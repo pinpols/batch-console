@@ -1,0 +1,19 @@
+@import './tokens.css';
+@import './reset.css';
+@import './element-override.css';
+
+#app {
+  min-height: 100vh;
+}
+
+.app-page {
+  min-height: 100%;
+  padding: var(--space-lg);
+}
+
+.app-surface {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-surface);
+  box-shadow: var(--shadow-card);
+}
