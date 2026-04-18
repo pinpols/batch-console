@@ -20,6 +20,7 @@ import router from './router'
 import { permissionDirective } from '@/directives/permission'
 import { hoverTabActivateDirective } from '@/directives/hoverTabActivate'
 import { trackClickDirective } from '@/directives/trackClick'
+import { safeHtmlDirective } from '@/directives/safeHtml'
 import { initLogger, logClick, logError } from '@/utils/logger'
 import { initSentry } from '@/utils/sentry'
 import '@/charts/echarts'
@@ -51,6 +52,7 @@ app.use(VueQueryPlugin, {
 app.directive('permission', permissionDirective)
 app.directive('hover-tab-activate', hoverTabActivateDirective)
 app.directive('track-click', trackClickDirective)
+app.directive('safe-html', safeHtmlDirective)
 
 // ---- 前端操作日志系统（本地 buffer + localStorage 兜底 + 批量上报 /api/console/telemetry/events） ----
 initLogger()

@@ -28,6 +28,8 @@ export default [
       'vue/multi-word-component-names': 'off',
       '@typescript-eslint/no-explicit-any': 'warn',
       'no-console': ['warn', { allow: ['warn', 'error'] }],
+      // 禁用原生 v-html：统一走 v-safe-html（内部用 DOMPurify 过滤）
+      'vue/no-v-html': 'error',
     },
   },
 ]

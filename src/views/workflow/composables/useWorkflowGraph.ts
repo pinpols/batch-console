@@ -6,6 +6,7 @@ import { computed, nextTick, onScopeDispose, reactive, ref, shallowRef, type Ref
 import { Dnd, Graph, Shape, type Cell, type Edge as X6Edge, type Node as X6Node } from '@antv/x6'
 import { FixedMiniMap } from '../graph/FixedMiniMap'
 import { ElMessage } from 'element-plus'
+import { purifyHtml } from '@/utils/safeHtml'
 import {
   type WorkflowNodeKind,
   type WorkflowEdgeKind,
@@ -252,7 +253,8 @@ export function useWorkflowGraph(deps: GraphDeps) {
         root.style.setProperty('--workflow-accent', theme.accent)
         root.style.setProperty('--workflow-soft', theme.softText)
         root.title = tip
-        root.innerHTML = `
+        // 双保险：字段已 escapeHtml，再经 DOMPurify 兜底（前端独立 XSS 过滤策略）
+        root.innerHTML = purifyHtml(`
             <div class="workflow-node__top">
               <span class="workflow-node__kind">${escapeHtml(data.nodeType)}</span>
               <span class="workflow-node__order">#${Number(data.nodeOrder || 0)}</span>
@@ -261,7 +263,7 @@ export function useWorkflowGraph(deps: GraphDeps) {
             <div class="workflow-node__footer workflow-node__footer--micro">
               <span class="workflow-node__code">${escapeHtml(data.nodeCode)}</span>
             </div>
-          `
+          `)
         root.addEventListener('contextmenu', (e) => {
           e.preventDefault()
           e.stopPropagation()
