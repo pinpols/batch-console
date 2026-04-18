@@ -234,19 +234,33 @@ interface TelemetryPayload {
   }>
 }
 
+/** 后端 FrontendTelemetryRequest 的字段长度上限（Bean Validation @Size） */
+const MAX_APP_LEN = 50
+const MAX_TYPE_LEN = 20
+const MAX_NAME_LEN = 200
+
+function clip(value: string | undefined, max: number): string {
+  if (!value) return ''
+  return value.length > max ? value.slice(0, max) : value
+}
+
 function buildPayload(entries: LogEntry[]): TelemetryPayload {
   const uid = currentUserId()
   return {
-    app: APP_NAME,
+    app: clip(APP_NAME, MAX_APP_LEN),
     ...(uid ? { userId: uid } : {}),
     sessionId: SESSION_ID,
-    events: entries.map((e) => ({
-      type: e.type,
-      name: e.name,
-      ts: e.ts,
-      ...(e.page ? { page: e.page } : {}),
-      ...(e.props ? { props: e.props } : {}),
-    })),
+    // 过滤 + 截断：后端 @NotBlank/@Size 若单条不合规会拒整批，
+    // 导致 lastUploadedSeq 永不前进、所有后续日志也卡死。
+    events: entries
+      .filter((e) => e.type && e.name)
+      .map((e) => ({
+        type: clip(e.type, MAX_TYPE_LEN) as LogType,
+        name: clip(e.name, MAX_NAME_LEN),
+        ts: e.ts,
+        ...(e.page ? { page: e.page } : {}),
+        ...(e.props ? { props: e.props } : {}),
+      })),
   }
 }
 
@@ -257,6 +271,13 @@ async function uploadPendingLogs(): Promise<void> {
   const pending = buffer.filter((e) => e.id > lastUploadedSeq)
   if (pending.length === 0) return
   const chunk = pending.slice(0, UPLOAD_BATCH_SIZE)
+  const lastId = chunk[chunk.length - 1].id
+  const payload = buildPayload(chunk)
+  // 全部被过滤：直接前进游标，避免这批永远卡住
+  if (payload.events.length === 0) {
+    lastUploadedSeq = lastId
+    return
+  }
   uploadInFlight = true
   try {
     const tenantId = currentTenantId() ?? ''
@@ -267,12 +288,21 @@ async function uploadPendingLogs(): Promise<void> {
         Authorization: `Bearer ${token}`,
         ...(tenantId ? { 'X-Tenant-Id': tenantId } : {}),
       },
-      body: JSON.stringify(buildPayload(chunk)),
+      body: JSON.stringify(payload),
       credentials: 'same-origin',
       keepalive: true,
     })
+    // 200 正常前进；4xx 是客户端问题（字段格式/认证），重传也不会成功，丢掉避免永久卡死；
+    // 5xx / 网络失败：保留游标，下轮再试
     if (res.ok) {
-      lastUploadedSeq = chunk[chunk.length - 1].id
+      lastUploadedSeq = lastId
+    } else if (res.status >= 400 && res.status < 500) {
+      if (import.meta.env.DEV) {
+        console.warn(
+          `[logger] telemetry rejected (${res.status}); dropping ${chunk.length} entries`,
+        )
+      }
+      lastUploadedSeq = lastId
     }
   } catch {
     /* 网络失败:保留 lastUploadedSeq,下轮再试 */
