@@ -3,12 +3,16 @@ import { useQuery } from '@tanstack/vue-query'
 import { getMetaCalendars, getMetaEnums, getMetaWorkerGroups } from '@/api/meta'
 import { useTenantStore } from '@/stores/tenant'
 
-/** 全局枚举字典（与租户无关）；多页共享缓存 */
+/**
+ * 全局枚举字典(与租户无关);多页共享缓存。
+ * staleTime 2 分钟:既避免每次挂载都拉,又让后端修文案后较快生效。
+ * 真要强制刷新可调用 `queryClient.invalidateQueries({ queryKey: ['console-meta', 'enums'] })`。
+ */
 export function useConsoleMetaEnumsQuery() {
   return useQuery({
     queryKey: ['console-meta', 'enums'],
     queryFn: getMetaEnums,
-    staleTime: 10 * 60_000,
+    staleTime: 2 * 60_000,
   })
 }
 

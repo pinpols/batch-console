@@ -35,10 +35,10 @@
                     style="width: 160px"
                   >
                     <el-option
-                      v-for="rt in resourceTypes"
-                      :key="rt"
-                      :label="triggerResourceTypeMap[rt]?.label ?? rt"
-                      :value="rt"
+                      v-for="opt in resourceTypeOptions"
+                      :key="opt.value"
+                      :label="opt.label"
+                      :value="opt.value"
                     />
                   </el-select>
                 </el-form-item>
@@ -201,11 +201,17 @@
   import StatusTag from '@/components/common/StatusTag.vue'
   import ProTable from '@/components/table/ProTable.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
-  import { triggerResourceTypeMap } from '@/constants/status'
+  import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
+  import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
 
   const tenant = useTenantStore()
   const activeTab = ref('query')
-  const resourceTypes: ResourceType[] = ['JOB', 'WORKFLOW', 'FILE_CHANNEL', 'FILE_TEMPLATE']
+
+  const { data: metaEnums } = useConsoleMetaEnumsQuery()
+
+  const resourceTypeOptions = computed(() =>
+    pickMetaEnumGroup(metaEnums.value, 'triggerResourceType'),
+  )
 
   const loadingTags = ref(false)
   const savingTag = ref(false)

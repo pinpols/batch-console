@@ -6,61 +6,13 @@
 
 <script setup lang="ts">
   import { computed } from 'vue'
-  import {
-    alertSeverityMap,
-    alertStatusMap,
-    approvalStatusMap,
-    arrivalStateMap,
-    batchDayStatusMap,
-    channelTypeMap,
-    configStatusMap,
-    deliveryStatusMap,
-    fileStatusMap,
-    instanceStatusMap,
-    logLevelMap,
-    logTypeMap,
-    operationResultMap,
-    outboxPublishStatusMap,
-    partitionStatusMap,
-    slaStatusMap,
-    tenantConfigInitActionMap,
-    tenantStatusMap,
-    triggerResourceTypeMap,
-    triggerStatusMap,
-    workerStatusMap,
-    workflowDefinitionStatusMap,
-    workflowRunStatusMap,
-    ynStatusMap,
-  } from '@/constants/status'
+  import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
+  import { resolveStatusMeta, type StatusTagCategory } from '@/components/common/statusTagResolve'
 
   const props = withDefaults(
     defineProps<{
       value: string
-      category?:
-        | 'instance'
-        | 'file'
-        | 'partition'
-        | 'worker'
-        | 'workflow'
-        | 'workflowDefinition'
-        | 'log'
-        | 'logType'
-        | 'approval'
-        | 'outboxPublishStatus'
-        | 'alertSeverity'
-        | 'alertStatus'
-        | 'batchDay'
-        | 'sla'
-        | 'arrival'
-        | 'operationResult'
-        | 'configStatus'
-        | 'yn'
-        | 'tenant'
-        | 'trigger'
-        | 'triggerResourceType'
-        | 'tenantConfigInitAction'
-        | 'channelType'
-        | 'deliveryStatus'
+      category?: StatusTagCategory
       size?: 'small' | 'default' | 'large'
       fallback?: string
     }>(),
@@ -71,40 +23,9 @@
     },
   )
 
-  const meta = computed(() => {
-    const maps: Record<
-      typeof props.category,
-      Record<string, { label: string; type: 'primary' | 'success' | 'warning' | 'danger' | 'info' }>
-    > = {
-      instance: instanceStatusMap,
-      file: fileStatusMap,
-      partition: partitionStatusMap,
-      worker: workerStatusMap,
-      workflow: workflowRunStatusMap,
-      workflowDefinition: workflowDefinitionStatusMap,
-      log: logLevelMap,
-      logType: logTypeMap,
-      approval: approvalStatusMap,
-      outboxPublishStatus: outboxPublishStatusMap,
-      alertSeverity: alertSeverityMap,
-      alertStatus: alertStatusMap,
-      batchDay: batchDayStatusMap,
-      sla: slaStatusMap,
-      arrival: arrivalStateMap,
-      operationResult: operationResultMap,
-      configStatus: configStatusMap,
-      yn: ynStatusMap,
-      tenant: tenantStatusMap,
-      trigger: triggerStatusMap,
-      triggerResourceType: triggerResourceTypeMap,
-      tenantConfigInitAction: tenantConfigInitActionMap,
-      channelType: channelTypeMap,
-      deliveryStatus: deliveryStatusMap,
-    }
+  const { data: metaEnums } = useConsoleMetaEnumsQuery()
 
-    const map = maps[props.category] ?? {}
-    return (
-      map[props.value] ?? { label: props.value || props.fallback || '—', type: 'info' as const }
-    )
-  })
+  const meta = computed(() =>
+    resolveStatusMeta(props.value, props.category, metaEnums.value, props.fallback),
+  )
 </script>

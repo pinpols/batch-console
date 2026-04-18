@@ -3431,6 +3431,26 @@ export interface paths {
      *     | `operationType` | 文件审计操作类型（ARRIVAL_REGISTER / RECEIVE_SCAN / IMPORT_FEEDBACK / BAD_RECORD_GOVERNANCE / EXPORT_REGISTER / EXPORT_COMPLETE / DISPATCH_COMPLETE / DISPATCH_COMPENSATE / CATCH_UP_APPROVAL / BATCH_DAY_CATCH_UP）|
      *     | `operationResult` | 审计操作结果（SUCCESS / FAILED）|
      *     | `fileStatus` | 文件状态（RECEIVED / PARSING / PARSED / VALIDATED / LOADED / GENERATED / DISPATCHING / DISPATCHED / ARCHIVED / FAILED / DELETED）|
+     *     | `priorityLevel` | 优先级等级（P1 ~ P9）|
+     *     | `aiPromptDecision` | AI Prompt 审批决策（APPROVED / REJECTED_SCOPE / REJECTED_AUTH / REJECTED_DISABLED / REJECTED_SAFETY / FAILED）|
+     *     | `checksumType` | 文件校验类型（NONE / MD5 / SHA-256）|
+     *     | `workflowJoinMode` | 工作流汇聚模式（ALL / ANY / N_OF）|
+     *     | `fileDispatchRunStatus` | 文件分发运行状态（CREATED / RUNNING / COMPENSATING / ARCHIVED）|
+     *     | `fileDispatchStatus` | 文件分发状态（CREATED / SENT / ACKED / FAILED / COMPENSATED）|
+     *     | `fileReceiptStatus` | 文件回执状态（PENDING / SUCCESS / FAILED）|
+     *     | `pipelineRunStatus` | 流水线运行状态（RUNNING / SUCCESS / FAILED）|
+     *     | `compensationStatus` | 补偿命令状态（PENDING / RUNNING / SUCCESS / FAILED / CANCELLED）|
+     *     | `retryScheduleStatus` | 重试调度状态（WAITING / RUNNING / SUCCESS / FAILED / EXHAUSTED / CANCELLED）|
+     *     | `encryptType` | 文件加密类型（NONE / AES / PGP / CUSTOM）|
+     *     | `compressType` | 文件压缩类型（NONE / ZIP / GZIP）|
+     *     | `errorSinkType` | 错误落地类型（ERROR_TABLE / ERROR_FILE / BOTH）|
+     *     | `priorityBand` | 调度优先级档位（HIGH / MEDIUM / LOW）|
+     *     | `stepInstanceStatus` | 步骤实例状态（CREATED / WAITING / READY / RUNNING / RETRYING / SUCCESS / FAILED / CANCELLED / TERMINATED）|
+     *     | `runMode` | 运行模式（NORMAL / RETRY / RERUN / RECOVER / COMPENSATE）|
+     *     | `skipAction` | 跳过动作（CONTINUE / FAIL_BATCH / MANUAL_REVIEW）|
+     *     | `workflowNodeRunStatus` | 工作流节点运行状态（READY / RUNNING / SUCCESS / FAILED / SKIPPED）|
+     *     | `deadLetterReplayStatus` | 死信回放状态（NEW / REPLAYING / SUCCESS / FAILED / GIVE_UP）|
+     *     | `skipThresholdMode` | 跳过阈值模式（ABSOLUTE / PERCENTAGE）|
      *
      */
     get: operations['getMetaEnums']
@@ -5346,6 +5366,29 @@ export interface components {
         workerStatus?: components['schemas']['MetaEnumItem'][]
         outboxPublishStatus?: components['schemas']['MetaEnumItem'][]
         aiPromptCategory?: components['schemas']['MetaEnumItem'][]
+        operationType?: components['schemas']['MetaEnumItem'][]
+        operationResult?: components['schemas']['MetaEnumItem'][]
+        fileStatus?: components['schemas']['MetaEnumItem'][]
+        priorityLevel?: components['schemas']['MetaEnumItem'][]
+        aiPromptDecision?: components['schemas']['MetaEnumItem'][]
+        checksumType?: components['schemas']['MetaEnumItem'][]
+        workflowJoinMode?: components['schemas']['MetaEnumItem'][]
+        fileDispatchRunStatus?: components['schemas']['MetaEnumItem'][]
+        fileDispatchStatus?: components['schemas']['MetaEnumItem'][]
+        fileReceiptStatus?: components['schemas']['MetaEnumItem'][]
+        pipelineRunStatus?: components['schemas']['MetaEnumItem'][]
+        compensationStatus?: components['schemas']['MetaEnumItem'][]
+        retryScheduleStatus?: components['schemas']['MetaEnumItem'][]
+        encryptType?: components['schemas']['MetaEnumItem'][]
+        compressType?: components['schemas']['MetaEnumItem'][]
+        errorSinkType?: components['schemas']['MetaEnumItem'][]
+        priorityBand?: components['schemas']['MetaEnumItem'][]
+        stepInstanceStatus?: components['schemas']['MetaEnumItem'][]
+        runMode?: components['schemas']['MetaEnumItem'][]
+        skipAction?: components['schemas']['MetaEnumItem'][]
+        workflowNodeRunStatus?: components['schemas']['MetaEnumItem'][]
+        deadLetterReplayStatus?: components['schemas']['MetaEnumItem'][]
+        skipThresholdMode?: components['schemas']['MetaEnumItem'][]
       }
     }
     CommonResponseObject: components['schemas']['CommonResponseBase'] & {
@@ -7502,6 +7545,31 @@ export interface components {
       /** Format: int32 */
       workflowUpdated: number
     }
+    /** @enum {string} */
+    TriggerStatus:
+      | 'NORMAL'
+      | 'REGISTERED'
+      | 'PAUSED'
+      | 'UNREGISTERED'
+      | 'ERROR'
+      | 'BLOCKED'
+      | 'COMPLETE'
+    /** @enum {string} */
+    WebhookDeliveryStatus: 'SUCCESS' | 'FAILED' | 'EXHAUSTED'
+    /** @enum {string} */
+    NotificationChannelType: 'EMAIL' | 'WEBHOOK' | 'DINGTALK' | 'WECHAT' | 'SMS'
+    /** @enum {string} */
+    TenantStatus: 'ACTIVE' | 'SUSPENDED'
+    /** @enum {string} */
+    LogType: 'SYSTEM' | 'BUSINESS' | 'ALARM'
+    /** @enum {string} */
+    WorkflowDefinitionStatus: 'DRAFT' | 'PUBLISHED' | 'DISABLED'
+    /** @enum {string} */
+    TenantConfigInitAction: 'CREATED' | 'UPDATED' | 'SKIPPED' | 'FAILED'
+    /** @enum {string} */
+    TriggerResourceType: 'JOB' | 'WORKFLOW' | 'FILE_CHANNEL' | 'FILE_TEMPLATE'
+    /** @enum {string} */
+    ArrivalState: 'WAITING' | 'PARTIAL' | 'COMPLETE' | 'TIMEOUT' | 'TRIGGERED'
   }
   responses: never
   parameters: {

@@ -1,3 +1,4 @@
+import { post } from '@/api/client'
 import { readStoredTenantId } from '@/api/interceptors'
 
 type SseStreamType =
@@ -11,25 +12,39 @@ type SseStreamType =
   | 'pipeline-definitions'
 
 /**
- * 通用 SSE 流工厂 — 对应 `/api/console/stream/{domain}/events` 或 `/api/console/{domain}/events`。
- * 当前后端仅 `stream/job-instances/events` 走 `/stream/` 前缀，其余走各自根路径。
+ * 用 Authorization 交换一次性 SSE ticket(后端 5 分钟过期、使用后立删)。
+ * EventSource 不能自带 Authorization 头,因此须先换 ticket 再以 `?ticket=` 连流。
  */
-export function createSseStream(
+export async function fetchStreamTicket(): Promise<string> {
+  const res = await post<{ ticket: string }>('/api/console/auth/stream/ticket', {})
+  return res.ticket
+}
+
+function resolvePath(domain: SseStreamType): string {
+  const streamDomains: SseStreamType[] = ['job-instances', 'outbox-deliveries', 'outbox-retries']
+  return streamDomains.includes(domain)
+    ? `/api/console/stream/${domain}/events`
+    : `/api/console/${domain}/events`
+}
+
+function buildStreamUrl(path: string, ticket: string): string {
+  const base =
+    typeof import.meta.env.VITE_API_BASE_URL === 'string' ? import.meta.env.VITE_API_BASE_URL : ''
+  const qs = new URLSearchParams({ tenantId: readStoredTenantId(), ticket })
+  return `${base}${path}?${qs.toString()}`
+}
+
+/**
+ * 通用 SSE 流工厂 — 先 POST `/auth/stream/ticket` 换一次性 ticket,再连 `/{domain}/events?ticket=`。
+ * 返回 Promise<EventSource>;调用方需 await。连接失败会抛错。
+ */
+export async function createSseStream(
   domain: SseStreamType,
   onMessage: (data: string) => void,
   onError?: (e: Event) => void,
-): EventSource {
-  const token = localStorage.getItem('token') ?? ''
-  const tenantId = readStoredTenantId()
-  const base =
-    typeof import.meta.env.VITE_API_BASE_URL === 'string' ? import.meta.env.VITE_API_BASE_URL : ''
-  const qs = new URLSearchParams({ tenantId, token })
-  // stream/* domains use /stream/ prefix; others use /{domain}/events directly
-  const streamDomains: SseStreamType[] = ['job-instances', 'outbox-deliveries', 'outbox-retries']
-  const path = streamDomains.includes(domain)
-    ? `/api/console/stream/${domain}/events`
-    : `/api/console/${domain}/events`
-  const url = `${base}${path}?${qs.toString()}`
+): Promise<EventSource> {
+  const ticket = await fetchStreamTicket()
+  const url = buildStreamUrl(resolvePath(domain), ticket)
   const es = new EventSource(url)
   es.onmessage = (e) => onMessage(typeof e.data === 'string' ? e.data : String(e.data ?? ''))
   es.onerror = (e) => {
@@ -39,7 +54,7 @@ export function createSseStream(
   return es
 }
 
-/** Spring SSE 使用命名 event；与 ConsoleRealtimeEventHub 生命周期及 job-instances 域事件对齐 */
+/** Spring SSE 使用命名 event;与 ConsoleRealtimeEventHub 生命周期及 job-instances 域事件对齐 */
 const JOB_INSTANCE_SSE_EVENT_NAMES = [
   'ready',
   'heartbeat',
@@ -54,25 +69,18 @@ function jobInstancePayloadId(data: unknown): number | undefined {
 }
 
 /**
- * 订阅作业实例实时 SSE（`/api/console/stream/job-instances/events`）。
- * EventSource 无法带 Authorization 头，后端支持 `token` query；命名事件会序列化为 JSON 字符串交给回调。
+ * 订阅作业实例实时 SSE(`/api/console/stream/job-instances/events`)。
+ * 命名事件会序列化为 JSON 字符串交给回调。
  *
- * @param instanceId 若传入，则仅在解析到 `data.id` 与该 id 一致时回调（心跳/ready 等仍原样回调）。
+ * @param instanceId 若传入,则仅在解析到 `data.id` 与该 id 一致时回调(心跳/ready 等仍原样回调)。
  */
-export function createLogStream(
+export async function createLogStream(
   instanceId: number,
   onMessage: (log: string) => void,
   onError?: (e: Event) => void,
-): EventSource {
-  const token = localStorage.getItem('token') ?? ''
-  const tenantId = readStoredTenantId()
-  const base =
-    typeof import.meta.env.VITE_API_BASE_URL === 'string' ? import.meta.env.VITE_API_BASE_URL : ''
-  const qs = new URLSearchParams({
-    tenantId,
-    token,
-  })
-  const url = `${base}/api/console/stream/job-instances/events?${qs.toString()}`
+): Promise<EventSource> {
+  const ticket = await fetchStreamTicket()
+  const url = buildStreamUrl('/api/console/stream/job-instances/events', ticket)
   const es = new EventSource(url)
 
   const forward = (e: MessageEvent) => {

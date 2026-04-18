@@ -265,10 +265,10 @@
         <el-form-item label="类型">
           <el-select v-model="channelForm.channelType" placeholder="选择类型" style="width: 100%">
             <el-option
-              v-for="(meta, value) in channelTypeMap"
-              :key="value"
-              :label="`${meta.label} (${value})`"
-              :value="value"
+              v-for="opt in channelTypeOptions"
+              :key="opt.value"
+              :label="`${opt.label} (${opt.value})`"
+              :value="opt.value"
             />
           </el-select>
         </el-form-item>
@@ -392,10 +392,15 @@
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
-  import { channelTypeMap } from '@/constants/status'
+  import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
+  import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
 
   const tenant = useTenantStore()
   const activeTab = ref('channels')
+
+  const { data: metaEnums } = useConsoleMetaEnumsQuery()
+
+  const channelTypeOptions = computed(() => pickMetaEnumGroup(metaEnums.value, 'channelType'))
 
   // ── Pagination state ──
   const channelPage = ref(1)

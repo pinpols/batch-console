@@ -147,7 +147,6 @@
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { toPageResult } from '@/api/adapters'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
-  import { uniqueFieldValues } from '@/utils/queryFormOptions'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
@@ -192,23 +191,13 @@
 
   const { data: metaEnums } = useConsoleMetaEnumsQuery()
 
-  const retryStatusSelectOptions = computed(() => {
-    const api = pickMetaEnumGroup(metaEnums.value, 'outboxPublishStatus')
-    if (api.length) return api
-    return uniqueFieldValues(retriesAll.value, (row) => row.retryStatus).map((value) => ({
-      value,
-      label: value,
-    }))
-  })
+  const retryStatusSelectOptions = computed(() =>
+    pickMetaEnumGroup(metaEnums.value, 'outboxPublishStatus'),
+  )
 
-  const deliveryStatusSelectOptions = computed(() => {
-    const api = pickMetaEnumGroup(metaEnums.value, 'outboxPublishStatus')
-    if (api.length) return api
-    return uniqueFieldValues(deliveriesAll.value, (row) => row.deliveryStatus).map((value) => ({
-      value,
-      label: value,
-    }))
-  })
+  const deliveryStatusSelectOptions = computed(() =>
+    pickMetaEnumGroup(metaEnums.value, 'outboxPublishStatus'),
+  )
 
   const filteredRetries = computed(() => {
     let r = retriesAll.value

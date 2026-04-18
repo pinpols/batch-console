@@ -2,7 +2,7 @@
  * Workflow Designer — X6 Graph creation, Dnd, minimap, zoom, event bindings,
  * port config, HTML node registration.
  */
-import { computed, nextTick, reactive, ref, shallowRef, type Ref } from 'vue'
+import { computed, nextTick, onScopeDispose, reactive, ref, shallowRef, type Ref } from 'vue'
 import { Dnd, Graph, Shape, type Cell, type Edge as X6Edge, type Node as X6Node } from '@antv/x6'
 import { FixedMiniMap } from '../graph/FixedMiniMap'
 import { ElMessage } from 'element-plus'
@@ -192,6 +192,8 @@ export function useWorkflowGraph(deps: GraphDeps) {
       syncGraphDerivedState()
     }, 300)
   }
+
+  onScopeDispose(cancelPositionDerivedSyncTimer)
 
   // ─── Shape registration ────────────────────────────────────────────────────
 

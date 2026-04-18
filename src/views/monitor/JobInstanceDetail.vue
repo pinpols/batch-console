@@ -176,8 +176,21 @@
 
   let sse: EventSource | null = null
   let reloadTimer: ReturnType<typeof setTimeout> | null = null
+  let reopenTimer: ReturnType<typeof setTimeout> | null = null
+  let streamGen = 0
+  let streamRetries = 0
+  const MAX_SSE_RETRIES = 5
+
+  function clearReopenTimer() {
+    if (reopenTimer) {
+      clearTimeout(reopenTimer)
+      reopenTimer = null
+    }
+  }
 
   function closeStream() {
+    streamGen++
+    clearReopenTimer()
     if (sse) {
       sse.close()
       sse = null
@@ -196,19 +209,44 @@
     }, 400)
   }
 
-  function openStream() {
+  function scheduleReopen(capturedGen: number) {
+    if (capturedGen !== streamGen) return
+    if (streamRetries >= MAX_SSE_RETRIES) return
+    clearReopenTimer()
+    const delay = Math.min(30_000, 1_000 * 2 ** streamRetries)
+    streamRetries += 1
+    reopenTimer = setTimeout(() => {
+      reopenTimer = null
+      void openStream()
+    }, delay)
+  }
+
+  async function openStream() {
     closeStream()
     if (!Number.isFinite(instanceId.value) || !tenant.tenantId) return
-    sse = createLogStream(instanceId.value, () => {
-      scheduleReload()
-    })
+    const my = streamGen
+    try {
+      const es = await createLogStream(
+        instanceId.value,
+        () => scheduleReload(),
+        () => scheduleReopen(my),
+      )
+      if (my !== streamGen) {
+        es.close()
+        return
+      }
+      sse = es
+      streamRetries = 0
+    } catch {
+      scheduleReopen(my)
+    }
   }
 
   watch(
     () => [instanceId.value, tenant.tenantId] as const,
     () => {
       load()
-      openStream()
+      void openStream()
     },
     { immediate: true },
   )

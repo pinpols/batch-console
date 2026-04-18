@@ -1,37 +1,57 @@
 /**
- * 前端操作日志系统
+ * 前端操作日志 —— 唯一的埋点入口(telemetry.ts 已废弃并删除)。
  *
- * - 环形缓冲区存最近 N 条日志，超出自动淘汰最旧记录
- * - 定期持久化到 localStorage，页面刷新不丢失
- * - 登录后定时上报后端 /api/console/telemetry/events
- * - 分类：route（路由切换）、click（按钮/操作点击）、api（接口调用）、error（异常）
+ * 设计目标:
+ *  - 本地环形缓冲区 500 条;localStorage 兜底,刷新不丢
+ *  - 10s 落盘、15s 批量上报 `/api/console/telemetry/events`
+ *  - **schema 严格对齐后端 OpenAPI `receiveTelemetryEvents`**:
+ *     { app, userId?, sessionId?, events: [{ type, name, ts, page?, props? }] }
+ *  - `type` 只用后端声明的 4 种:`route | click | api | error`
+ *  - API 错误(status ≥ 400 / 网络错)上报为 `type: 'error'`,后端直接打 ERROR 级
+ *  - 过滤已知 benign 错误(ResizeObserver 等),不污染 console 与后端日志
+ *  - 错误事件尽量保留排障所需的所有上下文:method、url、status、traceId、requestId、stack
  */
 
-export type LogCategory = 'route' | 'click' | 'api' | 'error'
+/** 对齐后端 OpenAPI:4 种事件类型 */
+export type LogType = 'route' | 'click' | 'api' | 'error'
 export type LogLevel = 'info' | 'warn' | 'error'
 
 export interface LogEntry {
-  /** 自增序号 */
+  /** 自增序号(本地排重用) */
   id: number
   /** ISO 时间戳 */
   ts: string
-  /** 日志分类 */
-  category: LogCategory
-  /** 日志级别 */
+  /** 后端 schema 的 4 种 type */
+  type: LogType
+  /** 本地过滤/展示用;不发给后端 */
   level: LogLevel
-  /** 摘要 */
-  message: string
-  /** 附加结构化数据 */
-  detail?: Record<string, unknown>
+  /** 事件名(短文案:"页面切换:XXX" / "POST /api/xxx → 500") */
+  name: string
+  /** 触发时所在路由 path+hash */
+  page: string
+  /** 结构化上下文(业务 id、状态码、stack 等) */
+  props?: Record<string, unknown>
 }
 
 const STORAGE_KEY = 'batch-console-oplog'
 const MAX_ENTRIES = 500
-const FLUSH_INTERVAL_MS = 10_000 // 10s 落盘一次
-const UPLOAD_INTERVAL_MS = 15_000 // 15s 上报一次
+const FLUSH_INTERVAL_MS = 10_000
+const UPLOAD_INTERVAL_MS = 15_000
 const UPLOAD_BATCH_SIZE = 50
 const TELEMETRY_ENDPOINT = '/api/console/telemetry/events'
 const APP_NAME = 'batch-console'
+const TOKEN_STORAGE_KEY = 'token'
+const TENANT_STORAGE_KEY = 'batch-console-tenant-id'
+
+/** 已知 benign 错误 —— 不进 buffer,不上报,不刷 UI */
+const IGNORED_ERROR_PATTERNS: readonly RegExp[] = [
+  /ResizeObserver loop (limit exceeded|completed with undelivered)/i,
+  /Non-Error promise rejection captured/i,
+  /^Script error\.?$/, // 跨域脚本,没 stack 也没法排障
+]
+
+/** tab 级 session ID,整个页面生命周期不变 */
+const SESSION_ID = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
 
 let seq = 0
 let buffer: LogEntry[] = []
@@ -40,21 +60,59 @@ let uploadTimer: ReturnType<typeof setInterval> | null = null
 let lastUploadedSeq = 0
 let uploadInFlight = false
 
-// ---- 核心 API ----
+// ────────────────────────────────────────────── 环境信息
 
-function push(
-  category: LogCategory,
-  level: LogLevel,
-  message: string,
-  detail?: Record<string, unknown>,
-) {
+function currentPage(): string {
+  return typeof location !== 'undefined' ? location.pathname + location.hash : ''
+}
+
+/** base64url(JWT 用)→ binary string,比 atob 更耐受 `-` 与 `_` */
+function base64UrlDecode(s: string): string {
+  const pad = s.length % 4
+  const b64 = s.replace(/-/g, '+').replace(/_/g, '/') + (pad ? '='.repeat(4 - pad) : '')
+  if (typeof atob !== 'undefined') return atob(b64)
+  // node 环境兜底
+  return Buffer.from(b64, 'base64').toString('binary')
+}
+
+function currentUserId(): string | null {
+  try {
+    const token = localStorage.getItem(TOKEN_STORAGE_KEY)
+    if (!token) return null
+    const parts = token.split('.')
+    if (parts.length < 2) return null
+    const payload = JSON.parse(base64UrlDecode(parts[1])) as Record<string, unknown>
+    const sub = payload.sub ?? payload.userId
+    return typeof sub === 'string' ? sub : null
+  } catch {
+    return null
+  }
+}
+
+function currentTenantId(): string | null {
+  try {
+    return localStorage.getItem(TENANT_STORAGE_KEY) || null
+  } catch {
+    return null
+  }
+}
+
+function isIgnoredError(name: string): boolean {
+  return IGNORED_ERROR_PATTERNS.some((re) => re.test(name))
+}
+
+// ────────────────────────────────────────────── 核心 API
+
+function push(type: LogType, level: LogLevel, name: string, props?: Record<string, unknown>): void {
+  if (type === 'error' && isIgnoredError(name)) return
   const entry: LogEntry = {
     id: ++seq,
     ts: new Date().toISOString(),
-    category,
+    type,
     level,
-    message,
-    ...(detail !== undefined ? { detail } : {}),
+    name,
+    page: currentPage(),
+    ...(props && Object.keys(props).length ? { props } : {}),
   }
   buffer.push(entry)
   if (buffer.length > MAX_ENTRIES) {
@@ -62,43 +120,45 @@ function push(
   }
 }
 
-/** 写入一条路由日志 */
-export function logRoute(message: string, detail?: Record<string, unknown>) {
-  push('route', 'info', message, detail)
+/** 路由切换 */
+export function logRoute(name: string, props?: Record<string, unknown>): void {
+  push('route', 'info', name, props)
 }
 
-/** 写入一条点击/操作日志 */
-export function logClick(message: string, detail?: Record<string, unknown>) {
-  push('click', 'info', message, detail)
+/** 按钮/操作点击 */
+export function logClick(name: string, props?: Record<string, unknown>): void {
+  push('click', 'info', name, props)
 }
 
-/** 写入一条 API 日志 */
-export function logApi(message: string, level: LogLevel, detail?: Record<string, unknown>) {
-  push('api', level, message, detail)
+/**
+ * API 事件。成功走 `type: 'api'`(后端 INFO);失败走 `type: 'error'`(后端 ERROR,便于告警)。
+ * level 仅用于本地 UI 过滤,不影响后端分级(后端从 `type` 决定 log level)。
+ */
+export function logApi(name: string, level: LogLevel, props?: Record<string, unknown>): void {
+  const type: LogType = level === 'error' || level === 'warn' ? 'error' : 'api'
+  push(type, level, name, props)
 }
 
-/** 写入一条错误日志 */
-export function logError(message: string, detail?: Record<string, unknown>) {
-  push('error', 'error', message, detail)
+/** JS 运行时/Promise/Vue 组件异常 */
+export function logError(name: string, props?: Record<string, unknown>): void {
+  push('error', 'error', name, props)
 }
 
-// ---- 查询 ----
+// ────────────────────────────────────────────── 查询 / 导出
 
-/** 获取所有日志（返回副本） */
 export function getLogs(): LogEntry[] {
   return [...buffer]
 }
 
-/** 按条件过滤日志 */
 export function queryLogs(filter?: {
-  category?: LogCategory
+  type?: LogType
   level?: LogLevel
   keyword?: string
   since?: string
 }): LogEntry[] {
   let result = buffer
-  if (filter?.category) {
-    result = result.filter((e) => e.category === filter.category)
+  if (filter?.type) {
+    result = result.filter((e) => e.type === filter.type)
   }
   if (filter?.level) {
     result = result.filter((e) => e.level === filter.level)
@@ -107,8 +167,8 @@ export function queryLogs(filter?: {
     const kw = filter.keyword.toLowerCase()
     result = result.filter(
       (e) =>
-        e.message.toLowerCase().includes(kw) ||
-        (e.detail && JSON.stringify(e.detail).toLowerCase().includes(kw)),
+        e.name.toLowerCase().includes(kw) ||
+        (e.props != null && JSON.stringify(e.props).toLowerCase().includes(kw)),
     )
   }
   if (filter?.since) {
@@ -117,8 +177,7 @@ export function queryLogs(filter?: {
   return [...result]
 }
 
-/** 清空日志 */
-export function clearLogs() {
+export function clearLogs(): void {
   buffer = []
   seq = 0
   lastUploadedSeq = 0
@@ -129,21 +188,24 @@ export function clearLogs() {
   }
 }
 
-// ---- 持久化 ----
+export function exportLogsAsJson(): string {
+  return JSON.stringify(buffer, null, 2)
+}
 
-/** 立即落盘到 localStorage */
-export function flushLogs() {
+// ────────────────────────────────────────────── 持久化
+
+export function flushLogs(): void {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ seq, entries: buffer }))
   } catch {
+    // quota exceeded:砍掉一半再试一次,仍失败则放弃
     if (buffer.length > 200) {
       buffer = buffer.slice(buffer.length - 200)
     }
   }
 }
 
-/** 从 localStorage 恢复日志 */
-function restore() {
+function restore(): void {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return
@@ -153,30 +215,51 @@ function restore() {
       seq = typeof data.seq === 'number' ? data.seq : buffer.length
     }
   } catch {
-    /* corrupted → start fresh */
+    /* 坏数据 → 丢弃从头开始 */
   }
 }
 
-// ---- 后端上报 ----
+// ────────────────────────────────────────────── 后端上报
 
-/** 将未上报的日志批量发送到后端（未登录时跳过） */
-async function uploadPendingLogs() {
+interface TelemetryPayload {
+  app: string
+  userId?: string
+  sessionId?: string
+  events: Array<{
+    type: LogType
+    name: string
+    ts?: string
+    page?: string
+    props?: Record<string, unknown>
+  }>
+}
+
+function buildPayload(entries: LogEntry[]): TelemetryPayload {
+  const uid = currentUserId()
+  return {
+    app: APP_NAME,
+    ...(uid ? { userId: uid } : {}),
+    sessionId: SESSION_ID,
+    events: entries.map((e) => ({
+      type: e.type,
+      name: e.name,
+      ts: e.ts,
+      ...(e.page ? { page: e.page } : {}),
+      ...(e.props ? { props: e.props } : {}),
+    })),
+  }
+}
+
+async function uploadPendingLogs(): Promise<void> {
   if (uploadInFlight) return
-  const token = localStorage.getItem('token')
-  if (!token) return
+  const token = localStorage.getItem(TOKEN_STORAGE_KEY)
+  if (!token) return // 未登录期间暂不发,留在 buffer 登录后补发
   const pending = buffer.filter((e) => e.id > lastUploadedSeq)
   if (pending.length === 0) return
   const chunk = pending.slice(0, UPLOAD_BATCH_SIZE)
-  const events = chunk.map((e) => ({
-    type: e.category,
-    name: e.message,
-    ts: e.ts,
-    level: e.level,
-    ...(e.detail ? { detail: e.detail } : {}),
-  }))
   uploadInFlight = true
   try {
-    const tenantId = localStorage.getItem('batch-console-tenant-id') ?? ''
+    const tenantId = currentTenantId() ?? ''
     const res = await fetch(TELEMETRY_ENDPOINT, {
       method: 'POST',
       headers: {
@@ -184,42 +267,70 @@ async function uploadPendingLogs() {
         Authorization: `Bearer ${token}`,
         ...(tenantId ? { 'X-Tenant-Id': tenantId } : {}),
       },
-      body: JSON.stringify({ app: APP_NAME, events }),
+      body: JSON.stringify(buildPayload(chunk)),
       credentials: 'same-origin',
+      keepalive: true,
     })
     if (res.ok) {
       lastUploadedSeq = chunk[chunk.length - 1].id
     }
   } catch {
-    /* 网络失败：保留 lastUploadedSeq，下次重试 */
+    /* 网络失败:保留 lastUploadedSeq,下轮再试 */
   } finally {
     uploadInFlight = false
   }
 }
 
-// ---- 生命周期 ----
+function flushUploadOnUnload(): void {
+  const token = localStorage.getItem(TOKEN_STORAGE_KEY)
+  if (!token) return
+  const pending = buffer.filter((e) => e.id > lastUploadedSeq)
+  if (pending.length === 0) return
+  const chunk = pending.slice(0, UPLOAD_BATCH_SIZE)
+  try {
+    fetch(TELEMETRY_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+        ...(currentTenantId() ? { 'X-Tenant-Id': currentTenantId()! } : {}),
+      },
+      body: JSON.stringify(buildPayload(chunk)),
+      credentials: 'same-origin',
+      keepalive: true,
+    })
+    lastUploadedSeq = chunk[chunk.length - 1].id
+  } catch {
+    /* 页面即将卸载,失败无所谓 */
+  }
+}
 
-/** 初始化日志系统（应用启动时调用一次） */
-export function initLogger() {
+// ────────────────────────────────────────────── 生命周期
+
+export function initLogger(): void {
   restore()
 
-  // 定时落盘 localStorage
   if (flushTimer) clearInterval(flushTimer)
   flushTimer = setInterval(flushLogs, FLUSH_INTERVAL_MS)
 
-  // 定时上报后端
   if (uploadTimer) clearInterval(uploadTimer)
   uploadTimer = setInterval(() => {
     void uploadPendingLogs()
   }, UPLOAD_INTERVAL_MS)
 
-  // 页面关闭前落盘
-  window.addEventListener('beforeunload', flushLogs)
+  if (typeof window !== 'undefined') {
+    // 页面隐藏/关闭时:落盘 + 兜底上报(keepalive fetch,浏览器会后台完成)
+    window.addEventListener('visibilitychange', () => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
+        flushLogs()
+        flushUploadOnUnload()
+      }
+    })
+    window.addEventListener('beforeunload', () => {
+      flushLogs()
+      flushUploadOnUnload()
+    })
+  }
 
   push('route', 'info', '日志系统已初始化')
-}
-
-/** 导出日志为 JSON 文本（供排障下载） */
-export function exportLogsAsJson(): string {
-  return JSON.stringify(buffer, null, 2)
 }

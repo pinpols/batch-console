@@ -21,7 +21,6 @@ import { permissionDirective } from '@/directives/permission'
 import { hoverTabActivateDirective } from '@/directives/hoverTabActivate'
 import { trackClickDirective } from '@/directives/trackClick'
 import { initLogger, logClick, logError } from '@/utils/logger'
-import { initTelemetry, trackClick, trackJsError } from '@/utils/telemetry'
 import { initSentry } from '@/utils/sentry'
 import '@/charts/echarts'
 import '@/styles/app.css'
@@ -53,14 +52,8 @@ app.directive('permission', permissionDirective)
 app.directive('hover-tab-activate', hoverTabActivateDirective)
 app.directive('track-click', trackClickDirective)
 
-// ---- 前端操作日志系统（本地 localStorage 兜底） ----
+// ---- 前端操作日志系统（本地 buffer + localStorage 兜底 + 批量上报 /api/console/telemetry/events） ----
 initLogger()
-
-// ---- 行为埋点上报 ----
-initTelemetry({
-  endpoint: import.meta.env.VITE_TELEMETRY_ENDPOINT || '/api/console/telemetry/events',
-  enabled: import.meta.env.VITE_TELEMETRY_ENABLED !== 'false',
-})
 
 // ---- Sentry 错误监控 ----
 initSentry({
@@ -69,20 +62,29 @@ initSentry({
   dsn: import.meta.env.VITE_SENTRY_DSN,
 })
 
-// Vue 组件内未捕获异常 → 本地日志 + telemetry
+// Vue 组件内未捕获异常 → 记录组件名、info、message、stack(前 5 行)供前后端联调
 app.config.errorHandler = (err, instance, info) => {
   const component = instance?.$options?.name || instance?.$options?.__name || 'Unknown'
   const message = err instanceof Error ? err.message : String(err)
   const stack = err instanceof Error ? err.stack?.split('\n').slice(0, 5).join('\n') : undefined
-  logError(`Vue 异常：${component} [${info}]`, { component, info, message, stack })
-  trackJsError(`Vue: ${component} [${info}]`, { component, info, message, stack })
+  logError(`Vue 异常:${component} [${info}]`, {
+    kind: 'vue',
+    component,
+    info,
+    message,
+    stack,
+  })
 }
 
 // 全局 JS 运行时异常
 window.addEventListener('error', (event) => {
-  const detail = { filename: event.filename, lineno: event.lineno, colno: event.colno }
-  logError(`运行时异常：${event.message}`, detail)
-  trackJsError(event.message, detail)
+  logError(`运行时异常:${event.message}`, {
+    kind: 'runtime',
+    message: event.message,
+    filename: event.filename,
+    lineno: event.lineno,
+    colno: event.colno,
+  })
 })
 
 // 未处理的 Promise rejection
@@ -91,8 +93,11 @@ window.addEventListener('unhandledrejection', (event) => {
   const message = reason instanceof Error ? reason.message : String(reason)
   const stack =
     reason instanceof Error ? reason.stack?.split('\n').slice(0, 5).join('\n') : undefined
-  logError(`未处理 Promise 异常：${message}`, { message, stack })
-  trackJsError(`Unhandled rejection: ${message}`, { message, stack })
+  logError(`未处理 Promise 异常:${message}`, {
+    kind: 'unhandled-rejection',
+    message,
+    stack,
+  })
 })
 
 // 全局按钮点击自动采集（事件委托，无需每个按钮加指令）
@@ -111,7 +116,6 @@ document.addEventListener(
       el.className.split(' ')[0] ||
       'button'
     logClick(text)
-    trackClick(text)
   },
   true,
 )

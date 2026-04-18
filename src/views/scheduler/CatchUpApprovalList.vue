@@ -88,7 +88,6 @@
   import ProTable from '@/components/table/ProTable.vue'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
-  import { uniqueFieldValues } from '@/utils/queryFormOptions'
   import type { ConsolePendingCatchUpResponse } from '@/types/console-api'
 
   const tenant = useTenantStore()
@@ -115,14 +114,7 @@
 
   const { data: metaEnums } = useConsoleMetaEnumsQuery()
 
-  const catchUpStatusOptions = computed(() => {
-    const api = pickMetaEnumGroup(metaEnums.value, 'approvalStatus')
-    if (api.length) return api
-    return uniqueFieldValues(allRows.value, (row) => row.requestStatus).map((value) => ({
-      value,
-      label: value,
-    }))
-  })
+  const catchUpStatusOptions = computed(() => pickMetaEnumGroup(metaEnums.value, 'approvalStatus'))
 
   const filtered = computed(() => {
     let r = allRows.value

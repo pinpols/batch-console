@@ -1,6 +1,5 @@
 import type { Directive } from 'vue'
 import { logClick } from '@/utils/logger'
-import { trackClick } from '@/utils/telemetry'
 
 type HoverTabActivateBinding = true | { delay?: number } | undefined
 
@@ -64,8 +63,7 @@ export const hoverTabActivateDirective: Directive<HTMLElement, HoverTabActivateB
         if (item.classList.contains('is-active') || item.classList.contains('is-disabled')) return
         // 记录悬浮切换
         const label = item.textContent?.trim() || item.id || ''
-        logClick(`Tab 悬浮切换：${label}`)
-        trackClick(`Tab 悬浮切换：${label}`)
+        logClick(`Tab 悬浮切换:${label}`)
         // 触发 Element Plus tab 切换逻辑
         item.click()
       }, getDelay())

@@ -3,7 +3,6 @@ import { useAuthStore } from '@/stores/auth'
 import { usePermissionStore } from '@/stores/permission'
 import { useRouteProgressStore } from '@/stores/routeProgress'
 import { logRoute } from '@/utils/logger'
-import { trackPageView } from '@/utils/telemetry'
 import type { Role } from '@/types'
 
 const routes = [
@@ -548,12 +547,7 @@ router.beforeEach(async (to, from) => {
 router.afterEach((to, from) => {
   useRouteProgressStore().finish()
   const title = (to.meta.title as string) || to.name?.toString() || to.path
-  logRoute(`页面切换：${title}`, {
-    path: to.fullPath,
-    from: from.fullPath,
-    name: to.name?.toString(),
-  })
-  trackPageView(title, {
+  logRoute(`页面切换:${title}`, {
     path: to.fullPath,
     from: from.fullPath,
     name: to.name?.toString(),

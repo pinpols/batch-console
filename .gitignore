@@ -15,3 +15,10 @@ src/types/components.d.ts
 
 # Playwright auth state
 e2e/.auth/
+
+# Local dev server artifacts
+.vite-dev.log
+.vite-dev.pid
+
+# Local session memory
+.remember/

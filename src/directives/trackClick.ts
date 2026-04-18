@@ -1,27 +1,23 @@
 import type { Directive } from 'vue'
 import { logClick } from '@/utils/logger'
-import { trackClick as trackClickTelemetry } from '@/utils/telemetry'
 
 /**
  * v-track-click 指令 — 元素被点击时自动写入一条操作日志。
  *
- * 用法：
+ * 用法:
  *   <el-button v-track-click="'触发 Job'">触发</el-button>
  *   <el-button v-track-click="{ action: '审批通过', id: row.id }">通过</el-button>
  *
- * 值为字符串时直接作为 message；值为对象时取 action 字段作 message，其余作 detail。
+ * 值为字符串时直接作为 name;值为对象时取 `action` 字段作 name,其余字段作 props。
  */
 type TrackClickValue = string | { action: string; [key: string]: unknown }
 
 function handleClick(value: TrackClickValue) {
   if (typeof value === 'string') {
     logClick(value)
-    trackClickTelemetry(value)
   } else {
     const { action, ...rest } = value
-    const detail = Object.keys(rest).length ? rest : undefined
-    logClick(action, detail)
-    trackClickTelemetry(action, detail)
+    logClick(action, Object.keys(rest).length ? rest : undefined)
   }
 }
 

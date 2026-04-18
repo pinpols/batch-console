@@ -48,10 +48,10 @@
         <el-form-item label="状态">
           <el-select v-model="queryDraft.status" clearable placeholder="全部" style="width: 140px">
             <el-option
-              v-for="(meta, value) in tenantStatusMap"
-              :key="value"
-              :label="meta.label"
-              :value="value"
+              v-for="opt in tenantStatusOptions"
+              :key="opt.value"
+              :label="opt.label"
+              :value="opt.value"
             />
           </el-select>
         </el-form-item>
@@ -386,7 +386,8 @@
   import StatusTag from '@/components/common/StatusTag.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import TablePagerBar from '@/components/table/TablePagerBar.vue'
-  import { tenantStatusMap } from '@/constants/status'
+  import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
+  import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
 
   const auth = useAuthStore()
   const tenant = useTenantStore()
@@ -413,6 +414,10 @@
   })
 
   const page = ref<TenantPage>({ total: 0, pageNo: 1, pageSize: 20, items: [] })
+
+  const { data: metaEnums } = useConsoleMetaEnumsQuery()
+
+  const tenantStatusOptions = computed(() => pickMetaEnumGroup(metaEnums.value, 'tenantStatus'))
 
   const activeCount = computed(
     () => page.value.items.filter((item) => item.status === 'ACTIVE').length,

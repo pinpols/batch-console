@@ -1,3 +1,4 @@
+import type { components } from '@/types/api.generated'
 import type {
   FileStatus,
   InstanceStatus,
@@ -9,209 +10,241 @@ import type {
   WorkflowStatus,
 } from '@/types'
 
+// ─── 后端 enum schema 的类型化别名(来自 OpenAPI)─────────────────
+export type TriggerStatus = components['schemas']['TriggerStatus']
+export type WebhookDeliveryStatus = components['schemas']['WebhookDeliveryStatus']
+export type NotificationChannelType = components['schemas']['NotificationChannelType']
+export type TenantStatus = components['schemas']['TenantStatus']
+export type TriggerResourceType = components['schemas']['TriggerResourceType']
+export type TenantConfigInitAction = components['schemas']['TenantConfigInitAction']
+export type ArrivalState = components['schemas']['ArrivalState']
+
 export type StatusTagType = 'primary' | 'success' | 'warning' | 'danger' | 'info'
 
-export interface StatusMeta {
+// =====================================================================
+// 颜色映射 — 前端专属(UI 决策,后端无关)
+//
+// label(中文文案)不再由前端维护;`StatusTag` 会从 `/api/console/meta/enums`
+// 实时取 label,漏发时回退原始 value。对应的 enum 见每个 map 注释里的
+// `/meta/enums` key,`pickMetaEnumGroup(enums, 'xxx')` 可拿到 label+value。
+// =====================================================================
+
+/** /meta/enums: `instanceStatus` */
+export const instanceStatusColor: Record<InstanceStatus, StatusTagType> = {
+  CREATED: 'info',
+  WAITING: 'warning',
+  RUNNING: 'success',
+  COMPLETED: 'primary',
+  FAILED: 'danger',
+  CANCELLED: 'info',
+}
+
+/** /meta/enums: `fileStatus` */
+export const fileStatusColor: Record<FileStatus, StatusTagType> = {
+  RECEIVED: 'info',
+  PROCESSING: 'warning',
+  COMPLETED: 'success',
+  FAILED: 'danger',
+  DISPATCHED: 'primary',
+}
+
+/** /meta/enums: `partitionStatus` */
+export const partitionStatusColor: Record<PartitionStatus, StatusTagType> = {
+  CREATED: 'info',
+  READY: 'primary',
+  WAITING: 'warning',
+  RUNNING: 'success',
+  COMPLETED: 'primary',
+  FAILED: 'danger',
+}
+
+/** /meta/enums: `workerStatus` */
+export const workerStatusColor: Record<WorkerStatus, StatusTagType> = {
+  ONLINE: 'success',
+  DRAINING: 'warning',
+  OFFLINE: 'info',
+}
+
+/** /meta/enums: `workflowRunStatus` */
+export const workflowRunStatusColor: Record<WorkflowRunStatus, StatusTagType> = {
+  CREATED: 'info',
+  RUNNING: 'success',
+  COMPLETED: 'primary',
+  FAILED: 'danger',
+}
+
+/** /meta/enums: `workflowDefinitionStatus` */
+export const workflowDefinitionStatusColor: Record<WorkflowStatus, StatusTagType> = {
+  DRAFT: 'info',
+  PUBLISHED: 'success',
+  DISABLED: 'warning',
+}
+
+/** /meta/enums: `logType` */
+export const logTypeColor: Record<LogType, StatusTagType> = {
+  SYSTEM: 'info',
+  BUSINESS: 'primary',
+  ALARM: 'danger',
+}
+
+/** /meta/enums: `approvalStatus` */
+export const approvalStatusColor: Record<string, StatusTagType> = {
+  PENDING: 'warning',
+  APPROVED: 'success',
+  REJECTED: 'danger',
+  CANCELLED: 'info',
+  CLOSED: 'info',
+}
+
+/** /meta/enums: `outboxPublishStatus`(取值含别名) */
+export const outboxPublishStatusColor: Record<string, StatusTagType> = {
+  PENDING: 'warning',
+  SCHEDULED: 'info',
+  RETRYING: 'primary',
+  SUCCEEDED: 'success',
+  SUCCESS: 'success',
+  FAILED: 'danger',
+  EXHAUSTED: 'danger',
+  DEAD_LETTER: 'danger',
+  DELIVERED: 'success',
+  DISPATCHED: 'primary',
+  ACKED: 'success',
+}
+
+/** /meta/enums: `severity` */
+export const alertSeverityColor: Record<string, StatusTagType> = {
+  INFO: 'info',
+  WARNING: 'warning',
+  WARN: 'warning',
+  ERROR: 'danger',
+  CRITICAL: 'danger',
+}
+
+/** /meta/enums: `alertStatus` */
+export const alertStatusColor: Record<string, StatusTagType> = {
+  OPEN: 'danger',
+  ACKNOWLEDGED: 'primary',
+  SILENCED: 'warning',
+  CLOSED: 'info',
+}
+
+/** /meta/enums: `arrivalState`;保留旧契约 PENDING/COMPLETED/FAILED 兼容别名 */
+export const arrivalStateColor: Record<ArrivalState, StatusTagType> &
+  Record<string, StatusTagType> = {
+  WAITING: 'warning',
+  PARTIAL: 'info',
+  COMPLETE: 'success',
+  TIMEOUT: 'danger',
+  TRIGGERED: 'primary',
+  PENDING: 'warning',
+  COMPLETED: 'success',
+  FAILED: 'danger',
+}
+
+/** /meta/enums: `operationResult` */
+export const operationResultColor: Record<string, StatusTagType> = {
+  SUCCESS: 'success',
+  SUCCEEDED: 'success',
+  OK: 'success',
+  FAILED: 'danger',
+  FAILURE: 'danger',
+  ERROR: 'danger',
+}
+
+/** /meta/enums: `configStatus` */
+export const configStatusColor: Record<string, StatusTagType> = {
+  DRAFT: 'info',
+  PUBLISHED: 'success',
+  GRAY: 'warning',
+  ROLLING_BACK: 'warning',
+  ROLLED_BACK: 'info',
+  DEPRECATED: 'info',
+}
+
+/** /meta/enums: `tenantStatus` */
+export const tenantStatusColor: Record<TenantStatus, StatusTagType> = {
+  ACTIVE: 'success',
+  SUSPENDED: 'info',
+}
+
+/** /meta/enums: `triggerStatus` */
+export const triggerStatusColor: Record<TriggerStatus, StatusTagType> = {
+  NORMAL: 'success',
+  REGISTERED: 'success',
+  PAUSED: 'warning',
+  BLOCKED: 'warning',
+  ERROR: 'danger',
+  COMPLETE: 'info',
+  UNREGISTERED: 'info',
+}
+
+/** /meta/enums: `triggerResourceType` */
+export const triggerResourceTypeColor: Record<TriggerResourceType, StatusTagType> = {
+  JOB: 'primary',
+  WORKFLOW: 'success',
+  FILE_CHANNEL: 'info',
+  FILE_TEMPLATE: 'info',
+}
+
+/** TenantConfigInitItemStats.details[].action(未暴露为 /meta/enums 分组) */
+export const tenantConfigInitActionColor: Record<TenantConfigInitAction, StatusTagType> = {
+  CREATED: 'success',
+  UPDATED: 'primary',
+  SKIPPED: 'info',
+  FAILED: 'danger',
+}
+
+/** /meta/enums: `channelType` */
+export const channelTypeColor: Record<NotificationChannelType, StatusTagType> = {
+  EMAIL: 'primary',
+  WEBHOOK: 'info',
+  DINGTALK: 'success',
+  WECHAT: 'success',
+  SMS: 'warning',
+}
+
+/** /meta/enums: `webhookDeliveryStatus` */
+export const deliveryStatusColor: Record<WebhookDeliveryStatus, StatusTagType> = {
+  SUCCESS: 'success',
+  FAILED: 'danger',
+  EXHAUSTED: 'danger',
+}
+
+// =====================================================================
+// 前端专属分类(无 /meta/enums 对应 key)— 同时维护 label 与 color
+// =====================================================================
+
+export interface LocalStatusMeta {
   label: string
   type: StatusTagType
 }
 
-export const instanceStatusMap: Record<InstanceStatus, StatusMeta> = {
-  CREATED: { label: '已创建', type: 'info' },
-  WAITING: { label: '等待中', type: 'warning' },
-  RUNNING: { label: '运行中', type: 'success' },
-  COMPLETED: { label: '已完成', type: 'primary' },
-  FAILED: { label: '失败', type: 'danger' },
-  CANCELLED: { label: '已取消', type: 'info' },
+/** 布尔 true/false 专用(UI 概念) */
+export const ynStatusMeta: Record<string, LocalStatusMeta> = {
+  true: { label: '是', type: 'success' },
+  false: { label: '否', type: 'info' },
 }
 
-export const fileStatusMap: Record<FileStatus, StatusMeta> = {
-  RECEIVED: { label: '已接收', type: 'info' },
-  PROCESSING: { label: '处理中', type: 'warning' },
-  COMPLETED: { label: '已完成', type: 'success' },
-  FAILED: { label: '失败', type: 'danger' },
-  DISPATCHED: { label: '已分发', type: 'primary' },
-}
-
-export const partitionStatusMap: Record<PartitionStatus, StatusMeta> = {
-  CREATED: { label: '已创建', type: 'info' },
-  READY: { label: '就绪', type: 'primary' },
-  WAITING: { label: '等待中', type: 'warning' },
-  RUNNING: { label: '运行中', type: 'success' },
-  COMPLETED: { label: '已完成', type: 'primary' },
-  FAILED: { label: '失败', type: 'danger' },
-}
-
-export const workerStatusMap: Record<WorkerStatus, StatusMeta> = {
-  ONLINE: { label: '在线', type: 'success' },
-  DRAINING: { label: '排空中', type: 'warning' },
-  OFFLINE: { label: '离线', type: 'info' },
-}
-
-export const workflowRunStatusMap: Record<WorkflowRunStatus, StatusMeta> = {
-  CREATED: { label: '已创建', type: 'info' },
-  RUNNING: { label: '运行中', type: 'success' },
-  COMPLETED: { label: '已完成', type: 'primary' },
-  FAILED: { label: '失败', type: 'danger' },
-}
-
-export const logLevelMap: Record<LogLevel, StatusMeta> = {
+/** 日志等级(UI 概念,后端只透传 INFO/WARN/ERROR 原文) */
+export const logLevelMeta: Record<LogLevel, LocalStatusMeta> = {
   INFO: { label: 'INFO', type: 'info' },
   WARN: { label: 'WARN', type: 'warning' },
   ERROR: { label: 'ERROR', type: 'danger' },
 }
 
-/** 以下均为 string 键，兼容后端未枚举化字段；未知值回退为 info + 原文 */
-
-export const approvalStatusMap: Record<string, StatusMeta> = {
-  PENDING: { label: '待审批', type: 'warning' },
-  APPROVED: { label: '已通过', type: 'success' },
-  REJECTED: { label: '已拒绝', type: 'danger' },
-  CANCELLED: { label: '已取消', type: 'info' },
-  CLOSED: { label: '已关闭', type: 'info' },
-}
-
-export const outboxPublishStatusMap: Record<string, StatusMeta> = {
-  PENDING: { label: '待处理', type: 'warning' },
-  SCHEDULED: { label: '已调度', type: 'info' },
-  RETRYING: { label: '重试中', type: 'primary' },
-  SUCCEEDED: { label: '成功', type: 'success' },
-  SUCCESS: { label: '成功', type: 'success' },
-  FAILED: { label: '失败', type: 'danger' },
-  EXHAUSTED: { label: '重试耗尽', type: 'danger' },
-  DEAD_LETTER: { label: '死信', type: 'danger' },
-  DELIVERED: { label: '已投递', type: 'success' },
-  DISPATCHED: { label: '已派发', type: 'primary' },
-  ACKED: { label: '已确认', type: 'success' },
-}
-
-export const alertSeverityMap: Record<string, StatusMeta> = {
-  INFO: { label: '信息', type: 'info' },
-  WARNING: { label: '警告', type: 'warning' },
-  WARN: { label: '警告', type: 'warning' },
-  ERROR: { label: '错误', type: 'danger' },
-  CRITICAL: { label: '严重', type: 'danger' },
-}
-
-export const alertStatusMap: Record<string, StatusMeta> = {
-  OPEN: { label: '未处理', type: 'danger' },
-  ACKNOWLEDGED: { label: '已确认', type: 'primary' },
-  SILENCED: { label: '已静默', type: 'warning' },
-  CLOSED: { label: '已关闭', type: 'info' },
-}
-
-export const batchDayStatusMap: Record<string, StatusMeta> = {
+/** 批次日窗口(非标准 enum,控制台自定义状态) */
+export const batchDayStatusMeta: Record<string, LocalStatusMeta> = {
   OPEN: { label: '开窗', type: 'success' },
   CLOSED: { label: '关窗', type: 'info' },
   PROCESSING: { label: '处理中', type: 'primary' },
   PENDING: { label: '待开窗', type: 'warning' },
 }
 
-export const slaStatusMap: Record<string, StatusMeta> = {
+/** SLA 评估结果(派生状态,后端不建模) */
+export const slaStatusMeta: Record<string, LocalStatusMeta> = {
   OK: { label: '正常', type: 'success' },
   HEALTHY: { label: '正常', type: 'success' },
   WARNING: { label: '预警', type: 'warning' },
   BREACH: { label: '违规', type: 'danger' },
   VIOLATED: { label: '违规', type: 'danger' },
-}
-
-export const arrivalStateMap: Record<string, StatusMeta> = {
-  PENDING: { label: '待到达', type: 'warning' },
-  WAITING: { label: '等待中', type: 'warning' },
-  COMPLETE: { label: '已齐套', type: 'success' },
-  COMPLETED: { label: '已齐套', type: 'success' },
-  PARTIAL: { label: '部分', type: 'info' },
-  FAILED: { label: '失败', type: 'danger' },
-}
-
-export const operationResultMap: Record<string, StatusMeta> = {
-  SUCCESS: { label: '成功', type: 'success' },
-  SUCCEEDED: { label: '成功', type: 'success' },
-  OK: { label: '成功', type: 'success' },
-  FAILED: { label: '失败', type: 'danger' },
-  FAILURE: { label: '失败', type: 'danger' },
-  ERROR: { label: '错误', type: 'danger' },
-}
-
-export const configStatusMap: Record<string, StatusMeta> = {
-  DRAFT: { label: '草稿', type: 'info' },
-  PUBLISHED: { label: '已发布', type: 'success' },
-  GRAY: { label: '灰度', type: 'warning' },
-  ROLLING_BACK: { label: '回滚中', type: 'warning' },
-  ROLLED_BACK: { label: '已回滚', type: 'info' },
-  DEPRECATED: { label: '已废弃', type: 'info' },
-}
-
-export const ynStatusMap: Record<string, StatusMeta> = {
-  true: { label: '是', type: 'success' },
-  false: { label: '否', type: 'info' },
-}
-
-export const tenantStatusMap: Record<string, StatusMeta> = {
-  ACTIVE: { label: '启用', type: 'success' },
-  SUSPENDED: { label: '已暂停', type: 'info' },
-}
-
-export const workflowDefinitionStatusMap: Record<WorkflowStatus, StatusMeta> = {
-  DRAFT: { label: '草稿', type: 'info' },
-  PUBLISHED: { label: '已发布', type: 'success' },
-  DISABLED: { label: '已停用', type: 'warning' },
-}
-
-export const logTypeMap: Record<LogType, StatusMeta> = {
-  SYSTEM: { label: '系统', type: 'info' },
-  BUSINESS: { label: '业务', type: 'primary' },
-  ALARM: { label: '告警', type: 'danger' },
-}
-
-/** OpenAPI `resourceType` on trigger/config 相关 payload */
-export const triggerResourceTypeMap: Record<string, StatusMeta> = {
-  JOB: { label: 'Job', type: 'primary' },
-  WORKFLOW: { label: 'Workflow', type: 'success' },
-  FILE_CHANNEL: { label: '文件通道', type: 'info' },
-  FILE_TEMPLATE: { label: '文件模板', type: 'info' },
-}
-
-/** TenantConfigInitItemStats.details[].action */
-export const tenantConfigInitActionMap: Record<string, StatusMeta> = {
-  CREATED: { label: '新建', type: 'success' },
-  UPDATED: { label: '更新', type: 'primary' },
-  SKIPPED: { label: '跳过', type: 'info' },
-  FAILED: { label: '失败', type: 'danger' },
-}
-
-/** 通知渠道类型(NotificationChannel.channelType) */
-export const channelTypeMap: Record<string, StatusMeta> = {
-  EMAIL: { label: '邮件', type: 'primary' },
-  WEBHOOK: { label: 'Webhook', type: 'info' },
-  DINGTALK: { label: '钉钉', type: 'success' },
-  WECHAT: { label: '企业微信', type: 'success' },
-  SMS: { label: '短信', type: 'warning' },
-}
-
-/**
- * Trigger 状态 — 后端 `/api/console/triggers` 未在 OpenAPI 声明枚举,
- * 使用常见 Quartz 状态 + 兜底。未知值由 StatusTag 回退为原文。
- */
-export const triggerStatusMap: Record<string, StatusMeta> = {
-  NORMAL: { label: '正常', type: 'success' },
-  REGISTERED: { label: '已注册', type: 'success' },
-  ACTIVE: { label: '运行中', type: 'success' },
-  PAUSED: { label: '已暂停', type: 'warning' },
-  BLOCKED: { label: '阻塞', type: 'warning' },
-  ERROR: { label: '错误', type: 'danger' },
-  COMPLETE: { label: '已完成', type: 'info' },
-  UNREGISTERED: { label: '未注册', type: 'info' },
-  NONE: { label: '无', type: 'info' },
-}
-
-/** 通知投递状态(NotificationDeliveryLog.deliveryStatus) */
-export const deliveryStatusMap: Record<string, StatusMeta> = {
-  PENDING: { label: '待投递', type: 'warning' },
-  SENDING: { label: '投递中', type: 'primary' },
-  SUCCESS: { label: '成功', type: 'success' },
-  SUCCEEDED: { label: '成功', type: 'success' },
-  FAILED: { label: '失败', type: 'danger' },
-  RETRYING: { label: '重试中', type: 'primary' },
-  SKIPPED: { label: '已跳过', type: 'info' },
 }

@@ -4,7 +4,29 @@ import type { CommonResponse } from '@/types'
 import { createIdempotencyKey } from '@/utils/idempotency'
 import { setLastApiMeta } from '@/utils/lastApiMeta'
 import { logApi } from '@/utils/logger'
-import { trackApi, trackApiError } from '@/utils/telemetry'
+import { sanitizeParams, sanitizeRequestBody, sanitizeResponseBody } from '@/utils/logRedact'
+
+/**
+ * 成功响应只记 envelope 的 `{ code, message }`(通常几十字节),不记 `data`。
+ * 失败响应由错误拦截器记完整 body(含后端错误 message、meta.traceId 等)。
+ * 非 CommonResponse 形态(直接字符串/数组/null)不记 response 字段。
+ */
+function summarizeSuccessEnvelope(data: unknown): Record<string, unknown> | undefined {
+  if (data == null || typeof data !== 'object') return undefined
+  const { code, message } = data as { code?: unknown; message?: unknown }
+  if (code === undefined && message === undefined) return undefined
+  return {
+    ...(code !== undefined ? { code } : {}),
+    ...(message !== undefined ? { message } : {}),
+  }
+}
+
+/** 附加到 axios config 上的内部状态(不会发到后端) */
+type LoggedConfig = InternalAxiosRequestConfig & {
+  _startTime?: number
+  _loggedParams?: unknown
+  _loggedRequestBody?: unknown
+}
 
 const TENANT_STORAGE_KEY = 'batch-console-tenant-id'
 
@@ -104,30 +126,42 @@ export function applyApiInterceptors(client: AxiosInstance): void {
       config.headers['Idempotency-Key'] = createIdempotencyKey()
     }
 
-    // 记录请求发起时间供耗时计算
-    ;(config as InternalAxiosRequestConfig & { _startTime?: number })._startTime = Date.now()
+    // 记录请求发起时间 + 脱敏后的 params/body,供响应 / 错误拦截器写日志
+    const loggable = config as LoggedConfig
+    loggable._startTime = Date.now()
+    loggable._loggedParams = sanitizeParams(config.params)
+    loggable._loggedRequestBody = sanitizeRequestBody(config.data)
 
     return config
   })
 
   client.interceptors.response.use(
     (response) => {
-      const cfg = response.config as InternalAxiosRequestConfig & { _startTime?: number }
+      const cfg = response.config as LoggedConfig
       const duration = cfg._startTime ? Date.now() - cfg._startTime : undefined
       const method = (cfg.method ?? 'get').toUpperCase()
       const url = cfg.url ?? ''
+      const isBlob = response.config.responseType === 'blob'
+      // 成功路径:response 只留 envelope 的 code/message(必要时可从后端 meta 拿 traceId),
+      // 不拖 data 字段,防止列表接口一次性塞几 KB。失败路径(error 分支)仍记完整 body。
+      let responseField: unknown
+      if (isBlob) {
+        responseField = `[Blob responseType,${response.headers['content-length'] ?? '?'} bytes]`
+      } else {
+        responseField = summarizeSuccessEnvelope(response.data)
+      }
       logApi(`${method} ${url} → ${response.status}`, 'info', {
+        kind: 'api',
         method,
         url,
         status: response.status,
         ...(duration != null ? { durationMs: duration } : {}),
-      })
-      trackApi(`${method} ${url}`, {
-        status: response.status,
-        ...(duration != null ? { durationMs: duration } : {}),
+        ...(cfg._loggedParams !== undefined ? { params: cfg._loggedParams } : {}),
+        ...(cfg._loggedRequestBody !== undefined ? { request: cfg._loggedRequestBody } : {}),
+        ...(responseField !== undefined ? { response: responseField } : {}),
       })
 
-      if (response.config.responseType === 'blob') {
+      if (isBlob) {
         return response
       }
 
@@ -163,23 +197,30 @@ export function applyApiInterceptors(client: AxiosInstance): void {
     },
     (error) => {
       const status = error.response?.status as number | undefined
-      const cfg = error.config as (InternalAxiosRequestConfig & { _startTime?: number }) | undefined
+      const cfg = error.config as LoggedConfig | undefined
       const raw = error.response?.data
       {
         const duration = cfg?._startTime ? Date.now() - cfg._startTime : undefined
         const method = (cfg?.method ?? 'get').toUpperCase()
         const url = cfg?.url ?? ''
+        const meta =
+          raw && typeof raw === 'object' && 'meta' in raw
+            ? (raw as CommonResponse<unknown>).meta
+            : undefined
+        const axErr = error as AxiosError & { code?: string }
         logApi(`${method} ${url} → ${status ?? 'ERR'}`, 'error', {
+          kind: 'api',
           method,
           url,
           status,
           error: extractHttpErrorMessage(error),
           ...(duration != null ? { durationMs: duration } : {}),
-        })
-        trackApiError(`${method} ${url}`, {
-          status,
-          error: extractHttpErrorMessage(error),
-          ...(duration != null ? { durationMs: duration } : {}),
+          ...(meta?.traceId ? { traceId: meta.traceId } : {}),
+          ...(meta?.requestId ? { requestId: meta.requestId } : {}),
+          ...(axErr.code ? { errorCode: axErr.code } : {}),
+          ...(cfg?._loggedParams !== undefined ? { params: cfg._loggedParams } : {}),
+          ...(cfg?._loggedRequestBody !== undefined ? { request: cfg._loggedRequestBody } : {}),
+          ...(raw !== undefined ? { response: sanitizeResponseBody(raw) } : {}),
         })
       }
       if (raw && typeof raw === 'object' && 'meta' in raw) {

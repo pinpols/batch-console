@@ -2,7 +2,7 @@
  * Workflow Designer — data loading, saving, draft persistence, definition list,
  * submit to backend, DSL preview.
  */
-import { computed, ref, type Ref, type ShallowRef } from 'vue'
+import { computed, onScopeDispose, ref, type Ref, type ShallowRef } from 'vue'
 import type { Graph, Edge as X6Edge } from '@antv/x6'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useRoute, useRouter } from 'vue-router'
@@ -405,6 +405,14 @@ export function useWorkflowData(deps: DataDeps) {
       persistDraft(false)
     }
   }
+
+  // 组件卸载时清掉 pending 的 draft 定时器,避免 stale 回调写入已销毁的 refs
+  onScopeDispose(() => {
+    if (draftTimer != null) {
+      window.clearTimeout(draftTimer)
+      draftTimer = null
+    }
+  })
 
   // ─── Load definitions ──────────────────────────────────────────────────────
 
