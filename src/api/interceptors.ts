@@ -40,8 +40,8 @@ function isSuccessCode(code: string | number | undefined): boolean {
   return code === 'SUCCESS' || code === '0' || code === '200'
 }
 
-function isTokenExchangeRequest(config: InternalAxiosRequestConfig): boolean {
-  const u = config.url ?? ''
+function isTokenExchangeRequest(config?: { url?: string } | null): boolean {
+  const u = config?.url ?? ''
   return u.includes('/api/console/auth/login') || u.includes('/api/console/auth/token')
 }
 

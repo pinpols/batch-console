@@ -66,10 +66,9 @@ export const useAuthStore = defineStore('auth', () => {
       try {
         const profile = await get<ConsoleAuthProfilePayload>('/api/console/auth/me')
         userInfoInternal.value = mapProfileToUserInfo(profile)
-        const tenant = useTenantStore()
-        if (profile.tenantId) {
-          tenant.setTenantId(profile.tenantId)
-        }
+        // 注意：不要在这里 setTenantId(profile.tenantId)。
+        // 客户端是 tenant 选择的唯一真源（login/localStorage/切换都走 tenant store），
+        // /auth/me 返回的是账号归属 tenant，会把系统管理员的切换结果覆盖回去。
       } finally {
         fetchMePromise = null
       }
