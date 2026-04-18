@@ -80,6 +80,48 @@
             </el-icon>
           </el-button>
         </el-tooltip>
+        <!-- 当前租户：常驻醒目展示，不藏在悬浮面板里 -->
+        <div v-if="canSwitchTenant" class="tenant-chip tenant-chip--switch">
+          <el-icon class="tenant-chip__icon"><OfficeBuilding /></el-icon>
+          <span class="tenant-chip__label">租户</span>
+          <TenantSelect
+            :model-value="tenantIdInput"
+            size="small"
+            select-style="width: 168px"
+            placeholder="切换租户"
+            @update:model-value="handleTenantSwitch"
+          />
+          <el-tooltip content="复制 tenantId" placement="bottom">
+            <span
+              class="tenant-chip__copy"
+              role="button"
+              tabindex="0"
+              aria-label="复制 tenantId"
+              @click.stop="copyTenant"
+              @keydown.enter.prevent.stop="copyTenant"
+            >
+              <el-icon><DocumentCopy /></el-icon>
+            </span>
+          </el-tooltip>
+        </div>
+        <div v-else class="tenant-chip tenant-chip--readonly">
+          <el-icon class="tenant-chip__icon"><OfficeBuilding /></el-icon>
+          <span class="tenant-chip__label">租户</span>
+          <span class="tenant-chip__value" :title="tenantIdInput">{{ tenantIdInput }}</span>
+          <el-tooltip content="复制 tenantId" placement="bottom">
+            <span
+              class="tenant-chip__copy"
+              role="button"
+              tabindex="0"
+              aria-label="复制 tenantId"
+              @click.stop="copyTenant"
+              @keydown.enter.prevent.stop="copyTenant"
+            >
+              <el-icon><DocumentCopy /></el-icon>
+            </span>
+          </el-tooltip>
+        </div>
+
         <div class="header-controls">
           <el-tooltip content="更多（悬浮展开）" placement="bottom">
             <el-button text class="icon-button header-controls__handle" aria-label="更多">
@@ -89,44 +131,6 @@
             </el-button>
           </el-tooltip>
           <div class="header-controls__content">
-            <div v-if="canSwitchTenant" class="tenant-switcher">
-              <span class="tenant-switcher__label">Tenant</span>
-              <TenantSelect
-                :model-value="tenantIdInput"
-                size="small"
-                select-style="width: 180px"
-                placeholder="切换租户"
-                @update:model-value="handleTenantSwitch"
-              />
-              <el-tooltip content="复制 tenantId" placement="bottom">
-                <span
-                  class="tenant-pill__copy-icon"
-                  role="button"
-                  tabindex="0"
-                  aria-label="复制 tenantId"
-                  @click.stop="copyTenant"
-                  @keydown.enter.prevent.stop="copyTenant"
-                >
-                  <el-icon><DocumentCopy /></el-icon>
-                </span>
-              </el-tooltip>
-            </div>
-            <div v-else class="tenant-pill">
-              <span class="tenant-pill__label">Tenant</span>
-              <span class="tenant-pill__readonly">{{ tenantIdInput }}</span>
-              <el-tooltip content="复制 tenantId" placement="bottom">
-                <span
-                  class="tenant-pill__copy-icon"
-                  role="button"
-                  tabindex="0"
-                  aria-label="复制 tenantId"
-                  @click.stop="copyTenant"
-                  @keydown.enter.prevent.stop="copyTenant"
-                >
-                  <el-icon><DocumentCopy /></el-icon>
-                </span>
-              </el-tooltip>
-            </div>
             <el-tag v-if="auth.role" size="small" type="info">{{ auth.role }}</el-tag>
             <span class="username">{{ auth.userInfo?.username ?? '未登录' }}</span>
             <span class="header-controls__divider" aria-hidden="true" />
@@ -162,6 +166,7 @@
     Monitor,
     MoreFilled,
     Moon,
+    OfficeBuilding,
     Sunny,
     SwitchButton,
   } from '@element-plus/icons-vue'
@@ -381,54 +386,55 @@
     white-space: nowrap;
   }
 
-  .tenant-switcher {
+  /* 当前租户常驻 chip：醒目但不喧宾夺主 */
+  .tenant-chip {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-  }
-
-  .tenant-switcher__label {
-    flex-shrink: 0;
-    color: var(--color-text-tertiary);
-    font-size: 12px;
-    font-weight: 600;
-  }
-
-  .tenant-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 4px 10px 4px 12px;
+    gap: 6px;
+    padding: 4px 10px;
     border-radius: var(--radius-content);
-    border: 1px solid var(--color-border-light);
-    background: color-mix(in srgb, var(--color-bg-card) 88%, var(--color-primary) 12%);
+    border: 1px solid color-mix(in srgb, var(--color-primary) 32%, var(--color-border) 68%);
+    background: color-mix(in srgb, var(--color-primary) 10%, var(--color-bg-card) 90%);
     box-shadow: 0 1px 2px rgb(15 23 42 / 6%);
-    max-width: min(360px, 48vw);
     min-width: 0;
+    flex-shrink: 0;
   }
 
-  .tenant-pill__label {
+  .tenant-chip--readonly {
+    max-width: min(320px, 40vw);
+  }
+
+  .tenant-chip__icon {
+    flex-shrink: 0;
+    color: var(--color-primary);
+    font-size: 15px;
+  }
+
+  .tenant-chip__label {
     flex-shrink: 0;
     color: var(--color-text-tertiary);
     font-size: 12px;
     font-weight: 600;
+    letter-spacing: 0.02em;
   }
 
-  .tenant-pill__readonly {
+  .tenant-chip__value {
+    min-width: 0;
+    flex: 1;
     font-size: 13px;
-    color: var(--color-text-secondary);
+    font-weight: 600;
+    color: var(--color-text-primary);
     white-space: nowrap;
-    max-width: 180px;
     overflow: hidden;
     text-overflow: ellipsis;
   }
 
-  .tenant-pill__copy-icon {
+  .tenant-chip__copy {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     padding: 2px;
-    margin: 0 -2px 0 2px;
+    margin-left: 2px;
     border-radius: var(--radius-content);
     color: var(--color-text-tertiary);
     cursor: pointer;
@@ -438,14 +444,17 @@
       background 0.15s ease;
   }
 
-  .tenant-pill__copy-icon:hover {
+  .tenant-chip__copy:hover {
     color: var(--color-primary);
-    background: color-mix(in srgb, var(--color-primary) 12%, transparent 88%);
+    background: color-mix(in srgb, var(--color-primary) 14%, transparent 86%);
   }
 
   @media (max-width: 960px) {
-    .tenant-pill {
-      max-width: 42vw;
+    .tenant-chip--readonly {
+      max-width: 34vw;
+    }
+    .tenant-chip__label {
+      display: none;
     }
   }
 
