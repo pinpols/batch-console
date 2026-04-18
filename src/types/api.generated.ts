@@ -6343,6 +6343,31 @@ export interface components {
       username: string
       tenantId: string
       authorities: string[]
+      /** @description 按当前用户 authorities 过滤后的侧边栏菜单树，由后端 ConsoleMenuRegistry 下发，前端不再硬编码。 */
+      menus: components['schemas']['ConsoleMenuGroup'][]
+    }
+    /** @description 侧边栏菜单分组。 */
+    ConsoleMenuGroup: {
+      /** @description 分组稳定 key（路由/埋点用） */
+      key: string
+      title: string
+      /** @description 图标名（Element Plus icon 标识） */
+      icon: string
+      /**
+       * @description 查看该分组所需最低角色等级（VIEWER < OPERATOR < ADMIN）
+       * @enum {string}
+       */
+      minRole: 'VIEWER' | 'OPERATOR' | 'ADMIN'
+      children: components['schemas']['ConsoleMenuItem'][]
+    }
+    /** @description 菜单项（叶子节点）。 */
+    ConsoleMenuItem: {
+      title: string
+      /** @description 前端路由路径 */
+      path: string
+      icon: string
+      /** @enum {string} */
+      minRole: 'VIEWER' | 'OPERATOR' | 'ADMIN'
     }
     /** @description Username is globally unique. Tenant is resolved from the account record automatically; no tenantId field is needed.
      *      */

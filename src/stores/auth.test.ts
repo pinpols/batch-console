@@ -24,6 +24,7 @@ vi.mock('@/api/auth', () => ({
     username: p.username,
     role: p.role,
     permissions: p.permissions ?? [],
+    menus: p.menus,
   })),
 }))
 

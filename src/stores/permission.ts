@@ -3,7 +3,23 @@ import { defineStore } from 'pinia'
 import { useAuthStore } from '@/stores/auth'
 import { navigationGroups } from '@/constants/navigation'
 import type { NavigationGroup } from '@/constants/navigation'
-import type { Role } from '@/types'
+import { resolveIcon } from '@/utils/iconResolve'
+import type { MenuGroup, Role } from '@/types'
+
+function menuGroupToNavigation(menu: MenuGroup): NavigationGroup {
+  return {
+    key: menu.key,
+    title: menu.title,
+    icon: resolveIcon(menu.icon),
+    minRole: menu.minRole,
+    children: menu.children.map((c) => ({
+      title: c.title,
+      path: c.path,
+      icon: resolveIcon(c.icon),
+      minRole: c.minRole,
+    })),
+  }
+}
 
 export const usePermissionStore = defineStore('permission', () => {
   const auth = useAuthStore()
@@ -30,7 +46,17 @@ export const usePermissionStore = defineStore('permission', () => {
       .filter((group) => group.children.length > 0)
   }
 
-  const visibleGroups = computed(() => filterGroups(navigationGroups))
+  /**
+   * 优先使用后端 ConsoleMenuRegistry 下发的菜单（已按 authorities 过滤）；
+   * 如果后端未下发（老版本后端 / 未登录 / fetchMe 未完成），回退到硬编码导航并按 role 过滤作为兜底。
+   */
+  const visibleGroups = computed<NavigationGroup[]>(() => {
+    const backendMenus = auth.menus
+    if (backendMenus && backendMenus.length > 0) {
+      return backendMenus.map(menuGroupToNavigation)
+    }
+    return filterGroups(navigationGroups)
+  })
 
   return {
     role,

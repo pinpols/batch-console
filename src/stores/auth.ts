@@ -4,7 +4,7 @@ import { get } from '@/api/client'
 import { authApi, mapProfileToUserInfo, type ConsoleAuthProfilePayload } from '@/api/auth'
 import { useTenantStore } from '@/stores/tenant'
 import { roleOrder } from '@/constants/role'
-import type { UserInfo, Role } from '@/types'
+import type { UserInfo, Role, MenuGroup } from '@/types'
 
 export const useAuthStore = defineStore('auth', () => {
   const token = ref<string>(localStorage.getItem('token') ?? '')
@@ -15,6 +15,8 @@ export const useAuthStore = defineStore('auth', () => {
 
   const isLoggedIn = computed(() => !!token.value)
   const role = computed<Role | null>(() => userInfo.value?.role ?? null)
+  /** 后端下发的侧边栏菜单（已按 authorities 过滤） */
+  const menus = computed<MenuGroup[]>(() => userInfo.value?.menus ?? [])
 
   /** 当前用户是否为租户用户（非系统角色，不可切换租户） */
   const isTenantUser = computed(() => {
@@ -80,6 +82,7 @@ export const useAuthStore = defineStore('auth', () => {
     userInfo,
     isLoggedIn,
     role,
+    menus,
     isTenantUser,
     hasPermission,
     canAccess,

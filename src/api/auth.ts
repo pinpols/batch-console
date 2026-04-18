@@ -1,6 +1,6 @@
 import { get, post } from '@/api/client'
 
-import type { Role, UserInfo } from '@/types'
+import type { MenuGroup, Role, UserInfo } from '@/types'
 
 export interface LoginParams {
   username: string
@@ -22,6 +22,8 @@ export interface ConsoleAuthProfilePayload {
   username: string
   tenantId: string
   authorities: string[]
+  /** 后端 ConsoleMenuRegistry 按 authorities 过滤后的菜单树；老版本后端可能无该字段 */
+  menus?: MenuGroup[]
 }
 
 function mapAuthoritiesToRole(authorities: string[]): Role {
@@ -38,6 +40,7 @@ export function mapProfileToUserInfo(p: ConsoleAuthProfilePayload): UserInfo {
     username: p.username,
     role: mapAuthoritiesToRole(p.authorities ?? []),
     permissions: p.authorities ?? [],
+    menus: p.menus,
   }
 }
 

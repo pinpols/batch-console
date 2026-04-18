@@ -44,11 +44,29 @@ export interface PageResult<T> {
 // ─── 权限 ─────────────────────────────────────────────────────
 export type Role = 'ADMIN' | 'OPERATOR' | 'VIEWER'
 
+/** 由后端 ConsoleMenuRegistry 下发（已按 authorities 过滤）。icon 为字符串标识，前端解析成 Component。 */
+export interface MenuItem {
+  title: string
+  path: string
+  icon: string
+  minRole: Role
+}
+
+export interface MenuGroup {
+  key: string
+  title: string
+  icon: string
+  minRole: Role
+  children: MenuItem[]
+}
+
 export interface UserInfo {
   userId: string
   username: string
   role: Role
   permissions: string[]
+  /** 后端下发的侧边栏菜单（已按当前 authorities 过滤） */
+  menus?: MenuGroup[]
 }
 
 // ─── 文件中心 ─────────────────────────────────────────────────

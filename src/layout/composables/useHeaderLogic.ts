@@ -66,6 +66,10 @@ export function useHeaderLogic() {
     if (!newTenantId) return
     tenant.setTenantId(newTenantId)
     ElMessage.success(`已切换到租户 ${newTenantId}`)
+    // 后端会按 tenant+authorities 下发菜单，切换租户后需刷新 profile
+    auth.fetchMe().catch((err) => {
+      if (import.meta.env.DEV) console.warn('[tenant-switch] fetchMe failed:', err)
+    })
   }
 
   async function copyTenant() {
