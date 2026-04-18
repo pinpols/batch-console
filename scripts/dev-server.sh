@@ -93,6 +93,14 @@ kill_port_processes() {
 
 start_foreground() {
   cd "$ROOT_DIR"
+  remove_stale_pid
+
+  if is_running; then
+    echo "Frontend dev server is already running in background with PID $(cat "$PID_FILE"). Stop it first with 'make stop'."
+    exit 1
+  fi
+
+  kill_port_processes
   exec "$NPM_BIN" run dev -- --host "$DEV_HOST" --port "$PORT"
 }
 
