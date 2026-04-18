@@ -166,7 +166,7 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, onMounted, ref, watch } from 'vue'
+  import { computed, ref, watch } from 'vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import type { FormInstance, FormRules } from 'element-plus'
   import {
@@ -180,6 +180,7 @@
   } from '@/api/system'
   import { useSseAutoReload } from '@/composables/useSseAutoReload'
   import { useTenantStore } from '@/stores/tenant'
+  import { useTenantReload } from '@/composables/useTenantReload'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
@@ -429,13 +430,6 @@
   }
 
   watch([keyword, pipelineType, enabledFilter, page, pageSize], () => load())
-  watch(
-    () => tenant.tenantId,
-    () => {
-      resetForm()
-      load()
-    },
-  )
 
   useSseAutoReload({
     domain: 'pipeline-definitions',
@@ -443,8 +437,10 @@
     scope: () => tenant.tenantId,
   })
 
-  onMounted(resetForm)
-  onMounted(load)
+  useTenantReload(() => {
+    resetForm()
+    void load()
+  })
 </script>
 
 <style scoped>

@@ -73,12 +73,13 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, ref, watch, onMounted } from 'vue'
+  import { computed, ref } from 'vue'
   import { ElMessageBox } from 'element-plus'
   import { toPageResult } from '@/api/adapters'
   import { fileApi } from '@/api/file'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { useTenantStore } from '@/stores/tenant'
+  import { useTenantReload } from '@/composables/useTenantReload'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
@@ -166,10 +167,5 @@
     }
   }
 
-  watch(
-    () => tenant.tenantId,
-    () => load(),
-  )
-
-  onMounted(load)
+  useTenantReload(load)
 </script>

@@ -73,7 +73,7 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, reactive, onMounted, watch } from 'vue'
+  import { ref, reactive } from 'vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import {
     listWebhooks,
@@ -83,6 +83,7 @@
     listWebhookDeliveryLogs,
   } from '@/api/webhooks'
   import { useTenantStore } from '@/stores/tenant'
+  import { useTenantReload } from '@/composables/useTenantReload'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
@@ -163,11 +164,7 @@
     logVisible.value = true
   }
 
-  watch(
-    () => tenant.tenantId,
-    () => load(),
-  )
-  onMounted(load)
+  useTenantReload(load)
 </script>
 
 <style scoped></style>

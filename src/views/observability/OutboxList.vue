@@ -144,6 +144,7 @@
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { useSseAutoReload } from '@/composables/useSseAutoReload'
   import { useTenantStore } from '@/stores/tenant'
+  import { useTenantReload } from '@/composables/useTenantReload'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { toPageResult } from '@/api/adapters'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
@@ -304,12 +305,9 @@
     }
   }
 
-  watch(
-    () => tenant.tenantId,
-    () => loadTab(),
-  )
+  useTenantReload(loadTab)
 
-  watch(tab, () => loadTab(), { immediate: true })
+  watch(tab, () => loadTab())
 
   useSseAutoReload({
     domain: 'outbox-retries',

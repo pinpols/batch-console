@@ -363,7 +363,7 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, reactive, computed, onMounted, watch } from 'vue'
+  import { ref, reactive, computed } from 'vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import {
     listNotificationChannels,
@@ -386,6 +386,7 @@
   } from '@/api/webhooks'
   import { toPageResult } from '@/api/adapters'
   import { useTenantStore } from '@/stores/tenant'
+  import { useTenantReload } from '@/composables/useTenantReload'
   import ProTable from '@/components/table/ProTable.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import PageContainer from '@/components/common/PageContainer.vue'
@@ -701,8 +702,7 @@
     void loadWebhooks()
   }
 
-  watch(() => tenant.tenantId, loadAll)
-  onMounted(loadAll)
+  useTenantReload(loadAll)
 </script>
 
 <style scoped></style>

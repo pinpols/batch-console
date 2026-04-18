@@ -3,6 +3,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { getOpsSummary } from '@/api/ops'
 import { useTenantStore } from '@/stores/tenant'
+import { useTenantReload } from '@/composables/useTenantReload'
 import { lastApiMeta } from '@/utils/lastApiMeta'
 import {
   getDashboardBundle,
@@ -162,6 +163,8 @@ export function useOpsSummary() {
   watch(rangeKey, () => {
     void loadCharts()
   })
+
+  useTenantReload(load)
 
   return {
     // state

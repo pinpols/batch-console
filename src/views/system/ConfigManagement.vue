@@ -204,7 +204,7 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, computed, onMounted, watch } from 'vue'
+  import { ref, computed } from 'vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import {
     listConfigChangeLogs,
@@ -218,6 +218,7 @@
   } from '@/api/configReleases'
   import { toPageResult } from '@/api/adapters'
   import { useTenantStore } from '@/stores/tenant'
+  import { useTenantReload } from '@/composables/useTenantReload'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
@@ -371,18 +372,14 @@
     void loadSyncLogs()
   }
 
-  watch(
-    () => tenant.tenantId,
-    () => {
-      logPage.value = 1
-      secretPage.value = 1
-      exportResult.value = null
-      previewResult.value = null
-      syncLogs.value = []
-      loadAll()
-    },
-  )
-  onMounted(loadAll)
+  useTenantReload(() => {
+    logPage.value = 1
+    secretPage.value = 1
+    exportResult.value = null
+    previewResult.value = null
+    syncLogs.value = []
+    loadAll()
+  })
 </script>
 
 <style scoped></style>

@@ -121,11 +121,12 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, onMounted, ref, watch } from 'vue'
+  import { computed, ref } from 'vue'
   import { ElMessageBox } from 'element-plus'
   import { governanceApi, type GovernanceQuotaPolicyRow } from '@/api/governance'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { useTenantStore } from '@/stores/tenant'
+  import { useTenantReload } from '@/composables/useTenantReload'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
@@ -224,12 +225,7 @@
     }
   }
 
-  watch(
-    () => tenant.tenantId,
-    () => load(),
-  )
-
-  onMounted(load)
+  useTenantReload(load)
 </script>
 
 <style scoped>

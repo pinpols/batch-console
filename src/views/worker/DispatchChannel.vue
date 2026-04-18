@@ -90,11 +90,12 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, watch, onMounted, computed, reactive } from 'vue'
+  import { ref, watch, computed, reactive } from 'vue'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { getMetaEnums, type MetaOption } from '@/api/meta'
   import { queryFileChannels } from '@/api/fileChannelsQuery'
   import { useTenantStore } from '@/stores/tenant'
+  import { useTenantReload } from '@/composables/useTenantReload'
   import { toPageResult } from '@/api/adapters'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
@@ -183,12 +184,7 @@
     slicePage()
   })
 
-  watch(
-    () => tenant.tenantId,
-    () => load(),
-  )
-
-  onMounted(load)
+  useTenantReload(load)
 </script>
 
 <style scoped></style>

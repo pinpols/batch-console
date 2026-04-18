@@ -175,12 +175,13 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, reactive, ref, onMounted, watch } from 'vue'
+  import { computed, reactive, ref } from 'vue'
   import { useRouter } from 'vue-router'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { workflowApi } from '@/api/workflow'
   import { useSseAutoReload } from '@/composables/useSseAutoReload'
   import { useTenantStore } from '@/stores/tenant'
+  import { useTenantReload } from '@/composables/useTenantReload'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
@@ -324,21 +325,16 @@
     }
   }
 
-  watch(
-    () => tenant.tenantId,
-    () => {
-      page.value = 1
-      void load()
-    },
-  )
-
   useSseAutoReload({
     domain: 'workflow-definitions',
     reload: load,
     scope: () => tenant.tenantId,
   })
 
-  onMounted(load)
+  useTenantReload(() => {
+    page.value = 1
+    void load()
+  })
 </script>
 
 <style scoped></style>

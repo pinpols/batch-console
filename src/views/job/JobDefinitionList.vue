@@ -171,7 +171,7 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, reactive, computed, onMounted, watch } from 'vue'
+  import { ref, reactive, computed } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { toPageResult } from '@/api/adapters'
@@ -180,6 +180,7 @@
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { useJobDefinitions } from '@/composables/queries/useJobDefinitions'
   import { useTenantStore } from '@/stores/tenant'
+  import { useTenantReload } from '@/composables/useTenantReload'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
@@ -356,16 +357,10 @@
     }
   }
 
-  watch(
-    () => tenant.tenantId,
-    () => {
-      void loadMeta()
-    },
-  )
-
-  onMounted(() => {
+  {
     const q = route.query
     if (q.jobCode) filters.jobCode = String(q.jobCode)
-    void loadMeta()
-  })
+  }
+
+  useTenantReload(loadMeta)
 </script>

@@ -129,11 +129,12 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, ref, watch, onMounted, reactive } from 'vue'
+  import { computed, ref, watch, reactive } from 'vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { batchApprove, batchReject, approveOne, queryApprovals, rejectOne } from '@/api/approvals'
   import { useTenantStore } from '@/stores/tenant'
+  import { useTenantReload } from '@/composables/useTenantReload'
   import { lastApiMeta } from '@/utils/lastApiMeta'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { toPageResult } from '@/api/adapters'
@@ -321,12 +322,7 @@
     ElMessage.success('已复制')
   }
 
-  watch(
-    () => tenant.tenantId,
-    () => load(),
-  )
-
-  onMounted(load)
+  useTenantReload(load)
 </script>
 
 <style scoped>

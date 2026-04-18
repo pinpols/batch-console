@@ -83,11 +83,12 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, ref, watch, onMounted } from 'vue'
+  import { computed, ref } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { fetchAllPageItems, toPageResult } from '@/api/adapters'
   import { useTenantStore } from '@/stores/tenant'
+  import { useTenantReload } from '@/composables/useTenantReload'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
@@ -169,16 +170,10 @@
     router.push(`/monitor/job-instances/${jobInstanceId}`)
   }
 
-  watch(
-    () => tenant.tenantId,
-    () => {
-      void load()
-    },
-  )
-
-  onMounted(() => {
+  {
     const q = route.query.jobInstanceId as string | undefined
     if (q) filterInstanceId.value = q
-    void load()
-  })
+  }
+
+  useTenantReload(load)
 </script>

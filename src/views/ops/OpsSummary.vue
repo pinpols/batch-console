@@ -68,7 +68,6 @@
 </template>
 
 <script setup lang="ts">
-  import { onMounted } from 'vue'
   import { Refresh } from '@element-plus/icons-vue'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
@@ -104,8 +103,6 @@
     goFailedJobs,
     copyTrace,
   } = useOpsSummary()
-
-  onMounted(load)
 </script>
 
 <style scoped>

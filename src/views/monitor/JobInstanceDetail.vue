@@ -73,6 +73,7 @@
   import { instanceApi } from '@/api/instance'
   import { createLogStream } from '@/api/stream'
   import { useTenantStore } from '@/stores/tenant'
+  import { useTenantReload } from '@/composables/useTenantReload'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
@@ -242,14 +243,15 @@
     }
   }
 
-  watch(
-    () => [instanceId.value, tenant.tenantId] as const,
-    () => {
-      load()
-      void openStream()
-    },
-    { immediate: true },
-  )
+  useTenantReload(() => {
+    void load()
+    void openStream()
+  })
+
+  watch(instanceId, () => {
+    void load()
+    void openStream()
+  })
 
   onBeforeUnmount(closeStream)
 </script>

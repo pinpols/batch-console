@@ -165,12 +165,13 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, reactive, ref, onMounted, watch } from 'vue'
+  import { computed, reactive, ref, watch } from 'vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { toPageResult } from '@/api/adapters'
   import { fileApi } from '@/api/file'
   import { useTenantStore } from '@/stores/tenant'
+  import { useTenantReload } from '@/composables/useTenantReload'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
@@ -331,16 +332,8 @@
     filters.endDate = value[1] ?? ''
   })
 
-  watch(
-    () => tenant.tenantId,
-    () => {
-      page.value = 1
-      void load()
-      void loadBizTypes()
-    },
-  )
-
-  onMounted(() => {
+  useTenantReload(() => {
+    page.value = 1
     void load()
     void loadBizTypes()
   })

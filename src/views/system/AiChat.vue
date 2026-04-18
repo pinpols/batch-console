@@ -132,13 +132,14 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, onMounted, ref, watch } from 'vue'
+  import { computed, ref, watch } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { fetchAllPageItems, toPageResult } from '@/api/adapters'
   import { chatWithAi } from '@/api/system'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { useTenantStore } from '@/stores/tenant'
+  import { useTenantReload } from '@/composables/useTenantReload'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
@@ -275,10 +276,9 @@
     }
   }
 
-  onMounted(() => {
-    if (route.query.tab === 'audits') activeTab.value = 'audits'
-    loadAudits()
-  })
+  if (route.query.tab === 'audits') activeTab.value = 'audits'
+
+  useTenantReload(loadAudits)
 
   watch(
     () => route.query.tab,

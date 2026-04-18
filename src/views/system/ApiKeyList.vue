@@ -100,11 +100,12 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, reactive, computed, onMounted, watch } from 'vue'
+  import { ref, reactive, computed } from 'vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { listApiKeys, createApiKey, getApiKey, revokeApiKey } from '@/api/apiKeys'
   import { toPageResult } from '@/api/adapters'
   import { useTenantStore } from '@/stores/tenant'
+  import { useTenantReload } from '@/composables/useTenantReload'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
@@ -209,11 +210,7 @@
     }
   }
 
-  watch(
-    () => tenant.tenantId,
-    () => load(),
-  )
-  onMounted(load)
+  useTenantReload(load)
 </script>
 
 <style scoped></style>

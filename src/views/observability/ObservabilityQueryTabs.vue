@@ -178,7 +178,7 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, computed, onMounted, watch } from 'vue'
+  import { ref, computed } from 'vue'
   import {
     queryDeadLetters,
     queryRetries,
@@ -187,6 +187,7 @@
   } from '@/api/observabilityQueries'
   import { toPageResult } from '@/api/adapters'
   import { useTenantStore } from '@/stores/tenant'
+  import { useTenantReload } from '@/composables/useTenantReload'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
@@ -284,8 +285,7 @@
     void loadDeadLetters()
   }
 
-  watch(() => tenant.tenantId, loadAll)
-  onMounted(loadAll)
+  useTenantReload(loadAll)
 </script>
 
 <style scoped></style>

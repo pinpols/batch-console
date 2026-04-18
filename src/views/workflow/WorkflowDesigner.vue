@@ -673,6 +673,7 @@
   } from '@element-plus/icons-vue'
   import { useAppStore } from '@/stores/app'
   import { useTenantStore } from '@/stores/tenant'
+  import { useTenantReload } from '@/composables/useTenantReload'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
@@ -924,16 +925,13 @@
     { immediate: true },
   )
 
-  watch(
-    () => tenant.tenantId,
-    () => {
-      selectedWorkflowCode.value = ''
-      definitionOptions.value = []
-      workflowDefinition.value = null
-      clearDraft(false)
-      void loadDefinitions()
-    },
-  )
+  useTenantReload(() => {
+    selectedWorkflowCode.value = ''
+    definitionOptions.value = []
+    workflowDefinition.value = null
+    clearDraft(false)
+    void loadDefinitions()
+  })
 
   watch(
     () => routeWorkflowCode.value,
@@ -970,7 +968,6 @@
     restorePanelWidths()
     createGraph()
     window.addEventListener('keydown', onKeydown)
-    void loadDefinitions()
     refreshGraphTheme()
   })
 

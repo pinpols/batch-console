@@ -155,7 +155,7 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, reactive, ref, watch, onMounted } from 'vue'
+  import { computed, reactive, ref, watch } from 'vue'
   import { useRoute } from 'vue-router'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
@@ -165,6 +165,7 @@
   import { acknowledgeAlert, closeAlert, silenceAlert } from '@/api/alertsCommands'
   import { useAuthStore } from '@/stores/auth'
   import { useTenantStore } from '@/stores/tenant'
+  import { useTenantReload } from '@/composables/useTenantReload'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
@@ -351,25 +352,21 @@
     filters.endTime = value[1] ?? ''
   })
 
-  watch(
-    () => tenant.tenantId,
-    () => {
-      page.value = 1
-      void load()
-    },
-  )
-
   useSseAutoReload({
     domain: 'alerts',
     reload: load,
     scope: () => tenant.tenantId,
   })
 
-  onMounted(() => {
+  {
     const q = route.query
     if (q.severity) filters.severity = String(q.severity)
     if (q.status) filters.status = String(q.status)
     if (q.traceId) filters.traceId = String(q.traceId)
+  }
+
+  useTenantReload(() => {
+    page.value = 1
     void load()
   })
 </script>

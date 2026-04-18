@@ -179,7 +179,7 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, watch, onMounted, computed, reactive } from 'vue'
+  import { ref, watch, computed, reactive } from 'vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import {
@@ -193,6 +193,7 @@
     diffConfigReleases,
   } from '@/api/configReleases'
   import { useTenantStore } from '@/stores/tenant'
+  import { useTenantReload } from '@/composables/useTenantReload'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { toPageResult } from '@/api/adapters'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
@@ -410,12 +411,7 @@
     }
   }
 
-  watch(
-    () => tenant.tenantId,
-    () => load(),
-  )
-
-  onMounted(load)
+  useTenantReload(load)
 </script>
 
 <style scoped>

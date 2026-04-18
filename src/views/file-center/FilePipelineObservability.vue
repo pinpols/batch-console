@@ -206,10 +206,11 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, computed, onMounted, watch } from 'vue'
+  import { ref, computed } from 'vue'
   import { fetchAllPageItems, toPageResult } from '@/api/adapters'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { useTenantStore } from '@/stores/tenant'
+  import { useTenantReload } from '@/composables/useTenantReload'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
@@ -391,13 +392,8 @@
     else await loadErrors()
   }
 
-  watch(
-    () => tenant.tenantId,
-    () => {
-      page.value = 1
-      void runActive()
-    },
-  )
-
-  onMounted(runActive)
+  useTenantReload(() => {
+    page.value = 1
+    void runActive()
+  })
 </script>

@@ -55,7 +55,7 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, onMounted, watch } from 'vue'
+  import { ref } from 'vue'
   import {
     getClusterDiagnostic,
     getShedLockStatus,
@@ -63,6 +63,7 @@
     getOutboxHealth,
   } from '@/api/clusterDiagnostic'
   import { useTenantStore } from '@/stores/tenant'
+  import { useTenantReload } from '@/composables/useTenantReload'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
@@ -94,11 +95,7 @@
     }
   }
 
-  watch(
-    () => tenant.tenantId,
-    () => loadAll(),
-  )
-  onMounted(loadAll)
+  useTenantReload(loadAll)
 </script>
 
 <style scoped></style>

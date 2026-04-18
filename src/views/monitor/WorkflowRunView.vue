@@ -76,6 +76,7 @@
   import { cancelWorkflowRun, terminateWorkflowRun, skipWorkflowRunNode } from '@/api/workflowRuns'
   import { queryWorkflowNodeRuns } from '@/api/workflowQueries'
   import { useTenantStore } from '@/stores/tenant'
+  import { useTenantReload } from '@/composables/useTenantReload'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
@@ -158,9 +159,9 @@
     }
   }
 
-  watch(
-    () => [runId.value, tenant.tenantId] as const,
-    () => load(),
-    { immediate: true },
-  )
+  useTenantReload(load)
+
+  watch(runId, () => {
+    void load()
+  })
 </script>

@@ -183,7 +183,7 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, reactive, computed, onMounted, watch } from 'vue'
+  import { ref, reactive, computed } from 'vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import {
     listResourceTags,
@@ -195,6 +195,7 @@
   import type { ResourceType } from '@/api/tags'
   import { toPageResult } from '@/api/adapters'
   import { useTenantStore } from '@/stores/tenant'
+  import { useTenantReload } from '@/composables/useTenantReload'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
@@ -335,15 +336,12 @@
     }
   }
 
-  watch(
-    () => tenant.tenantId,
-    () => {
-      tagRows.value = []
-      searchResults.value = []
-      tagKeys.value = []
-    },
-  )
-  onMounted(loadKeys)
+  useTenantReload(() => {
+    tagRows.value = []
+    searchResults.value = []
+    tagKeys.value = []
+    void loadKeys()
+  })
 </script>
 
 <style scoped></style>

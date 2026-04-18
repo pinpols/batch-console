@@ -92,12 +92,13 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, reactive, computed, onMounted, watch } from 'vue'
+  import { ref, reactive, computed } from 'vue'
   import { useRouter } from 'vue-router'
   import { ElMessage } from 'element-plus'
   import { queryBatchDays } from '@/api/batchDays'
   import { useMetaCalendarsQuery } from '@/composables/queries/useConsoleMeta'
   import { useTenantStore } from '@/stores/tenant'
+  import { useTenantReload } from '@/composables/useTenantReload'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
@@ -172,12 +173,5 @@
     })
   }
 
-  watch(
-    () => tenant.tenantId,
-    () => {
-      load()
-    },
-  )
-
-  onMounted(load)
+  useTenantReload(load)
 </script>

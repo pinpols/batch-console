@@ -124,10 +124,11 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, onMounted, ref, watch } from 'vue'
+  import { computed, ref, watch } from 'vue'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { queryFileTemplateDetail, queryFileTemplates } from '@/api/system'
   import { useTenantStore } from '@/stores/tenant'
+  import { useTenantReload } from '@/composables/useTenantReload'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
@@ -231,12 +232,8 @@
   }
 
   watch([page, pageSize], syncPage)
-  watch(
-    () => tenant.tenantId,
-    () => load(),
-  )
 
-  onMounted(load)
+  useTenantReload(load)
 </script>
 
 <style scoped></style>

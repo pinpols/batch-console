@@ -265,7 +265,7 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, ref, watch, onMounted } from 'vue'
+  import { computed, ref } from 'vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { fmtDatetime } from '@/utils/datetime'
   import {
@@ -276,6 +276,7 @@
   } from '@/api/scheduler'
   import { toPageResult } from '@/api/adapters'
   import { useTenantStore } from '@/stores/tenant'
+  import { useTenantReload } from '@/composables/useTenantReload'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
@@ -410,10 +411,7 @@
     }
   }
 
-  watch(
-    () => tenant.tenantId,
-    () => loadAll(),
-  )
+  useTenantReload(loadAll)
 
   async function confirmPauseAll() {
     try {
@@ -442,8 +440,6 @@
       resumeLoading.value = false
     }
   }
-
-  onMounted(loadAll)
 </script>
 
 <style scoped>

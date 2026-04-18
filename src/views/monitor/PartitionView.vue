@@ -60,6 +60,7 @@
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { instanceApi } from '@/api/instance'
   import { useTenantStore } from '@/stores/tenant'
+  import { useTenantReload } from '@/composables/useTenantReload'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
@@ -105,9 +106,9 @@
     }
   }
 
-  watch(
-    () => [instanceId.value, tenant.tenantId] as const,
-    () => load(),
-    { immediate: true },
-  )
+  useTenantReload(load)
+
+  watch(instanceId, () => {
+    void load()
+  })
 </script>

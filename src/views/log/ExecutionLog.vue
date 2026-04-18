@@ -89,12 +89,13 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, onUnmounted, ref, watch, onMounted } from 'vue'
+  import { computed, onUnmounted, ref, watch } from 'vue'
   import { useRoute } from 'vue-router'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { queryAudits } from '@/api/observabilityQueries'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { useTenantStore } from '@/stores/tenant'
+  import { useTenantReload } from '@/composables/useTenantReload'
   import { toPageResult } from '@/api/adapters'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
   import PageContainer from '@/components/common/PageContainer.vue'
@@ -204,19 +205,15 @@
     }
   })
 
-  watch(
-    () => tenant.tenantId,
-    () => load(),
-  )
-
-  onMounted(() => {
+  {
     const q = route.query
     if (q.traceId) {
       traceDraft.value = String(q.traceId)
       traceApplied.value = String(q.traceId)
     }
-    void load()
-  })
+  }
+
+  useTenantReload(load)
 
   onUnmounted(() => {
     if (timer) clearInterval(timer)

@@ -85,7 +85,7 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, onMounted, watch } from 'vue'
+  import { ref } from 'vue'
   import { ElMessage } from 'element-plus'
   import {
     exportConfigSync,
@@ -94,6 +94,7 @@
     listConfigSyncLogs,
   } from '@/api/configReleases'
   import { useTenantStore } from '@/stores/tenant'
+  import { useTenantReload } from '@/composables/useTenantReload'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
@@ -169,15 +170,12 @@
     }
   }
 
-  watch(
-    () => tenant.tenantId,
-    () => {
-      exportResult.value = null
-      previewResult.value = null
-      syncLogs.value = []
-    },
-  )
-  onMounted(loadLogs)
+  useTenantReload(() => {
+    exportResult.value = null
+    previewResult.value = null
+    syncLogs.value = []
+    void loadLogs()
+  })
 </script>
 
 <style scoped>

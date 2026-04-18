@@ -114,12 +114,13 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, reactive, ref, watch, onMounted } from 'vue'
+  import { computed, reactive, ref, watch } from 'vue'
   import { ElMessage } from 'element-plus'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { queryAudits } from '@/api/observabilityQueries'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { useTenantStore } from '@/stores/tenant'
+  import { useTenantReload } from '@/composables/useTenantReload'
   import { lastApiMeta } from '@/utils/lastApiMeta'
   import { toPageResult } from '@/api/adapters'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
@@ -250,12 +251,7 @@
     filters.endTime = value[1] ?? ''
   })
 
-  watch(
-    () => tenant.tenantId,
-    () => load(),
-  )
-
-  onMounted(load)
+  useTenantReload(load)
 </script>
 
 <style scoped>

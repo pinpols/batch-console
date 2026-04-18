@@ -114,7 +114,7 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, computed, onMounted, watch } from 'vue'
+  import { ref, computed } from 'vue'
   import { useRouter } from 'vue-router'
   import { instanceApi } from '@/api/instance'
   import { queryWorkflowDefinitions } from '@/api/workflowQueries'
@@ -122,6 +122,7 @@
   import { useSseAutoReload } from '@/composables/useSseAutoReload'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
   import { useTenantStore } from '@/stores/tenant'
+  import { useTenantReload } from '@/composables/useTenantReload'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
@@ -212,23 +213,15 @@
     router.push(`/monitor/workflow-runs/${row.id}`)
   }
 
-  watch(
-    () => tenant.tenantId,
-    () => {
-      page.value = 1
-      void loadWorkflowCodes()
-      load()
-    },
-  )
-
   useSseAutoReload({
     domain: 'workflow-runs',
     reload: load,
     scope: () => tenant.tenantId,
   })
 
-  onMounted(() => {
+  useTenantReload(() => {
+    page.value = 1
     void loadWorkflowCodes()
-    load()
+    void load()
   })
 </script>

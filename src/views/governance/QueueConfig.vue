@@ -259,7 +259,7 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, onMounted, ref, watch } from 'vue'
+  import { computed, ref, watch } from 'vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { toPageResult } from '@/api/adapters'
   import {
@@ -271,6 +271,7 @@
   } from '@/api/governance'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { useTenantStore } from '@/stores/tenant'
+  import { useTenantReload } from '@/composables/useTenantReload'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
@@ -531,11 +532,6 @@
     }
   }
 
-  watch(
-    () => tenant.tenantId,
-    () => load(),
-  )
-
   watch(activeTab, () => {
     kwDraft.value = ''
     enabledDraft.value = undefined
@@ -544,7 +540,7 @@
     resetListPages()
   })
 
-  onMounted(load)
+  useTenantReload(load)
 </script>
 
 <style scoped>

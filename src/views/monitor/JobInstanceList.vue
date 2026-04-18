@@ -113,12 +113,13 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, reactive, computed, onMounted, watch, nextTick } from 'vue'
+  import { ref, reactive, computed } from 'vue'
   import { useRouter, useRoute } from 'vue-router'
   import { instanceApi } from '@/api/instance'
   import { jobApi } from '@/api/job'
   import { useSseAutoReload } from '@/composables/useSseAutoReload'
   import { useTenantStore } from '@/stores/tenant'
+  import { useTenantReload } from '@/composables/useTenantReload'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
@@ -166,16 +167,6 @@
       jobCodeOptions.value = []
     }
   }
-
-  watch(
-    () => tenant.tenantId,
-    (id) => {
-      query.tenantId = id
-      query.page = 1
-      void loadJobCodes()
-      loadData()
-    },
-  )
 
   function onDateChange(val: [string, string] | null) {
     query.startDate = val?.[0] ?? ''
@@ -265,8 +256,7 @@
     scope: () => tenant.tenantId,
   })
 
-  onMounted(() => {
-    query.tenantId = tenant.tenantId
+  {
     const q = route.query
     if (q.status) query.instanceStatus = String(q.status)
     if (q.jobCode) query.jobCode = String(q.jobCode)
@@ -275,7 +265,12 @@
     if (query.startDate && query.endDate) {
       dateRange.value = [query.startDate, query.endDate]
     }
+  }
+
+  useTenantReload(() => {
+    query.tenantId = tenant.tenantId
+    query.page = 1
     void loadJobCodes()
-    loadData()
+    void loadData()
   })
 </script>

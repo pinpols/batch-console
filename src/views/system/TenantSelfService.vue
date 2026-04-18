@@ -47,10 +47,11 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, reactive, onMounted, watch } from 'vue'
+  import { ref, reactive } from 'vue'
   import { ElMessage } from 'element-plus'
   import { getTenantQuota, getTenantUsage, requestQuotaChange } from '@/api/tenantSelfService'
   import { useTenantStore } from '@/stores/tenant'
+  import { useTenantReload } from '@/composables/useTenantReload'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
@@ -119,8 +120,7 @@
     void loadUsage()
   }
 
-  watch(() => tenant.tenantId, loadAll)
-  onMounted(loadAll)
+  useTenantReload(loadAll)
 </script>
 
 <style scoped></style>
