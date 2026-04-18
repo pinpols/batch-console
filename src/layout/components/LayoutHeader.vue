@@ -129,7 +129,22 @@
             </div>
             <el-tag v-if="auth.role" size="small" type="info">{{ auth.role }}</el-tag>
             <span class="username">{{ auth.userInfo?.username ?? '未登录' }}</span>
-            <el-button text type="primary" @click="handleLogout">退出</el-button>
+            <span class="header-controls__divider" aria-hidden="true" />
+            <el-popconfirm
+              title="确认退出登录？"
+              confirm-button-text="退出"
+              cancel-button-text="取消"
+              width="220"
+              :hide-after="0"
+              @confirm="handleLogout"
+            >
+              <template #reference>
+                <el-button text class="logout-btn" aria-label="退出登录" title="退出登录">
+                  <el-icon><SwitchButton /></el-icon>
+                  <span class="logout-btn__text">退出</span>
+                </el-button>
+              </template>
+            </el-popconfirm>
           </div>
         </div>
       </div>
@@ -148,6 +163,7 @@
     MoreFilled,
     Moon,
     Sunny,
+    SwitchButton,
   } from '@element-plus/icons-vue'
   import LayoutTabs from '@/layout/LayoutTabs.vue'
   import TenantSelect from '@/components/common/TenantSelect.vue'
@@ -435,5 +451,35 @@
 
   .icon-button {
     padding: 6px;
+  }
+
+  /* 悬浮面板末端：分隔线 + 额外 inline 间距，让“退出”和用户名在视觉上断开，降低误触概率 */
+  .header-controls__divider {
+    display: inline-block;
+    width: 1px;
+    height: 16px;
+    margin: 0 4px 0 6px;
+    background: var(--color-border-light);
+    flex-shrink: 0;
+  }
+
+  .logout-btn {
+    padding: 4px 8px;
+    color: var(--color-text-secondary);
+    font-size: 13px;
+    gap: 4px;
+  }
+
+  .logout-btn :deep(.el-icon) {
+    font-size: 14px;
+  }
+
+  .logout-btn:hover {
+    color: var(--el-color-danger);
+    background: color-mix(in srgb, var(--el-color-danger) 10%, transparent 90%);
+  }
+
+  .logout-btn__text {
+    font-weight: 600;
   }
 </style>
