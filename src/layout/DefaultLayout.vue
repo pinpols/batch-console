@@ -1,254 +1,260 @@
 <template>
-  <el-container class="layout-root">
-    <el-aside class="layout-sidebar" :width="app.sidebarCollapsed ? '80px' : '240px'">
-      <div class="brand">
-        <div class="brand__logo">BC</div>
-        <div v-if="!app.sidebarCollapsed" class="brand__text">
-          <div class="brand__title">批量调度平台</div>
-          <div class="brand__subtitle">Batch Console</div>
-        </div>
-      </div>
-
-      <el-menu
-        class="layout-menu"
-        :collapse="app.sidebarCollapsed"
-        :default-active="activeMenu"
-        :unique-opened="true"
-        router
-      >
-        <template v-for="group in visibleGroups" :key="group.key">
-          <el-sub-menu :index="group.key">
-            <template #title>
-              <el-icon>
-                <component :is="group.icon" />
-              </el-icon>
-              <span>{{ group.title }}</span>
-            </template>
-            <el-menu-item
-              v-for="item in group.children"
-              :key="item.path"
-              :index="item.path"
-            >
-              {{ item.title }}
-            </el-menu-item>
-          </el-sub-menu>
-        </template>
-      </el-menu>
-    </el-aside>
+  <el-container class="layout-root" :class="{ 'is-focus': app.focusMode }">
+    <LayoutSidebar />
 
     <el-container class="layout-shell">
-      <el-header class="layout-header">
-        <div class="layout-header__left">
-          <el-button text class="icon-button" @click="app.toggleSidebar()">
-            <el-icon>
-              <Fold v-if="!app.sidebarCollapsed" />
-              <Expand v-else />
-            </el-icon>
-          </el-button>
-          <div class="page-meta">
-            <div class="page-meta__title">{{ currentTitle }}</div>
-            <div class="page-meta__subtitle">{{ currentSubtitle }}</div>
-          </div>
-        </div>
-
-        <div class="layout-header__right">
-          <span class="tenant-label">租户</span>
-          <el-input
-            v-model="tenantIdInput"
-            class="tenant-input"
-            size="small"
-            clearable
-            placeholder="tenantId"
-            @change="onTenantCommit"
-            @blur="onTenantCommit"
-          />
-          <el-tag v-if="auth.role" size="small" type="info">{{ auth.role }}</el-tag>
-          <span class="username">{{ auth.userInfo?.username ?? '未登录' }}</span>
-          <el-button text type="primary" @click="handleLogout">退出</el-button>
-        </div>
-      </el-header>
+      <LayoutHeader @open-palette="paletteOpen = true" />
 
       <el-main class="layout-main">
-        <RouterView />
+        <!--
+          外层 surface：边框/圆角/阴影/hover 缩放；内层 body 为实际纵向滚动层（整页不滚）。
+        -->
+        <div class="layout-main__surface layout-panel">
+          <div v-if="app.focusMode" class="focus-fab">
+            <el-tooltip content="退出全屏（Esc）" placement="left">
+              <el-button circle class="focus-fab__btn" @click="app.setFocusMode(false)">
+                <el-icon>
+                  <FullScreen />
+                </el-icon>
+              </el-button>
+            </el-tooltip>
+          </div>
+          <div class="layout-main__body">
+            <div class="layout-main__content">
+              <RouterView v-slot="{ Component, route: r }">
+                <KeepAlive :max="20">
+                  <component :is="Component" :key="r.fullPath" />
+                </KeepAlive>
+              </RouterView>
+            </div>
+          </div>
+        </div>
       </el-main>
     </el-container>
+
+    <CommandPalette v-model="paletteOpen" :groups="visibleGroups" :recent-tabs="tabsStore.list" />
   </el-container>
 </template>
 
 <script setup lang="ts">
-  import { computed, ref, watch } from 'vue'
-  import { useRoute, useRouter } from 'vue-router'
-  import { Expand, Fold } from '@element-plus/icons-vue'
-  import { useAuthStore } from '@/stores/auth'
-  import { useAppStore } from '@/stores/app'
-  import { usePermissionStore } from '@/stores/permission'
-  import { useTenantStore } from '@/stores/tenant'
+  import { watch, onMounted, onUnmounted } from 'vue'
+  import { useRoute } from 'vue-router'
+  import { FullScreen } from '@element-plus/icons-vue'
+  import CommandPalette from '@/components/common/CommandPalette.vue'
+  import LayoutSidebar from '@/layout/LayoutSidebar.vue'
+  import LayoutHeader from '@/layout/components/LayoutHeader.vue'
+  import { useHeaderLogic } from '@/layout/composables/useHeaderLogic'
 
   const route = useRoute()
-  const router = useRouter()
-  const auth = useAuthStore()
-  const app = useAppStore()
-  const permission = usePermissionStore()
-  const tenant = useTenantStore()
+  const { app, tabsStore, paletteOpen, visibleGroups } = useHeaderLogic()
 
-  const tenantIdInput = ref(tenant.tenantId)
+  function onGlobalKeydown(e: KeyboardEvent) {
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+      const target = e.target as HTMLElement | null
+      if (target?.isContentEditable) return
+      e.preventDefault()
+      paletteOpen.value = true
+      return
+    }
+    if (!app.focusMode) return
+    if (e.key === 'Escape') app.setFocusMode(false)
+  }
+
+  const LAYOUT_SHELL_LOCK_CLASS = 'layout-shell-lock'
+
+  onMounted(() => {
+    document.documentElement.classList.add(LAYOUT_SHELL_LOCK_CLASS)
+    window.addEventListener('keydown', onGlobalKeydown)
+  })
+  onUnmounted(() => {
+    document.documentElement.classList.remove(LAYOUT_SHELL_LOCK_CLASS)
+    window.removeEventListener('keydown', onGlobalKeydown)
+  })
+
   watch(
-    () => tenant.tenantId,
-    (v) => {
-      tenantIdInput.value = v
-    },
+    () => route.fullPath,
+    () => tabsStore.addFromRoute(route),
+    { immediate: true },
   )
-
-  function onTenantCommit() {
-    const v = tenantIdInput.value?.trim() || 'default'
-    tenant.setTenantId(v)
-  }
-
-  const activeMenu = computed(() => (route.meta.activeMenu as string) ?? route.path)
-  const currentTitle = computed(() => (route.meta.title as string) ?? '批量调度平台')
-  const currentSubtitle = computed(
-    () => (route.meta.description as string) ?? '状态驱动型运维控制台',
-  )
-  const visibleGroups = computed(() => permission.visibleGroups)
-
-  async function handleLogout() {
-    await auth.logout()
-    router.push('/login')
-  }
 </script>
 
 <style scoped>
   .layout-root {
     min-height: 100vh;
-    background: var(--color-bg-page);
-  }
-
-  .layout-sidebar {
-    display: flex;
-    flex-direction: column;
-    border-right: 1px solid var(--color-border-light);
-    background: linear-gradient(180deg, #091120 0%, #0f172a 100%);
-    transition: width 0.2s ease;
+    background: var(--color-bg-canvas);
+    /* 四边等距：侧栏 | 顶栏 | 主区外缘对齐；内层由 --layout-panel-hover-safe 为 hover scale 留空 */
+    padding: var(--layout-panel-hover-safe);
+    gap: var(--layout-panel-gap);
     overflow: hidden;
-  }
-
-  .brand {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    height: 64px;
-    padding: 0 16px;
-    border-bottom: 1px solid rgb(255 255 255 / 8%);
-  }
-
-  .brand__logo {
-    display: grid;
-    place-items: center;
-    width: 36px;
-    height: 36px;
-    border-radius: 10px;
-    color: #fff;
-    font-size: 14px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    background: linear-gradient(135deg, #1677ff 0%, #4ca1ff 100%);
-  }
-
-  .brand__title {
-    color: #fff;
-    font-size: 14px;
-    font-weight: 600;
-    line-height: 1.3;
-  }
-
-  .brand__subtitle {
-    color: rgb(255 255 255 / 58%);
-    font-size: 12px;
-    line-height: 1.3;
-  }
-
-  .layout-menu {
-    flex: 1;
-    border-right: none;
-    background: transparent;
-  }
-
-  .layout-menu :deep(.el-sub-menu__title),
-  .layout-menu :deep(.el-menu-item) {
-    color: rgb(255 255 255 / 78%);
-  }
-
-  .layout-menu :deep(.el-sub-menu__title:hover),
-  .layout-menu :deep(.el-menu-item:hover) {
-    color: #fff;
-    background: rgb(255 255 255 / 8%);
-  }
-
-  .layout-menu :deep(.el-menu-item.is-active) {
-    color: #fff;
-    background: rgb(22 119 255 / 20%);
   }
 
   .layout-shell {
     min-width: 0;
-  }
-
-  .layout-header {
+    min-height: calc(100vh - (var(--layout-panel-hover-safe) * 2) - var(--layout-panel-gap));
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-lg);
-    height: 64px;
-    padding: 0 24px;
-    background: rgba(255 255 255 / 84%);
-    backdrop-filter: blur(12px);
-    border-bottom: 1px solid var(--color-border-light);
+    flex-direction: column;
+    background: transparent;
+    overflow: visible;
+    gap: var(--layout-header-main-gap);
+    /**
+     * 顶栏卡片内边距 = 主内容壳 padding + 主区内层 page-scroll-edge-bleed，
+     * 与 el-main 内「白卡片 + layout-main__content」文字起始线同一垂线。
+     */
+    --layout-main-gutter: 6px;
+    --layout-card-border-width: 1px;
+    --layout-card-padding: 16px;
+    --layout-content-inset-inline: calc(var(--layout-card-padding) + var(--page-scroll-edge-bleed));
   }
 
-  .layout-header__left,
-  .layout-header__right {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    min-width: 0;
+  .layout-root.is-focus {
+    padding: 0;
+    gap: 0;
   }
 
-  .page-meta {
-    min-width: 0;
+  .layout-root.is-focus .layout-sidebar {
+    display: none;
   }
 
-  .page-meta__title {
-    font-size: 16px;
-    font-weight: 600;
-    line-height: 1.3;
+  .layout-root.is-focus :deep(.layout-header) {
+    display: none;
   }
 
-  .page-meta__subtitle {
-    margin-top: 2px;
-    color: var(--color-text-tertiary);
-    font-size: 12px;
-    line-height: 1.3;
+  .layout-root.is-focus .layout-shell {
+    min-height: 0;
+    flex: 1;
   }
 
-  .username {
-    color: var(--color-text-secondary);
-    font-size: 13px;
+  /* 全屏内容区：禁用 hover 放大，避免干扰阅读与遮挡 */
+  .layout-root.is-focus .app-surface:hover,
+  .layout-root.is-focus :deep(.el-card:hover),
+  .layout-root.is-focus .layout-main__surface:hover {
+    transform: none !important;
+    box-shadow:
+      var(--shadow-surface),
+      inset 0 1px 0 var(--layout-panel-inset-highlight);
+    border-color: var(--color-border-light);
   }
 
-  .tenant-label {
-    color: var(--color-text-tertiary);
-    font-size: 12px;
+  .layout-root.is-focus .app-surface,
+  .layout-root.is-focus :deep(.el-card),
+  .layout-root.is-focus .layout-main__surface {
+    transition: none !important;
   }
 
-  .tenant-input {
-    width: 140px;
+  .layout-root.is-focus .layout-main__surface {
+    padding: 0;
+    border-radius: 0;
+    border: none;
+    box-shadow: none;
+  }
+
+  .layout-root.is-focus .layout-main {
+    padding: 0;
+  }
+
+  .focus-fab {
+    position: fixed;
+    right: 14px;
+    bottom: 14px;
+    z-index: 1999;
+  }
+
+  .focus-fab__btn {
+    backdrop-filter: blur(10px);
   }
 
   .layout-main {
-    padding: 24px;
+    --el-main-padding: 0;
+    display: flex;
+    flex-direction: column;
+    padding: var(--layout-main-gutter) !important;
+    min-height: 0;
+    flex: 1;
+    overflow: visible;
+    background: transparent;
+    gap: 0;
   }
 
-  .icon-button {
-    padding: 6px;
+  /**
+   * 主内容卡片外壳：不参与滚动；hover scale 与侧栏/顶栏共用画布边距 --layout-panel-hover-safe。
+   */
+  .layout-main__surface {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: visible;
+    padding: var(--layout-card-padding);
+    background: var(--color-bg-card);
+    border: var(--layout-card-border-width) solid var(--color-border-light);
+    border-radius: var(--layout-panel-radius);
+    transform-origin: 50% 50%;
+    transition:
+      transform var(--motion-duration-sm) var(--motion-ease-emphasized),
+      box-shadow var(--motion-duration-md) var(--motion-ease-standard),
+      border-color var(--motion-duration-sm) var(--motion-ease-standard);
+  }
+
+  /** 与侧栏 / 顶栏 app-surface 一致：上浮 + 缩放 + 主色混边（阴影见全局 .layout-panel） */
+  .layout-main__surface:hover {
+    transform: translateY(var(--ui-hover-translate-y)) scale(var(--ui-hover-scale));
+    border-color: color-mix(in srgb, var(--color-border) 68%, var(--color-primary) 32%);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .layout-main__surface,
+    .layout-main__surface:hover {
+      transition: none;
+      transform: none;
+    }
+  }
+
+  /** 实际滚动层：列表/长页仅在白卡片内滚，侧栏与顶栏固定 */
+  .layout-main__body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-gutter: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+  }
+
+  .layout-main__body::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;
+  }
+
+  .layout-main__content {
+    flex: 1;
+    min-height: 0;
+    box-sizing: border-box;
+    /**
+     * 顶边单独收紧；左右与底边仍用 --page-scroll-edge-bleed。
+     */
+    padding: var(--page-scroll-edge-top) var(--page-scroll-edge-bleed) var(--page-scroll-edge-bleed);
+  }
+
+  .layout-main__body :deep(.page-container) {
+    flex: 1;
+    min-height: 0;
+  }
+
+  @media (max-width: 720px) {
+    .layout-root {
+      padding: 10px;
+      gap: 8px;
+    }
+    .layout-shell {
+      min-height: calc(100vh - 28px);
+      gap: var(--layout-header-main-gap);
+      --layout-main-gutter: 5px;
+      --layout-card-padding: 12px;
+    }
   }
 </style>

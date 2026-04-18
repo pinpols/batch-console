@@ -1,44 +1,76 @@
 import { get } from '@/api/client'
-import type { JobInstance, PageResult } from '@/types'
+import { fetchAllPageItems, toPageResult } from '@/api/adapters'
+import type { ConsoleJobInstanceResponse } from '@/types/console-api'
+import type { PageResponse, PageResult } from '@/types'
 
 export interface InstanceQueryParams {
   tenantId: string
+  /** partial match */
   jobCode?: string
+  /** exact match */
   instanceStatus?: string
+  /** ISO date range start */
   startDate?: string
+  /** ISO date range end */
   endDate?: string
   page: number
   pageSize: number
 }
 
-/** GET /api/console/query/instances — OpenAPI 当前 data 为数组，此处做前端分页与筛选。 */
-export async function queryJobInstances(query: InstanceQueryParams): Promise<PageResult<JobInstance>> {
-  const items = await get<JobInstance[]>('/api/console/query/instances', {
-    tenantId: query.tenantId,
-  })
-
-  let rows = [...items]
+function applyInstanceFilters(rows: ConsoleJobInstanceResponse[], query: InstanceQueryParams) {
+  let r = [...rows]
   if (query.jobCode) {
-    rows = rows.filter((r) => r.jobCode?.includes(query.jobCode))
+    r = r.filter((x) => x.jobCode?.includes(query.jobCode!))
   }
   if (query.instanceStatus) {
-    rows = rows.filter((r) => r.instanceStatus === query.instanceStatus)
+    r = r.filter((x) => x.instanceStatus === query.instanceStatus)
   }
   if (query.startDate) {
-    rows = rows.filter((r) => !r.startedAt || r.startedAt >= query.startDate!)
+    r = r.filter((x) => !x.startedAt || x.startedAt >= query.startDate!)
   }
   if (query.endDate) {
-    rows = rows.filter((r) => !r.startedAt || r.startedAt <= `${query.endDate}T23:59:59`)
+    r = r.filter((x) => !x.startedAt || x.startedAt <= `${query.endDate}T23:59:59`)
+  }
+  return r
+}
+
+/**
+ * GET /api/console/queries/instances — OpenAPI data 为 PageResponse（pageNo/pageSize）。
+ * 无筛选时走服务端分页；有筛选时拉全量再端上分页（契约未声明 jobCode 等 query 参数）。
+ */
+export async function queryJobInstances(
+  query: InstanceQueryParams,
+): Promise<PageResult<ConsoleJobInstanceResponse>> {
+  const hasFilter = !!(query.jobCode || query.instanceStatus || query.startDate || query.endDate)
+
+  if (!hasFilter) {
+    const pr = await get<PageResponse<ConsoleJobInstanceResponse>>(
+      '/api/console/queries/instances',
+      {
+        tenantId: query.tenantId,
+        pageNo: query.page,
+        pageSize: query.pageSize,
+      },
+    )
+    return {
+      records: (pr.items ?? []) as ConsoleJobInstanceResponse[],
+      total: pr.total ?? 0,
+      page: query.page,
+      pageSize: query.pageSize,
+    }
   }
 
-  const total = rows.length
-  const start = (query.page - 1) * query.pageSize
-  const records = rows.slice(start, start + query.pageSize)
-
-  return {
-    records,
-    total,
-    page: query.page,
-    pageSize: query.pageSize,
-  }
+  // 将过滤参数传给后端（后端支持时减少传输量，客户端 applyInstanceFilters 仍做兜底）
+  const all = await fetchAllPageItems<ConsoleJobInstanceResponse>(
+    '/api/console/queries/instances',
+    {
+      tenantId: query.tenantId,
+      ...(query.jobCode ? { jobCode: query.jobCode } : {}),
+      ...(query.instanceStatus ? { instanceStatus: query.instanceStatus } : {}),
+      ...(query.startDate ? { startDate: query.startDate } : {}),
+      ...(query.endDate ? { endDate: query.endDate } : {}),
+    },
+  )
+  const filtered = applyInstanceFilters(all, query)
+  return toPageResult(filtered, query.page, query.pageSize)
 }

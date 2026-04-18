@@ -9,21 +9,195 @@
   --color-text-secondary: #595959;
   --color-text-tertiary: #8c8c8c;
 
+  /** Typography */
+  --font-size-xs: 12px;
+  --font-size-sm: 13px;
+  --font-size-md: 14px;
+  --font-size-lg: 16px;
+  --font-size-xl: 20px;
+  --font-size-2xl: 24px;
+  --line-height-tight: 1.35;
+  --line-height-base: 1.55;
+
   --color-bg-page: #f5f7fa;
+  /** 主内容区画布（侧栏右侧），略深于卡片以突出卡片层次 */
+  --color-bg-canvas: #e9eef5;
   --color-bg-card: #ffffff;
   --color-bg-hero: linear-gradient(135deg, #eef5ff 0%, #f7faff 42%, #ffffff 100%);
   --color-border: #e5e6eb;
   --color-border-light: #f0f0f0;
 
   --shadow-card: 0 2px 8px rgb(0 0 0 / 6%);
-  --radius-button: 6px;
-  --radius-input: 6px;
-  --radius-card: 8px;
-  --radius-surface: 10px;
+  /** 页面级卡片（标题区、内容块） */
+  --shadow-surface: 0 2px 12px rgb(15 23 42 / 6%), 0 0 0 1px rgb(15 23 42 / 4%);
+  --shadow-surface-hover: 0 12px 24px rgb(15 23 42 / 12%), 0 0 0 1px rgb(15 23 42 / 7%);
+  /**
+   * 主内容区 / 弹层内：与 shadow-surface-hover 叠用；内描边不被父级 overflow 裁切，避免 hover「四周没变化」。
+   */
+  --surface-hover-edge-inset: inset 0 0 0 1px color-mix(in srgb, var(--color-primary) 26%, transparent);
+
+  /** 全站统一 hover 浮起参数 */
+  --ui-hover-translate-y: -2px;
+  --ui-hover-scale: 1.02;
+
+  /** 动效 token（与 prefers-reduced-motion 配合使用） */
+  --motion-duration-fast: 140ms;
+  --motion-duration-sm: 160ms;
+  --motion-duration-md: 220ms;
+  --motion-ease-standard: cubic-bezier(0.33, 1, 0.68, 1);
+  --motion-ease-emphasized: cubic-bezier(0.4, 0, 0.2, 1);
+  /**
+   * 全站统一圆角基准：表格/卡片/壳体/按钮/输入/下拉项等同源；紧凑模式只改此值。
+   */
+  --radius-content: 12px;
+  --radius-button: var(--radius-content);
+  --radius-input: var(--radius-content);
+  --radius-card-lg: var(--radius-content);
+  --layout-panel-radius: var(--radius-content);
+  /** 与旧命名兼容 */
+  --radius-surface: var(--radius-content);
+  --radius-card: var(--radius-content);
 
   --space-xs: 4px;
   --space-sm: 8px;
   --space-md: 16px;
   --space-lg: 24px;
   --space-xl: 32px;
+
+  /** 主内容区画布内边距、页面内卡片纵向间距（紧凑） */
+  --page-canvas-padding: 14px;
+  /** PageHeader 与 SectionCard 等竖向堆叠间距（PageContainer gap；原 header margin 已并入此量级） */
+  --page-section-gap: 14px;
+  /** 页内容器四边留白：hover 放大/阴影 + 与裁剪边距离（layout-main__content padding） */
+  /** 略大于 hover 阴影扩散，减少主滚动区内卡片/表格贴边被裁切 */
+  --page-scroll-edge-bleed: 18px;
+  /** 主内容区顶部留白（通常小于四边统一值，避免标题区离顶栏过远） */
+  --page-scroll-edge-top: 8px;
+  /** SectionCard 内：查询条 / 工具条 与 表格 的区块间距 */
+  --page-block-gap: 10px;
+
+  /** 三主卡片（侧栏 / 顶栏 / 主内容）：列间距、圆角、顶面内高光 */
+  --layout-panel-gap: 10px;
+  /** 顶栏卡片与下方主内容白卡片之间的纵向间距（仅 layout-shell 内） */
+  --layout-header-main-gap: 8px;
+  /**
+   * 画布四边留白：侧栏 / 顶栏 / 主内容白卡片 hover scale 与大阴影共用，
+   * 由 layout-root 均分，避免任一块被 overflow:hidden 裁切（勿再单独给主列加厚）。
+   */
+  --layout-panel-hover-safe: 14px;
+  --layout-panel-inset-highlight: rgb(255 255 255 / 38%);
+  /** SectionCard / 指标卡等内容区内边距（覆盖 Element 默认 20px） */
+  --card-inner-padding: 14px;
+  /**
+   * 页内水平对齐：PageHeader 与 SectionCard（el-card body）左右内边距同源，
+   * 标题/操作区与下方表单、表格、分页在同一垂线。
+   */
+  --page-align-inline: var(--card-inner-padding);
+
+  --layout-header-bg: rgb(255 255 255 / 84%);
+
+  /** 侧栏品牌区与一级菜单左右内边距对齐 */
+  --layout-sidebar-inline: 12px;
+  --layout-sidebar-brand-pad-block: 10px;
+
+  --layout-sidebar-bg: linear-gradient(180deg, #eef1f5 0%, #e3e8f0 100%);
+  --layout-sidebar-brand-divider: rgb(0 0 0 / 8%);
+  --layout-sidebar-text: var(--color-text-secondary);
+  --layout-sidebar-text-muted: var(--color-text-tertiary);
+  --layout-sidebar-subnav-bg: rgb(0 0 0 / 6%);
+  --layout-sidebar-hover-bg: rgb(0 0 0 / 7%);
+  --layout-sidebar-hover-text: var(--color-text-primary);
+  --layout-sidebar-active-bg: rgb(22 119 255 / 14%);
+  --layout-sidebar-active-text: var(--color-primary);
+  --layout-sidebar-active-hover-bg: rgb(22 119 255 / 20%);
+
+  --layout-menu-popup-bg: #eef1f5;
+  --layout-menu-popup-border: var(--color-border);
+  --layout-menu-popup-text: var(--color-text-secondary);
+  --layout-menu-popup-hover-bg: var(--el-fill-color-light, #f5f7fa);
+  --layout-menu-popup-active-bg: rgb(22 119 255 / 14%);
+  --layout-menu-popup-active-text: var(--color-primary);
+
+  --login-page-bg:
+    radial-gradient(circle at top left, rgb(22 119 255 / 12%), transparent 36%),
+    radial-gradient(circle at bottom right, rgb(82 196 26 / 10%), transparent 28%),
+    linear-gradient(180deg, #f8fbff 0%, #f5f7fa 100%);
+
+  --table-header-bg: #f1f4f8;
+  --table-stripe-bg: #f7f9fc;
+  --table-row-hover-bg: rgb(22 119 255 / 8%);
+  --table-current-row-bg: rgb(22 119 255 / 14%);
+  --table-fixed-shadow: 8px 0 14px -6px rgb(15 23 42 / 12%);
+}
+
+html.dark {
+  color-scheme: dark;
+
+  --color-text-primary: #e5eaf0;
+  --color-text-secondary: #a8b0bd;
+  --color-text-tertiary: #7d8796;
+
+  --color-bg-page: #0f1419;
+  --color-bg-canvas: #0b0f14;
+  --color-bg-card: #1a1f26;
+  --color-bg-hero: linear-gradient(135deg, #141920 0%, #1a2230 42%, #1a1f26 100%);
+  --color-border: #2d333b;
+  --color-border-light: #252a32;
+
+  --shadow-card: 0 2px 12px rgb(0 0 0 / 35%);
+  --shadow-surface: 0 2px 16px rgb(0 0 0 / 38%), 0 0 0 1px rgb(255 255 255 / 6%);
+  --shadow-surface-hover: 0 18px 32px rgb(0 0 0 / 52%), 0 0 0 1px rgb(255 255 255 / 10%);
+  --surface-hover-edge-inset: inset 0 0 0 1px color-mix(in srgb, var(--color-primary) 42%, transparent);
+
+  --layout-header-bg: rgb(26 31 38 / 92%);
+
+  --layout-sidebar-bg: linear-gradient(180deg, #091120 0%, #0f172a 100%);
+  --layout-sidebar-brand-divider: rgb(255 255 255 / 8%);
+  --layout-sidebar-text: rgb(255 255 255 / 82%);
+  --layout-sidebar-text-muted: rgb(255 255 255 / 58%);
+  --layout-sidebar-subnav-bg: rgb(0 0 0 / 28%);
+  --layout-sidebar-hover-bg: rgb(255 255 255 / 10%);
+  --layout-sidebar-hover-text: #fff;
+  --layout-sidebar-active-bg: rgb(29 78 216 / 92%);
+  --layout-sidebar-active-text: #fff;
+  --layout-sidebar-active-hover-bg: rgb(37 99 235 / 95%);
+
+  --layout-menu-popup-bg: #0f172a;
+  --layout-menu-popup-border: rgb(255 255 255 / 12%);
+  --layout-menu-popup-text: rgb(255 255 255 / 88%);
+  --layout-menu-popup-hover-bg: rgb(255 255 255 / 12%);
+  --layout-menu-popup-active-bg: rgb(29 78 216 / 92%);
+  --layout-menu-popup-active-text: #ffffff;
+
+  --login-page-bg:
+    radial-gradient(circle at top left, rgb(22 119 255 / 16%), transparent 38%),
+    radial-gradient(circle at bottom right, rgb(82 196 26 / 6%), transparent 30%),
+    linear-gradient(180deg, #121820 0%, #0f1419 100%);
+
+  --table-header-bg: #1c222c;
+  /** 与「白 4% 叠在卡片上」接近，但保持不透明，避免固定列下透出横向滚动内容 */
+  --table-stripe-bg: color-mix(in srgb, var(--color-bg-card) 96%, #ffffff 4%);
+  --table-row-hover-bg: rgb(22 119 255 / 14%);
+  --table-current-row-bg: rgb(22 119 255 / 22%);
+  --table-fixed-shadow: 10px 0 20px -8px rgb(0 0 0 / 55%);
+
+  --layout-panel-inset-highlight: rgb(255 255 255 / 8%);
+}
+
+/** 紧凑模式：减弱 scale、收紧画布/卡片内边距，表格可在 element-override 跟字号 */
+html[data-density='compact'] {
+  --ui-hover-scale: 1;
+  --ui-hover-translate-y: -1px;
+  --page-canvas-padding: 10px;
+  --page-section-gap: 10px;
+  --page-scroll-edge-bleed: 10px;
+  --page-scroll-edge-top: 6px;
+  --page-block-gap: 8px;
+  --card-inner-padding: 10px;
+  --layout-panel-gap: 8px;
+  --layout-header-main-gap: 6px;
+  --layout-panel-hover-safe: 11px;
+  --layout-sidebar-inline: 10px;
+  --layout-sidebar-brand-pad-block: 8px;
+  --radius-content: 10px;
 }

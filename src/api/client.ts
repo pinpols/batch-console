@@ -12,7 +12,11 @@ export const apiClient = axios.create({
 
 applyApiInterceptors(apiClient)
 
-export async function get<T>(url: string, params?: object, config?: AxiosRequestConfig): Promise<T> {
+export async function get<T>(
+  url: string,
+  params?: object,
+  config?: AxiosRequestConfig,
+): Promise<T> {
   const { data } = await apiClient.get<T>(url, { params, ...config })
   return data
 }
@@ -24,6 +28,15 @@ export async function post<T>(url: string, body?: object, config?: AxiosRequestC
 
 export async function put<T>(url: string, body?: object, config?: AxiosRequestConfig): Promise<T> {
   const { data } = await apiClient.put<T>(url, body, config)
+  return data
+}
+
+export async function patch<T>(
+  url: string,
+  body?: object,
+  config?: AxiosRequestConfig,
+): Promise<T> {
+  const { data } = await apiClient.patch<T>(url, body, config)
   return data
 }
 

@@ -1,12 +1,20 @@
 import { get, post } from '@/api/client'
+import { fetchAllPageItems, toPageResult } from '@/api/adapters'
 import { queryJobInstances, type InstanceQueryParams } from '@/api/queries/instances'
-import type { JobInstance, JobPartition, PageResult, WorkflowRun } from '@/types'
+import type {
+  ConsoleJobInstanceResponse,
+  ConsoleJobStepInstanceResponse,
+  ConsoleWorkflowRunResponse,
+} from '@/types/console-api'
+import type { PageResponse, PageResult } from '@/types'
 
 export type InstanceQuery = InstanceQueryParams
 
 export interface WorkflowRunQuery {
   tenantId?: string
-  workflowCode?: string
+  /** 由 workflowCode 在页面侧解析为 definitionId 后传入 */
+  workflowDefinitionId?: number
+  /** exact match */
   runStatus?: string
   page: number
   pageSize: number
@@ -15,16 +23,9 @@ export interface WorkflowRunQuery {
 export const instanceApi = {
   list: (query: InstanceQuery) => queryJobInstances(query),
 
-  detail: async (instanceId: number, tenantId: string) => {
-    const list = await get<JobInstance[]>('/api/console/query/instances', { tenantId })
-    const row = list.find((x) => x.id === instanceId)
-    if (!row) {
-      throw new Error('实例不存在')
-    }
-    return row
-  },
+  detail: (instanceId: number, tenantId: string) =>
+    get<ConsoleJobInstanceResponse>(`/api/console/queries/instances/${instanceId}`, { tenantId }),
 
-  /** 对齐 OpenAPI 后改为独立命令 DTO（需 instanceNo / jobCode / bizDate 等） */
   retry: (instanceNo: string, tenantId: string, jobCode: string, bizDate: string) =>
     post<string>('/api/console/jobs/rerun', {
       tenantId,
@@ -34,41 +35,84 @@ export const instanceApi = {
       reason: 'console rerun',
     }),
 
-  cancel: (_instanceId: number, _tenantId: string) =>
-    Promise.reject(new Error('取消实例：请对齐后端命令 API 后实现')),
+  cancel: (instanceId: number, tenantId: string) =>
+    post<string>(`/api/console/instances/${instanceId}/cancel`, undefined, {
+      params: { tenantId },
+    }),
 
   partitions: async (instanceId: number, tenantId: string) => {
-    const rows = await get<JobPartition[]>('/api/console/query/job-step-instances', { tenantId })
+    // 传入 jobInstanceId 参数让后端过滤（后端不支持时会忽略该参数，回退到全量）
+    const rows = await fetchAllPageItems<ConsoleJobStepInstanceResponse>(
+      '/api/console/queries/job-step-instances',
+      { tenantId, jobInstanceId: instanceId },
+    )
     return rows.filter((r) => r.jobInstanceId === instanceId)
   },
 
   workflowRuns: async (query: WorkflowRunQuery) => {
-    const items = await get<WorkflowRun[]>('/api/console/query/workflow-runs', {
-      tenantId: query.tenantId,
-    })
-    let rows = [...items]
-    if (query.workflowCode) {
-      rows = rows.filter((r) => r.workflowCode?.includes(query.workflowCode))
+    const hasFilter =
+      query.workflowDefinitionId != null || !!(query.runStatus && query.runStatus.trim())
+
+    if (!hasFilter) {
+      const pr = await get<PageResponse<ConsoleWorkflowRunResponse>>(
+        '/api/console/queries/workflow-runs',
+        {
+          tenantId: query.tenantId,
+          pageNo: query.page,
+          pageSize: query.pageSize,
+        },
+      )
+      return {
+        records: (pr.items ?? []) as ConsoleWorkflowRunResponse[],
+        total: pr.total ?? 0,
+        page: query.page,
+        pageSize: query.pageSize,
+      } satisfies PageResult<ConsoleWorkflowRunResponse>
     }
-    if (query.runStatus) {
+
+    // 将过滤参数传给后端（后端支持时减少传输量，客户端仍做兜底过滤）
+    const items = await fetchAllPageItems<ConsoleWorkflowRunResponse>(
+      '/api/console/queries/workflow-runs',
+      {
+        tenantId: query.tenantId,
+        ...(query.workflowDefinitionId != null
+          ? { workflowDefinitionId: query.workflowDefinitionId }
+          : {}),
+        ...(query.runStatus?.trim() ? { runStatus: query.runStatus.trim() } : {}),
+      },
+    )
+    let rows = [...items]
+    if (query.workflowDefinitionId != null) {
+      rows = rows.filter((r) => r.workflowDefinitionId === query.workflowDefinitionId)
+    }
+    if (query.runStatus?.trim()) {
       rows = rows.filter((r) => r.runStatus === query.runStatus)
     }
-    const total = rows.length
-    const start = (query.page - 1) * query.pageSize
-    return {
-      records: rows.slice(start, start + query.pageSize),
-      total,
-      page: query.page,
-      pageSize: query.pageSize,
-    } satisfies PageResult<WorkflowRun>
+    return toPageResult(rows, query.page, query.pageSize)
   },
 
-  workflowRunDetail: async (runId: number, tenantId: string) => {
-    const list = await get<WorkflowRun[]>('/api/console/query/workflow-runs', { tenantId })
-    const row = list.find((x) => x.id === runId)
-    if (!row) {
-      throw new Error('Workflow Run 不存在')
-    }
-    return row
-  },
+  workflowRunDetail: (runId: number, tenantId: string) =>
+    get<ConsoleWorkflowRunResponse>(`/api/console/queries/workflow-runs/${runId}`, { tenantId }),
+
+  /** POST /api/console/instances/{id}/terminate */
+  terminate: (instanceId: number, tenantId: string) =>
+    post<string>(`/api/console/instances/${instanceId}/terminate`, undefined, {
+      params: { tenantId },
+    }),
+
+  /** GET /api/console/queries/instances/batch-status */
+  batchStatus: (tenantId: string, instanceNos: string[]) =>
+    get<unknown>('/api/console/queries/instances/batch-status', { tenantId, instanceNos }),
+
+  /** POST /api/console/instances/partitions/{id}/cancel */
+  cancelPartition: (partitionId: number, tenantId: string) =>
+    post<string>(`/api/console/instances/partitions/${partitionId}/cancel`, undefined, {
+      params: { tenantId },
+    }),
+
+  /** POST /api/console/instances/partitions/{id}/retry */
+  retryPartition: (partitionId: number, tenantId: string) =>
+    post<string>(`/api/console/instances/partitions/${partitionId}/retry`, undefined, {
+      params: { tenantId },
+    }),
 }

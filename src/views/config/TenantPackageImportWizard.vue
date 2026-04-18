@@ -1,0 +1,594 @@
+<template>
+  <PageContainer class="tenant-pkg-page">
+    <PageHeader
+      title="合并导入"
+      description="8-Sheet 租户配置包：单事务导入文件渠道 / 告警路由 / Pipeline / 工作流 / Job 定义，含跨 Sheet 依赖校验。"
+      compact
+    />
+    <SectionCard>
+      <div class="excel-wizard">
+        <div class="excel-wizard__steps-shell">
+          <el-steps :active="step" finish-status="success" align-center class="excel-wizard__steps">
+            <el-step title="上传" description="选择并提交文件" />
+            <el-step title="预览" description="校验与汇总" />
+            <el-step title="应用" description="写入配置" />
+          </el-steps>
+        </div>
+
+        <div class="excel-wizard__body">
+          <!-- Step 0: Upload -->
+          <div
+            v-show="step === 0"
+            class="excel-wizard__panel"
+            v-loading="upLoading"
+            element-loading-text="正在上传文件..."
+          >
+            <div class="upload-zone">
+              <el-icon class="upload-zone__icon" :size="36"><Upload /></el-icon>
+              <p class="upload-zone__title">上传租户配置包 Excel</p>
+              <p class="upload-zone__desc">
+                8-Sheet 格式（job_definition / file_channel / alert_routing / pipeline /
+                workflow_definition …）。上传成功后可进入预览校验。
+              </p>
+              <div class="upload-zone__quick-actions">
+                <el-button :loading="tplLoading" @click="doDownloadTemplate">
+                  下载配置包模板
+                </el-button>
+                <el-button :loading="exportLoading" @click="doExport"> 导出当前配置包 </el-button>
+              </div>
+              <div class="upload-zone__actions">
+                <el-upload
+                  :auto-upload="false"
+                  :limit="1"
+                  :on-change="onFile"
+                  :show-file-list="false"
+                >
+                  <el-button type="primary">选择文件</el-button>
+                </el-upload>
+                <el-button type="success" :disabled="!file" :loading="upLoading" @click="doUpload">
+                  开始上传
+                </el-button>
+              </div>
+              <div v-if="file" class="upload-zone__file">
+                <el-icon><Document /></el-icon>
+                <span class="upload-zone__file-name">{{ file.name }}</span>
+              </div>
+            </div>
+
+            <el-alert
+              v-if="uploadToken"
+              class="excel-wizard__token-alert"
+              type="success"
+              :closable="false"
+              show-icon
+            >
+              <template #title>上传成功</template>
+              <div class="excel-wizard__token-label">uploadToken</div>
+              <pre class="excel-wizard__token-code">{{ uploadToken }}</pre>
+            </el-alert>
+          </div>
+
+          <!-- Step 1: Preview -->
+          <div
+            v-show="step === 1"
+            class="excel-wizard__panel excel-wizard__panel--wide"
+            v-loading="pvLoading"
+            element-loading-text="正在拉取预览数据..."
+          >
+            <p v-if="!uploadToken" class="excel-wizard__mute-hint">
+              请先在「上传」步骤完成文件提交。
+            </p>
+            <template v-else>
+              <div class="excel-wizard__panel-head">
+                <h3 class="excel-wizard__panel-title">预览与校验</h3>
+                <div class="excel-wizard__panel-actions">
+                  <el-button
+                    type="primary"
+                    :disabled="!uploadToken"
+                    :loading="pvLoading"
+                    @click="doPreview"
+                  >
+                    拉取预览
+                  </el-button>
+                  <el-tooltip
+                    content="下载服务端生成的带逐格错误注释的 Excel，可在本地修正后重新上传"
+                    placement="top"
+                  >
+                    <el-button
+                      :disabled="!uploadToken"
+                      :loading="wbLoading"
+                      @click="doDownloadWorkbook"
+                    >
+                      下载带注释预览
+                    </el-button>
+                  </el-tooltip>
+                </div>
+              </div>
+              <el-descriptions
+                v-if="previewStats"
+                class="excel-wizard__desc"
+                :column="2"
+                border
+                title="汇总"
+              >
+                <el-descriptions-item label="totalRows">{{
+                  previewStats.total
+                }}</el-descriptions-item>
+                <el-descriptions-item label="validRows">{{
+                  previewStats.valid
+                }}</el-descriptions-item>
+                <el-descriptions-item label="invalidRows">{{
+                  previewStats.invalid
+                }}</el-descriptions-item>
+              </el-descriptions>
+              <el-alert
+                v-if="previewWorkbookUrl"
+                type="info"
+                :closable="false"
+                show-icon
+                class="excel-wizard__desc"
+              >
+                <template #title>
+                  服务端已生成带注释预览：
+                  <a :href="previewWorkbookUrl" target="_blank" class="cell-link">下载 Excel</a>
+                </template>
+              </el-alert>
+              <div v-if="issueRows.length" class="excel-wizard__table-block">
+                <div class="excel-wizard__table-caption">行级问题</div>
+                <el-table
+                  class="wizard-stretch console-table"
+                  :data="issueRows"
+                  max-height="320"
+                  stripe
+                  border
+                  highlight-current-row
+                  empty-text="暂无数据"
+                >
+                  <el-table-column prop="sheetName" label="Sheet" width="160" />
+                  <el-table-column prop="rowNo" label="行" width="70" />
+                  <el-table-column prop="messages" label="原因" min-width="200" />
+                </el-table>
+              </div>
+            </template>
+          </div>
+
+          <!-- Step 2: Apply -->
+          <div v-show="step === 2" class="excel-wizard__panel">
+            <div class="apply-zone">
+              <el-icon class="apply-zone__icon" :size="32"><WarningFilled /></el-icon>
+              <h3 class="apply-zone__title">确认应用</h3>
+              <p class="apply-zone__desc">
+                将把当前 <code>uploadToken</code> 对应的 8-Sheet 预览结果
+                <strong>单事务</strong>写入租户配置。执行前请已在「预览」中确认数据无误。
+              </p>
+              <el-button type="danger" size="large" :disabled="!uploadToken" @click="doApply">
+                确认应用变更
+              </el-button>
+            </div>
+          </div>
+        </div>
+
+        <div class="excel-wizard__footer">
+          <el-button :disabled="step <= 0" @click="step--">上一步</el-button>
+          <el-button
+            type="primary"
+            :disabled="step >= 2 || (step === 0 && !uploadToken)"
+            @click="step++"
+          >
+            下一步
+          </el-button>
+        </div>
+      </div>
+    </SectionCard>
+  </PageContainer>
+</template>
+
+<script setup lang="ts">
+  import { computed, ref } from 'vue'
+  import { Document, Upload, WarningFilled } from '@element-plus/icons-vue'
+  import type { UploadFile } from 'element-plus'
+  import { ElMessage, ElMessageBox } from 'element-plus'
+  import {
+    tenantPackageDownloadTemplate,
+    tenantPackageExport,
+    tenantPackageUpload,
+    tenantPackagePreview,
+    tenantPackageDownloadPreviewWorkbook,
+    tenantPackageApply,
+  } from '@/api/excelDomains'
+  import PageContainer from '@/components/common/PageContainer.vue'
+  import PageHeader from '@/components/common/PageHeader.vue'
+  import SectionCard from '@/components/common/SectionCard.vue'
+
+  const step = ref(0)
+  const file = ref<File | null>(null)
+  const uploadToken = ref('')
+  const upLoading = ref(false)
+  const pvLoading = ref(false)
+  const wbLoading = ref(false)
+  const tplLoading = ref(false)
+  const exportLoading = ref(false)
+  const previewRaw = ref<Record<string, unknown> | null>(null)
+
+  const previewStats = computed(() => {
+    const p = previewRaw.value
+    if (!p) return null
+    const total = typeof p.totalRows === 'number' ? p.totalRows : undefined
+    const valid = typeof p.validRows === 'number' ? p.validRows : undefined
+    const invalid = typeof p.invalidRows === 'number' ? p.invalidRows : undefined
+    if (total === undefined && valid === undefined) return null
+    return { total: total ?? '—', valid: valid ?? '—', invalid: invalid ?? '—' }
+  })
+
+  const previewWorkbookUrl = computed(() => {
+    const url = previewRaw.value?.previewWorkbookUrl
+    return typeof url === 'string' && url ? url : null
+  })
+
+  const issueRows = computed(() => {
+    const p = previewRaw.value
+    if (!p || !Array.isArray(p.issues)) return []
+    return (p.issues as Record<string, unknown>[]).map((i) => ({
+      sheetName: String(i.sheetName ?? ''),
+      rowNo: i.rowNo,
+      messages: Array.isArray(i.messages)
+        ? (i.messages as string[]).join('; ')
+        : String(i.messages ?? ''),
+    }))
+  })
+
+  function onFile(u: UploadFile) {
+    file.value = u.raw ?? null
+  }
+
+  function triggerBlobDownload(blob: Blob, filename: string) {
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
+  async function doDownloadTemplate() {
+    tplLoading.value = true
+    try {
+      const blob = await tenantPackageDownloadTemplate()
+      triggerBlobDownload(blob, 'tenant-package-template.xlsx')
+      ElMessage.success('配置包模板已下载')
+    } finally {
+      tplLoading.value = false
+    }
+  }
+
+  async function doExport() {
+    exportLoading.value = true
+    try {
+      const blob = await tenantPackageExport()
+      triggerBlobDownload(blob, 'tenant-package-export.xlsx')
+      ElMessage.success('当前配置包已导出')
+    } finally {
+      exportLoading.value = false
+    }
+  }
+
+  async function doUpload() {
+    if (!file.value) return
+    upLoading.value = true
+    try {
+      const res = await tenantPackageUpload(file.value)
+      uploadToken.value = res.uploadToken ?? ''
+      if (!uploadToken.value) {
+        ElMessage.warning('响应中未找到 uploadToken，请核对后端 multipart 字段名与契约。')
+      }
+    } finally {
+      upLoading.value = false
+    }
+  }
+
+  async function doPreview() {
+    if (!uploadToken.value) return
+    pvLoading.value = true
+    try {
+      previewRaw.value = (await tenantPackagePreview(uploadToken.value)) as Record<string, unknown>
+    } finally {
+      pvLoading.value = false
+    }
+  }
+
+  async function doDownloadWorkbook() {
+    if (!uploadToken.value) return
+    wbLoading.value = true
+    try {
+      const blob = await tenantPackageDownloadPreviewWorkbook(uploadToken.value)
+      triggerBlobDownload(blob, `tenant-package-preview-${uploadToken.value}.xlsx`)
+      ElMessage.success('已下载带注释预览文件')
+    } finally {
+      wbLoading.value = false
+    }
+  }
+
+  async function doApply() {
+    if (!uploadToken.value) return
+    try {
+      await ElMessageBox.confirm(
+        '确认将 8-Sheet 预览结果单事务应用到租户配置？此操作不可撤销。',
+        '应用合并导入',
+        { type: 'warning' },
+      )
+      await tenantPackageApply(uploadToken.value, {})
+      ElMessage.success('合并导入已应用')
+    } catch {
+      /* cancel */
+    }
+  }
+</script>
+
+<style scoped>
+  :deep(.tenant-pkg-page) {
+    gap: 8px;
+  }
+
+  .excel-wizard {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin: 0;
+    width: 100%;
+    min-height: 360px;
+    box-sizing: border-box;
+  }
+
+  .excel-wizard__steps-shell {
+    padding: 8px 10px 10px;
+    margin-bottom: 10px;
+    background: linear-gradient(
+      180deg,
+      var(--el-fill-color-lighter, rgb(0 0 0 / 4%)) 0%,
+      transparent 100%
+    );
+    border-bottom: 1px solid var(--color-border-light);
+  }
+
+  .excel-wizard__steps {
+    max-width: 100%;
+    margin: 0;
+  }
+
+  .excel-wizard__steps :deep(.el-step__title) {
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.35;
+  }
+
+  .excel-wizard__steps :deep(.el-step__description) {
+    margin-top: 2px;
+    font-size: 12px;
+    color: var(--color-text-tertiary);
+    line-height: 1.4;
+  }
+
+  .excel-wizard__body {
+    flex: 1 1 auto;
+    width: 100%;
+    min-height: 180px;
+  }
+
+  .excel-wizard__panel {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    padding-bottom: 12px;
+    box-sizing: border-box;
+  }
+
+  .excel-wizard__panel--wide {
+    max-width: 100%;
+    align-items: stretch;
+  }
+
+  .upload-zone {
+    width: 100%;
+    padding: 16px 12px;
+    text-align: center;
+    border: 1px dashed var(--color-border);
+    border-radius: var(--radius-card-lg);
+    background: var(--color-bg-card);
+    box-shadow: var(--shadow-card);
+  }
+
+  .upload-zone__icon {
+    color: var(--color-primary);
+    opacity: 0.9;
+  }
+
+  .upload-zone__title {
+    margin: 8px 0 4px;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    line-height: 1.3;
+  }
+
+  .upload-zone__desc {
+    margin: 0 auto;
+    max-width: 520px;
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    line-height: 1.55;
+  }
+
+  .upload-zone__quick-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 14px;
+    padding-bottom: 14px;
+    border-bottom: 1px dashed var(--color-border-light);
+  }
+
+  .upload-zone__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 12px;
+  }
+
+  .upload-zone__file {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 10px;
+    padding: 6px 10px;
+    max-width: 100%;
+    border-radius: var(--radius-input);
+    background: var(--el-fill-color-light);
+    color: var(--color-text-secondary);
+    font-size: 13px;
+  }
+
+  .upload-zone__file-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+  }
+
+  .excel-wizard__token-alert {
+    width: 100%;
+    margin-top: 12px;
+    text-align: left;
+  }
+
+  .excel-wizard__token-alert :deep(.el-alert__content) {
+    width: 100%;
+  }
+
+  .excel-wizard__token-label {
+    margin-top: 6px;
+    font-size: 12px;
+    color: var(--color-text-secondary);
+  }
+
+  .excel-wizard__token-code {
+    margin: 6px 0 0;
+    padding: 8px 10px;
+    font-size: 12px;
+    line-height: 1.5;
+    word-break: break-all;
+    white-space: pre-wrap;
+    border-radius: var(--radius-input);
+    background: var(--el-fill-color-blank);
+    border: 1px solid var(--color-border-light);
+    color: var(--color-text-primary);
+  }
+
+  .excel-wizard__mute-hint {
+    margin: 0 0 10px;
+    font-size: 13px;
+    color: var(--color-text-tertiary);
+    text-align: center;
+  }
+
+  .excel-wizard__panel-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .excel-wizard__panel-title {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+  }
+
+  .excel-wizard__panel-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .excel-wizard__desc {
+    width: 100%;
+  }
+
+  .excel-wizard__table-block {
+    margin-top: 12px;
+    width: 100%;
+  }
+
+  .excel-wizard__table-caption {
+    margin-bottom: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+  }
+
+  .wizard-stretch {
+    width: 100%;
+  }
+
+  .apply-zone {
+    width: 100%;
+    padding: 16px 12px;
+    text-align: center;
+    border-radius: var(--radius-card-lg);
+    border: 1px solid var(--color-border-light);
+    background: linear-gradient(
+      165deg,
+      var(--el-color-warning-light-9, rgb(250 173 20 / 8%)) 0%,
+      var(--color-bg-card) 48%
+    );
+    box-shadow: var(--shadow-card);
+  }
+
+  .apply-zone__icon {
+    color: var(--color-warning);
+  }
+
+  .apply-zone__title {
+    margin: 4px 0 2px;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+  }
+
+  .apply-zone__desc {
+    margin: 0 auto 14px;
+    max-width: 460px;
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    line-height: 1.6;
+  }
+
+  .apply-zone__desc code {
+    font-size: 12px;
+    padding: 1px 5px;
+    border-radius: var(--radius-content);
+    background: var(--el-fill-color-light);
+  }
+
+  .excel-wizard__footer {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    margin: 8px 0 0;
+    padding: 10px 0 0;
+    background: var(--el-fill-color-lighter, rgb(0 0 0 / 3%));
+    border-top: 1px solid var(--color-border-light);
+  }
+</style>

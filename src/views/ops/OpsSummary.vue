@@ -1,62 +1,157 @@
 <template>
   <PageContainer>
-    <PageHeader
-      title="运营概览"
-      description="GET /api/console/ops/summary — 依赖当前租户，展示待审批、告警、运行任务等聚合指标。"
-    >
+    <PageHeader title="运营概览" description="GET /api/console/ops/summary?tenantId=">
       <template #actions>
-        <el-button type="primary" :loading="loading" @click="load">刷新</el-button>
+        <el-button type="primary" :icon="Refresh" :loading="loading" @click="load">刷新</el-button>
       </template>
     </PageHeader>
 
-    <SectionCard>
-      <template #header>快照 JSON（联调后改为卡片矩阵）</template>
-      <pre v-if="summary" class="json-preview">{{ formatted }}</pre>
-      <EmptyState v-else-if="!loading" description="暂无数据或接口未就绪" />
+    <div v-if="lastTrace" class="trace-bar">
+      <span class="trace-label">最近 traceId</span>
+      <code class="trace-code">{{ lastTrace }}</code>
+      <el-button size="small" @click="copyTrace">复制</el-button>
+    </div>
+
+    <SectionCard v-if="summary" class="ops-tabs-card">
+      <el-tabs v-model="opsTab" v-hover-tab-activate="true" class="pill-tabs ops-tabs">
+        <el-tab-pane label="卡片指标" name="kpis" />
+        <el-tab-pane label="趋势" name="trend" />
+        <el-tab-pane label="分布" name="dist" />
+        <el-tab-pane label="扩展面板" name="extra" />
+      </el-tabs>
+
+      <div class="ops-panels">
+        <OpsMetricGrid
+          :summary="summary"
+          :active="opsTab === 'kpis'"
+          @go="go"
+          @go-failed-jobs="goFailedJobs"
+        />
+
+        <OpsTrendPanel
+          :active="opsTab === 'trend'"
+          v-model:range-key="rangeKey"
+          :charts-loading="chartsLoading"
+          :chart-theme="chartTheme"
+          :jobs-trend-option="jobsTrendOption"
+          :alerts-trend-option="alertsTrendOption"
+          :outbox-trend-option="outboxTrendOption"
+          @refresh-charts="loadCharts"
+        />
+
+        <OpsDistPanel
+          :active="opsTab === 'dist'"
+          :charts-loading="chartsLoading"
+          :chart-theme="chartTheme"
+          :alert-type-top-n-option="alertTypeTopNOption"
+          :worker-load-top-n-option="workerLoadTopNOption"
+          @refresh-charts="loadCharts"
+        />
+      </div>
+    </SectionCard>
+
+    <OpsExtraPanel
+      v-if="opsTab === 'extra'"
+      :extra-loading="extraLoading"
+      :sla-report="slaReport"
+      :execution-progress="executionProgress"
+      :tenant-usage="tenantUsage"
+      @load-extra="loadExtraPanels"
+    />
+
+    <SectionCard v-else-if="!loading && !summary">
+      <EmptyState
+        description="暂无数据或请求失败（未联调后端时属正常）。请确认 tenantId 与网关。"
+      />
     </SectionCard>
   </PageContainer>
 </template>
 
 <script setup lang="ts">
-  import { ref, computed, onMounted } from 'vue'
-  import { getOpsSummary } from '@/api/ops'
-  import { useTenantStore } from '@/stores/tenant'
+  import { onMounted } from 'vue'
+  import { Refresh } from '@element-plus/icons-vue'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
+  import OpsMetricGrid from './components/OpsMetricGrid.vue'
+  import OpsTrendPanel from './components/OpsTrendPanel.vue'
+  import OpsDistPanel from './components/OpsDistPanel.vue'
+  import OpsExtraPanel from './components/OpsExtraPanel.vue'
+  import { useOpsSummary } from './composables/useOpsSummary'
 
-  const tenant = useTenantStore()
-  const loading = ref(false)
-  const summary = ref<Record<string, unknown> | null>(null)
-
-  const formatted = computed(() =>
-    summary.value ? JSON.stringify(summary.value, null, 2) : '',
-  )
-
-  async function load() {
-    loading.value = true
-    try {
-      summary.value = await getOpsSummary(tenant.tenantId)
-    } catch {
-      summary.value = null
-    } finally {
-      loading.value = false
-    }
-  }
+  const {
+    loading,
+    summary,
+    lastTrace,
+    opsTab,
+    rangeKey,
+    chartsLoading,
+    chartTheme,
+    jobsTrendOption,
+    alertsTrendOption,
+    outboxTrendOption,
+    alertTypeTopNOption,
+    workerLoadTopNOption,
+    extraLoading,
+    slaReport,
+    executionProgress,
+    tenantUsage,
+    load,
+    loadCharts,
+    loadExtraPanels,
+    go,
+    goFailedJobs,
+    copyTrace,
+  } = useOpsSummary()
 
   onMounted(load)
 </script>
 
 <style scoped>
-  .json-preview {
-    margin: 0;
-    padding: 12px;
-    overflow: auto;
-    max-height: 480px;
+  .trace-bar {
+    display: flex;
+    align-items: center;
+    gap: var(--page-block-gap);
+    margin-bottom: 0;
+    padding: var(--page-block-gap) var(--card-inner-padding);
+    font-size: 13px;
+    border-radius: var(--radius-content);
+    border: 1px solid var(--color-border-light);
+    background: var(--color-bg-card);
+  }
+
+  .trace-label {
+    color: var(--color-text-tertiary, #8c8c8c);
+  }
+
+  .trace-code {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
     font-size: 12px;
-    line-height: 1.5;
-    background: var(--color-bg-page);
-    border-radius: 8px;
+  }
+
+  .ops-tabs-card {
+    margin-top: 0;
+  }
+
+  .ops-tabs {
+    margin-top: 2px;
+  }
+
+  .ops-tabs :deep(.el-tabs__content) {
+    display: none;
+  }
+
+  .ops-tabs-card :deep(.el-card__body) {
+    overflow: visible;
+  }
+
+  .ops-panels {
+    position: relative;
+    margin-top: 10px;
+    overflow: visible;
   }
 </style>

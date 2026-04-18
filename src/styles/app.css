@@ -6,14 +6,731 @@
   min-height: 100vh;
 }
 
+/**
+ * DefaultLayout 挂载时由脚本为 html 加上此类：
+ * 锁定整页滚动，纵向滚动仅发生在主内容白卡片 .layout-main__body 内。
+ * 侧栏 / 顶栏 / 主内容三卡片的 hover 放大与阴影由 layout-root 的 --layout-panel-hover-safe 统一留白，避免裁切。
+ * 登录页等无 layout-root 的页面不受影响。
+ */
+html.layout-shell-lock,
+html.layout-shell-lock body {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+html.layout-shell-lock #app {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+html.layout-shell-lock #app > .layout-root {
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  max-height: 100%;
+  overflow: hidden;
+  align-items: stretch;
+}
+
+html.layout-shell-lock .layout-root > .layout-shell.el-container {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  overflow: visible;
+}
+
+html.layout-shell-lock .layout-root > .layout-sidebar.el-aside {
+  min-height: 0;
+  align-self: stretch;
+  max-height: 100%;
+}
+
 .app-page {
   min-height: 100%;
-  padding: var(--space-lg);
+  padding: var(--page-canvas-padding);
 }
 
 .app-surface {
   background: var(--color-bg-card);
   border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-surface);
-  box-shadow: var(--shadow-card);
+  border-radius: var(--radius-content);
+  box-shadow: var(--shadow-surface);
+  transition:
+    transform var(--motion-duration-sm) var(--motion-ease-emphasized),
+    box-shadow var(--motion-duration-md) var(--motion-ease-standard),
+    border-color var(--motion-duration-sm) var(--motion-ease-standard);
+  transform-origin: 50% 50%;
+}
+
+.app-surface:hover {
+  transform: translateY(var(--ui-hover-translate-y)) scale(var(--ui-hover-scale));
+  box-shadow: var(--shadow-surface-hover);
+  border-color: color-mix(in srgb, var(--color-border) 68%, var(--color-primary) 32%);
+}
+
+/** 页内标题区 / 列表主卡片：保留悬浮与阴影，不 scale，避免上下沿顶到视口或被父级裁切 */
+.app-surface.surface-hover-lift-only:hover {
+  transform: translateY(var(--ui-hover-translate-y));
+}
+
+/**
+ * 主白卡片内部（滚动层 .layout-main__body 会裁切 overflow）：页内 app-surface、el-card 仅上浮、不 scale，
+ * 避免标题区 / SectionCard / 内嵌表格左侧或边缘被「啃掉」。侧栏、顶栏、.layout-main__surface 三壳保持原 hover 缩放。
+ */
+.layout-main__content .app-surface:hover {
+  transform: translateY(var(--ui-hover-translate-y));
+  border-color: color-mix(in srgb, var(--color-border) 68%, var(--color-primary) 32%);
+  box-shadow: var(--shadow-surface-hover), var(--surface-hover-edge-inset);
+}
+
+.layout-main__content .el-card:hover {
+  transform: translateY(var(--ui-hover-translate-y));
+  border-color: color-mix(in srgb, var(--color-border) 70%, var(--color-primary) 30%);
+  box-shadow: var(--shadow-surface-hover), var(--surface-hover-edge-inset);
+}
+
+/** 主内容区：键盘焦点在页头 / 区块卡片内时，内描边提示（不依赖 outline，避免被滚动层裁切） */
+.layout-main__content .page-header.app-surface:focus-within:has(:focus-visible) {
+  box-shadow: var(--shadow-surface), inset 0 0 0 2px color-mix(in srgb, var(--color-primary) 42%, transparent);
+}
+
+.layout-main__content .page-header.app-surface:focus-within:has(:focus-visible):hover {
+  box-shadow:
+    var(--shadow-surface-hover),
+    var(--surface-hover-edge-inset),
+    inset 0 0 0 2px color-mix(in srgb, var(--color-primary) 42%, transparent);
+}
+
+.layout-main__content .section-card.el-card:focus-within:has(:focus-visible) {
+  box-shadow:
+    var(--shadow-surface),
+    inset 0 0 0 2px color-mix(in srgb, var(--color-primary) 42%, transparent);
+}
+
+.layout-main__content .section-card.el-card:focus-within:has(:focus-visible):hover {
+  box-shadow:
+    var(--shadow-surface-hover),
+    var(--surface-hover-edge-inset),
+    inset 0 0 0 2px color-mix(in srgb, var(--color-primary) 42%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-surface,
+  .app-surface:hover {
+    transition: none;
+    transform: none;
+  }
+
+  .app-surface.surface-hover-lift-only:hover {
+    transform: none;
+  }
+
+  .layout-main__content .app-surface:hover,
+  .layout-main__content .el-card:hover {
+    transform: none;
+  }
+}
+
+/**
+ * 三主卡片（侧栏 / 顶栏）：在通用 .app-surface 之后声明，覆盖圆角与阴影并叠加顶面内高光。
+ * 主内容壳无 .app-surface，单独一条。
+ */
+.app-surface.layout-panel {
+  border-radius: var(--layout-panel-radius);
+  box-shadow: var(--shadow-surface), inset 0 1px 0 var(--layout-panel-inset-highlight);
+}
+
+.app-surface.layout-panel:hover {
+  box-shadow: var(--shadow-surface-hover), inset 0 1px 0 var(--layout-panel-inset-highlight);
+}
+
+.layout-main__surface.layout-panel {
+  border-radius: var(--layout-panel-radius);
+  box-shadow: var(--shadow-surface), inset 0 1px 0 var(--layout-panel-inset-highlight);
+}
+
+.layout-main__surface.layout-panel:hover {
+  box-shadow: var(--shadow-surface-hover), inset 0 1px 0 var(--layout-panel-inset-highlight);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-surface.layout-panel:hover,
+  .layout-main__surface.layout-panel:hover {
+    box-shadow: var(--shadow-surface), inset 0 1px 0 var(--layout-panel-inset-highlight);
+  }
+}
+
+/* 胶囊卡片式 Tabs（悬浮/选中浮起） */
+.pill-tabs .el-tabs__header {
+  margin: 0 0 10px;
+}
+
+.pill-tabs .el-tabs__content {
+  overflow: visible;
+  padding-top: var(--space-sm);
+}
+
+/**
+ * pill-tabs 内 tab-pane 的统一内间距：
+ * 给 section-toolbar / console-table / data-panel 留出呼吸空间。
+ */
+.pill-tabs .el-tab-pane {
+  min-width: 0;
+  overflow: visible;
+}
+
+/** tab 内首个 section-toolbar 不需要额外 top margin */
+.pill-tabs .el-tab-pane > .section-toolbar:first-child {
+  margin-top: 0;
+}
+
+/** tab 内 console-table 统一圆角 + 溢出裁剪 */
+.pill-tabs .console-table {
+  border-radius: var(--radius-content);
+  overflow: hidden;
+}
+
+/** tab 内 query-form 下方保持间距 */
+.pill-tabs .query-form + .console-table,
+.pill-tabs .section-toolbar + .console-table {
+  margin-top: var(--page-block-gap);
+}
+
+.pill-tabs .el-tabs__nav-wrap::after {
+  display: none;
+}
+
+.pill-tabs .el-tabs__nav-wrap {
+  /* 分段控件底座：先稳住整体，再让单项更克制 */
+  padding: 4px;
+  border-radius: var(--radius-content);
+  background: color-mix(in srgb, var(--color-bg-card) 90%, var(--color-bg-canvas) 10%);
+  border: 1px solid color-mix(in srgb, var(--color-border-light) 70%, var(--color-border) 30%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 55%),
+    0 1px 2px rgb(15 23 42 / 6%);
+}
+
+.pill-tabs .el-tabs__nav {
+  border: none;
+  gap: 6px;
+}
+
+.pill-tabs .el-tabs__active-bar {
+  display: none;
+}
+
+.pill-tabs .el-tabs__item {
+  height: 34px;
+  line-height: 34px;
+  padding: 0 12px;
+  border-radius: var(--radius-content);
+  overflow: hidden;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+  letter-spacing: 0.1px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  user-select: none;
+  transition:
+    box-shadow var(--motion-duration-md) var(--motion-ease-standard),
+    background-color var(--motion-duration-sm) var(--motion-ease-standard),
+    border-color var(--motion-duration-sm) var(--motion-ease-standard),
+    color var(--motion-duration-sm) var(--motion-ease-standard);
+}
+
+.pill-tabs .el-tabs__item:hover {
+  color: var(--color-text-primary);
+  background-color: color-mix(in srgb, var(--color-bg-card) 92%, var(--color-bg-canvas) 8%);
+  border-color: color-mix(in srgb, var(--color-border) 82%, var(--color-primary) 18%);
+}
+
+.pill-tabs .el-tabs__item.is-active {
+  color: color-mix(in srgb, var(--color-primary) 96%, var(--color-text-primary) 4%);
+  background-color: color-mix(in srgb, var(--color-primary) 10%, var(--color-bg-card) 90%);
+  border-color: color-mix(in srgb, var(--color-primary) 24%, var(--color-border) 76%);
+  border-radius: var(--radius-content);
+  box-shadow:
+    0 6px 14px rgb(15 23 42 / 10%),
+    0 0 0 1px rgb(15 23 42 / 3%);
+}
+
+/* Element Plus 会把首/尾 tab 的左右 padding 清零，导致“两边的字不居中”；这里统一回填 */
+.pill-tabs.el-tabs--top > .el-tabs__header .el-tabs__item:nth-child(2),
+.pill-tabs.el-tabs--bottom > .el-tabs__header .el-tabs__item:nth-child(2) {
+  padding-left: 12px !important;
+}
+
+.pill-tabs.el-tabs--top > .el-tabs__header .el-tabs__item:last-child,
+.pill-tabs.el-tabs--bottom > .el-tabs__header .el-tabs__item:last-child {
+  padding-right: 12px !important;
+}
+
+.pill-tabs.el-tabs--left > .el-tabs__header,
+.pill-tabs.el-tabs--right > .el-tabs__header {
+  margin: 0 18px 0 0;
+}
+
+.pill-tabs.el-tabs--left > .el-tabs__header .el-tabs__nav-wrap,
+.pill-tabs.el-tabs--right > .el-tabs__header .el-tabs__nav-wrap {
+  padding: 8px;
+  border-radius: var(--radius-content);
+}
+
+.pill-tabs.el-tabs--left > .el-tabs__header .el-tabs__nav,
+.pill-tabs.el-tabs--right > .el-tabs__header .el-tabs__nav {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pill-tabs.el-tabs--left > .el-tabs__header .el-tabs__item,
+.pill-tabs.el-tabs--right > .el-tabs__header .el-tabs__item {
+  width: 168px;
+  min-height: 52px;
+  height: auto;
+  line-height: 1.25;
+  justify-content: flex-start;
+  padding: 14px 18px !important;
+  text-align: left;
+  border-radius: var(--radius-content);
+}
+
+/* 悬浮即选中时（v-hover-tab-activate）：给 active:hover 一点点“按下反馈”，不跳动 */
+.pill-tabs .el-tabs__item.is-active:hover {
+  background-color: color-mix(in srgb, var(--color-primary) 12%, var(--color-bg-card) 88%);
+  border-color: color-mix(in srgb, var(--color-primary) 28%, var(--color-border) 72%);
+  box-shadow:
+    0 8px 18px rgb(15 23 42 / 12%),
+    0 0 0 1px rgb(15 23 42 / 4%);
+}
+
+.pill-tabs .el-tabs__item:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--color-primary) 42%, transparent 58%);
+  outline-offset: 2px;
+}
+
+/* 深色模式：底座更“黑里透灰”，选中块更干净 */
+:global(html.dark) .pill-tabs .el-tabs__nav-wrap {
+  background: color-mix(in srgb, var(--color-bg-card) 78%, #000 22%);
+  border-color: color-mix(in srgb, var(--color-border-light) 45%, #000 55%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 6%),
+    0 1px 2px rgb(0 0 0 / 45%);
+}
+
+:global(html.dark) .pill-tabs .el-tabs__item:hover {
+  background-color: color-mix(in srgb, var(--color-bg-card) 86%, #ffffff 14%);
+  border-color: color-mix(in srgb, var(--color-border) 86%, #ffffff 14%);
+}
+
+:global(html.dark) .pill-tabs .el-tabs__item.is-active {
+  background-color: color-mix(in srgb, var(--color-primary) 16%, var(--color-bg-card) 84%);
+  border-color: color-mix(in srgb, var(--color-primary) 34%, var(--color-border) 66%);
+  box-shadow:
+    0 10px 22px rgb(0 0 0 / 42%),
+    0 0 0 1px rgb(255 255 255 / 6%);
+}
+
+:global(html.dark) .pill-tabs .el-tabs__item.is-active:hover {
+  background-color: color-mix(in srgb, var(--color-primary) 18%, var(--color-bg-card) 82%);
+  border-color: color-mix(in srgb, var(--color-primary) 38%, var(--color-border) 62%);
+  box-shadow:
+    0 12px 26px rgb(0 0 0 / 46%),
+    0 0 0 1px rgb(255 255 255 / 7%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pill-tabs .el-tabs__item,
+  .pill-tabs .el-tabs__item:hover,
+  .pill-tabs .el-tabs__item.is-active {
+    transition: none;
+    transform: none;
+  }
+}
+
+.pill-segmented {
+  --el-segmented-item-selected-color: color-mix(
+    in srgb,
+    var(--color-primary) 96%,
+    var(--color-text-primary) 4%
+  );
+  --el-segmented-item-selected-bg-color: color-mix(
+    in srgb,
+    var(--color-primary) 10%,
+    var(--color-bg-card) 90%
+  );
+  --el-segmented-item-hover-bg-color: color-mix(in srgb, var(--color-bg-card) 92%, var(--color-bg-canvas) 8%);
+  --el-segmented-bg-color: color-mix(in srgb, var(--color-bg-card) 90%, var(--color-bg-canvas) 10%);
+  --el-segmented-padding: 4px;
+  padding: 4px;
+  border: 1px solid color-mix(in srgb, var(--color-border-light) 70%, var(--color-border) 30%);
+  border-radius: var(--radius-content);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 55%),
+    0 1px 2px rgb(15 23 42 / 6%);
+}
+
+.pill-segmented .el-segmented__item {
+  min-height: 34px;
+  height: 34px;
+  line-height: 34px;
+  padding: 0 12px;
+  border-radius: var(--radius-content);
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+  letter-spacing: 0.1px;
+  color: var(--color-text-secondary);
+  border: 1px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    box-shadow var(--motion-duration-md) var(--motion-ease-standard),
+    border-color var(--motion-duration-sm) var(--motion-ease-standard),
+    background-color var(--motion-duration-sm) var(--motion-ease-standard),
+    color var(--motion-duration-sm) var(--motion-ease-standard);
+}
+
+.pill-segmented .el-segmented__item:hover {
+  color: var(--color-text-primary);
+  background-color: color-mix(in srgb, var(--color-bg-card) 92%, var(--color-bg-canvas) 8%);
+  border-color: color-mix(in srgb, var(--color-border) 82%, var(--color-primary) 18%);
+}
+
+.pill-segmented .el-segmented__item.is-selected {
+  border-color: color-mix(in srgb, var(--color-primary) 24%, var(--color-border) 76%);
+  background-color: color-mix(in srgb, var(--color-primary) 10%, var(--color-bg-card) 90%);
+  box-shadow:
+    0 6px 14px rgb(15 23 42 / 10%),
+    0 0 0 1px rgb(15 23 42 / 3%);
+}
+
+::global(html.dark) .pill-segmented {
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 8%),
+    0 1px 2px rgb(0 0 0 / 45%);
+}
+
+.pill-segmented .el-segmented__item.is-selected:hover {
+  background-color: color-mix(in srgb, var(--color-primary) 12%, var(--color-bg-card) 88%);
+  box-shadow:
+    0 8px 18px rgb(15 23 42 / 12%),
+    0 0 0 1px rgb(15 23 42 / 4%);
+}
+
+::global(html.dark) .pill-segmented .el-segmented__item.is-selected {
+  background-color: color-mix(in srgb, var(--color-primary) 16%, var(--color-bg-card) 84%);
+  border-color: color-mix(in srgb, var(--color-primary) 34%, var(--color-border) 66%);
+  box-shadow:
+    0 10px 22px rgb(0 0 0 / 42%),
+    0 0 0 1px rgb(255 255 255 / 6%);
+}
+
+::global(html.dark) .pill-segmented .el-segmented__item:hover {
+  background-color: color-mix(in srgb, var(--color-bg-card) 86%, #ffffff 14%);
+  border-color: color-mix(in srgb, var(--color-border) 86%, #ffffff 14%);
+}
+
+::global(html.dark) .pill-segmented .el-segmented__item.is-selected:hover {
+  background-color: color-mix(in srgb, var(--color-primary) 18%, var(--color-bg-card) 82%);
+  box-shadow:
+    0 12px 26px rgb(0 0 0 / 46%),
+    0 0 0 1px rgb(255 255 255 / 7%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pill-segmented .el-segmented__item,
+  .pill-segmented .el-segmented__item:hover,
+  .pill-segmented .el-segmented__item.is-selected {
+    transition: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .pill-tabs.el-tabs--left {
+    display: block;
+  }
+
+  .pill-tabs.el-tabs--left > .el-tabs__header {
+    margin: 0 0 14px;
+  }
+
+  .pill-tabs.el-tabs--left > .el-tabs__header .el-tabs__nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .pill-tabs.el-tabs--left > .el-tabs__header .el-tabs__item {
+    width: auto;
+    min-height: 40px;
+    justify-content: center;
+    padding: 0 16px !important;
+    text-align: center;
+  }
+}
+
+/**
+ * 页内区块工具栏（刷新 / 新增等操作按钮），位于表格或内容块上方。
+ * 所有新增页面复用此类，避免在 scoped 中重复声明。
+ */
+.section-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--page-block-gap);
+}
+
+/** 区块标题（SectionCard 内 h3/h4），比 PageHeader 更轻量 */
+.section-title {
+  margin: 0 0 var(--page-block-gap);
+  font-size: var(--font-size-md);
+  font-weight: 700;
+  color: var(--color-text-primary);
+  letter-spacing: -0.01em;
+}
+
+/**
+ * JSON 预览块：等宽字体 + 浅底色容器，诊断/详情页统一视觉。
+ */
+.json-preview {
+  margin: 0;
+  padding: 14px 16px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+  font-size: 12px;
+  line-height: 1.65;
+  color: var(--color-text-primary);
+  background: color-mix(in srgb, var(--color-bg-card) 90%, var(--color-bg-canvas) 10%);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-content);
+  tab-size: 2;
+}
+
+html.dark .json-preview {
+  background: color-mix(in srgb, var(--color-bg-card) 82%, #000 18%);
+  border-color: var(--color-border);
+}
+
+/**
+ * 分割区块：标签查询等页面内"新增/更新"与上方查询结果之间的分隔。
+ */
+.section-divider {
+  margin-top: var(--space-md);
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--color-border-light);
+}
+
+.section-divider__title {
+  margin: 0 0 var(--page-block-gap);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+/**
+ * 空单元格占位符：表格内空值显示"—"时的统一样式。
+ */
+.cell-empty {
+  color: var(--color-text-tertiary);
+  font-style: normal;
+  user-select: none;
+}
+
+/** 表格内可点击链接 — 无下划线，hover 时显示 */
+.cell-link {
+  color: var(--el-color-primary);
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.cell-link:hover {
+  color: var(--el-color-primary-light-3);
+  text-decoration: underline;
+}
+
+/**
+ * 行内代码块：表格内 Cron 表达式、正则等技术值。
+ */
+.cell-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: var(--radius-input);
+  background: color-mix(in srgb, var(--color-bg-card) 88%, var(--color-primary) 12%);
+  border: 1px solid var(--color-border-light);
+  color: var(--color-text-primary);
+  word-break: break-all;
+}
+
+html.dark .cell-code {
+  background: color-mix(in srgb, var(--color-bg-card) 82%, var(--color-primary) 18%);
+}
+
+/** 表单区块：pill-tabs 内嵌表单的标准容器 */
+.form-section {
+  max-width: 520px;
+  margin-top: var(--page-block-gap);
+}
+
+/**
+ * pill-tabs 内未包 form-panel 的 form-section 自动应用面板样式：
+ * 避免每个页面都要手动套 form-panel 容器。
+ */
+.pill-tabs .el-tab-pane > .form-section:not(.form-panel .form-section) {
+  padding: 20px 24px;
+  max-width: 560px;
+  background: color-mix(in srgb, var(--color-bg-card) 94%, var(--color-bg-canvas) 6%);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-content);
+}
+
+html.dark .pill-tabs .el-tab-pane > .form-section:not(.form-panel .form-section) {
+  background: color-mix(in srgb, var(--color-bg-card) 88%, #000 12%);
+}
+
+/**
+ * 表单面板：tab 内嵌表单的视觉容器（带浅底色 + 圆角边框）。
+ * 包裹 .form-section 或独立使用，给裸表单添加"卡中卡"质感。
+ */
+.form-panel {
+  padding: 20px 24px;
+  margin-top: var(--page-block-gap);
+  background: color-mix(in srgb, var(--color-bg-card) 94%, var(--color-bg-canvas) 6%);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-content);
+}
+
+.form-panel .form-section {
+  margin-top: 0;
+}
+
+html.dark .form-panel {
+  background: color-mix(in srgb, var(--color-bg-card) 88%, #000 12%);
+}
+
+/**
+ * 数据面板：tab 内配额/用量等 JSON 预览块的视觉容器，
+ * 与 form-panel 同风格，用于包裹刷新按钮 + 数据展示。
+ */
+.data-panel {
+  padding: 16px 20px;
+  margin-top: var(--page-block-gap);
+  background: color-mix(in srgb, var(--color-bg-card) 94%, var(--color-bg-canvas) 6%);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-content);
+}
+
+.data-panel + .data-panel {
+  margin-top: var(--space-md);
+}
+
+.data-panel .section-toolbar {
+  margin-bottom: var(--space-sm);
+}
+
+.data-panel .json-preview {
+  border: none;
+  background: transparent;
+  padding: 8px 0;
+}
+
+html.dark .data-panel {
+  background: color-mix(in srgb, var(--color-bg-card) 88%, #000 12%);
+}
+
+/**
+ * ListPageQueryBar（.query-form）：与 ProTable #query 槽内布局一致。
+ * 治理页等场景未包 ProTable 时，查询/重置/刷新同样靠右、换行间距一致。
+ */
+.query-form.el-form--inline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  row-gap: var(--space-sm);
+  column-gap: var(--space-md);
+  width: 100%;
+  min-width: 0;
+  margin-bottom: 0;
+}
+
+.query-form.el-form--inline .el-form-item {
+  margin-right: 0;
+  margin-bottom: 0;
+}
+
+.pro-table__query .query-actions,
+.query-form.el-form--inline .query-actions {
+  margin-left: auto;
+}
+
+.pro-table__query .query-form {
+  margin-bottom: 0;
+}
+
+/** 查询条旁说明：轻量卡片样式，避免大段裸文字 */
+.query-form .query-hint {
+  margin: 0;
+  max-width: min(520px, 100%);
+  padding: 6px 12px;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--color-text-secondary);
+  background: color-mix(in srgb, var(--color-bg-card) 92%, var(--color-primary) 8%);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-input);
+}
+
+/**
+ * 深浅色切换：View Transitions API 根快照交叉淡化（由 theme.ts + store 触发）
+ * prefers-reduced-motion 时在脚本侧已回退为瞬切，此处仅调默认时长曲线。
+ */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes vt-theme-root-out {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+    }
+  }
+
+  @keyframes vt-theme-root-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  /* 稍长 + 对称缓入缓出，叠化更柔、更「淡」 */
+  ::view-transition-old(root) {
+    animation: vt-theme-root-out 0.72s cubic-bezier(0.45, 0.02, 0.55, 0.98) both;
+  }
+
+  ::view-transition-new(root) {
+    animation: vt-theme-root-in 0.72s cubic-bezier(0.45, 0.02, 0.55, 0.98) both;
+  }
+
+  /* 过渡期间关掉局部 transition，避免 border/shadow 与整页快照不同步 */
+  html:active-view-transition .app-surface,
+  html:active-view-transition .page-header {
+    transition: none !important;
+  }
+
+  html:active-view-transition .pill-tabs .el-tabs__item {
+    transition: none !important;
+  }
 }

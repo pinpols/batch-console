@@ -2,106 +2,143 @@
   <PageContainer>
     <PageHeader
       title="Job Instance 列表"
-      description="执行实例、状态和分片进度的第一阶段页面骨架。"
-    >
-      <template #actions>
-        <el-button>导出</el-button>
-        <el-button type="primary" @click="loadData">刷新</el-button>
-      </template>
-    </PageHeader>
+      description="分页查询实例；Job Code 从定义接口拉取下拉，亦可手输未列出的编码。"
+    />
 
     <SectionCard>
-      <template #header>
-        <span>查询与列表</span>
-      </template>
+      <ProTable
+        :data="tableRows"
+        :loading="loading"
+        :total="total"
+        v-model:page="query.page"
+        v-model:page-size="query.pageSize"
+        @change="loadData"
+      >
+        <template #query>
+          <ListPageQueryBar
+            :model="query"
+            :filter-busy="loading"
+            :refresh-busy="loading"
+            @search="searchInstances"
+            @reset="resetQuery"
+            @refresh="loadData"
+          >
+            <el-form-item>
+              <template #label>
+                <HelpLabel tip="唯一作业标识，用于调度触发和实例关联">Job Code</HelpLabel>
+              </template>
+              <el-select
+                v-model="query.jobCode"
+                clearable
+                filterable
+                allow-create
+                default-first-option
+                placeholder="选择或输入 jobCode"
+                style="width: 200px"
+              >
+                <el-option v-for="code in jobCodeOptions" :key="code" :label="code" :value="code" />
+              </el-select>
+            </el-form-item>
+            <el-form-item label="状态">
+              <el-select
+                v-model="query.instanceStatus"
+                clearable
+                filterable
+                placeholder="全部实例状态"
+                style="width: 180px"
+              >
+                <el-option
+                  v-for="option in statusOptions"
+                  :key="option.value"
+                  :label="option.label"
+                  :value="option.value"
+                />
+              </el-select>
+            </el-form-item>
+            <el-form-item>
+              <template #label>
+                <HelpLabel tip="按实例创建或执行时间范围筛选">时间范围</HelpLabel>
+              </template>
+              <el-date-picker
+                v-model="dateRange"
+                type="daterange"
+                range-separator="至"
+                start-placeholder="开始日期"
+                end-placeholder="结束日期"
+                value-format="YYYY-MM-DD"
+                style="width: 260px"
+                @change="onDateChange"
+              />
+            </el-form-item>
+          </ListPageQueryBar>
+        </template>
 
-      <el-form :model="query" inline class="query-form">
-        <el-form-item label="Job Code">
-          <el-input v-model="query.jobCode" clearable placeholder="Job Code" style="width: 160px" />
-        </el-form-item>
-        <el-form-item label="状态">
-          <el-select v-model="query.instanceStatus" clearable placeholder="全部" style="width: 140px">
-            <el-option
-              v-for="option in statusOptions"
-              :key="option.value"
-              :label="option.label"
-              :value="option.value"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="时间范围">
-          <el-date-picker
-            v-model="dateRange"
-            type="daterange"
-            range-separator="~"
-            start-placeholder="开始日期"
-            end-placeholder="结束日期"
-            value-format="YYYY-MM-DD"
-            @change="onDateChange"
-          />
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="loadData">查询</el-button>
-          <el-button @click="resetQuery">重置</el-button>
-        </el-form-item>
-      </el-form>
-
-      <el-table :data="rows" v-loading="loading" stripe>
-        <el-table-column prop="instanceNo" label="实例编号" width="180" />
-        <el-table-column prop="jobCode" label="Job Code" width="160" />
+        <el-table-column prop="instanceNo" label="实例编号" width="180">
+          <template #default="{ row }">
+            <router-link class="cell-link" :to="`/monitor/job-instances/${row.id}`">
+              {{ row.instanceNo }}
+            </router-link>
+          </template>
+        </el-table-column>
+        <el-table-column prop="jobCode" label="Job Code" width="140">
+          <template #default="{ row }">
+            <router-link class="cell-link" :to="`/jobs/definitions?jobCode=${row.jobCode}`">
+              {{ row.jobCode }}
+            </router-link>
+          </template>
+        </el-table-column>
         <el-table-column label="状态" width="110">
           <template #default="{ row }">
             <StatusTag :value="row.instanceStatus" />
           </template>
         </el-table-column>
-        <el-table-column label="分片进度" width="160">
+        <el-table-column prop="bizDate" label="业务日" width="110" />
+        <DatetimeColumn prop="startedAt" label="开始时间" width="160" />
+        <el-table-column label="耗时" width="120">
           <template #default="{ row }">
-            {{ row.completedPartitionCount }}/{{ row.expectedPartitionCount }}
-            <span v-if="row.failedPartitionCount > 0" class="failure-hint">
-              (失败 {{ row.failedPartitionCount }})
-            </span>
+            <span>{{ formatDurationMs(calcDurationMs(row.startedAt, row.finishedAt)) }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="startedAt" label="开始时间" width="170" />
-        <el-table-column prop="finishedAt" label="结束时间" width="170" />
-        <el-table-column label="操作" fixed="right" width="180">
+        <el-table-column label="操作" fixed="right" width="200">
           <template #default="{ row }">
-            <el-button link @click="viewDetail(row)">详情</el-button>
-            <el-button link @click="viewPartitions(row)">分片</el-button>
+            <div class="table-actions">
+              <el-button size="small" plain type="primary" @click="viewDetail(row)">详情</el-button>
+              <el-button size="small" plain @click="viewPartitions(row)">步骤</el-button>
+            </div>
           </template>
         </el-table-column>
-      </el-table>
-
-      <div class="pager">
-        <el-pagination
-          v-model:current-page="query.page"
-          v-model:page-size="query.pageSize"
-          :total="total"
-          layout="total, sizes, prev, pager, next"
-          @change="loadData"
-        />
-      </div>
+      </ProTable>
     </SectionCard>
   </PageContainer>
 </template>
 
 <script setup lang="ts">
-  import { ref, reactive, onMounted, watch } from 'vue'
-  import { useRouter } from 'vue-router'
+  import { ref, reactive, computed, onMounted, watch, nextTick } from 'vue'
+  import { useRouter, useRoute } from 'vue-router'
   import { instanceApi } from '@/api/instance'
+  import { jobApi } from '@/api/job'
+  import { useSseAutoReload } from '@/composables/useSseAutoReload'
   import { useTenantStore } from '@/stores/tenant'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
+  import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
+  import ProTable from '@/components/table/ProTable.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
-  import type { JobInstance } from '@/types'
+  import HelpLabel from '@/components/common/HelpLabel.vue'
+  import TenantSelect from '@/components/common/TenantSelect.vue'
+  import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
+  import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
+  import type { ConsoleJobInstanceResponse } from '@/types/console-api'
 
   const router = useRouter()
+  const route = useRoute()
   const tenant = useTenantStore()
   const loading = ref(false)
-  const rows = ref<JobInstance[]>([])
+  const rows = ref<ConsoleJobInstanceResponse[]>([])
   const total = ref(0)
   const dateRange = ref<[string, string] | null>(null)
+  const jobCodeOptions = ref<string[]>([])
 
   const query = reactive({
     tenantId: tenant.tenantId,
@@ -113,36 +150,55 @@
     pageSize: 20,
   })
 
+  const tableRows = computed(() => rows.value as unknown as Record<string, unknown>[])
+
+  const { data: metaEnums } = useConsoleMetaEnumsQuery()
+
+  const statusOptions = computed(() => pickMetaEnumGroup(metaEnums.value, 'instanceStatus'))
+
+  async function loadJobCodes() {
+    try {
+      const defs = await jobApi.listDefinitions(tenant.tenantId)
+      jobCodeOptions.value = [...new Set(defs.map((d) => d.jobCode).filter(Boolean))].sort((a, b) =>
+        a.localeCompare(b),
+      )
+    } catch {
+      jobCodeOptions.value = []
+    }
+  }
+
   watch(
     () => tenant.tenantId,
     (id) => {
       query.tenantId = id
       query.page = 1
+      void loadJobCodes()
       loadData()
     },
   )
 
-  const statusOptions = [
-    { label: 'CREATED', value: 'CREATED' },
-    { label: 'WAITING', value: 'WAITING' },
-    { label: 'RUNNING', value: 'RUNNING' },
-    { label: 'COMPLETED', value: 'COMPLETED' },
-    { label: 'FAILED', value: 'FAILED' },
-    { label: 'CANCELLED', value: 'CANCELLED' },
-  ]
-
   function onDateChange(val: [string, string] | null) {
     query.startDate = val?.[0] ?? ''
     query.endDate = val?.[1] ?? ''
+    query.page = 1
+    loadData()
   }
 
   function resetQuery() {
+    query.tenantId = tenant.tenantId
     query.jobCode = ''
     query.instanceStatus = ''
     query.startDate = ''
     query.endDate = ''
     dateRange.value = null
     query.page = 1
+    syncFiltersToUrl()
+    loadData()
+  }
+
+  function searchInstances() {
+    query.page = 1
+    syncFiltersToUrl()
     loadData()
   }
 
@@ -157,32 +213,69 @@
     }
   }
 
-  function viewDetail(row: JobInstance) {
+  function syncFiltersToUrl() {
+    const params: Record<string, string> = {}
+    if (query.jobCode) params.jobCode = query.jobCode
+    if (query.instanceStatus) params.status = query.instanceStatus
+    if (query.startDate) params.startDate = query.startDate
+    if (query.endDate) params.endDate = query.endDate
+    void router.replace({ query: params })
+  }
+
+  function viewDetail(row: ConsoleJobInstanceResponse) {
     router.push(`/monitor/job-instances/${row.id}`)
   }
 
-  function viewPartitions(row: JobInstance) {
+  function viewPartitions(row: ConsoleJobInstanceResponse) {
     router.push(`/monitor/job-instances/${row.id}/partitions`)
   }
 
+  function toEpochMs(v: unknown): number | null {
+    if (v == null) return null
+    if (typeof v === 'number' && Number.isFinite(v)) return v
+    if (typeof v !== 'string') return null
+    const s = v.trim()
+    if (!s) return null
+    const t = Date.parse(s)
+    return Number.isFinite(t) ? t : null
+  }
+
+  function calcDurationMs(startedAt: unknown, finishedAt: unknown): number | null {
+    const start = toEpochMs(startedAt)
+    if (start == null) return null
+    const end = toEpochMs(finishedAt) ?? Date.now()
+    const d = end - start
+    return d >= 0 ? d : null
+  }
+
+  function formatDurationMs(ms: number | null): string {
+    if (ms == null) return '-'
+    const sec = Math.floor(ms / 1000)
+    const h = Math.floor(sec / 3600)
+    const m = Math.floor((sec % 3600) / 60)
+    const s = sec % 60
+    if (h > 0) return `${h}h ${String(m).padStart(2, '0')}m`
+    if (m > 0) return `${m}m ${String(s).padStart(2, '0')}s`
+    return `${s}s`
+  }
+
+  useSseAutoReload({
+    domain: 'job-instances',
+    reload: loadData,
+    scope: () => tenant.tenantId,
+  })
+
   onMounted(() => {
     query.tenantId = tenant.tenantId
+    const q = route.query
+    if (q.status) query.instanceStatus = String(q.status)
+    if (q.jobCode) query.jobCode = String(q.jobCode)
+    if (q.startDate) query.startDate = String(q.startDate)
+    if (q.endDate) query.endDate = String(q.endDate)
+    if (query.startDate && query.endDate) {
+      dateRange.value = [query.startDate, query.endDate]
+    }
+    void loadJobCodes()
     loadData()
   })
 </script>
-
-<style scoped>
-  .query-form {
-    margin-bottom: var(--space-md);
-  }
-
-  .pager {
-    display: flex;
-    justify-content: flex-end;
-    padding-top: var(--space-lg);
-  }
-
-  .failure-hint {
-    color: var(--color-danger);
-  }
-</style>

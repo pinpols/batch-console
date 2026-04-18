@@ -2,17 +2,335 @@
   <PageContainer>
     <PageHeader
       title="Outbox"
-      description="GET /api/console/query/outbox-retries | outbox-deliveries"
+      description="重试与投递日志分页聚合；状态项为数据中出现值并带常用中文释义（无单独字典接口）。"
     />
+
     <SectionCard>
-      <EmptyState description="TODO: Tab 切换两类查询列表" />
+      <el-tabs v-model="tab" v-hover-tab-activate="true" class="pill-tabs">
+        <el-tab-pane label="重试" name="retry">
+          <ProTable
+            :data="retryRows as unknown as Record<string, unknown>[]"
+            :loading="tableBlocking"
+            :total="retryTotal"
+            v-model:page="retryPage"
+            v-model:page-size="retryPageSize"
+            @change="sliceRetry"
+          >
+            <template #query>
+              <ListPageQueryBar
+                :filter-busy="queryActionBusy"
+                :refresh-busy="loading"
+                :disabled="loading"
+                @search="onRetrySearch"
+                @reset="onRetryReset"
+                @refresh="loadTab"
+              >
+                <el-form-item label="关键字">
+                  <el-input
+                    v-model="retryKwDraft"
+                    clearable
+                    placeholder="事件类型或事件 Key，模糊匹配"
+                    style="width: 220px"
+                    @keyup.enter="onRetrySearch"
+                  />
+                </el-form-item>
+                <el-form-item label="状态">
+                  <el-select
+                    v-model="retryStatusDraft"
+                    clearable
+                    filterable
+                    allow-create
+                    default-first-option
+                    placeholder="重试状态"
+                    style="width: 200px"
+                    @keyup.enter="onRetrySearch"
+                  >
+                    <el-option
+                      v-for="opt in retryStatusSelectOptions"
+                      :key="opt.value"
+                      :label="opt.label"
+                      :value="opt.value"
+                    />
+                  </el-select>
+                </el-form-item>
+              </ListPageQueryBar>
+            </template>
+            <el-table-column prop="eventType" label="事件类型" width="140" />
+            <el-table-column prop="eventKey" label="Key" min-width="160" show-overflow-tooltip />
+            <el-table-column prop="retryStatus" label="状态" width="120">
+              <template #default="{ row }">
+                <StatusTag :value="String(row.retryStatus ?? '')" category="outboxPublishStatus" />
+              </template>
+            </el-table-column>
+            <el-table-column prop="retryCount" label="次数" width="80" />
+            <DatetimeColumn prop="nextRetryAt" label="下次重试" width="160" />
+          </ProTable>
+        </el-tab-pane>
+        <el-tab-pane label="投递" name="delivery">
+          <ProTable
+            :data="deliveryRows as unknown as Record<string, unknown>[]"
+            :loading="tableBlocking"
+            :total="deliveryTotal"
+            v-model:page="deliveryPage"
+            v-model:page-size="deliveryPageSize"
+            @change="sliceDelivery"
+          >
+            <template #query>
+              <ListPageQueryBar
+                :filter-busy="queryActionBusy"
+                :refresh-busy="loading"
+                :disabled="loading"
+                @search="onDeliverySearch"
+                @reset="onDeliveryReset"
+                @refresh="loadTab"
+              >
+                <el-form-item label="关键字">
+                  <el-input
+                    v-model="deliveryKwDraft"
+                    clearable
+                    placeholder="事件类型、Key 或 Topic，模糊匹配"
+                    style="width: 220px"
+                    @keyup.enter="onDeliverySearch"
+                  />
+                </el-form-item>
+                <el-form-item label="状态">
+                  <el-select
+                    v-model="deliveryStatusDraft"
+                    clearable
+                    filterable
+                    allow-create
+                    default-first-option
+                    placeholder="投递状态"
+                    style="width: 200px"
+                    @keyup.enter="onDeliverySearch"
+                  >
+                    <el-option
+                      v-for="opt in deliveryStatusSelectOptions"
+                      :key="opt.value"
+                      :label="opt.label"
+                      :value="opt.value"
+                    />
+                  </el-select>
+                </el-form-item>
+              </ListPageQueryBar>
+            </template>
+            <el-table-column prop="eventType" label="事件类型" width="140" />
+            <el-table-column prop="eventKey" label="Key" min-width="160" show-overflow-tooltip />
+            <el-table-column prop="deliveryStatus" label="状态" width="120">
+              <template #default="{ row }">
+                <StatusTag
+                  :value="String(row.deliveryStatus ?? '')"
+                  category="outboxPublishStatus"
+                />
+              </template>
+            </el-table-column>
+            <el-table-column
+              prop="targetTopic"
+              label="Topic"
+              min-width="140"
+              show-overflow-tooltip
+            />
+            <DatetimeColumn prop="updatedAt" label="更新" width="160" />
+          </ProTable>
+        </el-tab-pane>
+      </el-tabs>
     </SectionCard>
   </PageContainer>
 </template>
 
 <script setup lang="ts">
+  import { computed, ref, watch } from 'vue'
+  import { queryOutboxDeliveries, queryOutboxRetries } from '@/api/observabilityQueries'
+  import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
+  import { useSseAutoReload } from '@/composables/useSseAutoReload'
+  import { useTenantStore } from '@/stores/tenant'
+  import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
+  import { toPageResult } from '@/api/adapters'
+  import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
+  import { uniqueFieldValues } from '@/utils/queryFormOptions'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
-  import EmptyState from '@/components/common/EmptyState.vue'
+  import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
+  import ProTable from '@/components/table/ProTable.vue'
+  import StatusTag from '@/components/common/StatusTag.vue'
+  import type {
+    ConsoleOutboxDeliveryLogResponse,
+    ConsoleOutboxRetryLogResponse,
+  } from '@/types/console-api'
+
+  const tenant = useTenantStore()
+  const tab = ref<'retry' | 'delivery'>('retry')
+  const loading = ref(false)
+  const {
+    filterBusy: queryActionBusy,
+    tableBlocking,
+    runSearch,
+    runReset,
+  } = useListFilterFeedback(loading)
+
+  const retriesAll = ref<ConsoleOutboxRetryLogResponse[]>([])
+  const deliveriesAll = ref<ConsoleOutboxDeliveryLogResponse[]>([])
+
+  const retryRows = ref<ConsoleOutboxRetryLogResponse[]>([])
+  const retryTotal = ref(0)
+  const retryPage = ref(1)
+  const retryPageSize = ref(20)
+  const retryKwDraft = ref('')
+  const retryStatusDraft = ref('')
+  const retryKwApplied = ref('')
+  const retryStatusApplied = ref('')
+
+  const deliveryRows = ref<ConsoleOutboxDeliveryLogResponse[]>([])
+  const deliveryTotal = ref(0)
+  const deliveryPage = ref(1)
+  const deliveryPageSize = ref(20)
+  const deliveryKwDraft = ref('')
+  const deliveryStatusDraft = ref('')
+  const deliveryKwApplied = ref('')
+  const deliveryStatusApplied = ref('')
+
+  const { data: metaEnums } = useConsoleMetaEnumsQuery()
+
+  const retryStatusSelectOptions = computed(() => {
+    const api = pickMetaEnumGroup(metaEnums.value, 'outboxPublishStatus')
+    if (api.length) return api
+    return uniqueFieldValues(retriesAll.value, (row) => row.retryStatus).map((value) => ({
+      value,
+      label: value,
+    }))
+  })
+
+  const deliveryStatusSelectOptions = computed(() => {
+    const api = pickMetaEnumGroup(metaEnums.value, 'outboxPublishStatus')
+    if (api.length) return api
+    return uniqueFieldValues(deliveriesAll.value, (row) => row.deliveryStatus).map((value) => ({
+      value,
+      label: value,
+    }))
+  })
+
+  const filteredRetries = computed(() => {
+    let r = retriesAll.value
+    const k = retryKwApplied.value.trim().toLowerCase()
+    if (k) {
+      r = r.filter(
+        (row) =>
+          row.eventType?.toLowerCase().includes(k) || row.eventKey?.toLowerCase().includes(k),
+      )
+    }
+    const s = retryStatusApplied.value.trim()
+    if (s) r = r.filter((row) => String(row.retryStatus ?? '') === s)
+    return r
+  })
+
+  const filteredDeliveries = computed(() => {
+    let r = deliveriesAll.value
+    const k = deliveryKwApplied.value.trim().toLowerCase()
+    if (k) {
+      r = r.filter(
+        (row) =>
+          row.eventType?.toLowerCase().includes(k) ||
+          row.eventKey?.toLowerCase().includes(k) ||
+          String(row.targetTopic ?? '')
+            .toLowerCase()
+            .includes(k),
+      )
+    }
+    const s = deliveryStatusApplied.value.trim()
+    if (s) r = r.filter((row) => String(row.deliveryStatus ?? '') === s)
+    return r
+  })
+
+  function sliceRetry() {
+    const pr = toPageResult(filteredRetries.value, retryPage.value, retryPageSize.value)
+    retryRows.value = pr.records as ConsoleOutboxRetryLogResponse[]
+    retryTotal.value = pr.total
+  }
+
+  function sliceDelivery() {
+    const pr = toPageResult(filteredDeliveries.value, deliveryPage.value, deliveryPageSize.value)
+    deliveryRows.value = pr.records as ConsoleOutboxDeliveryLogResponse[]
+    deliveryTotal.value = pr.total
+  }
+
+  function onRetrySearch() {
+    return runSearch(() => {
+      retryKwApplied.value = retryKwDraft.value.trim()
+      retryStatusApplied.value = retryStatusDraft.value.trim()
+      retryPage.value = 1
+      sliceRetry()
+    })
+  }
+
+  function onRetryReset() {
+    return runReset(() => {
+      retryKwDraft.value = ''
+      retryStatusDraft.value = ''
+      retryKwApplied.value = ''
+      retryStatusApplied.value = ''
+      retryPage.value = 1
+      sliceRetry()
+    })
+  }
+
+  function onDeliverySearch() {
+    return runSearch(() => {
+      deliveryKwApplied.value = deliveryKwDraft.value.trim()
+      deliveryStatusApplied.value = deliveryStatusDraft.value.trim()
+      deliveryPage.value = 1
+      sliceDelivery()
+    })
+  }
+
+  function onDeliveryReset() {
+    return runReset(() => {
+      deliveryKwDraft.value = ''
+      deliveryStatusDraft.value = ''
+      deliveryKwApplied.value = ''
+      deliveryStatusApplied.value = ''
+      deliveryPage.value = 1
+      sliceDelivery()
+    })
+  }
+
+  async function loadTab() {
+    loading.value = true
+    try {
+      if (tab.value === 'retry') {
+        retriesAll.value = await queryOutboxRetries(tenant.tenantId, {
+          retryStatus: retryStatusApplied.value.trim() || undefined,
+        })
+        retryPage.value = 1
+        sliceRetry()
+      } else {
+        deliveriesAll.value = await queryOutboxDeliveries(tenant.tenantId, {
+          deliveryStatus: deliveryStatusApplied.value.trim() || undefined,
+        })
+        deliveryPage.value = 1
+        sliceDelivery()
+      }
+    } finally {
+      loading.value = false
+    }
+  }
+
+  watch(
+    () => tenant.tenantId,
+    () => loadTab(),
+  )
+
+  watch(tab, () => loadTab(), { immediate: true })
+
+  useSseAutoReload({
+    domain: 'outbox-retries',
+    reload: () => (tab.value === 'retry' ? loadTab() : Promise.resolve()),
+    scope: () => tenant.tenantId,
+  })
+
+  useSseAutoReload({
+    domain: 'outbox-deliveries',
+    reload: () => (tab.value === 'delivery' ? loadTab() : Promise.resolve()),
+    scope: () => tenant.tenantId,
+  })
 </script>

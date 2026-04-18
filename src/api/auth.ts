@@ -1,4 +1,5 @@
 import { get, post } from '@/api/client'
+
 import type { Role, UserInfo } from '@/types'
 
 export interface LoginParams {
@@ -6,7 +7,7 @@ export interface LoginParams {
   password: string
 }
 
-/** POST /api/console/auth/token 解包后的 data */
+/** POST /api/console/auth/login 解包后的 data */
 export interface ConsoleAuthTokenPayload {
   accessToken: string
   tokenType: string
@@ -31,11 +32,6 @@ function mapAuthoritiesToRole(authorities: string[]): Role {
   return 'VIEWER'
 }
 
-function basicAuthHeader(username: string, password: string) {
-  const raw = unescape(encodeURIComponent(`${username}:${password}`))
-  return `Basic ${btoa(raw)}`
-}
-
 export function mapProfileToUserInfo(p: ConsoleAuthProfilePayload): UserInfo {
   return {
     userId: p.username,
@@ -47,11 +43,10 @@ export function mapProfileToUserInfo(p: ConsoleAuthProfilePayload): UserInfo {
 
 export const authApi = {
   login: async (params: LoginParams) => {
-    const payload = await post<ConsoleAuthTokenPayload>(
-      '/api/console/auth/token',
-      {},
-      { headers: { Authorization: basicAuthHeader(params.username, params.password) } },
-    )
+    const payload = await post<ConsoleAuthTokenPayload>('/api/console/auth/login', {
+      username: params.username,
+      password: params.password,
+    })
     return {
       token: payload.accessToken,
       userInfo: mapProfileToUserInfo({
@@ -68,6 +63,9 @@ export const authApi = {
     const profile = await get<ConsoleAuthProfilePayload>('/api/console/auth/me')
     return mapProfileToUserInfo(profile)
   },
+
+  /** POST /api/console/auth/token — exchange current session for JWT */
+  token: () => post<ConsoleAuthTokenPayload>('/api/console/auth/token', undefined),
 
   /** Console API 无单独 logout 端点时仅前端清态 */
   logout: () => Promise.resolve(),

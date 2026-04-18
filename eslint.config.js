@@ -26,7 +26,8 @@ export default [
       ...vue.configs['flat/recommended'].rules,
       ...prettier.rules,
       'vue/multi-word-component-names': 'off',
-      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-explicit-any': 'warn',
+      'no-console': ['warn', { allow: ['warn', 'error'] }],
     },
   },
 ]

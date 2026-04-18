@@ -11,13 +11,20 @@
 
 <style scoped>
   .section-card {
-    border: 1px solid var(--color-border-light);
+    border: none;
+    border-radius: var(--radius-content);
+  }
+
+  .section-card :deep(.el-card__body) {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
   }
 
   .section-card__header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: var(--space-md);
+    gap: var(--space-sm);
   }
 </style>

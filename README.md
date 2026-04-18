@@ -36,7 +36,7 @@ npm run preview
 
 本地默认通过 Vite 代理把 `/api` 转发到后端：
 
-- 后端地址：`http://localhost:8080`
+- 后端地址：`http://localhost:18080`（与 `docs/api/console-api.openapi.yaml` 中 `servers` 一致，可在 `.env.development` 的 `VITE_DEV_PROXY_TARGET` 覆盖）
 - 代理配置：`vite.config.ts`
 
 环境变量：

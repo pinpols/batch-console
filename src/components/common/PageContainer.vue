@@ -8,7 +8,7 @@
   .page-container {
     display: flex;
     flex-direction: column;
-    gap: var(--space-lg);
+    gap: var(--page-section-gap);
     min-height: 100%;
   }
 </style>
