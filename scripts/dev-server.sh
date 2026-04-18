@@ -95,9 +95,10 @@ start_foreground() {
   cd "$ROOT_DIR"
   remove_stale_pid
 
+  # 已有后台实例：先停掉，前台启动始终接管端口
   if is_running; then
-    echo "Frontend dev server is already running in background with PID $(cat "$PID_FILE"). Stop it first with 'make stop'."
-    exit 1
+    echo "Detected background dev server (PID $(cat "$PID_FILE")). Stopping it to take over."
+    stop_background
   fi
 
   kill_port_processes
