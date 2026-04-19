@@ -28,3 +28,14 @@
 
 - **切换租户重取**：任何依赖 `tenant.tenantId` 的视图，统一用 `useTenantReload(loadFn)`（`src/composables/useTenantReload.ts`），不要再手写 `onMounted + watch(tenant.tenantId)` 组合。TanStack Query 场景把 `tenant.tenantId` 写进 `queryKey` 即可，无需该组合式。
 - **XSS 兜底**：原生 `v-html` 已被 ESLint 禁用（`vue/no-v-html: error`）。任何需要以 HTML 渲染的字符串，使用 `v-safe-html="content"` 指令（内部走 DOMPurify）；手动 `innerHTML = ...` 场景请先经 `purifyHtml()`（`src/utils/safeHtml.ts`）。**不信任后端是否已转义**——前端独立过滤。
+
+### 测试范围约定
+
+- **移动端（`/m/*` 路由、`src/views-mobile/`、`src/layout-mobile/`）不写自动化测试**（既不写 Vitest 单测，也不写 Playwright e2e）。理由：
+  - 移动端视图是桌面 API 的轻量壳，业务逻辑全部复用（stores / api / composables 已有单测覆盖）
+  - Playwright 仅在 Desktop Chrome 跑，mobile 手势（下拉刷新、触屏滚动）无法在当前 e2e 环境稳定复现
+  - 维护收益 << 重复成本，靠手工在真机上回归即可
+- 发生以下情况才要补测：
+  - 移动端新增**独立于桌面的业务逻辑**（非桌面 API 薄封装），则针对该逻辑单元写 Vitest 单测
+  - 移动端出现**桌面未暴露的回归 bug**，用单测固化防回归
+- 桌面端（`src/views/`、`src/layout/`、非 mobile 的 composables）照旧要求：关键业务逻辑 Vitest 覆盖，e2e 覆盖主要用户路径。
