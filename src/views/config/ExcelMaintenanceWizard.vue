@@ -212,14 +212,27 @@
               </div>
 
               <div class="excel-wizard__footer">
-                <el-button :disabled="step <= 0" @click="step--">上一步</el-button>
-                <el-button
-                  type="primary"
-                  :disabled="step >= 2 || (step === 0 && !uploadToken)"
-                  @click="step++"
-                >
-                  下一步
-                </el-button>
+                <el-tooltip content="上一步" placement="top">
+                  <button
+                    class="wizard-nav wizard-nav--prev"
+                    :disabled="step <= 0"
+                    aria-label="上一步"
+                    @click="step--"
+                  >
+                    <el-icon><ArrowLeft /></el-icon>
+                  </button>
+                </el-tooltip>
+                <span class="wizard-nav__progress">{{ step + 1 }} / 3</span>
+                <el-tooltip content="下一步" placement="top">
+                  <button
+                    class="wizard-nav wizard-nav--next"
+                    :disabled="step >= 2 || (step === 0 && !uploadToken)"
+                    aria-label="下一步"
+                    @click="step++"
+                  >
+                    <el-icon><ArrowRight /></el-icon>
+                  </button>
+                </el-tooltip>
               </div>
             </div>
           </el-tab-pane>
@@ -232,7 +245,7 @@
 <script setup lang="ts">
   import { computed, ref, watch } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
-  import { Document, Upload, WarningFilled } from '@element-plus/icons-vue'
+  import { ArrowLeft, ArrowRight, Document, Upload, WarningFilled } from '@element-plus/icons-vue'
   import type { UploadFile } from 'element-plus'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import {
@@ -703,13 +716,78 @@
 
   .excel-wizard__footer {
     display: flex;
-    flex-wrap: wrap;
+    align-items: center;
     justify-content: center;
-    gap: var(--page-block-gap);
-    margin: var(--space-sm) 0 0;
+    gap: 20px;
+    margin: var(--space-lg) auto 0;
     padding: var(--page-block-gap) 0 0;
-    background: var(--el-fill-color-lighter, rgb(0 0 0 / 3%));
     border-top: 1px solid var(--color-border-light);
+  }
+
+  .wizard-nav {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 1px solid var(--color-border);
+    background: var(--color-bg-card);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    outline: none;
+    transition:
+      transform 0.15s ease,
+      box-shadow 0.18s ease,
+      color 0.15s ease,
+      background 0.15s ease,
+      border-color 0.15s ease;
+  }
+
+  .wizard-nav :deep(.el-icon) {
+    font-size: 18px;
+  }
+
+  .wizard-nav:not(:disabled):hover {
+    color: var(--color-primary);
+    border-color: color-mix(in srgb, var(--color-primary) 44%, var(--color-border) 56%);
+    background: color-mix(in srgb, var(--color-primary) 10%, var(--color-bg-card) 90%);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 18px rgb(15 23 42 / 10%);
+  }
+
+  .wizard-nav:not(:disabled):active {
+    transform: translateY(0);
+  }
+
+  .wizard-nav:focus-visible {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 28%, transparent 72%);
+  }
+
+  .wizard-nav:disabled {
+    opacity: 0.38;
+    cursor: not-allowed;
+  }
+
+  .wizard-nav--next:not(:disabled) {
+    color: #fff;
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+  }
+
+  .wizard-nav--next:not(:disabled):hover {
+    background: color-mix(in srgb, var(--color-primary) 86%, #000 14%);
+    color: #fff;
+  }
+
+  .wizard-nav__progress {
+    min-width: 48px;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: var(--color-text-tertiary);
+    text-align: center;
+    font-variant-numeric: tabular-nums;
   }
 
   .mt {
