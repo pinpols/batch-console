@@ -23,8 +23,10 @@ module.exports = defineConfig({
   use: {
     baseURL: 'http://localhost:5173',
     storageState: 'e2e/.auth/user.json',
-    navigationTimeout: 10_000,
-    actionTimeout: 5_000,
+    // 4-worker 并发对 dev server + backend 的压力较大，偶发 page.goto 10s
+    // 和 click 5s 超时都不是代码 bug；给出更稳的预算
+    navigationTimeout: 15_000,
+    actionTimeout: 10_000,
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
