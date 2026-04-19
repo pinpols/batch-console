@@ -172,19 +172,21 @@ async function exportTenantPackageFixture(token) {
   }
 }
 
+/**
+ * 租户配置包 seed xlsx 的源在后端仓库下，前端仅引用不再保存副本，
+ * 防止两份文件漂移（权威源：
+ * file-batch-system/docs/test-data/test-full-coverage-import-suite/README.md）。
+ * 相对路径规则：batch-console 与 file-batch-system 同级目录。
+ */
+const SEED_SUITE_DIR = path.resolve(
+  __dirname,
+  '../../file-batch-system/docs/test-data/test-full-coverage-import-suite',
+)
+
 const TENANT_EXCELS = [
-  {
-    tenantId: 'ta',
-    file: path.resolve(__dirname, '../test-excel-abc/ta-tenant-config-package-test.xlsx'),
-  },
-  {
-    tenantId: 'tb',
-    file: path.resolve(__dirname, '../test-excel-abc/tb-tenant-config-package-test.xlsx'),
-  },
-  {
-    tenantId: 'tc',
-    file: path.resolve(__dirname, '../test-excel-abc/tc-tenant-config-package-test.xlsx'),
-  },
+  { tenantId: 'ta', file: path.join(SEED_SUITE_DIR, 'ta-tenant-config-package-test.xlsx') },
+  { tenantId: 'tb', file: path.join(SEED_SUITE_DIR, 'tb-tenant-config-package-test.xlsx') },
+  { tenantId: 'tc', file: path.join(SEED_SUITE_DIR, 'tc-tenant-config-package-test.xlsx') },
 ]
 
 /**

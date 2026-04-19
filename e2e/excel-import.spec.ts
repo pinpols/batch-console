@@ -6,16 +6,24 @@ import { enterDemoApp, expectPageTitle, isVisible } from './support/app'
 /**
  * Excel 导入测试 — 覆盖单域维护向导 + 合并导入（租户配置包）
  *
- * fixture 文件由 global-setup.js 在 seeding 后自动导出：
- *   test-excel-abc/resource-queues-export.xlsx   ← 单域上传链路测试
- *   test-excel-abc/tenant-package-export.xlsx    ← 租户包上传链路测试
- * 若 fixture 文件不存在（后端离线），上传链路测试会被跳过，其余 UI 测试正常运行。
+ * fixture 来源：
+ *  - export 文件由 global-setup 运行时从后端导出至前端 test-excel-abc/（gitignore）
+ *  - seed (ta) 文件权威副本在后端仓库，前端仅引用避免双份漂移：
+ *      ../file-batch-system/docs/test-data/test-full-coverage-import-suite/
+ *
+ * 任一 fixture 文件不存在（后端离线 / global-setup 未跑）时，上传链路测试
+ * 会被跳过，其余 UI 测试正常运行。
  */
+
+const SEED_SUITE_DIR = path.resolve(
+  __dirname,
+  '../../file-batch-system/docs/test-data/test-full-coverage-import-suite',
+)
 
 const FIXTURES = {
   domain: path.resolve(__dirname, '../test-excel-abc/resource-queues-export.xlsx'),
   tenantPackage: path.resolve(__dirname, '../test-excel-abc/tenant-package-export.xlsx'),
-  seedA: path.resolve(__dirname, '../test-excel-abc/ta-tenant-config-package-test.xlsx'),
+  seedA: path.join(SEED_SUITE_DIR, 'ta-tenant-config-package-test.xlsx'),
 }
 
 // ─── 单域 Excel 维护 ───────────────────────────────────────────────

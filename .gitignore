@@ -26,3 +26,9 @@ e2e/.auth/
 # Claude Code 本地运行时状态
 .claude/
 test-results-full/
+
+# e2e 用的 Excel fixture：seed 文件权威源在后端仓库（file-batch-system/
+# docs/test-data/test-full-coverage-import-suite/），前端不再保存副本；
+# export 文件由 global-setup 运行时生成，属本地产物。
+/test-excel-abc/*.xlsx
+/test-excel-abc/.DS_Store
