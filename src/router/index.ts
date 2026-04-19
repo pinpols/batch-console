@@ -3,7 +3,14 @@ import { useAuthStore } from '@/stores/auth'
 import { usePermissionStore } from '@/stores/permission'
 import { useRouteProgressStore } from '@/stores/routeProgress'
 import { logRoute } from '@/utils/logger'
+import { isMobile } from '@/layout-mobile/composables/useMobileDetect'
 import type { Role } from '@/types'
+
+/**
+ * 移动端仅覆盖关键 5 页。桌面其它路径在移动设备上不自动跳，
+ * 但首次落到根路径 / /ops/summary 时会被判断为"首页场景"引导到 /m。
+ */
+const MOBILE_AUTO_REDIRECT_PATHS = new Set<string>(['/', '/ops/summary'])
 
 const routes = [
   {
@@ -497,6 +504,45 @@ const routes = [
       { path: 'self-service/jobs', redirect: '/self-service' },
     ],
   },
+  // ─── Mobile 独立路由（/m/*）—— 桌面层级零耦合，共享 store/api/composables ───
+  {
+    path: '/m',
+    component: () => import('@/layout-mobile/MobileLayout.vue'),
+    meta: { requiresAuth: true, mobile: true },
+    redirect: '/m/ops/summary',
+    children: [
+      {
+        path: 'ops/summary',
+        name: 'm-ops-summary',
+        component: () => import('@/views-mobile/MOpsSummary.vue'),
+        meta: { title: '运营概览', minRole: 'VIEWER' },
+      },
+      {
+        path: 'approvals',
+        name: 'm-approvals',
+        component: () => import('@/views-mobile/MApprovals.vue'),
+        meta: { title: '审批中心', minRole: 'OPERATOR' },
+      },
+      {
+        path: 'alerts',
+        name: 'm-alerts',
+        component: () => import('@/views-mobile/MAlerts.vue'),
+        meta: { title: '告警', minRole: 'VIEWER' },
+      },
+      {
+        path: 'jobs',
+        name: 'm-jobs',
+        component: () => import('@/views-mobile/MJobInstances.vue'),
+        meta: { title: 'Job Instance', minRole: 'VIEWER' },
+      },
+      {
+        path: 'catchup',
+        name: 'm-catchup',
+        component: () => import('@/views-mobile/MCatchUp.vue'),
+        meta: { title: 'Catch-up 审批', minRole: 'VIEWER' },
+      },
+    ],
+  },
   {
     path: '/:pathMatch(.*)*',
     name: 'not-found',
@@ -521,6 +567,16 @@ router.beforeEach(async (to, from) => {
   if (to.meta.requiresAuth === false) return true
 
   if (!auth.isLoggedIn) return { name: 'login', query: { redirect: to.fullPath } }
+
+  // 移动设备访问桌面首页时自动跳到移动端。?desktop=1 可强制留在桌面版。
+  if (
+    MOBILE_AUTO_REDIRECT_PATHS.has(to.path) &&
+    to.query.desktop !== '1' &&
+    isMobile() &&
+    !to.path.startsWith('/m')
+  ) {
+    return { path: '/m/ops/summary' }
+  }
 
   if (!auth.userInfo) {
     try {

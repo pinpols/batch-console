@@ -1,0 +1,225 @@
+/**
+ * 移动端通用样式 tokens —— 在 MobileLayout 挂载时 import 即可。
+ * 所有 mobile 视图共享此基础。
+ */
+
+.m-page {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.m-page__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 2px;
+}
+
+.m-page__title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  letter-spacing: 0.02em;
+}
+
+.m-page__subtitle {
+  font-size: 12px;
+  color: var(--color-text-tertiary);
+  margin-top: 2px;
+}
+
+.m-page__refresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  border-radius: 16px;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-card);
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.m-page__refresh:active {
+  opacity: 0.6;
+}
+
+.m-card {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border-light);
+  border-radius: 12px;
+  padding: 12px 14px;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 4%);
+}
+
+.m-card + .m-card {
+  margin-top: 10px;
+}
+
+.m-card__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.m-card__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.m-card__sub {
+  font-size: 12px;
+  color: var(--color-text-tertiary);
+  margin-top: 4px;
+}
+
+.m-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.m-card__meta-key {
+  color: var(--color-text-tertiary);
+  margin-right: 2px;
+}
+
+.m-card__actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.m-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-card);
+  color: var(--color-text-primary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.m-btn:active {
+  transform: scale(0.97);
+}
+
+.m-btn--primary {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
+}
+
+.m-btn--danger {
+  background: var(--el-color-danger);
+  border-color: var(--el-color-danger);
+  color: #fff;
+}
+
+.m-btn--plain-danger {
+  color: var(--el-color-danger);
+  border-color: color-mix(in srgb, var(--el-color-danger) 40%, var(--color-border) 60%);
+}
+
+.m-metric-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.m-metric {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border-light);
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.m-metric__label {
+  font-size: 12px;
+  color: var(--color-text-tertiary);
+}
+
+.m-metric__value {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.m-metric__value--danger {
+  color: var(--el-color-danger);
+}
+
+.m-metric__value--warning {
+  color: var(--el-color-warning);
+}
+
+.m-metric__value--success {
+  color: var(--el-color-success);
+}
+
+.m-empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--color-text-tertiary);
+  font-size: 13px;
+}
+
+.m-loading {
+  padding: 40px 20px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--color-text-tertiary);
+}
+
+.m-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.4;
+  background: var(--el-fill-color-lighter);
+  color: var(--color-text-secondary);
+}
+
+.m-chip--info {
+  background: color-mix(in srgb, var(--color-primary) 14%, transparent 86%);
+  color: var(--color-primary);
+}
+
+.m-chip--success {
+  background: color-mix(in srgb, var(--el-color-success) 14%, transparent 86%);
+  color: var(--el-color-success);
+}
+
+.m-chip--warning {
+  background: color-mix(in srgb, var(--el-color-warning) 14%, transparent 86%);
+  color: var(--el-color-warning);
+}
+
+.m-chip--danger {
+  background: color-mix(in srgb, var(--el-color-danger) 14%, transparent 86%);
+  color: var(--el-color-danger);
+}
