@@ -22,3 +22,7 @@ e2e/.auth/
 
 # Local session memory
 .remember/
+
+# Claude Code 本地运行时状态
+.claude/
+test-results-full/
