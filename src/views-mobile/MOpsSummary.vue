@@ -81,6 +81,7 @@
   import { Refresh } from '@element-plus/icons-vue'
   import { ElMessage } from 'element-plus'
   import { useTenantStore } from '@/stores/tenant'
+  import { useAutoRefresh } from '@/composables/useAutoRefresh'
   import { getOpsSummary } from '@/api/ops'
   import type { ConsoleOpsSummaryResponse } from '@/types/console-api'
 
@@ -102,4 +103,6 @@
 
   onMounted(load)
   watch(() => tenant.tenantId, load)
+  // 30s 轮询：页面在前台时自动刷新，切后台时暂停（oncall 场景）
+  useAutoRefresh(load, 30_000)
 </script>

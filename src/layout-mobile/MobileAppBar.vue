@@ -5,7 +5,7 @@
       <div class="mobile-appbar__title">{{ title }}</div>
     </div>
     <div class="mobile-appbar__right">
-      <el-popover placement="bottom-end" :width="220" trigger="click">
+      <el-popover placement="bottom-end" :width="290" trigger="click">
         <template #reference>
           <button class="mobile-appbar__btn" aria-label="账号菜单">
             <el-icon><User /></el-icon>
@@ -20,11 +20,38 @@
             <span class="mobile-appbar__key">角色</span>
             <span class="mobile-appbar__val">{{ auth.role ?? '—' }}</span>
           </div>
-          <div class="mobile-appbar__row">
+
+          <!-- 租户：有切换权限显示下拉，否则只读 -->
+          <div class="mobile-appbar__tenant">
             <span class="mobile-appbar__key">租户</span>
-            <span class="mobile-appbar__val">{{ tenant.tenantId }}</span>
+            <TenantSelect
+              v-if="canSwitchTenant"
+              :model-value="tenant.tenantId"
+              size="small"
+              placeholder="切换租户"
+              select-style="width: 190px"
+              @update:model-value="handleTenantSwitch"
+            />
+            <span v-else class="mobile-appbar__val">{{ tenant.tenantId }}</span>
           </div>
+
           <el-divider style="margin: 10px 0" />
+
+          <!-- 主题切换 -->
+          <div class="mobile-appbar__row mobile-appbar__row--clickable" @click="app.toggleTheme()">
+            <span class="mobile-appbar__key">
+              <el-icon class="mobile-appbar__icon">
+                <Monitor v-if="app.themePreference === 'system'" />
+                <Sunny v-else-if="app.themePreference === 'light'" />
+                <Moon v-else />
+              </el-icon>
+              主题
+            </span>
+            <span class="mobile-appbar__val">{{ themeLabel }}</span>
+          </div>
+
+          <el-divider style="margin: 10px 0" />
+
           <a class="mobile-appbar__link" @click="goDesktop">切换到桌面版</a>
           <el-popconfirm
             title="确认退出登录？"
@@ -45,18 +72,34 @@
 <script setup lang="ts">
   import { computed } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
-  import { User } from '@element-plus/icons-vue'
+  import { User, Monitor, Moon, Sunny } from '@element-plus/icons-vue'
+  import { ElMessage } from 'element-plus'
   import { useAuthStore } from '@/stores/auth'
   import { useTenantStore } from '@/stores/tenant'
   import { useTabsStore } from '@/stores/tabs'
+  import { useAppStore } from '@/stores/app'
+  import { canSwitchTenant as checkCanSwitchTenant } from '@/utils/tenantAccess'
+  import TenantSelect from '@/components/common/TenantSelect.vue'
 
   const route = useRoute()
   const router = useRouter()
   const auth = useAuthStore()
   const tenant = useTenantStore()
   const tabsStore = useTabsStore()
+  const app = useAppStore()
 
   const title = computed(() => (route.meta.title as string) || '批量调度平台')
+  const canSwitchTenant = computed(() => checkCanSwitchTenant(auth.userInfo?.permissions ?? []))
+  const themeLabel = computed(() => {
+    switch (app.themePreference) {
+      case 'light':
+        return '浅色'
+      case 'dark':
+        return '深色'
+      default:
+        return '跟随系统'
+    }
+  })
 
   async function handleLogout() {
     await auth.logout()
@@ -64,10 +107,19 @@
     router.push('/login')
   }
 
+  function handleTenantSwitch(newTenantId: string) {
+    if (!newTenantId) return
+    tenant.setTenantId(newTenantId)
+    ElMessage.success(`已切换到 ${newTenantId}`)
+    auth.fetchMe().catch((err) => {
+      if (import.meta.env.DEV) console.warn('[mobile tenant-switch] fetchMe failed:', err)
+    })
+  }
+
   function goDesktop() {
-    // 把当前移动路径映射到桌面路径（去掉 /m 前缀）
+    // 把当前移动路径映射到桌面路径（去掉 /m 前缀），并显式 ?desktop=1 禁用反向跳回
     const desktopPath = route.path.replace(/^\/m(\/|$)/, '/')
-    router.push(desktopPath || '/')
+    router.push({ path: desktopPath || '/', query: { desktop: '1' } })
   }
 </script>
 
@@ -175,5 +227,29 @@
 
   .mobile-appbar__link--danger {
     color: var(--el-color-danger);
+  }
+
+  .mobile-appbar__tenant {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 6px 4px;
+  }
+
+  .mobile-appbar__row--clickable {
+    cursor: pointer;
+    border-radius: 6px;
+    transition: background 0.15s ease;
+  }
+
+  .mobile-appbar__row--clickable:active {
+    background: var(--el-fill-color-light);
+  }
+
+  .mobile-appbar__icon {
+    margin-right: 6px;
+    vertical-align: -2px;
+    font-size: 15px;
   }
 </style>

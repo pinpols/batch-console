@@ -43,6 +43,7 @@
   import { Refresh } from '@element-plus/icons-vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { useTenantStore } from '@/stores/tenant'
+  import { useAutoRefresh } from '@/composables/useAutoRefresh'
   import { queryAlertsAll } from '@/api/alertsQuery'
   import { acknowledgeAlert, silenceAlert, closeAlert } from '@/api/alertsCommands'
   import type { ConsoleAlertEventResponse } from '@/types/console-api'
@@ -137,4 +138,6 @@
 
   onMounted(load)
   watch(() => tenant.tenantId, load)
+  // oncall 关键页：20s 轮询，切后台时暂停
+  useAutoRefresh(load, 20_000)
 </script>
