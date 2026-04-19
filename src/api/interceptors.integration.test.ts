@@ -141,6 +141,51 @@ describe('API 4xx 错误日志:trace / request / response / error 全部保留',
   })
 })
 
+describe('401 分级处理:业务 401 不登出', () => {
+  function make401Adapter(url: string) {
+    return async (cfg: { url?: string }) => {
+      throw Object.assign(new Error('Request failed with status code 401'), {
+        isAxiosError: true,
+        response: {
+          status: 401,
+          statusText: 'Unauthorized',
+          headers: {},
+          data: { code: 'UNAUTHORIZED', message: 'x', meta: {} },
+          config: cfg,
+        },
+        config: { ...cfg, url },
+      })
+    }
+  }
+
+  it('/api/console/auth/me 401 → 清 token + 跳 /login', async () => {
+    ;(window as { location: { href: string } }).location.href = '/'
+    const client = makeClient()
+    client.defaults.adapter = make401Adapter('/api/console/auth/me') as never
+    await expect(client.get('/api/console/auth/me')).rejects.toThrow()
+    expect(storage.get('token')).toBeUndefined()
+    expect((window as { location: { href: string } }).location.href).toBe('/login')
+  })
+
+  it('/api/console/triggers 401 → 保留 token，不跳登录', async () => {
+    ;(window as { location: { href: string } }).location.href = '/'
+    const client = makeClient()
+    client.defaults.adapter = make401Adapter('/api/console/triggers') as never
+    await expect(client.get('/api/console/triggers')).rejects.toThrow()
+    expect(storage.get('token')).toBe('dev.test.token')
+    expect((window as { location: { href: string } }).location.href).toBe('/')
+  })
+
+  it('/api/console/auth/login 401 → 保留 token（提示密码错），不跳登录', async () => {
+    ;(window as { location: { href: string } }).location.href = '/'
+    const client = makeClient()
+    client.defaults.adapter = make401Adapter('/api/console/auth/login') as never
+    await expect(client.post('/api/console/auth/login', {})).rejects.toThrow()
+    expect(storage.get('token')).toBe('dev.test.token')
+    expect((window as { location: { href: string } }).location.href).toBe('/')
+  })
+})
+
 describe('网络错误:无响应但有 errorCode', () => {
   it('记录 ERR_NETWORK / 无 response', async () => {
     const client = makeClient()

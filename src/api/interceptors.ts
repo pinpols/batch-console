@@ -45,6 +45,20 @@ function isTokenExchangeRequest(config?: { url?: string } | null): boolean {
   return u.includes('/api/console/auth/login') || u.includes('/api/console/auth/token')
 }
 
+/**
+ * 只有这些路径的 401 才能判断"session 真正失效"。
+ * 业务接口（/triggers、/workers 等）的 401 可能源自后端代理鉴权失败 / RBAC
+ * 不足，不应清 token 把用户踢回登录页。
+ */
+function isSessionAuthRequest(config?: { url?: string } | null): boolean {
+  const u = config?.url ?? ''
+  return (
+    u.includes('/api/console/auth/me') ||
+    u.includes('/api/console/auth/token') ||
+    u.includes('/api/console/auth/login')
+  )
+}
+
 const MUTATING = new Set(['post', 'put', 'patch', 'delete'])
 
 type SpringLikeErrorBody = {
@@ -228,15 +242,21 @@ export function applyApiInterceptors(client: AxiosInstance): void {
       }
 
       if (status === 401) {
-        if (!isTokenExchangeRequest(cfg)) {
-          localStorage.removeItem('token')
-          window.location.href = '/login'
-        } else {
+        if (isTokenExchangeRequest(cfg)) {
+          // 登录 / 刷 token 本身 401：用户名密码错 或 refresh 失败，提示不登出
           const msg =
             raw && typeof raw === 'object' && 'message' in raw
               ? String((raw as CommonResponse<unknown>).message || '')
               : ''
           showApiErrorToast(msg || '用户名或密码错误')
+        } else if (isSessionAuthRequest(cfg)) {
+          // /auth/me 401：session 真正失效 → 清 token 跳登录
+          localStorage.removeItem('token')
+          window.location.href = '/login'
+        } else {
+          // 业务接口 401：可能是代理鉴权失败 / 该接口 RBAC 不足，不登出
+          const msg = extractHttpErrorMessage(error) || '该操作未授权'
+          showApiErrorToast(msg, error)
         }
       } else if (status === 403) {
         showApiErrorToast('权限不足', error)
