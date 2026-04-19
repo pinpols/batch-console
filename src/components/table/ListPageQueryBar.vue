@@ -1,5 +1,7 @@
 <template>
   <el-form inline class="query-form" v-bind="attrs" @submit.prevent="emit('search')">
+    <!-- prepend: 查询条件 form-item 之前的插槽（典型用法：左上角的"新增 XX"主操作按钮） -->
+    <slot name="prepend" />
     <slot />
     <el-form-item v-if="showTrailing" class="query-actions">
       <el-button
