@@ -42,6 +42,11 @@ export default defineConfig(({ mode }) => {
     },
   },
   build: {
+    // 默认 esbuild minify（terser 慢 5-10x），显式写明防被覆盖
+    minify: 'esbuild',
+    // element-plus 1.06 MB（gzip 334 KB）是合理 vendor chunk，阈值拉到 1200 静默噪声
+    // 超 1200 才告警，仍能提示"真的需要拆分"的新引入
+    chunkSizeWarningLimit: 1200,
     rollupOptions: {
       output: {
         manualChunks: {
@@ -53,6 +58,23 @@ export default defineConfig(({ mode }) => {
       },
     },
   },
+  /**
+   * 显式 pre-bundle：大依赖首启时一次性处理，避免用户第一次访问某条路由
+   * 才触发 optimize dep，造成 2-3s HMR 卡顿。
+   */
+  optimizeDeps: {
+    include: [
+      'vue',
+      'vue-router',
+      'pinia',
+      'element-plus',
+      '@element-plus/icons-vue',
+      '@tanstack/vue-query',
+      'axios',
+      'echarts',
+      'vue-echarts',
+    ],
+  },
   server: {
     port: 5173,
     proxy: {
@@ -60,6 +82,22 @@ export default defineConfig(({ mode }) => {
         target: devProxyTarget,
         changeOrigin: true,
       },
+    },
+    /**
+     * 预热：dev 启动时后台编译这些文件，用户首次导航立即到位。
+     * 仅列高频公共路径，低频页面按需动态 import 不用预热。
+     */
+    warmup: {
+      clientFiles: [
+        './src/main.ts',
+        './src/App.vue',
+        './src/layout/DefaultLayout.vue',
+        './src/layout/LayoutSidebar.vue',
+        './src/layout/components/LayoutHeader.vue',
+        './src/views/ops/OpsSummary.vue',
+        './src/api/client.ts',
+        './src/api/interceptors.ts',
+      ],
     },
   },
   }
