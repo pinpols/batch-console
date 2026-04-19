@@ -1,5 +1,66 @@
 # Changelog
 
+## 2026-04-19 — E2E 稳定化 + 移动端 + 真 bug 猎杀
+
+### 端到端测试稳定化
+
+- E2E 通过率 82.3% → ~95%（320 → ~370 过 / 67 → ~19 挂）
+- 详细过程见 [docs/reports/2026-04-19-e2e测试报告.md](docs/reports/2026-04-19-e2e测试报告.md)
+
+### 后端真 bug 修复（对应 `file-batch-system` 仓）
+
+- `DefaultConsoleTriggerProxyService` 转发 orchestrator 缺 `X-Internal-Secret` → 401
+- `ConsoleTenantConfigPackageExcelController.upload` 全局角色缺 `tenantId` 参数 → `tenant is required` 400
+- tenant-package apply 阶段 pipeline/step MyBatis 参数键 camelCase 但 XML 绑 snake_case → `null` 撞 NOT NULL → 500
+- `ConsoleDashboardQueryService` 用 `Map.of(null)` 构造聚合行 → NPE × 121
+- `DefaultConsolePipelineDefinitionApplicationService.toInstant` 只枚举 .SSSSSS/.SSS 两种 fractional seconds pattern → 5 位小数秒解析失败
+
+### 前端真 bug 修复
+
+- `ListPageQueryBar` 缺 `#prepend` 命名 slot → `NotificationManagement.vue` 三个"新增渠道/规则/Webhook"主按钮**生产环境完全不渲染**（🔴 生产级阻塞）
+- 业务接口 401 被 interceptor 当 session 失效清 token 跳登录 → 改为分级（`/auth/me` 才登出，业务 401 只弹 toast）
+- `auth.fetchMe()` 同步 `tenant.setTenantId(profile.tenantId)` 把系统管理员刚切过去的租户又覆盖回源租户 → 移除
+- iOS Safari 无痕模式 / 禁 Cookie 时 `localStorage.setItem` 抛 SecurityError → `index.html` shim 探测不可用时装上内存版，30+ 处调用点零改动
+- 列表页 header 与 ListPageQueryBar 之间的"刷新"按钮重复（strict-mode 违规）→ 4 页去重
+- 顶栏"退出"按钮放在悬浮面板末端易误触 → `el-popconfirm` 二次确认 + 视觉分隔
+- Header 租户 chip 常驻顶栏（原来藏在悬浮面板里，admin 切租户体验差）
+- logger telemetry 上报 `name` 超 200 会让整批 400 → `buildPayload` 裁剪 + 4xx 丢批不卡死
+
+### 前端架构重构
+
+- 侧边栏菜单由后端 `/auth/me` 下发（`ConsoleMenuRegistry` 按 authorities 过滤），前端不再硬编码 `navigationGroups`；切租户后自动 `fetchMe()` 刷新 authorities + menus
+- 抽 `useTenantReload(loadFn)` composable 统一 `onMounted + watch(tenant.tenantId)` 模式，迁移 43 个视图
+- Element Plus 全局 `zh-cn` locale（main.ts `app.use` + App.vue `ElConfigProvider`），MessageBox 按钮从 "OK/Cancel" 统一到中文
+- 前端独立 DOMPurify 兜底 + ESLint `vue/no-v-html: error` 禁用原生 `v-html`，新增 `v-safe-html` 指令
+- Vite 性能调优：`server.warmup` + `optimizeDeps.include` 大依赖预打包 → dev 冷启动 1.36s → 0.97s
+- `make dev` 前台启动接管后台实例 + 清端口，与 `dev-bg` 行为对齐
+
+### 移动端独立路由 `/m/*`
+
+- 新增 `MobileLayout` + `MobileAppBar` + `MobileTabBar`，共享 stores/api/composables
+- 5 个页面：`MOpsSummary` / `MApprovals` / `MAlerts` / `MJobInstances` / `MCatchUp` + `MJobInstanceDetail`
+- PWA manifest + apple-touch-icon / favicon，"添加到主屏幕"即独立 app 启动
+- 下拉刷新（`MPullRefresh`）+ 骨架屏（`MSkeleton`）+ tab bar 徽章（`mobileBadges` pinia store）
+- 自动刷新（`useAutoRefresh`，visibility-aware），概览 30s / 告警 20s 轮询
+- UA + viewport 检测自动 `/` → `/m/ops/summary` 跳转，`?desktop=1` 强制桌面版
+- 账号面板支持切租户 / 切主题 / 退出
+
+### 工具链与 E2E 支撑
+
+- Playwright globalSetup 接通 config，每次 e2e 前刷 token + 重新 seed ta/tb/tc
+- seedTenant 上传 URL 加 `?tenantId=`；幂等键改为 tenant + 内容哈希稳定值
+- e2e seed xlsx 统一引用后端权威源 `../../file-batch-system/docs/test-data/...`，前端副本删除
+- actionTimeout 5s → 10s、navigationTimeout 10s → 15s、globalTimeout 3min → 30min、单测 timeout 15s → 25s
+- 新增 `AGENTS.md` 跨仓联调相对路径索引 + 前端通用规则（useTenantReload / DOMPurify / 移动端不写 e2e）
+
+### 文档整理
+
+- `docs/` 按长期权威 / 阶段性报告（带日期前缀）/ 归档三层重组
+- `docs/README.md` 作为文档索引
+- 阶段性报告统一加 `YYYY-MM-DD-` 前缀入 `docs/reports/`
+
+---
+
 ## 2026-04-18 — 前端全量重构
 
 ### 角色与权限
