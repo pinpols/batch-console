@@ -6,6 +6,24 @@ const crypto = require('crypto')
 const API_BASE = 'http://localhost:18080'
 const FIXTURE_TENANT = 'system'
 
+/**
+ * 稳定幂等 key：相同 tenant + 文件内容哈希 + 阶段名 → 同一 key。
+ * 配合后端 ConsoleIdempotencyInterceptor，重跑 e2e 时 upload/apply
+ * 直接命中缓存响应，不会对数据库重放（避免撞唯一键 500）。
+ */
+function stableIdempotencyKey(tenantId, stage, fileBuffer) {
+  const h = crypto
+    .createHash('sha1')
+    .update(tenantId)
+    .update(':')
+    .update(stage)
+    .update(':')
+    .update(fileBuffer || Buffer.alloc(0))
+    .digest('hex')
+    .slice(0, 32)
+  return `e2e-seed-${h}`
+}
+
 // 超时常量（ms）
 const T_SHORT = 8_000   // 登录、导出等轻量接口
 const T_UPLOAD = 20_000 // 文件上传
@@ -52,10 +70,11 @@ async function seedTenant(token, tenantId, filePath) {
     'X-Tenant-Id': tenantId,
   }
 
+  const fileBuffer = readFileSync(filePath)
+
   // ── ① 上传 ──────────────────────────────────────────────────────
   let uploadToken
   try {
-    const fileBuffer = readFileSync(filePath)
     const formData = new FormData()
     formData.append(
       'file',
@@ -70,7 +89,10 @@ async function seedTenant(token, tenantId, filePath) {
       `${API_BASE}/api/console/config/tenant-package/excel/upload?tenantId=${encodeURIComponent(tenantId)}`,
       {
         method: 'POST',
-        headers: { ...commonHeaders, 'Idempotency-Key': idempotencyKey() },
+        headers: {
+          ...commonHeaders,
+          'Idempotency-Key': stableIdempotencyKey(tenantId, 'upload', fileBuffer),
+        },
         body: formData,
         timeoutMs: T_UPLOAD,
       },
@@ -103,7 +125,7 @@ async function seedTenant(token, tenantId, filePath) {
         headers: {
           ...commonHeaders,
           'Content-Type': 'application/json',
-          'Idempotency-Key': idempotencyKey(),
+          'Idempotency-Key': stableIdempotencyKey(tenantId, 'apply', fileBuffer),
         },
         body: JSON.stringify({}),
         timeoutMs: T_APPLY,
