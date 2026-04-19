@@ -65,8 +65,9 @@ async function seedTenant(token, tenantId, filePath) {
       path.basename(filePath),
     )
 
+    // 全局角色（admin）需显式带上 tenantId 给 ConsoleTenantGuard 解析
     const uploadRes = await fetchWithTimeout(
-      `${API_BASE}/api/console/config/tenant-package/excel/upload`,
+      `${API_BASE}/api/console/config/tenant-package/excel/upload?tenantId=${encodeURIComponent(tenantId)}`,
       {
         method: 'POST',
         headers: { ...commonHeaders, 'Idempotency-Key': idempotencyKey() },
@@ -227,7 +228,7 @@ async function globalSetup(config) {
     await exportTenantPackageFixture(token)
   }
 
-  // ── 写 storageState（默认测试租户 ta）───────────────────────────
+  // ── 写 storageState（默认测试租户 ta，与 seedTenant 目标一致）──────
   const authDir = path.resolve('e2e/.auth')
   mkdirSync(authDir, { recursive: true })
 
@@ -237,7 +238,7 @@ async function globalSetup(config) {
       {
         origin: baseURL,
         localStorage: [
-          { name: 'batch-console-tenant-id', value: 'system' },
+          { name: 'batch-console-tenant-id', value: 'ta' },
           { name: 'token', value: token ?? '' },
         ],
       },
@@ -245,7 +246,7 @@ async function globalSetup(config) {
   }
 
   writeFileSync(path.join(authDir, 'user.json'), JSON.stringify(storageState, null, 2))
-  console.log('[global-setup] storageState 已写入，默认测试租户: system')
+  console.log('[global-setup] storageState 已写入，默认测试租户: ta')
 }
 
 module.exports = globalSetup
