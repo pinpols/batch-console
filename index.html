@@ -8,6 +8,54 @@
   </head>
   <body>
     <div id="app"></div>
+    <script>
+      /**
+       * Storage shim：iOS Safari 无痕模式 / 浏览器禁用 Cookie 时 localStorage
+       * 会在写入时抛 SecurityError，导致整个 app bootstrap 崩溃白屏。
+       * 这里在任何模块执行前，先探测可用性；不可用则用一个内存版替换，
+       * 保证后续全部 localStorage.* 调用不再 throw（会话期内 in-memory 有效）。
+       */
+      ;(function () {
+        try {
+          var k = '__ls_probe__'
+          localStorage.setItem(k, '1')
+          localStorage.removeItem(k)
+        } catch (_e) {
+          var store = Object.create(null)
+          var shim = {
+            getItem: function (k) {
+              return k in store ? store[k] : null
+            },
+            setItem: function (k, v) {
+              store[k] = String(v)
+            },
+            removeItem: function (k) {
+              delete store[k]
+            },
+            clear: function () {
+              store = Object.create(null)
+            },
+            key: function (i) {
+              return Object.keys(store)[i] || null
+            },
+          }
+          Object.defineProperty(shim, 'length', {
+            get: function () {
+              return Object.keys(store).length
+            },
+          })
+          try {
+            Object.defineProperty(window, 'localStorage', {
+              value: shim,
+              writable: false,
+              configurable: true,
+            })
+          } catch (_) {
+            /* 某些 UA 冻结了 window 属性，无能为力 */
+          }
+        }
+      })()
+    </script>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

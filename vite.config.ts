@@ -77,6 +77,9 @@ export default defineConfig(({ mode }) => {
   },
   server: {
     port: 5173,
+    // 允许任何 Host 头（dev only）。生产 build 不使用这段配置。
+    // 场景：手机/其他设备通过 localtunnel / cloudflared / ngrok 等隧道访问本机 dev。
+    allowedHosts: true,
     proxy: {
       '/api': {
         target: devProxyTarget,
