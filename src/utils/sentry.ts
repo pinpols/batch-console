@@ -1,10 +1,13 @@
 /**
- * Sentry 错误监控初始化
+ * Sentry 错误监控初始化（**当前未激活**，是留给运维的激活入口）。
  *
- * 依赖 @sentry/vue，需先安装：npm install @sentry/vue
- * 通过环境变量 VITE_SENTRY_DSN 控制是否启用
+ * 激活步骤（按顺序）：
+ *   1. `npm install @sentry/vue`（未装时下面的动态 import 会静默失败）
+ *   2. `.env.production` 或 `.env.development` 配 `VITE_SENTRY_DSN=https://...`
+ *   3. 部署时确认 Sentry 后台 release tag 与 build 时的 __APP_VERSION__ 对齐
  *
- * 未安装 @sentry/vue 时 build 不报错（动态路径跳过 Rollup 静态分析）
+ * 当前两个 .env 的 DSN 都为空 → `initSentry` 第一行 early return → 整个路径 zero-cost。
+ * 动态 import 跳过 Rollup 静态分析，build 不会因 `@sentry/vue` 未装而失败。
  */
 
 import type { App } from 'vue'

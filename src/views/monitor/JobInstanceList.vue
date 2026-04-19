@@ -158,10 +158,16 @@
   const statusOptions = computed(() => pickMetaEnumGroup(metaEnums.value, 'instanceStatus'))
 
   async function loadJobCodes() {
+    // 仅用于下拉"常用 jobCode"提示，取前 500 条即可；超过 500 的租户让用户手输或搜索
+    // （旧实现走 fetchAllPageItems，大租户会拉回万级数据，浪费带宽）
     try {
-      const defs = await jobApi.listDefinitions(tenant.tenantId)
-      jobCodeOptions.value = [...new Set(defs.map((d) => d.jobCode).filter(Boolean))].sort((a, b) =>
-        a.localeCompare(b),
+      const paged = await jobApi.listDefinitionsPaged({
+        tenantId: tenant.tenantId,
+        pageNo: 1,
+        pageSize: 500,
+      })
+      jobCodeOptions.value = [...new Set(paged.records.map((d) => d.jobCode).filter(Boolean))].sort(
+        (a, b) => a.localeCompare(b),
       )
     } catch {
       jobCodeOptions.value = []
