@@ -5,9 +5,6 @@
       description="平台管理员维护控制台登录账号：编辑、启用 / 停用、重置密码。所有写操作都会记录到审计日志。"
       :show-description="true"
     >
-      <template #actions>
-        <el-button :loading="loading" @click="load">刷新</el-button>
-      </template>
     </PageHeader>
 
     <div class="metrics">

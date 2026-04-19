@@ -7,7 +7,6 @@
     >
       <template #actions>
         <el-button type="primary" @click="openCreate">新增参数</el-button>
-        <el-button :loading="loading" @click="load">刷新</el-button>
       </template>
     </PageHeader>
 

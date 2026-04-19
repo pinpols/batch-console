@@ -13,7 +13,6 @@
           >批量新建</el-button
         >
         <el-button v-if="canManageTenants" plain @click="openCopyConfig">复制配置</el-button>
-        <el-button :loading="loading" @click="load">刷新</el-button>
       </template>
     </PageHeader>
 

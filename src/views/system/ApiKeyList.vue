@@ -5,7 +5,6 @@
         <el-button type="primary" v-track-click="'新增 API Key'" @click="openCreate"
           >新增 API Key</el-button
         >
-        <el-button :loading="loading" @click="load">刷新</el-button>
       </template>
     </PageHeader>
 
