@@ -1,7 +1,8 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import { VueQueryPlugin } from '@tanstack/vue-query'
-import { ElSelect } from 'element-plus'
+import ElementPlus, { ElSelect } from 'element-plus'
+import zhCn from 'element-plus/es/locale/lang/zh-cn'
 import 'element-plus/dist/index.css'
 import 'element-plus/theme-chalk/dark/css-vars.css'
 
@@ -37,6 +38,9 @@ const pinia = createPinia()
 
 app.use(pinia)
 app.use(router)
+// Element Plus 中文 locale：imperative API（ElMessageBox / ElNotification /
+// ElMessage）依赖全局 locale；声明式组件由 App.vue 里的 ElConfigProvider 覆盖。
+app.use(ElementPlus, { locale: zhCn })
 app.use(VueQueryPlugin, {
   queryClientConfig: {
     defaultOptions: {
