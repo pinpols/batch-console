@@ -1,35 +1,39 @@
 <template>
-  <div class="m-page">
-    <div class="m-page__header">
-      <div>
-        <div class="m-page__title">Catch-up 审批</div>
-        <div class="m-page__subtitle">待审批 {{ pendingCount }} 条</div>
+  <MPullRefresh :on-refresh="load">
+    <div class="m-page">
+      <div class="m-page__header">
+        <div>
+          <div class="m-page__title">Catch-up 审批</div>
+          <div class="m-page__subtitle">待审批 {{ pendingCount }} 条</div>
+        </div>
+        <button class="m-page__refresh" :disabled="loading" @click="load">
+          <el-icon><Refresh /></el-icon>
+          {{ loading ? '加载中' : '刷新' }}
+        </button>
       </div>
-      <button class="m-page__refresh" :disabled="loading" @click="load">
-        <el-icon><Refresh /></el-icon>
-        {{ loading ? '加载中' : '刷新' }}
-      </button>
-    </div>
 
-    <div v-if="loading && rows.length === 0" class="m-loading">加载中…</div>
-    <div v-else-if="rows.length === 0" class="m-empty">暂无补跑审批</div>
+      <MSkeleton v-if="loading && rows.length === 0" :count="3" />
+      <div v-else-if="rows.length === 0" class="m-empty">暂无补跑审批</div>
 
-    <div v-for="row in rows" :key="row.id" class="m-card">
-      <div class="m-card__row">
-        <div class="m-card__title">{{ row.jobCode }} · {{ row.bizDate }}</div>
-        <span :class="['m-chip', statusChipClass(row.requestStatus)]">{{ row.requestStatus }}</span>
-      </div>
-      <div class="m-card__sub">request: {{ row.requestId }}</div>
-      <div class="m-card__meta">
-        <div><span class="m-card__meta-key">创建</span>{{ fmt(row.createdAt) }}</div>
-        <div><span class="m-card__meta-key">trace</span>{{ row.traceId }}</div>
-      </div>
-      <div v-if="isPending(row.requestStatus)" class="m-card__actions">
-        <button class="m-btn m-btn--plain-danger" @click="decide(row, false)">拒绝</button>
-        <button class="m-btn m-btn--primary" @click="decide(row, true)">批准</button>
+      <div v-for="row in rows" :key="row.id" class="m-card">
+        <div class="m-card__row">
+          <div class="m-card__title">{{ row.jobCode }} · {{ row.bizDate }}</div>
+          <span :class="['m-chip', statusChipClass(row.requestStatus)]">{{
+            row.requestStatus
+          }}</span>
+        </div>
+        <div class="m-card__sub">request: {{ row.requestId }}</div>
+        <div class="m-card__meta">
+          <div><span class="m-card__meta-key">创建</span>{{ fmt(row.createdAt) }}</div>
+          <div><span class="m-card__meta-key">trace</span>{{ row.traceId }}</div>
+        </div>
+        <div v-if="isPending(row.requestStatus)" class="m-card__actions">
+          <button class="m-btn m-btn--plain-danger" @click="decide(row, false)">拒绝</button>
+          <button class="m-btn m-btn--primary" @click="decide(row, true)">批准</button>
+        </div>
       </div>
     </div>
-  </div>
+  </MPullRefresh>
 </template>
 
 <script setup lang="ts">
@@ -37,6 +41,8 @@
   import { Refresh } from '@element-plus/icons-vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { useTenantStore } from '@/stores/tenant'
+  import MPullRefresh from '@/layout-mobile/MPullRefresh.vue'
+  import MSkeleton from '@/layout-mobile/MSkeleton.vue'
   import { fetchAllPageItems } from '@/api/adapters'
   import { jobApi } from '@/api/job'
   import type { ConsolePendingCatchUpResponse } from '@/types/console-api'

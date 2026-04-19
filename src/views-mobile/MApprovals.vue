@@ -1,43 +1,45 @@
 <template>
-  <div class="m-page">
-    <div class="m-page__header">
-      <div>
-        <div class="m-page__title">审批中心</div>
-        <div class="m-page__subtitle">待处理 {{ pendingCount }} 条</div>
-      </div>
-      <button class="m-page__refresh" :disabled="loading" @click="load">
-        <el-icon><Refresh /></el-icon>
-        {{ loading ? '加载中' : '刷新' }}
-      </button>
-    </div>
-
-    <div v-if="loading && rows.length === 0" class="m-loading">加载中…</div>
-    <div v-else-if="rows.length === 0" class="m-empty">暂无审批记录</div>
-
-    <div v-for="row in rows" :key="row.approvalNo" class="m-card">
-      <div class="m-card__row">
-        <div class="m-card__title">{{ row.approvalType }} · {{ row.actionType }}</div>
-        <span :class="['m-chip', statusChipClass(row.approvalStatus)]">{{
-          row.approvalStatus
-        }}</span>
-      </div>
-      <div class="m-card__sub">单号：{{ row.approvalNo }}</div>
-      <div class="m-card__meta">
+  <MPullRefresh :on-refresh="load">
+    <div class="m-page">
+      <div class="m-page__header">
         <div>
-          <span class="m-card__meta-key">目标</span>{{ row.targetType }}/{{ row.targetId || '—' }}
+          <div class="m-page__title">审批中心</div>
+          <div class="m-page__subtitle">待处理 {{ pendingCount }} 条</div>
         </div>
-        <div><span class="m-card__meta-key">请求者</span>{{ row.requesterId || '—' }}</div>
-        <div><span class="m-card__meta-key">创建</span>{{ fmt(row.createdAt) }}</div>
-        <div v-if="row.rejectionReason">
-          <span class="m-card__meta-key">拒绝原因</span>{{ row.rejectionReason }}
-        </div>
+        <button class="m-page__refresh" :disabled="loading" @click="load">
+          <el-icon><Refresh /></el-icon>
+          {{ loading ? '加载中' : '刷新' }}
+        </button>
       </div>
-      <div v-if="isPending(row)" class="m-card__actions">
-        <button class="m-btn m-btn--plain-danger" @click="reject(row)">拒绝</button>
-        <button class="m-btn m-btn--primary" @click="approve(row)">批准</button>
+
+      <MSkeleton v-if="loading && rows.length === 0" :count="3" />
+      <div v-else-if="rows.length === 0" class="m-empty">暂无审批记录</div>
+
+      <div v-for="row in rows" :key="row.approvalNo" class="m-card">
+        <div class="m-card__row">
+          <div class="m-card__title">{{ row.approvalType }} · {{ row.actionType }}</div>
+          <span :class="['m-chip', statusChipClass(row.approvalStatus)]">{{
+            row.approvalStatus
+          }}</span>
+        </div>
+        <div class="m-card__sub">单号：{{ row.approvalNo }}</div>
+        <div class="m-card__meta">
+          <div>
+            <span class="m-card__meta-key">目标</span>{{ row.targetType }}/{{ row.targetId || '—' }}
+          </div>
+          <div><span class="m-card__meta-key">请求者</span>{{ row.requesterId || '—' }}</div>
+          <div><span class="m-card__meta-key">创建</span>{{ fmt(row.createdAt) }}</div>
+          <div v-if="row.rejectionReason">
+            <span class="m-card__meta-key">拒绝原因</span>{{ row.rejectionReason }}
+          </div>
+        </div>
+        <div v-if="isPending(row)" class="m-card__actions">
+          <button class="m-btn m-btn--plain-danger" @click="reject(row)">拒绝</button>
+          <button class="m-btn m-btn--primary" @click="approve(row)">批准</button>
+        </div>
       </div>
     </div>
-  </div>
+  </MPullRefresh>
 </template>
 
 <script setup lang="ts">
@@ -45,6 +47,8 @@
   import { Refresh } from '@element-plus/icons-vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { useTenantStore } from '@/stores/tenant'
+  import MPullRefresh from '@/layout-mobile/MPullRefresh.vue'
+  import MSkeleton from '@/layout-mobile/MSkeleton.vue'
   import { queryApprovals, approveOne, rejectOne } from '@/api/approvals'
   import type { ConsoleApprovalCommandResponse } from '@/types/console-api'
 

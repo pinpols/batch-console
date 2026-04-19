@@ -13,9 +13,23 @@
 </template>
 
 <script setup lang="ts">
+  import { onMounted, watch } from 'vue'
   import MobileAppBar from './MobileAppBar.vue'
   import MobileTabBar from './MobileTabBar.vue'
   import './styles/mobile-common.css'
+  import { useMobileBadgesStore } from '@/stores/mobileBadges'
+  import { useTenantStore } from '@/stores/tenant'
+  import { useAutoRefresh } from '@/composables/useAutoRefresh'
+
+  const badges = useMobileBadgesStore()
+  const tenant = useTenantStore()
+  onMounted(() => void badges.refresh())
+  watch(
+    () => tenant.tenantId,
+    () => void badges.refresh(),
+  )
+  // 30s 轮询所有 tab 的徽章，切后台时暂停
+  useAutoRefresh(() => badges.refresh(), 30_000)
 </script>
 
 <style scoped>

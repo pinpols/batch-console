@@ -536,6 +536,12 @@ const routes = [
         meta: { title: 'Job Instance', minRole: 'VIEWER' },
       },
       {
+        path: 'jobs/:id',
+        name: 'm-job-detail',
+        component: () => import('@/views-mobile/MJobInstanceDetail.vue'),
+        meta: { title: 'Job 实例详情', minRole: 'VIEWER' },
+      },
+      {
         path: 'catchup',
         name: 'm-catchup',
         component: () => import('@/views-mobile/MCatchUp.vue'),

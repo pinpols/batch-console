@@ -7,9 +7,18 @@
       class="mobile-tab"
       :class="{ 'mobile-tab--active': isActive(tab.path) }"
     >
-      <el-icon class="mobile-tab__icon">
-        <component :is="tab.icon" />
-      </el-icon>
+      <div class="mobile-tab__icon-wrap">
+        <el-icon class="mobile-tab__icon">
+          <component :is="tab.icon" />
+        </el-icon>
+        <span
+          v-if="badgeOf(tab.path) > 0"
+          class="mobile-tab__badge"
+          :class="{ 'mobile-tab__badge--danger': isDangerBadge(tab.path) }"
+        >
+          {{ badgeOf(tab.path) > 99 ? '99+' : badgeOf(tab.path) }}
+        </span>
+      </div>
       <span class="mobile-tab__label">{{ tab.label }}</span>
     </router-link>
   </nav>
@@ -19,8 +28,10 @@
   import { computed } from 'vue'
   import { useRoute } from 'vue-router'
   import { Histogram, Stamp, WarningFilled, Monitor, Memo } from '@element-plus/icons-vue'
+  import { useMobileBadgesStore } from '@/stores/mobileBadges'
 
   const route = useRoute()
+  const badges = useMobileBadgesStore()
 
   const tabs = [
     { path: '/m/ops/summary', label: '概览', icon: Histogram },
@@ -31,6 +42,20 @@
   ]
 
   const isActive = computed(() => (path: string) => route.path.startsWith(path))
+
+  function badgeOf(path: string): number {
+    if (path === '/m/approvals') return badges.approvalsBadge
+    if (path === '/m/alerts') return badges.alertsBadge
+    if (path === '/m/jobs') return badges.jobsBadge
+    return 0
+  }
+
+  function isDangerBadge(path: string): boolean {
+    // 告警 + 失败任务用红色徽章；待审批用普通
+    if (path === '/m/alerts') return badges.criticalAlerts > 0 || badges.openAlerts > 0
+    if (path === '/m/jobs') return badges.failedJobs > 0
+    return false
+  }
 </script>
 
 <style scoped>
@@ -67,8 +92,35 @@
     transform: scale(0.94);
   }
 
+  .mobile-tab__icon-wrap {
+    position: relative;
+    display: inline-flex;
+  }
+
   .mobile-tab__icon {
     font-size: 22px;
+  }
+
+  .mobile-tab__badge {
+    position: absolute;
+    top: -4px;
+    right: -10px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 9px;
+    background: var(--color-primary);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 18px;
+    letter-spacing: 0;
+    text-align: center;
+    box-shadow: 0 0 0 2px var(--color-bg-card);
+  }
+
+  .mobile-tab__badge--danger {
+    background: var(--el-color-danger);
   }
 
   .mobile-tab__label {

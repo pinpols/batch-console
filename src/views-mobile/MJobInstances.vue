@@ -1,99 +1,112 @@
 <template>
-  <div class="m-page">
-    <div class="m-page__header">
-      <div>
-        <div class="m-page__title">Job Instance</div>
-        <div class="m-page__subtitle">共 {{ total }} 条 · 第 {{ page }} 页</div>
+  <MPullRefresh :on-refresh="load">
+    <div class="m-page">
+      <div class="m-page__header">
+        <div>
+          <div class="m-page__title">Job Instance</div>
+          <div class="m-page__subtitle">共 {{ total }} 条 · 第 {{ page }} 页</div>
+        </div>
+        <button class="m-page__refresh" :disabled="loading" @click="load">
+          <el-icon><Refresh /></el-icon>
+          {{ loading ? '加载中' : '刷新' }}
+        </button>
       </div>
-      <button class="m-page__refresh" :disabled="loading" @click="load">
-        <el-icon><Refresh /></el-icon>
-        {{ loading ? '加载中' : '刷新' }}
-      </button>
-    </div>
 
-    <div class="m-page__header" style="gap: 8px">
-      <el-select
-        v-model="query.instanceStatus"
-        placeholder="所有状态"
-        clearable
-        size="small"
-        style="flex: 1"
-        @change="onFilterChange"
+      <div class="m-page__header" style="gap: 8px">
+        <el-select
+          v-model="query.instanceStatus"
+          placeholder="所有状态"
+          clearable
+          size="small"
+          style="flex: 1"
+          @change="onFilterChange"
+        >
+          <el-option v-for="s in statuses" :key="s" :label="s" :value="s" />
+        </el-select>
+        <el-input
+          v-model="query.jobCode"
+          placeholder="jobCode 模糊"
+          clearable
+          size="small"
+          style="flex: 1"
+          @change="onFilterChange"
+        />
+      </div>
+
+      <MSkeleton v-if="loading && rows.length === 0" :count="4" />
+      <div v-else-if="rows.length === 0" class="m-empty">暂无实例</div>
+
+      <div
+        v-for="row in rows"
+        :key="row.id"
+        class="m-card m-card--clickable"
+        @click="openDetail(row)"
       >
-        <el-option v-for="s in statuses" :key="s" :label="s" :value="s" />
-      </el-select>
-      <el-input
-        v-model="query.jobCode"
-        placeholder="jobCode 模糊"
-        clearable
-        size="small"
-        style="flex: 1"
-        @change="onFilterChange"
-      />
-    </div>
-
-    <div v-if="loading && rows.length === 0" class="m-loading">加载中…</div>
-    <div v-else-if="rows.length === 0" class="m-empty">暂无实例</div>
-
-    <div v-for="row in rows" :key="row.id" class="m-card">
-      <div class="m-card__row">
-        <div class="m-card__title">{{ row.jobCode }}</div>
-        <span :class="['m-chip', statusChipClass(row.instanceStatus)]">{{
-          row.instanceStatus
-        }}</span>
-      </div>
-      <div class="m-card__sub">{{ row.instanceNo }}</div>
-      <div class="m-card__meta">
-        <div><span class="m-card__meta-key">业务日</span>{{ row.bizDate }}</div>
-        <div><span class="m-card__meta-key">触发</span>{{ row.triggerType }}</div>
-        <div><span class="m-card__meta-key">优先级</span>{{ row.priority }}</div>
-        <div><span class="m-card__meta-key">开始</span>{{ fmt(row.startedAt) }}</div>
-        <div v-if="row.finishedAt">
-          <span class="m-card__meta-key">结束</span>{{ fmt(row.finishedAt) }}
+        <div class="m-card__row">
+          <div class="m-card__title">{{ row.jobCode }}</div>
+          <span :class="['m-chip', statusChipClass(row.instanceStatus)]">{{
+            row.instanceStatus
+          }}</span>
+        </div>
+        <div class="m-card__sub">{{ row.instanceNo }}</div>
+        <div class="m-card__meta">
+          <div><span class="m-card__meta-key">业务日</span>{{ row.bizDate }}</div>
+          <div><span class="m-card__meta-key">触发</span>{{ row.triggerType }}</div>
+          <div><span class="m-card__meta-key">优先级</span>{{ row.priority }}</div>
+          <div><span class="m-card__meta-key">开始</span>{{ fmt(row.startedAt) }}</div>
+          <div v-if="row.finishedAt">
+            <span class="m-card__meta-key">结束</span>{{ fmt(row.finishedAt) }}
+          </div>
+        </div>
+        <div
+          v-if="row.instanceStatus === 'RUNNING' || row.instanceStatus === 'FAILED'"
+          class="m-card__actions"
+          @click.stop
+        >
+          <button
+            v-if="row.instanceStatus === 'FAILED'"
+            class="m-btn m-btn--primary"
+            @click="retry(row)"
+          >
+            重试
+          </button>
+          <button
+            v-if="row.instanceStatus === 'RUNNING'"
+            class="m-btn m-btn--danger"
+            @click="terminate(row)"
+          >
+            终止
+          </button>
         </div>
       </div>
-      <div
-        v-if="row.instanceStatus === 'RUNNING' || row.instanceStatus === 'FAILED'"
-        class="m-card__actions"
-      >
-        <button
-          v-if="row.instanceStatus === 'FAILED'"
-          class="m-btn m-btn--primary"
-          @click="retry(row)"
-        >
-          重试
-        </button>
-        <button
-          v-if="row.instanceStatus === 'RUNNING'"
-          class="m-btn m-btn--danger"
-          @click="terminate(row)"
-        >
-          终止
-        </button>
+
+      <div v-if="total > query.pageSize" class="m-page__header" style="justify-content: center">
+        <el-pagination
+          small
+          background
+          layout="prev, pager, next"
+          :total="total"
+          :current-page="page"
+          :page-size="query.pageSize"
+          @current-change="onPageChange"
+        />
       </div>
     </div>
-
-    <div v-if="total > query.pageSize" class="m-page__header" style="justify-content: center">
-      <el-pagination
-        small
-        background
-        layout="prev, pager, next"
-        :total="total"
-        :current-page="page"
-        :page-size="query.pageSize"
-        @current-change="onPageChange"
-      />
-    </div>
-  </div>
+  </MPullRefresh>
 </template>
 
 <script setup lang="ts">
   import { onMounted, reactive, ref, watch } from 'vue'
+  import { useRouter } from 'vue-router'
   import { Refresh } from '@element-plus/icons-vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { useTenantStore } from '@/stores/tenant'
+  import MPullRefresh from '@/layout-mobile/MPullRefresh.vue'
+  import MSkeleton from '@/layout-mobile/MSkeleton.vue'
   import { instanceApi } from '@/api/instance'
   import type { ConsoleJobInstanceResponse } from '@/types/console-api'
+
+  const router = useRouter()
 
   const tenant = useTenantStore()
   const loading = ref(false)
@@ -153,6 +166,10 @@
     } finally {
       loading.value = false
     }
+  }
+
+  function openDetail(row: ConsoleJobInstanceResponse) {
+    router.push(`/m/jobs/${row.id}`)
   }
 
   function onFilterChange() {

@@ -58,6 +58,19 @@
   margin-top: 10px;
 }
 
+.m-card--clickable {
+  cursor: pointer;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.m-card--clickable:active {
+  transform: scale(0.98);
+  border-color: color-mix(in srgb, var(--color-primary) 30%, var(--color-border-light) 70%);
+}
+
 .m-card__row {
   display: flex;
   align-items: center;
