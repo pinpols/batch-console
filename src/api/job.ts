@@ -18,13 +18,52 @@ async function resolveJobDefinitionId(jobCode: string, tenantId: string) {
   return matched.id
 }
 
+export interface JobDefinitionListParams {
+  tenantId: string
+  pageNo: number
+  pageSize: number
+  jobCode?: string
+  /** undefined = 后端默认仅 enabled=true；显式传 false = 只看停用；true = 只看启用 */
+  enabled?: boolean
+}
+
 export const jobApi = {
-  /** OpenAPI 为 PageResponse，聚合全量供列表端上筛选 */
+  /**
+   * @deprecated 仅限需要全量聚合的特殊场景（如 meta 下拉）。列表页请改用
+   * {@link jobApi.listDefinitionsPaged}，避免 fetchAllPageItems 最大 20000 条的客户端聚合。
+   */
   listDefinitions: (tenantId?: string, jobCode?: string) =>
     fetchAllPageItems<ConsoleJobDefinitionResponse>('/api/console/queries/job-definitions', {
       tenantId,
       ...(jobCode ? { jobCode } : {}),
     }),
+
+  /**
+   * 服务端分页版本。后端 OpenAPI `queryJobDefinitions` 支持 tenantId / pageNo /
+   * pageSize / jobCode / enabled 五个过滤参数。页面次要过滤（jobName / workerGroup 等
+   * 后端尚未暴露）仍在当前页内做前端过滤——后端扩展后可进一步下推。
+   */
+  listDefinitionsPaged: async (params: JobDefinitionListParams) => {
+    const { pageNo, pageSize } = params
+    const res = await get<{
+      total: number
+      pageNo: number
+      pageSize: number
+      items: ConsoleJobDefinitionResponse[]
+    }>('/api/console/queries/job-definitions', {
+      tenantId: params.tenantId,
+      pageNo,
+      pageSize,
+      ...(params.jobCode ? { jobCode: params.jobCode } : {}),
+      ...(params.enabled != null ? { enabled: params.enabled } : {}),
+    })
+    return {
+      records: res.items ?? [],
+      total: res.total ?? 0,
+      page: res.pageNo ?? pageNo,
+      pageSize: res.pageSize ?? pageSize,
+    }
+  },
 
   toggleEnabled: async (jobCode: string, tenantId: string, enabled: boolean) => {
     const id = await resolveJobDefinitionId(jobCode, tenantId)

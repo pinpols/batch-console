@@ -2,7 +2,7 @@
   <PageContainer>
     <PageHeader
       title="Job 定义"
-      description="GET /api/console/queries/job-definitions（PageResponse 端上聚合后筛选）"
+      description="GET /api/console/queries/job-definitions（服务端分页 + jobCode/enabled 过滤）"
     />
 
     <SectionCard>
@@ -174,11 +174,10 @@
   import { ref, reactive, computed } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { ElMessage, ElMessageBox } from 'element-plus'
-  import { toPageResult } from '@/api/adapters'
   import { jobApi } from '@/api/job'
   import { getMetaEnums, getMetaQueues, type MetaOption } from '@/api/meta'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
-  import { useJobDefinitions } from '@/composables/queries/useJobDefinitions'
+  import { useJobDefinitionsPaged } from '@/composables/queries/useJobDefinitionsPaged'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
   import PageContainer from '@/components/common/PageContainer.vue'
@@ -211,7 +210,18 @@
   })
 
   const filterTenantRef = computed(() => filters.tenantId)
-  const { data: allData, isPending, isFetching, refetch } = useJobDefinitions(filterTenantRef)
+  // 服务端过滤参数：后端 queryJobDefinitions 仅支持 jobCode / enabled；
+  // 次要过滤（jobName / workerGroup / queueCode / scheduleType）后端未暴露
+  // → 放到"本页前端过滤"。要完整搜索须用 Job Code / 启用状态。
+  const serverJobCode = computed(() => filters.jobCode.trim() || undefined)
+  const serverEnabled = computed<boolean | undefined>(() => filters.enabled ?? undefined)
+  const { data, isPending, isFetching, refetch } = useJobDefinitionsPaged({
+    page,
+    pageSize,
+    jobCode: serverJobCode,
+    enabled: serverEnabled,
+    tenantIdOverride: filterTenantRef,
+  })
 
   const remoteBlocking = computed(() => isPending.value || isFetching.value)
   const {
@@ -221,22 +231,18 @@
     runReset,
   } = useListFilterFeedback(remoteBlocking)
 
+  const pageRows = computed(() => data.value?.records ?? [])
+
   const workerGroupOptions = computed(() =>
     Array.from(
-      new Set(
-        (allData.value ?? [])
-          .map((row) => row.workerGroup)
-          .filter((item): item is string => !!item),
-      ),
+      new Set(pageRows.value.map((row) => row.workerGroup).filter((v): v is string => !!v)),
     ),
   )
 
+  /** 只对后端未暴露的次要 filter（jobName / workerGroup / queueCode / scheduleType）做本页过滤。 */
   const filtered = computed(() => {
-    const list = allData.value ?? []
-    return list.filter((row) => {
-      if (filters.jobCode.trim() && !row.jobCode?.includes(filters.jobCode.trim())) return false
+    return pageRows.value.filter((row) => {
       if (filters.jobName.trim() && !row.jobName?.includes(filters.jobName.trim())) return false
-      if (filters.enabled != null && row.enabled !== filters.enabled) return false
       if (filters.workerGroup.trim() && !row.workerGroup?.includes(filters.workerGroup.trim())) {
         return false
       }
@@ -250,12 +256,9 @@
     })
   })
 
-  const total = computed(() => filtered.value.length)
+  const total = computed(() => data.value?.total ?? 0)
 
-  const tableRows = computed(() => {
-    const pr = toPageResult(filtered.value, page.value, pageSize.value)
-    return pr.records as unknown as Record<string, unknown>[]
-  })
+  const tableRows = computed(() => filtered.value as unknown as Record<string, unknown>[])
 
   function onSearch() {
     return runSearch(() => {
