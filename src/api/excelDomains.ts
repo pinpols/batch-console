@@ -14,24 +14,28 @@ export type ExcelDomain =
   | 'resource-queues'
 
 /**
- * 5 个「初始化就维护」域：仍使用各自独立的 upload/preview/apply 端点。
- * 对应的单域 Excel 维护页面（ExcelMaintenanceWizard）只挂载这 5 个。
+ * 仍使用各自独立 upload/preview/apply 端点的域。ExcelMaintenanceWizard 只挂载这些。
+ *
+ * 后端 OpenAPI（2026-04-19+）实情：
+ * - file-templates：独立端点保留 ✓
+ * - resource-queues：独立端点保留但已 @deprecated（仍可用，但建议走 tenant-package）
+ * - batch-windows / business-calendars / quota-policies：**已删除**独立端点 → 合并到 tenant-package
+ * - file-channels / workflows / job-definitions / alert-routings / pipeline-definitions：早已合并
+ *
+ * 同步修改请重跑 `npm run gen:api` 后核对。
  */
 export const STANDALONE_DOMAINS = [
   'file-templates',
-  'batch-windows',
-  'business-calendars',
-  'quota-policies',
   'resource-queues',
 ] as const satisfies readonly ExcelDomain[]
 
 /**
- * 5 个「合并导入」域：已迁移至 /api/console/config/tenant-package/excel 系列接口
- * （8-Sheet 单事务，含跨 Sheet 依赖校验）。
- * 对应的独立单域 upload/preview/apply 端点已标注 deprecated，
- * 前端页面已从 ExcelMaintenanceWizard 下线，代码保留供参考。
+ * 已并入 tenant-package（8-Sheet 单事务）的域。前端不再为这些 domain 暴露独立 wizard。
+ * 这里列出仅用于：
+ *  - 文档/审计 —— 提醒"这些 domain 不要再加独立入口"
+ *  - excelDomains.ts 路径表完整性（调用了会 404，但调用前 ExcelMaintenanceWizard 会过滤）
  *
- * @deprecated — 单域导入端点已废弃，请使用 TenantPackageImportWizard。
+ * @deprecated 请使用 TenantPackageImportWizard 完成这些 domain 的批量导入。
  */
 export const MERGED_DOMAINS = [
   'file-channels',
@@ -39,6 +43,9 @@ export const MERGED_DOMAINS = [
   'job-definitions',
   'alert-routings',
   'pipeline-definitions',
+  'batch-windows',
+  'business-calendars',
+  'quota-policies',
 ] as const satisfies readonly ExcelDomain[]
 
 /**

@@ -55,6 +55,23 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/console/auth/stream/ticket': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Issue one-time SSE ticket (5min TTL) for EventSource auth */
+    post: operations['issueConsoleSseTicket']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/console/pipeline-definitions/events': {
     parameters: {
       query?: never
@@ -984,86 +1001,6 @@ export interface paths {
     patch?: never
     trace?: never
   }
-  '/api/console/config/file-channels/excel/upload': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /**
-     * Upload file channel Excel
-     * @deprecated
-     */
-    post: operations['uploadFileChannelExcel']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/console/config/file-channels/excel/preview/{uploadToken}': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * Preview uploaded file channel Excel
-     * @deprecated
-     */
-    get: operations['previewFileChannelExcel']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/console/config/file-channels/excel/preview/{uploadToken}/workbook': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * Download annotated preview workbook for file channel Excel
-     * @deprecated
-     */
-    get: operations['downloadFileChannelExcelPreviewWorkbook']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/console/config/file-channels/excel/apply/{uploadToken}': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /**
-     * Apply uploaded file channel Excel
-     * @deprecated
-     */
-    post: operations['applyFileChannelExcel']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
   '/api/console/config/workflows/excel/template': {
     parameters: {
       query?: never
@@ -1098,86 +1035,6 @@ export interface paths {
     patch?: never
     trace?: never
   }
-  '/api/console/config/workflows/excel/upload': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /**
-     * Upload workflow Excel
-     * @deprecated
-     */
-    post: operations['uploadWorkflowExcel']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/console/config/workflows/excel/preview/{uploadToken}': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * Preview uploaded workflow Excel
-     * @deprecated
-     */
-    get: operations['previewWorkflowExcel']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/console/config/workflows/excel/preview/{uploadToken}/workbook': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * Download annotated preview workbook for workflow Excel
-     * @deprecated
-     */
-    get: operations['downloadWorkflowExcelPreviewWorkbook']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/console/config/workflows/excel/apply/{uploadToken}': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /**
-     * Apply uploaded workflow Excel
-     * @deprecated
-     */
-    post: operations['applyWorkflowExcel']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
   '/api/console/config/job-definitions/excel/template': {
     parameters: {
       query?: never
@@ -1206,86 +1063,6 @@ export interface paths {
     get: operations['exportJobDefinitionExcel']
     put?: never
     post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/console/config/job-definitions/excel/upload': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /**
-     * Upload job definition Excel
-     * @deprecated
-     */
-    post: operations['uploadJobDefinitionExcel']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/console/config/job-definitions/excel/preview/{uploadToken}': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * Preview uploaded job definition Excel
-     * @deprecated
-     */
-    get: operations['previewJobDefinitionExcel']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/console/config/job-definitions/excel/preview/{uploadToken}/workbook': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * Download annotated preview workbook for job definition Excel
-     * @deprecated
-     */
-    get: operations['downloadJobDefinitionExcelPreviewWorkbook']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/console/config/job-definitions/excel/apply/{uploadToken}': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /**
-     * Apply uploaded job definition Excel
-     * @deprecated
-     */
-    post: operations['applyJobDefinitionExcel']
     delete?: never
     options?: never
     head?: never
@@ -1461,86 +1238,6 @@ export interface paths {
     patch?: never
     trace?: never
   }
-  '/api/console/config/batch-windows/excel/upload': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /**
-     * Upload batch window Excel
-     * @deprecated
-     */
-    post: operations['uploadBatchWindowExcel']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/console/config/batch-windows/excel/preview/{uploadToken}': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * Preview uploaded batch window Excel
-     * @deprecated
-     */
-    get: operations['previewBatchWindowExcel']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/console/config/batch-windows/excel/preview/{uploadToken}/workbook': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * Download annotated preview workbook for batch window Excel
-     * @deprecated
-     */
-    get: operations['downloadBatchWindowExcelPreviewWorkbook']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/console/config/batch-windows/excel/apply/{uploadToken}': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /**
-     * Apply uploaded batch window Excel
-     * @deprecated
-     */
-    post: operations['applyBatchWindowExcel']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
   '/api/console/config/business-calendars/excel/template': {
     parameters: {
       query?: never
@@ -1569,86 +1266,6 @@ export interface paths {
     get: operations['exportBusinessCalendarExcel']
     put?: never
     post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/console/config/business-calendars/excel/upload': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /**
-     * Upload business calendar Excel
-     * @deprecated
-     */
-    post: operations['uploadBusinessCalendarExcel']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/console/config/business-calendars/excel/preview/{uploadToken}': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * Preview uploaded business calendar Excel
-     * @deprecated
-     */
-    get: operations['previewBusinessCalendarExcel']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/console/config/business-calendars/excel/preview/{uploadToken}/workbook': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * Download annotated preview workbook for business calendar Excel
-     * @deprecated
-     */
-    get: operations['downloadBusinessCalendarExcelPreviewWorkbook']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/console/config/business-calendars/excel/apply/{uploadToken}': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /**
-     * Apply uploaded business calendar Excel
-     * @deprecated
-     */
-    post: operations['applyBusinessCalendarExcel']
     delete?: never
     options?: never
     head?: never
@@ -1689,86 +1306,6 @@ export interface paths {
     patch?: never
     trace?: never
   }
-  '/api/console/config/pipeline-definitions/excel/upload': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /**
-     * Upload pipeline definition Excel
-     * @deprecated
-     */
-    post: operations['uploadPipelineDefinitionExcel']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/console/config/pipeline-definitions/excel/preview/{uploadToken}': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * Preview uploaded pipeline definition Excel
-     * @deprecated
-     */
-    get: operations['previewPipelineDefinitionExcel']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/console/config/pipeline-definitions/excel/preview/{uploadToken}/workbook': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * Download annotated preview workbook for pipeline definition Excel
-     * @deprecated
-     */
-    get: operations['downloadPipelineDefinitionExcelPreviewWorkbook']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/console/config/pipeline-definitions/excel/apply/{uploadToken}': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /**
-     * Apply uploaded pipeline definition Excel
-     * @deprecated
-     */
-    post: operations['applyPipelineDefinitionExcel']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
   '/api/console/config/quota-policies/excel/template': {
     parameters: {
       query?: never
@@ -1797,86 +1334,6 @@ export interface paths {
     get: operations['exportQuotaPolicyExcel']
     put?: never
     post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/console/config/quota-policies/excel/upload': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /**
-     * Upload quota policy Excel
-     * @deprecated
-     */
-    post: operations['uploadQuotaPolicyExcel']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/console/config/quota-policies/excel/preview/{uploadToken}': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * Preview uploaded quota policy Excel
-     * @deprecated
-     */
-    get: operations['previewQuotaPolicyExcel']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/console/config/quota-policies/excel/preview/{uploadToken}/workbook': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * Download annotated preview workbook for quota policy Excel
-     * @deprecated
-     */
-    get: operations['downloadQuotaPolicyExcelPreviewWorkbook']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/console/config/quota-policies/excel/apply/{uploadToken}': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /**
-     * Apply uploaded quota policy Excel
-     * @deprecated
-     */
-    post: operations['applyQuotaPolicyExcel']
     delete?: never
     options?: never
     head?: never
@@ -5317,6 +4774,9 @@ export interface components {
     CommonResponseConsoleAuthProfileResponse: components['schemas']['CommonResponseBase'] & {
       data?: components['schemas']['ConsoleAuthProfileResponse']
     }
+    CommonResponseConsoleSseTicketResponse: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['ConsoleSseTicketResponse']
+    }
     CommonResponseConsoleFileOperationResponse: components['schemas']['CommonResponseBase'] & {
       data?: components['schemas']['ConsoleFileOperationResponse']
     }
@@ -5579,29 +5039,8 @@ export interface components {
     CommonResponseConsoleFileChannelExcelUpload: components['schemas']['CommonResponseBase'] & {
       data?: components['schemas']['ConsoleFileChannelExcelUploadResponse']
     }
-    CommonResponseConsoleFileChannelExcelPreview: components['schemas']['CommonResponseBase'] & {
-      data?: components['schemas']['ConsoleFileChannelExcelPreviewResponse']
-    }
     CommonResponseConsoleFileChannelExcelApply: components['schemas']['CommonResponseBase'] & {
       data?: components['schemas']['ConsoleFileChannelExcelApplyResponse']
-    }
-    CommonResponseConsoleWorkflowExcelUpload: components['schemas']['CommonResponseBase'] & {
-      data?: components['schemas']['ConsoleWorkflowExcelUploadResponse']
-    }
-    CommonResponseConsoleWorkflowExcelPreview: components['schemas']['CommonResponseBase'] & {
-      data?: components['schemas']['ConsoleWorkflowExcelPreviewResponse']
-    }
-    CommonResponseConsoleWorkflowExcelApply: components['schemas']['CommonResponseBase'] & {
-      data?: components['schemas']['ConsoleWorkflowExcelApplyResponse']
-    }
-    CommonResponseConsoleJobDefinitionExcelUpload: components['schemas']['CommonResponseBase'] & {
-      data?: components['schemas']['ConsoleJobDefinitionExcelUploadResponse']
-    }
-    CommonResponseConsoleJobDefinitionExcelPreview: components['schemas']['CommonResponseBase'] & {
-      data?: components['schemas']['ConsoleJobDefinitionExcelPreviewResponse']
-    }
-    CommonResponseConsoleJobDefinitionExcelApply: components['schemas']['CommonResponseBase'] & {
-      data?: components['schemas']['ConsoleJobDefinitionExcelApplyResponse']
     }
     CommonResponseConsoleAlertRoutingExcelUpload: components['schemas']['CommonResponseBase'] & {
       data?: components['schemas']['ConsoleAlertRoutingExcelUploadResponse']
@@ -5615,35 +5054,11 @@ export interface components {
     CommonResponseConsoleBatchWindowExcelUpload: components['schemas']['CommonResponseBase'] & {
       data?: components['schemas']['ConsoleBatchWindowExcelUploadResponse']
     }
-    CommonResponseConsoleBatchWindowExcelPreview: components['schemas']['CommonResponseBase'] & {
-      data?: components['schemas']['ConsoleBatchWindowExcelPreviewResponse']
-    }
     CommonResponseConsoleBatchWindowExcelApply: components['schemas']['CommonResponseBase'] & {
       data?: components['schemas']['ConsoleBatchWindowExcelApplyResponse']
     }
-    CommonResponseConsoleBusinessCalendarExcelUpload: components['schemas']['CommonResponseBase'] & {
-      data?: components['schemas']['ConsoleBusinessCalendarExcelUploadResponse']
-    }
-    CommonResponseConsoleBusinessCalendarExcelPreview: components['schemas']['CommonResponseBase'] & {
-      data?: components['schemas']['ConsoleBusinessCalendarExcelPreviewResponse']
-    }
-    CommonResponseConsoleBusinessCalendarExcelApply: components['schemas']['CommonResponseBase'] & {
-      data?: components['schemas']['ConsoleBusinessCalendarExcelApplyResponse']
-    }
-    CommonResponseConsolePipelineDefinitionExcelUpload: components['schemas']['CommonResponseBase'] & {
-      data?: components['schemas']['ConsolePipelineDefinitionExcelUploadResponse']
-    }
-    CommonResponseConsolePipelineDefinitionExcelPreview: components['schemas']['CommonResponseBase'] & {
-      data?: components['schemas']['ConsolePipelineDefinitionExcelPreviewResponse']
-    }
-    CommonResponseConsolePipelineDefinitionExcelApply: components['schemas']['CommonResponseBase'] & {
-      data?: components['schemas']['ConsolePipelineDefinitionExcelApplyResponse']
-    }
     CommonResponseConsoleTenantQuotaPolicyExcelUpload: components['schemas']['CommonResponseBase'] & {
       data?: components['schemas']['ConsoleTenantQuotaPolicyExcelUploadResponse']
-    }
-    CommonResponseConsoleTenantQuotaPolicyExcelPreview: components['schemas']['CommonResponseBase'] & {
-      data?: components['schemas']['ConsoleTenantQuotaPolicyExcelPreviewResponse']
     }
     CommonResponseConsoleTenantQuotaPolicyExcelApply: components['schemas']['CommonResponseBase'] & {
       data?: components['schemas']['ConsoleTenantQuotaPolicyExcelApplyResponse']
@@ -5797,20 +5212,8 @@ export interface components {
     }
     FileTemplateExcelApplyRequest: components['schemas']['ExcelApplyRequest']
     FileChannelExcelApplyRequest: components['schemas']['ExcelApplyRequest']
-    WorkflowExcelApplyRequest: {
-      reason?: string
-    }
-    JobDefinitionExcelApplyRequest: {
-      reason?: string
-    }
     AlertRoutingExcelApplyRequest: components['schemas']['ExcelApplyRequest']
     BatchWindowExcelApplyRequest: components['schemas']['ExcelApplyRequest']
-    BusinessCalendarExcelApplyRequest: {
-      reason?: string
-    }
-    PipelineDefinitionExcelApplyRequest: {
-      reason?: string
-    }
     TenantQuotaPolicyExcelApplyRequest: components['schemas']['ExcelApplyRequest']
     ResourceQueueExcelApplyRequest: components['schemas']['ExcelApplyRequest']
     ExcelApplyRequest: {
@@ -6339,6 +5742,10 @@ export interface components {
       tenantId: string
       authorities: string[]
     }
+    /** @description 一次性 SSE ticket（5min TTL），用作 EventSource 连接的 `?ticket=` 查询参数。 */
+    ConsoleSseTicketResponse: {
+      ticket: string
+    }
     ConsoleAuthProfileResponse: {
       username: string
       tenantId: string
@@ -6808,25 +6215,6 @@ export interface components {
       /** Format: date-time */
       updatedAt: string
     }
-    ConsoleFileChannelResponse: {
-      /** Format: int64 */
-      id: number
-      tenantId: string
-      channelCode: string
-      channelName: string
-      channelType: string
-      targetEndpoint: string
-      authType: string
-      configJson: string
-      receiptPolicy: string
-      /** Format: int32 */
-      timeoutSeconds: number
-      enabled: boolean
-      /** Format: date-time */
-      createdAt: string
-      /** Format: date-time */
-      updatedAt: string
-    }
     ConsoleFileTemplateResponse: {
       /** Format: int64 */
       id: number
@@ -6903,185 +6291,7 @@ export interface components {
     }
     ConsoleFileTemplateExcelApplyResponse: components['schemas']['ExcelApplyResponse']
     ConsoleFileChannelExcelUploadResponse: components['schemas']['ExcelUploadResponse']
-    ConsoleFileChannelExcelPreviewResponse: {
-      uploadToken: string
-      fileName: string
-      sheetName: string
-      /** Format: int32 */
-      totalRows: number
-      /** Format: int32 */
-      validRows: number
-      /** Format: int32 */
-      invalidRows: number
-      rows: components['schemas']['ConsoleFileChannelResponse'][]
-      issues: components['schemas']['ExcelRowIssue'][]
-      previewWorkbookUrl?: string
-    }
     ConsoleFileChannelExcelApplyResponse: components['schemas']['ExcelApplyResponse']
-    ConsoleWorkflowExcelUploadResponse: {
-      uploadToken: string
-      fileName: string
-      /** Format: int32 */
-      definitionRows: number
-      /** Format: int32 */
-      nodeRows: number
-      /** Format: int32 */
-      edgeRows: number
-      /** Format: int32 */
-      totalRows: number
-    }
-    ConsoleWorkflowExcelPreviewResponse: {
-      uploadToken: string
-      fileName: string
-      /** Format: int32 */
-      definitionRows: number
-      /** Format: int32 */
-      nodeRows: number
-      /** Format: int32 */
-      edgeRows: number
-      /** Format: int32 */
-      totalRows: number
-      /** Format: int32 */
-      validRows: number
-      /** Format: int32 */
-      invalidRows: number
-      definitions: components['schemas']['ConsoleWorkflowDefinitionExcelRowResponse'][]
-      nodes: components['schemas']['ConsoleWorkflowNodeExcelRowResponse'][]
-      edges: components['schemas']['ConsoleWorkflowEdgeExcelRowResponse'][]
-      issues: components['schemas']['ConsoleWorkflowExcelRowIssueResponse'][]
-    }
-    ConsoleWorkflowExcelApplyResponse: {
-      uploadToken: string
-      tenantId: string
-      /** Format: int32 */
-      definitionRows: number
-      /** Format: int32 */
-      nodeRows: number
-      /** Format: int32 */
-      edgeRows: number
-      /** Format: int32 */
-      insertedDefinitions: number
-      /** Format: int32 */
-      updatedDefinitions: number
-      /** Format: int32 */
-      insertedNodes: number
-      /** Format: int32 */
-      updatedNodes: number
-      /** Format: int32 */
-      insertedEdges: number
-      /** Format: int32 */
-      updatedEdges: number
-    }
-    ConsoleWorkflowExcelRowIssueResponse: {
-      sheetName: string
-      /** Format: int32 */
-      rowNo: number
-      rowKey: string
-      workflowCode: string
-      /** Format: int32 */
-      workflowVersion: number
-      messages: string[]
-    }
-    ConsoleJobDefinitionExcelUploadResponse: {
-      uploadToken: string
-      fileName: string
-      /** Format: int32 */
-      rowCount: number
-    }
-    ConsoleJobDefinitionExcelPreviewResponse: {
-      uploadToken: string
-      fileName: string
-      /** Format: int32 */
-      totalRows: number
-      /** Format: int32 */
-      validRows: number
-      /** Format: int32 */
-      invalidRows: number
-      rows: components['schemas']['ConsoleJobDefinitionExcelRowResponse'][]
-      issues: components['schemas']['ConsoleJobDefinitionExcelRowIssueResponse'][]
-    }
-    ConsoleJobDefinitionExcelApplyResponse: {
-      uploadToken: string
-      tenantId: string
-      /** Format: int32 */
-      appliedRows: number
-      /** Format: int32 */
-      updatedRows: number
-    }
-    ConsoleJobDefinitionExcelRowResponse: {
-      tenantId: string
-      jobCode: string
-      jobName: string
-      jobType: string
-      queueCode: string
-      workerGroup: string
-      scheduleType: string
-      scheduleExpr: string
-      calendarCode: string
-      windowCode: string
-      retryPolicy: string
-      /** Format: int32 */
-      retryMaxCount: number
-      /** Format: int32 */
-      timeoutSeconds: number
-      shardStrategy: string
-      executionHandler: string
-      paramSchema: string
-      defaultParams: string
-      enabled: boolean
-      description: string
-    }
-    ConsoleJobDefinitionExcelRowIssueResponse: {
-      sheetName: string
-      /** Format: int32 */
-      rowNo: number
-      rowKey: string
-      jobCode: string
-      messages: string[]
-    }
-    ConsoleWorkflowDefinitionExcelRowResponse: {
-      tenantId: string
-      workflowCode: string
-      workflowName: string
-      workflowType: string
-      /** Format: int32 */
-      version: number
-      enabled: boolean
-      description: string
-    }
-    ConsoleWorkflowNodeExcelRowResponse: {
-      tenantId: string
-      workflowCode: string
-      /** Format: int32 */
-      workflowVersion: number
-      nodeCode: string
-      nodeName: string
-      nodeType: string
-      relatedJobCode: string
-      relatedPipelineCode: string
-      workerGroup: string
-      windowCode: string
-      /** Format: int32 */
-      nodeOrder: number
-      retryPolicy: string
-      /** Format: int32 */
-      retryMaxCount: number
-      /** Format: int32 */
-      timeoutSeconds: number
-      nodeParams: string
-      enabled: boolean
-    }
-    ConsoleWorkflowEdgeExcelRowResponse: {
-      tenantId: string
-      workflowCode: string
-      /** Format: int32 */
-      workflowVersion: number
-      fromNodeCode: string
-      toNodeCode: string
-      edgeType: string
-      conditionExpr: string
-      enabled: boolean
-    }
     ConsoleFileChannelExcelRowIssueResponse: components['schemas']['ExcelRowIssue']
     ConsoleOutboxRetryLogResponse: {
       /** Format: int64 */
@@ -7158,239 +6368,10 @@ export interface components {
     }
     ConsoleAlertRoutingExcelApplyResponse: components['schemas']['ExcelApplyResponse']
     ConsoleAlertRoutingExcelRowIssueResponse: components['schemas']['ExcelRowIssue']
-    ConsoleBatchWindowResponse: {
-      /** Format: int64 */
-      id: number
-      tenantId: string
-      windowCode: string
-      windowName: string
-      timezone: string
-      startTime: string
-      endTime: string
-      endStrategy: string
-      outOfWindowAction: string
-      allowCrossDay: boolean
-      enabled: boolean
-      description?: string
-      /** Format: date-time */
-      createdAt: string
-      /** Format: date-time */
-      updatedAt: string
-    }
     ConsoleBatchWindowExcelUploadResponse: components['schemas']['ExcelUploadResponse']
-    ConsoleBatchWindowExcelPreviewResponse: {
-      uploadToken: string
-      fileName: string
-      sheetName: string
-      /** Format: int32 */
-      totalRows: number
-      /** Format: int32 */
-      validRows: number
-      /** Format: int32 */
-      invalidRows: number
-      rows: components['schemas']['ConsoleBatchWindowResponse'][]
-      issues: components['schemas']['ExcelRowIssue'][]
-      previewWorkbookUrl?: string
-    }
     ConsoleBatchWindowExcelApplyResponse: components['schemas']['ExcelApplyResponse']
     ConsoleBatchWindowExcelRowIssueResponse: components['schemas']['ExcelRowIssue']
-    ConsoleBusinessCalendarResponse: {
-      /** Format: int64 */
-      id: number
-      tenantId: string
-      calendarCode: string
-      calendarName: string
-      timezone: string
-      holidayRollRule: string
-      catchUpPolicy: string
-      /** Format: int32 */
-      catchUpMaxDays?: number
-      enabled: boolean
-      /** Format: date-time */
-      createdAt: string
-      /** Format: date-time */
-      updatedAt: string
-    }
-    ConsoleCalendarHolidayResponse: {
-      /** Format: int64 */
-      id: number
-      calendarCode: string
-      /** Format: date */
-      bizDate: string
-      dayType: string
-      holidayName?: string
-      description?: string
-    }
-    ConsoleBusinessCalendarExcelUploadResponse: {
-      uploadToken: string
-      fileName: string
-      calendarSheetName: string
-      /** Format: int32 */
-      calendarRowCount: number
-      holidaySheetName: string
-      /** Format: int32 */
-      holidayRowCount: number
-    }
-    ConsoleBusinessCalendarExcelPreviewResponse: {
-      uploadToken: string
-      fileName: string
-      /** Format: int32 */
-      totalCalendarRows: number
-      /** Format: int32 */
-      validCalendarRows: number
-      /** Format: int32 */
-      invalidCalendarRows: number
-      calendarRows: components['schemas']['ConsoleBusinessCalendarResponse'][]
-      /** Format: int32 */
-      totalHolidayRows: number
-      /** Format: int32 */
-      validHolidayRows: number
-      /** Format: int32 */
-      invalidHolidayRows: number
-      holidayRows: components['schemas']['ConsoleCalendarHolidayResponse'][]
-      issues: components['schemas']['ConsoleBusinessCalendarExcelRowIssueResponse'][]
-    }
-    ConsoleBusinessCalendarExcelApplyResponse: {
-      uploadToken: string
-      tenantId: string
-      /** Format: int32 */
-      appliedCalendarRows: number
-      /** Format: int32 */
-      insertedCalendars: number
-      /** Format: int32 */
-      updatedCalendars: number
-      /** Format: int32 */
-      appliedHolidayRows: number
-    }
-    ConsoleBusinessCalendarExcelRowIssueResponse: {
-      sheetName: string
-      /** Format: int32 */
-      rowNo: number
-      rowKey?: string
-      messages: string[]
-    }
-    PipelineDefinitionStepResponse: {
-      /** Format: int64 */
-      id: number
-      /** Format: int64 */
-      pipelineDefinitionId: number
-      stepCode: string
-      stepName: string
-      stageCode: string
-      /** Format: int32 */
-      stepOrder: number
-      implCode: string
-      stepParams?: string
-      /** Format: int32 */
-      timeoutSeconds?: number
-      retryPolicy?: string
-      /** Format: int32 */
-      retryMaxCount?: number
-      enabled: boolean
-      /** Format: date-time */
-      createdAt: string
-      /** Format: date-time */
-      updatedAt: string
-    }
-    PipelineDefinitionDetailResponse: {
-      /** Format: int64 */
-      id: number
-      tenantId: string
-      jobCode: string
-      pipelineName: string
-      pipelineType: string
-      bizType?: string
-      workerGroup?: string
-      /** Format: int32 */
-      version?: number
-      enabled: boolean
-      description?: string
-      /** Format: date-time */
-      createdAt: string
-      /** Format: date-time */
-      updatedAt: string
-      steps: components['schemas']['PipelineDefinitionStepResponse'][]
-    }
-    ConsolePipelineDefinitionExcelUploadResponse: {
-      uploadToken: string
-      fileName: string
-      /** Format: int32 */
-      pipelineRowCount: number
-      /** Format: int32 */
-      stepRowCount: number
-    }
-    ConsolePipelineDefinitionExcelPreviewResponse: {
-      uploadToken: string
-      fileName: string
-      /** Format: int32 */
-      totalPipelineRows: number
-      /** Format: int32 */
-      validPipelineRows: number
-      /** Format: int32 */
-      invalidPipelineRows: number
-      /** Format: int32 */
-      totalStepRows: number
-      /** Format: int32 */
-      validStepRows: number
-      /** Format: int32 */
-      invalidStepRows: number
-      pipelines: components['schemas']['PipelineDefinitionDetailResponse'][]
-      issues: components['schemas']['ConsolePipelineDefinitionExcelRowIssueResponse'][]
-    }
-    ConsolePipelineDefinitionExcelApplyResponse: {
-      uploadToken: string
-      tenantId: string
-      /** Format: int32 */
-      appliedPipelines: number
-      /** Format: int32 */
-      insertedPipelines: number
-      /** Format: int32 */
-      updatedPipelines: number
-      /** Format: int32 */
-      appliedSteps: number
-    }
-    ConsolePipelineDefinitionExcelRowIssueResponse: {
-      sheetName: string
-      /** Format: int32 */
-      rowNo: number
-      rowKey?: string
-      messages: string[]
-    }
-    ConsoleTenantQuotaPolicyResponse: {
-      /** Format: int64 */
-      id: number
-      tenantId: string
-      policyCode: string
-      /** Format: int32 */
-      maxRunningJobsPerTenant?: number
-      /** Format: int32 */
-      maxPartitionsPerTenant?: number
-      /** Format: int32 */
-      maxQpsPerTenant?: number
-      /** Format: int32 */
-      fairShareWeight?: number
-      enabled: boolean
-      description?: string
-      /** Format: date-time */
-      createdAt: string
-      /** Format: date-time */
-      updatedAt: string
-    }
     ConsoleTenantQuotaPolicyExcelUploadResponse: components['schemas']['ExcelUploadResponse']
-    ConsoleTenantQuotaPolicyExcelPreviewResponse: {
-      uploadToken: string
-      fileName: string
-      sheetName: string
-      /** Format: int32 */
-      totalRows: number
-      /** Format: int32 */
-      validRows: number
-      /** Format: int32 */
-      invalidRows: number
-      rows: components['schemas']['ConsoleTenantQuotaPolicyResponse'][]
-      issues: components['schemas']['ExcelRowIssue'][]
-      previewWorkbookUrl?: string
-    }
     ConsoleTenantQuotaPolicyExcelApplyResponse: components['schemas']['ExcelApplyResponse']
     ConsoleTenantQuotaPolicyExcelRowIssueResponse: components['schemas']['ExcelRowIssue']
     ConsoleResourceQueueResponse: {
@@ -7722,6 +6703,26 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['CommonResponseConsoleAuthProfileResponse']
+        }
+      }
+    }
+  }
+  issueConsoleSseTicket: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description One-time ticket used as `?ticket=` query param on SSE endpoints */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseConsoleSseTicketResponse']
         }
       }
     }
@@ -9311,105 +8312,6 @@ export interface operations {
       }
     }
   }
-  uploadFileChannelExcel: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'multipart/form-data': {
-          /** Format: binary */
-          file: string
-        }
-      }
-    }
-    responses: {
-      /** @description Upload session */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['CommonResponseExcelUpload']
-        }
-      }
-    }
-  }
-  previewFileChannelExcel: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        uploadToken: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Preview result */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['CommonResponseConsoleFileChannelExcelPreview']
-        }
-      }
-    }
-  }
-  downloadFileChannelExcelPreviewWorkbook: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        uploadToken: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Annotated workbook download */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': string
-        }
-      }
-    }
-  }
-  applyFileChannelExcel: {
-    parameters: {
-      query?: never
-      header: {
-        'Idempotency-Key': components['parameters']['IdempotencyKeyHeader']
-      }
-      path: {
-        uploadToken: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['ExcelApplyRequest']
-      }
-    }
-    responses: {
-      /** @description Apply result */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['CommonResponseExcelApply']
-        }
-      }
-    }
-  }
   downloadWorkflowExcelTemplate: {
     parameters: {
       query?: never
@@ -9456,105 +8358,6 @@ export interface operations {
       }
     }
   }
-  uploadWorkflowExcel: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'multipart/form-data': {
-          /** Format: binary */
-          file: string
-        }
-      }
-    }
-    responses: {
-      /** @description Upload session */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['CommonResponseConsoleWorkflowExcelUpload']
-        }
-      }
-    }
-  }
-  previewWorkflowExcel: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        uploadToken: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Preview result */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['CommonResponseConsoleWorkflowExcelPreview']
-        }
-      }
-    }
-  }
-  downloadWorkflowExcelPreviewWorkbook: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        uploadToken: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Annotated workbook download */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': string
-        }
-      }
-    }
-  }
-  applyWorkflowExcel: {
-    parameters: {
-      query?: never
-      header: {
-        'Idempotency-Key': components['parameters']['IdempotencyKeyHeader']
-      }
-      path: {
-        uploadToken: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['WorkflowExcelApplyRequest']
-      }
-    }
-    responses: {
-      /** @description Apply result */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['CommonResponseConsoleWorkflowExcelApply']
-        }
-      }
-    }
-  }
   downloadJobDefinitionExcelTemplate: {
     parameters: {
       query?: never
@@ -9596,105 +8399,6 @@ export interface operations {
         }
         content: {
           'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': string
-        }
-      }
-    }
-  }
-  uploadJobDefinitionExcel: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'multipart/form-data': {
-          /** Format: binary */
-          file: string
-        }
-      }
-    }
-    responses: {
-      /** @description Upload session */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['CommonResponseConsoleJobDefinitionExcelUpload']
-        }
-      }
-    }
-  }
-  previewJobDefinitionExcel: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        uploadToken: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Preview result */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['CommonResponseConsoleJobDefinitionExcelPreview']
-        }
-      }
-    }
-  }
-  downloadJobDefinitionExcelPreviewWorkbook: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        uploadToken: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Annotated workbook download */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': string
-        }
-      }
-    }
-  }
-  applyJobDefinitionExcel: {
-    parameters: {
-      query?: never
-      header: {
-        'Idempotency-Key': components['parameters']['IdempotencyKeyHeader']
-      }
-      path: {
-        uploadToken: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['JobDefinitionExcelApplyRequest']
-      }
-    }
-    responses: {
-      /** @description Apply result */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['CommonResponseConsoleJobDefinitionExcelApply']
         }
       }
     }
@@ -9916,105 +8620,6 @@ export interface operations {
       }
     }
   }
-  uploadBatchWindowExcel: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'multipart/form-data': {
-          /** Format: binary */
-          file: string
-        }
-      }
-    }
-    responses: {
-      /** @description Upload session */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['CommonResponseExcelUpload']
-        }
-      }
-    }
-  }
-  previewBatchWindowExcel: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        uploadToken: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Preview result */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['CommonResponseConsoleBatchWindowExcelPreview']
-        }
-      }
-    }
-  }
-  downloadBatchWindowExcelPreviewWorkbook: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        uploadToken: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Annotated workbook download */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': string
-        }
-      }
-    }
-  }
-  applyBatchWindowExcel: {
-    parameters: {
-      query?: never
-      header: {
-        'Idempotency-Key': components['parameters']['IdempotencyKeyHeader']
-      }
-      path: {
-        uploadToken: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['ExcelApplyRequest']
-      }
-    }
-    responses: {
-      /** @description Apply result */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['CommonResponseExcelApply']
-        }
-      }
-    }
-  }
   downloadBusinessCalendarExcelTemplate: {
     parameters: {
       query?: never
@@ -10053,105 +8658,6 @@ export interface operations {
         }
         content: {
           'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': string
-        }
-      }
-    }
-  }
-  uploadBusinessCalendarExcel: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'multipart/form-data': {
-          /** Format: binary */
-          file: string
-        }
-      }
-    }
-    responses: {
-      /** @description Upload session */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['CommonResponseConsoleBusinessCalendarExcelUpload']
-        }
-      }
-    }
-  }
-  previewBusinessCalendarExcel: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        uploadToken: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Preview result */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['CommonResponseConsoleBusinessCalendarExcelPreview']
-        }
-      }
-    }
-  }
-  downloadBusinessCalendarExcelPreviewWorkbook: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        uploadToken: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Annotated workbook download */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': string
-        }
-      }
-    }
-  }
-  applyBusinessCalendarExcel: {
-    parameters: {
-      query?: never
-      header: {
-        'Idempotency-Key': components['parameters']['IdempotencyKeyHeader']
-      }
-      path: {
-        uploadToken: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['BusinessCalendarExcelApplyRequest']
-      }
-    }
-    responses: {
-      /** @description Apply result */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['CommonResponseConsoleBusinessCalendarExcelApply']
         }
       }
     }
@@ -10201,105 +8707,6 @@ export interface operations {
       }
     }
   }
-  uploadPipelineDefinitionExcel: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'multipart/form-data': {
-          /** Format: binary */
-          file: string
-        }
-      }
-    }
-    responses: {
-      /** @description Upload session */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['CommonResponseConsolePipelineDefinitionExcelUpload']
-        }
-      }
-    }
-  }
-  previewPipelineDefinitionExcel: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        uploadToken: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Preview result */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['CommonResponseConsolePipelineDefinitionExcelPreview']
-        }
-      }
-    }
-  }
-  downloadPipelineDefinitionExcelPreviewWorkbook: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        uploadToken: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Annotated workbook download */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': string
-        }
-      }
-    }
-  }
-  applyPipelineDefinitionExcel: {
-    parameters: {
-      query?: never
-      header: {
-        'Idempotency-Key': components['parameters']['IdempotencyKeyHeader']
-      }
-      path: {
-        uploadToken: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['PipelineDefinitionExcelApplyRequest']
-      }
-    }
-    responses: {
-      /** @description Apply result */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['CommonResponseConsolePipelineDefinitionExcelApply']
-        }
-      }
-    }
-  }
   downloadQuotaPolicyExcelTemplate: {
     parameters: {
       query?: never
@@ -10340,105 +8747,6 @@ export interface operations {
         }
         content: {
           'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': string
-        }
-      }
-    }
-  }
-  uploadQuotaPolicyExcel: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'multipart/form-data': {
-          /** Format: binary */
-          file: string
-        }
-      }
-    }
-    responses: {
-      /** @description Upload session */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['CommonResponseExcelUpload']
-        }
-      }
-    }
-  }
-  previewQuotaPolicyExcel: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        uploadToken: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Preview result */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['CommonResponseConsoleTenantQuotaPolicyExcelPreview']
-        }
-      }
-    }
-  }
-  downloadQuotaPolicyExcelPreviewWorkbook: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        uploadToken: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Annotated workbook download */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': string
-        }
-      }
-    }
-  }
-  applyQuotaPolicyExcel: {
-    parameters: {
-      query?: never
-      header: {
-        'Idempotency-Key': components['parameters']['IdempotencyKeyHeader']
-      }
-      path: {
-        uploadToken: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['ExcelApplyRequest']
-      }
-    }
-    responses: {
-      /** @description Apply result */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['CommonResponseExcelApply']
         }
       }
     }
@@ -15938,7 +14246,11 @@ export interface operations {
   }
   uploadTenantConfigPackageExcel: {
     parameters: {
-      query?: never
+      query?: {
+        /** @description 全局角色（ROLE_ADMIN / ROLE_CONFIG_ADMIN）必须显式指定目标租户； 租户级账号可不传（沿用 JWT 内 tenantId）。
+         *      */
+        tenantId?: string
+      }
       header?: never
       path?: never
       cookie?: never
