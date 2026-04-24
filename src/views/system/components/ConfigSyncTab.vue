@@ -27,11 +27,12 @@
                 type="primary"
                 :loading="exporting"
                 :icon="Download"
-                circle
                 class="export-row__action"
                 v-track-click="'配置同步-导出'"
                 @click="doExport"
-              />
+              >
+                下载
+              </el-button>
             </div>
           </el-form-item>
         </el-form>
@@ -57,12 +58,18 @@
             />
           </el-form-item>
           <el-form-item class="form-actions">
-            <el-button :loading="previewing" v-track-click="'配置同步-预览'" @click="doPreview"
-              >预览变更</el-button
+            <el-button
+              :loading="previewing"
+              :disabled="!importPayload.trim()"
+              v-track-click="'配置同步-预览'"
+              @click="doPreview"
             >
+              预览变更
+            </el-button>
             <el-button
               type="primary"
               :loading="importing"
+              :disabled="!importPayload.trim()"
               v-track-click="'配置同步-导入'"
               @click="doImport"
               >确认导入</el-button
@@ -169,17 +176,20 @@
     padding: var(--card-inner-padding);
     border-radius: var(--radius-content);
     border: 1px solid var(--color-border-light);
-    background: color-mix(in srgb, var(--color-bg-card) 94%, var(--color-bg-canvas) 6%);
+    background:
+      radial-gradient(1200px 420px at 0% 0%, rgb(59 130 246 / 8%), transparent 55%),
+      color-mix(in srgb, var(--color-bg-card) 96%, var(--color-bg-canvas) 4%);
     box-shadow:
       inset 0 1px 0 rgb(255 255 255 / 55%),
       0 1px 2px rgb(15 23 42 / 6%);
   }
 
   .sync-block__title {
-    font-size: 13px;
-    font-weight: 650;
-    color: var(--color-text-secondary);
-    margin: 2px 0 6px;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+    color: var(--color-text);
+    margin: 0 0 6px;
   }
 
   .sync-block__desc {
@@ -193,7 +203,7 @@
     display: flex;
     align-items: center;
     width: 100%;
-    position: relative;
+    gap: 10px;
   }
 
   .export-row__select {
@@ -207,17 +217,10 @@
   }
 
   .export-row__action {
-    position: absolute;
-    right: 0;
-    top: 50%;
-    transform: translateY(-50%);
+    flex: 0 0 auto;
     box-shadow:
       0 10px 22px rgb(59 130 246 / 12%),
       inset 0 1px 0 rgb(255 255 255 / 20%);
-  }
-
-  .export-row :deep(.el-input__wrapper) {
-    padding-right: 54px;
   }
 
   .export-row__action:hover {
@@ -252,6 +255,11 @@
     background: color-mix(in srgb, var(--color-bg-canvas) 88%, #fff 12%);
     box-shadow: inset 0 1px 0 rgb(255 255 255 / 55%);
     min-height: 220px;
+  }
+
+  .form-actions :deep(.el-form-item__content) {
+    justify-content: flex-end;
+    gap: 10px;
   }
 
   .sync-result {

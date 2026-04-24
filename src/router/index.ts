@@ -629,8 +629,8 @@ router.onError((err, to) => {
   // 典型线上场景：发布后用户缓存了旧 chunk，点击菜单会报 “Loading chunk failed”
   // 这里做一次性自动恢复（避免卡在空白页/进度条不消失）。
   const isChunkLoadError =
-    /Loading chunk \\d+ failed/i.test(message) ||
-    /Loading CSS chunk \\d+ failed/i.test(message) ||
+    /Loading chunk \d+ failed/i.test(message) ||
+    /Loading CSS chunk \d+ failed/i.test(message) ||
     /Failed to fetch dynamically imported module/i.test(message) ||
     /Importing a module script failed/i.test(message)
 

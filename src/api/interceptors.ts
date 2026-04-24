@@ -283,7 +283,18 @@ export function applyApiInterceptors(client: AxiosInstance): void {
           const path = cfg?.url ? `${cfg.baseURL ?? ''}${cfg.url}` : ''
           console.error('[API]', m, path, status, raw)
         }
-        if (status === 404) {
+        if (status === 400 && /Required request parameter 'jobCode'/i.test(msg)) {
+          const m = (cfg?.method ?? 'get').toUpperCase()
+          const url = cfg?.url ?? (error as AxiosError)?.config?.url
+          showErrorToast({
+            title: '参数缺失（jobCode）',
+            message: url
+              ? `接口要求必填参数 jobCode，但本次请求未携带。请检查该页面的查询条件/路由参数是否传了 jobCode。\n${m} ${url}`
+              : `接口要求必填参数 jobCode，但本次请求未携带。请检查该页面的查询条件/路由参数是否传了 jobCode。`,
+            traceId: extractErrorTrace(error),
+            duration: 7500,
+          })
+        } else if (status === 404) {
           const url = (error as AxiosError)?.config?.url
           showErrorToast({
             title: '接口不存在',
