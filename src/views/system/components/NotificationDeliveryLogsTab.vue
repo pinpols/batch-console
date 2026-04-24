@@ -1,0 +1,141 @@
+<template>
+  <ProTable
+    :data="pagedDeliveryLogs"
+    :loading="loadingLogs"
+    :total="filteredDeliveryLogs.length"
+    v-model:page="logPage"
+    v-model:page-size="logPageSize"
+    @change="() => {}"
+  >
+    <template #query>
+      <ListPageQueryBar
+        :filter-busy="false"
+        :refresh-busy="loadingLogs"
+        @search="applyLogFilter"
+        @reset="resetLogFilter"
+        @refresh="loadDeliveryLogs"
+      >
+        <el-form-item label="关键字">
+          <el-input
+            class="query-w-260"
+            v-model="logFilterDraft.keyword"
+            clearable
+            placeholder="搜索 eventType / channelId"
+            @keyup.enter="applyLogFilter"
+          />
+        </el-form-item>
+        <el-form-item label="状态">
+          <el-select
+            class="query-w-180"
+            v-model="logFilterDraft.status"
+            clearable
+            placeholder="全部"
+          >
+            <el-option
+              v-for="opt in deliveryStatusOptions"
+              :key="opt.value"
+              :label="opt.label"
+              :value="opt.value"
+            />
+          </el-select>
+        </el-form-item>
+      </ListPageQueryBar>
+    </template>
+    <el-table-column prop="id" label="ID" width="80">
+      <template #default="{ row }">{{ row.id ?? '—' }}</template>
+    </el-table-column>
+    <el-table-column prop="channelId" label="渠道 ID" width="100">
+      <template #default="{ row }">{{ row.channelId ?? '—' }}</template>
+    </el-table-column>
+    <el-table-column prop="eventType" label="事件类型" width="160">
+      <template #default="{ row }">{{ row.eventType || '—' }}</template>
+    </el-table-column>
+    <el-table-column prop="deliveryStatus" label="状态" width="100">
+      <template #default="{ row }">
+        <StatusTag
+          v-if="row.deliveryStatus"
+          :value="String(row.deliveryStatus)"
+          category="deliveryStatus"
+        />
+        <span v-else class="cell-empty">—</span>
+      </template>
+    </el-table-column>
+    <el-table-column prop="httpStatus" label="HTTP" width="80">
+      <template #default="{ row }">{{ row.httpStatus ?? '—' }}</template>
+    </el-table-column>
+    <el-table-column prop="responseBody" label="响应" min-width="200" show-overflow-tooltip>
+      <template #default="{ row }">{{ row.responseBody || '—' }}</template>
+    </el-table-column>
+    <DatetimeColumn prop="createdAt" label="时间" width="160" />
+  </ProTable>
+</template>
+
+<script setup lang="ts">
+  import { ref, reactive, computed } from 'vue'
+  import { listNotificationDeliveryLogs } from '@/api/notifications'
+  import { toPageResult } from '@/api/adapters'
+  import { useTenantStore } from '@/stores/tenant'
+  import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
+  import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
+  import ProTable from '@/components/table/ProTable.vue'
+  import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
+  import StatusTag from '@/components/common/StatusTag.vue'
+  import DatetimeColumn from '@/components/common/DatetimeColumn.vue'
+
+  const tenant = useTenantStore()
+  const { data: metaEnums } = useConsoleMetaEnumsQuery()
+  const deliveryStatusOptions = computed(() => pickMetaEnumGroup(metaEnums.value, 'deliveryStatus'))
+
+  const loadingLogs = ref(false)
+  const deliveryLogs = ref<Record<string, unknown>[]>([])
+  const logPage = ref(1)
+  const logPageSize = ref(20)
+  const logFilterDraft = reactive({ keyword: '', status: '' })
+  const logFilterApplied = reactive({ keyword: '', status: '' })
+
+  async function loadDeliveryLogs() {
+    loadingLogs.value = true
+    try {
+      const data = await listNotificationDeliveryLogs(tenant.tenantId)
+      deliveryLogs.value = Array.isArray(data) ? (data as Record<string, unknown>[]) : []
+    } catch {
+      deliveryLogs.value = []
+    } finally {
+      loadingLogs.value = false
+    }
+  }
+
+  function normalize(s: unknown) {
+    return String(s ?? '')
+      .trim()
+      .toLowerCase()
+  }
+
+  const filteredDeliveryLogs = computed(() => {
+    const k = normalize(logFilterApplied.keyword)
+    const s = normalize(logFilterApplied.status)
+    return deliveryLogs.value.filter((row) => {
+      const okStatus = !s ? true : normalize(row.deliveryStatus) === s
+      if (!okStatus) return false
+      if (!k) return true
+      const hay = `${row.eventType ?? ''} ${row.channelId ?? ''}`.toLowerCase()
+      return hay.includes(k)
+    })
+  })
+
+  const pagedDeliveryLogs = computed(
+    () => toPageResult(filteredDeliveryLogs.value, logPage.value, logPageSize.value).records,
+  )
+
+  function applyLogFilter() {
+    logFilterApplied.keyword = logFilterDraft.keyword.trim()
+    logFilterApplied.status = logFilterDraft.status.trim()
+    logPage.value = 1
+  }
+
+  function resetLogFilter() {
+    logFilterDraft.keyword = ''
+    logFilterDraft.status = ''
+    applyLogFilter()
+  }
+</script>
