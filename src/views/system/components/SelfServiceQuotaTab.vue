@@ -23,7 +23,7 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, onMounted } from 'vue'
+  import { ref } from 'vue'
   import { getTenantQuota, getTenantUsage } from '@/api/tenantSelfService'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
@@ -55,11 +55,6 @@
       loadingUsage.value = false
     }
   }
-
-  onMounted(() => {
-    void loadQuota()
-    void loadUsage()
-  })
 
   useTenantReload(() => {
     void loadQuota()

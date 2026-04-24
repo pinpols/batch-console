@@ -33,7 +33,7 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, reactive, onMounted } from 'vue'
+  import { ref, reactive } from 'vue'
   import { ElMessage } from 'element-plus'
   import { getTenantQuota, requestQuotaChange } from '@/api/tenantSelfService'
   import { useTenantStore } from '@/stores/tenant'
@@ -100,10 +100,6 @@
       submittingQuota.value = false
     }
   }
-
-  onMounted(() => {
-    void loadQuotaKeys()
-  })
 
   useTenantReload(() => {
     quotaKeys.value = []
