@@ -27,10 +27,10 @@
       >
         <el-form-item label="关键字">
           <el-input
+            class="query-w-220"
             v-model="queryDraft.keyword"
             clearable
             placeholder="username / displayName"
-            style="width: 220px"
             @keyup.enter="onSearch"
           />
         </el-form-item>
@@ -106,7 +106,7 @@
             v-model="form.tenantId"
             :disabled="true"
             placeholder="归属租户"
-            select-style="width: 100%"
+            select-class="query-w-full"
           />
         </el-form-item>
         <el-form-item label="用户名">

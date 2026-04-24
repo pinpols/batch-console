@@ -6,11 +6,17 @@
       :show-description="true"
     >
       <template #actions>
-        <el-button v-if="canManageTenants" type="primary" :icon="Plus" @click="openCreate"
-          >新建租户</el-button
+        <el-button
+          v-if="canManageTenants"
+          type="primary"
+          :icon="Plus"
+          class="pretty-add-button"
+          @click="openCreate"
         >
+          新增租户
+        </el-button>
         <el-button v-if="canManageTenants" type="primary" plain @click="openBatchCreate"
-          >批量新建</el-button
+          >批量新增</el-button
         >
         <el-button v-if="canManageTenants" plain @click="openCopyConfig">复制配置</el-button>
       </template>
@@ -37,15 +43,15 @@
       >
         <el-form-item label="关键字">
           <el-input
+            class="query-w-220"
             v-model="queryDraft.keyword"
             clearable
             placeholder="tenantId / tenantName"
-            style="width: 220px"
             @keyup.enter="onSearch"
           />
         </el-form-item>
         <el-form-item label="状态">
-          <el-select v-model="queryDraft.status" clearable placeholder="全部" style="width: 140px">
+          <el-select class="query-w-140" v-model="queryDraft.status" clearable placeholder="全部">
             <el-option
               v-for="opt in tenantStatusOptions"
               :key="opt.value"
@@ -126,10 +132,10 @@
       />
     </SectionCard>
 
-    <!-- 新建 / 编辑对话框 -->
+    <!-- 新增 / 编辑对话框 -->
     <el-dialog
       v-model="formVisible"
-      :title="form.editing ? `编辑租户：${form.tenantId}` : '新建租户'"
+      :title="form.editing ? `编辑租户：${form.tenantId}` : '新增租户'"
       width="520px"
     >
       <el-form label-width="100px">
@@ -181,8 +187,8 @@
         </el-button>
       </template>
     </el-dialog>
-    <!-- 批量新建对话框 -->
-    <el-dialog v-model="batchFormVisible" title="批量新建租户" width="620px">
+    <!-- 批量新增对话框 -->
+    <el-dialog v-model="batchFormVisible" title="批量新增租户" width="620px">
       <el-form label-width="100px">
         <el-form-item label="租户列表" required>
           <el-input
@@ -212,11 +218,11 @@
         <el-divider content-position="left">配置初始化（可选）</el-divider>
         <el-form-item label="源租户">
           <el-select
+            class="query-w-280"
             v-model="batchForm.initConfigFrom"
             clearable
             filterable
             placeholder="留空则跳过配置初始化"
-            style="width: 280px"
           >
             <el-option
               v-for="t in page.items"
@@ -274,7 +280,7 @@
         </el-form-item>
         <el-form-item label="试运行">
           <el-switch v-model="initForm.dryRun" />
-          <span class="form-hint" style="margin-left: 8px">开启后仅校验，不实际写入</span>
+          <span class="form-hint u-ml-8">开启后仅校验，不实际写入</span>
         </el-form-item>
       </el-form>
       <template #footer>
@@ -293,10 +299,10 @@
       <el-form label-width="100px">
         <el-form-item label="源租户" required>
           <el-select
+            class="query-w-280"
             v-model="copyForm.sourceTenantId"
             filterable
             placeholder="选择源租户"
-            style="width: 280px"
           >
             <el-option
               v-for="t in page.items"
@@ -312,7 +318,7 @@
             multiple
             filterable
             placeholder="选择一个或多个目标租户"
-            style="width: 100%"
+            class="query-w-full"
           >
             <el-option
               v-for="t in page.items.filter((x) => x.tenantId !== copyForm.sourceTenantId)"
@@ -336,7 +342,7 @@
         </el-form-item>
         <el-form-item label="试运行">
           <el-switch v-model="copyForm.dryRun" />
-          <span class="form-hint" style="margin-left: 8px">开启后仅预览差异，不实际写入</span>
+          <span class="form-hint u-ml-8">开启后仅预览差异，不实际写入</span>
         </el-form-item>
       </el-form>
       <template #footer>

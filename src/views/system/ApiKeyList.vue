@@ -2,9 +2,15 @@
   <PageContainer>
     <PageHeader title="API Key 管理" description="API Key 的创建、查看与吊销。">
       <template #actions>
-        <el-button type="primary" v-track-click="'新增 API Key'" @click="openCreate"
-          >新增 API Key</el-button
+        <el-button
+          type="primary"
+          :icon="Plus"
+          class="pretty-add-button"
+          v-track-click="'新增 API Key'"
+          @click="openCreate"
         >
+          新增 API Key
+        </el-button>
       </template>
     </PageHeader>
 
@@ -28,10 +34,10 @@
           >
             <el-form-item label="关键字">
               <el-input
+                class="query-w-200"
                 v-model="kwDraft"
                 clearable
                 placeholder="按名称模糊搜索"
-                style="width: 200px"
                 @keyup.enter="onSearch"
               />
             </el-form-item>
@@ -40,7 +46,16 @@
         <el-table-column prop="id" label="ID" width="80" />
         <el-table-column prop="keyName" label="名称" min-width="160" show-overflow-tooltip />
         <el-table-column prop="scopes" label="权限范围" min-width="180" show-overflow-tooltip />
+        <el-table-column label="状态" width="110">
+          <template #default="{ row }">
+            <StatusTag
+              :value="String(isRevoked(row) ? 'REVOKED' : isEnabled(row) ? 'ENABLED' : 'DISABLED')"
+              category="apiKey"
+            />
+          </template>
+        </el-table-column>
         <DatetimeColumn prop="expiresAt" label="过期时间" width="160" />
+        <DatetimeColumn prop="revokedAt" label="吊销时间" width="160" />
         <DatetimeColumn prop="createdAt" label="创建时间" width="160" />
         <el-table-column label="操作" width="160" fixed="right">
           <template #default="{ row }">
@@ -52,8 +67,10 @@
                 type="danger"
                 v-track-click="{ action: '吊销 API Key', id: row.id }"
                 @click="confirmRevoke(row)"
-                >吊销</el-button
+                :disabled="isRevoked(row)"
               >
+                {{ isRevoked(row) ? '已吊销' : '吊销' }}
+              </el-button>
             </div>
           </template>
         </el-table-column>
@@ -74,7 +91,7 @@
             type="datetime"
             value-format="YYYY-MM-DDTHH:mm:ss"
             placeholder="可选，不填则永久"
-            style="width: 100%"
+            class="query-w-full"
           />
         </el-form-item>
       </el-form>
@@ -89,7 +106,12 @@
         <el-descriptions-item label="ID">{{ detail.id }}</el-descriptions-item>
         <el-descriptions-item label="名称">{{ detail.keyName }}</el-descriptions-item>
         <el-descriptions-item label="权限范围">{{ detail.scopes }}</el-descriptions-item>
+        <el-descriptions-item label="enabled">{{
+          String(detail.enabled ?? '')
+        }}</el-descriptions-item>
         <el-descriptions-item label="过期时间">{{ detail.expiresAt }}</el-descriptions-item>
+        <el-descriptions-item label="revokedAt">{{ detail.revokedAt ?? '—' }}</el-descriptions-item>
+        <el-descriptions-item label="revokedBy">{{ detail.revokedBy ?? '—' }}</el-descriptions-item>
         <el-descriptions-item label="原始响应">
           <pre class="json-preview">{{ JSON.stringify(detail, null, 2) }}</pre>
         </el-descriptions-item>
@@ -101,6 +123,7 @@
 <script setup lang="ts">
   import { ref, reactive, computed } from 'vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
+  import { Plus } from '@element-plus/icons-vue'
   import { listApiKeys, createApiKey, getApiKey, revokeApiKey } from '@/api/apiKeys'
   import { toPageResult } from '@/api/adapters'
   import { useTenantStore } from '@/stores/tenant'
@@ -110,6 +133,7 @@
   import SectionCard from '@/components/common/SectionCard.vue'
   import ProTable from '@/components/table/ProTable.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
+  import StatusTag from '@/components/common/StatusTag.vue'
 
   const tenant = useTenantStore()
   const loading = ref(false)
@@ -121,6 +145,21 @@
   const pageSize = ref(20)
   const kwDraft = ref('')
   const keyword = ref('')
+
+  function isEnabled(row: Record<string, unknown>): boolean {
+    const v = row.enabled
+    if (typeof v === 'boolean') return v
+    if (typeof v === 'string') return v.toLowerCase() === 'true'
+    if (typeof v === 'number') return v === 1
+    return true
+  }
+
+  function isRevoked(row: Record<string, unknown>): boolean {
+    const v = row.revokedAt
+    if (v == null) return false
+    const s = String(v).trim()
+    return s.length > 0 && s !== '0'
+  }
 
   const filtered = computed(() => {
     const k = keyword.value.trim().toLowerCase()
@@ -197,12 +236,16 @@
   }
 
   async function confirmRevoke(row: Record<string, unknown>) {
+    if (isRevoked(row)) return
     try {
       await ElMessageBox.confirm(`吊销 API Key #${row.id}（${row.keyName}）？`, '吊销确认', {
         type: 'warning',
       })
       await revokeApiKey(row.id as number, tenant.tenantId)
       ElMessage.success('已吊销')
+      // Optimistic UI: update row immediately (so button/text changes right away)
+      row.revokedAt = new Date().toISOString()
+      row.enabled = false
       await load()
     } catch {
       /* cancel */

@@ -6,7 +6,9 @@
       :show-description="true"
     >
       <template #actions>
-        <el-button type="primary" @click="openCreate">新增参数</el-button>
+        <el-button type="primary" :icon="Plus" class="pretty-add-button" @click="openCreate">
+          新增参数
+        </el-button>
       </template>
     </PageHeader>
 
@@ -30,10 +32,10 @@
           >
             <el-form-item label="关键字">
               <el-input
+                class="query-w-200"
                 v-model="kwDraft"
                 clearable
                 placeholder="按 Key 模糊搜索"
-                style="width: 200px"
                 @keyup.enter="onSearch"
               />
             </el-form-item>
@@ -83,6 +85,7 @@
 <script setup lang="ts">
   import { ref, reactive, computed } from 'vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
+  import { Plus } from '@element-plus/icons-vue'
   import {
     listSystemParameters,
     upsertSystemParameter,

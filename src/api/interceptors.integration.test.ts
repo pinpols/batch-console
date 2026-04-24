@@ -167,11 +167,11 @@ describe('401 分级处理:业务 401 不登出', () => {
     expect((window as { location: { href: string } }).location.href).toBe('/login')
   })
 
-  it('/api/console/triggers 401 → 保留 token，不跳登录', async () => {
+  it('/api/console/ops/triggers 401 → 保留 token，不跳登录', async () => {
     ;(window as { location: { href: string } }).location.href = '/'
     const client = makeClient()
-    client.defaults.adapter = make401Adapter('/api/console/triggers') as never
-    await expect(client.get('/api/console/triggers')).rejects.toThrow()
+    client.defaults.adapter = make401Adapter('/api/console/ops/triggers') as never
+    await expect(client.get('/api/console/ops/triggers')).rejects.toThrow()
     expect(storage.get('token')).toBe('dev.test.token')
     expect((window as { location: { href: string } }).location.href).toBe('/')
   })

@@ -8,7 +8,19 @@
           <div class="form-panel">
             <el-form label-width="100px" class="form-section">
               <el-form-item label="Job Code">
-                <el-input v-model="rerunForm.jobCode" placeholder="Job Code" />
+                <el-select
+                  v-model="rerunForm.jobCode"
+                  filterable
+                  remote
+                  reserve-keyword
+                  placeholder="请输入关键字搜索"
+                  :remote-method="queryJobCodes"
+                  :loading="jobCodeLoading"
+                  @focus="loadDefaultJobCodes"
+                  class="query-w-full"
+                >
+                  <el-option v-for="opt in jobCodeOptions" :key="opt" :label="opt" :value="opt" />
+                </el-select>
               </el-form-item>
               <el-form-item label="业务日">
                 <el-date-picker
@@ -16,7 +28,7 @@
                   type="date"
                   value-format="YYYY-MM-DD"
                   placeholder="选择日期"
-                  style="width: 100%"
+                  class="query-w-full"
                 />
               </el-form-item>
               <el-form-item label="目标实例号">
@@ -30,9 +42,10 @@
                   placeholder="重跑原因"
                 />
               </el-form-item>
-              <el-form-item>
+              <el-form-item class="form-actions">
                 <el-button
                   type="primary"
+                  class="pretty-primary-button"
                   :loading="rerunLoading"
                   v-track-click="'自助重跑申请'"
                   @click="submitRerun"
@@ -47,7 +60,19 @@
           <div class="form-panel">
             <el-form label-width="100px" class="form-section">
               <el-form-item label="Job Code">
-                <el-input v-model="compForm.jobCode" placeholder="Job Code" />
+                <el-select
+                  v-model="compForm.jobCode"
+                  filterable
+                  remote
+                  reserve-keyword
+                  placeholder="请输入关键字搜索"
+                  :remote-method="queryJobCodes"
+                  :loading="jobCodeLoading"
+                  @focus="loadDefaultJobCodes"
+                  class="query-w-full"
+                >
+                  <el-option v-for="opt in jobCodeOptions" :key="opt" :label="opt" :value="opt" />
+                </el-select>
               </el-form-item>
               <el-form-item label="业务日">
                 <el-date-picker
@@ -55,11 +80,26 @@
                   type="date"
                   value-format="YYYY-MM-DD"
                   placeholder="选择日期"
-                  style="width: 100%"
+                  class="query-w-full"
                 />
               </el-form-item>
               <el-form-item label="补偿类型">
-                <el-input v-model="compForm.compensationType" placeholder="可选" />
+                <el-select
+                  v-model="compForm.compensationType"
+                  filterable
+                  allow-create
+                  default-first-option
+                  clearable
+                  placeholder="请选择（或输入自定义）"
+                  class="query-w-full"
+                >
+                  <el-option
+                    v-for="t in compensationTypeOptions"
+                    :key="t.value"
+                    :label="t.label"
+                    :value="t.value"
+                  />
+                </el-select>
               </el-form-item>
               <el-form-item label="目标实例号">
                 <el-input v-model="compForm.targetInstanceNo" placeholder="可选" />
@@ -72,9 +112,10 @@
                   placeholder="补偿原因"
                 />
               </el-form-item>
-              <el-form-item>
+              <el-form-item class="form-actions">
                 <el-button
                   type="primary"
+                  class="pretty-primary-button"
                   :loading="compLoading"
                   v-track-click="'自助补偿申请'"
                   @click="submitCompensation"
@@ -93,6 +134,7 @@
   import { ref, reactive } from 'vue'
   import { ElMessage } from 'element-plus'
   import { selfServiceRerunRequest, selfServiceCompensationRequest } from '@/api/selfServiceJobs'
+  import { jobApi } from '@/api/job'
   import { useTenantStore } from '@/stores/tenant'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
@@ -103,6 +145,62 @@
   const rerunLoading = ref(false)
   const compLoading = ref(false)
 
+  const jobCodeLoading = ref(false)
+  const jobCodeOptions = ref<string[]>([])
+
+  async function loadDefaultJobCodes() {
+    if (jobCodeLoading.value) return
+    if (jobCodeOptions.value.length > 0) return
+    jobCodeLoading.value = true
+    try {
+      const res = await jobApi.listDefinitionsPaged({
+        tenantId: tenant.tenantId,
+        pageNo: 1,
+        pageSize: 30,
+        enabled: true,
+      })
+      jobCodeOptions.value = Array.from(
+        new Set(
+          (res.records ?? [])
+            .map((r) => r.jobCode)
+            .filter((v): v is string => typeof v === 'string' && v),
+        ),
+      )
+    } catch {
+      jobCodeOptions.value = []
+    } finally {
+      jobCodeLoading.value = false
+    }
+  }
+
+  async function queryJobCodes(keyword: string) {
+    const q = keyword.trim()
+    if (!q) {
+      return
+    }
+    jobCodeLoading.value = true
+    try {
+      const res = await jobApi.listDefinitionsPaged({
+        tenantId: tenant.tenantId,
+        pageNo: 1,
+        pageSize: 30,
+        jobCode: q,
+        enabled: true,
+      })
+      jobCodeOptions.value = Array.from(
+        new Set(
+          (res.records ?? [])
+            .map((r) => r.jobCode)
+            .filter((v): v is string => typeof v === 'string' && v),
+        ),
+      )
+    } catch {
+      jobCodeOptions.value = []
+    } finally {
+      jobCodeLoading.value = false
+    }
+  }
+
   const rerunForm = reactive({ jobCode: '', bizDate: '', targetInstanceNo: '', reason: '' })
   const compForm = reactive({
     jobCode: '',
@@ -111,6 +209,15 @@
     targetInstanceNo: '',
     reason: '',
   })
+
+  const compensationTypeOptions = [
+    { value: 'JOB', label: 'JOB（重跑作业）' },
+    { value: 'STEP', label: 'STEP（重跑步骤）' },
+    { value: 'PARTITION', label: 'PARTITION（重试分区）' },
+    { value: 'FILE', label: 'FILE（重处理文件）' },
+    { value: 'BATCH', label: 'BATCH（重跑批次）' },
+    { value: 'DLQ', label: 'DLQ（死信回放）' },
+  ] as const
 
   async function submitRerun() {
     if (!rerunForm.jobCode.trim()) {
@@ -170,3 +277,38 @@
     }
   }
 </script>
+
+<style scoped>
+  .pretty-primary-button {
+    border: none;
+    border-radius: 12px;
+    padding: 0 20px;
+    min-height: 42px;
+    font-weight: 650;
+    letter-spacing: 0.06em;
+    background: linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--color-primary) 78%, #ffffff 22%) 0%,
+      color-mix(in srgb, #0f5ed9 72%, #ffffff 28%) 100%
+    );
+    box-shadow: 0 6px 16px rgb(59 130 246 / 16%);
+    transition:
+      transform 0.18s ease,
+      box-shadow 0.18s ease,
+      filter 0.18s ease;
+  }
+
+  .pretty-primary-button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 24px rgb(59 130 246 / 18%);
+    filter: saturate(1.05);
+  }
+
+  .pretty-primary-button:active {
+    transform: translateY(0);
+  }
+
+  .form-actions :deep(.el-form-item__content) {
+    justify-content: center;
+  }
+</style>

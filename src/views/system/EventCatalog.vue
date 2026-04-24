@@ -24,10 +24,10 @@
               >
                 <el-form-item label="关键字">
                   <el-input
+                    class="query-w-240"
                     v-model="eventTypeKeyword"
                     clearable
                     placeholder="搜索事件类型"
-                    style="width: 240px"
                   />
                 </el-form-item>
               </ListPageQueryBar>
@@ -37,7 +37,11 @@
               label="事件类型"
               min-width="200"
               show-overflow-tooltip
-            />
+            >
+              <template #default="{ row }">
+                <CopyableText :text="String(row.eventType ?? '')" />
+              </template>
+            </el-table-column>
             <el-table-column
               prop="description"
               label="描述"
@@ -46,6 +50,20 @@
             />
             <el-table-column prop="category" label="分类" width="140" />
             <el-table-column prop="schema" label="Schema" min-width="200" show-overflow-tooltip />
+            <el-table-column label="操作" width="120" fixed="right">
+              <template #default="{ row }">
+                <div class="table-actions">
+                  <el-button
+                    size="small"
+                    plain
+                    type="primary"
+                    @click="openDetail('eventType', row)"
+                  >
+                    详情
+                  </el-button>
+                </div>
+              </template>
+            </el-table-column>
           </ProTable>
         </el-tab-pane>
 
@@ -69,10 +87,10 @@
               >
                 <el-form-item label="关键字">
                   <el-input
+                    class="query-w-240"
                     v-model="topicKeyword"
                     clearable
                     placeholder="搜索 Topic"
-                    style="width: 240px"
                   />
                 </el-form-item>
               </ListPageQueryBar>
@@ -90,10 +108,37 @@
               min-width="200"
               show-overflow-tooltip
             />
+            <el-table-column label="操作" width="120" fixed="right">
+              <template #default="{ row }">
+                <div class="table-actions">
+                  <el-button size="small" plain type="primary" @click="openDetail('topic', row)">
+                    详情
+                  </el-button>
+                </div>
+              </template>
+            </el-table-column>
           </ProTable>
         </el-tab-pane>
       </el-tabs>
     </SectionCard>
+
+    <el-drawer v-model="detailVisible" :title="detailTitle" size="720px">
+      <div v-if="detailRow" class="detail-drawer">
+        <div class="detail-drawer__meta">
+          <div v-if="detailKind === 'eventType'" class="detail-drawer__meta-row">
+            <span class="detail-drawer__label">事件类型</span>
+            <CopyableText :text="String((detailRow as any).eventType ?? '')" />
+          </div>
+          <div v-else class="detail-drawer__meta-row">
+            <span class="detail-drawer__label">Topic</span>
+            <CopyableText
+              :text="String((detailRow as any).topic ?? (detailRow as any).name ?? '')"
+            />
+          </div>
+        </div>
+        <pre class="json-preview">{{ detailJson }}</pre>
+      </div>
+    </el-drawer>
   </PageContainer>
 </template>
 
@@ -119,6 +164,27 @@
   const typePageSize = ref(20)
   const topicPage = ref(1)
   const topicPageSize = ref(20)
+
+  const detailVisible = ref(false)
+  const detailKind = ref<'eventType' | 'topic'>('eventType')
+  const detailRow = ref<Record<string, unknown> | null>(null)
+  const detailTitle = computed(() =>
+    detailKind.value === 'eventType' ? '事件类型详情' : 'Topic 详情',
+  )
+  const detailJson = computed(() => {
+    if (!detailRow.value) return ''
+    try {
+      return JSON.stringify(detailRow.value, null, 2)
+    } catch {
+      return String(detailRow.value)
+    }
+  })
+
+  function openDetail(kind: 'eventType' | 'topic', row: Record<string, unknown>) {
+    detailKind.value = kind
+    detailRow.value = row
+    detailVisible.value = true
+  }
 
   const filteredEventTypes = computed(() => {
     const k = eventTypeKeyword.value.trim().toLowerCase()

@@ -30,13 +30,13 @@
               >
                 <el-form-item label="组">
                   <el-select
+                    class="query-w-180"
                     v-model="workerFilters.workerGroup"
                     clearable
                     filterable
                     allow-create
                     default-first-option
                     placeholder="选择或输入 workerGroup"
-                    style="width: 180px"
                   >
                     <el-option
                       v-for="o in workerGroupOptions"
@@ -48,10 +48,10 @@
                 </el-form-item>
                 <el-form-item label="状态">
                   <el-select
+                    class="query-w-200"
                     v-model="workerFilters.status"
                     clearable
                     placeholder="全部连接状态"
-                    style="width: 200px"
                   >
                     <el-option
                       v-for="opt in workerStatusOptions"
@@ -63,10 +63,10 @@
                 </el-form-item>
                 <el-form-item label="关键字">
                   <el-input
+                    class="query-w-200"
                     v-model="workerFilters.keyword"
                     clearable
                     placeholder="按 workerCode 模糊匹配"
-                    style="width: 200px"
                   />
                 </el-form-item>
               </ListPageQueryBar>
@@ -121,19 +121,19 @@
               >
                 <el-form-item label="渠道编码">
                   <el-input
+                    class="query-w-180"
                     v-model="channelFilters.channelCode"
                     clearable
                     placeholder="渠道编码，模糊匹配"
-                    style="width: 180px"
                   />
                 </el-form-item>
                 <el-form-item label="类型">
                   <el-select
+                    class="query-w-160"
                     v-model="channelFilters.channelType"
                     clearable
                     filterable
                     placeholder="全部渠道类型"
-                    style="width: 160px"
                   >
                     <el-option
                       v-for="option in channelTypeOptions"

@@ -25,22 +25,22 @@
           >
             <el-form-item label="关键字">
               <el-input
+                class="query-w-240"
                 v-model="kwDraft"
                 clearable
                 placeholder="requestId / jobCode / traceId"
-                style="width: 240px"
                 @keyup.enter="onSearch"
               />
             </el-form-item>
             <el-form-item label="状态">
               <el-select
+                class="query-w-180"
                 v-model="statusDraft"
                 clearable
                 filterable
                 allow-create
                 default-first-option
                 placeholder="选择或输入 requestStatus"
-                style="width: 180px"
                 @keyup.enter="onSearch"
               >
                 <el-option
@@ -53,12 +53,12 @@
             </el-form-item>
             <el-form-item label="业务日">
               <el-date-picker
+                class="query-w-160"
                 v-model="bizDateDraft"
                 type="date"
                 value-format="YYYY-MM-DD"
                 clearable
                 placeholder="选择业务日"
-                style="width: 160px"
                 @keyup.enter="onSearch"
               />
             </el-form-item>

@@ -27,22 +27,22 @@
               >
                 <el-form-item label="关键字">
                   <el-input
+                    class="query-w-220"
                     v-model="retryKwDraft"
                     clearable
                     placeholder="事件类型或事件 Key，模糊匹配"
-                    style="width: 220px"
                     @keyup.enter="onRetrySearch"
                   />
                 </el-form-item>
                 <el-form-item label="状态">
                   <el-select
+                    class="query-w-200"
                     v-model="retryStatusDraft"
                     clearable
                     filterable
                     allow-create
                     default-first-option
                     placeholder="重试状态"
-                    style="width: 200px"
                     @keyup.enter="onRetrySearch"
                   >
                     <el-option
@@ -64,6 +64,15 @@
             </el-table-column>
             <el-table-column prop="retryCount" label="次数" width="80" />
             <DatetimeColumn prop="nextRetryAt" label="下次重试" width="160" />
+            <el-table-column label="操作" width="120" fixed="right">
+              <template #default="{ row }">
+                <div class="table-actions">
+                  <el-button size="small" plain type="primary" @click="openDetail('retry', row)">
+                    详情
+                  </el-button>
+                </div>
+              </template>
+            </el-table-column>
           </ProTable>
         </el-tab-pane>
         <el-tab-pane label="投递" name="delivery">
@@ -86,22 +95,22 @@
               >
                 <el-form-item label="关键字">
                   <el-input
+                    class="query-w-220"
                     v-model="deliveryKwDraft"
                     clearable
                     placeholder="事件类型、Key 或 Topic，模糊匹配"
-                    style="width: 220px"
                     @keyup.enter="onDeliverySearch"
                   />
                 </el-form-item>
                 <el-form-item label="状态">
                   <el-select
+                    class="query-w-200"
                     v-model="deliveryStatusDraft"
                     clearable
                     filterable
                     allow-create
                     default-first-option
                     placeholder="投递状态"
-                    style="width: 200px"
                     @keyup.enter="onDeliverySearch"
                   >
                     <el-option
@@ -131,10 +140,39 @@
               show-overflow-tooltip
             />
             <DatetimeColumn prop="updatedAt" label="更新" width="160" />
+            <el-table-column label="操作" width="120" fixed="right">
+              <template #default="{ row }">
+                <div class="table-actions">
+                  <el-button size="small" plain type="primary" @click="openDetail('delivery', row)">
+                    详情
+                  </el-button>
+                </div>
+              </template>
+            </el-table-column>
           </ProTable>
         </el-tab-pane>
       </el-tabs>
     </SectionCard>
+
+    <el-drawer v-model="detailVisible" :title="detailTitle" size="720px">
+      <div v-if="detailRow" class="detail-drawer">
+        <div class="detail-drawer__meta">
+          <div class="detail-drawer__meta-row">
+            <span class="detail-drawer__label">事件类型</span>
+            <CopyableText :text="String((detailRow as any).eventType ?? '')" />
+          </div>
+          <div class="detail-drawer__meta-row">
+            <span class="detail-drawer__label">Key</span>
+            <CopyableText :text="String((detailRow as any).eventKey ?? '')" />
+          </div>
+          <div v-if="detailKind === 'delivery'" class="detail-drawer__meta-row">
+            <span class="detail-drawer__label">Topic</span>
+            <CopyableText :text="String((detailRow as any).targetTopic ?? '')" />
+          </div>
+        </div>
+        <pre class="json-preview">{{ detailJson }}</pre>
+      </div>
+    </el-drawer>
   </PageContainer>
 </template>
 
@@ -154,6 +192,7 @@
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import ProTable from '@/components/table/ProTable.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
+  import CopyableText from '@/components/common/CopyableText.vue'
   import type {
     ConsoleOutboxDeliveryLogResponse,
     ConsoleOutboxRetryLogResponse,
@@ -171,6 +210,30 @@
 
   const retriesAll = ref<ConsoleOutboxRetryLogResponse[]>([])
   const deliveriesAll = ref<ConsoleOutboxDeliveryLogResponse[]>([])
+
+  const detailVisible = ref(false)
+  const detailKind = ref<'retry' | 'delivery'>('retry')
+  const detailRow = ref<ConsoleOutboxRetryLogResponse | ConsoleOutboxDeliveryLogResponse | null>(
+    null,
+  )
+  const detailTitle = computed(() => (detailKind.value === 'retry' ? '重试详情' : '投递详情'))
+  const detailJson = computed(() => {
+    if (!detailRow.value) return ''
+    try {
+      return JSON.stringify(detailRow.value, null, 2)
+    } catch {
+      return String(detailRow.value)
+    }
+  })
+
+  function openDetail(
+    kind: 'retry' | 'delivery',
+    row: ConsoleOutboxRetryLogResponse | ConsoleOutboxDeliveryLogResponse,
+  ) {
+    detailKind.value = kind
+    detailRow.value = row
+    detailVisible.value = true
+  }
 
   const retryRows = ref<ConsoleOutboxRetryLogResponse[]>([])
   const retryTotal = ref(0)

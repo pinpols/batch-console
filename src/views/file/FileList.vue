@@ -25,11 +25,11 @@
           >
             <el-form-item label="状态">
               <el-select
+                class="query-w-160"
                 v-model="filters.fileStatus"
                 clearable
                 filterable
                 placeholder="全部文件状态"
-                style="width: 160px"
               >
                 <el-option
                   v-for="o in fileStatusSelectOptions"
@@ -41,11 +41,11 @@
             </el-form-item>
             <el-form-item label="业务类型">
               <el-select
+                class="query-w-160"
                 v-model="filters.bizType"
                 clearable
                 filterable
                 placeholder="全部业务类型"
-                style="width: 160px"
               >
                 <el-option
                   v-for="o in bizTypeOptions"
@@ -57,37 +57,37 @@
             </el-form-item>
             <el-form-item label="文件名">
               <el-input
+                class="query-w-160"
                 v-model="filters.fileName"
                 clearable
                 placeholder="文件名，模糊匹配"
-                style="width: 160px"
               />
             </el-form-item>
             <el-form-item label="Trace">
               <el-input
+                class="query-w-160"
                 v-model="filters.traceId"
                 clearable
                 placeholder="Trace Id，模糊匹配"
-                style="width: 160px"
               />
             </el-form-item>
             <el-form-item label="File ID">
               <el-input
+                class="query-w-120"
                 v-model="filters.fileId"
                 clearable
                 placeholder="文件 Id，精确或包含"
-                style="width: 120px"
               />
             </el-form-item>
             <el-form-item label="业务日">
               <el-date-picker
+                class="query-w-260"
                 v-model="bizDateRange"
                 type="daterange"
                 value-format="YYYY-MM-DD"
                 range-separator="至"
                 start-placeholder="开始日期"
                 end-placeholder="结束日期"
-                style="width: 260px"
               />
             </el-form-item>
           </ListPageQueryBar>

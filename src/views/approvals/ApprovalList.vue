@@ -26,11 +26,11 @@
           >
             <el-form-item label="状态">
               <el-select
+                class="query-w-200"
                 v-model="filters.status"
                 clearable
                 filterable
                 placeholder="全部审批状态"
-                style="width: 200px"
               >
                 <el-option
                   v-for="opt in approvalStatusSelectOptions"
@@ -42,13 +42,13 @@
             </el-form-item>
             <el-form-item label="类型">
               <el-select
+                class="query-w-180"
                 v-model="filters.type"
                 clearable
                 filterable
                 allow-create
                 default-first-option
                 placeholder="选择或输入 approvalType"
-                style="width: 180px"
               >
                 <el-option
                   v-for="o in approvalTypeOptions"
@@ -60,10 +60,10 @@
             </el-form-item>
             <el-form-item label="关键字">
               <el-input
+                class="query-w-240"
                 v-model="filters.keyword"
                 clearable
                 placeholder="审批单号、申请人、目标类型或 Id"
-                style="width: 240px"
               />
             </el-form-item>
           </ListPageQueryBar>

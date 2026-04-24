@@ -13,7 +13,7 @@
       </div>
 
       <div class="m-page__header">
-        <el-segmented v-model="filter" :options="filterOptions" size="small" style="width: 100%" />
+        <el-segmented v-model="filter" :options="filterOptions" size="small" class="u-w-full" />
       </div>
 
       <MSkeleton v-if="loading && filtered.length === 0" :count="3" />

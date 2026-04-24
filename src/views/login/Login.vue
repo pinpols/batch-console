@@ -4,8 +4,6 @@
     <div class="login-bg-glow login-bg-glow--2" aria-hidden="true" />
 
     <main class="login-card">
-      <div class="login-card__accent" aria-hidden="true" />
-
       <div class="login-brand">
         <span class="login-brand__logo">BC</span>
         <div>
@@ -16,7 +14,6 @@
 
       <header class="login-card__header">
         <h2 class="login-card__title">欢迎回来</h2>
-        <p class="login-card__subtitle">请使用控制台账号登录</p>
       </header>
 
       <div v-if="loginTrace" class="login-trace" role="status">
@@ -70,12 +67,6 @@
           {{ loading ? '登录中…' : '登 录' }}
         </el-button>
       </el-form>
-
-      <div class="login-card__footer">
-        <span class="login-card__tag">RBAC 权限</span>
-        <span class="login-card__tag">租户隔离</span>
-        <span class="login-card__tag">审计留痕</span>
-      </div>
     </main>
   </div>
 </template>
@@ -186,16 +177,6 @@
       0 12px 40px rgb(0 0 0 / 28%);
   }
 
-  .login-card__accent {
-    position: absolute;
-    top: 0;
-    left: 32px;
-    right: 32px;
-    height: 3px;
-    border-radius: 0 0 3px 3px;
-    background: linear-gradient(90deg, var(--color-primary), #10b981);
-  }
-
   /* 品牌 */
   .login-brand {
     display: flex;
@@ -234,7 +215,7 @@
 
   /* 标题 */
   .login-card__header {
-    margin-bottom: 28px;
+    margin-bottom: 18px;
   }
 
   .login-card__title {
@@ -243,12 +224,6 @@
     font-weight: 700;
     letter-spacing: -0.02em;
     color: var(--color-text-primary);
-  }
-
-  .login-card__subtitle {
-    margin: 0;
-    font-size: 14px;
-    color: var(--color-text-secondary);
   }
 
   /* Trace */
@@ -361,29 +336,6 @@
 
   .login-submit:active {
     transform: translateY(0);
-  }
-
-  /* 底部标签 */
-  .login-card__footer {
-    display: flex;
-    justify-content: center;
-    gap: 8px;
-    margin-top: 28px;
-    padding-top: 20px;
-    border-top: 1px solid var(--color-border-light);
-  }
-
-  .login-card__tag {
-    font-size: 11px;
-    font-weight: 500;
-    color: var(--color-text-tertiary);
-    padding: 4px 10px;
-    border-radius: 6px;
-    background: rgb(241 245 249 / 60%);
-  }
-
-  html.dark .login-card__tag {
-    background: rgb(30 41 59 / 50%);
   }
 
   /* 动画 */

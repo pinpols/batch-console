@@ -25,19 +25,19 @@
           >
             <el-form-item label="渠道编码">
               <el-input
+                class="query-w-180"
                 v-model="filters.channelCode"
                 clearable
                 placeholder="渠道编码，模糊匹配"
-                style="width: 180px"
               />
             </el-form-item>
             <el-form-item label="类型">
               <el-select
+                class="query-w-160"
                 v-model="filters.channelType"
                 clearable
                 filterable
                 placeholder="全部渠道类型"
-                style="width: 160px"
               >
                 <el-option
                   v-for="option in channelTypeOptions"

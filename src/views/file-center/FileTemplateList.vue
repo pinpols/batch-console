@@ -28,11 +28,11 @@
             </el-form-item>
             <el-form-item label="模板类型">
               <el-select
+                class="query-w-160"
                 v-model="templateType"
                 clearable
                 filterable
                 placeholder="全部模板类型"
-                style="width: 160px"
               >
                 <el-option
                   v-for="option in templateTypeOptions"
@@ -44,11 +44,11 @@
             </el-form-item>
             <el-form-item label="业务类型">
               <el-select
+                class="query-w-160"
                 v-model="bizType"
                 clearable
                 filterable
                 placeholder="全部业务类型"
-                style="width: 160px"
               >
                 <el-option
                   v-for="option in bizTypeOptions"
@@ -59,7 +59,7 @@
               </el-select>
             </el-form-item>
             <el-form-item label="启用">
-              <el-select v-model="enabled" clearable placeholder="全部" style="width: 120px">
+              <el-select v-model="enabled" clearable placeholder="全部" class="query-w-120">
                 <el-option label="启用" :value="true" />
                 <el-option label="停用" :value="false" />
               </el-select>

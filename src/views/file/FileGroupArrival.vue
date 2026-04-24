@@ -25,19 +25,19 @@
           >
             <el-form-item label="组编码">
               <el-input
+                class="query-w-200"
                 v-model="kwDraft"
                 clearable
                 placeholder="fileGroupCode"
-                style="width: 200px"
                 @keyup.enter="onSearch"
               />
             </el-form-item>
             <el-form-item label="到达状态">
               <el-input
+                class="query-w-160"
                 v-model="stateDraft"
                 clearable
                 placeholder="arrivalState"
-                style="width: 160px"
                 @keyup.enter="onSearch"
               />
             </el-form-item>

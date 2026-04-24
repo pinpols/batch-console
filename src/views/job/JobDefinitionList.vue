@@ -26,27 +26,22 @@
           >
             <el-form-item label="Job Code">
               <el-input
+                class="query-w-160"
                 v-model="filters.jobCode"
                 clearable
                 placeholder="请输入 jobCode"
-                style="width: 160px"
               />
             </el-form-item>
             <el-form-item label="名称">
               <el-input
+                class="query-w-160"
                 v-model="filters.jobName"
                 clearable
                 placeholder="请输入 jobName"
-                style="width: 160px"
               />
             </el-form-item>
             <el-form-item label="启用">
-              <el-select
-                v-model="filters.enabled"
-                clearable
-                placeholder="全部"
-                style="width: 120px"
-              >
+              <el-select class="query-w-120" v-model="filters.enabled" clearable placeholder="全部">
                 <el-option label="启用" :value="true" />
                 <el-option label="停用" :value="false" />
               </el-select>
@@ -56,11 +51,11 @@
                 <HelpLabel tip="Worker 分组，决定由哪组 Worker 执行该 Job">Worker Group</HelpLabel>
               </template>
               <el-select
+                class="query-w-180"
                 v-model="filters.workerGroup"
                 clearable
                 filterable
                 placeholder="请选择 workerGroup"
-                style="width: 180px"
               >
                 <el-option
                   v-for="option in workerGroupOptions"
@@ -75,11 +70,11 @@
                 <HelpLabel tip="调度队列，控制并发和执行优先级">Queue</HelpLabel>
               </template>
               <el-select
+                class="query-w-160"
                 v-model="filters.queueCode"
                 clearable
                 filterable
                 placeholder="请选择 queueCode"
-                style="width: 160px"
               >
                 <el-option
                   v-for="option in queueOptions"
@@ -96,10 +91,10 @@
                 >
               </template>
               <el-select
+                class="query-w-160"
                 v-model="filters.scheduleType"
                 clearable
                 placeholder="请选择 scheduleType"
-                style="width: 160px"
               >
                 <el-option
                   v-for="option in scheduleTypeOptions"

@@ -26,22 +26,25 @@
                   <div class="bubble__body">{{ item.content }}</div>
                 </div>
               </div>
-              <el-form @submit.prevent>
-                <el-form-item label="Prompt">
+              <el-form class="composer" @submit.prevent>
+                <div class="composer__label">Prompt</div>
+                <el-input
+                  v-model="prompt"
+                  type="textarea"
+                  :rows="6"
+                  placeholder="例如：解释某 Job 失败原因、查询某 Trace 关联步骤、总结今日告警…"
+                  class="composer__editor"
+                />
+                <div class="composer__actions">
                   <el-input
-                    v-model="prompt"
-                    type="textarea"
-                    :rows="5"
-                    placeholder="例如：解释某 Job 失败原因、查询某 Trace 关联步骤、总结今日告警…"
-                  />
-                </el-form-item>
-                <div class="chat-actions">
-                  <el-input
+                    class="query-w-240"
                     v-model="modelName"
-                    placeholder="模型名，可空（走服务端默认）"
-                    style="width: 240px"
+                    placeholder="模型名（可空，走服务端默认）"
                   />
-                  <el-button type="primary" :loading="sending" @click="send">发送</el-button>
+                  <div class="composer__actions-right">
+                    <div class="composer__hint">Enter 换行，点击发送提交</div>
+                    <el-button type="primary" :loading="sending" @click="send">发送</el-button>
+                  </div>
                 </div>
               </el-form>
             </div>
@@ -69,31 +72,31 @@
               >
                 <el-form-item label="Trace">
                   <el-input
+                    class="query-w-200"
                     v-model="auditTraceDraft"
                     clearable
                     placeholder="链路 Trace Id，支持模糊"
-                    style="width: 200px"
                     @keyup.enter="onAuditSearch"
                   />
                 </el-form-item>
                 <el-form-item label="操作人">
                   <el-input
+                    class="query-w-160"
                     v-model="auditOperatorDraft"
                     clearable
                     placeholder="操作人 Id，支持模糊"
-                    style="width: 160px"
                     @keyup.enter="onAuditSearch"
                   />
                 </el-form-item>
                 <el-form-item label="分类">
                   <el-select
+                    class="query-w-200"
                     v-model="auditCategoryDraft"
                     clearable
                     filterable
                     allow-create
                     default-first-option
                     placeholder="选择或输入 promptCategory"
-                    style="width: 200px"
                     @keyup.enter="onAuditSearch"
                   >
                     <el-option
@@ -325,8 +328,11 @@
     padding: var(--space-md);
     border-radius: var(--radius-content);
     border: 1px solid var(--color-border-light);
-    background: var(--color-bg-card);
+    background: color-mix(in srgb, var(--color-bg-card) 94%, var(--color-bg-canvas) 6%);
     box-sizing: border-box;
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 55%),
+      0 1px 2px rgb(15 23 42 / 6%);
   }
 
   .audit-table-shell {
@@ -341,38 +347,107 @@
     flex-direction: column;
     gap: 12px;
     margin-bottom: 16px;
-    max-height: 420px;
+    max-height: min(520px, calc(100vh - 420px));
     overflow: auto;
+    padding: 14px;
+    border-radius: var(--radius-content);
+    border: 1px solid var(--color-border-light);
+    background: color-mix(in srgb, var(--color-bg-card) 92%, var(--color-bg-canvas) 8%);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 55%),
+      0 1px 2px rgb(15 23 42 / 6%);
   }
 
   .bubble {
-    max-width: 80%;
-    padding: 12px;
-    border-radius: var(--radius-content);
+    max-width: min(860px, 100%);
+    padding: 10px 12px;
+    border-radius: 14px;
+    border: 1px solid var(--color-border-light);
+    background: var(--color-bg-card);
+    box-shadow: 0 1px 0 rgb(15 23 42 / 4%);
+  }
+
+  .bubble__body {
     white-space: pre-wrap;
     word-break: break-word;
+    line-height: 1.6;
+    color: var(--color-text-primary);
   }
 
   .bubble--user {
     align-self: flex-end;
-    background: color-mix(in srgb, var(--color-primary) 10%, white 90%);
+    border-color: color-mix(in srgb, var(--color-primary) 22%, var(--color-border) 78%);
+    background: color-mix(in srgb, var(--color-primary) 7%, var(--color-bg-card) 93%);
   }
 
   .bubble--assistant {
     align-self: flex-start;
-    background: var(--color-bg-page, #f6f8fb);
+    background: var(--color-bg-card);
   }
 
   .bubble__meta {
     margin-bottom: 6px;
     font-size: 12px;
+    font-weight: 700;
+    color: var(--color-text-tertiary, #909399);
+  }
+
+  .composer {
+    display: grid;
+    gap: 10px;
+    padding: 12px;
+    border-radius: var(--radius-content);
+    border: 1px solid var(--color-border-light);
+    background: color-mix(in srgb, var(--color-bg-card) 96%, var(--color-bg-canvas) 4%);
+  }
+
+  .composer__label {
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.02em;
     color: var(--color-text-secondary);
   }
 
-  .chat-actions {
+  .composer :deep(.composer__editor .el-textarea__inner) {
+    border-radius: 12px;
+    border: 1px solid var(--color-border-light);
+    background: color-mix(in srgb, var(--color-bg-canvas) 88%, #fff 12%);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 55%);
+    transition:
+      box-shadow var(--motion-duration-md) var(--motion-ease-standard),
+      border-color var(--motion-duration-sm) var(--motion-ease-standard);
+  }
+
+  .composer :deep(.composer__editor .el-textarea__inner:focus) {
+    border-color: color-mix(in srgb, var(--color-primary) 42%, var(--color-border) 58%);
+    box-shadow:
+      0 0 0 3px color-mix(in srgb, var(--color-primary) 14%, transparent 86%),
+      inset 0 1px 0 rgb(255 255 255 / 55%);
+  }
+
+  .composer__actions {
     display: flex;
+    align-items: center;
     justify-content: space-between;
     gap: 12px;
     flex-wrap: wrap;
+  }
+
+  .composer__actions-right {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .composer__hint {
+    font-size: 12px;
+    color: var(--color-text-tertiary, #909399);
+    white-space: nowrap;
+  }
+
+  @media (max-width: 900px) {
+    .composer__hint {
+      display: none;
+    }
   }
 </style>

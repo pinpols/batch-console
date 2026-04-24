@@ -27,18 +27,18 @@
                 v-model="filterTenantId"
                 placeholder="按租户过滤"
                 size="default"
-                select-style="width: 180px"
+                select-class="query-w-180"
               />
             </el-form-item>
             <el-form-item label="Workflow">
               <el-select
+                class="query-w-200"
                 v-model="workflowCode"
                 clearable
                 filterable
                 allow-create
                 default-first-option
                 placeholder="选择或输入 workflowCode"
-                style="width: 200px"
               >
                 <el-option
                   v-for="code in workflowCodeOptions"
@@ -50,11 +50,11 @@
             </el-form-item>
             <el-form-item label="状态">
               <el-select
+                class="query-w-200"
                 v-model="runStatus"
                 clearable
                 filterable
                 placeholder="全部运行状态"
-                style="width: 200px"
               >
                 <el-option
                   v-for="opt in runStatusOptions"

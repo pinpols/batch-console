@@ -5,7 +5,9 @@
       description="对接 `pipeline-definitions` 的列表、detail、toggle，以及 create/update 表单。"
     >
       <template #actions>
-        <el-button type="primary" @click="openCreate">新建 Pipeline</el-button>
+        <el-button type="primary" :icon="Plus" class="pretty-add-button" @click="openCreate">
+          新增 Pipeline
+        </el-button>
       </template>
     </PageHeader>
 
@@ -35,11 +37,11 @@
             </el-form-item>
             <el-form-item label="类型">
               <el-select
+                class="query-w-160"
                 v-model="pipelineType"
                 clearable
                 filterable
                 placeholder="请选择 pipelineType"
-                style="width: 160px"
               >
                 <el-option
                   v-for="option in pipelineTypeOptions"
@@ -50,7 +52,7 @@
               </el-select>
             </el-form-item>
             <el-form-item label="启用">
-              <el-select v-model="enabledFilter" clearable placeholder="全部" style="width: 120px">
+              <el-select class="query-w-120" v-model="enabledFilter" clearable placeholder="全部">
                 <el-option label="启用" :value="true" />
                 <el-option label="停用" :value="false" />
               </el-select>
@@ -86,7 +88,7 @@
     <el-drawer v-model="drawerVisible" :title="drawerTitle" size="760px">
       <el-form ref="formRef" :model="form" :rules="formRules" label-width="120px">
         <el-form-item label="tenantId" prop="tenantId">
-          <TenantSelect v-model="form.tenantId" select-style="width: 100%" />
+          <TenantSelect v-model="form.tenantId" select-class="query-w-full" />
         </el-form-item>
         <el-form-item label="pipelineCode" prop="pipelineCode">
           <el-input v-model="form.pipelineCode" :disabled="editingId != null" />
@@ -106,7 +108,14 @@
         <el-form-item label="步骤编辑">
           <div class="steps-editor">
             <div class="steps-toolbar">
-              <el-button type="primary" link @click="addStep">新增步骤</el-button>
+              <el-button
+                type="primary"
+                :icon="Plus"
+                class="pretty-add-button pretty-add-button--mini"
+                @click="addStep"
+              >
+                新增步骤
+              </el-button>
             </div>
             <div class="steps-list">
               <div
@@ -169,6 +178,7 @@
   import { computed, ref, watch } from 'vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import type { FormInstance, FormRules } from 'element-plus'
+  import { Plus } from '@element-plus/icons-vue'
   import {
     createPipelineDefinition,
     queryPipelineDefinitionDetail,

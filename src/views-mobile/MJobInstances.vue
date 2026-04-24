@@ -12,13 +12,13 @@
         </button>
       </div>
 
-      <div class="m-page__header" style="gap: 8px">
+      <div class="m-page__header u-gap-8">
         <el-select
           v-model="query.instanceStatus"
           placeholder="所有状态"
           clearable
           size="small"
-          style="flex: 1"
+          class="u-flex-1"
           @change="onFilterChange"
         >
           <el-option v-for="s in statuses" :key="s" :label="s" :value="s" />
@@ -28,7 +28,7 @@
           placeholder="jobCode 模糊"
           clearable
           size="small"
-          style="flex: 1"
+          class="u-flex-1"
           @change="onFilterChange"
         />
       </div>

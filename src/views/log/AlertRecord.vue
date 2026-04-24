@@ -25,11 +25,11 @@
           >
             <el-form-item label="级别">
               <el-select
+                class="query-w-140"
                 v-model="filters.severity"
                 clearable
                 filterable
                 placeholder="请选择级别"
-                style="width: 140px"
               >
                 <el-option
                   v-for="option in severityOptions"
@@ -41,11 +41,11 @@
             </el-form-item>
             <el-form-item label="类型">
               <el-select
+                class="query-w-160"
                 v-model="filters.alertType"
                 clearable
                 filterable
                 placeholder="请选择 alertType"
-                style="width: 160px"
               >
                 <el-option
                   v-for="option in alertTypeOptions"
@@ -57,11 +57,11 @@
             </el-form-item>
             <el-form-item label="状态">
               <el-select
+                class="query-w-140"
                 v-model="filters.status"
                 clearable
                 filterable
                 placeholder="请选择状态"
-                style="width: 140px"
               >
                 <el-option
                   v-for="option in statusOptions"
@@ -73,21 +73,21 @@
             </el-form-item>
             <el-form-item label="Trace">
               <el-input
+                class="query-w-160"
                 v-model="filters.traceId"
                 clearable
                 placeholder="请输入 traceId"
-                style="width: 160px"
               />
             </el-form-item>
             <el-form-item label="时间范围">
               <el-date-picker
+                class="query-w-340"
                 v-model="timeRange"
                 type="datetimerange"
                 value-format="YYYY-MM-DD HH:mm:ss"
                 range-separator="至"
                 start-placeholder="开始时间"
                 end-placeholder="结束时间"
-                style="width: 340px"
               />
             </el-form-item>
           </ListPageQueryBar>

@@ -26,13 +26,13 @@
           >
             <el-form-item label="组">
               <el-select
+                class="query-w-180"
                 v-model="filters.workerGroup"
                 clearable
                 filterable
                 allow-create
                 default-first-option
                 placeholder="选择或输入 workerGroup"
-                style="width: 180px"
               >
                 <el-option
                   v-for="o in workerGroupOptions"
@@ -44,10 +44,10 @@
             </el-form-item>
             <el-form-item label="状态">
               <el-select
+                class="query-w-200"
                 v-model="filters.status"
                 clearable
                 placeholder="全部连接状态"
-                style="width: 200px"
               >
                 <el-option
                   v-for="opt in workerStatusOptions"
@@ -59,10 +59,10 @@
             </el-form-item>
             <el-form-item label="编码">
               <el-input
+                class="query-w-180"
                 v-model="filters.keyword"
                 clearable
                 placeholder="按 workerCode 模糊匹配"
-                style="width: 180px"
               />
             </el-form-item>
           </ListPageQueryBar>

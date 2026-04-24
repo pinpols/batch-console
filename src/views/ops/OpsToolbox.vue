@@ -4,7 +4,7 @@
 
     <SectionCard>
       <div class="section-toolbar">
-        <h3 class="section-title" style="margin-bottom: 0; flex: 1">Kafka Lag</h3>
+        <h3 class="section-title u-mb-0 u-flex-1">Kafka Lag</h3>
         <el-button :loading="loadingLag" @click="loadKafkaLag">刷新</el-button>
       </div>
       <pre v-if="kafkaLag" class="json-preview">{{ JSON.stringify(kafkaLag, null, 2) }}</pre>
@@ -13,7 +13,7 @@
 
     <SectionCard>
       <div class="section-toolbar">
-        <h3 class="section-title" style="margin-bottom: 0; flex: 1">Outbox 统计</h3>
+        <h3 class="section-title u-mb-0 u-flex-1">Outbox 统计</h3>
         <el-button :loading="loadingOutbox" @click="loadOutboxStats">刷新</el-button>
         <el-button
           type="warning"

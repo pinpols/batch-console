@@ -24,19 +24,19 @@
           >
             <el-form-item label="实例 Id">
               <el-input
+                class="query-w-160"
                 v-model="filterInstanceId"
                 clearable
                 placeholder="精确匹配 jobInstanceId"
-                style="width: 160px"
               />
             </el-form-item>
             <el-form-item label="步骤状态">
               <el-select
+                class="query-w-200"
                 v-model="filterStepStatus"
                 clearable
                 filterable
                 placeholder="全部步骤状态"
-                style="width: 200px"
               >
                 <el-option
                   v-for="opt in stepStatusOptions"

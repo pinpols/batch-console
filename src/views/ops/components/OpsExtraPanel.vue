@@ -1,7 +1,10 @@
 <template>
   <SectionCard class="extra-panel-card">
     <div class="section-toolbar">
-      <el-button :loading="extraLoading" @click="$emit('loadExtra')">刷新扩展面板</el-button>
+      <span class="u-flex-1" />
+      <el-button type="primary" :icon="Refresh" :loading="extraLoading" @click="$emit('loadExtra')">
+        刷新
+      </el-button>
     </div>
     <div class="extra-panels">
       <div class="extra-block">
@@ -28,6 +31,7 @@
 </template>
 
 <script setup lang="ts">
+  import { Refresh } from '@element-plus/icons-vue'
   import SectionCard from '@/components/common/SectionCard.vue'
 
   defineProps<{

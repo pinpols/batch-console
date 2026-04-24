@@ -95,7 +95,9 @@ html.layout-shell-lock .layout-root > .layout-sidebar.el-aside {
 
 /** 主内容区：键盘焦点在页头 / 区块卡片内时，内描边提示（不依赖 outline，避免被滚动层裁切） */
 .layout-main__content .page-header.app-surface:focus-within:has(:focus-visible) {
-  box-shadow: var(--shadow-surface), inset 0 0 0 2px color-mix(in srgb, var(--color-primary) 42%, transparent);
+  box-shadow:
+    var(--shadow-surface),
+    inset 0 0 0 2px color-mix(in srgb, var(--color-primary) 42%, transparent);
 }
 
 .layout-main__content .page-header.app-surface:focus-within:has(:focus-visible):hover {
@@ -141,26 +143,36 @@ html.layout-shell-lock .layout-root > .layout-sidebar.el-aside {
  */
 .app-surface.layout-panel {
   border-radius: var(--layout-panel-radius);
-  box-shadow: var(--shadow-surface), inset 0 1px 0 var(--layout-panel-inset-highlight);
+  box-shadow:
+    var(--shadow-surface),
+    inset 0 1px 0 var(--layout-panel-inset-highlight);
 }
 
 .app-surface.layout-panel:hover {
-  box-shadow: var(--shadow-surface-hover), inset 0 1px 0 var(--layout-panel-inset-highlight);
+  box-shadow:
+    var(--shadow-surface-hover),
+    inset 0 1px 0 var(--layout-panel-inset-highlight);
 }
 
 .layout-main__surface.layout-panel {
   border-radius: var(--layout-panel-radius);
-  box-shadow: var(--shadow-surface), inset 0 1px 0 var(--layout-panel-inset-highlight);
+  box-shadow:
+    var(--shadow-surface),
+    inset 0 1px 0 var(--layout-panel-inset-highlight);
 }
 
 .layout-main__surface.layout-panel:hover {
-  box-shadow: var(--shadow-surface-hover), inset 0 1px 0 var(--layout-panel-inset-highlight);
+  box-shadow:
+    var(--shadow-surface-hover),
+    inset 0 1px 0 var(--layout-panel-inset-highlight);
 }
 
 @media (prefers-reduced-motion: reduce) {
   .app-surface.layout-panel:hover,
   .layout-main__surface.layout-panel:hover {
-    box-shadow: var(--shadow-surface), inset 0 1px 0 var(--layout-panel-inset-highlight);
+    box-shadow:
+      var(--shadow-surface),
+      inset 0 1px 0 var(--layout-panel-inset-highlight);
   }
 }
 
@@ -314,6 +326,54 @@ html.layout-shell-lock .layout-root > .layout-sidebar.el-aside {
     0 0 0 1px rgb(15 23 42 / 4%);
 }
 
+/* 统一“新增”按钮：浅蓝、轻渐变、微阴影（用于页面 actions / queryBar prepend） */
+.pretty-add-button.el-button {
+  --el-button-text-color: #fff;
+  --el-button-bg-color: transparent;
+  --el-button-border-color: transparent;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 26%, var(--color-border) 74%);
+  border-radius: 11px;
+  padding: 0 14px;
+  min-height: 34px;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--color-primary) 70%, #ffffff 30%) 0%,
+    color-mix(in srgb, #0f5ed9 60%, #ffffff 40%) 100%
+  );
+  box-shadow:
+    0 10px 22px rgb(59 130 246 / 14%),
+    inset 0 1px 0 rgb(255 255 255 / 20%);
+  transition:
+    transform var(--motion-duration-sm) var(--motion-ease-emphasized),
+    box-shadow var(--motion-duration-md) var(--motion-ease-standard),
+    filter var(--motion-duration-sm) var(--motion-ease-standard);
+}
+
+.pretty-add-button.el-button:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    0 14px 30px rgb(59 130 246 / 16%),
+    inset 0 1px 0 rgb(255 255 255 / 24%);
+  filter: saturate(1.02);
+}
+
+.pretty-add-button.el-button:active {
+  transform: translateY(0);
+}
+
+/* 小号“新增”按钮（用于弹窗/抽屉内工具条：如新增步骤） */
+.pretty-add-button--mini.el-button {
+  border-radius: 10px;
+  padding: 0 12px;
+  min-height: 30px;
+  font-size: 12px;
+  box-shadow:
+    0 8px 18px rgb(59 130 246 / 14%),
+    inset 0 1px 0 rgb(255 255 255 / 20%);
+}
+
 .pill-tabs .el-tabs__item:focus-visible {
   outline: 2px solid color-mix(in srgb, var(--color-primary) 42%, transparent 58%);
   outline-offset: 2px;
@@ -369,7 +429,11 @@ html.layout-shell-lock .layout-root > .layout-sidebar.el-aside {
     var(--color-primary) 10%,
     var(--color-bg-card) 90%
   );
-  --el-segmented-item-hover-bg-color: color-mix(in srgb, var(--color-bg-card) 92%, var(--color-bg-canvas) 8%);
+  --el-segmented-item-hover-bg-color: color-mix(
+    in srgb,
+    var(--color-bg-card) 92%,
+    var(--color-bg-canvas) 8%
+  );
   --el-segmented-bg-color: color-mix(in srgb, var(--color-bg-card) 90%, var(--color-bg-canvas) 10%);
   --el-segmented-padding: 4px;
   padding: 4px;
@@ -640,6 +704,101 @@ html.dark .form-panel {
   margin-bottom: var(--space-sm);
 }
 
+/* Lightweight layout utilities (avoid inline styles) */
+.u-w-full {
+  width: 100%;
+}
+
+.u-flex-1 {
+  flex: 1;
+}
+
+.u-mb-0 {
+  margin-bottom: 0;
+}
+
+.u-mb-12 {
+  margin-bottom: 12px;
+}
+
+.u-ml-8 {
+  margin-left: 8px;
+}
+
+.u-gap-8 {
+  gap: 8px;
+}
+
+/* Unified error toast (Element Plus message content) */
+.error-toast {
+  display: grid;
+  gap: 4px;
+  min-width: 220px;
+}
+
+.error-toast__title {
+  font-weight: 700;
+  color: var(--color-text-primary);
+  line-height: 1.3;
+}
+
+.error-toast__message {
+  color: var(--color-text-primary);
+  line-height: 1.45;
+  word-break: break-word;
+}
+
+.error-toast__trace {
+  margin-top: 2px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+}
+
+.error-toast__trace-label {
+  opacity: 0.9;
+}
+
+.error-toast__trace-code {
+  font-family: var(
+    --font-family-mono,
+    ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    Monaco,
+    Consolas,
+    monospace
+  );
+  padding: 1px 6px;
+  border-radius: 6px;
+  border: 1px solid var(--color-border-light);
+  background: color-mix(in srgb, var(--color-bg-card) 92%, var(--color-bg-canvas) 8%);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  user-select: text;
+}
+
+.error-toast__trace-copy {
+  border: none;
+  background: transparent;
+  padding: 0;
+  color: color-mix(in srgb, var(--color-primary) 88%, var(--color-text-primary) 12%);
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.error-toast__trace-copy:hover {
+  text-decoration: underline;
+}
+
+/* Table: render placeholder for truly empty cells */
+.console-table .el-table__body .cell:empty::before {
+  content: '—';
+  color: var(--color-text-tertiary, #909399);
+}
+
 .data-panel .json-preview {
   border: none;
   background: transparent;
@@ -668,6 +827,299 @@ html.dark .data-panel {
 .query-form.el-form--inline .el-form-item {
   margin-right: 0;
   margin-bottom: 0;
+}
+
+/**
+ * 查询条控件默认宽度（不写 style/class 宽度时生效）
+ * - 关键字/普通输入：220px
+ * - 下拉/日期：200px（更紧凑）
+ *
+ * 需要“固定档位宽度”时，优先用 `query-w-###`（替代手写 `style="width: ###px"`），避免 inline style 与全局默认打架。
+ */
+.query-form.el-form--inline {
+  --query-input-width: 220px;
+  --query-select-width: 200px;
+}
+
+/**
+ * 查询条：固定宽度档位（配合模板里的 `query-w-120` … `query-w-360`）
+ * - `el-input` / `el-input-number`：用 `--el-input-width`
+ * - `el-select`：用 `--el-select-width`
+ * - `el-date-picker`（单值/非 range 变体）：用 `--el-date-editor-width`
+ */
+.query-w-120.el-input,
+.query-w-120.el-input-number {
+  --el-input-width: 120px;
+  width: var(--el-input-width);
+}
+
+.query-w-120.el-select {
+  --el-select-width: 120px;
+  width: var(--el-select-width);
+}
+
+.query-w-120.el-date-editor:not(.el-date-editor--daterange):not(.el-date-editor--datetimerange):not(
+    .el-date-editor--monthrange
+  ):not(.el-date-editor--dates) {
+  --el-date-editor-width: 120px;
+}
+
+.query-w-140.el-input,
+.query-w-140.el-input-number {
+  --el-input-width: 140px;
+  width: var(--el-input-width);
+}
+
+.query-w-140.el-select {
+  --el-select-width: 140px;
+  width: var(--el-select-width);
+}
+
+.query-w-140.el-date-editor:not(.el-date-editor--daterange):not(.el-date-editor--datetimerange):not(
+    .el-date-editor--monthrange
+  ):not(.el-date-editor--dates) {
+  --el-date-editor-width: 140px;
+}
+
+.query-w-168.el-input,
+.query-w-168.el-input-number {
+  --el-input-width: 168px;
+  width: var(--el-input-width);
+}
+
+.query-w-168.el-select {
+  --el-select-width: 168px;
+  width: var(--el-select-width);
+}
+
+.query-w-168.el-date-editor:not(.el-date-editor--daterange):not(.el-date-editor--datetimerange):not(
+    .el-date-editor--monthrange
+  ):not(.el-date-editor--dates) {
+  --el-date-editor-width: 168px;
+}
+
+.query-w-190.el-input,
+.query-w-190.el-input-number {
+  --el-input-width: 190px;
+  width: var(--el-input-width);
+}
+
+.query-w-190.el-select {
+  --el-select-width: 190px;
+  width: var(--el-select-width);
+}
+
+.query-w-190.el-date-editor:not(.el-date-editor--daterange):not(.el-date-editor--datetimerange):not(
+    .el-date-editor--monthrange
+  ):not(.el-date-editor--dates) {
+  --el-date-editor-width: 190px;
+}
+
+.query-w-160.el-input,
+.query-w-160.el-input-number {
+  --el-input-width: 160px;
+  width: var(--el-input-width);
+}
+
+.query-w-160.el-select {
+  --el-select-width: 160px;
+  width: var(--el-select-width);
+}
+
+.query-w-160.el-date-editor:not(.el-date-editor--daterange):not(.el-date-editor--datetimerange):not(
+    .el-date-editor--monthrange
+  ):not(.el-date-editor--dates) {
+  --el-date-editor-width: 160px;
+}
+
+.query-w-180.el-input,
+.query-w-180.el-input-number {
+  --el-input-width: 180px;
+  width: var(--el-input-width);
+}
+
+.query-w-180.el-select {
+  --el-select-width: 180px;
+  width: var(--el-select-width);
+}
+
+.query-w-180.el-date-editor:not(.el-date-editor--daterange):not(.el-date-editor--datetimerange):not(
+    .el-date-editor--monthrange
+  ):not(.el-date-editor--dates) {
+  --el-date-editor-width: 180px;
+}
+
+.query-w-200.el-input,
+.query-w-200.el-input-number {
+  --el-input-width: 200px;
+  width: var(--el-input-width);
+}
+
+.query-w-200.el-select {
+  --el-select-width: 200px;
+  width: var(--el-select-width);
+}
+
+.query-w-200.el-date-editor:not(.el-date-editor--daterange):not(.el-date-editor--datetimerange):not(
+    .el-date-editor--monthrange
+  ):not(.el-date-editor--dates) {
+  --el-date-editor-width: 200px;
+}
+
+.query-w-220.el-input,
+.query-w-220.el-input-number {
+  --el-input-width: 220px;
+  width: var(--el-input-width);
+}
+
+.query-w-220.el-select {
+  --el-select-width: 220px;
+  width: var(--el-select-width);
+}
+
+.query-w-220.el-date-editor:not(.el-date-editor--daterange):not(.el-date-editor--datetimerange):not(
+    .el-date-editor--monthrange
+  ):not(.el-date-editor--dates) {
+  --el-date-editor-width: 220px;
+}
+
+.query-w-240.el-input,
+.query-w-240.el-input-number {
+  --el-input-width: 240px;
+  width: var(--el-input-width);
+}
+
+.query-w-240.el-select {
+  --el-select-width: 240px;
+  width: var(--el-select-width);
+}
+
+.query-w-240.el-date-editor:not(.el-date-editor--daterange):not(.el-date-editor--datetimerange):not(
+    .el-date-editor--monthrange
+  ):not(.el-date-editor--dates) {
+  --el-date-editor-width: 240px;
+}
+
+.query-w-260.el-input,
+.query-w-260.el-input-number {
+  --el-input-width: 260px;
+  width: var(--el-input-width);
+}
+
+.query-w-260.el-select {
+  --el-select-width: 260px;
+  width: var(--el-select-width);
+}
+
+.query-w-260.el-date-editor:not(.el-date-editor--daterange):not(.el-date-editor--datetimerange):not(
+    .el-date-editor--monthrange
+  ):not(.el-date-editor--dates) {
+  --el-date-editor-width: 260px;
+}
+
+.query-w-280.el-input,
+.query-w-280.el-input-number {
+  --el-input-width: 280px;
+  width: var(--el-input-width);
+}
+
+.query-w-280.el-select {
+  --el-select-width: 280px;
+  width: var(--el-select-width);
+}
+
+.query-w-280.el-date-editor:not(.el-date-editor--daterange):not(.el-date-editor--datetimerange):not(
+    .el-date-editor--monthrange
+  ):not(.el-date-editor--dates) {
+  --el-date-editor-width: 280px;
+}
+
+.query-w-300.el-input,
+.query-w-300.el-input-number {
+  --el-input-width: 300px;
+  width: var(--el-input-width);
+}
+
+.query-w-300.el-select {
+  --el-select-width: 300px;
+  width: var(--el-select-width);
+}
+
+.query-w-300.el-date-editor:not(.el-date-editor--daterange):not(.el-date-editor--datetimerange):not(
+    .el-date-editor--monthrange
+  ):not(.el-date-editor--dates) {
+  --el-date-editor-width: 300px;
+}
+
+.query-w-340.el-input,
+.query-w-340.el-input-number {
+  --el-input-width: 340px;
+  width: var(--el-input-width);
+}
+
+.query-w-340.el-select {
+  --el-select-width: 340px;
+  width: var(--el-select-width);
+}
+
+.query-w-340.el-date-editor:not(.el-date-editor--daterange):not(.el-date-editor--datetimerange):not(
+    .el-date-editor--monthrange
+  ):not(.el-date-editor--dates) {
+  --el-date-editor-width: 340px;
+}
+
+.query-w-360.el-input,
+.query-w-360.el-input-number {
+  --el-input-width: 360px;
+  width: var(--el-input-width);
+}
+
+.query-w-360.el-select {
+  --el-select-width: 360px;
+  width: var(--el-select-width);
+}
+
+.query-w-360.el-date-editor:not(.el-date-editor--daterange):not(.el-date-editor--datetimerange):not(
+    .el-date-editor--monthrange
+  ):not(.el-date-editor--dates) {
+  --el-date-editor-width: 360px;
+}
+
+.query-w-full.el-input,
+.query-w-full.el-input-number {
+  --el-input-width: 100%;
+  width: 100%;
+}
+
+.query-w-full.el-select {
+  --el-select-width: 100%;
+  width: 100%;
+}
+
+.query-w-full.el-date-editor:not(.el-date-editor--daterange):not(
+    .el-date-editor--datetimerange
+  ):not(.el-date-editor--monthrange):not(.el-date-editor--dates) {
+  --el-date-editor-width: 100%;
+  width: 100%;
+}
+
+.query-form.el-form--inline :where(.el-input, .el-select, .el-date-editor) {
+  width: var(--query-input-width);
+}
+
+.query-form.el-form--inline :where(.el-select, .el-date-editor) {
+  width: var(--query-select-width);
+}
+
+.query-form.el-form--inline :where(.el-input__wrapper, .el-select__wrapper, .el-date-editor) {
+  max-width: 100%;
+}
+
+@media (max-width: 900px) {
+  .query-form.el-form--inline {
+    --query-input-width: min(320px, 100%);
+    --query-select-width: min(260px, 100%);
+  }
 }
 
 .pro-table__query .query-actions,

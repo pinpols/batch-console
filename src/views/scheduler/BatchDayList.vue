@@ -25,12 +25,12 @@
           >
             <el-form-item label="日历" required>
               <el-select
+                class="query-w-200"
                 v-model="filters.calendarCode"
                 filterable
                 allow-create
                 default-first-option
                 placeholder="选择或输入 calendarCode"
-                style="width: 200px"
               >
                 <el-option v-for="c in calendarCodeOptions" :key="c" :label="c" :value="c" />
               </el-select>

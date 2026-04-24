@@ -31,21 +31,21 @@
           >
             <el-form-item label="Trace">
               <el-input
+                class="query-w-200"
                 v-model="filters.traceId"
                 clearable
                 placeholder="Trace Id，模糊匹配"
-                style="width: 200px"
               />
             </el-form-item>
             <el-form-item label="操作类型">
               <el-select
+                class="query-w-200"
                 v-model="filters.operationType"
                 clearable
                 filterable
                 allow-create
                 default-first-option
                 placeholder="选择或输入 operationType"
-                style="width: 200px"
               >
                 <el-option
                   v-for="o in operationTypeOptions"
@@ -57,27 +57,27 @@
             </el-form-item>
             <el-form-item label="操作者">
               <el-input
+                class="query-w-160"
                 v-model="filters.operatorId"
                 clearable
                 placeholder="操作人 Id，模糊匹配"
-                style="width: 160px"
               />
             </el-form-item>
             <el-form-item label="File ID">
               <el-input
+                class="query-w-140"
                 v-model="filters.fileId"
                 clearable
                 placeholder="关联文件 Id"
-                style="width: 140px"
               />
             </el-form-item>
             <el-form-item label="结果">
               <el-select
+                class="query-w-200"
                 v-model="filters.operationResult"
                 clearable
                 filterable
                 placeholder="全部操作结果"
-                style="width: 200px"
               >
                 <el-option
                   v-for="opt in operationResultSelectOptions"
@@ -89,13 +89,13 @@
             </el-form-item>
             <el-form-item label="时间范围">
               <el-date-picker
+                class="query-w-340"
                 v-model="timeRange"
                 type="datetimerange"
                 value-format="YYYY-MM-DD HH:mm:ss"
                 range-separator="至"
                 start-placeholder="开始时间"
                 end-placeholder="结束时间"
-                style="width: 340px"
               />
             </el-form-item>
           </ListPageQueryBar>

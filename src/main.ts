@@ -18,6 +18,7 @@ import App from './App.vue'
 applyThemeToDocument(resolveEffectiveTheme(readThemePreference(), getSystemIsDark()))
 applyContentDensityToDocument(readStoredContentDensity())
 import router from './router'
+import { useAuthStore } from '@/stores/auth'
 import { permissionDirective } from '@/directives/permission'
 import { hoverTabActivateDirective } from '@/directives/hoverTabActivate'
 import { trackClickDirective } from '@/directives/trackClick'
@@ -38,6 +39,14 @@ const pinia = createPinia()
 
 app.use(pinia)
 app.use(router)
+
+// 预热 /auth/me，避免“刷新页面后首次点菜单”被路由守卫阻塞导致体感卡顿
+{
+  const auth = useAuthStore(pinia)
+  if (auth.isLoggedIn && !auth.userInfo) {
+    auth.fetchMe().catch(() => auth.logout())
+  }
+}
 // Element Plus 中文 locale：imperative API（ElMessageBox / ElNotification /
 // ElMessage）依赖全局 locale；声明式组件由 App.vue 里的 ElConfigProvider 覆盖。
 app.use(ElementPlus, { locale: zhCn })

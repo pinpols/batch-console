@@ -25,22 +25,22 @@
           >
             <el-form-item label="Trace">
               <el-input
+                class="query-w-200"
                 v-model="traceDraft"
                 clearable
                 placeholder="Trace Id，端上模糊匹配"
-                style="width: 200px"
                 @keyup.enter="onSearch"
               />
             </el-form-item>
             <el-form-item label="操作类型">
               <el-select
+                class="query-w-200"
                 v-model="opDraft"
                 clearable
                 filterable
                 allow-create
                 default-first-option
                 placeholder="选择或输入 operationType"
-                style="width: 200px"
                 @keyup.enter="onSearch"
               >
                 <el-option
@@ -53,11 +53,11 @@
             </el-form-item>
             <el-form-item label="结果">
               <el-select
+                class="query-w-200"
                 v-model="opResultDraft"
                 clearable
                 filterable
                 placeholder="全部操作结果"
-                style="width: 200px"
                 @keyup.enter="onSearch"
               >
                 <el-option

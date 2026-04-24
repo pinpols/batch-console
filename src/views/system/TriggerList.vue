@@ -26,10 +26,10 @@
           >
             <el-form-item label="Job Code">
               <el-input
+                class="query-w-220"
                 v-model="kwDraft"
                 clearable
                 placeholder="按 Job Code 模糊搜索"
-                style="width: 220px"
                 @keyup.enter="onSearch"
               />
             </el-form-item>

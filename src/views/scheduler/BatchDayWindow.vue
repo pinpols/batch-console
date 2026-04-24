@@ -35,7 +35,22 @@
 
     <SectionCard v-if="window">
       <template #header>按 Job 汇总</template>
-      <el-table :data="window.jobs" stripe border empty-text="暂无数据" class="console-table">
+      <ListPageQueryBar
+        :filter-busy="false"
+        :refresh-busy="loading"
+        @search="() => {}"
+        @reset="
+          () => {
+            jobKeyword = ''
+          }
+        "
+        @refresh="load"
+      >
+        <el-form-item label="Job">
+          <el-input class="query-w-240" v-model="jobKeyword" clearable placeholder="搜索 jobCode" />
+        </el-form-item>
+      </ListPageQueryBar>
+      <el-table :data="filteredJobs" stripe border empty-text="暂无数据" class="console-table">
         <el-table-column prop="jobCode" label="Job" min-width="160" />
         <el-table-column prop="totalJobCount" label="总数" width="72" />
         <el-table-column prop="successJobCount" label="成功" width="72" />
@@ -95,6 +110,7 @@
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
+  import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import type { ConsoleBatchDayWindowResponse } from '@/types/console-api'
 
   const route = useRoute()
@@ -108,6 +124,18 @@
 
   const loading = ref(false)
   const window = ref<ConsoleBatchDayWindowResponse | null>(null)
+  const jobKeyword = ref('')
+
+  const filteredJobs = computed(() => {
+    const list = window.value?.jobs ?? []
+    const k = jobKeyword.value.trim().toLowerCase()
+    if (!k) return list
+    return list.filter((x) =>
+      String(x.jobCode ?? '')
+        .toLowerCase()
+        .includes(k),
+    )
+  })
 
   const catchupVisible = ref(false)
   const catchupLoading = ref(false)

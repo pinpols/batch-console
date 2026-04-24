@@ -25,38 +25,33 @@
           >
             <el-form-item label="Workflow Code">
               <el-input
+                class="query-w-160"
                 v-model="filters.workflowCode"
                 clearable
                 placeholder="请输入 workflowCode"
-                style="width: 160px"
               />
             </el-form-item>
             <el-form-item label="名称">
               <el-input
+                class="query-w-160"
                 v-model="filters.workflowName"
                 clearable
                 placeholder="请输入 workflowName"
-                style="width: 160px"
               />
             </el-form-item>
             <el-form-item label="启用">
-              <el-select
-                v-model="filters.enabled"
-                clearable
-                placeholder="全部"
-                style="width: 120px"
-              >
+              <el-select class="query-w-120" v-model="filters.enabled" clearable placeholder="全部">
                 <el-option label="启用" :value="true" />
                 <el-option label="停用" :value="false" />
               </el-select>
             </el-form-item>
             <el-form-item label="类型">
               <el-select
+                class="query-w-160"
                 v-model="filters.workflowType"
                 clearable
                 filterable
                 placeholder="请选择 workflowType"
-                style="width: 160px"
               >
                 <el-option
                   v-for="option in workflowTypeOptions"
@@ -68,12 +63,12 @@
             </el-form-item>
             <el-form-item label="版本">
               <el-input-number
+                class="query-w-140"
                 v-model="filters.version"
                 :min="1"
                 :step="1"
                 controls-position="right"
                 placeholder="版本"
-                style="width: 140px"
               />
             </el-form-item>
           </ListPageQueryBar>

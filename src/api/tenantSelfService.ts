@@ -13,7 +13,7 @@ export function getTenantUsage(tenantId: string) {
 /** POST /api/console/tenants/quota/request */
 export function requestQuotaChange(
   tenantId: string,
-  body: { quotaKey: string; requestedValue: string; reason: string },
+  body: { field: string; requestedValue: number; reason: string },
 ) {
   return post<void>('/api/console/tenants/quota/request', body, { params: { tenantId } })
 }

@@ -87,7 +87,7 @@
           <TenantSelect
             :model-value="tenantIdInput"
             size="small"
-            select-style="width: 168px"
+            select-class="query-w-168"
             placeholder="切换租户"
             @update:model-value="handleTenantSwitch"
           />

@@ -2,20 +2,53 @@
   <PageContainer>
     <PageHeader title="Webhook 管理" description="Webhook 端点 CRUD 及投递日志查看。">
       <template #actions>
-        <el-button type="primary" @click="openCreate">新增 Webhook</el-button>
+        <el-button type="primary" :icon="Plus" class="pretty-add-button" @click="openCreate">
+          新增 Webhook
+        </el-button>
         <el-button :loading="loading" @click="load">刷新</el-button>
       </template>
     </PageHeader>
 
     <SectionCard>
-      <el-table
-        v-loading="loading"
-        :data="rows"
-        stripe
-        border
-        empty-text="暂无数据"
-        class="console-table"
+      <ProTable
+        :data="pagedRows"
+        :loading="loading"
+        :total="filteredRows.length"
+        v-model:page="page"
+        v-model:page-size="pageSize"
+        :has-active-filters="hasActiveFilters"
+        @change="() => {}"
       >
+        <template #query>
+          <ListPageQueryBar
+            :filter-busy="false"
+            :refresh-busy="loading"
+            @search="applyFilter"
+            @reset="resetFilter"
+            @refresh="load"
+          >
+            <el-form-item label="关键字">
+              <el-input
+                class="query-w-280"
+                v-model="filterDraft.keyword"
+                clearable
+                placeholder="搜索 URL / 事件类型"
+                @keyup.enter="applyFilter"
+              />
+            </el-form-item>
+            <el-form-item label="启用">
+              <el-select
+                class="query-w-140"
+                v-model="filterDraft.enabled"
+                clearable
+                placeholder="全部"
+              >
+                <el-option label="已启用" :value="true" />
+                <el-option label="已停用" :value="false" />
+              </el-select>
+            </el-form-item>
+          </ListPageQueryBar>
+        </template>
         <el-table-column prop="id" label="ID" width="80" />
         <el-table-column prop="url" label="URL" min-width="250" show-overflow-tooltip />
         <el-table-column prop="eventTypes" label="事件类型" min-width="160" show-overflow-tooltip />
@@ -35,7 +68,7 @@
             </div>
           </template>
         </el-table-column>
-      </el-table>
+      </ProTable>
     </SectionCard>
 
     <el-dialog
@@ -73,8 +106,10 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, reactive } from 'vue'
+  import { ref, reactive, computed } from 'vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
+  import { Plus } from '@element-plus/icons-vue'
+  import { toPageResult } from '@/api/adapters'
   import {
     listWebhooks,
     createWebhook,
@@ -88,6 +123,8 @@
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
+  import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
+  import ProTable from '@/components/table/ProTable.vue'
 
   const tenant = useTenantStore()
   const loading = ref(false)
@@ -96,6 +133,34 @@
   const logVisible = ref(false)
   const editingId = ref<number | null>(null)
   const rows = ref<Record<string, unknown>[]>([])
+  const filterDraft = reactive({ keyword: '', enabled: undefined as boolean | undefined })
+  const filterApplied = reactive({ keyword: '', enabled: undefined as boolean | undefined })
+  const page = ref(1)
+  const pageSize = ref(20)
+
+  const filteredRows = computed(() => {
+    const k = filterApplied.keyword.trim().toLowerCase()
+    const en = filterApplied.enabled
+    return rows.value.filter((row) => {
+      const okEnabled = en === undefined ? true : !!row.enabled === en
+      if (!okEnabled) return false
+      if (!k) return true
+      const hay = `${row.url ?? ''} ${row.eventTypes ?? ''}`.toLowerCase()
+      return hay.includes(k)
+    })
+  })
+
+  const hasActiveFilters = computed(
+    () => !!filterApplied.keyword.trim() || filterApplied.enabled !== undefined,
+  )
+
+  const pagedRows = computed(
+    () =>
+      toPageResult(filteredRows.value, page.value, pageSize.value).records as unknown as Record<
+        string,
+        unknown
+      >[],
+  )
   const deliveryLogs = ref<Record<string, unknown>[]>([])
   const form = reactive({ url: '', eventTypes: '', enabled: true })
 
@@ -108,6 +173,18 @@
     } finally {
       loading.value = false
     }
+  }
+
+  function applyFilter() {
+    filterApplied.keyword = filterDraft.keyword.trim()
+    filterApplied.enabled = filterDraft.enabled
+    page.value = 1
+  }
+
+  function resetFilter() {
+    filterDraft.keyword = ''
+    filterDraft.enabled = undefined
+    applyFilter()
   }
 
   function openCreate() {

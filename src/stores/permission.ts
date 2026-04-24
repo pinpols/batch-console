@@ -53,7 +53,10 @@ export const usePermissionStore = defineStore('permission', () => {
   const visibleGroups = computed<NavigationGroup[]>(() => {
     const backendMenus = auth.menus
     if (backendMenus && backendMenus.length > 0) {
-      return backendMenus.map(menuGroupToNavigation)
+      // 后端通常已按权限过滤，但仍兜底剔除空分组，避免侧边栏出现“点了没反应”的标题项。
+      return backendMenus
+        .map(menuGroupToNavigation)
+        .filter((g) => Array.isArray(g.children) && g.children.length > 0)
     }
     return filterGroups(navigationGroups)
   })

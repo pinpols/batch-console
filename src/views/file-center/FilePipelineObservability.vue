@@ -31,10 +31,10 @@
               >
                 <el-form-item label="关键字">
                   <el-input
+                    class="query-w-280"
                     v-model="kwDraft"
                     clearable
                     placeholder="Job / 类型 / 状态 / Trace / fileId"
-                    style="width: 280px"
                     @keyup.enter="onSearch"
                   />
                 </el-form-item>
@@ -80,10 +80,10 @@
               >
                 <el-form-item label="关键字">
                   <el-input
+                    class="query-w-280"
                     v-model="kwDraft"
                     clearable
                     placeholder="步骤 / 阶段 / 状态 / 错误 / 实例 Id"
-                    style="width: 280px"
                     @keyup.enter="onSearch"
                   />
                 </el-form-item>
@@ -128,10 +128,10 @@
               >
                 <el-form-item label="关键字">
                   <el-input
+                    class="query-w-280"
                     v-model="kwDraft"
                     clearable
                     placeholder="fileId / 状态 / 渠道 / 外部请求 ID"
-                    style="width: 280px"
                     @keyup.enter="onSearch"
                   />
                 </el-form-item>
@@ -178,10 +178,10 @@
               >
                 <el-form-item label="关键字">
                   <el-input
+                    class="query-w-280"
                     v-model="kwDraft"
                     clearable
                     placeholder="fileId / 错误码 / 阶段 / 信息"
-                    style="width: 280px"
                     @keyup.enter="onSearch"
                   />
                 </el-form-item>

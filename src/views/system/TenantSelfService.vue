@@ -4,7 +4,7 @@
 
     <SectionCard>
       <div class="section-toolbar">
-        <h3 class="section-title" style="margin-bottom: 0; flex: 1">当前配额</h3>
+        <h3 class="section-title u-mb-0 u-flex-1">当前配额</h3>
         <el-button :loading="loadingQuota" @click="loadQuota">刷新</el-button>
       </div>
       <pre v-if="quota" class="json-preview">{{ JSON.stringify(quota, null, 2) }}</pre>
@@ -13,7 +13,7 @@
 
     <SectionCard>
       <div class="section-toolbar">
-        <h3 class="section-title" style="margin-bottom: 0; flex: 1">当前用量</h3>
+        <h3 class="section-title u-mb-0 u-flex-1">当前用量</h3>
         <el-button :loading="loadingUsage" @click="loadUsage">刷新</el-button>
       </div>
       <pre v-if="usage" class="json-preview">{{ JSON.stringify(usage, null, 2) }}</pre>
@@ -91,8 +91,9 @@
       ElMessage.warning('配额键不能为空')
       return
     }
-    if (!form.requestedValue.trim()) {
-      ElMessage.warning('期望值不能为空')
+    const requestedValue = Number.parseInt(form.requestedValue.trim(), 10)
+    if (!Number.isFinite(requestedValue) || requestedValue <= 0) {
+      ElMessage.warning('期望值需为正整数')
       return
     }
     if (!form.reason.trim()) {
@@ -102,8 +103,8 @@
     submitting.value = true
     try {
       await requestQuotaChange(tenant.tenantId, {
-        quotaKey: form.quotaKey,
-        requestedValue: form.requestedValue,
+        field: form.quotaKey,
+        requestedValue,
         reason: form.reason,
       })
       ElMessage.success('申请已提交')

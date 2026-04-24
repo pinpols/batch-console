@@ -30,24 +30,38 @@
                 8-Sheet 格式（job_definition / file_channel / alert_routing / pipeline /
                 workflow_definition …）。上传成功后可进入预览校验。
               </p>
-              <div class="upload-zone__quick-actions">
-                <el-button :loading="tplLoading" @click="doDownloadTemplate">
-                  下载配置包模板
-                </el-button>
-                <el-button :loading="exportLoading" @click="doExport"> 导出当前配置包 </el-button>
-              </div>
-              <div class="upload-zone__actions">
-                <el-upload
-                  :auto-upload="false"
-                  :limit="1"
-                  :on-change="onFile"
-                  :show-file-list="false"
-                >
-                  <el-button type="primary">选择文件</el-button>
-                </el-upload>
-                <el-button type="success" :disabled="!file" :loading="upLoading" @click="doUpload">
-                  开始上传
-                </el-button>
+              <div class="upload-zone__toolbar">
+                <div class="upload-zone__toolbar-left">
+                  <el-button link type="primary" :loading="tplLoading" @click="doDownloadTemplate">
+                    下载配置包模板
+                  </el-button>
+                  <span class="upload-zone__toolbar-dot" aria-hidden="true">•</span>
+                  <el-button link type="primary" :loading="exportLoading" @click="doExport">
+                    导出当前配置包
+                  </el-button>
+                </div>
+                <div class="upload-zone__toolbar-right">
+                  <el-upload
+                    :auto-upload="false"
+                    :limit="1"
+                    :on-change="onFile"
+                    :show-file-list="false"
+                  >
+                    <el-button class="upload-zone__ghost-btn" type="primary" plain size="large">
+                      选择文件
+                    </el-button>
+                  </el-upload>
+                  <el-button
+                    class="upload-zone__primary-btn"
+                    type="primary"
+                    :disabled="!file"
+                    :loading="upLoading"
+                    size="large"
+                    @click="doUpload"
+                  >
+                    开始上传
+                  </el-button>
+                </div>
               </div>
               <div v-if="file" class="upload-zone__file">
                 <el-icon><Document /></el-icon>
@@ -436,24 +450,138 @@
     line-height: 1.55;
   }
 
-  .upload-zone__quick-actions {
+  .upload-zone__toolbar {
     display: flex;
-    flex-wrap: wrap;
     align-items: center;
-    justify-content: center;
-    gap: 8px;
-    margin-top: 14px;
-    padding-bottom: 14px;
-    border-bottom: 1px dashed var(--color-border-light);
+    justify-content: space-between;
+    gap: var(--space-md);
+    margin: var(--card-inner-padding) auto 0;
+    padding-top: var(--space-xs);
+    max-width: 720px;
+    width: 100%;
   }
 
-  .upload-zone__actions {
-    display: flex;
-    flex-wrap: wrap;
+  .upload-zone__toolbar-left {
+    display: inline-flex;
     align-items: center;
-    justify-content: center;
     gap: 10px;
-    margin-top: 12px;
+    color: var(--color-text-tertiary);
+    flex-wrap: wrap;
+  }
+
+  .upload-zone__toolbar-left :deep(.el-button.is-link) {
+    border-radius: 999px;
+    padding: 6px 12px;
+    background: color-mix(in srgb, var(--color-primary) 8%, transparent 92%);
+    border: 1px solid color-mix(in srgb, var(--color-primary) 18%, var(--color-border) 82%);
+    box-shadow: 0 8px 18px rgb(15 23 42 / 8%);
+    transition:
+      transform 0.16s ease,
+      box-shadow 0.18s ease,
+      background 0.18s ease,
+      border-color 0.18s ease;
+  }
+
+  .upload-zone__toolbar-left :deep(.el-button.is-link:hover) {
+    transform: translateY(-1px);
+    background: color-mix(in srgb, var(--color-primary) 12%, transparent 88%);
+    border-color: color-mix(in srgb, var(--color-primary) 30%, var(--color-border) 70%);
+    box-shadow: 0 12px 26px rgb(15 23 42 / 12%);
+  }
+
+  .upload-zone__toolbar-left :deep(.el-button.is-link:active) {
+    transform: translateY(0);
+    box-shadow: 0 10px 20px rgb(15 23 42 / 10%);
+  }
+
+  .upload-zone__toolbar-dot {
+    opacity: 0.55;
+    transform: translateY(-1px);
+  }
+
+  .upload-zone__toolbar-right {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-sm);
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .upload-zone__toolbar-right :deep(.el-upload) {
+    width: auto;
+  }
+
+  .upload-zone__ghost-btn,
+  .upload-zone__primary-btn {
+    min-height: 44px;
+    border-radius: 12px;
+    font-weight: 650;
+    padding: 0 18px;
+  }
+
+  .upload-zone__ghost-btn {
+    border-color: color-mix(in srgb, var(--color-primary) 26%, var(--color-border) 74%);
+    background: color-mix(in srgb, var(--color-primary) 6%, var(--color-bg-card) 94%);
+    box-shadow: 0 8px 18px rgb(15 23 42 / 10%);
+    transition:
+      transform 0.18s ease,
+      box-shadow 0.18s ease,
+      border-color 0.18s ease,
+      background 0.18s ease;
+  }
+
+  .upload-zone__ghost-btn:hover {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--color-primary) 38%, var(--color-border) 62%);
+    background: color-mix(in srgb, var(--color-primary) 9%, var(--color-bg-card) 91%);
+    box-shadow: 0 12px 26px rgb(15 23 42 / 14%);
+  }
+
+  .upload-zone__ghost-btn:active {
+    transform: translateY(0);
+  }
+
+  .upload-zone__primary-btn {
+    border: none;
+    background: linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--color-primary) 74%, #ffffff 26%) 0%,
+      color-mix(in srgb, #0f5ed9 64%, #ffffff 36%) 100%
+    );
+    box-shadow: 0 12px 30px rgb(59 130 246 / 18%);
+    transition:
+      transform 0.18s ease,
+      box-shadow 0.18s ease,
+      filter 0.18s ease;
+  }
+
+  .upload-zone__primary-btn:hover {
+    transform: translateY(-1px);
+    filter: saturate(1.03);
+    box-shadow: 0 16px 40px rgb(59 130 246 / 22%);
+  }
+
+  .upload-zone__primary-btn:active {
+    transform: translateY(0);
+  }
+
+  .upload-zone__primary-btn:disabled,
+  .upload-zone__ghost-btn:disabled {
+    box-shadow: none;
+    transform: none;
+  }
+
+  @media (max-width: 720px) {
+    .upload-zone__toolbar {
+      flex-direction: column;
+      align-items: stretch;
+      max-width: 520px;
+      gap: var(--space-sm);
+    }
+
+    .upload-zone__toolbar-right {
+      justify-content: center;
+    }
   }
 
   .upload-zone__file {

@@ -5,6 +5,7 @@ import { createIdempotencyKey } from '@/utils/idempotency'
 import { setLastApiMeta } from '@/utils/lastApiMeta'
 import { logApi } from '@/utils/logger'
 import { sanitizeParams, sanitizeRequestBody, sanitizeResponseBody } from '@/utils/logRedact'
+import { showErrorToast } from '@/utils/errorToast'
 
 /**
  * 成功响应只记 envelope 的 `{ code, message }`(通常几十字节),不记 `data`。
@@ -83,6 +84,13 @@ function extractHttpErrorMessage(error: unknown): string {
   const status = ax.response?.status
   const d = ax.response?.data
   if (d && typeof d === 'object') {
+    // Spring Boot 3 默认 404 message（映射不到 controller 时落到静态资源处理器）
+    // 例：`No static resource api/console/triggers for request '/api/console/triggers'.`
+    // 这类信息对用户不友好，统一改成“接口不存在/版本不匹配”。
+    if (status === 404 && typeof d.message === 'string' && /No static resource/i.test(d.message)) {
+      const url = ax.config?.url || d.path
+      return url ? `接口不存在或后端版本不匹配（${url}）` : '接口不存在或后端版本不匹配'
+    }
     const parts: string[] = []
     if (d.message) parts.push(String(d.message))
     if (d.error && String(d.error) !== String(d.message)) parts.push(String(d.error))
@@ -107,11 +115,10 @@ function extractErrorTrace(error: unknown): string | undefined {
 
 function showApiErrorToast(message: string, error?: unknown) {
   const trace = error !== undefined ? extractErrorTrace(error) : undefined
-  const text = trace && !message.includes(trace) ? `${message}（trace：${trace}）` : message
-  ElMessage.error({
-    message: text,
-    duration: trace ? 6500 : 4000,
-    showClose: true,
+  showErrorToast({
+    title: '请求失败',
+    message,
+    traceId: trace,
   })
 }
 
@@ -192,10 +199,10 @@ export function applyApiInterceptors(client: AxiosInstance): void {
         if (!isSuccessCode(envelope.code as string | number)) {
           const msg = envelope.message || '请求失败'
           const tid = envelope.meta?.traceId || envelope.meta?.requestId
-          ElMessage.error({
-            message: tid ? `${msg}（trace：${tid}）` : msg,
-            duration: tid ? 6500 : 4000,
-            showClose: true,
+          showErrorToast({
+            title: '请求失败',
+            message: msg,
+            traceId: tid ? String(tid) : undefined,
           })
           return Promise.reject(
             Object.assign(new Error(msg), {
@@ -256,10 +263,18 @@ export function applyApiInterceptors(client: AxiosInstance): void {
         } else {
           // 业务接口 401：可能是代理鉴权失败 / 该接口 RBAC 不足，不登出
           const msg = extractHttpErrorMessage(error) || '该操作未授权'
-          showApiErrorToast(msg, error)
+          showErrorToast({
+            title: '未授权',
+            message: msg,
+            traceId: extractErrorTrace(error),
+          })
         }
       } else if (status === 403) {
-        showApiErrorToast('权限不足', error)
+        showErrorToast({
+          title: '权限不足',
+          message: '你没有访问该功能的权限。',
+          traceId: extractErrorTrace(error),
+        })
       } else {
         const msg = extractHttpErrorMessage(error)
         if (import.meta.env.DEV && status != null && status >= 500) {
@@ -268,7 +283,23 @@ export function applyApiInterceptors(client: AxiosInstance): void {
           const path = cfg?.url ? `${cfg.baseURL ?? ''}${cfg.url}` : ''
           console.error('[API]', m, path, status, raw)
         }
-        showApiErrorToast(msg, error)
+        if (status === 404) {
+          const url = (error as AxiosError)?.config?.url
+          showErrorToast({
+            title: '接口不存在',
+            message: url
+              ? `后端未提供该接口或版本不匹配：${url}。请确认后端已部署最新版本，并检查代理/网关路由配置。`
+              : `后端未提供该接口或版本不匹配。请确认后端已部署最新版本，并检查代理/网关路由配置。`,
+            traceId: extractErrorTrace(error),
+            duration: 7500,
+          })
+        } else {
+          showErrorToast({
+            title: status ? `请求失败（HTTP ${status}）` : '请求失败',
+            message: msg,
+            traceId: extractErrorTrace(error),
+          })
+        }
       }
       return Promise.reject(error)
     },

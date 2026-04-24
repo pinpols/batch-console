@@ -12,8 +12,8 @@
         <el-tab-pane label="运维工具箱" name="toolbox">
           <div class="data-panel">
             <div class="section-toolbar">
-              <h3 class="section-title" style="margin-bottom: 0">Kafka Lag</h3>
-              <span style="flex: 1" />
+              <h3 class="section-title u-mb-0">Kafka Lag</h3>
+              <span class="u-flex-1" />
               <el-button :loading="loadingLag" @click="loadKafkaLag">刷新</el-button>
             </div>
             <pre v-if="kafkaLag" class="json-preview">{{ JSON.stringify(kafkaLag, null, 2) }}</pre>
@@ -22,8 +22,8 @@
 
           <div class="data-panel">
             <div class="section-toolbar">
-              <h3 class="section-title" style="margin-bottom: 0">Outbox 统计</h3>
-              <span style="flex: 1" />
+              <h3 class="section-title u-mb-0">Outbox 统计</h3>
+              <span class="u-flex-1" />
               <el-button :loading="loadingOutbox" @click="loadOutboxStats">刷新</el-button>
               <el-button
                 type="warning"
@@ -50,7 +50,7 @@
         <!-- 集群诊断 -->
         <el-tab-pane label="集群诊断" name="cluster">
           <div class="section-toolbar">
-            <span style="flex: 1" />
+            <span class="u-flex-1" />
             <el-button type="primary" :loading="loadingCluster" @click="loadCluster"
               >全部刷新</el-button
             >

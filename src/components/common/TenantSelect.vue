@@ -9,7 +9,8 @@
     :loading="searching"
     :placeholder="placeholder"
     :size="size"
-    :style="selectStyle"
+    :class="resolvedSelectClass"
+    :style="selectStyleNormalized"
     :disabled="disabled"
     @update:model-value="$emit('update:modelValue', $event)"
     @clear="onClear"
@@ -22,16 +23,19 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, onMounted } from 'vue'
+  import { computed, ref, onMounted } from 'vue'
   import { listTenants, type Tenant } from '@/api/tenants'
 
-  withDefaults(
+  const props = withDefaults(
     defineProps<{
       modelValue?: string
       placeholder?: string
       size?: 'small' | 'default' | 'large'
       disabled?: boolean
+      /** @deprecated Prefer `selectClass` (e.g. `query-w-200`) */
       selectStyle?: string
+      /** Utility classes applied to the underlying `el-select` */
+      selectClass?: string
     }>(),
     {
       modelValue: '',
@@ -39,12 +43,21 @@
       size: 'default',
       disabled: false,
       selectStyle: 'width: 200px',
+      selectClass: '',
     },
   )
 
   defineEmits<{
     'update:modelValue': [value: string]
   }>()
+
+  const resolvedSelectClass = computed(() => props.selectClass?.trim() || undefined)
+
+  const selectStyleNormalized = computed(() => {
+    // When callers use width utility classes, inline `width:` would win and defeat the class.
+    if (resolvedSelectClass.value) return undefined
+    return props.selectStyle?.trim() ? props.selectStyle : undefined
+  })
 
   const searching = ref(false)
   const options = ref<Tenant[]>([])

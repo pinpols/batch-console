@@ -35,6 +35,39 @@
         >节点运行（GET /api/console/queries/workflow-node-runs，端上按 workflowRunId
         过滤）</template
       >
+      <ListPageQueryBar
+        :filter-busy="false"
+        :refresh-busy="loading"
+        @search="applyNodeFilter"
+        @reset="resetNodeFilter"
+        @refresh="loadNodeRuns"
+      >
+        <el-form-item label="nodeCode">
+          <el-input
+            class="query-w-200"
+            v-model="nodeFilterDraft.nodeCode"
+            clearable
+            placeholder="exact"
+            @keyup.enter="applyNodeFilter"
+          />
+        </el-form-item>
+        <el-form-item label="nodeStatus">
+          <el-select
+            class="query-w-200"
+            v-model="nodeFilterDraft.nodeStatus"
+            clearable
+            filterable
+            placeholder="全部"
+          >
+            <el-option
+              v-for="opt in nodeStatusOptions"
+              :key="opt.value"
+              :label="opt.label"
+              :value="opt.value"
+            />
+          </el-select>
+        </el-form-item>
+      </ListPageQueryBar>
       <el-table
         v-loading="loading"
         :data="nodeRuns"
@@ -64,23 +97,40 @@
           </template>
         </el-table-column>
       </el-table>
+      <TablePagerBar
+        :page="nodePage"
+        :page-size="nodePageSize"
+        :total="nodeTotal"
+        @update:page="onNodePageChange"
+        @update:page-size="
+          (s: number) => {
+            nodePageSize = s
+            nodePage = 1
+            void loadNodeRuns()
+          }
+        "
+      />
     </SectionCard>
   </PageContainer>
 </template>
 
 <script setup lang="ts">
-  import { computed, ref, watch } from 'vue'
+  import { computed, ref, watch, reactive } from 'vue'
   import { useRoute } from 'vue-router'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { instanceApi } from '@/api/instance'
   import { cancelWorkflowRun, terminateWorkflowRun, skipWorkflowRunNode } from '@/api/workflowRuns'
-  import { queryWorkflowNodeRuns } from '@/api/workflowQueries'
+  import { queryWorkflowNodeRunsPaged } from '@/api/workflowQueries'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
+  import TablePagerBar from '@/components/table/TablePagerBar.vue'
+  import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
+  import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
+  import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
   import type {
     ConsoleWorkflowNodeRunResponse,
     ConsoleWorkflowRunResponse,
@@ -93,6 +143,39 @@
   const actionLoading = ref(false)
   const run = ref<ConsoleWorkflowRunResponse | null>(null)
   const nodeRuns = ref<ConsoleWorkflowNodeRunResponse[]>([])
+  const nodePage = ref(1)
+  const nodePageSize = ref(20)
+  const nodeTotal = ref(0)
+
+  const { data: metaEnums } = useConsoleMetaEnumsQuery()
+  const nodeStatusOptions = computed(() =>
+    pickMetaEnumGroup(metaEnums.value, 'workflowNodeRunStatus'),
+  )
+
+  const nodeFilterDraft = reactive({ nodeCode: '', nodeStatus: '' })
+  const nodeFilterApplied = reactive({ nodeCode: '', nodeStatus: '' })
+
+  async function loadNodeRuns() {
+    if (!Number.isFinite(runId.value)) return
+    loading.value = true
+    try {
+      const pr = await queryWorkflowNodeRunsPaged({
+        tenantId: tenant.tenantId,
+        page: nodePage.value,
+        pageSize: nodePageSize.value,
+        workflowRunId: runId.value,
+        nodeCode: nodeFilterApplied.nodeCode,
+        nodeStatus: nodeFilterApplied.nodeStatus,
+      })
+      nodeRuns.value = pr.records
+      nodeTotal.value = pr.total
+    } catch {
+      nodeRuns.value = []
+      nodeTotal.value = 0
+    } finally {
+      loading.value = false
+    }
+  }
 
   const runId = computed(() => Number(route.params.id))
 
@@ -105,15 +188,37 @@
     loading.value = true
     try {
       run.value = await instanceApi.workflowRunDetail(runId.value, tenant.tenantId)
-      // 传入 workflowRunId 让后端过滤，避免拉取全量 nodeRuns
-      const items = await queryWorkflowNodeRuns(tenant.tenantId, runId.value)
-      nodeRuns.value = items.filter((n) => n.workflowRunId === runId.value)
+      nodePage.value = 1
+      await loadNodeRuns()
     } catch {
       run.value = null
       nodeRuns.value = []
+      nodeTotal.value = 0
+      nodePage.value = 1
     } finally {
       loading.value = false
     }
+  }
+
+  function applyNodeFilter() {
+    nodeFilterApplied.nodeCode = nodeFilterDraft.nodeCode
+    nodeFilterApplied.nodeStatus = nodeFilterDraft.nodeStatus
+    nodePage.value = 1
+    void loadNodeRuns()
+  }
+
+  function resetNodeFilter() {
+    nodeFilterDraft.nodeCode = ''
+    nodeFilterDraft.nodeStatus = ''
+    nodeFilterApplied.nodeCode = ''
+    nodeFilterApplied.nodeStatus = ''
+    nodePage.value = 1
+    void loadNodeRuns()
+  }
+
+  function onNodePageChange(p: number) {
+    nodePage.value = p
+    void loadNodeRuns()
   }
 
   async function confirmCancel() {

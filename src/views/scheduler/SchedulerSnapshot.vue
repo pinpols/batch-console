@@ -134,6 +134,13 @@
           />
           <el-table-column prop="burstLimit" label="burstLimit" width="110" />
           <el-table-column prop="partitionBurstLimit" label="partitionBurstLimit" width="150" />
+          <el-table-column label="操作" width="110" fixed="right">
+            <template #default="{ row }">
+              <div class="table-actions">
+                <CopyableText :text="String(row.policyCode ?? '')">复制 Code</CopyableText>
+              </div>
+            </template>
+          </el-table-column>
         </el-table>
         <TablePagerBar
           :page="pagePolicies"
@@ -180,6 +187,13 @@
             width="190"
           />
           <el-table-column prop="burstLimit" label="burstLimit" width="110" />
+          <el-table-column label="操作" width="110" fixed="right">
+            <template #default="{ row }">
+              <div class="table-actions">
+                <CopyableText :text="String(row.queueCode ?? '')">复制 Code</CopyableText>
+              </div>
+            </template>
+          </el-table-column>
         </el-table>
         <TablePagerBar
           :page="pageQueues"
@@ -223,6 +237,13 @@
                   :status="progressStatus(row.status)"
                 />
                 <span class="load-cell__value">{{ row.currentLoad }}</span>
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column label="操作" width="110" fixed="right">
+            <template #default="{ row }">
+              <div class="table-actions">
+                <CopyableText :text="String(row.workerCode ?? '')">复制 Code</CopyableText>
               </div>
             </template>
           </el-table-column>
@@ -282,6 +303,7 @@
   import SectionCard from '@/components/common/SectionCard.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
   import TablePagerBar from '@/components/table/TablePagerBar.vue'
+  import CopyableText from '@/components/common/CopyableText.vue'
   import type {
     ConsoleSchedulerSnapshotHistoryResponse,
     ConsoleSchedulerSnapshotResponse,

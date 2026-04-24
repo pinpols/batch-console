@@ -103,6 +103,11 @@ html.dark {
     border-color var(--motion-duration-sm) var(--motion-ease-standard);
 }
 
+/* 表格宽度与外部容器对齐：当列总宽小于容器时也不要“缩短”成一小块 */
+.el-table :where(.el-table__header, .el-table__body, .el-table__footer) {
+  min-width: 100%;
+}
+
 /**
  * 列表表格：外侧阴影易被 .layout-main__body overflow 裁切，hover 叠加内描边保证四边可见。
  * 弹层内表格同理（抽屉/对话框常 teleport 到 body）。
@@ -343,12 +348,7 @@ html.dark {
 /* 实体按钮：轻微渐变 + 投影，减少默认「灰扁」感（不含 text / link / plain） */
 .el-button--primary:not(.is-link):not(.is-text):not(.is-plain):not(.is-disabled),
 .el-button--info:not(.is-link):not(.is-text):not(.is-plain):not(.is-disabled) {
-  background-image: linear-gradient(
-    180deg,
-    #6db4ff 0%,
-    #3b8cff 46%,
-    var(--color-primary) 100%
-  );
+  background-image: linear-gradient(180deg, #6db4ff 0%, #3b8cff 46%, var(--color-primary) 100%);
   border-color: #3b8cff;
   color: #fff;
   box-shadow:
@@ -777,7 +777,11 @@ html.dark .el-drawer {
 
 .el-select-dropdown .el-select-dropdown__item:not(.is-disabled).is-hovering,
 .el-select-dropdown .el-select-dropdown__item:not(.is-disabled):hover {
-  background-color: color-mix(in srgb, var(--color-bg-card) 88%, var(--color-primary) 12%) !important;
+  background-color: color-mix(
+    in srgb,
+    var(--color-bg-card) 88%,
+    var(--color-primary) 12%
+  ) !important;
   border-color: color-mix(in srgb, var(--color-border) 70%, var(--color-primary) 30%);
   box-shadow: var(--shadow-surface-hover);
   transform: translateY(var(--ui-hover-translate-y)) scale(var(--ui-hover-scale));

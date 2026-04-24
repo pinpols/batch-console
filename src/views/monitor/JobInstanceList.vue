@@ -28,24 +28,24 @@
                 <HelpLabel tip="唯一作业标识，用于调度触发和实例关联">Job Code</HelpLabel>
               </template>
               <el-select
+                class="query-w-200"
                 v-model="query.jobCode"
                 clearable
                 filterable
                 allow-create
                 default-first-option
                 placeholder="选择或输入 jobCode"
-                style="width: 200px"
               >
                 <el-option v-for="code in jobCodeOptions" :key="code" :label="code" :value="code" />
               </el-select>
             </el-form-item>
             <el-form-item label="状态">
               <el-select
+                class="query-w-180"
                 v-model="query.instanceStatus"
                 clearable
                 filterable
                 placeholder="全部实例状态"
-                style="width: 180px"
               >
                 <el-option
                   v-for="option in statusOptions"
@@ -60,13 +60,13 @@
                 <HelpLabel tip="按实例创建或执行时间范围筛选">时间范围</HelpLabel>
               </template>
               <el-date-picker
+                class="query-w-260"
                 v-model="dateRange"
                 type="daterange"
                 range-separator="至"
                 start-placeholder="开始日期"
                 end-placeholder="结束日期"
                 value-format="YYYY-MM-DD"
-                style="width: 260px"
                 @change="onDateChange"
               />
             </el-form-item>

@@ -25,27 +25,27 @@
           >
             <el-form-item label="Key">
               <el-input
+                class="query-w-180"
                 v-model="filters.key"
                 clearable
                 placeholder="配置 Key，模糊匹配"
-                style="width: 180px"
               />
             </el-form-item>
             <el-form-item label="名称">
               <el-input
+                class="query-w-180"
                 v-model="filters.name"
                 clearable
                 placeholder="配置显示名，模糊匹配"
-                style="width: 180px"
               />
             </el-form-item>
             <el-form-item label="状态">
               <el-select
+                class="query-w-200"
                 v-model="filters.status"
                 clearable
                 filterable
                 placeholder="全部发布状态"
-                style="width: 200px"
               >
                 <el-option
                   v-for="opt in configReleaseStatusOptions"
@@ -109,10 +109,10 @@
       <el-form :inline="true" class="diff-form">
         <el-form-item label="版本 A">
           <el-select
+            class="query-w-240"
             v-model="diffForm.releaseIdA"
             filterable
             placeholder="选择发布版本"
-            style="width: 240px"
           >
             <el-option
               v-for="r in allRows"
@@ -124,10 +124,10 @@
         </el-form-item>
         <el-form-item label="版本 B">
           <el-select
+            class="query-w-240"
             v-model="diffForm.releaseIdB"
             filterable
             placeholder="选择发布版本"
-            style="width: 240px"
           >
             <el-option
               v-for="r in allRows.filter((x) => x.id !== diffForm.releaseIdA)"

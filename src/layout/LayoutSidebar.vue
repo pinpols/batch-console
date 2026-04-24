@@ -26,7 +26,13 @@
             </el-icon>
             <span>{{ group.title }}</span>
           </template>
-          <el-menu-item v-for="item in group.children" :key="item.path" :index="item.path">
+          <el-menu-item
+            v-for="item in group.children"
+            :key="item.path"
+            :index="item.path"
+            @mouseenter="prefetchRouteComponent(item.path)"
+            @focus="prefetchRouteComponent(item.path)"
+          >
             <el-icon v-if="item.icon">
               <component :is="item.icon" />
             </el-icon>
@@ -40,16 +46,33 @@
 
 <script setup lang="ts">
   import { computed } from 'vue'
-  import { useRoute } from 'vue-router'
+  import { useRoute, useRouter } from 'vue-router'
   import { useAppStore } from '@/stores/app'
   import { usePermissionStore } from '@/stores/permission'
 
   const app = useAppStore()
   const permission = usePermissionStore()
   const route = useRoute()
+  const router = useRouter()
 
   const activeMenu = computed(() => (route.meta.activeMenu as string) ?? route.path)
   const visibleGroups = computed(() => permission.visibleGroups)
+
+  function prefetchRouteComponent(path: string) {
+    try {
+      const resolved = router.resolve(path)
+      for (const record of resolved.matched) {
+        const loader = record.components?.default
+        if (typeof loader === 'function') {
+          Promise.resolve(loader()).catch(() => {
+            /* ignore prefetch failures */
+          })
+        }
+      }
+    } catch {
+      /* ignore */
+    }
+  }
 </script>
 
 <style scoped>

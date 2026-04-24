@@ -29,7 +29,7 @@
               :model-value="tenant.tenantId"
               size="small"
               placeholder="切换租户"
-              select-style="width: 190px"
+              select-class="query-w-190"
               @update:model-value="handleTenantSwitch"
             />
             <span v-else class="mobile-appbar__val">{{ tenant.tenantId }}</span>

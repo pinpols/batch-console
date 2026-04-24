@@ -12,8 +12,8 @@
         <el-tab-pane label="配额与用量" name="quota">
           <div class="data-panel">
             <div class="section-toolbar">
-              <h3 class="section-title" style="margin-bottom: 0">当前配额</h3>
-              <span style="flex: 1" />
+              <h3 class="section-title u-mb-0">当前配额</h3>
+              <span class="u-flex-1" />
               <el-button :loading="loadingQuota" @click="loadQuota">刷新</el-button>
             </div>
             <pre v-if="quota" class="json-preview">{{ JSON.stringify(quota, null, 2) }}</pre>
@@ -22,8 +22,8 @@
 
           <div class="data-panel">
             <div class="section-toolbar">
-              <h3 class="section-title" style="margin-bottom: 0">当前用量</h3>
-              <span style="flex: 1" />
+              <h3 class="section-title u-mb-0">当前用量</h3>
+              <span class="u-flex-1" />
               <el-button :loading="loadingUsage" @click="loadUsage">刷新</el-button>
             </div>
             <pre v-if="usage" class="json-preview">{{ JSON.stringify(usage, null, 2) }}</pre>
@@ -36,7 +36,15 @@
           <div class="form-panel">
             <el-form label-width="100px" class="form-section">
               <el-form-item label="配额键">
-                <el-input v-model="quotaForm.quotaKey" placeholder="如 maxConcurrentJobs" />
+                <el-select
+                  v-model="quotaForm.quotaKey"
+                  filterable
+                  placeholder="请选择配额键"
+                  class="query-w-full"
+                  :loading="quotaKeysLoading"
+                >
+                  <el-option v-for="k in quotaKeys" :key="k" :label="k" :value="k" />
+                </el-select>
               </el-form-item>
               <el-form-item label="期望值">
                 <el-input v-model="quotaForm.requestedValue" placeholder="请输入期望值" />
@@ -49,13 +57,14 @@
                   placeholder="变更原因"
                 />
               </el-form-item>
-              <el-form-item>
+              <el-form-item class="form-actions">
                 <el-button
                   type="primary"
+                  class="pretty-primary-button"
                   :loading="submittingQuota"
                   v-track-click="'配额变更申请'"
                   @click="submitQuotaChange"
-                  >提交申请</el-button
+                  >提交配额变更</el-button
                 >
               </el-form-item>
             </el-form>
@@ -67,7 +76,19 @@
           <div class="form-panel">
             <el-form label-width="100px" class="form-section">
               <el-form-item label="Job Code">
-                <el-input v-model="rerunForm.jobCode" placeholder="Job Code" />
+                <el-select
+                  v-model="rerunForm.jobCode"
+                  filterable
+                  remote
+                  reserve-keyword
+                  placeholder="请输入关键字搜索"
+                  :remote-method="queryJobCodes"
+                  :loading="jobCodeLoading"
+                  @focus="loadDefaultJobCodes"
+                  class="query-w-full"
+                >
+                  <el-option v-for="opt in jobCodeOptions" :key="opt" :label="opt" :value="opt" />
+                </el-select>
               </el-form-item>
               <el-form-item label="业务日">
                 <el-date-picker
@@ -75,7 +96,7 @@
                   type="date"
                   value-format="YYYY-MM-DD"
                   placeholder="选择日期"
-                  style="width: 100%"
+                  class="query-w-full"
                 />
               </el-form-item>
               <el-form-item label="目标实例号">
@@ -89,9 +110,10 @@
                   placeholder="重跑原因"
                 />
               </el-form-item>
-              <el-form-item>
+              <el-form-item class="form-actions">
                 <el-button
                   type="primary"
+                  class="pretty-primary-button"
                   :loading="rerunLoading"
                   v-track-click="'自助重跑申请'"
                   @click="submitRerun"
@@ -107,7 +129,19 @@
           <div class="form-panel">
             <el-form label-width="100px" class="form-section">
               <el-form-item label="Job Code">
-                <el-input v-model="compForm.jobCode" placeholder="Job Code" />
+                <el-select
+                  v-model="compForm.jobCode"
+                  filterable
+                  remote
+                  reserve-keyword
+                  placeholder="请输入关键字搜索"
+                  :remote-method="queryJobCodes"
+                  :loading="jobCodeLoading"
+                  @focus="loadDefaultJobCodes"
+                  class="query-w-full"
+                >
+                  <el-option v-for="opt in jobCodeOptions" :key="opt" :label="opt" :value="opt" />
+                </el-select>
               </el-form-item>
               <el-form-item label="业务日">
                 <el-date-picker
@@ -115,11 +149,26 @@
                   type="date"
                   value-format="YYYY-MM-DD"
                   placeholder="选择日期"
-                  style="width: 100%"
+                  class="query-w-full"
                 />
               </el-form-item>
               <el-form-item label="补偿类型">
-                <el-input v-model="compForm.compensationType" placeholder="可选" />
+                <el-select
+                  v-model="compForm.compensationType"
+                  filterable
+                  allow-create
+                  default-first-option
+                  clearable
+                  placeholder="请选择（或输入自定义）"
+                  class="query-w-full"
+                >
+                  <el-option
+                    v-for="t in compensationTypeOptions"
+                    :key="t.value"
+                    :label="t.label"
+                    :value="t.value"
+                  />
+                </el-select>
               </el-form-item>
               <el-form-item label="目标实例号">
                 <el-input v-model="compForm.targetInstanceNo" placeholder="可选" />
@@ -132,9 +181,10 @@
                   placeholder="补偿原因"
                 />
               </el-form-item>
-              <el-form-item>
+              <el-form-item class="form-actions">
                 <el-button
                   type="primary"
+                  class="pretty-primary-button"
                   :loading="compLoading"
                   v-track-click="'自助补偿申请'"
                   @click="submitCompensation"
@@ -150,10 +200,11 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, reactive } from 'vue'
+  import { ref, reactive, watch } from 'vue'
   import { ElMessage } from 'element-plus'
   import { getTenantQuota, getTenantUsage, requestQuotaChange } from '@/api/tenantSelfService'
   import { selfServiceRerunRequest, selfServiceCompensationRequest } from '@/api/selfServiceJobs'
+  import { jobApi } from '@/api/job'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
   import PageContainer from '@/components/common/PageContainer.vue'
@@ -194,14 +245,43 @@
   // ── 配额变更 ──
   const submittingQuota = ref(false)
   const quotaForm = reactive({ quotaKey: '', requestedValue: '', reason: '' })
+  const quotaKeysLoading = ref(false)
+  const quotaKeys = ref<string[]>([])
+
+  function extractQuotaKeys(payload: unknown): string[] {
+    const items = (payload as { items?: unknown })?.items
+    if (!Array.isArray(items)) return []
+    const keys = items
+      .map((it) => {
+        if (!it || typeof it !== 'object') return ''
+        const anyIt = it as Record<string, unknown>
+        return String((anyIt.policyCode ?? anyIt.field ?? anyIt.quotaKey ?? '') || '').trim()
+      })
+      .filter(Boolean)
+    return Array.from(new Set(keys))
+  }
+
+  async function loadQuotaKeys() {
+    if (quotaKeysLoading.value) return
+    quotaKeysLoading.value = true
+    try {
+      const q = await getTenantQuota(tenant.tenantId)
+      quotaKeys.value = extractQuotaKeys(q)
+    } catch {
+      quotaKeys.value = []
+    } finally {
+      quotaKeysLoading.value = false
+    }
+  }
 
   async function submitQuotaChange() {
     if (!quotaForm.quotaKey.trim()) {
       ElMessage.warning('配额键不能为空')
       return
     }
-    if (!quotaForm.requestedValue.trim()) {
-      ElMessage.warning('期望值不能为空')
+    const requestedValue = Number.parseInt(quotaForm.requestedValue.trim(), 10)
+    if (!Number.isFinite(requestedValue) || requestedValue <= 0) {
+      ElMessage.warning('期望值需为正整数')
       return
     }
     if (!quotaForm.reason.trim()) {
@@ -211,8 +291,8 @@
     submittingQuota.value = true
     try {
       await requestQuotaChange(tenant.tenantId, {
-        quotaKey: quotaForm.quotaKey,
-        requestedValue: quotaForm.requestedValue,
+        field: quotaForm.quotaKey,
+        requestedValue,
         reason: quotaForm.reason,
       })
       ElMessage.success('申请已提交')
@@ -227,6 +307,64 @@
   // ── 重跑申请 ──
   const rerunLoading = ref(false)
   const rerunForm = reactive({ jobCode: '', bizDate: '', targetInstanceNo: '', reason: '' })
+
+  const jobCodeLoading = ref(false)
+  const jobCodeOptions = ref<string[]>([])
+
+  async function loadDefaultJobCodes() {
+    if (jobCodeLoading.value) return
+    // 如果已经有候选项，就不重复拉取
+    if (jobCodeOptions.value.length > 0) return
+    jobCodeLoading.value = true
+    try {
+      const res = await jobApi.listDefinitionsPaged({
+        tenantId: tenant.tenantId,
+        pageNo: 1,
+        pageSize: 30,
+        enabled: true,
+      })
+      jobCodeOptions.value = Array.from(
+        new Set(
+          (res.records ?? [])
+            .map((r) => r.jobCode)
+            .filter((v): v is string => typeof v === 'string' && v),
+        ),
+      )
+    } catch {
+      jobCodeOptions.value = []
+    } finally {
+      jobCodeLoading.value = false
+    }
+  }
+
+  async function queryJobCodes(keyword: string) {
+    const q = keyword.trim()
+    if (!q) {
+      // 保留默认候选项；不清空，避免“点开没东西”的错觉
+      return
+    }
+    jobCodeLoading.value = true
+    try {
+      const res = await jobApi.listDefinitionsPaged({
+        tenantId: tenant.tenantId,
+        pageNo: 1,
+        pageSize: 30,
+        jobCode: q,
+        enabled: true,
+      })
+      jobCodeOptions.value = Array.from(
+        new Set(
+          (res.records ?? [])
+            .map((r) => r.jobCode)
+            .filter((v): v is string => typeof v === 'string' && v),
+        ),
+      )
+    } catch {
+      jobCodeOptions.value = []
+    } finally {
+      jobCodeLoading.value = false
+    }
+  }
 
   async function submitRerun() {
     if (!rerunForm.jobCode.trim()) {
@@ -266,6 +404,15 @@
     reason: '',
   })
 
+  const compensationTypeOptions = [
+    { value: 'JOB', label: 'JOB（重跑作业）' },
+    { value: 'STEP', label: 'STEP（重跑步骤）' },
+    { value: 'PARTITION', label: 'PARTITION（重试分区）' },
+    { value: 'FILE', label: 'FILE（重处理文件）' },
+    { value: 'BATCH', label: 'BATCH（重跑批次）' },
+    { value: 'DLQ', label: 'DLQ（死信回放）' },
+  ] as const
+
   async function submitCompensation() {
     if (!compForm.jobCode.trim()) {
       ElMessage.warning('Job Code 不能为空')
@@ -299,9 +446,59 @@
   function loadAll() {
     void loadQuota()
     void loadUsage()
+    quotaKeys.value = []
+    void loadQuotaKeys()
   }
 
   useTenantReload(loadAll)
+
+  watch(
+    activeTab,
+    (t) => {
+      if (t === 'quotaChange' && quotaKeys.value.length === 0) {
+        void loadQuotaKeys()
+      }
+      if (t === 'rerun' || t === 'compensation') {
+        // lazy: options loaded via remote search, but clear stale list when switching tab
+        jobCodeOptions.value = []
+      }
+    },
+    { immediate: true },
+  )
 </script>
 
-<style scoped></style>
+<style scoped>
+  .pretty-primary-button {
+    border: none;
+    border-radius: 12px;
+    padding: 0 20px;
+    min-height: 42px;
+    font-weight: 650;
+    letter-spacing: 0.06em;
+    background: linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--color-primary) 78%, #ffffff 22%) 0%,
+      color-mix(in srgb, #0f5ed9 72%, #ffffff 28%) 100%
+    );
+    box-shadow: 0 6px 16px rgb(59 130 246 / 16%);
+    transition:
+      transform 0.18s ease,
+      box-shadow 0.18s ease,
+      filter 0.18s ease;
+  }
+
+  .pretty-primary-button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 24px rgb(59 130 246 / 18%);
+    filter: saturate(1.05);
+  }
+
+  .pretty-primary-button:active {
+    transform: translateY(0);
+  }
+
+  /* actions: center the submit button */
+  .form-actions :deep(.el-form-item__content) {
+    justify-content: center;
+  }
+</style>

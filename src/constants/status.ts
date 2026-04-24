@@ -248,3 +248,10 @@ export const slaStatusMeta: Record<string, LocalStatusMeta> = {
   BREACH: { label: '违规', type: 'danger' },
   VIOLATED: { label: '违规', type: 'danger' },
 }
+
+/** API Key 状态(UI 概念,后端实体字段组合: enabled + revokedAt) */
+export const apiKeyStatusMeta: Record<string, LocalStatusMeta> = {
+  ENABLED: { label: '启用', type: 'success' },
+  DISABLED: { label: '停用', type: 'info' },
+  REVOKED: { label: '已吊销', type: 'danger' },
+}

@@ -60,24 +60,41 @@
         </el-tab-pane>
 
         <el-tab-pane label="同步日志" name="logs">
-          <div class="section-toolbar">
-            <el-button :loading="loadingLogs" @click="loadLogs">刷新</el-button>
-          </div>
-          <el-table
-            :data="syncLogs"
-            stripe
-            border
-            empty-text="暂无数据"
-            size="small"
-            class="console-table"
+          <ProTable
+            :data="pagedLogs"
+            :loading="loadingLogs"
+            :total="filteredLogs.length"
+            v-model:page="logPage"
+            v-model:page-size="logPageSize"
+            :has-active-filters="hasActiveLogFilters"
+            @change="() => {}"
           >
+            <template #query>
+              <ListPageQueryBar
+                :filter-busy="false"
+                :refresh-busy="loadingLogs"
+                @search="applyLogFilter"
+                @reset="resetLogFilter"
+                @refresh="loadLogs"
+              >
+                <el-form-item label="关键字">
+                  <el-input
+                    class="query-w-240"
+                    v-model="logKeywordDraft"
+                    clearable
+                    placeholder="摘要/操作者/类型/状态"
+                    @keyup.enter="applyLogFilter"
+                  />
+                </el-form-item>
+              </ListPageQueryBar>
+            </template>
             <el-table-column prop="id" label="ID" width="80" />
             <el-table-column prop="syncType" label="类型" width="100" />
             <el-table-column prop="status" label="状态" width="100" />
             <el-table-column prop="operatorId" label="操作者" width="120" />
             <el-table-column prop="summary" label="摘要" min-width="250" show-overflow-tooltip />
             <DatetimeColumn prop="createdAt" label="时间" width="160" />
-          </el-table>
+          </ProTable>
         </el-tab-pane>
       </el-tabs>
     </SectionCard>
@@ -85,8 +102,9 @@
 </template>
 
 <script setup lang="ts">
-  import { ref } from 'vue'
+  import { ref, computed } from 'vue'
   import { ElMessage } from 'element-plus'
+  import { toPageResult } from '@/api/adapters'
   import {
     exportConfigSync,
     previewConfigSync,
@@ -98,6 +116,8 @@
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
+  import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
+  import ProTable from '@/components/table/ProTable.vue'
 
   const tenant = useTenantStore()
   const activeTab = ref('export')
@@ -111,6 +131,28 @@
   const importPayload = ref('')
   const previewResult = ref<unknown>(null)
   const syncLogs = ref<Record<string, unknown>[]>([])
+  const logKeywordDraft = ref('')
+  const logKeywordApplied = ref('')
+  const logPage = ref(1)
+  const logPageSize = ref(20)
+
+  const filteredLogs = computed(() => {
+    const k = logKeywordApplied.value.trim().toLowerCase()
+    if (!k) return syncLogs.value
+    return syncLogs.value.filter((r) => {
+      const hay =
+        `${r.summary ?? ''} ${r.operatorId ?? ''} ${r.syncType ?? ''} ${r.status ?? ''}`.toLowerCase()
+      return hay.includes(k)
+    })
+  })
+
+  const hasActiveLogFilters = computed(() => !!logKeywordApplied.value.trim())
+
+  const pagedLogs = computed(
+    () =>
+      toPageResult(filteredLogs.value, logPage.value, logPageSize.value)
+        .records as unknown as Record<string, unknown>[],
+  )
 
   async function doExport() {
     exporting.value = true
@@ -170,10 +212,22 @@
     }
   }
 
+  function applyLogFilter() {
+    logKeywordApplied.value = logKeywordDraft.value
+    logPage.value = 1
+  }
+
+  function resetLogFilter() {
+    logKeywordDraft.value = ''
+    logKeywordApplied.value = ''
+    logPage.value = 1
+  }
+
   useTenantReload(() => {
     exportResult.value = null
     previewResult.value = null
     syncLogs.value = []
+    resetLogFilter()
     void loadLogs()
   })
 </script>

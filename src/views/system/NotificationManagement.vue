@@ -13,7 +13,7 @@
           <ProTable
             :data="pagedChannels"
             :loading="loadingChannels"
-            :total="channels.length"
+            :total="filteredChannels.length"
             v-model:page="channelPage"
             v-model:page-size="channelPageSize"
             @change="() => {}"
@@ -22,18 +22,40 @@
               <ListPageQueryBar
                 :filter-busy="false"
                 :refresh-busy="loadingChannels"
-                @search="() => {}"
-                @reset="() => {}"
+                @search="applyChannelFilter"
+                @reset="resetChannelFilter"
                 @refresh="loadChannels"
               >
                 <template #prepend>
                   <el-button
                     type="primary"
+                    :icon="Plus"
+                    class="pretty-add-button"
                     v-track-click="'新增通知渠道'"
                     @click="openChannelCreate"
-                    >新增渠道</el-button
+                    >新增</el-button
                   >
                 </template>
+                <el-form-item label="关键字">
+                  <el-input
+                    class="query-w-220"
+                    v-model="channelFilterDraft.keyword"
+                    clearable
+                    placeholder="搜索编码/名称"
+                    @keyup.enter="applyChannelFilter"
+                  />
+                </el-form-item>
+                <el-form-item label="启用">
+                  <el-select
+                    class="query-w-140"
+                    v-model="channelFilterDraft.enabled"
+                    clearable
+                    placeholder="全部"
+                  >
+                    <el-option label="已启用" :value="true" />
+                    <el-option label="已停用" :value="false" />
+                  </el-select>
+                </el-form-item>
               </ListPageQueryBar>
             </template>
             <el-table-column prop="channelCode" label="渠道编码" width="160" />
@@ -91,7 +113,7 @@
           <ProTable
             :data="pagedRules"
             :loading="loadingRules"
-            :total="rules.length"
+            :total="filteredRules.length"
             v-model:page="rulePage"
             v-model:page-size="rulePageSize"
             @change="() => {}"
@@ -100,13 +122,40 @@
               <ListPageQueryBar
                 :filter-busy="false"
                 :refresh-busy="loadingRules"
-                @search="() => {}"
-                @reset="() => {}"
+                @search="applyRuleFilter"
+                @reset="resetRuleFilter"
                 @refresh="loadRules"
               >
                 <template #prepend>
-                  <el-button type="primary" @click="openRuleCreate">新增规则</el-button>
+                  <el-button
+                    type="primary"
+                    :icon="Plus"
+                    class="pretty-add-button"
+                    @click="openRuleCreate"
+                  >
+                    新增
+                  </el-button>
                 </template>
+                <el-form-item label="关键字">
+                  <el-input
+                    class="query-w-240"
+                    v-model="ruleFilterDraft.keyword"
+                    clearable
+                    placeholder="搜索名称/事件类型"
+                    @keyup.enter="applyRuleFilter"
+                  />
+                </el-form-item>
+                <el-form-item label="启用">
+                  <el-select
+                    class="query-w-140"
+                    v-model="ruleFilterDraft.enabled"
+                    clearable
+                    placeholder="全部"
+                  >
+                    <el-option label="已启用" :value="true" />
+                    <el-option label="已停用" :value="false" />
+                  </el-select>
+                </el-form-item>
               </ListPageQueryBar>
             </template>
             <el-table-column prop="ruleId" label="ID" width="80" />
@@ -148,7 +197,7 @@
           <ProTable
             :data="pagedWebhookRows"
             :loading="loadingWebhooks"
-            :total="webhookRows.length"
+            :total="filteredWebhooks.length"
             v-model:page="webhookPage"
             v-model:page-size="webhookPageSize"
             @change="() => {}"
@@ -157,13 +206,40 @@
               <ListPageQueryBar
                 :filter-busy="false"
                 :refresh-busy="loadingWebhooks"
-                @search="() => {}"
-                @reset="() => {}"
+                @search="applyWebhookFilter"
+                @reset="resetWebhookFilter"
                 @refresh="loadWebhooks"
               >
                 <template #prepend>
-                  <el-button type="primary" @click="openWebhookCreate">新增 Webhook</el-button>
+                  <el-button
+                    type="primary"
+                    :icon="Plus"
+                    class="pretty-add-button"
+                    @click="openWebhookCreate"
+                  >
+                    新增
+                  </el-button>
                 </template>
+                <el-form-item label="URL">
+                  <el-input
+                    class="query-w-280"
+                    v-model="webhookFilterDraft.keyword"
+                    clearable
+                    placeholder="搜索 URL / 事件类型"
+                    @keyup.enter="applyWebhookFilter"
+                  />
+                </el-form-item>
+                <el-form-item label="启用">
+                  <el-select
+                    class="query-w-140"
+                    v-model="webhookFilterDraft.enabled"
+                    clearable
+                    placeholder="全部"
+                  >
+                    <el-option label="已启用" :value="true" />
+                    <el-option label="已停用" :value="false" />
+                  </el-select>
+                </el-form-item>
               </ListPageQueryBar>
             </template>
             <el-table-column prop="id" label="ID" width="80" />
@@ -200,7 +276,7 @@
           <ProTable
             :data="pagedDeliveryLogs"
             :loading="loadingLogs"
-            :total="deliveryLogs.length"
+            :total="filteredDeliveryLogs.length"
             v-model:page="logPage"
             v-model:page-size="logPageSize"
             @change="() => {}"
@@ -209,10 +285,35 @@
               <ListPageQueryBar
                 :filter-busy="false"
                 :refresh-busy="loadingLogs"
-                @search="() => {}"
-                @reset="() => {}"
+                @search="applyLogFilter"
+                @reset="resetLogFilter"
                 @refresh="loadDeliveryLogs"
-              />
+              >
+                <el-form-item label="关键字">
+                  <el-input
+                    class="query-w-260"
+                    v-model="logFilterDraft.keyword"
+                    clearable
+                    placeholder="搜索 eventType / channelId"
+                    @keyup.enter="applyLogFilter"
+                  />
+                </el-form-item>
+                <el-form-item label="状态">
+                  <el-select
+                    class="query-w-180"
+                    v-model="logFilterDraft.status"
+                    clearable
+                    placeholder="全部"
+                  >
+                    <el-option
+                      v-for="opt in deliveryStatusOptions"
+                      :key="opt.value"
+                      :label="opt.label"
+                      :value="opt.value"
+                    />
+                  </el-select>
+                </el-form-item>
+              </ListPageQueryBar>
             </template>
             <el-table-column prop="id" label="ID" width="80">
               <template #default="{ row }">{{ row.id ?? '—' }}</template>
@@ -263,7 +364,7 @@
           <el-input v-model="channelForm.channelName" placeholder="渠道名称" />
         </el-form-item>
         <el-form-item label="类型">
-          <el-select v-model="channelForm.channelType" placeholder="选择类型" style="width: 100%">
+          <el-select v-model="channelForm.channelType" placeholder="选择类型" class="query-w-full">
             <el-option
               v-for="opt in channelTypeOptions"
               :key="opt.value"
@@ -311,7 +412,7 @@
             v-model="ruleForm.channelId"
             :min="1"
             placeholder="渠道 ID"
-            style="width: 100%"
+            class="query-w-full"
           />
         </el-form-item>
         <el-form-item label="启用">
@@ -365,6 +466,7 @@
 <script setup lang="ts">
   import { ref, reactive, computed } from 'vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
+  import { Plus } from '@element-plus/icons-vue'
   import {
     listNotificationChannels,
     createNotificationChannel,
@@ -402,6 +504,7 @@
   const { data: metaEnums } = useConsoleMetaEnumsQuery()
 
   const channelTypeOptions = computed(() => pickMetaEnumGroup(metaEnums.value, 'channelType'))
+  const deliveryStatusOptions = computed(() => pickMetaEnumGroup(metaEnums.value, 'deliveryStatus'))
 
   // ── Pagination state ──
   const channelPage = ref(1)
@@ -419,6 +522,8 @@
   const channelFormVisible = ref(false)
   const channelEditingCode = ref<string | null>(null)
   const channels = ref<Record<string, unknown>[]>([])
+  const channelFilterDraft = reactive({ keyword: '', enabled: undefined as boolean | undefined })
+  const channelFilterApplied = reactive({ keyword: '', enabled: undefined as boolean | undefined })
   const channelForm = reactive({
     channelCode: '',
     channelName: '',
@@ -514,6 +619,8 @@
   const ruleFormVisible = ref(false)
   const ruleEditingId = ref<number | null>(null)
   const rules = ref<Record<string, unknown>[]>([])
+  const ruleFilterDraft = reactive({ keyword: '', enabled: undefined as boolean | undefined })
+  const ruleFilterApplied = reactive({ keyword: '', enabled: undefined as boolean | undefined })
   const ruleForm = reactive({ ruleName: '', eventTypes: '', channelId: 1, enabled: true })
 
   async function loadRules() {
@@ -584,6 +691,8 @@
   // ── Delivery Logs ──
   const loadingLogs = ref(false)
   const deliveryLogs = ref<Record<string, unknown>[]>([])
+  const logFilterDraft = reactive({ keyword: '', status: '' })
+  const logFilterApplied = reactive({ keyword: '', status: '' })
 
   async function loadDeliveryLogs() {
     loadingLogs.value = true
@@ -604,6 +713,8 @@
   const webhookLogVisible = ref(false)
   const webhookEditingId = ref<number | null>(null)
   const webhookRows = ref<Record<string, unknown>[]>([])
+  const webhookFilterDraft = reactive({ keyword: '', enabled: undefined as boolean | undefined })
+  const webhookFilterApplied = reactive({ keyword: '', enabled: undefined as boolean | undefined })
   const webhookDeliveryLogs = ref<Record<string, unknown>[]>([])
   const webhookForm = reactive({ url: '', eventTypes: '', enabled: true })
 
@@ -673,28 +784,128 @@
   }
 
   // ── Paged computeds ──
+  function normalize(s: unknown) {
+    return String(s ?? '')
+      .trim()
+      .toLowerCase()
+  }
+
+  const filteredChannels = computed(() => {
+    const k = normalize(channelFilterApplied.keyword)
+    const en = channelFilterApplied.enabled
+    return channels.value.filter((row) => {
+      const okEnabled = en === undefined ? true : !!row.enabled === en
+      if (!okEnabled) return false
+      if (!k) return true
+      const hay = `${row.channelCode ?? ''} ${row.channelName ?? ''}`.toLowerCase()
+      return hay.includes(k)
+    })
+  })
+
+  const filteredRules = computed(() => {
+    const k = normalize(ruleFilterApplied.keyword)
+    const en = ruleFilterApplied.enabled
+    return rules.value.filter((row) => {
+      const okEnabled = en === undefined ? true : !!row.enabled === en
+      if (!okEnabled) return false
+      if (!k) return true
+      const hay = `${row.ruleName ?? ''} ${row.eventTypes ?? ''}`.toLowerCase()
+      return hay.includes(k)
+    })
+  })
+
+  const filteredWebhooks = computed(() => {
+    const k = normalize(webhookFilterApplied.keyword)
+    const en = webhookFilterApplied.enabled
+    return webhookRows.value.filter((row) => {
+      const okEnabled = en === undefined ? true : !!row.enabled === en
+      if (!okEnabled) return false
+      if (!k) return true
+      const hay = `${row.url ?? ''} ${row.eventTypes ?? ''}`.toLowerCase()
+      return hay.includes(k)
+    })
+  })
+
+  const filteredDeliveryLogs = computed(() => {
+    const k = normalize(logFilterApplied.keyword)
+    const s = normalize(logFilterApplied.status)
+    return deliveryLogs.value.filter((row) => {
+      const okStatus = !s ? true : normalize(row.deliveryStatus) === s
+      if (!okStatus) return false
+      if (!k) return true
+      const hay = `${row.eventType ?? ''} ${row.channelId ?? ''}`.toLowerCase()
+      return hay.includes(k)
+    })
+  })
+
   const pagedChannels = computed(
     () =>
-      toPageResult(channels.value, channelPage.value, channelPageSize.value)
+      toPageResult(filteredChannels.value, channelPage.value, channelPageSize.value)
         .records as unknown as Record<string, unknown>[],
   )
   const pagedRules = computed(
     () =>
-      toPageResult(rules.value, rulePage.value, rulePageSize.value).records as unknown as Record<
-        string,
-        unknown
-      >[],
+      toPageResult(filteredRules.value, rulePage.value, rulePageSize.value)
+        .records as unknown as Record<string, unknown>[],
   )
   const pagedWebhookRows = computed(
     () =>
-      toPageResult(webhookRows.value, webhookPage.value, webhookPageSize.value)
+      toPageResult(filteredWebhooks.value, webhookPage.value, webhookPageSize.value)
         .records as unknown as Record<string, unknown>[],
   )
   const pagedDeliveryLogs = computed(
     () =>
-      toPageResult(deliveryLogs.value, logPage.value, logPageSize.value)
+      toPageResult(filteredDeliveryLogs.value, logPage.value, logPageSize.value)
         .records as unknown as Record<string, unknown>[],
   )
+
+  function applyChannelFilter() {
+    channelFilterApplied.keyword = channelFilterDraft.keyword.trim()
+    channelFilterApplied.enabled = channelFilterDraft.enabled
+    channelPage.value = 1
+  }
+
+  function resetChannelFilter() {
+    channelFilterDraft.keyword = ''
+    channelFilterDraft.enabled = undefined
+    applyChannelFilter()
+  }
+
+  function applyRuleFilter() {
+    ruleFilterApplied.keyword = ruleFilterDraft.keyword.trim()
+    ruleFilterApplied.enabled = ruleFilterDraft.enabled
+    rulePage.value = 1
+  }
+
+  function resetRuleFilter() {
+    ruleFilterDraft.keyword = ''
+    ruleFilterDraft.enabled = undefined
+    applyRuleFilter()
+  }
+
+  function applyWebhookFilter() {
+    webhookFilterApplied.keyword = webhookFilterDraft.keyword.trim()
+    webhookFilterApplied.enabled = webhookFilterDraft.enabled
+    webhookPage.value = 1
+  }
+
+  function resetWebhookFilter() {
+    webhookFilterDraft.keyword = ''
+    webhookFilterDraft.enabled = undefined
+    applyWebhookFilter()
+  }
+
+  function applyLogFilter() {
+    logFilterApplied.keyword = logFilterDraft.keyword.trim()
+    logFilterApplied.status = logFilterDraft.status.trim()
+    logPage.value = 1
+  }
+
+  function resetLogFilter() {
+    logFilterDraft.keyword = ''
+    logFilterDraft.status = ''
+    applyLogFilter()
+  }
 
   function loadAll() {
     void loadChannels()
