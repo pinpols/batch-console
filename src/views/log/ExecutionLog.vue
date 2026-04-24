@@ -148,7 +148,7 @@
     return r
   })
 
-  const tableRows = computed(() => display.value as unknown as Record<string, unknown>[])
+  const tableRows = computed(() => display.value)
 
   function slicePage() {
     const list = filtered.value

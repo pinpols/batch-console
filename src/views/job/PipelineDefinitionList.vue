@@ -227,7 +227,7 @@
   >([])
 
   const queryKeyword = computed(() => keyword.value.trim().toLowerCase())
-  const tableRows = computed(() => rows.value as unknown as Record<string, unknown>[])
+  const tableRows = computed(() => rows.value)
   const drawerTitle = computed(() => (editingId.value == null ? '新建 Pipeline' : '编辑 Pipeline'))
   const pipelineTypeOptions = computed(() =>
     Array.from(

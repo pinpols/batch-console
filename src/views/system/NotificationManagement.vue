@@ -839,24 +839,16 @@
   })
 
   const pagedChannels = computed(
-    () =>
-      toPageResult(filteredChannels.value, channelPage.value, channelPageSize.value)
-        .records as unknown as Record<string, unknown>[],
+    () => toPageResult(filteredChannels.value, channelPage.value, channelPageSize.value).records,
   )
   const pagedRules = computed(
-    () =>
-      toPageResult(filteredRules.value, rulePage.value, rulePageSize.value)
-        .records as unknown as Record<string, unknown>[],
+    () => toPageResult(filteredRules.value, rulePage.value, rulePageSize.value).records,
   )
   const pagedWebhookRows = computed(
-    () =>
-      toPageResult(filteredWebhooks.value, webhookPage.value, webhookPageSize.value)
-        .records as unknown as Record<string, unknown>[],
+    () => toPageResult(filteredWebhooks.value, webhookPage.value, webhookPageSize.value).records,
   )
   const pagedDeliveryLogs = computed(
-    () =>
-      toPageResult(filteredDeliveryLogs.value, logPage.value, logPageSize.value)
-        .records as unknown as Record<string, unknown>[],
+    () => toPageResult(filteredDeliveryLogs.value, logPage.value, logPageSize.value).records,
   )
 
   function applyChannelFilter() {

@@ -151,7 +151,7 @@
     pageSize: 20,
   })
 
-  const tableRows = computed(() => rows.value as unknown as Record<string, unknown>[])
+  const tableRows = computed(() => rows.value)
 
   const { data: metaEnums } = useConsoleMetaEnumsQuery()
 

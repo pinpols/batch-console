@@ -168,7 +168,7 @@
 
   const tableRows = computed(() => {
     const pr = toPageResult(filtered.value, page.value, pageSize.value)
-    return pr.records as unknown as Record<string, unknown>[]
+    return pr.records
   })
 
   function onSearch() {

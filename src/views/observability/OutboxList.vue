@@ -9,7 +9,7 @@
       <el-tabs v-model="tab" v-hover-tab-activate="true" class="pill-tabs">
         <el-tab-pane label="重试" name="retry">
           <ProTable
-            :data="retryRows as unknown as Record<string, unknown>[]"
+            :data="retryRows"
             :loading="tableBlocking"
             :total="retryTotal"
             v-model:page="retryPage"
@@ -77,7 +77,7 @@
         </el-tab-pane>
         <el-tab-pane label="投递" name="delivery">
           <ProTable
-            :data="deliveryRows as unknown as Record<string, unknown>[]"
+            :data="deliveryRows"
             :loading="tableBlocking"
             :total="deliveryTotal"
             v-model:page="deliveryPage"
@@ -159,15 +159,17 @@
         <div class="detail-drawer__meta">
           <div class="detail-drawer__meta-row">
             <span class="detail-drawer__label">事件类型</span>
-            <CopyableText :text="String((detailRow as any).eventType ?? '')" />
+            <CopyableText :text="detailRow.eventType ?? ''" />
           </div>
           <div class="detail-drawer__meta-row">
             <span class="detail-drawer__label">Key</span>
-            <CopyableText :text="String((detailRow as any).eventKey ?? '')" />
+            <CopyableText :text="detailRow.eventKey ?? ''" />
           </div>
           <div v-if="detailKind === 'delivery'" class="detail-drawer__meta-row">
             <span class="detail-drawer__label">Topic</span>
-            <CopyableText :text="String((detailRow as any).targetTopic ?? '')" />
+            <CopyableText
+              :text="(detailRow as ConsoleOutboxDeliveryLogResponse).targetTopic ?? ''"
+            />
           </div>
         </div>
         <pre class="json-preview">{{ detailJson }}</pre>

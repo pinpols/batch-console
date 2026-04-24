@@ -203,7 +203,7 @@
     return r
   })
 
-  const auditTableRows = computed(() => auditRows.value as unknown as Record<string, unknown>[])
+  const auditTableRows = computed(() => auditRows.value)
 
   function sliceAuditPage() {
     const list = auditFiltered.value

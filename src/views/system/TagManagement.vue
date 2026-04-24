@@ -102,7 +102,7 @@
 
         <el-tab-pane label="按标签搜索" name="search">
           <ProTable
-            :data="filteredSearchResults as unknown as Record<string, unknown>[]"
+            :data="filteredSearchResults"
             :loading="searching"
             :total="filteredSearchResults.length"
             :show-pager="false"
@@ -331,7 +331,7 @@
         filteredKeys.value.map((key) => ({ key })),
         keyPage.value,
         keyPageSize.value,
-      ).records as unknown as Record<string, unknown>[],
+      ).records,
   )
 
   async function loadTags() {

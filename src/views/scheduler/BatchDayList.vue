@@ -128,7 +128,7 @@
     return [...new Set([...codes, 'DEFAULT'])].sort((a, b) => a.localeCompare(b))
   })
 
-  const tableRows = computed(() => rows.value as unknown as Record<string, unknown>[])
+  const tableRows = computed(() => rows.value)
 
   async function load() {
     const cal = filters.calendarCode.trim()

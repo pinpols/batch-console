@@ -7,7 +7,7 @@
 
     <SectionCard>
       <ProTable
-        :data="rows as unknown as Record<string, unknown>[]"
+        :data="rows"
         :loading="loading"
         :total="total"
         v-model:page="page"

@@ -253,7 +253,7 @@
 
   const total = computed(() => data.value?.total ?? 0)
 
-  const tableRows = computed(() => filtered.value as unknown as Record<string, unknown>[])
+  const tableRows = computed(() => filtered.value)
 
   function onSearch() {
     return runSearch(() => {

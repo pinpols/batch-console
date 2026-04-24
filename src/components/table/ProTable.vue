@@ -44,7 +44,7 @@
 
   withDefaults(
     defineProps<{
-      data: Record<string, unknown>[]
+      data: readonly unknown[]
       loading?: boolean
       total: number
       /** 1-based，与 OpenAPI PageRequest.pageNo 一致 */

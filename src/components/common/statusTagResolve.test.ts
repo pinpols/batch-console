@@ -92,7 +92,7 @@ describe('resolveStatusMeta — 后端新增 enum 值只靠颜色表兜底', () 
 
 describe('STATUS_TAG_CATEGORIES —— 配置完整性', () => {
   it('every backend-backed category declares at least one metaKey', () => {
-    const frontendOnly: string[] = ['log', 'yn', 'batchDay', 'sla']
+    const frontendOnly: string[] = ['log', 'yn', 'batchDay', 'sla', 'apiKey']
     for (const [cat, cfg] of Object.entries(STATUS_TAG_CATEGORIES)) {
       if (frontendOnly.includes(cat)) {
         expect(cfg.metaKeys, `${cat} should have no metaKeys`).toBeUndefined()

@@ -164,7 +164,7 @@
   const selection = ref<ConsoleApprovalCommandResponse[]>([])
 
   const lastTrace = computed(() => lastApiMeta.value?.traceId ?? '')
-  const tableRows = computed(() => rows.value as unknown as Record<string, unknown>[])
+  const tableRows = computed(() => rows.value)
 
   const filters = reactive({
     status: '',

@@ -149,9 +149,7 @@
   const hasActiveLogFilters = computed(() => !!logKeywordApplied.value.trim())
 
   const pagedLogs = computed(
-    () =>
-      toPageResult(filteredLogs.value, logPage.value, logPageSize.value)
-        .records as unknown as Record<string, unknown>[],
+    () => toPageResult(filteredLogs.value, logPage.value, logPageSize.value).records,
   )
 
   async function doExport() {

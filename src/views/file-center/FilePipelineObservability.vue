@@ -292,22 +292,22 @@
 
   const pipelineRows = computed(() => {
     const pr = toPageResult(filteredPipelines.value, page.value, pageSize.value)
-    return pr.records as unknown as Record<string, unknown>[]
+    return pr.records
   })
 
   const stepRows = computed(() => {
     const pr = toPageResult(filteredSteps.value, page.value, pageSize.value)
-    return pr.records as unknown as Record<string, unknown>[]
+    return pr.records
   })
 
   const dispatchRows = computed(() => {
     const pr = toPageResult(filteredDispatches.value, page.value, pageSize.value)
-    return pr.records as unknown as Record<string, unknown>[]
+    return pr.records
   })
 
   const errorRows = computed(() => {
     const pr = toPageResult(filteredErrors.value, page.value, pageSize.value)
-    return pr.records as unknown as Record<string, unknown>[]
+    return pr.records
   })
 
   function onSearch() {

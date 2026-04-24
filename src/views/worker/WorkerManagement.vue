@@ -276,7 +276,7 @@
 
   const workerTableRows = computed(() => {
     const pr = toPageResult(filteredWorkers.value, workerPage.value, workerPageSize.value)
-    return pr.records as unknown as Record<string, unknown>[]
+    return pr.records
   })
 
   function onWorkerSearch() {
@@ -382,7 +382,7 @@
     return r
   })
 
-  const channelTableRows = computed(() => channelRows.value as unknown as Record<string, unknown>[])
+  const channelTableRows = computed(() => channelRows.value)
 
   function sliceChannelPage() {
     const list = filteredChannels.value

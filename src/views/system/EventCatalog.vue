@@ -127,13 +127,11 @@
         <div class="detail-drawer__meta">
           <div v-if="detailKind === 'eventType'" class="detail-drawer__meta-row">
             <span class="detail-drawer__label">事件类型</span>
-            <CopyableText :text="String((detailRow as any).eventType ?? '')" />
+            <CopyableText :text="String(detailRow.eventType ?? '')" />
           </div>
           <div v-else class="detail-drawer__meta-row">
             <span class="detail-drawer__label">Topic</span>
-            <CopyableText
-              :text="String((detailRow as any).topic ?? (detailRow as any).name ?? '')"
-            />
+            <CopyableText :text="String(detailRow.topic ?? detailRow.name ?? '')" />
           </div>
         </div>
         <pre class="json-preview">{{ detailJson }}</pre>
@@ -193,9 +191,7 @@
   })
 
   const pagedEventTypes = computed(
-    () =>
-      toPageResult(filteredEventTypes.value, typePage.value, typePageSize.value)
-        .records as unknown as Record<string, unknown>[],
+    () => toPageResult(filteredEventTypes.value, typePage.value, typePageSize.value).records,
   )
 
   const filteredTopics = computed(() => {
@@ -205,9 +201,7 @@
   })
 
   const pagedTopics = computed(
-    () =>
-      toPageResult(filteredTopics.value, topicPage.value, topicPageSize.value)
-        .records as unknown as Record<string, unknown>[],
+    () => toPageResult(filteredTopics.value, topicPage.value, topicPageSize.value).records,
   )
 
   async function loadEventTypes() {

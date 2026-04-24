@@ -202,7 +202,7 @@
     endTime: '',
   })
 
-  const tableRows = computed(() => rows.value as unknown as Record<string, unknown>[])
+  const tableRows = computed(() => rows.value)
   const severityOptions = computed(() =>
     Array.from(
       new Set(allRows.value.map((row) => row.severity).filter((item): item is string => !!item)),

@@ -13,7 +13,7 @@
       </div>
 
       <ProTable
-        :data="display as unknown as Record<string, unknown>[]"
+        :data="display"
         :loading="tableBlocking"
         :total="total"
         v-model:page="page"

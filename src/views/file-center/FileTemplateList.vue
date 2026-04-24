@@ -189,7 +189,7 @@
     })
   })
 
-  const tableRows = computed(() => rows.value as unknown as Record<string, unknown>[])
+  const tableRows = computed(() => rows.value)
 
   function syncPage() {
     const start = (page.value - 1) * pageSize.value
