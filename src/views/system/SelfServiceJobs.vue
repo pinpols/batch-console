@@ -277,38 +277,3 @@
     }
   }
 </script>
-
-<style scoped>
-  .pretty-primary-button {
-    border: none;
-    border-radius: 12px;
-    padding: 0 20px;
-    min-height: 42px;
-    font-weight: 650;
-    letter-spacing: 0.06em;
-    background: linear-gradient(
-      135deg,
-      color-mix(in srgb, var(--color-primary) 78%, #ffffff 22%) 0%,
-      color-mix(in srgb, #0f5ed9 72%, #ffffff 28%) 100%
-    );
-    box-shadow: 0 6px 16px rgb(59 130 246 / 16%);
-    transition:
-      transform 0.18s ease,
-      box-shadow 0.18s ease,
-      filter 0.18s ease;
-  }
-
-  .pretty-primary-button:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 10px 24px rgb(59 130 246 / 18%);
-    filter: saturate(1.05);
-  }
-
-  .pretty-primary-button:active {
-    transform: translateY(0);
-  }
-
-  .form-actions :deep(.el-form-item__content) {
-    justify-content: center;
-  }
-</style>
