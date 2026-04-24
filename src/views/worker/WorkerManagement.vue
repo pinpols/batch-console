@@ -103,7 +103,7 @@
         <!-- 文件渠道 -->
         <el-tab-pane label="文件渠道" name="channels">
           <ProTable
-            :data="channelTableRows"
+            :data="channelRows"
             :loading="channelTableBlocking"
             :total="channelTotal"
             v-model:page="channelPage"
@@ -381,8 +381,6 @@
     if (t) r = r.filter((x) => String(x.channelType ?? '').includes(t))
     return r
   })
-
-  const channelTableRows = computed(() => channelRows.value)
 
   function sliceChannelPage() {
     const list = filteredChannels.value

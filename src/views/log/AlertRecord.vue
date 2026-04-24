@@ -7,7 +7,7 @@
 
     <SectionCard>
       <ProTable
-        :data="tableRows"
+        :data="rows"
         :loading="tableBlocking"
         :total="total"
         v-model:page="page"
@@ -202,7 +202,6 @@
     endTime: '',
   })
 
-  const tableRows = computed(() => rows.value)
   const severityOptions = computed(() =>
     Array.from(
       new Set(allRows.value.map((row) => row.severity).filter((item): item is string => !!item)),

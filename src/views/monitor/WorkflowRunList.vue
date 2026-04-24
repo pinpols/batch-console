@@ -7,7 +7,7 @@
 
     <SectionCard>
       <ProTable
-        :data="tableRows"
+        :data="rows"
         :loading="loading"
         :total="total"
         v-model:page="page"
@@ -150,8 +150,6 @@
 
   /** 缓存定义列表，避免每次 load 都重新拉取 */
   const cachedDefs = ref<Awaited<ReturnType<typeof queryWorkflowDefinitions>>>([])
-
-  const tableRows = computed(() => rows.value)
 
   async function loadWorkflowCodes() {
     try {

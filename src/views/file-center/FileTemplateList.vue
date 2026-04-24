@@ -7,7 +7,7 @@
 
     <SectionCard>
       <ProTable
-        :data="tableRows"
+        :data="rows"
         :loading="tableBlocking"
         :total="total"
         v-model:page="page"
@@ -188,8 +188,6 @@
       return true
     })
   })
-
-  const tableRows = computed(() => rows.value)
 
   function syncPage() {
     const start = (page.value - 1) * pageSize.value

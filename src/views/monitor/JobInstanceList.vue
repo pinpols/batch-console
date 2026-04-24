@@ -7,7 +7,7 @@
 
     <SectionCard>
       <ProTable
-        :data="tableRows"
+        :data="rows"
         :loading="loading"
         :total="total"
         v-model:page="query.page"
@@ -150,8 +150,6 @@
     page: 1,
     pageSize: 20,
   })
-
-  const tableRows = computed(() => rows.value)
 
   const { data: metaEnums } = useConsoleMetaEnumsQuery()
 

@@ -54,7 +54,7 @@
         <el-tab-pane label="AI 审计" name="audits">
           <ProTable
             class="audit-table-shell"
-            :data="auditTableRows"
+            :data="auditRows"
             :loading="auditTableBlocking"
             :total="auditTotal"
             v-model:page="auditPage"
@@ -202,8 +202,6 @@
     if (c) r = r.filter((row) => String(row.promptCategory ?? '') === c)
     return r
   })
-
-  const auditTableRows = computed(() => auditRows.value)
 
   function sliceAuditPage() {
     const list = auditFiltered.value

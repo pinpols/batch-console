@@ -7,7 +7,7 @@
 
     <SectionCard>
       <ProTable
-        :data="tableRows"
+        :data="filtered"
         :loading="tableBlocking"
         :total="total"
         v-model:page="page"
@@ -252,8 +252,6 @@
   })
 
   const total = computed(() => data.value?.total ?? 0)
-
-  const tableRows = computed(() => filtered.value)
 
   function onSearch() {
     return runSearch(() => {

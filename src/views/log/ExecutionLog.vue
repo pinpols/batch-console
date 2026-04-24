@@ -6,7 +6,7 @@
     />
     <SectionCard>
       <ProTable
-        :data="tableRows"
+        :data="display"
         :loading="tableBlocking"
         :total="total"
         v-model:page="page"
@@ -147,8 +147,6 @@
       r = r.filter((x) => String(x.operationResult ?? '').toUpperCase() === res.toUpperCase())
     return r
   })
-
-  const tableRows = computed(() => display.value)
 
   function slicePage() {
     const list = filtered.value

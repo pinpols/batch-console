@@ -7,7 +7,7 @@
 
     <SectionCard>
       <ProTable
-        :data="tableRows"
+        :data="rows"
         :loading="tableBlocking"
         :total="total"
         v-model:page="page"
@@ -110,8 +110,6 @@
   const kwApplied = ref('')
   const statusApplied = ref('')
   const bizDateApplied = ref('')
-
-  const tableRows = computed(() => rows.value)
 
   const { data: metaEnums } = useConsoleMetaEnumsQuery()
 

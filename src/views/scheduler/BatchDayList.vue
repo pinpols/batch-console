@@ -7,7 +7,7 @@
 
     <SectionCard>
       <ProTable
-        :data="tableRows"
+        :data="rows"
         :loading="loading"
         :total="total"
         v-model:page="page"
@@ -127,8 +127,6 @@
     const codes = api.map((o) => o.value).filter(Boolean)
     return [...new Set([...codes, 'DEFAULT'])].sort((a, b) => a.localeCompare(b))
   })
-
-  const tableRows = computed(() => rows.value)
 
   async function load() {
     const cal = filters.calendarCode.trim()

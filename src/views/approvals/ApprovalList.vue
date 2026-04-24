@@ -7,7 +7,7 @@
 
     <SectionCard>
       <ProTable
-        :data="tableRows"
+        :data="rows"
         :loading="tableBlocking"
         :total="total"
         v-model:page="page"
@@ -164,7 +164,6 @@
   const selection = ref<ConsoleApprovalCommandResponse[]>([])
 
   const lastTrace = computed(() => lastApiMeta.value?.traceId ?? '')
-  const tableRows = computed(() => rows.value)
 
   const filters = reactive({
     status: '',
