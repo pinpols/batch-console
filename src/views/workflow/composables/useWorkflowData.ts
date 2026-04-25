@@ -2,7 +2,7 @@
  * Workflow Designer — data loading, saving, draft persistence, definition list,
  * submit to backend, DSL preview.
  */
-import { computed, onScopeDispose, ref, type Ref, type ShallowRef } from 'vue'
+import { computed, onScopeDispose, ref, watch, type Ref, type ShallowRef } from 'vue'
 import type { Graph, Edge as X6Edge } from '@antv/x6'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useRoute, useRouter } from 'vue-router'
@@ -375,9 +375,40 @@ export function useWorkflowData(deps: DataDeps) {
     if (!currentDraftKey.value) return
     if (draftTimer != null) window.clearTimeout(draftTimer)
     draftTimer = window.setTimeout(() => {
+      draftTimer = null
       persistDraft(false)
     }, 350)
   }
+
+  /**
+   * 切租户时跑在 useTenantReload 回调之前:
+   *   1) 取消 pending 的 draft 防抖,否则回调会在 tenant 变更后触发,
+   *      用旧 form 数据写到新租户的 localStorage key。
+   *   2) 用"旧"tenantId 删除该租户下当前 workflow 的草稿。原来 clearDraft
+   *      在 useTenantReload 里跑,tenant.tenantId 已经是新值,
+   *      删错 key → 旧租户草稿残留。
+   *
+   * 注:本 watch 注册早于 WorkflowDesigner.vue 里的 useTenantReload,
+   * Vue 同 tick 内按注册顺序 flush,本 watch 先跑。
+   */
+  watch(
+    () => tenant.tenantId,
+    (_newId, oldId) => {
+      if (draftTimer != null) {
+        window.clearTimeout(draftTimer)
+        draftTimer = null
+      }
+      if (oldId && selectedWorkflowCode.value) {
+        try {
+          window.localStorage.removeItem(
+            `workflow-editor:draft:${oldId}:${selectedWorkflowCode.value}`,
+          )
+        } catch {
+          /* ignore quota / privacy mode */
+        }
+      }
+    },
+  )
 
   function clearDraft(shouldToast = true) {
     if (currentDraftKey.value) {
@@ -416,15 +447,22 @@ export function useWorkflowData(deps: DataDeps) {
 
   // ─── Load definitions ──────────────────────────────────────────────────────
 
+  // token 守卫:切租户时上一个租户的 list 响应晚到,会把旧 defs 塞进新状态、
+  // 又触发 selectedWorkflowCode 变更引发二次 loadWorkflow。和 loadWorkflowToken 同一模式。
+  let loadDefinitionsToken = 0
+
   async function loadDefinitions() {
+    const token = ++loadDefinitionsToken
     definitionsLoading.value = true
     try {
-      definitionOptions.value = await queryWorkflowDefinitions(tenant.tenantId)
+      const defs = await queryWorkflowDefinitions(tenant.tenantId)
+      if (token !== loadDefinitionsToken) return
+      definitionOptions.value = defs
       const routeCode = routeWorkflowCode.value
       const nextCode =
-        (routeCode && definitionOptions.value.some((item) => item.workflowCode === routeCode)
+        (routeCode && defs.some((item) => item.workflowCode === routeCode)
           ? routeCode
-          : definitionOptions.value[0]?.workflowCode) ?? ''
+          : defs[0]?.workflowCode) ?? ''
       if (nextCode && nextCode !== selectedWorkflowCode.value) {
         selectedWorkflowCode.value = nextCode
       }
@@ -433,9 +471,11 @@ export function useWorkflowData(deps: DataDeps) {
         workflowDefinition.value = null
       }
     } catch (err) {
-      ElMessage.error(`加载定义列表失败：${err instanceof Error ? err.message : '未知错误'}`)
+      if (token === loadDefinitionsToken) {
+        ElMessage.error(`加载定义列表失败：${err instanceof Error ? err.message : '未知错误'}`)
+      }
     } finally {
-      definitionsLoading.value = false
+      if (token === loadDefinitionsToken) definitionsLoading.value = false
     }
   }
 

@@ -2,7 +2,7 @@
  * Workflow Designer — inspector forms (nodeForm, edgeForm, workflowForm),
  * selection state, and apply/sync functions.
  */
-import { computed, reactive, ref, type ShallowRef } from 'vue'
+import { computed, nextTick, reactive, ref, type ShallowRef } from 'vue'
 import type { Cell, Edge as X6Edge, Node as X6Node, Graph } from '@antv/x6'
 import { ElMessage } from 'element-plus'
 import {
@@ -153,9 +153,12 @@ export function useWorkflowInspector(deps: {
       const n = cell as X6Node
       syncWorkflowHtmlNodeSelectedClass(n, selected)
       if (n.shape === 'workflow-node') {
-        void import('vue').then(({ nextTick }) =>
-          nextTick(() => syncWorkflowHtmlNodeSelectedClass(n, selected)),
-        )
+        // HTML 节点内部 DOM 在首帧可能尚未 patch,nextTick 兜底一次。
+        // 注:回调里守卫 graph 是否已销毁,避免组件卸载后触发 findViewByCell。
+        void nextTick(() => {
+          if (!graph.value) return
+          syncWorkflowHtmlNodeSelectedClass(n, selected)
+        })
       }
       setNodeStyle(n, selected)
     } else if (cell.isEdge()) setEdgeStyle(cell as X6Edge, selected)

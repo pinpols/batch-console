@@ -313,10 +313,25 @@ export function useWorkflowDag(deps: DagDeps) {
 
   // ─── Keyboard handler ─────────────────────────────────────────────────────
 
+  function isAnyElModalVisible(): boolean {
+    // Element Plus 的 .el-overlay 即使关闭也留在 DOM 里,通过 inline style
+    // `display:none` 控制显隐,所以 querySelector(.el-overlay) 会误判为打开。
+    // 检查 inline style 非 none 的 overlay 才算真正可见。
+    const overlays = document.querySelectorAll('.el-overlay')
+    for (const el of overlays) {
+      if (el instanceof HTMLElement && el.style.display !== 'none') return true
+    }
+    return false
+  }
+
   function onKeydown(event: KeyboardEvent) {
     const target = event.target as HTMLElement | null
     const tag = target?.tagName?.toLowerCase()
     if (tag === 'input' || tag === 'textarea' || tag === 'select') return
+    if (target?.isContentEditable) return
+    // 防穿透:任意 Element Plus 模态态(dialog / drawer / message-box) 可见时,
+    // Backspace / Delete / Shift+T 等都不该作用到画布,避免误删选中节点。
+    if (isAnyElModalVisible()) return
     if (selectedKind.value === 'node' && event.shiftKey) {
       const key = event.key.toLowerCase()
       if (key === 't') {
