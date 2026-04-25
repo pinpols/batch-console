@@ -447,7 +447,7 @@
 </template>
 
 <script setup lang="ts">
-  import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
+  import { onActivated, onBeforeUnmount, onDeactivated, onMounted, ref, watch } from 'vue'
   import { CircleCheck, DataLine, Document, EditPen, Grid, Guide } from '@element-plus/icons-vue'
   import { useAppStore } from '@/stores/app'
   import { useTenantStore } from '@/stores/tenant'
@@ -744,16 +744,57 @@
 
   // ─── Lifecycle ─────────────────────────────────────────────────────────────
 
+  /**
+   * B7:标签页 / 浏览器关闭时 onBeforeUnmount 不保证触发(尤其移动端 /
+   * 后台杀进程),pending 的 draft 防抖会丢失。用 beforeunload + visibilitychange
+   * 兜底 flush。注意:不在 handler 里弹 confirm,只做 best-effort 持久化。
+   */
+  function flushDraftOnExit() {
+    flushPendingDraft()
+  }
+  function onVisibilityChangeMaybeFlush() {
+    if (document.visibilityState === 'hidden') flushPendingDraft()
+  }
+
   onMounted(() => {
     window.addEventListener('mousedown', onDocumentPointerCloseContextMenu, true)
     restorePanelWidths()
     createGraph()
     window.addEventListener('keydown', onKeydown)
     refreshGraphTheme()
+    window.addEventListener('beforeunload', flushDraftOnExit)
+    document.addEventListener('visibilitychange', onVisibilityChangeMaybeFlush)
+  })
+
+  /**
+   * KeepAlive 双挂载:DefaultLayout 用 <KeepAlive :key="r.fullPath">,本
+   * 页 watcher router.replace 会把 fullPath 从 /workflow/designer 改成
+   * /workflow/designer/<code> → key 变化 → 旧实例进 cache,新实例挂载。
+   *
+   * cache 中的旧实例不会跑 onBeforeUnmount,graph 一直挂着,每次跳路径
+   * 累积一份 x6 Graph + 事件监听 + DOM。
+   *
+   * 策略:用 onDeactivated 在"进缓存"时主动 disposeGraph,onActivated
+   * 回到前台时如果 graph 为空再重建一次。首次挂载时 onMounted 已建好,
+   * 紧跟的 onActivated 里 graph.value 非空 → 跳过,不重复构造。
+   */
+  onDeactivated(() => {
+    flushPendingDraft()
+    cancelPositionDerivedSyncTimer()
+    disposeGraph()
+  })
+
+  onActivated(() => {
+    if (!graph.value) {
+      createGraph()
+      refreshGraphTheme()
+    }
   })
 
   onBeforeUnmount(() => {
     window.removeEventListener('mousedown', onDocumentPointerCloseContextMenu, true)
+    window.removeEventListener('beforeunload', flushDraftOnExit)
+    document.removeEventListener('visibilitychange', onVisibilityChangeMaybeFlush)
     cleanupSplitter()
     window.removeEventListener('keydown', onKeydown)
     flushPendingDraft()
