@@ -119,8 +119,18 @@ export function useWorkflowGraph(deps: GraphDeps) {
     graphZoomUiTick.value += 1
   }
 
+  /**
+   * 容器 clientWidth/Height 为 0 时,zoomToFit 会算出 NaN 矩阵分量 →
+   * "Failed to set the 'a' property on 'SVGMatrix': non-finite"。
+   * 首帧布局还没就绪 / 栏目被折叠都可能命中,这里统一兜底。
+   */
+  function canvasHasPaintableSize(): boolean {
+    const el = canvasRef.value
+    return !!el && el.clientWidth > 0 && el.clientHeight > 0
+  }
+
   function fitGraphZoom() {
-    if (!graph.value) return
+    if (!graph.value || !canvasHasPaintableSize()) return
     graph.value.zoomToFit({ padding: 40, maxScale: 1.25, minScale: 0.45 })
     graphZoomUiTick.value += 1
   }
@@ -147,6 +157,12 @@ export function useWorkflowGraph(deps: GraphDeps) {
       _edgeZOrderRaf = null
       normalizeEdgeZOrder()
     })
+  }
+  function cancelEdgeZOrderRaf() {
+    if (_edgeZOrderRaf !== null) {
+      cancelAnimationFrame(_edgeZOrderRaf)
+      _edgeZOrderRaf = null
+    }
   }
 
   // ─── syncGraphDerivedState + draft queue ───────────────────────────────────
@@ -421,7 +437,7 @@ export function useWorkflowGraph(deps: GraphDeps) {
     }
 
     nextTick(() => {
-      if (preparedNodes.length > 0) {
+      if (preparedNodes.length > 0 && canvasHasPaintableSize()) {
         graph.value?.zoomToFit({ padding: 40, maxScale: 1.1, minScale: 0.5 })
       }
       normalizeEdgeZOrder()
@@ -550,7 +566,42 @@ export function useWorkflowGraph(deps: GraphDeps) {
 
   // ─── Create the graph ──────────────────────────────────────────────────────
 
+  /**
+   * x6 构造时会立刻用容器的 clientWidth/Height 计算 SVG viewBox / matrix。
+   * 容器尺寸为 0 时,计算出 Infinity/NaN → 抛 "Failed to set the 'a'
+   * property on 'SVGMatrix': non-finite value"。设计器在布局稳定前挂载
+   * (tab 切换 / 弹窗打开 / 首帧 0 布局) 就容易命中。
+   *
+   * 策略:首帧尺寸非零就直接创建;否则挂 ResizeObserver 等到首个非零
+   * 布局再真正构造。组件提前卸载时 cancelPendingCreateGraph 断连。
+   */
+  let _pendingCreateRo: ResizeObserver | null = null
+  function cancelPendingCreateGraph() {
+    if (_pendingCreateRo) {
+      _pendingCreateRo.disconnect()
+      _pendingCreateRo = null
+    }
+  }
+
   function createGraph() {
+    const el = canvasRef.value
+    if (!el) return
+    if (graph.value) return // already created
+    if (el.clientWidth > 0 && el.clientHeight > 0) {
+      createGraphImpl()
+      return
+    }
+    cancelPendingCreateGraph()
+    _pendingCreateRo = new ResizeObserver(() => {
+      if (el.clientWidth > 0 && el.clientHeight > 0) {
+        cancelPendingCreateGraph()
+        createGraphImpl()
+      }
+    })
+    _pendingCreateRo.observe(el)
+  }
+
+  function createGraphImpl() {
     if (!canvasRef.value) return
     registerShapes()
     graph.value = new Graph({
@@ -718,9 +769,12 @@ export function useWorkflowGraph(deps: GraphDeps) {
 
   function disposeGraph() {
     cancelPositionDerivedSyncTimer()
+    cancelEdgeZOrderRaf()
+    cancelPendingCreateGraph()
     disposeStencilPalette()
     graph.value?.dispose()
     graph.value = null
+    graphReady.value = false
   }
 
   return {

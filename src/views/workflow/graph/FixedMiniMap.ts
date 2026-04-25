@@ -74,6 +74,17 @@ export class FixedMiniMap extends MiniMap {
 
   /** 将节点放在更大的视野里呈现，表达「在大图中的位置」而非 1:1 卡片克隆 */
   private minimapZoomOverview() {
+    // 缩略图容器在"未选中 workflow"或 HUD 隐藏时尺寸为 0,此时 zoomToFit /
+    // zoomToRect 里 ratio = viewportSize / contentSize 落到 Infinity,
+    // x6 的 TransformManager.scale 会把 Infinity 写进 SVGMatrix 抛
+    // "Failed to set the 'a' property on 'SVGMatrix': non-finite"。
+    // 容器未就绪就跳过,等 host 出现(hud 显隐切换会触发新的 model 事件)
+    // 再重算。
+    const container = this.targetGraph.options.container as HTMLElement | undefined
+    if (!container || container.clientWidth <= 0 || container.clientHeight <= 0) {
+      return
+    }
+
     const bbox = this.targetGraph.getContentArea()
     if (!bbox.width || !bbox.height) {
       this.targetGraph.zoomToFit({ padding: OVERVIEW_PAD })
