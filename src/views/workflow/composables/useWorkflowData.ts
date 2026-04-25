@@ -351,13 +351,30 @@ export function useWorkflowData(deps: DataDeps) {
     ElMessage.warning('本地草稿保存失败，请检查浏览器存储权限或空间')
   }
 
+  /**
+   * O5:相同内容避免重复写 localStorage。
+   * 防抖 350ms 后常常 form 没任何变化(比如只是短暂 focus 输入框又失焦)
+   * 也会触发 persistDraft,产生一次无效 JSON.stringify + setItem。
+   * 缓存上次写入的 body(去掉 savedAt) 作指纹,相同就跳过 setItem,
+   * 但仍更新 draftUpdatedAt 让 UI 显示"刚检查过"。用户手点保存
+   * (showMessage=true) 时不做去重,保证 toast 语义准确。
+   */
+  let _lastPersistedDraftBody = ''
   function persistDraft(showMessage = true) {
     if (!currentDraftKey.value || !graph.value) return
     try {
       const payload = buildDraftPayload()
       const now = new Date().toISOString()
       payload.savedAt = now
-      window.localStorage.setItem(currentDraftKey.value, JSON.stringify(payload))
+      const fullJson = JSON.stringify(payload)
+      // 去掉 savedAt 字段做指纹(savedAt 每次都会变)
+      const bodyPayload = { ...payload, savedAt: '' }
+      const bodyJson = JSON.stringify(bodyPayload)
+      const unchanged = !showMessage && bodyJson === _lastPersistedDraftBody
+      if (!unchanged) {
+        window.localStorage.setItem(currentDraftKey.value, fullJson)
+        _lastPersistedDraftBody = bodyJson
+      }
       draftSource.value = 'local-draft'
       draftUpdatedAt.value = now
       validationIssues.value = validateGraph()
@@ -421,6 +438,7 @@ export function useWorkflowData(deps: DataDeps) {
         return
       }
     }
+    _lastPersistedDraftBody = ''
     draftSource.value = 'backend'
     draftUpdatedAt.value = ''
     if (shouldToast) {
@@ -496,6 +514,8 @@ export function useWorkflowData(deps: DataDeps) {
     if (!selectedWorkflowCode.value) return
     const token = ++loadWorkflowToken
     loadingWorkflow.value = true
+    // 切换 workflow 时清掉 O5 指纹,避免跨 workflow 错判"未变化"
+    _lastPersistedDraftBody = ''
     try {
       const defs = definitionOptions.value.length
         ? definitionOptions.value

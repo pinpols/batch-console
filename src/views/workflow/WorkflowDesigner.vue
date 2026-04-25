@@ -512,6 +512,7 @@
     graphReady,
     canvasResetting,
     graphVersion,
+    graphVersionLight,
     canvasContextMenu,
     canvasContextMenuRef,
     graphZoomPercentLabel,
@@ -541,7 +542,7 @@
   const inspectorModule = useWorkflowInspector({
     graph,
     graphReady,
-    graphVersion,
+    graphVersionLight,
     selectedCellId,
     syncGraphDerivedState,
     scheduleEdgeZOrder,

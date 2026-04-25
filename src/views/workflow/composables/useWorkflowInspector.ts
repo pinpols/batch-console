@@ -28,7 +28,8 @@ import { useAppStore } from '@/stores/app'
 export function useWorkflowInspector(deps: {
   graph: ShallowRef<Graph | null>
   graphReady: ReturnType<typeof ref<boolean>>
-  graphVersion: ReturnType<typeof ref<number>>
+  /** 轻量版本号:stats / minimapCoords 用,拖动过程每帧都更新 */
+  graphVersionLight: ReturnType<typeof ref<number>>
   selectedCellId: ReturnType<typeof ref<string>>
   syncGraphDerivedState: () => void
   scheduleEdgeZOrder: () => void
@@ -36,7 +37,7 @@ export function useWorkflowInspector(deps: {
   const {
     graph,
     graphReady,
-    graphVersion,
+    graphVersionLight,
     selectedCellId,
     syncGraphDerivedState,
     scheduleEdgeZOrder,
@@ -327,7 +328,7 @@ export function useWorkflowInspector(deps: {
   }
 
   const stats = computed(() => {
-    void graphVersion.value
+    void graphVersionLight.value
     return {
       nodes: graph.value?.getNodes().length ?? 0,
       edges: graph.value?.getEdges().length ?? 0,
@@ -338,7 +339,7 @@ export function useWorkflowInspector(deps: {
   const minimapCoordsTitle = '图坐标：原点为画布左上角，单位与节点位置一致'
   const minimapCoordsLabel = computed(() => {
     if (!graph.value || !graphReady.value) return ''
-    void graphVersion.value
+    void graphVersionLight.value
     const g = graph.value
     if (selectedKind.value === 'node' && selectedCellId.value) {
       const cell = g.getCellById(selectedCellId.value)

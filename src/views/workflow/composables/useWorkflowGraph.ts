@@ -66,6 +66,15 @@ export function useWorkflowGraph(deps: GraphDeps) {
   const canvasResetting = ref(false)
   /** 触发缩放百分比展示刷新 */
   const graphZoomUiTick = ref(0)
+  /**
+   * 画布状态变化版本号,分两档驱动下游 recompute:
+   *   - graphVersionLight: 位置/帧级轻改动都加,stats / minimapCoords 等
+   *     廉价读(O(节点数)级 DOM 读取)跟这个
+   *   - graphVersion (heavy): 结构改动(增删节点/边、属性变动等)才加,
+   *     dslPreview / validation 这种要 JSON.stringify 整张图的昂贵读
+   *     跟这个。拖动 300ms 内只发 light,debounce 结束才发 heavy。
+   */
+  const graphVersionLight = ref(0)
   const graphVersion = ref(0)
 
   const canvasContextMenu = reactive({
@@ -197,9 +206,10 @@ export function useWorkflowGraph(deps: GraphDeps) {
 
   function syncGraphDerivedState(options: { queueDraft?: boolean; skipValidation?: boolean } = {}) {
     const { queueDraft = graphReady.value, skipValidation = false } = options
-    graphVersion.value += 1
-    if (!skipValidation && _validationIssuesRef) {
-      _validationIssuesRef.value = _validateGraph()
+    graphVersionLight.value += 1
+    if (!skipValidation) {
+      graphVersion.value += 1
+      if (_validationIssuesRef) _validationIssuesRef.value = _validateGraph()
     }
     if (queueDraft && graphReady.value) _queueDraftSave()
   }
@@ -564,17 +574,51 @@ export function useWorkflowGraph(deps: GraphDeps) {
 
   // ─── MiniMap ───────────────────────────────────────────────────────────────
 
+  /**
+   * O4:缩略图容器(.workflow-canvas-hud)在"未选中 workflow / 正在初始化"
+   * 时 display:none,尺寸为 0,此时 FixedMiniMap 构造内的首次 zoomToFit
+   * 会算出 Infinity 触发 SVGMatrix DOMException(已由 FixedMiniMap 守卫
+   * 兜住),但 plugin.use + 事件订阅仍是一次无用的启动成本。改成首次 host
+   * 获得非零尺寸时再真正 use,等到用户真的能看到它。
+   */
+  let _minimapInitialized = false
+  let _minimapInitRo: ResizeObserver | null = null
+  function cancelMinimapLazyInit() {
+    if (_minimapInitRo) {
+      _minimapInitRo.disconnect()
+      _minimapInitRo = null
+    }
+  }
   function initMinimapPlugin() {
-    if (!graph.value || !minimapHostRef.value) return
+    if (_minimapInitialized) return
+    if (!graph.value) return
+    const host = minimapHostRef.value
+    if (!host) return
+    if (host.clientWidth > 0 && host.clientHeight > 0) {
+      attachMinimapPlugin(host)
+      return
+    }
+    cancelMinimapLazyInit()
+    _minimapInitRo = new ResizeObserver(() => {
+      if (host.clientWidth > 0 && host.clientHeight > 0) {
+        cancelMinimapLazyInit()
+        attachMinimapPlugin(host)
+      }
+    })
+    _minimapInitRo.observe(host)
+  }
+  function attachMinimapPlugin(host: HTMLElement) {
+    if (!graph.value) return
     graph.value.use(
       new FixedMiniMap({
-        container: minimapHostRef.value,
+        container: host,
         width: 164,
         height: 108,
         padding: 4,
         scalable: true,
       }),
     )
+    _minimapInitialized = true
   }
 
   // ─── Create the graph ──────────────────────────────────────────────────────
@@ -783,10 +827,12 @@ export function useWorkflowGraph(deps: GraphDeps) {
     cancelPositionDerivedSyncTimer()
     cancelEdgeZOrderRaf()
     cancelPendingCreateGraph()
+    cancelMinimapLazyInit()
     disposeStencilPalette()
     graph.value?.dispose()
     graph.value = null
     graphReady.value = false
+    _minimapInitialized = false
   }
 
   return {
@@ -795,6 +841,7 @@ export function useWorkflowGraph(deps: GraphDeps) {
     canvasResetting,
     graphZoomUiTick,
     graphVersion,
+    graphVersionLight,
     canvasContextMenu,
     canvasContextMenuRef,
     graphZoomPercentLabel,
