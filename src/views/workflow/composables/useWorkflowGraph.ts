@@ -26,26 +26,39 @@ export interface GraphDeps {
   canvasRef: Ref<HTMLDivElement | null>
   minimapHostRef: Ref<HTMLDivElement | null>
   dndPaletteRef: Ref<HTMLDivElement | null>
+  selectedCellId: Ref<string>
+}
+
+export interface InspectorCallbacks {
   setSelectedCell: (cell: Cell | null) => void
   setNodeStyle: (cell: X6Node, selected: boolean) => void
   setEdgeStyle: (cell: X6Edge, selected: boolean) => void
   renderCellAppearance: (cell: Cell, selected: boolean) => void
-  selectedCellId: Ref<string>
-  applyGraphGridTheme: () => void
 }
 
 export function useWorkflowGraph(deps: GraphDeps) {
-  const {
-    canvasRef,
-    minimapHostRef,
-    dndPaletteRef,
-    setSelectedCell,
-    setNodeStyle,
-    setEdgeStyle,
-    renderCellAppearance,
-    selectedCellId,
-    applyGraphGridTheme,
-  } = deps
+  const { canvasRef, minimapHostRef, dndPaletteRef, selectedCellId } = deps
+
+  /**
+   * Inspector 依赖 graph(构造时 graph 还没建 → 无法反向传),graph 的事件
+   * 处理又要调 inspector 的 setSelectedCell/setNodeStyle/... 才能更新选中
+   * 态。原来的做法是父组件用 `let _setSelectedCell = () => {}` 占位,创建
+   * graph 模块时传包装,创建 inspector 后再赋值;占位期的误用很难看出来。
+   *
+   * 换成显式 bindInspectorCallbacks:父组件创建 inspector 后统一调一次。
+   * graph 内部用 _X 局部变量闭包,不再对 deps 里的 setX 有依赖。
+   */
+  let _setSelectedCell: (cell: Cell | null) => void = () => {}
+  let _setNodeStyle: (cell: X6Node, selected: boolean) => void = () => {}
+  let _setEdgeStyle: (cell: X6Edge, selected: boolean) => void = () => {}
+  let _renderCellAppearance: (cell: Cell, selected: boolean) => void = () => {}
+
+  function bindInspectorCallbacks(callbacks: InspectorCallbacks) {
+    _setSelectedCell = callbacks.setSelectedCell
+    _setNodeStyle = callbacks.setNodeStyle
+    _setEdgeStyle = callbacks.setEdgeStyle
+    _renderCellAppearance = callbacks.renderCellAppearance
+  }
 
   const graph = shallowRef<Graph | null>(null)
   const graphReady = ref(false)
@@ -433,7 +446,7 @@ export function useWorkflowGraph(deps: GraphDeps) {
 
     // 对批量加载的边立即应用颜色样式（shape 默认色是灰色，需覆盖）
     for (const cell of cells) {
-      if (cell.isEdge()) setEdgeStyle(cell as X6Edge, false)
+      if (cell.isEdge()) _setEdgeStyle(cell as X6Edge, false)
     }
 
     nextTick(() => {
@@ -444,7 +457,7 @@ export function useWorkflowGraph(deps: GraphDeps) {
       // 等缩放完成后再显示，消除闪烁
       canvasResetting.value = false
     })
-    setSelectedCell(null)
+    _setSelectedCell(null)
     syncGraphDerivedState({ queueDraft: false })
   }
 
@@ -531,7 +544,7 @@ export function useWorkflowGraph(deps: GraphDeps) {
             null
           if (existing) {
             ElMessage.warning(`已经存在 ${k} 节点`)
-            setSelectedCell(existing)
+            _setSelectedCell(existing)
             return false
           }
         }
@@ -683,9 +696,9 @@ export function useWorkflowGraph(deps: GraphDeps) {
     })
 
     // ─── Event bindings ────────────────────────────────────────────────────
-    graph.value.on('node:click', ({ node }) => setSelectedCell(node))
-    graph.value.on('edge:click', ({ edge }) => setSelectedCell(edge))
-    graph.value.on('blank:click', () => setSelectedCell(null))
+    graph.value.on('node:click', ({ node }) => _setSelectedCell(node))
+    graph.value.on('edge:click', ({ edge }) => _setSelectedCell(edge))
+    graph.value.on('blank:click', () => _setSelectedCell(null))
     graph.value.on('blank:contextmenu', ({ e }) => {
       preventCtxEvent(e)
       closeCanvasContextMenu()
@@ -721,7 +734,7 @@ export function useWorkflowGraph(deps: GraphDeps) {
         sourcePort: edge.getSourcePortId() ?? 'right',
         targetPort: edge.getTargetPortId() ?? 'left',
       } satisfies WorkflowEdgeDraft)
-      setEdgeStyle(edge, false)
+      _setEdgeStyle(edge, false)
       scheduleEdgeZOrder()
       syncGraphDerivedState()
     })
@@ -738,23 +751,22 @@ export function useWorkflowGraph(deps: GraphDeps) {
     })
     graph.value.on('cell:removed', () => {
       syncGraphDerivedState()
-      setSelectedCell(null)
+      _setSelectedCell(null)
       scheduleEdgeZOrder()
     })
     graph.value.on('cell:change:data', ({ cell }) => {
-      renderCellAppearance(cell, cell.id === selectedCellId.value)
+      _renderCellAppearance(cell, cell.id === selectedCellId.value)
     })
     graph.value.on('node:added', ({ node, options }) => {
       if ((options as { stencil?: unknown } | undefined)?.stencil == null) return
       if (!node.isNode()) return
-      setNodeStyle(node, false)
-      setSelectedCell(node)
+      _setNodeStyle(node, false)
+      _setSelectedCell(node)
       syncGraphDerivedState()
       scheduleEdgeZOrder()
     })
 
     graphReady.value = true
-    applyGraphGridTheme()
     if (dndPaletteRef.value) {
       initStencilPalette()
     } else {
@@ -797,6 +809,7 @@ export function useWorkflowGraph(deps: GraphDeps) {
 
     syncGraphDerivedState,
     bindDerivedStateCallbacks,
+    bindInspectorCallbacks,
     cancelPositionDerivedSyncTimer,
 
     edgeDraftFromGraphCell,

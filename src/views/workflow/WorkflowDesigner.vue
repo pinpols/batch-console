@@ -496,27 +496,15 @@
   const selectedCellId = ref('')
 
   // ─── Graph ─────────────────────────────────────────────────────────────────
-  // Inspector needs graph, graph needs inspector callbacks — we resolve
-  // the circular dependency by creating graph first (it has no inspector dep
-  // at construction time), then inspector, then binding callbacks.
-
-  // Create a temporary placeholder for inspector functions that graph needs
-  let _setSelectedCell: (cell: import('@antv/x6').Cell | null) => void = () => {}
-  let _setNodeStyle: (cell: import('@antv/x6').Node, selected: boolean) => void = () => {}
-  let _setEdgeStyle: (cell: import('@antv/x6').Edge, selected: boolean) => void = () => {}
-  let _renderCellAppearance: (cell: import('@antv/x6').Cell, selected: boolean) => void = () => {}
-  let _applyGraphGridTheme: () => void = () => {}
-
+  // Inspector 依赖 graph、graph 的事件需要 inspector 的 setSelectedCell 等 —— 循环
+  // 依赖通过先建 graph(无 inspector 依赖)、再建 inspector、最后
+  // bindInspectorCallbacks 三步打破。之前用父级 `let _X = () => {}` 占位 + 函数包装
+  // 传 deps,暴露面多、占位期误用难察觉,现在占位已下沉到 useWorkflowGraph 内部。
   const graphModule = useWorkflowGraph({
     canvasRef,
     minimapHostRef,
     dndPaletteRef,
     selectedCellId,
-    setSelectedCell: (cell) => _setSelectedCell(cell),
-    setNodeStyle: (cell, selected) => _setNodeStyle(cell, selected),
-    setEdgeStyle: (cell, selected) => _setEdgeStyle(cell, selected),
-    renderCellAppearance: (cell, selected) => _renderCellAppearance(cell, selected),
-    applyGraphGridTheme: () => _applyGraphGridTheme(),
   })
 
   const {
@@ -534,6 +522,7 @@
     scheduleEdgeZOrder,
     syncGraphDerivedState,
     bindDerivedStateCallbacks,
+    bindInspectorCallbacks,
     cancelPositionDerivedSyncTimer,
     onLibraryNodePointerDown,
     currentWorkflowExportNodes,
@@ -575,16 +564,11 @@
     setNodeStyle,
     setEdgeStyle,
     renderCellAppearance,
-    applyGraphGridTheme,
     selectFallbackAfterDelete,
   } = inspectorModule
 
-  // Now bind the inspector functions to the graph module's forwarding layer
-  _setSelectedCell = setSelectedCell
-  _setNodeStyle = setNodeStyle
-  _setEdgeStyle = setEdgeStyle
-  _renderCellAppearance = renderCellAppearance
-  _applyGraphGridTheme = applyGraphGridTheme
+  // 绑定 inspector 回调到 graph 模块(替代旧的 `let _X = () => {}` 占位)。
+  bindInspectorCallbacks({ setSelectedCell, setNodeStyle, setEdgeStyle, renderCellAppearance })
 
   // ─── Data ──────────────────────────────────────────────────────────────────
   const dataModule = useWorkflowData({
