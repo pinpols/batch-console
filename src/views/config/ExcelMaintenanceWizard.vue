@@ -163,7 +163,7 @@
                     <el-descriptions
                       v-if="previewStats"
                       class="excel-wizard__desc"
-                      :column="2"
+                      :column="3"
                       border
                       title="汇总"
                     >
@@ -175,6 +175,12 @@
                       }}</el-descriptions-item>
                       <el-descriptions-item label="invalidRows">{{
                         previewStats.invalid
+                      }}</el-descriptions-item>
+                      <el-descriptions-item label="预计新增">{{
+                        previewStats.insert
+                      }}</el-descriptions-item>
+                      <el-descriptions-item label="预计更新">{{
+                        previewStats.update
                       }}</el-descriptions-item>
                     </el-descriptions>
                     <el-alert
@@ -221,6 +227,25 @@
                       <code>uploadToken</code>
                       对应的预览结果写入租户配置。执行前请已在「预览」中确认数据无误。
                     </p>
+                    <el-descriptions
+                      v-if="previewStats"
+                      class="apply-zone__diff"
+                      :column="2"
+                      border
+                    >
+                      <el-descriptions-item label="预计新增">{{
+                        previewStats.insert
+                      }}</el-descriptions-item>
+                      <el-descriptions-item label="预计更新">{{
+                        previewStats.update
+                      }}</el-descriptions-item>
+                      <el-descriptions-item label="有效行">{{
+                        previewStats.valid
+                      }}</el-descriptions-item>
+                      <el-descriptions-item label="无效行">{{
+                        previewStats.invalid
+                      }}</el-descriptions-item>
+                    </el-descriptions>
                     <el-button type="danger" size="large" :disabled="!uploadToken" @click="doApply">
                       确认应用变更
                     </el-button>
@@ -344,8 +369,14 @@
     const total = typeof p.totalRows === 'number' ? p.totalRows : undefined
     const valid = typeof p.validRows === 'number' ? p.validRows : undefined
     const invalid = typeof p.invalidRows === 'number' ? p.invalidRows : undefined
+    const changeSummary =
+      p.changeSummary && typeof p.changeSummary === 'object'
+        ? (p.changeSummary as Record<string, unknown>)
+        : {}
+    const insert = typeof changeSummary.insertRows === 'number' ? changeSummary.insertRows : 0
+    const update = typeof changeSummary.updateRows === 'number' ? changeSummary.updateRows : 0
     if (total === undefined && valid === undefined) return null
-    return { total: total ?? '—', valid: valid ?? '—', invalid: invalid ?? '—' }
+    return { total: total ?? '—', valid: valid ?? '—', invalid: invalid ?? '—', insert, update }
   })
 
   const previewWorkbookUrl = computed(() => {
@@ -843,6 +874,12 @@
     padding: 1px 5px;
     border-radius: var(--radius-content);
     background: var(--el-fill-color-light);
+  }
+
+  .apply-zone__diff {
+    width: min(520px, 100%);
+    margin: 0 auto var(--space-md);
+    text-align: left;
   }
 
   .excel-wizard__footer {

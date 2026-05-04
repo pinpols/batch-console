@@ -140,6 +140,113 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/console/ops/cache/evict-job-definition': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Evict orchestrator Redis cache for a single job definition
+     * @description Manual cache eviction for the OrchestratorConfigCacheService. Use only when DB
+     *     was modified outside the console write path (direct psql / SQL migration);
+     *     otherwise normal write endpoints already trigger afterCommit eviction.
+     */
+    post: operations['evictJobDefinitionCache']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/ops/cache/evict-all-job-definitions': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Evict orchestrator Redis cache for all job definitions of a tenant */
+    post: operations['evictAllJobDefinitionsCache']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/ops/cache/evict-workflow-definition': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Evict orchestrator Redis cache for a single workflow definition */
+    post: operations['evictWorkflowDefinitionCache']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/ops/cache/evict-business-calendar': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Evict orchestrator Redis cache for a single business calendar */
+    post: operations['evictBusinessCalendarCache']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/ops/cache/evict-batch-window': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Evict orchestrator Redis cache for a single batch window */
+    post: operations['evictBatchWindowCache']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/ops/cache/evict-quota-policies': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Evict orchestrator Redis cache for tenant quota policy resolution */
+    post: operations['evictQuotaPoliciesCache']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/console/ops/summary': {
     parameters: {
       query?: never
@@ -887,86 +994,6 @@ export interface paths {
     patch?: never
     trace?: never
   }
-  '/api/console/config/file-templates/excel/upload': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /**
-     * Upload file template Excel
-     * @deprecated
-     */
-    post: operations['uploadFileTemplateExcel']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/console/config/file-templates/excel/preview/{uploadToken}': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * Preview uploaded file template Excel
-     * @deprecated
-     */
-    get: operations['previewFileTemplateExcel']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/console/config/file-templates/excel/preview/{uploadToken}/workbook': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * Download preview workbook with validation annotations
-     * @deprecated
-     */
-    get: operations['downloadFileTemplatePreviewWorkbook']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/console/config/file-templates/excel/apply/{uploadToken}': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /**
-     * Apply uploaded file template Excel
-     * @deprecated
-     */
-    post: operations['applyFileTemplateExcel']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
   '/api/console/config/file-channels/excel/template': {
     parameters: {
       query?: never
@@ -1097,86 +1124,6 @@ export interface paths {
     get: operations['exportAlertRoutingExcel']
     put?: never
     post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/console/config/alert-routings/excel/upload': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /**
-     * Upload alert routing Excel
-     * @deprecated
-     */
-    post: operations['uploadAlertRoutingExcel']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/console/config/alert-routings/excel/preview/{uploadToken}': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * Preview uploaded alert routing Excel
-     * @deprecated
-     */
-    get: operations['previewAlertRoutingExcel']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/console/config/alert-routings/excel/preview/{uploadToken}/workbook': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * Download annotated preview workbook for alert routing Excel
-     * @deprecated
-     */
-    get: operations['downloadAlertRoutingExcelPreviewWorkbook']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/console/config/alert-routings/excel/apply/{uploadToken}': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /**
-     * Apply uploaded alert routing Excel
-     * @deprecated
-     */
-    post: operations['applyAlertRoutingExcel']
     delete?: never
     options?: never
     head?: never
@@ -1368,86 +1315,6 @@ export interface paths {
     get: operations['exportResourceQueueExcel']
     put?: never
     post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/console/config/resource-queues/excel/upload': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /**
-     * Upload resource queue Excel
-     * @deprecated
-     */
-    post: operations['uploadResourceQueueExcel']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/console/config/resource-queues/excel/preview/{uploadToken}': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * Preview uploaded resource queue Excel
-     * @deprecated
-     */
-    get: operations['previewResourceQueueExcel']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/console/config/resource-queues/excel/preview/{uploadToken}/workbook': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * Download annotated preview workbook for resource queue Excel
-     * @deprecated
-     */
-    get: operations['downloadResourceQueueExcelPreviewWorkbook']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/console/config/resource-queues/excel/apply/{uploadToken}': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /**
-     * Apply uploaded resource queue Excel
-     * @deprecated
-     */
-    post: operations['applyResourceQueueExcel']
     delete?: never
     options?: never
     head?: never
@@ -2323,6 +2190,26 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/console/queries/partitions': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Query job partitions by instance
+     * @description 按作业实例分页查询分区（`job_partition`）。服务端分页 + `partitionStatus` 过滤；按 `partition_no` 升序返回。
+     */
+    get: operations['queryJobPartitions']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/console/queries/workflow-definitions': {
     parameters: {
       query?: never
@@ -2752,7 +2639,7 @@ export interface paths {
     patch?: never
     trace?: never
   }
-  '/api/console/triggers': {
+  '/api/console/ops/triggers': {
     parameters: {
       query?: never
       header?: never
@@ -2769,7 +2656,7 @@ export interface paths {
     patch?: never
     trace?: never
   }
-  '/api/console/triggers/{jobCode}/register': {
+  '/api/console/ops/triggers/{jobCode}/register': {
     parameters: {
       query?: never
       header?: never
@@ -2786,7 +2673,7 @@ export interface paths {
     patch?: never
     trace?: never
   }
-  '/api/console/triggers/{jobCode}/unregister': {
+  '/api/console/ops/triggers/{jobCode}/unregister': {
     parameters: {
       query?: never
       header?: never
@@ -2803,7 +2690,7 @@ export interface paths {
     patch?: never
     trace?: never
   }
-  '/api/console/triggers/{jobCode}/pause': {
+  '/api/console/ops/triggers/{jobCode}/pause': {
     parameters: {
       query?: never
       header?: never
@@ -2820,7 +2707,7 @@ export interface paths {
     patch?: never
     trace?: never
   }
-  '/api/console/triggers/{jobCode}/resume': {
+  '/api/console/ops/triggers/{jobCode}/resume': {
     parameters: {
       query?: never
       header?: never
@@ -2907,6 +2794,8 @@ export interface paths {
      *     | `skipAction` | 跳过动作（CONTINUE / FAIL_BATCH / MANUAL_REVIEW）|
      *     | `workflowNodeRunStatus` | 工作流节点运行状态（READY / RUNNING / SUCCESS / FAILED / SKIPPED）|
      *     | `deadLetterReplayStatus` | 死信回放状态（NEW / REPLAYING / SUCCESS / FAILED / GIVE_UP）|
+     *     | `deadLetterErrorClass` | 死信错误分类（BUSINESS / SYSTEM）|
+     *     | `quotaExceededStrategy` | 租户配额超额策略（REJECT / QUEUE_DEFER / DEGRADE_PRIORITY）|
      *     | `skipThresholdMode` | 跳过阈值模式（ABSOLUTE / PERCENTAGE）|
      *
      */
@@ -4797,7 +4686,9 @@ export interface components {
         triggerMode?: components['schemas']['MetaEnumItem'][]
         catchUpPolicy?: components['schemas']['MetaEnumItem'][]
         jobType?: components['schemas']['MetaEnumItem'][]
+        batchType?: components['schemas']['MetaEnumItem'][]
         shardStrategy?: components['schemas']['MetaEnumItem'][]
+        executionMode?: components['schemas']['MetaEnumItem'][]
         retryPolicy?: components['schemas']['MetaEnumItem'][]
         taskStatus?: components['schemas']['MetaEnumItem'][]
         partitionStatus?: components['schemas']['MetaEnumItem'][]
@@ -4848,6 +4739,8 @@ export interface components {
         skipAction?: components['schemas']['MetaEnumItem'][]
         workflowNodeRunStatus?: components['schemas']['MetaEnumItem'][]
         deadLetterReplayStatus?: components['schemas']['MetaEnumItem'][]
+        deadLetterErrorClass?: components['schemas']['MetaEnumItem'][]
+        quotaExceededStrategy?: components['schemas']['MetaEnumItem'][]
         skipThresholdMode?: components['schemas']['MetaEnumItem'][]
       }
     }
@@ -4891,6 +4784,9 @@ export interface components {
       data?: components['schemas']['PageResponse']
     }
     CommonResponseJobStepInstanceList: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['PageResponse']
+    }
+    CommonResponseJobPartitionList: components['schemas']['CommonResponseBase'] & {
       data?: components['schemas']['PageResponse']
     }
     CommonResponseWorkflowDefinitionList: components['schemas']['CommonResponseBase'] & {
@@ -5406,6 +5302,10 @@ export interface components {
       /** Format: int32 */
       timeoutSeconds: number
       shardStrategy: string
+      /** @description 执行模式 ExecutionMode 枚举 code:FULL / INCREMENTAL / CDC,缺省 FULL */
+      executionMode: string
+      /** @description 增量模式下的水位字段名(例:update_time / id);FULL 模式下应为空 */
+      watermarkField?: string
       executionHandler: string
       paramSchema: string
       defaultParams: string
@@ -5472,6 +5372,29 @@ export interface components {
       resultSummary: string
       errorCode: string
       errorMessage: string
+      /** Format: date-time */
+      startedAt: string
+      /** Format: date-time */
+      finishedAt: string
+    }
+    ConsoleJobPartitionResponse: {
+      /** Format: int64 */
+      id: number
+      tenantId: string
+      /** Format: int64 */
+      jobInstanceId: number
+      /** Format: int32 */
+      partitionNo: number
+      partitionKey: string
+      /** @description WAITING / READY / RUNNING / RETRYING / SUCCESS / FAILED / CANCELLED */
+      partitionStatus: string
+      workerGroup: string
+      workerCode: string
+      /** Format: int32 */
+      retryCount: number
+      businessKey: string
+      /** Format: date-time */
+      leaseExpireAt: string
       /** Format: date-time */
       startedAt: string
       /** Format: date-time */
@@ -6274,6 +6197,14 @@ export interface components {
       updatedAt: string
     }
     ConsoleExcelRowIssueResponse: components['schemas']['ExcelRowIssue']
+    ExcelChangeSummary: {
+      /** Format: int32 */
+      insertRows: number
+      /** Format: int32 */
+      updateRows: number
+      /** Format: int32 */
+      upsertRows: number
+    }
     ConsoleFileTemplateExcelUploadResponse: components['schemas']['ExcelUploadResponse']
     ConsoleFileTemplateExcelPreviewResponse: {
       uploadToken: string
@@ -6288,6 +6219,7 @@ export interface components {
       rows: components['schemas']['ConsoleFileTemplateResponse'][]
       issues: components['schemas']['ExcelRowIssue'][]
       previewWorkbookUrl?: string
+      changeSummary?: components['schemas']['ExcelChangeSummary']
     }
     ConsoleFileTemplateExcelApplyResponse: components['schemas']['ExcelApplyResponse']
     ConsoleFileChannelExcelUploadResponse: components['schemas']['ExcelUploadResponse']
@@ -6365,6 +6297,7 @@ export interface components {
       rows: components['schemas']['ConsoleAlertRoutingResponse'][]
       issues: components['schemas']['ExcelRowIssue'][]
       previewWorkbookUrl?: string
+      changeSummary?: components['schemas']['ExcelChangeSummary']
     }
     ConsoleAlertRoutingExcelApplyResponse: components['schemas']['ExcelApplyResponse']
     ConsoleAlertRoutingExcelRowIssueResponse: components['schemas']['ExcelRowIssue']
@@ -6413,6 +6346,7 @@ export interface components {
       rows: components['schemas']['ConsoleResourceQueueResponse'][]
       issues: components['schemas']['ExcelRowIssue'][]
       previewWorkbookUrl?: string
+      changeSummary?: components['schemas']['ExcelChangeSummary']
     }
     ConsoleResourceQueueExcelApplyResponse: components['schemas']['ExcelApplyResponse']
     ConsoleResourceQueueExcelRowIssueResponse: components['schemas']['ExcelRowIssue']
@@ -6426,6 +6360,255 @@ export interface components {
       createdAt?: string
       /** Format: date-time */
       updatedAt?: string
+    }
+    /** @description 批量租户配置初始化请求。
+     *     mode=SKIP_EXISTING 已存在跳过；mode=UPSERT 已存在更新。
+     *     dryRun=true 时只校验不落库。
+     *     各 List<XxxSpec> 字段为可选；未传则该类配置不初始化。
+     *      */
+    TenantConfigBatchInitRequest: {
+      targetTenantIds: string[]
+      /**
+       * @default SKIP_EXISTING
+       * @enum {string}
+       */
+      mode: 'SKIP_EXISTING' | 'UPSERT'
+      /** @default false */
+      dryRun: boolean
+      jobDefinitions?: components['schemas']['JobDefinitionSpec'][]
+      workflowDefinitions?: components['schemas']['WorkflowDefinitionSpec'][]
+      pipelineDefinitions?: components['schemas']['PipelineDefinitionSpec'][]
+      fileChannels?: components['schemas']['FileChannelSpec'][]
+      fileTemplates?: components['schemas']['FileTemplateSpec'][]
+      resourceQueues?: components['schemas']['ResourceQueueSpec'][]
+      batchWindows?: components['schemas']['BatchWindowSpec'][]
+      businessCalendars?: components['schemas']['BusinessCalendarSpec'][]
+      quotaPolicies?: components['schemas']['TenantQuotaPolicySpec'][]
+      alertRoutings?: components['schemas']['AlertRoutingSpec'][]
+    }
+    /** @description 跨租户配置复制请求。从源租户读取配置，推送到目标租户列表。
+     *     configTypes 为空表示复制全部 10 类。
+     *      */
+    TenantConfigCopyRequest: {
+      sourceTenantId: string
+      targetTenantIds: string[]
+      /** @description 空表示复制全部 10 类 */
+      configTypes?: components['schemas']['TenantConfigCopyType'][]
+      /**
+       * @default SKIP_EXISTING
+       * @enum {string}
+       */
+      mode: 'SKIP_EXISTING' | 'UPSERT'
+      /** @default false */
+      dryRun: boolean
+    }
+    /**
+     * @description 配置类型枚举。后端 @JsonCreator 兼容简写：
+     *     "JOB" → JOB_DEFINITION / "WORKFLOW" → WORKFLOW_DEFINITION /
+     *     "PIPELINE" → PIPELINE_DEFINITION（仅 *_DEFINITION 三类支持简写）。
+     *     其余类型必须传完整名称。
+     *
+     * @enum {string}
+     */
+    TenantConfigCopyType:
+      | 'JOB_DEFINITION'
+      | 'WORKFLOW_DEFINITION'
+      | 'PIPELINE_DEFINITION'
+      | 'FILE_CHANNEL'
+      | 'FILE_TEMPLATE'
+      | 'RESOURCE_QUEUE'
+      | 'BATCH_WINDOW'
+      | 'BUSINESS_CALENDAR'
+      | 'QUOTA_POLICY'
+      | 'ALERT_ROUTING'
+    JobDefinitionSpec: {
+      jobCode?: string
+      jobName?: string
+      jobType?: string
+      bizType?: string
+      scheduleType?: string
+      scheduleExpr?: string
+      timezone?: string
+      triggerMode?: string
+      workerGroup?: string
+      queueCode?: string
+      calendarCode?: string
+      windowCode?: string
+      dagEnabled?: boolean | null
+      shardStrategy?: string
+      retryPolicy?: string
+      retryMaxCount?: number | null
+      timeoutSeconds?: number | null
+      executionHandler?: string
+      paramSchema?: string
+      defaultParams?: string
+      priority?: number | null
+      enabled?: boolean | null
+      description?: string
+    }
+    WorkflowDefinitionSpec: {
+      workflowCode?: string
+      workflowName?: string
+      workflowType?: string
+      enabled?: boolean | null
+      nodes?: components['schemas']['WorkflowNodeSpec'][]
+      edges?: components['schemas']['WorkflowEdgeSpec'][]
+    }
+    WorkflowNodeSpec: {
+      nodeCode?: string
+      nodeName?: string
+      nodeType?: string
+      relatedJobCode?: string
+      relatedPipelineCode?: string
+      workerGroup?: string
+      windowCode?: string
+      nodeOrder?: number | null
+      retryPolicy?: string
+      retryMaxCount?: number | null
+      timeoutSeconds?: number | null
+      nodeParams?: string
+      enabled?: boolean | null
+    }
+    WorkflowEdgeSpec: {
+      fromNodeCode?: string
+      toNodeCode?: string
+      edgeType?: string
+      conditionExpr?: string
+      enabled?: boolean | null
+    }
+    PipelineDefinitionSpec: {
+      jobCode?: string
+      pipelineName?: string
+      pipelineType?: string
+      bizType?: string
+      workerGroup?: string
+      enabled?: boolean | null
+      description?: string
+      steps?: components['schemas']['PipelineStepSpec'][]
+    }
+    PipelineStepSpec: {
+      stepCode?: string
+      stepName?: string
+      stageCode?: string
+      stepOrder?: number | null
+      implCode?: string
+      stepParams?: string
+      timeoutSeconds?: number | null
+      retryPolicy?: string
+      retryMaxCount?: number | null
+      enabled?: boolean | null
+    }
+    FileChannelSpec: {
+      channelCode?: string
+      channelName?: string
+      channelType?: string
+      targetEndpoint?: string
+      authType?: string
+      configJson?: string
+      receiptPolicy?: string
+      timeoutSeconds?: number | null
+      enabled?: boolean | null
+    }
+    FileTemplateSpec: {
+      templateCode?: string
+      templateName?: string
+      templateType?: string
+      bizType?: string
+      fileFormatType?: string
+      charset?: string
+      targetCharset?: string
+      withBom?: boolean | null
+      lineSeparator?: string
+      delimiter?: string
+      quoteChar?: string
+      escapeChar?: string
+      recordLength?: number | null
+      headerRows?: number | null
+      footerRows?: number | null
+      headerTemplateJson?: string
+      trailerTemplateJson?: string
+      checksumType?: string
+      compressType?: string
+      encryptType?: string
+      namingRule?: string
+      fieldMappingsJson?: string
+      validationRuleSetJson?: string
+      defaultQueryCode?: string
+      defaultQuerySql?: string
+      queryParamSchemaJson?: string
+      streamingEnabled?: boolean | null
+      pageSize?: number | null
+      fetchSize?: number | null
+      chunkSize?: number | null
+      previewMaskingEnabled?: boolean | null
+      errorLineMaskingEnabled?: boolean | null
+      logMaskingEnabled?: boolean | null
+      contentEncryptionEnabled?: boolean | null
+      encryptionKeyRef?: string
+      downloadRequiresApproval?: boolean | null
+      maskingRuleSet?: string
+      enabled?: boolean | null
+      version?: number | null
+      description?: string
+    }
+    ResourceQueueSpec: {
+      queueCode?: string
+      queueName?: string
+      queueType?: string
+      maxRunningJobs?: number | null
+      maxRunningPartitions?: number | null
+      maxQps?: number | null
+      workerGroup?: string
+      resourceTag?: string
+      priorityPolicy?: string
+      fairShareWeight?: number | null
+      enabled?: boolean | null
+      description?: string
+    }
+    BatchWindowSpec: {
+      windowCode?: string
+      windowName?: string
+      timezone?: string
+      startTime?: string
+      endTime?: string
+      endStrategy?: string
+      outOfWindowAction?: string
+      allowCrossDay?: boolean | null
+      enabled?: boolean | null
+      description?: string
+    }
+    BusinessCalendarSpec: {
+      calendarCode?: string
+      calendarName?: string
+      timezone?: string
+      holidayRollRule?: string
+      catchUpPolicy?: string
+      catchUpMaxDays?: number | null
+      enabled?: boolean | null
+      holidays?: string[]
+    }
+    TenantQuotaPolicySpec: {
+      policyCode?: string
+      maxRunningJobsPerTenant?: number | null
+      maxPartitionsPerTenant?: number | null
+      maxQpsPerTenant?: number | null
+      fairShareWeight?: number | null
+      enabled?: boolean | null
+      description?: string
+    }
+    AlertRoutingSpec: {
+      routeCode?: string
+      routeName?: string
+      team?: string
+      alertGroup?: string
+      severity?: string
+      receiver?: string
+      groupBy?: string
+      groupWaitSeconds?: number | null
+      groupIntervalSeconds?: number | null
+      repeatIntervalSeconds?: number | null
+      enabled?: boolean | null
+      description?: string
     }
     TenantConfigBatchInitResponse: {
       batchOperationId: string
@@ -6823,6 +7006,142 @@ export interface operations {
         }
         content: {
           'text/event-stream': components['schemas']['ConsoleSseEventResponse']
+        }
+      }
+    }
+  }
+  evictJobDefinitionCache: {
+    parameters: {
+      query: {
+        tenantId: string
+        jobCode: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Eviction result with the affected cache key descriptor */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseObject']
+        }
+      }
+    }
+  }
+  evictAllJobDefinitionsCache: {
+    parameters: {
+      query: {
+        tenantId: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Eviction result with the wildcard cache key descriptor */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseObject']
+        }
+      }
+    }
+  }
+  evictWorkflowDefinitionCache: {
+    parameters: {
+      query: {
+        tenantId: string
+        workflowCode: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Eviction result with the affected cache key descriptor */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseObject']
+        }
+      }
+    }
+  }
+  evictBusinessCalendarCache: {
+    parameters: {
+      query: {
+        tenantId: string
+        calendarCode: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Eviction result with the affected cache key descriptor */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseObject']
+        }
+      }
+    }
+  }
+  evictBatchWindowCache: {
+    parameters: {
+      query: {
+        tenantId: string
+        windowCode: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Eviction result with the affected cache key descriptor */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseObject']
+        }
+      }
+    }
+  }
+  evictQuotaPoliciesCache: {
+    parameters: {
+      query: {
+        tenantId: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Eviction result with the affected cache key descriptor */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseObject']
         }
       }
     }
@@ -8168,105 +8487,6 @@ export interface operations {
       }
     }
   }
-  uploadFileTemplateExcel: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'multipart/form-data': {
-          /** Format: binary */
-          file: string
-        }
-      }
-    }
-    responses: {
-      /** @description Upload session */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['CommonResponseExcelUpload']
-        }
-      }
-    }
-  }
-  previewFileTemplateExcel: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        uploadToken: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Preview result */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['CommonResponseConsoleFileTemplateExcelPreview']
-        }
-      }
-    }
-  }
-  downloadFileTemplatePreviewWorkbook: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        uploadToken: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Excel workbook binary */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': string
-        }
-      }
-    }
-  }
-  applyFileTemplateExcel: {
-    parameters: {
-      query?: never
-      header: {
-        'Idempotency-Key': components['parameters']['IdempotencyKeyHeader']
-      }
-      path: {
-        uploadToken: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['ExcelApplyRequest']
-      }
-    }
-    responses: {
-      /** @description Apply result */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['CommonResponseExcelApply']
-        }
-      }
-    }
-  }
   downloadFileChannelExcelTemplate: {
     parameters: {
       query?: never
@@ -8445,105 +8665,6 @@ export interface operations {
         }
         content: {
           'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': string
-        }
-      }
-    }
-  }
-  uploadAlertRoutingExcel: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'multipart/form-data': {
-          /** Format: binary */
-          file: string
-        }
-      }
-    }
-    responses: {
-      /** @description Upload session */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['CommonResponseExcelUpload']
-        }
-      }
-    }
-  }
-  previewAlertRoutingExcel: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        uploadToken: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Preview result */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['CommonResponseConsoleAlertRoutingExcelPreview']
-        }
-      }
-    }
-  }
-  downloadAlertRoutingExcelPreviewWorkbook: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        uploadToken: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Annotated workbook download */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': string
-        }
-      }
-    }
-  }
-  applyAlertRoutingExcel: {
-    parameters: {
-      query?: never
-      header: {
-        'Idempotency-Key': components['parameters']['IdempotencyKeyHeader']
-      }
-      path: {
-        uploadToken: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['ExcelApplyRequest']
-      }
-    }
-    responses: {
-      /** @description Apply result */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['CommonResponseExcelApply']
         }
       }
     }
@@ -8792,105 +8913,6 @@ export interface operations {
         }
         content: {
           'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': string
-        }
-      }
-    }
-  }
-  uploadResourceQueueExcel: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'multipart/form-data': {
-          /** Format: binary */
-          file: string
-        }
-      }
-    }
-    responses: {
-      /** @description Upload session */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['CommonResponseExcelUpload']
-        }
-      }
-    }
-  }
-  previewResourceQueueExcel: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        uploadToken: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Preview result */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['CommonResponseConsoleResourceQueueExcelPreview']
-        }
-      }
-    }
-  }
-  downloadResourceQueueExcelPreviewWorkbook: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        uploadToken: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Annotated workbook download */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': string
-        }
-      }
-    }
-  }
-  applyResourceQueueExcel: {
-    parameters: {
-      query?: never
-      header: {
-        'Idempotency-Key': components['parameters']['IdempotencyKeyHeader']
-      }
-      path: {
-        uploadToken: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['ExcelApplyRequest']
-      }
-    }
-    responses: {
-      /** @description Apply result */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['CommonResponseExcelApply']
         }
       }
     }
@@ -10184,6 +10206,34 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['CommonResponseConsoleJobStepInstanceResponse']
+        }
+      }
+    }
+  }
+  queryJobPartitions: {
+    parameters: {
+      query?: {
+        tenantId?: components['parameters']['TenantIdQuery']
+        pageNo?: components['parameters']['PageNoQuery']
+        pageSize?: components['parameters']['PageSizeQuery']
+        /** @description Filter by job instance ID */
+        jobInstanceId?: components['parameters']['JobInstanceIdFilter']
+        /** @description Filter by partition status (e.g. WAITING / READY / RUNNING / SUCCESS / FAILED) */
+        partitionStatus?: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Job partition list */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseJobPartitionList']
         }
       }
     }
@@ -12934,7 +12984,7 @@ export interface operations {
     }
     requestBody: {
       content: {
-        'application/json': Record<string, never>
+        'application/json': components['schemas']['TenantConfigBatchInitRequest']
       }
     }
     responses: {
@@ -12960,30 +13010,7 @@ export interface operations {
     }
     requestBody: {
       content: {
-        'application/json': {
-          sourceTenantId: string
-          targetTenantIds: string[]
-          /** @description Empty means all 10 types */
-          configTypes?: (
-            | 'JOB_DEFINITION'
-            | 'WORKFLOW_DEFINITION'
-            | 'PIPELINE_DEFINITION'
-            | 'FILE_CHANNEL'
-            | 'FILE_TEMPLATE'
-            | 'RESOURCE_QUEUE'
-            | 'BATCH_WINDOW'
-            | 'BUSINESS_CALENDAR'
-            | 'QUOTA_POLICY'
-            | 'ALERT_ROUTING'
-          )[]
-          /**
-           * @default SKIP_EXISTING
-           * @enum {string}
-           */
-          mode?: 'SKIP_EXISTING' | 'UPSERT'
-          /** @default false */
-          dryRun?: boolean
-        }
+        'application/json': components['schemas']['TenantConfigCopyRequest']
       }
     }
     responses: {
@@ -13641,8 +13668,9 @@ export interface operations {
     requestBody: {
       content: {
         'application/json': {
-          quotaKey: string
-          requestedValue: string
+          field: string
+          /** Format: int32 */
+          requestedValue: number
           reason: string
         }
       }
@@ -13654,7 +13682,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseVoid']
+          'application/json': components['schemas']['CommonResponseString']
         }
       }
     }
