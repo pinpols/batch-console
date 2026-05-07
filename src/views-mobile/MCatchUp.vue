@@ -27,9 +27,8 @@
           <div><span class="m-card__meta-key">创建</span>{{ fmt(row.createdAt) }}</div>
           <div><span class="m-card__meta-key">trace</span>{{ row.traceId }}</div>
         </div>
-        <div v-if="isPending(row.requestStatus)" class="m-card__actions">
-          <button class="m-btn m-btn--plain-danger" @click="decide(row, false)">拒绝</button>
-          <button class="m-btn m-btn--primary" @click="decide(row, true)">批准</button>
+        <div v-if="isPending(row.requestStatus)" class="m-card__notice">
+          批准/拒绝请到桌面端 Approvals 页面操作（移动端待 BE 接口重构）
         </div>
       </div>
     </div>
@@ -39,12 +38,11 @@
 <script setup lang="ts">
   import { computed, onMounted, ref, watch } from 'vue'
   import { Refresh } from '@element-plus/icons-vue'
-  import { ElMessage, ElMessageBox } from 'element-plus'
+  import { ElMessage } from 'element-plus'
   import { useTenantStore } from '@/stores/tenant'
   import MPullRefresh from '@/layout-mobile/MPullRefresh.vue'
   import MSkeleton from '@/layout-mobile/MSkeleton.vue'
   import { fetchAllPageItems } from '@/api/adapters'
-  import { jobApi } from '@/api/job'
   import type { ConsolePendingCatchUpResponse } from '@/types/console-api'
 
   const tenant = useTenantStore()
@@ -95,23 +93,9 @@
     }
   }
 
-  async function decide(row: ConsolePendingCatchUpResponse, approved: boolean) {
-    const verb = approved ? '批准' : '拒绝'
-    try {
-      await ElMessageBox.confirm(`${verb}补跑 ${row.jobCode} @ ${row.bizDate}？`, `确认${verb}`, {
-        type: approved ? 'info' : 'warning',
-      })
-      await jobApi.catchUpApprove({
-        tenantId: tenant.tenantId,
-        requestId: row.requestId,
-        approved,
-      })
-      ElMessage.success(`已${verb}`)
-      await load()
-    } catch {
-      /* cancelled */
-    }
-  }
+  // 批准/拒绝按钮已下线:原 jobApi.catchUpApprove 调用字段名与 BE DTO 不一致,
+  // 且单接口不能拒绝。等 BE 把 approvalNo 加进 ConsolePendingCatchUpResponse + 同步 openapi
+  // 之后,在桌面端 Approvals 流程统一处理;移动端仅作只读查看。
 
   onMounted(load)
   watch(() => tenant.tenantId, load)
