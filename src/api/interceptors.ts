@@ -124,14 +124,13 @@ function showApiErrorToast(message: string, error?: unknown) {
 
 export function applyApiInterceptors(client: AxiosInstance): void {
   client.interceptors.request.use((config) => {
-    if (config.responseType === 'blob') {
-      return config
-    }
-
     if (config.data instanceof FormData) {
       delete config.headers['Content-Type']
     }
 
+    // 注:blob 响应(报表导出 / 模板下载等)以前在这里 early-return,导致
+    // Authorization / X-Tenant-Id 都没注入,后端必然 401。blob 是 responseType,
+    // 跟请求体无关,统一走下面的 header 注入流程即可。
     const token = localStorage.getItem('token')
     if (token && !isTokenExchangeRequest(config)) {
       config.headers.Authorization = `Bearer ${token}`

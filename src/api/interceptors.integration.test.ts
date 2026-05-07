@@ -228,6 +228,27 @@ describe('Blob 响应:不读 body', () => {
     expect(e).toBeDefined()
     expect(String(e!.props?.response)).toMatch(/Blob responseType/)
   })
+
+  it('blob 请求也要带 Authorization 头(报表导出 / 模板下载场景必须)', async () => {
+    localStorage.setItem('token', 'jwt-blob-test')
+    const client = makeClient()
+    let capturedAuth: string | undefined
+    client.defaults.adapter = async (cfg) => {
+      capturedAuth = cfg.headers?.Authorization as string | undefined
+      return {
+        data: new Blob(['x']),
+        status: 200,
+        statusText: 'OK',
+        headers: {},
+        config: cfg,
+      } as never
+    }
+
+    await client.get('/api/console/reports/excel/audits', { responseType: 'blob' })
+
+    expect(capturedAuth).toBe('Bearer jwt-blob-test')
+    localStorage.removeItem('token')
+  })
 })
 
 describe('FormData 请求:只记 key 不记 value', () => {
