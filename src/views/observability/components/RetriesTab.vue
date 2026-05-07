@@ -1,11 +1,11 @@
 <template>
   <div>
     <ListPageQueryBar
-      :filter-busy="false"
+      :filter-busy="filterBusy"
       :refresh-busy="loadingRetry"
       @search="applyFilter"
       @reset="resetFilter"
-      @refresh="loadRetries"
+      @refresh="() => runRefresh(loadRetries)"
     >
       <el-form-item label="关联类型">
         <el-select
@@ -90,9 +90,11 @@
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import TablePagerBar from '@/components/table/TablePagerBar.vue'
   import QueryDetailDrawer from './QueryDetailDrawer.vue'
+  import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
 
   const tenant = useTenantStore()
   const loadingRetry = ref(false)
+  const { filterBusy, runSearch, runReset, runRefresh } = useListFilterFeedback(loadingRetry)
   const retryRows = ref<Record<string, unknown>[]>([])
   const retryPage = ref(1)
   const retryPageSize = ref(20)
@@ -164,20 +166,24 @@
   }
 
   function applyFilter() {
-    retryApplied.relatedType = retryDraft.relatedType.trim()
-    retryApplied.relatedId = retryDraft.relatedId.trim()
-    retryApplied.status = retryDraft.status.trim()
-    retryPage.value = 1
+    return runSearch(() => {
+      retryApplied.relatedType = retryDraft.relatedType.trim()
+      retryApplied.relatedId = retryDraft.relatedId.trim()
+      retryApplied.status = retryDraft.status.trim()
+      retryPage.value = 1
+    })
   }
 
   function resetFilter() {
-    retryDraft.relatedType = ''
-    retryDraft.relatedId = ''
-    retryDraft.status = ''
-    retryApplied.relatedType = ''
-    retryApplied.relatedId = ''
-    retryApplied.status = ''
-    retryPage.value = 1
+    return runReset(() => {
+      retryDraft.relatedType = ''
+      retryDraft.relatedId = ''
+      retryDraft.status = ''
+      retryApplied.relatedType = ''
+      retryApplied.relatedId = ''
+      retryApplied.status = ''
+      retryPage.value = 1
+    })
   }
 
   function onPageSizeChange(s: number) {

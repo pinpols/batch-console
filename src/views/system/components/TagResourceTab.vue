@@ -1,17 +1,18 @@
 <template>
   <div>
     <ListPageQueryBar
-      :filter-busy="false"
+      :filter-busy="filterBusy"
       :refresh-busy="loadingTags"
-      @search="loadTags"
+      @search="() => runSearch(loadTags)"
       @reset="
-        () => {
-          queryForm.resourceType = ''
-          queryForm.resourceCode = ''
-          tagRows.value = []
-        }
+        () =>
+          runReset(() => {
+            queryForm.resourceType = ''
+            queryForm.resourceCode = ''
+            tagRows.value = []
+          })
       "
-      @refresh="loadTags"
+      @refresh="() => runRefresh(loadTags)"
     >
       <template #prepend>
         <el-button type="primary" :icon="Plus" class="pretty-add-button" @click="openNewDialog">
@@ -115,6 +116,7 @@
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
+  import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
 
   const tenant = useTenantStore()
   const { data: metaEnums } = useConsoleMetaEnumsQuery()
@@ -123,6 +125,7 @@
   )
 
   const loadingTags = ref(false)
+  const { filterBusy, runSearch, runReset, runRefresh } = useListFilterFeedback(loadingTags)
   const queryForm = reactive({ resourceType: '' as string, resourceCode: '' })
   const editValueByKey = reactive<Record<string, string>>({})
   const savingKey = ref('')

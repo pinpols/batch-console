@@ -36,15 +36,11 @@
     <SectionCard v-if="window">
       <template #header>按 Job 汇总</template>
       <ListPageQueryBar
-        :filter-busy="false"
+        :filter-busy="filterBusy"
         :refresh-busy="loading"
-        @search="() => {}"
-        @reset="
-          () => {
-            jobKeyword = ''
-          }
-        "
-        @refresh="load"
+        @search="() => runSearch(() => {})"
+        @reset="() => runReset(() => (jobKeyword = ''))"
+        @refresh="() => runRefresh(load)"
       >
         <el-form-item label="Job">
           <el-input class="query-w-240" v-model="jobKeyword" clearable placeholder="搜索 jobCode" />
@@ -111,6 +107,7 @@
   import SectionCard from '@/components/common/SectionCard.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
+  import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import type { ConsoleBatchDayWindowResponse } from '@/types/console-api'
 
   const route = useRoute()
@@ -123,6 +120,7 @@
   const title = computed(() => (bizDate.value ? `批次日窗口 · ${bizDate.value}` : '批次日窗口'))
 
   const loading = ref(false)
+  const { filterBusy, runSearch, runReset, runRefresh } = useListFilterFeedback(loading)
   const window = ref<ConsoleBatchDayWindowResponse | null>(null)
   const jobKeyword = ref('')
 

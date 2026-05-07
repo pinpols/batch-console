@@ -8,7 +8,7 @@
     <SectionCard>
       <ProTable
         :data="rows"
-        :loading="loading"
+        :loading="tableBlocking"
         :total="total"
         v-model:page="query.page"
         v-model:page-size="query.pageSize"
@@ -17,11 +17,11 @@
         <template #query>
           <ListPageQueryBar
             :model="query"
-            :filter-busy="loading"
+            :filter-busy="filterBusy"
             :refresh-busy="loading"
             @search="searchInstances"
             @reset="resetQuery"
-            @refresh="loadData"
+            @refresh="() => runRefresh(loadData)"
           >
             <el-form-item>
               <template #label>
@@ -130,12 +130,15 @@
   import TenantSelect from '@/components/common/TenantSelect.vue'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
+  import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import type { ConsoleJobInstanceResponse } from '@/types/console-api'
 
   const router = useRouter()
   const route = useRoute()
   const tenant = useTenantStore()
   const loading = ref(false)
+  const { filterBusy, tableBlocking, runSearch, runReset, runRefresh } =
+    useListFilterFeedback(loading)
   const rows = ref<ConsoleJobInstanceResponse[]>([])
   const total = ref(0)
   const dateRange = ref<[string, string] | null>(null)
@@ -180,21 +183,25 @@
   }
 
   function resetQuery() {
-    query.tenantId = tenant.tenantId
-    query.jobCode = ''
-    query.instanceStatus = ''
-    query.startDate = ''
-    query.endDate = ''
-    dateRange.value = null
-    query.page = 1
-    syncFiltersToUrl()
-    loadData()
+    return runReset(async () => {
+      query.tenantId = tenant.tenantId
+      query.jobCode = ''
+      query.instanceStatus = ''
+      query.startDate = ''
+      query.endDate = ''
+      dateRange.value = null
+      query.page = 1
+      syncFiltersToUrl()
+      await loadData()
+    })
   }
 
   function searchInstances() {
-    query.page = 1
-    syncFiltersToUrl()
-    loadData()
+    return runSearch(async () => {
+      query.page = 1
+      syncFiltersToUrl()
+      await loadData()
+    })
   }
 
   async function loadData() {

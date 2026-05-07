@@ -16,11 +16,11 @@
           >
             <template #query>
               <ListPageQueryBar
-                :filter-busy="false"
+                :filter-busy="typesFilterBusy"
                 :refresh-busy="loadingTypes"
-                @search="() => {}"
-                @reset="eventTypeKeyword = ''"
-                @refresh="loadEventTypes"
+                @search="() => runTypesSearch(() => {})"
+                @reset="() => runTypesReset(() => (eventTypeKeyword = ''))"
+                @refresh="() => runTypesRefresh(loadEventTypes)"
               >
                 <el-form-item label="关键字">
                   <el-input
@@ -79,11 +79,11 @@
           >
             <template #query>
               <ListPageQueryBar
-                :filter-busy="false"
+                :filter-busy="topicsFilterBusy"
                 :refresh-busy="loadingTopics"
-                @search="() => {}"
-                @reset="topicKeyword = ''"
-                @refresh="loadTopics"
+                @search="() => runTopicsSearch(() => {})"
+                @reset="() => runTopicsReset(() => (topicKeyword = ''))"
+                @refresh="() => runTopicsRefresh(loadTopics)"
               >
                 <el-form-item label="关键字">
                   <el-input
@@ -150,10 +150,23 @@
   import ProTable from '@/components/table/ProTable.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import CopyableText from '@/components/common/CopyableText.vue'
+  import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
 
   const activeTab = ref('eventTypes')
   const loadingTypes = ref(false)
   const loadingTopics = ref(false)
+  const {
+    filterBusy: typesFilterBusy,
+    runSearch: runTypesSearch,
+    runReset: runTypesReset,
+    runRefresh: runTypesRefresh,
+  } = useListFilterFeedback(loadingTypes)
+  const {
+    filterBusy: topicsFilterBusy,
+    runSearch: runTopicsSearch,
+    runReset: runTopicsReset,
+    runRefresh: runTopicsRefresh,
+  } = useListFilterFeedback(loadingTopics)
   const eventTypeKeyword = ref('')
   const topicKeyword = ref('')
   const eventTypes = ref<Record<string, unknown>[]>([])

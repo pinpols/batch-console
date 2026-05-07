@@ -17,7 +17,7 @@
     <SectionCard>
       <ProTable
         :data="pagedRows"
-        :loading="loading"
+        :loading="tableBlocking"
         :total="filtered.length"
         v-model:page="page"
         v-model:page-size="pageSize"
@@ -26,11 +26,11 @@
       >
         <template #query>
           <ListPageQueryBar
-            :filter-busy="false"
+            :filter-busy="filterBusy"
             :refresh-busy="loading"
             @search="onSearch"
             @reset="onReset"
-            @refresh="load"
+            @refresh="() => runRefresh(load)"
           >
             <el-form-item label="关键字">
               <el-input
@@ -134,9 +134,12 @@
   import ProTable from '@/components/table/ProTable.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
+  import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
 
   const tenant = useTenantStore()
   const loading = ref(false)
+  const { filterBusy, tableBlocking, runSearch, runReset, runRefresh } =
+    useListFilterFeedback(loading)
   const saving = ref(false)
   const createVisible = ref(false)
   const detailVisible = ref(false)
@@ -180,13 +183,17 @@
   )
 
   function onSearch() {
-    keyword.value = kwDraft.value
-    page.value = 1
+    return runSearch(() => {
+      keyword.value = kwDraft.value
+      page.value = 1
+    })
   }
   function onReset() {
-    kwDraft.value = ''
-    keyword.value = ''
-    page.value = 1
+    return runReset(() => {
+      kwDraft.value = ''
+      keyword.value = ''
+      page.value = 1
+    })
   }
   const detail = ref<Record<string, unknown> | null>(null)
   const form = reactive({ keyName: '', scopes: '', expiresAt: '' })

@@ -8,7 +8,7 @@
     <SectionCard>
       <ProTable
         :data="rows"
-        :loading="loading"
+        :loading="tableBlocking"
         :total="total"
         v-model:page="page"
         v-model:page-size="pageSize"
@@ -16,11 +16,11 @@
       >
         <template #query>
           <ListPageQueryBar
-            :filter-busy="loading"
+            :filter-busy="filterBusy"
             :refresh-busy="loading"
             @search="search"
             @reset="resetQueryBar"
-            @refresh="load"
+            @refresh="() => runRefresh(load)"
           >
             <el-form-item label="租户">
               <TenantSelect
@@ -131,11 +131,14 @@
   import StatusTag from '@/components/common/StatusTag.vue'
   import CopyableText from '@/components/common/CopyableText.vue'
   import TenantSelect from '@/components/common/TenantSelect.vue'
+  import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import type { ConsoleWorkflowRunResponse } from '@/types/console-api'
 
   const router = useRouter()
   const tenant = useTenantStore()
   const loading = ref(false)
+  const { filterBusy, tableBlocking, runSearch, runReset, runRefresh } =
+    useListFilterFeedback(loading)
   const rows = ref<ConsoleWorkflowRunResponse[]>([])
   const total = ref(0)
   const page = ref(1)
@@ -195,16 +198,20 @@
   }
 
   function search() {
-    page.value = 1
-    load()
+    return runSearch(async () => {
+      page.value = 1
+      await load()
+    })
   }
 
   function resetQueryBar() {
-    filterTenantId.value = tenant.tenantId
-    workflowCode.value = ''
-    runStatus.value = ''
-    page.value = 1
-    load()
+    return runReset(async () => {
+      filterTenantId.value = tenant.tenantId
+      workflowCode.value = ''
+      runStatus.value = ''
+      page.value = 1
+      await load()
+    })
   }
 
   function goDetail(row: ConsoleWorkflowRunResponse) {

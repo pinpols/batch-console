@@ -1,12 +1,12 @@
 <template>
   <div>
     <ListPageQueryBar
-      :filter-busy="false"
+      :filter-busy="filterBusy"
       :refresh-busy="loadingSecrets"
       :disabled="loadingSecrets"
-      @refresh="loadSecrets"
-      @search="loadSecrets"
-      @reset="loadSecrets"
+      @refresh="() => runRefresh(loadSecrets)"
+      @search="() => runSearch(loadSecrets)"
+      @reset="() => runReset(loadSecrets)"
     />
     <el-table
       :data="pagedSecrets.records"
@@ -79,10 +79,12 @@
   import TablePagerBar from '@/components/table/TablePagerBar.vue'
   import CopyableText from '@/components/common/CopyableText.vue'
   import DatetimeColumn from '@/components/common/DatetimeColumn.vue'
+  import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import type { ConsoleSecretVersionResponse } from '@/types/console-api'
 
   const tenant = useTenantStore()
   const loadingSecrets = ref(false)
+  const { filterBusy, runSearch, runReset, runRefresh } = useListFilterFeedback(loadingSecrets)
   const secretDetailVisible = ref(false)
   const secretRows = ref<ConsoleSecretVersionResponse[]>([])
   const secretPage = ref(1)

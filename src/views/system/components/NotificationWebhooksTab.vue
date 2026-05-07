@@ -10,11 +10,11 @@
     >
       <template #query>
         <ListPageQueryBar
-          :filter-busy="false"
+          :filter-busy="filterBusy"
           :refresh-busy="loadingWebhooks"
           @search="applyWebhookFilter"
           @reset="resetWebhookFilter"
-          @refresh="loadWebhooks"
+          @refresh="() => runRefresh(loadWebhooks)"
         >
           <template #prepend>
             <el-button
@@ -126,9 +126,11 @@
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
   import DatetimeColumn from '@/components/common/DatetimeColumn.vue'
+  import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
 
   const tenant = useTenantStore()
   const loadingWebhooks = ref(false)
+  const { filterBusy, runSearch, runReset, runRefresh } = useListFilterFeedback(loadingWebhooks)
   const savingWebhook = ref(false)
   const webhookFormVisible = ref(false)
   const webhookLogVisible = ref(false)
@@ -229,15 +231,21 @@
   )
 
   function applyWebhookFilter() {
-    webhookFilterApplied.keyword = webhookFilterDraft.keyword.trim()
-    webhookFilterApplied.enabled = webhookFilterDraft.enabled
-    webhookPage.value = 1
+    return runSearch(() => {
+      webhookFilterApplied.keyword = webhookFilterDraft.keyword.trim()
+      webhookFilterApplied.enabled = webhookFilterDraft.enabled
+      webhookPage.value = 1
+    })
   }
 
   function resetWebhookFilter() {
-    webhookFilterDraft.keyword = ''
-    webhookFilterDraft.enabled = undefined
-    applyWebhookFilter()
+    return runReset(() => {
+      webhookFilterDraft.keyword = ''
+      webhookFilterDraft.enabled = undefined
+      webhookFilterApplied.keyword = ''
+      webhookFilterApplied.enabled = undefined
+      webhookPage.value = 1
+    })
   }
 
   useTenantReload(() => {

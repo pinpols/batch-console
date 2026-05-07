@@ -11,17 +11,18 @@
     >
       <template #query>
         <ListPageQueryBar
-          :filter-busy="false"
+          :filter-busy="searchFilterBusy"
           :refresh-busy="searching"
-          @search="doSearch"
+          @search="() => runTagSearch(doSearch)"
           @reset="
-            () => {
-              searchForm.tagKey = ''
-              searchForm.tagValue = ''
-              searchFilters.resourceType = ''
-            }
+            () =>
+              runTagSearchReset(() => {
+                searchForm.tagKey = ''
+                searchForm.tagValue = ''
+                searchFilters.resourceType = ''
+              })
           "
-          @refresh="doSearch"
+          @refresh="() => runTagSearchRefresh(doSearch)"
         >
           <el-form-item label="资源类型">
             <el-select
@@ -84,20 +85,22 @@
       >
         <template #query>
           <ListPageQueryBar
-            :filter-busy="false"
+            :filter-busy="keysFilterBusy"
             :refresh-busy="loadingKeys"
             @search="
-              () => {
-                keyPage = 1
-              }
+              () =>
+                runKeysSearch(() => {
+                  keyPage = 1
+                })
             "
             @reset="
-              () => {
-                keyKeyword = ''
-                keyPage = 1
-              }
+              () =>
+                runKeysReset(() => {
+                  keyKeyword = ''
+                  keyPage = 1
+                })
             "
-            @refresh="loadKeys"
+            @refresh="() => runKeysRefresh(loadKeys)"
           >
             <el-form-item label="关键字">
               <el-input
@@ -132,6 +135,7 @@
   import StatusTag from '@/components/common/StatusTag.vue'
   import ProTable from '@/components/table/ProTable.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
+  import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
 
   const tenant = useTenantStore()
   const { data: metaEnums } = useConsoleMetaEnumsQuery()
@@ -141,6 +145,18 @@
 
   const searching = ref(false)
   const loadingKeys = ref(false)
+  const {
+    filterBusy: searchFilterBusy,
+    runSearch: runTagSearch,
+    runReset: runTagSearchReset,
+    runRefresh: runTagSearchRefresh,
+  } = useListFilterFeedback(searching)
+  const {
+    filterBusy: keysFilterBusy,
+    runSearch: runKeysSearch,
+    runReset: runKeysReset,
+    runRefresh: runKeysRefresh,
+  } = useListFilterFeedback(loadingKeys)
 
   const searchForm = reactive({ tagKey: '', tagValue: '' })
   const searchFilters = reactive({ resourceType: '' as string })

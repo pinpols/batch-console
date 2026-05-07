@@ -1,11 +1,11 @@
 <template>
   <div>
     <ListPageQueryBar
-      :filter-busy="false"
+      :filter-busy="filterBusy"
       :refresh-busy="loadingReceipts"
       @search="applyFilter"
       @reset="resetFilter"
-      @refresh="loadChannelReceipts"
+      @refresh="() => runRefresh(loadChannelReceipts)"
     >
       <el-form-item label="渠道">
         <el-input
@@ -87,9 +87,11 @@
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import TablePagerBar from '@/components/table/TablePagerBar.vue'
   import QueryDetailDrawer from './QueryDetailDrawer.vue'
+  import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
 
   const tenant = useTenantStore()
   const loadingReceipts = ref(false)
+  const { filterBusy, runSearch, runReset, runRefresh } = useListFilterFeedback(loadingReceipts)
   const receiptRows = ref<Record<string, unknown>[]>([])
   const receiptPage = ref(1)
   const receiptPageSize = ref(20)
@@ -156,20 +158,24 @@
   }
 
   function applyFilter() {
-    receiptApplied.channelCode = receiptDraft.channelCode.trim()
-    receiptApplied.fileId = receiptDraft.fileId.trim()
-    receiptApplied.status = receiptDraft.status.trim()
-    receiptPage.value = 1
+    return runSearch(() => {
+      receiptApplied.channelCode = receiptDraft.channelCode.trim()
+      receiptApplied.fileId = receiptDraft.fileId.trim()
+      receiptApplied.status = receiptDraft.status.trim()
+      receiptPage.value = 1
+    })
   }
 
   function resetFilter() {
-    receiptDraft.channelCode = ''
-    receiptDraft.fileId = ''
-    receiptDraft.status = ''
-    receiptApplied.channelCode = ''
-    receiptApplied.fileId = ''
-    receiptApplied.status = ''
-    receiptPage.value = 1
+    return runReset(() => {
+      receiptDraft.channelCode = ''
+      receiptDraft.fileId = ''
+      receiptDraft.status = ''
+      receiptApplied.channelCode = ''
+      receiptApplied.fileId = ''
+      receiptApplied.status = ''
+      receiptPage.value = 1
+    })
   }
 
   function onPageSizeChange(s: number) {

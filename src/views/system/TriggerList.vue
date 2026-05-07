@@ -9,7 +9,7 @@
     <SectionCard>
       <ProTable
         :data="pagedRows"
-        :loading="loading"
+        :loading="tableBlocking"
         :total="filtered.length"
         v-model:page="page"
         v-model:page-size="pageSize"
@@ -18,11 +18,11 @@
       >
         <template #query>
           <ListPageQueryBar
-            :filter-busy="false"
+            :filter-busy="filterBusy"
             :refresh-busy="loading"
             @search="onSearch"
             @reset="onReset"
-            @refresh="load"
+            @refresh="() => runRefresh(load)"
           >
             <el-form-item label="Job Code">
               <el-input
@@ -125,9 +125,12 @@
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
   import CopyableText from '@/components/common/CopyableText.vue'
+  import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
 
   const tenant = useTenantStore()
   const loading = ref(false)
+  const { filterBusy, tableBlocking, runSearch, runReset, runRefresh } =
+    useListFilterFeedback(loading)
   const allRows = ref<Record<string, unknown>[]>([])
   const page = ref(1)
   const pageSize = ref(20)
@@ -153,13 +156,17 @@
   )
 
   function onSearch() {
-    keyword.value = kwDraft.value
-    page.value = 1
+    return runSearch(() => {
+      keyword.value = kwDraft.value
+      page.value = 1
+    })
   }
   function onReset() {
-    kwDraft.value = ''
-    keyword.value = ''
-    page.value = 1
+    return runReset(() => {
+      kwDraft.value = ''
+      keyword.value = ''
+      page.value = 1
+    })
   }
 
   async function load() {

@@ -10,11 +10,11 @@
     >
       <template #query>
         <ListPageQueryBar
-          :filter-busy="false"
+          :filter-busy="filterBusy"
           :refresh-busy="loadingRules"
           @search="applyRuleFilter"
           @reset="resetRuleFilter"
-          @refresh="loadRules"
+          @refresh="() => runRefresh(loadRules)"
         >
           <template #prepend>
             <el-button
@@ -120,9 +120,11 @@
   import ProTable from '@/components/table/ProTable.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
+  import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
 
   const tenant = useTenantStore()
   const loadingRules = ref(false)
+  const { filterBusy, runSearch, runReset, runRefresh } = useListFilterFeedback(loadingRules)
   const savingRule = ref(false)
   const ruleFormVisible = ref(false)
   const ruleEditingId = ref<number | null>(null)
@@ -221,15 +223,21 @@
   )
 
   function applyRuleFilter() {
-    ruleFilterApplied.keyword = ruleFilterDraft.keyword.trim()
-    ruleFilterApplied.enabled = ruleFilterDraft.enabled
-    rulePage.value = 1
+    return runSearch(() => {
+      ruleFilterApplied.keyword = ruleFilterDraft.keyword.trim()
+      ruleFilterApplied.enabled = ruleFilterDraft.enabled
+      rulePage.value = 1
+    })
   }
 
   function resetRuleFilter() {
-    ruleFilterDraft.keyword = ''
-    ruleFilterDraft.enabled = undefined
-    applyRuleFilter()
+    return runReset(() => {
+      ruleFilterDraft.keyword = ''
+      ruleFilterDraft.enabled = undefined
+      ruleFilterApplied.keyword = ''
+      ruleFilterApplied.enabled = undefined
+      rulePage.value = 1
+    })
   }
 
   useTenantReload(() => {

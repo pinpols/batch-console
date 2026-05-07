@@ -13,11 +13,11 @@
 
     <SectionCard>
       <ListPageQueryBar
-        :filter-busy="false"
+        :filter-busy="filterBusy"
         :refresh-busy="loading"
         @search="applyFilter"
         @reset="resetFilter"
-        @refresh="load"
+        @refresh="() => runRefresh(load)"
       >
         <el-form-item label="状态">
           <el-select
@@ -103,10 +103,12 @@
   import StatusTag from '@/components/common/StatusTag.vue'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
+  import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
 
   const route = useRoute()
   const tenant = useTenantStore()
   const loading = ref(false)
+  const { filterBusy, runSearch, runReset, runRefresh } = useListFilterFeedback(loading)
   const rows = ref<ConsoleJobPartitionResponse[]>([])
   const page = ref(1)
   const pageSize = ref(20)
@@ -141,16 +143,20 @@
   }
 
   function applyFilter() {
-    filterApplied.partitionStatus = filterDraft.partitionStatus
-    page.value = 1
-    void load()
+    return runSearch(async () => {
+      filterApplied.partitionStatus = filterDraft.partitionStatus
+      page.value = 1
+      await load()
+    })
   }
 
   function resetFilter() {
-    filterDraft.partitionStatus = ''
-    filterApplied.partitionStatus = ''
-    page.value = 1
-    void load()
+    return runReset(async () => {
+      filterDraft.partitionStatus = ''
+      filterApplied.partitionStatus = ''
+      page.value = 1
+      await load()
+    })
   }
 
   function onPageChange(p: number) {

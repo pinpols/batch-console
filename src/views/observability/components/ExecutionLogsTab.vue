@@ -1,11 +1,11 @@
 <template>
   <div>
     <ListPageQueryBar
-      :filter-busy="false"
+      :filter-busy="filterBusy"
       :refresh-busy="loadingExec"
       @search="applyFilter"
       @reset="resetFilter"
-      @refresh="loadExecutionLogs"
+      @refresh="() => runRefresh(loadExecutionLogs)"
     >
       <el-form-item label="操作类型">
         <el-select
@@ -98,11 +98,13 @@
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import TablePagerBar from '@/components/table/TablePagerBar.vue'
   import QueryDetailDrawer from './QueryDetailDrawer.vue'
+  import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
 
   const tenant = useTenantStore()
   const router = useRouter()
 
   const loadingExec = ref(false)
+  const { filterBusy, runSearch, runReset, runRefresh } = useListFilterFeedback(loadingExec)
   const execRows = ref<Record<string, unknown>[]>([])
   const execPage = ref(1)
   const execPageSize = ref(20)
@@ -179,20 +181,24 @@
   }
 
   function applyFilter() {
-    execApplied.operationType = execDraft.operationType.trim()
-    execApplied.result = execDraft.result.trim()
-    execApplied.traceId = execDraft.traceId.trim()
-    execPage.value = 1
+    return runSearch(() => {
+      execApplied.operationType = execDraft.operationType.trim()
+      execApplied.result = execDraft.result.trim()
+      execApplied.traceId = execDraft.traceId.trim()
+      execPage.value = 1
+    })
   }
 
   function resetFilter() {
-    execDraft.operationType = ''
-    execDraft.result = ''
-    execDraft.traceId = ''
-    execApplied.operationType = ''
-    execApplied.result = ''
-    execApplied.traceId = ''
-    execPage.value = 1
+    return runReset(() => {
+      execDraft.operationType = ''
+      execDraft.result = ''
+      execDraft.traceId = ''
+      execApplied.operationType = ''
+      execApplied.result = ''
+      execApplied.traceId = ''
+      execPage.value = 1
+    })
   }
 
   function onPageSizeChange(s: number) {

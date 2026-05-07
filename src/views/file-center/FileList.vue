@@ -8,7 +8,7 @@
     <SectionCard>
       <ProTable
         :data="rows"
-        :loading="loading"
+        :loading="tableBlocking"
         :total="total"
         v-model:page="page"
         v-model:page-size="pageSize"
@@ -17,11 +17,11 @@
         <template #query>
           <ListPageQueryBar
             :model="filters"
-            :filter-busy="loading"
+            :filter-busy="filterBusy"
             :refresh-busy="loading"
             @search="onSearch"
             @reset="reset"
-            @refresh="load"
+            @refresh="() => runRefresh(load)"
           >
             <el-form-item label="状态">
               <el-select
@@ -182,10 +182,13 @@
   import StatusTag from '@/components/common/StatusTag.vue'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
   import { getMetaBizTypes } from '@/api/meta'
+  import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import type { ConsoleAuditLogResponse, ConsoleFileRecordResponse } from '@/types/console-api'
 
   const tenant = useTenantStore()
   const loading = ref(false)
+  const { filterBusy, tableBlocking, runSearch, runReset, runRefresh } =
+    useListFilterFeedback(loading)
   const rows = ref<ConsoleFileRecordResponse[]>([])
   const total = ref(0)
   const page = ref(1)
@@ -252,22 +255,26 @@
   }
 
   function onSearch() {
-    page.value = 1
-    void load()
+    return runSearch(async () => {
+      page.value = 1
+      await load()
+    })
   }
 
   function reset() {
-    filters.tenantId = tenant.tenantId
-    filters.fileStatus = ''
-    filters.bizType = ''
-    filters.fileName = ''
-    filters.traceId = ''
-    filters.fileId = ''
-    filters.startDate = ''
-    filters.endDate = ''
-    bizDateRange.value = []
-    page.value = 1
-    void load()
+    return runReset(async () => {
+      filters.tenantId = tenant.tenantId
+      filters.fileStatus = ''
+      filters.bizType = ''
+      filters.fileName = ''
+      filters.traceId = ''
+      filters.fileId = ''
+      filters.startDate = ''
+      filters.endDate = ''
+      bizDateRange.value = []
+      page.value = 1
+      await load()
+    })
   }
 
   async function openDetail(row: ConsoleFileRecordResponse) {

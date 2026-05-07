@@ -1,12 +1,12 @@
 <template>
   <div>
     <ListPageQueryBar
-      :filter-busy="false"
+      :filter-busy="filterBusy"
       :refresh-busy="loadingSyncLogs"
       :disabled="loadingSyncLogs"
-      @refresh="loadSyncLogs"
-      @search="loadSyncLogs"
-      @reset="loadSyncLogs"
+      @refresh="() => runRefresh(loadSyncLogs)"
+      @search="() => runSearch(loadSyncLogs)"
+      @reset="() => runReset(loadSyncLogs)"
     />
     <el-table
       :data="syncLogs"
@@ -33,9 +33,11 @@
   import { useTenantReload } from '@/composables/useTenantReload'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import DatetimeColumn from '@/components/common/DatetimeColumn.vue'
+  import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
 
   const tenant = useTenantStore()
   const loadingSyncLogs = ref(false)
+  const { filterBusy, runSearch, runReset, runRefresh } = useListFilterFeedback(loadingSyncLogs)
   const syncLogs = ref<Record<string, unknown>[]>([])
 
   async function loadSyncLogs() {

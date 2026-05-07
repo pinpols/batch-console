@@ -1,11 +1,11 @@
 <template>
   <div>
     <ListPageQueryBar
-      :filter-busy="false"
+      :filter-busy="filterBusy"
       :refresh-busy="loadingDL"
       @search="applyFilter"
       @reset="resetFilter"
-      @refresh="loadDeadLetters"
+      @refresh="() => runRefresh(loadDeadLetters)"
     >
       <el-form-item label="来源类型">
         <el-select
@@ -87,9 +87,11 @@
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import TablePagerBar from '@/components/table/TablePagerBar.vue'
   import QueryDetailDrawer from './QueryDetailDrawer.vue'
+  import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
 
   const tenant = useTenantStore()
   const loadingDL = ref(false)
+  const { filterBusy, runSearch, runReset, runRefresh } = useListFilterFeedback(loadingDL)
   const dlRows = ref<Record<string, unknown>[]>([])
   const dlPage = ref(1)
   const dlPageSize = ref(20)
@@ -154,20 +156,24 @@
   }
 
   function applyFilter() {
-    dlApplied.sourceType = dlDraft.sourceType.trim()
-    dlApplied.sourceId = dlDraft.sourceId.trim()
-    dlApplied.keyword = dlDraft.keyword.trim()
-    dlPage.value = 1
+    return runSearch(() => {
+      dlApplied.sourceType = dlDraft.sourceType.trim()
+      dlApplied.sourceId = dlDraft.sourceId.trim()
+      dlApplied.keyword = dlDraft.keyword.trim()
+      dlPage.value = 1
+    })
   }
 
   function resetFilter() {
-    dlDraft.sourceType = ''
-    dlDraft.sourceId = ''
-    dlDraft.keyword = ''
-    dlApplied.sourceType = ''
-    dlApplied.sourceId = ''
-    dlApplied.keyword = ''
-    dlPage.value = 1
+    return runReset(() => {
+      dlDraft.sourceType = ''
+      dlDraft.sourceId = ''
+      dlDraft.keyword = ''
+      dlApplied.sourceType = ''
+      dlApplied.sourceId = ''
+      dlApplied.keyword = ''
+      dlPage.value = 1
+    })
   }
 
   function onPageSizeChange(s: number) {

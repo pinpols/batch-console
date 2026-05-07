@@ -10,11 +10,11 @@
     >
       <template #query>
         <ListPageQueryBar
-          :filter-busy="false"
+          :filter-busy="filterBusy"
           :refresh-busy="loadingChannels"
           @search="applyChannelFilter"
           @reset="resetChannelFilter"
-          @refresh="loadChannels"
+          @refresh="() => runRefresh(loadChannels)"
         >
           <template #prepend>
             <el-button
@@ -158,12 +158,14 @@
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
   import DatetimeColumn from '@/components/common/DatetimeColumn.vue'
+  import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
 
   const tenant = useTenantStore()
   const { data: metaEnums } = useConsoleMetaEnumsQuery()
   const channelTypeOptions = computed(() => pickMetaEnumGroup(metaEnums.value, 'channelType'))
 
   const loadingChannels = ref(false)
+  const { filterBusy, runSearch, runReset, runRefresh } = useListFilterFeedback(loadingChannels)
   const savingChannel = ref(false)
   const channelFormVisible = ref(false)
   const channelEditingCode = ref<string | null>(null)
@@ -284,15 +286,21 @@
   )
 
   function applyChannelFilter() {
-    channelFilterApplied.keyword = channelFilterDraft.keyword.trim()
-    channelFilterApplied.enabled = channelFilterDraft.enabled
-    channelPage.value = 1
+    return runSearch(() => {
+      channelFilterApplied.keyword = channelFilterDraft.keyword.trim()
+      channelFilterApplied.enabled = channelFilterDraft.enabled
+      channelPage.value = 1
+    })
   }
 
   function resetChannelFilter() {
-    channelFilterDraft.keyword = ''
-    channelFilterDraft.enabled = undefined
-    applyChannelFilter()
+    return runReset(() => {
+      channelFilterDraft.keyword = ''
+      channelFilterDraft.enabled = undefined
+      channelFilterApplied.keyword = ''
+      channelFilterApplied.enabled = undefined
+      channelPage.value = 1
+    })
   }
 
   useTenantReload(() => {

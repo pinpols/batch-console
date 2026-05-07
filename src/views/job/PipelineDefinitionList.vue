@@ -14,7 +14,7 @@
     <SectionCard>
       <ProTable
         :data="rows"
-        :loading="loading"
+        :loading="tableBlocking"
         :total="total"
         v-model:page="page"
         v-model:page-size="pageSize"
@@ -22,11 +22,11 @@
       >
         <template #query>
           <ListPageQueryBar
-            :filter-busy="loading"
+            :filter-busy="filterBusy"
             :refresh-busy="loading"
             @search="onQueryBarSearch"
             @reset="onQueryBarReset"
-            @refresh="load"
+            @refresh="() => runRefresh(load)"
           >
             <el-form-item label="关键字">
               <el-input
@@ -197,10 +197,13 @@
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import ProTable from '@/components/table/ProTable.vue'
   import TenantSelect from '@/components/common/TenantSelect.vue'
+  import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
 
   const tenant = useTenantStore()
   const formRef = ref<FormInstance>()
   const loading = ref(false)
+  const { filterBusy, tableBlocking, runSearch, runReset, runRefresh } =
+    useListFilterFeedback(loading)
   const togglingId = ref<number | null>(null)
   const rows = ref<PipelineDefinitionRow[]>([])
   const allRows = ref<PipelineDefinitionRow[]>([])
@@ -265,16 +268,20 @@
   const stepsJsonPreview = computed(() => JSON.stringify(steps.value, null, 2))
 
   function onQueryBarSearch() {
-    page.value = 1
-    void load()
+    return runSearch(async () => {
+      page.value = 1
+      await load()
+    })
   }
 
   function onQueryBarReset() {
-    keyword.value = ''
-    pipelineType.value = ''
-    enabledFilter.value = undefined
-    page.value = 1
-    void load()
+    return runReset(async () => {
+      keyword.value = ''
+      pipelineType.value = ''
+      enabledFilter.value = undefined
+      page.value = 1
+      await load()
+    })
   }
 
   async function load() {

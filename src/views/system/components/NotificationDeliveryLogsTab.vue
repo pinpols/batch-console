@@ -9,11 +9,11 @@
   >
     <template #query>
       <ListPageQueryBar
-        :filter-busy="false"
+        :filter-busy="filterBusy"
         :refresh-busy="loadingLogs"
         @search="applyLogFilter"
         @reset="resetLogFilter"
-        @refresh="loadDeliveryLogs"
+        @refresh="() => runRefresh(loadDeliveryLogs)"
       >
         <el-form-item label="关键字">
           <el-input
@@ -81,12 +81,14 @@
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
   import DatetimeColumn from '@/components/common/DatetimeColumn.vue'
+  import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
 
   const tenant = useTenantStore()
   const { data: metaEnums } = useConsoleMetaEnumsQuery()
   const deliveryStatusOptions = computed(() => pickMetaEnumGroup(metaEnums.value, 'deliveryStatus'))
 
   const loadingLogs = ref(false)
+  const { filterBusy, runSearch, runReset, runRefresh } = useListFilterFeedback(loadingLogs)
   const deliveryLogs = ref<Record<string, unknown>[]>([])
   const logPage = ref(1)
   const logPageSize = ref(20)
@@ -128,14 +130,20 @@
   )
 
   function applyLogFilter() {
-    logFilterApplied.keyword = logFilterDraft.keyword.trim()
-    logFilterApplied.status = logFilterDraft.status.trim()
-    logPage.value = 1
+    return runSearch(() => {
+      logFilterApplied.keyword = logFilterDraft.keyword.trim()
+      logFilterApplied.status = logFilterDraft.status.trim()
+      logPage.value = 1
+    })
   }
 
   function resetLogFilter() {
-    logFilterDraft.keyword = ''
-    logFilterDraft.status = ''
-    applyLogFilter()
+    return runReset(() => {
+      logFilterDraft.keyword = ''
+      logFilterDraft.status = ''
+      logFilterApplied.keyword = ''
+      logFilterApplied.status = ''
+      logPage.value = 1
+    })
   }
 </script>

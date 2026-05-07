@@ -36,11 +36,11 @@
         过滤）</template
       >
       <ListPageQueryBar
-        :filter-busy="false"
+        :filter-busy="filterBusy"
         :refresh-busy="loading"
         @search="applyNodeFilter"
         @reset="resetNodeFilter"
-        @refresh="loadNodeRuns"
+        @refresh="() => runRefresh(loadNodeRuns)"
       >
         <el-form-item label="nodeCode">
           <el-input
@@ -131,6 +131,7 @@
   import StatusTag from '@/components/common/StatusTag.vue'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
+  import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import type {
     ConsoleWorkflowNodeRunResponse,
     ConsoleWorkflowRunResponse,
@@ -140,6 +141,7 @@
 
   const tenant = useTenantStore()
   const loading = ref(false)
+  const { filterBusy, runSearch, runReset, runRefresh } = useListFilterFeedback(loading)
   const actionLoading = ref(false)
   const run = ref<ConsoleWorkflowRunResponse | null>(null)
   const nodeRuns = ref<ConsoleWorkflowNodeRunResponse[]>([])
@@ -201,19 +203,23 @@
   }
 
   function applyNodeFilter() {
-    nodeFilterApplied.nodeCode = nodeFilterDraft.nodeCode
-    nodeFilterApplied.nodeStatus = nodeFilterDraft.nodeStatus
-    nodePage.value = 1
-    void loadNodeRuns()
+    return runSearch(async () => {
+      nodeFilterApplied.nodeCode = nodeFilterDraft.nodeCode
+      nodeFilterApplied.nodeStatus = nodeFilterDraft.nodeStatus
+      nodePage.value = 1
+      await loadNodeRuns()
+    })
   }
 
   function resetNodeFilter() {
-    nodeFilterDraft.nodeCode = ''
-    nodeFilterDraft.nodeStatus = ''
-    nodeFilterApplied.nodeCode = ''
-    nodeFilterApplied.nodeStatus = ''
-    nodePage.value = 1
-    void loadNodeRuns()
+    return runReset(async () => {
+      nodeFilterDraft.nodeCode = ''
+      nodeFilterDraft.nodeStatus = ''
+      nodeFilterApplied.nodeCode = ''
+      nodeFilterApplied.nodeStatus = ''
+      nodePage.value = 1
+      await loadNodeRuns()
+    })
   }
 
   function onNodePageChange(p: number) {
