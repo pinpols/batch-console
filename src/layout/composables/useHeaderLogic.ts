@@ -83,19 +83,6 @@ export function useHeaderLogic() {
   }
 
   const currentTitle = computed(() => (route.meta.title as string) ?? '批量调度平台')
-  const currentSubtitle = computed(
-    () => (route.meta.description as string) ?? '状态驱动型运维控制台',
-  )
-
-  /** 顶栏仅保留短说明；接口契约类长文案交给页面内 PageHeader，避免顶栏堆两行显得「高一截」 */
-  const showLayoutSubtitle = computed(() => {
-    const d = String(route.meta.description ?? '').trim()
-    if (!d) return false
-    if (/^(GET|POST|PUT|DELETE|PATCH)\s/i.test(d)) return false
-    if (/OpenAPI|契约|PageResponse|端上|未单独定义|对齐后端/i.test(d)) return false
-    if (d.length > 72) return false
-    return true
-  })
 
   const visibleGroups = computed(() => permission.visibleGroups)
 
@@ -136,8 +123,6 @@ export function useHeaderLogic() {
     handleTenantSwitch,
     copyTenant,
     currentTitle,
-    currentSubtitle,
-    showLayoutSubtitle,
     visibleGroups,
     themeToggleLabel,
     themeToggleAriaLabel,

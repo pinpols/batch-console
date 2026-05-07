@@ -33,9 +33,6 @@
               </el-button>
             </el-tooltip>
           </div>
-          <div v-if="showLayoutSubtitle" class="page-meta__subtitle">
-            {{ currentSubtitle }}
-          </div>
         </div>
       </div>
 
@@ -192,8 +189,6 @@
     handleTenantSwitch,
     copyTenant,
     currentTitle,
-    currentSubtitle,
-    showLayoutSubtitle,
     themeToggleLabel,
     themeToggleAriaLabel,
     commandPaletteShortcutLabel,
@@ -381,13 +376,6 @@
     font-size: 15px;
     font-weight: 600;
     line-height: 1.2;
-  }
-
-  .page-meta__subtitle {
-    margin-top: 1px;
-    color: var(--color-text-tertiary);
-    font-size: 11px;
-    line-height: 1.25;
   }
 
   .palette-shortcut {
