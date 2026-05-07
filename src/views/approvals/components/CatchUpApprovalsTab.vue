@@ -1,79 +1,70 @@
 <template>
-  <PageContainer>
-    <PageHeader
-      title="Catch-up 审批"
-      description="全量拉取后前端筛选分页；状态从当前数据归纳下拉，业务日支持日历点选。"
-    />
-
-    <SectionCard>
-      <ProTable
-        :data="rows"
-        :loading="tableBlocking"
-        :total="total"
-        v-model:page="page"
-        v-model:page-size="pageSize"
-        @change="slicePage"
+  <ProTable
+    :data="rows"
+    :loading="tableBlocking"
+    :total="total"
+    v-model:page="page"
+    v-model:page-size="pageSize"
+    @change="slicePage"
+  >
+    <template #query>
+      <ListPageQueryBar
+        :filter-busy="queryActionBusy"
+        :refresh-busy="loading"
+        :disabled="loading"
+        @search="onSearch"
+        @reset="onReset"
+        @refresh="load"
       >
-        <template #query>
-          <ListPageQueryBar
-            :filter-busy="queryActionBusy"
-            :refresh-busy="loading"
-            :disabled="loading"
-            @search="onSearch"
-            @reset="onReset"
-            @refresh="load"
+        <el-form-item label="关键字">
+          <el-input
+            class="query-w-240"
+            v-model="kwDraft"
+            clearable
+            placeholder="requestId / jobCode / traceId"
+            @keyup.enter="onSearch"
+          />
+        </el-form-item>
+        <el-form-item label="状态">
+          <el-select
+            class="query-w-180"
+            v-model="statusDraft"
+            clearable
+            filterable
+            allow-create
+            default-first-option
+            placeholder="选择或输入 requestStatus"
+            @keyup.enter="onSearch"
           >
-            <el-form-item label="关键字">
-              <el-input
-                class="query-w-240"
-                v-model="kwDraft"
-                clearable
-                placeholder="requestId / jobCode / traceId"
-                @keyup.enter="onSearch"
-              />
-            </el-form-item>
-            <el-form-item label="状态">
-              <el-select
-                class="query-w-180"
-                v-model="statusDraft"
-                clearable
-                filterable
-                allow-create
-                default-first-option
-                placeholder="选择或输入 requestStatus"
-                @keyup.enter="onSearch"
-              >
-                <el-option
-                  v-for="o in catchUpStatusOptions"
-                  :key="o.value"
-                  :label="o.label"
-                  :value="o.value"
-                />
-              </el-select>
-            </el-form-item>
-            <el-form-item label="业务日">
-              <el-date-picker
-                class="query-w-160"
-                v-model="bizDateDraft"
-                type="date"
-                value-format="YYYY-MM-DD"
-                clearable
-                placeholder="选择业务日"
-                @keyup.enter="onSearch"
-              />
-            </el-form-item>
-          </ListPageQueryBar>
-        </template>
-        <el-table-column prop="requestId" label="请求单号" min-width="180" />
-        <el-table-column prop="jobCode" label="Job Code" min-width="140" />
-        <el-table-column prop="bizDate" label="业务日期" width="120" />
-        <el-table-column prop="requestStatus" label="状态" width="120" />
-        <el-table-column prop="traceId" label="Trace" min-width="150" show-overflow-tooltip />
-        <DatetimeColumn prop="createdAt" label="创建时间" width="160" />
-        <DatetimeColumn prop="updatedAt" label="更新时间" width="160" />
-      </ProTable>
-    </SectionCard>
-  </PageContainer>
+            <el-option
+              v-for="o in catchUpStatusOptions"
+              :key="o.value"
+              :label="o.label"
+              :value="o.value"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="业务日">
+          <el-date-picker
+            class="query-w-160"
+            v-model="bizDateDraft"
+            type="date"
+            value-format="YYYY-MM-DD"
+            clearable
+            placeholder="选择业务日"
+            @keyup.enter="onSearch"
+          />
+        </el-form-item>
+      </ListPageQueryBar>
+    </template>
+    <el-table-column prop="requestId" label="请求单号" min-width="180" />
+    <el-table-column prop="jobCode" label="Job Code" min-width="140" />
+    <el-table-column prop="bizDate" label="业务日期" width="120" />
+    <el-table-column prop="requestStatus" label="状态" width="120" />
+    <el-table-column prop="traceId" label="Trace" min-width="150" show-overflow-tooltip />
+    <DatetimeColumn prop="createdAt" label="创建时间" width="160" />
+    <DatetimeColumn prop="updatedAt" label="更新时间" width="160" />
+  </ProTable>
 </template>
 
 <script setup lang="ts">
@@ -82,9 +73,6 @@
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
-  import PageContainer from '@/components/common/PageContainer.vue'
-  import PageHeader from '@/components/common/PageHeader.vue'
-  import SectionCard from '@/components/common/SectionCard.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import ProTable from '@/components/table/ProTable.vue'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'

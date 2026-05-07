@@ -135,12 +135,7 @@ export const navigationGroups: NavigationGroup[] = [
     children: [
       { title: '调度快照', path: '/scheduler/snapshot', minRole: 'VIEWER', icon: TrendCharts },
       { title: '批次日与窗口', path: '/scheduler/batch-days', minRole: 'VIEWER', icon: Calendar },
-      {
-        title: 'Catch-up 审批',
-        path: '/scheduler/catch-up-approvals',
-        minRole: 'VIEWER',
-        icon: Memo,
-      },
+      // Catch-up 审批已合到 /approvals?tab=catch-up
       { title: '租户配额', path: '/governance/quota', minRole: 'OPERATOR', icon: Briefcase },
       { title: '队列 & 窗口', path: '/governance/queues', minRole: 'ADMIN', icon: Tools },
       { title: 'Worker 管理', path: '/workers/management', minRole: 'OPERATOR', icon: Cpu },

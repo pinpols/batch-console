@@ -325,16 +325,8 @@ const routes = [
           minRole: 'VIEWER',
         },
       },
-      {
-        path: 'scheduler/catch-up-approvals',
-        name: 'catch-up-approvals',
-        component: () => import('@/views/scheduler/CatchUpApprovalList.vue'),
-        meta: {
-          title: 'Catch-up 审批',
-          activeMenu: '/scheduler/catch-up-approvals',
-          minRole: 'VIEWER',
-        },
-      },
+      // Catch-up 审批已合并到 /approvals?tab=catch-up;旧链接 redirect 兼容
+      { path: 'scheduler/catch-up-approvals', redirect: '/approvals?tab=catch-up' },
       {
         path: 'governance/quota',
         name: 'quota-panel',
