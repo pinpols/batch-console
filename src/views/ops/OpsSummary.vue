@@ -54,7 +54,6 @@
       v-if="opsTab === 'extra'"
       :extra-loading="extraLoading"
       :sla-report="slaReport"
-      :execution-progress="executionProgress"
       :tenant-usage="tenantUsage"
       @load-extra="loadExtraPanels"
     />
@@ -94,7 +93,6 @@
     workerLoadTopNOption,
     extraLoading,
     slaReport,
-    executionProgress,
     tenantUsage,
     load,
     loadCharts,

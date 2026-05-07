@@ -5,12 +5,7 @@ import { getOpsSummary } from '@/api/ops'
 import { useTenantStore } from '@/stores/tenant'
 import { useTenantReload } from '@/composables/useTenantReload'
 import { lastApiMeta } from '@/utils/lastApiMeta'
-import {
-  getDashboardBundle,
-  getDashboardSlaReport,
-  getDashboardExecutionProgress,
-  getDashboardTenantUsage,
-} from '@/api/dashboard'
+import { getDashboardBundle, getDashboardSlaReport, getDashboardTenantUsage } from '@/api/dashboard'
 import type { ConsoleOpsSummaryResponse } from '@/types/console-api'
 import {
   buildLineOption,
@@ -45,9 +40,11 @@ export function useOpsSummary() {
   )
 
   // ---- extra panels ----
+  // 注:执行进度(execution-progress)接口要求 jobCode + bizDate 都必填,
+  // 本页是租户级概览没法填,曾在这里调用时一直报"参数缺失 (jobCode)"。
+  // 已撤掉调用,UI 改成提示用户去 Job 实例详情查看。
   const extraLoading = ref(false)
   const slaReport = ref<unknown>(null)
-  const executionProgress = ref<unknown>(null)
   const tenantUsage = ref<unknown>(null)
 
   // ---- actions ----
@@ -133,13 +130,11 @@ export function useOpsSummary() {
   async function loadExtraPanels() {
     extraLoading.value = true
     try {
-      const [sla, exec, usage] = await Promise.all([
+      const [sla, usage] = await Promise.all([
         getDashboardSlaReport(tenant.tenantId).catch(() => null),
-        getDashboardExecutionProgress(tenant.tenantId).catch(() => null),
         getDashboardTenantUsage(tenant.tenantId).catch(() => null),
       ])
       slaReport.value = sla
-      executionProgress.value = exec
       tenantUsage.value = usage
     } finally {
       extraLoading.value = false
@@ -182,7 +177,6 @@ export function useOpsSummary() {
     workerLoadTopNOption,
     extraLoading,
     slaReport,
-    executionProgress,
     tenantUsage,
     // actions
     load,

@@ -14,10 +14,12 @@
       </div>
       <div class="extra-block">
         <h4 class="extra-title">执行进度</h4>
-        <pre v-if="executionProgress" class="json-preview">{{
-          JSON.stringify(executionProgress, null, 2)
-        }}</pre>
-        <span v-else class="extra-empty">暂无数据</span>
+        <div class="extra-hint">
+          <p>需指定 Job + 业务日期才能查看,本概览页未提供选择器。</p>
+          <RouterLink class="extra-hint__link" to="/monitor/job-instances">
+            前往 Job 实例列表 →
+          </RouterLink>
+        </div>
       </div>
       <div class="extra-block">
         <h4 class="extra-title">租户用量</h4>
@@ -32,12 +34,12 @@
 
 <script setup lang="ts">
   import { Refresh } from '@element-plus/icons-vue'
+  import { RouterLink } from 'vue-router'
   import SectionCard from '@/components/common/SectionCard.vue'
 
   defineProps<{
     extraLoading: boolean
     slaReport: unknown
-    executionProgress: unknown
     tenantUsage: unknown
   }>()
 
@@ -67,5 +69,21 @@
   .extra-empty {
     color: var(--color-text-tertiary);
     font-size: var(--font-size-xs);
+  }
+
+  .extra-hint {
+    color: var(--color-text-tertiary);
+    font-size: var(--font-size-xs);
+    line-height: 1.6;
+  }
+  .extra-hint p {
+    margin: 0 0 6px;
+  }
+  .extra-hint__link {
+    color: var(--el-color-primary);
+    text-decoration: none;
+  }
+  .extra-hint__link:hover {
+    text-decoration: underline;
   }
 </style>
