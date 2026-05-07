@@ -117,6 +117,11 @@
         <el-table-column prop="workerGroup" label="Worker Group" width="140" />
         <el-table-column prop="queueCode" label="队列" width="140" />
         <el-table-column prop="scheduleType" label="调度类型" width="120" />
+        <el-table-column prop="executionMode" label="执行模式" width="110">
+          <template #default="{ row }">
+            <StatusTag :value="row.executionMode || 'FULL'" category="executionMode" />
+          </template>
+        </el-table-column>
         <el-table-column prop="enabled" label="启用" width="80">
           <template #default="{ row }">
             <StatusTag :value="String(row.enabled)" category="yn" />
@@ -128,9 +133,10 @@
           min-width="140"
           show-overflow-tooltip
         />
-        <el-table-column label="操作" min-width="260" fixed="right">
+        <el-table-column label="操作" min-width="320" fixed="right">
           <template #default="{ row }">
             <div class="table-actions">
+              <el-button size="small" plain type="primary" @click="openEdit(row)">编辑</el-button>
               <el-button
                 size="small"
                 plain
@@ -162,17 +168,65 @@
         </el-table-column>
       </ProTable>
     </SectionCard>
+
+    <el-drawer
+      v-model="editDrawerVisible"
+      :title="editDrawerTitle"
+      size="520px"
+      :before-close="onEditDrawerClose"
+    >
+      <el-form
+        ref="editFormRef"
+        :model="editForm"
+        :rules="editFormRules"
+        label-width="120px"
+        @submit.prevent
+      >
+        <el-form-item label="Job Code">
+          <el-input :model-value="editingJobCode" disabled />
+        </el-form-item>
+        <el-form-item label="执行模式" prop="executionMode">
+          <el-select v-model="editForm.executionMode" class="query-w-full">
+            <el-option
+              v-for="option in executionModeOptions"
+              :key="option.value"
+              :label="option.label"
+              :value="option.value"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item
+          v-if="editForm.executionMode === 'INCREMENTAL'"
+          label="水位字段名"
+          prop="watermarkField"
+        >
+          <el-input
+            v-model="editForm.watermarkField"
+            placeholder="增量水位字段名(例:update_time / id)"
+            maxlength="64"
+            show-word-limit
+          />
+        </el-form-item>
+        <div class="drawer-actions">
+          <el-button @click="closeEditDrawer">取消</el-button>
+          <el-button type="primary" :loading="editSaving" @click="submitEdit">保存</el-button>
+        </div>
+      </el-form>
+    </el-drawer>
   </PageContainer>
 </template>
 
 <script setup lang="ts">
-  import { ref, reactive, computed } from 'vue'
+  import { ref, reactive, computed, watch } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { ElMessage, ElMessageBox } from 'element-plus'
+  import type { FormInstance, FormItemRule, FormRules } from 'element-plus'
   import { jobApi } from '@/api/job'
   import { getMetaEnums, getMetaQueues, type MetaOption } from '@/api/meta'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { useJobDefinitionsPaged } from '@/composables/queries/useJobDefinitionsPaged'
+  import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
+  import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
   import PageContainer from '@/components/common/PageContainer.vue'
@@ -353,6 +407,94 @@
     }
   }
 
+  // ── 编辑抽屉(轻量版,只露 ExecutionMode + watermarkField,部分更新) ─────
+  const editFormRef = ref<FormInstance>()
+  const editDrawerVisible = ref(false)
+  const editSaving = ref(false)
+  const editingId = ref<number | null>(null)
+  const editingTenantId = ref('')
+  const editingJobCode = ref('')
+  const editForm = reactive({
+    executionMode: 'FULL',
+    watermarkField: '',
+  })
+
+  const { data: metaEnumsData } = useConsoleMetaEnumsQuery()
+  const executionModeOptions = computed(() =>
+    pickMetaEnumGroup(metaEnumsData.value, 'executionMode'),
+  )
+
+  const editDrawerTitle = computed(() =>
+    editingJobCode.value ? `编辑 Job「${editingJobCode.value}」` : '编辑 Job',
+  )
+
+  const watermarkRule: FormItemRule = {
+    validator: (_rule, value: unknown, callback) => {
+      if (editForm.executionMode !== 'INCREMENTAL') return callback()
+      const v = typeof value === 'string' ? value.trim() : ''
+      if (!v) return callback(new Error('INCREMENTAL 模式下必须填写水位字段名'))
+      if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(v)) {
+        return callback(new Error('只能含字母 / 数字 / 下划线,且不能以数字开头'))
+      }
+      return callback()
+    },
+    trigger: 'blur',
+  }
+
+  const editFormRules: FormRules = {
+    executionMode: [{ required: true, message: '请选择执行模式', trigger: 'change' }],
+    watermarkField: [watermarkRule],
+  }
+
+  // 切到 FULL/CDC 时自动清空水位字段
+  watch(
+    () => editForm.executionMode,
+    (mode) => {
+      if (mode !== 'INCREMENTAL') editForm.watermarkField = ''
+    },
+  )
+
+  function openEdit(row: ConsoleJobDefinitionResponse) {
+    editingId.value = row.id
+    editingTenantId.value = row.tenantId || filters.tenantId || tenant.tenantId
+    editingJobCode.value = row.jobCode
+    editForm.executionMode = row.executionMode || 'FULL'
+    editForm.watermarkField = row.watermarkField ?? ''
+    editDrawerVisible.value = true
+    // 抽屉打开后清掉历史校验态
+    void editFormRef.value?.clearValidate()
+  }
+
+  function closeEditDrawer() {
+    editDrawerVisible.value = false
+  }
+
+  function onEditDrawerClose(done: () => void) {
+    if (editSaving.value) return
+    done()
+  }
+
+  async function submitEdit() {
+    if (editingId.value == null) return
+    const valid = await editFormRef.value?.validate().catch(() => false)
+    if (!valid) return
+    editSaving.value = true
+    try {
+      await jobApi.updateDefinition(editingId.value, {
+        tenantId: editingTenantId.value,
+        executionMode: editForm.executionMode,
+        // 仅 INCREMENTAL 时回写值;其它模式回写空串让后端清字段
+        watermarkField:
+          editForm.executionMode === 'INCREMENTAL' ? editForm.watermarkField.trim() : '',
+      })
+      ElMessage.success(`已更新 ${editingJobCode.value}`)
+      editDrawerVisible.value = false
+      await refetch()
+    } finally {
+      editSaving.value = false
+    }
+  }
+
   {
     const q = route.query
     if (q.jobCode) filters.jobCode = String(q.jobCode)
@@ -360,3 +502,12 @@
 
   useTenantReload(loadMeta)
 </script>
+
+<style scoped>
+  .drawer-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 8px;
+  }
+</style>

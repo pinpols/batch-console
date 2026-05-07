@@ -12,6 +12,7 @@ import {
   channelTypeColor,
   configStatusColor,
   deliveryStatusColor,
+  executionModeColor,
   fileStatusColor,
   instanceStatusColor,
   logLevelMeta,
@@ -59,6 +60,7 @@ export type StatusTagCategory =
   | 'channelType'
   | 'deliveryStatus'
   | 'apiKey'
+  | 'executionMode'
 
 /**
  * 每个分类的解析配置。
@@ -109,6 +111,7 @@ export const STATUS_TAG_CATEGORIES: Record<StatusTagCategory, CategoryConfig> = 
     metaKeys: ['webhookDeliveryStatus', 'deliveryStatus'],
   },
   apiKey: { color: {}, local: apiKeyStatusMeta },
+  executionMode: { color: executionModeColor, metaKeys: ['executionMode'] },
   // /meta/enums 未提供,label 由前端维护
   log: { color: {}, local: logLevelMeta },
   yn: { color: {}, local: ynStatusMeta },

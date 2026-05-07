@@ -542,6 +542,186 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/console/forensic/export': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * ADR-022 v0.1 Forensic export bundle (sync)
+     * @description 转发到 orchestrator `POST /internal/forensic/export`。同步生成 ZIP bundle
+     *     含 manifest.json + job-instances.json + batch-day-operation-audits.json，
+     *     SHA-256 attestation。v0.1 落本地 fs；v0.2 才接 OSS / 对象锁 / *_history。
+     *     仅 ROLE_ADMIN。
+     */
+    post: operations['requestForensicExport']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/forensic/export/{exportId}/download': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Download forensic export bundle */
+    get: operations['downloadForensicExport']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/ops/batch-day-replay/sessions': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * ADR-020 提交批次日重放 session
+     * @description 转发到 orchestrator `POST /internal/orchestrator/batch-day-replay/sessions`。
+     *     scope ∈ {ALL, ALL_FAILED, SUBSET_JOB_CODES, OUTPUTS_ONLY}；ALL/ALL_FAILED 物化所有候选 instance，
+     *     SUBSET 需 jobCodes，OUTPUTS_ONLY 需 versionIds。autoApprove=true 直接 RUNNING；否则 PENDING_APPROVAL。
+     *     同 (tenant, calendarCode, bizDate) 已存在 active session → STATE_CONFLICT。
+     */
+    post: operations['submitBatchDayReplay']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/ops/batch-day-replay/sessions/{sessionId}/approve': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** ADR-020 审批通过批次日重放 session（PENDING_APPROVAL → RUNNING） */
+    post: operations['approveBatchDayReplay']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/ops/batch-day-replay/sessions/{sessionId}/cancel': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * ADR-020 取消批次日重放 session（PENDING_APPROVAL / RUNNING → CANCELLED）
+     * @description 已 RUNNING 的 instance 不强杀，让其自然跑完；session 标 CANCELLED 阻止后续派发。
+     */
+    post: operations['cancelBatchDayReplay']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/ops/batch-day-replay/sessions/{sessionId}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** ADR-020 批次日重放 session detail（含 totalCount / succeededCount / failedCount / inFlightCount 进度） */
+    get: operations['detailBatchDayReplay']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/ops/batch-day-replay/sessions/{sessionId}/entries': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** ADR-020 批次日重放 session 条目进度（按 status 过滤 PENDING/SUCCEEDED/FAILED） */
+    get: operations['listBatchDayReplayEntries']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/ops/dry-run/plan': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * ADR-026 演练计划（L1 CONFIG_VALIDATE / L2 SCHEDULE_PLAN / L3 EXECUTION_PLAN）
+     * @description 转发到 orchestrator `POST /internal/orchestrator/dry-run/plan`。
+     *     L1 解析 cron / DAG / 参数；L2 复用 SchedulePlanBuilder 输出 partition / worker route；
+     *     L3 在 L2 基础上叠加 SQL EXPLAIN / MinIO bucketExists / HTTP HEAD reachability。
+     *     响应含 findings (PASS/WARN/ERROR) + summary。**不写 instance / 不调外部投递**（priority-scope §ADR-026 §5）。
+     */
+    post: operations['dryRunPlan']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/batch-days/operate': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Operate on a batch_day_instance (FREEZE / RELEASE / SKIP / REOPEN / CLOSE)
+     * @description 转发到 orchestrator 内部接口 `POST /internal/batch-days/operate`，由
+     *     `BatchDayOperationService` 执行状态机推进。同事务双写 `job_execution_log`
+     *     + `batch_day_operation_audit`（V105）。RELEASE 触发 `batch_day_waiting_launch`
+     *     重放。需要 ROLE_ADMIN；建议高风险动作（REOPEN / CLOSE）后续接审批流。
+     */
+    post: operations['operateBatchDay']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/console/jobs/batch-trigger': {
     parameters: {
       query?: never
@@ -4742,10 +4922,14 @@ export interface components {
         deadLetterErrorClass?: components['schemas']['MetaEnumItem'][]
         quotaExceededStrategy?: components['schemas']['MetaEnumItem'][]
         skipThresholdMode?: components['schemas']['MetaEnumItem'][]
+        failureClass?: components['schemas']['MetaEnumItem'][]
       }
     }
     CommonResponseObject: components['schemas']['CommonResponseBase'] & {
       data?: unknown
+    }
+    CommonResponseObjectArray: components['schemas']['CommonResponseBase'] & {
+      data?: Record<string, never>[]
     }
     CommonResponseMapList: components['schemas']['CommonResponseBase'] & {
       data?: {
@@ -5016,6 +5200,86 @@ export interface components {
       jobCodes?: string[]
       reason?: string
     }
+    ForensicExportRequest: {
+      tenantId?: string
+      /** Format: date */
+      bizDateFrom: string
+      /** Format: date */
+      bizDateTo: string
+      jobCodes?: string[]
+      /**
+       * @description BUNDLE 默认（zip 含 manifest + 多个 json 文件）
+       * @enum {string}
+       */
+      exportFormat?: 'BUNDLE' | 'JSON' | 'CSV'
+      requestedBy?: string
+    }
+    /** @description ADR-020 批次日重放提交命令 */
+    BatchDayReplaySubmitRequest: {
+      tenantId: string
+      calendarCode: string
+      /** Format: date */
+      bizDate: string
+      /** @enum {string} */
+      scope: 'ALL' | 'ALL_FAILED' | 'SUBSET_JOB_CODES' | 'OUTPUTS_ONLY'
+      /** @description 仅 SUBSET_JOB_CODES scope 必填 */
+      jobCodes?: string[]
+      /** @description 仅 OUTPUTS_ONLY scope 必填，要 promote 的 result_version id 列表 */
+      versionIds?: number[]
+      /**
+       * @description 缺省 CREATE_NEW_VERSION
+       * @enum {string}
+       */
+      resultPolicy?: 'CREATE_NEW_VERSION' | 'KEEP_BOTH' | 'MANUAL_CONFIRM_EFFECTIVE'
+      /**
+       * @description 缺省 USE_ORIGINAL_CONFIG
+       * @enum {string}
+       */
+      configVersionPolicy?: 'USE_ORIGINAL_CONFIG' | 'USE_CURRENT_CONFIG' | 'USE_SPECIFIC_VERSION'
+      /** Format: int32 */
+      configVersion?: number
+      reason: string
+      requestedBy: string
+      /** @description true 直接 RUNNING；false PENDING_APPROVAL（默认） */
+      autoApprove?: boolean
+      traceId?: string
+    }
+    /** @description ADR-026 演练计划请求 */
+    DryRunPlanRequest: {
+      tenantId: string
+      jobCode: string
+      /**
+       * Format: date
+       * @description L2/L3 必填；L1 可空
+       */
+      bizDate?: string
+      /**
+       * @description L1=CONFIG_VALIDATE / L2=SCHEDULE_PLAN / L3=EXECUTION_PLAN
+       * @enum {string}
+       */
+      level?: 'CONFIG_VALIDATE' | 'SCHEDULE_PLAN' | 'EXECUTION_PLAN'
+      /** @description 可选 effectiveParams；L3 EXECUTION_PLAN 中识别以下 key 触发探测：
+       *     - sql / querySql / sourceQuery / validationSql / selectSql → JdbcTemplate EXPLAIN
+       *     - minioBucket → MinioClient.bucketExists（命名 DNS-style 校验）
+       *     - endpointUrl / callbackUrl / channelEndpoint / dispatchTarget → HTTP HEAD（5s timeout）
+       *      */
+      params?: {
+        [key: string]: unknown
+      }
+    }
+    BatchDayOperateRequest: {
+      tenantId?: string
+      calendarCode: string
+      /** Format: date */
+      bizDate: string
+      /**
+       * @description 批量日治理动作；状态机由 BatchDayOperationService 推进
+       * @enum {string}
+       */
+      action: 'FREEZE' | 'RELEASE' | 'SKIP' | 'REOPEN' | 'CLOSE'
+      operatorId?: string
+      reason?: string
+    }
     CompensationCommandRequest: {
       tenantId: string
       compensationType: string
@@ -5048,8 +5312,31 @@ export interface components {
       jobCode: string
       /** Format: date */
       bizDate: string
-      targetInstanceNo: string
+      /**
+       * Format: int64
+       * @description 可选: job_instance.id 直查; 与 targetInstanceNo 二选一
+       */
+      targetId?: number
+      targetInstanceNo?: string
+      batchNo?: string
+      /** Format: int64 */
+      relatedFileId?: number
       reason: string
+      operatorId?: string
+      approvalId?: string
+      strategy?: string
+      /**
+       * @description §5.5 补跑结果版本策略, 默认 CREATE_NEW_VERSION
+       * @enum {string}
+       */
+      resultPolicy?: 'CREATE_NEW_VERSION' | 'KEEP_BOTH' | 'MANUAL_CONFIRM_EFFECTIVE'
+      /**
+       * @description §5.5 补跑配置版本策略, 默认 USE_ORIGINAL_CONFIG
+       * @enum {string}
+       */
+      configVersionPolicy?: 'USE_ORIGINAL_CONFIG' | 'USE_LATEST_CONFIG' | 'USE_SPECIFIED_VERSION'
+      /** @description 仅当 configVersionPolicy=USE_SPECIFIED_VERSION 时必填; 其他策略下忽略 */
+      configVersion?: number
     }
     DeadLetterReplayRequest: {
       tenantId: string
@@ -5351,6 +5638,10 @@ export interface components {
       startedAt: string
       /** Format: date-time */
       finishedAt: string
+      /** @description ADR-026 演练标记；true = dry-run instance，UI 应渲染演练徽标，区分 SUCCESS_DRY_RUN/FAILED_DRY_RUN 终态。 */
+      dryRun?: boolean
+      /** @description ADR-012 失败分类码（FailureClass enum），仅终态 FAILED/PARTIAL_FAILED 时填值。 */
+      failureClass?: string
     }
     ConsoleJobStepInstanceResponse: {
       /** Format: int64 */
@@ -5441,6 +5732,13 @@ export interface components {
       createdAt: string
       /** Format: date-time */
       updatedAt: string
+      /** @description ADR-018 跨日依赖 JSONB 数组（CrossDayDependencySpec[]）；UI 渲染依赖图。 */
+      crossDayDependencies?: string
+      /**
+       * Format: int32
+       * @description ADR-018 跨日依赖等待 timeout（秒）；用于 UI 显示"已等 X 分钟 / 剩 Y 分钟"。
+       */
+      crossDayDependencyTimeoutSeconds?: number
     }
     ConsoleWorkflowEdgeResponse: {
       /** Format: int64 */
@@ -7569,6 +7867,228 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['CommonResponseConsoleBatchDayCatchUpResponse']
+        }
+      }
+    }
+  }
+  requestForensicExport: {
+    parameters: {
+      query?: never
+      header: {
+        'Idempotency-Key': components['parameters']['IdempotencyKeyHeader']
+      }
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ForensicExportRequest']
+      }
+    }
+    responses: {
+      /** @description Export bundle metadata (status / sha256 / fileSize / storagePath) */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseMapStringObject']
+        }
+      }
+    }
+  }
+  downloadForensicExport: {
+    parameters: {
+      query: {
+        tenantId: string
+      }
+      header?: never
+      path: {
+        exportId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Bundle zip */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/octet-stream': string
+        }
+      }
+    }
+  }
+  submitBatchDayReplay: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['BatchDayReplaySubmitRequest']
+      }
+    }
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseObject']
+        }
+      }
+    }
+  }
+  approveBatchDayReplay: {
+    parameters: {
+      query: {
+        tenantId?: string
+        approver: string
+      }
+      header?: never
+      path: {
+        sessionId: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseObject']
+        }
+      }
+    }
+  }
+  cancelBatchDayReplay: {
+    parameters: {
+      query?: {
+        tenantId?: string
+      }
+      header?: never
+      path: {
+        sessionId: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseObject']
+        }
+      }
+    }
+  }
+  detailBatchDayReplay: {
+    parameters: {
+      query?: {
+        tenantId?: string
+      }
+      header?: never
+      path: {
+        sessionId: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseObject']
+        }
+      }
+    }
+  }
+  listBatchDayReplayEntries: {
+    parameters: {
+      query?: {
+        status?: 'PENDING' | 'SUCCEEDED' | 'FAILED'
+        limit?: number
+      }
+      header?: never
+      path: {
+        sessionId: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseObjectArray']
+        }
+      }
+    }
+  }
+  dryRunPlan: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['DryRunPlanRequest']
+      }
+    }
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseObject']
+        }
+      }
+    }
+  }
+  operateBatchDay: {
+    parameters: {
+      query?: never
+      header: {
+        'Idempotency-Key': components['parameters']['IdempotencyKeyHeader']
+      }
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['BatchDayOperateRequest']
+      }
+    }
+    responses: {
+      /** @description Operate result */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseMapStringObject']
         }
       }
     }

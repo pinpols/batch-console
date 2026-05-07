@@ -210,6 +210,13 @@ export const deliveryStatusColor: Record<WebhookDeliveryStatus, StatusTagType> =
   EXHAUSTED: 'danger',
 }
 
+/** /meta/enums: `executionMode`(FULL=info / INCREMENTAL=primary / CDC=warning) */
+export const executionModeColor: Record<string, StatusTagType> = {
+  FULL: 'info',
+  INCREMENTAL: 'primary',
+  CDC: 'warning',
+}
+
 // =====================================================================
 // 前端专属分类(无 /meta/enums 对应 key)— 同时维护 label 与 color
 // =====================================================================

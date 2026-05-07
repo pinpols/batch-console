@@ -77,6 +77,30 @@ describe('resolveStatusMeta — type 解析', () => {
   })
 })
 
+describe('resolveStatusMeta — executionMode 类别', () => {
+  it('FULL=info / INCREMENTAL=primary / CDC=warning,label 走 /meta/enums.executionMode', () => {
+    const metaEnums = enumsWith({
+      executionMode: [
+        { value: 'FULL', label: '全量' },
+        { value: 'INCREMENTAL', label: '增量' },
+        { value: 'CDC', label: 'CDC' },
+      ],
+    })
+    expect(resolveStatusMeta('FULL', 'executionMode', metaEnums)).toEqual({
+      label: '全量',
+      type: 'info',
+    })
+    expect(resolveStatusMeta('INCREMENTAL', 'executionMode', metaEnums)).toEqual({
+      label: '增量',
+      type: 'primary',
+    })
+    expect(resolveStatusMeta('CDC', 'executionMode', metaEnums)).toEqual({
+      label: 'CDC',
+      type: 'warning',
+    })
+  })
+})
+
 describe('resolveStatusMeta — 后端新增 enum 值只靠颜色表兜底', () => {
   it('backend adds new value → backend label shows, color falls to info (no local crash)', () => {
     const metaEnums = enumsWith({
