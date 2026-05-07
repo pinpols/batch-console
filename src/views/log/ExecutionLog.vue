@@ -21,7 +21,7 @@
             :disabled="loading"
             @search="onSearch"
             @reset="reset"
-            @refresh="load"
+            @refresh="() => runRefresh(load)"
           >
             <el-form-item label="Trace">
               <el-input
@@ -114,6 +114,7 @@
     tableBlocking,
     runSearch,
     runReset,
+    runRefresh,
   } = useListFilterFeedback(loading)
   const rows = ref<ConsoleAuditLogResponse[]>([])
   const traceDraft = ref('')

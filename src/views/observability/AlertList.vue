@@ -21,7 +21,7 @@
             :disabled="loading"
             @search="search"
             @reset="reset"
-            @refresh="load"
+            @refresh="() => runRefresh(load)"
           >
             <el-form-item label="级别">
               <el-select
@@ -184,6 +184,7 @@
     tableBlocking,
     runSearch,
     runReset,
+    runRefresh,
   } = useListFilterFeedback(loading)
   const allRows = ref<ConsoleAlertEventResponse[]>([])
   const rows = ref<ConsoleAlertEventResponse[]>([])

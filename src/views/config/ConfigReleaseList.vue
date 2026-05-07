@@ -21,7 +21,7 @@
             :disabled="loading"
             @search="onSearch"
             @reset="reset"
-            @refresh="load"
+            @refresh="() => runRefresh(load)"
           >
             <el-form-item label="Key">
               <el-input
@@ -212,6 +212,7 @@
     tableBlocking,
     runSearch,
     runReset,
+    runRefresh,
   } = useListFilterFeedback(loading)
   const allRows = ref<ConsoleConfigReleaseResponse[]>([])
   const rows = ref<ConsoleConfigReleaseResponse[]>([])

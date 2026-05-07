@@ -20,7 +20,7 @@
             :refresh-busy="loading"
             @search="onQuerySearch"
             @reset="onQueryReset"
-            @refresh="load"
+            @refresh="() => runRefresh(load)"
           >
             <el-form-item label="实例 Id">
               <el-input
@@ -103,7 +103,12 @@
   const router = useRouter()
   const tenant = useTenantStore()
   const loading = ref(false)
-  const { filterBusy: queryActionBusy, runSearch, runReset } = useListFilterFeedback(loading)
+  const {
+    filterBusy: queryActionBusy,
+    runSearch,
+    runReset,
+    runRefresh,
+  } = useListFilterFeedback(loading)
   const allRows = ref<ConsoleJobStepInstanceResponse[]>([])
   const filterInstanceId = ref('')
   const filterStepStatus = ref('')

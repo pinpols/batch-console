@@ -117,7 +117,7 @@
                 :disabled="channelLoading"
                 @search="onChannelSearch"
                 @reset="resetChannels"
-                @refresh="loadChannels"
+                @refresh="() => runChannelRefresh(loadChannels)"
               >
                 <el-form-item label="渠道编码">
                   <el-input
@@ -246,6 +246,7 @@
     tableBlocking: workerTableBlocking,
     runSearch: runWorkerSearch,
     runReset: runWorkerReset,
+    runRefresh: runWorkerRefresh,
   } = useListFilterFeedback(workerIsPending)
 
   const workerFilters = reactive({ workerGroup: '', status: '', keyword: '' })
@@ -295,7 +296,7 @@
   }
 
   function onRefreshWorkers() {
-    void refetchWorkers()
+    return runWorkerRefresh(() => refetchWorkers())
   }
 
   useSseAutoReload({
@@ -361,6 +362,7 @@
     tableBlocking: channelTableBlocking,
     runSearch: runChannelSearch,
     runReset: runChannelReset,
+    runRefresh: runChannelRefresh,
   } = useListFilterFeedback(channelLoading)
   const allChannelRows = ref<ConsoleFileChannelResponse[]>([])
   const channelRows = ref<ConsoleFileChannelResponse[]>([])

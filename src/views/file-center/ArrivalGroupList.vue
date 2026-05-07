@@ -21,7 +21,7 @@
             :disabled="loading"
             @search="onSearch"
             @reset="onReset"
-            @refresh="load"
+            @refresh="() => runRefresh(load)"
           >
             <el-form-item label="组编码">
               <el-input
@@ -95,6 +95,7 @@
     tableBlocking,
     runSearch,
     runReset,
+    runRefresh,
   } = useListFilterFeedback(loading)
   const allRows = ref<ConsoleFileArrivalGroupResponse[]>([])
   const rows = ref<ConsoleFileArrivalGroupResponse[]>([])

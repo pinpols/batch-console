@@ -39,7 +39,7 @@
         :refresh-busy="loading"
         @search="onSearch"
         @reset="onReset"
-        @refresh="load"
+        @refresh="() => runRefresh(load)"
       >
         <el-form-item label="关键字">
           <el-input
@@ -190,7 +190,7 @@
   const tenant = useTenantStore()
   const loading = ref(false)
   const listRemote = ref(true)
-  const { filterBusy, runSearch, runReset } = useListFilterFeedback(listRemote)
+  const { filterBusy, runSearch, runReset, runRefresh } = useListFilterFeedback(listRemote)
 
   const queryDraft = reactive<{
     keyword: string

@@ -16,7 +16,7 @@
             :refresh-busy="loading"
             @search="onTabSearch"
             @reset="onTabReset"
-            @refresh="load"
+            @refresh="() => runRefresh(load)"
           />
           <el-table
             v-loading="loading"
@@ -66,7 +66,7 @@
             :refresh-busy="loading"
             @search="onTabSearch"
             @reset="onTabReset"
-            @refresh="load"
+            @refresh="() => runRefresh(load)"
           />
           <el-table
             v-loading="loading"
@@ -116,7 +116,7 @@
             :refresh-busy="loading"
             @search="onTabSearch"
             @reset="onTabReset"
-            @refresh="load"
+            @refresh="() => runRefresh(load)"
           />
           <el-table
             v-loading="loading"
@@ -224,7 +224,7 @@
 
   const tenant = useTenantStore()
   const listRemote = ref(false)
-  const { filterBusy, runSearch, runReset } = useListFilterFeedback(listRemote)
+  const { filterBusy, runSearch, runReset, runRefresh } = useListFilterFeedback(listRemote)
   const loading = ref(false)
   const holidayLoading = ref(false)
   const togglingKey = ref('')

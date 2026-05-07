@@ -21,7 +21,7 @@
             :disabled="loading"
             @search="onSearch"
             @reset="reset"
-            @refresh="load"
+            @refresh="() => runRefresh(load)"
           >
             <el-form-item label="模板编码">
               <el-input v-model="keyword" clearable placeholder="模板编码或名称，模糊匹配" />
@@ -141,6 +141,7 @@
   const loading = ref(false)
   const {
     filterBusy: queryActionBusy,
+    runRefresh,
     tableBlocking,
     runSearch,
     runReset,

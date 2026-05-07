@@ -23,7 +23,7 @@
                 :disabled="loading"
                 @search="onRetrySearch"
                 @reset="onRetryReset"
-                @refresh="loadTab"
+                @refresh="() => runRefresh(loadTab)"
               >
                 <el-form-item label="关键字">
                   <el-input
@@ -91,7 +91,7 @@
                 :disabled="loading"
                 @search="onDeliverySearch"
                 @reset="onDeliveryReset"
-                @refresh="loadTab"
+                @refresh="() => runRefresh(loadTab)"
               >
                 <el-form-item label="关键字">
                   <el-input
@@ -208,6 +208,7 @@
     tableBlocking,
     runSearch,
     runReset,
+    runRefresh,
   } = useListFilterFeedback(loading)
 
   const retriesAll = ref<ConsoleOutboxRetryLogResponse[]>([])

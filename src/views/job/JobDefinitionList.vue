@@ -278,6 +278,7 @@
     tableBlocking,
     runSearch,
     runReset,
+    runRefresh,
   } = useListFilterFeedback(remoteBlocking)
 
   const pageRows = computed(() => data.value?.records ?? [])
@@ -327,7 +328,7 @@
   }
 
   function onRefreshDefinitions() {
-    void refetch()
+    return runRefresh(() => refetch())
   }
 
   function goInstances(jobCode: string) {

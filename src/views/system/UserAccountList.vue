@@ -23,7 +23,7 @@
         :refresh-busy="loading"
         @search="onSearch"
         @reset="onReset"
-        @refresh="load"
+        @refresh="() => runRefresh(load)"
       >
         <el-form-item label="关键字">
           <el-input
@@ -182,7 +182,7 @@
   const saving = ref(false)
   const resetting = ref(false)
   const listRemote = ref(true)
-  const { filterBusy, runSearch, runReset } = useListFilterFeedback(listRemote)
+  const { filterBusy, runSearch, runReset, runRefresh } = useListFilterFeedback(listRemote)
 
   const queryDraft = reactive({ tenantId: '', keyword: '' })
   const queryApplied = reactive({

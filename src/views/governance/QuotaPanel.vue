@@ -134,7 +134,7 @@
 
   const tenant = useTenantStore()
   const listRemote = ref(false)
-  const { filterBusy, runSearch, runReset } = useListFilterFeedback(listRemote)
+  const { filterBusy, runSearch, runReset, runRefresh } = useListFilterFeedback(listRemote)
   const loading = ref(false)
   const togglingId = ref<number | null>(null)
   const policies = ref<GovernanceQuotaPolicyRow[]>([])
@@ -177,7 +177,7 @@
   }
 
   function onQuotaRefresh() {
-    return load()
+    return runRefresh(load)
   }
 
   const filtered = computed(() => {

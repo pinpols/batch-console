@@ -27,7 +27,7 @@
                 :disabled="loading"
                 @search="onSearch"
                 @reset="onReset"
-                @refresh="reloadTab"
+                @refresh="() => runRefresh(reloadTab)"
               >
                 <el-form-item label="关键字">
                   <el-input
@@ -76,7 +76,7 @@
                 :disabled="loading"
                 @search="onSearch"
                 @reset="onReset"
-                @refresh="reloadTab"
+                @refresh="() => runRefresh(reloadTab)"
               >
                 <el-form-item label="关键字">
                   <el-input
@@ -124,7 +124,7 @@
                 :disabled="loading"
                 @search="onSearch"
                 @reset="onReset"
-                @refresh="reloadTab"
+                @refresh="() => runRefresh(reloadTab)"
               >
                 <el-form-item label="关键字">
                   <el-input
@@ -174,7 +174,7 @@
                 :disabled="loading"
                 @search="onSearch"
                 @reset="onReset"
-                @refresh="reloadTab"
+                @refresh="() => runRefresh(reloadTab)"
               >
                 <el-form-item label="关键字">
                   <el-input
@@ -232,6 +232,7 @@
     tableBlocking,
     runSearch,
     runReset,
+    runRefresh,
   } = useListFilterFeedback(loading)
   const page = ref(1)
   const pageSize = ref(20)

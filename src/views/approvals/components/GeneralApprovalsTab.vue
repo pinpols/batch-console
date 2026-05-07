@@ -15,7 +15,7 @@
         :disabled="loading"
         @search="onSearch"
         @reset="reset"
-        @refresh="load"
+        @refresh="() => runRefresh(load)"
       >
         <el-form-item label="状态">
           <el-select
@@ -142,6 +142,7 @@
     tableBlocking,
     runSearch,
     runReset,
+    runRefresh,
   } = useListFilterFeedback(loading)
   const allRows = ref<ConsoleApprovalCommandResponse[]>([])
   const rows = ref<ConsoleApprovalCommandResponse[]>([])

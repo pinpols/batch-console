@@ -68,7 +68,7 @@
                 :disabled="auditLoading"
                 @search="onAuditSearch"
                 @reset="onAuditReset"
-                @refresh="loadAudits"
+                @refresh="() => runAuditRefresh(loadAudits)"
               >
                 <el-form-item label="Trace">
                   <el-input
@@ -173,6 +173,7 @@
     tableBlocking: auditTableBlocking,
     runSearch: runAuditSearch,
     runReset: runAuditReset,
+    runRefresh: runAuditRefresh,
   } = useListFilterFeedback(auditLoading)
   const auditAll = ref<AiAuditLogResponse[]>([])
   const auditRows = ref<AiAuditLogResponse[]>([])
