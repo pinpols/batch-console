@@ -29,58 +29,15 @@
       </template>
 
       <div class="kpis" role="tablist" aria-label="快照分类">
-        <div
-          role="tab"
-          :tabindex="0"
-          :aria-selected="activePanel === 'policies'"
-          class="kpi kpi--primary"
-          :class="{ 'kpi--active': activePanel === 'policies' }"
-          @mouseenter="activePanel = 'policies'"
-          @click="activePanel = 'policies'"
-          @focus="activePanel = 'policies'"
-        >
-          <div class="kpi__label">策略（policies）</div>
-          <div class="kpi__value">{{ snap.policies?.length ?? 0 }}</div>
-        </div>
-        <div
-          role="tab"
-          :tabindex="0"
-          :aria-selected="activePanel === 'queues'"
-          class="kpi kpi--success"
-          :class="{ 'kpi--active': activePanel === 'queues' }"
-          @mouseenter="activePanel = 'queues'"
-          @click="activePanel = 'queues'"
-          @focus="activePanel = 'queues'"
-        >
-          <div class="kpi__label">队列（queues）</div>
-          <div class="kpi__value">{{ snap.queues?.length ?? 0 }}</div>
-        </div>
-        <div
-          role="tab"
-          :tabindex="0"
-          :aria-selected="activePanel === 'workers'"
-          class="kpi kpi--warning"
-          :class="{ 'kpi--active': activePanel === 'workers' }"
-          @mouseenter="activePanel = 'workers'"
-          @click="activePanel = 'workers'"
-          @focus="activePanel = 'workers'"
-        >
-          <div class="kpi__label">Workers</div>
-          <div class="kpi__value">{{ snap.workers?.length ?? 0 }}</div>
-        </div>
-        <div
-          role="tab"
-          :tabindex="0"
-          :aria-selected="activePanel === 'history'"
-          class="kpi kpi--info"
-          :class="{ 'kpi--active': activePanel === 'history' }"
-          @mouseenter="activePanel = 'history'"
-          @click="activePanel = 'history'"
-          @focus="activePanel = 'history'"
-        >
-          <div class="kpi__label">历史点数</div>
-          <div class="kpi__value">{{ history.length }}</div>
-        </div>
+        <SnapshotKpiTab
+          v-for="t in kpiTabs"
+          :key="t.key"
+          :label="t.label"
+          :value="t.value"
+          :variant="t.variant"
+          :active="activePanel === t.key"
+          @select="activePanel = t.key"
+        />
       </div>
     </SectionCard>
 
@@ -304,12 +261,14 @@
   import StatusTag from '@/components/common/StatusTag.vue'
   import TablePagerBar from '@/components/table/TablePagerBar.vue'
   import CopyableText from '@/components/common/CopyableText.vue'
+  import SnapshotKpiTab from './components/SnapshotKpiTab.vue'
   import type {
     ConsoleSchedulerSnapshotHistoryResponse,
     ConsoleSchedulerSnapshotResponse,
   } from '@/types/console-api'
 
   type PanelKey = 'policies' | 'queues' | 'workers' | 'history'
+  type KpiVariant = 'primary' | 'success' | 'warning' | 'info'
 
   const tenant = useTenantStore()
   const loading = ref(false)
@@ -325,6 +284,30 @@
   const pageQueues = ref(1)
   const pageWorkers = ref(1)
   const pageHistory = ref(1)
+
+  const kpiTabs = computed<{ key: PanelKey; label: string; value: number; variant: KpiVariant }[]>(
+    () => [
+      {
+        key: 'policies',
+        label: '策略(policies)',
+        value: snap.value?.policies?.length ?? 0,
+        variant: 'primary',
+      },
+      {
+        key: 'queues',
+        label: '队列(queues)',
+        value: snap.value?.queues?.length ?? 0,
+        variant: 'success',
+      },
+      {
+        key: 'workers',
+        label: 'Workers',
+        value: snap.value?.workers?.length ?? 0,
+        variant: 'warning',
+      },
+      { key: 'history', label: '历史点数', value: history.value.length, variant: 'info' },
+    ],
+  )
 
   type TagType = 'primary' | 'success' | 'warning' | 'danger' | 'info'
   const TAG_TYPES: TagType[] = ['primary', 'success', 'warning', 'danger', 'info']
@@ -517,85 +500,6 @@
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: var(--space-md);
-  }
-
-  .kpi {
-    position: relative;
-    padding: 14px 14px 12px;
-    border: 1px solid var(--color-border-light);
-    border-radius: var(--radius-card-lg);
-    background: color-mix(in srgb, var(--color-bg-card) 92%, var(--color-bg-canvas) 8%);
-    overflow: hidden;
-    cursor: pointer;
-    outline: none;
-    transition:
-      border-color var(--motion-duration-sm) var(--motion-ease-standard),
-      box-shadow var(--motion-duration-sm) var(--motion-ease-standard);
-  }
-
-  .kpi:focus-visible {
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 40%, transparent);
-  }
-
-  .kpi::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 4px;
-    background: var(--color-primary);
-  }
-
-  .kpi--success::before {
-    background: var(--color-success);
-  }
-  .kpi--warning::before {
-    background: var(--color-warning);
-  }
-  .kpi--info::before {
-    background: #64748b;
-  }
-
-  .kpi--active {
-    border-color: color-mix(in srgb, var(--color-primary) 38%, var(--color-border-light));
-    box-shadow:
-      0 0 0 1px color-mix(in srgb, var(--color-primary) 22%, transparent),
-      var(--shadow-surface);
-  }
-
-  .kpi--success.kpi--active {
-    border-color: color-mix(in srgb, var(--color-success) 42%, var(--color-border-light));
-    box-shadow:
-      0 0 0 1px color-mix(in srgb, var(--color-success) 24%, transparent),
-      var(--shadow-surface);
-  }
-
-  .kpi--warning.kpi--active {
-    border-color: color-mix(in srgb, var(--color-warning) 42%, var(--color-border-light));
-    box-shadow:
-      0 0 0 1px color-mix(in srgb, var(--color-warning) 24%, transparent),
-      var(--shadow-surface);
-  }
-
-  .kpi--info.kpi--active {
-    border-color: color-mix(in srgb, #64748b 35%, var(--color-border-light));
-    box-shadow:
-      0 0 0 1px color-mix(in srgb, #64748b 20%, transparent),
-      var(--shadow-surface);
-  }
-
-  .kpi__label {
-    font-size: 12px;
-    color: var(--color-text-tertiary);
-  }
-
-  .kpi__value {
-    margin-top: 4px;
-    font-size: 22px;
-    font-weight: 700;
-    letter-spacing: -0.02em;
-    color: var(--color-text-primary);
   }
 
   .detail-pane {
