@@ -1,5 +1,31 @@
 <template>
   <div class="sync-grid">
+    <!-- 跨环境同步参数 sourceEnv / targetEnv 对 3 个动作共享;
+         BE ConfigSync*Request 全 NotBlank,默认 'default' 让基础场景跑通,
+         真要跨 dev/prod 同步在这里改即可。 -->
+    <div class="sync-block sync-block--params">
+      <div class="sync-block__title">同步参数</div>
+      <div class="sync-block__desc">
+        当前租户 <code>{{ tenant.tenantId }}</code> 即源租户;BE 要求 sourceEnv / targetEnv
+        都不能为空,默认 default。
+      </div>
+      <el-form label-width="100px" inline class="form-section">
+        <el-form-item label="源环境">
+          <el-input v-model="sourceEnv" class="env-input" placeholder="如 default / prod" />
+        </el-form-item>
+        <el-form-item label="目标环境">
+          <el-input v-model="targetEnv" class="env-input" placeholder="如 default / staging" />
+        </el-form-item>
+        <el-form-item label="目标租户">
+          <el-input
+            v-model="targetTenantsText"
+            class="env-input env-input--wide"
+            placeholder="逗号分隔多个;留空则用当前租户"
+          />
+        </el-form-item>
+      </el-form>
+    </div>
+
     <div class="sync-block">
       <div class="sync-block__title">配置导出</div>
       <div class="sync-block__desc">
@@ -95,10 +121,36 @@
 
   const tenant = useTenantStore()
 
+  // 跨环境同步参数:三个动作共享。BE 全 NotBlank,默认 'default' 兼容单环境场景。
+  const sourceEnv = ref('default')
+  const targetEnv = ref('default')
+  const targetTenantsText = ref('')
+
+  function resolvedTargetTenants(): string[] {
+    const list = targetTenantsText.value
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean)
+    return list.length ? list : [tenant.tenantId]
+  }
+
   const exporting = ref(false)
   const exportTypes = ref<string[]>([])
   const exportResult = ref<unknown>(null)
-  const exportTypeOptions = ['JOB', 'WORKFLOW', 'PIPELINE', 'FILE', 'ALERT', 'SYSTEM'] as const
+  // BE TenantConfigCopyRequest.ConfigType 短别名(JOB / WORKFLOW / ...);老 yaml 用全名(JOB_DEFINITION 等)
+  // 与 BE 对不上,改用短别名跟 BE 实际接受值对齐。
+  const exportTypeOptions = [
+    'JOB',
+    'WORKFLOW',
+    'PIPELINE',
+    'FILE_CHANNEL',
+    'FILE_TEMPLATE',
+    'RESOURCE_QUEUE',
+    'BATCH_WINDOW',
+    'BUSINESS_CALENDAR',
+    'QUOTA_POLICY',
+    'ALERT_ROUTING',
+  ] as const
 
   const previewing = ref(false)
   const importing = ref(false)
@@ -108,10 +160,13 @@
   async function doExport() {
     exporting.value = true
     try {
-      const body: { tenantId: string; configTypes?: string[] } = { tenantId: tenant.tenantId }
       const types = exportTypes.value.map((s) => s.trim()).filter(Boolean)
-      if (types.length) body.configTypes = types
-      exportResult.value = await exportConfigSync(body)
+      exportResult.value = await exportConfigSync({
+        sourceTenantId: tenant.tenantId,
+        sourceEnv: sourceEnv.value.trim() || 'default',
+        targetEnv: targetEnv.value.trim() || 'default',
+        ...(types.length ? { configTypes: types } : {}),
+      })
       ElMessage.success('导出完成')
     } finally {
       exporting.value = false
@@ -125,8 +180,14 @@
     }
     previewing.value = true
     try {
-      const payload = JSON.parse(importPayload.value)
-      previewResult.value = await previewConfigSync({ tenantId: tenant.tenantId, payload })
+      // payload 当前没用到(preview 是按 source/target 算 diff,bundle 在 import 才用)
+      JSON.parse(importPayload.value) // 仅校验合法 JSON
+      previewResult.value = await previewConfigSync({
+        sourceTenantId: tenant.tenantId,
+        tenantId: tenant.tenantId,
+        sourceEnv: sourceEnv.value.trim() || 'default',
+        targetEnv: targetEnv.value.trim() || 'default',
+      })
     } catch (e) {
       ElMessage.error(e instanceof SyntaxError ? 'Payload 需为合法 JSON' : '预览失败')
     } finally {
@@ -141,8 +202,14 @@
     }
     importing.value = true
     try {
-      const payload = JSON.parse(importPayload.value)
-      await importConfigSync({ tenantId: tenant.tenantId, payload })
+      const bundle = JSON.parse(importPayload.value)
+      await importConfigSync({
+        tenantId: tenant.tenantId,
+        sourceEnv: sourceEnv.value.trim() || 'default',
+        targetEnv: targetEnv.value.trim() || 'default',
+        targetTenantIds: resolvedTargetTenants(),
+        bundle,
+      })
       ElMessage.success('导入完成')
     } catch (e) {
       ElMessage.error(e instanceof SyntaxError ? 'Payload 需为合法 JSON' : '导入失败')
@@ -170,6 +237,16 @@
       grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
       gap: var(--space-lg);
     }
+  }
+
+  .sync-block--params {
+    grid-column: 1 / -1;
+  }
+  .env-input {
+    width: 200px;
+  }
+  .env-input--wide {
+    width: 320px;
   }
 
   .sync-block {

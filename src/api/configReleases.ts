@@ -118,18 +118,55 @@ export function rejectConfigApproval(
   return post<string>(`/api/console/config/approvals/${approvalId}/reject`, body)
 }
 
-/** POST /api/console/config/sync/export */
-export function exportConfigSync(body: { tenantId: string; configTypes?: string[] }) {
+/**
+ * POST /api/console/config/sync/export
+ *
+ * 与 BE `ConfigSyncExportRequest` 对齐:sourceTenantId / sourceEnv / targetEnv 都 NotBlank。
+ * configTypes 用 TenantConfigCopyRequest.ConfigType 的短别名(JOB / WORKFLOW / ...)。
+ */
+export interface ConfigSyncExportBody {
+  sourceTenantId: string
+  sourceEnv: string
+  targetEnv: string
+  configTypes?: string[]
+}
+export function exportConfigSync(body: ConfigSyncExportBody) {
   return post<unknown>('/api/console/config/sync/export', body)
 }
 
-/** POST /api/console/config/sync/preview */
-export function previewConfigSync(body: { tenantId: string; payload: unknown }) {
+/**
+ * POST /api/console/config/sync/preview
+ *
+ * 与 BE `ConfigSyncPreviewRequest` 对齐(sourceTenantId / tenantId / sourceEnv / targetEnv NotBlank)。
+ */
+export interface ConfigSyncPreviewBody {
+  sourceTenantId: string
+  tenantId: string
+  sourceEnv: string
+  targetEnv: string
+  configTypes?: string[]
+}
+export function previewConfigSync(body: ConfigSyncPreviewBody) {
   return post<unknown>('/api/console/config/sync/preview', body)
 }
 
-/** POST /api/console/config/sync/import */
-export function importConfigSync(body: { tenantId: string; payload: unknown; mode?: string }) {
+/**
+ * POST /api/console/config/sync/import
+ *
+ * 与 BE `ConfigSyncImportRequest` 对齐:
+ *   tenantId / sourceEnv / targetEnv NotBlank,targetTenantIds NotEmpty;
+ *   之前 FE 用 `payload` 字段名 + 缺所有 env / target 字段,直接被 NotBlank/NotEmpty 三连。
+ */
+export interface ConfigSyncImportBody {
+  tenantId: string
+  sourceEnv: string
+  targetEnv: string
+  targetTenantIds: string[]
+  bundle?: unknown
+  mode?: 'SKIP_EXISTING' | 'UPSERT'
+  dryRun?: boolean
+}
+export function importConfigSync(body: ConfigSyncImportBody) {
   return post<unknown>('/api/console/config/sync/import', body)
 }
 
