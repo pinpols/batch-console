@@ -1,4 +1,4 @@
-import { del, get, post, put } from '@/api/client'
+import { del, get, post } from '@/api/client'
 import { fetchAllPageItems } from '@/api/adapters'
 
 /**
@@ -187,9 +187,6 @@ export const governanceApi = {
   ) =>
     (await listGovernanceRows('/api/console/queues', tenantId, filters ?? {})).map(normalizeQueue),
 
-  /** POST /api/console/queues — create */
-  createQueue: (body: object) => post<number>('/api/console/queues', body),
-
   /** POST /api/console/queues/{id}/toggle — toggle enabled */
   toggleQueue: (id: number, tenantId: string, enabled: boolean) =>
     post<string>(`/api/console/queues/${id}/toggle`, undefined, {
@@ -204,9 +201,6 @@ export const governanceApi = {
       normalizeBatchWindow,
     ),
 
-  /** POST /api/console/batch-windows — create */
-  createBatchWindow: (body: object) => post<number>('/api/console/batch-windows', body),
-
   /** POST /api/console/batch-windows/{id}/toggle — toggle enabled */
   toggleBatchWindow: (id: number, tenantId: string, enabled: boolean) =>
     post<string>(`/api/console/batch-windows/${id}/toggle`, undefined, {
@@ -217,9 +211,6 @@ export const governanceApi = {
     (await listGovernanceRows('/api/console/calendars', tenantId, filters ?? {})).map(
       normalizeCalendar,
     ),
-
-  /** POST /api/console/calendars — create */
-  createCalendar: (body: object) => post<number>('/api/console/calendars', body),
 
   /** POST /api/console/calendars/{id}/toggle — toggle enabled */
   toggleCalendar: (id: number, tenantId: string, enabled: boolean) =>
@@ -234,10 +225,6 @@ export const governanceApi = {
       }).then((data) => (Array.isArray(data) ? data : (data.items ?? [])))
     ).map(normalizeHoliday),
 
-  /** POST /api/console/calendars/{id}/holidays — batch import holidays */
-  importCalendarHolidays: (calendarId: number, body: object[]) =>
-    post<unknown>(`/api/console/calendars/${calendarId}/holidays`, body),
-
   listQuotaPolicies: async (
     tenantId: string,
     filters?: { policyCode?: string; enabled?: boolean },
@@ -246,36 +233,15 @@ export const governanceApi = {
       normalizeQuotaPolicy,
     ),
 
-  /** POST /api/console/quota-policies — create */
-  createQuotaPolicy: (body: object) => post<number>('/api/console/quota-policies', body),
-
   /** POST /api/console/quota-policies/{id}/toggle — toggle enabled */
   toggleQuotaPolicy: (id: number, tenantId: string, enabled: boolean) =>
     post<string>(`/api/console/quota-policies/${id}/toggle`, undefined, {
       params: { tenantId, enabled },
     }),
 
-  /** PUT /api/console/batch-windows/{id} */
-  updateBatchWindow: (id: number, body: object) =>
-    put<string>(`/api/console/batch-windows/${id}`, body),
-
-  /** PUT /api/console/calendars/{id} */
-  updateCalendar: (id: number, body: object) => put<string>(`/api/console/calendars/${id}`, body),
-
-  /** PUT /api/console/calendars/{id}/holidays/{holidayId} */
-  updateCalendarHoliday: (calendarId: number, holidayId: number, body: object) =>
-    put<string>(`/api/console/calendars/${calendarId}/holidays/${holidayId}`, body),
-
   /** DELETE /api/console/calendars/{id}/holidays/{holidayId} */
   deleteCalendarHoliday: (calendarId: number, holidayId: number, tenantId: string) =>
     del<void>(`/api/console/calendars/${calendarId}/holidays/${holidayId}`, {
       params: { tenantId },
     }),
-
-  /** PUT /api/console/queues/{id} */
-  updateQueue: (id: number, body: object) => put<string>(`/api/console/queues/${id}`, body),
-
-  /** PUT /api/console/quota-policies/{id} */
-  updateQuotaPolicy: (id: number, body: object) =>
-    put<string>(`/api/console/quota-policies/${id}`, body),
 }

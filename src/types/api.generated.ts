@@ -676,6 +676,99 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/console/result-versions': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * ADR-017 列举 result_version（含 PENDING / EFFECTIVE / SUPERSEDED / ARCHIVED / DRY_RUN）
+     * @description 转发到 orchestrator `GET /internal/orchestrator/result-versions`。按 (tenantId, businessKey)
+     *     逐版本返回（businessKey 形如 `job:{jobCode}:{bizDate}` 或 `workflow:{wfCode}:{bizDate}`），
+     *     默认上限 50 条。EFFECTIVE 单版裁决靠 partial unique index 保证。
+     */
+    get: operations['listResultVersions']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/result-versions/effective': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** ADR-017 当前 EFFECTIVE 版本（同 businessKey 至多 1 条） */
+    get: operations['effectiveResultVersion']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/result-versions/{id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** ADR-017 result_version 详情（含完整 payload_json） */
+    get: operations['detailResultVersion']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/result-versions/{id}/promote': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * ADR-017 promote PENDING → EFFECTIVE（手工 / 审批驱动）
+     * @description 命中 partial unique index `uk_result_version_effective` 由 orchestrator service 保证 EFFECTIVE 单版唯一。
+     */
+    post: operations['promoteResultVersion']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/result-versions/{id}/reject': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** ADR-017 reject PENDING → ARCHIVED（候选放弃，不影响其他版本） */
+    post: operations['rejectResultVersion']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/console/ops/dry-run/plan': {
     parameters: {
       query?: never
@@ -5170,7 +5263,7 @@ export interface components {
       /** Format: date */
       bizDate: string
       /** @enum {string} */
-      triggerType: 'MANUAL' | 'API' | 'SCHEDULE' | 'CATCH_UP'
+      triggerType?: 'MANUAL' | 'API' | 'SCHEDULE' | 'CATCH_UP'
       payload?: string
       /**
        * @description When true, validates the trigger request without executing. Idempotency-Key not required.
@@ -5299,13 +5392,24 @@ export interface components {
       strategy?: string
       traceId?: string
     }
+    /** @description 与 BE Java DTO `CompensateRequest` 对齐。 */
     CompensateRequest: {
       tenantId: string
       jobCode: string
       /** Format: date */
       bizDate: string
-      targetInstanceNo: string
-      reason: string
+      compensationType?: string
+      /** Format: int64 */
+      targetId?: number
+      targetInstanceNo?: string
+      batchNo?: string
+      /** Format: int64 */
+      relatedFileId?: number
+      channelCode?: string
+      reason?: string
+      operatorId?: string
+      approvalId?: string
+      strategy?: string
     }
     RerunRequest: {
       tenantId: string
@@ -5338,20 +5442,33 @@ export interface components {
       /** @description 仅当 configVersionPolicy=USE_SPECIFIED_VERSION 时必填; 其他策略下忽略 */
       configVersion?: number
     }
+    /** @description 与 BE Java DTO `DeadLetterReplayRequest` 对齐。 */
     DeadLetterReplayRequest: {
       tenantId: string
       /** Format: int64 */
       deadLetterId: number
       reason?: string
+      operatorId?: string
+      approvalId?: string
+      strategy?: string
     }
+    /** @description Catch-up 双流程语义:
+     *     - 不传 approvalId: 创建审批 ticket,返回 approvalNo
+     *     - 传 approvalId + requestId: 已批准的 ticket 触发实际补跑
+     *     与 BE Java DTO `ConsoleCatchUpApprovalRequest` 对齐。
+     *      */
     ConsoleCatchUpApprovalRequest: {
       tenantId: string
+      /** @description 用于幂等关联的业务 requestId(必填) */
+      requestId: string
       jobCode: string
       /** Format: date */
       bizDate: string
-      approvalNo: string
-      operatorId?: string
+      /** @description 可选,计划补跑时间 */
+      scheduledAt?: string
       reason?: string
+      /** @description 已批准 ticket 的 ID(第二阶段调用时传) */
+      approvalId?: string
     }
     ApprovalActionRequest: {
       tenantId: string
@@ -5364,15 +5481,19 @@ export interface components {
       operatorId?: string
       reason?: string
     }
+    /** @description 与 BE Java DTO `ConfigReleaseUpsertRequest` 对齐(注:configPayload 在 BE 是 JSON-string,字段名 configPayloadJson)。 */
     ConfigReleaseUpsertRequest: {
       tenantId: string
       configType: string
       configKey: string
       configName: string
-      configPayload?: {
-        [key: string]: unknown
-      }
+      /** @description 配置内容序列化为 JSON 字符串(BE 不解析,直接落库) */
+      configPayloadJson?: string
+      grayScopeJson?: string
+      effectiveFromAt?: string
+      effectiveToAt?: string
       operatorId?: string
+      traceId?: string
       reason?: string
     }
     ConfigReleaseActionRequest: {
@@ -5569,6 +5690,76 @@ export interface components {
       createdAt: string
       /** Format: date-time */
       updatedAt: string
+    }
+    /** @description 创建作业定义。与 BE Java DTO `JobDefinitionCreateRequest` 对齐。 */
+    JobDefinitionCreateRequest: {
+      tenantId?: string
+      jobCode: string
+      jobType: string
+      scheduleType: string
+      jobName?: string
+      bizType?: string
+      scheduleExpr?: string
+      timezone?: string
+      triggerMode?: string
+      workerGroup?: string
+      queueCode?: string
+      calendarCode?: string
+      windowCode?: string
+      dagEnabled?: boolean
+      shardStrategy?: string
+      /**
+       * @description 执行模式 ExecutionMode 枚举,缺省 FULL。INCREMENTAL 必须配合 watermarkField
+       * @enum {string}
+       */
+      executionMode?: 'FULL' | 'INCREMENTAL' | 'CDC'
+      /** @description 增量模式下的水位字段名(例:update_time / id);FULL 模式下应为空 */
+      watermarkField?: string
+      retryPolicy?: string
+      /** Format: int32 */
+      retryMaxCount?: number
+      /** Format: int32 */
+      timeoutSeconds?: number
+      executionHandler?: string
+      paramSchema?: string
+      defaultParams?: string
+      /** Format: int32 */
+      priority?: number
+      enabled?: boolean
+      description?: string
+    }
+    /** @description 更新作业定义。所有字段可选(缺省视为不修改),与 BE Java DTO `JobDefinitionUpdateRequest`
+     *     对齐。jobCode/jobType 在更新场景不可改,故未列出。
+     *      */
+    JobDefinitionUpdateRequest: {
+      tenantId?: string
+      jobName?: string
+      bizType?: string
+      scheduleType?: string
+      scheduleExpr?: string
+      timezone?: string
+      triggerMode?: string
+      workerGroup?: string
+      queueCode?: string
+      calendarCode?: string
+      windowCode?: string
+      dagEnabled?: boolean
+      shardStrategy?: string
+      /** @enum {string} */
+      executionMode?: 'FULL' | 'INCREMENTAL' | 'CDC'
+      watermarkField?: string
+      retryPolicy?: string
+      /** Format: int32 */
+      retryMaxCount?: number
+      /** Format: int32 */
+      timeoutSeconds?: number
+      executionHandler?: string
+      paramSchema?: string
+      defaultParams?: string
+      /** Format: int32 */
+      priority?: number
+      enabled?: boolean
+      description?: string
     }
     ConsoleJobDefinitionResponse: {
       /** Format: int64 */
@@ -8039,6 +8230,125 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['CommonResponseObjectArray']
+        }
+      }
+    }
+  }
+  listResultVersions: {
+    parameters: {
+      query: {
+        tenantId?: string
+        businessKey: string
+        limit?: number
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseObjectArray']
+        }
+      }
+    }
+  }
+  effectiveResultVersion: {
+    parameters: {
+      query: {
+        tenantId?: string
+        businessKey: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseObject']
+        }
+      }
+    }
+  }
+  detailResultVersion: {
+    parameters: {
+      query?: {
+        tenantId?: string
+      }
+      header?: never
+      path: {
+        id: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseObject']
+        }
+      }
+    }
+  }
+  promoteResultVersion: {
+    parameters: {
+      query?: {
+        tenantId?: string
+      }
+      header?: never
+      path: {
+        id: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseObject']
+        }
+      }
+    }
+  }
+  rejectResultVersion: {
+    parameters: {
+      query?: {
+        tenantId?: string
+      }
+      header?: never
+      path: {
+        id: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseObject']
         }
       }
     }
@@ -11145,7 +11455,7 @@ export interface operations {
     }
     requestBody: {
       content: {
-        'application/json': Record<string, never>
+        'application/json': components['schemas']['JobDefinitionCreateRequest']
       }
     }
     responses: {
@@ -11197,7 +11507,7 @@ export interface operations {
     }
     requestBody: {
       content: {
-        'application/json': Record<string, never>
+        'application/json': components['schemas']['JobDefinitionUpdateRequest']
       }
     }
     responses: {

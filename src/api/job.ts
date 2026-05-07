@@ -7,6 +7,66 @@ import type { BatchDayCatchUpRequest, ConsoleJobDefinitionResponse } from '@/typ
 
 export type InstanceQuery = InstanceQueryParams
 
+export type ExecutionMode = 'FULL' | 'INCREMENTAL' | 'CDC'
+
+/** 与 BE `JobDefinitionCreateRequest` (Java DTO) 对齐;BE openapi.yaml 同步补 schema。 */
+export interface JobDefinitionCreateRequest {
+  tenantId: string
+  jobCode: string
+  jobType: string
+  scheduleType: string
+  jobName?: string
+  bizType?: string
+  scheduleExpr?: string
+  timezone?: string
+  triggerMode?: string
+  workerGroup?: string
+  queueCode?: string
+  calendarCode?: string
+  windowCode?: string
+  dagEnabled?: boolean
+  shardStrategy?: string
+  executionMode?: ExecutionMode
+  watermarkField?: string
+  retryPolicy?: string
+  retryMaxCount?: number
+  timeoutSeconds?: number
+  executionHandler?: string
+  paramSchema?: string
+  defaultParams?: string
+  priority?: number
+  enabled?: boolean
+  description?: string
+}
+
+/** PUT 接收任意子集(BE 用 null/未传区分"不改"),与 JobDefinitionUpdateRequest Java DTO 对齐。 */
+export interface JobDefinitionUpdateRequest {
+  tenantId: string
+  jobName?: string
+  bizType?: string
+  scheduleType?: string
+  scheduleExpr?: string
+  timezone?: string
+  triggerMode?: string
+  workerGroup?: string
+  queueCode?: string
+  calendarCode?: string
+  windowCode?: string
+  dagEnabled?: boolean
+  shardStrategy?: string
+  executionMode?: ExecutionMode
+  watermarkField?: string
+  retryPolicy?: string
+  retryMaxCount?: number
+  timeoutSeconds?: number
+  executionHandler?: string
+  paramSchema?: string
+  defaultParams?: string
+  priority?: number
+  enabled?: boolean
+  description?: string
+}
+
 async function resolveJobDefinitionId(jobCode: string, tenantId: string) {
   // 传入 jobCode 让后端过滤（后端不支持时忽略该参数，回退到全量）
   const rows = await fetchAllPageItems<ConsoleJobDefinitionResponse>(
@@ -102,36 +162,16 @@ export const jobApi = {
       params: { tenantId, newJobCode },
     }),
 
-  /** POST /api/console/jobs/tasks/replay */
-  replayTask: (body: object) => post<string>('/api/console/jobs/tasks/replay', body),
-
-  /** POST /api/console/jobs/partitions/replay */
-  replayPartition: (body: object) => post<string>('/api/console/jobs/partitions/replay', body),
-
-  /** POST /api/console/jobs/batch-trigger */
-  batchTrigger: (body: object) => post<string>('/api/console/jobs/batch-trigger', body),
-
-  /** POST /api/console/jobs/catch-up/approve */
-  catchUpApprove: (body: object) => post<string>('/api/console/jobs/catch-up/approve', body),
-
-  /** POST /api/console/jobs/compensate */
-  compensate: (body: object) => post<string>('/api/console/jobs/compensate', body),
-
-  /** POST /api/console/jobs/compensations — create compensation command */
-  createCompensation: (body: object) => post<string>('/api/console/jobs/compensations', body),
-
-  /** POST /api/console/jobs/dead-letters/replay */
-  replayDeadLetters: (body: object) => post<string>('/api/console/jobs/dead-letters/replay', body),
-
   /** GET /api/console/job-definitions/{id} */
   getDefinition: (id: number, tenantId: string) =>
     get<ConsoleJobDefinitionResponse>(`/api/console/job-definitions/${id}`, { tenantId }),
 
   /** POST /api/console/job-definitions — create */
-  createDefinition: (body: object) => post<number>('/api/console/job-definitions', body),
+  createDefinition: (body: JobDefinitionCreateRequest) =>
+    post<number>('/api/console/job-definitions', body),
 
-  /** PUT /api/console/job-definitions/{id} — update */
-  updateDefinition: (id: number, body: object) =>
+  /** PUT /api/console/job-definitions/{id} — update (PUT 语义为整体替换,但 BE 实际接受任意子集) */
+  updateDefinition: (id: number, body: JobDefinitionUpdateRequest) =>
     put<void>(`/api/console/job-definitions/${id}`, body),
 
   /** POST /api/console/jobs/rerun — rerun a failed instance */

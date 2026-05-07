@@ -221,29 +221,9 @@ export function queryFilePipelineDetail(id: number, tenantId: string) {
   return get<ConsoleFilePipelineResponse>(`/api/console/queries/file-pipelines/${id}`, { tenantId })
 }
 
-/** POST /api/console/file-channels — create */
-export function createFileChannel(body: object) {
-  return post<number>('/api/console/file-channels', body)
-}
-
-/** PUT /api/console/file-channels/{id} — update */
-export function updateFileChannel(id: number, body: object) {
-  return put<void>(`/api/console/file-channels/${id}`, body)
-}
-
 /** PATCH /api/console/file-channels/{id} — toggle enabled */
 export function toggleFileChannel(id: number, tenantId: string, enabled: boolean) {
   return patch<void>(`/api/console/file-channels/${id}`, { tenantId, enabled })
-}
-
-/** POST /api/console/file-templates — create */
-export function createFileTemplate(body: object) {
-  return post<number>('/api/console/file-templates', body)
-}
-
-/** PUT /api/console/file-templates/{id} — update */
-export function updateFileTemplate(id: number, body: object) {
-  return put<void>(`/api/console/file-templates/${id}`, body)
 }
 
 /** PATCH /api/console/file-templates/{id} — toggle enabled */
