@@ -2,41 +2,22 @@
   <PageContainer>
     <PageHeader
       title="队列 / 窗口 / 日历"
-      description="对接治理接口：`queues`、`batch-windows`、`calendars`；列表由客户端拉全量后筛选与分页（与 OpenAPI 分页字段无关）。"
+      description="对接治理接口:`queues`、`batch-windows`、`calendars`;列表由客户端拉全量后筛选与分页(与 OpenAPI 分页字段无关)。"
     />
 
     <SectionCard>
       <el-tabs v-model="activeTab" v-hover-tab-activate="true" class="pill-tabs governance-tabs">
         <el-tab-pane label="队列" name="queues">
-          <ListPageQueryBar
-            class="governance-query"
+          <GovernanceFilterBar
+            v-model:keyword="kwDraft"
+            v-model:enabled="enabledDraft"
+            :keyword-placeholder="keywordPlaceholder"
             :filter-busy="filterBusy"
             :refresh-busy="loading"
             @search="onTabSearch"
             @reset="onTabReset"
-            @refresh="onTabRefresh"
-          >
-            <el-form-item label="关键字">
-              <el-input
-                v-model="kwDraft"
-                clearable
-                :placeholder="keywordPlaceholder"
-                class="governance-query__search"
-                @keyup.enter="onTabSearch"
-              />
-            </el-form-item>
-            <el-form-item label="启用状态">
-              <el-select
-                v-model="enabledDraft"
-                clearable
-                placeholder="全部"
-                class="governance-query__select"
-              >
-                <el-option label="已启用" :value="true" />
-                <el-option label="已停用" :value="false" />
-              </el-select>
-            </el-form-item>
-          </ListPageQueryBar>
+            @refresh="load"
+          />
           <el-table
             v-loading="loading"
             :data="pagedQueues.records"
@@ -71,41 +52,22 @@
             :page="pageQueues"
             :page-size="pageSize"
             :total="pagedQueues.total"
-            @update:page="setPageQueues"
-            @update:page-size="onQueuesPageSize"
+            @update:page="(p) => (pageQueues = p)"
+            @update:page-size="onAnyPageSize"
           />
         </el-tab-pane>
 
         <el-tab-pane label="批次窗口" name="windows">
-          <ListPageQueryBar
-            class="governance-query"
+          <GovernanceFilterBar
+            v-model:keyword="kwDraft"
+            v-model:enabled="enabledDraft"
+            :keyword-placeholder="keywordPlaceholder"
             :filter-busy="filterBusy"
             :refresh-busy="loading"
             @search="onTabSearch"
             @reset="onTabReset"
-            @refresh="onTabRefresh"
-          >
-            <el-form-item label="关键字">
-              <el-input
-                v-model="kwDraft"
-                clearable
-                :placeholder="keywordPlaceholder"
-                class="governance-query__search"
-                @keyup.enter="onTabSearch"
-              />
-            </el-form-item>
-            <el-form-item label="启用状态">
-              <el-select
-                v-model="enabledDraft"
-                clearable
-                placeholder="全部"
-                class="governance-query__select"
-              >
-                <el-option label="已启用" :value="true" />
-                <el-option label="已停用" :value="false" />
-              </el-select>
-            </el-form-item>
-          </ListPageQueryBar>
+            @refresh="load"
+          />
           <el-table
             v-loading="loading"
             :data="pagedWindows.records"
@@ -140,41 +102,22 @@
             :page="pageWindows"
             :page-size="pageSize"
             :total="pagedWindows.total"
-            @update:page="setPageWindows"
-            @update:page-size="onWindowsPageSize"
+            @update:page="(p) => (pageWindows = p)"
+            @update:page-size="onAnyPageSize"
           />
         </el-tab-pane>
 
         <el-tab-pane label="日历" name="calendars">
-          <ListPageQueryBar
-            class="governance-query"
+          <GovernanceFilterBar
+            v-model:keyword="kwDraft"
+            v-model:enabled="enabledDraft"
+            :keyword-placeholder="keywordPlaceholder"
             :filter-busy="filterBusy"
             :refresh-busy="loading"
             @search="onTabSearch"
             @reset="onTabReset"
-            @refresh="onTabRefresh"
-          >
-            <el-form-item label="关键字">
-              <el-input
-                v-model="kwDraft"
-                clearable
-                :placeholder="keywordPlaceholder"
-                class="governance-query__search"
-                @keyup.enter="onTabSearch"
-              />
-            </el-form-item>
-            <el-form-item label="启用状态">
-              <el-select
-                v-model="enabledDraft"
-                clearable
-                placeholder="全部"
-                class="governance-query__select"
-              >
-                <el-option label="已启用" :value="true" />
-                <el-option label="已停用" :value="false" />
-              </el-select>
-            </el-form-item>
-          </ListPageQueryBar>
+            @refresh="load"
+          />
           <el-table
             v-loading="loading"
             :data="pagedCalendars.records"
@@ -215,8 +158,8 @@
             :page="pageCalendars"
             :page-size="pageSize"
             :total="pagedCalendars.total"
-            @update:page="setPageCalendars"
-            @update:page-size="onCalendarsPageSize"
+            @update:page="(p) => (pageCalendars = p)"
+            @update:page-size="onAnyPageSize"
           />
         </el-tab-pane>
       </el-tabs>
@@ -251,7 +194,7 @@
         :page="holidayPage"
         :page-size="holidayPageSize"
         :total="pagedHolidays.total"
-        @update:page="setHolidayPage"
+        @update:page="(p) => (holidayPage = p)"
         @update:page-size="onHolidayPageSize"
       />
     </el-drawer>
@@ -275,9 +218,9 @@
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
-  import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import TablePagerBar from '@/components/table/TablePagerBar.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
+  import GovernanceFilterBar from './components/GovernanceFilterBar.vue'
 
   const tenant = useTenantStore()
   const listRemote = ref(false)
@@ -337,44 +280,14 @@
     })
   }
 
-  function setPageQueues(p: number) {
-    pageQueues.value = p
-  }
-
-  function setPageWindows(p: number) {
-    pageWindows.value = p
-  }
-
-  function setPageCalendars(p: number) {
-    pageCalendars.value = p
-  }
-
-  function setHolidayPage(p: number) {
-    holidayPage.value = p
-  }
-
-  function onQueuesPageSize(s: number) {
+  function onAnyPageSize(s: number) {
     pageSize.value = s
-    pageQueues.value = 1
-  }
-
-  function onWindowsPageSize(s: number) {
-    pageSize.value = s
-    pageWindows.value = 1
-  }
-
-  function onCalendarsPageSize(s: number) {
-    pageSize.value = s
-    pageCalendars.value = 1
+    resetListPages()
   }
 
   function onHolidayPageSize(s: number) {
     holidayPageSize.value = s
     holidayPage.value = 1
-  }
-
-  function onTabRefresh() {
-    return load()
   }
 
   const filteredQueues = computed(() => {
@@ -456,64 +369,71 @@
     }
   }
 
-  async function confirmToggle(name: string, enabled: boolean) {
-    await ElMessageBox.confirm(`确认将 ${name} ${enabled ? '启用' : '停用'}吗？`, '状态切换确认', {
-      type: 'warning',
-    })
-  }
-
-  async function toggleQueue(row: GovernanceQueueRow) {
-    if (!row.id) return
-    const enabled = !row.enabled
+  /** 三种 toggle 的共同骨架:确认 → 调 API → 回写 row.enabled。 */
+  async function confirmAndToggle(
+    label: string,
+    rowId: number | undefined,
+    enabledNext: boolean,
+    togglingId: string,
+    apiCall: () => Promise<unknown>,
+    onSuccess: () => void,
+  ) {
+    if (!rowId) return
     try {
-      await confirmToggle(`队列 ${row.queueCode}`, enabled)
+      await ElMessageBox.confirm(
+        `确认将 ${label} ${enabledNext ? '启用' : '停用'}吗?`,
+        '状态切换确认',
+        {
+          type: 'warning',
+        },
+      )
     } catch {
       return
     }
-    togglingKey.value = `queue-${row.id}`
+    togglingKey.value = togglingId
     try {
-      await governanceApi.toggleQueue(row.id, tenant.tenantId, enabled)
-      row.enabled = enabled
-      ElMessage.success(`队列 ${row.queueCode} 已${enabled ? '启用' : '停用'}`)
+      await apiCall()
+      onSuccess()
+      ElMessage.success(`${label} 已${enabledNext ? '启用' : '停用'}`)
     } finally {
       togglingKey.value = ''
     }
   }
 
-  async function toggleWindow(row: GovernanceBatchWindowRow) {
-    if (!row.id) return
-    const enabled = !row.enabled
-    try {
-      await confirmToggle(`窗口 ${row.windowCode}`, enabled)
-    } catch {
-      return
-    }
-    togglingKey.value = `window-${row.id}`
-    try {
-      await governanceApi.toggleBatchWindow(row.id, tenant.tenantId, enabled)
-      row.enabled = enabled
-      ElMessage.success(`窗口 ${row.windowCode} 已${enabled ? '启用' : '停用'}`)
-    } finally {
-      togglingKey.value = ''
-    }
+  function toggleQueue(row: GovernanceQueueRow) {
+    const next = !row.enabled
+    return confirmAndToggle(
+      `队列 ${row.queueCode}`,
+      row.id,
+      next,
+      `queue-${row.id}`,
+      () => governanceApi.toggleQueue(row.id, tenant.tenantId, next),
+      () => (row.enabled = next),
+    )
   }
 
-  async function toggleCalendar(row: GovernanceCalendarRow) {
-    if (!row.id) return
-    const enabled = !row.enabled
-    try {
-      await confirmToggle(`日历 ${row.calendarCode}`, enabled)
-    } catch {
-      return
-    }
-    togglingKey.value = `calendar-${row.id}`
-    try {
-      await governanceApi.toggleCalendar(row.id, tenant.tenantId, enabled)
-      row.enabled = enabled
-      ElMessage.success(`日历 ${row.calendarCode} 已${enabled ? '启用' : '停用'}`)
-    } finally {
-      togglingKey.value = ''
-    }
+  function toggleWindow(row: GovernanceBatchWindowRow) {
+    const next = !row.enabled
+    return confirmAndToggle(
+      `窗口 ${row.windowCode}`,
+      row.id,
+      next,
+      `window-${row.id}`,
+      () => governanceApi.toggleBatchWindow(row.id, tenant.tenantId, next),
+      () => (row.enabled = next),
+    )
+  }
+
+  function toggleCalendar(row: GovernanceCalendarRow) {
+    const next = !row.enabled
+    return confirmAndToggle(
+      `日历 ${row.calendarCode}`,
+      row.id,
+      next,
+      `calendar-${row.id}`,
+      () => governanceApi.toggleCalendar(row.id, tenant.tenantId, next),
+      () => (row.enabled = next),
+    )
   }
 
   async function openHolidays(row: GovernanceCalendarRow) {
@@ -547,23 +467,5 @@
   .governance-tabs :deep(.el-tabs__content) {
     padding-top: 10px;
     overflow: visible;
-  }
-
-  .governance-query {
-    margin-bottom: 12px;
-  }
-
-  .governance-query__search {
-    width: 320px;
-  }
-
-  .governance-query__select {
-    width: 160px;
-  }
-
-  @media (max-width: 900px) {
-    .governance-query__search {
-      width: min(320px, 100%);
-    }
   }
 </style>
