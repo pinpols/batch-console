@@ -1,4 +1,12 @@
-import { onScopeDispose, watch, type Ref, type WatchSource } from 'vue'
+import {
+  getCurrentInstance,
+  onActivated,
+  onDeactivated,
+  onScopeDispose,
+  watch,
+  type Ref,
+  type WatchSource,
+} from 'vue'
 import { ElMessage } from 'element-plus'
 import { createSseStream } from '@/api/stream'
 
@@ -34,6 +42,11 @@ export interface UseSseAutoReloadOptions {
  * 接 SSE 后可几乎实时更新。
  *
  * 关键设计:
+ * - **KeepAlive 感知**:DefaultLayout 用 KeepAlive 缓存了 20 个 view 实例。如果只
+ *   靠 onScopeDispose,SSE 永远不会在切走时关闭 → 8+ 个 SSE view 切完会撞上
+ *   浏览器同源连接上限(HTTP/1.1 ≈ 6),后续请求堆积卡死。
+ *   用 onActivated/onDeactivated 在 view 切走/回来时关流/重开。真正销毁(KeepAlive
+ *   evict 或非 KeepAlive 路径)走 onScopeDispose 兜底。
  * - **generation guard**:tenantId/scope 快速切换时,旧 ticket 返回后不会上位。
  * - **指数退避自愈**:网络抖动后 SSE onerror → 自动换新 ticket 重连,1s/2s/4s/8s/16s(封顶 30s)。
  *   由于后端 ticket 一次性 + 5min 过期,浏览器原生 EventSource 重连机制用不了(会携带旧 ticket 必 401),
@@ -54,6 +67,8 @@ export function useSseAutoReload(options: UseSseAutoReloadOptions): void {
   let generation = 0
   let retries = 0
   let fallbackNotified = false
+  /** KeepAlive 激活态;deactivate 时为 false,期间 maybeOpen() 会跳过。 */
+  let isActive = true
 
   function isEnabled(): boolean {
     const e = options.enabled
@@ -141,18 +156,40 @@ export function useSseAutoReload(options: UseSseAutoReloadOptions): void {
     }
   }
 
-  if (scope) {
-    watch(scope, () => void open(), { immediate: true })
-  } else {
+  /** 仅当 KeepAlive 激活态时才开流,deactivated 期间所有 trigger 都跳过。 */
+  function maybeOpen() {
+    if (!isActive) return
     void open()
+  }
+
+  if (scope) {
+    watch(scope, () => maybeOpen(), { immediate: true })
+  } else {
+    maybeOpen()
   }
 
   // enabled 运行期响应:false → 关流,true → 重开
   const enabledSource = options.enabled
   if (enabledSource != null && typeof enabledSource !== 'boolean') {
     watch(enabledSource, (on) => {
-      if (on) void open()
+      if (on) maybeOpen()
       else close()
+    })
+  }
+
+  // KeepAlive 生命周期:被缓存(deactivate)立刻关流释放浏览器连接配额;
+  // 重新激活时按当前 scope 重开。getCurrentInstance 防止在 effectScope 测试场景下报错。
+  if (getCurrentInstance()) {
+    onDeactivated(() => {
+      isActive = false
+      close()
+    })
+    onActivated(() => {
+      // 首次 onActivated 紧跟 setup,此时 isActive 已经是 true 且 setup 期 maybeOpen
+      // 已开过流;条件分支跳过避免双开。后续从 deactivated 回来才走重开。
+      if (isActive) return
+      isActive = true
+      maybeOpen()
     })
   }
 
