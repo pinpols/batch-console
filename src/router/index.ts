@@ -439,7 +439,7 @@ const routes = [
       {
         path: 'system/event-catalog',
         name: 'event-catalog',
-        component: () => import('@/views/system/EventCatalog.vue'),
+        component: () => import('@/views/observability/EventCatalog.vue'),
         meta: {
           title: '事件目录',
           activeMenu: '/system/event-catalog',
