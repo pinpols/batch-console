@@ -30,7 +30,7 @@ const routes = [
         name: 'ops-summary',
         component: () => import('@/views/ops/OpsSummary.vue'),
         meta: {
-          title: '运营概览',
+          title: '控制面板',
           description: '控制面快照与快捷入口',
           activeMenu: '/ops/summary',
           minRole: 'VIEWER',
@@ -72,7 +72,7 @@ const routes = [
         name: 'tenant-package-import',
         component: () => import('@/views/config/TenantPackageImportWizard.vue'),
         meta: {
-          title: '合并导入',
+          title: '配置批量导入',
           activeMenu: '/config/tenant-package',
           minRole: 'OPERATOR',
         },
@@ -92,7 +92,7 @@ const routes = [
         name: 'reports',
         component: () => import('@/views/reports/ReportExportHub.vue'),
         meta: {
-          title: '报表导出',
+          title: '报表中心',
           activeMenu: '/reports',
           minRole: 'VIEWER',
         },
@@ -124,7 +124,7 @@ const routes = [
         name: 'file-arrival',
         component: () => import('@/views/file-center/ArrivalGroupList.vue'),
         meta: {
-          title: '文件组到达治理',
+          title: '到达组治理',
           activeMenu: '/files/arrival-groups',
           minRole: 'VIEWER',
         },
@@ -144,7 +144,7 @@ const routes = [
         name: 'job-definitions',
         component: () => import('@/views/job/JobDefinitionList.vue'),
         meta: {
-          title: 'Job 定义',
+          title: '作业定义',
           activeMenu: '/jobs/definitions',
           minRole: 'VIEWER',
         },
@@ -154,7 +154,7 @@ const routes = [
         name: 'workflow-definitions',
         component: () => import('@/views/workflow/WorkflowDefinitionList.vue'),
         meta: {
-          title: 'Workflow 定义',
+          title: '工作流定义',
           activeMenu: '/workflow/definitions',
           minRole: 'VIEWER',
         },
@@ -164,7 +164,7 @@ const routes = [
         name: 'pipeline-definitions',
         component: () => import('@/views/job/PipelineDefinitionList.vue'),
         meta: {
-          title: 'Pipeline 定义',
+          title: '流水线定义',
           activeMenu: '/jobs/pipelines',
           minRole: 'VIEWER',
         },
@@ -174,7 +174,7 @@ const routes = [
         name: 'workflow-designer',
         component: () => import('@/views/workflow/WorkflowDesigner.vue'),
         meta: {
-          title: 'Workflow 编排',
+          title: '工作流编排',
           activeMenu: '/workflow/designer',
           minRole: 'OPERATOR',
         },
@@ -185,7 +185,7 @@ const routes = [
         name: 'job-instance-list',
         component: () => import('@/views/monitor/JobInstanceList.vue'),
         meta: {
-          title: 'Job Instance 列表',
+          title: '作业实例',
           activeMenu: '/monitor/job-instances',
           minRole: 'VIEWER',
         },
@@ -195,7 +195,7 @@ const routes = [
         name: 'job-instance-detail',
         component: () => import('@/views/monitor/JobInstanceDetail.vue'),
         meta: {
-          title: 'Job Instance 详情',
+          title: '作业实例详情',
           activeMenu: '/monitor/job-instances',
           minRole: 'VIEWER',
         },
@@ -205,7 +205,7 @@ const routes = [
         name: 'partition-view',
         component: () => import('@/views/monitor/PartitionView.vue'),
         meta: {
-          title: 'Job Step / 分片',
+          title: '作业分片',
           activeMenu: '/monitor/job-instances',
           minRole: 'VIEWER',
         },
@@ -215,7 +215,7 @@ const routes = [
         name: 'job-step-list',
         component: () => import('@/views/monitor/JobStepInstanceList.vue'),
         meta: {
-          title: 'Job Step Instance',
+          title: '作业步骤',
           activeMenu: '/monitor/job-steps',
           minRole: 'VIEWER',
         },
@@ -225,7 +225,7 @@ const routes = [
         name: 'workflow-run-list',
         component: () => import('@/views/monitor/WorkflowRunList.vue'),
         meta: {
-          title: 'Workflow Run 列表',
+          title: '工作流运行',
           activeMenu: '/monitor/workflow-runs',
           minRole: 'VIEWER',
         },
@@ -235,21 +235,14 @@ const routes = [
         name: 'workflow-run-detail',
         component: () => import('@/views/monitor/WorkflowRunDetail.vue'),
         meta: {
-          title: 'Workflow Run 详情',
+          title: '工作流运行详情',
           activeMenu: '/monitor/workflow-runs',
           minRole: 'VIEWER',
         },
       },
-      {
-        path: 'logs',
-        name: 'execution-log',
-        component: () => import('@/views/log/ExecutionLog.vue'),
-        meta: {
-          title: '执行日志',
-          activeMenu: '/logs',
-          minRole: 'VIEWER',
-        },
-      },
+      // 执行日志已合到"综合查询"的 ExecutionLogs Tab,顶级 /logs 撤掉。
+      // route 保留 redirect 兼容旧书签。
+      { path: 'logs', redirect: '/observability/queries?tab=executionLogs' },
       { path: 'alerts', redirect: '/observability/alerts' },
       { path: 'alerts/list', redirect: '/observability/alerts' },
       {
@@ -288,7 +281,7 @@ const routes = [
         name: 'worker-management',
         component: () => import('@/views/worker/WorkerManagement.vue'),
         meta: {
-          title: 'Worker 管理',
+          title: 'Worker',
           activeMenu: '/workers/management',
           minRole: 'OPERATOR',
         },
@@ -342,7 +335,7 @@ const routes = [
         name: 'queue-config',
         component: () => import('@/views/governance/QueueConfig.vue'),
         meta: {
-          title: '队列 & 窗口',
+          title: '队列与窗口',
           activeMenu: '/governance/queues',
           minRole: 'ADMIN',
         },
@@ -392,7 +385,7 @@ const routes = [
         name: 'api-key-list',
         component: () => import('@/views/system/ApiKeyList.vue'),
         meta: {
-          title: 'API Key 管理',
+          title: 'API Key',
           activeMenu: '/system/api-keys',
           minRole: 'ADMIN',
         },
@@ -402,7 +395,7 @@ const routes = [
         name: 'trigger-list',
         component: () => import('@/views/system/TriggerList.vue'),
         meta: {
-          title: 'Trigger 管理',
+          title: '触发器',
           activeMenu: '/system/triggers',
           minRole: 'OPERATOR',
         },
@@ -443,7 +436,7 @@ const routes = [
         name: 'config-management',
         component: () => import('@/views/system/ConfigManagement.vue'),
         meta: {
-          title: '配置管理',
+          title: '变更与同步',
           activeMenu: '/config/management',
           minRole: 'OPERATOR',
         },
@@ -477,7 +470,7 @@ const routes = [
         name: 'observability-queries',
         component: () => import('@/views/observability/ObservabilityQueryTabs.vue'),
         meta: {
-          title: '可观测性查询',
+          title: '综合查询',
           activeMenu: '/observability/queries',
           minRole: 'VIEWER',
         },

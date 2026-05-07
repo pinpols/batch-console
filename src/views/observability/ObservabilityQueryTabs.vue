@@ -25,7 +25,8 @@
 </template>
 
 <script setup lang="ts">
-  import { ref } from 'vue'
+  import { ref, watch } from 'vue'
+  import { useRoute, useRouter } from 'vue-router'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
@@ -34,7 +35,16 @@
   import ExecutionLogsTab from './components/ExecutionLogsTab.vue'
   import ChannelReceiptsTab from './components/ChannelReceiptsTab.vue'
 
-  const activeTab = ref<'deadLetters' | 'retries' | 'executionLogs' | 'channelReceipts'>(
-    'deadLetters',
+  type Tab = 'deadLetters' | 'retries' | 'executionLogs' | 'channelReceipts'
+  const VALID = new Set<Tab>(['deadLetters', 'retries', 'executionLogs', 'channelReceipts'])
+
+  const route = useRoute()
+  const router = useRouter()
+  const activeTab = ref<Tab>(
+    VALID.has(route.query.tab as Tab) ? (route.query.tab as Tab) : 'deadLetters',
   )
+
+  watch(activeTab, (tab) => {
+    void router.replace({ query: { ...route.query, tab } })
+  })
 </script>
