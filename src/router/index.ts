@@ -303,7 +303,7 @@ const routes = [
         name: 'batch-day-list',
         component: () => import('@/views/scheduler/BatchDayList.vue'),
         meta: {
-          title: '批次日历日',
+          title: '批次日与窗口',
           activeMenu: '/scheduler/batch-days',
           minRole: 'VIEWER',
         },
@@ -325,7 +325,7 @@ const routes = [
         name: 'quota-panel',
         component: () => import('@/views/governance/QuotaPanel.vue'),
         meta: {
-          title: '租户配额面板',
+          title: '租户配额',
           activeMenu: '/governance/quota',
           minRole: 'OPERATOR',
         },
@@ -365,7 +365,7 @@ const routes = [
         name: 'user-role',
         component: () => import('@/views/system/UserRole.vue'),
         meta: {
-          title: '当前登录态',
+          title: '权限自查',
           activeMenu: '/system/users',
           minRole: 'ADMIN',
         },
@@ -500,7 +500,7 @@ const routes = [
         path: 'ops/summary',
         name: 'm-ops-summary',
         component: () => import('@/views-mobile/MOpsSummary.vue'),
-        meta: { title: '运营概览', minRole: 'VIEWER' },
+        meta: { title: '控制面板', minRole: 'VIEWER' },
       },
       {
         path: 'approvals',
@@ -518,13 +518,13 @@ const routes = [
         path: 'jobs',
         name: 'm-jobs',
         component: () => import('@/views-mobile/MJobInstances.vue'),
-        meta: { title: 'Job Instance', minRole: 'VIEWER' },
+        meta: { title: '作业实例', minRole: 'VIEWER' },
       },
       {
         path: 'jobs/:id',
         name: 'm-job-detail',
         component: () => import('@/views-mobile/MJobInstanceDetail.vue'),
-        meta: { title: 'Job 实例详情', minRole: 'VIEWER' },
+        meta: { title: '作业实例详情', minRole: 'VIEWER' },
       },
       {
         path: 'catchup',

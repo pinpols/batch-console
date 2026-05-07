@@ -1,7 +1,7 @@
 <template>
   <PageContainer>
     <PageHeader
-      title="Job Partition"
+      title="作业分片"
       :description="`实例 #${instanceId} 的分区列表`"
       :show-description="true"
       :back-to="`/monitor/job-instances/${instanceId}`"

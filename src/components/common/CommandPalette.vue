@@ -136,7 +136,7 @@
     return [
       {
         key: `jump:job:${term}`,
-        title: `Job Instance #${term}`,
+        title: `作业实例 #${term}`,
         subtitle: '打开详情页',
         meta: '跳转',
         path: `/monitor/job-instances/${term}`,

@@ -1,7 +1,7 @@
 <template>
   <PageContainer>
     <PageHeader
-      title="配额策略"
+      title="租户配额"
       description="对接 `GET /api/console/quota-policies`，展示并切换租户配额策略状态。"
     />
 

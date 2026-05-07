@@ -1,7 +1,7 @@
 <template>
   <PageContainer>
     <PageHeader
-      title="批次日历日"
+      title="批次日与窗口"
       description="按日历编码与日期区间分页查询；日历编码优先从治理「日历」接口同步下拉。"
     />
 

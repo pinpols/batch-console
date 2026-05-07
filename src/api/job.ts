@@ -74,7 +74,7 @@ async function resolveJobDefinitionId(jobCode: string, tenantId: string) {
     { tenantId, jobCode },
   )
   const matched = rows.find((row) => row.jobCode === jobCode)
-  if (!matched) throw new Error(`Job 定义不存在：${jobCode}`)
+  if (!matched) throw new Error(`作业定义不存在：${jobCode}`)
   return matched.id
 }
 

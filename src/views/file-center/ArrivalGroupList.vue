@@ -1,7 +1,7 @@
 <template>
   <PageContainer>
     <PageHeader
-      title="文件组到达治理"
+      title="到达组治理"
       description="GET /api/console/queries/file-arrival-groups（PageResponse 端上聚合）· POST …/arrival-groups/action"
     />
 

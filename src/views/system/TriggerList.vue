@@ -1,7 +1,7 @@
 <template>
   <PageContainer>
     <PageHeader
-      title="Trigger 管理"
+      title="触发器"
       description="Job Trigger 注册、注销、暂停与恢复。"
       :show-description="true"
     />

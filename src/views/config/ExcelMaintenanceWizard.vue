@@ -313,11 +313,11 @@
     'file-templates': '文件模板',
     'file-channels': '文件渠道', // 合并导入域（代码保留）
     workflows: '工作流', // 合并导入域（代码保留）
-    'job-definitions': 'Job 定义', // 合并导入域（代码保留）
+    'job-definitions': '作业定义', // 合并导入域（代码保留）
     'alert-routings': '告警路由', // 合并导入域（代码保留）
     'batch-windows': '批次窗口',
     'business-calendars': '业务日历',
-    'pipeline-definitions': 'Pipeline 定义', // 合并导入域（代码保留）
+    'pipeline-definitions': '流水线定义', // 合并导入域（代码保留）
     'quota-policies': '配额策略',
     'resource-queues': '资源队列',
   }

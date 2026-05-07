@@ -1,7 +1,7 @@
 <template>
   <PageContainer>
     <PageHeader
-      title="Job 定义"
+      title="作业定义"
       description="GET /api/console/queries/job-definitions（服务端分页 + jobCode/enabled 过滤）"
     />
 

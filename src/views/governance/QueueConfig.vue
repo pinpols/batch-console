@@ -1,7 +1,7 @@
 <template>
   <PageContainer>
     <PageHeader
-      title="队列 / 窗口 / 日历"
+      title="队列与窗口"
       description="对接治理接口:`queues`、`batch-windows`、`calendars`;列表由客户端拉全量后筛选与分页(与 OpenAPI 分页字段无关)。"
     />
 

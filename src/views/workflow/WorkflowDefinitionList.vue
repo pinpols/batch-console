@@ -1,7 +1,7 @@
 <template>
   <PageContainer>
     <PageHeader
-      title="Workflow 定义"
+      title="工作流定义"
       description="GET /api/console/queries/workflow-definitions（PageResponse 端上聚合后筛选）"
     />
 
@@ -123,7 +123,7 @@
       </ProTable>
     </SectionCard>
 
-    <el-drawer v-model="detailVisible" title="Workflow 详情 / 版本信息" size="760px">
+    <el-drawer v-model="detailVisible" title="工作流详情 / 版本信息" size="760px">
       <el-descriptions v-if="detailRow" :column="2" border size="small">
         <el-descriptions-item label="workflowCode">{{
           detailRow.workflowCode
@@ -163,7 +163,7 @@
       </el-descriptions>
     </el-drawer>
 
-    <el-dialog v-model="validateVisible" title="Workflow 校验结果" width="720px">
+    <el-dialog v-model="validateVisible" title="工作流校验结果" width="720px">
       <pre class="json-preview">{{ validateResult }}</pre>
     </el-dialog>
   </PageContainer>

@@ -1,6 +1,6 @@
 <template>
   <PageContainer>
-    <PageHeader title="运营概览" description="GET /api/console/ops/summary?tenantId=">
+    <PageHeader title="控制面板" description="GET /api/console/ops/summary?tenantId=">
       <template #actions>
         <el-button type="primary" :icon="Refresh" :loading="loading" @click="load">刷新</el-button>
       </template>

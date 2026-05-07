@@ -1,10 +1,6 @@
 <template>
   <PageContainer>
-    <PageHeader
-      title="Job Instance 详情"
-      :description="headerDesc"
-      back-to="/monitor/job-instances"
-    >
+    <PageHeader title="作业实例详情" :description="headerDesc" back-to="/monitor/job-instances">
       <template #actions>
         <el-button type="primary" :loading="loading" @click="load">刷新</el-button>
         <el-button v-if="row" type="danger" :loading="cancelLoading" @click="confirmCancel">
@@ -35,7 +31,7 @@
         <el-descriptions-item label="重试">{{ row.retryFlag ? '是' : '否' }}</el-descriptions-item>
       </el-descriptions>
       <div class="actions">
-        <el-button type="primary" @click="goSteps">步骤 / Job Step</el-button>
+        <el-button type="primary" @click="goSteps">查看分片</el-button>
         <el-button @click="goLogs">执行日志（审计检索）</el-button>
         <el-button type="warning" :loading="rerunLoading" @click="confirmRerun">重跑</el-button>
         <el-button type="danger" :loading="cancelLoading" @click="confirmCancel"

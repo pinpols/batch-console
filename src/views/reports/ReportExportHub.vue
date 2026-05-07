@@ -1,6 +1,6 @@
 <template>
   <PageContainer>
-    <PageHeader title="导出中心" description="一键导出常用报表（Excel），请求将携带 tenantId">
+    <PageHeader title="报表中心" description="一键导出常用报表（Excel），请求将携带 tenantId">
       <template #actions>
         <div class="header-actions">
           <el-tag type="info" effect="plain">tenant: {{ tenant.tenantId }}</el-tag>

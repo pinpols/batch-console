@@ -1,7 +1,7 @@
 <template>
   <PageContainer>
     <PageHeader
-      title="Workflow Run 列表"
+      title="工作流运行"
       description="分页接口拉取运行记录；Workflow 编码从当前租户下的定义列表选择（无单独枚举接口）。"
     />
 

@@ -1,7 +1,7 @@
 <template>
   <PageContainer>
     <PageHeader
-      title="Worker 管理"
+      title="Worker"
       description="Worker 注册列表与文件渠道管理。"
       :show-description="true"
     />

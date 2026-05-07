@@ -1,7 +1,7 @@
 <template>
   <PageContainer>
     <PageHeader
-      title="Pipeline 定义"
+      title="流水线定义"
       description="对接 `pipeline-definitions` 的列表、detail、toggle，以及 create/update 表单。"
     >
       <template #actions>

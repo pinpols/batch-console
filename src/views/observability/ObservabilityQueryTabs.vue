@@ -1,7 +1,7 @@
 <template>
   <PageContainer>
     <PageHeader
-      title="可观测性查询"
+      title="综合查询"
       description="Dead Letters、重试调度、执行日志、Channel 回执查询。"
     />
 

@@ -3,7 +3,7 @@
     <div class="m-page">
       <div class="m-page__header">
         <div>
-          <div class="m-page__title">Job Instance</div>
+          <div class="m-page__title">作业实例</div>
           <div class="m-page__subtitle">共 {{ total }} 条 · 第 {{ page }} 页</div>
         </div>
         <button class="m-page__refresh" :disabled="loading" @click="load">

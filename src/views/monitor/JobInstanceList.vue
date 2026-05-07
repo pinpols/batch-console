@@ -1,7 +1,7 @@
 <template>
   <PageContainer>
     <PageHeader
-      title="Job Instance 列表"
+      title="作业实例"
       description="分页查询实例；Job Code 从定义接口拉取下拉，亦可手输未列出的编码。"
     />
 

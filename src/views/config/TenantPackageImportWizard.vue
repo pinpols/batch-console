@@ -1,8 +1,8 @@
 <template>
   <PageContainer class="tenant-pkg-page">
     <PageHeader
-      title="合并导入"
-      description="8-Sheet 租户配置包：单事务导入文件渠道 / 告警路由 / Pipeline / 工作流 / Job 定义，含跨 Sheet 依赖校验。"
+      title="配置批量导入"
+      description="8-Sheet 租户配置包：单事务导入文件渠道 / 告警路由 / 流水线 / 工作流 / 作业定义，含跨 Sheet 依赖校验。"
       compact
     />
     <SectionCard>

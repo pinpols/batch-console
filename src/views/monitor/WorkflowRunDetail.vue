@@ -1,10 +1,6 @@
 <template>
   <PageContainer>
-    <PageHeader
-      title="Workflow Run 详情"
-      :description="headerDesc"
-      back-to="/monitor/workflow-runs"
-    >
+    <PageHeader title="工作流运行详情" :description="headerDesc" back-to="/monitor/workflow-runs">
       <template #actions>
         <el-button type="primary" :loading="loading" @click="load">刷新</el-button>
         <el-button v-if="run" type="warning" :loading="actionLoading" @click="confirmCancel"
@@ -229,7 +225,7 @@
 
   async function confirmCancel() {
     try {
-      await ElMessageBox.confirm(`取消 Workflow Run #${runId.value}？`, '取消确认', {
+      await ElMessageBox.confirm(`取消工作流运行 #${runId.value}？`, '取消确认', {
         type: 'warning',
       })
       actionLoading.value = true
@@ -245,7 +241,7 @@
 
   async function confirmTerminate() {
     try {
-      await ElMessageBox.confirm(`强制终止 Workflow Run #${runId.value}？不可逆。`, '终止确认', {
+      await ElMessageBox.confirm(`强制终止工作流运行 #${runId.value}？不可逆。`, '终止确认', {
         type: 'error',
       })
       actionLoading.value = true

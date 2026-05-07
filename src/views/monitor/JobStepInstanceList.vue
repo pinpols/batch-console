@@ -1,7 +1,7 @@
 <template>
   <PageContainer>
     <PageHeader
-      title="Job Step Instance 总览"
+      title="作业步骤"
       description="多页聚合为全量后在浏览器筛选；步骤状态为分区状态枚举下拉。"
     />
 

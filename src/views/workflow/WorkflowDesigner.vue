@@ -3,7 +3,7 @@
     <!-- 离屏模板图：供 X6 Dnd 生成与画布一致的拖拽预览 -->
     <div ref="dndPaletteRef" class="workflow-dnd-palette-host" aria-hidden="true" />
 
-    <PageHeader title="Workflow 编排" :description="subtitle" show-description compact>
+    <PageHeader title="工作流编排" :description="subtitle" show-description compact>
       <template #actions>
         <el-button :loading="definitionsLoading" @click="reloadDefinitions">同步定义列表</el-button>
         <el-button type="primary" :loading="loadingWorkflow" @click="reloadWorkflow">
