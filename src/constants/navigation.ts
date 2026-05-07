@@ -155,7 +155,7 @@ export const navigationGroups: NavigationGroup[] = [
     children: [
       { title: '租户管理', path: '/system/tenants', minRole: 'OPERATOR', icon: Briefcase },
       { title: '用户账户', path: '/system/user-accounts', minRole: 'ADMIN', icon: Tickets },
-      { title: '当前登录态', path: '/system/users', minRole: 'ADMIN', icon: Tickets },
+      // /system/users(权限自查)从主菜单撤下,改由 Header 右上 dropdown 触发(ADMIN 可见)
       { title: 'AI 助手', path: '/system/ai-chat', minRole: 'ADMIN', icon: Document },
       { title: 'API Key', path: '/system/api-keys', minRole: 'ADMIN', icon: Key },
       { title: '系统参数', path: '/system/parameters', minRole: 'ADMIN', icon: Setting },

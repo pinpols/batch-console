@@ -132,23 +132,22 @@
           </el-tooltip>
           <div class="header-controls__content">
             <el-tag v-if="auth.role" size="small" type="info">{{ auth.role }}</el-tag>
-            <span class="username">{{ auth.userInfo?.username ?? '未登录' }}</span>
-            <span class="header-controls__divider" aria-hidden="true" />
-            <el-popconfirm
-              title="确认退出登录？"
-              confirm-button-text="退出"
-              cancel-button-text="取消"
-              width="220"
-              :hide-after="0"
-              @confirm="handleLogout"
-            >
-              <template #reference>
-                <el-button text class="logout-btn" aria-label="退出登录" title="退出登录">
-                  <el-icon><SwitchButton /></el-icon>
-                  <span class="logout-btn__text">退出</span>
-                </el-button>
+            <el-dropdown trigger="click" placement="bottom-end" @command="onUserCommand">
+              <span class="username username--clickable" tabindex="0">
+                {{ auth.userInfo?.username ?? '未登录' }}
+                <el-icon class="username__caret"><ArrowDown /></el-icon>
+              </span>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item v-if="auth.role === 'ADMIN'" command="profile" :icon="Key">
+                    权限自查
+                  </el-dropdown-item>
+                  <el-dropdown-item command="logout" :icon="SwitchButton" divided>
+                    退出登录
+                  </el-dropdown-item>
+                </el-dropdown-menu>
               </template>
-            </el-popconfirm>
+            </el-dropdown>
           </div>
         </div>
       </div>
@@ -157,11 +156,15 @@
 </template>
 
 <script setup lang="ts">
+  import { useRouter } from 'vue-router'
+  import { ElMessageBox } from 'element-plus'
   import {
+    ArrowDown,
     DocumentCopy,
     Expand,
     Fold,
     FullScreen,
+    Key,
     Link,
     Monitor,
     MoreFilled,
@@ -178,6 +181,7 @@
     (e: 'open-palette'): void
   }>()
 
+  const router = useRouter()
   const {
     app,
     auth,
@@ -195,6 +199,25 @@
     commandPaletteShortcutLabel,
     handleLogout,
   } = useHeaderLogic()
+
+  async function onUserCommand(command: string) {
+    if (command === 'profile') {
+      void router.push('/system/users')
+      return
+    }
+    if (command === 'logout') {
+      try {
+        await ElMessageBox.confirm('确认退出登录?', '退出登录', {
+          confirmButtonText: '退出',
+          cancelButtonText: '取消',
+          type: 'warning',
+        })
+      } catch {
+        return
+      }
+      handleLogout()
+    }
+  }
 </script>
 
 <style scoped>
@@ -386,6 +409,28 @@
     white-space: nowrap;
   }
 
+  .username--clickable {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    border-radius: 6px;
+    padding: 2px 6px;
+    outline: none;
+    transition: background var(--motion-duration-sm) var(--motion-ease-standard);
+  }
+
+  .username--clickable:hover,
+  .username--clickable:focus-visible {
+    background: var(--color-bg-elevated, color-mix(in srgb, var(--color-primary) 8%, transparent));
+    color: var(--color-text-primary);
+  }
+
+  .username__caret {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+  }
+
   /* 当前租户常驻 chip：醒目但不喧宾夺主 */
   .tenant-chip {
     display: inline-flex;
@@ -460,35 +505,5 @@
 
   .icon-button {
     padding: 6px;
-  }
-
-  /* 悬浮面板末端：分隔线 + 额外 inline 间距，让“退出”和用户名在视觉上断开，降低误触概率 */
-  .header-controls__divider {
-    display: inline-block;
-    width: 1px;
-    height: 16px;
-    margin: 0 4px 0 6px;
-    background: var(--color-border-light);
-    flex-shrink: 0;
-  }
-
-  .logout-btn {
-    padding: 4px 8px;
-    color: var(--color-text-secondary);
-    font-size: 13px;
-    gap: 4px;
-  }
-
-  .logout-btn :deep(.el-icon) {
-    font-size: 14px;
-  }
-
-  .logout-btn:hover {
-    color: var(--el-color-danger);
-    background: color-mix(in srgb, var(--el-color-danger) 10%, transparent 90%);
-  }
-
-  .logout-btn__text {
-    font-weight: 600;
   }
 </style>
