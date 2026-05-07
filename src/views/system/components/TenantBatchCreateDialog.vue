@@ -1,0 +1,166 @@
+<template>
+  <el-dialog
+    :model-value="modelValue"
+    title="批量新增租户"
+    width="620px"
+    @update:model-value="(v) => emit('update:modelValue', v)"
+  >
+    <el-form label-width="100px">
+      <el-form-item label="租户列表" required>
+        <el-input
+          v-model="form.tenantsText"
+          type="textarea"
+          :autosize="{ minRows: 4, maxRows: 10 }"
+          placeholder="每行一个:tenantId,tenantName[,description]"
+        />
+        <div class="form-hint">每行格式:tenantId,名称[,描述]。最多 50 个。</div>
+      </el-form-item>
+      <el-form-item label="用户名前缀">
+        <el-input
+          v-model="form.usernamePrefix"
+          placeholder="默认 op-,最终用户名为 {前缀}{tenantId}"
+          maxlength="32"
+        />
+      </el-form-item>
+      <el-form-item label="共享密码" required>
+        <el-input
+          v-model="form.password"
+          type="password"
+          show-password
+          placeholder="所有租户共享的初始密码,至少 12 个字符"
+          maxlength="256"
+        />
+      </el-form-item>
+      <el-divider content-position="left">配置初始化(可选)</el-divider>
+      <el-form-item label="源租户">
+        <el-select
+          class="query-w-280"
+          v-model="form.initConfigFrom"
+          clearable
+          filterable
+          placeholder="留空则跳过配置初始化"
+        >
+          <el-option
+            v-for="t in items"
+            :key="t.tenantId"
+            :label="`${t.tenantId} — ${t.tenantName}`"
+            :value="t.tenantId"
+          />
+        </el-select>
+        <div class="form-hint">选择后,新建租户将自动复制源租户的全部 10 类配置。</div>
+      </el-form-item>
+      <el-form-item v-if="form.initConfigFrom" label="初始化模式">
+        <el-radio-group v-model="form.initMode">
+          <el-radio value="SKIP_EXISTING">SKIP_EXISTING</el-radio>
+          <el-radio value="UPSERT">UPSERT</el-radio>
+        </el-radio-group>
+      </el-form-item>
+    </el-form>
+    <template #footer>
+      <el-button @click="emit('update:modelValue', false)">取消</el-button>
+      <el-button type="primary" :loading="saving" @click="submit">批量创建</el-button>
+    </template>
+  </el-dialog>
+</template>
+
+<script setup lang="ts">
+  import { reactive, ref, watch } from 'vue'
+  import { ElMessage } from 'element-plus'
+  import { batchCreateTenants, type Tenant } from '@/api/tenants'
+
+  const props = defineProps<{
+    modelValue: boolean
+    items: Tenant[]
+  }>()
+
+  const emit = defineEmits<{
+    (e: 'update:modelValue', v: boolean): void
+    (e: 'saved'): void
+    (e: 'result', data: unknown): void
+  }>()
+
+  const saving = ref(false)
+  const form = reactive({
+    tenantsText: '',
+    usernamePrefix: 'op-',
+    password: '',
+    initConfigFrom: '',
+    initMode: 'SKIP_EXISTING' as 'SKIP_EXISTING' | 'UPSERT',
+  })
+
+  watch(
+    () => props.modelValue,
+    (open) => {
+      if (!open) return
+      form.tenantsText = ''
+      form.usernamePrefix = 'op-'
+      form.password = ''
+      form.initConfigFrom = ''
+      form.initMode = 'SKIP_EXISTING'
+    },
+  )
+
+  function parseTenants(text: string) {
+    return text
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .map((line) => {
+        const [tenantId = '', tenantName = '', description] = line.split(',').map((s) => s.trim())
+        return { tenantId, tenantName, description: description || undefined }
+      })
+  }
+
+  async function submit() {
+    const tenants = parseTenants(form.tenantsText)
+    if (tenants.length === 0) {
+      ElMessage.warning('请至少填写一个租户')
+      return
+    }
+    if (tenants.length > 50) {
+      ElMessage.warning('单次最多 50 个租户')
+      return
+    }
+    for (const t of tenants) {
+      if (!t.tenantId || !t.tenantName) {
+        ElMessage.warning(`每行至少包含 tenantId 和名称:${t.tenantId || '(空)'}`)
+        return
+      }
+    }
+    if (form.password.length < 12) {
+      ElMessage.warning('共享密码至少 12 个字符')
+      return
+    }
+    saving.value = true
+    try {
+      const res = await batchCreateTenants({
+        tenants,
+        usernamePrefix: form.usernamePrefix || undefined,
+        password: form.password,
+        initConfigFrom: form.initConfigFrom || undefined,
+        initMode: form.initConfigFrom ? form.initMode : undefined,
+      })
+      emit('update:modelValue', false)
+      if (res.configInit) {
+        const ci = res.configInit
+        ElMessage.success(
+          `已创建 ${tenants.length} 个租户,配置初始化:${ci.successTenants} 成功 / ${ci.failureTenants} 失败`,
+        )
+        emit('result', res.configInit)
+      } else {
+        ElMessage.success(`已批量创建 ${tenants.length} 个租户`)
+      }
+      emit('saved')
+    } finally {
+      saving.value = false
+    }
+  }
+</script>
+
+<style scoped>
+  .form-hint {
+    margin-top: 4px;
+    font-size: 12px;
+    color: var(--color-text-tertiary, #909399);
+  }
+</style>
