@@ -1,9 +1,6 @@
 <template>
   <PageContainer>
-    <PageHeader
-      title="作业定义"
-      description="GET /api/console/queries/job-definitions（服务端分页 + jobCode/enabled 过滤）"
-    />
+    <PageHeader title="作业定义" description="作业定义清单与执行模式、调度规则维护。" />
 
     <SectionCard>
       <ProTable

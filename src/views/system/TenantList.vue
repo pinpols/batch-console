@@ -1,10 +1,6 @@
 <template>
   <PageContainer>
-    <PageHeader
-      title="租户管理"
-      description="维护平台级租户目录:创建、编辑、暂停 / 恢复租户,并可一键将当前控制台上下文切换到目标租户。"
-      :show-description="true"
-    >
+    <PageHeader title="租户管理" description="平台租户目录:创建、编辑、暂停 / 恢复与上下文切换。">
       <template #actions>
         <el-button
           v-if="canManageTenants"

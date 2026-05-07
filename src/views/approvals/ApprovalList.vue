@@ -1,9 +1,6 @@
 <template>
   <PageContainer>
-    <PageHeader
-      title="审批中心"
-      description="通用审批 + Catch-up 审批合并入口;Tab 状态用 ?tab= 持久化,可深链。"
-    />
+    <PageHeader title="审批中心" description="通用审批与 Catch-up 审批的统一处理入口。" />
 
     <SectionCard>
       <el-tabs v-model="activeTab" v-hover-tab-activate="true" class="pill-tabs">

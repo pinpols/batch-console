@@ -2,8 +2,7 @@
   <PageContainer>
     <PageHeader
       :title="title"
-      description="批次日窗口状态与 Catch-up 操作"
-      :show-description="true"
+      description="批次日窗口运行状态与 Catch-up 触发。"
       back-to="/scheduler/batch-days"
     >
       <template #actions>

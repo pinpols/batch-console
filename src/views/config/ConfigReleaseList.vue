@@ -1,9 +1,6 @@
 <template>
   <PageContainer>
-    <PageHeader
-      title="配置发布"
-      description="发布单列表；发布状态以下拉枚举筛选，Key 与名称仍支持模糊输入。"
-    />
+    <PageHeader title="配置发布" description="配置发布单列表与状态流转。" />
 
     <SectionCard>
       <ProTable

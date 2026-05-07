@@ -1,9 +1,6 @@
 <template>
   <PageContainer>
-    <PageHeader
-      title="到达组治理"
-      description="GET /api/console/queries/file-arrival-groups（PageResponse 端上聚合）· POST …/arrival-groups/action"
-    />
+    <PageHeader title="到达组治理" description="文件组到达策略、校验状态与异常补救入口。" />
 
     <SectionCard>
       <ProTable

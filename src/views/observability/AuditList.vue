@@ -1,9 +1,6 @@
 <template>
   <PageContainer>
-    <PageHeader
-      title="审计日志"
-      description="全量审计与本地筛选；操作类型与结果优先 meta/enums，并与当前数据中的新值合并。"
-    />
+    <PageHeader title="审计日志" description="平台关键操作的审计日志查询。" />
 
     <SectionCard>
       <div v-if="lastTrace" class="trace-bar">

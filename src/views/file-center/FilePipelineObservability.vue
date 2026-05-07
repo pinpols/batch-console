@@ -1,9 +1,6 @@
 <template>
   <PageContainer>
-    <PageHeader
-      title="流水线观测"
-      description="file-pipelines / steps / dispatches / errors — 端上拉全量分页数据后按关键字筛选再分页（数据量大时首次加载可能较慢）。"
-    />
+    <PageHeader title="流水线观测" description="文件流水线、步骤、投递与错误的统一观测。" />
 
     <SectionCard>
       <el-tabs

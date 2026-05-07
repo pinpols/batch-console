@@ -1,10 +1,6 @@
 <template>
   <PageContainer>
-    <PageHeader
-      title="运维诊断"
-      description="Kafka Lag、Outbox 运维工具与集群健康诊断。"
-      :show-description="true"
-    />
+    <PageHeader title="运维诊断" description="Kafka Lag、Outbox 运维工具与集群健康诊断。" />
 
     <SectionCard>
       <el-tabs v-model="activeTab" v-hover-tab-activate="true" class="pill-tabs">

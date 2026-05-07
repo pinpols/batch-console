@@ -1,10 +1,6 @@
 <template>
   <PageContainer>
-    <PageHeader
-      title="权限自查"
-      description="展示当前登录用户、角色、权限声明，以及基于导航配置推导出的可访问范围。"
-      :show-description="true"
-    >
+    <PageHeader title="权限自查" description="当前登录用户的角色、权限与可访问菜单一览。">
       <template #actions>
         <el-button :loading="refreshing" @click="refreshProfile">刷新登录态</el-button>
       </template>

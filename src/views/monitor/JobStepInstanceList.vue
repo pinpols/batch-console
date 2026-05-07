@@ -1,9 +1,6 @@
 <template>
   <PageContainer>
-    <PageHeader
-      title="作业步骤"
-      description="多页聚合为全量后在浏览器筛选；步骤状态为分区状态枚举下拉。"
-    />
+    <PageHeader title="作业步骤" description="跨实例汇总的作业步骤运行记录。" />
 
     <SectionCard>
       <ProTable

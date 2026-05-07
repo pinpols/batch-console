@@ -1,9 +1,6 @@
 <template>
   <PageContainer>
-    <PageHeader
-      title="工作流定义"
-      description="GET /api/console/queries/workflow-definitions（PageResponse 端上聚合后筛选）"
-    />
+    <PageHeader title="工作流定义" description="工作流定义清单、版本与启用状态维护。" />
 
     <SectionCard>
       <ProTable

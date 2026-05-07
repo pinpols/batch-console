@@ -1,9 +1,6 @@
 <template>
   <PageContainer>
-    <PageHeader
-      title="工作流运行"
-      description="分页接口拉取运行记录；Workflow 编码从当前租户下的定义列表选择（无单独枚举接口）。"
-    />
+    <PageHeader title="工作流运行" description="工作流运行历史与节点执行明细入口。" />
 
     <SectionCard>
       <ProTable

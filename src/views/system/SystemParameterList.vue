@@ -1,10 +1,6 @@
 <template>
   <PageContainer>
-    <PageHeader
-      title="系统参数"
-      description="系统参数键值对管理；支持新增、编辑、删除。"
-      :show-description="true"
-    >
+    <PageHeader title="系统参数" description="系统级参数键值对的增删改。">
       <template #actions>
         <el-button type="primary" :icon="Plus" class="pretty-add-button" @click="openCreate">
           新增参数

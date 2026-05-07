@@ -3,7 +3,6 @@
     <PageHeader
       title="作业分片"
       :description="`实例 #${instanceId} 的分区列表`"
-      :show-description="true"
       :back-to="`/monitor/job-instances/${instanceId}`"
     >
       <template #actions>

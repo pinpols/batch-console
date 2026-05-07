@@ -2,7 +2,7 @@
   <PageContainer class="excel-wizard-page">
     <PageHeader
       :title="title"
-      description="初始化就维护域：上传 → 预览校验 → 应用变更。合并导入（工作流 / Job / Pipeline / 文件渠道 / 告警路由）请使用「合并导入」入口。"
+      description="单域 Excel 配置维护:上传 → 预览校验 → 应用变更。"
       compact
     >
       <template #actions>

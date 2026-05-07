@@ -1,9 +1,6 @@
 <template>
   <PageContainer>
-    <PageHeader
-      title="执行日志（审计检索）"
-      description="基于审计全量与端上筛选；操作类型与结果优先使用 meta/enums，缺省再回落当前数据与本地映射。"
-    />
+    <PageHeader title="执行日志（审计检索）" description="审计日志全量加载后端上筛选(执行操作)。" />
     <SectionCard>
       <ProTable
         :data="display"

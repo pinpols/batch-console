@@ -1,9 +1,6 @@
 <template>
   <PageContainer>
-    <PageHeader
-      title="流水线定义"
-      description="对接 `pipeline-definitions` 的列表、detail、toggle，以及 create/update 表单。"
-    >
+    <PageHeader title="流水线定义" description="流水线定义清单与步骤编排。">
       <template #actions>
         <el-button type="primary" :icon="Plus" class="pretty-add-button" @click="openCreate">
           新增 Pipeline

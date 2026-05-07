@@ -1,10 +1,6 @@
 <template>
   <PageContainer>
-    <PageHeader
-      title="Worker"
-      description="Worker 注册列表与文件渠道管理。"
-      :show-description="true"
-    />
+    <PageHeader title="Worker" description="Worker 注册列表与文件渠道管理。" />
 
     <SectionCard>
       <el-tabs v-model="activeTab" v-hover-tab-activate="true" class="pill-tabs">

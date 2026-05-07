@@ -1,9 +1,6 @@
 <template>
   <PageContainer>
-    <PageHeader
-      title="队列与窗口"
-      description="对接治理接口:`queues`、`batch-windows`、`calendars`;列表由客户端拉全量后筛选与分页(与 OpenAPI 分页字段无关)。"
-    />
+    <PageHeader title="队列与窗口" description="调度队列、批次窗口与业务日历的治理入口。" />
 
     <SectionCard>
       <el-tabs v-model="activeTab" v-hover-tab-activate="true" class="pill-tabs governance-tabs">

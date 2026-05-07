@@ -1,10 +1,6 @@
 <template>
   <PageContainer>
-    <PageHeader
-      title="自助服务"
-      description="查看租户配额与用量，申请配额变更、Job 重跑与补偿。"
-      :show-description="true"
-    />
+    <PageHeader title="自助服务" description="查看租户配额与用量，申请配额变更、Job 重跑与补偿。" />
 
     <SectionCard>
       <el-tabs v-model="activeTab" v-hover-tab-activate="true" class="pill-tabs">

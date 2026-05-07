@@ -2,7 +2,7 @@
   <PageContainer>
     <PageHeader
       title="综合查询"
-      description="Dead Letters、重试调度、执行日志、Channel 回执查询。"
+      description="死信、重试调度、执行日志与 Channel 回执的统一查询。"
     />
 
     <SectionCard>

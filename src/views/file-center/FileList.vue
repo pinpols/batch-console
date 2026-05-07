@@ -1,9 +1,6 @@
 <template>
   <PageContainer>
-    <PageHeader
-      title="文件列表"
-      description="分页查询文件记录；状态与业务类型优先 meta/enums，缺省再回落当前页数据。"
-    />
+    <PageHeader title="文件列表" description="文件记录分页查询与状态、业务类型筛选。" />
 
     <SectionCard>
       <ProTable

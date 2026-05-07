@@ -1,9 +1,6 @@
 <template>
   <PageContainer>
-    <PageHeader
-      title="AI 助手"
-      description="对话走控制台 AI 接口；审计表支持按 Trace、操作人与分类筛选，分类选项由已加载数据归纳。"
-    />
+    <PageHeader title="AI 助手" description="AI 助手对话与历史审计查询。" />
 
     <SectionCard>
       <el-tabs

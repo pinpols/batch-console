@@ -1,10 +1,6 @@
 <template>
   <PageContainer>
-    <PageHeader
-      title="用户账户"
-      description="平台管理员维护控制台登录账号：编辑、启用 / 停用、重置密码。所有写操作都会记录到审计日志。"
-      :show-description="true"
-    >
+    <PageHeader title="用户账户" description="控制台登录账号的编辑、启用 / 停用与重置密码。">
     </PageHeader>
 
     <div class="metrics">

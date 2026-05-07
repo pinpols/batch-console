@@ -1,9 +1,6 @@
 <template>
   <PageContainer>
-    <PageHeader
-      title="Outbox"
-      description="重试与投递日志分页聚合；状态项为数据中出现值并带常用中文释义（无单独字典接口）。"
-    />
+    <PageHeader title="Outbox" description="事件 Outbox 的投递与重试日志。" />
 
     <SectionCard>
       <el-tabs v-model="tab" v-hover-tab-activate="true" class="pill-tabs">

@@ -1,9 +1,6 @@
 <template>
   <PageContainer>
-    <PageHeader
-      title="作业实例"
-      description="分页查询实例；Job Code 从定义接口拉取下拉，亦可手输未列出的编码。"
-    />
+    <PageHeader title="作业实例" description="作业实例分页查询与重跑、取消、终止操作。" />
 
     <SectionCard>
       <ProTable
