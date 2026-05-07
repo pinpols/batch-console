@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import type { RouteLocationNormalizedLoaded } from 'vue-router'
-import { useTabsStore, PAGE_TABS_MAX_VISIBLE } from './tabs'
+import { useTabsStore, PAGE_TABS_MAX_TOTAL, PAGE_TABS_MAX_VISIBLE } from './tabs'
 
 function mkRoute(path: string, title = path, fullPath = path): RouteLocationNormalizedLoaded {
   return {
@@ -46,6 +46,25 @@ describe('useTabsStore', () => {
       expect(tabs.list).toHaveLength(1)
       expect(tabs.list[0].path).toBe('/job/list?status=RUNNING')
       expect(tabs.list[0].lastAccessAt).toBeGreaterThanOrEqual(first)
+    })
+
+    it('bubbles a revisited tab to the end of the list (MRU)', () => {
+      const tabs = useTabsStore()
+      ;['/a', '/b', '/c'].forEach((p) => tabs.addFromRoute(mkRoute(p)))
+      // 重访 /a 应该把它移到最右(活跃 tab 永远在末尾)
+      tabs.addFromRoute(mkRoute('/a'))
+      expect(tabs.list.map((t) => t.key)).toEqual(['/b', '/c', '/a'])
+    })
+
+    it('caps total list to PAGE_TABS_MAX_TOTAL, evicting the leftmost', () => {
+      const tabs = useTabsStore()
+      for (let i = 0; i < PAGE_TABS_MAX_TOTAL + 3; i++) {
+        tabs.addFromRoute(mkRoute(`/page-${i}`))
+      }
+      expect(tabs.list).toHaveLength(PAGE_TABS_MAX_TOTAL)
+      // 最左 3 条(/page-0..2)应被淘汰,保留 /page-3 起
+      expect(tabs.list[0].key).toBe('/page-3')
+      expect(tabs.list[tabs.list.length - 1].key).toBe(`/page-${PAGE_TABS_MAX_TOTAL + 2}`)
     })
   })
 

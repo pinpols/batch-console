@@ -2,8 +2,19 @@ import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import type { RouteLocationNormalizedLoaded } from 'vue-router'
 
-/** 主标签栏最多平铺展示数量，其余收入左侧「更多」 */
-export const PAGE_TABS_MAX_VISIBLE = 10
+/**
+ * 标签栏容量参数。
+ *
+ * 行为约定:
+ * - `list` 顺序 = 最近访问历史(老 → 新),最右是当前活跃。
+ * - 重访已有 tab 会被「冒泡」到最末(splice + push),所以活跃 tab 永远在 inline 区。
+ * - 新打开 tab 追加到末尾;超过 TOTAL 时从最左侧淘汰(MRU FIFO)。
+ * - 因为活跃 tab 必在最末,FIFO 不会顶掉用户正在用的页面。
+ */
+/** store 里最多保留多少条 tab。超过后从最左(最久未访问)淘汰。 */
+export const PAGE_TABS_MAX_TOTAL = 12
+/** 主标签栏最多平铺展示数量,其余收入左侧「更多」popover。 */
+export const PAGE_TABS_MAX_VISIBLE = 6
 
 export interface PageTab {
   /** 逻辑页签 key：按 route.path 去重，避免 query 变化开出重复页签 */
@@ -29,14 +40,21 @@ export const useTabsStore = defineStore('tabs', () => {
     const key = route.path
     const title = (route.meta.title as string) || String(route.name ?? '页面')
     const now = Date.now()
-    const hit = list.value.find((t) => t.key === key)
-    if (hit) {
+    const i = list.value.findIndex((t) => t.key === key)
+
+    // 已存在: 冒泡到末尾(MRU),并刷新 path / title / 时间戳
+    if (i !== -1) {
+      const [hit] = list.value.splice(i, 1)
       hit.title = title
       hit.path = route.fullPath
       hit.lastAccessAt = now
+      list.value.push(hit)
       return
     }
+
+    // 新打开: 追加 + 超容量从最左侧淘汰
     list.value.push({ key, path: route.fullPath, title, lastAccessAt: now })
+    while (list.value.length > PAGE_TABS_MAX_TOTAL) list.value.shift()
   }
 
   function removeByKey(key: string) {

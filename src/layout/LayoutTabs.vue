@@ -263,7 +263,8 @@
     align-items: center;
     gap: 2px;
     max-width: 180px;
-    min-width: 0;
+    /* 别让 flex 把标题挤成纯 ··· × ;真装不下走横向 scroll(.page-tabs__scroll 已开) */
+    min-width: 80px;
     padding: 5px 6px 5px 8px;
     border: 1px solid var(--color-border-light);
     border-radius: var(--radius-content);
