@@ -285,10 +285,9 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, ref, watch } from 'vue'
+  import { computed, watch } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { ArrowLeft, ArrowRight, Document, Upload, WarningFilled } from '@element-plus/icons-vue'
-  import type { UploadFile } from 'element-plus'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import {
     excelApply,
@@ -301,6 +300,7 @@
     STANDALONE_DOMAINS,
     type ExcelDomain,
   } from '@/api/excelDomains'
+  import { useImportWizard } from '@/composables/useImportWizard'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
@@ -351,65 +351,24 @@
     domainValid.value ? `Excel 维护 — ${domainLabels[activeDomain.value]}` : 'Excel 维护',
   )
 
-  const step = ref(0)
-  const file = ref<File | null>(null)
-  const uploadToken = ref('')
-  const upLoading = ref(false)
-  const pvLoading = ref(false)
-  const wbLoading = ref(false)
-  const tplLoading = ref(false)
-  const exportLoading = ref(false)
-  const previewRaw = ref<Record<string, unknown> | null>(null)
+  const {
+    step,
+    file,
+    uploadToken,
+    upLoading,
+    pvLoading,
+    wbLoading,
+    tplLoading,
+    exportLoading,
+    previewRaw,
+    previewStats,
+    previewWorkbookUrl,
+    issueRows,
+    onFile,
+    triggerBlobDownload,
+  } = useImportWizard()
 
   const workbookSupported = computed(() => supportsPreviewWorkbook(activeDomain.value))
-
-  const previewStats = computed(() => {
-    const p = previewRaw.value
-    if (!p) return null
-    const total = typeof p.totalRows === 'number' ? p.totalRows : undefined
-    const valid = typeof p.validRows === 'number' ? p.validRows : undefined
-    const invalid = typeof p.invalidRows === 'number' ? p.invalidRows : undefined
-    const changeSummary =
-      p.changeSummary && typeof p.changeSummary === 'object'
-        ? (p.changeSummary as Record<string, unknown>)
-        : {}
-    const insert = typeof changeSummary.insertRows === 'number' ? changeSummary.insertRows : 0
-    const update = typeof changeSummary.updateRows === 'number' ? changeSummary.updateRows : 0
-    if (total === undefined && valid === undefined) return null
-    return { total: total ?? '—', valid: valid ?? '—', invalid: invalid ?? '—', insert, update }
-  })
-
-  const previewWorkbookUrl = computed(() => {
-    const url = previewRaw.value?.previewWorkbookUrl
-    return typeof url === 'string' && url ? url : null
-  })
-
-  const issueRows = computed(() => {
-    const p = previewRaw.value
-    if (!p || !Array.isArray(p.issues)) return []
-    return (p.issues as Record<string, unknown>[]).map((i) => ({
-      sheetName: String(i.sheetName ?? ''),
-      rowNo: i.rowNo,
-      messages: Array.isArray(i.messages)
-        ? (i.messages as string[]).join('; ')
-        : String(i.messages ?? ''),
-    }))
-  })
-
-  function onFile(u: UploadFile) {
-    file.value = u.raw ?? null
-  }
-
-  function triggerBlobDownload(blob: Blob, filename: string) {
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = filename
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
-  }
 
   async function doDownloadTemplate() {
     if (!domainValid.value) return
