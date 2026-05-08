@@ -4,6 +4,7 @@
     :class="{
       'page-header--compact': effectiveCompact,
       'page-header--toolbar': toolbar,
+      'page-header--summary': hideDuplicateTitle,
     }"
   >
     <div class="page-header__left">
@@ -11,8 +12,19 @@
         <el-icon :size="16"><ArrowLeft /></el-icon>
       </button>
       <div>
-        <h1 class="title" :class="{ 'title--muted': toolbar }">{{ title }}</h1>
-        <p v-if="shouldShowDescription" class="description">{{ description }}</p>
+        <h1
+          class="title"
+          :class="{ 'title--muted': toolbar, 'title--sr-only': hideDuplicateTitle }"
+        >
+          {{ displayTitle }}
+        </h1>
+        <p
+          v-if="shouldShowDescription"
+          class="description"
+          :class="{ 'description--primary': hideDuplicateTitle }"
+        >
+          {{ displayDescription }}
+        </p>
       </div>
     </div>
     <div v-if="$slots.actions" class="actions">
@@ -23,12 +35,12 @@
 
 <script setup lang="ts">
   import { computed } from 'vue'
-  import { useRouter } from 'vue-router'
+  import { useRoute, useRouter } from 'vue-router'
   import { ArrowLeft } from '@element-plus/icons-vue'
 
   const props = withDefaults(
     defineProps<{
-      title: string
+      title?: string
       description?: string
       /** 紧凑模式：减少上下 padding、缩小标题字号 */
       compact?: boolean
@@ -41,6 +53,11 @@
       showDescription?: boolean
       /** 返回按钮目标路由；传入后在标题左侧显示返回箭头 */
       backTo?: string
+      /**
+       * 是否显示标题。默认 auto：普通列表页若已由全局页头展示相同标题，则
+       * 这里视觉隐藏标题，只保留页面说明/操作区；详情返回页仍显示。
+       */
+      showTitle?: boolean
     }>(),
     {
       compact: undefined,
@@ -50,11 +67,28 @@
   )
 
   const router = useRouter()
+  const route = useRoute()
 
   const effectiveCompact = computed(() => props.compact ?? true)
+  const displayTitle = computed(() => {
+    const explicit = props.title?.trim()
+    if (explicit) return explicit
+    return typeof route.meta.title === 'string' ? route.meta.title : ''
+  })
+  const displayDescription = computed(() => {
+    const explicit = props.description?.trim()
+    if (explicit) return explicit
+    return typeof route.meta.description === 'string' ? route.meta.description : ''
+  })
+  const hideDuplicateTitle = computed(() => {
+    if (props.showTitle != null) return !props.showTitle
+    if (props.backTo) return false
+    const routeTitle = typeof route.meta.title === 'string' ? route.meta.title.trim() : ''
+    return routeTitle !== '' && routeTitle === displayTitle.value.trim()
+  })
 
   const shouldShowDescription = computed(() => {
-    const d = String(props.description ?? '').trim()
+    const d = displayDescription.value.trim()
     if (!d) return false
     if (!props.showDescription) return false
     // 老页面遗留的"GET /api/..."这类接口文案默认不显示
@@ -91,6 +125,20 @@
     padding-bottom: 9px;
   }
 
+  .page-header--summary {
+    align-items: center;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    background:
+      linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--color-bg-card) 92%, var(--color-primary) 8%),
+        var(--color-bg-card)
+      ),
+      var(--color-bg-card);
+    border: 1px solid color-mix(in srgb, var(--color-border-light) 84%, var(--color-primary) 16%);
+  }
+
   .title {
     margin: 0;
     font-size: var(--font-size-xl);
@@ -113,6 +161,18 @@
     font-size: var(--font-size-md);
   }
 
+  .title--sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
   .description {
     margin: 4px 0 0;
     color: var(--color-text-tertiary, #909399);
@@ -126,6 +186,18 @@
   .page-header--compact .description {
     font-size: 12.5px;
     line-height: 1.5;
+  }
+
+  .description--primary {
+    margin-top: 0;
+    max-width: 900px;
+    padding-left: 10px;
+    border-left: 3px solid color-mix(in srgb, var(--color-primary) 76%, transparent);
+    color: color-mix(in srgb, var(--color-text-primary) 74%, var(--color-text-secondary) 26%);
+    font-size: 13px;
+    font-weight: 550;
+    line-height: 1.5;
+    letter-spacing: 0;
   }
 
   .page-header__left {

@@ -1,6 +1,6 @@
 <template>
   <PageContainer>
-    <PageHeader title="作业实例" description="作业实例分页查询与重跑、取消、终止操作。" />
+    <PageHeader />
 
     <SectionCard>
       <ProTable

@@ -4,6 +4,7 @@ import { usePermissionStore } from '@/stores/permission'
 import { useRouteProgressStore } from '@/stores/routeProgress'
 import { logError, logRoute } from '@/utils/logger'
 import { isMobile } from '@/layout-mobile/composables/useMobileDetect'
+import { applyPageMetaToRoutes } from '@/constants/pageMeta'
 import type { Role } from '@/types'
 
 /**
@@ -52,7 +53,7 @@ const routes = [
         name: 'config-releases',
         component: () => import('@/views/config/ConfigReleaseList.vue'),
         meta: {
-          title: '配置发布',
+          title: '发布管理',
           activeMenu: '/config/releases',
           minRole: 'OPERATOR',
         },
@@ -174,7 +175,7 @@ const routes = [
         name: 'workflow-designer',
         component: () => import('@/views/workflow/WorkflowDesigner.vue'),
         meta: {
-          title: '工作流编排',
+          title: '编排设计器',
           activeMenu: '/workflow/designer',
           minRole: 'OPERATOR',
         },
@@ -185,7 +186,7 @@ const routes = [
         name: 'job-instance-list',
         component: () => import('@/views/monitor/JobInstanceList.vue'),
         meta: {
-          title: '作业实例',
+          title: '作业运行',
           activeMenu: '/monitor/job-instances',
           minRole: 'VIEWER',
         },
@@ -541,6 +542,8 @@ const routes = [
     meta: { requiresAuth: false },
   },
 ]
+
+applyPageMetaToRoutes(routes)
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),

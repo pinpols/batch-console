@@ -1,6 +1,6 @@
 <template>
   <PageContainer>
-    <PageHeader title="Outbox" description="事件 Outbox 的投递与重试日志。" />
+    <PageHeader />
 
     <SectionCard>
       <el-tabs v-model="tab" v-hover-tab-activate="true" class="pill-tabs">

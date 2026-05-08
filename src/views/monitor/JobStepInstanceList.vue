@@ -1,6 +1,6 @@
 <template>
   <PageContainer>
-    <PageHeader title="作业步骤" description="跨实例汇总的作业步骤运行记录。" />
+    <PageHeader />
 
     <SectionCard>
       <ProTable

@@ -1,6 +1,6 @@
 <template>
   <PageContainer>
-    <PageHeader title="工作流运行" description="工作流运行历史与节点执行明细入口。" />
+    <PageHeader />
 
     <SectionCard>
       <ProTable

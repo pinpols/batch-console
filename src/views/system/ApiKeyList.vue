@@ -1,6 +1,6 @@
 <template>
   <PageContainer>
-    <PageHeader title="API Key" description="API Key 的创建、查看与吊销。">
+    <PageHeader>
       <template #actions>
         <el-button
           type="primary"

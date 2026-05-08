@@ -1,10 +1,6 @@
 <template>
   <PageContainer class="excel-wizard-page">
-    <PageHeader
-      :title="title"
-      description="单域 Excel 配置维护:上传 → 预览校验 → 应用变更。"
-      compact
-    >
+    <PageHeader :title="title" compact>
       <template #actions>
         <el-tag v-if="domainValid" size="small" type="primary" effect="plain" round>
           {{ domainLabels[activeDomain] }}

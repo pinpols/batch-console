@@ -1,6 +1,6 @@
 <template>
   <PageContainer>
-    <PageHeader title="审计日志" description="平台关键操作的审计日志查询。" />
+    <PageHeader />
 
     <SectionCard>
       <div v-if="lastTrace" class="trace-bar">

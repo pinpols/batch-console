@@ -1,6 +1,6 @@
 <template>
   <PageContainer>
-    <PageHeader title="变更与同步" description="配置变更审计、Secret 管理与配置导入导出同步。" />
+    <PageHeader />
 
     <SectionCard>
       <el-tabs v-model="activeTab" v-hover-tab-activate="true" class="pill-tabs">

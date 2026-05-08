@@ -1,6 +1,6 @@
 <template>
   <PageContainer>
-    <PageHeader title="系统参数" description="系统级参数键值对的增删改。">
+    <PageHeader>
       <template #actions>
         <el-button type="primary" :icon="Plus" class="pretty-add-button" @click="openCreate">
           新增参数

@@ -1,6 +1,6 @@
 <template>
   <PageContainer>
-    <PageHeader title="队列与窗口" description="调度队列、批次窗口与业务日历的治理入口。" />
+    <PageHeader />
 
     <SectionCard>
       <el-tabs v-model="activeTab" v-hover-tab-activate="true" class="pill-tabs governance-tabs">

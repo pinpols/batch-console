@@ -1,6 +1,6 @@
 <template>
   <PageContainer>
-    <PageHeader title="标签管理" description="资源标签的增删改查与按标签搜索。" />
+    <PageHeader />
 
     <SectionCard>
       <el-tabs v-model="activeTab" v-hover-tab-activate="true" class="pill-tabs">

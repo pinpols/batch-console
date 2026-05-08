@@ -1,6 +1,6 @@
 <template>
   <PageContainer>
-    <PageHeader title="通知与投递" description="通知渠道、订阅规则、Webhook 端点与投递日志。" />
+    <PageHeader />
 
     <SectionCard>
       <el-tabs v-model="activeTab" v-hover-tab-activate="true" class="pill-tabs">
