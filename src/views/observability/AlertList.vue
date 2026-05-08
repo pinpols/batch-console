@@ -1,6 +1,6 @@
 <template>
   <PageContainer>
-    <PageHeader title="告警" description="告警事件查看、确认、静默与关闭。" />
+    <PageHeader />
 
     <SectionCard>
       <ProTable

@@ -1,6 +1,6 @@
 <template>
   <PageContainer>
-    <PageHeader title="调度快照" description="调度器实时快照:策略、队列、Worker 与历史采样。">
+    <PageHeader>
       <template #actions>
         <el-button type="primary" :loading="loading" @click="loadAll">刷新</el-button>
         <el-button type="warning" :loading="pauseLoading" @click="confirmPauseAll"

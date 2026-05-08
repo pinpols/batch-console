@@ -1,6 +1,6 @@
 <template>
   <PageContainer>
-    <PageHeader title="文件列表" description="文件记录分页查询与状态、业务类型筛选。" />
+    <PageHeader />
 
     <SectionCard>
       <ProTable

@@ -1,6 +1,6 @@
 <template>
   <PageContainer>
-    <PageHeader title="作业定义" description="作业定义清单与执行模式、调度规则维护。" />
+    <PageHeader />
 
     <SectionCard>
       <ProTable

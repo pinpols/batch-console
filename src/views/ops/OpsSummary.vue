@@ -1,6 +1,6 @@
 <template>
   <PageContainer>
-    <PageHeader title="控制面板" description="当前租户的实时运营指标、SLA 趋势与近期分布。">
+    <PageHeader>
       <template #actions>
         <el-button type="primary" :icon="Refresh" :loading="loading" @click="load">刷新</el-button>
       </template>

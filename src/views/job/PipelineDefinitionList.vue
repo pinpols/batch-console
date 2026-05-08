@@ -1,6 +1,6 @@
 <template>
   <PageContainer>
-    <PageHeader title="流水线定义" description="流水线定义清单与步骤编排。">
+    <PageHeader>
       <template #actions>
         <el-button type="primary" :icon="Plus" class="pretty-add-button" @click="openCreate">
           新增 Pipeline

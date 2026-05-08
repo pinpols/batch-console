@@ -1,6 +1,6 @@
 <template>
   <PageContainer>
-    <PageHeader title="批次日与窗口" description="按日历与日期区间查询批次日运行情况。" />
+    <PageHeader />
 
     <SectionCard>
       <ProTable

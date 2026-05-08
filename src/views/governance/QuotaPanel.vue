@@ -1,6 +1,6 @@
 <template>
   <PageContainer>
-    <PageHeader title="租户配额" description="租户级配额策略与启用状态。" />
+    <PageHeader />
 
     <SectionCard>
       <div class="panel-head">

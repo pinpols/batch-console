@@ -3,14 +3,60 @@
     <!-- 离屏模板图：供 X6 Dnd 生成与画布一致的拖拽预览 -->
     <div ref="dndPaletteRef" class="workflow-dnd-palette-host" aria-hidden="true" />
 
-    <PageHeader title="工作流编排" :description="subtitle" show-description compact>
-      <template #actions>
-        <el-button :loading="definitionsLoading" @click="reloadDefinitions">同步定义列表</el-button>
+    <section class="workflow-context app-surface" aria-label="当前编排对象">
+      <div class="workflow-context__main">
+        <div class="workflow-context__title-row">
+          <h1 class="workflow-context__title">{{ workflowContextTitle }}</h1>
+          <el-tag
+            v-if="workflowContextCode"
+            class="workflow-context__tag"
+            size="small"
+            effect="plain"
+          >
+            {{ workflowContextCode }}
+          </el-tag>
+          <el-tag
+            v-if="workflowDefinition"
+            class="workflow-context__tag"
+            :type="workflowDefinition.enabled ? 'success' : 'info'"
+            size="small"
+            effect="plain"
+          >
+            {{ workflowDefinition.enabled ? '启用' : '停用' }}
+          </el-tag>
+        </div>
+        <p class="workflow-context__desc">{{ workflowContextDesc }}</p>
+      </div>
+
+      <div class="workflow-context__metrics" aria-label="编排状态">
+        <div class="workflow-context-metric">
+          <span class="workflow-context-metric__label">节点</span>
+          <strong>{{ stats.nodes }}</strong>
+        </div>
+        <div class="workflow-context-metric">
+          <span class="workflow-context-metric__label">连线</span>
+          <strong>{{ stats.edges }}</strong>
+        </div>
+        <div class="workflow-context-metric">
+          <span class="workflow-context-metric__label">校验</span>
+          <strong :class="{ 'is-danger': validationErrorCount > 0 }">{{
+            validationSummary
+          }}</strong>
+        </div>
+        <div class="workflow-context-metric workflow-context-metric--wide">
+          <span class="workflow-context-metric__label">草稿</span>
+          <strong>{{ draftSavedDisplay.main }}</strong>
+          <span class="workflow-context-metric__sub">{{ draftSourceLabel }}</span>
+        </div>
+      </div>
+
+      <div class="workflow-context__actions">
+        <el-button :loading="definitionsLoading" @click="reloadDefinitions">同步定义</el-button>
         <el-button type="primary" :loading="loadingWorkflow" @click="reloadWorkflow">
-          重新加载画布
+          重载画布
         </el-button>
-      </template>
-    </PageHeader>
+      </div>
+    </section>
 
     <SectionCard class="workflow-shell workflow-page-card">
       <div class="workflow-toolbar">
@@ -447,13 +493,12 @@
 </template>
 
 <script setup lang="ts">
-  import { onActivated, onBeforeUnmount, onDeactivated, onMounted, ref, watch } from 'vue'
+  import { computed, onActivated, onBeforeUnmount, onDeactivated, onMounted, ref, watch } from 'vue'
   import { CircleCheck, DataLine, Document, EditPen, Grid, Guide } from '@element-plus/icons-vue'
   import { useAppStore } from '@/stores/app'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
   import PageContainer from '@/components/common/PageContainer.vue'
-  import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
   import {
     nodeKinds,
@@ -600,7 +645,6 @@
     dslPanelOpen,
     routeWorkflowCode,
     selectedDefinition,
-    subtitle,
     draftSavedDisplay,
     dslPreview,
     dslPreviewLines,
@@ -620,6 +664,36 @@
     clearSuppressDefinitionFormSync,
     router,
   } = dataModule
+
+  const workflowContextCode = computed(() => selectedWorkflowCode.value.trim())
+  const workflowContextTitle = computed(() => {
+    if (!selectedWorkflowCode.value) return '未选择 Workflow'
+    return (
+      selectedDefinition.value?.workflowName ||
+      workflowDefinition.value?.workflowName ||
+      selectedWorkflowCode.value
+    )
+  })
+  const workflowContextDesc = computed(() => {
+    if (!selectedWorkflowCode.value) return '选择一个定义后开始编辑画布。'
+    return (
+      workflowDefinition.value?.description ||
+      selectedDefinition.value?.description ||
+      '当前 Workflow 暂无描述。'
+    )
+  })
+  const validationErrorCount = computed(
+    () => validationIssues.value.filter((issue) => issue.level === 'error').length,
+  )
+  const validationWarningCount = computed(
+    () => validationIssues.value.filter((issue) => issue.level === 'warning').length,
+  )
+  const validationSummary = computed(() => {
+    if (validationErrorCount.value > 0) return `${validationErrorCount.value} 错误`
+    if (validationWarningCount.value > 0) return `${validationWarningCount.value} 警告`
+    return '通过'
+  })
+  const draftSourceLabel = computed(() => (draftSource.value === 'local-draft' ? '本地' : '后端'))
 
   // Bind validation + draft callbacks into the graph module
   bindDerivedStateCallbacks(validateGraph, queueDraftSave, validationIssues)

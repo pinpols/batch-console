@@ -1,6 +1,6 @@
 <template>
   <PageContainer>
-    <PageHeader title="工作流定义" description="工作流定义清单、版本与启用状态维护。" />
+    <PageHeader />
 
     <SectionCard>
       <ProTable

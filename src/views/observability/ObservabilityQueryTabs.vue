@@ -1,9 +1,6 @@
 <template>
   <PageContainer>
-    <PageHeader
-      title="综合查询"
-      description="死信、重试调度、执行日志与 Channel 回执的统一查询。"
-    />
+    <PageHeader />
 
     <SectionCard>
       <el-tabs v-model="activeTab" v-hover-tab-activate="true" class="pill-tabs">

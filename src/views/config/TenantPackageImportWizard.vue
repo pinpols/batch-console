@@ -1,10 +1,6 @@
 <template>
   <PageContainer class="tenant-pkg-page">
-    <PageHeader
-      title="配置批量导入"
-      description="租户配置包跨域单事务导入,含 Sheet 间依赖校验。"
-      compact
-    />
+    <PageHeader compact />
     <SectionCard>
       <div class="excel-wizard">
         <div class="excel-wizard__steps-shell">

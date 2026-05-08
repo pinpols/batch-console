@@ -1,7 +1,6 @@
 <template>
   <PageContainer>
-    <PageHeader title="用户账户" description="控制台登录账号的编辑、启用 / 停用与重置密码。">
-    </PageHeader>
+    <PageHeader> </PageHeader>
 
     <div class="metrics">
       <MetricCard label="账户总数" :value="page.total" />

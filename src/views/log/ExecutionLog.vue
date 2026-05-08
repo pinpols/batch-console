@@ -1,6 +1,6 @@
 <template>
   <PageContainer>
-    <PageHeader title="执行日志（审计检索）" description="审计日志全量加载后端上筛选(执行操作)。" />
+    <PageHeader title="执行日志（审计检索）" />
     <SectionCard>
       <ProTable
         :data="display"

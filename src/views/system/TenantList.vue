@@ -1,6 +1,6 @@
 <template>
   <PageContainer>
-    <PageHeader title="租户管理" description="平台租户目录:创建、编辑、暂停 / 恢复与上下文切换。">
+    <PageHeader>
       <template #actions>
         <el-button
           v-if="canManageTenants"

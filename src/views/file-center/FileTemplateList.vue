@@ -1,6 +1,6 @@
 <template>
   <PageContainer>
-    <PageHeader title="文件模板" description="文件模板清单与类型、业务类型分类。" />
+    <PageHeader />
 
     <SectionCard>
       <ProTable

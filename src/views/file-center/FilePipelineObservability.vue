@@ -1,6 +1,6 @@
 <template>
   <PageContainer>
-    <PageHeader title="流水线观测" description="文件流水线、步骤、投递与错误的统一观测。" />
+    <PageHeader />
 
     <SectionCard>
       <el-tabs

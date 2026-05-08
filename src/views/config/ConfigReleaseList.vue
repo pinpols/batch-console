@@ -1,6 +1,6 @@
 <template>
   <PageContainer>
-    <PageHeader title="配置发布" description="配置发布单列表与状态流转。" />
+    <PageHeader />
 
     <SectionCard>
       <ProTable

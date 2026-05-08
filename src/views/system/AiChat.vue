@@ -1,6 +1,6 @@
 <template>
   <PageContainer>
-    <PageHeader title="AI 助手" description="AI 助手对话与历史审计查询。" />
+    <PageHeader />
 
     <SectionCard>
       <el-tabs

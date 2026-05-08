@@ -1,6 +1,6 @@
 <template>
   <PageContainer>
-    <PageHeader title="事件目录" description="浏览系统事件类型与 Kafka Topic 注册信息。" />
+    <PageHeader />
 
     <SectionCard>
       <el-tabs v-model="activeTab" v-hover-tab-activate="true" class="pill-tabs">
