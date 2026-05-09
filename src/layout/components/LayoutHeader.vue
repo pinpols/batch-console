@@ -119,7 +119,7 @@
           </el-tooltip>
         </div>
 
-        <div class="header-controls">
+        <div class="header-controls" :class="{ 'header-controls--pinned': dropdownOpen }">
           <el-tooltip content="更多（悬浮展开）" placement="bottom">
             <el-button text class="icon-button header-controls__handle" aria-label="更多">
               <el-icon>
@@ -129,7 +129,12 @@
           </el-tooltip>
           <div class="header-controls__content">
             <el-tag v-if="auth.role" size="small" type="info">{{ auth.role }}</el-tag>
-            <el-dropdown trigger="click" placement="bottom-end" @command="onUserCommand">
+            <el-dropdown
+              trigger="click"
+              placement="bottom-end"
+              @command="onUserCommand"
+              @visible-change="dropdownOpen = $event"
+            >
               <span class="username username--clickable" tabindex="0">
                 {{ auth.userInfo?.username ?? '未登录' }}
                 <el-icon class="username__caret"><ArrowDown /></el-icon>
@@ -153,6 +158,7 @@
 </template>
 
 <script setup lang="ts">
+  import { ref } from 'vue'
   import { useRouter } from 'vue-router'
   import { ElMessageBox } from 'element-plus'
   import {
@@ -179,6 +185,7 @@
   }>()
 
   const router = useRouter()
+  const dropdownOpen = ref(false)
   const {
     app,
     auth,
@@ -321,9 +328,10 @@
     overflow: hidden;
   }
 
-  /* 悬浮/聚焦展开 */
+  /* 悬浮/聚焦/下拉打开时展开 */
   .header-controls:hover .header-controls__content,
-  .header-controls:focus-within .header-controls__content {
+  .header-controls:focus-within .header-controls__content,
+  .header-controls--pinned .header-controls__content {
     max-width: min(1040px, 94vw);
     pointer-events: auto;
     overflow: visible;
@@ -336,7 +344,8 @@
   }
 
   .header-controls:hover .header-controls__handle,
-  .header-controls:focus-within .header-controls__handle {
+  .header-controls:focus-within .header-controls__handle,
+  .header-controls--pinned .header-controls__handle {
     opacity: 0.55;
   }
 
