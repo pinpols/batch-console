@@ -242,8 +242,14 @@ const routes = [
         },
       },
       // 执行日志已合到"综合查询"的 ExecutionLogs Tab,顶级 /logs 撤掉。
-      // route 保留 redirect 兼容旧书签。
-      { path: 'logs', redirect: '/observability/queries?tab=executionLogs' },
+      // route 保留 redirect 兼容旧书签。函数式 redirect 透传 query(traceId 等)。
+      {
+        path: 'logs',
+        redirect: (to) => ({
+          path: '/observability/queries',
+          query: { ...to.query, tab: 'executionLogs' },
+        }),
+      },
       { path: 'alerts', redirect: '/observability/alerts' },
       { path: 'alerts/list', redirect: '/observability/alerts' },
       {
