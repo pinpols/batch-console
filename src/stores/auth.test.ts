@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { useAuthStore } from './auth'
+import { useTenantStore } from './tenant'
 
 const storage = new Map<string, string>()
 vi.stubGlobal('localStorage', {
@@ -32,6 +33,7 @@ describe('useAuthStore', () => {
   beforeEach(() => {
     storage.clear()
     setActivePinia(createPinia())
+    vi.clearAllMocks()
   })
 
   it('isLoggedIn is false when no token', () => {
@@ -97,5 +99,91 @@ describe('useAuthStore', () => {
     await p2
     expect(mockedGet).toHaveBeenCalledTimes(1)
     expect(auth.userInfo?.username).toBe('test')
+  })
+
+  it('fetchMe discards stale response after tenant switch mid-flight', async () => {
+    const { get } = await import('@/api/client')
+    const mockedGet = vi.mocked(get)
+    storage.set('token', 'abc')
+    setActivePinia(createPinia())
+    const auth = useAuthStore()
+    const tenant = useTenantStore()
+    tenant.setTenantId('tenant-A')
+
+    // 第一次 fetchMe 拿 A profile,响应延迟回来
+    let resolveA!: (v: unknown) => void
+    mockedGet.mockReturnValueOnce(
+      new Promise((r) => {
+        resolveA = r
+      }),
+    )
+    const pA = auth.fetchMe()
+
+    // 切到 B,旧 fetchMe 还在飞;watch 触发新 fetchMe(B)
+    tenant.setTenantId('tenant-B')
+    let resolveB!: (v: unknown) => void
+    mockedGet.mockReturnValueOnce(
+      new Promise((r) => {
+        resolveB = r
+      }),
+    )
+    // 等 watch 异步触发完
+    await Promise.resolve()
+    await Promise.resolve()
+
+    // B 先落地 → 写入 B profile
+    resolveB({
+      userId: 'uB',
+      username: 'user-b',
+      role: 'OPERATOR',
+      permissions: ['ROLE_TENANT_USER'],
+    })
+    await new Promise((r) => setTimeout(r, 0))
+    expect(auth.userInfo?.username).toBe('user-b')
+
+    // A 后落地 → 当前 tenant 已是 B,丢弃 A 响应,不污染 userInfo
+    resolveA({
+      userId: 'uA',
+      username: 'user-a',
+      role: 'ADMIN',
+      permissions: ['*'],
+    })
+    await pA
+    expect(auth.userInfo?.username).toBe('user-b')
+  })
+
+  it('auth store auto-refreshes profile when tenant changes', async () => {
+    const { get } = await import('@/api/client')
+    const mockedGet = vi.mocked(get)
+    storage.set('token', 'abc')
+    setActivePinia(createPinia())
+    const auth = useAuthStore()
+    const tenant = useTenantStore()
+
+    mockedGet.mockResolvedValue({
+      userId: 'u1',
+      username: 'after-switch',
+      role: 'ADMIN',
+      permissions: ['*'],
+    })
+
+    expect(mockedGet).toHaveBeenCalledTimes(0)
+    tenant.setTenantId('new-tenant')
+    // watch 是异步的,等 microtask flush
+    await new Promise((r) => setTimeout(r, 0))
+    expect(mockedGet).toHaveBeenCalledTimes(1)
+    expect(auth.userInfo?.username).toBe('after-switch')
+  })
+
+  it('tenant change does NOT trigger fetchMe when no token', async () => {
+    const { get } = await import('@/api/client')
+    const mockedGet = vi.mocked(get)
+    setActivePinia(createPinia())
+    useAuthStore() // 触发 store 初始化 / watch 注册
+    const tenant = useTenantStore()
+
+    tenant.setTenantId('whatever')
+    await new Promise((r) => setTimeout(r, 0))
+    expect(mockedGet).not.toHaveBeenCalled()
   })
 })

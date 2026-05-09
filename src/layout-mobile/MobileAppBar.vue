@@ -107,13 +107,15 @@
     router.push('/login')
   }
 
-  function handleTenantSwitch(newTenantId: string) {
+  async function handleTenantSwitch(newTenantId: string) {
     if (!newTenantId) return
     tenant.setTenantId(newTenantId)
     ElMessage.success(`已切换到 ${newTenantId}`)
-    auth.fetchMe().catch((err) => {
+    try {
+      await auth.fetchMe()
+    } catch (err) {
       if (import.meta.env.DEV) console.warn('[mobile tenant-switch] fetchMe failed:', err)
-    })
+    }
   }
 
   function goDesktop() {
