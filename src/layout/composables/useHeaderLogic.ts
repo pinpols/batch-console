@@ -62,14 +62,18 @@ export function useHeaderLogic() {
   /** 系统角色是否可切换租户 */
   const canSwitchTenant = computed(() => checkCanSwitchTenant(auth.userInfo?.permissions ?? []))
 
-  function handleTenantSwitch(newTenantId: string) {
+  async function handleTenantSwitch(newTenantId: string) {
     if (!newTenantId) return
     tenant.setTenantId(newTenantId)
     ElMessage.success(`已切换到租户 ${newTenantId}`)
-    // 后端会按 tenant+authorities 下发菜单，切换租户后需刷新 profile
-    auth.fetchMe().catch((err) => {
+    // 后端按 tenant+authorities 下发菜单,切租户必须刷 profile;await 避免
+    // 过渡窗口期侧边栏 / 路由 guard 用旧 role/menus 渲染或放行。
+    // (auth store 同时挂了 watch tenantId 的兜底,这里 await 保 UX)
+    try {
+      await auth.fetchMe()
+    } catch (err) {
       if (import.meta.env.DEV) console.warn('[tenant-switch] fetchMe failed:', err)
-    })
+    }
   }
 
   async function copyTenant() {

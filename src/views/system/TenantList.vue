@@ -329,10 +329,17 @@
     }
   }
 
-  function switchToTenant(row: Tenant) {
+  async function switchToTenant(row: Tenant) {
     if (row.tenantId === tenant.tenantId) return
     tenant.setTenantId(row.tenantId)
     ElMessage.success(`当前租户已切换为 ${row.tenantId}`)
+    // 切租户后必须刷新 auth profile,否则 role/menus/permissions 还是上一个租户的。
+    // 同时 await,避免侧边栏 / 路由 guard 在过渡窗口期用旧权限渲染或放行。
+    try {
+      await auth.fetchMe()
+    } catch (err) {
+      if (import.meta.env.DEV) console.warn('[tenant-switch] fetchMe failed:', err)
+    }
   }
 
   // ── 结果展示 ─────────────────────────────────────────
