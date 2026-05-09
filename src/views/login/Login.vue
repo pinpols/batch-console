@@ -35,11 +35,15 @@
             v-model="form.username"
             placeholder="请输入用户名"
             size="large"
-            clearable
             autocomplete="username"
           >
             <template #prefix>
               <el-icon><User /></el-icon>
+            </template>
+            <template #suffix>
+              <el-icon v-if="form.username" class="input-clear-btn" @click="form.username = ''">
+                <CircleClose />
+              </el-icon>
             </template>
           </el-input>
         </el-form-item>
@@ -73,7 +77,7 @@
 
 <script setup lang="ts">
   import { ref, reactive } from 'vue'
-  import { Lock, User } from '@element-plus/icons-vue'
+  import { CircleClose, Lock, User } from '@element-plus/icons-vue'
   import { useRouter, useRoute } from 'vue-router'
   import type { FormInstance } from 'element-plus'
   import { ElMessage } from 'element-plus'
@@ -311,6 +315,17 @@
 
   .login-form :deep(.el-input__prefix) {
     color: var(--color-text-tertiary);
+  }
+
+  .input-clear-btn {
+    cursor: pointer;
+    color: var(--color-text-tertiary);
+    font-size: 15px;
+    transition: color 0.15s ease;
+  }
+
+  .input-clear-btn:hover {
+    color: var(--color-text-secondary);
   }
 
   .login-submit {
