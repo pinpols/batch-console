@@ -90,7 +90,7 @@
 
 <script setup lang="ts">
   import { ref, reactive, computed } from 'vue'
-  import { useRouter } from 'vue-router'
+  import { useRoute, useRouter } from 'vue-router'
   import { queryExecutionLogs } from '@/api/observabilityQueries'
   import { toPageResult } from '@/api/adapters'
   import { useTenantStore } from '@/stores/tenant'
@@ -102,14 +102,16 @@
 
   const tenant = useTenantStore()
   const router = useRouter()
+  const route = useRoute()
 
   const loadingExec = ref(false)
   const { filterBusy, runSearch, runReset, runRefresh } = useListFilterFeedback(loadingExec)
   const execRows = ref<Record<string, unknown>[]>([])
   const execPage = ref(1)
   const execPageSize = ref(20)
-  const execDraft = reactive({ operationType: '', result: '', traceId: '' })
-  const execApplied = reactive({ operationType: '', result: '', traceId: '' })
+  const initialTrace = typeof route.query.traceId === 'string' ? route.query.traceId.trim() : ''
+  const execDraft = reactive({ operationType: '', result: '', traceId: initialTrace })
+  const execApplied = reactive({ operationType: '', result: '', traceId: initialTrace })
 
   const detailVisible = ref(false)
   const detailRow = ref<Record<string, unknown> | null>(null)
