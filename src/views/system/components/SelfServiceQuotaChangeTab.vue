@@ -1,7 +1,13 @@
 <template>
   <div class="form-panel">
-    <el-form label-width="100px" class="form-section">
-      <el-form-item label="配额键">
+    <el-form
+      ref="quotaFormRef"
+      :model="quotaForm"
+      :rules="quotaFormRules"
+      label-width="100px"
+      class="form-section"
+    >
+      <el-form-item label="配额键" prop="quotaKey">
         <el-select
           v-model="quotaForm.quotaKey"
           filterable
@@ -12,10 +18,10 @@
           <el-option v-for="k in quotaKeys" :key="k" :label="k" :value="k" />
         </el-select>
       </el-form-item>
-      <el-form-item label="期望值">
-        <el-input v-model="quotaForm.requestedValue" placeholder="请输入期望值" />
+      <el-form-item label="期望值" prop="requestedValue">
+        <el-input v-model="quotaForm.requestedValue" placeholder="请输入期望值(正整数)" />
       </el-form-item>
-      <el-form-item label="原因">
+      <el-form-item label="原因" prop="reason">
         <el-input v-model="quotaForm.reason" type="textarea" :rows="3" placeholder="变更原因" />
       </el-form-item>
       <el-form-item class="form-actions">
@@ -35,15 +41,34 @@
 <script setup lang="ts">
   import { ref, reactive } from 'vue'
   import { ElMessage } from 'element-plus'
+  import type { FormRules } from 'element-plus'
   import { getTenantQuota, requestQuotaChange } from '@/api/tenantSelfService'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
+  import { useFormValidate, rules } from '@/composables/useFormValidate'
 
   const tenant = useTenantStore()
   const submittingQuota = ref(false)
   const quotaForm = reactive({ quotaKey: '', requestedValue: '', reason: '' })
   const quotaKeysLoading = ref(false)
   const quotaKeys = ref<string[]>([])
+
+  const { formRef: quotaFormRef, validate: validateQuotaForm } = useFormValidate()
+  const quotaFormRules: FormRules = {
+    quotaKey: [rules.required('配额键必选', 'change')],
+    requestedValue: [
+      rules.required('期望值必填'),
+      {
+        validator: (_r, v: string, cb) => {
+          const n = Number.parseInt(String(v).trim(), 10)
+          if (Number.isFinite(n) && n > 0) cb()
+          else cb(new Error('期望值需为正整数'))
+        },
+        trigger: 'blur',
+      },
+    ],
+    reason: [rules.required('原因必填')],
+  }
 
   function extractQuotaKeys(payload: unknown): string[] {
     const items = (payload as { items?: unknown })?.items
@@ -72,19 +97,8 @@
   }
 
   async function submitQuotaChange() {
-    if (!quotaForm.quotaKey.trim()) {
-      ElMessage.warning('配额键不能为空')
-      return
-    }
+    if (!(await validateQuotaForm())) return
     const requestedValue = Number.parseInt(quotaForm.requestedValue.trim(), 10)
-    if (!Number.isFinite(requestedValue) || requestedValue <= 0) {
-      ElMessage.warning('期望值需为正整数')
-      return
-    }
-    if (!quotaForm.reason.trim()) {
-      ElMessage.warning('原因不能为空')
-      return
-    }
     submittingQuota.value = true
     try {
       await requestQuotaChange(tenant.tenantId, {

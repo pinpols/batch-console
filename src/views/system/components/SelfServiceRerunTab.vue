@@ -1,7 +1,13 @@
 <template>
   <div class="form-panel">
-    <el-form label-width="100px" class="form-section">
-      <el-form-item label="Job Code">
+    <el-form
+      ref="rerunFormRef"
+      :model="rerunForm"
+      :rules="rerunFormRules"
+      label-width="100px"
+      class="form-section"
+    >
+      <el-form-item label="Job Code" prop="jobCode">
         <el-select
           v-model="rerunForm.jobCode"
           filterable
@@ -16,7 +22,7 @@
           <el-option v-for="opt in jobCodeOptions" :key="opt" :label="opt" :value="opt" />
         </el-select>
       </el-form-item>
-      <el-form-item label="业务日">
+      <el-form-item label="业务日" prop="bizDate">
         <el-date-picker
           v-model="rerunForm.bizDate"
           type="date"
@@ -48,10 +54,12 @@
 <script setup lang="ts">
   import { ref, reactive } from 'vue'
   import { ElMessage } from 'element-plus'
+  import type { FormRules } from 'element-plus'
   import { selfServiceRerunRequest } from '@/api/selfServiceJobs'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
   import { useJobCodeSearch } from '@/composables/useJobCodeSearch'
+  import { useFormValidate, rules } from '@/composables/useFormValidate'
 
   const tenant = useTenantStore()
   const rerunLoading = ref(false)
@@ -60,15 +68,14 @@
   const { jobCodeLoading, jobCodeOptions, loadDefaultJobCodes, queryJobCodes, clearOptions } =
     useJobCodeSearch()
 
+  const { formRef: rerunFormRef, validate: validateRerunForm } = useFormValidate()
+  const rerunFormRules: FormRules = {
+    jobCode: [rules.required('Job Code 必选', 'change')],
+    bizDate: [rules.required('业务日必选', 'change')],
+  }
+
   async function submitRerun() {
-    if (!rerunForm.jobCode.trim()) {
-      ElMessage.warning('Job Code 不能为空')
-      return
-    }
-    if (!rerunForm.bizDate) {
-      ElMessage.warning('业务日不能为空')
-      return
-    }
+    if (!(await validateRerunForm())) return
     rerunLoading.value = true
     try {
       await selfServiceRerunRequest({
