@@ -1,80 +1,81 @@
 <template>
   <el-dialog
     :model-value="modelValue"
-    title="跨租户复制配置"
+    :title="t('tenantCopyConfigDialog.title')"
     width="640px"
     @update:model-value="(v) => emit('update:modelValue', v)"
   >
     <el-alert type="info" :closable="false" show-icon class="mb-12">
-      <template #title>从源租户读取配置,自动写入目标租户,无需手写 Spec。</template>
+      <template #title>{{ t('tenantCopyConfigDialog.infoAlert') }}</template>
     </el-alert>
     <el-form ref="copyFormRef" :model="form" :rules="copyFormRules" label-width="100px">
-      <el-form-item label="源租户" prop="sourceTenantId">
+      <el-form-item :label="t('tenantCopyConfigDialog.fieldSource')" prop="sourceTenantId">
         <el-select
           class="query-w-280"
           v-model="form.sourceTenantId"
           filterable
-          placeholder="选择源租户(default 是内置模板,推荐)"
+          :placeholder="t('tenantCopyConfigDialog.sourcePlaceholder')"
         >
           <el-option
-            v-for="t in sourceableItems"
-            :key="t.tenantId"
-            :label="`${t.tenantId} — ${t.tenantName}`"
-            :value="t.tenantId"
+            v-for="ten in sourceableItems"
+            :key="ten.tenantId"
+            :label="`${ten.tenantId} — ${ten.tenantName}`"
+            :value="ten.tenantId"
           >
-            <span>{{ t.tenantId }} — {{ t.tenantName }}</span>
+            <span>{{ ten.tenantId }} — {{ ten.tenantName }}</span>
             <el-tag
-              v-if="isTemplateTenant(t.tenantId)"
+              v-if="isTemplateTenant(ten.tenantId)"
               size="small"
               type="primary"
               effect="plain"
               class="u-ml-8"
             >
-              推荐模板
+              {{ t('tenantConfigShared.templateTag') }}
             </el-tag>
           </el-option>
         </el-select>
-        <div class="form-hint">系统/内置租户(system / default-tenant)已隐藏</div>
+        <div class="form-hint">{{ t('tenantCopyConfigDialog.sourceHint') }}</div>
       </el-form-item>
-      <el-form-item label="目标租户" prop="targetTenantIds">
+      <el-form-item :label="t('tenantCopyConfigDialog.fieldTargets')" prop="targetTenantIds">
         <el-select
           v-model="form.targetTenantIds"
           multiple
           filterable
-          placeholder="选择一个或多个目标租户"
+          :placeholder="t('tenantCopyConfigDialog.targetsPlaceholder')"
           class="query-w-full"
         >
           <el-option
-            v-for="t in targetableItems"
-            :key="t.tenantId"
-            :label="`${t.tenantId} — ${t.tenantName}`"
-            :value="t.tenantId"
+            v-for="ten in targetableItems"
+            :key="ten.tenantId"
+            :label="`${ten.tenantId} — ${ten.tenantName}`"
+            :value="ten.tenantId"
           />
         </el-select>
       </el-form-item>
-      <el-form-item label="配置类型">
+      <el-form-item :label="t('tenantConfigShared.configTypeLabel')">
         <el-checkbox-group v-model="form.configTypes">
           <el-checkbox v-for="ct in ALL_CONFIG_TYPES" :key="ct" :label="ct" :value="ct" />
         </el-checkbox-group>
-        <div class="form-hint">留空表示全部 10 个类型</div>
+        <div class="form-hint">{{ t('tenantConfigShared.configTypeHintAll') }}</div>
       </el-form-item>
-      <el-form-item label="写入模式">
+      <el-form-item :label="t('tenantConfigShared.writeModeLabel')">
         <el-radio-group v-model="form.mode">
-          <el-radio value="SKIP_EXISTING">仅补缺失项</el-radio>
-          <el-radio value="UPSERT">覆盖更新已有</el-radio>
+          <el-radio value="SKIP_EXISTING">{{ t('tenantConfigShared.modeSkipExisting') }}</el-radio>
+          <el-radio value="UPSERT">{{ t('tenantConfigShared.modeUpsert') }}</el-radio>
         </el-radio-group>
       </el-form-item>
     </el-form>
     <template #footer>
-      <el-button @click="emit('update:modelValue', false)">取消</el-button>
-      <!-- 体检"痛点 8":dryRun 开关替换为两个明确按钮,主次和后果一眼能看 -->
+      <el-button @click="emit('update:modelValue', false)">
+        {{ t('tenantConfigShared.cancel') }}
+      </el-button>
       <el-button
         plain
         :loading="saving && lastDryRun"
         :disabled="saving && !lastDryRun"
         @click="submit(true)"
       >
-        试运行预览差异
+        {{ t('tenantConfigShared.dryRunPreviewDiff') }}
       </el-button>
       <el-button
         type="danger"
@@ -82,7 +83,7 @@
         :disabled="saving && lastDryRun"
         @click="submit(false)"
       >
-        正式执行复制
+        {{ t('tenantCopyConfigDialog.btnRunFormal') }}
       </el-button>
     </template>
   </el-dialog>
@@ -90,7 +91,10 @@
 
 <script setup lang="ts">
   import { computed, reactive, ref, watch } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
+
+  const { t } = useI18n({ useScope: 'global' })
   import type { FormRules } from 'element-plus'
   import { copyTenantConfig, type ConfigType } from '@/api/ops'
   import type { Tenant } from '@/api/tenants'
@@ -118,11 +122,13 @@
 
   const { formRef: copyFormRef, validate: validateCopyForm } = useFormValidate()
   const copyFormRules: FormRules = {
-    sourceTenantId: [rules.required('请选择源租户', 'change')],
+    sourceTenantId: [rules.required(t('tenantCopyConfigDialog.ruleSource'), 'change')],
     targetTenantIds: [
       {
         validator: (_r, v: unknown[], cb) =>
-          Array.isArray(v) && v.length > 0 ? cb() : cb(new Error('请选择至少一个目标租户')),
+          Array.isArray(v) && v.length > 0
+            ? cb()
+            : cb(new Error(t('tenantCopyConfigDialog.ruleTargets'))),
         trigger: 'change',
       },
     ],
@@ -161,7 +167,7 @@
       })
       emit('result', res)
       if (!dryRun) {
-        ElMessage.success('复制完成')
+        ElMessage.success(t('tenantCopyConfigDialog.toastDone'))
         emit('update:modelValue', false)
       }
     } finally {

@@ -1,87 +1,95 @@
 <template>
   <el-dialog
     :model-value="modelValue"
-    title="批量新增租户"
+    :title="t('tenantBatchCreateDialog.title')"
     width="620px"
     @update:model-value="(v) => emit('update:modelValue', v)"
   >
     <el-form ref="batchFormRef" :model="form" :rules="batchFormRules" label-width="100px">
-      <el-form-item label="租户列表" prop="tenantsText">
+      <el-form-item :label="t('tenantBatchCreateDialog.fieldTenants')" prop="tenantsText">
         <el-input
           v-model="form.tenantsText"
           type="textarea"
           :autosize="{ minRows: 4, maxRows: 10 }"
-          placeholder="每行一个,逗号分隔:租户 ID,显示名称,描述(可选)
-例:acme-prod,ACME 生产,公司主环境"
+          :placeholder="t('tenantBatchCreateDialog.tenantsPlaceholder')"
         />
-        <div class="form-hint">每行格式:租户 ID,显示名称,描述(可选);单次最多 50 个</div>
+        <div class="form-hint">{{ t('tenantBatchCreateDialog.tenantsHint') }}</div>
       </el-form-item>
-      <el-form-item label="用户名前缀" prop="usernamePrefix">
+      <el-form-item :label="t('tenantBatchCreateDialog.fieldPrefix')" prop="usernamePrefix">
         <el-input
           v-model="form.usernamePrefix"
-          placeholder="默认 op-,会拼成 {前缀}{租户 ID} 作为初始用户名"
+          :placeholder="t('tenantBatchCreateDialog.prefixPlaceholder')"
           maxlength="32"
         />
       </el-form-item>
-      <el-form-item label="共享密码" prop="password">
+      <el-form-item :label="t('tenantBatchCreateDialog.fieldPassword')" prop="password">
         <el-input
           v-model="form.password"
           type="password"
           show-password
-          placeholder="所有租户共享的初始密码,≥ 12 位"
+          :placeholder="t('tenantBatchCreateDialog.passwordPlaceholder')"
           maxlength="256"
         />
-        <div class="form-hint">建议大小写字母 + 数字混合;每个租户首次登录后立即修改</div>
+        <div class="form-hint">{{ t('tenantBatchCreateDialog.passwordHint') }}</div>
       </el-form-item>
-      <el-divider content-position="left">配置初始化(可选)</el-divider>
-      <el-form-item label="源租户">
+      <el-divider content-position="left">
+        {{ t('tenantBatchCreateDialog.sectionInitConfig') }}
+      </el-divider>
+      <el-form-item :label="t('tenantBatchCreateDialog.fieldSource')">
         <el-select
           class="query-w-280"
           v-model="form.initConfigFrom"
           clearable
           filterable
-          placeholder="留空跳过(default 为内置模板)"
+          :placeholder="t('tenantBatchCreateDialog.sourcePlaceholder')"
         >
           <template #empty>
-            <div class="empty-hint">系统/内置租户已隐藏</div>
+            <div class="empty-hint">{{ t('tenantBatchCreateDialog.sourceEmpty') }}</div>
           </template>
           <el-option
-            v-for="t in sourceableItems"
-            :key="t.tenantId"
-            :label="`${t.tenantId} — ${t.tenantName}`"
-            :value="t.tenantId"
+            v-for="ten in sourceableItems"
+            :key="ten.tenantId"
+            :label="`${ten.tenantId} — ${ten.tenantName}`"
+            :value="ten.tenantId"
           >
-            <span>{{ t.tenantId }} — {{ t.tenantName }}</span>
+            <span>{{ ten.tenantId }} — {{ ten.tenantName }}</span>
             <el-tag
-              v-if="isTemplateTenant(t.tenantId)"
+              v-if="isTemplateTenant(ten.tenantId)"
               size="small"
               type="primary"
               effect="plain"
               class="u-ml-8"
             >
-              推荐模板
+              {{ t('tenantConfigShared.templateTag') }}
             </el-tag>
           </el-option>
         </el-select>
-        <div class="form-hint">选择后将复制源租户的全部 10 类配置(系统租户已隐藏)</div>
+        <div class="form-hint">{{ t('tenantBatchCreateDialog.sourceHint') }}</div>
       </el-form-item>
-      <el-form-item v-if="form.initConfigFrom" label="初始化模式">
+      <el-form-item v-if="form.initConfigFrom" :label="t('tenantConfigShared.initModeLabel')">
         <el-radio-group v-model="form.initMode">
-          <el-radio value="SKIP_EXISTING">仅补缺失项</el-radio>
-          <el-radio value="UPSERT">覆盖更新已有</el-radio>
+          <el-radio value="SKIP_EXISTING">{{ t('tenantConfigShared.modeSkipExisting') }}</el-radio>
+          <el-radio value="UPSERT">{{ t('tenantConfigShared.modeUpsert') }}</el-radio>
         </el-radio-group>
       </el-form-item>
     </el-form>
     <template #footer>
-      <el-button @click="emit('update:modelValue', false)">取消</el-button>
-      <el-button type="primary" :loading="saving" @click="submit">批量创建</el-button>
+      <el-button @click="emit('update:modelValue', false)">
+        {{ t('tenantConfigShared.cancel') }}
+      </el-button>
+      <el-button type="primary" :loading="saving" @click="submit">
+        {{ t('tenantBatchCreateDialog.btnSubmit') }}
+      </el-button>
     </template>
   </el-dialog>
 </template>
 
 <script setup lang="ts">
   import { computed, reactive, ref, watch } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
+
+  const { t } = useI18n({ useScope: 'global' })
   import type { FormRules } from 'element-plus'
   import { batchCreateTenants, type Tenant } from '@/api/tenants'
   import { isReservedTenant, isTemplateTenant } from './tenantConfigTypes'
@@ -126,15 +134,21 @@
   // tenantsText 校验逻辑复杂(逐行解析 + 数量上限),写自定义 validator
   const batchFormRules: FormRules = {
     tenantsText: [
-      rules.required('请至少填写一个租户'),
+      rules.required(t('tenantBatchCreateDialog.ruleAtLeastOne')),
       {
         validator: (_r, v: string, cb) => {
           const items = parseTenants(v ?? '')
-          if (items.length === 0) return cb(new Error('请至少填写一个租户'))
-          if (items.length > 50) return cb(new Error('单次最多 50 个租户'))
-          for (const t of items) {
-            if (!t.tenantId || !t.tenantName) {
-              return cb(new Error(`每行至少包含 tenantId 和名称:${t.tenantId || '(空)'}`))
+          if (items.length === 0) return cb(new Error(t('tenantBatchCreateDialog.ruleAtLeastOne')))
+          if (items.length > 50) return cb(new Error(t('tenantBatchCreateDialog.ruleMax50')))
+          for (const item of items) {
+            if (!item.tenantId || !item.tenantName) {
+              return cb(
+                new Error(
+                  t('tenantBatchCreateDialog.ruleLineMissing', {
+                    row: item.tenantId || t('tenantBatchCreateDialog.ruleLineEmpty'),
+                  }),
+                ),
+              )
             }
           }
           cb()
@@ -142,7 +156,7 @@
         trigger: 'blur',
       },
     ],
-    password: [rules.required('共享密码必填'), rules.minLength(12)],
+    password: [rules.required(t('tenantBatchCreateDialog.rulePassword')), rules.minLength(12)],
   }
 
   function parseTenants(text: string) {
@@ -172,11 +186,15 @@
       if (res.configInit) {
         const ci = res.configInit
         ElMessage.success(
-          `已创建 ${tenants.length} 个租户,配置初始化:${ci.successTenants} 成功 / ${ci.failureTenants} 失败`,
+          t('tenantBatchCreateDialog.toastWithInit', {
+            n: tenants.length,
+            success: ci.successTenants,
+            failure: ci.failureTenants,
+          }),
         )
         emit('result', res.configInit)
       } else {
-        ElMessage.success(`已批量创建 ${tenants.length} 个租户`)
+        ElMessage.success(t('tenantBatchCreateDialog.toastSimple', { n: tenants.length }))
       }
       emit('saved')
     } finally {
