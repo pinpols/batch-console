@@ -149,19 +149,19 @@
           detailRow.edges?.length ?? 0
         }}</el-descriptions-item>
         <el-descriptions-item label="说明" :span="2">
-          <pre class="json-preview">{{ detailRow.description || '—' }}</pre>
+          <JsonPreview :data="detailRow.description || '—'" />
         </el-descriptions-item>
         <el-descriptions-item label="nodes" :span="2">
-          <pre class="json-preview">{{ JSON.stringify(detailRow.nodes ?? [], null, 2) }}</pre>
+          <JsonPreview :data="detailRow.nodes ?? []" />
         </el-descriptions-item>
         <el-descriptions-item label="edges" :span="2">
-          <pre class="json-preview">{{ JSON.stringify(detailRow.edges ?? [], null, 2) }}</pre>
+          <JsonPreview :data="detailRow.edges ?? []" />
         </el-descriptions-item>
       </el-descriptions>
     </el-drawer>
 
     <el-dialog v-model="validateVisible" title="工作流校验结果" width="720px">
-      <pre class="json-preview">{{ validateResult }}</pre>
+      <JsonPreview :data="validateResult" />
     </el-dialog>
   </PageContainer>
 </template>
@@ -181,6 +181,7 @@
   import ProTable from '@/components/table/ProTable.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
   import TenantSelect from '@/components/common/TenantSelect.vue'
+  import JsonPreview from '@/components/common/JsonPreview.vue'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import type {
     ConsoleWorkflowDefinitionResponse,

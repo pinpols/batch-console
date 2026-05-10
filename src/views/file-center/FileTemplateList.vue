@@ -107,13 +107,13 @@
           detail.lineSeparator || '—'
         }}</el-descriptions-item>
         <el-descriptions-item label="queryParamSchema" :span="2">
-          <pre class="json-preview">{{ detail.queryParamSchema || '—' }}</pre>
+          <JsonPreview :data="detail.queryParamSchema || '—'" />
         </el-descriptions-item>
         <el-descriptions-item label="fieldMappings" :span="2">
-          <pre class="json-preview">{{ detail.fieldMappings || '—' }}</pre>
+          <JsonPreview :data="detail.fieldMappings || '—'" />
         </el-descriptions-item>
         <el-descriptions-item label="description" :span="2">
-          <pre class="json-preview">{{ detail.description || '—' }}</pre>
+          <JsonPreview :data="detail.description || '—'" />
         </el-descriptions-item>
       </el-descriptions>
     </el-drawer>
@@ -132,6 +132,7 @@
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import ProTable from '@/components/table/ProTable.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
+  import JsonPreview from '@/components/common/JsonPreview.vue'
   import type { ConsoleFileTemplateResponse } from '@/types/console-api'
 
   const tenant = useTenantStore()

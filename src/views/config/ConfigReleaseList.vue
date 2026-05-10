@@ -97,7 +97,7 @@
     <el-drawer v-model="depsVisible" title="配置依赖关系" size="640px">
       <div v-loading="depsLoading">
         <el-empty v-if="!depsLoading && !depsData" description="暂无数据" />
-        <pre v-else class="release-json">{{ JSON.stringify(depsData, null, 2) }}</pre>
+        <JsonPreview v-else class="release-json" :data="depsData" />
       </div>
     </el-drawer>
 
@@ -146,7 +146,7 @@
         </el-form-item>
       </el-form>
       <div v-if="diffData" class="diff-result">
-        <pre class="release-json">{{ JSON.stringify(diffData, null, 2) }}</pre>
+        <JsonPreview class="release-json" :data="diffData" />
       </div>
     </el-dialog>
 
@@ -159,16 +159,7 @@
         <el-descriptions-item label="versionNo">{{ detail.versionNo }}</el-descriptions-item>
         <el-descriptions-item label="publishedAt">{{ detail.publishedAt }}</el-descriptions-item>
         <el-descriptions-item label="原始响应" :span="2">
-          <pre
-            style="
-              margin: 0;
-              white-space: pre-wrap;
-              word-break: break-word;
-              font-family: var(--font-family-mono, monospace);
-              font-size: 12px;
-            "
-            >{{ JSON.stringify(detail, null, 2) }}</pre
-          >
+          <JsonPreview :data="detail" />
         </el-descriptions-item>
       </el-descriptions>
     </el-drawer>
@@ -200,6 +191,7 @@
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import ProTable from '@/components/table/ProTable.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
+  import JsonPreview from '@/components/common/JsonPreview.vue'
   import type { ConsoleConfigReleaseResponse } from '@/types/console-api'
 
   const tenant = useTenantStore()

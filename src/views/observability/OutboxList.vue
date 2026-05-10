@@ -151,27 +151,12 @@
       </el-tabs>
     </SectionCard>
 
-    <el-drawer v-model="detailVisible" :title="detailTitle" size="720px">
-      <div v-if="detailRow" class="detail-drawer">
-        <div class="detail-drawer__meta">
-          <div class="detail-drawer__meta-row">
-            <span class="detail-drawer__label">事件类型</span>
-            <CopyableText :text="detailRow.eventType ?? ''" />
-          </div>
-          <div class="detail-drawer__meta-row">
-            <span class="detail-drawer__label">Key</span>
-            <CopyableText :text="detailRow.eventKey ?? ''" />
-          </div>
-          <div v-if="detailKind === 'delivery'" class="detail-drawer__meta-row">
-            <span class="detail-drawer__label">Topic</span>
-            <CopyableText
-              :text="(detailRow as ConsoleOutboxDeliveryLogResponse).targetTopic ?? ''"
-            />
-          </div>
-        </div>
-        <pre class="json-preview">{{ detailJson }}</pre>
-      </div>
-    </el-drawer>
+    <DetailDrawer
+      v-model="detailVisible"
+      :title="detailTitle"
+      :meta-rows="detailMetaRows"
+      :raw="detailRow"
+    />
   </PageContainer>
 </template>
 
@@ -191,7 +176,7 @@
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import ProTable from '@/components/table/ProTable.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
-  import CopyableText from '@/components/common/CopyableText.vue'
+  import DetailDrawer from '@/components/common/DetailDrawer.vue'
   import type {
     ConsoleOutboxDeliveryLogResponse,
     ConsoleOutboxRetryLogResponse,
@@ -217,13 +202,19 @@
     null,
   )
   const detailTitle = computed(() => (detailKind.value === 'retry' ? '重试详情' : '投递详情'))
-  const detailJson = computed(() => {
-    if (!detailRow.value) return ''
-    try {
-      return JSON.stringify(detailRow.value, null, 2)
-    } catch {
-      return String(detailRow.value)
+  const detailMetaRows = computed(() => {
+    if (!detailRow.value) return []
+    const rows = [
+      { label: '事件类型', value: detailRow.value.eventType ?? '' },
+      { label: 'Key', value: detailRow.value.eventKey ?? '' },
+    ]
+    if (detailKind.value === 'delivery') {
+      rows.push({
+        label: 'Topic',
+        value: (detailRow.value as ConsoleOutboxDeliveryLogResponse).targetTopic ?? '',
+      })
     }
+    return rows
   })
 
   function openDetail(

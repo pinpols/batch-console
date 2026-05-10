@@ -122,21 +122,12 @@
       </el-tabs>
     </SectionCard>
 
-    <el-drawer v-model="detailVisible" :title="detailTitle" size="720px">
-      <div v-if="detailRow" class="detail-drawer">
-        <div class="detail-drawer__meta">
-          <div v-if="detailKind === 'eventType'" class="detail-drawer__meta-row">
-            <span class="detail-drawer__label">事件类型</span>
-            <CopyableText :text="String(detailRow.eventType ?? '')" />
-          </div>
-          <div v-else class="detail-drawer__meta-row">
-            <span class="detail-drawer__label">Topic</span>
-            <CopyableText :text="String(detailRow.topic ?? detailRow.name ?? '')" />
-          </div>
-        </div>
-        <pre class="json-preview">{{ detailJson }}</pre>
-      </div>
-    </el-drawer>
+    <DetailDrawer
+      v-model="detailVisible"
+      :title="detailTitle"
+      :meta-rows="detailMetaRows"
+      :raw="detailRow"
+    />
   </PageContainer>
 </template>
 
@@ -150,6 +141,7 @@
   import ProTable from '@/components/table/ProTable.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import CopyableText from '@/components/common/CopyableText.vue'
+  import DetailDrawer from '@/components/common/DetailDrawer.vue'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
 
   const activeTab = ref('eventTypes')
@@ -182,13 +174,11 @@
   const detailTitle = computed(() =>
     detailKind.value === 'eventType' ? '事件类型详情' : 'Topic 详情',
   )
-  const detailJson = computed(() => {
-    if (!detailRow.value) return ''
-    try {
-      return JSON.stringify(detailRow.value, null, 2)
-    } catch {
-      return String(detailRow.value)
-    }
+  const detailMetaRows = computed(() => {
+    if (!detailRow.value) return []
+    return detailKind.value === 'eventType'
+      ? [{ label: '事件类型', value: String(detailRow.value.eventType ?? '') }]
+      : [{ label: 'Topic', value: String(detailRow.value.topic ?? detailRow.value.name ?? '') }]
   })
 
   function openDetail(kind: 'eventType' | 'topic', row: Record<string, unknown>) {

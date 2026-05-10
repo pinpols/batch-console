@@ -69,10 +69,10 @@
       @update:page-size="onPageSizeChange"
     />
 
-    <QueryDetailDrawer
-      v-model:visible="detailVisible"
+    <DetailDrawer
+      v-model="detailVisible"
       title="Dead Letter 详情"
-      :row="detailRow"
+      :raw="detailRow"
       :meta-rows="detailMetaRows"
     />
   </div>
@@ -86,7 +86,7 @@
   import { useTenantReload } from '@/composables/useTenantReload'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import TablePagerBar from '@/components/table/TablePagerBar.vue'
-  import QueryDetailDrawer from './QueryDetailDrawer.vue'
+  import DetailDrawer from '@/components/common/DetailDrawer.vue'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
 
   const tenant = useTenantStore()

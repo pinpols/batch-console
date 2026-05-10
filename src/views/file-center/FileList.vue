@@ -129,7 +129,7 @@
         <el-descriptions-item label="createdAt">{{ detail.createdAt }}</el-descriptions-item>
         <el-descriptions-item label="updatedAt">{{ detail.updatedAt }}</el-descriptions-item>
         <el-descriptions-item label="原始响应" :span="2">
-          <pre class="json-preview">{{ JSON.stringify(detail, null, 2) }}</pre>
+          <JsonPreview :data="detail" />
         </el-descriptions-item>
       </el-descriptions>
     </el-drawer>
@@ -179,6 +179,7 @@
   import TablePagerBar from '@/components/table/TablePagerBar.vue'
   import TenantSelect from '@/components/common/TenantSelect.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
+  import JsonPreview from '@/components/common/JsonPreview.vue'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
   import { getMetaBizTypes } from '@/api/meta'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
