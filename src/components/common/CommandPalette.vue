@@ -233,10 +233,29 @@
     display: flex;
     align-items: center;
     gap: 10px;
+    padding-bottom: 0;
   }
 
   .cp-header :deep(.el-input) {
     flex: 1;
+  }
+
+  /* el-input 默认 box-shadow 在聚焦时延展到下方，上面那条"空白条"其实是 shadow 阴影 */
+  /* 收紧成一条细描边而非阴影外溢，避免搜索框下面看起来多一根分割线 */
+  .cp-header :deep(.el-input__wrapper) {
+    border-radius: var(--radius-content);
+    box-shadow: 0 0 0 1px var(--color-border-light, #ebeef5);
+    transition: box-shadow 0.15s ease;
+  }
+
+  .cp-header :deep(.el-input__wrapper:hover) {
+    box-shadow: 0 0 0 1px var(--color-border, #dcdfe6);
+  }
+
+  .cp-header :deep(.el-input__wrapper.is-focus) {
+    box-shadow:
+      0 0 0 1px var(--color-primary, #1677ff),
+      0 0 0 3px color-mix(in srgb, var(--color-primary, #1677ff) 18%, transparent);
   }
 
   .cp-kbd {
@@ -249,7 +268,32 @@
   .cp-body {
     max-height: min(52vh, 420px);
     overflow-y: auto;
-    margin-top: 8px;
+    margin-top: 14px;
+    /* 给滚动条留出 6px 内边距,避免贴边 */
+    padding-right: 4px;
+    /* Firefox 细滚动条 */
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--color-text-tertiary, #909399) 35%, transparent)
+      transparent;
+  }
+
+  /* WebKit 系(Chrome/Safari/Edge)细滑滚动条 */
+  .cp-body::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .cp-body::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .cp-body::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--color-text-tertiary, #909399) 30%, transparent);
+    border-radius: 3px;
+    transition: background 0.15s ease;
+  }
+
+  .cp-body::-webkit-scrollbar-thumb:hover {
+    background: color-mix(in srgb, var(--color-text-tertiary, #909399) 60%, transparent);
   }
 
   .cp-empty {
@@ -361,14 +405,27 @@
     padding: 0;
     border-radius: var(--radius-content);
     overflow: hidden;
+    /* 阴影柔和一点(spotlight 风),避免 dialog 下边出现明显矩形阴影 */
+    box-shadow:
+      0 18px 50px -12px rgb(0 0 0 / 16%),
+      0 4px 12px -2px rgb(0 0 0 / 8%);
   }
 
   .command-palette .el-dialog__header {
     margin: 0;
-    padding: 14px 16px 0;
+    /* 去掉 header 默认 margin-bottom + padding-bottom,完全交给 cp-body margin-top 控制间距,
+       消除搜索框下方那条莫名的空白条(原是 el-dialog header 默认 22px padding-bottom + 无视觉占位) */
+    padding: 16px 16px 0;
+  }
+
+  .command-palette .el-dialog__headerbtn {
+    /* 默认右上角 close 按钮我们不显示(show-close=false),但保留位置会偷高度;隐藏掉 */
+    display: none;
   }
 
   .command-palette .el-dialog__body {
-    padding: 0 16px 16px;
+    padding: 0 12px 14px 16px;
+    /* dialog body 自己不滚动,滚动委托给内部 cp-body */
+    overflow: hidden;
   }
 </style>
