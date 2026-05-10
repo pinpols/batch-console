@@ -187,7 +187,7 @@ export const jobApi = {
   batchToggle: (body: { tenantId: string; ids: number[]; enabled: boolean }) =>
     patch<unknown>('/api/console/job-definitions/batch', body),
 
-  /** POST /api/console/job-definitions/{id}/clone */
-  clone: (id: number, tenantId: string) =>
-    post<number>(`/api/console/job-definitions/${id}/clone`, { tenantId }),
+  /** POST /api/console/job-definitions/{id}/clone — newJobCode 必填(BE @NotBlank) */
+  clone: (id: number, tenantId: string, newJobCode: string) =>
+    post<number>(`/api/console/job-definitions/${id}/clone`, { tenantId, newJobCode }),
 }
