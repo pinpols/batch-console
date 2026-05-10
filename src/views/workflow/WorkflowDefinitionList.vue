@@ -22,68 +22,108 @@
             @reset="reset"
             @refresh="() => runRefresh(load)"
           >
-            <el-form-item label="Workflow Code">
+            <el-form-item :label="t('workflowDefinitionList.codeLabel')">
               <el-input
                 class="query-w-160"
                 v-model="filters.workflowCode"
                 clearable
-                placeholder="按工作流 Code 搜索"
+                :placeholder="t('workflowDefinitionList.codePlaceholder')"
               />
             </el-form-item>
-            <el-form-item label="名称">
+            <el-form-item :label="t('workflowDefinitionList.nameLabel')">
               <el-input
                 class="query-w-160"
                 v-model="filters.workflowName"
                 clearable
-                placeholder="请输入 workflowName"
+                :placeholder="t('workflowDefinitionList.namePlaceholder')"
               />
             </el-form-item>
-            <el-form-item label="启用">
-              <el-select class="query-w-120" v-model="filters.enabled" clearable placeholder="全部">
-                <el-option label="启用" :value="true" />
-                <el-option label="停用" :value="false" />
+            <el-form-item :label="t('workflowDefinitionList.enabledLabel')">
+              <el-select
+                class="query-w-120"
+                v-model="filters.enabled"
+                clearable
+                :placeholder="t('workflowDefinitionList.enabledPlaceholder')"
+              >
+                <el-option :label="t('workflowDefinitionList.optEnabled')" :value="true" />
+                <el-option :label="t('workflowDefinitionList.optDisabled')" :value="false" />
               </el-select>
             </el-form-item>
-            <el-form-item label="类型">
+            <el-form-item :label="t('workflowDefinitionList.typeLabel')">
               <MetaSelect
                 class="query-w-160"
                 v-model="filters.workflowType"
                 :options="workflowTypeOptions"
                 clearable
                 filterable
-                placeholder="请选择 workflowType"
+                enum-key="workflowType"
+                :placeholder="t('workflowDefinitionList.typePlaceholder')"
               />
             </el-form-item>
-            <el-form-item label="版本">
+            <el-form-item :label="t('workflowDefinitionList.versionLabel')">
               <el-input-number
                 class="query-w-140"
                 v-model="filters.version"
                 :min="1"
                 :step="1"
                 controls-position="right"
-                placeholder="版本"
+                :placeholder="t('workflowDefinitionList.versionPlaceholder')"
               />
             </el-form-item>
           </ListPageQueryBar>
         </template>
 
-        <el-table-column prop="workflowCode" label="Code" min-width="140" />
-        <el-table-column prop="workflowName" label="名称" min-width="160" />
-        <el-table-column prop="workflowType" label="类型" width="120" />
-        <el-table-column prop="version" label="版本" width="80" align="right" />
-        <el-table-column prop="description" label="说明" min-width="200" show-overflow-tooltip />
-        <el-table-column prop="enabled" label="启用" width="80">
+        <el-table-column
+          prop="workflowCode"
+          :label="t('workflowDefinitionList.colCode')"
+          min-width="140"
+        />
+        <el-table-column
+          prop="workflowName"
+          :label="t('workflowDefinitionList.colName')"
+          min-width="160"
+        />
+        <el-table-column
+          prop="workflowType"
+          :label="t('workflowDefinitionList.colType')"
+          width="120"
+        >
+          <template #default="{ row }">
+            {{ resolveEnumLabel('workflowType', row.workflowType) }}
+          </template>
+        </el-table-column>
+        <el-table-column
+          prop="version"
+          :label="t('workflowDefinitionList.colVersion')"
+          width="80"
+          align="right"
+        />
+        <el-table-column
+          prop="description"
+          :label="t('workflowDefinitionList.colDescription')"
+          min-width="200"
+          show-overflow-tooltip
+        />
+        <el-table-column prop="enabled" :label="t('workflowDefinitionList.colEnabled')" width="80">
           <template #default="{ row }">
             <StatusTag :value="String(row.enabled)" category="yn" />
           </template>
         </el-table-column>
-        <DatetimeColumn prop="updatedAt" label="更新时间" width="160" />
-        <el-table-column label="操作" min-width="360" fixed="right">
+        <DatetimeColumn
+          prop="updatedAt"
+          :label="t('workflowDefinitionList.colUpdatedAt')"
+          width="160"
+        />
+        <el-table-column
+          :label="t('workflowDefinitionList.colActions')"
+          min-width="360"
+          fixed="right"
+        >
           <template #default="{ row }">
             <div class="table-actions">
-              <el-button size="small" plain type="primary" @click="openDag(row.workflowCode)"
-                >DAG</el-button
-              >
+              <el-button size="small" plain type="primary" @click="openDag(row.workflowCode)">
+                {{ t('workflowDefinitionList.actionDag') }}
+              </el-button>
               <el-button
                 size="small"
                 plain
@@ -91,7 +131,11 @@
                 :loading="actingIds.has(row.id)"
                 @click="toggleRow(row)"
               >
-                {{ row.enabled ? '停用' : '启用' }}
+                {{
+                  row.enabled
+                    ? t('workflowDefinitionList.actionDisable')
+                    : t('workflowDefinitionList.actionEnable')
+                }}
               </el-button>
               <el-button
                 size="small"
@@ -99,9 +143,11 @@
                 :loading="actingIds.has(row.id)"
                 @click="validateRow(row)"
               >
-                校验
+                {{ t('workflowDefinitionList.actionValidate') }}
               </el-button>
-              <el-button size="small" plain @click="openDetail(row)">详情</el-button>
+              <el-button size="small" plain @click="openDetail(row)">
+                {{ t('workflowDefinitionList.actionDetail') }}
+              </el-button>
               <el-button
                 size="small"
                 plain
@@ -109,7 +155,7 @@
                 :loading="actingIds.has(row.id)"
                 @click="removeRow(row)"
               >
-                删除
+                {{ t('workflowDefinitionList.actionDelete') }}
               </el-button>
             </div>
           </template>
@@ -117,7 +163,11 @@
       </ProTable>
     </SectionCard>
 
-    <el-drawer v-model="detailVisible" title="工作流详情 / 版本信息" size="760px">
+    <el-drawer
+      v-model="detailVisible"
+      :title="t('workflowDefinitionList.detailTitle')"
+      size="760px"
+    >
       <el-descriptions v-if="detailRow" :column="2" border size="small">
         <el-descriptions-item label="workflowCode">{{
           detailRow.workflowCode
@@ -130,7 +180,7 @@
         }}</el-descriptions-item>
         <el-descriptions-item label="version">{{ detailRow.version }}</el-descriptions-item>
         <el-descriptions-item label="enabled">
-          {{ detailRow.enabled ? '是' : '否' }}
+          {{ detailRow.enabled ? t('common.yes') : t('common.no') }}
         </el-descriptions-item>
         <el-descriptions-item label="tenantId">{{ detailRow.tenantId }}</el-descriptions-item>
         <el-descriptions-item label="createdAt">{{
@@ -139,13 +189,13 @@
         <el-descriptions-item label="updatedAt">{{
           detailRow.updatedAt || '—'
         }}</el-descriptions-item>
-        <el-descriptions-item label="节点数">{{
+        <el-descriptions-item :label="t('workflowDefinitionList.detailNodes')">{{
           detailRow.nodes?.length ?? 0
         }}</el-descriptions-item>
-        <el-descriptions-item label="连线数">{{
+        <el-descriptions-item :label="t('workflowDefinitionList.detailEdges')">{{
           detailRow.edges?.length ?? 0
         }}</el-descriptions-item>
-        <el-descriptions-item label="说明" :span="2">
+        <el-descriptions-item :label="t('workflowDefinitionList.detailDescription')" :span="2">
           <JsonPreview :data="detailRow.description || '—'" />
         </el-descriptions-item>
         <el-descriptions-item label="nodes" :span="2">
@@ -157,7 +207,11 @@
       </el-descriptions>
     </el-drawer>
 
-    <el-dialog v-model="validateVisible" title="工作流校验结果" width="720px">
+    <el-dialog
+      v-model="validateVisible"
+      :title="t('workflowDefinitionList.validateTitle')"
+      width="720px"
+    >
       <JsonPreview :data="validateResult" />
     </el-dialog>
   </PageContainer>
@@ -166,7 +220,16 @@
 <script setup lang="ts">
   import { computed, reactive, ref } from 'vue'
   import { useRouter } from 'vue-router'
+  import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
+
+  const { t, te } = useI18n({ useScope: 'global' })
+
+  function resolveEnumLabel(group: string, value?: string | null): string {
+    if (!value) return ''
+    const key = `enum.${group}.${value}`
+    return te(key) ? t(key) : value
+  }
   import { confirmDanger } from '@/composables/useDangerConfirm'
   import { workflowApi } from '@/api/workflow'
   import { useSseAutoReload } from '@/composables/useSseAutoReload'
@@ -284,10 +347,17 @@
 
   async function toggleRow(row: ConsoleWorkflowDefinitionResponse) {
     try {
+      const action = row.enabled
+        ? t('workflowDefinitionList.actionDisable')
+        : t('workflowDefinitionList.actionEnable')
       await ElMessageBox.confirm(
-        `${row.enabled ? '停用' : '启用'} Workflow「${row.workflowCode}」？`,
-        '状态切换确认',
-        { type: 'warning' },
+        t('workflowDefinitionList.toggleConfirmText', { action, code: row.workflowCode }),
+        t('workflowDefinitionList.toggleConfirmTitle'),
+        {
+          type: 'warning',
+          confirmButtonText: t('common.confirm'),
+          cancelButtonText: t('common.cancel'),
+        },
       )
     } catch {
       return
@@ -295,7 +365,12 @@
     actingIds.value = new Set([...actingIds.value, row.id])
     try {
       await workflowApi.toggle(row.id, tenant.tenantId, !row.enabled)
-      ElMessage.success(`已${row.enabled ? '停用' : '启用'} ${row.workflowCode}`)
+      const action = row.enabled
+        ? t('workflowDefinitionList.actionDisable')
+        : t('workflowDefinitionList.actionEnable')
+      ElMessage.success(
+        t('workflowDefinitionList.toggleSuccess', { action, code: row.workflowCode }),
+      )
       await load()
     } finally {
       actingIds.value = new Set([...actingIds.value].filter((id) => id !== row.id))
@@ -316,10 +391,9 @@
   async function removeRow(row: ConsoleWorkflowDefinitionResponse) {
     try {
       await confirmDanger({
-        verb: '删除',
-        target: `工作流「${row.workflowCode}」`,
-        consequence:
-          '该工作流的所有版本都会被物理删除;如有正在跑的实例不会被中断,但跑完后无法再次触发。',
+        verb: t('workflowDefinitionList.deleteVerb'),
+        target: t('workflowDefinitionList.deleteTarget', { code: row.workflowCode }),
+        consequence: t('workflowDefinitionList.deleteConsequence'),
         irreversible: true,
       })
     } catch {
@@ -328,7 +402,7 @@
     actingIds.value = new Set([...actingIds.value, row.id])
     try {
       await workflowApi.toggle(row.id, tenant.tenantId, false)
-      ElMessage.success(`已禁用 ${row.workflowCode}`)
+      ElMessage.success(t('workflowDefinitionList.deleteSuccess', { code: row.workflowCode }))
       if (rows.value.length === 1 && page.value > 1) {
         page.value -= 1
       }
