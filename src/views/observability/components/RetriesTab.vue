@@ -100,18 +100,19 @@
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { useListLoadState } from '@/composables/useListLoadState'
   import DataState from '@/components/common/DataState.vue'
+  import type { ConsoleRetryScheduleResponse } from '@/types/console-api'
 
   const tenant = useTenantStore()
   const { loading: loadingRetry, error: loadRetryError, run: runLoadRetry } = useListLoadState()
   const { filterBusy, runSearch, runReset, runRefresh } = useListFilterFeedback(loadingRetry)
-  const retryRows = ref<Record<string, unknown>[]>([])
+  const retryRows = ref<ConsoleRetryScheduleResponse[]>([])
   const retryPage = ref(1)
   const retryPageSize = ref(20)
   const retryDraft = reactive({ relatedType: '', relatedId: '', status: '' })
   const retryApplied = reactive({ relatedType: '', relatedId: '', status: '' })
 
   const detailVisible = ref(false)
-  const detailRow = ref<Record<string, unknown> | null>(null)
+  const detailRow = ref<ConsoleRetryScheduleResponse | null>(null)
 
   const retryRelatedTypeOptions = computed(() =>
     Array.from(
@@ -149,23 +150,18 @@
   )
 
   const detailMetaRows = computed(() => {
-    const r = detailRow.value ?? {}
+    const r = detailRow.value
+    if (!r) return []
     return [
-      { label: '关联类型', value: pickString(r, 'relatedType') },
-      { label: '关联 ID', value: pickString(r, 'relatedId') },
-      { label: '状态', value: pickString(r, 'retryStatus') },
+      { label: '关联类型', value: r.relatedType ?? '' },
+      { label: '关联 ID', value: String(r.relatedId ?? '') },
+      { label: '状态', value: r.retryStatus ?? '' },
     ]
   })
 
-  function pickString(row: Record<string, unknown>, key: string): string {
-    const v = row[key]
-    if (v == null) return ''
-    return typeof v === 'string' ? v : String(v)
-  }
-
   async function loadRetries() {
     await runLoadRetry(async () => {
-      retryRows.value = (await queryRetries(tenant.tenantId)) as Record<string, unknown>[]
+      retryRows.value = await queryRetries(tenant.tenantId)
     }).catch(() => {
       retryRows.value = []
     })
@@ -197,7 +193,7 @@
     retryPage.value = 1
   }
 
-  function openDetail(row: Record<string, unknown>) {
+  function openDetail(row: ConsoleRetryScheduleResponse) {
     detailRow.value = row
     detailVisible.value = true
   }
