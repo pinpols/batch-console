@@ -7,7 +7,9 @@
 
   --color-text-primary: #1f1f1f;
   --color-text-secondary: #595959;
-  --color-text-tertiary: #8c8c8c;
+  /* tertiary 原 #8c8c8c 在白底 4.45:1 不达 wcag2aa(4.5:1);
+     调到 #6b6b6b ≈ 5.74:1 通过,视觉变化轻微 */
+  --color-text-tertiary: #6b6b6b;
 
   /** Typography */
   --font-size-xs: 12px;

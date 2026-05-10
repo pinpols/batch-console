@@ -41,10 +41,189 @@ export default withMermaid({
   // 让 markdown-it 自动 escape 这类 `<` 字符;后端文档不需要嵌 HTML。
   markdown: {
     html: false,
+
+    // 后端 markdown 里很多 link 用本机绝对路径或 ./README.md 形式,
+    // 直接 build 出来在浏览器里点进去 100% 404。这里在 markdown-it 的 token
+    // 渲染层做一次 link 重写,集中修三类问题:
+    //
+    //   1. ./README.md / ./xxx/README.md → ./ / ./xxx/
+    //      vitepress rewrites 把每个目录的 README.md 输出为 index.md,
+    //      所以 README 路径不存在,要去掉
+    //   2. ./xxx.md / ./xxx.md#anchor → ./xxx / ./xxx#anchor
+    //      cleanUrls=true 模式下后缀 .md 会 404,要剥掉
+    //   3. /Users/dengchao/Downloads/file-batch-system/xxx.java(本机绝对路径)
+    //      → https://github.com/pinpols/file-batch-system/blob/main/xxx.java
+    //      浏览器没法读本机路径,转 GitHub 源码链接
+    config(md) {
+      const REPO_PREFIX = '/Users/dengchao/Downloads/file-batch-system/'
+      const GITHUB_BASE = 'https://github.com/pinpols/file-batch-system/blob/main/'
+      // batch-common / batch-console-api / batch-orchestrator / batch-worker-* / ...
+      // 这些是 BE 项目模块,markdown 里裸写 batch-xxx/src/.../*.java 是想引源码,
+      // 但浏览器解析为 docs URL 必 404,统一转 GitHub blob
+      const MODULE_RE = /^(batch-[\w-]+)\/(src|pom\.xml)/
+
+      function rewriteHref(href: string): string {
+        if (!href || /^(https?:|mailto:|javascript:|#)/.test(href)) return href
+        // 1. 本机绝对路径 → GitHub blob
+        if (href.startsWith(REPO_PREFIX)) {
+          const rel = href.slice(REPO_PREFIX.length)
+          return GITHUB_BASE + rel
+        }
+        // 2. 项目模块相对路径 batch-xxx/src/... → GitHub blob
+        if (MODULE_RE.test(href)) {
+          // 砍掉行号:File.java:123 → File.java#L123
+          const m = href.match(/^(.+\.\w+):(\d+)(.*)$/)
+          if (m) return GITHUB_BASE + m[1] + '#L' + m[2] + m[3]
+          return GITHUB_BASE + href
+        }
+        // 3. 拆 hash / query
+        const hashIdx = href.search(/[#?]/)
+        const path = hashIdx === -1 ? href : href.slice(0, hashIdx)
+        const tail = hashIdx === -1 ? '' : href.slice(hashIdx)
+        // 4. README.md / README → 目录根
+        if (/(?:^|\/)README(\.md)?$/.test(path)) {
+          return path.replace(/(?:^|\/)README(\.md)?$/, () => '/') + tail
+        }
+        // 5. 一般 .md 后缀 → cleanUrls 形式
+        if (path.endsWith('.md')) {
+          return path.slice(0, -3) + tail
+        }
+        return href
+      }
+
+      const orig =
+        md.renderer.rules.link_open ||
+        ((tokens: any, idx: number, opts: any, _env: any, self: any) =>
+          self.renderToken(tokens, idx, opts))
+      md.renderer.rules.link_open = (tokens: any, idx: number, opts: any, env: any, self: any) => {
+        const token = tokens[idx]
+        const hrefIdx = token.attrIndex('href')
+        if (hrefIdx >= 0) {
+          const old = token.attrs[hrefIdx][1]
+          const next = rewriteHref(old)
+          if (next !== old) token.attrs[hrefIdx][1] = next
+        }
+        return orig(tokens, idx, opts, env, self)
+      }
+    },
   },
 
   // 跨仓引用时禁用 vitepress 的 git lastUpdated(读不到对仓 git 信息)
   lastUpdated: false,
+
+  /**
+   * 死链兜底:build 完成后扫所有 .html,把 /docs/ 内不存在的 a href 处理成两类:
+   *   (1) 真实文件在 archive/ 下 → 改写指向 archive 路径(BE 文档 link 没跟上归档)
+   *   (2) 真不存在的 → 改成 href="javascript:void(0)" + class="dead-link",
+   *       浏览器不再跳 404 page
+   *
+   * 时机:vitepress 的 buildEnd 在 SSR 渲染完所有 .html 后触发(closeBundle
+   * 时还没 render),才能扫到全量 .html
+   */
+  async buildEnd(siteConfig: { outDir: string }) {
+    const { readdir, readFile, writeFile, stat } = await import('node:fs/promises')
+    const { join, relative } = await import('node:path')
+    const DIST = siteConfig.outDir
+    const BASE = '/docs/'
+
+    const real = new Set<string>()
+    async function collect(dir: string) {
+      for (const n of await readdir(dir)) {
+        const p = join(dir, n)
+        const s = await stat(p).catch(() => null)
+        if (!s) continue
+        if (s.isDirectory()) await collect(p)
+        else {
+          const rel = relative(DIST, p)
+          const url = BASE + rel
+          real.add(url)
+          if (rel.endsWith('.html')) {
+            real.add(url.replace(/index\.html$/, ''))
+            real.add(url.replace(/\.html$/, ''))
+            real.add(url.replace(/index\.html$/, '').replace(/\/$/, ''))
+            if (rel === 'index.html') {
+              real.add(BASE)
+              real.add(BASE.replace(/\/$/, ''))
+            }
+          }
+        }
+      }
+    }
+    await collect(DIST)
+
+    function exists(u: string): boolean {
+      return (
+        real.has(u) || real.has(u + '/') || real.has(u.replace(/\/$/, '')) || real.has(u + '.html')
+      )
+    }
+    // 候选前缀:BE 把过期文件统一归档到 archive/<dir>/
+    const PREFIXES = ['/docs/archive', '/docs/archive/architecture', '/docs/archive/analysis']
+    function findArchived(u: string): string | null {
+      if (!u.startsWith(BASE)) return null
+      const tail = u.slice(BASE.length - 1)
+      for (const p of PREFIXES) {
+        const cand = p + tail
+        if (exists(cand)) return cand
+        const stripped = tail.replace(/^\/[^/]+/, '')
+        const cand2 = p + stripped
+        if (exists(cand2) && stripped !== tail && stripped) return cand2
+      }
+      return null
+    }
+
+    let rewritten = 0
+    let neutralized = 0
+    const { resolve } = await import('node:path/posix')
+    async function patch(dir: string) {
+      for (const n of await readdir(dir)) {
+        const p = join(dir, n)
+        const s = await stat(p).catch(() => null)
+        if (!s) continue
+        if (s.isDirectory()) await patch(p)
+        else if (n.endsWith('.html')) {
+          // 当前 html 文件对应的绝对 URL,用来 resolve 相对 href
+          // 例:dist/architecture/adr/ADR-012.html → /docs/architecture/adr/ADR-012.html
+          const pageRel = relative(DIST, p)
+          const pageUrl = BASE + pageRel
+          const pageDirUrl = pageUrl.replace(/[^/]*$/, '')
+
+          let html = await readFile(p, 'utf-8')
+          let touched = false
+          html = html.replace(
+            /<a([^>]*?)href="([^"#?]*)([#?][^"]*)?"([^>]*)>/g,
+            (m, pre, href, hash = '', post) => {
+              if (!href) return m
+              if (/^(https?:|mailto:|javascript:|#)/.test(href)) return m
+              // 解析为绝对 URL
+              let abs: string
+              if (href.startsWith('/')) abs = href
+              else abs = resolve(pageDirUrl, href)
+              if (!abs.startsWith(BASE)) return m
+              if (exists(abs)) return m
+              const archived = findArchived(abs)
+              if (archived) {
+                touched = true
+                rewritten++
+                return `<a${pre}href="${archived}${hash}"${post}>`
+              }
+              touched = true
+              neutralized++
+              const cleaned =
+                pre.replace(/\sclass="[^"]*"/g, '') + post.replace(/\sclass="[^"]*"/g, '')
+              return `<a${cleaned} href="javascript:void(0)" class="dead-link" title="链接已失效:${abs}">`
+            },
+          )
+          if (touched) await writeFile(p, html)
+        }
+      }
+    }
+    try {
+      await patch(DIST)
+      console.log(`[buildEnd:dead-links] rewritten=${rewritten} neutralized=${neutralized}`)
+    } catch (e) {
+      console.warn('[buildEnd:dead-links] skip:', (e as Error).message)
+    }
+  },
 
   // srcDir 在 batch-console 仓外(file-batch-system/docs/),Rollup 从那里 resolve
   // 不到本仓 node_modules 的 vue。显式 alias 避免 SSR build 时 vue/server-renderer
@@ -69,6 +248,142 @@ export default withMermaid({
             }
             next()
           })
+        },
+      },
+      {
+        // vitepress 默认只 emit .md → .html,不会拷 srcDir 下的 .yaml/.json/.sql 等
+        // 但 BE 文档 link 真有指向这些文件(api/console-api.openapi.yaml /
+        // compliance/sbom.json),不拷会 404。在 build 完成时把整个 srcDir 下的
+        // 静态资源(白名单后缀)mirror 到 dist 对应路径
+        name: 'docs-static-assets-mirror',
+        async closeBundle() {
+          const { readdir, mkdir, copyFile, stat } = await import('node:fs/promises')
+          const { join, relative, dirname } = await import('node:path')
+          const SRC = fileURLToPath(new URL('../../../file-batch-system/docs', import.meta.url))
+          const DIST = fileURLToPath(new URL('../.vitepress/dist', import.meta.url))
+          const ALLOWED = /\.(ya?ml|json|sql|csv|txt|svg|png|jpe?g|gif|pdf)$/i
+          let copied = 0
+          async function walk(dir: string) {
+            for (const name of await readdir(dir)) {
+              if (name.startsWith('.') || name === 'node_modules') continue
+              const p = join(dir, name)
+              const s = await stat(p).catch(() => null)
+              if (!s) continue
+              if (s.isDirectory()) await walk(p)
+              else if (ALLOWED.test(name)) {
+                const rel = relative(SRC, p)
+                const target = join(DIST, rel)
+                await mkdir(dirname(target), { recursive: true })
+                await copyFile(p, target)
+                copied++
+              }
+            }
+          }
+          try {
+            await walk(SRC)
+            console.log(`[docs-static-assets-mirror] copied ${copied} files`)
+          } catch (e) {
+            console.warn('[docs-static-assets-mirror] skip:', (e as Error).message)
+          }
+        },
+      },
+      {
+        // 死链兜底:留个 placeholder,实际逻辑挪到顶层 buildEnd
+        // (vite closeBundle 时 vitepress 还没 render pages 出 .html,扫不到死链)
+        name: 'docs-rewrite-dead-links-placeholder',
+        async closeBundleNoop() {
+          const { readdir, readFile, writeFile, stat } = await import('node:fs/promises')
+          const { join, relative } = await import('node:path')
+          const DIST = fileURLToPath(new URL('../.vitepress/dist', import.meta.url))
+          const BASE = '/docs/'
+
+          // 1. 扫真实存在的 URL
+          const real = new Set<string>()
+          async function collect(dir: string) {
+            for (const n of await readdir(dir)) {
+              const p = join(dir, n)
+              const s = await stat(p).catch(() => null)
+              if (!s) continue
+              if (s.isDirectory()) await collect(p)
+              else {
+                const rel = relative(DIST, p)
+                const url = BASE + rel
+                real.add(url)
+                if (rel.endsWith('.html')) {
+                  real.add(url.replace(/index\.html$/, ''))
+                  real.add(url.replace(/\.html$/, ''))
+                  real.add(url.replace(/index\.html$/, '').replace(/\/$/, ''))
+                  if (rel === 'index.html') {
+                    real.add(BASE)
+                    real.add(BASE.replace(/\/$/, ''))
+                  }
+                }
+              }
+            }
+          }
+          await collect(DIST)
+
+          function exists(u: string): boolean {
+            return (
+              real.has(u) || real.has(u + '/') || real.has(u.replace(/\/$/, '')) || real.has(u + '.html')
+            )
+          }
+          // 候选前缀(BE 把过期文件统一归档到 archive/)
+          const PREFIXES = ['/docs/archive', '/docs/archive/architecture', '/docs/archive/analysis']
+          function findArchived(u: string): string | null {
+            if (!u.startsWith(BASE)) return null
+            const tail = u.slice(BASE.length - 1) // 含前导 /,如 /analysis/foo
+            for (const p of PREFIXES) {
+              const cand = p + tail
+              if (exists(cand)) return cand
+              // 也试试不含 PREFIX 路径首段(去掉一层目录)
+              const stripped = tail.replace(/^\/[^/]+/, '')
+              const cand2 = p + stripped
+              if (exists(cand2) && stripped !== tail) return cand2
+            }
+            return null
+          }
+
+          let rewritten = 0
+          let neutralized = 0
+          async function patch(dir: string) {
+            for (const n of await readdir(dir)) {
+              const p = join(dir, n)
+              const s = await stat(p).catch(() => null)
+              if (!s) continue
+              if (s.isDirectory()) await patch(p)
+              else if (n.endsWith('.html')) {
+                let html = await readFile(p, 'utf-8')
+                let touched = false
+                html = html.replace(
+                  /<a([^>]*?)href="(\/docs\/[^"#?]*)([#?][^"]*)?"([^>]*)>/g,
+                  (m, pre, href, hash = '', post) => {
+                    if (exists(href)) return m
+                    const archived = findArchived(href)
+                    if (archived) {
+                      touched = true
+                      rewritten++
+                      return `<a${pre}href="${archived}${hash}"${post}>`
+                    }
+                    // 真死链:换成无 href 的 span,带 title 提示
+                    touched = true
+                    neutralized++
+                    return `<span class="dead-link" title="链接已失效:${href}">`
+                  },
+                )
+                // 同步替换对应 </a>(只在我们 neutralize 的 a 之后)
+                // 简化处理:无差别替换全部 </a> 为 </span> 不安全;改用更稳的方式 —
+                // 保留 a tag 但改 href="javascript:void(0)" 并加 class
+                if (touched) await writeFile(p, html)
+              }
+            }
+          }
+          try {
+            await patch(DIST)
+            console.log(`[docs-rewrite-dead-links] rewritten=${rewritten} neutralized=${neutralized}`)
+          } catch (e) {
+            console.warn('[docs-rewrite-dead-links] skip:', (e as Error).message)
+          }
         },
       },
     ],

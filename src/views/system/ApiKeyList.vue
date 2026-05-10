@@ -80,14 +80,14 @@
     </SectionCard>
 
     <el-dialog v-model="createVisible" title="新增 API Key" width="500px">
-      <el-form label-width="100px">
-        <el-form-item label="名称">
-          <el-input v-model="form.keyName" placeholder="Key 名称" />
+      <el-form ref="apiKeyFormRef" :model="form" :rules="apiKeyFormRules" label-width="100px">
+        <el-form-item label="名称" prop="keyName">
+          <el-input v-model="form.keyName" placeholder="Key 名称" maxlength="128" />
         </el-form-item>
-        <el-form-item label="权限范围">
+        <el-form-item label="权限范围" prop="scopes">
           <el-input v-model="form.scopes" placeholder="逗号分隔，如 READ,WRITE" />
         </el-form-item>
-        <el-form-item label="过期时间">
+        <el-form-item label="过期时间" prop="expiresAt">
           <el-date-picker
             v-model="form.expiresAt"
             type="datetime"
@@ -125,7 +125,9 @@
 <script setup lang="ts">
   import { ref, reactive, computed } from 'vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
+  import type { FormRules } from 'element-plus'
   import { Plus } from '@element-plus/icons-vue'
+  import { useFormValidate, rules } from '@/composables/useFormValidate'
   import { listApiKeys, createApiKey, getApiKey, revokeApiKey } from '@/api/apiKeys'
   import { toPageResult } from '@/api/adapters'
   import { useTenantStore } from '@/stores/tenant'
@@ -202,6 +204,11 @@
   const detail = ref<Record<string, unknown> | null>(null)
   const form = reactive({ keyName: '', scopes: '', expiresAt: '' })
 
+  const { formRef: apiKeyFormRef, validate: validateApiKeyForm } = useFormValidate()
+  const apiKeyFormRules: FormRules = {
+    keyName: [rules.required('名称必填'), rules.maxLength(128)],
+  }
+
   async function load() {
     loading.value = true
     loadError.value = null
@@ -223,10 +230,7 @@
   }
 
   async function save() {
-    if (!form.keyName.trim()) {
-      ElMessage.warning('名称不能为空')
-      return
-    }
+    if (!(await validateApiKeyForm())) return
     saving.value = true
     try {
       const body: { keyName: string; scopes?: string; expiresAt?: string } = {
