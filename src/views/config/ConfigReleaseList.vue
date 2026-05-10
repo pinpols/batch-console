@@ -22,94 +22,143 @@
             @reset="reset"
             @refresh="() => runRefresh(load)"
           >
-            <el-form-item label="Key">
+            <el-form-item :label="t('configReleaseList.keyLabel')">
               <el-input
                 class="query-w-180"
                 v-model="filters.key"
                 clearable
-                placeholder="配置 Key，模糊匹配"
+                :placeholder="t('configReleaseList.keyPlaceholder')"
               />
             </el-form-item>
-            <el-form-item label="名称">
+            <el-form-item :label="t('configReleaseList.nameLabel')">
               <el-input
                 class="query-w-180"
                 v-model="filters.name"
                 clearable
-                placeholder="配置显示名，模糊匹配"
+                :placeholder="t('configReleaseList.namePlaceholder')"
               />
             </el-form-item>
-            <el-form-item label="状态">
+            <el-form-item :label="t('configReleaseList.statusLabel')">
               <MetaSelect
                 class="query-w-200"
                 v-model="filters.status"
                 clearable
                 filterable
-                placeholder="全部发布状态"
+                enum-key="configStatus"
+                :placeholder="t('configReleaseList.statusPlaceholder')"
                 :options="configReleaseStatusOptions"
               />
             </el-form-item>
           </ListPageQueryBar>
         </template>
-        <el-table-column prop="configKey" label="Key" min-width="140" show-overflow-tooltip />
-        <el-table-column prop="configName" label="名称" min-width="140" />
-        <el-table-column prop="configType" label="类型" width="120" />
-        <el-table-column prop="configStatus" label="状态" width="120">
+        <el-table-column
+          prop="configKey"
+          :label="t('configReleaseList.colKey')"
+          min-width="140"
+          show-overflow-tooltip
+        />
+        <el-table-column
+          prop="configName"
+          :label="t('configReleaseList.colName')"
+          min-width="140"
+        />
+        <el-table-column prop="configType" :label="t('configReleaseList.colType')" width="120" />
+        <el-table-column prop="configStatus" :label="t('configReleaseList.colStatus')" width="120">
           <template #default="{ row }">
             <StatusTag :value="String(row.configStatus ?? '')" category="configStatus" />
           </template>
         </el-table-column>
-        <el-table-column prop="versionNo" label="版本" width="80" align="right" />
-        <DatetimeColumn prop="publishedAt" label="发布时间" width="160" />
-        <DatetimeColumn prop="effectiveFromAt" label="生效起" width="160" />
-        <DatetimeColumn prop="effectiveToAt" label="生效止" width="160" />
-        <DatetimeColumn prop="rolledBackAt" label="回滚时间" width="160" />
-        <el-table-column prop="createdBy" label="创建人" width="120" show-overflow-tooltip />
-        <el-table-column label="操作" width="380" fixed="right">
+        <el-table-column
+          prop="versionNo"
+          :label="t('configReleaseList.colVersion')"
+          width="80"
+          align="right"
+        />
+        <DatetimeColumn
+          prop="publishedAt"
+          :label="t('configReleaseList.colPublishedAt')"
+          width="160"
+        />
+        <DatetimeColumn
+          prop="effectiveFromAt"
+          :label="t('configReleaseList.colEffectiveFrom')"
+          width="160"
+        />
+        <DatetimeColumn
+          prop="effectiveToAt"
+          :label="t('configReleaseList.colEffectiveTo')"
+          width="160"
+        />
+        <DatetimeColumn
+          prop="rolledBackAt"
+          :label="t('configReleaseList.colRolledBackAt')"
+          width="160"
+        />
+        <el-table-column
+          prop="createdBy"
+          :label="t('configReleaseList.colCreatedBy')"
+          width="120"
+          show-overflow-tooltip
+        />
+        <el-table-column :label="t('configReleaseList.colActions')" width="380" fixed="right">
           <template #default="{ row }">
             <div class="table-actions">
               <el-button
                 size="small"
                 plain
-                v-track-click="{ action: '查看配置详情', id: row.id }"
+                v-track-click="{ action: 'view config detail', id: row.id }"
                 @click="viewDetail(row)"
-                >详情</el-button
               >
-              <el-button size="small" plain type="primary" @click="doPublish(row)">发布</el-button>
-              <el-button size="small" plain @click="doGray(row)">灰度</el-button>
-              <el-button size="small" plain type="danger" @click="doRollback(row)">回滚</el-button>
-              <el-button size="small" plain @click="doDeps(row)">依赖</el-button>
-              <el-button size="small" plain @click="openDiff(row)">对比</el-button>
+                {{ t('configReleaseList.actionDetail') }}
+              </el-button>
+              <el-button size="small" plain type="primary" @click="doPublish(row)">
+                {{ t('configReleaseList.actionPublish') }}
+              </el-button>
+              <el-button size="small" plain @click="doGray(row)">
+                {{ t('configReleaseList.actionGray') }}
+              </el-button>
+              <el-button size="small" plain type="danger" @click="doRollback(row)">
+                {{ t('configReleaseList.actionRollback') }}
+              </el-button>
+              <el-button size="small" plain @click="doDeps(row)">
+                {{ t('configReleaseList.actionDeps') }}
+              </el-button>
+              <el-button size="small" plain @click="openDiff(row)">
+                {{ t('configReleaseList.actionDiff') }}
+              </el-button>
               <el-button
                 size="small"
                 plain
                 type="warning"
-                v-track-click="{ action: '提交配置审批', id: row.id }"
+                v-track-click="{ action: 'submit config approval', id: row.id }"
                 @click="doSubmitApproval(row)"
-                >提审</el-button
               >
+                {{ t('configReleaseList.actionSubmit') }}
+              </el-button>
             </div>
           </template>
         </el-table-column>
       </ProTable>
     </SectionCard>
 
-    <!-- 依赖关系抽屉 -->
-    <el-drawer v-model="depsVisible" title="配置依赖关系" size="640px">
+    <el-drawer v-model="depsVisible" :title="t('configReleaseList.depsTitle')" size="640px">
       <div v-loading="depsLoading">
-        <el-empty v-if="!depsLoading && !depsData" description="暂无数据" />
+        <el-empty
+          v-if="!depsLoading && !depsData"
+          :description="t('configReleaseList.depsEmpty')"
+        />
         <JsonPreview v-else class="release-json" :data="depsData" />
       </div>
     </el-drawer>
 
-    <!-- 版本对比对话框 -->
-    <el-dialog v-model="diffVisible" title="配置版本对比" width="720px">
+    <el-dialog v-model="diffVisible" :title="t('configReleaseList.diffTitle')" width="720px">
       <el-form :inline="true" class="diff-form">
-        <el-form-item label="版本 A">
+        <el-form-item :label="t('configReleaseList.diffVersionA')">
           <el-select
             class="query-w-240"
             v-model="diffForm.releaseIdA"
             filterable
-            placeholder="选择发布版本"
+            :placeholder="t('configReleaseList.diffPlaceholder')"
           >
             <el-option
               v-for="r in allRows"
@@ -119,12 +168,12 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="版本 B">
+        <el-form-item :label="t('configReleaseList.diffVersionB')">
           <el-select
             class="query-w-240"
             v-model="diffForm.releaseIdB"
             filterable
-            placeholder="选择发布版本"
+            :placeholder="t('configReleaseList.diffPlaceholder')"
           >
             <el-option
               v-for="r in allRows.filter((x) => x.id !== diffForm.releaseIdA)"
@@ -141,7 +190,7 @@
             :disabled="!diffForm.releaseIdA || !diffForm.releaseIdB"
             @click="doDiff"
           >
-            对比
+            {{ t('configReleaseList.diffButton') }}
           </el-button>
         </el-form-item>
       </el-form>
@@ -150,7 +199,7 @@
       </div>
     </el-dialog>
 
-    <el-drawer v-model="detailVisible" title="配置发布详情" size="640px">
+    <el-drawer v-model="detailVisible" :title="t('configReleaseList.detailTitle')" size="640px">
       <el-descriptions v-if="detail" :column="2" border size="small">
         <el-descriptions-item label="ID">{{ detail.id }}</el-descriptions-item>
         <el-descriptions-item label="configKey">{{ detail.configKey }}</el-descriptions-item>
@@ -158,7 +207,7 @@
         <el-descriptions-item label="configStatus">{{ detail.configStatus }}</el-descriptions-item>
         <el-descriptions-item label="versionNo">{{ detail.versionNo }}</el-descriptions-item>
         <el-descriptions-item label="publishedAt">{{ detail.publishedAt }}</el-descriptions-item>
-        <el-descriptions-item label="原始响应" :span="2">
+        <el-descriptions-item :label="t('configReleaseList.detailRawResponse')" :span="2">
           <JsonPreview :data="detail" />
         </el-descriptions-item>
       </el-descriptions>
@@ -168,7 +217,10 @@
 
 <script setup lang="ts">
   import { ref, watch, computed, reactive } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
+
+  const { t } = useI18n({ useScope: 'global' })
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import {
     grayRelease,
@@ -282,15 +334,15 @@
   async function doPublish(row: ConsoleConfigReleaseResponse) {
     try {
       const { value: reason } = await ElMessageBox.prompt(
-        '发布原因（可选）',
-        `发布 ${row.configKey}`,
+        t('configReleaseList.publishPrompt'),
+        t('configReleaseList.publishTitle', { key: row.configKey }),
         {
-          confirmButtonText: '发布',
-          cancelButtonText: '取消',
+          confirmButtonText: t('configReleaseList.publishConfirm'),
+          cancelButtonText: t('common.cancel'),
         },
       )
       await publishRelease(row.id, { tenantId: tenant.tenantId, reason: reason || undefined })
-      ElMessage.success(`已发布 ${row.configKey}`)
+      ElMessage.success(t('configReleaseList.publishSuccess', { key: row.configKey }))
       await load()
     } catch {
       /* cancel */
@@ -300,15 +352,19 @@
   async function doGray(row: ConsoleConfigReleaseResponse) {
     try {
       const { value: grayScopeJson } = await ElMessageBox.prompt(
-        '灰度范围 JSON（可选，对齐后端 grayScopeJson）',
-        `灰度 ${row.configKey}`,
-        { confirmButtonText: '确定', cancelButtonText: '取消', inputType: 'textarea' },
+        t('configReleaseList.grayPrompt'),
+        t('configReleaseList.grayTitle', { key: row.configKey }),
+        {
+          confirmButtonText: t('common.confirm'),
+          cancelButtonText: t('common.cancel'),
+          inputType: 'textarea',
+        },
       )
       await grayRelease(row.id, {
         tenantId: tenant.tenantId,
         grayScopeJson: grayScopeJson || undefined,
       })
-      ElMessage.success(`已灰度 ${row.configKey}`)
+      ElMessage.success(t('configReleaseList.graySuccess', { key: row.configKey }))
       await load()
     } catch {
       /* cancel */
@@ -317,13 +373,25 @@
 
   async function doRollback(row: ConsoleConfigReleaseResponse) {
     try {
-      await ElMessageBox.confirm(`确认回滚 ${row.configKey}？`, '回滚', { type: 'warning' })
-      const { value: reason } = await ElMessageBox.prompt('回滚原因（可选）', '回滚', {
-        confirmButtonText: '提交',
-        cancelButtonText: '取消',
-      })
+      await ElMessageBox.confirm(
+        t('configReleaseList.rollbackConfirmText', { key: row.configKey }),
+        t('configReleaseList.rollbackTitle'),
+        {
+          type: 'warning',
+          confirmButtonText: t('common.confirm'),
+          cancelButtonText: t('common.cancel'),
+        },
+      )
+      const { value: reason } = await ElMessageBox.prompt(
+        t('configReleaseList.rollbackPrompt'),
+        t('configReleaseList.rollbackTitle'),
+        {
+          confirmButtonText: t('configReleaseList.rollbackSubmit'),
+          cancelButtonText: t('common.cancel'),
+        },
+      )
       await rollbackRelease(row.id, { tenantId: tenant.tenantId, reason: reason || undefined })
-      ElMessage.success(`已回滚 ${row.configKey}`)
+      ElMessage.success(t('configReleaseList.rollbackSuccess', { key: row.configKey }))
       await load()
     } catch {
       /* cancel */
@@ -344,15 +412,18 @@
   async function doSubmitApproval(row: ConsoleConfigReleaseResponse) {
     try {
       const { value: reason } = await ElMessageBox.prompt(
-        '提审原因（可选）',
-        `提交审批 ${row.configKey}`,
-        { confirmButtonText: '提交', cancelButtonText: '取消' },
+        t('configReleaseList.submitPrompt'),
+        t('configReleaseList.submitTitle', { key: row.configKey }),
+        {
+          confirmButtonText: t('configReleaseList.rollbackSubmit'),
+          cancelButtonText: t('common.cancel'),
+        },
       )
       await submitReleaseApproval(row.id, {
         tenantId: tenant.tenantId,
         reason: reason || undefined,
       })
-      ElMessage.success(`已提交审批 ${row.configKey}`)
+      ElMessage.success(t('configReleaseList.submitSuccess', { key: row.configKey }))
       await load()
     } catch {
       /* cancel */
