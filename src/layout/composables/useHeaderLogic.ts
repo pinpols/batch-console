@@ -1,6 +1,7 @@
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
 import { useAppStore } from '@/stores/app'
 import { usePermissionStore } from '@/stores/permission'
@@ -16,6 +17,7 @@ export function useHeaderLogic() {
   const permission = usePermissionStore()
   const tabsStore = useTabsStore()
   const tenant = useTenantStore()
+  const { t } = useI18n()
   const paletteOpen = ref(false)
 
   const breadcrumbs = computed(() => {
@@ -45,9 +47,9 @@ export function useHeaderLogic() {
     try {
       const url = new URL(route.fullPath, window.location.origin).href
       await navigator.clipboard.writeText(url)
-      ElMessage.success('已复制链接')
+      ElMessage.success(t('copy.linkSuccess'))
     } catch {
-      ElMessage.error('复制失败')
+      ElMessage.error(t('copy.fail'))
     }
   }
 
@@ -65,7 +67,7 @@ export function useHeaderLogic() {
   async function handleTenantSwitch(newTenantId: string) {
     if (!newTenantId) return
     tenant.setTenantId(newTenantId)
-    ElMessage.success(`已切换到租户 ${newTenantId}`)
+    ElMessage.success(`${t('nav.switchTenant')}: ${newTenantId}`)
     // 后端按 tenant+authorities 下发菜单,切租户必须刷 profile;await 避免
     // 过渡窗口期侧边栏 / 路由 guard 用旧 role/menus 渲染或放行。
     // (auth store 同时挂了 watch tenantId 的兜底,这里 await 保 UX)
@@ -80,24 +82,25 @@ export function useHeaderLogic() {
     const text = tenantIdInput.value?.trim() ?? tenant.tenantId
     try {
       await navigator.clipboard.writeText(text)
-      ElMessage.success('已复制 tenantId')
+      ElMessage.success(t('copy.tenantSuccess'))
     } catch {
-      ElMessage.error('复制失败')
+      ElMessage.error(t('copy.fail'))
     }
   }
 
-  const currentTitle = computed(() => (route.meta.title as string) ?? '批量调度平台')
+  const currentTitle = computed(() => (route.meta.title as string) ?? t('nav.appTitle'))
 
   const visibleGroups = computed(() => permission.visibleGroups)
 
   const themeToggleLabel = computed(() => {
     if (app.themePreference === 'system') {
-      return `跟随系统 · ${app.theme === 'dark' ? '深色' : '浅色'}`
+      const effective = app.theme === 'dark' ? t('nav.themeDark') : t('nav.themeLight')
+      return `${t('nav.themeFollowSystem')} · ${effective}`
     }
-    return app.themePreference === 'light' ? '浅色' : '深色'
+    return app.themePreference === 'light' ? t('nav.themeLight') : t('nav.themeDark')
   })
 
-  const themeToggleAriaLabel = computed(() => '切换主题')
+  const themeToggleAriaLabel = computed(() => t('nav.switchTheme'))
 
   const commandPaletteShortcutLabel = computed(() =>
     typeof navigator !== 'undefined' && /Mac|iPhone|iPod|iPad/i.test(navigator.platform ?? '')
