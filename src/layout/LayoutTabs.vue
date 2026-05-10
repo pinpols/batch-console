@@ -18,7 +18,9 @@
               tabindex="0"
               @keydown.enter.prevent="overflowOpen = true"
             >
-              <span class="page-tab__title">更多 ({{ tabsStore.overflowTabs.length }})</span>
+              <span class="page-tab__title"
+                >{{ t('common.more') }} ({{ tabsStore.overflowTabs.length }})</span
+              >
               <el-icon class="page-tab__overflow-caret">
                 <ArrowDown />
               </el-icon>
@@ -33,7 +35,7 @@
                 :class="{ 'is-active': route.fullPath === tab.key }"
               >
                 <span class="page-tabs-overflow__row-title" @click="onOverflowTabClick(tab)">{{
-                  tab.title
+                  resolveTabTitle(tab)
                 }}</span>
                 <div class="page-tabs-overflow__row-actions" @click.stop>
                   <el-dropdown
@@ -41,19 +43,19 @@
                     popper-class="page-tab-dropdown-popper"
                     @command="(c) => tabCloseCommand(c, tab.key)"
                   >
-                    <span class="page-tab__kebab" aria-label="标签批量关闭">
+                    <span class="page-tab__kebab" :aria-label="t('nav.closeTabsBatchAria')">
                       <el-icon><MoreFilled /></el-icon>
                     </span>
                     <template #dropdown>
                       <el-dropdown-menu>
                         <el-dropdown-item command="left" :disabled="tabDisableCloseLeft(tab.key)">
-                          关闭左侧所有
+                          {{ t('nav.closeLeft') }}
                         </el-dropdown-item>
                         <el-dropdown-item command="right" :disabled="tabDisableCloseRight(tab.key)">
-                          关闭右侧所有
+                          {{ t('nav.closeRight') }}
                         </el-dropdown-item>
                         <el-dropdown-item command="others" :disabled="tabDisableCloseOthers()">
-                          关闭其他
+                          {{ t('nav.closeOthers') }}
                         </el-dropdown-item>
                       </el-dropdown-menu>
                     </template>
@@ -63,7 +65,7 @@
                     class="page-tab__close page-tabs-overflow__row-close"
                     role="button"
                     tabindex="0"
-                    aria-label="关闭标签"
+                    :aria-label="t('nav.closeTabAria')"
                     @click.stop="closeTab(tab.key)"
                     @keydown.enter.prevent.stop="closeTab(tab.key)"
                   >
@@ -80,26 +82,28 @@
           class="page-tab"
           :class="{ 'page-tab--active': route.fullPath === tab.key }"
         >
-          <span class="page-tab__title" @click="onTabClick(tab.path)">{{ tab.title }}</span>
+          <span class="page-tab__title" @click="onTabClick(tab.path)">{{
+            resolveTabTitle(tab)
+          }}</span>
           <div class="page-tab__trailing" @click.stop>
             <el-dropdown
               trigger="click"
               popper-class="page-tab-dropdown-popper"
               @command="(c) => tabCloseCommand(c, tab.key)"
             >
-              <span class="page-tab__kebab" aria-label="标签批量关闭">
+              <span class="page-tab__kebab" :aria-label="t('nav.closeTabsBatchAria')">
                 <el-icon><MoreFilled /></el-icon>
               </span>
               <template #dropdown>
                 <el-dropdown-menu>
                   <el-dropdown-item command="left" :disabled="tabDisableCloseLeft(tab.key)">
-                    关闭左侧所有
+                    {{ t('nav.closeLeft') }}
                   </el-dropdown-item>
                   <el-dropdown-item command="right" :disabled="tabDisableCloseRight(tab.key)">
-                    关闭右侧所有
+                    {{ t('nav.closeRight') }}
                   </el-dropdown-item>
                   <el-dropdown-item command="others" :disabled="tabDisableCloseOthers()">
-                    关闭其他
+                    {{ t('nav.closeOthers') }}
                   </el-dropdown-item>
                 </el-dropdown-menu>
               </template>
@@ -109,7 +113,7 @@
               class="page-tab__close"
               role="button"
               tabindex="0"
-              aria-label="关闭标签"
+              :aria-label="t('nav.closeTabAria')"
               @click.stop="closeTab(tab.key)"
               @keydown.enter.prevent.stop="closeTab(tab.key)"
             >
@@ -125,15 +129,23 @@
 <script setup lang="ts">
   import { ref, computed } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
+  import { useI18n } from 'vue-i18n'
   import { ArrowDown, MoreFilled } from '@element-plus/icons-vue'
   import { useTabsStore, type PageTab } from '@/stores/tabs'
   import { useAppStore } from '@/stores/app'
+  import { pathToKey } from '@/constants/pathKey'
 
   const route = useRoute()
   const router = useRouter()
   const app = useAppStore()
   const tabsStore = useTabsStore()
   const overflowOpen = ref(false)
+  const { t, te } = useI18n()
+
+  function resolveTabTitle(tab: PageTab): string {
+    const key = `page.${pathToKey(tab.path)}.title`
+    return te(key) ? t(key) : tab.title
+  }
 
   const overflowContainsActive = computed(() =>
     tabsStore.overflowTabs.some((t) => t.key === route.fullPath),

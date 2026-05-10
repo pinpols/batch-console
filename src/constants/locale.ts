@@ -22,15 +22,23 @@ export function detectBrowserLocale(): Locale {
 }
 
 export function readLocalePreference(): Locale {
-  if (typeof localStorage === 'undefined') return 'zh-CN'
-  const v = localStorage.getItem(LOCALE_STORAGE_KEY)
-  if (v === 'zh-CN' || v === 'en-US') return v
+  // 测试环境下 localStorage 可能是部分桩(jsdom 没初始化或被替换),
+  // typeof 检查不能保证有方法,所以再 try/catch 兜一层。
+  try {
+    const v = globalThis.localStorage?.getItem?.(LOCALE_STORAGE_KEY)
+    if (v === 'zh-CN' || v === 'en-US') return v
+  } catch {
+    /* ignore */
+  }
   return detectBrowserLocale()
 }
 
 export function writeLocalePreference(locale: Locale): void {
-  if (typeof localStorage === 'undefined') return
-  localStorage.setItem(LOCALE_STORAGE_KEY, locale)
+  try {
+    globalThis.localStorage?.setItem?.(LOCALE_STORAGE_KEY, locale)
+  } catch {
+    /* ignore */
+  }
 }
 
 export function applyLocaleToDocument(locale: Locale): void {

@@ -84,6 +84,11 @@ const messages: Messages = {
       runtime: 'Runtime & Scheduling',
       system: 'System',
     },
+    closeLeft: 'Close all to the left',
+    closeRight: 'Close all to the right',
+    closeOthers: 'Close others',
+    closeTabAria: 'Close tab',
+    closeTabsBatchAria: 'Batch close tabs',
     mobileTab: {
       summary: 'Overview',
       approvals: 'Approve',
@@ -110,6 +115,163 @@ const messages: Messages = {
     metaJump: 'Jump',
     jumpJobInstance: 'Job instance #{id}',
     jumpDetail: 'Open detail page',
+  },
+  page: {
+    opsSummary: {
+      title: 'Dashboard',
+      description: 'Tenant runtime overview, SLA trends and pending items.',
+    },
+    approvals: {
+      title: 'Approvals',
+      description: 'Centralized approvals for releases, reruns and catch-up.',
+    },
+    reports: { title: 'Reports', description: 'Export common ops, scheduler and audit reports.' },
+    selfService: {
+      title: 'Self-service',
+      description: 'Check quotas and usage; submit reruns, retries and quota requests.',
+    },
+    jobsDefinitions: {
+      title: 'Job definitions',
+      description: 'Maintain job definitions, execution mode and scheduling rules.',
+    },
+    workflowDefinitions: {
+      title: 'Workflow definitions',
+      description: 'Maintain workflow definitions, versions and active status.',
+    },
+    jobsPipelines: {
+      title: 'Pipeline definitions',
+      description: 'Maintain pipeline definitions and step ordering.',
+    },
+    workflowDesigner: {
+      title: 'Workflow designer',
+      description: 'Edit workflow nodes, conditional edges and join semantics.',
+    },
+    monitorJobInstances: {
+      title: 'Job runs',
+      description: 'Inspect job runs and trigger rerun, cancel or terminate.',
+    },
+    monitorJobSteps: {
+      title: 'Job steps',
+      description: 'Search job steps to locate step-level issues.',
+    },
+    monitorWorkflowRuns: {
+      title: 'Workflow runs',
+      description: 'Browse workflow run history and dive into node detail.',
+    },
+    schedulerSnapshot: {
+      title: 'Scheduler snapshot',
+      description: 'Live scheduler state, queue load and worker samples.',
+    },
+    filesList: { title: 'Files', description: 'Search file records by status and business type.' },
+    filesTemplates: {
+      title: 'File templates',
+      description: 'Maintain file templates, formats and business categories.',
+    },
+    filesArrivalGroups: {
+      title: 'Arrival groups',
+      description: 'Maintain file arrival policies and handle missing/abnormal arrivals.',
+    },
+    filesPipelineObs: {
+      title: 'Pipeline observability',
+      description: 'View file pipelines, steps, deliveries and error records.',
+    },
+    configReleases: {
+      title: 'Releases',
+      description: 'Track release tickets and handle publish, approval and rollback.',
+    },
+    configManagement: {
+      title: 'Changes & sync',
+      description: 'View config change records, handle secrets and cross-env sync.',
+    },
+    systemTags: {
+      title: 'Tags',
+      description: 'Maintain resource tags and search related objects by tag.',
+    },
+    configExcel: {
+      title: 'Excel config',
+      description: 'Upload Excel configs, preview validation, then apply to current domain.',
+    },
+    configTenantPackage: {
+      title: 'Bulk config import',
+      description: 'Import tenant config bundles and apply atomically after validation.',
+    },
+    observabilityAlerts: {
+      title: 'Alerts',
+      description: 'View alerts and execute ack, silence and close.',
+    },
+    observabilityAudits: {
+      title: 'Audit log',
+      description: 'Query platform key actions and trace user/API behavior.',
+    },
+    observabilityOutbox: {
+      title: 'Outbox',
+      description: 'View Outbox dispatch status and retry records.',
+    },
+    systemNotifications: {
+      title: 'Notifications',
+      description: 'Configure notification channels and subscriptions, track delivery.',
+    },
+    observabilityQueries: {
+      title: 'Unified query',
+      description: 'Search dead-letter, retry, execution logs and channel receipts.',
+    },
+    systemEventCatalog: {
+      title: 'Event catalog',
+      description: 'Browse system event types, topics and delivery contracts.',
+    },
+    workersManagement: {
+      title: 'Workers',
+      description: 'View worker online status and maintain file processing channels.',
+    },
+    systemTriggers: {
+      title: 'Triggers',
+      description: 'Register, pause and resume job triggers.',
+    },
+    schedulerBatchDays: {
+      title: 'Batch days',
+      description: 'Inspect batch-day runtime status by calendar and date.',
+    },
+    governanceQueues: {
+      title: 'Queues & windows',
+      description: 'Maintain scheduler queues, batch windows and business calendars.',
+    },
+    governanceQuota: {
+      title: 'Tenant quotas',
+      description: 'Maintain tenant quota policies for concurrency and burst.',
+    },
+    systemTenants: {
+      title: 'Tenants',
+      description: 'SaaS isolation unit: tenantId, name, status, bulk creation, config copy, etc.',
+    },
+    systemUserAccounts: {
+      title: 'User accounts',
+      description:
+        'Console accounts: username, display name, role, enable/disable, password reset.',
+    },
+    systemParameters: {
+      title: 'System parameters',
+      description: 'Maintain system-level key-value params for platform switches.',
+    },
+    systemApiKeys: {
+      title: 'API keys',
+      description: 'Create, view and revoke console API keys.',
+    },
+    systemAiChat: {
+      title: 'AI assistant',
+      description: 'Chat with the AI assistant and trace historical calls.',
+    },
+    opsDiagnostic: {
+      title: 'Ops diagnostics',
+      description: 'Diagnose Kafka, Outbox and cluster health.',
+    },
+    systemUsers: {
+      title: 'Permission audit',
+      description: 'View current account role, permissions and accessible menus.',
+    },
+    logs: {
+      title: 'Execution logs',
+      description: 'Search execution/operation logs for audit and troubleshooting.',
+    },
   },
   toast: {
     saveSuccess: 'Saved',

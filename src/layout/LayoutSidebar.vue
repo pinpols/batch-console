@@ -36,7 +36,7 @@
             <el-icon v-if="item.icon">
               <component :is="item.icon" />
             </el-icon>
-            {{ item.title }}
+            {{ resolveItemTitle(item) }}
           </el-menu-item>
         </el-sub-menu>
       </template>
@@ -50,7 +50,8 @@
   import { useI18n } from 'vue-i18n'
   import { useAppStore } from '@/stores/app'
   import { usePermissionStore } from '@/stores/permission'
-  import type { NavigationGroup } from '@/constants/navigation'
+  import type { NavigationGroup, NavigationItem } from '@/constants/navigation'
+  import { pathToKey } from '@/constants/pathKey'
 
   const app = useAppStore()
   const permission = usePermissionStore()
@@ -61,6 +62,11 @@
   function resolveGroupTitle(group: NavigationGroup): string {
     const key = `nav.group.${group.key}`
     return te(key) ? t(key) : group.title
+  }
+
+  function resolveItemTitle(item: NavigationItem): string {
+    const key = `page.${pathToKey(item.path)}.title`
+    return te(key) ? t(key) : item.title
   }
 
   const activeMenu = computed(() => (route.meta.activeMenu as string) ?? route.path)

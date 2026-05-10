@@ -64,8 +64,14 @@
   import { Search } from '@element-plus/icons-vue'
   import type { NavigationGroup } from '@/constants/navigation'
   import type { PageTab } from '@/stores/tabs'
+  import { pathToKey } from '@/constants/pathKey'
 
-  const { t } = useI18n()
+  const { t, te } = useI18n()
+
+  function resolvePageTitle(path: string, fallback: string): string {
+    const key = `page.${pathToKey(path)}.title`
+    return te(key) ? t(key) : fallback
+  }
 
   type PaletteSource = 'recent' | 'menu' | 'jump'
 
@@ -107,7 +113,7 @@
     )
     return sorted.slice(0, 8).map((tab) => ({
       key: `recent:${tab.key}`,
-      title: tab.title,
+      title: resolvePageTitle(tab.path, tab.title),
       subtitle: tab.path,
       meta: t('palette.metaRecent'),
       path: tab.path,
@@ -119,10 +125,11 @@
     const out: Omit<PaletteItem, 'globalIndex'>[] = []
     for (const g of props.groups) {
       for (const c of g.children) {
+        const groupKey = `nav.group.${g.key}`
         out.push({
           key: `menu:${c.path}`,
-          title: c.title,
-          subtitle: g.title,
+          title: resolvePageTitle(c.path, c.title),
+          subtitle: te(groupKey) ? t(groupKey) : g.title,
           meta: t('palette.metaMenu'),
           path: c.path,
           icon: c.icon,

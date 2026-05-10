@@ -90,6 +90,11 @@ export default {
       runtime: '运行时与调度',
       system: '系统管理',
     },
+    closeLeft: '关闭左侧所有',
+    closeRight: '关闭右侧所有',
+    closeOthers: '关闭其他',
+    closeTabAria: '关闭标签',
+    closeTabsBatchAria: '标签批量关闭',
     mobileTab: {
       summary: '概览',
       approvals: '审批',
@@ -116,6 +121,105 @@ export default {
     metaJump: '跳转',
     jumpJobInstance: '作业实例 #{id}',
     jumpDetail: '打开详情页',
+  },
+  page: {
+    opsSummary: {
+      title: '控制面板',
+      description: '查看当前租户的运行概览、SLA 趋势和待处理事项。',
+    },
+    approvals: { title: '审批中心', description: '集中处理配置发布、重跑和 Catch-up 审批。' },
+    reports: { title: '报表中心', description: '导出常用运营、调度和审计报表。' },
+    selfService: { title: '自助服务', description: '查看配额与用量,提交重跑、补偿和配额申请。' },
+    jobsDefinitions: { title: '作业定义', description: '维护作业定义、执行模式和调度规则。' },
+    workflowDefinitions: { title: '工作流定义', description: '维护工作流定义、版本和启停状态。' },
+    jobsPipelines: { title: '流水线定义', description: '维护流水线定义和步骤执行顺序。' },
+    workflowDesigner: {
+      title: '编排设计器',
+      description: '选择 Workflow 后编辑节点、条件边和汇聚关系。',
+    },
+    monitorJobInstances: {
+      title: '作业运行',
+      description: '查询作业运行记录,执行重跑、取消和终止。',
+    },
+    monitorJobSteps: { title: '作业步骤', description: '按条件查询作业步骤,定位步骤级执行问题。' },
+    monitorWorkflowRuns: {
+      title: '工作流运行',
+      description: '查询工作流运行历史,并进入节点明细。',
+    },
+    schedulerSnapshot: {
+      title: '调度快照',
+      description: '查看调度器实时状态、队列负载和 Worker 采样。',
+    },
+    filesList: { title: '文件列表', description: '查询文件记录,按状态和业务类型筛选。' },
+    filesTemplates: { title: '文件模板', description: '维护文件模板、格式和业务分类。' },
+    filesArrivalGroups: {
+      title: '到达组治理',
+      description: '维护文件组到达策略,处理缺失和异常到达。',
+    },
+    filesPipelineObs: {
+      title: '流水线观测',
+      description: '查看文件流水线、步骤、投递和错误记录。',
+    },
+    configReleases: { title: '发布管理', description: '跟踪配置发布单状态,处理发布、审批和回滚。' },
+    configManagement: {
+      title: '变更与同步',
+      description: '查看配置变更记录,处理 Secret 与跨环境同步。',
+    },
+    systemTags: { title: '标签管理', description: '维护资源标签,并按标签检索关联对象。' },
+    configExcel: { title: 'Excel 维护', description: '上传 Excel 配置,预览校验后应用到当前域。' },
+    configTenantPackage: {
+      title: '配置批量导入',
+      description: '导入租户配置包,预览校验结果后一次性应用。',
+    },
+    observabilityAlerts: { title: '告警', description: '查看告警事件,并执行确认、静默和关闭。' },
+    observabilityAudits: {
+      title: '审计日志',
+      description: '查询平台关键操作,追踪用户和接口行为。',
+    },
+    observabilityOutbox: { title: 'Outbox', description: '查看 Outbox 投递状态和重试记录。' },
+    systemNotifications: {
+      title: '通知与投递',
+      description: '配置通知渠道和订阅规则,追踪投递结果。',
+    },
+    observabilityQueries: {
+      title: '综合查询',
+      description: '集中查询死信、重试、执行日志和渠道回执。',
+    },
+    systemEventCatalog: {
+      title: '事件目录',
+      description: '查看系统事件类型、Topic 和投递约定。',
+    },
+    workersManagement: { title: 'Worker', description: '查看 Worker 在线状态,维护文件处理渠道。' },
+    systemTriggers: { title: '触发器', description: '管理作业触发器的注册、暂停和恢复。' },
+    schedulerBatchDays: {
+      title: '批次日与窗口',
+      description: '按日历和日期查看批次日运行状态。',
+    },
+    governanceQueues: {
+      title: '队列与窗口',
+      description: '维护调度队列、批次窗口和业务日历。',
+    },
+    governanceQuota: {
+      title: '租户配额',
+      description: '维护租户配额策略,控制并发和突发容量。',
+    },
+    systemTenants: {
+      title: '租户实例',
+      description: 'SaaS 维度的隔离单位:tenantId、租户名、状态、批量新建、复制配置等。',
+    },
+    systemUserAccounts: {
+      title: '登录账户',
+      description: '控制台登录账号:username、显示名、角色、启停、密码重置等。',
+    },
+    systemParameters: {
+      title: '系统参数',
+      description: '维护系统级参数键值,控制平台运行开关。',
+    },
+    systemApiKeys: { title: 'API Key', description: '创建、查看和吊销控制台 API Key。' },
+    systemAiChat: { title: 'AI 助手', description: '与 AI 助手对话,并追踪历史调用记录。' },
+    opsDiagnostic: { title: '运维诊断', description: '排查 Kafka、Outbox 和集群健康问题。' },
+    systemUsers: { title: '权限自查', description: '查看当前账号的角色、权限和可访问菜单。' },
+    logs: { title: '执行日志', description: '查询执行操作日志,辅助审计和问题定位。' },
   },
   toast: {
     saveSuccess: '保存成功',
