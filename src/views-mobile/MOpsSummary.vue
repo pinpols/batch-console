@@ -74,13 +74,25 @@
 
       <MSkeleton v-else-if="loading" :count="4" />
       <div v-else class="m-empty">暂无数据。后端未联调时属正常。</div>
+
+      <!-- 快捷入口:Tab Bar 已占满 5 个槽位,这里导出二级常用列表 -->
+      <div class="m-quick-grid">
+        <router-link to="/m/files" class="m-quick">
+          <el-icon><Files /></el-icon>
+          <span>文件</span>
+        </router-link>
+        <router-link to="/m/tenants" class="m-quick">
+          <el-icon><OfficeBuilding /></el-icon>
+          <span>租户</span>
+        </router-link>
+      </div>
     </div>
   </MPullRefresh>
 </template>
 
 <script setup lang="ts">
   import { ref, onMounted, watch } from 'vue'
-  import { Refresh } from '@element-plus/icons-vue'
+  import { Refresh, Files, OfficeBuilding } from '@element-plus/icons-vue'
   import { ElMessage } from 'element-plus'
   import { useTenantStore } from '@/stores/tenant'
   import { useAutoRefresh } from '@/composables/useAutoRefresh'
@@ -110,3 +122,37 @@
   // 30s 轮询：页面在前台时自动刷新，切后台时暂停（oncall 场景）
   useAutoRefresh(load, 30_000)
 </script>
+
+<style scoped>
+  .m-quick-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 12px;
+  }
+
+  .m-quick {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 18px 12px;
+    border-radius: 12px;
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border-light);
+    color: var(--color-text-primary);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .m-quick :deep(.el-icon) {
+    font-size: 22px;
+    color: var(--color-primary);
+  }
+
+  .m-quick:active {
+    transform: scale(0.97);
+  }
+</style>

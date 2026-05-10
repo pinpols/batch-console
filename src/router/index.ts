@@ -539,6 +539,20 @@ const routes = [
         component: () => import('@/views-mobile/MCatchUp.vue'),
         meta: { title: 'Catch-up 审批', minRole: 'VIEWER' },
       },
+      {
+        path: 'files',
+        name: 'm-files',
+        component: () => import('@/views-mobile/MFileList.vue'),
+        meta: { title: '文件', minRole: 'VIEWER' },
+      },
+      {
+        path: 'tenants',
+        name: 'm-tenants',
+        component: () => import('@/views-mobile/MTenants.vue'),
+        // 移动端租户列表对所有有 view 权限的用户可见;实际写操作仍由
+        // 各按钮通过 v-permission 细化(目前只列查看)
+        meta: { title: '租户', minRole: 'VIEWER' },
+      },
     ],
   },
   {
@@ -581,9 +595,16 @@ router.beforeEach(async (to, from) => {
   if (!auth.userInfo) {
     try {
       await auth.fetchMe()
-    } catch {
-      await auth.logout()
-      return { name: 'login', query: { redirect: to.fullPath } }
+    } catch (err) {
+      // 只有 401 真鉴权过期才登出。5xx / 网络不可达 / 超时等保留登录态,
+      // 让用户停在原页,由 axios 拦截器 toast 提示;否则 BE 一抖动就把全员踢回登录页。
+      const status = (err as { response?: { status?: number } } | null)?.response?.status
+      if (status === 401) {
+        await auth.logout()
+        return { name: 'login', query: { redirect: to.fullPath } }
+      }
+      // 透明放行:userInfo 仍为 null,各页面自身 loadXxx 会再次失败 + toast,
+      // 但用户不会被无声踢出。
     }
   }
 
