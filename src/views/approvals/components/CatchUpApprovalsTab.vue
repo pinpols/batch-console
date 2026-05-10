@@ -18,7 +18,7 @@
         @reset="onReset"
         @refresh="() => runRefresh(load)"
       >
-        <el-form-item label="关键字">
+        <el-form-item :label="t('approvals.keywordLabel')">
           <el-input
             class="query-w-240"
             v-model="kwDraft"
@@ -27,7 +27,7 @@
             @keyup.enter="onSearch"
           />
         </el-form-item>
-        <el-form-item label="状态">
+        <el-form-item :label="t('approvals.catchUpStatus')">
           <MetaSelect
             class="query-w-180"
             v-model="statusDraft"
@@ -35,37 +35,45 @@
             filterable
             allow-create
             default-first-option
-            placeholder="选择或输入 requestStatus"
+            enum-key="approvalStatus"
+            :placeholder="t('approvals.catchUpStatusPlaceholder')"
             @keyup.enter="onSearch"
             :options="catchUpStatusOptions"
           />
         </el-form-item>
-        <el-form-item label="业务日">
+        <el-form-item :label="t('approvals.catchUpColBizDate')">
           <el-date-picker
             class="query-w-160"
             v-model="bizDateDraft"
             type="date"
             value-format="YYYY-MM-DD"
             clearable
-            placeholder="选择业务日"
+            :placeholder="t('approvals.catchUpColBizDate')"
             @keyup.enter="onSearch"
           />
         </el-form-item>
       </ListPageQueryBar>
     </template>
-    <el-table-column prop="requestId" label="请求单号" min-width="180" />
-    <el-table-column prop="jobCode" label="Job Code" min-width="140" />
-    <el-table-column prop="bizDate" label="业务日期" width="120" />
-    <el-table-column prop="requestStatus" label="状态" width="120" />
+    <el-table-column prop="requestId" :label="t('approvals.catchUpColRequestId')" min-width="180" />
+    <el-table-column prop="jobCode" :label="t('approvals.catchUpColJobCode')" min-width="140" />
+    <el-table-column prop="bizDate" :label="t('approvals.catchUpColBizDate')" width="120" />
+    <el-table-column prop="requestStatus" :label="t('approvals.colStatus')" width="120">
+      <template #default="{ row }">
+        <StatusTag :value="String(row.requestStatus ?? '')" category="approval" />
+      </template>
+    </el-table-column>
     <el-table-column prop="traceId" label="Trace" min-width="150" show-overflow-tooltip />
-    <DatetimeColumn prop="createdAt" label="创建时间" width="160" />
-    <DatetimeColumn prop="updatedAt" label="更新时间" width="160" />
+    <DatetimeColumn prop="createdAt" :label="t('approvals.catchUpColCreatedAt')" width="160" />
+    <DatetimeColumn prop="updatedAt" label="updatedAt" width="160" />
   </ProTable>
 </template>
 
 <script setup lang="ts">
   import { computed, ref } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import { fetchAllPageItems, toPageResult } from '@/api/adapters'
+
+  const { t } = useI18n({ useScope: 'global' })
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
@@ -75,6 +83,7 @@
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
   import type { ConsolePendingCatchUpResponse } from '@/types/console-api'
   import MetaSelect from '@/components/common/MetaSelect.vue'
+  import StatusTag from '@/components/common/StatusTag.vue'
 
   const tenant = useTenantStore()
   const loading = ref(false)
