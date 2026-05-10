@@ -3,7 +3,7 @@
     <PageHeader>
       <template #actions>
         <el-button type="primary" :icon="Plus" class="pretty-add-button" @click="openCreate">
-          新增 Pipeline
+          {{ t('pipelineDefinitionList.headerCreate') }}
         </el-button>
       </template>
     </PageHeader>
@@ -27,20 +27,20 @@
             @reset="onQueryBarReset"
             @refresh="() => runRefresh(load)"
           >
-            <el-form-item label="关键字">
+            <el-form-item :label="t('pipelineDefinitionList.keywordLabel')">
               <el-input
                 v-model="keyword"
                 clearable
-                placeholder="请输入 pipelineCode / pipelineName"
+                :placeholder="t('pipelineDefinitionList.keywordPlaceholder')"
               />
             </el-form-item>
-            <el-form-item label="类型">
+            <el-form-item :label="t('pipelineDefinitionList.typeLabel')">
               <el-select
                 class="query-w-160"
                 v-model="pipelineType"
                 clearable
                 filterable
-                placeholder="请选择 pipelineType"
+                :placeholder="t('pipelineDefinitionList.typePlaceholder')"
               >
                 <el-option
                   v-for="option in pipelineTypeOptions"
@@ -50,34 +50,57 @@
                 />
               </el-select>
             </el-form-item>
-            <el-form-item label="启用">
-              <el-select class="query-w-120" v-model="enabledFilter" clearable placeholder="全部">
-                <el-option label="启用" :value="true" />
-                <el-option label="停用" :value="false" />
+            <el-form-item :label="t('pipelineDefinitionList.enabledLabel')">
+              <el-select
+                class="query-w-120"
+                v-model="enabledFilter"
+                clearable
+                :placeholder="t('pipelineDefinitionList.enabledPlaceholder')"
+              >
+                <el-option :label="t('pipelineDefinitionList.optEnabled')" :value="true" />
+                <el-option :label="t('pipelineDefinitionList.optDisabled')" :value="false" />
               </el-select>
             </el-form-item>
           </ListPageQueryBar>
         </template>
-        <el-table-column prop="pipelineCode" label="编码" min-width="160" />
-        <el-table-column prop="pipelineName" label="名称" min-width="180" />
-        <el-table-column prop="pipelineType" label="类型" width="120" />
-        <DatetimeColumn prop="updatedAt" label="更新时间" width="160" />
-        <el-table-column label="启用" width="120">
+        <el-table-column
+          prop="pipelineCode"
+          :label="t('pipelineDefinitionList.colCode')"
+          min-width="160"
+        />
+        <el-table-column
+          prop="pipelineName"
+          :label="t('pipelineDefinitionList.colName')"
+          min-width="180"
+        />
+        <el-table-column
+          prop="pipelineType"
+          :label="t('pipelineDefinitionList.colType')"
+          width="120"
+        />
+        <DatetimeColumn
+          prop="updatedAt"
+          :label="t('pipelineDefinitionList.colUpdatedAt')"
+          width="160"
+        />
+        <el-table-column :label="t('pipelineDefinitionList.colEnabled')" width="120">
           <template #default="{ row }">
             <el-switch
               :model-value="row.enabled"
               :loading="togglingId === row.id"
               inline-prompt
-              active-text="开"
-              inactive-text="关"
+              :active-text="t('pipelineDefinitionList.switchOn')"
+              :inactive-text="t('pipelineDefinitionList.switchOff')"
               @change="toggle(row)"
             />
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="100" fixed="right">
+        <el-table-column :label="t('pipelineDefinitionList.colActions')" width="100" fixed="right">
           <template #default="{ row }">
             <div class="table-actions">
-              <el-button size="small" plain type="primary" @click="openEdit(row)">编辑</el-button>
+              <el-button size="small" plain type="primary" @click="openEdit(row)">
+                {{ t('pipelineDefinitionList.actionEdit') }}
+              </el-button>
             </div>
           </template>
         </el-table-column>
@@ -96,7 +119,10 @@
           <el-input v-model="form.pipelineName" />
         </el-form-item>
         <el-form-item label="pipelineType" prop="pipelineType">
-          <el-input v-model="form.pipelineType" placeholder="如 FILE_IMPORT / FILE_EXPORT" />
+          <el-input
+            v-model="form.pipelineType"
+            :placeholder="t('pipelineDefinitionList.typeFieldPlaceholder')"
+          />
         </el-form-item>
         <el-form-item label="enabled">
           <el-switch v-model="form.enabled" />
@@ -104,7 +130,7 @@
         <el-form-item label="description">
           <el-input v-model="form.description" type="textarea" :rows="3" />
         </el-form-item>
-        <el-form-item label="步骤编辑">
+        <el-form-item :label="t('pipelineDefinitionList.stepsTitle')">
           <div class="steps-editor">
             <div class="steps-toolbar">
               <el-button
@@ -113,7 +139,7 @@
                 class="pretty-add-button pretty-add-button--mini"
                 @click="addStep"
               >
-                新增步骤
+                {{ t('pipelineDefinitionList.addStep') }}
               </el-button>
             </div>
             <div class="steps-list">
@@ -131,20 +157,22 @@
                 <div class="step-card__head">
                   <div class="step-card__title">
                     <span class="step-card__drag">::</span>
-                    <span>步骤 {{ index + 1 }}</span>
+                    <span>{{ t('pipelineDefinitionList.stepLabel', { n: index + 1 }) }}</span>
                   </div>
                   <div class="step-card__actions">
-                    <el-button link :disabled="index === 0" @click="moveStepUp(index)"
-                      >上移</el-button
-                    >
+                    <el-button link :disabled="index === 0" @click="moveStepUp(index)">
+                      {{ t('pipelineDefinitionList.moveUp') }}
+                    </el-button>
                     <el-button
                       link
                       :disabled="index === steps.length - 1"
                       @click="moveStepDown(index)"
                     >
-                      下移
+                      {{ t('pipelineDefinitionList.moveDown') }}
                     </el-button>
-                    <el-button link type="danger" @click="removeStep(index)">删除</el-button>
+                    <el-button link type="danger" @click="removeStep(index)">
+                      {{ t('pipelineDefinitionList.deleteStep') }}
+                    </el-button>
                   </div>
                 </div>
                 <div class="step-card__grid">
@@ -166,8 +194,12 @@
           </div>
         </el-form-item>
         <div class="drawer-actions">
-          <el-button @click="drawerVisible = false">取消</el-button>
-          <el-button type="primary" :loading="saving" @click="submitForm">保存</el-button>
+          <el-button @click="drawerVisible = false">
+            {{ t('pipelineDefinitionList.drawerCancel') }}
+          </el-button>
+          <el-button type="primary" :loading="saving" @click="submitForm">
+            {{ t('pipelineDefinitionList.drawerSave') }}
+          </el-button>
         </div>
       </el-form>
     </el-drawer>
@@ -176,7 +208,10 @@
 
 <script setup lang="ts">
   import { computed, ref, watch } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
+
+  const { t } = useI18n({ useScope: 'global' })
   import type { FormInstance, FormRules } from 'element-plus'
   import { Plus } from '@element-plus/icons-vue'
   import {
@@ -237,7 +272,11 @@
   >([])
 
   const queryKeyword = computed(() => keyword.value.trim().toLowerCase())
-  const drawerTitle = computed(() => (editingId.value == null ? '新建 Pipeline' : '编辑 Pipeline'))
+  const drawerTitle = computed(() =>
+    editingId.value == null
+      ? t('pipelineDefinitionList.drawerCreateTitle')
+      : t('pipelineDefinitionList.drawerEditTitle'),
+  )
   const pipelineTypeOptions = computed(() =>
     Array.from(
       new Set(
@@ -247,17 +286,23 @@
   )
 
   const formRules: FormRules = {
-    tenantId: [{ required: true, message: '请填写 tenantId', trigger: 'blur' }],
+    tenantId: [
+      { required: true, message: t('pipelineDefinitionList.ruleTenantId'), trigger: 'blur' },
+    ],
     pipelineCode: [
-      { required: true, message: '请填写 pipelineCode', trigger: 'blur' },
+      { required: true, message: t('pipelineDefinitionList.rulePipelineCode'), trigger: 'blur' },
       {
         pattern: /^[a-zA-Z0-9_-]+$/,
-        message: '只允许字母、数字、下划线和连字符',
+        message: t('pipelineDefinitionList.rulePipelineCodePattern'),
         trigger: 'blur',
       },
     ],
-    pipelineName: [{ required: true, message: '请填写 pipelineName', trigger: 'blur' }],
-    pipelineType: [{ required: true, message: '请填写 pipelineType', trigger: 'blur' }],
+    pipelineName: [
+      { required: true, message: t('pipelineDefinitionList.rulePipelineName'), trigger: 'blur' },
+    ],
+    pipelineType: [
+      { required: true, message: t('pipelineDefinitionList.rulePipelineType'), trigger: 'blur' },
+    ],
   }
 
   function resetForm() {
@@ -358,7 +403,7 @@
 
   async function submitForm() {
     const valid = await formRef.value?.validate().catch(() => {
-      ElMessage.warning('请检查表单必填项')
+      ElMessage.warning(t('pipelineDefinitionList.checkRequired'))
       return false
     })
     if (!valid) return
@@ -387,7 +432,14 @@
     try {
       if (isCreate) await createPipelineDefinition(payload)
       else await updatePipelineDefinition(editingId.value, payload)
-      ElMessage.success(`已${isCreate ? '创建' : '更新'} Pipeline ${payload.pipelineCode}`)
+      ElMessage.success(
+        t('pipelineDefinitionList.saveSuccess', {
+          action: isCreate
+            ? t('pipelineDefinitionList.actionCreate')
+            : t('pipelineDefinitionList.actionUpdate'),
+          code: form.value.pipelineCode,
+        }),
+      )
       drawerVisible.value = false
       await load()
     } finally {
@@ -399,9 +451,12 @@
     if (!row.id) return
     const target = !row.enabled
     try {
+      const action = target
+        ? t('pipelineDefinitionList.enable')
+        : t('pipelineDefinitionList.disable')
       await ElMessageBox.confirm(
-        `确认将 Pipeline ${row.pipelineCode} ${target ? '启用' : '停用'}吗？`,
-        '切换 Pipeline 状态',
+        t('pipelineDefinitionList.toggleConfirmText', { code: row.pipelineCode, action }),
+        t('pipelineDefinitionList.toggleConfirmTitle'),
         { type: 'warning' },
       )
     } catch {
@@ -411,7 +466,12 @@
     try {
       await togglePipelineDefinition(row.id, tenant.tenantId, target)
       row.enabled = target
-      ElMessage.success(`已${target ? '启用' : '停用'} Pipeline ${row.pipelineCode}`)
+      const action = target
+        ? t('pipelineDefinitionList.enable')
+        : t('pipelineDefinitionList.disable')
+      ElMessage.success(
+        t('pipelineDefinitionList.toggleSuccess', { action, code: row.pipelineCode }),
+      )
     } finally {
       togglingId.value = null
     }
