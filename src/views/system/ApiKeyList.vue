@@ -6,10 +6,10 @@
           type="primary"
           :icon="Plus"
           class="pretty-add-button"
-          v-track-click="'新增 API Key'"
+          v-track-click="'create API key'"
           @click="openCreate"
         >
-          新增 API Key
+          {{ t('apiKeyList.headerCreate') }}
         </el-button>
       </template>
     </PageHeader>
@@ -34,31 +34,40 @@
             @reset="onReset"
             @refresh="() => runRefresh(load)"
           >
-            <el-form-item label="关键字">
+            <el-form-item :label="t('apiKeyList.keywordLabel')">
               <el-input
                 class="query-w-200"
                 v-model="kwDraft"
                 clearable
-                placeholder="按名称模糊搜索"
+                :placeholder="t('apiKeyList.keywordPlaceholder')"
                 @keyup.enter="onSearch"
               />
             </el-form-item>
           </ListPageQueryBar>
         </template>
         <template #empty>
-          <EmptyState
-            description="还没有 API Key。新增一个用于服务端调用 / SDK / CI 接入。"
-            :image-size="80"
-          >
+          <EmptyState :description="t('apiKeyList.emptyDescription')" :image-size="80">
             <template #action>
-              <el-button type="primary" :icon="Plus" @click="openCreate">新增 API Key</el-button>
+              <el-button type="primary" :icon="Plus" @click="openCreate">
+                {{ t('apiKeyList.headerCreate') }}
+              </el-button>
             </template>
           </EmptyState>
         </template>
-        <el-table-column prop="id" label="ID" width="80" />
-        <el-table-column prop="keyName" label="名称" min-width="160" show-overflow-tooltip />
-        <el-table-column prop="scopes" label="权限范围" min-width="180" show-overflow-tooltip />
-        <el-table-column label="状态" width="110">
+        <el-table-column prop="id" :label="t('apiKeyList.colId')" width="80" />
+        <el-table-column
+          prop="keyName"
+          :label="t('apiKeyList.colName')"
+          min-width="160"
+          show-overflow-tooltip
+        />
+        <el-table-column
+          prop="scopes"
+          :label="t('apiKeyList.colScopes')"
+          min-width="180"
+          show-overflow-tooltip
+        />
+        <el-table-column :label="t('apiKeyList.colStatus')" width="110">
           <template #default="{ row }">
             <StatusTag
               :value="String(isRevoked(row) ? 'REVOKED' : isEnabled(row) ? 'ENABLED' : 'DISABLED')"
@@ -66,22 +75,24 @@
             />
           </template>
         </el-table-column>
-        <DatetimeColumn prop="expiresAt" label="过期时间" width="160" />
-        <DatetimeColumn prop="revokedAt" label="吊销时间" width="160" />
-        <DatetimeColumn prop="createdAt" label="创建时间" width="160" />
-        <el-table-column label="操作" width="160" fixed="right">
+        <DatetimeColumn prop="expiresAt" :label="t('apiKeyList.colExpiresAt')" width="160" />
+        <DatetimeColumn prop="revokedAt" :label="t('apiKeyList.colRevokedAt')" width="160" />
+        <DatetimeColumn prop="createdAt" :label="t('apiKeyList.colCreatedAt')" width="160" />
+        <el-table-column :label="t('apiKeyList.colActions')" width="160" fixed="right">
           <template #default="{ row }">
             <div class="table-actions">
-              <el-button size="small" plain type="primary" @click="viewDetail(row)">详情</el-button>
+              <el-button size="small" plain type="primary" @click="viewDetail(row)">
+                {{ t('apiKeyList.actionDetail') }}
+              </el-button>
               <el-button
                 size="small"
                 plain
                 type="danger"
-                v-track-click="{ action: '吊销 API Key', id: row.id }"
+                v-track-click="{ action: 'revoke API key', id: row.id }"
                 @click="confirmRevoke(row)"
                 :disabled="isRevoked(row)"
               >
-                {{ isRevoked(row) ? '已吊销' : '吊销' }}
+                {{ isRevoked(row) ? t('apiKeyList.actionRevoked') : t('apiKeyList.actionRevoke') }}
               </el-button>
             </div>
           </template>
@@ -89,34 +100,39 @@
       </ProTable>
     </SectionCard>
 
-    <el-dialog v-model="createVisible" title="新增 API Key" width="500px">
+    <el-dialog v-model="createVisible" :title="t('apiKeyList.dialogCreateTitle')" width="500px">
       <el-form ref="apiKeyFormRef" :model="form" :rules="apiKeyFormRules" label-width="100px">
-        <el-form-item label="名称" prop="keyName">
-          <el-input v-model="form.keyName" placeholder="Key 名称" maxlength="128" />
+        <el-form-item :label="t('apiKeyList.fieldName')" prop="keyName">
+          <el-input
+            v-model="form.keyName"
+            :placeholder="t('apiKeyList.fieldNamePlaceholder')"
+            maxlength="128"
+          />
         </el-form-item>
-        <el-form-item label="权限范围" prop="scopes">
-          <el-input v-model="form.scopes" placeholder="逗号分隔，如 READ,WRITE" />
+        <el-form-item :label="t('apiKeyList.fieldScopes')" prop="scopes">
+          <el-input v-model="form.scopes" :placeholder="t('apiKeyList.fieldScopesPlaceholder')" />
         </el-form-item>
-        <el-form-item label="过期时间" prop="expiresAt">
+        <el-form-item :label="t('apiKeyList.fieldExpiresAt')" prop="expiresAt">
           <el-date-picker
             v-model="form.expiresAt"
             type="datetime"
             value-format="YYYY-MM-DDTHH:mm:ss"
-            placeholder="可选，不填则永久"
+            :placeholder="t('apiKeyList.fieldExpiresAtPlaceholder')"
             class="query-w-full"
           />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="createVisible = false">取消</el-button>
-        <el-button type="primary" :loading="saving" @click="save">创建</el-button>
+        <el-button @click="createVisible = false">{{ t('apiKeyList.dialogCancel') }}</el-button>
+        <el-button type="primary" :loading="saving" @click="save">
+          {{ t('apiKeyList.dialogCreate') }}
+        </el-button>
       </template>
     </el-dialog>
 
-    <!-- 创建成功后强制弹出明文密钥(只显示这一次) -->
     <el-dialog
       v-model="rawKeyVisible"
-      title="🔑 API Key 已创建"
+      :title="t('apiKeyList.rawKeyTitle')"
       width="560px"
       :close-on-click-modal="false"
       :close-on-press-escape="false"
@@ -127,12 +143,14 @@
         type="warning"
         :closable="false"
         show-icon
-        title="这是密钥的唯一一次完整显示"
-        description="关闭此窗口后将不再显示。请立即复制保存到安全的地方(密码管理器 / KMS)。"
+        :title="t('apiKeyList.rawKeyAlertTitle')"
+        :description="t('apiKeyList.rawKeyAlertDescription')"
         class="raw-key-alert"
       />
       <div class="raw-key-block">
-        <div class="raw-key-block__label">名称:{{ createdKey?.keyName }}</div>
+        <div class="raw-key-block__label">
+          {{ t('apiKeyList.rawKeyLabel', { name: createdKey?.keyName ?? '' }) }}
+        </div>
         <div class="raw-key-block__value">
           <code>{{ createdKey?.rawKey }}</code>
         </div>
@@ -142,28 +160,34 @@
           class="raw-key-block__copy"
           @click="copyRawKey"
         >
-          {{ copied ? '已复制' : '复制密钥' }}
+          {{ copied ? t('apiKeyList.rawKeyCopied') : t('apiKeyList.rawKeyCopy') }}
         </el-button>
       </div>
       <template #footer>
         <el-button :disabled="!copied" type="primary" @click="closeRawKey">
-          {{ copied ? '我已保存,关闭' : '请先复制再关闭' }}
+          {{ copied ? t('apiKeyList.rawKeyClose') : t('apiKeyList.rawKeyCloseDisabled') }}
         </el-button>
       </template>
     </el-dialog>
 
-    <el-drawer v-model="detailVisible" title="API Key 详情" size="560px">
+    <el-drawer v-model="detailVisible" :title="t('apiKeyList.detailTitle')" size="560px">
       <el-descriptions v-if="detail" :column="1" border size="small">
         <el-descriptions-item label="ID">{{ detail.id }}</el-descriptions-item>
-        <el-descriptions-item label="名称">{{ detail.keyName }}</el-descriptions-item>
-        <el-descriptions-item label="权限范围">{{ detail.scopes }}</el-descriptions-item>
+        <el-descriptions-item :label="t('apiKeyList.colName')">
+          {{ detail.keyName }}
+        </el-descriptions-item>
+        <el-descriptions-item :label="t('apiKeyList.detailScopes')">
+          {{ detail.scopes }}
+        </el-descriptions-item>
         <el-descriptions-item label="enabled">{{
           String(detail.enabled ?? '')
         }}</el-descriptions-item>
-        <el-descriptions-item label="过期时间">{{ detail.expiresAt }}</el-descriptions-item>
+        <el-descriptions-item :label="t('apiKeyList.detailExpiresAt')">
+          {{ detail.expiresAt }}
+        </el-descriptions-item>
         <el-descriptions-item label="revokedAt">{{ detail.revokedAt ?? '—' }}</el-descriptions-item>
         <el-descriptions-item label="revokedBy">{{ detail.revokedBy ?? '—' }}</el-descriptions-item>
-        <el-descriptions-item label="原始响应">
+        <el-descriptions-item :label="t('apiKeyList.detailRawResponse')">
           <JsonPreview :data="detail" />
         </el-descriptions-item>
       </el-descriptions>
@@ -173,7 +197,10 @@
 
 <script setup lang="ts">
   import { ref, reactive, computed } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
+
+  const { t } = useI18n({ useScope: 'global' })
   import { confirmDanger } from '@/composables/useDangerConfirm'
   import type { FormRules } from 'element-plus'
   import { Check, DocumentCopy, Plus } from '@element-plus/icons-vue'
@@ -216,9 +243,9 @@
     try {
       await navigator.clipboard.writeText(createdKey.value.rawKey)
       copied.value = true
-      ElMessage.success('已复制到剪贴板')
+      ElMessage.success(t('apiKeyList.copySuccess'))
     } catch {
-      ElMessage.error('剪贴板写入失败,请手动选中复制')
+      ElMessage.error(t('apiKeyList.copyFail'))
     }
   }
 
@@ -284,7 +311,7 @@
 
   const { formRef: apiKeyFormRef, validate: validateApiKeyForm } = useFormValidate()
   const apiKeyFormRules: FormRules = {
-    keyName: [rules.required('名称必填'), rules.maxLength(128)],
+    keyName: [rules.required(t('apiKeyList.nameRequired')), rules.maxLength(128)],
   }
 
   async function load() {
@@ -337,14 +364,13 @@
     if (isRevoked(row)) return
     try {
       await confirmDanger({
-        verb: '吊销',
-        target: ` API Key 「${row.keyName}」`,
-        consequence:
-          '该密钥立即失效;所有使用此密钥的后台调用、SDK 客户端、CI/CD 流水线会立即收到 401。',
+        verb: t('apiKeyList.revokeVerb'),
+        target: t('apiKeyList.revokeTarget', { name: String(row.keyName ?? '') }),
+        consequence: t('apiKeyList.revokeConsequence'),
         irreversible: true,
       })
       await revokeApiKey(row.id as number, tenant.tenantId)
-      ElMessage.success('已吊销')
+      ElMessage.success(t('apiKeyList.revokedToast'))
       // Optimistic UI: update row immediately (so button/text changes right away)
       row.revokedAt = new Date().toISOString()
       row.enabled = false

@@ -22,28 +22,33 @@
             @reset="onReset"
             @refresh="() => runRefresh(load)"
           >
-            <el-form-item label="Job Code">
+            <el-form-item :label="t('triggerList.jobCodeLabel')">
               <el-input
                 class="query-w-220"
                 v-model="kwDraft"
                 clearable
-                placeholder="按 Job Code 模糊搜索"
+                :placeholder="t('triggerList.jobCodePlaceholder')"
                 @keyup.enter="onSearch"
               />
             </el-form-item>
           </ListPageQueryBar>
         </template>
-        <el-table-column prop="jobCode" label="Job Code" min-width="180" show-overflow-tooltip>
+        <el-table-column
+          prop="jobCode"
+          :label="t('triggerList.colJobCode')"
+          min-width="180"
+          show-overflow-tooltip
+        >
           <template #default="{ row }">
             <CopyableText :text="String(row.jobCode ?? '')" />
           </template>
         </el-table-column>
-        <el-table-column prop="triggerType" label="类型" width="120">
+        <el-table-column prop="triggerType" :label="t('triggerList.colType')" width="120">
           <template #default="{ row }">
-            {{ row.triggerType || '—' }}
+            {{ resolveTriggerType(row.triggerType) }}
           </template>
         </el-table-column>
-        <el-table-column prop="triggerStatus" label="状态" width="120">
+        <el-table-column prop="triggerStatus" :label="t('triggerList.colStatus')" width="120">
           <template #default="{ row }">
             <StatusTag
               v-if="row.triggerStatus || row.status"
@@ -53,48 +58,52 @@
             <span v-else class="cell-empty">—</span>
           </template>
         </el-table-column>
-        <el-table-column label="Cron 表达式" min-width="160" show-overflow-tooltip>
+        <el-table-column :label="t('triggerList.colCron')" min-width="160" show-overflow-tooltip>
           <template #default="{ row }">
             <code v-if="row.cronExpression" class="cell-code">{{ row.cronExpression }}</code>
             <span v-else class="cell-empty">—</span>
           </template>
         </el-table-column>
-        <DatetimeColumn prop="nextFireTime" label="下次触发" width="160" />
-        <el-table-column label="操作" width="280" fixed="right">
+        <DatetimeColumn prop="nextFireTime" :label="t('triggerList.colNextFire')" width="160" />
+        <el-table-column :label="t('triggerList.colActions')" width="280" fixed="right">
           <template #default="{ row }">
             <div class="table-actions">
               <el-button
                 size="small"
                 plain
                 type="primary"
-                v-track-click="{ action: '注册 Trigger', jobCode: row.jobCode }"
+                v-track-click="{ action: 'register trigger', jobCode: row.jobCode }"
                 @click="doRegister(row)"
-                >注册</el-button
               >
+                {{ t('triggerList.actionRegister') }}
+              </el-button>
               <el-button
                 size="small"
                 plain
                 type="danger"
-                v-track-click="{ action: '注销 Trigger', jobCode: row.jobCode }"
+                v-track-click="{ action: 'unregister trigger', jobCode: row.jobCode }"
                 @click="doUnregister(row)"
-                >注销</el-button
               >
+                {{ t('triggerList.actionUnregister') }}
+              </el-button>
               <el-button
                 size="small"
                 plain
                 type="warning"
-                v-track-click="{ action: '暂停 Trigger', jobCode: row.jobCode }"
+                v-track-click="{ action: 'pause trigger', jobCode: row.jobCode }"
                 @click="doPause(row)"
-                >暂停</el-button
               >
+                {{ t('triggerList.actionPause') }}
+              </el-button>
               <el-button
                 size="small"
                 plain
                 type="success"
-                v-track-click="{ action: '恢复 Trigger', jobCode: row.jobCode }"
+                v-track-click="{ action: 'resume trigger', jobCode: row.jobCode }"
                 @click="doResume(row)"
-                >恢复</el-button
               >
+                {{ t('triggerList.actionResume') }}
+              </el-button>
             </div>
           </template>
         </el-table-column>
@@ -105,7 +114,16 @@
 
 <script setup lang="ts">
   import { ref, computed } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
+
+  const { t, te } = useI18n({ useScope: 'global' })
+
+  function resolveTriggerType(value?: string | null): string {
+    if (!value) return '—'
+    const key = `enum.triggerType.${value}`
+    return te(key) ? t(key) : value
+  }
   import {
     listTriggers,
     registerTrigger,
@@ -183,9 +201,17 @@
 
   async function doRegister(row: Record<string, unknown>) {
     try {
-      await ElMessageBox.confirm(`注册 Trigger：${row.jobCode}？`, '注册确认', { type: 'info' })
+      await ElMessageBox.confirm(
+        t('triggerList.registerText', { code: String(row.jobCode) }),
+        t('triggerList.registerTitle'),
+        {
+          type: 'info',
+          confirmButtonText: t('common.confirm'),
+          cancelButtonText: t('common.cancel'),
+        },
+      )
       await registerTrigger(String(row.jobCode), tenant.tenantId)
-      ElMessage.success('已注册')
+      ElMessage.success(t('triggerList.registerSuccess'))
       await load()
     } catch {
       /* cancel */
@@ -194,9 +220,17 @@
 
   async function doUnregister(row: Record<string, unknown>) {
     try {
-      await ElMessageBox.confirm(`注销 Trigger：${row.jobCode}？`, '注销确认', { type: 'warning' })
+      await ElMessageBox.confirm(
+        t('triggerList.unregisterText', { code: String(row.jobCode) }),
+        t('triggerList.unregisterTitle'),
+        {
+          type: 'warning',
+          confirmButtonText: t('common.confirm'),
+          cancelButtonText: t('common.cancel'),
+        },
+      )
       await unregisterTrigger(String(row.jobCode), tenant.tenantId)
-      ElMessage.success('已注销')
+      ElMessage.success(t('triggerList.unregisterSuccess'))
       await load()
     } catch {
       /* cancel */
@@ -205,9 +239,17 @@
 
   async function doPause(row: Record<string, unknown>) {
     try {
-      await ElMessageBox.confirm(`暂停 Trigger：${row.jobCode}？`, '暂停确认', { type: 'warning' })
+      await ElMessageBox.confirm(
+        t('triggerList.pauseText', { code: String(row.jobCode) }),
+        t('triggerList.pauseTitle'),
+        {
+          type: 'warning',
+          confirmButtonText: t('common.confirm'),
+          cancelButtonText: t('common.cancel'),
+        },
+      )
       await pauseTrigger(String(row.jobCode), tenant.tenantId)
-      ElMessage.success('已暂停')
+      ElMessage.success(t('triggerList.pauseSuccess'))
       await load()
     } catch {
       /* cancel */
@@ -217,7 +259,7 @@
   async function doResume(row: Record<string, unknown>) {
     try {
       await resumeTrigger(String(row.jobCode), tenant.tenantId)
-      ElMessage.success('已恢复')
+      ElMessage.success(t('triggerList.resumeSuccess'))
       await load()
     } catch {
       /* cancel */
