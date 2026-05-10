@@ -31,7 +31,9 @@ async function runAxe(page: Awaited<ReturnType<typeof test.info>['attach']> exte
 test.describe('a11y baseline:核心 5 页 axe 审查', () => {
   test('登录页(未登录)', async ({ page }) => {
     await page.goto('/login')
-    await page.waitForLoadState('networkidle')
+    await page.waitForLoadState('domcontentloaded')
+    // 给客户端 hydrate / 列表首屏渲染 1.5s 缓冲(SSE 心跳页 networkidle 永不达)
+    await page.waitForTimeout(1500)
     const { blockers, all } = await runAxe(page)
     if (blockers.length > 0) {
       console.error('A11y blockers:', JSON.stringify(blockers, null, 2))
@@ -42,7 +44,9 @@ test.describe('a11y baseline:核心 5 页 axe 审查', () => {
 
   test('运营概览', async ({ page }) => {
     await page.goto('/ops/summary')
-    await page.waitForLoadState('networkidle')
+    await page.waitForLoadState('domcontentloaded')
+    // 给客户端 hydrate / 列表首屏渲染 1.5s 缓冲(SSE 心跳页 networkidle 永不达)
+    await page.waitForTimeout(1500)
     const { blockers } = await runAxe(page, [
       '.echarts',
       '[class*="vue-echarts"]',
@@ -53,21 +57,27 @@ test.describe('a11y baseline:核心 5 页 axe 审查', () => {
 
   test('租户列表', async ({ page }) => {
     await page.goto('/system/tenants')
-    await page.waitForLoadState('networkidle')
+    await page.waitForLoadState('domcontentloaded')
+    // 给客户端 hydrate / 列表首屏渲染 1.5s 缓冲(SSE 心跳页 networkidle 永不达)
+    await page.waitForTimeout(1500)
     const { blockers } = await runAxe(page)
     expect(blockers, blockers.map((v) => v.id).join(', ')).toHaveLength(0)
   })
 
   test('Job 实例', async ({ page }) => {
     await page.goto('/monitor/job-instances')
-    await page.waitForLoadState('networkidle')
+    await page.waitForLoadState('domcontentloaded')
+    // 给客户端 hydrate / 列表首屏渲染 1.5s 缓冲(SSE 心跳页 networkidle 永不达)
+    await page.waitForTimeout(1500)
     const { blockers } = await runAxe(page)
     expect(blockers, blockers.map((v) => v.id).join(', ')).toHaveLength(0)
   })
 
   test('审批中心', async ({ page }) => {
     await page.goto('/approvals')
-    await page.waitForLoadState('networkidle')
+    await page.waitForLoadState('domcontentloaded')
+    // 给客户端 hydrate / 列表首屏渲染 1.5s 缓冲(SSE 心跳页 networkidle 永不达)
+    await page.waitForTimeout(1500)
     const { blockers } = await runAxe(page)
     expect(blockers, blockers.map((v) => v.id).join(', ')).toHaveLength(0)
   })

@@ -77,3 +77,11 @@
 
   const showTrailing = computed(() => props.showSearch || props.showReset || props.showRefresh)
 </script>
+
+<style scoped>
+  /* 自管 margin-bottom:让裸用 ListPageQueryBar(不套 ProTable)的页面也跟下方表格
+     有标准间距。ProTable 那边把 .pro-table__query 的 margin 清 0 避免叠加 */
+  .query-form {
+    margin-bottom: var(--page-block-gap);
+  }
+</style>
