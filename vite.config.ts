@@ -47,7 +47,9 @@ export default defineConfig(({ mode }) => {
       registerType: 'autoUpdate',
       // 复用 public/manifest.webmanifest 现有配置,不让插件重生成
       manifest: false,
-      injectRegister: 'auto',
+      // null = 不自动 inject,改由 SwUpdatePrompt.vue 通过 virtual:pwa-register
+      // 手动 registerSW(),拿到 onNeedRefresh / onOfflineReady 回调驱动 UI 提示
+      injectRegister: null,
       // dev 模式默认不注册 SW,避免拦截热更新;生产 build 才生成
       devOptions: { enabled: false },
       workbox: {

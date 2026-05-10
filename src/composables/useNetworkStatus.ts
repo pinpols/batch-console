@@ -1,6 +1,7 @@
 import { onScopeDispose, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { CircleCloseFilled, CircleCheckFilled } from '@element-plus/icons-vue'
+import { i18n } from '@/locales'
 import { logRoute } from '@/utils/logger'
 
 /**
@@ -21,7 +22,7 @@ export function useNetworkStatus() {
     logRoute('network:offline', { kind: 'network' })
     // 持久化:不自动消失;恢复时手动关
     offlineToast = ElMessage({
-      message: '网络已断开,请检查连接',
+      message: i18n.global.t('network.offline'),
       type: 'error',
       duration: 0,
       showClose: true,
@@ -38,7 +39,7 @@ export function useNetworkStatus() {
       offlineToast = null
     }
     ElMessage({
-      message: '网络已恢复',
+      message: i18n.global.t('network.online'),
       type: 'success',
       duration: 2000,
       icon: CircleCheckFilled,

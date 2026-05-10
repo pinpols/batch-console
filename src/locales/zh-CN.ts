@@ -104,6 +104,16 @@ export default {
       ariaLabel: '底部导航',
     },
   },
+  network: {
+    offline: '网络已断开,请检查连接',
+    online: '网络已恢复',
+  },
+  pwa: {
+    updateReady: '新版本已就绪,刷新可用上最新版本。',
+    updateNow: '立即刷新',
+    updateLater: '稍后',
+    offlineReady: '已可以离线使用控制台基础功能。',
+  },
   copy: {
     success: '已复制',
     linkSuccess: '已复制链接',
