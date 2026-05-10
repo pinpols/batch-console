@@ -1,50 +1,92 @@
 <template>
   <PageContainer>
-    <PageHeader title="作业实例详情" :description="headerDesc" back-to="/monitor/job-instances">
+    <PageHeader
+      :title="t('monitor.detailTitle')"
+      :description="headerDesc"
+      back-to="/monitor/job-instances"
+    >
       <template #actions>
-        <el-button type="primary" :loading="loading" @click="load">刷新</el-button>
+        <el-button type="primary" :loading="loading" @click="load">
+          {{ t('monitor.detailRefresh') }}
+        </el-button>
         <el-button v-if="row" type="danger" :loading="cancelLoading" @click="confirmCancel">
-          取消实例
+          {{ t('monitor.detailCancel') }}
         </el-button>
       </template>
     </PageHeader>
 
     <div v-if="row" class="detail-grid">
-      <MetricCard label="实例编号" :value="row.instanceNo" description="instanceNo" />
-      <MetricCard label="状态" :value="row.instanceStatus" description="instanceStatus" />
-      <MetricCard label="Job Code" :value="row.jobCode" description="jobCode" />
-      <MetricCard label="业务日" :value="row.bizDate" description="bizDate" />
-      <MetricCard label="Trace" :value="row.traceId || '—'" description="traceId" />
-      <MetricCard label="队列" :value="row.queueCode || '—'" description="queueCode" />
+      <MetricCard
+        :label="t('monitor.detailMetricInstanceNo')"
+        :value="row.instanceNo"
+        description="instanceNo"
+      />
+      <MetricCard
+        :label="t('monitor.detailMetricStatus')"
+        :value="row.instanceStatus"
+        description="instanceStatus"
+      />
+      <MetricCard
+        :label="t('monitor.detailMetricJobCode')"
+        :value="row.jobCode"
+        description="jobCode"
+      />
+      <MetricCard
+        :label="t('monitor.detailMetricBizDate')"
+        :value="row.bizDate"
+        description="bizDate"
+      />
+      <MetricCard
+        :label="t('monitor.detailMetricTrace')"
+        :value="row.traceId || '—'"
+        description="traceId"
+      />
+      <MetricCard
+        :label="t('monitor.detailMetricQueue')"
+        :value="row.queueCode || '—'"
+        description="queueCode"
+      />
     </div>
 
     <SectionCard v-if="row">
-      <template #header>时间与 SLA</template>
+      <template #header>{{ t('monitor.detailTimeSection') }}</template>
       <el-descriptions :column="2" border>
-        <el-descriptions-item label="开始">{{ fmtDatetime(row.startedAt) }}</el-descriptions-item>
-        <el-descriptions-item label="结束">{{ fmtDatetime(row.finishedAt) }}</el-descriptions-item>
-        <el-descriptions-item label="截止">{{ fmtDatetime(row.deadlineAt) }}</el-descriptions-item>
-        <el-descriptions-item label="SLA 告警时间">{{
+        <el-descriptions-item :label="t('monitor.detailStarted')">{{
+          fmtDatetime(row.startedAt)
+        }}</el-descriptions-item>
+        <el-descriptions-item :label="t('monitor.detailFinished')">{{
+          fmtDatetime(row.finishedAt)
+        }}</el-descriptions-item>
+        <el-descriptions-item :label="t('monitor.detailDeadline')">{{
+          fmtDatetime(row.deadlineAt)
+        }}</el-descriptions-item>
+        <el-descriptions-item :label="t('monitor.detailSlaAlerted')">{{
           row.slaAlertedAt || '—'
         }}</el-descriptions-item>
-        <el-descriptions-item label="重跑">{{ row.rerunFlag ? '是' : '否' }}</el-descriptions-item>
-        <el-descriptions-item label="重试">{{ row.retryFlag ? '是' : '否' }}</el-descriptions-item>
+        <el-descriptions-item :label="t('monitor.detailRerun')">
+          {{ row.rerunFlag ? t('common.yes') : t('common.no') }}
+        </el-descriptions-item>
+        <el-descriptions-item :label="t('monitor.detailRetry')">
+          {{ row.retryFlag ? t('common.yes') : t('common.no') }}
+        </el-descriptions-item>
       </el-descriptions>
       <div class="actions">
-        <el-button type="primary" @click="goSteps">查看分片</el-button>
-        <el-button @click="goLogs">执行日志（审计检索）</el-button>
-        <el-button type="warning" :loading="rerunLoading" @click="confirmRerun">重跑</el-button>
-        <el-button type="danger" :loading="cancelLoading" @click="confirmCancel"
-          >取消实例</el-button
-        >
-        <el-button type="danger" :loading="terminateLoading" @click="confirmTerminate"
-          >终止实例</el-button
-        >
+        <el-button type="primary" @click="goSteps">{{ t('monitor.detailGoSteps') }}</el-button>
+        <el-button @click="goLogs">{{ t('monitor.detailGoLogs') }}</el-button>
+        <el-button type="warning" :loading="rerunLoading" @click="confirmRerun">
+          {{ t('monitor.detailRerunBtn') }}
+        </el-button>
+        <el-button type="danger" :loading="cancelLoading" @click="confirmCancel">
+          {{ t('monitor.detailCancelBtn') }}
+        </el-button>
+        <el-button type="danger" :loading="terminateLoading" @click="confirmTerminate">
+          {{ t('monitor.detailTerminateBtn') }}
+        </el-button>
       </div>
     </SectionCard>
 
     <SectionCard v-if="row">
-      <template #header>参数与结果摘要</template>
+      <template #header>{{ t('monitor.detailParamsSection') }}</template>
       <el-descriptions :column="1" border>
         <el-descriptions-item label="paramsSnapshot">
           <pre class="mono">{{ row.paramsSnapshot || '—' }}</pre>
@@ -56,14 +98,17 @@
     </SectionCard>
 
     <SectionCard v-else-if="!loading">
-      <EmptyState description="未找到该实例。请确认实例 ID 正确且属于当前租户。" />
+      <EmptyState :description="t('monitor.detailEmpty')" />
     </SectionCard>
   </PageContainer>
 </template>
 
 <script setup lang="ts">
   import { computed, onBeforeUnmount, ref, watch } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import { fmtDatetime } from '@/utils/datetime'
+
+  const { t } = useI18n({ useScope: 'global' })
   import { useRoute, useRouter } from 'vue-router'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { confirmDanger } from '@/composables/useDangerConfirm'
@@ -90,7 +135,7 @@
   const instanceId = computed(() => Number(route.params.id))
 
   const headerDesc = computed(() => {
-    if (!row.value) return '加载中...'
+    if (!row.value) return t('monitor.detailLoading')
     return `${row.value.jobCode} · ${row.value.bizDate || ''}`
   })
 
@@ -120,9 +165,13 @@
     if (!r) return
     try {
       await ElMessageBox.confirm(
-        `将对实例 ${r.instanceNo} 发起重跑（rerun），需 jobCode 与 bizDate。是否继续？`,
-        '重跑确认',
-        { type: 'warning' },
+        t('monitor.rerunConfirmText', { no: r.instanceNo }),
+        t('monitor.rerunConfirmTitle'),
+        {
+          type: 'warning',
+          confirmButtonText: t('common.confirm'),
+          cancelButtonText: t('common.cancel'),
+        },
       )
     } catch {
       return
@@ -130,7 +179,7 @@
     rerunLoading.value = true
     try {
       await instanceApi.retry(r.instanceNo, tenant.tenantId, r.jobCode, r.bizDate)
-      ElMessage.success(`已发起重跑 ${r.instanceNo}`)
+      ElMessage.success(t('monitor.rerunSuccess', { no: r.instanceNo }))
       await load()
     } finally {
       rerunLoading.value = false
@@ -141,14 +190,22 @@
     const r = row.value
     if (!r) return
     try {
-      await ElMessageBox.confirm(`取消实例 ${r.instanceNo}？`, '取消确认', { type: 'warning' })
+      await ElMessageBox.confirm(
+        t('monitor.instanceCancelText', { no: r.instanceNo }),
+        t('monitor.instanceCancelTitle'),
+        {
+          type: 'warning',
+          confirmButtonText: t('common.confirm'),
+          cancelButtonText: t('common.cancel'),
+        },
+      )
     } catch {
       return
     }
     cancelLoading.value = true
     try {
       await instanceApi.cancel(r.id, tenant.tenantId)
-      ElMessage.success(`已取消实例 ${r.instanceNo}`)
+      ElMessage.success(t('monitor.instanceCanceled', { no: r.instanceNo }))
       await load()
     } finally {
       cancelLoading.value = false
@@ -160,10 +217,9 @@
     if (!r) return
     try {
       await confirmDanger({
-        verb: '强制终止',
-        target: `实例 ${r.instanceNo}`,
-        consequence:
-          '当前正在执行的步骤会被立刻打断;已经写入的中间结果不会回滚,需要手动清理或重跑。',
+        verb: t('monitor.terminateVerb'),
+        target: t('monitor.terminateTarget', { no: r.instanceNo }),
+        consequence: t('monitor.terminateConsequence'),
         irreversible: true,
       })
     } catch {
@@ -172,7 +228,7 @@
     terminateLoading.value = true
     try {
       await instanceApi.terminate(r.id, tenant.tenantId)
-      ElMessage.success(`已强制终止实例 ${r.instanceNo}`)
+      ElMessage.success(t('monitor.terminateSuccess', { no: r.instanceNo }))
       await load()
     } finally {
       terminateLoading.value = false
