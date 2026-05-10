@@ -23,36 +23,46 @@
               type="primary"
               :icon="Plus"
               class="pretty-add-button"
-              v-track-click="'新增通知渠道'"
+              v-track-click="t('notificationChannelsTab.trackAdd')"
               @click="openChannelCreate"
-              >新增</el-button
             >
+              {{ t('notificationCommon.btnAdd') }}
+            </el-button>
           </template>
-          <el-form-item label="关键字">
+          <el-form-item :label="t('notificationCommon.keywordLabel')">
             <el-input
               class="query-w-220"
               v-model="channelFilterDraft.keyword"
               clearable
-              placeholder="搜索编码/名称"
+              :placeholder="t('notificationChannelsTab.kwPlaceholder')"
               @keyup.enter="applyChannelFilter"
             />
           </el-form-item>
-          <el-form-item label="启用">
+          <el-form-item :label="t('notificationCommon.enabledLabel')">
             <el-select
               class="query-w-140"
               v-model="channelFilterDraft.enabled"
               clearable
-              placeholder="全部"
+              :placeholder="t('notificationCommon.allPlaceholder')"
             >
-              <el-option label="已启用" :value="true" />
-              <el-option label="已停用" :value="false" />
+              <el-option :label="t('notificationCommon.optEnabled')" :value="true" />
+              <el-option :label="t('notificationCommon.optDisabled')" :value="false" />
             </el-select>
           </el-form-item>
         </ListPageQueryBar>
       </template>
-      <el-table-column prop="channelCode" label="渠道编码" width="160" />
-      <el-table-column prop="channelName" label="渠道名称" min-width="160" show-overflow-tooltip />
-      <el-table-column prop="channelType" label="类型" width="120">
+      <el-table-column
+        prop="channelCode"
+        :label="t('notificationChannelsTab.colCode')"
+        width="160"
+      />
+      <el-table-column
+        prop="channelName"
+        :label="t('notificationChannelsTab.colName')"
+        min-width="160"
+        show-overflow-tooltip
+      />
+      <el-table-column prop="channelType" :label="t('notificationChannelsTab.colType')" width="120">
         <template #default="{ row }">
           <StatusTag
             v-if="row.channelType"
@@ -62,33 +72,45 @@
           <span v-else class="cell-empty">—</span>
         </template>
       </el-table-column>
-      <el-table-column prop="enabled" label="启用" width="80">
+      <el-table-column prop="enabled" :label="t('notificationCommon.colEnabled')" width="80">
         <template #default="{ row }">
           <StatusTag :value="String(row.enabled)" category="yn" />
         </template>
       </el-table-column>
-      <DatetimeColumn prop="createdAt" label="创建时间" width="160" />
-      <el-table-column label="操作" width="260" fixed="right">
+      <DatetimeColumn
+        prop="createdAt"
+        :label="t('notificationChannelsTab.colCreatedAt')"
+        width="160"
+      />
+      <el-table-column :label="t('notificationCommon.colActions')" width="260" fixed="right">
         <template #default="{ row }">
           <div class="table-actions">
-            <el-button size="small" plain type="primary" @click="openChannelEdit(row)"
-              >编辑</el-button
-            >
+            <el-button size="small" plain type="primary" @click="openChannelEdit(row)">
+              {{ t('notificationCommon.btnEdit') }}
+            </el-button>
             <el-button
               size="small"
               plain
-              v-track-click="{ action: '测试通知渠道', code: row.channelCode }"
+              v-track-click="{
+                action: t('notificationChannelsTab.trackTest'),
+                code: row.channelCode,
+              }"
               @click="testChannel(row)"
-              >测试</el-button
             >
+              {{ t('notificationChannelsTab.btnTest') }}
+            </el-button>
             <el-button
               size="small"
               plain
               type="danger"
-              v-track-click="{ action: '删除通知渠道', code: row.channelCode }"
+              v-track-click="{
+                action: t('notificationChannelsTab.trackDelete'),
+                code: row.channelCode,
+              }"
               @click="confirmDeleteChannel(row)"
-              >删除</el-button
             >
+              {{ t('notificationCommon.btnDelete') }}
+            </el-button>
           </div>
         </template>
       </el-table-column>
@@ -96,7 +118,11 @@
 
     <el-dialog
       v-model="channelFormVisible"
-      :title="channelEditingCode ? '编辑渠道' : '新增渠道'"
+      :title="
+        channelEditingCode
+          ? t('notificationChannelsTab.dialogTitleEdit')
+          : t('notificationChannelsTab.dialogTitleCreate')
+      "
       width="560px"
     >
       <el-form
@@ -105,19 +131,27 @@
         :rules="channelFormRules"
         label-width="100px"
       >
-        <el-form-item label="编码" prop="channelCode">
+        <el-form-item :label="t('notificationChannelsTab.fieldCode')" prop="channelCode">
           <el-input
             v-model="channelForm.channelCode"
             :disabled="!!channelEditingCode"
-            placeholder="唯一编码，如 ops-email"
+            :placeholder="t('notificationChannelsTab.codePlaceholder')"
             maxlength="64"
           />
         </el-form-item>
-        <el-form-item label="名称" prop="channelName">
-          <el-input v-model="channelForm.channelName" placeholder="渠道名称" maxlength="128" />
+        <el-form-item :label="t('notificationChannelsTab.fieldName')" prop="channelName">
+          <el-input
+            v-model="channelForm.channelName"
+            :placeholder="t('notificationChannelsTab.namePlaceholder')"
+            maxlength="128"
+          />
         </el-form-item>
-        <el-form-item label="类型" prop="channelType">
-          <el-select v-model="channelForm.channelType" placeholder="选择类型" class="query-w-full">
+        <el-form-item :label="t('notificationChannelsTab.fieldType')" prop="channelType">
+          <el-select
+            v-model="channelForm.channelType"
+            :placeholder="t('notificationChannelsTab.typePlaceholder')"
+            class="query-w-full"
+          >
             <el-option
               v-for="opt in channelTypeOptions"
               :key="opt.value"
@@ -126,21 +160,25 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="配置" prop="config">
+        <el-form-item :label="t('notificationChannelsTab.fieldConfig')" prop="config">
           <el-input
             v-model="channelForm.config"
             type="textarea"
             :rows="4"
-            placeholder='JSON 配置，如 {"url":"..."}'
+            :placeholder="t('notificationChannelsTab.configPlaceholder')"
           />
         </el-form-item>
-        <el-form-item label="启用" prop="enabled">
+        <el-form-item :label="t('notificationChannelsTab.fieldEnabled')" prop="enabled">
           <el-switch v-model="channelForm.enabled" />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="channelFormVisible = false">取消</el-button>
-        <el-button type="primary" :loading="savingChannel" @click="saveChannel">保存</el-button>
+        <el-button @click="channelFormVisible = false">
+          {{ t('notificationCommon.btnCancel') }}
+        </el-button>
+        <el-button type="primary" :loading="savingChannel" @click="saveChannel">
+          {{ t('notificationCommon.btnSave') }}
+        </el-button>
       </template>
     </el-dialog>
   </div>
@@ -148,7 +186,10 @@
 
 <script setup lang="ts">
   import { ref, reactive, computed } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
+
+  const { t } = useI18n({ useScope: 'global' })
   import { confirmDanger } from '@/composables/useDangerConfirm'
   import type { FormRules } from 'element-plus'
   import { Plus } from '@element-plus/icons-vue'
@@ -200,9 +241,12 @@
 
   const { formRef: channelFormRef, validate: validateChannelForm } = useFormValidate()
   const channelFormRules: FormRules = {
-    channelCode: [rules.required('编码必填'), rules.code('小写字母/数字/_/- 组合,字母开头')],
-    channelName: [rules.required('名称必填'), rules.maxLength(128)],
-    channelType: [rules.required('类型必选', 'change')],
+    channelCode: [
+      rules.required(t('notificationChannelsTab.ruleCode')),
+      rules.code(t('notificationChannelsTab.ruleCodePattern')),
+    ],
+    channelName: [rules.required(t('notificationChannelsTab.ruleName')), rules.maxLength(128)],
+    channelType: [rules.required(t('notificationChannelsTab.ruleType'), 'change')],
   }
 
   async function loadChannels() {
@@ -244,7 +288,7 @@
       } else {
         await createNotificationChannel(tenant.tenantId, body)
       }
-      ElMessage.success('已保存')
+      ElMessage.success(t('notificationCommon.savedToast'))
       channelFormVisible.value = false
       await loadChannels()
     } finally {
@@ -255,22 +299,22 @@
   async function testChannel(row: Record<string, unknown>) {
     try {
       await testNotificationChannel(String(row.channelCode), tenant.tenantId)
-      ElMessage.success('测试消息已发送')
+      ElMessage.success(t('notificationChannelsTab.testSent'))
     } catch {
-      ElMessage.error('测试发送失败')
+      ElMessage.error(t('notificationChannelsTab.testFailed'))
     }
   }
 
   async function confirmDeleteChannel(row: Record<string, unknown>) {
     try {
       await confirmDanger({
-        verb: '删除',
-        target: `通知渠道「${row.channelName}」`,
-        consequence: '关联此渠道的告警规则会发不出通知,触发后变成静默告警。',
+        verb: t('notificationCommon.deleteVerb'),
+        target: t('notificationChannelsTab.deleteTarget', { name: row.channelName }),
+        consequence: t('notificationChannelsTab.deleteConsequence'),
         irreversible: false,
       })
       await deleteNotificationChannel(String(row.channelCode), tenant.tenantId)
-      ElMessage.success('已删除')
+      ElMessage.success(t('notificationCommon.deletedToast'))
       await loadChannels()
     } catch {
       /* cancel */

@@ -25,50 +25,67 @@
               class="pretty-add-button"
               @click="openWebhookCreate"
             >
-              新增
+              {{ t('notificationCommon.btnAdd') }}
             </el-button>
           </template>
-          <el-form-item label="URL">
+          <el-form-item :label="t('notificationWebhooksTab.kwLabel')">
             <el-input
               class="query-w-280"
               v-model="webhookFilterDraft.keyword"
               clearable
-              placeholder="搜索 URL / 事件类型"
+              :placeholder="t('notificationWebhooksTab.kwPlaceholder')"
               @keyup.enter="applyWebhookFilter"
             />
           </el-form-item>
-          <el-form-item label="启用">
+          <el-form-item :label="t('notificationCommon.enabledLabel')">
             <el-select
               class="query-w-140"
               v-model="webhookFilterDraft.enabled"
               clearable
-              placeholder="全部"
+              :placeholder="t('notificationCommon.allPlaceholder')"
             >
-              <el-option label="已启用" :value="true" />
-              <el-option label="已停用" :value="false" />
+              <el-option :label="t('notificationCommon.optEnabled')" :value="true" />
+              <el-option :label="t('notificationCommon.optDisabled')" :value="false" />
             </el-select>
           </el-form-item>
         </ListPageQueryBar>
       </template>
-      <el-table-column prop="id" label="ID" width="80" />
-      <el-table-column prop="name" label="名称" min-width="140" show-overflow-tooltip />
-      <el-table-column prop="callbackUrl" label="URL" min-width="250" show-overflow-tooltip />
-      <el-table-column prop="eventTypes" label="事件类型" min-width="160" show-overflow-tooltip />
-      <el-table-column prop="enabled" label="启用" width="80">
+      <el-table-column prop="id" :label="t('notificationWebhooksTab.colId')" width="80" />
+      <el-table-column
+        prop="name"
+        :label="t('notificationWebhooksTab.colName')"
+        min-width="140"
+        show-overflow-tooltip
+      />
+      <el-table-column
+        prop="callbackUrl"
+        :label="t('notificationWebhooksTab.colUrl')"
+        min-width="250"
+        show-overflow-tooltip
+      />
+      <el-table-column
+        prop="eventTypes"
+        :label="t('notificationWebhooksTab.colEventTypes')"
+        min-width="160"
+        show-overflow-tooltip
+      />
+      <el-table-column prop="enabled" :label="t('notificationCommon.colEnabled')" width="80">
         <template #default="{ row }">
           <StatusTag :value="String(row.enabled)" category="yn" />
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="220" fixed="right">
+      <el-table-column :label="t('notificationCommon.colActions')" width="220" fixed="right">
         <template #default="{ row }">
           <div class="table-actions">
-            <el-button size="small" plain type="primary" @click="openWebhookEdit(row)"
-              >编辑</el-button
-            >
-            <el-button size="small" plain @click="viewWebhookLogs(row)">投递日志</el-button>
-            <el-button size="small" plain type="danger" @click="confirmDeleteWebhook(row)"
-              >删除</el-button
-            >
+            <el-button size="small" plain type="primary" @click="openWebhookEdit(row)">
+              {{ t('notificationCommon.btnEdit') }}
+            </el-button>
+            <el-button size="small" plain @click="viewWebhookLogs(row)">
+              {{ t('notificationWebhooksTab.btnDeliveryLogs') }}
+            </el-button>
+            <el-button size="small" plain type="danger" @click="confirmDeleteWebhook(row)">
+              {{ t('notificationCommon.btnDelete') }}
+            </el-button>
           </div>
         </template>
       </el-table-column>
@@ -76,7 +93,11 @@
 
     <el-dialog
       v-model="webhookFormVisible"
-      :title="webhookEditingId ? '编辑 Webhook' : '新增 Webhook'"
+      :title="
+        webhookEditingId
+          ? t('notificationWebhooksTab.dialogTitleEdit')
+          : t('notificationWebhooksTab.dialogTitleCreate')
+      "
       width="560px"
     >
       <el-form
@@ -85,38 +106,73 @@
         :rules="webhookFormRules"
         label-width="100px"
       >
-        <el-form-item label="名称" prop="name">
-          <el-input v-model="webhookForm.name" placeholder="webhook 名称" maxlength="128" />
-        </el-form-item>
-        <el-form-item label="URL" prop="callbackUrl">
-          <el-input v-model="webhookForm.callbackUrl" placeholder="https://..." />
-        </el-form-item>
-        <el-form-item label="事件类型" prop="eventTypes">
+        <el-form-item :label="t('notificationWebhooksTab.fieldName')" prop="name">
           <el-input
-            v-model="webhookForm.eventTypes"
-            placeholder="逗号分隔，如 JOB_COMPLETED,JOB_FAILED"
+            v-model="webhookForm.name"
+            :placeholder="t('notificationWebhooksTab.namePlaceholder')"
+            maxlength="128"
           />
         </el-form-item>
-        <el-form-item label="Secret" prop="secret">
-          <el-input v-model="webhookForm.secret" placeholder="可选,签名密钥" />
+        <el-form-item :label="t('notificationWebhooksTab.fieldUrl')" prop="callbackUrl">
+          <el-input
+            v-model="webhookForm.callbackUrl"
+            :placeholder="t('notificationWebhooksTab.urlPlaceholder')"
+          />
         </el-form-item>
-        <el-form-item label="启用" prop="enabled">
+        <el-form-item :label="t('notificationWebhooksTab.fieldEventTypes')" prop="eventTypes">
+          <el-input
+            v-model="webhookForm.eventTypes"
+            :placeholder="t('notificationWebhooksTab.eventTypesPlaceholder')"
+          />
+        </el-form-item>
+        <el-form-item :label="t('notificationWebhooksTab.fieldSecret')" prop="secret">
+          <el-input
+            v-model="webhookForm.secret"
+            :placeholder="t('notificationWebhooksTab.secretPlaceholder')"
+          />
+        </el-form-item>
+        <el-form-item :label="t('notificationCommon.enabledLabel')" prop="enabled">
           <el-switch v-model="webhookForm.enabled" />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="webhookFormVisible = false">取消</el-button>
-        <el-button type="primary" :loading="savingWebhook" @click="saveWebhook">保存</el-button>
+        <el-button @click="webhookFormVisible = false">
+          {{ t('notificationCommon.btnCancel') }}
+        </el-button>
+        <el-button type="primary" :loading="savingWebhook" @click="saveWebhook">
+          {{ t('notificationCommon.btnSave') }}
+        </el-button>
       </template>
     </el-dialog>
 
-    <el-dialog v-model="webhookLogVisible" title="Webhook 投递日志" width="800px">
+    <el-dialog
+      v-model="webhookLogVisible"
+      :title="t('notificationWebhooksTab.deliveryLogDialogTitle')"
+      width="800px"
+    >
       <el-table :data="webhookDeliveryLogs" border size="small" height="400" class="console-table">
-        <el-table-column prop="id" label="ID" width="80" />
-        <el-table-column prop="eventType" label="事件" width="160" />
-        <el-table-column prop="httpStatus" label="HTTP" width="80" />
-        <el-table-column prop="responseBody" label="响应" min-width="200" show-overflow-tooltip />
-        <DatetimeColumn prop="createdAt" label="时间" width="160" />
+        <el-table-column prop="id" :label="t('notificationWebhooksTab.colId')" width="80" />
+        <el-table-column
+          prop="eventType"
+          :label="t('notificationWebhooksTab.logColEvent')"
+          width="160"
+        />
+        <el-table-column
+          prop="httpStatus"
+          :label="t('notificationWebhooksTab.logColHttp')"
+          width="80"
+        />
+        <el-table-column
+          prop="responseBody"
+          :label="t('notificationWebhooksTab.logColResponse')"
+          min-width="200"
+          show-overflow-tooltip
+        />
+        <DatetimeColumn
+          prop="createdAt"
+          :label="t('notificationWebhooksTab.logColTime')"
+          width="160"
+        />
       </el-table>
     </el-dialog>
   </div>
@@ -124,7 +180,10 @@
 
 <script setup lang="ts">
   import { ref, reactive, computed } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
+
+  const { t } = useI18n({ useScope: 'global' })
   import { confirmDanger } from '@/composables/useDangerConfirm'
   import type { FormRules } from 'element-plus'
   import { Plus } from '@element-plus/icons-vue'
@@ -173,10 +232,10 @@
 
   const { formRef: webhookFormRef, validate: validateWebhookForm } = useFormValidate()
   const webhookFormRules: FormRules = {
-    name: [rules.required('名称必填'), rules.maxLength(128)],
+    name: [rules.required(t('notificationWebhooksTab.ruleName')), rules.maxLength(128)],
     callbackUrl: [
-      rules.required('URL 必填'),
-      rules.pattern(/^https?:\/\/[^\s]+$/i, 'URL 须以 http:// 或 https:// 开头'),
+      rules.required(t('notificationWebhooksTab.ruleUrl')),
+      rules.pattern(/^https?:\/\/[^\s]+$/i, t('notificationWebhooksTab.ruleUrlPattern')),
     ],
   }
 
@@ -227,7 +286,7 @@
       } else {
         await createWebhook(tenant.tenantId, { name: webhookForm.name, ...baseBody })
       }
-      ElMessage.success('已保存')
+      ElMessage.success(t('notificationCommon.savedToast'))
       webhookFormVisible.value = false
       await loadWebhooks()
     } finally {
@@ -238,13 +297,15 @@
   async function confirmDeleteWebhook(row: Record<string, unknown>) {
     try {
       await confirmDanger({
-        verb: '删除',
-        target: `Webhook 「${row.name || row.callbackUrl || '#' + row.id}」`,
-        consequence: '该 Webhook 立即停止接收事件;历史投递日志保留可查。',
+        verb: t('notificationCommon.deleteVerb'),
+        target: t('notificationWebhooksTab.deleteTarget', {
+          name: row.name || row.callbackUrl || '#' + row.id,
+        }),
+        consequence: t('notificationWebhooksTab.deleteConsequence'),
         irreversible: false,
       })
       await deleteWebhook(row.id as number, tenant.tenantId)
-      ElMessage.success('已删除')
+      ElMessage.success(t('notificationCommon.deletedToast'))
       await loadWebhooks()
     } catch {
       /* cancel */
