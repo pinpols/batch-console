@@ -4,7 +4,7 @@
 
     <SectionCard>
       <el-tabs v-model="activeTab" v-hover-tab-activate="true" class="pill-tabs governance-tabs">
-        <el-tab-pane label="队列" name="queues">
+        <el-tab-pane :label="t('queueConfig.tabQueues')" name="queues">
           <GovernanceFilterBar
             v-model:keyword="kwDraft"
             v-model:enabled="enabledDraft"
@@ -22,24 +22,44 @@
             border
             size="small"
             highlight-current-row
-            empty-text="暂无数据"
+            :empty-text="t('common.noData')"
             class="console-table"
           >
-            <el-table-column prop="queueCode" label="队列编码" min-width="150" />
-            <el-table-column prop="queueName" label="名称" min-width="160" />
-            <el-table-column prop="queueType" label="类型" width="120" />
-            <el-table-column prop="fairShareGroup" label="公平组" min-width="140" />
-            <el-table-column prop="concurrentCap" label="并发上限" width="110" />
-            <el-table-column prop="burstLimit" label="突发上限" width="110" />
-            <DatetimeColumn prop="updatedAt" label="更新时间" width="160" />
-            <el-table-column label="启用" width="110" fixed="right">
+            <el-table-column
+              prop="queueCode"
+              :label="t('queueConfig.colQueueCode')"
+              min-width="150"
+            />
+            <el-table-column
+              prop="queueName"
+              :label="t('queueConfig.colQueueName')"
+              min-width="160"
+            />
+            <el-table-column prop="queueType" :label="t('queueConfig.colQueueType')" width="120" />
+            <el-table-column
+              prop="fairShareGroup"
+              :label="t('queueConfig.colFairShareGroup')"
+              min-width="140"
+            />
+            <el-table-column
+              prop="concurrentCap"
+              :label="t('queueConfig.colConcurrentCap')"
+              width="110"
+            />
+            <el-table-column
+              prop="burstLimit"
+              :label="t('queueConfig.colBurstLimit')"
+              width="110"
+            />
+            <DatetimeColumn prop="updatedAt" :label="t('queueConfig.colUpdatedAt')" width="160" />
+            <el-table-column :label="t('queueConfig.colEnabled')" width="110" fixed="right">
               <template #default="{ row }">
                 <el-switch
                   :model-value="row.enabled"
                   :loading="togglingKey === `queue-${row.id}`"
                   inline-prompt
-                  active-text="开"
-                  inactive-text="关"
+                  :active-text="t('queueConfig.switchOn')"
+                  :inactive-text="t('queueConfig.switchOff')"
                   @change="toggleQueue(row)"
                 />
               </template>
@@ -54,7 +74,7 @@
           />
         </el-tab-pane>
 
-        <el-tab-pane label="批次窗口" name="windows">
+        <el-tab-pane :label="t('queueConfig.tabWindows')" name="windows">
           <GovernanceFilterBar
             v-model:keyword="kwDraft"
             v-model:enabled="enabledDraft"
@@ -72,24 +92,40 @@
             border
             size="small"
             highlight-current-row
-            empty-text="暂无数据"
+            :empty-text="t('common.noData')"
             class="console-table"
           >
-            <el-table-column prop="windowCode" label="窗口编码" min-width="150" />
-            <el-table-column prop="windowName" label="名称" min-width="160" />
-            <el-table-column prop="startTime" label="开始时间" width="110" />
-            <el-table-column prop="endTime" label="结束时间" width="110" />
-            <el-table-column prop="crossDayPolicy" label="跨日策略" min-width="120" />
-            <el-table-column prop="outOfWindowAction" label="窗口外动作" min-width="140" />
-            <DatetimeColumn prop="updatedAt" label="更新时间" width="160" />
-            <el-table-column label="启用" width="110" fixed="right">
+            <el-table-column
+              prop="windowCode"
+              :label="t('queueConfig.colWindowCode')"
+              min-width="150"
+            />
+            <el-table-column
+              prop="windowName"
+              :label="t('queueConfig.colWindowName')"
+              min-width="160"
+            />
+            <el-table-column prop="startTime" :label="t('queueConfig.colStartTime')" width="110" />
+            <el-table-column prop="endTime" :label="t('queueConfig.colEndTime')" width="110" />
+            <el-table-column
+              prop="crossDayPolicy"
+              :label="t('queueConfig.colCrossDayPolicy')"
+              min-width="120"
+            />
+            <el-table-column
+              prop="outOfWindowAction"
+              :label="t('queueConfig.colOutOfWindow')"
+              min-width="140"
+            />
+            <DatetimeColumn prop="updatedAt" :label="t('queueConfig.colUpdatedAt')" width="160" />
+            <el-table-column :label="t('queueConfig.colEnabled')" width="110" fixed="right">
               <template #default="{ row }">
                 <el-switch
                   :model-value="row.enabled"
                   :loading="togglingKey === `window-${row.id}`"
                   inline-prompt
-                  active-text="开"
-                  inactive-text="关"
+                  :active-text="t('queueConfig.switchOn')"
+                  :inactive-text="t('queueConfig.switchOff')"
                   @change="toggleWindow(row)"
                 />
               </template>
@@ -104,7 +140,7 @@
           />
         </el-tab-pane>
 
-        <el-tab-pane label="日历" name="calendars">
+        <el-tab-pane :label="t('queueConfig.tabCalendars')" name="calendars">
           <GovernanceFilterBar
             v-model:keyword="kwDraft"
             v-model:enabled="enabledDraft"
@@ -122,30 +158,42 @@
             border
             size="small"
             highlight-current-row
-            empty-text="暂无数据"
+            :empty-text="t('common.noData')"
             class="console-table"
           >
-            <el-table-column prop="calendarCode" label="日历编码" min-width="150" />
-            <el-table-column prop="calendarName" label="名称" min-width="160" />
-            <el-table-column prop="timezone" label="时区" min-width="140" />
-            <DatetimeColumn prop="updatedAt" label="更新时间" width="160" />
-            <el-table-column label="节假日" min-width="128">
+            <el-table-column
+              prop="calendarCode"
+              :label="t('queueConfig.colCalendarCode')"
+              min-width="150"
+            />
+            <el-table-column
+              prop="calendarName"
+              :label="t('queueConfig.colCalendarName')"
+              min-width="160"
+            />
+            <el-table-column
+              prop="timezone"
+              :label="t('queueConfig.colTimezone')"
+              min-width="140"
+            />
+            <DatetimeColumn prop="updatedAt" :label="t('queueConfig.colUpdatedAt')" width="160" />
+            <el-table-column :label="t('queueConfig.colHolidays')" min-width="128">
               <template #default="{ row }">
                 <div class="table-actions">
                   <el-button size="small" plain type="primary" @click="openHolidays(row)">
-                    查看节假日
+                    {{ t('queueConfig.viewHolidays') }}
                   </el-button>
                 </div>
               </template>
             </el-table-column>
-            <el-table-column label="启用" width="110" fixed="right">
+            <el-table-column :label="t('queueConfig.colEnabled')" width="110" fixed="right">
               <template #default="{ row }">
                 <el-switch
                   :model-value="row.enabled"
                   :loading="togglingKey === `calendar-${row.id}`"
                   inline-prompt
-                  active-text="开"
-                  inactive-text="关"
+                  :active-text="t('queueConfig.switchOn')"
+                  :inactive-text="t('queueConfig.switchOff')"
                   @change="toggleCalendar(row)"
                 />
               </template>
@@ -178,10 +226,22 @@
         class="console-table"
         empty-text="暂无数据"
       >
-        <el-table-column prop="holidayDate" label="日期" min-width="130" />
-        <el-table-column prop="holidayName" label="名称" min-width="160" />
-        <el-table-column prop="holidayType" label="类型" min-width="120" />
-        <el-table-column label="启用" width="90">
+        <el-table-column
+          prop="holidayDate"
+          :label="t('queueConfig.holidayColDate')"
+          min-width="130"
+        />
+        <el-table-column
+          prop="holidayName"
+          :label="t('queueConfig.holidayColName')"
+          min-width="160"
+        />
+        <el-table-column
+          prop="holidayType"
+          :label="t('queueConfig.holidayColType')"
+          min-width="120"
+        />
+        <el-table-column :label="t('queueConfig.holidayColEnabled')" width="90">
           <template #default="{ row }">
             <StatusTag :value="String(row.enabled)" category="yn" />
           </template>
@@ -200,7 +260,10 @@
 
 <script setup lang="ts">
   import { computed, ref, watch } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
+
+  const { t } = useI18n({ useScope: 'global' })
   import { toPageResult } from '@/api/adapters'
   import {
     governanceApi,
@@ -235,7 +298,7 @@
   const calendars = ref<GovernanceCalendarRow[]>([])
   const holidays = ref<GovernanceCalendarHolidayRow[]>([])
   const holidayDrawerVisible = ref(false)
-  const holidayDrawerTitle = ref('节假日')
+  const holidayDrawerTitle = ref(t('queueConfig.holidayDrawerTitle'))
   const pageSize = ref(20)
   const pageQueues = ref(1)
   const pageWindows = ref(1)
@@ -244,9 +307,9 @@
   const holidayPageSize = ref(20)
 
   const keywordPlaceholder = computed(() => {
-    if (activeTab.value === 'windows') return '搜索 windowCode / name'
-    if (activeTab.value === 'calendars') return '搜索 calendarCode / name'
-    return '搜索 queueCode / name'
+    if (activeTab.value === 'windows') return t('queueConfig.keywordWindows')
+    if (activeTab.value === 'calendars') return t('queueConfig.keywordCalendars')
+    return t('queueConfig.keywordQueues')
   })
 
   function matchEnabled(enabled: boolean) {
@@ -377,11 +440,14 @@
   ) {
     if (!rowId) return
     try {
+      const action = enabledNext ? t('queueConfig.enable') : t('queueConfig.disable')
       await ElMessageBox.confirm(
-        `确认将 ${label} ${enabledNext ? '启用' : '停用'}吗?`,
-        '状态切换确认',
+        t('queueConfig.toggleConfirmText', { label, action }),
+        t('queueConfig.toggleConfirmTitle'),
         {
           type: 'warning',
+          confirmButtonText: t('common.confirm'),
+          cancelButtonText: t('common.cancel'),
         },
       )
     } catch {
@@ -391,7 +457,8 @@
     try {
       await apiCall()
       onSuccess()
-      ElMessage.success(`${label} 已${enabledNext ? '启用' : '停用'}`)
+      const action = enabledNext ? t('queueConfig.enable') : t('queueConfig.disable')
+      ElMessage.success(t('queueConfig.toggleSuccess', { label, action }))
     } finally {
       togglingKey.value = ''
     }
@@ -400,7 +467,7 @@
   function toggleQueue(row: GovernanceQueueRow) {
     const next = !row.enabled
     return confirmAndToggle(
-      `队列 ${row.queueCode}`,
+      t('queueConfig.queueLabel', { code: row.queueCode }),
       row.id,
       next,
       `queue-${row.id}`,
@@ -412,7 +479,7 @@
   function toggleWindow(row: GovernanceBatchWindowRow) {
     const next = !row.enabled
     return confirmAndToggle(
-      `窗口 ${row.windowCode}`,
+      t('queueConfig.windowLabel', { code: row.windowCode }),
       row.id,
       next,
       `window-${row.id}`,
@@ -424,7 +491,7 @@
   function toggleCalendar(row: GovernanceCalendarRow) {
     const next = !row.enabled
     return confirmAndToggle(
-      `日历 ${row.calendarCode}`,
+      t('queueConfig.calendarLabel', { code: row.calendarCode }),
       row.id,
       next,
       `calendar-${row.id}`,
@@ -436,7 +503,9 @@
   async function openHolidays(row: GovernanceCalendarRow) {
     holidayPage.value = 1
     holidayDrawerVisible.value = true
-    holidayDrawerTitle.value = `${row.calendarCode} 节假日`
+    holidayDrawerTitle.value = t('queueConfig.holidayDrawerTitleWithCode', {
+      code: row.calendarCode,
+    })
     holidayLoading.value = true
     try {
       holidays.value = row.id
