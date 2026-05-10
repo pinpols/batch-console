@@ -412,10 +412,9 @@ export default withMermaid({
 
     // 顶部导航 — 按 build 产物 URL 写
     // rewrites 把每个目录的 README.md 重命名输出为 index.md,所以子目录入口 = /xxx/
-    // ADR 在 architecture/adr/ 目录,目前没 README.md → 跳第一篇 ADR-001
     nav: [
       { text: '架构', link: '/architecture/' },
-      { text: 'ADR', link: '/architecture/adr/ADR-001-dual-orm' },
+      { text: 'ADR', link: '/architecture/adr/' },
       { text: '设计', link: '/design/' },
       { text: '运维', link: '/runbook/' },
       { text: '规范', link: '/coding-conventions' },
