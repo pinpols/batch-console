@@ -9,7 +9,6 @@
       :show-pager="false"
       v-model:page="searchPage"
       v-model:page-size="searchPageSize"
-      empty-text="暂无数据"
     >
       <template #query>
         <ListPageQueryBar
@@ -26,35 +25,35 @@
           "
           @refresh="() => runTagSearchRefresh(doSearch)"
         >
-          <el-form-item label="资源类型">
+          <el-form-item :label="t('tagSearchTab.resourceTypeLabel')">
             <MetaSelect
               v-model="searchFilters.resourceType"
               clearable
-              placeholder="全部"
+              :placeholder="t('tagSearchTab.resourceTypePlaceholder')"
               class="tag-search__type"
               :options="resourceTypeOptions"
             />
           </el-form-item>
-          <el-form-item label="标签键">
+          <el-form-item :label="t('tagSearchTab.tagKeyLabel')">
             <el-input
               v-model="searchForm.tagKey"
-              placeholder="必填，如 env / biz / owner"
+              :placeholder="t('tagSearchTab.tagKeyPlaceholder')"
               class="tag-search__key"
               @keyup.enter="doSearch"
             />
           </el-form-item>
-          <el-form-item label="标签值">
+          <el-form-item :label="t('tagSearchTab.tagValueLabel')">
             <el-input
               v-model="searchForm.tagValue"
               clearable
-              placeholder="可选，如 prod"
+              :placeholder="t('tagSearchTab.tagValuePlaceholder')"
               class="tag-search__value"
               @keyup.enter="doSearch"
             />
           </el-form-item>
         </ListPageQueryBar>
       </template>
-      <el-table-column prop="resourceType" label="资源类型" width="140">
+      <el-table-column prop="resourceType" :label="t('tagSearchTab.colResourceType')" width="140">
         <template #default="{ row }">
           <StatusTag
             v-if="row.resourceType"
@@ -64,13 +63,28 @@
           <span v-else class="cell-empty">—</span>
         </template>
       </el-table-column>
-      <el-table-column prop="resourceCode" label="资源编码" min-width="200" show-overflow-tooltip />
-      <el-table-column prop="tagKey" label="标签键" min-width="160" show-overflow-tooltip />
-      <el-table-column prop="tagValue" label="标签值" min-width="200" show-overflow-tooltip />
+      <el-table-column
+        prop="resourceCode"
+        :label="t('tagSearchTab.colResourceCode')"
+        min-width="200"
+        show-overflow-tooltip
+      />
+      <el-table-column
+        prop="tagKey"
+        :label="t('tagSearchTab.colTagKey')"
+        min-width="160"
+        show-overflow-tooltip
+      />
+      <el-table-column
+        prop="tagValue"
+        :label="t('tagSearchTab.colTagValue')"
+        min-width="200"
+        show-overflow-tooltip
+      />
     </ProTable>
 
     <div class="tag-subsection">
-      <div class="tag-subsection__title">已注册 Key</div>
+      <div class="tag-subsection__title">{{ t('tagSearchTab.keysSubtitle') }}</div>
       <ProTable
         :data="pagedKeys"
         :loading="loadingKeys"
@@ -100,12 +114,12 @@
             "
             @refresh="() => runKeysRefresh(loadKeys)"
           >
-            <el-form-item label="关键字">
+            <el-form-item :label="t('tagSearchTab.keysKeywordLabel')">
               <el-input
                 class="query-w-260"
                 v-model="keyKeyword"
                 clearable
-                placeholder="搜索已注册 tagKey"
+                :placeholder="t('tagSearchTab.keysKeywordPlaceholder')"
                 @keyup.enter="
                   () => {
                     keyPage = 1
@@ -115,7 +129,7 @@
             </el-form-item>
           </ListPageQueryBar>
         </template>
-        <el-table-column prop="key" label="标签键" min-width="300" />
+        <el-table-column prop="key" :label="t('tagSearchTab.colTagKey')" min-width="300" />
       </ProTable>
     </div>
   </div>
@@ -123,7 +137,10 @@
 
 <script setup lang="ts">
   import { ref, reactive, computed } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
+
+  const { t } = useI18n({ useScope: 'global' })
   import { searchByTag, listTagKeys } from '@/api/tags'
   import { toPageResult } from '@/api/adapters'
   import { useTenantStore } from '@/stores/tenant'
@@ -200,7 +217,7 @@
 
   async function doSearch() {
     if (!searchForm.tagKey.trim()) {
-      ElMessage.warning('Tag Key 不能为空')
+      ElMessage.warning(t('tagSearchTab.tagKeyRequired'))
       return
     }
     await runSearchTag(async () => {

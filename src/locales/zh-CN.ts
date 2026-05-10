@@ -1886,6 +1886,22 @@ export default {
     createdCardPrimary: '去初始化',
     createdCardSecondary: '留在列表',
   },
+  tagSearchTab: {
+    resourceTypeLabel: '资源类型',
+    resourceTypePlaceholder: '全部',
+    tagKeyLabel: '标签键',
+    tagKeyPlaceholder: '必填,如 env / biz / owner',
+    tagValueLabel: '标签值',
+    tagValuePlaceholder: '可选,如 prod',
+    colResourceType: '资源类型',
+    colResourceCode: '资源编码',
+    colTagKey: '标签键',
+    colTagValue: '标签值',
+    keysSubtitle: '已注册 Key',
+    keysKeywordLabel: '关键字',
+    keysKeywordPlaceholder: '搜索已注册 tagKey',
+    tagKeyRequired: 'Tag Key 不能为空',
+  },
 } as const
 
 export type Messages = typeof import('./zh-CN').default

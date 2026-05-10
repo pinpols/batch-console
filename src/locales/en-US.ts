@@ -1929,6 +1929,22 @@ const messages: Messages = {
     createdCardPrimary: 'Initialize now',
     createdCardSecondary: 'Stay on list',
   },
+  tagSearchTab: {
+    resourceTypeLabel: 'Resource type',
+    resourceTypePlaceholder: 'All',
+    tagKeyLabel: 'Tag key',
+    tagKeyPlaceholder: 'Required, e.g. env / biz / owner',
+    tagValueLabel: 'Tag value',
+    tagValuePlaceholder: 'Optional, e.g. prod',
+    colResourceType: 'Resource type',
+    colResourceCode: 'Resource code',
+    colTagKey: 'Tag key',
+    colTagValue: 'Tag value',
+    keysSubtitle: 'Registered keys',
+    keysKeywordLabel: 'Keyword',
+    keysKeywordPlaceholder: 'Search registered tagKey',
+    tagKeyRequired: 'Tag Key is required',
+  },
 }
 
 export default messages
