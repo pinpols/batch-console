@@ -51,9 +51,10 @@ export default defineConfig(({ mode }) => {
       output: {
         manualChunks: {
           'vendor-element-plus': ['element-plus', '@element-plus/icons-vue'],
-          'vendor-echarts': ['echarts', 'vue-echarts'],
-          'vendor-x6': ['@antv/x6'],
           'vendor-vue': ['vue', 'vue-router', 'pinia'],
+          // echarts (181 KB gzip) 只 OpsSummary 用,x6 (155 KB gzip) 只 WorkflowDesigner 用,
+          // 不写进 manualChunks → rollup 自动跟随路由 lazy chunk 走,
+          // 不进首屏依赖图,非该页用户少下 ~336 KB gzip。
         },
       },
     },

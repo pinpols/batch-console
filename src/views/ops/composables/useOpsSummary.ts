@@ -35,8 +35,10 @@ export function useOpsSummary() {
   const alertTypeTopNOption = ref<Record<string, unknown>>({})
   const workerLoadTopNOption = ref<Record<string, unknown>>({})
 
+  // 用品牌主题(echarts.ts 里 registerTheme 注册),不再用 echarts 内置 'dark'。
+  // 跟 tokens.css 的 --color-primary / 网格灰阶 / SectionCard 暗底配色都对得上。
   const chartTheme = computed(() =>
-    document.documentElement.classList.contains('dark') ? 'dark' : undefined,
+    document.documentElement.classList.contains('dark') ? 'console-dark' : 'console-light',
   )
 
   // ---- extra panels ----

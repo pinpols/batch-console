@@ -6,6 +6,8 @@
       <ProTable
         :data="rows"
         :loading="tableBlocking"
+        :error="loadError"
+        :on-retry="loadData"
         :total="total"
         v-model:page="query.page"
         v-model:page-size="query.pageSize"
@@ -201,12 +203,17 @@
     })
   }
 
+  const loadError = ref<unknown>(null)
   async function loadData() {
     loading.value = true
+    loadError.value = null
     try {
       const result = await instanceApi.list(query)
       rows.value = result.records
       total.value = result.total
+    } catch (err) {
+      loadError.value = err
+      throw err
     } finally {
       loading.value = false
     }

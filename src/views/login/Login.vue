@@ -41,7 +41,15 @@
               <el-icon><User /></el-icon>
             </template>
             <template #suffix>
-              <el-icon v-if="form.username" class="input-clear-btn" @click="form.username = ''">
+              <el-icon
+                v-if="form.username"
+                class="input-clear-btn"
+                role="button"
+                tabindex="0"
+                aria-label="清空用户名"
+                @click="form.username = ''"
+                @keydown.enter.space.prevent="form.username = ''"
+              >
                 <CircleClose />
               </el-icon>
             </template>

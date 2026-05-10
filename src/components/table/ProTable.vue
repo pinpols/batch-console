@@ -7,6 +7,12 @@
       <slot name="toolbar" />
     </div>
     <TableSkeleton v-if="loading && !data.length" :rows="skeletonRows" />
+    <!-- 加载失败 + 没有历史数据时,展示错误态(可选 retry CTA);避免和"暂无数据"混淆 -->
+    <EmptyState v-else-if="error && !data.length" variant="error" :description="resolvedErrorText">
+      <template v-if="onRetry" #action>
+        <el-button type="primary" :icon="Refresh" @click="onRetry">重试</el-button>
+      </template>
+    </EmptyState>
     <template v-else>
       <el-table
         :data="data"
@@ -37,12 +43,15 @@
 </template>
 
 <script setup lang="ts">
+  import { computed } from 'vue'
+  import { Refresh } from '@element-plus/icons-vue'
   import TableSkeleton from '@/components/table/TableSkeleton.vue'
   import TablePagerBar from '@/components/table/TablePagerBar.vue'
+  import EmptyState from '@/components/common/EmptyState.vue'
 
   defineOptions({ inheritAttrs: false })
 
-  withDefaults(
+  const props = withDefaults(
     defineProps<{
       data: readonly unknown[]
       loading?: boolean
@@ -64,6 +73,12 @@
       pageSizes?: number[]
       /** 骨架屏行数（首次加载时显示） */
       skeletonRows?: number
+      /** 加载失败状态(优先于 emptyText 展示);传 Error 或任意 truthy 值 */
+      error?: unknown
+      /** 错误态文案;不传则取 error.message 或"加载失败,请重试" */
+      errorText?: string
+      /** 可选重试回调,传了就在错误态渲染"重试"按钮 */
+      onRetry?: () => void | Promise<void>
     }>(),
     {
       loading: false,
@@ -75,8 +90,16 @@
       hidePagerWhenSinglePage: true,
       pageSizes: () => [20, 50, 100, 200],
       skeletonRows: 6,
+      error: null,
     },
   )
+
+  // errorText 优先级:显式传 → error.message → 默认文案
+  const resolvedErrorText = computed(() => {
+    if (props.errorText?.trim()) return props.errorText.trim()
+    if (props.error instanceof Error && props.error.message) return props.error.message
+    return '加载失败,请重试'
+  })
 
   const emit = defineEmits<{
     (e: 'update:page', v: number): void
