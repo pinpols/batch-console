@@ -21,3 +21,9 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv
 }
+
+/** vue-i18n 类型增强:让 `$t` / `t()` 的 key 自动补全到中文文案表 */
+declare module 'vue-i18n' {
+  type AppMessages = typeof import('@/locales/zh-CN').default
+  interface DefineLocaleMessage extends AppMessages {}
+}

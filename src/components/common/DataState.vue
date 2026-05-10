@@ -5,12 +5,12 @@
   <!-- error:用 EmptyState 'error' 变体 + 重试按钮(若 onRetry 提供) -->
   <EmptyState v-else-if="error" variant="error" :description="errorText">
     <template v-if="onRetry" #action>
-      <el-button type="primary" :icon="Refresh" @click="onRetry">重试</el-button>
+      <el-button type="primary" :icon="Refresh" @click="onRetry">{{ t('common.retry') }}</el-button>
     </template>
   </EmptyState>
 
   <!-- empty:已加载但没数据 -->
-  <EmptyState v-else-if="!hasData" :description="emptyText" />
+  <EmptyState v-else-if="!hasData" :description="emptyTextResolved" />
 
   <!-- 有数据:把内容交给 default slot,父组件渲染 el-table 等 -->
   <slot v-else />
@@ -32,6 +32,7 @@
    *  - 不强制迁移,新页 + 高流量页用,存量页可保留 v-loading + empty-text 范式
    */
   import { computed } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import { Refresh } from '@element-plus/icons-vue'
   import EmptyState from '@/components/common/EmptyState.vue'
   import TableSkeleton from '@/components/table/TableSkeleton.vue'
@@ -50,14 +51,18 @@
       loading: false,
       error: null,
       hasData: false,
-      emptyText: '暂无数据',
+      emptyText: '',
       skeletonRows: 6,
     },
   )
 
+  const { t } = useI18n()
+
   const errorText = computed(() => {
     if (props.errorText?.trim()) return props.errorText.trim()
-    if (props.error instanceof Error) return props.error.message || '加载失败,请重试'
-    return '加载失败,请重试'
+    if (props.error instanceof Error) return props.error.message || t('empty.error')
+    return t('empty.error')
   })
+
+  const emptyTextResolved = computed(() => props.emptyText?.trim() || t('empty.default'))
 </script>

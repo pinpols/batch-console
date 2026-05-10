@@ -1,8 +1,8 @@
 <template>
-  <EmptyState v-if="error" variant="error" title="此页面渲染异常" :description="errorText">
+  <EmptyState v-if="error" variant="error" :title="t('error.boundary')" :description="errorText">
     <template #action>
-      <el-button type="primary" :icon="Refresh" @click="retry">重新加载</el-button>
-      <el-button :icon="HomeFilled" @click="goHome">回到首页</el-button>
+      <el-button type="primary" :icon="Refresh" @click="retry">{{ t('common.refresh') }}</el-button>
+      <el-button :icon="HomeFilled" @click="goHome">{{ t('common.backToHome') }}</el-button>
     </template>
   </EmptyState>
   <slot v-else />
@@ -25,6 +25,7 @@
    */
   import { ref, onErrorCaptured, watch } from 'vue'
   import { useRouter } from 'vue-router'
+  import { useI18n } from 'vue-i18n'
   import { Refresh, HomeFilled } from '@element-plus/icons-vue'
   import EmptyState from '@/components/common/EmptyState.vue'
   import { logError } from '@/utils/logger'
@@ -35,6 +36,7 @@
   }>()
 
   const router = useRouter()
+  const { t } = useI18n()
   const error = ref<unknown>(null)
 
   const errorText = ref('')

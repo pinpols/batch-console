@@ -13,6 +13,7 @@
 
 <script setup lang="ts">
   import { computed } from 'vue'
+  import { useI18n } from 'vue-i18n'
 
   type EmptyStateVariant = 'empty' | 'forbidden' | 'error' | 'offline' | 'network'
 
@@ -30,23 +31,27 @@
     },
   )
 
-  const presets: Record<EmptyStateVariant, { title: string; description: string }> = {
-    empty: { title: '', description: '暂无数据' },
-    forbidden: { title: '无权限', description: '当前账号无权查看或操作该资源。' },
-    error: { title: '加载失败', description: '请求未能完成，请稍后重试或联系管理员。' },
-    offline: { title: '服务不可用', description: '暂时无法连接后端，请检查网络或代理配置。' },
-    network: { title: '网络异常', description: '连接超时或服务未响应，请稍后重试。' },
-  }
+  const { t } = useI18n()
+
+  const presets = computed<Record<EmptyStateVariant, { title: string; description: string }>>(
+    () => ({
+      empty: { title: '', description: t('empty.default') },
+      forbidden: { title: t('error.forbidden'), description: t('error.forbiddenSub') },
+      error: { title: t('empty.error'), description: t('error.subtitle') },
+      offline: { title: t('error.networkTitle'), description: t('error.networkSub') },
+      network: { title: t('error.networkTitle'), description: t('error.networkSub') },
+    }),
+  )
 
   const computedTitle = computed(() => {
     if (props.title?.trim()) return props.title.trim()
-    const p = presets[props.variant]
+    const p = presets.value[props.variant]
     return p.title || undefined
   })
 
   const computedDescription = computed(() => {
     if (props.description?.trim()) return props.description.trim()
-    return presets[props.variant].description
+    return presets.value[props.variant].description
   })
 </script>
 

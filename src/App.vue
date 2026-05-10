@@ -1,14 +1,21 @@
 <template>
-  <!-- 中文全局 locale：Element Plus 的 MessageBox / Dialog / Pagination 等默认英文
-       （按钮 "OK"/"Cancel"、"Previous"/"Next" 等）；挂载 zh-cn 后统一中文。 -->
-  <ElConfigProvider :locale="zhCn">
+  <!-- ElConfigProvider 把 :locale 透传给所有 Element Plus 声明式组件
+       (Pagination / DatePicker / Dialog 等内置文案);imperative API
+       (ElMessageBox / ElMessage)由 main.ts use(ElementPlus, { locale }) 提供。 -->
+  <ElConfigProvider :locale="elementLocale">
     <RouteProgressBar />
     <RouterView />
   </ElConfigProvider>
 </template>
 
 <script setup lang="ts">
+  import { computed } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import { ElConfigProvider } from 'element-plus'
-  import zhCn from 'element-plus/es/locale/lang/zh-cn'
   import RouteProgressBar from '@/components/common/RouteProgressBar.vue'
+  import { resolveElementPlusLocale } from '@/locales/elementPlus'
+  import type { Locale } from '@/constants/locale'
+
+  const { locale } = useI18n()
+  const elementLocale = computed(() => resolveElementPlusLocale(locale.value as Locale))
 </script>

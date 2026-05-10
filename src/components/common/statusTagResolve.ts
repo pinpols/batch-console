@@ -126,21 +126,39 @@ export interface ResolvedStatusMeta {
 
 /**
  * 解析 StatusTag 的 label / type。
- * label 优先级:/meta/enums > 本地 local(前端专属分类) > fallback > 原始 value > '—'
+ * label 优先级:i18n `enum.<group>.<value>` > /meta/enums > 本地 local > fallback > 原始 value > '—'
  * type 优先级:local color map > local.type > 'info'
+ *
+ * `translate` 由调用方注入(StatusTag.vue 注入 vue-i18n 的 `te`/`t`)。i18n key 不存在时
+ * 自然回退到 BE label,迁移可分阶段:zh-CN/en-US 文案表里只填了部分 enum 也安全。
  */
+export interface StatusTagTranslate {
+  exists: (key: string) => boolean
+  translate: (key: string) => string
+}
+
 export function resolveStatusMeta(
   value: string,
   category: StatusTagCategory,
   metaEnums: Record<string, MetaOption[]> | undefined | null,
   fallback = '',
+  translate?: StatusTagTranslate,
 ): ResolvedStatusMeta {
   const cfg = STATUS_TAG_CATEGORIES[category]
   const localMeta = cfg.local?.[value]
   const type: StatusTagType = cfg.color[value] ?? localMeta?.type ?? 'info'
 
   let label: string | undefined
-  if (metaEnums && cfg.metaKeys) {
+  if (translate && cfg.metaKeys && value) {
+    for (const k of cfg.metaKeys) {
+      const i18nKey = `enum.${k}.${value}`
+      if (translate.exists(i18nKey)) {
+        label = translate.translate(i18nKey)
+        break
+      }
+    }
+  }
+  if (!label && metaEnums && cfg.metaKeys) {
     for (const k of cfg.metaKeys) {
       const group = metaEnums[k]
       if (Array.isArray(group)) {
