@@ -9,7 +9,7 @@
         v-hover-tab-activate="true"
         class="pill-tabs"
       >
-        <el-tab-pane label="AI 助手" name="chat">
+        <el-tab-pane :label="t('aiChat.tabChat')" name="chat">
           <div class="chat-layout">
             <div class="chat-panel">
               <div class="chat-list">
@@ -19,7 +19,9 @@
                   class="bubble"
                   :class="`bubble--${item.role}`"
                 >
-                  <div class="bubble__meta">{{ item.role === 'user' ? '我' : 'AI' }}</div>
+                  <div class="bubble__meta">
+                    {{ item.role === 'user' ? t('aiChat.bubbleMe') : t('aiChat.bubbleAi') }}
+                  </div>
                   <div class="bubble__body">{{ item.content }}</div>
                 </div>
               </div>
@@ -29,18 +31,20 @@
                   v-model="prompt"
                   type="textarea"
                   :rows="6"
-                  placeholder="例如：解释某 Job 失败原因、查询某 Trace 关联步骤、总结今日告警…"
+                  :placeholder="t('aiChat.inputPlaceholder')"
                   class="composer__editor"
                 />
                 <div class="composer__actions">
                   <el-input
                     class="query-w-240"
                     v-model="modelName"
-                    placeholder="模型名（可空，走服务端默认）"
+                    :placeholder="t('aiChat.modelPlaceholder')"
                   />
                   <div class="composer__actions-right">
-                    <div class="composer__hint">Enter 换行，点击发送提交</div>
-                    <el-button type="primary" :loading="sending" @click="send">发送</el-button>
+                    <div class="composer__hint">{{ t('aiChat.composerHint') }}</div>
+                    <el-button type="primary" :loading="sending" @click="send">
+                      {{ t('aiChat.btnSend') }}
+                    </el-button>
                   </div>
                 </div>
               </el-form>
@@ -48,7 +52,7 @@
           </div>
         </el-tab-pane>
 
-        <el-tab-pane label="AI 审计" name="audits">
+        <el-tab-pane :label="t('aiChat.tabAudits')" name="audits">
           <ProTable
             class="audit-table-shell"
             :data="auditRows"
@@ -72,20 +76,20 @@
                     class="query-w-200"
                     v-model="auditTraceDraft"
                     clearable
-                    placeholder="链路 Trace Id，支持模糊"
+                    :placeholder="t('aiChat.tracePlaceholder')"
                     @keyup.enter="onAuditSearch"
                   />
                 </el-form-item>
-                <el-form-item label="操作人">
+                <el-form-item :label="t('aiChat.operatorLabel')">
                   <el-input
                     class="query-w-160"
                     v-model="auditOperatorDraft"
                     clearable
-                    placeholder="操作人 Id，支持模糊"
+                    :placeholder="t('aiChat.operatorPlaceholder')"
                     @keyup.enter="onAuditSearch"
                   />
                 </el-form-item>
-                <el-form-item label="分类">
+                <el-form-item :label="t('aiChat.categoryLabel')">
                   <MetaSelect
                     class="query-w-200"
                     v-model="auditCategoryDraft"
@@ -93,35 +97,45 @@
                     filterable
                     allow-create
                     default-first-option
-                    placeholder="选择或输入 promptCategory"
+                    :placeholder="t('aiChat.categoryPlaceholder')"
                     @keyup.enter="onAuditSearch"
                     :options="auditCategoryOptions"
                   />
                 </el-form-item>
               </ListPageQueryBar>
             </template>
-            <DatetimeColumn prop="createdAt" label="时间" width="160" />
-            <el-table-column prop="operatorId" label="操作人" width="120" />
-            <el-table-column prop="sessionId" label="会话" width="140" show-overflow-tooltip />
-            <el-table-column prop="requestId" label="请求 ID" width="140" show-overflow-tooltip />
-            <el-table-column prop="promptCategory" label="分类" width="120" />
-            <el-table-column prop="promptDecision" label="决策" width="110" />
-            <el-table-column prop="modelName" label="模型" width="140" />
+            <DatetimeColumn prop="createdAt" :label="t('aiChat.colTime')" width="160" />
+            <el-table-column prop="operatorId" :label="t('aiChat.colOperator')" width="120" />
+            <el-table-column
+              prop="sessionId"
+              :label="t('aiChat.colSession')"
+              width="140"
+              show-overflow-tooltip
+            />
+            <el-table-column
+              prop="requestId"
+              :label="t('aiChat.colRequestId')"
+              width="140"
+              show-overflow-tooltip
+            />
+            <el-table-column prop="promptCategory" :label="t('aiChat.colCategory')" width="120" />
+            <el-table-column prop="promptDecision" :label="t('aiChat.colDecision')" width="110" />
+            <el-table-column prop="modelName" :label="t('aiChat.colModel')" width="140" />
             <el-table-column
               prop="refusalReason"
-              label="拒绝原因"
+              :label="t('aiChat.colRejectReason')"
               min-width="180"
               show-overflow-tooltip
             />
             <el-table-column
               prop="promptPreview"
-              label="Prompt 预览"
+              :label="t('aiChat.colPromptPreview')"
               min-width="220"
               show-overflow-tooltip
             />
             <el-table-column
               prop="responsePreview"
-              label="回答预览"
+              :label="t('aiChat.colAnswerPreview')"
               min-width="260"
               show-overflow-tooltip
             />
@@ -135,7 +149,10 @@
 
 <script setup lang="ts">
   import { computed, ref, watch } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import { useRoute, useRouter } from 'vue-router'
+
+  const { t } = useI18n({ useScope: 'global' })
   import { fetchAllPageItems, toPageResult } from '@/api/adapters'
   import { chatWithAi } from '@/api/system'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
@@ -251,7 +268,7 @@
       messages.value.push({
         id: `${Date.now()}-a`,
         role: 'assistant',
-        content: res.answer || 'AI 未返回内容',
+        content: res.answer || t('aiChat.emptyAnswer'),
       })
       prompt.value = ''
       void loadAudits()

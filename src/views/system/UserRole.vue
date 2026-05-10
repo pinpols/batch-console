@@ -2,50 +2,56 @@
   <PageContainer>
     <PageHeader>
       <template #actions>
-        <el-button :loading="refreshing" @click="refreshProfile">刷新登录态</el-button>
+        <el-button :loading="refreshing" @click="refreshProfile">
+          {{ t('userRole.btnRefreshLogin') }}
+        </el-button>
       </template>
     </PageHeader>
 
     <div class="metrics">
-      <MetricCard label="当前角色" :value="roleLabel(currentRole)" />
-      <MetricCard label="权限条目" :value="permissionList.length" />
+      <MetricCard :label="t('userRole.metricCurrentRole')" :value="roleLabel(currentRole)" />
+      <MetricCard :label="t('userRole.metricPermissionCount')" :value="permissionList.length" />
       <div
         class="metric-hit"
         role="button"
         tabindex="0"
-        title="展开导航访问矩阵"
+        :title="t('userRole.matrixHintTooltip')"
         @click="expandMatrixScroll"
         @keydown.enter.prevent="expandMatrixScroll"
       >
-        <MetricCard label="可见菜单项" :value="visibleMenuCount" description="点击展开下方矩阵" />
+        <MetricCard
+          :label="t('userRole.metricVisibleMenu')"
+          :value="visibleMenuCount"
+          :description="t('userRole.metricVisibleMenuDesc')"
+        />
       </div>
-      <MetricCard label="当前租户" :value="tenant.tenantId" />
+      <MetricCard :label="t('userRole.metricCurrentTenant')" :value="tenant.tenantId" />
     </div>
 
     <SectionCard>
       <template #header>
-        <span>当前登录态</span>
+        <span>{{ t('userRole.sectionLoginStatus') }}</span>
       </template>
 
       <el-alert :title="modeMessage" type="info" :closable="false" show-icon />
 
       <el-descriptions :column="2" border class="profile-panel">
-        <el-descriptions-item label="用户名">
+        <el-descriptions-item :label="t('userRole.fieldUsername')">
           {{ currentUser?.username || '—' }}
         </el-descriptions-item>
-        <el-descriptions-item label="用户 ID">
+        <el-descriptions-item :label="t('userRole.fieldUserId')">
           {{ currentUser?.userId || '—' }}
         </el-descriptions-item>
-        <el-descriptions-item label="角色">
+        <el-descriptions-item :label="t('userRole.fieldRole')">
           <el-tag size="small" type="primary">{{ roleLabel(currentRole) }}</el-tag>
         </el-descriptions-item>
-        <el-descriptions-item label="当前租户">
+        <el-descriptions-item :label="t('userRole.fieldTenant')">
           {{ tenant.tenantId }}
         </el-descriptions-item>
-        <el-descriptions-item label="权限条目数">
+        <el-descriptions-item :label="t('userRole.fieldPermissionCount')">
           {{ permissionList.length }}
         </el-descriptions-item>
-        <el-descriptions-item label="角色阶梯">
+        <el-descriptions-item :label="t('userRole.fieldRoleChain')">
           <div class="role-chain">
             <el-tag
               v-for="role in roleOrder"
@@ -63,10 +69,10 @@
 
     <SectionCard>
       <template #header>
-        <span>权限清单</span>
+        <span>{{ t('userRole.sectionPermissionList') }}</span>
       </template>
 
-      <el-empty v-if="permissionList.length === 0" description="当前用户未返回权限声明。" />
+      <el-empty v-if="permissionList.length === 0" :description="t('userRole.emptyPermissions')" />
 
       <div v-else class="permission-list">
         <el-tag v-for="permissionName in permissionList" :key="permissionName" effect="plain">
@@ -85,8 +91,10 @@
             @click="onMatrixHeadClick"
           >
             <div class="access-matrix__head-left">
-              <span>导航访问矩阵</span>
-              <el-tag size="small" effect="plain" type="info">{{ accessRows.length }} 项</el-tag>
+              <span>{{ t('userRole.sectionAccessMatrix') }}</span>
+              <el-tag size="small" effect="plain" type="info">
+                {{ t('userRole.matrixCount', { n: accessRows.length }) }}
+              </el-tag>
             </div>
             <div class="access-matrix__head-actions" @click.stop>
               <template v-if="!matrixExpanded">
@@ -95,7 +103,7 @@
                   :icon="Plus"
                   circle
                   size="small"
-                  aria-label="展开矩阵"
+                  :aria-label="t('userRole.btnExpandMatrix')"
                   @click="expandMatrix"
                 />
               </template>
@@ -107,7 +115,7 @@
                 :icon="ArrowUp"
                 @click="collapseMatrix"
               >
-                收起
+                {{ t('userRole.btnCollapse') }}
               </el-button>
             </div>
           </div>
@@ -120,7 +128,7 @@
           @click="expandMatrix"
         >
           <el-icon class="access-matrix__collapsed-icon" :size="20"><Plus /></el-icon>
-          <span>悬停本区域或点击展开完整访问矩阵</span>
+          <span>{{ t('userRole.matrixCollapsedHint') }}</span>
         </div>
 
         <el-table
@@ -131,21 +139,21 @@
           highlight-current-row
           class="console-table access-matrix__table"
         >
-          <el-table-column prop="groupTitle" label="分组" min-width="140" />
-          <el-table-column prop="itemTitle" label="页面" min-width="160" />
-          <el-table-column label="最低角色" width="120">
+          <el-table-column prop="groupTitle" :label="t('userRole.colGroup')" min-width="140" />
+          <el-table-column prop="itemTitle" :label="t('userRole.colItem')" min-width="160" />
+          <el-table-column :label="t('userRole.colMinRole')" width="120">
             <template #default="{ row }">
               {{ roleLabel(row.requiredRole) }}
             </template>
           </el-table-column>
-          <el-table-column label="当前访问" width="120">
+          <el-table-column :label="t('userRole.colAccess')" width="120">
             <template #default="{ row }">
               <el-tag size="small" :type="row.allowed ? 'success' : 'info'">
-                {{ row.allowed ? '允许' : '不可见' }}
+                {{ row.allowed ? t('userRole.accessAllowed') : t('userRole.accessHidden') }}
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="path" label="路由" min-width="220" />
+          <el-table-column prop="path" :label="t('userRole.colPath')" min-width="220" />
         </el-table>
         <TablePagerBar
           v-if="matrixExpanded"
@@ -162,8 +170,11 @@
 
 <script setup lang="ts">
   import { computed, nextTick, ref, watch } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import { toPageResult } from '@/api/adapters'
   import { ElMessage } from 'element-plus'
+
+  const { t } = useI18n({ useScope: 'global' })
   import { ArrowUp, Plus } from '@element-plus/icons-vue'
   import { navigationGroups } from '@/constants/navigation'
   import { roleLabelMap, roleOrder } from '@/constants/role'
@@ -223,7 +234,7 @@
   const visibleMenuCount = computed(() =>
     permission.visibleGroups.reduce((total, group) => total + group.children.length, 0),
   )
-  const modeMessage = computed(() => '当前为真实鉴权模式，数据来自 /api/console/auth/me。')
+  const modeMessage = computed(() => t('userRole.modeMessage'))
 
   const accessRows = computed<AccessRow[]>(() =>
     navigationGroups.flatMap((group) =>
@@ -260,14 +271,14 @@
   })
 
   function roleLabel(role?: Role) {
-    return role ? roleLabelMap[role] : '未设置'
+    return role ? roleLabelMap[role] : t('userRole.roleUnset')
   }
 
   async function refreshProfile() {
     refreshing.value = true
     try {
       await auth.fetchMe()
-      ElMessage.success('登录态已刷新')
+      ElMessage.success(t('userRole.loginRefreshedToast'))
     } finally {
       refreshing.value = false
     }
