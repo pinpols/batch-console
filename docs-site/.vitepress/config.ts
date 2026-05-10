@@ -95,25 +95,29 @@ export default withMermaid({
     langMenuLabel: '语言',
     externalLinkIcon: true,
 
-    // 顶部导航按一级目录分组(对应文档原始目录)
+    // 顶部导航 — 按 build 产物 URL 写
+    // rewrites 把每个目录的 README.md 重命名输出为 index.md,所以子目录入口 = /xxx/
+    // ADR 在 architecture/adr/ 目录,目前没 README.md → 跳第一篇 ADR-001
     nav: [
       { text: '架构', link: '/architecture/' },
-      { text: 'ADR', link: '/architecture/adrs' },
+      { text: 'ADR', link: '/architecture/adr/ADR-001-dual-orm' },
       { text: '设计', link: '/design/' },
       { text: '运维', link: '/runbook/' },
       { text: '规范', link: '/coding-conventions' },
       { text: 'API', link: '/api/' },
-      { text: '更多', items: [
-        { text: '分析(analysis)', link: '/analysis/' },
-        { text: '合规(compliance)', link: '/compliance/' },
-        { text: '字典(dict)', link: '/dict/' },
-        { text: '测试(testing)', link: '/testing/' },
-        { text: '归档(archive)', link: '/archive/' },
-      ] },
+      {
+        text: '更多',
+        items: [
+          { text: '分析(analysis)', link: '/analysis/' },
+          { text: '合规(compliance)', link: '/compliance/' },
+          { text: '字典(dict)', link: '/dict/' },
+          { text: '测试(testing)', link: '/testing/' },
+          { text: '归档(archive)', link: '/archive/' },
+        ],
+      },
     ],
 
-    // 侧边栏按一级目录组装,每个分类取目录第一篇做入口
-    // VitePress 自动 lazy 渲染,不读 srcDir 也不影响 nav 跳转
+    // 侧边栏按一级目录组装,每个分类指向其根入口(rewrites 后的 index.md)
     sidebar: {
       '/architecture/': [{ text: '架构', items: [{ text: '总览', link: '/architecture/' }] }],
       '/design/': [{ text: '设计', items: [{ text: '总览', link: '/design/' }] }],
