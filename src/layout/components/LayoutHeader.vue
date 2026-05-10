@@ -67,11 +67,17 @@
           </el-button>
         </el-tooltip>
         <el-dropdown trigger="click" placement="bottom" @command="handleLocaleCommand">
-          <el-tooltip :content="t('nav.switchLocale')" placement="bottom">
-            <el-button text class="icon-button" :aria-label="t('nav.switchLocale')">
-              <span class="locale-chip">{{ currentLocale === 'zh-CN' ? '中' : 'EN' }}</span>
-            </el-button>
-          </el-tooltip>
+          <!-- 注:el-dropdown 的 trigger slot 不能再包 el-tooltip,Element Plus 处理
+               trigger 时会找首个 element child 绑定事件;tooltip 会拦截掉 click,
+               导致下拉打不开。tooltip 改成 button 的 title 原生属性。 -->
+          <el-button
+            text
+            class="icon-button"
+            :title="t('nav.switchLocale')"
+            :aria-label="t('nav.switchLocale')"
+          >
+            <span class="locale-chip">{{ currentLocale === 'zh-CN' ? '中' : 'EN' }}</span>
+          </el-button>
           <template #dropdown>
             <el-dropdown-menu>
               <el-dropdown-item
