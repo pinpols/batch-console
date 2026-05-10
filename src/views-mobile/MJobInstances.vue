@@ -3,29 +3,36 @@
     <div class="m-page">
       <div class="m-page__header">
         <div>
-          <div class="m-page__title">作业实例</div>
-          <div class="m-page__subtitle">共 {{ total }} 条 · 第 {{ page }} 页</div>
+          <div class="m-page__title">{{ t('mobile.jobs.title') }}</div>
+          <div class="m-page__subtitle">
+            {{ t('mobile.jobs.summary', { total, page }) }}
+          </div>
         </div>
         <button class="m-page__refresh" :disabled="loading" @click="load">
           <el-icon><Refresh /></el-icon>
-          {{ loading ? '加载中' : '刷新' }}
+          {{ loading ? t('mobile.common.loading') : t('mobile.common.refresh') }}
         </button>
       </div>
 
       <div class="m-page__header u-gap-8">
         <el-select
           v-model="query.instanceStatus"
-          placeholder="所有状态"
+          :placeholder="t('mobile.jobs.placeholderStatus')"
           clearable
           size="small"
           class="u-flex-1"
           @change="onFilterChange"
         >
-          <el-option v-for="s in statuses" :key="s" :label="s" :value="s" />
+          <el-option
+            v-for="s in statuses"
+            :key="s"
+            :label="resolveEnumLabel('instanceStatus', s)"
+            :value="s"
+          />
         </el-select>
         <el-input
           v-model="query.jobCode"
-          placeholder="jobCode 模糊"
+          :placeholder="t('mobile.jobs.placeholderJobCode')"
           clearable
           size="small"
           class="u-flex-1"
@@ -34,7 +41,7 @@
       </div>
 
       <MSkeleton v-if="loading && rows.length === 0" :count="4" />
-      <div v-else-if="rows.length === 0" class="m-empty">暂无实例</div>
+      <div v-else-if="rows.length === 0" class="m-empty">{{ t('mobile.jobs.empty') }}</div>
 
       <div
         v-for="row in rows"
@@ -44,18 +51,31 @@
       >
         <div class="m-card__row">
           <div class="m-card__title">{{ row.jobCode }}</div>
-          <span :class="['m-chip', statusChipClass(row.instanceStatus)]">{{
-            row.instanceStatus
-          }}</span>
+          <span :class="['m-chip', statusChipClass(row.instanceStatus)]">
+            {{ resolveEnumLabel('instanceStatus', row.instanceStatus) }}
+          </span>
         </div>
         <div class="m-card__sub">{{ row.instanceNo }}</div>
         <div class="m-card__meta">
-          <div><span class="m-card__meta-key">业务日</span>{{ row.bizDate }}</div>
-          <div><span class="m-card__meta-key">触发</span>{{ row.triggerType }}</div>
-          <div><span class="m-card__meta-key">优先级</span>{{ row.priority }}</div>
-          <div><span class="m-card__meta-key">开始</span>{{ fmt(row.startedAt) }}</div>
+          <div>
+            <span class="m-card__meta-key">{{ t('mobile.jobs.bizDate') }}</span
+            >{{ row.bizDate }}
+          </div>
+          <div>
+            <span class="m-card__meta-key">{{ t('mobile.jobs.trigger') }}</span>
+            {{ resolveEnumLabel('triggerType', row.triggerType) }}
+          </div>
+          <div>
+            <span class="m-card__meta-key">{{ t('mobile.jobs.priority') }}</span
+            >{{ row.priority }}
+          </div>
+          <div>
+            <span class="m-card__meta-key">{{ t('mobile.jobs.startedAt') }}</span>
+            {{ fmt(row.startedAt) }}
+          </div>
           <div v-if="row.finishedAt">
-            <span class="m-card__meta-key">结束</span>{{ fmt(row.finishedAt) }}
+            <span class="m-card__meta-key">{{ t('mobile.jobs.finishedAt') }}</span>
+            {{ fmt(row.finishedAt) }}
           </div>
         </div>
         <div
@@ -68,14 +88,14 @@
             class="m-btn m-btn--primary"
             @click="retry(row)"
           >
-            重试
+            {{ t('mobile.jobs.retry') }}
           </button>
           <button
             v-if="row.instanceStatus === 'RUNNING'"
             class="m-btn m-btn--danger"
             @click="terminate(row)"
           >
-            终止
+            {{ t('mobile.jobs.terminate') }}
           </button>
         </div>
       </div>
@@ -98,15 +118,26 @@
 <script setup lang="ts">
   import { onMounted, reactive, ref, watch } from 'vue'
   import { useRouter } from 'vue-router'
+  import { useI18n } from 'vue-i18n'
   import { Refresh } from '@element-plus/icons-vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { useTenantStore } from '@/stores/tenant'
+  import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import MPullRefresh from '@/layout-mobile/MPullRefresh.vue'
   import MSkeleton from '@/layout-mobile/MSkeleton.vue'
   import { instanceApi } from '@/api/instance'
   import type { ConsoleJobInstanceResponse } from '@/types/console-api'
 
   const router = useRouter()
+  const { t, te } = useI18n({ useScope: 'global' })
+
+  const { data: metaEnums } = useConsoleMetaEnumsQuery()
+  function resolveEnumLabel(group: string, value?: string | null): string {
+    if (!value) return '—'
+    const key = `enum.${group}.${value}`
+    if (te(key)) return t(key)
+    return metaEnums.value?.[group]?.find((o) => o.value === value)?.label ?? value
+  }
 
   const tenant = useTenantStore()
   const loading = ref(false)
@@ -162,7 +193,7 @@
       rows.value = res.records
       total.value = res.total
     } catch {
-      ElMessage.error('加载失败')
+      ElMessage.error(t('mobile.common.loadFail'))
     } finally {
       loading.value = false
     }
@@ -184,9 +215,17 @@
 
   async function retry(row: ConsoleJobInstanceResponse) {
     try {
-      await ElMessageBox.confirm(`重试 ${row.instanceNo}？`, '确认重试', { type: 'warning' })
+      await ElMessageBox.confirm(
+        `${t('mobile.jobs.retry')} ${row.instanceNo}?`,
+        t('mobile.jobs.retry'),
+        {
+          type: 'warning',
+          confirmButtonText: t('common.confirm'),
+          cancelButtonText: t('common.cancel'),
+        },
+      )
       await instanceApi.retry(row.instanceNo, tenant.tenantId, row.jobCode, row.bizDate)
-      ElMessage.success('已提交重试')
+      ElMessage.success(t('mobile.jobs.retryToast'))
       await load()
     } catch {
       /* cancelled */
@@ -195,11 +234,17 @@
 
   async function terminate(row: ConsoleJobInstanceResponse) {
     try {
-      await ElMessageBox.confirm(`终止运行中的 ${row.instanceNo}？`, '确认终止', {
-        type: 'warning',
-      })
+      await ElMessageBox.confirm(
+        `${t('mobile.jobs.terminate')} ${row.instanceNo}?`,
+        t('mobile.jobs.terminate'),
+        {
+          type: 'warning',
+          confirmButtonText: t('common.confirm'),
+          cancelButtonText: t('common.cancel'),
+        },
+      )
       await instanceApi.terminate(row.id, tenant.tenantId)
-      ElMessage.success('已终止')
+      ElMessage.success(t('mobile.jobs.terminateToast'))
       await load()
     } catch {
       /* cancelled */

@@ -3,32 +3,37 @@
     <div class="m-page">
       <div class="m-page__header">
         <div>
-          <div class="m-page__title">Catch-up 审批</div>
-          <div class="m-page__subtitle">待审批 {{ pendingCount }} 条</div>
+          <div class="m-page__title">{{ t('mobile.catchup.title') }}</div>
+          <div class="m-page__subtitle">
+            {{ t('mobile.catchup.pendingCount', { n: pendingCount }) }}
+          </div>
         </div>
         <button class="m-page__refresh" :disabled="loading" @click="load">
           <el-icon><Refresh /></el-icon>
-          {{ loading ? '加载中' : '刷新' }}
+          {{ loading ? t('mobile.common.loading') : t('mobile.common.refresh') }}
         </button>
       </div>
 
       <MSkeleton v-if="loading && rows.length === 0" :count="3" />
-      <div v-else-if="rows.length === 0" class="m-empty">暂无补跑审批</div>
+      <div v-else-if="rows.length === 0" class="m-empty">{{ t('mobile.catchup.empty') }}</div>
 
       <div v-for="row in rows" :key="row.id" class="m-card">
         <div class="m-card__row">
           <div class="m-card__title">{{ row.jobCode }} · {{ row.bizDate }}</div>
-          <span :class="['m-chip', statusChipClass(row.requestStatus)]">{{
-            row.requestStatus
-          }}</span>
+          <span :class="['m-chip', statusChipClass(row.requestStatus)]">
+            {{ resolveEnumLabel('approvalStatus', row.requestStatus) }}
+          </span>
         </div>
         <div class="m-card__sub">request: {{ row.requestId }}</div>
         <div class="m-card__meta">
-          <div><span class="m-card__meta-key">创建</span>{{ fmt(row.createdAt) }}</div>
+          <div>
+            <span class="m-card__meta-key">{{ t('mobile.tenants.created') }}</span>
+            {{ fmt(row.createdAt) }}
+          </div>
           <div><span class="m-card__meta-key">trace</span>{{ row.traceId }}</div>
         </div>
         <div v-if="isPending(row.requestStatus)" class="m-card__notice">
-          批准/拒绝请到桌面端 Approvals 页面操作（移动端待 BE 接口重构）
+          {{ t('mobile.catchup.pendingApi') }}
         </div>
       </div>
     </div>
@@ -37,15 +42,26 @@
 
 <script setup lang="ts">
   import { computed, onMounted, ref, watch } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import { Refresh } from '@element-plus/icons-vue'
   import { ElMessage } from 'element-plus'
   import { useTenantStore } from '@/stores/tenant'
+  import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import MPullRefresh from '@/layout-mobile/MPullRefresh.vue'
   import MSkeleton from '@/layout-mobile/MSkeleton.vue'
   import { fetchAllPageItems } from '@/api/adapters'
   import type { ConsolePendingCatchUpResponse } from '@/types/console-api'
 
+  const { t, te } = useI18n({ useScope: 'global' })
   const tenant = useTenantStore()
+
+  const { data: metaEnums } = useConsoleMetaEnumsQuery()
+  function resolveEnumLabel(group: string, value?: string | null): string {
+    if (!value) return '—'
+    const key = `enum.${group}.${value}`
+    if (te(key)) return t(key)
+    return metaEnums.value?.[group]?.find((o) => o.value === value)?.label ?? value
+  }
   const loading = ref(false)
   const rows = ref<ConsolePendingCatchUpResponse[]>([])
 
@@ -87,7 +103,7 @@
         { tenantId: tenant.tenantId },
       )
     } catch {
-      ElMessage.error('加载失败')
+      ElMessage.error(t('mobile.common.loadFail'))
     } finally {
       loading.value = false
     }
