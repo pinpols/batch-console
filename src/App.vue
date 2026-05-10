@@ -16,6 +16,6 @@
   import { resolveElementPlusLocale } from '@/locales/elementPlus'
   import type { Locale } from '@/constants/locale'
 
-  const { locale } = useI18n()
+  const { locale } = useI18n({ useScope: 'global' })
   const elementLocale = computed(() => resolveElementPlusLocale(locale.value as Locale))
 </script>

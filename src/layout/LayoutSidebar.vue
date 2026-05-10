@@ -57,7 +57,7 @@
   const permission = usePermissionStore()
   const route = useRoute()
   const router = useRouter()
-  const { t, te } = useI18n()
+  const { t, te } = useI18n({ useScope: 'global' })
 
   function resolveGroupTitle(group: NavigationGroup): string {
     const key = `nav.group.${group.key}`

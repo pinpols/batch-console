@@ -31,7 +31,7 @@
     },
   )
 
-  const { t } = useI18n()
+  const { t } = useI18n({ useScope: 'global' })
 
   const presets = computed<Record<EmptyStateVariant, { title: string; description: string }>>(
     () => ({

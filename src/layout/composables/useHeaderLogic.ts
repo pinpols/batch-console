@@ -17,7 +17,7 @@ export function useHeaderLogic() {
   const permission = usePermissionStore()
   const tabsStore = useTabsStore()
   const tenant = useTenantStore()
-  const { t, te } = useI18n()
+  const { t, te } = useI18n({ useScope: 'global' })
   const paletteOpen = ref(false)
 
   const breadcrumbs = computed(() => {

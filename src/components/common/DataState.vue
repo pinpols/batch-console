@@ -56,7 +56,7 @@
     },
   )
 
-  const { t } = useI18n()
+  const { t } = useI18n({ useScope: 'global' })
 
   const errorText = computed(() => {
     if (props.errorText?.trim()) return props.errorText.trim()

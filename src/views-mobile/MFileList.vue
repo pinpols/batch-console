@@ -78,7 +78,7 @@
   import { fileApi, type FileQuery } from '@/api/file'
   import type { ConsoleFileRecordResponse } from '@/types/console-api'
 
-  const { t, te } = useI18n()
+  const { t, te } = useI18n({ useScope: 'global' })
   const tenant = useTenantStore()
   const sentinel = ref<HTMLElement | null>(null)
   const statusFilter = ref<string>('')

@@ -30,7 +30,7 @@
   import { ElMessage } from 'element-plus'
   import { Refresh } from '@element-plus/icons-vue'
 
-  const { t } = useI18n()
+  const { t } = useI18n({ useScope: 'global' })
   const needRefresh = ref(false)
   let updateSW: ((reload?: boolean) => Promise<void>) | null = null
 

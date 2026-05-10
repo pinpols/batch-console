@@ -216,7 +216,7 @@
   import { useLocale } from '@/composables/useLocale'
   import type { Locale } from '@/constants/locale'
 
-  const { t } = useI18n()
+  const { t } = useI18n({ useScope: 'global' })
   const { current: currentLocale, options: localeOptions, setLocale } = useLocale()
 
   function handleLocaleCommand(command: string) {
