@@ -119,7 +119,7 @@
 
 <script setup lang="ts">
   import { computed, ref } from 'vue'
-  import { ElMessageBox } from 'element-plus'
+  import { ElMessage, ElMessageBox } from 'element-plus'
   import { governanceApi, type GovernanceQuotaPolicyRow } from '@/api/governance'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { useTenantStore } from '@/stores/tenant'
@@ -217,6 +217,7 @@
     try {
       await governanceApi.toggleQuotaPolicy(row.id, tenant.tenantId, target)
       row.enabled = target
+      ElMessage.success(`已${target ? '启用' : '停用'}配额策略 ${row.policyCode}`)
     } finally {
       togglingId.value = null
     }

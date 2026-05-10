@@ -65,7 +65,7 @@
   import { computed, onBeforeUnmount, ref, watch } from 'vue'
   import { fmtDatetime } from '@/utils/datetime'
   import { useRoute, useRouter } from 'vue-router'
-  import { ElMessageBox } from 'element-plus'
+  import { ElMessage, ElMessageBox } from 'element-plus'
   import { instanceApi } from '@/api/instance'
   import { createLogStream } from '@/api/stream'
   import { useTenantStore } from '@/stores/tenant'
@@ -129,6 +129,7 @@
     rerunLoading.value = true
     try {
       await instanceApi.retry(r.instanceNo, tenant.tenantId, r.jobCode, r.bizDate)
+      ElMessage.success(`已发起重跑 ${r.instanceNo}`)
       await load()
     } finally {
       rerunLoading.value = false
@@ -146,6 +147,7 @@
     cancelLoading.value = true
     try {
       await instanceApi.cancel(r.id, tenant.tenantId)
+      ElMessage.success(`已取消实例 ${r.instanceNo}`)
       await load()
     } finally {
       cancelLoading.value = false
@@ -165,6 +167,7 @@
     terminateLoading.value = true
     try {
       await instanceApi.terminate(r.id, tenant.tenantId)
+      ElMessage.success(`已强制终止实例 ${r.instanceNo}`)
       await load()
     } finally {
       terminateLoading.value = false

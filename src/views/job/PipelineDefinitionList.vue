@@ -367,9 +367,11 @@
         })),
     }
     saving.value = true
+    const isCreate = editingId.value == null
     try {
-      if (editingId.value == null) await createPipelineDefinition(payload)
+      if (isCreate) await createPipelineDefinition(payload)
       else await updatePipelineDefinition(editingId.value, payload)
+      ElMessage.success(`已${isCreate ? '创建' : '更新'} Pipeline ${payload.pipelineCode}`)
       drawerVisible.value = false
       await load()
     } finally {
@@ -393,6 +395,7 @@
     try {
       await togglePipelineDefinition(row.id, tenant.tenantId, target)
       row.enabled = target
+      ElMessage.success(`已${target ? '启用' : '停用'} Pipeline ${row.pipelineCode}`)
     } finally {
       togglingId.value = null
     }

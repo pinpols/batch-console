@@ -136,10 +136,12 @@
 
     <el-dialog v-model="auditVisible" title="文件审计" width="880px">
       <el-table
+        v-loading="loading"
         :data="pagedAuditRows.records"
         border
         size="small"
         height="420"
+        empty-text="暂无审计记录"
         highlight-current-row
         class="console-table"
       >

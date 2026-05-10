@@ -51,6 +51,7 @@
 
       <div v-show="activePanel === 'policies'" class="detail-pane" role="tabpanel">
         <el-table
+          v-loading="loading"
           :data="pagedPolicies.records"
           stripe
           border
@@ -107,6 +108,7 @@
 
       <div v-show="activePanel === 'queues'" class="detail-pane" role="tabpanel">
         <el-table
+          v-loading="loading"
           :data="pagedQueues.records"
           stripe
           border
@@ -160,6 +162,7 @@
 
       <div v-show="activePanel === 'workers'" class="detail-pane" role="tabpanel">
         <el-table
+          v-loading="loading"
           :data="pagedWorkers.records"
           stripe
           border
@@ -221,11 +224,25 @@
           empty-text="暂无数据"
           class="console-table"
         >
-          <DatetimeColumn prop="snapshotAt" label="时间" width="160" />
-          <el-table-column prop="policyCode" label="策略" width="140" />
-          <el-table-column prop="activeJobs" label="activeJobs" width="100" />
-          <el-table-column prop="effectiveJobCap" label="effectiveJobCap" width="120" />
-          <el-table-column prop="groupActiveJobs" label="groupActiveJobs" width="130" />
+          <DatetimeColumn prop="snapshotAt" label="时间" width="170" />
+          <el-table-column label="策略" min-width="180">
+            <template #default="{ row }">
+              <el-tag size="small" effect="plain" type="primary">{{ row.policyCode }}</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="activeJobs" label="活跃 Jobs" width="110" align="right" />
+          <el-table-column
+            prop="effectiveJobCap"
+            label="effectiveJobCap"
+            min-width="150"
+            align="right"
+          />
+          <el-table-column
+            prop="groupActiveJobs"
+            label="groupActiveJobs"
+            min-width="160"
+            align="right"
+          />
         </el-table>
         <TablePagerBar
           :page="pageHistory"
