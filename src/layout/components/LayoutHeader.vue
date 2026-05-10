@@ -66,31 +66,16 @@
             </el-icon>
           </el-button>
         </el-tooltip>
-        <el-dropdown trigger="click" placement="bottom" @command="handleLocaleCommand">
-          <!-- 注:el-dropdown 的 trigger slot 不能再包 el-tooltip,Element Plus 处理
-               trigger 时会找首个 element child 绑定事件;tooltip 会拦截掉 click,
-               导致下拉打不开。tooltip 改成 button 的 title 原生属性。 -->
+        <el-tooltip :content="localeToggleTooltip" placement="bottom">
           <el-button
             text
             class="icon-button"
-            :title="t('nav.switchLocale')"
-            :aria-label="t('nav.switchLocale')"
+            :aria-label="localeToggleTooltip"
+            @click="toggleLocale"
           >
             <span class="locale-chip">{{ currentLocale === 'zh-CN' ? '中' : 'EN' }}</span>
           </el-button>
-          <template #dropdown>
-            <el-dropdown-menu>
-              <el-dropdown-item
-                v-for="opt in localeOptions"
-                :key="opt.value"
-                :command="opt.value"
-                :class="{ 'is-active': currentLocale === opt.value }"
-              >
-                {{ opt.label }}
-              </el-dropdown-item>
-            </el-dropdown-menu>
-          </template>
-        </el-dropdown>
+        </el-tooltip>
         <el-tooltip :content="themeToggleLabel" placement="bottom">
           <el-button
             text
@@ -218,15 +203,20 @@
   import LayoutTabs from '@/layout/LayoutTabs.vue'
   import TenantSelect from '@/components/common/TenantSelect.vue'
   import { useHeaderLogic } from '@/layout/composables/useHeaderLogic'
+  import { computed } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { useLocale } from '@/composables/useLocale'
-  import type { Locale } from '@/constants/locale'
 
   const { t } = useI18n({ useScope: 'global' })
-  const { current: currentLocale, options: localeOptions, setLocale } = useLocale()
+  const { current: currentLocale, setLocale } = useLocale()
 
-  function handleLocaleCommand(command: string) {
-    setLocale(command as Locale)
+  // 只有两种语言,直接切而不是下拉:tooltip 显示"切到对端"提示
+  const localeToggleTooltip = computed(() =>
+    currentLocale.value === 'zh-CN' ? 'Switch to English' : '切换到中文',
+  )
+
+  function toggleLocale() {
+    setLocale(currentLocale.value === 'zh-CN' ? 'en-US' : 'zh-CN')
   }
 
   defineEmits<{
