@@ -65,7 +65,7 @@
       </div>
       <div v-if="exportResult" class="sync-result">
         <div class="sync-result__title">导出结果</div>
-        <pre class="json-preview">{{ JSON.stringify(exportResult, null, 2) }}</pre>
+        <JsonPreview :data="exportResult" />
       </div>
     </div>
 
@@ -105,7 +105,7 @@
       </div>
       <div v-if="previewResult" class="sync-result">
         <div class="sync-result__title">预览结果</div>
-        <pre class="json-preview">{{ JSON.stringify(previewResult, null, 2) }}</pre>
+        <JsonPreview :data="previewResult" />
       </div>
     </div>
   </div>
@@ -117,6 +117,7 @@
   import { Download } from '@element-plus/icons-vue'
   import { exportConfigSync, previewConfigSync, importConfigSync } from '@/api/configReleases'
   import { useTenantStore } from '@/stores/tenant'
+  import JsonPreview from '@/components/common/JsonPreview.vue'
   import { useTenantReload } from '@/composables/useTenantReload'
 
   const tenant = useTenantStore()

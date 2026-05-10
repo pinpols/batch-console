@@ -12,7 +12,7 @@
               <span class="u-flex-1" />
               <el-button :loading="loadingLag" @click="loadKafkaLag">刷新</el-button>
             </div>
-            <pre v-if="kafkaLag" class="json-preview">{{ JSON.stringify(kafkaLag, null, 2) }}</pre>
+            <JsonPreview v-if="kafkaLag" :data="kafkaLag" />
             <el-empty v-else description="暂无数据" />
           </div>
 
@@ -36,9 +36,7 @@
                 >重发布</el-button
               >
             </div>
-            <pre v-if="outboxStats" class="json-preview">{{
-              JSON.stringify(outboxStats, null, 2)
-            }}</pre>
+            <JsonPreview v-if="outboxStats" :data="outboxStats" />
             <el-empty v-else description="暂无数据" />
           </div>
         </el-tab-pane>
@@ -54,9 +52,7 @@
 
           <div class="data-panel">
             <h3 class="section-title">集群概览</h3>
-            <pre v-if="clusterData" class="json-preview">{{
-              JSON.stringify(clusterData, null, 2)
-            }}</pre>
+            <JsonPreview v-if="clusterData" :data="clusterData" />
             <el-empty v-else description="暂无数据" />
           </div>
 
@@ -85,25 +81,19 @@
                 show-overflow-tooltip
               />
             </el-table>
-            <pre v-else-if="shedLockRaw" class="json-preview">{{
-              JSON.stringify(shedLockRaw, null, 2)
-            }}</pre>
+            <JsonPreview v-else-if="shedLockRaw" :data="shedLockRaw" />
             <el-empty v-else description="暂无数据" />
           </div>
 
           <div class="data-panel">
             <h3 class="section-title">Worker 一致性</h3>
-            <pre v-if="workerConsistency" class="json-preview">{{
-              JSON.stringify(workerConsistency, null, 2)
-            }}</pre>
+            <JsonPreview v-if="workerConsistency" :data="workerConsistency" />
             <el-empty v-else description="暂无数据" />
           </div>
 
           <div class="data-panel">
             <h3 class="section-title">Outbox 健康</h3>
-            <pre v-if="outboxHealth" class="json-preview">{{
-              JSON.stringify(outboxHealth, null, 2)
-            }}</pre>
+            <JsonPreview v-if="outboxHealth" :data="outboxHealth" />
             <el-empty v-else description="暂无数据" />
           </div>
         </el-tab-pane>
@@ -127,6 +117,7 @@
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
+  import JsonPreview from '@/components/common/JsonPreview.vue'
 
   const tenant = useTenantStore()
   const activeTab = ref('toolbox')

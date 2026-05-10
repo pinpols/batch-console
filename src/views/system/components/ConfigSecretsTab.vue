@@ -62,7 +62,7 @@
         <el-descriptions-item label="版本">{{ secretDetail.versionNo }}</el-descriptions-item>
         <el-descriptions-item label="状态">{{ secretDetail.secretStatus }}</el-descriptions-item>
         <el-descriptions-item label="原始响应">
-          <pre class="json-preview">{{ JSON.stringify(secretDetail, null, 2) }}</pre>
+          <JsonPreview :data="secretDetail" />
         </el-descriptions-item>
       </el-descriptions>
     </el-drawer>
@@ -80,6 +80,7 @@
   import TablePagerBar from '@/components/table/TablePagerBar.vue'
   import CopyableText from '@/components/common/CopyableText.vue'
   import DatetimeColumn from '@/components/common/DatetimeColumn.vue'
+  import JsonPreview from '@/components/common/JsonPreview.vue'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import type { ConsoleSecretVersionResponse } from '@/types/console-api'
 

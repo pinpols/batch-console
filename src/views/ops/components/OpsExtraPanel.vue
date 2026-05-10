@@ -9,7 +9,7 @@
     <div class="extra-panels">
       <div class="extra-block">
         <h4 class="extra-title">SLA 报告</h4>
-        <pre v-if="slaReport" class="json-preview">{{ JSON.stringify(slaReport, null, 2) }}</pre>
+        <JsonPreview v-if="slaReport" :data="slaReport" />
         <span v-else class="extra-empty">暂无数据</span>
       </div>
       <div class="extra-block">
@@ -23,9 +23,7 @@
       </div>
       <div class="extra-block">
         <h4 class="extra-title">租户用量</h4>
-        <pre v-if="tenantUsage" class="json-preview">{{
-          JSON.stringify(tenantUsage, null, 2)
-        }}</pre>
+        <JsonPreview v-if="tenantUsage" :data="tenantUsage" />
         <span v-else class="extra-empty">暂无数据</span>
       </div>
     </div>
@@ -36,6 +34,7 @@
   import { Refresh } from '@element-plus/icons-vue'
   import { RouterLink } from 'vue-router'
   import SectionCard from '@/components/common/SectionCard.vue'
+  import JsonPreview from '@/components/common/JsonPreview.vue'
 
   defineProps<{
     extraLoading: boolean

@@ -183,7 +183,7 @@
           channelDetailRow.updatedAt || '—'
         }}</el-descriptions-item>
         <el-descriptions-item label="原始响应" :span="2">
-          <pre class="json-preview">{{ JSON.stringify(channelDetailRow, null, 2) }}</pre>
+          <JsonPreview :data="channelDetailRow" />
         </el-descriptions-item>
       </el-descriptions>
     </el-drawer>
@@ -215,6 +215,7 @@
   import ProTable from '@/components/table/ProTable.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
   import CopyableText from '@/components/common/CopyableText.vue'
+  import JsonPreview from '@/components/common/JsonPreview.vue'
   import type { ConsoleWorkerRegistryResponse } from '@/types/console-api'
   import type { ConsoleFileChannelResponse } from '@/types/console-api'
 

@@ -143,7 +143,7 @@
     <TenantCopyConfigDialog v-model="copyVisible" :items="page.items" @result="showResult" />
 
     <el-dialog v-model="resultVisible" title="执行结果" width="640px">
-      <pre class="result-json">{{ resultJson }}</pre>
+      <JsonPreview class="result-json" :data="resultJson" />
       <template #footer>
         <el-button type="primary" @click="resultVisible = false">确定</el-button>
       </template>
@@ -173,6 +173,7 @@
   import SectionCard from '@/components/common/SectionCard.vue'
   import MetricCard from '@/components/common/MetricCard.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
+  import JsonPreview from '@/components/common/JsonPreview.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import TablePagerBar from '@/components/table/TablePagerBar.vue'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'

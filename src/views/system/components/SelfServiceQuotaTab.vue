@@ -6,7 +6,7 @@
         <span class="u-flex-1" />
         <el-button :loading="loadingQuota" @click="loadQuota">刷新</el-button>
       </div>
-      <pre v-if="quota" class="json-preview">{{ JSON.stringify(quota, null, 2) }}</pre>
+      <JsonPreview v-if="quota" :data="quota" />
       <el-empty v-else description="暂无配额数据" />
     </div>
 
@@ -16,7 +16,7 @@
         <span class="u-flex-1" />
         <el-button :loading="loadingUsage" @click="loadUsage">刷新</el-button>
       </div>
-      <pre v-if="usage" class="json-preview">{{ JSON.stringify(usage, null, 2) }}</pre>
+      <JsonPreview v-if="usage" :data="usage" />
       <el-empty v-else description="暂无用量数据" />
     </div>
   </div>
@@ -27,6 +27,7 @@
   import { getTenantQuota, getTenantUsage } from '@/api/tenantSelfService'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
+  import JsonPreview from '@/components/common/JsonPreview.vue'
 
   const tenant = useTenantStore()
   const loadingQuota = ref(false)

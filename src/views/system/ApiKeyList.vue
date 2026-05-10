@@ -113,7 +113,7 @@
         <el-descriptions-item label="revokedAt">{{ detail.revokedAt ?? '—' }}</el-descriptions-item>
         <el-descriptions-item label="revokedBy">{{ detail.revokedBy ?? '—' }}</el-descriptions-item>
         <el-descriptions-item label="原始响应">
-          <pre class="json-preview">{{ JSON.stringify(detail, null, 2) }}</pre>
+          <JsonPreview :data="detail" />
         </el-descriptions-item>
       </el-descriptions>
     </el-drawer>
@@ -134,6 +134,7 @@
   import ProTable from '@/components/table/ProTable.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
+  import JsonPreview from '@/components/common/JsonPreview.vue'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
 
   const tenant = useTenantStore()
