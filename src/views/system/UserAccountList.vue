@@ -3,14 +3,14 @@
     <PageHeader> </PageHeader>
 
     <div class="metrics">
-      <MetricCard label="账户总数" :value="page.total" />
-      <MetricCard label="已启用" :value="enabledCount" />
-      <MetricCard label="已停用" :value="disabledCount" />
+      <MetricCard :label="t('userAccountList.metricTotal')" :value="page.total" />
+      <MetricCard :label="t('userAccountList.metricEnabled')" :value="enabledCount" />
+      <MetricCard :label="t('userAccountList.metricDisabled')" :value="disabledCount" />
     </div>
 
     <SectionCard>
       <template #header>
-        <span>账户列表</span>
+        <span>{{ t('userAccountList.sectionTitle') }}</span>
       </template>
 
       <ListPageQueryBar
@@ -20,12 +20,12 @@
         @reset="onReset"
         @refresh="() => runRefresh(load)"
       >
-        <el-form-item label="关键字">
+        <el-form-item :label="t('userAccountList.keywordLabel')">
           <el-input
             class="query-w-220"
             v-model="queryDraft.keyword"
             clearable
-            placeholder="username / displayName"
+            :placeholder="t('userAccountList.keywordPlaceholder')"
             @keyup.enter="onSearch"
           />
         </el-form-item>
@@ -42,19 +42,28 @@
           :data="page.items"
           stripe
           border
-          empty-text="暂无数据"
+          :empty-text="t('common.noData')"
           class="console-table"
         >
-          <el-table-column prop="id" label="ID" width="80" />
-          <el-table-column prop="tenantId" label="租户 ID" min-width="160" />
-          <el-table-column prop="username" label="用户名" min-width="160" show-overflow-tooltip />
+          <el-table-column prop="id" :label="t('userAccountList.colId')" width="80" />
           <el-table-column
-            prop="displayName"
-            label="显示名"
+            prop="tenantId"
+            :label="t('userAccountList.colTenantId')"
+            min-width="160"
+          />
+          <el-table-column
+            prop="username"
+            :label="t('userAccountList.colUsername')"
             min-width="160"
             show-overflow-tooltip
           />
-          <el-table-column label="角色">
+          <el-table-column
+            prop="displayName"
+            :label="t('userAccountList.colDisplayName')"
+            min-width="160"
+            show-overflow-tooltip
+          />
+          <el-table-column :label="t('userAccountList.colRoles')">
             <template #default="{ row }">
               <div class="role-tags">
                 <el-tag
@@ -68,28 +77,33 @@
               </div>
             </template>
           </el-table-column>
-          <el-table-column label="状态" width="100">
+          <el-table-column :label="t('userAccountList.colStatus')" width="100">
             <template #default="{ row }">
               <StatusTag :value="String(row.enabled)" category="yn" />
             </template>
           </el-table-column>
-          <DatetimeColumn prop="createdAt" label="创建时间" width="160" />
-          <el-table-column label="操作" width="360" fixed="right">
+          <DatetimeColumn prop="createdAt" :label="t('userAccountList.colCreatedAt')" width="160" />
+          <el-table-column :label="t('userAccountList.colActions')" width="360" fixed="right">
             <template #default="{ row }">
               <div class="table-actions">
-                <el-button size="small" plain type="primary" @click="openEdit(row)">编辑</el-button>
-                <el-button size="small" plain @click="openResetPassword(row)">重置密码</el-button>
+                <el-button size="small" plain type="primary" @click="openEdit(row)">
+                  {{ t('userAccountList.actionEdit') }}
+                </el-button>
+                <el-button size="small" plain @click="openResetPassword(row)">
+                  {{ t('userAccountList.actionResetPassword') }}
+                </el-button>
                 <el-button
                   v-if="row.enabled"
                   size="small"
                   plain
                   type="warning"
                   @click="confirmDisable(row)"
-                  >停用</el-button
                 >
-                <el-button v-else size="small" plain type="success" @click="confirmEnable(row)"
-                  >启用</el-button
-                >
+                  {{ t('userAccountList.actionDisable') }}
+                </el-button>
+                <el-button v-else size="small" plain type="success" @click="confirmEnable(row)">
+                  {{ t('userAccountList.actionEnable') }}
+                </el-button>
               </div>
             </template>
           </el-table-column>
@@ -105,61 +119,72 @@
       />
     </SectionCard>
 
-    <!-- 编辑 -->
-    <el-dialog v-model="formVisible" :title="`编辑账户 · ${form.username}`" width="560px">
+    <el-dialog
+      v-model="formVisible"
+      :title="t('userAccountList.editTitle', { name: form.username })"
+      width="560px"
+    >
       <el-form label-width="100px">
-        <el-form-item label="所属租户">
+        <el-form-item :label="t('userAccountList.fieldTenant')">
           <TenantSelect
             v-model="form.tenantId"
             :disabled="true"
-            placeholder="归属租户"
+            :placeholder="t('userAccountList.fieldTenantPlaceholder')"
             select-class="query-w-full"
           />
         </el-form-item>
-        <el-form-item label="用户名">
+        <el-form-item :label="t('userAccountList.fieldUsername')">
           <el-input v-model="form.username" :disabled="true" maxlength="128" />
         </el-form-item>
-        <el-form-item label="显示名">
-          <el-input v-model="form.displayName" placeholder="可选" maxlength="256" />
+        <el-form-item :label="t('userAccountList.fieldDisplayName')">
+          <el-input
+            v-model="form.displayName"
+            :placeholder="t('userAccountList.fieldDisplayNamePlaceholder')"
+            maxlength="256"
+          />
         </el-form-item>
-        <el-form-item label="角色">
+        <el-form-item :label="t('userAccountList.fieldRoles')">
           <el-input
             v-model="form.authoritiesCsv"
-            placeholder="例:ADMIN, OPERATOR(留空 = 仅查看)"
+            :placeholder="t('userAccountList.fieldRolesPlaceholder')"
             maxlength="512"
           />
-          <div class="form-hint">
-            可选角色:管理员(ADMIN)/ 操作员(OPERATOR)/ 配置管理员(CONFIG_ADMIN)/ 审计员(AUDITOR)/
-            查看者(VIEWER) · 多个角色用半角逗号分隔
-          </div>
+          <div class="form-hint">{{ t('userAccountList.rolesHint') }}</div>
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="formVisible = false">取消</el-button>
-        <el-button type="primary" :loading="saving" @click="submitForm">保存</el-button>
+        <el-button @click="formVisible = false">{{ t('userAccountList.dialogCancel') }}</el-button>
+        <el-button type="primary" :loading="saving" @click="submitForm">
+          {{ t('userAccountList.dialogSave') }}
+        </el-button>
       </template>
     </el-dialog>
 
-    <!-- 重置密码 -->
     <el-dialog
       v-model="resetVisible"
-      :title="resetTarget ? `重置密码：${resetTarget.username}` : '重置密码'"
+      :title="
+        resetTarget
+          ? t('userAccountList.resetTitle', { name: resetTarget.username })
+          : t('userAccountList.resetTitleDefault')
+      "
       width="440px"
     >
       <el-form ref="resetFormRef" :model="resetForm" :rules="resetFormRules" label-width="100px">
-        <el-form-item label="新密码" prop="newPassword">
+        <el-form-item :label="t('userAccountList.fieldNewPassword')" prop="newPassword">
           <el-input
             v-model="resetForm.newPassword"
             type="password"
             show-password
-            placeholder="至少 8 个字符"
+            :placeholder="t('userAccountList.fieldNewPasswordPlaceholder')"
             maxlength="256"
           />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="resetVisible = false">取消</el-button>
-        <el-button type="primary" :loading="resetting" @click="submitReset">确认重置</el-button>
+        <el-button @click="resetVisible = false">{{ t('userAccountList.resetCancel') }}</el-button>
+        <el-button type="primary" :loading="resetting" @click="submitReset">
+          {{ t('userAccountList.resetSubmit') }}
+        </el-button>
       </template>
     </el-dialog>
   </PageContainer>
@@ -167,7 +192,10 @@
 
 <script setup lang="ts">
   import { computed, onMounted, reactive, ref } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
+
+  const { t } = useI18n({ useScope: 'global' })
   import type { FormRules } from 'element-plus'
   import { useFormValidate, rules } from '@/composables/useFormValidate'
   import {
@@ -301,7 +329,7 @@
         displayName: form.displayName || undefined,
         authoritiesCsv: form.authoritiesCsv || undefined,
       })
-      ElMessage.success('已更新')
+      ElMessage.success(t('userAccountList.updateSuccess'))
       formVisible.value = false
       await load()
     } finally {
@@ -316,7 +344,7 @@
 
   const { formRef: resetFormRef, validate: validateResetForm } = useFormValidate()
   const resetFormRules: FormRules = {
-    newPassword: [rules.required('新密码必填'), rules.minLength(8)],
+    newPassword: [rules.required(t('userAccountList.newPasswordRequired')), rules.minLength(8)],
   }
 
   function openResetPassword(row: UserAccount) {
@@ -331,7 +359,7 @@
     resetting.value = true
     try {
       await resetUserPassword(resetTarget.value.id, { newPassword: resetForm.newPassword })
-      ElMessage.success('密码已重置')
+      ElMessage.success(t('userAccountList.resetSuccess'))
       resetVisible.value = false
     } finally {
       resetting.value = false
@@ -341,9 +369,17 @@
   // --- 启停 / 删除 ---
   async function confirmEnable(row: UserAccount) {
     try {
-      await ElMessageBox.confirm(`启用账户 ${row.username}？`, '启用账户', { type: 'info' })
+      await ElMessageBox.confirm(
+        t('userAccountList.enableConfirmText', { name: row.username }),
+        t('userAccountList.enableConfirmTitle'),
+        {
+          type: 'info',
+          confirmButtonText: t('common.confirm'),
+          cancelButtonText: t('common.cancel'),
+        },
+      )
       await enableUser(row.id)
-      ElMessage.success('已启用')
+      ElMessage.success(t('userAccountList.enableSuccess'))
       await load()
     } catch {
       /* cancel */
@@ -353,14 +389,16 @@
   async function confirmDisable(row: UserAccount) {
     try {
       await ElMessageBox.confirm(
-        `停用账户 ${row.username} 后该用户将无法登录，继续？`,
-        '停用账户',
+        t('userAccountList.disableConfirmText', { name: row.username }),
+        t('userAccountList.disableConfirmTitle'),
         {
           type: 'warning',
+          confirmButtonText: t('common.confirm'),
+          cancelButtonText: t('common.cancel'),
         },
       )
       await disableUser(row.id)
-      ElMessage.success('已停用')
+      ElMessage.success(t('userAccountList.disableSuccess'))
       await load()
     } catch {
       /* cancel */
