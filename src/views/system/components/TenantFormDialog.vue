@@ -1,26 +1,39 @@
 <template>
   <el-dialog
     :model-value="modelValue"
-    :title="editing ? `编辑租户 · ${form.tenantId}` : '新增租户'"
+    :title="
+      editing
+        ? t('tenantFormDialog.titleEdit', { id: form.tenantId })
+        : t('tenantFormDialog.titleCreate')
+    "
     width="540px"
     @update:model-value="(v) => emit('update:modelValue', v)"
   >
     <el-form ref="formRef" :model="form" :rules="formRules" label-width="92px">
-      <el-form-item label="租户 ID" prop="tenantId">
-        <el-input v-model="form.tenantId" :disabled="editing" placeholder="例如:acme-prod" />
+      <el-form-item :label="t('tenantFormDialog.fieldTenantId')" prop="tenantId">
+        <el-input
+          v-model="form.tenantId"
+          :disabled="editing"
+          :placeholder="t('tenantFormDialog.tenantIdPlaceholder')"
+        />
         <div class="form-hint">
-          小写字母 / 数字 / 短横线,2-64 位,首尾字母或数字 · <strong>创建后不可修改</strong>
+          {{ t('tenantFormDialog.tenantIdHint') }} ·
+          <strong>{{ t('tenantFormDialog.tenantIdHintLocked') }}</strong>
         </div>
       </el-form-item>
-      <el-form-item label="名称" prop="tenantName">
-        <el-input v-model="form.tenantName" placeholder="租户显示名称" maxlength="256" />
+      <el-form-item :label="t('tenantFormDialog.fieldTenantName')" prop="tenantName">
+        <el-input
+          v-model="form.tenantName"
+          :placeholder="t('tenantFormDialog.tenantNamePlaceholder')"
+          maxlength="256"
+        />
       </el-form-item>
-      <el-form-item label="描述" prop="description">
+      <el-form-item :label="t('tenantFormDialog.fieldDescription')" prop="description">
         <el-input
           v-model="form.description"
           type="textarea"
           :autosize="{ minRows: 2, maxRows: 4 }"
-          placeholder="可选"
+          :placeholder="t('tenantFormDialog.descriptionPlaceholder')"
           maxlength="512"
           show-word-limit
         />
@@ -28,38 +41,40 @@
 
       <template v-if="!editing">
         <el-divider content-position="left">
-          <span class="section-divider__text">首位管理员账号</span>
+          <span class="section-divider__text">{{ t('tenantFormDialog.sectionAdmin') }}</span>
         </el-divider>
         <el-alert
           type="info"
           :closable="false"
           show-icon
           class="form-alert"
-          title="新租户需要先有一个管理员账号才能登录,这里同时创建首位管理员。后续可在「登录账户」页继续添加更多账号。"
+          :title="t('tenantFormDialog.adminAlert')"
         />
-        <el-form-item label="账号名" prop="username">
+        <el-form-item :label="t('tenantFormDialog.fieldUsername')" prop="username">
           <el-input
             v-model="form.username"
-            placeholder="例:admin、op-acme(字母 / 数字 / . _ -)"
+            :placeholder="t('tenantFormDialog.usernamePlaceholder')"
             maxlength="128"
           />
         </el-form-item>
-        <el-form-item label="初始密码" prop="password">
+        <el-form-item :label="t('tenantFormDialog.fieldPassword')" prop="password">
           <el-input
             v-model="form.password"
             type="password"
             show-password
-            placeholder="≥ 12 位,建议大小写字母 + 数字混合"
+            :placeholder="t('tenantFormDialog.passwordPlaceholder')"
             maxlength="256"
           />
-          <div class="form-hint">用户首次登录后应立即修改</div>
+          <div class="form-hint">{{ t('tenantFormDialog.passwordHint') }}</div>
         </el-form-item>
       </template>
     </el-form>
     <template #footer>
-      <el-button @click="emit('update:modelValue', false)">取消</el-button>
+      <el-button @click="emit('update:modelValue', false)">
+        {{ t('tenantConfigShared.cancel') }}
+      </el-button>
       <el-button type="primary" :loading="saving" @click="submit">
-        {{ editing ? '保存' : '创建' }}
+        {{ editing ? t('tenantFormDialog.btnSave') : t('tenantFormDialog.btnCreate') }}
       </el-button>
     </template>
   </el-dialog>
@@ -67,7 +82,10 @@
 
 <script setup lang="ts">
   import { computed, reactive, ref, watch } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
+
+  const { t } = useI18n({ useScope: 'global' })
   import type { FormRules } from 'element-plus'
   import { createTenant, updateTenant, type Tenant } from '@/api/tenants'
   import { useFormValidate, rules } from '@/composables/useFormValidate'
@@ -99,25 +117,25 @@
   // 新建态下要走完整规则
   const formRules = computed<FormRules>(() => {
     const base: FormRules = {
-      tenantName: [rules.required('名称必填'), rules.maxLength(256)],
+      tenantName: [rules.required(t('tenantFormDialog.ruleTenantName')), rules.maxLength(256)],
     }
     if (!editing.value) {
       Object.assign(base, {
         tenantId: [
-          rules.required('tenantId 必填'),
+          rules.required(t('tenantFormDialog.ruleTenantId')),
           rules.pattern(
             /^[a-z0-9][a-z0-9-]{0,62}[a-z0-9]$/,
-            '小写字母/数字/短横线,长度 2-64,首尾字母或数字',
+            t('tenantFormDialog.ruleTenantIdPattern'),
           ),
         ],
         username: [
-          rules.required('账号名必填'),
-          rules.pattern(/^[a-zA-Z0-9][a-zA-Z0-9._-]+$/, '字母 / 数字 / . _ -,首字符须字母或数字'),
+          rules.required(t('tenantFormDialog.ruleUsername')),
+          rules.pattern(/^[a-zA-Z0-9][a-zA-Z0-9._-]+$/, t('tenantFormDialog.ruleUsernamePattern')),
           rules.minLength(2),
         ],
         // BE 实际接受 ≥8,FE 加严到 ≥12 与「批量新增」「BE BatchCreateTenantRequest」对齐,
         // 避免单租户用 8 位弱密码后批量场景又要求 12 的不一致体验
-        password: [rules.required('初始密码必填'), rules.minLength(12)],
+        password: [rules.required(t('tenantFormDialog.rulePassword')), rules.minLength(12)],
       })
     }
     return base
@@ -147,7 +165,7 @@
           tenantName: form.tenantName.trim(),
           description: form.description || undefined,
         })
-        ElMessage.success('已更新')
+        ElMessage.success(t('tenantFormDialog.toastUpdated'))
       } else {
         await createTenant({
           tenantId,

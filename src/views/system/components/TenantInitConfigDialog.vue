@@ -1,44 +1,39 @@
 <template>
   <el-dialog
     :model-value="modelValue"
-    title="初始化租户配置"
+    :title="t('tenantInitConfigDialog.title')"
     width="640px"
     @update:model-value="(v) => emit('update:modelValue', v)"
   >
-    <!-- 体检"痛点 7":手写 JSON 只有原作者能完成。先把人引到"复制配置"快路径,
-         避免他们在这里手写 spec — 复制是无 JSON、有 dryRun 的 wizard 版,真正常用的入口 -->
     <el-alert type="warning" :closable="false" show-icon class="mb-12">
       <template #title>
-        <strong>高级路径 — 需手写 Spec JSON。</strong>
-        日常推荐用「页头 → 复制配置」从源租户(default 模板或同业务租户)一键复制,无需写 JSON。
+        <strong>{{ t('tenantInitConfigDialog.advancedAlertStrong') }}</strong>
+        {{ t('tenantInitConfigDialog.advancedAlert') }}
       </template>
     </el-alert>
     <el-alert type="info" :closable="false" show-icon class="mb-12">
-      <template #title>
-        把一份配置 JSON 写入目标租户,可覆盖全部 10 类配置(作业 / 工作流 / 流水线 / 文件渠道 / 模板 /
-        队列 / 窗口 / 日历 / 配额 / 告警路由)。
-      </template>
+      <template #title>{{ t('tenantInitConfigDialog.descAlert') }}</template>
     </el-alert>
     <el-form ref="initFormRef" :model="form" :rules="initFormRules" label-width="100px">
-      <el-form-item label="目标租户">
+      <el-form-item :label="t('tenantInitConfigDialog.fieldTarget')">
         <el-tag>{{ form.targetTenantId }}</el-tag>
       </el-form-item>
-      <el-form-item label="配置类型" prop="configTypes">
+      <el-form-item :label="t('tenantConfigShared.configTypeLabel')" prop="configTypes">
         <el-checkbox-group v-model="form.configTypes">
           <el-checkbox v-for="ct in ALL_CONFIG_TYPES" :key="ct" :label="ct" :value="ct" />
         </el-checkbox-group>
-        <div class="form-hint">留空表示全部 10 个类型</div>
+        <div class="form-hint">{{ t('tenantConfigShared.configTypeHintAll') }}</div>
       </el-form-item>
-      <el-form-item label="写入模式" prop="mode">
+      <el-form-item :label="t('tenantConfigShared.writeModeLabel')" prop="mode">
         <el-radio-group v-model="form.mode">
-          <el-radio value="SKIP_EXISTING">仅补缺失项</el-radio>
-          <el-radio value="UPSERT">覆盖更新已有</el-radio>
+          <el-radio value="SKIP_EXISTING">{{ t('tenantConfigShared.modeSkipExisting') }}</el-radio>
+          <el-radio value="UPSERT">{{ t('tenantConfigShared.modeUpsert') }}</el-radio>
         </el-radio-group>
         <div class="form-hint">
           {{
             form.mode === 'SKIP_EXISTING'
-              ? '已存在的配置保持不动,只新建源租户里多出来的'
-              : '已存在的配置会被源租户的版本覆盖,慎用'
+              ? t('tenantInitConfigDialog.modeHintSkip')
+              : t('tenantInitConfigDialog.modeHintUpsert')
           }}
         </div>
       </el-form-item>
@@ -47,22 +42,22 @@
           v-model="form.specJson"
           type="textarea"
           :autosize="{ minRows: 8, maxRows: 20 }"
-          placeholder='完整的配置 JSON,例如 {"jobDefinitions":[...],"workflowDefinitions":[...]}'
+          :placeholder="t('tenantInitConfigDialog.specPlaceholder')"
           style="font-family: var(--font-family-mono, monospace); font-size: 12px"
         />
       </el-form-item>
     </el-form>
     <template #footer>
-      <el-button @click="emit('update:modelValue', false)">取消</el-button>
-      <!-- 体检"痛点 8":dryRun 开关藏一层心智成本,容易把试运行当正式执行;
-           改成两个明确按钮 — 灰色试运行 + 红色正式执行,主次和后果一眼能看 -->
+      <el-button @click="emit('update:modelValue', false)">
+        {{ t('tenantConfigShared.cancel') }}
+      </el-button>
       <el-button
         plain
         :loading="saving && lastDryRun"
         :disabled="saving && !lastDryRun"
         @click="submit(true)"
       >
-        试运行预览
+        {{ t('tenantConfigShared.dryRunPreview') }}
       </el-button>
       <el-button
         type="danger"
@@ -70,7 +65,7 @@
         :disabled="saving && lastDryRun"
         @click="submit(false)"
       >
-        正式执行初始化
+        {{ t('tenantInitConfigDialog.btnRunFormal') }}
       </el-button>
     </template>
   </el-dialog>
@@ -78,7 +73,10 @@
 
 <script setup lang="ts">
   import { reactive, ref, watch } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
+
+  const { t } = useI18n({ useScope: 'global' })
   import type { FormRules } from 'element-plus'
   import { batchInitTenantConfig, type ConfigType } from '@/api/ops'
   import { ALL_CONFIG_TYPES } from './tenantConfigTypes'
@@ -106,7 +104,7 @@
 
   const { formRef: initFormRef, validate: validateInitForm } = useFormValidate()
   const initFormRules: FormRules = {
-    specJson: [rules.required('Spec JSON 必填')],
+    specJson: [rules.required(t('tenantInitConfigDialog.ruleSpec'))],
   }
 
   watch(
@@ -127,7 +125,7 @@
     try {
       spec = JSON.parse(form.specJson)
     } catch {
-      ElMessage.error('JSON 格式不合法')
+      ElMessage.error(t('tenantInitConfigDialog.errInvalidJson'))
       return
     }
     saving.value = true
@@ -142,7 +140,7 @@
       })
       emit('result', res)
       if (!dryRun) {
-        ElMessage.success('初始化完成')
+        ElMessage.success(t('tenantInitConfigDialog.toastDone'))
         emit('update:modelValue', false)
       }
     } finally {
