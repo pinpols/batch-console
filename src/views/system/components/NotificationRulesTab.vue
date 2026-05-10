@@ -3,6 +3,8 @@
     <ProTable
       :data="pagedRules"
       :loading="loadingRules"
+      :error="loadRulesError"
+      :on-retry="loadRules"
       :total="filteredRules.length"
       v-model:page="rulePage"
       v-model:page-size="rulePageSize"
@@ -121,9 +123,10 @@
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
+  import { useListLoadState } from '@/composables/useListLoadState'
 
   const tenant = useTenantStore()
-  const loadingRules = ref(false)
+  const { loading: loadingRules, error: loadRulesError, run: runLoadingRules } = useListLoadState()
   const { filterBusy, runSearch, runReset, runRefresh } = useListFilterFeedback(loadingRules)
   const savingRule = ref(false)
   const ruleFormVisible = ref(false)
@@ -136,15 +139,12 @@
   const ruleForm = reactive({ ruleName: '', eventTypes: '', channelId: 1, enabled: true })
 
   async function loadRules() {
-    loadingRules.value = true
-    try {
+    await runLoadingRules(async () => {
       const data = await listNotificationRules(tenant.tenantId)
       rules.value = Array.isArray(data) ? (data as Record<string, unknown>[]) : []
-    } catch {
+    }).catch(() => {
       rules.value = []
-    } finally {
-      loadingRules.value = false
-    }
+    })
   }
 
   function openRuleCreate() {

@@ -6,6 +6,8 @@
     v-model:page="page"
     v-model:page-size="pageSize"
     @change="slicePage"
+    :error="loadError"
+    :on-retry="load"
   >
     <template #query>
       <ListPageQueryBar
@@ -81,6 +83,7 @@
 
   const tenant = useTenantStore()
   const loading = ref(false)
+  const loadError = ref<unknown>(null)
   const {
     filterBusy: queryActionBusy,
     tableBlocking,
@@ -154,6 +157,7 @@
 
   async function load() {
     loading.value = true
+    loadError.value = null
     try {
       allRows.value = await fetchAllPageItems<ConsolePendingCatchUpResponse>(
         '/api/console/queries/catch-up-approvals',
@@ -161,7 +165,8 @@
       )
       page.value = 1
       slicePage()
-    } catch {
+    } catch (err) {
+      loadError.value = err
       allRows.value = []
       slicePage()
     } finally {

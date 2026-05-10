@@ -17,6 +17,8 @@
         v-model:page-size="pageSize"
         :has-active-filters="!!keyword"
         @change="slicePage"
+        :error="loadError"
+        :on-retry="load"
       >
         <template #query>
           <ListPageQueryBar
@@ -100,6 +102,7 @@
 
   const tenant = useTenantStore()
   const loading = ref(false)
+  const loadError = ref<unknown>(null)
   const { filterBusy, tableBlocking, runSearch, runReset, runRefresh } =
     useListFilterFeedback(loading)
   const saving = ref(false)
@@ -140,6 +143,7 @@
 
   async function load() {
     loading.value = true
+    loadError.value = null
     try {
       const data = await listSystemParameters(tenant.tenantId)
       allRows.value = Array.isArray(data)
@@ -148,7 +152,8 @@
             key,
             value: String(value),
           }))
-    } catch {
+    } catch (err) {
+      loadError.value = err
       allRows.value = []
     } finally {
       loading.value = false

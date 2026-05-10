@@ -10,6 +10,8 @@
         v-model:page="page"
         v-model:page-size="pageSize"
         @change="load"
+        :error="loadError"
+        :on-retry="load"
       >
         <template #query>
           <ListPageQueryBar
@@ -192,6 +194,7 @@
   const tenant = useTenantStore()
 
   const loading = ref(false)
+  const loadError = ref<unknown>(null)
   const { filterBusy, tableBlocking, runSearch, runReset, runRefresh } =
     useListFilterFeedback(loading)
   const rows = ref<ConsoleWorkflowDefinitionResponse[]>([])
@@ -227,6 +230,7 @@
 
   async function load() {
     loading.value = true
+    loadError.value = null
     try {
       // listDefinitions 内部已做全量拉取 + 过滤 + 分页，直接使用结果
       const result = await workflowApi.listDefinitions({
@@ -243,6 +247,9 @@
       allRows.value = result.allItems
       rows.value = result.records
       total.value = result.total
+    } catch (err) {
+      loadError.value = err
+      throw err
     } finally {
       loading.value = false
     }

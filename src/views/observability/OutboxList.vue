@@ -12,6 +12,8 @@
             v-model:page="retryPage"
             v-model:page-size="retryPageSize"
             @change="sliceRetry"
+            :error="loadError"
+            :on-retry="loadTab"
           >
             <template #query>
               <ListPageQueryBar
@@ -185,6 +187,7 @@
   const tenant = useTenantStore()
   const tab = ref<'retry' | 'delivery'>('retry')
   const loading = ref(false)
+  const loadError = ref<unknown>(null)
   const {
     filterBusy: queryActionBusy,
     tableBlocking,
@@ -340,6 +343,7 @@
 
   async function loadTab() {
     loading.value = true
+    loadError.value = null
     try {
       if (tab.value === 'retry') {
         retriesAll.value = await queryOutboxRetries(tenant.tenantId, {

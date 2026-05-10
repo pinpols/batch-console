@@ -10,6 +10,8 @@
         v-model:page="page"
         v-model:page-size="pageSize"
         @change="load"
+        :error="loadError"
+        :on-retry="load"
       >
         <template #query>
           <ListPageQueryBar
@@ -137,6 +139,7 @@
 
   const tenant = useTenantStore()
   const loading = ref(false)
+  const loadError = ref<unknown>(null)
   const {
     filterBusy: queryActionBusy,
     runRefresh,
@@ -196,10 +199,14 @@
 
   async function load() {
     loading.value = true
+    loadError.value = null
     try {
       const pr = await queryFileTemplates(tenant.tenantId, 1, 200)
       allRows.value = (pr.items ?? []) as ConsoleFileTemplateResponse[]
       syncPage()
+    } catch (err) {
+      loadError.value = err
+      throw err
     } finally {
       loading.value = false
     }

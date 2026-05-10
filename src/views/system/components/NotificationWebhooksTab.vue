@@ -3,6 +3,8 @@
     <ProTable
       :data="pagedWebhookRows"
       :loading="loadingWebhooks"
+      :error="loadWebhooksError"
+      :on-retry="loadWebhooks"
       :total="filteredWebhooks.length"
       v-model:page="webhookPage"
       v-model:page-size="webhookPageSize"
@@ -127,9 +129,14 @@
   import StatusTag from '@/components/common/StatusTag.vue'
   import DatetimeColumn from '@/components/common/DatetimeColumn.vue'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
+  import { useListLoadState } from '@/composables/useListLoadState'
 
   const tenant = useTenantStore()
-  const loadingWebhooks = ref(false)
+  const {
+    loading: loadingWebhooks,
+    error: loadWebhooksError,
+    run: runLoadingWebhooks,
+  } = useListLoadState()
   const { filterBusy, runSearch, runReset, runRefresh } = useListFilterFeedback(loadingWebhooks)
   const savingWebhook = ref(false)
   const webhookFormVisible = ref(false)
@@ -144,14 +151,11 @@
   const webhookForm = reactive({ url: '', eventTypes: '', enabled: true })
 
   async function loadWebhooks() {
-    loadingWebhooks.value = true
-    try {
+    await runLoadingWebhooks(async () => {
       webhookRows.value = (await listWebhooks(tenant.tenantId)) as Record<string, unknown>[]
-    } catch {
+    }).catch(() => {
       webhookRows.value = []
-    } finally {
-      loadingWebhooks.value = false
-    }
+    })
   }
 
   function openWebhookCreate() {

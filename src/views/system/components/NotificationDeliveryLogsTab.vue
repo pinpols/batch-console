@@ -2,6 +2,8 @@
   <ProTable
     :data="pagedDeliveryLogs"
     :loading="loadingLogs"
+    :error="loadLogsError"
+    :on-retry="loadDeliveryLogs"
     :total="filteredDeliveryLogs.length"
     v-model:page="logPage"
     v-model:page-size="logPageSize"
@@ -82,12 +84,13 @@
   import StatusTag from '@/components/common/StatusTag.vue'
   import DatetimeColumn from '@/components/common/DatetimeColumn.vue'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
+  import { useListLoadState } from '@/composables/useListLoadState'
 
   const tenant = useTenantStore()
   const { data: metaEnums } = useConsoleMetaEnumsQuery()
   const deliveryStatusOptions = computed(() => pickMetaEnumGroup(metaEnums.value, 'deliveryStatus'))
 
-  const loadingLogs = ref(false)
+  const { loading: loadingLogs, error: loadLogsError, run: runLoadLogs } = useListLoadState()
   const { filterBusy, runSearch, runReset, runRefresh } = useListFilterFeedback(loadingLogs)
   const deliveryLogs = ref<Record<string, unknown>[]>([])
   const logPage = ref(1)
@@ -96,15 +99,12 @@
   const logFilterApplied = reactive({ keyword: '', status: '' })
 
   async function loadDeliveryLogs() {
-    loadingLogs.value = true
-    try {
+    await runLoadLogs(async () => {
       const data = await listNotificationDeliveryLogs(tenant.tenantId)
       deliveryLogs.value = Array.isArray(data) ? (data as Record<string, unknown>[]) : []
-    } catch {
+    }).catch(() => {
       deliveryLogs.value = []
-    } finally {
-      loadingLogs.value = false
-    }
+    })
   }
 
   function normalize(s: unknown) {

@@ -16,6 +16,8 @@
         v-model:page="page"
         v-model:page-size="pageSize"
         @change="load"
+        :error="loadError"
+        :on-retry="load"
       >
         <template #query>
           <ListPageQueryBar
@@ -199,6 +201,7 @@
   const tenant = useTenantStore()
   const formRef = ref<FormInstance>()
   const loading = ref(false)
+  const loadError = ref<unknown>(null)
   const { filterBusy, tableBlocking, runSearch, runReset, runRefresh } =
     useListFilterFeedback(loading)
   const togglingId = ref<number | null>(null)
@@ -283,6 +286,7 @@
 
   async function load() {
     loading.value = true
+    loadError.value = null
     try {
       const pr = await queryPipelineDefinitions(tenant.tenantId, 1, 200)
       allRows.value = pr.items

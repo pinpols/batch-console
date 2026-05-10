@@ -224,6 +224,7 @@
   const tenant = useTenantStore()
   const activeTab = ref<'pipelines' | 'steps' | 'dispatches' | 'errors'>('pipelines')
   const loading = ref(false)
+  const loadError = ref<unknown>(null)
   const {
     filterBusy: queryActionBusy,
     tableBlocking,

@@ -138,6 +138,7 @@
   import { chatWithAi } from '@/api/system'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
+  import { useListLoadState } from '@/composables/useListLoadState'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
   import PageContainer from '@/components/common/PageContainer.vue'
@@ -164,7 +165,7 @@
   const conversationId = ref('')
   const messages = ref<ChatMessage[]>([])
 
-  const auditLoading = ref(false)
+  const { loading: auditLoading, error: auditLoadError, run: runLoadAudits } = useListLoadState()
   const {
     filterBusy: auditQueryBusy,
     tableBlocking: auditTableBlocking,
@@ -257,8 +258,7 @@
   }
 
   async function loadAudits() {
-    auditLoading.value = true
-    try {
+    await runLoadAudits(async () => {
       auditAll.value = await fetchAllPageItems<AiAuditLogResponse>(
         '/api/console/queries/ai-audits',
         {
@@ -267,12 +267,10 @@
       )
       auditPage.value = 1
       sliceAuditPage()
-    } catch {
+    }).catch(() => {
       auditAll.value = []
       sliceAuditPage()
-    } finally {
-      auditLoading.value = false
-    }
+    })
   }
 
   if (route.query.tab === 'audits') activeTab.value = 'audits'

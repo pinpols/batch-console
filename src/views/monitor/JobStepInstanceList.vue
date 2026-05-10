@@ -10,6 +10,8 @@
         v-model:page="page"
         v-model:page-size="pageSize"
         @change="slicePage"
+        :error="loadError"
+        :on-retry="load"
       >
         <template #query>
           <ListPageQueryBar
@@ -100,6 +102,7 @@
   const router = useRouter()
   const tenant = useTenantStore()
   const loading = ref(false)
+  const loadError = ref<unknown>(null)
   const {
     filterBusy: queryActionBusy,
     runSearch,
@@ -154,6 +157,7 @@
 
   async function load() {
     loading.value = true
+    loadError.value = null
     try {
       allRows.value = await fetchAllPageItems<ConsoleJobStepInstanceResponse>(
         '/api/console/queries/job-step-instances',
@@ -161,6 +165,9 @@
       )
       page.value = 1
       slicePage()
+    } catch (err) {
+      loadError.value = err
+      throw err
     } finally {
       loading.value = false
     }
