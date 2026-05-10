@@ -98,6 +98,16 @@ const messages: Messages = {
       ariaLabel: 'Bottom navigation',
     },
   },
+  network: {
+    offline: 'You are offline. Please check your connection.',
+    online: 'Back online',
+  },
+  pwa: {
+    updateReady: 'A new version is ready — refresh to get the latest.',
+    updateNow: 'Refresh now',
+    updateLater: 'Later',
+    offlineReady: 'The console core features are now available offline.',
+  },
   copy: {
     success: 'Copied',
     linkSuccess: 'Link copied',

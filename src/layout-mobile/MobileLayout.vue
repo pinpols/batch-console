@@ -9,6 +9,7 @@
       </router-view>
     </main>
     <MobileTabBar />
+    <SwUpdatePrompt />
   </div>
 </template>
 
@@ -16,6 +17,7 @@
   import { onMounted, watch } from 'vue'
   import MobileAppBar from './MobileAppBar.vue'
   import MobileTabBar from './MobileTabBar.vue'
+  import SwUpdatePrompt from '@/components/common/SwUpdatePrompt.vue'
   import './styles/mobile-common.css'
   import { useMobileBadgesStore } from '@/stores/mobileBadges'
   import { useTenantStore } from '@/stores/tenant'

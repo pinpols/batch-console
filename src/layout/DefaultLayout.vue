@@ -35,6 +35,7 @@
     </el-container>
 
     <CommandPalette v-model="paletteOpen" :groups="visibleGroups" :recent-tabs="tabsStore.list" />
+    <SwUpdatePrompt />
   </el-container>
 </template>
 
@@ -44,6 +45,7 @@
   import { FullScreen } from '@element-plus/icons-vue'
   import CommandPalette from '@/components/common/CommandPalette.vue'
   import ErrorBoundary from '@/components/common/ErrorBoundary.vue'
+  import SwUpdatePrompt from '@/components/common/SwUpdatePrompt.vue'
   import LayoutSidebar from '@/layout/LayoutSidebar.vue'
   import LayoutHeader from '@/layout/components/LayoutHeader.vue'
   import { useHeaderLogic } from '@/layout/composables/useHeaderLogic'
