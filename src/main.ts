@@ -25,7 +25,9 @@ import { trackClickDirective } from '@/directives/trackClick'
 import { safeHtmlDirective } from '@/directives/safeHtml'
 import { initLogger, logClick, logError } from '@/utils/logger'
 import { initSentry } from '@/utils/sentry'
-import '@/charts/echarts'
+import { initWebVitals } from '@/utils/webVitals'
+// echarts 初始化挪到 OpsSummary.vue 顶部 import,跟随路由 lazy chunk 加载,
+// 不进首屏。非运维页用户(配置员/审批员等)少下 ~181 KB gzip。
 import '@/styles/app.css'
 
 /** 下拉面板与选择框同宽（默认仅用 minWidth，弹层常宽于触发器） */
@@ -69,6 +71,9 @@ app.directive('safe-html', safeHtmlDirective)
 
 // ---- 前端操作日志系统（本地 buffer + localStorage 兜底 + 批量上报 /api/console/telemetry/events） ----
 initLogger()
+
+// ---- Web Vitals(LCP / CLS / INP / FCP / TTFB)→ logger,生产环境用,给后续优化建测量基线 ----
+initWebVitals()
 
 // ---- Sentry 错误监控 ----
 initSentry({

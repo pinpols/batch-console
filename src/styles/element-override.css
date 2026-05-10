@@ -840,3 +840,46 @@ html.dark .el-drawer {
     -webkit-backdrop-filter: none;
   }
 }
+
+/**
+ * 全局 :focus-visible 主色描边环 — a11y baseline
+ * 仅键盘导航时显示(:focus-visible 自动屏蔽鼠标点击 focus),
+ * 鼠标用户视觉无干扰,键盘 / 屏阅读器用户能清晰追踪当前焦点。
+ *
+ * 覆盖 EP 所有交互组件 + 原生 button/a/input/select/textarea。
+ * 用 outline 而非 box-shadow,不影响 layout(box-shadow 在某些 EP 组件里被覆盖)。
+ */
+.el-button:focus-visible,
+.el-input__wrapper:focus-within,
+.el-select__wrapper:focus-within,
+.el-textarea__inner:focus-visible,
+.el-checkbox__input.is-focus .el-checkbox__inner,
+.el-radio__input.is-focus .el-radio__inner,
+.el-tabs__item:focus-visible,
+.el-pagination button:focus-visible,
+.el-dropdown-menu__item:focus-visible,
+.el-menu-item:focus-visible,
+.el-link:focus-visible,
+button:focus-visible,
+a:focus-visible,
+[role='button']:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--color-primary) 70%, transparent);
+  outline-offset: 2px;
+  border-radius: var(--radius-input, 8px);
+}
+
+/* el-input / el-select 内部 wrapper focus 用 box-shadow 而非 outline,避免 input 边框双重 */
+.el-input__wrapper:focus-within,
+.el-select__wrapper:focus-within {
+  outline: none;
+  box-shadow:
+    0 0 0 1px var(--color-primary),
+    0 0 0 4px color-mix(in srgb, var(--color-primary) 22%, transparent) !important;
+}
+
+/* 表格行 focus(键盘 Tab 进入) */
+.el-table__body tr:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--color-primary) 70%, transparent);
+  outline-offset: -2px;
+}

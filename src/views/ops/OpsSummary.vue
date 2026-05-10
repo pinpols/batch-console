@@ -67,6 +67,9 @@
 </template>
 
 <script setup lang="ts">
+  // echarts/core 模块注册:本页是 echarts 的唯一使用入口,从 main.ts 挪到这里以
+  // 跟随路由 lazy chunk 加载,首屏不下 echarts(~181 KB gzip)。
+  import '@/charts/echarts'
   import { Refresh } from '@element-plus/icons-vue'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'

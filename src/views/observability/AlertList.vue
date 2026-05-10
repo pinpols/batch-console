@@ -6,6 +6,8 @@
       <ProTable
         :data="rows"
         :loading="tableBlocking"
+        :error="loadError"
+        :on-retry="load"
         :total="total"
         v-model:page="page"
         v-model:page-size="pageSize"
@@ -246,11 +248,16 @@
     rows.value = pr.records as ConsoleAlertEventResponse[]
   }
 
+  const loadError = ref<unknown>(null)
   async function load() {
     loading.value = true
+    loadError.value = null
     try {
       allRows.value = await queryAlertsAll(filters.tenantId || tenant.tenantId)
       slicePage()
+    } catch (err) {
+      loadError.value = err
+      throw err
     } finally {
       loading.value = false
     }

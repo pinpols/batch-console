@@ -6,6 +6,8 @@
       <ProTable
         :data="rows"
         :loading="tableBlocking"
+        :error="loadError"
+        :on-retry="load"
         :total="total"
         v-model:page="page"
         v-model:page-size="pageSize"
@@ -170,8 +172,10 @@
     return hit?.id
   }
 
+  const loadError = ref<unknown>(null)
   async function load() {
     loading.value = true
+    loadError.value = null
     try {
       const defId = resolveDefId()
       const code = workflowCode.value.trim()
@@ -189,6 +193,9 @@
       })
       rows.value = pr.records
       total.value = pr.total
+    } catch (err) {
+      loadError.value = err
+      throw err
     } finally {
       loading.value = false
     }
