@@ -66,7 +66,7 @@
   import type { PageTab } from '@/stores/tabs'
   import { pathToKey } from '@/constants/pathKey'
 
-  const { t, te } = useI18n()
+  const { t, te } = useI18n({ useScope: 'global' })
 
   function resolvePageTitle(path: string, fallback: string): string {
     const key = `page.${pathToKey(path)}.title`

@@ -140,7 +140,7 @@
   const app = useAppStore()
   const tabsStore = useTabsStore()
   const overflowOpen = ref(false)
-  const { t, te } = useI18n()
+  const { t, te } = useI18n({ useScope: 'global' })
 
   function resolveTabTitle(tab: PageTab): string {
     const key = `page.${pathToKey(tab.path)}.title`

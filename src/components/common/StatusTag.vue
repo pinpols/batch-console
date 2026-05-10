@@ -25,7 +25,7 @@
   )
 
   const { data: metaEnums } = useConsoleMetaEnumsQuery()
-  const { t, te } = useI18n()
+  const { t, te } = useI18n({ useScope: 'global' })
 
   const meta = computed(() =>
     resolveStatusMeta(props.value, props.category, metaEnums.value, props.fallback, {

@@ -78,7 +78,7 @@
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { listTenants, type Tenant, type TenantListQuery } from '@/api/tenants'
 
-  const { t, te } = useI18n()
+  const { t, te } = useI18n({ useScope: 'global' })
   const sentinel = ref<HTMLElement | null>(null)
   const keyword = ref('')
   const statusFilter = ref<string>('')

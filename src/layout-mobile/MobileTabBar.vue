@@ -33,7 +33,7 @@
 
   const route = useRoute()
   const badges = useMobileBadgesStore()
-  const { t } = useI18n()
+  const { t } = useI18n({ useScope: 'global' })
 
   const tabs = [
     { path: '/m/ops/summary', labelKey: 'nav.mobileTab.summary', icon: Histogram },

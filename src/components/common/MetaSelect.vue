@@ -43,7 +43,7 @@
 
   const model = defineModel<string | number | boolean | null | undefined>()
 
-  const { t, te } = useI18n()
+  const { t, te } = useI18n({ useScope: 'global' })
 
   function formatLabel(opt: MetaOption): string {
     if (props.enumKey && opt.value) {

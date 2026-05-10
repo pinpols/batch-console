@@ -15,7 +15,7 @@ import { setI18nLocale } from '@/locales'
  * - `setLocale(next)`:同步 vue-i18n + html lang + localStorage
  */
 export function useLocale() {
-  const { locale } = useI18n()
+  const { locale } = useI18n({ useScope: 'global' })
 
   const current = computed<Locale>(() => locale.value as Locale)
 
