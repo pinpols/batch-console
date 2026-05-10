@@ -55,8 +55,13 @@
         <el-button type="primary" :loading="loadingWorkflow" @click="reloadWorkflow">
           重载画布
         </el-button>
+        <el-tooltip content="查看 ADR-009 Workflow 参数 DSL 文档" placement="bottom">
+          <el-button :icon="Reading" @click="docsDrawerOpen = true">DSL 文档</el-button>
+        </el-tooltip>
       </div>
     </section>
+
+    <DocsDrawer v-model="docsDrawerOpen" doc-key="adr-009-workflow-param-dsl" />
 
     <SectionCard class="workflow-shell workflow-page-card">
       <div class="workflow-toolbar">
@@ -494,7 +499,16 @@
 
 <script setup lang="ts">
   import { computed, onActivated, onBeforeUnmount, onDeactivated, onMounted, ref, watch } from 'vue'
-  import { CircleCheck, DataLine, Document, EditPen, Grid, Guide } from '@element-plus/icons-vue'
+  import {
+    CircleCheck,
+    DataLine,
+    Document,
+    EditPen,
+    Grid,
+    Guide,
+    Reading,
+  } from '@element-plus/icons-vue'
+  import DocsDrawer from '@/components/common/DocsDrawer.vue'
   import { useAppStore } from '@/stores/app'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
@@ -539,6 +553,9 @@
   // ─── Inspector (needs graph, so we forward refs) ───────────────────────────
   // We need selectedCellId as a shared ref between inspector and graph
   const selectedCellId = ref('')
+
+  // 上下文文档抽屉:点击工具栏"DSL 文档"打开,iframe 加载 /docs/architecture/adr/ADR-009-...
+  const docsDrawerOpen = ref(false)
 
   // ─── Graph ─────────────────────────────────────────────────────────────────
   // Inspector 依赖 graph、graph 的事件需要 inspector 的 setSelectedCell 等 —— 循环
