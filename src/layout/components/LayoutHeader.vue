@@ -195,7 +195,10 @@
 
   // 文档站入口:dev 走独立 vitepress server(5174);prod 同域 /docs/(nginx alias)。
   // dev 不走 SPA proxy,因为 vitepress 在非根 base 下客户端会拼出错的 module URL。
-  const docsUrl = import.meta.env.DEV ? 'http://localhost:5174/docs/' : '/docs/'
+  // 直跳 /docs/README:vitepress + cleanUrls 把 srcDir 根 README.md 渲染为 /README,
+  // 根路径 /docs/ 因为缺 index.md 会落 404 page。改用 README 作为 home,nginx
+  // 也加 /docs/ → /docs/README 的 302 兜底外部链接。
+  const docsUrl = import.meta.env.DEV ? 'http://localhost:5174/docs/README' : '/docs/README'
 
   const router = useRouter()
   const {
