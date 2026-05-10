@@ -22,6 +22,13 @@
             @reset="reset"
             @refresh="() => runRefresh(load)"
           >
+            <el-form-item label="快捷">
+              <el-radio-group :model-value="quickStatus" size="small" @change="onQuickStatusChange">
+                <el-radio-button value="all">全部</el-radio-button>
+                <el-radio-button value="processing">处理中</el-radio-button>
+                <el-radio-button value="failed">失败</el-radio-button>
+              </el-radio-group>
+            </el-form-item>
             <el-form-item label="状态">
               <MetaSelect
                 class="query-w-160"
@@ -67,14 +74,10 @@
               />
             </el-form-item>
             <el-form-item label="业务日">
-              <el-date-picker
-                class="query-w-260"
+              <DateRangePresetPicker
                 v-model="bizDateRange"
                 type="daterange"
-                value-format="YYYY-MM-DD"
-                range-separator="至"
-                start-placeholder="开始日期"
-                end-placeholder="结束日期"
+                default-preset="today"
               />
             </el-form-item>
           </ListPageQueryBar>
@@ -91,17 +94,9 @@
         <el-table-column prop="bizDate" label="业务日" width="110" />
         <el-table-column prop="traceId" label="Trace" min-width="140" show-overflow-tooltip />
         <DatetimeColumn prop="createdAt" label="创建时间" width="160" />
-        <el-table-column label="操作" min-width="168" fixed="right">
+        <el-table-column label="操作" width="180" fixed="right">
           <template #default="{ row }">
-            <div class="table-actions">
-              <el-button size="small" plain type="primary" @click="openDetail(row)">详情</el-button>
-              <el-button size="small" plain @click="openAudit(row)">审计</el-button>
-              <el-button size="small" plain @click="downloadFile(row)">下载</el-button>
-              <el-button size="small" plain type="warning" @click="redispatchFile(row)"
-                >重投递</el-button
-              >
-              <el-button size="small" plain type="danger" @click="archiveFile(row)">归档</el-button>
-            </div>
+            <RowActions :actions="rowActions(row)" />
           </template>
         </el-table-column>
       </ProTable>
@@ -174,6 +169,8 @@
   import TenantSelect from '@/components/common/TenantSelect.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
   import JsonPreview from '@/components/common/JsonPreview.vue'
+  import DateRangePresetPicker from '@/components/common/DateRangePresetPicker.vue'
+  import RowActions, { type RowAction } from '@/components/common/RowActions.vue'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
   import { getMetaBizTypes } from '@/api/meta'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
@@ -194,7 +191,15 @@
   const auditRows = ref<ConsoleAuditLogResponse[]>([])
   const auditPage = ref(1)
   const auditPageSize = ref(20)
-  const bizDateRange = ref<[string, string] | []>([])
+  // 列表筛选默认锚到"今日 + 全部状态";运维大多看当天文件
+  function todayRange(): [string, string] {
+    const d = new Date()
+    const p = (n: number) => String(n).padStart(2, '0')
+    const s = `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`
+    return [s, s]
+  }
+  const initialBizRange = todayRange()
+  const bizDateRange = ref<[string, string] | null>(initialBizRange)
   const filters = reactive({
     tenantId: tenant.tenantId,
     fileStatus: '',
@@ -202,9 +207,36 @@
     fileName: '',
     traceId: '',
     fileId: '',
-    startDate: '',
-    endDate: '',
+    startDate: initialBizRange[0],
+    endDate: initialBizRange[1],
   })
+
+  // 快捷状态 chip:把单值 fileStatus 映射到 全部 / 处理中 / 失败
+  // 关键值参考 fileStatus enum:PROCESSING / FAILED / ARCHIVED / SUCCEEDED 等
+  const quickStatus = computed<'all' | 'processing' | 'failed' | ''>(() => {
+    if (!filters.fileStatus) return 'all'
+    if (filters.fileStatus === 'PROCESSING') return 'processing'
+    if (filters.fileStatus === 'FAILED') return 'failed'
+    return ''
+  })
+
+  function onQuickStatusChange(key: string | number | boolean | undefined) {
+    const k = String(key)
+    filters.fileStatus = k === 'processing' ? 'PROCESSING' : k === 'failed' ? 'FAILED' : ''
+    page.value = 1
+    void load()
+  }
+
+  // 行操作:1 主 + 4 次,折进"更多"避免一行 5 个 plain 按钮
+  function rowActions(row: ConsoleFileRecordResponse): RowAction[] {
+    return [
+      { key: 'detail', label: '详情', primary: true, onClick: () => openDetail(row) },
+      { key: 'audit', label: '审计', onClick: () => openAudit(row) },
+      { key: 'download', label: '下载', onClick: () => downloadFile(row) },
+      { key: 'redispatch', label: '重投递', divided: true, onClick: () => redispatchFile(row) },
+      { key: 'archive', label: '归档', danger: true, onClick: () => archiveFile(row) },
+    ]
+  }
 
   const { data: metaEnums } = useConsoleMetaEnumsQuery()
 
@@ -262,15 +294,16 @@
 
   function reset() {
     return runReset(async () => {
+      const t = todayRange()
       filters.tenantId = tenant.tenantId
       filters.fileStatus = ''
       filters.bizType = ''
       filters.fileName = ''
       filters.traceId = ''
       filters.fileId = ''
-      filters.startDate = ''
-      filters.endDate = ''
-      bizDateRange.value = []
+      filters.startDate = t[0]
+      filters.endDate = t[1]
+      bizDateRange.value = t
       page.value = 1
       await load()
     })
@@ -338,8 +371,8 @@
   }
 
   watch(bizDateRange, (value) => {
-    filters.startDate = value[0] ?? ''
-    filters.endDate = value[1] ?? ''
+    filters.startDate = value?.[0] ?? ''
+    filters.endDate = value?.[1] ?? ''
   })
 
   useTenantReload(() => {
