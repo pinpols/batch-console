@@ -168,10 +168,27 @@
 
   async function doRepublish() {
     try {
-      await ElMessageBox.confirm('确认重发布 Outbox？', '重发布确认', { type: 'warning' })
+      // BE @NotEmpty List<Long> ids,空数组会 400 → 让用户输入要重投的事件 ID
+      const { value: idsText } = await ElMessageBox.prompt(
+        '请输入要重投的 outbox 事件 ID(逗号分隔,仅 FAILED / GIVE_UP 状态可重投)',
+        '重发布',
+        {
+          inputPattern: /^\s*\d+(\s*,\s*\d+)*\s*$/,
+          inputErrorMessage: '只能输入数字 ID,逗号分隔',
+          type: 'warning',
+        },
+      )
+      const ids = idsText
+        .split(',')
+        .map((s: string) => Number(s.trim()))
+        .filter((n: number) => !Number.isNaN(n) && n > 0)
+      if (!ids.length) {
+        ElMessage.warning('未提供有效 ID')
+        return
+      }
       republishing.value = true
-      await republishOutbox(tenant.tenantId)
-      ElMessage.success('已发起重发布')
+      await republishOutbox(tenant.tenantId, ids)
+      ElMessage.success(`已发起重投 ${ids.length} 条`)
       await loadOutboxStats()
     } catch {
       /* cancel */

@@ -53,7 +53,27 @@ export function upsertArchivePolicy(
   return put<void>('/api/console/ops/archive-policies', body, { params: { tenantId } })
 }
 
-/** POST /api/console/config/tenant-init */
+/** ConfigType 枚举 → BE TenantConfigBatchInitRequest 顶层 List 字段名 */
+const CONFIG_TYPE_TO_KEY: Record<ConfigType, string> = {
+  JOB_DEFINITION: 'jobDefinitions',
+  WORKFLOW_DEFINITION: 'workflowDefinitions',
+  PIPELINE_DEFINITION: 'pipelineDefinitions',
+  FILE_CHANNEL: 'fileChannels',
+  FILE_TEMPLATE: 'fileTemplates',
+  RESOURCE_QUEUE: 'resourceQueues',
+  BATCH_WINDOW: 'batchWindows',
+  BUSINESS_CALENDAR: 'businessCalendars',
+  QUOTA_POLICY: 'quotaPolicies',
+  ALERT_ROUTING: 'alertRoutings',
+}
+
+/**
+ * POST /api/console/config/tenant-init
+ *
+ * BE TenantConfigBatchInitRequest 把各类配置直接放在顶层(jobDefinitions/workflowDefinitions/...)。
+ * FE 调用方传 spec(完整 JSON 内容)+ 可选 configTypes(白名单)— 这里展开 spec 到顶层,
+ * 并用 configTypes 过滤(若提供)。原先嵌在 spec 字段下,BE 反序列化时丢弃,初始化无效。
+ */
 export function batchInitTenantConfig(body: {
   targetTenantIds: string[]
   spec: Record<string, unknown>
@@ -61,7 +81,16 @@ export function batchInitTenantConfig(body: {
   mode?: 'SKIP_EXISTING' | 'UPSERT'
   dryRun?: boolean
 }) {
-  return post<unknown>('/api/console/config/tenant-init', body)
+  const { targetTenantIds, spec, configTypes, mode, dryRun } = body
+  const allowedKeys = configTypes?.length
+    ? new Set(configTypes.map((t) => CONFIG_TYPE_TO_KEY[t]))
+    : null
+  const flattened: Record<string, unknown> = { targetTenantIds, mode, dryRun }
+  for (const [k, v] of Object.entries(spec)) {
+    if (allowedKeys && !allowedKeys.has(k)) continue
+    flattened[k] = v
+  }
+  return post<unknown>('/api/console/config/tenant-init', flattened)
 }
 
 /** GET /api/console/ops/summary/events — SSE stream */
