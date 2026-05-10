@@ -24,6 +24,7 @@
     "docs:dev": "npm run docs:prepare && vitepress dev docs-site --port 5174",
     "docs:build": "npm run docs:prepare && vitepress build docs-site",
     "docs:preview": "vitepress preview docs-site --port 5174",
+    "docs:serve": "npm run docs:build && npm run docs:preview",
     "dev:all": "concurrently -k -n SPA,DOCS -c blue,green \"npm:dev\" \"npm:docs:dev\"",
     "docker:build": "docker build -t batch-console:latest .",
     "docker:run": "docker run --rm -p 8080:80 -e BACKEND_UPSTREAM_HOST=host.docker.internal:18080 --add-host=host.docker.internal:host-gateway batch-console:latest",
