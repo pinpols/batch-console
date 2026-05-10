@@ -48,6 +48,12 @@ server {
     # 走 auth_request 鉴权:internal 子请求带原 cookie/header 到 BE /api/console/auth/check
     # BE 返 204 = 通过,401/403 = 拒绝(浏览器收到 401 后由 SPA 拦截器跳登录)
     # base /docs/ 与 vitepress 配置对齐(docs-site/.vitepress/config.ts)
+
+    # /docs(无斜杠)永久重定向到 /docs/,对齐 vitepress base 行为
+    location = /docs {
+        return 301 /docs/;
+    }
+
     location /docs/ {
         auth_request /__auth_check;
         # 鉴权失败 → 401(SPA 全局拦截器读到 401 跳登录)

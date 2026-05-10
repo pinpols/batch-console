@@ -54,6 +54,24 @@ export default withMermaid({
     // 那边没 node_modules,导致 optimizeDeps 找不到 vitepress 子依赖 → dev 白屏。
     // 显式 root 锚定到 docs-site/.vitepress 同级,确保依赖解析正确。
     root: fileURLToPath(new URL('..', import.meta.url)),
+    plugins: [
+      {
+        // base 是 /docs/,vitepress dev server 严格要求尾斜杠 → /docs(无斜杠) 直接 404
+        // 这里在 vite 的 connect middleware 链路上拦截一次,302 跳到 /docs/
+        name: 'docs-base-trailing-slash-redirect',
+        configureServer(server) {
+          server.middlewares.use((req, res, next) => {
+            if (req.url === '/docs') {
+              res.statusCode = 302
+              res.setHeader('Location', '/docs/')
+              res.end()
+              return
+            }
+            next()
+          })
+        },
+      },
+    ],
     resolve: {
       // 跨仓 srcDir 下,Rollup 从 markdown 文件位置(file-batch-system/docs/...)
       // 反向解析 vue / vue/server-renderer 找不到本仓 node_modules。
