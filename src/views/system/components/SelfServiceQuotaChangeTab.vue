@@ -7,32 +7,41 @@
       label-width="100px"
       class="form-section"
     >
-      <el-form-item label="配额键" prop="quotaKey">
+      <el-form-item :label="t('selfServiceQuotaChangeTab.keyLabel')" prop="quotaKey">
         <el-select
           v-model="quotaForm.quotaKey"
           filterable
-          placeholder="请选择配额键"
+          :placeholder="t('selfServiceQuotaChangeTab.keyPlaceholder')"
           class="query-w-full"
           :loading="quotaKeysLoading"
         >
           <el-option v-for="k in quotaKeys" :key="k" :label="k" :value="k" />
         </el-select>
       </el-form-item>
-      <el-form-item label="期望值" prop="requestedValue">
-        <el-input v-model="quotaForm.requestedValue" placeholder="请输入期望值(正整数)" />
+      <el-form-item :label="t('selfServiceQuotaChangeTab.valueLabel')" prop="requestedValue">
+        <el-input
+          v-model="quotaForm.requestedValue"
+          :placeholder="t('selfServiceQuotaChangeTab.valuePlaceholder')"
+        />
       </el-form-item>
-      <el-form-item label="原因" prop="reason">
-        <el-input v-model="quotaForm.reason" type="textarea" :rows="3" placeholder="变更原因" />
+      <el-form-item :label="t('selfServiceQuotaChangeTab.reasonLabel')" prop="reason">
+        <el-input
+          v-model="quotaForm.reason"
+          type="textarea"
+          :rows="3"
+          :placeholder="t('selfServiceQuotaChangeTab.reasonPlaceholder')"
+        />
       </el-form-item>
       <el-form-item class="form-actions">
         <el-button
           type="primary"
           class="pretty-primary-button"
           :loading="submittingQuota"
-          v-track-click="'配额变更申请'"
+          v-track-click="t('selfServiceQuotaChangeTab.trackSubmit')"
           @click="submitQuotaChange"
-          >提交配额变更</el-button
         >
+          {{ t('selfServiceQuotaChangeTab.btnSubmit') }}
+        </el-button>
       </el-form-item>
     </el-form>
   </div>
@@ -40,7 +49,10 @@
 
 <script setup lang="ts">
   import { ref, reactive } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
+
+  const { t } = useI18n({ useScope: 'global' })
   import type { FormRules } from 'element-plus'
   import { getTenantQuota, requestQuotaChange } from '@/api/tenantSelfService'
   import { useTenantStore } from '@/stores/tenant'
@@ -55,19 +67,19 @@
 
   const { formRef: quotaFormRef, validate: validateQuotaForm } = useFormValidate()
   const quotaFormRules: FormRules = {
-    quotaKey: [rules.required('配额键必选', 'change')],
+    quotaKey: [rules.required(t('selfServiceQuotaChangeTab.ruleKey'), 'change')],
     requestedValue: [
-      rules.required('期望值必填'),
+      rules.required(t('selfServiceQuotaChangeTab.ruleValue')),
       {
         validator: (_r, v: string, cb) => {
           const n = Number.parseInt(String(v).trim(), 10)
           if (Number.isFinite(n) && n > 0) cb()
-          else cb(new Error('期望值需为正整数'))
+          else cb(new Error(t('selfServiceQuotaChangeTab.ruleValuePositive')))
         },
         trigger: 'blur',
       },
     ],
-    reason: [rules.required('原因必填')],
+    reason: [rules.required(t('selfServiceQuotaChangeTab.ruleReason'))],
   }
 
   function extractQuotaKeys(payload: unknown): string[] {
@@ -106,7 +118,7 @@
         requestedValue,
         reason: quotaForm.reason,
       })
-      ElMessage.success('申请已提交')
+      ElMessage.success(t('selfServiceQuotaChangeTab.submittedToast'))
       quotaForm.quotaKey = ''
       quotaForm.requestedValue = ''
       quotaForm.reason = ''

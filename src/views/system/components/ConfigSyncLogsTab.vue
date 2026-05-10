@@ -19,16 +19,25 @@
         :data="syncLogs"
         stripe
         border
-        empty-text="暂无数据"
+        :empty-text="t('common.noData')"
         size="small"
         class="console-table"
       >
-        <el-table-column prop="id" label="ID" width="80" />
-        <el-table-column prop="syncType" label="类型" width="100" />
-        <el-table-column prop="status" label="状态" width="100" />
-        <el-table-column prop="operatorId" label="操作者" width="120" />
-        <el-table-column prop="summary" label="摘要" min-width="250" show-overflow-tooltip />
-        <DatetimeColumn prop="createdAt" label="时间" width="160" />
+        <el-table-column prop="id" :label="t('configSyncLogsTab.colId')" width="80" />
+        <el-table-column prop="syncType" :label="t('configSyncLogsTab.colType')" width="100" />
+        <el-table-column prop="status" :label="t('configSyncLogsTab.colStatus')" width="100" />
+        <el-table-column
+          prop="operatorId"
+          :label="t('configSyncLogsTab.colOperator')"
+          width="120"
+        />
+        <el-table-column
+          prop="summary"
+          :label="t('configSyncLogsTab.colSummary')"
+          min-width="250"
+          show-overflow-tooltip
+        />
+        <DatetimeColumn prop="createdAt" :label="t('configSyncLogsTab.colTime')" width="160" />
       </el-table>
     </DataState>
   </div>
@@ -36,7 +45,10 @@
 
 <script setup lang="ts">
   import { ref } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import { listConfigSyncLogs } from '@/api/configReleases'
+
+  const { t } = useI18n({ useScope: 'global' })
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
