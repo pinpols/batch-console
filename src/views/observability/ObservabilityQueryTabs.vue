@@ -4,16 +4,16 @@
 
     <SectionCard>
       <el-tabs v-model="activeTab" v-hover-tab-activate="true" class="pill-tabs">
-        <el-tab-pane label="Dead Letters" name="deadLetters">
+        <el-tab-pane :label="t('observability.tabDeadLetters')" name="deadLetters">
           <DeadLettersTab />
         </el-tab-pane>
-        <el-tab-pane label="重试调度" name="retries" lazy>
+        <el-tab-pane :label="t('observability.tabRetries')" name="retries" lazy>
           <RetriesTab />
         </el-tab-pane>
-        <el-tab-pane label="执行日志" name="executionLogs" lazy>
+        <el-tab-pane :label="t('observability.tabExecLogs')" name="executionLogs" lazy>
           <ExecutionLogsTab />
         </el-tab-pane>
-        <el-tab-pane label="Channel 回执" name="channelReceipts" lazy>
+        <el-tab-pane :label="t('observability.tabChannelReceipts')" name="channelReceipts" lazy>
           <ChannelReceiptsTab />
         </el-tab-pane>
       </el-tabs>
@@ -24,6 +24,9 @@
 <script setup lang="ts">
   import { ref, watch } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
+  import { useI18n } from 'vue-i18n'
+
+  const { t } = useI18n({ useScope: 'global' })
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'

@@ -4,7 +4,7 @@
 
     <SectionCard>
       <el-tabs v-model="tab" v-hover-tab-activate="true" class="pill-tabs">
-        <el-tab-pane label="重试" name="retry">
+        <el-tab-pane :label="t('observability.outboxTabRetry')" name="retry">
           <ProTable
             :data="retryRows"
             :loading="tableBlocking"
@@ -24,16 +24,16 @@
                 @reset="onRetryReset"
                 @refresh="() => runRefresh(loadTab)"
               >
-                <el-form-item label="关键字">
+                <el-form-item :label="t('observability.outboxKeywordLabel')">
                   <el-input
                     class="query-w-220"
                     v-model="retryKwDraft"
                     clearable
-                    placeholder="事件类型或事件 Key，模糊匹配"
+                    :placeholder="t('observability.outboxRetryKeywordPlaceholder')"
                     @keyup.enter="onRetrySearch"
                   />
                 </el-form-item>
-                <el-form-item label="状态">
+                <el-form-item :label="t('observability.outboxStatusLabel')">
                   <MetaSelect
                     class="query-w-200"
                     v-model="retryStatusDraft"
@@ -41,35 +41,63 @@
                     filterable
                     allow-create
                     default-first-option
-                    placeholder="重试状态"
+                    enum-key="outboxPublishStatus"
+                    :placeholder="t('observability.outboxRetryStatusPlaceholder')"
                     @keyup.enter="onRetrySearch"
                     :options="retryStatusSelectOptions"
                   />
                 </el-form-item>
               </ListPageQueryBar>
             </template>
-            <el-table-column prop="eventType" label="事件类型" width="140" />
-            <el-table-column prop="eventKey" label="Key" min-width="160" show-overflow-tooltip />
-            <el-table-column prop="retryStatus" label="状态" width="120">
+            <el-table-column
+              prop="eventType"
+              :label="t('observability.outboxColEventType')"
+              width="140"
+            />
+            <el-table-column
+              prop="eventKey"
+              :label="t('observability.outboxColKey')"
+              min-width="160"
+              show-overflow-tooltip
+            />
+            <el-table-column
+              prop="retryStatus"
+              :label="t('observability.outboxColStatus')"
+              width="120"
+            >
               <template #default="{ row }">
                 <StatusTag :value="String(row.retryStatus ?? '')" category="outboxPublishStatus" />
               </template>
             </el-table-column>
-            <el-table-column prop="retryCount" label="次数" width="70" align="right" />
-            <el-table-column prop="retryPolicy" label="策略" width="120" show-overflow-tooltip />
-            <DatetimeColumn prop="nextRetryAt" label="下次重试" width="160" />
-            <el-table-column label="操作" width="120" fixed="right">
+            <el-table-column
+              prop="retryCount"
+              :label="t('observability.outboxColCount')"
+              width="70"
+              align="right"
+            />
+            <el-table-column
+              prop="retryPolicy"
+              :label="t('observability.outboxColPolicy')"
+              width="120"
+              show-overflow-tooltip
+            />
+            <DatetimeColumn
+              prop="nextRetryAt"
+              :label="t('observability.outboxColNextRetry')"
+              width="160"
+            />
+            <el-table-column :label="t('observability.outboxColActions')" width="120" fixed="right">
               <template #default="{ row }">
                 <div class="table-actions">
                   <el-button size="small" plain type="primary" @click="openDetail('retry', row)">
-                    详情
+                    {{ t('observability.outboxActionDetail') }}
                   </el-button>
                 </div>
               </template>
             </el-table-column>
           </ProTable>
         </el-tab-pane>
-        <el-tab-pane label="投递" name="delivery">
+        <el-tab-pane :label="t('observability.outboxTabDelivery')" name="delivery">
           <ProTable
             :data="deliveryRows"
             :loading="tableBlocking"
@@ -87,16 +115,16 @@
                 @reset="onDeliveryReset"
                 @refresh="() => runRefresh(loadTab)"
               >
-                <el-form-item label="关键字">
+                <el-form-item :label="t('observability.outboxKeywordLabel')">
                   <el-input
                     class="query-w-220"
                     v-model="deliveryKwDraft"
                     clearable
-                    placeholder="事件类型、Key 或 Topic，模糊匹配"
+                    :placeholder="t('observability.outboxDeliveryKeywordPlaceholder')"
                     @keyup.enter="onDeliverySearch"
                   />
                 </el-form-item>
-                <el-form-item label="状态">
+                <el-form-item :label="t('observability.outboxStatusLabel')">
                   <MetaSelect
                     class="query-w-200"
                     v-model="deliveryStatusDraft"
@@ -104,16 +132,30 @@
                     filterable
                     allow-create
                     default-first-option
-                    placeholder="投递状态"
+                    enum-key="outboxPublishStatus"
+                    :placeholder="t('observability.outboxDeliveryStatusPlaceholder')"
                     @keyup.enter="onDeliverySearch"
                     :options="deliveryStatusSelectOptions"
                   />
                 </el-form-item>
               </ListPageQueryBar>
             </template>
-            <el-table-column prop="eventType" label="事件类型" width="140" />
-            <el-table-column prop="eventKey" label="Key" min-width="160" show-overflow-tooltip />
-            <el-table-column prop="deliveryStatus" label="状态" width="120">
+            <el-table-column
+              prop="eventType"
+              :label="t('observability.outboxColEventType')"
+              width="140"
+            />
+            <el-table-column
+              prop="eventKey"
+              :label="t('observability.outboxColKey')"
+              min-width="160"
+              show-overflow-tooltip
+            />
+            <el-table-column
+              prop="deliveryStatus"
+              :label="t('observability.outboxColStatus')"
+              width="120"
+            >
               <template #default="{ row }">
                 <StatusTag
                   :value="String(row.deliveryStatus ?? '')"
@@ -123,23 +165,32 @@
             </el-table-column>
             <el-table-column
               prop="targetTopic"
-              label="Topic"
+              :label="t('observability.outboxColTopic')"
               min-width="140"
               show-overflow-tooltip
             />
-            <el-table-column prop="deliveryAttempt" label="尝试" width="70" align="right" />
+            <el-table-column
+              prop="deliveryAttempt"
+              :label="t('observability.outboxColAttempt')"
+              width="70"
+              align="right"
+            />
             <el-table-column
               prop="errorMessage"
-              label="错误"
+              :label="t('observability.outboxColError')"
               min-width="180"
               show-overflow-tooltip
             />
-            <DatetimeColumn prop="updatedAt" label="更新" width="160" />
-            <el-table-column label="操作" width="120" fixed="right">
+            <DatetimeColumn
+              prop="updatedAt"
+              :label="t('observability.outboxColUpdated')"
+              width="160"
+            />
+            <el-table-column :label="t('observability.outboxColActions')" width="120" fixed="right">
               <template #default="{ row }">
                 <div class="table-actions">
                   <el-button size="small" plain type="primary" @click="openDetail('delivery', row)">
-                    详情
+                    {{ t('observability.outboxActionDetail') }}
                   </el-button>
                 </div>
               </template>
@@ -160,7 +211,10 @@
 
 <script setup lang="ts">
   import { computed, ref, watch } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import { queryOutboxDeliveries, queryOutboxRetries } from '@/api/observabilityQueries'
+
+  const { t } = useI18n({ useScope: 'global' })
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { useSseAutoReload } from '@/composables/useSseAutoReload'
   import { useTenantStore } from '@/stores/tenant'
@@ -201,16 +255,20 @@
   const detailRow = ref<ConsoleOutboxRetryLogResponse | ConsoleOutboxDeliveryLogResponse | null>(
     null,
   )
-  const detailTitle = computed(() => (detailKind.value === 'retry' ? '重试详情' : '投递详情'))
+  const detailTitle = computed(() =>
+    detailKind.value === 'retry'
+      ? t('observability.outboxRetryDetailTitle')
+      : t('observability.outboxDeliveryDetailTitle'),
+  )
   const detailMetaRows = computed(() => {
     if (!detailRow.value) return []
     const rows = [
-      { label: '事件类型', value: detailRow.value.eventType ?? '' },
-      { label: 'Key', value: detailRow.value.eventKey ?? '' },
+      { label: t('observability.outboxColEventType'), value: detailRow.value.eventType ?? '' },
+      { label: t('observability.outboxColKey'), value: detailRow.value.eventKey ?? '' },
     ]
     if (detailKind.value === 'delivery') {
       rows.push({
-        label: 'Topic',
+        label: t('observability.outboxColTopic'),
         value: (detailRow.value as ConsoleOutboxDeliveryLogResponse).targetTopic ?? '',
       })
     }
