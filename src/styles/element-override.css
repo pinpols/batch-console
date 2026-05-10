@@ -883,3 +883,12 @@ a:focus-visible,
   outline: 2px solid color-mix(in srgb, var(--color-primary) 70%, transparent);
   outline-offset: -2px;
 }
+
+/* 体检"痛点 9":表单错误时不要把 灰提示 + 红字 + 红描边 三件套同时显示。
+   验证不通过时,el-form-item 会被加 .is-error 类;此时把内嵌的 .form-hint 灰提示隐藏,
+   只留红色错误信息(红字本身已经把 "为什么不合格" 说清楚了,灰提示这时是噪音)。
+   未提交时 .is-error 不存在 → .form-hint 正常显示,起到引导作用。*/
+.el-form-item.is-error .form-hint {
+  display: none;
+}
+

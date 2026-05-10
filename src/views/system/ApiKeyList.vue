@@ -45,6 +45,16 @@
             </el-form-item>
           </ListPageQueryBar>
         </template>
+        <template #empty>
+          <EmptyState
+            description="还没有 API Key。新增一个用于服务端调用 / SDK / CI 接入。"
+            :image-size="80"
+          >
+            <template #action>
+              <el-button type="primary" :icon="Plus" @click="openCreate">新增 API Key</el-button>
+            </template>
+          </EmptyState>
+        </template>
         <el-table-column prop="id" label="ID" width="80" />
         <el-table-column prop="keyName" label="名称" min-width="160" show-overflow-tooltip />
         <el-table-column prop="scopes" label="权限范围" min-width="180" show-overflow-tooltip />
@@ -184,6 +194,7 @@
   import ProTable from '@/components/table/ProTable.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
+  import EmptyState from '@/components/common/EmptyState.vue'
   import JsonPreview from '@/components/common/JsonPreview.vue'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
 

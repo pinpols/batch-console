@@ -75,9 +75,21 @@
           :data="page.items"
           stripe
           border
-          empty-text="暂无数据"
+          :empty-text="hasActiveFilters ? '未找到符合条件的租户,请调整筛选条件' : '暂无数据'"
           class="console-table"
         >
+          <!-- 引导式空状态:仅"无筛选 + 零数据"时显示 CTA;有筛选/状态过滤时回落到默认 empty-text -->
+          <template v-if="!hasActiveFilters" #empty>
+            <EmptyState
+              description="还没有租户。新增第一个,把业务接入批量调度平台。"
+              :image-size="80"
+            >
+              <template v-if="canManageTenants" #action>
+                <el-button type="primary" :icon="Plus" @click="openCreate">新增租户</el-button>
+                <el-button plain @click="batchVisible = true">批量新增</el-button>
+              </template>
+            </EmptyState>
+          </template>
           <el-table-column prop="tenantId" label="tenantId" min-width="180" />
           <el-table-column prop="tenantName" label="名称" min-width="160" show-overflow-tooltip />
           <el-table-column label="状态" width="110">
@@ -116,7 +128,7 @@
       />
     </SectionCard>
 
-    <TenantFormDialog v-model="formVisible" :initial="formInitial" @saved="load" />
+    <TenantFormDialog v-model="formVisible" :initial="formInitial" @saved="onTenantSaved" />
     <TenantBatchCreateDialog
       v-model="batchVisible"
       :items="page.items"
@@ -165,7 +177,9 @@
   import MetricCard from '@/components/common/MetricCard.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
   import RowActions, { type RowAction } from '@/components/common/RowActions.vue'
+  import EmptyState from '@/components/common/EmptyState.vue'
   import JsonPreview from '@/components/common/JsonPreview.vue'
+  import { showCreateSuccess } from '@/composables/useCreateSuccess'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import TablePagerBar from '@/components/table/TablePagerBar.vue'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
@@ -228,6 +242,10 @@
     () => page.value.items.filter((item) => item.status === 'SUSPENDED').length,
   )
   const canManageTenants = computed(() => hasTenantAdminAccess(auth.userInfo?.permissions ?? []))
+
+  // 用于"引导式空状态":仅在没有筛选 + 没数据时才展示"新增第一个"CTA
+  // 有 keyword 或 status 过滤时,空数据应说"未找到符合条件",而不是诱导新增
+  const hasActiveFilters = computed(() => !!queryApplied.keyword || !!queryApplied.status)
 
   async function load() {
     await runLoad(async () => {
@@ -341,6 +359,25 @@
   const copyVisible = ref(false)
   const initVisible = ref(false)
   const initTargetTenantId = ref('')
+
+  // 创建租户后:刷新列表 + 弹出"去初始化 / 留在列表"引导卡片;编辑只刷新
+  // 解决体检"病根 2:做完就完事,没下一步引导"——新租户最关键的下一步就是初始化基础配置
+  async function onTenantSaved(payload: { tenantId: string; created: boolean }) {
+    await load()
+    if (!payload.created) return
+    showCreateSuccess({
+      title: '租户已创建',
+      message: `「${payload.tenantId}」已创建。下一步建议立即初始化基础配置(队列 / 参数 / 告警),避免上线前忘配漏配。`,
+      primary: {
+        label: '去初始化',
+        onClick: () => {
+          initTargetTenantId.value = payload.tenantId
+          initVisible.value = true
+        },
+      },
+      secondary: { label: '留在列表' },
+    })
+  }
 
   function openInitConfig(row: Tenant) {
     if (!canManageTenants.value) return

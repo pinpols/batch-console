@@ -185,6 +185,7 @@
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
+  import { showCreateSuccess } from '@/composables/useCreateSuccess'
   import PageContainer from '@/components/common/PageContainer.vue'
   import MetaSelect from '@/components/common/MetaSelect.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
@@ -379,7 +380,14 @@
         filters.tenantId || tenant.tenantId,
         JSON.parse(payloadText),
       )
-      ElMessage.success(`已触发 ${row.jobCode}`)
+      // 替换"已触发"toast → 引导用户去监控页跟踪刚刚触发的实例
+      // 体检"病根 2:做完就完事"——触发后最自然的下一步就是看新实例跑得怎样
+      showCreateSuccess({
+        title: '已触发',
+        message: `${row.jobCode} 已触发,新实例可在监控页跟踪运行状态。`,
+        primary: { label: '查看实例', onClick: () => goInstances(row.jobCode) },
+        secondary: { label: '留在当前页' },
+      })
     } finally {
       actingJobCode.value = ''
     }
