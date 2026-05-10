@@ -135,12 +135,12 @@ export const pageMetaByPath = {
     description: '维护租户配额策略，控制并发和突发容量。',
   },
   '/system/tenants': {
-    title: '租户管理',
-    description: '管理平台租户，并在租户上下文间快速切换。',
+    title: '租户实例',
+    description: 'SaaS 维度的隔离单位:tenantId、租户名、状态、批量新建、复制配置等。',
   },
   '/system/user-accounts': {
-    title: '用户账户',
-    description: '管理控制台账号、登录状态和密码重置。',
+    title: '登录账户',
+    description: '控制台登录账号:username、显示名、角色、启停、密码重置等。',
   },
   '/system/parameters': {
     title: '系统参数',

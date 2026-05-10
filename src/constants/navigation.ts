@@ -35,6 +35,8 @@ import {
   Tickets,
   TrendCharts,
   Tools,
+  User,
+  OfficeBuilding,
   WarningFilled,
 } from '@element-plus/icons-vue'
 
@@ -297,16 +299,18 @@ export const navigationGroups: NavigationGroup[] = [
     minRole: 'OPERATOR',
     children: [
       {
+        // 租户实例:SaaS 隔离单位 → 用 OfficeBuilding(组织/楼宇),区分于"账户=个人"
         title: pageTitle('/system/tenants'),
         path: '/system/tenants',
         minRole: 'OPERATOR',
-        icon: Briefcase,
+        icon: OfficeBuilding,
       },
       {
+        // 登录账户:控制台真人账号 → 用 User(单人头像),区分于"租户=组织实例"
         title: pageTitle('/system/user-accounts'),
         path: '/system/user-accounts',
         minRole: 'ADMIN',
-        icon: Tickets,
+        icon: User,
       },
       // /system/users(权限自查)从主菜单撤下,改由 Header 右上 dropdown 触发(ADMIN 可见)
       {

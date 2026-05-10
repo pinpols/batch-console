@@ -352,7 +352,7 @@ const routes = [
         name: 'tenant-list',
         component: () => import('@/views/system/TenantList.vue'),
         meta: {
-          title: '租户管理',
+          title: '租户实例',
           activeMenu: '/system/tenants',
           minRole: 'OPERATOR',
         },
@@ -362,7 +362,7 @@ const routes = [
         name: 'user-account-list',
         component: () => import('@/views/system/UserAccountList.vue'),
         meta: {
-          title: '用户账户',
+          title: '登录账户',
           activeMenu: '/system/user-accounts',
           minRole: 'ADMIN',
         },
