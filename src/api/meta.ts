@@ -21,10 +21,6 @@ export interface MetaOption {
   value: string
 }
 
-type RawCommonResponse = {
-  data?: unknown
-}
-
 function toObject(value: unknown): Record<string, unknown> {
   return value && typeof value === 'object' ? (value as Record<string, unknown>) : {}
 }
@@ -40,60 +36,37 @@ function normalizeOption(item: unknown): MetaOption | null {
   }
 }
 
-export async function getMetaEnums() {
-  const response = await get<RawCommonResponse>('/api/console/meta/enums')
-  const data = toObject(response.data)
-  return Object.fromEntries(
-    Object.entries(data).map(([key, value]) => [
-      key,
-      Array.isArray(value)
-        ? value.map((item) => normalizeOption(item)).filter((item): item is MetaOption => !!item)
-        : [],
-    ]),
-  ) as Record<string, MetaOption[]>
-}
-
-export async function getMetaQueues(tenantId: string) {
-  const response = await get<RawCommonResponse>('/api/console/meta/queues', { tenantId })
-  return Array.isArray(response.data)
-    ? response.data
-        .map((item) => normalizeOption(item))
-        .filter((item): item is MetaOption => !!item)
+function toOptions(payload: unknown): MetaOption[] {
+  return Array.isArray(payload)
+    ? payload.map((item) => normalizeOption(item)).filter((item): item is MetaOption => !!item)
     : []
 }
 
-export async function getMetaCalendars(tenantId: string) {
-  const response = await get<RawCommonResponse>('/api/console/meta/calendars', { tenantId })
-  return Array.isArray(response.data)
-    ? response.data
-        .map((item) => normalizeOption(item))
-        .filter((item): item is MetaOption => !!item)
-    : []
+/**
+ * 注:`get<T>()` 已由 axios 拦截器(`interceptors.ts:213`)解包过 CommonResponse,
+ * 返回的就是 envelope 的 `data` 字段内容,不要再 `.data` 一次,否则全空。
+ */
+export async function getMetaEnums(): Promise<Record<string, MetaOption[]>> {
+  const data = toObject(await get<unknown>('/api/console/meta/enums'))
+  return Object.fromEntries(Object.entries(data).map(([key, value]) => [key, toOptions(value)]))
 }
 
-export async function getMetaWindows(tenantId: string) {
-  const response = await get<RawCommonResponse>('/api/console/meta/windows', { tenantId })
-  return Array.isArray(response.data)
-    ? response.data
-        .map((item) => normalizeOption(item))
-        .filter((item): item is MetaOption => !!item)
-    : []
+export async function getMetaQueues(tenantId: string): Promise<MetaOption[]> {
+  return toOptions(await get<unknown>('/api/console/meta/queues', { tenantId }))
 }
 
-export async function getMetaWorkerGroups(tenantId: string) {
-  const response = await get<RawCommonResponse>('/api/console/meta/worker-groups', { tenantId })
-  return Array.isArray(response.data)
-    ? response.data
-        .map((item) => normalizeOption(item))
-        .filter((item): item is MetaOption => !!item)
-    : []
+export async function getMetaCalendars(tenantId: string): Promise<MetaOption[]> {
+  return toOptions(await get<unknown>('/api/console/meta/calendars', { tenantId }))
 }
 
-export async function getMetaBizTypes(tenantId: string) {
-  const response = await get<RawCommonResponse>('/api/console/meta/biz-types', { tenantId })
-  return Array.isArray(response.data)
-    ? response.data
-        .map((item) => normalizeOption(item))
-        .filter((item): item is MetaOption => !!item)
-    : []
+export async function getMetaWindows(tenantId: string): Promise<MetaOption[]> {
+  return toOptions(await get<unknown>('/api/console/meta/windows', { tenantId }))
+}
+
+export async function getMetaWorkerGroups(tenantId: string): Promise<MetaOption[]> {
+  return toOptions(await get<unknown>('/api/console/meta/worker-groups', { tenantId }))
+}
+
+export async function getMetaBizTypes(tenantId: string): Promise<MetaOption[]> {
+  return toOptions(await get<unknown>('/api/console/meta/biz-types', { tenantId }))
 }
