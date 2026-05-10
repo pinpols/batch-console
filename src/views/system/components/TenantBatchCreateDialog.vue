@@ -5,8 +5,8 @@
     width="620px"
     @update:model-value="(v) => emit('update:modelValue', v)"
   >
-    <el-form label-width="100px">
-      <el-form-item label="租户列表" required>
+    <el-form ref="batchFormRef" :model="form" :rules="batchFormRules" label-width="100px">
+      <el-form-item label="租户列表" prop="tenantsText">
         <el-input
           v-model="form.tenantsText"
           type="textarea"
@@ -15,14 +15,14 @@
         />
         <div class="form-hint">每行格式:tenantId,名称[,描述]。最多 50 个。</div>
       </el-form-item>
-      <el-form-item label="用户名前缀">
+      <el-form-item label="用户名前缀" prop="usernamePrefix">
         <el-input
           v-model="form.usernamePrefix"
           placeholder="默认 op-,最终用户名为 {前缀}{tenantId}"
           maxlength="32"
         />
       </el-form-item>
-      <el-form-item label="共享密码" required>
+      <el-form-item label="共享密码" prop="password">
         <el-input
           v-model="form.password"
           type="password"
@@ -41,13 +41,15 @@
           placeholder="留空则跳过配置初始化"
         >
           <el-option
-            v-for="t in items"
+            v-for="t in sourceableItems"
             :key="t.tenantId"
             :label="`${t.tenantId} — ${t.tenantName}`"
             :value="t.tenantId"
           />
         </el-select>
-        <div class="form-hint">选择后,新建租户将自动复制源租户的全部 10 类配置。</div>
+        <div class="form-hint">
+          选择后,新建租户将自动复制源租户的全部 10 类配置;系统/内置租户已隐藏
+        </div>
       </el-form-item>
       <el-form-item v-if="form.initConfigFrom" label="初始化模式">
         <el-radio-group v-model="form.initMode">
@@ -64,14 +66,18 @@
 </template>
 
 <script setup lang="ts">
-  import { reactive, ref, watch } from 'vue'
+  import { computed, reactive, ref, watch } from 'vue'
   import { ElMessage } from 'element-plus'
   import { batchCreateTenants, type Tenant } from '@/api/tenants'
+  import { isReservedTenant } from './tenantConfigTypes'
 
   const props = defineProps<{
     modelValue: boolean
     items: Tenant[]
   }>()
+
+  // 与 TenantCopyConfigDialog 一致:源租户排除 system/default/default-tenant
+  const sourceableItems = computed(() => props.items.filter((x) => !isReservedTenant(x.tenantId)))
 
   const emit = defineEmits<{
     (e: 'update:modelValue', v: boolean): void

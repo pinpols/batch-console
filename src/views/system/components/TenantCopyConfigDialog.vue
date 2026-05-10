@@ -17,12 +17,13 @@
           placeholder="选择源租户"
         >
           <el-option
-            v-for="t in items"
+            v-for="t in sourceableItems"
             :key="t.tenantId"
             :label="`${t.tenantId} — ${t.tenantName}`"
             :value="t.tenantId"
           />
         </el-select>
+        <div class="form-hint">系统/内置租户(system / default / default-tenant)已隐藏</div>
       </el-form-item>
       <el-form-item label="目标租户" prop="targetTenantIds">
         <el-select
@@ -72,7 +73,7 @@
   import type { FormRules } from 'element-plus'
   import { copyTenantConfig, type ConfigType } from '@/api/ops'
   import type { Tenant } from '@/api/tenants'
-  import { ALL_CONFIG_TYPES } from './tenantConfigTypes'
+  import { ALL_CONFIG_TYPES, isReservedTenant } from './tenantConfigTypes'
   import { useFormValidate, rules } from '@/composables/useFormValidate'
 
   const props = defineProps<{
@@ -106,8 +107,11 @@
     ],
   }
 
+  // 源租户:排除系统/内置租户(参考 tenantConfigTypes.RESERVED_TENANT_IDS)
+  const sourceableItems = computed(() => props.items.filter((x) => !isReservedTenant(x.tenantId)))
+  // 目标租户:同样排掉系统租户(系统配置不该被业务租户配置覆盖),且不能选当前源
   const targetableItems = computed(() =>
-    props.items.filter((x) => x.tenantId !== form.sourceTenantId),
+    props.items.filter((x) => !isReservedTenant(x.tenantId) && x.tenantId !== form.sourceTenantId),
   )
 
   watch(
