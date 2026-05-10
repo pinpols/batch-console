@@ -149,6 +149,7 @@
 <script setup lang="ts">
   import { ref, reactive, computed } from 'vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
+  import { confirmDanger } from '@/composables/useDangerConfirm'
   import type { FormRules } from 'element-plus'
   import { Plus } from '@element-plus/icons-vue'
   import { useFormValidate, rules } from '@/composables/useFormValidate'
@@ -262,11 +263,12 @@
 
   async function confirmDeleteChannel(row: Record<string, unknown>) {
     try {
-      await ElMessageBox.confirm(
-        `删除渠道 ${row.channelCode}（${row.channelName}）？`,
-        '删除确认',
-        { type: 'warning' },
-      )
+      await confirmDanger({
+        verb: '删除',
+        target: `通知渠道「${row.channelName}」`,
+        consequence: '关联此渠道的告警规则会发不出通知,触发后变成静默告警。',
+        irreversible: false,
+      })
       await deleteNotificationChannel(String(row.channelCode), tenant.tenantId)
       ElMessage.success('已删除')
       await loadChannels()

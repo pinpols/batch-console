@@ -46,7 +46,7 @@
           class="console-table"
         >
           <el-table-column prop="id" label="ID" width="80" />
-          <el-table-column prop="tenantId" label="tenantId" min-width="160" />
+          <el-table-column prop="tenantId" label="租户 ID" min-width="160" />
           <el-table-column prop="username" label="用户名" min-width="160" show-overflow-tooltip />
           <el-table-column
             prop="displayName"
@@ -106,9 +106,9 @@
     </SectionCard>
 
     <!-- 编辑 -->
-    <el-dialog v-model="formVisible" :title="`编辑账户：${form.username}`" width="560px">
+    <el-dialog v-model="formVisible" :title="`编辑账户 · ${form.username}`" width="560px">
       <el-form label-width="100px">
-        <el-form-item label="tenantId">
+        <el-form-item label="所属租户">
           <TenantSelect
             v-model="form.tenantId"
             :disabled="true"
@@ -122,13 +122,16 @@
         <el-form-item label="显示名">
           <el-input v-model="form.displayName" placeholder="可选" maxlength="256" />
         </el-form-item>
-        <el-form-item label="authoritiesCsv">
+        <el-form-item label="角色">
           <el-input
             v-model="form.authoritiesCsv"
-            placeholder="ROLE_CONFIG_ADMIN,ROLE_AUDITOR（留空默认 ROLE_USER）"
+            placeholder="例:ADMIN, OPERATOR(留空 = 仅查看)"
             maxlength="512"
           />
-          <div class="form-hint">角色以半角逗号分隔，例如 ROLE_ADMIN、ROLE_AUDITOR。</div>
+          <div class="form-hint">
+            可选角色:管理员(ADMIN)/ 操作员(OPERATOR)/ 配置管理员(CONFIG_ADMIN)/ 审计员(AUDITOR)/
+            查看者(VIEWER) · 多个角色用半角逗号分隔
+          </div>
         </el-form-item>
       </el-form>
       <template #footer>

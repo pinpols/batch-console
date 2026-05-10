@@ -66,6 +66,7 @@
   import { fmtDatetime } from '@/utils/datetime'
   import { useRoute, useRouter } from 'vue-router'
   import { ElMessage, ElMessageBox } from 'element-plus'
+  import { confirmDanger } from '@/composables/useDangerConfirm'
   import { instanceApi } from '@/api/instance'
   import { createLogStream } from '@/api/stream'
   import { useTenantStore } from '@/stores/tenant'
@@ -158,8 +159,12 @@
     const r = row.value
     if (!r) return
     try {
-      await ElMessageBox.confirm(`强制终止实例 ${r.instanceNo}？此操作不可逆。`, '终止确认', {
-        type: 'error',
+      await confirmDanger({
+        verb: '强制终止',
+        target: `实例 ${r.instanceNo}`,
+        consequence:
+          '当前正在执行的步骤会被立刻打断;已经写入的中间结果不会回滚,需要手动清理或重跑。',
+        irreversible: true,
       })
     } catch {
       return

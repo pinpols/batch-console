@@ -109,6 +109,7 @@
 <script setup lang="ts">
   import { ref, reactive, computed } from 'vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
+  import { confirmDanger } from '@/composables/useDangerConfirm'
   import { Plus } from '@element-plus/icons-vue'
   import { listResourceTags, upsertResourceTag, deleteResourceTag } from '@/api/tags'
   import type { ResourceType } from '@/api/tags'
@@ -220,7 +221,17 @@
   async function confirmDeleteTag(row: Record<string, unknown>) {
     deletingKey.value = String(row.tagKey ?? '')
     try {
-      await ElMessageBox.confirm(`删除标签 "${row.tagKey}"？`, '删除确认', { type: 'warning' })
+      await confirmDanger({
+        verb: '删除',
+        target: `标签「${row.tagKey}」`,
+        consequence:
+          '该资源 (' +
+          queryForm.resourceType +
+          ' / ' +
+          queryForm.resourceCode +
+          ') 上的此标签立即移除,关联策略可能受影响。',
+        irreversible: false,
+      })
       await deleteResourceTag(
         tenant.tenantId,
         queryForm.resourceType,

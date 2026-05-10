@@ -93,7 +93,7 @@
                 <el-descriptions-item label="policyName">
                   {{ p.policyName || '—' }}
                 </el-descriptions-item>
-                <el-descriptions-item label="tenantId">
+                <el-descriptions-item label="租户 ID">
                   {{ p.tenantId || '—' }}
                 </el-descriptions-item>
                 <el-descriptions-item label="fairShareWeight">

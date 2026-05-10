@@ -125,6 +125,7 @@
 <script setup lang="ts">
   import { ref, reactive, computed } from 'vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
+  import { confirmDanger } from '@/composables/useDangerConfirm'
   import type { FormRules } from 'element-plus'
   import { Plus } from '@element-plus/icons-vue'
   import { useFormValidate, rules } from '@/composables/useFormValidate'
@@ -236,7 +237,12 @@
 
   async function confirmDeleteWebhook(row: Record<string, unknown>) {
     try {
-      await ElMessageBox.confirm(`删除 Webhook #${row.id}？`, '删除确认', { type: 'warning' })
+      await confirmDanger({
+        verb: '删除',
+        target: `Webhook 「${row.name || row.callbackUrl || '#' + row.id}」`,
+        consequence: '该 Webhook 立即停止接收事件;历史投递日志保留可查。',
+        irreversible: false,
+      })
       await deleteWebhook(row.id as number, tenant.tenantId)
       ElMessage.success('已删除')
       await loadWebhooks()

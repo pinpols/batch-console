@@ -103,6 +103,45 @@
       </template>
     </el-dialog>
 
+    <!-- 创建成功后强制弹出明文密钥(只显示这一次) -->
+    <el-dialog
+      v-model="rawKeyVisible"
+      title="🔑 API Key 已创建"
+      width="560px"
+      :close-on-click-modal="false"
+      :close-on-press-escape="false"
+      :show-close="false"
+      align-center
+    >
+      <el-alert
+        type="warning"
+        :closable="false"
+        show-icon
+        title="这是密钥的唯一一次完整显示"
+        description="关闭此窗口后将不再显示。请立即复制保存到安全的地方(密码管理器 / KMS)。"
+        class="raw-key-alert"
+      />
+      <div class="raw-key-block">
+        <div class="raw-key-block__label">名称:{{ createdKey?.keyName }}</div>
+        <div class="raw-key-block__value">
+          <code>{{ createdKey?.rawKey }}</code>
+        </div>
+        <el-button
+          type="primary"
+          :icon="copied ? Check : DocumentCopy"
+          class="raw-key-block__copy"
+          @click="copyRawKey"
+        >
+          {{ copied ? '已复制' : '复制密钥' }}
+        </el-button>
+      </div>
+      <template #footer>
+        <el-button :disabled="!copied" type="primary" @click="closeRawKey">
+          {{ copied ? '我已保存,关闭' : '请先复制再关闭' }}
+        </el-button>
+      </template>
+    </el-dialog>
+
     <el-drawer v-model="detailVisible" title="API Key 详情" size="560px">
       <el-descriptions v-if="detail" :column="1" border size="small">
         <el-descriptions-item label="ID">{{ detail.id }}</el-descriptions-item>
@@ -124,11 +163,18 @@
 
 <script setup lang="ts">
   import { ref, reactive, computed } from 'vue'
-  import { ElMessage, ElMessageBox } from 'element-plus'
+  import { ElMessage } from 'element-plus'
+  import { confirmDanger } from '@/composables/useDangerConfirm'
   import type { FormRules } from 'element-plus'
-  import { Plus } from '@element-plus/icons-vue'
+  import { Check, DocumentCopy, Plus } from '@element-plus/icons-vue'
   import { useFormValidate, rules } from '@/composables/useFormValidate'
-  import { listApiKeys, createApiKey, getApiKey, revokeApiKey } from '@/api/apiKeys'
+  import {
+    listApiKeys,
+    createApiKey,
+    getApiKey,
+    revokeApiKey,
+    type CreateApiKeyResponse,
+  } from '@/api/apiKeys'
   import { toPageResult } from '@/api/adapters'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
@@ -149,6 +195,27 @@
   const saving = ref(false)
   const createVisible = ref(false)
   const detailVisible = ref(false)
+  // 创建成功后弹明文密钥的强制 modal
+  const rawKeyVisible = ref(false)
+  const createdKey = ref<CreateApiKeyResponse | null>(null)
+  const copied = ref(false)
+
+  async function copyRawKey() {
+    if (!createdKey.value?.rawKey) return
+    try {
+      await navigator.clipboard.writeText(createdKey.value.rawKey)
+      copied.value = true
+      ElMessage.success('已复制到剪贴板')
+    } catch {
+      ElMessage.error('剪贴板写入失败,请手动选中复制')
+    }
+  }
+
+  function closeRawKey() {
+    rawKeyVisible.value = false
+    createdKey.value = null
+    copied.value = false
+  }
   const allRows = ref<Record<string, unknown>[]>([])
   const page = ref(1)
   const pageSize = ref(20)
@@ -238,9 +305,12 @@
       }
       if (form.scopes.trim()) body.scopes = form.scopes
       if (form.expiresAt) body.expiresAt = form.expiresAt
-      await createApiKey(tenant.tenantId, body)
-      ElMessage.success('已创建')
+      // BE 仅在 POST 响应里返回 rawKey 明文,之后任何 GET 都查不到 → 必须立即弹出引导用户保存
+      const created = await createApiKey(tenant.tenantId, body)
       createVisible.value = false
+      createdKey.value = created
+      copied.value = false
+      rawKeyVisible.value = true
       await load()
     } finally {
       saving.value = false
@@ -255,8 +325,12 @@
   async function confirmRevoke(row: Record<string, unknown>) {
     if (isRevoked(row)) return
     try {
-      await ElMessageBox.confirm(`吊销 API Key #${row.id}（${row.keyName}）？`, '吊销确认', {
-        type: 'warning',
+      await confirmDanger({
+        verb: '吊销',
+        target: ` API Key 「${row.keyName}」`,
+        consequence:
+          '该密钥立即失效;所有使用此密钥的后台调用、SDK 客户端、CI/CD 流水线会立即收到 401。',
+        irreversible: true,
       })
       await revokeApiKey(row.id as number, tenant.tenantId)
       ElMessage.success('已吊销')
@@ -272,4 +346,39 @@
   useTenantReload(load)
 </script>
 
-<style scoped></style>
+<style scoped>
+  .raw-key-alert {
+    margin-bottom: 16px;
+  }
+
+  .raw-key-block {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+    background: var(--color-bg-canvas);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-content);
+  }
+
+  .raw-key-block__label {
+    font-size: 12px;
+    color: var(--color-text-tertiary);
+  }
+
+  .raw-key-block__value {
+    background: var(--color-bg-card);
+    border: 1px dashed var(--color-border);
+    border-radius: var(--radius-content);
+    padding: 12px 14px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 13px;
+    word-break: break-all;
+    user-select: all;
+    color: var(--color-text-primary);
+  }
+
+  .raw-key-block__copy {
+    align-self: flex-start;
+  }
+</style>

@@ -158,6 +158,7 @@
 <script setup lang="ts">
   import { computed, reactive, ref, watch } from 'vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
+  import { confirmDanger } from '@/composables/useDangerConfirm'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { toPageResult } from '@/api/adapters'
   import { fileApi } from '@/api/file'
@@ -321,8 +322,12 @@
 
   async function archiveFile(row: ConsoleFileRecordResponse) {
     try {
-      await ElMessageBox.confirm(`归档文件 #${row.id}（${row.fileName}）？`, '归档确认', {
-        type: 'warning',
+      await confirmDanger({
+        verb: '归档',
+        target: `文件「${row.fileName}」`,
+        consequence:
+          '归档后该文件不再出现在列表里,正在跑的下游任务不受影响,但新触发会找不到此文件。可在管理后台按 fileId 反向查询。',
+        irreversible: false,
       })
       await fileApi.archive({ tenantId: tenant.tenantId, fileId: row.id })
       ElMessage.success('已归档')
