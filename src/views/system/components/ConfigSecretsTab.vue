@@ -8,40 +8,47 @@
       @search="() => runSearch(loadSecrets)"
       @reset="() => runReset(loadSecrets)"
     />
-    <el-table
-      v-loading="loadingSecrets"
-      :data="pagedSecrets.records"
-      stripe
-      border
-      empty-text="暂无数据"
-      size="small"
-      class="console-table"
+    <DataState
+      :loading="loadingSecrets"
+      :error="loadSecretsError"
+      :has-data="pagedSecrets.records.length > 0"
+      :on-retry="loadSecrets"
     >
-      <el-table-column prop="id" label="ID" width="80" />
-      <el-table-column prop="secretRef" label="Secret Key" min-width="200" show-overflow-tooltip>
-        <template #default="{ row }">
-          <CopyableText :text="String(row.secretRef ?? '')" />
-        </template>
-      </el-table-column>
-      <el-table-column prop="versionNo" label="版本" width="80" />
-      <el-table-column prop="secretStatus" label="状态" width="100" />
-      <DatetimeColumn prop="createdAt" label="创建时间" width="160" />
-      <el-table-column label="操作" width="160" fixed="right">
-        <template #default="{ row }">
-          <div class="table-actions">
-            <el-button size="small" plain type="primary" @click="viewSecret(row)">详情</el-button>
-            <el-button
-              size="small"
-              plain
-              type="warning"
-              v-track-click="{ action: '轮转 Secret', secretKey: row.secretRef }"
-              @click="confirmRotate(row)"
-              >轮转</el-button
-            >
-          </div>
-        </template>
-      </el-table-column>
-    </el-table>
+      <el-table
+        v-loading="loadingSecrets"
+        :data="pagedSecrets.records"
+        stripe
+        border
+        empty-text="暂无数据"
+        size="small"
+        class="console-table"
+      >
+        <el-table-column prop="id" label="ID" width="80" />
+        <el-table-column prop="secretRef" label="Secret Key" min-width="200" show-overflow-tooltip>
+          <template #default="{ row }">
+            <CopyableText :text="String(row.secretRef ?? '')" />
+          </template>
+        </el-table-column>
+        <el-table-column prop="versionNo" label="版本" width="80" />
+        <el-table-column prop="secretStatus" label="状态" width="100" />
+        <DatetimeColumn prop="createdAt" label="创建时间" width="160" />
+        <el-table-column label="操作" width="160" fixed="right">
+          <template #default="{ row }">
+            <div class="table-actions">
+              <el-button size="small" plain type="primary" @click="viewSecret(row)">详情</el-button>
+              <el-button
+                size="small"
+                plain
+                type="warning"
+                v-track-click="{ action: '轮转 Secret', secretKey: row.secretRef }"
+                @click="confirmRotate(row)"
+                >轮转</el-button
+              >
+            </div>
+          </template>
+        </el-table-column>
+      </el-table>
+    </DataState>
     <TablePagerBar
       :page="secretPage"
       :page-size="secretPageSize"
@@ -82,10 +89,16 @@
   import DatetimeColumn from '@/components/common/DatetimeColumn.vue'
   import JsonPreview from '@/components/common/JsonPreview.vue'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
+  import { useListLoadState } from '@/composables/useListLoadState'
+  import DataState from '@/components/common/DataState.vue'
   import type { ConsoleSecretVersionResponse } from '@/types/console-api'
 
   const tenant = useTenantStore()
-  const loadingSecrets = ref(false)
+  const {
+    loading: loadingSecrets,
+    error: loadSecretsError,
+    run: runLoadSecrets,
+  } = useListLoadState()
   const { filterBusy, runSearch, runReset, runRefresh } = useListFilterFeedback(loadingSecrets)
   const secretDetailVisible = ref(false)
   const secretRows = ref<ConsoleSecretVersionResponse[]>([])
@@ -97,14 +110,11 @@
   const secretDetail = ref<ConsoleSecretVersionResponse | null>(null)
 
   async function loadSecrets() {
-    loadingSecrets.value = true
-    try {
+    await runLoadSecrets(async () => {
       secretRows.value = await listSecrets(tenant.tenantId)
-    } catch {
+    }).catch(() => {
       secretRows.value = []
-    } finally {
-      loadingSecrets.value = false
-    }
+    })
   }
 
   async function viewSecret(row: ConsoleSecretVersionResponse) {

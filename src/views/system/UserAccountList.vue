@@ -31,58 +31,70 @@
         </el-form-item>
       </ListPageQueryBar>
 
-      <el-table
-        v-loading="loading"
-        :data="page.items"
-        stripe
-        border
-        empty-text="暂无数据"
-        class="console-table"
+      <DataState
+        :loading="loading"
+        :error="loadError"
+        :has-data="page.items.length > 0"
+        :on-retry="load"
       >
-        <el-table-column prop="id" label="ID" width="80" />
-        <el-table-column prop="tenantId" label="tenantId" min-width="160" />
-        <el-table-column prop="username" label="用户名" min-width="160" show-overflow-tooltip />
-        <el-table-column prop="displayName" label="显示名" min-width="160" show-overflow-tooltip />
-        <el-table-column label="角色">
-          <template #default="{ row }">
-            <div class="role-tags">
-              <el-tag
-                v-for="role in parseRoles(row.authoritiesCsv)"
-                :key="role"
-                size="small"
-                effect="plain"
-              >
-                {{ role }}
-              </el-tag>
-            </div>
-          </template>
-        </el-table-column>
-        <el-table-column label="状态" width="100">
-          <template #default="{ row }">
-            <StatusTag :value="String(row.enabled)" category="yn" />
-          </template>
-        </el-table-column>
-        <DatetimeColumn prop="createdAt" label="创建时间" width="160" />
-        <el-table-column label="操作" width="360" fixed="right">
-          <template #default="{ row }">
-            <div class="table-actions">
-              <el-button size="small" plain type="primary" @click="openEdit(row)">编辑</el-button>
-              <el-button size="small" plain @click="openResetPassword(row)">重置密码</el-button>
-              <el-button
-                v-if="row.enabled"
-                size="small"
-                plain
-                type="warning"
-                @click="confirmDisable(row)"
-                >停用</el-button
-              >
-              <el-button v-else size="small" plain type="success" @click="confirmEnable(row)"
-                >启用</el-button
-              >
-            </div>
-          </template>
-        </el-table-column>
-      </el-table>
+        <el-table
+          v-loading="loading"
+          :data="page.items"
+          stripe
+          border
+          empty-text="暂无数据"
+          class="console-table"
+        >
+          <el-table-column prop="id" label="ID" width="80" />
+          <el-table-column prop="tenantId" label="tenantId" min-width="160" />
+          <el-table-column prop="username" label="用户名" min-width="160" show-overflow-tooltip />
+          <el-table-column
+            prop="displayName"
+            label="显示名"
+            min-width="160"
+            show-overflow-tooltip
+          />
+          <el-table-column label="角色">
+            <template #default="{ row }">
+              <div class="role-tags">
+                <el-tag
+                  v-for="role in parseRoles(row.authoritiesCsv)"
+                  :key="role"
+                  size="small"
+                  effect="plain"
+                >
+                  {{ role }}
+                </el-tag>
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column label="状态" width="100">
+            <template #default="{ row }">
+              <StatusTag :value="String(row.enabled)" category="yn" />
+            </template>
+          </el-table-column>
+          <DatetimeColumn prop="createdAt" label="创建时间" width="160" />
+          <el-table-column label="操作" width="360" fixed="right">
+            <template #default="{ row }">
+              <div class="table-actions">
+                <el-button size="small" plain type="primary" @click="openEdit(row)">编辑</el-button>
+                <el-button size="small" plain @click="openResetPassword(row)">重置密码</el-button>
+                <el-button
+                  v-if="row.enabled"
+                  size="small"
+                  plain
+                  type="warning"
+                  @click="confirmDisable(row)"
+                  >停用</el-button
+                >
+                <el-button v-else size="small" plain type="success" @click="confirmEnable(row)"
+                  >启用</el-button
+                >
+              </div>
+            </template>
+          </el-table-column>
+        </el-table>
+      </DataState>
 
       <TablePagerBar
         :page="queryApplied.pageNo"
@@ -164,6 +176,8 @@
     type UserPage,
   } from '@/api/userAccounts'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
+  import { useListLoadState } from '@/composables/useListLoadState'
+  import DataState from '@/components/common/DataState.vue'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
@@ -173,7 +187,7 @@
   import TenantSelect from '@/components/common/TenantSelect.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
 
-  const loading = ref(false)
+  const { loading, error: loadError, run: runLoad } = useListLoadState()
   const saving = ref(false)
   const resetting = ref(false)
   const listRemote = ref(true)
@@ -200,8 +214,7 @@
   }
 
   async function load() {
-    loading.value = true
-    try {
+    await runLoad(async () => {
       const q: UserListQuery = {
         pageNo: queryApplied.pageNo,
         pageSize: queryApplied.pageSize,
@@ -209,16 +222,14 @@
       if (queryApplied.tenantId) q.tenantId = queryApplied.tenantId
       if (queryApplied.keyword) q.keyword = queryApplied.keyword
       page.value = await listUsers(q)
-    } catch {
+    }).catch(() => {
       page.value = {
         total: 0,
         pageNo: queryApplied.pageNo,
         pageSize: queryApplied.pageSize,
         items: [],
       }
-    } finally {
-      loading.value = false
-    }
+    })
   }
 
   function onSearch() {

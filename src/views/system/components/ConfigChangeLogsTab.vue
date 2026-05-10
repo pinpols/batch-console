@@ -8,23 +8,30 @@
       @search="() => runSearch(loadLogs)"
       @reset="() => runReset(loadLogs)"
     />
-    <el-table
-      v-loading="loadingLogs"
-      :data="pagedLogs.records"
-      stripe
-      border
-      empty-text="暂无数据"
-      size="small"
-      class="console-table"
+    <DataState
+      :loading="loadingLogs"
+      :error="loadLogsError"
+      :has-data="pagedLogs.records.length > 0"
+      :on-retry="loadLogs"
     >
-      <el-table-column prop="id" label="ID" width="80" />
-      <el-table-column prop="releaseId" label="Release ID" width="100" />
-      <el-table-column prop="changeType" label="变更类型" width="120" />
-      <el-table-column prop="configKey" label="配置键" min-width="200" show-overflow-tooltip />
-      <el-table-column prop="operatorId" label="操作者" width="120" />
-      <DatetimeColumn prop="createdAt" label="时间" width="160" />
-      <el-table-column prop="remark" label="备注" min-width="180" show-overflow-tooltip />
-    </el-table>
+      <el-table
+        v-loading="loadingLogs"
+        :data="pagedLogs.records"
+        stripe
+        border
+        empty-text="暂无数据"
+        size="small"
+        class="console-table"
+      >
+        <el-table-column prop="id" label="ID" width="80" />
+        <el-table-column prop="releaseId" label="Release ID" width="100" />
+        <el-table-column prop="changeType" label="变更类型" width="120" />
+        <el-table-column prop="configKey" label="配置键" min-width="200" show-overflow-tooltip />
+        <el-table-column prop="operatorId" label="操作者" width="120" />
+        <DatetimeColumn prop="createdAt" label="时间" width="160" />
+        <el-table-column prop="remark" label="备注" min-width="180" show-overflow-tooltip />
+      </el-table>
+    </DataState>
     <TablePagerBar
       :page="logPage"
       :page-size="logPageSize"
@@ -48,12 +55,14 @@
   import { useTenantReload } from '@/composables/useTenantReload'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import TablePagerBar from '@/components/table/TablePagerBar.vue'
+  import DataState from '@/components/common/DataState.vue'
+  import { useListLoadState } from '@/composables/useListLoadState'
   import DatetimeColumn from '@/components/common/DatetimeColumn.vue'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import type { ConsoleConfigChangeLogResponse } from '@/types/console-api'
 
   const tenant = useTenantStore()
-  const loadingLogs = ref(false)
+  const { loading: loadingLogs, error: loadLogsError, run: runLoadLogs } = useListLoadState()
   const { filterBusy, runSearch, runReset, runRefresh } = useListFilterFeedback(loadingLogs)
   const logRows = ref<ConsoleConfigChangeLogResponse[]>([])
   const logPage = ref(1)
@@ -61,14 +70,11 @@
   const pagedLogs = computed(() => toPageResult(logRows.value, logPage.value, logPageSize.value))
 
   async function loadLogs() {
-    loadingLogs.value = true
-    try {
+    await runLoadLogs(async () => {
       logRows.value = await listConfigChangeLogs(tenant.tenantId)
-    } catch {
+    }).catch(() => {
       logRows.value = []
-    } finally {
-      loadingLogs.value = false
-    }
+    })
   }
 
   useTenantReload(() => {

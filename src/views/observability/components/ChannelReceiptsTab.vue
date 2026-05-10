@@ -37,30 +37,42 @@
         </el-select>
       </el-form-item>
     </ListPageQueryBar>
-    <el-table
-      v-loading="loadingReceipts"
-      :data="pagedReceipts.records"
-      stripe
-      border
-      empty-text="暂无数据"
-      size="small"
-      class="console-table"
+    <DataState
+      :loading="loadingReceipts"
+      :error="loadReceiptsError"
+      :has-data="pagedReceipts.records.length > 0"
+      :on-retry="loadChannelReceipts"
     >
-      <el-table-column prop="id" label="ID" width="80" />
-      <el-table-column prop="channelCode" label="渠道" min-width="160" show-overflow-tooltip />
-      <el-table-column prop="fileId" label="文件 ID" width="100" />
-      <el-table-column prop="dispatchStatus" label="投递状态" width="100" />
-      <el-table-column prop="receiptStatus" label="回执状态" width="100" />
-      <el-table-column prop="errorMessage" label="错误信息" min-width="250" show-overflow-tooltip />
-      <DatetimeColumn prop="dispatchedAt" label="投递时间" width="160" />
-      <el-table-column label="操作" width="120" fixed="right">
-        <template #default="{ row }">
-          <div class="table-actions">
-            <el-button size="small" plain type="primary" @click="openDetail(row)">详情</el-button>
-          </div>
-        </template>
-      </el-table-column>
-    </el-table>
+      <el-table
+        v-loading="loadingReceipts"
+        :data="pagedReceipts.records"
+        stripe
+        border
+        empty-text="暂无数据"
+        size="small"
+        class="console-table"
+      >
+        <el-table-column prop="id" label="ID" width="80" />
+        <el-table-column prop="channelCode" label="渠道" min-width="160" show-overflow-tooltip />
+        <el-table-column prop="fileId" label="文件 ID" width="100" />
+        <el-table-column prop="dispatchStatus" label="投递状态" width="100" />
+        <el-table-column prop="receiptStatus" label="回执状态" width="100" />
+        <el-table-column
+          prop="errorMessage"
+          label="错误信息"
+          min-width="250"
+          show-overflow-tooltip
+        />
+        <DatetimeColumn prop="dispatchedAt" label="投递时间" width="160" />
+        <el-table-column label="操作" width="120" fixed="right">
+          <template #default="{ row }">
+            <div class="table-actions">
+              <el-button size="small" plain type="primary" @click="openDetail(row)">详情</el-button>
+            </div>
+          </template>
+        </el-table-column>
+      </el-table>
+    </DataState>
     <TablePagerBar
       :page="receiptPage"
       :page-size="receiptPageSize"
@@ -88,9 +100,15 @@
   import TablePagerBar from '@/components/table/TablePagerBar.vue'
   import DetailDrawer from '@/components/common/DetailDrawer.vue'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
+  import { useListLoadState } from '@/composables/useListLoadState'
+  import DataState from '@/components/common/DataState.vue'
 
   const tenant = useTenantStore()
-  const loadingReceipts = ref(false)
+  const {
+    loading: loadingReceipts,
+    error: loadReceiptsError,
+    run: runLoadReceipts,
+  } = useListLoadState()
   const { filterBusy, runSearch, runReset, runRefresh } = useListFilterFeedback(loadingReceipts)
   const receiptRows = ref<Record<string, unknown>[]>([])
   const receiptPage = ref(1)
@@ -147,14 +165,11 @@
   }
 
   async function loadChannelReceipts() {
-    loadingReceipts.value = true
-    try {
+    await runLoadReceipts(async () => {
       receiptRows.value = (await queryChannelReceipts(tenant.tenantId)) as Record<string, unknown>[]
-    } catch {
+    }).catch(() => {
       receiptRows.value = []
-    } finally {
-      loadingReceipts.value = false
-    }
+    })
   }
 
   function applyFilter() {

@@ -37,30 +37,42 @@
         />
       </el-form-item>
     </ListPageQueryBar>
-    <el-table
-      v-loading="loadingDL"
-      :data="pagedDL.records"
-      stripe
-      border
-      empty-text="暂无数据"
-      size="small"
-      class="console-table"
+    <DataState
+      :loading="loadingDL"
+      :error="loadDLError"
+      :has-data="pagedDL.records.length > 0"
+      :on-retry="loadDeadLetters"
     >
-      <el-table-column prop="id" label="ID" width="80" />
-      <el-table-column prop="sourceType" label="来源类型" width="120" />
-      <el-table-column prop="sourceId" label="来源 ID" width="100" />
-      <el-table-column prop="deadLetterReason" label="原因" min-width="250" show-overflow-tooltip />
-      <DatetimeColumn prop="createdAt" label="失败时间" width="160" />
-      <el-table-column prop="replayCount" label="重试次数" width="90" />
-      <el-table-column prop="replayStatus" label="状态" width="100" />
-      <el-table-column label="操作" width="120" fixed="right">
-        <template #default="{ row }">
-          <div class="table-actions">
-            <el-button size="small" plain type="primary" @click="openDetail(row)">详情</el-button>
-          </div>
-        </template>
-      </el-table-column>
-    </el-table>
+      <el-table
+        v-loading="loadingDL"
+        :data="pagedDL.records"
+        stripe
+        border
+        empty-text="暂无数据"
+        size="small"
+        class="console-table"
+      >
+        <el-table-column prop="id" label="ID" width="80" />
+        <el-table-column prop="sourceType" label="来源类型" width="120" />
+        <el-table-column prop="sourceId" label="来源 ID" width="100" />
+        <el-table-column
+          prop="deadLetterReason"
+          label="原因"
+          min-width="250"
+          show-overflow-tooltip
+        />
+        <DatetimeColumn prop="createdAt" label="失败时间" width="160" />
+        <el-table-column prop="replayCount" label="重试次数" width="90" />
+        <el-table-column prop="replayStatus" label="状态" width="100" />
+        <el-table-column label="操作" width="120" fixed="right">
+          <template #default="{ row }">
+            <div class="table-actions">
+              <el-button size="small" plain type="primary" @click="openDetail(row)">详情</el-button>
+            </div>
+          </template>
+        </el-table-column>
+      </el-table>
+    </DataState>
     <TablePagerBar
       :page="dlPage"
       :page-size="dlPageSize"
@@ -88,9 +100,11 @@
   import TablePagerBar from '@/components/table/TablePagerBar.vue'
   import DetailDrawer from '@/components/common/DetailDrawer.vue'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
+  import { useListLoadState } from '@/composables/useListLoadState'
+  import DataState from '@/components/common/DataState.vue'
 
   const tenant = useTenantStore()
-  const loadingDL = ref(false)
+  const { loading: loadingDL, error: loadDLError, run: runLoadDL } = useListLoadState()
   const { filterBusy, runSearch, runReset, runRefresh } = useListFilterFeedback(loadingDL)
   const dlRows = ref<Record<string, unknown>[]>([])
   const dlPage = ref(1)
@@ -145,14 +159,11 @@
   }
 
   async function loadDeadLetters() {
-    loadingDL.value = true
-    try {
+    await runLoadDL(async () => {
       dlRows.value = (await queryDeadLetters(tenant.tenantId)) as Record<string, unknown>[]
-    } catch {
+    }).catch(() => {
       dlRows.value = []
-    } finally {
-      loadingDL.value = false
-    }
+    })
   }
 
   function applyFilter() {

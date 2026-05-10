@@ -45,46 +45,53 @@
       </el-form-item>
     </ListPageQueryBar>
 
-    <el-table
-      v-loading="loadingTags"
-      :data="tagRows"
-      stripe
-      border
-      size="small"
-      empty-text="暂无数据"
-      class="console-table"
+    <DataState
+      :loading="loadingTags"
+      :error="loadTagsError"
+      :has-data="tagRows.length > 0"
+      :on-retry="loadTags"
     >
-      <el-table-column prop="tagKey" label="标签键" min-width="220" show-overflow-tooltip />
-      <el-table-column label="标签值" min-width="260">
-        <template #default="{ row }">
-          <el-input v-model="editValueByKey[String(row.tagKey)]" clearable placeholder="可选" />
-        </template>
-      </el-table-column>
-      <el-table-column label="操作" width="170" fixed="right">
-        <template #default="{ row }">
-          <div class="table-actions">
-            <el-button
-              size="small"
-              plain
-              type="primary"
-              :loading="savingKey === String(row.tagKey)"
-              @click="saveRow(row)"
-            >
-              保存
-            </el-button>
-            <el-button
-              size="small"
-              plain
-              type="danger"
-              :loading="deletingKey === String(row.tagKey)"
-              @click="confirmDeleteTag(row)"
-            >
-              删除
-            </el-button>
-          </div>
-        </template>
-      </el-table-column>
-    </el-table>
+      <el-table
+        v-loading="loadingTags"
+        :data="tagRows"
+        stripe
+        border
+        size="small"
+        empty-text="暂无数据"
+        class="console-table"
+      >
+        <el-table-column prop="tagKey" label="标签键" min-width="220" show-overflow-tooltip />
+        <el-table-column label="标签值" min-width="260">
+          <template #default="{ row }">
+            <el-input v-model="editValueByKey[String(row.tagKey)]" clearable placeholder="可选" />
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="170" fixed="right">
+          <template #default="{ row }">
+            <div class="table-actions">
+              <el-button
+                size="small"
+                plain
+                type="primary"
+                :loading="savingKey === String(row.tagKey)"
+                @click="saveRow(row)"
+              >
+                保存
+              </el-button>
+              <el-button
+                size="small"
+                plain
+                type="danger"
+                :loading="deletingKey === String(row.tagKey)"
+                @click="confirmDeleteTag(row)"
+              >
+                删除
+              </el-button>
+            </div>
+          </template>
+        </el-table-column>
+      </el-table>
+    </DataState>
 
     <el-dialog v-model="newDialogVisible" title="新增标签" width="520px">
       <el-form label-width="84px" class="new-dialog-form">
@@ -117,6 +124,8 @@
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
+  import { useListLoadState } from '@/composables/useListLoadState'
+  import DataState from '@/components/common/DataState.vue'
 
   const tenant = useTenantStore()
   const { data: metaEnums } = useConsoleMetaEnumsQuery()
@@ -124,7 +133,7 @@
     pickMetaEnumGroup(metaEnums.value, 'triggerResourceType'),
   )
 
-  const loadingTags = ref(false)
+  const { loading: loadingTags, error: loadTagsError, run: runLoadTags } = useListLoadState()
   const { filterBusy, runSearch, runReset, runRefresh } = useListFilterFeedback(loadingTags)
   const queryForm = reactive({ resourceType: '' as string, resourceCode: '' })
   const editValueByKey = reactive<Record<string, string>>({})
@@ -141,8 +150,7 @@
       ElMessage.warning('请输入资源类型和编码')
       return
     }
-    loadingTags.value = true
-    try {
+    await runLoadTags(async () => {
       const data = await listResourceTags(
         tenant.tenantId,
         queryForm.resourceType as ResourceType,
@@ -154,11 +162,9 @@
         const tagKey = String(row.tagKey ?? '')
         editValueByKey[tagKey] = row.tagValue ? String(row.tagValue) : ''
       })
-    } catch {
+    }).catch(() => {
       tagRows.value = []
-    } finally {
-      loadingTags.value = false
-    }
+    })
   }
 
   async function upsertTag(tagKey: string, tagValue: string) {
