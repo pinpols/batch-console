@@ -4,36 +4,45 @@
          BE ConfigSync*Request 全 NotBlank,默认 'default' 让基础场景跑通,
          真要跨 dev/prod 同步在这里改即可。 -->
     <div class="sync-block sync-block--params">
-      <div class="sync-block__title">同步参数</div>
+      <div class="sync-block__title">{{ t('configSyncTab.paramsTitle') }}</div>
       <div class="sync-block__desc">
-        当前租户 <code>{{ tenant.tenantId }}</code> 即源租户;BE 要求 sourceEnv / targetEnv
-        都不能为空,默认 default。
+        <i18n-t keypath="configSyncTab.paramsDesc" tag="span">
+          <template #tenant
+            ><code>{{ tenant.tenantId }}</code></template
+          >
+        </i18n-t>
       </div>
       <el-form label-width="100px" inline class="form-section">
-        <el-form-item label="源环境">
-          <el-input v-model="sourceEnv" class="env-input" placeholder="如 default / prod" />
+        <el-form-item :label="t('configSyncTab.sourceEnvLabel')">
+          <el-input
+            v-model="sourceEnv"
+            class="env-input"
+            :placeholder="t('configSyncTab.sourceEnvPlaceholder')"
+          />
         </el-form-item>
-        <el-form-item label="目标环境">
-          <el-input v-model="targetEnv" class="env-input" placeholder="如 default / staging" />
+        <el-form-item :label="t('configSyncTab.targetEnvLabel')">
+          <el-input
+            v-model="targetEnv"
+            class="env-input"
+            :placeholder="t('configSyncTab.targetEnvPlaceholder')"
+          />
         </el-form-item>
-        <el-form-item label="目标租户">
+        <el-form-item :label="t('configSyncTab.targetTenantsLabel')">
           <el-input
             v-model="targetTenantsText"
             class="env-input env-input--wide"
-            placeholder="逗号分隔多个;留空则用当前租户"
+            :placeholder="t('configSyncTab.targetTenantsPlaceholder')"
           />
         </el-form-item>
       </el-form>
     </div>
 
     <div class="sync-block">
-      <div class="sync-block__title">配置导出</div>
-      <div class="sync-block__desc">
-        选择要导出的配置域（留空表示全部），点击下载按钮获取 JSON。
-      </div>
+      <div class="sync-block__title">{{ t('configSyncTab.exportTitle') }}</div>
+      <div class="sync-block__desc">{{ t('configSyncTab.exportDesc') }}</div>
       <div class="form-panel">
         <el-form label-width="100px" class="form-section">
-          <el-form-item label="配置类型" class="export-item">
+          <el-form-item :label="t('configSyncTab.exportTypesLabel')" class="export-item">
             <div class="export-row">
               <el-select
                 v-model="exportTypes"
@@ -44,42 +53,42 @@
                 default-first-option
                 collapse-tags
                 collapse-tags-tooltip
-                placeholder="留空导出全部；可多选/输入，如 JOB, WORKFLOW"
+                :placeholder="t('configSyncTab.exportTypesPlaceholder')"
                 class="export-row__select"
               >
-                <el-option v-for="t in exportTypeOptions" :key="t" :label="t" :value="t" />
+                <el-option v-for="opt in exportTypeOptions" :key="opt" :label="opt" :value="opt" />
               </el-select>
               <el-button
                 type="primary"
                 :loading="exporting"
                 :icon="Download"
                 class="export-row__action"
-                v-track-click="'配置同步-导出'"
+                v-track-click="t('configSyncTab.trackExport')"
                 @click="doExport"
               >
-                下载
+                {{ t('configSyncTab.btnDownload') }}
               </el-button>
             </div>
           </el-form-item>
         </el-form>
       </div>
       <div v-if="exportResult" class="sync-result">
-        <div class="sync-result__title">导出结果</div>
+        <div class="sync-result__title">{{ t('configSyncTab.exportResultTitle') }}</div>
         <JsonPreview :data="exportResult" />
       </div>
     </div>
 
     <div class="sync-block">
-      <div class="sync-block__title">配置导入</div>
-      <div class="sync-block__desc">粘贴导出的 JSON。建议先“预览变更”确认差异，再执行导入。</div>
+      <div class="sync-block__title">{{ t('configSyncTab.importTitle') }}</div>
+      <div class="sync-block__desc">{{ t('configSyncTab.importDesc') }}</div>
       <div class="form-panel">
         <el-form label-width="100px">
-          <el-form-item label="Payload">
+          <el-form-item :label="t('configSyncTab.payloadLabel')">
             <el-input
               v-model="importPayload"
               type="textarea"
               :rows="8"
-              placeholder="粘贴导出的 JSON"
+              :placeholder="t('configSyncTab.payloadPlaceholder')"
               class="sync-payload"
             />
           </el-form-item>
@@ -87,24 +96,25 @@
             <el-button
               :loading="previewing"
               :disabled="!importPayload.trim()"
-              v-track-click="'配置同步-预览'"
+              v-track-click="t('configSyncTab.trackPreview')"
               @click="doPreview"
             >
-              预览变更
+              {{ t('configSyncTab.btnPreview') }}
             </el-button>
             <el-button
               type="primary"
               :loading="importing"
               :disabled="!importPayload.trim()"
-              v-track-click="'配置同步-导入'"
+              v-track-click="t('configSyncTab.trackImport')"
               @click="doImport"
-              >确认导入</el-button
             >
+              {{ t('configSyncTab.btnImport') }}
+            </el-button>
           </el-form-item>
         </el-form>
       </div>
       <div v-if="previewResult" class="sync-result">
-        <div class="sync-result__title">预览结果</div>
+        <div class="sync-result__title">{{ t('configSyncTab.previewResultTitle') }}</div>
         <JsonPreview :data="previewResult" />
       </div>
     </div>
@@ -113,7 +123,10 @@
 
 <script setup lang="ts">
   import { ref } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
+
+  const { t } = useI18n({ useScope: 'global' })
   import { Download } from '@element-plus/icons-vue'
   import { exportConfigSync, previewConfigSync, importConfigSync } from '@/api/configReleases'
   import { useTenantStore } from '@/stores/tenant'
@@ -168,7 +181,7 @@
         targetEnv: targetEnv.value.trim() || 'default',
         ...(types.length ? { configTypes: types } : {}),
       })
-      ElMessage.success('导出完成')
+      ElMessage.success(t('configSyncTab.toastExportDone'))
     } finally {
       exporting.value = false
     }
@@ -176,13 +189,12 @@
 
   async function doPreview() {
     if (!importPayload.value.trim()) {
-      ElMessage.warning('请输入 Payload')
+      ElMessage.warning(t('configSyncTab.toastNeedPayload'))
       return
     }
     previewing.value = true
     try {
-      // payload 当前没用到(preview 是按 source/target 算 diff,bundle 在 import 才用)
-      JSON.parse(importPayload.value) // 仅校验合法 JSON
+      JSON.parse(importPayload.value)
       previewResult.value = await previewConfigSync({
         sourceTenantId: tenant.tenantId,
         tenantId: tenant.tenantId,
@@ -190,7 +202,11 @@
         targetEnv: targetEnv.value.trim() || 'default',
       })
     } catch (e) {
-      ElMessage.error(e instanceof SyntaxError ? 'Payload 需为合法 JSON' : '预览失败')
+      ElMessage.error(
+        e instanceof SyntaxError
+          ? t('configSyncTab.errInvalidJson')
+          : t('configSyncTab.errPreviewFailed'),
+      )
     } finally {
       previewing.value = false
     }
@@ -198,7 +214,7 @@
 
   async function doImport() {
     if (!importPayload.value.trim()) {
-      ElMessage.warning('请输入 Payload')
+      ElMessage.warning(t('configSyncTab.toastNeedPayload'))
       return
     }
     importing.value = true
@@ -211,9 +227,13 @@
         targetTenantIds: resolvedTargetTenants(),
         bundle,
       })
-      ElMessage.success('导入完成')
+      ElMessage.success(t('configSyncTab.toastImportDone'))
     } catch (e) {
-      ElMessage.error(e instanceof SyntaxError ? 'Payload 需为合法 JSON' : '导入失败')
+      ElMessage.error(
+        e instanceof SyntaxError
+          ? t('configSyncTab.errInvalidJson')
+          : t('configSyncTab.errImportFailed'),
+      )
     } finally {
       importing.value = false
     }

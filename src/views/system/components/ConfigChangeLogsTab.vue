@@ -19,30 +19,61 @@
         :data="pagedLogs.records"
         stripe
         border
-        empty-text="暂无数据"
+        :empty-text="t('common.noData')"
         size="small"
         class="console-table"
       >
-        <el-table-column prop="id" label="ID" width="80" />
-        <el-table-column prop="configType" label="类型" width="100" />
-        <el-table-column prop="configKey" label="配置键" min-width="200" show-overflow-tooltip />
-        <el-table-column prop="versionNo" label="版本" width="80" />
-        <el-table-column prop="changeAction" label="操作" width="110" />
-        <el-table-column prop="changeResult" label="结果" width="100">
+        <el-table-column prop="id" :label="t('configChangeLogsTab.colId')" width="80" />
+        <el-table-column prop="configType" :label="t('configChangeLogsTab.colType')" width="100" />
+        <el-table-column
+          prop="configKey"
+          :label="t('configChangeLogsTab.colConfigKey')"
+          min-width="200"
+          show-overflow-tooltip
+        />
+        <el-table-column prop="versionNo" :label="t('configChangeLogsTab.colVersion')" width="80" />
+        <el-table-column
+          prop="changeAction"
+          :label="t('configChangeLogsTab.colAction')"
+          width="110"
+        />
+        <el-table-column
+          prop="changeResult"
+          :label="t('configChangeLogsTab.colResult')"
+          width="100"
+        >
           <template #default="{ row }">
             <StatusTag :value="String(row.changeResult ?? '')" category="operationResult" />
           </template>
         </el-table-column>
-        <el-table-column prop="operatorType" label="操作者类型" width="110" />
-        <el-table-column prop="operatorId" label="操作者" width="140" show-overflow-tooltip />
-        <el-table-column prop="traceId" label="Trace" width="180" show-overflow-tooltip>
+        <el-table-column
+          prop="operatorType"
+          :label="t('configChangeLogsTab.colOperatorType')"
+          width="110"
+        />
+        <el-table-column
+          prop="operatorId"
+          :label="t('configChangeLogsTab.colOperator')"
+          width="140"
+          show-overflow-tooltip
+        />
+        <el-table-column
+          prop="traceId"
+          :label="t('configChangeLogsTab.colTrace')"
+          width="180"
+          show-overflow-tooltip
+        >
           <template #default="{ row }">
             <CopyableText v-if="row.traceId" :text="String(row.traceId)" />
             <span v-else class="muted">—</span>
           </template>
         </el-table-column>
-        <DatetimeColumn prop="createdAt" label="时间" width="160" />
-        <el-table-column label="变更摘要" min-width="180" show-overflow-tooltip>
+        <DatetimeColumn prop="createdAt" :label="t('configChangeLogsTab.colTime')" width="160" />
+        <el-table-column
+          :label="t('configChangeLogsTab.colSummary')"
+          min-width="180"
+          show-overflow-tooltip
+        >
           <template #default="{ row }">
             <span v-if="row.changeSummaryJson" class="mono">{{ row.changeSummaryJson }}</span>
             <span v-else class="muted">—</span>
@@ -67,7 +98,10 @@
 
 <script setup lang="ts">
   import { ref, computed } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import { listConfigChangeLogs } from '@/api/configReleases'
+
+  const { t } = useI18n({ useScope: 'global' })
   import { toPageResult } from '@/api/adapters'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
