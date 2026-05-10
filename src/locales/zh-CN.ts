@@ -110,6 +110,26 @@ export default {
     tenantSuccess: '已复制 tenantId',
     fail: '复制失败',
   },
+  mobile: {
+    files: {
+      title: '文件',
+      subtitle: '共 {total} 条',
+      bizDate: '业务日',
+      size: '大小',
+      received: '接收',
+      statusAll: '全部',
+      loadMore: '加载更多',
+      allLoaded: '— 已加载全部 —',
+    },
+    tenants: {
+      title: '租户',
+      subtitle: '共 {total} 条',
+      created: '创建',
+      statusAll: '全部',
+      loadMore: '加载更多',
+      allLoaded: '— 已加载全部 —',
+    },
+  },
   palette: {
     placeholder: '搜索菜单、最近页面;纯数字可跳 Job 实例详情',
     empty: '无匹配结果',

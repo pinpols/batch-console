@@ -104,6 +104,26 @@ const messages: Messages = {
     tenantSuccess: 'tenantId copied',
     fail: 'Copy failed',
   },
+  mobile: {
+    files: {
+      title: 'Files',
+      subtitle: '{total} total',
+      bizDate: 'Biz date',
+      size: 'Size',
+      received: 'Received',
+      statusAll: 'All',
+      loadMore: 'Load more',
+      allLoaded: '— end of list —',
+    },
+    tenants: {
+      title: 'Tenants',
+      subtitle: '{total} total',
+      created: 'Created',
+      statusAll: 'All',
+      loadMore: 'Load more',
+      allLoaded: '— end of list —',
+    },
+  },
   palette: {
     placeholder: 'Search menu, recent pages; numeric input jumps to job instance',
     empty: 'No matches',
