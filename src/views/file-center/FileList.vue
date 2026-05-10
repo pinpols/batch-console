@@ -22,58 +22,61 @@
             @reset="reset"
             @refresh="() => runRefresh(load)"
           >
-            <el-form-item label="快捷">
+            <el-form-item :label="t('fileList.quick')">
               <el-radio-group :model-value="quickStatus" size="small" @change="onQuickStatusChange">
-                <el-radio-button value="all">全部</el-radio-button>
-                <el-radio-button value="processing">处理中</el-radio-button>
-                <el-radio-button value="failed">失败</el-radio-button>
+                <el-radio-button value="all">{{ t('fileList.quickAll') }}</el-radio-button>
+                <el-radio-button value="processing">
+                  {{ t('fileList.quickProcessing') }}
+                </el-radio-button>
+                <el-radio-button value="failed">{{ t('fileList.quickFailed') }}</el-radio-button>
               </el-radio-group>
             </el-form-item>
-            <el-form-item label="状态">
+            <el-form-item :label="t('fileList.statusLabel')">
               <MetaSelect
                 class="query-w-160"
                 v-model="filters.fileStatus"
                 clearable
                 filterable
-                placeholder="全部文件状态"
+                enum-key="fileStatus"
+                :placeholder="t('fileList.statusPlaceholder')"
                 :options="fileStatusSelectOptions"
               />
             </el-form-item>
-            <el-form-item label="业务类型">
+            <el-form-item :label="t('fileList.bizType')">
               <MetaSelect
                 class="query-w-160"
                 v-model="filters.bizType"
                 clearable
                 filterable
-                placeholder="全部业务类型"
+                :placeholder="t('fileList.bizTypePlaceholder')"
                 :options="bizTypeOptions"
               />
             </el-form-item>
-            <el-form-item label="文件名">
+            <el-form-item :label="t('fileList.fileName')">
               <el-input
                 class="query-w-160"
                 v-model="filters.fileName"
                 clearable
-                placeholder="文件名，模糊匹配"
+                :placeholder="t('fileList.fileNamePlaceholder')"
               />
             </el-form-item>
-            <el-form-item label="Trace">
+            <el-form-item :label="t('fileList.trace')">
               <el-input
                 class="query-w-160"
                 v-model="filters.traceId"
                 clearable
-                placeholder="Trace Id，模糊匹配"
+                :placeholder="t('fileList.tracePlaceholder')"
               />
             </el-form-item>
-            <el-form-item label="File ID">
+            <el-form-item :label="t('fileList.fileId')">
               <el-input
                 class="query-w-120"
                 v-model="filters.fileId"
                 clearable
-                placeholder="文件 Id，精确或包含"
+                :placeholder="t('fileList.fileIdPlaceholder')"
               />
             </el-form-item>
-            <el-form-item label="业务日">
+            <el-form-item :label="t('fileList.bizDate')">
               <DateRangePresetPicker
                 v-model="bizDateRange"
                 type="daterange"
@@ -84,17 +87,27 @@
         </template>
 
         <el-table-column prop="id" label="ID" width="90" />
-        <el-table-column prop="fileName" label="文件名" min-width="180" show-overflow-tooltip />
-        <el-table-column prop="fileStatus" label="状态" width="120">
+        <el-table-column
+          prop="fileName"
+          :label="t('fileList.fileName')"
+          min-width="180"
+          show-overflow-tooltip
+        />
+        <el-table-column prop="fileStatus" :label="t('fileList.statusLabel')" width="120">
           <template #default="{ row }">
             <StatusTag :value="String(row.fileStatus ?? '')" category="file" />
           </template>
         </el-table-column>
-        <el-table-column prop="bizType" label="业务类型" width="120" />
-        <el-table-column prop="bizDate" label="业务日" width="110" />
-        <el-table-column prop="traceId" label="Trace" min-width="140" show-overflow-tooltip />
-        <DatetimeColumn prop="createdAt" label="创建时间" width="160" />
-        <el-table-column label="操作" width="180" fixed="right">
+        <el-table-column prop="bizType" :label="t('fileList.bizType')" width="120" />
+        <el-table-column prop="bizDate" :label="t('fileList.bizDate')" width="110" />
+        <el-table-column
+          prop="traceId"
+          :label="t('fileList.trace')"
+          min-width="140"
+          show-overflow-tooltip
+        />
+        <DatetimeColumn prop="createdAt" :label="t('fileList.colCreatedAt')" width="160" />
+        <el-table-column :label="t('fileList.colActions')" width="180" fixed="right">
           <template #default="{ row }">
             <RowActions :actions="rowActions(row)" />
           </template>
@@ -102,7 +115,7 @@
       </ProTable>
     </SectionCard>
 
-    <el-drawer v-model="detailVisible" title="文件详情" size="720px">
+    <el-drawer v-model="detailVisible" :title="t('fileList.detailTitle')" size="720px">
       <el-descriptions v-if="detail" :column="2" border size="small">
         <el-descriptions-item label="ID">{{ detail.id }}</el-descriptions-item>
         <el-descriptions-item label="tenantId">{{ detail.tenantId }}</el-descriptions-item>
@@ -113,31 +126,54 @@
         <el-descriptions-item label="traceId" :span="2">{{ detail.traceId }}</el-descriptions-item>
         <el-descriptions-item label="createdAt">{{ detail.createdAt }}</el-descriptions-item>
         <el-descriptions-item label="updatedAt">{{ detail.updatedAt }}</el-descriptions-item>
-        <el-descriptions-item label="原始响应" :span="2">
+        <el-descriptions-item :label="t('fileList.detailRawResponse')" :span="2">
           <JsonPreview :data="detail" />
         </el-descriptions-item>
       </el-descriptions>
     </el-drawer>
 
-    <el-dialog v-model="auditVisible" title="文件审计" width="880px">
+    <el-dialog v-model="auditVisible" :title="t('fileList.auditTitle')" width="880px">
       <el-table
         v-loading="loading"
         :data="pagedAuditRows.records"
         border
         size="small"
         height="420"
-        empty-text="暂无审计记录"
+        :empty-text="t('fileList.auditEmpty')"
         highlight-current-row
         class="console-table"
       >
-        <DatetimeColumn prop="createdAt" label="时间" width="160" />
-        <el-table-column prop="operationType" label="操作" width="120" />
-        <el-table-column prop="operationResult" label="结果" width="120" />
-        <el-table-column prop="operatorType" label="操作者类型" width="110" />
-        <el-table-column prop="operatorId" label="操作者" width="120" />
-        <el-table-column prop="traceId" label="Trace" min-width="150" show-overflow-tooltip />
-        <el-table-column prop="evidenceRef" label="证据" width="140" show-overflow-tooltip />
-        <el-table-column prop="detailSummary" label="摘要" min-width="180" show-overflow-tooltip />
+        <DatetimeColumn prop="createdAt" :label="t('fileList.auditTime')" width="160" />
+        <el-table-column
+          prop="operationType"
+          :label="t('fileList.auditOperationType')"
+          width="120"
+        />
+        <el-table-column
+          prop="operationResult"
+          :label="t('fileList.auditOperationResult')"
+          width="120"
+        />
+        <el-table-column prop="operatorType" :label="t('fileList.auditOperatorType')" width="110" />
+        <el-table-column prop="operatorId" :label="t('fileList.auditOperatorId')" width="120" />
+        <el-table-column
+          prop="traceId"
+          :label="t('fileList.trace')"
+          min-width="150"
+          show-overflow-tooltip
+        />
+        <el-table-column
+          prop="evidenceRef"
+          :label="t('fileList.auditEvidence')"
+          width="140"
+          show-overflow-tooltip
+        />
+        <el-table-column
+          prop="detailSummary"
+          :label="t('fileList.auditDetailSummary')"
+          min-width="180"
+          show-overflow-tooltip
+        />
       </el-table>
       <TablePagerBar
         :page="auditPage"
@@ -152,7 +188,10 @@
 
 <script setup lang="ts">
   import { computed, reactive, ref, watch } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
+
+  const { t } = useI18n({ useScope: 'global' })
   import { confirmDanger } from '@/composables/useDangerConfirm'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { toPageResult } from '@/api/adapters'
@@ -230,11 +269,26 @@
   // 行操作:1 主 + 4 次,折进"更多"避免一行 5 个 plain 按钮
   function rowActions(row: ConsoleFileRecordResponse): RowAction[] {
     return [
-      { key: 'detail', label: '详情', primary: true, onClick: () => openDetail(row) },
-      { key: 'audit', label: '审计', onClick: () => openAudit(row) },
-      { key: 'download', label: '下载', onClick: () => downloadFile(row) },
-      { key: 'redispatch', label: '重投递', divided: true, onClick: () => redispatchFile(row) },
-      { key: 'archive', label: '归档', danger: true, onClick: () => archiveFile(row) },
+      {
+        key: 'detail',
+        label: t('fileList.actionDetail'),
+        primary: true,
+        onClick: () => openDetail(row),
+      },
+      { key: 'audit', label: t('fileList.actionAudit'), onClick: () => openAudit(row) },
+      { key: 'download', label: t('fileList.actionDownload'), onClick: () => downloadFile(row) },
+      {
+        key: 'redispatch',
+        label: t('fileList.actionRedispatch'),
+        divided: true,
+        onClick: () => redispatchFile(row),
+      },
+      {
+        key: 'archive',
+        label: t('fileList.actionArchive'),
+        danger: true,
+        onClick: () => archiveFile(row),
+      },
     ]
   }
 
@@ -336,17 +390,23 @@
       a.click()
       URL.revokeObjectURL(url)
     } catch {
-      ElMessage.error('下载失败')
+      ElMessage.error(t('fileList.downloadFail'))
     }
   }
 
   async function redispatchFile(row: ConsoleFileRecordResponse) {
     try {
-      await ElMessageBox.confirm(`重投递文件 #${row.id}（${row.fileName}）？`, '重投递确认', {
-        type: 'warning',
-      })
+      await ElMessageBox.confirm(
+        t('fileList.redispatchConfirm', { id: row.id, name: row.fileName }),
+        t('fileList.redispatchTitle'),
+        {
+          type: 'warning',
+          confirmButtonText: t('common.confirm'),
+          cancelButtonText: t('common.cancel'),
+        },
+      )
       await fileApi.redispatch({ tenantId: tenant.tenantId, fileId: row.id })
-      ElMessage.success('已发起重投递')
+      ElMessage.success(t('fileList.redispatchSuccess'))
       await load()
     } catch {
       /* cancel */
@@ -356,14 +416,13 @@
   async function archiveFile(row: ConsoleFileRecordResponse) {
     try {
       await confirmDanger({
-        verb: '归档',
-        target: `文件「${row.fileName}」`,
-        consequence:
-          '归档后该文件不再出现在列表里,正在跑的下游任务不受影响,但新触发会找不到此文件。可在管理后台按 fileId 反向查询。',
+        verb: t('fileList.archiveVerb'),
+        target: t('fileList.archiveTarget', { name: row.fileName }),
+        consequence: t('fileList.archiveConsequence'),
         irreversible: false,
       })
       await fileApi.archive({ tenantId: tenant.tenantId, fileId: row.id })
-      ElMessage.success('已归档')
+      ElMessage.success(t('fileList.archiveSuccess'))
       await load()
     } catch {
       /* cancel */

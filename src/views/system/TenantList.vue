@@ -9,25 +9,27 @@
           class="pretty-add-button"
           @click="openCreate"
         >
-          新增租户
+          {{ t('tenantList.headerCreate') }}
         </el-button>
-        <el-button v-if="canManageTenants" type="primary" plain @click="batchVisible = true"
-          >批量新增</el-button
-        >
-        <el-button v-if="canManageTenants" plain @click="copyVisible = true">复制配置</el-button>
+        <el-button v-if="canManageTenants" type="primary" plain @click="batchVisible = true">
+          {{ t('tenantList.headerBatch') }}
+        </el-button>
+        <el-button v-if="canManageTenants" plain @click="copyVisible = true">
+          {{ t('tenantList.headerCopyConfig') }}
+        </el-button>
       </template>
     </PageHeader>
 
     <div class="metrics">
-      <MetricCard label="租户总数" :value="page.total" />
-      <MetricCard label="启用中" :value="activeCount" />
-      <MetricCard label="已暂停" :value="suspendedCount" />
-      <MetricCard label="当前上下文" :value="tenant.tenantId" />
+      <MetricCard :label="t('tenantList.metricTotal')" :value="page.total" />
+      <MetricCard :label="t('tenantList.metricActive')" :value="activeCount" />
+      <MetricCard :label="t('tenantList.metricSuspended')" :value="suspendedCount" />
+      <MetricCard :label="t('tenantList.metricCurrent')" :value="tenant.tenantId" />
     </div>
 
     <SectionCard>
       <template #header>
-        <span>租户列表</span>
+        <span>{{ t('tenantList.sectionTitle') }}</span>
       </template>
 
       <ListPageQueryBar
@@ -37,28 +39,31 @@
         @reset="onReset"
         @refresh="() => runRefresh(load)"
       >
-        <el-form-item label="快捷">
+        <el-form-item :label="t('tenantList.quick')">
           <el-radio-group :model-value="quickStatus" size="small" @change="onQuickStatusChange">
-            <el-radio-button value="all">全部</el-radio-button>
-            <el-radio-button value="active">启用</el-radio-button>
-            <el-radio-button value="suspended">暂停</el-radio-button>
+            <el-radio-button value="all">{{ t('tenantList.quickAll') }}</el-radio-button>
+            <el-radio-button value="active">{{ t('tenantList.quickActive') }}</el-radio-button>
+            <el-radio-button value="suspended">
+              {{ t('tenantList.quickSuspended') }}
+            </el-radio-button>
           </el-radio-group>
         </el-form-item>
-        <el-form-item label="关键字">
+        <el-form-item :label="t('tenantList.keyword')">
           <el-input
             class="query-w-220"
             v-model="queryDraft.keyword"
             clearable
-            placeholder="tenantId / tenantName"
+            :placeholder="t('tenantList.keywordPlaceholderLite')"
             @keyup.enter="onSearch"
           />
         </el-form-item>
-        <el-form-item label="状态">
+        <el-form-item :label="t('tenantList.statusLabel')">
           <MetaSelect
             class="query-w-140"
             v-model="queryDraft.status"
             clearable
-            placeholder="全部"
+            enum-key="tenantStatus"
+            :placeholder="t('tenantList.statusPlaceholder')"
             :options="tenantStatusOptions"
           />
         </el-form-item>
@@ -75,32 +80,48 @@
           :data="page.items"
           stripe
           border
-          :empty-text="hasActiveFilters ? '未找到符合条件的租户,请调整筛选条件' : '暂无数据'"
+          :empty-text="hasActiveFilters ? t('tenantList.emptyFiltered') : t('common.noData')"
           class="console-table"
         >
           <!-- 引导式空状态:仅"无筛选 + 零数据"时显示 CTA;有筛选/状态过滤时回落到默认 empty-text -->
           <template v-if="!hasActiveFilters" #empty>
-            <EmptyState
-              description="还没有租户。新增第一个,把业务接入批量调度平台。"
-              :image-size="80"
-            >
+            <EmptyState :description="t('tenantList.emptyDescription')" :image-size="80">
               <template v-if="canManageTenants" #action>
-                <el-button type="primary" :icon="Plus" @click="openCreate">新增租户</el-button>
-                <el-button plain @click="batchVisible = true">批量新增</el-button>
+                <el-button type="primary" :icon="Plus" @click="openCreate">
+                  {{ t('tenantList.headerCreate') }}
+                </el-button>
+                <el-button plain @click="batchVisible = true">
+                  {{ t('tenantList.headerBatch') }}
+                </el-button>
               </template>
             </EmptyState>
           </template>
-          <el-table-column prop="tenantId" label="tenantId" min-width="180" />
-          <el-table-column prop="tenantName" label="名称" min-width="160" show-overflow-tooltip />
-          <el-table-column label="状态" width="110">
+          <el-table-column prop="tenantId" :label="t('tenantList.colTenantId')" min-width="180" />
+          <el-table-column
+            prop="tenantName"
+            :label="t('tenantList.colName')"
+            min-width="160"
+            show-overflow-tooltip
+          />
+          <el-table-column :label="t('tenantList.statusLabel')" width="110">
             <template #default="{ row }">
               <StatusTag :value="String(row.status ?? '')" category="tenant" />
             </template>
           </el-table-column>
-          <el-table-column prop="description" label="描述" min-width="220" show-overflow-tooltip />
-          <el-table-column prop="createdBy" label="创建人" width="140" show-overflow-tooltip />
-          <DatetimeColumn prop="createdAt" label="创建时间" width="160" />
-          <el-table-column label="操作" width="220" fixed="right">
+          <el-table-column
+            prop="description"
+            :label="t('tenantList.colDescription')"
+            min-width="220"
+            show-overflow-tooltip
+          />
+          <el-table-column
+            prop="createdBy"
+            :label="t('tenantList.colCreatedBy')"
+            width="140"
+            show-overflow-tooltip
+          />
+          <DatetimeColumn prop="createdAt" :label="t('tenantList.colCreatedAt')" width="160" />
+          <el-table-column :label="t('tenantList.colActions')" width="220" fixed="right">
             <template #default="{ row }">
               <div class="table-actions">
                 <el-tag
@@ -110,7 +131,7 @@
                   effect="plain"
                   class="current-tag"
                 >
-                  当前
+                  {{ t('tenantList.currentTag') }}
                 </el-tag>
                 <RowActions :actions="rowActions(row)" />
               </div>
@@ -142,10 +163,10 @@
     />
     <TenantCopyConfigDialog v-model="copyVisible" :items="page.items" @result="showResult" />
 
-    <el-dialog v-model="resultVisible" title="执行结果" width="640px">
+    <el-dialog v-model="resultVisible" :title="t('tenantList.resultDialogTitle')" width="640px">
       <JsonPreview class="result-json" :data="resultJson" />
       <template #footer>
-        <el-button type="primary" @click="resultVisible = false">确定</el-button>
+        <el-button type="primary" @click="resultVisible = false">{{ t('common.ok') }}</el-button>
       </template>
     </el-dialog>
   </PageContainer>
@@ -153,8 +174,11 @@
 
 <script setup lang="ts">
   import { computed, onMounted, reactive, ref } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { Plus } from '@element-plus/icons-vue'
+
+  const { t } = useI18n({ useScope: 'global' })
   import {
     listTenants,
     suspendTenant,
@@ -323,29 +347,33 @@
     if (!isCurrent) {
       acts.push({
         key: 'switch',
-        label: '设为当前',
+        label: t('tenantList.actionSwitch'),
         primary: true,
         onClick: () => switchToTenant(row),
       })
     }
     if (canManageTenants.value) {
-      acts.push({ key: 'edit', label: '编辑', onClick: () => openEdit(row) })
+      acts.push({
+        key: 'edit',
+        label: t('tenantList.actionEdit'),
+        onClick: () => openEdit(row),
+      })
       acts.push({
         key: 'init',
-        label: '初始化配置',
+        label: t('tenantList.actionInitConfig'),
         onClick: () => openInitConfig(row),
       })
       if (isActive) {
         acts.push({
           key: 'suspend',
-          label: '暂停',
+          label: t('tenantList.actionSuspend'),
           divided: true,
           onClick: () => confirmSuspend(row),
         })
       } else {
         acts.push({
           key: 'activate',
-          label: '恢复',
+          label: t('tenantList.actionResume'),
           divided: true,
           onClick: () => confirmActivate(row),
         })
@@ -366,16 +394,16 @@
     await load()
     if (!payload.created) return
     showCreateSuccess({
-      title: '租户已创建',
-      message: `「${payload.tenantId}」已创建。下一步建议立即初始化基础配置(队列 / 参数 / 告警),避免上线前忘配漏配。`,
+      title: t('tenantList.createdCardTitle'),
+      message: t('tenantList.createdCardMessage', { id: payload.tenantId }),
       primary: {
-        label: '去初始化',
+        label: t('tenantList.createdCardPrimary'),
         onClick: () => {
           initTargetTenantId.value = payload.tenantId
           initVisible.value = true
         },
       },
-      secondary: { label: '留在列表' },
+      secondary: { label: t('tenantList.createdCardSecondary') },
     })
   }
 
@@ -390,12 +418,16 @@
     if (!canManageTenants.value) return
     try {
       await ElMessageBox.confirm(
-        `暂停租户 ${row.tenantId} 后,相关配置与调度将受影响,确认继续?`,
-        '暂停租户',
-        { type: 'warning' },
+        t('tenantList.suspendConfirm', { id: row.tenantId }),
+        t('tenantList.suspendTitle'),
+        {
+          type: 'warning',
+          confirmButtonText: t('common.confirm'),
+          cancelButtonText: t('common.cancel'),
+        },
       )
       await suspendTenant(row.tenantId)
-      ElMessage.success('已暂停')
+      ElMessage.success(t('tenantList.suspendedToast'))
       await load()
     } catch {
       /* cancel */
@@ -405,9 +437,17 @@
   async function confirmActivate(row: Tenant) {
     if (!canManageTenants.value) return
     try {
-      await ElMessageBox.confirm(`恢复租户 ${row.tenantId}?`, '恢复租户', { type: 'info' })
+      await ElMessageBox.confirm(
+        t('tenantList.activateConfirmText', { id: row.tenantId }),
+        t('tenantList.activateConfirmTitle'),
+        {
+          type: 'info',
+          confirmButtonText: t('common.confirm'),
+          cancelButtonText: t('common.cancel'),
+        },
+      )
       await activateTenant(row.tenantId)
-      ElMessage.success('已恢复')
+      ElMessage.success(t('tenantList.activatedToast'))
       await load()
     } catch {
       /* cancel */
@@ -417,7 +457,7 @@
   async function switchToTenant(row: Tenant) {
     if (row.tenantId === tenant.tenantId) return
     tenant.setTenantId(row.tenantId)
-    ElMessage.success(`当前租户已切换为 ${row.tenantId}`)
+    ElMessage.success(t('tenantList.switchedToast', { id: row.tenantId }))
     // 切租户后必须刷新 auth profile,否则 role/menus/permissions 还是上一个租户的。
     // 同时 await,避免侧边栏 / 路由 guard 在过渡窗口期用旧权限渲染或放行。
     try {
