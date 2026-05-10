@@ -22,45 +22,45 @@
             @reset="reset"
             @refresh="() => runRefresh(load)"
           >
-            <el-form-item label="日历" required>
+            <el-form-item :label="t('batchDayList.calendarLabel')" required>
               <el-select
                 class="query-w-200"
                 v-model="filters.calendarCode"
                 filterable
                 allow-create
                 default-first-option
-                placeholder="选择或输入 calendarCode"
+                :placeholder="t('batchDayList.calendarPlaceholder')"
               >
                 <el-option v-for="c in calendarCodeOptions" :key="c" :label="c" :value="c" />
               </el-select>
             </el-form-item>
-            <el-form-item label="起始日">
+            <el-form-item :label="t('batchDayList.startLabel')">
               <el-date-picker
                 v-model="filters.from"
                 type="date"
                 value-format="YYYY-MM-DD"
-                placeholder="起始业务日"
+                :placeholder="t('batchDayList.startPlaceholder')"
               />
             </el-form-item>
-            <el-form-item label="结束日">
+            <el-form-item :label="t('batchDayList.endLabel')">
               <el-date-picker
                 v-model="filters.to"
                 type="date"
                 value-format="YYYY-MM-DD"
-                placeholder="结束业务日"
+                :placeholder="t('batchDayList.endPlaceholder')"
               />
             </el-form-item>
           </ListPageQueryBar>
         </template>
 
-        <el-table-column prop="bizDate" label="业务日" width="120">
+        <el-table-column prop="bizDate" :label="t('batchDayList.colBizDate')" width="120">
           <template #default="{ row }">
             <router-link class="cell-link" :to="`/scheduler/batch-days/${row.bizDate}`">
               {{ row.bizDate }}
             </router-link>
           </template>
         </el-table-column>
-        <el-table-column prop="dayStatus" label="日状态" width="120">
+        <el-table-column prop="dayStatus" :label="t('batchDayList.colDayStatus')" width="120">
           <template #default="{ row }">
             <StatusTag :value="String(row.dayStatus ?? '')" category="batchDay" />
           </template>
@@ -70,22 +70,47 @@
             <StatusTag :value="String(row.slaStatus ?? '')" category="sla" />
           </template>
         </el-table-column>
-        <el-table-column prop="totalJobCount" label="任务数" width="88" align="right" />
-        <el-table-column prop="successJobCount" label="成功" width="72" align="right" />
-        <el-table-column prop="failedJobCount" label="失败" width="72" align="right" />
-        <el-table-column prop="inFlightJobCount" label="进行中" width="88" align="right" />
-        <el-table-column prop="lateCount" label="超时" width="72" align="right" />
+        <el-table-column
+          prop="totalJobCount"
+          :label="t('batchDayList.colTotal')"
+          width="88"
+          align="right"
+        />
+        <el-table-column
+          prop="successJobCount"
+          :label="t('batchDayList.colSuccess')"
+          width="72"
+          align="right"
+        />
+        <el-table-column
+          prop="failedJobCount"
+          :label="t('batchDayList.colFailed')"
+          width="72"
+          align="right"
+        />
+        <el-table-column
+          prop="inFlightJobCount"
+          :label="t('batchDayList.colInFlight')"
+          width="88"
+          align="right"
+        />
+        <el-table-column
+          prop="lateCount"
+          :label="t('batchDayList.colLate')"
+          width="72"
+          align="right"
+        />
         <el-table-column prop="catchupCount" label="Catch-up" width="96" align="right" />
-        <DatetimeColumn prop="openAt" label="开窗" width="160" />
+        <DatetimeColumn prop="openAt" :label="t('batchDayList.colOpen')" width="160" />
         <DatetimeColumn prop="cutoffAt" label="cutoff" width="160" />
-        <DatetimeColumn prop="settledAt" label="结算" width="160" />
-        <DatetimeColumn prop="slaDeadlineAt" label="SLA 截止" width="160" />
-        <el-table-column label="操作" width="150" fixed="right">
+        <DatetimeColumn prop="settledAt" :label="t('batchDayList.colSettled')" width="160" />
+        <DatetimeColumn prop="slaDeadlineAt" :label="t('batchDayList.colSla')" width="160" />
+        <el-table-column :label="t('batchDayList.colActions')" width="150" fixed="right">
           <template #default="{ row }">
             <div class="table-actions">
-              <el-button size="small" plain type="primary" @click="goWindow(row.bizDate)"
-                >窗口 / 补跑</el-button
-              >
+              <el-button size="small" plain type="primary" @click="goWindow(row.bizDate)">
+                {{ t('batchDayList.actionWindow') }}
+              </el-button>
             </div>
           </template>
         </el-table-column>
@@ -97,7 +122,10 @@
 <script setup lang="ts">
   import { ref, reactive, computed } from 'vue'
   import { useRouter } from 'vue-router'
+  import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
+
+  const { t } = useI18n({ useScope: 'global' })
   import { queryBatchDays } from '@/api/batchDays'
   import { useMetaCalendarsQuery } from '@/composables/queries/useConsoleMeta'
   import { useTenantStore } from '@/stores/tenant'
@@ -138,7 +166,7 @@
   async function load() {
     const cal = filters.calendarCode.trim()
     if (!cal) {
-      ElMessage.warning('请选择或填写日历编码')
+      ElMessage.warning(t('batchDayList.requireCalendar'))
       return
     }
     loading.value = true

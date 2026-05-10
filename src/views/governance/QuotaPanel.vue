@@ -6,7 +6,7 @@
       <div class="panel-head">
         <div class="panel-title">
           <span class="dot dot--primary" />
-          策略列表
+          {{ t('quotaPanel.sectionTitle') }}
         </div>
       </div>
 
@@ -18,21 +18,21 @@
         @reset="onQuotaReset"
         @refresh="onQuotaRefresh"
       >
-        <el-form-item label="启用状态">
+        <el-form-item :label="t('quotaPanel.enabledLabel')">
           <el-select
             v-model="enabledDraft"
             clearable
-            placeholder="全部"
+            :placeholder="t('quotaPanel.enabledPlaceholder')"
             class="quota-query__select"
           >
-            <el-option label="已启用" :value="true" />
-            <el-option label="已停用" :value="false" />
+            <el-option :label="t('quotaPanel.optEnabled')" :value="true" />
+            <el-option :label="t('quotaPanel.optDisabled')" :value="false" />
           </el-select>
         </el-form-item>
-        <el-form-item label="关键字">
+        <el-form-item :label="t('quotaPanel.keywordLabel')">
           <el-input
             v-model="kwDraft"
-            placeholder="搜索 policy / fairShareGroup…"
+            :placeholder="t('quotaPanel.keywordPlaceholder')"
             clearable
             class="quota-query__search"
             @keyup.enter="onQuotaSearch"
@@ -40,7 +40,7 @@
         </el-form-item>
       </ListPageQueryBar>
 
-      <el-empty v-if="!loading && filtered.length === 0" description="暂无配额策略" />
+      <el-empty v-if="!loading && filtered.length === 0" :description="t('quotaPanel.empty')" />
 
       <div v-else class="grid">
         <el-card
@@ -61,8 +61,8 @@
               <el-switch
                 :model-value="p.enabled"
                 inline-prompt
-                active-text="启用"
-                inactive-text="停用"
+                :active-text="t('quotaPanel.switchOn')"
+                :inactive-text="t('quotaPanel.switchOff')"
                 :loading="togglingId === p.id"
                 @change="togglePolicy(p)"
               />
@@ -74,26 +74,26 @@
 
           <div class="kpi-row">
             <div class="kpi">
-              <div class="kpi__label">并发上限</div>
+              <div class="kpi__label">{{ t('quotaPanel.kpiConcurrent') }}</div>
               <div class="kpi__value">{{ num(p.concurrentCap) }}</div>
             </div>
             <div class="kpi">
-              <div class="kpi__label">QPS</div>
+              <div class="kpi__label">{{ t('quotaPanel.kpiQps') }}</div>
               <div class="kpi__value">{{ num(p.qpsLimit) }}</div>
             </div>
             <div class="kpi">
-              <div class="kpi__label">突发上限</div>
+              <div class="kpi__label">{{ t('quotaPanel.kpiBurst') }}</div>
               <div class="kpi__value">{{ num(p.burstLimit) }}</div>
             </div>
           </div>
 
           <el-collapse class="details">
-            <el-collapse-item title="更多明细" name="more">
+            <el-collapse-item :title="t('quotaPanel.moreDetails')" name="more">
               <el-descriptions :column="2" size="small" border>
                 <el-descriptions-item label="policyName">
                   {{ p.policyName || '—' }}
                 </el-descriptions-item>
-                <el-descriptions-item label="租户 ID">
+                <el-descriptions-item :label="t('quotaPanel.tenantId')">
                   {{ p.tenantId || '—' }}
                 </el-descriptions-item>
                 <el-descriptions-item label="fairShareWeight">
@@ -119,7 +119,10 @@
 
 <script setup lang="ts">
   import { computed, ref } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
+
+  const { t } = useI18n({ useScope: 'global' })
   import { governanceApi, type GovernanceQuotaPolicyRow } from '@/api/governance'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { useTenantStore } from '@/stores/tenant'
@@ -204,10 +207,15 @@
     if (!row.id) return
     const target = !row.enabled
     try {
+      const action = target ? t('quotaPanel.switchOn') : t('quotaPanel.switchOff')
       await ElMessageBox.confirm(
-        `确认将策略 ${row.policyCode} ${target ? '启用' : '停用'}吗？`,
-        '切换配额策略',
-        { type: 'warning' },
+        t('quotaPanel.toggleConfirmText', { code: row.policyCode, action }),
+        t('quotaPanel.toggleConfirmTitle'),
+        {
+          type: 'warning',
+          confirmButtonText: t('common.confirm'),
+          cancelButtonText: t('common.cancel'),
+        },
       )
     } catch {
       return
@@ -217,7 +225,8 @@
     try {
       await governanceApi.toggleQuotaPolicy(row.id, tenant.tenantId, target)
       row.enabled = target
-      ElMessage.success(`已${target ? '启用' : '停用'}配额策略 ${row.policyCode}`)
+      const action = target ? t('quotaPanel.switchOn') : t('quotaPanel.switchOff')
+      ElMessage.success(t('quotaPanel.toggleSuccess', { action, code: row.policyCode }))
     } finally {
       togglingId.value = null
     }

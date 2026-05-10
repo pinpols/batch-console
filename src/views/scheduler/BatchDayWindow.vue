@@ -2,38 +2,48 @@
   <PageContainer>
     <PageHeader
       :title="title"
-      description="查看批次窗口状态，并按需发起 Catch-up。"
+      :description="t('batchDayWindow.description')"
       back-to="/scheduler/batch-days"
     >
       <template #actions>
-        <el-button type="primary" :loading="loading" @click="load">刷新</el-button>
-        <el-button type="success" :disabled="!calendarCode" @click="openCatchup"
-          >发起 Catch-up</el-button
-        >
+        <el-button type="primary" :loading="loading" @click="load">
+          {{ t('batchDayWindow.refresh') }}
+        </el-button>
+        <el-button type="success" :disabled="!calendarCode" @click="openCatchup">
+          {{ t('batchDayWindow.catchUp') }}
+        </el-button>
       </template>
     </PageHeader>
 
     <SectionCard v-if="window">
-      <template #header>窗口状态</template>
+      <template #header>{{ t('batchDayWindow.windowStatus') }}</template>
       <el-descriptions :column="2" border size="small">
-        <el-descriptions-item label="业务日">{{ window.bizDate }}</el-descriptions-item>
-        <el-descriptions-item label="日状态">{{ window.dayStatus }}</el-descriptions-item>
-        <el-descriptions-item label="当前时间">{{ window.currentSystemTime }}</el-descriptions-item>
-        <el-descriptions-item label="截止时间">{{ window.cutoffAt ?? '—' }}</el-descriptions-item>
-        <el-descriptions-item label="SLA 截止">{{
-          window.slaDeadlineAt ?? '—'
-        }}</el-descriptions-item>
-        <el-descriptions-item label="距截止(秒)">{{
-          window.timeUntilCutoffSeconds ?? '—'
-        }}</el-descriptions-item>
-        <el-descriptions-item label="迟到窗口关闭">{{
-          window.lateArrivalWindowClosesAt ?? '—'
-        }}</el-descriptions-item>
+        <el-descriptions-item :label="t('batchDayWindow.bizDate')">
+          {{ window.bizDate }}
+        </el-descriptions-item>
+        <el-descriptions-item :label="t('batchDayWindow.dayStatus')">
+          {{ window.dayStatus }}
+        </el-descriptions-item>
+        <el-descriptions-item :label="t('batchDayWindow.currentTime')">
+          {{ window.currentSystemTime }}
+        </el-descriptions-item>
+        <el-descriptions-item :label="t('batchDayWindow.cutoff')">
+          {{ window.cutoffAt ?? '—' }}
+        </el-descriptions-item>
+        <el-descriptions-item :label="t('batchDayWindow.slaCutoff')">
+          {{ window.slaDeadlineAt ?? '—' }}
+        </el-descriptions-item>
+        <el-descriptions-item :label="t('batchDayWindow.secondsToCutoff')">
+          {{ window.timeUntilCutoffSeconds ?? '—' }}
+        </el-descriptions-item>
+        <el-descriptions-item :label="t('batchDayWindow.lateWindowClosed')">
+          {{ window.lateArrivalWindowClosesAt ?? '—' }}
+        </el-descriptions-item>
       </el-descriptions>
     </SectionCard>
 
     <SectionCard v-if="window">
-      <template #header>按 Job 汇总</template>
+      <template #header>{{ t('batchDayWindow.jobSummary') }}</template>
       <ListPageQueryBar
         :filter-busy="filterBusy"
         :refresh-busy="loading"
@@ -42,53 +52,80 @@
         @refresh="() => runRefresh(load)"
       >
         <el-form-item label="Job">
-          <el-input class="query-w-240" v-model="jobKeyword" clearable placeholder="搜索 jobCode" />
+          <el-input
+            class="query-w-240"
+            v-model="jobKeyword"
+            clearable
+            :placeholder="t('batchDayWindow.jobSearchPlaceholder')"
+          />
         </el-form-item>
       </ListPageQueryBar>
-      <el-table :data="filteredJobs" stripe border empty-text="暂无数据" class="console-table">
+      <el-table
+        :data="filteredJobs"
+        stripe
+        border
+        :empty-text="t('common.noData')"
+        class="console-table"
+      >
         <el-table-column prop="jobCode" label="Job" min-width="160" />
-        <el-table-column prop="totalJobCount" label="总数" width="72" />
-        <el-table-column prop="successJobCount" label="成功" width="72" />
-        <el-table-column prop="failedJobCount" label="失败" width="72" />
-        <el-table-column prop="inFlightJobCount" label="进行中" width="88" />
+        <el-table-column prop="totalJobCount" :label="t('batchDayWindow.colTotalJob')" width="72" />
+        <el-table-column
+          prop="successJobCount"
+          :label="t('batchDayWindow.colSuccessJob')"
+          width="72"
+        />
+        <el-table-column
+          prop="failedJobCount"
+          :label="t('batchDayWindow.colFailedJob')"
+          width="72"
+        />
+        <el-table-column
+          prop="inFlightJobCount"
+          :label="t('batchDayWindow.colInFlightJob')"
+          width="88"
+        />
         <el-table-column prop="catchupCount" label="Catch-up" width="88" />
       </el-table>
     </SectionCard>
 
     <SectionCard v-else-if="!loading">
-      <EmptyState description="无数据或日历编码未传。请从列表进入并携带 calendarCode。" />
+      <EmptyState :description="t('batchDayWindow.emptyDescription')" />
     </SectionCard>
 
     <el-dialog
       v-model="catchupVisible"
-      title="批次日 Catch-up"
+      :title="t('batchDayWindow.dialogTitle')"
       width="520px"
       @closed="resetCatchup"
     >
       <el-form label-width="100px">
-        <el-form-item label="日历编码">
+        <el-form-item :label="t('batchDayWindow.fieldCalendar')">
           <el-input v-model="catchupForm.calendarCode" disabled />
         </el-form-item>
-        <el-form-item label="Job 代码">
+        <el-form-item :label="t('batchDayWindow.fieldJobCodes')">
           <el-input
             v-model="catchupJobCodesText"
             type="textarea"
             :rows="2"
-            placeholder="可选，逗号分隔；留空表示按策略全量"
+            :placeholder="t('batchDayWindow.fieldJobCodesPlaceholder')"
           />
         </el-form-item>
-        <el-form-item label="原因">
+        <el-form-item :label="t('batchDayWindow.fieldReason')">
           <el-input
             v-model="catchupForm.reason"
             type="textarea"
             :rows="2"
-            placeholder="审计用说明"
+            :placeholder="t('batchDayWindow.fieldReasonPlaceholder')"
           />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="catchupVisible = false">取消</el-button>
-        <el-button type="primary" :loading="catchupLoading" @click="submitCatchup">提交</el-button>
+        <el-button @click="catchupVisible = false">{{
+          t('batchDayWindow.dialogCancel')
+        }}</el-button>
+        <el-button type="primary" :loading="catchupLoading" @click="submitCatchup">
+          {{ t('batchDayWindow.dialogSubmit') }}
+        </el-button>
       </template>
     </el-dialog>
   </PageContainer>
@@ -97,7 +134,10 @@
 <script setup lang="ts">
   import { computed, ref, watch } from 'vue'
   import { useRoute } from 'vue-router'
+  import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
+
+  const { t } = useI18n({ useScope: 'global' })
   import { launchBatchDayCatchUp, queryBatchDayWindow } from '@/api/batchDays'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
@@ -116,7 +156,11 @@
   const bizDate = computed(() => (route.params.bizDate as string) || '')
   const calendarCode = computed(() => (route.query.calendarCode as string) || '')
 
-  const title = computed(() => (bizDate.value ? `批次日窗口 · ${bizDate.value}` : '批次日窗口'))
+  const title = computed(() =>
+    bizDate.value
+      ? t('batchDayWindow.titleWithDate', { date: bizDate.value })
+      : t('batchDayWindow.titleDefault'),
+  )
 
   const loading = ref(false)
   const { filterBusy, runSearch, runReset, runRefresh } = useListFilterFeedback(loading)
@@ -161,7 +205,7 @@
 
   function openCatchup() {
     if (!calendarCode.value.trim()) {
-      ElMessage.warning('缺少 query.calendarCode，请从列表页进入')
+      ElMessage.warning(t('batchDayWindow.missingCalendar'))
       return
     }
     catchupForm.value = {
@@ -197,7 +241,7 @@
         reason: catchupForm.value.reason || undefined,
       })
       const n = res.items?.length ?? 0
-      ElMessage.success(`已提交 Catch-up，返回 ${n} 条项`)
+      ElMessage.success(t('batchDayWindow.submitSuccess', { n }))
       catchupVisible.value = false
       await load()
     } finally {
