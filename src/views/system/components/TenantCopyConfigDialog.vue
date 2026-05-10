@@ -14,16 +14,27 @@
           class="query-w-280"
           v-model="form.sourceTenantId"
           filterable
-          placeholder="选择源租户"
+          placeholder="选择源租户(default 是内置模板,推荐)"
         >
           <el-option
             v-for="t in sourceableItems"
             :key="t.tenantId"
             :label="`${t.tenantId} — ${t.tenantName}`"
             :value="t.tenantId"
-          />
+          >
+            <span>{{ t.tenantId }} — {{ t.tenantName }}</span>
+            <el-tag
+              v-if="isTemplateTenant(t.tenantId)"
+              size="small"
+              type="primary"
+              effect="plain"
+              class="u-ml-8"
+            >
+              推荐模板
+            </el-tag>
+          </el-option>
         </el-select>
-        <div class="form-hint">系统/内置租户(system / default / default-tenant)已隐藏</div>
+        <div class="form-hint">系统/内置租户(system / default-tenant)已隐藏</div>
       </el-form-item>
       <el-form-item label="目标租户" prop="targetTenantIds">
         <el-select
@@ -73,7 +84,7 @@
   import type { FormRules } from 'element-plus'
   import { copyTenantConfig, type ConfigType } from '@/api/ops'
   import type { Tenant } from '@/api/tenants'
-  import { ALL_CONFIG_TYPES, isReservedTenant } from './tenantConfigTypes'
+  import { ALL_CONFIG_TYPES, isReservedTenant, isTemplateTenant } from './tenantConfigTypes'
   import { useFormValidate, rules } from '@/composables/useFormValidate'
 
   const props = defineProps<{
