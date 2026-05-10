@@ -3,7 +3,7 @@
     <PageHeader>
       <template #actions>
         <el-button type="primary" :icon="Plus" class="pretty-add-button" @click="openCreate">
-          新增参数
+          {{ t('systemParameterList.headerCreate') }}
         </el-button>
       </template>
     </PageHeader>
@@ -28,58 +28,87 @@
             @reset="onReset"
             @refresh="() => runRefresh(load)"
           >
-            <el-form-item label="关键字">
+            <el-form-item :label="t('systemParameterList.keywordLabel')">
               <el-input
                 class="query-w-200"
                 v-model="kwDraft"
                 clearable
-                placeholder="按 Key 模糊搜索"
+                :placeholder="t('systemParameterList.keywordPlaceholder')"
                 @keyup.enter="onSearch"
               />
             </el-form-item>
           </ListPageQueryBar>
         </template>
-        <el-table-column prop="key" label="Key" min-width="200" show-overflow-tooltip>
+        <el-table-column
+          prop="key"
+          :label="t('systemParameterList.colKey')"
+          min-width="200"
+          show-overflow-tooltip
+        >
           <template #default="{ row }">
             <CopyableText v-if="row.key" :text="row.key" />
             <span v-else class="cell-empty">—</span>
           </template>
         </el-table-column>
-        <el-table-column prop="value" label="Value" min-width="300" show-overflow-tooltip>
+        <el-table-column
+          prop="value"
+          :label="t('systemParameterList.colValue')"
+          min-width="300"
+          show-overflow-tooltip
+        >
           <template #default="{ row }">
             {{ row.value || '—' }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="160" fixed="right">
+        <el-table-column :label="t('systemParameterList.colActions')" width="160" fixed="right">
           <template #default="{ row }">
             <div class="table-actions">
-              <el-button size="small" plain type="primary" @click="openEdit(row)">编辑</el-button>
-              <el-button size="small" plain type="danger" @click="confirmDelete(row)"
-                >删除</el-button
-              >
+              <el-button size="small" plain type="primary" @click="openEdit(row)">
+                {{ t('systemParameterList.actionEdit') }}
+              </el-button>
+              <el-button size="small" plain type="danger" @click="confirmDelete(row)">
+                {{ t('systemParameterList.actionDelete') }}
+              </el-button>
             </div>
           </template>
         </el-table-column>
       </ProTable>
     </SectionCard>
 
-    <el-dialog v-model="dialogVisible" :title="editingKey ? '编辑参数' : '新增参数'" width="500px">
+    <el-dialog
+      v-model="dialogVisible"
+      :title="
+        editingKey
+          ? t('systemParameterList.dialogEditTitle')
+          : t('systemParameterList.dialogCreateTitle')
+      "
+      width="500px"
+    >
       <el-form ref="paramFormRef" :model="form" :rules="formRules" label-width="100px">
-        <el-form-item label="Key" prop="key">
+        <el-form-item :label="t('systemParameterList.fieldKey')" prop="key">
           <el-input
             v-model="form.key"
             :disabled="!!editingKey"
-            placeholder="参数键"
+            :placeholder="t('systemParameterList.fieldKeyPlaceholder')"
             maxlength="128"
           />
         </el-form-item>
-        <el-form-item label="Value" prop="value">
-          <el-input v-model="form.value" type="textarea" :rows="3" placeholder="参数值" />
+        <el-form-item :label="t('systemParameterList.fieldValue')" prop="value">
+          <el-input
+            v-model="form.value"
+            type="textarea"
+            :rows="3"
+            :placeholder="t('systemParameterList.fieldValuePlaceholder')"
+          />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="saving" @click="save">保存</el-button>
+        <el-button @click="dialogVisible = false">
+          {{ t('systemParameterList.dialogCancel') }}
+        </el-button>
+        <el-button type="primary" :loading="saving" @click="save">
+          {{ t('systemParameterList.dialogSave') }}
+        </el-button>
       </template>
     </el-dialog>
   </PageContainer>
@@ -87,7 +116,10 @@
 
 <script setup lang="ts">
   import { ref, reactive, computed } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
+
+  const { t } = useI18n({ useScope: 'global' })
   import { confirmDanger } from '@/composables/useDangerConfirm'
   import type { FormRules } from 'element-plus'
   import { Plus } from '@element-plus/icons-vue'
@@ -122,8 +154,8 @@
   const { formRef: paramFormRef, validate: validateParamForm } = useFormValidate()
   const formRules: FormRules = {
     key: [
-      rules.required('Key 必填'),
-      rules.pattern(/^[a-zA-Z0-9._-]+$/, '只允许字母 / 数字 / . / _ / -'),
+      rules.required(t('systemParameterList.keyRequired')),
+      rules.pattern(/^[a-zA-Z0-9._-]+$/, t('systemParameterList.keyPattern')),
       rules.maxLength(128),
     ],
   }
@@ -200,7 +232,7 @@
     saving.value = true
     try {
       await upsertSystemParameter(tenant.tenantId, { key: form.key, value: form.value })
-      ElMessage.success('已保存')
+      ElMessage.success(t('systemParameterList.saveSuccess'))
       dialogVisible.value = false
       await load()
     } finally {
@@ -211,13 +243,13 @@
   async function confirmDelete(row: { key: string }) {
     try {
       await confirmDanger({
-        verb: '删除',
-        target: `参数 「${row.key}」`,
-        consequence: '正在读取此参数的运行中任务在下次刷新缓存时取不到值,可能切到默认行为或失败。',
+        verb: t('systemParameterList.deleteVerb'),
+        target: t('systemParameterList.deleteTarget', { key: row.key }),
+        consequence: t('systemParameterList.deleteConsequence'),
         irreversible: true,
       })
       await deleteSystemParameter(tenant.tenantId, row.key)
-      ElMessage.success('已删除')
+      ElMessage.success(t('systemParameterList.deleteSuccess'))
       await load()
     } catch {
       /* cancel */
