@@ -3,16 +3,16 @@
     <div class="metric-grid">
       <button type="button" class="metric-hit" @click="$emit('go', '/approvals')">
         <MetricCard
-          label="待审批"
+          :label="t('opsMetricGrid.pendingApprovals')"
           :value="String(summary.pendingApprovals)"
-          description="点击进入审批中心"
+          :description="t('opsMetricGrid.pendingApprovalsDesc')"
         />
       </button>
       <button type="button" class="metric-hit" @click="$emit('go', '/observability/alerts')">
         <MetricCard
-          label="未处理告警"
+          :label="t('opsMetricGrid.activeAlerts')"
           :value="String(summary.openAlerts)"
-          description="点击查看告警列表"
+          :description="t('opsMetricGrid.activeAlertsDesc')"
         />
       </button>
       <button
@@ -21,9 +21,9 @@
         @click="$emit('go', '/observability/alerts?severity=CRITICAL')"
       >
         <MetricCard
-          label="严重告警"
+          :label="t('opsMetricGrid.criticalAlerts')"
           :value="String(summary.criticalAlerts)"
-          description="点击查看严重告警"
+          :description="t('opsMetricGrid.criticalAlertsDesc')"
         />
       </button>
       <button
@@ -32,58 +32,58 @@
         @click="$emit('go', '/monitor/job-instances?status=RUNNING')"
       >
         <MetricCard
-          label="运行中任务"
+          :label="t('opsMetricGrid.runningInstances')"
           :value="String(summary.runningJobs)"
-          description="点击查看运行中实例"
+          :description="t('opsMetricGrid.runningInstancesDesc')"
         />
       </button>
       <button type="button" class="metric-hit" @click="$emit('goFailedJobs')">
         <MetricCard
-          label="失败任务"
+          :label="t('opsMetricGrid.failedInstances')"
           :value="String(summary.failedJobs)"
-          description="点击查看失败实例"
+          :description="t('opsMetricGrid.failedInstancesDesc')"
         />
       </button>
       <button type="button" class="metric-hit" @click="$emit('go', '/monitor/job-instances')">
         <MetricCard
-          label="SLA 违规"
+          :label="t('opsMetricGrid.slaViolations')"
           :value="String(summary.slaBreaches)"
-          description="点击查看实例 SLA"
+          :description="t('opsMetricGrid.slaViolationsDesc')"
         />
       </button>
       <button type="button" class="metric-hit" @click="$emit('go', '/workers/management')">
         <MetricCard
-          label="在线 Worker"
+          :label="t('opsMetricGrid.onlineWorkers')"
           :value="String(summary.onlineWorkers)"
-          description="点击查看 Worker 列表"
+          :description="t('opsMetricGrid.workerListDesc')"
         />
       </button>
       <button type="button" class="metric-hit" @click="$emit('go', '/workers/management')">
         <MetricCard
           label="Draining"
           :value="String(summary.drainingWorkers)"
-          description="点击查看 Worker 列表"
+          :description="t('opsMetricGrid.workerListDesc')"
         />
       </button>
       <button type="button" class="metric-hit" @click="$emit('go', '/workers/management')">
         <MetricCard
-          label="离线 Worker"
+          :label="t('opsMetricGrid.offlineWorkers')"
           :value="String(summary.offlineWorkers)"
-          description="点击查看 Worker 列表"
+          :description="t('opsMetricGrid.workerListDesc')"
         />
       </button>
       <button type="button" class="metric-hit" @click="$emit('go', '/observability/outbox')">
         <MetricCard
-          label="Outbox 重试积压"
+          :label="t('opsMetricGrid.outboxRetryBacklog')"
           :value="String(summary.outboxRetryBacklog)"
-          description="点击查看 Outbox 列表"
+          :description="t('opsMetricGrid.outboxRetryBacklogDesc')"
         />
       </button>
       <button type="button" class="metric-hit" @click="$emit('go', '/observability/outbox')">
         <MetricCard
-          label="Outbox 投递失败"
+          :label="t('opsMetricGrid.outboxDeliveryFailed')"
           :value="String(summary.outboxDeliveryFailures)"
-          description="点击查看 Outbox 列表"
+          :description="t('opsMetricGrid.outboxDeliveryFailedDesc')"
         />
       </button>
     </div>
@@ -91,8 +91,11 @@
 </template>
 
 <script setup lang="ts">
+  import { useI18n } from 'vue-i18n'
   import MetricCard from '@/components/common/MetricCard.vue'
   import type { ConsoleOpsSummaryResponse } from '@/types/console-api'
+
+  const { t } = useI18n({ useScope: 'global' })
 
   defineProps<{
     summary: ConsoleOpsSummaryResponse

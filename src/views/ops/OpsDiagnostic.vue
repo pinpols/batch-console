@@ -4,60 +4,64 @@
 
     <SectionCard>
       <el-tabs v-model="activeTab" v-hover-tab-activate="true" class="pill-tabs">
-        <!-- 工具箱 -->
-        <el-tab-pane label="运维工具箱" name="toolbox">
+        <el-tab-pane :label="t('opsDiagnostic.tabToolbox')" name="toolbox">
           <div class="data-panel">
             <div class="section-toolbar">
-              <h3 class="section-title u-mb-0">Kafka Lag</h3>
+              <h3 class="section-title u-mb-0">{{ t('opsDiagnostic.sectionKafkaLag') }}</h3>
               <span class="u-flex-1" />
-              <el-button :loading="loadingLag" @click="loadKafkaLag">刷新</el-button>
+              <el-button :loading="loadingLag" @click="loadKafkaLag">
+                {{ t('opsDiagnostic.btnRefresh') }}
+              </el-button>
             </div>
             <JsonPreview v-if="kafkaLag" :data="kafkaLag" />
-            <el-empty v-else description="暂无数据" />
+            <el-empty v-else :description="t('opsDiagnostic.emptyData')" />
           </div>
 
           <div class="data-panel">
             <div class="section-toolbar">
-              <h3 class="section-title u-mb-0">Outbox 统计</h3>
+              <h3 class="section-title u-mb-0">{{ t('opsDiagnostic.sectionOutboxStats') }}</h3>
               <span class="u-flex-1" />
-              <el-button :loading="loadingOutbox" @click="loadOutboxStats">刷新</el-button>
+              <el-button :loading="loadingOutbox" @click="loadOutboxStats">
+                {{ t('opsDiagnostic.btnRefresh') }}
+              </el-button>
               <el-button
                 type="warning"
                 :loading="cleaning"
-                v-track-click="'Outbox 清理'"
+                v-track-click="t('opsDiagnostic.trackCleanup')"
                 @click="doCleanup"
-                >清理</el-button
               >
+                {{ t('opsDiagnostic.btnCleanup') }}
+              </el-button>
               <el-button
                 type="primary"
                 :loading="republishing"
-                v-track-click="'Outbox 重发布'"
+                v-track-click="t('opsDiagnostic.trackRepublish')"
                 @click="doRepublish"
-                >重发布</el-button
               >
+                {{ t('opsDiagnostic.btnRepublish') }}
+              </el-button>
             </div>
             <JsonPreview v-if="outboxStats" :data="outboxStats" />
-            <el-empty v-else description="暂无数据" />
+            <el-empty v-else :description="t('opsDiagnostic.emptyData')" />
           </div>
         </el-tab-pane>
 
-        <!-- 集群诊断 -->
-        <el-tab-pane label="集群诊断" name="cluster">
+        <el-tab-pane :label="t('opsDiagnostic.tabCluster')" name="cluster">
           <div class="section-toolbar">
             <span class="u-flex-1" />
-            <el-button type="primary" :loading="loadingCluster" @click="loadCluster"
-              >全部刷新</el-button
-            >
+            <el-button type="primary" :loading="loadingCluster" @click="loadCluster">
+              {{ t('opsDiagnostic.btnRefreshAll') }}
+            </el-button>
           </div>
 
           <div class="data-panel">
-            <h3 class="section-title">集群概览</h3>
+            <h3 class="section-title">{{ t('opsDiagnostic.sectionClusterOverview') }}</h3>
             <JsonPreview v-if="clusterData" :data="clusterData" />
-            <el-empty v-else description="暂无数据" />
+            <el-empty v-else :description="t('opsDiagnostic.emptyData')" />
           </div>
 
           <div class="data-panel">
-            <h3 class="section-title">ShedLock 状态</h3>
+            <h3 class="section-title">{{ t('opsDiagnostic.sectionShedLock') }}</h3>
             <el-table
               v-if="shedLockRows.length"
               :data="shedLockRows"
@@ -68,7 +72,7 @@
             >
               <el-table-column
                 prop="name"
-                label="Lock 名称"
+                :label="t('opsDiagnostic.colLockName')"
                 min-width="200"
                 show-overflow-tooltip
               />
@@ -82,19 +86,19 @@
               />
             </el-table>
             <JsonPreview v-else-if="shedLockRaw" :data="shedLockRaw" />
-            <el-empty v-else description="暂无数据" />
+            <el-empty v-else :description="t('opsDiagnostic.emptyData')" />
           </div>
 
           <div class="data-panel">
-            <h3 class="section-title">Worker 一致性</h3>
+            <h3 class="section-title">{{ t('opsDiagnostic.sectionWorkerConsistency') }}</h3>
             <JsonPreview v-if="workerConsistency" :data="workerConsistency" />
-            <el-empty v-else description="暂无数据" />
+            <el-empty v-else :description="t('opsDiagnostic.emptyData')" />
           </div>
 
           <div class="data-panel">
-            <h3 class="section-title">Outbox 健康</h3>
+            <h3 class="section-title">{{ t('opsDiagnostic.sectionOutboxHealth') }}</h3>
             <JsonPreview v-if="outboxHealth" :data="outboxHealth" />
-            <el-empty v-else description="暂无数据" />
+            <el-empty v-else :description="t('opsDiagnostic.emptyData')" />
           </div>
         </el-tab-pane>
       </el-tabs>
@@ -104,7 +108,10 @@
 
 <script setup lang="ts">
   import { ref } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
+
+  const { t } = useI18n({ useScope: 'global' })
   import { getKafkaLag, getOutboxStats, cleanupOutbox, republishOutbox } from '@/api/ops'
   import {
     getClusterDiagnostic,
@@ -154,10 +161,14 @@
 
   async function doCleanup() {
     try {
-      await ElMessageBox.confirm('确认清理 Outbox？', '清理确认', { type: 'warning' })
+      await ElMessageBox.confirm(
+        t('opsDiagnostic.cleanupConfirmText'),
+        t('opsDiagnostic.cleanupConfirmTitle'),
+        { type: 'warning' },
+      )
       cleaning.value = true
       await cleanupOutbox(tenant.tenantId)
-      ElMessage.success('清理完成')
+      ElMessage.success(t('opsDiagnostic.cleanupDoneToast'))
       await loadOutboxStats()
     } catch {
       /* cancel */
@@ -170,11 +181,11 @@
     try {
       // BE @NotEmpty List<Long> ids,空数组会 400 → 让用户输入要重投的事件 ID
       const { value: idsText } = await ElMessageBox.prompt(
-        '请输入要重投的 outbox 事件 ID(逗号分隔,仅 FAILED / GIVE_UP 状态可重投)',
-        '重发布',
+        t('opsDiagnostic.republishPromptText'),
+        t('opsDiagnostic.republishPromptTitle'),
         {
           inputPattern: /^\s*\d+(\s*,\s*\d+)*\s*$/,
-          inputErrorMessage: '只能输入数字 ID,逗号分隔',
+          inputErrorMessage: t('opsDiagnostic.republishPromptError'),
           type: 'warning',
         },
       )
@@ -183,12 +194,12 @@
         .map((s: string) => Number(s.trim()))
         .filter((n: number) => !Number.isNaN(n) && n > 0)
       if (!ids.length) {
-        ElMessage.warning('未提供有效 ID')
+        ElMessage.warning(t('opsDiagnostic.noValidIds'))
         return
       }
       republishing.value = true
       await republishOutbox(tenant.tenantId, ids)
-      ElMessage.success(`已发起重投 ${ids.length} 条`)
+      ElMessage.success(t('opsDiagnostic.republishDoneToast', { n: ids.length }))
       await loadOutboxStats()
     } catch {
       /* cancel */

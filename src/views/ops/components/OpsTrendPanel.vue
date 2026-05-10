@@ -2,8 +2,8 @@
   <section class="ops-panel" :class="{ 'ops-panel--active': active }" :aria-hidden="!active">
     <div class="charts-header">
       <div>
-        <div class="charts-title">趋势</div>
-        <div class="charts-subtitle">用于快速判断是否"在变差"（支持 1h/6h/24h 切换）</div>
+        <div class="charts-title">{{ t('opsTrendPanel.title') }}</div>
+        <div class="charts-subtitle">{{ t('opsTrendPanel.subtitle') }}</div>
       </div>
       <div class="charts-actions">
         <el-radio-group
@@ -21,7 +21,7 @@
           :loading="chartsLoading"
           @click="$emit('refreshCharts')"
         >
-          刷新
+          {{ t('opsTrendPanel.btnRefresh') }}
         </el-button>
       </div>
     </div>
@@ -30,7 +30,7 @@
       <div class="chart-panel">
         <div class="panel-title">
           <span class="dot dot--primary" />
-          运行中 / 失败任务趋势
+          {{ t('opsTrendPanel.runFailTrend') }}
         </div>
         <VChart
           class="chart"
@@ -44,7 +44,7 @@
       <div class="chart-panel">
         <div class="panel-title">
           <span class="dot dot--warning" />
-          告警趋势（按状态）
+          {{ t('opsTrendPanel.alertTrend') }}
         </div>
         <VChart
           class="chart"
@@ -58,7 +58,7 @@
       <div class="chart-panel">
         <div class="panel-title">
           <span class="dot dot--success" />
-          SLA 达标 / 违约趋势
+          {{ t('opsTrendPanel.slaTrend') }}
         </div>
         <VChart
           class="chart"
@@ -73,8 +73,11 @@
 </template>
 
 <script setup lang="ts">
+  import { useI18n } from 'vue-i18n'
   import { RefreshRight } from '@element-plus/icons-vue'
   import VChart from 'vue-echarts'
+
+  const { t } = useI18n({ useScope: 'global' })
 
   defineProps<{
     active: boolean
