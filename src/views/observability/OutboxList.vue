@@ -55,7 +55,8 @@
                 <StatusTag :value="String(row.retryStatus ?? '')" category="outboxPublishStatus" />
               </template>
             </el-table-column>
-            <el-table-column prop="retryCount" label="次数" width="80" />
+            <el-table-column prop="retryCount" label="次数" width="70" align="right" />
+            <el-table-column prop="retryPolicy" label="策略" width="120" show-overflow-tooltip />
             <DatetimeColumn prop="nextRetryAt" label="下次重试" width="160" />
             <el-table-column label="操作" width="120" fixed="right">
               <template #default="{ row }">
@@ -124,6 +125,13 @@
               prop="targetTopic"
               label="Topic"
               min-width="140"
+              show-overflow-tooltip
+            />
+            <el-table-column prop="deliveryAttempt" label="尝试" width="70" align="right" />
+            <el-table-column
+              prop="errorMessage"
+              label="错误"
+              min-width="180"
               show-overflow-tooltip
             />
             <DatetimeColumn prop="updatedAt" label="更新" width="160" />

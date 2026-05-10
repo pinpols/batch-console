@@ -102,9 +102,17 @@
             </template>
             <DatetimeColumn prop="createdAt" label="时间" width="160" />
             <el-table-column prop="operatorId" label="操作人" width="120" />
-            <el-table-column prop="promptCategory" label="分类" width="130" />
-            <el-table-column prop="promptDecision" label="决策" width="120" />
+            <el-table-column prop="sessionId" label="会话" width="140" show-overflow-tooltip />
+            <el-table-column prop="requestId" label="请求 ID" width="140" show-overflow-tooltip />
+            <el-table-column prop="promptCategory" label="分类" width="120" />
+            <el-table-column prop="promptDecision" label="决策" width="110" />
             <el-table-column prop="modelName" label="模型" width="140" />
+            <el-table-column
+              prop="refusalReason"
+              label="拒绝原因"
+              min-width="180"
+              show-overflow-tooltip
+            />
             <el-table-column
               prop="promptPreview"
               label="Prompt 预览"

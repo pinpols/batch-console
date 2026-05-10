@@ -51,7 +51,14 @@
               width="120"
               show-overflow-tooltip
             />
+            <el-table-column
+              prop="lastSuccessStage"
+              label="最近成功"
+              width="120"
+              show-overflow-tooltip
+            />
             <el-table-column prop="fileId" label="fileId" width="88" />
+            <el-table-column prop="relatedJobInstanceId" label="关联实例" width="100" />
             <el-table-column prop="traceId" label="Trace" min-width="120" show-overflow-tooltip />
             <DatetimeColumn prop="startedAt" label="开始" width="160" />
             <DatetimeColumn prop="finishedAt" label="结束" width="160" />
@@ -90,19 +97,23 @@
             <el-table-column prop="pipelineInstanceId" label="流水线实例" width="120" />
             <el-table-column prop="stepCode" label="步骤" width="120" />
             <el-table-column prop="stageCode" label="阶段" width="120" />
+            <el-table-column prop="runSeq" label="序号" width="70" align="right" />
             <el-table-column prop="stepStatus" label="状态" width="120">
               <template #default="{ row }">
                 <StatusTag :value="String(row.stepStatus ?? '')" category="partition" />
               </template>
             </el-table-column>
-            <el-table-column prop="retryCount" label="重试" width="72" />
-            <el-table-column
-              prop="errorMessage"
-              label="错误"
-              min-width="160"
-              show-overflow-tooltip
-            />
-            <el-table-column prop="durationMs" label="耗时(ms)" width="100" />
+            <el-table-column prop="retryCount" label="重试" width="72" align="right" />
+            <DatetimeColumn prop="startedAt" label="开始" width="160" />
+            <DatetimeColumn prop="finishedAt" label="完成" width="160" />
+            <el-table-column label="错误" min-width="200" show-overflow-tooltip>
+              <template #default="{ row }">
+                <span v-if="row.errorCode" class="mono">[{{ row.errorCode }}]</span>
+                <span v-if="row.errorMessage">{{ row.errorMessage }}</span>
+                <span v-if="!row.errorCode && !row.errorMessage" class="muted">—</span>
+              </template>
+            </el-table-column>
+            <el-table-column prop="durationMs" label="耗时(ms)" width="100" align="right" />
           </ProTable>
         </el-tab-pane>
 
@@ -147,12 +158,29 @@
             </el-table-column>
             <el-table-column prop="channelCode" label="渠道" width="120" show-overflow-tooltip />
             <el-table-column
+              prop="dispatchTarget"
+              label="目标"
+              min-width="160"
+              show-overflow-tooltip
+            />
+            <el-table-column prop="dispatchAttempt" label="尝试" width="70" align="right" />
+            <el-table-column prop="receiptStatus" label="回执" width="100" />
+            <el-table-column prop="receiptCode" label="回执码" width="120" show-overflow-tooltip />
+            <el-table-column
               prop="externalRequestId"
               label="外部请求 ID"
               min-width="140"
               show-overflow-tooltip
             />
-            <DatetimeColumn prop="createdAt" label="创建" width="160" />
+            <el-table-column label="错误" min-width="200" show-overflow-tooltip>
+              <template #default="{ row }">
+                <span v-if="row.errorCode" class="mono">[{{ row.errorCode }}]</span>
+                <span v-if="row.errorMessage">{{ row.errorMessage }}</span>
+                <span v-if="!row.errorCode && !row.errorMessage" class="muted">—</span>
+              </template>
+            </el-table-column>
+            <DatetimeColumn prop="dispatchedAt" label="投递时间" width="160" />
+            <DatetimeColumn prop="ackAt" label="确认时间" width="160" />
           </ProTable>
         </el-tab-pane>
 
@@ -186,6 +214,7 @@
             </template>
             <el-table-column prop="id" label="ID" width="88" />
             <el-table-column prop="fileId" label="fileId" width="88" />
+            <el-table-column prop="recordNo" label="行号" width="80" align="right" />
             <el-table-column prop="errorCode" label="码" width="120" />
             <el-table-column prop="errorStage" label="阶段" width="100" />
             <el-table-column
@@ -194,6 +223,14 @@
               min-width="200"
               show-overflow-tooltip
             />
+            <el-table-column label="跳过" width="100">
+              <template #default="{ row }">
+                <el-tag v-if="row.skipped" size="small" type="warning" effect="plain">
+                  跳过{{ row.skipAction ? `(${row.skipAction})` : '' }}
+                </el-tag>
+                <span v-else class="muted">—</span>
+              </template>
+            </el-table-column>
             <DatetimeColumn prop="createdAt" label="时间" width="160" />
           </ProTable>
         </el-tab-pane>

@@ -87,7 +87,15 @@
           </template>
         </el-table-column>
         <el-table-column prop="alertType" label="类型" width="120" />
+        <el-table-column prop="serviceName" label="服务" width="140" show-overflow-tooltip />
         <el-table-column prop="title" label="标题" min-width="180" show-overflow-tooltip />
+        <DatetimeColumn prop="firstSeenAt" label="首次发生" width="160" />
+        <el-table-column
+          prop="dedupFingerprint"
+          label="去重指纹"
+          width="160"
+          show-overflow-tooltip
+        />
         <el-table-column prop="status" label="状态" width="110">
           <template #default="{ row }">
             <StatusTag :value="String(row.status ?? '')" category="alertStatus" />

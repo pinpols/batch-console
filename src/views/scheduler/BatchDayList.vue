@@ -70,12 +70,16 @@
             <StatusTag :value="String(row.slaStatus ?? '')" category="sla" />
           </template>
         </el-table-column>
-        <el-table-column prop="totalJobCount" label="任务数" width="88" />
-        <el-table-column prop="successJobCount" label="成功" width="72" />
-        <el-table-column prop="failedJobCount" label="失败" width="72" />
-        <el-table-column prop="inFlightJobCount" label="进行中" width="88" />
-        <el-table-column prop="catchupCount" label="Catch-up" width="96" />
+        <el-table-column prop="totalJobCount" label="任务数" width="88" align="right" />
+        <el-table-column prop="successJobCount" label="成功" width="72" align="right" />
+        <el-table-column prop="failedJobCount" label="失败" width="72" align="right" />
+        <el-table-column prop="inFlightJobCount" label="进行中" width="88" align="right" />
+        <el-table-column prop="lateCount" label="超时" width="72" align="right" />
+        <el-table-column prop="catchupCount" label="Catch-up" width="96" align="right" />
         <DatetimeColumn prop="openAt" label="开窗" width="160" />
+        <DatetimeColumn prop="cutoffAt" label="cutoff" width="160" />
+        <DatetimeColumn prop="settledAt" label="结算" width="160" />
+        <DatetimeColumn prop="slaDeadlineAt" label="SLA 截止" width="160" />
         <el-table-column label="操作" width="150" fixed="right">
           <template #default="{ row }">
             <div class="table-actions">

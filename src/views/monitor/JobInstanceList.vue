@@ -82,14 +82,39 @@
         </el-table-column>
         <el-table-column label="状态" width="110">
           <template #default="{ row }">
-            <StatusTag :value="row.instanceStatus" />
+            <StatusTag :value="row.instanceStatus" category="instance" />
           </template>
         </el-table-column>
         <el-table-column prop="bizDate" label="业务日" width="110" />
+        <el-table-column prop="triggerType" label="触发" width="100" />
+        <el-table-column label="队列 / 组" width="160">
+          <template #default="{ row }">
+            <div class="cell-stack">
+              <span v-if="row.queueCode" class="cell-main">{{ row.queueCode }}</span>
+              <span v-if="row.workerGroup" class="cell-sub">{{ row.workerGroup }}</span>
+              <span v-if="!row.queueCode && !row.workerGroup" class="muted">—</span>
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column label="重跑/重试" width="100">
+          <template #default="{ row }">
+            <el-tag v-if="row.rerunFlag" size="small" type="warning" effect="plain">重跑</el-tag>
+            <el-tag v-if="row.retryFlag" size="small" type="info" effect="plain">重试</el-tag>
+            <span v-if="!row.rerunFlag && !row.retryFlag" class="muted">—</span>
+          </template>
+        </el-table-column>
         <DatetimeColumn prop="startedAt" label="开始时间" width="160" />
+        <DatetimeColumn prop="finishedAt" label="完成时间" width="160" />
         <el-table-column label="耗时" width="120">
           <template #default="{ row }">
             <span>{{ formatDurationMs(calcDurationMs(row.startedAt, row.finishedAt)) }}</span>
+          </template>
+        </el-table-column>
+        <DatetimeColumn prop="slaAlertedAt" label="SLA 告警" width="160" />
+        <el-table-column prop="traceId" label="Trace" width="180" show-overflow-tooltip>
+          <template #default="{ row }">
+            <CopyableText v-if="row.traceId" :text="String(row.traceId)" />
+            <span v-else class="muted">—</span>
           </template>
         </el-table-column>
         <el-table-column label="操作" fixed="right" width="200">
@@ -122,6 +147,7 @@
   import StatusTag from '@/components/common/StatusTag.vue'
   import HelpLabel from '@/components/common/HelpLabel.vue'
   import TenantSelect from '@/components/common/TenantSelect.vue'
+  import CopyableText from '@/components/common/CopyableText.vue'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'

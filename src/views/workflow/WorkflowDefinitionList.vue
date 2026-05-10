@@ -70,7 +70,8 @@
         <el-table-column prop="workflowCode" label="Code" min-width="140" />
         <el-table-column prop="workflowName" label="名称" min-width="160" />
         <el-table-column prop="workflowType" label="类型" width="120" />
-        <el-table-column prop="version" label="版本" width="80" />
+        <el-table-column prop="version" label="版本" width="80" align="right" />
+        <el-table-column prop="description" label="说明" min-width="200" show-overflow-tooltip />
         <el-table-column prop="enabled" label="启用" width="80">
           <template #default="{ row }">
             <StatusTag :value="String(row.enabled)" category="yn" />

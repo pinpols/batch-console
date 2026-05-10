@@ -48,14 +48,20 @@
             <StatusTag :value="String(row.arrivalState ?? '')" category="arrival" />
           </template>
         </el-table-column>
-        <el-table-column prop="waitFileGroupMode" label="等待模式" width="120" />
+        <el-table-column prop="waitFileGroupMode" label="等待模式" width="110" />
         <el-table-column
           prop="requiredFileSet"
           label="必需文件集"
           min-width="160"
           show-overflow-tooltip
         />
+        <el-table-column prop="arrivalTimeoutAction" label="超时动作" width="110" />
+        <el-table-column prop="arrivedCount" label="已到" width="70" align="right" />
+        <el-table-column prop="waitingCount" label="等待中" width="80" align="right" />
+        <el-table-column prop="timeoutCount" label="超时" width="70" align="right" />
+        <el-table-column prop="triggeredCount" label="已触发" width="80" align="right" />
         <DatetimeColumn prop="expectedArrivalTime" label="期望到达" width="160" />
+        <DatetimeColumn prop="latestTolerableTime" label="最迟容忍" width="160" />
         <DatetimeColumn prop="lastUpdatedAt" label="更新" width="160" />
         <el-table-column label="操作" width="130" fixed="right">
           <template #default="{ row }">

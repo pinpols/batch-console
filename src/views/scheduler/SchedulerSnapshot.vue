@@ -89,6 +89,14 @@
           />
           <el-table-column prop="burstLimit" label="burstLimit" width="110" />
           <el-table-column prop="partitionBurstLimit" label="partitionBurstLimit" width="150" />
+          <el-table-column prop="quotaBurstRemaining" label="quotaBurstRemaining" width="160" />
+          <el-table-column
+            prop="quotaBurstPeakBorrowed"
+            label="quotaBurstPeakBorrowed"
+            width="180"
+          />
+          <el-table-column prop="groupSharedMaxRunningJobs" label="groupSharedMax" width="130" />
+          <DatetimeColumn prop="quotaResetWindowExpiresAt" label="quota 窗口到期" width="170" />
           <el-table-column label="操作" width="110" fixed="right">
             <template #default="{ row }">
               <div class="table-actions">
@@ -143,6 +151,14 @@
             width="190"
           />
           <el-table-column prop="burstLimit" label="burstLimit" width="110" />
+          <el-table-column prop="quotaBurstRemaining" label="quotaBurstRemaining" width="160" />
+          <el-table-column
+            prop="quotaBurstPeakBorrowed"
+            label="quotaBurstPeakBorrowed"
+            width="180"
+          />
+          <el-table-column prop="groupSharedMaxRunningJobs" label="groupSharedMax" width="130" />
+          <DatetimeColumn prop="quotaResetWindowExpiresAt" label="quota 窗口到期" width="170" />
           <el-table-column label="操作" width="110" fixed="right">
             <template #default="{ row }">
               <div class="table-actions">
@@ -225,24 +241,47 @@
           class="console-table"
         >
           <DatetimeColumn prop="snapshotAt" label="时间" width="170" />
-          <el-table-column label="策略" min-width="180">
+          <el-table-column label="策略 / 组" min-width="220">
             <template #default="{ row }">
-              <el-tag size="small" effect="plain" type="primary">{{ row.policyCode }}</el-tag>
+              <div class="cell-stack">
+                <div class="cell-main">
+                  <el-tag size="small" effect="plain" type="primary">{{ row.policyCode }}</el-tag>
+                  <el-tag size="small" effect="plain" :type="tagTypeForKey(row.fairShareGroup)">
+                    {{ row.fairShareGroup }}
+                  </el-tag>
+                </div>
+                <div class="cell-sub">
+                  quotaResetPolicy:
+                  <el-tag size="small" effect="plain" type="info">{{
+                    row.quotaResetPolicy
+                  }}</el-tag>
+                </div>
+              </div>
             </template>
           </el-table-column>
-          <el-table-column prop="activeJobs" label="活跃 Jobs" width="110" align="right" />
+          <el-table-column prop="activeJobs" label="activeJobs" width="100" align="right" />
+          <el-table-column
+            prop="activePartitions"
+            label="activePartitions"
+            width="130"
+            align="right"
+          />
           <el-table-column
             prop="effectiveJobCap"
             label="effectiveJobCap"
-            min-width="150"
+            width="130"
             align="right"
           />
+          <el-table-column prop="maxJobsBase" label="maxJobsBase" width="120" align="right" />
+          <el-table-column prop="burstLimit" label="burstLimit" width="110" align="right" />
           <el-table-column
             prop="groupActiveJobs"
             label="groupActiveJobs"
-            min-width="160"
+            width="140"
             align="right"
           />
+          <el-table-column prop="groupMaxJobs" label="groupMaxJobs" width="120" align="right" />
+          <el-table-column prop="onlineWorkers" label="onlineWorkers" width="120" align="right" />
         </el-table>
         <TablePagerBar
           :page="pageHistory"

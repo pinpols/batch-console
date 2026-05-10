@@ -87,6 +87,18 @@
           </template>
         </el-table-column>
         <DatetimeColumn prop="startedAt" label="开始" width="160" />
+        <DatetimeColumn prop="finishedAt" label="完成" width="160" />
+        <el-table-column prop="relatedJobInstanceId" label="关联实例" width="100">
+          <template #default="{ row }">
+            <router-link
+              v-if="row.relatedJobInstanceId"
+              class="cell-link"
+              :to="`/monitor/job-instances/${row.relatedJobInstanceId}`"
+              >{{ row.relatedJobInstanceId }}</router-link
+            >
+            <span v-else class="muted">—</span>
+          </template>
+        </el-table-column>
         <el-table-column label="操作" width="110" fixed="right">
           <template #default="{ row }">
             <div class="table-actions">

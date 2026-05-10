@@ -37,8 +37,10 @@
         empty-text="暂无数据"
         class="console-table"
       >
-        <el-table-column prop="partitionNo" label="分区" width="90" />
+        <el-table-column prop="partitionNo" label="分区" width="80" align="right" />
         <el-table-column prop="partitionKey" label="分区键" min-width="160" show-overflow-tooltip />
+        <el-table-column prop="businessKey" label="业务键" min-width="140" show-overflow-tooltip />
+        <el-table-column prop="jobInstanceId" label="实例 Id" width="100" align="right" />
         <el-table-column prop="partitionStatus" label="状态" width="140">
           <template #default="{ row }">
             <StatusTag :value="String(row.partitionStatus ?? '')" category="partition" />

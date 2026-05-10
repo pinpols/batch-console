@@ -24,13 +24,35 @@
         class="console-table"
       >
         <el-table-column prop="id" label="ID" width="80" />
-        <el-table-column prop="secretRef" label="Secret Key" min-width="200" show-overflow-tooltip>
+        <el-table-column label="Secret" min-width="240" show-overflow-tooltip>
           <template #default="{ row }">
-            <CopyableText :text="String(row.secretRef ?? '')" />
+            <div class="cell-stack">
+              <CopyableText :text="String(row.secretRef ?? '')" />
+              <span v-if="row.secretName" class="cell-sub">{{ row.secretName }}</span>
+            </div>
           </template>
         </el-table-column>
-        <el-table-column prop="versionNo" label="版本" width="80" />
+        <el-table-column prop="versionNo" label="版本" width="80" align="right" />
+        <el-table-column label="当前" width="80">
+          <template #default="{ row }">
+            <el-tag v-if="row.currentVersion" type="success" size="small" effect="plain">
+              当前
+            </el-tag>
+            <span v-else class="muted">—</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="secretStatus" label="状态" width="100" />
+        <DatetimeColumn prop="effectiveFromAt" label="生效起" width="160" />
+        <DatetimeColumn prop="effectiveToAt" label="生效止" width="160" />
+        <DatetimeColumn prop="rotationWindowStartAt" label="轮转窗起" width="160" />
+        <DatetimeColumn prop="rotationWindowEndAt" label="轮转窗止" width="160" />
+        <el-table-column
+          prop="rotationReason"
+          label="轮转原因"
+          min-width="160"
+          show-overflow-tooltip
+        />
+        <el-table-column prop="createdBy" label="创建人" width="120" show-overflow-tooltip />
         <DatetimeColumn prop="createdAt" label="创建时间" width="160" />
         <el-table-column label="操作" width="160" fixed="right">
           <template #default="{ row }">
