@@ -1,0 +1,35 @@
+node_modules
+dist
+dist-ssr
+.git
+.github
+.vscode
+.idea
+.claude
+*.log
+.vite-dev.log
+
+# tests / e2e 不进构建镜像
+test-results
+playwright-report
+blob-report
+playwright/.cache
+e2e/.auth
+e2e/__snapshots__
+
+# env 不打入镜像(部署时通过 -e 注入)
+.env.local
+.env.*.local
+
+# 文档站点不进运行镜像(单独 vitepress build/部署)
+docs-site
+docs
+
+# 截图 / 临时
+*.png
+*.xlsx
+oldfiles
+
+# OS junk
+.DS_Store
+Thumbs.db

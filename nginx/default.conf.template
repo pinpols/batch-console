@@ -1,0 +1,130 @@
+# 此文件经 envsubst 渲染:${BACKEND_UPSTREAM} / ${NGINX_PORT} 来自镜像 ENV
+# (nginx:1.19+ 自动支持 /etc/nginx/templates → /etc/nginx/conf.d 的渲染)
+
+upstream backend {
+    server ${BACKEND_UPSTREAM_HOST};
+    keepalive 32;
+}
+
+server {
+    listen ${NGINX_PORT};
+    server_name _;
+
+    root /usr/share/nginx/html;
+    index index.html;
+
+    # ────── 健康检查 ──────
+    location = /healthz {
+        access_log off;
+        add_header Content-Type text/plain;
+        return 200 "ok\n";
+    }
+
+    # ────── /api 反代到 BE ──────
+    # 路径透传(BE 期望 /api/console/* 完整路径),保留 Host / X-Real-IP / X-Forwarded-* 头
+    # WebSocket / SSE 升级头也带上(/api/console/ops/summary/events 走 SSE)
+    location /api/ {
+        proxy_pass         http://backend;
+        proxy_http_version 1.1;
+        proxy_set_header   Host              $host;
+        proxy_set_header   X-Real-IP         $remote_addr;
+        proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded-Proto $scheme;
+        proxy_set_header   X-Forwarded-Host  $host;
+        proxy_set_header   Upgrade           $http_upgrade;
+        proxy_set_header   Connection        $connection_upgrade;
+
+        # SSE/长连接:关 buffer + 长读超时(对齐 BE keepAlive 30s 周期)
+        proxy_buffering    off;
+        proxy_cache        off;
+        proxy_read_timeout 3600s;
+        proxy_send_timeout 3600s;
+
+        # CORS preflight:本同源部署不需要,跨域部署再开
+        # add_header Access-Control-Allow-Origin "*" always;
+    }
+
+    # ────── /docs/ 内嵌文档中心(VitePress 静态产物) ──────
+    # 走 auth_request 鉴权:internal 子请求带原 cookie/header 到 BE /api/console/auth/check
+    # BE 返 204 = 通过,401/403 = 拒绝(浏览器收到 401 后由 SPA 拦截器跳登录)
+    # base /docs/ 与 vitepress 配置对齐(docs-site/.vitepress/config.ts)
+    location /docs/ {
+        auth_request /__auth_check;
+        # 鉴权失败 → 401(SPA 全局拦截器读到 401 跳登录)
+        error_page 401 = @docs_unauthorized;
+
+        alias /var/www/batch-docs/;
+        try_files $uri $uri/ /docs/index.html;
+
+        # vitepress 也是 hash 命名 assets,长缓存
+        location ~* /docs/assets/.+\.(js|css|woff2?|ttf|eot|otf|png|jpg|jpeg|gif|svg|webp|ico)$ {
+            expires 1y;
+            add_header Cache-Control "public, max-age=31536000, immutable";
+        }
+        # docs/index.html 跟主站一样不缓存
+        location = /docs/index.html {
+            add_header Cache-Control "no-cache, no-store, must-revalidate";
+        }
+    }
+
+    location @docs_unauthorized {
+        return 401;
+    }
+
+    # ────── auth_request 子请求(internal,不暴露给浏览器) ──────
+    # 把原请求的 cookie / Authorization 头透传给 BE,BE 返 204 = 通过
+    location = /__auth_check {
+        internal;
+        proxy_pass         http://backend/api/console/auth/check;
+        proxy_pass_request_body off;             # auth check 不需要 body
+        proxy_set_header   Content-Length        "";
+        proxy_set_header   Host                  $host;
+        proxy_set_header   X-Original-URI        $request_uri;
+        proxy_set_header   X-Real-IP             $remote_addr;
+        proxy_set_header   X-Forwarded-For       $proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded-Proto     $scheme;
+        proxy_set_header   Cookie                $http_cookie;
+        proxy_set_header   Authorization         $http_authorization;
+        # 鉴权 SLO:300ms 内必须出结果,超时按拒绝
+        proxy_connect_timeout 1s;
+        proxy_read_timeout    2s;
+        proxy_send_timeout    2s;
+    }
+
+    # ────── 静态资源:hash 文件名 → 长缓存 immutable ──────
+    location ~* ^/(assets|fonts|img)/.+\.(js|css|woff2?|ttf|eot|otf|png|jpg|jpeg|gif|svg|webp|ico)$ {
+        expires 1y;
+        add_header Cache-Control "public, max-age=31536000, immutable";
+        try_files $uri =404;
+    }
+
+    # ────── HTML / index 不缓存(SPA 入口必须新鲜) ──────
+    location = /index.html {
+        add_header Cache-Control "no-cache, no-store, must-revalidate";
+        add_header Pragma "no-cache";
+        add_header Expires "0";
+    }
+
+    # ────── SPA fallback:vue-router history 模式所有路由 → /index.html ──────
+    location / {
+        try_files $uri $uri/ /index.html;
+        add_header Cache-Control "no-cache";
+    }
+
+    # ────── 安全头(全局) ──────
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    # Permissions-Policy 关闭不需要的浏览器特性(按需调整)
+    add_header Permissions-Policy "geolocation=(), microphone=(), camera=(), payment=()" always;
+
+    # 错误页:都回 SPA 入口让 vue-router 自己处理 404
+    error_page 404 = /index.html;
+}
+
+# WebSocket 升级 map(SSE 不需要,但留着将来如果接 ws 不用改)
+map $http_upgrade $connection_upgrade {
+    default upgrade;
+    ''      close;
+}

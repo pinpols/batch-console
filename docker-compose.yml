@@ -1,0 +1,39 @@
+# 单服务部署:前端 nginx 容器,反代到外部 BE
+# 用法:
+#   docker compose up -d --build              # 默认 BE 走 host.docker.internal:18080
+#   BACKEND_UPSTREAM_HOST=10.0.0.5:18080 docker compose up -d   # 覆盖 BE 地址
+#   docker compose logs -f frontend           # 看日志
+#   docker compose down                       # 停
+
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        # 想严格 typecheck 改 build(慢 ~20s);快速发布走 build:fast
+        BUILD_MODE: ${BUILD_MODE:-build:fast}
+    image: batch-console:latest
+    container_name: batch-console
+    restart: unless-stopped
+    ports:
+      - '${HOST_PORT:-8080}:80'
+    environment:
+      # nginx upstream;开发本机:host.docker.internal:18080(macOS/Windows 可直接用,Linux 需要加 extra_hosts)
+      BACKEND_UPSTREAM_HOST: ${BACKEND_UPSTREAM_HOST:-host.docker.internal:18080}
+      NGINX_PORT: 80
+    extra_hosts:
+      # Linux 需要这行才能让容器解析 host.docker.internal(macOS/Windows 自带)
+      - 'host.docker.internal:host-gateway'
+    healthcheck:
+      test: ['CMD', 'curl', '-fs', 'http://localhost/healthz']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    # 日志旋转:防容器写满磁盘
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '3'
