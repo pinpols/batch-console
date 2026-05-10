@@ -10,6 +10,8 @@
         v-model:page="page"
         v-model:page-size="pageSize"
         @change="load"
+        :error="loadError"
+        :on-retry="load"
       >
         <template #query>
           <ListPageQueryBar
@@ -187,6 +189,7 @@
 
   const tenant = useTenantStore()
   const loading = ref(false)
+  const loadError = ref<unknown>(null)
   const { filterBusy, tableBlocking, runSearch, runReset, runRefresh } =
     useListFilterFeedback(loading)
   const rows = ref<ConsoleFileRecordResponse[]>([])
@@ -240,6 +243,7 @@
 
   async function load() {
     loading.value = true
+    loadError.value = null
     try {
       const pr = await fileApi.list({
         tenantId: filters.tenantId || tenant.tenantId,
@@ -249,6 +253,9 @@
       })
       rows.value = pr.records
       total.value = pr.total
+    } catch (err) {
+      loadError.value = err
+      throw err
     } finally {
       loading.value = false
     }

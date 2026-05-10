@@ -6,6 +6,8 @@
       <ProTable
         :data="rows"
         :loading="tableBlocking"
+        :error="loadError"
+        :on-retry="load"
         :total="total"
         v-model:page="page"
         v-model:page-size="pageSize"
@@ -128,6 +130,7 @@
     return [...new Set([...codes, 'DEFAULT'])].sort((a, b) => a.localeCompare(b))
   })
 
+  const loadError = ref<unknown>(null)
   async function load() {
     const cal = filters.calendarCode.trim()
     if (!cal) {
@@ -135,6 +138,7 @@
       return
     }
     loading.value = true
+    loadError.value = null
     try {
       const pr = await queryBatchDays({
         tenantId: tenant.tenantId,
@@ -146,6 +150,9 @@
       })
       rows.value = (pr.items ?? []) as ConsoleBatchDayResponse[]
       total.value = pr.total ?? 0
+    } catch (err) {
+      loadError.value = err
+      throw err
     } finally {
       loading.value = false
     }

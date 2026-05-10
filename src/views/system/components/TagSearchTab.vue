@@ -3,6 +3,8 @@
     <ProTable
       :data="filteredSearchResults"
       :loading="searching"
+      :error="searchError"
+      :on-retry="doSearch"
       :total="filteredSearchResults.length"
       :show-pager="false"
       v-model:page="searchPage"
@@ -78,6 +80,8 @@
       <ProTable
         :data="pagedKeys"
         :loading="loadingKeys"
+        :error="loadKeysError"
+        :on-retry="loadKeys"
         :total="filteredKeys.length"
         v-model:page="keyPage"
         v-model:page-size="keyPageSize"
@@ -136,6 +140,7 @@
   import ProTable from '@/components/table/ProTable.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
+  import { useListLoadState } from '@/composables/useListLoadState'
 
   const tenant = useTenantStore()
   const { data: metaEnums } = useConsoleMetaEnumsQuery()
@@ -143,8 +148,8 @@
     pickMetaEnumGroup(metaEnums.value, 'triggerResourceType'),
   )
 
-  const searching = ref(false)
-  const loadingKeys = ref(false)
+  const { loading: searching, error: searchError, run: runSearchTag } = useListLoadState()
+  const { loading: loadingKeys, error: loadKeysError, run: runLoadKeys } = useListLoadState()
   const {
     filterBusy: searchFilterBusy,
     runSearch: runTagSearch,
@@ -203,31 +208,25 @@
       ElMessage.warning('Tag Key 不能为空')
       return
     }
-    searching.value = true
-    try {
+    await runSearchTag(async () => {
       const data = await searchByTag(
         tenant.tenantId,
         searchForm.tagKey,
         searchForm.tagValue || undefined,
       )
       searchResults.value = Array.isArray(data) ? (data as Record<string, unknown>[]) : []
-    } catch {
+    }).catch(() => {
       searchResults.value = []
-    } finally {
-      searching.value = false
-    }
+    })
   }
 
   async function loadKeys() {
-    loadingKeys.value = true
-    try {
+    await runLoadKeys(async () => {
       const data = await listTagKeys(tenant.tenantId)
       tagKeys.value = Array.isArray(data) ? data : []
-    } catch {
+    }).catch(() => {
       tagKeys.value = []
-    } finally {
-      loadingKeys.value = false
-    }
+    })
   }
 
   useTenantReload(() => {

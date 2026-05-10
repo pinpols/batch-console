@@ -9,6 +9,8 @@
           <ProTable
             :data="workerTableRows"
             :loading="workerTableBlocking"
+            :error="workerLoadError"
+            :on-retry="refetchWorkers"
             :total="workerTotal"
             v-model:page="workerPage"
             v-model:page-size="workerPageSize"
@@ -101,6 +103,8 @@
           <ProTable
             :data="channelRows"
             :loading="channelTableBlocking"
+            :error="channelLoadError"
+            :on-retry="loadChannels"
             :total="channelTotal"
             v-model:page="channelPage"
             v-model:page-size="channelPageSize"
@@ -195,6 +199,7 @@
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { useQueryClient } from '@tanstack/vue-query'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
+  import { useListLoadState } from '@/composables/useListLoadState'
   import { useSseAutoReload } from '@/composables/useSseAutoReload'
   import { useWorkers } from '@/composables/queries/useWorkers'
   import {
@@ -233,6 +238,7 @@
     data: allWorkerData,
     isPending: workerIsPending,
     isFetching: workerIsFetching,
+    error: workerLoadError,
     refetch: refetchWorkers,
   } = useWorkers()
   const { data: metaEnums } = useConsoleMetaEnumsQuery()
@@ -353,7 +359,11 @@
   // ═══════════════════════════════════════
   // 文件渠道
   // ═══════════════════════════════════════
-  const channelLoading = ref(false)
+  const {
+    loading: channelLoading,
+    error: channelLoadError,
+    run: runLoadChannels,
+  } = useListLoadState()
   const {
     filterBusy: channelQueryBusy,
     tableBlocking: channelTableBlocking,
@@ -389,16 +399,13 @@
   }
 
   async function loadChannels() {
-    channelLoading.value = true
-    try {
+    await runLoadChannels(async () => {
       allChannelRows.value = await queryFileChannels(tenant.tenantId)
       const enums = await getMetaEnums()
       channelTypeOptions.value = enums.channelType ?? []
       channelPage.value = 1
       sliceChannelPage()
-    } finally {
-      channelLoading.value = false
-    }
+    })
   }
 
   function onChannelSearch() {

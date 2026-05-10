@@ -10,6 +10,8 @@
         v-model:page-size="pageSize"
         @change="slicePage"
         :show-pager="true"
+        :error="loadError"
+        :on-retry="load"
       >
         <template #query>
           <ListPageQueryBar
@@ -106,6 +108,7 @@
   const route = useRoute()
   const tenant = useTenantStore()
   const loading = ref(false)
+  const loadError = ref<unknown>(null)
   const {
     filterBusy: queryActionBusy,
     tableBlocking,
@@ -178,6 +181,7 @@
 
   async function load() {
     loading.value = true
+    loadError.value = null
     try {
       rows.value = await queryAudits(tenant.tenantId, {
         traceId: traceApplied.value.trim() || undefined,
@@ -186,6 +190,9 @@
       })
       page.value = 1
       slicePage()
+    } catch (err) {
+      loadError.value = err
+      throw err
     } finally {
       loading.value = false
     }

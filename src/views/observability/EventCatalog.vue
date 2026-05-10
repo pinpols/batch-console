@@ -8,6 +8,8 @@
           <ProTable
             :data="pagedEventTypes"
             :loading="loadingTypes"
+            :error="loadTypesError"
+            :on-retry="loadEventTypes"
             :total="filteredEventTypes.length"
             v-model:page="typePage"
             v-model:page-size="typePageSize"
@@ -71,6 +73,8 @@
           <ProTable
             :data="pagedTopics"
             :loading="loadingTopics"
+            :error="loadTopicsError"
+            :on-retry="loadTopics"
             :total="filteredTopics.length"
             v-model:page="topicPage"
             v-model:page-size="topicPageSize"
@@ -143,10 +147,11 @@
   import CopyableText from '@/components/common/CopyableText.vue'
   import DetailDrawer from '@/components/common/DetailDrawer.vue'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
+  import { useListLoadState } from '@/composables/useListLoadState'
 
   const activeTab = ref('eventTypes')
-  const loadingTypes = ref(false)
-  const loadingTopics = ref(false)
+  const { loading: loadingTypes, error: loadTypesError, run: runLoadTypes } = useListLoadState()
+  const { loading: loadingTopics, error: loadTopicsError, run: runLoadTopics } = useListLoadState()
   const {
     filterBusy: typesFilterBusy,
     runSearch: runTypesSearch,
@@ -208,27 +213,21 @@
   )
 
   async function loadEventTypes() {
-    loadingTypes.value = true
-    try {
+    await runLoadTypes(async () => {
       const data = await listEventTypes()
       eventTypes.value = Array.isArray(data) ? (data as Record<string, unknown>[]) : []
-    } catch {
+    }).catch(() => {
       eventTypes.value = []
-    } finally {
-      loadingTypes.value = false
-    }
+    })
   }
 
   async function loadTopics() {
-    loadingTopics.value = true
-    try {
+    await runLoadTopics(async () => {
       const data = await listKafkaTopics()
       topics.value = Array.isArray(data) ? (data as Record<string, unknown>[]) : []
-    } catch {
+    }).catch(() => {
       topics.value = []
-    } finally {
-      loadingTopics.value = false
-    }
+    })
   }
 
   onMounted(() => {

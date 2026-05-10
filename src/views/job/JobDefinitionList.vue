@@ -6,6 +6,8 @@
       <ProTable
         :data="filtered"
         :loading="tableBlocking"
+        :error="jobLoadError"
+        :on-retry="refetch"
         :total="total"
         v-model:page="page"
         v-model:page-size="pageSize"
@@ -261,7 +263,13 @@
   // → 放到"本页前端过滤"。要完整搜索须用 Job Code / 启用状态。
   const serverJobCode = computed(() => filters.jobCode.trim() || undefined)
   const serverEnabled = computed<boolean | undefined>(() => filters.enabled ?? undefined)
-  const { data, isPending, isFetching, refetch } = useJobDefinitionsPaged({
+  const {
+    data,
+    isPending,
+    isFetching,
+    error: jobLoadError,
+    refetch,
+  } = useJobDefinitionsPaged({
     page,
     pageSize,
     jobCode: serverJobCode,

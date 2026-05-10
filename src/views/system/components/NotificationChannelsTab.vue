@@ -3,6 +3,8 @@
     <ProTable
       :data="pagedChannels"
       :loading="loadingChannels"
+      :error="loadChannelsError"
+      :on-retry="loadChannels"
       :total="filteredChannels.length"
       v-model:page="channelPage"
       v-model:page-size="channelPageSize"
@@ -159,12 +161,17 @@
   import StatusTag from '@/components/common/StatusTag.vue'
   import DatetimeColumn from '@/components/common/DatetimeColumn.vue'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
+  import { useListLoadState } from '@/composables/useListLoadState'
 
   const tenant = useTenantStore()
   const { data: metaEnums } = useConsoleMetaEnumsQuery()
   const channelTypeOptions = computed(() => pickMetaEnumGroup(metaEnums.value, 'channelType'))
 
-  const loadingChannels = ref(false)
+  const {
+    loading: loadingChannels,
+    error: loadChannelsError,
+    run: runLoadingChannels,
+  } = useListLoadState()
   const { filterBusy, runSearch, runReset, runRefresh } = useListFilterFeedback(loadingChannels)
   const savingChannel = ref(false)
   const channelFormVisible = ref(false)
@@ -183,15 +190,12 @@
   })
 
   async function loadChannels() {
-    loadingChannels.value = true
-    try {
+    await runLoadingChannels(async () => {
       const data = await listNotificationChannels(tenant.tenantId)
       channels.value = Array.isArray(data) ? (data as Record<string, unknown>[]) : []
-    } catch {
+    }).catch(() => {
       channels.value = []
-    } finally {
-      loadingChannels.value = false
-    }
+    })
   }
 
   function openChannelCreate() {

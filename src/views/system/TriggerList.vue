@@ -6,6 +6,8 @@
       <ProTable
         :data="pagedRows"
         :loading="tableBlocking"
+        :error="loadError"
+        :on-retry="load"
         :total="filtered.length"
         v-model:page="page"
         v-model:page-size="pageSize"
@@ -125,6 +127,7 @@
 
   const tenant = useTenantStore()
   const loading = ref(false)
+  const loadError = ref<unknown>(null)
   const { filterBusy, tableBlocking, runSearch, runReset, runRefresh } =
     useListFilterFeedback(loading)
   const allRows = ref<Record<string, unknown>[]>([])
@@ -167,9 +170,11 @@
 
   async function load() {
     loading.value = true
+    loadError.value = null
     try {
       allRows.value = (await listTriggers(tenant.tenantId)) as Record<string, unknown>[]
-    } catch {
+    } catch (err) {
+      loadError.value = err
       allRows.value = []
     } finally {
       loading.value = false
