@@ -34,7 +34,7 @@
                   />
                 </el-form-item>
                 <el-form-item label="状态">
-                  <el-select
+                  <MetaSelect
                     class="query-w-200"
                     v-model="retryStatusDraft"
                     clearable
@@ -43,14 +43,8 @@
                     default-first-option
                     placeholder="重试状态"
                     @keyup.enter="onRetrySearch"
-                  >
-                    <el-option
-                      v-for="opt in retryStatusSelectOptions"
-                      :key="opt.value"
-                      :label="opt.label"
-                      :value="opt.value"
-                    />
-                  </el-select>
+                    :options="retryStatusSelectOptions"
+                  />
                 </el-form-item>
               </ListPageQueryBar>
             </template>
@@ -102,7 +96,7 @@
                   />
                 </el-form-item>
                 <el-form-item label="状态">
-                  <el-select
+                  <MetaSelect
                     class="query-w-200"
                     v-model="deliveryStatusDraft"
                     clearable
@@ -111,14 +105,8 @@
                     default-first-option
                     placeholder="投递状态"
                     @keyup.enter="onDeliverySearch"
-                  >
-                    <el-option
-                      v-for="opt in deliveryStatusSelectOptions"
-                      :key="opt.value"
-                      :label="opt.label"
-                      :value="opt.value"
-                    />
-                  </el-select>
+                    :options="deliveryStatusSelectOptions"
+                  />
                 </el-form-item>
               </ListPageQueryBar>
             </template>
@@ -173,6 +161,7 @@
   import { toPageResult } from '@/api/adapters'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
   import PageContainer from '@/components/common/PageContainer.vue'
+  import MetaSelect from '@/components/common/MetaSelect.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'

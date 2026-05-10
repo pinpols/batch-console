@@ -68,20 +68,14 @@
               <template #label>
                 <HelpLabel tip="调度队列，控制并发和执行优先级">Queue</HelpLabel>
               </template>
-              <el-select
+              <MetaSelect
                 class="query-w-160"
                 v-model="filters.queueCode"
                 clearable
                 filterable
                 placeholder="请选择 queueCode"
-              >
-                <el-option
-                  v-for="option in queueOptions"
-                  :key="option.value"
-                  :label="option.label"
-                  :value="option.value"
-                />
-              </el-select>
+                :options="queueOptions"
+              />
             </el-form-item>
             <el-form-item>
               <template #label>
@@ -89,19 +83,13 @@
                   >调度类型</HelpLabel
                 >
               </template>
-              <el-select
+              <MetaSelect
                 class="query-w-160"
                 v-model="filters.scheduleType"
                 clearable
                 placeholder="请选择 scheduleType"
-              >
-                <el-option
-                  v-for="option in scheduleTypeOptions"
-                  :key="option.value"
-                  :label="option.label"
-                  :value="option.value"
-                />
-              </el-select>
+                :options="scheduleTypeOptions"
+              />
             </el-form-item>
           </ListPageQueryBar>
         </template>
@@ -185,14 +173,11 @@
           <el-input :model-value="editingJobCode" disabled />
         </el-form-item>
         <el-form-item label="执行模式" prop="executionMode">
-          <el-select v-model="editForm.executionMode" class="query-w-full">
-            <el-option
-              v-for="option in executionModeOptions"
-              :key="option.value"
-              :label="option.label"
-              :value="option.value"
-            />
-          </el-select>
+          <MetaSelect
+            v-model="editForm.executionMode"
+            class="query-w-full"
+            :options="executionModeOptions"
+          />
         </el-form-item>
         <el-form-item
           v-if="editForm.executionMode === 'INCREMENTAL'"
@@ -229,6 +214,7 @@
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
   import PageContainer from '@/components/common/PageContainer.vue'
+  import MetaSelect from '@/components/common/MetaSelect.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'

@@ -39,20 +39,14 @@
               </el-select>
             </el-form-item>
             <el-form-item label="状态">
-              <el-select
+              <MetaSelect
                 class="query-w-180"
                 v-model="query.instanceStatus"
                 clearable
                 filterable
                 placeholder="全部实例状态"
-              >
-                <el-option
-                  v-for="option in statusOptions"
-                  :key="option.value"
-                  :label="option.label"
-                  :value="option.value"
-                />
-              </el-select>
+                :options="statusOptions"
+              />
             </el-form-item>
             <el-form-item>
               <template #label>
@@ -120,6 +114,7 @@
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
   import PageContainer from '@/components/common/PageContainer.vue'
+  import MetaSelect from '@/components/common/MetaSelect.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'

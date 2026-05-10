@@ -37,7 +37,7 @@
               />
             </el-form-item>
             <el-form-item label="操作类型">
-              <el-select
+              <MetaSelect
                 class="query-w-200"
                 v-model="filters.operationType"
                 clearable
@@ -45,14 +45,8 @@
                 allow-create
                 default-first-option
                 placeholder="选择或输入 operationType"
-              >
-                <el-option
-                  v-for="o in operationTypeOptions"
-                  :key="o.value"
-                  :label="o.label"
-                  :value="o.value"
-                />
-              </el-select>
+                :options="operationTypeOptions"
+              />
             </el-form-item>
             <el-form-item label="操作者">
               <el-input
@@ -71,20 +65,14 @@
               />
             </el-form-item>
             <el-form-item label="结果">
-              <el-select
+              <MetaSelect
                 class="query-w-200"
                 v-model="filters.operationResult"
                 clearable
                 filterable
                 placeholder="全部操作结果"
-              >
-                <el-option
-                  v-for="opt in operationResultSelectOptions"
-                  :key="opt.value"
-                  :label="opt.label"
-                  :value="opt.value"
-                />
-              </el-select>
+                :options="operationResultSelectOptions"
+              />
             </el-form-item>
             <el-form-item label="时间范围">
               <el-date-picker
@@ -124,6 +112,7 @@
   import { toPageResult } from '@/api/adapters'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
   import PageContainer from '@/components/common/PageContainer.vue'
+  import MetaSelect from '@/components/common/MetaSelect.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'

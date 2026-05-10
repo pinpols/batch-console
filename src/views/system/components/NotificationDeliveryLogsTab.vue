@@ -27,19 +27,13 @@
           />
         </el-form-item>
         <el-form-item label="状态">
-          <el-select
+          <MetaSelect
             class="query-w-180"
             v-model="logFilterDraft.status"
             clearable
             placeholder="全部"
-          >
-            <el-option
-              v-for="opt in deliveryStatusOptions"
-              :key="opt.value"
-              :label="opt.label"
-              :value="opt.value"
-            />
-          </el-select>
+            :options="deliveryStatusOptions"
+          />
         </el-form-item>
       </ListPageQueryBar>
     </template>
@@ -82,6 +76,7 @@
   import ProTable from '@/components/table/ProTable.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
+  import MetaSelect from '@/components/common/MetaSelect.vue'
   import DatetimeColumn from '@/components/common/DatetimeColumn.vue'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { useListLoadState } from '@/composables/useListLoadState'

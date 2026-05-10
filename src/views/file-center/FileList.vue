@@ -23,36 +23,24 @@
             @refresh="() => runRefresh(load)"
           >
             <el-form-item label="状态">
-              <el-select
+              <MetaSelect
                 class="query-w-160"
                 v-model="filters.fileStatus"
                 clearable
                 filterable
                 placeholder="全部文件状态"
-              >
-                <el-option
-                  v-for="o in fileStatusSelectOptions"
-                  :key="o.value"
-                  :label="o.label"
-                  :value="o.value"
-                />
-              </el-select>
+                :options="fileStatusSelectOptions"
+              />
             </el-form-item>
             <el-form-item label="业务类型">
-              <el-select
+              <MetaSelect
                 class="query-w-160"
                 v-model="filters.bizType"
                 clearable
                 filterable
                 placeholder="全部业务类型"
-              >
-                <el-option
-                  v-for="o in bizTypeOptions"
-                  :key="o.value"
-                  :label="o.label"
-                  :value="o.value"
-                />
-              </el-select>
+                :options="bizTypeOptions"
+              />
             </el-form-item>
             <el-form-item label="文件名">
               <el-input
@@ -174,6 +162,7 @@
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
   import PageContainer from '@/components/common/PageContainer.vue'
+  import MetaSelect from '@/components/common/MetaSelect.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'

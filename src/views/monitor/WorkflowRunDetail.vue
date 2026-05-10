@@ -48,20 +48,14 @@
           />
         </el-form-item>
         <el-form-item label="nodeStatus">
-          <el-select
+          <MetaSelect
             class="query-w-200"
             v-model="nodeFilterDraft.nodeStatus"
             clearable
             filterable
             placeholder="全部"
-          >
-            <el-option
-              v-for="opt in nodeStatusOptions"
-              :key="opt.value"
-              :label="opt.label"
-              :value="opt.value"
-            />
-          </el-select>
+            :options="nodeStatusOptions"
+          />
         </el-form-item>
       </ListPageQueryBar>
       <el-table
@@ -120,6 +114,7 @@
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
   import PageContainer from '@/components/common/PageContainer.vue'
+  import MetaSelect from '@/components/common/MetaSelect.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
   import TablePagerBar from '@/components/table/TablePagerBar.vue'
