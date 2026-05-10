@@ -75,8 +75,16 @@
         </el-table-column>
         <el-table-column prop="runSeq" label="序号" width="70" />
         <el-table-column prop="retryCount" label="重试" width="70" />
-        <el-table-column prop="errorMessage" label="错误" min-width="160" show-overflow-tooltip />
-        <el-table-column prop="durationMs" label="耗时 ms" width="100" />
+        <DatetimeColumn prop="startedAt" label="开始" width="160" />
+        <DatetimeColumn prop="finishedAt" label="完成" width="160" />
+        <el-table-column label="错误" min-width="200" show-overflow-tooltip>
+          <template #default="{ row }">
+            <span v-if="row.errorCode" class="mono">[{{ row.errorCode }}]</span>
+            <span v-if="row.errorMessage">{{ row.errorMessage }}</span>
+            <span v-if="!row.errorCode && !row.errorMessage" class="muted">—</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="durationMs" label="耗时 ms" width="100" align="right" />
         <el-table-column label="操作" width="100" fixed="right">
           <template #default="{ row }">
             <div class="table-actions">
@@ -120,6 +128,7 @@
   import TablePagerBar from '@/components/table/TablePagerBar.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
+  import DatetimeColumn from '@/components/common/DatetimeColumn.vue'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'

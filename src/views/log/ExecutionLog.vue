@@ -67,8 +67,11 @@
             <StatusTag :value="String(row.operationResult ?? '')" category="operationResult" />
           </template>
         </el-table-column>
+        <el-table-column prop="operatorType" label="操作者类型" width="110" />
         <el-table-column prop="operatorId" label="操作者" width="120" />
+        <el-table-column prop="fileId" label="File ID" width="100" />
         <el-table-column prop="traceId" label="Trace" min-width="120" show-overflow-tooltip />
+        <el-table-column prop="evidenceRef" label="证据" width="140" show-overflow-tooltip />
         <el-table-column prop="detailSummary" label="摘要" min-width="160" show-overflow-tooltip />
       </ProTable>
     </SectionCard>

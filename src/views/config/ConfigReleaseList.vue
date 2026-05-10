@@ -58,8 +58,12 @@
             <StatusTag :value="String(row.configStatus ?? '')" category="configStatus" />
           </template>
         </el-table-column>
-        <el-table-column prop="versionNo" label="版本" width="80" />
+        <el-table-column prop="versionNo" label="版本" width="80" align="right" />
         <DatetimeColumn prop="publishedAt" label="发布时间" width="160" />
+        <DatetimeColumn prop="effectiveFromAt" label="生效起" width="160" />
+        <DatetimeColumn prop="effectiveToAt" label="生效止" width="160" />
+        <DatetimeColumn prop="rolledBackAt" label="回滚时间" width="160" />
+        <el-table-column prop="createdBy" label="创建人" width="120" show-overflow-tooltip />
         <el-table-column label="操作" width="380" fixed="right">
           <template #default="{ row }">
             <div class="table-actions">

@@ -78,9 +78,25 @@
         <StatusTag :value="String(row.approvalStatus ?? '')" category="approval" />
       </template>
     </el-table-column>
+    <el-table-column prop="actionType" label="动作" width="100" show-overflow-tooltip />
     <el-table-column prop="targetType" label="目标类型" width="110" show-overflow-tooltip />
-    <el-table-column prop="targetId" label="目标 Id" min-width="220" show-overflow-tooltip />
+    <el-table-column prop="targetId" label="目标 Id" min-width="180" show-overflow-tooltip />
     <el-table-column prop="requesterId" label="申请人" width="110" show-overflow-tooltip />
+    <el-table-column prop="approverId" label="审批人" width="110" show-overflow-tooltip>
+      <template #default="{ row }">
+        <span v-if="row.approverId">{{ row.approverId }}</span>
+        <span v-else class="muted">—</span>
+      </template>
+    </el-table-column>
+    <el-table-column label="审批理由 / 拒绝理由" min-width="200" show-overflow-tooltip>
+      <template #default="{ row }">
+        <span v-if="row.approvalReason">{{ row.approvalReason }}</span>
+        <span v-else-if="row.rejectionReason" class="muted">拒:{{ row.rejectionReason }}</span>
+        <span v-else class="muted">—</span>
+      </template>
+    </el-table-column>
+    <DatetimeColumn prop="approvedAt" label="审批时间" width="160" />
+    <DatetimeColumn prop="executedAt" label="执行时间" width="160" />
     <el-table-column label="操作" width="160" fixed="right" align="center">
       <template #default="{ row }">
         <div class="table-actions">
@@ -124,6 +140,7 @@
   import StatusTag from '@/components/common/StatusTag.vue'
   import MetaSelect from '@/components/common/MetaSelect.vue'
   import CopyableText from '@/components/common/CopyableText.vue'
+  import DatetimeColumn from '@/components/common/DatetimeColumn.vue'
   import type { ConsoleApprovalCommandResponse } from '@/types/console-api'
 
   const tenant = useTenantStore()
