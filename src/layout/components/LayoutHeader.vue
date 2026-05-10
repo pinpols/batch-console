@@ -134,38 +134,31 @@
           </el-tooltip>
         </div>
 
-        <div class="header-controls" :class="{ 'header-controls--pinned': dropdownOpen }">
-          <el-tooltip content="更多（悬浮展开）" placement="bottom">
-            <el-button text class="icon-button header-controls__handle" aria-label="更多">
-              <el-icon>
-                <MoreFilled />
-              </el-icon>
-            </el-button>
-          </el-tooltip>
-          <div class="header-controls__content">
-            <el-tag v-if="auth.role" size="small" type="info">{{ auth.role }}</el-tag>
-            <el-dropdown
-              trigger="click"
-              placement="bottom-end"
-              @command="onUserCommand"
-              @visible-change="dropdownOpen = $event"
-            >
-              <span class="username username--clickable" tabindex="0">
-                {{ auth.userInfo?.username ?? '未登录' }}
-                <el-icon class="username__caret"><ArrowDown /></el-icon>
-              </span>
-              <template #dropdown>
-                <el-dropdown-menu>
-                  <el-dropdown-item v-if="auth.role === 'ADMIN'" command="profile" :icon="Key">
-                    权限自查
-                  </el-dropdown-item>
-                  <el-dropdown-item command="logout" :icon="SwitchButton" divided>
-                    退出登录
-                  </el-dropdown-item>
-                </el-dropdown-menu>
-              </template>
-            </el-dropdown>
-          </div>
+        <div class="user-area">
+          <el-tag v-if="auth.role" size="small" type="info" class="user-area__role">
+            {{ auth.role }}
+          </el-tag>
+          <el-dropdown
+            trigger="click"
+            placement="bottom-end"
+            :hide-on-click="true"
+            @command="onUserCommand"
+          >
+            <span class="username username--clickable" tabindex="0">
+              {{ auth.userInfo?.username ?? '未登录' }}
+              <el-icon class="username__caret"><ArrowDown /></el-icon>
+            </span>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item v-if="auth.role === 'ADMIN'" command="profile" :icon="Key">
+                  权限自查
+                </el-dropdown-item>
+                <el-dropdown-item command="logout" :icon="SwitchButton" divided>
+                  退出登录
+                </el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
         </div>
       </div>
     </div>
@@ -173,7 +166,6 @@
 </template>
 
 <script setup lang="ts">
-  import { ref } from 'vue'
   import { useRouter } from 'vue-router'
   import { ElMessageBox } from 'element-plus'
   import {
@@ -185,7 +177,6 @@
     Key,
     Link,
     Monitor,
-    MoreFilled,
     Moon,
     OfficeBuilding,
     Reading,
@@ -201,7 +192,6 @@
   }>()
 
   const router = useRouter()
-  const dropdownOpen = ref(false)
   const {
     app,
     auth,
@@ -320,49 +310,17 @@
     width: 100%;
   }
 
-  .header-controls {
+  /* 用户区:role tag + 用户名下拉,常驻显示,不再悬浮收缩 */
+  .user-area {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    min-width: 0;
-  }
-
-  .header-controls__content {
-    display: inline-flex;
-    align-items: center;
-    flex-wrap: nowrap;
     gap: 10px;
     min-width: 0;
-    overflow: hidden;
-    transition: max-width 0.22s cubic-bezier(0.33, 1, 0.68, 1);
+    flex-shrink: 0;
   }
 
-  /* 默认收起：只保留 "更多" 把手 */
-  .header-controls:not(:hover):not(:focus-within) .header-controls__content {
-    max-width: 0;
-    pointer-events: none;
-    overflow: hidden;
-  }
-
-  /* 悬浮/聚焦/下拉打开时展开 */
-  .header-controls:hover .header-controls__content,
-  .header-controls:focus-within .header-controls__content,
-  .header-controls--pinned .header-controls__content {
-    max-width: min(1040px, 94vw);
-    pointer-events: auto;
-    overflow: visible;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .header-controls__content {
-      transition: none;
-    }
-  }
-
-  .header-controls:hover .header-controls__handle,
-  .header-controls:focus-within .header-controls__handle,
-  .header-controls--pinned .header-controls__handle {
-    opacity: 0.55;
+  .user-area__role {
+    flex-shrink: 0;
   }
 
   .page-meta {
