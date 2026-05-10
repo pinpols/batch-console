@@ -27,19 +27,13 @@
           @refresh="() => runTagSearchRefresh(doSearch)"
         >
           <el-form-item label="资源类型">
-            <el-select
+            <MetaSelect
               v-model="searchFilters.resourceType"
               clearable
               placeholder="全部"
               class="tag-search__type"
-            >
-              <el-option
-                v-for="opt in resourceTypeOptions"
-                :key="opt.value"
-                :label="opt.label"
-                :value="opt.value"
-              />
-            </el-select>
+              :options="resourceTypeOptions"
+            />
           </el-form-item>
           <el-form-item label="标签键">
             <el-input
@@ -137,6 +131,7 @@
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
   import StatusTag from '@/components/common/StatusTag.vue'
+  import MetaSelect from '@/components/common/MetaSelect.vue'
   import ProTable from '@/components/table/ProTable.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'

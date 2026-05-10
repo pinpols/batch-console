@@ -28,7 +28,7 @@
           />
         </el-form-item>
         <el-form-item label="状态">
-          <el-select
+          <MetaSelect
             class="query-w-180"
             v-model="statusDraft"
             clearable
@@ -37,14 +37,8 @@
             default-first-option
             placeholder="选择或输入 requestStatus"
             @keyup.enter="onSearch"
-          >
-            <el-option
-              v-for="o in catchUpStatusOptions"
-              :key="o.value"
-              :label="o.label"
-              :value="o.value"
-            />
-          </el-select>
+            :options="catchUpStatusOptions"
+          />
         </el-form-item>
         <el-form-item label="业务日">
           <el-date-picker
@@ -80,6 +74,7 @@
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
   import type { ConsolePendingCatchUpResponse } from '@/types/console-api'
+  import MetaSelect from '@/components/common/MetaSelect.vue'
 
   const tenant = useTenantStore()
   const loading = ref(false)

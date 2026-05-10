@@ -20,19 +20,13 @@
         </el-button>
       </template>
       <el-form-item label="资源类型">
-        <el-select
+        <MetaSelect
           v-model="queryForm.resourceType"
           clearable
           placeholder="请选择"
           class="tag-query__type"
-        >
-          <el-option
-            v-for="opt in resourceTypeOptions"
-            :key="opt.value"
-            :label="opt.label"
-            :value="opt.value"
-          />
-        </el-select>
+          :options="resourceTypeOptions"
+        />
       </el-form-item>
       <el-form-item label="资源编码">
         <el-input
@@ -126,6 +120,7 @@
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { useListLoadState } from '@/composables/useListLoadState'
   import DataState from '@/components/common/DataState.vue'
+  import MetaSelect from '@/components/common/MetaSelect.vue'
 
   const tenant = useTenantStore()
   const { data: metaEnums } = useConsoleMetaEnumsQuery()

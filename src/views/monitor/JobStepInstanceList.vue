@@ -30,20 +30,14 @@
               />
             </el-form-item>
             <el-form-item label="步骤状态">
-              <el-select
+              <MetaSelect
                 class="query-w-200"
                 v-model="filterStepStatus"
                 clearable
                 filterable
                 placeholder="全部步骤状态"
-              >
-                <el-option
-                  v-for="opt in stepStatusOptions"
-                  :key="opt.value"
-                  :label="opt.label"
-                  :value="opt.value"
-                />
-              </el-select>
+                :options="stepStatusOptions"
+              />
             </el-form-item>
             <el-form-item>
               <p class="query-hint">
@@ -89,6 +83,7 @@
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
   import PageContainer from '@/components/common/PageContainer.vue'
+  import MetaSelect from '@/components/common/MetaSelect.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'

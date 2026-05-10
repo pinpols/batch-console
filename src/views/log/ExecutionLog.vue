@@ -32,7 +32,7 @@
               />
             </el-form-item>
             <el-form-item label="操作类型">
-              <el-select
+              <MetaSelect
                 class="query-w-200"
                 v-model="opDraft"
                 clearable
@@ -41,31 +41,19 @@
                 default-first-option
                 placeholder="选择或输入 operationType"
                 @keyup.enter="onSearch"
-              >
-                <el-option
-                  v-for="o in operationTypeOptions"
-                  :key="o.value"
-                  :label="o.label"
-                  :value="o.value"
-                />
-              </el-select>
+                :options="operationTypeOptions"
+              />
             </el-form-item>
             <el-form-item label="结果">
-              <el-select
+              <MetaSelect
                 class="query-w-200"
                 v-model="opResultDraft"
                 clearable
                 filterable
                 placeholder="全部操作结果"
                 @keyup.enter="onSearch"
-              >
-                <el-option
-                  v-for="opt in opResultOptions"
-                  :key="opt.value"
-                  :label="opt.label"
-                  :value="opt.value"
-                />
-              </el-select>
+                :options="opResultOptions"
+              />
             </el-form-item>
             <el-form-item>
               <el-switch v-model="poll" active-text="每 30 秒自动刷新列表" />
@@ -98,6 +86,7 @@
   import { toPageResult } from '@/api/adapters'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
   import PageContainer from '@/components/common/PageContainer.vue'
+  import MetaSelect from '@/components/common/MetaSelect.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'

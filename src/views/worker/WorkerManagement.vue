@@ -27,7 +27,7 @@
                 @refresh="onRefreshWorkers"
               >
                 <el-form-item label="组">
-                  <el-select
+                  <MetaSelect
                     class="query-w-180"
                     v-model="workerFilters.workerGroup"
                     clearable
@@ -35,29 +35,17 @@
                     allow-create
                     default-first-option
                     placeholder="选择或输入 workerGroup"
-                  >
-                    <el-option
-                      v-for="o in workerGroupOptions"
-                      :key="o.value"
-                      :label="o.label"
-                      :value="o.value"
-                    />
-                  </el-select>
+                    :options="workerGroupOptions"
+                  />
                 </el-form-item>
                 <el-form-item label="状态">
-                  <el-select
+                  <MetaSelect
                     class="query-w-200"
                     v-model="workerFilters.status"
                     clearable
                     placeholder="全部连接状态"
-                  >
-                    <el-option
-                      v-for="opt in workerStatusOptions"
-                      :key="opt.value"
-                      :label="opt.label"
-                      :value="opt.value"
-                    />
-                  </el-select>
+                    :options="workerStatusOptions"
+                  />
                 </el-form-item>
                 <el-form-item label="关键字">
                   <el-input
@@ -128,20 +116,14 @@
                   />
                 </el-form-item>
                 <el-form-item label="类型">
-                  <el-select
+                  <MetaSelect
                     class="query-w-160"
                     v-model="channelFilters.channelType"
                     clearable
                     filterable
                     placeholder="全部渠道类型"
-                  >
-                    <el-option
-                      v-for="option in channelTypeOptions"
-                      :key="option.value"
-                      :label="option.label"
-                      :value="option.value"
-                    />
-                  </el-select>
+                    :options="channelTypeOptions"
+                  />
                 </el-form-item>
               </ListPageQueryBar>
             </template>
@@ -214,6 +196,7 @@
   import { uniqueFieldValues } from '@/utils/queryFormOptions'
   import { useTenantStore } from '@/stores/tenant'
   import PageContainer from '@/components/common/PageContainer.vue'
+  import MetaSelect from '@/components/common/MetaSelect.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'

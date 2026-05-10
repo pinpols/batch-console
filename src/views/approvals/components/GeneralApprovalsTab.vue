@@ -20,23 +20,17 @@
         @refresh="() => runRefresh(load)"
       >
         <el-form-item label="状态">
-          <el-select
+          <MetaSelect
             class="query-w-200"
             v-model="filters.status"
             clearable
             filterable
             placeholder="全部审批状态"
-          >
-            <el-option
-              v-for="opt in approvalStatusSelectOptions"
-              :key="opt.value"
-              :label="opt.label"
-              :value="opt.value"
-            />
-          </el-select>
+            :options="approvalStatusSelectOptions"
+          />
         </el-form-item>
         <el-form-item label="类型">
-          <el-select
+          <MetaSelect
             class="query-w-180"
             v-model="filters.type"
             clearable
@@ -44,14 +38,8 @@
             allow-create
             default-first-option
             placeholder="选择或输入 approvalType"
-          >
-            <el-option
-              v-for="o in approvalTypeOptions"
-              :key="o.value"
-              :label="o.label"
-              :value="o.value"
-            />
-          </el-select>
+            :options="approvalTypeOptions"
+          />
         </el-form-item>
         <el-form-item label="关键字">
           <el-input
@@ -134,6 +122,7 @@
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import ProTable from '@/components/table/ProTable.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
+  import MetaSelect from '@/components/common/MetaSelect.vue'
   import CopyableText from '@/components/common/CopyableText.vue'
   import type { ConsoleApprovalCommandResponse } from '@/types/console-api'
 

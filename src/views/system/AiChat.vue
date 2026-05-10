@@ -86,7 +86,7 @@
                   />
                 </el-form-item>
                 <el-form-item label="分类">
-                  <el-select
+                  <MetaSelect
                     class="query-w-200"
                     v-model="auditCategoryDraft"
                     clearable
@@ -95,14 +95,8 @@
                     default-first-option
                     placeholder="选择或输入 promptCategory"
                     @keyup.enter="onAuditSearch"
-                  >
-                    <el-option
-                      v-for="o in auditCategoryOptions"
-                      :key="o.value"
-                      :label="o.label"
-                      :value="o.value"
-                    />
-                  </el-select>
+                    :options="auditCategoryOptions"
+                  />
                 </el-form-item>
               </ListPageQueryBar>
             </template>
@@ -142,6 +136,7 @@
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
   import PageContainer from '@/components/common/PageContainer.vue'
+  import MetaSelect from '@/components/common/MetaSelect.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'

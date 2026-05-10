@@ -39,20 +39,14 @@
               />
             </el-form-item>
             <el-form-item label="状态">
-              <el-select
+              <MetaSelect
                 class="query-w-200"
                 v-model="filters.status"
                 clearable
                 filterable
                 placeholder="全部发布状态"
-              >
-                <el-option
-                  v-for="opt in configReleaseStatusOptions"
-                  :key="opt.value"
-                  :label="opt.label"
-                  :value="opt.value"
-                />
-              </el-select>
+                :options="configReleaseStatusOptions"
+              />
             </el-form-item>
           </ListPageQueryBar>
         </template>
@@ -188,6 +182,7 @@
   import { toPageResult } from '@/api/adapters'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
   import PageContainer from '@/components/common/PageContainer.vue'
+  import MetaSelect from '@/components/common/MetaSelect.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'

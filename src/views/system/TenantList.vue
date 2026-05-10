@@ -47,14 +47,13 @@
           />
         </el-form-item>
         <el-form-item label="状态">
-          <el-select class="query-w-140" v-model="queryDraft.status" clearable placeholder="全部">
-            <el-option
-              v-for="opt in tenantStatusOptions"
-              :key="opt.value"
-              :label="opt.label"
-              :value="opt.value"
-            />
-          </el-select>
+          <MetaSelect
+            class="query-w-140"
+            v-model="queryDraft.status"
+            clearable
+            placeholder="全部"
+            :options="tenantStatusOptions"
+          />
         </el-form-item>
       </ListPageQueryBar>
 
@@ -176,6 +175,7 @@
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { useListLoadState } from '@/composables/useListLoadState'
   import DataState from '@/components/common/DataState.vue'
+  import MetaSelect from '@/components/common/MetaSelect.vue'
   import { canManageTenants as hasTenantAdminAccess } from '@/utils/tenantAccess'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
