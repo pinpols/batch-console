@@ -4,9 +4,9 @@
 
     <SectionCard>
       <div v-if="lastTrace" class="trace-bar">
-        <span>最近 traceId</span>
+        <span>{{ t('auditList.lastTrace') }}</span>
         <code>{{ lastTrace }}</code>
-        <el-button size="small" @click="copyTrace">复制</el-button>
+        <el-button size="small" @click="copyTrace">{{ t('auditList.copy') }}</el-button>
       </div>
 
       <ProTable
@@ -28,15 +28,15 @@
             @reset="reset"
             @refresh="() => runRefresh(load)"
           >
-            <el-form-item label="Trace">
+            <el-form-item :label="t('auditList.traceLabel')">
               <el-input
                 class="query-w-200"
                 v-model="filters.traceId"
                 clearable
-                placeholder="Trace Id，模糊匹配"
+                :placeholder="t('auditList.tracePlaceholder')"
               />
             </el-form-item>
-            <el-form-item label="操作类型">
+            <el-form-item :label="t('auditList.operationTypeLabel')">
               <MetaSelect
                 class="query-w-200"
                 v-model="filters.operationType"
@@ -44,59 +44,88 @@
                 filterable
                 allow-create
                 default-first-option
-                placeholder="选择或输入 operationType"
+                enum-key="operationType"
+                :placeholder="t('auditList.operationTypePlaceholder')"
                 :options="operationTypeOptions"
               />
             </el-form-item>
-            <el-form-item label="操作者">
+            <el-form-item :label="t('auditList.operatorLabel')">
               <el-input
                 class="query-w-160"
                 v-model="filters.operatorId"
                 clearable
-                placeholder="操作人 Id，模糊匹配"
+                :placeholder="t('auditList.operatorPlaceholder')"
               />
             </el-form-item>
-            <el-form-item label="File ID">
+            <el-form-item :label="t('auditList.fileIdLabel')">
               <el-input
                 class="query-w-140"
                 v-model="filters.fileId"
                 clearable
-                placeholder="关联文件 Id"
+                :placeholder="t('auditList.fileIdPlaceholder')"
               />
             </el-form-item>
-            <el-form-item label="结果">
+            <el-form-item :label="t('auditList.resultLabel')">
               <MetaSelect
                 class="query-w-200"
                 v-model="filters.operationResult"
                 clearable
                 filterable
-                placeholder="全部操作结果"
+                enum-key="operationResult"
+                :placeholder="t('auditList.resultPlaceholder')"
                 :options="operationResultSelectOptions"
               />
             </el-form-item>
-            <el-form-item label="时间范围">
+            <el-form-item :label="t('auditList.timeRangeLabel')">
               <el-date-picker
                 class="query-w-340"
                 v-model="timeRange"
                 type="datetimerange"
                 value-format="YYYY-MM-DD HH:mm:ss"
-                range-separator="至"
-                start-placeholder="开始时间"
-                end-placeholder="结束时间"
+                :range-separator="t('auditList.timeRangeSeparator')"
+                :start-placeholder="t('auditList.startTimePlaceholder')"
+                :end-placeholder="t('auditList.endTimePlaceholder')"
               />
             </el-form-item>
           </ListPageQueryBar>
         </template>
 
-        <DatetimeColumn prop="createdAt" label="时间" width="160" />
-        <el-table-column prop="operationType" label="操作" width="120" />
-        <el-table-column prop="operationResult" label="结果" width="120" />
-        <el-table-column prop="operatorType" label="操作者类型" width="110" />
-        <el-table-column prop="operatorId" label="操作者" width="120" />
-        <el-table-column prop="fileId" label="File ID" width="100" />
-        <el-table-column prop="traceId" label="Trace" min-width="130" show-overflow-tooltip />
-        <el-table-column prop="evidenceRef" label="证据" width="140" show-overflow-tooltip />
-        <el-table-column prop="detailSummary" label="摘要" min-width="180" show-overflow-tooltip />
+        <DatetimeColumn prop="createdAt" :label="t('auditList.colTime')" width="160" />
+        <el-table-column prop="operationType" :label="t('auditList.colOperationType')" width="120">
+          <template #default="{ row }">
+            {{ resolveEnumLabel('operationType', row.operationType) }}
+          </template>
+        </el-table-column>
+        <el-table-column
+          prop="operationResult"
+          :label="t('auditList.colOperationResult')"
+          width="120"
+        >
+          <template #default="{ row }">
+            {{ resolveEnumLabel('operationResult', row.operationResult) }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="operatorType" :label="t('auditList.colOperatorType')" width="110" />
+        <el-table-column prop="operatorId" :label="t('auditList.colOperatorId')" width="120" />
+        <el-table-column prop="fileId" :label="t('auditList.colFileId')" width="100" />
+        <el-table-column
+          prop="traceId"
+          :label="t('auditList.colTrace')"
+          min-width="130"
+          show-overflow-tooltip
+        />
+        <el-table-column
+          prop="evidenceRef"
+          :label="t('auditList.colEvidence')"
+          width="140"
+          show-overflow-tooltip
+        />
+        <el-table-column
+          prop="detailSummary"
+          :label="t('auditList.colSummary')"
+          min-width="180"
+          show-overflow-tooltip
+        />
       </ProTable>
     </SectionCard>
   </PageContainer>
@@ -104,7 +133,16 @@
 
 <script setup lang="ts">
   import { computed, reactive, ref, watch } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
+
+  const { t, te } = useI18n({ useScope: 'global' })
+
+  function resolveEnumLabel(group: string, value?: string | null): string {
+    if (!value) return ''
+    const key = `enum.${group}.${value}`
+    return te(key) ? t(key) : value
+  }
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { queryAudits } from '@/api/observabilityQueries'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
@@ -239,7 +277,7 @@
   function copyTrace() {
     if (!lastTrace.value) return
     void navigator.clipboard.writeText(lastTrace.value)
-    ElMessage.success('已复制')
+    ElMessage.success(t('auditList.copied'))
   }
 
   watch(timeRange, (value) => {

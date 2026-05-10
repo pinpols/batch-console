@@ -4,10 +4,10 @@
 
     <SectionCard>
       <el-tabs v-model="activeTab" v-hover-tab-activate="true" class="pill-tabs">
-        <el-tab-pane label="资源标签" name="resource">
+        <el-tab-pane :label="t('tagManagement.tabResource')" name="resource">
           <TagResourceTab />
         </el-tab-pane>
-        <el-tab-pane label="按标签搜索" name="search">
+        <el-tab-pane :label="t('tagManagement.tabSearch')" name="search">
           <TagSearchTab />
         </el-tab-pane>
       </el-tabs>
@@ -17,7 +17,10 @@
 
 <script setup lang="ts">
   import { ref } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import PageContainer from '@/components/common/PageContainer.vue'
+
+  const { t } = useI18n({ useScope: 'global' })
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
   import TagResourceTab from './components/TagResourceTab.vue'
