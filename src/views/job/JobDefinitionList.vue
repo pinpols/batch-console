@@ -23,38 +23,45 @@
             @reset="reset"
             @refresh="onRefreshDefinitions"
           >
-            <el-form-item label="Job Code">
+            <el-form-item :label="t('jobDefinitionList.jobCodeLabel')">
               <el-input
                 class="query-w-160"
                 v-model="filters.jobCode"
                 clearable
-                placeholder="按作业 Code 搜索"
+                :placeholder="t('jobDefinitionList.jobCodePlaceholder')"
               />
             </el-form-item>
-            <el-form-item label="名称">
+            <el-form-item :label="t('jobDefinitionList.jobNameLabel')">
               <el-input
                 class="query-w-160"
                 v-model="filters.jobName"
                 clearable
-                placeholder="请输入 jobName"
+                :placeholder="t('jobDefinitionList.jobNamePlaceholder')"
               />
             </el-form-item>
-            <el-form-item label="启用">
-              <el-select class="query-w-120" v-model="filters.enabled" clearable placeholder="全部">
-                <el-option label="启用" :value="true" />
-                <el-option label="停用" :value="false" />
+            <el-form-item :label="t('jobDefinitionList.enabledLabel')">
+              <el-select
+                class="query-w-120"
+                v-model="filters.enabled"
+                clearable
+                :placeholder="t('jobDefinitionList.enabledPlaceholder')"
+              >
+                <el-option :label="t('jobDefinitionList.optEnabled')" :value="true" />
+                <el-option :label="t('jobDefinitionList.optDisabled')" :value="false" />
               </el-select>
             </el-form-item>
             <el-form-item>
               <template #label>
-                <HelpLabel tip="Worker 分组，决定由哪组 Worker 执行该 Job">Worker Group</HelpLabel>
+                <HelpLabel :tip="t('jobDefinitionList.workerGroupTip')">
+                  {{ t('jobDefinitionList.workerGroupLabel') }}
+                </HelpLabel>
               </template>
               <el-select
                 class="query-w-180"
                 v-model="filters.workerGroup"
                 clearable
                 filterable
-                placeholder="请选择 workerGroup"
+                :placeholder="t('jobDefinitionList.workerGroupPlaceholder')"
               >
                 <el-option
                   v-for="option in workerGroupOptions"
@@ -66,61 +73,84 @@
             </el-form-item>
             <el-form-item>
               <template #label>
-                <HelpLabel tip="调度队列，控制并发和执行优先级">Queue</HelpLabel>
+                <HelpLabel :tip="t('jobDefinitionList.queueTip')">
+                  {{ t('jobDefinitionList.queueLabel') }}
+                </HelpLabel>
               </template>
               <MetaSelect
                 class="query-w-160"
                 v-model="filters.queueCode"
                 clearable
                 filterable
-                placeholder="请选择 queueCode"
+                :placeholder="t('jobDefinitionList.queuePlaceholder')"
                 :options="queueOptions"
               />
             </el-form-item>
             <el-form-item>
               <template #label>
-                <HelpLabel tip="CRON 定时触发 / EVENT 事件触发 / MANUAL 手动触发"
-                  >调度类型</HelpLabel
-                >
+                <HelpLabel :tip="t('jobDefinitionList.scheduleTypeTip')">
+                  {{ t('jobDefinitionList.scheduleTypeLabel') }}
+                </HelpLabel>
               </template>
               <MetaSelect
                 class="query-w-160"
                 v-model="filters.scheduleType"
                 clearable
-                placeholder="请选择 scheduleType"
+                enum-key="scheduleType"
+                :placeholder="t('jobDefinitionList.scheduleTypePlaceholder')"
                 :options="scheduleTypeOptions"
               />
             </el-form-item>
           </ListPageQueryBar>
         </template>
 
-        <el-table-column prop="jobCode" label="Job Code" min-width="140">
+        <el-table-column prop="jobCode" :label="t('jobDefinitionList.colJobCode')" min-width="140">
           <template #default="{ row }">
             <CopyableText :text="row.jobCode" />
           </template>
         </el-table-column>
-        <el-table-column prop="jobName" label="名称" min-width="160" />
-        <el-table-column prop="tenantId" label="租户" width="100" />
-        <el-table-column prop="workerGroup" label="Worker Group" width="140" />
-        <el-table-column prop="queueCode" label="队列" width="140" />
-        <el-table-column prop="scheduleType" label="调度类型" width="120" />
-        <el-table-column prop="executionMode" label="执行模式" width="110">
+        <el-table-column
+          prop="jobName"
+          :label="t('jobDefinitionList.colJobName')"
+          min-width="160"
+        />
+        <el-table-column prop="tenantId" :label="t('jobDefinitionList.colTenant')" width="100" />
+        <el-table-column
+          prop="workerGroup"
+          :label="t('jobDefinitionList.colWorkerGroup')"
+          width="140"
+        />
+        <el-table-column prop="queueCode" :label="t('jobDefinitionList.colQueue')" width="140" />
+        <el-table-column
+          prop="scheduleType"
+          :label="t('jobDefinitionList.colScheduleType')"
+          width="120"
+        >
+          <template #default="{ row }">
+            {{ resolveScheduleType(row.scheduleType) }}
+          </template>
+        </el-table-column>
+        <el-table-column
+          prop="executionMode"
+          :label="t('jobDefinitionList.colExecutionMode')"
+          width="110"
+        >
           <template #default="{ row }">
             <StatusTag :value="row.executionMode || 'FULL'" category="executionMode" />
           </template>
         </el-table-column>
-        <el-table-column prop="enabled" label="启用" width="80">
+        <el-table-column prop="enabled" :label="t('jobDefinitionList.colEnabled')" width="80">
           <template #default="{ row }">
             <StatusTag :value="String(row.enabled)" category="yn" />
           </template>
         </el-table-column>
         <el-table-column
           prop="scheduleExpr"
-          label="调度表达式"
+          :label="t('jobDefinitionList.colScheduleExpr')"
           min-width="140"
           show-overflow-tooltip
         />
-        <el-table-column label="操作" width="180" fixed="right">
+        <el-table-column :label="t('jobDefinitionList.colActions')" width="180" fixed="right">
           <template #default="{ row }">
             <RowActions :actions="rowActions(row)" />
           </template>
@@ -141,31 +171,34 @@
         label-width="120px"
         @submit.prevent
       >
-        <el-form-item label="Job Code">
+        <el-form-item :label="t('jobDefinitionList.fieldJobCode')">
           <el-input :model-value="editingJobCode" disabled />
         </el-form-item>
-        <el-form-item label="执行模式" prop="executionMode">
+        <el-form-item :label="t('jobDefinitionList.fieldExecutionMode')" prop="executionMode">
           <MetaSelect
             v-model="editForm.executionMode"
             class="query-w-full"
+            enum-key="executionMode"
             :options="executionModeOptions"
           />
         </el-form-item>
         <el-form-item
           v-if="editForm.executionMode === 'INCREMENTAL'"
-          label="水位字段名"
+          :label="t('jobDefinitionList.fieldWatermark')"
           prop="watermarkField"
         >
           <el-input
             v-model="editForm.watermarkField"
-            placeholder="增量水位字段名(例:update_time / id)"
+            :placeholder="t('jobDefinitionList.fieldWatermarkPlaceholder')"
             maxlength="64"
             show-word-limit
           />
         </el-form-item>
         <div class="drawer-actions">
-          <el-button @click="closeEditDrawer">取消</el-button>
-          <el-button type="primary" :loading="editSaving" @click="submitEdit">保存</el-button>
+          <el-button @click="closeEditDrawer">{{ t('jobDefinitionList.drawerCancel') }}</el-button>
+          <el-button type="primary" :loading="editSaving" @click="submitEdit">
+            {{ t('jobDefinitionList.drawerSave') }}
+          </el-button>
         </div>
       </el-form>
     </el-drawer>
@@ -175,7 +208,16 @@
 <script setup lang="ts">
   import { ref, reactive, computed, watch } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
+  import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
+
+  const { t, te } = useI18n({ useScope: 'global' })
+
+  function resolveScheduleType(value?: string | null): string {
+    if (!value) return ''
+    const key = `enum.scheduleType.${value}`
+    return te(key) ? t(key) : value
+  }
   import type { FormInstance, FormItemRule, FormRules } from 'element-plus'
   import { jobApi } from '@/api/job'
   import { getMetaEnums, getMetaQueues, type MetaOption } from '@/api/meta'
@@ -306,17 +348,31 @@
     return [
       {
         key: 'trigger',
-        label: '手动触发',
+        label: t('jobDefinitionList.actionTrigger'),
         primary: true,
         loading: acting,
         onClick: () => triggerRow(row),
       },
-      { key: 'edit', label: '编辑', onClick: () => openEdit(row) },
-      { key: 'instances', label: '查看实例', onClick: () => goInstances(row.jobCode) },
-      { key: 'clone', label: '克隆', onClick: () => cloneRow(row) },
+      {
+        key: 'edit',
+        label: t('jobDefinitionList.actionEdit'),
+        onClick: () => openEdit(row),
+      },
+      {
+        key: 'instances',
+        label: t('jobDefinitionList.actionInstances'),
+        onClick: () => goInstances(row.jobCode),
+      },
+      {
+        key: 'clone',
+        label: t('jobDefinitionList.actionClone'),
+        onClick: () => cloneRow(row),
+      },
       {
         key: 'toggle',
-        label: row.enabled ? '停用' : '启用',
+        label: row.enabled
+          ? t('jobDefinitionList.actionDisable')
+          : t('jobDefinitionList.actionEnable'),
         divided: true,
         disabled: acting,
         onClick: () => toggleRow(row),
@@ -335,10 +391,17 @@
 
   async function toggleRow(row: ConsoleJobDefinitionResponse) {
     try {
+      const action = row.enabled
+        ? t('jobDefinitionList.actionDisable')
+        : t('jobDefinitionList.actionEnable')
       await ElMessageBox.confirm(
-        `${row.enabled ? '停用' : '启用'} Job「${row.jobCode}」？`,
-        '状态切换确认',
-        { type: 'warning' },
+        t('jobDefinitionList.toggleConfirmText', { action, code: row.jobCode }),
+        t('jobDefinitionList.toggleConfirmTitle'),
+        {
+          type: 'warning',
+          confirmButtonText: t('common.confirm'),
+          cancelButtonText: t('common.cancel'),
+        },
       )
     } catch {
       return
@@ -346,7 +409,10 @@
     actingJobCode.value = row.jobCode
     try {
       await jobApi.toggleEnabled(row.jobCode, filters.tenantId || tenant.tenantId, !row.enabled)
-      ElMessage.success(`已${row.enabled ? '停用' : '启用'} ${row.jobCode}`)
+      const action = row.enabled
+        ? t('jobDefinitionList.actionDisable')
+        : t('jobDefinitionList.actionEnable')
+      ElMessage.success(t('jobDefinitionList.toggleSuccess', { action, code: row.jobCode }))
       await refetch()
     } finally {
       actingJobCode.value = ''
@@ -357,20 +423,20 @@
     let payloadText = ''
     try {
       const { value } = await ElMessageBox.prompt(
-        '可选，输入 JSON payload；留空则发送空对象',
-        `手动触发 ${row.jobCode}`,
+        t('jobDefinitionList.triggerPrompt'),
+        t('jobDefinitionList.triggerTitle', { code: row.jobCode }),
         {
           inputType: 'textarea',
           inputValue: '{}',
-          confirmButtonText: '触发',
-          cancelButtonText: '取消',
+          confirmButtonText: t('jobDefinitionList.triggerConfirm'),
+          cancelButtonText: t('common.cancel'),
         },
       )
       payloadText = value?.trim() || '{}'
       JSON.parse(payloadText)
     } catch (error) {
       if (error === 'cancel' || error === 'close') return
-      ElMessage.error('payload 需为合法 JSON')
+      ElMessage.error(t('jobDefinitionList.triggerInvalidJson'))
       return
     }
     actingJobCode.value = row.jobCode
@@ -383,10 +449,13 @@
       // 替换"已触发"toast → 引导用户去监控页跟踪刚刚触发的实例
       // 体检"病根 2:做完就完事"——触发后最自然的下一步就是看新实例跑得怎样
       showCreateSuccess({
-        title: '已触发',
-        message: `${row.jobCode} 已触发,新实例可在监控页跟踪运行状态。`,
-        primary: { label: '查看实例', onClick: () => goInstances(row.jobCode) },
-        secondary: { label: '留在当前页' },
+        title: t('jobDefinitionList.triggerSuccessTitle'),
+        message: t('jobDefinitionList.triggerSuccessMessage', { code: row.jobCode }),
+        primary: {
+          label: t('jobDefinitionList.triggerSuccessPrimary'),
+          onClick: () => goInstances(row.jobCode),
+        },
+        secondary: { label: t('jobDefinitionList.triggerSuccessSecondary') },
       })
     } finally {
       actingJobCode.value = ''
@@ -395,9 +464,17 @@
 
   async function cloneRow(row: ConsoleJobDefinitionResponse) {
     try {
-      await ElMessageBox.confirm(`克隆 Job「${row.jobCode}」？`, '克隆确认', { type: 'info' })
+      await ElMessageBox.confirm(
+        t('jobDefinitionList.cloneConfirmText', { code: row.jobCode }),
+        t('jobDefinitionList.cloneConfirmTitle'),
+        {
+          type: 'info',
+          confirmButtonText: t('common.confirm'),
+          cancelButtonText: t('common.cancel'),
+        },
+      )
       await jobApi.clone(row.id, filters.tenantId || tenant.tenantId)
-      ElMessage.success(`已克隆 ${row.jobCode}`)
+      ElMessage.success(t('jobDefinitionList.cloneSuccess', { code: row.jobCode }))
       await refetch()
     } catch {
       /* cancel */
@@ -422,16 +499,18 @@
   )
 
   const editDrawerTitle = computed(() =>
-    editingJobCode.value ? `编辑 Job「${editingJobCode.value}」` : '编辑 Job',
+    editingJobCode.value
+      ? t('jobDefinitionList.drawerEditTitleWithCode', { code: editingJobCode.value })
+      : t('jobDefinitionList.drawerEditTitle'),
   )
 
   const watermarkRule: FormItemRule = {
     validator: (_rule, value: unknown, callback) => {
       if (editForm.executionMode !== 'INCREMENTAL') return callback()
       const v = typeof value === 'string' ? value.trim() : ''
-      if (!v) return callback(new Error('INCREMENTAL 模式下必须填写水位字段名'))
+      if (!v) return callback(new Error(t('jobDefinitionList.ruleWatermarkRequired')))
       if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(v)) {
-        return callback(new Error('只能含字母 / 数字 / 下划线,且不能以数字开头'))
+        return callback(new Error(t('jobDefinitionList.ruleWatermarkPattern')))
       }
       return callback()
     },
@@ -439,7 +518,13 @@
   }
 
   const editFormRules: FormRules = {
-    executionMode: [{ required: true, message: '请选择执行模式', trigger: 'change' }],
+    executionMode: [
+      {
+        required: true,
+        message: t('jobDefinitionList.ruleExecutionModeRequired'),
+        trigger: 'change',
+      },
+    ],
     watermarkField: [watermarkRule],
   }
 
@@ -484,7 +569,7 @@
         watermarkField:
           editForm.executionMode === 'INCREMENTAL' ? editForm.watermarkField.trim() : '',
       })
-      ElMessage.success(`已更新 ${editingJobCode.value}`)
+      ElMessage.success(t('jobDefinitionList.updateSuccess', { code: editingJobCode.value }))
       editDrawerVisible.value = false
       await refetch()
     } finally {

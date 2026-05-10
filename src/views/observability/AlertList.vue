@@ -22,23 +22,24 @@
             @reset="reset"
             @refresh="() => runRefresh(load)"
           >
-            <el-form-item label="级别">
+            <el-form-item :label="t('alertList.severityLabel')">
               <MetaSelect
                 class="query-w-140"
                 v-model="filters.severity"
                 :options="severityOptions"
                 clearable
                 filterable
-                placeholder="请选择级别"
+                enum-key="severity"
+                :placeholder="t('alertList.severityPlaceholder')"
               />
             </el-form-item>
-            <el-form-item label="类型">
+            <el-form-item :label="t('alertList.typeLabel')">
               <el-select
                 class="query-w-160"
                 v-model="filters.alertType"
                 clearable
                 filterable
-                placeholder="请选择 alertType"
+                :placeholder="t('alertList.typePlaceholder')"
               >
                 <el-option
                   v-for="option in alertTypeOptions"
@@ -48,54 +49,70 @@
                 />
               </el-select>
             </el-form-item>
-            <el-form-item label="状态">
+            <el-form-item :label="t('alertList.statusLabel')">
               <MetaSelect
                 class="query-w-140"
                 v-model="filters.status"
                 :options="statusOptions"
                 clearable
                 filterable
-                placeholder="请选择状态"
+                enum-key="alertStatus"
+                :placeholder="t('alertList.statusPlaceholder')"
               />
             </el-form-item>
-            <el-form-item label="Trace">
+            <el-form-item :label="t('alertList.traceLabel')">
               <el-input
                 class="query-w-160"
                 v-model="filters.traceId"
                 clearable
-                placeholder="请输入 traceId"
+                :placeholder="t('alertList.tracePlaceholder')"
               />
             </el-form-item>
-            <el-form-item label="时间范围">
+            <el-form-item :label="t('alertList.timeRangeLabel')">
               <DateRangePresetPicker v-model="timeRange" default-preset="today" />
             </el-form-item>
           </ListPageQueryBar>
         </template>
 
-        <el-table-column prop="id" label="ID" width="80" />
-        <el-table-column prop="severity" label="级别" width="100">
+        <el-table-column prop="id" :label="t('alertList.colId')" width="80" />
+        <el-table-column prop="severity" :label="t('alertList.colSeverity')" width="100">
           <template #default="{ row }">
             <StatusTag :value="String(row.severity ?? '')" category="alertSeverity" />
           </template>
         </el-table-column>
-        <el-table-column prop="alertType" label="类型" width="120" />
-        <el-table-column prop="serviceName" label="服务" width="140" show-overflow-tooltip />
-        <el-table-column prop="title" label="标题" min-width="180" show-overflow-tooltip />
-        <DatetimeColumn prop="firstSeenAt" label="首次发生" width="160" />
+        <el-table-column prop="alertType" :label="t('alertList.colType')" width="120" />
+        <el-table-column
+          prop="serviceName"
+          :label="t('alertList.colService')"
+          width="140"
+          show-overflow-tooltip
+        />
+        <el-table-column
+          prop="title"
+          :label="t('alertList.colTitle')"
+          min-width="180"
+          show-overflow-tooltip
+        />
+        <DatetimeColumn prop="firstSeenAt" :label="t('alertList.colFirstSeen')" width="160" />
         <el-table-column
           prop="dedupFingerprint"
-          label="去重指纹"
+          :label="t('alertList.colDedup')"
           width="160"
           show-overflow-tooltip
         />
-        <el-table-column prop="status" label="状态" width="110">
+        <el-table-column prop="status" :label="t('alertList.colStatus')" width="110">
           <template #default="{ row }">
             <StatusTag :value="String(row.status ?? '')" category="alertStatus" />
           </template>
         </el-table-column>
-        <el-table-column prop="occurrenceCount" label="次数" width="80" />
-        <DatetimeColumn prop="lastSeenAt" label="最近" width="160" />
-        <el-table-column prop="traceId" label="Trace" min-width="120" show-overflow-tooltip>
+        <el-table-column prop="occurrenceCount" :label="t('alertList.colCount')" width="80" />
+        <DatetimeColumn prop="lastSeenAt" :label="t('alertList.colLastSeen')" width="160" />
+        <el-table-column
+          prop="traceId"
+          :label="t('alertList.colTrace')"
+          min-width="120"
+          show-overflow-tooltip
+        >
           <template #default="{ row }">
             <router-link v-if="row.traceId" class="cell-link" :to="`/logs?traceId=${row.traceId}`">
               {{ row.traceId }}
@@ -103,7 +120,7 @@
             <span v-else class="cell-empty">—</span>
           </template>
         </el-table-column>
-        <el-table-column label="治理" width="260" fixed="right">
+        <el-table-column :label="t('alertList.colActions')" width="260" fixed="right">
           <template #default="{ row }">
             <div class="table-actions">
               <el-button
@@ -113,7 +130,7 @@
                 :loading="actingId === row.id"
                 @click="doAck(row)"
               >
-                确认
+                {{ t('alertList.actionAck') }}
               </el-button>
               <el-button
                 size="small"
@@ -122,7 +139,7 @@
                 :loading="actingId === row.id"
                 @click="doSilence(row)"
               >
-                静默
+                {{ t('alertList.actionSilence') }}
               </el-button>
               <el-button
                 size="small"
@@ -131,7 +148,7 @@
                 :loading="actingId === row.id"
                 @click="doClose(row)"
               >
-                关闭
+                {{ t('alertList.actionClose') }}
               </el-button>
             </div>
           </template>
@@ -144,7 +161,10 @@
 <script setup lang="ts">
   import { computed, reactive, ref, watch } from 'vue'
   import { useRoute } from 'vue-router'
+  import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
+
+  const { t } = useI18n({ useScope: 'global' })
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { useSseAutoReload } from '@/composables/useSseAutoReload'
   import { toPageResult } from '@/api/adapters'
@@ -273,11 +293,11 @@
 
   async function optionalReason(title: string): Promise<string | undefined> {
     try {
-      const { value } = await ElMessageBox.prompt('可选，审计说明', title, {
-        confirmButtonText: '提交',
-        cancelButtonText: '跳过',
+      const { value } = await ElMessageBox.prompt(t('alertList.reasonPrompt'), title, {
+        confirmButtonText: t('alertList.reasonSubmit'),
+        cancelButtonText: t('alertList.reasonSkip'),
         distinguishCancelAndClose: true,
-        inputPlaceholder: 'reason',
+        inputPlaceholder: t('alertList.reasonPlaceholder'),
       })
       return value?.trim() || undefined
     } catch (e) {
@@ -288,15 +308,23 @@
 
   async function doAck(row: ConsoleAlertEventResponse) {
     try {
-      await ElMessageBox.confirm(`确认告警「${row.title}」？`, '确认（ACK）', { type: 'warning' })
+      await ElMessageBox.confirm(
+        t('alertList.confirmAckText', { title: row.title }),
+        t('alertList.confirmAckTitle'),
+        {
+          type: 'warning',
+          confirmButtonText: t('common.confirm'),
+          cancelButtonText: t('common.cancel'),
+        },
+      )
       actingId.value = row.id
-      const reason = await optionalReason('ACK 说明')
+      const reason = await optionalReason(t('alertList.ackReasonTitle'))
       await acknowledgeAlert(row.id, actionBody(reason))
-      ElMessage.success('已提交确认')
+      ElMessage.success(t('alertList.ackedToast'))
       await load()
     } catch (e) {
       if (e !== 'cancel' && e !== 'close') {
-        /* 错误由拦截器提示 */
+        /* handled */
       }
     } finally {
       actingId.value = null
@@ -305,11 +333,19 @@
 
   async function doSilence(row: ConsoleAlertEventResponse) {
     try {
-      await ElMessageBox.confirm(`静默告警「${row.title}」？`, '静默', { type: 'warning' })
+      await ElMessageBox.confirm(
+        t('alertList.confirmSilenceText', { title: row.title }),
+        t('alertList.confirmSilenceTitle'),
+        {
+          type: 'warning',
+          confirmButtonText: t('common.confirm'),
+          cancelButtonText: t('common.cancel'),
+        },
+      )
       actingId.value = row.id
-      const reason = await optionalReason('静默说明')
+      const reason = await optionalReason(t('alertList.silenceReasonTitle'))
       await silenceAlert(row.id, actionBody(reason))
-      ElMessage.success('已提交静默')
+      ElMessage.success(t('alertList.silencedToast'))
       await load()
     } catch (e) {
       if (e !== 'cancel' && e !== 'close') {
@@ -322,11 +358,19 @@
 
   async function doClose(row: ConsoleAlertEventResponse) {
     try {
-      await ElMessageBox.confirm(`关闭告警「${row.title}」？`, '关闭', { type: 'warning' })
+      await ElMessageBox.confirm(
+        t('alertList.confirmCloseText', { title: row.title }),
+        t('alertList.confirmCloseTitle'),
+        {
+          type: 'warning',
+          confirmButtonText: t('common.confirm'),
+          cancelButtonText: t('common.cancel'),
+        },
+      )
       actingId.value = row.id
-      const reason = await optionalReason('关闭说明')
+      const reason = await optionalReason(t('alertList.closeReasonTitle'))
       await closeAlert(row.id, actionBody(reason))
-      ElMessage.success('已提交关闭')
+      ElMessage.success(t('alertList.closedToast'))
       await load()
     } catch (e) {
       if (e !== 'cancel' && e !== 'close') {
