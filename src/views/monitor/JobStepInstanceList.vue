@@ -21,40 +21,38 @@
             @reset="onQueryReset"
             @refresh="() => runRefresh(load)"
           >
-            <el-form-item label="实例 Id">
+            <el-form-item :label="t('monitor.stepInstanceIdLabel')">
               <el-input
                 class="query-w-160"
                 v-model="filterInstanceId"
                 clearable
-                placeholder="精确匹配 jobInstanceId"
+                :placeholder="t('monitor.stepInstanceIdPlaceholder')"
               />
             </el-form-item>
-            <el-form-item label="步骤状态">
+            <el-form-item :label="t('monitor.stepStatusLabel')">
               <MetaSelect
                 class="query-w-200"
                 v-model="filterStepStatus"
                 clearable
                 filterable
-                placeholder="全部步骤状态"
+                enum-key="partitionStatus"
+                :placeholder="t('monitor.stepStatusPlaceholder')"
                 :options="stepStatusOptions"
               />
             </el-form-item>
             <el-form-item>
-              <p class="query-hint">
-                数据为接口分页拉全量后的本地过滤；实例多时首次加载可能较慢，建议填实例 Id
-                缩小范围后再查。
-              </p>
+              <p class="query-hint">{{ t('monitor.stepHint') }}</p>
             </el-form-item>
           </ListPageQueryBar>
         </template>
-        <el-table-column prop="jobInstanceId" label="实例 Id" width="100">
+        <el-table-column prop="jobInstanceId" :label="t('monitor.stepColInstanceId')" width="100">
           <template #default="{ row }">
             <router-link class="cell-link" :to="`/monitor/job-instances/${row.jobInstanceId}`">
               {{ row.jobInstanceId }}
             </router-link>
           </template>
         </el-table-column>
-        <el-table-column label="步骤" width="180">
+        <el-table-column :label="t('monitor.stepColStep')" width="180">
           <template #default="{ row }">
             <div class="cell-stack">
               <span class="cell-main">{{ row.stepCode }}</span>
@@ -62,27 +60,32 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column prop="stepStatus" label="状态" width="120">
+        <el-table-column prop="stepStatus" :label="t('monitor.stepColStatus')" width="120">
           <template #default="{ row }">
             <StatusTag :value="String(row.stepStatus ?? '')" category="partition" />
           </template>
         </el-table-column>
-        <el-table-column prop="retryCount" label="重试" width="80" align="right" />
-        <DatetimeColumn prop="startedAt" label="开始" width="160" />
-        <DatetimeColumn prop="finishedAt" label="完成" width="160" />
-        <el-table-column label="错误" min-width="200" show-overflow-tooltip>
+        <el-table-column
+          prop="retryCount"
+          :label="t('monitor.stepColRetry')"
+          width="80"
+          align="right"
+        />
+        <DatetimeColumn prop="startedAt" :label="t('monitor.stepColStarted')" width="160" />
+        <DatetimeColumn prop="finishedAt" :label="t('monitor.stepColFinished')" width="160" />
+        <el-table-column :label="t('monitor.stepColError')" min-width="200" show-overflow-tooltip>
           <template #default="{ row }">
             <span v-if="row.errorCode" class="mono">[{{ row.errorCode }}]</span>
             <span v-if="row.errorMessage">{{ row.errorMessage }}</span>
             <span v-if="!row.errorCode && !row.errorMessage" class="muted">—</span>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="110" fixed="right">
+        <el-table-column :label="t('monitor.stepColActions')" width="110" fixed="right">
           <template #default="{ row }">
             <div class="table-actions">
-              <el-button size="small" plain type="primary" @click="goInstance(row.jobInstanceId)"
-                >实例</el-button
-              >
+              <el-button size="small" plain type="primary" @click="goInstance(row.jobInstanceId)">
+                {{ t('monitor.stepActionInstance') }}
+              </el-button>
             </div>
           </template>
         </el-table-column>
@@ -94,6 +97,9 @@
 <script setup lang="ts">
   import { computed, ref } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
+  import { useI18n } from 'vue-i18n'
+
+  const { t } = useI18n({ useScope: 'global' })
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { fetchAllPageItems, toPageResult } from '@/api/adapters'
   import { useTenantStore } from '@/stores/tenant'

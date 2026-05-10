@@ -1,36 +1,55 @@
 <template>
   <PageContainer>
-    <PageHeader title="工作流运行详情" :description="headerDesc" back-to="/monitor/workflow-runs">
+    <PageHeader
+      :title="t('monitor.runDetailTitle')"
+      :description="headerDesc"
+      back-to="/monitor/workflow-runs"
+    >
       <template #actions>
-        <el-button type="primary" :loading="loading" @click="load">刷新</el-button>
-        <el-button v-if="run" type="warning" :loading="actionLoading" @click="confirmCancel"
-          >取消</el-button
-        >
-        <el-button v-if="run" type="danger" :loading="actionLoading" @click="confirmTerminate"
-          >终止</el-button
-        >
+        <el-button type="primary" :loading="loading" @click="load">
+          {{ t('monitor.runDetailRefresh') }}
+        </el-button>
+        <el-button v-if="run" type="warning" :loading="actionLoading" @click="confirmCancel">
+          {{ t('monitor.runDetailCancel') }}
+        </el-button>
+        <el-button v-if="run" type="danger" :loading="actionLoading" @click="confirmTerminate">
+          {{ t('monitor.runDetailTerminate') }}
+        </el-button>
       </template>
     </PageHeader>
 
     <SectionCard v-if="run">
-      <template #header>运行主档</template>
+      <template #header>{{ t('monitor.runDetailMaster') }}</template>
       <el-descriptions :column="2" border>
-        <el-descriptions-item label="Run Id">{{ run.id }}</el-descriptions-item>
-        <el-descriptions-item label="Def Id">{{ run.workflowDefinitionId }}</el-descriptions-item>
-        <el-descriptions-item label="状态">{{ run.runStatus }}</el-descriptions-item>
-        <el-descriptions-item label="当前节点">{{ run.currentNodeCode }}</el-descriptions-item>
-        <el-descriptions-item label="业务日">{{ run.bizDate }}</el-descriptions-item>
-        <el-descriptions-item label="Trace">{{ run.traceId }}</el-descriptions-item>
-        <el-descriptions-item label="开始">{{ run.startedAt }}</el-descriptions-item>
-        <el-descriptions-item label="结束">{{ run.finishedAt }}</el-descriptions-item>
+        <el-descriptions-item :label="t('monitor.runDetailRunId')">
+          {{ run.id }}
+        </el-descriptions-item>
+        <el-descriptions-item :label="t('monitor.runDetailDefId')">
+          {{ run.workflowDefinitionId }}
+        </el-descriptions-item>
+        <el-descriptions-item :label="t('monitor.runDetailStatus')">
+          {{ run.runStatus }}
+        </el-descriptions-item>
+        <el-descriptions-item :label="t('monitor.runDetailCurrentNode')">
+          {{ run.currentNodeCode }}
+        </el-descriptions-item>
+        <el-descriptions-item :label="t('monitor.runDetailBizDate')">
+          {{ run.bizDate }}
+        </el-descriptions-item>
+        <el-descriptions-item :label="t('monitor.runDetailTrace')">
+          {{ run.traceId }}
+        </el-descriptions-item>
+        <el-descriptions-item :label="t('monitor.runDetailStarted')">
+          {{ run.startedAt }}
+        </el-descriptions-item>
+        <el-descriptions-item :label="t('monitor.runDetailFinished')">
+          {{ run.finishedAt }}
+        </el-descriptions-item>
       </el-descriptions>
     </SectionCard>
 
     <SectionCard>
-      <template #header
-        >节点运行（GET /api/console/queries/workflow-node-runs，端上按 workflowRunId
-        过滤）</template
-      >
+      <template #header>{{ t('monitor.nodeRunsHeader') }}</template>
       <ListPageQueryBar
         :filter-busy="filterBusy"
         :refresh-busy="loading"
@@ -53,7 +72,7 @@
             v-model="nodeFilterDraft.nodeStatus"
             clearable
             filterable
-            placeholder="全部"
+            :placeholder="t('monitor.nodeFilterStatusPlaceholder')"
             :options="nodeStatusOptions"
           />
         </el-form-item>
@@ -63,34 +82,39 @@
         :data="nodeRuns"
         stripe
         border
-        empty-text="暂无数据"
+        :empty-text="t('common.noData')"
         class="console-table"
       >
-        <el-table-column prop="nodeCode" label="节点" width="140" />
-        <el-table-column prop="nodeType" label="类型" width="100" />
-        <el-table-column prop="nodeStatus" label="状态" width="120">
+        <el-table-column prop="nodeCode" :label="t('monitor.nodeColCode')" width="140" />
+        <el-table-column prop="nodeType" :label="t('monitor.nodeColType')" width="100" />
+        <el-table-column prop="nodeStatus" :label="t('monitor.nodeColStatus')" width="120">
           <template #default="{ row }">
             <StatusTag :value="String(row.nodeStatus ?? '')" category="partition" />
           </template>
         </el-table-column>
-        <el-table-column prop="runSeq" label="序号" width="70" />
-        <el-table-column prop="retryCount" label="重试" width="70" />
-        <DatetimeColumn prop="startedAt" label="开始" width="160" />
-        <DatetimeColumn prop="finishedAt" label="完成" width="160" />
-        <el-table-column label="错误" min-width="200" show-overflow-tooltip>
+        <el-table-column prop="runSeq" :label="t('monitor.nodeColSeq')" width="70" />
+        <el-table-column prop="retryCount" :label="t('monitor.nodeColRetry')" width="70" />
+        <DatetimeColumn prop="startedAt" :label="t('monitor.nodeColStarted')" width="160" />
+        <DatetimeColumn prop="finishedAt" :label="t('monitor.nodeColFinished')" width="160" />
+        <el-table-column :label="t('monitor.nodeColError')" min-width="200" show-overflow-tooltip>
           <template #default="{ row }">
             <span v-if="row.errorCode" class="mono">[{{ row.errorCode }}]</span>
             <span v-if="row.errorMessage">{{ row.errorMessage }}</span>
             <span v-if="!row.errorCode && !row.errorMessage" class="muted">—</span>
           </template>
         </el-table-column>
-        <el-table-column prop="durationMs" label="耗时 ms" width="100" align="right" />
-        <el-table-column label="操作" width="100" fixed="right">
+        <el-table-column
+          prop="durationMs"
+          :label="t('monitor.nodeColDuration')"
+          width="100"
+          align="right"
+        />
+        <el-table-column :label="t('monitor.nodeColActions')" width="100" fixed="right">
           <template #default="{ row }">
             <div class="table-actions">
-              <el-button size="small" plain type="warning" @click="confirmSkipNode(row)"
-                >跳过</el-button
-              >
+              <el-button size="small" plain type="warning" @click="confirmSkipNode(row)">
+                {{ t('monitor.nodeActionSkip') }}
+              </el-button>
             </div>
           </template>
         </el-table-column>
@@ -115,7 +139,10 @@
 <script setup lang="ts">
   import { computed, ref, watch, reactive } from 'vue'
   import { useRoute } from 'vue-router'
+  import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
+
+  const { t } = useI18n({ useScope: 'global' })
   import { confirmDanger } from '@/composables/useDangerConfirm'
   import { instanceApi } from '@/api/instance'
   import { cancelWorkflowRun, terminateWorkflowRun, skipWorkflowRunNode } from '@/api/workflowRuns'
@@ -183,7 +210,7 @@
   const runId = computed(() => Number(route.params.id))
 
   const headerDesc = computed(() =>
-    Number.isFinite(runId.value) ? `Run #${runId.value}` : '无效路由参数',
+    Number.isFinite(runId.value) ? `Run #${runId.value}` : t('monitor.runDetailInvalidParam'),
   )
 
   async function load() {
@@ -230,12 +257,18 @@
 
   async function confirmCancel() {
     try {
-      await ElMessageBox.confirm(`取消工作流运行 #${runId.value}？`, '取消确认', {
-        type: 'warning',
-      })
+      await ElMessageBox.confirm(
+        t('monitor.runCancelConfirmText', { id: runId.value }),
+        t('monitor.runCancelTitle'),
+        {
+          type: 'warning',
+          confirmButtonText: t('common.confirm'),
+          cancelButtonText: t('common.cancel'),
+        },
+      )
       actionLoading.value = true
       await cancelWorkflowRun(runId.value, tenant.tenantId)
-      ElMessage.success('已取消')
+      ElMessage.success(t('monitor.runCanceled'))
       await load()
     } catch {
       /* cancel */
@@ -247,14 +280,14 @@
   async function confirmTerminate() {
     try {
       await confirmDanger({
-        verb: '强制终止',
-        target: `工作流运行 #${runId.value}`,
-        consequence: '所有正在执行的节点会被打断;已写入的中间结果不会回滚,需手动清理或重跑。',
+        verb: t('monitor.runTerminateVerb'),
+        target: t('monitor.runTerminateTarget', { id: runId.value }),
+        consequence: t('monitor.runTerminateConsequence'),
         irreversible: true,
       })
       actionLoading.value = true
       await terminateWorkflowRun(runId.value, tenant.tenantId)
-      ElMessage.success('已终止')
+      ElMessage.success(t('monitor.runTerminated'))
       await load()
     } catch {
       /* cancel */
@@ -265,9 +298,17 @@
 
   async function confirmSkipNode(row: ConsoleWorkflowNodeRunResponse) {
     try {
-      await ElMessageBox.confirm(`跳过节点 ${row.nodeCode}？`, '跳过确认', { type: 'warning' })
+      await ElMessageBox.confirm(
+        t('monitor.skipNodeText', { code: row.nodeCode }),
+        t('monitor.skipNodeTitle'),
+        {
+          type: 'warning',
+          confirmButtonText: t('common.confirm'),
+          cancelButtonText: t('common.cancel'),
+        },
+      )
       await skipWorkflowRunNode(runId.value, tenant.tenantId, row.nodeCode)
-      ElMessage.success('已跳过')
+      ElMessage.success(t('monitor.skipNodeSuccess'))
       await load()
     } catch {
       /* cancel */

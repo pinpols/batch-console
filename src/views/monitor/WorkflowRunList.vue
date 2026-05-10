@@ -21,15 +21,15 @@
             @reset="resetQueryBar"
             @refresh="() => runRefresh(load)"
           >
-            <el-form-item label="租户">
+            <el-form-item :label="t('monitor.runListTenantLabel')">
               <TenantSelect
                 v-model="filterTenantId"
-                placeholder="按租户过滤"
+                :placeholder="t('monitor.runListTenantPlaceholder')"
                 size="default"
                 select-class="query-w-180"
               />
             </el-form-item>
-            <el-form-item label="Workflow">
+            <el-form-item :label="t('monitor.runListWorkflowLabel')">
               <el-select
                 class="query-w-200"
                 v-model="workflowCode"
@@ -37,7 +37,7 @@
                 filterable
                 allow-create
                 default-first-option
-                placeholder="选择或输入 workflowCode"
+                :placeholder="t('monitor.runListWorkflowPlaceholder')"
               >
                 <el-option
                   v-for="code in workflowCodeOptions"
@@ -47,48 +47,53 @@
                 />
               </el-select>
             </el-form-item>
-            <el-form-item label="状态">
+            <el-form-item :label="t('monitor.runListStatusLabel')">
               <MetaSelect
                 class="query-w-200"
                 v-model="runStatus"
                 clearable
                 filterable
-                placeholder="全部运行状态"
+                enum-key="workflowRunStatus"
+                :placeholder="t('monitor.runListStatusPlaceholder')"
                 :options="runStatusOptions"
               />
             </el-form-item>
           </ListPageQueryBar>
         </template>
 
-        <el-table-column prop="id" label="Run Id" width="90">
+        <el-table-column prop="id" :label="t('monitor.runColRunId')" width="90">
           <template #default="{ row }">
             <router-link class="cell-link" :to="`/monitor/workflow-runs/${row.id}`">
               {{ row.id }}
             </router-link>
           </template>
         </el-table-column>
-        <el-table-column prop="workflowDefinitionId" label="Def Id" width="90" />
-        <el-table-column prop="runStatus" label="状态" width="120">
+        <el-table-column prop="workflowDefinitionId" :label="t('monitor.runColDefId')" width="90" />
+        <el-table-column prop="runStatus" :label="t('monitor.runColStatus')" width="120">
           <template #default="{ row }">
             <StatusTag :value="String(row.runStatus ?? '')" category="workflow" />
           </template>
         </el-table-column>
         <el-table-column
           prop="currentNodeCode"
-          label="当前节点"
+          :label="t('monitor.runColCurrentNode')"
           width="140"
           show-overflow-tooltip
         />
-        <el-table-column prop="bizDate" label="业务日" width="110" />
-        <el-table-column prop="traceId" label="Trace" min-width="120">
+        <el-table-column prop="bizDate" :label="t('monitor.runColBizDate')" width="110" />
+        <el-table-column prop="traceId" :label="t('monitor.runColTrace')" min-width="120">
           <template #default="{ row }">
             <CopyableText v-if="row.traceId" :text="row.traceId" />
             <span v-else>—</span>
           </template>
         </el-table-column>
-        <DatetimeColumn prop="startedAt" label="开始" width="160" />
-        <DatetimeColumn prop="finishedAt" label="完成" width="160" />
-        <el-table-column prop="relatedJobInstanceId" label="关联实例" width="100">
+        <DatetimeColumn prop="startedAt" :label="t('monitor.runColStarted')" width="160" />
+        <DatetimeColumn prop="finishedAt" :label="t('monitor.runColFinished')" width="160" />
+        <el-table-column
+          prop="relatedJobInstanceId"
+          :label="t('monitor.runColRelated')"
+          width="100"
+        >
           <template #default="{ row }">
             <router-link
               v-if="row.relatedJobInstanceId"
@@ -99,7 +104,7 @@
             <span v-else class="muted">—</span>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="110" fixed="right">
+        <el-table-column :label="t('monitor.runColActions')" width="110" fixed="right">
           <template #default="{ row }">
             <div class="table-actions">
               <el-button
@@ -108,7 +113,7 @@
                 type="primary"
                 @click="goDetail(row as ConsoleWorkflowRunResponse)"
               >
-                详情
+                {{ t('monitor.runActionDetail') }}
               </el-button>
             </div>
           </template>
@@ -121,6 +126,9 @@
 <script setup lang="ts">
   import { ref, computed } from 'vue'
   import { useRouter } from 'vue-router'
+  import { useI18n } from 'vue-i18n'
+
+  const { t } = useI18n({ useScope: 'global' })
   import { instanceApi } from '@/api/instance'
   import { queryWorkflowDefinitions } from '@/api/workflowQueries'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'

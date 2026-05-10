@@ -1,12 +1,14 @@
 <template>
   <PageContainer>
     <PageHeader
-      title="作业分片"
-      :description="`实例 #${instanceId} 的分区列表`"
+      :title="t('monitor.partitionTitle')"
+      :description="t('monitor.partitionDescription', { id: instanceId })"
       :back-to="`/monitor/job-instances/${instanceId}`"
     >
       <template #actions>
-        <el-button type="primary" :loading="loading" @click="load">刷新</el-button>
+        <el-button type="primary" :loading="loading" @click="load">
+          {{ t('monitor.partitionRefresh') }}
+        </el-button>
       </template>
     </PageHeader>
 
@@ -18,13 +20,14 @@
         @reset="resetFilter"
         @refresh="() => runRefresh(load)"
       >
-        <el-form-item label="状态">
+        <el-form-item :label="t('monitor.partitionStatusLabel')">
           <MetaSelect
             class="query-w-200"
             v-model="filterDraft.partitionStatus"
             clearable
             filterable
-            placeholder="全部"
+            enum-key="partitionStatus"
+            :placeholder="t('monitor.partitionStatusPlaceholder')"
             :options="partitionStatusOptions"
           />
         </el-form-item>
@@ -34,33 +37,63 @@
         :data="rows"
         stripe
         border
-        empty-text="暂无数据"
+        :empty-text="t('common.noData')"
         class="console-table"
       >
-        <el-table-column prop="partitionNo" label="分区" width="80" align="right" />
-        <el-table-column prop="partitionKey" label="分区键" min-width="160" show-overflow-tooltip />
-        <el-table-column prop="businessKey" label="业务键" min-width="140" show-overflow-tooltip />
-        <el-table-column prop="jobInstanceId" label="实例 Id" width="100" align="right" />
-        <el-table-column prop="partitionStatus" label="状态" width="140">
+        <el-table-column
+          prop="partitionNo"
+          :label="t('monitor.partColNo')"
+          width="80"
+          align="right"
+        />
+        <el-table-column
+          prop="partitionKey"
+          :label="t('monitor.partColKey')"
+          min-width="160"
+          show-overflow-tooltip
+        />
+        <el-table-column
+          prop="businessKey"
+          :label="t('monitor.partColBusinessKey')"
+          min-width="140"
+          show-overflow-tooltip
+        />
+        <el-table-column
+          prop="jobInstanceId"
+          :label="t('monitor.partColInstanceId')"
+          width="100"
+          align="right"
+        />
+        <el-table-column prop="partitionStatus" :label="t('monitor.partColStatus')" width="140">
           <template #default="{ row }">
             <StatusTag :value="String(row.partitionStatus ?? '')" category="partition" />
           </template>
         </el-table-column>
-        <el-table-column prop="workerGroup" label="Worker 组" width="140" show-overflow-tooltip />
-        <el-table-column prop="workerCode" label="Worker" width="140" show-overflow-tooltip />
-        <el-table-column prop="retryCount" label="重试" width="70" />
-        <DatetimeColumn prop="leaseExpireAt" label="Lease 过期" width="160" />
-        <DatetimeColumn prop="startedAt" label="开始" width="160" />
-        <DatetimeColumn prop="finishedAt" label="结束" width="160" />
-        <el-table-column label="操作" width="170" fixed="right">
+        <el-table-column
+          prop="workerGroup"
+          :label="t('monitor.partColWorkerGroup')"
+          width="140"
+          show-overflow-tooltip
+        />
+        <el-table-column
+          prop="workerCode"
+          :label="t('monitor.partColWorker')"
+          width="140"
+          show-overflow-tooltip
+        />
+        <el-table-column prop="retryCount" :label="t('monitor.partColRetry')" width="70" />
+        <DatetimeColumn prop="leaseExpireAt" :label="t('monitor.partColLeaseExpire')" width="160" />
+        <DatetimeColumn prop="startedAt" :label="t('monitor.partColStarted')" width="160" />
+        <DatetimeColumn prop="finishedAt" :label="t('monitor.partColFinished')" width="160" />
+        <el-table-column :label="t('monitor.partColActions')" width="170" fixed="right">
           <template #default="{ row }">
             <div class="table-actions">
-              <el-button size="small" plain type="warning" @click="retryPartition(row)"
-                >重试</el-button
-              >
-              <el-button size="small" plain type="danger" @click="cancelPartition(row)"
-                >取消</el-button
-              >
+              <el-button size="small" plain type="warning" @click="retryPartition(row)">
+                {{ t('monitor.partActionRetry') }}
+              </el-button>
+              <el-button size="small" plain type="danger" @click="cancelPartition(row)">
+                {{ t('monitor.partActionCancel') }}
+              </el-button>
             </div>
           </template>
         </el-table-column>
@@ -85,7 +118,10 @@
 <script setup lang="ts">
   import { computed, ref, watch, reactive } from 'vue'
   import { useRoute } from 'vue-router'
+  import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
+
+  const { t } = useI18n({ useScope: 'global' })
   import { instanceApi } from '@/api/instance'
   import { queryPartitionsPaged, type ConsoleJobPartitionResponse } from '@/api/queries/partitions'
   import { useTenantStore } from '@/stores/tenant'
@@ -162,9 +198,17 @@
 
   async function cancelPartition(row: ConsoleJobPartitionResponse) {
     try {
-      await ElMessageBox.confirm(`取消分片 #${row.id}？`, '取消确认', { type: 'warning' })
+      await ElMessageBox.confirm(
+        t('monitor.partCancelConfirmText', { id: row.id }),
+        t('monitor.partCancelConfirmTitle'),
+        {
+          type: 'warning',
+          confirmButtonText: t('common.confirm'),
+          cancelButtonText: t('common.cancel'),
+        },
+      )
       await instanceApi.cancelPartition(row.id, tenant.tenantId)
-      ElMessage.success('已取消')
+      ElMessage.success(t('monitor.partCanceled'))
       await load()
     } catch {
       /* cancel */
@@ -173,9 +217,17 @@
 
   async function retryPartition(row: ConsoleJobPartitionResponse) {
     try {
-      await ElMessageBox.confirm(`重试分片 #${row.id}？`, '重试确认', { type: 'warning' })
+      await ElMessageBox.confirm(
+        t('monitor.partRetryConfirmText', { id: row.id }),
+        t('monitor.partRetryConfirmTitle'),
+        {
+          type: 'warning',
+          confirmButtonText: t('common.confirm'),
+          cancelButtonText: t('common.cancel'),
+        },
+      )
       await instanceApi.retryPartition(row.id, tenant.tenantId)
-      ElMessage.success('已发起重试')
+      ElMessage.success(t('monitor.partRetrySuccess'))
       await load()
     } catch {
       /* cancel */
