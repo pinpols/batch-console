@@ -54,6 +54,14 @@ server {
         return 301 /docs/;
     }
 
+    # /docs/ 根路径在 vitepress + cleanUrls + srcDir 缺 index.md 时会落 404 page,
+    # 直接 302 跳到 /docs/README(srcDir 的 README.md 在 cleanUrls 后就是这路径)
+    location = /docs/ {
+        auth_request /__auth_check;
+        error_page 401 = @docs_unauthorized;
+        return 302 /docs/README;
+    }
+
     location /docs/ {
         auth_request /__auth_check;
         # 鉴权失败 → 401(SPA 全局拦截器读到 401 跳登录)

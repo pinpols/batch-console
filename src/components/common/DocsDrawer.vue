@@ -47,10 +47,11 @@
    */
   import { computed } from 'vue'
   import { Top } from '@element-plus/icons-vue'
+  import { DOC_REGISTRY, resolveDocUrl } from './docsRegistry'
 
   const props = defineProps<{
     modelValue: boolean
-    /** 稳定标识,见 DOC_REGISTRY */
+    /** 稳定标识,见 docsRegistry.DOC_REGISTRY */
     docKey: string
     /** 可选:覆盖 DOC_REGISTRY 默认标题 */
     title?: string
@@ -60,46 +61,8 @@
     (e: 'update:modelValue', v: boolean): void
   }>()
 
-  /**
-   * docKey → { path, title } 映射表。
-   * path 相对文档站 base(/docs/),不带前导 /。
-   * 新增条目后,业务代码用 :doc-key="..." 即可。
-   */
-  const DOC_REGISTRY: Record<string, { path: string; title: string }> = {
-    'adr-009-workflow-param-dsl': {
-      path: 'architecture/adr/ADR-009-workflow-param-dsl',
-      title: 'ADR-009 Workflow 参数 DSL',
-    },
-    'adr-002-transactional-outbox': {
-      path: 'architecture/adr/ADR-002-transactional-outbox',
-      title: 'ADR-002 Transactional Outbox',
-    },
-    'workflow-dependency-guide': {
-      path: 'architecture/workflow-dependency-guide',
-      title: 'Workflow 依赖规则',
-    },
-    'pipeline-vs-workflow-boundary': {
-      path: 'architecture/pipeline-vs-workflow-boundary',
-      title: 'Pipeline vs Workflow 边界',
-    },
-    'coding-conventions': {
-      path: 'coding-conventions',
-      title: '代码规范',
-    },
-    // 业务侧增加新 doc-key 在这里加一行,然后在页面 v-bind:doc-key 即可
-  }
-
-  /** 文档站 base:dev 直连 5174,prod 同域 /docs/(nginx alias) */
-  const docsBase = import.meta.env.DEV ? 'http://localhost:5174/docs/' : '/docs/'
-
   const docEntry = computed(() => DOC_REGISTRY[props.docKey])
-
-  const iframeSrc = computed(() => {
-    const entry = docEntry.value
-    if (!entry) return ''
-    return docsBase + entry.path
-  })
-
+  const iframeSrc = computed(() => resolveDocUrl(props.docKey))
   const resolvedTitle = computed(() => props.title || docEntry.value?.title || '文档')
 </script>
 

@@ -1,5 +1,18 @@
-import { describe, it, expect } from 'vitest'
-import { rules } from './useFormValidate'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { effectScope } from 'vue'
+
+const elMessageWarningMock = vi.fn()
+vi.mock('element-plus', () => ({
+  ElMessage: {
+    warning: (...args: unknown[]) => elMessageWarningMock(...args),
+  },
+}))
+
+import { rules, useFormValidate } from './useFormValidate'
+
+beforeEach(() => {
+  elMessageWarningMock.mockClear()
+})
 
 describe('useFormValidate rules', () => {
   it('required 默认 blur', () => {
@@ -29,5 +42,61 @@ describe('useFormValidate rules', () => {
   it('minLength / maxLength', () => {
     expect(rules.minLength(3)).toMatchObject({ min: 3 })
     expect(rules.maxLength(64)).toMatchObject({ max: 64 })
+  })
+})
+
+describe('useFormValidate.validate()', () => {
+  function setup() {
+    const scope = effectScope()
+    let api!: ReturnType<typeof useFormValidate>
+    scope.run(() => {
+      api = useFormValidate()
+    })
+    return { api, dispose: () => scope.stop() }
+  }
+
+  it('formRef 未挂载时 validate() 返回 false 不抛', async () => {
+    const { api, dispose } = setup()
+    expect(await api.validate()).toBe(false)
+    dispose()
+  })
+
+  it('校验通过时返回 true 不发 toast', async () => {
+    const { api, dispose } = setup()
+    api.formRef.value = {
+      validate: () => Promise.resolve(true),
+      scrollToField: vi.fn(),
+    } as never
+    expect(await api.validate()).toBe(true)
+    expect(elMessageWarningMock).not.toHaveBeenCalled()
+    dispose()
+  })
+
+  it('校验失败:返回 false + toast 第一条 message + 自动滚到第一个错误项', async () => {
+    const { api, dispose } = setup()
+    const scrollToField = vi.fn()
+    api.formRef.value = {
+      validate: () =>
+        Promise.reject({
+          tenantId: [{ message: 'tenantId 必填' }, { message: '另一个错' }],
+          name: [{ message: 'name 必填' }],
+        }),
+      scrollToField,
+    } as never
+    expect(await api.validate()).toBe(false)
+    expect(elMessageWarningMock).toHaveBeenCalledWith('tenantId 必填')
+    expect(scrollToField).toHaveBeenCalledWith('tenantId')
+    dispose()
+  })
+
+  it('silent 模式失败不发 toast', async () => {
+    const { api, dispose } = setup()
+    api.formRef.value = {
+      validate: () => Promise.reject({ name: [{ message: 'x' }] }),
+      scrollToField: vi.fn(),
+    } as never
+    expect(await api.validate({ silent: true })).toBe(false)
+    expect(elMessageWarningMock).not.toHaveBeenCalled()
+    dispose()
   })
 })

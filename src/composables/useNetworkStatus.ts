@@ -1,4 +1,4 @@
-import { onMounted, onUnmounted, ref } from 'vue'
+import { onScopeDispose, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { CircleCloseFilled, CircleCheckFilled } from '@element-plus/icons-vue'
 import { logRoute } from '@/utils/logger'
@@ -46,13 +46,13 @@ export function useNetworkStatus() {
     })
   }
 
-  onMounted(() => {
-    window.addEventListener('online', onOnline)
-    window.addEventListener('offline', onOffline)
-    if (!online.value) onOffline()
-  })
+  // 立即注册 listener(不等 onMounted),配 onScopeDispose 清理。
+  // 这样 setup 体内 / 单测里 effectScope 都能直接生效,跟 Vue 组件 mount 解耦。
+  window.addEventListener('online', onOnline)
+  window.addEventListener('offline', onOffline)
+  if (!online.value) onOffline()
 
-  onUnmounted(() => {
+  onScopeDispose(() => {
     window.removeEventListener('online', onOnline)
     window.removeEventListener('offline', onOffline)
     if (offlineToast) offlineToast.close()

@@ -4,6 +4,7 @@ import vue from '@vitejs/plugin-vue'
 import AutoImport from 'unplugin-auto-import/vite'
 import Components from 'unplugin-vue-components/vite'
 import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
+import { VitePWA } from 'vite-plugin-pwa'
 import { fileURLToPath, URL } from 'node:url'
 
 export default defineConfig(({ mode }) => {
@@ -34,6 +35,41 @@ export default defineConfig(({ mode }) => {
     Components({
       resolvers: [ElementPlusResolver()],
       dts: 'src/types/components.d.ts',
+    }),
+    /**
+     * PWA / Service Worker:
+     * - 桌面快捷方式 + 移动端可"加到桌面"(已有 manifest.webmanifest)
+     * - 静态资源 cache-first(版本化文件名,SW 自动刷新)
+     * - API 不缓存(除 /meta/* 这类配置字典外,避免数据陈旧)
+     * - registerType=autoUpdate:新部署自动接管,跳过用户手动 reload
+     */
+    VitePWA({
+      registerType: 'autoUpdate',
+      // 复用 public/manifest.webmanifest 现有配置,不让插件重生成
+      manifest: false,
+      injectRegister: 'auto',
+      // dev 模式默认不注册 SW,避免拦截热更新;生产 build 才生成
+      devOptions: { enabled: false },
+      workbox: {
+        // SPA fallback:offline 时所有路由 fallback 到 index.html
+        navigateFallback: '/index.html',
+        navigateFallbackDenylist: [/^\/api\//, /^\/docs\//],
+        // 静态资源 hash 命名,长期缓存 + SW 接管刷新
+        globPatterns: ['**/*.{js,css,html,svg,woff2}'],
+        // 排除大文件(echarts/x6 vendor chunk)避免预缓存膨胀
+        maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
+        runtimeCaching: [
+          {
+            // /meta/* 字典型接口缓存 1h,弱网时回退缓存值;失败不影响主流程
+            urlPattern: /\/api\/console\/meta\//,
+            handler: 'StaleWhileRevalidate',
+            options: {
+              cacheName: 'meta-api-cache',
+              expiration: { maxEntries: 30, maxAgeSeconds: 60 * 60 },
+            },
+          },
+        ],
+      },
     }),
   ],
   resolve: {
