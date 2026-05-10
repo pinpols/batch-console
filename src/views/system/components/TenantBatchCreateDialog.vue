@@ -27,9 +27,10 @@
           v-model="form.password"
           type="password"
           show-password
-          placeholder="所有租户共享的初始密码,至少 12 个字符"
+          placeholder="所有租户共享的初始密码,≥ 12 位"
           maxlength="256"
         />
+        <div class="form-hint">建议大小写字母 + 数字混合;每个租户首次登录后立即修改</div>
       </el-form-item>
       <el-divider content-position="left">配置初始化(可选)</el-divider>
       <el-form-item label="源租户">
@@ -38,8 +39,11 @@
           v-model="form.initConfigFrom"
           clearable
           filterable
-          placeholder="留空跳过初始化(default 是内置模板,推荐)"
+          placeholder="留空跳过(default 为内置模板)"
         >
+          <template #empty>
+            <div class="empty-hint">系统/内置租户已隐藏</div>
+          </template>
           <el-option
             v-for="t in sourceableItems"
             :key="t.tenantId"
@@ -58,9 +62,7 @@
             </el-tag>
           </el-option>
         </el-select>
-        <div class="form-hint">
-          选择后,新建租户将自动复制源租户的全部 10 类配置;系统租户(system / default-tenant)已隐藏
-        </div>
+        <div class="form-hint">选择后将复制源租户的全部 10 类配置(系统租户已隐藏)</div>
       </el-form-item>
       <el-form-item v-if="form.initConfigFrom" label="初始化模式">
         <el-radio-group v-model="form.initMode">
@@ -185,6 +187,13 @@
 <style scoped>
   .form-hint {
     margin-top: 4px;
+    font-size: 12px;
+    color: var(--color-text-tertiary, #909399);
+    line-height: 1.4;
+  }
+
+  .empty-hint {
+    padding: 8px 12px;
     font-size: 12px;
     color: var(--color-text-tertiary, #909399);
   }
