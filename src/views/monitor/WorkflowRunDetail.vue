@@ -116,6 +116,7 @@
   import { computed, ref, watch, reactive } from 'vue'
   import { useRoute } from 'vue-router'
   import { ElMessage, ElMessageBox } from 'element-plus'
+  import { confirmDanger } from '@/composables/useDangerConfirm'
   import { instanceApi } from '@/api/instance'
   import { cancelWorkflowRun, terminateWorkflowRun, skipWorkflowRunNode } from '@/api/workflowRuns'
   import { queryWorkflowNodeRunsPaged } from '@/api/workflowQueries'
@@ -245,8 +246,11 @@
 
   async function confirmTerminate() {
     try {
-      await ElMessageBox.confirm(`强制终止工作流运行 #${runId.value}？不可逆。`, '终止确认', {
-        type: 'error',
+      await confirmDanger({
+        verb: '强制终止',
+        target: `工作流运行 #${runId.value}`,
+        consequence: '所有正在执行的节点会被打断;已写入的中间结果不会回滚,需手动清理或重跑。',
+        irreversible: true,
       })
       actionLoading.value = true
       await terminateWorkflowRun(runId.value, tenant.tenantId)

@@ -28,7 +28,7 @@
                 class="query-w-160"
                 v-model="filters.jobCode"
                 clearable
-                placeholder="请输入 jobCode"
+                placeholder="按作业 Code 搜索"
               />
             </el-form-item>
             <el-form-item label="名称">

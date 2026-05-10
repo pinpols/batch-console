@@ -7,8 +7,8 @@
   >
     <el-alert type="info" :closable="false" show-icon class="mb-12">
       <template #title>
-        将 JSON Spec 写入目标租户,覆盖全部 10 个配置域。SKIP_EXISTING 仅创建缺失项,UPSERT
-        会覆盖已有项。
+        把一份配置 JSON 写入目标租户,可覆盖全部 10 类配置(作业 / 工作流 / 流水线 / 文件渠道 / 模板 /
+        队列 / 窗口 / 日历 / 配额 / 告警路由)。
       </template>
     </el-alert>
     <el-form ref="initFormRef" :model="form" :rules="initFormRules" label-width="100px">
@@ -23,9 +23,16 @@
       </el-form-item>
       <el-form-item label="写入模式" prop="mode">
         <el-radio-group v-model="form.mode">
-          <el-radio value="SKIP_EXISTING">SKIP_EXISTING</el-radio>
-          <el-radio value="UPSERT">UPSERT</el-radio>
+          <el-radio value="SKIP_EXISTING">仅补缺失项</el-radio>
+          <el-radio value="UPSERT">覆盖更新已有</el-radio>
         </el-radio-group>
+        <div class="form-hint">
+          {{
+            form.mode === 'SKIP_EXISTING'
+              ? '已存在的配置保持不动,只新建源租户里多出来的'
+              : '已存在的配置会被源租户的版本覆盖,慎用'
+          }}
+        </div>
       </el-form-item>
       <el-form-item label="Spec JSON" prop="specJson">
         <el-input

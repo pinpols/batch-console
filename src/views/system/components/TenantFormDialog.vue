@@ -1,14 +1,16 @@
 <template>
   <el-dialog
     :model-value="modelValue"
-    :title="editing ? `编辑租户:${form.tenantId}` : '新增租户'"
+    :title="editing ? `编辑租户 · ${form.tenantId}` : '新增租户'"
     width="540px"
     @update:model-value="(v) => emit('update:modelValue', v)"
   >
     <el-form ref="formRef" :model="form" :rules="formRules" label-width="92px">
-      <el-form-item label="tenantId" prop="tenantId">
+      <el-form-item label="租户 ID" prop="tenantId">
         <el-input v-model="form.tenantId" :disabled="editing" placeholder="例如:acme-prod" />
-        <div class="form-hint">小写字母 / 数字 / 短横线,2-64 位,首尾字母或数字</div>
+        <div class="form-hint">
+          小写字母 / 数字 / 短横线,2-64 位,首尾字母或数字 · <strong>创建后不可修改</strong>
+        </div>
       </el-form-item>
       <el-form-item label="名称" prop="tenantName">
         <el-input v-model="form.tenantName" placeholder="租户显示名称" maxlength="256" />
@@ -33,7 +35,7 @@
           :closable="false"
           show-icon
           class="form-alert"
-          title="新建租户必须同时创建一个首位登录账号(角色 ROLE_TENANT_USER),否则该租户无人可登录管理。账号可后续在「登录账户」页继续添加。"
+          title="新租户需要先有一个管理员账号才能登录,这里同时创建首位管理员。后续可在「登录账户」页继续添加更多账号。"
         />
         <el-form-item label="账号名" prop="username">
           <el-input

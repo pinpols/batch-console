@@ -27,7 +27,7 @@
                 class="query-w-160"
                 v-model="filters.workflowCode"
                 clearable
-                placeholder="请输入 workflowCode"
+                placeholder="按工作流 Code 搜索"
               />
             </el-form-item>
             <el-form-item label="名称">
@@ -167,6 +167,7 @@
   import { computed, reactive, ref } from 'vue'
   import { useRouter } from 'vue-router'
   import { ElMessage, ElMessageBox } from 'element-plus'
+  import { confirmDanger } from '@/composables/useDangerConfirm'
   import { workflowApi } from '@/api/workflow'
   import { useSseAutoReload } from '@/composables/useSseAutoReload'
   import { useTenantStore } from '@/stores/tenant'
@@ -314,8 +315,12 @@
 
   async function removeRow(row: ConsoleWorkflowDefinitionResponse) {
     try {
-      await ElMessageBox.confirm(`删除 Workflow「${row.workflowCode}」？`, '删除确认', {
-        type: 'warning',
+      await confirmDanger({
+        verb: '删除',
+        target: `工作流「${row.workflowCode}」`,
+        consequence:
+          '该工作流的所有版本都会被物理删除;如有正在跑的实例不会被中断,但跑完后无法再次触发。',
+        irreversible: true,
       })
     } catch {
       return

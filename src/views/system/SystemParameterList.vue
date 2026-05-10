@@ -87,7 +87,8 @@
 
 <script setup lang="ts">
   import { ref, reactive, computed } from 'vue'
-  import { ElMessage, ElMessageBox } from 'element-plus'
+  import { ElMessage } from 'element-plus'
+  import { confirmDanger } from '@/composables/useDangerConfirm'
   import type { FormRules } from 'element-plus'
   import { Plus } from '@element-plus/icons-vue'
   import { useFormValidate, rules } from '@/composables/useFormValidate'
@@ -209,7 +210,12 @@
 
   async function confirmDelete(row: { key: string }) {
     try {
-      await ElMessageBox.confirm(`删除参数 "${row.key}"？`, '删除确认', { type: 'warning' })
+      await confirmDanger({
+        verb: '删除',
+        target: `参数 「${row.key}」`,
+        consequence: '正在读取此参数的运行中任务在下次刷新缓存时取不到值,可能切到默认行为或失败。',
+        irreversible: true,
+      })
       await deleteSystemParameter(tenant.tenantId, row.key)
       ElMessage.success('已删除')
       await load()

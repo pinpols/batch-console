@@ -11,14 +11,15 @@
           v-model="form.tenantsText"
           type="textarea"
           :autosize="{ minRows: 4, maxRows: 10 }"
-          placeholder="每行一个:tenantId,tenantName[,description]"
+          placeholder="每行一个,逗号分隔:租户 ID,显示名称,描述(可选)
+例:acme-prod,ACME 生产,公司主环境"
         />
-        <div class="form-hint">每行格式:tenantId,名称[,描述]。最多 50 个。</div>
+        <div class="form-hint">每行格式:租户 ID,显示名称,描述(可选);单次最多 50 个</div>
       </el-form-item>
       <el-form-item label="用户名前缀" prop="usernamePrefix">
         <el-input
           v-model="form.usernamePrefix"
-          placeholder="默认 op-,最终用户名为 {前缀}{tenantId}"
+          placeholder="默认 op-,会拼成 {前缀}{租户 ID} 作为初始用户名"
           maxlength="32"
         />
       </el-form-item>
@@ -66,8 +67,8 @@
       </el-form-item>
       <el-form-item v-if="form.initConfigFrom" label="初始化模式">
         <el-radio-group v-model="form.initMode">
-          <el-radio value="SKIP_EXISTING">SKIP_EXISTING</el-radio>
-          <el-radio value="UPSERT">UPSERT</el-radio>
+          <el-radio value="SKIP_EXISTING">仅补缺失项</el-radio>
+          <el-radio value="UPSERT">覆盖更新已有</el-radio>
         </el-radio-group>
       </el-form-item>
     </el-form>

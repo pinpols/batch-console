@@ -60,8 +60,8 @@
       </el-form-item>
       <el-form-item label="写入模式">
         <el-radio-group v-model="form.mode">
-          <el-radio value="SKIP_EXISTING">SKIP_EXISTING</el-radio>
-          <el-radio value="UPSERT">UPSERT</el-radio>
+          <el-radio value="SKIP_EXISTING">仅补缺失项</el-radio>
+          <el-radio value="UPSERT">覆盖更新已有</el-radio>
         </el-radio-group>
       </el-form-item>
       <el-form-item label="试运行">

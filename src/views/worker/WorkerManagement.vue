@@ -179,6 +179,7 @@
 <script setup lang="ts">
   import { computed, reactive, ref, watch, onMounted } from 'vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
+  import { confirmDanger } from '@/composables/useDangerConfirm'
   import { useQueryClient } from '@tanstack/vue-query'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { useListLoadState } from '@/composables/useListLoadState'
@@ -327,7 +328,13 @@
 
   async function offline(row: ConsoleWorkerRegistryResponse) {
     try {
-      await ElMessageBox.confirm(`强制下线 ${row.workerCode}？`, '强制下线', { type: 'warning' })
+      await confirmDanger({
+        verb: '强制下线',
+        target: `Worker 「${row.workerCode}」`,
+        consequence:
+          '该 Worker 上正在跑的分片会被立即中断;系统会等心跳超时后才把分片重新分给其它 Worker,中间有 30s 左右真空期。',
+        irreversible: true,
+      })
       await forceWorkerOffline(row.workerCode, {
         tenantId: tenant.tenantId,
         reason: 'console offline',

@@ -109,6 +109,7 @@
 <script setup lang="ts">
   import { ref, reactive, computed } from 'vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
+  import { confirmDanger } from '@/composables/useDangerConfirm'
   import type { FormRules } from 'element-plus'
   import { useFormValidate, rules as r } from '@/composables/useFormValidate'
   import { Plus } from '@element-plus/icons-vue'
@@ -195,8 +196,11 @@
   async function confirmDeleteRule(row: Record<string, unknown>) {
     const ruleId = Number(row.ruleId ?? row.id ?? 0)
     try {
-      await ElMessageBox.confirm(`删除规则 #${ruleId}（${row.ruleName}）？`, '删除确认', {
-        type: 'warning',
+      await confirmDanger({
+        verb: '删除',
+        target: `通知规则「${row.ruleName}」`,
+        consequence: '该规则匹配的事件不再触发任何通知,事件本身仍正常产生。',
+        irreversible: false,
       })
       await deleteNotificationRule(ruleId, tenant.tenantId)
       ElMessage.success('已删除')
