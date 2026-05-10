@@ -4,10 +4,10 @@
 
     <SectionCard>
       <el-tabs v-model="activeTab" v-hover-tab-activate="true" class="pill-tabs">
-        <el-tab-pane label="通用审批" name="general">
+        <el-tab-pane :label="t('approvals.tabGeneral')" name="general">
           <GeneralApprovalsTab />
         </el-tab-pane>
-        <el-tab-pane label="Catch-up 审批" name="catch-up">
+        <el-tab-pane :label="t('approvals.tabCatchUp')" name="catch-up">
           <CatchUpApprovalsTab />
         </el-tab-pane>
       </el-tabs>
@@ -18,6 +18,9 @@
 <script setup lang="ts">
   import { ref, watch } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
+  import { useI18n } from 'vue-i18n'
+
+  const { t } = useI18n({ useScope: 'global' })
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'

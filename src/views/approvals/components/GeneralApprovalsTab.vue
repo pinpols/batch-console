@@ -19,17 +19,18 @@
         @reset="reset"
         @refresh="() => runRefresh(load)"
       >
-        <el-form-item label="状态">
+        <el-form-item :label="t('approvals.statusLabel')">
           <MetaSelect
             class="query-w-200"
             v-model="filters.status"
             clearable
             filterable
-            placeholder="全部审批状态"
+            enum-key="approvalStatus"
+            :placeholder="t('approvals.statusPlaceholder')"
             :options="approvalStatusSelectOptions"
           />
         </el-form-item>
-        <el-form-item label="类型">
+        <el-form-item :label="t('approvals.typeLabel')">
           <MetaSelect
             class="query-w-180"
             v-model="filters.type"
@@ -37,67 +38,106 @@
             filterable
             allow-create
             default-first-option
-            placeholder="选择或输入 approvalType"
+            enum-key="approvalType"
+            :placeholder="t('approvals.typePlaceholder')"
             :options="approvalTypeOptions"
           />
         </el-form-item>
-        <el-form-item label="关键字">
+        <el-form-item :label="t('approvals.keywordLabel')">
           <el-input
             class="query-w-240"
             v-model="filters.keyword"
             clearable
-            placeholder="审批单号、申请人、目标类型或 Id"
+            :placeholder="t('approvals.keywordPlaceholder')"
           />
         </el-form-item>
       </ListPageQueryBar>
     </template>
 
     <template #toolbar>
-      <el-button type="primary" plain :disabled="!selection.length" @click="runBatchApprove"
-        >批量通过</el-button
-      >
-      <el-button type="danger" plain :disabled="!selection.length" @click="runBatchReject"
-        >批量拒绝</el-button
-      >
+      <el-button type="primary" plain :disabled="!selection.length" @click="runBatchApprove">
+        {{ t('approvals.batchApprove') }}
+      </el-button>
+      <el-button type="danger" plain :disabled="!selection.length" @click="runBatchReject">
+        {{ t('approvals.batchReject') }}
+      </el-button>
       <span v-if="lastTrace" class="trace">
-        最近 traceId：
+        {{ t('approvals.lastTrace') }}
         <code>{{ lastTrace }}</code>
-        <el-button size="small" link type="primary" @click="copyTrace">复制</el-button>
+        <el-button size="small" link type="primary" @click="copyTrace">
+          {{ t('approvals.copy') }}
+        </el-button>
       </span>
     </template>
 
     <el-table-column type="selection" width="48" :selectable="selectableRow" />
-    <el-table-column prop="approvalNo" label="审批单号" width="160">
+    <el-table-column prop="approvalNo" :label="t('approvals.colApprovalNo')" width="160">
       <template #default="{ row }">
         <CopyableText :text="row.approvalNo" />
       </template>
     </el-table-column>
-    <el-table-column prop="approvalType" label="类型" width="110" show-overflow-tooltip />
-    <el-table-column prop="approvalStatus" label="状态" width="120">
+    <el-table-column
+      prop="approvalType"
+      :label="t('approvals.colType')"
+      width="110"
+      show-overflow-tooltip
+    >
+      <template #default="{ row }">
+        {{ resolveType(row.approvalType) }}
+      </template>
+    </el-table-column>
+    <el-table-column prop="approvalStatus" :label="t('approvals.colStatus')" width="120">
       <template #default="{ row }">
         <StatusTag :value="String(row.approvalStatus ?? '')" category="approval" />
       </template>
     </el-table-column>
-    <el-table-column prop="actionType" label="动作" width="100" show-overflow-tooltip />
-    <el-table-column prop="targetType" label="目标类型" width="110" show-overflow-tooltip />
-    <el-table-column prop="targetId" label="目标 Id" min-width="180" show-overflow-tooltip />
-    <el-table-column prop="requesterId" label="申请人" width="110" show-overflow-tooltip />
-    <el-table-column prop="approverId" label="审批人" width="110" show-overflow-tooltip>
+    <el-table-column
+      prop="actionType"
+      :label="t('approvals.colAction')"
+      width="100"
+      show-overflow-tooltip
+    />
+    <el-table-column
+      prop="targetType"
+      :label="t('approvals.colTargetType')"
+      width="110"
+      show-overflow-tooltip
+    />
+    <el-table-column
+      prop="targetId"
+      :label="t('approvals.colTargetId')"
+      min-width="180"
+      show-overflow-tooltip
+    />
+    <el-table-column
+      prop="requesterId"
+      :label="t('approvals.colRequester')"
+      width="110"
+      show-overflow-tooltip
+    />
+    <el-table-column
+      prop="approverId"
+      :label="t('approvals.colApprover')"
+      width="110"
+      show-overflow-tooltip
+    >
       <template #default="{ row }">
         <span v-if="row.approverId">{{ row.approverId }}</span>
         <span v-else class="muted">—</span>
       </template>
     </el-table-column>
-    <el-table-column label="审批理由 / 拒绝理由" min-width="200" show-overflow-tooltip>
+    <el-table-column :label="t('approvals.colReason')" min-width="200" show-overflow-tooltip>
       <template #default="{ row }">
         <span v-if="row.approvalReason">{{ row.approvalReason }}</span>
-        <span v-else-if="row.rejectionReason" class="muted">拒:{{ row.rejectionReason }}</span>
+        <span v-else-if="row.rejectionReason" class="muted">
+          {{ t('approvals.rejectPrefix') }}{{ row.rejectionReason }}
+        </span>
         <span v-else class="muted">—</span>
       </template>
     </el-table-column>
-    <DatetimeColumn prop="approvedAt" label="审批时间" width="160" />
-    <DatetimeColumn prop="executedAt" label="执行时间" width="160" />
-    <el-table-column label="操作" width="160" fixed="right" align="center">
+    <DatetimeColumn prop="approvedAt" :label="t('approvals.colApprovedAt')" width="160" />
+    <DatetimeColumn prop="executedAt" :label="t('approvals.colExecutedAt')" width="160" />
+    <el-table-column :label="t('approvals.colActions')" width="160" fixed="right" align="center">
       <template #default="{ row }">
         <div class="table-actions">
           <el-button
@@ -107,7 +147,7 @@
             :disabled="!isPending(row)"
             @click="approveRow(row)"
           >
-            通过
+            {{ t('approvals.actionApprove') }}
           </el-button>
           <el-button
             size="small"
@@ -116,7 +156,7 @@
             :disabled="!isPending(row)"
             @click="rejectRow(row)"
           >
-            拒绝
+            {{ t('approvals.actionReject') }}
           </el-button>
         </div>
       </template>
@@ -126,7 +166,16 @@
 
 <script setup lang="ts">
   import { computed, ref, watch, reactive } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
+
+  const { t, te } = useI18n({ useScope: 'global' })
+
+  function resolveType(value?: string | null): string {
+    if (!value) return ''
+    const key = `enum.approvalType.${value}`
+    return te(key) ? t(key) : value
+  }
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { batchApprove, batchReject, approveOne, queryApprovals, rejectOne } from '@/api/approvals'
   import { useTenantStore } from '@/stores/tenant'
@@ -253,13 +302,17 @@
 
   async function approveRow(row: ConsoleApprovalCommandResponse) {
     try {
-      const { value: reason } = await ElMessageBox.prompt('审批意见（可选）', '通过审批', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        inputPlaceholder: 'reason',
-      })
+      const { value: reason } = await ElMessageBox.prompt(
+        t('approvals.approveDialogPrompt'),
+        t('approvals.approveDialogTitle'),
+        {
+          confirmButtonText: t('common.confirm'),
+          cancelButtonText: t('common.cancel'),
+          inputPlaceholder: t('approvals.approveDialogPlaceholder'),
+        },
+      )
       await approveOne(row.approvalNo, { tenantId: tenant.tenantId, reason: reason || undefined })
-      ElMessage.success(`已通过审批 ${row.approvalNo}`)
+      ElMessage.success(t('approvals.approvedToast', { no: row.approvalNo }))
       await load()
     } catch {
       /* cancel */
@@ -268,13 +321,17 @@
 
   async function rejectRow(row: ConsoleApprovalCommandResponse) {
     try {
-      const { value: reason } = await ElMessageBox.prompt('拒绝原因', '拒绝审批', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        inputPlaceholder: '必填或按后端要求',
-      })
+      const { value: reason } = await ElMessageBox.prompt(
+        t('approvals.rejectDialogPrompt'),
+        t('approvals.rejectDialogTitle'),
+        {
+          confirmButtonText: t('common.confirm'),
+          cancelButtonText: t('common.cancel'),
+          inputPlaceholder: t('approvals.rejectDialogPlaceholder'),
+        },
+      )
       await rejectOne(row.approvalNo, { tenantId: tenant.tenantId, reason: reason || undefined })
-      ElMessage.success(`已拒绝审批 ${row.approvalNo}`)
+      ElMessage.success(t('approvals.rejectedToast', { no: row.approvalNo }))
       await load()
     } catch {
       /* cancel */
@@ -284,9 +341,17 @@
   async function runBatchApprove() {
     const nos = selection.value.map((r) => r.approvalNo)
     try {
-      await ElMessageBox.confirm(`确认批量通过 ${nos.length} 条？`, '批量通过', { type: 'warning' })
+      await ElMessageBox.confirm(
+        t('approvals.batchApproveConfirm', { n: nos.length }),
+        t('approvals.batchApproveTitle'),
+        {
+          type: 'warning',
+          confirmButtonText: t('common.confirm'),
+          cancelButtonText: t('common.cancel'),
+        },
+      )
       await batchApprove({ tenantId: tenant.tenantId, approvalNos: nos })
-      ElMessage.success(`已批量通过 ${nos.length} 条审批`)
+      ElMessage.success(t('approvals.batchApprovedToast', { n: nos.length }))
       await load()
     } catch {
       /* cancel */
@@ -297,11 +362,11 @@
     const nos = selection.value.map((r) => r.approvalNo)
     try {
       const { value: reason } = await ElMessageBox.prompt(
-        '拒绝原因（可选）',
-        `批量拒绝 ${nos.length} 条`,
+        t('approvals.batchRejectPrompt'),
+        t('approvals.batchRejectTitle', { n: nos.length }),
         {
-          confirmButtonText: '确定',
-          cancelButtonText: '取消',
+          confirmButtonText: t('common.confirm'),
+          cancelButtonText: t('common.cancel'),
         },
       )
       await batchReject({
@@ -309,7 +374,7 @@
         approvalNos: nos,
         reason: reason || undefined,
       })
-      ElMessage.success(`已批量拒绝 ${nos.length} 条审批`)
+      ElMessage.success(t('approvals.batchRejectedToast', { n: nos.length }))
       await load()
     } catch {
       /* cancel */
@@ -319,7 +384,7 @@
   function copyTrace() {
     if (!lastTrace.value) return
     void navigator.clipboard.writeText(lastTrace.value)
-    ElMessage.success('已复制')
+    ElMessage.success(t('approvals.copied'))
   }
 
   useTenantReload(load)
