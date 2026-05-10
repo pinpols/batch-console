@@ -10,7 +10,9 @@
     <!-- 加载失败 + 没有历史数据时,展示错误态(可选 retry CTA);避免和"暂无数据"混淆 -->
     <EmptyState v-else-if="error && !data.length" variant="error" :description="resolvedErrorText">
       <template v-if="onRetry" #action>
-        <el-button type="primary" :icon="Refresh" @click="onRetry">重试</el-button>
+        <el-button type="primary" :icon="Refresh" @click="onRetry">{{
+          t('common.retry')
+        }}</el-button>
       </template>
     </EmptyState>
     <template v-else>
@@ -21,7 +23,7 @@
         size="small"
         highlight-current-row
         :border="border"
-        :empty-text="hasActiveFilters ? filteredEmptyText : emptyText"
+        :empty-text="hasActiveFilters ? resolvedFilteredEmpty : resolvedEmpty"
         class="pro-table__table console-table"
         v-bind="$attrs"
       >
@@ -50,7 +52,10 @@
 <script setup lang="ts">
   import { computed, onMounted } from 'vue'
   import { useRoute } from 'vue-router'
+  import { useI18n } from 'vue-i18n'
   import { Refresh } from '@element-plus/icons-vue'
+
+  const { t } = useI18n({ useScope: 'global' })
   import TableSkeleton from '@/components/table/TableSkeleton.vue'
   import TablePagerBar from '@/components/table/TablePagerBar.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
@@ -67,9 +72,9 @@
       pageSize: number
       /** 单元格线框表格 */
       border?: boolean
-      /** 空数据文案 */
+      /** 空数据文案;不传则用 i18n proTable.empty */
       emptyText?: string
-      /** 有筛选条件时的空数据文案 */
+      /** 有筛选条件时的空数据文案;不传则用 i18n proTable.filteredEmpty */
       filteredEmptyText?: string
       /** 当前是否有筛选条件激活 */
       hasActiveFilters?: boolean
@@ -93,8 +98,6 @@
     {
       loading: false,
       border: true,
-      emptyText: '暂无数据',
-      filteredEmptyText: '未找到符合条件的数据，请调整筛选条件',
       hasActiveFilters: false,
       showPager: true,
       hidePagerWhenSinglePage: true,
@@ -124,11 +127,15 @@
     }
   })
 
-  // errorText 优先级:显式传 → error.message → 默认文案
+  const resolvedEmpty = computed(() => props.emptyText?.trim() || t('proTable.empty'))
+  const resolvedFilteredEmpty = computed(
+    () => props.filteredEmptyText?.trim() || t('proTable.filteredEmpty'),
+  )
+
   const resolvedErrorText = computed(() => {
     if (props.errorText?.trim()) return props.errorText.trim()
     if (props.error instanceof Error && props.error.message) return props.error.message
-    return '加载失败,请重试'
+    return t('proTable.loadFailed')
   })
 
   const emit = defineEmits<{

@@ -17,7 +17,7 @@
     <!-- 次操作折叠到"更多"dropdown -->
     <el-dropdown v-if="moreActions.length" trigger="click" @command="onCommand">
       <el-button size="small" plain class="row-actions__more">
-        更多
+        {{ t('rowActions.more') }}
         <el-icon class="row-actions__caret"><ArrowDown /></el-icon>
       </el-button>
       <template #dropdown>
@@ -44,6 +44,9 @@
 <script setup lang="ts">
   import { computed } from 'vue'
   import type { Component } from 'vue'
+  import { useI18n } from 'vue-i18n'
+
+  const { t } = useI18n({ useScope: 'global' })
   import { ArrowDown } from '@element-plus/icons-vue'
 
   /**
