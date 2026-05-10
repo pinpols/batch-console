@@ -79,23 +79,28 @@
       :title="webhookEditingId ? '编辑 Webhook' : '新增 Webhook'"
       width="560px"
     >
-      <el-form label-width="100px">
-        <el-form-item label="名称" required>
-          <el-input v-model="webhookForm.name" placeholder="webhook 名称" />
+      <el-form
+        ref="webhookFormRef"
+        :model="webhookForm"
+        :rules="webhookFormRules"
+        label-width="100px"
+      >
+        <el-form-item label="名称" prop="name">
+          <el-input v-model="webhookForm.name" placeholder="webhook 名称" maxlength="128" />
         </el-form-item>
-        <el-form-item label="URL" required>
+        <el-form-item label="URL" prop="callbackUrl">
           <el-input v-model="webhookForm.callbackUrl" placeholder="https://..." />
         </el-form-item>
-        <el-form-item label="事件类型">
+        <el-form-item label="事件类型" prop="eventTypes">
           <el-input
             v-model="webhookForm.eventTypes"
             placeholder="逗号分隔，如 JOB_COMPLETED,JOB_FAILED"
           />
         </el-form-item>
-        <el-form-item label="Secret">
+        <el-form-item label="Secret" prop="secret">
           <el-input v-model="webhookForm.secret" placeholder="可选,签名密钥" />
         </el-form-item>
-        <el-form-item label="启用">
+        <el-form-item label="启用" prop="enabled">
           <el-switch v-model="webhookForm.enabled" />
         </el-form-item>
       </el-form>
@@ -120,7 +125,9 @@
 <script setup lang="ts">
   import { ref, reactive, computed } from 'vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
+  import type { FormRules } from 'element-plus'
   import { Plus } from '@element-plus/icons-vue'
+  import { useFormValidate, rules } from '@/composables/useFormValidate'
   import {
     listWebhooks,
     createWebhook,
@@ -163,6 +170,15 @@
     enabled: true,
   })
 
+  const { formRef: webhookFormRef, validate: validateWebhookForm } = useFormValidate()
+  const webhookFormRules: FormRules = {
+    name: [rules.required('名称必填'), rules.maxLength(128)],
+    callbackUrl: [
+      rules.required('URL 必填'),
+      rules.pattern(/^https?:\/\/[^\s]+$/i, 'URL 须以 http:// 或 https:// 开头'),
+    ],
+  }
+
   async function loadWebhooks() {
     await runLoadingWebhooks(async () => {
       webhookRows.value = (await listWebhooks(tenant.tenantId)) as Record<string, unknown>[]
@@ -192,10 +208,7 @@
   }
 
   async function saveWebhook() {
-    if (!webhookForm.name.trim() || !webhookForm.callbackUrl.trim()) {
-      ElMessage.warning('名称和 URL 必填')
-      return
-    }
+    if (!(await validateWebhookForm())) return
     savingWebhook.value = true
     try {
       const eventTypeList = webhookForm.eventTypes

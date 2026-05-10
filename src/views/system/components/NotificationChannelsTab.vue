@@ -99,18 +99,24 @@
       :title="channelEditingCode ? '编辑渠道' : '新增渠道'"
       width="560px"
     >
-      <el-form label-width="100px">
-        <el-form-item label="编码">
+      <el-form
+        ref="channelFormRef"
+        :model="channelForm"
+        :rules="channelFormRules"
+        label-width="100px"
+      >
+        <el-form-item label="编码" prop="channelCode">
           <el-input
             v-model="channelForm.channelCode"
             :disabled="!!channelEditingCode"
             placeholder="唯一编码，如 ops-email"
+            maxlength="64"
           />
         </el-form-item>
-        <el-form-item label="名称">
-          <el-input v-model="channelForm.channelName" placeholder="渠道名称" />
+        <el-form-item label="名称" prop="channelName">
+          <el-input v-model="channelForm.channelName" placeholder="渠道名称" maxlength="128" />
         </el-form-item>
-        <el-form-item label="类型">
+        <el-form-item label="类型" prop="channelType">
           <el-select v-model="channelForm.channelType" placeholder="选择类型" class="query-w-full">
             <el-option
               v-for="opt in channelTypeOptions"
@@ -120,7 +126,7 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="配置">
+        <el-form-item label="配置" prop="config">
           <el-input
             v-model="channelForm.config"
             type="textarea"
@@ -128,7 +134,7 @@
             placeholder='JSON 配置，如 {"url":"..."}'
           />
         </el-form-item>
-        <el-form-item label="启用">
+        <el-form-item label="启用" prop="enabled">
           <el-switch v-model="channelForm.enabled" />
         </el-form-item>
       </el-form>
@@ -143,7 +149,9 @@
 <script setup lang="ts">
   import { ref, reactive, computed } from 'vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
+  import type { FormRules } from 'element-plus'
   import { Plus } from '@element-plus/icons-vue'
+  import { useFormValidate, rules } from '@/composables/useFormValidate'
   import {
     listNotificationChannels,
     createNotificationChannel,
@@ -189,6 +197,13 @@
     enabled: true,
   })
 
+  const { formRef: channelFormRef, validate: validateChannelForm } = useFormValidate()
+  const channelFormRules: FormRules = {
+    channelCode: [rules.required('编码必填'), rules.code('小写字母/数字/_/- 组合,字母开头')],
+    channelName: [rules.required('名称必填'), rules.maxLength(128)],
+    channelType: [rules.required('类型必选', 'change')],
+  }
+
   async function loadChannels() {
     await runLoadingChannels(async () => {
       const data = await listNotificationChannels(tenant.tenantId)
@@ -219,14 +234,7 @@
   }
 
   async function saveChannel() {
-    if (!channelForm.channelCode.trim()) {
-      ElMessage.warning('编码不能为空')
-      return
-    }
-    if (!channelForm.channelName.trim()) {
-      ElMessage.warning('名称不能为空')
-      return
-    }
+    if (!(await validateChannelForm())) return
     savingChannel.value = true
     try {
       const body = { ...channelForm }

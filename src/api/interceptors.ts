@@ -27,6 +27,68 @@ type LoggedConfig = InternalAxiosRequestConfig & {
   _startTime?: number
   _loggedParams?: unknown
   _loggedRequestBody?: unknown
+  /** 重试次数,从 0 开始,最大 RETRY_MAX */
+  _retryCount?: number
+  /** 401 时已尝试过静默 refresh,避免无限循环 */
+  _refreshAttempted?: boolean
+}
+
+/**
+ * 静默 refresh token:401 时调一次 /api/console/auth/token 拿新 JWT,
+ * 同时多个请求并发 401 共享一个 refresh promise(去重)。
+ * 成功 → 写新 token + 通知调用方 retry 原请求;失败 → 跳登录。
+ */
+let refreshInFlight: Promise<string | null> | null = null
+
+async function performRefresh(client: AxiosInstance): Promise<string | null> {
+  try {
+    const resp = await client.post('/api/console/auth/token')
+    const data = resp.data as { accessToken?: string } | undefined
+    const token = data?.accessToken
+    if (token) {
+      localStorage.setItem('token', token)
+      return token
+    }
+    return null
+  } catch {
+    return null
+  }
+}
+
+function tryRefreshToken(client: AxiosInstance): Promise<string | null> {
+  if (!refreshInFlight) {
+    refreshInFlight = performRefresh(client).finally(() => {
+      refreshInFlight = null
+    })
+  }
+  return refreshInFlight
+}
+
+/**
+ * 重试策略:
+ *  - 仅幂等 GET(避免重复 mutation)
+ *  - 网络错误(无 response)或 5xx / 429 限流
+ *  - 指数退避 + jitter,最大 2 次重试(总 3 次尝试)
+ *  - 总耗时上限 ~3.5s,超过用户感受到卡顿就算了
+ */
+const RETRY_MAX = 2
+const RETRY_BASE_DELAY = 500
+const RETRYABLE_STATUS = new Set([429, 502, 503, 504])
+
+function isRetryableError(error: AxiosError, cfg?: LoggedConfig): boolean {
+  if (!cfg) return false
+  const method = (cfg.method ?? 'get').toLowerCase()
+  if (method !== 'get') return false
+  // 网络错误(超时 / DNS / 断网)无 response,error.code = 'ERR_NETWORK' / 'ECONNABORTED' 等
+  if (!error.response) return true
+  const status = error.response.status
+  return RETRYABLE_STATUS.has(status)
+}
+
+function nextRetryDelay(attempt: number): number {
+  const exp = RETRY_BASE_DELAY * Math.pow(2, attempt)
+  const jitter = Math.random() * 200
+  return exp + jitter
 }
 
 const TENANT_STORAGE_KEY = 'batch-console-tenant-id'
@@ -215,7 +277,7 @@ export function applyApiInterceptors(client: AxiosInstance): void {
 
       return response
     },
-    (error) => {
+    async (error) => {
       const status = error.response?.status as number | undefined
       const cfg = error.config as LoggedConfig | undefined
       const raw = error.response?.data
@@ -247,6 +309,25 @@ export function applyApiInterceptors(client: AxiosInstance): void {
         setLastApiMeta((raw as CommonResponse<unknown>).meta ?? null)
       }
 
+      // 幂等 GET 在网络错 / 5xx / 429 时静默重试(指数退避),用户感知不到瞬时抖动
+      const retryCount = cfg?._retryCount ?? 0
+      if (cfg && retryCount < RETRY_MAX && isRetryableError(error as AxiosError, cfg)) {
+        cfg._retryCount = retryCount + 1
+        const delay = nextRetryDelay(retryCount)
+        logApi(`retry ${retryCount + 1}/${RETRY_MAX} in ${Math.round(delay)}ms`, 'warn', {
+          kind: 'api-retry',
+          method: (cfg.method ?? 'get').toUpperCase(),
+          url: cfg.url ?? '',
+          status,
+          attempt: retryCount + 1,
+        })
+        return new Promise((resolve, reject) => {
+          setTimeout(() => {
+            client.request(cfg).then(resolve).catch(reject)
+          }, delay)
+        })
+      }
+
       if (status === 401) {
         if (isTokenExchangeRequest(cfg)) {
           // 登录 / 刷 token 本身 401：用户名密码错 或 refresh 失败，提示不登出
@@ -259,8 +340,20 @@ export function applyApiInterceptors(client: AxiosInstance): void {
           // /auth/me 401：session 真正失效 → 清 token 跳登录
           localStorage.removeItem('token')
           window.location.href = '/login'
+        } else if (cfg && !cfg._refreshAttempted) {
+          // 业务接口 401:先静默 refresh 一次,成功则 retry 原请求,失败再提示。
+          // _refreshAttempted 标记避免无限循环;并发多 401 经 refreshInFlight 去重。
+          cfg._refreshAttempted = true
+          const newToken = await tryRefreshToken(client)
+          if (newToken) {
+            // 用新 token 重发(请求拦截器会从 localStorage 拿最新值)
+            return client.request(cfg)
+          }
+          // refresh 失败:session 真没了,清 token 跳登录(跟 /auth/me 401 同一处理)
+          localStorage.removeItem('token')
+          window.location.href = '/login'
         } else {
-          // 业务接口 401：可能是代理鉴权失败 / 该接口 RBAC 不足，不登出
+          // 已尝试过 refresh 仍 401:权限真不够 / 接口 RBAC 限制,不登出,toast 提示
           const msg = extractHttpErrorMessage(error) || '该操作未授权'
           showErrorToast({
             title: '未授权',

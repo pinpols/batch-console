@@ -64,11 +64,16 @@
     </SectionCard>
 
     <el-dialog v-model="dialogVisible" :title="editingKey ? '编辑参数' : '新增参数'" width="500px">
-      <el-form label-width="100px">
-        <el-form-item label="Key">
-          <el-input v-model="form.key" :disabled="!!editingKey" placeholder="参数键" />
+      <el-form ref="paramFormRef" :model="form" :rules="formRules" label-width="100px">
+        <el-form-item label="Key" prop="key">
+          <el-input
+            v-model="form.key"
+            :disabled="!!editingKey"
+            placeholder="参数键"
+            maxlength="128"
+          />
         </el-form-item>
-        <el-form-item label="Value">
+        <el-form-item label="Value" prop="value">
           <el-input v-model="form.value" type="textarea" :rows="3" placeholder="参数值" />
         </el-form-item>
       </el-form>
@@ -83,7 +88,9 @@
 <script setup lang="ts">
   import { ref, reactive, computed } from 'vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
+  import type { FormRules } from 'element-plus'
   import { Plus } from '@element-plus/icons-vue'
+  import { useFormValidate, rules } from '@/composables/useFormValidate'
   import {
     listSystemParameters,
     upsertSystemParameter,
@@ -110,6 +117,15 @@
   const editingKey = ref('')
   const allRows = ref<{ key: string; value: string }[]>([])
   const form = reactive({ key: '', value: '' })
+
+  const { formRef: paramFormRef, validate: validateParamForm } = useFormValidate()
+  const formRules: FormRules = {
+    key: [
+      rules.required('Key 必填'),
+      rules.pattern(/^[a-zA-Z0-9._-]+$/, '只允许字母 / 数字 / . / _ / -'),
+      rules.maxLength(128),
+    ],
+  }
   const page = ref(1)
   const pageSize = ref(20)
   const kwDraft = ref('')
@@ -179,10 +195,7 @@
   }
 
   async function save() {
-    if (!form.key.trim()) {
-      ElMessage.warning('Key 不能为空')
-      return
-    }
+    if (!(await validateParamForm())) return
     saving.value = true
     try {
       await upsertSystemParameter(tenant.tenantId, { key: form.key, value: form.value })

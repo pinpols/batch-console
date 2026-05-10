@@ -76,17 +76,17 @@
       :title="ruleEditingId ? '编辑规则' : '新增规则'"
       width="560px"
     >
-      <el-form label-width="100px">
-        <el-form-item label="名称">
-          <el-input v-model="ruleForm.ruleName" placeholder="规则名称" />
+      <el-form ref="ruleFormRef" :model="ruleForm" :rules="ruleFormRules" label-width="100px">
+        <el-form-item label="名称" prop="ruleName">
+          <el-input v-model="ruleForm.ruleName" placeholder="规则名称" maxlength="128" />
         </el-form-item>
-        <el-form-item label="事件类型">
+        <el-form-item label="事件类型" prop="eventTypes">
           <el-input
             v-model="ruleForm.eventTypes"
             placeholder="逗号分隔，如 JOB_FAILED,JOB_TIMEOUT"
           />
         </el-form-item>
-        <el-form-item label="渠道 ID">
+        <el-form-item label="渠道 ID" prop="channelId">
           <el-input-number
             v-model="ruleForm.channelId"
             :min="1"
@@ -94,7 +94,7 @@
             class="query-w-full"
           />
         </el-form-item>
-        <el-form-item label="启用">
+        <el-form-item label="启用" prop="enabled">
           <el-switch v-model="ruleForm.enabled" />
         </el-form-item>
       </el-form>
@@ -109,6 +109,8 @@
 <script setup lang="ts">
   import { ref, reactive, computed } from 'vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
+  import type { FormRules } from 'element-plus'
+  import { useFormValidate, rules as r } from '@/composables/useFormValidate'
   import { Plus } from '@element-plus/icons-vue'
   import {
     listNotificationRules,
@@ -138,6 +140,13 @@
   const ruleFilterApplied = reactive({ keyword: '', enabled: undefined as boolean | undefined })
   const ruleForm = reactive({ ruleName: '', eventTypes: '', channelId: 1, enabled: true })
 
+  const { formRef: ruleFormRef, validate: validateRuleForm } = useFormValidate()
+  const ruleFormRules: FormRules = {
+    ruleName: [r.required('名称必填'), r.maxLength(128)],
+    eventTypes: [r.required('事件类型必填')],
+    channelId: [r.required('渠道 ID 必填', 'change')],
+  }
+
   async function loadRules() {
     await runLoadingRules(async () => {
       const data = await listNotificationRules(tenant.tenantId)
@@ -166,10 +175,7 @@
   }
 
   async function saveRule() {
-    if (!ruleForm.ruleName.trim()) {
-      ElMessage.warning('名称不能为空')
-      return
-    }
+    if (!(await validateRuleForm())) return
     savingRule.value = true
     try {
       const body = { ...ruleForm }

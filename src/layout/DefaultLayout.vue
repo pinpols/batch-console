@@ -22,9 +22,11 @@
           <div class="layout-main__body">
             <div class="layout-main__content">
               <RouterView v-slot="{ Component, route: r }">
-                <KeepAlive :max="20">
-                  <component :is="Component" :key="r.fullPath" />
-                </KeepAlive>
+                <ErrorBoundary :route-key="r.fullPath">
+                  <KeepAlive :max="20">
+                    <component :is="Component" :key="r.fullPath" />
+                  </KeepAlive>
+                </ErrorBoundary>
               </RouterView>
             </div>
           </div>
@@ -41,12 +43,17 @@
   import { useRoute } from 'vue-router'
   import { FullScreen } from '@element-plus/icons-vue'
   import CommandPalette from '@/components/common/CommandPalette.vue'
+  import ErrorBoundary from '@/components/common/ErrorBoundary.vue'
   import LayoutSidebar from '@/layout/LayoutSidebar.vue'
   import LayoutHeader from '@/layout/components/LayoutHeader.vue'
   import { useHeaderLogic } from '@/layout/composables/useHeaderLogic'
+  import { useNetworkStatus } from '@/composables/useNetworkStatus'
+  import { shouldShowOnboarding, startOnboarding } from '@/composables/useOnboardingTour'
 
   const route = useRoute()
   const { app, tabsStore, paletteOpen, visibleGroups } = useHeaderLogic()
+  // 全局网络状态监听:断网/恢复弹消息(配合 axios retry,短抖用户无感)
+  useNetworkStatus()
 
   function onGlobalKeydown(e: KeyboardEvent) {
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
@@ -65,6 +72,10 @@
   onMounted(() => {
     document.documentElement.classList.add(LAYOUT_SHELL_LOCK_CLASS)
     window.addEventListener('keydown', onGlobalKeydown)
+    // 首次登录后引导;延迟 800ms 等 Header / Sidebar 渲染完再标 anchor
+    if (shouldShowOnboarding()) {
+      setTimeout(() => startOnboarding(), 800)
+    }
   })
   onUnmounted(() => {
     document.documentElement.classList.remove(LAYOUT_SHELL_LOCK_CLASS)

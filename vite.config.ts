@@ -86,6 +86,11 @@ export default defineConfig(({ mode }) => {
         target: devProxyTarget,
         changeOrigin: true,
       },
+      // 不再代理 /docs 到 vitepress dev (5174):VitePress dev 在非根 base 下
+      // 会从客户端拼出形如 `/docs.md` 的 module URL(漏 /docs/ 前缀),proxy
+      // 透传后 vitepress 5174 也匹配不上 → 404。
+      // dev 期请直接访问 http://localhost:5174/docs/ 看文档;
+      // prod 由 nginx alias /var/www/batch-docs/ 兜住,无 base 计算问题。
     },
     /**
      * 预热：dev 启动时后台编译这些文件，用户首次导航立即到位。

@@ -5,15 +5,15 @@
     width="520px"
     @update:model-value="(v) => emit('update:modelValue', v)"
   >
-    <el-form label-width="100px">
-      <el-form-item label="tenantId" required>
+    <el-form ref="formRef" :model="form" :rules="formRules" label-width="100px">
+      <el-form-item label="tenantId" prop="tenantId">
         <el-input v-model="form.tenantId" :disabled="editing" placeholder="例如:acme-prod" />
         <div class="form-hint">小写字母、数字、短横线;长度 2–64;首尾需为字母或数字。</div>
       </el-form-item>
-      <el-form-item label="名称" required>
+      <el-form-item label="名称" prop="tenantName">
         <el-input v-model="form.tenantName" placeholder="租户显示名称" maxlength="256" />
       </el-form-item>
-      <el-form-item label="描述">
+      <el-form-item label="描述" prop="description">
         <el-input
           v-model="form.description"
           type="textarea"
@@ -24,7 +24,7 @@
         />
       </el-form-item>
       <template v-if="!editing">
-        <el-form-item label="操作账号" required>
+        <el-form-item label="操作账号" prop="username">
           <el-input
             v-model="form.username"
             placeholder="初始操作账号用户名(ROLE_TENANT_USER)"
@@ -32,7 +32,7 @@
           />
           <div class="form-hint">字母、数字、._- ,至少 2 个字符。</div>
         </el-form-item>
-        <el-form-item label="初始密码" required>
+        <el-form-item label="初始密码" prop="password">
           <el-input
             v-model="form.password"
             type="password"
@@ -53,9 +53,11 @@
 </template>
 
 <script setup lang="ts">
-  import { reactive, ref, watch } from 'vue'
+  import { computed, reactive, ref, watch } from 'vue'
   import { ElMessage } from 'element-plus'
+  import type { FormRules } from 'element-plus'
   import { createTenant, updateTenant, type Tenant } from '@/api/tenants'
+  import { useFormValidate, rules } from '@/composables/useFormValidate'
 
   const props = defineProps<{
     modelValue: boolean
@@ -77,6 +79,34 @@
     password: '',
   })
 
+  const { formRef, validate } = useFormValidate()
+
+  // 编辑态下 tenantId / username / password 不校验(灰显或不显示);
+  // 新建态下要走完整规则
+  const formRules = computed<FormRules>(() => {
+    const base: FormRules = {
+      tenantName: [rules.required('名称必填'), rules.maxLength(256)],
+    }
+    if (!editing.value) {
+      Object.assign(base, {
+        tenantId: [
+          rules.required('tenantId 必填'),
+          rules.pattern(
+            /^[a-z0-9][a-z0-9-]{0,62}[a-z0-9]$/,
+            '小写字母/数字/短横线,长度 2-64,首尾字母或数字',
+          ),
+        ],
+        username: [
+          rules.required('操作账号必填'),
+          rules.pattern(/^[a-zA-Z0-9][a-zA-Z0-9._-]+$/, '字母/数字/._- 组合,至少 2 个字符'),
+          rules.minLength(2),
+        ],
+        password: [rules.required('初始密码必填'), rules.minLength(8)],
+      })
+    }
+    return base
+  })
+
   watch(
     () => props.modelValue,
     (open) => {
@@ -92,24 +122,7 @@
   )
 
   async function submit() {
-    if (!editing.value) {
-      if (!/^[a-z0-9][a-z0-9-]*[a-z0-9]$/.test(form.tenantId)) {
-        ElMessage.warning('tenantId 格式非法:小写字母 / 数字 / 短横线,长度 2–64')
-        return
-      }
-      if (!/^[a-zA-Z0-9][a-zA-Z0-9._-]*$/.test(form.username) || form.username.length < 2) {
-        ElMessage.warning('操作账号用户名格式非法:字母 / 数字 / ._- ,至少 2 个字符')
-        return
-      }
-      if (form.password.length < 8) {
-        ElMessage.warning('初始密码至少 8 个字符')
-        return
-      }
-    }
-    if (!form.tenantName.trim()) {
-      ElMessage.warning('名称不能为空')
-      return
-    }
+    if (!(await validate())) return
     saving.value = true
     try {
       if (editing.value) {
