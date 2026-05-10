@@ -4,8 +4,7 @@
 
     <SectionCard>
       <el-tabs v-model="activeTab" v-hover-tab-activate="true" class="pill-tabs">
-        <!-- Worker 列表 -->
-        <el-tab-pane label="Worker 列表" name="workers">
+        <el-tab-pane :label="t('workerManagement.tabWorkers')" name="workers">
           <ProTable
             :data="workerTableRows"
             :loading="workerTableBlocking"
@@ -26,7 +25,7 @@
                 @reset="resetWorkers"
                 @refresh="onRefreshWorkers"
               >
-                <el-form-item label="组">
+                <el-form-item :label="t('workerManagement.groupLabel')">
                   <MetaSelect
                     class="query-w-180"
                     v-model="workerFilters.workerGroup"
@@ -34,60 +33,78 @@
                     filterable
                     allow-create
                     default-first-option
-                    placeholder="选择或输入 workerGroup"
+                    :placeholder="t('workerManagement.groupPlaceholder')"
                     :options="workerGroupOptions"
                   />
                 </el-form-item>
-                <el-form-item label="状态">
+                <el-form-item :label="t('workerManagement.statusLabel')">
                   <MetaSelect
                     class="query-w-200"
                     v-model="workerFilters.status"
                     clearable
-                    placeholder="全部连接状态"
+                    enum-key="workerStatus"
+                    :placeholder="t('workerManagement.statusPlaceholder')"
                     :options="workerStatusOptions"
                   />
                 </el-form-item>
-                <el-form-item label="关键字">
+                <el-form-item :label="t('workerManagement.keywordLabel')">
                   <el-input
                     class="query-w-200"
                     v-model="workerFilters.keyword"
                     clearable
-                    placeholder="按 workerCode 模糊匹配"
+                    :placeholder="t('workerManagement.keywordPlaceholder')"
                   />
                 </el-form-item>
               </ListPageQueryBar>
             </template>
 
-            <el-table-column prop="workerCode" label="Worker" min-width="140">
+            <el-table-column
+              prop="workerCode"
+              :label="t('workerManagement.colWorker')"
+              min-width="140"
+            >
               <template #default="{ row }">
                 <CopyableText :text="row.workerCode" />
               </template>
             </el-table-column>
-            <el-table-column prop="workerGroup" label="组" width="120" />
-            <el-table-column prop="status" label="状态" width="110">
+            <el-table-column
+              prop="workerGroup"
+              :label="t('workerManagement.colGroup')"
+              width="120"
+            />
+            <el-table-column prop="status" :label="t('workerManagement.colStatus')" width="110">
               <template #default="{ row }">
                 <StatusTag :value="String(row.status ?? '')" category="worker" />
               </template>
             </el-table-column>
-            <el-table-column prop="currentLoad" label="负载" width="80" />
-            <DatetimeColumn prop="heartbeatAt" label="心跳" width="160" />
-            <el-table-column label="治理" width="220" fixed="right">
+            <el-table-column prop="currentLoad" :label="t('workerManagement.colLoad')" width="80" />
+            <DatetimeColumn
+              prop="heartbeatAt"
+              :label="t('workerManagement.colHeartbeat')"
+              width="160"
+            />
+            <el-table-column :label="t('workerManagement.colActions')" width="220" fixed="right">
               <template #default="{ row }">
                 <div class="table-actions">
-                  <el-button size="small" plain type="warning" @click="drain(row)">Drain</el-button>
-                  <el-button size="small" plain type="danger" @click="offline(row)"
-                    >强制下线</el-button
-                  >
-                  <el-button size="small" plain @click="takeover(row)">接管</el-button>
-                  <el-button size="small" plain type="success" @click="warmup(row)">预热</el-button>
+                  <el-button size="small" plain type="warning" @click="drain(row)">
+                    {{ t('workerManagement.actionDrain') }}
+                  </el-button>
+                  <el-button size="small" plain type="danger" @click="offline(row)">
+                    {{ t('workerManagement.actionOffline') }}
+                  </el-button>
+                  <el-button size="small" plain @click="takeover(row)">
+                    {{ t('workerManagement.actionTakeover') }}
+                  </el-button>
+                  <el-button size="small" plain type="success" @click="warmup(row)">
+                    {{ t('workerManagement.actionWarmup') }}
+                  </el-button>
                 </div>
               </template>
             </el-table-column>
           </ProTable>
         </el-tab-pane>
 
-        <!-- 文件渠道 -->
-        <el-tab-pane label="文件渠道" name="channels">
+        <el-tab-pane :label="t('workerManagement.tabChannels')" name="channels">
           <ProTable
             :data="channelRows"
             :loading="channelTableBlocking"
@@ -107,41 +124,62 @@
                 @reset="resetChannels"
                 @refresh="() => runChannelRefresh(loadChannels)"
               >
-                <el-form-item label="渠道编码">
+                <el-form-item :label="t('workerManagement.channelCodeLabel')">
                   <el-input
                     class="query-w-180"
                     v-model="channelFilters.channelCode"
                     clearable
-                    placeholder="渠道编码，模糊匹配"
+                    :placeholder="t('workerManagement.channelCodePlaceholder')"
                   />
                 </el-form-item>
-                <el-form-item label="类型">
+                <el-form-item :label="t('workerManagement.channelTypeLabel')">
                   <MetaSelect
                     class="query-w-160"
                     v-model="channelFilters.channelType"
                     clearable
                     filterable
-                    placeholder="全部渠道类型"
+                    enum-key="channelType"
+                    :placeholder="t('workerManagement.channelTypePlaceholder')"
                     :options="channelTypeOptions"
                   />
                 </el-form-item>
               </ListPageQueryBar>
             </template>
-            <el-table-column prop="channelCode" label="渠道编码" min-width="140" />
-            <el-table-column prop="channelType" label="类型" width="120" />
-            <el-table-column label="启用" width="90">
+            <el-table-column
+              prop="channelCode"
+              :label="t('workerManagement.channelColCode')"
+              min-width="140"
+            />
+            <el-table-column
+              prop="channelType"
+              :label="t('workerManagement.channelColType')"
+              width="120"
+            />
+            <el-table-column :label="t('workerManagement.channelColEnabled')" width="90">
               <template #default="{ row }">
                 <StatusTag :value="String(row.enabled)" category="yn" />
               </template>
             </el-table-column>
-            <el-table-column prop="timeoutSeconds" label="超时(s)" width="100" />
-            <DatetimeColumn prop="updatedAt" label="更新" width="160" />
-            <el-table-column label="操作" width="100" fixed="right">
+            <el-table-column
+              prop="timeoutSeconds"
+              :label="t('workerManagement.channelColTimeout')"
+              width="100"
+            />
+            <DatetimeColumn
+              prop="updatedAt"
+              :label="t('workerManagement.channelColUpdated')"
+              width="160"
+            />
+            <el-table-column
+              :label="t('workerManagement.channelColActions')"
+              width="100"
+              fixed="right"
+            >
               <template #default="{ row }">
                 <div class="table-actions">
-                  <el-button size="small" plain type="primary" @click="openChannelDetail(row)"
-                    >详情</el-button
-                  >
+                  <el-button size="small" plain type="primary" @click="openChannelDetail(row)">
+                    {{ t('workerManagement.channelActionDetail') }}
+                  </el-button>
                 </div>
               </template>
             </el-table-column>
@@ -150,8 +188,11 @@
       </el-tabs>
     </SectionCard>
 
-    <!-- 渠道详情抽屉 -->
-    <el-drawer v-model="channelDetailVisible" title="渠道详情" size="680px">
+    <el-drawer
+      v-model="channelDetailVisible"
+      :title="t('workerManagement.channelDetailTitle')"
+      size="680px"
+    >
       <el-descriptions v-if="channelDetailRow" :column="2" border size="small">
         <el-descriptions-item label="channelCode">{{
           channelDetailRow.channelCode
@@ -159,16 +200,16 @@
         <el-descriptions-item label="channelType">{{
           channelDetailRow.channelType
         }}</el-descriptions-item>
-        <el-descriptions-item label="enabled">{{
-          channelDetailRow.enabled ? '是' : '否'
-        }}</el-descriptions-item>
+        <el-descriptions-item label="enabled">
+          {{ channelDetailRow.enabled ? t('workerManagement.yes') : t('workerManagement.no') }}
+        </el-descriptions-item>
         <el-descriptions-item label="timeoutSeconds">{{
           channelDetailRow.timeoutSeconds ?? '—'
         }}</el-descriptions-item>
         <el-descriptions-item label="updatedAt" :span="2">{{
           channelDetailRow.updatedAt || '—'
         }}</el-descriptions-item>
-        <el-descriptions-item label="原始响应" :span="2">
+        <el-descriptions-item :label="t('workerManagement.channelDetailRawResponse')" :span="2">
           <JsonPreview :data="channelDetailRow" />
         </el-descriptions-item>
       </el-descriptions>
@@ -178,7 +219,10 @@
 
 <script setup lang="ts">
   import { computed, reactive, ref, watch, onMounted } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
+
+  const { t } = useI18n({ useScope: 'global' })
   import { confirmDanger } from '@/composables/useDangerConfirm'
   import { useQueryClient } from '@tanstack/vue-query'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
@@ -294,9 +338,17 @@
 
   async function drain(row: ConsoleWorkerRegistryResponse) {
     try {
-      await ElMessageBox.confirm(`对 ${row.workerCode} 发起 drain？`, 'Drain', { type: 'warning' })
+      await ElMessageBox.confirm(
+        t('workerManagement.drainConfirmText', { code: row.workerCode }),
+        t('workerManagement.drainConfirmTitle'),
+        {
+          type: 'warning',
+          confirmButtonText: t('common.confirm'),
+          cancelButtonText: t('common.cancel'),
+        },
+      )
       await drainWorker(row.workerCode, { tenantId: tenant.tenantId, reason: 'console drain' })
-      ElMessage.success(`已对 ${row.workerCode} 发起 Drain`)
+      ElMessage.success(t('workerManagement.drainSuccess', { code: row.workerCode }))
       await queryClient.invalidateQueries({ queryKey: ['workers', tenant.tenantId] })
     } catch {
       /* cancel */
@@ -305,12 +357,20 @@
 
   async function takeover(row: ConsoleWorkerRegistryResponse) {
     try {
-      await ElMessageBox.confirm(`接管 ${row.workerCode} 的任务？`, '接管', { type: 'warning' })
+      await ElMessageBox.confirm(
+        t('workerManagement.takeoverConfirmText', { code: row.workerCode }),
+        t('workerManagement.takeoverConfirmTitle'),
+        {
+          type: 'warning',
+          confirmButtonText: t('common.confirm'),
+          cancelButtonText: t('common.cancel'),
+        },
+      )
       await takeoverWorker(row.workerCode, {
         tenantId: tenant.tenantId,
         reason: 'console takeover',
       })
-      ElMessage.success(`已接管 ${row.workerCode}`)
+      ElMessage.success(t('workerManagement.takeoverSuccess', { code: row.workerCode }))
       await queryClient.invalidateQueries({ queryKey: ['workers', tenant.tenantId] })
     } catch {
       /* cancel */
@@ -320,7 +380,7 @@
   async function warmup(row: ConsoleWorkerRegistryResponse) {
     try {
       await warmupWorker(row.workerCode, tenant.tenantId)
-      ElMessage.success(`已对 ${row.workerCode} 发起预热`)
+      ElMessage.success(t('workerManagement.warmupSuccess', { code: row.workerCode }))
     } catch {
       /* cancel */
     }
@@ -329,17 +389,16 @@
   async function offline(row: ConsoleWorkerRegistryResponse) {
     try {
       await confirmDanger({
-        verb: '强制下线',
-        target: `Worker 「${row.workerCode}」`,
-        consequence:
-          '该 Worker 上正在跑的分片会被立即中断;系统会等心跳超时后才把分片重新分给其它 Worker,中间有 30s 左右真空期。',
+        verb: t('workerManagement.offlineVerb'),
+        target: t('workerManagement.offlineTarget', { code: row.workerCode }),
+        consequence: t('workerManagement.offlineConsequence'),
         irreversible: true,
       })
       await forceWorkerOffline(row.workerCode, {
         tenantId: tenant.tenantId,
         reason: 'console offline',
       })
-      ElMessage.success(`已强制下线 ${row.workerCode}`)
+      ElMessage.success(t('workerManagement.offlineSuccess', { code: row.workerCode }))
       await queryClient.invalidateQueries({ queryKey: ['workers', tenant.tenantId] })
     } catch {
       /* cancel */
