@@ -19,12 +19,16 @@
         :data="pagedSecrets.records"
         stripe
         border
-        empty-text="暂无数据"
+        :empty-text="t('common.noData')"
         size="small"
         class="console-table"
       >
-        <el-table-column prop="id" label="ID" width="80" />
-        <el-table-column label="Secret" min-width="240" show-overflow-tooltip>
+        <el-table-column prop="id" :label="t('configSecretsTab.fieldId')" width="80" />
+        <el-table-column
+          :label="t('configSecretsTab.colSecret')"
+          min-width="240"
+          show-overflow-tooltip
+        >
           <template #default="{ row }">
             <div class="cell-stack">
               <CopyableText :text="String(row.secretRef ?? '')" />
@@ -32,40 +36,72 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column prop="versionNo" label="版本" width="80" align="right" />
-        <el-table-column label="当前" width="80">
+        <el-table-column
+          prop="versionNo"
+          :label="t('configSecretsTab.colVersion')"
+          width="80"
+          align="right"
+        />
+        <el-table-column :label="t('configSecretsTab.colCurrent')" width="80">
           <template #default="{ row }">
             <el-tag v-if="row.currentVersion" type="success" size="small" effect="plain">
-              当前
+              {{ t('configSecretsTab.tagCurrent') }}
             </el-tag>
             <span v-else class="muted">—</span>
           </template>
         </el-table-column>
-        <el-table-column prop="secretStatus" label="状态" width="100" />
-        <DatetimeColumn prop="effectiveFromAt" label="生效起" width="160" />
-        <DatetimeColumn prop="effectiveToAt" label="生效止" width="160" />
-        <DatetimeColumn prop="rotationWindowStartAt" label="轮转窗起" width="160" />
-        <DatetimeColumn prop="rotationWindowEndAt" label="轮转窗止" width="160" />
+        <el-table-column prop="secretStatus" :label="t('configSecretsTab.colStatus')" width="100" />
+        <DatetimeColumn
+          prop="effectiveFromAt"
+          :label="t('configSecretsTab.colEffectiveFrom')"
+          width="160"
+        />
+        <DatetimeColumn
+          prop="effectiveToAt"
+          :label="t('configSecretsTab.colEffectiveTo')"
+          width="160"
+        />
+        <DatetimeColumn
+          prop="rotationWindowStartAt"
+          :label="t('configSecretsTab.colRotationStart')"
+          width="160"
+        />
+        <DatetimeColumn
+          prop="rotationWindowEndAt"
+          :label="t('configSecretsTab.colRotationEnd')"
+          width="160"
+        />
         <el-table-column
           prop="rotationReason"
-          label="轮转原因"
+          :label="t('configSecretsTab.colRotationReason')"
           min-width="160"
           show-overflow-tooltip
         />
-        <el-table-column prop="createdBy" label="创建人" width="120" show-overflow-tooltip />
-        <DatetimeColumn prop="createdAt" label="创建时间" width="160" />
-        <el-table-column label="操作" width="160" fixed="right">
+        <el-table-column
+          prop="createdBy"
+          :label="t('configSecretsTab.colCreatedBy')"
+          width="120"
+          show-overflow-tooltip
+        />
+        <DatetimeColumn prop="createdAt" :label="t('configSecretsTab.colCreatedAt')" width="160" />
+        <el-table-column :label="t('configSecretsTab.colActions')" width="160" fixed="right">
           <template #default="{ row }">
             <div class="table-actions">
-              <el-button size="small" plain type="primary" @click="viewSecret(row)">详情</el-button>
+              <el-button size="small" plain type="primary" @click="viewSecret(row)">
+                {{ t('configSecretsTab.btnDetail') }}
+              </el-button>
               <el-button
                 size="small"
                 plain
                 type="warning"
-                v-track-click="{ action: '轮转 Secret', secretKey: row.secretRef }"
+                v-track-click="{
+                  action: t('configSecretsTab.trackRotate'),
+                  secretKey: row.secretRef,
+                }"
                 @click="confirmRotate(row)"
-                >轮转</el-button
               >
+                {{ t('configSecretsTab.btnRotate') }}
+              </el-button>
             </div>
           </template>
         </el-table-column>
@@ -84,13 +120,25 @@
       "
     />
 
-    <el-drawer v-model="secretDetailVisible" title="Secret 详情" size="560px">
+    <el-drawer
+      v-model="secretDetailVisible"
+      :title="t('configSecretsTab.drawerTitle')"
+      size="560px"
+    >
       <el-descriptions v-if="secretDetail" :column="1" border size="small">
-        <el-descriptions-item label="ID">{{ secretDetail.id }}</el-descriptions-item>
-        <el-descriptions-item label="Secret Key">{{ secretDetail.secretRef }}</el-descriptions-item>
-        <el-descriptions-item label="版本">{{ secretDetail.versionNo }}</el-descriptions-item>
-        <el-descriptions-item label="状态">{{ secretDetail.secretStatus }}</el-descriptions-item>
-        <el-descriptions-item label="原始响应">
+        <el-descriptions-item :label="t('configSecretsTab.fieldId')">
+          {{ secretDetail.id }}
+        </el-descriptions-item>
+        <el-descriptions-item :label="t('configSecretsTab.fieldSecretKey')">
+          {{ secretDetail.secretRef }}
+        </el-descriptions-item>
+        <el-descriptions-item :label="t('configSecretsTab.fieldVersion')">
+          {{ secretDetail.versionNo }}
+        </el-descriptions-item>
+        <el-descriptions-item :label="t('configSecretsTab.fieldStatus')">
+          {{ secretDetail.secretStatus }}
+        </el-descriptions-item>
+        <el-descriptions-item :label="t('configSecretsTab.fieldRaw')">
           <JsonPreview :data="secretDetail" />
         </el-descriptions-item>
       </el-descriptions>
@@ -100,7 +148,10 @@
 
 <script setup lang="ts">
   import { ref, computed } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
+
+  const { t } = useI18n({ useScope: 'global' })
   import { listSecrets, getSecretVersion, rotateSecret } from '@/api/configReleases'
   import { toPageResult } from '@/api/adapters'
   import { useTenantStore } from '@/stores/tenant'
@@ -149,11 +200,13 @@
 
   async function confirmRotate(row: ConsoleSecretVersionResponse) {
     try {
-      await ElMessageBox.confirm(`轮转 Secret "${row.secretRef}"？`, '轮转确认', {
-        type: 'warning',
-      })
+      await ElMessageBox.confirm(
+        t('configSecretsTab.rotateConfirmText', { name: row.secretRef }),
+        t('configSecretsTab.rotateConfirmTitle'),
+        { type: 'warning' },
+      )
       await rotateSecret({ tenantId: tenant.tenantId, secretRef: row.secretRef })
-      ElMessage.success('已发起轮转')
+      ElMessage.success(t('configSecretsTab.rotateDoneToast'))
       await loadSecrets()
     } catch {
       /* cancel */
