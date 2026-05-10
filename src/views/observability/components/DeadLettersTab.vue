@@ -102,18 +102,19 @@
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { useListLoadState } from '@/composables/useListLoadState'
   import DataState from '@/components/common/DataState.vue'
+  import type { ConsoleDeadLetterTaskResponse } from '@/types/console-api'
 
   const tenant = useTenantStore()
   const { loading: loadingDL, error: loadDLError, run: runLoadDL } = useListLoadState()
   const { filterBusy, runSearch, runReset, runRefresh } = useListFilterFeedback(loadingDL)
-  const dlRows = ref<Record<string, unknown>[]>([])
+  const dlRows = ref<ConsoleDeadLetterTaskResponse[]>([])
   const dlPage = ref(1)
   const dlPageSize = ref(20)
   const dlDraft = reactive({ sourceType: '', sourceId: '', keyword: '' })
   const dlApplied = reactive({ sourceType: '', sourceId: '', keyword: '' })
 
   const detailVisible = ref(false)
-  const detailRow = ref<Record<string, unknown> | null>(null)
+  const detailRow = ref<ConsoleDeadLetterTaskResponse | null>(null)
 
   const dlSourceTypeOptions = computed(() =>
     Array.from(
@@ -144,23 +145,18 @@
   const pagedDL = computed(() => toPageResult(filteredDL.value, dlPage.value, dlPageSize.value))
 
   const detailMetaRows = computed(() => {
-    const r = detailRow.value ?? {}
+    const r = detailRow.value
+    if (!r) return []
     return [
-      { label: '来源类型', value: pickString(r, 'sourceType') },
-      { label: '来源 ID', value: pickString(r, 'sourceId') },
-      { label: '状态', value: pickString(r, 'replayStatus') },
+      { label: '来源类型', value: r.sourceType ?? '' },
+      { label: '来源 ID', value: String(r.sourceId ?? '') },
+      { label: '状态', value: r.replayStatus ?? '' },
     ]
   })
 
-  function pickString(row: Record<string, unknown>, key: string): string {
-    const v = row[key]
-    if (v == null) return ''
-    return typeof v === 'string' ? v : String(v)
-  }
-
   async function loadDeadLetters() {
     await runLoadDL(async () => {
-      dlRows.value = (await queryDeadLetters(tenant.tenantId)) as Record<string, unknown>[]
+      dlRows.value = await queryDeadLetters(tenant.tenantId)
     }).catch(() => {
       dlRows.value = []
     })
@@ -192,7 +188,7 @@
     dlPage.value = 1
   }
 
-  function openDetail(row: Record<string, unknown>) {
+  function openDetail(row: ConsoleDeadLetterTaskResponse) {
     detailRow.value = row
     detailVisible.value = true
   }
