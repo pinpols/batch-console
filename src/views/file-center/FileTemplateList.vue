@@ -26,36 +26,24 @@
               <el-input v-model="keyword" clearable placeholder="模板编码或名称，模糊匹配" />
             </el-form-item>
             <el-form-item label="模板类型">
-              <el-select
+              <MetaSelect
                 class="query-w-160"
                 v-model="templateType"
+                :options="templateTypeOptions"
                 clearable
                 filterable
                 placeholder="全部模板类型"
-              >
-                <el-option
-                  v-for="option in templateTypeOptions"
-                  :key="option"
-                  :label="option"
-                  :value="option"
-                />
-              </el-select>
+              />
             </el-form-item>
             <el-form-item label="业务类型">
-              <el-select
+              <MetaSelect
                 class="query-w-160"
                 v-model="bizType"
+                :options="bizTypeOptions"
                 clearable
                 filterable
                 placeholder="全部业务类型"
-              >
-                <el-option
-                  v-for="option in bizTypeOptions"
-                  :key="option"
-                  :label="option"
-                  :value="option"
-                />
-              </el-select>
+              />
             </el-form-item>
             <el-form-item label="启用">
               <el-select v-model="enabled" clearable placeholder="全部" class="query-w-120">
@@ -125,6 +113,10 @@
 <script setup lang="ts">
   import { computed, ref, watch } from 'vue'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
+  import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
+  import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
+  import { getMetaBizTypes, type MetaOption } from '@/api/meta'
+  import MetaSelect from '@/components/common/MetaSelect.vue'
   import { queryFileTemplateDetail, queryFileTemplates } from '@/api/system'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
@@ -158,18 +150,26 @@
   const templateType = ref('')
   const bizType = ref('')
   const enabled = ref<boolean | undefined>()
-  const templateTypeOptions = computed(() =>
-    Array.from(
+  // templateType 走后端 enum(完整候选);未到达时 fallback 到 rows 派生
+  const { data: metaEnums } = useConsoleMetaEnumsQuery()
+  const templateTypeOptions = computed(() => {
+    const fromEnum = pickMetaEnumGroup(metaEnums.value, 'fileTemplateType')
+    if (fromEnum.length > 0) return fromEnum
+    return Array.from(
       new Set(
         allRows.value.map((row) => row.templateType).filter((item): item is string => !!item),
       ),
-    ),
-  )
-  const bizTypeOptions = computed(() =>
-    Array.from(
-      new Set(allRows.value.map((row) => row.bizType).filter((item): item is string => !!item)),
-    ),
-  )
+    ).map((v) => ({ value: v, label: v }))
+  })
+  // bizType 是租户级业务字典(独立 API),进页面 + 切租户时拉
+  const bizTypeOptions = ref<MetaOption[]>([])
+  async function loadBizTypes() {
+    try {
+      bizTypeOptions.value = await getMetaBizTypes(tenant.tenantId)
+    } catch {
+      bizTypeOptions.value = []
+    }
+  }
 
   const filtered = computed(() => {
     const k = keyword.value.trim().toLowerCase()
@@ -237,7 +237,10 @@
 
   watch([page, pageSize], syncPage)
 
-  useTenantReload(load)
+  useTenantReload(() => {
+    void load()
+    void loadBizTypes()
+  })
 </script>
 
 <style scoped></style>

@@ -45,20 +45,14 @@
               </el-select>
             </el-form-item>
             <el-form-item label="类型">
-              <el-select
+              <MetaSelect
                 class="query-w-160"
                 v-model="filters.workflowType"
+                :options="workflowTypeOptions"
                 clearable
                 filterable
                 placeholder="请选择 workflowType"
-              >
-                <el-option
-                  v-for="option in workflowTypeOptions"
-                  :key="option"
-                  :label="option"
-                  :value="option"
-                />
-              </el-select>
+              />
             </el-form-item>
             <el-form-item label="版本">
               <el-input-number
@@ -185,6 +179,9 @@
   import TenantSelect from '@/components/common/TenantSelect.vue'
   import JsonPreview from '@/components/common/JsonPreview.vue'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
+  import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
+  import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
+  import MetaSelect from '@/components/common/MetaSelect.vue'
   import type {
     ConsoleWorkflowDefinitionResponse,
     WorkflowDefinitionDetailResponse,
@@ -216,14 +213,17 @@
     version: undefined as number | undefined,
   })
 
-  const workflowTypeOptions = computed(() =>
-    Array.from(
+  // workflowType 走后端 enum,完整候选不依赖列表先加载;rows 派生作 fallback
+  const { data: metaEnums } = useConsoleMetaEnumsQuery()
+  const workflowTypeOptions = computed(() => {
+    const fromEnum = pickMetaEnumGroup(metaEnums.value, 'workflowType')
+    if (fromEnum.length > 0) return fromEnum
+    return Array.from(
       new Set(
         allRows.value.map((row) => row.workflowType).filter((item): item is string => !!item),
       ),
-    ),
-  )
-
+    ).map((v) => ({ value: v, label: v }))
+  })
   function openDag(workflowCode: string) {
     void router.push({ path: `/workflow/designer/${encodeURIComponent(workflowCode)}` })
   }

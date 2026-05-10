@@ -23,20 +23,14 @@
             @refresh="() => runRefresh(load)"
           >
             <el-form-item label="级别">
-              <el-select
+              <MetaSelect
                 class="query-w-140"
                 v-model="filters.severity"
+                :options="severityOptions"
                 clearable
                 filterable
                 placeholder="请选择级别"
-              >
-                <el-option
-                  v-for="option in severityOptions"
-                  :key="option"
-                  :label="option"
-                  :value="option"
-                />
-              </el-select>
+              />
             </el-form-item>
             <el-form-item label="类型">
               <el-select
@@ -55,20 +49,14 @@
               </el-select>
             </el-form-item>
             <el-form-item label="状态">
-              <el-select
+              <MetaSelect
                 class="query-w-140"
                 v-model="filters.status"
+                :options="statusOptions"
                 clearable
                 filterable
                 placeholder="请选择状态"
-              >
-                <el-option
-                  v-for="option in statusOptions"
-                  :key="option"
-                  :label="option"
-                  :value="option"
-                />
-              </el-select>
+              />
             </el-form-item>
             <el-form-item label="Trace">
               <el-input
@@ -172,6 +160,9 @@
   import ProTable from '@/components/table/ProTable.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
   import TenantSelect from '@/components/common/TenantSelect.vue'
+  import MetaSelect from '@/components/common/MetaSelect.vue'
+  import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
+  import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
   import type { ConsoleAlertEventResponse } from '@/types/console-api'
 
   const route = useRoute()
@@ -202,19 +193,14 @@
     endTime: '',
   })
 
-  const severityOptions = computed(() =>
-    Array.from(
-      new Set(allRows.value.map((row) => row.severity).filter((item): item is string => !!item)),
-    ),
-  )
+  // severity / alertStatus 走后端 enum 字典(完整候选);进页面就有数据,不依赖列表先加载
+  const { data: metaEnums } = useConsoleMetaEnumsQuery()
+  const severityOptions = computed(() => pickMetaEnumGroup(metaEnums.value, 'severity'))
+  const statusOptions = computed(() => pickMetaEnumGroup(metaEnums.value, 'alertStatus'))
+  // alertType 后端没枚举字典(各租户业务自定),保持从已加载数据 unique 派生
   const alertTypeOptions = computed(() =>
     Array.from(
       new Set(allRows.value.map((row) => row.alertType).filter((item): item is string => !!item)),
-    ),
-  )
-  const statusOptions = computed(() =>
-    Array.from(
-      new Set(allRows.value.map((row) => row.status).filter((item): item is string => !!item)),
     ),
   )
 
