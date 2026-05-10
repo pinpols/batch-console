@@ -57,7 +57,7 @@
             class="icon-button"
             aria-label="打开文档中心"
             tag="a"
-            href="/docs/"
+            :href="docsUrl"
             target="_blank"
             rel="noopener"
           >
@@ -153,6 +153,7 @@
                 <el-dropdown-item v-if="auth.role === 'ADMIN'" command="profile" :icon="Key">
                   权限自查
                 </el-dropdown-item>
+                <el-dropdown-item command="onboarding" :icon="Compass"> 重看引导 </el-dropdown-item>
                 <el-dropdown-item command="logout" :icon="SwitchButton" divided>
                   退出登录
                 </el-dropdown-item>
@@ -177,6 +178,7 @@
     Key,
     Link,
     Monitor,
+    Compass,
     Moon,
     OfficeBuilding,
     Reading,
@@ -190,6 +192,10 @@
   defineEmits<{
     (e: 'open-palette'): void
   }>()
+
+  // 文档站入口:dev 走独立 vitepress server(5174);prod 同域 /docs/(nginx alias)。
+  // dev 不走 SPA proxy,因为 vitepress 在非根 base 下客户端会拼出错的 module URL。
+  const docsUrl = import.meta.env.DEV ? 'http://localhost:5174/docs/' : '/docs/'
 
   const router = useRouter()
   const {
@@ -211,6 +217,13 @@
   async function onUserCommand(command: string) {
     if (command === 'profile') {
       void router.push('/system/users')
+      return
+    }
+    if (command === 'onboarding') {
+      // 清掉"已完成"标记 + 立即启动 tour
+      const { resetOnboarding, startOnboarding } = await import('@/composables/useOnboardingTour')
+      resetOnboarding()
+      startOnboarding()
       return
     }
     if (command === 'logout') {

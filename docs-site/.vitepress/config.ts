@@ -24,6 +24,15 @@ export default withMermaid({
   lang: 'zh-CN',
   cleanUrls: true,
 
+  // 后端文档根目录是 README.md(GitHub 习惯)而非 VitePress 默认的 index.md。
+  // rewrite 让 /docs/ 的入口直接命中 README.md,避免 root 路径 404。
+  // 同时各子目录 README.md 也映射到目录根,跟 GitHub 浏览体验一致。
+  rewrites: {
+    'README.md': 'index.md',
+    ':dir/README.md': ':dir/index.md',
+    ':parent/:dir/README.md': ':parent/:dir/index.md',
+  },
+
   // 后端文档体例不一,build 阶段死链先告警不阻断,P1 再逐条修
   ignoreDeadLinks: true,
 
@@ -41,12 +50,19 @@ export default withMermaid({
   // 不到本仓 node_modules 的 vue。显式 alias 避免 SSR build 时 vue/server-renderer
   // 解析失败。
   vite: {
+    // 跨仓 srcDir 时,Vite 的 root 默认会跑去 srcDir(file-batch-system/docs/),
+    // 那边没 node_modules,导致 optimizeDeps 找不到 vitepress 子依赖 → dev 白屏。
+    // 显式 root 锚定到 docs-site/.vitepress 同级,确保依赖解析正确。
+    root: fileURLToPath(new URL('..', import.meta.url)),
     resolve: {
+      // 跨仓 srcDir 下,Rollup 从 markdown 文件位置(file-batch-system/docs/...)
+      // 反向解析 vue / vue/server-renderer 找不到本仓 node_modules。
+      // 显式 alias 保 build 不挂(dev 走 root 已 OK)。
+      // alias 指 vue 包目录(含 package.json),让 import 'vue' / 'vue/server-renderer'
+      // / 'vue/jsx-runtime' 等 sub-path 都走 vue 自己的 exports map 解析。
+      // 别 alias 到具体 entry 文件(否则 sub-path 会拼成 <file>/server-renderer 报错)。
       alias: {
         vue: fileURLToPath(new URL('../../node_modules/vue', import.meta.url)),
-        'vue/server-renderer': fileURLToPath(
-          new URL('../../node_modules/vue/server-renderer/index.mjs', import.meta.url),
-        ),
       },
     },
   },

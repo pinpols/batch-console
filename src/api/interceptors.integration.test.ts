@@ -167,12 +167,81 @@ describe('401 分级处理:业务 401 不登出', () => {
     expect((window as { location: { href: string } }).location.href).toBe('/login')
   })
 
-  it('/api/console/ops/triggers 401 → 保留 token，不跳登录', async () => {
+  it('/api/console/ops/triggers 401 → 静默 refresh,refresh 也 401 → 跳 /login', async () => {
     ;(window as { location: { href: string } }).location.href = '/'
     const client = makeClient()
-    client.defaults.adapter = make401Adapter('/api/console/ops/triggers') as never
+    // 业务接口和 /auth/token 都 401:走"refresh 也失败 → 视为 session 真过期"分支
+    client.defaults.adapter = (async (cfg: { url?: string }) => {
+      const url = cfg.url ?? ''
+      if (url.includes('/api/console/auth/token') || url.includes('/api/console/ops/triggers')) {
+        throw Object.assign(new Error('Request failed with status code 401'), {
+          isAxiosError: true,
+          response: {
+            status: 401,
+            statusText: 'Unauthorized',
+            headers: {},
+            data: { code: 'UNAUTHORIZED', message: 'x', meta: {} },
+            config: cfg,
+          },
+          config: cfg,
+        })
+      }
+      throw new Error('Unexpected URL ' + url)
+    }) as never
     await expect(client.get('/api/console/ops/triggers')).rejects.toThrow()
-    expect(storage.get('token')).toBe('dev.test.token')
+    expect(storage.get('token')).toBeUndefined()
+    expect((window as { location: { href: string } }).location.href).toBe('/login')
+  })
+
+  it('/api/console/ops/triggers 401 → refresh 成功 → 用新 token retry 原请求成功', async () => {
+    ;(window as { location: { href: string } }).location.href = '/'
+    const client = makeClient()
+    let bizCallCount = 0
+    client.defaults.adapter = (async (cfg: { url?: string }) => {
+      const url = cfg.url ?? ''
+      if (url.includes('/api/console/auth/token')) {
+        // refresh 成功:返回新 accessToken
+        return {
+          status: 200,
+          statusText: 'OK',
+          headers: { 'content-type': 'application/json' },
+          data: { code: 'SUCCESS', data: { accessToken: 'new-token' }, message: 'ok', meta: {} },
+          config: cfg,
+        }
+      }
+      if (url.includes('/api/console/ops/triggers')) {
+        bizCallCount++
+        if (bizCallCount === 1) {
+          // 第一次 401 触发 refresh
+          throw Object.assign(new Error('Request failed with status code 401'), {
+            isAxiosError: true,
+            response: {
+              status: 401,
+              statusText: 'Unauthorized',
+              headers: {},
+              data: { code: 'UNAUTHORIZED', message: 'x', meta: {} },
+              config: cfg,
+            },
+            config: cfg,
+          })
+        }
+        // refresh 后 retry 成功
+        return {
+          status: 200,
+          statusText: 'OK',
+          headers: { 'content-type': 'application/json' },
+          data: { code: 'SUCCESS', data: { items: [] }, message: 'ok', meta: {} },
+          config: cfg,
+        }
+      }
+      throw new Error('Unexpected URL ' + url)
+    }) as never
+    const resp = await client.get('/api/console/ops/triggers')
+    // refresh 后写入新 token
+    expect(storage.get('token')).toBe('new-token')
+    expect(bizCallCount).toBe(2)
+    expect(resp.data).toEqual({ items: [] })
+    // 没跳登录
     expect((window as { location: { href: string } }).location.href).toBe('/')
   })
 
