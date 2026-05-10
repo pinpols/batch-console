@@ -2,13 +2,15 @@
   <PageContainer>
     <PageHeader>
       <template #actions>
-        <el-button type="primary" :loading="loading" @click="loadAll">刷新</el-button>
-        <el-button type="warning" :loading="pauseLoading" @click="confirmPauseAll"
-          >全局暂停</el-button
-        >
-        <el-button type="success" :loading="resumeLoading" @click="confirmResumeAll"
-          >全局恢复</el-button
-        >
+        <el-button type="primary" :loading="loading" @click="loadAll">
+          {{ t('schedulerSnapshot.headerRefresh') }}
+        </el-button>
+        <el-button type="warning" :loading="pauseLoading" @click="confirmPauseAll">
+          {{ t('schedulerSnapshot.headerPauseAll') }}
+        </el-button>
+        <el-button type="success" :loading="resumeLoading" @click="confirmResumeAll">
+          {{ t('schedulerSnapshot.headerResumeAll') }}
+        </el-button>
       </template>
     </PageHeader>
 
@@ -16,7 +18,7 @@
       <template #header>
         <div class="card-header">
           <div class="card-title">
-            当前快照
+            {{ t('schedulerSnapshot.cardSnapshotTitle') }}
             <el-tag size="small" effect="plain" type="info">{{ snap.generatedAt }}</el-tag>
           </div>
           <div class="card-actions">
@@ -25,7 +27,7 @@
         </div>
       </template>
 
-      <div class="kpis" role="tablist" aria-label="快照分类">
+      <div class="kpis" role="tablist" :aria-label="t('schedulerSnapshot.kpiAriaLabel')">
         <SnapshotKpiTab
           v-for="t in kpiTabs"
           :key="t.key"
@@ -45,7 +47,9 @@
             <span class="dot" :class="activeDotClass" />
             {{ activePanelTitle }}
           </div>
-          <el-tag size="small" effect="plain" type="info">{{ activePanelCount }} 条</el-tag>
+          <el-tag size="small" effect="plain" type="info">
+            {{ activePanelCount }}{{ t('schedulerSnapshot.countSuffix') }}
+          </el-tag>
         </div>
       </template>
 
@@ -56,10 +60,10 @@
           stripe
           border
           size="small"
-          empty-text="暂无数据"
+          :empty-text="t('common.noData')"
           class="console-table"
         >
-          <el-table-column label="策略" min-width="180">
+          <el-table-column :label="t('schedulerSnapshot.colPolicy')" min-width="180">
             <template #default="{ row }">
               <div class="cell-stack">
                 <div class="cell-main">
@@ -77,11 +81,31 @@
               </div>
             </template>
           </el-table-column>
-          <el-table-column prop="fairShareWeight" label="权重" width="90" />
-          <el-table-column prop="activeJobs" label="活跃 Jobs" width="110" />
-          <el-table-column prop="activePartitions" label="活跃分片" width="110" />
-          <el-table-column prop="effectiveTenantJobCap" label="租户上限(Job)" width="140" />
-          <el-table-column prop="effectiveTenantPartitionCap" label="租户上限(分片)" width="150" />
+          <el-table-column
+            prop="fairShareWeight"
+            :label="t('schedulerSnapshot.colWeight')"
+            width="90"
+          />
+          <el-table-column
+            prop="activeJobs"
+            :label="t('schedulerSnapshot.colActiveJobs')"
+            width="110"
+          />
+          <el-table-column
+            prop="activePartitions"
+            :label="t('schedulerSnapshot.colActivePartitions')"
+            width="110"
+          />
+          <el-table-column
+            prop="effectiveTenantJobCap"
+            :label="t('schedulerSnapshot.colTenantJobCap')"
+            width="140"
+          />
+          <el-table-column
+            prop="effectiveTenantPartitionCap"
+            :label="t('schedulerSnapshot.colTenantPartitionCap')"
+            width="150"
+          />
           <el-table-column
             prop="maxRunningJobsPerTenant"
             label="maxRunningJobsPerTenant"
@@ -96,11 +120,17 @@
             width="180"
           />
           <el-table-column prop="groupSharedMaxRunningJobs" label="groupSharedMax" width="130" />
-          <DatetimeColumn prop="quotaResetWindowExpiresAt" label="quota 窗口到期" width="170" />
-          <el-table-column label="操作" width="110" fixed="right">
+          <DatetimeColumn
+            prop="quotaResetWindowExpiresAt"
+            :label="t('schedulerSnapshot.colQuotaWindow')"
+            width="170"
+          />
+          <el-table-column :label="t('schedulerSnapshot.colActions')" width="110" fixed="right">
             <template #default="{ row }">
               <div class="table-actions">
-                <CopyableText :text="String(row.policyCode ?? '')">复制 Code</CopyableText>
+                <CopyableText :text="String(row.policyCode ?? '')">
+                  {{ t('schedulerSnapshot.actionCopyCode') }}
+                </CopyableText>
               </div>
             </template>
           </el-table-column>
@@ -121,10 +151,10 @@
           stripe
           border
           size="small"
-          empty-text="暂无数据"
+          :empty-text="t('common.noData')"
           class="console-table"
         >
-          <el-table-column label="队列" min-width="180">
+          <el-table-column :label="t('schedulerSnapshot.colQueue')" min-width="180">
             <template #default="{ row }">
               <div class="cell-stack">
                 <div class="cell-main">
@@ -142,8 +172,16 @@
               </div>
             </template>
           </el-table-column>
-          <el-table-column prop="fairShareWeight" label="权重" width="90" />
-          <el-table-column prop="activeJobs" label="活跃 Jobs" width="110" />
+          <el-table-column
+            prop="fairShareWeight"
+            :label="t('schedulerSnapshot.colWeight')"
+            width="90"
+          />
+          <el-table-column
+            prop="activeJobs"
+            :label="t('schedulerSnapshot.colActiveJobs')"
+            width="110"
+          />
           <el-table-column prop="maxRunningJobs" label="maxRunningJobs" width="150" />
           <el-table-column
             prop="effectiveMaxRunningJobs"
@@ -158,11 +196,17 @@
             width="180"
           />
           <el-table-column prop="groupSharedMaxRunningJobs" label="groupSharedMax" width="130" />
-          <DatetimeColumn prop="quotaResetWindowExpiresAt" label="quota 窗口到期" width="170" />
-          <el-table-column label="操作" width="110" fixed="right">
+          <DatetimeColumn
+            prop="quotaResetWindowExpiresAt"
+            :label="t('schedulerSnapshot.colQuotaWindow')"
+            width="170"
+          />
+          <el-table-column :label="t('schedulerSnapshot.colActions')" width="110" fixed="right">
             <template #default="{ row }">
               <div class="table-actions">
-                <CopyableText :text="String(row.queueCode ?? '')">复制 Code</CopyableText>
+                <CopyableText :text="String(row.queueCode ?? '')">
+                  {{ t('schedulerSnapshot.actionCopyCode') }}
+                </CopyableText>
               </div>
             </template>
           </el-table-column>
@@ -183,10 +227,10 @@
           stripe
           border
           size="small"
-          empty-text="暂无数据"
+          :empty-text="t('common.noData')"
           class="console-table"
         >
-          <el-table-column label="Worker" min-width="220">
+          <el-table-column :label="t('schedulerSnapshot.colWorker')" min-width="220">
             <template #default="{ row }">
               <div class="cell-stack">
                 <div class="cell-main">
@@ -200,7 +244,7 @@
               </div>
             </template>
           </el-table-column>
-          <el-table-column label="当前负载" width="240">
+          <el-table-column :label="t('schedulerSnapshot.colCurrentLoad')" width="240">
             <template #default="{ row }">
               <div class="load-cell">
                 <el-progress
@@ -213,10 +257,12 @@
               </div>
             </template>
           </el-table-column>
-          <el-table-column label="操作" width="110" fixed="right">
+          <el-table-column :label="t('schedulerSnapshot.colActions')" width="110" fixed="right">
             <template #default="{ row }">
               <div class="table-actions">
-                <CopyableText :text="String(row.workerCode ?? '')">复制 Code</CopyableText>
+                <CopyableText :text="String(row.workerCode ?? '')">
+                  {{ t('schedulerSnapshot.actionCopyCode') }}
+                </CopyableText>
               </div>
             </template>
           </el-table-column>
@@ -237,11 +283,11 @@
           stripe
           border
           size="small"
-          empty-text="暂无数据"
+          :empty-text="t('common.noData')"
           class="console-table"
         >
-          <DatetimeColumn prop="snapshotAt" label="时间" width="170" />
-          <el-table-column label="策略 / 组" min-width="220">
+          <DatetimeColumn prop="snapshotAt" :label="t('schedulerSnapshot.colTime')" width="170" />
+          <el-table-column :label="t('schedulerSnapshot.colPolicyGroup')" min-width="220">
             <template #default="{ row }">
               <div class="cell-stack">
                 <div class="cell-main">
@@ -297,7 +343,10 @@
 
 <script setup lang="ts">
   import { computed, ref } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
+
+  const { t } = useI18n({ useScope: 'global' })
   import { fmtDatetime } from '@/utils/datetime'
   import {
     getSchedulerSnapshot,
@@ -342,23 +391,28 @@
     () => [
       {
         key: 'policies',
-        label: '策略(policies)',
+        label: t('schedulerSnapshot.kpiPolicies'),
         value: snap.value?.policies?.length ?? 0,
         variant: 'primary',
       },
       {
         key: 'queues',
-        label: '队列(queues)',
+        label: t('schedulerSnapshot.kpiQueues'),
         value: snap.value?.queues?.length ?? 0,
         variant: 'success',
       },
       {
         key: 'workers',
-        label: 'Workers',
+        label: t('schedulerSnapshot.kpiWorkers'),
         value: snap.value?.workers?.length ?? 0,
         variant: 'warning',
       },
-      { key: 'history', label: '历史点数', value: history.value.length, variant: 'info' },
+      {
+        key: 'history',
+        label: t('schedulerSnapshot.kpiHistory'),
+        value: history.value.length,
+        variant: 'info',
+      },
     ],
   )
 
@@ -404,10 +458,10 @@
 
   const activePanelTitle = computed(() => {
     const m: Record<PanelKey, string> = {
-      policies: '策略（policies）',
-      queues: '队列（queues）',
-      workers: 'Workers（采样）',
-      history: '历史',
+      policies: t('schedulerSnapshot.panelPolicies'),
+      queues: t('schedulerSnapshot.panelQueues'),
+      workers: t('schedulerSnapshot.panelWorkers'),
+      history: t('schedulerSnapshot.panelHistory'),
     }
     return m[activePanel.value]
   })
@@ -473,10 +527,18 @@
 
   async function confirmPauseAll() {
     try {
-      await ElMessageBox.confirm('暂停全部调度器？', '全局暂停', { type: 'warning' })
+      await ElMessageBox.confirm(
+        t('schedulerSnapshot.pauseConfirmText'),
+        t('schedulerSnapshot.pauseConfirmTitle'),
+        {
+          type: 'warning',
+          confirmButtonText: t('common.confirm'),
+          cancelButtonText: t('common.cancel'),
+        },
+      )
       pauseLoading.value = true
       await pauseAllSchedulers()
-      ElMessage.success('已暂停全部调度')
+      ElMessage.success(t('schedulerSnapshot.pauseSuccess'))
       await loadAll()
     } catch {
       /* cancel */
@@ -487,10 +549,18 @@
 
   async function confirmResumeAll() {
     try {
-      await ElMessageBox.confirm('恢复全部调度器？', '全局恢复', { type: 'info' })
+      await ElMessageBox.confirm(
+        t('schedulerSnapshot.resumeConfirmText'),
+        t('schedulerSnapshot.resumeConfirmTitle'),
+        {
+          type: 'info',
+          confirmButtonText: t('common.confirm'),
+          cancelButtonText: t('common.cancel'),
+        },
+      )
       resumeLoading.value = true
       await resumeAllSchedulers()
-      ElMessage.success('已恢复全部调度')
+      ElMessage.success(t('schedulerSnapshot.resumeSuccess'))
       await loadAll()
     } catch {
       /* cancel */
