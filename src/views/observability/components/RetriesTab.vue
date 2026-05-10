@@ -39,31 +39,38 @@
         </el-select>
       </el-form-item>
     </ListPageQueryBar>
-    <el-table
-      v-loading="loadingRetry"
-      :data="pagedRetries.records"
-      stripe
-      border
-      empty-text="暂无数据"
-      size="small"
-      class="console-table"
+    <DataState
+      :loading="loadingRetry"
+      :error="loadRetryError"
+      :has-data="pagedRetries.records.length > 0"
+      :on-retry="loadRetries"
     >
-      <el-table-column prop="id" label="ID" width="80" />
-      <el-table-column prop="relatedType" label="关联类型" width="120" />
-      <el-table-column prop="relatedId" label="关联 ID" width="100" />
-      <el-table-column prop="retryStatus" label="状态" width="120" />
-      <DatetimeColumn prop="nextRetryAt" label="下次重试" width="160" />
-      <el-table-column prop="retryCount" label="重试次数" width="90" />
-      <el-table-column prop="maxRetryCount" label="最大重试" width="90" />
-      <DatetimeColumn prop="createdAt" label="创建时间" width="160" />
-      <el-table-column label="操作" width="120" fixed="right">
-        <template #default="{ row }">
-          <div class="table-actions">
-            <el-button size="small" plain type="primary" @click="openDetail(row)">详情</el-button>
-          </div>
-        </template>
-      </el-table-column>
-    </el-table>
+      <el-table
+        v-loading="loadingRetry"
+        :data="pagedRetries.records"
+        stripe
+        border
+        empty-text="暂无数据"
+        size="small"
+        class="console-table"
+      >
+        <el-table-column prop="id" label="ID" width="80" />
+        <el-table-column prop="relatedType" label="关联类型" width="120" />
+        <el-table-column prop="relatedId" label="关联 ID" width="100" />
+        <el-table-column prop="retryStatus" label="状态" width="120" />
+        <DatetimeColumn prop="nextRetryAt" label="下次重试" width="160" />
+        <el-table-column prop="retryCount" label="重试次数" width="90" />
+        <el-table-column prop="maxRetryCount" label="最大重试" width="90" />
+        <DatetimeColumn prop="createdAt" label="创建时间" width="160" />
+        <el-table-column label="操作" width="120" fixed="right">
+          <template #default="{ row }">
+            <div class="table-actions">
+              <el-button size="small" plain type="primary" @click="openDetail(row)">详情</el-button>
+            </div>
+          </template>
+        </el-table-column>
+      </el-table>
+    </DataState>
     <TablePagerBar
       :page="retryPage"
       :page-size="retryPageSize"
@@ -91,9 +98,11 @@
   import TablePagerBar from '@/components/table/TablePagerBar.vue'
   import DetailDrawer from '@/components/common/DetailDrawer.vue'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
+  import { useListLoadState } from '@/composables/useListLoadState'
+  import DataState from '@/components/common/DataState.vue'
 
   const tenant = useTenantStore()
-  const loadingRetry = ref(false)
+  const { loading: loadingRetry, error: loadRetryError, run: runLoadRetry } = useListLoadState()
   const { filterBusy, runSearch, runReset, runRefresh } = useListFilterFeedback(loadingRetry)
   const retryRows = ref<Record<string, unknown>[]>([])
   const retryPage = ref(1)
@@ -155,14 +164,11 @@
   }
 
   async function loadRetries() {
-    loadingRetry.value = true
-    try {
+    await runLoadRetry(async () => {
       retryRows.value = (await queryRetries(tenant.tenantId)) as Record<string, unknown>[]
-    } catch {
+    }).catch(() => {
       retryRows.value = []
-    } finally {
-      loadingRetry.value = false
-    }
+    })
   }
 
   function applyFilter() {

@@ -58,66 +58,73 @@
         </el-form-item>
       </ListPageQueryBar>
 
-      <el-table
-        v-loading="loading"
-        :data="page.items"
-        stripe
-        border
-        empty-text="暂无数据"
-        class="console-table"
+      <DataState
+        :loading="loading"
+        :error="loadError"
+        :has-data="page.items.length > 0"
+        :on-retry="load"
       >
-        <el-table-column prop="tenantId" label="tenantId" min-width="180" />
-        <el-table-column prop="tenantName" label="名称" min-width="160" show-overflow-tooltip />
-        <el-table-column label="状态" width="110">
-          <template #default="{ row }">
-            <StatusTag :value="String(row.status ?? '')" category="tenant" />
-          </template>
-        </el-table-column>
-        <el-table-column prop="description" label="描述" min-width="220" show-overflow-tooltip />
-        <el-table-column prop="createdBy" label="创建人" width="140" show-overflow-tooltip />
-        <DatetimeColumn prop="createdAt" label="创建时间" width="160" />
-        <el-table-column label="操作" width="400" fixed="right">
-          <template #default="{ row }">
-            <div class="table-actions">
-              <el-button
-                v-if="canManageTenants"
-                size="small"
-                plain
-                type="primary"
-                @click="openEdit(row)"
-                >编辑</el-button
-              >
-              <el-button
-                v-if="canManageTenants && row.status === 'ACTIVE'"
-                size="small"
-                plain
-                type="warning"
-                @click="confirmSuspend(row)"
-                >暂停</el-button
-              >
-              <el-button
-                v-else-if="canManageTenants"
-                size="small"
-                plain
-                type="success"
-                @click="confirmActivate(row)"
-                >恢复</el-button
-              >
-              <el-button v-if="canManageTenants" size="small" plain @click="openInitConfig(row)"
-                >初始化</el-button
-              >
-              <el-button
-                size="small"
-                plain
-                :type="row.tenantId === tenant.tenantId ? 'info' : 'primary'"
-                :disabled="row.tenantId === tenant.tenantId"
-                @click="switchToTenant(row)"
-                >{{ row.tenantId === tenant.tenantId ? '当前' : '设为当前' }}</el-button
-              >
-            </div>
-          </template>
-        </el-table-column>
-      </el-table>
+        <el-table
+          v-loading="loading"
+          :data="page.items"
+          stripe
+          border
+          empty-text="暂无数据"
+          class="console-table"
+        >
+          <el-table-column prop="tenantId" label="tenantId" min-width="180" />
+          <el-table-column prop="tenantName" label="名称" min-width="160" show-overflow-tooltip />
+          <el-table-column label="状态" width="110">
+            <template #default="{ row }">
+              <StatusTag :value="String(row.status ?? '')" category="tenant" />
+            </template>
+          </el-table-column>
+          <el-table-column prop="description" label="描述" min-width="220" show-overflow-tooltip />
+          <el-table-column prop="createdBy" label="创建人" width="140" show-overflow-tooltip />
+          <DatetimeColumn prop="createdAt" label="创建时间" width="160" />
+          <el-table-column label="操作" width="400" fixed="right">
+            <template #default="{ row }">
+              <div class="table-actions">
+                <el-button
+                  v-if="canManageTenants"
+                  size="small"
+                  plain
+                  type="primary"
+                  @click="openEdit(row)"
+                  >编辑</el-button
+                >
+                <el-button
+                  v-if="canManageTenants && row.status === 'ACTIVE'"
+                  size="small"
+                  plain
+                  type="warning"
+                  @click="confirmSuspend(row)"
+                  >暂停</el-button
+                >
+                <el-button
+                  v-else-if="canManageTenants"
+                  size="small"
+                  plain
+                  type="success"
+                  @click="confirmActivate(row)"
+                  >恢复</el-button
+                >
+                <el-button v-if="canManageTenants" size="small" plain @click="openInitConfig(row)"
+                  >初始化</el-button
+                >
+                <el-button
+                  size="small"
+                  plain
+                  :type="row.tenantId === tenant.tenantId ? 'info' : 'primary'"
+                  :disabled="row.tenantId === tenant.tenantId"
+                  @click="switchToTenant(row)"
+                  >{{ row.tenantId === tenant.tenantId ? '当前' : '设为当前' }}</el-button
+                >
+              </div>
+            </template>
+          </el-table-column>
+        </el-table>
+      </DataState>
 
       <TablePagerBar
         :page="queryApplied.pageNo"
@@ -167,6 +174,8 @@
   import { useAuthStore } from '@/stores/auth'
   import { useTenantStore } from '@/stores/tenant'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
+  import { useListLoadState } from '@/composables/useListLoadState'
+  import DataState from '@/components/common/DataState.vue'
   import { canManageTenants as hasTenantAdminAccess } from '@/utils/tenantAccess'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
@@ -185,7 +194,7 @@
 
   const auth = useAuthStore()
   const tenant = useTenantStore()
-  const loading = ref(false)
+  const { loading, error: loadError, run: runLoad } = useListLoadState()
   const listRemote = ref(true)
   const { filterBusy, runSearch, runReset, runRefresh } = useListFilterFeedback(listRemote)
 
@@ -220,8 +229,7 @@
   const canManageTenants = computed(() => hasTenantAdminAccess(auth.userInfo?.permissions ?? []))
 
   async function load() {
-    loading.value = true
-    try {
+    await runLoad(async () => {
       const q: TenantListQuery = {
         pageNo: queryApplied.pageNo,
         pageSize: queryApplied.pageSize,
@@ -230,16 +238,14 @@
       if (queryApplied.status) q.status = queryApplied.status
       const resp = await listTenants(q)
       page.value = resp
-    } catch {
+    }).catch(() => {
       page.value = {
         total: 0,
         pageNo: queryApplied.pageNo,
         pageSize: queryApplied.pageSize,
         items: [],
       }
-    } finally {
-      loading.value = false
-    }
+    })
   }
 
   function onSearch() {

@@ -39,38 +39,45 @@
         />
       </el-form-item>
     </ListPageQueryBar>
-    <el-table
-      v-loading="loadingExec"
-      :data="pagedExec.records"
-      stripe
-      border
-      empty-text="暂无数据"
-      size="small"
-      class="console-table"
+    <DataState
+      :loading="loadingExec"
+      :error="loadExecError"
+      :has-data="pagedExec.records.length > 0"
+      :on-retry="loadExecutionLogs"
     >
-      <el-table-column prop="id" label="ID" width="80" />
-      <el-table-column prop="operationType" label="操作类型" width="140" />
-      <el-table-column prop="operationResult" label="结果" width="100" />
-      <el-table-column prop="operatorId" label="操作人" width="140" show-overflow-tooltip />
-      <el-table-column prop="detailSummary" label="摘要" min-width="300" show-overflow-tooltip />
-      <el-table-column prop="traceId" label="Trace ID" width="180" show-overflow-tooltip />
-      <DatetimeColumn prop="createdAt" label="时间" width="160" />
-      <el-table-column label="操作" width="160" fixed="right">
-        <template #default="{ row }">
-          <div class="table-actions">
-            <el-button size="small" plain type="primary" @click="openDetail(row)">详情</el-button>
-            <el-button
-              v-if="row.traceId"
-              size="small"
-              plain
-              type="info"
-              @click="goTrace(String(row.traceId))"
-              >Trace</el-button
-            >
-          </div>
-        </template>
-      </el-table-column>
-    </el-table>
+      <el-table
+        v-loading="loadingExec"
+        :data="pagedExec.records"
+        stripe
+        border
+        empty-text="暂无数据"
+        size="small"
+        class="console-table"
+      >
+        <el-table-column prop="id" label="ID" width="80" />
+        <el-table-column prop="operationType" label="操作类型" width="140" />
+        <el-table-column prop="operationResult" label="结果" width="100" />
+        <el-table-column prop="operatorId" label="操作人" width="140" show-overflow-tooltip />
+        <el-table-column prop="detailSummary" label="摘要" min-width="300" show-overflow-tooltip />
+        <el-table-column prop="traceId" label="Trace ID" width="180" show-overflow-tooltip />
+        <DatetimeColumn prop="createdAt" label="时间" width="160" />
+        <el-table-column label="操作" width="160" fixed="right">
+          <template #default="{ row }">
+            <div class="table-actions">
+              <el-button size="small" plain type="primary" @click="openDetail(row)">详情</el-button>
+              <el-button
+                v-if="row.traceId"
+                size="small"
+                plain
+                type="info"
+                @click="goTrace(String(row.traceId))"
+                >Trace</el-button
+              >
+            </div>
+          </template>
+        </el-table-column>
+      </el-table>
+    </DataState>
     <TablePagerBar
       :page="execPage"
       :page-size="execPageSize"
@@ -99,12 +106,14 @@
   import TablePagerBar from '@/components/table/TablePagerBar.vue'
   import DetailDrawer from '@/components/common/DetailDrawer.vue'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
+  import { useListLoadState } from '@/composables/useListLoadState'
+  import DataState from '@/components/common/DataState.vue'
 
   const tenant = useTenantStore()
   const router = useRouter()
   const route = useRoute()
 
-  const loadingExec = ref(false)
+  const { loading: loadingExec, error: loadExecError, run: runLoadExec } = useListLoadState()
   const { filterBusy, runSearch, runReset, runRefresh } = useListFilterFeedback(loadingExec)
   const execRows = ref<Record<string, unknown>[]>([])
   const execPage = ref(1)
@@ -172,14 +181,11 @@
   }
 
   async function loadExecutionLogs() {
-    loadingExec.value = true
-    try {
+    await runLoadExec(async () => {
       execRows.value = (await queryExecutionLogs(tenant.tenantId)) as Record<string, unknown>[]
-    } catch {
+    }).catch(() => {
       execRows.value = []
-    } finally {
-      loadingExec.value = false
-    }
+    })
   }
 
   function applyFilter() {
