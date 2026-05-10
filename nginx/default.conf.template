@@ -13,6 +13,12 @@ server {
     root /usr/share/nginx/html;
     index index.html;
 
+    # 关键:return 30x 时输出相对 Location,避免 nginx 用 server_name(此处 "_") +
+    # 监听端口(80)拼绝对 URL → 浏览器看到 http://localhost/... 把宿主映射端口(如 15173)丢了。
+    # 让浏览器自己用当前 origin 解析,容器映射到任意端口都正常。
+    absolute_redirect off;
+    port_in_redirect off;
+
     # ────── 健康检查 ──────
     location = /healthz {
         access_log off;
@@ -54,14 +60,10 @@ server {
         return 301 /docs/;
     }
 
-    # /docs/ 根路径在 vitepress + cleanUrls + srcDir 缺 index.md 时会落 404 page,
-    # 直接 302 跳到 /docs/README(srcDir 的 README.md 在 cleanUrls 后就是这路径)
-    location = /docs/ {
-        auth_request /__auth_check;
-        error_page 401 = @docs_unauthorized;
-        return 302 /docs/README;
-    }
-
+    # /docs/ 根路径由下面的 prefix `location /docs/` 走 try_files 直接命中
+    # /var/www/batch-docs/index.html。vitepress 的 rewrites `'README.md': 'index.md'`
+    # 已把 srcDir 的 README.md 内容打到 dist/index.html,无需再 302 跳 /docs/README;
+    # 旧写法会让浏览器地址栏变成 /docs/README,且不同 origin/port 还可能丢端口。
     location /docs/ {
         auth_request /__auth_check;
         # 鉴权失败 → 401(SPA 全局拦截器读到 401 跳登录)
