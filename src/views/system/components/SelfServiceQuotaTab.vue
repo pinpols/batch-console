@@ -2,29 +2,36 @@
   <div>
     <div class="data-panel">
       <div class="section-toolbar">
-        <h3 class="section-title u-mb-0">当前配额</h3>
+        <h3 class="section-title u-mb-0">{{ t('selfServiceQuotaTab.sectionQuota') }}</h3>
         <span class="u-flex-1" />
-        <el-button :loading="loadingQuota" @click="loadQuota">刷新</el-button>
+        <el-button :loading="loadingQuota" @click="loadQuota">
+          {{ t('selfServiceQuotaTab.btnRefresh') }}
+        </el-button>
       </div>
       <JsonPreview v-if="quota" :data="quota" />
-      <el-empty v-else description="暂无配额数据" />
+      <el-empty v-else :description="t('selfServiceQuotaTab.emptyQuota')" />
     </div>
 
     <div class="data-panel">
       <div class="section-toolbar">
-        <h3 class="section-title u-mb-0">当前用量</h3>
+        <h3 class="section-title u-mb-0">{{ t('selfServiceQuotaTab.sectionUsage') }}</h3>
         <span class="u-flex-1" />
-        <el-button :loading="loadingUsage" @click="loadUsage">刷新</el-button>
+        <el-button :loading="loadingUsage" @click="loadUsage">
+          {{ t('selfServiceQuotaTab.btnRefresh') }}
+        </el-button>
       </div>
       <JsonPreview v-if="usage" :data="usage" />
-      <el-empty v-else description="暂无用量数据" />
+      <el-empty v-else :description="t('selfServiceQuotaTab.emptyUsage')" />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
   import { ref } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import { getTenantQuota, getTenantUsage } from '@/api/tenantSelfService'
+
+  const { t } = useI18n({ useScope: 'global' })
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
   import JsonPreview from '@/components/common/JsonPreview.vue'

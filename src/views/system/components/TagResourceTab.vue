@@ -16,23 +16,23 @@
     >
       <template #prepend>
         <el-button type="primary" :icon="Plus" class="pretty-add-button" @click="openNewDialog">
-          新增标签
+          {{ t('tagResourceTab.btnAddTag') }}
         </el-button>
       </template>
-      <el-form-item label="资源类型">
+      <el-form-item :label="t('tagResourceTab.resourceTypeLabel')">
         <MetaSelect
           v-model="queryForm.resourceType"
           clearable
-          placeholder="请选择"
+          :placeholder="t('tagResourceTab.resourceTypePlaceholder')"
           class="tag-query__type"
           :options="resourceTypeOptions"
         />
       </el-form-item>
-      <el-form-item label="资源编码">
+      <el-form-item :label="t('tagResourceTab.resourceCodeLabel')">
         <el-input
           v-model="queryForm.resourceCode"
           clearable
-          placeholder="必填"
+          :placeholder="t('tagResourceTab.resourceCodePlaceholder')"
           class="tag-query__code"
           @keyup.enter="loadTags"
         />
@@ -51,16 +51,25 @@
         stripe
         border
         size="small"
-        empty-text="暂无数据"
+        :empty-text="t('common.noData')"
         class="console-table"
       >
-        <el-table-column prop="tagKey" label="标签键" min-width="220" show-overflow-tooltip />
-        <el-table-column label="标签值" min-width="260">
+        <el-table-column
+          prop="tagKey"
+          :label="t('tagResourceTab.colTagKey')"
+          min-width="220"
+          show-overflow-tooltip
+        />
+        <el-table-column :label="t('tagResourceTab.colTagValue')" min-width="260">
           <template #default="{ row }">
-            <el-input v-model="editValueByKey[String(row.tagKey)]" clearable placeholder="可选" />
+            <el-input
+              v-model="editValueByKey[String(row.tagKey)]"
+              clearable
+              :placeholder="t('tagResourceTab.valuePlaceholder')"
+            />
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="170" fixed="right">
+        <el-table-column :label="t('tagResourceTab.colActions')" width="170" fixed="right">
           <template #default="{ row }">
             <div class="table-actions">
               <el-button
@@ -70,7 +79,7 @@
                 :loading="savingKey === String(row.tagKey)"
                 @click="saveRow(row)"
               >
-                保存
+                {{ t('tagResourceTab.btnSave') }}
               </el-button>
               <el-button
                 size="small"
@@ -79,7 +88,7 @@
                 :loading="deletingKey === String(row.tagKey)"
                 @click="confirmDeleteTag(row)"
               >
-                删除
+                {{ t('tagResourceTab.btnDelete') }}
               </el-button>
             </div>
           </template>
@@ -87,19 +96,26 @@
       </el-table>
     </DataState>
 
-    <el-dialog v-model="newDialogVisible" title="新增标签" width="520px">
+    <el-dialog v-model="newDialogVisible" :title="t('tagResourceTab.dialogTitle')" width="520px">
       <el-form label-width="84px" class="new-dialog-form">
-        <el-form-item label="标签键" required>
+        <el-form-item :label="t('tagResourceTab.fieldTagKey')" required>
           <el-input v-model="newTag.tagKey" placeholder="tagKey" />
         </el-form-item>
-        <el-form-item label="标签值">
-          <el-input v-model="newTag.tagValue" placeholder="tagValue（可选）" />
+        <el-form-item :label="t('tagResourceTab.fieldTagValue')">
+          <el-input
+            v-model="newTag.tagValue"
+            :placeholder="t('tagResourceTab.tagValueOptionalPlaceholder')"
+          />
         </el-form-item>
       </el-form>
       <template #footer>
         <div class="dialog-footer">
-          <el-button @click="newDialogVisible = false">取消</el-button>
-          <el-button type="primary" :loading="savingNew" @click="saveNewTag">保存</el-button>
+          <el-button @click="newDialogVisible = false">
+            {{ t('tagResourceTab.btnCancel') }}
+          </el-button>
+          <el-button type="primary" :loading="savingNew" @click="saveNewTag">
+            {{ t('tagResourceTab.btnSave') }}
+          </el-button>
         </div>
       </template>
     </el-dialog>
@@ -108,7 +124,10 @@
 
 <script setup lang="ts">
   import { ref, reactive, computed } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
+
+  const { t } = useI18n({ useScope: 'global' })
   import { confirmDanger } from '@/composables/useDangerConfirm'
   import { Plus } from '@element-plus/icons-vue'
   import { listResourceTags, upsertResourceTag, deleteResourceTag } from '@/api/tags'
@@ -143,7 +162,7 @@
 
   async function loadTags() {
     if (!queryForm.resourceType || !queryForm.resourceCode.trim()) {
-      ElMessage.warning('请输入资源类型和编码')
+      ElMessage.warning(t('tagResourceTab.needResourceTypeCode'))
       return
     }
     await runLoadTags(async () => {
@@ -165,11 +184,11 @@
 
   async function upsertTag(tagKey: string, tagValue: string) {
     if (!queryForm.resourceType || !queryForm.resourceCode.trim()) {
-      ElMessage.warning('请先在上方选择资源类型和编码')
+      ElMessage.warning(t('tagResourceTab.selectAbove'))
       return
     }
     if (!tagKey.trim()) {
-      ElMessage.warning('Tag Key 不能为空')
+      ElMessage.warning(t('tagResourceTab.tagKeyRequired'))
       return
     }
     try {
@@ -179,10 +198,10 @@
         tagKey,
         ...(tagValue ? { tagValue } : {}),
       })
-      ElMessage.success('已保存')
+      ElMessage.success(t('tagResourceTab.savedToast'))
       await loadTags()
     } catch {
-      ElMessage.error('保存失败')
+      ElMessage.error(t('tagResourceTab.saveFailed'))
     }
   }
 
@@ -198,7 +217,7 @@
 
   async function saveNewTag() {
     if (!newTag.tagKey.trim()) {
-      ElMessage.warning('Tag Key 不能为空')
+      ElMessage.warning(t('tagResourceTab.tagKeyRequired'))
       return
     }
     savingNew.value = true
@@ -222,14 +241,12 @@
     deletingKey.value = String(row.tagKey ?? '')
     try {
       await confirmDanger({
-        verb: '删除',
-        target: `标签「${row.tagKey}」`,
-        consequence:
-          '该资源 (' +
-          queryForm.resourceType +
-          ' / ' +
-          queryForm.resourceCode +
-          ') 上的此标签立即移除,关联策略可能受影响。',
+        verb: t('tagResourceTab.deleteVerb'),
+        target: t('tagResourceTab.deleteTarget', { key: row.tagKey }),
+        consequence: t('tagResourceTab.deleteConsequence', {
+          type: queryForm.resourceType,
+          code: queryForm.resourceCode,
+        }),
         irreversible: false,
       })
       await deleteResourceTag(
@@ -238,7 +255,7 @@
         queryForm.resourceCode,
         String(row.tagKey),
       )
-      ElMessage.success('已删除')
+      ElMessage.success(t('tagResourceTab.deletedToast'))
       await loadTags()
     } catch {
       /* cancel */

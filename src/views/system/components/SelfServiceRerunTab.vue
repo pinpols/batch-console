@@ -7,13 +7,13 @@
       label-width="100px"
       class="form-section"
     >
-      <el-form-item label="Job Code" prop="jobCode">
+      <el-form-item :label="t('selfServiceCommon.jobCodeLabel')" prop="jobCode">
         <el-select
           v-model="rerunForm.jobCode"
           filterable
           remote
           reserve-keyword
-          placeholder="请输入关键字搜索"
+          :placeholder="t('selfServiceCommon.jobCodePlaceholder')"
           :remote-method="queryJobCodes"
           :loading="jobCodeLoading"
           @focus="loadDefaultJobCodes"
@@ -22,30 +22,39 @@
           <el-option v-for="opt in jobCodeOptions" :key="opt" :label="opt" :value="opt" />
         </el-select>
       </el-form-item>
-      <el-form-item label="业务日" prop="bizDate">
+      <el-form-item :label="t('selfServiceCommon.bizDateLabel')" prop="bizDate">
         <el-date-picker
           v-model="rerunForm.bizDate"
           type="date"
           value-format="YYYY-MM-DD"
-          placeholder="选择日期"
+          :placeholder="t('selfServiceCommon.bizDatePlaceholder')"
           class="query-w-full"
         />
       </el-form-item>
-      <el-form-item label="目标实例号">
-        <el-input v-model="rerunForm.targetInstanceNo" placeholder="可选" />
+      <el-form-item :label="t('selfServiceCommon.targetInstanceLabel')">
+        <el-input
+          v-model="rerunForm.targetInstanceNo"
+          :placeholder="t('selfServiceCommon.targetInstanceOptional')"
+        />
       </el-form-item>
-      <el-form-item label="原因">
-        <el-input v-model="rerunForm.reason" type="textarea" :rows="3" placeholder="重跑原因" />
+      <el-form-item :label="t('selfServiceCommon.reasonLabel')">
+        <el-input
+          v-model="rerunForm.reason"
+          type="textarea"
+          :rows="3"
+          :placeholder="t('selfServiceRerunTab.reasonPlaceholder')"
+        />
       </el-form-item>
       <el-form-item class="form-actions">
         <el-button
           type="primary"
           class="pretty-primary-button"
           :loading="rerunLoading"
-          v-track-click="'自助重跑申请'"
+          v-track-click="t('selfServiceRerunTab.trackSubmit')"
           @click="submitRerun"
-          >提交重跑申请</el-button
         >
+          {{ t('selfServiceRerunTab.btnSubmit') }}
+        </el-button>
       </el-form-item>
     </el-form>
   </div>
@@ -53,7 +62,10 @@
 
 <script setup lang="ts">
   import { ref, reactive } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
+
+  const { t } = useI18n({ useScope: 'global' })
   import type { FormRules } from 'element-plus'
   import { selfServiceRerunRequest } from '@/api/selfServiceJobs'
   import { useTenantStore } from '@/stores/tenant'
@@ -70,8 +82,8 @@
 
   const { formRef: rerunFormRef, validate: validateRerunForm } = useFormValidate()
   const rerunFormRules: FormRules = {
-    jobCode: [rules.required('Job Code 必选', 'change')],
-    bizDate: [rules.required('业务日必选', 'change')],
+    jobCode: [rules.required(t('selfServiceCommon.ruleJobCode'), 'change')],
+    bizDate: [rules.required(t('selfServiceCommon.ruleBizDate'), 'change')],
   }
 
   async function submitRerun() {
@@ -85,7 +97,7 @@
         ...(rerunForm.targetInstanceNo ? { targetInstanceNo: rerunForm.targetInstanceNo } : {}),
         ...(rerunForm.reason ? { reason: rerunForm.reason } : {}),
       })
-      ElMessage.success('重跑申请已提交')
+      ElMessage.success(t('selfServiceRerunTab.submittedToast'))
       rerunForm.jobCode = ''
       rerunForm.bizDate = ''
       rerunForm.targetInstanceNo = ''

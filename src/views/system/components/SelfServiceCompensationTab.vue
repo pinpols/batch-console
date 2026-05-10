@@ -7,13 +7,13 @@
       label-width="100px"
       class="form-section"
     >
-      <el-form-item label="Job Code" prop="jobCode">
+      <el-form-item :label="t('selfServiceCommon.jobCodeLabel')" prop="jobCode">
         <el-select
           v-model="compForm.jobCode"
           filterable
           remote
           reserve-keyword
-          placeholder="请输入关键字搜索"
+          :placeholder="t('selfServiceCommon.jobCodePlaceholder')"
           :remote-method="queryJobCodes"
           :loading="jobCodeLoading"
           @focus="loadDefaultJobCodes"
@@ -22,56 +22,68 @@
           <el-option v-for="opt in jobCodeOptions" :key="opt" :label="opt" :value="opt" />
         </el-select>
       </el-form-item>
-      <el-form-item label="业务日" prop="bizDate">
+      <el-form-item :label="t('selfServiceCommon.bizDateLabel')" prop="bizDate">
         <el-date-picker
           v-model="compForm.bizDate"
           type="date"
           value-format="YYYY-MM-DD"
-          placeholder="选择日期"
+          :placeholder="t('selfServiceCommon.bizDatePlaceholder')"
           class="query-w-full"
         />
       </el-form-item>
-      <el-form-item label="补偿类型">
+      <el-form-item :label="t('selfServiceCompensationTab.typeLabel')">
         <el-select
           v-model="compForm.compensationType"
           filterable
           allow-create
           default-first-option
           clearable
-          placeholder="请选择（或输入自定义）"
+          :placeholder="t('selfServiceCompensationTab.typePlaceholder')"
           class="query-w-full"
         >
           <el-option
-            v-for="t in compensationTypeOptions"
-            :key="t.value"
-            :label="t.label"
-            :value="t.value"
+            v-for="opt in compensationTypeOptions"
+            :key="opt.value"
+            :label="opt.label"
+            :value="opt.value"
           />
         </el-select>
       </el-form-item>
-      <el-form-item label="目标实例号">
-        <el-input v-model="compForm.targetInstanceNo" placeholder="可选" />
+      <el-form-item :label="t('selfServiceCommon.targetInstanceLabel')">
+        <el-input
+          v-model="compForm.targetInstanceNo"
+          :placeholder="t('selfServiceCommon.targetInstanceOptional')"
+        />
       </el-form-item>
-      <el-form-item label="原因">
-        <el-input v-model="compForm.reason" type="textarea" :rows="3" placeholder="补偿原因" />
+      <el-form-item :label="t('selfServiceCommon.reasonLabel')">
+        <el-input
+          v-model="compForm.reason"
+          type="textarea"
+          :rows="3"
+          :placeholder="t('selfServiceCompensationTab.reasonPlaceholder')"
+        />
       </el-form-item>
       <el-form-item class="form-actions">
         <el-button
           type="primary"
           class="pretty-primary-button"
           :loading="compLoading"
-          v-track-click="'自助补偿申请'"
+          v-track-click="t('selfServiceCompensationTab.trackSubmit')"
           @click="submitCompensation"
-          >提交补偿申请</el-button
         >
+          {{ t('selfServiceCompensationTab.btnSubmit') }}
+        </el-button>
       </el-form-item>
     </el-form>
   </div>
 </template>
 
 <script setup lang="ts">
-  import { ref, reactive } from 'vue'
+  import { ref, reactive, computed } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
+
+  const { t } = useI18n({ useScope: 'global' })
   import type { FormRules } from 'element-plus'
   import { selfServiceCompensationRequest } from '@/api/selfServiceJobs'
   import { useTenantStore } from '@/stores/tenant'
@@ -89,22 +101,22 @@
     reason: '',
   })
 
-  const compensationTypeOptions = [
-    { value: 'JOB', label: 'JOB（重跑作业）' },
-    { value: 'STEP', label: 'STEP（重跑步骤）' },
-    { value: 'PARTITION', label: 'PARTITION（重试分区）' },
-    { value: 'FILE', label: 'FILE（重处理文件）' },
-    { value: 'BATCH', label: 'BATCH（重跑批次）' },
-    { value: 'DLQ', label: 'DLQ（死信回放）' },
-  ] as const
+  const compensationTypeOptions = computed(() => [
+    { value: 'JOB', label: t('selfServiceCompensationTab.optJob') },
+    { value: 'STEP', label: t('selfServiceCompensationTab.optStep') },
+    { value: 'PARTITION', label: t('selfServiceCompensationTab.optPartition') },
+    { value: 'FILE', label: t('selfServiceCompensationTab.optFile') },
+    { value: 'BATCH', label: t('selfServiceCompensationTab.optBatch') },
+    { value: 'DLQ', label: t('selfServiceCompensationTab.optDlq') },
+  ])
 
   const { jobCodeLoading, jobCodeOptions, loadDefaultJobCodes, queryJobCodes, clearOptions } =
     useJobCodeSearch()
 
   const { formRef: compFormRef, validate: validateCompForm } = useFormValidate()
   const compFormRules: FormRules = {
-    jobCode: [rules.required('Job Code 必选', 'change')],
-    bizDate: [rules.required('业务日必选', 'change')],
+    jobCode: [rules.required(t('selfServiceCommon.ruleJobCode'), 'change')],
+    bizDate: [rules.required(t('selfServiceCommon.ruleBizDate'), 'change')],
   }
 
   async function submitCompensation() {
@@ -119,7 +131,7 @@
         ...(compForm.targetInstanceNo ? { targetInstanceNo: compForm.targetInstanceNo } : {}),
         ...(compForm.reason ? { reason: compForm.reason } : {}),
       })
-      ElMessage.success('补偿申请已提交')
+      ElMessage.success(t('selfServiceCompensationTab.submittedToast'))
       compForm.jobCode = ''
       compForm.bizDate = ''
       compForm.compensationType = ''
