@@ -38,17 +38,28 @@
           v-model="form.initConfigFrom"
           clearable
           filterable
-          placeholder="留空则跳过配置初始化"
+          placeholder="留空跳过初始化(default 是内置模板,推荐)"
         >
           <el-option
             v-for="t in sourceableItems"
             :key="t.tenantId"
             :label="`${t.tenantId} — ${t.tenantName}`"
             :value="t.tenantId"
-          />
+          >
+            <span>{{ t.tenantId }} — {{ t.tenantName }}</span>
+            <el-tag
+              v-if="isTemplateTenant(t.tenantId)"
+              size="small"
+              type="primary"
+              effect="plain"
+              class="u-ml-8"
+            >
+              推荐模板
+            </el-tag>
+          </el-option>
         </el-select>
         <div class="form-hint">
-          选择后,新建租户将自动复制源租户的全部 10 类配置;系统/内置租户已隐藏
+          选择后,新建租户将自动复制源租户的全部 10 类配置;系统租户(system / default-tenant)已隐藏
         </div>
       </el-form-item>
       <el-form-item v-if="form.initConfigFrom" label="初始化模式">
@@ -70,7 +81,7 @@
   import { ElMessage } from 'element-plus'
   import type { FormRules } from 'element-plus'
   import { batchCreateTenants, type Tenant } from '@/api/tenants'
-  import { isReservedTenant } from './tenantConfigTypes'
+  import { isReservedTenant, isTemplateTenant } from './tenantConfigTypes'
   import { useFormValidate, rules } from '@/composables/useFormValidate'
 
   const props = defineProps<{
