@@ -12,9 +12,13 @@
       :model-value="modelValue ?? null"
       :type="type"
       :value-format="resolvedFormat"
-      range-separator="至"
-      :start-placeholder="type === 'daterange' ? '开始日期' : '开始时间'"
-      :end-placeholder="type === 'daterange' ? '结束日期' : '结束时间'"
+      :range-separator="t('dateRangePicker.rangeSeparator')"
+      :start-placeholder="
+        type === 'daterange' ? t('dateRangePicker.startDate') : t('dateRangePicker.startTime')
+      "
+      :end-placeholder="
+        type === 'daterange' ? t('dateRangePicker.endDate') : t('dateRangePicker.endTime')
+      "
       class="dr-preset__picker"
       @update:model-value="onPickerChange"
     />
@@ -23,6 +27,9 @@
 
 <script setup lang="ts">
   import { computed, watch } from 'vue'
+  import { useI18n } from 'vue-i18n'
+
+  const { t } = useI18n({ useScope: 'global' })
 
   /**
    * 时间范围预设 chip + 自定义日期选择器。
@@ -90,28 +97,32 @@
 
   const presets = computed<Preset[]>(() => {
     const base: Preset[] = [
-      { key: 'today', label: '今天', range: () => [startOfDay(new Date()), endOfDay(new Date())] },
+      {
+        key: 'today',
+        label: t('dateRangePicker.today'),
+        range: () => [startOfDay(new Date()), endOfDay(new Date())],
+      },
       {
         key: '7d',
-        label: '最近 7 天',
+        label: t('dateRangePicker.last7d'),
         range: () => [startOfDay(daysAgo(6)), endOfDay(new Date())],
       },
       {
         key: '30d',
-        label: '最近 30 天',
+        label: t('dateRangePicker.last30d'),
         range: () => [startOfDay(daysAgo(29)), endOfDay(new Date())],
       },
       {
         key: 'thisMonth',
-        label: '本月',
+        label: t('dateRangePicker.thisMonth'),
         range: () => {
           const now = new Date()
           return [startOfDay(new Date(now.getFullYear(), now.getMonth(), 1)), endOfDay(now)]
         },
       },
     ]
-    if (props.includeAll) base.push({ key: 'all', label: '全部' })
-    base.push({ key: 'custom', label: '自定义' })
+    if (props.includeAll) base.push({ key: 'all', label: t('dateRangePicker.all') })
+    base.push({ key: 'custom', label: t('dateRangePicker.custom') })
     return base
   })
 

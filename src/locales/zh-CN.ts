@@ -44,6 +44,27 @@ export default {
     optional: '(选填)',
     required: '(必填)',
   },
+  proTable: {
+    empty: '暂无数据',
+    filteredEmpty: '未找到符合条件的数据,请调整筛选条件',
+    loadFailed: '加载失败,请重试',
+  },
+  rowActions: {
+    more: '更多',
+  },
+  dateRangePicker: {
+    rangeSeparator: '至',
+    startDate: '开始日期',
+    endDate: '结束日期',
+    startTime: '开始时间',
+    endTime: '结束时间',
+    today: '今天',
+    last7d: '最近 7 天',
+    last30d: '最近 30 天',
+    thisMonth: '本月',
+    all: '全部',
+    custom: '自定义',
+  },
   nav: {
     overview: '概览',
     observability: '观测',

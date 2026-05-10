@@ -38,6 +38,27 @@ const messages: Messages = {
     optional: '(optional)',
     required: '(required)',
   },
+  proTable: {
+    empty: 'No data',
+    filteredEmpty: 'No matching data — adjust the filters and try again',
+    loadFailed: 'Failed to load. Please retry.',
+  },
+  rowActions: {
+    more: 'More',
+  },
+  dateRangePicker: {
+    rangeSeparator: 'to',
+    startDate: 'Start date',
+    endDate: 'End date',
+    startTime: 'Start time',
+    endTime: 'End time',
+    today: 'Today',
+    last7d: 'Last 7 days',
+    last30d: 'Last 30 days',
+    thisMonth: 'This month',
+    all: 'All',
+    custom: 'Custom',
+  },
   nav: {
     overview: 'Overview',
     observability: 'Observability',
