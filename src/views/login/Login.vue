@@ -8,18 +8,20 @@
         <span class="login-brand__logo">BC</span>
         <div>
           <div class="login-brand__name">Batch Console</div>
-          <div class="login-brand__desc">批量调度控制台</div>
+          <div class="login-brand__desc">{{ t('login.appDesc') }}</div>
         </div>
       </div>
 
       <header class="login-card__header">
-        <h2 class="login-card__title">欢迎回来</h2>
+        <h2 class="login-card__title">{{ t('login.welcome') }}</h2>
       </header>
 
       <div v-if="loginTrace" class="login-trace" role="status">
-        <span class="login-trace__label">Trace</span>
+        <span class="login-trace__label">{{ t('login.traceLabel') }}</span>
         <code class="login-trace__code" :title="loginTrace">{{ loginTrace }}</code>
-        <el-button size="small" link type="primary" @click="copyTrace">复制</el-button>
+        <el-button size="small" link type="primary" @click="copyTrace">
+          {{ t('login.copy') }}
+        </el-button>
       </div>
 
       <el-form
@@ -30,10 +32,10 @@
         label-position="top"
         @submit.prevent="handleLogin"
       >
-        <el-form-item label="账号" prop="username">
+        <el-form-item :label="t('login.usernameLabel')" prop="username">
           <el-input
             v-model="form.username"
-            placeholder="请输入用户名"
+            :placeholder="t('login.usernamePlaceholder')"
             size="large"
             autocomplete="username"
           >
@@ -46,7 +48,7 @@
                 class="input-clear-btn"
                 role="button"
                 tabindex="0"
-                aria-label="清空用户名"
+                :aria-label="t('login.clearUsernameAria')"
                 @click="form.username = ''"
                 @keydown.enter.space.prevent="form.username = ''"
               >
@@ -55,11 +57,11 @@
             </template>
           </el-input>
         </el-form-item>
-        <el-form-item label="密码" prop="password">
+        <el-form-item :label="t('login.passwordLabel')" prop="password">
           <el-input
             v-model="form.password"
             type="password"
-            placeholder="请输入密码"
+            :placeholder="t('login.passwordPlaceholder')"
             size="large"
             show-password
             autocomplete="current-password"
@@ -76,7 +78,7 @@
           class="login-submit"
           size="large"
         >
-          {{ loading ? '登录中…' : '登 录' }}
+          {{ loading ? t('login.submitting') : t('login.submit') }}
         </el-button>
       </el-form>
     </main>
@@ -85,7 +87,10 @@
 
 <script setup lang="ts">
   import { ref, reactive } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import { CircleClose, Lock, User } from '@element-plus/icons-vue'
+
+  const { t } = useI18n({ useScope: 'global' })
   import { useRouter, useRoute } from 'vue-router'
   import type { FormInstance } from 'element-plus'
   import { ElMessage } from 'element-plus'
@@ -102,8 +107,8 @@
   const form = reactive({ username: '', password: '' })
 
   const rules = {
-    username: [{ required: true, message: '请填写账号', trigger: 'blur' }],
-    password: [{ required: true, message: '请填写密码', trigger: 'blur' }],
+    username: [{ required: true, message: t('login.usernameRequired'), trigger: 'blur' }],
+    password: [{ required: true, message: t('login.passwordRequired'), trigger: 'blur' }],
   }
 
   async function handleLogin() {
@@ -126,7 +131,7 @@
   function copyTrace() {
     if (!loginTrace.value) return
     void navigator.clipboard.writeText(loginTrace.value)
-    ElMessage.success('已复制追踪 ID')
+    ElMessage.success(t('login.copySuccess'))
   }
 </script>
 
