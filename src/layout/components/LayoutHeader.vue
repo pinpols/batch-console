@@ -51,6 +51,21 @@
             <span class="palette-shortcut">{{ commandPaletteShortcutLabel }}</span>
           </el-button>
         </el-tooltip>
+        <el-tooltip content="文档中心（ADR / 架构 / 运维 / 操作手册）" placement="bottom">
+          <el-button
+            text
+            class="icon-button"
+            aria-label="打开文档中心"
+            tag="a"
+            href="/docs/"
+            target="_blank"
+            rel="noopener"
+          >
+            <el-icon>
+              <Reading />
+            </el-icon>
+          </el-button>
+        </el-tooltip>
         <el-tooltip :content="themeToggleLabel" placement="bottom">
           <el-button
             text
@@ -173,6 +188,7 @@
     MoreFilled,
     Moon,
     OfficeBuilding,
+    Reading,
     Sunny,
     SwitchButton,
   } from '@element-plus/icons-vue'
