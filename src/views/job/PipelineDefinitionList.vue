@@ -149,8 +149,9 @@
                 </div>
                 <div class="step-card__grid">
                   <el-input v-model="row.stepCode" placeholder="stepCode" />
+                  <el-input v-model="row.stepName" placeholder="stepName" />
                   <el-input v-model="row.stageCode" placeholder="stageCode" />
-                  <el-input v-model="row.stepType" placeholder="stepType" />
+                  <el-input v-model="row.stepType" placeholder="implCode" />
                   <el-input v-model="row.description" placeholder="description" />
                 </div>
               </div>
@@ -226,7 +227,13 @@
     description: '',
   })
   const steps = ref<
-    Array<{ stepCode: string; stageCode: string; stepType: string; description: string }>
+    Array<{
+      stepCode: string
+      stepName: string
+      stageCode: string
+      stepType: string
+      description: string
+    }>
   >([])
 
   const queryKeyword = computed(() => keyword.value.trim().toLowerCase())
@@ -326,7 +333,8 @@
     editingId.value = row.id
     form.value = {
       tenantId: String(obj.tenantId ?? row.tenantId ?? tenant.tenantId),
-      pipelineCode: String(obj.pipelineCode ?? row.pipelineCode ?? ''),
+      // BE PipelineDefinitionDetailResponse 字段是 jobCode,本地 form 沿用 pipelineCode 名
+      pipelineCode: String(obj.jobCode ?? obj.pipelineCode ?? row.pipelineCode ?? ''),
       pipelineName: String(obj.pipelineName ?? row.pipelineName ?? ''),
       pipelineType: String(obj.pipelineType ?? row.pipelineType ?? ''),
       enabled: Boolean(obj.enabled ?? row.enabled),
@@ -338,7 +346,9 @@
           return {
             stepCode: String(step.stepCode ?? ''),
             stageCode: String(step.stageCode ?? ''),
-            stepType: String(step.stepType ?? ''),
+            // BE StepResponse: stepName / implCode;本地编辑模型用 description / stepType 兼容历史模板
+            stepName: String(step.stepName ?? ''),
+            stepType: String(step.implCode ?? step.stepType ?? ''),
             description: String(step.description ?? ''),
           }
         })
@@ -355,7 +365,8 @@
 
     const payload = {
       tenantId: form.value.tenantId || tenant.tenantId,
-      pipelineCode: form.value.pipelineCode,
+      // BE PipelineDefinitionSaveRequest 必填 jobCode(@NotBlank);本地 form pipelineCode 翻译过去
+      jobCode: form.value.pipelineCode,
       pipelineName: form.value.pipelineName,
       pipelineType: form.value.pipelineType,
       enabled: form.value.enabled,
@@ -364,9 +375,10 @@
         .filter((item) => item.stepCode || item.stageCode || item.stepType || item.description)
         .map((item, index) => ({
           stepCode: item.stepCode,
+          // BE StepItem 必填 stepName + implCode;UI 暂时用 description 当 stepName,stepType 当 implCode
+          stepName: item.stepName || item.description || item.stepCode,
           stageCode: item.stageCode,
-          stepType: item.stepType,
-          description: item.description,
+          implCode: item.stepType,
           stepOrder: index + 1,
         })),
     }
@@ -408,6 +420,7 @@
   function addStep() {
     steps.value.push({
       stepCode: '',
+      stepName: '',
       stageCode: '',
       stepType: '',
       description: '',

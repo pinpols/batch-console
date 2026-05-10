@@ -147,7 +147,11 @@
     try {
       const data = await listSystemParameters(tenant.tenantId)
       allRows.value = Array.isArray(data)
-        ? (data as { key: string; value: string }[])
+        ? // BE 返 List<SystemParameterEntity> {paramKey, paramValue, ...},翻译到本地 {key, value}
+          (data as Array<Record<string, unknown>>).map((r) => ({
+            key: String(r.paramKey ?? r.key ?? ''),
+            value: String(r.paramValue ?? r.value ?? ''),
+          }))
         : Object.entries(data as Record<string, string>).map(([key, value]) => ({
             key,
             value: String(value),

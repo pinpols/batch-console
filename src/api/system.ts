@@ -70,7 +70,7 @@ function normalizePipelineDefinition(row: RawObject): PipelineDefinitionRow {
   return {
     id: readNumber(row, 'id'),
     tenantId: readString(row, 'tenantId', 'tenant_id'),
-    pipelineCode: readString(row, 'pipelineCode', 'job_code'),
+    pipelineCode: readString(row, 'jobCode', 'pipelineCode', 'job_code'),
     pipelineName: readString(row, 'pipelineName', 'pipeline_name', 'name'),
     pipelineType: readString(row, 'pipelineType', 'pipeline_type'),
     enabled: readBoolean(row, 'enabled'),

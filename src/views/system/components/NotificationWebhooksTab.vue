@@ -51,7 +51,8 @@
         </ListPageQueryBar>
       </template>
       <el-table-column prop="id" label="ID" width="80" />
-      <el-table-column prop="url" label="URL" min-width="250" show-overflow-tooltip />
+      <el-table-column prop="name" label="名称" min-width="140" show-overflow-tooltip />
+      <el-table-column prop="callbackUrl" label="URL" min-width="250" show-overflow-tooltip />
       <el-table-column prop="eventTypes" label="事件类型" min-width="160" show-overflow-tooltip />
       <el-table-column prop="enabled" label="启用" width="80">
         <template #default="{ row }">
@@ -79,14 +80,20 @@
       width="560px"
     >
       <el-form label-width="100px">
-        <el-form-item label="URL">
-          <el-input v-model="webhookForm.url" placeholder="https://..." />
+        <el-form-item label="名称" required>
+          <el-input v-model="webhookForm.name" placeholder="webhook 名称" />
+        </el-form-item>
+        <el-form-item label="URL" required>
+          <el-input v-model="webhookForm.callbackUrl" placeholder="https://..." />
         </el-form-item>
         <el-form-item label="事件类型">
           <el-input
             v-model="webhookForm.eventTypes"
             placeholder="逗号分隔，如 JOB_COMPLETED,JOB_FAILED"
           />
+        </el-form-item>
+        <el-form-item label="Secret">
+          <el-input v-model="webhookForm.secret" placeholder="可选,签名密钥" />
         </el-form-item>
         <el-form-item label="启用">
           <el-switch v-model="webhookForm.enabled" />
@@ -148,7 +155,13 @@
   const webhookFilterDraft = reactive({ keyword: '', enabled: undefined as boolean | undefined })
   const webhookFilterApplied = reactive({ keyword: '', enabled: undefined as boolean | undefined })
   const webhookDeliveryLogs = ref<Record<string, unknown>[]>([])
-  const webhookForm = reactive({ url: '', eventTypes: '', enabled: true })
+  const webhookForm = reactive({
+    name: '',
+    callbackUrl: '',
+    eventTypes: '',
+    secret: '',
+    enabled: true,
+  })
 
   async function loadWebhooks() {
     await runLoadingWebhooks(async () => {
@@ -160,31 +173,46 @@
 
   function openWebhookCreate() {
     webhookEditingId.value = null
-    webhookForm.url = ''
+    webhookForm.name = ''
+    webhookForm.callbackUrl = ''
     webhookForm.eventTypes = ''
+    webhookForm.secret = ''
     webhookForm.enabled = true
     webhookFormVisible.value = true
   }
 
   function openWebhookEdit(row: Record<string, unknown>) {
     webhookEditingId.value = row.id as number
-    webhookForm.url = String(row.url ?? '')
+    webhookForm.name = String(row.name ?? '')
+    webhookForm.callbackUrl = String(row.callbackUrl ?? '')
     webhookForm.eventTypes = String(row.eventTypes ?? '')
+    webhookForm.secret = String(row.secret ?? '')
     webhookForm.enabled = !!row.enabled
     webhookFormVisible.value = true
   }
 
   async function saveWebhook() {
+    if (!webhookForm.name.trim() || !webhookForm.callbackUrl.trim()) {
+      ElMessage.warning('名称和 URL 必填')
+      return
+    }
     savingWebhook.value = true
     try {
-      const body = {
-        tenantId: tenant.tenantId,
-        url: webhookForm.url,
-        eventTypes: webhookForm.eventTypes,
+      const eventTypeList = webhookForm.eventTypes
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean)
+      const baseBody = {
+        callbackUrl: webhookForm.callbackUrl,
+        eventTypes: eventTypeList,
+        secret: webhookForm.secret || undefined,
         enabled: webhookForm.enabled,
       }
-      if (webhookEditingId.value) await updateWebhook(webhookEditingId.value, body)
-      else await createWebhook(body)
+      if (webhookEditingId.value) {
+        await updateWebhook(webhookEditingId.value, tenant.tenantId, baseBody)
+      } else {
+        await createWebhook(tenant.tenantId, { name: webhookForm.name, ...baseBody })
+      }
       ElMessage.success('已保存')
       webhookFormVisible.value = false
       await loadWebhooks()
