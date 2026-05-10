@@ -143,10 +143,10 @@
       :title="resetTarget ? `重置密码：${resetTarget.username}` : '重置密码'"
       width="440px"
     >
-      <el-form label-width="100px">
-        <el-form-item label="新密码" required>
+      <el-form ref="resetFormRef" :model="resetForm" :rules="resetFormRules" label-width="100px">
+        <el-form-item label="新密码" prop="newPassword">
           <el-input
-            v-model="newPassword"
+            v-model="resetForm.newPassword"
             type="password"
             show-password
             placeholder="至少 8 个字符"
@@ -165,6 +165,8 @@
 <script setup lang="ts">
   import { computed, onMounted, reactive, ref } from 'vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
+  import type { FormRules } from 'element-plus'
+  import { useFormValidate, rules } from '@/composables/useFormValidate'
   import {
     listUsers,
     updateUser,
@@ -307,23 +309,25 @@
   // --- 重置密码 ---
   const resetVisible = ref(false)
   const resetTarget = ref<UserAccount | null>(null)
-  const newPassword = ref('')
+  const resetForm = reactive({ newPassword: '' })
+
+  const { formRef: resetFormRef, validate: validateResetForm } = useFormValidate()
+  const resetFormRules: FormRules = {
+    newPassword: [rules.required('新密码必填'), rules.minLength(8)],
+  }
 
   function openResetPassword(row: UserAccount) {
     resetTarget.value = row
-    newPassword.value = ''
+    resetForm.newPassword = ''
     resetVisible.value = true
   }
 
   async function submitReset() {
     if (!resetTarget.value) return
-    if (newPassword.value.length < 8) {
-      ElMessage.warning('密码至少 8 个字符')
-      return
-    }
+    if (!(await validateResetForm())) return
     resetting.value = true
     try {
-      await resetUserPassword(resetTarget.value.id, { newPassword: newPassword.value })
+      await resetUserPassword(resetTarget.value.id, { newPassword: resetForm.newPassword })
       ElMessage.success('密码已重置')
       resetVisible.value = false
     } finally {

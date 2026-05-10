@@ -11,23 +11,23 @@
         会覆盖已有项。
       </template>
     </el-alert>
-    <el-form label-width="100px">
+    <el-form ref="initFormRef" :model="form" :rules="initFormRules" label-width="100px">
       <el-form-item label="目标租户">
         <el-tag>{{ form.targetTenantId }}</el-tag>
       </el-form-item>
-      <el-form-item label="配置类型">
+      <el-form-item label="配置类型" prop="configTypes">
         <el-checkbox-group v-model="form.configTypes">
           <el-checkbox v-for="ct in ALL_CONFIG_TYPES" :key="ct" :label="ct" :value="ct" />
         </el-checkbox-group>
         <div class="form-hint">留空表示全部 10 个类型</div>
       </el-form-item>
-      <el-form-item label="写入模式">
+      <el-form-item label="写入模式" prop="mode">
         <el-radio-group v-model="form.mode">
           <el-radio value="SKIP_EXISTING">SKIP_EXISTING</el-radio>
           <el-radio value="UPSERT">UPSERT</el-radio>
         </el-radio-group>
       </el-form-item>
-      <el-form-item label="Spec JSON" required>
+      <el-form-item label="Spec JSON" prop="specJson">
         <el-input
           v-model="form.specJson"
           type="textarea"
@@ -36,7 +36,7 @@
           style="font-family: var(--font-family-mono, monospace); font-size: 12px"
         />
       </el-form-item>
-      <el-form-item label="试运行">
+      <el-form-item label="试运行" prop="dryRun">
         <el-switch v-model="form.dryRun" />
         <span class="form-hint u-ml-8">开启后仅校验,不实际写入</span>
       </el-form-item>
@@ -53,8 +53,10 @@
 <script setup lang="ts">
   import { reactive, ref, watch } from 'vue'
   import { ElMessage } from 'element-plus'
+  import type { FormRules } from 'element-plus'
   import { batchInitTenantConfig, type ConfigType } from '@/api/ops'
   import { ALL_CONFIG_TYPES } from './tenantConfigTypes'
+  import { useFormValidate, rules } from '@/composables/useFormValidate'
 
   const props = defineProps<{
     modelValue: boolean
@@ -75,6 +77,11 @@
     dryRun: true,
   })
 
+  const { formRef: initFormRef, validate: validateInitForm } = useFormValidate()
+  const initFormRules: FormRules = {
+    specJson: [rules.required('Spec JSON 必填')],
+  }
+
   watch(
     () => props.modelValue,
     (open) => {
@@ -88,10 +95,7 @@
   )
 
   async function submit() {
-    if (!form.specJson.trim()) {
-      ElMessage.warning('Spec JSON 不能为空')
-      return
-    }
+    if (!(await validateInitForm())) return
     let spec: Record<string, unknown>
     try {
       spec = JSON.parse(form.specJson)

@@ -8,8 +8,8 @@
     <el-alert type="info" :closable="false" show-icon class="mb-12">
       <template #title>从源租户读取配置,自动写入目标租户,无需手写 Spec。</template>
     </el-alert>
-    <el-form label-width="100px">
-      <el-form-item label="源租户" required>
+    <el-form ref="copyFormRef" :model="form" :rules="copyFormRules" label-width="100px">
+      <el-form-item label="源租户" prop="sourceTenantId">
         <el-select
           class="query-w-280"
           v-model="form.sourceTenantId"
@@ -24,7 +24,7 @@
           />
         </el-select>
       </el-form-item>
-      <el-form-item label="目标租户" required>
+      <el-form-item label="目标租户" prop="targetTenantIds">
         <el-select
           v-model="form.targetTenantIds"
           multiple
@@ -69,9 +69,11 @@
 <script setup lang="ts">
   import { computed, reactive, ref, watch } from 'vue'
   import { ElMessage } from 'element-plus'
+  import type { FormRules } from 'element-plus'
   import { copyTenantConfig, type ConfigType } from '@/api/ops'
   import type { Tenant } from '@/api/tenants'
   import { ALL_CONFIG_TYPES } from './tenantConfigTypes'
+  import { useFormValidate, rules } from '@/composables/useFormValidate'
 
   const props = defineProps<{
     modelValue: boolean
@@ -92,6 +94,18 @@
     dryRun: true,
   })
 
+  const { formRef: copyFormRef, validate: validateCopyForm } = useFormValidate()
+  const copyFormRules: FormRules = {
+    sourceTenantId: [rules.required('请选择源租户', 'change')],
+    targetTenantIds: [
+      {
+        validator: (_r, v: unknown[], cb) =>
+          Array.isArray(v) && v.length > 0 ? cb() : cb(new Error('请选择至少一个目标租户')),
+        trigger: 'change',
+      },
+    ],
+  }
+
   const targetableItems = computed(() =>
     props.items.filter((x) => x.tenantId !== form.sourceTenantId),
   )
@@ -109,14 +123,7 @@
   )
 
   async function submit() {
-    if (!form.sourceTenantId) {
-      ElMessage.warning('请选择源租户')
-      return
-    }
-    if (form.targetTenantIds.length === 0) {
-      ElMessage.warning('请选择至少一个目标租户')
-      return
-    }
+    if (!(await validateCopyForm())) return
     saving.value = true
     try {
       const res = await copyTenantConfig({

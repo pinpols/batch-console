@@ -49,3 +49,19 @@ div[class*='language-'] {
 .dark .mermaid svg {
   filter: brightness(0.92);
 }
+
+
+/* 死链:buildEnd 钩子把不存在的 link 改成 .dead-link;
+   视觉上灰色 + 删除线 + 禁用 cursor,鼠标 hover 显原始 href title */
+.vp-doc a.dead-link,
+a.dead-link {
+  color: var(--vp-c-text-3) !important;
+  text-decoration: line-through !important;
+  text-decoration-style: dotted !important;
+  cursor: not-allowed !important;
+  pointer-events: auto;
+}
+.vp-doc a.dead-link:hover {
+  color: var(--vp-c-text-2) !important;
+  background: transparent !important;
+}
