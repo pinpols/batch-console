@@ -1,6 +1,7 @@
 import { ref } from 'vue'
 import type { FormInstance, FormItemRule } from 'element-plus'
 import { ElMessage } from 'element-plus'
+import { i18n } from '@/locales'
 
 /**
  * 标准化 el-form 客户端校验流程,消除每页手写
@@ -33,7 +34,7 @@ export function useFormValidate() {
       // EP 抛 errors 是 { fieldName: [{ message }, ...] } 形态
       if (!opts?.silent) {
         const firstMsg = pickFirstErrorMessage(errors)
-        ElMessage.warning(firstMsg || '请检查表单必填项')
+        ElMessage.warning(firstMsg || i18n.global.t('form.checkRequired'))
       }
       // 自动滚动到第一个 invalid field(EP form-item.scrollToField 内置)
       const firstField = pickFirstErrorField(errors)
@@ -71,43 +72,65 @@ function pickFirstErrorField(errors: unknown): string | null {
   return keys[0] ?? null
 }
 
-/** 常用 rule 工厂,避免每页重复写 trigger/message */
+/**
+ * 把入参当作 i18n key 试取,取到就用翻译,取不到回落到原文。
+ *
+ * 这样老调用 `rules.required('名称必填')` 仍然显示中文(EN 用户看到中文,可接受过渡),
+ * 新调用 `rules.required('tenantList.fieldTenantName')` 会按当前 locale 渲染。
+ */
+function tr(messageOrKey: string | undefined, fallback?: string): string {
+  if (!messageOrKey) return fallback ?? ''
+  if (i18n.global.te(messageOrKey)) {
+    return i18n.global.t(messageOrKey)
+  }
+  return messageOrKey
+}
+
+/**
+ * 常用 rule 工厂,避免每页重复写 trigger/message。
+ *
+ * 所有 message 入参都过一遍 `tr()`:
+ *  - 传 i18n key(如 `'tenantList.fieldTenantName'`)→ 翻译为当前 locale
+ *  - 传字面量(如 `'名称必填'`)→ 直接用,实现增量迁移不破坏现网
+ *
+ * 默认 message 走 `form.*` 命名空间,自动跟随语言切换。
+ */
 export const rules = {
-  required: (message: string, trigger: 'blur' | 'change' = 'blur'): FormItemRule => ({
+  required: (message?: string, trigger: 'blur' | 'change' = 'blur'): FormItemRule => ({
     required: true,
-    message,
+    message: tr(message, i18n.global.t('form.checkRequired')),
     trigger,
   }),
 
   minLength: (n: number, trigger: 'blur' | 'change' = 'blur'): FormItemRule => ({
     min: n,
-    message: `至少 ${n} 个字符`,
+    message: i18n.global.t('form.minLength', { min: n }),
     trigger,
   }),
 
   maxLength: (n: number, trigger: 'blur' | 'change' = 'blur'): FormItemRule => ({
     max: n,
-    message: `最多 ${n} 个字符`,
+    message: i18n.global.t('form.maxLength', { max: n }),
     trigger,
   }),
 
   pattern: (re: RegExp, message: string, trigger: 'blur' | 'change' = 'blur'): FormItemRule => ({
     pattern: re,
-    message,
+    message: tr(message),
     trigger,
   }),
 
   /** code 类字段:大小写字母 + 数字 + 下划线 + 连字符,字母开头 */
-  code: (message = '只允许字母 / 数字 / _ / -,字母开头'): FormItemRule => ({
+  code: (message?: string): FormItemRule => ({
     pattern: /^[a-zA-Z][\w-]*$/,
-    message,
+    message: tr(message, i18n.global.t('form.codePattern')),
     trigger: 'blur',
   }),
 
   /** tenantId 风格:大小写字母 / 数字 / 连字符,3-64 长度 */
   tenantId: (): FormItemRule => ({
     pattern: /^[a-z0-9][a-z0-9-]{2,63}$/i,
-    message: '由 3-64 位字母 / 数字 / 连字符组成,字母或数字开头',
+    message: i18n.global.t('form.tenantIdPattern'),
     trigger: 'blur',
   }),
 }
