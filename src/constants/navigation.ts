@@ -2,41 +2,48 @@ import type { Component } from 'vue'
 import type { Role } from '@/types'
 import { pageTitle } from '@/constants/pageMeta'
 import {
+  Aim,
   Bell,
   Box,
-  Briefcase,
   Calendar,
+  ChatLineRound,
   Collection,
   CollectionTag,
   Connection,
   Cpu,
+  DataAnalysis,
   Document,
   DocumentChecked,
+  Download,
+  EditPen,
   Files,
   FolderOpened,
-  Guide,
-  DataAnalysis,
-  Download,
   Histogram,
   Key,
   List,
   Management,
   Memo,
+  MessageBox,
   Monitor,
+  Notebook,
+  OfficeBuilding,
   Operation,
+  PieChart,
   PriceTag,
   Promotion,
   Reading,
   Search,
-  Share,
+  Service,
+  SetUp,
   Setting,
   Stamp,
-  Timer,
   Tickets,
-  TrendCharts,
+  Timer,
   Tools,
+  TrendCharts,
   User,
-  OfficeBuilding,
+  VideoPlay,
+  View,
   WarningFilled,
 } from '@element-plus/icons-vue'
 
@@ -84,10 +91,11 @@ export const navigationGroups: NavigationGroup[] = [
       { title: pageTitle('/approvals'), path: '/approvals', minRole: 'OPERATOR', icon: Stamp },
       { title: pageTitle('/reports'), path: '/reports', minRole: 'VIEWER', icon: Download },
       {
+        // 自助服务 → Service(客服/受理),比 Tickets(票据)更贴"自助办理"
         title: pageTitle('/self-service'),
         path: '/self-service',
         minRole: 'OPERATOR',
-        icon: Tickets,
+        icon: Service,
       },
     ],
   },
@@ -109,16 +117,18 @@ export const navigationGroups: NavigationGroup[] = [
         icon: Collection,
       },
       {
+        // 流水线 → Connection(管道/连接),比 Share(分享分叉)更贴"链式步骤"
         title: pageTitle('/jobs/pipelines'),
         path: '/jobs/pipelines',
         minRole: 'VIEWER',
-        icon: Share,
+        icon: Connection,
       },
       {
+        // 工作流编辑器 → EditPen(画图编辑),比 Guide(指南)更贴"DAG 编辑"
         title: pageTitle('/workflow/designer'),
         path: '/workflow/designer',
         minRole: 'OPERATOR',
-        icon: Guide,
+        icon: EditPen,
       },
     ],
   },
@@ -128,16 +138,18 @@ export const navigationGroups: NavigationGroup[] = [
     icon: Monitor,
     children: [
       {
+        // Job 实例 → VideoPlay(运行中),避开跟父分组 Monitor 同 icon
         title: pageTitle('/monitor/job-instances'),
         path: '/monitor/job-instances',
         minRole: 'VIEWER',
-        icon: Monitor,
+        icon: VideoPlay,
       },
       {
+        // 步骤实例 → Operation(操作步骤),Timer 留给真定时类(触发器)
         title: pageTitle('/monitor/job-steps'),
         path: '/monitor/job-steps',
         minRole: 'VIEWER',
-        icon: Timer,
+        icon: Operation,
       },
       {
         title: pageTitle('/monitor/workflow-runs'),
@@ -146,10 +158,11 @@ export const navigationGroups: NavigationGroup[] = [
         icon: Promotion,
       },
       {
+        // 调度器快照 → Aim(快照/瞄准当下),避开跟控制面板 TrendCharts 同 icon
         title: pageTitle('/scheduler/snapshot'),
         path: '/scheduler/snapshot',
         minRole: 'VIEWER',
-        icon: TrendCharts,
+        icon: Aim,
       },
     ],
   },
@@ -203,7 +216,13 @@ export const navigationGroups: NavigationGroup[] = [
         minRole: 'OPERATOR',
         icon: PriceTag,
       },
-      { title: pageTitle('/config/excel'), path: '/config/excel', minRole: 'OPERATOR', icon: List },
+      {
+        // Excel 维护 → Tickets(票据/表格感),避开跟作业定义 List 同 icon
+        title: pageTitle('/config/excel'),
+        path: '/config/excel',
+        minRole: 'OPERATOR',
+        icon: Tickets,
+      },
       {
         title: pageTitle('/config/tenant-package'),
         path: '/config/tenant-package',
@@ -213,9 +232,10 @@ export const navigationGroups: NavigationGroup[] = [
     ],
   },
   {
+    // 观测与查询(分组)→ View(综合观测),避开跟"告警事件" WarningFilled 同 icon
     key: 'observability',
     title: '观测与查询',
-    icon: WarningFilled,
+    icon: View,
     children: [
       {
         title: pageTitle('/observability/alerts'),
@@ -224,16 +244,18 @@ export const navigationGroups: NavigationGroup[] = [
         icon: WarningFilled,
       },
       {
+        // 操作审计 → Notebook(审计日志本),避开跟"配置管理" Memo 同 icon
         title: pageTitle('/observability/audits'),
         path: '/observability/audits',
         minRole: 'VIEWER',
-        icon: Memo,
+        icon: Notebook,
       },
       {
+        // Outbox → MessageBox(消息发件箱),避开跟"租户包" Box 同 icon
         title: pageTitle('/observability/outbox'),
         path: '/observability/outbox',
         minRole: 'OPERATOR',
-        icon: Box,
+        icon: MessageBox,
       },
       {
         title: pageTitle('/system/notifications'),
@@ -248,17 +270,19 @@ export const navigationGroups: NavigationGroup[] = [
         icon: Search,
       },
       {
+        // 事件目录 → Reading(目录/手册),避开跟"工作流定义" Collection 同 icon
         title: pageTitle('/system/event-catalog'),
         path: '/system/event-catalog',
         minRole: 'VIEWER',
-        icon: Collection,
+        icon: Reading,
       },
     ],
   },
   {
+    // 运行配置(分组)→ SetUp(运行参数设定),避开跟"Worker" Cpu 同 icon
     key: 'runtime',
     title: '运行配置',
-    icon: Cpu,
+    icon: SetUp,
     children: [
       {
         title: pageTitle('/workers/management'),
@@ -279,23 +303,26 @@ export const navigationGroups: NavigationGroup[] = [
         icon: Calendar,
       },
       {
+        // 队列 → Connection(链接/管道) — Connection 已被流水线用,这里换 Management 也合适
         title: pageTitle('/governance/queues'),
         path: '/governance/queues',
         minRole: 'ADMIN',
-        icon: Connection,
+        icon: Management,
       },
       {
+        // 配额 → PieChart(饼图配额),比 Briefcase(公文包)更贴"分配占比"
         title: pageTitle('/governance/quota'),
         path: '/governance/quota',
         minRole: 'OPERATOR',
-        icon: Briefcase,
+        icon: PieChart,
       },
     ],
   },
   {
+    // 系统管理(分组)→ Tools(管理工具集),避开跟"系统参数" Setting 同 icon
     key: 'system',
     title: '系统管理',
-    icon: Setting,
+    icon: Tools,
     minRole: 'OPERATOR',
     children: [
       {
@@ -314,6 +341,7 @@ export const navigationGroups: NavigationGroup[] = [
       },
       // /system/users(权限自查)从主菜单撤下,改由 Header 右上 dropdown 触发(ADMIN 可见)
       {
+        // 系统参数 → Setting(齿轮),group icon 已改 Tools 不冲突
         title: pageTitle('/system/parameters'),
         path: '/system/parameters',
         minRole: 'ADMIN',
@@ -326,16 +354,18 @@ export const navigationGroups: NavigationGroup[] = [
         icon: Key,
       },
       {
+        // AI 助手 → ChatLineRound(对话气泡),Document 是文档不是对话
         title: pageTitle('/system/ai-chat'),
         path: '/system/ai-chat',
         minRole: 'ADMIN',
-        icon: Document,
+        icon: ChatLineRound,
       },
       {
+        // 运维诊断 → DataAnalysis(诊断分析),Tools 已被父分组占
         title: pageTitle('/ops/diagnostic'),
         path: '/ops/diagnostic',
         minRole: 'ADMIN',
-        icon: Tools,
+        icon: DataAnalysis,
       },
     ],
   },
