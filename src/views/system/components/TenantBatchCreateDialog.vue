@@ -68,8 +68,10 @@
 <script setup lang="ts">
   import { computed, reactive, ref, watch } from 'vue'
   import { ElMessage } from 'element-plus'
+  import type { FormRules } from 'element-plus'
   import { batchCreateTenants, type Tenant } from '@/api/tenants'
   import { isReservedTenant } from './tenantConfigTypes'
+  import { useFormValidate, rules } from '@/composables/useFormValidate'
 
   const props = defineProps<{
     modelValue: boolean
@@ -106,6 +108,29 @@
     },
   )
 
+  const { formRef: batchFormRef, validate: validateBatchForm } = useFormValidate()
+  // tenantsText 校验逻辑复杂(逐行解析 + 数量上限),写自定义 validator
+  const batchFormRules: FormRules = {
+    tenantsText: [
+      rules.required('请至少填写一个租户'),
+      {
+        validator: (_r, v: string, cb) => {
+          const items = parseTenants(v ?? '')
+          if (items.length === 0) return cb(new Error('请至少填写一个租户'))
+          if (items.length > 50) return cb(new Error('单次最多 50 个租户'))
+          for (const t of items) {
+            if (!t.tenantId || !t.tenantName) {
+              return cb(new Error(`每行至少包含 tenantId 和名称:${t.tenantId || '(空)'}`))
+            }
+          }
+          cb()
+        },
+        trigger: 'blur',
+      },
+    ],
+    password: [rules.required('共享密码必填'), rules.minLength(12)],
+  }
+
   function parseTenants(text: string) {
     return text
       .split('\n')
@@ -118,25 +143,8 @@
   }
 
   async function submit() {
+    if (!(await validateBatchForm())) return
     const tenants = parseTenants(form.tenantsText)
-    if (tenants.length === 0) {
-      ElMessage.warning('请至少填写一个租户')
-      return
-    }
-    if (tenants.length > 50) {
-      ElMessage.warning('单次最多 50 个租户')
-      return
-    }
-    for (const t of tenants) {
-      if (!t.tenantId || !t.tenantName) {
-        ElMessage.warning(`每行至少包含 tenantId 和名称:${t.tenantId || '(空)'}`)
-        return
-      }
-    }
-    if (form.password.length < 12) {
-      ElMessage.warning('共享密码至少 12 个字符')
-      return
-    }
     saving.value = true
     try {
       const res = await batchCreateTenants({
