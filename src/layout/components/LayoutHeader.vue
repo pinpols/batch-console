@@ -66,6 +66,25 @@
             </el-icon>
           </el-button>
         </el-tooltip>
+        <el-dropdown trigger="click" placement="bottom" @command="handleLocaleCommand">
+          <el-tooltip :content="t('nav.switchLocale')" placement="bottom">
+            <el-button text class="icon-button" :aria-label="t('nav.switchLocale')">
+              <span class="locale-chip">{{ currentLocale === 'zh-CN' ? '中' : 'EN' }}</span>
+            </el-button>
+          </el-tooltip>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item
+                v-for="opt in localeOptions"
+                :key="opt.value"
+                :command="opt.value"
+                :class="{ 'is-active': currentLocale === opt.value }"
+              >
+                {{ opt.label }}
+              </el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
         <el-tooltip :content="themeToggleLabel" placement="bottom">
           <el-button
             text
@@ -188,6 +207,16 @@
   import LayoutTabs from '@/layout/LayoutTabs.vue'
   import TenantSelect from '@/components/common/TenantSelect.vue'
   import { useHeaderLogic } from '@/layout/composables/useHeaderLogic'
+  import { useI18n } from 'vue-i18n'
+  import { useLocale } from '@/composables/useLocale'
+  import type { Locale } from '@/constants/locale'
+
+  const { t } = useI18n()
+  const { current: currentLocale, options: localeOptions, setLocale } = useLocale()
+
+  function handleLocaleCommand(command: string) {
+    setLocale(command as Locale)
+  }
 
   defineEmits<{
     (e: 'open-palette'): void
@@ -493,5 +522,14 @@
 
   .icon-button {
     padding: 6px;
+  }
+
+  .locale-chip {
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+    min-width: 20px;
+    text-align: center;
+    color: var(--el-text-color-regular);
   }
 </style>

@@ -203,6 +203,14 @@ export function applyApiInterceptors(client: AxiosInstance): void {
       config.headers['X-Tenant-Id'] = tenantId
     }
 
+    // 后端 /meta/enums 可按 Accept-Language 返回不同语言 label;FE 缺失 i18n key 时
+    // 用 BE label 兜底。读 localStorage 而不是 vue-i18n 实例,避免请求拦截器在
+    // i18n init 之前触发(token-refresh / SSE init 等)时拿不到 locale。
+    const locale =
+      (typeof localStorage !== 'undefined' && localStorage.getItem('batch-console:locale')) ||
+      'zh-CN'
+    config.headers['Accept-Language'] = locale === 'en-US' ? 'en-US,en;q=0.9' : 'zh-CN,zh;q=0.9'
+
     const method = (config.method ?? 'get').toLowerCase()
     if (MUTATING.has(method) && !config.headers['Idempotency-Key']) {
       config.headers['Idempotency-Key'] = createIdempotencyKey()
