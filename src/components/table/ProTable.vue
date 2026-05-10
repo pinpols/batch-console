@@ -128,8 +128,10 @@
     align-self: stretch;
   }
 
+  /* query slot 内的 ListPageQueryBar 自管 margin-bottom,这里清 0 避免叠加;
+     非 ListPageQueryBar 内容(自定义 toolbar 之类)需要自己加 margin */
   .pro-table__query {
-    margin-bottom: var(--page-block-gap);
+    margin-bottom: 0;
   }
 
   .pro-table__toolbar {
