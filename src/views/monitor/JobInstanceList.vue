@@ -24,7 +24,9 @@
           >
             <el-form-item>
               <template #label>
-                <HelpLabel tip="唯一作业标识，用于调度触发和实例关联">Job Code</HelpLabel>
+                <HelpLabel :tip="t('jobInstanceList.jobCodeTip')">
+                  {{ t('jobInstanceList.jobCodeLabel') }}
+                </HelpLabel>
               </template>
               <el-select
                 class="query-w-200"
@@ -33,31 +35,38 @@
                 filterable
                 allow-create
                 default-first-option
-                placeholder="选择或输入 jobCode"
+                :placeholder="t('jobInstanceList.jobCodePlaceholder')"
               >
                 <el-option v-for="code in jobCodeOptions" :key="code" :label="code" :value="code" />
               </el-select>
             </el-form-item>
-            <el-form-item label="快捷">
+            <el-form-item :label="t('jobInstanceList.quick')">
               <el-radio-group :model-value="quickStatus" size="small" @change="onQuickStatusChange">
-                <el-radio-button value="all">全部</el-radio-button>
-                <el-radio-button value="running">进行中</el-radio-button>
-                <el-radio-button value="failed">失败</el-radio-button>
+                <el-radio-button value="all">{{ t('jobInstanceList.quickAll') }}</el-radio-button>
+                <el-radio-button value="running">
+                  {{ t('jobInstanceList.quickRunning') }}
+                </el-radio-button>
+                <el-radio-button value="failed">
+                  {{ t('jobInstanceList.quickFailed') }}
+                </el-radio-button>
               </el-radio-group>
             </el-form-item>
-            <el-form-item label="状态">
+            <el-form-item :label="t('jobInstanceList.statusLabel')">
               <MetaSelect
                 class="query-w-180"
                 v-model="query.instanceStatus"
                 clearable
                 filterable
-                placeholder="全部实例状态"
+                enum-key="instanceStatus"
+                :placeholder="t('jobInstanceList.statusPlaceholder')"
                 :options="statusOptions"
               />
             </el-form-item>
             <el-form-item>
               <template #label>
-                <HelpLabel tip="按业务日期范围筛选;默认今日">业务日</HelpLabel>
+                <HelpLabel :tip="t('jobInstanceList.bizDateTip')">
+                  {{ t('jobInstanceList.bizDateLabel') }}
+                </HelpLabel>
               </template>
               <DateRangePresetPicker
                 v-model="dateRange"
@@ -69,28 +78,32 @@
           </ListPageQueryBar>
         </template>
 
-        <el-table-column prop="instanceNo" label="实例编号" width="180">
+        <el-table-column prop="instanceNo" :label="t('jobInstanceList.colInstanceNo')" width="180">
           <template #default="{ row }">
             <router-link class="cell-link" :to="`/monitor/job-instances/${row.id}`">
               {{ row.instanceNo }}
             </router-link>
           </template>
         </el-table-column>
-        <el-table-column prop="jobCode" label="Job Code" width="140">
+        <el-table-column prop="jobCode" :label="t('jobInstanceList.colJobCode')" width="140">
           <template #default="{ row }">
             <router-link class="cell-link" :to="`/jobs/definitions?jobCode=${row.jobCode}`">
               {{ row.jobCode }}
             </router-link>
           </template>
         </el-table-column>
-        <el-table-column label="状态" width="110">
+        <el-table-column :label="t('jobInstanceList.colStatus')" width="110">
           <template #default="{ row }">
             <StatusTag :value="row.instanceStatus" category="instance" />
           </template>
         </el-table-column>
-        <el-table-column prop="bizDate" label="业务日" width="110" />
-        <el-table-column prop="triggerType" label="触发" width="100" />
-        <el-table-column label="队列 / 组" width="160">
+        <el-table-column prop="bizDate" :label="t('jobInstanceList.colBizDate')" width="110" />
+        <el-table-column prop="triggerType" :label="t('jobInstanceList.colTrigger')" width="100">
+          <template #default="{ row }">
+            {{ resolveTriggerType(row.triggerType) }}
+          </template>
+        </el-table-column>
+        <el-table-column :label="t('jobInstanceList.colQueueGroup')" width="160">
           <template #default="{ row }">
             <div class="cell-stack">
               <span v-if="row.queueCode" class="cell-main">{{ row.queueCode }}</span>
@@ -99,32 +112,49 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column label="重跑/重试" width="100">
+        <el-table-column :label="t('jobInstanceList.colRerunRetry')" width="100">
           <template #default="{ row }">
-            <el-tag v-if="row.rerunFlag" size="small" type="warning" effect="plain">重跑</el-tag>
-            <el-tag v-if="row.retryFlag" size="small" type="info" effect="plain">重试</el-tag>
+            <el-tag v-if="row.rerunFlag" size="small" type="warning" effect="plain">
+              {{ t('jobInstanceList.tagRerun') }}
+            </el-tag>
+            <el-tag v-if="row.retryFlag" size="small" type="info" effect="plain">
+              {{ t('jobInstanceList.tagRetry') }}
+            </el-tag>
             <span v-if="!row.rerunFlag && !row.retryFlag" class="muted">—</span>
           </template>
         </el-table-column>
-        <DatetimeColumn prop="startedAt" label="开始时间" width="160" />
-        <DatetimeColumn prop="finishedAt" label="完成时间" width="160" />
-        <el-table-column label="耗时" width="120">
+        <DatetimeColumn prop="startedAt" :label="t('jobInstanceList.colStartedAt')" width="160" />
+        <DatetimeColumn prop="finishedAt" :label="t('jobInstanceList.colFinishedAt')" width="160" />
+        <el-table-column :label="t('jobInstanceList.colDuration')" width="120">
           <template #default="{ row }">
             <span>{{ formatDurationMs(calcDurationMs(row.startedAt, row.finishedAt)) }}</span>
           </template>
         </el-table-column>
-        <DatetimeColumn prop="slaAlertedAt" label="SLA 告警" width="160" />
-        <el-table-column prop="traceId" label="Trace" width="180" show-overflow-tooltip>
+        <DatetimeColumn
+          prop="slaAlertedAt"
+          :label="t('jobInstanceList.colSlaAlerted')"
+          width="160"
+        />
+        <el-table-column
+          prop="traceId"
+          :label="t('jobInstanceList.colTrace')"
+          width="180"
+          show-overflow-tooltip
+        >
           <template #default="{ row }">
             <CopyableText v-if="row.traceId" :text="String(row.traceId)" />
             <span v-else class="muted">—</span>
           </template>
         </el-table-column>
-        <el-table-column label="操作" fixed="right" width="200">
+        <el-table-column :label="t('jobInstanceList.colActions')" fixed="right" width="200">
           <template #default="{ row }">
             <div class="table-actions">
-              <el-button size="small" plain type="primary" @click="viewDetail(row)">详情</el-button>
-              <el-button size="small" plain @click="viewPartitions(row)">步骤</el-button>
+              <el-button size="small" plain type="primary" @click="viewDetail(row)">
+                {{ t('jobInstanceList.actionDetail') }}
+              </el-button>
+              <el-button size="small" plain @click="viewPartitions(row)">
+                {{ t('jobInstanceList.actionPartitions') }}
+              </el-button>
             </div>
           </template>
         </el-table-column>
@@ -136,6 +166,15 @@
 <script setup lang="ts">
   import { ref, reactive, computed } from 'vue'
   import { useRouter, useRoute } from 'vue-router'
+  import { useI18n } from 'vue-i18n'
+
+  const { t, te } = useI18n({ useScope: 'global' })
+
+  function resolveTriggerType(value?: string | null): string {
+    if (!value) return '—'
+    const key = `enum.triggerType.${value}`
+    return te(key) ? t(key) : value
+  }
   import { instanceApi } from '@/api/instance'
   import { jobApi } from '@/api/job'
   import { useSseAutoReload } from '@/composables/useSseAutoReload'
