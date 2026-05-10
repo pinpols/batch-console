@@ -22,53 +22,97 @@
             @reset="onReset"
             @refresh="() => runRefresh(load)"
           >
-            <el-form-item label="组编码">
+            <el-form-item :label="t('arrivalGroupList.groupCodeLabel')">
               <el-input
                 class="query-w-200"
                 v-model="kwDraft"
                 clearable
-                placeholder="fileGroupCode"
+                :placeholder="t('arrivalGroupList.groupCodePlaceholder')"
                 @keyup.enter="onSearch"
               />
             </el-form-item>
-            <el-form-item label="到达状态">
+            <el-form-item :label="t('arrivalGroupList.stateLabel')">
               <el-input
                 class="query-w-160"
                 v-model="stateDraft"
                 clearable
-                placeholder="arrivalState"
+                :placeholder="t('arrivalGroupList.statePlaceholder')"
                 @keyup.enter="onSearch"
               />
             </el-form-item>
           </ListPageQueryBar>
         </template>
-        <el-table-column prop="fileGroupCode" label="组编码" min-width="140" />
-        <el-table-column prop="arrivalState" label="状态" width="130">
+        <el-table-column
+          prop="fileGroupCode"
+          :label="t('arrivalGroupList.colGroupCode')"
+          min-width="140"
+        />
+        <el-table-column prop="arrivalState" :label="t('arrivalGroupList.colState')" width="130">
           <template #default="{ row }">
             <StatusTag :value="String(row.arrivalState ?? '')" category="arrival" />
           </template>
         </el-table-column>
-        <el-table-column prop="waitFileGroupMode" label="等待模式" width="110" />
+        <el-table-column
+          prop="waitFileGroupMode"
+          :label="t('arrivalGroupList.colWaitMode')"
+          width="110"
+        />
         <el-table-column
           prop="requiredFileSet"
-          label="必需文件集"
+          :label="t('arrivalGroupList.colRequired')"
           min-width="160"
           show-overflow-tooltip
         />
-        <el-table-column prop="arrivalTimeoutAction" label="超时动作" width="110" />
-        <el-table-column prop="arrivedCount" label="已到" width="70" align="right" />
-        <el-table-column prop="waitingCount" label="等待中" width="80" align="right" />
-        <el-table-column prop="timeoutCount" label="超时" width="70" align="right" />
-        <el-table-column prop="triggeredCount" label="已触发" width="80" align="right" />
-        <DatetimeColumn prop="expectedArrivalTime" label="期望到达" width="160" />
-        <DatetimeColumn prop="latestTolerableTime" label="最迟容忍" width="160" />
-        <DatetimeColumn prop="lastUpdatedAt" label="更新" width="160" />
-        <el-table-column label="操作" width="130" fixed="right">
+        <el-table-column
+          prop="arrivalTimeoutAction"
+          :label="t('arrivalGroupList.colTimeoutAction')"
+          width="110"
+        />
+        <el-table-column
+          prop="arrivedCount"
+          :label="t('arrivalGroupList.colArrived')"
+          width="70"
+          align="right"
+        />
+        <el-table-column
+          prop="waitingCount"
+          :label="t('arrivalGroupList.colWaiting')"
+          width="80"
+          align="right"
+        />
+        <el-table-column
+          prop="timeoutCount"
+          :label="t('arrivalGroupList.colTimeout')"
+          width="70"
+          align="right"
+        />
+        <el-table-column
+          prop="triggeredCount"
+          :label="t('arrivalGroupList.colTriggered')"
+          width="80"
+          align="right"
+        />
+        <DatetimeColumn
+          prop="expectedArrivalTime"
+          :label="t('arrivalGroupList.colExpected')"
+          width="160"
+        />
+        <DatetimeColumn
+          prop="latestTolerableTime"
+          :label="t('arrivalGroupList.colTolerable')"
+          width="160"
+        />
+        <DatetimeColumn
+          prop="lastUpdatedAt"
+          :label="t('arrivalGroupList.colUpdated')"
+          width="160"
+        />
+        <el-table-column :label="t('arrivalGroupList.colActions')" width="130" fixed="right">
           <template #default="{ row }">
             <div class="table-actions">
-              <el-button size="small" plain type="primary" @click="confirm(row)"
-                >确认到达</el-button
-              >
+              <el-button size="small" plain type="primary" @click="confirm(row)">
+                {{ t('arrivalGroupList.actionConfirm') }}
+              </el-button>
             </div>
           </template>
         </el-table-column>
@@ -79,7 +123,10 @@
 
 <script setup lang="ts">
   import { computed, ref } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import { ElMessageBox } from 'element-plus'
+
+  const { t } = useI18n({ useScope: 'global' })
   import { toPageResult } from '@/api/adapters'
   import { fileApi } from '@/api/file'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
@@ -166,9 +213,15 @@
 
   async function confirm(row: ConsoleFileArrivalGroupResponse) {
     try {
-      await ElMessageBox.confirm(`确认文件组 ${row.fileGroupCode} 已到达？`, '确认到达', {
-        type: 'warning',
-      })
+      await ElMessageBox.confirm(
+        t('arrivalGroupList.confirmText', { code: row.fileGroupCode }),
+        t('arrivalGroupList.confirmTitle'),
+        {
+          type: 'warning',
+          confirmButtonText: t('common.confirm'),
+          cancelButtonText: t('common.cancel'),
+        },
+      )
       await fileApi.confirmArrival(row.fileGroupCode, tenant.tenantId)
       await load()
     } catch {

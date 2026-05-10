@@ -22,55 +22,81 @@
             @reset="reset"
             @refresh="() => runRefresh(load)"
           >
-            <el-form-item label="模板编码">
-              <el-input v-model="keyword" clearable placeholder="模板编码或名称，模糊匹配" />
+            <el-form-item :label="t('fileTemplateList.codeLabel')">
+              <el-input
+                v-model="keyword"
+                clearable
+                :placeholder="t('fileTemplateList.codePlaceholder')"
+              />
             </el-form-item>
-            <el-form-item label="模板类型">
+            <el-form-item :label="t('fileTemplateList.typeLabel')">
               <MetaSelect
                 class="query-w-160"
                 v-model="templateType"
                 :options="templateTypeOptions"
                 clearable
                 filterable
-                placeholder="全部模板类型"
+                enum-key="fileTemplateType"
+                :placeholder="t('fileTemplateList.typePlaceholder')"
               />
             </el-form-item>
-            <el-form-item label="业务类型">
+            <el-form-item :label="t('fileTemplateList.bizTypeLabel')">
               <MetaSelect
                 class="query-w-160"
                 v-model="bizType"
                 :options="bizTypeOptions"
                 clearable
                 filterable
-                placeholder="全部业务类型"
+                :placeholder="t('fileTemplateList.bizTypePlaceholder')"
               />
             </el-form-item>
-            <el-form-item label="启用">
-              <el-select v-model="enabled" clearable placeholder="全部" class="query-w-120">
-                <el-option label="启用" :value="true" />
-                <el-option label="停用" :value="false" />
+            <el-form-item :label="t('fileTemplateList.enabledLabel')">
+              <el-select
+                v-model="enabled"
+                clearable
+                :placeholder="t('fileTemplateList.enabledPlaceholder')"
+                class="query-w-120"
+              >
+                <el-option :label="t('fileTemplateList.optEnabled')" :value="true" />
+                <el-option :label="t('fileTemplateList.optDisabled')" :value="false" />
               </el-select>
             </el-form-item>
           </ListPageQueryBar>
         </template>
 
-        <el-table-column prop="templateCode" label="模板编码" min-width="160" />
-        <el-table-column prop="templateName" label="名称" min-width="180" />
-        <el-table-column prop="templateType" label="类型" width="120" />
-        <el-table-column prop="fileFormatType" label="格式" width="120" />
-        <el-table-column prop="bizType" label="业务类型" width="120" />
-        <el-table-column prop="version" label="版本" width="90" />
-        <el-table-column label="启用" width="90">
+        <el-table-column
+          prop="templateCode"
+          :label="t('fileTemplateList.colCode')"
+          min-width="160"
+        />
+        <el-table-column
+          prop="templateName"
+          :label="t('fileTemplateList.colName')"
+          min-width="180"
+        />
+        <el-table-column prop="templateType" :label="t('fileTemplateList.colType')" width="120">
+          <template #default="{ row }">
+            {{ resolveEnumLabel('fileTemplateType', row.templateType) }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="fileFormatType" :label="t('fileTemplateList.colFormat')" width="120">
+          <template #default="{ row }">
+            {{ resolveEnumLabel('fileTemplateFormat', row.fileFormatType) }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="bizType" :label="t('fileTemplateList.colBizType')" width="120" />
+        <el-table-column prop="version" :label="t('fileTemplateList.colVersion')" width="90" />
+        <el-table-column :label="t('fileTemplateList.colEnabled')" width="90">
           <template #default="{ row }">
             <StatusTag :value="String(row.enabled)" category="yn" />
           </template>
         </el-table-column>
-        <DatetimeColumn prop="updatedAt" label="更新时间" width="160" />
-        <el-table-column label="操作" width="100" fixed="right">
+        <DatetimeColumn prop="updatedAt" :label="t('fileTemplateList.colUpdatedAt')" width="160" />
+        <el-table-column :label="t('fileTemplateList.colActions')" width="100" fixed="right">
           <template #default="{ row }">
             <div class="table-actions">
               <el-button size="small" plain type="primary" @click="openDetail(row.templateCode)">
-                详情
+                {{ t('fileTemplateList.actionDetail') }}
               </el-button>
             </div>
           </template>
@@ -78,7 +104,7 @@
       </ProTable>
     </SectionCard>
 
-    <el-drawer v-model="detailVisible" title="模板详情" size="720px">
+    <el-drawer v-model="detailVisible" :title="t('fileTemplateList.detailTitle')" size="720px">
       <el-descriptions v-if="detail" :column="2" border size="small">
         <el-descriptions-item label="templateCode">{{ detail.templateCode }}</el-descriptions-item>
         <el-descriptions-item label="templateName">{{ detail.templateName }}</el-descriptions-item>
@@ -112,7 +138,16 @@
 
 <script setup lang="ts">
   import { computed, ref, watch } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
+
+  const { t, te } = useI18n({ useScope: 'global' })
+
+  function resolveEnumLabel(group: string, value?: string | null): string {
+    if (!value) return ''
+    const key = `enum.${group}.${value}`
+    return te(key) ? t(key) : value
+  }
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
   import { getMetaBizTypes, type MetaOption } from '@/api/meta'
