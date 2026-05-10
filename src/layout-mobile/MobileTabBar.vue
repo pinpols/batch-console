@@ -1,5 +1,5 @@
 <template>
-  <nav class="mobile-tab-bar" role="navigation" aria-label="底部导航">
+  <nav class="mobile-tab-bar" role="navigation" :aria-label="t('nav.mobileTab.ariaLabel')">
     <router-link
       v-for="tab in tabs"
       :key="tab.path"
@@ -19,7 +19,7 @@
           {{ badgeOf(tab.path) > 99 ? '99+' : badgeOf(tab.path) }}
         </span>
       </div>
-      <span class="mobile-tab__label">{{ tab.label }}</span>
+      <span class="mobile-tab__label">{{ t(tab.labelKey) }}</span>
     </router-link>
   </nav>
 </template>
@@ -27,18 +27,20 @@
 <script setup lang="ts">
   import { computed } from 'vue'
   import { useRoute } from 'vue-router'
+  import { useI18n } from 'vue-i18n'
   import { Histogram, Stamp, WarningFilled, Monitor, Memo } from '@element-plus/icons-vue'
   import { useMobileBadgesStore } from '@/stores/mobileBadges'
 
   const route = useRoute()
   const badges = useMobileBadgesStore()
+  const { t } = useI18n()
 
   const tabs = [
-    { path: '/m/ops/summary', label: '概览', icon: Histogram },
-    { path: '/m/approvals', label: '审批', icon: Stamp },
-    { path: '/m/alerts', label: '告警', icon: WarningFilled },
-    { path: '/m/jobs', label: '任务', icon: Monitor },
-    { path: '/m/catchup', label: '补跑', icon: Memo },
+    { path: '/m/ops/summary', labelKey: 'nav.mobileTab.summary', icon: Histogram },
+    { path: '/m/approvals', labelKey: 'nav.mobileTab.approvals', icon: Stamp },
+    { path: '/m/alerts', labelKey: 'nav.mobileTab.alerts', icon: WarningFilled },
+    { path: '/m/jobs', labelKey: 'nav.mobileTab.jobs', icon: Monitor },
+    { path: '/m/catchup', labelKey: 'nav.mobileTab.catchup', icon: Memo },
   ]
 
   const isActive = computed(() => (path: string) => route.path.startsWith(path))

@@ -14,7 +14,7 @@
         <el-input
           ref="inputRef"
           v-model="q"
-          placeholder="搜索菜单、最近页面；纯数字可跳 Job 实例详情"
+          :placeholder="t('palette.placeholder')"
           clearable
           :prefix-icon="Search"
           @keydown.down.prevent="move(1)"
@@ -26,7 +26,7 @@
     </template>
 
     <div class="cp-body">
-      <div v-if="!flatItems.length" class="cp-empty">无匹配结果</div>
+      <div v-if="!flatItems.length" class="cp-empty">{{ t('palette.empty') }}</div>
       <div v-for="section in sections" v-else :key="section.key" class="cp-section">
         <div class="cp-section__title">{{ section.title }}</div>
         <div class="cp-list" role="listbox">
@@ -59,10 +59,13 @@
 <script setup lang="ts">
   import { computed, nextTick, ref, watch } from 'vue'
   import { useRouter } from 'vue-router'
+  import { useI18n } from 'vue-i18n'
   import type { Component } from 'vue'
   import { Search } from '@element-plus/icons-vue'
   import type { NavigationGroup } from '@/constants/navigation'
   import type { PageTab } from '@/stores/tabs'
+
+  const { t } = useI18n()
 
   type PaletteSource = 'recent' | 'menu' | 'jump'
 
@@ -102,12 +105,12 @@
     const sorted = [...props.recentTabs].sort(
       (a, b) => (b.lastAccessAt ?? 0) - (a.lastAccessAt ?? 0),
     )
-    return sorted.slice(0, 8).map((t) => ({
-      key: `recent:${t.key}`,
-      title: t.title,
-      subtitle: t.path,
-      meta: '最近',
-      path: t.path,
+    return sorted.slice(0, 8).map((tab) => ({
+      key: `recent:${tab.key}`,
+      title: tab.title,
+      subtitle: tab.path,
+      meta: t('palette.metaRecent'),
+      path: tab.path,
       source: 'recent' as const,
     }))
   })
@@ -120,7 +123,7 @@
           key: `menu:${c.path}`,
           title: c.title,
           subtitle: g.title,
-          meta: '菜单',
+          meta: t('palette.metaMenu'),
           path: c.path,
           icon: c.icon,
           source: 'menu',
@@ -136,9 +139,9 @@
     return [
       {
         key: `jump:job:${term}`,
-        title: `作业实例 #${term}`,
-        subtitle: '打开详情页',
-        meta: '跳转',
+        title: t('palette.jumpJobInstance', { id: term }),
+        subtitle: t('palette.jumpDetail'),
+        meta: t('palette.metaJump'),
         path: `/monitor/job-instances/${term}`,
         source: 'jump' as const,
       },
@@ -180,9 +183,9 @@
     const rec = flatItems.value.filter((x) => x.source === 'recent')
     const menu = flatItems.value.filter((x) => x.source === 'menu')
     return [
-      { key: 'jump', title: '快捷跳转', items: jump },
-      { key: 'recent', title: '最近访问', items: rec },
-      { key: 'menu', title: '菜单', items: menu },
+      { key: 'jump', title: t('palette.sectionJump'), items: jump },
+      { key: 'recent', title: t('palette.sectionRecent'), items: rec },
+      { key: 'menu', title: t('palette.sectionMenu'), items: menu },
     ].filter((s) => s.items.length)
   })
 

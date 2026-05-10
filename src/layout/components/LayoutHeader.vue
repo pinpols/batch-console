@@ -22,11 +22,11 @@
               </el-breadcrumb>
               <div class="page-meta__title">{{ currentTitle }}</div>
             </div>
-            <el-tooltip content="复制当前页面完整链接（含查询参数）" placement="bottom">
+            <el-tooltip :content="t('nav.copyLink')" placement="bottom">
               <el-button
                 text
                 class="icon-button page-meta__copy-link"
-                aria-label="复制当前链接"
+                :aria-label="t('nav.copyLinkAria')"
                 @click="copyCurrentUrl"
               >
                 <el-icon><Link /></el-icon>
@@ -41,21 +41,21 @@
       </div>
 
       <div class="layout-header__right">
-        <el-tooltip content="命令面板（⌘/Ctrl + K）" placement="bottom">
+        <el-tooltip :content="`${t('nav.commandPalette')}(⌘/Ctrl + K)`" placement="bottom">
           <el-button
             text
             class="icon-button"
-            aria-label="打开命令面板"
+            :aria-label="t('nav.openCommandPalette')"
             @click="$emit('open-palette')"
           >
             <span class="palette-shortcut">{{ commandPaletteShortcutLabel }}</span>
           </el-button>
         </el-tooltip>
-        <el-tooltip content="文档中心（ADR / 架构 / 运维 / 操作手册）" placement="bottom">
+        <el-tooltip :content="t('nav.openDocsTooltip')" placement="bottom">
           <el-button
             text
             class="icon-button"
-            aria-label="打开文档中心"
+            :aria-label="t('nav.openDocs')"
             tag="a"
             :href="docsUrl"
             target="_blank"
@@ -99,11 +99,14 @@
             </el-icon>
           </el-button>
         </el-tooltip>
-        <el-tooltip :content="app.focusMode ? '退出全屏内容区' : '全屏内容区'" placement="bottom">
+        <el-tooltip
+          :content="app.focusMode ? t('nav.exitFullscreen') : t('nav.fullscreen')"
+          placement="bottom"
+        >
           <el-button
             text
             class="icon-button"
-            aria-label="全屏内容区"
+            :aria-label="t('nav.fullscreen')"
             @click="app.toggleFocusMode()"
           >
             <el-icon>
@@ -114,20 +117,20 @@
         <!-- 当前租户：常驻醒目展示，不藏在悬浮面板里 -->
         <div v-if="canSwitchTenant" class="tenant-chip tenant-chip--switch">
           <el-icon class="tenant-chip__icon"><OfficeBuilding /></el-icon>
-          <span class="tenant-chip__label">租户</span>
+          <span class="tenant-chip__label">{{ t('nav.tenant') }}</span>
           <TenantSelect
             :model-value="tenantIdInput"
             size="small"
             select-class="query-w-168"
-            placeholder="切换租户"
+            :placeholder="t('nav.switchTenantPlaceholder')"
             @update:model-value="handleTenantSwitch"
           />
-          <el-tooltip content="复制 tenantId" placement="bottom">
+          <el-tooltip :content="t('nav.copyTenantId')" placement="bottom">
             <span
               class="tenant-chip__copy"
               role="button"
               tabindex="0"
-              aria-label="复制 tenantId"
+              :aria-label="t('nav.copyTenantIdAria')"
               @click.stop="copyTenant"
               @keydown.enter.prevent.stop="copyTenant"
             >
@@ -137,14 +140,14 @@
         </div>
         <div v-else class="tenant-chip tenant-chip--readonly">
           <el-icon class="tenant-chip__icon"><OfficeBuilding /></el-icon>
-          <span class="tenant-chip__label">租户</span>
+          <span class="tenant-chip__label">{{ t('nav.tenant') }}</span>
           <span class="tenant-chip__value" :title="tenantIdInput">{{ tenantIdInput }}</span>
-          <el-tooltip content="复制 tenantId" placement="bottom">
+          <el-tooltip :content="t('nav.copyTenantId')" placement="bottom">
             <span
               class="tenant-chip__copy"
               role="button"
               tabindex="0"
-              aria-label="复制 tenantId"
+              :aria-label="t('nav.copyTenantIdAria')"
               @click.stop="copyTenant"
               @keydown.enter.prevent.stop="copyTenant"
             >
@@ -164,17 +167,19 @@
             @command="onUserCommand"
           >
             <span class="username username--clickable" tabindex="0">
-              {{ auth.userInfo?.username ?? '未登录' }}
+              {{ auth.userInfo?.username ?? t('nav.notLoggedIn') }}
               <el-icon class="username__caret"><ArrowDown /></el-icon>
             </span>
             <template #dropdown>
               <el-dropdown-menu>
                 <el-dropdown-item v-if="auth.role === 'ADMIN'" command="profile" :icon="Key">
-                  权限自查
+                  {{ t('nav.permissionAudit') }}
                 </el-dropdown-item>
-                <el-dropdown-item command="onboarding" :icon="Compass"> 重看引导 </el-dropdown-item>
+                <el-dropdown-item command="onboarding" :icon="Compass">
+                  {{ t('nav.onboarding') }}
+                </el-dropdown-item>
                 <el-dropdown-item command="logout" :icon="SwitchButton" divided>
-                  退出登录
+                  {{ t('nav.logout') }}
                 </el-dropdown-item>
               </el-dropdown-menu>
             </template>
@@ -261,9 +266,9 @@
     }
     if (command === 'logout') {
       try {
-        await ElMessageBox.confirm('确认退出登录?', '退出登录', {
-          confirmButtonText: '退出',
-          cancelButtonText: '取消',
+        await ElMessageBox.confirm(t('nav.confirmLogout'), t('nav.logout'), {
+          confirmButtonText: t('nav.logout'),
+          cancelButtonText: t('common.cancel'),
           type: 'warning',
         })
       } catch {

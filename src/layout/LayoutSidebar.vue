@@ -6,7 +6,7 @@
     <div class="brand">
       <div class="brand__logo">BC</div>
       <div v-if="!app.sidebarCollapsed" class="brand__text">
-        <div class="brand__title">批量调度平台</div>
+        <div class="brand__title">{{ t('nav.appTitle') }}</div>
         <div class="brand__subtitle">Batch Console</div>
       </div>
     </div>
@@ -24,7 +24,7 @@
             <el-icon>
               <component :is="group.icon" />
             </el-icon>
-            <span>{{ group.title }}</span>
+            <span>{{ resolveGroupTitle(group) }}</span>
           </template>
           <el-menu-item
             v-for="item in group.children"
@@ -47,13 +47,21 @@
 <script setup lang="ts">
   import { computed } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
+  import { useI18n } from 'vue-i18n'
   import { useAppStore } from '@/stores/app'
   import { usePermissionStore } from '@/stores/permission'
+  import type { NavigationGroup } from '@/constants/navigation'
 
   const app = useAppStore()
   const permission = usePermissionStore()
   const route = useRoute()
   const router = useRouter()
+  const { t, te } = useI18n()
+
+  function resolveGroupTitle(group: NavigationGroup): string {
+    const key = `nav.group.${group.key}`
+    return te(key) ? t(key) : group.title
+  }
 
   const activeMenu = computed(() => (route.meta.activeMenu as string) ?? route.path)
   const visibleGroups = computed(() => permission.visibleGroups)
