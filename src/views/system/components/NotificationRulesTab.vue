@@ -25,47 +25,63 @@
               class="pretty-add-button"
               @click="openRuleCreate"
             >
-              新增
+              {{ t('notificationCommon.btnAdd') }}
             </el-button>
           </template>
-          <el-form-item label="关键字">
+          <el-form-item :label="t('notificationCommon.keywordLabel')">
             <el-input
               class="query-w-240"
               v-model="ruleFilterDraft.keyword"
               clearable
-              placeholder="搜索名称/事件类型"
+              :placeholder="t('notificationRulesTab.kwPlaceholder')"
               @keyup.enter="applyRuleFilter"
             />
           </el-form-item>
-          <el-form-item label="启用">
+          <el-form-item :label="t('notificationCommon.enabledLabel')">
             <el-select
               class="query-w-140"
               v-model="ruleFilterDraft.enabled"
               clearable
-              placeholder="全部"
+              :placeholder="t('notificationCommon.allPlaceholder')"
             >
-              <el-option label="已启用" :value="true" />
-              <el-option label="已停用" :value="false" />
+              <el-option :label="t('notificationCommon.optEnabled')" :value="true" />
+              <el-option :label="t('notificationCommon.optDisabled')" :value="false" />
             </el-select>
           </el-form-item>
         </ListPageQueryBar>
       </template>
-      <el-table-column prop="ruleId" label="ID" width="80" />
-      <el-table-column prop="ruleName" label="规则名称" min-width="160" show-overflow-tooltip />
-      <el-table-column prop="eventTypes" label="事件类型" min-width="200" show-overflow-tooltip />
-      <el-table-column prop="channelId" label="渠道 ID" width="100" />
-      <el-table-column prop="enabled" label="启用" width="80">
+      <el-table-column prop="ruleId" :label="t('notificationRulesTab.colId')" width="80" />
+      <el-table-column
+        prop="ruleName"
+        :label="t('notificationRulesTab.colName')"
+        min-width="160"
+        show-overflow-tooltip
+      />
+      <el-table-column
+        prop="eventTypes"
+        :label="t('notificationRulesTab.colEventTypes')"
+        min-width="200"
+        show-overflow-tooltip
+      />
+      <el-table-column
+        prop="channelId"
+        :label="t('notificationRulesTab.colChannelId')"
+        width="100"
+      />
+      <el-table-column prop="enabled" :label="t('notificationCommon.colEnabled')" width="80">
         <template #default="{ row }">
           <StatusTag :value="String(row.enabled)" category="yn" />
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="160" fixed="right">
+      <el-table-column :label="t('notificationCommon.colActions')" width="160" fixed="right">
         <template #default="{ row }">
           <div class="table-actions">
-            <el-button size="small" plain type="primary" @click="openRuleEdit(row)">编辑</el-button>
-            <el-button size="small" plain type="danger" @click="confirmDeleteRule(row)"
-              >删除</el-button
-            >
+            <el-button size="small" plain type="primary" @click="openRuleEdit(row)">
+              {{ t('notificationCommon.btnEdit') }}
+            </el-button>
+            <el-button size="small" plain type="danger" @click="confirmDeleteRule(row)">
+              {{ t('notificationCommon.btnDelete') }}
+            </el-button>
           </div>
         </template>
       </el-table-column>
@@ -73,34 +89,46 @@
 
     <el-dialog
       v-model="ruleFormVisible"
-      :title="ruleEditingId ? '编辑规则' : '新增规则'"
+      :title="
+        ruleEditingId
+          ? t('notificationRulesTab.dialogTitleEdit')
+          : t('notificationRulesTab.dialogTitleCreate')
+      "
       width="560px"
     >
       <el-form ref="ruleFormRef" :model="ruleForm" :rules="ruleFormRules" label-width="100px">
-        <el-form-item label="名称" prop="ruleName">
-          <el-input v-model="ruleForm.ruleName" placeholder="规则名称" maxlength="128" />
-        </el-form-item>
-        <el-form-item label="事件类型" prop="eventTypes">
+        <el-form-item :label="t('notificationRulesTab.fieldName')" prop="ruleName">
           <el-input
-            v-model="ruleForm.eventTypes"
-            placeholder="逗号分隔，如 JOB_FAILED,JOB_TIMEOUT"
+            v-model="ruleForm.ruleName"
+            :placeholder="t('notificationRulesTab.namePlaceholder')"
+            maxlength="128"
           />
         </el-form-item>
-        <el-form-item label="渠道 ID" prop="channelId">
+        <el-form-item :label="t('notificationRulesTab.fieldEventTypes')" prop="eventTypes">
+          <el-input
+            v-model="ruleForm.eventTypes"
+            :placeholder="t('notificationRulesTab.eventTypesPlaceholder')"
+          />
+        </el-form-item>
+        <el-form-item :label="t('notificationRulesTab.fieldChannelId')" prop="channelId">
           <el-input-number
             v-model="ruleForm.channelId"
             :min="1"
-            placeholder="渠道 ID"
+            :placeholder="t('notificationRulesTab.channelIdPlaceholder')"
             class="query-w-full"
           />
         </el-form-item>
-        <el-form-item label="启用" prop="enabled">
+        <el-form-item :label="t('notificationCommon.enabledLabel')" prop="enabled">
           <el-switch v-model="ruleForm.enabled" />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="ruleFormVisible = false">取消</el-button>
-        <el-button type="primary" :loading="savingRule" @click="saveRule">保存</el-button>
+        <el-button @click="ruleFormVisible = false">
+          {{ t('notificationCommon.btnCancel') }}
+        </el-button>
+        <el-button type="primary" :loading="savingRule" @click="saveRule">
+          {{ t('notificationCommon.btnSave') }}
+        </el-button>
       </template>
     </el-dialog>
   </div>
@@ -108,7 +136,10 @@
 
 <script setup lang="ts">
   import { ref, reactive, computed } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
+
+  const { t } = useI18n({ useScope: 'global' })
   import { confirmDanger } from '@/composables/useDangerConfirm'
   import type { FormRules } from 'element-plus'
   import { useFormValidate, rules as r } from '@/composables/useFormValidate'
@@ -143,9 +174,9 @@
 
   const { formRef: ruleFormRef, validate: validateRuleForm } = useFormValidate()
   const ruleFormRules: FormRules = {
-    ruleName: [r.required('名称必填'), r.maxLength(128)],
-    eventTypes: [r.required('事件类型必填')],
-    channelId: [r.required('渠道 ID 必填', 'change')],
+    ruleName: [r.required(t('notificationRulesTab.ruleName')), r.maxLength(128)],
+    eventTypes: [r.required(t('notificationRulesTab.ruleEventTypes'))],
+    channelId: [r.required(t('notificationRulesTab.ruleChannelId'), 'change')],
   }
 
   async function loadRules() {
@@ -185,7 +216,7 @@
       } else {
         await createNotificationRule(tenant.tenantId, body)
       }
-      ElMessage.success('已保存')
+      ElMessage.success(t('notificationCommon.savedToast'))
       ruleFormVisible.value = false
       await loadRules()
     } finally {
@@ -197,13 +228,13 @@
     const ruleId = Number(row.ruleId ?? row.id ?? 0)
     try {
       await confirmDanger({
-        verb: '删除',
-        target: `通知规则「${row.ruleName}」`,
-        consequence: '该规则匹配的事件不再触发任何通知,事件本身仍正常产生。',
+        verb: t('notificationCommon.deleteVerb'),
+        target: t('notificationRulesTab.deleteTarget', { name: row.ruleName }),
+        consequence: t('notificationRulesTab.deleteConsequence'),
         irreversible: false,
       })
       await deleteNotificationRule(ruleId, tenant.tenantId)
-      ElMessage.success('已删除')
+      ElMessage.success(t('notificationCommon.deletedToast'))
       await loadRules()
     } catch {
       /* cancel */
