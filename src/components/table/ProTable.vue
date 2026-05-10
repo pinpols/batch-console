@@ -43,7 +43,8 @@
 </template>
 
 <script setup lang="ts">
-  import { computed } from 'vue'
+  import { computed, onMounted } from 'vue'
+  import { useRoute } from 'vue-router'
   import { Refresh } from '@element-plus/icons-vue'
   import TableSkeleton from '@/components/table/TableSkeleton.vue'
   import TablePagerBar from '@/components/table/TablePagerBar.vue'
@@ -79,6 +80,10 @@
       errorText?: string
       /** 可选重试回调,传了就在错误态渲染"重试"按钮 */
       onRetry?: () => void | Promise<void>
+      /** pageSize 持久化到 localStorage(默认开,opt-out 用 false) */
+      persistPageSize?: boolean
+      /** 持久化 key 后缀;不传则自动用 route.path,确保每页独立 */
+      persistKey?: string
     }>(),
     {
       loading: false,
@@ -91,8 +96,28 @@
       pageSizes: () => [20, 50, 100, 200],
       skeletonRows: 6,
       error: null,
+      persistPageSize: true,
     },
   )
+
+  // pageSize 持久化:用户在 A 页选 50,刷新或 B 页回 A 页应该还是 50,而不是掉回 20
+  // key:'pro-table:pageSize:' + (显式传的 persistKey ?? 当前路由 path)
+  const route = useRoute()
+  const storageKey = computed(
+    () => 'pro-table:pageSize:' + (props.persistKey || route.path || 'global'),
+  )
+
+  onMounted(() => {
+    if (!props.persistPageSize) return
+    try {
+      const saved = Number(localStorage.getItem(storageKey.value))
+      if (saved > 0 && saved !== props.pageSize && (props.pageSizes ?? []).includes(saved)) {
+        emit('update:pageSize', saved)
+      }
+    } catch {
+      /* localStorage 不可用(隐身模式 / quota) — 忽略 */
+    }
+  })
 
   // errorText 优先级:显式传 → error.message → 默认文案
   const resolvedErrorText = computed(() => {
@@ -113,6 +138,13 @@
   }
 
   function onSizeChange(s: number) {
+    if (props.persistPageSize) {
+      try {
+        localStorage.setItem(storageKey.value, String(s))
+      } catch {
+        /* localStorage 不可用 — 忽略 */
+      }
+    }
     emit('update:pageSize', s)
     emit('update:page', 1)
     emit('change')

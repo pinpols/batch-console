@@ -37,6 +37,13 @@
         @reset="onReset"
         @refresh="() => runRefresh(load)"
       >
+        <el-form-item label="快捷">
+          <el-radio-group :model-value="quickStatus" size="small" @change="onQuickStatusChange">
+            <el-radio-button value="all">全部</el-radio-button>
+            <el-radio-button value="active">启用</el-radio-button>
+            <el-radio-button value="suspended">暂停</el-radio-button>
+          </el-radio-group>
+        </el-form-item>
         <el-form-item label="关键字">
           <el-input
             class="query-w-220"
@@ -81,44 +88,19 @@
           <el-table-column prop="description" label="描述" min-width="220" show-overflow-tooltip />
           <el-table-column prop="createdBy" label="创建人" width="140" show-overflow-tooltip />
           <DatetimeColumn prop="createdAt" label="创建时间" width="160" />
-          <el-table-column label="操作" width="400" fixed="right">
+          <el-table-column label="操作" width="220" fixed="right">
             <template #default="{ row }">
               <div class="table-actions">
-                <el-button
-                  v-if="canManageTenants"
-                  size="small"
-                  plain
-                  type="primary"
-                  @click="openEdit(row)"
-                  >编辑</el-button
-                >
-                <el-button
-                  v-if="canManageTenants && row.status === 'ACTIVE'"
-                  size="small"
-                  plain
-                  type="warning"
-                  @click="confirmSuspend(row)"
-                  >暂停</el-button
-                >
-                <el-button
-                  v-else-if="canManageTenants"
-                  size="small"
-                  plain
+                <el-tag
+                  v-if="row.tenantId === tenant.tenantId"
                   type="success"
-                  @click="confirmActivate(row)"
-                  >恢复</el-button
-                >
-                <el-button v-if="canManageTenants" size="small" plain @click="openInitConfig(row)"
-                  >初始化</el-button
-                >
-                <el-button
                   size="small"
-                  plain
-                  :type="row.tenantId === tenant.tenantId ? 'info' : 'primary'"
-                  :disabled="row.tenantId === tenant.tenantId"
-                  @click="switchToTenant(row)"
-                  >{{ row.tenantId === tenant.tenantId ? '当前' : '设为当前' }}</el-button
+                  effect="plain"
+                  class="current-tag"
                 >
+                  当前
+                </el-tag>
+                <RowActions :actions="rowActions(row)" />
               </div>
             </template>
           </el-table-column>
@@ -182,6 +164,7 @@
   import SectionCard from '@/components/common/SectionCard.vue'
   import MetricCard from '@/components/common/MetricCard.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
+  import RowActions, { type RowAction } from '@/components/common/RowActions.vue'
   import JsonPreview from '@/components/common/JsonPreview.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import TablePagerBar from '@/components/table/TablePagerBar.vue'
@@ -219,6 +202,24 @@
 
   const { data: metaEnums } = useConsoleMetaEnumsQuery()
   const tenantStatusOptions = computed(() => pickMetaEnumGroup(metaEnums.value, 'tenantStatus'))
+
+  // 快捷 chip:把状态下拉的 ACTIVE / SUSPENDED 提到顶部一键过滤,常用即点即走
+  // 默认"全部"——首次进入不隐藏数据,操作员看完整 inventory 自己再缩
+  const quickStatus = computed<'all' | 'active' | 'suspended' | ''>(() => {
+    if (!queryApplied.status) return 'all'
+    if (queryApplied.status === 'ACTIVE') return 'active'
+    if (queryApplied.status === 'SUSPENDED') return 'suspended'
+    return ''
+  })
+
+  function onQuickStatusChange(key: string | number | boolean | undefined) {
+    const k = String(key)
+    const next: TenantStatus | '' = k === 'active' ? 'ACTIVE' : k === 'suspended' ? 'SUSPENDED' : ''
+    queryDraft.status = next
+    queryApplied.status = next
+    queryApplied.pageNo = 1
+    void load()
+  }
 
   const activeCount = computed(
     () => page.value.items.filter((item) => item.status === 'ACTIVE').length,
@@ -293,6 +294,46 @@
     if (!canManageTenants.value) return
     formInitial.value = row
     formVisible.value = true
+  }
+
+  // ── 行操作工厂(给 <RowActions> 用)─────────────────────────────
+  function rowActions(row: Tenant): RowAction[] {
+    const isCurrent = row.tenantId === tenant.tenantId
+    const isActive = row.status === 'ACTIVE'
+    const acts: RowAction[] = []
+    // 主操作:设为当前 / 已是当前
+    if (!isCurrent) {
+      acts.push({
+        key: 'switch',
+        label: '设为当前',
+        primary: true,
+        onClick: () => switchToTenant(row),
+      })
+    }
+    if (canManageTenants.value) {
+      acts.push({ key: 'edit', label: '编辑', onClick: () => openEdit(row) })
+      acts.push({
+        key: 'init',
+        label: '初始化配置',
+        onClick: () => openInitConfig(row),
+      })
+      if (isActive) {
+        acts.push({
+          key: 'suspend',
+          label: '暂停',
+          divided: true,
+          onClick: () => confirmSuspend(row),
+        })
+      } else {
+        acts.push({
+          key: 'activate',
+          label: '恢复',
+          divided: true,
+          onClick: () => confirmActivate(row),
+        })
+      }
+    }
+    return acts
   }
 
   // ── 批量 / 复制 / 初始化 ─────────────────────────────

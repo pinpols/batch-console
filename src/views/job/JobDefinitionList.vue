@@ -120,37 +120,9 @@
           min-width="140"
           show-overflow-tooltip
         />
-        <el-table-column label="操作" min-width="320" fixed="right">
+        <el-table-column label="操作" width="180" fixed="right">
           <template #default="{ row }">
-            <div class="table-actions">
-              <el-button size="small" plain type="primary" @click="openEdit(row)">编辑</el-button>
-              <el-button
-                size="small"
-                plain
-                :type="row.enabled ? 'warning' : 'success'"
-                :loading="actingJobCode === row.jobCode"
-                @click="toggleRow(row)"
-              >
-                {{ row.enabled ? '停用' : '启用' }}
-              </el-button>
-              <el-button
-                size="small"
-                plain
-                type="primary"
-                :loading="actingJobCode === row.jobCode"
-                @click="triggerRow(row)"
-              >
-                手动触发
-              </el-button>
-              <el-button size="small" plain @click="goInstances(row.jobCode)">查看实例</el-button>
-              <el-button
-                size="small"
-                plain
-                v-track-click="{ action: '克隆 Job', jobCode: row.jobCode }"
-                @click="cloneRow(row)"
-                >克隆</el-button
-              >
-            </div>
+            <RowActions :actions="rowActions(row)" />
           </template>
         </el-table-column>
       </ProTable>
@@ -220,6 +192,7 @@
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import ProTable from '@/components/table/ProTable.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
+  import RowActions, { type RowAction } from '@/components/common/RowActions.vue'
   import CopyableText from '@/components/common/CopyableText.vue'
   import HelpLabel from '@/components/common/HelpLabel.vue'
   import TenantSelect from '@/components/common/TenantSelect.vue'
@@ -324,6 +297,30 @@
 
   function goInstances(jobCode: string) {
     void router.push({ path: '/monitor/job-instances', query: { jobCode } })
+  }
+
+  // ── 行操作工厂(给 <RowActions> 用)─────────────────────────
+  function rowActions(row: ConsoleJobDefinitionResponse): RowAction[] {
+    const acting = actingJobCode.value === row.jobCode
+    return [
+      {
+        key: 'trigger',
+        label: '手动触发',
+        primary: true,
+        loading: acting,
+        onClick: () => triggerRow(row),
+      },
+      { key: 'edit', label: '编辑', onClick: () => openEdit(row) },
+      { key: 'instances', label: '查看实例', onClick: () => goInstances(row.jobCode) },
+      { key: 'clone', label: '克隆', onClick: () => cloneRow(row) },
+      {
+        key: 'toggle',
+        label: row.enabled ? '停用' : '启用',
+        divided: true,
+        disabled: acting,
+        onClick: () => toggleRow(row),
+      },
+    ]
   }
 
   async function loadMeta() {

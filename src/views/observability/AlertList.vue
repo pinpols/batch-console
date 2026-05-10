@@ -67,15 +67,7 @@
               />
             </el-form-item>
             <el-form-item label="时间范围">
-              <el-date-picker
-                class="query-w-340"
-                v-model="timeRange"
-                type="datetimerange"
-                value-format="YYYY-MM-DD HH:mm:ss"
-                range-separator="至"
-                start-placeholder="开始时间"
-                end-placeholder="结束时间"
-              />
+              <DateRangePresetPicker v-model="timeRange" default-preset="today" />
             </el-form-item>
           </ListPageQueryBar>
         </template>

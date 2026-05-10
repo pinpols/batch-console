@@ -38,6 +38,13 @@
                 <el-option v-for="code in jobCodeOptions" :key="code" :label="code" :value="code" />
               </el-select>
             </el-form-item>
+            <el-form-item label="快捷">
+              <el-radio-group :model-value="quickStatus" size="small" @change="onQuickStatusChange">
+                <el-radio-button value="all">全部</el-radio-button>
+                <el-radio-button value="running">进行中</el-radio-button>
+                <el-radio-button value="failed">失败</el-radio-button>
+              </el-radio-group>
+            </el-form-item>
             <el-form-item label="状态">
               <MetaSelect
                 class="query-w-180"
@@ -50,17 +57,13 @@
             </el-form-item>
             <el-form-item>
               <template #label>
-                <HelpLabel tip="按实例创建或执行时间范围筛选">时间范围</HelpLabel>
+                <HelpLabel tip="按业务日期范围筛选;默认今日">业务日</HelpLabel>
               </template>
-              <el-date-picker
-                class="query-w-260"
+              <DateRangePresetPicker
                 v-model="dateRange"
                 type="daterange"
-                range-separator="至"
-                start-placeholder="开始日期"
-                end-placeholder="结束日期"
-                value-format="YYYY-MM-DD"
-                @change="onDateChange"
+                default-preset="today"
+                @update:model-value="onDateChange"
               />
             </el-form-item>
           </ListPageQueryBar>
@@ -148,6 +151,7 @@
   import HelpLabel from '@/components/common/HelpLabel.vue'
   import TenantSelect from '@/components/common/TenantSelect.vue'
   import CopyableText from '@/components/common/CopyableText.vue'
+  import DateRangePresetPicker from '@/components/common/DateRangePresetPicker.vue'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
@@ -161,18 +165,43 @@
     useListFilterFeedback(loading)
   const rows = ref<ConsoleJobInstanceResponse[]>([])
   const total = ref(0)
-  const dateRange = ref<[string, string] | null>(null)
   const jobCodeOptions = ref<string[]>([])
+
+  // 列表筛选默认锚到"今日",运维 80% 场景关心当天数据;URL query 会在下面覆盖
+  function todayRange(): [string, string] {
+    const d = new Date()
+    const p = (n: number) => String(n).padStart(2, '0')
+    const s = `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`
+    return [s, s]
+  }
+  const initialRange = todayRange()
+  const dateRange = ref<[string, string] | null>(initialRange)
 
   const query = reactive({
     tenantId: tenant.tenantId,
     jobCode: '',
     instanceStatus: '',
-    startDate: '',
-    endDate: '',
+    startDate: initialRange[0],
+    endDate: initialRange[1],
     page: 1,
     pageSize: 20,
   })
+
+  // 快捷状态 chip 的展示 key:由当前 instanceStatus 反推
+  const quickStatus = computed<'all' | 'running' | 'failed' | ''>(() => {
+    if (!query.instanceStatus) return 'all'
+    if (query.instanceStatus === 'RUNNING') return 'running'
+    if (query.instanceStatus === 'FAILED') return 'failed'
+    return ''
+  })
+
+  function onQuickStatusChange(key: string | number | boolean | undefined) {
+    const k = String(key)
+    query.instanceStatus = k === 'running' ? 'RUNNING' : k === 'failed' ? 'FAILED' : ''
+    query.page = 1
+    syncFiltersToUrl()
+    void loadData()
+  }
 
   const { data: metaEnums } = useConsoleMetaEnumsQuery()
 
@@ -199,17 +228,19 @@
     query.startDate = val?.[0] ?? ''
     query.endDate = val?.[1] ?? ''
     query.page = 1
-    loadData()
+    syncFiltersToUrl()
+    void loadData()
   }
 
   function resetQuery() {
     return runReset(async () => {
+      const t = todayRange()
       query.tenantId = tenant.tenantId
       query.jobCode = ''
       query.instanceStatus = ''
-      query.startDate = ''
-      query.endDate = ''
-      dateRange.value = null
+      query.startDate = t[0]
+      query.endDate = t[1]
+      dateRange.value = t
       query.page = 1
       syncFiltersToUrl()
       await loadData()
