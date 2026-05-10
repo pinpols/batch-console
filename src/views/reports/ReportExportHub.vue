@@ -3,8 +3,12 @@
     <PageHeader>
       <template #actions>
         <div class="header-actions">
-          <el-tag type="info" effect="plain">tenant: {{ tenant.tenantId }}</el-tag>
-          <el-button size="small" plain @click="copyTenant">复制</el-button>
+          <el-tag type="info" effect="plain">
+            {{ t('reportExportHub.tenantTagPrefix', { id: tenant.tenantId }) }}
+          </el-tag>
+          <el-button size="small" plain @click="copyTenant">
+            {{ t('reportExportHub.btnCopy') }}
+          </el-button>
         </div>
       </template>
     </PageHeader>
@@ -13,10 +17,15 @@
       <template #header>
         <div class="card-header">
           <div>
-            <div class="card-title">可导出的报表</div>
-            <div class="card-subtitle">支持搜索，点击卡片即可开始下载</div>
+            <div class="card-title">{{ t('reportExportHub.cardTitle') }}</div>
+            <div class="card-subtitle">{{ t('reportExportHub.cardSubtitle') }}</div>
           </div>
-          <el-input v-model="keyword" placeholder="搜索报表名称…" clearable class="search" />
+          <el-input
+            v-model="keyword"
+            :placeholder="t('reportExportHub.searchPlaceholder')"
+            clearable
+            class="search"
+          />
         </div>
       </template>
 
@@ -46,7 +55,7 @@
               :loading="loadingKey === r.key"
               @click.stop="downloadOne(r)"
             >
-              下载
+              {{ t('reportExportHub.btnDownload') }}
             </el-button>
             <div class="report-card__file">{{ r.file }}</div>
           </div>
@@ -55,21 +64,22 @@
 
       <el-empty
         v-if="filteredReports.length === 0"
-        description="没有匹配的报表"
+        :description="t('reportExportHub.emptyDesc')"
         :image-size="72"
         class="empty"
       />
 
-      <p class="hint">
-        提示：若后端返回 JSON 错误而非 xlsx，浏览器可能无法打开文件；以 Network 与 traceId 为准。
-      </p>
+      <p class="hint">{{ t('reportExportHub.hintText') }}</p>
     </SectionCard>
   </PageContainer>
 </template>
 
 <script setup lang="ts">
   import { ref, computed } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
+
+  const { t } = useI18n({ useScope: 'global' })
   import { downloadReportExcel, type ReportExcelKey } from '@/api/reports'
   import { useTenantStore } from '@/stores/tenant'
   import PageContainer from '@/components/common/PageContainer.vue'
@@ -90,75 +100,75 @@
     badgeType?: 'success' | 'warning' | 'danger' | 'info'
   }
 
-  const reports: ReportCard[] = [
+  const reports = computed<ReportCard[]>(() => [
     {
       key: 'config-releases',
-      label: '配置发布',
-      desc: '配置发布记录与生效区间',
+      label: t('reportExportHub.labelConfigReleases'),
+      desc: t('reportExportHub.descConfigReleases'),
       file: 'config-releases.xlsx',
-      badge: '配置',
+      badge: t('reportExportHub.badgeConfig'),
     },
     {
       key: 'secrets',
-      label: 'Secrets',
-      desc: '密钥版本与轮转窗口',
+      label: t('reportExportHub.labelSecrets'),
+      desc: t('reportExportHub.descSecrets'),
       file: 'secrets.xlsx',
-      badge: '配置',
+      badge: t('reportExportHub.badgeConfig'),
     },
     {
       key: 'change-logs',
-      label: '变更记录',
-      desc: '关键配置与治理项变更流水',
+      label: t('reportExportHub.labelChangeLogs'),
+      desc: t('reportExportHub.descChangeLogs'),
       file: 'change-logs.xlsx',
     },
     {
       key: 'audits',
-      label: '审计',
-      desc: '重要操作与权限相关审计',
+      label: t('reportExportHub.labelAudits'),
+      desc: t('reportExportHub.descAudits'),
       file: 'audits.xlsx',
-      badge: '审计',
+      badge: t('reportExportHub.badgeAudit'),
     },
     {
       key: 'scheduler-snapshot',
-      label: '调度快照',
-      desc: '当前调度策略、队列与窗口快照',
+      label: t('reportExportHub.labelSchedulerSnapshot'),
+      desc: t('reportExportHub.descSchedulerSnapshot'),
       file: 'scheduler-snapshot.xlsx',
-      badge: '调度',
+      badge: t('reportExportHub.badgeSchedule'),
     },
     {
       key: 'scheduler-history',
-      label: '调度历史',
-      desc: '调度快照历史，用于回溯对比',
+      label: t('reportExportHub.labelSchedulerHistory'),
+      desc: t('reportExportHub.descSchedulerHistory'),
       file: 'scheduler-history.xlsx',
-      badge: '调度',
+      badge: t('reportExportHub.badgeSchedule'),
     },
     {
       key: 'workers',
-      label: 'Workers',
-      desc: 'Worker 注册与运行状态',
+      label: t('reportExportHub.labelWorkers'),
+      desc: t('reportExportHub.descWorkers'),
       file: 'workers.xlsx',
-      badge: '运行',
+      badge: t('reportExportHub.badgeRuntime'),
     },
     {
       key: 'outbox-retries',
-      label: 'Outbox 重试',
-      desc: '投递失败重试记录',
+      label: t('reportExportHub.labelOutboxRetries'),
+      desc: t('reportExportHub.descOutboxRetries'),
       file: 'outbox-retries.xlsx',
-      badge: '观测',
+      badge: t('reportExportHub.badgeObservability'),
     },
     {
       key: 'outbox-deliveries',
-      label: 'Outbox 投递',
-      desc: '投递日志与下游响应',
+      label: t('reportExportHub.labelOutboxDeliveries'),
+      desc: t('reportExportHub.descOutboxDeliveries'),
       file: 'outbox-deliveries.xlsx',
-      badge: '观测',
+      badge: t('reportExportHub.badgeObservability'),
     },
-  ]
+  ])
 
   const filteredReports = computed(() => {
     const k = keyword.value.trim().toLowerCase()
-    if (!k) return reports
-    return reports.filter((r) => {
+    if (!k) return reports.value
+    return reports.value.filter((r) => {
       const hay = `${r.label} ${r.desc} ${r.file} ${r.badge ?? ''}`.toLowerCase()
       return hay.includes(k)
     })
@@ -168,9 +178,9 @@
     loadingKey.value = r.key
     try {
       await downloadReportExcel(r.key, { tenantId: tenant.tenantId }, r.file)
-      ElMessage.success('已开始下载')
+      ElMessage.success(t('reportExportHub.downloadStartedToast'))
     } catch {
-      ElMessage.error('下载失败（参见控制台与 traceId）')
+      ElMessage.error(t('reportExportHub.downloadFailedToast'))
     } finally {
       loadingKey.value = ''
     }
@@ -179,9 +189,9 @@
   async function copyTenant() {
     try {
       await navigator.clipboard.writeText(tenant.tenantId)
-      ElMessage.success('已复制 tenantId')
+      ElMessage.success(t('reportExportHub.tenantCopiedToast'))
     } catch {
-      ElMessage.error('复制失败')
+      ElMessage.error(t('reportExportHub.copyFailedToast'))
     }
   }
 </script>
