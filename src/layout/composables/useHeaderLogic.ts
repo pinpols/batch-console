@@ -17,15 +17,23 @@ export function useHeaderLogic() {
   const permission = usePermissionStore()
   const tabsStore = useTabsStore()
   const tenant = useTenantStore()
-  const { t } = useI18n()
+  const { t, te } = useI18n()
   const paletteOpen = ref(false)
 
   const breadcrumbs = computed(() => {
     const out: { title: string; path: string }[] = []
     const seen = new Set<string>()
     for (const r of route.matched) {
-      const title = r.meta?.title
-      if (!title || typeof title !== 'string') continue
+      const fallback = r.meta?.title
+      const pathKey = r.meta?.pathKey as string | undefined
+      const i18nKey = pathKey ? `page.${pathKey}.title` : ''
+      let title: string | undefined
+      if (i18nKey && te(i18nKey)) {
+        title = t(i18nKey)
+      } else if (typeof fallback === 'string' && fallback) {
+        title = fallback
+      }
+      if (!title) continue
       let path = route.fullPath
       if (r.name && typeof r.name === 'string') {
         try {
@@ -88,7 +96,12 @@ export function useHeaderLogic() {
     }
   }
 
-  const currentTitle = computed(() => (route.meta.title as string) ?? t('nav.appTitle'))
+  const currentTitle = computed(() => {
+    const pathKey = route.meta?.pathKey as string | undefined
+    const i18nKey = pathKey ? `page.${pathKey}.title` : ''
+    if (i18nKey && te(i18nKey)) return t(i18nKey)
+    return (route.meta.title as string) ?? t('nav.appTitle')
+  })
 
   const visibleGroups = computed(() => permission.visibleGroups)
 
