@@ -7,32 +7,32 @@
       @reset="resetFilter"
       @refresh="() => runRefresh(loadDeadLetters)"
     >
-      <el-form-item label="来源类型">
+      <el-form-item :label="t('observability.dlqSourceTypeLabel')">
         <el-select
           class="query-w-180"
           v-model="dlDraft.sourceType"
           clearable
           filterable
-          placeholder="全部"
+          :placeholder="t('observability.dlqSourceTypePlaceholder')"
         >
           <el-option v-for="opt in dlSourceTypeOptions" :key="opt" :label="opt" :value="opt" />
         </el-select>
       </el-form-item>
-      <el-form-item label="来源 ID">
+      <el-form-item :label="t('observability.dlqSourceIdLabel')">
         <el-input
           class="query-w-200"
           v-model="dlDraft.sourceId"
           clearable
-          placeholder="精确匹配"
+          :placeholder="t('observability.dlqSourceIdPlaceholder')"
           @keyup.enter="applyFilter"
         />
       </el-form-item>
-      <el-form-item label="关键字">
+      <el-form-item :label="t('observability.dlqKeywordLabel')">
         <el-input
           class="query-w-220"
           v-model="dlDraft.keyword"
           clearable
-          placeholder="原因 / 状态 模糊匹配"
+          :placeholder="t('observability.dlqKeywordPlaceholder')"
           @keyup.enter="applyFilter"
         />
       </el-form-item>
@@ -48,26 +48,36 @@
         :data="pagedDL.records"
         stripe
         border
-        empty-text="暂无数据"
+        :empty-text="t('common.noData')"
         size="small"
         class="console-table"
       >
         <el-table-column prop="id" label="ID" width="80" />
-        <el-table-column prop="sourceType" label="来源类型" width="120" />
-        <el-table-column prop="sourceId" label="来源 ID" width="100" />
+        <el-table-column
+          prop="sourceType"
+          :label="t('observability.dlqColSourceType')"
+          width="120"
+        />
+        <el-table-column prop="sourceId" :label="t('observability.dlqColSourceId')" width="100" />
         <el-table-column
           prop="deadLetterReason"
-          label="原因"
+          :label="t('observability.dlqColReason')"
           min-width="250"
           show-overflow-tooltip
         />
-        <DatetimeColumn prop="createdAt" label="失败时间" width="160" />
-        <el-table-column prop="replayCount" label="重试次数" width="90" />
-        <el-table-column prop="replayStatus" label="状态" width="100" />
-        <el-table-column label="操作" width="120" fixed="right">
+        <DatetimeColumn prop="createdAt" :label="t('observability.dlqColFailedAt')" width="160" />
+        <el-table-column
+          prop="replayCount"
+          :label="t('observability.dlqColRetryCount')"
+          width="90"
+        />
+        <el-table-column prop="replayStatus" :label="t('observability.dlqColStatus')" width="100" />
+        <el-table-column :label="t('observability.dlqColActions')" width="120" fixed="right">
           <template #default="{ row }">
             <div class="table-actions">
-              <el-button size="small" plain type="primary" @click="openDetail(row)">详情</el-button>
+              <el-button size="small" plain type="primary" @click="openDetail(row)">
+                {{ t('observability.dlqActionDetail') }}
+              </el-button>
             </div>
           </template>
         </el-table-column>
@@ -83,7 +93,7 @@
 
     <DetailDrawer
       v-model="detailVisible"
-      title="Dead Letter 详情"
+      :title="t('observability.dlqDetailTitle')"
       :raw="detailRow"
       :meta-rows="detailMetaRows"
     />
@@ -92,7 +102,10 @@
 
 <script setup lang="ts">
   import { ref, reactive, computed } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import { queryDeadLetters } from '@/api/observabilityQueries'
+
+  const { t } = useI18n({ useScope: 'global' })
   import { toPageResult } from '@/api/adapters'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
@@ -148,9 +161,9 @@
     const r = detailRow.value
     if (!r) return []
     return [
-      { label: '来源类型', value: r.sourceType ?? '' },
-      { label: '来源 ID', value: String(r.sourceId ?? '') },
-      { label: '状态', value: r.replayStatus ?? '' },
+      { label: t('observability.dlqMetaSourceType'), value: r.sourceType ?? '' },
+      { label: t('observability.dlqMetaSourceId'), value: String(r.sourceId ?? '') },
+      { label: t('observability.dlqMetaStatus'), value: r.replayStatus ?? '' },
     ]
   })
 

@@ -7,24 +7,24 @@
       @reset="resetFilter"
       @refresh="() => runRefresh(loadExecutionLogs)"
     >
-      <el-form-item label="操作类型">
+      <el-form-item :label="t('observability.execOperationTypeLabel')">
         <el-select
           class="query-w-200"
           v-model="execDraft.operationType"
           clearable
           filterable
-          placeholder="全部"
+          :placeholder="t('observability.execOperationTypePlaceholder')"
         >
           <el-option v-for="opt in execOperationTypeOptions" :key="opt" :label="opt" :value="opt" />
         </el-select>
       </el-form-item>
-      <el-form-item label="结果">
+      <el-form-item :label="t('observability.execResultLabel')">
         <el-select
           class="query-w-180"
           v-model="execDraft.result"
           clearable
           filterable
-          placeholder="全部"
+          :placeholder="t('observability.execResultPlaceholder')"
         >
           <el-option v-for="opt in execResultOptions" :key="opt" :label="opt" :value="opt" />
         </el-select>
@@ -34,7 +34,7 @@
           class="query-w-220"
           v-model="execDraft.traceId"
           clearable
-          placeholder="模糊匹配"
+          :placeholder="t('observability.execKeywordPlaceholder')"
           @keyup.enter="applyFilter"
         />
       </el-form-item>
@@ -50,21 +50,49 @@
         :data="pagedExec.records"
         stripe
         border
-        empty-text="暂无数据"
+        :empty-text="t('common.noData')"
         size="small"
         class="console-table"
       >
         <el-table-column prop="id" label="ID" width="80" />
-        <el-table-column prop="operationType" label="操作类型" width="140" />
-        <el-table-column prop="operationResult" label="结果" width="100" />
-        <el-table-column prop="operatorId" label="操作人" width="140" show-overflow-tooltip />
-        <el-table-column prop="detailSummary" label="摘要" min-width="300" show-overflow-tooltip />
+        <el-table-column
+          prop="operationType"
+          :label="t('observability.execColOperationType')"
+          width="140"
+        >
+          <template #default="{ row }">
+            {{ resolveEnumLabel('operationType', row.operationType) }}
+          </template>
+        </el-table-column>
+        <el-table-column
+          prop="operationResult"
+          :label="t('observability.execColResult')"
+          width="100"
+        >
+          <template #default="{ row }">
+            {{ resolveEnumLabel('operationResult', row.operationResult) }}
+          </template>
+        </el-table-column>
+        <el-table-column
+          prop="operatorId"
+          :label="t('observability.execColOperator')"
+          width="140"
+          show-overflow-tooltip
+        />
+        <el-table-column
+          prop="detailSummary"
+          :label="t('observability.execColSummary')"
+          min-width="300"
+          show-overflow-tooltip
+        />
         <el-table-column prop="traceId" label="Trace ID" width="180" show-overflow-tooltip />
-        <DatetimeColumn prop="createdAt" label="时间" width="160" />
-        <el-table-column label="操作" width="160" fixed="right">
+        <DatetimeColumn prop="createdAt" :label="t('observability.execColTime')" width="160" />
+        <el-table-column :label="t('observability.execColActions')" width="160" fixed="right">
           <template #default="{ row }">
             <div class="table-actions">
-              <el-button size="small" plain type="primary" @click="openDetail(row)">详情</el-button>
+              <el-button size="small" plain type="primary" @click="openDetail(row)">
+                {{ t('observability.execActionDetail') }}
+              </el-button>
               <el-button
                 v-if="row.traceId"
                 size="small"
@@ -88,7 +116,7 @@
 
     <DetailDrawer
       v-model="detailVisible"
-      title="执行日志详情"
+      :title="t('observability.execDetailTitle')"
       :raw="detailRow"
       :meta-rows="detailMetaRows"
     />
@@ -98,7 +126,16 @@
 <script setup lang="ts">
   import { ref, reactive, computed } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
+  import { useI18n } from 'vue-i18n'
   import { queryExecutionLogs } from '@/api/observabilityQueries'
+
+  const { t, te } = useI18n({ useScope: 'global' })
+
+  function resolveEnumLabel(group: string, value?: string | null): string {
+    if (!value) return ''
+    const key = `enum.${group}.${value}`
+    return te(key) ? t(key) : value
+  }
   import { toPageResult } from '@/api/adapters'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
@@ -168,8 +205,8 @@
   const detailMetaRows = computed(() => {
     const r = detailRow.value ?? {}
     return [
-      { label: '操作类型', value: pickString(r, 'operationType') },
-      { label: '结果', value: pickString(r, 'operationResult') },
+      { label: t('observability.execMetaOperationType'), value: pickString(r, 'operationType') },
+      { label: t('observability.execMetaResult'), value: pickString(r, 'operationResult') },
       { label: 'Trace', value: pickString(r, 'traceId') },
     ]
   })

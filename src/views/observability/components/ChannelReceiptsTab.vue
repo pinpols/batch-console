@@ -7,31 +7,31 @@
       @reset="resetFilter"
       @refresh="() => runRefresh(loadChannelReceipts)"
     >
-      <el-form-item label="渠道">
+      <el-form-item :label="t('observability.chanLabel')">
         <el-input
           class="query-w-220"
           v-model="receiptDraft.channelCode"
           clearable
-          placeholder="模糊匹配"
+          :placeholder="t('observability.chanPlaceholder')"
           @keyup.enter="applyFilter"
         />
       </el-form-item>
-      <el-form-item label="文件 ID">
+      <el-form-item :label="t('observability.chanFileIdLabel')">
         <el-input
           class="query-w-200"
           v-model="receiptDraft.fileId"
           clearable
-          placeholder="精确匹配"
+          :placeholder="t('observability.chanFileIdPlaceholder')"
           @keyup.enter="applyFilter"
         />
       </el-form-item>
-      <el-form-item label="回执状态">
+      <el-form-item :label="t('observability.chanReceiptStatusLabel')">
         <el-select
           class="query-w-180"
           v-model="receiptDraft.status"
           clearable
           filterable
-          placeholder="全部"
+          :placeholder="t('observability.chanReceiptStatusPlaceholder')"
         >
           <el-option v-for="opt in receiptStatusOptions" :key="opt" :label="opt" :value="opt" />
         </el-select>
@@ -48,26 +48,45 @@
         :data="pagedReceipts.records"
         stripe
         border
-        empty-text="暂无数据"
+        :empty-text="t('common.noData')"
         size="small"
         class="console-table"
       >
         <el-table-column prop="id" label="ID" width="80" />
-        <el-table-column prop="channelCode" label="渠道" min-width="160" show-overflow-tooltip />
-        <el-table-column prop="fileId" label="文件 ID" width="100" />
-        <el-table-column prop="dispatchStatus" label="投递状态" width="100" />
-        <el-table-column prop="receiptStatus" label="回执状态" width="100" />
+        <el-table-column
+          prop="channelCode"
+          :label="t('observability.chanColChannel')"
+          min-width="160"
+          show-overflow-tooltip
+        />
+        <el-table-column prop="fileId" :label="t('observability.chanColFileId')" width="100" />
+        <el-table-column
+          prop="dispatchStatus"
+          :label="t('observability.chanColDispatchStatus')"
+          width="100"
+        />
+        <el-table-column
+          prop="receiptStatus"
+          :label="t('observability.chanColReceiptStatus')"
+          width="100"
+        />
         <el-table-column
           prop="errorMessage"
-          label="错误信息"
+          :label="t('observability.chanColError')"
           min-width="250"
           show-overflow-tooltip
         />
-        <DatetimeColumn prop="dispatchedAt" label="投递时间" width="160" />
-        <el-table-column label="操作" width="120" fixed="right">
+        <DatetimeColumn
+          prop="dispatchedAt"
+          :label="t('observability.chanColDispatchedAt')"
+          width="160"
+        />
+        <el-table-column :label="t('observability.chanColActions')" width="120" fixed="right">
           <template #default="{ row }">
             <div class="table-actions">
-              <el-button size="small" plain type="primary" @click="openDetail(row)">详情</el-button>
+              <el-button size="small" plain type="primary" @click="openDetail(row)">
+                {{ t('observability.chanActionDetail') }}
+              </el-button>
             </div>
           </template>
         </el-table-column>
@@ -83,7 +102,7 @@
 
     <DetailDrawer
       v-model="detailVisible"
-      title="Channel 回执详情"
+      :title="t('observability.chanDetailTitle')"
       :raw="detailRow"
       :meta-rows="detailMetaRows"
     />
@@ -92,7 +111,10 @@
 
 <script setup lang="ts">
   import { ref, reactive, computed } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import { queryChannelReceipts } from '@/api/observabilityQueries'
+
+  const { t } = useI18n({ useScope: 'global' })
   import { toPageResult } from '@/api/adapters'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
@@ -152,9 +174,9 @@
   const detailMetaRows = computed(() => {
     const r = detailRow.value ?? {}
     return [
-      { label: '渠道', value: pickString(r, 'channelCode') },
-      { label: '文件 ID', value: pickString(r, 'fileId') },
-      { label: '回执状态', value: pickString(r, 'receiptStatus') },
+      { label: t('observability.chanMetaChannel'), value: pickString(r, 'channelCode') },
+      { label: t('observability.chanMetaFileId'), value: pickString(r, 'fileId') },
+      { label: t('observability.chanMetaReceiptStatus'), value: pickString(r, 'receiptStatus') },
     ]
   })
 

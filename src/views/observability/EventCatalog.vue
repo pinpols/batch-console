@@ -4,7 +4,7 @@
 
     <SectionCard>
       <el-tabs v-model="activeTab" v-hover-tab-activate="true" class="pill-tabs">
-        <el-tab-pane label="事件类型" name="eventTypes">
+        <el-tab-pane :label="t('observability.eventCatalogTabEventTypes')" name="eventTypes">
           <ProTable
             :data="pagedEventTypes"
             :loading="loadingTypes"
@@ -24,19 +24,19 @@
                 @reset="() => runTypesReset(() => (eventTypeKeyword = ''))"
                 @refresh="() => runTypesRefresh(loadEventTypes)"
               >
-                <el-form-item label="关键字">
+                <el-form-item :label="t('observability.eventCatalogKeywordLabel')">
                   <el-input
                     class="query-w-240"
                     v-model="eventTypeKeyword"
                     clearable
-                    placeholder="搜索事件类型"
+                    :placeholder="t('observability.eventCatalogEventTypesPlaceholder')"
                   />
                 </el-form-item>
               </ListPageQueryBar>
             </template>
             <el-table-column
               prop="eventType"
-              label="事件类型"
+              :label="t('observability.eventCatalogColEventType')"
               min-width="200"
               show-overflow-tooltip
             >
@@ -46,13 +46,26 @@
             </el-table-column>
             <el-table-column
               prop="description"
-              label="描述"
+              :label="t('observability.eventCatalogColDescription')"
               min-width="300"
               show-overflow-tooltip
             />
-            <el-table-column prop="category" label="分类" width="140" />
-            <el-table-column prop="schema" label="Schema" min-width="200" show-overflow-tooltip />
-            <el-table-column label="操作" width="120" fixed="right">
+            <el-table-column
+              prop="category"
+              :label="t('observability.eventCatalogColCategory')"
+              width="140"
+            />
+            <el-table-column
+              prop="schema"
+              :label="t('observability.eventCatalogColSchema')"
+              min-width="200"
+              show-overflow-tooltip
+            />
+            <el-table-column
+              :label="t('observability.eventCatalogColActions')"
+              width="120"
+              fixed="right"
+            >
               <template #default="{ row }">
                 <div class="table-actions">
                   <el-button
@@ -61,7 +74,7 @@
                     type="primary"
                     @click="openDetail('eventType', row)"
                   >
-                    详情
+                    {{ t('observability.eventCatalogActionDetail') }}
                   </el-button>
                 </div>
               </template>
@@ -69,7 +82,7 @@
           </ProTable>
         </el-tab-pane>
 
-        <el-tab-pane label="Kafka Topics" name="topics">
+        <el-tab-pane :label="t('observability.eventCatalogTabTopics')" name="topics">
           <ProTable
             :data="pagedTopics"
             :loading="loadingTopics"
@@ -89,34 +102,51 @@
                 @reset="() => runTopicsReset(() => (topicKeyword = ''))"
                 @refresh="() => runTopicsRefresh(loadTopics)"
               >
-                <el-form-item label="关键字">
+                <el-form-item :label="t('observability.eventCatalogKeywordLabel')">
                   <el-input
                     class="query-w-240"
                     v-model="topicKeyword"
                     clearable
-                    placeholder="搜索 Topic"
+                    :placeholder="t('observability.eventCatalogTopicsPlaceholder')"
                   />
                 </el-form-item>
               </ListPageQueryBar>
             </template>
-            <el-table-column prop="topic" label="Topic" min-width="250" show-overflow-tooltip>
+            <el-table-column
+              prop="topic"
+              :label="t('observability.eventCatalogColTopic')"
+              min-width="250"
+              show-overflow-tooltip
+            >
               <template #default="{ row }">
                 <CopyableText :text="String(row.topic ?? row.name ?? '')" />
               </template>
             </el-table-column>
-            <el-table-column prop="partitions" label="分区数" width="100" />
-            <el-table-column prop="replicationFactor" label="副本因子" width="100" />
+            <el-table-column
+              prop="partitions"
+              :label="t('observability.eventCatalogColPartitions')"
+              width="100"
+            />
+            <el-table-column
+              prop="replicationFactor"
+              :label="t('observability.eventCatalogColReplicas')"
+              width="100"
+            />
             <el-table-column
               prop="description"
-              label="描述"
+              :label="t('observability.eventCatalogColDescription')"
               min-width="200"
               show-overflow-tooltip
             />
-            <el-table-column label="操作" width="120" fixed="right">
+            <el-table-column
+              :label="t('observability.eventCatalogColActions')"
+              width="120"
+              fixed="right"
+            >
               <template #default="{ row }">
                 <div class="table-actions">
                   <el-button size="small" plain type="primary" @click="openDetail('topic', row)">
-                    详情
+                    {{ t('observability.eventCatalogActionDetail') }}
                   </el-button>
                 </div>
               </template>
@@ -137,7 +167,10 @@
 
 <script setup lang="ts">
   import { ref, computed, onMounted } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import { listEventTypes, listKafkaTopics } from '@/api/eventCatalog'
+
+  const { t } = useI18n({ useScope: 'global' })
   import { toPageResult } from '@/api/adapters'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
@@ -177,13 +210,25 @@
   const detailKind = ref<'eventType' | 'topic'>('eventType')
   const detailRow = ref<Record<string, unknown> | null>(null)
   const detailTitle = computed(() =>
-    detailKind.value === 'eventType' ? '事件类型详情' : 'Topic 详情',
+    detailKind.value === 'eventType'
+      ? t('observability.eventCatalogEventTypeDetailTitle')
+      : t('observability.eventCatalogTopicDetailTitle'),
   )
   const detailMetaRows = computed(() => {
     if (!detailRow.value) return []
     return detailKind.value === 'eventType'
-      ? [{ label: '事件类型', value: String(detailRow.value.eventType ?? '') }]
-      : [{ label: 'Topic', value: String(detailRow.value.topic ?? detailRow.value.name ?? '') }]
+      ? [
+          {
+            label: t('observability.eventCatalogMetaEventType'),
+            value: String(detailRow.value.eventType ?? ''),
+          },
+        ]
+      : [
+          {
+            label: t('observability.eventCatalogMetaTopic'),
+            value: String(detailRow.value.topic ?? detailRow.value.name ?? ''),
+          },
+        ]
   })
 
   function openDetail(kind: 'eventType' | 'topic', row: Record<string, unknown>) {

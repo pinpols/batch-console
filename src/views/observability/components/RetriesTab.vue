@@ -7,33 +7,33 @@
       @reset="resetFilter"
       @refresh="() => runRefresh(loadRetries)"
     >
-      <el-form-item label="关联类型">
+      <el-form-item :label="t('observability.retryRelatedTypeLabel')">
         <el-select
           class="query-w-180"
           v-model="retryDraft.relatedType"
           clearable
           filterable
-          placeholder="全部"
+          :placeholder="t('observability.retryRelatedTypePlaceholder')"
         >
           <el-option v-for="opt in retryRelatedTypeOptions" :key="opt" :label="opt" :value="opt" />
         </el-select>
       </el-form-item>
-      <el-form-item label="关联 ID">
+      <el-form-item :label="t('observability.retryRelatedIdLabel')">
         <el-input
           class="query-w-200"
           v-model="retryDraft.relatedId"
           clearable
-          placeholder="精确匹配"
+          :placeholder="t('observability.retryRelatedIdPlaceholder')"
           @keyup.enter="applyFilter"
         />
       </el-form-item>
-      <el-form-item label="状态">
+      <el-form-item :label="t('observability.retryStatusLabel')">
         <el-select
           class="query-w-180"
           v-model="retryDraft.status"
           clearable
           filterable
-          placeholder="全部"
+          :placeholder="t('observability.retryStatusPlaceholder')"
         >
           <el-option v-for="opt in retryStatusOptions" :key="opt" :label="opt" :value="opt" />
         </el-select>
@@ -50,22 +50,48 @@
         :data="pagedRetries.records"
         stripe
         border
-        empty-text="暂无数据"
+        :empty-text="t('common.noData')"
         size="small"
         class="console-table"
       >
         <el-table-column prop="id" label="ID" width="80" />
-        <el-table-column prop="relatedType" label="关联类型" width="120" />
-        <el-table-column prop="relatedId" label="关联 ID" width="100" />
-        <el-table-column prop="retryStatus" label="状态" width="120" />
-        <DatetimeColumn prop="nextRetryAt" label="下次重试" width="160" />
-        <el-table-column prop="retryCount" label="重试次数" width="90" />
-        <el-table-column prop="maxRetryCount" label="最大重试" width="90" />
-        <DatetimeColumn prop="createdAt" label="创建时间" width="160" />
-        <el-table-column label="操作" width="120" fixed="right">
+        <el-table-column
+          prop="relatedType"
+          :label="t('observability.retryColRelatedType')"
+          width="120"
+        />
+        <el-table-column
+          prop="relatedId"
+          :label="t('observability.retryColRelatedId')"
+          width="100"
+        />
+        <el-table-column
+          prop="retryStatus"
+          :label="t('observability.retryColStatus')"
+          width="120"
+        />
+        <DatetimeColumn
+          prop="nextRetryAt"
+          :label="t('observability.retryColNextRetry')"
+          width="160"
+        />
+        <el-table-column
+          prop="retryCount"
+          :label="t('observability.retryColRetryCount')"
+          width="90"
+        />
+        <el-table-column
+          prop="maxRetryCount"
+          :label="t('observability.retryColMaxRetry')"
+          width="90"
+        />
+        <DatetimeColumn prop="createdAt" :label="t('observability.retryColCreated')" width="160" />
+        <el-table-column :label="t('observability.retryColActions')" width="120" fixed="right">
           <template #default="{ row }">
             <div class="table-actions">
-              <el-button size="small" plain type="primary" @click="openDetail(row)">详情</el-button>
+              <el-button size="small" plain type="primary" @click="openDetail(row)">
+                {{ t('observability.retryActionDetail') }}
+              </el-button>
             </div>
           </template>
         </el-table-column>
@@ -81,7 +107,7 @@
 
     <DetailDrawer
       v-model="detailVisible"
-      title="重试调度详情"
+      :title="t('observability.retryDetailTitle')"
       :raw="detailRow"
       :meta-rows="detailMetaRows"
     />
@@ -90,6 +116,9 @@
 
 <script setup lang="ts">
   import { ref, reactive, computed } from 'vue'
+  import { useI18n } from 'vue-i18n'
+
+  const { t } = useI18n({ useScope: 'global' })
   import { queryRetries } from '@/api/observabilityQueries'
   import { toPageResult } from '@/api/adapters'
   import { useTenantStore } from '@/stores/tenant'
@@ -153,9 +182,9 @@
     const r = detailRow.value
     if (!r) return []
     return [
-      { label: '关联类型', value: r.relatedType ?? '' },
-      { label: '关联 ID', value: String(r.relatedId ?? '') },
-      { label: '状态', value: r.retryStatus ?? '' },
+      { label: t('observability.retryMetaRelatedType'), value: r.relatedType ?? '' },
+      { label: t('observability.retryMetaRelatedId'), value: String(r.relatedId ?? '') },
+      { label: t('observability.retryMetaStatus'), value: r.retryStatus ?? '' },
     ]
   })
 
