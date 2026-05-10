@@ -432,7 +432,10 @@ export default withMermaid({
     ],
 
     // 侧边栏按一级目录组装,每个分类指向其根入口(rewrites 后的 index.md)
+    // 注意:更深的路径要排在前面 — VitePress 用最长前缀匹配,但靠对象 key 顺序决定优先级,
+    // 把 /architecture/adr/ 写在 /architecture/ 之前,避免进 ADR 页时回落到"架构"侧栏
     sidebar: {
+      '/architecture/adr/': [{ text: 'ADR', items: [{ text: '总览', link: '/architecture/adr/' }] }],
       '/architecture/': [{ text: '架构', items: [{ text: '总览', link: '/architecture/' }] }],
       '/design/': [{ text: '设计', items: [{ text: '总览', link: '/design/' }] }],
       '/runbook/': [{ text: '运维', items: [{ text: '总览', link: '/runbook/' }] }],
