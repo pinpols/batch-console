@@ -26,6 +26,11 @@
         v-bind="$attrs"
       >
         <slot />
+        <!-- 过滤无结果时不抢 #empty 槽,继续走 filteredEmptyText;
+             仅在"零数据 + 无筛选"时让父组件用 #empty 渲染引导卡片(EmptyState + CTA) -->
+        <template v-if="!hasActiveFilters && $slots.empty" #empty>
+          <slot name="empty" />
+        </template>
       </el-table>
       <TablePagerBar
         v-if="showPager"

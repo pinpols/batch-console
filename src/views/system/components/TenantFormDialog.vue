@@ -79,7 +79,8 @@
 
   const emit = defineEmits<{
     (e: 'update:modelValue', v: boolean): void
-    (e: 'saved'): void
+    /** payload 携带 tenantId 和 created 标记;父组件可据此决定是否展示"创建后引导卡片" */
+    (e: 'saved', payload: { tenantId: string; created: boolean }): void
   }>()
 
   const editing = ref(false)
@@ -140,23 +141,24 @@
     if (!(await validate())) return
     saving.value = true
     try {
+      const tenantId = form.tenantId.trim()
       if (editing.value) {
-        await updateTenant(form.tenantId, {
+        await updateTenant(tenantId, {
           tenantName: form.tenantName.trim(),
           description: form.description || undefined,
         })
         ElMessage.success('已更新')
       } else {
         await createTenant({
-          tenantId: form.tenantId.trim(),
+          tenantId,
           tenantName: form.tenantName.trim(),
           description: form.description || undefined,
           username: form.username.trim(),
           password: form.password,
         })
-        ElMessage.success('已创建')
+        // 不再 toast"已创建"——父组件会展示带"去初始化 / 查看列表"的引导卡片
       }
-      emit('saved')
+      emit('saved', { tenantId, created: !editing.value })
       emit('update:modelValue', false)
     } finally {
       saving.value = false

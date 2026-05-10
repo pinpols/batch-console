@@ -5,6 +5,14 @@
     width="640px"
     @update:model-value="(v) => emit('update:modelValue', v)"
   >
+    <!-- 体检"痛点 7":手写 JSON 只有原作者能完成。先把人引到"复制配置"快路径,
+         避免他们在这里手写 spec — 复制是无 JSON、有 dryRun 的 wizard 版,真正常用的入口 -->
+    <el-alert type="warning" :closable="false" show-icon class="mb-12">
+      <template #title>
+        <strong>高级路径 — 需手写 Spec JSON。</strong>
+        日常推荐用「页头 → 复制配置」从源租户(default 模板或同业务租户)一键复制,无需写 JSON。
+      </template>
+    </el-alert>
     <el-alert type="info" :closable="false" show-icon class="mb-12">
       <template #title>
         把一份配置 JSON 写入目标租户,可覆盖全部 10 类配置(作业 / 工作流 / 流水线 / 文件渠道 / 模板 /
@@ -43,15 +51,26 @@
           style="font-family: var(--font-family-mono, monospace); font-size: 12px"
         />
       </el-form-item>
-      <el-form-item label="试运行" prop="dryRun">
-        <el-switch v-model="form.dryRun" />
-        <span class="form-hint u-ml-8">开启后仅校验,不实际写入</span>
-      </el-form-item>
     </el-form>
     <template #footer>
       <el-button @click="emit('update:modelValue', false)">取消</el-button>
-      <el-button type="primary" :loading="saving" @click="submit">
-        {{ form.dryRun ? '试运行' : '执行初始化' }}
+      <!-- 体检"痛点 8":dryRun 开关藏一层心智成本,容易把试运行当正式执行;
+           改成两个明确按钮 — 灰色试运行 + 红色正式执行,主次和后果一眼能看 -->
+      <el-button
+        plain
+        :loading="saving && lastDryRun"
+        :disabled="saving && !lastDryRun"
+        @click="submit(true)"
+      >
+        试运行预览
+      </el-button>
+      <el-button
+        type="danger"
+        :loading="saving && !lastDryRun"
+        :disabled="saving && lastDryRun"
+        @click="submit(false)"
+      >
+        正式执行初始化
       </el-button>
     </template>
   </el-dialog>
@@ -76,12 +95,13 @@
   }>()
 
   const saving = ref(false)
+  // 用于两个按钮区分 loading 状态:点试运行时只有"试运行"按钮转,反之亦然
+  const lastDryRun = ref(true)
   const form = reactive({
     targetTenantId: '',
     configTypes: [] as ConfigType[],
     mode: 'SKIP_EXISTING' as 'SKIP_EXISTING' | 'UPSERT',
     specJson: '',
-    dryRun: true,
   })
 
   const { formRef: initFormRef, validate: validateInitForm } = useFormValidate()
@@ -97,11 +117,11 @@
       form.configTypes = []
       form.mode = 'SKIP_EXISTING'
       form.specJson = ''
-      form.dryRun = true
+      lastDryRun.value = true
     },
   )
 
-  async function submit() {
+  async function submit(dryRun: boolean) {
     if (!(await validateInitForm())) return
     let spec: Record<string, unknown>
     try {
@@ -111,16 +131,17 @@
       return
     }
     saving.value = true
+    lastDryRun.value = dryRun
     try {
       const res = await batchInitTenantConfig({
         targetTenantIds: [form.targetTenantId],
         spec,
         configTypes: form.configTypes.length ? form.configTypes : undefined,
         mode: form.mode,
-        dryRun: form.dryRun,
+        dryRun,
       })
       emit('result', res)
-      if (!form.dryRun) {
+      if (!dryRun) {
         ElMessage.success('初始化完成')
         emit('update:modelValue', false)
       }

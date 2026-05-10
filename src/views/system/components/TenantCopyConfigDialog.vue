@@ -64,15 +64,25 @@
           <el-radio value="UPSERT">覆盖更新已有</el-radio>
         </el-radio-group>
       </el-form-item>
-      <el-form-item label="试运行">
-        <el-switch v-model="form.dryRun" />
-        <span class="form-hint u-ml-8">开启后仅预览差异,不实际写入</span>
-      </el-form-item>
     </el-form>
     <template #footer>
       <el-button @click="emit('update:modelValue', false)">取消</el-button>
-      <el-button type="primary" :loading="saving" @click="submit">
-        {{ form.dryRun ? '试运行' : '执行复制' }}
+      <!-- 体检"痛点 8":dryRun 开关替换为两个明确按钮,主次和后果一眼能看 -->
+      <el-button
+        plain
+        :loading="saving && lastDryRun"
+        :disabled="saving && !lastDryRun"
+        @click="submit(true)"
+      >
+        试运行预览差异
+      </el-button>
+      <el-button
+        type="danger"
+        :loading="saving && !lastDryRun"
+        :disabled="saving && lastDryRun"
+        @click="submit(false)"
+      >
+        正式执行复制
       </el-button>
     </template>
   </el-dialog>
@@ -98,12 +108,12 @@
   }>()
 
   const saving = ref(false)
+  const lastDryRun = ref(true)
   const form = reactive({
     sourceTenantId: '',
     targetTenantIds: [] as string[],
     configTypes: [] as ConfigType[],
     mode: 'SKIP_EXISTING' as 'SKIP_EXISTING' | 'UPSERT',
-    dryRun: true,
   })
 
   const { formRef: copyFormRef, validate: validateCopyForm } = useFormValidate()
@@ -133,23 +143,24 @@
       form.targetTenantIds = []
       form.configTypes = []
       form.mode = 'SKIP_EXISTING'
-      form.dryRun = true
+      lastDryRun.value = true
     },
   )
 
-  async function submit() {
+  async function submit(dryRun: boolean) {
     if (!(await validateCopyForm())) return
     saving.value = true
+    lastDryRun.value = dryRun
     try {
       const res = await copyTenantConfig({
         sourceTenantId: form.sourceTenantId,
         targetTenantIds: form.targetTenantIds,
         configTypes: form.configTypes.length ? form.configTypes : undefined,
         mode: form.mode,
-        dryRun: form.dryRun,
+        dryRun,
       })
       emit('result', res)
-      if (!form.dryRun) {
+      if (!dryRun) {
         ElMessage.success('复制完成')
         emit('update:modelValue', false)
       }
