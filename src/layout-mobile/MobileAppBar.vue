@@ -7,28 +7,28 @@
     <div class="mobile-appbar__right">
       <el-popover placement="bottom-end" :width="290" trigger="click">
         <template #reference>
-          <button class="mobile-appbar__btn" aria-label="账号菜单">
+          <button class="mobile-appbar__btn" :aria-label="t('mobile.appBar.accountMenu')">
             <el-icon><User /></el-icon>
           </button>
         </template>
         <div class="mobile-appbar__panel">
           <div class="mobile-appbar__row">
-            <span class="mobile-appbar__key">用户</span>
+            <span class="mobile-appbar__key">{{ t('mobile.appBar.user') }}</span>
             <span class="mobile-appbar__val">{{ auth.userInfo?.username ?? '—' }}</span>
           </div>
           <div class="mobile-appbar__row">
-            <span class="mobile-appbar__key">角色</span>
+            <span class="mobile-appbar__key">{{ t('mobile.appBar.role') }}</span>
             <span class="mobile-appbar__val">{{ auth.role ?? '—' }}</span>
           </div>
 
-          <!-- 租户：有切换权限显示下拉，否则只读 -->
+          <!-- 租户:有切换权限显示下拉,否则只读 -->
           <div class="mobile-appbar__tenant">
-            <span class="mobile-appbar__key">租户</span>
+            <span class="mobile-appbar__key">{{ t('mobile.appBar.tenant') }}</span>
             <TenantSelect
               v-if="canSwitchTenant"
               :model-value="tenant.tenantId"
               size="small"
-              placeholder="切换租户"
+              :placeholder="t('mobile.appBar.switchTenantPlaceholder')"
               select-class="query-w-190"
               @update:model-value="handleTenantSwitch"
             />
@@ -37,7 +37,6 @@
 
           <el-divider style="margin: 10px 0" />
 
-          <!-- 主题切换 -->
           <div class="mobile-appbar__row mobile-appbar__row--clickable" @click="app.toggleTheme()">
             <span class="mobile-appbar__key">
               <el-icon class="mobile-appbar__icon">
@@ -45,22 +44,24 @@
                 <Sunny v-else-if="app.themePreference === 'light'" />
                 <Moon v-else />
               </el-icon>
-              主题
+              {{ t('mobile.appBar.theme') }}
             </span>
             <span class="mobile-appbar__val">{{ themeLabel }}</span>
           </div>
 
           <el-divider style="margin: 10px 0" />
 
-          <a class="mobile-appbar__link" @click="goDesktop">切换到桌面版</a>
+          <a class="mobile-appbar__link" @click="goDesktop">{{ t('mobile.appBar.goDesktop') }}</a>
           <el-popconfirm
-            title="确认退出登录？"
-            confirm-button-text="退出"
-            cancel-button-text="取消"
+            :title="t('mobile.appBar.confirmLogout')"
+            :confirm-button-text="t('mobile.appBar.logoutConfirmText')"
+            :cancel-button-text="t('common.cancel')"
             @confirm="handleLogout"
           >
             <template #reference>
-              <a class="mobile-appbar__link mobile-appbar__link--danger">退出登录</a>
+              <a class="mobile-appbar__link mobile-appbar__link--danger">
+                {{ t('mobile.appBar.logout') }}
+              </a>
             </template>
           </el-popconfirm>
         </div>
@@ -72,6 +73,7 @@
 <script setup lang="ts">
   import { computed } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
+  import { useI18n } from 'vue-i18n'
   import { User, Monitor, Moon, Sunny } from '@element-plus/icons-vue'
   import { ElMessage } from 'element-plus'
   import { useAuthStore } from '@/stores/auth'
@@ -79,25 +81,34 @@
   import { useTabsStore } from '@/stores/tabs'
   import { useAppStore } from '@/stores/app'
   import { canSwitchTenant as checkCanSwitchTenant } from '@/utils/tenantAccess'
+  import { pathToKey } from '@/constants/pathKey'
   import TenantSelect from '@/components/common/TenantSelect.vue'
 
   const route = useRoute()
   const router = useRouter()
+  const { t, te } = useI18n({ useScope: 'global' })
   const auth = useAuthStore()
   const tenant = useTenantStore()
   const tabsStore = useTabsStore()
   const app = useAppStore()
 
-  const title = computed(() => (route.meta.title as string) || '批量调度平台')
+  const title = computed(() => {
+    // 移动端路由 meta 也写了中文 title;若桌面端 page.<key>.title 命中就走 i18n,
+    // 否则回退到 meta.title,最终再兜底应用名
+    const pathKey = route.meta?.pathKey as string | undefined
+    const i18nKey = pathKey ? `page.${pathKey}.title` : `page.${pathToKey(route.path)}.title`
+    if (te(i18nKey)) return t(i18nKey)
+    return (route.meta.title as string) || t('nav.appTitle')
+  })
   const canSwitchTenant = computed(() => checkCanSwitchTenant(auth.userInfo?.permissions ?? []))
   const themeLabel = computed(() => {
     switch (app.themePreference) {
       case 'light':
-        return '浅色'
+        return t('mobile.appBar.themeLight')
       case 'dark':
-        return '深色'
+        return t('mobile.appBar.themeDark')
       default:
-        return '跟随系统'
+        return t('mobile.appBar.themeFollowSystem')
     }
   })
 
@@ -110,7 +121,7 @@
   async function handleTenantSwitch(newTenantId: string) {
     if (!newTenantId) return
     tenant.setTenantId(newTenantId)
-    ElMessage.success(`已切换到 ${newTenantId}`)
+    ElMessage.success(t('mobile.appBar.switchedTenant', { id: newTenantId }))
     try {
       await auth.fetchMe()
     } catch (err) {
