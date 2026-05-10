@@ -2,22 +2,24 @@
   <PageContainer>
     <PageHeader>
       <template #actions>
-        <el-button type="primary" :icon="Refresh" :loading="loading" @click="load">刷新</el-button>
+        <el-button type="primary" :icon="Refresh" :loading="loading" @click="load">
+          {{ t('opsSummary.btnRefresh') }}
+        </el-button>
       </template>
     </PageHeader>
 
     <div v-if="lastTrace" class="trace-bar">
-      <span class="trace-label">最近 traceId</span>
+      <span class="trace-label">{{ t('opsSummary.traceLabel') }}</span>
       <code class="trace-code">{{ lastTrace }}</code>
-      <el-button size="small" @click="copyTrace">复制</el-button>
+      <el-button size="small" @click="copyTrace">{{ t('opsSummary.btnCopy') }}</el-button>
     </div>
 
     <SectionCard v-if="summary" class="ops-tabs-card">
       <el-tabs v-model="opsTab" v-hover-tab-activate="true" class="pill-tabs ops-tabs">
-        <el-tab-pane label="卡片指标" name="kpis" />
-        <el-tab-pane label="趋势" name="trend" />
-        <el-tab-pane label="分布" name="dist" />
-        <el-tab-pane label="扩展面板" name="extra" />
+        <el-tab-pane :label="t('opsSummary.tabKpis')" name="kpis" />
+        <el-tab-pane :label="t('opsSummary.tabTrend')" name="trend" />
+        <el-tab-pane :label="t('opsSummary.tabDist')" name="dist" />
+        <el-tab-pane :label="t('opsSummary.tabExtra')" name="extra" />
       </el-tabs>
 
       <div class="ops-panels">
@@ -59,9 +61,7 @@
     />
 
     <SectionCard v-else-if="!loading && !summary">
-      <EmptyState
-        description="暂无数据或请求失败（未联调后端时属正常）。请确认 tenantId 与网关。"
-      />
+      <EmptyState :description="t('opsSummary.errorDesc')" />
     </SectionCard>
   </PageContainer>
 </template>
@@ -70,7 +70,10 @@
   // echarts/core 模块注册:本页是 echarts 的唯一使用入口,从 main.ts 挪到这里以
   // 跟随路由 lazy chunk 加载,首屏不下 echarts(~181 KB gzip)。
   import '@/charts/echarts'
+  import { useI18n } from 'vue-i18n'
   import { Refresh } from '@element-plus/icons-vue'
+
+  const { t } = useI18n({ useScope: 'global' })
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'

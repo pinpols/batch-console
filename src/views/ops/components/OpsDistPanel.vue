@@ -2,8 +2,8 @@
   <section class="ops-panel" :class="{ 'ops-panel--active': active }" :aria-hidden="!active">
     <div class="charts-header">
       <div>
-        <div class="charts-title">分布</div>
-        <div class="charts-subtitle">用于定位"主要异常类型/主要影响面"</div>
+        <div class="charts-title">{{ t('opsDistPanel.title') }}</div>
+        <div class="charts-subtitle">{{ t('opsDistPanel.subtitle') }}</div>
       </div>
       <div class="charts-actions">
         <el-button
@@ -12,7 +12,7 @@
           :loading="chartsLoading"
           @click="$emit('refreshCharts')"
         >
-          刷新
+          {{ t('opsDistPanel.btnRefresh') }}
         </el-button>
       </div>
     </div>
@@ -21,7 +21,7 @@
       <div class="chart-panel">
         <div class="panel-title">
           <span class="dot dot--info" />
-          触发类型分布
+          {{ t('opsDistPanel.triggerType') }}
         </div>
         <VChart
           class="chart"
@@ -34,7 +34,7 @@
       <div class="chart-panel">
         <div class="panel-title">
           <span class="dot dot--success" />
-          Worker 组 / 状态分布
+          {{ t('opsDistPanel.workerGroup') }}
         </div>
         <VChart
           class="chart"
@@ -49,8 +49,11 @@
 </template>
 
 <script setup lang="ts">
+  import { useI18n } from 'vue-i18n'
   import { RefreshRight } from '@element-plus/icons-vue'
   import VChart from 'vue-echarts'
+
+  const { t } = useI18n({ useScope: 'global' })
 
   defineProps<{
     active: boolean
