@@ -1,18 +1,17 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { effectScope, ref } from 'vue'
 
-const elMessageSuccessMock = vi.fn()
+const elMessageMock = vi.fn()
 
 vi.mock('element-plus', () => ({
-  ElMessage: {
-    success: (...args: unknown[]) => elMessageSuccessMock(...args),
-  },
+  // ElMessage 在源码里以 callable 形式调用(`ElMessage({...})`),mock 也按 callable 实现
+  ElMessage: (...args: unknown[]) => elMessageMock(...args),
 }))
 
 import { useListFilterFeedback } from './useListFilterFeedback'
 
 beforeEach(() => {
-  elMessageSuccessMock.mockReset()
+  elMessageMock.mockReset()
 })
 
 function setup() {
@@ -26,25 +25,37 @@ function setup() {
 }
 
 describe('useListFilterFeedback', () => {
-  it('runSearch 完成后 toast "已按条件更新列表"', async () => {
+  it('runSearch 完成后 toast "已按条件更新列表"(success + grouping + plain)', async () => {
     const { api, dispose } = setup()
     await api.runSearch(() => {})
-    expect(elMessageSuccessMock).toHaveBeenCalledTimes(1)
-    expect(elMessageSuccessMock.mock.calls[0][0]).toMatchObject({ message: '已按条件更新列表' })
+    expect(elMessageMock).toHaveBeenCalledTimes(1)
+    expect(elMessageMock.mock.calls[0][0]).toMatchObject({
+      message: '已按条件更新列表',
+      type: 'success',
+      plain: true,
+      grouping: true,
+      customClass: 'filter-feedback-toast',
+    })
     dispose()
   })
 
-  it('runReset 完成后 toast "已重置筛选条件"', async () => {
+  it('runReset 完成后 toast "已重置筛选条件"(info 色,区别于 success)', async () => {
     const { api, dispose } = setup()
     await api.runReset(() => {})
-    expect(elMessageSuccessMock.mock.calls[0][0]).toMatchObject({ message: '已重置筛选条件' })
+    expect(elMessageMock.mock.calls[0][0]).toMatchObject({
+      message: '已重置筛选条件',
+      type: 'info',
+    })
     dispose()
   })
 
   it('runRefresh 完成后 toast "已刷新"', async () => {
     const { api, dispose } = setup()
     await api.runRefresh(() => {})
-    expect(elMessageSuccessMock.mock.calls[0][0]).toMatchObject({ message: '已刷新' })
+    expect(elMessageMock.mock.calls[0][0]).toMatchObject({
+      message: '已刷新',
+      type: 'success',
+    })
     dispose()
   })
 
@@ -55,7 +66,7 @@ describe('useListFilterFeedback', () => {
         throw new Error('boom')
       }),
     ).rejects.toThrow('boom')
-    expect(elMessageSuccessMock).not.toHaveBeenCalled()
+    expect(elMessageMock).not.toHaveBeenCalled()
     expect(api.filterBusy.value).toBe(false)
     dispose()
   })

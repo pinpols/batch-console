@@ -9,6 +9,7 @@
       @reset="() => runReset(loadLogs)"
     />
     <el-table
+      v-loading="loadingLogs"
       :data="pagedLogs.records"
       stripe
       border

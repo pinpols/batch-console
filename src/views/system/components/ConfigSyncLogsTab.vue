@@ -9,6 +9,7 @@
       @reset="() => runReset(loadSyncLogs)"
     />
     <el-table
+      v-loading="loadingSyncLogs"
       :data="syncLogs"
       stripe
       border

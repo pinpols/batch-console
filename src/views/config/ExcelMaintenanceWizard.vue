@@ -242,7 +242,13 @@
                         previewStats.invalid
                       }}</el-descriptions-item>
                     </el-descriptions>
-                    <el-button type="danger" size="large" :disabled="!uploadToken" @click="doApply">
+                    <el-button
+                      type="danger"
+                      size="large"
+                      :disabled="!uploadToken"
+                      :loading="applyLoading"
+                      @click="doApply"
+                    >
                       确认应用变更
                     </el-button>
                   </div>
@@ -281,7 +287,7 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, watch } from 'vue'
+  import { computed, ref, watch } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { ArrowLeft, ArrowRight, Document, Upload, WarningFilled } from '@element-plus/icons-vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
@@ -429,13 +435,20 @@
     }
   }
 
+  const applyLoading = ref(false)
   async function doApply() {
     if (!uploadToken.value || !domainValid.value) return
     try {
       await ElMessageBox.confirm('确认将预览结果应用到租户配置？', '应用', { type: 'warning' })
-      await excelApply(activeDomain.value, uploadToken.value, {})
     } catch {
-      /* cancel */
+      return
+    }
+    applyLoading.value = true
+    try {
+      await excelApply(activeDomain.value, uploadToken.value, {})
+      ElMessage.success(`已应用 ${domainLabels[activeDomain.value]} 配置变更`)
+    } finally {
+      applyLoading.value = false
     }
   }
 

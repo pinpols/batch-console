@@ -9,6 +9,7 @@
       @reset="() => runReset(loadSecrets)"
     />
     <el-table
+      v-loading="loadingSecrets"
       :data="pagedSecrets.records"
       stripe
       border
