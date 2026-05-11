@@ -235,6 +235,7 @@ export default {
     fieldTimeoutSeconds: '超时(s)',
     fieldExtJson: '扩展 JSON',
     extJsonPlaceholder: '合法 JSON 对象,如 {}',
+    dslHint: '输入 $ 触发 autocomplete：$.nodes.<上游>.output.<key> / $.workflowRun.bizDate',
     btnApply: '应用修改',
     btnDuplicate: '复制',
     btnRemove: '删除',
@@ -1144,6 +1145,7 @@ export default {
   },
   pipelineDefinitionList: {
     headerCreate: '新增 Pipeline',
+    emptyDescription: '当前租户尚无 Pipeline。新建一个以开始编排文件处理步骤。',
     keywordLabel: '关键字',
     keywordPlaceholder: '请输入 pipelineCode / pipelineName',
     typeLabel: '类型',
@@ -2330,6 +2332,7 @@ export default {
     deleteVerb: '删除',
   },
   notificationChannelsTab: {
+    emptyDescription: '尚未配置通知渠道。先新增一个(如邮件 / Webhook),告警规则才能把通知发出去。',
     kwPlaceholder: '搜索编码/名称',
     trackAdd: '新增通知渠道',
     colCode: '渠道编码',
@@ -2360,6 +2363,7 @@ export default {
     deleteConsequence: '关联此渠道的告警规则会发不出通知,触发后变成静默告警。',
   },
   notificationRulesTab: {
+    emptyDescription: '尚无通知规则。新增规则把事件类型路由到具体的通知渠道。',
     kwPlaceholder: '搜索名称/事件类型',
     colId: 'ID',
     colName: '规则名称',
@@ -2380,6 +2384,7 @@ export default {
     deleteConsequence: '该规则匹配的事件不再触发任何通知,事件本身仍正常产生。',
   },
   notificationWebhooksTab: {
+    emptyDescription: '尚未注册 Webhook。注册一个 URL 把事件推给外部系统(如 PagerDuty / Slack)。',
     kwLabel: 'URL',
     kwPlaceholder: '搜索 URL / 事件类型',
     colId: 'ID',

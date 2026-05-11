@@ -9,7 +9,17 @@
       v-model:page="rulePage"
       v-model:page-size="rulePageSize"
       @change="() => {}"
+      :has-active-filters="hasActiveRuleFilters"
     >
+      <template v-if="!hasActiveRuleFilters" #empty>
+        <EmptyState :description="t('notificationRulesTab.emptyDescription')" :image-size="80">
+          <template #action>
+            <el-button type="primary" :icon="Plus" @click="openRuleCreate">
+              {{ t('notificationCommon.btnAdd') }}
+            </el-button>
+          </template>
+        </EmptyState>
+      </template>
       <template #query>
         <ListPageQueryBar
           :filter-busy="filterBusy"
@@ -154,6 +164,7 @@
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
   import ProTable from '@/components/table/ProTable.vue'
+  import EmptyState from '@/components/common/EmptyState.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
@@ -170,6 +181,9 @@
   const rulePageSize = ref(20)
   const ruleFilterDraft = reactive({ keyword: '', enabled: undefined as boolean | undefined })
   const ruleFilterApplied = reactive({ keyword: '', enabled: undefined as boolean | undefined })
+  const hasActiveRuleFilters = computed(
+    () => !!(ruleFilterApplied.keyword.trim() || ruleFilterApplied.enabled !== undefined),
+  )
   const ruleForm = reactive({ ruleName: '', eventTypes: '', channelId: 1, enabled: true })
 
   const { formRef: ruleFormRef, validate: validateRuleForm } = useFormValidate()

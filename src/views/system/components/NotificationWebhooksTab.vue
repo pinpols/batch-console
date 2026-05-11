@@ -9,7 +9,17 @@
       v-model:page="webhookPage"
       v-model:page-size="webhookPageSize"
       @change="() => {}"
+      :has-active-filters="hasActiveWebhookFilters"
     >
+      <template v-if="!hasActiveWebhookFilters" #empty>
+        <EmptyState :description="t('notificationWebhooksTab.emptyDescription')" :image-size="80">
+          <template #action>
+            <el-button type="primary" :icon="Plus" @click="openWebhookCreate">
+              {{ t('notificationCommon.btnAdd') }}
+            </el-button>
+          </template>
+        </EmptyState>
+      </template>
       <template #query>
         <ListPageQueryBar
           :filter-busy="filterBusy"
@@ -199,6 +209,7 @@
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
   import ProTable from '@/components/table/ProTable.vue'
+  import EmptyState from '@/components/common/EmptyState.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
   import DatetimeColumn from '@/components/common/DatetimeColumn.vue'
@@ -221,6 +232,9 @@
   const webhookPageSize = ref(20)
   const webhookFilterDraft = reactive({ keyword: '', enabled: undefined as boolean | undefined })
   const webhookFilterApplied = reactive({ keyword: '', enabled: undefined as boolean | undefined })
+  const hasActiveWebhookFilters = computed(
+    () => !!(webhookFilterApplied.keyword.trim() || webhookFilterApplied.enabled !== undefined),
+  )
   const webhookDeliveryLogs = ref<Record<string, unknown>[]>([])
   const webhookForm = reactive({
     name: '',
