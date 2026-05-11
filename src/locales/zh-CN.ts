@@ -1487,6 +1487,11 @@ export default {
     rerunConfirmText: '将对实例 {no} 发起重跑(rerun),需 jobCode 与 bizDate。是否继续?',
     rerunConfirmTitle: '重跑确认',
     rerunSuccess: '已发起重跑 {no}',
+    rerunSuccessTitle: '重跑已下发',
+    rerunSuccessMessage:
+      '已对 {code} 重新发起一次实例(由原 {no} 触发);新实例会进入监控列表,可在那里跟踪状态。',
+    rerunGoList: '去看新实例',
+    rerunStay: '留在当前页',
     instanceCancelText: '取消实例 {no}?',
     instanceCancelTitle: '取消确认',
     instanceCanceled: '已取消实例 {no}',

@@ -112,6 +112,7 @@
   import { useRoute, useRouter } from 'vue-router'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { confirmDanger } from '@/composables/useDangerConfirm'
+  import { showCreateSuccess } from '@/composables/useCreateSuccess'
   import { instanceApi } from '@/api/instance'
   import { createLogStream } from '@/api/stream'
   import { useTenantStore } from '@/stores/tenant'
@@ -179,8 +180,20 @@
     rerunLoading.value = true
     try {
       await instanceApi.retry(r.instanceNo, tenant.tenantId, r.jobCode, r.bizDate)
-      ElMessage.success(t('monitor.rerunSuccess', { no: r.instanceNo }))
-      await load()
+      // rerun 产生的是新实例;给用户两个明确动作:看新实例 / 留在当前
+      showCreateSuccess({
+        title: t('monitor.rerunSuccessTitle'),
+        message: t('monitor.rerunSuccessMessage', { no: r.instanceNo, code: r.jobCode }),
+        primary: {
+          label: t('monitor.rerunGoList'),
+          onClick: () =>
+            router.push({
+              path: '/monitor/job-instances',
+              query: { jobCode: r.jobCode, startDate: r.bizDate, endDate: r.bizDate },
+            }),
+        },
+        secondary: { label: t('monitor.rerunStay'), onClick: () => load() },
+      })
     } finally {
       rerunLoading.value = false
     }
