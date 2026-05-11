@@ -231,6 +231,7 @@ const messages: Messages = {
     fieldTimeoutSeconds: 'Timeout (s)',
     fieldExtJson: 'Extension JSON',
     extJsonPlaceholder: 'Valid JSON object, e.g. {}',
+    dslHint: 'Type $ for autocomplete: $.nodes.<upstream>.output.<key> / $.workflowRun.bizDate',
     btnApply: 'Apply',
     btnDuplicate: 'Duplicate',
     btnRemove: 'Remove',
@@ -1198,6 +1199,8 @@ const messages: Messages = {
   },
   pipelineDefinitionList: {
     headerCreate: 'New Pipeline',
+    emptyDescription:
+      'No pipelines defined for this tenant. Create one to start orchestrating file processing steps.',
     keywordLabel: 'Keyword',
     keywordPlaceholder: 'Enter pipelineCode / pipelineName',
     typeLabel: 'Type',
@@ -2377,6 +2380,8 @@ const messages: Messages = {
     deleteVerb: 'Delete',
   },
   notificationChannelsTab: {
+    emptyDescription:
+      'No notification channels yet. Create one (e.g. email / webhook) so alert rules can deliver notifications.',
     kwPlaceholder: 'Search code / name',
     trackAdd: 'Add notification channel',
     colCode: 'Channel code',
@@ -2407,6 +2412,8 @@ const messages: Messages = {
     deleteConsequence: 'Alert rules tied to this channel will fall silent on trigger.',
   },
   notificationRulesTab: {
+    emptyDescription:
+      'No notification rules yet. Add one to route event types to specific channels.',
     kwPlaceholder: 'Search name / event type',
     colId: 'ID',
     colName: 'Rule name',
@@ -2427,6 +2434,8 @@ const messages: Messages = {
     deleteConsequence: 'Events matching this rule will no longer trigger notifications.',
   },
   notificationWebhooksTab: {
+    emptyDescription:
+      'No webhooks registered. Add one to push events to external systems (e.g. PagerDuty / Slack).',
     kwLabel: 'URL',
     kwPlaceholder: 'Search URL / event type',
     colId: 'ID',

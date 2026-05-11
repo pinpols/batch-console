@@ -9,7 +9,17 @@
       v-model:page="channelPage"
       v-model:page-size="channelPageSize"
       @change="() => {}"
+      :has-active-filters="hasActiveChannelFilters"
     >
+      <template v-if="!hasActiveChannelFilters" #empty>
+        <EmptyState :description="t('notificationChannelsTab.emptyDescription')" :image-size="80">
+          <template #action>
+            <el-button type="primary" :icon="Plus" @click="openChannelCreate">
+              {{ t('notificationCommon.btnAdd') }}
+            </el-button>
+          </template>
+        </EmptyState>
+      </template>
       <template #query>
         <ListPageQueryBar
           :filter-busy="filterBusy"
@@ -207,6 +217,7 @@
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
   import ProTable from '@/components/table/ProTable.vue'
+  import EmptyState from '@/components/common/EmptyState.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
   import DatetimeColumn from '@/components/common/DatetimeColumn.vue'
@@ -231,6 +242,9 @@
   const channelPageSize = ref(20)
   const channelFilterDraft = reactive({ keyword: '', enabled: undefined as boolean | undefined })
   const channelFilterApplied = reactive({ keyword: '', enabled: undefined as boolean | undefined })
+  const hasActiveChannelFilters = computed(
+    () => !!(channelFilterApplied.keyword.trim() || channelFilterApplied.enabled !== undefined),
+  )
   const channelForm = reactive({
     channelCode: '',
     channelName: '',

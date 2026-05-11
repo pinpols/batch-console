@@ -18,7 +18,17 @@
         @change="load"
         :error="loadError"
         :on-retry="load"
+        :has-active-filters="hasActiveFilters"
       >
+        <template v-if="!hasActiveFilters" #empty>
+          <EmptyState :description="t('pipelineDefinitionList.emptyDescription')" :image-size="80">
+            <template #action>
+              <el-button type="primary" :icon="Plus" @click="openCreate">
+                {{ t('pipelineDefinitionList.headerCreate') }}
+              </el-button>
+            </template>
+          </EmptyState>
+        </template>
         <template #query>
           <ListPageQueryBar
             :filter-busy="filterBusy"
@@ -229,6 +239,7 @@
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
+  import EmptyState from '@/components/common/EmptyState.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import ProTable from '@/components/table/ProTable.vue'
   import TenantSelect from '@/components/common/TenantSelect.vue'
@@ -249,6 +260,9 @@
   const keyword = ref('')
   const pipelineType = ref('')
   const enabledFilter = ref<boolean | undefined>()
+  const hasActiveFilters = computed(
+    () => !!(keyword.value.trim() || pipelineType.value.trim() || enabledFilter.value != null),
+  )
   const drawerVisible = ref(false)
   const saving = ref(false)
   const editingId = ref<number | null>(null)
