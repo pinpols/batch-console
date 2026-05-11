@@ -148,9 +148,9 @@ test.describe('Workflow 定义 — 操作流', () => {
     await expectPageTitle(page, '工作流定义')
   })
 
-  // SKIPPED: BE PATCH /api/console/workflow-definitions/{id} 返 404(真实 bug,非 spec 漂移)
-  // 待 BE 修复后启用
-  test.skip('停用 / 启用切换 → 确认 → toast', async ({ page }) => {
+  // 旧 404 实为 FE 用 tenant.tenantId 而非 row.tenantId 跨租户查询触发(BE 防泄漏),
+  // 已在 WorkflowDefinitionList.toggleRow 改为 row.tenantId ?? tenant.tenantId
+  test('停用 / 启用切换 → 确认 → toast', async ({ page }) => {
     const toggleBtn = page
       .locator('.table-actions')
       .getByRole('button', { name: /停用|启用/ })
@@ -178,8 +178,8 @@ test.describe('Workflow 定义 — 操作流', () => {
     await expect(resultDialog.or(anyToast)).toBeVisible({ timeout: 8000 })
   })
 
-  // SKIPPED: 同样依赖 GET /api/console/workflow-definitions/{id} - BE 404 bug
-  test.skip('详情抽屉打开并含版本信息', async ({ page }) => {
+  // 同上 — openDetail 已用 row.tenantId
+  test('详情抽屉打开并含版本信息', async ({ page }) => {
     const detailBtn = page.locator('.table-actions').getByRole('button', { name: '详情' }).first()
     if (!(await isVisible(detailBtn))) return
     await detailBtn.click()

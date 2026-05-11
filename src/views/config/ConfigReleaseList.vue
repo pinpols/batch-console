@@ -341,7 +341,10 @@
           cancelButtonText: t('common.cancel'),
         },
       )
-      await publishRelease(row.id, { tenantId: tenant.tenantId, reason: reason || undefined })
+      await publishRelease(row.id, {
+        tenantId: row.tenantId ?? tenant.tenantId,
+        reason: reason || undefined,
+      })
       ElMessage.success(t('configReleaseList.publishSuccess', { key: row.configKey }))
       await load()
     } catch {
@@ -361,7 +364,7 @@
         },
       )
       await grayRelease(row.id, {
-        tenantId: tenant.tenantId,
+        tenantId: row.tenantId ?? tenant.tenantId,
         grayScopeJson: grayScopeJson || undefined,
       })
       ElMessage.success(t('configReleaseList.graySuccess', { key: row.configKey }))
@@ -390,7 +393,10 @@
           cancelButtonText: t('common.cancel'),
         },
       )
-      await rollbackRelease(row.id, { tenantId: tenant.tenantId, reason: reason || undefined })
+      await rollbackRelease(row.id, {
+        tenantId: row.tenantId ?? tenant.tenantId,
+        reason: reason || undefined,
+      })
       ElMessage.success(t('configReleaseList.rollbackSuccess', { key: row.configKey }))
       await load()
     } catch {
@@ -402,10 +408,10 @@
   const detail = ref<Record<string, unknown> | null>(null)
 
   async function viewDetail(row: ConsoleConfigReleaseResponse) {
-    detail.value = (await getConfigRelease(row.id, tenant.tenantId)) as unknown as Record<
-      string,
-      unknown
-    >
+    detail.value = (await getConfigRelease(
+      row.id,
+      row.tenantId ?? tenant.tenantId,
+    )) as unknown as Record<string, unknown>
     detailVisible.value = true
   }
 
@@ -420,7 +426,7 @@
         },
       )
       await submitReleaseApproval(row.id, {
-        tenantId: tenant.tenantId,
+        tenantId: row.tenantId ?? tenant.tenantId,
         reason: reason || undefined,
       })
       ElMessage.success(t('configReleaseList.submitSuccess', { key: row.configKey }))
@@ -441,7 +447,7 @@
     depsLoading.value = true
     try {
       depsData.value = await listConfigDependencies(
-        tenant.tenantId,
+        row.tenantId ?? tenant.tenantId,
         String(row.configType ?? ''),
         String(row.configKey ?? ''),
       )

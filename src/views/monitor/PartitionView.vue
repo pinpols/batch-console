@@ -218,7 +218,7 @@
           cancelButtonText: t('common.cancel'),
         },
       )
-      await instanceApi.cancelPartition(row.id, tenant.tenantId)
+      await instanceApi.cancelPartition(row.id, row.tenantId ?? tenant.tenantId)
       ElMessage.success(t('monitor.partCanceled'))
       await load()
     } catch {
@@ -237,7 +237,7 @@
           cancelButtonText: t('common.cancel'),
         },
       )
-      await instanceApi.retryPartition(row.id, tenant.tenantId)
+      await instanceApi.retryPartition(row.id, row.tenantId ?? tenant.tenantId)
       ElMessage.success(t('monitor.partRetrySuccess'))
       await load()
     } catch {

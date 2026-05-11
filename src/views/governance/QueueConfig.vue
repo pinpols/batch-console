@@ -471,7 +471,7 @@
       row.id,
       next,
       `queue-${row.id}`,
-      () => governanceApi.toggleQueue(row.id, tenant.tenantId, next),
+      () => governanceApi.toggleQueue(row.id, row.tenantId ?? tenant.tenantId, next),
       () => (row.enabled = next),
     )
   }
@@ -483,7 +483,7 @@
       row.id,
       next,
       `window-${row.id}`,
-      () => governanceApi.toggleBatchWindow(row.id, tenant.tenantId, next),
+      () => governanceApi.toggleBatchWindow(row.id, row.tenantId ?? tenant.tenantId, next),
       () => (row.enabled = next),
     )
   }
@@ -495,7 +495,7 @@
       row.id,
       next,
       `calendar-${row.id}`,
-      () => governanceApi.toggleCalendar(row.id, tenant.tenantId, next),
+      () => governanceApi.toggleCalendar(row.id, row.tenantId ?? tenant.tenantId, next),
       () => (row.enabled = next),
     )
   }
