@@ -454,7 +454,7 @@
         />
 
         <aside class="workflow-panel workflow-panel--right">
-          <WorkflowInspectorWorkflowForm :workflow-form="workflowForm" />
+          <WorkflowInspectorWorkflowForm :workflow-form="workflowForm" :readonly="isReadOnly" />
 
           <SectionCard class="workflow-card">
             <template #title>
@@ -467,6 +467,7 @@
               v-if="selectedKind === 'node'"
               :node-form="nodeForm"
               :upstream-node-codes="selectedNodeUpstreamCodes"
+              :readonly="isReadOnly"
               @apply="applyNodeForm"
               @duplicate="duplicateSelectedNode"
               @remove="removeSelected"
@@ -476,6 +477,7 @@
             <WorkflowInspectorEdgeForm
               v-else-if="selectedKind === 'edge'"
               :edge-form="edgeForm"
+              :readonly="isReadOnly"
               @apply="applyEdgeForm"
               @remove="removeSelected"
             />

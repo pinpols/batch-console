@@ -24,6 +24,7 @@
           v-model="edgeForm.edgeType"
           size="small"
           class="workflow-inspector-radio-group"
+          :disabled="readonly"
         >
           <el-radio-button v-for="item in edgeKinds" :key="item.kind" :label="item.kind">
             {{ item.label }}
@@ -37,17 +38,18 @@
           :rows="2"
           size="small"
           :placeholder="t('workflowInspector.conditionPlaceholder')"
+          :disabled="readonly"
         />
       </el-form-item>
       <el-form-item :label="t('workflowInspector.fieldEnabled')">
-        <el-switch v-model="edgeForm.enabled" size="small" />
+        <el-switch v-model="edgeForm.enabled" size="small" :disabled="readonly" />
       </el-form-item>
     </el-form>
     <div class="workflow-action-row workflow-action-row--inspector">
-      <el-button type="primary" size="small" @click="emit('apply')">
+      <el-button type="primary" size="small" :disabled="readonly" @click="emit('apply')">
         {{ t('workflowInspector.btnApply') }}
       </el-button>
-      <el-button type="danger" plain size="small" @click="emit('remove')">
+      <el-button type="danger" plain size="small" :disabled="readonly" @click="emit('remove')">
         {{ t('workflowInspector.btnRemoveEdge') }}
       </el-button>
     </div>
@@ -60,7 +62,13 @@
 
   const { t } = useI18n({ useScope: 'global' })
 
-  defineProps<{ edgeForm: EdgeFormState }>()
+  withDefaults(
+    defineProps<{
+      edgeForm: EdgeFormState
+      readonly?: boolean
+    }>(),
+    { readonly: false },
+  )
   const emit = defineEmits<{
     apply: []
     remove: []
