@@ -12,7 +12,7 @@
         <el-alert
           type="error"
           :closable="false"
-          title="参数不正确，请从左侧菜单进入对应的 Excel 维护入口。"
+          :title="t('excelMaintenanceWizard.badRouteAlert')"
         />
       </div>
 
@@ -37,9 +37,18 @@
                   align-center
                   class="excel-wizard__steps"
                 >
-                  <el-step title="上传" description="选择并提交文件" />
-                  <el-step title="预览" description="校验与汇总" />
-                  <el-step title="应用" description="写入配置" />
+                  <el-step
+                    :title="t('excelMaintenanceWizard.stepUpload')"
+                    :description="t('excelMaintenanceWizard.stepUploadDesc')"
+                  />
+                  <el-step
+                    :title="t('excelMaintenanceWizard.stepPreview')"
+                    :description="t('excelMaintenanceWizard.stepPreviewDesc')"
+                  />
+                  <el-step
+                    :title="t('excelMaintenanceWizard.stepApply')"
+                    :description="t('excelMaintenanceWizard.stepApplyDesc')"
+                  />
                 </el-steps>
               </div>
 
@@ -48,16 +57,14 @@
                   v-show="step === 0"
                   class="excel-wizard__panel"
                   v-loading="upLoading"
-                  element-loading-text="正在上传文件..."
+                  :element-loading-text="t('excelMaintenanceWizard.uploadingFile')"
                 >
                   <div class="upload-zone">
                     <el-icon class="upload-zone__icon" :size="36">
                       <Upload />
                     </el-icon>
-                    <p class="upload-zone__title">上传 Excel</p>
-                    <p class="upload-zone__desc">
-                      支持 .xlsx / .xls（单文件）。上传成功后可进入预览校验。
-                    </p>
+                    <p class="upload-zone__title">{{ t('excelMaintenanceWizard.uploadTitle') }}</p>
+                    <p class="upload-zone__desc">{{ t('excelMaintenanceWizard.uploadDesc') }}</p>
                     <div class="upload-zone__toolbar">
                       <div class="upload-zone__toolbar-left">
                         <el-button
@@ -66,11 +73,11 @@
                           :loading="tplLoading"
                           @click="doDownloadTemplate"
                         >
-                          下载导入模板
+                          {{ t('excelMaintenanceWizard.btnDownloadTemplate') }}
                         </el-button>
                         <span class="upload-zone__toolbar-dot" aria-hidden="true">•</span>
                         <el-button link type="primary" :loading="exportLoading" @click="doExport">
-                          导出当前配置
+                          {{ t('excelMaintenanceWizard.btnExportCurrent') }}
                         </el-button>
                       </div>
                       <div class="upload-zone__toolbar-right">
@@ -86,7 +93,7 @@
                             plain
                             size="large"
                           >
-                            选择文件
+                            {{ t('excelMaintenanceWizard.btnPickFile') }}
                           </el-button>
                         </el-upload>
                         <el-button
@@ -97,7 +104,7 @@
                           size="large"
                           @click="doUpload"
                         >
-                          开始上传
+                          {{ t('excelMaintenanceWizard.btnStartUpload') }}
                         </el-button>
                       </div>
                     </div>
@@ -114,7 +121,7 @@
                     :closable="false"
                     show-icon
                   >
-                    <template #title>上传成功</template>
+                    <template #title>{{ t('excelMaintenanceWizard.uploadSuccess') }}</template>
                     <div class="excel-wizard__token-label">uploadToken</div>
                     <pre class="excel-wizard__token-code">{{ uploadToken }}</pre>
                   </el-alert>
@@ -124,14 +131,16 @@
                   v-show="step === 1"
                   class="excel-wizard__panel excel-wizard__panel--wide"
                   v-loading="pvLoading"
-                  element-loading-text="正在拉取预览数据..."
+                  :element-loading-text="t('excelMaintenanceWizard.fetchingPreview')"
                 >
                   <p v-if="!uploadToken" class="excel-wizard__mute-hint">
-                    请先在「上传」步骤完成文件提交。
+                    {{ t('excelMaintenanceWizard.needUploadFirst') }}
                   </p>
                   <template v-else>
                     <div class="excel-wizard__panel-head">
-                      <h3 class="excel-wizard__panel-title">预览与校验</h3>
+                      <h3 class="excel-wizard__panel-title">
+                        {{ t('excelMaintenanceWizard.panelTitlePreview') }}
+                      </h3>
                       <div class="excel-wizard__panel-actions">
                         <el-button
                           type="primary"
@@ -139,11 +148,11 @@
                           :loading="pvLoading"
                           @click="doPreview"
                         >
-                          拉取预览
+                          {{ t('excelMaintenanceWizard.btnFetchPreview') }}
                         </el-button>
                         <el-tooltip
                           v-if="workbookSupported"
-                          content="下载服务端生成的带逐格错误注释的 Excel，可在本地修正后重新上传"
+                          :content="t('excelMaintenanceWizard.annotatedTooltip')"
                           placement="top"
                         >
                           <el-button
@@ -151,7 +160,7 @@
                             :loading="wbLoading"
                             @click="doDownloadPreviewWorkbook"
                           >
-                            下载带注释预览
+                            {{ t('excelMaintenanceWizard.btnDownloadAnnotated') }}
                           </el-button>
                         </el-tooltip>
                       </div>
@@ -161,23 +170,23 @@
                       class="excel-wizard__desc"
                       :column="3"
                       border
-                      title="汇总"
+                      :title="t('excelMaintenanceWizard.descTitleSummary')"
                     >
-                      <el-descriptions-item label="totalRows">{{
-                        previewStats.total
-                      }}</el-descriptions-item>
-                      <el-descriptions-item label="validRows">{{
-                        previewStats.valid
-                      }}</el-descriptions-item>
-                      <el-descriptions-item label="invalidRows">{{
-                        previewStats.invalid
-                      }}</el-descriptions-item>
-                      <el-descriptions-item label="预计新增">{{
-                        previewStats.insert
-                      }}</el-descriptions-item>
-                      <el-descriptions-item label="预计更新">{{
-                        previewStats.update
-                      }}</el-descriptions-item>
+                      <el-descriptions-item :label="t('excelMaintenanceWizard.descLabelTotal')">
+                        {{ previewStats.total }}
+                      </el-descriptions-item>
+                      <el-descriptions-item :label="t('excelMaintenanceWizard.descLabelValid')">
+                        {{ previewStats.valid }}
+                      </el-descriptions-item>
+                      <el-descriptions-item :label="t('excelMaintenanceWizard.descLabelInvalid')">
+                        {{ previewStats.invalid }}
+                      </el-descriptions-item>
+                      <el-descriptions-item :label="t('excelMaintenanceWizard.descLabelInsert')">
+                        {{ previewStats.insert }}
+                      </el-descriptions-item>
+                      <el-descriptions-item :label="t('excelMaintenanceWizard.descLabelUpdate')">
+                        {{ previewStats.update }}
+                      </el-descriptions-item>
                     </el-descriptions>
                     <el-alert
                       v-if="previewWorkbookUrl"
@@ -187,14 +196,16 @@
                       class="excel-wizard__desc"
                     >
                       <template #title>
-                        服务端已生成带注释预览：
-                        <a :href="previewWorkbookUrl" target="_blank" class="cell-link"
-                          >下载 Excel</a
-                        >
+                        {{ t('excelMaintenanceWizard.annotatedReadyTitle') }}
+                        <a :href="previewWorkbookUrl" target="_blank" class="cell-link">
+                          {{ t('excelMaintenanceWizard.annotatedReadyLink') }}
+                        </a>
                       </template>
                     </el-alert>
                     <div v-if="issueRows.length" class="excel-wizard__table-block">
-                      <div class="excel-wizard__table-caption">行级问题</div>
+                      <div class="excel-wizard__table-caption">
+                        {{ t('excelMaintenanceWizard.rowIssuesCaption') }}
+                      </div>
                       <el-table
                         class="wizard-stretch console-table"
                         :data="issueRows"
@@ -202,11 +213,23 @@
                         stripe
                         border
                         highlight-current-row
-                        empty-text="暂无数据"
+                        :empty-text="t('common.noData')"
                       >
-                        <el-table-column prop="sheetName" label="Sheet" width="120" />
-                        <el-table-column prop="rowNo" label="行" width="70" />
-                        <el-table-column prop="messages" label="原因" min-width="200" />
+                        <el-table-column
+                          prop="sheetName"
+                          :label="t('excelMaintenanceWizard.colSheet')"
+                          width="120"
+                        />
+                        <el-table-column
+                          prop="rowNo"
+                          :label="t('excelMaintenanceWizard.colRowNo')"
+                          width="70"
+                        />
+                        <el-table-column
+                          prop="messages"
+                          :label="t('excelMaintenanceWizard.colMessages')"
+                          min-width="200"
+                        />
                       </el-table>
                     </div>
                   </template>
@@ -217,30 +240,30 @@
                     <el-icon class="apply-zone__icon" :size="32">
                       <WarningFilled />
                     </el-icon>
-                    <h3 class="apply-zone__title">确认应用</h3>
-                    <p class="apply-zone__desc">
-                      将把当前
-                      <code>uploadToken</code>
-                      对应的预览结果写入租户配置。执行前请已在「预览」中确认数据无误。
-                    </p>
+                    <h3 class="apply-zone__title">{{ t('excelMaintenanceWizard.applyTitle') }}</h3>
+                    <p class="apply-zone__desc">{{ t('excelMaintenanceWizard.applyDesc') }}</p>
                     <el-descriptions
                       v-if="previewStats"
                       class="apply-zone__diff"
                       :column="2"
                       border
                     >
-                      <el-descriptions-item label="预计新增">{{
-                        previewStats.insert
-                      }}</el-descriptions-item>
-                      <el-descriptions-item label="预计更新">{{
-                        previewStats.update
-                      }}</el-descriptions-item>
-                      <el-descriptions-item label="有效行">{{
-                        previewStats.valid
-                      }}</el-descriptions-item>
-                      <el-descriptions-item label="无效行">{{
-                        previewStats.invalid
-                      }}</el-descriptions-item>
+                      <el-descriptions-item :label="t('excelMaintenanceWizard.descLabelInsert')">
+                        {{ previewStats.insert }}
+                      </el-descriptions-item>
+                      <el-descriptions-item :label="t('excelMaintenanceWizard.descLabelUpdate')">
+                        {{ previewStats.update }}
+                      </el-descriptions-item>
+                      <el-descriptions-item
+                        :label="t('excelMaintenanceWizard.descLabelValidShort')"
+                      >
+                        {{ previewStats.valid }}
+                      </el-descriptions-item>
+                      <el-descriptions-item
+                        :label="t('excelMaintenanceWizard.descLabelInvalidShort')"
+                      >
+                        {{ previewStats.invalid }}
+                      </el-descriptions-item>
                     </el-descriptions>
                     <el-button
                       type="danger"
@@ -249,29 +272,29 @@
                       :loading="applyLoading"
                       @click="doApply"
                     >
-                      确认应用变更
+                      {{ t('excelMaintenanceWizard.btnApply') }}
                     </el-button>
                   </div>
                 </div>
               </div>
 
               <div class="excel-wizard__footer">
-                <el-tooltip content="上一步" placement="top">
+                <el-tooltip :content="t('excelMaintenanceWizard.btnPrev')" placement="top">
                   <button
                     class="wizard-nav wizard-nav--prev"
                     :disabled="step <= 0"
-                    aria-label="上一步"
+                    :aria-label="t('excelMaintenanceWizard.btnPrev')"
                     @click="step--"
                   >
                     <el-icon><ArrowLeft /></el-icon>
                   </button>
                 </el-tooltip>
                 <span class="wizard-nav__progress">{{ step + 1 }} / 3</span>
-                <el-tooltip content="下一步" placement="top">
+                <el-tooltip :content="t('excelMaintenanceWizard.btnNext')" placement="top">
                   <button
                     class="wizard-nav wizard-nav--next"
                     :disabled="step >= 2 || (step === 0 && !uploadToken)"
-                    aria-label="下一步"
+                    :aria-label="t('excelMaintenanceWizard.btnNext')"
                     @click="step++"
                   >
                     <el-icon><ArrowRight /></el-icon>
@@ -288,7 +311,10 @@
 
 <script setup lang="ts">
   import { computed, ref, watch } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import { useRoute, useRouter } from 'vue-router'
+
+  const { t } = useI18n({ useScope: 'global' })
   import { ArrowLeft, ArrowRight, Document, Upload, WarningFilled } from '@element-plus/icons-vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import {
@@ -311,22 +337,24 @@
   const router = useRouter()
   // 仅挂载 5 个「初始化就维护」域；合并导入的 5 个域代码保留但不在此页面展示
   const allowed: ExcelDomain[] = [...STANDALONE_DOMAINS]
-  const domainLabels: Record<ExcelDomain, string> = {
-    'file-templates': '文件模板',
-    'file-channels': '文件渠道', // 合并导入域（代码保留）
-    workflows: '工作流', // 合并导入域（代码保留）
-    'job-definitions': '作业定义', // 合并导入域（代码保留）
-    'alert-routings': '告警路由', // 合并导入域（代码保留）
-    'batch-windows': '批次窗口',
-    'business-calendars': '业务日历',
-    'pipeline-definitions': '流水线定义', // 合并导入域（代码保留）
-    'quota-policies': '配额策略',
-    'resource-queues': '资源队列',
-  }
-  const domainOptions = allowed.map((value) => ({
-    label: domainLabels[value],
-    value,
+  const domainLabels = computed<Record<ExcelDomain, string>>(() => ({
+    'file-templates': t('excelMaintenanceWizard.domFileTemplates'),
+    'file-channels': t('excelMaintenanceWizard.domFileChannels'),
+    workflows: t('excelMaintenanceWizard.domWorkflows'),
+    'job-definitions': t('excelMaintenanceWizard.domJobDefinitions'),
+    'alert-routings': t('excelMaintenanceWizard.domAlertRoutings'),
+    'batch-windows': t('excelMaintenanceWizard.domBatchWindows'),
+    'business-calendars': t('excelMaintenanceWizard.domBusinessCalendars'),
+    'pipeline-definitions': t('excelMaintenanceWizard.domPipelineDefinitions'),
+    'quota-policies': t('excelMaintenanceWizard.domQuotaPolicies'),
+    'resource-queues': t('excelMaintenanceWizard.domResourceQueues'),
   }))
+  const domainOptions = computed(() =>
+    allowed.map((value) => ({
+      label: domainLabels.value[value],
+      value,
+    })),
+  )
   const domainFromRoute = computed(() => {
     const queryDomain = route.query.domain
     if (typeof queryDomain === 'string') return queryDomain
@@ -350,7 +378,11 @@
     },
   })
   const title = computed(() =>
-    domainValid.value ? `Excel 维护 — ${domainLabels[activeDomain.value]}` : 'Excel 维护',
+    domainValid.value
+      ? t('excelMaintenanceWizard.titleWithDomain', {
+          domain: domainLabels.value[activeDomain.value],
+        })
+      : t('excelMaintenanceWizard.titleBase'),
   )
 
   const {
@@ -378,7 +410,7 @@
     try {
       const blob = await excelDownloadTemplate(activeDomain.value)
       triggerBlobDownload(blob, `${activeDomain.value}-template.xlsx`)
-      ElMessage.success('模板已下载')
+      ElMessage.success(t('excelMaintenanceWizard.templateDownloadedToast'))
     } finally {
       tplLoading.value = false
     }
@@ -390,7 +422,7 @@
     try {
       const blob = await excelExport(activeDomain.value)
       triggerBlobDownload(blob, `${activeDomain.value}-export.xlsx`)
-      ElMessage.success('配置已导出')
+      ElMessage.success(t('excelMaintenanceWizard.exportedToast'))
     } finally {
       exportLoading.value = false
     }
@@ -403,7 +435,7 @@
       const res = await excelUpload(activeDomain.value, file.value)
       uploadToken.value = res.uploadToken ?? ''
       if (!uploadToken.value) {
-        ElMessage.warning('响应中未找到 uploadToken，请核对后端 multipart 字段名与契约。')
+        ElMessage.warning(t('excelMaintenanceWizard.noUploadTokenWarn'))
       }
     } finally {
       upLoading.value = false
@@ -429,7 +461,7 @@
     try {
       const blob = await excelDownloadPreviewWorkbook(activeDomain.value, uploadToken.value)
       triggerBlobDownload(blob, `${activeDomain.value}-preview-${uploadToken.value}.xlsx`)
-      ElMessage.success('已下载带注释预览文件')
+      ElMessage.success(t('excelMaintenanceWizard.annotatedDownloadedToast'))
     } finally {
       wbLoading.value = false
     }
@@ -439,14 +471,22 @@
   async function doApply() {
     if (!uploadToken.value || !domainValid.value) return
     try {
-      await ElMessageBox.confirm('确认将预览结果应用到租户配置？', '应用', { type: 'warning' })
+      await ElMessageBox.confirm(
+        t('excelMaintenanceWizard.applyConfirmText'),
+        t('excelMaintenanceWizard.applyConfirmTitle'),
+        { type: 'warning' },
+      )
     } catch {
       return
     }
     applyLoading.value = true
     try {
       await excelApply(activeDomain.value, uploadToken.value, {})
-      ElMessage.success(`已应用 ${domainLabels[activeDomain.value]} 配置变更`)
+      ElMessage.success(
+        t('excelMaintenanceWizard.appliedToast', {
+          domain: domainLabels.value[activeDomain.value],
+        }),
+      )
     } finally {
       applyLoading.value = false
     }
