@@ -516,6 +516,7 @@ const messages: Messages = {
       bulkAckedToast: 'Acknowledged {n} alerts',
       bulkClosedToast: 'Closed {n} alerts',
       bulkPickFirst: 'Pick alerts first',
+      viewLogs: 'View logs by traceId',
     },
     jobs: {
       title: 'Job runs',
@@ -1517,6 +1518,10 @@ const messages: Messages = {
     detailMetricTrace: 'Trace',
     detailMetricQueue: 'Queue',
     detailTimeSection: 'Time & SLA',
+    detailRelatedSection: 'Related entities',
+    detailParentInstance: 'Parent instance',
+    detailRelatedFile: 'Related file',
+    detailFailureClass: 'Failure class',
     detailStarted: 'Started',
     detailFinished: 'Finished',
     detailDeadline: 'Deadline',

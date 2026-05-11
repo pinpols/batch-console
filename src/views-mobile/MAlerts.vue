@@ -82,6 +82,14 @@
             {{ fmt(row.lastSeenAt) }}
           </div>
         </div>
+        <div v-if="!bulkMode && row.traceId" class="m-card__actions" @click.stop>
+          <button
+            class="m-btn"
+            @click="$router.push({ path: '/m/logs', query: { traceId: row.traceId } })"
+          >
+            {{ t('mobile.alerts.viewLogs') }}
+          </button>
+        </div>
         <div v-if="!bulkMode && row.status === 'OPEN'" class="m-card__actions" @click.stop>
           <button class="m-btn" @click="silence(row)">{{ t('mobile.alerts.silence') }}</button>
           <button class="m-btn" @click="ack(row)">{{ t('mobile.alerts.ack') }}</button>

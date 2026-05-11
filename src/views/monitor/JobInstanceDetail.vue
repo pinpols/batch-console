@@ -48,6 +48,28 @@
       />
     </div>
 
+    <SectionCard v-if="row && (row.parentInstanceId || row.relatedFileId || row.failureClass)">
+      <template #header>{{ t('monitor.detailRelatedSection') }}</template>
+      <el-descriptions :column="2" border>
+        <el-descriptions-item
+          v-if="row.parentInstanceId"
+          :label="t('monitor.detailParentInstance')"
+        >
+          <router-link class="cell-link" :to="`/monitor/job-instances/${row.parentInstanceId}`">
+            #{{ row.parentInstanceId }}
+          </router-link>
+        </el-descriptions-item>
+        <el-descriptions-item v-if="row.relatedFileId" :label="t('monitor.detailRelatedFile')">
+          <router-link class="cell-link" :to="`/file-center/files?fileId=${row.relatedFileId}`">
+            #{{ row.relatedFileId }}
+          </router-link>
+        </el-descriptions-item>
+        <el-descriptions-item v-if="row.failureClass" :label="t('monitor.detailFailureClass')">
+          <el-tag size="small" type="danger" effect="plain">{{ row.failureClass }}</el-tag>
+        </el-descriptions-item>
+      </el-descriptions>
+    </SectionCard>
+
     <SectionCard v-if="row">
       <template #header>{{ t('monitor.detailTimeSection') }}</template>
       <el-descriptions :column="2" border>
