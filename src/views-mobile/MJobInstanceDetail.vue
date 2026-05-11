@@ -2,7 +2,7 @@
   <div class="m-page">
     <div class="m-page__header">
       <div>
-        <button class="m-page__refresh" @click="$router.back()">
+        <button class="m-page__refresh" @click="goBack()">
           <el-icon><ArrowLeft /></el-icon>
           {{ t('common.backToPrev') }}
         </button>
@@ -138,6 +138,7 @@
   import { ArrowLeft, Refresh } from '@element-plus/icons-vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { useTenantStore } from '@/stores/tenant'
+  import { useSmartBack } from '@/composables/useSmartBack'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { instanceApi } from '@/api/instance'
   import type {
@@ -149,6 +150,7 @@
   const route = useRoute()
   const router = useRouter()
   const tenant = useTenantStore()
+  const goBack = useSmartBack('/m/jobs')
 
   const { data: metaEnums } = useConsoleMetaEnumsQuery()
   function resolveEnumLabel(group: string, value?: string | null): string {
@@ -258,7 +260,7 @@
         row.value.bizDate,
       )
       ElMessage.success(t('mobile.jobDetail.retrySuccess'))
-      router.back()
+      goBack()
     } catch {
       /* cancelled */
     }

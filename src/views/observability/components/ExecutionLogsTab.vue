@@ -85,7 +85,14 @@
           min-width="300"
           show-overflow-tooltip
         />
-        <el-table-column prop="traceId" label="Trace ID" width="180" show-overflow-tooltip />
+        <el-table-column prop="traceId" label="Trace ID" width="180" show-overflow-tooltip>
+          <template #default="{ row }">
+            <router-link v-if="row.traceId" class="cell-link" :to="`/logs?traceId=${row.traceId}`">
+              {{ row.traceId }}
+            </router-link>
+            <span v-else class="cell-empty">—</span>
+          </template>
+        </el-table-column>
         <DatetimeColumn prop="createdAt" :label="t('observability.execColTime')" width="160" />
         <el-table-column :label="t('observability.execColActions')" width="160" fixed="right">
           <template #default="{ row }">

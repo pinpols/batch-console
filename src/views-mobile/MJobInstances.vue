@@ -151,7 +151,7 @@
 
 <script setup lang="ts">
   import { onMounted, reactive, ref, watch } from 'vue'
-  import { useRouter } from 'vue-router'
+  import { useRoute, useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import { Refresh } from '@element-plus/icons-vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
@@ -162,6 +162,7 @@
   import { instanceApi } from '@/api/instance'
   import type { ConsoleJobInstanceResponse } from '@/types/console-api'
 
+  const route = useRoute()
   const router = useRouter()
   const { t, te } = useI18n({ useScope: 'global' })
 
@@ -184,7 +185,7 @@
   const query = reactive({
     tenantId: tenant.tenantId,
     jobCode: '',
-    instanceStatus: '',
+    instanceStatus: (route.query.status as string) || '',
     startDate: '',
     endDate: '',
     page: 1,

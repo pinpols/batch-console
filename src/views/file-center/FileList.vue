@@ -197,7 +197,10 @@
   import { toPageResult } from '@/api/adapters'
   import { fileApi } from '@/api/file'
   import { useTenantStore } from '@/stores/tenant'
+  import { useRoute } from 'vue-router'
   import { useTenantReload } from '@/composables/useTenantReload'
+
+  const route = useRoute()
   import PageContainer from '@/components/common/PageContainer.vue'
   import MetaSelect from '@/components/common/MetaSelect.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
@@ -239,13 +242,16 @@
   }
   const initialBizRange = todayRange()
   const bizDateRange = ref<[string, string] | null>(initialBizRange)
+  // 接受深链 ?fileId=xxx / ?traceId=xxx 跳入,自动套用筛选
+  const initialFileId = (route.query.fileId as string) || ''
+  const initialTraceId = (route.query.traceId as string) || ''
   const filters = reactive({
     tenantId: tenant.tenantId,
     fileStatus: '',
     bizType: '',
     fileName: '',
-    traceId: '',
-    fileId: '',
+    traceId: initialTraceId,
+    fileId: initialFileId,
     startDate: initialBizRange[0],
     endDate: initialBizRange[1],
   })

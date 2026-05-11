@@ -100,7 +100,12 @@
   })
 
   function goBack() {
-    if (props.backTo) {
+    if (!props.backTo) return
+    // 优先 history.back(保留列表筛选);深链直开则跳 backTo
+    const hasBackEntry = !!(window.history.state && window.history.state.back)
+    if (hasBackEntry) {
+      router.back()
+    } else {
       router.push(props.backTo)
     }
   }

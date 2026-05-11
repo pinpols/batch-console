@@ -70,13 +70,46 @@
               width="120"
               show-overflow-tooltip
             />
-            <el-table-column prop="fileId" label="fileId" width="88" />
+            <el-table-column prop="fileId" label="fileId" width="88">
+              <template #default="{ row }">
+                <router-link
+                  v-if="row.fileId"
+                  class="cell-link"
+                  :to="`/file-center/files?fileId=${row.fileId}`"
+                >
+                  {{ row.fileId }}
+                </router-link>
+                <span v-else>—</span>
+              </template>
+            </el-table-column>
             <el-table-column
               prop="relatedJobInstanceId"
               :label="t('filePipelineObservability.colRelatedInstance')"
               width="100"
-            />
-            <el-table-column prop="traceId" label="Trace" min-width="120" show-overflow-tooltip />
+            >
+              <template #default="{ row }">
+                <router-link
+                  v-if="row.relatedJobInstanceId"
+                  class="cell-link"
+                  :to="`/monitor/job-instances/${row.relatedJobInstanceId}`"
+                >
+                  {{ row.relatedJobInstanceId }}
+                </router-link>
+                <span v-else>—</span>
+              </template>
+            </el-table-column>
+            <el-table-column prop="traceId" label="Trace" min-width="120" show-overflow-tooltip>
+              <template #default="{ row }">
+                <router-link
+                  v-if="row.traceId"
+                  class="cell-link"
+                  :to="`/logs?traceId=${row.traceId}`"
+                >
+                  {{ row.traceId }}
+                </router-link>
+                <span v-else>—</span>
+              </template>
+            </el-table-column>
             <DatetimeColumn
               prop="startedAt"
               :label="t('filePipelineObservability.colStart')"

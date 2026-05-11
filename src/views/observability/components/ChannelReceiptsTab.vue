@@ -59,7 +59,18 @@
           min-width="160"
           show-overflow-tooltip
         />
-        <el-table-column prop="fileId" :label="t('observability.chanColFileId')" width="100" />
+        <el-table-column prop="fileId" :label="t('observability.chanColFileId')" width="100">
+          <template #default="{ row }">
+            <router-link
+              v-if="row.fileId"
+              class="cell-link"
+              :to="`/file-center/files?fileId=${row.fileId}`"
+            >
+              {{ row.fileId }}
+            </router-link>
+            <span v-else class="cell-empty">—</span>
+          </template>
+        </el-table-column>
         <el-table-column
           prop="dispatchStatus"
           :label="t('observability.chanColDispatchStatus')"
