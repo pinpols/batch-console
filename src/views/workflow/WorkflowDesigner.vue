@@ -135,6 +135,20 @@
           <span class="workflow-toolbar__eyebrow">{{ t('workflowDesigner.eyebrowCanvas') }}</span>
           <div class="workflow-toolbar__actions">
             <el-button-group class="workflow-toolbar__btn-group">
+              <el-button
+                :disabled="!canUndo"
+                :title="`${t('workflowDesigner.btnUndo')} (Ctrl+Z)`"
+                @click="undo"
+              >
+                {{ t('workflowDesigner.btnUndo') }}
+              </el-button>
+              <el-button
+                :disabled="!canRedo"
+                :title="`${t('workflowDesigner.btnRedo')} (Ctrl+Y)`"
+                @click="redo"
+              >
+                {{ t('workflowDesigner.btnRedo') }}
+              </el-button>
               <el-button :disabled="!selectedWorkflowCode" @click="reLayout">
                 {{ t('workflowDesigner.btnAutoLayout') }}
               </el-button>
@@ -631,6 +645,10 @@
     onDocumentPointerCloseContextMenu,
     nudgeGraphZoom,
     fitGraphZoom,
+    canUndo,
+    canRedo,
+    undo,
+    redo,
     scheduleEdgeZOrder,
     syncGraphDerivedState,
     bindDerivedStateCallbacks,

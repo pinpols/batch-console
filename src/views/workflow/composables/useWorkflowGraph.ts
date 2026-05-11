@@ -4,6 +4,8 @@
  */
 import { computed, nextTick, onScopeDispose, reactive, ref, shallowRef, type Ref } from 'vue'
 import { Dnd, Graph, Shape, type Cell, type Edge as X6Edge, type Node as X6Node } from '@antv/x6'
+import { History } from '@antv/x6/es/plugin/history'
+import { Selection } from '@antv/x6/es/plugin/selection'
 import { FixedMiniMap } from '../graph/FixedMiniMap'
 import { ElMessage } from 'element-plus'
 import { purifyHtml } from '@/utils/safeHtml'
@@ -62,6 +64,16 @@ export function useWorkflowGraph(deps: GraphDeps) {
 
   const graph = shallowRef<Graph | null>(null)
   const graphReady = ref(false)
+  /** 撤销/重做按钮 disabled 状态驱动 tick — graph.canUndo()/canRedo() 不是响应式，靠 history:change 推 */
+  const historyTick = ref(0)
+  const canUndo = computed(() => {
+    void historyTick.value
+    return graph.value?.canUndo() ?? false
+  })
+  const canRedo = computed(() => {
+    void historyTick.value
+    return graph.value?.canRedo() ?? false
+  })
   /** 切换画布内容时短暂隐藏，避免 resetCells→zoomToFit 之间的中间帧闪烁 */
   const canvasResetting = ref(false)
   /** 触发缩放百分比展示刷新 */
@@ -739,6 +751,42 @@ export function useWorkflowGraph(deps: GraphDeps) {
       },
     })
 
+    // ─── Plugins: History (undo/redo) + Selection (rubber-band 多选) ────────
+    // 跳过 resetCells / 初次 load 等"加载态"变更，避免它们污染 undo 栈：
+    // beforeAddCommand 返回 false 会让该 command 不入历史。
+    graph.value.use(
+      new History({
+        enabled: true,
+        beforeAddCommand(_event, args) {
+          // canvasResetting=true 期间（重置画布 / 自动布局 / 切换 workflow）所有变更不入栈
+          if (canvasResetting.value) return false
+          // 仅记录用户交互产生的 ui 修改，忽略系统态（如 style 自动刷新）
+          const opts = (args as { options?: { ui?: boolean; stencil?: unknown } } | undefined)
+            ?.options
+          if (opts?.stencil != null) return true
+          if (opts?.ui === true) return true
+          // node:added 等没有 ui 标记的也允许（拖入 / 删除）
+          return true
+        },
+      }),
+    )
+    graph.value.use(
+      new Selection({
+        enabled: true,
+        multiple: true,
+        rubberband: true, // 空白处按住左键框选
+        rubberEdge: true,
+        modifiers: 'shift', // 与 panning 左键拖动并存：默认空白拖 = 平移，Shift+左键 = 框选
+        movable: true,
+        showNodeSelectionBox: true,
+        showEdgeSelectionBox: false,
+      }),
+    )
+
+    graph.value.on('history:change', () => {
+      historyTick.value += 1
+    })
+
     // ─── Event bindings ────────────────────────────────────────────────────
     graph.value.on('node:click', ({ node }) => _setSelectedCell(node))
     graph.value.on('edge:click', ({ edge }) => _setSelectedCell(edge))
@@ -823,6 +871,19 @@ export function useWorkflowGraph(deps: GraphDeps) {
     }
   }
 
+  // ─── History / Selection helpers ────────────────────────────────────────
+
+  function undo() {
+    if (graph.value?.canUndo()) graph.value.undo()
+  }
+  function redo() {
+    if (graph.value?.canRedo()) graph.value.redo()
+  }
+  function selectAll() {
+    if (!graph.value) return
+    graph.value.select(graph.value.getCells())
+  }
+
   function disposeGraph() {
     cancelPositionDerivedSyncTimer()
     cancelEdgeZOrderRaf()
@@ -845,6 +906,11 @@ export function useWorkflowGraph(deps: GraphDeps) {
     canvasContextMenu,
     canvasContextMenuRef,
     graphZoomPercentLabel,
+    canUndo,
+    canRedo,
+    undo,
+    redo,
+    selectAll,
 
     closeCanvasContextMenu,
     openCanvasContextMenu,

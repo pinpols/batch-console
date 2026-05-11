@@ -57,6 +57,8 @@ const messages: Messages = {
     tagBackend: 'Backend data',
     eyebrowCanvas: 'Canvas',
     btnAutoLayout: 'Auto layout',
+    btnUndo: 'Undo',
+    btnRedo: 'Redo',
     btnApplyDefinitionForm: 'Apply workflow info',
     btnSaveDraft: 'Save draft',
     btnCopyDsl: 'Copy DSL',

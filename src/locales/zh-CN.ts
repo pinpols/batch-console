@@ -63,6 +63,8 @@ export default {
     tagBackend: '后端数据',
     eyebrowCanvas: '画布',
     btnAutoLayout: '自动布局',
+    btnUndo: '撤销',
+    btnRedo: '重做',
     btnApplyDefinitionForm: '应用流程信息',
     btnSaveDraft: '保存草稿',
     btnCopyDsl: '复制 DSL',
