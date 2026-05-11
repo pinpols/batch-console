@@ -1,0 +1,10 @@
+{
+  "_doc": "⚠️ BE/FE 均未暴露 POST /api/console/users。本 payload 仅作记录:用户创建必须用 SQL,见 ../../10-rbac-users/seed-users.sql。",
+  "_unsupported": true,
+  "tenant_id": "ta",
+  "username": "test-user-e2e",
+  "display_name": "E2E 测试用户",
+  "password_hash_argon2id": "<由 BE PasswordEncoder 生成>",
+  "authorities_csv": "ROLE_OPERATOR",
+  "enabled": true
+}

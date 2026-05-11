@@ -1,0 +1,10 @@
+{
+  "_doc": "POST /api/console/tags?tenantId=ta — upsert 单条;循环 5 条造批量数据。body 见 src/api/tags.ts:{ resourceType, resourceCode, tagKey, tagValue? }",
+  "tags": [
+    { "resourceType": "JOB_DEFINITION", "resourceCode": "TA_INC_ORDER_AGG", "tagKey": "test-tag-env",   "tagValue": "prod"   },
+    { "resourceType": "JOB_DEFINITION", "resourceCode": "TA_INC_ORDER_AGG", "tagKey": "test-tag-biz",   "tagValue": "retail" },
+    { "resourceType": "JOB_DEFINITION", "resourceCode": "TA_INC_ORDER_AGG", "tagKey": "test-tag-owner", "tagValue": "team-a" },
+    { "resourceType": "FILE_TEMPLATE",  "resourceCode": "TA_ORDERS",        "tagKey": "test-tag-pii",   "tagValue": "true"   },
+    { "resourceType": "FILE_TEMPLATE",  "resourceCode": "TA_ORDERS",        "tagKey": "test-tag-env",   "tagValue": "stage"  }
+  ]
+}

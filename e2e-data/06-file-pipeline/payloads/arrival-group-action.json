@@ -1,0 +1,6 @@
+{
+  "_doc": "POST /api/console/files/arrival-groups/action — body 见 src/api/file.ts:{ tenantId, fileGroupCode, action }。action 取值参考 BE FileArrivalGroupAction 枚举(常见:CONFIRM / REDISPATCH / RESET / IGNORE)。",
+  "tenantId": "ta",
+  "fileGroupCode": "TA_DAILY_GROUP",
+  "action": "CONFIRM"
+}

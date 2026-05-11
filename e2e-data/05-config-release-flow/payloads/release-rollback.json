@@ -1,0 +1,6 @@
+{
+  "_doc": "POST /api/console/config/releases/{releaseId}/rollback — body 见 src/api/configReleases.ts:{ tenantId, operatorId?, reason?, traceId? }",
+  "tenantId": "ta",
+  "operatorId": "e2e-tester",
+  "reason": "E2E 测试回滚路径"
+}

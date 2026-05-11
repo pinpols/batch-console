@@ -1,0 +1,6 @@
+{
+  "_doc": "POST /api/console/files/redispatch — body 见 src/api/file.ts:{ tenantId, fileId (number, 单个), reason? }。批量需循环调用。",
+  "tenantId": "ta",
+  "fileId": 1001,
+  "reason": "上游 channel 已恢复,重新分发"
+}

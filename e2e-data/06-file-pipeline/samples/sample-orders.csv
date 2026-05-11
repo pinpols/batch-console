@@ -1,0 +1,4 @@
+order_id,customer_id,product_id,amount,currency,order_date
+ORD-E2E-001,CUST-001,PROD-A,99.90,USD,2026-05-01
+ORD-E2E-002,CUST-002,PROD-B,150.00,USD,2026-05-01
+ORD-E2E-003,CUST-003,PROD-A,75.50,EUR,2026-05-01

@@ -1,0 +1,6 @@
+{
+  "_doc": "PUT /api/console/system-parameters?tenantId=system — body 见 src/api/systemParameters.ts:{ key, value, description? }",
+  "key": "test.e2e.max_retry",
+  "value": "5",
+  "description": "FE 测试调整最大重试次数"
+}

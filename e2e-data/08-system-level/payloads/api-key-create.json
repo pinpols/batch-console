@@ -1,0 +1,6 @@
+{
+  "_doc": "POST /api/console/api-keys?tenantId=system — body 见 src/api/apiKeys.ts:{ keyName, scopes?: string (CSV), expiresAt?: ISO8601 }",
+  "keyName": "test-api-key-e2e",
+  "scopes": "READ,WRITE",
+  "expiresAt": "2026-12-31T23:59:59Z"
+}

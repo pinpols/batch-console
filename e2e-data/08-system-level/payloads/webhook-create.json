@@ -1,0 +1,8 @@
+{
+  "_doc": "POST /api/console/webhooks?tenantId=system — body 类型见 src/api/webhooks.ts:CreateWebhookBody。字段:name / callbackUrl / eventTypes / secret? / enabled?",
+  "name": "test-webhook-job-done",
+  "callbackUrl": "https://example.com/hook/job-done",
+  "eventTypes": ["JOB_SUCCEEDED", "JOB_FAILED"],
+  "secret": "test-webhook-secret-2026",
+  "enabled": true
+}

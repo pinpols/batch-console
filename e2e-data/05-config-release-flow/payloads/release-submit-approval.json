@@ -1,0 +1,6 @@
+{
+  "_doc": "POST /api/console/config/releases/{releaseId}/submit-approval — body 见 src/api/configReleases.ts:{ tenantId, operatorId?, reason? }",
+  "tenantId": "ta",
+  "operatorId": "e2e-tester",
+  "reason": "E2E 自动化提审"
+}

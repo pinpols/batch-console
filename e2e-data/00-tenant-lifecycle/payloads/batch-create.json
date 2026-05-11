@@ -1,0 +1,12 @@
+{
+  "_doc": "POST /api/console/tenants/batch — 批量新增 + 可选自动初始化。",
+  "tenants": [
+    { "tenantId": "te", "tenantName": "测试租户 E", "description": "批量新增样本-1" },
+    { "tenantId": "tf", "tenantName": "测试租户 F", "description": "批量新增样本-2" },
+    { "tenantId": "tg", "tenantName": "测试租户 G", "description": "批量新增样本-3" }
+  ],
+  "usernamePrefix": "op-",
+  "password": "TestBatch@2026",
+  "initConfigFrom": "default-tenant",
+  "initMode": "SKIP_EXISTING"
+}

@@ -1,0 +1,7 @@
+{
+  "_doc": "POST /api/console/config/releases — body 见 src/api/configReleases.ts:{ tenantId, configType?, configCode?, releaseNote? }。BE 返回 releaseId(number),后续 publish/gray/rollback 都需要该 id。",
+  "tenantId": "ta",
+  "configType": "JOB_DEFINITION",
+  "configCode": "TA_INC_ORDER_AGG",
+  "releaseNote": "E2E 测试:调整 cron 表达式"
+}

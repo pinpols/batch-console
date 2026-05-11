@@ -1,0 +1,8 @@
+{
+  "_doc": "POST /api/console/notifications/channels?tenantId=system — body 见 NotificationChannelsTab.channelForm:{ channelCode, channelName, channelType, config (string!), enabled }。注意 config 是 string,不是嵌套 object。",
+  "channelCode": "test-channel-email",
+  "channelName": "测试 Email 渠道",
+  "channelType": "EMAIL",
+  "config": "{\"smtpHost\":\"smtp.example.com\",\"smtpPort\":587,\"username\":\"noreply@example.com\",\"password\":\"test-smtp-pass-2026\",\"from\":\"noreply@example.com\"}",
+  "enabled": true
+}

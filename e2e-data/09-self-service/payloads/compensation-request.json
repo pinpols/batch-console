@@ -1,0 +1,9 @@
+{
+  "_doc": "POST /api/console/self-service/jobs/compensation-request — body 见 src/api/selfServiceJobs.ts:{ tenantId, jobCode, bizDate, compensationType?, targetInstanceNo?, reason? }",
+  "tenantId": "ta",
+  "jobCode": "TA_INC_ORDER_AGG",
+  "bizDate": "2026-04-29",
+  "compensationType": "FULL_RERUN",
+  "targetInstanceNo": "e2e-failed-1",
+  "reason": "上游数据延迟,失败实例补偿"
+}

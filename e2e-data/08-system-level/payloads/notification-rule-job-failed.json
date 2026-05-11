@@ -1,0 +1,7 @@
+{
+  "_doc": "POST /api/console/notifications/rules?tenantId=system — body 见 NotificationRulesTab.ruleForm:{ ruleName, eventTypes(string 逗号分隔), channelId(number), enabled }。channelId 需用 listChannels 取到再填。",
+  "ruleName": "test-rule-job-failed",
+  "eventTypes": "JOB_FAILED,JOB_TIMEOUT",
+  "channelId": 1,
+  "enabled": true
+}
