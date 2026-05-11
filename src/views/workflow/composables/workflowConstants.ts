@@ -4,8 +4,13 @@
 
 // ─── Types ──────────────────────────────────────────────────────────────────────
 
-export type WorkflowNodeKind = 'START' | 'TASK' | 'DECISION' | 'JOIN' | 'END'
-export type WorkflowEdgeKind = 'SUCCESS' | 'FAILURE' | 'CONDITION' | 'DEFAULT'
+/**
+ * 与后端 `workflow_node.node_type` 字典严格对齐（见 CLAUDE.md §领域数据字典 / WorkflowNodeType enum）。
+ * 旧 5 类型 (DECISION/JOIN) 已折叠：DECISION → GATEWAY、JOIN → GATEWAY（join_mode 在 node_params 表达）。
+ */
+export type WorkflowNodeKind = 'START' | 'END' | 'TASK' | 'GATEWAY' | 'FILE_STEP' | 'JOB'
+/** 与后端 `workflow_edge.edge_type` 严格对齐（WorkflowEdgeType enum）。DEFAULT 已重命名为 ALWAYS。 */
+export type WorkflowEdgeKind = 'SUCCESS' | 'FAILURE' | 'CONDITION' | 'ALWAYS'
 export type SelectedKind = 'workflow' | 'node' | 'edge' | null
 
 export interface WorkflowFormState {
@@ -112,7 +117,7 @@ export const nodeThemeMap: Record<WorkflowNodeKind, WorkflowNodeTheme> = {
     softText: '#475569',
     ring: 'rgba(100, 116, 139, 0.16)',
   },
-  DECISION: {
+  GATEWAY: {
     bg: 'rgba(249, 115, 22, 0.12)',
     border: 'rgba(249, 115, 22, 0.86)',
     accent: '#ea580c',
@@ -120,7 +125,15 @@ export const nodeThemeMap: Record<WorkflowNodeKind, WorkflowNodeTheme> = {
     softText: '#9a3412',
     ring: 'rgba(249, 115, 22, 0.18)',
   },
-  JOIN: {
+  FILE_STEP: {
+    bg: 'rgba(20, 184, 166, 0.12)',
+    border: 'rgba(20, 184, 166, 0.84)',
+    accent: '#0d9488',
+    text: '#0f172a',
+    softText: '#115e59',
+    ring: 'rgba(20, 184, 166, 0.18)',
+  },
+  JOB: {
     bg: 'rgba(99, 102, 241, 0.12)',
     border: 'rgba(99, 102, 241, 0.84)',
     accent: '#4f46e5',
@@ -142,7 +155,7 @@ export const edgeThemeMap: Record<WorkflowEdgeKind, { stroke: string; label: str
   SUCCESS: { stroke: '#2563eb', label: 'SUCCESS' },
   FAILURE: { stroke: '#dc2626', label: 'FAILURE' },
   CONDITION: { stroke: '#ea580c', label: 'CONDITION' },
-  DEFAULT: { stroke: '#64748b', label: 'DEFAULT' },
+  ALWAYS: { stroke: '#64748b', label: 'ALWAYS' },
 }
 
 // ─── Enum arrays ────────────────────────────────────────────────────────────────
@@ -150,8 +163,9 @@ export const edgeThemeMap: Record<WorkflowEdgeKind, { stroke: string; label: str
 export const nodeKinds: Array<{ kind: WorkflowNodeKind; label: string }> = [
   { kind: 'START', label: '起点' },
   { kind: 'TASK', label: '任务' },
-  { kind: 'DECISION', label: '条件分支' },
-  { kind: 'JOIN', label: '汇聚' },
+  { kind: 'GATEWAY', label: '网关' },
+  { kind: 'FILE_STEP', label: '文件流水线' },
+  { kind: 'JOB', label: '作业' },
   { kind: 'END', label: '终点' },
 ]
 
@@ -159,7 +173,7 @@ export const edgeKinds: Array<{ kind: WorkflowEdgeKind; label: string }> = [
   { kind: 'SUCCESS', label: '成功边' },
   { kind: 'FAILURE', label: '失败边' },
   { kind: 'CONDITION', label: '条件边' },
-  { kind: 'DEFAULT', label: '默认边' },
+  { kind: 'ALWAYS', label: '总是' },
 ]
 
 // ─── Pure helper functions ──────────────────────────────────────────────────────
@@ -213,9 +227,11 @@ export function toNodeKind(value: string | null | undefined): WorkflowNodeKind {
     .trim()
     .toUpperCase()
   if (['START', 'SOURCE'].includes(text)) return 'START'
-  if (['DECISION', 'GATEWAY', 'BRANCH'].includes(text)) return 'DECISION'
-  if (['JOIN', 'MERGE', 'SYNC'].includes(text)) return 'JOIN'
   if (['END', 'STOP', 'TERMINAL'].includes(text)) return 'END'
+  // 旧 DECISION / JOIN 折叠到 GATEWAY（GATEWAY 的 join_mode 在 node_params 表达）
+  if (['GATEWAY', 'DECISION', 'BRANCH', 'JOIN', 'MERGE', 'SYNC'].includes(text)) return 'GATEWAY'
+  if (['FILE_STEP', 'FILE-STEP', 'PIPELINE_STEP'].includes(text)) return 'FILE_STEP'
+  if (['JOB'].includes(text)) return 'JOB'
   return 'TASK'
 }
 
@@ -225,7 +241,8 @@ export function toEdgeKind(value: string | null | undefined): WorkflowEdgeKind {
     .toUpperCase()
   if (['FAIL', 'FAILED', 'ERROR', 'FAILURE'].includes(text)) return 'FAILURE'
   if (['COND', 'CONDITION', 'IF', 'RULE'].includes(text)) return 'CONDITION'
-  if (['DEFAULT', 'ELSE', 'FALLBACK'].includes(text)) return 'DEFAULT'
+  // 旧 DEFAULT 重命名为 ALWAYS（后端约定）
+  if (['ALWAYS', 'DEFAULT', 'ELSE', 'FALLBACK'].includes(text)) return 'ALWAYS'
   return 'SUCCESS'
 }
 
@@ -233,10 +250,19 @@ export function getTheme(kind: WorkflowNodeKind) {
   return nodeThemeMap[kind] ?? nodeThemeMap.TASK
 }
 
+const NODE_DEFAULT_NAME: Record<WorkflowNodeKind, string> = {
+  START: 'START 节点',
+  END: 'END 节点',
+  TASK: '新任务',
+  GATEWAY: '网关',
+  FILE_STEP: '文件流水线',
+  JOB: '作业引用',
+}
+
 export function defaultNodeForm(kind: WorkflowNodeKind, nodeCode = ''): NodeFormState {
   return {
     nodeCode,
-    nodeName: kind === 'TASK' ? '新任务' : `${kind} 节点`,
+    nodeName: NODE_DEFAULT_NAME[kind] ?? kind,
     nodeType: kind,
     relatedJobCode: '',
     relatedPipelineCode: '',

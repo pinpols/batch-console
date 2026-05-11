@@ -127,9 +127,28 @@ export const workflowApi = {
   toggle: (id: number, tenantId: string, enabled: boolean): Promise<void> =>
     patch<void>(`/api/console/workflow-definitions/${id}`, { tenantId, enabled }),
 
-  /** 触发后端 DAG 校验（返回 Object，结构由后端决定） */
-  validate: (id: number, tenantId: string): Promise<unknown> =>
-    post<unknown>(`/api/console/workflow-definitions/${id}/validate`, null, {
+  /**
+   * 触发后端 DAG 静态校验（ADR-025）。返回 15 条规则的结构化 finding；
+   * `errors` 是旧版字符串兼容字段，已废弃，新代码请消费 `findings`。
+   */
+  validate: (id: number, tenantId: string): Promise<DagValidationResult> =>
+    post<DagValidationResult>(`/api/console/workflow-definitions/${id}/validate`, null, {
       params: { tenantId },
     }),
+}
+
+/** 单条校验发现，与后端 `DagValidationResult.Finding` 1:1。`nodeCode` 与 `edgeId` 至多一个非空。 */
+export interface DagValidationFinding {
+  code: string
+  level: 'ERROR' | 'WARNING'
+  message: string
+  nodeCode?: string | null
+  edgeId?: string | null
+}
+
+export interface DagValidationResult {
+  valid: boolean
+  /** @deprecated 兼容旧前端，next minor 删除。新代码请消费 findings */
+  errors: string[]
+  findings: DagValidationFinding[]
 }

@@ -232,19 +232,18 @@ export function useWorkflowData(deps: DataDeps) {
     }
 
     for (const node of nodes) {
-      if (node.nodeType === 'JOIN' && (incomingCount.get(node.nodeCode) ?? 0) < 2) {
-        pushIssue({
-          level: 'warning',
-          message: `JOIN 节点 ${node.nodeCode} 的前驱少于 2 个`,
-          nodeCode: node.nodeCode,
-        })
-      }
-      if (node.nodeType === 'DECISION' && (outgoingCount.get(node.nodeCode) ?? 0) < 2) {
-        pushIssue({
-          level: 'warning',
-          message: `DECISION 节点 ${node.nodeCode} 的分支少于 2 条`,
-          nodeCode: node.nodeCode,
-        })
+      // GATEWAY 用于分支或汇聚：≥2 入边视为汇聚分支（旧 JOIN 语义），≥2 出边视为分支（旧 DECISION 语义）。
+      // 既无 ≥2 入也无 ≥2 出 → 该 GATEWAY 实际没起到分流/汇合作用，给出提示。
+      if (node.nodeType === 'GATEWAY') {
+        const inN = incomingCount.get(node.nodeCode) ?? 0
+        const outN = outgoingCount.get(node.nodeCode) ?? 0
+        if (inN < 2 && outN < 2) {
+          pushIssue({
+            level: 'warning',
+            message: `GATEWAY 节点 ${node.nodeCode} 既无多前驱也无多分支`,
+            nodeCode: node.nodeCode,
+          })
+        }
       }
     }
 
@@ -684,9 +683,82 @@ export function useWorkflowData(deps: DataDeps) {
       await new Promise((r) => setTimeout(r, 500))
       void loadWorkflow()
     } catch (err) {
-      ElMessage.error(`提交失败：${err instanceof Error ? err.message : '未知错误'}`)
+      // 409 = 后端检出冲突（当前包含 workflowCode 已存在的 create 路径；后续 update 接乐观锁后同样落此分支）。
+      // 不能在前端"强制覆盖"——会盲写覆盖他人改动；引导用户先重载后端最新状态再决定。
+      const status = extractHttpStatus(err)
+      if (status === 409) {
+        try {
+          await ElMessageBox.confirm(
+            '后端已存在冲突版本（可能他人刚刚提交，或同名 workflowCode 已落库）。\n' +
+              '建议「重载后端」拉取最新状态后再决定如何合并；如已确认要丢弃后端版本，请联系管理员从 DB 侧处理。',
+            '提交冲突 (409)',
+            {
+              type: 'warning',
+              confirmButtonText: '重载后端',
+              cancelButtonText: '稍后处理',
+              distinguishCancelAndClose: true,
+            },
+          )
+          await loadWorkflow()
+        } catch {
+          // 用户选择"稍后处理"或关闭弹窗 — 不做任何动作，保留本地草稿待用户继续编辑
+        }
+      } else {
+        ElMessage.error(`提交失败：${err instanceof Error ? err.message : '未知错误'}`)
+      }
     } finally {
       submittingToBackend.value = false
+    }
+  }
+
+  /** 从 axios error / 任意 thrown value 中提取 HTTP status 码；非 HTTP 错误返回 0。 */
+  function extractHttpStatus(err: unknown): number {
+    if (typeof err === 'object' && err !== null) {
+      const e = err as { response?: { status?: number }; status?: number }
+      return e.response?.status ?? e.status ?? 0
+    }
+    return 0
+  }
+
+  // ─── Backend validate (ADR-025) ────────────────────────────────────────────
+
+  const backendValidating = ref(false)
+  const backendValidationIssues = ref<ValidationIssue[]>([])
+
+  async function validateOnBackend() {
+    if (!selectedDefinition.value || !selectedDefinition.value.id) {
+      ElMessage.warning('请先在工具栏选中已落库的 workflow（本地草稿无 id 无法触发后端校验）')
+      return
+    }
+    backendValidating.value = true
+    try {
+      const result = await workflowApi.validate(selectedDefinition.value.id, tenant.tenantId)
+      const findings = Array.isArray(result.findings) ? result.findings : []
+      // 后端 finding → ValidationIssue（level 大小写归一 / 字段名映射）
+      backendValidationIssues.value = findings.map((f) => ({
+        level: f.level === 'WARNING' ? ('warning' as const) : ('error' as const),
+        message: `[${f.code}] ${f.message}`,
+        nodeCode: f.nodeCode ?? undefined,
+        edgeId: f.edgeId ?? undefined,
+      }))
+      // 把后端 finding 合并进 validationIssues，去重（同 message+nodeCode+edgeId）
+      const merged: ValidationIssue[] = [...validateGraph(), ...backendValidationIssues.value]
+      const seen = new Set<string>()
+      validationIssues.value = merged.filter((iss) => {
+        const k = `${iss.level}|${iss.nodeCode ?? ''}|${iss.edgeId ?? ''}|${iss.message}`
+        if (seen.has(k)) return false
+        seen.add(k)
+        return true
+      })
+      if (result.valid) {
+        ElMessage.success('后端 DAG 校验通过')
+      } else {
+        ElMessage.warning(`后端校验发现 ${backendValidationIssues.value.length} 条问题`)
+      }
+    } catch (err) {
+      ElMessage.error(`后端校验失败：${err instanceof Error ? err.message : '未知错误'}`)
+    } finally {
+      backendValidating.value = false
     }
   }
 
@@ -849,6 +921,8 @@ export function useWorkflowData(deps: DataDeps) {
     exportManifest,
     importManifest,
     importManifestFromFile,
+    validateOnBackend,
+    backendValidating,
 
     // suppress helpers
     getSuppressDefinitionFormSync,

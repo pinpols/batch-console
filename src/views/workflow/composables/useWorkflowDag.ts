@@ -73,11 +73,12 @@ export function useWorkflowDag(deps: DagDeps) {
 
   function suggestDownstreamEdgeType(sourceNode: X6Node): WorkflowEdgeKind {
     const source = sourceNode.getData() as WorkflowNodeDraft
-    if (source.nodeType !== 'DECISION') return 'SUCCESS'
+    if (source.nodeType !== 'GATEWAY') return 'SUCCESS'
     const existingOutgoing = currentWorkflowExportEdges().filter(
       (edge) => edge.fromNodeCode === source.nodeCode,
     )
-    return existingOutgoing.some((edge) => edge.edgeType === 'DEFAULT') ? 'CONDITION' : 'DEFAULT'
+    // GATEWAY 出边惯用：先 CONDITION 表达分支，最后挂一条 ALWAYS 兜底
+    return existingOutgoing.some((edge) => edge.edgeType === 'ALWAYS') ? 'CONDITION' : 'ALWAYS'
   }
 
   function createEdgeBetween(sourceNode: X6Node, targetNode: X6Node, edgeType: WorkflowEdgeKind) {
@@ -155,7 +156,7 @@ export function useWorkflowDag(deps: DagDeps) {
     scheduleEdgeZOrder()
   }
 
-  function addDownstreamNode(kind: Extract<WorkflowNodeKind, 'TASK' | 'DECISION' | 'JOIN'>) {
+  function addDownstreamNode(kind: Extract<WorkflowNodeKind, 'TASK' | 'GATEWAY' | 'JOB'>) {
     if (!graph.value || selectedKind.value !== 'node' || !selectedCellId.value) return
     const cell = graph.value.getCellById(selectedCellId.value)
     if (!cell || !cell.isNode()) return
@@ -395,14 +396,16 @@ export function useWorkflowDag(deps: DagDeps) {
         addDownstreamNode('TASK')
         return
       }
-      if (key === 'd') {
+      if (key === 'g') {
+        // Shift+G → GATEWAY（原 Shift+D 改 G，与后端命名对齐；分支语义保留）
         event.preventDefault()
-        addDownstreamNode('DECISION')
+        addDownstreamNode('GATEWAY')
         return
       }
       if (key === 'j') {
+        // Shift+J → JOB（原 JOIN 已折叠到 GATEWAY；J 现指 JOB 节点）
         event.preventDefault()
-        addDownstreamNode('JOIN')
+        addDownstreamNode('JOB')
         return
       }
     }

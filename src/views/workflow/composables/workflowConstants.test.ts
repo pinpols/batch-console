@@ -24,15 +24,18 @@ describe('toNodeKind', () => {
     expect(toNodeKind('SOURCE')).toBe('START')
   })
 
-  it('normalizes DECISION aliases', () => {
-    expect(toNodeKind('gateway')).toBe('DECISION')
-    expect(toNodeKind('BRANCH')).toBe('DECISION')
-    expect(toNodeKind('decision')).toBe('DECISION')
+  it('folds DECISION / BRANCH / JOIN / MERGE / SYNC into GATEWAY (后端只有 GATEWAY)', () => {
+    expect(toNodeKind('gateway')).toBe('GATEWAY')
+    expect(toNodeKind('BRANCH')).toBe('GATEWAY')
+    expect(toNodeKind('decision')).toBe('GATEWAY')
+    expect(toNodeKind('merge')).toBe('GATEWAY')
+    expect(toNodeKind('SYNC')).toBe('GATEWAY')
   })
 
-  it('normalizes JOIN aliases', () => {
-    expect(toNodeKind('merge')).toBe('JOIN')
-    expect(toNodeKind('SYNC')).toBe('JOIN')
+  it('normalizes FILE_STEP / JOB aliases', () => {
+    expect(toNodeKind('file_step')).toBe('FILE_STEP')
+    expect(toNodeKind('PIPELINE_STEP')).toBe('FILE_STEP')
+    expect(toNodeKind('job')).toBe('JOB')
   })
 
   it('normalizes END aliases', () => {
@@ -61,9 +64,11 @@ describe('toEdgeKind', () => {
     expect(toEdgeKind('rule')).toBe('CONDITION')
   })
 
-  it('normalizes DEFAULT aliases', () => {
-    expect(toEdgeKind('else')).toBe('DEFAULT')
-    expect(toEdgeKind('FALLBACK')).toBe('DEFAULT')
+  it('normalizes ALWAYS aliases (incl. legacy DEFAULT/ELSE/FALLBACK)', () => {
+    expect(toEdgeKind('always')).toBe('ALWAYS')
+    expect(toEdgeKind('default')).toBe('ALWAYS')
+    expect(toEdgeKind('else')).toBe('ALWAYS')
+    expect(toEdgeKind('FALLBACK')).toBe('ALWAYS')
   })
 
   it('defaults unknown values to SUCCESS', () => {
@@ -91,7 +96,9 @@ describe('defaultNodeForm', () => {
   })
 
   it('uses the kind label for non-TASK nodes', () => {
-    expect(defaultNodeForm('DECISION').nodeName).toBe('DECISION 节点')
+    expect(defaultNodeForm('GATEWAY').nodeName).toBe('网关')
+    expect(defaultNodeForm('FILE_STEP').nodeName).toBe('文件流水线')
+    expect(defaultNodeForm('JOB').nodeName).toBe('作业引用')
     expect(defaultNodeForm('END').nodeName).toBe('END 节点')
   })
 
@@ -132,7 +139,7 @@ describe('edgeLabelText', () => {
 
   it('falls back to the edge type label', () => {
     expect(edgeLabelText({ edgeType: 'FAILURE', conditionExpr: '' })).toBe('FAILURE')
-    expect(edgeLabelText({ edgeType: 'DEFAULT', conditionExpr: '   ' })).toBe('DEFAULT')
+    expect(edgeLabelText({ edgeType: 'ALWAYS', conditionExpr: '   ' })).toBe('ALWAYS')
   })
 })
 
