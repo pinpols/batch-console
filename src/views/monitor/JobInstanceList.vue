@@ -142,7 +142,9 @@
           show-overflow-tooltip
         >
           <template #default="{ row }">
-            <CopyableText v-if="row.traceId" :text="String(row.traceId)" />
+            <router-link v-if="row.traceId" class="cell-link" :to="`/logs?traceId=${row.traceId}`">
+              {{ row.traceId }}
+            </router-link>
             <span v-else class="muted">—</span>
           </template>
         </el-table-column>

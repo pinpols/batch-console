@@ -15,11 +15,11 @@
       </div>
 
       <div v-if="summary" class="m-metric-grid">
-        <div class="m-metric">
+        <router-link to="/m/jobs?status=RUNNING" class="m-metric">
           <span class="m-metric__label">{{ t('mobile.summary.runningJobs') }}</span>
           <span class="m-metric__value">{{ summary.runningJobs }}</span>
-        </div>
-        <div class="m-metric">
+        </router-link>
+        <router-link to="/m/jobs?status=FAILED" class="m-metric">
           <span class="m-metric__label">{{ t('mobile.summary.failedJobs') }}</span>
           <span
             class="m-metric__value"
@@ -27,8 +27,8 @@
           >
             {{ summary.failedJobs }}
           </span>
-        </div>
-        <div class="m-metric">
+        </router-link>
+        <router-link to="/m/approvals" class="m-metric">
           <span class="m-metric__label">{{ t('mobile.summary.pendingApprovals') }}</span>
           <span
             class="m-metric__value"
@@ -36,8 +36,8 @@
           >
             {{ summary.pendingApprovals }}
           </span>
-        </div>
-        <div class="m-metric">
+        </router-link>
+        <router-link to="/m/alerts" class="m-metric">
           <span class="m-metric__label">{{ t('mobile.summary.openAlerts') }}</span>
           <span
             class="m-metric__value"
@@ -45,8 +45,8 @@
           >
             {{ summary.openAlerts }}
           </span>
-        </div>
-        <div class="m-metric">
+        </router-link>
+        <router-link to="/m/jobs" class="m-metric">
           <span class="m-metric__label">{{ t('mobile.summary.slaBreaches') }}</span>
           <span
             class="m-metric__value"
@@ -54,16 +54,16 @@
           >
             {{ summary.slaBreaches }}
           </span>
-        </div>
-        <div class="m-metric">
+        </router-link>
+        <router-link to="/m/workers?filter=online" class="m-metric">
           <span class="m-metric__label">{{ t('mobile.summary.onlineWorkers') }}</span>
           <span class="m-metric__value m-metric__value--success">{{ summary.onlineWorkers }}</span>
-        </div>
-        <div class="m-metric">
+        </router-link>
+        <router-link to="/m/workers?filter=draining" class="m-metric">
           <span class="m-metric__label">{{ t('mobile.summary.drainingWorkers') }}</span>
           <span class="m-metric__value">{{ summary.drainingWorkers }}</span>
-        </div>
-        <div class="m-metric">
+        </router-link>
+        <router-link to="/m/workers?filter=offline" class="m-metric">
           <span class="m-metric__label">{{ t('mobile.summary.offlineWorkers') }}</span>
           <span
             class="m-metric__value"
@@ -71,7 +71,7 @@
           >
             {{ summary.offlineWorkers }}
           </span>
-        </div>
+        </router-link>
       </div>
 
       <MSkeleton v-else-if="loading" :count="4" />

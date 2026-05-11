@@ -95,6 +95,7 @@
 
 <script setup lang="ts">
   import { computed, onMounted, ref, watch } from 'vue'
+  import { useRoute } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import { Refresh } from '@element-plus/icons-vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
@@ -112,8 +113,14 @@
   } from '@/api/workers'
   import type { ConsoleWorkerRegistryResponse } from '@/types/console-api'
 
+  const route = useRoute()
   const { t, te } = useI18n({ useScope: 'global' })
   const tenant = useTenantStore()
+  type WorkerFilter = 'all' | 'online' | 'draining' | 'offline'
+  const allowedFilters: WorkerFilter[] = ['all', 'online', 'draining', 'offline']
+  const initialFilter = allowedFilters.includes(route.query.filter as WorkerFilter)
+    ? (route.query.filter as WorkerFilter)
+    : 'all'
   const { data: metaEnums } = useConsoleMetaEnumsQuery()
   function resolveEnumLabel(group: string, value?: string | null): string {
     if (!value) return '—'
@@ -125,7 +132,7 @@
   const loading = ref(false)
   const rows = ref<ConsoleWorkerRegistryResponse[]>([])
   const busyCode = ref<string | null>(null)
-  const filter = ref<'all' | 'online' | 'draining' | 'offline'>('all')
+  const filter = ref<WorkerFilter>(initialFilter)
 
   const filterOptions = computed(() => [
     { value: 'all', label: t('mobile.workers.filterAll') },

@@ -83,7 +83,9 @@
         <el-table-column prop="bizDate" :label="t('monitor.runColBizDate')" width="110" />
         <el-table-column prop="traceId" :label="t('monitor.runColTrace')" min-width="120">
           <template #default="{ row }">
-            <CopyableText v-if="row.traceId" :text="row.traceId" />
+            <router-link v-if="row.traceId" class="cell-link" :to="`/logs?traceId=${row.traceId}`">
+              {{ row.traceId }}
+            </router-link>
             <span v-else>—</span>
           </template>
         </el-table-column>
