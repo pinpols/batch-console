@@ -29,14 +29,52 @@
       </el-form-item>
       <div class="workflow-inspector-cols-2">
         <el-form-item :label="t('workflowInspector.fieldRelatedJob')">
+          <!-- JOB 节点：下拉选已注册 job-definitions（与后端 V8 校验一致）；其他类型保留 free-text -->
+          <el-select
+            v-if="nodeForm.nodeType === 'JOB'"
+            v-model="nodeForm.relatedJobCode"
+            filterable
+            clearable
+            :placeholder="t('workflowInspector.relatedJobPlaceholder')"
+            size="small"
+            :loading="jobOptionsLoading"
+            class="workflow-fill-w"
+          >
+            <el-option
+              v-for="item in jobOptions"
+              :key="item.jobCode"
+              :label="`${item.jobCode}${item.jobName ? ' · ' + item.jobName : ''}`"
+              :value="item.jobCode"
+            />
+          </el-select>
           <el-input
+            v-else
             v-model="nodeForm.relatedJobCode"
             :placeholder="t('workflowInspector.relatedJobPlaceholder')"
             size="small"
           />
         </el-form-item>
         <el-form-item :label="t('workflowInspector.fieldRelatedPipeline')">
+          <!-- FILE_STEP 节点：下拉选已启用 pipeline-definitions；其他类型保留 free-text -->
+          <el-select
+            v-if="nodeForm.nodeType === 'FILE_STEP'"
+            v-model="nodeForm.relatedPipelineCode"
+            filterable
+            clearable
+            :placeholder="t('workflowInspector.relatedPipelinePlaceholder')"
+            size="small"
+            :loading="pipelineOptionsLoading"
+            class="workflow-fill-w"
+          >
+            <el-option
+              v-for="item in pipelineOptions"
+              :key="item.code"
+              :label="`${item.code}${item.name ? ' · ' + item.name : ''}`"
+              :value="item.code"
+            />
+          </el-select>
           <el-input
+            v-else
             v-model="nodeForm.relatedPipelineCode"
             :placeholder="t('workflowInspector.relatedPipelinePlaceholder')"
             size="small"
@@ -142,16 +180,16 @@
         <el-button
           class="workflow-quick-create__btn"
           size="small"
-          @click="emit('add-downstream', 'DECISION')"
+          @click="emit('add-downstream', 'GATEWAY')"
         >
-          {{ t('workflowInspector.addDownstreamDecision') }}
+          {{ t('workflowInspector.addDownstreamGateway') }}
         </el-button>
         <el-button
           class="workflow-quick-create__btn"
           size="small"
-          @click="emit('add-downstream', 'JOIN')"
+          @click="emit('add-downstream', 'JOB')"
         >
-          {{ t('workflowInspector.addDownstreamJoin') }}
+          {{ t('workflowInspector.addDownstreamJob') }}
         </el-button>
       </div>
     </div>
@@ -159,20 +197,87 @@
 </template>
 
 <script setup lang="ts">
+  import { ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import {
     nodeKinds,
     type NodeFormState,
     type WorkflowNodeKind,
   } from '../composables/workflowConstants'
+  import { jobApi } from '@/api/job'
+  import { queryPipelineDefinitionsQuery } from '@/api/system'
+  import { useTenantStore } from '@/stores/tenant'
 
   const { t } = useI18n({ useScope: 'global' })
+  const tenant = useTenantStore()
 
-  defineProps<{ nodeForm: NodeFormState }>()
+  const props = defineProps<{ nodeForm: NodeFormState }>()
   const emit = defineEmits<{
     apply: []
     duplicate: []
     remove: []
     'add-downstream': [WorkflowNodeKind]
   }>()
+
+  // ─── FILE_STEP / JOB 节点的下拉选项 ─────────────────────────────────────────
+
+  interface JobOption {
+    jobCode: string
+    jobName?: string
+  }
+  interface PipelineOption {
+    code: string
+    name?: string
+  }
+
+  const jobOptions = ref<JobOption[]>([])
+  const jobOptionsLoading = ref(false)
+  const jobOptionsLoaded = ref(false)
+
+  const pipelineOptions = ref<PipelineOption[]>([])
+  const pipelineOptionsLoading = ref(false)
+  const pipelineOptionsLoaded = ref(false)
+
+  async function ensureJobOptions() {
+    if (jobOptionsLoaded.value || jobOptionsLoading.value) return
+    jobOptionsLoading.value = true
+    try {
+      const list = await jobApi.listDefinitions(tenant.tenantId)
+      jobOptions.value = (list ?? [])
+        .filter((j) => j.enabled !== false)
+        .map((j) => ({ jobCode: j.jobCode, jobName: j.jobName ?? '' }))
+      jobOptionsLoaded.value = true
+    } finally {
+      jobOptionsLoading.value = false
+    }
+  }
+
+  async function ensurePipelineOptions() {
+    if (pipelineOptionsLoaded.value || pipelineOptionsLoading.value) return
+    pipelineOptionsLoading.value = true
+    try {
+      const list = await queryPipelineDefinitionsQuery(tenant.tenantId)
+      pipelineOptions.value = (list ?? [])
+        .filter((p) => (p.enabled ?? true) !== false)
+        .map((p) => ({
+          // 后端可能用 pipelineCode 或 code 任一字段；兼容兜底
+          code: String(p.pipelineCode ?? p.code ?? ''),
+          name: String(p.pipelineName ?? p.name ?? ''),
+        }))
+        .filter((p) => p.code !== '')
+      pipelineOptionsLoaded.value = true
+    } finally {
+      pipelineOptionsLoading.value = false
+    }
+  }
+
+  // 切到 JOB / FILE_STEP 类型时按需加载，避免初次打开 inspector 就发请求
+  watch(
+    () => props.nodeForm.nodeType,
+    (kind) => {
+      if (kind === 'JOB') void ensureJobOptions()
+      else if (kind === 'FILE_STEP') void ensurePipelineOptions()
+    },
+    { immediate: true },
+  )
 </script>

@@ -155,6 +155,13 @@
               <el-button :disabled="!workflowDefinition" @click="applyDefinitionForm">
                 {{ t('workflowDesigner.btnApplyDefinitionForm') }}
               </el-button>
+              <el-button
+                :disabled="!workflowDefinition?.id"
+                :loading="backendValidating"
+                @click="validateOnBackend"
+              >
+                {{ t('workflowDesigner.btnBackendValidate') }}
+              </el-button>
             </el-button-group>
             <el-button-group class="workflow-toolbar__btn-group">
               <el-button :disabled="!graphReady" @click="saveDraft">
@@ -423,7 +430,7 @@
             +
             <kbd>T</kbd>
             /
-            <kbd>D</kbd>
+            <kbd>G</kbd>
             /
             <kbd>J</kbd>
             {{ t('workflowDesigner.canvasHintShiftKey') }}
@@ -768,6 +775,8 @@
     copyDsl,
     exportManifest,
     importManifestFromFile,
+    validateOnBackend,
+    backendValidating,
     getSuppressDefinitionFormSync,
     clearSuppressDefinitionFormSync,
     router,
