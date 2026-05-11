@@ -63,6 +63,8 @@ const messages: Messages = {
     btnSaveDraft: 'Save draft',
     btnCopyDsl: 'Copy DSL',
     btnClearDraft: 'Clear draft',
+    btnExportJson: 'Export JSON',
+    btnImportJson: 'Import JSON',
     btnSubmitBackend: 'Submit to backend',
     sectionLibrary: 'Node library',
     libraryTooltip: 'Hold left mouse to drag onto canvas',

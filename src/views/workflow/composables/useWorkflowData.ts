@@ -690,6 +690,94 @@ export function useWorkflowData(deps: DataDeps) {
     }
   }
 
+  // ─── JSON Manifest export / import ─────────────────────────────────────────
+
+  /**
+   * 导出当前画布状态为 JSON manifest 文件，schema 与本地草稿一致
+   * (workflowDefinition + nodes + edges + savedAt)，可作为版本化配置或跨环境迁移。
+   * 文件名 `workflow-<code>-<yyyyMMddHHmm>.json`。
+   */
+  function exportManifest() {
+    const payload = buildDraftPayload()
+    const code = payload.workflowDefinition.workflowCode || 'workflow'
+    const ts = new Date()
+    const pad = (n: number) => String(n).padStart(2, '0')
+    const fname = `workflow-${code}-${ts.getFullYear()}${pad(ts.getMonth() + 1)}${pad(ts.getDate())}${pad(ts.getHours())}${pad(ts.getMinutes())}.json`
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = fname
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+    ElMessage.success(`已导出 ${fname}`)
+  }
+
+  /**
+   * 从 JSON 文本恢复画布：用于 paste / file upload。
+   * 校验 shape，对齐到当前 workflowCode（不允许跨 workflow 灌入避免误覆盖），
+   * 落画布 + 标记为 local-draft + 入 draft 队列。
+   */
+  function importManifest(jsonText: string): { ok: true } | { ok: false; reason: string } {
+    let parsed: unknown
+    try {
+      parsed = JSON.parse(jsonText)
+    } catch {
+      return { ok: false, reason: 'JSON 解析失败' }
+    }
+    if (!parsed || typeof parsed !== 'object') return { ok: false, reason: 'JSON 顶层不是对象' }
+    const obj = parsed as Partial<WorkflowDraftPayload>
+    if (!obj.workflowDefinition || !Array.isArray(obj.nodes) || !Array.isArray(obj.edges)) {
+      return { ok: false, reason: 'manifest 缺少 workflowDefinition / nodes / edges 字段' }
+    }
+    const inCode = obj.workflowDefinition.workflowCode
+    const curCode = selectedWorkflowCode.value
+    if (!curCode) return { ok: false, reason: '请先在工具栏选中目标 workflow，再导入 manifest' }
+    if (inCode && inCode !== curCode) {
+      return {
+        ok: false,
+        reason: `manifest 的 workflowCode=${inCode}，与当前选中的 ${curCode} 不一致，拒绝跨流灌入`,
+      }
+    }
+    // 落画布
+    copyWorkflowForm(
+      obj.workflowDefinition as WorkflowDraftPayload['workflowDefinition'],
+      workflowForm,
+    )
+    resetGraph(
+      obj.nodes as WorkflowDraftPayload['nodes'],
+      obj.edges as WorkflowDraftPayload['edges'],
+      layoutWorkflowNodes,
+    )
+    draftSource.value = 'local-draft'
+    draftUpdatedAt.value = new Date().toISOString()
+    queueDraftSave()
+    return { ok: true }
+  }
+
+  /**
+   * 从 File 对象读取 JSON 并 importManifest，给文件上传按钮用。
+   */
+  async function importManifestFromFile(file: File) {
+    if (!file.name.toLowerCase().endsWith('.json')) {
+      ElMessage.error('请选择 .json 文件')
+      return
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      ElMessage.error('manifest 文件超过 5 MB，请检查')
+      return
+    }
+    const text = await file.text()
+    const result = importManifest(text)
+    if (result.ok) {
+      ElMessage.success(`已导入 ${file.name}`)
+    } else {
+      ElMessage.error(`导入失败：${result.reason}`)
+    }
+  }
+
   // ─── Copy DSL ──────────────────────────────────────────────────────────────
 
   async function copyDsl() {
@@ -758,6 +846,9 @@ export function useWorkflowData(deps: DataDeps) {
     submitToBackend,
     copyDsl,
     buildDraftPayload,
+    exportManifest,
+    importManifest,
+    importManifestFromFile,
 
     // suppress helpers
     getSuppressDefinitionFormSync,

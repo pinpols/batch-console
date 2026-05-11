@@ -38,6 +38,11 @@ export interface DagDeps {
   allocateEdgeId: (fromId: string, toId: string, edgeType: WorkflowEdgeKind) => string
   currentWorkflowExportNodes: () => WorkflowNodeDraft[]
   currentWorkflowExportEdges: () => WorkflowEdgeDraft[]
+  /** Clipboard 操作：由 useWorkflowGraph 提供 */
+  copySelection: () => void
+  cutSelection: () => void
+  pasteFromClipboard: () => void
+  duplicateSelection: () => void
 }
 
 export function useWorkflowDag(deps: DagDeps) {
@@ -58,6 +63,10 @@ export function useWorkflowDag(deps: DagDeps) {
     allocateEdgeId,
     currentWorkflowExportNodes,
     currentWorkflowExportEdges,
+    copySelection,
+    cutSelection,
+    pasteFromClipboard,
+    duplicateSelection,
   } = deps
 
   // ─── Edge creation helpers ─────────────────────────────────────────────────
@@ -356,6 +365,26 @@ export function useWorkflowDag(deps: DagDeps) {
           event.preventDefault()
           g.select(g.getCells())
         }
+        return
+      }
+      if (key === 'c') {
+        event.preventDefault()
+        copySelection()
+        return
+      }
+      if (key === 'x') {
+        event.preventDefault()
+        cutSelection()
+        return
+      }
+      if (key === 'v') {
+        event.preventDefault()
+        pasteFromClipboard()
+        return
+      }
+      if (key === 'd') {
+        event.preventDefault()
+        duplicateSelection()
         return
       }
     }

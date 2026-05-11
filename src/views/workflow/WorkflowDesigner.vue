@@ -167,6 +167,24 @@
                 {{ t('workflowDesigner.btnClearDraft') }}
               </el-button>
             </el-button-group>
+            <el-button-group class="workflow-toolbar__btn-group">
+              <el-button :disabled="!graphReady" @click="exportManifest">
+                {{ t('workflowDesigner.btnExportJson') }}
+              </el-button>
+              <el-button
+                :disabled="!graphReady || !selectedWorkflowCode"
+                @click="triggerImportManifest"
+              >
+                {{ t('workflowDesigner.btnImportJson') }}
+              </el-button>
+            </el-button-group>
+            <input
+              ref="manifestFileInput"
+              type="file"
+              accept="application/json,.json"
+              style="display: none"
+              @change="onManifestFileChange"
+            />
             <el-button
               type="primary"
               :disabled="!graphReady || !selectedWorkflowCode"
@@ -649,6 +667,10 @@
     canRedo,
     undo,
     redo,
+    copySelection,
+    cutSelection,
+    pasteFromClipboard,
+    duplicateSelection,
     scheduleEdgeZOrder,
     syncGraphDerivedState,
     bindDerivedStateCallbacks,
@@ -744,10 +766,24 @@
     applyDefinitionForm,
     submitToBackend,
     copyDsl,
+    exportManifest,
+    importManifestFromFile,
     getSuppressDefinitionFormSync,
     clearSuppressDefinitionFormSync,
     router,
   } = dataModule
+
+  const manifestFileInput = ref<HTMLInputElement | null>(null)
+  function triggerImportManifest() {
+    manifestFileInput.value?.click()
+  }
+  async function onManifestFileChange(event: Event) {
+    const input = event.target as HTMLInputElement
+    const file = input.files?.[0]
+    if (file) await importManifestFromFile(file)
+    // 清空 input 值，允许下次选同一文件也触发 change
+    if (input) input.value = ''
+  }
 
   const workflowContextCode = computed(() => selectedWorkflowCode.value.trim())
   const workflowContextTitle = computed(() => {
@@ -818,6 +854,10 @@
     allocateEdgeId,
     currentWorkflowExportNodes,
     currentWorkflowExportEdges,
+    copySelection,
+    cutSelection,
+    pasteFromClipboard,
+    duplicateSelection,
   })
 
   // ─── Watchers ──────────────────────────────────────────────────────────────

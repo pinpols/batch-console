@@ -4,6 +4,7 @@
  */
 import { computed, nextTick, onScopeDispose, reactive, ref, shallowRef, type Ref } from 'vue'
 import { Dnd, Graph, Shape, type Cell, type Edge as X6Edge, type Node as X6Node } from '@antv/x6'
+import { Clipboard } from '@antv/x6/es/plugin/clipboard'
 import { History } from '@antv/x6/es/plugin/history'
 import { Selection } from '@antv/x6/es/plugin/selection'
 import { FixedMiniMap } from '../graph/FixedMiniMap'
@@ -782,6 +783,12 @@ export function useWorkflowGraph(deps: GraphDeps) {
         showEdgeSelectionBox: false,
       }),
     )
+    graph.value.use(
+      new Clipboard({
+        enabled: true,
+        // useLocalStorage 默认 true：跨标签页 / 刷新后仍可粘贴，但同时会和 dom clipboard 互不污染
+      }),
+    )
 
     graph.value.on('history:change', () => {
       historyTick.value += 1
@@ -884,6 +891,85 @@ export function useWorkflowGraph(deps: GraphDeps) {
     graph.value.select(graph.value.getCells())
   }
 
+  // ─── Clipboard helpers ──────────────────────────────────────────────────
+
+  /** 选中节点/边 → 写入 X6 剪贴板。无选中时 noop。 */
+  function copySelection() {
+    const g = graph.value
+    if (!g) return
+    const cells = g.getSelectedCells()
+    if (cells.length === 0) return
+    g.copy(cells)
+  }
+  function cutSelection() {
+    const g = graph.value
+    if (!g) return
+    const cells = g.getSelectedCells()
+    if (cells.length === 0) return
+    g.cut(cells)
+  }
+  /**
+   * 粘贴：x6 默认 offset 20px + 自动分配新 cell.id；但 cell.data.nodeCode 不刷新
+   * (因为它是业务字段 x6 不知道唯一约束)。这里粘贴后遍历，给每个节点分配新
+   * nodeCode，并同步修正 paste 出来的内部边端引用。
+   */
+  function pasteFromClipboard() {
+    const g = graph.value
+    if (!g) return
+    if (g.isClipboardEmpty()) return
+    const pasted = g.paste({ offset: 32 })
+    // 收集本次粘贴节点的旧 → 新 nodeCode 映射，修边端
+    const codeMap = new Map<string, string>()
+    for (const cell of pasted) {
+      if (!cell.isNode()) continue
+      const oldData = cell.getData() as WorkflowNodeDraft
+      const kind = oldData?.nodeType
+      if (!kind) continue
+      // START / END 是单例：粘贴时跳过，免得出现 2 个 START
+      if (kind === 'START' || kind === 'END') {
+        g.removeCell(cell)
+        continue
+      }
+      const newCode = allocateNodeCodeForGraph(kind, g)
+      codeMap.set(oldData.nodeCode, newCode)
+      cell.setProp('id', newCode, { silent: true })
+      const pos = (cell as X6Node).position()
+      cell.setData({ ...oldData, nodeCode: newCode, x: pos.x, y: pos.y })
+    }
+    for (const cell of pasted) {
+      if (!cell.isEdge()) continue
+      const e = cell as X6Edge
+      const oldData = e.getData() as WorkflowEdgeDraft
+      const newFrom = codeMap.get(oldData.fromNodeCode)
+      const newTo = codeMap.get(oldData.toNodeCode)
+      // 端点没都被粘贴 → 该边作废（防止悬空连到原节点）
+      if (!newFrom || !newTo) {
+        g.removeCell(e)
+        continue
+      }
+      const newId = allocateEdgeId(newFrom, newTo, oldData.edgeType)
+      e.setData({ ...oldData, id: newId, fromNodeCode: newFrom, toNodeCode: newTo })
+    }
+    // 选中粘贴产物，方便用户立刻拖动
+    const survived = pasted.filter((c) => !c.removed)
+    if (survived.length > 0) {
+      g.cleanSelection()
+      g.select(survived)
+      _setSelectedCell(survived[0])
+    }
+    syncGraphDerivedState()
+    scheduleEdgeZOrder()
+  }
+  /** 复制选中并立即原地粘贴 = "Duplicate"，符合 Ctrl+D 习惯。 */
+  function duplicateSelection() {
+    const g = graph.value
+    if (!g) return
+    const cells = g.getSelectedCells()
+    if (cells.length === 0) return
+    g.copy(cells)
+    pasteFromClipboard()
+  }
+
   function disposeGraph() {
     cancelPositionDerivedSyncTimer()
     cancelEdgeZOrderRaf()
@@ -911,6 +997,10 @@ export function useWorkflowGraph(deps: GraphDeps) {
     undo,
     redo,
     selectAll,
+    copySelection,
+    cutSelection,
+    pasteFromClipboard,
+    duplicateSelection,
 
     closeCanvasContextMenu,
     openCanvasContextMenu,
