@@ -23,11 +23,17 @@
         />
       </el-form-item>
       <el-form-item :label="t('workflowInspector.fieldWorkflowType')">
-        <el-input
+        <!-- 与后端 WorkflowType 字典对齐：DAG / PIPELINE / MIXED -->
+        <el-select
           v-model="workflowForm.workflowType"
           size="small"
           :placeholder="t('workflowInspector.workflowTypePlaceholder')"
-        />
+          class="workflow-fill-w"
+        >
+          <el-option label="DAG" value="DAG" />
+          <el-option label="PIPELINE" value="PIPELINE" />
+          <el-option label="MIXED" value="MIXED" />
+        </el-select>
       </el-form-item>
       <el-form-item :label="t('workflowInspector.fieldEnabled')">
         <el-switch v-model="workflowForm.enabled" size="small" />

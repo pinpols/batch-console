@@ -120,12 +120,65 @@
         </el-form-item>
       </div>
       <el-form-item :label="t('workflowInspector.fieldRetryPolicy')">
-        <el-input
+        <!-- 与后端 RetryPolicyType 字典对齐：NONE / FIXED / EXPONENTIAL -->
+        <el-select
           v-model="nodeForm.retryPolicy"
           size="small"
           :placeholder="t('workflowInspector.retryPolicyPlaceholder')"
-        />
+          class="workflow-fill-w"
+        >
+          <el-option label="NONE" value="NONE" />
+          <el-option label="FIXED" value="FIXED" />
+          <el-option label="EXPONENTIAL" value="EXPONENTIAL" />
+        </el-select>
       </el-form-item>
+      <!-- GATEWAY join_mode（后端 V9/V10 校验）：ALL_OF 要求 ≥2 入边，N_OF_M 要求 n ≤ m 且 m 等于入边数 -->
+      <template v-if="nodeForm.nodeType === 'GATEWAY'">
+        <div class="workflow-inspector-cols-2">
+          <el-form-item :label="t('workflowInspector.fieldJoinMode')">
+            <el-select
+              v-model="joinMode"
+              size="small"
+              :placeholder="t('workflowInspector.joinModePlaceholder')"
+              clearable
+              class="workflow-fill-w"
+            >
+              <el-option label="ALL_OF" value="ALL_OF" />
+              <el-option label="N_OF_M" value="N_OF_M" />
+            </el-select>
+          </el-form-item>
+          <el-form-item v-if="joinMode === 'N_OF_M'" :label="t('workflowInspector.fieldJoinN')">
+            <el-input-number
+              v-model="joinN"
+              class="workflow-fill-w"
+              :min="1"
+              :step="1"
+              size="small"
+              controls-position="right"
+            />
+          </el-form-item>
+        </div>
+      </template>
+      <!-- ADR-018 跨日依赖（V6/V7 后端校验）：仅暴露超时秒数 + JSON 数组编辑入口；复杂结构靠 DSL 编辑器 -->
+      <div class="workflow-inspector-cols-2">
+        <el-form-item :label="t('workflowInspector.fieldCrossDayDeps')">
+          <el-input
+            v-model="nodeForm.crossDayDependencies"
+            size="small"
+            :placeholder="t('workflowInspector.crossDayDepsPlaceholder')"
+          />
+        </el-form-item>
+        <el-form-item :label="t('workflowInspector.fieldCrossDayTimeout')">
+          <el-input-number
+            v-model="nodeForm.crossDayDependencyTimeoutSeconds"
+            class="workflow-fill-w"
+            :min="0"
+            :step="60"
+            size="small"
+            controls-position="right"
+          />
+        </el-form-item>
+      </div>
       <el-form-item :label="t('workflowInspector.fieldTimeoutSeconds')">
         <el-input-number
           v-model="nodeForm.timeoutSeconds"
@@ -137,13 +190,14 @@
         />
       </el-form-item>
       <el-form-item :label="t('workflowInspector.fieldExtJson')">
-        <el-input
+        <DslEditor
           v-model="nodeForm.nodeParams"
-          type="textarea"
-          :rows="2"
-          size="small"
+          :upstream-node-codes="upstreamNodeCodes"
           :placeholder="t('workflowInspector.extJsonPlaceholder')"
         />
+        <div class="workflow-dsl-hint">
+          <span>{{ t('workflowInspector.dslHint') }}</span>
+        </div>
       </el-form-item>
       <el-form-item :label="t('workflowInspector.fieldEnabled')">
         <el-switch v-model="nodeForm.enabled" size="small" />
@@ -197,7 +251,7 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, watch } from 'vue'
+  import { computed, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import {
     nodeKinds,
@@ -207,11 +261,18 @@
   import { jobApi } from '@/api/job'
   import { queryPipelineDefinitionsQuery } from '@/api/system'
   import { useTenantStore } from '@/stores/tenant'
+  import DslEditor from './DslEditor.vue'
 
   const { t } = useI18n({ useScope: 'global' })
   const tenant = useTenantStore()
 
-  const props = defineProps<{ nodeForm: NodeFormState }>()
+  const props = withDefaults(
+    defineProps<{
+      nodeForm: NodeFormState
+      upstreamNodeCodes?: string[]
+    }>(),
+    { upstreamNodeCodes: () => [] },
+  )
   const emit = defineEmits<{
     apply: []
     duplicate: []
@@ -280,4 +341,55 @@
     },
     { immediate: true },
   )
+
+  // ─── GATEWAY join_mode 读写 ─────────────────────────────────────────────────
+  // 后端从 node_params JSONB 读 join_mode：保 form 写入透过 nodeParams 字符串内嵌
+  // 字段同步，避免给 NodeFormState 加 1 个只有 GATEWAY 用到的字段（也避免落库时漏写）。
+
+  interface ParsedNodeParams extends Record<string, unknown> {
+    join_mode?: string
+    join_n?: number
+  }
+
+  function parseParams(): ParsedNodeParams {
+    if (!props.nodeForm.nodeParams || !props.nodeForm.nodeParams.trim()) return {}
+    try {
+      const obj = JSON.parse(props.nodeForm.nodeParams) as unknown
+      return obj && typeof obj === 'object' ? (obj as ParsedNodeParams) : {}
+    } catch {
+      return {}
+    }
+  }
+  function writeParams(next: ParsedNodeParams) {
+    // 序列化时把 undefined 字段剔掉，避免 JSON 里出现冗余 null
+    const clean: Record<string, unknown> = {}
+    for (const [k, v] of Object.entries(next)) {
+      if (v !== undefined && v !== null && v !== '') clean[k] = v
+    }
+    props.nodeForm.nodeParams = JSON.stringify(clean, null, 2)
+  }
+
+  const joinMode = computed<string>({
+    get: () => (parseParams().join_mode as string) ?? '',
+    set: (val) => {
+      const cur = parseParams()
+      if (!val) {
+        delete cur.join_mode
+        delete cur.join_n
+      } else {
+        cur.join_mode = val
+        if (val !== 'N_OF_M') delete cur.join_n
+        else if (cur.join_n == null) cur.join_n = 1
+      }
+      writeParams(cur)
+    },
+  })
+  const joinN = computed<number>({
+    get: () => Number(parseParams().join_n ?? 1),
+    set: (val) => {
+      const cur = parseParams()
+      cur.join_n = Math.max(1, Math.floor(val))
+      writeParams(cur)
+    },
+  })
 </script>

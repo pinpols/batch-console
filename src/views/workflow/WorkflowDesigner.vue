@@ -63,6 +63,9 @@
       </div>
 
       <div class="workflow-context__actions">
+        <el-tag v-if="isReadOnly" type="warning" effect="plain" size="small">
+          {{ t('workflowDesigner.readOnlyTag') }}
+        </el-tag>
         <el-button :loading="definitionsLoading" @click="reloadDefinitions">
           {{ t('workflowDesigner.btnSyncDefinitions') }}
         </el-button>
@@ -149,10 +152,10 @@
               >
                 {{ t('workflowDesigner.btnRedo') }}
               </el-button>
-              <el-button :disabled="!selectedWorkflowCode" @click="reLayout">
+              <el-button :disabled="!selectedWorkflowCode || isReadOnly" @click="reLayout">
                 {{ t('workflowDesigner.btnAutoLayout') }}
               </el-button>
-              <el-button :disabled="!workflowDefinition" @click="applyDefinitionForm">
+              <el-button :disabled="!workflowDefinition || isReadOnly" @click="applyDefinitionForm">
                 {{ t('workflowDesigner.btnApplyDefinitionForm') }}
               </el-button>
               <el-button
@@ -164,13 +167,13 @@
               </el-button>
             </el-button-group>
             <el-button-group class="workflow-toolbar__btn-group">
-              <el-button :disabled="!graphReady" @click="saveDraft">
+              <el-button :disabled="!graphReady || isReadOnly" @click="saveDraft">
                 {{ t('workflowDesigner.btnSaveDraft') }}
               </el-button>
               <el-button :disabled="!graphReady" @click="copyDsl">
                 {{ t('workflowDesigner.btnCopyDsl') }}
               </el-button>
-              <el-button :disabled="!graphReady" @click="clearDraft">
+              <el-button :disabled="!graphReady || isReadOnly" @click="clearDraft">
                 {{ t('workflowDesigner.btnClearDraft') }}
               </el-button>
             </el-button-group>
@@ -179,7 +182,7 @@
                 {{ t('workflowDesigner.btnExportJson') }}
               </el-button>
               <el-button
-                :disabled="!graphReady || !selectedWorkflowCode"
+                :disabled="!graphReady || !selectedWorkflowCode || isReadOnly"
                 @click="triggerImportManifest"
               >
                 {{ t('workflowDesigner.btnImportJson') }}
@@ -194,7 +197,7 @@
             />
             <el-button
               type="primary"
-              :disabled="!graphReady || !selectedWorkflowCode"
+              :disabled="!graphReady || !selectedWorkflowCode || isReadOnly"
               :loading="submittingToBackend"
               @click="submitToBackend"
             >
@@ -227,8 +230,12 @@
                 type="button"
                 class="workflow-node-pill"
                 :class="`workflow-node-pill--${kind.kind.toLowerCase()}`"
-                :disabled="!graphReady"
-                :title="t('workflowDesigner.libraryTooltip')"
+                :disabled="!graphReady || isReadOnly"
+                :title="
+                  isReadOnly
+                    ? t('workflowDesigner.readOnlyTooltip')
+                    : t('workflowDesigner.libraryTooltip')
+                "
                 @pointerdown="onLibraryNodePointerDown(kind.kind, $event)"
               >
                 <span class="workflow-node-pill__dot" aria-hidden="true" />
@@ -459,6 +466,7 @@
             <WorkflowInspectorNodeForm
               v-if="selectedKind === 'node'"
               :node-form="nodeForm"
+              :upstream-node-codes="selectedNodeUpstreamCodes"
               @apply="applyNodeForm"
               @duplicate="duplicateSelectedNode"
               @remove="removeSelected"
@@ -594,6 +602,7 @@
   import DocsDrawer from '@/components/common/DocsDrawer.vue'
   import { useAppStore } from '@/stores/app'
   import { useTenantStore } from '@/stores/tenant'
+  import { useAuthStore } from '@/stores/auth'
   import { useTenantReload } from '@/composables/useTenantReload'
   import PageContainer from '@/components/common/PageContainer.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
@@ -617,6 +626,13 @@
 
   const app = useAppStore()
   const tenant = useTenantStore()
+  const auth = useAuthStore()
+
+  /**
+   * 只读模式：当前用户没有 ROLE_ADMIN 权限时（AUDITOR / TENANT_USER 等）禁用所有写操作。
+   * 后端 PUT/POST/PATCH 已经鉴权（403），这里前端先 disable 避免无效请求 + UX 不一致。
+   */
+  const isReadOnly = computed(() => !auth.hasPermission('ROLE_ADMIN'))
   const { t } = useI18n({ useScope: 'global' })
 
   function levelLabel(level: ValidationIssueLevel) {
@@ -724,6 +740,7 @@
     setEdgeStyle,
     renderCellAppearance,
     selectFallbackAfterDelete,
+    selectedNodeUpstreamCodes,
   } = inspectorModule
 
   // 绑定 inspector 回调到 graph 模块(替代旧的 `let _X = () => {}` 占位)。
