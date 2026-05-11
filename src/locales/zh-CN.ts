@@ -69,6 +69,8 @@ export default {
     btnSaveDraft: '保存草稿',
     btnCopyDsl: '复制 DSL',
     btnClearDraft: '清除草稿',
+    btnExportJson: '导出 JSON',
+    btnImportJson: '导入 JSON',
     btnSubmitBackend: '提交到后端',
     sectionLibrary: '节点库',
     libraryTooltip: '按住左键拖到画布',

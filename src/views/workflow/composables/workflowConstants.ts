@@ -407,76 +407,58 @@ export function normalizeWorkflowEdge(
   }
 }
 
-// ─── Layout algorithm ───────────────────────────────────────────────────────────
+// ─── Layout algorithm (dagre) ──────────────────────────────────────────────────
 
+import dagre from 'dagre'
+
+/**
+ * 用 dagre 算 DAG 节点位置。对比之前 BFS 分层布局，dagre 优势：
+ *   - 分支节点更对称（child 沿父节点 X 居中）
+ *   - 边交叉次数最小化（barycentric 排序）
+ *   - 多 START / 多入口图也能算出合理坐标
+ *
+ * 节点宽高用 X6 视图常量（WORKFLOW_NODE_VIEW_W / H），保持与画布渲染一致。
+ * rankdir LR 从左到右，与现有 BFS 输出方向一致，避免用户视觉跳动。
+ */
 export function layoutWorkflowNodes(nodes: WorkflowNodeDraft[], edges: WorkflowEdgeDraft[]) {
-  const byCode = new Map(nodes.map((node) => [node.nodeCode, node]))
-  const incoming = new Map<string, Set<string>>()
-  const outgoing = new Map<string, Set<string>>()
-  const indegree = new Map<string, number>()
-  const level = new Map<string, number>()
+  if (nodes.length === 0) return []
+  const g = new dagre.graphlib.Graph({ multigraph: true })
+  g.setGraph({
+    rankdir: 'LR',
+    nodesep: 60, // 同层节点纵向间距
+    ranksep: 80, // 层间横向间距
+    marginx: 80,
+    marginy: 80,
+  })
+  g.setDefaultEdgeLabel(() => ({}))
 
   for (const node of nodes) {
-    incoming.set(node.nodeCode, new Set())
-    outgoing.set(node.nodeCode, new Set())
-    indegree.set(node.nodeCode, 0)
-    level.set(node.nodeCode, 0)
-  }
-
-  for (const edge of edges) {
-    if (!byCode.has(edge.fromNodeCode) || !byCode.has(edge.toNodeCode)) continue
-    incoming.get(edge.toNodeCode)?.add(edge.fromNodeCode)
-    outgoing.get(edge.fromNodeCode)?.add(edge.toNodeCode)
-    indegree.set(edge.toNodeCode, (indegree.get(edge.toNodeCode) ?? 0) + 1)
-  }
-
-  const queue = nodes
-    .filter((node) => (indegree.get(node.nodeCode) ?? 0) === 0)
-    .sort((a, b) => a.nodeOrder - b.nodeOrder || a.nodeCode.localeCompare(b.nodeCode))
-    .map((node) => node.nodeCode)
-
-  const visited = new Set<string>()
-  while (queue.length) {
-    const code = queue.shift() as string
-    if (visited.has(code)) continue
-    visited.add(code)
-    const currentLevel = level.get(code) ?? 0
-    for (const target of outgoing.get(code) ?? []) {
-      level.set(target, Math.max(level.get(target) ?? 0, currentLevel + 1))
-      indegree.set(target, (indegree.get(target) ?? 0) - 1)
-      if ((indegree.get(target) ?? 0) <= 0) {
-        queue.push(target)
-      }
-    }
-  }
-
-  const buckets = new Map<number, WorkflowNodeDraft[]>()
-  for (const node of nodes) {
-    const l = level.get(node.nodeCode) ?? 0
-    const list = buckets.get(l) ?? []
-    list.push(node)
-    buckets.set(l, list)
-  }
-
-  const sortedLevels = [...buckets.keys()].sort((a, b) => a - b)
-  const result: WorkflowNodeDraft[] = []
-  const xGap = Math.max(292, WORKFLOW_NODE_VIEW_W + 40)
-  const yGap = 150
-  const baseX = 80
-  const baseY = 80
-
-  for (const l of sortedLevels) {
-    const list = (buckets.get(l) ?? []).sort(
-      (a, b) => a.nodeOrder - b.nodeOrder || a.nodeCode.localeCompare(b.nodeCode),
-    )
-    list.forEach((node, idx) => {
-      result.push({
-        ...node,
-        x: baseX + l * xGap,
-        y: baseY + idx * yGap,
-      })
+    g.setNode(node.nodeCode, {
+      width: WORKFLOW_NODE_VIEW_W,
+      height: WORKFLOW_NODE_VIEW_H,
     })
   }
+  const codes = new Set(nodes.map((n) => n.nodeCode))
+  // 用 edge.id 当 name 避免同源同目标多边覆盖（GATEWAY 多 CONDITION 出边场景）
+  for (const edge of edges) {
+    if (!codes.has(edge.fromNodeCode) || !codes.has(edge.toNodeCode)) continue
+    g.setEdge(
+      edge.fromNodeCode,
+      edge.toNodeCode,
+      {},
+      edge.id || `${edge.fromNodeCode}-${edge.toNodeCode}`,
+    )
+  }
 
-  return result
+  dagre.layout(g)
+
+  return nodes.map((node) => {
+    const pos = g.node(node.nodeCode)
+    // dagre 给的是 center 坐标，X6 用左上角，要回退半个尺寸
+    return {
+      ...node,
+      x: Math.round(pos.x - WORKFLOW_NODE_VIEW_W / 2),
+      y: Math.round(pos.y - WORKFLOW_NODE_VIEW_H / 2),
+    }
+  })
 }
