@@ -7,7 +7,7 @@
 -- 触发类型(ck_job_instance_trigger_type):
 --   SCHEDULED / API / MANUAL / EVENT / CATCH_UP
 --
--- 前置:ta 租户内 jobCode='TA_INC_ORDER_AGG' 的 job_definition 已存在(由 01 包导入)。
+-- 前置:ta 租户内 jobCode='TA_IMPORT_ORDER' 的 job_definition 已存在(由 01 包导入)。
 --
 -- 用法(BE 同事执行):
 --   PGPASSWORD=xxx psql -h localhost -p 15432 -U batch -d batch_console \
@@ -22,7 +22,7 @@ BEGIN;
 DO $$
 DECLARE
   v_tenant    VARCHAR := 'ta';
-  v_job_code  VARCHAR := 'TA_INC_ORDER_AGG';
+  v_job_code  VARCHAR := 'TA_IMPORT_ORDER';
   v_jd_id     BIGINT;
   v_running   BIGINT;
   v_success   BIGINT;
