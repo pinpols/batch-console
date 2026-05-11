@@ -105,7 +105,14 @@
           :label="t('fileList.trace')"
           min-width="140"
           show-overflow-tooltip
-        />
+        >
+          <template #default="{ row }">
+            <router-link v-if="row.traceId" class="cell-link" :to="`/logs?traceId=${row.traceId}`">
+              {{ row.traceId }}
+            </router-link>
+            <span v-else class="cell-empty">—</span>
+          </template>
+        </el-table-column>
         <DatetimeColumn prop="createdAt" :label="t('fileList.colCreatedAt')" width="160" />
         <el-table-column :label="t('fileList.colActions')" width="180" fixed="right">
           <template #default="{ row }">
@@ -123,7 +130,16 @@
         <el-descriptions-item label="fileStatus">{{ detail.fileStatus }}</el-descriptions-item>
         <el-descriptions-item label="bizType">{{ detail.bizType }}</el-descriptions-item>
         <el-descriptions-item label="bizDate">{{ detail.bizDate }}</el-descriptions-item>
-        <el-descriptions-item label="traceId" :span="2">{{ detail.traceId }}</el-descriptions-item>
+        <el-descriptions-item label="traceId" :span="2">
+          <router-link
+            v-if="detail.traceId"
+            class="cell-link"
+            :to="`/logs?traceId=${detail.traceId}`"
+          >
+            {{ detail.traceId }}
+          </router-link>
+          <span v-else>—</span>
+        </el-descriptions-item>
         <el-descriptions-item label="createdAt">{{ detail.createdAt }}</el-descriptions-item>
         <el-descriptions-item label="updatedAt">{{ detail.updatedAt }}</el-descriptions-item>
         <el-descriptions-item :label="t('fileList.detailRawResponse')" :span="2">
@@ -161,7 +177,14 @@
           :label="t('fileList.trace')"
           min-width="150"
           show-overflow-tooltip
-        />
+        >
+          <template #default="{ row }">
+            <router-link v-if="row.traceId" class="cell-link" :to="`/logs?traceId=${row.traceId}`">
+              {{ row.traceId }}
+            </router-link>
+            <span v-else class="cell-empty">—</span>
+          </template>
+        </el-table-column>
         <el-table-column
           prop="evidenceRef"
           :label="t('fileList.auditEvidence')"
@@ -370,13 +393,13 @@
   }
 
   async function openDetail(row: ConsoleFileRecordResponse) {
-    detail.value = await fileApi.detail(row.id, tenant.tenantId)
+    detail.value = await fileApi.detail(row.id, row.tenantId ?? tenant.tenantId)
     detailVisible.value = true
   }
 
   async function openAudit(row: ConsoleFileRecordResponse) {
     auditPage.value = 1
-    auditRows.value = await fileApi.audit(row.id, tenant.tenantId)
+    auditRows.value = await fileApi.audit(row.id, row.tenantId ?? tenant.tenantId)
     auditVisible.value = true
   }
 
@@ -388,7 +411,7 @@
 
   async function downloadFile(row: ConsoleFileRecordResponse) {
     try {
-      const res = await fileApi.download(row.id, tenant.tenantId)
+      const res = await fileApi.download(row.id, row.tenantId ?? tenant.tenantId)
       const url = URL.createObjectURL(res.data as Blob)
       const a = document.createElement('a')
       a.href = url
@@ -411,7 +434,7 @@
           cancelButtonText: t('common.cancel'),
         },
       )
-      await fileApi.redispatch({ tenantId: tenant.tenantId, fileId: row.id })
+      await fileApi.redispatch({ tenantId: row.tenantId ?? tenant.tenantId, fileId: row.id })
       ElMessage.success(t('fileList.redispatchSuccess'))
       await load()
     } catch {
@@ -427,7 +450,7 @@
         consequence: t('fileList.archiveConsequence'),
         irreversible: false,
       })
-      await fileApi.archive({ tenantId: tenant.tenantId, fileId: row.id })
+      await fileApi.archive({ tenantId: row.tenantId ?? tenant.tenantId, fileId: row.id })
       ElMessage.success(t('fileList.archiveSuccess'))
       await load()
     } catch {
