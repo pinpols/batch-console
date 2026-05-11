@@ -332,6 +332,33 @@ export function useWorkflowDag(deps: DagDeps) {
     // 防穿透:任意 Element Plus 模态态(dialog / drawer / message-box) 可见时,
     // Backspace / Delete / Shift+T 等都不该作用到画布,避免误删选中节点。
     if (isAnyElModalVisible()) return
+    // Ctrl/Cmd + Z 撤销 / Ctrl+Shift+Z / Ctrl+Y 重做 / Ctrl+A 全选
+    const mod = event.ctrlKey || event.metaKey
+    if (mod) {
+      const key = event.key.toLowerCase()
+      if (key === 'z' && !event.shiftKey) {
+        if (graph.value?.canUndo()) {
+          event.preventDefault()
+          graph.value.undo()
+        }
+        return
+      }
+      if ((key === 'z' && event.shiftKey) || key === 'y') {
+        if (graph.value?.canRedo()) {
+          event.preventDefault()
+          graph.value.redo()
+        }
+        return
+      }
+      if (key === 'a') {
+        const g = graph.value
+        if (g) {
+          event.preventDefault()
+          g.select(g.getCells())
+        }
+        return
+      }
+    }
     if (selectedKind.value === 'node' && event.shiftKey) {
       const key = event.key.toLowerCase()
       if (key === 't') {
