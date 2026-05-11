@@ -643,6 +643,9 @@ export function useWorkflowData(deps: DataDeps) {
         timeoutSeconds: n.timeoutSeconds,
         nodeParams: n.nodeParams || undefined,
         enabled: n.enabled,
+        crossDayDependencies: n.crossDayDependencies || undefined,
+        crossDayDependencyTimeoutSeconds:
+          n.crossDayDependencyTimeoutSeconds > 0 ? n.crossDayDependencyTimeoutSeconds : undefined,
       })),
       edges: edges.map((e) => ({
         fromNodeCode: e.fromNodeCode,

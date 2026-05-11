@@ -335,6 +335,38 @@ export function useWorkflowInspector(deps: {
     }
   })
 
+  /**
+   * 当前选中节点的所有传递性上游 nodeCode。
+   *
+   * <p>用于 DSL 编辑器 autocomplete：`$.nodes.<上游>.output.<key>` 只能引用本节点
+   * 真实可达的上游（避免引用根本不会先于本节点执行的节点），与后端
+   * WorkflowParamResolver 的 reachable 校验语义对齐。
+   */
+  const selectedNodeUpstreamCodes = computed<string[]>(() => {
+    void graphVersionLight.value
+    const g = graph.value
+    if (!g || selectedKind.value !== 'node' || !selectedCellId.value) return []
+    const target = selectedCellId.value
+    const incoming = new Map<string, string[]>()
+    for (const e of g.getEdges()) {
+      const from = e.getSourceCellId()
+      const to = e.getTargetCellId()
+      if (!from || !to) continue
+      const list = incoming.get(to) ?? []
+      list.push(from)
+      incoming.set(to, list)
+    }
+    const visited = new Set<string>()
+    const queue: string[] = [...(incoming.get(target) ?? [])]
+    while (queue.length) {
+      const cur = queue.shift() as string
+      if (visited.has(cur)) continue
+      visited.add(cur)
+      for (const p of incoming.get(cur) ?? []) queue.push(p)
+    }
+    return [...visited].sort()
+  })
+
   /** 缩略图旁：选中节点或全部内容区在图坐标中的中心，便于对照「大图」位置 */
   const minimapCoordsTitle = '图坐标：原点为画布左上角，单位与节点位置一致'
   const minimapCoordsLabel = computed(() => {
@@ -373,6 +405,7 @@ export function useWorkflowInspector(deps: {
     setEdgeStyle,
     selectionAccent,
     selectFallbackAfterDelete,
+    selectedNodeUpstreamCodes,
   }
 }
 

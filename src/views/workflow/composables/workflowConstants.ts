@@ -35,6 +35,10 @@ export interface NodeFormState {
   timeoutSeconds: number
   nodeParams: string
   enabled: boolean
+  /** ADR-018 跨日依赖 JSON 数组字符串，例 `[{"jobCode":"X","dayOffset":-1}]`；空字符串 / `[]` 视为无 */
+  crossDayDependencies: string
+  /** 跨日依赖等待超时秒；0 = 不等待 */
+  crossDayDependencyTimeoutSeconds: number
 }
 
 export interface EdgeFormState {
@@ -274,6 +278,8 @@ export function defaultNodeForm(kind: WorkflowNodeKind, nodeCode = ''): NodeForm
     timeoutSeconds: 0,
     nodeParams: '{}',
     enabled: true,
+    crossDayDependencies: '',
+    crossDayDependencyTimeoutSeconds: 0,
   }
 }
 
@@ -413,6 +419,13 @@ export function normalizeWorkflowNode(
     timeoutSeconds: row.timeoutSeconds ?? 0,
     nodeParams: row.nodeParams ?? '',
     enabled: row.enabled ?? true,
+    crossDayDependencies:
+      typeof row.crossDayDependencies === 'string'
+        ? row.crossDayDependencies
+        : row.crossDayDependencies != null
+          ? JSON.stringify(row.crossDayDependencies)
+          : '',
+    crossDayDependencyTimeoutSeconds: row.crossDayDependencyTimeoutSeconds ?? 0,
     x: 0,
     y: 0,
     width: WORKFLOW_NODE_VIEW_W,
