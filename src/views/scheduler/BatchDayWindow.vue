@@ -67,7 +67,18 @@
         :empty-text="t('common.noData')"
         class="console-table"
       >
-        <el-table-column prop="jobCode" label="Job" min-width="160" />
+        <el-table-column prop="jobCode" label="Job" min-width="160">
+          <template #default="{ row }">
+            <router-link
+              v-if="row.jobCode"
+              class="cell-link"
+              :to="`/monitor/job-instances?jobCode=${row.jobCode}&startDate=${bizDate}&endDate=${bizDate}`"
+            >
+              {{ row.jobCode }}
+            </router-link>
+            <span v-else>—</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="totalJobCount" :label="t('batchDayWindow.colTotalJob')" width="72" />
         <el-table-column
           prop="successJobCount"
