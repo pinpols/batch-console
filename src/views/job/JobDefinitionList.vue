@@ -408,7 +408,11 @@
     }
     actingJobCode.value = row.jobCode
     try {
-      await jobApi.toggleEnabled(row.jobCode, filters.tenantId || tenant.tenantId, !row.enabled)
+      await jobApi.toggleEnabled(
+        row.jobCode,
+        row.tenantId || filters.tenantId || tenant.tenantId,
+        !row.enabled,
+      )
       const action = row.enabled
         ? t('jobDefinitionList.actionDisable')
         : t('jobDefinitionList.actionEnable')
@@ -473,7 +477,7 @@
           cancelButtonText: t('common.cancel'),
         },
       )
-      await jobApi.clone(row.id, filters.tenantId || tenant.tenantId)
+      await jobApi.clone(row.id, row.tenantId || filters.tenantId || tenant.tenantId)
       ElMessage.success(t('jobDefinitionList.cloneSuccess', { code: row.jobCode }))
       await refetch()
     } catch {

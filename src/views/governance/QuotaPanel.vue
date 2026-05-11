@@ -223,7 +223,8 @@
 
     togglingId.value = row.id
     try {
-      await governanceApi.toggleQuotaPolicy(row.id, tenant.tenantId, target)
+      // 用 row.tenantId 避免租户切换 race(BE 防跨租户泄漏会返 404)
+      await governanceApi.toggleQuotaPolicy(row.id, row.tenantId ?? tenant.tenantId, target)
       row.enabled = target
       const action = target ? t('quotaPanel.switchOn') : t('quotaPanel.switchOff')
       ElMessage.success(t('quotaPanel.toggleSuccess', { action, code: row.policyCode }))

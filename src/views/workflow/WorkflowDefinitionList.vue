@@ -341,7 +341,9 @@
   }
 
   async function openDetail(row: ConsoleWorkflowDefinitionResponse) {
-    detailRow.value = await workflowApi.detailById(row.id, tenant.tenantId)
+    // 用 row.tenantId 而非 tenant.tenantId,避免租户切换 race 时跨租户 404
+    // (BE 防跨租户泄漏,row 来自 ta 但 store 已切 tb → 用 tb 查 ta 的 id → 404)
+    detailRow.value = await workflowApi.detailById(row.id, row.tenantId ?? tenant.tenantId)
     detailVisible.value = true
   }
 
@@ -364,7 +366,7 @@
     }
     actingIds.value = new Set([...actingIds.value, row.id])
     try {
-      await workflowApi.toggle(row.id, tenant.tenantId, !row.enabled)
+      await workflowApi.toggle(row.id, row.tenantId ?? tenant.tenantId, !row.enabled)
       const action = row.enabled
         ? t('workflowDefinitionList.actionDisable')
         : t('workflowDefinitionList.actionEnable')
@@ -380,7 +382,7 @@
   async function validateRow(row: ConsoleWorkflowDefinitionResponse) {
     actingIds.value = new Set([...actingIds.value, row.id])
     try {
-      const result = await workflowApi.validate(row.id, tenant.tenantId)
+      const result = await workflowApi.validate(row.id, row.tenantId ?? tenant.tenantId)
       validateResult.value = JSON.stringify(result ?? {}, null, 2)
       validateVisible.value = true
     } finally {
@@ -401,7 +403,7 @@
     }
     actingIds.value = new Set([...actingIds.value, row.id])
     try {
-      await workflowApi.toggle(row.id, tenant.tenantId, false)
+      await workflowApi.toggle(row.id, row.tenantId ?? tenant.tenantId, false)
       ElMessage.success(t('workflowDefinitionList.deleteSuccess', { code: row.workflowCode }))
       if (rows.value.length === 1 && page.value > 1) {
         page.value -= 1
