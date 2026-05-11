@@ -8,7 +8,7 @@
     }"
   >
     <div class="page-header__left">
-      <button v-if="backTo" class="back-btn" title="返回" @click="goBack">
+      <button v-if="backTo" class="back-btn" :title="t('pageHeader.backTooltip')" @click="goBack">
         <el-icon :size="16"><ArrowLeft /></el-icon>
       </button>
       <div>
@@ -35,8 +35,11 @@
 
 <script setup lang="ts">
   import { computed } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import { useRoute, useRouter } from 'vue-router'
   import { ArrowLeft } from '@element-plus/icons-vue'
+
+  const { t } = useI18n({ useScope: 'global' })
 
   const props = withDefaults(
     defineProps<{

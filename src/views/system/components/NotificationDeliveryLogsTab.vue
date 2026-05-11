@@ -17,36 +17,48 @@
         @reset="resetLogFilter"
         @refresh="() => runRefresh(loadDeliveryLogs)"
       >
-        <el-form-item label="关键字">
+        <el-form-item :label="t('notificationDeliveryLogsTab.kwLabel')">
           <el-input
             class="query-w-260"
             v-model="logFilterDraft.keyword"
             clearable
-            placeholder="搜索 eventType / channelId"
+            :placeholder="t('notificationDeliveryLogsTab.kwPlaceholder')"
             @keyup.enter="applyLogFilter"
           />
         </el-form-item>
-        <el-form-item label="状态">
+        <el-form-item :label="t('notificationDeliveryLogsTab.statusLabel')">
           <MetaSelect
             class="query-w-180"
             v-model="logFilterDraft.status"
             clearable
-            placeholder="全部"
+            :placeholder="t('notificationDeliveryLogsTab.statusPlaceholder')"
             :options="deliveryStatusOptions"
           />
         </el-form-item>
       </ListPageQueryBar>
     </template>
-    <el-table-column prop="id" label="ID" width="80">
+    <el-table-column prop="id" :label="t('notificationDeliveryLogsTab.colId')" width="80">
       <template #default="{ row }">{{ row.id ?? '—' }}</template>
     </el-table-column>
-    <el-table-column prop="channelId" label="渠道 ID" width="100">
+    <el-table-column
+      prop="channelId"
+      :label="t('notificationDeliveryLogsTab.colChannelId')"
+      width="100"
+    >
       <template #default="{ row }">{{ row.channelId ?? '—' }}</template>
     </el-table-column>
-    <el-table-column prop="eventType" label="事件类型" width="160">
+    <el-table-column
+      prop="eventType"
+      :label="t('notificationDeliveryLogsTab.colEventType')"
+      width="160"
+    >
       <template #default="{ row }">{{ row.eventType || '—' }}</template>
     </el-table-column>
-    <el-table-column prop="deliveryStatus" label="状态" width="100">
+    <el-table-column
+      prop="deliveryStatus"
+      :label="t('notificationDeliveryLogsTab.colStatus')"
+      width="100"
+    >
       <template #default="{ row }">
         <StatusTag
           v-if="row.deliveryStatus"
@@ -56,19 +68,31 @@
         <span v-else class="cell-empty">—</span>
       </template>
     </el-table-column>
-    <el-table-column prop="httpStatus" label="HTTP" width="80">
+    <el-table-column prop="httpStatus" :label="t('notificationDeliveryLogsTab.colHttp')" width="80">
       <template #default="{ row }">{{ row.httpStatus ?? '—' }}</template>
     </el-table-column>
-    <el-table-column prop="responseBody" label="响应" min-width="200" show-overflow-tooltip>
+    <el-table-column
+      prop="responseBody"
+      :label="t('notificationDeliveryLogsTab.colResponse')"
+      min-width="200"
+      show-overflow-tooltip
+    >
       <template #default="{ row }">{{ row.responseBody || '—' }}</template>
     </el-table-column>
-    <DatetimeColumn prop="createdAt" label="时间" width="160" />
+    <DatetimeColumn
+      prop="createdAt"
+      :label="t('notificationDeliveryLogsTab.colTime')"
+      width="160"
+    />
   </ProTable>
 </template>
 
 <script setup lang="ts">
   import { ref, reactive, computed } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import { listNotificationDeliveryLogs } from '@/api/notifications'
+
+  const { t } = useI18n({ useScope: 'global' })
   import { toPageResult } from '@/api/adapters'
   import { useTenantStore } from '@/stores/tenant'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
