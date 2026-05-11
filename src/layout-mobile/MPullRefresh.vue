@@ -25,7 +25,10 @@
 
 <script setup lang="ts">
   import { computed, ref } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import { Refresh, Loading } from '@element-plus/icons-vue'
+
+  const { t } = useI18n({ useScope: 'global' })
 
   const props = withDefaults(
     defineProps<{
@@ -52,8 +55,10 @@
     return 'translateY(0)'
   })
   const hintText = computed(() => {
-    if (refreshing.value) return '刷新中…'
-    return dragY.value >= props.threshold ? '松开刷新' : '下拉刷新'
+    if (refreshing.value) return t('mPullRefresh.refreshing')
+    return dragY.value >= props.threshold
+      ? t('mPullRefresh.releaseToRefresh')
+      : t('mPullRefresh.pullToRefresh')
   })
 
   function scrollTopOfApp(): number {

@@ -280,6 +280,11 @@ export default {
   pageHeader: {
     backTooltip: '返回',
   },
+  mPullRefresh: {
+    refreshing: '刷新中…',
+    releaseToRefresh: '松开刷新',
+    pullToRefresh: '下拉刷新',
+  },
   notificationDeliveryLogsTab: {
     kwLabel: '关键字',
     kwPlaceholder: '搜索 eventType / channelId',

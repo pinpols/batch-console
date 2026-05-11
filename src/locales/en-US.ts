@@ -276,6 +276,11 @@ const messages: Messages = {
   pageHeader: {
     backTooltip: 'Back',
   },
+  mPullRefresh: {
+    refreshing: 'Refreshing…',
+    releaseToRefresh: 'Release to refresh',
+    pullToRefresh: 'Pull to refresh',
+  },
   notificationDeliveryLogsTab: {
     kwLabel: 'Keyword',
     kwPlaceholder: 'Search eventType / channelId',
