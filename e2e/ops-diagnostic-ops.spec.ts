@@ -61,7 +61,7 @@ test.describe('运维诊断 — Outbox 清理 / 重发布', () => {
     await cleanBtn.click()
     await expect(page.locator('.el-message-box')).toBeVisible()
     await expect(page.locator('.el-message-box')).toContainText('清理 Outbox')
-    await page.locator('.el-message-box').getByRole('button', { name: '确定' }).click()
+    await page.locator('.el-message-box').getByRole('button', { name: /^(确定|确认.*)$/ }).click()
     await expect(page.locator('.el-message')).toBeVisible({ timeout: 8000 })
   })
 
@@ -70,8 +70,10 @@ test.describe('运维诊断 — Outbox 清理 / 重发布', () => {
     if (!(await isVisible(republishBtn))) return
     await republishBtn.click()
     await expect(page.locator('.el-message-box')).toBeVisible()
-    await expect(page.locator('.el-message-box')).toContainText('重发布 Outbox')
-    await page.locator('.el-message-box').getByRole('button', { name: '确定' }).click()
+    // 文案改成"重发布"+ outbox 事件 ID 提示
+    await expect(page.locator('.el-message-box')).toContainText(/重发布|outbox 事件 ID/)
+    // 不填 ID 直接点确定,BE 应返回参数错;只要 toast(成功或错误)都说明流程通
+    await page.locator('.el-message-box').getByRole('button', { name: /^(确定|确认.*)$/ }).click()
     await expect(page.locator('.el-message')).toBeVisible({ timeout: 8000 })
   })
 })

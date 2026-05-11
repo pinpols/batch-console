@@ -11,7 +11,7 @@ test.describe('报表导出中心 — 页面基础', () => {
   test.beforeEach(async ({ page }) => {
     await enterDemoApp(page)
     await page.goto('/reports')
-    await expectPageTitle(page, /导出中心/)
+    await expectPageTitle(page, /报表中心/)
   })
 
   test('展示所有报表卡片', async ({ page }) => {
@@ -43,7 +43,7 @@ test.describe('报表导出中心 — 搜索过滤', () => {
   test.beforeEach(async ({ page }) => {
     await enterDemoApp(page)
     await page.goto('/reports')
-    await expectPageTitle(page, /导出中心/)
+    await expectPageTitle(page, /报表中心/)
   })
 
   test('关键字搜索"调度"只展示调度相关卡片', async ({ page }) => {
@@ -95,7 +95,7 @@ test.describe('报表导出中心 — 下载交互', () => {
   test.beforeEach(async ({ page }) => {
     await enterDemoApp(page)
     await page.goto('/reports')
-    await expectPageTitle(page, /导出中心/)
+    await expectPageTitle(page, /报表中心/)
   })
 
   test('点击下载按钮触发请求并出现 toast', async ({ page }) => {

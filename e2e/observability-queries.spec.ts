@@ -8,7 +8,7 @@ test.describe('observability query tabs (可观测性查询)', () => {
 
   test('可观测性查询页面可打开并展示多个标签页', async ({ page }) => {
     await page.goto('/observability/queries')
-    await expectPageTitle(page, '可观测性查询')
+    await expectPageTitle(page, '综合查询')
     await expect(page.getByRole('tab', { name: 'Dead Letters' })).toBeVisible()
   })
 
@@ -36,7 +36,7 @@ test.describe('ops summary (运营概览)', () => {
 
   test('运营概览展示指标卡片网格', async ({ page }) => {
     await page.goto('/ops/summary')
-    await expectPageTitle(page, '运营概览')
+    await expectPageTitle(page, '控制面板')
     await expect(page.locator('.metric-grid')).toBeVisible()
     await expect(page.locator('.metric-hit')).toHaveCount(11)
   })

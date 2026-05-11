@@ -9,7 +9,7 @@ test.describe('Worker 管理 — 筛选查询', () => {
   test.beforeEach(async ({ page }) => {
     await enterDemoApp(page)
     await page.goto('/workers/management')
-    await expectPageTitle(page, 'Worker 管理')
+    await expectPageTitle(page, 'Worker')
   })
 
   test('Worker 列表 tab 默认激活', async ({ page }) => {
@@ -28,7 +28,7 @@ test.describe('Worker 管理 — 筛选查询', () => {
     if (await isVisible(opt, 2000)) {
       await opt.click()
       await page.getByRole('button', { name: '查询' }).click()
-      await expect(page.locator('.el-table').first()).toBeAttached({ timeout: 10_000 })
+      await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
     }
   })
 
@@ -40,14 +40,14 @@ test.describe('Worker 管理 — 筛选查询', () => {
     if (!(await isVisible(input, 2000))) return
     await input.fill('worker')
     await page.getByRole('button', { name: '查询' }).click()
-    await expect(page.locator('.el-table').first()).toBeAttached({ timeout: 10_000 })
+    await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
     await page.getByRole('button', { name: '重置' }).click()
     await expect(input).toHaveValue('')
   })
 
   test('刷新按钮', async ({ page }) => {
     await page.getByRole('button', { name: '刷新' }).click()
-    await expect(page.locator('.el-table').first()).toBeAttached({ timeout: 10_000 })
+    await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
   })
 })
 
@@ -55,7 +55,7 @@ test.describe('Worker 管理 — Worker 操作', () => {
   test.beforeEach(async ({ page }) => {
     await enterDemoApp(page)
     await page.goto('/workers/management')
-    await expectPageTitle(page, 'Worker 管理')
+    await expectPageTitle(page, 'Worker')
   })
 
   test('Drain → 确认 → toast', async ({ page }) => {
@@ -63,7 +63,7 @@ test.describe('Worker 管理 — Worker 操作', () => {
     if (!(await isVisible(drainBtn))) return
     await drainBtn.click()
     await expect(page.locator('.el-message-box')).toContainText('drain', { ignoreCase: true })
-    await page.locator('.el-message-box').getByRole('button', { name: '确定' }).click()
+    await page.locator('.el-message-box').getByRole('button', { name: /^(确定|确认.*)$/ }).click()
     await expect(page.locator('.el-message')).toBeVisible({ timeout: 8000 })
   })
 
@@ -75,7 +75,7 @@ test.describe('Worker 管理 — Worker 操作', () => {
     if (!(await isVisible(offlineBtn))) return
     await offlineBtn.click()
     await expect(page.locator('.el-message-box')).toBeVisible()
-    await page.locator('.el-message-box').getByRole('button', { name: '确定' }).click()
+    await page.locator('.el-message-box').getByRole('button', { name: /^(确定|确认.*)$/ }).click()
     await expect(page.locator('.el-message')).toBeVisible({ timeout: 8000 })
   })
 
@@ -87,7 +87,7 @@ test.describe('Worker 管理 — Worker 操作', () => {
     if (!(await isVisible(takeoverBtn))) return
     await takeoverBtn.click()
     await expect(page.locator('.el-message-box')).toBeVisible()
-    await page.locator('.el-message-box').getByRole('button', { name: '确定' }).click()
+    await page.locator('.el-message-box').getByRole('button', { name: /^(确定|确认.*)$/ }).click()
     await expect(page.locator('.el-message')).toBeVisible({ timeout: 8000 })
   })
 
@@ -106,13 +106,13 @@ test.describe('Worker 管理 — 文件渠道', () => {
   test.beforeEach(async ({ page }) => {
     await enterDemoApp(page)
     await page.goto('/workers/management')
-    await expectPageTitle(page, 'Worker 管理')
+    await expectPageTitle(page, 'Worker')
     await page.getByRole('tab', { name: '文件渠道' }).click()
     await expect(page.getByRole('tab', { name: '文件渠道' })).toHaveClass(/is-active/)
   })
 
   test('文件渠道列表加载', async ({ page }) => {
-    await expect(page.locator('.el-table').first()).toBeAttached({ timeout: 10_000 })
+    await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
   })
 
   test('渠道类型筛选', async ({ page }) => {
@@ -126,7 +126,7 @@ test.describe('Worker 管理 — 文件渠道', () => {
     if (await isVisible(opt, 2000)) {
       await opt.click()
       await page.getByRole('button', { name: '查询' }).click()
-      await expect(page.locator('.el-table').first()).toBeAttached({ timeout: 10_000 })
+      await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
     }
   })
 

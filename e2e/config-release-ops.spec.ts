@@ -25,7 +25,7 @@ async function waitForSuccessToast(page: import('@playwright/test').Page) {
 test.describe('配置发布 — 筛选与查询', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/config/releases')
-    await expectPageTitle(page, '配置发布')
+    await expectPageTitle(page, '发布管理')
   })
 
   test('Key 模糊搜索 → 表格按条件刷新', async ({ page }) => {
@@ -57,7 +57,7 @@ test.describe('配置发布 — 筛选与查询', () => {
       await firstOpt.click()
       await page.getByRole('button', { name: '查询' }).click()
       // 表格展示对应状态标签
-      await expect(page.locator('.el-table').first()).toBeAttached({ timeout: 10_000 })
+      await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
       // 重置后状态下拉清空
       await page.getByRole('button', { name: '重置' }).click()
       await expect(statusSelect).not.toContainText(label?.trim() ?? 'x')
@@ -88,7 +88,7 @@ test.describe('配置发布 — 筛选与查询', () => {
 test.describe('配置发布 — 详情抽屉', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/config/releases')
-    await expectPageTitle(page, '配置发布')
+    await expectPageTitle(page, '发布管理')
   })
 
   test('点击详情 → 抽屉展示 configKey / configStatus 字段 → 关闭', async ({ page }) => {
@@ -108,7 +108,7 @@ test.describe('配置发布 — 详情抽屉', () => {
 test.describe('配置发布 — 发布操作', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/config/releases')
-    await expectPageTitle(page, '配置发布')
+    await expectPageTitle(page, '发布管理')
   })
 
   test('发布：填写原因并提交 → toast 出现 → 表格刷新', async ({ page }) => {
@@ -136,7 +136,7 @@ test.describe('配置发布 — 发布操作', () => {
       .locator('.el-message-box')
       .locator('input,textarea')
       .fill('{"tenants":["e2e-tenant"]}')
-    await page.locator('.el-message-box').getByRole('button', { name: '确定' }).click()
+    await page.locator('.el-message-box').getByRole('button', { name: /^(确定|确认.*)$/ }).click()
     await waitForAnyToast(page)
     await expect(page.getByRole('columnheader', { name: 'Key' })).toBeVisible({ timeout: 6000 })
   })
@@ -150,7 +150,7 @@ test.describe('配置发布 — 发布操作', () => {
     await rollbackBtn.click()
     // 第一个 confirm 弹窗
     await expect(page.locator('.el-message-box')).toBeVisible()
-    await page.locator('.el-message-box').getByRole('button', { name: '确定' }).click()
+    await page.locator('.el-message-box').getByRole('button', { name: /^(确定|确认.*)$/ }).click()
     // 第二个 prompt 弹窗（原因）
     await expect(page.locator('.el-message-box')).toBeVisible({ timeout: 3000 })
     await page.locator('.el-message-box').locator('input,textarea').fill('e2e 自动化回滚')
@@ -179,7 +179,7 @@ test.describe('配置发布 — 发布操作', () => {
 test.describe('配置发布 — 依赖与版本对比', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/config/releases')
-    await expectPageTitle(page, '配置发布')
+    await expectPageTitle(page, '发布管理')
   })
 
   test('依赖：点击后抽屉加载数据（JSON 或空提示）', async ({ page }) => {

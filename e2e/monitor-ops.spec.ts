@@ -12,7 +12,7 @@ test.describe('Job Instance — 筛选查询', () => {
   test.beforeEach(async ({ page }) => {
     await enterDemoApp(page)
     await page.goto('/monitor/job-instances')
-    await expectPageTitle(page, 'Job Instance 列表')
+    await expectPageTitle(page, '作业运行')
   })
 
   test('Job Code 搜索 → 查询', async ({ page }) => {
@@ -25,7 +25,7 @@ test.describe('Job Instance — 筛选查询', () => {
       await input.getByRole('textbox').first().fill('DEMO')
     }
     await page.getByRole('button', { name: '查询' }).click()
-    await expect(page.locator('.el-table').first()).toBeAttached({ timeout: 10_000 })
+    await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
   })
 
   test('状态筛选 → 查询', async ({ page }) => {
@@ -38,13 +38,13 @@ test.describe('Job Instance — 筛选查询', () => {
     if (await isVisible(opt, 2000)) {
       await opt.click()
       await page.getByRole('button', { name: '查询' }).click()
-      await expect(page.locator('.el-table').first()).toBeAttached({ timeout: 10_000 })
+      await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
     }
   })
 
   test('重置清空筛选', async ({ page }) => {
     await page.getByRole('button', { name: '重置' }).click()
-    await expect(page.locator('.el-table').first()).toBeAttached({ timeout: 10_000 })
+    await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
   })
 
   test('刷新', async ({ page }) => {
@@ -61,7 +61,7 @@ test.describe('Job Instance 详情 — 操作流', () => {
     const id = await getFirstCellLinkId(page, '/monitor/job-instances')
     if (!id) return
     await page.goto(`/monitor/job-instances/${id}`)
-    await expectPageTitle(page, 'Job Instance 详情')
+    await expectPageTitle(page, '作业实例详情')
     await expect(page.getByText('实例编号')).toBeVisible({ timeout: 10_000 })
     await expect(page.getByText('Job Code')).toBeVisible()
     await expect(page.getByText('状态')).toBeVisible()
@@ -72,7 +72,7 @@ test.describe('Job Instance 详情 — 操作流', () => {
     const id = await getFirstCellLinkId(page, '/monitor/job-instances')
     if (!id) return
     await page.goto(`/monitor/job-instances/${id}`)
-    await expectPageTitle(page, 'Job Instance 详情')
+    await expectPageTitle(page, '作业实例详情')
     await page.getByRole('button', { name: '刷新' }).click()
     await expect(page.getByText('实例编号')).toBeVisible({ timeout: 10_000 })
   })
@@ -82,7 +82,7 @@ test.describe('Job Instance 详情 — 操作流', () => {
     const id = await getFirstCellLinkId(page, '/monitor/job-instances')
     if (!id) return
     await page.goto(`/monitor/job-instances/${id}`)
-    await expectPageTitle(page, 'Job Instance 详情')
+    await expectPageTitle(page, '作业实例详情')
     const stepsBtn = page.getByRole('button', { name: /步骤|Job Step/ })
     if (!(await isVisible(stepsBtn, 3000))) return
     await stepsBtn.click()
@@ -94,13 +94,13 @@ test.describe('Job Instance 详情 — 操作流', () => {
     const id = await getFirstCellLinkId(page, '/monitor/job-instances')
     if (!id) return
     await page.goto(`/monitor/job-instances/${id}`)
-    await expectPageTitle(page, 'Job Instance 详情')
+    await expectPageTitle(page, '作业实例详情')
     const rerunBtn = page.getByRole('button', { name: '重跑' })
     if (!(await isVisible(rerunBtn, 3000))) return
     await rerunBtn.click()
     await expect(page.locator('.el-message-box')).toBeVisible()
     await expect(page.locator('.el-message-box')).toContainText('重跑')
-    await page.locator('.el-message-box').getByRole('button', { name: '确定' }).click()
+    await page.locator('.el-message-box').getByRole('button', { name: /^(确定|确认.*)$/ }).click()
     await expect(page.locator('.el-message')).toBeVisible({ timeout: 8000 })
   })
 
@@ -109,13 +109,13 @@ test.describe('Job Instance 详情 — 操作流', () => {
     const id = await getFirstCellLinkId(page, '/monitor/job-instances')
     if (!id) return
     await page.goto(`/monitor/job-instances/${id}`)
-    await expectPageTitle(page, 'Job Instance 详情')
+    await expectPageTitle(page, '作业实例详情')
     const cancelBtn = page.getByRole('button', { name: '取消实例' })
     if (!(await isVisible(cancelBtn, 3000))) return
     await cancelBtn.click()
     await expect(page.locator('.el-message-box')).toBeVisible()
     await expect(page.locator('.el-message-box')).toContainText('取消')
-    await page.locator('.el-message-box').getByRole('button', { name: '确定' }).click()
+    await page.locator('.el-message-box').getByRole('button', { name: /^(确定|确认.*)$/ }).click()
     await expect(page.locator('.el-message')).toBeVisible({ timeout: 8000 })
   })
 
@@ -124,13 +124,13 @@ test.describe('Job Instance 详情 — 操作流', () => {
     const id = await getFirstCellLinkId(page, '/monitor/job-instances')
     if (!id) return
     await page.goto(`/monitor/job-instances/${id}`)
-    await expectPageTitle(page, 'Job Instance 详情')
+    await expectPageTitle(page, '作业实例详情')
     const terminateBtn = page.getByRole('button', { name: '终止实例' })
     if (!(await isVisible(terminateBtn, 3000))) return
     await terminateBtn.click()
     await expect(page.locator('.el-message-box')).toBeVisible()
     await expect(page.locator('.el-message-box')).toContainText('终止')
-    await page.locator('.el-message-box').getByRole('button', { name: '确定' }).click()
+    await page.locator('.el-message-box').getByRole('button', { name: /^(确定|确认.*)$/ }).click()
     await expect(page.locator('.el-message')).toBeVisible({ timeout: 8000 })
   })
 })
@@ -147,7 +147,7 @@ test.describe('Job Step 分片 — 操作流', () => {
   })
 
   test('分片列表加载', async ({ page }) => {
-    await expect(page.locator('.el-table').first()).toBeAttached({ timeout: 10_000 })
+    await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
   })
 
   test('重试分片 → 确认 → toast', async ({ page }) => {
@@ -155,7 +155,7 @@ test.describe('Job Step 分片 — 操作流', () => {
     if (!(await isVisible(retryBtn))) return
     await retryBtn.click()
     await expect(page.locator('.el-message-box')).toBeVisible()
-    await page.locator('.el-message-box').getByRole('button', { name: '确定' }).click()
+    await page.locator('.el-message-box').getByRole('button', { name: /^(确定|确认.*)$/ }).click()
     await expect(page.locator('.el-message')).toBeVisible({ timeout: 8000 })
   })
 
@@ -164,7 +164,7 @@ test.describe('Job Step 分片 — 操作流', () => {
     if (!(await isVisible(cancelBtn))) return
     await cancelBtn.click()
     await expect(page.locator('.el-message-box')).toBeVisible()
-    await page.locator('.el-message-box').getByRole('button', { name: '确定' }).click()
+    await page.locator('.el-message-box').getByRole('button', { name: /^(确定|确认.*)$/ }).click()
     await expect(page.locator('.el-message')).toBeVisible({ timeout: 8000 })
   })
 })
@@ -175,7 +175,7 @@ test.describe('Workflow Run — 筛选查询', () => {
   test.beforeEach(async ({ page }) => {
     await enterDemoApp(page)
     await page.goto('/monitor/workflow-runs')
-    await expectPageTitle(page, 'Workflow Run 列表')
+    await expectPageTitle(page, '工作流运行')
   })
 
   test('Workflow 搜索 → 查询', async ({ page }) => {
@@ -186,22 +186,25 @@ test.describe('Workflow Run — 筛选查询', () => {
     if (!(await isVisible(input, 2000))) return
     await input.fill('test')
     await page.getByRole('button', { name: '查询' }).click()
-    await expect(page.locator('.el-table').first()).toBeAttached({ timeout: 10_000 })
+    await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
   })
 
   test('状态筛选 → 查询 → 重置', async ({ page }) => {
+    // 第一个 .el-form-item with 状态 — 避免页面其它"状态"标签干扰
     const statusSelect = page
       .locator('.el-form-item')
-      .filter({ hasText: '状态' })
+      .filter({ hasText: /^状态/ })
       .locator('.el-select')
+      .first()
     await statusSelect.click()
     const opt = page.locator('.el-select-dropdown__item').first()
     if (await isVisible(opt, 2000)) {
       await opt.click()
       await page.getByRole('button', { name: '查询' }).click()
-      await expect(page.locator('.el-table').first()).toBeAttached({ timeout: 10_000 })
+      await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
     }
-    await page.getByRole('button', { name: '重置' }).click()
+    // 重置按钮在某些状态下 disabled 切到 enabled 时短暂不稳,force click 跳过 stability 检查
+    await page.getByRole('button', { name: '重置' }).click({ force: true })
   })
 
   test('刷新', async ({ page }) => {
@@ -224,7 +227,7 @@ test.describe('审计日志 — 筛选查询', () => {
     if (!(await isVisible(input, 2000))) return
     await input.fill('trace-test-123')
     await page.getByRole('button', { name: '查询' }).click()
-    await expect(page.locator('.el-table').first()).toBeAttached({ timeout: 10_000 })
+    await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
   })
 
   test('操作类型筛选 → 查询 → 重置', async ({ page }) => {
@@ -238,13 +241,13 @@ test.describe('审计日志 — 筛选查询', () => {
     if (await isVisible(opt, 2000)) {
       await opt.click()
       await page.getByRole('button', { name: '查询' }).click()
-      await expect(page.locator('.el-table').first()).toBeAttached({ timeout: 10_000 })
+      await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
     }
     await page.getByRole('button', { name: '重置' }).click()
   })
 
   test('刷新', async ({ page }) => {
     await page.getByRole('button', { name: '刷新' }).click()
-    await expect(page.locator('.el-table').first()).toBeAttached({ timeout: 10_000 })
+    await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
   })
 })

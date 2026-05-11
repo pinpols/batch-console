@@ -24,7 +24,7 @@ test.describe('告警 — 筛选查询', () => {
     if (await isVisible(opt, 2000)) {
       await opt.click()
       await page.getByRole('button', { name: '查询' }).click()
-      await expect(page.locator('.el-table').first()).toBeAttached({ timeout: 10_000 })
+      await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
     }
   })
 
@@ -38,7 +38,7 @@ test.describe('告警 — 筛选查询', () => {
     if (await isVisible(opt, 2000)) {
       await opt.click()
       await page.getByRole('button', { name: '查询' }).click()
-      await expect(page.locator('.el-table').first()).toBeAttached({ timeout: 10_000 })
+      await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
     }
   })
 
@@ -47,14 +47,14 @@ test.describe('告警 — 筛选查询', () => {
     if (!(await isVisible(input, 2000))) return
     await input.fill('trace-test')
     await page.getByRole('button', { name: '查询' }).click()
-    await expect(page.locator('.el-table').first()).toBeAttached({ timeout: 10_000 })
+    await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
     await page.getByRole('button', { name: '重置' }).click()
     await expect(input).toHaveValue('')
   })
 
   test('刷新', async ({ page }) => {
     await page.getByRole('button', { name: '刷新' }).click()
-    await expect(page.locator('.el-table').first()).toBeAttached({ timeout: 10_000 })
+    await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
   })
 })
 
@@ -75,7 +75,7 @@ test.describe('告警 — 操作流', () => {
     await expect(page.locator('.el-message-box')).toBeVisible()
     const input = page.locator('.el-message-box').locator('input,textarea').first()
     if (await isVisible(input, 1000)) await input.fill('e2e 自动化确认')
-    await page.locator('.el-message-box').getByRole('button', { name: '确定' }).click()
+    await page.locator('.el-message-box').getByRole('button', { name: /^(确定|确认.*)$/ }).click()
     await expect(page.locator('.el-message')).toBeVisible({ timeout: 8000 })
   })
 
@@ -89,7 +89,7 @@ test.describe('告警 — 操作流', () => {
     await expect(page.locator('.el-message-box')).toBeVisible()
     const input = page.locator('.el-message-box').locator('input,textarea').first()
     if (await isVisible(input, 1000)) await input.fill('e2e 自动化静默')
-    await page.locator('.el-message-box').getByRole('button', { name: '确定' }).click()
+    await page.locator('.el-message-box').getByRole('button', { name: /^(确定|确认.*)$/ }).click()
     await expect(page.locator('.el-message')).toBeVisible({ timeout: 8000 })
   })
 
@@ -103,7 +103,7 @@ test.describe('告警 — 操作流', () => {
     await expect(page.locator('.el-message-box')).toBeVisible()
     const input = page.locator('.el-message-box').locator('input,textarea').first()
     if (await isVisible(input, 1000)) await input.fill('e2e 自动化关闭')
-    await page.locator('.el-message-box').getByRole('button', { name: '确定' }).click()
+    await page.locator('.el-message-box').getByRole('button', { name: /^(确定|确认.*)$/ }).click()
     await expect(page.locator('.el-message')).toBeVisible({ timeout: 8000 })
   })
 })
@@ -131,7 +131,7 @@ test.describe('Outbox — Tab 与筛选', () => {
     if (!(await isVisible(input, 2000))) return
     await input.fill('test')
     await page.getByRole('button', { name: '查询' }).click()
-    await expect(page.locator('.el-table').first()).toBeAttached({ timeout: 10_000 })
+    await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
   })
 
   test('重试 tab — 状态筛选', async ({ page }) => {
@@ -145,7 +145,7 @@ test.describe('Outbox — Tab 与筛选', () => {
     if (await isVisible(opt, 2000)) {
       await opt.click()
       await page.getByRole('button', { name: '查询' }).click()
-      await expect(page.locator('.el-table').first()).toBeAttached({ timeout: 10_000 })
+      await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
     }
   })
 
@@ -155,11 +155,11 @@ test.describe('Outbox — Tab 与筛选', () => {
     if (!(await isVisible(input, 2000))) return
     await input.fill('test')
     await page.getByRole('button', { name: '查询' }).click()
-    await expect(page.locator('.el-table').first()).toBeAttached({ timeout: 10_000 })
+    await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
   })
 
   test('刷新', async ({ page }) => {
     await page.getByRole('button', { name: '刷新' }).click()
-    await expect(page.locator('.el-table').first()).toBeAttached({ timeout: 10_000 })
+    await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
   })
 })

@@ -8,7 +8,7 @@ test.describe('monitoring pages', () => {
 
   test('Job Instance 列表支持基础筛选控件', async ({ page }) => {
     await page.goto('/monitor/job-instances')
-    await expectPageTitle(page, 'Job Instance 列表')
+    await expectPageTitle(page, '作业运行')
     await expect(page.getByText('Job Code').first()).toBeVisible()
     await expect(page.getByText('状态').first()).toBeVisible()
     await expect(page.getByRole('button', { name: '刷新' })).toBeVisible()
@@ -16,13 +16,13 @@ test.describe('monitoring pages', () => {
 
   test('Job Step Instance 页面可打开', async ({ page }) => {
     await page.goto('/monitor/job-steps')
-    await expectPageTitle(page, /Job Step Instance/)
+    await expectPageTitle(page, /作业步骤|Job Step Instance/)
     await expect(page.getByRole('button', { name: '刷新' })).toBeVisible()
   })
 
   test('Workflow Run 列表支持查询与详情入口列', async ({ page }) => {
     await page.goto('/monitor/workflow-runs')
-    await expectPageTitle(page, 'Workflow Run 列表')
+    await expectPageTitle(page, '工作流运行')
     await expect(page.getByRole('button', { name: '刷新' })).toBeVisible()
     await expect(page.getByRole('columnheader', { name: /Run Id|Def Id/ }).first()).toBeVisible()
   })

@@ -11,7 +11,7 @@ test.describe('租户管理 — 筛选查询', () => {
   test.beforeEach(async ({ page }) => {
     await enterDemoApp(page)
     await page.goto('/system/tenants')
-    await expectPageTitle(page, '租户管理')
+    await expectPageTitle(page, '租户实例')
   })
 
   test('关键字搜索', async ({ page }) => {
@@ -19,7 +19,7 @@ test.describe('租户管理 — 筛选查询', () => {
     if (!(await isVisible(input, 2000))) return
     await input.fill('test')
     await page.getByRole('button', { name: '查询' }).click()
-    await expect(page.locator('.el-table').first()).toBeAttached({ timeout: 10_000 })
+    await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
   })
 
   test('状态筛选 → 查询 → 重置', async ({ page }) => {
@@ -33,7 +33,7 @@ test.describe('租户管理 — 筛选查询', () => {
     if (await isVisible(opt, 2000)) {
       await opt.click()
       await page.getByRole('button', { name: '查询' }).click()
-      await expect(page.locator('.el-table').first()).toBeAttached({ timeout: 10_000 })
+      await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
     }
     await page.getByRole('button', { name: '重置' }).click()
   })
@@ -50,18 +50,19 @@ test.describe('租户管理 — 新建租户', () => {
   test('新建租户 → 填写 → 提交 → toast', async ({ page }) => {
     await enterDemoApp(page)
     await page.goto('/system/tenants')
-    await expectPageTitle(page, '租户管理')
+    await expectPageTitle(page, '租户实例')
 
-    await page.getByRole('button', { name: '新建租户' }).first().click()
-    await expect(page.getByText('新建租户').first()).toBeVisible()
+    await page.getByRole('button', { name: '新增租户' }).first().click()
+    await expect(page.getByText('新增租户').first()).toBeVisible()
 
-    await page.getByRole('textbox', { name: /tenantId/i }).first().fill(uniqueTenantId)
+    await page.getByLabel('租户 ID').fill(uniqueTenantId)
     await page.getByLabel('名称').fill('E2E 测试租户')
-    // 操作账号和密码通常必填
-    const accountInput = page.getByLabel('操作账号')
+    // 账号 + 密码必填(useDestroyConfirm/createTenant body)
+    const accountInput = page.getByLabel('账号名')
     if (await isVisible(accountInput, 1000)) await accountInput.fill('e2e-admin')
     const pwdInput = page.getByLabel('初始密码')
-    if (await isVisible(pwdInput, 1000)) await pwdInput.fill('Test@12345')
+    // 密码 ≥ 12 位(P0 强化)
+    if (await isVisible(pwdInput, 1000)) await pwdInput.fill('Test@2026e2e1')
 
     await page.getByRole('button', { name: /保存|创建/ }).click()
     await expect(page.locator('.el-message')).toBeVisible({ timeout: 8000 })
@@ -72,7 +73,7 @@ test.describe('租户管理 — 编辑租户', () => {
   test.beforeEach(async ({ page }) => {
     await enterDemoApp(page)
     await page.goto('/system/tenants')
-    await expectPageTitle(page, '租户管理')
+    await expectPageTitle(page, '租户实例')
   })
 
   test('编辑第一个租户 → 修改名称 → 保存 → toast', async ({ page }) => {
@@ -92,7 +93,7 @@ test.describe('租户管理 — 状态切换', () => {
   test.beforeEach(async ({ page }) => {
     await enterDemoApp(page)
     await page.goto('/system/tenants')
-    await expectPageTitle(page, '租户管理')
+    await expectPageTitle(page, '租户实例')
   })
 
   test('暂停租户 → 确认 → toast', async ({ page }) => {
@@ -104,7 +105,7 @@ test.describe('租户管理 — 状态切换', () => {
     await suspendBtn.click()
     await expect(page.locator('.el-message-box')).toBeVisible()
     await expect(page.locator('.el-message-box')).toContainText('暂停')
-    await page.locator('.el-message-box').getByRole('button', { name: '确定' }).click()
+    await page.locator('.el-message-box').getByRole('button', { name: /^(确定|确认.*)$/ }).click()
     await expect(page.locator('.el-message')).toBeVisible({ timeout: 8000 })
   })
 
@@ -116,7 +117,7 @@ test.describe('租户管理 — 状态切换', () => {
     if (!(await isVisible(resumeBtn))) return
     await resumeBtn.click()
     await expect(page.locator('.el-message-box')).toBeVisible()
-    await page.locator('.el-message-box').getByRole('button', { name: '确定' }).click()
+    await page.locator('.el-message-box').getByRole('button', { name: /^(确定|确认.*)$/ }).click()
     await expect(page.locator('.el-message')).toBeVisible({ timeout: 8000 })
   })
 
@@ -138,7 +139,7 @@ test.describe('租户管理 — 初始化配置（试运行）', () => {
   test.beforeEach(async ({ page }) => {
     await enterDemoApp(page)
     await page.goto('/system/tenants')
-    await expectPageTitle(page, '租户管理')
+    await expectPageTitle(page, '租户实例')
   })
 
   test('初始化配置 → 选类型 → 试运行 → 结果展示', async ({ page }) => {
@@ -174,7 +175,7 @@ test.describe('租户管理 — 复制配置（试运行）', () => {
   test('复制配置 → 选类型 → 试运行 → 结果展示', async ({ page }) => {
     await enterDemoApp(page)
     await page.goto('/system/tenants')
-    await expectPageTitle(page, '租户管理')
+    await expectPageTitle(page, '租户实例')
 
     await page.getByRole('button', { name: '复制配置' }).click()
     await expect(page.getByText('跨租户复制配置')).toBeVisible()

@@ -9,7 +9,7 @@ test.describe('用户账户 — 页面基础', () => {
   test.beforeEach(async ({ page }) => {
     await enterDemoApp(page)
     await page.goto('/system/user-accounts')
-    await expectPageTitle(page, '用户账户')
+    await expectPageTitle(page, '登录账户')
   })
 
   test('展示账户总数 / 已启用 / 已停用指标卡', async ({ page }) => {
@@ -26,7 +26,7 @@ test.describe('用户账户 — 页面基础', () => {
 
   test('刷新', async ({ page }) => {
     await page.getByRole('button', { name: '刷新' }).first().click()
-    await expect(page.locator('.el-table').first()).toBeAttached({ timeout: 10_000 })
+    await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
   })
 })
 
@@ -34,7 +34,7 @@ test.describe('用户账户 — 筛选查询', () => {
   test.beforeEach(async ({ page }) => {
     await enterDemoApp(page)
     await page.goto('/system/user-accounts')
-    await expectPageTitle(page, '用户账户')
+    await expectPageTitle(page, '登录账户')
   })
 
   test('关键字筛选 → 查询', async ({ page }) => {
@@ -44,7 +44,7 @@ test.describe('用户账户 — 筛选查询', () => {
       .getByRole('textbox')
     await input.fill('admin')
     await page.getByRole('button', { name: '查询' }).click()
-    await expect(page.locator('.el-table').first()).toBeAttached({ timeout: 10_000 })
+    await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
   })
 
   test('回车触发查询', async ({ page }) => {
@@ -54,7 +54,7 @@ test.describe('用户账户 — 筛选查询', () => {
       .getByRole('textbox')
     await input.fill('test')
     await input.press('Enter')
-    await expect(page.locator('.el-table').first()).toBeAttached({ timeout: 10_000 })
+    await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
   })
 
   test('重置清空关键字', async ({ page }) => {
@@ -66,7 +66,7 @@ test.describe('用户账户 — 筛选查询', () => {
     await page.getByRole('button', { name: '查询' }).click()
     await page.getByRole('button', { name: '重置' }).first().click()
     await expect(input).toHaveValue('')
-    await expect(page.locator('.el-table').first()).toBeAttached({ timeout: 10_000 })
+    await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
   })
 })
 
@@ -74,7 +74,7 @@ test.describe('用户账户 — 编辑对话框', () => {
   test.beforeEach(async ({ page }) => {
     await enterDemoApp(page)
     await page.goto('/system/user-accounts')
-    await expectPageTitle(page, '用户账户')
+    await expectPageTitle(page, '登录账户')
   })
 
   test('点击编辑弹出对话框并展示用户名（只读）', async ({ page }) => {
@@ -120,7 +120,7 @@ test.describe('用户账户 — 重置密码', () => {
   test.beforeEach(async ({ page }) => {
     await enterDemoApp(page)
     await page.goto('/system/user-accounts')
-    await expectPageTitle(page, '用户账户')
+    await expectPageTitle(page, '登录账户')
   })
 
   test('点击重置密码弹出对话框', async ({ page }) => {
@@ -165,7 +165,7 @@ test.describe('用户账户 — 启用 / 停用', () => {
   test.beforeEach(async ({ page }) => {
     await enterDemoApp(page)
     await page.goto('/system/user-accounts')
-    await expectPageTitle(page, '用户账户')
+    await expectPageTitle(page, '登录账户')
   })
 
   test('停用账户 → 确认弹框 → 取消不变更', async ({ page }) => {

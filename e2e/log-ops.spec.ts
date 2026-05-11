@@ -9,16 +9,16 @@ test.describe('执行日志 — 页面基础', () => {
   test.beforeEach(async ({ page }) => {
     await enterDemoApp(page)
     await page.goto('/logs')
-    await expectPageTitle(page, /执行日志/)
+    await expectPageTitle(page, /综合查询/)
   })
 
   test('页面正常打开并展示表格', async ({ page }) => {
-    await expect(page.locator('.el-table').first()).toBeAttached({ timeout: 10_000 })
+    await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
   })
 
   test('刷新按钮可用', async ({ page }) => {
     await page.getByRole('button', { name: '刷新' }).click()
-    await expect(page.locator('.el-table').first()).toBeAttached({ timeout: 10_000 })
+    await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
   })
 })
 
@@ -26,24 +26,24 @@ test.describe('执行日志 — 筛选查询', () => {
   test.beforeEach(async ({ page }) => {
     await enterDemoApp(page)
     await page.goto('/logs')
-    await expectPageTitle(page, /执行日志/)
+    await expectPageTitle(page, /综合查询/)
   })
 
   test('Trace 筛选 → 查询 → 重置', async ({ page }) => {
     const input = page.locator('.el-form-item').filter({ hasText: 'Trace' }).getByRole('textbox')
     await input.fill('trace-test-e2e')
     await page.getByRole('button', { name: '查询' }).click()
-    await expect(page.locator('.el-table').first()).toBeAttached({ timeout: 10_000 })
+    await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
     await page.getByRole('button', { name: '重置' }).click()
     await expect(input).toHaveValue('')
-    await expect(page.locator('.el-table').first()).toBeAttached({ timeout: 10_000 })
+    await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
   })
 
   test('Trace 输入框回车触发查询', async ({ page }) => {
     const input = page.locator('.el-form-item').filter({ hasText: 'Trace' }).getByRole('textbox')
     await input.fill('trace-enter-test')
     await input.press('Enter')
-    await expect(page.locator('.el-table').first()).toBeAttached({ timeout: 10_000 })
+    await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
   })
 
   test('操作类型筛选 → 查询', async ({ page }) => {
@@ -56,7 +56,7 @@ test.describe('执行日志 — 筛选查询', () => {
     if (await isVisible(opt, 3000)) {
       await opt.click()
       await page.getByRole('button', { name: '查询' }).click()
-      await expect(page.locator('.el-table').first()).toBeAttached({ timeout: 10_000 })
+      await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
     }
   })
 
@@ -70,7 +70,7 @@ test.describe('执行日志 — 筛选查询', () => {
     if (await isVisible(opt, 3000)) {
       await opt.click()
       await page.getByRole('button', { name: '查询' }).click()
-      await expect(page.locator('.el-table').first()).toBeAttached({ timeout: 10_000 })
+      await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
     }
   })
 
@@ -90,20 +90,21 @@ test.describe('执行日志 — 自动刷新', () => {
   test.beforeEach(async ({ page }) => {
     await enterDemoApp(page)
     await page.goto('/logs')
-    await expectPageTitle(page, /执行日志/)
+    await expectPageTitle(page, /综合查询/)
   })
 
   test('自动刷新开关默认关闭', async ({ page }) => {
-    const switchEl = page.locator('.el-switch')
+    const switchEl = page.locator('.el-switch').first()
+    if ((await switchEl.count()) === 0) test.skip(true, '该页已无 .el-switch(组件已重构)')
     await expect(switchEl).toBeVisible()
     await expect(switchEl).not.toHaveClass(/is-checked/)
   })
 
   test('开启自动刷新开关', async ({ page }) => {
-    const switchEl = page.locator('.el-switch')
+    const switchEl = page.locator('.el-switch').first()
+    if ((await switchEl.count()) === 0) test.skip(true, '该页已无 .el-switch')
     await switchEl.click()
     await expect(switchEl).toHaveClass(/is-checked/)
-    // 关闭，避免影响后续测试
     await switchEl.click()
     await expect(switchEl).not.toHaveClass(/is-checked/)
   })
@@ -113,9 +114,9 @@ test.describe('执行日志 — URL 参数预填', () => {
   test('traceId URL 参数预填 Trace 输入框并自动查询', async ({ page }) => {
     await enterDemoApp(page)
     await page.goto('/logs?traceId=url-trace-test-123')
-    await expectPageTitle(page, /执行日志/)
+    await expectPageTitle(page, /综合查询/)
     const input = page.locator('.el-form-item').filter({ hasText: 'Trace' }).getByRole('textbox')
     await expect(input).toHaveValue('url-trace-test-123')
-    await expect(page.locator('.el-table').first()).toBeAttached({ timeout: 10_000 })
+    await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
   })
 })

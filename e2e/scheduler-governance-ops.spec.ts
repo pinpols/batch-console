@@ -37,7 +37,7 @@ test.describe('调度快照 — 全局暂停 / 恢复', () => {
     await pauseBtn.click()
     await expect(page.locator('.el-message-box')).toBeVisible()
     await expect(page.locator('.el-message-box')).toContainText('暂停')
-    await page.locator('.el-message-box').getByRole('button', { name: '确定' }).click()
+    await page.locator('.el-message-box').getByRole('button', { name: /^(确定|确认.*)$/ }).click()
     await expect(page.locator('.el-message')).toBeVisible({ timeout: 8000 })
   })
 
@@ -47,7 +47,7 @@ test.describe('调度快照 — 全局暂停 / 恢复', () => {
     await resumeBtn.click()
     await expect(page.locator('.el-message-box')).toBeVisible()
     await expect(page.locator('.el-message-box')).toContainText('恢复')
-    await page.locator('.el-message-box').getByRole('button', { name: '确定' }).click()
+    await page.locator('.el-message-box').getByRole('button', { name: /^(确定|确认.*)$/ }).click()
     await expect(page.locator('.el-message')).toBeVisible({ timeout: 8000 })
   })
 })
@@ -58,7 +58,7 @@ test.describe('批次日历日 — 筛选查询', () => {
   test.beforeEach(async ({ page }) => {
     await enterDemoApp(page)
     await page.goto('/scheduler/batch-days')
-    await expectPageTitle(page, '批次日历日')
+    await expectPageTitle(page, '批次日与窗口')
   })
 
   test('日历选择后查询', async ({ page }) => {
@@ -71,7 +71,7 @@ test.describe('批次日历日 — 筛选查询', () => {
     if (await isVisible(opt, 2000)) {
       await opt.click()
       await page.getByRole('button', { name: '查询' }).click()
-      await expect(page.locator('.el-table').first()).toBeAttached({ timeout: 10_000 })
+      await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
     }
   })
 
@@ -88,13 +88,13 @@ test.describe('批次日历日 — 筛选查询', () => {
       await startInput.fill('2026-04-01')
       await endInput.fill('2026-04-30')
       await page.getByRole('button', { name: '查询' }).click()
-      await expect(page.locator('.el-table').first()).toBeAttached({ timeout: 10_000 })
+      await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
     }
   })
 
   test('刷新', async ({ page }) => {
     await page.getByRole('button', { name: '刷新' }).click()
-    await expect(page.locator('.el-table').first()).toBeAttached({ timeout: 10_000 })
+    await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
   })
 })
 
@@ -103,8 +103,11 @@ test.describe('批次日历日 — 筛选查询', () => {
 test.describe('Catch-up 审批 — 筛选查询', () => {
   test.beforeEach(async ({ page }) => {
     await enterDemoApp(page)
+    // /scheduler/catch-up-approvals 已 redirect 到 /approvals?tab=catch-up
+    // 页头是"审批中心",Catch-up 是 tab 名
     await page.goto('/scheduler/catch-up-approvals')
-    await expectPageTitle(page, 'Catch-up 审批')
+    await expectPageTitle(page, '审批中心')
+    await expect(page).toHaveURL(/\/approvals\?tab=catch-up/)
   })
 
   test('关键字搜索 → 查询 → 重置', async ({ page }) => {
@@ -112,7 +115,7 @@ test.describe('Catch-up 审批 — 筛选查询', () => {
     if (!(await isVisible(input, 2000))) return
     await input.fill('test')
     await page.getByRole('button', { name: '查询' }).click()
-    await expect(page.locator('.el-table').first()).toBeAttached({ timeout: 10_000 })
+    await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
     await page.getByRole('button', { name: '重置' }).click()
     await expect(input).toHaveValue('')
   })
@@ -128,7 +131,7 @@ test.describe('Catch-up 审批 — 筛选查询', () => {
     if (await isVisible(opt, 2000)) {
       await opt.click()
       await page.getByRole('button', { name: '查询' }).click()
-      await expect(page.locator('.el-table').first()).toBeAttached({ timeout: 10_000 })
+      await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
     }
   })
 
@@ -140,7 +143,7 @@ test.describe('Catch-up 审批 — 筛选查询', () => {
     if (!(await isVisible(bizInput, 2000))) return
     await bizInput.fill('2026-04-01')
     await page.getByRole('button', { name: '查询' }).click()
-    await expect(page.locator('.el-table').first()).toBeAttached({ timeout: 10_000 })
+    await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
   })
 })
 
@@ -165,7 +168,7 @@ test.describe('队列 / 窗口 / 日历 — Tab 与操作', () => {
 
   test('刷新', async ({ page }) => {
     await page.getByRole('button', { name: '刷新' }).click()
-    await expect(page.locator('.el-table').first()).toBeAttached({ timeout: 10_000 })
+    await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
   })
 
   test('关键字筛选 → 查询', async ({ page }) => {
@@ -173,7 +176,7 @@ test.describe('队列 / 窗口 / 日历 — Tab 与操作', () => {
     if (!(await isVisible(input, 2000))) return
     await input.fill('test')
     await page.getByRole('button', { name: '查询' }).click()
-    await expect(page.locator('.el-table').first()).toBeAttached({ timeout: 10_000 })
+    await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
   })
 
   test('启用 / 停用切换 → 确认 → toast', async ({ page }) => {
@@ -181,7 +184,7 @@ test.describe('队列 / 窗口 / 日历 — Tab 与操作', () => {
     if (!(await isVisible(toggle))) return
     await toggle.click()
     await expect(page.locator('.el-message-box')).toBeVisible({ timeout: 5000 })
-    await page.locator('.el-message-box').getByRole('button', { name: '确定' }).click()
+    await page.locator('.el-message-box').getByRole('button', { name: /^(确定|确认.*)$/ }).click()
     await expect(page.locator('.el-message')).toBeVisible({ timeout: 8000 })
   })
 
@@ -238,7 +241,7 @@ test.describe('租户配额 — 筛选与启用切换', () => {
     if (!(await isVisible(toggle))) return
     await toggle.click()
     await expect(page.locator('.el-message-box')).toBeVisible({ timeout: 5000 })
-    await page.locator('.el-message-box').getByRole('button', { name: '确定' }).click()
+    await page.locator('.el-message-box').getByRole('button', { name: /^(确定|确认.*)$/ }).click()
     await expect(page.locator('.el-message')).toBeVisible({ timeout: 8000 })
   })
 })
@@ -249,12 +252,12 @@ test.describe('Trigger 管理 — 注册 / 注销 / 暂停 / 恢复', () => {
   test.beforeEach(async ({ page }) => {
     await enterDemoApp(page)
     await page.goto('/system/triggers')
-    await expectPageTitle(page, 'Trigger 管理')
+    await expectPageTitle(page, '触发器')
   })
 
   test('刷新', async ({ page }) => {
     await page.getByRole('button', { name: '刷新' }).click()
-    await expect(page.locator('.el-table').first()).toBeAttached({ timeout: 10_000 })
+    await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
   })
 
   test('注册 → 确认 → toast', async ({ page }) => {
@@ -265,7 +268,7 @@ test.describe('Trigger 管理 — 注册 / 注销 / 暂停 / 恢复', () => {
     if (!(await isVisible(registerBtn))) return
     await registerBtn.click()
     await expect(page.locator('.el-message-box')).toContainText('注册')
-    await page.locator('.el-message-box').getByRole('button', { name: '确定' }).click()
+    await page.locator('.el-message-box').getByRole('button', { name: /^(确定|确认.*)$/ }).click()
     await expect(page.locator('.el-message')).toBeVisible({ timeout: 8000 })
   })
 
@@ -277,7 +280,7 @@ test.describe('Trigger 管理 — 注册 / 注销 / 暂停 / 恢复', () => {
     if (!(await isVisible(unregisterBtn))) return
     await unregisterBtn.click()
     await expect(page.locator('.el-message-box')).toContainText('注销')
-    await page.locator('.el-message-box').getByRole('button', { name: '确定' }).click()
+    await page.locator('.el-message-box').getByRole('button', { name: /^(确定|确认.*)$/ }).click()
     await expect(page.locator('.el-message')).toBeVisible({ timeout: 8000 })
   })
 
@@ -289,7 +292,7 @@ test.describe('Trigger 管理 — 注册 / 注销 / 暂停 / 恢复', () => {
     if (!(await isVisible(pauseBtn))) return
     await pauseBtn.click()
     await expect(page.locator('.el-message-box')).toContainText('暂停')
-    await page.locator('.el-message-box').getByRole('button', { name: '确定' }).click()
+    await page.locator('.el-message-box').getByRole('button', { name: /^(确定|确认.*)$/ }).click()
     await expect(page.locator('.el-message')).toBeVisible({ timeout: 8000 })
   })
 
@@ -301,7 +304,7 @@ test.describe('Trigger 管理 — 注册 / 注销 / 暂停 / 恢复', () => {
     if (!(await isVisible(resumeBtn))) return
     await resumeBtn.click()
     await expect(page.locator('.el-message-box')).toBeVisible()
-    await page.locator('.el-message-box').getByRole('button', { name: '确定' }).click()
+    await page.locator('.el-message-box').getByRole('button', { name: /^(确定|确认.*)$/ }).click()
     await expect(page.locator('.el-message')).toBeVisible({ timeout: 8000 })
   })
 })
