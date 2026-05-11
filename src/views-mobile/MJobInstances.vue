@@ -40,17 +40,51 @@
         />
       </div>
 
+      <div class="m-page__header u-gap-8">
+        <button
+          v-if="!bulkMode"
+          class="m-btn"
+          :disabled="rows.length === 0"
+          @click="bulkMode = true"
+        >
+          {{ t('mobile.jobs.bulkSelect') }}
+        </button>
+        <template v-else>
+          <button class="m-btn" @click="exitBulk">{{ t('mobile.jobs.bulkCancel') }}</button>
+          <span class="m-bulk-count">
+            {{ t('mobile.jobs.bulkSelected', { n: selected.size }) }}
+          </span>
+          <button class="m-btn m-btn--primary" :disabled="bulkBusy" @click="bulkRetry">
+            {{ t('mobile.jobs.bulkRetry') }}
+          </button>
+        </template>
+      </div>
+
       <MSkeleton v-if="loading && rows.length === 0" :count="4" />
       <div v-else-if="rows.length === 0" class="m-empty">{{ t('mobile.jobs.empty') }}</div>
 
       <div
         v-for="row in rows"
         :key="row.id"
-        class="m-card m-card--clickable"
-        @click="openDetail(row)"
+        class="m-card"
+        :class="[
+          bulkMode && selected.has(row.id) ? 'm-card--selected' : '',
+          !bulkMode ? 'm-card--clickable' : '',
+        ]"
+        @click="bulkMode ? toggleOne(row) : openDetail(row)"
       >
         <div class="m-card__row">
-          <div class="m-card__title">{{ row.jobCode }}</div>
+          <div class="m-card__title">
+            <input
+              v-if="bulkMode"
+              type="checkbox"
+              class="m-check"
+              :disabled="row.instanceStatus !== 'FAILED'"
+              :checked="selected.has(row.id)"
+              @click.stop="toggleOne(row)"
+            />
+            {{ row.jobCode }}
+          </div>
           <span :class="['m-chip', statusChipClass(row.instanceStatus)]">
             {{ resolveEnumLabel('instanceStatus', row.instanceStatus) }}
           </span>
@@ -79,7 +113,7 @@
           </div>
         </div>
         <div
-          v-if="row.instanceStatus === 'RUNNING' || row.instanceStatus === 'FAILED'"
+          v-if="!bulkMode && (row.instanceStatus === 'RUNNING' || row.instanceStatus === 'FAILED')"
           class="m-card__actions"
           @click.stop
         >
@@ -251,6 +285,79 @@
     }
   }
 
+  const bulkMode = ref(false)
+  const selected = ref<Set<number>>(new Set())
+  const bulkBusy = ref(false)
+
+  function exitBulk() {
+    bulkMode.value = false
+    selected.value = new Set()
+  }
+
+  function toggleOne(row: ConsoleJobInstanceResponse) {
+    if (row.instanceStatus !== 'FAILED') return
+    if (selected.value.has(row.id)) selected.value.delete(row.id)
+    else selected.value.add(row.id)
+    selected.value = new Set(selected.value)
+  }
+
+  async function bulkRetry() {
+    if (selected.value.size === 0) {
+      ElMessage.warning(t('mobile.jobs.bulkPickFirst'))
+      return
+    }
+    const targets = rows.value.filter((r) => selected.value.has(r.id))
+    try {
+      await ElMessageBox.confirm(
+        t('mobile.jobs.bulkRetryConfirm', { n: targets.length }),
+        t('mobile.jobs.bulkRetry'),
+        {
+          type: 'warning',
+          confirmButtonText: t('common.confirm'),
+          cancelButtonText: t('common.cancel'),
+        },
+      )
+    } catch {
+      return
+    }
+    bulkBusy.value = true
+    let ok = 0
+    try {
+      for (const r of targets) {
+        try {
+          await instanceApi.retry(r.instanceNo, tenant.tenantId, r.jobCode, r.bizDate)
+          ok++
+        } catch {
+          /* skip */
+        }
+      }
+      ElMessage.success(t('mobile.jobs.bulkRetryDoneToast', { n: ok }))
+      exitBulk()
+      await load()
+    } finally {
+      bulkBusy.value = false
+    }
+  }
+
   onMounted(load)
   watch(() => tenant.tenantId, load)
 </script>
+
+<style scoped>
+  .m-bulk-count {
+    align-self: center;
+    font-size: 12px;
+    color: var(--color-text-secondary);
+  }
+
+  .m-check {
+    margin-right: 6px;
+    transform: scale(1.15);
+    vertical-align: middle;
+  }
+
+  .m-card--selected {
+    border-color: var(--color-primary);
+    background: color-mix(in srgb, var(--color-primary) 4%, var(--color-bg-card) 96%);
+  }
+</style>

@@ -83,9 +83,13 @@
           <el-icon><Files /></el-icon>
           <span>{{ t('mobile.summary.filesQuick') }}</span>
         </router-link>
-        <router-link to="/m/tenants" class="m-quick">
-          <el-icon><OfficeBuilding /></el-icon>
-          <span>{{ t('mobile.summary.tenantsQuick') }}</span>
+        <router-link to="/m/catchup" class="m-quick">
+          <el-icon><Memo /></el-icon>
+          <span>{{ t('mobile.summary.catchupQuick') }}</span>
+        </router-link>
+        <router-link to="/m/outbox" class="m-quick">
+          <el-icon><Promotion /></el-icon>
+          <span>{{ t('mobile.summary.outboxQuick') }}</span>
         </router-link>
       </div>
     </div>
@@ -95,7 +99,7 @@
 <script setup lang="ts">
   import { ref, onMounted, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { Refresh, Files, OfficeBuilding } from '@element-plus/icons-vue'
+  import { Refresh, Files, Memo, Promotion } from '@element-plus/icons-vue'
   import { ElMessage } from 'element-plus'
 
   const { t } = useI18n({ useScope: 'global' })
@@ -131,7 +135,7 @@
 <style scoped>
   .m-quick-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(3, 1fr);
     gap: 12px;
     margin-top: 12px;
   }

@@ -546,12 +546,22 @@ const routes = [
         meta: { title: '文件', minRole: 'VIEWER' },
       },
       {
-        path: 'tenants',
-        name: 'm-tenants',
-        component: () => import('@/views-mobile/MTenants.vue'),
-        // 移动端租户列表对所有有 view 权限的用户可见;实际写操作仍由
-        // 各按钮通过 v-permission 细化(目前只列查看)
-        meta: { title: '租户', minRole: 'VIEWER' },
+        path: 'workers',
+        name: 'm-workers',
+        component: () => import('@/views-mobile/MWorkers.vue'),
+        meta: { title: 'Worker', minRole: 'VIEWER' },
+      },
+      {
+        path: 'outbox',
+        name: 'm-outbox',
+        component: () => import('@/views-mobile/MOutbox.vue'),
+        meta: { title: 'Outbox', minRole: 'VIEWER' },
+      },
+      {
+        path: 'logs',
+        name: 'm-logs',
+        component: () => import('@/views-mobile/MExecutionLog.vue'),
+        meta: { title: '执行日志', minRole: 'VIEWER' },
       },
     ],
   },

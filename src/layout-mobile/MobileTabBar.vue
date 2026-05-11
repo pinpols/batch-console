@@ -28,7 +28,7 @@
   import { computed } from 'vue'
   import { useRoute } from 'vue-router'
   import { useI18n } from 'vue-i18n'
-  import { Histogram, Stamp, WarningFilled, Monitor, Memo } from '@element-plus/icons-vue'
+  import { Histogram, Stamp, WarningFilled, Monitor, Cpu } from '@element-plus/icons-vue'
   import { useMobileBadgesStore } from '@/stores/mobileBadges'
 
   const route = useRoute()
@@ -36,11 +36,11 @@
   const { t } = useI18n({ useScope: 'global' })
 
   const tabs = [
-    { path: '/m/ops/summary', labelKey: 'nav.mobileTab.summary', icon: Histogram },
-    { path: '/m/approvals', labelKey: 'nav.mobileTab.approvals', icon: Stamp },
     { path: '/m/alerts', labelKey: 'nav.mobileTab.alerts', icon: WarningFilled },
+    { path: '/m/approvals', labelKey: 'nav.mobileTab.approvals', icon: Stamp },
+    { path: '/m/ops/summary', labelKey: 'nav.mobileTab.summary', icon: Histogram },
     { path: '/m/jobs', labelKey: 'nav.mobileTab.jobs', icon: Monitor },
-    { path: '/m/catchup', labelKey: 'nav.mobileTab.catchup', icon: Memo },
+    { path: '/m/workers', labelKey: 'nav.mobileTab.workers', icon: Cpu },
   ]
 
   const isActive = computed(() => (path: string) => route.path.startsWith(path))

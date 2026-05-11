@@ -49,7 +49,17 @@
             <span class="m-card__meta-key">{{ t('mobile.jobs.finishedAt') }}</span>
             {{ fmt(row.finishedAt) }}
           </div>
-          <div><span class="m-card__meta-key">traceId</span>{{ row.traceId }}</div>
+          <div>
+            <span class="m-card__meta-key">traceId</span>
+            <button
+              v-if="row.traceId"
+              class="m-link"
+              @click="$router.push({ path: '/m/logs', query: { traceId: row.traceId } })"
+            >
+              {{ row.traceId }}
+            </button>
+            <span v-else>—</span>
+          </div>
         </div>
         <div
           v-if="row.instanceStatus === 'RUNNING' || row.instanceStatus === 'FAILED'"
@@ -69,6 +79,42 @@
           >
             {{ t('mobile.jobs.terminate') }}
           </button>
+          <button
+            v-if="row.traceId"
+            class="m-btn"
+            @click="$router.push({ path: '/m/logs', query: { traceId: row.traceId } })"
+          >
+            {{ t('mobile.jobDetail.viewLogs') }}
+          </button>
+        </div>
+      </div>
+
+      <div class="m-card">
+        <div class="m-card__title" style="margin-bottom: 6px">
+          {{ t('mobile.jobDetail.sectionSteps') }}
+        </div>
+        <div v-if="stepsLoading" class="m-loading">{{ t('mobile.common.loading') }}</div>
+        <div v-else-if="steps.length === 0" class="m-empty">
+          {{ t('mobile.jobDetail.stepEmpty') }}
+        </div>
+        <div v-else class="m-step-list">
+          <div v-for="s in steps" :key="s.id" class="m-step">
+            <div class="m-card__row">
+              <div class="m-step__title">{{ s.stepCode }}</div>
+              <span :class="['m-chip', stepChipClass(s.stepStatus)]">
+                {{ resolveEnumLabel('partitionStatus', s.stepStatus) }}
+              </span>
+            </div>
+            <div class="m-card__meta">
+              <div>retry · {{ s.retryCount }}</div>
+              <div v-if="s.startedAt">start · {{ fmt(s.startedAt) }}</div>
+              <div v-if="s.finishedAt">finish · {{ fmt(s.finishedAt) }}</div>
+            </div>
+            <div v-if="s.errorCode || s.errorMessage" class="m-step__err">
+              <span v-if="s.errorCode" class="m-step__err-code">[{{ s.errorCode }}]</span>
+              {{ s.errorMessage }}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -94,7 +140,10 @@
   import { useTenantStore } from '@/stores/tenant'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { instanceApi } from '@/api/instance'
-  import type { ConsoleJobInstanceResponse } from '@/types/console-api'
+  import type {
+    ConsoleJobInstanceResponse,
+    ConsoleJobStepInstanceResponse,
+  } from '@/types/console-api'
 
   const { t, te } = useI18n({ useScope: 'global' })
   const route = useRoute()
@@ -110,6 +159,8 @@
   }
   const loading = ref(false)
   const row = ref<ConsoleJobInstanceResponse | null>(null)
+  const steps = ref<ConsoleJobStepInstanceResponse[]>([])
+  const stepsLoading = ref(false)
 
   const instanceId = () => Number(route.params.id)
 
@@ -131,6 +182,14 @@
     }
   }
 
+  function stepChipClass(s?: string) {
+    if (s === 'SUCCESS' || s === 'COMPLETED') return 'm-chip--success'
+    if (s === 'RUNNING') return 'm-chip--info'
+    if (s === 'FAILED' || s === 'CANCELLED') return 'm-chip--danger'
+    if (s === 'WAITING' || s === 'READY' || s === 'RETRYING') return 'm-chip--warning'
+    return ''
+  }
+
   function statusChipClass(s?: string) {
     switch (s) {
       case 'SUCCESS':
@@ -149,12 +208,29 @@
     }
   }
 
+  async function loadSteps(id: number) {
+    stepsLoading.value = true
+    try {
+      // partitions API 实际返回 step instances(命名沿用桌面端 instanceApi)
+      const list = (await instanceApi.partitions(
+        id,
+        tenant.tenantId,
+      )) as unknown as ConsoleJobStepInstanceResponse[]
+      steps.value = Array.isArray(list) ? list : []
+    } catch {
+      steps.value = []
+    } finally {
+      stepsLoading.value = false
+    }
+  }
+
   async function load() {
     const id = instanceId()
     if (!id) return
     loading.value = true
     try {
       row.value = await instanceApi.detail(id, tenant.tenantId)
+      await loadSteps(id)
     } catch {
       row.value = null
       ElMessage.error(t('mobile.common.loadFail'))
@@ -227,5 +303,50 @@
     color: var(--color-text-secondary);
     white-space: pre-wrap;
     word-break: break-all;
+  }
+
+  .m-link {
+    display: inline;
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--color-primary);
+    text-decoration: underline;
+    cursor: pointer;
+    word-break: break-all;
+    font: inherit;
+  }
+
+  .m-step-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .m-step {
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: var(--el-fill-color-lighter);
+  }
+
+  .m-step__title {
+    font-weight: 600;
+    font-size: 13px;
+  }
+
+  .m-step__err {
+    margin-top: 4px;
+    padding: 6px 8px;
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--el-color-danger) 8%, transparent);
+    color: var(--el-color-danger);
+    font-size: 12px;
+    word-break: break-all;
+  }
+
+  .m-step__err-code {
+    font-weight: 700;
+    margin-right: 4px;
   }
 </style>
