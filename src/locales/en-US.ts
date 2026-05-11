@@ -273,6 +273,22 @@ const messages: Messages = {
   rowActions: {
     more: 'More',
   },
+  pageHeader: {
+    backTooltip: 'Back',
+  },
+  notificationDeliveryLogsTab: {
+    kwLabel: 'Keyword',
+    kwPlaceholder: 'Search eventType / channelId',
+    statusLabel: 'Status',
+    statusPlaceholder: 'All',
+    colId: 'ID',
+    colChannelId: 'Channel ID',
+    colEventType: 'Event type',
+    colStatus: 'Status',
+    colHttp: 'HTTP',
+    colResponse: 'Response',
+    colTime: 'Time',
+  },
   dateRangePicker: {
     rangeSeparator: 'to',
     startDate: 'Start date',

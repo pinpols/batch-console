@@ -277,6 +277,22 @@ export default {
   rowActions: {
     more: '更多',
   },
+  pageHeader: {
+    backTooltip: '返回',
+  },
+  notificationDeliveryLogsTab: {
+    kwLabel: '关键字',
+    kwPlaceholder: '搜索 eventType / channelId',
+    statusLabel: '状态',
+    statusPlaceholder: '全部',
+    colId: 'ID',
+    colChannelId: '渠道 ID',
+    colEventType: '事件类型',
+    colStatus: '状态',
+    colHttp: 'HTTP',
+    colResponse: '响应',
+    colTime: '时间',
+  },
   dateRangePicker: {
     rangeSeparator: '至',
     startDate: '开始日期',
