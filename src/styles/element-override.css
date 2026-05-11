@@ -850,8 +850,6 @@ html.dark .el-drawer {
  * 用 outline 而非 box-shadow,不影响 layout(box-shadow 在某些 EP 组件里被覆盖)。
  */
 .el-button:focus-visible,
-.el-input__wrapper:focus-within,
-.el-select__wrapper:focus-within,
 .el-textarea__inner:focus-visible,
 .el-checkbox__input.is-focus .el-checkbox__inner,
 .el-radio__input.is-focus .el-radio__inner,
@@ -863,19 +861,52 @@ html.dark .el-drawer {
 button:focus-visible,
 a:focus-visible,
 [role='button']:focus-visible,
-[tabindex]:focus-visible {
+[tabindex]:focus-visible:not(.el-select__wrapper):not(.el-input__wrapper):not(.el-input__inner):not(.el-textarea__inner) {
   outline: 2px solid color-mix(in srgb, var(--color-primary) 70%, transparent);
   outline-offset: 2px;
   border-radius: var(--radius-input, 8px);
 }
 
-/* el-input / el-select 内部 wrapper focus 用 box-shadow 而非 outline,避免 input 边框双重 */
+/* el-input/select/textarea 内部的真实 <input>/<textarea> 元素本身不要再画 outline,
+   focus 视觉由父 wrapper 那一圈柔和外环承担,避免内里再多一道线。 */
+.el-input__inner:focus,
+.el-input__inner:focus-visible,
+.el-textarea__inner:focus,
+.el-textarea__inner:focus-visible,
+.el-select__input:focus,
+.el-select__input:focus-visible {
+  outline: none !important;
+}
+
+/* el-input / el-select focus 仅做颜色 + 轻微提亮,不加额外环。
+   静态:EP 自带 1px 灰边;focus:同 1px 边切主色 + 极淡光晕(2px 12%)。
+   视觉上和静态尺寸一致,只是颜色变化,不会突然"长出一个圈"导致与未 focus
+   的同行控件视觉不齐。键盘 a11y 仍可达(主色边 + 淡环 + 文本对比度足够)。 */
 .el-input__wrapper:focus-within,
-.el-select__wrapper:focus-within {
-  outline: none;
+.el-input__wrapper.is-focus,
+.el-select__wrapper:focus-within,
+.el-select__wrapper.is-focused,
+.el-select__wrapper.is-focus {
+  outline: none !important;
+  /* 内圈(EP 1px 主色 inset)显式透明覆盖 → 输入框最里那条线消失;
+     外圈用 4px blur 软光晕(25% 主色),无锐边,不会和白底切出线感。 */
   box-shadow:
-    0 0 0 1px var(--color-primary),
-    0 0 0 4px color-mix(in srgb, var(--color-primary) 22%, transparent) !important;
+    inset 0 0 0 1px transparent,
+    0 0 0 2px color-mix(in srgb, var(--color-primary) 25%, transparent) !important;
+  border-color: transparent !important;
+}
+
+/* el-select 内部嵌套了 .el-input__wrapper(承载占位/输入框),focus 时同样会画
+   1px inset 主色 → 视觉上变成"内深外淡"两圈。这里把内层 wrapper 的描边/阴影
+   全部清掉,只让外层 .el-select__wrapper 出焦点环。 */
+.el-select__wrapper .el-input__wrapper,
+.el-select__wrapper .el-input__wrapper:focus-within,
+.el-select__wrapper .el-input__wrapper.is-focus,
+.el-select__wrapper:focus-within .el-input__wrapper,
+.el-select__wrapper.is-focused .el-input__wrapper {
+  box-shadow: none !important;
+  outline: none !important;
+  border-color: transparent !important;
 }
 
 /* 表格行 focus(键盘 Tab 进入) */

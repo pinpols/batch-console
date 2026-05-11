@@ -349,17 +349,23 @@ export function applyApiInterceptors(client: AxiosInstance): void {
           localStorage.removeItem('token')
           window.location.href = '/login'
         } else if (cfg && !cfg._refreshAttempted) {
-          // 业务接口 401:先静默 refresh 一次,成功则 retry 原请求,失败再提示。
-          // _refreshAttempted 标记避免无限循环;并发多 401 经 refreshInFlight 去重。
+          // 业务接口 401:先静默 refresh 一次,成功则 retry 原请求。
+          // refresh 失败 ≠ session 一定过期(可能是后端 RBAC 不足、refresh 端点限流等);
+          // 真正的 session 失效由后续 /auth/me 401 路径处理,这里只 toast 不踢人,
+          // 避免单个权限不足的接口把整个会话清掉(典型如 SchedulerSnapshot:
+          // 后端 @PreAuthorize 比路由 minRole 严)。
           cfg._refreshAttempted = true
           const newToken = await tryRefreshToken(client)
           if (newToken) {
             // 用新 token 重发(请求拦截器会从 localStorage 拿最新值)
             return client.request(cfg)
           }
-          // refresh 失败:session 真没了,清 token 跳登录(跟 /auth/me 401 同一处理)
-          localStorage.removeItem('token')
-          window.location.href = '/login'
+          const msg = extractHttpErrorMessage(error) || '该操作未授权'
+          showErrorToast({
+            title: '未授权',
+            message: msg,
+            traceId: extractErrorTrace(error),
+          })
         } else {
           // 已尝试过 refresh 仍 401:权限真不够 / 接口 RBAC 限制,不登出,toast 提示
           const msg = extractHttpErrorMessage(error) || '该操作未授权'

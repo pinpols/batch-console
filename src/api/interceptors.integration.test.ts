@@ -167,10 +167,11 @@ describe('401 分级处理:业务 401 不登出', () => {
     expect((window as { location: { href: string } }).location.href).toBe('/login')
   })
 
-  it('/api/console/ops/triggers 401 → 静默 refresh,refresh 也 401 → 跳 /login', async () => {
+  it('/api/console/ops/triggers 401 → 静默 refresh,refresh 也 401 → 保留 token,toast 提示(不踢出)', async () => {
     ;(window as { location: { href: string } }).location.href = '/'
     const client = makeClient()
-    // 业务接口和 /auth/token 都 401:走"refresh 也失败 → 视为 session 真过期"分支
+    // 业务接口和 /auth/token 都 401:不再视为 session 真过期(可能只是 RBAC 不足),
+    // 保留 token 让用户停在原页,由 toast 提示。session 真过期由 /auth/me 路径兜底。
     client.defaults.adapter = (async (cfg: { url?: string }) => {
       const url = cfg.url ?? ''
       if (url.includes('/api/console/auth/token') || url.includes('/api/console/ops/triggers')) {
@@ -189,8 +190,8 @@ describe('401 分级处理:业务 401 不登出', () => {
       throw new Error('Unexpected URL ' + url)
     }) as never
     await expect(client.get('/api/console/ops/triggers')).rejects.toThrow()
-    expect(storage.get('token')).toBeUndefined()
-    expect((window as { location: { href: string } }).location.href).toBe('/login')
+    expect(storage.get('token')).toBe('dev.test.token')
+    expect((window as { location: { href: string } }).location.href).toBe('/')
   })
 
   it('/api/console/ops/triggers 401 → refresh 成功 → 用新 token retry 原请求成功', async () => {
