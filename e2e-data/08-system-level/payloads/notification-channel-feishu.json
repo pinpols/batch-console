@@ -1,0 +1,8 @@
+{
+  "_doc": "POST /api/console/notifications/channels?tenantId=system — config 是 JSON string,不是 object。",
+  "channelCode": "test-channel-feishu",
+  "channelName": "测试飞书机器人",
+  "channelType": "FEISHU",
+  "config": "{\"webhookUrl\":\"https://open.feishu.cn/open-apis/bot/v2/hook/test-token\",\"secret\":\"test-feishu-secret\"}",
+  "enabled": true
+}

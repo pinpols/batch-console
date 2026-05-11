@@ -1,0 +1,9 @@
+{
+  "_doc": "PUT /api/console/ops/archive-policies?tenantId=system — body 见 src/api/ops.ts:{ targetTable, retentionDays, archiveEnabled, cleanupEnabled, batchSize, description? }。**单条**更新一个 policy,批量需循环调用。",
+  "targetTable": "job_instance",
+  "retentionDays": 90,
+  "archiveEnabled": true,
+  "cleanupEnabled": true,
+  "batchSize": 500,
+  "description": "E2E 测试 — 调整 job_instance 归档保留 90 天"
+}

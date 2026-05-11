@@ -1,0 +1,8 @@
+{
+  "_doc": "POST /api/console/self-service/jobs/rerun-request — body 见 src/api/selfServiceJobs.ts:{ tenantId, jobCode, bizDate, targetInstanceNo?, reason? }",
+  "tenantId": "ta",
+  "jobCode": "TA_INC_ORDER_AGG",
+  "bizDate": "2026-05-01",
+  "targetInstanceNo": "e2e-success-1",
+  "reason": "数据源订正,需要补跑当日订单聚合"
+}

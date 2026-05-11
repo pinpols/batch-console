@@ -1,0 +1,7 @@
+{
+  "_doc": "POST /api/console/config/releases/{releaseId}/gray — body 见 src/api/configReleases.ts:{ tenantId, operatorId?, reason?, grayScopeJson? }。grayScopeJson 是 JSON string 描述灰度范围。",
+  "tenantId": "ta",
+  "operatorId": "e2e-tester",
+  "reason": "E2E 灰度 10% 到 ta",
+  "grayScopeJson": "{\"strategy\":\"percentage\",\"percentage\":10}"
+}

@@ -1,0 +1,31 @@
+{
+  "_doc": "POST /api/console/config/tenant-init — 把 spec(默认 default-tenant 完整 JSON 配置)初始化到 targetTenantIds。configTypes 留空 = 全部类型。",
+  "targetTenantIds": ["td"],
+  "configTypes": [
+    "RESOURCE_QUEUE",
+    "BUSINESS_CALENDAR",
+    "BATCH_WINDOW",
+    "FILE_TEMPLATE",
+    "FILE_CHANNEL",
+    "JOB_DEFINITION",
+    "PIPELINE_DEFINITION",
+    "WORKFLOW_DEFINITION",
+    "QUOTA_POLICY",
+    "ALERT_ROUTING"
+  ],
+  "mode": "SKIP_EXISTING",
+  "dryRun": false,
+  "spec": {
+    "_doc": "实际值由 source-export 派生:GET /api/console/config/sync/export?tenantId=default-tenant 取出后整段塞进 spec",
+    "jobDefinitions": [],
+    "workflowDefinitions": [],
+    "pipelineDefinitions": [],
+    "fileChannels": [],
+    "fileTemplates": [],
+    "resourceQueues": [],
+    "batchWindows": [],
+    "businessCalendars": [],
+    "quotaPolicies": [],
+    "alertRoutings": []
+  }
+}

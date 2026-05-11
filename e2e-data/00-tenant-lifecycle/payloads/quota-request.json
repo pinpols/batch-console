@@ -1,0 +1,8 @@
+{
+  "_doc": "POST /api/console/tenants/quota/request — 普通用户(OPERATOR)在自助服务申请提额。Header X-Tenant-Id: ta。",
+  "category": "JOB_PARALLEL",
+  "currentLimit": 10,
+  "requestedLimit": 50,
+  "reason": "月底批量结算高峰需要提升并发",
+  "expectedDuration": "PERMANENT"
+}

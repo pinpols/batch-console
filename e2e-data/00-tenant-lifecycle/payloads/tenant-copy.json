@@ -1,0 +1,8 @@
+{
+  "_doc": "POST /api/console/config/tenant-copy — 把 sourceTenantId 的配置复制到 targetTenantIds。",
+  "sourceTenantId": "ta",
+  "targetTenantIds": ["th"],
+  "configTypes": ["JOB_DEFINITION", "RESOURCE_QUEUE", "FILE_TEMPLATE"],
+  "mode": "UPSERT",
+  "dryRun": false
+}

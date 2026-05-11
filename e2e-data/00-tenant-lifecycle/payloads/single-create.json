@@ -1,0 +1,8 @@
+{
+  "_doc": "POST /api/console/tenants — 单个新增。Header 必带 X-Tenant-Id: system + admin token。",
+  "tenantId": "td",
+  "tenantName": "测试租户 D",
+  "description": "FE 写接口测试-单租户新增样本",
+  "username": "op-td",
+  "password": "TestOp@2026Td"
+}

@@ -1,0 +1,6 @@
+{
+  "_doc": "POST /api/console/tenants/quota/request?tenantId=ta — body 见 src/api/tenantSelfService.ts:{ field, requestedValue (number), reason }",
+  "field": "maxConcurrentJobs",
+  "requestedValue": 50,
+  "reason": "月底批量结算高峰,需要提升并发承载"
+}

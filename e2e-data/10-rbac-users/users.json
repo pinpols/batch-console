@@ -1,0 +1,50 @@
+{
+  "_doc": "RBAC 测试用户矩阵(在 system 租户用 admin token 创建)。密码 ≥ 12 位。",
+  "users": [
+    {
+      "username": "test-op-ta",
+      "displayName": "OP for ta",
+      "password": "TestOp@2026taX",
+      "tenantId": "ta",
+      "role": "OPERATOR",
+      "email": "op-ta@test.local",
+      "purpose": "测自助 + 写操作权限"
+    },
+    {
+      "username": "test-viewer-ta",
+      "displayName": "Viewer for ta",
+      "password": "TestVi@2026taX",
+      "tenantId": "ta",
+      "role": "VIEWER",
+      "email": "viewer-ta@test.local",
+      "purpose": "测只读 + 写按钮被禁"
+    },
+    {
+      "username": "test-tu-ta",
+      "displayName": "TenantUser for ta",
+      "password": "TestTu@2026taX",
+      "tenantId": "ta",
+      "role": "TENANT_USER",
+      "email": "tu-ta@test.local",
+      "purpose": "测纯业务用户,只能进 /self-service / /files/list"
+    },
+    {
+      "username": "test-auditor",
+      "displayName": "Auditor",
+      "password": "TestAu@2026sysX",
+      "tenantId": "system",
+      "role": "AUDITOR",
+      "email": "auditor@test.local",
+      "purpose": "测审计页可见,写操作禁"
+    },
+    {
+      "username": "test-cfg-admin",
+      "displayName": "Config Admin",
+      "password": "TestCf@2026sysX",
+      "tenantId": "system",
+      "role": "CONFIG_ADMIN",
+      "email": "cfg-admin@test.local",
+      "purpose": "测配置发布审批权"
+    }
+  ]
+}

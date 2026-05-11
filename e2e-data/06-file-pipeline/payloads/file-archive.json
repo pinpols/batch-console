@@ -1,0 +1,6 @@
+{
+  "_doc": "POST /api/console/files/archive — body 见 src/api/file.ts:{ tenantId, fileId (number, 单个), reason? }",
+  "tenantId": "ta",
+  "fileId": 1003,
+  "reason": "已超期,归档释放热存储"
+}
