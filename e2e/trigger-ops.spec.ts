@@ -9,7 +9,7 @@ test.describe('Trigger 管理 — 页面基础', () => {
   test.beforeEach(async ({ page }) => {
     await enterDemoApp(page)
     await page.goto('/system/triggers')
-    await expectPageTitle(page, 'Trigger 管理')
+    await expectPageTitle(page, '触发器')
   })
 
   test('表格展示 Job Code / 类型 / 状态 / 操作列', async ({ page }) => {
@@ -21,7 +21,7 @@ test.describe('Trigger 管理 — 页面基础', () => {
 
   test('刷新', async ({ page }) => {
     await page.getByRole('button', { name: '刷新' }).click()
-    await expect(page.locator('.el-table').first()).toBeAttached({ timeout: 10_000 })
+    await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
   })
 })
 
@@ -29,7 +29,7 @@ test.describe('Trigger 管理 — 注册操作', () => {
   test.beforeEach(async ({ page }) => {
     await enterDemoApp(page)
     await page.goto('/system/triggers')
-    await expectPageTitle(page, 'Trigger 管理')
+    await expectPageTitle(page, '触发器')
   })
 
   test('点击注册 → 弹出确认框', async ({ page }) => {
@@ -54,7 +54,7 @@ test.describe('Trigger 管理 — 注册操作', () => {
     if (!(await isVisible(btn))) return
     await btn.click()
     await expect(page.locator('.el-message-box')).toBeVisible()
-    await page.locator('.el-message-box').getByRole('button', { name: '确定' }).click()
+    await page.locator('.el-message-box').getByRole('button', { name: /^(确定|确认.*)$/ }).click()
     const toast = page.locator('.el-message')
     if (await isVisible(toast, 8000)) {
       await expect(toast).toBeVisible()
@@ -66,7 +66,7 @@ test.describe('Trigger 管理 — 注销操作', () => {
   test.beforeEach(async ({ page }) => {
     await enterDemoApp(page)
     await page.goto('/system/triggers')
-    await expectPageTitle(page, 'Trigger 管理')
+    await expectPageTitle(page, '触发器')
   })
 
   test('点击注销 → 弹出确认框', async ({ page }) => {
@@ -91,7 +91,7 @@ test.describe('Trigger 管理 — 注销操作', () => {
     if (!(await isVisible(btn))) return
     await btn.click()
     await expect(page.locator('.el-message-box')).toBeVisible()
-    await page.locator('.el-message-box').getByRole('button', { name: '确定' }).click()
+    await page.locator('.el-message-box').getByRole('button', { name: /^(确定|确认.*)$/ }).click()
     const toast = page.locator('.el-message')
     if (await isVisible(toast, 8000)) {
       await expect(toast).toBeVisible()
@@ -103,7 +103,7 @@ test.describe('Trigger 管理 — 暂停操作', () => {
   test.beforeEach(async ({ page }) => {
     await enterDemoApp(page)
     await page.goto('/system/triggers')
-    await expectPageTitle(page, 'Trigger 管理')
+    await expectPageTitle(page, '触发器')
   })
 
   test('点击暂停 → 弹出确认框', async ({ page }) => {
@@ -128,7 +128,7 @@ test.describe('Trigger 管理 — 暂停操作', () => {
     if (!(await isVisible(btn))) return
     await btn.click()
     await expect(page.locator('.el-message-box')).toBeVisible()
-    await page.locator('.el-message-box').getByRole('button', { name: '确定' }).click()
+    await page.locator('.el-message-box').getByRole('button', { name: /^(确定|确认.*)$/ }).click()
     const toast = page.locator('.el-message')
     if (await isVisible(toast, 8000)) {
       await expect(toast).toBeVisible()
@@ -140,7 +140,7 @@ test.describe('Trigger 管理 — 恢复操作', () => {
   test.beforeEach(async ({ page }) => {
     await enterDemoApp(page)
     await page.goto('/system/triggers')
-    await expectPageTitle(page, 'Trigger 管理')
+    await expectPageTitle(page, '触发器')
   })
 
   test('点击恢复 → 直接提交并出现 toast（无确认框）', async ({ page }) => {

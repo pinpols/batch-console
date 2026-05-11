@@ -10,7 +10,7 @@ test.describe('标签管理 — 标签查询', () => {
     await enterDemoApp(page)
     await page.goto('/system/tags')
     await expectPageTitle(page, '标签管理')
-    await expect(page.getByRole('tab', { name: '标签查询' })).toHaveClass(/is-active/)
+    await expect(page.getByRole('tab', { name: '资源标签' })).toHaveClass(/is-active/)
   })
 
   test('资源类型选择 → 查询', async ({ page }) => {
@@ -23,8 +23,8 @@ test.describe('标签管理 — 标签查询', () => {
     const opt = page.locator('.el-select-dropdown__item').first()
     if (await isVisible(opt, 2000)) {
       await opt.click()
-      await page.getByRole('button', { name: '查询' }).click()
-      await expect(page.locator('.el-table').first()).toBeAttached({ timeout: 10_000 })
+      await page.locator('.el-tab-pane:visible').getByRole('button', { name: '查询' }).first().click()
+      await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
     }
   })
 
@@ -35,16 +35,16 @@ test.describe('标签管理 — 标签查询', () => {
       .getByRole('textbox')
     if (!(await isVisible(codeInput, 2000))) return
     await codeInput.fill('test-resource')
-    await page.getByRole('button', { name: '查询' }).click()
-    await expect(page.locator('.el-table').first()).toBeAttached({ timeout: 10_000 })
+    await page.locator('.el-tab-pane:visible').getByRole('button', { name: '查询' }).first().click()
+    await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
   })
 
   test('Tag Key 输入 → 查询', async ({ page }) => {
     const keyInput = page.getByPlaceholder('Tag Key').first()
     if (!(await isVisible(keyInput, 2000))) return
     await keyInput.fill('env')
-    await page.getByRole('button', { name: '查询' }).click()
-    await expect(page.locator('.el-table').first()).toBeAttached({ timeout: 10_000 })
+    await page.locator('.el-tab-pane:visible').getByRole('button', { name: '查询' }).first().click()
+    await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
   })
 
   test('重置清空筛选条件', async ({ page }) => {
@@ -57,7 +57,7 @@ test.describe('标签管理 — 标签查询', () => {
 
   test('刷新', async ({ page }) => {
     await page.getByRole('button', { name: '刷新' }).click()
-    await expect(page.locator('.el-table').first()).toBeAttached({ timeout: 10_000 })
+    await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
   })
 })
 
@@ -74,8 +74,8 @@ test.describe('标签管理 — 按标签搜索', () => {
     const keyInput = page.getByPlaceholder('Tag Key').first()
     if (!(await isVisible(keyInput, 2000))) return
     await keyInput.fill('env')
-    await page.getByRole('button', { name: '搜索' }).click()
-    await expect(page.locator('.el-table').first()).toBeAttached({ timeout: 10_000 })
+    await page.locator('.el-tab-pane:visible').getByRole('button', { name: '查询' }).first().click()
+    await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
   })
 
   test('Tag Key + Tag Value 联合搜索', async ({ page }) => {
@@ -84,27 +84,27 @@ test.describe('标签管理 — 按标签搜索', () => {
     if (!(await isVisible(keyInput, 2000))) return
     await keyInput.fill('env')
     if (await isVisible(valueInput, 1000)) await valueInput.fill('prod')
-    await page.getByRole('button', { name: '搜索' }).click()
-    await expect(page.locator('.el-table').first()).toBeAttached({ timeout: 10_000 })
+    await page.locator('.el-tab-pane:visible').getByRole('button', { name: '查询' }).first().click()
+    await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
   })
 
   test('搜索结果刷新', async ({ page }) => {
-    await page.getByRole('button', { name: '搜索' }).click()
-    await expect(page.locator('.el-table').first()).toBeAttached({ timeout: 10_000 })
+    await page.locator('.el-tab-pane:visible').getByRole('button', { name: '查询' }).first().click()
+    await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
   })
 })
 
-test.describe('标签管理 — 已注册 Key', () => {
+// "已注册 Key" 已从 tab 降为 TagSearchTab 内的 sub-section,
+// 进入"按标签搜索"tab 后可见,不再是独立 tab。
+test.describe('标签管理 — 已注册 Key sub-section', () => {
   test.beforeEach(async ({ page }) => {
     await enterDemoApp(page)
     await page.goto('/system/tags')
     await expectPageTitle(page, '标签管理')
-    await page.getByRole('tab', { name: '已注册 Key' }).click()
-    await expect(page.getByRole('tab', { name: '已注册 Key' })).toHaveClass(/is-active/)
+    await page.getByRole('tab', { name: '按标签搜索' }).click()
   })
 
-  test('刷新后 Key 列表加载', async ({ page }) => {
-    await page.getByRole('button', { name: '刷新' }).click()
-    await expect(page.locator('.el-table').first()).toBeAttached({ timeout: 10_000 })
+  test('已注册 Key sub-section 在按标签搜索 tab 内可见', async ({ page }) => {
+    await expect(page.getByText('已注册 Key').first()).toBeVisible({ timeout: 8000 })
   })
 })

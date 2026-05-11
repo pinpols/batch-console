@@ -8,7 +8,7 @@ test.describe('tenant management (租户管理)', () => {
 
   test('租户列表可打开并展示表格与操作列', async ({ page }) => {
     await page.goto('/system/tenants')
-    await expectPageTitle(page, '租户管理')
+    await expectPageTitle(page, '租户实例')
     await expect(page.getByRole('button', { name: '刷新' }).first()).toBeVisible()
     await expect(page.getByRole('columnheader', { name: 'tenantId' })).toBeVisible()
   })
@@ -21,7 +21,7 @@ test.describe('user accounts (用户账户)', () => {
 
   test('用户账户列表可打开并展示表格', async ({ page }) => {
     await page.goto('/system/user-accounts')
-    await expectPageTitle(page, '用户账户')
+    await expectPageTitle(page, '登录账户')
     await expect(page.getByRole('button', { name: '刷新' }).first()).toBeVisible()
   })
 })
@@ -33,7 +33,7 @@ test.describe('user role (用户 & 角色)', () => {
 
   test('用户 & 角色页面可打开', async ({ page }) => {
     await page.goto('/system/users')
-    await expectPageTitle(page, '用户 & 角色')
+    await expectPageTitle(page, '权限自查')
   })
 })
 
@@ -44,7 +44,7 @@ test.describe('API key management (API Key 管理)', () => {
 
   test('API Key 页面可打开并展示表格与操作列', async ({ page }) => {
     await page.goto('/system/api-keys')
-    await expectPageTitle(page, 'API Key 管理')
+    await expectPageTitle(page, 'API Key')
     await expect(page.getByRole('button', { name: '刷新' })).toBeVisible()
     await expect(page.getByRole('columnheader', { name: '操作' })).toBeVisible()
   })
@@ -57,7 +57,7 @@ test.describe('trigger management (Trigger 管理)', () => {
 
   test('Trigger 列表可打开并展示表格', async ({ page }) => {
     await page.goto('/system/triggers')
-    await expectPageTitle(page, 'Trigger 管理')
+    await expectPageTitle(page, '触发器')
     await expect(page.getByRole('button', { name: '刷新' })).toBeVisible()
     await expect(page.getByRole('columnheader', { name: '状态' })).toBeVisible()
   })

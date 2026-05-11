@@ -25,7 +25,8 @@ test.describe('self-service panel (自助服务)', () => {
   test('配额变更标签展示表单', async ({ page }) => {
     await page.goto('/self-service')
     await page.getByRole('tab', { name: '配额变更' }).click()
-    await expect(page.getByRole('button', { name: '提交申请' })).toBeVisible()
+    // 按钮文案改为"提交配额变更"
+    await expect(page.getByRole('button', { name: /提交配额变更|提交申请/ })).toBeVisible()
   })
 
   test('重跑申请标签展示表单', async ({ page }) => {

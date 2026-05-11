@@ -42,7 +42,7 @@ test.describe('dashboard metric card navigation (指标卡片跳转)', () => {
     await page.goto('/ops/summary')
     await page.locator('.metric-hit', { hasText: '在线 Worker' }).click()
     await expect(page).toHaveURL(/\/workers\/management/)
-    await expectPageTitle(page, 'Worker 管理')
+    await expectPageTitle(page, 'Worker')
   })
 
   test('点击 Outbox 重试积压卡片跳转到 Outbox', async ({ page }) => {
@@ -149,7 +149,7 @@ test.describe('query parameter pre-fill (查询参数预填)', () => {
 
   test('Job Instance 列表通过 status 参数预填筛选条件', async ({ page }) => {
     await page.goto('/monitor/job-instances?status=FAILED')
-    await expectPageTitle(page, 'Job Instance 列表')
+    await expectPageTitle(page, '作业运行')
     // 状态筛选应已选中 FAILED
     const statusSelect = page.locator('.el-form-item').filter({ hasText: '状态' }).locator('.el-select')
     await expect(statusSelect).toContainText('FAILED', { timeout: 10_000 })
@@ -157,7 +157,7 @@ test.describe('query parameter pre-fill (查询参数预填)', () => {
 
   test('Job Instance 列表通过 jobCode 参数预填筛选条件', async ({ page }) => {
     await page.goto('/monitor/job-instances?jobCode=DEMO_JOB')
-    await expectPageTitle(page, 'Job Instance 列表')
+    await expectPageTitle(page, '作业运行')
   })
 
   test('告警列表通过 severity 参数预填筛选条件', async ({ page }) => {
@@ -169,7 +169,7 @@ test.describe('query parameter pre-fill (查询参数预填)', () => {
 
   test('执行日志通过 traceId 参数预填搜索条件', async ({ page }) => {
     await page.goto('/logs?traceId=test-trace-123')
-    await expectPageTitle(page, /执行日志/)
+    await expectPageTitle(page, /综合查询/)
     const traceInput = page.locator('.el-form-item').filter({ hasText: /trace/i }).getByRole('textbox').first()
     await expect(traceInput).toHaveValue('test-trace-123', { timeout: 15_000 })
   })

@@ -8,7 +8,7 @@ test.describe('worker management (Worker 管理)', () => {
 
   test('Worker 管理页面可打开并展示 2 个标签页', async ({ page }) => {
     await page.goto('/workers/management')
-    await expectPageTitle(page, 'Worker 管理')
+    await expectPageTitle(page, 'Worker')
     await expect(page.getByRole('tab', { name: 'Worker 列表' })).toBeVisible()
     await expect(page.getByRole('tab', { name: '文件渠道' })).toBeVisible()
   })

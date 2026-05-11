@@ -24,7 +24,7 @@ test.describe('observability pages', () => {
 
   test('执行日志支持查询与重置', async ({ page }) => {
     await page.goto('/logs')
-    await expectPageTitle(page, /执行日志/)
+    await expectPageTitle(page, /综合查询/)
     const traceInput = page.locator('.el-form-item').filter({ hasText: /Trace/i }).getByRole('textbox')
     await traceInput.fill('trace-001')
     await page.getByRole('button', { name: '查询' }).click()

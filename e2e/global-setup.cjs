@@ -262,6 +262,12 @@ async function globalSetup(config) {
         localStorage: [
           { name: 'batch-console-tenant-id', value: 'ta' },
           { name: 'token', value: token ?? '' },
+          // 强制中文 locale,避免某些 spec 没走 enterDemoApp 时 i18n 拿到浏览器默认 en-US
+          // 见 src/constants/locale.ts:1 (LOCALE_STORAGE_KEY)
+          { name: 'batch-console:locale', value: 'zh-CN' },
+          // 关掉首次登录引导(driver.js tour),避免 overlay 拦截点击
+          // 见 src/composables/useOnboardingTour.ts:14
+          { name: 'batch-console-onboarding-done', value: '1' },
         ],
       },
     ],

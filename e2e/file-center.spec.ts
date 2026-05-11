@@ -32,7 +32,7 @@ test.describe('arrival groups (文件组到达治理)', () => {
 
   test('文件组到达治理页面可打开并展示表格', async ({ page }) => {
     await page.goto('/files/arrival-groups')
-    await expectPageTitle(page, '文件组到达治理')
+    await expectPageTitle(page, '到达组治理')
     await expect(page.getByRole('button', { name: '刷新' })).toBeVisible()
   })
 })

@@ -8,7 +8,7 @@ test.describe('quota panel (配额策略)', () => {
 
   test('配额策略可打开', async ({ page }) => {
     await page.goto('/governance/quota')
-    await expectPageTitle(page, '配额策略')
+    await expectPageTitle(page, '租户配额')
   })
 })
 
@@ -19,7 +19,7 @@ test.describe('queue config (队列 / 窗口 / 日历)', () => {
 
   test('队列 / 窗口 / 日历页面可打开并展示标签页', async ({ page }) => {
     await page.goto('/governance/queues')
-    await expectPageTitle(page, '队列 / 窗口 / 日历')
+    await expectPageTitle(page, '队列与窗口')
     await expect(page.getByRole('button', { name: '刷新' })).toBeVisible()
   })
 })
@@ -37,14 +37,15 @@ test.describe('scheduler (调度)', () => {
 
   test('批次日历日列表可打开并展示查询控件', async ({ page }) => {
     await page.goto('/scheduler/batch-days')
-    await expectPageTitle(page, '批次日历日')
+    await expectPageTitle(page, '批次日与窗口')
     await expect(page.getByText('日历').first()).toBeVisible()
     await expect(page.getByRole('button', { name: '刷新' })).toBeVisible()
   })
 
   test('Catch-up 审批页面可打开', async ({ page }) => {
+    // /scheduler/catch-up-approvals redirect 到 /approvals?tab=catch-up
     await page.goto('/scheduler/catch-up-approvals')
-    await expectPageTitle(page, 'Catch-up 审批')
+    await expectPageTitle(page, '审批中心')
   })
 })
 
@@ -67,6 +68,6 @@ test.describe('reports (报表导出)', () => {
 
   test('报表导出中心可打开', async ({ page }) => {
     await page.goto('/reports')
-    await expectPageTitle(page, /导出中心/)
+    await expectPageTitle(page, /报表中心/)
   })
 })

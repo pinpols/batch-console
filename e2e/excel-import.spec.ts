@@ -28,13 +28,10 @@ const FIXTURES = {
 
 // ─── 单域 Excel 维护 ───────────────────────────────────────────────
 
-// 只有 STANDALONE_DOMAINS 仍使用单域维护向导；
-// MERGED_DOMAINS (file-channels, workflows 等) 已迁移至合并导入
+// 只有 STANDALONE_DOMAINS 仍使用单域维护向导;其他全部合并到 tenant-package
+// 见 src/api/excelDomains.ts:27 STANDALONE_DOMAINS
 const domains = [
   { domain: 'file-templates', label: '文件模板' },
-  { domain: 'batch-windows', label: '批次窗口' },
-  { domain: 'business-calendars', label: '业务日历' },
-  { domain: 'quota-policies', label: '配额策略' },
   { domain: 'resource-queues', label: '资源队列' },
 ] as const
 
@@ -61,11 +58,11 @@ test.describe('Excel 单域维护向导', () => {
 
   test('左侧 tab 切换域时步骤重置', async ({ page }) => {
     await page.goto('/config/excel?domain=file-templates')
-    // 切换到另一个 domain tab
-    const tab = page.locator('.el-tabs__item', { hasText: '批次窗口' })
+    // 切换到另一个 domain tab(资源队列)
+    const tab = page.locator('.el-tabs__item', { hasText: '资源队列' })
     await tab.click()
     // URL 应更新
-    await expect(page).toHaveURL(/domain=batch-windows/)
+    await expect(page).toHaveURL(/domain=resource-queues/)
     // 步骤回到 0
     await expect(page.getByRole('button', { name: '开始上传' })).toBeDisabled()
   })
@@ -87,7 +84,7 @@ test.describe('合并导入 — 租户配置包', () => {
   test.beforeEach(async ({ page }) => {
     await enterDemoApp(page)
     await page.goto('/config/tenant-package')
-    await expect(page.locator('.page-header .title').first()).toHaveText(/合并导入/, { timeout: 15_000 })
+    await expect(page.locator('.page-header .title').first()).toHaveText(/配置批量导入/, { timeout: 15_000 })
   })
 
   test('页面展示三步向导与 8-Sheet 描述', async ({ page }) => {
@@ -216,7 +213,7 @@ test.describe('合并导入 — 文件选择交互', () => {
   test.beforeEach(async ({ page }) => {
     await enterDemoApp(page)
     await page.goto('/config/tenant-package')
-    await expect(page.locator('.page-header .title').first()).toHaveText(/合并导入/, { timeout: 15_000 })
+    await expect(page.locator('.page-header .title').first()).toHaveText(/配置批量导入/, { timeout: 15_000 })
   })
 
   test('选择文件后「开始上传」按钮变为可用', async ({ page }) => {
@@ -240,7 +237,7 @@ test.describe('合并导入 — 完整上传链路（依赖后端）', () => {
     test.skip(!fs.existsSync(FIXTURES.seedA), '种子文件不存在，跳过上传链路')
     await enterDemoApp(page)
     await page.goto('/config/tenant-package')
-    await expect(page.locator('.page-header .title').first()).toHaveText(/合并导入/, { timeout: 15_000 })
+    await expect(page.locator('.page-header .title').first()).toHaveText(/配置批量导入/, { timeout: 15_000 })
   })
 
   test('上传 → uploadToken 出现 → 进入预览步骤', async ({ page }) => {

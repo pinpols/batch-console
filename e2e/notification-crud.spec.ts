@@ -14,15 +14,17 @@ test.describe('notification channel CRUD (通知渠道增删改)', () => {
     await expect(page.getByRole('tab', { name: '通知渠道' })).toHaveClass(/is-active/)
 
     // —— 新增 ——
-    await page.getByRole('button', { name: /新增渠道/ }).click()
+    // tab 内"新增"按钮(NotificationChannelsTab 用 prepend 插槽)
+    await page.locator('.el-tab-pane:visible').getByRole('button', { name: /^新增$/ }).first().click()
     await expect(page.getByText('新增渠道').first()).toBeVisible()
     await page.getByLabel('编码').fill(uniqueCode)
     await page.getByLabel('名称').fill('E2E 测试渠道')
-    // 填写"类型"下拉（如果存在）
-    const typeSelect = page.getByLabel('类型').or(page.locator('.el-form-item').filter({ hasText: '类型' }).locator('.el-select')).first()
+    // 填写"类型"下拉（在 dialog 内,避免多个 select 干扰）
+    const typeSelect = page.locator('.el-dialog').locator('.el-form-item').filter({ hasText: '类型' }).locator('.el-select').first()
     if (await isVisible(typeSelect, 2000)) {
       await typeSelect.click()
-      await page.locator('.el-select-dropdown__item').first().click()
+      // 只匹配 visible 的 dropdown 项,跳过其它隐藏 select 残留的 dropdown
+      await page.locator('.el-select-dropdown:visible .el-select-dropdown__item').first().click()
     }
     await page.getByRole('button', { name: '保存' }).click()
     // 保存可能因缺少必填字段失败，检查对话框是否关闭
@@ -66,7 +68,7 @@ test.describe('subscription rule CRUD (订阅规则增删改)', () => {
   })
 
   test('新增规则对话框可打开并填写', async ({ page }) => {
-    await page.getByRole('button', { name: /新增规则/ }).click()
+    await page.locator('.el-tab-pane:visible').getByRole('button', { name: /^新增$/ }).first().click()
     await expect(page.getByText('新增规则').first()).toBeVisible()
     await page.getByLabel('名称').fill('E2E 测试规则')
     await page.getByLabel('事件类型').fill('JOB_FAILED,JOB_TIMEOUT')
@@ -85,10 +87,11 @@ test.describe('webhook CRUD (Webhook 增删改)', () => {
   })
 
   test('新增 Webhook 对话框可打开并填写', async ({ page }) => {
-    await page.getByRole('button', { name: /新增/ }).click()
+    await page.locator('.el-tab-pane:visible').getByRole('button', { name: /^新增$/ }).first().click()
     await expect(page.getByText(/新增 Webhook/).first()).toBeVisible()
-    await page.getByLabel('URL').fill('https://example.com/hook')
-    await page.getByLabel('事件类型').fill('JOB_COMPLETED')
+    // dialog 内的 URL input(避免与外面"搜索 URL / 事件类型"列表筛选 input 重名)
+    await page.locator('.el-dialog').getByLabel('URL').first().fill('https://example.com/hook')
+    await page.locator('.el-dialog').getByLabel('事件类型').first().fill('JOB_COMPLETED')
     await expect(page.getByRole('button', { name: '保存' })).toBeVisible()
     await page.getByRole('button', { name: '取消' }).click()
   })

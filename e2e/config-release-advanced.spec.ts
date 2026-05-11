@@ -5,7 +5,7 @@ test.describe('config release dependency & diff (配置发布依赖与对比)', 
   test.beforeEach(async ({ page }) => {
     await enterDemoApp(page)
     await page.goto('/config/releases')
-    await expectPageTitle(page, '配置发布')
+    await expectPageTitle(page, '发布管理')
   })
 
   test('操作列展示依赖和对比按钮', async ({ page }) => {
