@@ -1533,6 +1533,11 @@ const messages: Messages = {
     rerunConfirmText: 'About to rerun {no} (requires jobCode and bizDate). Continue?',
     rerunConfirmTitle: 'Confirm rerun',
     rerunSuccess: 'Rerun dispatched: {no}',
+    rerunSuccessTitle: 'Rerun dispatched',
+    rerunSuccessMessage:
+      'A fresh instance of {code} has been triggered (from {no}). It will appear in the monitor list — track it there.',
+    rerunGoList: 'Go to monitor',
+    rerunStay: 'Stay here',
     instanceCancelText: 'Cancel run {no}?',
     instanceCancelTitle: 'Confirm cancel',
     instanceCanceled: 'Cancelled run {no}',
