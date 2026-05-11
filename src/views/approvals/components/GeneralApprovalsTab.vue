@@ -108,7 +108,14 @@
       :label="t('approvals.colTargetId')"
       min-width="180"
       show-overflow-tooltip
-    />
+    >
+      <template #default="{ row }">
+        <router-link v-if="targetLink(row)" class="cell-link" :to="targetLink(row) || ''">
+          {{ row.targetId }}
+        </router-link>
+        <span v-else>{{ row.targetId || '—' }}</span>
+      </template>
+    </el-table-column>
     <el-table-column
       prop="requesterId"
       :label="t('approvals.colRequester')"
@@ -175,6 +182,28 @@
     if (!value) return ''
     const key = `enum.approvalType.${value}`
     return te(key) ? t(key) : value
+  }
+
+  /**
+   * targetId 跳到对应实体详情:
+   * JOB_RERUN → /monitor/job-instances/{id}
+   * CONFIG_RELEASE → /config/releases?id={id}(配置发布列表过滤)
+   * 其余类型返回空,展示纯文本。
+   */
+  function targetLink(row: { approvalType?: string; targetId?: string }): string | null {
+    if (!row?.targetId) return null
+    const id = String(row.targetId)
+    switch (row.approvalType) {
+      case 'JOB_RERUN':
+        // BE targetId 可能是 instanceNo 或数字 ID;数字直接跳详情,字符串跳列表过滤
+        return /^\d+$/.test(id)
+          ? `/monitor/job-instances/${id}`
+          : `/monitor/job-instances?instanceNo=${encodeURIComponent(id)}`
+      case 'CONFIG_RELEASE':
+        return `/config/releases?id=${encodeURIComponent(id)}`
+      default:
+        return null
+    }
   }
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { batchApprove, batchReject, approveOne, queryApprovals, rejectOne } from '@/api/approvals'

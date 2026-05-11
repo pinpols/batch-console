@@ -225,7 +225,10 @@
   const { t } = useI18n({ useScope: 'global' })
   import { confirmDanger } from '@/composables/useDangerConfirm'
   import { useQueryClient } from '@tanstack/vue-query'
+  import { useRoute } from 'vue-router'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
+
+  const route = useRoute()
   import { useListLoadState } from '@/composables/useListLoadState'
   import { useSseAutoReload } from '@/composables/useSseAutoReload'
   import { useWorkers } from '@/composables/queries/useWorkers'
@@ -280,7 +283,12 @@
     runRefresh: runWorkerRefresh,
   } = useListFilterFeedback(workerIsPending)
 
-  const workerFilters = reactive({ workerGroup: '', status: '', keyword: '' })
+  // 接受 ?workerCode / ?status / ?group 深链(从其他页或邮件跳入时自动过滤)
+  const workerFilters = reactive({
+    workerGroup: (route.query.group as string) || '',
+    status: (route.query.status as string) || '',
+    keyword: (route.query.workerCode as string) || '',
+  })
 
   const workerGroupOptions = computed(() => {
     const api = workerGroupMeta.value ?? []

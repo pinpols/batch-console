@@ -80,7 +80,18 @@
           :label="t('monitor.partColWorker')"
           width="140"
           show-overflow-tooltip
-        />
+        >
+          <template #default="{ row }">
+            <router-link
+              v-if="row.workerCode"
+              class="cell-link"
+              :to="`/workers/management?workerCode=${row.workerCode}`"
+            >
+              {{ row.workerCode }}
+            </router-link>
+            <span v-else class="cell-empty">—</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="retryCount" :label="t('monitor.partColRetry')" width="70" />
         <DatetimeColumn prop="leaseExpireAt" :label="t('monitor.partColLeaseExpire')" width="160" />
         <DatetimeColumn prop="startedAt" :label="t('monitor.partColStarted')" width="160" />
