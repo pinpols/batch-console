@@ -5,35 +5,40 @@
       <div class="excel-wizard">
         <div class="excel-wizard__steps-shell">
           <el-steps :active="step" finish-status="success" align-center class="excel-wizard__steps">
-            <el-step title="上传" description="选择并提交文件" />
-            <el-step title="预览" description="校验与汇总" />
-            <el-step title="应用" description="写入配置" />
+            <el-step
+              :title="t('excelMaintenanceWizard.stepUpload')"
+              :description="t('excelMaintenanceWizard.stepUploadDesc')"
+            />
+            <el-step
+              :title="t('excelMaintenanceWizard.stepPreview')"
+              :description="t('excelMaintenanceWizard.stepPreviewDesc')"
+            />
+            <el-step
+              :title="t('excelMaintenanceWizard.stepApply')"
+              :description="t('excelMaintenanceWizard.stepApplyDesc')"
+            />
           </el-steps>
         </div>
 
         <div class="excel-wizard__body">
-          <!-- Step 0: Upload -->
           <div
             v-show="step === 0"
             class="excel-wizard__panel"
             v-loading="upLoading"
-            element-loading-text="正在上传文件..."
+            :element-loading-text="t('excelMaintenanceWizard.uploadingFile')"
           >
             <div class="upload-zone">
               <el-icon class="upload-zone__icon" :size="36"><Upload /></el-icon>
-              <p class="upload-zone__title">上传租户配置包 Excel</p>
-              <p class="upload-zone__desc">
-                8-Sheet 格式（job_definition / file_channel / alert_routing / pipeline /
-                workflow_definition …）。上传成功后可进入预览校验。
-              </p>
+              <p class="upload-zone__title">{{ t('tenantPackageImportWizard.uploadTitle') }}</p>
+              <p class="upload-zone__desc">{{ t('tenantPackageImportWizard.uploadDesc') }}</p>
               <div class="upload-zone__toolbar">
                 <div class="upload-zone__toolbar-left">
                   <el-button link type="primary" :loading="tplLoading" @click="doDownloadTemplate">
-                    下载配置包模板
+                    {{ t('tenantPackageImportWizard.btnDownloadTemplate') }}
                   </el-button>
                   <span class="upload-zone__toolbar-dot" aria-hidden="true">•</span>
                   <el-button link type="primary" :loading="exportLoading" @click="doExport">
-                    导出当前配置包
+                    {{ t('tenantPackageImportWizard.btnExportCurrent') }}
                   </el-button>
                 </div>
                 <div class="upload-zone__toolbar-right">
@@ -44,7 +49,7 @@
                     :show-file-list="false"
                   >
                     <el-button class="upload-zone__ghost-btn" type="primary" plain size="large">
-                      选择文件
+                      {{ t('excelMaintenanceWizard.btnPickFile') }}
                     </el-button>
                   </el-upload>
                   <el-button
@@ -55,7 +60,7 @@
                     size="large"
                     @click="doUpload"
                   >
-                    开始上传
+                    {{ t('excelMaintenanceWizard.btnStartUpload') }}
                   </el-button>
                 </div>
               </div>
@@ -72,25 +77,26 @@
               :closable="false"
               show-icon
             >
-              <template #title>上传成功</template>
+              <template #title>{{ t('excelMaintenanceWizard.uploadSuccess') }}</template>
               <div class="excel-wizard__token-label">uploadToken</div>
               <pre class="excel-wizard__token-code">{{ uploadToken }}</pre>
             </el-alert>
           </div>
 
-          <!-- Step 1: Preview -->
           <div
             v-show="step === 1"
             class="excel-wizard__panel excel-wizard__panel--wide"
             v-loading="pvLoading"
-            element-loading-text="正在拉取预览数据..."
+            :element-loading-text="t('excelMaintenanceWizard.fetchingPreview')"
           >
             <p v-if="!uploadToken" class="excel-wizard__mute-hint">
-              请先在「上传」步骤完成文件提交。
+              {{ t('excelMaintenanceWizard.needUploadFirst') }}
             </p>
             <template v-else>
               <div class="excel-wizard__panel-head">
-                <h3 class="excel-wizard__panel-title">预览与校验</h3>
+                <h3 class="excel-wizard__panel-title">
+                  {{ t('excelMaintenanceWizard.panelTitlePreview') }}
+                </h3>
                 <div class="excel-wizard__panel-actions">
                   <el-button
                     type="primary"
@@ -98,10 +104,10 @@
                     :loading="pvLoading"
                     @click="doPreview"
                   >
-                    拉取预览
+                    {{ t('excelMaintenanceWizard.btnFetchPreview') }}
                   </el-button>
                   <el-tooltip
-                    content="下载服务端生成的带逐格错误注释的 Excel，可在本地修正后重新上传"
+                    :content="t('excelMaintenanceWizard.annotatedTooltip')"
                     placement="top"
                   >
                     <el-button
@@ -109,7 +115,7 @@
                       :loading="wbLoading"
                       @click="doDownloadWorkbook"
                     >
-                      下载带注释预览
+                      {{ t('excelMaintenanceWizard.btnDownloadAnnotated') }}
                     </el-button>
                   </el-tooltip>
                 </div>
@@ -119,17 +125,17 @@
                 class="excel-wizard__desc"
                 :column="2"
                 border
-                title="汇总"
+                :title="t('excelMaintenanceWizard.descTitleSummary')"
               >
-                <el-descriptions-item label="totalRows">{{
-                  previewStats.total
-                }}</el-descriptions-item>
-                <el-descriptions-item label="validRows">{{
-                  previewStats.valid
-                }}</el-descriptions-item>
-                <el-descriptions-item label="invalidRows">{{
-                  previewStats.invalid
-                }}</el-descriptions-item>
+                <el-descriptions-item :label="t('excelMaintenanceWizard.descLabelTotal')">
+                  {{ previewStats.total }}
+                </el-descriptions-item>
+                <el-descriptions-item :label="t('excelMaintenanceWizard.descLabelValid')">
+                  {{ previewStats.valid }}
+                </el-descriptions-item>
+                <el-descriptions-item :label="t('excelMaintenanceWizard.descLabelInvalid')">
+                  {{ previewStats.invalid }}
+                </el-descriptions-item>
               </el-descriptions>
               <el-alert
                 v-if="previewWorkbookUrl"
@@ -139,12 +145,16 @@
                 class="excel-wizard__desc"
               >
                 <template #title>
-                  服务端已生成带注释预览：
-                  <a :href="previewWorkbookUrl" target="_blank" class="cell-link">下载 Excel</a>
+                  {{ t('excelMaintenanceWizard.annotatedReadyTitle') }}
+                  <a :href="previewWorkbookUrl" target="_blank" class="cell-link">
+                    {{ t('excelMaintenanceWizard.annotatedReadyLink') }}
+                  </a>
                 </template>
               </el-alert>
               <div v-if="issueRows.length" class="excel-wizard__table-block">
-                <div class="excel-wizard__table-caption">行级问题</div>
+                <div class="excel-wizard__table-caption">
+                  {{ t('excelMaintenanceWizard.rowIssuesCaption') }}
+                </div>
                 <el-table
                   class="wizard-stretch console-table"
                   :data="issueRows"
@@ -152,49 +162,63 @@
                   stripe
                   border
                   highlight-current-row
-                  empty-text="暂无数据"
+                  :empty-text="t('common.noData')"
                 >
-                  <el-table-column prop="sheetName" label="Sheet" width="160" />
-                  <el-table-column prop="rowNo" label="行" width="70" />
-                  <el-table-column prop="messages" label="原因" min-width="200" />
+                  <el-table-column
+                    prop="sheetName"
+                    :label="t('excelMaintenanceWizard.colSheet')"
+                    width="160"
+                  />
+                  <el-table-column
+                    prop="rowNo"
+                    :label="t('excelMaintenanceWizard.colRowNo')"
+                    width="70"
+                  />
+                  <el-table-column
+                    prop="messages"
+                    :label="t('excelMaintenanceWizard.colMessages')"
+                    min-width="200"
+                  />
                 </el-table>
               </div>
             </template>
           </div>
 
-          <!-- Step 2: Apply -->
           <div v-show="step === 2" class="excel-wizard__panel">
             <div class="apply-zone">
               <el-icon class="apply-zone__icon" :size="32"><WarningFilled /></el-icon>
-              <h3 class="apply-zone__title">确认应用</h3>
+              <h3 class="apply-zone__title">{{ t('excelMaintenanceWizard.applyTitle') }}</h3>
               <p class="apply-zone__desc">
-                将把当前 <code>uploadToken</code> 对应的 8-Sheet 预览结果
-                <strong>单事务</strong>写入租户配置。执行前请已在「预览」中确认数据无误。
+                {{ t('tenantPackageImportWizard.applyDescStart') }}
+                <code>uploadToken</code>
+                {{ t('tenantPackageImportWizard.applyDescMid') }}
+                <strong>{{ t('tenantPackageImportWizard.applyDescBold') }}</strong>
+                {{ t('tenantPackageImportWizard.applyDescEnd') }}
               </p>
               <el-button type="danger" size="large" :disabled="!uploadToken" @click="doApply">
-                确认应用变更
+                {{ t('excelMaintenanceWizard.btnApply') }}
               </el-button>
             </div>
           </div>
         </div>
 
         <div class="excel-wizard__footer">
-          <el-tooltip content="上一步" placement="top">
+          <el-tooltip :content="t('excelMaintenanceWizard.btnPrev')" placement="top">
             <button
               class="wizard-nav wizard-nav--prev"
               :disabled="step <= 0"
-              aria-label="上一步"
+              :aria-label="t('excelMaintenanceWizard.btnPrev')"
               @click="step--"
             >
               <el-icon><ArrowLeft /></el-icon>
             </button>
           </el-tooltip>
           <span class="wizard-nav__progress">{{ step + 1 }} / 3</span>
-          <el-tooltip content="下一步" placement="top">
+          <el-tooltip :content="t('excelMaintenanceWizard.btnNext')" placement="top">
             <button
               class="wizard-nav wizard-nav--next"
               :disabled="step >= 2 || (step === 0 && !uploadToken)"
-              aria-label="下一步"
+              :aria-label="t('excelMaintenanceWizard.btnNext')"
               @click="step++"
             >
               <el-icon><ArrowRight /></el-icon>
@@ -207,8 +231,11 @@
 </template>
 
 <script setup lang="ts">
+  import { useI18n } from 'vue-i18n'
   import { ArrowLeft, ArrowRight, Document, Upload, WarningFilled } from '@element-plus/icons-vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
+
+  const { t } = useI18n({ useScope: 'global' })
   import {
     tenantPackageDownloadTemplate,
     tenantPackageExport,
@@ -244,7 +271,7 @@
     try {
       const blob = await tenantPackageDownloadTemplate()
       triggerBlobDownload(blob, 'tenant-package-template.xlsx')
-      ElMessage.success('配置包模板已下载')
+      ElMessage.success(t('tenantPackageImportWizard.templateDownloadedToast'))
     } finally {
       tplLoading.value = false
     }
@@ -255,7 +282,7 @@
     try {
       const blob = await tenantPackageExport()
       triggerBlobDownload(blob, 'tenant-package-export.xlsx')
-      ElMessage.success('当前配置包已导出')
+      ElMessage.success(t('tenantPackageImportWizard.exportedToast'))
     } finally {
       exportLoading.value = false
     }
@@ -268,7 +295,7 @@
       const res = await tenantPackageUpload(file.value)
       uploadToken.value = res.uploadToken ?? ''
       if (!uploadToken.value) {
-        ElMessage.warning('响应中未找到 uploadToken，请核对后端 multipart 字段名与契约。')
+        ElMessage.warning(t('excelMaintenanceWizard.noUploadTokenWarn'))
       }
     } finally {
       upLoading.value = false
@@ -291,7 +318,7 @@
     try {
       const blob = await tenantPackageDownloadPreviewWorkbook(uploadToken.value)
       triggerBlobDownload(blob, `tenant-package-preview-${uploadToken.value}.xlsx`)
-      ElMessage.success('已下载带注释预览文件')
+      ElMessage.success(t('excelMaintenanceWizard.annotatedDownloadedToast'))
     } finally {
       wbLoading.value = false
     }
@@ -301,12 +328,12 @@
     if (!uploadToken.value) return
     try {
       await ElMessageBox.confirm(
-        '确认将 8-Sheet 预览结果单事务应用到租户配置？此操作不可撤销。',
-        '应用合并导入',
+        t('tenantPackageImportWizard.applyConfirmText'),
+        t('tenantPackageImportWizard.applyConfirmTitle'),
         { type: 'warning' },
       )
       await tenantPackageApply(uploadToken.value, {})
-      ElMessage.success('合并导入已应用')
+      ElMessage.success(t('tenantPackageImportWizard.appliedToast'))
     } catch {
       /* cancel */
     }

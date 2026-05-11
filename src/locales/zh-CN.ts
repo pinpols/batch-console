@@ -44,6 +44,22 @@ export default {
     optional: '(选填)',
     required: '(必填)',
   },
+  tenantPackageImportWizard: {
+    uploadTitle: '上传租户配置包 Excel',
+    uploadDesc:
+      '8-Sheet 格式(job_definition / file_channel / alert_routing / pipeline / workflow_definition …)。上传成功后可进入预览校验。',
+    btnDownloadTemplate: '下载配置包模板',
+    btnExportCurrent: '导出当前配置包',
+    applyDescStart: '将把当前',
+    applyDescMid: '对应的 8-Sheet 预览结果',
+    applyDescBold: '单事务',
+    applyDescEnd: '写入租户配置。执行前请已在「预览」中确认数据无误。',
+    templateDownloadedToast: '配置包模板已下载',
+    exportedToast: '当前配置包已导出',
+    applyConfirmText: '确认将 8-Sheet 预览结果单事务应用到租户配置?此操作不可撤销。',
+    applyConfirmTitle: '应用合并导入',
+    appliedToast: '合并导入已应用',
+  },
   excelMaintenanceWizard: {
     titleBase: 'Excel 维护',
     titleWithDomain: 'Excel 维护 — {domain}',

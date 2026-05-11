@@ -38,6 +38,22 @@ const messages: Messages = {
     optional: '(optional)',
     required: '(required)',
   },
+  tenantPackageImportWizard: {
+    uploadTitle: 'Upload tenant config package',
+    uploadDesc:
+      '8-sheet format (job_definition / file_channel / alert_routing / pipeline / workflow_definition …). Preview after upload.',
+    btnDownloadTemplate: 'Download package template',
+    btnExportCurrent: 'Export current package',
+    applyDescStart: 'Will apply the 8-sheet preview for the current',
+    applyDescMid: 'to tenant config as a',
+    applyDescBold: 'single transaction',
+    applyDescEnd: '. Verify in Preview first.',
+    templateDownloadedToast: 'Package template downloaded',
+    exportedToast: 'Current package exported',
+    applyConfirmText: 'Apply the 8-sheet preview as a single transaction? This cannot be undone.',
+    applyConfirmTitle: 'Apply merged import',
+    appliedToast: 'Merged import applied',
+  },
   excelMaintenanceWizard: {
     titleBase: 'Excel maintenance',
     titleWithDomain: 'Excel maintenance — {domain}',
