@@ -212,7 +212,7 @@
 
   // 只有两种语言,直接切而不是下拉:tooltip 显示"切到对端"提示
   const localeToggleTooltip = computed(() =>
-    currentLocale.value === 'zh-CN' ? 'Switch to English' : '切换到中文',
+    currentLocale.value === 'zh-CN' ? t('layoutHeader.switchToEn') : t('layoutHeader.switchToZh'),
   )
 
   function toggleLocale() {

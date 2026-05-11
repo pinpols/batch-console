@@ -11,7 +11,9 @@
 
     <EmptyState v-else-if="error && !data.length" variant="error" :description="resolvedErrorText">
       <template v-if="onRetry" #action>
-        <el-button type="primary" :icon="Refresh" @click="onRetry">重试</el-button>
+        <el-button type="primary" :icon="Refresh" @click="onRetry">
+          {{ t('common.retry') }}
+        </el-button>
       </template>
     </EmptyState>
 
@@ -31,7 +33,7 @@
             <template v-if="loading" #empty>
               <div class="virtual-pro-table__loading">
                 <el-icon class="is-loading"><Loading /></el-icon>
-                加载中…
+                {{ t('proTable.loadingMore') }}
               </div>
             </template>
           </el-table-v2>
@@ -75,7 +77,10 @@
    * loading / error / empty / 分页 三态行为跟 ProTable 完全一致。
    */
   import { computed } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import { Refresh, Loading } from '@element-plus/icons-vue'
+
+  const { t } = useI18n({ useScope: 'global' })
   import type { Column } from 'element-plus'
   import TableSkeleton from '@/components/table/TableSkeleton.vue'
   import TablePagerBar from '@/components/table/TablePagerBar.vue'
@@ -124,7 +129,7 @@
   const resolvedErrorText = computed(() => {
     if (props.errorText?.trim()) return props.errorText.trim()
     if (props.error instanceof Error && props.error.message) return props.error.message
-    return '加载失败,请重试'
+    return t('proTable.loadFailed')
   })
 
   function onPageChange(p: number) {

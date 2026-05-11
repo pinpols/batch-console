@@ -1,6 +1,6 @@
 <template>
   <PageContainer>
-    <PageHeader title="执行日志（审计检索）" />
+    <PageHeader :title="t('executionLog.title')" />
     <SectionCard>
       <ProTable
         :data="display"
@@ -22,16 +22,16 @@
             @reset="reset"
             @refresh="() => runRefresh(load)"
           >
-            <el-form-item label="Trace">
+            <el-form-item :label="t('executionLog.traceLabel')">
               <el-input
                 class="query-w-200"
                 v-model="traceDraft"
                 clearable
-                placeholder="Trace Id，端上模糊匹配"
+                :placeholder="t('executionLog.tracePlaceholder')"
                 @keyup.enter="onSearch"
               />
             </el-form-item>
-            <el-form-item label="操作类型">
+            <el-form-item :label="t('executionLog.opTypeLabel')">
               <MetaSelect
                 class="query-w-200"
                 v-model="opDraft"
@@ -39,40 +39,59 @@
                 filterable
                 allow-create
                 default-first-option
-                placeholder="选择或输入 operationType"
+                :placeholder="t('executionLog.opTypePlaceholder')"
                 @keyup.enter="onSearch"
                 :options="operationTypeOptions"
               />
             </el-form-item>
-            <el-form-item label="结果">
+            <el-form-item :label="t('executionLog.opResultLabel')">
               <MetaSelect
                 class="query-w-200"
                 v-model="opResultDraft"
                 clearable
                 filterable
-                placeholder="全部操作结果"
+                :placeholder="t('executionLog.opResultPlaceholder')"
                 @keyup.enter="onSearch"
                 :options="opResultOptions"
               />
             </el-form-item>
             <el-form-item>
-              <el-switch v-model="poll" active-text="每 30 秒自动刷新列表" />
+              <el-switch v-model="poll" :active-text="t('executionLog.pollLabel')" />
             </el-form-item>
           </ListPageQueryBar>
         </template>
-        <DatetimeColumn prop="createdAt" label="时间" width="160" />
-        <el-table-column prop="operationType" label="操作" width="120" />
-        <el-table-column prop="operationResult" label="结果" width="110">
+        <DatetimeColumn prop="createdAt" :label="t('executionLog.colTime')" width="160" />
+        <el-table-column prop="operationType" :label="t('executionLog.colOpType')" width="120" />
+        <el-table-column prop="operationResult" :label="t('executionLog.colOpResult')" width="110">
           <template #default="{ row }">
             <StatusTag :value="String(row.operationResult ?? '')" category="operationResult" />
           </template>
         </el-table-column>
-        <el-table-column prop="operatorType" label="操作者类型" width="110" />
-        <el-table-column prop="operatorId" label="操作者" width="120" />
-        <el-table-column prop="fileId" label="File ID" width="100" />
-        <el-table-column prop="traceId" label="Trace" min-width="120" show-overflow-tooltip />
-        <el-table-column prop="evidenceRef" label="证据" width="140" show-overflow-tooltip />
-        <el-table-column prop="detailSummary" label="摘要" min-width="160" show-overflow-tooltip />
+        <el-table-column
+          prop="operatorType"
+          :label="t('executionLog.colOperatorType')"
+          width="110"
+        />
+        <el-table-column prop="operatorId" :label="t('executionLog.colOperator')" width="120" />
+        <el-table-column prop="fileId" :label="t('executionLog.colFileId')" width="100" />
+        <el-table-column
+          prop="traceId"
+          :label="t('executionLog.colTrace')"
+          min-width="120"
+          show-overflow-tooltip
+        />
+        <el-table-column
+          prop="evidenceRef"
+          :label="t('executionLog.colEvidence')"
+          width="140"
+          show-overflow-tooltip
+        />
+        <el-table-column
+          prop="detailSummary"
+          :label="t('executionLog.colSummary')"
+          min-width="160"
+          show-overflow-tooltip
+        />
       </ProTable>
     </SectionCard>
   </PageContainer>
@@ -80,7 +99,10 @@
 
 <script setup lang="ts">
   import { computed, onUnmounted, ref, watch } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import { useRoute } from 'vue-router'
+
+  const { t } = useI18n({ useScope: 'global' })
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { queryAudits } from '@/api/observabilityQueries'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
@@ -131,8 +153,8 @@
 
   const filtered = computed(() => {
     let r = rows.value
-    const t = traceApplied.value.trim()
-    if (t) r = r.filter((x) => x.traceId?.includes(t))
+    const trace = traceApplied.value.trim()
+    if (trace) r = r.filter((x) => x.traceId?.includes(trace))
     const o = opApplied.value.trim()
     if (o) r = r.filter((x) => String(x.operationType ?? '') === o)
     const res = opResultApplied.value.trim()
