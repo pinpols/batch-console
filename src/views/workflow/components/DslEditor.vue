@@ -19,7 +19,14 @@
   import { onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue'
   import { EditorState, Compartment } from '@codemirror/state'
   import { EditorView, keymap, lineNumbers, highlightActiveLine } from '@codemirror/view'
-  import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
+  import {
+    defaultKeymap,
+    history,
+    historyKeymap,
+    indentWithTab,
+    indentMore,
+    indentLess,
+  } from '@codemirror/commands'
   import { json, jsonParseLinter } from '@codemirror/lang-json'
   import { linter, lintGutter } from '@codemirror/lint'
   import {
@@ -31,9 +38,12 @@
   import {
     bracketMatching,
     indentOnInput,
+    indentUnit,
     syntaxHighlighting,
     defaultHighlightStyle,
   } from '@codemirror/language'
+  import { searchKeymap, highlightSelectionMatches } from '@codemirror/search'
+  import { ElMessage } from 'element-plus'
 
   /** 上游节点产出的所有可能 key（聚合 IMPORT/EXPORT/PROCESS/DISPATCH 四个领域，去重）。 */
   const OUTPUT_KEYS = [
@@ -171,6 +181,27 @@
     return { from: word.from, to: word.to, options, validFor: /^\$[\w.]*$/ }
   }
 
+  /**
+   * Cmd/Ctrl+Shift+F → 把当前文档 JSON 格式化（缩进 2 空格）。
+   * 解析失败时 ElMessage 提示但不修改文档（避免吞掉用户的中间态输入）。
+   */
+  function formatJson(view: EditorView): boolean {
+    const text = view.state.doc.toString()
+    if (!text.trim()) return true
+    try {
+      const obj = JSON.parse(text) as unknown
+      const formatted = JSON.stringify(obj, null, 2)
+      if (formatted === text) return true
+      view.dispatch({
+        changes: { from: 0, to: view.state.doc.length, insert: formatted },
+      })
+      return true
+    } catch (e) {
+      ElMessage.error(`JSON 格式化失败：${e instanceof Error ? e.message : '解析错误'}`)
+      return true
+    }
+  }
+
   function createState(doc: string) {
     return EditorState.create({
       doc,
@@ -179,13 +210,30 @@
         history(),
         bracketMatching(),
         indentOnInput(),
+        indentUnit.of('  '), // 2 空格缩进，与 JSON.stringify(_, _, 2) 输出一致
         highlightActiveLine(),
+        highlightSelectionMatches(),
         syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
         json(),
         lintGutter(),
         linter(jsonParseLinter()),
         autocompletion({ override: [buildDslCompletions], activateOnTyping: true }),
-        keymap.of([...defaultKeymap, ...historyKeymap, ...completionKeymap]),
+        keymap.of([
+          // 优先级：自定义快捷键 > 自动补全 > 搜索 > 历史 > 默认。
+          {
+            key: 'Mod-Shift-f',
+            preventDefault: true,
+            run: formatJson,
+          },
+          // 选中区按 Tab/Shift-Tab 在多行间整体缩进（覆盖默认插入 \t 行为）
+          { key: 'Tab', preventDefault: true, run: indentMore },
+          { key: 'Shift-Tab', preventDefault: true, run: indentLess },
+          indentWithTab, // 单光标位置 Tab → 插入缩进单位
+          ...completionKeymap,
+          ...searchKeymap,
+          ...historyKeymap,
+          ...defaultKeymap,
+        ]),
         readonlyCompartment.of(EditorState.readOnly.of(props.readonly)),
         EditorView.updateListener.of((u) => {
           if (u.docChanged) {

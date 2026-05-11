@@ -20,6 +20,7 @@
           v-model="workflowForm.workflowName"
           size="small"
           :placeholder="t('workflowInspector.workflowNamePlaceholder')"
+          :disabled="readonly"
         />
       </el-form-item>
       <el-form-item :label="t('workflowInspector.fieldWorkflowType')">
@@ -29,6 +30,7 @@
           size="small"
           :placeholder="t('workflowInspector.workflowTypePlaceholder')"
           class="workflow-fill-w"
+          :disabled="readonly"
         >
           <el-option label="DAG" value="DAG" />
           <el-option label="PIPELINE" value="PIPELINE" />
@@ -36,7 +38,7 @@
         </el-select>
       </el-form-item>
       <el-form-item :label="t('workflowInspector.fieldEnabled')">
-        <el-switch v-model="workflowForm.enabled" size="small" />
+        <el-switch v-model="workflowForm.enabled" size="small" :disabled="readonly" />
       </el-form-item>
       <el-form-item :label="t('workflowInspector.fieldDescription')">
         <el-input
@@ -45,6 +47,7 @@
           :rows="2"
           size="small"
           :placeholder="t('workflowInspector.descriptionPlaceholder')"
+          :disabled="readonly"
         />
       </el-form-item>
     </el-form>
@@ -59,5 +62,11 @@
 
   const { t } = useI18n({ useScope: 'global' })
 
-  defineProps<{ workflowForm: WorkflowFormState }>()
+  withDefaults(
+    defineProps<{
+      workflowForm: WorkflowFormState
+      readonly?: boolean
+    }>(),
+    { readonly: false },
+  )
 </script>

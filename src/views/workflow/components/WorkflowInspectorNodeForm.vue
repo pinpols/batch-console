@@ -1,6 +1,12 @@
 <template>
   <div>
-    <el-form label-position="top" class="workflow-form workflow-form--inspector">
+    <!-- el-form :disabled 会级联到所有 el-* 表单子组件（input/select/switch/radio/input-number 等），
+         省去逐个挂 :disabled。DslEditor 走 :readonly 单独控制（非 el-* 组件不会自动级联） -->
+    <el-form
+      label-position="top"
+      class="workflow-form workflow-form--inspector"
+      :disabled="readonly"
+    >
       <el-form-item :label="t('workflowInspector.fieldNodeCode')">
         <el-input
           v-model="nodeForm.nodeCode"
@@ -194,6 +200,7 @@
           v-model="nodeForm.nodeParams"
           :upstream-node-codes="upstreamNodeCodes"
           :placeholder="t('workflowInspector.extJsonPlaceholder')"
+          :readonly="readonly"
         />
         <div class="workflow-dsl-hint">
           <span>{{ t('workflowInspector.dslHint') }}</span>
@@ -204,17 +211,17 @@
       </el-form-item>
     </el-form>
     <div class="workflow-action-row workflow-action-row--inspector">
-      <el-button type="primary" size="small" @click="emit('apply')">
+      <el-button type="primary" size="small" :disabled="readonly" @click="emit('apply')">
         {{ t('workflowInspector.btnApply') }}
       </el-button>
-      <el-button size="small" @click="emit('duplicate')">
+      <el-button size="small" :disabled="readonly" @click="emit('duplicate')">
         {{ t('workflowInspector.btnDuplicate') }}
       </el-button>
-      <el-button type="danger" plain size="small" @click="emit('remove')">
+      <el-button type="danger" plain size="small" :disabled="readonly" @click="emit('remove')">
         {{ t('workflowInspector.btnRemove') }}
       </el-button>
     </div>
-    <div class="workflow-quick-create">
+    <div v-if="!readonly" class="workflow-quick-create">
       <div class="workflow-quick-create__head">
         <span class="workflow-quick-create__title">
           {{ t('workflowInspector.quickCreateTitle') }}
@@ -270,8 +277,9 @@
     defineProps<{
       nodeForm: NodeFormState
       upstreamNodeCodes?: string[]
+      readonly?: boolean
     }>(),
-    { upstreamNodeCodes: () => [] },
+    { upstreamNodeCodes: () => [], readonly: false },
   )
   const emit = defineEmits<{
     apply: []
