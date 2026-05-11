@@ -3,7 +3,7 @@
     <!-- 离屏模板图：供 X6 Dnd 生成与画布一致的拖拽预览 -->
     <div ref="dndPaletteRef" class="workflow-dnd-palette-host" aria-hidden="true" />
 
-    <section class="workflow-context app-surface" aria-label="当前编排对象">
+    <section class="workflow-context app-surface" :aria-label="t('workflowDesigner.ariaContext')">
       <div class="workflow-context__main">
         <div class="workflow-context__title-row">
           <h1 class="workflow-context__title">{{ workflowContextTitle }}</h1>
@@ -22,41 +22,57 @@
             size="small"
             effect="plain"
           >
-            {{ workflowDefinition.enabled ? '启用' : '停用' }}
+            {{
+              workflowDefinition.enabled
+                ? t('workflowDesigner.tagEnabled')
+                : t('workflowDesigner.tagDisabled')
+            }}
           </el-tag>
         </div>
         <p class="workflow-context__desc">{{ workflowContextDesc }}</p>
       </div>
 
-      <div class="workflow-context__metrics" aria-label="编排状态">
+      <div class="workflow-context__metrics" :aria-label="t('workflowDesigner.ariaCanvasState')">
         <div class="workflow-context-metric">
-          <span class="workflow-context-metric__label">节点</span>
+          <span class="workflow-context-metric__label">{{
+            t('workflowDesigner.metricNodes')
+          }}</span>
           <strong>{{ stats.nodes }}</strong>
         </div>
         <div class="workflow-context-metric">
-          <span class="workflow-context-metric__label">连线</span>
+          <span class="workflow-context-metric__label">{{
+            t('workflowDesigner.metricEdges')
+          }}</span>
           <strong>{{ stats.edges }}</strong>
         </div>
         <div class="workflow-context-metric">
-          <span class="workflow-context-metric__label">校验</span>
-          <strong :class="{ 'is-danger': validationErrorCount > 0 }">{{
-            validationSummary
-          }}</strong>
+          <span class="workflow-context-metric__label">
+            {{ t('workflowDesigner.metricValidation') }}
+          </span>
+          <strong :class="{ 'is-danger': validationErrorCount > 0 }">
+            {{ validationSummary }}
+          </strong>
         </div>
         <div class="workflow-context-metric workflow-context-metric--wide">
-          <span class="workflow-context-metric__label">草稿</span>
+          <span class="workflow-context-metric__label">{{
+            t('workflowDesigner.metricDraft')
+          }}</span>
           <strong>{{ draftSavedDisplay.main }}</strong>
           <span class="workflow-context-metric__sub">{{ draftSourceLabel }}</span>
         </div>
       </div>
 
       <div class="workflow-context__actions">
-        <el-button :loading="definitionsLoading" @click="reloadDefinitions">同步定义</el-button>
-        <el-button type="primary" :loading="loadingWorkflow" @click="reloadWorkflow">
-          重载画布
+        <el-button :loading="definitionsLoading" @click="reloadDefinitions">
+          {{ t('workflowDesigner.btnSyncDefinitions') }}
         </el-button>
-        <el-tooltip content="查看 ADR-009 Workflow 参数 DSL 文档" placement="bottom">
-          <el-button :icon="Reading" @click="docsDrawerOpen = true">DSL 文档</el-button>
+        <el-button type="primary" :loading="loadingWorkflow" @click="reloadWorkflow">
+          {{ t('workflowDesigner.btnReloadCanvas') }}
+        </el-button>
+        <el-tooltip :content="t('workflowDesigner.docsTooltip')" placement="bottom">
+          <el-button :icon="Reading" @click="docsDrawerOpen = true">
+            {{ t('workflowDesigner.btnDocs') }}
+          </el-button>
         </el-tooltip>
       </div>
     </section>
@@ -66,13 +82,13 @@
     <SectionCard class="workflow-shell workflow-page-card">
       <div class="workflow-toolbar">
         <div class="workflow-toolbar__section workflow-toolbar__section--object">
-          <span class="workflow-toolbar__eyebrow">编排对象</span>
+          <span class="workflow-toolbar__eyebrow">{{ t('workflowDesigner.eyebrowObject') }}</span>
           <div class="workflow-toolbar__controls workflow-toolbar__controls--object">
             <el-select
               v-model="selectedWorkflowCode"
               filterable
               clearable
-              placeholder="选择 workflow"
+              :placeholder="t('workflowDesigner.selectPlaceholder')"
               class="workflow-select"
               :loading="definitionsLoading"
             >
@@ -100,7 +116,7 @@
                 effect="plain"
                 size="small"
               >
-                本地草稿
+                {{ t('workflowDesigner.tagLocalDraft') }}
               </el-tag>
               <el-tag
                 v-else-if="draftSource === 'backend'"
@@ -109,25 +125,33 @@
                 effect="plain"
                 size="small"
               >
-                后端数据
+                {{ t('workflowDesigner.tagBackend') }}
               </el-tag>
             </div>
           </div>
         </div>
 
         <div class="workflow-toolbar__section workflow-toolbar__section--actions">
-          <span class="workflow-toolbar__eyebrow">画布</span>
+          <span class="workflow-toolbar__eyebrow">{{ t('workflowDesigner.eyebrowCanvas') }}</span>
           <div class="workflow-toolbar__actions">
             <el-button-group class="workflow-toolbar__btn-group">
-              <el-button :disabled="!selectedWorkflowCode" @click="reLayout">自动布局</el-button>
+              <el-button :disabled="!selectedWorkflowCode" @click="reLayout">
+                {{ t('workflowDesigner.btnAutoLayout') }}
+              </el-button>
               <el-button :disabled="!workflowDefinition" @click="applyDefinitionForm">
-                应用流程信息
+                {{ t('workflowDesigner.btnApplyDefinitionForm') }}
               </el-button>
             </el-button-group>
             <el-button-group class="workflow-toolbar__btn-group">
-              <el-button :disabled="!graphReady" @click="saveDraft">保存草稿</el-button>
-              <el-button :disabled="!graphReady" @click="copyDsl">复制 DSL</el-button>
-              <el-button :disabled="!graphReady" @click="clearDraft">清除草稿</el-button>
+              <el-button :disabled="!graphReady" @click="saveDraft">
+                {{ t('workflowDesigner.btnSaveDraft') }}
+              </el-button>
+              <el-button :disabled="!graphReady" @click="copyDsl">
+                {{ t('workflowDesigner.btnCopyDsl') }}
+              </el-button>
+              <el-button :disabled="!graphReady" @click="clearDraft">
+                {{ t('workflowDesigner.btnClearDraft') }}
+              </el-button>
             </el-button-group>
             <el-button
               type="primary"
@@ -135,7 +159,7 @@
               :loading="submittingToBackend"
               @click="submitToBackend"
             >
-              提交到后端
+              {{ t('workflowDesigner.btnSubmitBackend') }}
             </el-button>
           </div>
         </div>
@@ -154,7 +178,7 @@
             <template #title>
               <span class="workflow-card-title">
                 <el-icon class="workflow-card-title__icon"><Grid /></el-icon>
-                节点库
+                {{ t('workflowDesigner.sectionLibrary') }}
               </span>
             </template>
             <div class="workflow-node-library">
@@ -165,7 +189,7 @@
                 class="workflow-node-pill"
                 :class="`workflow-node-pill--${kind.kind.toLowerCase()}`"
                 :disabled="!graphReady"
-                title="按住左键拖到画布"
+                :title="t('workflowDesigner.libraryTooltip')"
                 @pointerdown="onLibraryNodePointerDown(kind.kind, $event)"
               >
                 <span class="workflow-node-pill__dot" aria-hidden="true" />
@@ -178,16 +202,16 @@
             <template #title>
               <span class="workflow-card-title">
                 <el-icon class="workflow-card-title__icon"><DataLine /></el-icon>
-                编排信息
+                {{ t('workflowDesigner.sectionInfo') }}
               </span>
             </template>
             <div class="workflow-summary">
               <div class="workflow-summary__col">
-                <span>节点</span>
+                <span>{{ t('workflowDesigner.summaryNodes') }}</span>
                 <strong>{{ stats.nodes }}</strong>
               </div>
               <div class="workflow-summary__col">
-                <span>连线</span>
+                <span>{{ t('workflowDesigner.summaryEdges') }}</span>
                 <strong>{{ stats.edges }}</strong>
               </div>
               <div class="workflow-summary__col workflow-summary__col--draft">
@@ -197,10 +221,10 @@
                   :disabled="!draftSavedDisplay.tip"
                 >
                   <div class="workflow-summary__draft">
-                    <span>本地保存</span>
-                    <strong class="workflow-summary__draft-main">{{
-                      draftSavedDisplay.main
-                    }}</strong>
+                    <span>{{ t('workflowDesigner.summaryLocalSave') }}</span>
+                    <strong class="workflow-summary__draft-main">
+                      {{ draftSavedDisplay.main }}
+                    </strong>
                     <span class="workflow-summary__sub">{{ draftSavedDisplay.sub }}</span>
                   </div>
                 </el-tooltip>
@@ -212,10 +236,14 @@
             <template #title>
               <span class="workflow-card-title">
                 <el-icon class="workflow-card-title__icon"><CircleCheck /></el-icon>
-                校验结果
+                {{ t('workflowDesigner.sectionValidation') }}
               </span>
             </template>
-            <div class="workflow-validation-scroll" role="region" aria-label="校验提示列表">
+            <div
+              class="workflow-validation-scroll"
+              role="region"
+              :aria-label="t('workflowDesigner.ariaValidationList')"
+            >
               <ul v-if="validationIssues.length" class="workflow-issues">
                 <li
                   v-for="(issue, idx) in validationIssues"
@@ -232,18 +260,18 @@
                     :disabled="!isValidationIssueActionable(issue)"
                     @click="focusValidationIssue(issue)"
                   >
-                    <span class="workflow-issue__level">{{
-                      validationIssueLevelLabel(issue.level)
-                    }}</span>
+                    <span class="workflow-issue__level">
+                      {{ levelLabel(issue.level) }}
+                    </span>
                     <span class="workflow-issue__text">{{ issue.message }}</span>
-                    <span v-if="isValidationIssueActionable(issue)" class="workflow-issue__action"
-                      >定位</span
-                    >
+                    <span v-if="isValidationIssueActionable(issue)" class="workflow-issue__action">
+                      {{ t('workflowDesigner.validationActionLocate') }}
+                    </span>
                   </button>
                 </li>
               </ul>
               <div v-else class="workflow-empty workflow-empty--validation">
-                当前 DAG 没有明显结构问题。
+                {{ t('workflowDesigner.validationEmpty') }}
               </div>
             </div>
           </SectionCard>
@@ -252,14 +280,19 @@
             <template #title>
               <span class="workflow-card-title">
                 <el-icon class="workflow-card-title__icon"><Guide /></el-icon>
-                连线与图例
+                {{ t('workflowDesigner.sectionLegend') }}
               </span>
             </template>
             <p class="workflow-legend__hint">
-              节点库<strong>左键按住拖到画布</strong>添加节点；从节点
-              <strong>右侧锚点</strong> 连到目标 <strong>左侧锚点</strong>；空白处拖动平移画布。
+              {{ t('workflowDesigner.legendNodeLibrary')
+              }}<strong>{{ t('workflowDesigner.legendDragHint') }}</strong>
+              {{ t('workflowDesigner.legendAddNode') }}
+              <strong>{{ t('workflowDesigner.legendRightAnchor') }}</strong>
+              {{ t('workflowDesigner.legendConnectTo') }}
+              <strong>{{ t('workflowDesigner.legendLeftAnchor') }}</strong>
+              {{ t('workflowDesigner.legendPanTail') }}
             </p>
-            <ul class="workflow-legend" aria-label="边类型图例">
+            <ul class="workflow-legend" :aria-label="t('workflowDesigner.ariaLegend')">
               <li v-for="ek in edgeKinds" :key="ek.kind" class="workflow-legend__row">
                 <span
                   class="workflow-legend__swatch"
@@ -277,8 +310,8 @@
           class="workflow-splitter workflow-splitter--left"
           role="separator"
           aria-orientation="vertical"
-          aria-label="拖拽调整左侧栏宽度"
-          title="拖拽调整宽度"
+          :aria-label="t('workflowDesigner.ariaSplitterLeft')"
+          :title="t('workflowDesigner.splitterTitle')"
           @mousedown.prevent="onSplitterDown('left', $event)"
         />
 
@@ -291,16 +324,24 @@
             <div ref="canvasRef" class="workflow-canvas" />
             <div v-show="selectedWorkflowCode && graphReady" class="workflow-canvas-hud">
               <div class="workflow-minimap-stack">
-                <div ref="minimapHostRef" class="workflow-minimap-host" aria-label="画布缩略图" />
+                <div
+                  ref="minimapHostRef"
+                  class="workflow-minimap-host"
+                  :aria-label="t('workflowDesigner.ariaMinimap')"
+                />
                 <span class="workflow-minimap-coords" :title="minimapCoordsTitle">{{
                   minimapCoordsLabel
                 }}</span>
               </div>
-              <div class="workflow-zoom-toolbar" role="toolbar" aria-label="画布缩放">
+              <div
+                class="workflow-zoom-toolbar"
+                role="toolbar"
+                :aria-label="t('workflowDesigner.ariaZoomToolbar')"
+              >
                 <button
                   type="button"
                   class="workflow-zoom-toolbar__btn"
-                  title="缩小"
+                  :title="t('workflowDesigner.btnZoomOut')"
                   @click="nudgeGraphZoom(-1)"
                 >
                   −
@@ -309,7 +350,7 @@
                 <button
                   type="button"
                   class="workflow-zoom-toolbar__btn"
-                  title="放大"
+                  :title="t('workflowDesigner.btnZoomIn')"
                   @click="nudgeGraphZoom(1)"
                 >
                   +
@@ -317,10 +358,10 @@
                 <button
                   type="button"
                   class="workflow-zoom-toolbar__fit"
-                  title="缩放以适应全部节点"
+                  :title="t('workflowDesigner.btnFitTitle')"
                   @click="fitGraphZoom"
                 >
-                  适应
+                  {{ t('workflowDesigner.btnFit') }}
                 </button>
               </div>
             </div>
@@ -328,10 +369,10 @@
               v-if="loadingWorkflow && selectedWorkflowCode"
               class="workflow-canvas-loading"
               v-loading="true"
-              element-loading-text="加载画布中..."
+              :element-loading-text="t('workflowDesigner.canvasLoading')"
             />
             <div v-if="!selectedWorkflowCode" class="workflow-canvas-empty">
-              <el-empty description="请选择 Workflow 后开始编排" :image-size="80">
+              <el-empty :description="t('workflowDesigner.canvasEmpty')" :image-size="80">
                 <template #image>
                   <div class="workflow-canvas-empty__illus" aria-hidden="true" />
                 </template>
@@ -339,13 +380,13 @@
             </div>
           </div>
           <p class="workflow-canvas-hint">
-            左侧节点库按住拖到画布添加 · 空白处拖拽平移 · 右下角缩略图拖拽视口 ·
+            {{ t('workflowDesigner.canvasHintTail1') }}
             <kbd>Ctrl</kbd>
             /
             <kbd>⌘</kbd>
-            + 滚轮缩放 · 右键节点/连线快捷操作 ·
+            {{ t('workflowDesigner.canvasHintTail2') }}
             <kbd>Delete</kbd>
-            删除 ·
+            {{ t('workflowDesigner.canvasHintDelete') }}
             <kbd>Shift</kbd>
             +
             <kbd>T</kbd>
@@ -353,7 +394,7 @@
             <kbd>D</kbd>
             /
             <kbd>J</kbd>
-            快速加下游
+            {{ t('workflowDesigner.canvasHintShiftKey') }}
           </p>
         </main>
 
@@ -361,8 +402,8 @@
           class="workflow-splitter workflow-splitter--right"
           role="separator"
           aria-orientation="vertical"
-          aria-label="拖拽调整右侧栏宽度"
-          title="拖拽调整宽度"
+          :aria-label="t('workflowDesigner.ariaSplitterRight')"
+          :title="t('workflowDesigner.splitterTitle')"
           @mousedown.prevent="onSplitterDown('right', $event)"
         />
 
@@ -373,7 +414,7 @@
             <template #title>
               <span class="workflow-card-title">
                 <el-icon class="workflow-card-title__icon"><EditPen /></el-icon>
-                选中对象
+                {{ t('workflowDesigner.sectionSelected') }}
               </span>
             </template>
             <WorkflowInspectorNodeForm
@@ -395,7 +436,7 @@
             <el-empty
               v-else
               class="workflow-inspector-empty"
-              description="在画布上点选节点或连线以编辑属性"
+              :description="t('workflowDesigner.inspectorEmpty')"
               :image-size="64"
             />
           </SectionCard>
@@ -404,21 +445,23 @@
             <template #title>
               <span class="workflow-card-title">
                 <el-icon class="workflow-card-title__icon"><Document /></el-icon>
-                草稿 DSL
+                {{ t('workflowDesigner.sectionDsl') }}
               </span>
             </template>
             <el-collapse v-model="dslPanelOpen" class="workflow-dsl-collapse">
               <el-collapse-item name="preview">
                 <template #title>
                   <div class="workflow-dsl-collapse__head">
-                    <span class="workflow-dsl-collapse__title">JSON 预览（只读）</span>
+                    <span class="workflow-dsl-collapse__title">
+                      {{ t('workflowDesigner.dslPreviewTitle') }}
+                    </span>
                     <el-tag
                       size="small"
                       type="info"
                       effect="plain"
                       class="workflow-dsl-collapse__tag"
                     >
-                      {{ dslPreviewLines }} 行
+                      {{ t('workflowDesigner.dslLines', { n: dslPreviewLines }) }}
                     </el-tag>
                   </div>
                 </template>
@@ -455,7 +498,7 @@
             role="menuitem"
             @click="ctxMenuEditNode"
           >
-            侧栏编辑
+            {{ t('workflowDesigner.ctxEditInSidebar') }}
           </button>
           <button
             type="button"
@@ -463,7 +506,7 @@
             role="menuitem"
             @click="ctxMenuDuplicateFromContext"
           >
-            复制节点
+            {{ t('workflowDesigner.ctxDuplicateNode') }}
           </button>
           <button
             type="button"
@@ -471,7 +514,7 @@
             role="menuitem"
             @click="ctxMenuDeleteNodeFromContext"
           >
-            删除节点
+            {{ t('workflowDesigner.ctxDeleteNode') }}
           </button>
         </template>
         <template v-else-if="canvasContextMenu.type === 'edge'">
@@ -481,7 +524,7 @@
             role="menuitem"
             @click="ctxMenuEditEdge"
           >
-            侧栏编辑
+            {{ t('workflowDesigner.ctxEditInSidebar') }}
           </button>
           <button
             type="button"
@@ -489,7 +532,7 @@
             role="menuitem"
             @click="ctxMenuDeleteEdgeFromContext"
           >
-            删除连线
+            {{ t('workflowDesigner.ctxDeleteEdge') }}
           </button>
         </template>
       </div>
@@ -499,6 +542,7 @@
 
 <script setup lang="ts">
   import { computed, onActivated, onBeforeUnmount, onDeactivated, onMounted, ref, watch } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import {
     CircleCheck,
     DataLine,
@@ -518,10 +562,10 @@
     nodeKinds,
     edgeKinds,
     edgeLegendColor,
-    validationIssueLevelLabel,
     isValidationIssueActionable,
     copyWorkflowForm,
     normalizeWorkflowDefinition,
+    type ValidationIssueLevel,
   } from './composables/workflowConstants'
   import { useWorkflowSplitter } from './composables/useWorkflowSplitter'
   import { useWorkflowGraph } from './composables/useWorkflowGraph'
@@ -534,6 +578,11 @@
 
   const app = useAppStore()
   const tenant = useTenantStore()
+  const { t } = useI18n({ useScope: 'global' })
+
+  function levelLabel(level: ValidationIssueLevel) {
+    return level === 'error' ? t('workflowDesigner.levelError') : t('workflowDesigner.levelWarning')
+  }
 
   // ─── DOM refs ──────────────────────────────────────────────────────────────
   const canvasRef = ref<HTMLDivElement | null>(null)
@@ -684,7 +733,7 @@
 
   const workflowContextCode = computed(() => selectedWorkflowCode.value.trim())
   const workflowContextTitle = computed(() => {
-    if (!selectedWorkflowCode.value) return '未选择 Workflow'
+    if (!selectedWorkflowCode.value) return t('workflowDesigner.titleUnselected')
     return (
       selectedDefinition.value?.workflowName ||
       workflowDefinition.value?.workflowName ||
@@ -692,11 +741,11 @@
     )
   })
   const workflowContextDesc = computed(() => {
-    if (!selectedWorkflowCode.value) return '选择一个定义后开始编辑画布。'
+    if (!selectedWorkflowCode.value) return t('workflowDesigner.descUnselected')
     return (
       workflowDefinition.value?.description ||
       selectedDefinition.value?.description ||
-      '当前 Workflow 暂无描述。'
+      t('workflowDesigner.descNone')
     )
   })
   const validationErrorCount = computed(
@@ -706,11 +755,17 @@
     () => validationIssues.value.filter((issue) => issue.level === 'warning').length,
   )
   const validationSummary = computed(() => {
-    if (validationErrorCount.value > 0) return `${validationErrorCount.value} 错误`
-    if (validationWarningCount.value > 0) return `${validationWarningCount.value} 警告`
-    return '通过'
+    if (validationErrorCount.value > 0)
+      return t('workflowDesigner.validationErrors', { n: validationErrorCount.value })
+    if (validationWarningCount.value > 0)
+      return t('workflowDesigner.validationWarnings', { n: validationWarningCount.value })
+    return t('workflowDesigner.validationPass')
   })
-  const draftSourceLabel = computed(() => (draftSource.value === 'local-draft' ? '本地' : '后端'))
+  const draftSourceLabel = computed(() =>
+    draftSource.value === 'local-draft'
+      ? t('workflowDesigner.sourceLocal')
+      : t('workflowDesigner.sourceBackend'),
+  )
 
   // Bind validation + draft callbacks into the graph module
   bindDerivedStateCallbacks(validateGraph, queueDraftSave, validationIssues)
