@@ -144,32 +144,6 @@ async function seedTenant(token, tenantId, filePath) {
 }
 
 /**
- * 导出单域 Excel 配置作为 UI 上传测试的 fixture 文件。
- */
-async function exportDomainFixture(token, domain) {
-  const outPath = path.resolve(__dirname, `../test-excel-abc/${domain}-export.xlsx`)
-  if (existsSync(outPath)) {
-    console.log(`[fixture] 已存在，跳过 ${domain}`)
-    return
-  }
-  try {
-    const res = await fetchWithTimeout(
-      `${API_BASE}/api/console/config/${domain}/excel/export`,
-      { headers: { Authorization: `Bearer ${token}`, 'X-Tenant-Id': FIXTURE_TENANT } },
-    )
-    if (!res.ok) {
-      console.warn(`[fixture] 导出失败 domain=${domain} status=${res.status}`)
-      return
-    }
-    const buf = Buffer.from(await res.arrayBuffer())
-    writeFileSync(outPath, buf)
-    console.log(`[fixture] ✓ 导出 ${domain} → ${outPath}`)
-  } catch (err) {
-    console.warn(`[fixture] 导出异常 domain=${domain}: ${err.message}`)
-  }
-}
-
-/**
  * 导出租户配置包作为 UI 上传测试的 fixture 文件。
  */
 async function exportTenantPackageFixture(token) {
@@ -180,7 +154,7 @@ async function exportTenantPackageFixture(token) {
   }
   try {
     const res = await fetchWithTimeout(
-      `${API_BASE}/api/console/config/tenant-package/excel/export`,
+      `${API_BASE}/api/console/config/tenant-package/excel/export?tenantId=${encodeURIComponent(FIXTURE_TENANT)}`,
       { headers: { Authorization: `Bearer ${token}`, 'X-Tenant-Id': FIXTURE_TENANT } },
     )
     if (!res.ok) {
@@ -246,7 +220,6 @@ async function globalSetup(config) {
     for (const { tenantId, file } of TENANT_EXCELS) {
       await seedTenant(token, tenantId, file)
     }
-    await exportDomainFixture(token, 'resource-queues')
     await exportTenantPackageFixture(token)
   }
 

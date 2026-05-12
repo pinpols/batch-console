@@ -77,31 +77,6 @@ test.describe('config releases (配置发布)', () => {
   })
 })
 
-test.describe('excel maintenance (Excel 维护)', () => {
-  test.beforeEach(async ({ page }) => {
-    await enterDemoApp(page)
-  })
-
-  test('Excel 维护页可打开并展示步骤向导', async ({ page }) => {
-    await page.goto('/config/excel')
-    await expectPageTitle(page, /Excel 维护/)
-  })
-
-  test('各 domain 子路由可达', async ({ page }) => {
-    const domains = [
-      'file-templates',
-      'file-channels',
-      'workflows',
-      'job-definitions',
-      'alert-routings',
-    ]
-    for (const domain of domains) {
-      await page.goto(`/config/excel/${domain}`)
-      await expect(page).toHaveURL(/\/config\/excel/)
-    }
-  })
-})
-
 test.describe('tags (标签管理)', () => {
   test.beforeEach(async ({ page }) => {
     await enterDemoApp(page)

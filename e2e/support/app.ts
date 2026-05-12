@@ -16,7 +16,6 @@ export const smokeRoutes: RouteCheck[] = [
   { path: '/ops/diagnostic', title: '运维诊断' },
   // 配置与发布
   { path: '/config/releases', title: '发布管理' },
-  { path: '/config/excel', title: /Excel 维护/ },
   { path: '/config/management', title: '变更与同步' },
   { path: '/config/tenant-package', title: '配置批量导入' },
   { path: '/system/tags', title: '标签管理' },
