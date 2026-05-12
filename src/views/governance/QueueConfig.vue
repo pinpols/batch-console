@@ -15,6 +15,11 @@
             @reset="onTabReset"
             @refresh="() => runRefresh(load)"
           />
+          <div class="config-toolbar">
+            <el-button type="primary" :icon="Plus" @click="openQueueCreate">
+              {{ t('common.create') }}
+            </el-button>
+          </div>
           <el-table
             v-loading="loading"
             :data="pagedQueues.records"
@@ -52,6 +57,11 @@
               width="110"
             />
             <DatetimeColumn prop="updatedAt" :label="t('queueConfig.colUpdatedAt')" width="160" />
+            <el-table-column :label="t('fileTemplateList.colActions')" width="92" fixed="right">
+              <template #default="{ row }">
+                <el-button :icon="Edit" circle @click="openQueueEdit(row)" />
+              </template>
+            </el-table-column>
             <el-table-column :label="t('queueConfig.colEnabled')" width="110" fixed="right">
               <template #default="{ row }">
                 <el-switch
@@ -85,6 +95,11 @@
             @reset="onTabReset"
             @refresh="() => runRefresh(load)"
           />
+          <div class="config-toolbar">
+            <el-button type="primary" :icon="Plus" @click="openWindowCreate">
+              {{ t('common.create') }}
+            </el-button>
+          </div>
           <el-table
             v-loading="loading"
             :data="pagedWindows.records"
@@ -118,6 +133,11 @@
               min-width="140"
             />
             <DatetimeColumn prop="updatedAt" :label="t('queueConfig.colUpdatedAt')" width="160" />
+            <el-table-column :label="t('fileTemplateList.colActions')" width="92" fixed="right">
+              <template #default="{ row }">
+                <el-button :icon="Edit" circle @click="openWindowEdit(row)" />
+              </template>
+            </el-table-column>
             <el-table-column :label="t('queueConfig.colEnabled')" width="110" fixed="right">
               <template #default="{ row }">
                 <el-switch
@@ -151,6 +171,11 @@
             @reset="onTabReset"
             @refresh="() => runRefresh(load)"
           />
+          <div class="config-toolbar">
+            <el-button type="primary" :icon="Plus" @click="openCalendarCreate">
+              {{ t('common.create') }}
+            </el-button>
+          </div>
           <el-table
             v-loading="loading"
             :data="pagedCalendars.records"
@@ -186,6 +211,11 @@
                 </div>
               </template>
             </el-table-column>
+            <el-table-column :label="t('fileTemplateList.colActions')" width="92" fixed="right">
+              <template #default="{ row }">
+                <el-button :icon="Edit" circle @click="openCalendarEdit(row)" />
+              </template>
+            </el-table-column>
             <el-table-column :label="t('queueConfig.colEnabled')" width="110" fixed="right">
               <template #default="{ row }">
                 <el-switch
@@ -216,6 +246,16 @@
       size="520px"
       destroy-on-close
     >
+      <div class="config-toolbar">
+        <el-button
+          type="primary"
+          :icon="Plus"
+          :disabled="!currentCalendarId"
+          @click="openHolidayCreate"
+        >
+          {{ t('common.create') }}
+        </el-button>
+      </div>
       <el-table
         v-loading="holidayLoading"
         :data="pagedHolidays.records"
@@ -246,6 +286,16 @@
             <StatusTag :value="String(row.enabled)" category="yn" />
           </template>
         </el-table-column>
+        <el-table-column :label="t('fileTemplateList.colActions')" width="132" fixed="right">
+          <template #default="{ row }">
+            <el-button size="small" plain type="primary" @click="openHolidayEdit(row)">
+              {{ t('common.edit') }}
+            </el-button>
+            <el-button size="small" plain type="danger" @click="deleteHoliday(row)">
+              {{ t('common.delete') }}
+            </el-button>
+          </template>
+        </el-table-column>
       </el-table>
       <TablePagerBar
         :page="holidayPage"
@@ -255,22 +305,176 @@
         @update:page-size="onHolidayPageSize"
       />
     </el-drawer>
+
+    <el-dialog
+      v-model="queueDialogVisible"
+      :title="queueEditingId == null ? '新增资源队列' : '编辑资源队列'"
+      width="640px"
+    >
+      <el-form :model="queueForm" label-width="128px">
+        <el-form-item label="queueCode" required>
+          <el-input v-model="queueForm.queueCode" :disabled="queueEditingId != null" />
+        </el-form-item>
+        <el-form-item label="queueName"><el-input v-model="queueForm.queueName" /></el-form-item>
+        <el-form-item label="queueType" required
+          ><el-input v-model="queueForm.queueType"
+        /></el-form-item>
+        <el-form-item label="maxRunningJobs"
+          ><el-input-number v-model="queueForm.maxRunningJobs" :min="0"
+        /></el-form-item>
+        <el-form-item label="maxRunningPartitions"
+          ><el-input-number v-model="queueForm.maxRunningPartitions" :min="0"
+        /></el-form-item>
+        <el-form-item label="maxQps"
+          ><el-input-number v-model="queueForm.maxQps" :min="0"
+        /></el-form-item>
+        <el-form-item label="workerGroup"
+          ><el-input v-model="queueForm.workerGroup"
+        /></el-form-item>
+        <el-form-item label="resourceTag"
+          ><el-input v-model="queueForm.resourceTag"
+        /></el-form-item>
+        <el-form-item label="priorityPolicy"
+          ><el-input v-model="queueForm.priorityPolicy"
+        /></el-form-item>
+        <el-form-item label="fairShareWeight"
+          ><el-input-number v-model="queueForm.fairShareWeight" :min="0"
+        /></el-form-item>
+        <el-form-item label="enabled"><el-switch v-model="queueForm.enabled" /></el-form-item>
+        <el-form-item label="description"
+          ><el-input v-model="queueForm.description" type="textarea"
+        /></el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="queueDialogVisible = false">{{ t('common.cancel') }}</el-button>
+        <el-button type="primary" :loading="saving" @click="saveQueue">{{
+          t('common.save')
+        }}</el-button>
+      </template>
+    </el-dialog>
+
+    <el-dialog
+      v-model="windowDialogVisible"
+      :title="windowEditingId == null ? '新增批次窗口' : '编辑批次窗口'"
+      width="640px"
+    >
+      <el-form :model="windowForm" label-width="128px">
+        <el-form-item label="windowCode" required>
+          <el-input v-model="windowForm.windowCode" :disabled="windowEditingId != null" />
+        </el-form-item>
+        <el-form-item label="windowName"><el-input v-model="windowForm.windowName" /></el-form-item>
+        <el-form-item label="timezone" required
+          ><el-input v-model="windowForm.timezone"
+        /></el-form-item>
+        <el-form-item label="startTime" required
+          ><el-time-picker v-model="windowForm.startTime" value-format="HH:mm:ss"
+        /></el-form-item>
+        <el-form-item label="endTime" required
+          ><el-time-picker v-model="windowForm.endTime" value-format="HH:mm:ss"
+        /></el-form-item>
+        <el-form-item label="endStrategy"
+          ><el-input v-model="windowForm.endStrategy"
+        /></el-form-item>
+        <el-form-item label="outOfWindowAction"
+          ><el-input v-model="windowForm.outOfWindowAction"
+        /></el-form-item>
+        <el-form-item label="allowCrossDay"
+          ><el-switch v-model="windowForm.allowCrossDay"
+        /></el-form-item>
+        <el-form-item label="enabled"><el-switch v-model="windowForm.enabled" /></el-form-item>
+        <el-form-item label="description"
+          ><el-input v-model="windowForm.description" type="textarea"
+        /></el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="windowDialogVisible = false">{{ t('common.cancel') }}</el-button>
+        <el-button type="primary" :loading="saving" @click="saveWindow">{{
+          t('common.save')
+        }}</el-button>
+      </template>
+    </el-dialog>
+
+    <el-dialog
+      v-model="calendarDialogVisible"
+      :title="calendarEditingId == null ? '新增业务日历' : '编辑业务日历'"
+      width="640px"
+    >
+      <el-form :model="calendarForm" label-width="128px">
+        <el-form-item label="calendarCode" required>
+          <el-input v-model="calendarForm.calendarCode" :disabled="calendarEditingId != null" />
+        </el-form-item>
+        <el-form-item label="calendarName" required
+          ><el-input v-model="calendarForm.calendarName"
+        /></el-form-item>
+        <el-form-item label="timezone" required
+          ><el-input v-model="calendarForm.timezone"
+        /></el-form-item>
+        <el-form-item label="holidayRollRule"
+          ><el-input v-model="calendarForm.holidayRollRule"
+        /></el-form-item>
+        <el-form-item label="catchUpPolicy"
+          ><el-input v-model="calendarForm.catchUpPolicy"
+        /></el-form-item>
+        <el-form-item label="catchUpMaxDays"
+          ><el-input-number v-model="calendarForm.catchUpMaxDays" :min="0"
+        /></el-form-item>
+        <el-form-item label="enabled"><el-switch v-model="calendarForm.enabled" /></el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="calendarDialogVisible = false">{{ t('common.cancel') }}</el-button>
+        <el-button type="primary" :loading="saving" @click="saveCalendar">{{
+          t('common.save')
+        }}</el-button>
+      </template>
+    </el-dialog>
+
+    <el-dialog
+      v-model="holidayDialogVisible"
+      :title="holidayEditingId == null ? '新增节假日' : '编辑节假日'"
+      width="520px"
+    >
+      <el-form :model="holidayForm" label-width="108px">
+        <el-form-item label="bizDate" required
+          ><el-date-picker v-model="holidayForm.bizDate" type="date" value-format="YYYY-MM-DD"
+        /></el-form-item>
+        <el-form-item label="dayType" required
+          ><el-input v-model="holidayForm.dayType"
+        /></el-form-item>
+        <el-form-item label="holidayName"
+          ><el-input v-model="holidayForm.holidayName"
+        /></el-form-item>
+        <el-form-item label="description"
+          ><el-input v-model="holidayForm.description" type="textarea"
+        /></el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="holidayDialogVisible = false">{{ t('common.cancel') }}</el-button>
+        <el-button type="primary" :loading="saving" @click="saveHoliday">{{
+          t('common.save')
+        }}</el-button>
+      </template>
+    </el-dialog>
   </PageContainer>
 </template>
 
 <script setup lang="ts">
-  import { computed, ref, watch } from 'vue'
+  import { computed, reactive, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
+  import { Edit, Plus } from '@element-plus/icons-vue'
 
   const { t } = useI18n({ useScope: 'global' })
   import { toPageResult } from '@/api/adapters'
   import {
     governanceApi,
+    type GovernanceBatchWindowSavePayload,
     type GovernanceBatchWindowRow,
     type GovernanceCalendarHolidayRow,
+    type GovernanceCalendarHolidaySavePayload,
     type GovernanceCalendarRow,
+    type GovernanceCalendarSavePayload,
     type GovernanceQueueRow,
+    type GovernanceQueueSavePayload,
   } from '@/api/governance'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { useTenantStore } from '@/stores/tenant'
@@ -299,12 +503,82 @@
   const holidays = ref<GovernanceCalendarHolidayRow[]>([])
   const holidayDrawerVisible = ref(false)
   const holidayDrawerTitle = ref(t('queueConfig.holidayDrawerTitle'))
+  const currentCalendarId = ref<number | null>(null)
+  const queueDialogVisible = ref(false)
+  const windowDialogVisible = ref(false)
+  const calendarDialogVisible = ref(false)
+  const holidayDialogVisible = ref(false)
+  const queueEditingId = ref<number | null>(null)
+  const windowEditingId = ref<number | null>(null)
+  const calendarEditingId = ref<number | null>(null)
+  const holidayEditingId = ref<number | null>(null)
+  const saving = ref(false)
   const pageSize = ref(20)
   const pageQueues = ref(1)
   const pageWindows = ref(1)
   const pageCalendars = ref(1)
   const holidayPage = ref(1)
   const holidayPageSize = ref(20)
+
+  const queueForm = reactive({
+    queueCode: '',
+    queueName: '',
+    queueType: 'DEFAULT',
+    maxRunningJobs: undefined as number | undefined,
+    maxRunningPartitions: undefined as number | undefined,
+    maxQps: undefined as number | undefined,
+    workerGroup: '',
+    resourceTag: '',
+    priorityPolicy: '',
+    fairShareWeight: undefined as number | undefined,
+    enabled: true,
+    description: '',
+  })
+
+  const windowForm = reactive({
+    windowCode: '',
+    windowName: '',
+    timezone: 'Asia/Shanghai',
+    startTime: '00:00:00',
+    endTime: '23:59:59',
+    endStrategy: '',
+    outOfWindowAction: '',
+    allowCrossDay: false,
+    enabled: true,
+    description: '',
+  })
+
+  const calendarForm = reactive({
+    calendarCode: '',
+    calendarName: '',
+    timezone: 'Asia/Shanghai',
+    holidayRollRule: '',
+    catchUpPolicy: '',
+    catchUpMaxDays: undefined as number | undefined,
+    enabled: true,
+  })
+
+  const holidayForm = reactive({
+    bizDate: '',
+    dayType: 'HOLIDAY',
+    holidayName: '',
+    description: '',
+  })
+
+  function optionalText(value: string) {
+    const text = value.trim()
+    return text ? text : undefined
+  }
+
+  function requireText(value: string, label: string) {
+    const text = value.trim()
+    if (!text) throw new Error(`${label} 必填`)
+    return text
+  }
+
+  function handleValidationError(err: unknown) {
+    if (err instanceof Error) ElMessage.warning(err.message)
+  }
 
   const keywordPlaceholder = computed(() => {
     if (activeTab.value === 'windows') return t('queueConfig.keywordWindows')
@@ -500,9 +774,209 @@
     )
   }
 
+  function openQueueCreate() {
+    queueEditingId.value = null
+    Object.assign(queueForm, {
+      queueCode: '',
+      queueName: '',
+      queueType: 'DEFAULT',
+      maxRunningJobs: undefined,
+      maxRunningPartitions: undefined,
+      maxQps: undefined,
+      workerGroup: '',
+      resourceTag: '',
+      priorityPolicy: '',
+      fairShareWeight: undefined,
+      enabled: true,
+      description: '',
+    })
+    queueDialogVisible.value = true
+  }
+
+  function openQueueEdit(row: GovernanceQueueRow) {
+    queueEditingId.value = row.id
+    Object.assign(queueForm, {
+      queueCode: row.queueCode,
+      queueName: row.queueName,
+      queueType: row.queueType || 'DEFAULT',
+      maxRunningJobs: row.concurrentCap ?? undefined,
+      maxRunningPartitions: undefined,
+      maxQps: row.burstLimit ?? undefined,
+      workerGroup: '',
+      resourceTag: '',
+      priorityPolicy: '',
+      fairShareWeight: undefined,
+      enabled: row.enabled,
+      description: '',
+    })
+    queueDialogVisible.value = true
+  }
+
+  function buildQueuePayload(): GovernanceQueueSavePayload {
+    return {
+      tenantId: tenant.tenantId,
+      ...(queueEditingId.value == null
+        ? { queueCode: requireText(queueForm.queueCode, 'queueCode') }
+        : {}),
+      queueName: optionalText(queueForm.queueName),
+      queueType: requireText(queueForm.queueType, 'queueType'),
+      maxRunningJobs: queueForm.maxRunningJobs,
+      maxRunningPartitions: queueForm.maxRunningPartitions,
+      maxQps: queueForm.maxQps,
+      workerGroup: optionalText(queueForm.workerGroup),
+      resourceTag: optionalText(queueForm.resourceTag),
+      priorityPolicy: optionalText(queueForm.priorityPolicy),
+      fairShareWeight: queueForm.fairShareWeight,
+      enabled: queueForm.enabled,
+      description: optionalText(queueForm.description),
+    }
+  }
+
+  async function saveQueue() {
+    saving.value = true
+    try {
+      const payload = buildQueuePayload()
+      if (queueEditingId.value == null) await governanceApi.createQueue(payload)
+      else await governanceApi.updateQueue(queueEditingId.value, payload)
+      ElMessage.success(t('fileTemplateList.saveSuccess'))
+      queueDialogVisible.value = false
+      await load()
+    } catch (err) {
+      handleValidationError(err)
+    } finally {
+      saving.value = false
+    }
+  }
+
+  function openWindowCreate() {
+    windowEditingId.value = null
+    Object.assign(windowForm, {
+      windowCode: '',
+      windowName: '',
+      timezone: 'Asia/Shanghai',
+      startTime: '00:00:00',
+      endTime: '23:59:59',
+      endStrategy: '',
+      outOfWindowAction: '',
+      allowCrossDay: false,
+      enabled: true,
+      description: '',
+    })
+    windowDialogVisible.value = true
+  }
+
+  function openWindowEdit(row: GovernanceBatchWindowRow) {
+    windowEditingId.value = row.id
+    Object.assign(windowForm, {
+      windowCode: row.windowCode,
+      windowName: row.windowName,
+      timezone: 'Asia/Shanghai',
+      startTime: row.startTime || '00:00:00',
+      endTime: row.endTime || '23:59:59',
+      endStrategy: row.crossDayPolicy,
+      outOfWindowAction: row.outOfWindowAction,
+      allowCrossDay: row.crossDayPolicy === 'ALLOW' || row.crossDayPolicy === 'true',
+      enabled: row.enabled,
+      description: '',
+    })
+    windowDialogVisible.value = true
+  }
+
+  function buildWindowPayload(): GovernanceBatchWindowSavePayload {
+    return {
+      tenantId: tenant.tenantId,
+      ...(windowEditingId.value == null
+        ? { windowCode: requireText(windowForm.windowCode, 'windowCode') }
+        : {}),
+      windowName: optionalText(windowForm.windowName),
+      timezone: requireText(windowForm.timezone, 'timezone'),
+      startTime: requireText(windowForm.startTime, 'startTime'),
+      endTime: requireText(windowForm.endTime, 'endTime'),
+      endStrategy: optionalText(windowForm.endStrategy),
+      outOfWindowAction: optionalText(windowForm.outOfWindowAction),
+      allowCrossDay: windowForm.allowCrossDay,
+      enabled: windowForm.enabled,
+      description: optionalText(windowForm.description),
+    }
+  }
+
+  async function saveWindow() {
+    saving.value = true
+    try {
+      const payload = buildWindowPayload()
+      if (windowEditingId.value == null) await governanceApi.createBatchWindow(payload)
+      else await governanceApi.updateBatchWindow(windowEditingId.value, payload)
+      ElMessage.success(t('fileTemplateList.saveSuccess'))
+      windowDialogVisible.value = false
+      await load()
+    } catch (err) {
+      handleValidationError(err)
+    } finally {
+      saving.value = false
+    }
+  }
+
+  function openCalendarCreate() {
+    calendarEditingId.value = null
+    Object.assign(calendarForm, {
+      calendarCode: '',
+      calendarName: '',
+      timezone: 'Asia/Shanghai',
+      holidayRollRule: '',
+      catchUpPolicy: '',
+      catchUpMaxDays: undefined,
+      enabled: true,
+    })
+    calendarDialogVisible.value = true
+  }
+
+  function openCalendarEdit(row: GovernanceCalendarRow) {
+    calendarEditingId.value = row.id
+    Object.assign(calendarForm, {
+      calendarCode: row.calendarCode,
+      calendarName: row.calendarName,
+      timezone: row.timezone || 'Asia/Shanghai',
+      holidayRollRule: '',
+      catchUpPolicy: '',
+      catchUpMaxDays: undefined,
+      enabled: row.enabled,
+    })
+    calendarDialogVisible.value = true
+  }
+
+  function buildCalendarPayload(): GovernanceCalendarSavePayload {
+    return {
+      tenantId: tenant.tenantId,
+      calendarCode: requireText(calendarForm.calendarCode, 'calendarCode'),
+      calendarName: requireText(calendarForm.calendarName, 'calendarName'),
+      timezone: requireText(calendarForm.timezone, 'timezone'),
+      holidayRollRule: optionalText(calendarForm.holidayRollRule),
+      catchUpPolicy: optionalText(calendarForm.catchUpPolicy),
+      catchUpMaxDays: calendarForm.catchUpMaxDays,
+      enabled: calendarForm.enabled,
+    }
+  }
+
+  async function saveCalendar() {
+    saving.value = true
+    try {
+      const payload = buildCalendarPayload()
+      if (calendarEditingId.value == null) await governanceApi.createCalendar(payload)
+      else await governanceApi.updateCalendar(calendarEditingId.value, payload)
+      ElMessage.success(t('fileTemplateList.saveSuccess'))
+      calendarDialogVisible.value = false
+      await load()
+    } catch (err) {
+      handleValidationError(err)
+    } finally {
+      saving.value = false
+    }
+  }
+
   async function openHolidays(row: GovernanceCalendarRow) {
     holidayPage.value = 1
     holidayDrawerVisible.value = true
+    currentCalendarId.value = row.id
     holidayDrawerTitle.value = t('queueConfig.holidayDrawerTitleWithCode', {
       code: row.calendarCode,
     })
@@ -516,6 +990,84 @@
     } finally {
       holidayLoading.value = false
     }
+  }
+
+  function openHolidayCreate() {
+    holidayEditingId.value = null
+    Object.assign(holidayForm, {
+      bizDate: '',
+      dayType: 'HOLIDAY',
+      holidayName: '',
+      description: '',
+    })
+    holidayDialogVisible.value = true
+  }
+
+  function openHolidayEdit(row: GovernanceCalendarHolidayRow) {
+    holidayEditingId.value = row.id
+    Object.assign(holidayForm, {
+      bizDate: row.holidayDate,
+      dayType: row.holidayType,
+      holidayName: row.holidayName,
+      description: row.description,
+    })
+    holidayDialogVisible.value = true
+  }
+
+  function buildHolidayPayload(): GovernanceCalendarHolidaySavePayload {
+    return {
+      tenantId: tenant.tenantId,
+      bizDate: requireText(holidayForm.bizDate, 'bizDate'),
+      dayType: requireText(holidayForm.dayType, 'dayType'),
+      holidayName: optionalText(holidayForm.holidayName),
+      description: optionalText(holidayForm.description),
+    }
+  }
+
+  async function reloadCurrentHolidays() {
+    if (!currentCalendarId.value) return
+    holidays.value = await governanceApi.listCalendarHolidays(
+      currentCalendarId.value,
+      tenant.tenantId,
+    )
+  }
+
+  async function saveHoliday() {
+    if (!currentCalendarId.value) return
+    saving.value = true
+    try {
+      const payload = buildHolidayPayload()
+      if (holidayEditingId.value == null) {
+        await governanceApi.createCalendarHoliday(currentCalendarId.value, payload)
+      } else {
+        await governanceApi.updateCalendarHoliday(
+          currentCalendarId.value,
+          holidayEditingId.value,
+          payload,
+        )
+      }
+      ElMessage.success(t('fileTemplateList.saveSuccess'))
+      holidayDialogVisible.value = false
+      await reloadCurrentHolidays()
+    } catch (err) {
+      handleValidationError(err)
+    } finally {
+      saving.value = false
+    }
+  }
+
+  async function deleteHoliday(row: GovernanceCalendarHolidayRow) {
+    if (!currentCalendarId.value || !row.id) return
+    try {
+      await ElMessageBox.confirm(`确认删除 ${row.holidayDate}?`, t('common.delete'), {
+        type: 'warning',
+      })
+    } catch {
+      return
+    }
+    await governanceApi.deleteCalendarHoliday(currentCalendarId.value, row.id, tenant.tenantId)
+    ElMessage.success(t('fileTemplateList.saveSuccess'))
+    await reloadCurrentHolidays()
   }
 
   watch(activeTab, () => {

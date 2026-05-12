@@ -33,6 +33,40 @@ export interface PipelineDefinitionForm {
   description: string
 }
 
+export interface FileTemplateSavePayload {
+  tenantId: string
+  templateCode?: string
+  templateName?: string
+  templateType?: string
+  bizType?: string
+  fileFormatType?: string
+  charset?: string
+  targetCharset?: string
+  withBom?: boolean
+  lineSeparator?: string
+  delimiter?: string
+  quoteChar?: string
+  escapeChar?: string
+  fieldMappingsJson?: string
+  queryParamSchemaJson?: string
+  enabled?: boolean
+  version?: number
+  description?: string
+}
+
+export interface FileChannelSavePayload {
+  tenantId: string
+  channelCode?: string
+  channelName?: string
+  channelType?: string
+  targetEndpoint?: string
+  authType?: string
+  configJson?: string
+  receiptPolicy?: string
+  timeoutSeconds?: number
+  enabled?: boolean
+}
+
 function readString(row: RawObject, ...keys: string[]) {
   for (const key of keys) {
     const value = row[key]
@@ -176,6 +210,14 @@ export function listFileChannels(tenantId: string) {
   return fetchAllPageItems<ConsoleFileChannelResponse>('/api/console/file-channels', { tenantId })
 }
 
+export function createFileChannel(body: FileChannelSavePayload) {
+  return post<ConsoleFileChannelResponse>('/api/console/file-channels', body)
+}
+
+export function updateFileChannel(id: number, body: FileChannelSavePayload) {
+  return put<ConsoleFileChannelResponse>(`/api/console/file-channels/${id}`, body)
+}
+
 /** GET /api/console/file-channels/{id} */
 export function getFileChannel(id: number, tenantId: string) {
   return get<ConsoleFileChannelResponse>(`/api/console/file-channels/${id}`, { tenantId })
@@ -192,6 +234,14 @@ export function queryFileChannelDetail(channelCode: string, tenantId: string) {
 /** GET /api/console/file-templates — command-side list */
 export function listFileTemplates(tenantId: string) {
   return fetchAllPageItems<ConsoleFileTemplateResponse>('/api/console/file-templates', { tenantId })
+}
+
+export function createFileTemplate(body: FileTemplateSavePayload) {
+  return post<ConsoleFileTemplateResponse>('/api/console/file-templates', body)
+}
+
+export function updateFileTemplate(id: number, body: FileTemplateSavePayload) {
+  return put<ConsoleFileTemplateResponse>(`/api/console/file-templates/${id}`, body)
 }
 
 /** GET /api/console/file-templates/{id} */
