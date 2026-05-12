@@ -1,16 +1,27 @@
 import { apiClient, get, post } from '@/api/client'
+import { readStoredTenantId } from '@/api/interceptors'
 
 const TENANT_PKG_BASE = '/api/console/config/tenant-package/excel'
 
+function currentTenantParams() {
+  return { tenantId: readStoredTenantId() }
+}
+
 /** GET …/template — 下载租户配置包空白模板 */
 export async function tenantPackageDownloadTemplate(): Promise<Blob> {
-  const res = await apiClient.get(`${TENANT_PKG_BASE}/template`, { responseType: 'blob' })
+  const res = await apiClient.get(`${TENANT_PKG_BASE}/template`, {
+    params: currentTenantParams(),
+    responseType: 'blob',
+  })
   return res.data as Blob
 }
 
 /** GET …/export — 导出当前租户全量配置包 */
 export async function tenantPackageExport(): Promise<Blob> {
-  const res = await apiClient.get(`${TENANT_PKG_BASE}/export`, { responseType: 'blob' })
+  const res = await apiClient.get(`${TENANT_PKG_BASE}/export`, {
+    params: currentTenantParams(),
+    responseType: 'blob',
+  })
   return res.data as Blob
 }
 
@@ -18,7 +29,9 @@ export async function tenantPackageExport(): Promise<Blob> {
 export async function tenantPackageUpload(file: File) {
   const fd = new FormData()
   fd.append('file', file)
-  return post<{ uploadToken?: string }>(`${TENANT_PKG_BASE}/upload`, fd)
+  return post<{ uploadToken?: string }>(`${TENANT_PKG_BASE}/upload`, fd, {
+    params: currentTenantParams(),
+  })
 }
 
 /** GET …/preview/{token} — 预览校验结果 */
