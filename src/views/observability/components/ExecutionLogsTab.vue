@@ -226,23 +226,28 @@
 
   async function loadExecutionLogs() {
     await runLoadExec(async () => {
-      execRows.value = (await queryExecutionLogs(tenant.tenantId)) as Record<string, unknown>[]
+      execRows.value = (await queryExecutionLogs(tenant.tenantId, {
+        traceId: execApplied.traceId.trim() || undefined,
+        operationType: execApplied.operationType.trim() || undefined,
+        operationResult: execApplied.result.trim() || undefined,
+      })) as Record<string, unknown>[]
     }).catch(() => {
       execRows.value = []
     })
   }
 
-  function applyFilter() {
-    return runSearch(() => {
+  async function applyFilter() {
+    return runSearch(async () => {
       execApplied.operationType = execDraft.operationType.trim()
       execApplied.result = execDraft.result.trim()
       execApplied.traceId = execDraft.traceId.trim()
       execPage.value = 1
+      await loadExecutionLogs()
     })
   }
 
-  function resetFilter() {
-    return runReset(() => {
+  async function resetFilter() {
+    return runReset(async () => {
       execDraft.operationType = ''
       execDraft.result = ''
       execDraft.traceId = ''
@@ -250,6 +255,7 @@
       execApplied.result = ''
       execApplied.traceId = ''
       execPage.value = 1
+      await loadExecutionLogs()
     })
   }
 

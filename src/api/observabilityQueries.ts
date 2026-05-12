@@ -18,6 +18,12 @@ export interface AuditQueryFilters {
   endTime?: string
 }
 
+export interface ExecutionLogFilters {
+  traceId?: string
+  operationType?: string
+  operationResult?: string
+}
+
 export interface OutboxRetryFilters {
   /** exact match */
   eventType?: string
@@ -89,9 +95,12 @@ export function queryRetries(tenantId: string) {
 }
 
 /** GET /api/console/queries/execution-logs */
-export function queryExecutionLogs(tenantId: string) {
+export function queryExecutionLogs(tenantId: string, filters?: ExecutionLogFilters) {
   return fetchAllPageItems<Record<string, unknown>>('/api/console/queries/execution-logs', {
     tenantId,
+    ...(filters?.traceId ? { traceId: filters.traceId } : {}),
+    ...(filters?.operationType ? { operationType: filters.operationType } : {}),
+    ...(filters?.operationResult ? { operationResult: filters.operationResult } : {}),
   })
 }
 
