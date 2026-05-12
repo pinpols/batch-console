@@ -21,6 +21,22 @@ export interface GovernanceQueueRow {
   updatedAt: string
 }
 
+export interface GovernanceQueueSavePayload {
+  tenantId: string
+  queueCode?: string
+  queueName?: string
+  queueType?: string
+  maxRunningJobs?: number
+  maxRunningPartitions?: number
+  maxQps?: number
+  workerGroup?: string
+  resourceTag?: string
+  priorityPolicy?: string
+  fairShareWeight?: number
+  enabled?: boolean
+  description?: string
+}
+
 export interface GovernanceBatchWindowRow {
   id: number
   tenantId: string
@@ -34,6 +50,20 @@ export interface GovernanceBatchWindowRow {
   updatedAt: string
 }
 
+export interface GovernanceBatchWindowSavePayload {
+  tenantId: string
+  windowCode?: string
+  windowName?: string
+  timezone?: string
+  startTime?: string
+  endTime?: string
+  endStrategy?: string
+  outOfWindowAction?: string
+  allowCrossDay?: boolean
+  enabled?: boolean
+  description?: string
+}
+
 export interface GovernanceCalendarRow {
   id: number
   tenantId: string
@@ -44,12 +74,32 @@ export interface GovernanceCalendarRow {
   updatedAt: string
 }
 
+export interface GovernanceCalendarSavePayload {
+  tenantId: string
+  calendarCode?: string
+  calendarName: string
+  timezone: string
+  holidayRollRule?: string
+  catchUpPolicy?: string
+  catchUpMaxDays?: number
+  enabled?: boolean
+}
+
 export interface GovernanceCalendarHolidayRow {
   id: number
   holidayDate: string
   holidayName: string
   holidayType: string
   enabled: boolean
+  description: string
+}
+
+export interface GovernanceCalendarHolidaySavePayload {
+  tenantId: string
+  bizDate: string
+  dayType: string
+  holidayName?: string
+  description?: string
 }
 
 export interface GovernanceQuotaPolicyRow {
@@ -194,10 +244,11 @@ function normalizeCalendar(row: RawRow): GovernanceCalendarRow {
 function normalizeHoliday(row: RawRow): GovernanceCalendarHolidayRow {
   return {
     id: readNumber(row, 'id', 'holidayId') ?? 0,
-    holidayDate: readString(row, 'holidayDate'),
-    holidayName: readString(row, 'holidayName', 'name'),
-    holidayType: readString(row, 'holidayType'),
+    holidayDate: readString(row, 'holidayDate', 'bizDate', 'biz_date'),
+    holidayName: readString(row, 'holidayName', 'holiday_name', 'name'),
+    holidayType: readString(row, 'holidayType', 'dayType', 'day_type'),
     enabled: readBoolean(row, 'enabled'),
+    description: readString(row, 'description'),
   }
 }
 
@@ -265,6 +316,12 @@ export const governanceApi = {
       params: { tenantId, enabled },
     }),
 
+  createQueue: (body: GovernanceQueueSavePayload) =>
+    post<RawRow>('/api/console/queues', body).then(normalizeQueue),
+
+  updateQueue: (id: number, body: GovernanceQueueSavePayload) =>
+    put<RawRow>(`/api/console/queues/${id}`, body).then(normalizeQueue),
+
   listBatchWindows: async (
     tenantId: string,
     filters?: { windowCode?: string; enabled?: boolean },
@@ -279,6 +336,12 @@ export const governanceApi = {
       params: { tenantId, enabled },
     }),
 
+  createBatchWindow: (body: GovernanceBatchWindowSavePayload) =>
+    post<RawRow>('/api/console/batch-windows', body).then(normalizeBatchWindow),
+
+  updateBatchWindow: (id: number, body: GovernanceBatchWindowSavePayload) =>
+    put<RawRow>(`/api/console/batch-windows/${id}`, body).then(normalizeBatchWindow),
+
   listCalendars: async (tenantId: string, filters?: { calendarCode?: string; enabled?: boolean }) =>
     (await listGovernanceRows('/api/console/calendars', tenantId, filters ?? {})).map(
       normalizeCalendar,
@@ -290,12 +353,40 @@ export const governanceApi = {
       params: { tenantId, enabled },
     }),
 
+  createCalendar: (body: GovernanceCalendarSavePayload) =>
+    post<RawRow>('/api/console/calendars', body).then(normalizeCalendar),
+
+  updateCalendar: (id: number, body: GovernanceCalendarSavePayload) =>
+    put<RawRow>(`/api/console/calendars/${id}`, body).then(normalizeCalendar),
+
   listCalendarHolidays: async (id: number, tenantId: string) =>
     (
       await get<RawRow[] | { items?: RawRow[] }>(`/api/console/calendars/${id}/holidays`, {
         tenantId,
       }).then((data) => (Array.isArray(data) ? data : (data.items ?? [])))
     ).map(normalizeHoliday),
+
+  createCalendarHoliday: (calendarId: number, body: GovernanceCalendarHolidaySavePayload) =>
+    post<void>(`/api/console/calendars/${calendarId}/holidays`, {
+      tenantId: body.tenantId,
+      items: [
+        {
+          bizDate: body.bizDate,
+          dayType: body.dayType,
+          holidayName: body.holidayName,
+          description: body.description,
+        },
+      ],
+    }),
+
+  updateCalendarHoliday: (
+    calendarId: number,
+    holidayId: number,
+    body: GovernanceCalendarHolidaySavePayload,
+  ) =>
+    put<RawRow>(`/api/console/calendars/${calendarId}/holidays/${holidayId}`, body).then(
+      normalizeHoliday,
+    ),
 
   listQuotaPolicies: async (
     tenantId: string,
