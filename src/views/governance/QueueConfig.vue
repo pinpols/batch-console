@@ -5,6 +5,15 @@
     <SectionCard>
       <el-tabs v-model="activeTab" v-hover-tab-activate="true" class="pill-tabs governance-tabs">
         <el-tab-pane :label="t('queueConfig.tabQueues')" name="queues">
+          <div class="panel-head">
+            <div class="panel-title">
+              <span class="dot dot--primary" />
+              {{ t('queueConfig.sectionQueues') }}
+            </div>
+            <el-button type="primary" :icon="Plus" @click="openQueueCreate">
+              {{ t('common.create') }}
+            </el-button>
+          </div>
           <GovernanceFilterBar
             v-model:keyword="kwDraft"
             v-model:enabled="enabledDraft"
@@ -15,11 +24,6 @@
             @reset="onTabReset"
             @refresh="() => runRefresh(load)"
           />
-          <div class="config-toolbar">
-            <el-button type="primary" :icon="Plus" @click="openQueueCreate">
-              {{ t('common.create') }}
-            </el-button>
-          </div>
           <el-table
             v-loading="loading"
             :data="pagedQueues.records"
@@ -57,12 +61,7 @@
               width="110"
             />
             <DatetimeColumn prop="updatedAt" :label="t('queueConfig.colUpdatedAt')" width="160" />
-            <el-table-column :label="t('fileTemplateList.colActions')" width="92" fixed="right">
-              <template #default="{ row }">
-                <el-button :icon="Edit" circle @click="openQueueEdit(row)" />
-              </template>
-            </el-table-column>
-            <el-table-column :label="t('queueConfig.colEnabled')" width="110" fixed="right">
+            <el-table-column :label="t('queueConfig.colEnabled')" width="110">
               <template #default="{ row }">
                 <el-switch
                   :model-value="row.enabled"
@@ -72,6 +71,13 @@
                   :inactive-text="t('queueConfig.switchOff')"
                   @change="toggleQueue(row)"
                 />
+              </template>
+            </el-table-column>
+            <el-table-column :label="t('fileTemplateList.colActions')" width="80" fixed="right">
+              <template #default="{ row }">
+                <el-tooltip :content="t('common.edit')" placement="top">
+                  <el-button :icon="Edit" circle @click="openQueueEdit(row)" />
+                </el-tooltip>
               </template>
             </el-table-column>
           </el-table>
@@ -85,6 +91,15 @@
         </el-tab-pane>
 
         <el-tab-pane :label="t('queueConfig.tabWindows')" name="windows">
+          <div class="panel-head">
+            <div class="panel-title">
+              <span class="dot dot--warning" />
+              {{ t('queueConfig.sectionWindows') }}
+            </div>
+            <el-button type="primary" :icon="Plus" @click="openWindowCreate">
+              {{ t('common.create') }}
+            </el-button>
+          </div>
           <GovernanceFilterBar
             v-model:keyword="kwDraft"
             v-model:enabled="enabledDraft"
@@ -95,11 +110,6 @@
             @reset="onTabReset"
             @refresh="() => runRefresh(load)"
           />
-          <div class="config-toolbar">
-            <el-button type="primary" :icon="Plus" @click="openWindowCreate">
-              {{ t('common.create') }}
-            </el-button>
-          </div>
           <el-table
             v-loading="loading"
             :data="pagedWindows.records"
@@ -133,12 +143,7 @@
               min-width="140"
             />
             <DatetimeColumn prop="updatedAt" :label="t('queueConfig.colUpdatedAt')" width="160" />
-            <el-table-column :label="t('fileTemplateList.colActions')" width="92" fixed="right">
-              <template #default="{ row }">
-                <el-button :icon="Edit" circle @click="openWindowEdit(row)" />
-              </template>
-            </el-table-column>
-            <el-table-column :label="t('queueConfig.colEnabled')" width="110" fixed="right">
+            <el-table-column :label="t('queueConfig.colEnabled')" width="110">
               <template #default="{ row }">
                 <el-switch
                   :model-value="row.enabled"
@@ -148,6 +153,13 @@
                   :inactive-text="t('queueConfig.switchOff')"
                   @change="toggleWindow(row)"
                 />
+              </template>
+            </el-table-column>
+            <el-table-column :label="t('fileTemplateList.colActions')" width="80" fixed="right">
+              <template #default="{ row }">
+                <el-tooltip :content="t('common.edit')" placement="top">
+                  <el-button :icon="Edit" circle @click="openWindowEdit(row)" />
+                </el-tooltip>
               </template>
             </el-table-column>
           </el-table>
@@ -161,6 +173,15 @@
         </el-tab-pane>
 
         <el-tab-pane :label="t('queueConfig.tabCalendars')" name="calendars">
+          <div class="panel-head">
+            <div class="panel-title">
+              <span class="dot dot--success" />
+              {{ t('queueConfig.sectionCalendars') }}
+            </div>
+            <el-button type="primary" :icon="Plus" @click="openCalendarCreate">
+              {{ t('common.create') }}
+            </el-button>
+          </div>
           <GovernanceFilterBar
             v-model:keyword="kwDraft"
             v-model:enabled="enabledDraft"
@@ -171,11 +192,6 @@
             @reset="onTabReset"
             @refresh="() => runRefresh(load)"
           />
-          <div class="config-toolbar">
-            <el-button type="primary" :icon="Plus" @click="openCalendarCreate">
-              {{ t('common.create') }}
-            </el-button>
-          </div>
           <el-table
             v-loading="loading"
             :data="pagedCalendars.records"
@@ -211,12 +227,7 @@
                 </div>
               </template>
             </el-table-column>
-            <el-table-column :label="t('fileTemplateList.colActions')" width="92" fixed="right">
-              <template #default="{ row }">
-                <el-button :icon="Edit" circle @click="openCalendarEdit(row)" />
-              </template>
-            </el-table-column>
-            <el-table-column :label="t('queueConfig.colEnabled')" width="110" fixed="right">
+            <el-table-column :label="t('queueConfig.colEnabled')" width="110">
               <template #default="{ row }">
                 <el-switch
                   :model-value="row.enabled"
@@ -226,6 +237,13 @@
                   :inactive-text="t('queueConfig.switchOff')"
                   @change="toggleCalendar(row)"
                 />
+              </template>
+            </el-table-column>
+            <el-table-column :label="t('fileTemplateList.colActions')" width="80" fixed="right">
+              <template #default="{ row }">
+                <el-tooltip :content="t('common.edit')" placement="top">
+                  <el-button :icon="Edit" circle @click="openCalendarEdit(row)" />
+                </el-tooltip>
               </template>
             </el-table-column>
           </el-table>
@@ -264,7 +282,7 @@
         size="small"
         highlight-current-row
         class="console-table"
-        empty-text="暂无数据"
+        :empty-text="t('common.noData')"
       >
         <el-table-column
           prop="holidayDate"
@@ -286,14 +304,16 @@
             <StatusTag :value="String(row.enabled)" category="yn" />
           </template>
         </el-table-column>
-        <el-table-column :label="t('fileTemplateList.colActions')" width="132" fixed="right">
+        <el-table-column :label="t('fileTemplateList.colActions')" width="92" fixed="right">
           <template #default="{ row }">
-            <el-button size="small" plain type="primary" @click="openHolidayEdit(row)">
-              {{ t('common.edit') }}
-            </el-button>
-            <el-button size="small" plain type="danger" @click="deleteHoliday(row)">
-              {{ t('common.delete') }}
-            </el-button>
+            <div class="table-actions">
+              <el-tooltip :content="t('common.edit')" placement="top">
+                <el-button :icon="Edit" circle @click="openHolidayEdit(row)" />
+              </el-tooltip>
+              <el-tooltip :content="t('common.delete')" placement="top">
+                <el-button :icon="Delete" circle type="danger" @click="deleteHoliday(row)" />
+              </el-tooltip>
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -308,8 +328,11 @@
 
     <el-dialog
       v-model="queueDialogVisible"
-      :title="queueEditingId == null ? '新增资源队列' : '编辑资源队列'"
+      :title="
+        queueEditingId == null ? t('queueConfig.queueCreateTitle') : t('queueConfig.queueEditTitle')
+      "
       width="640px"
+      destroy-on-close
     >
       <el-form :model="queueForm" label-width="128px">
         <el-form-item label="queueCode" required>
@@ -355,8 +378,13 @@
 
     <el-dialog
       v-model="windowDialogVisible"
-      :title="windowEditingId == null ? '新增批次窗口' : '编辑批次窗口'"
+      :title="
+        windowEditingId == null
+          ? t('queueConfig.windowCreateTitle')
+          : t('queueConfig.windowEditTitle')
+      "
       width="640px"
+      destroy-on-close
     >
       <el-form :model="windowForm" label-width="128px">
         <el-form-item label="windowCode" required>
@@ -396,8 +424,13 @@
 
     <el-dialog
       v-model="calendarDialogVisible"
-      :title="calendarEditingId == null ? '新增业务日历' : '编辑业务日历'"
+      :title="
+        calendarEditingId == null
+          ? t('queueConfig.calendarCreateTitle')
+          : t('queueConfig.calendarEditTitle')
+      "
       width="640px"
+      destroy-on-close
     >
       <el-form :model="calendarForm" label-width="128px">
         <el-form-item label="calendarCode" required>
@@ -430,8 +463,13 @@
 
     <el-dialog
       v-model="holidayDialogVisible"
-      :title="holidayEditingId == null ? '新增节假日' : '编辑节假日'"
+      :title="
+        holidayEditingId == null
+          ? t('queueConfig.holidayCreateTitle')
+          : t('queueConfig.holidayEditTitle')
+      "
       width="520px"
+      destroy-on-close
     >
       <el-form :model="holidayForm" label-width="108px">
         <el-form-item label="bizDate" required
@@ -461,7 +499,7 @@
   import { computed, reactive, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
-  import { Edit, Plus } from '@element-plus/icons-vue'
+  import { Delete, Edit, Plus } from '@element-plus/icons-vue'
 
   const { t } = useI18n({ useScope: 'global' })
   import { toPageResult } from '@/api/adapters'
@@ -1085,5 +1123,42 @@
   .governance-tabs :deep(.el-tabs__content) {
     padding-top: 10px;
     overflow: visible;
+  }
+
+  .panel-head {
+    margin-bottom: var(--space-sm);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-md);
+    flex-wrap: wrap;
+  }
+
+  .panel-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: var(--font-size-md);
+    font-weight: 700;
+    color: var(--color-text-primary);
+    line-height: var(--line-height-tight);
+  }
+
+  .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: var(--radius-content);
+  }
+
+  .dot--primary {
+    background: var(--color-primary);
+  }
+
+  .dot--warning {
+    background: var(--color-warning);
+  }
+
+  .dot--success {
+    background: var(--color-success);
   }
 </style>

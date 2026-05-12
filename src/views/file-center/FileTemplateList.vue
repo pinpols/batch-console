@@ -4,7 +4,16 @@
 
     <SectionCard>
       <el-tabs v-model="activeTab" v-hover-tab-activate="true" class="pill-tabs file-config-tabs">
-        <el-tab-pane label="文件模板" name="templates">
+        <el-tab-pane :label="t('fileTemplateList.tabTemplates')" name="templates">
+          <div class="panel-head">
+            <div class="panel-title">
+              <span class="dot dot--primary" />
+              {{ t('fileTemplateList.sectionTemplates') }}
+            </div>
+            <el-button type="primary" :icon="Plus" @click="openTemplateCreate">
+              {{ t('common.create') }}
+            </el-button>
+          </div>
           <ProTable
             :data="rows"
             :loading="tableBlocking"
@@ -64,11 +73,6 @@
                   </el-select>
                 </el-form-item>
               </ListPageQueryBar>
-              <div class="config-toolbar">
-                <el-button type="primary" :icon="Plus" @click="openTemplateCreate">
-                  {{ t('common.create') }}
-                </el-button>
-              </div>
             </template>
 
             <el-table-column
@@ -99,7 +103,14 @@
             <el-table-column prop="version" :label="t('fileTemplateList.colVersion')" width="90" />
             <el-table-column :label="t('fileTemplateList.colEnabled')" width="90">
               <template #default="{ row }">
-                <StatusTag :value="String(row.enabled)" category="yn" />
+                <el-switch
+                  :model-value="row.enabled"
+                  inline-prompt
+                  :active-text="t('fileTemplateList.switchOn')"
+                  :inactive-text="t('fileTemplateList.switchOff')"
+                  :loading="togglingTemplateId === row.id"
+                  @change="toggleTemplate(row)"
+                />
               </template>
             </el-table-column>
             <DatetimeColumn
@@ -107,31 +118,33 @@
               :label="t('fileTemplateList.colUpdatedAt')"
               width="160"
             />
-            <el-table-column :label="t('fileTemplateList.colActions')" width="260" fixed="right">
+            <el-table-column :label="t('fileTemplateList.colActions')" width="120" fixed="right">
               <template #default="{ row }">
                 <div class="table-actions">
-                  <el-button size="small" plain type="primary" @click="openTemplateEdit(row)">
-                    {{ t('common.edit') }}
-                  </el-button>
-                  <el-button size="small" plain @click="toggleTemplate(row)">
-                    {{ row.enabled ? t('common.disable') : t('common.enable') }}
-                  </el-button>
-                  <el-button
-                    size="small"
-                    plain
-                    type="primary"
-                    @click="openDetail(row.templateCode)"
-                  >
-                    {{ t('fileTemplateList.actionDetail') }}
-                  </el-button>
+                  <el-tooltip :content="t('common.edit')" placement="top">
+                    <el-button :icon="Edit" circle @click="openTemplateEdit(row)" />
+                  </el-tooltip>
+                  <el-tooltip :content="t('fileTemplateList.actionDetail')" placement="top">
+                    <el-button :icon="View" circle @click="openDetail(row.templateCode)" />
+                  </el-tooltip>
                 </div>
               </template>
             </el-table-column>
           </ProTable>
         </el-tab-pane>
 
-        <el-tab-pane label="文件渠道" name="channels">
+        <el-tab-pane :label="t('fileTemplateList.tabChannels')" name="channels">
+          <div class="panel-head">
+            <div class="panel-title">
+              <span class="dot dot--success" />
+              {{ t('fileTemplateList.sectionChannels') }}
+            </div>
+            <el-button type="primary" :icon="Plus" @click="openChannelCreate">
+              {{ t('common.create') }}
+            </el-button>
+          </div>
           <ListPageQueryBar
+            class="query"
             :filter-busy="queryActionBusy"
             :refresh-busy="loading"
             :disabled="loading"
@@ -139,21 +152,26 @@
             @reset="resetChannels"
             @refresh="() => runRefresh(loadChannels)"
           >
-            <el-form-item label="渠道">
-              <el-input v-model="channelKeyword" clearable placeholder="channelCode / name" />
+            <el-form-item :label="t('fileTemplateList.channelKeywordLabel')">
+              <el-input
+                v-model="channelKeyword"
+                clearable
+                :placeholder="t('fileTemplateList.channelKeywordPlaceholder')"
+                class="query__search"
+              />
             </el-form-item>
-            <el-form-item label="启用">
-              <el-select v-model="channelEnabled" clearable class="query-w-120" placeholder="全部">
-                <el-option label="启用" :value="true" />
-                <el-option label="停用" :value="false" />
+            <el-form-item :label="t('fileTemplateList.enabledLabel')">
+              <el-select
+                v-model="channelEnabled"
+                clearable
+                class="query-w-120"
+                :placeholder="t('fileTemplateList.enabledPlaceholder')"
+              >
+                <el-option :label="t('fileTemplateList.optEnabled')" :value="true" />
+                <el-option :label="t('fileTemplateList.optDisabled')" :value="false" />
               </el-select>
             </el-form-item>
           </ListPageQueryBar>
-          <div class="config-toolbar">
-            <el-button type="primary" :icon="Plus" @click="openChannelCreate">
-              {{ t('common.create') }}
-            </el-button>
-          </div>
           <el-table
             v-loading="loading"
             :data="channelRows"
@@ -170,22 +188,24 @@
             <el-table-column prop="targetEndpoint" label="targetEndpoint" min-width="220" />
             <el-table-column prop="authType" label="authType" width="120" />
             <el-table-column prop="receiptPolicy" label="receiptPolicy" width="140" />
-            <el-table-column label="enabled" width="90">
+            <el-table-column label="enabled" width="110">
               <template #default="{ row }">
-                <StatusTag :value="String(row.enabled)" category="yn" />
+                <el-switch
+                  :model-value="row.enabled"
+                  inline-prompt
+                  :active-text="t('fileTemplateList.switchOn')"
+                  :inactive-text="t('fileTemplateList.switchOff')"
+                  :loading="togglingChannelId === row.id"
+                  @change="toggleChannel(row)"
+                />
               </template>
             </el-table-column>
             <DatetimeColumn prop="updatedAt" label="updatedAt" width="160" />
-            <el-table-column :label="t('fileTemplateList.colActions')" width="220" fixed="right">
+            <el-table-column :label="t('fileTemplateList.colActions')" width="80" fixed="right">
               <template #default="{ row }">
-                <div class="table-actions">
-                  <el-button size="small" plain type="primary" @click="openChannelEdit(row)">
-                    {{ t('common.edit') }}
-                  </el-button>
-                  <el-button size="small" plain @click="toggleChannel(row)">
-                    {{ row.enabled ? t('common.disable') : t('common.enable') }}
-                  </el-button>
-                </div>
+                <el-tooltip :content="t('common.edit')" placement="top">
+                  <el-button :icon="Edit" circle @click="openChannelEdit(row)" />
+                </el-tooltip>
               </template>
             </el-table-column>
           </el-table>
@@ -225,8 +245,13 @@
 
     <el-dialog
       v-model="templateDialogVisible"
-      :title="templateEditingId == null ? '新增文件模板' : '编辑文件模板'"
+      :title="
+        templateEditingId == null
+          ? t('fileTemplateList.templateCreateTitle')
+          : t('fileTemplateList.templateEditTitle')
+      "
       width="760px"
+      destroy-on-close
     >
       <el-form :model="templateForm" label-width="148px">
         <el-form-item label="templateCode" required>
@@ -280,8 +305,13 @@
 
     <el-dialog
       v-model="channelDialogVisible"
-      :title="channelEditingId == null ? '新增文件渠道' : '编辑文件渠道'"
+      :title="
+        channelEditingId == null
+          ? t('fileTemplateList.channelCreateTitle')
+          : t('fileTemplateList.channelEditTitle')
+      "
       width="720px"
+      destroy-on-close
     >
       <el-form :model="channelForm" label-width="138px">
         <el-form-item label="channelCode" required>
@@ -322,7 +352,7 @@
   import { computed, reactive, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
-  import { Plus } from '@element-plus/icons-vue'
+  import { Edit, Plus, View } from '@element-plus/icons-vue'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
 
   const { t, te } = useI18n({ useScope: 'global' })
@@ -376,6 +406,8 @@
   const templateEditingId = ref<number | null>(null)
   const channelEditingId = ref<number | null>(null)
   const saving = ref(false)
+  const togglingTemplateId = ref<number | null>(null)
+  const togglingChannelId = ref<number | null>(null)
   const activeTab = ref<'templates' | 'channels'>('templates')
   const detail = ref<ConsoleFileTemplateResponse | null>(null)
   const allRows = ref<ConsoleFileTemplateResponse[]>([])
@@ -609,9 +641,14 @@
   }
 
   async function toggleTemplate(row: ConsoleFileTemplateResponse) {
-    await toggleFileTemplate(row.id, tenant.tenantId, !row.enabled)
-    ElMessage.success(t('fileTemplateList.saveSuccess'))
-    await load()
+    togglingTemplateId.value = row.id
+    try {
+      await toggleFileTemplate(row.id, tenant.tenantId, !row.enabled)
+      row.enabled = !row.enabled
+      ElMessage.success(t('fileTemplateList.saveSuccess'))
+    } finally {
+      togglingTemplateId.value = null
+    }
   }
 
   function openChannelCreate() {
@@ -680,9 +717,14 @@
   }
 
   async function toggleChannel(row: ConsoleFileChannelResponse) {
-    await toggleFileChannel(row.id, tenant.tenantId, !row.enabled)
-    ElMessage.success(t('fileTemplateList.saveSuccess'))
-    await loadChannels()
+    togglingChannelId.value = row.id
+    try {
+      await toggleFileChannel(row.id, tenant.tenantId, !row.enabled)
+      row.enabled = !row.enabled
+      ElMessage.success(t('fileTemplateList.saveSuccess'))
+    } finally {
+      togglingChannelId.value = null
+    }
   }
 
   function onChannelSearch() {
@@ -730,5 +772,46 @@
 <style scoped>
   .file-config-tabs :deep(.el-tabs__content) {
     overflow: visible;
+  }
+
+  .panel-head {
+    margin-bottom: var(--space-sm);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-md);
+    flex-wrap: wrap;
+  }
+
+  .panel-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: var(--font-size-md);
+    font-weight: 700;
+    color: var(--color-text-primary);
+    line-height: var(--line-height-tight);
+  }
+
+  .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: var(--radius-content);
+  }
+
+  .dot--primary {
+    background: var(--color-primary);
+  }
+
+  .dot--success {
+    background: var(--color-success);
+  }
+
+  .query {
+    margin-bottom: var(--page-block-gap);
+  }
+
+  .query__search {
+    width: min(360px, 100%);
   }
 </style>
