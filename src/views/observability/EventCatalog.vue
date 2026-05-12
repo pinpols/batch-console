@@ -168,7 +168,12 @@
 <script setup lang="ts">
   import { ref, computed, onMounted } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { listEventTypes, listKafkaTopics } from '@/api/eventCatalog'
+  import {
+    listEventTypes,
+    listKafkaTopics,
+    type EventCatalogTopicRow,
+    type EventCatalogTypeRow,
+  } from '@/api/eventCatalog'
 
   const { t } = useI18n({ useScope: 'global' })
   import { toPageResult } from '@/api/adapters'
@@ -199,8 +204,8 @@
   } = useListFilterFeedback(loadingTopics)
   const eventTypeKeyword = ref('')
   const topicKeyword = ref('')
-  const eventTypes = ref<Record<string, unknown>[]>([])
-  const topics = ref<Record<string, unknown>[]>([])
+  const eventTypes = ref<EventCatalogTypeRow[]>([])
+  const topics = ref<EventCatalogTopicRow[]>([])
   const typePage = ref(1)
   const typePageSize = ref(20)
   const topicPage = ref(1)
@@ -259,8 +264,7 @@
 
   async function loadEventTypes() {
     await runLoadTypes(async () => {
-      const data = await listEventTypes()
-      eventTypes.value = Array.isArray(data) ? (data as Record<string, unknown>[]) : []
+      eventTypes.value = await listEventTypes()
     }).catch(() => {
       eventTypes.value = []
     })
@@ -268,8 +272,7 @@
 
   async function loadTopics() {
     await runLoadTopics(async () => {
-      const data = await listKafkaTopics()
-      topics.value = Array.isArray(data) ? (data as Record<string, unknown>[]) : []
+      topics.value = await listKafkaTopics()
     }).catch(() => {
       topics.value = []
     })
