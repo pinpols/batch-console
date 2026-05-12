@@ -146,8 +146,8 @@ export default {
     appliedToast: '合并导入已应用',
   },
   excelMaintenanceWizard: {
-    titleBase: 'Excel 维护',
-    titleWithDomain: 'Excel 维护 — {domain}',
+    titleBase: 'Excel 模板/导出',
+    titleWithDomain: 'Excel 模板/导出 — {domain}',
     badRouteAlert: '参数不正确,请从左侧菜单进入对应的 Excel 维护入口。',
     stepUpload: '上传',
     stepUploadDesc: '选择并提交文件',
@@ -158,7 +158,7 @@ export default {
     uploadingFile: '正在上传文件...',
     uploadTitle: '上传 Excel',
     uploadDesc: '支持 .xlsx / .xls(单文件)。上传成功后可进入预览校验。',
-    btnDownloadTemplate: '下载导入模板',
+    btnDownloadTemplate: '下载模板',
     btnExportCurrent: '导出当前配置',
     btnPickFile: '选择文件',
     btnStartUpload: '开始上传',
@@ -653,7 +653,10 @@ export default {
       description: '查看配置变更记录,处理 Secret 与跨环境同步。',
     },
     systemTags: { title: '标签管理', description: '维护资源标签,并按标签检索关联对象。' },
-    configExcel: { title: 'Excel 维护', description: '上传 Excel 配置,预览校验后应用到当前域。' },
+    configExcel: {
+      title: '模板/导出中心',
+      description: '下载单域模板或导出当前配置;导入统一走配置包。',
+    },
     configTenantPackage: {
       title: '配置批量导入',
       description: '导入租户配置包,预览校验结果后一次性应用。',
