@@ -55,6 +55,29 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/console/auth/check': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Lightweight auth probe (for nginx auth_request / reverse-proxy gating)
+     * @description Returns 204 if the current request carries a valid console session/JWT, 401 otherwise.
+     *     Designed for high-frequency reverse-proxy auth checks (e.g. gating `/docs/*` static
+     *     files); avoids the menu-assembly cost of `GET /api/console/auth/me`.
+     *
+     */
+    get: operations['checkConsoleAuth']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/console/auth/stream/ticket': {
     parameters: {
       query?: never
@@ -1225,367 +1248,6 @@ export interface paths {
     }
     /** List config change logs */
     get: operations['listConfigChangeLogs']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/console/config/file-templates/excel/template': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Download blank file template Excel template */
-    get: operations['downloadFileTemplateExcelTemplate']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/console/config/file-templates/excel/export': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Export file template configs as Excel */
-    get: operations['exportFileTemplateExcel']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/console/config/file-channels/excel/template': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Download blank file channel Excel template */
-    get: operations['downloadFileChannelExcelTemplate']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/console/config/file-channels/excel/export': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Export file channel configs as Excel */
-    get: operations['exportFileChannelExcel']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/console/config/workflows/excel/template': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Download blank workflow Excel template */
-    get: operations['downloadWorkflowExcelTemplate']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/console/config/workflows/excel/export': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Export workflow definitions, nodes, and edges as Excel */
-    get: operations['exportWorkflowExcel']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/console/config/job-definitions/excel/template': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Download blank job definition Excel template */
-    get: operations['downloadJobDefinitionExcelTemplate']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/console/config/job-definitions/excel/export': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Export job definitions as Excel */
-    get: operations['exportJobDefinitionExcel']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/console/config/alert-routings/excel/template': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Download blank alert routing Excel template */
-    get: operations['downloadAlertRoutingExcelTemplate']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/console/config/alert-routings/excel/export': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Export alert routing configs as Excel */
-    get: operations['exportAlertRoutingExcel']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/console/config/alert-routings/excel/quick-import': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /**
-     * One-click import alert routing Excel (upload + validate + apply)
-     * @description 合并上传、校验、应用为一次调用。无校验错误时自动 apply 并返回结果（applied=true）； 有校验错误时返回 preview 和带批注 workbook 下载 URL（applied=false），不执行 apply。 当 skipInvalid=true 时，跳过无效行仅导入有效行。
-     *
-     */
-    post: operations['quickImportAlertRoutingExcel']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/console/config/batch-windows/excel/template': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Download blank batch window Excel template */
-    get: operations['downloadBatchWindowExcelTemplate']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/console/config/batch-windows/excel/export': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Export batch window configs as Excel */
-    get: operations['exportBatchWindowExcel']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/console/config/business-calendars/excel/template': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Download blank business calendar Excel template */
-    get: operations['downloadBusinessCalendarExcelTemplate']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/console/config/business-calendars/excel/export': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Export business calendar configs as Excel */
-    get: operations['exportBusinessCalendarExcel']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/console/config/pipeline-definitions/excel/template': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Download blank pipeline definition Excel template */
-    get: operations['downloadPipelineDefinitionExcelTemplate']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/console/config/pipeline-definitions/excel/export': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Export pipeline definition configs as Excel */
-    get: operations['exportPipelineDefinitionExcel']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/console/config/quota-policies/excel/template': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Download blank quota policy Excel template */
-    get: operations['downloadQuotaPolicyExcelTemplate']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/console/config/quota-policies/excel/export': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Export quota policy configs as Excel */
-    get: operations['exportQuotaPolicyExcel']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/console/config/resource-queues/excel/template': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Download blank resource queue Excel template */
-    get: operations['downloadResourceQueueExcelTemplate']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/console/config/resource-queues/excel/export': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Export resource queue configs as Excel */
-    get: operations['exportResourceQueueExcel']
     put?: never
     post?: never
     delete?: never
@@ -3721,6 +3383,58 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/console/alert-routings': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** List alert routings */
+    get: operations['listAlertRoutings']
+    put?: never
+    /** Create alert routing */
+    post: operations['createAlertRouting']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/alert-routings/{id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    /** Update alert routing */
+    put: operations['updateAlertRouting']
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/alert-routings/{id}/toggle': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Enable or disable alert routing */
+    post: operations['toggleAlertRouting']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/console/pipeline-definitions': {
     parameters: {
       query?: never
@@ -4266,6 +3980,23 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/console/ops/cluster-diagnostic/terminal-children': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Terminal children health */
+    get: operations['terminalChildrenHealth']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/console/tenants': {
     parameters: {
       query?: never
@@ -4786,7 +4517,7 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** Download blank tenant config package Excel template (8 sheets) */
+    /** Download blank tenant config package Excel template (11 sheets) */
     get: operations['downloadTenantConfigPackageExcelTemplate']
     put?: never
     post?: never
@@ -4805,7 +4536,7 @@ export interface paths {
     }
     get?: never
     put?: never
-    /** Upload tenant config package Excel (8 sheets) */
+    /** Upload tenant config package Excel (11 sheets) */
     post: operations['uploadTenantConfigPackageExcel']
     delete?: never
     options?: never
@@ -5020,6 +4751,33 @@ export interface components {
     }
     CommonResponseObject: components['schemas']['CommonResponseBase'] & {
       data?: unknown
+    }
+    /** @description 工作流 DAG 静态校验的单条发现条目。`nodeCode` 与 `edgeId` 至多一个非空。 */
+    DagValidationFinding: {
+      /** @description 规则码，例如 MISSING_START / CYCLE_DETECTED / JOB_REF_MISSING */
+      code: string
+      /**
+       * @description 严重级别
+       * @enum {string}
+       */
+      level: 'ERROR' | 'WARNING'
+      /** @description 人类可读说明（含上下文，如节点 code 或边端点） */
+      message: string
+      /** @description 若该规则定位到具体节点，则为节点 code；否则 null */
+      nodeCode?: string | null
+      /** @description 若该规则定位到具体边，则为 `${fromNodeCode}-${toNodeCode}-${edgeType}`；否则 null */
+      edgeId?: string | null
+    }
+    DagValidationResult: {
+      /** @description 是否通过（findings 中无 ERROR） */
+      valid: boolean
+      /** @description 兼容旧前端的错误字符串列表（保留至下个 minor 版本，新代码请消费 findings） */
+      errors: string[]
+      /** @description 结构化校验条目，前端可按 nodeCode/edgeId 高亮画布单元 */
+      findings: components['schemas']['DagValidationFinding'][]
+    }
+    CommonResponseDagValidationResult: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['DagValidationResult']
     }
     CommonResponseObjectArray: components['schemas']['CommonResponseBase'] & {
       data?: Record<string, never>[]
@@ -7155,11 +6913,17 @@ export interface components {
       uploadToken: string
       fileName: string
       /** Format: int32 */
+      resourceQueueRows: number
+      /** Format: int32 */
+      businessCalendarRows: number
+      /** Format: int32 */
+      batchWindowRows: number
+      /** Format: int32 */
       jobRows: number
       /** Format: int32 */
       fileChannelRows: number
       /** Format: int32 */
-      alertRoutingRows: number
+      fileTemplateRows: number
       /** Format: int32 */
       pipelineRows: number
       /** Format: int32 */
@@ -7203,6 +6967,18 @@ export interface components {
       uploadToken: string
       tenantId: string
       /** Format: int32 */
+      resourceQueueInserted: number
+      /** Format: int32 */
+      resourceQueueUpdated: number
+      /** Format: int32 */
+      businessCalendarInserted: number
+      /** Format: int32 */
+      businessCalendarUpdated: number
+      /** Format: int32 */
+      batchWindowInserted: number
+      /** Format: int32 */
+      batchWindowUpdated: number
+      /** Format: int32 */
       jobInserted: number
       /** Format: int32 */
       jobUpdated: number
@@ -7211,9 +6987,9 @@ export interface components {
       /** Format: int32 */
       channelUpdated: number
       /** Format: int32 */
-      routingInserted: number
+      fileTemplateInserted: number
       /** Format: int32 */
-      routingUpdated: number
+      fileTemplateUpdated: number
       /** Format: int32 */
       pipelineInserted: number
       /** Format: int32 */
@@ -7376,6 +7152,31 @@ export interface operations {
         content: {
           'application/json': components['schemas']['CommonResponseConsoleAuthProfileResponse']
         }
+      }
+    }
+  }
+  checkConsoleAuth: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Authenticated */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description Not authenticated */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
       }
     }
   }
@@ -9268,481 +9069,6 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['CommonResponseConfigChangeLogList']
-        }
-      }
-    }
-  }
-  downloadFileTemplateExcelTemplate: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Empty Excel template download */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': string
-        }
-      }
-    }
-  }
-  exportFileTemplateExcel: {
-    parameters: {
-      query?: {
-        tenantId?: components['parameters']['TenantIdQuery']
-        templateCode?: string
-        templateType?: string
-        enabled?: boolean
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Excel file download */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': string
-        }
-      }
-    }
-  }
-  downloadFileChannelExcelTemplate: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Empty Excel template download */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': string
-        }
-      }
-    }
-  }
-  exportFileChannelExcel: {
-    parameters: {
-      query?: {
-        tenantId?: components['parameters']['TenantIdQuery']
-        channelCode?: string
-        channelType?: string
-        enabled?: boolean
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Excel file download */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': string
-        }
-      }
-    }
-  }
-  downloadWorkflowExcelTemplate: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Empty Excel template download */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': string
-        }
-      }
-    }
-  }
-  exportWorkflowExcel: {
-    parameters: {
-      query?: {
-        tenantId?: components['parameters']['TenantIdQuery']
-        workflowCode?: string
-        workflowType?: string
-        version?: number
-        enabled?: boolean
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Excel file download */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': string
-        }
-      }
-    }
-  }
-  downloadJobDefinitionExcelTemplate: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Empty Excel template download */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': string
-        }
-      }
-    }
-  }
-  exportJobDefinitionExcel: {
-    parameters: {
-      query?: {
-        tenantId?: components['parameters']['TenantIdQuery']
-        jobCode?: string
-        jobType?: string
-        enabled?: boolean
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Excel file download */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': string
-        }
-      }
-    }
-  }
-  downloadAlertRoutingExcelTemplate: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Empty Excel template download */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': string
-        }
-      }
-    }
-  }
-  exportAlertRoutingExcel: {
-    parameters: {
-      query?: {
-        tenantId?: components['parameters']['TenantIdQuery']
-        routeCode?: string
-        team?: string
-        severity?: 'INFO' | 'WARN' | 'ERROR' | 'CRITICAL'
-        enabled?: boolean
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Excel file download */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': string
-        }
-      }
-    }
-  }
-  quickImportAlertRoutingExcel: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'multipart/form-data': {
-          /** Format: binary */
-          file: string
-          reason?: string
-          /** @default false */
-          skipInvalid?: boolean
-        }
-      }
-    }
-    responses: {
-      /** @description Quick import result */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['CommonResponseExcelQuickImportAlertRouting']
-        }
-      }
-    }
-  }
-  downloadBatchWindowExcelTemplate: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Empty Excel template download */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': string
-        }
-      }
-    }
-  }
-  exportBatchWindowExcel: {
-    parameters: {
-      query?: {
-        tenantId?: components['parameters']['TenantIdQuery']
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Excel file download */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': string
-        }
-      }
-    }
-  }
-  downloadBusinessCalendarExcelTemplate: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Empty Excel template download */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': string
-        }
-      }
-    }
-  }
-  exportBusinessCalendarExcel: {
-    parameters: {
-      query?: {
-        tenantId?: components['parameters']['TenantIdQuery']
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Excel file download */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': string
-        }
-      }
-    }
-  }
-  downloadPipelineDefinitionExcelTemplate: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Empty Excel template download */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': string
-        }
-      }
-    }
-  }
-  exportPipelineDefinitionExcel: {
-    parameters: {
-      query?: {
-        tenantId?: components['parameters']['TenantIdQuery']
-        jobCode?: string
-        pipelineType?: string
-        enabled?: boolean
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Excel file download */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': string
-        }
-      }
-    }
-  }
-  downloadQuotaPolicyExcelTemplate: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Empty Excel template download */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': string
-        }
-      }
-    }
-  }
-  exportQuotaPolicyExcel: {
-    parameters: {
-      query?: {
-        tenantId?: components['parameters']['TenantIdQuery']
-        policyCode?: string
-        enabled?: boolean
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Excel file download */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': string
-        }
-      }
-    }
-  }
-  downloadResourceQueueExcelTemplate: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Empty Excel template download */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': string
-        }
-      }
-    }
-  }
-  exportResourceQueueExcel: {
-    parameters: {
-      query?: {
-        tenantId?: components['parameters']['TenantIdQuery']
-        queueCode?: string
-        queueType?: string
-        enabled?: boolean
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Excel file download */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': string
         }
       }
     }
@@ -11750,7 +11076,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseDagValidationResult']
         }
       }
     }
@@ -13040,6 +12366,115 @@ export interface operations {
       }
     }
   }
+  listAlertRoutings: {
+    parameters: {
+      query: {
+        tenantId: string
+        routeCode?: string
+        team?: string
+        severity?: string
+        enabled?: boolean
+        pageNo?: components['parameters']['PageNoQuery']
+        pageSize?: components['parameters']['PageSizeQuery']
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Alert routing list */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseObject']
+        }
+      }
+    }
+  }
+  createAlertRouting: {
+    parameters: {
+      query?: never
+      header: {
+        'Idempotency-Key': components['parameters']['IdempotencyKeyHeader']
+      }
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': Record<string, never>
+      }
+    }
+    responses: {
+      /** @description Created alert routing */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseObject']
+        }
+      }
+    }
+  }
+  updateAlertRouting: {
+    parameters: {
+      query?: never
+      header: {
+        'Idempotency-Key': components['parameters']['IdempotencyKeyHeader']
+      }
+      path: {
+        id: number
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': Record<string, never>
+      }
+    }
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseObject']
+        }
+      }
+    }
+  }
+  toggleAlertRouting: {
+    parameters: {
+      query: {
+        tenantId: string
+        enabled: boolean
+      }
+      header: {
+        'Idempotency-Key': components['parameters']['IdempotencyKeyHeader']
+      }
+      path: {
+        id: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseString']
+        }
+      }
+    }
+  }
   listPipelineDefinitions: {
     parameters: {
       query: {
@@ -14067,6 +13502,28 @@ export interface operations {
     requestBody?: never
     responses: {
       /** @description Outbox health */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseObject']
+        }
+      }
+    }
+  }
+  terminalChildrenHealth: {
+    parameters: {
+      query?: {
+        tenantId?: components['parameters']['TenantIdQuery']
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Terminal children health */
       200: {
         headers: {
           [name: string]: unknown

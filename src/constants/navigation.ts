@@ -37,7 +37,6 @@ import {
   SetUp,
   Setting,
   Stamp,
-  Tickets,
   Timer,
   Tools,
   TrendCharts,
@@ -217,13 +216,6 @@ export const navigationGroups: NavigationGroup[] = [
         icon: PriceTag,
       },
       {
-        // Excel 维护 → Tickets(票据/表格感),避开跟作业定义 List 同 icon
-        title: pageTitle('/config/excel'),
-        path: '/config/excel',
-        minRole: 'OPERATOR',
-        icon: Tickets,
-      },
-      {
         title: pageTitle('/config/tenant-package'),
         path: '/config/tenant-package',
         minRole: 'OPERATOR',
@@ -242,6 +234,12 @@ export const navigationGroups: NavigationGroup[] = [
         path: '/observability/alerts',
         minRole: 'VIEWER',
         icon: WarningFilled,
+      },
+      {
+        title: pageTitle('/observability/alert-routings'),
+        path: '/observability/alert-routings',
+        minRole: 'OPERATOR',
+        icon: Bell,
       },
       {
         // 操作审计 → Notebook(审计日志本),避开跟"配置管理" Memo 同 icon

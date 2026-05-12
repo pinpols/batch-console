@@ -95,10 +95,6 @@ export const pageMetaByPath = {
     title: '标签管理',
     description: '维护资源标签,并按标签检索关联对象。',
   },
-  '/config/excel': {
-    title: '模板/导出中心',
-    description: '下载单域模板或导出当前配置;导入统一走配置包。',
-  },
   '/config/tenant-package': {
     title: '配置批量导入',
     description: '导入租户配置包,预览校验结果后一次性应用。',
@@ -106,6 +102,10 @@ export const pageMetaByPath = {
   '/observability/alerts': {
     title: '告警',
     description: '查看告警事件,并执行确认、静默和关闭。',
+  },
+  '/observability/alert-routings': {
+    title: '告警路由',
+    description: '维护告警路由、接收人、聚合和重复通知规则。',
   },
   '/observability/audits': {
     title: '审计日志',
