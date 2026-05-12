@@ -96,8 +96,8 @@ export const pageMetaByPath = {
     description: '维护资源标签,并按标签检索关联对象。',
   },
   '/config/excel': {
-    title: 'Excel 维护',
-    description: '上传 Excel 配置,预览校验后应用到当前域。',
+    title: '模板/导出中心',
+    description: '下载单域模板或导出当前配置;导入统一走配置包。',
   },
   '/config/tenant-package': {
     title: '配置批量导入',

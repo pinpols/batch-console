@@ -79,7 +79,7 @@ export function excelPaths(domain: ExcelDomain) {
   return paths[domain]
 }
 
-/** GET /api/console/config/{domain}/excel/template — 下载空白导入模板（xlsx blob） */
+/** GET /api/console/config/{domain}/excel/template — 下载单域空白模板（xlsx blob） */
 export async function excelDownloadTemplate(domain: ExcelDomain) {
   const { template } = paths[domain]
   const response = await apiClient.get(template, { responseType: 'blob' })
