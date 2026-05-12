@@ -243,7 +243,7 @@
     tenantPackagePreview,
     tenantPackageDownloadPreviewWorkbook,
     tenantPackageApply,
-  } from '@/api/excelDomains'
+  } from '@/api/tenantPackageExcel'
   import { useImportWizard } from '@/composables/useImportWizard'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'

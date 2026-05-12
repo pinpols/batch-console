@@ -8,6 +8,9 @@
           <span class="dot dot--primary" />
           {{ t('quotaPanel.sectionTitle') }}
         </div>
+        <el-button type="primary" :icon="Plus" @click="openCreate">
+          {{ t('quotaPanel.actionCreate') }}
+        </el-button>
       </div>
 
       <ListPageQueryBar
@@ -52,12 +55,12 @@
           <div class="quota-card__top">
             <div class="quota-card__title">
               <span class="quota-card__code">{{ p.policyCode }}</span>
-              <span v-if="p.policyName" class="quota-card__name">{{ p.policyName }}</span>
-              <el-tag size="small" effect="plain" :type="tagTypeForKey(p.fairShareGroup)">
-                {{ p.fairShareGroup }}
-              </el-tag>
+              <span v-if="p.description" class="quota-card__name">{{ p.description }}</span>
             </div>
             <div class="quota-card__badges">
+              <el-tooltip :content="t('quotaPanel.actionEdit')" placement="top">
+                <el-button :icon="Edit" circle @click="openEdit(p)" />
+              </el-tooltip>
               <el-switch
                 :model-value="p.enabled"
                 inline-prompt
@@ -75,32 +78,29 @@
           <div class="kpi-row">
             <div class="kpi">
               <div class="kpi__label">{{ t('quotaPanel.kpiConcurrent') }}</div>
-              <div class="kpi__value">{{ num(p.concurrentCap) }}</div>
+              <div class="kpi__value">{{ num(p.maxRunningJobsPerTenant) }}</div>
             </div>
             <div class="kpi">
               <div class="kpi__label">{{ t('quotaPanel.kpiQps') }}</div>
-              <div class="kpi__value">{{ num(p.qpsLimit) }}</div>
+              <div class="kpi__value">{{ num(p.maxQpsPerTenant) }}</div>
             </div>
             <div class="kpi">
-              <div class="kpi__label">{{ t('quotaPanel.kpiBurst') }}</div>
-              <div class="kpi__value">{{ num(p.burstLimit) }}</div>
+              <div class="kpi__label">{{ t('quotaPanel.kpiPartitions') }}</div>
+              <div class="kpi__value">{{ num(p.maxPartitionsPerTenant) }}</div>
             </div>
           </div>
 
           <el-collapse class="details">
             <el-collapse-item :title="t('quotaPanel.moreDetails')" name="more">
               <el-descriptions :column="2" size="small" border>
-                <el-descriptions-item label="policyName">
-                  {{ p.policyName || '—' }}
-                </el-descriptions-item>
                 <el-descriptions-item :label="t('quotaPanel.tenantId')">
                   {{ p.tenantId || '—' }}
                 </el-descriptions-item>
                 <el-descriptions-item label="fairShareWeight">
                   {{ num(p.fairShareWeight) }}
                 </el-descriptions-item>
-                <el-descriptions-item label="slidingWindowHours">
-                  {{ num(p.slidingWindowHours) }}
+                <el-descriptions-item label="maxPartitionsPerTenant">
+                  {{ num(p.maxPartitionsPerTenant) }}
                 </el-descriptions-item>
                 <el-descriptions-item label="updatedAt">
                   {{ p.updatedAt || '—' }}
@@ -114,13 +114,60 @@
         </el-card>
       </div>
     </SectionCard>
+
+    <el-dialog
+      v-model="dialogVisible"
+      :title="
+        editingId == null ? t('quotaPanel.drawerCreateTitle') : t('quotaPanel.drawerEditTitle')
+      "
+      width="560px"
+      destroy-on-close
+    >
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="190px">
+        <el-form-item label="policyCode" prop="policyCode">
+          <el-input v-model="form.policyCode" :disabled="editingId != null" />
+        </el-form-item>
+        <el-form-item label="maxRunningJobsPerTenant" prop="maxRunningJobsPerTenant">
+          <el-input-number v-model="form.maxRunningJobsPerTenant" :min="0" />
+        </el-form-item>
+        <el-form-item label="maxPartitionsPerTenant" prop="maxPartitionsPerTenant">
+          <el-input-number v-model="form.maxPartitionsPerTenant" :min="0" />
+        </el-form-item>
+        <el-form-item label="maxQpsPerTenant" prop="maxQpsPerTenant">
+          <el-input-number v-model="form.maxQpsPerTenant" :min="0" />
+        </el-form-item>
+        <el-form-item label="fairShareWeight" prop="fairShareWeight">
+          <el-input-number v-model="form.fairShareWeight" :min="1" />
+        </el-form-item>
+        <el-form-item label="enabled">
+          <el-switch v-model="form.enabled" />
+        </el-form-item>
+        <el-form-item :label="t('quotaPanel.descriptionLabel')">
+          <el-input
+            v-model="form.description"
+            type="textarea"
+            :rows="3"
+            maxlength="512"
+            show-word-limit
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="dialogVisible = false">{{ t('common.cancel') }}</el-button>
+        <el-button type="primary" :loading="saving" @click="submitForm">
+          {{ t('common.save') }}
+        </el-button>
+      </template>
+    </el-dialog>
   </PageContainer>
 </template>
 
 <script setup lang="ts">
-  import { computed, ref } from 'vue'
+  import { computed, reactive, ref } from 'vue'
   import { useI18n } from 'vue-i18n'
+  import { Edit, Plus } from '@element-plus/icons-vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
+  import type { FormInstance, FormRules } from 'element-plus'
 
   const { t } = useI18n({ useScope: 'global' })
   import { governanceApi, type GovernanceQuotaPolicyRow } from '@/api/governance'
@@ -136,6 +183,7 @@
   const listRemote = ref(false)
   const { filterBusy, runSearch, runReset, runRefresh } = useListFilterFeedback(listRemote)
   const loading = ref(false)
+  const saving = ref(false)
   const togglingId = ref<number | null>(null)
   const policies = ref<GovernanceQuotaPolicyRow[]>([])
   const kwDraft = ref('')
@@ -143,15 +191,24 @@
   const kwApplied = ref('')
   const enabledApplied = ref<boolean | undefined>(undefined)
 
-  type TagType = 'primary' | 'success' | 'warning' | 'danger' | 'info'
-  const TAG_TYPES: TagType[] = ['primary', 'success', 'warning', 'danger', 'info']
+  const dialogVisible = ref(false)
+  const editingId = ref<number | null>(null)
+  const formRef = ref<FormInstance>()
+  const form = reactive({
+    policyCode: '',
+    maxRunningJobsPerTenant: 0,
+    maxPartitionsPerTenant: 0,
+    maxQpsPerTenant: 0,
+    fairShareWeight: 1,
+    enabled: true,
+    description: '',
+  })
 
-  function tagTypeForKey(key: string | null | undefined): TagType {
-    const s = String(key ?? '').trim()
-    if (!s) return 'info'
-    let hash = 0
-    for (let i = 0; i < s.length; i++) hash = (hash * 31 + s.charCodeAt(i)) >>> 0
-    return TAG_TYPES[hash % TAG_TYPES.length]
+  const rules: FormRules = {
+    policyCode: [{ required: true, message: t('quotaPanel.rulePolicyCode'), trigger: 'blur' }],
+    fairShareWeight: [
+      { required: true, message: t('quotaPanel.ruleFairShareWeight'), trigger: 'blur' },
+    ],
   }
 
   function num(v: unknown): string {
@@ -183,9 +240,7 @@
   const filtered = computed(() => {
     const k = kwApplied.value.trim().toLowerCase()
     return policies.value.filter((p) => {
-      const matchKeyword = !k
-        ? true
-        : `${p.policyCode} ${p.policyName} ${p.fairShareGroup}`.toLowerCase().includes(k)
+      const matchKeyword = !k ? true : `${p.policyCode} ${p.description}`.toLowerCase().includes(k)
       const matchEnabled =
         enabledApplied.value === undefined ? true : Boolean(p.enabled) === enabledApplied.value
       return matchKeyword && matchEnabled
@@ -200,6 +255,45 @@
       policies.value = []
     } finally {
       loading.value = false
+    }
+  }
+
+  function resetForm(row?: GovernanceQuotaPolicyRow) {
+    editingId.value = row?.id ?? null
+    form.policyCode = row?.policyCode ?? ''
+    form.maxRunningJobsPerTenant = row?.maxRunningJobsPerTenant ?? 0
+    form.maxPartitionsPerTenant = row?.maxPartitionsPerTenant ?? 0
+    form.maxQpsPerTenant = row?.maxQpsPerTenant ?? 0
+    form.fairShareWeight = row?.fairShareWeight ?? 1
+    form.enabled = row?.enabled ?? true
+    form.description = row?.description ?? ''
+  }
+
+  function openCreate() {
+    resetForm()
+    dialogVisible.value = true
+  }
+
+  function openEdit(row: GovernanceQuotaPolicyRow) {
+    resetForm(row)
+    dialogVisible.value = true
+  }
+
+  async function submitForm() {
+    if (!(await formRef.value?.validate().catch(() => false))) return
+    saving.value = true
+    try {
+      const body = { tenantId: tenant.tenantId, ...form }
+      if (editingId.value == null) {
+        await governanceApi.createQuotaPolicy(body)
+      } else {
+        await governanceApi.updateQuotaPolicy(editingId.value, body)
+      }
+      ElMessage.success(t('quotaPanel.saveSuccess', { code: form.policyCode }))
+      dialogVisible.value = false
+      await load()
+    } finally {
+      saving.value = false
     }
   }
 
@@ -239,6 +333,11 @@
 <style scoped>
   .panel-head {
     margin-bottom: var(--space-sm);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-md);
+    flex-wrap: wrap;
   }
 
   .panel-title {

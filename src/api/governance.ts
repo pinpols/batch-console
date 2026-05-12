@@ -1,4 +1,4 @@
-import { del, get, post } from '@/api/client'
+import { del, get, post, put } from '@/api/client'
 import { fetchAllPageItems } from '@/api/adapters'
 
 /**
@@ -56,15 +56,58 @@ export interface GovernanceQuotaPolicyRow {
   id: number
   tenantId: string
   policyCode: string
-  policyName: string
-  fairShareGroup: string
   fairShareWeight: number | null
-  concurrentCap: number | null
-  qpsLimit: number | null
-  burstLimit: number | null
-  slidingWindowHours: number | null
+  maxRunningJobsPerTenant: number | null
+  maxPartitionsPerTenant: number | null
+  maxQpsPerTenant: number | null
   enabled: boolean
+  description: string
   updatedAt: string
+}
+
+export interface GovernanceQuotaPolicySavePayload {
+  tenantId: string
+  policyCode: string
+  maxRunningJobsPerTenant?: number
+  maxPartitionsPerTenant?: number
+  maxQpsPerTenant?: number
+  fairShareWeight?: number
+  enabled?: boolean
+  description?: string
+}
+
+export interface GovernanceAlertRoutingRow {
+  id: number
+  tenantId: string
+  routeCode: string
+  routeName: string
+  team: string
+  alertGroup: string
+  severity: string
+  receiver: string
+  groupBy: string
+  groupWaitSeconds: number | null
+  groupIntervalSeconds: number | null
+  repeatIntervalSeconds: number | null
+  enabled: boolean
+  description: string
+  updatedAt: string
+}
+
+export interface GovernanceAlertRoutingSavePayload {
+  tenantId: string
+  routeCode: string
+  routeName?: string
+  team: string
+  alertGroup?: string
+  severity: string
+  receiver: string
+  groupBy?: string
+  groupWaitSeconds?: number
+  groupIntervalSeconds?: number
+  repeatIntervalSeconds?: number
+  enabled?: boolean
+  description?: string
 }
 
 function readString(row: RawRow, ...keys: string[]): string {
@@ -103,42 +146,48 @@ function readBoolean(row: RawRow, ...keys: string[]): boolean {
 function normalizeQueue(row: RawRow): GovernanceQueueRow {
   return {
     id: readNumber(row, 'id') ?? 0,
-    tenantId: readString(row, 'tenantId'),
-    queueCode: readString(row, 'queueCode'),
-    queueName: readString(row, 'queueName', 'name'),
-    queueType: readString(row, 'queueType'),
-    fairShareGroup: readString(row, 'fairShareGroup'),
-    concurrentCap: readNumber(row, 'concurrentCap', 'maxRunningJobs', 'maxConcurrentJobs'),
-    burstLimit: readNumber(row, 'burstLimit'),
+    tenantId: readString(row, 'tenantId', 'tenant_id'),
+    queueCode: readString(row, 'queueCode', 'queue_code'),
+    queueName: readString(row, 'queueName', 'queue_name', 'name'),
+    queueType: readString(row, 'queueType', 'queue_type'),
+    fairShareGroup: readString(row, 'fairShareGroup', 'fair_share_group'),
+    concurrentCap: readNumber(
+      row,
+      'concurrentCap',
+      'concurrent_cap',
+      'maxRunningJobs',
+      'maxConcurrentJobs',
+    ),
+    burstLimit: readNumber(row, 'burstLimit', 'burst_limit'),
     enabled: readBoolean(row, 'enabled'),
-    updatedAt: readString(row, 'updatedAt'),
+    updatedAt: readString(row, 'updatedAt', 'updated_at'),
   }
 }
 
 function normalizeBatchWindow(row: RawRow): GovernanceBatchWindowRow {
   return {
     id: readNumber(row, 'id') ?? 0,
-    tenantId: readString(row, 'tenantId'),
-    windowCode: readString(row, 'windowCode'),
-    windowName: readString(row, 'windowName', 'name'),
-    startTime: readString(row, 'startTime', 'windowStartTime'),
-    endTime: readString(row, 'endTime', 'windowEndTime'),
-    crossDayPolicy: readString(row, 'crossDayPolicy'),
-    outOfWindowAction: readString(row, 'outOfWindowAction'),
+    tenantId: readString(row, 'tenantId', 'tenant_id'),
+    windowCode: readString(row, 'windowCode', 'window_code'),
+    windowName: readString(row, 'windowName', 'window_name', 'name'),
+    startTime: readString(row, 'startTime', 'start_time', 'windowStartTime'),
+    endTime: readString(row, 'endTime', 'end_time', 'windowEndTime'),
+    crossDayPolicy: readString(row, 'crossDayPolicy', 'cross_day_policy'),
+    outOfWindowAction: readString(row, 'outOfWindowAction', 'out_of_window_action'),
     enabled: readBoolean(row, 'enabled'),
-    updatedAt: readString(row, 'updatedAt'),
+    updatedAt: readString(row, 'updatedAt', 'updated_at'),
   }
 }
 
 function normalizeCalendar(row: RawRow): GovernanceCalendarRow {
   return {
     id: readNumber(row, 'id') ?? 0,
-    tenantId: readString(row, 'tenantId'),
-    calendarCode: readString(row, 'calendarCode'),
-    calendarName: readString(row, 'calendarName', 'name'),
+    tenantId: readString(row, 'tenantId', 'tenant_id'),
+    calendarCode: readString(row, 'calendarCode', 'calendar_code'),
+    calendarName: readString(row, 'calendarName', 'calendar_name', 'name'),
     timezone: readString(row, 'timezone', 'timeZone'),
     enabled: readBoolean(row, 'enabled'),
-    updatedAt: readString(row, 'updatedAt'),
+    updatedAt: readString(row, 'updatedAt', 'updated_at'),
   }
 }
 
@@ -155,17 +204,40 @@ function normalizeHoliday(row: RawRow): GovernanceCalendarHolidayRow {
 function normalizeQuotaPolicy(row: RawRow): GovernanceQuotaPolicyRow {
   return {
     id: readNumber(row, 'id') ?? 0,
-    tenantId: readString(row, 'tenantId'),
-    policyCode: readString(row, 'policyCode'),
-    policyName: readString(row, 'policyName', 'name'),
-    fairShareGroup: readString(row, 'fairShareGroup'),
-    fairShareWeight: readNumber(row, 'fairShareWeight'),
-    concurrentCap: readNumber(row, 'concurrentCap', 'maxRunningJobsPerTenant'),
-    qpsLimit: readNumber(row, 'qpsLimit'),
-    burstLimit: readNumber(row, 'burstLimit'),
-    slidingWindowHours: readNumber(row, 'slidingWindowHours'),
+    tenantId: readString(row, 'tenantId', 'tenant_id'),
+    policyCode: readString(row, 'policyCode', 'policy_code'),
+    fairShareWeight: readNumber(row, 'fairShareWeight', 'fair_share_weight'),
+    maxRunningJobsPerTenant: readNumber(
+      row,
+      'maxRunningJobsPerTenant',
+      'max_running_jobs_per_tenant',
+      'concurrentCap',
+    ),
+    maxPartitionsPerTenant: readNumber(row, 'maxPartitionsPerTenant', 'max_partitions_per_tenant'),
+    maxQpsPerTenant: readNumber(row, 'maxQpsPerTenant', 'max_qps_per_tenant', 'qpsLimit'),
     enabled: readBoolean(row, 'enabled'),
-    updatedAt: readString(row, 'updatedAt'),
+    description: readString(row, 'description'),
+    updatedAt: readString(row, 'updatedAt', 'updated_at'),
+  }
+}
+
+function normalizeAlertRouting(row: RawRow): GovernanceAlertRoutingRow {
+  return {
+    id: readNumber(row, 'id') ?? 0,
+    tenantId: readString(row, 'tenantId', 'tenant_id'),
+    routeCode: readString(row, 'routeCode', 'route_code'),
+    routeName: readString(row, 'routeName', 'route_name'),
+    team: readString(row, 'team'),
+    alertGroup: readString(row, 'alertGroup', 'alert_group'),
+    severity: readString(row, 'severity'),
+    receiver: readString(row, 'receiver'),
+    groupBy: readString(row, 'groupBy', 'group_by'),
+    groupWaitSeconds: readNumber(row, 'groupWaitSeconds', 'group_wait_seconds'),
+    groupIntervalSeconds: readNumber(row, 'groupIntervalSeconds', 'group_interval_seconds'),
+    repeatIntervalSeconds: readNumber(row, 'repeatIntervalSeconds', 'repeat_interval_seconds'),
+    enabled: readBoolean(row, 'enabled'),
+    description: readString(row, 'description'),
+    updatedAt: readString(row, 'updatedAt', 'updated_at'),
   }
 }
 
@@ -236,6 +308,31 @@ export const governanceApi = {
   /** POST /api/console/quota-policies/{id}/toggle — toggle enabled */
   toggleQuotaPolicy: (id: number, tenantId: string, enabled: boolean) =>
     post<string>(`/api/console/quota-policies/${id}/toggle`, undefined, {
+      params: { tenantId, enabled },
+    }),
+
+  createQuotaPolicy: (body: GovernanceQuotaPolicySavePayload) =>
+    post<RawRow>('/api/console/quota-policies', body).then(normalizeQuotaPolicy),
+
+  updateQuotaPolicy: (id: number, body: GovernanceQuotaPolicySavePayload) =>
+    put<RawRow>(`/api/console/quota-policies/${id}`, body).then(normalizeQuotaPolicy),
+
+  listAlertRoutings: async (
+    tenantId: string,
+    filters?: { routeCode?: string; team?: string; severity?: string; enabled?: boolean },
+  ) =>
+    (await listGovernanceRows('/api/console/alert-routings', tenantId, filters ?? {})).map(
+      normalizeAlertRouting,
+    ),
+
+  createAlertRouting: (body: GovernanceAlertRoutingSavePayload) =>
+    post<RawRow>('/api/console/alert-routings', body).then(normalizeAlertRouting),
+
+  updateAlertRouting: (id: number, body: GovernanceAlertRoutingSavePayload) =>
+    put<RawRow>(`/api/console/alert-routings/${id}`, body).then(normalizeAlertRouting),
+
+  toggleAlertRouting: (id: number, tenantId: string, enabled: boolean) =>
+    post<string>(`/api/console/alert-routings/${id}/toggle`, undefined, {
       params: { tenantId, enabled },
     }),
 

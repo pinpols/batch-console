@@ -59,16 +59,6 @@ const routes = [
         },
       },
       {
-        path: 'config/excel',
-        name: 'config-excel',
-        component: () => import('@/views/config/ExcelMaintenanceWizard.vue'),
-        meta: {
-          title: 'Excel 维护',
-          activeMenu: '/config/excel',
-          minRole: 'OPERATOR',
-        },
-      },
-      {
         path: 'config/tenant-package',
         name: 'tenant-package-import',
         component: () => import('@/views/config/TenantPackageImportWizard.vue'),
@@ -77,16 +67,6 @@ const routes = [
           activeMenu: '/config/tenant-package',
           minRole: 'OPERATOR',
         },
-      },
-      {
-        path: 'config/excel/:domain',
-        redirect: (to) => ({
-          path: '/config/excel',
-          query: {
-            ...to.query,
-            domain: String(to.params.domain ?? 'file-templates'),
-          },
-        }),
       },
       {
         path: 'reports',
@@ -260,6 +240,16 @@ const routes = [
           title: '告警',
           activeMenu: '/observability/alerts',
           minRole: 'VIEWER',
+        },
+      },
+      {
+        path: 'observability/alert-routings',
+        name: 'observability-alert-routings',
+        component: () => import('@/views/observability/AlertRoutingPanel.vue'),
+        meta: {
+          title: '告警路由',
+          activeMenu: '/observability/alert-routings',
+          minRole: 'OPERATOR',
         },
       },
       {
