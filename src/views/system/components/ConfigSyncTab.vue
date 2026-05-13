@@ -1,104 +1,132 @@
 <template>
   <div class="sync">
-    <!-- 顶部业务说明 -->
     <p class="sync__hint">{{ t('configSyncTab.hint') }}</p>
 
     <div class="sync__flow">
-      <!-- ─── 源(当前租户) ─────────────────────────────── -->
-      <section class="sync__pane sync__pane--source" :aria-label="t('configSyncTab.sourceTitle')">
-        <header class="sync__pane-head">
-          <span class="sync__badge sync__badge--source">{{ t('configSyncTab.sourceTitle') }}</span>
-          <code class="sync__tenant">{{ tenant.tenantId }}</code>
+      <!-- ─── 源 ──────────────────────────────────────── -->
+      <section class="sync__pane" :aria-label="t('configSyncTab.sourceTitle')">
+        <header class="sync__head">
+          <span class="sync__step">01</span>
+          <div class="sync__head-text">
+            <span class="sync__title">{{ t('configSyncTab.sourceTitle') }}</span>
+            <span class="sync__subtitle">{{ tenant.tenantId }}</span>
+          </div>
         </header>
 
-        <el-form label-width="68px" class="sync__form">
-          <el-form-item :label="t('configSyncTab.sourceEnvLabel')">
-            <el-input v-model="sourceEnv" :placeholder="t('configSyncTab.sourceEnvPlaceholder')" />
-          </el-form-item>
+        <div class="sync__body">
+          <el-form label-width="56px" class="sync__form" size="default">
+            <el-form-item :label="t('configSyncTab.sourceEnvLabel')">
+              <el-input
+                v-model="sourceEnv"
+                :placeholder="t('configSyncTab.sourceEnvPlaceholder')"
+              />
+            </el-form-item>
 
-          <el-form-item :label="t('configSyncTab.typesTitle')">
-            <div class="sync__types">
-              <el-checkbox v-for="opt in exportTypeOptions" :key="opt.value" v-model="opt.checked">
-                {{ opt.label }}
-              </el-checkbox>
-            </div>
-            <p class="sync__types-hint">{{ t('configSyncTab.typesDescAll') }}</p>
-          </el-form-item>
-        </el-form>
+            <el-form-item :label="t('configSyncTab.typesTitle')">
+              <div class="sync__types">
+                <el-checkbox
+                  v-for="opt in exportTypeOptions"
+                  :key="opt.value"
+                  v-model="opt.checked"
+                >
+                  {{ opt.label }}
+                </el-checkbox>
+              </div>
+              <p class="sync__types-hint">{{ t('configSyncTab.typesDescAll') }}</p>
+            </el-form-item>
+          </el-form>
+        </div>
 
-        <div class="sync__actions sync__actions--source">
+        <footer class="sync__footer">
+          <el-button v-if="exportResult" :icon="Right" plain size="default" @click="copyToTarget">
+            {{ t('configSyncTab.btnCopyToTarget') }}
+          </el-button>
           <el-button
             type="primary"
             :loading="exporting"
             :icon="Download"
+            size="default"
             v-track-click="t('configSyncTab.trackExport')"
             @click="doExport"
           >
             {{ t('configSyncTab.btnExport') }}
           </el-button>
-          <el-button v-if="exportResult" :icon="Right" plain @click="copyToTarget">
-            {{ t('configSyncTab.btnCopyToTarget') }}
-          </el-button>
-        </div>
+        </footer>
       </section>
 
-      <!-- 流向箭头(>=1100px 显示) -->
-      <div class="sync__arrow" aria-hidden="true">
-        <el-icon><Right /></el-icon>
+      <!-- 流向连接(>=1100px 显示) -->
+      <div class="sync__connector" aria-hidden="true">
+        <span class="sync__connector-line"></span>
+        <span class="sync__connector-icon"
+          ><el-icon><Right /></el-icon
+        ></span>
+        <span class="sync__connector-line"></span>
       </div>
 
       <!-- ─── 目标 ─────────────────────────────────────── -->
-      <section class="sync__pane sync__pane--target" :aria-label="t('configSyncTab.targetTitle')">
-        <header class="sync__pane-head">
-          <span class="sync__badge sync__badge--target">{{ t('configSyncTab.targetTitle') }}</span>
+      <section class="sync__pane" :aria-label="t('configSyncTab.targetTitle')">
+        <header class="sync__head">
+          <span class="sync__step">02</span>
+          <div class="sync__head-text">
+            <span class="sync__title">{{ t('configSyncTab.targetTitle') }}</span>
+            <span class="sync__subtitle">{{ targetTenantsSubtitle }}</span>
+          </div>
         </header>
 
-        <el-form label-width="68px" class="sync__form">
-          <el-form-item :label="t('configSyncTab.targetEnvLabel')">
-            <el-input v-model="targetEnv" :placeholder="t('configSyncTab.targetEnvPlaceholder')" />
-          </el-form-item>
-          <el-form-item :label="t('configSyncTab.targetTenantsLabel')">
-            <el-input
-              v-model="targetTenantsText"
-              :placeholder="t('configSyncTab.targetTenantsPlaceholder')"
-            />
-          </el-form-item>
-          <el-form-item :label="t('configSyncTab.payloadLabel')">
-            <el-input
-              v-model="importPayload"
-              type="textarea"
-              :rows="8"
-              :placeholder="t('configSyncTab.payloadPlaceholder')"
-              class="sync__payload"
-            />
-          </el-form-item>
-        </el-form>
+        <div class="sync__body">
+          <el-form label-width="56px" class="sync__form" size="default">
+            <el-form-item :label="t('configSyncTab.targetEnvLabel')">
+              <el-input
+                v-model="targetEnv"
+                :placeholder="t('configSyncTab.targetEnvPlaceholder')"
+              />
+            </el-form-item>
+            <el-form-item :label="t('configSyncTab.targetTenantsLabel')">
+              <el-input
+                v-model="targetTenantsText"
+                :placeholder="t('configSyncTab.targetTenantsPlaceholder')"
+              />
+            </el-form-item>
+            <el-form-item :label="t('configSyncTab.payloadLabel')">
+              <el-input
+                v-model="importPayload"
+                type="textarea"
+                :rows="7"
+                :placeholder="t('configSyncTab.payloadPlaceholder')"
+                class="sync__payload"
+              />
+            </el-form-item>
+          </el-form>
+        </div>
 
-        <div class="sync__actions sync__actions--target">
+        <footer class="sync__footer">
           <el-button
             :loading="previewing"
             :disabled="!importPayload.trim()"
             :icon="View"
+            size="default"
             v-track-click="t('configSyncTab.trackPreview')"
             @click="doPreview"
           >
             {{ t('configSyncTab.btnPreview') }}
           </el-button>
           <el-button
-            type="danger"
+            type="primary"
             :loading="importing"
             :disabled="!importPayload.trim()"
             :icon="Upload"
+            size="default"
+            class="sync__apply"
             v-track-click="t('configSyncTab.trackImport')"
             @click="doImport"
           >
             {{ t('configSyncTab.btnImport') }}
           </el-button>
-        </div>
+        </footer>
       </section>
     </div>
 
-    <!-- ─── 结果区(全宽,导出/差异共享) ─────────────────── -->
+    <!-- ─── 结果区(导出/差异共享) ─────────────────────── -->
     <section v-if="displayResult" class="sync__result">
       <header class="sync__result-head">
         <span class="sync__result-title">{{ displayResultTitle }}</span>
@@ -157,6 +185,17 @@
   const displayResultTitle = computed(() =>
     previewResult.value ? t('configSyncTab.resultPreview') : t('configSyncTab.resultExport'),
   )
+
+  // 目标侧 header 副标题:显示当前目标租户列表的摘要
+  const targetTenantsSubtitle = computed(() => {
+    const list = targetTenantsText.value
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean)
+    if (!list.length) return tenant.tenantId
+    if (list.length === 1) return list[0]
+    return `${list[0]} 等 ${list.length} 个`
+  })
 
   function resolvedTargetTenants(): string[] {
     const list = targetTenantsText.value
@@ -266,151 +305,235 @@
 <style scoped>
   .sync {
     display: grid;
-    gap: var(--space-md);
+    gap: 20px;
   }
 
+  /* 顶部说明:纯文字,不再用色块抢视觉 */
   .sync__hint {
     margin: 0;
-    padding: 10px 14px;
-    border-radius: var(--radius-content);
-    background: color-mix(in srgb, var(--color-primary) 6%, var(--color-bg-card) 94%);
-    border: 1px solid color-mix(in srgb, var(--color-primary) 16%, var(--color-border-light) 84%);
-    color: var(--color-text-secondary);
+    color: var(--color-text-tertiary);
     font-size: 13px;
-    line-height: 1.6;
+    line-height: 1.65;
   }
 
+  /* 双栏布局:>=1100px 才显示连接线 */
   .sync__flow {
     display: grid;
     grid-template-columns: 1fr;
-    gap: var(--space-md);
+    gap: 16px;
     align-items: stretch;
   }
 
   @media (min-width: 1100px) {
     .sync__flow {
-      grid-template-columns: minmax(0, 1fr) 32px minmax(0, 1fr);
-      gap: var(--space-md);
+      grid-template-columns: minmax(0, 1fr) 56px minmax(0, 1fr);
+      gap: 0;
     }
   }
 
+  /* Pane:纯中性边框 + 微弱底色,不再用主题色边框喧宾夺主 */
   .sync__pane {
     display: flex;
     flex-direction: column;
-    gap: var(--space-sm);
-    padding: var(--card-inner-padding);
     border-radius: var(--radius-content);
     border: 1px solid var(--color-border-light);
-    background: color-mix(in srgb, var(--color-bg-card) 96%, var(--color-bg-canvas) 4%);
+    background: var(--color-bg-card);
+    overflow: hidden;
+    transition: border-color 0.15s ease;
   }
 
-  .sync__pane--source {
-    border-color: color-mix(in srgb, var(--color-success) 22%, var(--color-border-light) 78%);
+  .sync__pane:hover {
+    border-color: color-mix(in srgb, var(--color-border) 90%, var(--color-text-primary) 10%);
   }
 
-  .sync__pane--target {
-    border-color: color-mix(in srgb, var(--color-primary) 22%, var(--color-border-light) 78%);
-  }
-
-  .sync__pane-head {
+  /* Pane 头部:序号 + 标题 + 副标题(租户名) */
+  .sync__head {
     display: flex;
     align-items: center;
-    gap: 10px;
-    margin-bottom: 4px;
+    gap: 12px;
+    padding: 14px 18px 10px;
+    border-bottom: 1px solid var(--color-border-light);
   }
 
-  .sync__badge {
+  .sync__step {
+    flex: 0 0 auto;
+    width: 28px;
+    height: 28px;
     display: inline-flex;
     align-items: center;
-    padding: 2px 10px;
-    border-radius: 999px;
-    font-size: 12px;
-    font-weight: 650;
-    line-height: 1.6;
-  }
-
-  .sync__badge--source {
-    background: color-mix(in srgb, var(--color-success) 14%, var(--color-bg-card) 86%);
-    color: var(--color-success);
-  }
-
-  .sync__badge--target {
-    background: color-mix(in srgb, var(--color-primary) 14%, var(--color-bg-card) 86%);
-    color: var(--color-primary);
-  }
-
-  .sync__tenant {
-    font-family: var(--font-family-mono, ui-monospace, Menlo, Monaco, Consolas, monospace);
-    font-size: 12px;
+    justify-content: center;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--color-text-primary) 8%, transparent);
     color: var(--color-text-secondary);
-    padding: 2px 8px;
-    border-radius: var(--radius-input);
-    background: color-mix(in srgb, var(--color-bg-canvas) 92%, transparent 8%);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .sync__head-text {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+  }
+
+  .sync__title {
+    font-size: 14px;
+    font-weight: 650;
+    color: var(--color-text-primary);
+    line-height: 1.35;
+  }
+
+  .sync__subtitle {
+    font-family: var(--font-family-mono, ui-monospace, Menlo, Monaco, Consolas, monospace);
+    font-size: 11.5px;
+    color: var(--color-text-tertiary);
+    line-height: 1.4;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* 内容区:占满中间,使 footer 自动贴底 */
+  .sync__body {
+    flex: 1;
+    padding: 16px 18px 4px;
   }
 
   .sync__form {
     --el-form-label-color: var(--color-text-secondary);
   }
 
+  .sync__form :deep(.el-form-item) {
+    margin-bottom: 14px;
+  }
+
+  /* 配置类型 checkbox 网格 */
   .sync__types {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    gap: 4px 8px;
+    grid-template-columns: repeat(auto-fill, minmax(108px, 1fr));
+    gap: 8px 12px;
     width: 100%;
   }
 
+  .sync__types :deep(.el-checkbox) {
+    margin-right: 0;
+    height: auto;
+    line-height: 1.5;
+  }
+
   .sync__types-hint {
-    margin: 6px 0 0;
+    margin: 8px 0 0;
     font-size: 12px;
     color: var(--color-text-tertiary);
   }
 
+  /* JSON textarea:等宽字体 + 浅底 */
   .sync__payload :deep(.el-textarea__inner) {
     font-family: var(--font-family-mono, ui-monospace, Menlo, Monaco, Consolas, monospace);
     font-size: 12px;
     line-height: 1.55;
-    min-height: 200px;
+    background: color-mix(in srgb, var(--color-bg-canvas) 60%, var(--color-bg-card) 40%);
+    min-height: 168px;
   }
 
-  .sync__actions {
+  /* 底部操作区:两边一致地右对齐 + 上边线 */
+  .sync__footer {
     display: flex;
-    gap: 8px;
-    margin-top: auto;
-    padding-top: 4px;
-  }
-
-  .sync__actions--target {
     justify-content: flex-end;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 18px;
+    border-top: 1px solid var(--color-border-light);
+    background: color-mix(in srgb, var(--color-bg-canvas) 40%, var(--color-bg-card) 60%);
   }
 
-  .sync__arrow {
+  /* 应用按钮:不用 type=danger 的实心红,而是 primary + danger 文字色,
+     避免一整块红色压在右下角太重 */
+  .sync__apply {
+    background: var(--color-danger);
+    border-color: var(--color-danger);
+  }
+
+  .sync__apply:hover:not(.is-disabled),
+  .sync__apply:focus:not(.is-disabled) {
+    background: color-mix(in srgb, var(--color-danger) 88%, #000 12%);
+    border-color: color-mix(in srgb, var(--color-danger) 88%, #000 12%);
+  }
+
+  /* 中间连接线 + 箭头(只在 >=1100px 显示) */
+  .sync__connector {
     display: none;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    color: var(--color-text-tertiary);
-    font-size: 22px;
+    padding: 0 4px;
+  }
+
+  .sync__connector-line {
+    flex: 1;
+    width: 2px;
+    background: color-mix(in srgb, var(--color-border) 70%, transparent);
+  }
+
+  .sync__connector-icon {
+    width: 28px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    color: var(--color-text-secondary);
+    font-size: 16px;
+    margin: 6px 0;
   }
 
   @media (min-width: 1100px) {
-    .sync__arrow {
+    .sync__connector {
       display: flex;
+    }
+
+    /* 横向布局时,把竖线改横线 */
+    .sync__connector-line {
+      width: 100%;
+      height: 2px;
+      flex: 1;
+    }
+
+    .sync__connector {
+      flex-direction: row;
+    }
+
+    .sync__connector-icon {
+      margin: 0 6px;
     }
   }
 
+  /* 结果区:全宽,中性卡片样式 */
   .sync__result {
-    padding: var(--card-inner-padding);
     border-radius: var(--radius-content);
     border: 1px solid var(--color-border-light);
-    background: color-mix(in srgb, var(--color-bg-card) 96%, var(--color-bg-canvas) 4%);
+    background: var(--color-bg-card);
+    overflow: hidden;
   }
 
   .sync__result-head {
-    margin-bottom: 8px;
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--color-border-light);
+    background: color-mix(in srgb, var(--color-bg-canvas) 40%, var(--color-bg-card) 60%);
   }
 
   .sync__result-title {
     font-size: 13px;
     font-weight: 650;
-    color: var(--color-text);
+    color: var(--color-text-primary);
+  }
+
+  .sync__result :deep(.json-preview) {
+    margin: 0;
+    border-radius: 0;
   }
 </style>
