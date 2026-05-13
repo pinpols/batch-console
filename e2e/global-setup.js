@@ -7,9 +7,9 @@ const API_BASE = 'http://localhost:18080'
 const FIXTURE_TENANT = 'ta'
 
 // 超时常量（ms）
-const T_SHORT = 8_000   // 登录、导出等轻量接口
+const T_SHORT = 8_000 // 登录、导出等轻量接口
 const T_UPLOAD = 20_000 // 文件上传
-const T_APPLY  = 30_000 // 配置包应用（事务较重）
+const T_APPLY = 30_000 // 配置包应用（事务较重）
 
 /** 幂等 key */
 function idempotencyKey() {
@@ -81,7 +81,37 @@ async function seedTenant(token, tenantId, filePath) {
     return
   }
 
-  // ── ② 应用 ──────────────────────────────────────────────────────
+  // ── ② 预览校验 ──────────────────────────────────────────────────
+  // 权威 11-sheet 样本依赖 worker step_registry；本地只起 console-api 时
+  // pipeline_step_definition 会因 impl_code 未注册而无效。先 preview，漂移时跳过 apply。
+  try {
+    const previewRes = await fetchWithTimeout(
+      `${API_BASE}/api/console/config/tenant-package/excel/preview/${encodeURIComponent(uploadToken)}?tenantId=${encodeURIComponent(tenantId)}`,
+      { headers: commonHeaders, timeoutMs: T_SHORT },
+    )
+    if (!previewRes.ok) {
+      const text = await previewRes.text().catch(() => '')
+      console.warn(`[seed] 预览失败 tenant=${tenantId} status=${previewRes.status} ${text}`)
+      return
+    }
+    const previewJson = await previewRes.json()
+    const data = previewJson?.data ?? previewJson
+    if ((data?.invalidRows ?? 0) > 0) {
+      const issues = Array.isArray(data?.issues) ? data.issues.slice(0, 5) : []
+      const summary = issues
+        .map((x) => `${x.sheetName ?? '?'}#${x.rowNo ?? '?'} ${x.message ?? ''}`.trim())
+        .join(' | ')
+      console.warn(
+        `[seed] 预览存在无效行，跳过 apply tenant=${tenantId} invalidRows=${data.invalidRows}${summary ? `: ${summary}` : ''}`,
+      )
+      return
+    }
+  } catch (err) {
+    console.warn(`[seed] 预览异常 tenant=${tenantId}: ${err.message}`)
+    return
+  }
+
+  // ── ③ 应用 ──────────────────────────────────────────────────────
   try {
     const applyRes = await fetchWithTimeout(
       `${API_BASE}/api/console/config/tenant-package/excel/apply/${encodeURIComponent(uploadToken)}`,

@@ -20,7 +20,9 @@ test.describe('queue config (队列 / 窗口 / 日历)', () => {
   test('队列 / 窗口 / 日历页面可打开并展示标签页', async ({ page }) => {
     await page.goto('/governance/queues')
     await expectPageTitle(page, '队列与窗口')
-    await expect(page.getByRole('button', { name: '刷新' })).toBeVisible()
+    await expect(page.getByRole('tab', { name: '队列' })).toBeVisible()
+    await expect(page.getByRole('tab', { name: '批次窗口' })).toBeVisible()
+    await expect(page.getByRole('tab', { name: '日历' })).toBeVisible()
   })
 })
 

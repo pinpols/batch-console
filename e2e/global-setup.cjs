@@ -6,28 +6,10 @@ const crypto = require('crypto')
 const API_BASE = 'http://localhost:18080'
 const FIXTURE_TENANT = 'system'
 
-/**
- * 稳定幂等 key：相同 tenant + 文件内容哈希 + 阶段名 → 同一 key。
- * 配合后端 ConsoleIdempotencyInterceptor，重跑 e2e 时 upload/apply
- * 直接命中缓存响应，不会对数据库重放（避免撞唯一键 500）。
- */
-function stableIdempotencyKey(tenantId, stage, fileBuffer) {
-  const h = crypto
-    .createHash('sha1')
-    .update(tenantId)
-    .update(':')
-    .update(stage)
-    .update(':')
-    .update(fileBuffer || Buffer.alloc(0))
-    .digest('hex')
-    .slice(0, 32)
-  return `e2e-seed-${h}`
-}
-
 // 超时常量（ms）
-const T_SHORT = 8_000   // 登录、导出等轻量接口
+const T_SHORT = 8_000 // 登录、导出等轻量接口
 const T_UPLOAD = 20_000 // 文件上传
-const T_APPLY  = 30_000 // 配置包应用（事务较重）
+const T_APPLY = 30_000 // 配置包应用（事务较重）
 
 /** 幂等 key */
 function idempotencyKey() {
@@ -91,7 +73,7 @@ async function seedTenant(token, tenantId, filePath) {
         method: 'POST',
         headers: {
           ...commonHeaders,
-          'Idempotency-Key': stableIdempotencyKey(tenantId, 'upload', fileBuffer),
+          'Idempotency-Key': idempotencyKey(),
         },
         body: formData,
         timeoutMs: T_UPLOAD,
@@ -116,7 +98,41 @@ async function seedTenant(token, tenantId, filePath) {
     return
   }
 
-  // ── ② 应用 ──────────────────────────────────────────────────────
+  // ── ② 预览校验 ──────────────────────────────────────────────────
+  // 当前 11-sheet 权威样本包含 pipeline_step_definition；如果本地只启动 console-api、
+  // 未启动 worker 注册 step_registry，后端会判定 impl_code 未注册。此时继续 apply
+  // 只会得到 400，且污染 e2e 日志。先 preview，发现漂移就显式跳过。
+  try {
+    const previewRes = await fetchWithTimeout(
+      `${API_BASE}/api/console/config/tenant-package/excel/preview/${encodeURIComponent(uploadToken)}?tenantId=${encodeURIComponent(tenantId)}`,
+      {
+        headers: commonHeaders,
+        timeoutMs: T_SHORT,
+      },
+    )
+    if (!previewRes.ok) {
+      const text = await previewRes.text().catch(() => '')
+      console.warn(`[seed] 预览失败 tenant=${tenantId} status=${previewRes.status} ${text}`)
+      return
+    }
+    const previewJson = await previewRes.json()
+    const data = previewJson?.data ?? previewJson
+    if ((data?.invalidRows ?? 0) > 0) {
+      const issues = Array.isArray(data?.issues) ? data.issues.slice(0, 5) : []
+      const summary = issues
+        .map((x) => `${x.sheetName ?? '?'}#${x.rowNo ?? '?'} ${x.message ?? ''}`.trim())
+        .join(' | ')
+      console.warn(
+        `[seed] 预览存在无效行，跳过 apply tenant=${tenantId} invalidRows=${data.invalidRows}${summary ? `: ${summary}` : ''}`,
+      )
+      return
+    }
+  } catch (err) {
+    console.warn(`[seed] 预览异常 tenant=${tenantId}: ${err.message}`)
+    return
+  }
+
+  // ── ③ 应用 ──────────────────────────────────────────────────────
   try {
     const applyRes = await fetchWithTimeout(
       `${API_BASE}/api/console/config/tenant-package/excel/apply/${encodeURIComponent(uploadToken)}`,
@@ -125,7 +141,7 @@ async function seedTenant(token, tenantId, filePath) {
         headers: {
           ...commonHeaders,
           'Content-Type': 'application/json',
-          'Idempotency-Key': stableIdempotencyKey(tenantId, 'apply', fileBuffer),
+          'Idempotency-Key': idempotencyKey(),
         },
         body: JSON.stringify({}),
         timeoutMs: T_APPLY,
