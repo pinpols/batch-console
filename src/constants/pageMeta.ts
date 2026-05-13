@@ -51,6 +51,10 @@ export const pageMetaByPath = {
     title: '编排设计器',
     description: '选择 Workflow 后编辑节点、条件边和汇聚关系。',
   },
+  '/runs': {
+    title: '全部运行',
+    description: '跨作业 / 工作流的最近运行聚合,oncall 排障的统一入口。',
+  },
   '/monitor/job-instances': {
     title: '作业运行',
     description: '查询作业运行记录,执行重跑、取消和终止。',

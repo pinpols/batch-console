@@ -73,8 +73,9 @@ describe('permission navigation filtering', () => {
     const result = filterNavigationByBackendMenus(navigationGroups, backendMenus)
 
     expect(result).toHaveLength(1)
-    expect(result[0].key).toBe('observability')
-    expect(result[0].title).toBe('观测与查询')
+    // 2026-05-13 IA 重排:/system/notifications 从 observability 移入 infra
+    expect(result[0].key).toBe('infra')
+    expect(result[0].title).toBe('基础设施')
     expect(result[0].children.map((c) => c.path)).toEqual(['/system/notifications'])
     expect(result[0].children[0].title).toBe('通知与投递')
   })
