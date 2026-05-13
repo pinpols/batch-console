@@ -2,6 +2,11 @@
   <PageContainer>
     <PageHeader :title="t('runs.title')" :description="t('runs.description')">
       <template #actions>
+        <el-radio-group v-model="statusFilter" size="small" @change="loadAll">
+          <el-radio-button value="all">{{ t('runs.filterAll') }}</el-radio-button>
+          <el-radio-button value="running">{{ t('runs.filterRunning') }}</el-radio-button>
+          <el-radio-button value="failed">{{ t('runs.filterFailed') }}</el-radio-button>
+        </el-radio-group>
         <el-button type="primary" :loading="loading" @click="loadAll">
           {{ t('runs.refresh') }}
         </el-button>
@@ -112,11 +117,21 @@
   const wfLoading = ref(false)
   const loading = computed(() => jobLoading.value || wfLoading.value)
 
+  // 'all' | 'running' | 'failed' — 默认 all,oncall 切到 failed 一眼锁定挂的
+  const statusFilter = ref<'all' | 'running' | 'failed'>('all')
+
+  function statusCode(): string | undefined {
+    if (statusFilter.value === 'running') return 'RUNNING'
+    if (statusFilter.value === 'failed') return 'FAILED'
+    return undefined
+  }
+
   async function loadJobs() {
     jobLoading.value = true
     try {
       const page = await instanceApi.list({
         tenantId: tenant.tenantId,
+        instanceStatus: statusCode(),
         page: 1,
         pageSize: 20,
       })
@@ -133,6 +148,7 @@
     try {
       const page = await instanceApi.workflowRuns({
         tenantId: tenant.tenantId,
+        runStatus: statusCode(),
         page: 1,
         pageSize: 20,
       })

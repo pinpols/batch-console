@@ -97,7 +97,57 @@ oncall 排查典型路径从 4 跳压到 1 页:
 | P2 | 运行配置 + 系统管理 合并(病灶 #5) | 调 navigation.ts;改组名 | 低 |
 | P3 | 3 套定义收敛(病灶 #6) | 实体模型决策,涉及 BE | 高,需产品/架构对齐 |
 
-## 7. 参考
+## 7. 实际落地(v5,2026-05-13 当天迭代多版后定稿)
+
+第 4 节"建议新 IA"是 v1 草案(5-6 组方案,大基础设施杂烩);经一周迭代,
+实际定稿在 **7 组方案(IA v5)**,把"基础设施"按心智拆开,每组项数 ≤ 7:
+
+| 组 | 项 | 项数 |
+|---|---|---|
+| 工作台 | 控制面板 · 审批中心 · 报表 · 自助服务 | 4 |
+| **Runs** | 全部运行 · 作业运行 · 工作流运行 · 作业步骤 · 调度快照 · Trace 诊断 | 6 |
+| 作业与工作流 | 作业定义 · 工作流定义 · 流水线定义 · 编排设计器 | 4 |
+| 文件中心 | 文件 · 模板 · 到达组 · 流水线观测 | 4 |
+| **告警与投递** | 告警 · 告警路由 · Outbox · 通知与投递 · 审计日志 · 综合查询 | 6 |
+| **配置** | 发布管理 · 变更与同步 · 标签 · 批量导入 · 事件目录 | 5 |
+| **系统** | Worker · 触发器 · 批次日 · 队列 · 配额 · 租户 · 账户 · API Key · 参数 · 运维诊断 · AI 助手 | 11 |
+
+为什么从 5-6 组改成 7 组:
+
+- "基础设施合并"在草案上看着简洁,但 14 项一坨同样难找
+- 7 组后每组**单一心智**(告警/投递是只读响应类、配置是"我要改 X"、系统是 admin 维护)
+- 心智清晰 > 组数最小化
+
+### 已完成的落地项
+
+| 病灶 | 状态 | 关键 commit |
+|---|---|---|
+| #1 全局 Runs 入口 | ✅ | `b5aa1a9` — 新增 `/runs` 聚合页 + Runs 顶级组 |
+| #2 观测组拆分 | ✅ | `bf57fce` → `73d194b` — 拆为告警与投递 / 配置 / 系统 三组 |
+| #3 定义 ↔ 执行 mental model 分裂 | ✅ | `732cb79` `4ece3ef` — JobInstance / JobDefinition / WorkflowDefinition 详情都改成 tabs(含 Runs tab) |
+| #4 综合查询 → ⌘K palette | ✅ | `CommandPalette.vue` + `05ff0dd` — palette 支持菜单/最近/jobCode/workflowCode/jobInstanceId/traceId 全维度搜 |
+| #5 运行配置 + 系统管理合并 | ✅ | IA v5 已收敛到"系统"单一组 |
+| #6 3 套定义并行 | ⏸ 暂缓 | 需 BE 实体模型对齐,长期项 |
+| #7 自助服务 ≠ 顶级 | ⏸ 不改 | 评估后保留在工作台,符合"工作台 = 我要做的事"心智 |
+| #8 报表位置 | ⏸ 不改 | 留在工作台,符合多数产品惯例 |
+
+### 已完成的横向工程
+
+| 工程 | commit |
+|---|---|
+| BE 服务端 filter 支持(jobCode/runStatus/traceId) | `6f899a1` |
+| MCatchUp approvalNo 接通 | `69b5377` |
+| Trace 诊断扩到 8 域 | `56a679b` |
+| /runs status 过滤 chips(全部/运行中/失败) | 本文同期 |
+| Palette 实体匹配(BE 服务端搜 jobCode/workflowCode) | `05ff0dd` |
+
+### 剩余 roadmap
+
+- **P3 三套定义收敛** — 架构级,需 BE 模型决策,本季度暂不动
+- **PipelineDefinition Run-centric tab** — 完成 P2 对称性,小工程,可补
+- **E2E 冒烟测试** — 本批 IA + palette 改动多,无自动化覆盖,后续重构有回归风险
+
+## 8. 参考
 
 - Apache Airflow UI — <https://airflow.apache.org/docs/apache-airflow/stable/ui.html>
 - Dagster UI — <https://docs.dagster.io/concepts/dagit/dagit>
