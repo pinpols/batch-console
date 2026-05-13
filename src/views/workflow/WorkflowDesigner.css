@@ -1583,6 +1583,30 @@ html.dark .workflow-canvas-hint kbd {
   width: 100%;
 }
 
+.workflow-wait-config {
+  margin: 4px 0 8px;
+  padding: 8px;
+  border-radius: var(--radius-content);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 18%, var(--color-border-light) 82%);
+  background: color-mix(in srgb, var(--color-primary) 4%, var(--color-bg-card) 96%);
+}
+
+.workflow-wait-config__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+  font-size: 11px;
+  font-weight: 750;
+  color: var(--color-text-primary);
+}
+
+html.dark .workflow-wait-config {
+  background: color-mix(in srgb, var(--color-primary) 8%, var(--color-bg-card) 92%);
+  border-color: color-mix(in srgb, var(--color-primary) 28%, var(--color-border-light) 72%);
+}
+
 .workflow-inspector-radio-group {
   display: flex;
   flex-wrap: wrap;

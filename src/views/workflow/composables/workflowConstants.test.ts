@@ -38,6 +38,12 @@ describe('toNodeKind', () => {
     expect(toNodeKind('job')).toBe('JOB')
   })
 
+  it('normalizes WAIT aliases', () => {
+    expect(toNodeKind('wait')).toBe('WAIT')
+    expect(toNodeKind('sensor')).toBe('WAIT')
+    expect(toNodeKind('SENSOR_WAIT')).toBe('WAIT')
+  })
+
   it('normalizes END aliases', () => {
     expect(toNodeKind('stop')).toBe('END')
     expect(toNodeKind('TERMINAL')).toBe('END')
@@ -99,11 +105,23 @@ describe('defaultNodeForm', () => {
     expect(defaultNodeForm('GATEWAY').nodeName).toBe('网关')
     expect(defaultNodeForm('FILE_STEP').nodeName).toBe('文件流水线')
     expect(defaultNodeForm('JOB').nodeName).toBe('作业引用')
+    expect(defaultNodeForm('WAIT').nodeName).toBe('等待条件')
     expect(defaultNodeForm('END').nodeName).toBe('END 节点')
   })
 
   it('defaults nodeCode to empty string when omitted', () => {
     expect(defaultNodeForm('TASK').nodeCode).toBe('')
+  })
+
+  it('builds WAIT nodes with valid sensor defaults', () => {
+    const form = defaultNodeForm('WAIT', 'WAIT_1')
+    const params = JSON.parse(form.nodeParams) as Record<string, unknown>
+    expect(form.nodeType).toBe('WAIT')
+    expect(params.sensor_type).toBe('FILE_ARRIVAL')
+    expect(params.sensor_spec).toMatchObject({ pattern: 'settle-*.csv', maxAgeSeconds: 3600 })
+    expect(params.timeout_seconds).toBe(3600)
+    expect(params.poll_interval_seconds).toBe(30)
+    expect(params.on_timeout).toBe('FAIL')
   })
 })
 

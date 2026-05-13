@@ -8,7 +8,7 @@
  * 与后端 `workflow_node.node_type` 字典严格对齐（见 CLAUDE.md §领域数据字典 / WorkflowNodeType enum）。
  * 旧 5 类型 (DECISION/JOIN) 已折叠：DECISION → GATEWAY、JOIN → GATEWAY（join_mode 在 node_params 表达）。
  */
-export type WorkflowNodeKind = 'START' | 'END' | 'TASK' | 'GATEWAY' | 'FILE_STEP' | 'JOB'
+export type WorkflowNodeKind = 'START' | 'END' | 'TASK' | 'GATEWAY' | 'FILE_STEP' | 'JOB' | 'WAIT'
 /** 与后端 `workflow_edge.edge_type` 严格对齐（WorkflowEdgeType enum）。DEFAULT 已重命名为 ALWAYS。 */
 export type WorkflowEdgeKind = 'SUCCESS' | 'FAILURE' | 'CONDITION' | 'ALWAYS'
 export type SelectedKind = 'workflow' | 'node' | 'edge' | null
@@ -145,6 +145,14 @@ export const nodeThemeMap: Record<WorkflowNodeKind, WorkflowNodeTheme> = {
     softText: '#312e81',
     ring: 'rgba(99, 102, 241, 0.18)',
   },
+  WAIT: {
+    bg: 'rgba(14, 165, 233, 0.12)',
+    border: 'rgba(14, 165, 233, 0.84)',
+    accent: '#0284c7',
+    text: '#0f172a',
+    softText: '#075985',
+    ring: 'rgba(14, 165, 233, 0.18)',
+  },
   END: {
     bg: 'rgba(239, 68, 68, 0.12)',
     border: 'rgba(239, 68, 68, 0.84)',
@@ -170,6 +178,7 @@ export const nodeKinds: Array<{ kind: WorkflowNodeKind; label: string }> = [
   { kind: 'GATEWAY', label: '网关' },
   { kind: 'FILE_STEP', label: '文件流水线' },
   { kind: 'JOB', label: '作业' },
+  { kind: 'WAIT', label: '等待' },
   { kind: 'END', label: '终点' },
 ]
 
@@ -236,6 +245,7 @@ export function toNodeKind(value: string | null | undefined): WorkflowNodeKind {
   if (['GATEWAY', 'DECISION', 'BRANCH', 'JOIN', 'MERGE', 'SYNC'].includes(text)) return 'GATEWAY'
   if (['FILE_STEP', 'FILE-STEP', 'PIPELINE_STEP'].includes(text)) return 'FILE_STEP'
   if (['JOB'].includes(text)) return 'JOB'
+  if (['WAIT', 'SENSOR', 'SENSOR_WAIT'].includes(text)) return 'WAIT'
   return 'TASK'
 }
 
@@ -261,7 +271,23 @@ const NODE_DEFAULT_NAME: Record<WorkflowNodeKind, string> = {
   GATEWAY: '网关',
   FILE_STEP: '文件流水线',
   JOB: '作业引用',
+  WAIT: '等待条件',
 }
+
+const DEFAULT_WAIT_NODE_PARAMS = JSON.stringify(
+  {
+    sensor_type: 'FILE_ARRIVAL',
+    sensor_spec: {
+      pattern: 'settle-*.csv',
+      maxAgeSeconds: 3600,
+    },
+    timeout_seconds: 3600,
+    poll_interval_seconds: 30,
+    on_timeout: 'FAIL',
+  },
+  null,
+  2,
+)
 
 export function defaultNodeForm(kind: WorkflowNodeKind, nodeCode = ''): NodeFormState {
   return {
@@ -276,7 +302,7 @@ export function defaultNodeForm(kind: WorkflowNodeKind, nodeCode = ''): NodeForm
     retryPolicy: 'NONE',
     retryMaxCount: 0,
     timeoutSeconds: 0,
-    nodeParams: '{}',
+    nodeParams: kind === 'WAIT' ? DEFAULT_WAIT_NODE_PARAMS : '{}',
     enabled: true,
     crossDayDependencies: '',
     crossDayDependencyTimeoutSeconds: 0,
