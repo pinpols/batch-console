@@ -85,7 +85,7 @@
         <div v-if="!bulkMode && row.traceId" class="m-card__actions" @click.stop>
           <button
             class="m-btn"
-            @click="$router.push({ path: '/m/logs', query: { traceId: row.traceId } })"
+            @click="$router.push({ path: '/observability/trace', query: { traceId: row.traceId } })"
           >
             {{ t('mobile.alerts.viewLogs') }}
           </button>

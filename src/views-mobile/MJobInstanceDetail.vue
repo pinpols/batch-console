@@ -54,7 +54,9 @@
             <button
               v-if="row.traceId"
               class="m-link"
-              @click="$router.push({ path: '/m/logs', query: { traceId: row.traceId } })"
+              @click="
+                $router.push({ path: '/observability/trace', query: { traceId: row.traceId } })
+              "
             >
               {{ row.traceId }}
             </button>
@@ -82,7 +84,7 @@
           <button
             v-if="row.traceId"
             class="m-btn"
-            @click="$router.push({ path: '/m/logs', query: { traceId: row.traceId } })"
+            @click="$router.push({ path: '/observability/trace', query: { traceId: row.traceId } })"
           >
             {{ t('mobile.jobDetail.viewLogs') }}
           </button>
