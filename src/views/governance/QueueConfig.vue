@@ -1,18 +1,26 @@
 <template>
   <PageContainer>
-    <PageHeader />
+    <PageHeader>
+      <template #actions>
+        <el-button type="primary" :icon="Plus" @click="onCreateClick">
+          {{ activeCreateLabel }}
+        </el-button>
+      </template>
+    </PageHeader>
 
     <SectionCard>
-      <el-tabs v-model="activeTab" v-hover-tab-activate="true" class="pill-tabs governance-tabs">
-        <el-tab-pane :label="t('queueConfig.tabQueues')" name="queues">
+      <el-tabs
+        v-model="activeTab"
+        v-hover-tab-activate="true"
+        class="pill-tabs governance-tabs"
+        :class="{ 'single-mode': mode !== 'all' }"
+      >
+        <el-tab-pane v-if="showQueuesTab" :label="t('queueConfig.tabQueues')" name="queues">
           <div class="panel-head">
             <div class="panel-title">
               <span class="dot dot--primary" />
               {{ t('queueConfig.sectionQueues') }}
             </div>
-            <el-button type="primary" :icon="Plus" @click="openQueueCreate">
-              {{ t('common.create') }}
-            </el-button>
           </div>
           <GovernanceFilterBar
             v-model:keyword="kwDraft"
@@ -93,15 +101,12 @@
           />
         </el-tab-pane>
 
-        <el-tab-pane :label="t('queueConfig.tabWindows')" name="windows">
+        <el-tab-pane v-if="showWindowsTab" :label="t('queueConfig.tabWindows')" name="windows">
           <div class="panel-head">
             <div class="panel-title">
               <span class="dot dot--warning" />
               {{ t('queueConfig.sectionWindows') }}
             </div>
-            <el-button type="primary" :icon="Plus" @click="openWindowCreate">
-              {{ t('common.create') }}
-            </el-button>
           </div>
           <GovernanceFilterBar
             v-model:keyword="kwDraft"
@@ -177,15 +182,16 @@
           />
         </el-tab-pane>
 
-        <el-tab-pane :label="t('queueConfig.tabCalendars')" name="calendars">
+        <el-tab-pane
+          v-if="showCalendarsTab"
+          :label="t('queueConfig.tabCalendars')"
+          name="calendars"
+        >
           <div class="panel-head">
             <div class="panel-title">
               <span class="dot dot--success" />
               {{ t('queueConfig.sectionCalendars') }}
             </div>
-            <el-button type="primary" :icon="Plus" @click="openCalendarCreate">
-              {{ t('common.create') }}
-            </el-button>
           </div>
           <GovernanceFilterBar
             v-model:keyword="kwDraft"
@@ -500,6 +506,7 @@
 
 <script setup lang="ts">
   import { computed, reactive, ref, watch } from 'vue'
+  import { useRoute } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { confirmDanger } from '@/composables/useDangerConfirm'
@@ -534,7 +541,30 @@
   const loading = ref(false)
   const holidayLoading = ref(false)
   const togglingKey = ref('')
-  const activeTab = ref<'queues' | 'windows' | 'calendars'>('queues')
+  // P2 IA 拆分:route.meta.mode 限定本页只显示某一类资源
+  const route = useRoute()
+  const mode = computed<'queues' | 'windows' | 'calendars' | 'all'>(
+    () => (route.meta?.mode as 'queues' | 'windows' | 'calendars' | undefined) ?? 'all',
+  )
+  const showQueuesTab = computed(() => mode.value === 'all' || mode.value === 'queues')
+  const showWindowsTab = computed(() => mode.value === 'all' || mode.value === 'windows')
+  const showCalendarsTab = computed(() => mode.value === 'all' || mode.value === 'calendars')
+
+  const activeTab = ref<'queues' | 'windows' | 'calendars'>(
+    mode.value === 'windows' ? 'windows' : mode.value === 'calendars' ? 'calendars' : 'queues',
+  )
+
+  // PageHeader 右上"新建"按钮按当前 tab 切换文案与动作
+  const activeCreateLabel = computed(() => {
+    if (activeTab.value === 'queues') return t('queueConfig.actionCreateQueue')
+    if (activeTab.value === 'windows') return t('queueConfig.actionCreateWindow')
+    return t('queueConfig.actionCreateCalendar')
+  })
+  function onCreateClick() {
+    if (activeTab.value === 'queues') openQueueCreate()
+    else if (activeTab.value === 'windows') openWindowCreate()
+    else openCalendarCreate()
+  }
   const kwDraft = ref('')
   const enabledDraft = ref<boolean | undefined>(undefined)
   const kwApplied = ref('')
@@ -1129,6 +1159,14 @@
   .governance-tabs :deep(.el-tabs__content) {
     padding-top: 10px;
     overflow: visible;
+  }
+
+  /* P2 单模式路由(/governance/queues|windows|calendars):隐藏 tab 头 */
+  .governance-tabs.single-mode :deep(.el-tabs__header) {
+    display: none;
+  }
+  .governance-tabs.single-mode :deep(.el-tabs__content) {
+    padding-top: 0;
   }
 
   .panel-head {

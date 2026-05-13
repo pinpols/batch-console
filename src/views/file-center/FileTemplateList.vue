@@ -1,18 +1,30 @@
 <template>
   <PageContainer>
-    <PageHeader />
+    <PageHeader>
+      <template #actions>
+        <el-button type="primary" :icon="Plus" @click="onCreateClick">
+          {{ activeCreateLabel }}
+        </el-button>
+      </template>
+    </PageHeader>
 
     <SectionCard>
-      <el-tabs v-model="activeTab" v-hover-tab-activate="true" class="pill-tabs file-config-tabs">
-        <el-tab-pane :label="t('fileTemplateList.tabTemplates')" name="templates">
+      <el-tabs
+        v-model="activeTab"
+        v-hover-tab-activate="true"
+        class="pill-tabs file-config-tabs"
+        :class="{ 'single-mode': mode !== 'all' }"
+      >
+        <el-tab-pane
+          v-if="showTemplatesTab"
+          :label="t('fileTemplateList.tabTemplates')"
+          name="templates"
+        >
           <div class="panel-head">
             <div class="panel-title">
               <span class="dot dot--primary" />
               {{ t('fileTemplateList.sectionTemplates') }}
             </div>
-            <el-button type="primary" :icon="Plus" @click="openTemplateCreate">
-              {{ t('common.create') }}
-            </el-button>
           </div>
           <ProTable
             :data="rows"
@@ -135,15 +147,16 @@
           </ProTable>
         </el-tab-pane>
 
-        <el-tab-pane :label="t('fileTemplateList.tabChannels')" name="channels">
+        <el-tab-pane
+          v-if="showChannelsTab"
+          :label="t('fileTemplateList.tabChannels')"
+          name="channels"
+        >
           <div class="panel-head">
             <div class="panel-title">
               <span class="dot dot--success" />
               {{ t('fileTemplateList.sectionChannels') }}
             </div>
-            <el-button type="primary" :icon="Plus" @click="openChannelCreate">
-              {{ t('common.create') }}
-            </el-button>
           </div>
           <ListPageQueryBar
             class="query"
@@ -367,12 +380,21 @@
 
 <script setup lang="ts">
   import { computed, reactive, ref, watch } from 'vue'
+  import { useRoute } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
   import { Edit, Plus, View } from '@element-plus/icons-vue'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
 
   const { t, te } = useI18n({ useScope: 'global' })
+  // P2 IA 拆分:route.meta.mode 限定本页只显示某一类资源,实现两条路由共用一个组件
+  // 'templates' | 'channels' — 缺省视为单 tab 模式;不传则两个 tab 全显示(兼容老入口)
+  const route = useRoute()
+  const mode = computed<'templates' | 'channels' | 'all'>(
+    () => (route.meta?.mode as 'templates' | 'channels' | undefined) ?? 'all',
+  )
+  const showTemplatesTab = computed(() => mode.value === 'all' || mode.value === 'templates')
+  const showChannelsTab = computed(() => mode.value === 'all' || mode.value === 'channels')
 
   function resolveEnumLabel(group: string, value?: string | null): string {
     if (!value) return ''
@@ -425,7 +447,20 @@
   const saving = ref(false)
   const togglingTemplateId = ref<number | null>(null)
   const togglingChannelId = ref<number | null>(null)
-  const activeTab = ref<'templates' | 'channels'>('templates')
+  const activeTab = ref<'templates' | 'channels'>(
+    mode.value === 'channels' ? 'channels' : 'templates',
+  )
+
+  // PageHeader 右上"新建"按钮按当前 tab 切换文案与动作
+  const activeCreateLabel = computed(() =>
+    activeTab.value === 'templates'
+      ? t('fileTemplateList.actionCreateTemplate')
+      : t('fileTemplateList.actionCreateChannel'),
+  )
+  function onCreateClick() {
+    if (activeTab.value === 'templates') openTemplateCreate()
+    else openChannelCreate()
+  }
   const detail = ref<ConsoleFileTemplateResponse | null>(null)
   const allRows = ref<ConsoleFileTemplateResponse[]>([])
   const rows = ref<ConsoleFileTemplateResponse[]>([])
@@ -788,6 +823,12 @@
 <style scoped>
   .file-config-tabs :deep(.el-tabs__content) {
     overflow: visible;
+  }
+
+  /* P2 单模式路由(/files/templates 或 /files/channels):隐藏 tab 头,
+     用户从侧栏菜单进入相应路由后直接看到内容,无需多看一层 tab */
+  .file-config-tabs.single-mode :deep(.el-tabs__header) {
+    display: none;
   }
 
   .panel-head {

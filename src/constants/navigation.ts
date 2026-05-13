@@ -181,6 +181,12 @@ export const navigationGroups: NavigationGroup[] = [
         icon: Document,
       },
       {
+        title: pageTitle('/files/channels'),
+        path: '/files/channels',
+        minRole: 'VIEWER',
+        icon: Connection,
+      },
+      {
         title: pageTitle('/files/arrival-groups'),
         path: '/files/arrival-groups',
         minRole: 'VIEWER',
@@ -304,6 +310,18 @@ export const navigationGroups: NavigationGroup[] = [
         path: '/governance/queues',
         minRole: 'ADMIN',
         icon: Management,
+      },
+      {
+        title: pageTitle('/governance/windows'),
+        path: '/governance/windows',
+        minRole: 'ADMIN',
+        icon: Timer,
+      },
+      {
+        title: pageTitle('/governance/calendars'),
+        path: '/governance/calendars',
+        minRole: 'ADMIN',
+        icon: Calendar,
       },
       {
         title: pageTitle('/governance/quota'),

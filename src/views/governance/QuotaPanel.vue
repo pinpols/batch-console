@@ -1,6 +1,12 @@
 <template>
   <PageContainer>
-    <PageHeader />
+    <PageHeader>
+      <template #actions>
+        <el-button type="primary" :icon="Plus" @click="openCreate">
+          {{ t('quotaPanel.actionCreate') }}
+        </el-button>
+      </template>
+    </PageHeader>
 
     <SectionCard>
       <div class="panel-head">
@@ -8,9 +14,6 @@
           <span class="dot dot--primary" />
           {{ t('quotaPanel.sectionTitle') }}
         </div>
-        <el-button type="primary" :icon="Plus" @click="openCreate">
-          {{ t('quotaPanel.actionCreate') }}
-        </el-button>
       </div>
 
       <ListPageQueryBar

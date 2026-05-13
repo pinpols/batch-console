@@ -1150,6 +1150,9 @@ export default {
     backHome: '返回首页',
   },
   queueConfig: {
+    actionCreateQueue: '新建队列',
+    actionCreateWindow: '新建批次窗口',
+    actionCreateCalendar: '新建业务日历',
     holidayTarget: '节假日 {date}',
     holidayConsequence: '该节假日条目从日历移除;依赖此日历的调度从此把这天当作工作日处理。',
     tabQueues: '队列',
@@ -1774,6 +1777,8 @@ export default {
     stepActionInstance: '实例',
   },
   fileTemplateList: {
+    actionCreateTemplate: '新建文件模板',
+    actionCreateChannel: '新建文件渠道',
     tabTemplates: '文件模板',
     tabChannels: '文件渠道',
     sectionTemplates: '文件模板',

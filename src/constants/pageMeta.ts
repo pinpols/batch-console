@@ -79,6 +79,10 @@ export const pageMetaByPath = {
     title: '文件模板',
     description: '维护文件模板、格式和业务分类。',
   },
+  '/files/channels': {
+    title: '文件渠道',
+    description: '维护文件接入渠道,按渠道关联模板和触发策略。',
+  },
   '/files/arrival-groups': {
     title: '到达组治理',
     description: '维护文件组到达策略,处理缺失和异常到达。',
@@ -149,8 +153,16 @@ export const pageMetaByPath = {
     description: '按日历和日期查看批次日运行状态。',
   },
   '/governance/queues': {
-    title: '队列与窗口',
-    description: '维护调度队列、批次窗口和业务日历。',
+    title: '队列',
+    description: '维护调度队列,控制并发与优先级。',
+  },
+  '/governance/windows': {
+    title: '批次窗口',
+    description: '维护批次时间窗口,定义作业可调度的时间段。',
+  },
+  '/governance/calendars': {
+    title: '业务日历',
+    description: '维护业务日历,标注工作日 / 节假日 / 特殊日。',
   },
   '/governance/quota': {
     title: '租户配额',
