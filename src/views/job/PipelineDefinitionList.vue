@@ -107,10 +107,13 @@
             />
           </template>
         </el-table-column>
-        <el-table-column :label="t('pipelineDefinitionList.colActions')" width="120" fixed="right">
+        <el-table-column :label="t('pipelineDefinitionList.colActions')" width="180" fixed="right">
           <template #default="{ row }">
             <div class="table-actions">
-              <el-button size="small" plain type="primary" @click="openEdit(row)">
+              <el-button size="small" plain type="primary" @click="openDetail(row, 'runs')">
+                {{ t('pipelineDefinitionList.actionRuns') }}
+              </el-button>
+              <el-button size="small" plain @click="openEdit(row)">
                 {{ t('pipelineDefinitionList.actionEdit') }}
               </el-button>
             </div>
@@ -215,6 +218,78 @@
         </div>
       </el-form>
     </el-drawer>
+
+    <!-- Run-centric 详情抽屉(P2 对称):Overview + 最近运行 -->
+    <el-drawer
+      v-model="detailVisible"
+      :title="t('pipelineDefinitionList.detailTitle', { code: detailRow?.pipelineCode || '' })"
+      size="720px"
+    >
+      <el-tabs v-if="detailRow" v-model="activeDetailTab">
+        <el-tab-pane name="overview" :label="t('pipelineDefinitionList.detailTabOverview')">
+          <el-descriptions :column="2" border size="small">
+            <el-descriptions-item label="pipelineCode">{{
+              detailRow.pipelineCode
+            }}</el-descriptions-item>
+            <el-descriptions-item label="pipelineName">{{
+              detailRow.pipelineName
+            }}</el-descriptions-item>
+            <el-descriptions-item label="pipelineType">{{
+              detailRow.pipelineType || '—'
+            }}</el-descriptions-item>
+            <el-descriptions-item label="enabled">
+              {{ detailRow.enabled ? t('common.yes') : t('common.no') }}
+            </el-descriptions-item>
+            <el-descriptions-item label="tenantId">{{ detailRow.tenantId }}</el-descriptions-item>
+            <el-descriptions-item v-if="detailRow.description" label="description" :span="2">
+              {{ detailRow.description }}
+            </el-descriptions-item>
+          </el-descriptions>
+        </el-tab-pane>
+
+        <el-tab-pane name="runs" :lazy="true">
+          <template #label>
+            <span>
+              {{ t('pipelineDefinitionList.detailTabRuns') }}
+              <el-tag v-if="detailRunsRows.length" size="small" round>{{
+                detailRunsRows.length
+              }}</el-tag>
+            </span>
+          </template>
+          <div class="detail-runs-header">
+            <span>{{
+              t('pipelineDefinitionList.detailRunsHint', { code: detailRow.pipelineCode })
+            }}</span>
+            <el-button text type="primary" @click="goInstancesFiltered(detailRow.pipelineCode)">
+              {{ t('runs.viewAll') }} →
+            </el-button>
+          </div>
+          <el-table
+            v-loading="detailRunsLoading"
+            :data="detailRunsRows"
+            size="small"
+            empty-text="—"
+            stripe
+            @row-click="goJobInstance"
+          >
+            <el-table-column :label="t('runs.colInstance')" min-width="200">
+              <template #default="{ row }">
+                <span class="cell-link">{{ row.instanceNo }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column :label="t('runs.colStatus')" width="110">
+              <template #default="{ row }">
+                <StatusTag :value="row.instanceStatus" category="instance" />
+              </template>
+            </el-table-column>
+            <el-table-column prop="bizDate" :label="t('runs.colBizDate')" width="110" />
+            <el-table-column :label="t('runs.colStarted')" width="160">
+              <template #default="{ row }">{{ fmtDatetime(row.startedAt) }}</template>
+            </el-table-column>
+          </el-table>
+        </el-tab-pane>
+      </el-tabs>
+    </el-drawer>
   </PageContainer>
 </template>
 
@@ -238,6 +313,11 @@
   import { useSseAutoReload } from '@/composables/useSseAutoReload'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
+  import { useRouter } from 'vue-router'
+  import { instanceApi } from '@/api/instance'
+  import { fmtDatetime } from '@/utils/datetime'
+  import StatusTag from '@/components/common/StatusTag.vue'
+  import type { ConsoleJobInstanceResponse } from '@/types/console-api'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
@@ -267,6 +347,57 @@
   )
   const drawerVisible = ref(false)
   const saving = ref(false)
+
+  // ── Run-centric 详情抽屉(P2 对称) ─────
+  const router = useRouter()
+  const detailVisible = ref(false)
+  const detailRow = ref<PipelineDefinitionRow | null>(null)
+  const activeDetailTab = ref<'overview' | 'runs'>('overview')
+  const detailRunsRows = ref<ConsoleJobInstanceResponse[]>([])
+  const detailRunsLoading = ref(false)
+  const detailRunsLoadedFor = ref('')
+
+  // Pipeline 在 BE 落到 job_instance 表(pipelineCode == jobCode);用 instanceApi.list 拉
+  async function loadDetailRuns() {
+    const def = detailRow.value
+    if (!def?.pipelineCode || detailRunsLoadedFor.value === def.pipelineCode) return
+    detailRunsLoading.value = true
+    try {
+      const pageResult = await instanceApi.list({
+        tenantId: def.tenantId ?? tenant.tenantId,
+        jobCode: def.pipelineCode,
+        page: 1,
+        pageSize: 20,
+      })
+      detailRunsRows.value = pageResult.records ?? []
+      detailRunsLoadedFor.value = def.pipelineCode
+    } catch {
+      detailRunsRows.value = []
+    } finally {
+      detailRunsLoading.value = false
+    }
+  }
+
+  function openDetail(row: PipelineDefinitionRow, initialTab: 'overview' | 'runs') {
+    detailRow.value = row
+    detailRunsRows.value = []
+    detailRunsLoadedFor.value = ''
+    activeDetailTab.value = initialTab
+    detailVisible.value = true
+    if (initialTab === 'runs') void loadDetailRuns()
+  }
+
+  function goJobInstance(row: ConsoleJobInstanceResponse) {
+    void router.push(`/monitor/job-instances/${row.id}`)
+  }
+
+  function goInstancesFiltered(pipelineCode: string) {
+    void router.push({ path: '/monitor/job-instances', query: { jobCode: pipelineCode } })
+  }
+
+  watch(activeDetailTab, (tab) => {
+    if (tab === 'runs') void loadDetailRuns()
+  })
   const editingId = ref<number | null>(null)
   const draggingIndex = ref<number | null>(null)
   const form = ref<PipelineDefinitionForm>({
@@ -563,6 +694,19 @@
     display: flex;
     justify-content: flex-end;
     gap: 12px;
+  }
+
+  .detail-runs-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-sm);
+    font-size: 13px;
+    color: var(--color-text-secondary);
+  }
+
+  :deep(.el-table__row) {
+    cursor: pointer;
   }
 
   .steps-editor {
