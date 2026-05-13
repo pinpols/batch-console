@@ -181,7 +181,8 @@
 <script setup lang="ts">
   import { computed, onMounted, reactive, ref } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { ElMessage, ElMessageBox } from 'element-plus'
+  import { ElMessage } from 'element-plus'
+  import { confirmDanger } from '@/composables/useDangerConfirm'
   import { Plus } from '@element-plus/icons-vue'
 
   const { t } = useI18n({ useScope: 'global' })
@@ -427,15 +428,13 @@
   async function confirmSuspend(row: Tenant) {
     if (!canManageTenants.value) return
     try {
-      await ElMessageBox.confirm(
-        t('tenantList.suspendConfirm', { id: row.tenantId }),
-        t('tenantList.suspendTitle'),
-        {
-          type: 'warning',
-          confirmButtonText: t('common.confirm'),
-          cancelButtonText: t('common.cancel'),
-        },
-      )
+      await confirmDanger({
+        verb: '停用',
+        target: `租户「${row.tenantId}」`,
+        consequence:
+          '该租户下所有触发器停止派发,正在运行的任务不受影响。租户用户登录/调用 API 将被拒绝。可在列表点"启用"恢复。',
+        confirmButtonText: '确认停用',
+      })
       await suspendTenant(row.tenantId)
       ElMessage.success(t('tenantList.suspendedToast'))
       await load()
@@ -447,15 +446,12 @@
   async function confirmActivate(row: Tenant) {
     if (!canManageTenants.value) return
     try {
-      await ElMessageBox.confirm(
-        t('tenantList.activateConfirmText', { id: row.tenantId }),
-        t('tenantList.activateConfirmTitle'),
-        {
-          type: 'info',
-          confirmButtonText: t('common.confirm'),
-          cancelButtonText: t('common.cancel'),
-        },
-      )
+      await confirmDanger({
+        verb: '启用',
+        target: `租户「${row.tenantId}」`,
+        consequence: '该租户的触发器恢复派发,用户可重新登录。',
+        confirmButtonText: '确认启用',
+      })
       await activateTenant(row.tenantId)
       ElMessage.success(t('tenantList.activatedToast'))
       await load()

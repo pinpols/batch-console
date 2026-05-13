@@ -115,7 +115,8 @@
 <script setup lang="ts">
   import { ref, computed } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { ElMessage, ElMessageBox } from 'element-plus'
+  import { ElMessage } from 'element-plus'
+  import { confirmDanger } from '@/composables/useDangerConfirm'
 
   const { t, te } = useI18n({ useScope: 'global' })
 
@@ -201,15 +202,12 @@
 
   async function doRegister(row: Record<string, unknown>) {
     try {
-      await ElMessageBox.confirm(
-        t('triggerList.registerText', { code: String(row.jobCode) }),
-        t('triggerList.registerTitle'),
-        {
-          type: 'info',
-          confirmButtonText: t('common.confirm'),
-          cancelButtonText: t('common.cancel'),
-        },
-      )
+      await confirmDanger({
+        verb: '注册触发器',
+        target: `作业「${String(row.jobCode)}」`,
+        consequence: '按作业 cron 表达式开始派发任务,首次派发可能在几秒到几分钟内发生。',
+        confirmButtonText: '确认注册',
+      })
       await registerTrigger(String(row.jobCode), tenant.tenantId)
       ElMessage.success(t('triggerList.registerSuccess'))
       await load()
@@ -220,15 +218,13 @@
 
   async function doUnregister(row: Record<string, unknown>) {
     try {
-      await ElMessageBox.confirm(
-        t('triggerList.unregisterText', { code: String(row.jobCode) }),
-        t('triggerList.unregisterTitle'),
-        {
-          type: 'warning',
-          confirmButtonText: t('common.confirm'),
-          cancelButtonText: t('common.cancel'),
-        },
-      )
+      await confirmDanger({
+        verb: '注销触发器',
+        target: `作业「${String(row.jobCode)}」`,
+        consequence: '该作业从调度器移除,不再派发新任务。需要再次注册才能恢复定时执行。',
+        irreversible: true,
+        confirmButtonText: '确认注销',
+      })
       await unregisterTrigger(String(row.jobCode), tenant.tenantId)
       ElMessage.success(t('triggerList.unregisterSuccess'))
       await load()
@@ -239,15 +235,12 @@
 
   async function doPause(row: Record<string, unknown>) {
     try {
-      await ElMessageBox.confirm(
-        t('triggerList.pauseText', { code: String(row.jobCode) }),
-        t('triggerList.pauseTitle'),
-        {
-          type: 'warning',
-          confirmButtonText: t('common.confirm'),
-          cancelButtonText: t('common.cancel'),
-        },
-      )
+      await confirmDanger({
+        verb: '暂停触发器',
+        target: `作业「${String(row.jobCode)}」`,
+        consequence: '触发器停止派发新任务,正在运行的实例不受影响。点"恢复"可重新派发。',
+        confirmButtonText: '确认暂停',
+      })
       await pauseTrigger(String(row.jobCode), tenant.tenantId)
       ElMessage.success(t('triggerList.pauseSuccess'))
       await load()

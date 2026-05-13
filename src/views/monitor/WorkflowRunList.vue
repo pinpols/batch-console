@@ -69,6 +69,21 @@
           </ListPageQueryBar>
         </template>
 
+        <template #empty>
+          <EmptyState
+            variant="tenant-empty"
+            :title="t('monitor.runListEmptyTitle')"
+            :description="t('monitor.runListEmptyDescription')"
+            :image-size="80"
+          >
+            <template #action>
+              <el-button type="primary" @click="$router.push('/workflow/definitions')">
+                {{ t('monitor.runListEmptyGoDefinitions') }}
+              </el-button>
+            </template>
+          </EmptyState>
+        </template>
+
         <el-table-column prop="id" :label="t('monitor.runColRunId')" width="90">
           <template #default="{ row }">
             <router-link class="cell-link" :to="`/monitor/workflow-runs/${row.id}`">
@@ -154,6 +169,7 @@
   import MetaSelect from '@/components/common/MetaSelect.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
+  import EmptyState from '@/components/common/EmptyState.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import ProTable from '@/components/table/ProTable.vue'
   import StatusTag from '@/components/common/StatusTag.vue'

@@ -223,7 +223,7 @@
 
   const { t } = useI18n({ useScope: 'global' })
   import { useRoute, useRouter } from 'vue-router'
-  import { ElMessage, ElMessageBox } from 'element-plus'
+  import { ElMessage } from 'element-plus'
   import { confirmDanger } from '@/composables/useDangerConfirm'
   import { showCreateSuccess } from '@/composables/useCreateSuccess'
   import { instanceApi } from '@/api/instance'
@@ -336,15 +336,13 @@
     const r = row.value
     if (!r) return
     try {
-      await ElMessageBox.confirm(
-        t('monitor.rerunConfirmText', { no: r.instanceNo }),
-        t('monitor.rerunConfirmTitle'),
-        {
-          type: 'warning',
-          confirmButtonText: t('common.confirm'),
-          cancelButtonText: t('common.cancel'),
-        },
-      )
+      await confirmDanger({
+        verb: '重跑',
+        target: `实例「${r.instanceNo}」`,
+        consequence:
+          '将基于相同 jobCode + bizDate 派发一条新实例,原实例数据保留。下游若已消费旧实例输出,可能产生重复处理。',
+        confirmButtonText: '确认重跑',
+      })
     } catch {
       return
     }
@@ -374,15 +372,13 @@
     const r = row.value
     if (!r) return
     try {
-      await ElMessageBox.confirm(
-        t('monitor.instanceCancelText', { no: r.instanceNo }),
-        t('monitor.instanceCancelTitle'),
-        {
-          type: 'warning',
-          confirmButtonText: t('common.confirm'),
-          cancelButtonText: t('common.cancel'),
-        },
-      )
+      await confirmDanger({
+        verb: '终止',
+        target: `实例「${r.instanceNo}」`,
+        consequence: 'Worker 会尽快终止运行中的进程。已写入的中间结果可能保留,需手动清理。',
+        irreversible: true,
+        confirmButtonText: '确认终止',
+      })
     } catch {
       return
     }

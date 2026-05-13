@@ -344,7 +344,8 @@
 <script setup lang="ts">
   import { computed, ref } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { ElMessage, ElMessageBox } from 'element-plus'
+  import { ElMessage } from 'element-plus'
+  import { confirmDanger } from '@/composables/useDangerConfirm'
 
   const { t } = useI18n({ useScope: 'global' })
   import { fmtDatetime } from '@/utils/datetime'
@@ -527,15 +528,13 @@
 
   async function confirmPauseAll() {
     try {
-      await ElMessageBox.confirm(
-        t('schedulerSnapshot.pauseConfirmText'),
-        t('schedulerSnapshot.pauseConfirmTitle'),
-        {
-          type: 'warning',
-          confirmButtonText: t('common.confirm'),
-          cancelButtonText: t('common.cancel'),
-        },
-      )
+      await confirmDanger({
+        verb: '暂停',
+        target: '当前租户全部调度器',
+        consequence:
+          '所有触发器停止派发新任务,正在运行的实例不受影响。恢复后才会继续按计划派发,可能造成短时间窗口积压。',
+        confirmButtonText: '确认暂停',
+      })
       pauseLoading.value = true
       await pauseAllSchedulers()
       ElMessage.success(t('schedulerSnapshot.pauseSuccess'))
@@ -549,15 +548,12 @@
 
   async function confirmResumeAll() {
     try {
-      await ElMessageBox.confirm(
-        t('schedulerSnapshot.resumeConfirmText'),
-        t('schedulerSnapshot.resumeConfirmTitle'),
-        {
-          type: 'info',
-          confirmButtonText: t('common.confirm'),
-          cancelButtonText: t('common.cancel'),
-        },
-      )
+      await confirmDanger({
+        verb: '恢复',
+        target: '当前租户全部调度器',
+        consequence: '触发器恢复派发,暂停期间到点的任务会按既定策略追跑或顺延。',
+        confirmButtonText: '确认恢复',
+      })
       resumeLoading.value = true
       await resumeAllSchedulers()
       ElMessage.success(t('schedulerSnapshot.resumeSuccess'))

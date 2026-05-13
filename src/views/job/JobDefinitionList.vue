@@ -104,6 +104,21 @@
           </ListPageQueryBar>
         </template>
 
+        <template #empty>
+          <EmptyState
+            variant="tenant-empty"
+            :title="t('jobDefinitionList.emptyTitle')"
+            :description="t('jobDefinitionList.emptyDescription')"
+            :image-size="80"
+          >
+            <template #action>
+              <el-button type="primary" @click="$router.push('/config/tenant-package')">
+                {{ t('jobDefinitionList.emptyGoImport') }}
+              </el-button>
+            </template>
+          </EmptyState>
+        </template>
+
         <el-table-column prop="jobCode" :label="t('jobDefinitionList.colJobCode')" width="220">
           <template #default="{ row }">
             <CopyableText :text="row.jobCode" />
@@ -339,6 +354,7 @@
   import MetaSelect from '@/components/common/MetaSelect.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
+  import EmptyState from '@/components/common/EmptyState.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import ProTable from '@/components/table/ProTable.vue'
   import StatusTag from '@/components/common/StatusTag.vue'

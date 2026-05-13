@@ -757,15 +757,14 @@
     if (!rowId) return
     try {
       const action = enabledNext ? t('queueConfig.enable') : t('queueConfig.disable')
-      await ElMessageBox.confirm(
-        t('queueConfig.toggleConfirmText', { label, action }),
-        t('queueConfig.toggleConfirmTitle'),
-        {
-          type: 'warning',
-          confirmButtonText: t('common.confirm'),
-          cancelButtonText: t('common.cancel'),
-        },
-      )
+      await confirmDanger({
+        verb: action,
+        target: `「${label}」`,
+        consequence: enabledNext
+          ? '该队列/窗口恢复参与调度,排队中的任务将被派发。'
+          : '该队列/窗口停止参与调度,挂在其上的任务不会被派发,直到再次启用。',
+        confirmButtonText: `确认${action}`,
+      })
     } catch {
       return
     }

@@ -86,6 +86,21 @@
           </ListPageQueryBar>
         </template>
 
+        <template #empty>
+          <EmptyState
+            variant="tenant-empty"
+            :title="t('jobInstanceList.emptyTitle')"
+            :description="t('jobInstanceList.emptyDescription')"
+            :image-size="80"
+          >
+            <template #action>
+              <el-button type="primary" :icon="List" @click="$router.push('/jobs/definitions')">
+                {{ t('jobInstanceList.emptyGoDefinitions') }}
+              </el-button>
+            </template>
+          </EmptyState>
+        </template>
+
         <!-- P2.4 列顺序优化:用户决策字段(状态/jobCode/bizDate/耗时/重跑)优先,
              工程字段(instanceNo/queue/traceId)后置 -->
         <el-table-column :label="t('jobInstanceList.colStatus')" width="110">
@@ -202,6 +217,8 @@
   import MetaSelect from '@/components/common/MetaSelect.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
+  import EmptyState from '@/components/common/EmptyState.vue'
+  import { List } from '@element-plus/icons-vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import ProTable from '@/components/table/ProTable.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
