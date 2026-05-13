@@ -41,7 +41,12 @@
               </el-select>
             </el-form-item>
             <el-form-item :label="t('jobInstanceList.quick')">
-              <el-radio-group :model-value="quickStatus" size="small" @change="onQuickStatusChange">
+              <el-radio-group
+                v-hover-radio-activate="true"
+                :model-value="quickStatus"
+                size="small"
+                @change="onQuickStatusChange"
+              >
                 <el-radio-button value="all">{{ t('jobInstanceList.quickAll') }}</el-radio-button>
                 <el-radio-button value="running">
                   {{ t('jobInstanceList.quickRunning') }}

@@ -28,16 +28,6 @@
           @reset="resetWebhookFilter"
           @refresh="() => runRefresh(loadWebhooks)"
         >
-          <template #prepend>
-            <el-button
-              type="primary"
-              :icon="Plus"
-              class="pretty-add-button"
-              @click="openWebhookCreate"
-            >
-              {{ t('notificationCommon.btnAdd') }}
-            </el-button>
-          </template>
           <el-form-item :label="t('notificationWebhooksTab.kwLabel')">
             <el-input
               class="query-w-280"
@@ -378,4 +368,6 @@
     webhookPage.value = 1
     void loadWebhooks()
   })
+
+  defineExpose({ openWebhookCreate })
 </script>

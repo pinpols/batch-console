@@ -14,24 +14,12 @@
     </PageHeader>
 
     <SectionCard>
-      <el-tabs v-model="activeTab" class="tag-tabs">
-        <el-tab-pane name="resource">
-          <template #label>
-            <span class="tag-tabs__label">
-              <el-icon><CollectionTag /></el-icon>
-              {{ t('tagManagement.tabResource') }}
-            </span>
-          </template>
+      <el-tabs v-model="activeTab" v-hover-tab-activate="true" class="pill-tabs">
+        <el-tab-pane :label="t('tagManagement.tabResource')" name="resource">
           <p class="tag-tabs__desc">{{ t('tagManagement.descResource') }}</p>
           <TagResourceTab ref="resourceTabRef" />
         </el-tab-pane>
-        <el-tab-pane name="search">
-          <template #label>
-            <span class="tag-tabs__label">
-              <el-icon><Search /></el-icon>
-              {{ t('tagManagement.tabSearch') }}
-            </span>
-          </template>
+        <el-tab-pane :label="t('tagManagement.tabSearch')" name="search">
           <p class="tag-tabs__desc">{{ t('tagManagement.descSearch') }}</p>
           <TagSearchTab />
         </el-tab-pane>
@@ -44,7 +32,7 @@
   import { ref, watch } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
-  import { CollectionTag, Plus, Search } from '@element-plus/icons-vue'
+  import { Plus } from '@element-plus/icons-vue'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
@@ -73,19 +61,6 @@
 </script>
 
 <style scoped>
-  .tag-tabs__label {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 14px;
-    font-weight: 600;
-  }
-
-  .tag-tabs__label :deep(svg) {
-    width: 15px;
-    height: 15px;
-  }
-
   .tag-tabs__desc {
     margin: 0 0 var(--space-md);
     font-size: 13px;

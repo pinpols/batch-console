@@ -166,7 +166,7 @@
   const total = ref(0)
   const page = ref(1)
   const pageSize = ref(20)
-  const timeRange = ref<[string, string] | []>([])
+  const timeRange = ref<[string, string] | null>(null)
   const filters = reactive({
     traceId: '',
     operationType: '',
@@ -259,15 +259,15 @@
       filters.operationResult = ''
       filters.startTime = ''
       filters.endTime = ''
-      timeRange.value = []
+      timeRange.value = null
       page.value = 1
       slicePage()
     })
   }
 
   watch(timeRange, (value) => {
-    filters.startTime = value[0] ?? ''
-    filters.endTime = value[1] ?? ''
+    filters.startTime = value?.[0] ?? ''
+    filters.endTime = value?.[1] ?? ''
   })
 
   useTenantReload(load)

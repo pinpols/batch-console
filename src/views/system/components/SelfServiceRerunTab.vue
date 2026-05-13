@@ -21,6 +21,7 @@
         >
           <el-option v-for="opt in jobCodeOptions" :key="opt" :label="opt" :value="opt" />
         </el-select>
+        <div class="field-hint">{{ t('selfServiceCommon.jobCodeHint') }}</div>
       </el-form-item>
       <el-form-item :label="t('selfServiceCommon.bizDateLabel')" prop="bizDate">
         <el-date-picker
@@ -30,12 +31,14 @@
           :placeholder="t('selfServiceCommon.bizDatePlaceholder')"
           class="query-w-full"
         />
+        <div class="field-hint">{{ t('selfServiceCommon.bizDateHint') }}</div>
       </el-form-item>
       <el-form-item :label="t('selfServiceCommon.targetInstanceLabel')">
         <el-input
           v-model="rerunForm.targetInstanceNo"
           :placeholder="t('selfServiceCommon.targetInstanceOptional')"
         />
+        <div class="field-hint">{{ t('selfServiceCommon.targetInstanceHint') }}</div>
       </el-form-item>
       <el-form-item :label="t('selfServiceCommon.reasonLabel')">
         <el-input
@@ -44,6 +47,7 @@
           :rows="3"
           :placeholder="t('selfServiceRerunTab.reasonPlaceholder')"
         />
+        <div class="field-hint">{{ t('selfServiceRerunTab.reasonHint') }}</div>
       </el-form-item>
       <el-form-item class="form-actions">
         <el-button
@@ -109,3 +113,13 @@
 
   useTenantReload(clearOptions)
 </script>
+
+<style scoped>
+  .field-hint {
+    width: 100%;
+    margin-top: 6px;
+    font-size: 12px;
+    line-height: 1.45;
+    color: var(--color-text-tertiary);
+  }
+</style>

@@ -56,29 +56,44 @@
             <span class="palette-shortcut">{{ commandPaletteShortcutLabel }}</span>
           </el-button>
         </el-tooltip>
-        <el-dropdown trigger="click" placement="bottom-end" @command="onToolCommand">
-          <el-tooltip :content="t('nav.moreTools')" placement="bottom">
-            <el-button text class="icon-button" :aria-label="t('nav.moreTools')">
-              <el-icon><MoreFilled /></el-icon>
-            </el-button>
-          </el-tooltip>
-          <template #dropdown>
-            <el-dropdown-menu>
-              <el-dropdown-item command="docs" :icon="Reading">
-                {{ t('nav.openDocs') }}
-              </el-dropdown-item>
-              <el-dropdown-item command="locale">
-                {{ localeToggleTooltip }}
-              </el-dropdown-item>
-              <el-dropdown-item command="theme" :icon="themeToolIcon">
-                {{ themeToggleLabel }}
-              </el-dropdown-item>
-              <el-dropdown-item command="focus" :icon="FullScreen">
-                {{ app.focusMode ? t('nav.exitFullscreen') : t('nav.fullscreen') }}
-              </el-dropdown-item>
-            </el-dropdown-menu>
-          </template>
-        </el-dropdown>
+        <el-tooltip :content="t('nav.openDocsTooltip')" placement="bottom">
+          <el-button text class="icon-button" :aria-label="t('nav.openDocs')" @click="openDocs">
+            <el-icon><Reading /></el-icon>
+          </el-button>
+        </el-tooltip>
+        <el-tooltip :content="localeToggleTooltip" placement="bottom">
+          <el-button
+            text
+            class="icon-button locale-tool-button"
+            :aria-label="t('nav.switchLocale')"
+            @click="toggleLocale"
+          >
+            <span class="locale-chip">{{ localeChipLabel }}</span>
+          </el-button>
+        </el-tooltip>
+        <el-tooltip :content="themeToggleLabel" placement="bottom">
+          <el-button
+            text
+            class="icon-button"
+            :aria-label="themeToggleAriaLabel"
+            @click="app.toggleTheme()"
+          >
+            <el-icon><component :is="themeToolIcon" /></el-icon>
+          </el-button>
+        </el-tooltip>
+        <el-tooltip
+          :content="app.focusMode ? t('nav.exitFullscreen') : t('nav.fullscreen')"
+          placement="bottom"
+        >
+          <el-button
+            text
+            class="icon-button"
+            :aria-label="t('nav.fullscreen')"
+            @click="app.toggleFocusMode()"
+          >
+            <el-icon><FullScreen /></el-icon>
+          </el-button>
+        </el-tooltip>
         <!-- 当前租户：常驻醒目展示，不藏在悬浮面板里 -->
         <div v-if="canSwitchTenant" class="tenant-chip tenant-chip--switch">
           <el-icon class="tenant-chip__icon"><OfficeBuilding /></el-icon>
@@ -167,8 +182,6 @@
     Key,
     Link,
     Monitor,
-    Compass,
-    MoreFilled,
     Moon,
     OfficeBuilding,
     Reading,
@@ -189,6 +202,7 @@
   const localeToggleTooltip = computed(() =>
     currentLocale.value === 'zh-CN' ? t('layoutHeader.switchToEn') : t('layoutHeader.switchToZh'),
   )
+  const localeChipLabel = computed(() => (currentLocale.value === 'zh-CN' ? 'EN' : '中'))
   const themeToolIcon = computed(() => {
     if (app.themePreference === 'system') return Monitor
     return app.themePreference === 'light' ? Sunny : Moon
@@ -209,6 +223,10 @@
   // 文档请用 `npm run docs:serve`(= build + preview)而不是 `npm run docs:dev`,
   // preview 是基于真 build 产物,行为与 prod 一致。
   const docsUrl = import.meta.env.DEV ? 'http://localhost:5174/docs/' : '/docs/'
+
+  function openDocs() {
+    window.open(docsUrl, '_blank', 'noopener')
+  }
 
   const router = useRouter()
   const {
@@ -250,24 +268,6 @@
         return
       }
       handleLogout()
-    }
-  }
-
-  function onToolCommand(command: string) {
-    if (command === 'docs') {
-      window.open(docsUrl, '_blank', 'noopener')
-      return
-    }
-    if (command === 'locale') {
-      toggleLocale()
-      return
-    }
-    if (command === 'theme') {
-      app.toggleTheme()
-      return
-    }
-    if (command === 'focus') {
-      app.toggleFocusMode()
     }
   }
 </script>

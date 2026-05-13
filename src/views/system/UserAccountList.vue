@@ -1,6 +1,12 @@
 <template>
   <PageContainer>
-    <PageHeader> </PageHeader>
+    <PageHeader>
+      <template #actions>
+        <el-button type="primary" :icon="Plus" class="pretty-add-button" @click="openCreate">
+          {{ t('userAccountList.headerCreate') }}
+        </el-button>
+      </template>
+    </PageHeader>
 
     <div class="metrics">
       <MetricCard :label="t('userAccountList.metricTotal')" :value="page.total" />
@@ -120,6 +126,60 @@
     </SectionCard>
 
     <el-dialog
+      v-model="createVisible"
+      :title="t('userAccountList.createTitle')"
+      width="640px"
+      :before-close="onCreateClose"
+    >
+      <el-form ref="createFormRef" :model="createForm" :rules="createFormRules" label-width="100px">
+        <el-form-item :label="t('userAccountList.fieldTenant')" prop="tenantId">
+          <TenantSelect
+            v-model="createForm.tenantId"
+            :placeholder="t('userAccountList.createTenantPlaceholder')"
+            select-class="query-w-full"
+          />
+        </el-form-item>
+        <el-form-item :label="t('userAccountList.fieldUsername')" prop="username">
+          <el-input
+            v-model="createForm.username"
+            :placeholder="t('userAccountList.createUsernamePlaceholder')"
+            maxlength="128"
+          />
+        </el-form-item>
+        <el-form-item :label="t('userAccountList.fieldPassword')" prop="password">
+          <el-input
+            v-model="createForm.password"
+            type="password"
+            show-password
+            :placeholder="t('userAccountList.fieldNewPasswordPlaceholder')"
+            maxlength="256"
+          />
+        </el-form-item>
+        <el-form-item :label="t('userAccountList.fieldDisplayName')">
+          <el-input
+            v-model="createForm.displayName"
+            :placeholder="t('userAccountList.fieldDisplayNamePlaceholder')"
+            maxlength="256"
+          />
+        </el-form-item>
+        <el-form-item :label="t('userAccountList.fieldRoles')">
+          <el-input
+            v-model="createForm.authoritiesCsv"
+            :placeholder="t('userAccountList.createRolesPlaceholder')"
+            maxlength="512"
+          />
+          <div class="form-hint">{{ t('userAccountList.createRolesHint') }}</div>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="closeCreate">{{ t('userAccountList.dialogCancel') }}</el-button>
+        <el-button type="primary" :loading="creating" @click="submitCreate">
+          {{ t('userAccountList.createSubmit') }}
+        </el-button>
+      </template>
+    </el-dialog>
+
+    <el-dialog
       v-model="formVisible"
       :title="t('userAccountList.editTitle', { name: form.username })"
       width="640px"
@@ -194,12 +254,14 @@
   import { computed, onMounted, reactive, ref } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
+  import { Plus } from '@element-plus/icons-vue'
 
   const { t } = useI18n({ useScope: 'global' })
   import type { FormRules } from 'element-plus'
   import { useFormValidate, rules } from '@/composables/useFormValidate'
   import {
     listUsers,
+    createUser,
     updateUser,
     enableUser,
     disableUser,
@@ -219,8 +281,11 @@
   import TablePagerBar from '@/components/table/TablePagerBar.vue'
   import TenantSelect from '@/components/common/TenantSelect.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
+  import { useTenantStore } from '@/stores/tenant'
 
   const { loading, error: loadError, run: runLoad } = useListLoadState()
+  const tenant = useTenantStore()
+  const creating = ref(false)
   const saving = ref(false)
   const resetting = ref(false)
   const listRemote = ref(true)
@@ -295,7 +360,82 @@
     void load()
   }
 
-  // --- 表单 ---
+  // --- 新增 ---
+  const createVisible = ref(false)
+  const createForm = reactive({
+    tenantId: '',
+    username: '',
+    password: '',
+    displayName: '',
+    authoritiesCsv: '',
+  })
+
+  const {
+    formRef: createFormRef,
+    validate: validateCreateForm,
+    clearValidate: clearCreateValidate,
+  } = useFormValidate()
+  const createFormRules: FormRules = {
+    tenantId: [rules.required(t('userAccountList.tenantRequired'), 'change')],
+    username: [
+      rules.required(t('userAccountList.usernameRequired')),
+      rules.pattern(/^[A-Za-z][A-Za-z0-9_.@-]{2,127}$/, t('userAccountList.usernamePattern')),
+    ],
+    password: [rules.required(t('userAccountList.passwordRequired')), rules.minLength(8)],
+  }
+
+  function resetCreateForm() {
+    createForm.tenantId = tenant.tenantId
+    createForm.username = ''
+    createForm.password = ''
+    createForm.displayName = ''
+    createForm.authoritiesCsv = ''
+    clearCreateValidate()
+  }
+
+  function openCreate() {
+    resetCreateForm()
+    createVisible.value = true
+  }
+
+  function closeCreate() {
+    createVisible.value = false
+    resetCreateForm()
+  }
+
+  function onCreateClose(done: () => void) {
+    if (creating.value) return
+    done()
+    resetCreateForm()
+  }
+
+  async function submitCreate() {
+    if (!(await validateCreateForm())) return
+    creating.value = true
+    const username = createForm.username.trim()
+    const tenantId = createForm.tenantId
+    try {
+      await createUser({
+        tenantId: tenantId || undefined,
+        username,
+        password: createForm.password,
+        displayName: createForm.displayName.trim() || undefined,
+        authoritiesCsv: createForm.authoritiesCsv.trim() || undefined,
+      })
+      ElMessage.success(t('userAccountList.createSuccess', { name: username }))
+      createVisible.value = false
+      resetCreateForm()
+      queryDraft.keyword = username
+      queryApplied.keyword = username
+      queryApplied.tenantId = ''
+      queryApplied.pageNo = 1
+      await load()
+    } finally {
+      creating.value = false
+    }
+  }
+
+  // --- 编辑 ---
   interface UserForm {
     id: number | null
     tenantId: string

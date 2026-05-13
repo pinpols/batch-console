@@ -210,7 +210,7 @@
   const page = ref(1)
   const pageSize = ref(20)
   const actingId = ref<number | null>(null)
-  const timeRange = ref<[string, string] | []>([])
+  const timeRange = ref<[string, string] | null>(null)
   const filters = reactive({
     tenantId: tenant.tenantId,
     severity: '',
@@ -309,7 +309,7 @@
       filters.traceId = ''
       filters.startTime = ''
       filters.endTime = ''
-      timeRange.value = []
+      timeRange.value = null
       page.value = 1
       slicePage()
     })
@@ -398,8 +398,8 @@
   }
 
   watch(timeRange, (value) => {
-    filters.startTime = value[0] ?? ''
-    filters.endTime = value[1] ?? ''
+    filters.startTime = value?.[0] ?? ''
+    filters.endTime = value?.[1] ?? ''
   })
 
   useSseAutoReload({

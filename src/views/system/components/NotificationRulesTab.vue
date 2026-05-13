@@ -28,16 +28,6 @@
           @reset="resetRuleFilter"
           @refresh="() => runRefresh(loadRules)"
         >
-          <template #prepend>
-            <el-button
-              type="primary"
-              :icon="Plus"
-              class="pretty-add-button"
-              @click="openRuleCreate"
-            >
-              {{ t('notificationCommon.btnAdd') }}
-            </el-button>
-          </template>
           <el-form-item :label="t('notificationCommon.keywordLabel')">
             <el-input
               class="query-w-240"
@@ -299,4 +289,6 @@
     rulePage.value = 1
     void loadRules()
   })
+
+  defineExpose({ openRuleCreate })
 </script>

@@ -20,7 +20,10 @@
           <strong>{{ t('opsSummary.onboardingImport') }}</strong>
           <span>{{ t('opsSummary.onboardingImportDesc') }}</span>
         </button>
-        <button class="ops-onboarding__card" @click="$router.push('/jobs/definitions')">
+        <button
+          class="ops-onboarding__card"
+          @click="$router.push('/jobs/definitions?action=create')"
+        >
           <el-icon size="22" color="var(--color-primary)"><DocumentAdd /></el-icon>
           <strong>{{ t('opsSummary.onboardingNewJob') }}</strong>
           <span>{{ t('opsSummary.onboardingNewJobDesc') }}</span>

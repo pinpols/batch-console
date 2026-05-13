@@ -28,17 +28,6 @@
           @reset="resetChannelFilter"
           @refresh="() => runRefresh(loadChannels)"
         >
-          <template #prepend>
-            <el-button
-              type="primary"
-              :icon="Plus"
-              class="pretty-add-button"
-              v-track-click="t('notificationChannelsTab.trackAdd')"
-              @click="openChannelCreate"
-            >
-              {{ t('notificationCommon.btnAdd') }}
-            </el-button>
-          </template>
           <el-form-item :label="t('notificationCommon.keywordLabel')">
             <el-input
               class="query-w-220"
@@ -379,4 +368,6 @@
     channelPage.value = 1
     void loadChannels()
   })
+
+  defineExpose({ openChannelCreate })
 </script>

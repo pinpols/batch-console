@@ -22,6 +22,7 @@ import router from './router'
 import { useAuthStore } from '@/stores/auth'
 import { permissionDirective } from '@/directives/permission'
 import { hoverTabActivateDirective } from '@/directives/hoverTabActivate'
+import { hoverRadioActivateDirective } from '@/directives/hoverRadioActivate'
 import { trackClickDirective } from '@/directives/trackClick'
 import { safeHtmlDirective } from '@/directives/safeHtml'
 import { initLogger, logClick, logError } from '@/utils/logger'
@@ -68,6 +69,7 @@ app.use(VueQueryPlugin, {
 })
 app.directive('permission', permissionDirective)
 app.directive('hover-tab-activate', hoverTabActivateDirective)
+app.directive('hover-radio-activate', hoverRadioActivateDirective)
 app.directive('track-click', trackClickDirective)
 app.directive('safe-html', safeHtmlDirective)
 
