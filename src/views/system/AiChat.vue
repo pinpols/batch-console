@@ -375,7 +375,7 @@
   .bubble {
     max-width: min(860px, 100%);
     padding: 10px 12px;
-    border-radius: 14px;
+    border-radius: var(--radius-content);
     border: 1px solid var(--color-border-light);
     background: var(--color-bg-card);
     box-shadow: 0 1px 0 rgb(15 23 42 / 4%);
@@ -403,7 +403,7 @@
     margin-bottom: 6px;
     font-size: 12px;
     font-weight: 700;
-    color: var(--color-text-tertiary, #909399);
+    color: var(--color-text-tertiary);
   }
 
   .composer {
@@ -423,7 +423,7 @@
   }
 
   .composer :deep(.composer__editor .el-textarea__inner) {
-    border-radius: 12px;
+    border-radius: var(--radius-content);
     border: 1px solid var(--color-border-light);
     background: color-mix(in srgb, var(--color-bg-canvas) 88%, #fff 12%);
     box-shadow: inset 0 1px 0 rgb(255 255 255 / 55%);
@@ -455,7 +455,7 @@
 
   .composer__hint {
     font-size: 12px;
-    color: var(--color-text-tertiary, #909399);
+    color: var(--color-text-tertiary);
     white-space: nowrap;
   }
 

@@ -502,7 +502,7 @@
   .upload-zone__ghost-btn,
   .upload-zone__primary-btn {
     min-height: 44px;
-    border-radius: 12px;
+    border-radius: var(--radius-content);
     font-weight: 650;
     padding: 0 18px;
   }

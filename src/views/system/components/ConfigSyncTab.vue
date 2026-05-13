@@ -294,7 +294,7 @@
     margin: 0 0 var(--space-md);
     font-size: 12px;
     line-height: 1.55;
-    color: var(--color-text-tertiary, #909399);
+    color: var(--color-text-tertiary);
   }
 
   .export-row {
@@ -349,7 +349,7 @@
     );
     font-size: 12px;
     line-height: 1.55;
-    border-radius: 12px;
+    border-radius: var(--radius-content);
     background: color-mix(in srgb, var(--color-bg-canvas) 88%, #fff 12%);
     box-shadow: inset 0 1px 0 rgb(255 255 255 / 55%);
     min-height: 220px;
