@@ -396,7 +396,7 @@ export default {
       workspace: '工作台',
       runs: '运行',
       definitions: '作业与工作流',
-      files: '文件中心',
+      files: '文件',
       alerting: '告警与投递',
       config: '配置',
       scheduling: '调度',

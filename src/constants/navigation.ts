@@ -122,16 +122,24 @@ export const navigationGroups: NavigationGroup[] = [
         icon: Operation,
       },
       {
-        title: pageTitle('/scheduler/snapshot'),
-        path: '/scheduler/snapshot',
+        // 综合查询从"告警与投递"挪进运行组:它本质是排障工具,和 Trace 同一类
+        title: pageTitle('/observability/queries'),
+        path: '/observability/queries',
         minRole: 'VIEWER',
-        icon: Aim,
+        icon: Search,
       },
       {
         title: pageTitle('/observability/trace'),
         path: '/observability/trace',
         minRole: 'VIEWER',
         icon: Search,
+      },
+      {
+        // 调度器快照排到最后:它是"调度器视角",和实例不是同维度
+        title: pageTitle('/scheduler/snapshot'),
+        path: '/scheduler/snapshot',
+        minRole: 'VIEWER',
+        icon: Aim,
       },
     ],
   },
@@ -147,16 +155,16 @@ export const navigationGroups: NavigationGroup[] = [
         icon: List,
       },
       {
-        title: pageTitle('/workflow/definitions'),
-        path: '/workflow/definitions',
-        minRole: 'VIEWER',
-        icon: Collection,
-      },
-      {
         title: pageTitle('/jobs/pipelines'),
         path: '/jobs/pipelines',
         minRole: 'VIEWER',
         icon: Connection,
+      },
+      {
+        title: pageTitle('/workflow/definitions'),
+        path: '/workflow/definitions',
+        minRole: 'VIEWER',
+        icon: Collection,
       },
       {
         title: pageTitle('/workflow/designer'),
@@ -168,7 +176,7 @@ export const navigationGroups: NavigationGroup[] = [
   },
   {
     key: 'files',
-    title: '文件中心',
+    title: '文件',
     icon: FolderOpened,
     children: [
       { title: pageTitle('/files/list'), path: '/files/list', minRole: 'VIEWER', icon: Files },
@@ -193,7 +201,7 @@ export const navigationGroups: NavigationGroup[] = [
     ],
   },
   {
-    // 告警与投递:告警响应 + 投递可观测 + 审计 + 综合查询(都属"系统在干什么"的只读/响应类)
+    // 告警与投递:严格"系统在发什么消息" + "怎么订阅它"
     key: 'alerting',
     title: '告警与投递',
     icon: WarningFilled,
@@ -222,18 +230,6 @@ export const navigationGroups: NavigationGroup[] = [
         path: '/system/notifications',
         minRole: 'OPERATOR',
         icon: Bell,
-      },
-      {
-        title: pageTitle('/observability/audits'),
-        path: '/observability/audits',
-        minRole: 'VIEWER',
-        icon: Notebook,
-      },
-      {
-        title: pageTitle('/observability/queries'),
-        path: '/observability/queries',
-        minRole: 'VIEWER',
-        icon: Search,
       },
     ],
   },
@@ -316,11 +312,11 @@ export const navigationGroups: NavigationGroup[] = [
     ],
   },
   {
-    // 系统:租户/账户/Key/参数 + 运维工具(admin 维护类)
+    // 系统:租户/账户/Key/参数 + 审计 + 运维工具(admin 维护类)
     key: 'system',
     title: '系统',
     icon: Tools,
-    minRole: 'OPERATOR',
+    minRole: 'VIEWER',
     children: [
       {
         title: pageTitle('/system/tenants'),
@@ -345,6 +341,13 @@ export const navigationGroups: NavigationGroup[] = [
         path: '/system/parameters',
         minRole: 'ADMIN',
         icon: Setting,
+      },
+      {
+        // 审计日志从"告警与投递"挪进系统组:它是"谁干了什么"的合规追溯,和运维诊断同心智
+        title: pageTitle('/observability/audits'),
+        path: '/observability/audits',
+        minRole: 'VIEWER',
+        icon: Notebook,
       },
       {
         title: pageTitle('/ops/diagnostic'),
