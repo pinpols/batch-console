@@ -18,7 +18,17 @@
         @change="load"
         :error="loadError"
         :on-retry="load"
+        :has-active-filters="hasActiveFilters"
       >
+        <template v-if="!hasActiveFilters" #empty>
+          <EmptyState :description="t('workflowDefinitionList.emptyDescription')" :image-size="80">
+            <template #action>
+              <el-button type="primary" :icon="Plus" @click="goCreate">
+                {{ t('workflowDefinitionList.headerCreate') }}
+              </el-button>
+            </template>
+          </EmptyState>
+        </template>
         <template #query>
           <ListPageQueryBar
             :model="filters"
@@ -177,9 +187,65 @@
     <el-dialog
       v-model="validateVisible"
       :title="t('workflowDefinitionList.validateTitle')"
-      width="800px"
+      width="760px"
     >
-      <JsonPreview :data="validateResult" />
+      <div v-if="validateResult" class="validate-result">
+        <el-alert
+          :type="validateResult.valid ? 'success' : 'error'"
+          :title="
+            validateResult.valid
+              ? t('workflowDefinitionList.validatePass')
+              : t('workflowDefinitionList.validateFailed', {
+                  errors: validateErrorCount,
+                  warnings: validateWarningCount,
+                })
+          "
+          show-icon
+          :closable="false"
+        />
+        <el-table
+          v-if="validateResult.findings.length"
+          :data="validateResult.findings"
+          stripe
+          border
+          size="small"
+          class="validate-result__table console-table"
+        >
+          <el-table-column :label="t('workflowDefinitionList.validateColLevel')" width="100">
+            <template #default="{ row }">
+              <el-tag
+                size="small"
+                :type="row.level === 'ERROR' ? 'danger' : 'warning'"
+                effect="plain"
+              >
+                {{ row.level }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column
+            prop="code"
+            :label="t('workflowDefinitionList.validateColCode')"
+            width="170"
+          />
+          <el-table-column
+            :label="t('workflowDefinitionList.validateColTarget')"
+            width="160"
+            show-overflow-tooltip
+          >
+            <template #default="{ row }">
+              <span v-if="row.nodeCode">node: {{ row.nodeCode }}</span>
+              <span v-else-if="row.edgeId">edge: {{ row.edgeId }}</span>
+              <span v-else class="muted">—</span>
+            </template>
+          </el-table-column>
+          <el-table-column
+            prop="message"
+            :label="t('workflowDefinitionList.validateColMessage')"
+            min-width="260"
+            show-overflow-tooltip
+          />
+        </el-table>
+      </div>
     </el-dialog>
   </PageContainer>
 </template>
@@ -200,7 +266,7 @@
     return te(key) ? t(key) : value
   }
   import { confirmDanger } from '@/composables/useDangerConfirm'
-  import { workflowApi } from '@/api/workflow'
+  import { workflowApi, type DagValidationResult } from '@/api/workflow'
   import { useSseAutoReload } from '@/composables/useSseAutoReload'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
@@ -212,6 +278,7 @@
   import StatusTag from '@/components/common/StatusTag.vue'
   import TenantSelect from '@/components/common/TenantSelect.vue'
   import JsonPreview from '@/components/common/JsonPreview.vue'
+  import EmptyState from '@/components/common/EmptyState.vue'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
@@ -237,7 +304,17 @@
   const detailVisible = ref(false)
   const detailRow = ref<WorkflowDefinitionDetailResponse | null>(null)
   const validateVisible = ref(false)
-  const validateResult = ref('')
+  const validateResult = ref<DagValidationResult | null>(null)
+  const validateErrorCount = computed(
+    () =>
+      validateResult.value?.findings?.filter((f: { level: string }) => f.level === 'ERROR')
+        .length ?? 0,
+  )
+  const validateWarningCount = computed(
+    () =>
+      validateResult.value?.findings?.filter((f: { level: string }) => f.level === 'WARNING')
+        .length ?? 0,
+  )
   const filters = reactive({
     tenantId: tenant.tenantId,
     workflowCode: '',
@@ -246,6 +323,16 @@
     workflowType: '',
     version: undefined as number | undefined,
   })
+  const hasActiveFilters = computed(
+    () =>
+      !!(
+        filters.workflowCode.trim() ||
+        filters.workflowName.trim() ||
+        filters.enabled !== undefined ||
+        filters.workflowType.trim() ||
+        filters.version != null
+      ),
+  )
 
   // workflowType 走后端 enum,完整候选不依赖列表先加载;rows 派生作 fallback
   const { data: metaEnums } = useConsoleMetaEnumsQuery()
@@ -403,7 +490,7 @@
     actingIds.value = new Set([...actingIds.value, row.id])
     try {
       const result = await workflowApi.validate(row.id, row.tenantId ?? tenant.tenantId)
-      validateResult.value = JSON.stringify(result ?? {}, null, 2)
+      validateResult.value = result ?? null
       validateVisible.value = true
     } finally {
       actingIds.value = new Set([...actingIds.value].filter((id) => id !== row.id))
