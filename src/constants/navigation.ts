@@ -122,24 +122,18 @@ export const navigationGroups: NavigationGroup[] = [
         icon: Operation,
       },
       {
-        // 综合查询从"告警与投递"挪进运行组:它本质是排障工具,和 Trace 同一类
-        title: pageTitle('/observability/queries'),
-        path: '/observability/queries',
-        minRole: 'VIEWER',
-        icon: Search,
-      },
-      {
+        // Trace 在前:更明确的排障入口
         title: pageTitle('/observability/trace'),
         path: '/observability/trace',
         minRole: 'VIEWER',
         icon: Search,
       },
       {
-        // 调度器快照排到最后:它是"调度器视角",和实例不是同维度
-        title: pageTitle('/scheduler/snapshot'),
-        path: '/scheduler/snapshot',
+        // 综合查询在后:兜底的跨域排障工具
+        title: pageTitle('/observability/queries'),
+        path: '/observability/queries',
         minRole: 'VIEWER',
-        icon: Aim,
+        icon: Search,
       },
     ],
   },
@@ -290,6 +284,14 @@ export const navigationGroups: NavigationGroup[] = [
         path: '/system/triggers',
         minRole: 'OPERATOR',
         icon: Timer,
+      },
+      {
+        // 调度快照从"运行"挪到"调度":它是调度器视角(谁在排队/谁要发车),
+        // 和 Worker / 触发器 / 队列同心智,而不是某次实例运行
+        title: pageTitle('/scheduler/snapshot'),
+        path: '/scheduler/snapshot',
+        minRole: 'VIEWER',
+        icon: Aim,
       },
       {
         title: pageTitle('/scheduler/batch-days'),
