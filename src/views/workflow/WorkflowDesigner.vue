@@ -836,8 +836,16 @@
     el?.focus()
     el?.click()
   }
+  /**
+   * 新建走当前 designer 自身的"创建模式":
+   *   /workflow/designer?mode=create
+   * 不再 bounce 到 list 页(list 也是 P0 加了同一个 link 入口)。
+   * 此处直接清空 selectedWorkflowCode 并把 workflowForm 重置为待填,
+   * 提交时按 workflowApi.create 走。
+   */
   function goToDefinitions() {
-    void router.push('/workflow/definitions')
+    selectedWorkflowCode.value = ''
+    void router.replace({ path: '/workflow/designer', query: { mode: 'create' } })
   }
 
   const manifestFileInput = ref<HTMLInputElement | null>(null)
