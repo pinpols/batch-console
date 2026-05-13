@@ -88,7 +88,11 @@
         />
         <el-table-column prop="traceId" label="Trace ID" width="180" show-overflow-tooltip>
           <template #default="{ row }">
-            <router-link v-if="row.traceId" class="cell-link" :to="`/logs?traceId=${row.traceId}`">
+            <router-link
+              v-if="row.traceId"
+              class="cell-link"
+              :to="`/observability/trace?traceId=${row.traceId}`"
+            >
               {{ row.traceId }}
             </router-link>
             <span v-else class="cell-empty">—</span>
@@ -278,7 +282,7 @@
 
   function goTrace(traceId: string) {
     if (!traceId.trim()) return
-    router.push({ path: '/logs', query: { traceId } })
+    router.push({ path: '/observability/trace', query: { traceId } })
   }
 
   useTenantReload(() => {

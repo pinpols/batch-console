@@ -107,7 +107,11 @@
           show-overflow-tooltip
         >
           <template #default="{ row }">
-            <router-link v-if="row.traceId" class="cell-link" :to="`/logs?traceId=${row.traceId}`">
+            <router-link
+              v-if="row.traceId"
+              class="cell-link"
+              :to="`/observability/trace?traceId=${row.traceId}`"
+            >
               {{ row.traceId }}
             </router-link>
             <span v-else class="cell-empty">—</span>
@@ -134,7 +138,7 @@
           <router-link
             v-if="detail.traceId"
             class="cell-link"
-            :to="`/logs?traceId=${detail.traceId}`"
+            :to="`/observability/trace?traceId=${detail.traceId}`"
           >
             {{ detail.traceId }}
           </router-link>
@@ -179,7 +183,11 @@
           show-overflow-tooltip
         >
           <template #default="{ row }">
-            <router-link v-if="row.traceId" class="cell-link" :to="`/logs?traceId=${row.traceId}`">
+            <router-link
+              v-if="row.traceId"
+              class="cell-link"
+              :to="`/observability/trace?traceId=${row.traceId}`"
+            >
               {{ row.traceId }}
             </router-link>
             <span v-else class="cell-empty">—</span>

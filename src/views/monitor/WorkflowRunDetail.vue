@@ -37,7 +37,11 @@
           {{ run.bizDate }}
         </el-descriptions-item>
         <el-descriptions-item :label="t('monitor.runDetailTrace')">
-          <router-link v-if="run.traceId" class="cell-link" :to="`/logs?traceId=${run.traceId}`">
+          <router-link
+            v-if="run.traceId"
+            class="cell-link"
+            :to="`/observability/trace?traceId=${run.traceId}`"
+          >
             {{ run.traceId }}
           </router-link>
           <span v-else>—</span>

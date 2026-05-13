@@ -113,7 +113,8 @@ export const pageMetaByPath = {
   },
   '/observability/trace': {
     title: 'Trace 诊断',
-    description: '按 traceId 跨域聚合查询(作业/文件/审计/执行日志),0 命中时引导去 Grafana/Tempo。',
+    description:
+      '按 traceId 跨域聚合查询(作业实例/工作流运行/文件/审计/执行日志/告警/Outbox/死信),0 命中时引导去日志/链路平台。',
   },
   '/observability/audits': {
     title: '审计日志',
