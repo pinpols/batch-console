@@ -277,10 +277,10 @@ export const navigationGroups: NavigationGroup[] = [
     ],
   },
   {
-    // 系统:调度运行时 + 多租户/账户 + 运维工具(都属 admin 维护类)
-    key: 'system',
-    title: '系统',
-    icon: Tools,
+    // 调度:operator 日常调参的运行时资源(Worker / 触发器 / 批次日 / 队列 / 配额)
+    key: 'scheduling',
+    title: '调度',
+    icon: Timer,
     minRole: 'VIEWER',
     children: [
       {
@@ -313,6 +313,15 @@ export const navigationGroups: NavigationGroup[] = [
         minRole: 'OPERATOR',
         icon: PieChart,
       },
+    ],
+  },
+  {
+    // 系统:租户/账户/Key/参数 + 运维工具(admin 维护类)
+    key: 'system',
+    title: '系统',
+    icon: Tools,
+    minRole: 'OPERATOR',
+    children: [
       {
         title: pageTitle('/system/tenants'),
         path: '/system/tenants',
