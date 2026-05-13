@@ -13,6 +13,8 @@ export interface InstanceQueryParams {
   startDate?: string
   /** ISO date range end */
   endDate?: string
+  /** partial match */
+  traceId?: string
   page: number
   pageSize: number
 }
@@ -31,6 +33,9 @@ function applyInstanceFilters(rows: ConsoleJobInstanceResponse[], query: Instanc
   if (query.endDate) {
     r = r.filter((x) => !x.startedAt || x.startedAt <= `${query.endDate}T23:59:59`)
   }
+  if (query.traceId) {
+    r = r.filter((x) => x.traceId?.includes(query.traceId!))
+  }
   return r
 }
 
@@ -41,7 +46,13 @@ function applyInstanceFilters(rows: ConsoleJobInstanceResponse[], query: Instanc
 export async function queryJobInstances(
   query: InstanceQueryParams,
 ): Promise<PageResult<ConsoleJobInstanceResponse>> {
-  const hasFilter = !!(query.jobCode || query.instanceStatus || query.startDate || query.endDate)
+  const hasFilter = !!(
+    query.jobCode ||
+    query.instanceStatus ||
+    query.startDate ||
+    query.endDate ||
+    query.traceId
+  )
 
   if (!hasFilter) {
     const pr = await get<PageResponse<ConsoleJobInstanceResponse>>(
@@ -69,6 +80,7 @@ export async function queryJobInstances(
       ...(query.instanceStatus ? { instanceStatus: query.instanceStatus } : {}),
       ...(query.startDate ? { startDate: query.startDate } : {}),
       ...(query.endDate ? { endDate: query.endDate } : {}),
+      ...(query.traceId ? { traceId: query.traceId } : {}),
     },
   )
   const filtered = applyInstanceFilters(all, query)

@@ -58,6 +58,14 @@
                 :options="runStatusOptions"
               />
             </el-form-item>
+            <el-form-item :label="t('monitor.runListTraceIdLabel')">
+              <el-input
+                class="query-w-240"
+                v-model="traceId"
+                clearable
+                :placeholder="t('monitor.runListTraceIdPlaceholder')"
+              />
+            </el-form-item>
           </ListPageQueryBar>
         </template>
 
@@ -162,6 +170,7 @@
   const filterTenantId = ref(tenant.tenantId)
   const workflowCode = ref('')
   const runStatus = ref('')
+  const traceId = ref('')
   const workflowCodeOptions = ref<string[]>([])
   const { data: metaEnums } = useConsoleMetaEnumsQuery()
 
@@ -205,6 +214,7 @@
         tenantId: filterTenantId.value || tenant.tenantId,
         workflowDefinitionId: defId,
         runStatus: runStatus.value.trim() || undefined,
+        traceId: traceId.value.trim() || undefined,
         page: page.value,
         pageSize: pageSize.value,
       })
@@ -230,6 +240,7 @@
       filterTenantId.value = tenant.tenantId
       workflowCode.value = ''
       runStatus.value = ''
+      traceId.value = ''
       page.value = 1
       await load()
     })
