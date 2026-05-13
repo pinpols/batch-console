@@ -21,7 +21,10 @@
           @keydown.up.prevent="move(-1)"
           @keydown.enter.prevent="goActive()"
         />
-        <span class="cp-kbd">⌘/Ctrl + K</span>
+        <span v-if="entityLoading" class="cp-kbd cp-kbd--loading">{{
+          t('palette.searching')
+        }}</span>
+        <span v-else class="cp-kbd">⌘/Ctrl + K</span>
       </div>
     </template>
 
@@ -57,7 +60,7 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, nextTick, ref, watch } from 'vue'
+  import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
   import { useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import type { Component } from 'vue'
@@ -65,6 +68,13 @@
   import type { NavigationGroup } from '@/constants/navigation'
   import type { PageTab } from '@/stores/tabs'
   import { pathToKey } from '@/constants/pathKey'
+  import { instanceApi } from '@/api/instance'
+  import { workflowApi } from '@/api/workflow'
+  import { useTenantStore } from '@/stores/tenant'
+  import type {
+    ConsoleJobInstanceResponse,
+    ConsoleWorkflowDefinitionResponse,
+  } from '@/types/console-api'
 
   const { t, te } = useI18n({ useScope: 'global' })
 
@@ -73,7 +83,7 @@
     return te(key) ? t(key) : fallback
   }
 
-  type PaletteSource = 'recent' | 'menu' | 'jump'
+  type PaletteSource = 'recent' | 'menu' | 'jump' | 'entity'
 
   type PaletteItem = {
     key: string
@@ -97,6 +107,67 @@
   }>()
 
   const router = useRouter()
+  const tenant = useTenantStore()
+
+  // ─── 实体匹配(BE 服务端搜) ─────────────────────────────
+  // 触发条件:term 长度 ≥ 2,不是纯数字/纯 hex(那些已走 jump 项)。
+  // BE 支持 jobCode partial / workflowCode partial 过滤,我们各拉 5 条。
+  const entityJobInstances = ref<ConsoleJobInstanceResponse[]>([])
+  const entityWorkflowDefs = ref<ConsoleWorkflowDefinitionResponse[]>([])
+  const entityLoading = ref(false)
+  let debounceTimer: ReturnType<typeof setTimeout> | null = null
+  let activeSearchGen = 0
+
+  function shouldSearchEntity(term: string) {
+    if (term.length < 2) return false
+    if (/^\d+$/.test(term)) return false // 纯数字走 jumpItems
+    if (/^[a-f0-9]{16,64}$/i.test(term)) return false // traceId 走 jumpItems
+    return true
+  }
+
+  async function searchEntities(term: string) {
+    if (!shouldSearchEntity(term)) {
+      entityJobInstances.value = []
+      entityWorkflowDefs.value = []
+      return
+    }
+    activeSearchGen += 1
+    const myGen = activeSearchGen
+    entityLoading.value = true
+    try {
+      const [jobs, wfs] = await Promise.all([
+        instanceApi
+          .list({ tenantId: tenant.tenantId, jobCode: term, page: 1, pageSize: 5 })
+          .catch(() => ({ records: [] as ConsoleJobInstanceResponse[] })),
+        workflowApi
+          .listDefinitions({
+            tenantId: tenant.tenantId,
+            workflowCode: term,
+            page: 1,
+            pageSize: 5,
+          })
+          .catch(() => ({ records: [] as ConsoleWorkflowDefinitionResponse[] })),
+      ])
+      // 防止快速输入时旧请求覆盖新结果
+      if (myGen !== activeSearchGen) return
+      entityJobInstances.value = (jobs.records ?? []).slice(0, 5)
+      entityWorkflowDefs.value = (wfs.records ?? []).slice(0, 5)
+    } finally {
+      if (myGen === activeSearchGen) entityLoading.value = false
+    }
+  }
+
+  function scheduleEntitySearch(term: string) {
+    if (debounceTimer) clearTimeout(debounceTimer)
+    debounceTimer = setTimeout(() => {
+      debounceTimer = null
+      void searchEntities(term)
+    }, 300)
+  }
+
+  onBeforeUnmount(() => {
+    if (debounceTimer) clearTimeout(debounceTimer)
+  })
 
   const open = computed({
     get: () => props.modelValue,
@@ -171,6 +242,31 @@
     return []
   })
 
+  const entityItems = computed((): Omit<PaletteItem, 'globalIndex'>[] => {
+    const out: Omit<PaletteItem, 'globalIndex'>[] = []
+    for (const inst of entityJobInstances.value) {
+      out.push({
+        key: `entity:job:${inst.id}`,
+        title: inst.instanceNo,
+        subtitle: `${inst.jobCode} · ${inst.bizDate || ''} · ${inst.instanceStatus}`,
+        meta: t('palette.metaJob'),
+        path: `/monitor/job-instances/${inst.id}`,
+        source: 'entity' as const,
+      })
+    }
+    for (const wf of entityWorkflowDefs.value) {
+      out.push({
+        key: `entity:wf:${wf.id}`,
+        title: wf.workflowCode,
+        subtitle: `${wf.workflowName || ''} · v${wf.version} · ${wf.enabled ? 'enabled' : 'disabled'}`,
+        meta: t('palette.metaWorkflow'),
+        path: `/workflow/definitions?workflowCode=${encodeURIComponent(wf.workflowCode)}`,
+        source: 'entity' as const,
+      })
+    }
+    return out
+  })
+
   const flatItems = computed(() => {
     const rawTerm = q.value.trim()
     const term = rawTerm.toLowerCase()
@@ -180,13 +276,17 @@
     if (term && isJump) {
       base.push(...jumpItems.value, ...recentItems.value, ...menuItems.value)
     } else {
-      base.push(...recentItems.value, ...menuItems.value)
+      // 实体匹配排在 menu 前面:用户搜 jobCode/workflowCode 时希望优先看到真实数据
+      base.push(...entityItems.value, ...recentItems.value, ...menuItems.value)
     }
 
     const filtered = term
       ? base.filter((it) => {
           if ((/^\d+$/.test(rawTerm) || /^[a-f0-9]{16,64}$/i.test(rawTerm)) && it.source === 'jump')
             return true
+          // 实体匹配项来自服务端搜索结果,本身就是命中,不再用 hay 二次过滤
+          // (避免如 "wf-001" 因 path 不含全部字符被错杀)
+          if (it.source === 'entity') return true
           const hay = `${it.title} ${it.subtitle ?? ''} ${it.path}`.toLowerCase()
           return hay.includes(term)
         })
@@ -205,10 +305,12 @@
 
   const sections = computed(() => {
     const jump = flatItems.value.filter((x) => x.source === 'jump')
+    const entity = flatItems.value.filter((x) => x.source === 'entity')
     const rec = flatItems.value.filter((x) => x.source === 'recent')
     const menu = flatItems.value.filter((x) => x.source === 'menu')
     return [
       { key: 'jump', title: t('palette.sectionJump'), items: jump },
+      { key: 'entity', title: t('palette.sectionEntity'), items: entity },
       { key: 'recent', title: t('palette.sectionRecent'), items: rec },
       { key: 'menu', title: t('palette.sectionMenu'), items: menu },
     ].filter((s) => s.items.length)
@@ -241,6 +343,12 @@
   function onClosed() {
     q.value = ''
     activeIndex.value = 0
+    entityJobInstances.value = []
+    entityWorkflowDefs.value = []
+    if (debounceTimer) {
+      clearTimeout(debounceTimer)
+      debounceTimer = null
+    }
   }
 
   watch(open, (v) => {
@@ -251,8 +359,9 @@
     activeIndex.value = clamp(activeIndex.value, 0, Math.max(0, list.length - 1))
   })
 
-  watch(q, () => {
+  watch(q, (term) => {
     activeIndex.value = 0
+    scheduleEntitySearch(term.trim())
   })
 </script>
 
