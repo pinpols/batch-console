@@ -2705,6 +2705,8 @@ export default {
     btnCopyToTarget: '复制到目标侧 →',
     // 目标侧
     targetTitle: '目标',
+    targetCurrentTenant: '当前租户',
+    targetMultiTenants: '{first} 等 {n} 个',
     targetEnvLabel: '环境',
     targetEnvPlaceholder: '如 default / staging',
     targetTenantsLabel: '目标租户',
