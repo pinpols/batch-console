@@ -4105,7 +4105,8 @@ export interface paths {
     /** List user accounts */
     get: operations['listUsers']
     put?: never
-    post?: never
+    /** Create a console user account (ROLE_ADMIN only) */
+    post: operations['createUser']
     delete?: never
     options?: never
     head?: never
@@ -13776,6 +13777,38 @@ export interface operations {
     requestBody?: never
     responses: {
       /** @description Paginated user account list */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseObject']
+        }
+      }
+    }
+  }
+  createUser: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': {
+          /** @description Optional - falls back to caller tenant when omitted */
+          tenantId?: string
+          username: string
+          password: string
+          displayName?: string
+          /** @description CSV of role authorities, e.g. "ROLE_ADMIN,ROLE_TENANT_USER". Empty defaults to USER. */
+          authoritiesCsv?: string
+        }
+      }
+    }
+    responses: {
+      /** @description Created user account */
       200: {
         headers: {
           [name: string]: unknown
