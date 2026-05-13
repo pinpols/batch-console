@@ -155,7 +155,7 @@ const messages: Messages = {
   tenantPackageImportWizard: {
     uploadTitle: 'Upload tenant config package',
     uploadDesc:
-      '8-sheet format (job_definition / file_channel / alert_routing / pipeline / workflow_definition …). Preview after upload.',
+      'Standard 8-sheet Excel package (job definitions, file channels, alert routings, pipelines, workflows …). Preview & validate after upload before applying.',
     btnDownloadTemplate: 'Download package template',
     btnExportCurrent: 'Export current package',
     applyDescStart: 'Will apply the 8-sheet preview for the current',

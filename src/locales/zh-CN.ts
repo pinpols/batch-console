@@ -159,7 +159,7 @@ export default {
   tenantPackageImportWizard: {
     uploadTitle: '上传租户配置包 Excel',
     uploadDesc:
-      '8-Sheet 格式(job_definition / file_channel / alert_routing / pipeline / workflow_definition …)。上传成功后可进入预览校验。',
+      '标准 8-Sheet Excel 配置包(覆盖作业定义、文件渠道、告警路由、管道、工作流等)。上传后进入预览校验,确认无误再应用。',
     btnDownloadTemplate: '下载配置包模板',
     btnExportCurrent: '导出当前配置包',
     applyDescStart: '将把当前',
