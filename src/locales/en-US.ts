@@ -39,6 +39,11 @@ const messages: Messages = {
     required: '(required)',
   },
   workflowDesigner: {
+    emptyTitle: 'Select a Workflow first',
+    emptyDesc:
+      'Pick an existing Workflow from the dropdown above, or go to definitions to create a new one. Other actions become available after selection.',
+    emptyActionSelect: 'Select existing Workflow',
+    emptyActionNew: 'Create new Workflow',
     deleteCellConsequence:
       'The node/edge and its properties are removed from the draft. If already published, you must resubmit to apply.',
     ariaContext: 'Current workflow object',
@@ -346,6 +351,8 @@ const messages: Messages = {
     copyLinkAria: 'Copy current URL',
     openCommandPalette: 'Open command palette',
     moreTools: 'More tools',
+    foldSidebar: 'Collapse sidebar',
+    expandSidebar: 'Expand sidebar',
     openDocs: 'Open documentation',
     openDocsTooltip: 'Documentation (ADR / Architecture / Ops / Runbook)',
     fullscreen: 'Fullscreen content',
@@ -597,7 +604,7 @@ const messages: Messages = {
     },
   },
   palette: {
-    placeholder: 'Search menu, recent pages; numeric input jumps to job instance',
+    placeholder: 'Search menu/recent; numeric → Job Instance; traceId → Trace Diagnostic',
     empty: 'No matches',
     sectionJump: 'Quick jump',
     sectionRecent: 'Recent',
@@ -607,6 +614,8 @@ const messages: Messages = {
     metaJump: 'Jump',
     jumpJobInstance: 'Job instance #{id}',
     jumpDetail: 'Open detail page',
+    jumpTrace: 'Diagnose trace {trace}',
+    jumpTraceSubtitle: 'Cross-domain query by traceId',
   },
   page: {
     opsSummary: {
@@ -806,6 +815,15 @@ const messages: Messages = {
     actionRetry: 'Retry',
     actionRefresh: 'Refresh',
     actionClearFilter: 'Clear filter',
+    filterTitle: 'No matches',
+    filterDescription: 'No data matches current filters. Try adjusting or clearing filters.',
+    tenantTitle: 'No data in current tenant',
+    tenantDescription: 'Switch tenant to view data elsewhere, or create new in this tenant.',
+    noPermissionTitle: 'Permission denied',
+    noPermissionDescription:
+      'Your role cannot view this data. Contact admin to adjust permissions.',
+    serviceDownTitle: 'Backend service unavailable',
+    serviceDownDescription: 'Service temporarily unreachable. Refresh later or contact ops.',
   },
   error: {
     title: 'Something went wrong',
@@ -1408,6 +1426,10 @@ const messages: Messages = {
     noHitAlt: 'Possibly retention-expired or external BE log. Try Grafana / Tempo.',
     openGrafana: 'Open Grafana',
     openTempo: 'Open Tempo',
+    grafanaDown:
+      'Observability stack (Grafana) is down or unreachable: {url}. Start docker-compose.observability.yml first.',
+    tempoDown:
+      'Observability stack (Tempo) is down or unreachable: {url}. Start docker-compose.observability.yml first.',
     summary: 'traceId "{trace}" — {hits} hits across {domains} domains',
     hitCount: '{n} hits',
     domainErr: 'query failed',
@@ -1428,6 +1450,9 @@ const messages: Messages = {
     colMessage: 'Message',
   },
   observability: {
+    traceQuickPlaceholder: 'Paste traceId to jump to Trace Diagnostic',
+    traceQuickGo: 'Diagnose',
+    traceQuickHint: 'Paste a copied traceId from any page, or enter 16-64 hex chars',
     tabDeadLetters: 'Dead Letters',
     tabRetries: 'Retries',
     tabExecLogs: 'Execution logs',
@@ -2246,6 +2271,7 @@ const messages: Messages = {
     traceIdLabel: 'Trace Id',
     traceIdPlaceholder: 'Trace Id, partial match',
     colTrace: 'Trace',
+    colTraceJumpTip: 'Cross-domain query on this traceId',
     colActions: 'Actions',
     actionDetail: 'Detail',
     actionPartitions: 'Steps',
@@ -2738,6 +2764,16 @@ const messages: Messages = {
     tabExtra: 'Extra panels',
     errorDesc:
       'No data or request failed (normal if backend not connected). Verify tenantId and gateway.',
+    onboardingTitle: 'Tenant looks fresh',
+    onboardingDesc: 'All metrics are zero. Start with one of the four actions below.',
+    onboardingImport: 'Import config package',
+    onboardingImportDesc: 'Upload Excel bundle to bring jobs / queues / file templates at once',
+    onboardingNewJob: 'New job definition',
+    onboardingNewJobDesc: 'Create jobs one by one, good for trial',
+    onboardingTenant: 'Manage tenants',
+    onboardingTenantDesc: 'Switch or create tenants for multi-business isolation',
+    onboardingWorker: 'Check workers',
+    onboardingWorkerDesc: 'Verify workers are up, otherwise jobs cannot run',
   },
   reportExportHub: {
     tenantTagPrefix: 'tenant: {id}',

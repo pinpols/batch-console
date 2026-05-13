@@ -253,6 +253,17 @@ const routes = [
         },
       },
       {
+        path: 'observability/trace',
+        name: 'observability-trace',
+        component: () => import('@/views/observability/TraceDiagnostic.vue'),
+        meta: {
+          title: 'Trace 诊断',
+          description: '按 traceId 跨域聚合查询(作业/工作流/文件/审计/告警/Outbox 等)',
+          activeMenu: '/observability/trace',
+          minRole: 'VIEWER',
+        },
+      },
+      {
         path: 'observability/audits',
         name: 'observability-audits',
         component: () => import('@/views/observability/AuditList.vue'),

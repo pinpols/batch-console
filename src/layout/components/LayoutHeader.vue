@@ -2,12 +2,17 @@
   <el-header class="layout-header">
     <div class="layout-header__surface app-surface layout-panel">
       <div class="layout-header__left">
-        <el-button text class="icon-button layout-header__fold" @click="app.toggleSidebar()">
-          <el-icon>
-            <Fold v-if="!app.sidebarCollapsed" />
-            <Expand v-else />
-          </el-icon>
-        </el-button>
+        <el-tooltip
+          :content="app.sidebarCollapsed ? t('nav.expandSidebar') : t('nav.foldSidebar')"
+          placement="bottom"
+        >
+          <el-button text class="icon-button layout-header__fold" @click="app.toggleSidebar()">
+            <el-icon>
+              <Fold v-if="!app.sidebarCollapsed" />
+              <Expand v-else />
+            </el-icon>
+          </el-button>
+        </el-tooltip>
         <div class="page-meta">
           <div class="page-meta__title-row">
             <div class="page-meta__title-block">
@@ -51,60 +56,29 @@
             <span class="palette-shortcut">{{ commandPaletteShortcutLabel }}</span>
           </el-button>
         </el-tooltip>
-        <el-tooltip :content="t('nav.openDocsTooltip')" placement="bottom">
-          <el-button
-            text
-            class="icon-button"
-            :aria-label="t('nav.openDocs')"
-            tag="a"
-            :href="docsUrl"
-            target="_blank"
-            rel="noopener"
-          >
-            <el-icon>
-              <Reading />
-            </el-icon>
-          </el-button>
-        </el-tooltip>
-        <el-tooltip :content="localeToggleTooltip" placement="bottom">
-          <el-button
-            text
-            class="icon-button"
-            :aria-label="localeToggleTooltip"
-            @click="toggleLocale"
-          >
-            <span class="locale-chip">{{ currentLocale === 'zh-CN' ? '中' : 'EN' }}</span>
-          </el-button>
-        </el-tooltip>
-        <el-tooltip :content="themeToggleLabel" placement="bottom">
-          <el-button
-            text
-            class="icon-button"
-            :aria-label="themeToggleAriaLabel"
-            @click="app.toggleTheme()"
-          >
-            <el-icon>
-              <Monitor v-if="app.themePreference === 'system'" />
-              <Sunny v-else-if="app.themePreference === 'light'" />
-              <Moon v-else />
-            </el-icon>
-          </el-button>
-        </el-tooltip>
-        <el-tooltip
-          :content="app.focusMode ? t('nav.exitFullscreen') : t('nav.fullscreen')"
-          placement="bottom"
-        >
-          <el-button
-            text
-            class="icon-button"
-            :aria-label="t('nav.fullscreen')"
-            @click="app.toggleFocusMode()"
-          >
-            <el-icon>
-              <FullScreen />
-            </el-icon>
-          </el-button>
-        </el-tooltip>
+        <el-dropdown trigger="click" placement="bottom-end" @command="onToolCommand">
+          <el-tooltip :content="t('nav.moreTools')" placement="bottom">
+            <el-button text class="icon-button" :aria-label="t('nav.moreTools')">
+              <el-icon><MoreFilled /></el-icon>
+            </el-button>
+          </el-tooltip>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item command="docs" :icon="Reading">
+                {{ t('nav.openDocs') }}
+              </el-dropdown-item>
+              <el-dropdown-item command="locale">
+                {{ localeToggleTooltip }}
+              </el-dropdown-item>
+              <el-dropdown-item command="theme" :icon="themeToolIcon">
+                {{ themeToggleLabel }}
+              </el-dropdown-item>
+              <el-dropdown-item command="focus" :icon="FullScreen">
+                {{ app.focusMode ? t('nav.exitFullscreen') : t('nav.fullscreen') }}
+              </el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
         <!-- 当前租户：常驻醒目展示，不藏在悬浮面板里 -->
         <div v-if="canSwitchTenant" class="tenant-chip tenant-chip--switch">
           <el-icon class="tenant-chip__icon"><OfficeBuilding /></el-icon>
@@ -194,6 +168,7 @@
     Link,
     Monitor,
     Compass,
+    MoreFilled,
     Moon,
     OfficeBuilding,
     Reading,
@@ -214,6 +189,10 @@
   const localeToggleTooltip = computed(() =>
     currentLocale.value === 'zh-CN' ? t('layoutHeader.switchToEn') : t('layoutHeader.switchToZh'),
   )
+  const themeToolIcon = computed(() => {
+    if (app.themePreference === 'system') return Monitor
+    return app.themePreference === 'light' ? Sunny : Moon
+  })
 
   function toggleLocale() {
     setLocale(currentLocale.value === 'zh-CN' ? 'en-US' : 'zh-CN')
@@ -271,6 +250,24 @@
         return
       }
       handleLogout()
+    }
+  }
+
+  function onToolCommand(command: string) {
+    if (command === 'docs') {
+      window.open(docsUrl, '_blank', 'noopener')
+      return
+    }
+    if (command === 'locale') {
+      toggleLocale()
+      return
+    }
+    if (command === 'theme') {
+      app.toggleTheme()
+      return
+    }
+    if (command === 'focus') {
+      app.toggleFocusMode()
     }
   }
 </script>

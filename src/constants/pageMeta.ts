@@ -107,6 +107,10 @@ export const pageMetaByPath = {
     title: '告警路由',
     description: '维护告警路由、接收人、聚合和重复通知规则。',
   },
+  '/observability/trace': {
+    title: 'Trace 诊断',
+    description: '按 traceId 跨域聚合查询(作业/文件/审计/执行日志),0 命中时引导去 Grafana/Tempo。',
+  },
   '/observability/audits': {
     title: '审计日志',
     description: '查询平台关键操作,追踪用户和接口行为。',

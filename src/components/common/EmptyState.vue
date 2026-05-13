@@ -15,7 +15,16 @@
   import { computed } from 'vue'
   import { useI18n } from 'vue-i18n'
 
-  type EmptyStateVariant = 'empty' | 'forbidden' | 'error' | 'offline' | 'network'
+  type EmptyStateVariant =
+    | 'empty'
+    | 'forbidden'
+    | 'error'
+    | 'offline'
+    | 'network'
+    | 'filter-empty' // 用户加了筛选条件,无匹配
+    | 'tenant-empty' // 当前租户内空(可切换其它租户)
+    | 'no-permission' // 角色权限不足
+    | 'service-down' // BE 服务不可用
 
   const props = withDefaults(
     defineProps<{
@@ -40,6 +49,22 @@
       error: { title: t('empty.error'), description: t('error.subtitle') },
       offline: { title: t('error.networkTitle'), description: t('error.networkSub') },
       network: { title: t('error.networkTitle'), description: t('error.networkSub') },
+      'filter-empty': {
+        title: t('empty.filterTitle'),
+        description: t('empty.filterDescription'),
+      },
+      'tenant-empty': {
+        title: t('empty.tenantTitle'),
+        description: t('empty.tenantDescription'),
+      },
+      'no-permission': {
+        title: t('empty.noPermissionTitle'),
+        description: t('empty.noPermissionDescription'),
+      },
+      'service-down': {
+        title: t('empty.serviceDownTitle'),
+        description: t('empty.serviceDownDescription'),
+      },
     }),
   )
 
