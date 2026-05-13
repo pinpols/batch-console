@@ -162,6 +162,16 @@ const routes = [
       },
       { path: 'monitor/instances', redirect: '/monitor/job-instances' },
       {
+        path: 'runs',
+        name: 'runs-overview',
+        component: () => import('@/views/runs/RunsOverview.vue'),
+        meta: {
+          title: '全部运行',
+          activeMenu: '/runs',
+          minRole: 'VIEWER',
+        },
+      },
+      {
         path: 'monitor/job-instances',
         name: 'job-instance-list',
         component: () => import('@/views/monitor/JobInstanceList.vue'),
