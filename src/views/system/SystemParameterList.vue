@@ -82,7 +82,7 @@
           ? t('systemParameterList.dialogEditTitle')
           : t('systemParameterList.dialogCreateTitle')
       "
-      width="500px"
+      width="480px"
     >
       <el-form ref="paramFormRef" :model="form" :rules="formRules" label-width="100px">
         <el-form-item :label="t('systemParameterList.fieldKey')" prop="key">

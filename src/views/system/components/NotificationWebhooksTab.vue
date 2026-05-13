@@ -108,7 +108,7 @@
           ? t('notificationWebhooksTab.dialogTitleEdit')
           : t('notificationWebhooksTab.dialogTitleCreate')
       "
-      width="560px"
+      width="640px"
     >
       <el-form
         ref="webhookFormRef"

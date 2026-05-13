@@ -4,7 +4,6 @@ import { ElMessage } from 'element-plus'
 import { getOpsSummary } from '@/api/ops'
 import { useTenantStore } from '@/stores/tenant'
 import { useTenantReload } from '@/composables/useTenantReload'
-import { lastApiMeta } from '@/utils/lastApiMeta'
 import { getDashboardBundle, getDashboardSlaReport, getDashboardTenantUsage } from '@/api/dashboard'
 import type { ConsoleOpsSummaryResponse } from '@/types/console-api'
 import {
@@ -21,7 +20,6 @@ export function useOpsSummary() {
   // ---- core state ----
   const loading = ref(false)
   const summary = ref<ConsoleOpsSummaryResponse | null>(null)
-  const lastTrace = computed(() => lastApiMeta.value?.traceId ?? '')
 
   // ---- tabs / range ----
   const opsTab = ref<'kpis' | 'trend' | 'dist' | 'extra'>('kpis')
@@ -151,12 +149,6 @@ export function useOpsSummary() {
     router.push({ path: '/monitor/job-instances', query: { status: 'FAILED' } })
   }
 
-  function copyTrace() {
-    if (!lastTrace.value) return
-    void navigator.clipboard.writeText(lastTrace.value)
-    ElMessage.success('已复制 traceId')
-  }
-
   watch(rangeKey, () => {
     void loadCharts()
   })
@@ -167,7 +159,6 @@ export function useOpsSummary() {
     // state
     loading,
     summary,
-    lastTrace,
     opsTab,
     rangeKey,
     chartsLoading,
@@ -186,6 +177,5 @@ export function useOpsSummary() {
     loadExtraPanels,
     go,
     goFailedJobs,
-    copyTrace,
   }
 }

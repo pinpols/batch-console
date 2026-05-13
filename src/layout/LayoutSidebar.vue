@@ -111,9 +111,9 @@
     --el-menu-active-color: var(--layout-sidebar-active-text);
   }
 
-  /** 左侧栏与主内容区同款：悬浮略抬起 + 主色描边（与 .app-surface:hover 对齐） */
+  /** 左侧栏保持稳定，仅通过阴影与描边响应 hover，避免布局级 scale 影响弹层定位。 */
   .layout-sidebar:hover {
-    transform: translateY(var(--ui-hover-translate-y)) scale(var(--ui-hover-scale));
+    transform: none;
     box-shadow:
       var(--shadow-surface-hover),
       inset 0 1px 0 var(--layout-panel-inset-highlight);

@@ -96,8 +96,8 @@
       </el-table>
     </DataState>
 
-    <el-dialog v-model="newDialogVisible" :title="t('tagResourceTab.dialogTitle')" width="520px">
-      <el-form label-width="84px" class="new-dialog-form">
+    <el-dialog v-model="newDialogVisible" :title="t('tagResourceTab.dialogTitle')" width="480px">
+      <el-form label-width="100px" class="new-dialog-form">
         <el-form-item :label="t('tagResourceTab.fieldTagKey')" required>
           <el-input v-model="newTag.tagKey" placeholder="tagKey" />
         </el-form-item>

@@ -90,7 +90,7 @@
         <el-table-column
           prop="fileName"
           :label="t('fileList.fileName')"
-          min-width="180"
+          min-width="320"
           show-overflow-tooltip
         />
         <el-table-column prop="fileStatus" :label="t('fileList.statusLabel')" width="120">
@@ -103,7 +103,7 @@
         <el-table-column
           prop="traceId"
           :label="t('fileList.trace')"
-          min-width="140"
+          width="200"
           show-overflow-tooltip
         >
           <template #default="{ row }">
@@ -114,15 +114,15 @@
           </template>
         </el-table-column>
         <DatetimeColumn prop="createdAt" :label="t('fileList.colCreatedAt')" width="160" />
-        <el-table-column :label="t('fileList.colActions')" width="180" fixed="right">
+        <el-table-column :label="t('fileList.colActions')" width="320" fixed="right">
           <template #default="{ row }">
-            <RowActions :actions="rowActions(row)" />
+            <RowActions :actions="rowActions(row)" :inline-limit="3" />
           </template>
         </el-table-column>
       </ProTable>
     </SectionCard>
 
-    <el-drawer v-model="detailVisible" :title="t('fileList.detailTitle')" size="720px">
+    <el-drawer v-model="detailVisible" :title="t('fileList.detailTitle')" size="800px">
       <el-descriptions v-if="detail" :column="2" border size="small">
         <el-descriptions-item label="ID">{{ detail.id }}</el-descriptions-item>
         <el-descriptions-item label="tenantId">{{ detail.tenantId }}</el-descriptions-item>
@@ -148,7 +148,7 @@
       </el-descriptions>
     </el-drawer>
 
-    <el-dialog v-model="auditVisible" :title="t('fileList.auditTitle')" width="880px">
+    <el-dialog v-model="auditVisible" :title="t('fileList.auditTitle')" width="800px">
       <el-table
         v-loading="loading"
         :data="pagedAuditRows.records"

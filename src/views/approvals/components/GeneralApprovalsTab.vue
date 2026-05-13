@@ -61,13 +61,6 @@
       <el-button type="danger" plain :disabled="!selection.length" @click="runBatchReject">
         {{ t('approvals.batchReject') }}
       </el-button>
-      <span v-if="lastTrace" class="trace">
-        {{ t('approvals.lastTrace') }}
-        <code>{{ lastTrace }}</code>
-        <el-button size="small" link type="primary" @click="copyTrace">
-          {{ t('approvals.copy') }}
-        </el-button>
-      </span>
     </template>
 
     <el-table-column type="selection" width="48" :selectable="selectableRow" />
@@ -209,7 +202,6 @@
   import { batchApprove, batchReject, approveOne, queryApprovals, rejectOne } from '@/api/approvals'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
-  import { lastApiMeta } from '@/utils/lastApiMeta'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { toPageResult } from '@/api/adapters'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
@@ -237,8 +229,6 @@
   const page = ref(1)
   const pageSize = ref(20)
   const selection = ref<ConsoleApprovalCommandResponse[]>([])
-
-  const lastTrace = computed(() => lastApiMeta.value?.traceId ?? '')
 
   const filters = reactive({
     status: '',
@@ -408,12 +398,6 @@
     } catch {
       /* cancel */
     }
-  }
-
-  function copyTrace() {
-    if (!lastTrace.value) return
-    void navigator.clipboard.writeText(lastTrace.value)
-    ElMessage.success(t('approvals.copied'))
   }
 
   useTenantReload(load)

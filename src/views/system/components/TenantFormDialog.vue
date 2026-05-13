@@ -6,10 +6,10 @@
         ? t('tenantFormDialog.titleEdit', { id: form.tenantId })
         : t('tenantFormDialog.titleCreate')
     "
-    width="540px"
+    width="640px"
     @update:model-value="(v) => emit('update:modelValue', v)"
   >
-    <el-form ref="formRef" :model="form" :rules="formRules" label-width="92px">
+    <el-form ref="formRef" :model="form" :rules="formRules" label-width="100px">
       <el-form-item :label="t('tenantFormDialog.fieldTenantId')" prop="tenantId">
         <el-input
           v-model="form.tenantId"

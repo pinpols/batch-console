@@ -6,9 +6,7 @@
       <LayoutHeader @open-palette="paletteOpen = true" />
 
       <el-main class="layout-main">
-        <!--
-          外层 surface：边框/圆角/阴影/hover 缩放；内层 body 为实际纵向滚动层（整页不滚）。
-        -->
+        <!-- 外层 surface 固定不缩放；内层 body 为实际纵向滚动层（整页不滚）。 -->
         <div class="layout-main__surface layout-panel">
           <div v-if="app.focusMode" class="focus-fab">
             <el-tooltip content="退出全屏（Esc）" placement="left">
@@ -188,9 +186,7 @@
     gap: 0;
   }
 
-  /**
-   * 主内容卡片外壳：不参与滚动；hover scale 与侧栏/顶栏共用画布边距 --layout-panel-hover-safe。
-   */
+  /** 主内容卡片外壳：不参与滚动。 */
   .layout-main__surface {
     flex: 1;
     min-height: 0;
@@ -209,9 +205,9 @@
       border-color var(--motion-duration-sm) var(--motion-ease-standard);
   }
 
-  /** 与侧栏 / 顶栏 app-surface 一致：上浮 + 缩放 + 主色混边（阴影见全局 .layout-panel） */
+  /** 主壳保持稳定，仅通过描边反馈 hover，避免弹层/点击时定位闪烁。 */
   .layout-main__surface:hover {
-    transform: translateY(var(--ui-hover-translate-y)) scale(var(--ui-hover-scale));
+    transform: none;
     border-color: color-mix(in srgb, var(--color-border) 68%, var(--color-primary) 32%);
   }
 
@@ -230,17 +226,28 @@
     overflow-y: auto;
     overflow-x: hidden;
     scrollbar-gutter: auto;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--color-text-tertiary) 38%, transparent) transparent;
     display: flex;
     flex-direction: column;
     box-sizing: border-box;
   }
 
   .layout-main__body::-webkit-scrollbar {
-    width: 0;
-    height: 0;
-    display: none;
+    width: 8px;
+    height: 8px;
+  }
+
+  .layout-main__body::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--color-text-tertiary) 30%, transparent);
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+
+  .layout-main__body::-webkit-scrollbar-thumb:hover {
+    background: color-mix(in srgb, var(--color-primary) 46%, transparent);
+    background-clip: content-box;
   }
 
   .layout-main__content {

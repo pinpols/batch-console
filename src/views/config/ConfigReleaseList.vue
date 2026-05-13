@@ -151,7 +151,7 @@
       </div>
     </el-drawer>
 
-    <el-dialog v-model="diffVisible" :title="t('configReleaseList.diffTitle')" width="720px">
+    <el-dialog v-model="diffVisible" :title="t('configReleaseList.diffTitle')" width="800px">
       <el-form :inline="true" class="diff-form">
         <el-form-item :label="t('configReleaseList.diffVersionA')">
           <el-select

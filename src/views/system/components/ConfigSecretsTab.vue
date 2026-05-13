@@ -123,7 +123,7 @@
     <el-drawer
       v-model="secretDetailVisible"
       :title="t('configSecretsTab.drawerTitle')"
-      size="560px"
+      size="640px"
     >
       <el-descriptions v-if="secretDetail" :column="1" border size="small">
         <el-descriptions-item :label="t('configSecretsTab.fieldId')">

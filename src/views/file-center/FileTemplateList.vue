@@ -78,12 +78,14 @@
             <el-table-column
               prop="templateCode"
               :label="t('fileTemplateList.colCode')"
-              min-width="160"
+              width="220"
+              show-overflow-tooltip
             />
             <el-table-column
               prop="templateName"
               :label="t('fileTemplateList.colName')"
-              min-width="180"
+              min-width="260"
+              show-overflow-tooltip
             />
             <el-table-column prop="templateType" :label="t('fileTemplateList.colType')" width="120">
               <template #default="{ row }">
@@ -116,9 +118,9 @@
             <DatetimeColumn
               prop="updatedAt"
               :label="t('fileTemplateList.colUpdatedAt')"
-              width="160"
+              width="180"
             />
-            <el-table-column :label="t('fileTemplateList.colActions')" width="120" fixed="right">
+            <el-table-column :label="t('fileTemplateList.colActions')" width="132" fixed="right">
               <template #default="{ row }">
                 <div class="table-actions">
                   <el-tooltip :content="t('common.edit')" placement="top">
@@ -182,10 +184,25 @@
             :empty-text="t('common.noData')"
             class="console-table"
           >
-            <el-table-column prop="channelCode" label="channelCode" min-width="160" />
-            <el-table-column prop="channelName" label="channelName" min-width="160" />
+            <el-table-column
+              prop="channelCode"
+              label="channelCode"
+              width="220"
+              show-overflow-tooltip
+            />
+            <el-table-column
+              prop="channelName"
+              label="channelName"
+              min-width="240"
+              show-overflow-tooltip
+            />
             <el-table-column prop="channelType" label="channelType" width="130" />
-            <el-table-column prop="targetEndpoint" label="targetEndpoint" min-width="220" />
+            <el-table-column
+              prop="targetEndpoint"
+              label="targetEndpoint"
+              min-width="320"
+              show-overflow-tooltip
+            />
             <el-table-column prop="authType" label="authType" width="120" />
             <el-table-column prop="receiptPolicy" label="receiptPolicy" width="140" />
             <el-table-column label="enabled" width="110">
@@ -200,8 +217,8 @@
                 />
               </template>
             </el-table-column>
-            <DatetimeColumn prop="updatedAt" label="updatedAt" width="160" />
-            <el-table-column :label="t('fileTemplateList.colActions')" width="80" fixed="right">
+            <DatetimeColumn prop="updatedAt" label="updatedAt" width="180" />
+            <el-table-column :label="t('fileTemplateList.colActions')" width="96" fixed="right">
               <template #default="{ row }">
                 <el-tooltip :content="t('common.edit')" placement="top">
                   <el-button :icon="Edit" circle @click="openChannelEdit(row)" />
@@ -213,7 +230,7 @@
       </el-tabs>
     </SectionCard>
 
-    <el-drawer v-model="detailVisible" :title="t('fileTemplateList.detailTitle')" size="720px">
+    <el-drawer v-model="detailVisible" :title="t('fileTemplateList.detailTitle')" size="800px">
       <el-descriptions v-if="detail" :column="2" border size="small">
         <el-descriptions-item label="templateCode">{{ detail.templateCode }}</el-descriptions-item>
         <el-descriptions-item label="templateName">{{ detail.templateName }}</el-descriptions-item>
@@ -250,10 +267,10 @@
           ? t('fileTemplateList.templateCreateTitle')
           : t('fileTemplateList.templateEditTitle')
       "
-      width="760px"
+      width="800px"
       destroy-on-close
     >
-      <el-form :model="templateForm" label-width="148px">
+      <el-form :model="templateForm" label-width="120px">
         <el-form-item label="templateCode" required>
           <el-input v-model="templateForm.templateCode" :disabled="templateEditingId != null" />
         </el-form-item>
@@ -310,10 +327,10 @@
           ? t('fileTemplateList.channelCreateTitle')
           : t('fileTemplateList.channelEditTitle')
       "
-      width="720px"
+      width="800px"
       destroy-on-close
     >
-      <el-form :model="channelForm" label-width="138px">
+      <el-form :model="channelForm" label-width="120px">
         <el-form-item label="channelCode" required>
           <el-input v-model="channelForm.channelCode" :disabled="channelEditingId != null" />
         </el-form-item>

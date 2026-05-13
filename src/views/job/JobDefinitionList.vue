@@ -173,7 +173,7 @@
     <el-drawer
       v-model="editDrawerVisible"
       :title="editDrawerTitle"
-      size="520px"
+      size="480px"
       :before-close="onEditDrawerClose"
     >
       <el-form

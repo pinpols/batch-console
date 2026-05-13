@@ -43,6 +43,7 @@
       :loading="loadingExec"
       :error="loadExecError"
       :has-data="pagedExec.records.length > 0"
+      :empty-text="execEmptyText"
       :on-retry="loadExecutionLogs"
     >
       <el-table
@@ -207,6 +208,12 @@
 
   const pagedExec = computed(() =>
     toPageResult(filteredExec.value, execPage.value, execPageSize.value),
+  )
+
+  const execEmptyText = computed(() =>
+    execApplied.traceId.trim()
+      ? t('observability.execEmptyTrace')
+      : t('observability.execEmptyDefault'),
   )
 
   const detailMetaRows = computed(() => {
