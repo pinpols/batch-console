@@ -614,6 +614,13 @@ export default {
       pendingCount: '待处理 {n} 条',
       missedRuns: '缺失 {n} 次',
       pendingApi: '审批接口待 BE 接入',
+      approve: '批准',
+      reject: '拒绝',
+      approveSuccess: '已批准',
+      approveFail: '批准失败',
+      rejectSuccess: '已拒绝',
+      rejectFail: '拒绝失败',
+      legacyNoApprovalNo: '旧记录未走统一审批，仅可只读',
     },
     appBar: {
       accountMenu: '账号菜单',
