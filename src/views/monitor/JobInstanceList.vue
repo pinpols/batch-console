@@ -75,6 +75,14 @@
                 @update:model-value="onDateChange"
               />
             </el-form-item>
+            <el-form-item :label="t('jobInstanceList.traceIdLabel')">
+              <el-input
+                class="query-w-240"
+                v-model="query.traceId"
+                clearable
+                :placeholder="t('jobInstanceList.traceIdPlaceholder')"
+              />
+            </el-form-item>
           </ListPageQueryBar>
         </template>
 
@@ -224,6 +232,7 @@
     instanceStatus: '',
     startDate: initialRange[0],
     endDate: initialRange[1],
+    traceId: '',
     page: 1,
     pageSize: 20,
   })
@@ -281,6 +290,7 @@
       query.instanceStatus = ''
       query.startDate = t[0]
       query.endDate = t[1]
+      query.traceId = ''
       dateRange.value = t
       query.page = 1
       syncFiltersToUrl()
@@ -318,6 +328,7 @@
     if (query.instanceStatus) params.status = query.instanceStatus
     if (query.startDate) params.startDate = query.startDate
     if (query.endDate) params.endDate = query.endDate
+    if (query.traceId) params.traceId = query.traceId
     void router.replace({ query: params })
   }
 
@@ -370,6 +381,7 @@
     if (q.jobCode) query.jobCode = String(q.jobCode)
     if (q.startDate) query.startDate = String(q.startDate)
     if (q.endDate) query.endDate = String(q.endDate)
+    if (q.traceId) query.traceId = String(q.traceId)
     if (query.startDate && query.endDate) {
       dateRange.value = [query.startDate, query.endDate]
     }

@@ -16,6 +16,8 @@ export interface WorkflowRunQuery {
   workflowDefinitionId?: number
   /** exact match */
   runStatus?: string
+  /** partial match */
+  traceId?: string
   page: number
   pageSize: number
 }
@@ -51,7 +53,9 @@ export const instanceApi = {
 
   workflowRuns: async (query: WorkflowRunQuery) => {
     const hasFilter =
-      query.workflowDefinitionId != null || !!(query.runStatus && query.runStatus.trim())
+      query.workflowDefinitionId != null ||
+      !!(query.runStatus && query.runStatus.trim()) ||
+      !!(query.traceId && query.traceId.trim())
 
     if (!hasFilter) {
       const pr = await get<PageResponse<ConsoleWorkflowRunResponse>>(
@@ -79,6 +83,7 @@ export const instanceApi = {
           ? { workflowDefinitionId: query.workflowDefinitionId }
           : {}),
         ...(query.runStatus?.trim() ? { runStatus: query.runStatus.trim() } : {}),
+        ...(query.traceId?.trim() ? { traceId: query.traceId.trim() } : {}),
       },
     )
     let rows = [...items]
@@ -87,6 +92,9 @@ export const instanceApi = {
     }
     if (query.runStatus?.trim()) {
       rows = rows.filter((r) => r.runStatus === query.runStatus)
+    }
+    if (query.traceId?.trim()) {
+      rows = rows.filter((r) => r.traceId?.includes(query.traceId!.trim()))
     }
     return toPageResult(rows, query.page, query.pageSize)
   },
