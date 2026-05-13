@@ -96,14 +96,19 @@
               </template>
             </EmptyState>
           </template>
-          <el-table-column prop="tenantId" :label="t('tenantList.colTenantId')" min-width="180" />
+          <el-table-column
+            prop="tenantId"
+            :label="t('tenantList.colTenantId')"
+            width="220"
+            show-overflow-tooltip
+          />
           <el-table-column
             prop="tenantName"
             :label="t('tenantList.colName')"
-            min-width="160"
+            width="240"
             show-overflow-tooltip
           />
-          <el-table-column :label="t('tenantList.statusLabel')" width="110">
+          <el-table-column :label="t('tenantList.statusLabel')" width="96">
             <template #default="{ row }">
               <StatusTag :value="String(row.status ?? '')" category="tenant" />
             </template>
@@ -111,19 +116,19 @@
           <el-table-column
             prop="description"
             :label="t('tenantList.colDescription')"
-            min-width="220"
+            min-width="360"
             show-overflow-tooltip
           />
           <el-table-column
             prop="createdBy"
             :label="t('tenantList.colCreatedBy')"
-            width="140"
+            width="120"
             show-overflow-tooltip
           />
-          <DatetimeColumn prop="createdAt" :label="t('tenantList.colCreatedAt')" width="160" />
-          <el-table-column :label="t('tenantList.colActions')" width="220" fixed="right">
+          <DatetimeColumn prop="createdAt" :label="t('tenantList.colCreatedAt')" width="180" />
+          <el-table-column :label="t('tenantList.colActions')" width="360" fixed="right">
             <template #default="{ row }">
-              <div class="table-actions">
+              <div class="table-actions tenant-row-actions">
                 <el-tag
                   v-if="row.tenantId === tenant.tenantId"
                   type="success"
@@ -133,7 +138,8 @@
                 >
                   {{ t('tenantList.currentTag') }}
                 </el-tag>
-                <RowActions :actions="rowActions(row)" />
+                <!-- P2.5 inline-limit=2 把"初始化配置"和"暂停"等中/高风险操作收进更多菜单 -->
+                <RowActions :actions="rowActions(row)" :inline-limit="2" />
               </div>
             </template>
           </el-table-column>
@@ -361,12 +367,16 @@
       acts.push({
         key: 'init',
         label: t('tenantList.actionInitConfig'),
+        // 加 divided 在"更多"菜单里和上面 edit 视觉分隔;init 是中风险动作,
+        // 不放外露,通过 inlineLimit=2 让它进 more
+        divided: true,
         onClick: () => openInitConfig(row),
       })
       if (isActive) {
         acts.push({
           key: 'suspend',
           label: t('tenantList.actionSuspend'),
+          danger: true,
           divided: true,
           onClick: () => confirmSuspend(row),
         })
@@ -499,5 +509,15 @@
     border-radius: var(--radius-input, 4px);
     background: var(--el-fill-color-light);
     border: 1px solid var(--color-border-light);
+  }
+
+  .tenant-row-actions {
+    justify-content: flex-start;
+    flex-wrap: nowrap;
+    gap: 6px;
+  }
+
+  .tenant-row-actions :deep(.row-actions) {
+    flex-wrap: nowrap;
   }
 </style>

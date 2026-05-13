@@ -9,8 +9,12 @@
     </template>
   </EmptyState>
 
-  <!-- empty:已加载但没数据 -->
-  <EmptyState v-else-if="!hasData" :description="emptyTextResolved" />
+  <!-- empty:已加载但没数据 — 支持 5 类细分文案(filter-empty/tenant-empty/no-permission/...) -->
+  <EmptyState
+    v-else-if="!hasData"
+    :variant="emptyVariant"
+    :description="emptyTextResolved || undefined"
+  />
 
   <!-- 有数据:把内容交给 default slot,父组件渲染 el-table 等 -->
   <slot v-else />
@@ -37,6 +41,8 @@
   import EmptyState from '@/components/common/EmptyState.vue'
   import TableSkeleton from '@/components/table/TableSkeleton.vue'
 
+  type EmptyVariant = 'empty' | 'filter-empty' | 'tenant-empty' | 'no-permission' | 'service-down'
+
   const props = withDefaults(
     defineProps<{
       loading?: boolean
@@ -46,6 +52,8 @@
       errorText?: string
       skeletonRows?: number
       onRetry?: () => void | Promise<void>
+      /** 5 类空态文案细分 — 详见 EmptyState variant */
+      emptyVariant?: EmptyVariant
     }>(),
     {
       loading: false,
@@ -53,6 +61,7 @@
       hasData: false,
       emptyText: '',
       skeletonRows: 6,
+      emptyVariant: 'empty',
     },
   )
 

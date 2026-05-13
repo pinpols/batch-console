@@ -8,11 +8,35 @@
       </template>
     </PageHeader>
 
-    <div v-if="lastTrace" class="trace-bar">
-      <span class="trace-label">{{ t('opsSummary.traceLabel') }}</span>
-      <code class="trace-code">{{ lastTrace }}</code>
-      <el-button size="small" @click="copyTrace">{{ t('opsSummary.btnCopy') }}</el-button>
-    </div>
+    <!-- P2.1 全 0 引导:summary 加载完且所有核心指标 = 0,显示"开始接入"卡片 -->
+    <SectionCard v-if="summary && isFreshTenant" class="ops-onboarding">
+      <div class="ops-onboarding__head">
+        <h3>{{ t('opsSummary.onboardingTitle') }}</h3>
+        <p>{{ t('opsSummary.onboardingDesc') }}</p>
+      </div>
+      <div class="ops-onboarding__grid">
+        <button class="ops-onboarding__card" @click="$router.push('/config/tenant-package')">
+          <el-icon size="22" color="var(--color-primary)"><Upload /></el-icon>
+          <strong>{{ t('opsSummary.onboardingImport') }}</strong>
+          <span>{{ t('opsSummary.onboardingImportDesc') }}</span>
+        </button>
+        <button class="ops-onboarding__card" @click="$router.push('/jobs/definitions')">
+          <el-icon size="22" color="var(--color-primary)"><DocumentAdd /></el-icon>
+          <strong>{{ t('opsSummary.onboardingNewJob') }}</strong>
+          <span>{{ t('opsSummary.onboardingNewJobDesc') }}</span>
+        </button>
+        <button class="ops-onboarding__card" @click="$router.push('/system/tenants')">
+          <el-icon size="22" color="var(--color-primary)"><User /></el-icon>
+          <strong>{{ t('opsSummary.onboardingTenant') }}</strong>
+          <span>{{ t('opsSummary.onboardingTenantDesc') }}</span>
+        </button>
+        <button class="ops-onboarding__card" @click="$router.push('/workers/management')">
+          <el-icon size="22" color="var(--color-primary)"><Cpu /></el-icon>
+          <strong>{{ t('opsSummary.onboardingWorker') }}</strong>
+          <span>{{ t('opsSummary.onboardingWorkerDesc') }}</span>
+        </button>
+      </div>
+    </SectionCard>
 
     <SectionCard v-if="summary" class="ops-tabs-card">
       <el-tabs v-model="opsTab" v-hover-tab-activate="true" class="pill-tabs ops-tabs">
@@ -70,8 +94,9 @@
   // echarts/core 模块注册:本页是 echarts 的唯一使用入口,从 main.ts 挪到这里以
   // 跟随路由 lazy chunk 加载,首屏不下 echarts(~181 KB gzip)。
   import '@/charts/echarts'
+  import { computed } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { Refresh } from '@element-plus/icons-vue'
+  import { Refresh, Upload, DocumentAdd, User, Cpu } from '@element-plus/icons-vue'
 
   const { t } = useI18n({ useScope: 'global' })
   import PageContainer from '@/components/common/PageContainer.vue'
@@ -87,7 +112,6 @@
   const {
     loading,
     summary,
-    lastTrace,
     opsTab,
     rangeKey,
     chartsLoading,
@@ -105,37 +129,69 @@
     loadExtraPanels,
     go,
     goFailedJobs,
-    copyTrace,
   } = useOpsSummary()
+
+  // 全 0 指标 → 视为"全新租户",显示接入引导
+  const isFreshTenant = computed(() => {
+    const s = summary.value
+    if (!s) return false
+    return (
+      (s.pendingApprovals ?? 0) === 0 &&
+      (s.openAlerts ?? 0) === 0 &&
+      (s.criticalAlerts ?? 0) === 0 &&
+      (s.runningJobs ?? 0) === 0 &&
+      (s.failedJobs ?? 0) === 0
+    )
+  })
 </script>
 
 <style scoped>
-  .trace-bar {
-    display: flex;
-    align-items: center;
-    gap: var(--page-block-gap);
-    margin-bottom: 0;
-    padding: var(--page-block-gap) var(--card-inner-padding);
-    font-size: 13px;
-    border-radius: var(--radius-content);
-    border: 1px solid var(--color-border-light);
-    background: var(--color-bg-card);
-  }
-
-  .trace-label {
-    color: var(--color-text-tertiary, #8c8c8c);
-  }
-
-  .trace-code {
-    flex: 1;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    font-size: 12px;
-  }
-
   .ops-tabs-card {
     margin-top: 0;
+  }
+  .ops-onboarding__head {
+    margin-bottom: 16px;
+  }
+  .ops-onboarding__head h3 {
+    margin: 0 0 4px;
+    font-size: 16px;
+    color: var(--color-text-primary);
+  }
+  .ops-onboarding__head p {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: 13px;
+  }
+  .ops-onboarding__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+  }
+  .ops-onboarding__card {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 16px;
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-content);
+    background: var(--color-bg-card);
+    cursor: pointer;
+    text-align: left;
+    transition:
+      box-shadow 0.15s,
+      border-color 0.15s;
+  }
+  .ops-onboarding__card:hover {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-surface);
+  }
+  .ops-onboarding__card strong {
+    font-size: 14px;
+    color: var(--color-text-primary);
+  }
+  .ops-onboarding__card span {
+    font-size: 12px;
+    color: var(--color-text-tertiary);
   }
 
   .ops-tabs {

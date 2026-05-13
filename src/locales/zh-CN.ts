@@ -45,6 +45,11 @@ export default {
     required: '(必填)',
   },
   workflowDesigner: {
+    // P1.2 未选 Workflow 时的引导
+    emptyTitle: '请先选择一个 Workflow',
+    emptyDesc: '从顶部下拉选择已有 Workflow,或去定义页新建。其它操作按钮在选定后启用。',
+    emptyActionSelect: '选择已有 Workflow',
+    emptyActionNew: '去新建 Workflow',
     deleteCellConsequence: '该节点/连线及其属性会从画布草稿移除;若已发布需重新提交才生效。',
     ariaContext: '当前编排对象',
     tagEnabled: '启用',
@@ -349,6 +354,8 @@ export default {
     copyLinkAria: '复制当前链接',
     openCommandPalette: '打开命令面板',
     moreTools: '更多工具',
+    foldSidebar: '收起侧栏',
+    expandSidebar: '展开侧栏',
     openDocs: '打开文档中心',
     openDocsTooltip: '文档中心(ADR / 架构 / 运维 / 操作手册)',
     fullscreen: '全屏内容区',
@@ -600,7 +607,7 @@ export default {
     },
   },
   palette: {
-    placeholder: '搜索菜单、最近页面;纯数字可跳 Job 实例详情',
+    placeholder: '搜索菜单/最近页面;纯数字 → 作业实例;traceId → Trace 诊断',
     empty: '无匹配结果',
     sectionJump: '快捷跳转',
     sectionRecent: '最近访问',
@@ -610,6 +617,8 @@ export default {
     metaJump: '跳转',
     jumpJobInstance: '作业实例 #{id}',
     jumpDetail: '打开详情页',
+    jumpTrace: '诊断 trace {trace}',
+    jumpTraceSubtitle: '跨域聚合查询 traceId',
   },
   page: {
     opsSummary: {
@@ -754,6 +763,15 @@ export default {
     actionRetry: '重试',
     actionRefresh: '刷新',
     actionClearFilter: '清除筛选',
+    // 5 类细分空态(P1.1)
+    filterTitle: '筛选无结果',
+    filterDescription: '当前筛选条件无匹配数据,请调整或清除筛选。',
+    tenantTitle: '当前租户暂无数据',
+    tenantDescription: '可切换租户查看其它租户数据,或在当前租户新建。',
+    noPermissionTitle: '权限不足',
+    noPermissionDescription: '你的角色无法看到该数据,请联系管理员调整权限。',
+    serviceDownTitle: '后端服务不可用',
+    serviceDownDescription: '相关服务暂时不可达,请稍后刷新或联系运维。',
   },
   error: {
     title: '出错了',
@@ -1354,6 +1372,8 @@ export default {
       '可能是 trace 已过保留期 / 落在外部 BE(如 worker 日志),建议去 Grafana / Tempo 继续查。',
     openGrafana: '打开 Grafana',
     openTempo: '打开 Tempo',
+    grafanaDown: '观测栈(Grafana)未启动或不可达:{url}。请先启动 docker-compose.observability.yml。',
+    tempoDown: '观测栈(Tempo)未启动或不可达:{url}。请先启动 docker-compose.observability.yml。',
     summary: 'traceId 「{trace}」共命中 {hits} 条,跨 {domains} 个域',
     hitCount: '{n} 条',
     domainErr: '查询失败',
@@ -1376,6 +1396,10 @@ export default {
     colMessage: '消息',
   },
   observability: {
+    // P2.2 顶部 Trace 快搜
+    traceQuickPlaceholder: '粘 traceId,直跳 Trace 诊断聚合页',
+    traceQuickGo: '诊断 Trace',
+    traceQuickHint: '从其它页"复制 traceId"过来粘贴,或直接输入 16-64 位 hex',
     // ObservabilityQueryTabs
     tabDeadLetters: 'Dead Letters',
     tabRetries: '重试调度',
@@ -2204,6 +2228,7 @@ export default {
     traceIdLabel: 'Trace Id',
     traceIdPlaceholder: 'Trace Id，模糊匹配',
     colTrace: 'Trace',
+    colTraceJumpTip: '点击跨域聚合查询该 traceId',
     colActions: '操作',
     actionDetail: '详情',
     actionPartitions: '步骤',
@@ -2687,6 +2712,17 @@ export default {
     tabDist: '分布',
     tabExtra: '扩展面板',
     errorDesc: '暂无数据或请求失败(未联调后端时属正常)。请确认 tenantId 与网关。',
+    // P2.1 全新租户引导
+    onboardingTitle: '看起来当前租户还没接入',
+    onboardingDesc: '所有指标都是 0,可以从下面四件事开始。',
+    onboardingImport: '导入配置包',
+    onboardingImportDesc: '上传 Excel 整包,一次性带入作业 / 队列 / 文件模板等',
+    onboardingNewJob: '新建作业定义',
+    onboardingNewJobDesc: '逐个录入作业,适合少量调试',
+    onboardingTenant: '管理租户',
+    onboardingTenantDesc: '切换或新建租户,适合多业务隔离',
+    onboardingWorker: '查看 Worker',
+    onboardingWorkerDesc: '确认 worker 启动,否则作业跑不起来',
   },
   reportExportHub: {
     tenantTagPrefix: 'tenant: {id}',

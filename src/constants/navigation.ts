@@ -262,6 +262,13 @@ export const navigationGroups: NavigationGroup[] = [
         icon: Bell,
       },
       {
+        // Trace 诊断:跨域聚合的"先来这里查"主入口
+        title: pageTitle('/observability/trace'),
+        path: '/observability/trace',
+        minRole: 'VIEWER',
+        icon: Aim,
+      },
+      {
         title: pageTitle('/observability/queries'),
         path: '/observability/queries',
         minRole: 'VIEWER',

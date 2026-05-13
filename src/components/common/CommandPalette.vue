@@ -142,17 +142,33 @@
 
   const jumpItems = computed((): Omit<PaletteItem, 'globalIndex'>[] => {
     const term = q.value.trim()
-    if (!/^\d+$/.test(term)) return []
-    return [
-      {
-        key: `jump:job:${term}`,
-        title: t('palette.jumpJobInstance', { id: term }),
-        subtitle: t('palette.jumpDetail'),
-        meta: t('palette.metaJump'),
-        path: `/monitor/job-instances/${term}`,
-        source: 'jump' as const,
-      },
-    ]
+    // 纯数字:跳 Job Instance
+    if (/^\d+$/.test(term)) {
+      return [
+        {
+          key: `jump:job:${term}`,
+          title: t('palette.jumpJobInstance', { id: term }),
+          subtitle: t('palette.jumpDetail'),
+          meta: t('palette.metaJump'),
+          path: `/monitor/job-instances/${term}`,
+          source: 'jump' as const,
+        },
+      ]
+    }
+    // traceId 形态(32-64 位 16 进制):跳 Trace 诊断
+    if (/^[a-f0-9]{16,64}$/i.test(term)) {
+      return [
+        {
+          key: `jump:trace:${term}`,
+          title: t('palette.jumpTrace', { trace: term.slice(0, 16) + '...' }),
+          subtitle: t('palette.jumpTraceSubtitle'),
+          meta: t('palette.metaJump'),
+          path: `/observability/trace?traceId=${term}`,
+          source: 'jump' as const,
+        },
+      ]
+    }
+    return []
   })
 
   const flatItems = computed(() => {
@@ -160,7 +176,8 @@
     const term = rawTerm.toLowerCase()
     const base: Omit<PaletteItem, 'globalIndex'>[] = []
 
-    if (term && /^\d+$/.test(rawTerm)) {
+    const isJump = /^\d+$/.test(rawTerm) || /^[a-f0-9]{16,64}$/i.test(rawTerm)
+    if (term && isJump) {
       base.push(...jumpItems.value, ...recentItems.value, ...menuItems.value)
     } else {
       base.push(...recentItems.value, ...menuItems.value)
@@ -168,7 +185,8 @@
 
     const filtered = term
       ? base.filter((it) => {
-          if (/^\d+$/.test(rawTerm) && it.source === 'jump') return true
+          if ((/^\d+$/.test(rawTerm) || /^[a-f0-9]{16,64}$/i.test(rawTerm)) && it.source === 'jump')
+            return true
           const hay = `${it.title} ${it.subtitle ?? ''} ${it.path}`.toLowerCase()
           return hay.includes(term)
         })

@@ -86,11 +86,11 @@
           </ListPageQueryBar>
         </template>
 
-        <el-table-column prop="instanceNo" :label="t('jobInstanceList.colInstanceNo')" width="180">
+        <!-- P2.4 列顺序优化:用户决策字段(状态/jobCode/bizDate/耗时/重跑)优先,
+             工程字段(instanceNo/queue/traceId)后置 -->
+        <el-table-column :label="t('jobInstanceList.colStatus')" width="110">
           <template #default="{ row }">
-            <router-link class="cell-link" :to="`/monitor/job-instances/${row.id}`">
-              {{ row.instanceNo }}
-            </router-link>
+            <StatusTag :value="row.instanceStatus" category="instance" />
           </template>
         </el-table-column>
         <el-table-column prop="jobCode" :label="t('jobInstanceList.colJobCode')" width="140">
@@ -100,24 +100,10 @@
             </router-link>
           </template>
         </el-table-column>
-        <el-table-column :label="t('jobInstanceList.colStatus')" width="110">
-          <template #default="{ row }">
-            <StatusTag :value="row.instanceStatus" category="instance" />
-          </template>
-        </el-table-column>
         <el-table-column prop="bizDate" :label="t('jobInstanceList.colBizDate')" width="110" />
-        <el-table-column prop="triggerType" :label="t('jobInstanceList.colTrigger')" width="100">
+        <el-table-column :label="t('jobInstanceList.colDuration')" width="120">
           <template #default="{ row }">
-            {{ resolveTriggerType(row.triggerType) }}
-          </template>
-        </el-table-column>
-        <el-table-column :label="t('jobInstanceList.colQueueGroup')" width="160">
-          <template #default="{ row }">
-            <div class="cell-stack">
-              <span v-if="row.queueCode" class="cell-main">{{ row.queueCode }}</span>
-              <span v-if="row.workerGroup" class="cell-sub">{{ row.workerGroup }}</span>
-              <span v-if="!row.queueCode && !row.workerGroup" class="muted">—</span>
-            </div>
+            <span>{{ formatDurationMs(calcDurationMs(row.startedAt, row.finishedAt)) }}</span>
           </template>
         </el-table-column>
         <el-table-column :label="t('jobInstanceList.colRerunRetry')" width="100">
@@ -131,18 +117,35 @@
             <span v-if="!row.rerunFlag && !row.retryFlag" class="muted">—</span>
           </template>
         </el-table-column>
-        <DatetimeColumn prop="startedAt" :label="t('jobInstanceList.colStartedAt')" width="160" />
-        <DatetimeColumn prop="finishedAt" :label="t('jobInstanceList.colFinishedAt')" width="160" />
-        <el-table-column :label="t('jobInstanceList.colDuration')" width="120">
+        <el-table-column prop="triggerType" :label="t('jobInstanceList.colTrigger')" width="100">
           <template #default="{ row }">
-            <span>{{ formatDurationMs(calcDurationMs(row.startedAt, row.finishedAt)) }}</span>
+            {{ resolveTriggerType(row.triggerType) }}
           </template>
         </el-table-column>
+        <DatetimeColumn prop="startedAt" :label="t('jobInstanceList.colStartedAt')" width="160" />
+        <DatetimeColumn prop="finishedAt" :label="t('jobInstanceList.colFinishedAt')" width="160" />
         <DatetimeColumn
           prop="slaAlertedAt"
           :label="t('jobInstanceList.colSlaAlerted')"
           width="160"
         />
+        <!-- 以下工程字段:实例号 / 队列+Worker / Trace -->
+        <el-table-column prop="instanceNo" :label="t('jobInstanceList.colInstanceNo')" width="180">
+          <template #default="{ row }">
+            <router-link class="cell-link" :to="`/monitor/job-instances/${row.id}`">
+              {{ row.instanceNo }}
+            </router-link>
+          </template>
+        </el-table-column>
+        <el-table-column :label="t('jobInstanceList.colQueueGroup')" width="160">
+          <template #default="{ row }">
+            <div class="cell-stack">
+              <span v-if="row.queueCode" class="cell-main">{{ row.queueCode }}</span>
+              <span v-if="row.workerGroup" class="cell-sub">{{ row.workerGroup }}</span>
+              <span v-if="!row.queueCode && !row.workerGroup" class="muted">—</span>
+            </div>
+          </template>
+        </el-table-column>
         <el-table-column
           prop="traceId"
           :label="t('jobInstanceList.colTrace')"
@@ -150,7 +153,12 @@
           show-overflow-tooltip
         >
           <template #default="{ row }">
-            <router-link v-if="row.traceId" class="cell-link" :to="`/logs?traceId=${row.traceId}`">
+            <router-link
+              v-if="row.traceId"
+              class="cell-link"
+              :to="`/observability/trace?traceId=${row.traceId}`"
+              :title="t('jobInstanceList.colTraceJumpTip')"
+            >
               {{ row.traceId }}
             </router-link>
             <span v-else class="muted">—</span>

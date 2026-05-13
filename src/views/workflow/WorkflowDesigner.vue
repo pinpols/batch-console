@@ -368,6 +368,35 @@
           -->
           <div class="workflow-canvas-frame" :class="{ 'is-resetting': canvasResetting }">
             <div ref="canvasRef" class="workflow-canvas" />
+
+            <!-- 未选择 Workflow:画布空,显示三步引导,聚焦主操作 -->
+            <div v-if="!selectedWorkflowCode" class="workflow-canvas-empty" aria-live="polite">
+              <div class="workflow-canvas-empty__icon">
+                <el-icon size="56" color="var(--color-primary)">
+                  <component :is="ConnectionIcon" />
+                </el-icon>
+              </div>
+              <h3 class="workflow-canvas-empty__title">
+                {{ t('workflowDesigner.emptyTitle') }}
+              </h3>
+              <p class="workflow-canvas-empty__desc">
+                {{ t('workflowDesigner.emptyDesc') }}
+              </p>
+              <div class="workflow-canvas-empty__actions">
+                <el-button
+                  type="primary"
+                  :icon="EditPenIcon"
+                  size="large"
+                  @click="focusWorkflowSelect"
+                >
+                  {{ t('workflowDesigner.emptyActionSelect') }}
+                </el-button>
+                <el-button :icon="PlusIcon" size="large" @click="goToDefinitions">
+                  {{ t('workflowDesigner.emptyActionNew') }}
+                </el-button>
+              </div>
+            </div>
+
             <div v-show="selectedWorkflowCode && graphReady" class="workflow-canvas-hud">
               <div class="workflow-minimap-stack">
                 <div
@@ -417,13 +446,7 @@
               v-loading="true"
               :element-loading-text="t('workflowDesigner.canvasLoading')"
             />
-            <div v-if="!selectedWorkflowCode" class="workflow-canvas-empty">
-              <el-empty :description="t('workflowDesigner.canvasEmpty')" :image-size="80">
-                <template #image>
-                  <div class="workflow-canvas-empty__illus" aria-hidden="true" />
-                </template>
-              </el-empty>
-            </div>
+            <!-- 原通用空态被上方的引导 hero 取代,这里只保留 loading 占位 -->
           </div>
           <p class="workflow-canvas-hint">
             {{ t('workflowDesigner.canvasHintTail1') }}
@@ -594,13 +617,19 @@
   import { useI18n } from 'vue-i18n'
   import {
     CircleCheck,
+    Connection,
     DataLine,
     Document,
     EditPen,
     Grid,
     Guide,
+    Plus,
     Reading,
   } from '@element-plus/icons-vue'
+  // alias 给 template 用,避免与已有变量名冲突
+  const ConnectionIcon = Connection
+  const EditPenIcon = EditPen
+  const PlusIcon = Plus
   import DocsDrawer from '@/components/common/DocsDrawer.vue'
   import { useAppStore } from '@/stores/app'
   import { useTenantStore } from '@/stores/tenant'
@@ -800,6 +829,16 @@
     clearSuppressDefinitionFormSync,
     router,
   } = dataModule
+
+  // P1.2 未选 Workflow 时的引导动作
+  function focusWorkflowSelect() {
+    const el = document.querySelector('.workflow-select input') as HTMLInputElement | null
+    el?.focus()
+    el?.click()
+  }
+  function goToDefinitions() {
+    void router.push('/workflow/definitions')
+  }
 
   const manifestFileInput = ref<HTMLInputElement | null>(null)
   function triggerImportManifest() {
