@@ -908,14 +908,14 @@
     Object.assign(windowForm, {
       windowCode: row.windowCode,
       windowName: row.windowName,
-      timezone: 'Asia/Shanghai',
+      timezone: row.timezone || 'Asia/Shanghai',
       startTime: row.startTime || '00:00:00',
       endTime: row.endTime || '23:59:59',
-      endStrategy: row.crossDayPolicy,
+      endStrategy: row.endStrategy,
       outOfWindowAction: row.outOfWindowAction,
-      allowCrossDay: row.crossDayPolicy === 'ALLOW' || row.crossDayPolicy === 'true',
+      allowCrossDay: row.allowCrossDay,
       enabled: row.enabled,
-      description: '',
+      description: row.description,
     })
     windowDialogVisible.value = true
   }

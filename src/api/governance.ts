@@ -42,11 +42,15 @@ export interface GovernanceBatchWindowRow {
   tenantId: string
   windowCode: string
   windowName: string
+  timezone: string
   startTime: string
   endTime: string
+  endStrategy: string
   crossDayPolicy: string
   outOfWindowAction: string
+  allowCrossDay: boolean
   enabled: boolean
+  description: string
   updatedAt: string
 }
 
@@ -220,11 +224,21 @@ function normalizeBatchWindow(row: RawRow): GovernanceBatchWindowRow {
     tenantId: readString(row, 'tenantId', 'tenant_id'),
     windowCode: readString(row, 'windowCode', 'window_code'),
     windowName: readString(row, 'windowName', 'window_name', 'name'),
+    timezone: readString(row, 'timezone', 'timeZone'),
     startTime: readString(row, 'startTime', 'start_time', 'windowStartTime'),
     endTime: readString(row, 'endTime', 'end_time', 'windowEndTime'),
-    crossDayPolicy: readString(row, 'crossDayPolicy', 'cross_day_policy'),
+    endStrategy: readString(row, 'endStrategy', 'end_strategy'),
+    crossDayPolicy: readString(
+      row,
+      'crossDayPolicy',
+      'cross_day_policy',
+      'endStrategy',
+      'end_strategy',
+    ),
     outOfWindowAction: readString(row, 'outOfWindowAction', 'out_of_window_action'),
+    allowCrossDay: readBoolean(row, 'allowCrossDay', 'allow_cross_day'),
     enabled: readBoolean(row, 'enabled'),
+    description: readString(row, 'description'),
     updatedAt: readString(row, 'updatedAt', 'updated_at'),
   }
 }

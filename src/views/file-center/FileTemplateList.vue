@@ -370,8 +370,8 @@
     createFileChannel,
     createFileTemplate,
     listFileChannels,
+    listFileTemplates,
     queryFileTemplateDetail,
-    queryFileTemplates,
     toggleFileChannel,
     toggleFileTemplate,
     updateFileChannel,
@@ -518,8 +518,7 @@
     loading.value = true
     loadError.value = null
     try {
-      const pr = await queryFileTemplates(tenant.tenantId, 1, 200)
-      allRows.value = (pr.items ?? []) as ConsoleFileTemplateResponse[]
+      allRows.value = await listFileTemplates(tenant.tenantId)
       syncPage()
     } catch (err) {
       loadError.value = err
@@ -643,7 +642,7 @@
   async function toggleTemplate(row: ConsoleFileTemplateResponse) {
     togglingTemplateId.value = row.id
     try {
-      await toggleFileTemplate(row.id, tenant.tenantId, !row.enabled)
+      await toggleFileTemplate(row.id, row.tenantId ?? tenant.tenantId, !row.enabled)
       row.enabled = !row.enabled
       ElMessage.success(t('fileTemplateList.saveSuccess'))
     } finally {
@@ -719,7 +718,7 @@
   async function toggleChannel(row: ConsoleFileChannelResponse) {
     togglingChannelId.value = row.id
     try {
-      await toggleFileChannel(row.id, tenant.tenantId, !row.enabled)
+      await toggleFileChannel(row.id, row.tenantId ?? tenant.tenantId, !row.enabled)
       row.enabled = !row.enabled
       ElMessage.success(t('fileTemplateList.saveSuccess'))
     } finally {
