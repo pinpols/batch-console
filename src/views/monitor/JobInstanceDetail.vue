@@ -48,76 +48,167 @@
       />
     </div>
 
-    <SectionCard v-if="row && (row.parentInstanceId || row.relatedFileId || row.failureClass)">
-      <template #header>{{ t('monitor.detailRelatedSection') }}</template>
-      <el-descriptions :column="2" border>
-        <el-descriptions-item
-          v-if="row.parentInstanceId"
-          :label="t('monitor.detailParentInstance')"
-        >
-          <router-link class="cell-link" :to="`/monitor/job-instances/${row.parentInstanceId}`">
-            #{{ row.parentInstanceId }}
-          </router-link>
-        </el-descriptions-item>
-        <el-descriptions-item v-if="row.relatedFileId" :label="t('monitor.detailRelatedFile')">
-          <router-link class="cell-link" :to="`/file-center/files?fileId=${row.relatedFileId}`">
-            #{{ row.relatedFileId }}
-          </router-link>
-        </el-descriptions-item>
-        <el-descriptions-item v-if="row.failureClass" :label="t('monitor.detailFailureClass')">
-          <el-tag size="small" type="danger" effect="plain">{{ row.failureClass }}</el-tag>
-        </el-descriptions-item>
-      </el-descriptions>
-    </SectionCard>
+    <el-tabs v-if="row" v-model="activeTab" class="detail-tabs">
+      <!-- Tab 1: 概览 -->
+      <el-tab-pane name="overview" :label="t('monitor.detailTabOverview')">
+        <SectionCard v-if="row.parentInstanceId || row.relatedFileId || row.failureClass">
+          <template #header>{{ t('monitor.detailRelatedSection') }}</template>
+          <el-descriptions :column="2" border>
+            <el-descriptions-item
+              v-if="row.parentInstanceId"
+              :label="t('monitor.detailParentInstance')"
+            >
+              <router-link class="cell-link" :to="`/monitor/job-instances/${row.parentInstanceId}`">
+                #{{ row.parentInstanceId }}
+              </router-link>
+            </el-descriptions-item>
+            <el-descriptions-item v-if="row.relatedFileId" :label="t('monitor.detailRelatedFile')">
+              <router-link class="cell-link" :to="`/file-center/files?fileId=${row.relatedFileId}`">
+                #{{ row.relatedFileId }}
+              </router-link>
+            </el-descriptions-item>
+            <el-descriptions-item v-if="row.failureClass" :label="t('monitor.detailFailureClass')">
+              <el-tag size="small" type="danger" effect="plain">{{ row.failureClass }}</el-tag>
+            </el-descriptions-item>
+          </el-descriptions>
+        </SectionCard>
 
-    <SectionCard v-if="row">
-      <template #header>{{ t('monitor.detailTimeSection') }}</template>
-      <el-descriptions :column="2" border>
-        <el-descriptions-item :label="t('monitor.detailStarted')">{{
-          fmtDatetime(row.startedAt)
-        }}</el-descriptions-item>
-        <el-descriptions-item :label="t('monitor.detailFinished')">{{
-          fmtDatetime(row.finishedAt)
-        }}</el-descriptions-item>
-        <el-descriptions-item :label="t('monitor.detailDeadline')">{{
-          fmtDatetime(row.deadlineAt)
-        }}</el-descriptions-item>
-        <el-descriptions-item :label="t('monitor.detailSlaAlerted')">{{
-          row.slaAlertedAt || '—'
-        }}</el-descriptions-item>
-        <el-descriptions-item :label="t('monitor.detailRerun')">
-          {{ row.rerunFlag ? t('common.yes') : t('common.no') }}
-        </el-descriptions-item>
-        <el-descriptions-item :label="t('monitor.detailRetry')">
-          {{ row.retryFlag ? t('common.yes') : t('common.no') }}
-        </el-descriptions-item>
-      </el-descriptions>
-      <div class="actions">
-        <el-button type="primary" @click="goSteps">{{ t('monitor.detailGoSteps') }}</el-button>
-        <el-button @click="goLogs">{{ t('monitor.detailGoLogs') }}</el-button>
-        <el-button type="warning" :loading="rerunLoading" @click="confirmRerun">
-          {{ t('monitor.detailRerunBtn') }}
-        </el-button>
-        <el-button type="danger" :loading="cancelLoading" @click="confirmCancel">
-          {{ t('monitor.detailCancelBtn') }}
-        </el-button>
-        <el-button type="danger" :loading="terminateLoading" @click="confirmTerminate">
-          {{ t('monitor.detailTerminateBtn') }}
-        </el-button>
-      </div>
-    </SectionCard>
+        <SectionCard>
+          <template #header>{{ t('monitor.detailTimeSection') }}</template>
+          <el-descriptions :column="2" border>
+            <el-descriptions-item :label="t('monitor.detailStarted')">{{
+              fmtDatetime(row.startedAt)
+            }}</el-descriptions-item>
+            <el-descriptions-item :label="t('monitor.detailFinished')">{{
+              fmtDatetime(row.finishedAt)
+            }}</el-descriptions-item>
+            <el-descriptions-item :label="t('monitor.detailDeadline')">{{
+              fmtDatetime(row.deadlineAt)
+            }}</el-descriptions-item>
+            <el-descriptions-item :label="t('monitor.detailSlaAlerted')">{{
+              row.slaAlertedAt || '—'
+            }}</el-descriptions-item>
+            <el-descriptions-item :label="t('monitor.detailRerun')">
+              {{ row.rerunFlag ? t('common.yes') : t('common.no') }}
+            </el-descriptions-item>
+            <el-descriptions-item :label="t('monitor.detailRetry')">
+              {{ row.retryFlag ? t('common.yes') : t('common.no') }}
+            </el-descriptions-item>
+          </el-descriptions>
+          <div class="actions">
+            <el-button @click="goLogs">{{ t('monitor.detailGoLogs') }}</el-button>
+            <el-button type="warning" :loading="rerunLoading" @click="confirmRerun">
+              {{ t('monitor.detailRerunBtn') }}
+            </el-button>
+            <el-button type="danger" :loading="cancelLoading" @click="confirmCancel">
+              {{ t('monitor.detailCancelBtn') }}
+            </el-button>
+            <el-button type="danger" :loading="terminateLoading" @click="confirmTerminate">
+              {{ t('monitor.detailTerminateBtn') }}
+            </el-button>
+          </div>
+        </SectionCard>
 
-    <SectionCard v-if="row">
-      <template #header>{{ t('monitor.detailParamsSection') }}</template>
-      <el-descriptions :column="1" border>
-        <el-descriptions-item label="paramsSnapshot">
-          <pre class="mono">{{ row.paramsSnapshot || '—' }}</pre>
-        </el-descriptions-item>
-        <el-descriptions-item label="resultSummary">
-          <pre class="mono">{{ row.resultSummary || '—' }}</pre>
-        </el-descriptions-item>
-      </el-descriptions>
-    </SectionCard>
+        <SectionCard>
+          <template #header>{{ t('monitor.detailParamsSection') }}</template>
+          <el-descriptions :column="1" border>
+            <el-descriptions-item label="paramsSnapshot">
+              <pre class="mono">{{ row.paramsSnapshot || '—' }}</pre>
+            </el-descriptions-item>
+            <el-descriptions-item label="resultSummary">
+              <pre class="mono">{{ row.resultSummary || '—' }}</pre>
+            </el-descriptions-item>
+          </el-descriptions>
+        </SectionCard>
+      </el-tab-pane>
+
+      <!-- Tab 2: 步骤(inline) -->
+      <el-tab-pane name="steps" :lazy="true">
+        <template #label>
+          <span>
+            {{ t('monitor.detailTabSteps') }}
+            <el-tag v-if="stepsRows.length" size="small" round>{{ stepsRows.length }}</el-tag>
+          </span>
+        </template>
+        <SectionCard>
+          <template #header>
+            <span>{{ t('monitor.detailTabSteps') }}</span>
+            <el-button text type="primary" @click="goSteps">
+              {{ t('monitor.detailOpenStandalone') }}
+            </el-button>
+          </template>
+          <el-table v-loading="stepsLoading" :data="stepsRows" size="small" empty-text="—" stripe>
+            <el-table-column prop="stepCode" :label="t('monitor.stepColStep')" min-width="180" />
+            <el-table-column :label="t('monitor.stepColStatus')" width="120">
+              <template #default="{ row: s }">
+                <el-tag size="small" :type="stepTagType(s.stepStatus)">{{ s.stepStatus }}</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column
+              prop="retryCount"
+              :label="t('monitor.stepColRetry')"
+              width="80"
+              align="right"
+            />
+            <el-table-column :label="t('monitor.stepColStarted')" width="170">
+              <template #default="{ row: s }">{{ fmtDatetime(s.startedAt) }}</template>
+            </el-table-column>
+            <el-table-column :label="t('monitor.stepColFinished')" width="170">
+              <template #default="{ row: s }">{{ fmtDatetime(s.finishedAt) }}</template>
+            </el-table-column>
+            <el-table-column
+              prop="errorMessage"
+              :label="t('monitor.stepColError')"
+              show-overflow-tooltip
+            />
+          </el-table>
+        </SectionCard>
+      </el-tab-pane>
+
+      <!-- Tab 3: 最近运行(同 jobCode) -->
+      <el-tab-pane name="recent" :lazy="true">
+        <template #label>
+          <span>
+            {{ t('monitor.detailTabRecent') }}
+            <el-tag v-if="recentRows.length" size="small" round>{{ recentRows.length }}</el-tag>
+          </span>
+        </template>
+        <SectionCard>
+          <template #header>{{ t('monitor.detailRecentHeader', { code: row.jobCode }) }}</template>
+          <el-table v-loading="recentLoading" :data="recentRows" size="small" empty-text="—" stripe>
+            <el-table-column :label="t('monitor.detailMetricInstanceNo')" min-width="220">
+              <template #default="{ row: r }">
+                <router-link class="cell-link" :to="`/monitor/job-instances/${r.id}`">
+                  {{ r.instanceNo }}
+                </router-link>
+                <el-tag
+                  v-if="r.id === row?.id"
+                  size="small"
+                  effect="plain"
+                  style="margin-left: 6px"
+                >
+                  {{ t('monitor.detailRecentSelf') }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column prop="bizDate" :label="t('monitor.detailMetricBizDate')" width="120" />
+            <el-table-column :label="t('monitor.detailMetricStatus')" width="120">
+              <template #default="{ row: r }">
+                <el-tag size="small" :type="stepTagType(r.instanceStatus)">{{
+                  r.instanceStatus
+                }}</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column :label="t('monitor.detailStarted')" width="170">
+              <template #default="{ row: r }">{{ fmtDatetime(r.startedAt) }}</template>
+            </el-table-column>
+            <el-table-column :label="t('monitor.detailFinished')" width="170">
+              <template #default="{ row: r }">{{ fmtDatetime(r.finishedAt) }}</template>
+            </el-table-column>
+          </el-table>
+        </SectionCard>
+      </el-tab-pane>
+    </el-tabs>
 
     <SectionCard v-else-if="!loading">
       <EmptyState :description="t('monitor.detailEmpty')" />
@@ -144,7 +235,10 @@
   import SectionCard from '@/components/common/SectionCard.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
   import MetricCard from '@/components/common/MetricCard.vue'
-  import type { ConsoleJobInstanceResponse } from '@/types/console-api'
+  import type {
+    ConsoleJobInstanceResponse,
+    ConsoleJobStepInstanceResponse,
+  } from '@/types/console-api'
 
   const route = useRoute()
   const router = useRouter()
@@ -154,6 +248,61 @@
   const cancelLoading = ref(false)
   const terminateLoading = ref(false)
   const row = ref<ConsoleJobInstanceResponse | null>(null)
+
+  const activeTab = ref<'overview' | 'steps' | 'recent'>('overview')
+  const stepsLoading = ref(false)
+  const stepsRows = ref<ConsoleJobStepInstanceResponse[]>([])
+  const stepsLoaded = ref(false)
+  const recentLoading = ref(false)
+  const recentRows = ref<ConsoleJobInstanceResponse[]>([])
+  const recentLoaded = ref(false)
+
+  function stepTagType(
+    status: string,
+  ): 'success' | 'danger' | 'warning' | 'info' | 'primary' | undefined {
+    const s = (status || '').toUpperCase()
+    if (s === 'SUCCESS' || s === 'SUCCEEDED') return 'success'
+    if (s === 'FAILED' || s === 'CANCELLED' || s === 'CANCELED') return 'danger'
+    if (s === 'RUNNING' || s === 'RETRYING') return 'warning'
+    return 'info'
+  }
+
+  async function loadSteps() {
+    if (!row.value || !Number.isFinite(instanceId.value)) return
+    stepsLoading.value = true
+    try {
+      stepsRows.value = await instanceApi.partitions(instanceId.value, tenant.tenantId)
+      stepsLoaded.value = true
+    } catch {
+      stepsRows.value = []
+    } finally {
+      stepsLoading.value = false
+    }
+  }
+
+  async function loadRecent() {
+    if (!row.value?.jobCode) return
+    recentLoading.value = true
+    try {
+      const page = await instanceApi.list({
+        tenantId: tenant.tenantId,
+        jobCode: row.value.jobCode,
+        page: 1,
+        pageSize: 10,
+      })
+      recentRows.value = page.records ?? []
+      recentLoaded.value = true
+    } catch {
+      recentRows.value = []
+    } finally {
+      recentLoading.value = false
+    }
+  }
+
+  watch(activeTab, (tab) => {
+    if (tab === 'steps' && !stepsLoaded.value) void loadSteps()
+    if (tab === 'recent' && !recentLoaded.value) void loadRecent()
+  })
 
   const instanceId = computed(() => Number(route.params.id))
 
@@ -344,7 +493,15 @@
   })
 
   watch(instanceId, () => {
-    void load()
+    // 切到不同实例时,steps/recent 数据要重新拉,但只在当前 tab 触发,避免无谓请求
+    stepsLoaded.value = false
+    recentLoaded.value = false
+    stepsRows.value = []
+    recentRows.value = []
+    void load().then(() => {
+      if (activeTab.value === 'steps') void loadSteps()
+      else if (activeTab.value === 'recent') void loadRecent()
+    })
     void openStream()
   })
 
@@ -390,6 +547,10 @@
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: var(--space-md);
+    margin-bottom: var(--space-md);
+  }
+
+  .detail-tabs :deep(.el-tabs__header) {
     margin-bottom: var(--space-md);
   }
 
