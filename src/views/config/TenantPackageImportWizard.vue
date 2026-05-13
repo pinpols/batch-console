@@ -45,6 +45,7 @@
                   <el-upload
                     :auto-upload="false"
                     :limit="1"
+                    accept=".xls,.xlsx"
                     :on-change="onFile"
                     :show-file-list="false"
                   >
