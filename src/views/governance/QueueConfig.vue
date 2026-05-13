@@ -37,18 +37,21 @@
             <el-table-column
               prop="queueCode"
               :label="t('queueConfig.colQueueCode')"
-              min-width="150"
+              width="220"
+              show-overflow-tooltip
             />
             <el-table-column
               prop="queueName"
               :label="t('queueConfig.colQueueName')"
-              min-width="160"
+              min-width="240"
+              show-overflow-tooltip
             />
             <el-table-column prop="queueType" :label="t('queueConfig.colQueueType')" width="120" />
             <el-table-column
               prop="fairShareGroup"
               :label="t('queueConfig.colFairShareGroup')"
-              min-width="140"
+              width="180"
+              show-overflow-tooltip
             />
             <el-table-column
               prop="concurrentCap"
@@ -60,7 +63,7 @@
               :label="t('queueConfig.colBurstLimit')"
               width="110"
             />
-            <DatetimeColumn prop="updatedAt" :label="t('queueConfig.colUpdatedAt')" width="160" />
+            <DatetimeColumn prop="updatedAt" :label="t('queueConfig.colUpdatedAt')" width="180" />
             <el-table-column :label="t('queueConfig.colEnabled')" width="110">
               <template #default="{ row }">
                 <el-switch
@@ -73,7 +76,7 @@
                 />
               </template>
             </el-table-column>
-            <el-table-column :label="t('fileTemplateList.colActions')" width="80" fixed="right">
+            <el-table-column :label="t('fileTemplateList.colActions')" width="96" fixed="right">
               <template #default="{ row }">
                 <el-tooltip :content="t('common.edit')" placement="top">
                   <el-button :icon="Edit" circle @click="openQueueEdit(row)" />
@@ -123,26 +126,28 @@
             <el-table-column
               prop="windowCode"
               :label="t('queueConfig.colWindowCode')"
-              min-width="150"
+              width="220"
+              show-overflow-tooltip
             />
             <el-table-column
               prop="windowName"
               :label="t('queueConfig.colWindowName')"
-              min-width="160"
+              min-width="240"
+              show-overflow-tooltip
             />
             <el-table-column prop="startTime" :label="t('queueConfig.colStartTime')" width="110" />
             <el-table-column prop="endTime" :label="t('queueConfig.colEndTime')" width="110" />
             <el-table-column
               prop="crossDayPolicy"
               :label="t('queueConfig.colCrossDayPolicy')"
-              min-width="120"
+              width="150"
             />
             <el-table-column
               prop="outOfWindowAction"
               :label="t('queueConfig.colOutOfWindow')"
-              min-width="140"
+              width="160"
             />
-            <DatetimeColumn prop="updatedAt" :label="t('queueConfig.colUpdatedAt')" width="160" />
+            <DatetimeColumn prop="updatedAt" :label="t('queueConfig.colUpdatedAt')" width="180" />
             <el-table-column :label="t('queueConfig.colEnabled')" width="110">
               <template #default="{ row }">
                 <el-switch
@@ -155,7 +160,7 @@
                 />
               </template>
             </el-table-column>
-            <el-table-column :label="t('fileTemplateList.colActions')" width="80" fixed="right">
+            <el-table-column :label="t('fileTemplateList.colActions')" width="96" fixed="right">
               <template #default="{ row }">
                 <el-tooltip :content="t('common.edit')" placement="top">
                   <el-button :icon="Edit" circle @click="openWindowEdit(row)" />
@@ -205,19 +210,17 @@
             <el-table-column
               prop="calendarCode"
               :label="t('queueConfig.colCalendarCode')"
-              min-width="150"
+              width="220"
+              show-overflow-tooltip
             />
             <el-table-column
               prop="calendarName"
               :label="t('queueConfig.colCalendarName')"
-              min-width="160"
+              min-width="240"
+              show-overflow-tooltip
             />
-            <el-table-column
-              prop="timezone"
-              :label="t('queueConfig.colTimezone')"
-              min-width="140"
-            />
-            <DatetimeColumn prop="updatedAt" :label="t('queueConfig.colUpdatedAt')" width="160" />
+            <el-table-column prop="timezone" :label="t('queueConfig.colTimezone')" width="160" />
+            <DatetimeColumn prop="updatedAt" :label="t('queueConfig.colUpdatedAt')" width="180" />
             <el-table-column :label="t('queueConfig.colHolidays')" min-width="128">
               <template #default="{ row }">
                 <div class="table-actions">
@@ -239,7 +242,7 @@
                 />
               </template>
             </el-table-column>
-            <el-table-column :label="t('fileTemplateList.colActions')" width="80" fixed="right">
+            <el-table-column :label="t('fileTemplateList.colActions')" width="96" fixed="right">
               <template #default="{ row }">
                 <el-tooltip :content="t('common.edit')" placement="top">
                   <el-button :icon="Edit" circle @click="openCalendarEdit(row)" />
@@ -499,6 +502,7 @@
   import { computed, reactive, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
+  import { confirmDanger } from '@/composables/useDangerConfirm'
   import { Delete, Edit, Plus } from '@element-plus/icons-vue'
 
   const { t } = useI18n({ useScope: 'global' })
@@ -1097,8 +1101,11 @@
   async function deleteHoliday(row: GovernanceCalendarHolidayRow) {
     if (!currentCalendarId.value || !row.id) return
     try {
-      await ElMessageBox.confirm(`确认删除 ${row.holidayDate}?`, t('common.delete'), {
-        type: 'warning',
+      await confirmDanger({
+        verb: t('common.delete'),
+        target: t('queueConfig.holidayTarget', { date: row.holidayDate }),
+        consequence: t('queueConfig.holidayConsequence'),
+        irreversible: true,
       })
     } catch {
       return

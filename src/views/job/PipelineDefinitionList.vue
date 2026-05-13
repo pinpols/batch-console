@@ -76,12 +76,14 @@
         <el-table-column
           prop="pipelineCode"
           :label="t('pipelineDefinitionList.colCode')"
-          min-width="160"
+          width="220"
+          show-overflow-tooltip
         />
         <el-table-column
           prop="pipelineName"
           :label="t('pipelineDefinitionList.colName')"
-          min-width="180"
+          min-width="260"
+          show-overflow-tooltip
         />
         <el-table-column
           prop="pipelineType"
@@ -91,7 +93,7 @@
         <DatetimeColumn
           prop="updatedAt"
           :label="t('pipelineDefinitionList.colUpdatedAt')"
-          width="160"
+          width="180"
         />
         <el-table-column :label="t('pipelineDefinitionList.colEnabled')" width="120">
           <template #default="{ row }">
@@ -105,7 +107,7 @@
             />
           </template>
         </el-table-column>
-        <el-table-column :label="t('pipelineDefinitionList.colActions')" width="100" fixed="right">
+        <el-table-column :label="t('pipelineDefinitionList.colActions')" width="120" fixed="right">
           <template #default="{ row }">
             <div class="table-actions">
               <el-button size="small" plain type="primary" @click="openEdit(row)">
@@ -416,10 +418,16 @@
   }
 
   async function submitForm() {
-    const valid = await formRef.value?.validate().catch(() => {
-      ElMessage.warning(t('pipelineDefinitionList.checkRequired'))
-      return false
-    })
+    const valid = await formRef.value
+      ?.validate()
+      .catch((errors: Record<string, Array<{ message?: string }>> | unknown) => {
+        ElMessage.warning(t('pipelineDefinitionList.checkRequired'))
+        // 自动滚到首个错误字段:大表单时用户看不到错误位置
+        const firstField =
+          errors && typeof errors === 'object' ? Object.keys(errors as object)[0] : null
+        if (firstField) formRef.value?.scrollToField(firstField)
+        return false
+      })
     if (!valid) return
 
     const payload = {

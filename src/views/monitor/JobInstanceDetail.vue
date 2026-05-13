@@ -126,7 +126,7 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, onBeforeUnmount, ref, watch } from 'vue'
+  import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { fmtDatetime } from '@/utils/datetime'
 
@@ -159,7 +159,7 @@
 
   const headerDesc = computed(() => {
     if (!row.value) return t('monitor.detailLoading')
-    return `${row.value.jobCode} · ${row.value.bizDate || ''}`
+    return `${row.value.jobCode} · ${row.value.bizDate || ''} · ${t('monitor.detailKeyHint')}`
   })
 
   async function load() {
@@ -349,6 +349,40 @@
   })
 
   onBeforeUnmount(closeStream)
+
+  /**
+   * 详情页快捷键(oncall 高频):
+   *   r → rerun(仅 FAILED 时)
+   *   l → 跳 logs
+   *   s → 看 steps/分区
+   *   esc → 智能返回
+   * 在 input/textarea/contenteditable 内不触发,避免吞输入。
+   */
+  function onKey(e: KeyboardEvent) {
+    if (e.metaKey || e.ctrlKey || e.altKey) return
+    const tgt = e.target as HTMLElement | null
+    if (tgt) {
+      const tag = tgt.tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tgt.isContentEditable) return
+    }
+    if (e.key === 'r' || e.key === 'R') {
+      if (row.value?.instanceStatus === 'FAILED') {
+        e.preventDefault()
+        void confirmRerun()
+      }
+    } else if (e.key === 'l' || e.key === 'L') {
+      e.preventDefault()
+      goLogs()
+    } else if (e.key === 's' || e.key === 'S') {
+      e.preventDefault()
+      goSteps()
+    } else if (e.key === 'Escape') {
+      e.preventDefault()
+      router.back()
+    }
+  }
+  onMounted(() => window.addEventListener('keydown', onKey))
+  onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 </script>
 
 <style scoped>
