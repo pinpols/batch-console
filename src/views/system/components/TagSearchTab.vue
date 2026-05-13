@@ -35,12 +35,21 @@
             />
           </el-form-item>
           <el-form-item :label="t('tagSearchTab.tagKeyLabel')">
-            <el-input
+            <!-- tagKey 改用 autocomplete:已注册 tagKey 作为下拉建议,省掉原"已注册 Key"独立面板。
+                 BE 一开始就预拉了 tagKeys 列表,这里直接消费,0 额外请求。 -->
+            <el-autocomplete
               v-model="searchForm.tagKey"
+              :fetch-suggestions="suggestTagKeys"
               :placeholder="t('tagSearchTab.tagKeyPlaceholder')"
+              :trigger-on-focus="true"
               class="tag-search__key"
+              clearable
               @keyup.enter="doSearch"
-            />
+            >
+              <template #default="{ item }">
+                <span class="tag-search__suggest">{{ item.value }}</span>
+              </template>
+            </el-autocomplete>
           </el-form-item>
           <el-form-item :label="t('tagSearchTab.tagValueLabel')">
             <el-input
@@ -52,6 +61,22 @@
             />
           </el-form-item>
         </ListPageQueryBar>
+      </template>
+      <!-- 自定义 empty 状态:区分"还没搜"和"搜了无结果",避免冷冰冰的"暂无数据" -->
+      <template #empty>
+        <EmptyState
+          v-if="!hasSearched"
+          :title="t('tagSearchTab.emptyInitialTitle')"
+          :description="t('tagSearchTab.emptyInitialDesc')"
+          :image-size="80"
+        />
+        <EmptyState
+          v-else
+          variant="filter-empty"
+          :title="t('tagSearchTab.emptyNoMatchTitle')"
+          :description="t('tagSearchTab.emptyNoMatchDesc')"
+          :image-size="80"
+        />
       </template>
       <el-table-column prop="resourceType" :label="t('tagSearchTab.colResourceType')" width="140">
         <template #default="{ row }">
@@ -82,56 +107,6 @@
         show-overflow-tooltip
       />
     </ProTable>
-
-    <div class="tag-subsection">
-      <div class="tag-subsection__title">{{ t('tagSearchTab.keysSubtitle') }}</div>
-      <ProTable
-        :data="pagedKeys"
-        :loading="loadingKeys"
-        :error="loadKeysError"
-        :on-retry="loadKeys"
-        :total="filteredKeys.length"
-        v-model:page="keyPage"
-        v-model:page-size="keyPageSize"
-        @change="() => {}"
-      >
-        <template #query>
-          <ListPageQueryBar
-            :filter-busy="keysFilterBusy"
-            :refresh-busy="loadingKeys"
-            @search="
-              () =>
-                runKeysSearch(() => {
-                  keyPage = 1
-                })
-            "
-            @reset="
-              () =>
-                runKeysReset(() => {
-                  keyKeyword = ''
-                  keyPage = 1
-                })
-            "
-            @refresh="() => runKeysRefresh(loadKeys)"
-          >
-            <el-form-item :label="t('tagSearchTab.keysKeywordLabel')">
-              <el-input
-                class="query-w-260"
-                v-model="keyKeyword"
-                clearable
-                :placeholder="t('tagSearchTab.keysKeywordPlaceholder')"
-                @keyup.enter="
-                  () => {
-                    keyPage = 1
-                  }
-                "
-              />
-            </el-form-item>
-          </ListPageQueryBar>
-        </template>
-        <el-table-column prop="key" :label="t('tagSearchTab.colTagKey')" min-width="300" />
-      </ProTable>
-    </div>
   </div>
 </template>
 
@@ -142,13 +117,13 @@
 
   const { t } = useI18n({ useScope: 'global' })
   import { searchByTag, listTagKeys } from '@/api/tags'
-  import { toPageResult } from '@/api/adapters'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
   import StatusTag from '@/components/common/StatusTag.vue'
   import MetaSelect from '@/components/common/MetaSelect.vue'
+  import EmptyState from '@/components/common/EmptyState.vue'
   import ProTable from '@/components/table/ProTable.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
@@ -161,31 +136,23 @@
   )
 
   const { loading: searching, error: searchError, run: runSearchTag } = useListLoadState()
-  const { loading: loadingKeys, error: loadKeysError, run: runLoadKeys } = useListLoadState()
   const {
     filterBusy: searchFilterBusy,
     runSearch: runTagSearch,
     runReset: runTagSearchReset,
     runRefresh: runTagSearchRefresh,
   } = useListFilterFeedback(searching)
-  const {
-    filterBusy: keysFilterBusy,
-    runSearch: runKeysSearch,
-    runReset: runKeysReset,
-    runRefresh: runKeysRefresh,
-  } = useListFilterFeedback(loadingKeys)
 
   const searchForm = reactive({ tagKey: '', tagValue: '' })
   const searchFilters = reactive({ resourceType: '' as string })
 
   const searchResults = ref<Record<string, unknown>[]>([])
-  const tagKeys = ref<unknown[]>([])
-  const keyKeyword = ref('')
+  const tagKeys = ref<string[]>([])
+  // 用于区分"还没搜过"和"搜了但无结果"的两种空态
+  const hasSearched = ref(false)
 
   const searchPage = ref(1)
   const searchPageSize = ref(20)
-  const keyPage = ref(1)
-  const keyPageSize = ref(20)
 
   const filteredSearchResults = computed(() => {
     let rows = searchResults.value
@@ -194,26 +161,12 @@
     return rows
   })
 
-  const filteredKeys = computed(() => {
-    const k = keyKeyword.value.trim().toLowerCase()
-    const list = Array.isArray(tagKeys.value) ? tagKeys.value : []
-    const keys = list.map((x) => {
-      if (typeof x === 'string') return x
-      if (x && typeof x === 'object' && 'key' in x)
-        return String((x as Record<string, unknown>).key ?? '')
-      return String(x ?? '')
-    })
-    return k ? keys.filter((x) => x.toLowerCase().includes(k)) : keys
-  })
-
-  const pagedKeys = computed(
-    () =>
-      toPageResult(
-        filteredKeys.value.map((key) => ({ key })),
-        keyPage.value,
-        keyPageSize.value,
-      ).records,
-  )
+  // autocomplete 回调:按输入前缀模糊匹配已注册 tagKey
+  function suggestTagKeys(queryString: string, cb: (items: { value: string }[]) => void) {
+    const q = queryString.trim().toLowerCase()
+    const matched = q ? tagKeys.value.filter((k) => k.toLowerCase().includes(q)) : tagKeys.value
+    cb(matched.slice(0, 20).map((v) => ({ value: v })))
+  }
 
   async function doSearch() {
     if (!searchForm.tagKey.trim()) {
@@ -227,23 +180,32 @@
         searchForm.tagValue || undefined,
       )
       searchResults.value = Array.isArray(data) ? (data as Record<string, unknown>[]) : []
+      hasSearched.value = true
     }).catch(() => {
       searchResults.value = []
+      hasSearched.value = true
     })
   }
 
   async function loadKeys() {
-    await runLoadKeys(async () => {
+    try {
       const data = await listTagKeys(tenant.tenantId)
-      tagKeys.value = Array.isArray(data) ? data : []
-    }).catch(() => {
+      // BE 可能返回 string[] 也可能 {key}[],归一成 string[]
+      tagKeys.value = (Array.isArray(data) ? data : []).map((x) => {
+        if (typeof x === 'string') return x
+        if (x && typeof x === 'object' && 'key' in x)
+          return String((x as Record<string, unknown>).key ?? '')
+        return String(x ?? '')
+      })
+    } catch {
       tagKeys.value = []
-    })
+    }
   }
 
   useTenantReload(() => {
     searchResults.value = []
     tagKeys.value = []
+    hasSearched.value = false
     void loadKeys()
   })
 </script>
@@ -268,14 +230,8 @@
     }
   }
 
-  .tag-subsection {
-    margin-top: var(--space-md);
-  }
-
-  .tag-subsection__title {
+  .tag-search__suggest {
     font-size: 13px;
-    font-weight: 650;
-    color: var(--color-text-secondary);
-    margin: var(--space-md) 0 var(--space-sm);
+    color: var(--color-text-primary);
   }
 </style>
