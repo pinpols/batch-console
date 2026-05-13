@@ -4699,6 +4699,8 @@ export interface components {
         instanceStatus?: components['schemas']['MetaEnumItem'][]
         workflowType?: components['schemas']['MetaEnumItem'][]
         workflowNodeType?: components['schemas']['MetaEnumItem'][]
+        sensorType?: components['schemas']['MetaEnumItem'][]
+        sensorTimeoutAction?: components['schemas']['MetaEnumItem'][]
         edgeType?: components['schemas']['MetaEnumItem'][]
         workflowRunStatus?: components['schemas']['MetaEnumItem'][]
         pipelineType?: components['schemas']['MetaEnumItem'][]
@@ -5838,6 +5840,10 @@ export interface components {
       createdAt: string
       /** Format: date-time */
       updatedAt: string
+      /** @description 关联 approval_command.approval_no(LEFT JOIN target_id=request_id + approval_type=CATCH_UP);用于走统一审批接口 /api/console/approvals/{approvalNo}/approve|reject。未走统一审批的旧记录可为 null。 */
+      approvalNo?: string | null
+      /** @description 关联 approval_command.approval_status(PENDING/APPROVED/REJECTED/EXECUTED)。可空。 */
+      approvalStatus?: string | null
     }
     ConsoleFileArrivalGroupResponse: {
       tenantId: string
@@ -10270,6 +10276,8 @@ export interface operations {
         startDate?: components['parameters']['StartDateFilter']
         /** @description Filter end date (ISO date, inclusive) */
         endDate?: components['parameters']['EndDateFilter']
+        /** @description Filter by trace ID (partial match) */
+        traceId?: components['parameters']['TraceIdFilter']
         /** @description Sort order. Use 'duration' for slow task diagnosis (descending by runtime). */
         sortBy?: 'id' | 'duration'
         /** @description Minimum runtime threshold in seconds. Only returns instances running >= this value. */
@@ -10484,6 +10492,8 @@ export interface operations {
         workflowDefinitionId?: components['parameters']['WorkflowDefinitionIdFilter']
         /** @description Filter by run status (exact match) */
         runStatus?: components['parameters']['RunStatusFilter']
+        /** @description Filter by trace ID (partial match) */
+        traceId?: components['parameters']['TraceIdFilter']
       }
       header?: never
       path?: never

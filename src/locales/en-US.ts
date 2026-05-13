@@ -611,6 +611,13 @@ const messages: Messages = {
       pendingCount: '{n} pending',
       missedRuns: '{n} missed run(s)',
       pendingApi: 'Approval API pending backend rollout',
+      approve: 'Approve',
+      reject: 'Reject',
+      approveSuccess: 'Approved',
+      approveFail: 'Approve failed',
+      rejectSuccess: 'Rejected',
+      rejectFail: 'Reject failed',
+      legacyNoApprovalNo: 'Legacy row without unified approval; read-only',
     },
     appBar: {
       accountMenu: 'Account menu',
