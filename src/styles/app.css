@@ -1152,6 +1152,75 @@ html.dark .data-panel {
   max-width: 100%;
 }
 
+.query-form.el-form--inline .el-radio-group,
+.dr-preset .el-radio-group {
+  padding: 3px;
+  border-radius: var(--radius-content);
+  background: color-mix(in srgb, var(--color-bg-card) 88%, var(--color-bg-canvas) 12%);
+  border: 1px solid color-mix(in srgb, var(--color-border-light) 70%, var(--color-border) 30%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 50%),
+    0 1px 2px rgb(15 23 42 / 5%);
+  gap: 3px;
+}
+
+.query-form.el-form--inline .el-radio-button,
+.dr-preset .el-radio-button {
+  margin: 0;
+}
+
+.query-form.el-form--inline .el-radio-button__inner,
+.dr-preset .el-radio-button__inner {
+  height: 30px;
+  min-width: 58px;
+  padding: 0 13px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent !important;
+  border-radius: var(--radius-input) !important;
+  background: transparent;
+  box-shadow: none !important;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  font-weight: 650;
+  transition:
+    color var(--motion-duration-sm) var(--motion-ease-standard),
+    background-color var(--motion-duration-sm) var(--motion-ease-standard),
+    border-color var(--motion-duration-sm) var(--motion-ease-standard),
+    box-shadow var(--motion-duration-md) var(--motion-ease-standard);
+}
+
+.query-form.el-form--inline .el-radio-button__inner:hover,
+.dr-preset .el-radio-button__inner:hover {
+  color: var(--color-text-primary);
+  background: color-mix(in srgb, var(--color-bg-card) 92%, var(--color-primary) 8%);
+  border-color: color-mix(in srgb, var(--color-border) 78%, var(--color-primary) 22%) !important;
+}
+
+.query-form.el-form--inline .el-radio-button.is-active .el-radio-button__inner,
+.dr-preset .el-radio-button.is-active .el-radio-button__inner {
+  color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 12%, var(--color-bg-card) 88%);
+  border-color: color-mix(in srgb, var(--color-primary) 28%, var(--color-border) 72%) !important;
+  box-shadow:
+    0 6px 14px rgb(15 23 42 / 10%),
+    0 0 0 1px rgb(15 23 42 / 3%) !important;
+}
+
+html.dark .query-form.el-form--inline .el-radio-group,
+html.dark .dr-preset .el-radio-group {
+  background: color-mix(in srgb, var(--color-bg-card) 82%, #000 18%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 6%),
+    0 1px 2px rgb(0 0 0 / 16%);
+}
+
+.query-form.el-form--inline
+  :where(.el-input__inner, .el-select__placeholder, .el-select__selected-item, .el-select__input) {
+  font-size: 13px;
+}
+
 @media (max-width: 900px) {
   .query-form.el-form--inline {
     --query-input-width: min(320px, 100%);

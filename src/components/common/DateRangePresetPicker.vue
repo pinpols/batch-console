@@ -1,7 +1,12 @@
 <template>
   <div class="dr-preset">
     <div class="dr-preset__chips">
-      <el-radio-group :model-value="activePreset" size="small" @change="onPresetChange">
+      <el-radio-group
+        v-hover-radio-activate="true"
+        :model-value="activePreset"
+        size="small"
+        @change="onPresetChange"
+      >
         <el-radio-button v-for="p in presets" :key="p.key" :value="p.key" :label="p.key">
           {{ p.label }}
         </el-radio-button>

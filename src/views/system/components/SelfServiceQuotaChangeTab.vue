@@ -17,12 +17,14 @@
         >
           <el-option v-for="k in quotaKeys" :key="k" :label="k" :value="k" />
         </el-select>
+        <div class="field-hint">{{ t('selfServiceQuotaChangeTab.keyHint') }}</div>
       </el-form-item>
       <el-form-item :label="t('selfServiceQuotaChangeTab.valueLabel')" prop="requestedValue">
         <el-input
           v-model="quotaForm.requestedValue"
           :placeholder="t('selfServiceQuotaChangeTab.valuePlaceholder')"
         />
+        <div class="field-hint">{{ t('selfServiceQuotaChangeTab.valueHint') }}</div>
       </el-form-item>
       <el-form-item :label="t('selfServiceQuotaChangeTab.reasonLabel')" prop="reason">
         <el-input
@@ -31,6 +33,7 @@
           :rows="3"
           :placeholder="t('selfServiceQuotaChangeTab.reasonPlaceholder')"
         />
+        <div class="field-hint">{{ t('selfServiceQuotaChangeTab.reasonHint') }}</div>
       </el-form-item>
       <el-form-item class="form-actions">
         <el-button
@@ -132,3 +135,13 @@
     void loadQuotaKeys()
   })
 </script>
+
+<style scoped>
+  .field-hint {
+    width: 100%;
+    margin-top: 6px;
+    font-size: 12px;
+    line-height: 1.45;
+    color: var(--color-text-tertiary);
+  }
+</style>

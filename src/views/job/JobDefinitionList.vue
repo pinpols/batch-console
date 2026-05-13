@@ -1,6 +1,12 @@
 <template>
   <PageContainer>
-    <PageHeader />
+    <PageHeader>
+      <template #actions>
+        <el-button type="primary" :icon="Plus" class="pretty-add-button" @click="openCreate">
+          {{ t('jobDefinitionList.headerCreate') }}
+        </el-button>
+      </template>
+    </PageHeader>
 
     <SectionCard>
       <ProTable
@@ -186,6 +192,107 @@
     </SectionCard>
 
     <el-drawer
+      v-model="createDrawerVisible"
+      :title="t('jobDefinitionList.drawerCreateTitle')"
+      size="520px"
+      :before-close="onCreateDrawerClose"
+    >
+      <el-form
+        ref="createFormRef"
+        :model="createForm"
+        :rules="createFormRules"
+        label-width="120px"
+        @submit.prevent
+      >
+        <el-form-item :label="t('jobDefinitionList.fieldJobCode')" prop="jobCode">
+          <el-input
+            v-model="createForm.jobCode"
+            maxlength="128"
+            show-word-limit
+            :placeholder="t('jobDefinitionList.createJobCodePlaceholder')"
+          />
+        </el-form-item>
+        <el-form-item :label="t('jobDefinitionList.fieldJobName')" prop="jobName">
+          <el-input
+            v-model="createForm.jobName"
+            maxlength="256"
+            :placeholder="t('jobDefinitionList.createJobNamePlaceholder')"
+          />
+        </el-form-item>
+        <el-form-item :label="t('jobDefinitionList.fieldJobType')" prop="jobType">
+          <MetaSelect
+            v-model="createForm.jobType"
+            class="query-w-full"
+            enum-key="jobType"
+            :placeholder="t('jobDefinitionList.createJobTypePlaceholder')"
+          />
+        </el-form-item>
+        <el-form-item :label="t('jobDefinitionList.fieldScheduleType')" prop="scheduleType">
+          <MetaSelect
+            v-model="createForm.scheduleType"
+            class="query-w-full"
+            enum-key="scheduleType"
+            :options="scheduleTypeOptions"
+            :placeholder="t('jobDefinitionList.scheduleTypePlaceholder')"
+          />
+        </el-form-item>
+        <el-form-item :label="t('jobDefinitionList.fieldScheduleExpr')" prop="scheduleExpr">
+          <el-input
+            v-model="createForm.scheduleExpr"
+            :placeholder="t('jobDefinitionList.createScheduleExprPlaceholder')"
+          />
+        </el-form-item>
+        <el-form-item :label="t('jobDefinitionList.queueLabel')" prop="queueCode">
+          <MetaSelect
+            v-model="createForm.queueCode"
+            class="query-w-full"
+            clearable
+            filterable
+            :placeholder="t('jobDefinitionList.queuePlaceholder')"
+            :options="queueOptions"
+          />
+        </el-form-item>
+        <el-form-item :label="t('jobDefinitionList.workerGroupLabel')" prop="workerGroup">
+          <el-input
+            v-model="createForm.workerGroup"
+            :placeholder="t('jobDefinitionList.workerGroupPlaceholder')"
+          />
+        </el-form-item>
+        <el-form-item :label="t('jobDefinitionList.fieldExecutionMode')" prop="executionMode">
+          <MetaSelect
+            v-model="createForm.executionMode"
+            class="query-w-full"
+            enum-key="executionMode"
+            :options="executionModeOptions"
+          />
+        </el-form-item>
+        <el-form-item
+          v-if="createForm.executionMode === 'INCREMENTAL'"
+          :label="t('jobDefinitionList.fieldWatermark')"
+          prop="watermarkField"
+        >
+          <el-input
+            v-model="createForm.watermarkField"
+            :placeholder="t('jobDefinitionList.fieldWatermarkPlaceholder')"
+            maxlength="64"
+            show-word-limit
+          />
+        </el-form-item>
+        <el-form-item :label="t('jobDefinitionList.enabledLabel')" prop="enabled">
+          <el-switch v-model="createForm.enabled" />
+        </el-form-item>
+        <div class="drawer-actions">
+          <el-button @click="closeCreateDrawer">{{
+            t('jobDefinitionList.drawerCancel')
+          }}</el-button>
+          <el-button type="primary" :loading="createSaving" @click="submitCreate">
+            {{ t('jobDefinitionList.drawerCreateSubmit') }}
+          </el-button>
+        </div>
+      </el-form>
+    </el-drawer>
+
+    <el-drawer
       v-model="editDrawerVisible"
       :title="editDrawerTitle"
       size="480px"
@@ -330,7 +437,8 @@
   import { useRoute, useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
-
+  import { Plus } from '@element-plus/icons-vue'
+  type ExecutionMode = 'FULL' | 'INCREMENTAL' | 'CDC'
   const { t, te } = useI18n({ useScope: 'global' })
 
   function resolveScheduleType(value?: string | null): string {
@@ -671,6 +779,21 @@
     executionMode: 'FULL',
     watermarkField: '',
   })
+  const createFormRef = ref<FormInstance>()
+  const createDrawerVisible = ref(false)
+  const createSaving = ref(false)
+  const createForm = reactive({
+    jobCode: '',
+    jobName: '',
+    jobType: 'SHELL',
+    scheduleType: 'MANUAL',
+    scheduleExpr: '',
+    queueCode: '',
+    workerGroup: '',
+    executionMode: 'FULL' as ExecutionMode,
+    watermarkField: '',
+    enabled: true,
+  })
 
   const { data: metaEnumsData } = useConsoleMetaEnumsQuery()
   const executionModeOptions = computed(() =>
@@ -706,6 +829,16 @@
     ],
     watermarkField: [watermarkRule],
   }
+  const createFormRules: FormRules = {
+    jobCode: [rulesRequired(t('jobDefinitionList.ruleJobCodeRequired'))],
+    jobType: [rulesRequired(t('jobDefinitionList.ruleJobTypeRequired'))],
+    scheduleType: [rulesRequired(t('jobDefinitionList.ruleScheduleTypeRequired'))],
+    watermarkField: [watermarkRule],
+  }
+
+  function rulesRequired(message: string): FormItemRule {
+    return { required: true, message, trigger: ['blur', 'change'] }
+  }
 
   // 切到 FULL/CDC 时自动清空水位字段
   watch(
@@ -714,6 +847,79 @@
       if (mode !== 'INCREMENTAL') editForm.watermarkField = ''
     },
   )
+  watch(
+    () => createForm.executionMode,
+    (mode) => {
+      if (mode !== 'INCREMENTAL') createForm.watermarkField = ''
+    },
+  )
+
+  function resetCreateForm() {
+    createForm.jobCode = ''
+    createForm.jobName = ''
+    createForm.jobType = 'SHELL'
+    createForm.scheduleType = 'MANUAL'
+    createForm.scheduleExpr = ''
+    createForm.queueCode = ''
+    createForm.workerGroup = ''
+    createForm.executionMode = 'FULL'
+    createForm.watermarkField = ''
+    createForm.enabled = true
+  }
+
+  function openCreate() {
+    resetCreateForm()
+    createDrawerVisible.value = true
+    void createFormRef.value?.clearValidate()
+  }
+
+  function closeCreateDrawer() {
+    createDrawerVisible.value = false
+  }
+
+  function onCreateDrawerClose(done: () => void) {
+    if (createSaving.value) return
+    done()
+  }
+
+  async function submitCreate() {
+    const valid = await createFormRef.value
+      ?.validate()
+      .catch((errors: Record<string, Array<{ message?: string }>> | unknown) => {
+        const firstField =
+          errors && typeof errors === 'object' ? Object.keys(errors as object)[0] : null
+        if (firstField) createFormRef.value?.scrollToField(firstField)
+        return false
+      })
+    if (!valid) return
+    createSaving.value = true
+    try {
+      await jobApi.createDefinition({
+        tenantId: filters.tenantId || tenant.tenantId,
+        jobCode: createForm.jobCode.trim(),
+        jobName: createForm.jobName.trim() || undefined,
+        jobType: createForm.jobType.trim(),
+        scheduleType: createForm.scheduleType.trim(),
+        scheduleExpr: createForm.scheduleExpr.trim() || undefined,
+        queueCode: createForm.queueCode.trim() || undefined,
+        workerGroup: createForm.workerGroup.trim() || undefined,
+        executionMode: createForm.executionMode,
+        watermarkField:
+          createForm.executionMode === 'INCREMENTAL' ? createForm.watermarkField.trim() : '',
+        enabled: createForm.enabled,
+      })
+      ElMessage.success(t('jobDefinitionList.createSuccess', { code: createForm.jobCode }))
+      createDrawerVisible.value = false
+      filters.jobCode = createForm.jobCode.trim()
+      page.value = 1
+      await refetch()
+      void router.replace({
+        query: { ...route.query, action: undefined, jobCode: filters.jobCode },
+      })
+    } finally {
+      createSaving.value = false
+    }
+  }
 
   function openEdit(row: ConsoleJobDefinitionResponse) {
     editingId.value = row.id
@@ -766,6 +972,10 @@
   {
     const q = route.query
     if (q.jobCode) filters.jobCode = String(q.jobCode)
+    if (q.action === 'create') {
+      openCreate()
+      void router.replace({ query: { ...route.query, action: undefined } })
+    }
   }
 
   useTenantReload(loadMeta)

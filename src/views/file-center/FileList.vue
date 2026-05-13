@@ -23,7 +23,12 @@
             @refresh="() => runRefresh(load)"
           >
             <el-form-item :label="t('fileList.quick')">
-              <el-radio-group :model-value="quickStatus" size="small" @change="onQuickStatusChange">
+              <el-radio-group
+                v-hover-radio-activate="true"
+                :model-value="quickStatus"
+                size="small"
+                @change="onQuickStatusChange"
+              >
                 <el-radio-button value="all">{{ t('fileList.quickAll') }}</el-radio-button>
                 <el-radio-button value="processing">
                   {{ t('fileList.quickProcessing') }}
@@ -31,15 +36,20 @@
                 <el-radio-button value="failed">{{ t('fileList.quickFailed') }}</el-radio-button>
               </el-radio-group>
             </el-form-item>
-            <el-form-item :label="t('fileList.statusLabel')">
-              <MetaSelect
-                class="query-w-160"
-                v-model="filters.fileStatus"
+            <el-form-item :label="t('fileList.fileName')">
+              <el-input
+                class="query-w-220"
+                v-model="filters.fileName"
                 clearable
-                filterable
-                enum-key="fileStatus"
-                :placeholder="t('fileList.statusPlaceholder')"
-                :options="fileStatusSelectOptions"
+                :placeholder="t('fileList.fileNamePlaceholder')"
+              />
+            </el-form-item>
+            <el-form-item :label="t('fileList.fileId')">
+              <el-input
+                class="query-w-120"
+                v-model="filters.fileId"
+                clearable
+                :placeholder="t('fileList.fileIdPlaceholder')"
               />
             </el-form-item>
             <el-form-item :label="t('fileList.bizType')">
@@ -52,28 +62,15 @@
                 :options="bizTypeOptions"
               />
             </el-form-item>
-            <el-form-item :label="t('fileList.fileName')">
-              <el-input
+            <el-form-item :label="t('fileList.statusLabel')">
+              <MetaSelect
                 class="query-w-160"
-                v-model="filters.fileName"
+                v-model="filters.fileStatus"
                 clearable
-                :placeholder="t('fileList.fileNamePlaceholder')"
-              />
-            </el-form-item>
-            <el-form-item :label="t('fileList.trace')">
-              <el-input
-                class="query-w-160"
-                v-model="filters.traceId"
-                clearable
-                :placeholder="t('fileList.tracePlaceholder')"
-              />
-            </el-form-item>
-            <el-form-item :label="t('fileList.fileId')">
-              <el-input
-                class="query-w-120"
-                v-model="filters.fileId"
-                clearable
-                :placeholder="t('fileList.fileIdPlaceholder')"
+                filterable
+                enum-key="fileStatus"
+                :placeholder="t('fileList.statusPlaceholder')"
+                :options="fileStatusSelectOptions"
               />
             </el-form-item>
             <el-form-item :label="t('fileList.bizDate')">
@@ -81,6 +78,14 @@
                 v-model="bizDateRange"
                 type="daterange"
                 default-preset="today"
+              />
+            </el-form-item>
+            <el-form-item :label="t('fileList.trace')">
+              <el-input
+                class="query-w-240"
+                v-model="filters.traceId"
+                clearable
+                :placeholder="t('fileList.tracePlaceholder')"
               />
             </el-form-item>
           </ListPageQueryBar>

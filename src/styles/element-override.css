@@ -763,13 +763,30 @@ html.dark .el-drawer {
 }
 
 .el-select-dropdown .el-select-dropdown__item {
+  min-height: 34px;
+  height: auto;
+  line-height: 20px;
+  padding: 7px 12px;
+  font-size: 13px;
   border: 1px solid transparent;
   border-radius: var(--radius-card);
   margin: 2px 2px;
+  color: var(--color-text-secondary);
   transition:
     box-shadow var(--motion-duration-md) var(--motion-ease-standard),
     border-color var(--motion-duration-sm) var(--motion-ease-standard),
     background-color var(--motion-duration-sm) var(--motion-ease-standard);
+}
+
+.el-select-dropdown .el-select-dropdown__item span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.el-select-dropdown .el-select-dropdown__item.is-selected {
+  font-weight: 600;
+  color: var(--color-text-primary);
 }
 
 .el-select-dropdown .el-select-dropdown__item:not(.is-disabled).is-hovering,

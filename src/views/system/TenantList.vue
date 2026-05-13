@@ -40,7 +40,12 @@
         @refresh="() => runRefresh(load)"
       >
         <el-form-item :label="t('tenantList.quick')">
-          <el-radio-group :model-value="quickStatus" size="small" @change="onQuickStatusChange">
+          <el-radio-group
+            v-hover-radio-activate="true"
+            :model-value="quickStatus"
+            size="small"
+            @change="onQuickStatusChange"
+          >
             <el-radio-button value="all">{{ t('tenantList.quickAll') }}</el-radio-button>
             <el-radio-button value="active">{{ t('tenantList.quickActive') }}</el-radio-button>
             <el-radio-button value="suspended">

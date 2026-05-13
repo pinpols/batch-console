@@ -30,14 +30,7 @@
       </template>
 
       <div class="grid">
-        <button
-          v-for="r in filteredReports"
-          :key="r.key"
-          class="report-card"
-          type="button"
-          :disabled="loadingKey !== ''"
-          @click="downloadOne(r)"
-        >
+        <article v-for="r in filteredReports" :key="r.key" class="report-card">
           <div class="report-card__main">
             <div class="report-card__title">
               {{ r.label }}
@@ -53,13 +46,14 @@
               plain
               size="small"
               :loading="loadingKey === r.key"
-              @click.stop="downloadOne(r)"
+              :disabled="loadingKey !== ''"
+              @click="downloadOne(r)"
             >
               {{ t('reportExportHub.btnDownload') }}
             </el-button>
             <div class="report-card__file">{{ r.file }}</div>
           </div>
-        </button>
+        </article>
       </div>
 
       <el-empty
@@ -254,37 +248,36 @@
   }
 
   .report-card {
-    appearance: none;
     border: 1px solid var(--color-border-light);
     background: color-mix(in srgb, var(--color-bg-card) 92%, var(--color-bg-canvas) 8%);
     border-radius: var(--radius-card-lg);
     padding: var(--card-inner-padding);
     min-height: 108px;
-    box-shadow: 0 1px 0 rgb(0 0 0 / 2%);
+    box-shadow:
+      0 1px 0 rgb(0 0 0 / 2%),
+      0 8px 18px rgb(15 23 42 / 4%);
     text-align: left;
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
     gap: var(--space-md);
-    cursor: pointer;
     transition:
-      transform 120ms ease,
+      transform 140ms ease,
       border-color 120ms ease,
       box-shadow 120ms ease,
       background 120ms ease;
+    will-change: transform;
   }
 
-  .report-card:hover {
-    transform: translateY(-1px);
-    border-color: color-mix(in srgb, var(--color-border) 70%, var(--color-primary) 30%);
+  .report-card:hover,
+  .report-card:focus-within {
+    transform: translateY(-3px);
+    border-color: color-mix(in srgb, var(--color-border) 74%, var(--color-primary) 26%);
+    background: var(--color-bg-card);
     box-shadow:
-      0 8px 18px rgb(15 23 42 / 8%),
+      0 1px 0 rgb(0 0 0 / 2%),
+      0 14px 28px rgb(15 23 42 / 11%),
       var(--surface-hover-edge-inset);
-  }
-
-  .report-card:disabled {
-    cursor: not-allowed;
-    opacity: 0.78;
   }
 
   .report-card__main {

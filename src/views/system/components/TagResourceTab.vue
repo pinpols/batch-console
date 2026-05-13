@@ -14,11 +14,6 @@
       "
       @refresh="() => runRefresh(loadTags)"
     >
-      <template #prepend>
-        <el-button type="primary" :icon="Plus" class="pretty-add-button" @click="openNewDialog">
-          {{ t('tagResourceTab.btnAddTag') }}
-        </el-button>
-      </template>
       <el-form-item :label="t('tagResourceTab.resourceTypeLabel')">
         <MetaSelect
           v-model="queryForm.resourceType"
@@ -129,7 +124,6 @@
 
   const { t } = useI18n({ useScope: 'global' })
   import { confirmDanger } from '@/composables/useDangerConfirm'
-  import { Plus } from '@element-plus/icons-vue'
   import { listResourceTags, upsertResourceTag, deleteResourceTag } from '@/api/tags'
   import type { ResourceType } from '@/api/tags'
   import { useTenantStore } from '@/stores/tenant'
@@ -267,6 +261,8 @@
   useTenantReload(() => {
     tagRows.value = []
   })
+
+  defineExpose({ openNewDialog })
 </script>
 
 <style scoped>

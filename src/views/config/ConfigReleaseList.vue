@@ -1,6 +1,12 @@
 <template>
   <PageContainer>
-    <PageHeader />
+    <PageHeader>
+      <template #actions>
+        <el-button type="primary" :icon="Plus" class="pretty-add-button" @click="openCreate">
+          {{ t('configReleaseList.headerCreate') }}
+        </el-button>
+      </template>
+    </PageHeader>
 
     <SectionCard>
       <ProTable
@@ -141,6 +147,53 @@
       </ProTable>
     </SectionCard>
 
+    <el-drawer
+      v-model="createVisible"
+      :title="t('configReleaseList.createTitle')"
+      size="520px"
+      :before-close="onCreateClose"
+    >
+      <el-form
+        ref="createFormRef"
+        :model="createForm"
+        :rules="createRules"
+        label-width="120px"
+        @submit.prevent
+      >
+        <el-form-item :label="t('configReleaseList.createKeyLabel')" prop="configCode">
+          <el-input
+            v-model="createForm.configCode"
+            maxlength="128"
+            show-word-limit
+            :placeholder="t('configReleaseList.createKeyPlaceholder')"
+          />
+        </el-form-item>
+        <el-form-item :label="t('configReleaseList.createTypeLabel')" prop="configType">
+          <el-input
+            v-model="createForm.configType"
+            maxlength="64"
+            :placeholder="t('configReleaseList.createTypePlaceholder')"
+          />
+        </el-form-item>
+        <el-form-item :label="t('configReleaseList.createNoteLabel')" prop="releaseNote">
+          <el-input
+            v-model="createForm.releaseNote"
+            type="textarea"
+            :rows="4"
+            maxlength="500"
+            show-word-limit
+            :placeholder="t('configReleaseList.createNotePlaceholder')"
+          />
+        </el-form-item>
+        <div class="drawer-actions">
+          <el-button @click="closeCreate">{{ t('common.cancel') }}</el-button>
+          <el-button type="primary" :loading="createSaving" @click="submitCreate">
+            {{ t('configReleaseList.createSubmit') }}
+          </el-button>
+        </div>
+      </el-form>
+    </el-drawer>
+
     <el-drawer v-model="depsVisible" :title="t('configReleaseList.depsTitle')" size="640px">
       <div v-loading="depsLoading">
         <el-empty
@@ -219,12 +272,14 @@
   import { ref, watch, computed, reactive } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
+  import { Plus } from '@element-plus/icons-vue'
   import { confirmDanger } from '@/composables/useDangerConfirm'
 
   const { t } = useI18n({ useScope: 'global' })
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import {
     grayRelease,
+    createConfigRelease,
     listConfigReleases,
     publishRelease,
     rollbackRelease,
@@ -246,6 +301,7 @@
   import ProTable from '@/components/table/ProTable.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
   import JsonPreview from '@/components/common/JsonPreview.vue'
+  import type { FormInstance, FormRules } from 'element-plus'
   import type { ConsoleConfigReleaseResponse } from '@/types/console-api'
 
   const tenant = useTenantStore()
@@ -269,6 +325,22 @@
     name: '',
     status: '',
   })
+  const createVisible = ref(false)
+  const createSaving = ref(false)
+  const createFormRef = ref<FormInstance>()
+  const createForm = reactive({
+    configCode: '',
+    configType: '',
+    releaseNote: '',
+  })
+  const createRules: FormRules = {
+    configCode: [
+      { required: true, message: t('configReleaseList.ruleCreateKey'), trigger: 'blur' },
+    ],
+    configType: [
+      { required: true, message: t('configReleaseList.ruleCreateType'), trigger: 'blur' },
+    ],
+  }
 
   const { data: metaEnums } = useConsoleMetaEnumsQuery()
 
@@ -331,6 +403,47 @@
     page.value = 1
     slicePage()
   })
+
+  function resetCreateForm() {
+    createForm.configCode = ''
+    createForm.configType = ''
+    createForm.releaseNote = ''
+  }
+
+  function openCreate() {
+    resetCreateForm()
+    createVisible.value = true
+    void createFormRef.value?.clearValidate()
+  }
+
+  function closeCreate() {
+    createVisible.value = false
+  }
+
+  function onCreateClose(done: () => void) {
+    if (createSaving.value) return
+    done()
+  }
+
+  async function submitCreate() {
+    const valid = await createFormRef.value?.validate().catch(() => false)
+    if (!valid) return
+    createSaving.value = true
+    try {
+      await createConfigRelease({
+        tenantId: tenant.tenantId,
+        configCode: createForm.configCode.trim(),
+        configType: createForm.configType.trim(),
+        releaseNote: createForm.releaseNote.trim() || undefined,
+      })
+      ElMessage.success(t('configReleaseList.createSuccess', { key: createForm.configCode }))
+      createVisible.value = false
+      filters.key = createForm.configCode.trim()
+      await load()
+    } finally {
+      createSaving.value = false
+    }
+  }
 
   async function doPublish(row: ConsoleConfigReleaseResponse) {
     try {
@@ -506,5 +619,12 @@
 
   .diff-result {
     margin-top: var(--card-inner-padding);
+  }
+
+  .drawer-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 8px;
   }
 </style>
