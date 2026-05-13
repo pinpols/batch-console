@@ -147,7 +147,7 @@
   import { computed, ref, watch, reactive } from 'vue'
   import { useRoute } from 'vue-router'
   import { useI18n } from 'vue-i18n'
-  import { ElMessage, ElMessageBox } from 'element-plus'
+  import { ElMessage } from 'element-plus'
 
   const { t } = useI18n({ useScope: 'global' })
   import { confirmDanger } from '@/composables/useDangerConfirm'
@@ -264,15 +264,13 @@
 
   async function confirmCancel() {
     try {
-      await ElMessageBox.confirm(
-        t('monitor.runCancelConfirmText', { id: runId.value }),
-        t('monitor.runCancelTitle'),
-        {
-          type: 'warning',
-          confirmButtonText: t('common.confirm'),
-          cancelButtonText: t('common.cancel'),
-        },
-      )
+      await confirmDanger({
+        verb: '取消',
+        target: `工作流运行「#${runId.value}」`,
+        consequence:
+          '未开始的节点不再派发,正在运行的节点会按各自策略尽快收尾。已完成节点的产物保留。',
+        confirmButtonText: '确认取消',
+      })
       actionLoading.value = true
       await cancelWorkflowRun(runId.value, tenant.tenantId)
       ElMessage.success(t('monitor.runCanceled'))
@@ -305,15 +303,13 @@
 
   async function confirmSkipNode(row: ConsoleWorkflowNodeRunResponse) {
     try {
-      await ElMessageBox.confirm(
-        t('monitor.skipNodeText', { code: row.nodeCode }),
-        t('monitor.skipNodeTitle'),
-        {
-          type: 'warning',
-          confirmButtonText: t('common.confirm'),
-          cancelButtonText: t('common.cancel'),
-        },
-      )
+      await confirmDanger({
+        verb: '跳过',
+        target: `节点「${row.nodeCode}」`,
+        consequence: '该节点状态置为 SKIPPED,下游节点按依赖正常推进,但本节点的输出不会产生。',
+        irreversible: true,
+        confirmButtonText: '确认跳过',
+      })
       await skipWorkflowRunNode(runId.value, tenant.tenantId, row.nodeCode)
       ElMessage.success(t('monitor.skipNodeSuccess'))
       await load()

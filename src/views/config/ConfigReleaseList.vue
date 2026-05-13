@@ -219,6 +219,7 @@
   import { ref, watch, computed, reactive } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
+  import { confirmDanger } from '@/composables/useDangerConfirm'
 
   const { t } = useI18n({ useScope: 'global' })
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
@@ -376,15 +377,13 @@
 
   async function doRollback(row: ConsoleConfigReleaseResponse) {
     try {
-      await ElMessageBox.confirm(
-        t('configReleaseList.rollbackConfirmText', { key: row.configKey }),
-        t('configReleaseList.rollbackTitle'),
-        {
-          type: 'warning',
-          confirmButtonText: t('common.confirm'),
-          cancelButtonText: t('common.cancel'),
-        },
-      )
+      await confirmDanger({
+        verb: '回滚',
+        target: `配置「${row.configKey}」`,
+        consequence:
+          '当前生效配置将被回滚到上一版本,所有正在读取该配置的应用会在下次拉取时获取旧值。请确认旧版本可正常工作。',
+        confirmButtonText: '我已确认,继续回滚',
+      })
       const { value: reason } = await ElMessageBox.prompt(
         t('configReleaseList.rollbackPrompt'),
         t('configReleaseList.rollbackTitle'),

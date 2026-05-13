@@ -86,6 +86,21 @@
           </ListPageQueryBar>
         </template>
 
+        <template #empty>
+          <EmptyState
+            variant="tenant-empty"
+            :title="t('fileList.emptyTitle')"
+            :description="t('fileList.emptyDescription')"
+            :image-size="80"
+          >
+            <template #action>
+              <el-button type="primary" @click="$router.push('/files/templates')">
+                {{ t('fileList.emptyGoTemplates') }}
+              </el-button>
+            </template>
+          </EmptyState>
+        </template>
+
         <el-table-column prop="id" label="ID" width="90" />
         <el-table-column
           prop="fileName"
@@ -236,6 +251,7 @@
   import MetaSelect from '@/components/common/MetaSelect.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
+  import EmptyState from '@/components/common/EmptyState.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import ProTable from '@/components/table/ProTable.vue'
   import TablePagerBar from '@/components/table/TablePagerBar.vue'

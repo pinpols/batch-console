@@ -1666,6 +1666,10 @@ const messages: Messages = {
     runListStatusPlaceholder: 'All run statuses',
     runListTraceIdLabel: 'Trace Id',
     runListTraceIdPlaceholder: 'Trace Id, partial match',
+    runListEmptyTitle: 'No workflow runs yet',
+    runListEmptyDescription:
+      'A run = one execution of a workflow. Define a workflow and trigger or schedule it; runs will show up here.',
+    runListEmptyGoDefinitions: 'Open workflow definitions',
     runColRunId: 'Run Id',
     runColDefId: 'Def Id',
     runColStatus: 'Status',
@@ -2136,6 +2140,10 @@ const messages: Messages = {
     submitSuccess: 'Submitted approval for {key}',
   },
   jobDefinitionList: {
+    emptyTitle: 'No job definitions for this tenant yet',
+    emptyDescription:
+      'Job definitions are the scheduling unit. The common way is bulk import via a tenant config package. Admins can also create them manually.',
+    emptyGoImport: 'Open bulk import',
     jobCodeLabel: 'Job Code',
     jobCodePlaceholder: 'Search by jobCode',
     jobNameLabel: 'Name',
@@ -2339,6 +2347,10 @@ const messages: Messages = {
     resumeSuccess: 'All schedulers resumed',
   },
   jobInstanceList: {
+    emptyTitle: 'No job instances for this tenant yet',
+    emptyDescription:
+      'An instance = one concrete run. Define jobs and register triggers; once a trigger fires you will see instances here.',
+    emptyGoDefinitions: 'Open job definitions',
     jobCodeTip: 'Unique job identifier, used for scheduling and instance association',
     jobCodeLabel: 'Job Code',
     jobCodePlaceholder: 'Select or enter jobCode',
@@ -2372,6 +2384,10 @@ const messages: Messages = {
     actionPartitions: 'Steps',
   },
   fileList: {
+    emptyTitle: 'No files for this tenant yet',
+    emptyDescription:
+      'Files arrive via template-defined channels. Configure a template first; matching files will appear here.',
+    emptyGoTemplates: 'Open templates',
     quick: 'Quick',
     quickAll: 'All',
     quickProcessing: 'Processing',
