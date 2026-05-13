@@ -1595,6 +1595,9 @@ export default {
     title: '全部运行',
     description: '跨作业 / 工作流的最近 20 条运行,oncall 排障的统一入口。',
     refresh: '刷新',
+    filterAll: '全部',
+    filterRunning: '运行中',
+    filterFailed: '失败',
     jobSection: '最近作业运行',
     workflowSection: '最近工作流运行',
     viewAll: '查看全部',
@@ -1616,6 +1619,10 @@ export default {
     runListStatusPlaceholder: '全部运行状态',
     runListTraceIdLabel: 'Trace Id',
     runListTraceIdPlaceholder: 'Trace Id，模糊匹配',
+    runListEmptyTitle: '当前租户还没有任何工作流运行',
+    runListEmptyDescription:
+      '工作流运行 = 一次工作流的执行实例。先去工作流定义,触发或配置周期调度后,运行会出现在这里。',
+    runListEmptyGoDefinitions: '去看工作流定义',
     runColRunId: 'Run Id',
     runColDefId: 'Def Id',
     runColStatus: '状态',
@@ -2089,6 +2096,10 @@ export default {
     submitSuccess: '已提交审批 {key}',
   },
   jobDefinitionList: {
+    emptyTitle: '当前租户还没有任何作业定义',
+    emptyDescription:
+      '作业定义是调度的最小单位,通常通过"配置批量导入"批量创建。也可以由管理员手工新增。',
+    emptyGoImport: '去批量导入配置包',
     jobCodeLabel: 'Job Code',
     jobCodePlaceholder: '按作业 Code 搜索',
     jobNameLabel: '名称',
@@ -2291,6 +2302,10 @@ export default {
     resumeSuccess: '已恢复全部调度',
   },
   jobInstanceList: {
+    emptyTitle: '当前租户还没有任何作业实例',
+    emptyDescription:
+      '作业实例 = 一次具体的运行。先去定义作业、注册触发器,等触发器派发后就会在这里看到运行记录。',
+    emptyGoDefinitions: '去定义作业',
     jobCodeTip: '唯一作业标识,用于调度触发和实例关联',
     jobCodeLabel: 'Job Code',
     jobCodePlaceholder: '选择或输入 jobCode',
@@ -2324,6 +2339,9 @@ export default {
     actionPartitions: '步骤',
   },
   fileList: {
+    emptyTitle: '当前租户还没有任何文件',
+    emptyDescription: '文件通过模板渠道接入。先在"文件模板"配好渠道,匹配的文件到达后会出现在这里。',
+    emptyGoTemplates: '去看文件模板',
     quick: '快捷',
     quickAll: '全部',
     quickProcessing: '处理中',
