@@ -45,7 +45,6 @@
             type="primary"
             :loading="exporting"
             :icon="Download"
-            size="default"
             v-track-click="t('configSyncTab.trackExport')"
             @click="doExport"
           >
@@ -104,7 +103,6 @@
             :loading="previewing"
             :disabled="!importPayload.trim()"
             :icon="View"
-            size="default"
             v-track-click="t('configSyncTab.trackPreview')"
             @click="doPreview"
           >
@@ -115,7 +113,6 @@
             :loading="importing"
             :disabled="!importPayload.trim()"
             :icon="Upload"
-            size="default"
             class="sync__apply"
             v-track-click="t('configSyncTab.trackImport')"
             @click="doImport"
@@ -137,11 +134,11 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, ref } from 'vue'
+  import { computed, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
   import { Download, Right, View, Upload } from '@element-plus/icons-vue'
-  import { exportConfigSync, previewConfigSync, importConfigSync } from '@/api/configReleases'
+  import { exportConfigSync, importConfigSync } from '@/api/configReleases'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
   import { confirmDanger } from '@/composables/useDangerConfirm'
@@ -192,9 +189,14 @@
       .split(',')
       .map((s) => s.trim())
       .filter(Boolean)
-    if (!list.length) return tenant.tenantId
+    if (!list.length) return t('configSyncTab.targetCurrentTenant')
     if (list.length === 1) return list[0]
-    return `${list[0]} 等 ${list.length} 个`
+    return t('configSyncTab.targetMultiTenants', { first: list[0], n: list.length })
+  })
+
+  // 用户改了粘贴内容后,旧的差异预览就过期了 — 立即清掉避免误导
+  watch(importPayload, () => {
+    if (previewResult.value) previewResult.value = null
   })
 
   function resolvedTargetTenants(): string[] {
@@ -233,21 +235,28 @@
       ElMessage.warning(t('configSyncTab.toastNeedPayload'))
       return
     }
+    let bundle: unknown
+    try {
+      bundle = JSON.parse(importPayload.value)
+    } catch {
+      ElMessage.error(t('configSyncTab.errInvalidJson'))
+      return
+    }
     previewing.value = true
     try {
-      JSON.parse(importPayload.value)
-      previewResult.value = await previewConfigSync({
-        sourceTenantId: tenant.tenantId,
+      // 用 import + dryRun 做真正的"按粘贴 JSON 预览差异",
+      // 旧的 previewConfigSync 不接受 bundle,会按"从源租户重新算"做预览,
+      // 用户粘贴/编辑过的 JSON 不会被实际预览到。
+      previewResult.value = await importConfigSync({
         tenantId: tenant.tenantId,
         sourceEnv: sourceEnv.value.trim() || 'default',
         targetEnv: targetEnv.value.trim() || 'default',
+        targetTenantIds: resolvedTargetTenants(),
+        bundle,
+        dryRun: true,
       })
-    } catch (e) {
-      ElMessage.error(
-        e instanceof SyntaxError
-          ? t('configSyncTab.errInvalidJson')
-          : t('configSyncTab.errPreviewFailed'),
-      )
+    } catch {
+      ElMessage.error(t('configSyncTab.errPreviewFailed'))
     } finally {
       previewing.value = false
     }
@@ -449,37 +458,38 @@
     background: color-mix(in srgb, var(--color-bg-canvas) 40%, var(--color-bg-card) 60%);
   }
 
-  /* 应用按钮:不用 type=danger 的实心红,而是 primary + danger 文字色,
-     避免一整块红色压在右下角太重 */
-  .sync__apply {
+  /* 应用按钮:走 danger 色,但不用 type=danger(避免 hover 状态不一致);
+     disabled 时回灰,避免"按不动还红着"的歧义 */
+  .sync__apply:not(.is-disabled) {
     background: var(--color-danger);
     border-color: var(--color-danger);
   }
 
-  .sync__apply:hover:not(.is-disabled),
-  .sync__apply:focus:not(.is-disabled) {
+  .sync__apply:not(.is-disabled):hover,
+  .sync__apply:not(.is-disabled):focus {
     background: color-mix(in srgb, var(--color-danger) 88%, #000 12%);
     border-color: color-mix(in srgb, var(--color-danger) 88%, #000 12%);
   }
 
-  /* 中间连接线 + 箭头(只在 >=1100px 显示) */
+  /* 流向连接:窄屏纵向(短),宽屏横向(铺满中间列) */
   .sync__connector {
-    display: none;
+    display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 0 4px;
+    padding: 4px 0;
   }
 
   .sync__connector-line {
     flex: 1;
     width: 2px;
+    min-height: 12px;
     background: color-mix(in srgb, var(--color-border) 70%, transparent);
   }
 
   .sync__connector-icon {
-    width: 28px;
-    height: 28px;
+    width: 26px;
+    height: 26px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -487,27 +497,27 @@
     background: var(--color-bg-card);
     border: 1px solid var(--color-border);
     color: var(--color-text-secondary);
-    font-size: 16px;
+    font-size: 14px;
     margin: 6px 0;
+    /* 窄屏 icon 朝下,宽屏朝右 */
+    transform: rotate(90deg);
   }
 
   @media (min-width: 1100px) {
     .sync__connector {
-      display: flex;
-    }
-
-    /* 横向布局时,把竖线改横线 */
-    .sync__connector-line {
-      width: 100%;
-      height: 2px;
-      flex: 1;
-    }
-
-    .sync__connector {
       flex-direction: row;
+      padding: 0 4px;
+    }
+
+    .sync__connector-line {
+      width: auto;
+      height: 2px;
+      min-height: 0;
+      min-width: 12px;
     }
 
     .sync__connector-icon {
+      transform: none;
       margin: 0 6px;
     }
   }

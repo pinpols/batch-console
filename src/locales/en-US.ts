@@ -2755,6 +2755,8 @@ const messages: Messages = {
     btnExport: 'Download JSON',
     btnCopyToTarget: 'Copy to target →',
     targetTitle: 'Target',
+    targetCurrentTenant: 'Current tenant',
+    targetMultiTenants: '{first} + {n} tenants',
     targetEnvLabel: 'Env',
     targetEnvPlaceholder: 'e.g. default / staging',
     targetTenantsLabel: 'Target tenants',
