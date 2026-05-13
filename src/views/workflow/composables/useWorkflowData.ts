@@ -81,6 +81,13 @@ export function useWorkflowData(deps: DataDeps) {
     return code.trim()
   })
 
+  /**
+   * ?mode=create:用户从列表"新建"或 designer empty"新建"按钮进入。
+   * 此时不自动选第一个已有 workflow,让画布保持空白,
+   * 右侧 inspector 等用户填 workflowCode/Name/Type 后再走 create 路径。
+   */
+  const isCreateMode = computed(() => route.query.mode === 'create')
+
   const currentDraftKey = computed(() =>
     selectedWorkflowCode.value
       ? `workflow-editor:draft:${tenant.tenantId}:${selectedWorkflowCode.value}`
@@ -476,10 +483,13 @@ export function useWorkflowData(deps: DataDeps) {
       if (token !== loadDefinitionsToken) return
       definitionOptions.value = defs
       const routeCode = routeWorkflowCode.value
-      const nextCode =
-        (routeCode && defs.some((item) => item.workflowCode === routeCode)
-          ? routeCode
-          : defs[0]?.workflowCode) ?? ''
+      // 创建模式:不要 fallback 到 defs[0],画布保持空白等用户在右侧填新 workflowCode
+      const createMode = isCreateMode.value
+      const nextCode = createMode
+        ? ''
+        : ((routeCode && defs.some((item) => item.workflowCode === routeCode)
+            ? routeCode
+            : defs[0]?.workflowCode) ?? '')
       if (nextCode && nextCode !== selectedWorkflowCode.value) {
         selectedWorkflowCode.value = nextCode
       }
@@ -899,6 +909,7 @@ export function useWorkflowData(deps: DataDeps) {
 
     // computed
     routeWorkflowCode,
+    isCreateMode,
     currentDraftKey,
     selectedDefinition,
     subtitle,

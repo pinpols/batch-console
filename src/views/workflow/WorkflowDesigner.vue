@@ -377,23 +377,46 @@
                 </el-icon>
               </div>
               <h3 class="workflow-canvas-empty__title">
-                {{ t('workflowDesigner.emptyTitle') }}
+                {{
+                  isCreateMode
+                    ? t('workflowDesigner.createModeTitle')
+                    : t('workflowDesigner.emptyTitle')
+                }}
               </h3>
               <p class="workflow-canvas-empty__desc">
-                {{ t('workflowDesigner.emptyDesc') }}
+                {{
+                  isCreateMode
+                    ? t('workflowDesigner.createModeDesc')
+                    : t('workflowDesigner.emptyDesc')
+                }}
               </p>
               <div class="workflow-canvas-empty__actions">
-                <el-button
-                  type="primary"
-                  :icon="EditPenIcon"
-                  size="large"
-                  @click="focusWorkflowSelect"
-                >
-                  {{ t('workflowDesigner.emptyActionSelect') }}
-                </el-button>
-                <el-button :icon="PlusIcon" size="large" @click="goToDefinitions">
-                  {{ t('workflowDesigner.emptyActionNew') }}
-                </el-button>
+                <template v-if="isCreateMode">
+                  <el-button
+                    type="primary"
+                    :icon="EditPenIcon"
+                    size="large"
+                    @click="focusWorkflowFormCode"
+                  >
+                    {{ t('workflowDesigner.createModeGo') }}
+                  </el-button>
+                  <el-button size="large" @click="exitCreateMode">
+                    {{ t('workflowDesigner.createModeCancel') }}
+                  </el-button>
+                </template>
+                <template v-else>
+                  <el-button
+                    type="primary"
+                    :icon="EditPenIcon"
+                    size="large"
+                    @click="focusWorkflowSelect"
+                  >
+                    {{ t('workflowDesigner.emptyActionSelect') }}
+                  </el-button>
+                  <el-button :icon="PlusIcon" size="large" @click="goToDefinitions">
+                    {{ t('workflowDesigner.emptyActionNew') }}
+                  </el-button>
+                </template>
               </div>
             </div>
 
@@ -805,6 +828,7 @@
     validationIssues,
     dslPanelOpen,
     routeWorkflowCode,
+    isCreateMode,
     selectedDefinition,
     draftSavedDisplay,
     dslPreview,
@@ -846,6 +870,22 @@
   function goToDefinitions() {
     selectedWorkflowCode.value = ''
     void router.replace({ path: '/workflow/designer', query: { mode: 'create' } })
+  }
+
+  /** Create mode 下:聚焦右侧"流程属性"卡片的 workflowCode 输入 */
+  function focusWorkflowFormCode() {
+    // 选择器对应 WorkflowInspectorWorkflowForm 中 prop="workflowCode" 的第一个 input
+    // 不耦合 ref 是因为 right 面板已抽组件;以 class + DOM query 兜底足够
+    const el = document.querySelector<HTMLInputElement>(
+      '.workflow-panel--right .workflow-form input',
+    )
+    el?.focus()
+    el?.select?.()
+  }
+
+  /** Create mode 下:取消新建,回到普通选择模式 */
+  function exitCreateMode() {
+    void router.replace({ path: '/workflow/designer', query: {} })
   }
 
   const manifestFileInput = ref<HTMLInputElement | null>(null)

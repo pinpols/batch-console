@@ -49,6 +49,11 @@ export default {
     emptyTitle: '请先选择一个 Workflow',
     emptyDesc: '从顶部下拉选择已有 Workflow,或去定义页新建。其它操作按钮在选定后启用。',
     emptyActionSelect: '选择已有 Workflow',
+    createModeTitle: '新建 Workflow',
+    createModeDesc:
+      '右侧"流程属性"卡片填写 workflowCode / 名称 / 类型,然后从左侧节点库拖节点到画布开始编排。完成后点右上"提交到后端"。',
+    createModeGo: '去填写流程属性',
+    createModeCancel: '取消新建',
     emptyActionNew: '去新建 Workflow',
     deleteCellConsequence: '该节点/连线及其属性会从画布草稿移除;若已发布需重新提交才生效。',
     ariaContext: '当前编排对象',
