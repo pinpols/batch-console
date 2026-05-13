@@ -214,6 +214,99 @@
         </div>
       </el-form>
     </el-drawer>
+
+    <!-- Run-centric 详情抽屉(P2):Overview + 最近运行 inline -->
+    <el-drawer
+      v-model="detailVisible"
+      :title="t('jobDefinitionList.detailTitle', { code: detailRow?.jobCode || '' })"
+      size="720px"
+    >
+      <el-tabs v-if="detailRow" v-model="activeDetailTab">
+        <el-tab-pane name="overview" :label="t('jobDefinitionList.detailTabOverview')">
+          <el-descriptions :column="2" border size="small">
+            <el-descriptions-item label="jobCode">{{ detailRow.jobCode }}</el-descriptions-item>
+            <el-descriptions-item label="jobName">{{ detailRow.jobName }}</el-descriptions-item>
+            <el-descriptions-item label="jobType">{{ detailRow.jobType }}</el-descriptions-item>
+            <el-descriptions-item label="enabled">
+              {{ detailRow.enabled ? t('common.yes') : t('common.no') }}
+            </el-descriptions-item>
+            <el-descriptions-item label="executionMode">
+              {{ resolveEnumLabel('executionMode', detailRow.executionMode) }}
+            </el-descriptions-item>
+            <el-descriptions-item v-if="detailRow.watermarkField" label="watermarkField">
+              {{ detailRow.watermarkField }}
+            </el-descriptions-item>
+            <el-descriptions-item label="queueCode">{{
+              detailRow.queueCode || '—'
+            }}</el-descriptions-item>
+            <el-descriptions-item label="workerGroup">{{
+              detailRow.workerGroup || '—'
+            }}</el-descriptions-item>
+            <el-descriptions-item label="scheduleType">{{
+              detailRow.scheduleType || '—'
+            }}</el-descriptions-item>
+            <el-descriptions-item label="scheduleExpr">{{
+              detailRow.scheduleExpr || '—'
+            }}</el-descriptions-item>
+            <el-descriptions-item label="retryPolicy">{{
+              detailRow.retryPolicy || '—'
+            }}</el-descriptions-item>
+            <el-descriptions-item label="retryMaxCount">{{
+              detailRow.retryMaxCount
+            }}</el-descriptions-item>
+            <el-descriptions-item label="timeoutSeconds">{{
+              detailRow.timeoutSeconds
+            }}</el-descriptions-item>
+            <el-descriptions-item label="createdAt">{{
+              detailRow.createdAt || '—'
+            }}</el-descriptions-item>
+            <el-descriptions-item label="updatedAt">{{
+              detailRow.updatedAt || '—'
+            }}</el-descriptions-item>
+          </el-descriptions>
+        </el-tab-pane>
+
+        <el-tab-pane name="runs" :lazy="true">
+          <template #label>
+            <span>
+              {{ t('jobDefinitionList.detailTabRuns') }}
+              <el-tag v-if="detailRunsRows.length" size="small" round>{{
+                detailRunsRows.length
+              }}</el-tag>
+            </span>
+          </template>
+          <div class="detail-runs-header">
+            <span>{{ t('jobDefinitionList.detailRunsHint', { code: detailRow.jobCode }) }}</span>
+            <el-button text type="primary" @click="goInstances(detailRow.jobCode)">
+              {{ t('runs.viewAll') }} →
+            </el-button>
+          </div>
+          <el-table
+            v-loading="detailRunsLoading"
+            :data="detailRunsRows"
+            size="small"
+            empty-text="—"
+            stripe
+            @row-click="goJobInstance"
+          >
+            <el-table-column :label="t('runs.colInstance')" min-width="200">
+              <template #default="{ row }">
+                <span class="cell-link">{{ row.instanceNo }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column :label="t('runs.colStatus')" width="110">
+              <template #default="{ row }">
+                <StatusTag :value="row.instanceStatus" category="instance" />
+              </template>
+            </el-table-column>
+            <el-table-column prop="bizDate" :label="t('runs.colBizDate')" width="110" />
+            <el-table-column :label="t('runs.colStarted')" width="160">
+              <template #default="{ row }">{{ fmtDatetime(row.startedAt) }}</template>
+            </el-table-column>
+          </el-table>
+        </el-tab-pane>
+      </el-tabs>
+    </el-drawer>
   </PageContainer>
 </template>
 
@@ -232,6 +325,8 @@
   }
   import type { FormInstance, FormItemRule, FormRules } from 'element-plus'
   import { jobApi } from '@/api/job'
+  import { instanceApi } from '@/api/instance'
+  import { fmtDatetime } from '@/utils/datetime'
   import { getMetaEnums, getMetaQueues, type MetaOption } from '@/api/meta'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { useJobDefinitionsPaged } from '@/composables/queries/useJobDefinitionsPaged'
@@ -251,7 +346,10 @@
   import CopyableText from '@/components/common/CopyableText.vue'
   import HelpLabel from '@/components/common/HelpLabel.vue'
   import TenantSelect from '@/components/common/TenantSelect.vue'
-  import type { ConsoleJobDefinitionResponse } from '@/types/console-api'
+  import type {
+    ConsoleJobDefinitionResponse,
+    ConsoleJobInstanceResponse,
+  } from '@/types/console-api'
 
   const route = useRoute()
   const router = useRouter()
@@ -372,8 +470,11 @@
       },
       {
         key: 'instances',
+        // 旧"查看运行"会跳到 /monitor/job-instances 离开列表;
+        // 现在改成 inline detail drawer + Runs tab,保留 oncall 上下文,
+        // tab 内仍有"查看全部"链接通向完整可筛列表。
         label: t('jobDefinitionList.actionInstances'),
-        onClick: () => goInstances(row.jobCode),
+        onClick: () => openDetail(row, 'runs'),
       },
       {
         key: 'clone',
@@ -498,6 +599,51 @@
     }
   }
 
+  // ── Run-centric 详情抽屉(P2)─────
+  const detailVisible = ref(false)
+  const detailRow = ref<ConsoleJobDefinitionResponse | null>(null)
+  const activeDetailTab = ref<'overview' | 'runs'>('overview')
+  const detailRunsRows = ref<ConsoleJobInstanceResponse[]>([])
+  const detailRunsLoading = ref(false)
+  const detailRunsLoadedForJobCode = ref('')
+
+  async function loadDetailRuns() {
+    const def = detailRow.value
+    if (!def?.jobCode || detailRunsLoadedForJobCode.value === def.jobCode) return
+    detailRunsLoading.value = true
+    try {
+      const pageResult = await instanceApi.list({
+        tenantId: def.tenantId ?? tenant.tenantId,
+        jobCode: def.jobCode,
+        page: 1,
+        pageSize: 20,
+      })
+      detailRunsRows.value = pageResult.records ?? []
+      detailRunsLoadedForJobCode.value = def.jobCode
+    } catch {
+      detailRunsRows.value = []
+    } finally {
+      detailRunsLoading.value = false
+    }
+  }
+
+  function openDetail(row: ConsoleJobDefinitionResponse, initialTab: 'overview' | 'runs') {
+    detailRow.value = row
+    detailRunsRows.value = []
+    detailRunsLoadedForJobCode.value = ''
+    activeDetailTab.value = initialTab
+    detailVisible.value = true
+    if (initialTab === 'runs') void loadDetailRuns()
+  }
+
+  function goJobInstance(row: ConsoleJobInstanceResponse) {
+    void router.push(`/monitor/job-instances/${row.id}`)
+  }
+
+  watch(activeDetailTab, (tab) => {
+    if (tab === 'runs') void loadDetailRuns()
+  })
+
   // ── 编辑抽屉(轻量版,只露 ExecutionMode + watermarkField,部分更新) ─────
   const editFormRef = ref<FormInstance>()
   const editDrawerVisible = ref(false)
@@ -610,6 +756,19 @@
 </script>
 
 <style scoped>
+  .detail-runs-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-sm);
+    font-size: 13px;
+    color: var(--color-text-secondary);
+  }
+
+  :deep(.el-table__row) {
+    cursor: pointer;
+  }
+
   .drawer-actions {
     display: flex;
     justify-content: flex-end;

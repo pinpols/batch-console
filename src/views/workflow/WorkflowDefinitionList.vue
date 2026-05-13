@@ -145,43 +145,95 @@
       :title="t('workflowDefinitionList.detailTitle')"
       size="800px"
     >
-      <el-descriptions v-if="detailRow" :column="2" border size="small">
-        <el-descriptions-item label="workflowCode">{{
-          detailRow.workflowCode
-        }}</el-descriptions-item>
-        <el-descriptions-item label="workflowName">{{
-          detailRow.workflowName
-        }}</el-descriptions-item>
-        <el-descriptions-item label="workflowType">{{
-          detailRow.workflowType
-        }}</el-descriptions-item>
-        <el-descriptions-item label="version">{{ detailRow.version }}</el-descriptions-item>
-        <el-descriptions-item label="enabled">
-          {{ detailRow.enabled ? t('common.yes') : t('common.no') }}
-        </el-descriptions-item>
-        <el-descriptions-item label="tenantId">{{ detailRow.tenantId }}</el-descriptions-item>
-        <el-descriptions-item label="createdAt">{{
-          detailRow.createdAt || '—'
-        }}</el-descriptions-item>
-        <el-descriptions-item label="updatedAt">{{
-          detailRow.updatedAt || '—'
-        }}</el-descriptions-item>
-        <el-descriptions-item :label="t('workflowDefinitionList.detailNodes')">{{
-          detailRow.nodes?.length ?? 0
-        }}</el-descriptions-item>
-        <el-descriptions-item :label="t('workflowDefinitionList.detailEdges')">{{
-          detailRow.edges?.length ?? 0
-        }}</el-descriptions-item>
-        <el-descriptions-item :label="t('workflowDefinitionList.detailDescription')" :span="2">
-          <JsonPreview :data="detailRow.description || '—'" />
-        </el-descriptions-item>
-        <el-descriptions-item label="nodes" :span="2">
-          <JsonPreview :data="detailRow.nodes ?? []" />
-        </el-descriptions-item>
-        <el-descriptions-item label="edges" :span="2">
-          <JsonPreview :data="detailRow.edges ?? []" />
-        </el-descriptions-item>
-      </el-descriptions>
+      <el-tabs v-if="detailRow" v-model="activeDetailTab">
+        <!-- Tab: 概览 -->
+        <el-tab-pane name="overview" :label="t('workflowDefinitionList.detailTabOverview')">
+          <el-descriptions :column="2" border size="small">
+            <el-descriptions-item label="workflowCode">{{
+              detailRow.workflowCode
+            }}</el-descriptions-item>
+            <el-descriptions-item label="workflowName">{{
+              detailRow.workflowName
+            }}</el-descriptions-item>
+            <el-descriptions-item label="workflowType">{{
+              detailRow.workflowType
+            }}</el-descriptions-item>
+            <el-descriptions-item label="version">{{ detailRow.version }}</el-descriptions-item>
+            <el-descriptions-item label="enabled">
+              {{ detailRow.enabled ? t('common.yes') : t('common.no') }}
+            </el-descriptions-item>
+            <el-descriptions-item label="tenantId">{{ detailRow.tenantId }}</el-descriptions-item>
+            <el-descriptions-item label="createdAt">{{
+              detailRow.createdAt || '—'
+            }}</el-descriptions-item>
+            <el-descriptions-item label="updatedAt">{{
+              detailRow.updatedAt || '—'
+            }}</el-descriptions-item>
+            <el-descriptions-item :label="t('workflowDefinitionList.detailNodes')">{{
+              detailRow.nodes?.length ?? 0
+            }}</el-descriptions-item>
+            <el-descriptions-item :label="t('workflowDefinitionList.detailEdges')">{{
+              detailRow.edges?.length ?? 0
+            }}</el-descriptions-item>
+            <el-descriptions-item :label="t('workflowDefinitionList.detailDescription')" :span="2">
+              <JsonPreview :data="detailRow.description || '—'" />
+            </el-descriptions-item>
+          </el-descriptions>
+        </el-tab-pane>
+
+        <!-- Tab: 最近运行(P2 Run-centric)-->
+        <el-tab-pane name="runs" :lazy="true">
+          <template #label>
+            <span>
+              {{ t('workflowDefinitionList.detailTabRuns') }}
+              <el-tag v-if="detailRunsRows.length" size="small" round>{{
+                detailRunsRows.length
+              }}</el-tag>
+            </span>
+          </template>
+          <el-table
+            v-loading="detailRunsLoading"
+            :data="detailRunsRows"
+            size="small"
+            empty-text="—"
+            stripe
+            @row-click="goWorkflowRun"
+          >
+            <el-table-column :label="t('runs.colRun')" min-width="90">
+              <template #default="{ row }">
+                <span class="cell-link">#{{ row.id }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column :label="t('runs.colStatus')" width="110">
+              <template #default="{ row }">
+                <StatusTag :value="String(row.runStatus ?? '')" category="workflow" />
+              </template>
+            </el-table-column>
+            <el-table-column prop="bizDate" :label="t('runs.colBizDate')" width="110" />
+            <el-table-column
+              prop="currentNodeCode"
+              :label="t('runs.colCurrentNode')"
+              min-width="140"
+              show-overflow-tooltip
+            />
+            <el-table-column :label="t('runs.colStarted')" width="160">
+              <template #default="{ row }">{{ fmtDatetime(row.startedAt) }}</template>
+            </el-table-column>
+          </el-table>
+        </el-tab-pane>
+
+        <!-- Tab: DSL(节点 + 边的 JSON)-->
+        <el-tab-pane name="dsl" :label="t('workflowDefinitionList.detailTabDsl')">
+          <el-descriptions :column="1" border size="small">
+            <el-descriptions-item label="nodes">
+              <JsonPreview :data="detailRow.nodes ?? []" />
+            </el-descriptions-item>
+            <el-descriptions-item label="edges">
+              <JsonPreview :data="detailRow.edges ?? []" />
+            </el-descriptions-item>
+          </el-descriptions>
+        </el-tab-pane>
+      </el-tabs>
     </el-drawer>
 
     <el-dialog
@@ -251,7 +303,7 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, reactive, ref } from 'vue'
+  import { computed, reactive, ref, watch } from 'vue'
   import { useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
@@ -267,6 +319,8 @@
   }
   import { confirmDanger } from '@/composables/useDangerConfirm'
   import { workflowApi, type DagValidationResult } from '@/api/workflow'
+  import { instanceApi } from '@/api/instance'
+  import { fmtDatetime } from '@/utils/datetime'
   import { useSseAutoReload } from '@/composables/useSseAutoReload'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
@@ -285,6 +339,7 @@
   import MetaSelect from '@/components/common/MetaSelect.vue'
   import type {
     ConsoleWorkflowDefinitionResponse,
+    ConsoleWorkflowRunResponse,
     WorkflowDefinitionDetailResponse,
   } from '@/types/console-api'
 
@@ -303,6 +358,34 @@
   const actingIds = ref<Set<number>>(new Set())
   const detailVisible = ref(false)
   const detailRow = ref<WorkflowDefinitionDetailResponse | null>(null)
+  const activeDetailTab = ref<'overview' | 'runs' | 'dsl'>('overview')
+  const detailRunsRows = ref<ConsoleWorkflowRunResponse[]>([])
+  const detailRunsLoading = ref(false)
+  const detailRunsLoadedForId = ref<number | null>(null)
+
+  async function loadDetailRuns() {
+    const def = detailRow.value
+    if (!def?.id || detailRunsLoadedForId.value === def.id) return
+    detailRunsLoading.value = true
+    try {
+      const page = await instanceApi.workflowRuns({
+        tenantId: def.tenantId ?? tenant.tenantId,
+        workflowDefinitionId: def.id,
+        page: 1,
+        pageSize: 20,
+      })
+      detailRunsRows.value = page.records ?? []
+      detailRunsLoadedForId.value = def.id
+    } catch {
+      detailRunsRows.value = []
+    } finally {
+      detailRunsLoading.value = false
+    }
+  }
+
+  function goWorkflowRun(row: ConsoleWorkflowRunResponse) {
+    void router.push(`/monitor/workflow-runs/${row.id}`)
+  }
   const validateVisible = ref(false)
   const validateResult = ref<DagValidationResult | null>(null)
   const validateErrorCount = computed(
@@ -451,8 +534,16 @@
     // 用 row.tenantId 而非 tenant.tenantId,避免租户切换 race 时跨租户 404
     // (BE 防跨租户泄漏,row 来自 ta 但 store 已切 tb → 用 tb 查 ta 的 id → 404)
     detailRow.value = await workflowApi.detailById(row.id, row.tenantId ?? tenant.tenantId)
+    // 切到新的定义时重置 runs 缓存,避免显示上一次的 runs
+    detailRunsRows.value = []
+    detailRunsLoadedForId.value = null
+    activeDetailTab.value = 'overview'
     detailVisible.value = true
   }
+
+  watch(activeDetailTab, (tab) => {
+    if (tab === 'runs') void loadDetailRuns()
+  })
 
   async function toggleRow(row: ConsoleWorkflowDefinitionResponse) {
     try {
