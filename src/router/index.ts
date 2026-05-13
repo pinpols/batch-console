@@ -98,6 +98,18 @@ const routes = [
           title: '文件模板',
           activeMenu: '/files/templates',
           minRole: 'VIEWER',
+          mode: 'templates',
+        },
+      },
+      {
+        path: 'files/channels',
+        name: 'file-channel-list',
+        component: () => import('@/views/file-center/FileTemplateList.vue'),
+        meta: {
+          title: '文件渠道',
+          activeMenu: '/files/channels',
+          minRole: 'VIEWER',
+          mode: 'channels',
         },
       },
       {
@@ -353,9 +365,32 @@ const routes = [
         name: 'queue-config',
         component: () => import('@/views/governance/QueueConfig.vue'),
         meta: {
-          title: '队列与窗口',
+          title: '队列',
           activeMenu: '/governance/queues',
           minRole: 'ADMIN',
+          mode: 'queues',
+        },
+      },
+      {
+        path: 'governance/windows',
+        name: 'governance-windows',
+        component: () => import('@/views/governance/QueueConfig.vue'),
+        meta: {
+          title: '批次窗口',
+          activeMenu: '/governance/windows',
+          minRole: 'ADMIN',
+          mode: 'windows',
+        },
+      },
+      {
+        path: 'governance/calendars',
+        name: 'governance-calendars',
+        component: () => import('@/views/governance/QueueConfig.vue'),
+        meta: {
+          title: '业务日历',
+          activeMenu: '/governance/calendars',
+          minRole: 'ADMIN',
+          mode: 'calendars',
         },
       },
       {

@@ -1203,6 +1203,9 @@ const messages: Messages = {
     backHome: 'Back to home',
   },
   queueConfig: {
+    actionCreateQueue: 'New queue',
+    actionCreateWindow: 'New batch window',
+    actionCreateCalendar: 'New business calendar',
     holidayTarget: 'Holiday {date}',
     holidayConsequence:
       'Removes the holiday entry; schedules using this calendar will treat that day as a working day.',
@@ -1818,6 +1821,8 @@ const messages: Messages = {
     stepActionInstance: 'Run',
   },
   fileTemplateList: {
+    actionCreateTemplate: 'New template',
+    actionCreateChannel: 'New channel',
     tabTemplates: 'File templates',
     tabChannels: 'File channels',
     sectionTemplates: 'File templates',

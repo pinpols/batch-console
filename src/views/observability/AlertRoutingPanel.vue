@@ -1,6 +1,12 @@
 <template>
   <PageContainer>
-    <PageHeader />
+    <PageHeader>
+      <template #actions>
+        <el-button type="primary" :icon="Plus" @click="openCreate">
+          {{ t('alertRoutingPanel.actionCreate') }}
+        </el-button>
+      </template>
+    </PageHeader>
 
     <SectionCard>
       <div class="panel-head">
@@ -8,9 +14,6 @@
           <span class="dot dot--warning" />
           {{ t('alertRoutingPanel.sectionTitle') }}
         </div>
-        <el-button type="primary" :icon="Plus" @click="openCreate">
-          {{ t('alertRoutingPanel.actionCreate') }}
-        </el-button>
       </div>
 
       <ListPageQueryBar
