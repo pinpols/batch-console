@@ -37,6 +37,14 @@ export interface UpdateUserRequest {
   authoritiesCsv?: string
 }
 
+export interface CreateUserRequest {
+  tenantId?: string
+  username: string
+  password: string
+  displayName?: string
+  authoritiesCsv?: string
+}
+
 export interface ResetPasswordRequest {
   newPassword: string
 }
@@ -49,6 +57,11 @@ export function listUsers(query: UserListQuery = {}) {
 /** GET /api/console/users/{id} */
 export function getUser(id: number) {
   return get<UserAccount>(`/api/console/users/${id}`)
+}
+
+/** POST /api/console/users — admin creates a new account */
+export function createUser(body: CreateUserRequest) {
+  return post<UserAccount>('/api/console/users', body)
 }
 
 /** PUT /api/console/users/{id} */
