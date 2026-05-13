@@ -3129,9 +3129,11 @@ export default {
     colResourceCode: '资源编码',
     colTagKey: '标签键',
     colTagValue: '标签值',
-    keysSubtitle: '已注册 Key',
-    keysKeywordLabel: '关键字',
-    keysKeywordPlaceholder: '搜索已注册 tagKey',
+    emptyInitialTitle: '输入标签键查询',
+    emptyInitialDesc:
+      '填写标签键(必填)和可选的标签值,点查询即可反查关联资源。聚焦标签键输入框可看到已注册列表。',
+    emptyNoMatchTitle: '无匹配标签',
+    emptyNoMatchDesc: '当前条件下没有打了该标签的资源。换个标签键或清空标签值试试。',
     tagKeyRequired: 'Tag Key 不能为空',
   },
   configManagement: {

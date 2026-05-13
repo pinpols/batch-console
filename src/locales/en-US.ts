@@ -3181,9 +3181,12 @@ const messages: Messages = {
     colResourceCode: 'Resource code',
     colTagKey: 'Tag key',
     colTagValue: 'Tag value',
-    keysSubtitle: 'Registered keys',
-    keysKeywordLabel: 'Keyword',
-    keysKeywordPlaceholder: 'Search registered tagKey',
+    emptyInitialTitle: 'Enter a tag key to search',
+    emptyInitialDesc:
+      'Fill the tag key (required) and an optional value, then search to find resources tagged with it. Focus the tag-key input to see registered keys.',
+    emptyNoMatchTitle: 'No matching tags',
+    emptyNoMatchDesc:
+      'No resources are tagged with this. Try a different key or clear the value filter.',
     tagKeyRequired: 'Tag Key is required',
   },
   configManagement: {
