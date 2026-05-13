@@ -1,5 +1,5 @@
 import { get, post } from '@/api/client'
-import { fetchAllPageItems, toPageResult } from '@/api/adapters'
+import { fetchAllPageItems } from '@/api/adapters'
 import { queryJobInstances, type InstanceQueryParams } from '@/api/queries/instances'
 import type {
   ConsoleJobInstanceResponse,
@@ -43,42 +43,20 @@ export const instanceApi = {
     }),
 
   partitions: async (instanceId: number, tenantId: string) => {
-    // 传入 jobInstanceId 参数让后端过滤（后端不支持时会忽略该参数，回退到全量）
-    const rows = await fetchAllPageItems<ConsoleJobStepInstanceResponse>(
+    // 后端 JobStepInstanceMapper 已按 jobInstanceId 过滤，拉全量分页拼接即可
+    return fetchAllPageItems<ConsoleJobStepInstanceResponse>(
       '/api/console/queries/job-step-instances',
       { tenantId, jobInstanceId: instanceId },
     )
-    return rows.filter((r) => r.jobInstanceId === instanceId)
   },
 
   workflowRuns: async (query: WorkflowRunQuery) => {
-    const hasFilter =
-      query.workflowDefinitionId != null ||
-      !!(query.runStatus && query.runStatus.trim()) ||
-      !!(query.traceId && query.traceId.trim())
-
-    if (!hasFilter) {
-      const pr = await get<PageResponse<ConsoleWorkflowRunResponse>>(
-        '/api/console/queries/workflow-runs',
-        {
-          tenantId: query.tenantId,
-          pageNo: query.page,
-          pageSize: query.pageSize,
-        },
-      )
-      return {
-        records: (pr.items ?? []) as ConsoleWorkflowRunResponse[],
-        total: pr.total ?? 0,
-        page: query.page,
-        pageSize: query.pageSize,
-      } satisfies PageResult<ConsoleWorkflowRunResponse>
-    }
-
-    // 将过滤参数传给后端（后端支持时减少传输量，客户端仍做兜底过滤）
-    const items = await fetchAllPageItems<ConsoleWorkflowRunResponse>(
+    const pr = await get<PageResponse<ConsoleWorkflowRunResponse>>(
       '/api/console/queries/workflow-runs',
       {
         tenantId: query.tenantId,
+        pageNo: query.page,
+        pageSize: query.pageSize,
         ...(query.workflowDefinitionId != null
           ? { workflowDefinitionId: query.workflowDefinitionId }
           : {}),
@@ -86,17 +64,12 @@ export const instanceApi = {
         ...(query.traceId?.trim() ? { traceId: query.traceId.trim() } : {}),
       },
     )
-    let rows = [...items]
-    if (query.workflowDefinitionId != null) {
-      rows = rows.filter((r) => r.workflowDefinitionId === query.workflowDefinitionId)
-    }
-    if (query.runStatus?.trim()) {
-      rows = rows.filter((r) => r.runStatus === query.runStatus)
-    }
-    if (query.traceId?.trim()) {
-      rows = rows.filter((r) => r.traceId?.includes(query.traceId!.trim()))
-    }
-    return toPageResult(rows, query.page, query.pageSize)
+    return {
+      records: (pr.items ?? []) as ConsoleWorkflowRunResponse[],
+      total: pr.total ?? 0,
+      page: query.page,
+      pageSize: query.pageSize,
+    } satisfies PageResult<ConsoleWorkflowRunResponse>
   },
 
   workflowRunDetail: (runId: number, tenantId: string) =>
