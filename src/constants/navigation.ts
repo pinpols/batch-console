@@ -60,13 +60,13 @@ export interface NavigationGroup {
 }
 
 /**
- * 侧边栏分组(2026-05-13 IA 重排,从 8 组降到 6 组)。
+ * 侧边栏分组(2026-05-13 IA v2:7 组方案,易用性优先)。
  *
- * 改动:
- * - 新增 Runs 组(全部运行 / 作业运行 / 工作流运行 / 步骤 / 调度快照 / Trace),取代旧"执行与监控"
- * - 告警与配置(原 observability + config 合并),把告警/告警路由 + 发布/变更/标签/批量导入 + 事件目录 + 综合查询 放一起
- * - 基础设施(原"运行配置" + "系统管理" + Outbox/通知/审计/运维诊断/AI 合并),admin 类全归一组
- * - 定义组从"定义与编排"改名为"定义"
+ * 设计原则:
+ * - 每组单一心智:告警与投递 / 配置 / 系统 严格分开,不再"基础设施"杂烩
+ * - 组项数控制在 ≤6(系统组项数最多,但全部是同心智的 admin 项)
+ * - 排障入口聚焦在 Runs 组(Trace + 实例运行)+ 综合查询(放告警与投递,因主要查投递/审计)
+ * - 组 minRole 取组内最小,避免"幽灵分组"
  *
  * 参考 docs/ui/2026-05-13-ia-refactor-and-run-centric.md
  */
@@ -93,13 +93,11 @@ export const navigationGroups: NavigationGroup[] = [
     ],
   },
   {
-    // 新顶级 Runs 组:把所有"运行实例"相关入口集中,oncall 排障"先来这里"
     key: 'runs',
-    title: 'Runs',
+    title: '运行',
     icon: VideoPlay,
     children: [
       {
-        // 全部运行:跨实体最近运行聚合页(P0 新增)
         title: pageTitle('/runs'),
         path: '/runs',
         minRole: 'VIEWER',
@@ -139,7 +137,7 @@ export const navigationGroups: NavigationGroup[] = [
   },
   {
     key: 'definitions',
-    title: '定义',
+    title: '作业与工作流',
     icon: Management,
     children: [
       {
@@ -195,9 +193,9 @@ export const navigationGroups: NavigationGroup[] = [
     ],
   },
   {
-    // 告警与配置:告警/路由 + 配置发布/变更/标签/批量导入 + 事件目录 + 综合查询
+    // 告警与投递:告警响应 + 投递可观测 + 审计 + 综合查询(都属"系统在干什么"的只读/响应类)
     key: 'alerting',
-    title: '告警与配置',
+    title: '告警与投递',
     icon: WarningFilled,
     minRole: 'VIEWER',
     children: [
@@ -213,6 +211,39 @@ export const navigationGroups: NavigationGroup[] = [
         minRole: 'OPERATOR',
         icon: Bell,
       },
+      {
+        title: pageTitle('/observability/outbox'),
+        path: '/observability/outbox',
+        minRole: 'OPERATOR',
+        icon: MessageBox,
+      },
+      {
+        title: pageTitle('/system/notifications'),
+        path: '/system/notifications',
+        minRole: 'OPERATOR',
+        icon: Bell,
+      },
+      {
+        title: pageTitle('/observability/audits'),
+        path: '/observability/audits',
+        minRole: 'VIEWER',
+        icon: Notebook,
+      },
+      {
+        title: pageTitle('/observability/queries'),
+        path: '/observability/queries',
+        minRole: 'VIEWER',
+        icon: Search,
+      },
+    ],
+  },
+  {
+    // 配置:发布单 / 变更同步 / 标签 / 批量导入 / 事件目录(都属"我要改/查 something")
+    key: 'config',
+    title: '配置',
+    icon: Memo,
+    minRole: 'VIEWER',
+    children: [
       {
         title: pageTitle('/config/releases'),
         path: '/config/releases',
@@ -243,20 +274,14 @@ export const navigationGroups: NavigationGroup[] = [
         minRole: 'VIEWER',
         icon: Reading,
       },
-      {
-        title: pageTitle('/observability/queries'),
-        path: '/observability/queries',
-        minRole: 'VIEWER',
-        icon: Search,
-      },
     ],
   },
   {
-    // 基础设施:运行时调度参数 + 租户/账户/参数/Key + Outbox/通知/审计/诊断/AI
-    key: 'infra',
-    title: '基础设施',
+    // 系统:调度运行时 + 多租户/账户 + 运维工具(都属 admin 维护类)
+    key: 'system',
+    title: '系统',
     icon: Tools,
-    minRole: 'OPERATOR',
+    minRole: 'VIEWER',
     children: [
       {
         title: pageTitle('/workers/management'),
@@ -311,24 +336,6 @@ export const navigationGroups: NavigationGroup[] = [
         path: '/system/parameters',
         minRole: 'ADMIN',
         icon: Setting,
-      },
-      {
-        title: pageTitle('/observability/outbox'),
-        path: '/observability/outbox',
-        minRole: 'OPERATOR',
-        icon: MessageBox,
-      },
-      {
-        title: pageTitle('/system/notifications'),
-        path: '/system/notifications',
-        minRole: 'OPERATOR',
-        icon: Bell,
-      },
-      {
-        title: pageTitle('/observability/audits'),
-        path: '/observability/audits',
-        minRole: 'VIEWER',
-        icon: Notebook,
       },
       {
         title: pageTitle('/ops/diagnostic'),
