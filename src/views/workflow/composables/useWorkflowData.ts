@@ -611,9 +611,36 @@ export function useWorkflowData(deps: DataDeps) {
   async function submitToBackend() {
     if (!graph.value || !selectedWorkflowCode.value) return
 
-    const issues = validationIssues.value.filter((i) => i.level === 'error')
-    if (issues.length) {
-      ElMessage.warning(`存在 ${issues.length} 个校验错误，请修复后再提交`)
+    // 提交前先跑一次前端校验,确保用户看到最新状态(可能他刚改完节点还没失焦)
+    validationIssues.value = validateGraph()
+    const errs = validationIssues.value.filter((i) => i.level === 'error')
+    const warns = validationIssues.value.filter((i) => i.level === 'warning')
+    if (errs.length) {
+      // 弹结构化卡片(HTML 列表)而不是 toast,让用户能看到具体错误内容
+      const ESC = (s: string) =>
+        s.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
+      const lines = errs
+        .slice(0, 10)
+        .map((e) => `<li style="margin: 2px 0">${ESC(e.message)}</li>`)
+        .join('')
+      const extra =
+        errs.length > 10
+          ? `<div style="margin-top: 6px; color: var(--color-text-tertiary)">… +${errs.length - 10}</div>`
+          : ''
+      await ElMessageBox({
+        title: `提交受阻:存在 ${errs.length} 个错误`,
+        message: `<div style="font-size: 13px; line-height: 1.6">
+                    <div style="margin-bottom: 6px; color: var(--color-text-secondary)">
+                      请先在左侧"校验结果"面板修复以下错误后再提交:
+                    </div>
+                    <ul style="margin: 0; padding-left: 18px">${lines}</ul>
+                    ${extra}
+                  </div>`,
+        dangerouslyUseHTMLString: true,
+        type: 'error',
+        showCancelButton: false,
+        confirmButtonText: '去修复',
+      }).catch(() => undefined)
       return
     }
 
@@ -621,8 +648,12 @@ export function useWorkflowData(deps: DataDeps) {
     try {
       await ElMessageBox.confirm(
         isUpdate
-          ? `确认将当前画布内容提交到后端，覆盖「${selectedWorkflowCode.value}」的线上编排？`
-          : `确认将「${selectedWorkflowCode.value}」作为新 Workflow 提交到后端？`,
+          ? `确认将当前画布内容提交到后端,覆盖「${selectedWorkflowCode.value}」的线上编排?${
+              warns.length ? `\n注意:仍有 ${warns.length} 个警告未处理(允许提交但建议复核)。` : ''
+            }`
+          : `确认将「${selectedWorkflowCode.value}」作为新 Workflow 提交到后端?${
+              warns.length ? `\n注意:仍有 ${warns.length} 个警告未处理(允许提交但建议复核)。` : ''
+            }`,
         '提交确认',
         { type: 'warning', confirmButtonText: '确认提交', cancelButtonText: '取消' },
       )

@@ -309,32 +309,71 @@
               role="region"
               :aria-label="t('workflowDesigner.ariaValidationList')"
             >
-              <ul v-if="validationIssues.length" class="workflow-issues">
-                <li
-                  v-for="(issue, idx) in validationIssues"
-                  :key="`${idx}:${issue.level}:${issue.message}`"
-                  class="workflow-issues__item"
-                >
-                  <button
-                    type="button"
-                    class="workflow-issue"
-                    :class="[
-                      `is-${issue.level}`,
-                      { 'is-actionable': isValidationIssueActionable(issue) },
-                    ]"
-                    :disabled="!isValidationIssueActionable(issue)"
-                    @click="focusValidationIssue(issue)"
-                  >
-                    <span class="workflow-issue__level">
-                      {{ levelLabel(issue.level) }}
+              <template v-if="validationIssues.length">
+                <!-- 错误优先红色组,展开;警告组次之黄色 -->
+                <div v-if="validationErrors.length" class="workflow-issues-group">
+                  <div class="workflow-issues-group__head workflow-issues-group__head--error">
+                    <el-icon><WarnTriangleFilled /></el-icon>
+                    <span>{{
+                      t('workflowDesigner.groupErrors', { n: validationErrors.length })
+                    }}</span>
+                  </div>
+                  <ul class="workflow-issues">
+                    <li
+                      v-for="(issue, idx) in validationErrors"
+                      :key="`e${idx}:${issue.message}`"
+                      class="workflow-issues__item"
+                    >
+                      <button
+                        type="button"
+                        class="workflow-issue is-error"
+                        :class="{ 'is-actionable': isValidationIssueActionable(issue) }"
+                        :disabled="!isValidationIssueActionable(issue)"
+                        @click="focusValidationIssue(issue)"
+                      >
+                        <span class="workflow-issue__text">{{ issue.message }}</span>
+                        <span
+                          v-if="isValidationIssueActionable(issue)"
+                          class="workflow-issue__action"
+                        >
+                          {{ t('workflowDesigner.validationActionLocate') }}
+                        </span>
+                      </button>
+                    </li>
+                  </ul>
+                </div>
+                <div v-if="validationWarnings.length" class="workflow-issues-group">
+                  <div class="workflow-issues-group__head workflow-issues-group__head--warning">
+                    <el-icon><InfoFilled /></el-icon>
+                    <span>
+                      {{ t('workflowDesigner.groupWarnings', { n: validationWarnings.length }) }}
                     </span>
-                    <span class="workflow-issue__text">{{ issue.message }}</span>
-                    <span v-if="isValidationIssueActionable(issue)" class="workflow-issue__action">
-                      {{ t('workflowDesigner.validationActionLocate') }}
-                    </span>
-                  </button>
-                </li>
-              </ul>
+                  </div>
+                  <ul class="workflow-issues">
+                    <li
+                      v-for="(issue, idx) in validationWarnings"
+                      :key="`w${idx}:${issue.message}`"
+                      class="workflow-issues__item"
+                    >
+                      <button
+                        type="button"
+                        class="workflow-issue is-warning"
+                        :class="{ 'is-actionable': isValidationIssueActionable(issue) }"
+                        :disabled="!isValidationIssueActionable(issue)"
+                        @click="focusValidationIssue(issue)"
+                      >
+                        <span class="workflow-issue__text">{{ issue.message }}</span>
+                        <span
+                          v-if="isValidationIssueActionable(issue)"
+                          class="workflow-issue__action"
+                        >
+                          {{ t('workflowDesigner.validationActionLocate') }}
+                        </span>
+                      </button>
+                    </li>
+                  </ul>
+                </div>
+              </template>
               <div v-else class="workflow-empty workflow-empty--validation">
                 {{ t('workflowDesigner.validationEmpty') }}
               </div>
@@ -490,23 +529,88 @@
             />
             <!-- 原通用空态被上方的引导 hero 取代,这里只保留 loading 占位 -->
           </div>
-          <p class="workflow-canvas-hint">
-            {{ t('workflowDesigner.canvasHintTail1') }}
-            <kbd>Ctrl</kbd>
-            /
-            <kbd>⌘</kbd>
-            {{ t('workflowDesigner.canvasHintTail2') }}
-            <kbd>Delete</kbd>
-            {{ t('workflowDesigner.canvasHintDelete') }}
-            <kbd>Shift</kbd>
-            +
-            <kbd>T</kbd>
-            /
-            <kbd>G</kbd>
-            /
-            <kbd>J</kbd>
-            {{ t('workflowDesigner.canvasHintShiftKey') }}
-          </p>
+          <div class="workflow-canvas-hint">
+            <span class="workflow-canvas-hint__brief">
+              {{ t('workflowDesigner.canvasHintBrief') }}
+            </span>
+            <el-popover
+              placement="top-end"
+              :width="320"
+              trigger="click"
+              popper-class="workflow-cheatsheet-popper"
+            >
+              <template #reference>
+                <button
+                  type="button"
+                  class="workflow-canvas-hint__cheat-trigger"
+                  :title="t('workflowDesigner.cheatSheetTitle')"
+                  :aria-label="t('workflowDesigner.cheatSheetTitle')"
+                >
+                  <el-icon><QuestionFilled /></el-icon>
+                  <span>{{ t('workflowDesigner.cheatSheetTrigger') }}</span>
+                </button>
+              </template>
+              <div class="workflow-cheatsheet">
+                <div class="workflow-cheatsheet__title">
+                  {{ t('workflowDesigner.cheatSheetTitle') }}
+                </div>
+                <div class="workflow-cheatsheet__row">
+                  <div class="workflow-cheatsheet__action">
+                    {{ t('workflowDesigner.cheatSheetAddNode') }}
+                  </div>
+                  <div class="workflow-cheatsheet__keys">
+                    {{ t('workflowDesigner.cheatSheetDragLabel') }}
+                  </div>
+                </div>
+                <div class="workflow-cheatsheet__row">
+                  <div class="workflow-cheatsheet__action">
+                    {{ t('workflowDesigner.cheatSheetPan') }}
+                  </div>
+                  <div class="workflow-cheatsheet__keys">
+                    {{ t('workflowDesigner.cheatSheetPanLabel') }}
+                  </div>
+                </div>
+                <div class="workflow-cheatsheet__row">
+                  <div class="workflow-cheatsheet__action">
+                    {{ t('workflowDesigner.cheatSheetZoom') }}
+                  </div>
+                  <div class="workflow-cheatsheet__keys">
+                    <kbd>Ctrl</kbd> / <kbd>⌘</kbd> + Wheel
+                  </div>
+                </div>
+                <div class="workflow-cheatsheet__row">
+                  <div class="workflow-cheatsheet__action">
+                    {{ t('workflowDesigner.cheatSheetDelete') }}
+                  </div>
+                  <div class="workflow-cheatsheet__keys"><kbd>Delete</kbd></div>
+                </div>
+                <div class="workflow-cheatsheet__row">
+                  <div class="workflow-cheatsheet__action">
+                    {{ t('workflowDesigner.cheatSheetQuickAdd') }}
+                  </div>
+                  <div class="workflow-cheatsheet__keys">
+                    <kbd>Shift</kbd> + <kbd>T</kbd> / <kbd>G</kbd> / <kbd>J</kbd>
+                  </div>
+                </div>
+                <div class="workflow-cheatsheet__row">
+                  <div class="workflow-cheatsheet__action">
+                    {{ t('workflowDesigner.cheatSheetUndoRedo') }}
+                  </div>
+                  <div class="workflow-cheatsheet__keys">
+                    <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>Z</kbd> / <kbd>Y</kbd>
+                  </div>
+                </div>
+                <div class="workflow-cheatsheet__row">
+                  <div class="workflow-cheatsheet__action">
+                    {{ t('workflowDesigner.cheatSheetContextMenu') }}
+                  </div>
+                  <div class="workflow-cheatsheet__keys">
+                    {{ t('workflowDesigner.cheatSheetRightClick') }}
+                  </div>
+                </div>
+              </div>
+            </el-popover>
+          </div>
         </main>
 
         <div
@@ -666,8 +770,11 @@
     EditPen,
     Grid,
     Guide,
+    InfoFilled,
     Plus,
+    QuestionFilled,
     Reading,
+    WarnTriangleFilled,
   } from '@element-plus/icons-vue'
   // alias 给 template 用,避免与已有变量名冲突
   const ConnectionIcon = Connection
@@ -954,12 +1061,14 @@
       t('workflowDesigner.descNone')
     )
   })
-  const validationErrorCount = computed(
-    () => validationIssues.value.filter((issue) => issue.level === 'error').length,
+  const validationErrors = computed(() =>
+    validationIssues.value.filter((issue) => issue.level === 'error'),
   )
-  const validationWarningCount = computed(
-    () => validationIssues.value.filter((issue) => issue.level === 'warning').length,
+  const validationWarnings = computed(() =>
+    validationIssues.value.filter((issue) => issue.level === 'warning'),
   )
+  const validationErrorCount = computed(() => validationErrors.value.length)
+  const validationWarningCount = computed(() => validationWarnings.value.length)
   const validationSummary = computed(() => {
     if (validationErrorCount.value > 0)
       return t('workflowDesigner.validationErrors', { n: validationErrorCount.value })
