@@ -137,6 +137,7 @@
         <div class="workflow-toolbar__section workflow-toolbar__section--actions">
           <span class="workflow-toolbar__eyebrow">{{ t('workflowDesigner.eyebrowCanvas') }}</span>
           <div class="workflow-toolbar__actions">
+            <!-- 高频 4 个直显:Undo / Redo / 保存草稿 / 提交 -->
             <el-button-group class="workflow-toolbar__btn-group">
               <el-button
                 :disabled="!canUndo"
@@ -152,49 +153,10 @@
               >
                 {{ t('workflowDesigner.btnRedo') }}
               </el-button>
-              <el-button :disabled="!selectedWorkflowCode || isReadOnly" @click="reLayout">
-                {{ t('workflowDesigner.btnAutoLayout') }}
-              </el-button>
-              <el-button :disabled="!workflowDefinition || isReadOnly" @click="applyDefinitionForm">
-                {{ t('workflowDesigner.btnApplyDefinitionForm') }}
-              </el-button>
-              <el-button
-                :disabled="!workflowDefinition?.id"
-                :loading="backendValidating"
-                @click="validateOnBackend"
-              >
-                {{ t('workflowDesigner.btnBackendValidate') }}
-              </el-button>
             </el-button-group>
-            <el-button-group class="workflow-toolbar__btn-group">
-              <el-button :disabled="!graphReady || isReadOnly" @click="saveDraft">
-                {{ t('workflowDesigner.btnSaveDraft') }}
-              </el-button>
-              <el-button :disabled="!graphReady" @click="copyDsl">
-                {{ t('workflowDesigner.btnCopyDsl') }}
-              </el-button>
-              <el-button :disabled="!graphReady || isReadOnly" @click="clearDraft">
-                {{ t('workflowDesigner.btnClearDraft') }}
-              </el-button>
-            </el-button-group>
-            <el-button-group class="workflow-toolbar__btn-group">
-              <el-button :disabled="!graphReady" @click="exportManifest">
-                {{ t('workflowDesigner.btnExportJson') }}
-              </el-button>
-              <el-button
-                :disabled="!graphReady || !selectedWorkflowCode || isReadOnly"
-                @click="triggerImportManifest"
-              >
-                {{ t('workflowDesigner.btnImportJson') }}
-              </el-button>
-            </el-button-group>
-            <input
-              ref="manifestFileInput"
-              type="file"
-              accept="application/json,.json"
-              style="display: none"
-              @change="onManifestFileChange"
-            />
+            <el-button :disabled="!graphReady || isReadOnly" @click="saveDraft">
+              {{ t('workflowDesigner.btnSaveDraft') }}
+            </el-button>
             <el-button
               type="primary"
               :disabled="!graphReady || !selectedWorkflowCode || isReadOnly"
@@ -203,6 +165,63 @@
             >
               {{ t('workflowDesigner.btnSubmitBackend') }}
             </el-button>
+
+            <!-- 中低频折进"更多":自动布局 / 应用流程信息 / 后端校验 / 复制 DSL / 清除草稿 / 导出导入 -->
+            <el-dropdown trigger="click" @command="onToolbarCommand">
+              <el-button>
+                {{ t('workflowDesigner.btnMore') }}
+                <el-icon class="el-icon--right">
+                  <ArrowDown />
+                </el-icon>
+              </el-button>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item
+                    command="reLayout"
+                    :disabled="!selectedWorkflowCode || isReadOnly"
+                  >
+                    {{ t('workflowDesigner.btnAutoLayout') }}
+                  </el-dropdown-item>
+                  <el-dropdown-item
+                    command="applyDefinitionForm"
+                    :disabled="!workflowDefinition || isReadOnly"
+                  >
+                    {{ t('workflowDesigner.btnApplyDefinitionForm') }}
+                  </el-dropdown-item>
+                  <el-dropdown-item command="validateOnBackend" :disabled="!workflowDefinition?.id">
+                    {{ t('workflowDesigner.btnBackendValidate') }}
+                  </el-dropdown-item>
+                  <el-dropdown-item divided command="copyDsl" :disabled="!graphReady">
+                    {{ t('workflowDesigner.btnCopyDsl') }}
+                  </el-dropdown-item>
+                  <el-dropdown-item command="exportManifest" :disabled="!graphReady">
+                    {{ t('workflowDesigner.btnExportJson') }}
+                  </el-dropdown-item>
+                  <el-dropdown-item
+                    command="triggerImportManifest"
+                    :disabled="!graphReady || !selectedWorkflowCode || isReadOnly"
+                  >
+                    {{ t('workflowDesigner.btnImportJson') }}
+                  </el-dropdown-item>
+                  <el-dropdown-item
+                    divided
+                    command="clearDraft"
+                    :disabled="!graphReady || isReadOnly"
+                    class="workflow-toolbar__more-danger"
+                  >
+                    {{ t('workflowDesigner.btnClearDraft') }}
+                  </el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
+
+            <input
+              ref="manifestFileInput"
+              type="file"
+              accept="application/json,.json"
+              style="display: none"
+              @change="onManifestFileChange"
+            />
           </div>
         </div>
       </div>
@@ -640,6 +659,7 @@
   import { useI18n } from 'vue-i18n'
   import {
     CircleCheck,
+    ArrowDown,
     Connection,
     DataLine,
     Document,
@@ -886,6 +906,23 @@
   /** Create mode 下:取消新建,回到普通选择模式 */
   function exitCreateMode() {
     void router.replace({ path: '/workflow/designer', query: {} })
+  }
+
+  /**
+   * 工具栏「更多」dropdown 派发器。command 名字与 function 名一致,
+   * 避免维护两套映射表。
+   */
+  function onToolbarCommand(command: string) {
+    const map: Record<string, () => void | Promise<unknown>> = {
+      reLayout,
+      applyDefinitionForm,
+      validateOnBackend,
+      copyDsl,
+      exportManifest,
+      triggerImportManifest,
+      clearDraft,
+    }
+    map[command]?.()
   }
 
   const manifestFileInput = ref<HTMLInputElement | null>(null)

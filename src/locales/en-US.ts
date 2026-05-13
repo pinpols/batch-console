@@ -49,6 +49,7 @@ const messages: Messages = {
       'Fill workflowCode / name / type in the right "Workflow properties" card, then drag nodes from the library to start designing. Hit "Submit to backend" when done.',
     createModeGo: 'Go fill workflow properties',
     createModeCancel: 'Cancel',
+    btnMore: 'More',
     deleteCellConsequence:
       'The node/edge and its properties are removed from the draft. If already published, you must resubmit to apply.',
     ariaContext: 'Current workflow object',

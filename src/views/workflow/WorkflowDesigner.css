@@ -406,6 +406,14 @@ html.dark .workflow-toolbar:hover {
   padding: 4px 9px;
 }
 
+/* "更多" 折叠菜单里清除草稿是 danger */
+.workflow-toolbar__more-danger {
+  color: var(--el-color-danger) !important;
+}
+.workflow-toolbar__more-danger:hover {
+  background: color-mix(in srgb, var(--el-color-danger) 12%, transparent) !important;
+}
+
 .workflow-select {
   width: min(300px, 100%);
   max-width: 100%;
