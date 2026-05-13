@@ -329,7 +329,7 @@
 
   function goLogs() {
     const t = row.value?.traceId
-    router.push({ path: '/logs', query: t ? { traceId: t } : {} })
+    router.push({ path: '/observability/trace', query: t ? { traceId: t } : {} })
   }
 
   async function confirmRerun() {

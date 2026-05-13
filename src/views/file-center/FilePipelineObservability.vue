@@ -103,7 +103,7 @@
                 <router-link
                   v-if="row.traceId"
                   class="cell-link"
-                  :to="`/logs?traceId=${row.traceId}`"
+                  :to="`/observability/trace?traceId=${row.traceId}`"
                 >
                   {{ row.traceId }}
                 </router-link>

@@ -139,7 +139,14 @@
   import { useTenantStore } from '@/stores/tenant'
   import { jobApi } from '@/api/job'
   import { fileApi } from '@/api/file'
-  import { queryAudits, queryExecutionLogs } from '@/api/observabilityQueries'
+  import {
+    queryAudits,
+    queryExecutionLogs,
+    queryOutboxDeliveries,
+    queryDeadLetters,
+  } from '@/api/observabilityQueries'
+  import { queryWorkflowRuns } from '@/api/workflowQueries'
+  import { queryAlertsAll } from '@/api/alertsQuery'
 
   const { t } = useI18n({ useScope: 'global' })
   const route = useRoute()
@@ -174,13 +181,18 @@
   const totalHits = computed(() => results.value.reduce((s, d) => s + d.rows.length, 0))
   const hitDomains = computed(() => results.value.filter((d) => d.rows.length > 0))
 
-  // 8 个域:并行 fetch,每个独立 try/catch,单域失败不影响整体
+  // 多域并行 fetch,每个独立 try/catch,单域失败不影响整体。
+  // 部分 BE 接口不支持 traceId 过滤,统一在前端按 row.traceId 兜底过滤。
   async function fetchDomain(domain: string, fn: () => Promise<unknown[]>): Promise<unknown[]> {
     try {
       return (await fn()) || []
     } catch {
       return []
     }
+  }
+
+  function filterByTrace<T extends { traceId?: string | null }>(rows: T[], trace: string): T[] {
+    return rows.filter((r) => r?.traceId === trace)
   }
 
   async function search() {
@@ -194,7 +206,16 @@
     const t0 = Date.now()
     const tenantId = tenant.tenantId
 
-    const [jobInstances, files, audits, executionLogs] = await Promise.all([
+    const [
+      jobInstances,
+      files,
+      audits,
+      executionLogs,
+      workflowRuns,
+      outboxes,
+      alerts,
+      deadLetters,
+    ] = await Promise.all([
       fetchDomain(
         'jobInstance',
         () => jobApi.listInstances({ tenantId, traceId: trace }) as Promise<unknown[]>,
@@ -202,6 +223,15 @@
       fetchDomain('file', () => fileApi.list({ tenantId, traceId: trace }) as Promise<unknown[]>),
       fetchDomain('audit', () => queryAudits(tenantId, { traceId: trace })),
       fetchDomain('executionLog', () => queryExecutionLogs(tenantId, { traceId: trace })),
+      // 以下四域:BE 不支持 traceId 过滤,客户端按 row.traceId 兜底过滤
+      fetchDomain('workflowRun', async () =>
+        filterByTrace(await queryWorkflowRuns(tenantId), trace),
+      ),
+      fetchDomain('outbox', async () =>
+        filterByTrace(await queryOutboxDeliveries(tenantId), trace),
+      ),
+      fetchDomain('alert', async () => filterByTrace(await queryAlertsAll(tenantId), trace)),
+      fetchDomain('deadLetter', async () => filterByTrace(await queryDeadLetters(tenantId), trace)),
     ])
 
     results.value = [
@@ -257,6 +287,54 @@
           { prop: 'operationType', label: t('traceDiagnostic.colOperation'), width: 160 },
           { prop: 'operationResult', label: t('traceDiagnostic.colResult'), width: 100 },
           { prop: 'message', label: t('traceDiagnostic.colMessage') },
+          { prop: 'createdAt', label: t('traceDiagnostic.colCreatedAt'), width: 170 },
+        ],
+      },
+      {
+        domain: 'workflowRun',
+        label: t('traceDiagnostic.domainWorkflowRun'),
+        rows: workflowRuns as Record<string, unknown>[],
+        columns: [
+          {
+            prop: 'id',
+            label: 'ID',
+            width: 100,
+            linkTo: (row) => `/monitor/workflow-runs/${row.id}`,
+          },
+          { prop: 'workflowCode', label: t('traceDiagnostic.colWorkflowCode'), width: 180 },
+          { prop: 'runStatus', label: t('traceDiagnostic.colStatus'), width: 110 },
+          { prop: 'startedAt', label: t('traceDiagnostic.colStartedAt'), width: 170 },
+        ],
+      },
+      {
+        domain: 'alert',
+        label: t('traceDiagnostic.domainAlert'),
+        rows: alerts as Record<string, unknown>[],
+        columns: [
+          { prop: 'alertType', label: t('traceDiagnostic.colAlertType'), width: 160 },
+          { prop: 'severity', label: t('traceDiagnostic.colSeverity'), width: 100 },
+          { prop: 'alertStatus', label: t('traceDiagnostic.colStatus'), width: 110 },
+          { prop: 'createdAt', label: t('traceDiagnostic.colCreatedAt'), width: 170 },
+        ],
+      },
+      {
+        domain: 'outbox',
+        label: t('traceDiagnostic.domainOutbox'),
+        rows: outboxes as Record<string, unknown>[],
+        columns: [
+          { prop: 'eventType', label: t('traceDiagnostic.colEventType'), width: 180 },
+          { prop: 'deliveryStatus', label: t('traceDiagnostic.colStatus'), width: 110 },
+          { prop: 'targetTopic', label: t('traceDiagnostic.colTargetTopic'), width: 200 },
+          { prop: 'createdAt', label: t('traceDiagnostic.colCreatedAt'), width: 170 },
+        ],
+      },
+      {
+        domain: 'deadLetter',
+        label: t('traceDiagnostic.domainDeadLetter'),
+        rows: deadLetters as Record<string, unknown>[],
+        columns: [
+          { prop: 'taskType', label: t('traceDiagnostic.colTaskType'), width: 160 },
+          { prop: 'failureReason', label: t('traceDiagnostic.colReason') },
           { prop: 'createdAt', label: t('traceDiagnostic.colCreatedAt'), width: 170 },
         ],
       },
