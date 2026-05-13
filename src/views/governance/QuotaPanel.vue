@@ -280,7 +280,15 @@
   }
 
   async function submitForm() {
-    if (!(await formRef.value?.validate().catch(() => false))) return
+    const valid = await formRef.value
+      ?.validate()
+      .catch((errors: Record<string, Array<{ message?: string }>> | unknown) => {
+        const firstField =
+          errors && typeof errors === 'object' ? Object.keys(errors as object)[0] : null
+        if (firstField) formRef.value?.scrollToField(firstField)
+        return false
+      })
+    if (!valid) return
     saving.value = true
     try {
       const body = { tenantId: tenant.tenantId, ...form }

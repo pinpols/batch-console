@@ -104,7 +104,7 @@
           </ListPageQueryBar>
         </template>
 
-        <el-table-column prop="jobCode" :label="t('jobDefinitionList.colJobCode')" min-width="140">
+        <el-table-column prop="jobCode" :label="t('jobDefinitionList.colJobCode')" width="220">
           <template #default="{ row }">
             <CopyableText :text="row.jobCode" />
           </template>
@@ -112,15 +112,27 @@
         <el-table-column
           prop="jobName"
           :label="t('jobDefinitionList.colJobName')"
-          min-width="160"
+          min-width="240"
+          show-overflow-tooltip
         />
-        <el-table-column prop="tenantId" :label="t('jobDefinitionList.colTenant')" width="100" />
+        <el-table-column
+          prop="tenantId"
+          :label="t('jobDefinitionList.colTenant')"
+          width="140"
+          show-overflow-tooltip
+        />
         <el-table-column
           prop="workerGroup"
           :label="t('jobDefinitionList.colWorkerGroup')"
-          width="140"
+          width="180"
+          show-overflow-tooltip
         />
-        <el-table-column prop="queueCode" :label="t('jobDefinitionList.colQueue')" width="140" />
+        <el-table-column
+          prop="queueCode"
+          :label="t('jobDefinitionList.colQueue')"
+          width="180"
+          show-overflow-tooltip
+        />
         <el-table-column
           prop="scheduleType"
           :label="t('jobDefinitionList.colScheduleType')"
@@ -147,12 +159,12 @@
         <el-table-column
           prop="scheduleExpr"
           :label="t('jobDefinitionList.colScheduleExpr')"
-          min-width="140"
+          min-width="220"
           show-overflow-tooltip
         />
-        <el-table-column :label="t('jobDefinitionList.colActions')" width="180" fixed="right">
+        <el-table-column :label="t('jobDefinitionList.colActions')" width="360" fixed="right">
           <template #default="{ row }">
-            <RowActions :actions="rowActions(row)" />
+            <RowActions :actions="rowActions(row)" :inline-limit="4" />
           </template>
         </el-table-column>
       </ProTable>
@@ -373,6 +385,7 @@
         label: row.enabled
           ? t('jobDefinitionList.actionDisable')
           : t('jobDefinitionList.actionEnable'),
+        danger: row.enabled,
         divided: true,
         disabled: acting,
         onClick: () => toggleRow(row),
@@ -562,7 +575,14 @@
 
   async function submitEdit() {
     if (editingId.value == null) return
-    const valid = await editFormRef.value?.validate().catch(() => false)
+    const valid = await editFormRef.value
+      ?.validate()
+      .catch((errors: Record<string, Array<{ message?: string }>> | unknown) => {
+        const firstField =
+          errors && typeof errors === 'object' ? Object.keys(errors as object)[0] : null
+        if (firstField) editFormRef.value?.scrollToField(firstField)
+        return false
+      })
     if (!valid) return
     editSaving.value = true
     try {

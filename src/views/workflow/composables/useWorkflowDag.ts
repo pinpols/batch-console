@@ -5,6 +5,8 @@
 import type { Ref, ShallowRef } from 'vue'
 import type { Cell, Edge as X6Edge, Node as X6Node, Graph } from '@antv/x6'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { confirmDanger } from '@/composables/useDangerConfirm'
+import { i18n } from '@/locales'
 import {
   type WorkflowNodeKind,
   type WorkflowEdgeKind,
@@ -229,10 +231,11 @@ export function useWorkflowDag(deps: DagDeps) {
         ? `节点「${(cell.getData() as WorkflowNodeDraft).nodeName || cell.id}」`
         : `连线「${cell.id}」`
       try {
-        await ElMessageBox.confirm(`确认删除${label}？此操作不可撤销。`, '删除确认', {
-          type: 'warning',
-          confirmButtonText: '删除',
-          cancelButtonText: '取消',
+        await confirmDanger({
+          verb: i18n.global.t('common.delete'),
+          target: label,
+          consequence: i18n.global.t('workflowDesigner.deleteCellConsequence'),
+          irreversible: true,
         })
       } catch {
         return
