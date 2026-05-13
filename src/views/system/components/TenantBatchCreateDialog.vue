@@ -2,7 +2,7 @@
   <el-dialog
     :model-value="modelValue"
     :title="t('tenantBatchCreateDialog.title')"
-    width="620px"
+    width="640px"
     @update:model-value="(v) => emit('update:modelValue', v)"
   >
     <el-form ref="batchFormRef" :model="form" :rules="batchFormRules" label-width="100px">

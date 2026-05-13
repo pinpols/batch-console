@@ -208,7 +208,7 @@
     justify-content: center;
     width: 40px;
     height: 40px;
-    border-radius: 12px;
+    border-radius: var(--radius-content);
     font-size: 13px;
     font-weight: 700;
     letter-spacing: 0.06em;
@@ -253,7 +253,7 @@
     font-size: 12px;
     background: rgb(241 245 249 / 60%);
     border: 1px solid var(--color-border-light);
-    border-radius: 12px;
+    border-radius: var(--radius-content);
   }
 
   html.dark .login-trace {
@@ -296,7 +296,7 @@
 
   .login-form :deep(.el-input__wrapper) {
     min-height: 46px;
-    border-radius: 12px;
+    border-radius: var(--radius-content);
     box-shadow: none;
     background: rgb(248 250 252 / 80%);
     border: 1px solid var(--color-border-light);
@@ -349,7 +349,7 @@
     font-weight: 600;
     letter-spacing: 0.08em;
     border: none;
-    border-radius: 12px;
+    border-radius: var(--radius-content);
     background: linear-gradient(135deg, var(--color-primary) 0%, #0f5ed9 100%);
     box-shadow: 0 4px 16px rgb(22 119 255 / 18%);
     transition:

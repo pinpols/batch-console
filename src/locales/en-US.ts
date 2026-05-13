@@ -3006,6 +3006,29 @@ const messages: Messages = {
     keysKeywordPlaceholder: 'Search registered tagKey',
     tagKeyRequired: 'Tag Key is required',
   },
+  configManagement: {
+    tabLogs: 'Change logs',
+    tabSync: 'Config sync',
+    tabSyncLogs: 'Sync logs',
+  },
+  notificationManagement: {
+    tabChannels: 'Channels',
+    tabRules: 'Subscriptions',
+    tabDeliveryLogs: 'Delivery logs',
+  },
+  selfServicePanel: {
+    tabQuota: 'Quota & usage',
+    tabQuotaChange: 'Quota changes',
+    tabRerun: 'Rerun requests',
+    tabCompensation: 'Compensation',
+  },
+  governanceFilter: {
+    keywordLabel: 'Keyword',
+    enabledLabel: 'Status',
+    allPlaceholder: 'All',
+    optEnabled: 'Enabled',
+    optDisabled: 'Disabled',
+  },
 }
 
 export default messages

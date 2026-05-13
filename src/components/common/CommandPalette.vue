@@ -3,7 +3,7 @@
     v-model="open"
     class="command-palette"
     :show-close="false"
-    width="560px"
+    width="640px"
     append-to-body
     :close-on-click-modal="true"
     @closed="onClosed"

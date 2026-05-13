@@ -104,7 +104,7 @@
           ? t('notificationRulesTab.dialogTitleEdit')
           : t('notificationRulesTab.dialogTitleCreate')
       "
-      width="560px"
+      width="640px"
     >
       <el-form ref="ruleFormRef" :model="ruleForm" :rules="ruleFormRules" label-width="100px">
         <el-form-item :label="t('notificationRulesTab.fieldName')" prop="ruleName">

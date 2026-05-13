@@ -3,12 +3,6 @@
     <PageHeader />
 
     <SectionCard>
-      <div v-if="lastTrace" class="trace-bar">
-        <span>{{ t('auditList.lastTrace') }}</span>
-        <code>{{ lastTrace }}</code>
-        <el-button size="small" @click="copyTrace">{{ t('auditList.copy') }}</el-button>
-      </div>
-
       <ProTable
         :data="display"
         :loading="tableBlocking"
@@ -134,7 +128,6 @@
 <script setup lang="ts">
   import { computed, reactive, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { ElMessage } from 'element-plus'
 
   const { t, te } = useI18n({ useScope: 'global' })
 
@@ -148,7 +141,6 @@
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
-  import { lastApiMeta } from '@/utils/lastApiMeta'
   import { toPageResult } from '@/api/adapters'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
   import PageContainer from '@/components/common/PageContainer.vue'
@@ -185,7 +177,6 @@
     endTime: '',
   })
 
-  const lastTrace = computed(() => lastApiMeta.value?.traceId ?? '')
   const { data: metaEnums } = useConsoleMetaEnumsQuery()
 
   const operationTypeOptions = computed(() => pickMetaEnumGroup(metaEnums.value, 'operationType'))
@@ -274,12 +265,6 @@
     })
   }
 
-  function copyTrace() {
-    if (!lastTrace.value) return
-    void navigator.clipboard.writeText(lastTrace.value)
-    ElMessage.success(t('auditList.copied'))
-  }
-
   watch(timeRange, (value) => {
     filters.startTime = value[0] ?? ''
     filters.endTime = value[1] ?? ''
@@ -287,24 +272,3 @@
 
   useTenantReload(load)
 </script>
-
-<style scoped>
-  .trace-bar {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 12px;
-    padding: 8px 12px;
-    background: var(--el-fill-color-light);
-    border-radius: var(--radius-content);
-    font-size: 13px;
-  }
-
-  .trace-bar code {
-    flex: 1;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    font-size: 12px;
-  }
-</style>

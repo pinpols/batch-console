@@ -2954,6 +2954,29 @@ export default {
     keysKeywordPlaceholder: '搜索已注册 tagKey',
     tagKeyRequired: 'Tag Key 不能为空',
   },
+  configManagement: {
+    tabLogs: '变更日志',
+    tabSync: '配置同步',
+    tabSyncLogs: '同步日志',
+  },
+  notificationManagement: {
+    tabChannels: '通知渠道',
+    tabRules: '订阅规则',
+    tabDeliveryLogs: '投递日志',
+  },
+  selfServicePanel: {
+    tabQuota: '配额与用量',
+    tabQuotaChange: '配额变更',
+    tabRerun: '重跑申请',
+    tabCompensation: '补偿申请',
+  },
+  governanceFilter: {
+    keywordLabel: '关键字',
+    enabledLabel: '启用状态',
+    allPlaceholder: '全部',
+    optEnabled: '已启用',
+    optDisabled: '已停用',
+  },
 } as const
 
 export type Messages = typeof import('./zh-CN').default

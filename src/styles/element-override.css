@@ -757,9 +757,7 @@ html.dark .el-drawer {
   display: none;
 }
 
-/**
- * Select 选项行 hover：与全站 el-card / .app-surface 一致（上浮 + scale + 浮起阴影 + 主色混边）
- */
+/** Select 选项行 hover：仅颜色/描边反馈，避免弹层内 scale 造成定位闪烁。 */
 .el-select-dropdown .el-select-dropdown__list {
   padding: 6px 4px;
 }
@@ -769,7 +767,6 @@ html.dark .el-drawer {
   border-radius: var(--radius-card);
   margin: 2px 2px;
   transition:
-    transform var(--motion-duration-sm) var(--motion-ease-emphasized),
     box-shadow var(--motion-duration-md) var(--motion-ease-standard),
     border-color var(--motion-duration-sm) var(--motion-ease-standard),
     background-color var(--motion-duration-sm) var(--motion-ease-standard);
@@ -783,8 +780,7 @@ html.dark .el-drawer {
     var(--color-primary) 12%
   ) !important;
   border-color: color-mix(in srgb, var(--color-border) 70%, var(--color-primary) 30%);
-  box-shadow: var(--shadow-surface-hover);
-  transform: translateY(var(--ui-hover-translate-y)) scale(var(--ui-hover-scale));
+  box-shadow: 0 2px 8px rgb(15 23 42 / 8%);
   position: relative;
   z-index: 1;
 }
@@ -861,7 +857,9 @@ html.dark .el-drawer {
 button:focus-visible,
 a:focus-visible,
 [role='button']:focus-visible,
-[tabindex]:focus-visible:not(.el-select__wrapper):not(.el-input__wrapper):not(.el-input__inner):not(.el-textarea__inner) {
+[tabindex]:focus-visible:not(.el-select__wrapper):not(.el-input__wrapper):not(.el-input__inner):not(
+    .el-textarea__inner
+  ) {
   outline: 2px solid color-mix(in srgb, var(--color-primary) 70%, transparent);
   outline-offset: 2px;
   border-radius: var(--radius-input, 8px);
@@ -922,4 +920,3 @@ a:focus-visible,
 .el-form-item.is-error .form-hint {
   display: none;
 }
-

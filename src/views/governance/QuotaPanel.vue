@@ -120,7 +120,7 @@
       :title="
         editingId == null ? t('quotaPanel.drawerCreateTitle') : t('quotaPanel.drawerEditTitle')
       "
-      width="560px"
+      width="640px"
       destroy-on-close
     >
       <el-form ref="formRef" :model="form" :rules="rules" label-width="190px">

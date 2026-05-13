@@ -25,6 +25,17 @@ import {
   resolveEdgePortsForDraft,
 } from './workflowConstants'
 
+// X6 SVG 属性需字面量颜色,不能用 CSS var()。集中常量便于跟随设计 token 调整。
+const GRAPH_COLORS = {
+  outPortStroke: '#16a34a',
+  outPortFill: '#dcfce7',
+  inPortStroke: '#2563eb',
+  inPortFill: '#dbeafe',
+  edgeStroke: '#64748b',
+  magnetAvailable: '#22c55e',
+  magnetAdsorbed: '#2563eb',
+} as const
+
 export interface GraphDeps {
   canvasRef: Ref<HTMLDivElement | null>
   minimapHostRef: Ref<HTMLDivElement | null>
@@ -257,18 +268,18 @@ export function useWorkflowGraph(deps: GraphDeps) {
     const outPort = {
       r: 7,
       magnet: true,
-      stroke: '#16a34a',
+      stroke: GRAPH_COLORS.outPortStroke,
       strokeWidth: 2,
-      fill: '#dcfce7',
+      fill: GRAPH_COLORS.outPortFill,
       visibility: 'hidden',
       cursor: 'crosshair',
     }
     const inPort = {
       r: 7,
       magnet: true,
-      stroke: '#2563eb',
+      stroke: GRAPH_COLORS.inPortStroke,
       strokeWidth: 2,
-      fill: '#dbeafe',
+      fill: GRAPH_COLORS.inPortFill,
       visibility: 'hidden',
       cursor: 'crosshair',
     }
@@ -331,7 +342,7 @@ export function useWorkflowGraph(deps: GraphDeps) {
       inherit: 'edge',
       attrs: {
         line: {
-          stroke: '#64748b',
+          stroke: GRAPH_COLORS.edgeStroke,
           strokeWidth: 2,
           strokeLinejoin: 'round',
           strokeLinecap: 'round',
@@ -339,8 +350,8 @@ export function useWorkflowGraph(deps: GraphDeps) {
             name: 'block',
             width: 10,
             height: 7,
-            fill: '#64748b',
-            stroke: '#64748b',
+            fill: GRAPH_COLORS.edgeStroke,
+            stroke: GRAPH_COLORS.edgeStroke,
           },
         },
       },
@@ -736,11 +747,11 @@ export function useWorkflowGraph(deps: GraphDeps) {
       highlighting: {
         magnetAvailable: {
           name: 'stroke',
-          args: { padding: 6, attrs: { strokeWidth: 3, stroke: '#22c55e' } },
+          args: { padding: 6, attrs: { strokeWidth: 3, stroke: GRAPH_COLORS.magnetAvailable } },
         },
         magnetAdsorbed: {
           name: 'stroke',
-          args: { padding: 6, attrs: { strokeWidth: 3.5, stroke: '#2563eb' } },
+          args: { padding: 6, attrs: { strokeWidth: 3.5, stroke: GRAPH_COLORS.magnetAdsorbed } },
         },
       },
       translating: { restrict: false, autoOffset: true },

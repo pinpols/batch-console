@@ -4,16 +4,16 @@
 
     <SectionCard>
       <el-tabs v-model="activeTab" v-hover-tab-activate="true" class="pill-tabs">
-        <el-tab-pane label="配额与用量" name="quota">
+        <el-tab-pane :label="t('selfServicePanel.tabQuota')" name="quota">
           <SelfServiceQuotaTab />
         </el-tab-pane>
-        <el-tab-pane label="配额变更" name="quotaChange">
+        <el-tab-pane :label="t('selfServicePanel.tabQuotaChange')" name="quotaChange">
           <SelfServiceQuotaChangeTab />
         </el-tab-pane>
-        <el-tab-pane label="重跑申请" name="rerun">
+        <el-tab-pane :label="t('selfServicePanel.tabRerun')" name="rerun">
           <SelfServiceRerunTab />
         </el-tab-pane>
-        <el-tab-pane label="补偿申请" name="compensation">
+        <el-tab-pane :label="t('selfServicePanel.tabCompensation')" name="compensation">
           <SelfServiceCompensationTab />
         </el-tab-pane>
       </el-tabs>
@@ -23,6 +23,7 @@
 
 <script setup lang="ts">
   import { ref } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
@@ -31,5 +32,6 @@
   import SelfServiceRerunTab from './components/SelfServiceRerunTab.vue'
   import SelfServiceCompensationTab from './components/SelfServiceCompensationTab.vue'
 
+  const { t } = useI18n({ useScope: 'global' })
   const activeTab = ref('quota')
 </script>

@@ -191,7 +191,7 @@
     <el-drawer
       v-model="channelDetailVisible"
       :title="t('workerManagement.channelDetailTitle')"
-      size="680px"
+      size="640px"
     >
       <el-descriptions v-if="channelDetailRow" :column="2" border size="small">
         <el-descriptions-item label="channelCode">{{

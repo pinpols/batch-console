@@ -1,6 +1,12 @@
 <template>
   <PageContainer>
-    <PageHeader />
+    <PageHeader>
+      <template #actions>
+        <el-button type="primary" :icon="Plus" @click="goCreate">
+          {{ t('workflowDefinitionList.headerCreate') }}
+        </el-button>
+      </template>
+    </PageHeader>
 
     <SectionCard>
       <ProTable
@@ -76,12 +82,14 @@
         <el-table-column
           prop="workflowCode"
           :label="t('workflowDefinitionList.colCode')"
-          min-width="140"
+          width="220"
+          show-overflow-tooltip
         />
         <el-table-column
           prop="workflowName"
           :label="t('workflowDefinitionList.colName')"
-          min-width="160"
+          min-width="240"
+          show-overflow-tooltip
         />
         <el-table-column
           prop="workflowType"
@@ -101,7 +109,7 @@
         <el-table-column
           prop="description"
           :label="t('workflowDefinitionList.colDescription')"
-          min-width="200"
+          min-width="320"
           show-overflow-tooltip
         />
         <el-table-column prop="enabled" :label="t('workflowDefinitionList.colEnabled')" width="80">
@@ -112,52 +120,11 @@
         <DatetimeColumn
           prop="updatedAt"
           :label="t('workflowDefinitionList.colUpdatedAt')"
-          width="160"
+          width="180"
         />
-        <el-table-column
-          :label="t('workflowDefinitionList.colActions')"
-          min-width="360"
-          fixed="right"
-        >
+        <el-table-column :label="t('workflowDefinitionList.colActions')" width="200" fixed="right">
           <template #default="{ row }">
-            <div class="table-actions">
-              <el-button size="small" plain type="primary" @click="openDag(row.workflowCode)">
-                {{ t('workflowDefinitionList.actionDag') }}
-              </el-button>
-              <el-button
-                size="small"
-                plain
-                :type="row.enabled ? 'warning' : 'success'"
-                :loading="actingIds.has(row.id)"
-                @click="toggleRow(row)"
-              >
-                {{
-                  row.enabled
-                    ? t('workflowDefinitionList.actionDisable')
-                    : t('workflowDefinitionList.actionEnable')
-                }}
-              </el-button>
-              <el-button
-                size="small"
-                plain
-                :loading="actingIds.has(row.id)"
-                @click="validateRow(row)"
-              >
-                {{ t('workflowDefinitionList.actionValidate') }}
-              </el-button>
-              <el-button size="small" plain @click="openDetail(row)">
-                {{ t('workflowDefinitionList.actionDetail') }}
-              </el-button>
-              <el-button
-                size="small"
-                plain
-                type="danger"
-                :loading="actingIds.has(row.id)"
-                @click="removeRow(row)"
-              >
-                {{ t('workflowDefinitionList.actionDelete') }}
-              </el-button>
-            </div>
+            <RowActions :actions="rowActions(row)" />
           </template>
         </el-table-column>
       </ProTable>
@@ -166,7 +133,7 @@
     <el-drawer
       v-model="detailVisible"
       :title="t('workflowDefinitionList.detailTitle')"
-      size="760px"
+      size="800px"
     >
       <el-descriptions v-if="detailRow" :column="2" border size="small">
         <el-descriptions-item label="workflowCode">{{
@@ -210,7 +177,7 @@
     <el-dialog
       v-model="validateVisible"
       :title="t('workflowDefinitionList.validateTitle')"
-      width="720px"
+      width="800px"
     >
       <JsonPreview :data="validateResult" />
     </el-dialog>
@@ -222,6 +189,8 @@
   import { useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
+  import { Plus } from '@element-plus/icons-vue'
+  import RowActions, { type RowAction } from '@/components/common/RowActions.vue'
 
   const { t, te } = useI18n({ useScope: 'global' })
 
@@ -291,6 +260,57 @@
   })
   function openDag(workflowCode: string) {
     void router.push({ path: `/workflow/designer/${encodeURIComponent(workflowCode)}` })
+  }
+
+  /** 新建走 designer 的空白模式;由用户填 code/name/type 后提交 */
+  function goCreate() {
+    void router.push({ path: '/workflow/designer', query: { mode: 'create' } })
+  }
+
+  /**
+   * 按 row 状态组合行操作。
+   * - "DAG" 是主操作,直显
+   * - "校验" / "详情" 直显(次要)
+   * - "启用"/"停用" 折进 More
+   * - "归档" 折进 More + danger(实际只是禁用,BE 无物理删,文案要诚实)
+   */
+  function rowActions(row: ConsoleWorkflowDefinitionResponse): RowAction[] {
+    return [
+      {
+        key: 'dag',
+        label: t('workflowDefinitionList.actionDag'),
+        primary: true,
+        onClick: () => openDag(row.workflowCode),
+      },
+      {
+        key: 'validate',
+        label: t('workflowDefinitionList.actionValidate'),
+        loading: actingIds.value.has(row.id),
+        onClick: () => validateRow(row),
+      },
+      {
+        key: 'detail',
+        label: t('workflowDefinitionList.actionDetail'),
+        onClick: () => openDetail(row),
+      },
+      {
+        key: 'toggle',
+        label: row.enabled
+          ? t('workflowDefinitionList.actionDisable')
+          : t('workflowDefinitionList.actionEnable'),
+        loading: actingIds.value.has(row.id),
+        onClick: () => toggleRow(row),
+      },
+      {
+        key: 'archive',
+        label: t('workflowDefinitionList.actionArchive'),
+        danger: true,
+        divided: true,
+        disabled: !row.enabled, // 已禁用的不再让点
+        loading: actingIds.value.has(row.id),
+        onClick: () => removeRow(row),
+      },
+    ]
   }
 
   async function load() {
@@ -393,10 +413,11 @@
   async function removeRow(row: ConsoleWorkflowDefinitionResponse) {
     try {
       await confirmDanger({
-        verb: t('workflowDefinitionList.deleteVerb'),
-        target: t('workflowDefinitionList.deleteTarget', { code: row.workflowCode }),
-        consequence: t('workflowDefinitionList.deleteConsequence'),
-        irreversible: true,
+        verb: t('workflowDefinitionList.archiveVerb'),
+        target: t('workflowDefinitionList.archiveTarget', { code: row.workflowCode }),
+        // 诚实告知:这是软归档(BE 不暴露物理删除接口),实际走 toggle 禁用,可恢复
+        consequence: t('workflowDefinitionList.archiveConsequence'),
+        irreversible: false,
       })
     } catch {
       return
@@ -404,7 +425,7 @@
     actingIds.value = new Set([...actingIds.value, row.id])
     try {
       await workflowApi.toggle(row.id, row.tenantId ?? tenant.tenantId, false)
-      ElMessage.success(t('workflowDefinitionList.deleteSuccess', { code: row.workflowCode }))
+      ElMessage.success(t('workflowDefinitionList.archiveSuccess', { code: row.workflowCode }))
       if (rows.value.length === 1 && page.value > 1) {
         page.value -= 1
       }

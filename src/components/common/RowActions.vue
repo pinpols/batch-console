@@ -1,8 +1,8 @@
 <template>
   <div class="row-actions">
-    <!-- 主操作:第 1 个 primary action 直显 -->
+    <!-- 常用操作直显；超出 inlineLimit 的低频/危险操作再折进"更多" -->
     <el-button
-      v-for="a in primaryActions"
+      v-for="a in inlineActions"
       :key="a.key"
       size="small"
       :type="a.danger ? 'danger' : 'primary'"
@@ -14,7 +14,7 @@
       {{ a.label }}
     </el-button>
 
-    <!-- 次操作折叠到"更多"dropdown -->
+    <!-- 剩余操作折叠到"更多"dropdown -->
     <el-dropdown v-if="moreActions.length" trigger="click" @command="onCommand">
       <el-button size="small" plain class="row-actions__more">
         {{ t('rowActions.more') }}
@@ -93,20 +93,42 @@
     onClick: () => void | Promise<void>
   }
 
-  const props = defineProps<{ actions: RowAction[] }>()
+  const props = withDefaults(
+    defineProps<{
+      actions: RowAction[]
+      /** 最多直显几个行操作；危险操作默认排在折叠菜单里，除非数量足够少。 */
+      inlineLimit?: number
+    }>(),
+    { inlineLimit: 3 },
+  )
 
   const visibleActions = computed(() => props.actions.filter(Boolean))
 
-  const primaryActions = computed(() => {
+  const inlineActions = computed(() => {
+    const limit = Math.max(1, props.inlineLimit)
     const explicit = visibleActions.value.filter((a) => a.primary)
-    if (explicit.length) return explicit
-    // 没显式 primary:挑第一个非 danger / 非 disabled 当主
-    const first = visibleActions.value.find((a) => !a.danger && !a.disabled)
-    return first ? [first] : []
+    const picked = explicit.length ? [...explicit] : []
+    if (!picked.length) {
+      const first = visibleActions.value.find((a) => !a.danger && !a.disabled)
+      if (first) picked.push(first)
+    }
+    for (const action of visibleActions.value) {
+      if (picked.length >= limit) break
+      if (picked.some((a) => a.key === action.key)) continue
+      if (action.danger || action.disabled) continue
+      picked.push(action)
+    }
+    if (picked.length < limit && visibleActions.value.length <= limit) {
+      for (const action of visibleActions.value) {
+        if (picked.some((a) => a.key === action.key)) continue
+        picked.push(action)
+      }
+    }
+    return picked.slice(0, limit)
   })
 
   const moreActions = computed(() => {
-    const primaryKeys = new Set(primaryActions.value.map((a) => a.key))
+    const primaryKeys = new Set(inlineActions.value.map((a) => a.key))
     return visibleActions.value.filter((a) => !primaryKeys.has(a.key))
   })
 

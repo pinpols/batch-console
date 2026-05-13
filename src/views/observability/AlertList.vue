@@ -9,6 +9,9 @@
         :error="loadError"
         :on-retry="load"
         :total="total"
+        :has-active-filters="hasAlertFilters"
+        :empty-text="t('alertList.empty')"
+        :filtered-empty-text="alertFilteredEmptyText"
         v-model:page="page"
         v-model:page-size="pageSize"
         @change="slicePage"
@@ -222,6 +225,22 @@
     Array.from(
       new Set(allRows.value.map((row) => row.alertType).filter((item): item is string => !!item)),
     ),
+  )
+
+  const hasAlertFilters = computed(
+    () =>
+      !!(
+        filters.severity.trim() ||
+        filters.alertType.trim() ||
+        filters.status.trim() ||
+        filters.traceId.trim() ||
+        filters.startTime ||
+        filters.endTime
+      ),
+  )
+
+  const alertFilteredEmptyText = computed(() =>
+    filters.traceId.trim() ? t('alertList.emptyTrace') : t('alertList.emptyFiltered'),
   )
 
   function actionBody(reason?: string) {

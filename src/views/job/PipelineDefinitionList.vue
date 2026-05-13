@@ -119,7 +119,7 @@
       </ProTable>
     </SectionCard>
 
-    <el-drawer v-model="drawerVisible" :title="drawerTitle" size="760px">
+    <el-drawer v-model="drawerVisible" :title="drawerTitle" size="800px">
       <el-form ref="formRef" :model="form" :rules="formRules" label-width="120px">
         <el-form-item label="tenantId" prop="tenantId">
           <TenantSelect v-model="form.tenantId" select-class="query-w-full" />

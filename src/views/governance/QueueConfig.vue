@@ -264,7 +264,7 @@
     <el-drawer
       v-model="holidayDrawerVisible"
       :title="holidayDrawerTitle"
-      size="520px"
+      size="480px"
       destroy-on-close
     >
       <div class="config-toolbar">
@@ -337,7 +337,7 @@
       width="640px"
       destroy-on-close
     >
-      <el-form :model="queueForm" label-width="128px">
+      <el-form :model="queueForm" label-width="120px">
         <el-form-item label="queueCode" required>
           <el-input v-model="queueForm.queueCode" :disabled="queueEditingId != null" />
         </el-form-item>
@@ -389,7 +389,7 @@
       width="640px"
       destroy-on-close
     >
-      <el-form :model="windowForm" label-width="128px">
+      <el-form :model="windowForm" label-width="120px">
         <el-form-item label="windowCode" required>
           <el-input v-model="windowForm.windowCode" :disabled="windowEditingId != null" />
         </el-form-item>
@@ -435,7 +435,7 @@
       width="640px"
       destroy-on-close
     >
-      <el-form :model="calendarForm" label-width="128px">
+      <el-form :model="calendarForm" label-width="120px">
         <el-form-item label="calendarCode" required>
           <el-input v-model="calendarForm.calendarCode" :disabled="calendarEditingId != null" />
         </el-form-item>
@@ -471,10 +471,10 @@
           ? t('queueConfig.holidayCreateTitle')
           : t('queueConfig.holidayEditTitle')
       "
-      width="520px"
+      width="480px"
       destroy-on-close
     >
-      <el-form :model="holidayForm" label-width="108px">
+      <el-form :model="holidayForm" label-width="120px">
         <el-form-item label="bizDate" required
           ><el-date-picker v-model="holidayForm.bizDate" type="date" value-format="YYYY-MM-DD"
         /></el-form-item>

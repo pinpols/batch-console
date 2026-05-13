@@ -100,7 +100,7 @@
       </ProTable>
     </SectionCard>
 
-    <el-dialog v-model="createVisible" :title="t('apiKeyList.dialogCreateTitle')" width="500px">
+    <el-dialog v-model="createVisible" :title="t('apiKeyList.dialogCreateTitle')" width="480px">
       <el-form ref="apiKeyFormRef" :model="form" :rules="apiKeyFormRules" label-width="100px">
         <el-form-item :label="t('apiKeyList.fieldName')" prop="keyName">
           <el-input
@@ -133,7 +133,7 @@
     <el-dialog
       v-model="rawKeyVisible"
       :title="t('apiKeyList.rawKeyTitle')"
-      width="560px"
+      width="640px"
       :close-on-click-modal="false"
       :close-on-press-escape="false"
       :show-close="false"
@@ -170,7 +170,7 @@
       </template>
     </el-dialog>
 
-    <el-drawer v-model="detailVisible" :title="t('apiKeyList.detailTitle')" size="560px">
+    <el-drawer v-model="detailVisible" :title="t('apiKeyList.detailTitle')" size="640px">
       <el-descriptions v-if="detail" :column="1" border size="small">
         <el-descriptions-item label="ID">{{ detail.id }}</el-descriptions-item>
         <el-descriptions-item :label="t('apiKeyList.colName')">

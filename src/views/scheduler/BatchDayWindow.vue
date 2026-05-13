@@ -106,7 +106,7 @@
     <el-dialog
       v-model="catchupVisible"
       :title="t('batchDayWindow.dialogTitle')"
-      width="520px"
+      width="480px"
       @closed="resetCatchup"
     >
       <el-form label-width="100px">

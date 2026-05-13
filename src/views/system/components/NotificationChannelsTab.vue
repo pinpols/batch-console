@@ -133,7 +133,7 @@
           ? t('notificationChannelsTab.dialogTitleEdit')
           : t('notificationChannelsTab.dialogTitleCreate')
       "
-      width="560px"
+      width="640px"
     >
       <el-form
         ref="channelFormRef"

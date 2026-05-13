@@ -122,7 +122,7 @@
     <el-dialog
       v-model="formVisible"
       :title="t('userAccountList.editTitle', { name: form.username })"
-      width="560px"
+      width="640px"
     >
       <el-form label-width="100px">
         <el-form-item :label="t('userAccountList.fieldTenant')">
@@ -167,7 +167,7 @@
           ? t('userAccountList.resetTitle', { name: resetTarget.username })
           : t('userAccountList.resetTitleDefault')
       "
-      width="440px"
+      width="480px"
     >
       <el-form ref="resetFormRef" :model="resetForm" :rules="resetFormRules" label-width="100px">
         <el-form-item :label="t('userAccountList.fieldNewPassword')" prop="newPassword">

@@ -16,6 +16,7 @@
       </el-button>
       <el-button
         v-if="showReset"
+        text
         :icon="RefreshLeft"
         :loading="filterBusy"
         :disabled="disabled"
@@ -25,6 +26,7 @@
       </el-button>
       <el-button
         v-if="showRefresh"
+        text
         :icon="Refresh"
         :loading="refreshLoading"
         :disabled="disabled"
@@ -83,5 +85,9 @@
      有标准间距。ProTable 那边把 .pro-table__query 的 margin 清 0 避免叠加 */
   .query-form {
     margin-bottom: var(--page-block-gap);
+  }
+
+  .query-actions :deep(.el-form-item__content) {
+    gap: 4px;
   }
 </style>

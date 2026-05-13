@@ -78,7 +78,7 @@
       width="640px"
       destroy-on-close
     >
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="150px">
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="120px">
         <el-form-item label="routeCode" prop="routeCode">
           <el-input v-model="form.routeCode" :disabled="editingId != null" />
         </el-form-item>

@@ -7,7 +7,7 @@
     @reset="emit('reset')"
     @refresh="emit('refresh')"
   >
-    <el-form-item label="关键字">
+    <el-form-item :label="t('governanceFilter.keywordLabel')">
       <el-input
         :model-value="keyword"
         clearable
@@ -17,23 +17,26 @@
         @keyup.enter="emit('search')"
       />
     </el-form-item>
-    <el-form-item label="启用状态">
+    <el-form-item :label="t('governanceFilter.enabledLabel')">
       <el-select
         :model-value="enabled"
         clearable
-        placeholder="全部"
+        :placeholder="t('governanceFilter.allPlaceholder')"
         class="governance-query__select"
         @update:model-value="(v) => emit('update:enabled', v as boolean | undefined)"
       >
-        <el-option label="已启用" :value="true" />
-        <el-option label="已停用" :value="false" />
+        <el-option :label="t('governanceFilter.optEnabled')" :value="true" />
+        <el-option :label="t('governanceFilter.optDisabled')" :value="false" />
       </el-select>
     </el-form-item>
   </ListPageQueryBar>
 </template>
 
 <script setup lang="ts">
+  import { useI18n } from 'vue-i18n'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
+
+  const { t } = useI18n({ useScope: 'global' })
 
   defineProps<{
     keyword: string
