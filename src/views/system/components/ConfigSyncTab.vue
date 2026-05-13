@@ -1,144 +1,162 @@
 <template>
-  <div class="sync-grid">
-    <!-- 跨环境同步参数 sourceEnv / targetEnv 对 3 个动作共享;
-         BE ConfigSync*Request 全 NotBlank,默认 'default' 让基础场景跑通,
-         真要跨 dev/prod 同步在这里改即可。 -->
-    <div class="sync-block sync-block--params">
-      <div class="sync-block__title">{{ t('configSyncTab.paramsTitle') }}</div>
-      <div class="sync-block__desc">
-        <i18n-t keypath="configSyncTab.paramsDesc" tag="span">
-          <template #tenant
-            ><code>{{ tenant.tenantId }}</code></template
-          >
-        </i18n-t>
-      </div>
-      <el-form label-width="100px" inline class="form-section">
-        <el-form-item :label="t('configSyncTab.sourceEnvLabel')">
-          <el-input
-            v-model="sourceEnv"
-            class="env-input"
-            :placeholder="t('configSyncTab.sourceEnvPlaceholder')"
-          />
-        </el-form-item>
-        <el-form-item :label="t('configSyncTab.targetEnvLabel')">
-          <el-input
-            v-model="targetEnv"
-            class="env-input"
-            :placeholder="t('configSyncTab.targetEnvPlaceholder')"
-          />
-        </el-form-item>
-        <el-form-item :label="t('configSyncTab.targetTenantsLabel')">
-          <el-input
-            v-model="targetTenantsText"
-            class="env-input env-input--wide"
-            :placeholder="t('configSyncTab.targetTenantsPlaceholder')"
-          />
-        </el-form-item>
-      </el-form>
-    </div>
+  <div class="sync">
+    <!-- 顶部业务说明 -->
+    <p class="sync__hint">{{ t('configSyncTab.hint') }}</p>
 
-    <div class="sync-block">
-      <div class="sync-block__title">{{ t('configSyncTab.exportTitle') }}</div>
-      <div class="sync-block__desc">{{ t('configSyncTab.exportDesc') }}</div>
-      <div class="form-panel">
-        <el-form label-width="100px" class="form-section">
-          <el-form-item :label="t('configSyncTab.exportTypesLabel')" class="export-item">
-            <div class="export-row">
-              <el-select
-                v-model="exportTypes"
-                multiple
-                filterable
-                clearable
-                allow-create
-                default-first-option
-                collapse-tags
-                collapse-tags-tooltip
-                :placeholder="t('configSyncTab.exportTypesPlaceholder')"
-                class="export-row__select"
-              >
-                <el-option v-for="opt in exportTypeOptions" :key="opt" :label="opt" :value="opt" />
-              </el-select>
-              <el-button
-                type="primary"
-                :loading="exporting"
-                :icon="Download"
-                class="export-row__action"
-                v-track-click="t('configSyncTab.trackExport')"
-                @click="doExport"
-              >
-                {{ t('configSyncTab.btnDownload') }}
-              </el-button>
+    <div class="sync__flow">
+      <!-- ─── 源(当前租户) ─────────────────────────────── -->
+      <section class="sync__pane sync__pane--source" :aria-label="t('configSyncTab.sourceTitle')">
+        <header class="sync__pane-head">
+          <span class="sync__badge sync__badge--source">{{ t('configSyncTab.sourceTitle') }}</span>
+          <code class="sync__tenant">{{ tenant.tenantId }}</code>
+        </header>
+
+        <el-form label-width="68px" class="sync__form">
+          <el-form-item :label="t('configSyncTab.sourceEnvLabel')">
+            <el-input v-model="sourceEnv" :placeholder="t('configSyncTab.sourceEnvPlaceholder')" />
+          </el-form-item>
+
+          <el-form-item :label="t('configSyncTab.typesTitle')">
+            <div class="sync__types">
+              <el-checkbox v-for="opt in exportTypeOptions" :key="opt.value" v-model="opt.checked">
+                {{ opt.label }}
+              </el-checkbox>
             </div>
+            <p class="sync__types-hint">{{ t('configSyncTab.typesDescAll') }}</p>
           </el-form-item>
         </el-form>
-      </div>
-      <div v-if="exportResult" class="sync-result">
-        <div class="sync-result__title">{{ t('configSyncTab.exportResultTitle') }}</div>
-        <JsonPreview :data="exportResult" />
-      </div>
-    </div>
 
-    <div class="sync-block">
-      <div class="sync-block__title">{{ t('configSyncTab.importTitle') }}</div>
-      <div class="sync-block__desc">{{ t('configSyncTab.importDesc') }}</div>
-      <div class="form-panel">
-        <el-form label-width="100px">
+        <div class="sync__actions sync__actions--source">
+          <el-button
+            type="primary"
+            :loading="exporting"
+            :icon="Download"
+            v-track-click="t('configSyncTab.trackExport')"
+            @click="doExport"
+          >
+            {{ t('configSyncTab.btnExport') }}
+          </el-button>
+          <el-button v-if="exportResult" :icon="Right" plain @click="copyToTarget">
+            {{ t('configSyncTab.btnCopyToTarget') }}
+          </el-button>
+        </div>
+      </section>
+
+      <!-- 流向箭头(>=1100px 显示) -->
+      <div class="sync__arrow" aria-hidden="true">
+        <el-icon><Right /></el-icon>
+      </div>
+
+      <!-- ─── 目标 ─────────────────────────────────────── -->
+      <section class="sync__pane sync__pane--target" :aria-label="t('configSyncTab.targetTitle')">
+        <header class="sync__pane-head">
+          <span class="sync__badge sync__badge--target">{{ t('configSyncTab.targetTitle') }}</span>
+        </header>
+
+        <el-form label-width="68px" class="sync__form">
+          <el-form-item :label="t('configSyncTab.targetEnvLabel')">
+            <el-input v-model="targetEnv" :placeholder="t('configSyncTab.targetEnvPlaceholder')" />
+          </el-form-item>
+          <el-form-item :label="t('configSyncTab.targetTenantsLabel')">
+            <el-input
+              v-model="targetTenantsText"
+              :placeholder="t('configSyncTab.targetTenantsPlaceholder')"
+            />
+          </el-form-item>
           <el-form-item :label="t('configSyncTab.payloadLabel')">
             <el-input
               v-model="importPayload"
               type="textarea"
               :rows="8"
               :placeholder="t('configSyncTab.payloadPlaceholder')"
-              class="sync-payload"
+              class="sync__payload"
             />
           </el-form-item>
-          <el-form-item class="form-actions">
-            <el-button
-              :loading="previewing"
-              :disabled="!importPayload.trim()"
-              v-track-click="t('configSyncTab.trackPreview')"
-              @click="doPreview"
-            >
-              {{ t('configSyncTab.btnPreview') }}
-            </el-button>
-            <el-button
-              type="primary"
-              :loading="importing"
-              :disabled="!importPayload.trim()"
-              v-track-click="t('configSyncTab.trackImport')"
-              @click="doImport"
-            >
-              {{ t('configSyncTab.btnImport') }}
-            </el-button>
-          </el-form-item>
         </el-form>
-      </div>
-      <div v-if="previewResult" class="sync-result">
-        <div class="sync-result__title">{{ t('configSyncTab.previewResultTitle') }}</div>
-        <JsonPreview :data="previewResult" />
-      </div>
+
+        <div class="sync__actions sync__actions--target">
+          <el-button
+            :loading="previewing"
+            :disabled="!importPayload.trim()"
+            :icon="View"
+            v-track-click="t('configSyncTab.trackPreview')"
+            @click="doPreview"
+          >
+            {{ t('configSyncTab.btnPreview') }}
+          </el-button>
+          <el-button
+            type="danger"
+            :loading="importing"
+            :disabled="!importPayload.trim()"
+            :icon="Upload"
+            v-track-click="t('configSyncTab.trackImport')"
+            @click="doImport"
+          >
+            {{ t('configSyncTab.btnImport') }}
+          </el-button>
+        </div>
+      </section>
     </div>
+
+    <!-- ─── 结果区(全宽,导出/差异共享) ─────────────────── -->
+    <section v-if="displayResult" class="sync__result">
+      <header class="sync__result-head">
+        <span class="sync__result-title">{{ displayResultTitle }}</span>
+      </header>
+      <JsonPreview :data="displayResult" />
+    </section>
   </div>
 </template>
 
 <script setup lang="ts">
-  import { ref } from 'vue'
+  import { computed, ref } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
-
-  const { t } = useI18n({ useScope: 'global' })
-  import { Download } from '@element-plus/icons-vue'
+  import { Download, Right, View, Upload } from '@element-plus/icons-vue'
   import { exportConfigSync, previewConfigSync, importConfigSync } from '@/api/configReleases'
   import { useTenantStore } from '@/stores/tenant'
-  import JsonPreview from '@/components/common/JsonPreview.vue'
   import { useTenantReload } from '@/composables/useTenantReload'
+  import { confirmDanger } from '@/composables/useDangerConfirm'
+  import JsonPreview from '@/components/common/JsonPreview.vue'
 
+  const { t } = useI18n({ useScope: 'global' })
   const tenant = useTenantStore()
 
-  // 跨环境同步参数:三个动作共享。BE 全 NotBlank,默认 'default' 兼容单环境场景。
+  // BE NotBlank,默认 'default' 兼容单环境场景
   const sourceEnv = ref('default')
   const targetEnv = ref('default')
   const targetTenantsText = ref('')
+
+  // BE TenantConfigCopyRequest.ConfigType 短别名
+  const exportTypeOptions = ref([
+    { value: 'JOB', label: t('configSyncTab.typeJob'), checked: false },
+    { value: 'WORKFLOW', label: t('configSyncTab.typeWorkflow'), checked: false },
+    { value: 'PIPELINE', label: t('configSyncTab.typePipeline'), checked: false },
+    { value: 'FILE_CHANNEL', label: t('configSyncTab.typeFileChannel'), checked: false },
+    { value: 'FILE_TEMPLATE', label: t('configSyncTab.typeFileTemplate'), checked: false },
+    { value: 'RESOURCE_QUEUE', label: t('configSyncTab.typeResourceQueue'), checked: false },
+    { value: 'BATCH_WINDOW', label: t('configSyncTab.typeBatchWindow'), checked: false },
+    {
+      value: 'BUSINESS_CALENDAR',
+      label: t('configSyncTab.typeBusinessCalendar'),
+      checked: false,
+    },
+    { value: 'QUOTA_POLICY', label: t('configSyncTab.typeQuotaPolicy'), checked: false },
+    { value: 'ALERT_ROUTING', label: t('configSyncTab.typeAlertRouting'), checked: false },
+  ])
+
+  const exporting = ref(false)
+  const previewing = ref(false)
+  const importing = ref(false)
+  const exportResult = ref<unknown>(null)
+  const previewResult = ref<unknown>(null)
+  const importPayload = ref('')
+
+  // 差异预览结果优先于导出结果(用户最近的动作)
+  const displayResult = computed(() => previewResult.value ?? exportResult.value)
+  const displayResultTitle = computed(() =>
+    previewResult.value ? t('configSyncTab.resultPreview') : t('configSyncTab.resultExport'),
+  )
 
   function resolvedTargetTenants(): string[] {
     const list = targetTenantsText.value
@@ -148,43 +166,27 @@
     return list.length ? list : [tenant.tenantId]
   }
 
-  const exporting = ref(false)
-  const exportTypes = ref<string[]>([])
-  const exportResult = ref<unknown>(null)
-  // BE TenantConfigCopyRequest.ConfigType 短别名(JOB / WORKFLOW / ...);老 yaml 用全名(JOB_DEFINITION 等)
-  // 与 BE 对不上,改用短别名跟 BE 实际接受值对齐。
-  const exportTypeOptions = [
-    'JOB',
-    'WORKFLOW',
-    'PIPELINE',
-    'FILE_CHANNEL',
-    'FILE_TEMPLATE',
-    'RESOURCE_QUEUE',
-    'BATCH_WINDOW',
-    'BUSINESS_CALENDAR',
-    'QUOTA_POLICY',
-    'ALERT_ROUTING',
-  ] as const
-
-  const previewing = ref(false)
-  const importing = ref(false)
-  const importPayload = ref('')
-  const previewResult = ref<unknown>(null)
-
   async function doExport() {
     exporting.value = true
     try {
-      const types = exportTypes.value.map((s) => s.trim()).filter(Boolean)
+      const types = exportTypeOptions.value.filter((o) => o.checked).map((o) => o.value)
       exportResult.value = await exportConfigSync({
         sourceTenantId: tenant.tenantId,
         sourceEnv: sourceEnv.value.trim() || 'default',
         targetEnv: targetEnv.value.trim() || 'default',
         ...(types.length ? { configTypes: types } : {}),
       })
+      previewResult.value = null
       ElMessage.success(t('configSyncTab.toastExportDone'))
     } finally {
       exporting.value = false
     }
+  }
+
+  function copyToTarget() {
+    if (!exportResult.value) return
+    importPayload.value = JSON.stringify(exportResult.value, null, 2)
+    ElMessage.success(t('configSyncTab.toastCopiedToTarget'))
   }
 
   async function doPreview() {
@@ -217,23 +219,37 @@
       ElMessage.warning(t('configSyncTab.toastNeedPayload'))
       return
     }
+    let bundle: unknown
+    try {
+      bundle = JSON.parse(importPayload.value)
+    } catch {
+      ElMessage.error(t('configSyncTab.errInvalidJson'))
+      return
+    }
+    const tenants = resolvedTargetTenants()
+    try {
+      await confirmDanger({
+        verb: '应用配置',
+        target: `到 ${tenants.length} 个目标租户(${tenants.slice(0, 3).join(', ')}${tenants.length > 3 ? '…' : ''})`,
+        consequence: t('configSyncTab.importConsequence'),
+        irreversible: true,
+        confirmButtonText: '确认应用',
+      })
+    } catch {
+      return
+    }
     importing.value = true
     try {
-      const bundle = JSON.parse(importPayload.value)
       await importConfigSync({
         tenantId: tenant.tenantId,
         sourceEnv: sourceEnv.value.trim() || 'default',
         targetEnv: targetEnv.value.trim() || 'default',
-        targetTenantIds: resolvedTargetTenants(),
+        targetTenantIds: tenants,
         bundle,
       })
       ElMessage.success(t('configSyncTab.toastImportDone'))
-    } catch (e) {
-      ElMessage.error(
-        e instanceof SyntaxError
-          ? t('configSyncTab.errInvalidJson')
-          : t('configSyncTab.errImportFailed'),
-      )
+    } catch {
+      ElMessage.error(t('configSyncTab.errImportFailed'))
     } finally {
       importing.value = false
     }
@@ -242,134 +258,159 @@
   useTenantReload(() => {
     exportResult.value = null
     previewResult.value = null
+    importPayload.value = ''
+    exportTypeOptions.value.forEach((o) => (o.checked = false))
   })
 </script>
 
 <style scoped>
-  .sync-grid {
+  .sync {
+    display: grid;
+    gap: var(--space-md);
+  }
+
+  .sync__hint {
+    margin: 0;
+    padding: 10px 14px;
+    border-radius: var(--radius-content);
+    background: color-mix(in srgb, var(--color-primary) 6%, var(--color-bg-card) 94%);
+    border: 1px solid color-mix(in srgb, var(--color-primary) 16%, var(--color-border-light) 84%);
+    color: var(--color-text-secondary);
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  .sync__flow {
     display: grid;
     grid-template-columns: 1fr;
     gap: var(--space-md);
-    align-items: start;
+    align-items: stretch;
   }
 
   @media (min-width: 1100px) {
-    .sync-grid {
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-      gap: var(--space-lg);
+    .sync__flow {
+      grid-template-columns: minmax(0, 1fr) 32px minmax(0, 1fr);
+      gap: var(--space-md);
     }
   }
 
-  .sync-block--params {
-    grid-column: 1 / -1;
-  }
-  .env-input {
-    width: 200px;
-  }
-  .env-input--wide {
-    width: 320px;
-  }
-
-  .sync-block {
+  .sync__pane {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
     padding: var(--card-inner-padding);
     border-radius: var(--radius-content);
     border: 1px solid var(--color-border-light);
-    background:
-      radial-gradient(1200px 420px at 0% 0%, rgb(59 130 246 / 8%), transparent 55%),
-      color-mix(in srgb, var(--color-bg-card) 96%, var(--color-bg-canvas) 4%);
-    box-shadow:
-      inset 0 1px 0 rgb(255 255 255 / 55%),
-      0 1px 2px rgb(15 23 42 / 6%);
+    background: color-mix(in srgb, var(--color-bg-card) 96%, var(--color-bg-canvas) 4%);
   }
 
-  .sync-block__title {
-    font-size: 14px;
-    font-weight: 700;
-    letter-spacing: 0.2px;
-    color: var(--color-text);
-    margin: 0 0 6px;
+  .sync__pane--source {
+    border-color: color-mix(in srgb, var(--color-success) 22%, var(--color-border-light) 78%);
   }
 
-  .sync-block__desc {
-    margin: 0 0 var(--space-md);
+  .sync__pane--target {
+    border-color: color-mix(in srgb, var(--color-primary) 22%, var(--color-border-light) 78%);
+  }
+
+  .sync__pane-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+
+  .sync__badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 10px;
+    border-radius: 999px;
     font-size: 12px;
-    line-height: 1.55;
+    font-weight: 650;
+    line-height: 1.6;
+  }
+
+  .sync__badge--source {
+    background: color-mix(in srgb, var(--color-success) 14%, var(--color-bg-card) 86%);
+    color: var(--color-success);
+  }
+
+  .sync__badge--target {
+    background: color-mix(in srgb, var(--color-primary) 14%, var(--color-bg-card) 86%);
+    color: var(--color-primary);
+  }
+
+  .sync__tenant {
+    font-family: var(--font-family-mono, ui-monospace, Menlo, Monaco, Consolas, monospace);
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    padding: 2px 8px;
+    border-radius: var(--radius-input);
+    background: color-mix(in srgb, var(--color-bg-canvas) 92%, transparent 8%);
+  }
+
+  .sync__form {
+    --el-form-label-color: var(--color-text-secondary);
+  }
+
+  .sync__types {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 4px 8px;
+    width: 100%;
+  }
+
+  .sync__types-hint {
+    margin: 6px 0 0;
+    font-size: 12px;
     color: var(--color-text-tertiary);
   }
 
-  .export-row {
-    display: flex;
-    align-items: center;
-    width: 100%;
-    gap: 10px;
-  }
-
-  .export-row__select {
-    flex: 1;
-    min-width: 0;
-    width: 100%;
-  }
-
-  .export-item :deep(.el-form-item__content) {
-    width: 100%;
-  }
-
-  .export-row__action {
-    flex: 0 0 auto;
-    box-shadow:
-      0 10px 22px rgb(59 130 246 / 12%),
-      inset 0 1px 0 rgb(255 255 255 / 20%);
-  }
-
-  .export-row__action:hover {
-    filter: saturate(1.02);
-  }
-
-  @media (max-width: 640px) {
-    .export-row {
-      flex-direction: column;
-      align-items: stretch;
-    }
-
-    .export-row__select {
-      min-width: 0;
-      width: 100%;
-    }
-  }
-
-  .sync-payload :deep(.el-textarea__inner) {
-    font-family: var(
-      --font-family-mono,
-      ui-monospace,
-      SFMono-Regular,
-      Menlo,
-      Monaco,
-      Consolas,
-      monospace
-    );
+  .sync__payload :deep(.el-textarea__inner) {
+    font-family: var(--font-family-mono, ui-monospace, Menlo, Monaco, Consolas, monospace);
     font-size: 12px;
     line-height: 1.55;
-    border-radius: var(--radius-content);
-    background: color-mix(in srgb, var(--color-bg-canvas) 88%, #fff 12%);
-    box-shadow: inset 0 1px 0 rgb(255 255 255 / 55%);
-    min-height: 220px;
+    min-height: 200px;
   }
 
-  .form-actions :deep(.el-form-item__content) {
+  .sync__actions {
+    display: flex;
+    gap: 8px;
+    margin-top: auto;
+    padding-top: 4px;
+  }
+
+  .sync__actions--target {
     justify-content: flex-end;
-    gap: 10px;
   }
 
-  .sync-result {
-    margin-top: var(--space-md);
-    padding-top: var(--space-sm);
-    border-top: 1px dashed color-mix(in srgb, var(--color-border) 60%, transparent);
+  .sync__arrow {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-text-tertiary);
+    font-size: 22px;
   }
 
-  .sync-result__title {
-    font-size: 12px;
-    font-weight: 700;
-    color: var(--color-text-secondary);
+  @media (min-width: 1100px) {
+    .sync__arrow {
+      display: flex;
+    }
+  }
+
+  .sync__result {
+    padding: var(--card-inner-padding);
+    border-radius: var(--radius-content);
+    border: 1px solid var(--color-border-light);
+    background: color-mix(in srgb, var(--color-bg-card) 96%, var(--color-bg-canvas) 4%);
+  }
+
+  .sync__result-head {
     margin-bottom: 8px;
+  }
+
+  .sync__result-title {
+    font-size: 13px;
+    font-weight: 650;
+    color: var(--color-text);
   }
 </style>
