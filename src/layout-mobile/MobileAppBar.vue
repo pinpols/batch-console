@@ -5,6 +5,13 @@
       <div class="mobile-appbar__title">{{ title }}</div>
     </div>
     <div class="mobile-appbar__right">
+      <button
+        class="mobile-appbar__btn"
+        :aria-label="t('palette.placeholder')"
+        @click="$emit('open-palette')"
+      >
+        <el-icon><Search /></el-icon>
+      </button>
       <el-popover placement="bottom-end" :width="290" trigger="click">
         <template #reference>
           <button class="mobile-appbar__btn" :aria-label="t('mobile.appBar.accountMenu')">
@@ -74,7 +81,7 @@
   import { computed } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
-  import { User, Monitor, Moon, Sunny } from '@element-plus/icons-vue'
+  import { User, Monitor, Moon, Sunny, Search } from '@element-plus/icons-vue'
   import { ElMessage } from 'element-plus'
   import { useAuthStore } from '@/stores/auth'
   import { useTenantStore } from '@/stores/tenant'
@@ -83,6 +90,8 @@
   import { canSwitchTenant as checkCanSwitchTenant } from '@/utils/tenantAccess'
   import { pathToKey } from '@/constants/pathKey'
   import TenantSelect from '@/components/common/TenantSelect.vue'
+
+  defineEmits<{ (e: 'open-palette'): void }>()
 
   const route = useRoute()
   const router = useRouter()
