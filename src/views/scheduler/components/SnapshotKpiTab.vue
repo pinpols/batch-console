@@ -63,7 +63,7 @@
     background: var(--color-warning);
   }
   .kpi--info::before {
-    background: #64748b;
+    background: var(--color-text-tertiary);
   }
 
   .kpi--active {
@@ -88,9 +88,9 @@
   }
 
   .kpi--info.kpi--active {
-    border-color: color-mix(in srgb, #64748b 35%, var(--color-border-light));
+    border-color: color-mix(in srgb, var(--color-text-tertiary) 35%, var(--color-border-light));
     box-shadow:
-      0 0 0 1px color-mix(in srgb, #64748b 20%, transparent),
+      0 0 0 1px color-mix(in srgb, var(--color-text-tertiary) 20%, transparent),
       var(--shadow-surface);
   }
 

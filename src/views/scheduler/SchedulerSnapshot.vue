@@ -616,7 +616,7 @@
     background: var(--color-warning);
   }
   .dot--info {
-    background: #64748b;
+    background: var(--color-text-tertiary);
   }
 
   .kpis {

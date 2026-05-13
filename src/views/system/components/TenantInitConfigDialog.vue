@@ -153,7 +153,7 @@
   .form-hint {
     margin-top: 4px;
     font-size: 12px;
-    color: var(--color-text-tertiary, #909399);
+    color: var(--color-text-tertiary);
   }
 
   .mb-12 {
