@@ -165,6 +165,163 @@
           </el-form-item>
         </div>
       </template>
+      <template v-if="nodeForm.nodeType === 'WAIT'">
+        <div class="workflow-wait-config">
+          <div class="workflow-wait-config__head">
+            <span>{{ t('workflowInspector.waitConfigTitle') }}</span>
+            <el-tag size="small" effect="plain">ADR-028</el-tag>
+          </div>
+          <div class="workflow-inspector-cols-2">
+            <el-form-item :label="t('workflowInspector.fieldSensorType')">
+              <el-select v-model="sensorType" size="small" class="workflow-fill-w">
+                <el-option label="FILE_ARRIVAL" value="FILE_ARRIVAL" />
+                <el-option label="HTTP_POLL" value="HTTP_POLL" />
+                <el-option label="KAFKA_OFFSET" value="KAFKA_OFFSET" />
+                <el-option label="DB_ROW_EXISTS" value="DB_ROW_EXISTS" />
+              </el-select>
+            </el-form-item>
+            <el-form-item :label="t('workflowInspector.fieldOnTimeout')">
+              <el-select v-model="onTimeout" size="small" class="workflow-fill-w">
+                <el-option label="FAIL" value="FAIL" />
+                <el-option label="SKIP_DOWNSTREAM" value="SKIP_DOWNSTREAM" />
+              </el-select>
+            </el-form-item>
+          </div>
+          <div class="workflow-inspector-cols-2">
+            <el-form-item :label="t('workflowInspector.fieldSensorTimeout')">
+              <el-input-number
+                v-model="sensorTimeoutSeconds"
+                class="workflow-fill-w"
+                :min="1"
+                :step="60"
+                size="small"
+                controls-position="right"
+              />
+            </el-form-item>
+            <el-form-item :label="t('workflowInspector.fieldPollInterval')">
+              <el-input-number
+                v-model="pollIntervalSeconds"
+                class="workflow-fill-w"
+                :min="1"
+                :step="10"
+                size="small"
+                controls-position="right"
+              />
+            </el-form-item>
+          </div>
+
+          <template v-if="sensorType === 'FILE_ARRIVAL'">
+            <div class="workflow-inspector-cols-2">
+              <el-form-item :label="t('workflowInspector.fieldFilePattern')">
+                <el-input
+                  v-model="filePattern"
+                  size="small"
+                  :placeholder="t('workflowInspector.filePatternPlaceholder')"
+                />
+              </el-form-item>
+              <el-form-item :label="t('workflowInspector.fieldMaxAgeSeconds')">
+                <el-input-number
+                  v-model="fileMaxAgeSeconds"
+                  class="workflow-fill-w"
+                  :min="1"
+                  :step="300"
+                  size="small"
+                  controls-position="right"
+                />
+              </el-form-item>
+            </div>
+            <el-form-item :label="t('workflowInspector.fieldChannelCode')">
+              <el-input
+                v-model="fileChannelCode"
+                size="small"
+                :placeholder="t('workflowInspector.channelCodePlaceholder')"
+              />
+            </el-form-item>
+          </template>
+
+          <template v-else-if="sensorType === 'HTTP_POLL'">
+            <el-form-item :label="t('workflowInspector.fieldHttpUrl')">
+              <el-input
+                v-model="httpUrl"
+                size="small"
+                :placeholder="t('workflowInspector.httpUrlPlaceholder')"
+              />
+            </el-form-item>
+            <div class="workflow-inspector-cols-2">
+              <el-form-item :label="t('workflowInspector.fieldHttpMethod')">
+                <el-select v-model="httpMethod" size="small" class="workflow-fill-w">
+                  <el-option label="GET" value="GET" />
+                  <el-option label="POST" value="POST" />
+                </el-select>
+              </el-form-item>
+              <el-form-item :label="t('workflowInspector.fieldHttpMatchExpr')">
+                <el-input
+                  v-model="httpMatchExpr"
+                  size="small"
+                  :placeholder="t('workflowInspector.matchExprPlaceholder')"
+                />
+              </el-form-item>
+            </div>
+            <el-form-item :label="t('workflowInspector.fieldHeadersJson')">
+              <el-input
+                v-model="httpHeadersJson"
+                size="small"
+                :placeholder="t('workflowInspector.headersJsonPlaceholder')"
+              />
+            </el-form-item>
+          </template>
+
+          <template v-else-if="sensorType === 'KAFKA_OFFSET'">
+            <el-form-item :label="t('workflowInspector.fieldKafkaTopic')">
+              <el-input
+                v-model="kafkaTopic"
+                size="small"
+                :placeholder="t('workflowInspector.kafkaTopicPlaceholder')"
+              />
+            </el-form-item>
+            <div class="workflow-inspector-cols-2">
+              <el-form-item :label="t('workflowInspector.fieldKafkaPartition')">
+                <el-input-number
+                  v-model="kafkaPartition"
+                  class="workflow-fill-w"
+                  :min="0"
+                  :step="1"
+                  size="small"
+                  controls-position="right"
+                />
+              </el-form-item>
+              <el-form-item :label="t('workflowInspector.fieldKafkaMinOffset')">
+                <el-input-number
+                  v-model="kafkaMinOffset"
+                  class="workflow-fill-w"
+                  :min="0"
+                  :step="1"
+                  size="small"
+                  controls-position="right"
+                />
+              </el-form-item>
+            </div>
+          </template>
+
+          <template v-else-if="sensorType === 'DB_ROW_EXISTS'">
+            <el-form-item :label="t('workflowInspector.fieldDbSchema')">
+              <el-input
+                v-model="dbSchema"
+                size="small"
+                :placeholder="t('workflowInspector.dbSchemaPlaceholder')"
+              />
+            </el-form-item>
+            <el-form-item :label="t('workflowInspector.fieldDbSql')">
+              <el-input
+                v-model="dbSql"
+                type="textarea"
+                :autosize="{ minRows: 3, maxRows: 6 }"
+                :placeholder="t('workflowInspector.dbSqlPlaceholder')"
+              />
+            </el-form-item>
+          </template>
+        </div>
+      </template>
       <!-- ADR-018 跨日依赖（V6/V7 后端校验）：仅暴露超时秒数 + JSON 数组编辑入口；复杂结构靠 DSL 编辑器 -->
       <div class="workflow-inspector-cols-2">
         <el-form-item :label="t('workflowInspector.fieldCrossDayDeps')">
@@ -252,6 +409,13 @@
         >
           {{ t('workflowInspector.addDownstreamJob') }}
         </el-button>
+        <el-button
+          class="workflow-quick-create__btn"
+          size="small"
+          @click="emit('add-downstream', 'WAIT')"
+        >
+          {{ t('workflowInspector.addDownstreamWait') }}
+        </el-button>
       </div>
     </div>
   </div>
@@ -285,7 +449,7 @@
     apply: []
     duplicate: []
     remove: []
-    'add-downstream': [WorkflowNodeKind]
+    'add-downstream': [Extract<WorkflowNodeKind, 'TASK' | 'GATEWAY' | 'JOB' | 'WAIT'>]
   }>()
 
   // ─── FILE_STEP / JOB 节点的下拉选项 ─────────────────────────────────────────
@@ -354,9 +518,17 @@
   // 后端从 node_params JSONB 读 join_mode：保 form 写入透过 nodeParams 字符串内嵌
   // 字段同步，避免给 NodeFormState 加 1 个只有 GATEWAY 用到的字段（也避免落库时漏写）。
 
+  type SensorType = 'FILE_ARRIVAL' | 'HTTP_POLL' | 'KAFKA_OFFSET' | 'DB_ROW_EXISTS'
+  type TimeoutAction = 'FAIL' | 'SKIP_DOWNSTREAM'
+
   interface ParsedNodeParams extends Record<string, unknown> {
     join_mode?: string
     join_n?: number
+    sensor_type?: SensorType
+    sensor_spec?: Record<string, unknown>
+    timeout_seconds?: number
+    poll_interval_seconds?: number
+    on_timeout?: TimeoutAction
   }
 
   function parseParams(): ParsedNodeParams {
@@ -375,6 +547,42 @@
       if (v !== undefined && v !== null && v !== '') clean[k] = v
     }
     props.nodeForm.nodeParams = JSON.stringify(clean, null, 2)
+  }
+  function defaultSensorSpec(type: SensorType): Record<string, unknown> {
+    if (type === 'FILE_ARRIVAL') return { pattern: 'settle-*.csv', maxAgeSeconds: 3600 }
+    if (type === 'HTTP_POLL') return { url: '', method: 'GET', matchExpr: "$.status == 'READY'" }
+    if (type === 'KAFKA_OFFSET') return { topic: '', partition: 0, minOffset: 0 }
+    return {
+      schema: 'biz',
+      sql: "SELECT 1 FROM signal WHERE biz_date = :bizDate AND status = 'READY' LIMIT 1",
+    }
+  }
+  function ensureWaitParams() {
+    const cur = parseParams()
+    const type = (cur.sensor_type || 'FILE_ARRIVAL') as SensorType
+    cur.sensor_type = type
+    cur.sensor_spec =
+      cur.sensor_spec && typeof cur.sensor_spec === 'object' ? cur.sensor_spec : defaultSensorSpec(type)
+    cur.timeout_seconds = Number(cur.timeout_seconds ?? 3600)
+    cur.poll_interval_seconds = Number(cur.poll_interval_seconds ?? 30)
+    cur.on_timeout = (cur.on_timeout || 'FAIL') as TimeoutAction
+    writeParams(cur)
+  }
+  function sensorSpecField<T extends string | number>(key: string, fallback: T) {
+    return computed<T>({
+      get: () => {
+        const spec = parseParams().sensor_spec ?? {}
+        const value = spec[key]
+        return (value == null || value === '' ? fallback : value) as T
+      },
+      set: (value) => {
+        const cur = parseParams()
+        const spec = { ...(cur.sensor_spec ?? {}) }
+        spec[key] = value
+        cur.sensor_spec = spec
+        writeParams(cur)
+      },
+    })
   }
 
   const joinMode = computed<string>({
@@ -400,4 +608,63 @@
       writeParams(cur)
     },
   })
+  const sensorType = computed<SensorType>({
+    get: () => (parseParams().sensor_type || 'FILE_ARRIVAL') as SensorType,
+    set: (val) => {
+      const cur = parseParams()
+      cur.sensor_type = val
+      cur.sensor_spec = defaultSensorSpec(val)
+      cur.timeout_seconds = Number(cur.timeout_seconds ?? 3600)
+      cur.poll_interval_seconds = Number(cur.poll_interval_seconds ?? 30)
+      cur.on_timeout = (cur.on_timeout || 'FAIL') as TimeoutAction
+      writeParams(cur)
+    },
+  })
+  const onTimeout = computed<TimeoutAction>({
+    get: () => (parseParams().on_timeout || 'FAIL') as TimeoutAction,
+    set: (val) => {
+      const cur = parseParams()
+      cur.on_timeout = val
+      writeParams(cur)
+    },
+  })
+  const sensorTimeoutSeconds = computed<number>({
+    get: () => Number(parseParams().timeout_seconds ?? 3600),
+    set: (val) => {
+      const cur = parseParams()
+      cur.timeout_seconds = Math.max(1, Math.floor(val))
+      writeParams(cur)
+    },
+  })
+  const pollIntervalSeconds = computed<number>({
+    get: () => Number(parseParams().poll_interval_seconds ?? 30),
+    set: (val) => {
+      const cur = parseParams()
+      cur.poll_interval_seconds = Math.max(1, Math.floor(val))
+      writeParams(cur)
+    },
+  })
+  const filePattern = sensorSpecField<string>('pattern', '')
+  const fileMaxAgeSeconds = sensorSpecField<number>('maxAgeSeconds', 3600)
+  const fileChannelCode = sensorSpecField<string>('channelCode', '')
+  const httpUrl = sensorSpecField<string>('url', '')
+  const httpMethod = sensorSpecField<string>('method', 'GET')
+  const httpMatchExpr = sensorSpecField<string>('matchExpr', "$.status == 'READY'")
+  const httpHeadersJson = sensorSpecField<string>('headersJson', '')
+  const kafkaTopic = sensorSpecField<string>('topic', '')
+  const kafkaPartition = sensorSpecField<number>('partition', 0)
+  const kafkaMinOffset = sensorSpecField<number>('minOffset', 0)
+  const dbSchema = sensorSpecField<string>('schema', 'biz')
+  const dbSql = sensorSpecField<string>(
+    'sql',
+    "SELECT 1 FROM signal WHERE biz_date = :bizDate AND status = 'READY' LIMIT 1",
+  )
+
+  watch(
+    () => props.nodeForm.nodeType,
+    (kind) => {
+      if (kind === 'WAIT') ensureWaitParams()
+    },
+    { immediate: true },
+  )
 </script>

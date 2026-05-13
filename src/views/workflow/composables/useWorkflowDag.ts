@@ -158,7 +158,7 @@ export function useWorkflowDag(deps: DagDeps) {
     scheduleEdgeZOrder()
   }
 
-  function addDownstreamNode(kind: Extract<WorkflowNodeKind, 'TASK' | 'GATEWAY' | 'JOB'>) {
+  function addDownstreamNode(kind: Extract<WorkflowNodeKind, 'TASK' | 'GATEWAY' | 'JOB' | 'WAIT'>) {
     if (!graph.value || selectedKind.value !== 'node' || !selectedCellId.value) return
     const cell = graph.value.getCellById(selectedCellId.value)
     if (!cell || !cell.isNode()) return
@@ -409,6 +409,11 @@ export function useWorkflowDag(deps: DagDeps) {
         // Shift+J → JOB（原 JOIN 已折叠到 GATEWAY；J 现指 JOB 节点）
         event.preventDefault()
         addDownstreamNode('JOB')
+        return
+      }
+      if (key === 'w') {
+        event.preventDefault()
+        addDownstreamNode('WAIT')
         return
       }
     }
