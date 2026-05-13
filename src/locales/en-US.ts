@@ -44,6 +44,11 @@ const messages: Messages = {
       'Pick an existing Workflow from the dropdown above, or go to definitions to create a new one. Other actions become available after selection.',
     emptyActionSelect: 'Select existing Workflow',
     emptyActionNew: 'Create new Workflow',
+    createModeTitle: 'Create new Workflow',
+    createModeDesc:
+      'Fill workflowCode / name / type in the right "Workflow properties" card, then drag nodes from the library to start designing. Hit "Submit to backend" when done.',
+    createModeGo: 'Go fill workflow properties',
+    createModeCancel: 'Cancel',
     deleteCellConsequence:
       'The node/edge and its properties are removed from the draft. If already published, you must resubmit to apply.',
     ariaContext: 'Current workflow object',
