@@ -28,7 +28,8 @@ export const smokeRoutes: RouteCheck[] = [
   { path: '/jobs/definitions', title: '作业定义' },
   { path: '/workflow/definitions', title: '工作流定义' },
   { path: '/workflow/designer', title: '编排设计器' },
-  // 执行与观测
+  // Runs / 执行与观测
+  { path: '/runs', title: '全部运行' },
   { path: '/monitor/job-instances', title: '作业运行' },
   { path: '/monitor/job-steps', title: '作业步骤' },
   { path: '/monitor/workflow-runs', title: '工作流运行' },
