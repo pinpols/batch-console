@@ -6,8 +6,15 @@ import { useTenantStore } from '@/stores/tenant'
 import { roleOrder } from '@/constants/role'
 import type { UserInfo, Role, MenuGroup } from '@/types'
 
+/**
+ * ADR-030 §D7 Stage B：token 已由后端下发为 HttpOnly cookie（JS 不可读），
+ * 前端不再持有 token 字符串。{@code SESSION_FLAG_KEY} 仅作为"已登录"UI 提示位，
+ * 内容是常量 "1"，无敏感信息；页面刷新后避免登录态闪烁。真正鉴权靠后端 cookie。
+ */
+const SESSION_FLAG_KEY = 'batch-console-session'
+
 export const useAuthStore = defineStore('auth', () => {
-  const token = ref<string>(localStorage.getItem('token') ?? '')
+  const sessionActive = ref<boolean>(localStorage.getItem(SESSION_FLAG_KEY) === '1')
   const userInfoInternal = ref<UserInfo | null>(null)
   // 在飞 fetchMe 的目标 tenantId,用于切租户竞态时识别"应丢弃"的旧响应
   let fetchMePromise: Promise<void> | null = null
@@ -15,7 +22,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   const userInfo = computed(() => userInfoInternal.value)
 
-  const isLoggedIn = computed(() => !!token.value)
+  const isLoggedIn = computed(() => sessionActive.value)
   const role = computed<Role | null>(() => userInfo.value?.role ?? null)
   /** 后端下发的侧边栏菜单（已按 authorities 过滤） */
   const menus = computed<MenuGroup[]>(() => userInfo.value?.menus ?? [])
@@ -43,10 +50,11 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function login(username: string, password: string) {
+    // D7 Stage B: token 由后端写入 HttpOnly cookie，浏览器自动维护；前端只标"已登录"flag。
     const result = await authApi.login({ username, password })
-    token.value = result.token
+    sessionActive.value = true
     userInfoInternal.value = result.userInfo
-    localStorage.setItem('token', result.token)
+    localStorage.setItem(SESSION_FLAG_KEY, '1')
     const tenant = useTenantStore()
     if (result.tenantId) {
       tenant.setTenantId(result.tenantId)
@@ -54,12 +62,13 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function logout() {
+    // 后端 /logout 端点会 Set-Cookie max-age=0 清除 token cookie。
     await authApi.logout().catch((e) => {
       if (import.meta.env.DEV) console.warn('[auth] logout request failed:', e)
     })
-    token.value = ''
+    sessionActive.value = false
     userInfoInternal.value = null
-    localStorage.removeItem('token')
+    localStorage.removeItem(SESSION_FLAG_KEY)
   }
 
   async function fetchMe() {
@@ -100,13 +109,12 @@ export const useAuthStore = defineStore('auth', () => {
   watch(
     () => tenantStore.tenantId,
     () => {
-      if (!token.value) return
+      if (!sessionActive.value) return
       void fetchMe()
     },
   )
 
   return {
-    token,
     userInfo,
     isLoggedIn,
     role,

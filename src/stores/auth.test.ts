@@ -41,8 +41,8 @@ describe('useAuthStore', () => {
     expect(auth.isLoggedIn).toBe(false)
   })
 
-  it('isLoggedIn is true when token exists', () => {
-    storage.set('token', 'abc')
+  it('isLoggedIn is true when session flag exists', () => {
+    storage.set('batch-console-session', '1')
     setActivePinia(createPinia())
     const auth = useAuthStore()
     expect(auth.isLoggedIn).toBe(true)
@@ -62,16 +62,17 @@ describe('useAuthStore', () => {
     expect(auth.canAccess('ADMIN')).toBe(false)
   })
 
-  it('logout clears token and userInfo', async () => {
-    storage.set('token', 'test-token')
+  it('logout clears session flag and userInfo', async () => {
+    // D7 Stage B: token 不再前端持有；登录态用 session flag 表达
+    storage.set('batch-console-session', '1')
     setActivePinia(createPinia())
     const auth = useAuthStore()
-    expect(auth.token).toBe('test-token')
+    expect(auth.isLoggedIn).toBe(true)
 
     await auth.logout()
-    expect(auth.token).toBe('')
+    expect(auth.isLoggedIn).toBe(false)
     expect(auth.userInfo).toBeNull()
-    expect(storage.get('token')).toBeUndefined()
+    expect(storage.get('batch-console-session')).toBeUndefined()
   })
 
   it('fetchMe deduplicates concurrent calls', async () => {
@@ -104,7 +105,7 @@ describe('useAuthStore', () => {
   it('fetchMe discards stale response after tenant switch mid-flight', async () => {
     const { get } = await import('@/api/client')
     const mockedGet = vi.mocked(get)
-    storage.set('token', 'abc')
+    storage.set('batch-console-session', '1')
     setActivePinia(createPinia())
     const auth = useAuthStore()
     const tenant = useTenantStore()
@@ -155,7 +156,7 @@ describe('useAuthStore', () => {
   it('auth store auto-refreshes profile when tenant changes', async () => {
     const { get } = await import('@/api/client')
     const mockedGet = vi.mocked(get)
-    storage.set('token', 'abc')
+    storage.set('batch-console-session', '1')
     setActivePinia(createPinia())
     const auth = useAuthStore()
     const tenant = useTenantStore()
@@ -175,7 +176,7 @@ describe('useAuthStore', () => {
     expect(auth.userInfo?.username).toBe('after-switch')
   })
 
-  it('tenant change does NOT trigger fetchMe when no token', async () => {
+  it('tenant change does NOT trigger fetchMe when no session', async () => {
     const { get } = await import('@/api/client')
     const mockedGet = vi.mocked(get)
     setActivePinia(createPinia())

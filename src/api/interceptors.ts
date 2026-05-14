@@ -42,14 +42,12 @@ let refreshInFlight: Promise<string | null> | null = null
 
 async function performRefresh(client: AxiosInstance): Promise<string | null> {
   try {
+    // D7 Stage B: 后端 /api/console/auth/token 响应会同时下发 HttpOnly cookie，
+    // 浏览器自动接收 Set-Cookie；前端不再把 accessToken 写 localStorage。
+    // 这里仍然返回字符串供调用方判断"refresh 是否成功"（非空 = 成功）。
     const resp = await client.post('/api/console/auth/token')
     const data = resp.data as { accessToken?: string } | undefined
-    const token = data?.accessToken
-    if (token) {
-      localStorage.setItem('token', token)
-      return token
-    }
-    return null
+    return data?.accessToken ?? null
   } catch {
     return null
   }
@@ -190,13 +188,8 @@ export function applyApiInterceptors(client: AxiosInstance): void {
       delete config.headers['Content-Type']
     }
 
-    // 注:blob 响应(报表导出 / 模板下载等)以前在这里 early-return,导致
-    // Authorization / X-Tenant-Id 都没注入,后端必然 401。blob 是 responseType,
-    // 跟请求体无关,统一走下面的 header 注入流程即可。
-    const token = localStorage.getItem('token')
-    if (token && !isTokenExchangeRequest(config)) {
-      config.headers.Authorization = `Bearer ${token}`
-    }
+    // D7 Stage B: HttpOnly cookie 由浏览器自动随请求带，不再注入 Authorization header。
+    // (后端 ConsoleAuthenticationFilter 优先读 cookie，header fallback 也仍兼容老客户端)
 
     const tenantId = readStoredTenantId()
     if (tenantId) {
@@ -345,8 +338,9 @@ export function applyApiInterceptors(client: AxiosInstance): void {
               : ''
           showApiErrorToast(msg || '用户名或密码错误')
         } else if (isSessionAuthRequest(cfg)) {
-          // /auth/me 401：session 真正失效 → 清 token 跳登录
-          localStorage.removeItem('token')
+          // /auth/me 401：session 真正失效 → 清登录 flag 跳登录
+          // (HttpOnly cookie 由后端 max-age=0 或服务端 token 已过期；前端只需清 UI flag)
+          localStorage.removeItem('batch-console-session')
           window.location.href = '/login'
         } else if (cfg && !cfg._refreshAttempted) {
           // 业务接口 401:先静默 refresh 一次,成功则 retry 原请求。
@@ -357,7 +351,7 @@ export function applyApiInterceptors(client: AxiosInstance): void {
           cfg._refreshAttempted = true
           const newToken = await tryRefreshToken(client)
           if (newToken) {
-            // 用新 token 重发(请求拦截器会从 localStorage 拿最新值)
+            // 用新 token 重发(cookie 已被后端 Set-Cookie 更新，浏览器自动带最新值)
             return client.request(cfg)
           }
           const msg = extractHttpErrorMessage(error) || '该操作未授权'

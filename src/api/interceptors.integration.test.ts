@@ -41,8 +41,11 @@ function makeClient() {
 
 beforeEach(() => {
   storage.clear()
-  storage.set('token', 'dev.test.token')
+  // D7 Stage B: token 不再前端持有；session flag 表达"已登录"
+  storage.set('batch-console-session', '1')
   storage.set('batch-console-tenant-id', 'tenant-a')
+  // telemetry 默认关闭，测试需显式启用否则 logger push() 早 return → 断言 getLogs() 全失败
+  storage.set('batch-console-telemetry', 'on')
   clearLogs()
 })
 
@@ -158,12 +161,13 @@ describe('401 分级处理:业务 401 不登出', () => {
     }
   }
 
-  it('/api/console/auth/me 401 → 清 token + 跳 /login', async () => {
+  it('/api/console/auth/me 401 → 清 session flag + 跳 /login', async () => {
     ;(window as { location: { href: string } }).location.href = '/'
     const client = makeClient()
     client.defaults.adapter = make401Adapter('/api/console/auth/me') as never
     await expect(client.get('/api/console/auth/me')).rejects.toThrow()
-    expect(storage.get('token')).toBeUndefined()
+    // D7 Stage B: 不再清 'token'（已不存在），改清 session flag
+    expect(storage.get('batch-console-session')).toBeUndefined()
     expect((window as { location: { href: string } }).location.href).toBe('/login')
   })
 
@@ -190,7 +194,8 @@ describe('401 分级处理:业务 401 不登出', () => {
       throw new Error('Unexpected URL ' + url)
     }) as never
     await expect(client.get('/api/console/ops/triggers')).rejects.toThrow()
-    expect(storage.get('token')).toBe('dev.test.token')
+    // D7 Stage B: 业务 401 + refresh 也 401 不应清登录态（可能是单接口 RBAC 不足）
+    expect(storage.get('batch-console-session')).toBe('1')
     expect((window as { location: { href: string } }).location.href).toBe('/')
   })
 
@@ -238,20 +243,20 @@ describe('401 分级处理:业务 401 不登出', () => {
       throw new Error('Unexpected URL ' + url)
     }) as never
     const resp = await client.get('/api/console/ops/triggers')
-    // refresh 后写入新 token
-    expect(storage.get('token')).toBe('new-token')
+    // D7 Stage B: token 走 HttpOnly cookie，不再写 localStorage；仅断言 retry 通过
     expect(bizCallCount).toBe(2)
     expect(resp.data).toEqual({ items: [] })
     // 没跳登录
     expect((window as { location: { href: string } }).location.href).toBe('/')
   })
 
-  it('/api/console/auth/login 401 → 保留 token（提示密码错），不跳登录', async () => {
+  it('/api/console/auth/login 401 → 保留 session 状态（提示密码错），不跳登录', async () => {
     ;(window as { location: { href: string } }).location.href = '/'
     const client = makeClient()
     client.defaults.adapter = make401Adapter('/api/console/auth/login') as never
     await expect(client.post('/api/console/auth/login', {})).rejects.toThrow()
-    expect(storage.get('token')).toBe('dev.test.token')
+    // D7 Stage B: 登录 401 是输错密码，不应清掉已有 session flag
+    expect(storage.get('batch-console-session')).toBe('1')
     expect((window as { location: { href: string } }).location.href).toBe('/')
   })
 })
@@ -299,12 +304,13 @@ describe('Blob 响应:不读 body', () => {
     expect(String(e!.props?.response)).toMatch(/Blob responseType/)
   })
 
-  it('blob 请求也要带 Authorization 头(报表导出 / 模板下载场景必须)', async () => {
-    localStorage.setItem('token', 'jwt-blob-test')
+  it('blob 请求不注入 Authorization 头 (D7 Stage B: cookie 已自动带)', async () => {
     const client = makeClient()
     let capturedAuth: string | undefined
+    let capturedTenant: string | undefined
     client.defaults.adapter = async (cfg) => {
       capturedAuth = cfg.headers?.Authorization as string | undefined
+      capturedTenant = cfg.headers?.['X-Tenant-Id'] as string | undefined
       return {
         data: new Blob(['x']),
         status: 200,
@@ -316,8 +322,10 @@ describe('Blob 响应:不读 body', () => {
 
     await client.get('/api/console/reports/excel/audits', { responseType: 'blob' })
 
-    expect(capturedAuth).toBe('Bearer jwt-blob-test')
-    localStorage.removeItem('token')
+    // Authorization 不再注入；后端靠 HttpOnly cookie 鉴权
+    expect(capturedAuth).toBeUndefined()
+    // 但 X-Tenant-Id 仍然需要 (cookie 不带租户)
+    expect(capturedTenant).toBe('tenant-a')
   })
 })
 

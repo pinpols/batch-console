@@ -40,7 +40,9 @@ const UPLOAD_INTERVAL_MS = 15_000
 const UPLOAD_BATCH_SIZE = 50
 const TELEMETRY_ENDPOINT = '/api/console/telemetry/events'
 const APP_NAME = 'batch-console'
-const TOKEN_STORAGE_KEY = 'token'
+// D7 Stage B: 不再读 'token'，改读 session flag。真正鉴权靠 HttpOnly cookie 自动随
+// fetch keepalive 发送（fetch 默认 same-origin 带 cookie；keepalive 也保留这一行为）。
+const SESSION_FLAG_KEY = 'batch-console-session'
 const TENANT_STORAGE_KEY = 'batch-console-tenant-id'
 
 /** 已知 benign 错误 —— 不进 buffer,不上报,不刷 UI */
@@ -89,27 +91,12 @@ function currentPage(): string {
   return typeof location !== 'undefined' ? location.pathname + location.hash : ''
 }
 
-/** base64url(JWT 用)→ binary string,比 atob 更耐受 `-` 与 `_` */
-function base64UrlDecode(s: string): string {
-  const pad = s.length % 4
-  const b64 = s.replace(/-/g, '+').replace(/_/g, '/') + (pad ? '='.repeat(4 - pad) : '')
-  if (typeof atob !== 'undefined') return atob(b64)
-  // node 环境兜底
-  return Buffer.from(b64, 'base64').toString('binary')
-}
-
+/**
+ * D7 Stage B: 不再前端解码 JWT。userId 现在由后端从 HttpOnly cookie 鉴权后服务端补齐
+ * （后端 telemetry receive handler 知道当前 principal）。前端 payload 留空 userId 即可。
+ */
 function currentUserId(): string | null {
-  try {
-    const token = localStorage.getItem(TOKEN_STORAGE_KEY)
-    if (!token) return null
-    const parts = token.split('.')
-    if (parts.length < 2) return null
-    const payload = JSON.parse(base64UrlDecode(parts[1])) as Record<string, unknown>
-    const sub = payload.sub ?? payload.userId
-    return typeof sub === 'string' ? sub : null
-  } catch {
-    return null
-  }
+  return null
 }
 
 function currentTenantId(): string | null {
@@ -289,18 +276,17 @@ function buildPayload(entries: LogEntry[]): TelemetryPayload {
 }
 
 /** Safari 私模式 localStorage 抛 SecurityError；wrap 一层避免 unload 路径静默崩溃。 */
-function readTokenSafely(): string | null {
+function hasSessionFlag(): boolean {
   try {
-    return localStorage.getItem(TOKEN_STORAGE_KEY)
+    return localStorage.getItem(SESSION_FLAG_KEY) === '1'
   } catch {
-    return null
+    return false
   }
 }
 
 async function uploadPendingLogs(): Promise<void> {
   if (uploadInFlight) return
-  const token = readTokenSafely()
-  if (!token) return // 未登录期间暂不发,留在 buffer 登录后补发
+  if (!hasSessionFlag()) return // 未登录期间暂不发,留在 buffer 登录后补发
   const pending = buffer.filter((e) => e.id > lastUploadedSeq)
   if (pending.length === 0) return
   const chunk = pending.slice(0, UPLOAD_BATCH_SIZE)
@@ -314,11 +300,11 @@ async function uploadPendingLogs(): Promise<void> {
   uploadInFlight = true
   try {
     const tenantId = currentTenantId() ?? ''
+    // D7 Stage B: cookie 自动带；不再注入 Authorization header
     const res = await fetch(TELEMETRY_ENDPOINT, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
         ...(tenantId ? { 'X-Tenant-Id': tenantId } : {}),
       },
       body: JSON.stringify(payload),
@@ -345,17 +331,16 @@ async function uploadPendingLogs(): Promise<void> {
 }
 
 function flushUploadOnUnload(): void {
-  const token = readTokenSafely()
-  if (!token) return
+  if (!hasSessionFlag()) return
   const pending = buffer.filter((e) => e.id > lastUploadedSeq)
   if (pending.length === 0) return
   const chunk = pending.slice(0, UPLOAD_BATCH_SIZE)
   try {
+    // D7 Stage B: cookie 自动带；不再注入 Authorization header
     fetch(TELEMETRY_ENDPOINT, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
         ...(currentTenantId() ? { 'X-Tenant-Id': currentTenantId()! } : {}),
       },
       body: JSON.stringify(buildPayload(chunk)),
