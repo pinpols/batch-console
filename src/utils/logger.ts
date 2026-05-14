@@ -50,6 +50,27 @@ const IGNORED_ERROR_PATTERNS: readonly RegExp[] = [
   /^Script error\.?$/, // 跨域脚本,没 stack 也没法排障
 ]
 
+/**
+ * 总开关：默认关闭。
+ * - 构建期：`VITE_TELEMETRY_ENABLED=true` 时启用
+ * - 运行期：localStorage 设置 `batch-console-telemetry=on` 可临时打开（排障用）
+ *
+ * 关闭时所有 log* / initLogger / unload 上报全部 no-op，不写 buffer、不起定时器、
+ * 不注册 beforeunload 监听 —— 避免 `Failed to fetch` 类卸载竞态噪音。
+ */
+const TELEMETRY_TOGGLE_KEY = 'batch-console-telemetry'
+
+function isTelemetryEnabled(): boolean {
+  try {
+    const override = localStorage.getItem(TELEMETRY_TOGGLE_KEY)
+    if (override === 'on') return true
+    if (override === 'off') return false
+  } catch {
+    /* private mode / quota */
+  }
+  return import.meta.env?.VITE_TELEMETRY_ENABLED === 'true'
+}
+
 /** tab 级 session ID,整个页面生命周期不变 */
 const SESSION_ID = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
 
@@ -104,6 +125,7 @@ function isIgnoredError(name: string): boolean {
 // ────────────────────────────────────────────── 核心 API
 
 function push(type: LogType, level: LogLevel, name: string, props?: Record<string, unknown>): void {
+  if (!isTelemetryEnabled()) return
   if (type === 'error' && isIgnoredError(name)) return
   const entry: LogEntry = {
     id: ++seq,
@@ -338,6 +360,18 @@ function flushUploadOnUnload(): void {
 // ────────────────────────────────────────────── 生命周期
 
 export function initLogger(): void {
+  if (!isTelemetryEnabled()) {
+    // 开关关闭：清掉历史 buffer 并不起任何定时器 / 监听器
+    if (flushTimer) {
+      clearInterval(flushTimer)
+      flushTimer = null
+    }
+    if (uploadTimer) {
+      clearInterval(uploadTimer)
+      uploadTimer = null
+    }
+    return
+  }
   restore()
 
   if (flushTimer) clearInterval(flushTimer)
