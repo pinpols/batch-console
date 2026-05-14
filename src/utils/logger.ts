@@ -80,6 +80,8 @@ let flushTimer: ReturnType<typeof setInterval> | null = null
 let uploadTimer: ReturnType<typeof setInterval> | null = null
 let lastUploadedSeq = 0
 let uploadInFlight = false
+/** 监听器幂等注册标志：防止 initLogger 被多次调用时叠加 beforeunload/visibilitychange */
+let listenersRegistered = false
 
 // ────────────────────────────────────────────── 环境信息
 
@@ -286,9 +288,18 @@ function buildPayload(entries: LogEntry[]): TelemetryPayload {
   }
 }
 
+/** Safari 私模式 localStorage 抛 SecurityError；wrap 一层避免 unload 路径静默崩溃。 */
+function readTokenSafely(): string | null {
+  try {
+    return localStorage.getItem(TOKEN_STORAGE_KEY)
+  } catch {
+    return null
+  }
+}
+
 async function uploadPendingLogs(): Promise<void> {
   if (uploadInFlight) return
-  const token = localStorage.getItem(TOKEN_STORAGE_KEY)
+  const token = readTokenSafely()
   if (!token) return // 未登录期间暂不发,留在 buffer 登录后补发
   const pending = buffer.filter((e) => e.id > lastUploadedSeq)
   if (pending.length === 0) return
@@ -334,7 +345,7 @@ async function uploadPendingLogs(): Promise<void> {
 }
 
 function flushUploadOnUnload(): void {
-  const token = localStorage.getItem(TOKEN_STORAGE_KEY)
+  const token = readTokenSafely()
   if (!token) return
   const pending = buffer.filter((e) => e.id > lastUploadedSeq)
   if (pending.length === 0) return
@@ -359,9 +370,22 @@ function flushUploadOnUnload(): void {
 
 // ────────────────────────────────────────────── 生命周期
 
+/** beforeunload 处理器：声明在外部以便 removeEventListener 引用同一函数。 */
+function onBeforeUnload(): void {
+  flushLogs()
+  flushUploadOnUnload()
+}
+
+function onVisibilityChange(): void {
+  if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
+    flushLogs()
+    flushUploadOnUnload()
+  }
+}
+
 export function initLogger(): void {
   if (!isTelemetryEnabled()) {
-    // 开关关闭：清掉历史 buffer 并不起任何定时器 / 监听器
+    // 开关关闭：清掉历史 timer 并卸载已注册的监听器，行为完全等价"未启用"
     if (flushTimer) {
       clearInterval(flushTimer)
       flushTimer = null
@@ -369,6 +393,11 @@ export function initLogger(): void {
     if (uploadTimer) {
       clearInterval(uploadTimer)
       uploadTimer = null
+    }
+    if (listenersRegistered && typeof window !== 'undefined') {
+      window.removeEventListener('visibilitychange', onVisibilityChange)
+      window.removeEventListener('beforeunload', onBeforeUnload)
+      listenersRegistered = false
     }
     return
   }
@@ -382,19 +411,27 @@ export function initLogger(): void {
     void uploadPendingLogs()
   }, UPLOAD_INTERVAL_MS)
 
-  if (typeof window !== 'undefined') {
-    // 页面隐藏/关闭时:落盘 + 兜底上报(keepalive fetch,浏览器会后台完成)
-    window.addEventListener('visibilitychange', () => {
-      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
-        flushLogs()
-        flushUploadOnUnload()
-      }
-    })
-    window.addEventListener('beforeunload', () => {
-      flushLogs()
-      flushUploadOnUnload()
-    })
+  // 监听器幂等注册：initLogger 被 HMR / 运行期 reinit 多次调用时不会叠加
+  if (!listenersRegistered && typeof window !== 'undefined') {
+    window.addEventListener('visibilitychange', onVisibilityChange)
+    window.addEventListener('beforeunload', onBeforeUnload)
+    listenersRegistered = true
   }
 
   push('route', 'info', '日志系统已初始化')
+}
+
+/**
+ * 运行期手动重新启停 telemetry（排障用）。
+ * 用法：浏览器 console 执行 `localStorage.setItem('batch-console-telemetry','on')`，
+ * 然后再调 `reinitLogger()`（或暴露成 window.__reinitLogger 供 devtools 触发）即可立刻生效，
+ * 无需刷新页面。
+ */
+export function reinitLogger(): void {
+  initLogger()
+}
+
+if (typeof window !== 'undefined') {
+  // 暴露给 devtools，便于运维实时打开/关闭：window.__reinitLogger()
+  ;(window as unknown as { __reinitLogger?: () => void }).__reinitLogger = reinitLogger
 }
