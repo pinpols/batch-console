@@ -31,6 +31,8 @@ if (typeof window === 'undefined') {
 beforeEach(() => {
   clearLogs()
   storage.clear()
+  // telemetry 默认关闭（cc90063），测试需显式启用否则 push() 早 return → buffer 永远为空
+  storage.set('batch-console-telemetry', 'on')
 })
 
 describe('logger core — schema 对齐后端 OpenAPI', () => {
