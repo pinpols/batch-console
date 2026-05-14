@@ -8,6 +8,10 @@ const baseURL =
 export const apiClient = axios.create({
   baseURL,
   timeout: 30_000,
+  // ADR-030 §D7：后端登录响应下发 HttpOnly cookie `batch_console_token`，浏览器自动随请求回带。
+  // 同源场景 axios 默认不带 cookie，必须显式 withCredentials=true。
+  // 兼容期 Authorization header 仍由 interceptor 注入（双轨），后续 PR 完成迁移后再删。
+  withCredentials: true,
   headers: { 'Content-Type': 'application/json' },
   // 重写默认 transformResponse：axios 默认 JSON.parse 会静默截断 > 2^53 的 Long。
   // 用 json-bigint 把超大数转成 string，保住精度；blob/stream/非 JSON 原样返回。
