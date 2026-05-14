@@ -16,6 +16,9 @@ interface ImportMetaEnv {
   readonly VITE_API_BASE_URL?: string
   readonly VITE_DEV_PROXY_TARGET?: string
   readonly VITE_APP_TITLE?: string
+  /** 前端 telemetry 日志总开关。`'true'` 才启用；默认关闭。 */
+  readonly VITE_TELEMETRY_ENABLED?: string
+  readonly VITE_TELEMETRY_ENDPOINT?: string
 }
 
 interface ImportMeta {
