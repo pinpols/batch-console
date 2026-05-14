@@ -25,6 +25,11 @@ import {
   resolveEdgePortsForDraft,
 } from './workflowConstants'
 
+// X6 节点/边形状是全局注册表;composable 多次实例化时不能重复注册,
+// 否则 X6 抛 "Edge with name 'workflow-edge' already registered."
+// 标志位提升到模块作用域,首次注册后整页生命周期都为 true。
+let shapesRegistered = false
+
 // X6 SVG 属性需字面量颜色,不能用 CSS var()。集中常量便于跟随设计 token 调整。
 const GRAPH_COLORS = {
   outPortStroke: '#16a34a',
@@ -261,7 +266,6 @@ export function useWorkflowGraph(deps: GraphDeps) {
 
   // ─── Shape registration ────────────────────────────────────────────────────
 
-  let shapesRegistered = false
   function registerShapes() {
     if (shapesRegistered) return
 
@@ -769,15 +773,20 @@ export function useWorkflowGraph(deps: GraphDeps) {
     graph.value.use(
       new History({
         enabled: true,
-        beforeAddCommand(_event, args) {
+        beforeAddCommand(event, args) {
           // canvasResetting=true 期间（重置画布 / 自动布局 / 切换 workflow）所有变更不入栈
           if (canvasResetting.value) return false
-          // 仅记录用户交互产生的 ui 修改，忽略系统态（如 style 自动刷新）
           const opts = (args as { options?: { ui?: boolean; stencil?: unknown } } | undefined)
             ?.options
+          // 用户拖入（带 stencil 标记）或显式 ui 操作 → 进栈
           if (opts?.stencil != null) return true
           if (opts?.ui === true) return true
-          // node:added 等没有 ui 标记的也允许（拖入 / 删除）
+          // 程序化样式刷新（setNodeStyle / setEdgeStyle 调 cell.attr 不带 ui 标记）会
+          // 触发 `cell:change:attrs`；这类纯样式变更不应进 undo 栈，否则 ctrl+z 撤销的
+          // 是"样式刷新"而非"结构变更"，用户体验异常。
+          if (event === 'cell:change:attrs') return false
+          // 结构变更（node:added / node:removed / edge:added / edge:removed / cell:change:data
+          // 等）即使没有 ui 标记也属于业务编辑，保留入栈。
           return true
         },
       }),
