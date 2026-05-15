@@ -10,7 +10,22 @@
     </PageHeader>
 
     <SectionCard v-if="runId">
-      <template #header>运行状态叠加</template>
+      <template #header>
+        运行状态叠加
+        <el-tag
+          v-if="runStatus"
+          size="small"
+          :type="runStatusTagType"
+          effect="plain"
+          class="run-overlay-status"
+        >
+          {{ runStatus }}
+        </el-tag>
+        <span v-if="pollingActive" class="run-overlay-poll">
+          <span class="run-overlay-poll-dot" />
+          每 {{ pollIntervalMs / 1000 }}s 自动刷新
+        </span>
+      </template>
       <div class="run-overlay-legend">
         <span class="legend-chip legend-chip--running">RUNNING</span>
         <span class="legend-chip legend-chip--success">SUCCESS</span>
@@ -46,7 +61,7 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, nextTick, onMounted, ref, watch } from 'vue'
+  import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { ElMessage } from 'element-plus'
   import { DocumentCopy, Refresh } from '@element-plus/icons-vue'
@@ -57,11 +72,15 @@
   import DataState from '@/components/common/DataState.vue'
   import { workflowApi } from '@/api/workflow'
   import { queryWorkflowNodeRuns } from '@/api/workflowQueries'
+  import { instanceApi } from '@/api/instance'
   import { useTenantStore } from '@/stores/tenant'
   import type {
     ConsoleWorkflowNodeRunResponse,
     WorkflowDefinitionDetailResponse,
   } from '@/types/api.generated'
+
+  const pollIntervalMs = 8000
+  const terminalStatuses = new Set(['SUCCESS', 'COMPLETED', 'FAILED', 'CANCELLED', 'TERMINATED'])
 
   const route = useRoute()
   const router = useRouter()
@@ -83,6 +102,19 @@
   const graphRef = ref<HTMLDivElement | null>(null)
   const loading = ref(false)
   const errorMessage = ref('')
+  const runStatus = ref<string | null>(null)
+  /** sanitized mermaid id → 原始 nodeCode 反查表,用于节点点击导航 */
+  const nodeCodeBySanitizedId = ref<Map<string, string>>(new Map())
+  let pollTimer: ReturnType<typeof setInterval> | null = null
+  const pollingActive = ref(false)
+
+  const runStatusTagType = computed<'primary' | 'success' | 'danger' | 'info'>(() => {
+    const s = (runStatus.value || '').toUpperCase()
+    if (s === 'RUNNING') return 'primary'
+    if (s === 'SUCCESS' || s === 'COMPLETED') return 'success'
+    if (s === 'FAILED' || s === 'TERMINATED') return 'danger'
+    return 'info'
+  })
 
   const title = computed(() => {
     if (!detail.value) return 'Workflow 视图'
@@ -110,27 +142,118 @@
       errorMessage.value = '路由参数 id 非法'
       return
     }
+    stopPoll()
     loading.value = true
     errorMessage.value = ''
     try {
-      const [d, mer, nodeRuns] = await Promise.all([
+      const [d, mer, nodeRuns, run] = await Promise.all([
         workflowApi.detailById(id.value, tenant.tenantId),
         workflowApi.mermaid(id.value, tenant.tenantId),
         runId.value
           ? queryWorkflowNodeRuns(tenant.tenantId, runId.value)
           : Promise.resolve<ConsoleWorkflowNodeRunResponse[]>([]),
+        runId.value
+          ? instanceApi.workflowRunDetail(runId.value, tenant.tenantId).catch(() => null)
+          : Promise.resolve(null),
       ])
       detail.value = d
       mermaidText.value = mer.mermaid ?? ''
+      runStatus.value = run?.runStatus ?? null
+      buildNodeCodeMap(d)
       rendererText.value = applyStateOverlay(mermaidText.value, nodeRuns)
       await renderMermaid(rendererText.value)
+      attachNodeClicks()
+      maybeStartPoll()
     } catch (err: unknown) {
       errorMessage.value = err instanceof Error ? err.message : String(err)
       mermaidText.value = ''
       rendererText.value = ''
+      runStatus.value = null
       clearGraph()
     } finally {
       loading.value = false
+    }
+  }
+
+  /**
+   * 软刷新:不动整图骨架(detail/mermaidText 不重拉),只重新拉 nodeRuns + run.runStatus,
+   * 重新生成叠加并重渲染。轮询期间不显 loading,避免页面闪。终态后停轮询。
+   */
+  async function tickPoll() {
+    if (!runId.value) return
+    try {
+      const [nodeRuns, run] = await Promise.all([
+        queryWorkflowNodeRuns(tenant.tenantId, runId.value),
+        instanceApi.workflowRunDetail(runId.value, tenant.tenantId).catch(() => null),
+      ])
+      runStatus.value = run?.runStatus ?? null
+      rendererText.value = applyStateOverlay(mermaidText.value, nodeRuns)
+      await renderMermaid(rendererText.value)
+      attachNodeClicks()
+      if (run?.runStatus && terminalStatuses.has(run.runStatus.toUpperCase())) {
+        stopPoll()
+      }
+    } catch {
+      // 轮询失败不打扰用户,等下次 tick 或手动刷新
+    }
+  }
+
+  function maybeStartPoll() {
+    stopPoll()
+    if (!runId.value) return
+    const s = (runStatus.value || '').toUpperCase()
+    if (terminalStatuses.has(s)) return
+    pollingActive.value = true
+    pollTimer = setInterval(() => {
+      void tickPoll()
+    }, pollIntervalMs)
+  }
+
+  function stopPoll() {
+    if (pollTimer) {
+      clearInterval(pollTimer)
+      pollTimer = null
+    }
+    pollingActive.value = false
+  }
+
+  function buildNodeCodeMap(d: WorkflowDefinitionDetailResponse | null) {
+    const map = new Map<string, string>()
+    for (const n of d?.nodes ?? []) {
+      if (n.nodeCode) map.set(sanitizeMermaidId(n.nodeCode), n.nodeCode)
+    }
+    nodeCodeBySanitizedId.value = map
+  }
+
+  /**
+   * mermaid 渲染后扫 SVG 里所有 g.node,根据 id="flowchart-<sanitized>-<seq>" 反查原始
+   * nodeCode 并挂点击事件:有 runId 跳运行详情;无 runId 仅展示节点元数据。
+   */
+  function attachNodeClicks() {
+    if (!graphRef.value) return
+    const nodes = graphRef.value.querySelectorAll<SVGGElement>('g.node')
+    const idPattern = /^flowchart-(.+)-\d+$/
+    nodes.forEach((node) => {
+      const m = idPattern.exec(node.id)
+      if (!m) return
+      const original = nodeCodeBySanitizedId.value.get(m[1])
+      if (!original) return
+      node.style.cursor = 'pointer'
+      node.addEventListener('click', () => onNodeClick(original))
+    })
+  }
+
+  function onNodeClick(nodeCode: string) {
+    if (runId.value) {
+      void router.push({
+        path: `/monitor/workflow-runs/${runId.value}`,
+        query: { nodeCode },
+      })
+    } else {
+      const meta = detail.value?.nodes?.find((n) => n.nodeCode === nodeCode)
+      ElMessage.info(
+        `${nodeCode}${meta?.nodeName ? ' · ' + meta.nodeName : ''} · type=${meta?.nodeType ?? '?'}`,
+      )
     }
   }
 
@@ -230,6 +353,7 @@
 
   onMounted(reload)
   watch([() => route.params.id, () => route.query.runId], reload)
+  onBeforeUnmount(stopPoll)
 </script>
 
 <style scoped>
@@ -290,5 +414,32 @@
   }
   .run-overlay-link {
     margin-left: auto;
+  }
+  .run-overlay-status {
+    margin-left: 8px;
+  }
+  .run-overlay-poll {
+    margin-left: 12px;
+    color: var(--el-text-color-secondary);
+    font-size: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .run-overlay-poll-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #3b82f6;
+    animation: workflow-mermaid-pulse 1.4s ease-in-out infinite;
+  }
+  @keyframes workflow-mermaid-pulse {
+    0%,
+    100% {
+      opacity: 0.35;
+    }
+    50% {
+      opacity: 1;
+    }
   }
 </style>
