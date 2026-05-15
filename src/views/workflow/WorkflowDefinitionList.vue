@@ -330,7 +330,6 @@
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import ProTable from '@/components/table/ProTable.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
-  import TenantSelect from '@/components/common/TenantSelect.vue'
   import JsonPreview from '@/components/common/JsonPreview.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
@@ -428,13 +427,13 @@
       ),
     ).map((v) => ({ value: v, label: v }))
   })
-  function openDag(workflowCode: string) {
-    void router.push({ path: `/workflow/designer/${encodeURIComponent(workflowCode)}` })
+  function openDag(row: ConsoleWorkflowDefinitionResponse) {
+    void router.push({ path: `/workflow/viewer/${row.id}` })
   }
 
-  /** 新建走 designer 的空白模式;由用户填 code/name/type 后提交 */
+  /** 新建走配置包 Excel 导入向导(workflow_definition/node/edge 3 个 sheet 在同包内) */
   function goCreate() {
-    void router.push({ path: '/workflow/designer', query: { mode: 'create' } })
+    void router.push({ path: '/config/tenant-package' })
   }
 
   /**
@@ -450,7 +449,7 @@
         key: 'dag',
         label: t('workflowDefinitionList.actionDag'),
         primary: true,
-        onClick: () => openDag(row.workflowCode),
+        onClick: () => openDag(row),
       },
       {
         key: 'validate',
