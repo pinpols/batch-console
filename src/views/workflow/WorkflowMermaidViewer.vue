@@ -9,6 +9,21 @@
       </template>
     </PageHeader>
 
+    <SectionCard v-if="runId">
+      <template #header>运行状态叠加</template>
+      <div class="run-overlay-legend">
+        <span class="legend-chip legend-chip--running">RUNNING</span>
+        <span class="legend-chip legend-chip--success">SUCCESS</span>
+        <span class="legend-chip legend-chip--failed">FAILED</span>
+        <span class="legend-chip legend-chip--waiting">WAITING / READY</span>
+        <span class="legend-chip legend-chip--cancelled">CANCELLED / SKIPPED</span>
+        <span class="legend-chip legend-chip--pending">未启动 / 其它</span>
+        <el-link type="primary" :underline="false" class="run-overlay-link" @click="goToRun">
+          回到运行详情 #{{ runId }}
+        </el-link>
+      </div>
+    </SectionCard>
+
     <SectionCard>
       <template #header>DAG 视图</template>
       <DataState
@@ -32,7 +47,7 @@
 
 <script setup lang="ts">
   import { computed, nextTick, onMounted, ref, watch } from 'vue'
-  import { useRoute } from 'vue-router'
+  import { useRoute, useRouter } from 'vue-router'
   import { ElMessage } from 'element-plus'
   import { DocumentCopy, Refresh } from '@element-plus/icons-vue'
   import mermaid from 'mermaid'
@@ -41,15 +56,30 @@
   import SectionCard from '@/components/common/SectionCard.vue'
   import DataState from '@/components/common/DataState.vue'
   import { workflowApi } from '@/api/workflow'
+  import { queryWorkflowNodeRuns } from '@/api/workflowQueries'
   import { useTenantStore } from '@/stores/tenant'
-  import type { WorkflowDefinitionDetailResponse } from '@/types/api.generated'
+  import type {
+    ConsoleWorkflowNodeRunResponse,
+    WorkflowDefinitionDetailResponse,
+  } from '@/types/api.generated'
 
   const route = useRoute()
+  const router = useRouter()
   const tenant = useTenantStore()
 
   const id = computed(() => Number(route.params.id))
+  /** 可选 ?runId=NNN —— 存在则叠加该 run 的节点状态着色 */
+  const runId = computed(() => {
+    const raw = route.query.runId
+    const n = Number(Array.isArray(raw) ? raw[0] : raw)
+    return Number.isFinite(n) && n > 0 ? n : null
+  })
+
   const detail = ref<WorkflowDefinitionDetailResponse | null>(null)
+  /** 后端原始 mermaid 文本(无状态) */
   const mermaidText = ref('')
+  /** 含状态叠加的最终 mermaid 文本(渲染用) */
+  const rendererText = ref('')
   const graphRef = ref<HTMLDivElement | null>(null)
   const loading = ref(false)
   const errorMessage = ref('')
@@ -83,20 +113,88 @@
     loading.value = true
     errorMessage.value = ''
     try {
-      const [d, mer] = await Promise.all([
+      const [d, mer, nodeRuns] = await Promise.all([
         workflowApi.detailById(id.value, tenant.tenantId),
         workflowApi.mermaid(id.value, tenant.tenantId),
+        runId.value
+          ? queryWorkflowNodeRuns(tenant.tenantId, runId.value)
+          : Promise.resolve<ConsoleWorkflowNodeRunResponse[]>([]),
       ])
       detail.value = d
       mermaidText.value = mer.mermaid ?? ''
-      await renderMermaid(mermaidText.value)
+      rendererText.value = applyStateOverlay(mermaidText.value, nodeRuns)
+      await renderMermaid(rendererText.value)
     } catch (err: unknown) {
       errorMessage.value = err instanceof Error ? err.message : String(err)
       mermaidText.value = ''
+      rendererText.value = ''
       clearGraph()
     } finally {
       loading.value = false
     }
+  }
+
+  /**
+   * 把每个 nodeCode 的最新状态映射成 mermaid classDef 着色。同一 nodeCode 在 nodeRuns 里可能
+   * 有多条(retry 产生多个 run_seq 行),取 id 最大的那条作为最终状态(后端 run_seq 跟 id 同向增长)。
+   */
+  function applyStateOverlay(text: string, nodeRuns: ConsoleWorkflowNodeRunResponse[]): string {
+    if (!text || nodeRuns.length === 0) return text
+    const latest = new Map<string, ConsoleWorkflowNodeRunResponse>()
+    for (const r of nodeRuns) {
+      const code = r.nodeCode
+      if (!code) continue
+      const prior = latest.get(code)
+      if (!prior || (r.id ?? 0) > (prior.id ?? 0)) latest.set(code, r)
+    }
+    const classLines: string[] = []
+    for (const [code, r] of latest) {
+      const klass = statusToClass(r.nodeStatus)
+      if (klass) classLines.push(`class ${sanitizeMermaidId(code)} ${klass}`)
+    }
+    return (
+      text.trimEnd() +
+      '\n' +
+      // classDef 与后端 sanitize 同源 ASCII 化
+      '  classDef running fill:#3b82f6,stroke:#1d4ed8,color:#fff\n' +
+      '  classDef success fill:#10b981,stroke:#047857,color:#fff\n' +
+      '  classDef failed fill:#ef4444,stroke:#b91c1c,color:#fff\n' +
+      '  classDef waiting fill:#f59e0b,stroke:#b45309,color:#fff\n' +
+      '  classDef cancelled fill:#6b7280,stroke:#374151,color:#fff\n' +
+      classLines.map((l) => '  ' + l).join('\n') +
+      '\n'
+    )
+  }
+
+  function statusToClass(status?: string | null): string | null {
+    if (!status) return null
+    const s = status.toUpperCase()
+    if (s === 'RUNNING') return 'running'
+    if (s === 'SUCCESS' || s === 'COMPLETED' || s === 'SUCCEEDED') return 'success'
+    if (s === 'FAILED' || s === 'PARTIAL_FAILED') return 'failed'
+    if (s === 'WAITING' || s === 'READY' || s === 'CREATED') return 'waiting'
+    if (s === 'CANCELLED' || s === 'SKIPPED' || s === 'TERMINATED') return 'cancelled'
+    return null
+  }
+
+  /**
+   * 镜像后端 WorkflowMermaidRenderer.sanitizeId:只留 ASCII 字母数字下划线,首字符非字母前缀 'n'。
+   * 必须与后端逐字符行为一致,否则 class 行匹配不上节点 id 导致着色失效。
+   */
+  function sanitizeMermaidId(raw: string): string {
+    let out = ''
+    for (let i = 0; i < raw.length; i++) {
+      const c = raw.charCodeAt(i)
+      const isAsciiAlphaNum = (c >= 65 && c <= 90) || (c >= 97 && c <= 122) || (c >= 48 && c <= 57)
+      out += isAsciiAlphaNum || c === 95 ? raw[i] : '_'
+    }
+    const first = out.length === 0 ? 95 : out.charCodeAt(0)
+    const firstIsAsciiLetter = (first >= 65 && first <= 90) || (first >= 97 && first <= 122)
+    return firstIsAsciiLetter ? out : 'n' + out
+  }
+
+  function goToRun() {
+    if (runId.value) void router.push(`/monitor/workflow-runs/${runId.value}`)
   }
 
   async function renderMermaid(text: string) {
@@ -131,7 +229,7 @@
   }
 
   onMounted(reload)
-  watch(() => route.params.id, reload)
+  watch([() => route.params.id, () => route.query.runId], reload)
 </script>
 
 <style scoped>
@@ -156,5 +254,41 @@
     line-height: 1.5;
     white-space: pre;
     overflow-x: auto;
+  }
+  .run-overlay-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+  }
+  .legend-chip {
+    display: inline-flex;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    line-height: 18px;
+    color: #fff;
+  }
+  .legend-chip--running {
+    background: #3b82f6;
+  }
+  .legend-chip--success {
+    background: #10b981;
+  }
+  .legend-chip--failed {
+    background: #ef4444;
+  }
+  .legend-chip--waiting {
+    background: #f59e0b;
+  }
+  .legend-chip--cancelled {
+    background: #6b7280;
+  }
+  .legend-chip--pending {
+    background: var(--el-fill-color-darker);
+    color: var(--el-text-color-secondary);
+  }
+  .run-overlay-link {
+    margin-left: auto;
   }
 </style>

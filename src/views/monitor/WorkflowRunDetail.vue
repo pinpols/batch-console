@@ -9,6 +9,9 @@
         <el-button type="primary" :loading="loading" @click="load">
           {{ t('monitor.runDetailRefresh') }}
         </el-button>
+        <el-button v-if="run?.workflowDefinitionId" :icon="View" @click="openDag">
+          看 DAG
+        </el-button>
         <el-button v-if="run" type="warning" :loading="actionLoading" @click="confirmCancel">
           {{ t('monitor.runDetailCancel') }}
         </el-button>
@@ -145,7 +148,8 @@
 
 <script setup lang="ts">
   import { computed, ref, watch, reactive } from 'vue'
-  import { useRoute } from 'vue-router'
+  import { useRoute, useRouter } from 'vue-router'
+  import { View } from '@element-plus/icons-vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
 
@@ -173,6 +177,7 @@
   } from '@/types/console-api'
 
   const route = useRoute()
+  const router = useRouter()
 
   const tenant = useTenantStore()
   const loading = ref(false)
@@ -215,6 +220,14 @@
   }
 
   const runId = computed(() => Number(route.params.id))
+
+  function openDag() {
+    if (!run.value?.workflowDefinitionId || !Number.isFinite(runId.value)) return
+    void router.push({
+      path: `/workflow/viewer/${run.value.workflowDefinitionId}`,
+      query: { runId: String(runId.value) },
+    })
+  }
 
   const headerDesc = computed(() =>
     Number.isFinite(runId.value) ? `Run #${runId.value}` : t('monitor.runDetailInvalidParam'),
