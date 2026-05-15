@@ -15,7 +15,6 @@ import {
   Document,
   DocumentChecked,
   Download,
-  EditPen,
   Files,
   FolderOpened,
   Histogram,
@@ -49,6 +48,8 @@ export interface NavigationItem {
   path: string
   icon?: Component
   minRole?: Role
+  /** 隐藏出现在侧边栏,但 Command Palette / 内嵌跳转 仍可达 */
+  hidden?: boolean
 }
 
 export interface NavigationGroup {
@@ -60,15 +61,20 @@ export interface NavigationGroup {
 }
 
 /**
- * 侧边栏分组(2026-05-13 IA v2:7 组方案,易用性优先)。
+ * 侧边栏分组(2026-05-14 IA v3:8 组 → 7 组,38 visible → 35 visible)。
+ *
+ * 关键变化(对比 v2):
+ * - **#3 运行链路收敛**:`ops/diagnostic` 从"系统"挪到"运行"(看运行健康同心智),
+ *   `monitor/job-steps` 隐藏(从 job 实例 drill,不占主导航位)
+ * - **#1 侧边栏 8→7**:`配置 + 系统` 合并为 `配置与系统`(都是 admin 维护类心智),
+ *   `event-catalog` / `tenant-package` 折进 Command Palette
  *
  * 设计原则:
- * - 每组单一心智:告警与投递 / 配置 / 系统 严格分开,不再"基础设施"杂烩
- * - 组项数控制在 ≤6(系统组项数最多,但全部是同心智的 admin 项)
- * - 排障入口聚焦在 Runs 组(Trace + 实例运行)+ 综合查询(放告警与投递,因主要查投递/审计)
- * - 组 minRole 取组内最小,避免"幽灵分组"
+ * - 每组单一心智、组项数 ≤8(运行组现 5、配置与系统 8)
+ * - 高频在侧栏可见,低频走 Command Palette(hidden 项 ⌘K 仍可达)
+ * - 旧 group key 在 i18n 留兜底,用户停留在旧 URL 不会出现 raw key
  *
- * 参考 docs/ui/2026-05-13-ia-refactor-and-run-centric.md
+ * 参考 ADR docs/design/page-naming-convention.md(新页面三同命名约定)
  */
 export const navigationGroups: NavigationGroup[] = [
   {
@@ -97,12 +103,14 @@ export const navigationGroups: NavigationGroup[] = [
     title: '运行',
     icon: VideoPlay,
     children: [
+      // 概览 — 唯一主入口
       {
         title: pageTitle('/runs'),
         path: '/runs',
         minRole: 'VIEWER',
         icon: View,
       },
+      // Drill-down 明细(job-steps 已从主导航撤,从 job 实例详情进入,见下)
       {
         title: pageTitle('/monitor/job-instances'),
         path: '/monitor/job-instances',
@@ -115,25 +123,36 @@ export const navigationGroups: NavigationGroup[] = [
         minRole: 'VIEWER',
         icon: Promotion,
       },
+      // 统一排障入口:Trace 主入口
       {
-        title: pageTitle('/monitor/job-steps'),
-        path: '/monitor/job-steps',
-        minRole: 'VIEWER',
-        icon: Operation,
-      },
-      {
-        // Trace 在前:更明确的排障入口
         title: pageTitle('/observability/trace'),
         path: '/observability/trace',
         minRole: 'VIEWER',
         icon: Search,
       },
+      // 运维诊断:看运行健康(原系统组,2026-05-14 挪到运行组,同心智更顺)
       {
-        // 综合查询在后:兜底的跨域排障工具
+        title: pageTitle('/ops/diagnostic'),
+        path: '/ops/diagnostic',
+        minRole: 'ADMIN',
+        icon: DataAnalysis,
+      },
+      // ─── 以下 hidden,⌘K / 内嵌跳转 仍可达 ───
+      {
+        // job-steps 是 job 实例的 drill-down,从实例详情进,不占主导航
+        title: pageTitle('/monitor/job-steps'),
+        path: '/monitor/job-steps',
+        minRole: 'VIEWER',
+        icon: Operation,
+        hidden: true,
+      },
+      {
+        // queries 与 Trace 心智重叠,Trace 作主入口
         title: pageTitle('/observability/queries'),
         path: '/observability/queries',
         minRole: 'VIEWER',
         icon: Search,
+        hidden: true,
       },
     ],
   },
@@ -159,12 +178,6 @@ export const navigationGroups: NavigationGroup[] = [
         path: '/workflow/definitions',
         minRole: 'VIEWER',
         icon: Collection,
-      },
-      {
-        title: pageTitle('/workflow/designer'),
-        path: '/workflow/designer',
-        minRole: 'OPERATOR',
-        icon: EditPen,
       },
     ],
   },
@@ -234,51 +247,18 @@ export const navigationGroups: NavigationGroup[] = [
     ],
   },
   {
-    // 配置:发布单 / 变更同步 / 标签 / 批量导入 / 事件目录(都属"我要改/查 something")
-    key: 'config',
-    title: '配置',
-    icon: Memo,
-    minRole: 'VIEWER',
-    children: [
-      {
-        title: pageTitle('/config/releases'),
-        path: '/config/releases',
-        minRole: 'OPERATOR',
-        icon: DocumentChecked,
-      },
-      {
-        title: pageTitle('/config/management'),
-        path: '/config/management',
-        minRole: 'OPERATOR',
-        icon: Memo,
-      },
-      {
-        title: pageTitle('/system/tags'),
-        path: '/system/tags',
-        minRole: 'OPERATOR',
-        icon: PriceTag,
-      },
-      {
-        title: pageTitle('/config/tenant-package'),
-        path: '/config/tenant-package',
-        minRole: 'OPERATOR',
-        icon: Box,
-      },
-      {
-        title: pageTitle('/system/event-catalog'),
-        path: '/system/event-catalog',
-        minRole: 'VIEWER',
-        icon: Reading,
-      },
-    ],
-  },
-  {
-    // 调度:operator 日常调参的运行时资源(Worker / 触发器 / 批次日 / 队列 / 配额)
+    /**
+     * 调度:operator 日常调参的运行时资源 + 治理配置。
+     * 2026-05-14 IA 调整:8 项 → 5 项侧栏可见。
+     * 治理类 (queues/windows/calendars) 是 admin 低频配置,藏到 Command Palette,
+     * 避免和高频运行时(workers/triggers/snapshot)混在同一扫描视窗里增加心智负担。
+     */
     key: 'scheduling',
     title: '调度',
     icon: Timer,
     minRole: 'VIEWER',
     children: [
+      // 高频运行时(operator 日常)
       {
         title: pageTitle('/workers/management'),
         path: '/workers/management',
@@ -292,8 +272,6 @@ export const navigationGroups: NavigationGroup[] = [
         icon: Timer,
       },
       {
-        // 调度快照从"运行"挪到"调度":它是调度器视角(谁在排队/谁要发车),
-        // 和 Worker / 触发器 / 队列同心智,而不是某次实例运行
         title: pageTitle('/scheduler/snapshot'),
         path: '/scheduler/snapshot',
         minRole: 'VIEWER',
@@ -305,39 +283,55 @@ export const navigationGroups: NavigationGroup[] = [
         minRole: 'VIEWER',
         icon: Calendar,
       },
-      {
-        title: pageTitle('/governance/queues'),
-        path: '/governance/queues',
-        minRole: 'ADMIN',
-        icon: Management,
-      },
-      {
-        title: pageTitle('/governance/windows'),
-        path: '/governance/windows',
-        minRole: 'ADMIN',
-        icon: Timer,
-      },
-      {
-        title: pageTitle('/governance/calendars'),
-        path: '/governance/calendars',
-        minRole: 'ADMIN',
-        icon: Calendar,
-      },
+      // 治理 — operator 偶发,但仍是日常配额相关
       {
         title: pageTitle('/governance/quota'),
         path: '/governance/quota',
         minRole: 'OPERATOR',
         icon: PieChart,
       },
+      // ↓ 以下 admin 治理低频项隐藏到 Command Palette
+      {
+        title: pageTitle('/governance/queues'),
+        path: '/governance/queues',
+        minRole: 'ADMIN',
+        icon: Management,
+        hidden: true,
+      },
+      {
+        title: pageTitle('/governance/windows'),
+        path: '/governance/windows',
+        minRole: 'ADMIN',
+        icon: Timer,
+        hidden: true,
+      },
+      {
+        title: pageTitle('/governance/calendars'),
+        path: '/governance/calendars',
+        minRole: 'ADMIN',
+        icon: Calendar,
+        hidden: true,
+      },
     ],
   },
   {
-    // 系统:租户/账户/Key/参数 + 审计 + 运维工具(admin 维护类)
-    key: 'system',
-    title: '系统',
+    /**
+     * 配置与系统(2026-05-14 IA v3:合并原 config + system 两组)。
+     *
+     * 高频 8 项侧栏可见:租户/账户/Key/参数/审计 + 发布单/变更同步/标签。
+     * 低频 3 项 hidden,⌘K / 内嵌跳转可达:
+     *   - tenant-package(批量导入,半年用一次)
+     *   - event-catalog(查阅类只读字典)
+     *   - ai-chat(实验入口)
+     *
+     * ops/diagnostic 已挪到"运行"组(看运行健康同心智)。
+     */
+    key: 'configSystem',
+    title: '配置与系统',
     icon: Tools,
     minRole: 'VIEWER',
     children: [
+      // 租户与账号(高频)
       {
         title: pageTitle('/system/tenants'),
         path: '/system/tenants',
@@ -362,24 +356,53 @@ export const navigationGroups: NavigationGroup[] = [
         minRole: 'ADMIN',
         icon: Setting,
       },
+      // 审计(原"告警与投递"挪入)
       {
-        // 审计日志从"告警与投递"挪进系统组:它是"谁干了什么"的合规追溯,和运维诊断同心智
         title: pageTitle('/observability/audits'),
         path: '/observability/audits',
         minRole: 'VIEWER',
         icon: Notebook,
       },
+      // 配置(发布单 / 变更同步 / 标签 — 原 config 组保留高频 3 项)
       {
-        title: pageTitle('/ops/diagnostic'),
-        path: '/ops/diagnostic',
-        minRole: 'ADMIN',
-        icon: DataAnalysis,
+        title: pageTitle('/config/releases'),
+        path: '/config/releases',
+        minRole: 'OPERATOR',
+        icon: DocumentChecked,
+      },
+      {
+        title: pageTitle('/config/management'),
+        path: '/config/management',
+        minRole: 'OPERATOR',
+        icon: Memo,
+      },
+      {
+        title: pageTitle('/system/tags'),
+        path: '/system/tags',
+        minRole: 'OPERATOR',
+        icon: PriceTag,
+      },
+      // ─── hidden,⌘K 可达 ───
+      {
+        title: pageTitle('/config/tenant-package'),
+        path: '/config/tenant-package',
+        minRole: 'OPERATOR',
+        icon: Box,
+        hidden: true,
+      },
+      {
+        title: pageTitle('/system/event-catalog'),
+        path: '/system/event-catalog',
+        minRole: 'VIEWER',
+        icon: Reading,
+        hidden: true,
       },
       {
         title: pageTitle('/system/ai-chat'),
         path: '/system/ai-chat',
         minRole: 'ADMIN',
         icon: ChatLineRound,
+        hidden: true,
       },
     ],
   },

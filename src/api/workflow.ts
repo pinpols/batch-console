@@ -135,6 +135,13 @@ export const workflowApi = {
     post<DagValidationResult>(`/api/console/workflow-definitions/${id}/validate`, null, {
       params: { tenantId },
     }),
+
+  /**
+   * 拉取 workflow 渲染好的 mermaid flowchart 文本。供 viewer / docs / PR review 共用,
+   * 后端纯函数渲染,无 DB 状态副作用。
+   */
+  mermaid: (id: number, tenantId: string): Promise<{ mermaid: string }> =>
+    get<{ mermaid: string }>(`/api/console/workflow-definitions/${id}/mermaid`, { tenantId }),
 }
 
 /** 单条校验发现，与后端 `DagValidationResult.Finding` 1:1。`nodeCode` 与 `edgeId` 至多一个非空。 */

@@ -47,9 +47,9 @@ export const pageMetaByPath = {
     title: '流水线定义',
     description: '维护流水线定义和步骤执行顺序。',
   },
-  '/workflow/designer': {
-    title: '编排设计器',
-    description: '选择 Workflow 后编辑节点、条件边和汇聚关系。',
+  '/workflow/viewer': {
+    title: 'Workflow DAG 视图',
+    description: '只读查看 workflow 的 mermaid 图;编辑请走 Excel 包导入。',
   },
   '/runs': {
     title: '全部运行',

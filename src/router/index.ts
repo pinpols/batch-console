@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHistory, type RouteLocationNormalized } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { usePermissionStore } from '@/stores/permission'
 import { useRouteProgressStore } from '@/stores/routeProgress'
@@ -163,13 +163,13 @@ const routes = [
         },
       },
       {
-        path: 'workflow/designer/:code?',
-        name: 'workflow-designer',
-        component: () => import('@/views/workflow/WorkflowDesigner.vue'),
+        path: 'workflow/viewer/:id',
+        name: 'workflow-viewer',
+        component: () => import('@/views/workflow/WorkflowMermaidViewer.vue'),
         meta: {
-          title: '编排设计器',
-          activeMenu: '/workflow/designer',
-          minRole: 'OPERATOR',
+          title: 'Workflow DAG 视图',
+          activeMenu: '/workflow/definitions',
+          minRole: 'VIEWER',
         },
       },
       { path: 'monitor/instances', redirect: '/monitor/job-instances' },
@@ -247,7 +247,7 @@ const routes = [
       // route 保留 redirect 兼容旧书签。函数式 redirect 透传 query(traceId 等)。
       {
         path: 'logs',
-        redirect: (to) => ({
+        redirect: (to: RouteLocationNormalized) => ({
           path: '/observability/queries',
           query: { ...to.query, tab: 'executionLogs' },
         }),
@@ -543,6 +543,18 @@ const routes = [
     ],
   },
   // ─── Mobile 独立路由（/m/*）—— 桌面层级零耦合，共享 store/api/composables ───
+  //
+  // 设计:**5 主功能 Tab + 5 应急深链**(共 10 路由,详见 MobileTabBar.vue 注释)。
+  //
+  // 底部 Tab(5 项,常驻可见):
+  //   /m/alerts、/m/approvals、/m/ops/summary、/m/jobs、/m/workers
+  //
+  // 应急深链(5 项,无 Tab 入口,只从外部链入,删之前先确认产品):
+  //   /m/jobs/:id   ← Tab 点击 drill-down
+  //   /m/catchup    ← PWA push 通知 / 邮件
+  //   /m/files      ← 扫码 / 上游链
+  //   /m/outbox     ← PWA push 通知(投递失败)
+  //   /m/logs       ← traceId 跨页跳转 / 错误链
   {
     path: '/m',
     component: () => import('@/layout-mobile/MobileLayout.vue'),
