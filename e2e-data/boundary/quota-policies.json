@@ -1,0 +1,19 @@
+{
+  "endpoint": "/api/console/quota-policies",
+  "method": "POST",
+  "fixed": {
+    "tenantId": "tx",
+    "maxRunningJobsPerTenant": 50,
+    "maxPartitionsPerTenant": 20,
+    "maxQpsPerTenant": 1000,
+    "fairShareWeight": 1,
+    "enabled": true
+  },
+  "fields": [
+    { "name": "policyCode", "type": "string", "min": 1, "max": 128 },
+    { "name": "maxRunningJobsPerTenant", "type": "int", "min": 0, "max": 2147483647 },
+    { "name": "maxPartitionsPerTenant", "type": "int", "min": 0, "max": 2147483647 },
+    { "name": "maxQpsPerTenant", "type": "int", "min": 0, "max": 2147483647 },
+    { "name": "fairShareWeight", "type": "int", "min": 1, "max": 2147483647 }
+  ]
+}
