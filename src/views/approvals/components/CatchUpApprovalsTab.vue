@@ -23,7 +23,7 @@
             class="query-w-240"
             v-model="kwDraft"
             clearable
-            placeholder="requestId / jobCode / traceId"
+            :placeholder="t('approvals.catchUpKeywordPlaceholder')"
             @keyup.enter="onSearch"
           />
         </el-form-item>

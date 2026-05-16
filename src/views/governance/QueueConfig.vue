@@ -345,13 +345,17 @@
     >
       <el-form :model="queueForm" label-width="120px">
         <el-form-item :label="t('queueConfig.fieldQueueCode')" required>
-          <el-input v-model="queueForm.queueCode" :disabled="queueEditingId != null" />
+          <el-input
+            v-model="queueForm.queueCode"
+            :disabled="queueEditingId != null"
+            maxlength="128"
+          />
         </el-form-item>
         <el-form-item :label="t('queueConfig.fieldQueueName')"
-          ><el-input v-model="queueForm.queueName"
+          ><el-input v-model="queueForm.queueName" maxlength="256"
         /></el-form-item>
         <el-form-item :label="t('queueConfig.fieldQueueType')" required
-          ><el-input v-model="queueForm.queueType"
+          ><el-input v-model="queueForm.queueType" maxlength="32"
         /></el-form-item>
         <el-form-item :label="t('queueConfig.fieldMaxRunningJobs')"
           ><el-input-number v-model="queueForm.maxRunningJobs" :min="0"
@@ -363,13 +367,13 @@
           ><el-input-number v-model="queueForm.maxQps" :min="0"
         /></el-form-item>
         <el-form-item :label="t('queueConfig.fieldWorkerGroup')"
-          ><el-input v-model="queueForm.workerGroup"
+          ><el-input v-model="queueForm.workerGroup" maxlength="128"
         /></el-form-item>
         <el-form-item :label="t('queueConfig.fieldResourceTag')"
-          ><el-input v-model="queueForm.resourceTag"
+          ><el-input v-model="queueForm.resourceTag" maxlength="64"
         /></el-form-item>
         <el-form-item :label="t('queueConfig.fieldPriorityPolicy')"
-          ><el-input v-model="queueForm.priorityPolicy"
+          ><el-input v-model="queueForm.priorityPolicy" maxlength="32"
         /></el-form-item>
         <el-form-item :label="t('queueConfig.fieldFairShareWeight')"
           ><el-input-number v-model="queueForm.fairShareWeight" :min="0"
@@ -378,7 +382,11 @@
           ><el-switch v-model="queueForm.enabled"
         /></el-form-item>
         <el-form-item :label="t('queueConfig.fieldDescription')"
-          ><el-input v-model="queueForm.description" type="textarea"
+          ><el-input
+            v-model="queueForm.description"
+            type="textarea"
+            maxlength="512"
+            show-word-limit
         /></el-form-item>
       </el-form>
       <template #footer>
@@ -401,13 +409,17 @@
     >
       <el-form :model="windowForm" label-width="120px">
         <el-form-item :label="t('queueConfig.fieldWindowCode')" required>
-          <el-input v-model="windowForm.windowCode" :disabled="windowEditingId != null" />
+          <el-input
+            v-model="windowForm.windowCode"
+            :disabled="windowEditingId != null"
+            maxlength="128"
+          />
         </el-form-item>
         <el-form-item :label="t('queueConfig.fieldWindowName')"
-          ><el-input v-model="windowForm.windowName"
+          ><el-input v-model="windowForm.windowName" maxlength="256"
         /></el-form-item>
         <el-form-item :label="t('queueConfig.fieldTimezone')" required
-          ><el-input v-model="windowForm.timezone"
+          ><el-input v-model="windowForm.timezone" maxlength="64"
         /></el-form-item>
         <el-form-item :label="t('queueConfig.fieldStartTime')" required
           ><el-time-picker v-model="windowForm.startTime" value-format="HH:mm:ss"
@@ -416,10 +428,10 @@
           ><el-time-picker v-model="windowForm.endTime" value-format="HH:mm:ss"
         /></el-form-item>
         <el-form-item :label="t('queueConfig.fieldEndStrategy')"
-          ><el-input v-model="windowForm.endStrategy"
+          ><el-input v-model="windowForm.endStrategy" maxlength="32"
         /></el-form-item>
         <el-form-item :label="t('queueConfig.fieldOutOfWindowAction')"
-          ><el-input v-model="windowForm.outOfWindowAction"
+          ><el-input v-model="windowForm.outOfWindowAction" maxlength="32"
         /></el-form-item>
         <el-form-item :label="t('queueConfig.fieldAllowCrossDay')"
           ><el-switch v-model="windowForm.allowCrossDay"
@@ -428,7 +440,11 @@
           ><el-switch v-model="windowForm.enabled"
         /></el-form-item>
         <el-form-item :label="t('queueConfig.fieldDescription')"
-          ><el-input v-model="windowForm.description" type="textarea"
+          ><el-input
+            v-model="windowForm.description"
+            type="textarea"
+            maxlength="512"
+            show-word-limit
         /></el-form-item>
       </el-form>
       <template #footer>
@@ -451,19 +467,23 @@
     >
       <el-form :model="calendarForm" label-width="120px">
         <el-form-item :label="t('queueConfig.fieldCalendarCode')" required>
-          <el-input v-model="calendarForm.calendarCode" :disabled="calendarEditingId != null" />
+          <el-input
+            v-model="calendarForm.calendarCode"
+            :disabled="calendarEditingId != null"
+            maxlength="128"
+          />
         </el-form-item>
         <el-form-item :label="t('queueConfig.fieldCalendarName')" required
-          ><el-input v-model="calendarForm.calendarName"
+          ><el-input v-model="calendarForm.calendarName" maxlength="256"
         /></el-form-item>
         <el-form-item :label="t('queueConfig.fieldTimezone')" required
-          ><el-input v-model="calendarForm.timezone"
+          ><el-input v-model="calendarForm.timezone" maxlength="64"
         /></el-form-item>
         <el-form-item :label="t('queueConfig.fieldHolidayRollRule')"
-          ><el-input v-model="calendarForm.holidayRollRule"
+          ><el-input v-model="calendarForm.holidayRollRule" maxlength="32"
         /></el-form-item>
         <el-form-item :label="t('queueConfig.fieldCatchUpPolicy')"
-          ><el-input v-model="calendarForm.catchUpPolicy"
+          ><el-input v-model="calendarForm.catchUpPolicy" maxlength="32"
         /></el-form-item>
         <el-form-item :label="t('queueConfig.fieldCatchUpMaxDays')"
           ><el-input-number v-model="calendarForm.catchUpMaxDays" :min="0"
@@ -495,13 +515,17 @@
           ><el-date-picker v-model="holidayForm.bizDate" type="date" value-format="YYYY-MM-DD"
         /></el-form-item>
         <el-form-item :label="t('queueConfig.fieldDayType')" required
-          ><el-input v-model="holidayForm.dayType"
+          ><el-input v-model="holidayForm.dayType" maxlength="32"
         /></el-form-item>
         <el-form-item :label="t('queueConfig.fieldHolidayName')"
-          ><el-input v-model="holidayForm.holidayName"
+          ><el-input v-model="holidayForm.holidayName" maxlength="128"
         /></el-form-item>
         <el-form-item :label="t('queueConfig.fieldDescription')"
-          ><el-input v-model="holidayForm.description" type="textarea"
+          ><el-input
+            v-model="holidayForm.description"
+            type="textarea"
+            maxlength="512"
+            show-word-limit
         /></el-form-item>
       </el-form>
       <template #footer>

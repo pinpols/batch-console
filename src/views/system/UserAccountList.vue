@@ -89,7 +89,7 @@
             </template>
           </el-table-column>
           <DatetimeColumn prop="createdAt" :label="t('userAccountList.colCreatedAt')" width="160" />
-          <el-table-column :label="t('userAccountList.colActions')" width="360" fixed="right">
+          <el-table-column :label="t('userAccountList.colActions')" width="260" fixed="right">
             <template #default="{ row }">
               <div class="table-actions">
                 <el-button size="small" plain type="primary" @click="openEdit(row)">

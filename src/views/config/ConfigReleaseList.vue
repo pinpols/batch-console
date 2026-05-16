@@ -106,42 +106,9 @@
           width="120"
           show-overflow-tooltip
         />
-        <el-table-column :label="t('configReleaseList.colActions')" width="380" fixed="right">
+        <el-table-column :label="t('configReleaseList.colActions')" width="240" fixed="right">
           <template #default="{ row }">
-            <div class="table-actions">
-              <el-button
-                size="small"
-                plain
-                v-track-click="{ action: 'view config detail', id: row.id }"
-                @click="viewDetail(row)"
-              >
-                {{ t('configReleaseList.actionDetail') }}
-              </el-button>
-              <el-button size="small" plain type="primary" @click="doPublish(row)">
-                {{ t('configReleaseList.actionPublish') }}
-              </el-button>
-              <el-button size="small" plain @click="doGray(row)">
-                {{ t('configReleaseList.actionGray') }}
-              </el-button>
-              <el-button size="small" plain type="danger" @click="doRollback(row)">
-                {{ t('configReleaseList.actionRollback') }}
-              </el-button>
-              <el-button size="small" plain @click="doDeps(row)">
-                {{ t('configReleaseList.actionDeps') }}
-              </el-button>
-              <el-button size="small" plain @click="openDiff(row)">
-                {{ t('configReleaseList.actionDiff') }}
-              </el-button>
-              <el-button
-                size="small"
-                plain
-                type="warning"
-                v-track-click="{ action: 'submit config approval', id: row.id }"
-                @click="doSubmitApproval(row)"
-              >
-                {{ t('configReleaseList.actionSubmit') }}
-              </el-button>
-            </div>
+            <RowActions :actions="rowActions(row)" :inline-limit="2" />
           </template>
         </el-table-column>
       </ProTable>
@@ -302,6 +269,7 @@
   import ProTable from '@/components/table/ProTable.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
   import JsonPreview from '@/components/common/JsonPreview.vue'
+  import RowActions, { type RowAction } from '@/components/common/RowActions.vue'
   import type { FormInstance, FormRules } from 'element-plus'
   import type { ConsoleConfigReleaseResponse } from '@/types/console-api'
 
@@ -587,6 +555,34 @@
     diffForm.releaseIdB = 0
     diffData.value = null
     diffVisible.value = true
+  }
+
+  function rowActions(row: ConsoleConfigReleaseResponse): RowAction[] {
+    return [
+      { key: 'detail', label: t('configReleaseList.actionDetail'), onClick: () => viewDetail(row) },
+      {
+        key: 'publish',
+        label: t('configReleaseList.actionPublish'),
+        primary: true,
+        onClick: () => doPublish(row),
+      },
+      { key: 'gray', label: t('configReleaseList.actionGray'), onClick: () => doGray(row) },
+      { key: 'diff', label: t('configReleaseList.actionDiff'), onClick: () => openDiff(row) },
+      { key: 'deps', label: t('configReleaseList.actionDeps'), onClick: () => doDeps(row) },
+      {
+        key: 'submit',
+        label: t('configReleaseList.actionSubmit'),
+        divided: true,
+        onClick: () => doSubmitApproval(row),
+      },
+      {
+        key: 'rollback',
+        label: t('configReleaseList.actionRollback'),
+        danger: true,
+        divided: true,
+        onClick: () => doRollback(row),
+      },
+    ]
   }
 
   async function doDiff() {

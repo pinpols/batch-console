@@ -139,7 +139,12 @@
               min-width="260"
               show-overflow-tooltip
             />
-            <el-table-column prop="traceId" label="Trace" min-width="150" show-overflow-tooltip />
+            <el-table-column
+              prop="traceId"
+              :label="t('aiChat.colTrace')"
+              min-width="150"
+              show-overflow-tooltip
+            />
           </ProTable>
         </el-tab-pane>
       </el-tabs>

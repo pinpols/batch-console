@@ -109,16 +109,16 @@
     >
       <el-form ref="formRef" :model="form" :rules="rules" label-width="120px">
         <el-form-item :label="t('alertRoutingPanel.fieldRouteCode')" prop="routeCode">
-          <el-input v-model="form.routeCode" :disabled="editingId != null" />
+          <el-input v-model="form.routeCode" :disabled="editingId != null" maxlength="128" />
         </el-form-item>
         <el-form-item :label="t('alertRoutingPanel.fieldRouteName')">
-          <el-input v-model="form.routeName" />
+          <el-input v-model="form.routeName" maxlength="256" />
         </el-form-item>
         <el-form-item :label="t('alertRoutingPanel.fieldTeam')" prop="team">
-          <el-input v-model="form.team" />
+          <el-input v-model="form.team" maxlength="128" />
         </el-form-item>
         <el-form-item :label="t('alertRoutingPanel.fieldAlertGroup')">
-          <el-input v-model="form.alertGroup" />
+          <el-input v-model="form.alertGroup" maxlength="128" />
         </el-form-item>
         <el-form-item :label="t('alertRoutingPanel.fieldSeverity')" prop="severity">
           <el-select v-model="form.severity" allow-create filterable>
@@ -129,10 +129,14 @@
           </el-select>
         </el-form-item>
         <el-form-item :label="t('alertRoutingPanel.fieldReceiver')" prop="receiver">
-          <el-input v-model="form.receiver" />
+          <el-input v-model="form.receiver" maxlength="256" />
         </el-form-item>
         <el-form-item :label="t('alertRoutingPanel.fieldGroupBy')">
-          <el-input v-model="form.groupBy" placeholder="tenantId,jobCode,severity" />
+          <el-input
+            v-model="form.groupBy"
+            :placeholder="t('alertRoutingPanel.fieldGroupByPlaceholder')"
+            maxlength="512"
+          />
         </el-form-item>
         <el-form-item :label="t('alertRoutingPanel.fieldGroupWaitSeconds')">
           <el-input-number v-model="form.groupWaitSeconds" :min="0" />
@@ -151,7 +155,7 @@
             v-model="form.description"
             type="textarea"
             :rows="3"
-            maxlength="512"
+            maxlength="1024"
             show-word-limit
           />
         </el-form-item>

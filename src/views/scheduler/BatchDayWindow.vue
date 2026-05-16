@@ -72,7 +72,7 @@
         :empty-text="t('common.noData')"
         class="console-table"
       >
-        <el-table-column prop="jobCode" label="Job" min-width="160">
+        <el-table-column prop="jobCode" :label="t('batchDayWindow.colJob')" min-width="160">
           <template #default="{ row }">
             <router-link
               v-if="row.jobCode"
@@ -100,7 +100,11 @@
           :label="t('batchDayWindow.colInFlightJob')"
           width="88"
         />
-        <el-table-column prop="catchupCount" label="Catch-up" width="88" />
+        <el-table-column
+          prop="catchupCount"
+          :label="t('batchDayWindow.colCatchupJob')"
+          width="88"
+        />
       </el-table>
     </SectionCard>
 
