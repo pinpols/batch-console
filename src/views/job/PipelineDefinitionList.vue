@@ -125,22 +125,29 @@
     <el-drawer v-model="drawerVisible" :title="drawerTitle" size="800px">
       <el-form ref="formRef" :model="form" :rules="formRules" label-width="120px">
         <el-form-item :label="t('pipelineDefinitionList.fieldPipelineCode')" prop="pipelineCode">
-          <el-input v-model="form.pipelineCode" :disabled="editingId != null" />
+          <el-input v-model="form.pipelineCode" :disabled="editingId != null" maxlength="128" />
         </el-form-item>
         <el-form-item :label="t('pipelineDefinitionList.fieldPipelineName')" prop="pipelineName">
-          <el-input v-model="form.pipelineName" />
+          <el-input v-model="form.pipelineName" maxlength="256" />
         </el-form-item>
         <el-form-item :label="t('pipelineDefinitionList.fieldPipelineType')" prop="pipelineType">
           <el-input
             v-model="form.pipelineType"
             :placeholder="t('pipelineDefinitionList.typeFieldPlaceholder')"
+            maxlength="32"
           />
         </el-form-item>
         <el-form-item :label="t('pipelineDefinitionList.fieldEnabled')">
           <el-switch v-model="form.enabled" />
         </el-form-item>
         <el-form-item :label="t('pipelineDefinitionList.fieldDescription')">
-          <el-input v-model="form.description" type="textarea" :rows="3" />
+          <el-input
+            v-model="form.description"
+            type="textarea"
+            :rows="3"
+            maxlength="512"
+            show-word-limit
+          />
         </el-form-item>
         <el-form-item :label="t('pipelineDefinitionList.stepsTitle')">
           <div class="steps-editor">

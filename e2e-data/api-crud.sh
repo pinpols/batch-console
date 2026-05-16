@@ -151,6 +151,202 @@ should_run notification-channels && crud_entity \
   "{}" \
   "LC"
 
+# === 13. 工作流定义 (LCRU,字段 nodes/edges 不是 dagJson) ===
+should_run workflow-definitions && crud_entity \
+  "工作流定义" \
+  "/api/console/workflow-definitions" \
+  "{\"tenantId\":\"$TENANT\",\"workflowCode\":\"${PFX}_WF1\",\"workflowName\":\"[E2E] 测试工作流\",\"workflowType\":\"DAG\",\"enabled\":true,\"nodes\":[],\"edges\":[]}" \
+  "{\"tenantId\":\"$TENANT\",\"workflowCode\":\"${PFX}_WF1\",\"workflowName\":\"[E2E] 测试工作流 updated\",\"workflowType\":\"DAG\",\"enabled\":true,\"nodes\":[],\"edges\":[]}" \
+  "LCRU" \
+  "/api/console/queries/workflow-definitions"
+
+# === 14. 节假日 (LC, 业务日历子资源) ===
+if should_run holidays; then
+  CALENDAR_ID=$(/usr/bin/curl -s -b "$JAR" -H "X-Tenant-Id: $TENANT" \
+    "$API_BASE/api/console/calendars?tenantId=$TENANT&calendarCode=${PFX}-c1" \
+    | python3 -c "import json,sys
+try:
+  d=json.load(sys.stdin)
+  items=(d.get('data') or {}).get('items',[])
+  print(items[0].get('id','') if items else '')
+except Exception: print('')")
+  if [ -n "$CALENDAR_ID" ]; then
+    crud_entity \
+      "节假日" \
+      "/api/console/calendars/$CALENDAR_ID/holidays" \
+      "{\"tenantId\":\"$TENANT\",\"items\":[{\"bizDate\":\"2026-12-25\",\"dayType\":\"HOLIDAY\",\"holidayName\":\"[E2E] Christmas\"}]}" \
+      "{}" \
+      "LC"
+  else
+    printf '\n=== 节假日 ===\n  [SKIP] 前置 calendar 不存在\n'
+  fi
+fi
+
+# === 15. 系统参数 (BE 用 PUT 作 upsert,GET-by-value,DELETE-by-key) ===
+if should_run system-parameters; then
+  printf '\n=== 系统参数 (PUT-upsert) ===\n'
+  # LIST
+  raw=$(api_call GET "/api/console/system-parameters?tenantId=$TENANT" "")
+  code="${raw##*@@HTTP@@}"
+  [ "$code" = "200" ] && { printf "  [LIST]      "; _grn "PASS"; printf " HTTP %s\n" "$code"; TOTAL_PASS=$((TOTAL_PASS+1)); } \
+    || { printf "  [LIST]      "; _red "FAIL"; printf " HTTP %s\n" "$code"; TOTAL_FAIL=$((TOTAL_FAIL+1)); }
+  # PUT (upsert) - DTO 用 key/value (不是 paramKey/paramValue)
+  raw=$(api_call PUT "/api/console/system-parameters?tenantId=$TENANT" "{\"key\":\"${PFX}.test.key\",\"value\":\"v1\",\"description\":\"phase1\"}")
+  code="${raw##*@@HTTP@@}"
+  [ "$code" = "200" ] || [ "$code" = "204" ] && { printf "  [PUT]       "; _grn "PASS"; printf " HTTP %s\n" "$code"; TOTAL_PASS=$((TOTAL_PASS+1)); } \
+    || { printf "  [PUT]       "; _red "FAIL"; printf " HTTP %s\n" "$code"; TOTAL_FAIL=$((TOTAL_FAIL+1)); }
+  # GET value
+  raw=$(api_call GET "/api/console/system-parameters/value?tenantId=$TENANT&key=${PFX}.test.key" "")
+  code="${raw##*@@HTTP@@}"
+  [ "$code" = "200" ] && { printf "  [GET-value] "; _grn "PASS"; printf " HTTP %s\n" "$code"; TOTAL_PASS=$((TOTAL_PASS+1)); } \
+    || { printf "  [GET-value] "; _red "FAIL"; printf " HTTP %s\n" "$code"; TOTAL_FAIL=$((TOTAL_FAIL+1)); }
+  # DELETE
+  raw=$(api_call DELETE "/api/console/system-parameters?tenantId=$TENANT&key=${PFX}.test.key" "")
+  code="${raw##*@@HTTP@@}"
+  [ "$code" = "200" ] || [ "$code" = "204" ] && { printf "  [DELETE]    "; _grn "PASS"; printf " HTTP %s\n" "$code"; TOTAL_PASS=$((TOTAL_PASS+1)); } \
+    || { printf "  [DELETE]    "; _red "FAIL"; printf " HTTP %s\n" "$code"; TOTAL_FAIL=$((TOTAL_FAIL+1)); }
+fi
+
+# === 16. Tag 资源标签 (C,composite-key,无 list-by-id) ===
+should_run tags && crud_entity \
+  "Tag" \
+  "/api/console/tags" \
+  "{\"tenantId\":\"$TENANT\",\"resourceType\":\"JOB\",\"resourceCode\":\"${PFX}_J1\",\"tagKey\":\"${PFX}_tk1\",\"tagValue\":\"v1\"}" \
+  "{}" \
+  "C"
+
+# === 17. 通知规则 (LC,依赖 channel,chain create) ===
+if should_run notification-rules; then
+  CH_CODE=$(/usr/bin/curl -s -b "$JAR" -H "X-Tenant-Id: $TENANT" \
+    "$API_BASE/api/console/notifications/channels?tenantId=$TENANT" \
+    | python3 -c "import json,sys
+try:
+  d=json.load(sys.stdin)
+  data=d.get('data')
+  if isinstance(data, list) and data: print(data[0].get('channelCode',''))
+  elif isinstance(data, dict):
+    items=data.get('items',[])
+    print(items[0].get('channelCode','') if items else '')
+  else: print('')
+except Exception: print('')")
+  if [ -n "$CH_CODE" ]; then
+    crud_entity \
+      "通知规则" \
+      "/api/console/notifications/rules" \
+      "{\"ruleName\":\"${PFX}-nr1\",\"channelCode\":\"$CH_CODE\",\"eventTypes\":\"JOB_FAILED\",\"severityFilter\":\"\",\"jobCodeFilter\":\"\",\"enabled\":true}" \
+      "{}" \
+      "LC"
+  else
+    printf "\n=== 通知规则 ===\n  [SKIP] no channel in tx\n"
+  fi
+fi
+
+# === 18. 触发器 (operations) ===
+if should_run triggers; then
+  printf '\n=== 触发器 (operations) ===\n'
+  JOB_CODE="${PFX}_J1"
+  for op in register pause resume unregister; do
+    raw=$(api_call POST "/api/console/ops/triggers/$JOB_CODE/$op" "")
+    code="${raw##*@@HTTP@@}"
+    if [ "$code" = "200" ] || [ "$code" = "204" ]; then
+      printf "  [%-10s] " "$op"; _grn "PASS"; printf " HTTP %s\n" "$code"
+      TOTAL_PASS=$((TOTAL_PASS+1))
+    else
+      printf "  [%-10s] " "$op"; _red "FAIL"; printf " HTTP %s\n" "$code"
+      TOTAL_FAIL=$((TOTAL_FAIL+1))
+      body="${raw%@@HTTP@@*}"
+      echo -e "\n### 触发器 $op\n- POST .../triggers/$JOB_CODE/$op returned $code: $(echo "$body" | head -c 200)" >> "$REPORT"
+    fi
+  done
+fi
+
+# === 19. 配置同步 export / preview ===
+if should_run config-sync; then
+  printf '\n=== 配置同步 (operations) ===\n'
+  _sync_call() {
+    local label="$1" p="$2" b="$3"
+    local raw code body
+    raw=$(api_call POST "$p" "$b")
+    code="${raw##*@@HTTP@@}"
+    if [ "$code" = "200" ]; then
+      printf "  [%-9s]  " "$label"; _grn "PASS"; printf " HTTP %s\n" "$code"
+      TOTAL_PASS=$((TOTAL_PASS+1))
+    else
+      printf "  [%-9s]  " "$label"; _red "FAIL"; printf " HTTP %s\n" "$code"
+      TOTAL_FAIL=$((TOTAL_FAIL+1))
+      body="${raw%@@HTTP@@*}"
+      echo -e "\n### 配置同步 $label\n- POST $p returned $code: $(echo "$body" | head -c 200)" >> "$REPORT"
+    fi
+  }
+  _sync_call "export"  "/api/console/config/sync/export"  "{\"sourceTenantId\":\"$TENANT\",\"sourceEnv\":\"local\",\"targetEnv\":\"local\",\"configTypes\":[\"RESOURCE_QUEUE\"]}"
+  _sync_call "preview" "/api/console/config/sync/preview" "{\"sourceTenantId\":\"$TENANT\",\"tenantId\":\"$TENANT\",\"sourceEnv\":\"local\",\"targetEnv\":\"local\",\"configTypes\":[\"RESOURCE_QUEUE\"]}"
+fi
+
+# === 20. 自助服务 (字段:field/requestedValue/reason) ===
+if should_run self-service; then
+  printf '\n=== 自助服务 (operations) ===\n'
+  raw=$(api_call POST "/api/console/tenants/quota/request" "{\"field\":\"maxRunningJobsPerTenant\",\"requestedValue\":200,\"reason\":\"phase1 e2e quota up\"}")
+  code="${raw##*@@HTTP@@}"
+  if [ "$code" = "200" ]; then
+    printf "  [quota-req]  "; _grn "PASS"; printf " HTTP %s\n" "$code"
+    TOTAL_PASS=$((TOTAL_PASS+1))
+  else
+    printf "  [quota-req]  "; _red "FAIL"; printf " HTTP %s\n" "$code"
+    TOTAL_FAIL=$((TOTAL_FAIL+1))
+    body="${raw%@@HTTP@@*}"
+    echo -e "\n### 自助服务 quota-request\n- returned $code: $(echo "$body" | head -c 200)" >> "$REPORT"
+  fi
+fi
+
+# === 21. 租户 操作 (suspend / activate) ===
+if should_run tenant-ops; then
+  printf '\n=== 租户操作 ===\n'
+  for op in suspend activate; do
+    raw=$(api_call POST "/api/console/tenants/$TENANT/$op" "")
+    code="${raw##*@@HTTP@@}"
+    if [ "$code" = "200" ]; then
+      printf "  [%-9s]  " "$op"; _grn "PASS"; printf " HTTP %s\n" "$code"
+      TOTAL_PASS=$((TOTAL_PASS+1))
+    else
+      printf "  [%-9s]  " "$op"; _red "FAIL"; printf " HTTP %s\n" "$code"
+      TOTAL_FAIL=$((TOTAL_FAIL+1))
+      body="${raw%@@HTTP@@*}"
+      echo -e "\n### 租户 $op\n- returned $code: $(echo "$body" | head -c 200)" >> "$REPORT"
+    fi
+  done
+fi
+
+# === 22. Job 实例操作 cancel/terminate (用 03 灌的 ta 租户数据) ===
+if should_run job-instance-ops; then
+  printf '\n=== Job 实例操作 (in ta tenant) ===\n'
+  INST_ID=$(/usr/bin/curl -s -b "$JAR" -H "X-Tenant-Id: ta" \
+    "$API_BASE/api/console/queries/instances?tenantId=ta&pageNo=1&pageSize=10" \
+    | python3 -c "import json,sys
+try:
+  d=json.load(sys.stdin)
+  items=(d.get('data') or {}).get('items',[])
+  for it in items:
+    if it.get('instanceStatus') == 'RUNNING':
+      print(it.get('id',''))
+      break
+except Exception: print('')")
+  if [ -n "$INST_ID" ]; then
+    raw=$(/usr/bin/curl -s -b "$JAR" -X POST "$API_BASE/api/console/instances/$INST_ID/cancel?tenantId=ta" -H "Idempotency-Key: $(uuidgen)" -w "\n@@HTTP@@%{http_code}")
+    code="${raw##*@@HTTP@@}"
+    if [ "$code" = "200" ]; then
+      printf "  [cancel]    "; _grn "PASS"; printf " HTTP %s id=%s\n" "$code" "$INST_ID"
+      TOTAL_PASS=$((TOTAL_PASS+1))
+    else
+      printf "  [cancel]    "; _red "FAIL"; printf " HTTP %s\n" "$code"
+      TOTAL_FAIL=$((TOTAL_FAIL+1))
+      body="${raw%@@HTTP@@*}"
+      echo -e "\n### Job 实例 cancel\n- returned $code: $(echo "$body" | head -c 200)" >> "$REPORT"
+    fi
+  else
+    printf "  [SKIP] no RUNNING instance in ta\n"
+  fi
+fi
+
 # === 总结 ===
 echo
 echo "================================================================"

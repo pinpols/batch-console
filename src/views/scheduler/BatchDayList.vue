@@ -65,7 +65,7 @@
             <StatusTag :value="String(row.dayStatus ?? '')" category="batchDay" />
           </template>
         </el-table-column>
-        <el-table-column prop="slaStatus" label="SLA" width="110">
+        <el-table-column prop="slaStatus" :label="t('batchDayList.colSlaStatus')" width="110">
           <template #default="{ row }">
             <StatusTag :value="String(row.slaStatus ?? '')" category="sla" />
           </template>
@@ -100,9 +100,14 @@
           width="72"
           align="right"
         />
-        <el-table-column prop="catchupCount" label="Catch-up" width="96" align="right" />
+        <el-table-column
+          prop="catchupCount"
+          :label="t('batchDayList.colCatchup')"
+          width="96"
+          align="right"
+        />
         <DatetimeColumn prop="openAt" :label="t('batchDayList.colOpen')" width="160" />
-        <DatetimeColumn prop="cutoffAt" label="cutoff" width="160" />
+        <DatetimeColumn prop="cutoffAt" :label="t('batchDayList.colCutoff')" width="160" />
         <DatetimeColumn prop="settledAt" :label="t('batchDayList.colSettled')" width="160" />
         <DatetimeColumn prop="slaDeadlineAt" :label="t('batchDayList.colSla')" width="160" />
         <el-table-column :label="t('batchDayList.colActions')" width="150" fixed="right">

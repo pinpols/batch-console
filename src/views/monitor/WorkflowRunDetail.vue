@@ -72,7 +72,7 @@
             class="query-w-200"
             v-model="nodeFilterDraft.nodeCode"
             clearable
-            placeholder="exact"
+            :placeholder="t('monitor.nodeFilterCodePlaceholder')"
             @keyup.enter="applyNodeFilter"
           />
         </el-form-item>

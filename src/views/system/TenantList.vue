@@ -117,7 +117,7 @@
             show-overflow-tooltip
           />
           <DatetimeColumn prop="createdAt" :label="t('tenantList.colCreatedAt')" width="180" />
-          <el-table-column :label="t('tenantList.colActions')" width="360" fixed="right">
+          <el-table-column :label="t('tenantList.colActions')" width="260" fixed="right">
             <template #default="{ row }">
               <div class="table-actions tenant-row-actions">
                 <el-tag
@@ -129,7 +129,7 @@
                 >
                   {{ t('tenantList.currentTag') }}
                 </el-tag>
-                <RowActions :actions="rowActions(row)" :inline-limit="999" />
+                <RowActions :actions="rowActions(row)" :inline-limit="2" />
               </div>
             </template>
           </el-table-column>

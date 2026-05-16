@@ -128,7 +128,7 @@
     >
       <el-form ref="formRef" :model="form" :rules="rules" label-width="190px">
         <el-form-item :label="t('quotaPanel.fieldPolicyCode')" prop="policyCode">
-          <el-input v-model="form.policyCode" :disabled="editingId != null" />
+          <el-input v-model="form.policyCode" :disabled="editingId != null" maxlength="128" />
         </el-form-item>
         <el-form-item
           :label="t('quotaPanel.fieldMaxRunningJobsPerTenant')"

@@ -86,7 +86,12 @@
           min-width="300"
           show-overflow-tooltip
         />
-        <el-table-column prop="traceId" label="Trace ID" width="180" show-overflow-tooltip>
+        <el-table-column
+          prop="traceId"
+          :label="t('observability.execColTrace')"
+          width="180"
+          show-overflow-tooltip
+        >
           <template #default="{ row }">
             <router-link
               v-if="row.traceId"

@@ -70,7 +70,11 @@
               width="120"
               show-overflow-tooltip
             />
-            <el-table-column prop="fileId" label="fileId" width="88">
+            <el-table-column
+              prop="fileId"
+              :label="t('filePipelineObservability.colFileId')"
+              width="88"
+            >
               <template #default="{ row }">
                 <router-link
                   v-if="row.fileId"
@@ -98,7 +102,12 @@
                 <span v-else>—</span>
               </template>
             </el-table-column>
-            <el-table-column prop="traceId" label="Trace" min-width="120" show-overflow-tooltip>
+            <el-table-column
+              prop="traceId"
+              :label="t('filePipelineObservability.colTrace')"
+              min-width="120"
+              show-overflow-tooltip
+            >
               <template #default="{ row }">
                 <router-link
                   v-if="row.traceId"
@@ -247,7 +256,11 @@
               </ListPageQueryBar>
             </template>
             <el-table-column prop="id" :label="t('filePipelineObservability.colId')" width="88" />
-            <el-table-column prop="fileId" label="fileId" width="88" />
+            <el-table-column
+              prop="fileId"
+              :label="t('filePipelineObservability.colFileId')"
+              width="88"
+            />
             <el-table-column
               prop="pipelineInstanceId"
               :label="t('filePipelineObservability.colPipeline')"
@@ -353,7 +366,11 @@
               </ListPageQueryBar>
             </template>
             <el-table-column prop="id" :label="t('filePipelineObservability.colId')" width="88" />
-            <el-table-column prop="fileId" label="fileId" width="88" />
+            <el-table-column
+              prop="fileId"
+              :label="t('filePipelineObservability.colFileId')"
+              width="88"
+            />
             <el-table-column
               prop="recordNo"
               :label="t('filePipelineObservability.colRecordNo')"

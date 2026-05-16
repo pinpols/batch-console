@@ -62,7 +62,7 @@ test.describe('back button navigation (返回按钮)', () => {
     const id = await getFirstCellLinkId(page, '/monitor/job-instances')
     if (!id) return
     await page.goto(`/monitor/job-instances/${id}`)
-    const backBtn = page.locator('.back-btn')
+    const backBtn = page.locator('.nav-arrow-btn').first()
     await expect(backBtn).toBeVisible()
     await backBtn.click()
     await expect(page).toHaveURL(/\/monitor\/job-instances$/)
@@ -72,16 +72,18 @@ test.describe('back button navigation (返回按钮)', () => {
     const id = await getFirstCellLinkId(page, '/monitor/workflow-runs')
     if (!id) return
     await page.goto(`/monitor/workflow-runs/${id}`)
-    const backBtn = page.locator('.back-btn')
+    const backBtn = page.locator('.nav-arrow-btn').first()
     await expect(backBtn).toBeVisible()
     await backBtn.click()
     await expect(page).toHaveURL(/\/monitor\/workflow-runs$/)
   })
 
   test('批次日窗口页显示返回箭头并可返回列表', async ({ page }) => {
+    // PageHeader.showBackButton 依赖 history.state.back,直接 goto 没有 → 先访问列表再深链
+    await page.goto('/scheduler/batch-days')
     const today = new Date().toISOString().split('T')[0]
     await page.goto(`/scheduler/batch-days/${today}`)
-    const backBtn = page.locator('.back-btn')
+    const backBtn = page.locator('.nav-arrow-btn').first()
     await expect(backBtn).toBeVisible()
     await backBtn.click()
     await expect(page).toHaveURL(/\/scheduler\/batch-days$/)
@@ -91,7 +93,7 @@ test.describe('back button navigation (返回按钮)', () => {
     const id = await getFirstCellLinkId(page, '/monitor/job-instances')
     if (!id) return
     await page.goto(`/monitor/job-instances/${id}/partitions`)
-    const backBtn = page.locator('.back-btn')
+    const backBtn = page.locator('.nav-arrow-btn').first()
     await expect(backBtn).toBeVisible()
     await backBtn.click()
     await expect(page).toHaveURL(new RegExp(`/monitor/job-instances/${id}$`))
