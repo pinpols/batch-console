@@ -393,6 +393,7 @@ const messages: Messages = {
   },
   pageHeader: {
     backTooltip: 'Back',
+    forwardTooltip: 'Forward',
   },
   docsDrawer: {
     openInDocs: 'Open in docs site',
