@@ -32,7 +32,7 @@
                 v-for="tab in tabsStore.overflowTabs"
                 :key="tab.key"
                 class="page-tabs-overflow__row"
-                :class="{ 'is-active': route.fullPath === tab.key }"
+                :class="{ 'is-active': route.path === tab.key }"
               >
                 <span class="page-tabs-overflow__row-title" @click="onOverflowTabClick(tab)">{{
                   resolveTabTitle(tab)
@@ -80,7 +80,7 @@
           v-for="tab in tabsStore.visibleTabs"
           :key="tab.key"
           class="page-tab"
-          :class="{ 'page-tab--active': route.fullPath === tab.key }"
+          :class="{ 'page-tab--active': route.path === tab.key }"
         >
           <span class="page-tab__title" @click="onTabClick(tab.path)">{{
             resolveTabTitle(tab)
@@ -147,8 +147,11 @@
     return te(key) ? t(key) : tab.title
   }
 
+  // tab.key 是 route.path(见 stores/tabs.ts addFromRoute),所以这里全部用
+  // route.path 而不是 route.fullPath。否则带 query 的页(如 /workers/management?...)
+  // 永远匹配不到自己的 tab,折叠态下连"当前 tab"都显示不出来(空 pill bug)。
   const overflowContainsActive = computed(() =>
-    tabsStore.overflowTabs.some((t) => t.key === route.fullPath),
+    tabsStore.overflowTabs.some((t) => t.key === route.path),
   )
 
   function onTabClick(path: string) {
@@ -162,7 +165,7 @@
 
   function closeTab(key: string) {
     if (tabsStore.list.length <= 1) return
-    const active = route.fullPath === key
+    const active = route.path === key
     const idx = tabsStore.removeByKey(key)
     if (idx < 0) return
     if (active) {
@@ -175,9 +178,9 @@
   function tabCloseCommand(cmd: string, refKey: string) {
     if (cmd !== 'left' && cmd !== 'right' && cmd !== 'others') return
     let target: string | null = null
-    if (cmd === 'left') target = tabsStore.closeAllLeftOf(route.fullPath, refKey)
-    else if (cmd === 'right') target = tabsStore.closeAllRightOf(route.fullPath, refKey)
-    else target = tabsStore.closeOthers(route.fullPath, refKey)
+    if (cmd === 'left') target = tabsStore.closeAllLeftOf(route.path, refKey)
+    else if (cmd === 'right') target = tabsStore.closeAllRightOf(route.path, refKey)
+    else target = tabsStore.closeOthers(route.path, refKey)
     if (!tabsStore.overflowTabs.length) overflowOpen.value = false
     if (target) void router.push(target)
   }
