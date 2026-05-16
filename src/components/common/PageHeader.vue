@@ -44,8 +44,10 @@
         <button
           v-if="showForwardButton"
           class="nav-arrow-btn"
+          :class="{ 'is-disabled': forwardDisabled }"
           :title="t('pageHeader.forwardTooltip')"
           :aria-label="t('pageHeader.forwardTooltip')"
+          :disabled="forwardDisabled"
           @click="goForward"
         >
           <el-icon :size="16"><ArrowRight /></el-icon>
@@ -157,12 +159,10 @@
     return !!historyBackPath.value
   })
 
-  // 前进按钮:仅在 history 栈里确实有 forward 记录时显示,
-  // 否则就是个永远点不动的死按钮(无法可靠检测浏览器原生 history.length)。
-  const showForwardButton = computed(() => {
-    if (route.meta.hideBackButton === true) return false
-    return !!historyForwardPath.value
-  })
+  // 前进按钮常驻显示(用户要求),仅在无 forward 记录时置灰禁用。
+  // 隐藏条件只保留 meta.hideBackButton(登录页等入口页)。
+  const showForwardButton = computed(() => route.meta.hideBackButton !== true)
+  const forwardDisabled = computed(() => !historyForwardPath.value)
 
   function goBack() {
     const hasBackEntry = !!historyBackPath.value
@@ -305,6 +305,20 @@
     color: var(--el-color-primary);
     border-color: var(--el-color-primary);
     background: var(--el-color-primary-light-9);
+  }
+
+  .nav-arrow-btn.is-disabled,
+  .nav-arrow-btn:disabled {
+    cursor: not-allowed;
+    color: var(--color-text-tertiary);
+    opacity: 0.45;
+  }
+
+  .nav-arrow-btn.is-disabled:hover,
+  .nav-arrow-btn:disabled:hover {
+    color: var(--color-text-tertiary);
+    border-color: var(--color-border-light);
+    background: transparent;
   }
 
   .actions {
