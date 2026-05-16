@@ -2651,8 +2651,6 @@ const messages: Messages = {
     colGroupSharedMax: 'Group shared max',
     colMaxRunningJobs: 'Max running jobs',
     colEffectiveMaxRunningJobs: 'Effective max running',
-    colActiveJobs: 'Active jobs',
-    colActivePartitions: 'Active partitions',
     colEffectiveJobCap: 'Effective job cap',
     colMaxJobsBase: 'Max jobs (base)',
     colGroupActiveJobs: 'Group active jobs',
