@@ -31,6 +31,12 @@ type LoggedConfig = InternalAxiosRequestConfig & {
   _retryCount?: number
   /** 401 时已尝试过静默 refresh,避免无限循环 */
   _refreshAttempted?: boolean
+  /**
+   * 调用方主动声明该请求"失败也不弹 toast"。日志、reject、redirect 仍照常,
+   * 仅抑制 UI 错误提示。典型场景:登录页挂载时预清 cookie 的 /auth/logout,
+   * 失败属预期(cookie 失效)且对用户无意义,不该噪声化体验。
+   */
+  _silent?: boolean
 }
 
 /**
@@ -328,6 +334,11 @@ export function applyApiInterceptors(client: AxiosInstance): void {
             client.request(cfg).then(resolve).catch(reject)
           }, delay)
         })
+      }
+
+      const silent = cfg?._silent === true
+      if (silent) {
+        return Promise.reject(error)
       }
 
       if (status === 401) {
