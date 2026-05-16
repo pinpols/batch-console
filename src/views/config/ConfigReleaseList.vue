@@ -289,6 +289,7 @@
     diffConfigReleases,
   } from '@/api/configReleases'
   import { useTenantStore } from '@/stores/tenant'
+  import { useAuthStore } from '@/stores/auth'
   import { useTenantReload } from '@/composables/useTenantReload'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { toPageResult } from '@/api/adapters'
@@ -305,6 +306,9 @@
   import type { ConsoleConfigReleaseResponse } from '@/types/console-api'
 
   const tenant = useTenantStore()
+  const auth = useAuthStore()
+  // 配置发布所有写操作的 BE DTO 都 @NotBlank operatorId — 不传会 400 "不能为空"
+  const operatorId = () => auth.userInfo?.username ?? auth.userInfo?.userId ?? ''
   const loading = ref(false)
   const loadError = ref<unknown>(null)
   const {
@@ -457,6 +461,7 @@
       )
       await publishRelease(row.id, {
         tenantId: row.tenantId ?? tenant.tenantId,
+        operatorId: operatorId(),
         reason: reason || undefined,
       })
       ElMessage.success(t('configReleaseList.publishSuccess', { key: row.configKey }))
@@ -479,6 +484,7 @@
       )
       await grayRelease(row.id, {
         tenantId: row.tenantId ?? tenant.tenantId,
+        operatorId: operatorId(),
         grayScopeJson: grayScopeJson || undefined,
       })
       ElMessage.success(t('configReleaseList.graySuccess', { key: row.configKey }))
@@ -507,6 +513,7 @@
       )
       await rollbackRelease(row.id, {
         tenantId: row.tenantId ?? tenant.tenantId,
+        operatorId: operatorId(),
         reason: reason || undefined,
       })
       ElMessage.success(t('configReleaseList.rollbackSuccess', { key: row.configKey }))
@@ -539,6 +546,7 @@
       )
       await submitReleaseApproval(row.id, {
         tenantId: row.tenantId ?? tenant.tenantId,
+        operatorId: operatorId(),
         reason: reason || undefined,
       })
       ElMessage.success(t('configReleaseList.submitSuccess', { key: row.configKey }))
