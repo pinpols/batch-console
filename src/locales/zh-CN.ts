@@ -399,7 +399,8 @@ export default {
     more: '更多',
   },
   pageHeader: {
-    backTooltip: '返回',
+    backTooltip: '上一个界面',
+    forwardTooltip: '下一个界面',
   },
   docsDrawer: {
     openInDocs: '在文档站打开',
