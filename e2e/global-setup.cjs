@@ -11,6 +11,47 @@ const T_SHORT = 8_000 // 登录、导出等轻量接口
 const T_UPLOAD = 20_000 // 文件上传
 const T_APPLY = 30_000 // 配置包应用（事务较重）
 
+/**
+ * 把 fetch 响应的 Set-Cookie 头解析成 Playwright storageState cookie 对象。
+ * Playwright cookie schema: { name, value, domain, path, expires, httpOnly, secure, sameSite }
+ *
+ * 我们的 BE 通常下发的 cookie 是 SESSION / accessToken,带 HttpOnly + Path=/。
+ * 这里做最小解析:取 first kv 作为 name=value,后续 attribute 解析 Path/Domain/HttpOnly/Secure/SameSite。
+ * Max-Age / Expires 暂不处理(测试场景内不会过期)。
+ */
+function parseSetCookieForStorageState(raw, originUrl) {
+  const segments = String(raw).split(';').map((s) => s.trim())
+  const [first, ...attrs] = segments
+  const eq = first.indexOf('=')
+  const name = first.slice(0, eq).trim()
+  const value = first.slice(eq + 1).trim()
+  const url = new URL(originUrl)
+  const cookie = {
+    name,
+    value,
+    domain: url.hostname,
+    path: '/',
+    expires: -1,
+    httpOnly: false,
+    secure: false,
+    sameSite: 'Lax',
+  }
+  for (const a of attrs) {
+    const [k, v = ''] = a.split('=').map((s) => s.trim())
+    const lk = k.toLowerCase()
+    if (lk === 'path') cookie.path = v
+    else if (lk === 'domain') cookie.domain = v.startsWith('.') ? v.slice(1) : v
+    else if (lk === 'httponly') cookie.httpOnly = true
+    else if (lk === 'secure') cookie.secure = true
+    else if (lk === 'samesite') {
+      const normalized = v.toLowerCase()
+      cookie.sameSite =
+        normalized === 'strict' ? 'Strict' : normalized === 'none' ? 'None' : 'Lax'
+    }
+  }
+  return cookie
+}
+
 /** 幂等 key */
 function idempotencyKey() {
   return crypto.randomUUID()
@@ -215,7 +256,13 @@ async function globalSetup(config) {
   const baseURL = config.projects[0].use.baseURL ?? 'http://localhost:5173'
 
   // ── 登录 ────────────────────────────────────────────────────────
+  // D7 Stage B(commit 6405b5a):token 已迁到 HttpOnly cookie,localStorage 不再存。
+  // 旧实现只拿 accessToken 字段塞进 localStorage,FE 完全不读 → 全部测试掉登录页。
+  // 现在改为:
+  //   1) 拿 accessToken(用于本 setup 后续 seed 调用 Authorization header)
+  //   2) 解析响应 Set-Cookie,后面写进 storageState.cookies 让浏览器自动携带
   let token
+  let authCookies = []
   try {
     const loginRes = await fetchWithTimeout(`${API_BASE}/api/console/auth/login`, {
       method: 'POST',
@@ -226,7 +273,15 @@ async function globalSetup(config) {
     const loginJson = await loginRes.json()
     token = loginJson?.data?.accessToken
     if (!token) throw new Error('响应中无 accessToken')
-    console.log('[global-setup] 登录成功，expires:', loginJson?.data?.expiresAt)
+    // Node 18+: Headers.getSetCookie() 返回 string[];老节点 fallback 到 raw Set-Cookie
+    const setCookies =
+      typeof loginRes.headers.getSetCookie === 'function'
+        ? loginRes.headers.getSetCookie()
+        : [loginRes.headers.get('set-cookie')].filter(Boolean)
+    authCookies = setCookies.map((raw) => parseSetCookieForStorageState(raw, baseURL))
+    console.log(
+      `[global-setup] 登录成功,expires: ${loginJson?.data?.expiresAt},cookies: ${authCookies.length}`,
+    )
   } catch (err) {
     console.warn(`[global-setup] 登录失败（${err.message}），跳过 seed，仅写入 storageState`)
   }
@@ -244,12 +299,13 @@ async function globalSetup(config) {
   mkdirSync(authDir, { recursive: true })
 
   const storageState = {
-    cookies: [],
+    cookies: authCookies,
     origins: [
       {
         origin: baseURL,
         localStorage: [
           { name: 'batch-console-tenant-id', value: 'ta' },
+          // D7 Stage B 后 FE 不再读这个 key,保留是为兼容旧 spec 里可能的引用;真正的鉴权走 cookie。
           { name: 'token', value: token ?? '' },
           // 强制中文 locale,避免某些 spec 没走 enterDemoApp 时 i18n 拿到浏览器默认 en-US
           // 见 src/constants/locale.ts:1 (LOCALE_STORAGE_KEY)
