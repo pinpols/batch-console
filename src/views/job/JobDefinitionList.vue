@@ -578,7 +578,11 @@
   }
 
   function goInstances(jobCode: string) {
-    void router.push({ path: '/monitor/job-instances', query: { jobCode } })
+    // 从定义跳到该 job 的实例列表:列表默认锚今日,这里看的是"该 job 的历史运行",清掉日期
+    void router.push({
+      path: '/monitor/job-instances',
+      query: { jobCode, range: 'all' },
+    })
   }
 
   // ── 行操作工厂(给 <RowActions> 用)─────────────────────────

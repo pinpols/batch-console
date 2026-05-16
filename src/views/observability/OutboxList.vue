@@ -211,6 +211,7 @@
 
 <script setup lang="ts">
   import { computed, ref, watch } from 'vue'
+  import { useRoute } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import { queryOutboxDeliveries, queryOutboxRetries } from '@/api/observabilityQueries'
 
@@ -236,7 +237,8 @@
   } from '@/types/console-api'
 
   const tenant = useTenantStore()
-  const tab = ref<'retry' | 'delivery'>('retry')
+  const route = useRoute()
+  const tab = ref<'retry' | 'delivery'>(route.query.tab === 'delivery' ? 'delivery' : 'retry')
   const loading = ref(false)
   const loadError = ref<unknown>(null)
   const {
@@ -289,18 +291,18 @@
   const retryPage = ref(1)
   const retryPageSize = ref(20)
   const retryKwDraft = ref('')
-  const retryStatusDraft = ref('')
+  const retryStatusDraft = ref(tab.value === 'retry' ? String(route.query.status ?? '') : '')
   const retryKwApplied = ref('')
-  const retryStatusApplied = ref('')
+  const retryStatusApplied = ref(retryStatusDraft.value)
 
   const deliveryRows = ref<ConsoleOutboxDeliveryLogResponse[]>([])
   const deliveryTotal = ref(0)
   const deliveryPage = ref(1)
   const deliveryPageSize = ref(20)
   const deliveryKwDraft = ref('')
-  const deliveryStatusDraft = ref('')
+  const deliveryStatusDraft = ref(tab.value === 'delivery' ? String(route.query.status ?? '') : '')
   const deliveryKwApplied = ref('')
-  const deliveryStatusApplied = ref('')
+  const deliveryStatusApplied = ref(deliveryStatusDraft.value)
 
   const { data: metaEnums } = useConsoleMetaEnumsQuery()
 

@@ -388,7 +388,11 @@
   }
 
   function goInstancesFiltered(pipelineCode: string) {
-    void router.push({ path: '/monitor/job-instances', query: { jobCode: pipelineCode } })
+    // 同 JobDefinitionList.goInstances:看的是该 pipeline 的全部历史实例,清掉今日锚定
+    void router.push({
+      path: '/monitor/job-instances',
+      query: { jobCode: pipelineCode, range: 'all' },
+    })
   }
 
   watch(activeDetailTab, (tab) => {
