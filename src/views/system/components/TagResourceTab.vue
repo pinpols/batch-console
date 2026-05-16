@@ -4,14 +4,7 @@
       :filter-busy="filterBusy"
       :refresh-busy="loadingTags"
       @search="() => runSearch(loadTags)"
-      @reset="
-        () =>
-          runReset(() => {
-            queryForm.resourceType = ''
-            queryForm.resourceCode = ''
-            tagRows.value = []
-          })
-      "
+      @reset="() => runReset(resetTagFilter)"
       @refresh="() => runRefresh(loadTags)"
     >
       <el-form-item :label="t('tagResourceTab.resourceTypeLabel')">
@@ -149,6 +142,12 @@
   const savingKey = ref('')
   const deletingKey = ref('')
   const tagRows = ref<Record<string, unknown>[]>([])
+
+  function resetTagFilter() {
+    queryForm.resourceType = ''
+    queryForm.resourceCode = ''
+    tagRows.value = []
+  }
 
   const savingNew = ref(false)
   const newTag = reactive({ tagKey: '', tagValue: '' })

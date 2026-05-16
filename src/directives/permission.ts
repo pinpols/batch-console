@@ -26,9 +26,16 @@ export const permissionDirective: Directive<HTMLElement, PermissionValue> = {
   mounted(el, binding) {
     const auth = useAuthStore()
     const value = binding.value
-    const minRole = typeof value === 'object' ? value.minRole : undefined
-    const permissions =
-      typeof value === 'object' ? value.permissions : typeof value === 'string' ? value : undefined
+    // typeof Array === 'object',先剥离数组形态,再访问 {minRole, permissions} 字段
+    const isObjectShape = value != null && typeof value === 'object' && !Array.isArray(value)
+    const minRole: Role | undefined = isObjectShape
+      ? (value as { minRole?: Role }).minRole
+      : undefined
+    const permissions: string | string[] | undefined = isObjectShape
+      ? (value as { permissions?: string | string[] }).permissions
+      : typeof value === 'string' || Array.isArray(value)
+        ? (value as string | string[])
+        : undefined
 
     const allowedByRole = minRole ? auth.canAccess(minRole) : true
     const allowedByPermission = hasPermissions(permissions)

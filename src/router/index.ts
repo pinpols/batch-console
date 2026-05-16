@@ -1,4 +1,9 @@
-import { createRouter, createWebHistory, type RouteLocationNormalized } from 'vue-router'
+import {
+  createRouter,
+  createWebHistory,
+  type RouteLocationNormalized,
+  type RouteRecordRaw,
+} from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { usePermissionStore } from '@/stores/permission'
 import { useRouteProgressStore } from '@/stores/routeProgress'
@@ -13,7 +18,7 @@ import type { Role } from '@/types'
  */
 const MOBILE_AUTO_REDIRECT_PATHS = new Set<string>(['/', '/ops/summary'])
 
-const routes = [
+const routes: RouteRecordRaw[] = [
   {
     path: '/login',
     name: 'login',
@@ -245,13 +250,15 @@ const routes = [
       },
       // 执行日志已合到"综合查询"的 ExecutionLogs Tab,顶级 /logs 撤掉。
       // route 保留 redirect 兼容旧书签。函数式 redirect 透传 query(traceId 等)。
+      // 函数式 redirect:透传原 query(traceId 等),并强制带 tab=executionLogs。
+      // 整条 route 标 as RouteRecordRaw 避免 vue-router 严格类型上的 union 投影问题。
       {
         path: 'logs',
         redirect: (to: RouteLocationNormalized) => ({
           path: '/observability/queries',
           query: { ...to.query, tab: 'executionLogs' },
         }),
-      },
+      } as RouteRecordRaw,
       { path: 'alerts', redirect: '/observability/alerts' },
       { path: 'alerts/list', redirect: '/observability/alerts' },
       {
@@ -590,6 +597,14 @@ const routes = [
         name: 'm-job-detail',
         component: () => import('@/views-mobile/MJobInstanceDetail.vue'),
         meta: { title: '作业实例详情', minRole: 'VIEWER' },
+      },
+      {
+        // M3:移动只读 workflow DAG viewer。深链 /m/workflow/:id?runId=NNN
+        // oncall 从告警 push / 邮件链入,只看不操作
+        path: 'workflow/:id',
+        name: 'm-workflow-viewer',
+        component: () => import('@/views-mobile/MWorkflowViewer.vue'),
+        meta: { title: 'Workflow DAG', minRole: 'VIEWER' },
       },
       {
         path: 'catchup',

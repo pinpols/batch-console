@@ -27,7 +27,7 @@
             <span>{{ resolveGroupTitle(group) }}</span>
           </template>
           <el-menu-item
-            v-for="item in group.children"
+            v-for="item in group.children.filter((c) => !c.hidden)"
             :key="item.path"
             :index="item.path"
             @mouseenter="prefetchRouteComponent(item.path)"
@@ -76,7 +76,9 @@
     try {
       const resolved = router.resolve(path)
       for (const record of resolved.matched) {
-        const loader = record.components?.default
+        // Vue Router 类型上 components.default 可能是 Component 或 lazy import 函数;
+        // 这里只关心 lazy:用 typeof 判 + Function 强类型再调,绕过 union 报错。
+        const loader = record.components?.default as (() => Promise<unknown>) | undefined
         if (typeof loader === 'function') {
           Promise.resolve(loader()).catch(() => {
             /* ignore prefetch failures */

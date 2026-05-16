@@ -27,14 +27,15 @@ export const ALL_CONFIG_TYPES: readonly ConfigType[] = [
  * 这里 FE 是 UX 拦截。后续 BE 应在 ConsoleTenantConfigInitController.tenantCopy
  * 加白名单/拒绝 reserved tenant 兜底。
  */
-export const RESERVED_TENANT_IDS: readonly string[] = ['system', 'default-tenant']
+// 仅 isReservedTenant / isTemplateTenant 外部消费,常量改为模块内部。
+const RESERVED_TENANT_IDS: readonly string[] = ['system', 'default-tenant']
 
 export function isReservedTenant(tenantId: string): boolean {
   return RESERVED_TENANT_IDS.includes(tenantId)
 }
 
 /** 推荐作为初始化/复制模板的内置租户 id;在下拉里加"推荐"标签 */
-export const TEMPLATE_TENANT_ID = 'default'
+const TEMPLATE_TENANT_ID = 'default'
 
 export function isTemplateTenant(tenantId: string): boolean {
   return tenantId === TEMPLATE_TENANT_ID

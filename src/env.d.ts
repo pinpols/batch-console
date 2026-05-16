@@ -30,3 +30,15 @@ declare module 'vue-i18n' {
   type AppMessages = typeof import('@/locales/zh-CN').default
   interface DefineLocaleMessage extends AppMessages {}
 }
+
+/** vite-plugin-pwa 注入的 virtual module:dev 下不存在,导入时 await catch 兜底。 */
+declare module 'virtual:pwa-register' {
+  export interface RegisterSWOptions {
+    immediate?: boolean
+    onNeedRefresh?: () => void
+    onOfflineReady?: () => void
+    onRegistered?: (registration: ServiceWorkerRegistration | undefined) => void
+    onRegisterError?: (error: unknown) => void
+  }
+  export function registerSW(options?: RegisterSWOptions): (reloadPage?: boolean) => Promise<void>
+}

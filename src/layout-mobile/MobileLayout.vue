@@ -14,6 +14,7 @@
       :groups="permission.visibleGroups"
       :recent-tabs="tabsStore.list"
     />
+    <MInstallHint />
     <SwUpdatePrompt />
   </div>
 </template>

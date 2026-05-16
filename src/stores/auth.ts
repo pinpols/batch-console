@@ -51,6 +51,8 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function login(username: string, password: string) {
     // D7 Stage B: token 由后端写入 HttpOnly cookie，浏览器自动维护；前端只标"已登录"flag。
+    // 2026-05-16 后端 ConsoleAuthController.login 已落 Set-Cookie(batch_console_token,
+    // HttpOnly + SameSite=Lax + 8h Max-Age),dev fallback 已删。
     const result = await authApi.login({ username, password })
     sessionActive.value = true
     userInfoInternal.value = result.userInfo

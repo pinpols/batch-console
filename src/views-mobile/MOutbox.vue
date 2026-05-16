@@ -59,12 +59,14 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, onMounted, ref, watch } from 'vue'
+  import { computed, ref } from 'vue'
+  import { useTenantReload } from '@/composables/useTenantReload'
   import { useI18n } from 'vue-i18n'
   import { Refresh } from '@element-plus/icons-vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { useTenantStore } from '@/stores/tenant'
   import { useAutoRefresh } from '@/composables/useAutoRefresh'
+  import { REFRESH_INTERVAL_COLD_MS } from '@/layout-mobile/composables/refreshIntervals'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import MPullRefresh from '@/layout-mobile/MPullRefresh.vue'
   import MSkeleton from '@/layout-mobile/MSkeleton.vue'
@@ -146,8 +148,6 @@
       busyId.value = null
     }
   }
-
-  onMounted(load)
-  watch(() => tenant.tenantId, load)
-  useAutoRefresh(load, 30_000)
+  useTenantReload(load)
+  useAutoRefresh(load, REFRESH_INTERVAL_COLD_MS)
 </script>

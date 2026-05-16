@@ -335,180 +335,175 @@ html.dark {
 }
 
 .el-button {
+  --button-bg: var(--button-neutral-bg);
+  --button-bg-hover: var(--button-neutral-bg-hover);
+  --button-bg-active: var(--button-neutral-bg-active);
+  --button-border: var(--button-neutral-border);
+  --button-text: var(--button-neutral-text);
+  --button-text-hover: var(--button-neutral-text-hover);
+  --button-soft-bg: var(--button-neutral-bg);
+  --button-soft-bg-hover: var(--button-neutral-bg-hover);
+  --button-soft-border: var(--button-neutral-border);
+  --button-soft-text: var(--button-neutral-text);
   border-radius: var(--radius-button);
+  font-weight: 600;
   transition:
     color 0.16s ease,
     border-color 0.16s ease,
     background-color 0.16s ease,
     background-image 0.16s ease,
     box-shadow 0.18s ease,
-    opacity 0.15s ease;
+    opacity 0.15s ease,
+    transform var(--motion-duration-sm) var(--motion-ease-emphasized);
 }
 
-/* 实体按钮：轻微渐变 + 投影，减少默认「灰扁」感（不含 text / link / plain） */
-.el-button--primary:not(.is-link):not(.is-text):not(.is-plain):not(.is-disabled),
-.el-button--info:not(.is-link):not(.is-text):not(.is-plain):not(.is-disabled) {
-  background-image: linear-gradient(180deg, #6db4ff 0%, #3b8cff 46%, var(--color-primary) 100%);
-  border-color: #3b8cff;
-  color: #fff;
+.el-button--primary,
+.el-button--info {
+  --button-bg: var(--button-primary-bg);
+  --button-bg-hover: var(--button-primary-bg-hover);
+  --button-bg-active: var(--button-primary-bg-active);
+  --button-border: var(--button-primary-border);
+  --button-text: var(--button-primary-text);
+  --button-soft-bg: var(--button-primary-soft-bg);
+  --button-soft-bg-hover: var(--button-primary-soft-bg-hover);
+  --button-soft-border: var(--button-primary-soft-border);
+  --button-soft-text: var(--button-primary-soft-text);
+}
+
+.el-button--success {
+  --button-bg: var(--button-success-bg);
+  --button-bg-hover: var(--button-success-bg-hover);
+  --button-bg-active: var(--button-success-bg-active);
+  --button-border: var(--button-success-border);
+  --button-text: var(--button-success-text);
+  --button-soft-bg: var(--button-success-soft-bg);
+  --button-soft-bg-hover: var(--button-success-soft-bg-hover);
+  --button-soft-border: var(--button-success-soft-border);
+  --button-soft-text: var(--button-success-soft-text);
+}
+
+.el-button--warning {
+  --button-bg: var(--button-warning-bg);
+  --button-bg-hover: var(--button-warning-bg-hover);
+  --button-bg-active: var(--button-warning-bg-active);
+  --button-border: var(--button-warning-border);
+  --button-text: var(--button-warning-text);
+  --button-soft-bg: var(--button-warning-soft-bg);
+  --button-soft-bg-hover: var(--button-warning-soft-bg-hover);
+  --button-soft-border: var(--button-warning-soft-border);
+  --button-soft-text: var(--button-warning-soft-text);
+}
+
+.el-button--danger {
+  --button-bg: var(--button-danger-bg);
+  --button-bg-hover: var(--button-danger-bg-hover);
+  --button-bg-active: var(--button-danger-bg-active);
+  --button-border: var(--button-danger-border);
+  --button-text: var(--button-danger-text);
+  --button-soft-bg: var(--button-danger-soft-bg);
+  --button-soft-bg-hover: var(--button-danger-soft-bg-hover);
+  --button-soft-border: var(--button-danger-soft-border);
+  --button-soft-text: var(--button-danger-soft-text);
+}
+
+.el-button--default {
+  --button-bg: var(--button-neutral-bg);
+  --button-bg-hover: var(--button-neutral-bg-hover);
+  --button-bg-active: var(--button-neutral-bg-active);
+  --button-border: var(--button-neutral-border);
+  --button-text: var(--button-neutral-text);
+  --button-text-hover: var(--button-neutral-text-hover);
+  --button-soft-bg: var(--button-neutral-bg);
+  --button-soft-bg-hover: var(--button-neutral-bg-hover);
+  --button-soft-border: var(--button-neutral-border);
+  --button-soft-text: var(--button-neutral-text);
+}
+
+/* Solid buttons carry the action hierarchy. Gradients are intentionally subtle to avoid mixed page-level palettes. */
+.el-button:not(.is-link):not(.is-text):not(.is-plain):not(.is-disabled) {
+  background-color: var(--button-bg);
+  background-image: linear-gradient(180deg, rgb(255 255 255 / 10%), rgb(0 0 0 / 8%));
+  border-color: var(--button-border);
+  color: var(--button-text);
   box-shadow:
-    0 1px 2px rgb(22 119 255 / 22%),
-    0 3px 10px rgb(22 119 255 / 14%),
+    0 1px 2px rgb(15 23 42 / 10%),
+    0 6px 14px color-mix(in srgb, var(--button-bg) 18%, transparent),
     inset 0 1px 0 rgb(255 255 255 / 14%);
 }
 
-.el-button--primary:not(.is-link):not(.is-text):not(.is-plain):not(.is-disabled):hover,
-.el-button--info:not(.is-link):not(.is-text):not(.is-plain):not(.is-disabled):hover {
-  background-image: linear-gradient(180deg, #82c0ff 0%, #4c9cff 46%, #1f7fff 100%);
-  border-color: #8ec7ff;
+.el-button:not(.is-link):not(.is-text):not(.is-plain):not(.is-disabled):hover {
+  background-color: var(--button-bg-hover);
+  border-color: var(--button-bg-hover);
+  color: var(--button-text-hover, var(--button-text));
   box-shadow:
-    0 2px 6px rgb(22 119 255 / 30%),
-    0 6px 16px rgb(22 119 255 / 15%),
+    0 2px 5px rgb(15 23 42 / 12%),
+    0 10px 20px color-mix(in srgb, var(--button-bg) 20%, transparent),
     inset 0 1px 0 rgb(255 255 255 / 14%);
+  transform: translateY(-1px);
 }
 
-.el-button--success:not(.is-link):not(.is-text):not(.is-plain):not(.is-disabled) {
-  background-image: linear-gradient(180deg, #73d13d 0%, var(--color-success) 46%, #389e0d 100%);
-  border-color: #49aa19;
-  color: #fff;
-  box-shadow:
-    0 1px 2px rgb(82 196 26 / 25%),
-    0 3px 8px rgb(82 196 26 / 12%),
-    inset 0 1px 0 rgb(255 255 255 / 12%);
-}
-
-.el-button--success:not(.is-link):not(.is-text):not(.is-plain):not(.is-disabled):hover {
-  background-image: linear-gradient(180deg, #95de64 0%, #52c41a 50%, #389e0d 100%);
-  border-color: #73d13d;
-  box-shadow:
-    0 2px 6px rgb(82 196 26 / 28%),
-    0 5px 14px rgb(82 196 26 / 12%);
-}
-
-.el-button--warning:not(.is-link):not(.is-text):not(.is-plain):not(.is-disabled) {
-  background-image: linear-gradient(180deg, #ffc53d 0%, var(--color-warning) 48%, #d48806 100%);
-  border-color: #d48806;
-  color: #1f1f1f;
-  box-shadow:
-    0 1px 2px rgb(250 173 20 / 28%),
-    0 3px 8px rgb(250 173 20 / 10%),
-    inset 0 1px 0 rgb(255 255 255 / 22%);
-}
-
-.el-button--warning:not(.is-link):not(.is-text):not(.is-plain):not(.is-disabled):hover {
-  box-shadow:
-    0 2px 6px rgb(250 173 20 / 32%),
-    0 5px 14px rgb(250 173 20 / 12%);
-}
-
-.el-button--danger:not(.is-link):not(.is-text):not(.is-plain):not(.is-disabled) {
-  background-image: linear-gradient(180deg, #ff7875 0%, var(--color-danger) 46%, #cf1322 100%);
-  border-color: #ff4d4f;
-  color: #fff;
-  box-shadow:
-    0 1px 2px rgb(255 77 79 / 25%),
-    0 3px 8px rgb(255 77 79 / 12%),
-    inset 0 1px 0 rgb(255 255 255 / 12%);
-}
-
-.el-button--danger:not(.is-link):not(.is-text):not(.is-plain):not(.is-disabled):hover {
-  background-image: linear-gradient(180deg, #ffa39e 0%, #ff4d4f 48%, #cf1322 100%);
-  box-shadow:
-    0 2px 6px rgb(255 77 79 / 28%),
-    0 5px 14px rgb(255 77 79 / 12%);
+.el-button:not(.is-link):not(.is-text):not(.is-plain):not(.is-disabled):active {
+  background-color: var(--button-bg-active);
+  border-color: var(--button-bg-active);
+  transform: translateY(0);
 }
 
 .el-button--default:not(.is-link):not(.is-text):not(.is-plain):not(.is-disabled) {
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--color-bg-card) 96%, var(--color-primary) 4%),
-    var(--color-bg-card)
-  );
-  border-color: color-mix(in srgb, var(--color-border) 78%, var(--color-primary) 22%);
-  color: var(--color-text-primary);
-  box-shadow: 0 1px 2px rgb(15 23 42 / 5%);
-}
-
-.el-button--default:not(.is-link):not(.is-text):not(.is-plain):not(.is-disabled):hover {
-  border-color: color-mix(in srgb, var(--color-primary) 38%, var(--color-border) 62%);
-  color: var(--color-primary);
-  background: color-mix(in srgb, var(--color-bg-card) 88%, var(--color-primary) 12%);
-  box-shadow:
-    0 2px 6px rgb(22 119 255 / 10%),
-    0 1px 2px rgb(15 23 42 / 6%);
-}
-
-/* 浅色描边按钮（plain）：底色带语义色倾向 */
-.el-button--primary.is-plain:not(.is-disabled) {
-  background-color: color-mix(in srgb, var(--color-primary) 11%, var(--color-bg-card));
-  border-color: color-mix(in srgb, var(--color-primary) 45%, var(--color-border));
-  color: var(--color-primary);
-  box-shadow: 0 1px 2px rgb(22 119 255 / 8%);
-}
-
-.el-button--success.is-plain:not(.is-disabled) {
-  background-color: color-mix(in srgb, var(--color-success) 11%, var(--color-bg-card));
-  border-color: color-mix(in srgb, var(--color-success) 40%, var(--color-border));
-  color: var(--color-success);
-  box-shadow: 0 1px 2px rgb(82 196 26 / 7%);
-}
-
-.el-button--default.is-plain:not(.is-disabled) {
-  background-color: color-mix(in srgb, var(--color-bg-card) 94%, var(--color-primary) 6%);
-  border-color: color-mix(in srgb, var(--color-border) 85%, var(--color-primary) 15%);
-}
-
-html.dark .el-button--primary:not(.is-link):not(.is-text):not(.is-plain):not(.is-disabled),
-html.dark .el-button--info:not(.is-link):not(.is-text):not(.is-plain):not(.is-disabled) {
-  background-image: linear-gradient(180deg, #3d8ef7 0%, #1677ff 40%, #0958bf 100%);
-  border-color: #3d8ef7;
-  box-shadow:
-    0 2px 12px rgb(22 119 255 / 35%),
-    0 0 0 1px rgb(255 255 255 / 6%),
-    inset 0 1px 0 rgb(255 255 255 / 8%);
-}
-
-html.dark .el-button--primary:not(.is-link):not(.is-text):not(.is-plain):not(.is-disabled):hover,
-html.dark .el-button--info:not(.is-link):not(.is-text):not(.is-plain):not(.is-disabled):hover {
-  background-image: linear-gradient(180deg, #5aa3ff 0%, #2b8cff 45%, #1677ff 100%);
-  box-shadow:
-    0 3px 14px rgb(22 119 255 / 42%),
-    0 0 0 1px rgb(255 255 255 / 8%);
-}
-
-html.dark .el-button--success:not(.is-link):not(.is-text):not(.is-plain):not(.is-disabled) {
-  box-shadow:
-    0 2px 10px rgb(82 196 26 / 28%),
-    inset 0 1px 0 rgb(255 255 255 / 8%);
-}
-
-html.dark .el-button--warning:not(.is-link):not(.is-text):not(.is-plain):not(.is-disabled) {
-  color: #1a1a1a;
-  box-shadow:
-    0 2px 10px rgb(250 173 20 / 22%),
-    inset 0 1px 0 rgb(255 255 255 / 18%);
-}
-
-html.dark .el-button--danger:not(.is-link):not(.is-text):not(.is-plain):not(.is-disabled) {
-  box-shadow:
-    0 2px 10px rgb(255 77 79 / 26%),
-    inset 0 1px 0 rgb(255 255 255 / 8%);
+  background-image: linear-gradient(180deg, rgb(255 255 255 / 72%), rgb(255 255 255 / 0%));
+  box-shadow: 0 1px 2px rgb(15 23 42 / 6%);
 }
 
 html.dark .el-button--default:not(.is-link):not(.is-text):not(.is-plain):not(.is-disabled) {
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--color-bg-card) 94%, var(--color-primary) 6%),
-    color-mix(in srgb, var(--color-bg-card) 98%, #000 2%)
-  );
-  border-color: color-mix(in srgb, var(--color-border) 70%, var(--color-primary) 30%);
-  box-shadow: 0 1px 3px rgb(0 0 0 / 35%);
+  background-image: linear-gradient(180deg, rgb(255 255 255 / 5%), rgb(0 0 0 / 10%));
+  box-shadow: 0 1px 3px rgb(0 0 0 / 32%);
 }
 
-html.dark .el-button--default:not(.is-link):not(.is-text):not(.is-plain):not(.is-disabled):hover {
+/* Plain buttons are the default table/action-bar style: semantic but low-noise. */
+.el-button.is-plain:not(.is-disabled) {
+  background-color: var(--button-soft-bg);
+  border-color: var(--button-soft-border);
+  color: var(--button-soft-text);
+  box-shadow: 0 1px 2px rgb(15 23 42 / 5%);
+}
+
+.el-button.is-plain:not(.is-disabled):hover,
+.el-button.is-plain:not(.is-disabled):focus {
+  background-color: var(--button-soft-bg-hover);
+  border-color: var(--button-soft-text);
+  color: var(--button-soft-text);
   box-shadow:
-    0 2px 8px rgb(22 119 255 / 15%),
-    0 2px 6px rgb(0 0 0 / 35%);
+    0 2px 5px rgb(15 23 42 / 8%),
+    0 0 0 2px color-mix(in srgb, var(--button-soft-text) 12%, transparent);
+}
+
+.el-button.is-link:not(.is-disabled),
+.el-button.is-text:not(.is-disabled) {
+  color: var(--button-soft-text, var(--button-primary-soft-text));
+}
+
+.el-button.is-link:not(.is-disabled):hover,
+.el-button.is-text:not(.is-disabled):hover {
+  background-color: var(--button-soft-bg-hover, var(--button-primary-soft-bg-hover));
+  color: var(--button-bg-hover, var(--button-primary-bg-hover));
+}
+
+.el-button.is-disabled,
+.el-button.is-disabled:hover,
+.el-button.is-disabled:focus {
+  background-image: none !important;
+  background-color: var(--button-disabled-bg) !important;
+  border-color: var(--button-disabled-border) !important;
+  color: var(--button-disabled-text) !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.el-button.is-link.is-disabled,
+.el-button.is-text.is-disabled,
+.el-button.is-link.is-disabled:hover,
+.el-button.is-text.is-disabled:hover {
+  background-color: transparent !important;
+  border-color: transparent !important;
 }
 
 /* 分页箭头（上一页/下一页）禁用：placeholder 偏浅，图标不易辨认 */
@@ -877,7 +872,7 @@ a:focus-visible,
 [tabindex]:focus-visible:not(.el-select__wrapper):not(.el-input__wrapper):not(.el-input__inner):not(
     .el-textarea__inner
   ) {
-  outline: 2px solid color-mix(in srgb, var(--color-primary) 70%, transparent);
+  outline: 2px solid var(--button-focus-ring);
   outline-offset: 2px;
   border-radius: var(--radius-input, 8px);
 }

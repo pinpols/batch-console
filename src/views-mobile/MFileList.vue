@@ -43,11 +43,11 @@
           </div>
           <div>
             <span class="m-card__meta-key">{{ t('mobile.files.size') }}</span>
-            {{ formatSize(row.fileSize) }}
+            {{ formatSize(extraOf(row).fileSize) }}
           </div>
           <div>
             <span class="m-card__meta-key">{{ t('mobile.files.received') }}</span>
-            {{ fmt(row.receivedAt) }}
+            {{ fmt(extraOf(row).receivedAt) }}
           </div>
           <div v-if="row.traceId">
             <span class="m-card__meta-key">trace</span>
@@ -73,6 +73,7 @@
   import MPullRefresh from '@/layout-mobile/MPullRefresh.vue'
   import MSkeleton from '@/layout-mobile/MSkeleton.vue'
   import { useTenantStore } from '@/stores/tenant'
+  import { useTenantReload } from '@/composables/useTenantReload'
   import { useInfiniteList } from '@/composables/useInfiniteList'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { fileApi, type FileQuery } from '@/api/file'
@@ -126,13 +127,23 @@
     { flush: 'post' },
   )
 
-  // 切租户 / 改筛选 → 整个列表重置
-  watch([() => tenant.tenantId, statusFilter], () => {
+  // 切租户(走 useTenantReload,setup 时也执行一次) / 改筛选 → 整个列表重置
+  useTenantReload(() => reset(true))
+  watch(statusFilter, () => {
     void reset(true)
   })
 
   async function onPullRefresh() {
     await reset(true)
+  }
+
+  /**
+   * 后端可能返回 ConsoleFileRecordResponse 之外的字段(fileSize / receivedAt),OpenAPI
+   * schema 未声明。模板里渲染时通过这个 helper 把 row 转成允许任意字段的 view 类型,
+   * 既不破坏严格类型,又允许 UI 渐进展示。
+   */
+  function extraOf(row: unknown): { fileSize?: number | null; receivedAt?: string | null } {
+    return (row as { fileSize?: number | null; receivedAt?: string | null }) ?? {}
   }
 
   function fmt(ts?: string | null) {

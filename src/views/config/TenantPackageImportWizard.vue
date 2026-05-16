@@ -28,7 +28,7 @@
             :element-loading-text="t('excelMaintenanceWizard.uploadingFile')"
           >
             <div class="upload-zone">
-              <el-icon class="upload-zone__icon" :size="36"><Upload /></el-icon>
+              <el-icon class="upload-zone__icon" :size="36"><FolderOpened /></el-icon>
               <p class="upload-zone__title">{{ t('tenantPackageImportWizard.uploadTitle') }}</p>
               <p class="upload-zone__desc">{{ t('tenantPackageImportWizard.uploadDesc') }}</p>
               <div class="upload-zone__toolbar">
@@ -135,9 +135,95 @@
                   {{ previewStats.valid }}
                 </el-descriptions-item>
                 <el-descriptions-item :label="t('excelMaintenanceWizard.descLabelInvalid')">
-                  {{ previewStats.invalid }}
+                  <span :class="{ 'count-danger': Number(previewStats.invalid) > 0 }">
+                    {{ previewStats.invalid }}
+                  </span>
                 </el-descriptions-item>
               </el-descriptions>
+
+              <!-- 每张 sheet 的拆分 — 后端 sheets[] 之前被前端丢弃,现在显式展开 -->
+              <div v-if="sheetStats.length" class="excel-wizard__table-block">
+                <div class="excel-wizard__table-caption">
+                  {{ t('tenantPackageImportWizard.sheetStatsCaption') }}
+                </div>
+                <el-table
+                  class="wizard-stretch console-table"
+                  :data="sheetStats"
+                  size="small"
+                  stripe
+                  border
+                  :empty-text="t('common.noData')"
+                >
+                  <el-table-column
+                    prop="sheetName"
+                    :label="t('tenantPackageImportWizard.colSheet')"
+                    min-width="180"
+                  >
+                    <template #default="{ row }">
+                      <span>{{ row.sheetName }}</span>
+                      <el-tag
+                        v-if="downstreamAtRisk.includes(normalizeSheetName(row.sheetName))"
+                        size="small"
+                        type="warning"
+                        effect="plain"
+                        class="sheet-risk-tag"
+                      >
+                        {{ t('tenantPackageImportWizard.sheetRiskDownstream') }}
+                      </el-tag>
+                    </template>
+                  </el-table-column>
+                  <el-table-column
+                    prop="total"
+                    :label="t('tenantPackageImportWizard.colSheetTotal')"
+                    width="80"
+                  />
+                  <el-table-column
+                    prop="valid"
+                    :label="t('tenantPackageImportWizard.colSheetValid')"
+                    width="80"
+                  >
+                    <template #default="{ row }">
+                      <span class="count-success">{{ row.valid }}</span>
+                    </template>
+                  </el-table-column>
+                  <el-table-column
+                    prop="invalid"
+                    :label="t('tenantPackageImportWizard.colSheetInvalid')"
+                    width="100"
+                  >
+                    <template #default="{ row }">
+                      <span :class="{ 'count-danger': row.invalid > 0 }">{{ row.invalid }}</span>
+                    </template>
+                  </el-table-column>
+                </el-table>
+              </div>
+
+              <!-- 依赖图谱:当有 sheet 出错时,提示哪些下游会受影响 -->
+              <el-alert
+                v-if="downstreamAtRisk.length"
+                type="warning"
+                :closable="false"
+                show-icon
+                class="excel-wizard__desc"
+              >
+                <template #title>
+                  {{ t('tenantPackageImportWizard.depsAlertTitle') }}
+                </template>
+                <template #default>
+                  <div class="deps-alert-body">
+                    <span>{{ t('tenantPackageImportWizard.depsAlertBody') }}</span>
+                    <el-tag
+                      v-for="s in downstreamAtRisk"
+                      :key="s"
+                      size="small"
+                      type="warning"
+                      effect="plain"
+                    >
+                      {{ s }}
+                    </el-tag>
+                  </div>
+                </template>
+              </el-alert>
               <el-alert
                 v-if="previewWorkbookUrl"
                 type="info"
@@ -153,13 +239,22 @@
                 </template>
               </el-alert>
               <div v-if="issueRows.length" class="excel-wizard__table-block">
-                <div class="excel-wizard__table-caption">
-                  {{ t('excelMaintenanceWizard.rowIssuesCaption') }}
+                <div class="excel-wizard__table-caption issues-caption">
+                  <span>
+                    {{ t('excelMaintenanceWizard.rowIssuesCaption') }}
+                    <el-tag size="small" type="danger" effect="plain" class="issue-count-tag">
+                      {{ issueRows.length }}
+                    </el-tag>
+                  </span>
+                  <!-- I7: 修完直接重传,不必再绕回 step 0 -->
+                  <el-button text type="primary" :icon="ArrowLeft" size="small" @click="step = 0">
+                    {{ t('tenantPackageImportWizard.btnReuploadFixed') }}
+                  </el-button>
                 </div>
                 <el-table
                   class="wizard-stretch console-table"
                   :data="issueRows"
-                  max-height="320"
+                  :max-height="issueTableMaxHeight"
                   stripe
                   border
                   highlight-current-row
@@ -176,6 +271,16 @@
                     width="70"
                   />
                   <el-table-column
+                    prop="columnName"
+                    :label="t('tenantPackageImportWizard.colColumn')"
+                    width="140"
+                  >
+                    <template #default="{ row }">
+                      <code v-if="row.columnName" class="cell-col-code">{{ row.columnName }}</code>
+                      <span v-else class="cell-mute">—</span>
+                    </template>
+                  </el-table-column>
+                  <el-table-column
                     prop="messages"
                     :label="t('excelMaintenanceWizard.colMessages')"
                     min-width="200"
@@ -185,7 +290,12 @@
             </template>
           </div>
 
-          <div v-show="step === 2" class="excel-wizard__panel">
+          <div
+            v-show="step === 2"
+            class="excel-wizard__panel"
+            v-loading="applyLoading"
+            :element-loading-text="t('tenantPackageImportWizard.applyingLoading')"
+          >
             <div class="apply-zone">
               <el-icon class="apply-zone__icon" :size="32"><WarningFilled /></el-icon>
               <h3 class="apply-zone__title">{{ t('excelMaintenanceWizard.applyTitle') }}</h3>
@@ -196,9 +306,111 @@
                 <strong>{{ t('tenantPackageImportWizard.applyDescBold') }}</strong>
                 {{ t('tenantPackageImportWizard.applyDescEnd') }}
               </p>
-              <el-button type="danger" size="large" :disabled="!uploadToken" @click="doApply">
-                {{ t('excelMaintenanceWizard.btnApply') }}
-              </el-button>
+              <!-- 闸门:有 invalid 行直接拦 apply,避免半坏数据落库 -->
+              <el-alert
+                v-if="hasBlockingIssues && !applyResult"
+                type="error"
+                :closable="false"
+                show-icon
+                class="apply-zone__block"
+              >
+                <template #title>
+                  {{ t('tenantPackageImportWizard.applyBlockedTitle') }}
+                </template>
+                <template #default>
+                  {{
+                    t('tenantPackageImportWizard.applyBlockedBody', {
+                      n: previewStats?.invalid ?? issueRows.length,
+                    })
+                  }}
+                </template>
+              </el-alert>
+
+              <!-- I11: Apply 失败 → 错误 alert + 一键 Retry -->
+              <el-alert
+                v-if="applyError"
+                type="error"
+                :closable="false"
+                show-icon
+                class="apply-zone__block"
+              >
+                <template #title>{{ t('tenantPackageImportWizard.applyFailedTitle') }}</template>
+                <template #default>
+                  <div class="apply-fail-body">
+                    <pre class="apply-fail-err">{{ applyError }}</pre>
+                    <el-button size="small" type="primary" :icon="Refresh" @click="doApply">
+                      {{ t('tenantPackageImportWizard.btnRetryApply') }}
+                    </el-button>
+                  </div>
+                </template>
+              </el-alert>
+
+              <!-- I10: Apply 成功 → 完整 entity-level breakdown -->
+              <el-alert
+                v-if="applyResult"
+                type="success"
+                :closable="false"
+                show-icon
+                class="apply-zone__block"
+              >
+                <template #title>{{ t('tenantPackageImportWizard.applySucceededTitle') }}</template>
+                <template #default>
+                  <el-table
+                    class="apply-result-table"
+                    :data="applyBreakdownRows"
+                    size="small"
+                    border
+                    :empty-text="t('common.noData')"
+                  >
+                    <el-table-column
+                      prop="entity"
+                      :label="t('tenantPackageImportWizard.colEntity')"
+                      min-width="140"
+                    />
+                    <el-table-column
+                      prop="inserted"
+                      :label="t('tenantPackageImportWizard.colInserted')"
+                      width="90"
+                    >
+                      <template #default="{ row }">
+                        <span :class="{ 'count-success': row.inserted > 0 }">{{
+                          row.inserted
+                        }}</span>
+                      </template>
+                    </el-table-column>
+                    <el-table-column
+                      prop="updated"
+                      :label="t('tenantPackageImportWizard.colUpdated')"
+                      width="90"
+                    >
+                      <template #default="{ row }">
+                        <span :class="{ 'count-success': row.updated > 0 }">{{ row.updated }}</span>
+                      </template>
+                    </el-table-column>
+                  </el-table>
+                </template>
+              </el-alert>
+
+              <div class="apply-zone__actions">
+                <el-button
+                  v-if="!applyResult"
+                  type="danger"
+                  size="large"
+                  :disabled="!uploadToken || hasBlockingIssues || applyLoading"
+                  :loading="applyLoading"
+                  @click="doApply"
+                >
+                  {{
+                    applyLoading
+                      ? t('tenantPackageImportWizard.applyingBtn')
+                      : t('excelMaintenanceWizard.btnApply')
+                  }}
+                </el-button>
+                <!-- I12: 成功 / 失败后,显式"重置向导"回 step 0,避免 state 漂移 -->
+                <el-button v-if="applyResult || applyError" size="large" @click="resetWizard">
+                  {{ t('tenantPackageImportWizard.btnResetWizard') }}
+                </el-button>
+              </div>
             </div>
           </div>
         </div>
@@ -232,8 +444,16 @@
 </template>
 
 <script setup lang="ts">
+  import { computed, ref, shallowRef } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { ArrowLeft, ArrowRight, Document, Upload, WarningFilled } from '@element-plus/icons-vue'
+  import {
+    ArrowLeft,
+    ArrowRight,
+    Document,
+    FolderOpened,
+    Refresh,
+    WarningFilled,
+  } from '@element-plus/icons-vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
 
   const { t } = useI18n({ useScope: 'global' })
@@ -245,7 +465,7 @@
     tenantPackageDownloadPreviewWorkbook,
     tenantPackageApply,
   } from '@/api/tenantPackageExcel'
-  import { useImportWizard } from '@/composables/useImportWizard'
+  import { useImportWizard, type SheetStats } from '@/composables/useImportWizard'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
@@ -263,9 +483,131 @@
     previewStats,
     previewWorkbookUrl,
     issueRows,
+    sheetStats,
+    hasBlockingIssues,
     onFile,
     triggerBlobDownload,
   } = useImportWizard()
+
+  /**
+   * Tenant package 各 sheet 间的引用关系(前端静态知识库)。
+   * 后端 preview 只返 row 级错误,不返 cross-sheet 依赖;这里给用户可视化:
+   * 修一处错误,下游 sheet 会受连带影响。
+   */
+  const SHEET_DEPENDENCY_GRAPH: Array<{ from: string; to: string[] }> = [
+    { from: 'business-calendar', to: ['batch-window', 'job'] },
+    { from: 'resource-queue', to: ['job'] },
+    { from: 'batch-window', to: ['job'] },
+    { from: 'job', to: ['pipeline', 'workflow'] },
+    { from: 'channel', to: ['file-template'] },
+    { from: 'file-template', to: ['pipeline'] },
+    { from: 'pipeline', to: ['workflow'] },
+  ]
+
+  /** 按 sheet 名归一化:后端可能返 `BusinessCalendar` 或 `business-calendar` 任何风格,统一成 kebab。 */
+  function normalizeSheetName(raw: string): string {
+    return raw
+      .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
+      .replace(/[\s_]+/g, '-')
+      .toLowerCase()
+  }
+
+  /** 哪些 sheet 有错。 */
+  const failingSheets = computed<Set<string>>(() => {
+    const s = new Set<string>()
+    for (const sh of sheetStats.value) {
+      if (sh.invalid > 0) s.add(normalizeSheetName(sh.sheetName))
+    }
+    for (const i of issueRows.value) {
+      s.add(normalizeSheetName(i.sheetName))
+    }
+    return s
+  })
+
+  /** 受影响 = 自己出错 ∪ 任意上游出错(BFS 沿 from→to)。 */
+  const affectedSheets = computed<Set<string>>(() => {
+    const failing = failingSheets.value
+    const out = new Set(failing)
+    let added = true
+    while (added) {
+      added = false
+      for (const e of SHEET_DEPENDENCY_GRAPH) {
+        if (out.has(e.from)) {
+          for (const t of e.to) {
+            if (!out.has(t)) {
+              out.add(t)
+              added = true
+            }
+          }
+        }
+      }
+    }
+    return out
+  })
+
+  /** 仅"被上游影响"(自身没出错,但上游出错了)。 */
+  const downstreamAtRisk = computed<string[]>(() => {
+    const failing = failingSheets.value
+    return [...affectedSheets.value].filter((s) => !failing.has(s))
+  })
+
+  /**
+   * I8: issue 表高度自适应:每行 ~36px,base 帧 64;少于 8 条紧凑,多于 8 条限到 480 给出滚动条。
+   * 比固定 320 体验更好:少 issue 不空旷,多 issue 滚动条也更长好操作。
+   */
+  const issueTableMaxHeight = computed<number>(() => {
+    const n = issueRows.value.length
+    const rowH = 36
+    const base = 64
+    return Math.min(480, Math.max(160, base + n * rowH))
+  })
+
+  /**
+   * I9-I12 Apply 阶段状态机:
+   *   - applyLoading:进行中(disable button + 全 panel mask)
+   *   - applyError:失败的可读错误(alert + retry)
+   *   - applyResult:成功的 entity-level breakdown(insert/update 拆分)
+   * 三态互斥,resetWizard 一并清。
+   */
+  const applyLoading = ref(false)
+  const applyError = ref<string | null>(null)
+  const applyResult = shallowRef<Record<string, number> | null>(null)
+
+  /** 把后端 apply 返回的 9 实体 insert/update 拆分,展平成表行 */
+  const applyBreakdownRows = computed<Array<{ entity: string; inserted: number; updated: number }>>(
+    () => {
+      const r = applyResult.value
+      if (!r) return []
+      const ents: Array<[string, string, string]> = [
+        ['resource-queue', 'resourceQueueInserted', 'resourceQueueUpdated'],
+        ['business-calendar', 'businessCalendarInserted', 'businessCalendarUpdated'],
+        ['batch-window', 'batchWindowInserted', 'batchWindowUpdated'],
+        ['job', 'jobInserted', 'jobUpdated'],
+        ['channel', 'channelInserted', 'channelUpdated'],
+        ['file-template', 'fileTemplateInserted', 'fileTemplateUpdated'],
+        ['pipeline', 'pipelineInserted', 'pipelineUpdated'],
+        ['workflow', 'workflowInserted', 'workflowUpdated'],
+      ]
+      return ents
+        .map(([entity, ik, uk]) => ({
+          entity,
+          inserted: r[ik] ?? 0,
+          updated: r[uk] ?? 0,
+        }))
+        .filter((row) => row.inserted > 0 || row.updated > 0)
+    },
+  )
+
+  /** I12 重置向导:回 step 0 + 清掉所有阶段状态,让用户重新走完整流程 */
+  function resetWizard() {
+    applyLoading.value = false
+    applyError.value = null
+    applyResult.value = null
+    uploadToken.value = ''
+    file.value = null
+    previewRaw.value = null
+    step.value = 0
+  }
 
   async function doDownloadTemplate() {
     tplLoading.value = true
@@ -327,16 +669,51 @@
 
   async function doApply() {
     if (!uploadToken.value) return
+    if (hasBlockingIssues.value) {
+      ElMessage.error(t('tenantPackageImportWizard.applyBlockedTitle'))
+      return
+    }
+    // 重试场景:清掉上一次失败的 alert,再触发 confirm
+    applyError.value = null
+    // confirm 仅首次显示;retry 时跳过(用户已显式点 retry)
+    const isRetry = applyResult.value === null && applyError.value === null && false
+    void isRetry // 占位:目前无 retry-without-confirm 需求,但保留语义钩子
     try {
-      await ElMessageBox.confirm(
-        t('tenantPackageImportWizard.applyConfirmText'),
-        t('tenantPackageImportWizard.applyConfirmTitle'),
-        { type: 'warning' },
-      )
-      await tenantPackageApply(uploadToken.value, {})
-      ElMessage.success(t('tenantPackageImportWizard.appliedToast'))
+      const breakdown = sheetStats.value
+        .filter((s: SheetStats) => s.valid > 0)
+        .map((s: SheetStats) => `${s.sheetName}: ${s.valid}`)
+        .join(' · ')
+      const detail = breakdown
+        ? t('tenantPackageImportWizard.applyConfirmDetail', {
+            n: previewStats.value?.valid ?? 0,
+            breakdown,
+          })
+        : t('tenantPackageImportWizard.applyConfirmText')
+      await ElMessageBox.confirm(detail, t('tenantPackageImportWizard.applyConfirmTitle'), {
+        type: 'warning',
+        confirmButtonText: t('tenantPackageImportWizard.applyConfirmYes'),
+        cancelButtonText: t('common.cancel'),
+        dangerouslyUseHTMLString: false,
+      })
     } catch {
-      /* cancel */
+      return /* user cancelled confirm */
+    }
+    applyLoading.value = true
+    applyError.value = null
+    try {
+      const res = await tenantPackageApply(uploadToken.value, {})
+      // 后端 apply 返每实体 insert/update 拆分,放进 applyResult 让 I10 面板展示完整 breakdown
+      applyResult.value = res as unknown as Record<string, number>
+      ElMessage.success(t('tenantPackageImportWizard.appliedToast'))
+    } catch (err: unknown) {
+      // I11 失败展示:把后端 message / stack 完整保留供用户排障
+      const e = err as { response?: { data?: { message?: string } }; message?: string } | null
+      applyError.value =
+        e?.response?.data?.message ||
+        e?.message ||
+        (err instanceof Error ? err.message : String(err))
+    } finally {
+      applyLoading.value = false
     }
   }
 </script>
@@ -460,8 +837,8 @@
   .upload-zone__toolbar-left :deep(.el-button.is-link) {
     border-radius: 999px;
     padding: 6px 12px;
-    background: color-mix(in srgb, var(--color-primary) 8%, transparent 92%);
-    border: 1px solid color-mix(in srgb, var(--color-primary) 18%, var(--color-border) 82%);
+    background: var(--button-primary-soft-bg);
+    border: 1px solid var(--button-primary-soft-border);
     box-shadow: 0 8px 18px rgb(15 23 42 / 8%);
     transition:
       transform 0.16s ease,
@@ -472,8 +849,8 @@
 
   .upload-zone__toolbar-left :deep(.el-button.is-link:hover) {
     transform: translateY(-1px);
-    background: color-mix(in srgb, var(--color-primary) 12%, transparent 88%);
-    border-color: color-mix(in srgb, var(--color-primary) 30%, var(--color-border) 70%);
+    background: var(--button-primary-soft-bg-hover);
+    border-color: var(--button-primary-soft-text);
     box-shadow: 0 12px 26px rgb(15 23 42 / 12%);
   }
 
@@ -508,8 +885,8 @@
   }
 
   .upload-zone__ghost-btn {
-    border-color: color-mix(in srgb, var(--color-primary) 26%, var(--color-border) 74%);
-    background: color-mix(in srgb, var(--color-primary) 6%, var(--color-bg-card) 94%);
+    border-color: var(--button-primary-soft-border);
+    background: var(--button-primary-soft-bg);
     box-shadow: 0 8px 18px rgb(15 23 42 / 10%);
     transition:
       transform 0.18s ease,
@@ -520,8 +897,8 @@
 
   .upload-zone__ghost-btn:hover {
     transform: translateY(-1px);
-    border-color: color-mix(in srgb, var(--color-primary) 38%, var(--color-border) 62%);
-    background: color-mix(in srgb, var(--color-primary) 9%, var(--color-bg-card) 91%);
+    border-color: var(--button-primary-soft-text);
+    background: var(--button-primary-soft-bg-hover);
     box-shadow: 0 12px 26px rgb(15 23 42 / 14%);
   }
 
@@ -531,12 +908,13 @@
 
   .upload-zone__primary-btn {
     border: none;
+    color: var(--button-primary-text);
     background: linear-gradient(
-      135deg,
-      color-mix(in srgb, var(--color-primary) 74%, #ffffff 26%) 0%,
-      color-mix(in srgb, #0f5ed9 64%, #ffffff 36%) 100%
+      180deg,
+      color-mix(in srgb, var(--button-primary-bg) 88%, #ffffff 12%) 0%,
+      var(--button-primary-bg) 100%
     );
-    box-shadow: 0 12px 30px rgb(59 130 246 / 18%);
+    box-shadow: 0 12px 30px color-mix(in srgb, var(--button-primary-bg) 20%, transparent);
     transition:
       transform 0.18s ease,
       box-shadow 0.18s ease,
@@ -545,8 +923,13 @@
 
   .upload-zone__primary-btn:hover {
     transform: translateY(-1px);
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--button-primary-bg-hover) 88%, #ffffff 12%) 0%,
+      var(--button-primary-bg-hover) 100%
+    );
     filter: saturate(1.03);
-    box-shadow: 0 16px 40px rgb(59 130 246 / 22%);
+    box-shadow: 0 16px 40px color-mix(in srgb, var(--button-primary-bg) 24%, transparent);
   }
 
   .upload-zone__primary-btn:active {
@@ -784,5 +1167,80 @@
     color: var(--color-text-tertiary);
     text-align: center;
     font-variant-numeric: tabular-nums;
+  }
+
+  /* I1-I4 校验态视觉:数字色阶 + columnName 高亮 + apply 闸门 + 依赖警示 */
+  .count-success {
+    color: var(--color-success, #16a34a);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  .count-danger {
+    color: var(--color-danger, #ef4444);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+  .cell-col-code {
+    padding: 1px 6px;
+    font-size: 11px;
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--color-danger, #ef4444) 10%, transparent);
+    color: var(--color-danger, #ef4444);
+    font-family: var(--el-font-family-mono, ui-monospace, monospace);
+  }
+  .cell-mute {
+    color: var(--color-text-tertiary);
+  }
+  .sheet-risk-tag {
+    margin-left: 8px;
+  }
+  .deps-alert-body {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+  }
+  .apply-zone__block {
+    width: 100%;
+    margin: 12px 0;
+  }
+  /* I7: issue 表头与"重传"按钮分列两端 */
+  .issues-caption {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .issue-count-tag {
+    margin-left: 6px;
+  }
+  /* I9-I12 Apply 阶段状态机视觉 */
+  .apply-zone__actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 8px;
+  }
+  .apply-fail-body {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .apply-fail-err {
+    margin: 0;
+    padding: 8px;
+    background: color-mix(in srgb, var(--color-danger, #ef4444) 8%, transparent);
+    border-radius: 6px;
+    font-family: var(--el-font-family-mono, monospace);
+    font-size: 12px;
+    line-height: 1.55;
+    color: var(--color-danger, #b91c1c);
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 200px;
+    overflow: auto;
+  }
+  .apply-result-table {
+    margin-top: 8px;
+    max-width: 480px;
   }
 </style>

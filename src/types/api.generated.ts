@@ -78,6 +78,29 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/console/auth/logout': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Log out — clear HttpOnly token cookie
+     * @description Sets `Set-Cookie: batch_console_token=; Max-Age=0` so the browser drops the auth cookie.
+     *     Idempotent and does not require authentication (permitAll). Front-end should also clear
+     *     the `batch-console-session` localStorage flag.
+     *
+     */
+    post: operations['logoutConsole']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/console/auth/stream/ticket': {
     parameters: {
       query?: never
@@ -7180,6 +7203,24 @@ export interface operations {
       }
       /** @description Not authenticated */
       401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  logoutConsole: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Cookie cleared */
+      204: {
         headers: {
           [name: string]: unknown
         }

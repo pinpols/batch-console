@@ -1,0 +1,169 @@
+# 前端深度扫描报告 — 2026-05-15
+
+**触发**:用户在 IA 重整(#3 运行链路 / #1 侧栏 8→7)+ 阴影扁平化 + ADR + 移动端注释 + i18n shim 等一轮变更后,要求"再做一轮深度扫描分析问题修复"。
+
+**范围**:TypeScript / i18n / 路由 / 命名约定 / 死代码 / 鉴权 / Playwright 全量审计。
+
+---
+
+## 一、修复清单(本轮已做)
+
+| # | 问题 | 修法 | 文件 |
+|---|---|---|---|
+| 1 | `useI18n` 类型解析失败 112 个错误 | tsconfig `paths` mapping 不稳定,改用 ambient module shim `export * from 'vue-i18n/dist/vue-i18n.d.ts'` | [src/types/vue-i18n-shim.d.ts](src/types/vue-i18n-shim.d.ts) (新增) |
+| 2 | `router/index.ts:250` 函数式 redirect 入参隐式 `any` | 显式 `RouteLocationNormalized` | [src/router/index.ts:1](src/router/index.ts#L1)、[L250](src/router/index.ts#L250) |
+| 3 | 4 个页面缺 i18n `page.<pathKey>` 导致英文模式回退中文兜底 | 补 `filesChannels` / `observabilityTrace` / `governanceWindows` / `governanceCalendars` zh+en | [src/locales/zh-CN.ts](src/locales/zh-CN.ts)、[src/locales/en-US.ts](src/locales/en-US.ts) |
+| 4 | `DocsDrawer.vue` 模板里"在文档站打开" / iframe `title="文档"` 硬中文 | 改 `t('docsDrawer.openInDocs')` / `t('docsDrawer.iframeTitle')`,补 zh+en | [src/components/common/DocsDrawer.vue](src/components/common/DocsDrawer.vue) |
+
+---
+
+## 二、自动化扫描结果
+
+### TypeScript
+
+```
+useI18n related errors  112 → 0    (shim 修复)
+total production errors  80(预存,不在本轮范围)
+```
+
+预存 80 个错误均与本轮 IA / 阴影改动无关,分布:
+
+| 文件 | 错误 | 性质 |
+|---|---|---|
+| `views/worker/WorkerManagement.vue` | 6 | TanStack Query refetch 类型 |
+| `components/table/{Pro,Virtual}Table.vue` | 3 | `null` vs `LooseRequired` 类型(Element Plus 边界) |
+| `views/workflow/composables/useWorkflow*.ts` | 9 | X6 plugin 类型 / NodeFormState 字段对齐 |
+| `composables/useFormValidate.test.ts` 等测试 | 25+ | 测试代码类型 |
+| `api/alert*.ts` | 2 | Record<string, string \| number \| undefined> 约束 |
+| 其它(directives / DataState / EventCatalog ...) | 35 | 历史小型问题 |
+
+**结论**:不阻塞 build / runtime;后续可建独立"TS 债务清理"PR。
+
+### i18n key 对称性
+
+```
+zh keys: 2850
+en keys: 2850
+only in zh: 0
+only in en: 0
+pageMeta paths 缺 i18n key: 0 (本轮补齐 4 个)
+```
+
+### 路由 / 导航交叉
+
+```
+navigation paths: 43
+router paths matched: 43 (0 断链)
+```
+
+侧栏 7 组共 35 visible items + 8 hidden 全部命中真实路由(2026-05-15 IA 收敛后校准:`monitor/job-steps` 等 5 项保持可见 + ai-chat / event-catalog / tenant-package 等 3 项隐藏)。
+
+### 裸中文硬编码扫描
+
+`<template>` 区域纯中文文本节点扫描:
+
+```
+扫描文件:60+ .vue
+发现:1 处(DocsDrawer.vue,已修)
+```
+
+---
+
+## 三、关键发现(**未修,需用户决策**)
+
+### 🔴 F-1:Auth cookie 鉴权后端未实现 — 前端 SPA login 后立即 401
+
+**症状**:
+- 桌面端 `/login` 提交表单 → POST `/api/console/auth/login` 返回 `200 + accessToken`(正确)
+- 紧接着 `/api/console/auth/me` 返回 **401 Unauthorized**
+- 前端 router beforeEach 检测 401 → 重定向回 `/login`
+- 用户感觉 "登录按了没反应,一直停在登录页"
+
+**根因**:
+- 前端 [src/stores/auth.ts:52](src/stores/auth.ts#L52) 注释:"ADR-030 §D7 Stage B:token 已由后端下发为 HttpOnly cookie",登录后**只置 flag,不存 accessToken**
+- 前端 [src/api/interceptors.ts:191](src/api/interceptors.ts#L191) 注释:"HttpOnly cookie 由浏览器自动随请求带,不再注入 Authorization header"
+- 但**后端 login 响应里没有 `Set-Cookie` header**(直接 curl `localhost:18080` 也无),浏览器没有任何 cookie 可带,后续请求就是无认证状态
+
+**验证**:
+```bash
+curl -i -X POST -H 'Content-Type: application/json' \
+  -d '{"username":"admin","password":"admin123"}' \
+  http://localhost:18080/api/console/auth/login | grep -i set-cookie
+# 输出:(空)
+```
+
+**影响面**:
+- 桌面端 SPA **完全无法登录**(curl 直调 API 可拿 token,SPA 拿不到)
+- Playwright 自动审计**无法跑**(login 失败 → 60 路由全部回退到 /login)
+- 移动端、SSO 等场景影响未测
+
+**前端能不能修?** 能,但**不应该**修:
+- 选项 A:interceptor 注入 `Authorization` header(回到 D7 Stage A);**但这违背 ADR-030 D7 Stage B 安全设计意图,会被 XSS 偷 token**
+- 选项 B:在 dev-only 加 fallback;**会让 dev / prod 行为分叉,掩盖问题**
+- **正确做法**:**后端补上 `Set-Cookie: batch_console_token=<jwt>; HttpOnly; SameSite=Lax; Path=/; Max-Age=...`**
+
+**建议**:flag 给后端 / SRE 团队修复,确认 ADR-030 D7 Stage B 部署进度。在后端补完之前,**SPA 实际处于半残废状态**,但只影响 web 用户(可通过 cmd-line / curl 仍可用)。
+
+---
+
+## 四、回归状态
+
+| 项 | 状态 |
+|---|---|
+| HMR vite 编译 | ✅ 全过(11 次最近 reload 无错) |
+| 路由文件可达性 | ✅ 43/43 |
+| i18n 双语对称 | ✅ 2850 / 2850 |
+| 裸中文残留 | ✅ 0 |
+| 60 路由 Playwright 审计 | ⏸️ **被 F-1 阻塞**(login 全部失败) |
+
+---
+
+## 五、累计交付(本轮 + 上轮)
+
+### 上轮(#8 / #7 / #4 / #2 / #3 / #1)
+
+- ✅ #8 useTenantReload 重复加载(RunsOverview)
+- ✅ #7 移动端隐藏路由产品意图注释
+- ✅ #4 点状去卡片化(shadow 双层→单层,hover translate 全关)
+- ✅ #2 ADR 页面三同命名约定([docs/design/page-naming-convention.md](docs/design/page-naming-convention.md))
+- ✅ #3 运行链路收敛(ops/diagnostic 挪入 runs,job-steps hidden)
+- ✅ #1 侧栏 8 → 7 组(config + system 合并),visible 43 → 35(8 项 hidden 走 Command Palette)
+
+### 本轮深扫
+
+- ✅ 修 useI18n 类型解析(112 → 0)
+- ✅ 修 4 个页面 i18n 缺 key
+- ✅ 修 DocsDrawer 裸中文
+- ✅ 修 router redirect 函数 any 入参
+- 🔴 发现并升级 F-1 Auth Cookie 问题(未在前端修)
+
+---
+
+## 六、剩余待办
+
+### 🟡 中优先(下一迭代)
+
+- **#5 顶栏低频按钮收纳**(还没做):全屏 / 文档 / 语言 / 主题 4 个按钮收进 ⋯ 菜单,保留租户 / ⌘K / 用户常驻
+- **TS 80 个预存错误**:建议独立 PR 分批清,优先 ProTable / VirtualProTable 的 `null` 边界(3 处,影响所有表格页)
+
+### 🔴 高优先(等用户拍板)
+
+- **F-1 Auth Cookie 后端修复**:阻塞 SPA 可用性,需 SRE / 后端 owner 确认 ADR-030 D7 Stage B 部署状态
+
+### 🟢 不建议本轮做
+
+- TS 测试代码类型(25+ 错误):测试改 import 类型即可,工时长但不阻塞
+- X6 plugin 类型(useWorkflowGraph 3 处):@antv/x6 内部 dual-package(`es` vs `lib`),需要库升级或自管 .d.ts shim
+
+---
+
+## 七、文件改动汇总(本轮)
+
+| 文件 | 改动 |
+|---|---|
+| `src/types/vue-i18n-shim.d.ts` | **新增** ambient module 转发 dist 全部类型 |
+| `src/router/index.ts` | 引入 `RouteLocationNormalized` 类型,fix 函数 redirect any 入参 |
+| `src/components/common/DocsDrawer.vue` | 模板与 iframe title 改 `t()`,加 useI18n |
+| `src/locales/zh-CN.ts` | 加 4 个 page key + `docsDrawer.*` |
+| `src/locales/en-US.ts` | 同步 |
+| `tsconfig.app.json` | (上轮) `vue-i18n` path mapping 保留作 backup,主用 shim |

@@ -33,6 +33,15 @@ jobs:
       - name: ESLint（check 模式，不 auto-fix）
         run: npm run lint:check
 
+      # 后端 console-api.openapi.yaml 改了但前端没跑 gen:api 提交,会在这里挂。
+      # 本地开发也可直接 `npm run gen:api:check` 自查。
+      # BE_OPENAPI_URL:CI 没有 sibling 仓库,从 raw GitHub 拉 yaml;脚本本地有
+      # `../file-batch-system/docs/api/console-api.openapi.yaml` 时优先用本地。
+      - name: Check OpenAPI drift
+        env:
+          BE_OPENAPI_URL: ${{ secrets.BE_OPENAPI_URL }}
+        run: npm run gen:api:check
+
       - name: TypeCheck
         run: npm run typecheck
 

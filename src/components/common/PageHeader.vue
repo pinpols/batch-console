@@ -1,7 +1,12 @@
 <template>
+  <!--
+    hideDuplicateTitle 模式下:全局顶栏已经显示标题,本组件只剩描述 / 操作按钮。
+    去掉 .app-surface(卡片阴影)+ 缩小内边距,避免"卡片套卡片"的视觉层叠。
+  -->
   <section
-    class="page-header app-surface"
+    class="page-header"
     :class="{
+      'app-surface': !hideDuplicateTitle,
       'page-header--compact': effectiveCompact,
       'page-header--toolbar': toolbar,
       'page-header--summary': hideDuplicateTitle,
@@ -73,14 +78,26 @@
   const route = useRoute()
 
   const effectiveCompact = computed(() => props.compact ?? true)
+  /** route.meta.title/description 是中文兜底,优先用 i18n `page.<pathKey>.*` 跟随语言切换。 */
+  function i18nByPathKey(field: 'title' | 'description'): string {
+    const pathKey = typeof route.meta.pathKey === 'string' ? route.meta.pathKey : ''
+    if (!pathKey) return ''
+    const key = `page.${pathKey}.${field}`
+    const v = t(key)
+    return v && v !== key ? v : ''
+  }
   const displayTitle = computed(() => {
     const explicit = props.title?.trim()
     if (explicit) return explicit
+    const i18nVal = i18nByPathKey('title')
+    if (i18nVal) return i18nVal
     return typeof route.meta.title === 'string' ? route.meta.title : ''
   })
   const displayDescription = computed(() => {
     const explicit = props.description?.trim()
     if (explicit) return explicit
+    const i18nVal = i18nByPathKey('description')
+    if (i18nVal) return i18nVal
     return typeof route.meta.description === 'string' ? route.meta.description : ''
   })
   const hideDuplicateTitle = computed(() => {
@@ -134,17 +151,14 @@
   }
 
   .page-header--summary {
+    /* 列表页 summary 模式:去卡片化(无阴影 / 仅左侧 3px 主色竖条)
+       + 紧凑内边距,从"卡片"降为"内容标识条" */
     align-items: center;
-    padding-top: 10px;
-    padding-bottom: 10px;
-    background:
-      linear-gradient(
-        90deg,
-        color-mix(in srgb, var(--color-bg-card) 92%, var(--color-primary) 8%),
-        var(--color-bg-card)
-      ),
-      var(--color-bg-card);
-    border: 1px solid color-mix(in srgb, var(--color-border-light) 84%, var(--color-primary) 16%);
+    padding: 6px 12px 6px 16px;
+    background: transparent;
+    border: none;
+    border-left: 3px solid color-mix(in srgb, var(--color-primary) 60%, transparent);
+    border-radius: 0;
   }
 
   .title {

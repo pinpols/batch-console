@@ -35,6 +35,19 @@
   const badges = useMobileBadgesStore()
   const { t } = useI18n({ useScope: 'global' })
 
+  /**
+   * 移动端底部 Tab 设计:**5 主功能 + 5 应急深链**
+   *
+   * 这里只放最高频的 5 个 Tab(告警 / 审批 / 概览 / 作业 / Worker),刻意保持简洁。
+   *
+   * 另外 5 个路由(/m/catchup、/m/files、/m/outbox、/m/logs、/m/jobs/:id)在 router
+   * 里注册但**不放 Tab**,设计为**应急深链入口**:
+   *   - PWA 推送通知点开 → /m/catchup、/m/outbox
+   *   - 扫码 / 邮件 / 上游链接 → /m/files、/m/logs
+   *   - Tab 点击作业 → drill 到 /m/jobs/:id
+   *
+   * 这是产品决策,不是遗漏。改动前请先确认是否需要把某条提升为常驻 Tab。
+   */
   const tabs = [
     { path: '/m/alerts', labelKey: 'nav.mobileTab.alerts', icon: WarningFilled },
     { path: '/m/approvals', labelKey: 'nav.mobileTab.approvals', icon: Stamp },

@@ -1,4 +1,5 @@
 import { get } from '@/api/client'
+import type { components } from '@/types/api.generated'
 import type { PageResponse, PageResult } from '@/types'
 
 export interface PartitionQueryParams {
@@ -9,7 +10,8 @@ export interface PartitionQueryParams {
   pageSize: number
 }
 
-export type ConsoleJobPartitionResponse = Record<string, unknown>
+// 复用 OpenAPI codegen 生成的强类型,避免 row.id 等沦为 unknown
+export type ConsoleJobPartitionResponse = components['schemas']['ConsoleJobPartitionResponse']
 
 export async function queryPartitionsPaged(
   query: PartitionQueryParams,

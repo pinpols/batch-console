@@ -106,7 +106,7 @@
     />
 
     <DetailDrawer
-      v-model="detailVisible"
+      v-model:visible="detailVisible"
       :title="t('observability.retryDetailTitle')"
       :raw="detailRow"
       :meta-rows="detailMetaRows"

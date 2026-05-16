@@ -21,14 +21,6 @@
             @reset="resetQueryBar"
             @refresh="() => runRefresh(load)"
           >
-            <el-form-item :label="t('monitor.runListTenantLabel')">
-              <TenantSelect
-                v-model="filterTenantId"
-                :placeholder="t('monitor.runListTenantPlaceholder')"
-                size="default"
-                select-class="query-w-180"
-              />
-            </el-form-item>
             <el-form-item :label="t('monitor.runListWorkflowLabel')">
               <el-select
                 class="query-w-200"
@@ -174,7 +166,6 @@
   import ProTable from '@/components/table/ProTable.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
   import CopyableText from '@/components/common/CopyableText.vue'
-  import TenantSelect from '@/components/common/TenantSelect.vue'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import type { ConsoleWorkflowRunResponse } from '@/types/console-api'
 
@@ -187,7 +178,6 @@
   const total = ref(0)
   const page = ref(1)
   const pageSize = ref(20)
-  const filterTenantId = ref(tenant.tenantId)
   const workflowCode = ref('')
   const runStatus = ref('')
   const traceId = ref('')
@@ -201,7 +191,7 @@
 
   async function loadWorkflowCodes() {
     try {
-      cachedDefs.value = await queryWorkflowDefinitions(filterTenantId.value || tenant.tenantId)
+      cachedDefs.value = await queryWorkflowDefinitions(tenant.tenantId)
       workflowCodeOptions.value = [
         ...new Set(cachedDefs.value.map((d) => d.workflowCode).filter(Boolean)),
       ].sort((a, b) => a.localeCompare(b))
@@ -231,7 +221,7 @@
         return
       }
       const pr = await instanceApi.workflowRuns({
-        tenantId: filterTenantId.value || tenant.tenantId,
+        tenantId: tenant.tenantId,
         workflowDefinitionId: defId,
         runStatus: runStatus.value.trim() || undefined,
         traceId: traceId.value.trim() || undefined,
@@ -257,7 +247,6 @@
 
   function resetQueryBar() {
     return runReset(async () => {
-      filterTenantId.value = tenant.tenantId
       workflowCode.value = ''
       runStatus.value = ''
       traceId.value = ''

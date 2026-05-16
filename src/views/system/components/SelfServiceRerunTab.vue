@@ -34,10 +34,33 @@
         <div class="field-hint">{{ t('selfServiceCommon.bizDateHint') }}</div>
       </el-form-item>
       <el-form-item :label="t('selfServiceCommon.targetInstanceLabel')">
-        <el-input
+        <el-select
           v-model="rerunForm.targetInstanceNo"
-          :placeholder="t('selfServiceCommon.targetInstanceOptional')"
-        />
+          filterable
+          remote
+          clearable
+          reserve-keyword
+          :placeholder="
+            rerunForm.jobCode && rerunForm.bizDate
+              ? t('selfServiceCommon.targetInstanceOptional')
+              : t('selfServiceCommon.targetInstanceDisabledHint')
+          "
+          :disabled="!rerunForm.jobCode || !rerunForm.bizDate"
+          :remote-method="queryInstances"
+          :loading="instanceLoading"
+          @focus="loadInstances()"
+          class="query-w-full"
+        >
+          <el-option
+            v-for="opt in instanceOptions"
+            :key="opt.instanceNo"
+            :label="opt.instanceNo"
+            :value="opt.instanceNo"
+          >
+            <span>{{ opt.instanceNo }}</span>
+            <el-tag size="small" effect="plain" class="u-ml-8">{{ opt.status }}</el-tag>
+          </el-option>
+        </el-select>
         <div class="field-hint">{{ t('selfServiceCommon.targetInstanceHint') }}</div>
       </el-form-item>
       <el-form-item :label="t('selfServiceCommon.reasonLabel')">
@@ -65,7 +88,7 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, reactive } from 'vue'
+  import { ref, reactive, toRefs } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
 
@@ -75,6 +98,7 @@
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
   import { useJobCodeSearch } from '@/composables/useJobCodeSearch'
+  import { useInstanceNoSearch } from '@/composables/useInstanceNoSearch'
   import { useFormValidate, rules } from '@/composables/useFormValidate'
 
   const tenant = useTenantStore()
@@ -83,6 +107,15 @@
 
   const { jobCodeLoading, jobCodeOptions, loadDefaultJobCodes, queryJobCodes, clearOptions } =
     useJobCodeSearch()
+
+  const { jobCode: jobCodeRef, bizDate: bizDateRef } = toRefs(rerunForm)
+  const {
+    instanceLoading,
+    instanceOptions,
+    loadInstances,
+    queryInstances,
+    clearOptions: clearInstanceOptions,
+  } = useInstanceNoSearch(jobCodeRef, bizDateRef)
 
   const { formRef: rerunFormRef, validate: validateRerunForm } = useFormValidate()
   const rerunFormRules: FormRules = {
@@ -111,7 +144,10 @@
     }
   }
 
-  useTenantReload(clearOptions)
+  useTenantReload(() => {
+    clearOptions()
+    clearInstanceOptions()
+  })
 </script>
 
 <style scoped>

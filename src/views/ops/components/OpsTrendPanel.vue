@@ -6,11 +6,7 @@
         <div class="charts-subtitle">{{ t('opsTrendPanel.subtitle') }}</div>
       </div>
       <div class="charts-actions">
-        <el-radio-group
-          :model-value="rangeKey"
-          size="small"
-          @update:model-value="$emit('update:rangeKey', $event)"
-        >
+        <el-radio-group :model-value="rangeKey" size="small" @update:model-value="onRangeChange">
           <el-radio-button value="1h">1h</el-radio-button>
           <el-radio-button value="6h">6h</el-radio-button>
           <el-radio-button value="24h">24h</el-radio-button>
@@ -89,10 +85,15 @@
     outboxTrendOption: Record<string, unknown>
   }>()
 
-  defineEmits<{
+  const emit = defineEmits<{
     'update:rangeKey': [value: '1h' | '6h' | '24h']
     refreshCharts: []
   }>()
+
+  function onRangeChange(v: string | number | boolean | undefined) {
+    // el-radio-group 的 modelValue 是 union;限定到三档 enum 再 emit。
+    if (v === '1h' || v === '6h' || v === '24h') emit('update:rangeKey', v)
+  }
 </script>
 
 <style scoped>

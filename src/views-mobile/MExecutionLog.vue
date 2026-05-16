@@ -59,7 +59,8 @@
 </template>
 
 <script setup lang="ts">
-  import { onMounted, ref, watch } from 'vue'
+  import { ref, watch } from 'vue'
+  import { useTenantReload } from '@/composables/useTenantReload'
   import { useRoute, useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import { Refresh } from '@element-plus/icons-vue'
@@ -124,9 +125,7 @@
     })
     void load()
   }
-
-  onMounted(load)
-  watch(() => tenant.tenantId, load)
+  useTenantReload(load)
   watch(
     () => route.query.traceId,
     (v) => {

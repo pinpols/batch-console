@@ -48,7 +48,12 @@
         :filter-busy="filterBusy"
         :refresh-busy="loading"
         @search="() => runSearch(() => {})"
-        @reset="() => runReset(() => (jobKeyword = ''))"
+        @reset="
+          () =>
+            runReset(() => {
+              jobKeyword = ''
+            })
+        "
         @refresh="() => runRefresh(load)"
       >
         <el-form-item label="Job">

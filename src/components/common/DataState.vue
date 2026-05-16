@@ -57,7 +57,7 @@
     }>(),
     {
       loading: false,
-      error: null,
+      error: undefined,
       hasData: false,
       emptyText: '',
       skeletonRows: 6,

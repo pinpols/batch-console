@@ -127,7 +127,7 @@
     />
 
     <DetailDrawer
-      v-model="detailVisible"
+      v-model:visible="detailVisible"
       :title="t('observability.execDetailTitle')"
       :raw="detailRow"
       :meta-rows="detailMetaRows"

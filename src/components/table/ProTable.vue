@@ -64,7 +64,9 @@
 
   const props = withDefaults(
     defineProps<{
-      data: readonly unknown[]
+      // el-table `data` 要求 mutable any[]。这里用 unknown[](非 readonly)既兼容
+      // el-table 内部赋值,也保留对调用方"传 RemoteData<T>[] 等子集"的接纳。
+      data: unknown[]
       loading?: boolean
       total: number
       /** 1-based，与 OpenAPI PageRequest.pageNo 一致 */
@@ -103,7 +105,7 @@
       hidePagerWhenSinglePage: true,
       pageSizes: () => [20, 50, 100, 200],
       skeletonRows: 6,
-      error: null,
+      error: undefined,
       persistPageSize: true,
     },
   )

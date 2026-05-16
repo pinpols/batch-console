@@ -16,7 +16,9 @@
       </div>
       <div class="ops-onboarding__grid">
         <button class="ops-onboarding__card" @click="$router.push('/config/tenant-package')">
-          <el-icon size="22" color="var(--color-primary)"><Upload /></el-icon>
+          <span class="ops-onboarding__icon">
+            <el-icon size="20"><FolderOpened /></el-icon>
+          </span>
           <strong>{{ t('opsSummary.onboardingImport') }}</strong>
           <span>{{ t('opsSummary.onboardingImportDesc') }}</span>
         </button>
@@ -24,17 +26,23 @@
           class="ops-onboarding__card"
           @click="$router.push('/jobs/definitions?action=create')"
         >
-          <el-icon size="22" color="var(--color-primary)"><DocumentAdd /></el-icon>
+          <span class="ops-onboarding__icon">
+            <el-icon size="20"><DocumentAdd /></el-icon>
+          </span>
           <strong>{{ t('opsSummary.onboardingNewJob') }}</strong>
           <span>{{ t('opsSummary.onboardingNewJobDesc') }}</span>
         </button>
         <button class="ops-onboarding__card" @click="$router.push('/system/tenants')">
-          <el-icon size="22" color="var(--color-primary)"><User /></el-icon>
+          <span class="ops-onboarding__icon">
+            <el-icon size="20"><User /></el-icon>
+          </span>
           <strong>{{ t('opsSummary.onboardingTenant') }}</strong>
           <span>{{ t('opsSummary.onboardingTenantDesc') }}</span>
         </button>
         <button class="ops-onboarding__card" @click="$router.push('/workers/management')">
-          <el-icon size="22" color="var(--color-primary)"><Cpu /></el-icon>
+          <span class="ops-onboarding__icon">
+            <el-icon size="20"><Cpu /></el-icon>
+          </span>
           <strong>{{ t('opsSummary.onboardingWorker') }}</strong>
           <span>{{ t('opsSummary.onboardingWorkerDesc') }}</span>
         </button>
@@ -99,7 +107,7 @@
   import '@/charts/echarts'
   import { computed } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { Refresh, Upload, DocumentAdd, User, Cpu } from '@element-plus/icons-vue'
+  import { Refresh, FolderOpened, DocumentAdd, User, Cpu } from '@element-plus/icons-vue'
 
   const { t } = useI18n({ useScope: 'global' })
   import PageContainer from '@/components/common/PageContainer.vue'
@@ -187,6 +195,24 @@
   .ops-onboarding__card:hover {
     border-color: var(--color-primary);
     box-shadow: var(--shadow-surface);
+  }
+  .ops-onboarding__card:hover .ops-onboarding__icon {
+    background: var(--color-primary);
+    color: #fff;
+  }
+  .ops-onboarding__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    margin-bottom: 8px;
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+    color: var(--color-primary);
+    transition:
+      background 0.15s,
+      color 0.15s;
   }
   .ops-onboarding__card strong {
     font-size: 14px;

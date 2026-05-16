@@ -18,7 +18,7 @@
           rel="noopener"
           :icon="Top"
         >
-          在文档站打开
+          {{ t('docsDrawer.openInDocs') }}
         </el-button>
       </div>
     </template>
@@ -26,7 +26,7 @@
       v-if="modelValue && iframeSrc"
       :src="iframeSrc"
       class="docs-drawer__iframe"
-      title="文档"
+      :title="t('docsDrawer.iframeTitle')"
       loading="lazy"
     />
   </el-drawer>
@@ -46,8 +46,10 @@
    * docKey 是稳定标识(避免业务代码硬编码具体 URL);新增 doc-key 加到 DOC_REGISTRY。
    */
   import { computed } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import { Top } from '@element-plus/icons-vue'
   import { DOC_REGISTRY, resolveDocUrl } from './docsRegistry'
+  const { t } = useI18n({ useScope: 'global' })
 
   const props = defineProps<{
     modelValue: boolean
@@ -63,7 +65,9 @@
 
   const docEntry = computed(() => DOC_REGISTRY[props.docKey])
   const iframeSrc = computed(() => resolveDocUrl(props.docKey))
-  const resolvedTitle = computed(() => props.title || docEntry.value?.title || '文档')
+  const resolvedTitle = computed(
+    () => props.title || docEntry.value?.title || t('docsDrawer.iframeTitle'),
+  )
 </script>
 
 <style scoped>

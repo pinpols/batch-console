@@ -92,7 +92,7 @@
     />
 
     <DetailDrawer
-      v-model="detailVisible"
+      v-model:visible="detailVisible"
       :title="t('observability.dlqDetailTitle')"
       :raw="detailRow"
       :meta-rows="detailMetaRows"

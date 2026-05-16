@@ -2,7 +2,7 @@
   <PageContainer>
     <PageHeader>
       <template #actions>
-        <el-button type="primary" :loading="loading" @click="loadAll">
+        <el-button type="primary" :loading="loading" @click="loadAll()">
           {{ t('schedulerSnapshot.headerRefresh') }}
         </el-button>
         <el-button type="warning" :loading="pauseLoading" @click="confirmPauseAll">
@@ -505,13 +505,16 @@
     return undefined
   }
 
-  async function loadAll() {
+  async function loadAll(silent = false) {
     loading.value = true
     histLoading.value = true
+    let snapOk = true
+    let histOk = true
     try {
       snap.value = await getSchedulerSnapshot(tenant.tenantId)
     } catch {
       snap.value = null
+      snapOk = false
     } finally {
       loading.value = false
     }
@@ -519,12 +522,18 @@
       history.value = await getSchedulerSnapshotHistory(tenant.tenantId)
     } catch {
       history.value = []
+      histOk = false
     } finally {
       histLoading.value = false
     }
+    if (!silent) {
+      if (snapOk && histOk) ElMessage.success(t('schedulerSnapshot.refreshDone'))
+      else if (!snapOk && !histOk) ElMessage.error(t('schedulerSnapshot.refreshFailed'))
+      else ElMessage.warning(t('schedulerSnapshot.refreshPartial'))
+    }
   }
 
-  useTenantReload(loadAll)
+  useTenantReload(() => loadAll(true))
 
   async function confirmPauseAll() {
     try {

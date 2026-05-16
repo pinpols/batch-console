@@ -40,22 +40,6 @@
                 <el-option v-for="code in jobCodeOptions" :key="code" :label="code" :value="code" />
               </el-select>
             </el-form-item>
-            <el-form-item :label="t('jobInstanceList.quick')">
-              <el-radio-group
-                v-hover-radio-activate="true"
-                :model-value="quickStatus"
-                size="small"
-                @change="onQuickStatusChange"
-              >
-                <el-radio-button value="all">{{ t('jobInstanceList.quickAll') }}</el-radio-button>
-                <el-radio-button value="running">
-                  {{ t('jobInstanceList.quickRunning') }}
-                </el-radio-button>
-                <el-radio-button value="failed">
-                  {{ t('jobInstanceList.quickFailed') }}
-                </el-radio-button>
-              </el-radio-group>
-            </el-form-item>
             <el-form-item :label="t('jobInstanceList.statusLabel')">
               <MetaSelect
                 class="query-w-180"
@@ -228,7 +212,6 @@
   import ProTable from '@/components/table/ProTable.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
   import HelpLabel from '@/components/common/HelpLabel.vue'
-  import TenantSelect from '@/components/common/TenantSelect.vue'
   import CopyableText from '@/components/common/CopyableText.vue'
   import DateRangePresetPicker from '@/components/common/DateRangePresetPicker.vue'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
@@ -266,22 +249,6 @@
     page: 1,
     pageSize: 20,
   })
-
-  // 快捷状态 chip 的展示 key:由当前 instanceStatus 反推
-  const quickStatus = computed<'all' | 'running' | 'failed' | ''>(() => {
-    if (!query.instanceStatus) return 'all'
-    if (query.instanceStatus === 'RUNNING') return 'running'
-    if (query.instanceStatus === 'FAILED') return 'failed'
-    return ''
-  })
-
-  function onQuickStatusChange(key: string | number | boolean | undefined) {
-    const k = String(key)
-    query.instanceStatus = k === 'running' ? 'RUNNING' : k === 'failed' ? 'FAILED' : ''
-    query.page = 1
-    syncFiltersToUrl()
-    void loadData()
-  }
 
   const { data: metaEnums } = useConsoleMetaEnumsQuery()
 

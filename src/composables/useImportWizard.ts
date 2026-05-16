@@ -13,7 +13,16 @@ export interface PreviewStats {
 export interface PreviewIssue {
   sheetName: string
   rowNo: unknown
+  /** 后端返字段,之前前端丢弃 — 现在用于在表里显式列"出错的列" */
+  columnName?: string
   messages: string
+}
+
+export interface SheetStats {
+  sheetName: string
+  total: number
+  valid: number
+  invalid: number
 }
 
 export interface ImportWizardState {
@@ -29,6 +38,10 @@ export interface ImportWizardState {
   previewStats: ComputedRef<PreviewStats | null>
   previewWorkbookUrl: ComputedRef<string | null>
   issueRows: ComputedRef<PreviewIssue[]>
+  /** 后端 sheets[]:每张 sheet 的 valid/invalid 拆分,定位"哪张表坏了" */
+  sheetStats: ComputedRef<SheetStats[]>
+  /** 是否存在阻塞性错误:`invalidRows > 0`。Apply 应当 disabled。 */
+  hasBlockingIssues: ComputedRef<boolean>
   onFile: (u: UploadFile) => void
   triggerBlobDownload: (blob: Blob, filename: string) => void
 }
@@ -75,10 +88,30 @@ export function useImportWizard(): ImportWizardState {
     return (p.issues as Record<string, unknown>[]).map((i) => ({
       sheetName: String(i.sheetName ?? ''),
       rowNo: i.rowNo,
+      columnName: typeof i.columnName === 'string' ? i.columnName : undefined,
       messages: Array.isArray(i.messages)
         ? (i.messages as string[]).join('; ')
-        : String(i.messages ?? ''),
+        : Array.isArray(i.message)
+          ? (i.message as string[]).join('; ')
+          : String(i.messages ?? i.message ?? ''),
     }))
+  })
+
+  const sheetStats = computed<SheetStats[]>(() => {
+    const p = previewRaw.value
+    if (!p || !Array.isArray(p.sheets)) return []
+    return (p.sheets as Record<string, unknown>[]).map((s) => ({
+      sheetName: String(s.sheetName ?? ''),
+      total: typeof s.totalRows === 'number' ? s.totalRows : 0,
+      valid: typeof s.validRows === 'number' ? s.validRows : 0,
+      invalid: typeof s.invalidRows === 'number' ? s.invalidRows : 0,
+    }))
+  })
+
+  const hasBlockingIssues = computed<boolean>(() => {
+    const inv = previewStats.value?.invalid
+    if (typeof inv === 'number') return inv > 0
+    return issueRows.value.length > 0
   })
 
   function onFile(u: UploadFile) {
@@ -109,6 +142,8 @@ export function useImportWizard(): ImportWizardState {
     previewStats,
     previewWorkbookUrl,
     issueRows,
+    sheetStats,
+    hasBlockingIssues,
     onFile,
     triggerBlobDownload,
   }

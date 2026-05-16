@@ -350,8 +350,13 @@
     letter-spacing: 0.08em;
     border: none;
     border-radius: var(--radius-content);
-    background: linear-gradient(135deg, var(--color-primary) 0%, #0f5ed9 100%);
-    box-shadow: 0 4px 16px rgb(22 119 255 / 18%);
+    color: var(--button-primary-text);
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--button-primary-bg) 88%, #ffffff 12%) 0%,
+      var(--button-primary-bg) 100%
+    );
+    box-shadow: 0 4px 16px color-mix(in srgb, var(--button-primary-bg) 20%, transparent);
     transition:
       transform 0.2s ease,
       box-shadow 0.2s ease;
@@ -359,7 +364,12 @@
 
   .login-submit:hover {
     transform: translateY(-1px);
-    box-shadow: 0 6px 20px rgb(22 119 255 / 24%);
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--button-primary-bg-hover) 88%, #ffffff 12%) 0%,
+      var(--button-primary-bg-hover) 100%
+    );
+    box-shadow: 0 6px 20px color-mix(in srgb, var(--button-primary-bg) 26%, transparent);
   }
 
   .login-submit:active {

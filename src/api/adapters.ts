@@ -19,7 +19,7 @@ export function toPageResult<T>(items: T[], page: number, pageSize: number): Pag
  */
 export async function fetchAllPageItems<T>(
   url: string,
-  baseParams: Record<string, string | number | undefined>,
+  baseParams: Record<string, string | number | boolean | undefined>,
   opts?: { pageSize?: number; maxPages?: number },
 ): Promise<T[]> {
   const pageSize = opts?.pageSize ?? 200

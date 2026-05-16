@@ -2,18 +2,22 @@
   <PageContainer>
     <PageHeader :title="title" :description="description" back-to="/workflow/definitions">
       <template #actions>
-        <el-button :loading="loading" :icon="Refresh" @click="reload">刷新</el-button>
+        <el-button :loading="loading" :icon="Refresh" @click="reload">
+          {{ t('common.refresh') }}
+        </el-button>
         <el-button :icon="DocumentCopy" :disabled="!mermaidText" @click="copyText">
-          复制 mermaid
+          {{ t('workflowMermaidViewer.btnCopyMermaid') }}
         </el-button>
       </template>
     </PageHeader>
 
-    <SectionCard v-if="runId">
+    <!-- Legend 常驻:无 runId 也展示色板,避免用户首次看 DAG 不知道颜色含义。
+         有 runId 时额外叠"运行状态 + 自动刷新 + 回详情链接"。 -->
+    <SectionCard>
       <template #header>
-        运行状态叠加
+        <span>{{ t('workflowMermaidViewer.legendHeader') }}</span>
         <el-tag
-          v-if="runStatus"
+          v-if="runId && runStatus"
           size="small"
           :type="runStatusTagType"
           effect="plain"
@@ -23,7 +27,7 @@
         </el-tag>
         <span v-if="pollingActive" class="run-overlay-poll">
           <span class="run-overlay-poll-dot" />
-          每 {{ pollIntervalMs / 1000 }}s 自动刷新
+          {{ t('workflowMermaidViewer.pollEvery', { n: pollIntervalMs / 1000 }) }}
         </span>
       </template>
       <div class="run-overlay-legend">
@@ -32,20 +36,28 @@
         <span class="legend-chip legend-chip--failed">FAILED</span>
         <span class="legend-chip legend-chip--waiting">WAITING / READY</span>
         <span class="legend-chip legend-chip--cancelled">CANCELLED / SKIPPED</span>
-        <span class="legend-chip legend-chip--pending">未启动 / 其它</span>
-        <el-link type="primary" :underline="false" class="run-overlay-link" @click="goToRun">
-          回到运行详情 #{{ runId }}
+        <span class="legend-chip legend-chip--pending">
+          {{ t('workflowMermaidViewer.legendPending') }}
+        </span>
+        <el-link
+          v-if="runId"
+          type="primary"
+          :underline="false"
+          class="run-overlay-link"
+          @click="goToRun"
+        >
+          {{ t('workflowMermaidViewer.backToRun', { id: runId }) }}
         </el-link>
       </div>
     </SectionCard>
 
     <SectionCard>
-      <template #header>DAG 视图</template>
+      <template #header>{{ t('workflowMermaidViewer.dagHeader') }}</template>
       <DataState
         :loading="loading"
         :error="errorMessage"
         :empty="!loading && !mermaidText"
-        empty-text="还没有渲染数据"
+        :empty-text="t('workflowMermaidViewer.noRenderData')"
       >
         <!-- mermaid 渲染目标。SVG 由 mermaid.render() 受信任输出,挂到 ref.innerHTML 而非
              v-html(后者会被 ESLint vue/no-v-html 拦)。 -->
@@ -53,17 +65,113 @@
       </DataState>
     </SectionCard>
 
+    <!-- mermaid 源默认折叠,大多数用户不关心;需要时点开复制即可 -->
     <SectionCard v-if="mermaidText">
-      <template #header>mermaid 源(可粘贴到 PR/Wiki)</template>
-      <pre class="workflow-mermaid-source">{{ mermaidText }}</pre>
+      <template #header>
+        <span>{{ t('workflowMermaidViewer.mermaidSrcHeader') }}</span>
+        <el-button text size="small" class="mermaid-toggle" @click="showSource = !showSource">
+          {{
+            showSource
+              ? t('workflowMermaidViewer.btnCollapse')
+              : t('workflowMermaidViewer.btnExpand')
+          }}
+        </el-button>
+      </template>
+      <pre v-if="showSource" class="workflow-mermaid-source">{{ mermaidText }}</pre>
     </SectionCard>
+
+    <!-- 无 runId 时点节点弹出的元数据 drawer:取代原 ElMessage.info 拼字符串,
+         真正能看到 nodeName / relatedJobCode / pipelineCode / 参数 / 重试策略等。 -->
+    <el-drawer
+      v-model="detailDrawerVisible"
+      :title="
+        selectedNodeMeta
+          ? `${selectedNodeMeta.nodeCode}${selectedNodeMeta.nodeName ? ' · ' + selectedNodeMeta.nodeName : ''}`
+          : t('workflowMermaidViewer.nodeDetailTitle')
+      "
+      direction="rtl"
+      size="420px"
+      :append-to-body="true"
+    >
+      <el-descriptions v-if="selectedNodeMeta" :column="1" border>
+        <el-descriptions-item :label="t('workflowMermaidViewer.fldNodeCode')">
+          <code>{{ selectedNodeMeta.nodeCode }}</code>
+        </el-descriptions-item>
+        <el-descriptions-item :label="t('workflowMermaidViewer.fldNodeName')">
+          {{ selectedNodeMeta.nodeName || '—' }}
+        </el-descriptions-item>
+        <el-descriptions-item :label="t('workflowMermaidViewer.fldNodeType')">
+          <el-tag size="small" effect="plain">{{ selectedNodeMeta.nodeType || '?' }}</el-tag>
+        </el-descriptions-item>
+        <el-descriptions-item
+          v-if="selectedNodeMeta.relatedJobCode"
+          :label="t('workflowMermaidViewer.fldRelatedJob')"
+        >
+          <el-link
+            type="primary"
+            :underline="false"
+            @click="goToJobDef(selectedNodeMeta.relatedJobCode)"
+          >
+            {{ selectedNodeMeta.relatedJobCode }}
+          </el-link>
+        </el-descriptions-item>
+        <el-descriptions-item
+          v-if="selectedNodeMeta.relatedPipelineCode"
+          :label="t('workflowMermaidViewer.fldRelatedPipeline')"
+        >
+          <el-link
+            type="primary"
+            :underline="false"
+            @click="goToPipeline(selectedNodeMeta.relatedPipelineCode)"
+          >
+            {{ selectedNodeMeta.relatedPipelineCode }}
+          </el-link>
+        </el-descriptions-item>
+        <el-descriptions-item
+          v-if="selectedNodeMeta.workerGroup"
+          :label="t('workflowMermaidViewer.fldWorkerGroup')"
+        >
+          {{ selectedNodeMeta.workerGroup }}
+        </el-descriptions-item>
+        <el-descriptions-item
+          v-if="selectedNodeMeta.retryPolicy"
+          :label="t('workflowMermaidViewer.fldRetryPolicy')"
+        >
+          {{ selectedNodeMeta.retryPolicy }}
+          <span v-if="selectedNodeMeta.retryMaxCount != null" class="cell-mute">
+            × {{ selectedNodeMeta.retryMaxCount }}
+          </span>
+        </el-descriptions-item>
+        <el-descriptions-item
+          v-if="selectedNodeMeta.timeoutSeconds != null"
+          :label="t('workflowMermaidViewer.fldTimeout')"
+        >
+          {{ selectedNodeMeta.timeoutSeconds }} s
+        </el-descriptions-item>
+        <el-descriptions-item
+          v-if="selectedNodeDescription"
+          :label="t('workflowMermaidViewer.fldDescription')"
+        >
+          {{ selectedNodeDescription }}
+        </el-descriptions-item>
+        <el-descriptions-item
+          v-if="selectedNodeMeta.nodeParams"
+          :label="t('workflowMermaidViewer.fldParams')"
+        >
+          <pre class="node-detail-json">{{ selectedNodeMeta.nodeParams }}</pre>
+        </el-descriptions-item>
+      </el-descriptions>
+    </el-drawer>
   </PageContainer>
 </template>
 
 <script setup lang="ts">
   import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
+  import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
+
+  const { t } = useI18n({ useScope: 'global' })
   import { DocumentCopy, Refresh } from '@element-plus/icons-vue'
   import mermaid from 'mermaid'
   import PageContainer from '@/components/common/PageContainer.vue'
@@ -77,7 +185,7 @@
   import type {
     ConsoleWorkflowNodeRunResponse,
     WorkflowDefinitionDetailResponse,
-  } from '@/types/api.generated'
+  } from '@/types/console-api'
 
   const pollIntervalMs = 8000
   const terminalStatuses = new Set(['SUCCESS', 'COMPLETED', 'FAILED', 'CANCELLED', 'TERMINATED'])
@@ -107,6 +215,17 @@
   const nodeCodeBySanitizedId = ref<Map<string, string>>(new Map())
   let pollTimer: ReturnType<typeof setInterval> | null = null
   const pollingActive = ref(false)
+  /** mermaid 源码默认折叠,大多数用户不关心 */
+  const showSource = ref(false)
+  /** 无 runId 模式下点击节点弹出的详情抽屉 */
+  const detailDrawerVisible = ref(false)
+  type NodeMeta = NonNullable<WorkflowDefinitionDetailResponse['nodes']>[number]
+  const selectedNodeMeta = ref<NodeMeta | null>(null)
+  // description 字段在 OpenAPI schema 上是节点 extras 的可选字段;此处单独 computed 取值,
+  // 模板不能写 `(x as T).description`(Vue 编译器不接受 TS 断言)。
+  const selectedNodeDescription = computed<string | undefined>(
+    () => (selectedNodeMeta.value as { description?: string } | null)?.description,
+  )
 
   const runStatusTagType = computed<'primary' | 'success' | 'danger' | 'info'>(() => {
     const s = (runStatus.value || '').toUpperCase()
@@ -117,7 +236,7 @@
   })
 
   const title = computed(() => {
-    if (!detail.value) return 'Workflow 视图'
+    if (!detail.value) return t('workflowMermaidViewer.defaultTitle')
     return `${detail.value.workflowName ?? detail.value.workflowCode} · v${detail.value.version ?? '?'}`
   })
 
@@ -126,7 +245,7 @@
     const parts: string[] = []
     if (detail.value.workflowCode) parts.push(`code=${detail.value.workflowCode}`)
     if (detail.value.workflowType) parts.push(`type=${detail.value.workflowType}`)
-    if (detail.value.enabled === false) parts.push('已禁用')
+    if (detail.value.enabled === false) parts.push(t('workflowMermaidViewer.disabledTag'))
     return parts.join(' · ')
   })
 
@@ -139,7 +258,7 @@
 
   async function reload() {
     if (!Number.isFinite(id.value) || id.value <= 0) {
-      errorMessage.value = '路由参数 id 非法'
+      errorMessage.value = t('workflowMermaidViewer.invalidRouteParam')
       return
     }
     stopPoll()
@@ -203,6 +322,11 @@
     if (!runId.value) return
     const s = (runStatus.value || '').toUpperCase()
     if (terminalStatuses.has(s)) return
+    // tab 不可见时不开轮询,避免锁屏/切走还在打后端;visibilitychange 监听恢复
+    if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
+      pollingActive.value = false
+      return
+    }
     pollingActive.value = true
     pollTimer = setInterval(() => {
       void tickPoll()
@@ -215,6 +339,17 @@
       pollTimer = null
     }
     pollingActive.value = false
+  }
+
+  /** tab 切走停轮询;切回来一是立即 tick 一次,二是重启 interval */
+  function onVisibilityChange() {
+    if (!runId.value) return
+    if (document.visibilityState === 'hidden') {
+      stopPoll()
+    } else {
+      // 切回来:先补一次最新状态,再重启 interval
+      void tickPoll().then(() => maybeStartPoll())
+    }
   }
 
   function buildNodeCodeMap(d: WorkflowDefinitionDetailResponse | null) {
@@ -250,10 +385,15 @@
         query: { nodeCode },
       })
     } else {
+      // 无 runId 时打开侧抽屉展示完整节点元数据(原本仅 ElMessage.info 拼两个字段,
+      // 用户看不到关联 job/pipeline、参数、重试策略等关键字段)
       const meta = detail.value?.nodes?.find((n) => n.nodeCode === nodeCode)
-      ElMessage.info(
-        `${nodeCode}${meta?.nodeName ? ' · ' + meta.nodeName : ''} · type=${meta?.nodeType ?? '?'}`,
-      )
+      if (!meta) {
+        ElMessage.info(nodeCode)
+        return
+      }
+      selectedNodeMeta.value = meta
+      detailDrawerVisible.value = true
     }
   }
 
@@ -320,6 +460,15 @@
     if (runId.value) void router.push(`/monitor/workflow-runs/${runId.value}`)
   }
 
+  function goToJobDef(jobCode: string) {
+    detailDrawerVisible.value = false
+    void router.push({ path: '/jobs/definitions', query: { jobCode } })
+  }
+  function goToPipeline(pipelineCode: string) {
+    detailDrawerVisible.value = false
+    void router.push({ path: '/jobs/pipelines', query: { pipelineCode } })
+  }
+
   async function renderMermaid(text: string) {
     if (!text.trim()) {
       clearGraph()
@@ -333,7 +482,9 @@
       // SVG 来自 mermaid.render(可信),直接挂到 ref.innerHTML 而非 v-html(被 ESLint 拦)
       if (graphRef.value) graphRef.value.innerHTML = svg
     } catch (err: unknown) {
-      errorMessage.value = '渲染失败: ' + (err instanceof Error ? err.message : String(err))
+      errorMessage.value =
+        t('workflowMermaidViewer.renderFailPrefix') +
+        (err instanceof Error ? err.message : String(err))
       clearGraph()
     }
   }
@@ -345,15 +496,25 @@
   async function copyText() {
     try {
       await navigator.clipboard.writeText(mermaidText.value)
-      ElMessage.success('已复制到剪贴板')
+      ElMessage.success(t('workflowMermaidViewer.copiedToast'))
     } catch {
-      ElMessage.warning('复制失败,请手动选择上方文本')
+      ElMessage.warning(t('workflowMermaidViewer.copyFailWarn'))
     }
   }
 
-  onMounted(reload)
+  onMounted(() => {
+    void reload()
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', onVisibilityChange)
+    }
+  })
   watch([() => route.params.id, () => route.query.runId], reload)
-  onBeforeUnmount(stopPoll)
+  onBeforeUnmount(() => {
+    stopPoll()
+    if (typeof document !== 'undefined') {
+      document.removeEventListener('visibilitychange', onVisibilityChange)
+    }
+  })
 </script>
 
 <style scoped>
@@ -441,5 +602,22 @@
     50% {
       opacity: 1;
     }
+  }
+  .mermaid-toggle {
+    margin-left: 8px;
+  }
+  .cell-mute {
+    margin-left: 4px;
+    color: var(--el-text-color-secondary);
+  }
+  .node-detail-json {
+    margin: 0;
+    padding: 8px;
+    background: var(--el-fill-color-light);
+    border-radius: 4px;
+    font-family: var(--el-font-family-mono, monospace);
+    font-size: 12px;
+    max-height: 240px;
+    overflow: auto;
   }
 </style>

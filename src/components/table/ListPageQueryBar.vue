@@ -12,7 +12,7 @@
         :disabled="disabled"
         @click="emit('search')"
       >
-        查询
+        {{ t('common.search') }}
       </el-button>
       <el-button
         v-if="showReset"
@@ -22,7 +22,7 @@
         :disabled="disabled"
         @click="emit('reset')"
       >
-        重置
+        {{ t('common.reset') }}
       </el-button>
       <el-button
         v-if="showRefresh"
@@ -32,7 +32,7 @@
         :disabled="disabled"
         @click="emit('refresh')"
       >
-        刷新
+        {{ t('common.refresh') }}
       </el-button>
     </el-form-item>
   </el-form>
@@ -40,7 +40,9 @@
 
 <script setup lang="ts">
   import { computed, useAttrs } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import { Refresh, RefreshLeft, Search } from '@element-plus/icons-vue'
+  const { t } = useI18n({ useScope: 'global' })
 
   defineOptions({ inheritAttrs: false })
 

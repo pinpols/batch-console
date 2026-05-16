@@ -201,7 +201,7 @@
     </SectionCard>
 
     <DetailDrawer
-      v-model="detailVisible"
+      v-model:visible="detailVisible"
       :title="detailTitle"
       :meta-rows="detailMetaRows"
       :raw="detailRow"

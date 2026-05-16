@@ -99,7 +99,7 @@
     targetTenantId: '',
     configTypes: [] as ConfigType[],
     mode: 'SKIP_EXISTING' as 'SKIP_EXISTING' | 'UPSERT',
-    specJson: '',
+    specJson: '{}',
   })
 
   const { formRef: initFormRef, validate: validateInitForm } = useFormValidate()
@@ -114,7 +114,7 @@
       form.targetTenantId = props.targetTenantId
       form.configTypes = []
       form.mode = 'SKIP_EXISTING'
-      form.specJson = ''
+      form.specJson = '{}'
       lastDryRun.value = true
     },
   )

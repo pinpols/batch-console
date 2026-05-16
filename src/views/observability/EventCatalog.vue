@@ -21,7 +21,12 @@
                 :filter-busy="typesFilterBusy"
                 :refresh-busy="loadingTypes"
                 @search="() => runTypesSearch(() => {})"
-                @reset="() => runTypesReset(() => (eventTypeKeyword = ''))"
+                @reset="
+                  () =>
+                    runTypesReset(() => {
+                      eventTypeKeyword = ''
+                    })
+                "
                 @refresh="() => runTypesRefresh(loadEventTypes)"
               >
                 <el-form-item :label="t('observability.eventCatalogKeywordLabel')">
@@ -99,7 +104,12 @@
                 :filter-busy="topicsFilterBusy"
                 :refresh-busy="loadingTopics"
                 @search="() => runTopicsSearch(() => {})"
-                @reset="() => runTopicsReset(() => (topicKeyword = ''))"
+                @reset="
+                  () =>
+                    runTopicsReset(() => {
+                      topicKeyword = ''
+                    })
+                "
                 @refresh="() => runTopicsRefresh(loadTopics)"
               >
                 <el-form-item :label="t('observability.eventCatalogKeywordLabel')">
@@ -157,7 +167,7 @@
     </SectionCard>
 
     <DetailDrawer
-      v-model="detailVisible"
+      v-model:visible="detailVisible"
       :title="detailTitle"
       :meta-rows="detailMetaRows"
       :raw="detailRow"

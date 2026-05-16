@@ -4,7 +4,11 @@ const { driverDriveMock, driverConstructorMock } = vi.hoisted(() => {
   const drive = vi.fn()
   return {
     driverDriveMock: drive,
-    driverConstructorMock: vi.fn(() => ({ drive })),
+    // 显式带 params:driver.js 构造接受 { steps, ... } config 对象。
+    // vi.fn 默认空 tuple 会让 mock.calls[0][0] 报 "no element at index 0"。
+    driverConstructorMock: vi.fn<
+      (cfg: { steps?: unknown[]; [k: string]: unknown }) => { drive: () => void }
+    >(() => ({ drive })),
   }
 })
 

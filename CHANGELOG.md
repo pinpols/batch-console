@@ -28,7 +28,7 @@
 
 ### 前端架构重构
 
-- 侧边栏菜单由后端 `/auth/me` 下发（`ConsoleMenuRegistry` 按 authorities 过滤），前端不再硬编码 `navigationGroups`；切租户后自动 `fetchMe()` 刷新 authorities + menus
+- 侧边栏菜单由前端 `navigationGroups` 维护产品文案、图标和排序，后端 `/auth/me` 下发菜单只作为可见性来源（`ConsoleMenuRegistry` 按 authorities 过滤）；切租户后自动 `fetchMe()` 刷新 authorities + menus
 - 抽 `useTenantReload(loadFn)` composable 统一 `onMounted + watch(tenant.tenantId)` 模式，迁移 43 个视图
 - Element Plus 全局 `zh-cn` locale（main.ts `app.use` + App.vue `ElConfigProvider`），MessageBox 按钮从 "OK/Cancel" 统一到中文
 - 前端独立 DOMPurify 兜底 + ESLint `vue/no-v-html: error` 禁用原生 `v-html`，新增 `v-safe-html` 指令
@@ -38,7 +38,7 @@
 ### 移动端独立路由 `/m/*`
 
 - 新增 `MobileLayout` + `MobileAppBar` + `MobileTabBar`，共享 stores/api/composables
-- 5 个页面：`MOpsSummary` / `MApprovals` / `MAlerts` / `MJobInstances` / `MCatchUp` + `MJobInstanceDetail`
+- 首批移动端覆盖：`MOpsSummary` / `MApprovals` / `MAlerts` / `MJobInstances` / `MCatchUp` + `MJobInstanceDetail`；后续扩展了文件、Worker、Outbox、执行日志等应急入口
 - PWA manifest + apple-touch-icon / favicon，"添加到主屏幕"即独立 app 启动
 - 下拉刷新（`MPullRefresh`）+ 骨架屏（`MSkeleton`）+ tab bar 徽章（`mobileBadges` pinia store）
 - 自动刷新（`useAutoRefresh`，visibility-aware），概览 30s / 告警 20s 轮询

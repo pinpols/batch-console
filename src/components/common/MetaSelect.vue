@@ -36,10 +36,15 @@
 
   defineOptions({ inheritAttrs: true })
 
-  const props = defineProps<{
-    options: readonly MetaOption[]
-    enumKey?: string
-  }>()
+  // options 设可选:enumKey 类调用站希望"组件自取",空 options 时 select 显示空列表
+  // 不报错。后续可在此组件接 useMetaEnums 做 enumKey-only 自取(下迭代)。
+  const props = withDefaults(
+    defineProps<{
+      options?: readonly MetaOption[]
+      enumKey?: string
+    }>(),
+    { options: () => [] },
+  )
 
   const model = defineModel<string | number | boolean | null | undefined>()
 

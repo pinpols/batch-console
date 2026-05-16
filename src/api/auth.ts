@@ -70,6 +70,9 @@ export const authApi = {
   /** POST /api/console/auth/token — exchange current session for JWT */
   token: () => post<ConsoleAuthTokenPayload>('/api/console/auth/token', undefined),
 
-  /** Console API 无单独 logout 端点时仅前端清态 */
-  logout: () => Promise.resolve(),
+  /**
+   * POST /api/console/auth/logout — 后端 Set-Cookie max-age=0 清 HttpOnly
+   * token cookie。返回 204(无 body)。失败不抛(前端会兜底清本地态)。
+   */
+  logout: () => post<void>('/api/console/auth/logout', undefined),
 }
