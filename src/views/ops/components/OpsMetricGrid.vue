@@ -1,11 +1,12 @@
 <template>
   <section class="ops-panel" :class="{ 'ops-panel--active': active }" aria-hidden="false">
     <div class="metric-grid">
-      <button type="button" class="metric-hit" @click="$emit('go', '/approvals')">
+      <button type="button" class="metric-hit" @click="$emit('go', '/approvals?status=PENDING')">
         <MetricCard
           :label="t('opsMetricGrid.pendingApprovals')"
           :value="String(summary.pendingApprovals)"
           :description="t('opsMetricGrid.pendingApprovalsDesc')"
+          tone="warning"
         />
       </button>
       <button type="button" class="metric-hit" @click="$emit('go', '/observability/alerts')">
@@ -13,6 +14,7 @@
           :label="t('opsMetricGrid.activeAlerts')"
           :value="String(summary.openAlerts)"
           :description="t('opsMetricGrid.activeAlertsDesc')"
+          tone="warning"
         />
       </button>
       <button
@@ -24,17 +26,19 @@
           :label="t('opsMetricGrid.criticalAlerts')"
           :value="String(summary.criticalAlerts)"
           :description="t('opsMetricGrid.criticalAlertsDesc')"
+          tone="danger"
         />
       </button>
       <button
         type="button"
         class="metric-hit"
-        @click="$emit('go', '/monitor/job-instances?status=RUNNING')"
+        @click="$emit('go', '/monitor/job-instances?status=RUNNING&range=all')"
       >
         <MetricCard
           :label="t('opsMetricGrid.runningInstances')"
           :value="String(summary.runningJobs)"
           :description="t('opsMetricGrid.runningInstancesDesc')"
+          tone="info"
         />
       </button>
       <button type="button" class="metric-hit" @click="$emit('goFailedJobs')">
@@ -42,48 +46,79 @@
           :label="t('opsMetricGrid.failedInstances')"
           :value="String(summary.failedJobs)"
           :description="t('opsMetricGrid.failedInstancesDesc')"
+          tone="danger"
         />
       </button>
-      <button type="button" class="metric-hit" @click="$emit('go', '/monitor/job-instances')">
+      <button
+        type="button"
+        class="metric-hit"
+        @click="$emit('go', '/monitor/job-instances?range=all')"
+      >
         <MetricCard
           :label="t('opsMetricGrid.slaViolations')"
           :value="String(summary.slaBreaches)"
           :description="t('opsMetricGrid.slaViolationsDesc')"
+          tone="warning"
         />
       </button>
-      <button type="button" class="metric-hit" @click="$emit('go', '/workers/management')">
+      <button
+        type="button"
+        class="metric-hit"
+        @click="$emit('go', '/workers/management?status=ONLINE')"
+      >
         <MetricCard
           :label="t('opsMetricGrid.onlineWorkers')"
           :value="String(summary.onlineWorkers)"
           :description="t('opsMetricGrid.workerListDesc')"
+          tone="success"
         />
       </button>
-      <button type="button" class="metric-hit" @click="$emit('go', '/workers/management')">
+      <button
+        type="button"
+        class="metric-hit"
+        @click="$emit('go', '/workers/management?status=DRAINING')"
+      >
         <MetricCard
           label="Draining"
           :value="String(summary.drainingWorkers)"
           :description="t('opsMetricGrid.workerListDesc')"
+          tone="warning"
         />
       </button>
-      <button type="button" class="metric-hit" @click="$emit('go', '/workers/management')">
+      <button
+        type="button"
+        class="metric-hit"
+        @click="$emit('go', '/workers/management?status=OFFLINE')"
+      >
         <MetricCard
           :label="t('opsMetricGrid.offlineWorkers')"
           :value="String(summary.offlineWorkers)"
           :description="t('opsMetricGrid.workerListDesc')"
+          tone="danger"
         />
       </button>
-      <button type="button" class="metric-hit" @click="$emit('go', '/observability/outbox')">
+      <button
+        type="button"
+        class="metric-hit"
+        @click="$emit('go', '/observability/outbox?tab=retry')"
+      >
         <MetricCard
           :label="t('opsMetricGrid.outboxRetryBacklog')"
           :value="String(summary.outboxRetryBacklog)"
           :description="t('opsMetricGrid.outboxRetryBacklogDesc')"
+          tone="warning"
         />
       </button>
-      <button type="button" class="metric-hit" @click="$emit('go', '/observability/outbox')">
+      <button
+        type="button"
+        class="metric-hit"
+        @click="$emit('go', '/observability/outbox?tab=delivery&status=FAILED')"
+      >
         <MetricCard
           :label="t('opsMetricGrid.outboxDeliveryFailed')"
           :value="String(summary.outboxDeliveryFailures)"
           :description="t('opsMetricGrid.outboxDeliveryFailedDesc')"
+          tone="danger"
         />
       </button>
     </div>

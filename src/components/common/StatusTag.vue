@@ -1,8 +1,24 @@
 <template>
-  <el-tag :type="meta.type" :size="size" effect="light">
+  <el-tag class="status-tag" :type="meta.type" :size="size" effect="light">
+    <span class="status-tag__dot" aria-hidden="true" />
     {{ meta.label }}
   </el-tag>
 </template>
+
+<style scoped>
+  .status-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .status-tag__dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+    flex-shrink: 0;
+  }
+</style>
 
 <script setup lang="ts">
   import { computed } from 'vue'

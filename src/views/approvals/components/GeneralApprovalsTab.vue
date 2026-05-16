@@ -166,6 +166,7 @@
 
 <script setup lang="ts">
   import { computed, ref, watch, reactive } from 'vue'
+  import { useRoute } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
 
@@ -230,8 +231,9 @@
   const pageSize = ref(20)
   const selection = ref<ConsoleApprovalCommandResponse[]>([])
 
+  const route = useRoute()
   const filters = reactive({
-    status: '',
+    status: route.query.status ? String(route.query.status) : '',
     type: '',
     keyword: '',
   })
