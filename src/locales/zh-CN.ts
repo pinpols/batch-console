@@ -2608,8 +2608,6 @@ export default {
     colGroupSharedMax: '组共享上限',
     colMaxRunningJobs: '并发上限',
     colEffectiveMaxRunningJobs: '生效并发上限',
-    colActiveJobs: '活跃 Jobs',
-    colActivePartitions: '活跃分片',
     colEffectiveJobCap: '生效 Job 上限',
     colMaxJobsBase: '基础上限',
     colGroupActiveJobs: '组活跃 Jobs',
