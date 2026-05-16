@@ -379,7 +379,12 @@
     if (q.startDate) query.startDate = String(q.startDate)
     if (q.endDate) query.endDate = String(q.endDate)
     if (q.traceId) query.traceId = String(q.traceId)
-    if (query.startDate && query.endDate) {
+    // range=all:跨页跳转(如 Ops 卡片"失败任务"全量计数)主动清空默认的今日锚定
+    if (q.range === 'all') {
+      query.startDate = ''
+      query.endDate = ''
+      dateRange.value = null
+    } else if (query.startDate && query.endDate) {
       dateRange.value = [query.startDate, query.endDate]
     }
   }

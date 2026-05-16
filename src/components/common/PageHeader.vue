@@ -13,7 +13,12 @@
     }"
   >
     <div class="page-header__left">
-      <button v-if="backTo" class="back-btn" :title="t('pageHeader.backTooltip')" @click="goBack">
+      <button
+        v-if="showBackButton"
+        class="back-btn"
+        :title="t('pageHeader.backTooltip')"
+        @click="goBack"
+      >
         <el-icon :size="16"><ArrowLeft /></el-icon>
       </button>
       <div>
@@ -39,7 +44,7 @@
 </template>
 
 <script setup lang="ts">
-  import { computed } from 'vue'
+  import { computed, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { useRoute, useRouter } from 'vue-router'
   import { ArrowLeft } from '@element-plus/icons-vue'
@@ -116,13 +121,33 @@
     return true
   })
 
+  // history.state 在 vue-router 导航后会变,但不是响应式的;用 ref + route 监听同步
+  const historyBackPath = ref<unknown>(null)
+  watch(
+    () => route.fullPath,
+    () => {
+      historyBackPath.value = window.history.state?.back ?? null
+    },
+    { immediate: true },
+  )
+
+  /**
+   * 是否显示返回按钮(三种触发条件,任一满足即可):
+   * 1. 显式 backTo 属性(老用法,保留兼容)
+   * 2. 历史栈有上一条 in-app 记录 + 当前页未通过 meta.hideBackButton 主动关闭
+   * 仪表盘、登录页等入口页设置 meta.hideBackButton = true
+   */
+  const showBackButton = computed(() => {
+    if (props.backTo) return true
+    if (route.meta.hideBackButton === true) return false
+    return !!historyBackPath.value
+  })
+
   function goBack() {
-    if (!props.backTo) return
-    // 优先 history.back(保留列表筛选);深链直开则跳 backTo
-    const hasBackEntry = !!(window.history.state && window.history.state.back)
+    const hasBackEntry = !!historyBackPath.value
     if (hasBackEntry) {
       router.back()
-    } else {
+    } else if (props.backTo) {
       router.push(props.backTo)
     }
   }

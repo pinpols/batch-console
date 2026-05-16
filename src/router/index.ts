@@ -40,6 +40,8 @@ const routes: RouteRecordRaw[] = [
           description: '控制面快照与快捷入口',
           activeMenu: '/ops/summary',
           minRole: 'VIEWER',
+          // 应用入口/首页:不展示返回按钮(向"上层"无可去)
+          hideBackButton: true,
         },
       },
       {
