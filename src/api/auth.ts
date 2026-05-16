@@ -1,3 +1,4 @@
+import type { AxiosRequestConfig } from 'axios'
 import { get, post } from '@/api/client'
 
 import type { MenuGroup, Role, UserInfo } from '@/types'
@@ -73,6 +74,9 @@ export const authApi = {
   /**
    * POST /api/console/auth/logout — 后端 Set-Cookie max-age=0 清 HttpOnly
    * token cookie。返回 204(无 body)。失败不抛(前端会兜底清本地态)。
+   * 可传 `{ _silent: true }`(见 interceptors LoggedConfig)抑制失败 toast,
+   * 用于登录页挂载时预清的兜底调用。
    */
-  logout: () => post<void>('/api/console/auth/logout', undefined),
+  logout: (config?: AxiosRequestConfig) =>
+    post<void>('/api/console/auth/logout', undefined, config),
 }
