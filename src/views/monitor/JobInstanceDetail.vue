@@ -355,11 +355,12 @@
         message: t('monitor.rerunSuccessMessage', { no: r.instanceNo, code: r.jobCode }),
         primary: {
           label: t('monitor.rerunGoList'),
-          onClick: () =>
-            router.push({
+          onClick: () => {
+            void router.push({
               path: '/monitor/job-instances',
               query: { jobCode: r.jobCode, startDate: r.bizDate, endDate: r.bizDate },
-            }),
+            })
+          },
         },
         secondary: { label: t('monitor.rerunStay'), onClick: () => load() },
       })
@@ -494,10 +495,16 @@
     recentLoaded.value = false
     stepsRows.value = []
     recentRows.value = []
-    void load().then(() => {
-      if (activeTab.value === 'steps') void loadSteps()
-      else if (activeTab.value === 'recent') void loadRecent()
-    })
+    // load() reject 不应升级为 unhandled rejection;失败时也尝试拉 tab 数据(其中
+    // load 内部已 toast 提示,这里只静默 catch)。
+    load()
+      .then(() => {
+        if (activeTab.value === 'steps') void loadSteps()
+        else if (activeTab.value === 'recent') void loadRecent()
+      })
+      .catch(() => {
+        /* 已在 load() 内 toast 提示,无需重复 */
+      })
     void openStream()
   })
 

@@ -6,7 +6,8 @@
   "scripts": {
     "prepare": "node scripts/prepare.mjs",
     "dev": "vite",
-    "gen:api": "openapi-typescript ../file-batch-system/docs/api/console-api.openapi.yaml -o src/types/api.generated.ts",
+    "gen:api": "openapi-typescript ../file-batch-system/docs/api/console-api.openapi.yaml -o src/types/api.generated.ts && prettier --write src/types/api.generated.ts",
+    "gen:api:check": "bash scripts/check-api-drift.sh",
     "typecheck": "vue-tsc --noEmit",
     "build": "vue-tsc && vite build",
     "build:fast": "vite build",
@@ -42,7 +43,7 @@
     "@codemirror/view": "^6.42.1",
     "@sentry/vue": "^10.52.0",
     "@tanstack/vue-query": "^5.96.1",
-    "axios": "^1.7.9",
+    "axios": "^1.16.1",
     "codemirror": "^6.0.2",
     "dompurify": "^3.4.0",
     "driver.js": "^1.4.0",

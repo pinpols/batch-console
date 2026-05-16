@@ -13,7 +13,11 @@
         :data="filtered"
         :loading="tableBlocking"
         :error="jobLoadError"
-        :on-retry="refetch"
+        :on-retry="
+          () => {
+            void refetch()
+          }
+        "
         :total="total"
         v-model:page="page"
         v-model:page-size="pageSize"
@@ -469,7 +473,6 @@
   import RowActions, { type RowAction } from '@/components/common/RowActions.vue'
   import CopyableText from '@/components/common/CopyableText.vue'
   import HelpLabel from '@/components/common/HelpLabel.vue'
-  import TenantSelect from '@/components/common/TenantSelect.vue'
   import type {
     ConsoleJobDefinitionResponse,
     ConsoleJobInstanceResponse,
@@ -569,7 +572,9 @@
   }
 
   function onRefreshDefinitions() {
-    return runRefresh(() => refetch())
+    return runRefresh(async () => {
+      await refetch()
+    })
   }
 
   function goInstances(jobCode: string) {
@@ -715,7 +720,10 @@
           cancelButtonText: t('common.cancel'),
         },
       )
-      await jobApi.clone(row.id, row.tenantId || filters.tenantId || tenant.tenantId)
+      // 后端 clone @NotBlank 要求 newJobCode;默认在原 code 加 `-copy-<ts>` 后缀
+      // 后续 BE 出"重名校验失败回 409"再补 retry 流程。
+      const newJobCode = `${row.jobCode}-copy-${Date.now().toString(36).slice(-6)}`
+      await jobApi.clone(row.id, row.tenantId || filters.tenantId || tenant.tenantId, newJobCode)
       ElMessage.success(t('jobDefinitionList.cloneSuccess', { code: row.jobCode }))
       await refetch()
     } catch {
@@ -775,7 +783,7 @@
   const editingId = ref<number | null>(null)
   const editingTenantId = ref('')
   const editingJobCode = ref('')
-  const editForm = reactive({
+  const editForm = reactive<{ executionMode: ExecutionMode; watermarkField: string }>({
     executionMode: 'FULL',
     watermarkField: '',
   })
@@ -799,6 +807,14 @@
   const executionModeOptions = computed(() =>
     pickMetaEnumGroup(metaEnumsData.value, 'executionMode'),
   )
+
+  /** 把 enum 值翻译为可读 label,优先 i18n key,缺则回退 BE label,再缺则原值。 */
+  function resolveEnumLabel(group: string, value?: string | null): string {
+    if (!value) return '—'
+    const key = `enum.${group}.${value}`
+    if (te(key)) return t(key)
+    return metaEnumsData.value?.[group]?.find((o) => o.value === value)?.label ?? value
+  }
 
   const editDrawerTitle = computed(() =>
     editingJobCode.value
@@ -925,7 +941,7 @@
     editingId.value = row.id
     editingTenantId.value = row.tenantId || filters.tenantId || tenant.tenantId
     editingJobCode.value = row.jobCode
-    editForm.executionMode = row.executionMode || 'FULL'
+    editForm.executionMode = (row.executionMode as ExecutionMode | undefined) || 'FULL'
     editForm.watermarkField = row.watermarkField ?? ''
     editDrawerVisible.value = true
     // 抽屉打开后清掉历史校验态

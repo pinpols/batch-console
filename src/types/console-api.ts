@@ -14,7 +14,39 @@ export type ConsoleFileRecordResponse = components['schemas']['ConsoleFileRecord
 export type ConsoleFileArrivalGroupResponse =
   components['schemas']['ConsoleFileArrivalGroupResponse']
 export type ConsoleWorkerRegistryResponse = components['schemas']['ConsoleWorkerRegistryResponse']
-export type ConsoleFileChannelResponse = components['schemas']['ConsoleFileChannelResponse']
+// 后端 OpenAPI schema 暂未单独命名 ConsoleFileChannelResponse(只暴露 FileChannelSpec
+// + 列表用的 PageResponse),前端仍在多处用强类型读 row.channelCode 等字段。
+// 本地补一个接口,保证调用侧类型不退化为 any。
+// codegen 把这个 schema 加进来后,删除本接口,改回 components['schemas']['...']。
+export interface ConsoleFileChannelResponse {
+  id: number
+  tenantId: string
+  channelCode: string
+  channelName: string
+  channelType: string
+  targetEndpoint?: string | null
+  authType?: string | null
+  configJson?: string | null
+  receiptPolicy?: string | null
+  timeoutSeconds?: number | null
+  enabled: boolean
+  description?: string | null
+  version?: number | null
+  filter?: string | null
+  charset?: string | null
+  targetCharset?: string | null
+  fileFormatType?: string | null
+  lineSeparator?: string | null
+  delimiter?: string | null
+  fieldMappings?: unknown
+  queryParamSchema?: string | null
+  bizType?: string | null
+  templateCode?: string | null
+  templateName?: string | null
+  templateType?: string | null
+  createdAt?: string | null
+  updatedAt?: string | null
+}
 export type ConsoleWorkflowDefinitionResponse =
   components['schemas']['ConsoleWorkflowDefinitionResponse']
 export type WorkflowDefinitionDetailResponse =
@@ -113,25 +145,13 @@ export type ConsoleFileTemplateExcelApplyResponse =
   components['schemas']['ConsoleFileTemplateExcelApplyResponse']
 
 // --- Excel CRUD responses (file-channels) ---
+// 后端 codegen 未单独命名 Preview/Apply 的 channel 变体,统一用泛型 ExcelUpload/Apply。
+// (代码里目前没人 import ChannelPreview/Apply 字面量,等用时再补本地接口。)
 export type ConsoleFileChannelExcelUploadResponse =
   components['schemas']['ConsoleFileChannelExcelUploadResponse']
-export type ConsoleFileChannelExcelPreviewResponse =
-  components['schemas']['ConsoleFileChannelExcelPreviewResponse']
 export type ConsoleFileChannelExcelApplyResponse =
   components['schemas']['ConsoleFileChannelExcelApplyResponse']
 
-// --- Excel CRUD responses (workflows) ---
-export type ConsoleWorkflowExcelUploadResponse =
-  components['schemas']['ConsoleWorkflowExcelUploadResponse']
-export type ConsoleWorkflowExcelPreviewResponse =
-  components['schemas']['ConsoleWorkflowExcelPreviewResponse']
-export type ConsoleWorkflowExcelApplyResponse =
-  components['schemas']['ConsoleWorkflowExcelApplyResponse']
-
-// --- Excel CRUD responses (job-definitions) ---
-export type ConsoleJobDefinitionExcelUploadResponse =
-  components['schemas']['ConsoleJobDefinitionExcelUploadResponse']
-export type ConsoleJobDefinitionExcelPreviewResponse =
-  components['schemas']['ConsoleJobDefinitionExcelPreviewResponse']
-export type ConsoleJobDefinitionExcelApplyResponse =
-  components['schemas']['ConsoleJobDefinitionExcelApplyResponse']
+// --- Excel CRUD responses (workflows / job-definitions) ---
+// 后端 codegen 尚未生成 workflow / job-definition 的 Excel*Response schema。
+// 这些类型 export 全部 0 引用,删除即可;真要用时回到 codegen 加 schema 并恢复。

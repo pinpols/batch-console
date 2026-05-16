@@ -103,12 +103,14 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, onMounted, ref, watch } from 'vue'
+  import { computed, ref } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { Refresh } from '@element-plus/icons-vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { useTenantStore } from '@/stores/tenant'
+  import { useTenantReload } from '@/composables/useTenantReload'
   import { useAutoRefresh } from '@/composables/useAutoRefresh'
+  import { REFRESH_INTERVAL_WARM_MS } from '@/layout-mobile/composables/refreshIntervals'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import MPullRefresh from '@/layout-mobile/MPullRefresh.vue'
   import MSkeleton from '@/layout-mobile/MSkeleton.vue'
@@ -311,10 +313,10 @@
     }
   }
 
-  onMounted(load)
-  watch(() => tenant.tenantId, load)
-  // oncall 关键页：20s 轮询，切后台时暂停
-  useAutoRefresh(load, 20_000)
+  // useTenantReload: setup 时 + tenant 切换时调用 load(替代 onMounted + watch 手写)
+  useTenantReload(load)
+  // oncall 关键页:20s 轮询,切后台时暂停
+  useAutoRefresh(load, REFRESH_INTERVAL_WARM_MS)
 </script>
 
 <style scoped>

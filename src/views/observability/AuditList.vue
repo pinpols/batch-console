@@ -71,14 +71,10 @@
               />
             </el-form-item>
             <el-form-item :label="t('auditList.timeRangeLabel')">
-              <el-date-picker
-                class="query-w-340"
+              <DateRangePresetPicker
                 v-model="timeRange"
                 type="datetimerange"
-                value-format="YYYY-MM-DD HH:mm:ss"
-                :range-separator="t('auditList.timeRangeSeparator')"
-                :start-placeholder="t('auditList.startTimePlaceholder')"
-                :end-placeholder="t('auditList.endTimePlaceholder')"
+                default-preset="today"
               />
             </el-form-item>
           </ListPageQueryBar>
@@ -145,6 +141,7 @@
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
   import PageContainer from '@/components/common/PageContainer.vue'
   import MetaSelect from '@/components/common/MetaSelect.vue'
+  import DateRangePresetPicker from '@/components/common/DateRangePresetPicker.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'

@@ -9,8 +9,13 @@
         <!-- 外层 surface 固定不缩放；内层 body 为实际纵向滚动层（整页不滚）。 -->
         <div class="layout-main__surface layout-panel">
           <div v-if="app.focusMode" class="focus-fab">
-            <el-tooltip content="退出全屏（Esc）" placement="left">
-              <el-button circle class="focus-fab__btn" @click="app.setFocusMode(false)">
+            <el-tooltip :content="t('layoutHeader.exitFullscreenTooltip')" placement="left">
+              <el-button
+                circle
+                class="focus-fab__btn"
+                :aria-label="t('nav.exitFullscreen')"
+                @click="app.setFocusMode(false)"
+              >
                 <el-icon>
                   <FullScreen />
                 </el-icon>
@@ -40,7 +45,9 @@
 <script setup lang="ts">
   import { watch, onMounted, onUnmounted } from 'vue'
   import { useRoute } from 'vue-router'
+  import { useI18n } from 'vue-i18n'
   import { FullScreen } from '@element-plus/icons-vue'
+  const { t } = useI18n({ useScope: 'global' })
   import CommandPalette from '@/components/common/CommandPalette.vue'
   import ErrorBoundary from '@/components/common/ErrorBoundary.vue'
   import SwUpdatePrompt from '@/components/common/SwUpdatePrompt.vue'

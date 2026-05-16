@@ -22,20 +22,6 @@
             @reset="reset"
             @refresh="() => runRefresh(load)"
           >
-            <el-form-item :label="t('fileList.quick')">
-              <el-radio-group
-                v-hover-radio-activate="true"
-                :model-value="quickStatus"
-                size="small"
-                @change="onQuickStatusChange"
-              >
-                <el-radio-button value="all">{{ t('fileList.quickAll') }}</el-radio-button>
-                <el-radio-button value="processing">
-                  {{ t('fileList.quickProcessing') }}
-                </el-radio-button>
-                <el-radio-button value="failed">{{ t('fileList.quickFailed') }}</el-radio-button>
-              </el-radio-group>
-            </el-form-item>
             <el-form-item :label="t('fileList.fileName')">
               <el-input
                 class="query-w-220"
@@ -260,7 +246,6 @@
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import ProTable from '@/components/table/ProTable.vue'
   import TablePagerBar from '@/components/table/TablePagerBar.vue'
-  import TenantSelect from '@/components/common/TenantSelect.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
   import JsonPreview from '@/components/common/JsonPreview.vue'
   import DateRangePresetPicker from '@/components/common/DateRangePresetPicker.vue'
@@ -307,22 +292,6 @@
     startDate: initialBizRange[0],
     endDate: initialBizRange[1],
   })
-
-  // 快捷状态 chip:把单值 fileStatus 映射到 全部 / 处理中 / 失败
-  // 关键值参考 fileStatus enum:PROCESSING / FAILED / ARCHIVED / SUCCEEDED 等
-  const quickStatus = computed<'all' | 'processing' | 'failed' | ''>(() => {
-    if (!filters.fileStatus) return 'all'
-    if (filters.fileStatus === 'PROCESSING') return 'processing'
-    if (filters.fileStatus === 'FAILED') return 'failed'
-    return ''
-  })
-
-  function onQuickStatusChange(key: string | number | boolean | undefined) {
-    const k = String(key)
-    filters.fileStatus = k === 'processing' ? 'PROCESSING' : k === 'failed' ? 'FAILED' : ''
-    page.value = 1
-    void load()
-  }
 
   // 行操作:1 主 + 4 次,折进"更多"避免一行 5 个 plain 按钮
   function rowActions(row: ConsoleFileRecordResponse): RowAction[] {
@@ -382,8 +351,9 @@
     loadError.value = null
     try {
       const pr = await fileApi.list({
-        tenantId: filters.tenantId || tenant.tenantId,
         ...filters,
+        // 顺序后置:filters.tenantId 为空时回退到当前租户(避免 spread 覆盖)
+        tenantId: filters.tenantId || tenant.tenantId,
         page: page.value,
         pageSize: pageSize.value,
       })

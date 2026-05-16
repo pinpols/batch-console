@@ -5,17 +5,17 @@
 
 // ---- time helpers (kept exported for potential reuse) ----
 
-export function parseTime(value: string | null | undefined): number | null {
+function parseTime(value: string | null | undefined): number | null {
   if (!value) return null
   const t = Date.parse(value)
   return Number.isFinite(t) ? t : null
 }
 
-export function floorToBucket(ts: number, bucketMs: number): number {
+function floorToBucket(ts: number, bucketMs: number): number {
   return Math.floor(ts / bucketMs) * bucketMs
 }
 
-export function buildBuckets(now: number, from: number, bucketMs: number) {
+function buildBuckets(now: number, from: number, bucketMs: number) {
   const buckets: number[] = []
   const start = floorToBucket(from, bucketMs)
   const end = floorToBucket(now, bucketMs)
@@ -23,21 +23,21 @@ export function buildBuckets(now: number, from: number, bucketMs: number) {
   return buckets
 }
 
-export function fmtHM(ts: number) {
+function fmtHM(ts: number) {
   const d = new Date(ts)
   const hh = String(d.getHours()).padStart(2, '0')
   const mm = String(d.getMinutes()).padStart(2, '0')
   return `${hh}:${mm}`
 }
 
-export function rangeConfig(key: '1h' | '6h' | '24h') {
+function rangeConfig(key: '1h' | '6h' | '24h') {
   const now = Date.now()
   if (key === '1h') return { now, from: now - 60 * 60_000, bucketMs: 5 * 60_000 }
   if (key === '6h') return { now, from: now - 6 * 60 * 60_000, bucketMs: 30 * 60_000 }
   return { now, from: now - 24 * 60 * 60_000, bucketMs: 2 * 60 * 60_000 }
 }
 
-export function toDateKey(ts: number) {
+function toDateKey(ts: number) {
   const d = new Date(ts)
   const y = d.getFullYear()
   const m = String(d.getMonth() + 1).padStart(2, '0')
@@ -47,7 +47,7 @@ export function toDateKey(ts: number) {
 
 // ---- ECharts option builders ----
 
-export function baseGridOption() {
+function baseGridOption() {
   return {
     backgroundColor: 'transparent',
     grid: { left: 46, right: 18, top: 42, bottom: 44 },

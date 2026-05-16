@@ -124,9 +124,6 @@
 
     <el-drawer v-model="drawerVisible" :title="drawerTitle" size="800px">
       <el-form ref="formRef" :model="form" :rules="formRules" label-width="120px">
-        <el-form-item label="tenantId" prop="tenantId">
-          <TenantSelect v-model="form.tenantId" select-class="query-w-full" />
-        </el-form-item>
         <el-form-item label="pipelineCode" prop="pipelineCode">
           <el-input v-model="form.pipelineCode" :disabled="editingId != null" />
         </el-form-item>
@@ -324,7 +321,6 @@
   import EmptyState from '@/components/common/EmptyState.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import ProTable from '@/components/table/ProTable.vue'
-  import TenantSelect from '@/components/common/TenantSelect.vue'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
 
   const tenant = useTenantStore()
@@ -584,7 +580,7 @@
     const isCreate = editingId.value == null
     try {
       if (isCreate) await createPipelineDefinition(payload)
-      else await updatePipelineDefinition(editingId.value, payload)
+      else await updatePipelineDefinition(editingId.value!, payload)
       ElMessage.success(
         t('pipelineDefinitionList.saveSuccess', {
           action: isCreate

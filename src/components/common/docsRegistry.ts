@@ -32,8 +32,8 @@ export const DOC_REGISTRY: Record<string, DocRegistryEntry> = {
   },
 }
 
-/** 文档站 base:dev 直连 5174,prod 同域 /docs/(nginx alias) */
-export function getDocsBase(): string {
+/** 文档站 base:dev 直连 5174,prod 同域 /docs/(nginx alias) — 仅 resolveDocUrl 内部用 */
+function getDocsBase(): string {
   return import.meta.env.DEV ? 'http://localhost:5174/docs/' : '/docs/'
 }
 

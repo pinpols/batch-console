@@ -1,4 +1,4 @@
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { onBeforeUnmount, onMounted, ref, type Ref } from 'vue'
 
 export interface InfiniteListPage<T> {
   rows: T[]
@@ -28,7 +28,10 @@ export interface UseInfiniteListOptions<T> {
  */
 export function useInfiniteList<T>(opts: UseInfiniteListOptions<T>) {
   const pageSize = opts.pageSize ?? 20
-  const rows = ref<T[]>([]) as { value: T[] }
+  // 之前写 `as { value: T[] }` 想绕过 ref<T[]> 的 DeepReadonly,但同时把 Ref 类型也
+  // 抹掉了,调用方解构后类型变成 { value }(失去 unwrap),tsc 报 "Property 'X' does
+  // not exist on { value: T[] }"。改用 Ref<T[]> 显式标注,保持 ref 语义。
+  const rows: Ref<T[]> = ref<T[]>([]) as Ref<T[]>
   const page = ref(0)
   const total = ref(0)
   const hasMore = ref(true)

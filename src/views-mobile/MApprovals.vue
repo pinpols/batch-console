@@ -61,7 +61,8 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, onMounted, ref, watch } from 'vue'
+  import { computed, ref } from 'vue'
+  import { useTenantReload } from '@/composables/useTenantReload'
   import { useI18n } from 'vue-i18n'
   import { Refresh } from '@element-plus/icons-vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
@@ -164,7 +165,5 @@
       /* cancelled */
     }
   }
-
-  onMounted(load)
-  watch(() => tenant.tenantId, load)
+  useTenantReload(load)
 </script>

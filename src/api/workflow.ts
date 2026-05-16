@@ -132,7 +132,7 @@ export const workflowApi = {
    * `errors` 是旧版字符串兼容字段，已废弃，新代码请消费 `findings`。
    */
   validate: (id: number, tenantId: string): Promise<DagValidationResult> =>
-    post<DagValidationResult>(`/api/console/workflow-definitions/${id}/validate`, null, {
+    post<DagValidationResult>(`/api/console/workflow-definitions/${id}/validate`, undefined, {
       params: { tenantId },
     }),
 

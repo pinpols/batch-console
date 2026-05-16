@@ -190,6 +190,7 @@ export function applyApiInterceptors(client: AxiosInstance): void {
 
     // D7 Stage B: HttpOnly cookie 由浏览器自动随请求带，不再注入 Authorization header。
     // (后端 ConsoleAuthenticationFilter 优先读 cookie，header fallback 也仍兼容老客户端)
+    // 2026-05-16:后端 Set-Cookie 已落地,dev fallback 已删,前端纯 cookie 路径生效。
 
     const tenantId = readStoredTenantId()
     if (tenantId) {

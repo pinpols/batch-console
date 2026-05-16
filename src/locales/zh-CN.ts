@@ -45,6 +45,19 @@ export default {
     required: '(必填)',
   },
   workflowDesigner: {
+    // 折叠左右侧栏(画布优先布局)
+    expandLeftPanel: '展开左侧栏',
+    collapseLeftPanel: '收起左侧栏',
+    expandRightPanel: '展开右侧栏',
+    collapseRightPanel: '收起右侧栏',
+    // 保存状态 pill(单一 pill 三态)
+    saveStatusSyncing: '同步中…',
+    saveStatusSyncingTip: '正在把画布提交到后端',
+    saveStatusSynced: '已同步',
+    saveStatusSyncedTip: '画布与后端数据一致',
+    saveStatusDirty: '本地草稿',
+    saveStatusDirtyTip: '已自动保存到浏览器,点「提交到后端」推送到服务器',
+    saveStatusIdle: '空闲',
     // P1.2 未选 Workflow 时的引导
     emptyTitle: '请先选择一个 Workflow',
     emptyDesc: '从顶部下拉选择已有 Workflow,或去定义页新建。其它操作按钮在选定后启用。',
@@ -72,23 +85,13 @@ export default {
     cheatSheetRightClick: '右键节点 / 连线',
     emptyActionNew: '去新建 Workflow',
     deleteCellConsequence: '该节点/连线及其属性会从画布草稿移除;若已发布需重新提交才生效。',
-    ariaContext: '当前编排对象',
-    tagEnabled: '启用',
-    tagDisabled: '停用',
-    ariaCanvasState: '编排状态',
-    metricNodes: '节点',
-    metricEdges: '连线',
-    metricValidation: '校验',
-    metricDraft: '草稿',
     btnSyncDefinitions: '同步定义',
     btnReloadCanvas: '重载画布',
     docsTooltip: '查看 ADR-009 Workflow 参数 DSL 文档',
     btnDocs: 'DSL 文档',
-    eyebrowObject: '编排对象',
     selectPlaceholder: '选择 workflow',
     tagLocalDraft: '本地草稿',
     tagBackend: '后端数据',
-    eyebrowCanvas: '画布',
     btnAutoLayout: '自动布局',
     btnUndo: '撤销',
     btnRedo: '重做',
@@ -104,10 +107,6 @@ export default {
     btnSubmitBackend: '提交到后端',
     sectionLibrary: '节点库',
     libraryTooltip: '按住左键拖到画布',
-    sectionInfo: '编排信息',
-    summaryNodes: '节点',
-    summaryEdges: '连线',
-    summaryLocalSave: '本地保存',
     sectionValidation: '校验结果',
     ariaValidationList: '校验提示列表',
     validationActionLocate: '定位',
@@ -135,13 +134,9 @@ export default {
     ctxDeleteNode: '删除节点',
     ctxDeleteEdge: '删除连线',
     titleUnselected: '未选择 Workflow',
-    descUnselected: '选择一个定义后开始编辑画布。',
-    descNone: '当前 Workflow 暂无描述。',
     validationErrors: '{n} 错误',
     validationWarnings: '{n} 警告',
     validationPass: '通过',
-    sourceLocal: '本地',
-    sourceBackend: '后端',
     levelError: '错误',
     levelWarning: '警告',
     legendNodeLibrary: '节点库',
@@ -155,6 +150,36 @@ export default {
     canvasHintTail2: '+ 滚轮缩放 · 右键节点/连线快捷操作 ·',
     canvasHintDelete: '删除 ·',
     canvasHintShiftKey: '快速加下游',
+  },
+  workflowMermaidViewer: {
+    defaultTitle: 'Workflow 视图',
+    disabledTag: '已禁用',
+    btnCopyMermaid: '复制 mermaid',
+    btnExpand: '展开',
+    btnCollapse: '收起',
+    legendHeader: '节点状态图例',
+    legendPending: '未启动 / 其它',
+    pollEvery: '每 {n}s 自动刷新',
+    backToRun: '回到运行详情 #{id}',
+    dagHeader: 'DAG 视图',
+    mermaidSrcHeader: 'mermaid 源(可粘贴到 PR/Wiki)',
+    noRenderData: '还没有渲染数据',
+    invalidRouteParam: '路由参数 id 非法',
+    renderFailPrefix: '渲染失败: ',
+    copiedToast: '已复制到剪贴板',
+    copyFailWarn: '复制失败,请手动选择上方文本',
+    // V4 节点详情 drawer
+    nodeDetailTitle: '节点详情',
+    fldNodeCode: '节点编码',
+    fldNodeName: '节点名',
+    fldNodeType: '节点类型',
+    fldRelatedJob: '关联作业',
+    fldRelatedPipeline: '关联流水线',
+    fldWorkerGroup: 'Worker 组',
+    fldRetryPolicy: '重试策略',
+    fldTimeout: '超时',
+    fldDescription: '描述',
+    fldParams: '参数 JSON',
   },
   tenantPackageImportWizard: {
     uploadTitle: '上传租户配置包 Excel',
@@ -170,7 +195,33 @@ export default {
     exportedToast: '当前配置包已导出',
     applyConfirmText: '确认将 8-Sheet 预览结果单事务应用到租户配置?此操作不可撤销。',
     applyConfirmTitle: '应用合并导入',
+    applyConfirmYes: '确认应用',
+    applyConfirmDetail:
+      '将单事务写入 {n} 条有效行到租户配置(按 sheet 拆分:{breakdown})。此操作不可撤销,请确认数据无误。',
     appliedToast: '合并导入已应用',
+    // I1 sheet 拆分 / 列名 / 依赖图谱 / Apply 闸门
+    sheetStatsCaption: '各 sheet 校验拆分',
+    colSheet: 'Sheet 名',
+    colSheetTotal: '总行',
+    colSheetValid: '有效',
+    colSheetInvalid: '错误',
+    colColumn: '出错列',
+    sheetRiskDownstream: '受上游影响',
+    depsAlertTitle: '下游 sheet 可能连带受影响',
+    depsAlertBody: '当前出错的 sheet 上游被引用,以下下游 sheet 即使本表无错也可能在 apply 时失败:',
+    applyBlockedTitle: '存在 {n} 条无效行,无法应用',
+    applyBlockedBody: '请先在「预览」步骤下载带批注的工作簿,修复 {n} 条错误后重新上传。',
+    btnReuploadFixed: '修完后重新上传',
+    // I9-I12 Apply 阶段状态机
+    applyingLoading: '正在写入,单事务进行中…',
+    applyingBtn: '正在写入…',
+    applyFailedTitle: '应用失败',
+    applySucceededTitle: '已成功写入',
+    btnRetryApply: '重试',
+    btnResetWizard: '重新开始',
+    colEntity: '实体',
+    colInserted: '新增',
+    colUpdated: '更新',
   },
   excelMaintenanceWizard: {
     titleBase: 'Excel 模板/导出',
@@ -266,10 +317,12 @@ export default {
     joinModePlaceholder: '默认 ANY_OF（任一前驱就绪即触发）',
     fieldJoinN: 'N (N_OF_M)',
     fieldCrossDayDeps: '跨日依赖 JSON',
-    crossDayDepsPlaceholder: '[{"jobCode":"X","dayOffset":-1}]',
+    // vue-i18n 把 {x} 当占位符,需用 {'{'} / {'}'} 字面转义,否则
+    // 编译时报 "Invalid token in placeholder" / "Empty placeholder"
+    crossDayDepsPlaceholder: '[{\'{\'}"jobCode":"X","dayOffset":-1{\'}\'}]',
     fieldCrossDayTimeout: '跨日依赖超时(s)',
     fieldExtJson: '扩展 JSON',
-    extJsonPlaceholder: '合法 JSON 对象,如 {}',
+    extJsonPlaceholder: "合法 JSON 对象,如 {'{'}{'}'}",
     dslHint: '输入 $ 触发 autocomplete：$.nodes.<上游>.output.<key> / $.workflowRun.bizDate',
     btnApply: '应用修改',
     btnDuplicate: '复制',
@@ -297,7 +350,7 @@ export default {
     fieldHttpMatchExpr: '匹配表达式',
     matchExprPlaceholder: "$.status == 'READY'",
     fieldHeadersJson: '请求头 JSON',
-    headersJsonPlaceholder: '{"Authorization":"Bearer ..."}',
+    headersJsonPlaceholder: '{\'{\'}"Authorization":"Bearer ..."{\'}\'}',
     fieldKafkaTopic: 'Kafka Topic',
     kafkaTopicPlaceholder: 'upstream.settle.v1',
     fieldKafkaPartition: 'Partition',
@@ -340,12 +393,17 @@ export default {
   layoutHeader: {
     switchToEn: 'Switch to English',
     switchToZh: '切换到中文',
+    exitFullscreenTooltip: '退出全屏(Esc)',
   },
   rowActions: {
     more: '更多',
   },
   pageHeader: {
     backTooltip: '返回',
+  },
+  docsDrawer: {
+    openInDocs: '在文档站打开',
+    iframeTitle: '文档',
   },
   mPullRefresh: {
     refreshing: '刷新中…',
@@ -401,6 +459,7 @@ export default {
     copyLinkAria: '复制当前链接',
     openCommandPalette: '打开命令面板',
     moreTools: '更多工具',
+    toolsMenu: '工具菜单',
     foldSidebar: '收起侧栏',
     expandSidebar: '展开侧栏',
     openDocs: '打开文档中心',
@@ -423,16 +482,19 @@ export default {
       runs: '运行',
       definitions: '作业与工作流',
       files: '文件',
-      alerting: '告警与投递',
-      config: '配置',
       scheduling: '调度',
+      alerting: '告警与投递',
+      configSystem: '配置与系统',
+      // 旧 key 兜底(用户停留在旧 tab / 缓存 nav 状态时不至于显示原始 key)。
+      // 此前 config / system 都映射到 "配置与系统",在 HMR 旧 nav 没 GC 时会出现两个
+      // 标题相同的分组,因此各自保留原 label,新分组用 configSystem。
+      config: '配置',
       system: '系统',
-      // 旧 key 留兜底(用户停留在旧 tab 时不至于显示原始 key)
       jobs: '作业与工作流',
       monitor: '运行',
       observability: '告警与投递',
       runtime: '调度',
-      infra: '系统',
+      infra: '基础设施',
     },
     closeLeft: '关闭左侧所有',
     closeRight: '关闭右侧所有',
@@ -466,6 +528,26 @@ export default {
     fail: '复制失败',
   },
   mobile: {
+    installHint: {
+      title: '添加到主屏幕,像 App 一样用',
+      step1: '点 Safari 底部的',
+      step2: '按钮,选择',
+      step3: '"添加到主屏幕"',
+    },
+    workflowViewer: {
+      legend: '节点状态图例',
+      dag: 'DAG',
+      noData: '暂无 mermaid 数据',
+      pollHint: '每 {n}s 自动刷新',
+      invalidId: '路由参数 id 非法',
+      renderFailPrefix: '渲染失败: ',
+      fldType: '类型',
+      fldRunId: '运行 ID',
+      fldNodeType: '节点类型',
+      fldRelatedJob: '关联作业',
+      fldRelatedPipeline: '关联流水线',
+      fldWorkerGroup: 'Worker 组',
+    },
     files: {
       title: '文件',
       subtitle: '共 {total} 条',
@@ -714,6 +796,10 @@ export default {
     },
     filesList: { title: '文件列表', description: '查询文件记录,按状态和业务类型筛选。' },
     filesTemplates: { title: '文件模板', description: '维护文件模板、格式和业务分类。' },
+    filesChannels: {
+      title: '文件渠道',
+      description: '维护文件接入渠道,按渠道关联模板和触发策略。',
+    },
     filesArrivalGroups: {
       title: '到达组治理',
       description: '维护文件组到达策略,处理缺失和异常到达。',
@@ -742,6 +828,10 @@ export default {
       description: '查询平台关键操作,追踪用户和接口行为。',
     },
     observabilityOutbox: { title: 'Outbox', description: '查看 Outbox 投递状态和重试记录。' },
+    observabilityTrace: {
+      title: 'Trace 诊断',
+      description: '按 traceId 串联请求、API 调用、Outbox 投递和审计,定位跨链路问题。',
+    },
     systemNotifications: {
       title: '通知与投递',
       description: '配置通知渠道和订阅规则,追踪投递结果。',
@@ -767,6 +857,14 @@ export default {
     governanceQuota: {
       title: '租户配额',
       description: '维护租户配额策略,控制并发和突发容量。',
+    },
+    governanceWindows: {
+      title: '批次窗口',
+      description: '维护批次时间窗口,定义作业可调度的时间段。',
+    },
+    governanceCalendars: {
+      title: '业务日历',
+      description: '维护业务日历,标注工作日 / 节假日 / 特殊日。',
     },
     systemTenants: {
       title: '租户实例',
@@ -1293,10 +1391,10 @@ export default {
     keywordPlaceholder: '请输入 pipelineCode / pipelineName',
     typeLabel: '类型',
     typePlaceholder: '请选择 pipelineType',
-    enabledLabel: '启用',
+    enabledLabel: '启用状态',
     enabledPlaceholder: '全部',
-    optEnabled: '启用',
-    optDisabled: '停用',
+    optEnabled: '已启用',
+    optDisabled: '已停用',
     colCode: '编码',
     colName: '名称',
     colType: '类型',
@@ -1395,10 +1493,10 @@ export default {
     codePlaceholder: '按工作流 Code 搜索',
     nameLabel: '名称',
     namePlaceholder: '请输入 workflowName',
-    enabledLabel: '启用',
+    enabledLabel: '启用状态',
     enabledPlaceholder: '全部',
-    optEnabled: '启用',
-    optDisabled: '停用',
+    optEnabled: '已启用',
+    optDisabled: '已停用',
     typeLabel: '类型',
     typePlaceholder: '请选择 workflowType',
     versionLabel: '版本',
@@ -1821,10 +1919,10 @@ export default {
     typePlaceholder: '全部模板类型',
     bizTypeLabel: '业务类型',
     bizTypePlaceholder: '全部业务类型',
-    enabledLabel: '启用',
+    enabledLabel: '启用状态',
     enabledPlaceholder: '全部',
-    optEnabled: '启用',
-    optDisabled: '停用',
+    optEnabled: '已启用',
+    optDisabled: '已停用',
     colCode: '模板编码',
     colName: '名称',
     colType: '类型',
@@ -2171,10 +2269,10 @@ export default {
     jobCodePlaceholder: '按作业 Code 搜索',
     jobNameLabel: '名称',
     jobNamePlaceholder: '请输入 jobName',
-    enabledLabel: '启用',
+    enabledLabel: '启用状态',
     enabledPlaceholder: '全部',
-    optEnabled: '启用',
-    optDisabled: '停用',
+    optEnabled: '已启用',
+    optDisabled: '已停用',
     workerGroupLabel: 'Worker Group',
     workerGroupTip: 'Worker 分组,决定由哪组 Worker 执行该 Job',
     workerGroupPlaceholder: '请选择 workerGroup',
@@ -2381,6 +2479,9 @@ export default {
     resumeConfirmText: '恢复全部调度器?',
     resumeConfirmTitle: '全局恢复',
     resumeSuccess: '已恢复全部调度',
+    refreshDone: '刷新成功',
+    refreshFailed: '刷新失败,请检查权限或后端日志',
+    refreshPartial: '已刷新,但部分数据加载失败',
   },
   jobInstanceList: {
     emptyTitle: '当前租户还没有任何作业实例',
@@ -2590,7 +2691,7 @@ export default {
       '每行一个,逗号分隔:租户 ID,显示名称,描述(可选)\n例:acme-prod,ACME 生产,公司主环境',
     tenantsHint: '每行格式:租户 ID,显示名称,描述(可选);单次最多 50 个',
     fieldPrefix: '用户名前缀',
-    prefixPlaceholder: '默认 op-,会拼成 {前缀}{租户 ID} 作为初始用户名',
+    prefixPlaceholder: "默认 op-,会拼成 {'{'}前缀{'}'}{'{'}租户 ID{'}'} 作为初始用户名",
     fieldPassword: '共享密码',
     passwordPlaceholder: '所有租户共享的初始密码,≥ 12 位',
     passwordHint: '建议大小写字母 + 数字混合;每个租户首次登录后立即修改',
@@ -2618,7 +2719,8 @@ export default {
     fieldTarget: '目标租户',
     modeHintSkip: '已存在的配置保持不动,只新建源租户里多出来的',
     modeHintUpsert: '已存在的配置会被源租户的版本覆盖,慎用',
-    specPlaceholder: '完整的配置 JSON,例如 {"jobDefinitions":[...],"workflowDefinitions":[...]}',
+    specPlaceholder:
+      '完整的配置 JSON,例如 {\'{\'}"jobDefinitions":[...],"workflowDefinitions":[...]{\'}\'}',
     btnRunFormal: '正式执行初始化',
     ruleSpec: 'Spec JSON 必填',
     errInvalidJson: 'JSON 格式不合法',
@@ -2639,7 +2741,7 @@ export default {
   },
   notificationCommon: {
     keywordLabel: '关键字',
-    enabledLabel: '启用',
+    enabledLabel: '启用状态',
     allPlaceholder: '全部',
     optEnabled: '已启用',
     optDisabled: '已停用',
@@ -2674,7 +2776,7 @@ export default {
     fieldType: '类型',
     typePlaceholder: '选择类型',
     fieldConfig: '配置',
-    configPlaceholder: 'JSON 配置,如 {"url":"..."}',
+    configPlaceholder: 'JSON 配置,如 {\'{\'}"url":"..."{\'}\'}',
     fieldEnabled: '启用',
     ruleCode: '编码必填',
     ruleCodePattern: '小写字母/数字/_/- 组合,字母开头',
@@ -2868,6 +2970,10 @@ export default {
     colLockName: 'Lock 名称',
     sectionWorkerConsistency: 'Worker 一致性',
     sectionOutboxHealth: 'Outbox 健康',
+    refreshDone: '刷新成功',
+    refreshAllFailed: '全部子项加载失败,请检查权限或后端日志',
+    refreshPartial: '已刷新,但有 {n} 项加载失败',
+    loadFailed: '加载失败',
   },
   opsMetricGrid: {
     pendingApprovals: '待审批',
@@ -3090,6 +3196,7 @@ export default {
     bizDateHint: '选择需要重跑或补偿的业务日期，不是提交申请的日期。',
     targetInstanceLabel: '目标实例号',
     targetInstanceOptional: '可选',
+    targetInstanceDisabledHint: '先选 Job Code 和业务日',
     targetInstanceHint: '只处理某一次实例时填写；留空表示按作业和业务日匹配。',
     reasonLabel: '原因',
     ruleJobCode: 'Job Code 必选',
@@ -3221,4 +3328,21 @@ export default {
   },
 } as const
 
-export type Messages = typeof import('./zh-CN').default
+/**
+ * 把字面量类型映射为对应宽类型(string / number / boolean),保留 key 结构。
+ * en-US 实现 Messages 时只需对齐 key + 值的类型,不需要值字面量与 zh-CN 完全相同。
+ * 否则 `as const` 会让 zh "确定" 和 en "OK" 类型冲突,vue-tsc 报上千个伪错。
+ */
+type LoosenLiteral<T> = T extends string
+  ? string
+  : T extends number
+    ? number
+    : T extends boolean
+      ? boolean
+      : T extends readonly unknown[]
+        ? LoosenLiteral<T[number]>[]
+        : T extends object
+          ? { [K in keyof T]: LoosenLiteral<T[K]> }
+          : T
+
+export type Messages = LoosenLiteral<typeof import('./zh-CN').default>

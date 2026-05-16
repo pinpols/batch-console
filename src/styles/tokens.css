@@ -5,6 +5,70 @@
   --color-danger: #ff4d4f;
   --color-info: #1677ff;
 
+  /** Button color system: 统一在 Tailwind 500/600 区间(行业基线 GitHub/Vercel/Linear)。
+   *  Light mode 调整(2026-05-14):
+   *    - primary 从 blue-600(#2563eb)→ #1677ff(与 --color-primary 一致),避免过深
+   *    - success 从 green-700(#15803d)→ green-600(#16a34a),不再发"墨"
+   *    - warning 从 amber-700(#b45309)→ amber-600(#d97706),提高识别度
+   *    - danger  从 red-600 (#dc2626)→ red-500 (#ef4444),与 save pill / 校验徽章统一
+   *    - neutral bg 从 #ffffff → #fafbfc,border 加深 1 阶,让 default 按钮在白底卡片里有"立体感",
+   *      不再"消失"。Hover/active 跟着加深 1 阶。
+   *  Hover/active 一律比 base 深 8-10% (HSL L),保持视觉一致的"按下感"。
+   */
+  --button-primary-bg: #1677ff;
+  --button-primary-bg-hover: #0e63db;
+  --button-primary-bg-active: #0a52ba;
+  --button-primary-border: #1677ff;
+  --button-primary-text: #ffffff;
+  --button-primary-soft-bg: #eff6ff;
+  --button-primary-soft-bg-hover: #dbeafe;
+  --button-primary-soft-border: #93c5fd;
+  --button-primary-soft-text: #1d4ed8;
+
+  --button-success-bg: #16a34a;
+  --button-success-bg-hover: #15803d;
+  --button-success-bg-active: #166534;
+  --button-success-border: #16a34a;
+  --button-success-text: #ffffff;
+  --button-success-soft-bg: #ecfdf5;
+  --button-success-soft-bg-hover: #d1fae5;
+  --button-success-soft-border: #86efac;
+  --button-success-soft-text: #15803d;
+
+  --button-warning-bg: #d97706;
+  --button-warning-bg-hover: #b45309;
+  --button-warning-bg-active: #92400e;
+  --button-warning-border: #d97706;
+  --button-warning-text: #ffffff;
+  --button-warning-soft-bg: #fffbeb;
+  --button-warning-soft-bg-hover: #fef3c7;
+  --button-warning-soft-border: #fcd34d;
+  --button-warning-soft-text: #b45309;
+
+  --button-danger-bg: #ef4444;
+  --button-danger-bg-hover: #dc2626;
+  --button-danger-bg-active: #b91c1c;
+  --button-danger-border: #ef4444;
+  --button-danger-text: #ffffff;
+  --button-danger-soft-bg: #fef2f2;
+  --button-danger-soft-bg-hover: #fee2e2;
+  --button-danger-soft-border: #fca5a5;
+  --button-danger-soft-text: #b91c1c;
+
+  /* default(neutral)按钮在白底卡片里要有"看得见"的存在感,但又不能压过 primary。
+     bg 略偏 slate-50,border 加深一档,hover 再深一档 */
+  --button-neutral-bg: #fafbfc;
+  --button-neutral-bg-hover: #f1f5f9;
+  --button-neutral-bg-active: #e2e8f0;
+  --button-neutral-border: #cbd5e1;
+  --button-neutral-border-hover: #94a3b8;
+  --button-neutral-text: #334155;
+  --button-neutral-text-hover: #0f172a;
+  --button-disabled-bg: #f1f5f9;
+  --button-disabled-border: #e2e8f0;
+  --button-disabled-text: #94a3b8;
+  --button-focus-ring: color-mix(in srgb, var(--button-primary-bg) 38%, transparent);
+
   --color-text-primary: #1f1f1f;
   --color-text-secondary: #595959;
   /* tertiary 原 #8c8c8c 在白底 4.45:1 不达 wcag2aa(4.5:1);
@@ -29,18 +93,22 @@
   --color-border: #e5e6eb;
   --color-border-light: #f0f0f0;
 
-  --shadow-card: 0 2px 8px rgb(0 0 0 / 6%);
-  /** 页面级卡片（标题区、内容块） */
-  --shadow-surface: 0 2px 12px rgb(15 23 42 / 6%), 0 0 0 1px rgb(15 23 42 / 4%);
-  --shadow-surface-hover: 0 12px 24px rgb(15 23 42 / 12%), 0 0 0 1px rgb(15 23 42 / 7%);
+  /* 运维后台密集信息流,减阴影 1 阶,优先用 1px 边框分层,避免"卡片套卡片"漂浮感。
+     2026-05-14 点状去卡片化:shadow 双层→单层 + 不透明度减半。 */
+  --shadow-card: 0 1px 2px rgb(15 23 42 / 4%);
+  --shadow-surface: 0 0 0 1px rgb(15 23 42 / 5%);
+  --shadow-surface-hover: 0 0 0 1px rgb(15 23 42 / 9%);
   /**
    * 主内容区 / 弹层内：与 shadow-surface-hover 叠用；内描边不被父级 overflow 裁切，避免 hover「四周没变化」。
    */
-  --surface-hover-edge-inset: inset 0 0 0 1px color-mix(in srgb, var(--color-primary) 26%, transparent);
+  --surface-hover-edge-inset: inset 0 0 0 1px
+    color-mix(in srgb, var(--color-primary) 26%, transparent);
 
-  /** 全站统一 hover 浮起参数 */
-  --ui-hover-translate-y: -2px;
-  --ui-hover-scale: 1.02;
+  /** 全站统一 hover 浮起参数。
+   * 运维后台高频扫读 + 点击,浮起容易"晃眼",2026-05-14 关闭全站默认浮起,
+   * 改为仅在主 CTA / 入口卡片上由组件自身决定是否打开。 */
+  --ui-hover-translate-y: 0;
+  --ui-hover-scale: 1;
 
   /** 动效 token（与 prefers-reduced-motion 配合使用） */
   --motion-duration-fast: 140ms;
@@ -146,10 +214,61 @@ html.dark {
   --color-border: #2d333b;
   --color-border-light: #252a32;
 
-  --shadow-card: 0 2px 12px rgb(0 0 0 / 35%);
-  --shadow-surface: 0 2px 16px rgb(0 0 0 / 38%), 0 0 0 1px rgb(255 255 255 / 6%);
-  --shadow-surface-hover: 0 18px 32px rgb(0 0 0 / 52%), 0 0 0 1px rgb(255 255 255 / 10%);
-  --surface-hover-edge-inset: inset 0 0 0 1px color-mix(in srgb, var(--color-primary) 42%, transparent);
+  /* Dark mode 同步亮化(2026-05-14):与 light 对齐到统一基线,避免深色卡片下按钮发"黑"。 */
+  --button-primary-bg: #3b82f6;
+  --button-primary-bg-hover: #2563eb;
+  --button-primary-bg-active: #1d4ed8;
+  --button-primary-border: #3b82f6;
+  --button-primary-soft-bg: rgb(59 130 246 / 16%);
+  --button-primary-soft-bg-hover: rgb(59 130 246 / 24%);
+  --button-primary-soft-border: rgb(96 165 250 / 42%);
+  --button-primary-soft-text: #93c5fd;
+
+  --button-success-bg: #22c55e;
+  --button-success-bg-hover: #16a34a;
+  --button-success-bg-active: #15803d;
+  --button-success-border: #22c55e;
+  --button-success-soft-bg: rgb(34 197 94 / 16%);
+  --button-success-soft-bg-hover: rgb(34 197 94 / 24%);
+  --button-success-soft-border: rgb(74 222 128 / 40%);
+  --button-success-soft-text: #86efac;
+
+  --button-warning-bg: #f59e0b;
+  --button-warning-bg-hover: #d97706;
+  --button-warning-bg-active: #b45309;
+  --button-warning-border: #f59e0b;
+  --button-warning-soft-bg: rgb(245 158 11 / 16%);
+  --button-warning-soft-bg-hover: rgb(245 158 11 / 24%);
+  --button-warning-soft-border: rgb(251 191 36 / 42%);
+  --button-warning-soft-text: #fcd34d;
+
+  --button-danger-bg: #ef4444;
+  --button-danger-bg-hover: #dc2626;
+  --button-danger-bg-active: #b91c1c;
+  --button-danger-border: #ef4444;
+  --button-danger-soft-bg: rgb(239 68 68 / 16%);
+  --button-danger-soft-bg-hover: rgb(239 68 68 / 24%);
+  --button-danger-soft-border: rgb(248 113 113 / 42%);
+  --button-danger-soft-text: #fca5a5;
+
+  --button-neutral-bg: #202732;
+  --button-neutral-bg-hover: #263140;
+  --button-neutral-bg-active: #1b2430;
+  --button-neutral-border: #3b4554;
+  --button-neutral-border-hover: #536174;
+  --button-neutral-text: #d7dee8;
+  --button-neutral-text-hover: #ffffff;
+  --button-disabled-bg: #1b222c;
+  --button-disabled-border: #2b3440;
+  --button-disabled-text: #647083;
+  --button-focus-ring: color-mix(in srgb, var(--button-primary-bg) 52%, transparent);
+
+  /* dark mode 同步降阴影:单层 inset 描边即可,深底重阴影看起来"卡片漂浮"。 */
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 20%);
+  --shadow-surface: 0 0 0 1px rgb(255 255 255 / 6%);
+  --shadow-surface-hover: 0 0 0 1px rgb(255 255 255 / 12%);
+  --surface-hover-edge-inset: inset 0 0 0 1px
+    color-mix(in srgb, var(--color-primary) 42%, transparent);
 
   --layout-header-bg: rgb(26 31 38 / 92%);
 
@@ -186,10 +305,11 @@ html.dark {
   --layout-panel-inset-highlight: rgb(255 255 255 / 8%);
 }
 
-/** 紧凑模式：减弱 scale、收紧画布/卡片内边距，表格可在 element-override 跟字号 */
+/** 紧凑模式：收紧画布/卡片内边距，表格可在 element-override 跟字号。
+    hover 浮起跟默认一致全关(2026-05-14)。 */
 html[data-density='compact'] {
   --ui-hover-scale: 1;
-  --ui-hover-translate-y: -1px;
+  --ui-hover-translate-y: 0;
   --page-canvas-padding: 10px;
   --page-section-gap: 10px;
   --page-scroll-edge-bleed: 10px;

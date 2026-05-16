@@ -330,23 +330,23 @@ html.layout-shell-lock .layout-root > .layout-sidebar.el-aside {
 
 /* 统一“新增”按钮：浅蓝、轻渐变、微阴影（用于页面 actions / queryBar prepend） */
 .pretty-add-button.el-button {
-  --el-button-text-color: #fff;
+  --el-button-text-color: var(--button-primary-text);
   --el-button-bg-color: transparent;
   --el-button-border-color: transparent;
-  border: 1px solid color-mix(in srgb, var(--color-primary) 26%, var(--color-border) 74%);
+  border: 1px solid var(--button-primary-border);
   border-radius: 11px;
   padding: 0 14px;
   min-height: 34px;
   font-weight: 650;
   letter-spacing: 0.02em;
   background: linear-gradient(
-    135deg,
-    color-mix(in srgb, var(--color-primary) 70%, #ffffff 30%) 0%,
-    color-mix(in srgb, #0f5ed9 60%, #ffffff 40%) 100%
+    180deg,
+    color-mix(in srgb, var(--button-primary-bg) 88%, #ffffff 12%) 0%,
+    var(--button-primary-bg) 100%
   );
   box-shadow:
-    0 10px 22px rgb(59 130 246 / 14%),
-    inset 0 1px 0 rgb(255 255 255 / 20%);
+    0 8px 18px color-mix(in srgb, var(--button-primary-bg) 18%, transparent),
+    inset 0 1px 0 rgb(255 255 255 / 14%);
   transition:
     transform var(--motion-duration-sm) var(--motion-ease-emphasized),
     box-shadow var(--motion-duration-md) var(--motion-ease-standard),
@@ -355,9 +355,14 @@ html.layout-shell-lock .layout-root > .layout-sidebar.el-aside {
 
 .pretty-add-button.el-button:hover {
   transform: translateY(-1px);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--button-primary-bg-hover) 88%, #ffffff 12%) 0%,
+    var(--button-primary-bg-hover) 100%
+  );
   box-shadow:
-    0 14px 30px rgb(59 130 246 / 16%),
-    inset 0 1px 0 rgb(255 255 255 / 24%);
+    0 12px 24px color-mix(in srgb, var(--button-primary-bg) 22%, transparent),
+    inset 0 1px 0 rgb(255 255 255 / 16%);
   filter: saturate(1.02);
 }
 
@@ -373,12 +378,13 @@ html.layout-shell-lock .layout-root > .layout-sidebar.el-aside {
   min-height: 42px;
   font-weight: 650;
   letter-spacing: 0.06em;
+  color: var(--button-primary-text);
   background: linear-gradient(
-    135deg,
-    color-mix(in srgb, var(--color-primary) 78%, #ffffff 22%) 0%,
-    color-mix(in srgb, #0f5ed9 72%, #ffffff 28%) 100%
+    180deg,
+    color-mix(in srgb, var(--button-primary-bg) 90%, #ffffff 10%) 0%,
+    var(--button-primary-bg) 100%
   );
-  box-shadow: 0 6px 16px rgb(59 130 246 / 16%);
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--button-primary-bg) 18%, transparent);
   transition:
     transform 0.18s ease,
     box-shadow 0.18s ease,
@@ -387,7 +393,12 @@ html.layout-shell-lock .layout-root > .layout-sidebar.el-aside {
 
 .pretty-primary-button:hover {
   transform: translateY(-1px);
-  box-shadow: 0 10px 24px rgb(59 130 246 / 18%);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--button-primary-bg-hover) 90%, #ffffff 10%) 0%,
+    var(--button-primary-bg-hover) 100%
+  );
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--button-primary-bg) 22%, transparent);
   filter: saturate(1.05);
 }
 
@@ -407,8 +418,8 @@ html.layout-shell-lock .layout-root > .layout-sidebar.el-aside {
   min-height: 30px;
   font-size: 12px;
   box-shadow:
-    0 8px 18px rgb(59 130 246 / 14%),
-    inset 0 1px 0 rgb(255 255 255 / 20%);
+    0 8px 18px color-mix(in srgb, var(--button-primary-bg) 18%, transparent),
+    inset 0 1px 0 rgb(255 255 255 / 14%);
 }
 
 .pill-tabs .el-tabs__item:focus-visible {

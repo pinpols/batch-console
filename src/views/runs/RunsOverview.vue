@@ -94,7 +94,7 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, onMounted, ref } from 'vue'
+  import { computed, ref } from 'vue'
   import { useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import { fmtDatetime } from '@/utils/datetime'
@@ -173,8 +173,9 @@
     router.push(`/monitor/workflow-runs/${row.id}`)
   }
 
+  // useTenantReload immediate:true 已经在 setup 时调一次 loadAll;
+  // 之前还重复 onMounted(loadAll),首屏会触发 2 次 GET → 删 onMounted。
   useTenantReload(loadAll)
-  onMounted(loadAll)
 </script>
 
 <style scoped>

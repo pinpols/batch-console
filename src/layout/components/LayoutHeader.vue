@@ -6,7 +6,12 @@
           :content="app.sidebarCollapsed ? t('nav.expandSidebar') : t('nav.foldSidebar')"
           placement="bottom"
         >
-          <el-button text class="icon-button layout-header__fold" @click="app.toggleSidebar()">
+          <el-button
+            text
+            class="icon-button layout-header__fold"
+            :aria-label="app.sidebarCollapsed ? t('nav.expandSidebar') : t('nav.foldSidebar')"
+            @click="app.toggleSidebar()"
+          >
             <el-icon>
               <Fold v-if="!app.sidebarCollapsed" />
               <Expand v-else />
@@ -56,44 +61,35 @@
             <span class="palette-shortcut">{{ commandPaletteShortcutLabel }}</span>
           </el-button>
         </el-tooltip>
-        <el-tooltip :content="t('nav.openDocsTooltip')" placement="bottom">
-          <el-button text class="icon-button" :aria-label="t('nav.openDocs')" @click="openDocs">
-            <el-icon><Reading /></el-icon>
-          </el-button>
-        </el-tooltip>
-        <el-tooltip :content="localeToggleTooltip" placement="bottom">
-          <el-button
-            text
-            class="icon-button locale-tool-button"
-            :aria-label="t('nav.switchLocale')"
-            @click="toggleLocale"
-          >
-            <span class="locale-chip">{{ localeChipLabel }}</span>
-          </el-button>
-        </el-tooltip>
-        <el-tooltip :content="themeToggleLabel" placement="bottom">
+        <!-- 低频工具(文档 / 语言 / 主题 / 全屏)收纳进一个 dropdown,
+             降低顶栏扫描负担。常驻只剩:命令面板 / 租户 / 用户 -->
+        <el-dropdown trigger="click" placement="bottom-end" @command="onToolsCommand">
           <el-button
             text
             class="icon-button"
-            :aria-label="themeToggleAriaLabel"
-            @click="app.toggleTheme()"
+            :aria-label="t('nav.toolsMenu')"
+            :title="t('nav.toolsMenu')"
           >
-            <el-icon><component :is="themeToolIcon" /></el-icon>
+            <el-icon><MoreFilled /></el-icon>
           </el-button>
-        </el-tooltip>
-        <el-tooltip
-          :content="app.focusMode ? t('nav.exitFullscreen') : t('nav.fullscreen')"
-          placement="bottom"
-        >
-          <el-button
-            text
-            class="icon-button"
-            :aria-label="t('nav.fullscreen')"
-            @click="app.toggleFocusMode()"
-          >
-            <el-icon><FullScreen /></el-icon>
-          </el-button>
-        </el-tooltip>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item command="docs" :icon="Reading">
+                {{ t('nav.openDocs') }}
+              </el-dropdown-item>
+              <el-dropdown-item command="locale">
+                <span class="locale-chip-mini">{{ localeChipLabel }}</span>
+                {{ localeToggleTooltip }}
+              </el-dropdown-item>
+              <el-dropdown-item command="theme" :icon="themeToolIcon">
+                {{ themeToggleLabel }}
+              </el-dropdown-item>
+              <el-dropdown-item command="focus" :icon="FullScreen" :divided="true">
+                {{ app.focusMode ? t('nav.exitFullscreen') : t('nav.fullscreen') }}
+              </el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
         <!-- 当前租户：常驻醒目展示，不藏在悬浮面板里 -->
         <div v-if="canSwitchTenant" class="tenant-chip tenant-chip--switch">
           <el-icon class="tenant-chip__icon"><OfficeBuilding /></el-icon>
@@ -177,12 +173,14 @@
     ArrowDown,
     DocumentCopy,
     Expand,
+    Compass,
     Fold,
     FullScreen,
     Key,
     Link,
     Monitor,
     Moon,
+    MoreFilled,
     OfficeBuilding,
     Reading,
     Sunny,
@@ -226,6 +224,13 @@
 
   function openDocs() {
     window.open(docsUrl, '_blank', 'noopener')
+  }
+
+  function onToolsCommand(command: string) {
+    if (command === 'docs') openDocs()
+    else if (command === 'locale') toggleLocale()
+    else if (command === 'theme') app.toggleTheme()
+    else if (command === 'focus') app.toggleFocusMode()
   }
 
   const router = useRouter()

@@ -16,10 +16,15 @@
         <div class="sync__body">
           <el-form label-width="56px" class="sync__form" size="default">
             <el-form-item :label="t('configSyncTab.sourceEnvLabel')">
-              <el-input
+              <el-select
                 v-model="sourceEnv"
+                filterable
+                allow-create
+                default-first-option
                 :placeholder="t('configSyncTab.sourceEnvPlaceholder')"
-              />
+              >
+                <el-option v-for="e in ENV_PRESETS" :key="e" :label="e" :value="e" />
+              </el-select>
             </el-form-item>
 
             <el-form-item :label="t('configSyncTab.typesTitle')">
@@ -75,16 +80,33 @@
         <div class="sync__body">
           <el-form label-width="56px" class="sync__form" size="default">
             <el-form-item :label="t('configSyncTab.targetEnvLabel')">
-              <el-input
+              <el-select
                 v-model="targetEnv"
+                filterable
+                allow-create
+                default-first-option
                 :placeholder="t('configSyncTab.targetEnvPlaceholder')"
-              />
+              >
+                <el-option v-for="e in ENV_PRESETS" :key="e" :label="e" :value="e" />
+              </el-select>
             </el-form-item>
             <el-form-item :label="t('configSyncTab.targetTenantsLabel')">
-              <el-input
-                v-model="targetTenantsText"
+              <el-select
+                v-model="targetTenantIds"
+                multiple
+                filterable
+                collapse-tags
+                collapse-tags-tooltip
+                :loading="tenantsLoading"
                 :placeholder="t('configSyncTab.targetTenantsPlaceholder')"
-              />
+              >
+                <el-option
+                  v-for="ten in tenantOptions"
+                  :key="ten.tenantId"
+                  :label="`${ten.tenantId} — ${ten.tenantName}`"
+                  :value="ten.tenantId"
+                />
+              </el-select>
             </el-form-item>
             <el-form-item :label="t('configSyncTab.payloadLabel')">
               <el-input
@@ -134,15 +156,19 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, ref, watch } from 'vue'
+  import { computed, onMounted, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
   import { Download, Right, View, Upload } from '@element-plus/icons-vue'
   import { exportConfigSync, importConfigSync } from '@/api/configReleases'
+  import { listTenants } from '@/api/tenants'
+  import { isReservedTenant } from './tenantConfigTypes'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
   import { confirmDanger } from '@/composables/useDangerConfirm'
   import JsonPreview from '@/components/common/JsonPreview.vue'
+
+  const ENV_PRESETS = ['default', 'dev', 'staging', 'prod']
 
   const { t } = useI18n({ useScope: 'global' })
   const tenant = useTenantStore()
@@ -150,7 +176,25 @@
   // BE NotBlank,默认 'default' 兼容单环境场景
   const sourceEnv = ref('default')
   const targetEnv = ref('default')
-  const targetTenantsText = ref('')
+  const targetTenantIds = ref<string[]>([])
+
+  // 目标租户候选(排掉系统/内置租户和当前源租户)
+  const tenantsLoading = ref(false)
+  const tenantOptions = ref<{ tenantId: string; tenantName: string }[]>([])
+
+  async function loadTenants() {
+    tenantsLoading.value = true
+    try {
+      const res = await listTenants({ pageNo: 1, pageSize: 500 })
+      tenantOptions.value = (res.items ?? []).filter(
+        (x) => !isReservedTenant(x.tenantId) && x.tenantId !== tenant.tenantId,
+      )
+    } finally {
+      tenantsLoading.value = false
+    }
+  }
+
+  onMounted(loadTenants)
 
   // BE TenantConfigCopyRequest.ConfigType 短别名
   const exportTypeOptions = ref([
@@ -185,10 +229,7 @@
 
   // 目标侧 header 副标题:显示当前目标租户列表的摘要
   const targetTenantsSubtitle = computed(() => {
-    const list = targetTenantsText.value
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean)
+    const list = targetTenantIds.value
     if (!list.length) return t('configSyncTab.targetCurrentTenant')
     if (list.length === 1) return list[0]
     return t('configSyncTab.targetMultiTenants', { first: list[0], n: list.length })
@@ -200,11 +241,7 @@
   })
 
   function resolvedTargetTenants(): string[] {
-    const list = targetTenantsText.value
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean)
-    return list.length ? list : [tenant.tenantId]
+    return targetTenantIds.value.length ? targetTenantIds.value : [tenant.tenantId]
   }
 
   async function doExport() {
@@ -307,7 +344,9 @@
     exportResult.value = null
     previewResult.value = null
     importPayload.value = ''
+    targetTenantIds.value = []
     exportTypeOptions.value.forEach((o) => (o.checked = false))
+    void loadTenants()
   })
 </script>
 

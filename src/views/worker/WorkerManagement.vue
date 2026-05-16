@@ -9,7 +9,11 @@
             :data="workerTableRows"
             :loading="workerTableBlocking"
             :error="workerLoadError"
-            :on-retry="refetchWorkers"
+            :on-retry="
+              () => {
+                void refetchWorkers()
+              }
+            "
             :total="workerTotal"
             v-model:page="workerPage"
             v-model:page-size="workerPageSize"
@@ -335,12 +339,18 @@
   }
 
   function onRefreshWorkers() {
-    return runWorkerRefresh(() => refetchWorkers())
+    // TanStack refetch 返回 Promise<QueryObserverResult>,runWorkerRefresh 期望 void;
+    // 这里把返回值丢弃,只关心副作用刷新。
+    return runWorkerRefresh(async () => {
+      await refetchWorkers()
+    })
   }
 
   useSseAutoReload({
     domain: 'workers',
-    reload: () => refetchWorkers(),
+    reload: async () => {
+      await refetchWorkers()
+    },
     scope: () => tenant.tenantId,
   })
 

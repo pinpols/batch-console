@@ -191,8 +191,13 @@
     }
   }
 
-  function filterByTrace<T extends { traceId?: string | null }>(rows: T[], trace: string): T[] {
-    return rows.filter((r) => r?.traceId === trace)
+  /**
+   * 行级 traceId 过滤。某些行类型(outbox / deadLetter 等)在 OpenAPI schema 上没有
+   * `traceId` 字段声明,但后端实际下发或存在 props 里。这里用宽松约束让调用方
+   * 不必逐 row 类型扩展,只在运行时按 `r.traceId` 取值。
+   */
+  function filterByTrace<T>(rows: T[], trace: string): T[] {
+    return rows.filter((r) => (r as { traceId?: string | null } | null)?.traceId === trace)
   }
 
   async function search() {
@@ -216,11 +221,14 @@
       alerts,
       deadLetters,
     ] = await Promise.all([
-      fetchDomain(
-        'jobInstance',
-        () => jobApi.listInstances({ tenantId, traceId: trace }) as Promise<unknown[]>,
-      ),
-      fetchDomain('file', () => fileApi.list({ tenantId, traceId: trace }) as Promise<unknown[]>),
+      fetchDomain('jobInstance', async () => {
+        const r = await jobApi.listInstances({ tenantId, traceId: trace, page: 1, pageSize: 200 })
+        return r.records as unknown[]
+      }),
+      fetchDomain('file', async () => {
+        const r = await fileApi.list({ tenantId, traceId: trace, page: 1, pageSize: 200 })
+        return r.records as unknown[]
+      }),
       fetchDomain('audit', () => queryAudits(tenantId, { traceId: trace })),
       fetchDomain('executionLog', () => queryExecutionLogs(tenantId, { traceId: trace })),
       // 以下四域:BE 不支持 traceId 过滤,客户端按 row.traceId 兜底过滤

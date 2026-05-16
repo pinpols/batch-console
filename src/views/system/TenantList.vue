@@ -39,20 +39,6 @@
         @reset="onReset"
         @refresh="() => runRefresh(load)"
       >
-        <el-form-item :label="t('tenantList.quick')">
-          <el-radio-group
-            v-hover-radio-activate="true"
-            :model-value="quickStatus"
-            size="small"
-            @change="onQuickStatusChange"
-          >
-            <el-radio-button value="all">{{ t('tenantList.quickAll') }}</el-radio-button>
-            <el-radio-button value="active">{{ t('tenantList.quickActive') }}</el-radio-button>
-            <el-radio-button value="suspended">
-              {{ t('tenantList.quickSuspended') }}
-            </el-radio-button>
-          </el-radio-group>
-        </el-form-item>
         <el-form-item :label="t('tenantList.keyword')">
           <el-input
             class="query-w-220"
@@ -143,8 +129,7 @@
                 >
                   {{ t('tenantList.currentTag') }}
                 </el-tag>
-                <!-- P2.5 inline-limit=2 把"初始化配置"和"暂停"等中/高风险操作收进更多菜单 -->
-                <RowActions :actions="rowActions(row)" :inline-limit="2" />
+                <RowActions :actions="rowActions(row)" :inline-limit="999" />
               </div>
             </template>
           </el-table-column>
@@ -252,24 +237,6 @@
 
   const { data: metaEnums } = useConsoleMetaEnumsQuery()
   const tenantStatusOptions = computed(() => pickMetaEnumGroup(metaEnums.value, 'tenantStatus'))
-
-  // 快捷 chip:把状态下拉的 ACTIVE / SUSPENDED 提到顶部一键过滤,常用即点即走
-  // 默认"全部"——首次进入不隐藏数据,操作员看完整 inventory 自己再缩
-  const quickStatus = computed<'all' | 'active' | 'suspended' | ''>(() => {
-    if (!queryApplied.status) return 'all'
-    if (queryApplied.status === 'ACTIVE') return 'active'
-    if (queryApplied.status === 'SUSPENDED') return 'suspended'
-    return ''
-  })
-
-  function onQuickStatusChange(key: string | number | boolean | undefined) {
-    const k = String(key)
-    const next: TenantStatus | '' = k === 'active' ? 'ACTIVE' : k === 'suspended' ? 'SUSPENDED' : ''
-    queryDraft.status = next
-    queryApplied.status = next
-    queryApplied.pageNo = 1
-    void load()
-  }
 
   const activeCount = computed(
     () => page.value.items.filter((item) => item.status === 'ACTIVE').length,

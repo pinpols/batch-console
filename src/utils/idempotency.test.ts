@@ -24,7 +24,6 @@ describe('createIdempotencyKey', () => {
     delete globalThis.crypto
     const key = createIdempotencyKey()
     expect(key).toMatch(/^\d+-\d+-[a-z0-9]+$/)
-    // @ts-expect-error restore
-    globalThis.crypto = original
+    ;(globalThis as { crypto?: Crypto }).crypto = original
   })
 })

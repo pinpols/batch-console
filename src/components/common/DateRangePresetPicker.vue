@@ -1,19 +1,14 @@
 <template>
   <div class="dr-preset">
-    <div class="dr-preset__chips">
-      <el-radio-group
-        v-hover-radio-activate="true"
-        :model-value="activePreset"
-        size="small"
-        @change="onPresetChange"
-      >
-        <el-radio-button v-for="p in presets" :key="p.key" :value="p.key" :label="p.key">
-          {{ p.label }}
-        </el-radio-button>
-      </el-radio-group>
-    </div>
+    <el-select
+      :model-value="activePreset"
+      :placeholder="t('dateRangePicker.custom')"
+      class="dr-preset__select"
+      @change="onPresetChange"
+    >
+      <el-option v-for="p in presets" :key="p.key" :label="p.label" :value="p.key" />
+    </el-select>
     <el-date-picker
-      v-if="activePreset === 'custom'"
       :model-value="modelValue ?? null"
       :type="type"
       :value-format="resolvedFormat"
@@ -37,20 +32,12 @@
   const { t } = useI18n({ useScope: 'global' })
 
   /**
-   * 时间范围预设 chip + 自定义日期选择器。
-   * 解决"列表筛选时间范围空、用户每次手动选 / 没'今天''最近 7 天'快捷"的体检痛点。
-   *
-   * 用法:
-   *   <DateRangePresetPicker
-   *     v-model="timeRange"
-   *     default-preset="today"
-   *   />
-   *   timeRange = ['2026-05-10 00:00:00', '2026-05-10 23:59:59']  // string[2] | null
-   *
-   * 切到自定义会展开 datetimerange picker;切回 today/7d/... 会自动算出区间发出去。
+   * 时间范围预设 chip + 常驻日期选择器。
+   * 点 chip → 算出预设区间填入 picker;用户直接改 picker → 自动落入"自由日期"
+   * 状态(无 chip 高亮)。picker 常驻,用户始终能看到当前生效区间。
    */
 
-  type PresetKey = 'today' | '7d' | '30d' | 'thisMonth' | 'all' | 'custom'
+  type PresetKey = 'today' | '7d' | '30d' | 'thisMonth' | 'all'
 
   interface Preset {
     key: PresetKey
@@ -127,7 +114,6 @@
       },
     ]
     if (props.includeAll) base.push({ key: 'all', label: t('dateRangePicker.all') })
-    base.push({ key: 'custom', label: t('dateRangePicker.custom') })
     return base
   })
 
@@ -139,8 +125,9 @@
     return date + ' ' + p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds())
   }
 
-  // 当前 modelValue 反推 active preset
-  const activePreset = computed<PresetKey>(() => {
+  // 反推当前 modelValue 命中哪个 preset;不命中时返回 undefined → 无 chip 高亮,
+  // 表示用户在 picker 里挑了自由日期。
+  const activePreset = computed<PresetKey | undefined>(() => {
     const v = props.modelValue
     if (!v || !v[0] || !v[1]) return 'all'
     for (const p of presets.value) {
@@ -148,17 +135,13 @@
       const [s, e] = p.range()
       if (fmt(s) === v[0] && fmt(e) === v[1]) return p.key
     }
-    return 'custom'
+    return undefined
   })
 
   function onPresetChange(key: string | number | boolean | undefined) {
     const k = key as PresetKey
     if (k === 'all') {
       emit('update:modelValue', null)
-      return
-    }
-    if (k === 'custom') {
-      // 不立即清空,让用户在 picker 里改
       return
     }
     const p = presets.value.find((x) => x.key === k)
@@ -199,7 +182,7 @@
     flex-wrap: wrap;
   }
 
-  .dr-preset__picker {
-    margin-left: 4px;
+  .dr-preset__select {
+    width: 130px;
   }
 </style>

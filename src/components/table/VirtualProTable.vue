@@ -116,7 +116,7 @@
       hidePagerWhenSinglePage: true,
       pageSizes: () => [50, 100, 200, 500],
       skeletonRows: 8,
-      error: null,
+      error: undefined,
     },
   )
 

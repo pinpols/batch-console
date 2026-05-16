@@ -150,7 +150,8 @@
 </template>
 
 <script setup lang="ts">
-  import { onMounted, reactive, ref, watch } from 'vue'
+  import { reactive, ref } from 'vue'
+  import { useTenantReload } from '@/composables/useTenantReload'
   import { useRoute, useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import { Refresh } from '@element-plus/icons-vue'
@@ -339,9 +340,7 @@
       bulkBusy.value = false
     }
   }
-
-  onMounted(load)
-  watch(() => tenant.tenantId, load)
+  useTenantReload(load)
 </script>
 
 <style scoped>

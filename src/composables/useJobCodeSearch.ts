@@ -26,7 +26,7 @@ export function useJobCodeSearch() {
         new Set(
           (res.records ?? [])
             .map((r) => r.jobCode)
-            .filter((v): v is string => typeof v === 'string' && v),
+            .filter((v): v is string => typeof v === 'string' && !!v),
         ),
       )
     } catch {
@@ -52,7 +52,7 @@ export function useJobCodeSearch() {
         new Set(
           (res.records ?? [])
             .map((r) => r.jobCode)
-            .filter((v): v is string => typeof v === 'string' && v),
+            .filter((v): v is string => typeof v === 'string' && !!v),
         ),
       )
     } catch {

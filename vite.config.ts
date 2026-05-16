@@ -60,6 +60,8 @@ export default defineConfig(({ mode }) => {
         globPatterns: ['**/*.{js,css,html,svg,woff2}'],
         // 排除大文件(echarts/x6 vendor chunk)避免预缓存膨胀
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
+        // P7 Web Push:把自定义 push / notificationclick handler 注入生成的 SW
+        importScripts: ['/push-handler.js'],
         runtimeCaching: [
           {
             // /meta/* 字典型接口缓存 1h,弱网时回退缓存值;失败不影响主流程
@@ -119,6 +121,10 @@ export default defineConfig(({ mode }) => {
     // 允许任何 Host 头（dev only）。生产 build 不使用这段配置。
     // 场景：手机/其他设备通过 localtunnel / cloudflared / ngrok 等隧道访问本机 dev。
     allowedHosts: true,
+    // 通过 cloudflared / ngrok 等 https 隧道访问时，page 在 :443，但 Vite HMR client
+    // 默认尝试 wss://<同 host>:5173 → 端口被隧道拒，浏览器报错后 Vue mount 卡住白屏。
+    // 强制 client 走 443 + wss，让 HMR ws 走和页面同协议同端口。
+    hmr: { clientPort: 443, protocol: 'wss' },
     /**
      * watch.ignored:把 vitepress build 产物挡在 chokidar 之外。
      *

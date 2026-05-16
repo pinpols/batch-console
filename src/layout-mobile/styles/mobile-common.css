@@ -3,6 +3,31 @@
  * 所有 mobile 视图共享此基础。
  */
 
+/* P6 原生感:消蓝 tap 高亮 + 非文本禁长按菜单 + 禁全局橡皮筋 + 防字体放大
+   (status-bar-style=black-translucent 时,顶栏内容会延到状态栏下,MobileAppBar 自己用 safe-area-inset-top) */
+.mobile-layout {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+  /* 禁页面整体橡皮筋:list 区自己滚,顶部 / 底部不橡皮 */
+  overscroll-behavior-y: none;
+}
+.mobile-layout * {
+  -webkit-tap-highlight-color: transparent;
+}
+.mobile-layout button,
+.mobile-layout .m-card,
+.mobile-layout .m-chip,
+.mobile-layout .mobile-tab {
+  /* 禁长按弹"复制/查找"菜单 — 非文本元素 */
+  -webkit-touch-callout: none;
+  user-select: none;
+}
+/* 内容滚动区:允许内部橡皮筋,父级不橡皮 */
+.mobile-layout__content {
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
 .m-page {
   display: flex;
   flex-direction: column;

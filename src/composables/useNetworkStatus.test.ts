@@ -1,7 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { effectScope } from 'vue'
 
-const elMessageMock = vi.fn(() => ({ close: vi.fn() }))
+const elMessageMock = vi.fn<(...args: unknown[]) => { close: () => void }>(() => ({
+  close: vi.fn(),
+}))
 vi.mock('element-plus', () => ({
   ElMessage: (...args: unknown[]) => elMessageMock(...args),
 }))
