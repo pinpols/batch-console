@@ -146,7 +146,8 @@ export function useOpsSummary() {
   }
 
   function goFailedJobs() {
-    router.push({ path: '/monitor/job-instances', query: { status: 'FAILED' } })
+    // 卡片统计是全量(不限 bizDate),列表默认锚今日 → 必须 range=all 才能看到历史失败实例
+    router.push({ path: '/monitor/job-instances', query: { status: 'FAILED', range: 'all' } })
   }
 
   watch(rangeKey, () => {

@@ -1,5 +1,5 @@
 <template>
-  <el-card class="metric-card" shadow="never">
+  <el-card class="metric-card" :class="toneClass" shadow="never">
     <div class="metric-card__label">{{ label }}</div>
     <div class="metric-card__value" :class="{ 'metric-card__value--long': isLong }">
       {{ value }}
@@ -11,13 +11,30 @@
 <script setup lang="ts">
   import { computed } from 'vue'
 
-  const props = defineProps<{
-    label: string
-    value: string | number
-    description?: string
-  }>()
+  export type MetricTone = 'neutral' | 'info' | 'success' | 'warning' | 'danger'
+
+  const props = withDefaults(
+    defineProps<{
+      label: string
+      value: string | number
+      description?: string
+      tone?: MetricTone
+    }>(),
+    { tone: 'neutral' },
+  )
 
   const isLong = computed(() => typeof props.value === 'string' && props.value.length >= 14)
+
+  const isZero = computed(() => {
+    const v = props.value
+    if (typeof v === 'number') return v === 0
+    return v === '0' || v === '' || v == null
+  })
+
+  const toneClass = computed(() => {
+    const tone = isZero.value ? 'neutral' : props.tone
+    return `metric-card--${tone}`
+  })
 </script>
 
 <style scoped>
@@ -25,6 +42,42 @@
     border: 1px solid var(--color-border-light);
     border-radius: var(--radius-content);
     overflow: hidden;
+    position: relative;
+    --metric-tone: var(--color-text-primary);
+  }
+
+  .metric-card::before {
+    content: '';
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 3px;
+    background: var(--metric-tone);
+    opacity: 0;
+    transition: opacity 0.15s ease;
+  }
+
+  .metric-card--neutral {
+    --metric-tone: var(--color-text-secondary);
+  }
+  .metric-card--info {
+    --metric-tone: var(--el-color-primary);
+  }
+  .metric-card--success {
+    --metric-tone: var(--el-color-success);
+  }
+  .metric-card--warning {
+    --metric-tone: var(--el-color-warning);
+  }
+  .metric-card--danger {
+    --metric-tone: var(--el-color-danger);
+  }
+
+  .metric-card:not(.metric-card--neutral)::before {
+    opacity: 1;
+  }
+
+  .metric-card:not(.metric-card--neutral) .metric-card__value {
+    color: var(--metric-tone);
   }
 
   .metric-card__label {
