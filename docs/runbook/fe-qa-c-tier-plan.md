@@ -250,8 +250,288 @@
 
 ## 后续档(D 档预告,不在本次)
 
-- 移动端 `/m/*` 全套
-- 多浏览器矩阵(Chromium / Webkit / Firefox)
-- i18n 切换稳定性(实时切 zh↔en 中操作)
-- 长会话稳定性(8h+ 不刷新)
-- 权限矩阵全跑(ADMIN / OPERATOR / READONLY × 全菜单)
+| 项 | 预估 |
+|---|---|
+| 移动端 `/m/*` 完整 CRUD(本档冒烟已通) | 1-2 天 |
+| 多浏览器矩阵(Chromium / Webkit / Firefox) | 0.5 天 (CI 配置 + 跑) |
+| i18n 切换稳定性(zh↔en 中实时切) | 0.5 天 |
+| 长会话稳定性(8h+ 不刷新) | 1 天(soak test) |
+| 权限矩阵全跑(ADMIN/OPERATOR/VIEWER/CONFIG_ADMIN/AUDITOR/TENANT_USER × 全菜单) | 1-2 天 |
+
+---
+
+## 附录 A:P0 页表单字段清单(从 BE DTO 抽,Day 2 参照)
+
+> 提取自 `~/Downloads/file-batch-system/.../web/request/**`,列校验项给 boundary spec 用。
+
+### `/governance/queues` — ResourceQueueCreateRequest
+
+| 字段 | 类型 | 必填 | 长/范围 | 枚举 |
+|---|---|---|---|---|
+| tenantId | string | @ValidTenantId | — | — |
+| queueCode | string | ✓ | ≤128 | — |
+| queueName | string |  | ≤256 | — |
+| queueType | string | ✓ | ≤32 | IMPORT/EXPORT/DISPATCH/MIXED |
+| maxRunningJobs | int |  | ≥0 | — |
+| maxRunningPartitions | int |  | ≥0 | — |
+| maxQps | int |  | ≥0 | — |
+| workerGroup | string |  | ≤128 | — |
+| resourceTag | string |  | ≤64 | — |
+| priorityPolicy | string |  | ≤32 | FIFO/PRIORITY/FAIR (默认 FIFO) |
+| fairShareWeight | int |  | ≥1 | — |
+| description | string |  | ≤512 | — |
+
+### `/governance/windows` — BatchWindowCreateRequest
+
+字段类似,核心枚举:
+- `endStrategy`: STOP / FINISH_RUNNING / CONTINUE
+- `outOfWindowAction`: WAIT / FAIL
+
+### `/governance/calendars` — CalendarSaveRequest
+
+- `calendarCode`/`calendarName`/`timezone` ≤128/256/64, 三个 @NotBlank
+- `holidayRollRule`: SKIP / NEXT_WORKDAY / PREV_WORKDAY
+- `catchUpPolicy`: NONE / AUTO / MANUAL_APPROVAL
+- `catchUpMaxDays`: int ≥0
+
+### `/observability/alert-routings` — AlertRoutingSaveRequest
+
+- `routeCode`/`team`/`severity`/`receiver` 都 @NotBlank
+- `groupWaitSeconds`/`groupIntervalSeconds`/`repeatIntervalSeconds`: int ≥0
+
+### `/files/templates` — FileTemplateCreateRequest
+
+- `templateCode`/`templateType`/`fileFormatType` @NotBlank
+- `templateType`: IMPORT/EXPORT/SHARED
+- `fileFormatType`: DELIMITED/FIXED_WIDTH/EXCEL/XML/JSON/BINARY
+- `checksumType`: NONE/MD5/SHA-256
+- `compressType`: NONE/ZIP/GZIP
+- `encryptType`: NONE/AES/PGP/CUSTOM
+- `recordLength`/`headerRows`/`footerRows`: int ≥0
+- 17+ boolean 安全字段(default false 由 BE 补,FE 不必传)
+
+### `/files/channels` — FileChannelCreateRequest
+
+- `channelCode`/`channelType` @NotBlank
+- `channelType`: SFTP/API/API_PUSH/EMAIL/NAS/OSS/LOCAL
+- `receiptPolicy`: NONE/SYNC/ASYNC/POLLING
+- `timeoutSeconds`: int ≥0(默认 30)
+
+### `/jobs/pipelines` — PipelineDefinitionSaveRequest
+
+- `jobCode`/`pipelineName`/`pipelineType` @NotBlank
+- `pipelineType`: IMPORT/EXPORT/PROCESS/DISPATCH
+- `steps[]`: 子表单,每项 stepCode/stepName/stageCode/implCode @NotBlank
+
+### `/system/users` — CreateUserAccountRequest
+
+- `tenantId` @ValidTenantId
+- `username`: 2-128 字符,正则 `^[a-zA-Z0-9][a-zA-Z0-9._\-]*$`
+- `password`: 8-256
+- `authoritiesCsv`: ≤512 CSV(ROLE_ADMIN/ROLE_OPERATOR/ROLE_VIEWER/ROLE_TENANT_USER/ROLE_AUDITOR/ROLE_CONFIG_ADMIN)
+
+### `/system/api-keys` — CreateApiKeyRequest
+
+- `keyName`: 1-128 @NotBlank
+- `scopes`: ≤512 (String CSV,**不是 array**)
+- `expiresAt`: Instant ISO-8601(可空)
+
+### `/governance/quota` — QuotaPolicySaveRequest
+
+- `policyCode` @NotBlank ≤128
+- `maxRunningJobsPerTenant`/`maxPartitionsPerTenant`/`maxQpsPerTenant`: int ≥0
+- `fairShareWeight`: int ≥1
+- `description`: ≤512
+
+### `/approvals` — 无 form,操作为 approve/reject(reason 可选)
+
+---
+
+## 附录 B:工具与代码模板
+
+### B.1 form-helpers.ts 骨架
+
+```ts
+// e2e/support/form-helpers.ts
+import { type Page, type Locator, expect } from '@playwright/test'
+
+export async function openDialog(page: Page, triggerName: string | RegExp) {
+  await page.getByRole('button', { name: triggerName }).first().click()
+  await page.waitForTimeout(400) // EP dialog 进场动画
+  return page.locator('.el-dialog').first()
+}
+
+export async function submitForm(dialog: Locator, btnName = /保存|创建|确定/) {
+  await dialog.getByRole('button', { name: btnName }).click({ force: true })
+}
+
+/** 全空提交,期望 disabled OR required toast */
+export async function expectRequiredBlocked(dialog: Locator) {
+  await submitForm(dialog)
+  // 任一信号:1) toast warning, 2) form-item error class, 3) submit 按钮 loading=false 说明被拦
+  const sig = dialog.locator('.el-form-item.is-error, .el-message--warning, .el-message--error').first()
+  await expect(sig).toBeVisible({ timeout: 2000 })
+}
+
+/** 字段超长:输 N+1 字符,期望被截断或 rule message */
+export async function expectMaxLength(dialog: Locator, label: string | RegExp, max: number) {
+  const input = dialog.locator('.el-form-item').filter({ hasText: label }).locator('input,textarea').first()
+  const tooLong = 'a'.repeat(max + 1)
+  await input.fill(tooLong)
+  const value = await input.inputValue()
+  expect(value.length, `${label} expected max ${max}, got ${value.length}`).toBeLessThanOrEqual(max)
+}
+
+/** 类型不匹配:数字框输字母,期望被拒 */
+export async function expectNumericRejection(dialog: Locator, label: string | RegExp) {
+  const input = dialog.locator('.el-form-item').filter({ hasText: label }).locator('input').first()
+  await input.fill('abc')
+  const value = await input.inputValue()
+  expect(value, `${label} should reject non-numeric`).not.toContain('abc')
+}
+```
+
+### B.2 error-injection.ts 骨架
+
+```ts
+// e2e/support/error-injection.ts
+import { type Page } from '@playwright/test'
+
+export type ErrorKind = '400' | '401' | '403' | '404-biz' | '404-route' | '409' | '422' | '500' | 'offline' | 'slow'
+
+const BODY: Record<ErrorKind, { status: number; body: unknown }> = {
+  '400':     { status: 400, body: { code: 'VALIDATION_ERROR', message: '字段不合法', traceId: 'inject' } },
+  '401':     { status: 401, body: { code: 'UNAUTHORIZED', message: '未登录' } },
+  '403':     { status: 403, body: { code: 'FORBIDDEN', message: '权限不足' } },
+  '404-biz': { status: 404, body: { code: 'NOT_FOUND', message: 'queue not found: 999', data: null } },
+  '404-route': { status: 404, body: { message: "No static resource api/console/xxx for request '/api/console/xxx'." } },
+  '409':     { status: 409, body: { code: 'CONFLICT', message: 'queueCode 已存在' } },
+  '422':     { status: 422, body: { code: 'BIZ_INVALID', message: '业务规则失败' } },
+  '500':     { status: 500, body: { code: 'SYSTEM_ERROR', message: '系统错误', traceId: 'inject-500' } },
+  'offline': { status: 0,   body: null },
+  'slow':    { status: 200, body: null }, // 由 fulfill 加延时模拟
+}
+
+/** 用 page.route 拦截匹配的 endpoint,注入指定 kind */
+export async function injectError(
+  page: Page,
+  urlMatcher: string | RegExp,
+  kind: ErrorKind,
+  method: string = 'POST',
+) {
+  await page.route(urlMatcher, async (route) => {
+    if (route.request().method() !== method) return route.continue()
+    if (kind === 'offline') return route.abort('failed')
+    if (kind === 'slow') {
+      await new Promise((r) => setTimeout(r, 12_000))
+      return route.continue()
+    }
+    const { status, body } = BODY[kind]
+    await route.fulfill({
+      status,
+      contentType: 'application/json',
+      body: JSON.stringify(body),
+    })
+  })
+}
+```
+
+### B.3 axe 收紧后单 rule disable 模板
+
+```ts
+// e2e/a11y.spec.ts (扩展)
+import AxeBuilder from '@axe-core/playwright'
+
+const SEVERITY_TO_FAIL = ['critical', 'serious'] as const
+
+const P0_PAGES = [
+  '/login', '/governance/queues', '/governance/quota', '/observability/alert-routings',
+  '/files/templates', '/files/channels', '/jobs/pipelines', '/system/users',
+  '/system/api-keys', '/approvals',
+]
+
+for (const route of P0_PAGES) {
+  test(`a11y ${route}`, async ({ page }) => {
+    await page.goto(route)
+    const builder = new AxeBuilder({ page }).withTags(['wcag2aa'])
+    // EP 上游已知问题豁免(每条标注 issue link)
+    builder.disableRules([
+      'color-contrast', // EP el-button plain 在浅色背景对比不足,EP 上游 #14523
+      'aria-allowed-attr', // el-table 的 role=cell + aria-describedby 误报
+    ])
+    const results = await builder.analyze()
+    const fails = results.violations.filter((v) => SEVERITY_TO_FAIL.includes(v.impact as any))
+    expect(fails, JSON.stringify(fails, null, 2)).toHaveLength(0)
+  })
+}
+```
+
+### B.4 boundary.sh 生成器骨架
+
+```bash
+# e2e-data/boundary.sh
+# 用法: bash boundary.sh /api/console/queues
+# 读 boundary/queues.json,对每字段跑 7 类边界值 → POST → 记录响应
+#
+# 7 类:min-1 / min / min+1 / max-1 / max / max+1 / null / empty
+#
+# 用 jq 模板,对每字段构造 7 个 payload,curl 跑,把 status+code 写到表
+
+ENDPOINT="$1"
+FIELDS_JSON="boundary/$(basename $ENDPOINT).json"
+# ... 生成 7 个 payload * N 字段,跑过 → boundary-report.md
+```
+
+---
+
+## 附录 C:已修过的 C 档相关 baseline(B 档顺手做了的)
+
+C 档启动前,B 档联调阶段已经修了这些 C 档级别问题,Day 1 baseline 跑时**应该看不到回归**:
+
+| 问题 | 修复位置 | 备注 |
+|---|---|---|
+| `interceptors.ts` 把 BizException NOT_FOUND 误报"接口不存在" | `src/api/interceptors.ts` | 用 BizException code 区分 |
+| `TagSearchTab.vue` el-autocomplete scoped slot 触发 ce-NPE | 删 scoped slot | 'ce' render error |
+| `NotificationChannelsTab.vue` channelTypeOptions 用错枚举组 | 改 `notificationChannelType` 优先 | 通知渠道下拉永远空 |
+| `LayoutHeader.vue` locale chip CSS 缺失 → "ENSwitch to English" 粘连 | 加 `.locale-chip-mini` 样式 | 已部署 |
+| BE `DataIntegrityViolationException` 误报 500 | 加 handler 转 400 + 字段名 | 用户填错字段不再 500 |
+| BE `FileChannelConfigUpsertParam` 缺 id setter → MyBatis 500 | 加 `Long id` 字段 | 文件渠道创建可用 |
+| BE file_template / file_channel NOT NULL 字段 BE 不默认 → 500 | service 层补 17+ 字段默认 | 用户不必填隐藏字段 |
+| BE `single-session-enabled=true` 阻塞 e2e | local profile 改 false | 测试基建可跑 |
+| BE alert-routing UPDATE 不 merge → NULL violation | 加 mergeWithExisting | PATCH 语义正确 |
+| BE calendar holiday `bizDate` String→date 不 cast | mapper `#{bizDate}::date` | 节假日 CREATE 不再 500 |
+
+C 档跑出新 baseline 时,**先确认不是这 10 条的回归**再立项。
+
+---
+
+## 附录 D:工具清单
+
+| 已就位 | 版本 | 用途 |
+|---|---|---|
+| `@playwright/test` | ^1.60 | e2e 主框架 |
+| `@axe-core/playwright` | ^4.11 | a11y |
+| `devices['Pixel 5']` (内置) | — | mobile viewport(D 档用) |
+
+**Day 1 需新装**:无。所有依赖现有。
+
+---
+
+## 附录 E:产物清单(Done 后应有)
+
+```
+e2e/support/
+  form-helpers.ts          ← B.1 模板成型
+  error-injection.ts       ← B.2 模板成型
+e2e/
+  a11y.spec.ts             ← 覆盖 P0 10 页(改)
+  error-states.spec.ts     ← 新增,P0 写操作 × 错误注入矩阵
+  <page>-validation.spec.ts × 10  ← 每 P0 页一份表单子矩阵
+e2e-data/
+  boundary.sh              ← B.4 生成器
+  boundary/*.json          ← P0 5+ endpoint 字段表
+docs/runbook/
+  fe-qa-c-tier-report.md   ← 最终红绿矩阵
+  qa-c-keyboard-report.md  ← 人工抽测结论
+  qa-c-baseline.md         ← Day 1 不修先记账
+```
