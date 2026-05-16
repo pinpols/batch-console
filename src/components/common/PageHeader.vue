@@ -13,14 +13,6 @@
     }"
   >
     <div class="page-header__left">
-      <button
-        v-if="showBackButton"
-        class="back-btn"
-        :title="t('pageHeader.backTooltip')"
-        @click="goBack"
-      >
-        <el-icon :size="16"><ArrowLeft /></el-icon>
-      </button>
       <div>
         <h1
           class="title"
@@ -37,8 +29,28 @@
         </p>
       </div>
     </div>
-    <div v-if="$slots.actions" class="actions">
+    <div v-if="$slots.actions || showBackButton || showForwardButton" class="actions">
       <slot name="actions" />
+      <div v-if="showBackButton || showForwardButton" class="nav-arrows">
+        <button
+          v-if="showBackButton"
+          class="nav-arrow-btn"
+          :title="t('pageHeader.backTooltip')"
+          :aria-label="t('pageHeader.backTooltip')"
+          @click="goBack"
+        >
+          <el-icon :size="16"><ArrowLeft /></el-icon>
+        </button>
+        <button
+          v-if="showForwardButton"
+          class="nav-arrow-btn"
+          :title="t('pageHeader.forwardTooltip')"
+          :aria-label="t('pageHeader.forwardTooltip')"
+          @click="goForward"
+        >
+          <el-icon :size="16"><ArrowRight /></el-icon>
+        </button>
+      </div>
     </div>
   </section>
 </template>
@@ -47,7 +59,7 @@
   import { computed, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { useRoute, useRouter } from 'vue-router'
-  import { ArrowLeft } from '@element-plus/icons-vue'
+  import { ArrowLeft, ArrowRight } from '@element-plus/icons-vue'
 
   const { t } = useI18n({ useScope: 'global' })
 
@@ -123,10 +135,12 @@
 
   // history.state 在 vue-router 导航后会变,但不是响应式的;用 ref + route 监听同步
   const historyBackPath = ref<unknown>(null)
+  const historyForwardPath = ref<unknown>(null)
   watch(
     () => route.fullPath,
     () => {
       historyBackPath.value = window.history.state?.back ?? null
+      historyForwardPath.value = window.history.state?.forward ?? null
     },
     { immediate: true },
   )
@@ -143,6 +157,13 @@
     return !!historyBackPath.value
   })
 
+  // 前进按钮:仅在 history 栈里确实有 forward 记录时显示,
+  // 否则就是个永远点不动的死按钮(无法可靠检测浏览器原生 history.length)。
+  const showForwardButton = computed(() => {
+    if (route.meta.hideBackButton === true) return false
+    return !!historyForwardPath.value
+  })
+
   function goBack() {
     const hasBackEntry = !!historyBackPath.value
     if (hasBackEntry) {
@@ -150,6 +171,10 @@
     } else if (props.backTo) {
       router.push(props.backTo)
     }
+  }
+
+  function goForward() {
+    if (historyForwardPath.value) router.forward()
   }
 </script>
 
@@ -254,12 +279,19 @@
     min-width: 0;
   }
 
-  .back-btn {
+  .nav-arrows {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+
+  .nav-arrow-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 32px;
-    height: 32px;
+    width: 28px;
+    height: 28px;
     flex-shrink: 0;
     border: 1px solid var(--color-border-light);
     border-radius: var(--radius-sm, 6px);
@@ -269,7 +301,7 @@
     transition: all 0.2s;
   }
 
-  .back-btn:hover {
+  .nav-arrow-btn:hover {
     color: var(--el-color-primary);
     border-color: var(--el-color-primary);
     background: var(--el-color-primary-light-9);
