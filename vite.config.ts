@@ -123,8 +123,10 @@ export default defineConfig(({ mode }) => {
     allowedHosts: true,
     // 通过 cloudflared / ngrok 等 https 隧道访问时，page 在 :443，但 Vite HMR client
     // 默认尝试 wss://<同 host>:5173 → 端口被隧道拒，浏览器报错后 Vue mount 卡住白屏。
-    // 强制 client 走 443 + wss，让 HMR ws 走和页面同协议同端口。
-    hmr: { clientPort: 443, protocol: 'wss' },
+    // 仅当通过隧道访问时强制 wss/443;直接走 localhost:5173 时用默认 ws,
+    // 否则浏览器去连 wss://localhost:443 没人监听报错(直接看控制台一堆 wss failed)。
+    // VITE_HMR_TUNNEL=1 由用户在跑隧道命令时显式开启(.env.development.local 或临时 env)。
+    hmr: env.VITE_HMR_TUNNEL === '1' ? { clientPort: 443, protocol: 'wss' } : true,
     /**
      * watch.ignored:把 vitepress build 产物挡在 chokidar 之外。
      *

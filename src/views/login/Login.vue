@@ -86,7 +86,7 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, reactive } from 'vue'
+  import { ref, reactive, onMounted } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { CircleClose, Lock, User } from '@element-plus/icons-vue'
 
@@ -95,6 +95,8 @@
   import type { FormInstance } from 'element-plus'
   import { ElMessage } from 'element-plus'
   import { useAuthStore } from '@/stores/auth'
+  import { authApi } from '@/api/auth'
+  import type { AxiosRequestConfig } from 'axios'
   import { lastApiMeta } from '@/utils/lastApiMeta'
 
   const router = useRouter()
@@ -105,6 +107,17 @@
   const loading = ref(false)
   const loginTrace = ref('')
   const form = reactive({ username: '', password: '' })
+
+  // 兜底:登录页挂载时主动调一次 /auth/logout,让后端 Set-Cookie max-age=0
+  // 清掉浏览器里可能残留的失效 HttpOnly cookie。否则 cookie 过期 / 服务端 secret
+  // 轮换后,浏览器会把毒 cookie 自动带给后续 /auth/login,旧版后端 filter 会直接
+  // 401 INVALID_CONSOLE_JWT,用户陷死无法重新登录(必须手清浏览器数据)。
+  // 失败静默 —— 后端可能 401(cookie 已失效)或 5xx,都不影响接下来用户输密码登录。
+  onMounted(() => {
+    // _silent:抑制失败 toast(详见 src/api/interceptors.ts LoggedConfig._silent)。
+    // 失效 cookie 时这次 logout 会 401,不该让用户在登录页一打开就看到"未授权"。
+    void authApi.logout({ _silent: true } as AxiosRequestConfig).catch(() => {})
+  })
 
   const rules = {
     username: [{ required: true, message: t('login.usernameRequired'), trigger: 'blur' }],
