@@ -113,9 +113,13 @@
         <el-table-column
           prop="detailSummary"
           :label="t('auditList.colSummary')"
-          min-width="180"
+          min-width="220"
           show-overflow-tooltip
-        />
+        >
+          <template #default="{ row }">
+            <span class="audit-summary">{{ decodeSummary(row.detailSummary) }}</span>
+          </template>
+        </el-table-column>
       </ProTable>
     </SectionCard>
   </PageContainer>
@@ -131,6 +135,22 @@
     if (!value) return ''
     const key = `enum.${group}.${value}`
     return te(key) ? t(key) : value
+  }
+
+  // BE 返回的 detailSummary 是已经 HTML-encode 过的 JSON 字符串(&quot; / &amp; / &lt; / &gt; / &#39;)
+  // Vue 模板插值会把它当字面量再次显示,导致用户看到的是 {&quot;bucket&quot;:...} 而不是 {"bucket":...}
+  // 在前端做一次解码;如能 parse 成 JSON 则尝试压平显示(掐掉两边花括号也不必,直接原 JSON 字符串够用)
+  function decodeSummary(raw: unknown): string {
+    if (raw == null) return ''
+    const s = String(raw)
+    if (!s) return ''
+    const decoded = s
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&amp;/g, '&')
+    return decoded
   }
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { queryAudits } from '@/api/observabilityQueries'
@@ -269,3 +289,17 @@
 
   useTenantReload(load)
 </script>
+
+<style scoped>
+  .audit-summary {
+    font-family:
+      ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: inline-block;
+    max-width: 100%;
+  }
+</style>
