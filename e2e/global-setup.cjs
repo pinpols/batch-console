@@ -305,6 +305,9 @@ async function globalSetup(config) {
         origin: baseURL,
         localStorage: [
           { name: 'batch-console-tenant-id', value: 'ta' },
+          // FE 的 router beforeEach 检查这个 flag 决定 isLoggedIn(见 stores/auth.ts SESSION_FLAG_KEY)
+          // 必须设,否则即使 HttpOnly cookie 有效,FE 也会直接 redirect 到 /login。
+          { name: 'batch-console-session', value: '1' },
           // D7 Stage B 后 FE 不再读这个 key,保留是为兼容旧 spec 里可能的引用;真正的鉴权走 cookie。
           { name: 'token', value: token ?? '' },
           // 强制中文 locale,避免某些 spec 没走 enterDemoApp 时 i18n 拿到浏览器默认 en-US

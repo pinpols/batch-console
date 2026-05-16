@@ -10,15 +10,15 @@ test.describe('config management (配置管理)', () => {
     await page.goto('/config/management')
     await expectPageTitle(page, '变更与同步')
     // 当前 4 个 tab(配置导入/导出已合并到"配置同步"sync-block)
-    await expect(page.getByRole('tab', { name: '变更日志' })).toBeVisible()
-    await expect(page.getByRole('tab', { name: 'Secrets' })).toBeVisible()
-    await expect(page.getByRole('tab', { name: '配置同步' })).toBeVisible()
-    await expect(page.getByRole('tab', { name: '同步日志' })).toBeVisible()
+    await expect(page.locator('.config-nav__item').filter({ hasText: '变更日志' }).first()).toBeVisible()
+    await expect(page.locator('.config-nav__item').filter({ hasText: 'Secrets' }).first()).toBeVisible()
+    await expect(page.locator('.config-nav__item').filter({ hasText: '配置同步' }).first()).toBeVisible()
+    await expect(page.locator('.config-nav__item').filter({ hasText: '同步日志' }).first()).toBeVisible()
   })
 
   test('变更日志标签页展示表格与刷新按钮', async ({ page }) => {
     await page.goto('/config/management')
-    await expect(page.getByRole('tab', { name: '变更日志' })).toHaveClass(/is-active/)
+    await expect(page.locator('.config-nav__item').filter({ hasText: '变更日志' }).first()).toHaveClass(/is-active/)
     await expect(page.getByRole('button', { name: '刷新' })).toBeVisible()
     // 表格或空态展示(数据库可能无数据)
     await expect(
@@ -28,8 +28,8 @@ test.describe('config management (配置管理)', () => {
 
   test('Secrets 标签页可切换', async ({ page }) => {
     await page.goto('/config/management')
-    await page.getByRole('tab', { name: 'Secrets' }).click()
-    await expect(page.getByRole('tab', { name: 'Secrets' })).toHaveClass(/is-active/)
+    await page.locator('.config-nav__item').filter({ hasText: 'Secrets' }).first().click()
+    await expect(page.locator('.config-nav__item').filter({ hasText: 'Secrets' }).first()).toHaveClass(/is-active/)
     await expect(
       page.locator('.el-table, .empty-state, .table-skeleton').first()
     ).toBeAttached()
@@ -37,20 +37,21 @@ test.describe('config management (配置管理)', () => {
 
   test('配置同步标签页展示导出+导入区块', async ({ page }) => {
     await page.goto('/config/management')
-    await page.getByRole('tab', { name: '配置同步' }).click()
+    await page.locator('.config-nav__item').filter({ hasText: '配置同步' }).first().click()
     // 导出 sync-block
     await expect(page.getByText('配置导出')).toBeVisible()
-    await expect(page.getByRole('button', { name: /下载|导出/ })).toBeVisible()
+    await expect(page.getByRole('button', { name: /^(下载|导出为)/ }).first()).toBeVisible()
     // 导入 sync-block(Payload + 预览变更/确认导入)
-    await expect(page.getByText('Payload')).toBeVisible()
-    await expect(page.getByRole('button', { name: '预览变更' })).toBeVisible()
-    await expect(page.getByRole('button', { name: '确认导入' })).toBeVisible()
+    // payload textarea label 现在是 'JSON' (i18n configSyncTab.payloadLabel)
+    await expect(page.locator('.el-form-item').filter({ hasText: 'JSON' }).first()).toBeVisible()
+    await expect(page.getByRole('button', { name: /预览差异|预览变更/ }).first()).toBeVisible()
+    await expect(page.getByRole('button', { name: /应用到目标|确认导入|应用/ }).first()).toBeVisible()
   })
 
   test('同步日志标签页可切换', async ({ page }) => {
     await page.goto('/config/management')
-    await page.getByRole('tab', { name: '同步日志' }).click()
-    await expect(page.getByRole('tab', { name: '同步日志' })).toHaveClass(/is-active/)
+    await page.locator('.config-nav__item').filter({ hasText: '同步日志' }).first().click()
+    await expect(page.locator('.config-nav__item').filter({ hasText: '同步日志' }).first()).toHaveClass(/is-active/)
     await expect(
       page.locator('.el-table, .empty-state, .table-skeleton').first()
     ).toBeAttached()

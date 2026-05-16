@@ -99,16 +99,16 @@
                 <el-descriptions-item :label="t('quotaPanel.tenantId')">
                   {{ p.tenantId || '—' }}
                 </el-descriptions-item>
-                <el-descriptions-item label="fairShareWeight">
+                <el-descriptions-item :label="t('quotaPanel.fieldFairShareWeight')">
                   {{ num(p.fairShareWeight) }}
                 </el-descriptions-item>
-                <el-descriptions-item label="maxPartitionsPerTenant">
+                <el-descriptions-item :label="t('quotaPanel.fieldMaxPartitionsPerTenant')">
                   {{ num(p.maxPartitionsPerTenant) }}
                 </el-descriptions-item>
-                <el-descriptions-item label="updatedAt">
+                <el-descriptions-item :label="t('quotaPanel.descUpdatedAt')">
                   {{ p.updatedAt || '—' }}
                 </el-descriptions-item>
-                <el-descriptions-item label="enabled">
+                <el-descriptions-item :label="t('quotaPanel.fieldEnabled')">
                   {{ p.enabled ? 'true' : 'false' }}
                 </el-descriptions-item>
               </el-descriptions>
@@ -127,22 +127,28 @@
       destroy-on-close
     >
       <el-form ref="formRef" :model="form" :rules="rules" label-width="190px">
-        <el-form-item label="policyCode" prop="policyCode">
+        <el-form-item :label="t('quotaPanel.fieldPolicyCode')" prop="policyCode">
           <el-input v-model="form.policyCode" :disabled="editingId != null" />
         </el-form-item>
-        <el-form-item label="maxRunningJobsPerTenant" prop="maxRunningJobsPerTenant">
+        <el-form-item
+          :label="t('quotaPanel.fieldMaxRunningJobsPerTenant')"
+          prop="maxRunningJobsPerTenant"
+        >
           <el-input-number v-model="form.maxRunningJobsPerTenant" :min="0" />
         </el-form-item>
-        <el-form-item label="maxPartitionsPerTenant" prop="maxPartitionsPerTenant">
+        <el-form-item
+          :label="t('quotaPanel.fieldMaxPartitionsPerTenant')"
+          prop="maxPartitionsPerTenant"
+        >
           <el-input-number v-model="form.maxPartitionsPerTenant" :min="0" />
         </el-form-item>
-        <el-form-item label="maxQpsPerTenant" prop="maxQpsPerTenant">
+        <el-form-item :label="t('quotaPanel.fieldMaxQpsPerTenant')" prop="maxQpsPerTenant">
           <el-input-number v-model="form.maxQpsPerTenant" :min="0" />
         </el-form-item>
-        <el-form-item label="fairShareWeight" prop="fairShareWeight">
+        <el-form-item :label="t('quotaPanel.fieldFairShareWeight')" prop="fairShareWeight">
           <el-input-number v-model="form.fairShareWeight" :min="1" />
         </el-form-item>
-        <el-form-item label="enabled">
+        <el-form-item :label="t('quotaPanel.fieldEnabled')">
           <el-switch v-model="form.enabled" />
         </el-form-item>
         <el-form-item :label="t('quotaPanel.descriptionLabel')">

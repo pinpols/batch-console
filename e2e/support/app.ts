@@ -69,14 +69,19 @@ export async function enterDemoApp(page: Page) {
   })
 
   await page.goto('/ops/summary', { waitUntil: 'domcontentloaded' })
-  const url = page.url()
-  if (url.includes('/login')) {
-    throw new Error(
-      'Redirected to /login — storageState token is expired or invalid. ' +
-      'Run global-setup with a live backend to refresh it.',
-    )
+  // FE 启动期 router.beforeEach 异步调 /auth/me,domcontentloaded 可能早于此完成 →
+  // URL 短暂停留 /login 然后才弹回 /ops/summary。直接等终态 URL,不要在中间快照。
+  try {
+    await expect(page).toHaveURL(/\/ops\/summary/, { timeout: 15_000 })
+  } catch (e) {
+    if (page.url().includes('/login')) {
+      throw new Error(
+        'Redirected to /login — storageState token is expired or invalid. ' +
+          'Run global-setup with a live backend to refresh it.',
+      )
+    }
+    throw e
   }
-  await expect(page).toHaveURL(/\/ops\/summary/, { timeout: 15_000 })
 
   // 兜底:如 driver overlay 已经渲染就移除
   await page.evaluate(() => {

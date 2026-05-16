@@ -23,7 +23,7 @@ test.describe('审批中心 — 筛选查询', () => {
     const opt = page.locator('.el-select-dropdown__item').first()
     if (await isVisible(opt, 2000)) {
       await opt.click()
-      await page.getByRole('button', { name: '查询' }).click()
+      await page.getByRole('button', { name: '搜索' }).click()
       await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
     }
   })
@@ -37,7 +37,7 @@ test.describe('审批中心 — 筛选查询', () => {
     const opt = page.locator('.el-select-dropdown__item').first()
     if (await isVisible(opt, 2000)) {
       await opt.click()
-      await page.getByRole('button', { name: '查询' }).click()
+      await page.getByRole('button', { name: '搜索' }).click()
       await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
     }
   })
@@ -46,7 +46,7 @@ test.describe('审批中心 — 筛选查询', () => {
     const keyword = page.getByPlaceholder(/审批单号|申请人/)
     if (!(await isVisible(keyword, 2000))) return
     await keyword.fill('test-approval')
-    await page.getByRole('button', { name: '查询' }).click()
+    await page.getByRole('button', { name: '搜索' }).click()
     await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
     await page.getByRole('button', { name: '重置' }).click()
     await expect(keyword).toHaveValue('')
@@ -77,7 +77,7 @@ test.describe('审批中心 — 单条审批操作', () => {
     const input = page.locator('.el-message-box').locator('input,textarea').first()
     if (await isVisible(input, 1000)) await input.fill('e2e 自动化通过')
     await page.locator('.el-message-box').getByRole('button', { name: /^(确定|确认.*)$/ }).click()
-    await expect(page.locator('.el-message')).toBeVisible({ timeout: 8000 })
+    await expect(page.locator('.el-message').first()).toBeVisible({ timeout: 8000 })
     await expect(page.getByRole('columnheader', { name: '审批单号' })).toBeVisible({ timeout: 6000 })
   })
 
@@ -93,7 +93,7 @@ test.describe('审批中心 — 单条审批操作', () => {
     const input = page.locator('.el-message-box').locator('input,textarea').first()
     if (await isVisible(input, 1000)) await input.fill('e2e 自动化拒绝')
     await page.locator('.el-message-box').getByRole('button', { name: /^(确定|确认.*)$/ }).click()
-    await expect(page.locator('.el-message')).toBeVisible({ timeout: 8000 })
+    await expect(page.locator('.el-message').first()).toBeVisible({ timeout: 8000 })
   })
 })
 
@@ -113,7 +113,7 @@ test.describe('审批中心 — 批量审批操作', () => {
     await batchApproveBtn.click()
     await expect(page.locator('.el-message-box')).toBeVisible()
     await page.locator('.el-message-box').getByRole('button', { name: /^(确定|确认.*)$/ }).click()
-    await expect(page.locator('.el-message')).toBeVisible({ timeout: 8000 })
+    await expect(page.locator('.el-message').first()).toBeVisible({ timeout: 8000 })
   })
 
   test('批量拒绝：勾选第一行 → 批量拒绝 → 填原因 → 提交 → toast', async ({ page }) => {
@@ -127,7 +127,7 @@ test.describe('审批中心 — 批量审批操作', () => {
     const input = page.locator('.el-message-box').locator('input,textarea').first()
     if (await isVisible(input, 1000)) await input.fill('e2e 批量拒绝')
     await page.locator('.el-message-box').getByRole('button', { name: /^(确定|确认.*)$/ }).click()
-    await expect(page.locator('.el-message')).toBeVisible({ timeout: 8000 })
+    await expect(page.locator('.el-message').first()).toBeVisible({ timeout: 8000 })
   })
 
   test('无勾选时批量按钮禁用', async ({ page }) => {

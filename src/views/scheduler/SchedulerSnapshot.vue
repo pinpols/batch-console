@@ -108,18 +108,34 @@
           />
           <el-table-column
             prop="maxRunningJobsPerTenant"
-            label="maxRunningJobsPerTenant"
+            :label="t('schedulerSnapshot.colMaxRunningJobsPerTenant')"
             width="190"
           />
-          <el-table-column prop="burstLimit" label="burstLimit" width="110" />
-          <el-table-column prop="partitionBurstLimit" label="partitionBurstLimit" width="150" />
-          <el-table-column prop="quotaBurstRemaining" label="quotaBurstRemaining" width="160" />
+          <el-table-column
+            prop="burstLimit"
+            :label="t('schedulerSnapshot.colBurstLimit')"
+            width="110"
+          />
+          <el-table-column
+            prop="partitionBurstLimit"
+            :label="t('schedulerSnapshot.colPartitionBurstLimit')"
+            width="150"
+          />
+          <el-table-column
+            prop="quotaBurstRemaining"
+            :label="t('schedulerSnapshot.colQuotaBurstRemaining')"
+            width="160"
+          />
           <el-table-column
             prop="quotaBurstPeakBorrowed"
-            label="quotaBurstPeakBorrowed"
+            :label="t('schedulerSnapshot.colQuotaBurstPeakBorrowed')"
             width="180"
           />
-          <el-table-column prop="groupSharedMaxRunningJobs" label="groupSharedMax" width="130" />
+          <el-table-column
+            prop="groupSharedMaxRunningJobs"
+            :label="t('schedulerSnapshot.colGroupSharedMax')"
+            width="130"
+          />
           <DatetimeColumn
             prop="quotaResetWindowExpiresAt"
             :label="t('schedulerSnapshot.colQuotaWindow')"
@@ -182,20 +198,36 @@
             :label="t('schedulerSnapshot.colActiveJobs')"
             width="110"
           />
-          <el-table-column prop="maxRunningJobs" label="maxRunningJobs" width="150" />
+          <el-table-column
+            prop="maxRunningJobs"
+            :label="t('schedulerSnapshot.colMaxRunningJobs')"
+            width="150"
+          />
           <el-table-column
             prop="effectiveMaxRunningJobs"
-            label="effectiveMaxRunningJobs"
+            :label="t('schedulerSnapshot.colEffectiveMaxRunningJobs')"
             width="190"
           />
-          <el-table-column prop="burstLimit" label="burstLimit" width="110" />
-          <el-table-column prop="quotaBurstRemaining" label="quotaBurstRemaining" width="160" />
+          <el-table-column
+            prop="burstLimit"
+            :label="t('schedulerSnapshot.colBurstLimit')"
+            width="110"
+          />
+          <el-table-column
+            prop="quotaBurstRemaining"
+            :label="t('schedulerSnapshot.colQuotaBurstRemaining')"
+            width="160"
+          />
           <el-table-column
             prop="quotaBurstPeakBorrowed"
-            label="quotaBurstPeakBorrowed"
+            :label="t('schedulerSnapshot.colQuotaBurstPeakBorrowed')"
             width="180"
           />
-          <el-table-column prop="groupSharedMaxRunningJobs" label="groupSharedMax" width="130" />
+          <el-table-column
+            prop="groupSharedMaxRunningJobs"
+            :label="t('schedulerSnapshot.colGroupSharedMax')"
+            width="130"
+          />
           <DatetimeColumn
             prop="quotaResetWindowExpiresAt"
             :label="t('schedulerSnapshot.colQuotaWindow')"
@@ -305,29 +337,54 @@
               </div>
             </template>
           </el-table-column>
-          <el-table-column prop="activeJobs" label="activeJobs" width="100" align="right" />
+          <el-table-column
+            prop="activeJobs"
+            :label="t('schedulerSnapshot.colActiveJobs')"
+            width="100"
+            align="right"
+          />
           <el-table-column
             prop="activePartitions"
-            label="activePartitions"
+            :label="t('schedulerSnapshot.colActivePartitions')"
             width="130"
             align="right"
           />
           <el-table-column
             prop="effectiveJobCap"
-            label="effectiveJobCap"
+            :label="t('schedulerSnapshot.colEffectiveJobCap')"
             width="130"
             align="right"
           />
-          <el-table-column prop="maxJobsBase" label="maxJobsBase" width="120" align="right" />
-          <el-table-column prop="burstLimit" label="burstLimit" width="110" align="right" />
+          <el-table-column
+            prop="maxJobsBase"
+            :label="t('schedulerSnapshot.colMaxJobsBase')"
+            width="120"
+            align="right"
+          />
+          <el-table-column
+            prop="burstLimit"
+            :label="t('schedulerSnapshot.colBurstLimit')"
+            width="110"
+            align="right"
+          />
           <el-table-column
             prop="groupActiveJobs"
-            label="groupActiveJobs"
+            :label="t('schedulerSnapshot.colGroupActiveJobs')"
             width="140"
             align="right"
           />
-          <el-table-column prop="groupMaxJobs" label="groupMaxJobs" width="120" align="right" />
-          <el-table-column prop="onlineWorkers" label="onlineWorkers" width="120" align="right" />
+          <el-table-column
+            prop="groupMaxJobs"
+            :label="t('schedulerSnapshot.colGroupMaxJobs')"
+            width="120"
+            align="right"
+          />
+          <el-table-column
+            prop="onlineWorkers"
+            :label="t('schedulerSnapshot.colOnlineWorkers')"
+            width="120"
+            align="right"
+          />
         </el-table>
         <TablePagerBar
           :page="pageHistory"

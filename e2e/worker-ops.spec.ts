@@ -27,7 +27,7 @@ test.describe('Worker 管理 — 筛选查询', () => {
     const opt = page.locator('.el-select-dropdown__item').first()
     if (await isVisible(opt, 2000)) {
       await opt.click()
-      await page.getByRole('button', { name: '查询' }).click()
+      await page.getByRole('button', { name: '搜索' }).click()
       await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
     }
   })
@@ -39,7 +39,7 @@ test.describe('Worker 管理 — 筛选查询', () => {
       .getByRole('textbox')
     if (!(await isVisible(input, 2000))) return
     await input.fill('worker')
-    await page.getByRole('button', { name: '查询' }).click()
+    await page.getByRole('button', { name: '搜索' }).click()
     await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
     await page.getByRole('button', { name: '重置' }).click()
     await expect(input).toHaveValue('')
@@ -64,7 +64,7 @@ test.describe('Worker 管理 — Worker 操作', () => {
     await drainBtn.click()
     await expect(page.locator('.el-message-box')).toContainText('drain', { ignoreCase: true })
     await page.locator('.el-message-box').getByRole('button', { name: /^(确定|确认.*)$/ }).click()
-    await expect(page.locator('.el-message')).toBeVisible({ timeout: 8000 })
+    await expect(page.locator('.el-message').first()).toBeVisible({ timeout: 8000 })
   })
 
   test('强制下线 → 确认 → toast', async ({ page }) => {
@@ -76,7 +76,7 @@ test.describe('Worker 管理 — Worker 操作', () => {
     await offlineBtn.click()
     await expect(page.locator('.el-message-box')).toBeVisible()
     await page.locator('.el-message-box').getByRole('button', { name: /^(确定|确认.*)$/ }).click()
-    await expect(page.locator('.el-message')).toBeVisible({ timeout: 8000 })
+    await expect(page.locator('.el-message').first()).toBeVisible({ timeout: 8000 })
   })
 
   test('接管 → 确认 → toast', async ({ page }) => {
@@ -88,7 +88,7 @@ test.describe('Worker 管理 — Worker 操作', () => {
     await takeoverBtn.click()
     await expect(page.locator('.el-message-box')).toBeVisible()
     await page.locator('.el-message-box').getByRole('button', { name: /^(确定|确认.*)$/ }).click()
-    await expect(page.locator('.el-message')).toBeVisible({ timeout: 8000 })
+    await expect(page.locator('.el-message').first()).toBeVisible({ timeout: 8000 })
   })
 
   test('预热 → toast（无确认弹窗）', async ({ page }) => {
@@ -98,7 +98,7 @@ test.describe('Worker 管理 — Worker 操作', () => {
       .first()
     if (!(await isVisible(warmupBtn))) return
     await warmupBtn.click()
-    await expect(page.locator('.el-message')).toBeVisible({ timeout: 8000 })
+    await expect(page.locator('.el-message').first()).toBeVisible({ timeout: 8000 })
   })
 })
 
@@ -125,7 +125,7 @@ test.describe('Worker 管理 — 文件渠道', () => {
     const opt = page.locator('.el-select-dropdown__item').first()
     if (await isVisible(opt, 2000)) {
       await opt.click()
-      await page.getByRole('button', { name: '查询' }).click()
+      await page.getByRole('button', { name: '搜索' }).click()
       await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
     }
   })

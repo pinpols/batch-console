@@ -30,7 +30,7 @@ test.describe('approval actions (审批操作)', () => {
     if (await isVisible(keyword, 2000)) {
       await keyword.fill('test')
     }
-    await page.getByRole('button', { name: '查询' }).click()
+    await page.getByRole('button', { name: '搜索' }).click()
     // 查询后页面不崩溃
     await expect(page.getByRole('button', { name: '刷新' })).toBeVisible()
   })

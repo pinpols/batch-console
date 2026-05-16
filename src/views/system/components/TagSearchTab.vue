@@ -37,6 +37,9 @@
           <el-form-item :label="t('tagSearchTab.tagKeyLabel')">
             <!-- tagKey 改用 autocomplete:已注册 tagKey 作为下拉建议,省掉原"已注册 Key"独立面板。
                  BE 一开始就预拉了 tagKeys 列表,这里直接消费,0 额外请求。 -->
+            <!-- el-autocomplete 的 #default 槽在 popper teleport 渲染,
+                 scoped-slot 上下文易丢失(currentRenderingInstance 为 null → 'ce' NPE)。
+                 我们的建议项只展示 value 纯文本,EP 默认渲染等价,去掉自定义槽。 -->
             <el-autocomplete
               v-model="searchForm.tagKey"
               :fetch-suggestions="suggestTagKeys"
@@ -45,11 +48,7 @@
               class="tag-search__key"
               clearable
               @keyup.enter="doSearch"
-            >
-              <template #default="{ item }">
-                <span class="tag-search__suggest">{{ item.value }}</span>
-              </template>
-            </el-autocomplete>
+            />
           </el-form-item>
           <el-form-item :label="t('tagSearchTab.tagValueLabel')">
             <el-input

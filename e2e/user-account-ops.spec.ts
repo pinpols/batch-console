@@ -43,7 +43,7 @@ test.describe('用户账户 — 筛选查询', () => {
       .filter({ hasText: '关键字' })
       .getByRole('textbox')
     await input.fill('admin')
-    await page.getByRole('button', { name: '查询' }).click()
+    await page.getByRole('button', { name: '搜索' }).click()
     await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
   })
 
@@ -63,7 +63,7 @@ test.describe('用户账户 — 筛选查询', () => {
       .filter({ hasText: '关键字' })
       .getByRole('textbox')
     await input.fill('admin')
-    await page.getByRole('button', { name: '查询' }).click()
+    await page.getByRole('button', { name: '搜索' }).click()
     await page.getByRole('button', { name: '重置' }).first().click()
     await expect(input).toHaveValue('')
     await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })

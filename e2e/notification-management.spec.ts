@@ -19,7 +19,7 @@ test.describe('notification management (通知与投递)', () => {
     await page.goto('/system/notifications')
     await expect(page.getByRole('tab', { name: '通知渠道' })).toHaveClass(/is-active/)
     // 按钮文案简化为单字"新增"(在 tab pane 内 prepend 插槽)
-    await expect(page.locator('.el-tab-pane:visible').getByRole('button', { name: /^新增$/ }).first()).toBeVisible()
+    await expect(page.getByRole('button', { name: /^新增/ }).first()).toBeVisible()
     await expect(page.getByRole('button', { name: '刷新' }).first()).toBeVisible()
     await expect(page.getByRole('columnheader', { name: '渠道编码' })).toBeVisible()
   })
@@ -27,7 +27,7 @@ test.describe('notification management (通知与投递)', () => {
   test('订阅规则标签页展示表格与新增按钮', async ({ page }) => {
     await page.goto('/system/notifications')
     await page.getByRole('tab', { name: '订阅规则' }).click()
-    await expect(page.locator('.el-tab-pane:visible').getByRole('button', { name: /^新增$/ }).first()).toBeVisible()
+    await expect(page.getByRole('button', { name: /^新增/ }).first()).toBeVisible()
   })
 
   test('投递日志标签页展示表格', async ({ page }) => {

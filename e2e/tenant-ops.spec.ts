@@ -18,7 +18,7 @@ test.describe('租户管理 — 筛选查询', () => {
     const input = page.getByPlaceholder(/tenantId|名称/)
     if (!(await isVisible(input, 2000))) return
     await input.fill('test')
-    await page.getByRole('button', { name: '查询' }).click()
+    await page.getByRole('button', { name: '搜索' }).click()
     await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
   })
 
@@ -32,7 +32,7 @@ test.describe('租户管理 — 筛选查询', () => {
     const opt = page.locator('.el-select-dropdown__item').first()
     if (await isVisible(opt, 2000)) {
       await opt.click()
-      await page.getByRole('button', { name: '查询' }).click()
+      await page.getByRole('button', { name: '搜索' }).click()
       await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
     }
     await page.getByRole('button', { name: '重置' }).click()
@@ -65,7 +65,7 @@ test.describe('租户管理 — 新建租户', () => {
     if (await isVisible(pwdInput, 1000)) await pwdInput.fill('Test@2026e2e1')
 
     await page.getByRole('button', { name: /保存|创建/ }).click()
-    await expect(page.locator('.el-message')).toBeVisible({ timeout: 8000 })
+    await expect(page.locator('.el-message').first()).toBeVisible({ timeout: 8000 })
   })
 })
 
@@ -85,7 +85,7 @@ test.describe('租户管理 — 编辑租户', () => {
     await nameInput.clear()
     await nameInput.fill('E2E Tenant Updated')
     await page.getByRole('button', { name: /保存|确定/ }).click()
-    await expect(page.locator('.el-message')).toBeVisible({ timeout: 8000 })
+    await expect(page.locator('.el-message').first()).toBeVisible({ timeout: 8000 })
   })
 })
 
@@ -106,7 +106,7 @@ test.describe('租户管理 — 状态切换', () => {
     await expect(page.locator('.el-message-box')).toBeVisible()
     await expect(page.locator('.el-message-box')).toContainText('暂停')
     await page.locator('.el-message-box').getByRole('button', { name: /^(确定|确认.*)$/ }).click()
-    await expect(page.locator('.el-message')).toBeVisible({ timeout: 8000 })
+    await expect(page.locator('.el-message').first()).toBeVisible({ timeout: 8000 })
   })
 
   test('恢复租户 → 确认 → toast', async ({ page }) => {
@@ -118,7 +118,7 @@ test.describe('租户管理 — 状态切换', () => {
     await resumeBtn.click()
     await expect(page.locator('.el-message-box')).toBeVisible()
     await page.locator('.el-message-box').getByRole('button', { name: /^(确定|确认.*)$/ }).click()
-    await expect(page.locator('.el-message')).toBeVisible({ timeout: 8000 })
+    await expect(page.locator('.el-message').first()).toBeVisible({ timeout: 8000 })
   })
 
   test('设为当前租户', async ({ page }) => {
@@ -143,12 +143,13 @@ test.describe('租户管理 — 初始化配置（试运行）', () => {
   })
 
   test('初始化配置 → 选类型 → 试运行 → 结果展示', async ({ page }) => {
-    const initBtn = page
-      .locator('.table-actions')
-      .getByRole('button', { name: '初始化' })
-      .first()
-    if (!(await isVisible(initBtn))) return
-    await initBtn.click()
+    // 行操作"初始化配置"现在收纳在"更多"下拉菜单
+    const moreBtn = page.locator('.table-actions').getByRole('button', { name: /^更多/ }).first()
+    if (!(await isVisible(moreBtn))) return
+    await moreBtn.click()
+    const initItem = page.getByRole('menuitem', { name: '初始化配置' }).first()
+    if (!(await isVisible(initItem, 2000))) return
+    await initItem.click()
     await expect(page.getByText('初始化租户配置')).toBeVisible()
 
     // 选第一个配置类型 checkbox

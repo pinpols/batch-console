@@ -7,14 +7,14 @@ test.describe('navigation and tabs', () => {
   })
 
   test('侧边栏导航可切换到关键页面', async ({ page }) => {
-    // 菜单分组改名:执行与观测 → 执行与监控
-    await page.getByRole('menuitem', { name: '执行与监控' }).first().click()
+    // 菜单分组(IA 调整后):工作台/运行/作业与工作流/文件/告警与投递/...
+    await page.getByRole('menuitem', { name: '运行' }).first().click()
     await page.getByRole('menuitem', { name: /工作流运行/ }).first().click()
     await expect(page).toHaveURL(/\/monitor\/workflow-runs/)
     await expectPageTitle(page, '工作流运行')
 
-    // 切到观测查询组下的 Outbox
-    await page.getByRole('menuitem', { name: '观测查询' }).first().click()
+    // 切到告警与投递组下的 Outbox
+    await page.getByRole('menuitem', { name: /告警与投递/ }).first().click()
     await page.getByRole('menuitem', { name: 'Outbox' }).first().click()
     await expect(page).toHaveURL(/\/observability\/outbox/)
     await expectPageTitle(page, 'Outbox')
@@ -47,8 +47,8 @@ test.describe('navigation and tabs', () => {
 
   test('命令面板可以打开和关闭', async ({ page }) => {
     await page.getByRole('button', { name: '打开命令面板' }).click()
-    await expect(page.getByPlaceholder('搜索菜单、最近页面;纯数字可跳 Job 实例详情')).toBeVisible()
+    await expect(page.getByPlaceholder(/搜索菜单/)).toBeVisible()
     await page.keyboard.press('Escape')
-    await expect(page.getByPlaceholder('搜索菜单、最近页面;纯数字可跳 Job 实例详情')).toBeHidden()
+    await expect(page.getByPlaceholder(/搜索菜单/)).toBeHidden()
   })
 })

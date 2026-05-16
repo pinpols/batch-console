@@ -407,15 +407,38 @@ export function applyApiInterceptors(client: AxiosInstance): void {
             duration: 7500,
           })
         } else if (status === 404) {
-          const url = (error as AxiosError)?.config?.url
-          showErrorToast({
-            title: '接口不存在',
-            message: url
-              ? `后端未提供该接口或版本不匹配：${url}。请确认后端已部署最新版本，并检查代理/网关路由配置。`
-              : `后端未提供该接口或版本不匹配。请确认后端已部署最新版本，并检查代理/网关路由配置。`,
-            traceId: extractErrorTrace(error),
-            duration: 7500,
-          })
+          // 区分两类 404:
+          //   a) 后端 BizException(NOT_FOUND) — 路由 OK,但资源(分区/实例/租户)不存在,
+          //      响应体形如 { code:"NOT_FOUND", message:"partition not found", data:null }。
+          //      这种应该把领域 message 直接展示给用户,不是吓人的"接口不存在"。
+          //   b) Spring 默认 404(No static resource) — 路由真的没注册,
+          //      由 extractHttpErrorMessage() 改写为「接口不存在或后端版本不匹配(...)」。
+          const body = (error as AxiosError)?.response?.data as
+            | { code?: unknown; message?: unknown; data?: unknown }
+            | undefined
+          const isBizNotFound =
+            body != null &&
+            typeof body === 'object' &&
+            typeof body.code === 'string' &&
+            body.code.length > 0 &&
+            'data' in body
+          if (isBizNotFound) {
+            showErrorToast({
+              title: '资源不存在',
+              message: msg || '请求的资源在后端未找到。',
+              traceId: extractErrorTrace(error),
+            })
+          } else {
+            const url = (error as AxiosError)?.config?.url
+            showErrorToast({
+              title: '接口不存在',
+              message: url
+                ? `后端未提供该接口或版本不匹配：${url}。请确认后端已部署最新版本，并检查代理/网关路由配置。`
+                : `后端未提供该接口或版本不匹配。请确认后端已部署最新版本，并检查代理/网关路由配置。`,
+              traceId: extractErrorTrace(error),
+              duration: 7500,
+            })
+          }
         } else {
           showErrorToast({
             title: status ? `请求失败（HTTP ${status}）` : '请求失败',

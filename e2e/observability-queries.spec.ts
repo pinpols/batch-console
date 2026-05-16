@@ -13,7 +13,9 @@ test.describe('observability query tabs (可观测性查询)', () => {
   })
 
   test('Dead Letters 标签展示表格与刷新按钮', async ({ page }) => {
+    // 默认 tab 改为"执行日志",需点击切换到 Dead Letters
     await page.goto('/observability/queries')
+    await page.getByRole('tab', { name: 'Dead Letters' }).click()
     await expect(page.getByRole('tab', { name: 'Dead Letters' })).toHaveClass(/is-active/)
     await expect(page.getByRole('button', { name: '刷新' })).toBeVisible()
   })

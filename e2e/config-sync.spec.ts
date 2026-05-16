@@ -13,14 +13,14 @@ test.describe('配置同步', () => {
   })
 
   test('配置同步 tab 可切换 + 导出/导入区块可见', async ({ page }) => {
-    await page.getByRole('tab', { name: '配置同步' }).click()
-    await expect(page.getByRole('tab', { name: '配置同步' })).toHaveClass(/is-active/)
+    await page.locator('.config-nav__item').filter({ hasText: '配置同步' }).first().click()
+    await expect(page.locator('.config-nav__item').filter({ hasText: '配置同步' }).first()).toHaveClass(/is-active/)
     // 导出区块标识
     await expect(page.getByText(/配置导出|导出/).first()).toBeVisible({ timeout: 6000 })
   })
 
   test('导出按钮触发 POST /sync/export', async ({ page }) => {
-    await page.getByRole('tab', { name: '配置同步' }).click()
+    await page.locator('.config-nav__item').filter({ hasText: '配置同步' }).first().click()
     const exportBtn = page.getByRole('button', { name: /^(导出|下载导出|导出当前配置)$/ }).first()
     if (!(await isVisible(exportBtn, 4000))) return
 
@@ -34,7 +34,7 @@ test.describe('配置同步', () => {
   })
 
   test('预览变更按钮触发 POST /sync/preview', async ({ page }) => {
-    await page.getByRole('tab', { name: '配置同步' }).click()
+    await page.locator('.config-nav__item').filter({ hasText: '配置同步' }).first().click()
     // 填一个最小 payload
     const ta = page.locator('.el-textarea__inner').first()
     if (!(await isVisible(ta, 4000))) return

@@ -122,8 +122,9 @@ test.describe('报表导出中心 — 下载交互', () => {
       setTimeout(() => route.continue(), 2000)
     })
     await firstBtn.click()
-    // 其余卡片的 button 此时应为 disabled
+    // 其余卡片的 button 此时应为 disabled(el-button disabled 反映在 aria-disabled 属性)
     const secondCard = cards.nth(1)
-    await expect(secondCard).toHaveAttribute('disabled', '')
+    const secondBtn = secondCard.locator('.el-button', { hasText: '下载' })
+    await expect(secondBtn).toHaveAttribute('aria-disabled', 'true', { timeout: 3000 })
   })
 })

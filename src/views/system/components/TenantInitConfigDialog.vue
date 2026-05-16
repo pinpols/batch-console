@@ -37,7 +37,7 @@
           }}
         </div>
       </el-form-item>
-      <el-form-item label="Spec JSON" prop="specJson">
+      <el-form-item :label="t('tenantInitConfigDialog.fieldSpecJson')" prop="specJson">
         <el-input
           v-model="form.specJson"
           type="textarea"

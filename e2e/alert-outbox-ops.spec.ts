@@ -23,7 +23,7 @@ test.describe('告警 — 筛选查询', () => {
     const opt = page.locator('.el-select-dropdown__item').first()
     if (await isVisible(opt, 2000)) {
       await opt.click()
-      await page.getByRole('button', { name: '查询' }).click()
+      await page.getByRole('button', { name: '搜索' }).click()
       await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
     }
   })
@@ -37,7 +37,7 @@ test.describe('告警 — 筛选查询', () => {
     const opt = page.locator('.el-select-dropdown__item').first()
     if (await isVisible(opt, 2000)) {
       await opt.click()
-      await page.getByRole('button', { name: '查询' }).click()
+      await page.getByRole('button', { name: '搜索' }).click()
       await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
     }
   })
@@ -46,7 +46,7 @@ test.describe('告警 — 筛选查询', () => {
     const input = page.locator('.el-form-item').filter({ hasText: 'Trace' }).getByRole('textbox')
     if (!(await isVisible(input, 2000))) return
     await input.fill('trace-test')
-    await page.getByRole('button', { name: '查询' }).click()
+    await page.getByRole('button', { name: '搜索' }).click()
     await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
     await page.getByRole('button', { name: '重置' }).click()
     await expect(input).toHaveValue('')
@@ -76,7 +76,7 @@ test.describe('告警 — 操作流', () => {
     const input = page.locator('.el-message-box').locator('input,textarea').first()
     if (await isVisible(input, 1000)) await input.fill('e2e 自动化确认')
     await page.locator('.el-message-box').getByRole('button', { name: /^(确定|确认.*)$/ }).click()
-    await expect(page.locator('.el-message')).toBeVisible({ timeout: 8000 })
+    await expect(page.locator('.el-message').first()).toBeVisible({ timeout: 8000 })
   })
 
   test('静默告警 → 填写说明 → 提交 → toast', async ({ page }) => {
@@ -90,7 +90,7 @@ test.describe('告警 — 操作流', () => {
     const input = page.locator('.el-message-box').locator('input,textarea').first()
     if (await isVisible(input, 1000)) await input.fill('e2e 自动化静默')
     await page.locator('.el-message-box').getByRole('button', { name: /^(确定|确认.*)$/ }).click()
-    await expect(page.locator('.el-message')).toBeVisible({ timeout: 8000 })
+    await expect(page.locator('.el-message').first()).toBeVisible({ timeout: 8000 })
   })
 
   test('关闭告警 → 填写说明 → 提交 → toast', async ({ page }) => {
@@ -104,7 +104,7 @@ test.describe('告警 — 操作流', () => {
     const input = page.locator('.el-message-box').locator('input,textarea').first()
     if (await isVisible(input, 1000)) await input.fill('e2e 自动化关闭')
     await page.locator('.el-message-box').getByRole('button', { name: /^(确定|确认.*)$/ }).click()
-    await expect(page.locator('.el-message')).toBeVisible({ timeout: 8000 })
+    await expect(page.locator('.el-message').first()).toBeVisible({ timeout: 8000 })
   })
 })
 
@@ -130,7 +130,7 @@ test.describe('Outbox — Tab 与筛选', () => {
     const input = page.locator('.el-form-item').filter({ hasText: '关键字' }).getByRole('textbox')
     if (!(await isVisible(input, 2000))) return
     await input.fill('test')
-    await page.getByRole('button', { name: '查询' }).click()
+    await page.getByRole('button', { name: '搜索' }).click()
     await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
   })
 
@@ -144,7 +144,7 @@ test.describe('Outbox — Tab 与筛选', () => {
     const opt = page.locator('.el-select-dropdown__item').first()
     if (await isVisible(opt, 2000)) {
       await opt.click()
-      await page.getByRole('button', { name: '查询' }).click()
+      await page.getByRole('button', { name: '搜索' }).click()
       await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
     }
   })
@@ -154,7 +154,7 @@ test.describe('Outbox — Tab 与筛选', () => {
     const input = page.locator('.el-form-item').filter({ hasText: '关键字' }).getByRole('textbox')
     if (!(await isVisible(input, 2000))) return
     await input.fill('test')
-    await page.getByRole('button', { name: '查询' }).click()
+    await page.getByRole('button', { name: '搜索' }).click()
     await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
   })
 

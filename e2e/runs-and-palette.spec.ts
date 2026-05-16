@@ -44,7 +44,7 @@ test.describe('/runs 全部运行聚合页', () => {
         req.url().includes('instanceStatus=FAILED'),
       { timeout: 5000 },
     )
-    await page.getByRole('radio', { name: '失败' }).click()
+    await page.locator('.el-radio-button').filter({ hasText: '失败' }).first().click()
     const req = await reqPromise
     expect(req.url()).toContain('instanceStatus=FAILED')
   })
@@ -59,7 +59,7 @@ test.describe('/runs 全部运行聚合页', () => {
         req.url().includes('runStatus=RUNNING'),
       { timeout: 5000 },
     )
-    await page.getByRole('radio', { name: '运行中' }).click()
+    await page.locator('.el-radio-button').filter({ hasText: '运行中' }).first().click()
     const req = await reqPromise
     expect(req.url()).toContain('runStatus=RUNNING')
   })
