@@ -62,9 +62,14 @@
         <StatusTag :value="String(row.requestStatus ?? '')" category="approval" />
       </template>
     </el-table-column>
-    <el-table-column prop="traceId" label="Trace" min-width="150" show-overflow-tooltip />
+    <el-table-column
+      prop="traceId"
+      :label="t('approvals.catchUpColTrace')"
+      min-width="150"
+      show-overflow-tooltip
+    />
     <DatetimeColumn prop="createdAt" :label="t('approvals.catchUpColCreatedAt')" width="160" />
-    <DatetimeColumn prop="updatedAt" label="updatedAt" width="160" />
+    <DatetimeColumn prop="updatedAt" :label="t('approvals.catchUpColUpdatedAt')" width="160" />
   </ProTable>
 </template>
 

@@ -13,7 +13,7 @@ import { enterDemoApp, expectPageTitle, isVisible } from './support/app'
 
 // ─── 辅助：等待 toast（成功或失败均接受，只要 UI 有反馈）──────────
 async function waitForAnyToast(page: import('@playwright/test').Page) {
-  await expect(page.locator('.el-message')).toBeVisible({ timeout: 8000 })
+  await expect(page.locator('.el-message').first()).toBeVisible({ timeout: 8000 })
 }
 
 async function waitForSuccessToast(page: import('@playwright/test').Page) {
@@ -31,7 +31,7 @@ test.describe('配置发布 — 筛选与查询', () => {
   test('Key 模糊搜索 → 表格按条件刷新', async ({ page }) => {
     const keyInput = page.locator('.el-form-item').filter({ hasText: 'Key' }).getByRole('textbox')
     await keyInput.fill('test')
-    await page.getByRole('button', { name: '查询' }).click()
+    await page.getByRole('button', { name: '搜索' }).click()
     await expect(page.getByRole('columnheader', { name: 'Key' })).toBeVisible()
   })
 
@@ -41,7 +41,7 @@ test.describe('配置发布 — 筛选与查询', () => {
       .filter({ hasText: '名称' })
       .getByRole('textbox')
     await nameInput.fill('config')
-    await page.getByRole('button', { name: '查询' }).click()
+    await page.getByRole('button', { name: '搜索' }).click()
     await expect(page.getByRole('columnheader', { name: '名称' })).toBeVisible()
   })
 
@@ -55,7 +55,7 @@ test.describe('配置发布 — 筛选与查询', () => {
     if (await isVisible(firstOpt, 2000)) {
       const label = await firstOpt.textContent()
       await firstOpt.click()
-      await page.getByRole('button', { name: '查询' }).click()
+      await page.getByRole('button', { name: '搜索' }).click()
       // 表格展示对应状态标签
       await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
       // 重置后状态下拉清空

@@ -24,7 +24,7 @@ test.describe('Job Instance — 筛选查询', () => {
     if (await isVisible(input.getByRole('textbox').first(), 2000)) {
       await input.getByRole('textbox').first().fill('DEMO')
     }
-    await page.getByRole('button', { name: '查询' }).click()
+    await page.getByRole('button', { name: '搜索' }).click()
     await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
   })
 
@@ -37,7 +37,7 @@ test.describe('Job Instance — 筛选查询', () => {
     const opt = page.locator('.el-select-dropdown__item').first()
     if (await isVisible(opt, 2000)) {
       await opt.click()
-      await page.getByRole('button', { name: '查询' }).click()
+      await page.getByRole('button', { name: '搜索' }).click()
       await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
     }
   })
@@ -101,7 +101,7 @@ test.describe('Job Instance 详情 — 操作流', () => {
     await expect(page.locator('.el-message-box')).toBeVisible()
     await expect(page.locator('.el-message-box')).toContainText('重跑')
     await page.locator('.el-message-box').getByRole('button', { name: /^(确定|确认.*)$/ }).click()
-    await expect(page.locator('.el-message')).toBeVisible({ timeout: 8000 })
+    await expect(page.locator('.el-message').first()).toBeVisible({ timeout: 8000 })
   })
 
   test('取消实例 → 确认 → toast', async ({ page }) => {
@@ -116,7 +116,7 @@ test.describe('Job Instance 详情 — 操作流', () => {
     await expect(page.locator('.el-message-box')).toBeVisible()
     await expect(page.locator('.el-message-box')).toContainText('取消')
     await page.locator('.el-message-box').getByRole('button', { name: /^(确定|确认.*)$/ }).click()
-    await expect(page.locator('.el-message')).toBeVisible({ timeout: 8000 })
+    await expect(page.locator('.el-message').first()).toBeVisible({ timeout: 8000 })
   })
 
   test('终止实例 → 确认 → toast', async ({ page }) => {
@@ -131,7 +131,7 @@ test.describe('Job Instance 详情 — 操作流', () => {
     await expect(page.locator('.el-message-box')).toBeVisible()
     await expect(page.locator('.el-message-box')).toContainText('终止')
     await page.locator('.el-message-box').getByRole('button', { name: /^(确定|确认.*)$/ }).click()
-    await expect(page.locator('.el-message')).toBeVisible({ timeout: 8000 })
+    await expect(page.locator('.el-message').first()).toBeVisible({ timeout: 8000 })
   })
 })
 
@@ -156,7 +156,7 @@ test.describe('Job Step 分片 — 操作流', () => {
     await retryBtn.click()
     await expect(page.locator('.el-message-box')).toBeVisible()
     await page.locator('.el-message-box').getByRole('button', { name: /^(确定|确认.*)$/ }).click()
-    await expect(page.locator('.el-message')).toBeVisible({ timeout: 8000 })
+    await expect(page.locator('.el-message').first()).toBeVisible({ timeout: 8000 })
   })
 
   test('取消分片 → 确认 → toast', async ({ page }) => {
@@ -165,7 +165,7 @@ test.describe('Job Step 分片 — 操作流', () => {
     await cancelBtn.click()
     await expect(page.locator('.el-message-box')).toBeVisible()
     await page.locator('.el-message-box').getByRole('button', { name: /^(确定|确认.*)$/ }).click()
-    await expect(page.locator('.el-message')).toBeVisible({ timeout: 8000 })
+    await expect(page.locator('.el-message').first()).toBeVisible({ timeout: 8000 })
   })
 })
 
@@ -185,7 +185,7 @@ test.describe('Workflow Run — 筛选查询', () => {
       .getByRole('textbox')
     if (!(await isVisible(input, 2000))) return
     await input.fill('test')
-    await page.getByRole('button', { name: '查询' }).click()
+    await page.getByRole('button', { name: '搜索' }).click()
     await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
   })
 
@@ -200,7 +200,7 @@ test.describe('Workflow Run — 筛选查询', () => {
     const opt = page.locator('.el-select-dropdown__item').first()
     if (await isVisible(opt, 2000)) {
       await opt.click()
-      await page.getByRole('button', { name: '查询' }).click()
+      await page.getByRole('button', { name: '搜索' }).click()
       await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
     }
     // 重置按钮在某些状态下 disabled 切到 enabled 时短暂不稳,force click 跳过 stability 检查
@@ -226,7 +226,7 @@ test.describe('审计日志 — 筛选查询', () => {
     const input = page.locator('.el-form-item').filter({ hasText: 'Trace' }).getByRole('textbox')
     if (!(await isVisible(input, 2000))) return
     await input.fill('trace-test-123')
-    await page.getByRole('button', { name: '查询' }).click()
+    await page.getByRole('button', { name: '搜索' }).click()
     await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
   })
 
@@ -240,7 +240,7 @@ test.describe('审计日志 — 筛选查询', () => {
     const opt = page.locator('.el-select-dropdown__item').first()
     if (await isVisible(opt, 2000)) {
       await opt.click()
-      await page.getByRole('button', { name: '查询' }).click()
+      await page.getByRole('button', { name: '搜索' }).click()
       await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
     }
     await page.getByRole('button', { name: '重置' }).click()

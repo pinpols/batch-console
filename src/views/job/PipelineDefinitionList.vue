@@ -124,22 +124,22 @@
 
     <el-drawer v-model="drawerVisible" :title="drawerTitle" size="800px">
       <el-form ref="formRef" :model="form" :rules="formRules" label-width="120px">
-        <el-form-item label="pipelineCode" prop="pipelineCode">
+        <el-form-item :label="t('pipelineDefinitionList.fieldPipelineCode')" prop="pipelineCode">
           <el-input v-model="form.pipelineCode" :disabled="editingId != null" />
         </el-form-item>
-        <el-form-item label="pipelineName" prop="pipelineName">
+        <el-form-item :label="t('pipelineDefinitionList.fieldPipelineName')" prop="pipelineName">
           <el-input v-model="form.pipelineName" />
         </el-form-item>
-        <el-form-item label="pipelineType" prop="pipelineType">
+        <el-form-item :label="t('pipelineDefinitionList.fieldPipelineType')" prop="pipelineType">
           <el-input
             v-model="form.pipelineType"
             :placeholder="t('pipelineDefinitionList.typeFieldPlaceholder')"
           />
         </el-form-item>
-        <el-form-item label="enabled">
+        <el-form-item :label="t('pipelineDefinitionList.fieldEnabled')">
           <el-switch v-model="form.enabled" />
         </el-form-item>
-        <el-form-item label="description">
+        <el-form-item :label="t('pipelineDefinitionList.fieldDescription')">
           <el-input v-model="form.description" type="textarea" :rows="3" />
         </el-form-item>
         <el-form-item :label="t('pipelineDefinitionList.stepsTitle')">
@@ -188,11 +188,26 @@
                   </div>
                 </div>
                 <div class="step-card__grid">
-                  <el-input v-model="row.stepCode" placeholder="stepCode" />
-                  <el-input v-model="row.stepName" placeholder="stepName" />
-                  <el-input v-model="row.stageCode" placeholder="stageCode" />
-                  <el-input v-model="row.stepType" placeholder="implCode" />
-                  <el-input v-model="row.description" placeholder="description" />
+                  <el-input
+                    v-model="row.stepCode"
+                    :placeholder="t('pipelineDefinitionList.stepFieldCodePlaceholder')"
+                  />
+                  <el-input
+                    v-model="row.stepName"
+                    :placeholder="t('pipelineDefinitionList.stepFieldNamePlaceholder')"
+                  />
+                  <el-input
+                    v-model="row.stageCode"
+                    :placeholder="t('pipelineDefinitionList.stepFieldStagePlaceholder')"
+                  />
+                  <el-input
+                    v-model="row.stepType"
+                    :placeholder="t('pipelineDefinitionList.stepFieldImplPlaceholder')"
+                  />
+                  <el-input
+                    v-model="row.description"
+                    :placeholder="t('pipelineDefinitionList.stepFieldDescriptionPlaceholder')"
+                  />
                 </div>
               </div>
             </div>
@@ -225,20 +240,26 @@
       <el-tabs v-if="detailRow" v-model="activeDetailTab">
         <el-tab-pane name="overview" :label="t('pipelineDefinitionList.detailTabOverview')">
           <el-descriptions :column="2" border size="small">
-            <el-descriptions-item label="pipelineCode">{{
+            <el-descriptions-item :label="t('pipelineDefinitionList.fieldPipelineCode')">{{
               detailRow.pipelineCode
             }}</el-descriptions-item>
-            <el-descriptions-item label="pipelineName">{{
+            <el-descriptions-item :label="t('pipelineDefinitionList.fieldPipelineName')">{{
               detailRow.pipelineName
             }}</el-descriptions-item>
-            <el-descriptions-item label="pipelineType">{{
+            <el-descriptions-item :label="t('pipelineDefinitionList.fieldPipelineType')">{{
               detailRow.pipelineType || '—'
             }}</el-descriptions-item>
-            <el-descriptions-item label="enabled">
+            <el-descriptions-item :label="t('pipelineDefinitionList.fieldEnabled')">
               {{ detailRow.enabled ? t('common.yes') : t('common.no') }}
             </el-descriptions-item>
-            <el-descriptions-item label="tenantId">{{ detailRow.tenantId }}</el-descriptions-item>
-            <el-descriptions-item v-if="detailRow.description" label="description" :span="2">
+            <el-descriptions-item :label="t('common.tenantId')">{{
+              detailRow.tenantId
+            }}</el-descriptions-item>
+            <el-descriptions-item
+              v-if="detailRow.description"
+              :label="t('pipelineDefinitionList.fieldDescription')"
+              :span="2"
+            >
               {{ detailRow.description }}
             </el-descriptions-item>
           </el-descriptions>

@@ -17,12 +17,20 @@ test.describe('queue config (队列 / 窗口 / 日历)', () => {
     await enterDemoApp(page)
   })
 
-  test('队列 / 窗口 / 日历页面可打开并展示标签页', async ({ page }) => {
+  // IA 拆分后:每个 route 只显 1 个 tab(single-mode,tab 头被 CSS 隐藏)
+  // 改成检查 tabpanel 内容渲染 + 主操作按钮存在
+  test('队列页面打开', async ({ page }) => {
     await page.goto('/governance/queues')
     await expectPageTitle(page, '队列与窗口')
-    await expect(page.getByRole('tab', { name: '队列' })).toBeVisible()
-    await expect(page.getByRole('tab', { name: '批次窗口' })).toBeVisible()
-    await expect(page.getByRole('tab', { name: '日历' })).toBeVisible()
+    await expect(page.getByRole('button', { name: '新建队列' }).first()).toBeVisible()
+  })
+  test('批次窗口页面打开', async ({ page }) => {
+    await page.goto('/governance/windows')
+    await expect(page.getByRole('button', { name: '新建批次窗口' }).first()).toBeVisible()
+  })
+  test('日历页面打开', async ({ page }) => {
+    await page.goto('/governance/calendars')
+    await expect(page.getByRole('button', { name: '新建业务日历' }).first()).toBeVisible()
   })
 })
 

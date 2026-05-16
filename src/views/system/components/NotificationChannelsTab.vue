@@ -215,7 +215,11 @@
 
   const tenant = useTenantStore()
   const { data: metaEnums } = useConsoleMetaEnumsQuery()
-  const channelTypeOptions = computed(() => pickMetaEnumGroup(metaEnums.value, 'channelType'))
+  // 通知渠道用 notificationChannelType(EMAIL/FEISHU/DINGDING/SMS 等),
+  // 不能用 channelType(那是文件渠道:SFTP/API/API_PUSH...)。
+  const channelTypeOptions = computed(() =>
+    pickMetaEnumGroup(metaEnums.value, 'notificationChannelType', 'channelType'),
+  )
 
   const {
     loading: loadingChannels,

@@ -62,7 +62,7 @@ test.describe('运维诊断 — Outbox 清理 / 重发布', () => {
     await expect(page.locator('.el-message-box')).toBeVisible()
     await expect(page.locator('.el-message-box')).toContainText('清理 Outbox')
     await page.locator('.el-message-box').getByRole('button', { name: /^(确定|确认.*)$/ }).click()
-    await expect(page.locator('.el-message')).toBeVisible({ timeout: 8000 })
+    await expect(page.locator('.el-message').first()).toBeVisible({ timeout: 8000 })
   })
 
   test('Outbox 重发布 → 确认 → toast', async ({ page }) => {
@@ -70,10 +70,11 @@ test.describe('运维诊断 — Outbox 清理 / 重发布', () => {
     if (!(await isVisible(republishBtn))) return
     await republishBtn.click()
     await expect(page.locator('.el-message-box')).toBeVisible()
-    // 文案改成"重发布"+ outbox 事件 ID 提示
     await expect(page.locator('.el-message-box')).toContainText(/重发布|outbox 事件 ID/)
-    // 不填 ID 直接点确定,BE 应返回参数错;只要 toast(成功或错误)都说明流程通
+    // 输入合法格式的 ID(可能 BE 找不到也算流程通)。空输入会被 inputPattern 卡住不发请求,
+    // 所以必须填一个合法的数字。
+    await page.locator('.el-message-box input').fill('999999')
     await page.locator('.el-message-box').getByRole('button', { name: /^(确定|确认.*)$/ }).click()
-    await expect(page.locator('.el-message')).toBeVisible({ timeout: 8000 })
+    await expect(page.locator('.el-message').first()).toBeVisible({ timeout: 8000 })
   })
 })

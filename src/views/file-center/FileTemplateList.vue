@@ -199,26 +199,38 @@
           >
             <el-table-column
               prop="channelCode"
-              label="channelCode"
+              :label="t('fileTemplateList.colChannelCode')"
               width="220"
               show-overflow-tooltip
             />
             <el-table-column
               prop="channelName"
-              label="channelName"
+              :label="t('fileTemplateList.colChannelName')"
               min-width="240"
               show-overflow-tooltip
             />
-            <el-table-column prop="channelType" label="channelType" width="130" />
+            <el-table-column
+              prop="channelType"
+              :label="t('fileTemplateList.colChannelType')"
+              width="130"
+            />
             <el-table-column
               prop="targetEndpoint"
-              label="targetEndpoint"
+              :label="t('fileTemplateList.colTargetEndpoint')"
               min-width="320"
               show-overflow-tooltip
             />
-            <el-table-column prop="authType" label="authType" width="120" />
-            <el-table-column prop="receiptPolicy" label="receiptPolicy" width="140" />
-            <el-table-column label="enabled" width="110">
+            <el-table-column
+              prop="authType"
+              :label="t('fileTemplateList.colAuthType')"
+              width="120"
+            />
+            <el-table-column
+              prop="receiptPolicy"
+              :label="t('fileTemplateList.colReceiptPolicy')"
+              width="140"
+            />
+            <el-table-column :label="t('fileTemplateList.colEnabled')" width="110">
               <template #default="{ row }">
                 <el-switch
                   :model-value="row.enabled"
@@ -230,7 +242,11 @@
                 />
               </template>
             </el-table-column>
-            <DatetimeColumn prop="updatedAt" label="updatedAt" width="180" />
+            <DatetimeColumn
+              prop="updatedAt"
+              :label="t('fileTemplateList.colUpdatedAt')"
+              width="180"
+            />
             <el-table-column :label="t('fileTemplateList.colActions')" width="96" fixed="right">
               <template #default="{ row }">
                 <el-tooltip :content="t('common.edit')" placement="top">
@@ -245,29 +261,43 @@
 
     <el-drawer v-model="detailVisible" :title="t('fileTemplateList.detailTitle')" size="800px">
       <el-descriptions v-if="detail" :column="2" border size="small">
-        <el-descriptions-item label="templateCode">{{ detail.templateCode }}</el-descriptions-item>
-        <el-descriptions-item label="templateName">{{ detail.templateName }}</el-descriptions-item>
-        <el-descriptions-item label="templateType">{{ detail.templateType }}</el-descriptions-item>
-        <el-descriptions-item label="fileFormatType">{{
+        <el-descriptions-item :label="t('fileTemplateList.descTemplateCode')">{{
+          detail.templateCode
+        }}</el-descriptions-item>
+        <el-descriptions-item :label="t('fileTemplateList.descTemplateName')">{{
+          detail.templateName
+        }}</el-descriptions-item>
+        <el-descriptions-item :label="t('fileTemplateList.descTemplateType')">{{
+          detail.templateType
+        }}</el-descriptions-item>
+        <el-descriptions-item :label="t('fileTemplateList.descFileFormatType')">{{
           detail.fileFormatType
         }}</el-descriptions-item>
-        <el-descriptions-item label="bizType">{{ detail.bizType }}</el-descriptions-item>
-        <el-descriptions-item label="version">{{ detail.version }}</el-descriptions-item>
-        <el-descriptions-item label="charset">{{ detail.charset }}</el-descriptions-item>
-        <el-descriptions-item label="targetCharset">{{
+        <el-descriptions-item :label="t('fileTemplateList.descBizType')">{{
+          detail.bizType
+        }}</el-descriptions-item>
+        <el-descriptions-item :label="t('fileTemplateList.descVersion')">{{
+          detail.version
+        }}</el-descriptions-item>
+        <el-descriptions-item :label="t('fileTemplateList.descCharset')">{{
+          detail.charset
+        }}</el-descriptions-item>
+        <el-descriptions-item :label="t('fileTemplateList.descTargetCharset')">{{
           detail.targetCharset
         }}</el-descriptions-item>
-        <el-descriptions-item label="delimiter">{{ detail.delimiter || '—' }}</el-descriptions-item>
-        <el-descriptions-item label="lineSeparator">{{
+        <el-descriptions-item :label="t('fileTemplateList.descDelimiter')">{{
+          detail.delimiter || '—'
+        }}</el-descriptions-item>
+        <el-descriptions-item :label="t('fileTemplateList.descLineSeparator')">{{
           detail.lineSeparator || '—'
         }}</el-descriptions-item>
-        <el-descriptions-item label="queryParamSchema" :span="2">
+        <el-descriptions-item :label="t('fileTemplateList.descQueryParamSchema')" :span="2">
           <JsonPreview :data="detail.queryParamSchema || '—'" />
         </el-descriptions-item>
-        <el-descriptions-item label="fieldMappings" :span="2">
+        <el-descriptions-item :label="t('fileTemplateList.descFieldMappings')" :span="2">
           <JsonPreview :data="detail.fieldMappings || '—'" />
         </el-descriptions-item>
-        <el-descriptions-item label="description" :span="2">
+        <el-descriptions-item :label="t('fileTemplateList.descDescription')" :span="2">
           <JsonPreview :data="detail.description || '—'" />
         </el-descriptions-item>
       </el-descriptions>
@@ -284,44 +314,50 @@
       destroy-on-close
     >
       <el-form :model="templateForm" label-width="120px">
-        <el-form-item label="templateCode" required>
+        <el-form-item :label="t('fileTemplateList.fieldTemplateCode')" required>
           <el-input v-model="templateForm.templateCode" :disabled="templateEditingId != null" />
         </el-form-item>
-        <el-form-item label="templateName"
+        <el-form-item :label="t('fileTemplateList.fieldTemplateName')"
           ><el-input v-model="templateForm.templateName"
         /></el-form-item>
-        <el-form-item label="templateType" required
+        <el-form-item :label="t('fileTemplateList.fieldTemplateType')" required
           ><el-input v-model="templateForm.templateType"
         /></el-form-item>
-        <el-form-item label="bizType"
+        <el-form-item :label="t('fileTemplateList.fieldBizType')"
           ><MetaSelect
             v-model="templateForm.bizType"
             :options="bizTypeOptions"
             clearable
             filterable
         /></el-form-item>
-        <el-form-item label="fileFormatType"
+        <el-form-item :label="t('fileTemplateList.fieldFileFormatType')"
           ><el-input v-model="templateForm.fileFormatType"
         /></el-form-item>
-        <el-form-item label="charset"><el-input v-model="templateForm.charset" /></el-form-item>
-        <el-form-item label="targetCharset"
+        <el-form-item :label="t('fileTemplateList.fieldCharset')"
+          ><el-input v-model="templateForm.charset"
+        /></el-form-item>
+        <el-form-item :label="t('fileTemplateList.fieldTargetCharset')"
           ><el-input v-model="templateForm.targetCharset"
         /></el-form-item>
-        <el-form-item label="delimiter"><el-input v-model="templateForm.delimiter" /></el-form-item>
-        <el-form-item label="lineSeparator"
+        <el-form-item :label="t('fileTemplateList.fieldDelimiter')"
+          ><el-input v-model="templateForm.delimiter"
+        /></el-form-item>
+        <el-form-item :label="t('fileTemplateList.fieldLineSeparator')"
           ><el-input v-model="templateForm.lineSeparator"
         /></el-form-item>
-        <el-form-item label="version"
+        <el-form-item :label="t('fileTemplateList.fieldVersion')"
           ><el-input-number v-model="templateForm.version" :min="1"
         /></el-form-item>
-        <el-form-item label="enabled"><el-switch v-model="templateForm.enabled" /></el-form-item>
-        <el-form-item label="fieldMappingsJson"
+        <el-form-item :label="t('fileTemplateList.fieldEnabled')"
+          ><el-switch v-model="templateForm.enabled"
+        /></el-form-item>
+        <el-form-item :label="t('fileTemplateList.fieldFieldMappingsJson')"
           ><el-input v-model="templateForm.fieldMappingsJson" type="textarea" :rows="4"
         /></el-form-item>
-        <el-form-item label="queryParamSchemaJson"
+        <el-form-item :label="t('fileTemplateList.fieldQueryParamSchemaJson')"
           ><el-input v-model="templateForm.queryParamSchemaJson" type="textarea" :rows="3"
         /></el-form-item>
-        <el-form-item label="description"
+        <el-form-item :label="t('fileTemplateList.fieldDescription')"
           ><el-input v-model="templateForm.description" type="textarea"
         /></el-form-item>
       </el-form>
@@ -344,27 +380,31 @@
       destroy-on-close
     >
       <el-form :model="channelForm" label-width="120px">
-        <el-form-item label="channelCode" required>
+        <el-form-item :label="t('fileTemplateList.fieldChannelCode')" required>
           <el-input v-model="channelForm.channelCode" :disabled="channelEditingId != null" />
         </el-form-item>
-        <el-form-item label="channelName"
+        <el-form-item :label="t('fileTemplateList.fieldChannelName')"
           ><el-input v-model="channelForm.channelName"
         /></el-form-item>
-        <el-form-item label="channelType" required
+        <el-form-item :label="t('fileTemplateList.fieldChannelType')" required
           ><el-input v-model="channelForm.channelType"
         /></el-form-item>
-        <el-form-item label="targetEndpoint"
+        <el-form-item :label="t('fileTemplateList.fieldTargetEndpoint')"
           ><el-input v-model="channelForm.targetEndpoint"
         /></el-form-item>
-        <el-form-item label="authType"><el-input v-model="channelForm.authType" /></el-form-item>
-        <el-form-item label="receiptPolicy"
+        <el-form-item :label="t('fileTemplateList.fieldAuthType')"
+          ><el-input v-model="channelForm.authType"
+        /></el-form-item>
+        <el-form-item :label="t('fileTemplateList.fieldReceiptPolicy')"
           ><el-input v-model="channelForm.receiptPolicy"
         /></el-form-item>
-        <el-form-item label="timeoutSeconds"
+        <el-form-item :label="t('fileTemplateList.fieldTimeoutSeconds')"
           ><el-input-number v-model="channelForm.timeoutSeconds" :min="0"
         /></el-form-item>
-        <el-form-item label="enabled"><el-switch v-model="channelForm.enabled" /></el-form-item>
-        <el-form-item label="configJson"
+        <el-form-item :label="t('fileTemplateList.fieldEnabled')"
+          ><el-switch v-model="channelForm.enabled"
+        /></el-form-item>
+        <el-form-item :label="t('fileTemplateList.fieldConfigJson')"
           ><el-input v-model="channelForm.configJson" type="textarea" :rows="5"
         /></el-form-item>
       </el-form>

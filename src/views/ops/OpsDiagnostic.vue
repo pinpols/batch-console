@@ -86,11 +86,15 @@
                 min-width="200"
                 show-overflow-tooltip
               />
-              <el-table-column prop="lockUntil" label="Lock Until" width="200" />
-              <DatetimeColumn prop="lockedAt" label="Locked At" width="160" />
+              <el-table-column
+                prop="lockUntil"
+                :label="t('opsDiagnostic.colLockUntil')"
+                width="200"
+              />
+              <DatetimeColumn prop="lockedAt" :label="t('opsDiagnostic.colLockedAt')" width="160" />
               <el-table-column
                 prop="lockedBy"
-                label="Locked By"
+                :label="t('opsDiagnostic.colLockedBy')"
                 min-width="180"
                 show-overflow-tooltip
               />

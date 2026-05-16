@@ -78,11 +78,11 @@
                 {{ t('nav.openDocs') }}
               </el-dropdown-item>
               <el-dropdown-item command="locale">
-                <span class="locale-chip-mini">{{ localeChipLabel }}</span>
-                {{ localeToggleTooltip }}
+                <span class="locale-chip-mini" aria-hidden="true">{{ localeChipLabel }}</span>
+                <span>{{ localeToggleTooltip }}</span>
               </el-dropdown-item>
               <el-dropdown-item command="theme" :icon="themeToolIcon">
-                {{ themeToggleLabel }}
+                {{ themeActionLabel }}
               </el-dropdown-item>
               <el-dropdown-item command="focus" :icon="FullScreen" :divided="true">
                 {{ app.focusMode ? t('nav.exitFullscreen') : t('nav.fullscreen') }}
@@ -204,6 +204,13 @@
   const themeToolIcon = computed(() => {
     if (app.themePreference === 'system') return Monitor
     return app.themePreference === 'light' ? Sunny : Moon
+  })
+  // 与「打开文档中心 / Switch to English / 进入全屏」对齐，统一动词开头。
+  // 点击后实际切到的是 next preference，所以这里展示的是下一步动作，不是当前状态。
+  const themeActionLabel = computed(() => {
+    if (app.themePreference === 'light') return t('nav.switchToThemeDark')
+    if (app.themePreference === 'dark') return t('nav.switchToThemeSystem')
+    return t('nav.switchToThemeLight')
   })
 
   function toggleLocale() {
@@ -534,5 +541,21 @@
     min-width: 20px;
     text-align: center;
     color: var(--el-text-color-regular);
+  }
+
+  /* 工具菜单里语言项的「EN / 中」chip：占位与 el-dropdown-item 的 icon 等宽对齐，
+     避免和后面的文字粘在一起渲染成「ENSwitch to English」。 */
+  :deep(.el-dropdown-menu__item) .locale-chip-mini {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1em;
+    min-width: 1em;
+    height: 1em;
+    margin-right: 5px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--color-text-secondary);
   }
 </style>

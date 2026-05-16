@@ -18,7 +18,7 @@ test.describe('observability pages', () => {
     await expectPageTitle(page, '审计日志')
     const traceInput = page.locator('.el-form-item').filter({ hasText: /Trace|traceId/i }).getByRole('textbox')
     await traceInput.fill('demo-trace')
-    await page.getByRole('button', { name: '查询' }).click()
+    await page.getByRole('button', { name: '搜索' }).click()
     await expect(traceInput).toHaveValue('demo-trace')
   })
 
@@ -27,7 +27,7 @@ test.describe('observability pages', () => {
     await expectPageTitle(page, /综合查询/)
     const traceInput = page.locator('.el-form-item').filter({ hasText: /Trace/i }).getByRole('textbox')
     await traceInput.fill('trace-001')
-    await page.getByRole('button', { name: '查询' }).click()
+    await page.getByRole('button', { name: '搜索' }).click()
     await page.getByRole('button', { name: '重置' }).click()
     await expect(traceInput).toHaveValue('')
   })

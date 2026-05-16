@@ -32,7 +32,7 @@ test.describe('执行日志 — 筛选查询', () => {
   test('Trace 筛选 → 查询 → 重置', async ({ page }) => {
     const input = page.locator('.el-form-item').filter({ hasText: 'Trace' }).getByRole('textbox')
     await input.fill('trace-test-e2e')
-    await page.getByRole('button', { name: '查询' }).click()
+    await page.getByRole('button', { name: '搜索' }).click()
     await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
     await page.getByRole('button', { name: '重置' }).click()
     await expect(input).toHaveValue('')
@@ -55,7 +55,7 @@ test.describe('执行日志 — 筛选查询', () => {
     const opt = page.locator('.el-select-dropdown__item').first()
     if (await isVisible(opt, 3000)) {
       await opt.click()
-      await page.getByRole('button', { name: '查询' }).click()
+      await page.getByRole('button', { name: '搜索' }).click()
       await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
     }
   })
@@ -69,7 +69,7 @@ test.describe('执行日志 — 筛选查询', () => {
     const opt = page.locator('.el-select-dropdown__item').first()
     if (await isVisible(opt, 3000)) {
       await opt.click()
-      await page.getByRole('button', { name: '查询' }).click()
+      await page.getByRole('button', { name: '搜索' }).click()
       await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
     }
   })
@@ -80,7 +80,7 @@ test.describe('执行日志 — 筛选查询', () => {
       .filter({ hasText: 'Trace' })
       .getByRole('textbox')
     await traceInput.fill('combined-test')
-    await page.getByRole('button', { name: '查询' }).click()
+    await page.getByRole('button', { name: '搜索' }).click()
     await page.getByRole('button', { name: '重置' }).click()
     await expect(traceInput).toHaveValue('')
   })

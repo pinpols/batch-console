@@ -42,13 +42,35 @@
       </ListPageQueryBar>
 
       <el-table v-loading="loading" :data="filtered" class="routing-table">
-        <el-table-column prop="routeCode" label="routeCode" min-width="180" />
-        <el-table-column prop="routeName" label="routeName" min-width="160" />
-        <el-table-column prop="team" label="team" min-width="120" />
-        <el-table-column prop="severity" label="severity" width="120" />
-        <el-table-column prop="receiver" label="receiver" min-width="180" show-overflow-tooltip />
-        <el-table-column prop="groupBy" label="groupBy" min-width="140" show-overflow-tooltip />
-        <el-table-column label="enabled" width="120">
+        <el-table-column
+          prop="routeCode"
+          :label="t('alertRoutingPanel.colRouteCode')"
+          min-width="180"
+        />
+        <el-table-column
+          prop="routeName"
+          :label="t('alertRoutingPanel.colRouteName')"
+          min-width="160"
+        />
+        <el-table-column prop="team" :label="t('alertRoutingPanel.fieldTeam')" min-width="120" />
+        <el-table-column
+          prop="severity"
+          :label="t('alertRoutingPanel.fieldSeverity')"
+          width="120"
+        />
+        <el-table-column
+          prop="receiver"
+          :label="t('alertRoutingPanel.fieldReceiver')"
+          min-width="180"
+          show-overflow-tooltip
+        />
+        <el-table-column
+          prop="groupBy"
+          :label="t('alertRoutingPanel.colGroupBy')"
+          min-width="140"
+          show-overflow-tooltip
+        />
+        <el-table-column :label="t('alertRoutingPanel.fieldEnabled')" width="120">
           <template #default="{ row }">
             <el-switch
               :model-value="row.enabled"
@@ -60,7 +82,11 @@
             />
           </template>
         </el-table-column>
-        <el-table-column prop="updatedAt" label="updatedAt" min-width="180" />
+        <el-table-column
+          prop="updatedAt"
+          :label="t('alertRoutingPanel.colUpdatedAt')"
+          min-width="180"
+        />
         <el-table-column :label="t('alertRoutingPanel.actions')" width="110" fixed="right">
           <template #default="{ row }">
             <el-tooltip :content="t('alertRoutingPanel.actionEdit')" placement="top">
@@ -82,19 +108,19 @@
       destroy-on-close
     >
       <el-form ref="formRef" :model="form" :rules="rules" label-width="120px">
-        <el-form-item label="routeCode" prop="routeCode">
+        <el-form-item :label="t('alertRoutingPanel.fieldRouteCode')" prop="routeCode">
           <el-input v-model="form.routeCode" :disabled="editingId != null" />
         </el-form-item>
-        <el-form-item label="routeName">
+        <el-form-item :label="t('alertRoutingPanel.fieldRouteName')">
           <el-input v-model="form.routeName" />
         </el-form-item>
-        <el-form-item label="team" prop="team">
+        <el-form-item :label="t('alertRoutingPanel.fieldTeam')" prop="team">
           <el-input v-model="form.team" />
         </el-form-item>
-        <el-form-item label="alertGroup">
+        <el-form-item :label="t('alertRoutingPanel.fieldAlertGroup')">
           <el-input v-model="form.alertGroup" />
         </el-form-item>
-        <el-form-item label="severity" prop="severity">
+        <el-form-item :label="t('alertRoutingPanel.fieldSeverity')" prop="severity">
           <el-select v-model="form.severity" allow-create filterable>
             <el-option label="CRITICAL" value="CRITICAL" />
             <el-option label="ERROR" value="ERROR" />
@@ -102,22 +128,22 @@
             <el-option label="INFO" value="INFO" />
           </el-select>
         </el-form-item>
-        <el-form-item label="receiver" prop="receiver">
+        <el-form-item :label="t('alertRoutingPanel.fieldReceiver')" prop="receiver">
           <el-input v-model="form.receiver" />
         </el-form-item>
-        <el-form-item label="groupBy">
+        <el-form-item :label="t('alertRoutingPanel.fieldGroupBy')">
           <el-input v-model="form.groupBy" placeholder="tenantId,jobCode,severity" />
         </el-form-item>
-        <el-form-item label="groupWaitSeconds">
+        <el-form-item :label="t('alertRoutingPanel.fieldGroupWaitSeconds')">
           <el-input-number v-model="form.groupWaitSeconds" :min="0" />
         </el-form-item>
-        <el-form-item label="groupIntervalSeconds">
+        <el-form-item :label="t('alertRoutingPanel.fieldGroupIntervalSeconds')">
           <el-input-number v-model="form.groupIntervalSeconds" :min="0" />
         </el-form-item>
-        <el-form-item label="repeatIntervalSeconds">
+        <el-form-item :label="t('alertRoutingPanel.fieldRepeatIntervalSeconds')">
           <el-input-number v-model="form.repeatIntervalSeconds" :min="0" />
         </el-form-item>
-        <el-form-item label="enabled">
+        <el-form-item :label="t('alertRoutingPanel.fieldEnabled')">
           <el-switch v-model="form.enabled" />
         </el-form-item>
         <el-form-item :label="t('alertRoutingPanel.descriptionLabel')">

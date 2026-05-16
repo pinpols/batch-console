@@ -29,8 +29,8 @@ test.describe('tenant batch create with config init (批量建租户 + 配置初
     if (await isVisible(firstOption, 2000)) {
       await firstOption.click()
       // 初始化模式 radio 应出现
-      await expect(page.getByText('SKIP_EXISTING').first()).toBeVisible()
-      await expect(page.getByText('UPSERT')).toBeVisible()
+      await expect(page.getByText('仅补缺失项').first()).toBeVisible()
+      await expect(page.getByText('覆盖更新已有').first()).toBeVisible()
     }
     await page.getByRole('button', { name: '取消' }).click()
   })
@@ -53,7 +53,7 @@ test.describe('tenant init config dialog (初始化租户配置)', () => {
       await expect(page.getByText('WORKFLOW_DEFINITION')).toBeVisible()
       await expect(page.getByText('ALERT_ROUTING')).toBeVisible()
       // 写入模式 radio
-      await expect(page.getByText('SKIP_EXISTING').first()).toBeVisible()
+      await expect(page.getByText('仅补缺失项').first()).toBeVisible()
       // Spec JSON textarea
       await expect(page.getByPlaceholder(/完整的配置 JSON/)).toBeVisible()
       // 试运行 switch 默认开启

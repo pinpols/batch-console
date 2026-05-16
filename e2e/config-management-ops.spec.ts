@@ -19,7 +19,7 @@ test.describe('配置管理 — 变更日志', () => {
     await page.goto('/config/management')
     await expectPageTitle(page, '变更与同步')
     // 默认激活 tab
-    await expect(page.getByRole('tab', { name: '变更日志' })).toHaveClass(/is-active/)
+    await expect(page.locator('.config-nav__item').filter({ hasText: '变更日志' }).first()).toHaveClass(/is-active/)
   })
 
   test('刷新后表格或空态展示', async ({ page }) => {
@@ -52,8 +52,8 @@ test.describe('配置管理 — Secrets', () => {
     await enterDemoApp(page)
     await page.goto('/config/management')
     await expectPageTitle(page, '变更与同步')
-    await page.getByRole('tab', { name: 'Secrets' }).click()
-    await expect(page.getByRole('tab', { name: 'Secrets' })).toHaveClass(/is-active/)
+    await page.locator('.config-nav__item').filter({ hasText: 'Secrets' }).first().click()
+    await expect(page.locator('.config-nav__item').filter({ hasText: 'Secrets' }).first()).toHaveClass(/is-active/)
   })
 
   test('刷新后表格或空态展示', async ({ page }) => {
@@ -84,7 +84,7 @@ test.describe('配置管理 — Secrets', () => {
     // 真实确认轮转
     await page.locator('.el-message-box').getByRole('button', { name: /^(确定|确认.*)$/ }).click()
     // success 或 error（后端有 secret 则成功，否则报错）均接受
-    await expect(page.locator('.el-message')).toBeVisible({ timeout: 8000 })
+    await expect(page.locator('.el-message').first()).toBeVisible({ timeout: 8000 })
     await expect(page.getByRole('columnheader', { name: 'Secret Key' })).toBeVisible({ timeout: 6000 })
   })
 })
@@ -97,8 +97,8 @@ test.describe.skip('配置管理 — 配置导出', () => {
     await enterDemoApp(page)
     await page.goto('/config/management')
     await expectPageTitle(page, '变更与同步')
-    await page.getByRole('tab', { name: '配置导出' }).click()
-    await expect(page.getByRole('tab', { name: '配置导出' })).toHaveClass(/is-active/)
+    await page.locator('.config-nav__item').filter({ hasText: '配置导出' }).first().click()
+    await expect(page.locator('.config-nav__item').filter({ hasText: '配置导出' }).first()).toHaveClass(/is-active/)
   })
 
   test('导出全部配置 → 结果 JSON 显示在页面', async ({ page }) => {
@@ -166,7 +166,7 @@ test.describe.skip('配置管理 — 导出再导入（幂等往返）', () => {
     await expectPageTitle(page, '变更与同步')
 
     // ① 导出全部
-    await page.getByRole('tab', { name: '配置导出' }).click()
+    await page.locator('.config-nav__item').filter({ hasText: '配置导出' }).first().click()
     await page.getByRole('button', { name: '导出' }).click()
     // 可能因缺少 tenantId 返回 400
     if (!(await isVisible(page.locator('.el-message--success'), 15_000))) return
@@ -190,7 +190,7 @@ test.describe.skip('配置管理 — 导出再导入（幂等往返）', () => {
 
     // ④ 确认导入（幂等）
     await page.getByRole('button', { name: '确认导入' }).click()
-    await expect(page.locator('.el-message')).toBeVisible({ timeout: 10000 })
+    await expect(page.locator('.el-message').first()).toBeVisible({ timeout: 10000 })
   })
 })
 
@@ -201,8 +201,8 @@ test.describe('配置管理 — 同步日志', () => {
     await enterDemoApp(page)
     await page.goto('/config/management')
     await expectPageTitle(page, '变更与同步')
-    await page.getByRole('tab', { name: '同步日志' }).click()
-    await expect(page.getByRole('tab', { name: '同步日志' })).toHaveClass(/is-active/)
+    await page.locator('.config-nav__item').filter({ hasText: '同步日志' }).first().click()
+    await expect(page.locator('.config-nav__item').filter({ hasText: '同步日志' }).first()).toHaveClass(/is-active/)
   })
 
   test('刷新后表格或空态展示', async ({ page }) => {
@@ -218,7 +218,7 @@ test.describe('配置管理 — 同步日志', () => {
     const initialRows = await page.locator('.el-table__body').first().locator('tr').count()
 
     // 切到导出先拿 JSON
-    await page.getByRole('tab', { name: '配置导出' }).click()
+    await page.locator('.config-nav__item').filter({ hasText: '配置导出' }).first().click()
     await page.getByRole('button', { name: '导出' }).click()
     // 可能因缺少 tenantId 返回 400
     if (!(await isVisible(page.locator('.el-message--success'), 15_000))) return
@@ -228,10 +228,10 @@ test.describe('配置管理 — 同步日志', () => {
     await page.getByRole('tab', { name: '配置导入' }).click()
     await page.locator('.el-textarea__inner').fill(exportedText ?? '{}')
     await page.getByRole('button', { name: '确认导入' }).click()
-    await expect(page.locator('.el-message')).toBeVisible({ timeout: 10000 })
+    await expect(page.locator('.el-message').first()).toBeVisible({ timeout: 10000 })
 
     // 回到同步日志刷新
-    await page.getByRole('tab', { name: '同步日志' }).click()
+    await page.locator('.config-nav__item').filter({ hasText: '同步日志' }).first().click()
     await page.getByRole('button', { name: '刷新' }).click()
     await expect(page.getByRole('columnheader', { name: '摘要' })).toBeVisible({ timeout: 6000 })
     const afterRows = await page.locator('.el-table__body').first().locator('tr').count()
