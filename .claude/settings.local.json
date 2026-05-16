@@ -1,10 +1,15 @@
 {
   "permissions": {
-    "defaultMode": "bypassPermissions",
     "allow": [
       "Bash(npm install:*)",
       "Bash(npx vitest:*)",
-      "Bash(npx vue-tsc:*)"
-    ]
+      "Bash(npx vue-tsc:*)",
+      "Bash(cd /Users/dengchao/Downloads/file-batch-system && grep -rln \"warmup\" batch-console-api/src/main batch-orchestrator/src/main 2>/dev/null | head)",
+      "Bash(mvn -pl batch-orchestrator -am test -Dtest=DefaultWorkerDrainGovernanceServiceTest -Dsurefire.failIfNoSpecifiedTests=false)",
+      "Bash(mvn -pl batch-orchestrator test -Dtest='DefaultWorkerDrainGovernanceServiceTest,WorkerControllerTest' -Dsurefire.failIfNoSpecifiedTests=false)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)"
+    ],
+    "defaultMode": "bypassPermissions"
   }
 }
