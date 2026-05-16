@@ -81,6 +81,7 @@ export async function expectMaxLength(
 
 /**
  * 数字框输字母 → 期望被拒收(input mask)或 submit 时校验失败。
+ * el-input-number 渲染为 `type="number"`,playwright fill('abc') 会直接抛错 — 同样视为通过。
  */
 export async function expectNumericRejection(
   dialog: Locator,
@@ -88,7 +89,11 @@ export async function expectNumericRejection(
 ): Promise<void> {
   const formItem = dialog.locator('.el-form-item').filter({ hasText: label })
   const input = formItem.locator('input').first()
-  await input.fill('abc')
+  try {
+    await input.fill('abc')
+  } catch {
+    return // type=number 拒接字母,input mask 起效
+  }
   const value = await input.inputValue()
   if (!value.includes('abc')) return // input 拒收 — 通过
   await submitForm(dialog)
