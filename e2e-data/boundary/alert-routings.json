@@ -1,0 +1,21 @@
+{
+  "endpoint": "/api/console/alert-routings",
+  "method": "POST",
+  "fixed": {
+    "tenantId": "tx",
+    "routeName": "[E2E] boundary",
+    "team": "e2e-team",
+    "alertGroup": "e2e-group",
+    "severity": "WARN",
+    "receiver": "e2e@example.com",
+    "enabled": true
+  },
+  "fields": [
+    { "name": "routeCode", "type": "string", "min": 1, "max": 128 },
+    { "name": "team", "type": "string", "min": 1, "max": 64 },
+    { "name": "alertGroup", "type": "string", "min": 1, "max": 64 },
+    { "name": "severity", "type": "enum", "values": ["INFO", "WARN", "ERROR", "CRITICAL"], "invalid": ["DEBUG", "", "warn"] },
+    { "name": "receiver", "type": "string", "min": 1, "max": 256 },
+    { "name": "groupWaitSeconds", "type": "int", "min": 0, "max": 2147483647 }
+  ]
+}

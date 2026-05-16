@@ -1,0 +1,20 @@
+{
+  "endpoint": "/api/console/queues",
+  "method": "POST",
+  "fixed": {
+    "tenantId": "tx",
+    "queueName": "[E2E] boundary",
+    "queueType": "IMPORT",
+    "priorityPolicy": "FIFO",
+    "fairShareWeight": 1,
+    "enabled": true
+  },
+  "fields": [
+    { "name": "queueCode", "type": "string", "min": 1, "max": 128 },
+    { "name": "queueName", "type": "string", "min": 0, "max": 256 },
+    { "name": "queueType", "type": "enum", "values": ["IMPORT", "EXPORT", "DISPATCH", "MIXED"], "invalid": ["STANDARD", "", "import"] },
+    { "name": "maxRunningJobs", "type": "int", "min": 0, "max": 2147483647 },
+    { "name": "maxRunningPartitions", "type": "int", "min": 0, "max": 2147483647 },
+    { "name": "maxQps", "type": "int", "min": 0, "max": 2147483647 }
+  ]
+}
