@@ -98,6 +98,35 @@ C 档结束后整体 e2e:
 
 **累计 558 用例 / 0 fail**。
 
+## 2026-05-17 RBAC 收尾
+
+跑 `e2e-data/rbac-check.sh` 时发现历史 seed 把 `ROLE_OPERATOR` / `ROLE_VIEWER` 塞进 `authorities_csv`,但 BE 实际只实现 5 个 Spring 角色,这两个仅是 [ConsoleMenuRegistry](../../../file-batch-system/batch-console-api/src/main/java/com/example/batch/console/support/ConsoleMenuRegistry.java) 的菜单档位标签。结果两个 test 用户 `/auth/me` 都 403。
+
+**对齐处理**(option A,1h):
+- `seed-users.sql` / `users.json`:test-op-ta → `ROLE_TENANT_USER`,test-viewer-ta → `ROLE_USER`
+- `rbac-check.sh`:角色列注明"原 OPERATOR / 原 VIEWER"
+- DB:`UPDATE batch.console_user_account SET authorities_csv = ... WHERE username IN ('test-op-ta','test-viewer-ta')`
+- memory:`rbac_5roles_only.md` 固化 5 角色现实模型
+
+**复跑结果**(6 用户全绿):
+
+| 用户 | 角色 | login | /auth/me | POST /queues | 切 tb |
+|---|---|---|---|---|---|
+| admin | ADMIN | 200 | ROLE_ADMIN(7 菜单) | 409(等同允许) | 200 可切 |
+| test-op-ta | TENANT_USER | 200 | ROLE_TENANT_USER(5) | 403 拒 | 403 禁切 |
+| test-viewer-ta | USER | 200 | ROLE_USER(5) | 403 拒 | 403 禁切 |
+| test-tu-ta | TENANT_USER | 200 | ROLE_TENANT_USER(5) | 403 拒 | 403 禁切 |
+| test-auditor | AUDITOR | 200 | ROLE_AUDITOR(5) | 403 拒 | 200 可切 |
+| test-cfg-admin | CONFIG_ADMIN | 200 | ROLE_CONFIG_ADMIN(7) | 403 拒 | 200 可切 |
+
+写权限只放 ADMIN(`ConsoleResourceQueueController` 类级 `@PreAuthorize`);全局角色可跨租户(ConsoleTenantGuard 行为正确)。
+
+## 红径残量评估
+
+到此 C 档主体 + RBAC 收尾完成。剩余风险面:
+- 仍可能踩到未发现的 4xx/5xx,但 B 档收敛已生效:DB 约束 → 400 带字段名(ConsoleApiExceptionHandler DataIntegrityViolationException),BizException → 域名 message。用户看到的是有意义的 toast,而非裸 500。
+- 当前状态可正式进入**联调上线测试**;生产前建议补 D 档。
+
 ## D 档预告
 
 (详见 fe-qa-c-tier-plan.md 末尾,工时 4-5 天)
@@ -106,4 +135,5 @@ C 档结束后整体 e2e:
 - 多浏览器矩阵(Webkit / Firefox)
 - i18n 切换稳定性
 - 长会话 soak 测试
-- 权限矩阵全跑(6 角色 × 全菜单)
+- 权限矩阵全跑(已对齐 5 角色 × 全菜单;OPERATOR/VIEWER 已合并)
+- 文件上传完整链路
