@@ -165,11 +165,20 @@
           />
         </el-form-item>
         <el-form-item :label="t('userAccountList.fieldRoles')">
-          <el-input
-            v-model="createForm.authoritiesCsv"
+          <el-select
+            v-model="createRolesModel"
+            multiple
+            filterable
+            class="query-w-full"
             :placeholder="t('userAccountList.createRolesPlaceholder')"
-            maxlength="512"
-          />
+          >
+            <el-option
+              v-for="opt in ROLE_OPTIONS"
+              :key="opt.value"
+              :label="opt.label"
+              :value="opt.value"
+            />
+          </el-select>
           <div class="field-hint">{{ t('userAccountList.createRolesHint') }}</div>
         </el-form-item>
       </el-form>
@@ -208,11 +217,20 @@
           />
         </el-form-item>
         <el-form-item :label="t('userAccountList.fieldRoles')">
-          <el-input
-            v-model="form.authoritiesCsv"
+          <el-select
+            v-model="editRolesModel"
+            multiple
+            filterable
+            class="query-w-full"
             :placeholder="t('userAccountList.fieldRolesPlaceholder')"
-            maxlength="512"
-          />
+          >
+            <el-option
+              v-for="opt in ROLE_OPTIONS"
+              :key="opt.value"
+              :label="opt.label"
+              :value="opt.value"
+            />
+          </el-select>
           <div class="field-hint">{{ t('userAccountList.rolesHint') }}</div>
         </el-form-item>
       </el-form>
@@ -289,6 +307,28 @@
 
   const { loading, error: loadError, run: runLoad } = useListLoadState()
   const tenant = useTenantStore()
+
+  /**
+   * BE 实际有效的 Spring authority(参考 rbac_5roles_only memory):
+   * OPERATOR / VIEWER 是菜单档位标签不是 Spring 角色,直接落 authoritiesCsv
+   * 会触发 URL 兜底 403。让用户多选这 5 个,避免手填错字。
+   */
+  const ROLE_OPTIONS = [
+    { value: 'ROLE_ADMIN', label: 'ROLE_ADMIN (系统管理员)' },
+    { value: 'ROLE_CONFIG_ADMIN', label: 'ROLE_CONFIG_ADMIN (配置管理员)' },
+    { value: 'ROLE_AUDITOR', label: 'ROLE_AUDITOR (审计员)' },
+    { value: 'ROLE_TENANT_USER', label: 'ROLE_TENANT_USER (租户操作员)' },
+    { value: 'ROLE_USER', label: 'ROLE_USER (普通用户)' },
+  ] as const
+  function csvToRoles(csv: string): string[] {
+    return (csv || '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean)
+  }
+  function rolesToCsv(arr: string[]): string {
+    return Array.from(new Set(arr || [])).join(',')
+  }
   const creating = ref(false)
   const saving = ref(false)
   const resetting = ref(false)
@@ -373,6 +413,13 @@
     displayName: '',
     authoritiesCsv: '',
   })
+  // el-select multiple 模型,落地仍写 authoritiesCsv 兼容 BE payload 字段名
+  const createRolesModel = computed({
+    get: () => csvToRoles(createForm.authoritiesCsv),
+    set: (v: string[]) => {
+      createForm.authoritiesCsv = rolesToCsv(v)
+    },
+  })
 
   const {
     formRef: createFormRef,
@@ -454,6 +501,12 @@
     username: '',
     displayName: '',
     authoritiesCsv: '',
+  })
+  const editRolesModel = computed({
+    get: () => csvToRoles(form.authoritiesCsv),
+    set: (v: string[]) => {
+      form.authoritiesCsv = rolesToCsv(v)
+    },
   })
 
   function openEdit(row: UserAccount) {
