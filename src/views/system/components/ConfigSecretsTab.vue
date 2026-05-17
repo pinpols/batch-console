@@ -121,6 +121,7 @@
     />
 
     <el-drawer
+      :append-to-body="true"
       v-model="secretDetailVisible"
       :title="t('configSecretsTab.drawerTitle')"
       size="640px"

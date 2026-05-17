@@ -14,8 +14,8 @@
         <el-button
           size="small"
           :icon="RefreshRight"
-          :loading="chartsLoading"
-          @click="$emit('refreshCharts')"
+          :loading="chartsLoading || refresh.loading.value"
+          @click="onRefresh"
         >
           {{ t('opsTrendPanel.btnRefresh') }}
         </el-button>
@@ -69,13 +69,15 @@
 </template>
 
 <script setup lang="ts">
+  import { watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { RefreshRight } from '@element-plus/icons-vue'
   import VChart from 'vue-echarts'
+  import { useRefreshAction } from '@/composables/useRefreshAction'
 
   const { t } = useI18n({ useScope: 'global' })
 
-  defineProps<{
+  const props = defineProps<{
     active: boolean
     rangeKey: '1h' | '6h' | '24h'
     chartsLoading: boolean
@@ -93,6 +95,25 @@
   function onRangeChange(v: string | number | boolean | undefined) {
     // el-radio-group 的 modelValue 是 union;限定到三档 enum 再 emit。
     if (v === '1h' || v === '6h' || v === '24h') emit('update:rangeKey', v)
+  }
+
+  const refresh = useRefreshAction()
+
+  function onRefresh() {
+    void refresh.run(async () => {
+      emit('refreshCharts')
+      await new Promise<void>((resolve) => {
+        const stop = watch(
+          () => props.chartsLoading,
+          (v, old) => {
+            if (old && !v) {
+              stop()
+              resolve()
+            }
+          },
+        )
+      })
+    })
   }
 </script>
 

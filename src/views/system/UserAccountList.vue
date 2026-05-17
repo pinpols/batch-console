@@ -125,13 +125,15 @@
       />
     </SectionCard>
 
-    <el-dialog
+    <el-drawer
+      :append-to-body="true"
       v-model="createVisible"
       :title="t('userAccountList.createTitle')"
-      width="640px"
+      direction="rtl"
+      size="640px"
       :before-close="onCreateClose"
     >
-      <el-form ref="createFormRef" :model="createForm" :rules="createFormRules" label-width="100px">
+      <el-form ref="createFormRef" :model="createForm" :rules="createFormRules" label-width="88px">
         <el-form-item :label="t('userAccountList.fieldTenant')" prop="tenantId">
           <TenantSelect
             v-model="createForm.tenantId"
@@ -168,23 +170,25 @@
             :placeholder="t('userAccountList.createRolesPlaceholder')"
             maxlength="512"
           />
-          <div class="form-hint">{{ t('userAccountList.createRolesHint') }}</div>
+          <div class="field-hint">{{ t('userAccountList.createRolesHint') }}</div>
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="closeCreate">{{ t('userAccountList.dialogCancel') }}</el-button>
+        <el-button @click="closeCreate">{{ t('common.cancel') }}</el-button>
         <el-button type="primary" :loading="creating" @click="submitCreate">
           {{ t('userAccountList.createSubmit') }}
         </el-button>
       </template>
-    </el-dialog>
+    </el-drawer>
 
-    <el-dialog
+    <el-drawer
+      :append-to-body="true"
       v-model="formVisible"
       :title="t('userAccountList.editTitle', { name: form.username })"
-      width="640px"
+      direction="rtl"
+      size="640px"
     >
-      <el-form label-width="100px">
+      <el-form label-width="88px">
         <el-form-item :label="t('userAccountList.fieldTenant')">
           <TenantSelect
             v-model="form.tenantId"
@@ -209,16 +213,16 @@
             :placeholder="t('userAccountList.fieldRolesPlaceholder')"
             maxlength="512"
           />
-          <div class="form-hint">{{ t('userAccountList.rolesHint') }}</div>
+          <div class="field-hint">{{ t('userAccountList.rolesHint') }}</div>
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="formVisible = false">{{ t('userAccountList.dialogCancel') }}</el-button>
+        <el-button @click="formVisible = false">{{ t('common.cancel') }}</el-button>
         <el-button type="primary" :loading="saving" @click="submitForm">
-          {{ t('userAccountList.dialogSave') }}
+          {{ t('common.save') }}
         </el-button>
       </template>
-    </el-dialog>
+    </el-drawer>
 
     <el-dialog
       v-model="resetVisible"
@@ -229,7 +233,7 @@
       "
       width="480px"
     >
-      <el-form ref="resetFormRef" :model="resetForm" :rules="resetFormRules" label-width="100px">
+      <el-form ref="resetFormRef" :model="resetForm" :rules="resetFormRules" label-width="88px">
         <el-form-item :label="t('userAccountList.fieldNewPassword')" prop="newPassword">
           <el-input
             v-model="resetForm.newPassword"
@@ -559,11 +563,5 @@
     display: flex;
     flex-wrap: wrap;
     gap: 4px;
-  }
-
-  .form-hint {
-    margin-top: 4px;
-    font-size: 12px;
-    color: var(--color-text-tertiary);
   }
 </style>

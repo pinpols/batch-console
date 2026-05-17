@@ -15,7 +15,7 @@
     </PageHeader>
 
     <SectionCard>
-      <el-tabs v-model="activeTab" v-hover-tab-activate="true" class="pill-tabs">
+      <el-tabs v-model="activeTab" class="pill-tabs">
         <el-tab-pane :label="t('notificationManagement.tabChannels')" name="channels">
           <NotificationChannelsTab ref="channelsTabRef" />
         </el-tab-pane>

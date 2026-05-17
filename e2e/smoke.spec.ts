@@ -1,7 +1,7 @@
 import { expect, test } from './support/app'
 import { enterDemoApp, expectPageTitle, gotoAndAssertRoute, smokeRoutes } from './support/app'
 
-test.describe('smoke routes (VITE_DEMO_MODE)', () => {
+test.describe('@cross-browser smoke routes (VITE_DEMO_MODE)', () => {
   test('已登录用户访问根路径自动跳转到控制面板', async ({ page }) => {
     // FE 当前不在 /login 页做 mount-time redirect(只有登录提交后才跳),
     // 所以这条只测根路径 → /ops/summary。

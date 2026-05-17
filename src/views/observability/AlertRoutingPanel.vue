@@ -87,24 +87,33 @@
           :label="t('alertRoutingPanel.colUpdatedAt')"
           min-width="180"
         />
-        <el-table-column :label="t('alertRoutingPanel.actions')" width="110" fixed="right">
+        <el-table-column :label="t('alertRoutingPanel.actions')" width="120" fixed="right">
           <template #default="{ row }">
-            <el-tooltip :content="t('alertRoutingPanel.actionEdit')" placement="top">
-              <el-button :icon="Edit" circle @click="openEdit(row)" />
-            </el-tooltip>
+            <el-button
+              type="primary"
+              plain
+              size="small"
+              :icon="Edit"
+              :disabled="!row?.routeCode"
+              @click="openEdit(row)"
+            >
+              {{ t('alertRoutingPanel.actionEdit') }}
+            </el-button>
           </template>
         </el-table-column>
       </el-table>
     </SectionCard>
 
-    <el-dialog
+    <el-drawer
+      :append-to-body="true"
       v-model="dialogVisible"
       :title="
         editingId == null
           ? t('alertRoutingPanel.drawerCreateTitle')
           : t('alertRoutingPanel.drawerEditTitle')
       "
-      width="640px"
+      direction="rtl"
+      size="640px"
       destroy-on-close
     >
       <el-form ref="formRef" :model="form" :rules="rules" label-width="120px">
@@ -166,7 +175,7 @@
           {{ t('common.save') }}
         </el-button>
       </template>
-    </el-dialog>
+    </el-drawer>
   </PageContainer>
 </template>
 

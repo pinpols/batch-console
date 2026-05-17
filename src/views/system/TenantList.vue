@@ -21,9 +21,29 @@
     </PageHeader>
 
     <div class="metrics">
-      <MetricCard :label="t('tenantList.metricTotal')" :value="page.total" />
-      <MetricCard :label="t('tenantList.metricActive')" :value="activeCount" />
-      <MetricCard :label="t('tenantList.metricSuspended')" :value="suspendedCount" />
+      <MetricCard
+        :label="t('tenantList.metricTotal')"
+        :value="page.total"
+        clickable
+        :active="queryApplied.status === ''"
+        @click="filterByStatus('')"
+      />
+      <MetricCard
+        :label="t('tenantList.metricActive')"
+        :value="activeCount"
+        tone="success"
+        clickable
+        :active="queryApplied.status === 'ACTIVE'"
+        @click="filterByStatus('ACTIVE')"
+      />
+      <MetricCard
+        :label="t('tenantList.metricSuspended')"
+        :value="suspendedCount"
+        :tone="suspendedCount > 0 ? 'warning' : 'neutral'"
+        clickable
+        :active="queryApplied.status === 'SUSPENDED'"
+        @click="filterByStatus('SUSPENDED')"
+      />
       <MetricCard :label="t('tenantList.metricCurrent')" :value="tenant.tenantId" />
     </div>
 
@@ -277,6 +297,14 @@
       queryApplied.pageNo = 1
       await load()
     })
+  }
+
+  /** 指标卡点击 → 同步 status 到 draft 与 applied,重拉列表 */
+  function filterByStatus(status: TenantStatus | '') {
+    queryDraft.status = status
+    queryApplied.status = status
+    queryApplied.pageNo = 1
+    void load()
   }
 
   function onReset() {

@@ -108,7 +108,7 @@ export const pageMetaByPath = {
     description: '导入租户配置包,预览校验结果后一次性应用。',
   },
   '/observability/alerts': {
-    title: '告警',
+    title: '事件告警',
     description: '查看告警事件,并执行确认、静默和关闭。',
   },
   '/observability/alert-routings': {

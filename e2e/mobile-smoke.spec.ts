@@ -20,7 +20,7 @@ const MOBILE_ROUTES = [
   '/m/logs',
 ]
 
-test.describe('mobile /m/* 冒烟', () => {
+test.describe('@cross-browser mobile /m/* 冒烟', () => {
 
   for (const route of MOBILE_ROUTES) {
     test(`移动端可打开 ${route}`, async ({ page }) => {

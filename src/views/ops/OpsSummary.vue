@@ -2,7 +2,12 @@
   <PageContainer>
     <PageHeader>
       <template #actions>
-        <el-button type="primary" :icon="Refresh" :loading="loading" @click="load">
+        <el-button
+          type="primary"
+          :icon="Refresh"
+          :loading="loading || refresh.loading.value"
+          @click="refresh.run(load)"
+        >
           {{ t('opsSummary.btnRefresh') }}
         </el-button>
       </template>
@@ -50,7 +55,7 @@
     </SectionCard>
 
     <SectionCard v-if="summary" class="ops-tabs-card">
-      <el-tabs v-model="opsTab" v-hover-tab-activate="true" class="pill-tabs ops-tabs">
+      <el-tabs v-model="opsTab" class="pill-tabs ops-tabs">
         <el-tab-pane :label="t('opsSummary.tabKpis')" name="kpis" />
         <el-tab-pane :label="t('opsSummary.tabTrend')" name="trend" />
         <el-tab-pane :label="t('opsSummary.tabDist')" name="dist" />
@@ -108,6 +113,9 @@
   import { computed } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { Refresh, FolderOpened, DocumentAdd, User, Cpu } from '@element-plus/icons-vue'
+  import { useRefreshAction } from '@/composables/useRefreshAction'
+
+  const refresh = useRefreshAction()
 
   const { t } = useI18n({ useScope: 'global' })
   import PageContainer from '@/components/common/PageContainer.vue'

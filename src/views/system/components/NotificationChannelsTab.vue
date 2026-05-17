@@ -115,20 +115,22 @@
       </el-table-column>
     </ProTable>
 
-    <el-dialog
+    <el-drawer
+      :append-to-body="true"
       v-model="channelFormVisible"
       :title="
         channelEditingCode
           ? t('notificationChannelsTab.dialogTitleEdit')
           : t('notificationChannelsTab.dialogTitleCreate')
       "
-      width="640px"
+      direction="rtl"
+      size="640px"
     >
       <el-form
         ref="channelFormRef"
         :model="channelForm"
         :rules="channelFormRules"
-        label-width="100px"
+        label-width="88px"
       >
         <el-form-item :label="t('notificationChannelsTab.fieldCode')" prop="channelCode">
           <el-input
@@ -173,13 +175,13 @@
       </el-form>
       <template #footer>
         <el-button @click="channelFormVisible = false">
-          {{ t('notificationCommon.btnCancel') }}
+          {{ t('common.cancel') }}
         </el-button>
         <el-button type="primary" :loading="savingChannel" @click="saveChannel">
-          {{ t('notificationCommon.btnSave') }}
+          {{ t('common.save') }}
         </el-button>
       </template>
-    </el-dialog>
+    </el-drawer>
   </div>
 </template>
 

@@ -1,5 +1,5 @@
 <template>
-  <el-drawer v-model="visible" :title="title" :size="size">
+  <el-drawer :append-to-body="true" v-model="visible" :title="title" :size="size">
     <slot v-if="$slots.default" />
     <template v-else-if="metaRows && metaRows.length">
       <div class="detail-drawer__meta">

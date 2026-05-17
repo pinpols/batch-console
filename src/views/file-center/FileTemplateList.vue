@@ -11,7 +11,6 @@
     <SectionCard>
       <el-tabs
         v-model="activeTab"
-        v-hover-tab-activate="true"
         class="pill-tabs file-config-tabs"
         :class="{ 'single-mode': mode !== 'all' }"
       >
@@ -132,16 +131,9 @@
               :label="t('fileTemplateList.colUpdatedAt')"
               width="180"
             />
-            <el-table-column :label="t('fileTemplateList.colActions')" width="132" fixed="right">
+            <el-table-column :label="t('fileTemplateList.colActions')" width="180" fixed="right">
               <template #default="{ row }">
-                <div class="table-actions">
-                  <el-tooltip :content="t('common.edit')" placement="top">
-                    <el-button :icon="Edit" circle @click="openTemplateEdit(row)" />
-                  </el-tooltip>
-                  <el-tooltip :content="t('fileTemplateList.actionDetail')" placement="top">
-                    <el-button :icon="View" circle @click="openDetail(row.templateCode)" />
-                  </el-tooltip>
-                </div>
+                <RowActions :actions="templateRowActions(row)" :inline-limit="2" />
               </template>
             </el-table-column>
           </ProTable>
@@ -247,11 +239,17 @@
               :label="t('fileTemplateList.colUpdatedAt')"
               width="180"
             />
-            <el-table-column :label="t('fileTemplateList.colActions')" width="96" fixed="right">
+            <el-table-column :label="t('fileTemplateList.colActions')" width="120" fixed="right">
               <template #default="{ row }">
-                <el-tooltip :content="t('common.edit')" placement="top">
-                  <el-button :icon="Edit" circle @click="openChannelEdit(row)" />
-                </el-tooltip>
+                <el-button
+                  type="primary"
+                  plain
+                  size="small"
+                  :icon="Edit"
+                  @click="openChannelEdit(row)"
+                >
+                  {{ t('common.edit') }}
+                </el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -259,7 +257,12 @@
       </el-tabs>
     </SectionCard>
 
-    <el-drawer v-model="detailVisible" :title="t('fileTemplateList.detailTitle')" size="800px">
+    <el-drawer
+      :append-to-body="true"
+      v-model="detailVisible"
+      :title="t('fileTemplateList.detailTitle')"
+      size="800px"
+    >
       <el-descriptions v-if="detail" :column="2" border size="small">
         <el-descriptions-item :label="t('fileTemplateList.descTemplateCode')">{{
           detail.templateCode
@@ -303,14 +306,16 @@
       </el-descriptions>
     </el-drawer>
 
-    <el-dialog
+    <el-drawer
+      :append-to-body="true"
       v-model="templateDialogVisible"
       :title="
         templateEditingId == null
           ? t('fileTemplateList.templateCreateTitle')
           : t('fileTemplateList.templateEditTitle')
       "
-      width="800px"
+      direction="rtl"
+      size="800px"
       destroy-on-close
     >
       <el-form :model="templateForm" label-width="120px">
@@ -375,16 +380,18 @@
           t('common.save')
         }}</el-button>
       </template>
-    </el-dialog>
+    </el-drawer>
 
-    <el-dialog
+    <el-drawer
+      :append-to-body="true"
       v-model="channelDialogVisible"
       :title="
         channelEditingId == null
           ? t('fileTemplateList.channelCreateTitle')
           : t('fileTemplateList.channelEditTitle')
       "
-      width="800px"
+      direction="rtl"
+      size="800px"
       destroy-on-close
     >
       <el-form :model="channelForm" label-width="120px">
@@ -426,7 +433,7 @@
           t('common.save')
         }}</el-button>
       </template>
-    </el-dialog>
+    </el-drawer>
   </PageContainer>
 </template>
 
@@ -479,6 +486,7 @@
   import ProTable from '@/components/table/ProTable.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
   import JsonPreview from '@/components/common/JsonPreview.vue'
+  import RowActions, { type RowAction } from '@/components/common/RowActions.vue'
   import type { ConsoleFileChannelResponse, ConsoleFileTemplateResponse } from '@/types/console-api'
 
   const tenant = useTenantStore()
@@ -658,9 +666,31 @@
     }
   }
 
-  async function openDetail(templateCode: string) {
-    detail.value = await queryFileTemplateDetail(tenant.tenantId, templateCode)
+  async function openDetail(row: ConsoleFileTemplateResponse) {
+    // 防御:BE 返回的 row 字段可能全为 null(数据坏 / schema drift / 权限过滤);
+    // 不带 templateCode 直接 fetch 会 GET /file-templates/undefined → 404 报错
+    if (!row?.templateCode) {
+      ElMessage.warning(t('fileTemplateList.detailUnavailable'))
+      return
+    }
+    detail.value = await queryFileTemplateDetail(tenant.tenantId, row.templateCode)
     detailVisible.value = true
+  }
+
+  function templateRowActions(row: ConsoleFileTemplateResponse): RowAction[] {
+    return [
+      {
+        key: 'edit',
+        label: t('common.edit'),
+        primary: true,
+        onClick: () => openTemplateEdit(row),
+      },
+      {
+        key: 'detail',
+        label: t('fileTemplateList.actionDetail'),
+        onClick: () => openDetail(row),
+      },
+    ]
   }
 
   function openTemplateCreate() {

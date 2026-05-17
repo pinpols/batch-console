@@ -1,5 +1,14 @@
 <template>
-  <el-card class="metric-card" :class="toneClass" shadow="never">
+  <el-card
+    class="metric-card"
+    :class="[toneClass, { 'metric-card--clickable': clickable, 'metric-card--active': active }]"
+    shadow="never"
+    :role="clickable ? 'button' : undefined"
+    :tabindex="clickable ? 0 : undefined"
+    @click="clickable && emit('click')"
+    @keydown.enter.prevent="clickable && emit('click')"
+    @keydown.space.prevent="clickable && emit('click')"
+  >
     <div class="metric-card__label">{{ label }}</div>
     <div class="metric-card__value" :class="{ 'metric-card__value--long': isLong }">
       {{ value }}
@@ -19,9 +28,15 @@
       value: string | number
       description?: string
       tone?: MetricTone
+      /** 点击联动:true 时卡片变可点击,激活态可控 */
+      clickable?: boolean
+      /** 当前是否为「激活」筛选项,边框 + 左侧色条加重 */
+      active?: boolean
     }>(),
-    { tone: 'neutral' },
+    { tone: 'neutral', clickable: false, active: false },
   )
+
+  const emit = defineEmits<{ click: [] }>()
 
   const isLong = computed(() => typeof props.value === 'string' && props.value.length >= 14)
 
@@ -105,5 +120,40 @@
     margin-top: 8px;
     color: var(--color-text-tertiary);
     font-size: var(--font-size-xs);
+  }
+
+  .metric-card--clickable {
+    cursor: pointer;
+    transition:
+      border-color 0.18s ease,
+      box-shadow 0.18s ease;
+  }
+
+  .metric-card--clickable:hover {
+    border-color: color-mix(in srgb, var(--metric-tone) 60%, var(--color-border-light));
+    box-shadow: 0 4px 14px color-mix(in srgb, var(--metric-tone) 12%, transparent);
+  }
+
+  .metric-card--clickable::before {
+    opacity: 0.3;
+  }
+
+  .metric-card--clickable:hover::before {
+    opacity: 1;
+  }
+
+  .metric-card--clickable.metric-card--active {
+    border-color: var(--metric-tone);
+    background: color-mix(in srgb, var(--metric-tone) 6%, var(--color-bg-card));
+  }
+
+  .metric-card--clickable.metric-card--active::before {
+    opacity: 1;
+    width: 4px;
+  }
+
+  .metric-card--clickable:focus-visible {
+    outline: 2px solid var(--metric-tone);
+    outline-offset: 2px;
   }
 </style>

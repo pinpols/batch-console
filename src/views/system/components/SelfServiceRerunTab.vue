@@ -4,7 +4,7 @@
       ref="rerunFormRef"
       :model="rerunForm"
       :rules="rerunFormRules"
-      label-width="100px"
+      label-width="88px"
       class="form-section"
     >
       <el-form-item :label="t('selfServiceCommon.jobCodeLabel')" prop="jobCode">
@@ -73,9 +73,13 @@
         <div class="field-hint">{{ t('selfServiceRerunTab.reasonHint') }}</div>
       </el-form-item>
       <el-form-item class="form-actions">
+        <el-button :icon="RefreshLeft" :disabled="rerunLoading" @click="resetRerunForm">
+          {{ t('common.reset') }}
+        </el-button>
         <el-button
           type="primary"
           class="pretty-primary-button"
+          :icon="Promotion"
           :loading="rerunLoading"
           v-track-click="t('selfServiceRerunTab.trackSubmit')"
           @click="submitRerun"
@@ -91,6 +95,7 @@
   import { ref, reactive, toRefs } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
+  import { Promotion, RefreshLeft } from '@element-plus/icons-vue'
 
   const { t } = useI18n({ useScope: 'global' })
   import type { FormRules } from 'element-plus'
@@ -123,6 +128,14 @@
     bizDate: [rules.required(t('selfServiceCommon.ruleBizDate'), 'change')],
   }
 
+  function resetRerunForm() {
+    rerunForm.jobCode = ''
+    rerunForm.bizDate = ''
+    rerunForm.targetInstanceNo = ''
+    rerunForm.reason = ''
+    rerunFormRef.value?.clearValidate()
+  }
+
   async function submitRerun() {
     if (!(await validateRerunForm())) return
     rerunLoading.value = true
@@ -150,12 +163,4 @@
   })
 </script>
 
-<style scoped>
-  .field-hint {
-    width: 100%;
-    margin-top: 6px;
-    font-size: 12px;
-    line-height: 1.45;
-    color: var(--color-text-tertiary);
-  }
-</style>
+<style scoped></style>

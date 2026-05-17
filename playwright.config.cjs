@@ -31,7 +31,19 @@ module.exports = defineConfig({
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
   },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  // D 档:多浏览器矩阵。默认只跑 chromium(本地 dev 友好);
+  // 设 CROSS_BROWSER=1 启用 firefox + webkit + mobile-chrome。
+  // release pre-flight 用 `CROSS_BROWSER=1 npx playwright test --grep "@cross-browser"`。
+  projects: [
+    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+    ...(process.env.CROSS_BROWSER === '1'
+      ? [
+          { name: 'firefox', use: { ...devices['Desktop Firefox'] } },
+          { name: 'webkit', use: { ...devices['Desktop Safari'] } },
+          { name: 'mobile-chrome', use: { ...devices['Pixel 5'] } },
+        ]
+      : []),
+  ],
   webServer: {
     command: 'npm run dev',
     url: 'http://localhost:5173',

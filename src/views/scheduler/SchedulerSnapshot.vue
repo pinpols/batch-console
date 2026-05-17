@@ -2,7 +2,12 @@
   <PageContainer>
     <PageHeader>
       <template #actions>
-        <el-button type="primary" :loading="loading" @click="loadAll()">
+        <el-button
+          type="primary"
+          :icon="Refresh"
+          :loading="loading || refresh.loading.value"
+          @click="refresh.run(() => loadAll())"
+        >
           {{ t('schedulerSnapshot.headerRefresh') }}
         </el-button>
         <el-button type="warning" :loading="pauseLoading" @click="confirmPauseAll">
@@ -63,7 +68,7 @@
           :empty-text="t('common.noData')"
           class="console-table"
         >
-          <el-table-column :label="t('schedulerSnapshot.colPolicy')" min-width="180">
+          <el-table-column :label="t('schedulerSnapshot.colPolicy')" min-width="280">
             <template #default="{ row }">
               <div class="cell-stack">
                 <div class="cell-main">
@@ -141,13 +146,13 @@
             :label="t('schedulerSnapshot.colQuotaWindow')"
             width="170"
           />
-          <el-table-column :label="t('schedulerSnapshot.colActions')" width="110" fixed="right">
+          <el-table-column :label="t('schedulerSnapshot.colActions')" width="140" fixed="right">
             <template #default="{ row }">
-              <div class="table-actions">
-                <CopyableText :text="String(row.policyCode ?? '')">
+              <CopyableText :text="String(row.policyCode ?? '')" class="snapshot-copy-action">
+                <el-button type="primary" plain size="small" :icon="DocumentCopy">
                   {{ t('schedulerSnapshot.actionCopyCode') }}
-                </CopyableText>
-              </div>
+                </el-button>
+              </CopyableText>
             </template>
           </el-table-column>
         </el-table>
@@ -170,7 +175,7 @@
           :empty-text="t('common.noData')"
           class="console-table"
         >
-          <el-table-column :label="t('schedulerSnapshot.colQueue')" min-width="180">
+          <el-table-column :label="t('schedulerSnapshot.colQueue')" min-width="280">
             <template #default="{ row }">
               <div class="cell-stack">
                 <div class="cell-main">
@@ -233,13 +238,13 @@
             :label="t('schedulerSnapshot.colQuotaWindow')"
             width="170"
           />
-          <el-table-column :label="t('schedulerSnapshot.colActions')" width="110" fixed="right">
+          <el-table-column :label="t('schedulerSnapshot.colActions')" width="140" fixed="right">
             <template #default="{ row }">
-              <div class="table-actions">
-                <CopyableText :text="String(row.queueCode ?? '')">
+              <CopyableText :text="String(row.queueCode ?? '')" class="snapshot-copy-action">
+                <el-button type="primary" plain size="small" :icon="DocumentCopy">
                   {{ t('schedulerSnapshot.actionCopyCode') }}
-                </CopyableText>
-              </div>
+                </el-button>
+              </CopyableText>
             </template>
           </el-table-column>
         </el-table>
@@ -262,7 +267,7 @@
           :empty-text="t('common.noData')"
           class="console-table"
         >
-          <el-table-column :label="t('schedulerSnapshot.colWorker')" min-width="220">
+          <el-table-column :label="t('schedulerSnapshot.colWorker')" min-width="280">
             <template #default="{ row }">
               <div class="cell-stack">
                 <div class="cell-main">
@@ -289,13 +294,13 @@
               </div>
             </template>
           </el-table-column>
-          <el-table-column :label="t('schedulerSnapshot.colActions')" width="110" fixed="right">
+          <el-table-column :label="t('schedulerSnapshot.colActions')" width="140" fixed="right">
             <template #default="{ row }">
-              <div class="table-actions">
-                <CopyableText :text="String(row.workerCode ?? '')">
+              <CopyableText :text="String(row.workerCode ?? '')" class="snapshot-copy-action">
+                <el-button type="primary" plain size="small" :icon="DocumentCopy">
                   {{ t('schedulerSnapshot.actionCopyCode') }}
-                </CopyableText>
-              </div>
+                </el-button>
+              </CopyableText>
             </template>
           </el-table-column>
         </el-table>
@@ -402,6 +407,10 @@
   import { computed, ref } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
+  import { DocumentCopy, Refresh } from '@element-plus/icons-vue'
+  import { useRefreshAction } from '@/composables/useRefreshAction'
+
+  const refresh = useRefreshAction()
   import { confirmDanger } from '@/composables/useDangerConfirm'
 
   const { t } = useI18n({ useScope: 'global' })

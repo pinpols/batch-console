@@ -55,6 +55,9 @@ app.use(i18n)
 // Element Plus imperative API(ElMessageBox / ElNotification / ElMessage)依赖全局 locale。
 // 声明式组件由 App.vue 的 ElConfigProvider 响应式覆盖,这里只设置初始值。
 app.use(ElementPlus, { locale: resolveElementPlusLocale(i18n.global.locale.value) })
+// Toast 去重:相同 message+type 不重复堆叠,显示 ×N 计数
+import { installMessagePatch } from '@/utils/messagePatch'
+installMessagePatch()
 app.use(VueQueryPlugin, {
   queryClientConfig: {
     defaultOptions: {

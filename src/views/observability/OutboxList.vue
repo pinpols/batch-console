@@ -3,7 +3,7 @@
     <PageHeader />
 
     <SectionCard>
-      <el-tabs v-model="tab" v-hover-tab-activate="true" class="pill-tabs">
+      <el-tabs v-model="tab" class="pill-tabs">
         <el-tab-pane :label="t('observability.outboxTabRetry')" name="retry">
           <ProTable
             :data="retryRows"

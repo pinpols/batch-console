@@ -4,7 +4,7 @@
       ref="quotaFormRef"
       :model="quotaForm"
       :rules="quotaFormRules"
-      label-width="100px"
+      label-width="88px"
       class="form-section"
     >
       <el-form-item :label="t('selfServiceQuotaChangeTab.keyLabel')" prop="quotaKey">
@@ -36,9 +36,13 @@
         <div class="field-hint">{{ t('selfServiceQuotaChangeTab.reasonHint') }}</div>
       </el-form-item>
       <el-form-item class="form-actions">
+        <el-button :icon="RefreshLeft" :disabled="submittingQuota" @click="resetQuotaForm">
+          {{ t('common.reset') }}
+        </el-button>
         <el-button
           type="primary"
           class="pretty-primary-button"
+          :icon="Promotion"
           :loading="submittingQuota"
           v-track-click="t('selfServiceQuotaChangeTab.trackSubmit')"
           @click="submitQuotaChange"
@@ -54,6 +58,7 @@
   import { ref, reactive } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
+  import { Promotion, RefreshLeft } from '@element-plus/icons-vue'
 
   const { t } = useI18n({ useScope: 'global' })
   import type { FormRules } from 'element-plus'
@@ -111,6 +116,13 @@
     }
   }
 
+  function resetQuotaForm() {
+    quotaForm.quotaKey = ''
+    quotaForm.requestedValue = ''
+    quotaForm.reason = ''
+    quotaFormRef.value?.clearValidate()
+  }
+
   async function submitQuotaChange() {
     if (!(await validateQuotaForm())) return
     const requestedValue = Number.parseInt(quotaForm.requestedValue.trim(), 10)
@@ -136,12 +148,4 @@
   })
 </script>
 
-<style scoped>
-  .field-hint {
-    width: 100%;
-    margin-top: 6px;
-    font-size: 12px;
-    line-height: 1.45;
-    color: var(--color-text-tertiary);
-  }
-</style>
+<style scoped></style>

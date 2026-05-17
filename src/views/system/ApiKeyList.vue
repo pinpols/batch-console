@@ -100,8 +100,14 @@
       </ProTable>
     </SectionCard>
 
-    <el-dialog v-model="createVisible" :title="t('apiKeyList.dialogCreateTitle')" width="480px">
-      <el-form ref="apiKeyFormRef" :model="form" :rules="apiKeyFormRules" label-width="100px">
+    <el-drawer
+      :append-to-body="true"
+      v-model="createVisible"
+      :title="t('apiKeyList.dialogCreateTitle')"
+      direction="rtl"
+      size="480px"
+    >
+      <el-form ref="apiKeyFormRef" :model="form" :rules="apiKeyFormRules" label-width="88px">
         <el-form-item :label="t('apiKeyList.fieldName')" prop="keyName">
           <el-input
             v-model="form.keyName"
@@ -123,12 +129,12 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="createVisible = false">{{ t('apiKeyList.dialogCancel') }}</el-button>
+        <el-button @click="createVisible = false">{{ t('common.cancel') }}</el-button>
         <el-button type="primary" :loading="saving" @click="save">
           {{ t('apiKeyList.dialogCreate') }}
         </el-button>
       </template>
-    </el-dialog>
+    </el-drawer>
 
     <el-dialog
       v-model="rawKeyVisible"
@@ -170,7 +176,13 @@
       </template>
     </el-dialog>
 
-    <el-drawer v-model="detailVisible" :title="t('apiKeyList.detailTitle')" size="640px">
+    <el-drawer
+      :append-to-body="true"
+      v-model="detailVisible"
+      :title="t('apiKeyList.detailTitle')"
+      direction="rtl"
+      size="640px"
+    >
       <el-descriptions v-if="detail" :column="1" border size="small">
         <el-descriptions-item label="ID">{{ detail.id }}</el-descriptions-item>
         <el-descriptions-item :label="t('apiKeyList.colName')">

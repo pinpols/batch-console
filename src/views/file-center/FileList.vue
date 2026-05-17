@@ -132,7 +132,12 @@
       </ProTable>
     </SectionCard>
 
-    <el-drawer v-model="detailVisible" :title="t('fileList.detailTitle')" size="800px">
+    <el-drawer
+      :append-to-body="true"
+      v-model="detailVisible"
+      :title="t('fileList.detailTitle')"
+      size="800px"
+    >
       <el-descriptions v-if="detail" :column="2" border size="small">
         <el-descriptions-item label="ID">{{ detail.id }}</el-descriptions-item>
         <el-descriptions-item label="tenantId">{{ detail.tenantId }}</el-descriptions-item>

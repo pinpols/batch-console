@@ -132,15 +132,16 @@
           :label="t('workflowDefinitionList.colUpdatedAt')"
           width="180"
         />
-        <el-table-column :label="t('workflowDefinitionList.colActions')" width="200" fixed="right">
+        <el-table-column :label="t('workflowDefinitionList.colActions')" width="260" fixed="right">
           <template #default="{ row }">
-            <RowActions :actions="rowActions(row)" />
+            <RowActions :actions="rowActions(row)" :inline-limit="3" />
           </template>
         </el-table-column>
       </ProTable>
     </SectionCard>
 
     <el-drawer
+      :append-to-body="true"
       v-model="detailVisible"
       :title="t('workflowDefinitionList.detailTitle')"
       size="800px"
@@ -305,6 +306,7 @@
 <script setup lang="ts">
   import { computed, reactive, ref, watch } from 'vue'
   import { useRouter } from 'vue-router'
+  import { useDrawerAutoClose } from '@/composables/useDrawerAutoClose'
   import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { Plus } from '@element-plus/icons-vue'
@@ -386,6 +388,7 @@
     void router.push(`/monitor/workflow-runs/${row.id}`)
   }
   const validateVisible = ref(false)
+  useDrawerAutoClose([detailVisible, validateVisible])
   const validateResult = ref<DagValidationResult | null>(null)
   const validateErrorCount = computed(
     () =>

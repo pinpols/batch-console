@@ -122,7 +122,7 @@
       </ProTable>
     </SectionCard>
 
-    <el-drawer v-model="drawerVisible" :title="drawerTitle" size="800px">
+    <el-drawer :append-to-body="true" v-model="drawerVisible" :title="drawerTitle" size="800px">
       <el-form ref="formRef" :model="form" :rules="formRules" label-width="120px">
         <el-form-item :label="t('pipelineDefinitionList.fieldPipelineCode')" prop="pipelineCode">
           <el-input v-model="form.pipelineCode" :disabled="editingId != null" maxlength="128" />
@@ -240,6 +240,7 @@
 
     <!-- Run-centric 详情抽屉(P2 对称):Overview + 最近运行 -->
     <el-drawer
+      :append-to-body="true"
       v-model="detailVisible"
       :title="t('pipelineDefinitionList.detailTitle', { code: detailRow?.pipelineCode || '' })"
       size="720px"
@@ -339,6 +340,7 @@
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
   import { useRouter } from 'vue-router'
+  import { useDrawerAutoClose } from '@/composables/useDrawerAutoClose'
   import { instanceApi } from '@/api/instance'
   import { fmtDatetime } from '@/utils/datetime'
   import StatusTag from '@/components/common/StatusTag.vue'
@@ -375,6 +377,7 @@
   // ── Run-centric 详情抽屉(P2 对称) ─────
   const router = useRouter()
   const detailVisible = ref(false)
+  useDrawerAutoClose([drawerVisible, detailVisible])
   const detailRow = ref<PipelineDefinitionRow | null>(null)
   const activeDetailTab = ref<'overview' | 'runs'>('overview')
   const detailRunsRows = ref<ConsoleJobInstanceResponse[]>([])

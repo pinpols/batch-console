@@ -2,7 +2,11 @@
   <PageContainer>
     <PageHeader>
       <template #actions>
-        <el-button :loading="refreshing" @click="refreshProfile">
+        <el-button
+          :icon="Refresh"
+          :loading="refreshing || refreshAction.loading.value"
+          @click="refreshAction.run(refreshProfile)"
+        >
           {{ t('userRole.btnRefreshLogin') }}
         </el-button>
       </template>
@@ -175,7 +179,10 @@
   import { ElMessage } from 'element-plus'
 
   const { t } = useI18n({ useScope: 'global' })
-  import { ArrowUp, Plus } from '@element-plus/icons-vue'
+  import { ArrowUp, Plus, Refresh } from '@element-plus/icons-vue'
+  import { useRefreshAction } from '@/composables/useRefreshAction'
+
+  const refreshAction = useRefreshAction()
   import { navigationGroups } from '@/constants/navigation'
   import { roleLabelMap, roleOrder } from '@/constants/role'
   import { useAuthStore } from '@/stores/auth'

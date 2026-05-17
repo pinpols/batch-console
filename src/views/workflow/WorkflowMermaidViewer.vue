@@ -2,7 +2,11 @@
   <PageContainer>
     <PageHeader :title="title" :description="description" back-to="/workflow/definitions">
       <template #actions>
-        <el-button :loading="loading" :icon="Refresh" @click="reload">
+        <el-button
+          :loading="loading || refresh.loading.value"
+          :icon="Refresh"
+          @click="refresh.run(reload)"
+        >
           {{ t('common.refresh') }}
         </el-button>
         <el-button :icon="DocumentCopy" :disabled="!mermaidText" @click="copyText">
@@ -168,11 +172,15 @@
 <script setup lang="ts">
   import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
+  import { useDrawerAutoClose } from '@/composables/useDrawerAutoClose'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
 
   const { t } = useI18n({ useScope: 'global' })
   import { DocumentCopy, Refresh } from '@element-plus/icons-vue'
+  import { useRefreshAction } from '@/composables/useRefreshAction'
+
+  const refresh = useRefreshAction()
   import mermaid from 'mermaid'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
@@ -219,6 +227,7 @@
   const showSource = ref(false)
   /** 无 runId 模式下点击节点弹出的详情抽屉 */
   const detailDrawerVisible = ref(false)
+  useDrawerAutoClose(detailDrawerVisible)
   type NodeMeta = NonNullable<WorkflowDefinitionDetailResponse['nodes']>[number]
   const selectedNodeMeta = ref<NodeMeta | null>(null)
   // description 字段在 OpenAPI schema 上是节点 extras 的可选字段;此处单独 computed 取值,

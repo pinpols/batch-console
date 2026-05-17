@@ -9,8 +9,8 @@
         <el-button
           size="small"
           :icon="RefreshRight"
-          :loading="chartsLoading"
-          @click="$emit('refreshCharts')"
+          :loading="chartsLoading || refresh.loading.value"
+          @click="onRefresh"
         >
           {{ t('opsDistPanel.btnRefresh') }}
         </el-button>
@@ -49,13 +49,15 @@
 </template>
 
 <script setup lang="ts">
+  import { watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { RefreshRight } from '@element-plus/icons-vue'
   import VChart from 'vue-echarts'
+  import { useRefreshAction } from '@/composables/useRefreshAction'
 
   const { t } = useI18n({ useScope: 'global' })
 
-  defineProps<{
+  const props = defineProps<{
     active: boolean
     chartsLoading: boolean
     chartTheme: string | undefined
@@ -63,9 +65,28 @@
     workerLoadTopNOption: Record<string, unknown>
   }>()
 
-  defineEmits<{
+  const emit = defineEmits<{
     refreshCharts: []
   }>()
+
+  const refresh = useRefreshAction()
+
+  function onRefresh() {
+    void refresh.run(async () => {
+      emit('refreshCharts')
+      await new Promise<void>((resolve) => {
+        const stop = watch(
+          () => props.chartsLoading,
+          (v, old) => {
+            if (old && !v) {
+              stop()
+              resolve()
+            }
+          },
+        )
+      })
+    })
+  }
 </script>
 
 <style scoped>

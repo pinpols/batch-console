@@ -4,7 +4,7 @@
       ref="compFormRef"
       :model="compForm"
       :rules="compFormRules"
-      label-width="100px"
+      label-width="88px"
       class="form-section"
     >
       <el-form-item :label="t('selfServiceCommon.jobCodeLabel')" prop="jobCode">
@@ -69,9 +69,13 @@
         <div class="field-hint">{{ t('selfServiceCompensationTab.reasonHint') }}</div>
       </el-form-item>
       <el-form-item class="form-actions">
+        <el-button :icon="RefreshLeft" :disabled="compLoading" @click="resetCompForm">
+          {{ t('common.reset') }}
+        </el-button>
         <el-button
           type="primary"
           class="pretty-primary-button"
+          :icon="Promotion"
           :loading="compLoading"
           v-track-click="t('selfServiceCompensationTab.trackSubmit')"
           @click="submitCompensation"
@@ -87,6 +91,7 @@
   import { ref, reactive, computed } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
+  import { Promotion, RefreshLeft } from '@element-plus/icons-vue'
 
   const { t } = useI18n({ useScope: 'global' })
   import type { FormRules } from 'element-plus'
@@ -124,6 +129,15 @@
     bizDate: [rules.required(t('selfServiceCommon.ruleBizDate'), 'change')],
   }
 
+  function resetCompForm() {
+    compForm.jobCode = ''
+    compForm.bizDate = ''
+    compForm.compensationType = ''
+    compForm.targetInstanceNo = ''
+    compForm.reason = ''
+    compFormRef.value?.clearValidate()
+  }
+
   async function submitCompensation() {
     if (!(await validateCompForm())) return
     compLoading.value = true
@@ -150,12 +164,4 @@
   useTenantReload(clearOptions)
 </script>
 
-<style scoped>
-  .field-hint {
-    width: 100%;
-    margin-top: 6px;
-    font-size: 12px;
-    line-height: 1.45;
-    color: var(--color-text-tertiary);
-  }
-</style>
+<style scoped></style>

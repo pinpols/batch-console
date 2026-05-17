@@ -7,7 +7,12 @@
           <el-radio-button value="running">{{ t('runs.filterRunning') }}</el-radio-button>
           <el-radio-button value="failed">{{ t('runs.filterFailed') }}</el-radio-button>
         </el-radio-group>
-        <el-button type="primary" :loading="loading" @click="loadAll">
+        <el-button
+          type="primary"
+          :icon="Refresh"
+          :loading="loading || refresh.loading.value"
+          @click="refresh.run(loadAll)"
+        >
           {{ t('runs.refresh') }}
         </el-button>
       </template>
@@ -97,6 +102,10 @@
   import { computed, ref } from 'vue'
   import { useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
+  import { Refresh } from '@element-plus/icons-vue'
+  import { useRefreshAction } from '@/composables/useRefreshAction'
+
+  const refresh = useRefreshAction()
   import { fmtDatetime } from '@/utils/datetime'
   import { instanceApi } from '@/api/instance'
   import { useTenantStore } from '@/stores/tenant'

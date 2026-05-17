@@ -75,16 +75,18 @@
       </ProTable>
     </SectionCard>
 
-    <el-dialog
+    <el-drawer
+      :append-to-body="true"
       v-model="dialogVisible"
       :title="
         editingKey
           ? t('systemParameterList.dialogEditTitle')
           : t('systemParameterList.dialogCreateTitle')
       "
-      width="480px"
+      direction="rtl"
+      size="480px"
     >
-      <el-form ref="paramFormRef" :model="form" :rules="formRules" label-width="100px">
+      <el-form ref="paramFormRef" :model="form" :rules="formRules" label-width="88px">
         <el-form-item :label="t('systemParameterList.fieldKey')" prop="key">
           <el-input
             v-model="form.key"
@@ -104,13 +106,13 @@
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">
-          {{ t('systemParameterList.dialogCancel') }}
+          {{ t('common.cancel') }}
         </el-button>
         <el-button type="primary" :loading="saving" @click="save">
-          {{ t('systemParameterList.dialogSave') }}
+          {{ t('common.save') }}
         </el-button>
       </template>
-    </el-dialog>
+    </el-drawer>
   </PageContainer>
 </template>
 

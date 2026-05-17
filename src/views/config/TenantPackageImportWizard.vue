@@ -33,11 +33,23 @@
               <p class="upload-zone__desc">{{ t('tenantPackageImportWizard.uploadDesc') }}</p>
               <div class="upload-zone__toolbar">
                 <div class="upload-zone__toolbar-left">
-                  <el-button link type="primary" :loading="tplLoading" @click="doDownloadTemplate">
+                  <el-button
+                    link
+                    type="primary"
+                    :icon="Download"
+                    :loading="tplLoading"
+                    @click="doDownloadTemplate"
+                  >
                     {{ t('tenantPackageImportWizard.btnDownloadTemplate') }}
                   </el-button>
                   <span class="upload-zone__toolbar-dot" aria-hidden="true">•</span>
-                  <el-button link type="primary" :loading="exportLoading" @click="doExport">
+                  <el-button
+                    link
+                    type="primary"
+                    :icon="Download"
+                    :loading="exportLoading"
+                    @click="doExport"
+                  >
                     {{ t('tenantPackageImportWizard.btnExportCurrent') }}
                   </el-button>
                 </div>
@@ -56,6 +68,7 @@
                   <el-button
                     class="upload-zone__primary-btn"
                     type="primary"
+                    :icon="Upload"
                     :disabled="!file"
                     :loading="upLoading"
                     size="large"
@@ -112,6 +125,7 @@
                     placement="top"
                   >
                     <el-button
+                      :icon="Download"
                       :disabled="!uploadToken"
                       :loading="wbLoading"
                       @click="doDownloadWorkbook"
@@ -450,8 +464,10 @@
     ArrowLeft,
     ArrowRight,
     Document,
+    Download,
     FolderOpened,
     Refresh,
+    Upload,
     WarningFilled,
   } from '@element-plus/icons-vue'
   import { ElMessage, ElMessageBox } from 'element-plus'

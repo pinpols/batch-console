@@ -54,32 +54,48 @@
           :key="p.id || p.policyCode"
           shadow="never"
           class="quota-card"
+          :class="{ 'quota-card--disabled': !p.enabled }"
         >
-          <div class="quota-card__top">
-            <div class="quota-card__title">
-              <span class="quota-card__code">{{ p.policyCode }}</span>
-              <span v-if="p.description" class="quota-card__name">{{ p.description }}</span>
+          <div class="quota-card__head">
+            <div class="quota-card__heading">
+              <div class="quota-card__heading-row">
+                <span class="quota-card__code">{{ p.policyCode }}</span>
+                <el-tag
+                  :type="p.enabled ? 'success' : 'info'"
+                  size="small"
+                  effect="light"
+                  round
+                  class="quota-card__status"
+                >
+                  {{ p.enabled ? t('quotaPanel.switchOn') : t('quotaPanel.switchOff') }}
+                </el-tag>
+              </div>
+              <div v-if="p.description" class="quota-card__desc">{{ p.description }}</div>
+              <div class="quota-card__meta">
+                <span class="quota-card__chip">
+                  <span class="quota-card__chip-label">weight</span>
+                  <span class="quota-card__chip-value">{{ num(p.fairShareWeight) }}</span>
+                </span>
+                <span v-if="p.tenantId" class="quota-card__chip">
+                  <span class="quota-card__chip-label">tenant</span>
+                  <span class="quota-card__chip-value">{{ p.tenantId }}</span>
+                </span>
+              </div>
             </div>
-            <div class="quota-card__badges">
-              <el-tooltip :content="t('quotaPanel.actionEdit')" placement="top">
-                <el-button :icon="Edit" circle @click="openEdit(p)" />
-              </el-tooltip>
+            <div class="quota-card__actions">
               <el-switch
                 :model-value="p.enabled"
-                inline-prompt
-                :active-text="t('quotaPanel.switchOn')"
-                :inactive-text="t('quotaPanel.switchOff')"
                 :loading="togglingId === p.id"
                 @change="togglePolicy(p)"
               />
-              <el-tag size="small" effect="plain" type="info">
-                weight: {{ num(p.fairShareWeight) }}
-              </el-tag>
+              <el-button size="small" :icon="Edit" :disabled="!p?.policyCode" @click="openEdit(p)">
+                {{ t('quotaPanel.actionEdit') }}
+              </el-button>
             </div>
           </div>
 
           <div class="kpi-row">
-            <div class="kpi">
+            <div class="kpi kpi--primary">
               <div class="kpi__label">{{ t('quotaPanel.kpiConcurrent') }}</div>
               <div class="kpi__value">{{ num(p.maxRunningJobsPerTenant) }}</div>
             </div>
@@ -118,12 +134,14 @@
       </div>
     </SectionCard>
 
-    <el-dialog
+    <el-drawer
+      :append-to-body="true"
       v-model="dialogVisible"
       :title="
         editingId == null ? t('quotaPanel.drawerCreateTitle') : t('quotaPanel.drawerEditTitle')
       "
-      width="640px"
+      direction="rtl"
+      size="640px"
       destroy-on-close
     >
       <el-form ref="formRef" :model="form" :rules="rules" label-width="190px">
@@ -167,7 +185,7 @@
           {{ t('common.save') }}
         </el-button>
       </template>
-    </el-dialog>
+    </el-drawer>
   </PageContainer>
 </template>
 
@@ -396,70 +414,150 @@
 
   .quota-card {
     border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-content);
+    position: relative;
+    overflow: hidden;
+    transition:
+      border-color 0.15s ease,
+      box-shadow 0.15s ease;
   }
 
-  .quota-card__top {
+  .quota-card::before {
+    content: '';
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 3px;
+    background: var(--color-success);
+  }
+
+  .quota-card--disabled::before {
+    background: var(--color-text-tertiary);
+    opacity: 0.5;
+  }
+
+  .quota-card--disabled {
+    opacity: 0.78;
+  }
+
+  .quota-card:hover {
+    border-color: color-mix(in srgb, var(--color-primary) 30%, var(--color-border-light));
+    box-shadow: 0 4px 14px color-mix(in srgb, var(--color-primary) 8%, transparent);
+  }
+
+  .quota-card__head {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
     gap: var(--space-md);
     flex-wrap: wrap;
-    margin-bottom: 10px;
+    margin-bottom: 14px;
   }
 
-  .quota-card__title {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-sm);
-    flex-wrap: wrap;
+  .quota-card__heading {
     min-width: 0;
+    flex: 1;
+  }
+
+  .quota-card__heading-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
   }
 
   .quota-card__code {
-    font-size: var(--font-size-lg);
+    font-size: 16px;
     font-weight: 750;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.01em;
     color: var(--color-text-primary);
   }
 
-  .quota-card__name {
-    color: var(--color-text-secondary);
-    font-size: var(--font-size-sm);
+  .quota-card__status {
+    margin-left: 2px;
   }
 
-  .quota-card__badges {
+  .quota-card__desc {
+    color: var(--color-text-secondary);
+    font-size: 12.5px;
+    line-height: 1.5;
+    margin-bottom: 6px;
+  }
+
+  .quota-card__meta {
     display: inline-flex;
     align-items: center;
-    gap: var(--space-sm);
+    gap: 6px;
     flex-wrap: wrap;
+  }
+
+  .quota-card__chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 1px 8px;
+    background: var(--color-bg-subtle, #f4f5f7);
+    border-radius: 10px;
+    font-size: 11.5px;
+    line-height: 18px;
+  }
+
+  .quota-card__chip-label {
+    color: var(--color-text-tertiary);
+  }
+
+  .quota-card__chip-value {
+    color: var(--color-text-primary);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .quota-card__actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
   }
 
   .kpi-row {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: var(--space-md);
-    margin: 6px 0 12px;
+    gap: 10px;
+    margin: 0 0 12px;
   }
 
   .kpi {
     border: 1px solid var(--color-border-light);
-    border-radius: var(--radius-card-lg);
-    padding: 10px 10px 8px;
+    border-radius: 8px;
+    padding: 10px 12px;
     background: color-mix(in srgb, var(--color-bg-card) 92%, var(--color-bg-canvas) 8%);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .kpi--primary {
+    background: color-mix(in srgb, var(--color-primary) 6%, var(--color-bg-card));
+    border-color: color-mix(in srgb, var(--color-primary) 25%, var(--color-border-light));
+  }
+
+  .kpi--primary .kpi__value {
+    color: var(--color-primary);
   }
 
   .kpi__label {
-    font-size: var(--font-size-xs);
+    font-size: 11.5px;
     color: var(--color-text-tertiary);
-    line-height: var(--line-height-tight);
+    line-height: 1;
+    letter-spacing: 0.02em;
   }
 
   .kpi__value {
-    margin-top: 4px;
-    font-size: 20px;
-    font-weight: 800;
+    font-size: 22px;
+    font-weight: 700;
     letter-spacing: -0.02em;
     line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-text-primary);
   }
 
   .muted {
@@ -467,7 +565,25 @@
   }
 
   .details {
-    margin-top: 10px;
+    margin-top: 4px;
+    border-top: 1px solid var(--color-border-light);
+  }
+
+  .details :deep(.el-collapse-item__header) {
+    background: transparent;
+    color: var(--color-text-secondary);
+    font-size: 12.5px;
+    height: 36px;
+    line-height: 36px;
+    border-bottom: none;
+  }
+
+  .details :deep(.el-collapse-item__wrap) {
+    border-bottom: none;
+  }
+
+  .details :deep(.el-collapse-item__content) {
+    padding-bottom: 8px;
   }
 
   @media (max-width: 820px) {

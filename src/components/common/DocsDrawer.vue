@@ -1,5 +1,6 @@
 <template>
   <el-drawer
+    :append-to-body="true"
     :model-value="modelValue"
     :title="resolvedTitle"
     direction="rtl"
