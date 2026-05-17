@@ -87,16 +87,18 @@
       </el-table-column>
     </ProTable>
 
-    <el-dialog
+    <el-drawer
+      :append-to-body="true"
       v-model="ruleFormVisible"
       :title="
         ruleEditingId
           ? t('notificationRulesTab.dialogTitleEdit')
           : t('notificationRulesTab.dialogTitleCreate')
       "
-      width="640px"
+      direction="rtl"
+      size="640px"
     >
-      <el-form ref="ruleFormRef" :model="ruleForm" :rules="ruleFormRules" label-width="100px">
+      <el-form ref="ruleFormRef" :model="ruleForm" :rules="ruleFormRules" label-width="88px">
         <el-form-item :label="t('notificationRulesTab.fieldName')" prop="ruleName">
           <el-input
             v-model="ruleForm.ruleName"
@@ -124,13 +126,13 @@
       </el-form>
       <template #footer>
         <el-button @click="ruleFormVisible = false">
-          {{ t('notificationCommon.btnCancel') }}
+          {{ t('common.cancel') }}
         </el-button>
         <el-button type="primary" :loading="savingRule" @click="saveRule">
-          {{ t('notificationCommon.btnSave') }}
+          {{ t('common.save') }}
         </el-button>
       </template>
-    </el-dialog>
+    </el-drawer>
   </div>
 </template>
 

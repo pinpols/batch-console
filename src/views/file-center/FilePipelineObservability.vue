@@ -3,12 +3,7 @@
     <PageHeader />
 
     <SectionCard>
-      <el-tabs
-        v-model="activeTab"
-        v-hover-tab-activate="true"
-        class="pill-tabs"
-        @tab-change="onTabChange"
-      >
+      <el-tabs v-model="activeTab" class="pill-tabs" @tab-change="onTabChange">
         <el-tab-pane :label="t('filePipelineObservability.tabPipelines')" name="pipelines">
           <ProTable
             :data="pipelineRows"

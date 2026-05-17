@@ -6,7 +6,12 @@
       :back-to="`/monitor/job-instances/${instanceId}`"
     >
       <template #actions>
-        <el-button type="primary" :loading="loading" @click="load">
+        <el-button
+          type="primary"
+          :icon="Refresh"
+          :loading="loading || refresh.loading.value"
+          @click="refresh.run(load)"
+        >
           {{ t('monitor.partitionRefresh') }}
         </el-button>
       </template>
@@ -131,6 +136,10 @@
   import { useRoute } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
+  import { Refresh } from '@element-plus/icons-vue'
+  import { useRefreshAction } from '@/composables/useRefreshAction'
+
+  const refresh = useRefreshAction()
 
   const { t } = useI18n({ useScope: 'global' })
   import { instanceApi } from '@/api/instance'

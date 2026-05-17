@@ -44,7 +44,7 @@ async function gotoStable(page: Page, route: string): Promise<void> {
   await page.waitForTimeout(1500)
 }
 
-test.describe('a11y baseline (C 档):P0 10 页 axe critical+serious 审查', () => {
+test.describe('@cross-browser a11y baseline (C 档):P0 10 页 axe critical+serious 审查', () => {
   // --- 原 5 页(回归) ---
 
   test('/login 登录页', async ({ page }) => {

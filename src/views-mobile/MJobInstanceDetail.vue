@@ -125,12 +125,12 @@
 
         <div class="m-card">
           <div class="m-card__title" style="margin-bottom: 6px">paramsSnapshot</div>
-          <pre class="m-pre">{{ pretty(row.paramsSnapshot) || '—' }}</pre>
+          <JsonPreview :data="row.paramsSnapshot" />
         </div>
 
         <div class="m-card">
           <div class="m-card__title" style="margin-bottom: 6px">resultSummary</div>
-          <pre class="m-pre">{{ pretty(row.resultSummary) || '—' }}</pre>
+          <JsonPreview :data="row.resultSummary" />
         </div>
       </template>
     </div>
@@ -150,6 +150,7 @@
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { instanceApi } from '@/api/instance'
   import MPullRefresh from '@/layout-mobile/MPullRefresh.vue'
+  import JsonPreview from '@/components/common/JsonPreview.vue'
   import type {
     ConsoleJobInstanceResponse,
     ConsoleJobStepInstanceResponse,

@@ -2,7 +2,12 @@
   <SectionCard class="extra-panel-card">
     <div class="section-toolbar">
       <span class="u-flex-1" />
-      <el-button type="primary" :icon="Refresh" :loading="extraLoading" @click="$emit('loadExtra')">
+      <el-button
+        type="primary"
+        :icon="Refresh"
+        :loading="extraLoading || refresh.loading.value"
+        @click="onRefresh"
+      >
         {{ t('opsExtraPanel.btnRefresh') }}
       </el-button>
     </div>
@@ -31,23 +36,49 @@
 </template>
 
 <script setup lang="ts">
+  import { watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { Refresh } from '@element-plus/icons-vue'
   import { RouterLink } from 'vue-router'
   import SectionCard from '@/components/common/SectionCard.vue'
   import JsonPreview from '@/components/common/JsonPreview.vue'
+  import { useRefreshAction } from '@/composables/useRefreshAction'
 
   const { t } = useI18n({ useScope: 'global' })
 
-  defineProps<{
+  const props = defineProps<{
     extraLoading: boolean
     slaReport: unknown
     tenantUsage: unknown
   }>()
 
-  defineEmits<{
+  const emit = defineEmits<{
     loadExtra: []
   }>()
+
+  const refresh = useRefreshAction()
+
+  /** 等父组件 extraLoading 从 true 翻回 false,即视为本轮加载完成 */
+  function waitParentLoadDone(): Promise<void> {
+    return new Promise<void>((resolve) => {
+      const stop = watch(
+        () => props.extraLoading,
+        (v, old) => {
+          if (old && !v) {
+            stop()
+            resolve()
+          }
+        },
+      )
+    })
+  }
+
+  function onRefresh() {
+    void refresh.run(async () => {
+      emit('loadExtra')
+      await waitParentLoadDone()
+    })
+  }
 </script>
 
 <style scoped>

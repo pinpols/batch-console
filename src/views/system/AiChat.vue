@@ -3,12 +3,7 @@
     <PageHeader />
 
     <SectionCard>
-      <el-tabs
-        v-model="activeTab"
-        tab-position="left"
-        v-hover-tab-activate="true"
-        class="pill-tabs"
-      >
+      <el-tabs v-model="activeTab" tab-position="left" class="pill-tabs">
         <el-tab-pane :label="t('aiChat.tabChat')" name="chat">
           <div class="chat-layout">
             <div class="chat-panel">

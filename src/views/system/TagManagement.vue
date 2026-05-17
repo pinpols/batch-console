@@ -6,6 +6,7 @@
           v-if="activeTab === 'resource'"
           type="primary"
           :icon="Plus"
+          class="pretty-add-button"
           @click="openResourceCreate"
         >
           {{ t('tagResourceTab.btnAddTag') }}
@@ -14,7 +15,7 @@
     </PageHeader>
 
     <SectionCard>
-      <el-tabs v-model="activeTab" v-hover-tab-activate="true" class="pill-tabs">
+      <el-tabs v-model="activeTab" class="pill-tabs">
         <el-tab-pane :label="t('tagManagement.tabResource')" name="resource">
           <p class="tag-tabs__desc">{{ t('tagManagement.descResource') }}</p>
           <TagResourceTab ref="resourceTabRef" />

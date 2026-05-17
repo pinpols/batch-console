@@ -11,7 +11,6 @@
     <SectionCard>
       <el-tabs
         v-model="activeTab"
-        v-hover-tab-activate="true"
         class="pill-tabs governance-tabs"
         :class="{ 'single-mode': mode !== 'all' }"
       >
@@ -84,11 +83,18 @@
                 />
               </template>
             </el-table-column>
-            <el-table-column :label="t('fileTemplateList.colActions')" width="96" fixed="right">
+            <el-table-column :label="t('fileTemplateList.colActions')" width="120" fixed="right">
               <template #default="{ row }">
-                <el-tooltip :content="t('common.edit')" placement="top">
-                  <el-button :icon="Edit" circle @click="openQueueEdit(row)" />
-                </el-tooltip>
+                <el-button
+                  type="primary"
+                  plain
+                  size="small"
+                  :icon="Edit"
+                  :disabled="!row?.queueCode"
+                  @click="openQueueEdit(row)"
+                >
+                  {{ t('common.edit') }}
+                </el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -165,11 +171,18 @@
                 />
               </template>
             </el-table-column>
-            <el-table-column :label="t('fileTemplateList.colActions')" width="96" fixed="right">
+            <el-table-column :label="t('fileTemplateList.colActions')" width="120" fixed="right">
               <template #default="{ row }">
-                <el-tooltip :content="t('common.edit')" placement="top">
-                  <el-button :icon="Edit" circle @click="openWindowEdit(row)" />
-                </el-tooltip>
+                <el-button
+                  type="primary"
+                  plain
+                  size="small"
+                  :icon="Edit"
+                  :disabled="!row?.windowCode"
+                  @click="openWindowEdit(row)"
+                >
+                  {{ t('common.edit') }}
+                </el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -248,11 +261,18 @@
                 />
               </template>
             </el-table-column>
-            <el-table-column :label="t('fileTemplateList.colActions')" width="96" fixed="right">
+            <el-table-column :label="t('fileTemplateList.colActions')" width="120" fixed="right">
               <template #default="{ row }">
-                <el-tooltip :content="t('common.edit')" placement="top">
-                  <el-button :icon="Edit" circle @click="openCalendarEdit(row)" />
-                </el-tooltip>
+                <el-button
+                  type="primary"
+                  plain
+                  size="small"
+                  :icon="Edit"
+                  :disabled="!row?.calendarCode"
+                  @click="openCalendarEdit(row)"
+                >
+                  {{ t('common.edit') }}
+                </el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -268,6 +288,7 @@
     </SectionCard>
 
     <el-drawer
+      :append-to-body="true"
       v-model="holidayDrawerVisible"
       :title="holidayDrawerTitle"
       size="480px"
@@ -313,15 +334,27 @@
             <StatusTag :value="String(row.enabled)" category="yn" />
           </template>
         </el-table-column>
-        <el-table-column :label="t('fileTemplateList.colActions')" width="92" fixed="right">
+        <el-table-column :label="t('fileTemplateList.colActions')" width="170" fixed="right">
           <template #default="{ row }">
             <div class="table-actions">
-              <el-tooltip :content="t('common.edit')" placement="top">
-                <el-button :icon="Edit" circle @click="openHolidayEdit(row)" />
-              </el-tooltip>
-              <el-tooltip :content="t('common.delete')" placement="top">
-                <el-button :icon="Delete" circle type="danger" @click="deleteHoliday(row)" />
-              </el-tooltip>
+              <el-button
+                type="primary"
+                plain
+                size="small"
+                :icon="Edit"
+                @click="openHolidayEdit(row)"
+              >
+                {{ t('common.edit') }}
+              </el-button>
+              <el-button
+                type="danger"
+                plain
+                size="small"
+                :icon="Delete"
+                @click="deleteHoliday(row)"
+              >
+                {{ t('common.delete') }}
+              </el-button>
             </div>
           </template>
         </el-table-column>
@@ -335,12 +368,14 @@
       />
     </el-drawer>
 
-    <el-dialog
+    <el-drawer
+      :append-to-body="true"
       v-model="queueDialogVisible"
       :title="
         queueEditingId == null ? t('queueConfig.queueCreateTitle') : t('queueConfig.queueEditTitle')
       "
-      width="640px"
+      direction="rtl"
+      size="640px"
       destroy-on-close
     >
       <el-form :model="queueForm" label-width="120px">
@@ -395,16 +430,18 @@
           t('common.save')
         }}</el-button>
       </template>
-    </el-dialog>
+    </el-drawer>
 
-    <el-dialog
+    <el-drawer
+      :append-to-body="true"
       v-model="windowDialogVisible"
       :title="
         windowEditingId == null
           ? t('queueConfig.windowCreateTitle')
           : t('queueConfig.windowEditTitle')
       "
-      width="640px"
+      direction="rtl"
+      size="640px"
       destroy-on-close
     >
       <el-form :model="windowForm" label-width="120px">
@@ -453,16 +490,18 @@
           t('common.save')
         }}</el-button>
       </template>
-    </el-dialog>
+    </el-drawer>
 
-    <el-dialog
+    <el-drawer
+      :append-to-body="true"
       v-model="calendarDialogVisible"
       :title="
         calendarEditingId == null
           ? t('queueConfig.calendarCreateTitle')
           : t('queueConfig.calendarEditTitle')
       "
-      width="640px"
+      direction="rtl"
+      size="640px"
       destroy-on-close
     >
       <el-form :model="calendarForm" label-width="120px">
@@ -498,16 +537,18 @@
           t('common.save')
         }}</el-button>
       </template>
-    </el-dialog>
+    </el-drawer>
 
-    <el-dialog
+    <el-drawer
+      :append-to-body="true"
       v-model="holidayDialogVisible"
       :title="
         holidayEditingId == null
           ? t('queueConfig.holidayCreateTitle')
           : t('queueConfig.holidayEditTitle')
       "
-      width="480px"
+      direction="rtl"
+      size="480px"
       destroy-on-close
     >
       <el-form :model="holidayForm" label-width="120px">
@@ -534,7 +575,7 @@
           t('common.save')
         }}</el-button>
       </template>
-    </el-dialog>
+    </el-drawer>
   </PageContainer>
 </template>
 

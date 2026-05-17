@@ -6,7 +6,12 @@
       back-to="/scheduler/batch-days"
     >
       <template #actions>
-        <el-button type="primary" :loading="loading" @click="load">
+        <el-button
+          type="primary"
+          :icon="Refresh"
+          :loading="loading || refresh.loading.value"
+          @click="refresh.run(load)"
+        >
           {{ t('batchDayWindow.refresh') }}
         </el-button>
         <el-button type="success" :disabled="!calendarCode" @click="openCatchup">
@@ -112,13 +117,15 @@
       <EmptyState :description="t('batchDayWindow.emptyDescription')" />
     </SectionCard>
 
-    <el-dialog
+    <el-drawer
+      :append-to-body="true"
       v-model="catchupVisible"
       :title="t('batchDayWindow.dialogTitle')"
-      width="480px"
+      direction="rtl"
+      size="480px"
       @closed="resetCatchup"
     >
-      <el-form label-width="100px">
+      <el-form label-width="88px">
         <el-form-item :label="t('batchDayWindow.fieldCalendar')">
           <el-input v-model="catchupForm.calendarCode" disabled />
         </el-form-item>
@@ -140,14 +147,12 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="catchupVisible = false">{{
-          t('batchDayWindow.dialogCancel')
-        }}</el-button>
+        <el-button @click="catchupVisible = false">{{ t('common.cancel') }}</el-button>
         <el-button type="primary" :loading="catchupLoading" @click="submitCatchup">
           {{ t('batchDayWindow.dialogSubmit') }}
         </el-button>
       </template>
-    </el-dialog>
+    </el-drawer>
   </PageContainer>
 </template>
 
@@ -156,6 +161,10 @@
   import { useRoute } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
+  import { Refresh } from '@element-plus/icons-vue'
+  import { useRefreshAction } from '@/composables/useRefreshAction'
+
+  const refresh = useRefreshAction()
 
   const { t } = useI18n({ useScope: 'global' })
   import { launchBatchDayCatchUp, queryBatchDayWindow } from '@/api/batchDays'

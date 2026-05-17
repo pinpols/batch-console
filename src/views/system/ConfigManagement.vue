@@ -2,44 +2,33 @@
   <PageContainer>
     <PageHeader />
 
-    <SectionCard class="config-workbench-card">
-      <div class="config-workbench">
-        <nav class="config-nav" :aria-label="t('configManagement.navAria')">
-          <button
-            v-for="item in navItems"
-            :key="item.key"
-            type="button"
-            class="config-nav__item"
-            :class="{ 'is-active': activeTab === item.key }"
-            @mouseenter="selectTab(item.key)"
-            @focus="selectTab(item.key)"
-            @click="selectTab(item.key)"
-          >
-            <span class="config-nav__icon">
-              <component :is="item.icon" />
+    <SectionCard>
+      <el-tabs v-model="activeTab" class="pill-tabs">
+        <el-tab-pane v-for="item in navItems" :key="item.key" :name="item.key">
+          <template #label>
+            <span class="config-tab__label">
+              <el-icon class="config-tab__icon"><component :is="item.icon" /></el-icon>
+              {{ item.title }}
             </span>
-            <span class="config-nav__text">
-              <span class="config-nav__title">{{ item.title }}</span>
-              <span class="config-nav__desc">{{ item.desc }}</span>
-            </span>
-          </button>
-        </nav>
+          </template>
 
-        <section class="config-content">
-          <div class="config-content__head">
+          <div class="config-tab__head">
             <div>
-              <h2>{{ activeItem.title }}</h2>
-              <p>{{ activeItem.desc }}</p>
+              <h2>{{ item.title }}</h2>
+              <p>{{ item.desc }}</p>
             </div>
-            <el-tag effect="plain" size="small" type="info">{{ activeItem.badge }}</el-tag>
+            <el-tag effect="plain" size="small" type="info">{{ item.badge }}</el-tag>
           </div>
 
-          <ConfigChangeLogsTab v-if="activeTab === 'logs'" />
-          <ConfigSecretsTab v-else-if="activeTab === 'secrets'" />
-          <ConfigSyncTab v-else-if="activeTab === 'sync'" />
-          <ConfigSyncLogsTab v-else />
-        </section>
-      </div>
+          <!-- 仅在该 tab 激活时才挂载子组件,避免一进页面拉 4 套接口 -->
+          <template v-if="activeTab === item.key">
+            <ConfigChangeLogsTab v-if="item.key === 'logs'" />
+            <ConfigSecretsTab v-else-if="item.key === 'secrets'" />
+            <ConfigSyncTab v-else-if="item.key === 'sync'" />
+            <ConfigSyncLogsTab v-else-if="item.key === 'syncLogs'" />
+          </template>
+        </el-tab-pane>
+      </el-tabs>
     </SectionCard>
   </PageContainer>
 </template>
@@ -99,124 +88,23 @@
     },
   ])
 
-  const activeItem = computed(
-    () => navItems.value.find((item) => item.key === activeTab.value) ?? navItems.value[0],
-  )
-
-  function selectTab(tab: ConfigTab) {
-    if (activeTab.value === tab) return
-    activeTab.value = tab
-  }
-
   watch(activeTab, (tab) => {
     void router.replace({ query: { ...route.query, tab } })
   })
 </script>
 
 <style scoped>
-  .config-workbench {
-    display: grid;
-    grid-template-columns: minmax(240px, 300px) minmax(0, 1fr);
-    gap: var(--page-section-gap);
-    align-items: start;
-  }
-
-  .config-nav {
-    display: grid;
-    gap: var(--space-sm);
-    padding: 8px;
-    border: 1px solid var(--color-border-light);
-    border-radius: var(--radius-content);
-    background: color-mix(in srgb, var(--color-bg-card) 92%, var(--color-bg-canvas) 8%);
-  }
-
-  .config-nav__item {
-    appearance: none;
-    width: 100%;
-    border: 1px solid transparent;
-    border-radius: var(--radius-content);
-    background: transparent;
-    padding: 12px;
-    display: flex;
-    gap: 10px;
-    align-items: flex-start;
-    text-align: left;
-    color: var(--color-text-secondary);
-    cursor: pointer;
-    transition:
-      transform 140ms ease,
-      background-color var(--motion-duration-sm) var(--motion-ease-standard),
-      border-color var(--motion-duration-sm) var(--motion-ease-standard),
-      box-shadow var(--motion-duration-md) var(--motion-ease-standard),
-      color var(--motion-duration-sm) var(--motion-ease-standard);
-  }
-
-  .config-nav__item:hover,
-  .config-nav__item:focus-visible {
-    transform: translateY(-1px);
-    color: var(--color-text-primary);
-    background: var(--color-bg-card);
-    border-color: color-mix(in srgb, var(--color-border) 82%, var(--color-primary) 18%);
-    outline: none;
-  }
-
-  .config-nav__item.is-active {
-    transform: translateY(-1px);
-    color: var(--color-text-primary);
-    background: color-mix(in srgb, var(--color-primary) 9%, var(--color-bg-card) 91%);
-    border-color: color-mix(in srgb, var(--color-primary) 24%, var(--color-border) 76%);
-    box-shadow:
-      0 8px 18px rgb(15 23 42 / 9%),
-      var(--surface-hover-edge-inset);
-  }
-
-  .config-nav__icon {
-    flex: 0 0 auto;
-    width: 32px;
-    height: 32px;
+  .config-tab__label {
     display: inline-flex;
     align-items: center;
-    justify-content: center;
-    border-radius: var(--radius-input);
-    background: color-mix(in srgb, var(--color-bg-card) 86%, var(--color-bg-canvas) 14%);
-    border: 1px solid var(--color-border-light);
-    color: var(--color-text-tertiary);
+    gap: 6px;
   }
 
-  .config-nav__item.is-active .config-nav__icon {
-    color: var(--color-primary);
-    background: color-mix(in srgb, var(--color-primary) 12%, var(--color-bg-card) 88%);
-    border-color: color-mix(in srgb, var(--color-primary) 22%, var(--color-border) 78%);
+  .config-tab__icon {
+    font-size: 15px;
   }
 
-  .config-nav__icon :deep(svg) {
-    width: 17px;
-    height: 17px;
-  }
-
-  .config-nav__text {
-    min-width: 0;
-    display: grid;
-    gap: 4px;
-  }
-
-  .config-nav__title {
-    font-size: 14px;
-    font-weight: 650;
-    line-height: 1.35;
-  }
-
-  .config-nav__desc {
-    font-size: 12px;
-    line-height: 1.45;
-    color: var(--color-text-tertiary);
-  }
-
-  .config-content {
-    min-width: 0;
-  }
-
-  .config-content__head {
+  .config-tab__head {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
@@ -226,7 +114,7 @@
     margin-bottom: var(--page-block-gap);
   }
 
-  .config-content__head h2 {
+  .config-tab__head h2 {
     margin: 0;
     font-size: 18px;
     font-weight: 650;
@@ -234,29 +122,15 @@
     color: var(--color-text-primary);
   }
 
-  .config-content__head p {
+  .config-tab__head p {
     margin: 4px 0 0;
     font-size: 13px;
     line-height: 1.55;
     color: var(--color-text-secondary);
   }
 
-  @media (max-width: 960px) {
-    .config-workbench {
-      grid-template-columns: 1fr;
-    }
-
-    .config-nav {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-  }
-
   @media (max-width: 640px) {
-    .config-nav {
-      grid-template-columns: 1fr;
-    }
-
-    .config-content__head {
+    .config-tab__head {
       flex-direction: column;
       align-items: stretch;
     }

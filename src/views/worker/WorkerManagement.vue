@@ -3,7 +3,7 @@
     <PageHeader />
 
     <SectionCard>
-      <el-tabs v-model="activeTab" v-hover-tab-activate="true" class="pill-tabs">
+      <el-tabs v-model="activeTab" class="pill-tabs">
         <el-tab-pane :label="t('workerManagement.tabWorkers')" name="workers">
           <ProTable
             :data="workerTableRows"
@@ -193,6 +193,7 @@
     </SectionCard>
 
     <el-drawer
+      :append-to-body="true"
       v-model="channelDetailVisible"
       :title="t('workerManagement.channelDetailTitle')"
       size="640px"

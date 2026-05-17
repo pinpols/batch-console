@@ -115,6 +115,7 @@
     </SectionCard>
 
     <el-drawer
+      :append-to-body="true"
       v-model="createVisible"
       :title="t('configReleaseList.createTitle')"
       size="520px"
@@ -161,7 +162,12 @@
       </el-form>
     </el-drawer>
 
-    <el-drawer v-model="depsVisible" :title="t('configReleaseList.depsTitle')" size="640px">
+    <el-drawer
+      :append-to-body="true"
+      v-model="depsVisible"
+      :title="t('configReleaseList.depsTitle')"
+      size="640px"
+    >
       <div v-loading="depsLoading">
         <el-empty
           v-if="!depsLoading && !depsData"
@@ -219,7 +225,12 @@
       </div>
     </el-dialog>
 
-    <el-drawer v-model="detailVisible" :title="t('configReleaseList.detailTitle')" size="640px">
+    <el-drawer
+      :append-to-body="true"
+      v-model="detailVisible"
+      :title="t('configReleaseList.detailTitle')"
+      size="640px"
+    >
       <el-descriptions v-if="detail" :column="2" border size="small">
         <el-descriptions-item label="ID">{{ detail.id }}</el-descriptions-item>
         <el-descriptions-item label="configKey">{{ detail.configKey }}</el-descriptions-item>

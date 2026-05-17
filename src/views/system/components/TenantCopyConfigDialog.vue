@@ -1,14 +1,16 @@
 <template>
-  <el-dialog
+  <el-drawer
+    :append-to-body="true"
     :model-value="modelValue"
     :title="t('tenantCopyConfigDialog.title')"
-    width="640px"
+    direction="rtl"
+    size="640px"
     @update:model-value="(v) => emit('update:modelValue', v)"
   >
     <el-alert type="info" :closable="false" show-icon class="mb-12">
       <template #title>{{ t('tenantCopyConfigDialog.infoAlert') }}</template>
     </el-alert>
-    <el-form ref="copyFormRef" :model="form" :rules="copyFormRules" label-width="100px">
+    <el-form ref="copyFormRef" :model="form" :rules="copyFormRules" label-width="88px">
       <el-form-item :label="t('tenantCopyConfigDialog.fieldSource')" prop="sourceTenantId">
         <el-select
           class="query-w-280"
@@ -34,7 +36,7 @@
             </el-tag>
           </el-option>
         </el-select>
-        <div class="form-hint">{{ t('tenantCopyConfigDialog.sourceHint') }}</div>
+        <div class="field-hint">{{ t('tenantCopyConfigDialog.sourceHint') }}</div>
       </el-form-item>
       <el-form-item :label="t('tenantCopyConfigDialog.fieldTargets')" prop="targetTenantIds">
         <el-select
@@ -56,7 +58,7 @@
         <el-checkbox-group v-model="form.configTypes">
           <el-checkbox v-for="ct in ALL_CONFIG_TYPES" :key="ct" :label="ct" :value="ct" />
         </el-checkbox-group>
-        <div class="form-hint">{{ t('tenantConfigShared.configTypeHintAll') }}</div>
+        <div class="field-hint">{{ t('tenantConfigShared.configTypeHintAll') }}</div>
       </el-form-item>
       <el-form-item :label="t('tenantConfigShared.writeModeLabel')">
         <el-radio-group v-model="form.mode">
@@ -86,7 +88,7 @@
         {{ t('tenantCopyConfigDialog.btnRunFormal') }}
       </el-button>
     </template>
-  </el-dialog>
+  </el-drawer>
 </template>
 
 <script setup lang="ts">
@@ -177,12 +179,6 @@
 </script>
 
 <style scoped>
-  .form-hint {
-    margin-top: 4px;
-    font-size: 12px;
-    color: var(--color-text-tertiary);
-  }
-
   .mb-12 {
     margin-bottom: 12px;
   }

@@ -6,7 +6,12 @@
       back-to="/monitor/job-instances"
     >
       <template #actions>
-        <el-button type="primary" :loading="loading" @click="load">
+        <el-button
+          type="primary"
+          :icon="Refresh"
+          :loading="loading || refresh.loading.value"
+          @click="refresh.run(load)"
+        >
           {{ t('monitor.detailRefresh') }}
         </el-button>
         <el-button v-if="row" type="danger" :loading="cancelLoading" @click="confirmCancel">
@@ -113,10 +118,10 @@
           <template #header>{{ t('monitor.detailParamsSection') }}</template>
           <el-descriptions :column="1" border>
             <el-descriptions-item label="paramsSnapshot">
-              <pre class="mono">{{ row.paramsSnapshot || '—' }}</pre>
+              <JsonPreview :data="row.paramsSnapshot" />
             </el-descriptions-item>
             <el-descriptions-item label="resultSummary">
-              <pre class="mono">{{ row.resultSummary || '—' }}</pre>
+              <JsonPreview :data="row.resultSummary" />
             </el-descriptions-item>
           </el-descriptions>
         </SectionCard>
@@ -224,6 +229,10 @@
   const { t } = useI18n({ useScope: 'global' })
   import { useRoute, useRouter } from 'vue-router'
   import { ElMessage } from 'element-plus'
+  import { Refresh } from '@element-plus/icons-vue'
+  import { useRefreshAction } from '@/composables/useRefreshAction'
+
+  const refresh = useRefreshAction()
   import { confirmDanger } from '@/composables/useDangerConfirm'
   import { showCreateSuccess } from '@/composables/useCreateSuccess'
   import { instanceApi } from '@/api/instance'
@@ -235,6 +244,7 @@
   import SectionCard from '@/components/common/SectionCard.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
   import MetricCard from '@/components/common/MetricCard.vue'
+  import JsonPreview from '@/components/common/JsonPreview.vue'
   import type {
     ConsoleJobInstanceResponse,
     ConsoleJobStepInstanceResponse,

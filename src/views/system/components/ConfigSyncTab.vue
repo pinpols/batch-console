@@ -78,7 +78,7 @@
         </header>
 
         <div class="sync__body">
-          <el-form label-width="56px" class="sync__form" size="default">
+          <el-form label-width="72px" class="sync__form" size="default">
             <el-form-item :label="t('configSyncTab.targetEnvLabel')">
               <el-select
                 v-model="targetEnv"

@@ -6,7 +6,12 @@
       back-to="/monitor/workflow-runs"
     >
       <template #actions>
-        <el-button type="primary" :loading="loading" @click="load">
+        <el-button
+          type="primary"
+          :icon="Refresh"
+          :loading="loading || refresh.loading.value"
+          @click="refresh.run(load)"
+        >
           {{ t('monitor.runDetailRefresh') }}
         </el-button>
         <el-button v-if="run?.workflowDefinitionId" :icon="View" @click="openDag">
@@ -149,7 +154,10 @@
 <script setup lang="ts">
   import { computed, ref, watch, reactive } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
-  import { View } from '@element-plus/icons-vue'
+  import { View, Refresh } from '@element-plus/icons-vue'
+  import { useRefreshAction } from '@/composables/useRefreshAction'
+
+  const refresh = useRefreshAction()
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
 

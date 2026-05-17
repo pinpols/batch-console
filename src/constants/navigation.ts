@@ -4,6 +4,7 @@ import { pageTitle } from '@/constants/pageMeta'
 import {
   Aim,
   Bell,
+  BellFilled,
   Box,
   Calendar,
   ChatLineRound,
@@ -115,7 +116,7 @@ export const navigationGroups: NavigationGroup[] = [
         title: pageTitle('/monitor/job-instances'),
         path: '/monitor/job-instances',
         minRole: 'VIEWER',
-        icon: VideoPlay,
+        icon: Operation,
       },
       {
         title: pageTitle('/monitor/workflow-runs'),
@@ -143,7 +144,7 @@ export const navigationGroups: NavigationGroup[] = [
         title: pageTitle('/monitor/job-steps'),
         path: '/monitor/job-steps',
         minRole: 'VIEWER',
-        icon: Operation,
+        icon: Memo,
         hidden: true,
       },
       {
@@ -215,9 +216,11 @@ export const navigationGroups: NavigationGroup[] = [
   },
   {
     // 告警与投递:严格"系统在发什么消息" + "怎么订阅它"
+    // 图标分工:组=广播(Promotion)/ 告警=警告(WarningFilled)/ 路由=连接拓扑(Connection)/
+    //          Outbox=收件箱(MessageBox)/ 通知订阅=铃铛(Bell),互不重复
     key: 'alerting',
     title: '告警与投递',
-    icon: WarningFilled,
+    icon: BellFilled,
     minRole: 'VIEWER',
     children: [
       {
@@ -230,7 +233,7 @@ export const navigationGroups: NavigationGroup[] = [
         title: pageTitle('/observability/alert-routings'),
         path: '/observability/alert-routings',
         minRole: 'OPERATOR',
-        icon: Bell,
+        icon: Connection,
       },
       {
         title: pageTitle('/observability/outbox'),
@@ -269,7 +272,7 @@ export const navigationGroups: NavigationGroup[] = [
         title: pageTitle('/system/triggers'),
         path: '/system/triggers',
         minRole: 'OPERATOR',
-        icon: Timer,
+        icon: VideoPlay,
       },
       {
         title: pageTitle('/scheduler/snapshot'),

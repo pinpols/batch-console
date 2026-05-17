@@ -354,7 +354,6 @@ html.layout-shell-lock .layout-root > .layout-sidebar.el-aside {
 }
 
 .pretty-add-button.el-button:hover {
-  transform: translateY(-1px);
   background: linear-gradient(
     180deg,
     color-mix(in srgb, var(--button-primary-bg-hover) 88%, #ffffff 12%) 0%,
@@ -366,10 +365,6 @@ html.layout-shell-lock .layout-root > .layout-sidebar.el-aside {
   filter: saturate(1.02);
 }
 
-.pretty-add-button.el-button:active {
-  transform: translateY(0);
-}
-
 /* 自助服务等场景的主操作按钮：深一度的渐变蓝、稍大尺寸（提交类 CTA）。 */
 .pretty-primary-button {
   border: none;
@@ -379,36 +374,35 @@ html.layout-shell-lock .layout-root > .layout-sidebar.el-aside {
   font-weight: 650;
   letter-spacing: 0.06em;
   color: var(--button-primary-text);
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--button-primary-bg) 90%, #ffffff 10%) 0%,
-    var(--button-primary-bg) 100%
-  );
-  box-shadow: 0 6px 16px color-mix(in srgb, var(--button-primary-bg) 18%, transparent);
+  background: var(--button-primary-bg);
+  border: 1px solid var(--button-primary-bg);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--button-primary-bg) 18%, transparent);
   transition:
-    transform 0.18s ease,
-    box-shadow 0.18s ease,
-    filter 0.18s ease;
+    background 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
 }
 
 .pretty-primary-button:hover {
-  transform: translateY(-1px);
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--button-primary-bg-hover) 90%, #ffffff 10%) 0%,
-    var(--button-primary-bg-hover) 100%
-  );
-  box-shadow: 0 10px 24px color-mix(in srgb, var(--button-primary-bg) 22%, transparent);
-  filter: saturate(1.05);
+  background: var(--button-primary-bg-hover);
+  border-color: var(--button-primary-bg-hover);
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--button-primary-bg) 22%, transparent);
 }
 
-.pretty-primary-button:active {
-  transform: translateY(0);
+/* 表单操作行:右下角 + 顶部分隔线;按钮间距 8px。配合自助服务等长表单。 */
+.form-actions {
+  margin-top: var(--space-md);
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--color-border-light);
 }
 
-/* 表单操作行:居中单按钮 CTA(配合 .pretty-primary-button 使用)。 */
 .form-actions .el-form-item__content {
-  justify-content: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.form-actions .el-form-item__label {
+  display: none;
 }
 
 /* 小号“新增”按钮（用于弹窗/抽屉内工具条：如新增步骤） */

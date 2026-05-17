@@ -91,20 +91,22 @@
       </el-table-column>
     </ProTable>
 
-    <el-dialog
+    <el-drawer
+      :append-to-body="true"
       v-model="webhookFormVisible"
       :title="
         webhookEditingId
           ? t('notificationWebhooksTab.dialogTitleEdit')
           : t('notificationWebhooksTab.dialogTitleCreate')
       "
-      width="640px"
+      direction="rtl"
+      size="640px"
     >
       <el-form
         ref="webhookFormRef"
         :model="webhookForm"
         :rules="webhookFormRules"
-        label-width="100px"
+        label-width="88px"
       >
         <el-form-item :label="t('notificationWebhooksTab.fieldName')" prop="name">
           <el-input
@@ -137,13 +139,13 @@
       </el-form>
       <template #footer>
         <el-button @click="webhookFormVisible = false">
-          {{ t('notificationCommon.btnCancel') }}
+          {{ t('common.cancel') }}
         </el-button>
         <el-button type="primary" :loading="savingWebhook" @click="saveWebhook">
-          {{ t('notificationCommon.btnSave') }}
+          {{ t('common.save') }}
         </el-button>
       </template>
-    </el-dialog>
+    </el-drawer>
 
     <el-dialog
       v-model="webhookLogVisible"

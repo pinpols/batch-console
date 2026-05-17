@@ -1,22 +1,24 @@
 <template>
-  <el-dialog
+  <el-drawer
+    :append-to-body="true"
     :model-value="modelValue"
     :title="
       editing
         ? t('tenantFormDialog.titleEdit', { id: form.tenantId })
         : t('tenantFormDialog.titleCreate')
     "
-    width="640px"
+    direction="rtl"
+    size="640px"
     @update:model-value="(v) => emit('update:modelValue', v)"
   >
-    <el-form ref="formRef" :model="form" :rules="formRules" label-width="100px">
+    <el-form ref="formRef" :model="form" :rules="formRules" label-width="88px">
       <el-form-item :label="t('tenantFormDialog.fieldTenantId')" prop="tenantId">
         <el-input
           v-model="form.tenantId"
           :disabled="editing"
           :placeholder="t('tenantFormDialog.tenantIdPlaceholder')"
         />
-        <div class="form-hint">
+        <div class="field-hint">
           {{ t('tenantFormDialog.tenantIdHint') }} ·
           <strong>{{ t('tenantFormDialog.tenantIdHintLocked') }}</strong>
         </div>
@@ -65,7 +67,7 @@
             :placeholder="t('tenantFormDialog.passwordPlaceholder')"
             maxlength="256"
           />
-          <div class="form-hint">{{ t('tenantFormDialog.passwordHint') }}</div>
+          <div class="field-hint">{{ t('tenantFormDialog.passwordHint') }}</div>
         </el-form-item>
       </template>
     </el-form>
@@ -74,10 +76,10 @@
         {{ t('tenantConfigShared.cancel') }}
       </el-button>
       <el-button type="primary" :loading="saving" @click="submit">
-        {{ editing ? t('tenantFormDialog.btnSave') : t('tenantFormDialog.btnCreate') }}
+        {{ editing ? t('common.save') : t('tenantFormDialog.btnCreate') }}
       </el-button>
     </template>
-  </el-dialog>
+  </el-drawer>
 </template>
 
 <script setup lang="ts">
@@ -185,13 +187,6 @@
 </script>
 
 <style scoped>
-  .form-hint {
-    margin-top: 4px;
-    font-size: 12px;
-    color: var(--color-text-tertiary);
-    line-height: 1.4;
-  }
-
   .section-divider__text {
     font-size: 12px;
     font-weight: 600;

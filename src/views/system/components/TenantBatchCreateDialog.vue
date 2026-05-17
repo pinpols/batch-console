@@ -1,11 +1,13 @@
 <template>
-  <el-dialog
+  <el-drawer
+    :append-to-body="true"
     :model-value="modelValue"
     :title="t('tenantBatchCreateDialog.title')"
-    width="640px"
+    direction="rtl"
+    size="640px"
     @update:model-value="(v) => emit('update:modelValue', v)"
   >
-    <el-form ref="batchFormRef" :model="form" :rules="batchFormRules" label-width="100px">
+    <el-form ref="batchFormRef" :model="form" :rules="batchFormRules" label-width="88px">
       <el-form-item :label="t('tenantBatchCreateDialog.fieldTenants')" prop="tenantsText">
         <el-input
           v-model="form.tenantsText"
@@ -13,7 +15,7 @@
           :autosize="{ minRows: 4, maxRows: 10 }"
           :placeholder="t('tenantBatchCreateDialog.tenantsPlaceholder')"
         />
-        <div class="form-hint">{{ t('tenantBatchCreateDialog.tenantsHint') }}</div>
+        <div class="field-hint">{{ t('tenantBatchCreateDialog.tenantsHint') }}</div>
       </el-form-item>
       <el-form-item :label="t('tenantBatchCreateDialog.fieldPrefix')" prop="usernamePrefix">
         <el-input
@@ -30,7 +32,7 @@
           :placeholder="t('tenantBatchCreateDialog.passwordPlaceholder')"
           maxlength="256"
         />
-        <div class="form-hint">{{ t('tenantBatchCreateDialog.passwordHint') }}</div>
+        <div class="field-hint">{{ t('tenantBatchCreateDialog.passwordHint') }}</div>
       </el-form-item>
       <el-divider content-position="left">
         {{ t('tenantBatchCreateDialog.sectionInitConfig') }}
@@ -64,7 +66,7 @@
             </el-tag>
           </el-option>
         </el-select>
-        <div class="form-hint">{{ t('tenantBatchCreateDialog.sourceHint') }}</div>
+        <div class="field-hint">{{ t('tenantBatchCreateDialog.sourceHint') }}</div>
       </el-form-item>
       <el-form-item v-if="form.initConfigFrom" :label="t('tenantConfigShared.initModeLabel')">
         <el-radio-group v-model="form.initMode">
@@ -81,7 +83,7 @@
         {{ t('tenantBatchCreateDialog.btnSubmit') }}
       </el-button>
     </template>
-  </el-dialog>
+  </el-drawer>
 </template>
 
 <script setup lang="ts">
@@ -204,13 +206,6 @@
 </script>
 
 <style scoped>
-  .form-hint {
-    margin-top: 4px;
-    font-size: 12px;
-    color: var(--color-text-tertiary);
-    line-height: 1.4;
-  }
-
   .empty-hint {
     padding: 8px 12px;
     font-size: 12px;

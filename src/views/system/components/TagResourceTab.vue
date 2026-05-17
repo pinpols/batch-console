@@ -67,7 +67,7 @@
                 :loading="savingKey === String(row.tagKey)"
                 @click="saveRow(row)"
               >
-                {{ t('tagResourceTab.btnSave') }}
+                {{ t('common.save') }}
               </el-button>
               <el-button
                 size="small"
@@ -84,8 +84,14 @@
       </el-table>
     </DataState>
 
-    <el-dialog v-model="newDialogVisible" :title="t('tagResourceTab.dialogTitle')" width="480px">
-      <el-form label-width="100px" class="new-dialog-form">
+    <el-drawer
+      :append-to-body="true"
+      v-model="newDialogVisible"
+      :title="t('tagResourceTab.dialogTitle')"
+      direction="rtl"
+      size="480px"
+    >
+      <el-form label-width="88px" class="new-dialog-form">
         <el-form-item :label="t('tagResourceTab.fieldTagKey')" required>
           <el-input
             v-model="newTag.tagKey"
@@ -103,14 +109,14 @@
       <template #footer>
         <div class="dialog-footer">
           <el-button @click="newDialogVisible = false">
-            {{ t('tagResourceTab.btnCancel') }}
+            {{ t('common.cancel') }}
           </el-button>
           <el-button type="primary" :loading="savingNew" @click="saveNewTag">
-            {{ t('tagResourceTab.btnSave') }}
+            {{ t('common.save') }}
           </el-button>
         </div>
       </template>
-    </el-dialog>
+    </el-drawer>
   </div>
 </template>
 

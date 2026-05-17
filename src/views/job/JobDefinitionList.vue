@@ -122,7 +122,11 @@
             :image-size="80"
           >
             <template #action>
-              <el-button type="primary" @click="$router.push('/config/tenant-package')">
+              <el-button
+                type="primary"
+                :icon="Upload"
+                @click="$router.push('/config/tenant-package')"
+              >
                 {{ t('jobDefinitionList.emptyGoImport') }}
               </el-button>
             </template>
@@ -196,6 +200,7 @@
     </SectionCard>
 
     <el-drawer
+      :append-to-body="true"
       v-model="createDrawerVisible"
       :title="t('jobDefinitionList.drawerCreateTitle')"
       size="520px"
@@ -297,6 +302,7 @@
     </el-drawer>
 
     <el-drawer
+      :append-to-body="true"
       v-model="editDrawerVisible"
       :title="editDrawerTitle"
       size="480px"
@@ -343,6 +349,7 @@
 
     <!-- Run-centric 详情抽屉(P2):Overview + 最近运行 inline -->
     <el-drawer
+      :append-to-body="true"
       v-model="detailVisible"
       :title="t('jobDefinitionList.detailTitle', { code: detailRow?.jobCode || '' })"
       size="720px"
@@ -439,9 +446,10 @@
 <script setup lang="ts">
   import { ref, reactive, computed, watch } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
+  import { useDrawerAutoClose } from '@/composables/useDrawerAutoClose'
   import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
-  import { Plus } from '@element-plus/icons-vue'
+  import { Plus, Upload } from '@element-plus/icons-vue'
   type ExecutionMode = 'FULL' | 'INCREMENTAL' | 'CDC'
   const { t, te } = useI18n({ useScope: 'global' })
 
@@ -579,6 +587,8 @@
 
   function goInstances(jobCode: string) {
     // 从定义跳到该 job 的实例列表:列表默认锚今日,这里看的是"该 job 的历史运行",清掉日期
+    // 跳转前关闭详情 drawer,避免跳到目标页 drawer 还罩着(同路由 query-only 跳转不会触发组件卸载)
+    detailVisible.value = false
     void router.push({
       path: '/monitor/job-instances',
       query: { jobCode, range: 'all' },
@@ -793,6 +803,8 @@
   })
   const createFormRef = ref<FormInstance>()
   const createDrawerVisible = ref(false)
+  // 路由变化时自动关闭 detail / 编辑 / 新建 三个 drawer,避免跳到目标页 drawer 还罩着
+  useDrawerAutoClose([detailVisible, editDrawerVisible, createDrawerVisible])
   const createSaving = ref(false)
   const createForm = reactive({
     jobCode: '',
