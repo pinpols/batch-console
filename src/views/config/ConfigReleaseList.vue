@@ -2,7 +2,13 @@
   <PageContainer>
     <PageHeader>
       <template #actions>
-        <el-button type="primary" :icon="Plus" class="pretty-add-button" @click="openCreate">
+        <el-button
+          v-if="canMutateConfig"
+          type="primary"
+          :icon="Plus"
+          class="pretty-add-button"
+          @click="openCreate"
+        >
           {{ t('configReleaseList.headerCreate') }}
         </el-button>
       </template>
@@ -255,6 +261,7 @@
 
   const { t } = useI18n({ useScope: 'global' })
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
+  import { usePermission } from '@/composables/usePermission'
   import {
     grayRelease,
     createConfigRelease,
@@ -275,6 +282,7 @@
   import PageContainer from '@/components/common/PageContainer.vue'
   import MetaSelect from '@/components/common/MetaSelect.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
+  const { canMutateConfig } = usePermission()
   import SectionCard from '@/components/common/SectionCard.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import ProTable from '@/components/table/ProTable.vue'

@@ -6,6 +6,22 @@ import { setLastApiMeta } from '@/utils/lastApiMeta'
 import { logApi } from '@/utils/logger'
 import { sanitizeParams, sanitizeRequestBody, sanitizeResponseBody } from '@/utils/logRedact'
 import { showErrorToast } from '@/utils/errorToast'
+import { i18n } from '@/locales'
+
+/**
+ * 把后端 BizException 下发的 i18n key(形如 "error.auth.invalid_credentials")翻成中/英文。
+ * 命中 vue-i18n 字典就返回译文,否则原样返回 raw,让上层继续走兜底文案。
+ *
+ * 触发场景:登录失败 / NOT_FOUND / 幂等 Redis 失联 / 限流等后端直接抛 key 给前端的接口。
+ */
+function translateBizMessage(raw: string | undefined): string | undefined {
+  if (!raw) return raw
+  const trimmed = String(raw).trim()
+  // 只识别 "error.xxx[.yyy...]" 这种点分 key,普通中英文 message 原样直出
+  if (!/^error\.[a-z][a-z0-9_]*(?:\.[a-zA-Z0-9_]+)+$/.test(trimmed)) return raw
+  const { t, te } = i18n.global
+  return te(trimmed) ? t(trimmed) : raw
+}
 
 /**
  * 成功响应只记 envelope 的 `{ code, message }`(通常几十字节),不记 `data`。
@@ -158,7 +174,7 @@ function extractHttpErrorMessage(error: unknown): string {
       return url ? `接口不存在或后端版本不匹配（${url}）` : '接口不存在或后端版本不匹配'
     }
     const parts: string[] = []
-    if (d.message) parts.push(String(d.message))
+    if (d.message) parts.push(translateBizMessage(String(d.message)) ?? String(d.message))
     if (d.error && String(d.error) !== String(d.message)) parts.push(String(d.error))
     if (d.path) parts.push(`(${String(d.path)})`)
     if (parts.length) return parts.join(' ')
@@ -266,7 +282,7 @@ export function applyApiInterceptors(client: AxiosInstance): void {
         const envelope = body as CommonResponse<unknown>
         setLastApiMeta(envelope.meta ?? null)
         if (!isSuccessCode(envelope.code as string | number)) {
-          const msg = envelope.message || '请求失败'
+          const msg = translateBizMessage(envelope.message) || envelope.message || '请求失败'
           const tid = envelope.meta?.traceId || envelope.meta?.requestId
           showErrorToast({
             title: '请求失败',
@@ -344,10 +360,11 @@ export function applyApiInterceptors(client: AxiosInstance): void {
       if (status === 401) {
         if (isTokenExchangeRequest(cfg)) {
           // 登录 / 刷 token 本身 401：用户名密码错 或 refresh 失败，提示不登出
-          const msg =
+          const rawMsg =
             raw && typeof raw === 'object' && 'message' in raw
               ? String((raw as CommonResponse<unknown>).message || '')
               : ''
+          const msg = translateBizMessage(rawMsg) || rawMsg
           showApiErrorToast(msg || '用户名或密码错误')
         } else if (isSessionAuthRequest(cfg)) {
           // /auth/me 401：session 真正失效 → 清登录 flag 跳登录

@@ -1001,6 +1001,29 @@ const messages: Messages = {
     forbiddenSub: 'Please contact an admin to grant the required permission',
     networkTitle: 'Network error',
     networkSub: 'Please check your connection and try again',
+    auth: {
+      invalid_credentials: 'Invalid username or password',
+      account_locked: 'Account is locked, please contact an administrator',
+      account_disabled: 'Account is disabled, please contact an administrator',
+      session_expired: 'Session expired, please sign in again',
+      token_invalid: 'Invalid credentials, please sign in again',
+    },
+    job: {
+      definition_not_found: 'Job definition not found or already deleted',
+    },
+    pipeline: {
+      definition_not_found: 'Pipeline definition not found or already deleted',
+    },
+    tenant: {
+      not_found: 'Tenant not found',
+    },
+    idempotency: {
+      redis_unavailable: 'System is busy, please retry shortly',
+      key_conflict: 'Duplicate request, please retry shortly',
+    },
+    rateLimit: {
+      exceeded: 'Too many requests, please try again later',
+    },
     boundary: 'Component render error',
   },
   enum: {
@@ -1440,7 +1463,8 @@ const messages: Messages = {
     drawerEditTitle: 'Edit quota policy',
     descriptionLabel: 'Description',
     rulePolicyCode: 'policyCode is required',
-    ruleFairShareWeight: 'fairShareWeight is required',
+    ruleFairShareWeight: 'fairShareWeight must be ≥ 1',
+    ruleNonNegative: 'must be a non-negative integer',
     saveSuccess: 'Saved quota policy {code}',
     toggleConfirmText: 'Confirm {action} policy {code}?',
     toggleConfirmTitle: 'Toggle quota policy',
