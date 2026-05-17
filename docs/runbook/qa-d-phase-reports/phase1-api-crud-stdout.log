@@ -1,0 +1,80 @@
+  [CREATE]    PASS HTTP 200 id=5038
+  [UPDATE]    PASS HTTP 200
+
+=== 文件渠道 (/api/console/file-channels) ===
+  [LIST]      PASS HTTP 200
+  [CREATE]    PASS HTTP 200 id=5124
+  [READ]      PASS HTTP 200
+  [UPDATE]    PASS HTTP 200
+
+=== Job 定义 (/api/console/job-definitions) ===
+  [LIST]      PASS HTTP 200
+  [CREATE]    PASS HTTP 200 id=2125
+  [READ]      PASS HTTP 200
+  [UPDATE]    PASS HTTP 200
+
+=== Pipeline (/api/console/pipeline-definitions) ===
+  [LIST]      PASS HTTP 200
+  [CREATE]    PASS HTTP 200 id=4630
+  [READ]      PASS HTTP 200
+  [UPDATE]    PASS HTTP 200
+
+=== API Key (/api/console/api-keys) ===
+  [LIST]      PASS HTTP 200
+  [CREATE]    PASS HTTP 200 id=68
+
+=== Webhook (/api/console/webhooks) ===
+  [LIST]      PASS HTTP 200
+  [CREATE]    PASS HTTP 200 id=28
+  [DELETE]    PASS HTTP 200
+
+=== 通知渠道 (/api/console/notifications/channels) ===
+  [LIST]      PASS HTTP 200
+  [CREATE]    WARN HTTP 200 但响应无 id
+
+=== 工作流定义 (/api/console/workflow-definitions) ===
+  [LIST]      PASS HTTP 200
+  [CREATE]    PASS HTTP 200 id=2114
+  [READ]      PASS HTTP 200
+  [UPDATE]    PASS HTTP 200
+
+=== 节假日 (/api/console/calendars/1321/holidays) ===
+  [LIST]      PASS HTTP 200
+  [CREATE]    WARN HTTP 200 但响应无 id
+
+=== 系统参数 (PUT-upsert) ===
+  [LIST]      PASS HTTP 200
+  [PUT]       PASS HTTP 200
+  [GET-value] PASS HTTP 200
+  [DELETE]    PASS HTTP 200
+
+=== Tag (/api/console/tags) ===
+  [CREATE]    WARN HTTP 200 但响应无 id
+
+=== 通知规则 ===
+  [SKIP] no channel in tx
+
+=== 触发器 (operations) ===
+  [register  ] PASS HTTP 200
+  [pause     ] PASS HTTP 200
+  [resume    ] PASS HTTP 200
+  [unregister] PASS HTTP 200
+
+=== 配置同步 (operations) ===
+  [export   ]  PASS HTTP 200
+  [preview  ]  PASS HTTP 200
+
+=== 自助服务 (operations) ===
+  [quota-req]  PASS HTTP 200
+
+=== 租户操作 ===
+  [suspend  ]  PASS HTTP 200
+  [activate ]  PASS HTTP 200
+
+=== Job 实例操作 (in ta tenant) ===
+  [SKIP] no RUNNING instance in ta
+
+================================================================
+TOTAL: PASS 62 / FAIL 0 / SKIP 0
+报告: /tmp/api-crud-report.md
+================================================================
