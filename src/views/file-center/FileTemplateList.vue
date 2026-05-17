@@ -330,7 +330,10 @@
           ><el-input v-model="templateForm.templateName" maxlength="256"
         /></el-form-item>
         <el-form-item :label="t('fileTemplateList.fieldTemplateType')" required
-          ><el-input v-model="templateForm.templateType" maxlength="32"
+          ><MetaSelect
+            v-model="templateForm.templateType"
+            enum-key="fileTemplateType"
+            class="query-w-full"
         /></el-form-item>
         <el-form-item :label="t('fileTemplateList.fieldBizType')"
           ><MetaSelect
@@ -340,7 +343,11 @@
             filterable
         /></el-form-item>
         <el-form-item :label="t('fileTemplateList.fieldFileFormatType')"
-          ><el-input v-model="templateForm.fileFormatType" maxlength="32"
+          ><MetaSelect
+            v-model="templateForm.fileFormatType"
+            enum-key="fileTemplateFormat"
+            class="query-w-full"
+            clearable
         /></el-form-item>
         <el-form-item :label="t('fileTemplateList.fieldCharset')"
           ><el-input v-model="templateForm.charset" maxlength="32"
@@ -406,19 +413,30 @@
           ><el-input v-model="channelForm.channelName" maxlength="256"
         /></el-form-item>
         <el-form-item :label="t('fileTemplateList.fieldChannelType')" required
-          ><el-input v-model="channelForm.channelType" maxlength="32"
+          ><MetaSelect
+            v-model="channelForm.channelType"
+            enum-key="channelType"
+            class="query-w-full"
         /></el-form-item>
         <el-form-item :label="t('fileTemplateList.fieldTargetEndpoint')"
           ><el-input v-model="channelForm.targetEndpoint" maxlength="1024"
         /></el-form-item>
         <el-form-item :label="t('fileTemplateList.fieldAuthType')"
-          ><el-input v-model="channelForm.authType" maxlength="32"
+          ><MetaSelect
+            v-model="channelForm.authType"
+            enum-key="authType"
+            class="query-w-full"
+            clearable
         /></el-form-item>
         <el-form-item :label="t('fileTemplateList.fieldReceiptPolicy')"
-          ><el-input v-model="channelForm.receiptPolicy" maxlength="32"
+          ><MetaSelect
+            v-model="channelForm.receiptPolicy"
+            enum-key="receiptPolicy"
+            class="query-w-full"
+            clearable
         /></el-form-item>
         <el-form-item :label="t('fileTemplateList.fieldTimeoutSeconds')"
-          ><el-input-number v-model="channelForm.timeoutSeconds" :min="0"
+          ><el-input-number v-model="channelForm.timeoutSeconds" :min="0" :max="2147483647"
         /></el-form-item>
         <el-form-item :label="t('fileTemplateList.fieldEnabled')"
           ><el-switch v-model="channelForm.enabled"
