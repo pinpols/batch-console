@@ -951,6 +951,31 @@ export default {
     notFound: '页面不存在',
     notFoundSub: '你访问的地址可能已经被移动或删除',
     forbidden: '没有访问权限',
+    // 后端 BizException 直接下发的 i18n key 兜底翻译。interceptor 收到 message 形如
+    // "error.xxx.yyy" 时优先按这里映射,缺失则原样展示后端 message,不再露给用户裸 key
+    auth: {
+      invalid_credentials: '账号或密码错误,请确认后重试',
+      account_locked: '账号已被锁定,请联系管理员',
+      account_disabled: '账号已禁用,请联系管理员',
+      session_expired: '会话已过期,请重新登录',
+      token_invalid: '登录凭证无效,请重新登录',
+    },
+    job: {
+      definition_not_found: '该任务定义不存在或已被删除',
+    },
+    pipeline: {
+      definition_not_found: '该 Pipeline 定义不存在或已被删除',
+    },
+    tenant: {
+      not_found: '租户不存在',
+    },
+    idempotency: {
+      redis_unavailable: '系统繁忙,请稍后重试',
+      key_conflict: '请求重复,请稍后重试',
+    },
+    rateLimit: {
+      exceeded: '操作过于频繁,请稍后再试',
+    },
     forbiddenSub: '请联系管理员开通对应权限',
     networkTitle: '网络异常',
     networkSub: '请检查网络连接后重试',
@@ -1392,7 +1417,8 @@ export default {
     drawerEditTitle: '编辑配额策略',
     descriptionLabel: '描述',
     rulePolicyCode: '请填写 policyCode',
-    ruleFairShareWeight: '请填写 fairShareWeight',
+    ruleFairShareWeight: 'fairShareWeight ≥ 1',
+    ruleNonNegative: '请填写非负整数',
     saveSuccess: '已保存配额策略 {code}',
     toggleConfirmText: '确认将策略 {code} {action}吗?',
     toggleConfirmTitle: '切换配额策略',

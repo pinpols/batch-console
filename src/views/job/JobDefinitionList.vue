@@ -2,7 +2,13 @@
   <PageContainer>
     <PageHeader>
       <template #actions>
-        <el-button type="primary" :icon="Plus" class="pretty-add-button" @click="openCreate">
+        <el-button
+          v-if="canMutateConfig"
+          type="primary"
+          :icon="Plus"
+          class="pretty-add-button"
+          @click="openCreate"
+        >
           {{ t('jobDefinitionList.headerCreate') }}
         </el-button>
       </template>
@@ -463,6 +469,7 @@
   import { instanceApi } from '@/api/instance'
   import { fmtDatetime } from '@/utils/datetime'
   import { getMetaEnums, getMetaQueues, type MetaOption } from '@/api/meta'
+  import { usePermission } from '@/composables/usePermission'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { useJobDefinitionsPaged } from '@/composables/queries/useJobDefinitionsPaged'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
@@ -489,6 +496,7 @@
   const route = useRoute()
   const router = useRouter()
   const tenant = useTenantStore()
+  const { canMutateConfig } = usePermission()
   const page = ref(1)
   const pageSize = ref(20)
   const actingJobCode = ref('')

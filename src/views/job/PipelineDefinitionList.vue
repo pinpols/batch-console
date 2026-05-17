@@ -2,7 +2,13 @@
   <PageContainer>
     <PageHeader>
       <template #actions>
-        <el-button type="primary" :icon="Plus" class="pretty-add-button" @click="openCreate">
+        <el-button
+          v-if="canMutateConfig"
+          type="primary"
+          :icon="Plus"
+          class="pretty-add-button"
+          @click="openCreate"
+        >
           {{ t('pipelineDefinitionList.headerCreate') }}
         </el-button>
       </template>
@@ -23,7 +29,7 @@
         <template v-if="!hasActiveFilters" #empty>
           <EmptyState :description="t('pipelineDefinitionList.emptyDescription')" :image-size="80">
             <template #action>
-              <el-button type="primary" :icon="Plus" @click="openCreate">
+              <el-button v-if="canMutateConfig" type="primary" :icon="Plus" @click="openCreate">
                 {{ t('pipelineDefinitionList.headerCreate') }}
               </el-button>
             </template>
@@ -131,10 +137,11 @@
           <el-input v-model="form.pipelineName" maxlength="256" />
         </el-form-item>
         <el-form-item :label="t('pipelineDefinitionList.fieldPipelineType')" prop="pipelineType">
-          <el-input
+          <MetaSelect
             v-model="form.pipelineType"
+            class="query-w-full"
+            enum-key="pipelineType"
             :placeholder="t('pipelineDefinitionList.typeFieldPlaceholder')"
-            maxlength="32"
           />
         </el-form-item>
         <el-form-item :label="t('pipelineDefinitionList.fieldEnabled')">
@@ -349,10 +356,13 @@
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
+  import MetaSelect from '@/components/common/MetaSelect.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import ProTable from '@/components/table/ProTable.vue'
+  import { usePermission } from '@/composables/usePermission'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
 
+  const { canMutateConfig } = usePermission()
   const tenant = useTenantStore()
   const formRef = ref<FormInstance>()
   const loading = ref(false)

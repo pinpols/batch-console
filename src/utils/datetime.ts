@@ -16,6 +16,20 @@ export function fmtDatetime(val: unknown): string {
 }
 
 /**
+ * 把日期/字符串规范化为 ISO-8601 datetime(UTC,带 Z 后缀)。
+ *
+ * Why: 后端期望 ISO datetime,FE el-date-picker 默认 `YYYY-MM-DD` 10-char 形态会触发
+ * "Text '2026-05-17' could not be parsed at index 10" 后端日志(见 BE 日志 issue #5)。
+ * 用法: payload 出站前调用 `toIsoDateTime(form.bizDate)`,空值返 undefined 跳过该字段。
+ */
+export function toIsoDateTime(val: unknown): string | undefined {
+  if (val === null || val === undefined || val === '') return undefined
+  const d = val instanceof Date ? val : new Date(String(val))
+  if (isNaN(d.getTime())) return undefined
+  return d.toISOString()
+}
+
+/**
  * 仅格式化日期部分，输出示例：2026-04-12
  */
 export function fmtDate(val: unknown): string {

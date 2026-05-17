@@ -110,25 +110,22 @@
     border-radius: var(--radius-content, 10px);
   }
 
-  /* 字段少 → 2 列;min 防过窄,max 防超宽 */
+  /* 字段少 → 2 列;query-form 始终占满父容器宽度,与下方 ProTable 对齐 */
   .query-form--cols-2.el-form--inline {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    min-width: min(100%, 560px);
-    max-width: 880px;
+    width: 100%;
   }
 
   /* 默认 3 列 */
   .query-form--cols-3.el-form--inline {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    min-width: min(100%, 840px);
-    max-width: 1320px;
+    width: 100%;
   }
 
   /* 字段多 → 4 列 */
   .query-form--cols-4.el-form--inline {
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    min-width: min(100%, 1120px);
-    max-width: 1680px;
+    width: 100%;
   }
 
   html.dark .query-form.el-form--inline {

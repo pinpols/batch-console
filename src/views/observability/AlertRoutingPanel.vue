@@ -2,7 +2,7 @@
   <PageContainer>
     <PageHeader>
       <template #actions>
-        <el-button type="primary" :icon="Plus" @click="openCreate">
+        <el-button v-if="canMutateConfig" type="primary" :icon="Plus" @click="openCreate">
           {{ t('alertRoutingPanel.actionCreate') }}
         </el-button>
       </template>
@@ -130,12 +130,7 @@
           <el-input v-model="form.alertGroup" maxlength="128" />
         </el-form-item>
         <el-form-item :label="t('alertRoutingPanel.fieldSeverity')" prop="severity">
-          <el-select v-model="form.severity" allow-create filterable>
-            <el-option label="CRITICAL" value="CRITICAL" />
-            <el-option label="ERROR" value="ERROR" />
-            <el-option label="WARN" value="WARN" />
-            <el-option label="INFO" value="INFO" />
-          </el-select>
+          <MetaSelect v-model="form.severity" enum-key="severity" class="query-w-full" />
         </el-form-item>
         <el-form-item :label="t('alertRoutingPanel.fieldReceiver')" prop="receiver">
           <el-input v-model="form.receiver" maxlength="256" />
@@ -148,13 +143,13 @@
           />
         </el-form-item>
         <el-form-item :label="t('alertRoutingPanel.fieldGroupWaitSeconds')">
-          <el-input-number v-model="form.groupWaitSeconds" :min="0" />
+          <el-input-number v-model="form.groupWaitSeconds" :min="0" :max="INT32_MAX" />
         </el-form-item>
         <el-form-item :label="t('alertRoutingPanel.fieldGroupIntervalSeconds')">
-          <el-input-number v-model="form.groupIntervalSeconds" :min="0" />
+          <el-input-number v-model="form.groupIntervalSeconds" :min="0" :max="INT32_MAX" />
         </el-form-item>
         <el-form-item :label="t('alertRoutingPanel.fieldRepeatIntervalSeconds')">
-          <el-input-number v-model="form.repeatIntervalSeconds" :min="0" />
+          <el-input-number v-model="form.repeatIntervalSeconds" :min="0" :max="INT32_MAX" />
         </el-form-item>
         <el-form-item :label="t('alertRoutingPanel.fieldEnabled')">
           <el-switch v-model="form.enabled" />
@@ -196,8 +191,12 @@
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
+  import MetaSelect from '@/components/common/MetaSelect.vue'
+  import { usePermission } from '@/composables/usePermission'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
 
+  const { canMutateConfig } = usePermission()
+  const INT32_MAX = 2147483647
   const { t } = useI18n({ useScope: 'global' })
   const tenant = useTenantStore()
   const listRemote = ref(false)

@@ -2,7 +2,7 @@
   <PageContainer>
     <PageHeader>
       <template #actions>
-        <el-button type="primary" :icon="Plus" @click="onCreateClick">
+        <el-button v-if="canMutateConfig" type="primary" :icon="Plus" @click="onCreateClick">
           {{ activeCreateLabel }}
         </el-button>
       </template>
@@ -390,16 +390,16 @@
           ><el-input v-model="queueForm.queueName" maxlength="256"
         /></el-form-item>
         <el-form-item :label="t('queueConfig.fieldQueueType')" required
-          ><el-input v-model="queueForm.queueType" maxlength="32"
+          ><MetaSelect v-model="queueForm.queueType" enum-key="queueType" class="query-w-full"
         /></el-form-item>
         <el-form-item :label="t('queueConfig.fieldMaxRunningJobs')"
-          ><el-input-number v-model="queueForm.maxRunningJobs" :min="0"
+          ><el-input-number v-model="queueForm.maxRunningJobs" :min="0" :max="INT32_MAX"
         /></el-form-item>
         <el-form-item :label="t('queueConfig.fieldMaxRunningPartitions')"
-          ><el-input-number v-model="queueForm.maxRunningPartitions" :min="0"
+          ><el-input-number v-model="queueForm.maxRunningPartitions" :min="0" :max="INT32_MAX"
         /></el-form-item>
         <el-form-item :label="t('queueConfig.fieldMaxQps')"
-          ><el-input-number v-model="queueForm.maxQps" :min="0"
+          ><el-input-number v-model="queueForm.maxQps" :min="0" :max="INT32_MAX"
         /></el-form-item>
         <el-form-item :label="t('queueConfig.fieldWorkerGroup')"
           ><el-input v-model="queueForm.workerGroup" maxlength="128"
@@ -408,10 +408,14 @@
           ><el-input v-model="queueForm.resourceTag" maxlength="64"
         /></el-form-item>
         <el-form-item :label="t('queueConfig.fieldPriorityPolicy')"
-          ><el-input v-model="queueForm.priorityPolicy" maxlength="32"
+          ><MetaSelect
+            v-model="queueForm.priorityPolicy"
+            enum-key="priorityPolicy"
+            class="query-w-full"
+            clearable
         /></el-form-item>
         <el-form-item :label="t('queueConfig.fieldFairShareWeight')"
-          ><el-input-number v-model="queueForm.fairShareWeight" :min="0"
+          ><el-input-number v-model="queueForm.fairShareWeight" :min="1" :max="INT32_MAX"
         /></el-form-item>
         <el-form-item :label="t('queueConfig.fieldEnabled')"
           ><el-switch v-model="queueForm.enabled"
@@ -465,10 +469,18 @@
           ><el-time-picker v-model="windowForm.endTime" value-format="HH:mm:ss"
         /></el-form-item>
         <el-form-item :label="t('queueConfig.fieldEndStrategy')"
-          ><el-input v-model="windowForm.endStrategy" maxlength="32"
+          ><MetaSelect
+            v-model="windowForm.endStrategy"
+            enum-key="endStrategy"
+            class="query-w-full"
+            clearable
         /></el-form-item>
         <el-form-item :label="t('queueConfig.fieldOutOfWindowAction')"
-          ><el-input v-model="windowForm.outOfWindowAction" maxlength="32"
+          ><MetaSelect
+            v-model="windowForm.outOfWindowAction"
+            enum-key="outOfWindowAction"
+            class="query-w-full"
+            clearable
         /></el-form-item>
         <el-form-item :label="t('queueConfig.fieldAllowCrossDay')"
           ><el-switch v-model="windowForm.allowCrossDay"
@@ -519,13 +531,21 @@
           ><el-input v-model="calendarForm.timezone" maxlength="64"
         /></el-form-item>
         <el-form-item :label="t('queueConfig.fieldHolidayRollRule')"
-          ><el-input v-model="calendarForm.holidayRollRule" maxlength="32"
+          ><MetaSelect
+            v-model="calendarForm.holidayRollRule"
+            enum-key="holidayStrategy"
+            class="query-w-full"
+            clearable
         /></el-form-item>
         <el-form-item :label="t('queueConfig.fieldCatchUpPolicy')"
-          ><el-input v-model="calendarForm.catchUpPolicy" maxlength="32"
+          ><MetaSelect
+            v-model="calendarForm.catchUpPolicy"
+            enum-key="catchUpPolicy"
+            class="query-w-full"
+            clearable
         /></el-form-item>
         <el-form-item :label="t('queueConfig.fieldCatchUpMaxDays')"
-          ><el-input-number v-model="calendarForm.catchUpMaxDays" :min="0"
+          ><el-input-number v-model="calendarForm.catchUpMaxDays" :min="0" :max="INT32_MAX"
         /></el-form-item>
         <el-form-item :label="t('queueConfig.fieldEnabled')"
           ><el-switch v-model="calendarForm.enabled"
@@ -556,7 +576,7 @@
           ><el-date-picker v-model="holidayForm.bizDate" type="date" value-format="YYYY-MM-DD"
         /></el-form-item>
         <el-form-item :label="t('queueConfig.fieldDayType')" required
-          ><el-input v-model="holidayForm.dayType" maxlength="32"
+          ><MetaSelect v-model="holidayForm.dayType" enum-key="dayType" class="query-w-full"
         /></el-form-item>
         <el-form-item :label="t('queueConfig.fieldHolidayName')"
           ><el-input v-model="holidayForm.holidayName" maxlength="128"
@@ -604,8 +624,14 @@
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
   import PageContainer from '@/components/common/PageContainer.vue'
+  import MetaSelect from '@/components/common/MetaSelect.vue'
+  import { usePermission } from '@/composables/usePermission'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
+  const { canMutateConfig } = usePermission()
+  // 后端 Quota / Queue 这类计数字段是 int32:防止 999999999999999 这种超界值落到 Jackson
+  // (会回 400 "Numeric value out of range of int")。BE 日志里 8 次 4xx 全是这原因。
+  const INT32_MAX = 2147483647
   import TablePagerBar from '@/components/table/TablePagerBar.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
   import GovernanceFilterBar from './components/GovernanceFilterBar.vue'

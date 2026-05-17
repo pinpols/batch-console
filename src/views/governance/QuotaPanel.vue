@@ -2,7 +2,7 @@
   <PageContainer>
     <PageHeader>
       <template #actions>
-        <el-button type="primary" :icon="Plus" @click="openCreate">
+        <el-button v-if="canMutateConfig" type="primary" :icon="Plus" @click="openCreate">
           {{ t('quotaPanel.actionCreate') }}
         </el-button>
       </template>
@@ -152,19 +152,19 @@
           :label="t('quotaPanel.fieldMaxRunningJobsPerTenant')"
           prop="maxRunningJobsPerTenant"
         >
-          <el-input-number v-model="form.maxRunningJobsPerTenant" :min="0" />
+          <el-input-number v-model="form.maxRunningJobsPerTenant" :min="0" :max="INT32_MAX" />
         </el-form-item>
         <el-form-item
           :label="t('quotaPanel.fieldMaxPartitionsPerTenant')"
           prop="maxPartitionsPerTenant"
         >
-          <el-input-number v-model="form.maxPartitionsPerTenant" :min="0" />
+          <el-input-number v-model="form.maxPartitionsPerTenant" :min="0" :max="INT32_MAX" />
         </el-form-item>
         <el-form-item :label="t('quotaPanel.fieldMaxQpsPerTenant')" prop="maxQpsPerTenant">
-          <el-input-number v-model="form.maxQpsPerTenant" :min="0" />
+          <el-input-number v-model="form.maxQpsPerTenant" :min="0" :max="INT32_MAX" />
         </el-form-item>
         <el-form-item :label="t('quotaPanel.fieldFairShareWeight')" prop="fairShareWeight">
-          <el-input-number v-model="form.fairShareWeight" :min="1" />
+          <el-input-number v-model="form.fairShareWeight" :min="1" :max="INT32_MAX" />
         </el-form-item>
         <el-form-item :label="t('quotaPanel.fieldEnabled')">
           <el-switch v-model="form.enabled" />
@@ -209,6 +209,10 @@
   const tenant = useTenantStore()
   const listRemote = ref(false)
   const { filterBusy, runSearch, runReset, runRefresh } = useListFilterFeedback(listRemote)
+  import { usePermission } from '@/composables/usePermission'
+
+  const { canMutateConfig } = usePermission()
+  const INT32_MAX = 2147483647
   const loading = ref(false)
   const saving = ref(false)
   const togglingId = ref<number | null>(null)
@@ -231,10 +235,24 @@
     description: '',
   })
 
+  // BE @Min(0) / @Min(1) — null 也会 400,前端拦截可减 BE 4xx
+  const nonNegativeRule = (msgKey: string) => [
+    { required: true, message: t(msgKey), trigger: 'change' as const },
+    { type: 'number' as const, min: 0, message: t(msgKey), trigger: 'change' as const },
+  ]
   const rules: FormRules = {
     policyCode: [{ required: true, message: t('quotaPanel.rulePolicyCode'), trigger: 'blur' }],
+    maxRunningJobsPerTenant: nonNegativeRule('quotaPanel.ruleNonNegative'),
+    maxPartitionsPerTenant: nonNegativeRule('quotaPanel.ruleNonNegative'),
+    maxQpsPerTenant: nonNegativeRule('quotaPanel.ruleNonNegative'),
     fairShareWeight: [
-      { required: true, message: t('quotaPanel.ruleFairShareWeight'), trigger: 'blur' },
+      { required: true, message: t('quotaPanel.ruleFairShareWeight'), trigger: 'change' },
+      {
+        type: 'number',
+        min: 1,
+        message: t('quotaPanel.ruleFairShareWeight'),
+        trigger: 'change',
+      },
     ],
   }
 
