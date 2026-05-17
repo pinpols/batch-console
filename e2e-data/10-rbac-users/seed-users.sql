@@ -8,8 +8,10 @@
 -- 密码 hash 用 Argon2id(BE 默认 encoder)。下面的 hash 是占位,需要 BE 同事用 BE 工具或
 --   `mvn exec:java -Dexec.mainClass=...PasswordHasher` 替换为真实 hash;或者改用 BCrypt 兼容
 --
--- authorities_csv 枚举(对应 FE ROLE_*):
---   ROLE_ADMIN / ROLE_OPERATOR / ROLE_VIEWER / ROLE_TENANT_USER / ROLE_AUDITOR / ROLE_CONFIG_ADMIN
+-- authorities_csv 枚举(对应 BE ConsoleRoles 实际实现的 5 个):
+--   ROLE_ADMIN / ROLE_AUDITOR / ROLE_CONFIG_ADMIN / ROLE_TENANT_USER / ROLE_USER
+-- 历史上 OPERATOR / VIEWER 是 ConsoleMenuRegistry 的菜单档位标签,不是 Spring 角色 —
+-- 用它们当 authorities_csv 会被 SecurityConfig URL 兜底白名单卡 403。2026-05-17 已对齐。
 --
 -- 用法:  psql -h localhost -p 15432 -U batch -d batch_console -f seed-users.sql
 -- 清理:  DELETE FROM batch.console_user_account WHERE username LIKE 'test-%';
@@ -27,13 +29,15 @@ BEGIN;
 INSERT INTO batch.console_user_account (
   tenant_id, username, display_name, password_hash, authorities_csv, enabled
 ) VALUES
+  -- OP(原 OPERATOR)→ TENANT_USER:租户内可写
   ('ta',     'test-op-ta',     'OP for ta',
    '$argon2id$v=19$m=65536,t=3,p=4$REPLACE_WITH_REAL_HASH_FOR_TestOp_2026taX',
-   'ROLE_OPERATOR', TRUE),
+   'ROLE_TENANT_USER', TRUE),
 
+  -- Viewer(原 VIEWER)→ USER:仅可登录 + 看默认页
   ('ta',     'test-viewer-ta', 'Viewer for ta',
    '$argon2id$v=19$m=65536,t=3,p=4$REPLACE_WITH_REAL_HASH_FOR_TestVi_2026taX',
-   'ROLE_VIEWER', TRUE),
+   'ROLE_USER', TRUE),
 
   ('ta',     'test-tu-ta',     'TenantUser for ta',
    '$argon2id$v=19$m=65536,t=3,p=4$REPLACE_WITH_REAL_HASH_FOR_TestTu_2026taX',

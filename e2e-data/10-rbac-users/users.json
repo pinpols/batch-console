@@ -6,18 +6,18 @@
       "displayName": "OP for ta",
       "password": "TestOp@2026taX",
       "tenantId": "ta",
-      "role": "OPERATOR",
+      "role": "TENANT_USER",
       "email": "op-ta@test.local",
-      "purpose": "测自助 + 写操作权限"
+      "purpose": "租户内写操作(原 OPERATOR 已并入 TENANT_USER)"
     },
     {
       "username": "test-viewer-ta",
       "displayName": "Viewer for ta",
       "password": "TestVi@2026taX",
       "tenantId": "ta",
-      "role": "VIEWER",
+      "role": "USER",
       "email": "viewer-ta@test.local",
-      "purpose": "测只读 + 写按钮被禁"
+      "purpose": "默认只读用户(原 VIEWER 已并入 USER)"
     },
     {
       "username": "test-tu-ta",
