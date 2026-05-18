@@ -13,8 +13,9 @@ module.exports = defineConfig({
   // 单个测试 25s（从 15s 调大），容忍冷启动 + 网络抖动
   timeout: 25_000,
   expect: { timeout: 8_000 },
-  // 全局 30 分钟兜底（原来 3 分钟太紧）
-  globalTimeout: 1_800_000,
+  // 全局兜底:本地 dev 60 min(suite 已增至 749 tests,workers=2 需要 ~40 min)
+  // 原 3min → 30min → 60min
+  globalTimeout: 3_600_000,
   reporter: [
     ['html', { open: 'never' }],
     ['list'],
