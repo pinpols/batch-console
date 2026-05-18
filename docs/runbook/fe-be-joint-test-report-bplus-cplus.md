@@ -6,18 +6,20 @@
 
 ## 一图总览
 
-| 项 | 数 |
+| 项 | 数(二次跑) |
 |---|---|
 | 全 e2e 套件 | **632 tests** |
-| 直接通过 | **604** ✅ (95.6%) |
+| 直接通过 | **605** ✅ (95.7%) |
 | Skip(@cross-browser 等条件跳过) | 24 ⏭️ (3.8%) |
-| 失败 | 4 ❌ (0.6%) |
-| **非失败率** | **99.4%** ✅ 超目标 |
+| 失败 | 3 ❌ (0.5%) — 全部 spec 基建 flaky,**单独/2-worker 跑全过** |
+| **非失败率** | **99.5%** ✅ 超目标 |
 | console-api 内部 5xx | **0** ✅ |
 | 本次新增 spec | 4 文件 / **86 tests / 100% PASS** |
 | BE bug 修复 | **0**(发现的 4 个 WARN 全为 spec 配错,修 spec 后清零) |
 | FE bug 修复 | **0**(本档无 FE bug,前期已修) |
-| 已落 commit | 5 个(d3cbca5 / 8685701 / 8ac5f6f / 1902ba5 / a204dda) |
+| 已落 commit | 7 个(a204dda / d3cbca5 / 8685701 / 8ac5f6f / 1902ba5 / 751ed09 / db3a89c) |
+
+**上线判定**:✅ **前端代码本身可上线**(代码 0 bug);⚠️ **生产环境**必须先确认 orchestrator/worker/scheduler 三个 downstream service 已起。
 
 ## 分档执行结果
 
@@ -102,17 +104,31 @@
 - Phase 15 视觉回归:用现有 a11y.spec.ts 兜底(已落 C 档)
 - Phase 16 Pro 混沌/集成真打:留运维侧执行(需 toxiproxy + 实 Kafka/OSS/SMTP)
 
-## 4 个失败 spec 详情(均为 pre-existing,非本次新增)
+## 失败 spec 详情演进(2 次跑对比)
 
-| spec | 失败点 | 性质 | 影响 |
+**第一次跑(修前):604 PASS / 4 FAIL**
+| spec | 失败点 |
+|---|---|
+| runs-and-palette ⌘K 搜菜单 | `.command-palette .el-input__inner` toBeVisible 超时 |
+| runs-and-palette ⌘K 纯数字 | 同上 |
+| scheduler-governance-ops 刷新按钮 | `.el-card, .el-table` toBeAttached 超时 |
+| soak 长会话 20 轮路由切换 | error 累积 > 5(并行下) |
+
+**第二次跑(修后):605 PASS / 3 FAIL**(commit db3a89c 后)
+| spec | 失败点 | 单独跑/workers=2 | 性质 |
 |---|---|---|---|
-| runs-and-palette ⌘K 搜菜单 | `.command-palette .el-input__inner` toBeVisible 超时 | flaky / 选择器路径变化 | 低 |
-| runs-and-palette ⌘K 纯数字 | 同上 | 同上 | 低 |
-| scheduler-governance-ops 刷新按钮 | `.el-card, .el-table` toBeAttached 超时 | 页面初始无数据 | 低 |
-| soak 长会话 20 轮路由切换 | error 累积 > 5 | 长跑稳定性,需调阈值 | 低 |
+| scheduler-governance-ops 刷新按钮 | 选择器 timeout | ✅ 1.8s 通 | 4-worker 资源争抢 |
+| soak 长会话 | error 累积 > 5 | ✅ 通 | 同上 |
+| webhook-crud 列表展示 + 刷新 | timeout | ✅ workers=2 通 | 同上 |
 
-**这 4 个全是 pre-existing 已有 spec 的 flaky / 选择器路径问题,
-不是本次新增工作的产物;不阻塞 99% 覆盖目标的达成。**
+**修复内容**:
+- `e2e/runs-and-palette.spec.ts` 4 个 ⌘K 测都加 `layout-shell-lock` 等就绪 + body click 拿焦 + timeout 5s
+  - 根因:`enterDemoApp` 后立即 `goto` 新路由,DefaultLayout `onMounted` 还没绑 window keydown listener,Cmd+K 事件落空
+- `e2e/scheduler-governance-ops.spec.ts` 刷新按钮选择器扩到 `.section-card / .el-empty`,timeout 12s,button.first()
+
+**剩 3 个失败**:**全部并行 4-worker 资源争抢导致 timing 紧**(不是产品 bug,不是新增 spec 的产物)。
+- 1-worker / 2-worker 跑都 PASS
+- 修复方案(留运维):playwright.config 把 workers 从默认 `undefined`(4 核)降到 2,或对这 3 个 spec 加 `test.describe.configure({ mode: 'serial' })`
 
 ## BE 日志检查
 
@@ -172,6 +188,78 @@ e2e/.auth/
 
 1. **可选 Pro 档(2 天)**:k6 完整压测 + toxiproxy 混沌 + Kafka/OSS/SMTP 真打
    投入产出比已较低,建议生产前再做
-2. **修 4 个 flaky 旧 spec**(0.5 天):修 ⌘K palette 选择器 + scheduler 数据兜底 + soak 调阈值
+2. **playwright workers=2** 永久化(0.1 天)— 消除剩 3 个 flaky
 3. **dev 环境补齐 orchestrator/worker service**:让 rerun/compensation 等
    真正 200 成功,不仅 200 受理
+
+---
+
+## 🚀 上线评估(2026-05-18)
+
+### 总判定:**前端代码 ✅ 可上线**
+
+### 业务按钮逐项核对(0 报错)
+
+| 页面 / 按钮 | 状态 | 来源 spec |
+|---|---|---|
+| Job 定义 创建/编辑/删除/触发/克隆 | ✅ | job-definition-crud + job-ops |
+| Pipeline 定义 创建/编辑/步骤拖拽 | ✅ | pipeline-definition-crud(步骤拖拽人测兜底) |
+| Queue / Window / Calendar 创建编辑启停 | ✅ | queue-config-crud + governance |
+| Quota 策略 创建编辑 + 边界 | ✅ | quota-policy-crud + boundary |
+| 告警路由 创建编辑 | ✅ | alert-routing-crud |
+| 文件模板/渠道 双对话框 | ✅ | file-template-channel-crud |
+| 配置发布 创建/灰度/发布/回滚 | ✅ | config-release-crud + advanced |
+| 用户账户 创建/重置/启停 + ROLE 多选 | ✅ | user-account-ops + 新加 multi-select |
+| 租户 创建/批量/暂停/恢复/删除 | ✅ | tenant-ops + tenant-config-ops |
+| API Key / Webhook / 通知渠道 | ✅ | api-key-crud + webhook-crud + notification-* |
+| 标签管理 | ✅ | tag-* |
+| 审批 通过/拒绝/批量 | ✅ | approval-actions + approval-ops |
+| Job 实例 重跑/取消/终止 | ⚠️ | UI OK,生效需 orchestrator 在线 |
+| 分片 重试/取消 | ⚠️ | 同上 |
+| Outbox 重投/清理 | ✅ | alert-outbox-ops |
+| Excel 导入 | ✅ | excel-import + upload-full-chain |
+| 系统参数 | ✅ | system-parameter-crud |
+
+### 已验证 OK(可放心)
+
+| 项 | 证据 |
+|---|---|
+| **CRUD 表单输入** | B 档 42/42 + C 档 466/16 + D 档全过 + 新增 86/86 |
+| **必填校验** | Phase 6 测 9 接口,@NotBlank/@Size 都触发友好 400 |
+| **数字溢出** | Phase 10 int32 边界(2147483648 不 500) |
+| **Unicode/Emoji** | 落库不崩 |
+| **XSS / SQL inj / 路径穿越** | 全部字面值存,不执行 |
+| **RBAC 角色权限** | 5 角色 × 9 接口 46/46,无越权 |
+| **多租户切换** | 不串台 + 不掉登录态 |
+| **业务流 happy path** | 任务/文件/配置三大流全跑通 |
+| **审计日志** | 写操作都有 audit |
+| **错误文案 i18n** | error.xxx.yyy 映射,无裸 key |
+| **快捷键 ⌘K** | 修后 8/8 全过 |
+| **console-api 内部 5xx** | **0 个**(40 分钟全量跑) |
+| **traceId 全覆盖** | 4xx/5xx 响应都带 meta.traceId |
+
+### ⚠️ 上线红线(生产前必做)
+
+**红线 1:downstream 服务必须就绪**
+`POST /self-service/jobs/rerun-request` 等需要 orchestrator/worker 的接口,本地 dev 返 500(console-api 正确代理透传,不是 console-api bug)。**生产环境必须先确认 orchestrator + worker + scheduler 三个 service 都已起**,否则用户点"重跑/补偿/触发/暂停 Worker"按钮会看到 500 toast。
+
+**红线 2:生产环境跑一次 Phase 6 RBAC matrix spec**
+验证生产 BE @PreAuthorize 配置和 dev 一致(可能因环境配置差异导致权限放宽/收紧)。
+
+**红线 3:告警配置**
+console-api 自身 5xx 比例 > 0.1% 自动告警(目前是 0%,任何上涨都值得排查)。
+
+### 灰度上线建议
+
+1. **5% 租户灰度 24h**,重点观察:
+   - console-api 自身 5xx 比例(应保持 ≈ 0)
+   - traceId 命中率(应 100%)
+   - 用户点击的"重跑/触发/补偿"按钮是否 200 真生效(验 downstream)
+2. **24h 无异常**后逐步扩大到 25% → 50% → 100%
+3. **回滚预案**:config-release 自带回滚机制 + 历史版本保留
+
+### 下一阶段建议(可选,非阻塞上线)
+
+- **Pro 档**(~2 天):k6 完整压测 + toxiproxy 混沌 + 真实 Kafka/OSS/SMTP/Webhook 集成
+- **视觉回归基线**(~0.5 天):120 截图基线 + WCAG AA 对比度
+- **playwright workers=2 永久化**(0.1 天):消除剩 3 个 flaky 失败
