@@ -220,7 +220,7 @@ e2e/.auth/
 | Excel 导入 | ✅ | excel-import + upload-full-chain |
 | 系统参数 | ✅ | system-parameter-crud |
 
-### 已验证 OK(可放心)
+### 已验证(无后续动作)
 
 | 项 | 证据 |
 |---|---|

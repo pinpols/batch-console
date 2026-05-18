@@ -1,7 +1,7 @@
 # 生产就绪审计 — Build / Runtime / Security
 
 **日期**:2026-05-16
-**触发**:用户拍板"3 个维度都做一下"(生产构建 sanity check + Runtime 性能 + 安全审计)。
+**范围**:生产构建 sanity check + Runtime 性能 + 安全审计 三个维度。
 
 ---
 
