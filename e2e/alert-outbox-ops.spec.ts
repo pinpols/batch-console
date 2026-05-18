@@ -65,21 +65,22 @@ test.describe('告警 — 操作流', () => {
     await expectPageTitle(page, /事件告警|告警/)
   })
 
-  // FE 走两步对话框:① confirmDanger 危险确认(无 input) ② optionalReason 填写原因
-  // helper:处理两步链
+  // FE 走两步对话框:① confirmDanger 危险确认(无 input) ② optionalReason prompt(带 input)
+  // 区分:① 的 confirmButton 是"确认告警/静默/关闭",② 的 confirmButton 是"确定"且有 input
   async function clickThroughTwoDialogs(page: import('@playwright/test').Page, reason: string) {
-    // 第一个对话框 — confirmDanger
+    // ─── 第 1 步:confirmDanger ─────────
     const box1 = page.locator('.el-message-box').first()
     await expect(box1).toBeVisible({ timeout: 3000 })
-    await box1.getByRole('button', { name: /确认告警|确认静默|确认关闭|确定/ }).first().click()
-    // 等第一个关闭、第二个打开
-    await page.waitForTimeout(300)
-    // 第二个对话框 — optionalReason(可选)
-    const box2 = page.locator('.el-message-box').first()
-    if (await isVisible(box2, 2000)) {
-      const input = box2.locator('input,textarea').first()
-      if (await isVisible(input, 800)) await input.fill(reason)
-      await box2.getByRole('button', { name: /^(确定|确认.*)$/ }).first().click()
+    // 等"确认 verb"按钮(不带 reason input 的 confirm 对话框)
+    await box1.getByRole('button', { name: /^(确认告警|确认静默|确认关闭)$/ }).click({ timeout: 5000 })
+
+    // ─── 第 2 步:optionalReason prompt(以 input 出现为信号)
+    // 等第一个对话框消失再等第二个有 input 的对话框
+    await page.waitForTimeout(400)
+    const prompt = page.locator('.el-message-box').filter({ has: page.locator('input,textarea') })
+    if (await isVisible(prompt.first(), 3000)) {
+      await prompt.first().locator('input,textarea').first().fill(reason)
+      await prompt.first().getByRole('button', { name: '确定' }).click({ timeout: 5000 })
     }
   }
 
