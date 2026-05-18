@@ -67,6 +67,19 @@ export interface UserInfo {
   permissions: string[]
   /** 后端下发的侧边栏菜单（已按当前 authorities 过滤） */
   menus?: MenuGroup[]
+  /**
+   * P1 待 BE 实施:首次登录 / admin reset 后强制改密码。
+   * BE 在 console_user_account 加 password_must_change BOOLEAN,
+   * /auth/login + /auth/me response 带此字段。
+   * 字段缺失时视为 false(向后兼容老 BE 版本)。
+   */
+  mustChangePassword?: boolean
+  /**
+   * P3 待 BE 实施:密码距离过期剩余天数。
+   * BE schema 加 password_expires_at,login response 计算返回。
+   * < 7 时 FE banner 提示;≤ 0 时强制改(同 mustChangePassword 路径)。
+   */
+  passwordExpiringIn?: number
 }
 
 // ─── 文件中心 ─────────────────────────────────────────────────

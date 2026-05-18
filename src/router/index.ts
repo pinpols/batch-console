@@ -433,6 +433,16 @@ const routes: RouteRecordRaw[] = [
         },
       },
       {
+        // 自助账号 / 改密码 — 所有登录角色都可访问(P0.1 + P1 等 BE 实施)
+        path: 'system/me',
+        name: 'my-account',
+        component: () => import('@/views/system/MyAccount.vue'),
+        meta: {
+          title: '我的账户',
+          activeMenu: '/system/me',
+        },
+      },
+      {
         path: 'system/ai-chat',
         name: 'ai-chat',
         component: () => import('@/views/system/AiChat.vue'),
@@ -691,6 +701,16 @@ router.beforeEach(async (to, from) => {
       // 透明放行:userInfo 仍为 null,各页面自身 loadXxx 会再次失败 + toast,
       // 但用户不会被无声踢出。
     }
+  }
+
+  // P1 强制首次/重置后改密码(BE 字段 mustChangePassword);字段缺失视为 false 不拦
+  // 例外:/system/me 自己,以及 login/logout 类路径,不能拦否则死循环
+  if (
+    auth.userInfo?.mustChangePassword === true &&
+    to.path !== '/system/me' &&
+    !to.path.startsWith('/login')
+  ) {
+    return { path: '/system/me', query: { mustChange: '1' } }
   }
 
   const minRole = to.meta.minRole as string | undefined
