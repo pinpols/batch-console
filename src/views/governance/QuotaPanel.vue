@@ -181,7 +181,7 @@
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">{{ t('common.cancel') }}</el-button>
-        <el-button type="primary" :loading="saving" @click="submitForm">
+        <el-button type="primary" :loading="submitAction.loading.value" @click="submitForm">
           {{ t('common.save') }}
         </el-button>
       </template>
@@ -201,6 +201,7 @@
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
+  import { useAsyncAction } from '@/composables/useAsyncAction'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
@@ -214,7 +215,6 @@
   const { canMutateConfig } = usePermission()
   const INT32_MAX = 2147483647
   const loading = ref(false)
-  const saving = ref(false)
   const togglingId = ref<number | null>(null)
   const policies = ref<GovernanceQuotaPolicyRow[]>([])
   const kwDraft = ref('')
@@ -324,6 +324,22 @@
     dialogVisible.value = true
   }
 
+  // useAsyncAction:连点抗抖,300ms cooldown 防关弹窗动画期间二次提交
+  const submitAction = useAsyncAction(
+    async () => {
+      const body = { tenantId: tenant.tenantId, ...form }
+      if (editingId.value == null) {
+        await governanceApi.createQuotaPolicy(body)
+      } else {
+        await governanceApi.updateQuotaPolicy(editingId.value, body)
+      }
+      ElMessage.success(t('quotaPanel.saveSuccess', { code: form.policyCode }))
+      dialogVisible.value = false
+      await load()
+    },
+    { cooldownMs: 300 },
+  )
+
   async function submitForm() {
     const valid = await formRef.value
       ?.validate()
@@ -334,20 +350,7 @@
         return false
       })
     if (!valid) return
-    saving.value = true
-    try {
-      const body = { tenantId: tenant.tenantId, ...form }
-      if (editingId.value == null) {
-        await governanceApi.createQuotaPolicy(body)
-      } else {
-        await governanceApi.updateQuotaPolicy(editingId.value, body)
-      }
-      ElMessage.success(t('quotaPanel.saveSuccess', { code: form.policyCode }))
-      dialogVisible.value = false
-      await load()
-    } finally {
-      saving.value = false
-    }
+    await submitAction.run()
   }
 
   async function togglePolicy(row: GovernanceQuotaPolicyRow) {

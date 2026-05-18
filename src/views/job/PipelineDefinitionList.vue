@@ -238,7 +238,7 @@
           <el-button @click="drawerVisible = false">
             {{ t('pipelineDefinitionList.drawerCancel') }}
           </el-button>
-          <el-button type="primary" :loading="saving" @click="submitForm">
+          <el-button type="primary" :loading="submitAction.loading.value" @click="submitForm">
             {{ t('pipelineDefinitionList.drawerSave') }}
           </el-button>
         </div>
@@ -348,6 +348,7 @@
   import { useTenantReload } from '@/composables/useTenantReload'
   import { useRouter } from 'vue-router'
   import { useDrawerAutoClose } from '@/composables/useDrawerAutoClose'
+  import { useAsyncAction } from '@/composables/useAsyncAction'
   import { instanceApi } from '@/api/instance'
   import { fmtDatetime } from '@/utils/datetime'
   import StatusTag from '@/components/common/StatusTag.vue'
@@ -382,7 +383,6 @@
     () => !!(keyword.value.trim() || pipelineType.value.trim() || enabledFilter.value != null),
   )
   const drawerVisible = ref(false)
-  const saving = ref(false)
 
   // ── Run-centric 详情抽屉(P2 对称) ─────
   const router = useRouter()
@@ -589,41 +589,30 @@
     drawerVisible.value = true
   }
 
-  async function submitForm() {
-    const valid = await formRef.value
-      ?.validate()
-      .catch((errors: Record<string, Array<{ message?: string }>> | unknown) => {
-        ElMessage.warning(t('pipelineDefinitionList.checkRequired'))
-        // 自动滚到首个错误字段:大表单时用户看不到错误位置
-        const firstField =
-          errors && typeof errors === 'object' ? Object.keys(errors as object)[0] : null
-        if (firstField) formRef.value?.scrollToField(firstField)
-        return false
-      })
-    if (!valid) return
-
-    const payload = {
-      tenantId: form.value.tenantId || tenant.tenantId,
-      // BE PipelineDefinitionSaveRequest 必填 jobCode(@NotBlank);本地 form pipelineCode 翻译过去
-      jobCode: form.value.pipelineCode,
-      pipelineName: form.value.pipelineName,
-      pipelineType: form.value.pipelineType,
-      enabled: form.value.enabled,
-      description: form.value.description,
-      steps: steps.value
-        .filter((item) => item.stepCode || item.stageCode || item.stepType || item.description)
-        .map((item, index) => ({
-          stepCode: item.stepCode,
-          // BE StepItem 必填 stepName + implCode;UI 暂时用 description 当 stepName,stepType 当 implCode
-          stepName: item.stepName || item.description || item.stepCode,
-          stageCode: item.stageCode,
-          implCode: item.stepType,
-          stepOrder: index + 1,
-        })),
-    }
-    saving.value = true
-    const isCreate = editingId.value == null
-    try {
+  // useAsyncAction:连点抗抖,完成后 300ms 内 :loading 仍 true,
+  // 防止用户在 drawer 收起动画期间二次提交触发重复 create/update
+  const submitAction = useAsyncAction(
+    async () => {
+      const payload = {
+        tenantId: form.value.tenantId || tenant.tenantId,
+        // BE PipelineDefinitionSaveRequest 必填 jobCode(@NotBlank);本地 form pipelineCode 翻译过去
+        jobCode: form.value.pipelineCode,
+        pipelineName: form.value.pipelineName,
+        pipelineType: form.value.pipelineType,
+        enabled: form.value.enabled,
+        description: form.value.description,
+        steps: steps.value
+          .filter((item) => item.stepCode || item.stageCode || item.stepType || item.description)
+          .map((item, index) => ({
+            stepCode: item.stepCode,
+            // BE StepItem 必填 stepName + implCode;UI 暂时用 description 当 stepName,stepType 当 implCode
+            stepName: item.stepName || item.description || item.stepCode,
+            stageCode: item.stageCode,
+            implCode: item.stepType,
+            stepOrder: index + 1,
+          })),
+      }
+      const isCreate = editingId.value == null
       if (isCreate) await createPipelineDefinition(payload)
       else await updatePipelineDefinition(editingId.value!, payload)
       ElMessage.success(
@@ -636,9 +625,23 @@
       )
       drawerVisible.value = false
       await load()
-    } finally {
-      saving.value = false
-    }
+    },
+    { cooldownMs: 300 },
+  )
+
+  async function submitForm() {
+    const valid = await formRef.value
+      ?.validate()
+      .catch((errors: Record<string, Array<{ message?: string }>> | unknown) => {
+        ElMessage.warning(t('pipelineDefinitionList.checkRequired'))
+        // 自动滚到首个错误字段:大表单时用户看不到错误位置
+        const firstField =
+          errors && typeof errors === 'object' ? Object.keys(errors as object)[0] : null
+        if (firstField) formRef.value?.scrollToField(firstField)
+        return false
+      })
+    if (!valid) return
+    await submitAction.run()
   }
 
   async function toggle(row: PipelineDefinitionRow) {

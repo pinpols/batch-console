@@ -79,7 +79,7 @@
       <el-button @click="emit('update:modelValue', false)">
         {{ t('tenantConfigShared.cancel') }}
       </el-button>
-      <el-button type="primary" :loading="saving" @click="submit">
+      <el-button type="primary" :loading="submitAction.loading.value" @click="submit">
         {{ t('tenantBatchCreateDialog.btnSubmit') }}
       </el-button>
     </template>
@@ -96,6 +96,7 @@
   import { batchCreateTenants, type Tenant } from '@/api/tenants'
   import { isReservedTenant, isTemplateTenant } from './tenantConfigTypes'
   import { useFormValidate, rules } from '@/composables/useFormValidate'
+  import { useAsyncAction } from '@/composables/useAsyncAction'
 
   const props = defineProps<{
     modelValue: boolean
@@ -111,7 +112,6 @@
     (e: 'result', data: unknown): void
   }>()
 
-  const saving = ref(false)
   const form = reactive({
     tenantsText: '',
     usernamePrefix: 'op-',
@@ -172,11 +172,11 @@
       })
   }
 
-  async function submit() {
-    if (!(await validateBatchForm())) return
-    const tenants = parseTenants(form.tenantsText)
-    saving.value = true
-    try {
+  // useAsyncAction:连点抗抖,完成后 300ms 内 :loading 仍 true,防止用户在 emit
+  // 关闭弹窗的动画期间二次点击触发重复批量创建
+  const submitAction = useAsyncAction(
+    async () => {
+      const tenants = parseTenants(form.tenantsText)
       const res = await batchCreateTenants({
         tenants,
         usernamePrefix: form.usernamePrefix || undefined,
@@ -199,9 +199,13 @@
         ElMessage.success(t('tenantBatchCreateDialog.toastSimple', { n: tenants.length }))
       }
       emit('saved')
-    } finally {
-      saving.value = false
-    }
+    },
+    { cooldownMs: 300 },
+  )
+
+  async function submit() {
+    if (!(await validateBatchForm())) return
+    await submitAction.run()
   }
 </script>
 

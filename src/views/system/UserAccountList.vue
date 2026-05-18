@@ -236,7 +236,7 @@
       </el-form>
       <template #footer>
         <el-button @click="formVisible = false">{{ t('common.cancel') }}</el-button>
-        <el-button type="primary" :loading="saving" @click="submitForm">
+        <el-button type="primary" :loading="submitAction.loading.value" @click="submitForm">
           {{ t('common.save') }}
         </el-button>
       </template>
@@ -281,6 +281,7 @@
   const { t } = useI18n({ useScope: 'global' })
   import type { FormRules } from 'element-plus'
   import { useFormValidate, rules } from '@/composables/useFormValidate'
+  import { useAsyncAction } from '@/composables/useAsyncAction'
   import {
     listUsers,
     createUser,
@@ -330,7 +331,6 @@
     return Array.from(new Set(arr || [])).join(',')
   }
   const creating = ref(false)
-  const saving = ref(false)
   const resetting = ref(false)
   const listRemote = ref(true)
   const { filterBusy, runSearch, runReset, runRefresh } = useListFilterFeedback(listRemote)
@@ -518,10 +518,10 @@
     formVisible.value = true
   }
 
-  async function submitForm() {
-    if (form.id == null) return
-    saving.value = true
-    try {
+  // useAsyncAction:防止用户在保存请求回包前 / 弹窗关闭动画期间二次点击触发重复 update
+  const submitAction = useAsyncAction(
+    async () => {
+      if (form.id == null) return
       await updateUser(form.id, {
         displayName: form.displayName || undefined,
         authoritiesCsv: form.authoritiesCsv || undefined,
@@ -529,9 +529,12 @@
       ElMessage.success(t('userAccountList.updateSuccess'))
       formVisible.value = false
       await load()
-    } finally {
-      saving.value = false
-    }
+    },
+    { cooldownMs: 300 },
+  )
+
+  async function submitForm() {
+    await submitAction.run()
   }
 
   // --- 重置密码 ---
