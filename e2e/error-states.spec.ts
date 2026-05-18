@@ -30,8 +30,12 @@ test.describe('error-state: /api/console/queues POST', () => {
     const dialog = await openDialog(page, '新建队列')
     await fieldInput(dialog, '队列编码').fill('e2e-err-500')
     await fieldInput(dialog, '名称').fill('err500')
-    // queueType 是 select,需挑一个值
-    await dialog.locator('.el-form-item').filter({ hasText: '类型' }).locator('input').first().fill('IMPORT')
+    // queueType 是 readonly select。点开下拉,取第一个选项。
+    const typeWrap = dialog.locator('.el-form-item').filter({ hasText: '类型' })
+    await typeWrap.locator('.el-select__wrapper, .el-input__inner').first().click({ force: true })
+    const opt = page.locator('.el-select-dropdown:visible .el-select-dropdown__item').first()
+    await expect(opt).toBeVisible({ timeout: 3000 })
+    await opt.click({ force: true })
     await submitForm(dialog)
     await expectToastAndStay(page)
     await clearInjection(page, '**/api/console/queues')

@@ -24,7 +24,7 @@ test.describe('notification rule CRUD', () => {
     if (!(await isVisible(addBtn, 2000))) return
     await addBtn.click()
     await page.waitForTimeout(400)
-    const dialog = page.locator('.el-dialog').first()
+    const dialog = page.locator('.el-dialog:visible, .el-drawer:visible').first()
     await expect(dialog).toBeVisible()
     await dialog.getByRole('button', { name: '取消' }).click({ force: true })
   })

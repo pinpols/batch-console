@@ -22,7 +22,7 @@ test.describe('tenant batch create with config init (批量建租户 + 配置初
   test('选择源租户后初始化模式显示', async ({ page }) => {
     await page.getByRole('button', { name: '批量新增' }).click()
     // 点源租户下拉
-    const sourceSelect = page.locator('.el-dialog').locator('.el-select').last()
+    const sourceSelect = page.locator('.el-dialog:visible, .el-drawer:visible').locator('.el-select').last()
     await sourceSelect.click()
     // 选第一个选项
     const firstOption = page.locator('.el-select-dropdown__item').first()
@@ -82,9 +82,8 @@ test.describe('tenant copy config dialog (跨租户复制配置)', () => {
     await expect(page.getByText('JOB_DEFINITION')).toBeVisible()
     // 写入模式(label 改成中文了:仅补缺失项 / 覆盖更新已有)
     await expect(page.getByText('仅补缺失项').first()).toBeVisible()
-    // 试运行
-    await expect(page.getByText('试运行').first()).toBeVisible()
-    await expect(page.getByRole('button', { name: '试运行' })).toBeVisible()
+    // 2026-05 后试运行从 switch 改成独立按钮
+    await expect(page.getByRole('button', { name: /试运行|预览/ }).first()).toBeVisible()
     await page.getByRole('button', { name: '取消' }).click()
   })
 })

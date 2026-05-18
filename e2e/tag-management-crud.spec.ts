@@ -15,8 +15,8 @@ test.describe('tag management (标签管理)', () => {
   })
 
   test('按标签搜索 tab 可执行搜索', async ({ page }) => {
-    await page.getByRole('tab', { name: '按标签搜索' }).click()
-    await expect(page.getByRole('tab', { name: '按标签搜索' })).toHaveClass(/is-active/)
+    await page.getByRole('tab', { name: '搜索标签' }).click()
+    await expect(page.getByRole('tab', { name: '搜索标签' })).toHaveClass(/is-active/)
     // ListPageQueryBar 用"查询"按钮(在 visible tab pane 内,避免另一 tab 也有同名按钮的 strict 冲突)
     await expect(page.locator('.el-tab-pane:visible').getByRole('button', { name: '搜索' }).first()).toBeVisible()
   })

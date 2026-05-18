@@ -154,17 +154,17 @@ test.describe('租户管理 — 初始化配置（试运行）', () => {
 
     // 选第一个配置类型 checkbox
     const firstCheckbox = page
-      .locator('.el-dialog')
+      .locator('.el-dialog:visible, .el-drawer:visible')
       .locator('.el-checkbox')
       .first()
     await firstCheckbox.click()
 
-    // 确保试运行开关打开（默认应为开）
-    const dryRunSwitch = page.locator('.el-dialog').locator('.el-switch').first()
-    const isDryRun = await dryRunSwitch.getAttribute('aria-checked')
-    if (isDryRun !== 'true') await dryRunSwitch.click()
-
-    await page.locator('.el-dialog').getByRole('button', { name: '试运行' }).click()
+    // 2026-05 后改成两个独立按钮:「试运行」+「执行」。直接点试运行。
+    await page
+      .locator('.el-dialog:visible, .el-drawer:visible')
+      .getByRole('button', { name: /试运行|预览/ })
+      .first()
+      .click()
     // 等待执行结果弹窗或 toast
     await expect(
       page.getByText('执行结果').or(page.locator('.el-message')),
@@ -183,7 +183,7 @@ test.describe('租户管理 — 复制配置（试运行）', () => {
 
     // 选源租户（第一个选项）
     const sourceSelect = page
-      .locator('.el-dialog')
+      .locator('.el-dialog:visible, .el-drawer:visible')
       .locator('.el-form-item')
       .filter({ hasText: '源租户' })
       .locator('.el-select')
@@ -197,7 +197,7 @@ test.describe('租户管理 — 复制配置（试运行）', () => {
 
     // 选目标租户（第二个选项以避免与源相同）
     const targetSelect = page
-      .locator('.el-dialog')
+      .locator('.el-dialog:visible, .el-drawer:visible')
       .locator('.el-form-item')
       .filter({ hasText: '目标租户' })
       .locator('.el-select')
@@ -210,12 +210,12 @@ test.describe('租户管理 — 复制配置（试运行）', () => {
       return
     }
 
-    // 确保试运行开关打开
-    const dryRunSwitch = page.locator('.el-dialog').locator('.el-switch').first()
-    const isDryRun = await dryRunSwitch.getAttribute('aria-checked')
-    if (isDryRun !== 'true') await dryRunSwitch.click()
-
-    await page.locator('.el-dialog').getByRole('button', { name: '试运行' }).click()
+    // 2026-05 后改成独立「试运行」按钮(无 dry-run switch)
+    await page
+      .locator('.el-dialog:visible, .el-drawer:visible')
+      .getByRole('button', { name: /试运行|预览/ })
+      .first()
+      .click()
     await expect(
       page.getByText('执行结果').or(page.locator('.el-message')),
     ).toBeVisible({ timeout: 10000 })

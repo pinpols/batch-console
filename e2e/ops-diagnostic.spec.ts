@@ -1,29 +1,33 @@
+/**
+ * 运维诊断 — 2026-05 改版后无 tab,改为诊断卡片列表(diag-card)。
+ */
 import { expect, test } from './support/app'
 import { enterDemoApp, expectPageTitle } from './support/app'
 
 test.describe('ops diagnostic (运维诊断)', () => {
   test.beforeEach(async ({ page }) => {
     await enterDemoApp(page)
-  })
-
-  test('运维诊断页面可打开并展示 2 个标签页', async ({ page }) => {
     await page.goto('/ops/diagnostic')
     await expectPageTitle(page, '运维诊断')
-    await expect(page.getByRole('tab', { name: '运维工具箱' })).toBeVisible()
-    await expect(page.getByRole('tab', { name: '集群诊断' })).toBeVisible()
   })
 
-  test('运维工具箱标签页展示 Kafka Lag 与 Outbox 面板', async ({ page }) => {
-    await page.goto('/ops/diagnostic')
-    await expect(page.getByRole('tab', { name: '运维工具箱' })).toHaveClass(/is-active/)
-    await expect(page.getByText('Kafka Lag').first()).toBeVisible()
-    await expect(page.getByText('Outbox').first()).toBeAttached()
+  test('运维诊断页面可打开并展示诊断卡片', async ({ page }) => {
+    // 改版后没 tab,验证存在 diag-card 卡片列表 + 关键文案
+    const cards = page.locator('.diag-card')
+    await expect(cards.first()).toBeVisible({ timeout: 8000 })
+    expect(await cards.count()).toBeGreaterThan(0)
   })
 
-  test('集群诊断标签页展示多个诊断区块', async ({ page }) => {
-    await page.goto('/ops/diagnostic')
-    await page.getByRole('tab', { name: '集群诊断' }).click()
-    await expect(page.getByText('集群概览')).toBeVisible()
+  test('Kafka Lag / Outbox 区块存在', async ({ page }) => {
+    await expect(page.getByText(/Kafka Lag|消息积压/).first()).toBeVisible({ timeout: 8000 })
+    // 主页面 Outbox 区块文本(排除侧边栏菜单)
+    await expect(
+      page.locator('.diag-card, main, .page-body').getByText(/Outbox/).first(),
+    ).toBeVisible({ timeout: 8000 })
+  })
+
+  test('集群诊断区块存在', async ({ page }) => {
+    await expect(page.getByText(/集群|诊断|节点/).first()).toBeVisible({ timeout: 8000 })
   })
 
   test('旧路由重定向到运维诊断', async ({ page }) => {

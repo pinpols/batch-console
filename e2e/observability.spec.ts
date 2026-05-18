@@ -8,7 +8,7 @@ test.describe('observability pages', () => {
 
   test('告警页可打开并展示治理操作列', async ({ page }) => {
     await page.goto('/observability/alerts')
-    await expectPageTitle(page, '告警')
+    await expectPageTitle(page, /事件告警|告警/)
     await expect(page.getByRole('button', { name: '刷新' })).toBeVisible()
     await expect(page.getByRole('columnheader', { name: '治理' }).first()).toBeVisible()
   })

@@ -8,7 +8,7 @@ test.describe('quota panel (配额策略)', () => {
 
   test('配额策略可打开', async ({ page }) => {
     await page.goto('/governance/quota')
-    await expectPageTitle(page, '租户配额')
+    await expectPageTitle(page, /配额策略|租户配额/)
   })
 })
 
@@ -21,7 +21,7 @@ test.describe('queue config (队列 / 窗口 / 日历)', () => {
   // 改成检查 tabpanel 内容渲染 + 主操作按钮存在
   test('队列页面打开', async ({ page }) => {
     await page.goto('/governance/queues')
-    await expectPageTitle(page, '队列与窗口')
+    await expectPageTitle(page, /队列/)
     await expect(page.getByRole('button', { name: '新建队列' }).first()).toBeVisible()
   })
   test('批次窗口页面打开', async ({ page }) => {

@@ -201,7 +201,7 @@ test.describe('配置发布 — 依赖与版本对比', () => {
 
     // 选版本 B（选与 A 不同的第一个选项）
     const versionBSelect = page
-      .locator('.el-dialog')
+      .locator('.el-dialog:visible, .el-drawer:visible')
       .locator('.el-form-item')
       .filter({ hasText: '版本 B' })
       .locator('.el-select')
@@ -210,12 +210,12 @@ test.describe('配置发布 — 依赖与版本对比', () => {
     if (!(await isVisible(opt, 2000))) return
     await opt.click()
 
-    const compareBtn = page.locator('.el-dialog').getByRole('button', { name: '对比' })
+    const compareBtn = page.locator('.el-dialog:visible, .el-drawer:visible').getByRole('button', { name: '对比' })
     await expect(compareBtn).toBeEnabled()
     await compareBtn.click()
 
     // 结果：pre 或 toast
-    const resultPre = page.locator('.el-dialog').locator('pre')
+    const resultPre = page.locator('.el-dialog:visible, .el-drawer:visible').locator('pre')
     const anyToast = page.locator('.el-message')
     await expect(resultPre.or(anyToast)).toBeVisible({ timeout: 8000 })
   })

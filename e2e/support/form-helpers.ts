@@ -6,18 +6,20 @@ import { type Page, type Locator, expect } from '@playwright/test'
 
 /**
  * 打开页面级"新增/新建"对话框,等动画进场完毕。
- * @returns 该 dialog 的 Locator(`.el-dialog`)
+ * 兼容 EP `el-dialog` 和 `el-drawer`(多数 CRUD 表单 2026-05 后改成抽屉)。
+ * @returns 命中的容器 Locator(`.el-dialog` 或 `.el-drawer`)
  */
 export async function openDialog(
   page: Page,
   triggerName: string | RegExp,
 ): Promise<Locator> {
   await page.getByRole('button', { name: triggerName }).first().click()
-  // EP dialog 默认动画 ~300ms,等到 .el-dialog 出现且没有 transitionend 类
+  // EP dialog/drawer 默认动画 ~300ms
   await page.waitForTimeout(400)
-  const dialog = page.locator('.el-dialog').first()
-  await expect(dialog).toBeVisible({ timeout: 2000 })
-  return dialog
+  // 兼容 dialog & drawer。先取可见的那个。
+  const candidate = page.locator('.el-dialog:visible, .el-drawer:visible').first()
+  await expect(candidate).toBeVisible({ timeout: 3000 })
+  return candidate
 }
 
 /**
