@@ -130,7 +130,7 @@
       </el-form>
       <template #footer>
         <el-button @click="createVisible = false">{{ t('common.cancel') }}</el-button>
-        <el-button type="primary" :loading="saving" @click="save">
+        <el-button type="primary" :loading="saveAction.loading.value" @click="save">
           {{ t('apiKeyList.dialogCreate') }}
         </el-button>
       </template>
@@ -217,6 +217,7 @@
   import type { FormRules } from 'element-plus'
   import { Check, DocumentCopy, Plus } from '@element-plus/icons-vue'
   import { useFormValidate, rules } from '@/composables/useFormValidate'
+  import { useAsyncAction } from '@/composables/useAsyncAction'
   import {
     listApiKeys,
     createApiKey,
@@ -242,7 +243,6 @@
   const loadError = ref<unknown>(null)
   const { filterBusy, tableBlocking, runSearch, runReset, runRefresh } =
     useListFilterFeedback(loading)
-  const saving = ref(false)
   const createVisible = ref(false)
   const detailVisible = ref(false)
   // 创建成功后弹明文密钥的强制 modal
@@ -346,10 +346,10 @@
     createVisible.value = true
   }
 
-  async function save() {
-    if (!(await validateApiKeyForm())) return
-    saving.value = true
-    try {
+  // useAsyncAction:执行期间 + 完成后 300ms 内按钮自动 :loading=true(EP 同步 disabled),
+  // 防止用户在网络回包前 / 关闭弹窗动画期间二次点击触发重复创建。
+  const saveAction = useAsyncAction(
+    async () => {
       const body: { keyName: string; scopes?: string; expiresAt?: string } = {
         keyName: form.keyName,
       }
@@ -362,9 +362,13 @@
       copied.value = false
       rawKeyVisible.value = true
       await load()
-    } finally {
-      saving.value = false
-    }
+    },
+    { cooldownMs: 300 },
+  )
+
+  async function save() {
+    if (!(await validateApiKeyForm())) return
+    await saveAction.run()
   }
 
   async function viewDetail(row: Record<string, unknown>) {

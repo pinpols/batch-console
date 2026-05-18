@@ -166,7 +166,7 @@
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">{{ t('common.cancel') }}</el-button>
-        <el-button type="primary" :loading="saving" @click="submitForm">
+        <el-button type="primary" :loading="submitAction.loading.value" @click="submitForm">
           {{ t('common.save') }}
         </el-button>
       </template>
@@ -187,6 +187,7 @@
   } from '@/api/governance'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { useTenantReload } from '@/composables/useTenantReload'
+  import { useAsyncAction } from '@/composables/useAsyncAction'
   import { useTenantStore } from '@/stores/tenant'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
@@ -202,7 +203,6 @@
   const listRemote = ref(false)
   const { filterBusy, runSearch, runReset, runRefresh } = useListFilterFeedback(listRemote)
   const loading = ref(false)
-  const saving = ref(false)
   const togglingId = ref<number | null>(null)
   const rows = ref<GovernanceAlertRoutingRow[]>([])
   const kwDraft = ref('')
@@ -304,6 +304,22 @@
     dialogVisible.value = true
   }
 
+  // useAsyncAction:连点抗抖,300ms cooldown 防关弹窗动画期间二次提交
+  const submitAction = useAsyncAction(
+    async () => {
+      const body: GovernanceAlertRoutingSavePayload = { tenantId: tenant.tenantId, ...form }
+      if (editingId.value == null) {
+        await governanceApi.createAlertRouting(body)
+      } else {
+        await governanceApi.updateAlertRouting(editingId.value, body)
+      }
+      ElMessage.success(t('alertRoutingPanel.saveSuccess', { code: form.routeCode }))
+      dialogVisible.value = false
+      await load()
+    },
+    { cooldownMs: 300 },
+  )
+
   async function submitForm() {
     const valid = await formRef.value
       ?.validate()
@@ -314,20 +330,7 @@
         return false
       })
     if (!valid) return
-    saving.value = true
-    try {
-      const body: GovernanceAlertRoutingSavePayload = { tenantId: tenant.tenantId, ...form }
-      if (editingId.value == null) {
-        await governanceApi.createAlertRouting(body)
-      } else {
-        await governanceApi.updateAlertRouting(editingId.value, body)
-      }
-      ElMessage.success(t('alertRoutingPanel.saveSuccess', { code: form.routeCode }))
-      dialogVisible.value = false
-      await load()
-    } finally {
-      saving.value = false
-    }
+    await submitAction.run()
   }
 
   async function toggleRouting(row: GovernanceAlertRoutingRow) {

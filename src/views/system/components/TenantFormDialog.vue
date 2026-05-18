@@ -75,7 +75,7 @@
       <el-button @click="emit('update:modelValue', false)">
         {{ t('tenantConfigShared.cancel') }}
       </el-button>
-      <el-button type="primary" :loading="saving" @click="submit">
+      <el-button type="primary" :loading="submitAction.loading.value" @click="submit">
         {{ editing ? t('common.save') : t('tenantFormDialog.btnCreate') }}
       </el-button>
     </template>
@@ -91,6 +91,7 @@
   import type { FormRules } from 'element-plus'
   import { createTenant, updateTenant, type Tenant } from '@/api/tenants'
   import { useFormValidate, rules } from '@/composables/useFormValidate'
+  import { useAsyncAction } from '@/composables/useAsyncAction'
 
   const props = defineProps<{
     modelValue: boolean
@@ -104,7 +105,6 @@
   }>()
 
   const editing = ref(false)
-  const saving = ref(false)
   const form = reactive({
     tenantId: '',
     tenantName: '',
@@ -157,10 +157,10 @@
     },
   )
 
-  async function submit() {
-    if (!(await validate())) return
-    saving.value = true
-    try {
+  // useAsyncAction:连点抗抖,完成后 300ms 内 :loading 仍 true,防止用户在 emit
+  // 关闭弹窗的动画期间二次点击触发重复 create/update
+  const submitAction = useAsyncAction(
+    async () => {
       const tenantId = form.tenantId.trim()
       if (editing.value) {
         await updateTenant(tenantId, {
@@ -180,9 +180,13 @@
       }
       emit('saved', { tenantId, created: !editing.value })
       emit('update:modelValue', false)
-    } finally {
-      saving.value = false
-    }
+    },
+    { cooldownMs: 300 },
+  )
+
+  async function submit() {
+    if (!(await validate())) return
+    await submitAction.run()
   }
 </script>
 

@@ -108,7 +108,7 @@
         <el-button @click="dialogVisible = false">
           {{ t('common.cancel') }}
         </el-button>
-        <el-button type="primary" :loading="saving" @click="save">
+        <el-button type="primary" :loading="saveAction.loading.value" @click="save">
           {{ t('common.save') }}
         </el-button>
       </template>
@@ -126,6 +126,7 @@
   import type { FormRules } from 'element-plus'
   import { Plus } from '@element-plus/icons-vue'
   import { useFormValidate, rules } from '@/composables/useFormValidate'
+  import { useAsyncAction } from '@/composables/useAsyncAction'
   import {
     listSystemParameters,
     upsertSystemParameter,
@@ -147,7 +148,6 @@
   const loadError = ref<unknown>(null)
   const { filterBusy, tableBlocking, runSearch, runReset, runRefresh } =
     useListFilterFeedback(loading)
-  const saving = ref(false)
   const dialogVisible = ref(false)
   const editingKey = ref('')
   const allRows = ref<{ key: string; value: string }[]>([])
@@ -229,17 +229,20 @@
     dialogVisible.value = true
   }
 
-  async function save() {
-    if (!(await validateParamForm())) return
-    saving.value = true
-    try {
+  // useAsyncAction:连点抗抖,完成后 300ms 内 :loading 仍 true
+  const saveAction = useAsyncAction(
+    async () => {
       await upsertSystemParameter(tenant.tenantId, { key: form.key, value: form.value })
       ElMessage.success(t('systemParameterList.saveSuccess'))
       dialogVisible.value = false
       await load()
-    } finally {
-      saving.value = false
-    }
+    },
+    { cooldownMs: 300 },
+  )
+
+  async function save() {
+    if (!(await validateParamForm())) return
+    await saveAction.run()
   }
 
   async function confirmDelete(row: { key: string }) {
