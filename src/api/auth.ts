@@ -26,6 +26,23 @@ export interface ConsoleAuthProfilePayload {
   authorities: string[]
   /** 后端 ConsoleMenuRegistry 按 authorities 过滤后的菜单树；老版本后端可能无该字段 */
   menus?: MenuGroup[]
+  /**
+   * P1 待 BE 实施(见 docs/runbook/password-security-backlog.md):
+   * BE schema 加 password_must_change BOOLEAN + login/me response 带此字段。
+   * 字段缺失时 FE 视为 false(向后兼容老版本 BE)。
+   */
+  mustChangePassword?: boolean
+  /**
+   * P3 待 BE 实施:密码距离过期天数,< 7 时 FE banner 提示。
+   * 字段缺失时 FE 不显 banner。
+   */
+  passwordExpiringIn?: number
+}
+
+/** POST /api/console/auth/change-password — 待 BE 实施 (P0.1) */
+export interface ChangePasswordBody {
+  oldPassword: string
+  newPassword: string
 }
 
 function mapAuthoritiesToRole(authorities: string[]): Role {
@@ -43,6 +60,9 @@ export function mapProfileToUserInfo(p: ConsoleAuthProfilePayload): UserInfo {
     role: mapAuthoritiesToRole(p.authorities ?? []),
     permissions: p.authorities ?? [],
     menus: p.menus,
+    // P1/P3 待 BE:字段缺失 → undefined,FE 视为不需强制 / 不显 banner
+    mustChangePassword: p.mustChangePassword,
+    passwordExpiringIn: p.passwordExpiringIn,
   }
 }
 
@@ -84,4 +104,17 @@ export const authApi = {
    */
   logout: (config?: AxiosRequestConfig) =>
     post<void>('/api/console/auth/logout', undefined, config),
+
+  /**
+   * POST /api/console/auth/change-password — 自助改密码(待 BE 实施 P0.1)
+   *
+   * 见 docs/runbook/password-security-backlog.md
+   * - 5 角色全部可调(hasAnyAuthority ROLE_ADMIN/CONFIG_ADMIN/AUDITOR/TENANT_USER/USER)
+   * - oldPassword 错 → 401
+   * - newPassword 不合规(< 12 位)→ 400
+   * - newPassword == oldPassword → 409 STATE_CONFLICT
+   * - 成功后 BE 自动清 password_must_change flag
+   */
+  changePassword: (body: ChangePasswordBody) =>
+    post<void>('/api/console/auth/change-password', body),
 }
