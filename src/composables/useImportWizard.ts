@@ -118,6 +118,10 @@ export function useImportWizard(): ImportWizardState {
     file.value = u.raw ?? null
   }
 
+  function setRawFile(f: File) {
+    file.value = f
+  }
+
   function triggerBlobDownload(blob: Blob, filename: string) {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -145,6 +149,7 @@ export function useImportWizard(): ImportWizardState {
     sheetStats,
     hasBlockingIssues,
     onFile,
+    setRawFile,
     triggerBlobDownload,
   }
 }

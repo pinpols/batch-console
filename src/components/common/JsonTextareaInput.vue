@@ -79,7 +79,7 @@
    *   - 文件类型限制 .json(扩展名 + MIME 双判)
    *   - paste 事件:有文件走文件路径,纯文本不拦截让 el-input 原生 paste 接管
    */
-  import { computed, ref } from 'vue'
+  import { computed, onMounted, ref } from 'vue'
   import { ElMessage } from 'element-plus'
   import { UploadFilled, Document, Warning, Check } from '@element-plus/icons-vue'
 
@@ -113,6 +113,16 @@
   const fileInputEl = ref<HTMLInputElement>()
   const fileName = ref('')
   const fileSize = ref(0)
+
+  const defaultSeed = computed(() => (props.expect === 'array' ? '[]' : '{}'))
+
+  function ensureDefault() {
+    if (props.disabled) return
+    if (!props.modelValue || !props.modelValue.toString().trim()) {
+      emit('update:modelValue', defaultSeed.value)
+    }
+  }
+  onMounted(ensureDefault)
 
   const effectivePlaceholder = computed(
     () => props.placeholder || '把 .json 文件拖进来 / 点「选择文件」/ ⌘V 粘贴 / 直接键入',
@@ -196,7 +206,7 @@
   }
 
   function onClear() {
-    emit('update:modelValue', '')
+    emit('update:modelValue', defaultSeed.value)
     fileName.value = ''
     fileSize.value = 0
   }
