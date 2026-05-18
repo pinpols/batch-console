@@ -15,6 +15,10 @@ import { enterDemoApp, expectPageTitle, isVisible } from './support/app'
 // STAMP = Date.now() + random 后缀,防多 spec 文件并行加载时 jobCode 撞库 unique 约束
 const STAMP = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
 
+// 文件级 retry 兜底:user-journey C 在 4-worker 并行下偶发 cross-spec timing 干扰
+// (单跑 9/9 全过,合跑 1 fail)。允许 1 次 retry 消除 flaky
+test.describe.configure({ retries: 1 })
+
 test.describe('@user-journey D 档真实用户端到端闭环', () => {
   test.beforeEach(async ({ page }) => {
     await enterDemoApp(page)
