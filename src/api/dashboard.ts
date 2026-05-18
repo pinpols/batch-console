@@ -2,11 +2,6 @@ import { get } from '@/api/client'
 
 export type DashboardPayload = Record<string, unknown>
 
-export interface DashboardSeriesPoint {
-  label: string
-  value: number
-}
-
 export interface DashboardLineMetric {
   labels: string[]
   series: Record<string, number[]>
