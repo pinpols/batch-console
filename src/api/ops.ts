@@ -93,11 +93,6 @@ export function batchInitTenantConfig(body: {
   return post<unknown>('/api/console/config/tenant-init', flattened)
 }
 
-/** GET /api/console/ops/summary/events — SSE stream */
-export function getOpsSummaryEvents(tenantId: string) {
-  return get<unknown>('/api/console/ops/summary/events', { tenantId })
-}
-
 /** GET /api/console/ops/kafka-lag */
 export function getKafkaLag(_tenantId: string, groupId?: string) {
   return get<unknown>('/api/console/ops/kafka-lag', {

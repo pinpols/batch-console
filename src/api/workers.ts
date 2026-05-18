@@ -37,13 +37,6 @@ export function takeoverWorker(workerCode: string, body: { tenantId: string; rea
   )
 }
 
-/** GET /api/console/workers/{workerCode}/claimed-tasks */
-export function getWorkerClaimedTasks(workerCode: string, tenantId: string) {
-  return get<unknown>(`/api/console/workers/${encodeURIComponent(workerCode)}/claimed-tasks`, {
-    tenantId,
-  })
-}
-
 /** POST /api/console/workers/{workerCode}/warmup */
 export function warmupWorker(workerCode: string, tenantId: string) {
   return post<unknown>(`/api/console/workers/${encodeURIComponent(workerCode)}/warmup`, undefined, {

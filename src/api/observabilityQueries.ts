@@ -110,13 +110,3 @@ export function queryChannelReceipts(tenantId: string) {
     tenantId,
   })
 }
-
-/** GET /api/console/queries/workflow-node-runs/{id} */
-export function getWorkflowNodeRunDetail(id: number, tenantId: string) {
-  return get<unknown>(`/api/console/queries/workflow-node-runs/${id}`, { tenantId })
-}
-
-/** GET /api/console/queries/job-step-instances/{id} */
-export function getJobStepInstanceDetail(id: number, tenantId: string) {
-  return get<unknown>(`/api/console/queries/job-step-instances/${id}`, { tenantId })
-}

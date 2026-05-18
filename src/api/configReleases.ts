@@ -89,11 +89,6 @@ export function diffConfigReleases(tenantId: string, releaseIdA: number, release
   return get<unknown>('/api/console/config/releases/diff', { tenantId, releaseIdA, releaseIdB })
 }
 
-/** GET /api/console/config/releases/{releaseId}/approval — get approval detail */
-export function getReleaseApproval(releaseId: number, tenantId: string) {
-  return get<unknown>(`/api/console/config/releases/${releaseId}/approval`, { tenantId })
-}
-
 /** POST /api/console/config/releases/{releaseId}/submit-approval — submit for approval */
 export function submitReleaseApproval(
   releaseId: number,

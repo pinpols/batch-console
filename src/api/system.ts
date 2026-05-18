@@ -117,14 +117,6 @@ export function chatWithAi(body: AiChatRequest) {
   return post<AiChatResponse>('/api/console/ai/chat', body)
 }
 
-export function queryAiAudits(tenantId: string, pageNo: number, pageSize: number) {
-  return get<PageResponse<AiAuditLogResponse>>('/api/console/queries/ai-audits', {
-    tenantId,
-    pageNo,
-    pageSize,
-  })
-}
-
 export function queryCatchUpApprovals(tenantId: string, pageNo: number, pageSize: number) {
   return get<PageResponse<ConsolePendingCatchUpResponse>>(
     '/api/console/queries/catch-up-approvals',
@@ -195,16 +187,6 @@ export function togglePipelineDefinition(id: number, tenantId: string, enabled: 
   })
 }
 
-/** GET /api/console/queries/pipeline-definitions */
-export function queryPipelineDefinitionsQuery(tenantId: string) {
-  return fetchAllPageItems<RawObject>('/api/console/queries/pipeline-definitions', { tenantId })
-}
-
-/** GET /api/console/queries/pipeline-definitions/{id} */
-export function queryPipelineDefinitionDetailQuery(id: number, tenantId: string) {
-  return get<RawObject>(`/api/console/queries/pipeline-definitions/${id}`, { tenantId })
-}
-
 /** GET /api/console/file-channels — command-side list */
 export function listFileChannels(tenantId: string) {
   return fetchAllPageItems<ConsoleFileChannelResponse>('/api/console/file-channels', { tenantId })
@@ -247,23 +229,6 @@ export function updateFileTemplate(id: number, body: FileTemplateSavePayload) {
 /** GET /api/console/file-templates/{id} */
 export function getFileTemplate(id: number, tenantId: string) {
   return get<ConsoleFileTemplateResponse>(`/api/console/file-templates/${id}`, { tenantId })
-}
-
-/** GET /api/console/file-pipeline-observability */
-export function listFilePipelineObservability(tenantId: string) {
-  return fetchAllPageItems<ConsoleFilePipelineResponse>(
-    '/api/console/file-pipeline-observability',
-    {
-      tenantId,
-    },
-  )
-}
-
-/** GET /api/console/file-pipeline-observability/{id} */
-export function getFilePipelineObservability(id: number, tenantId: string) {
-  return get<ConsoleFilePipelineResponse>(`/api/console/file-pipeline-observability/${id}`, {
-    tenantId,
-  })
 }
 
 /** GET /api/console/queries/file-pipelines/{id} */
