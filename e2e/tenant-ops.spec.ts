@@ -59,8 +59,9 @@ test.describe('租户管理 — 新建租户', () => {
     await page.getByLabel('租户 ID').fill(uniqueTenantId)
     await page.getByLabel('名称').fill('E2E 测试租户')
     // 账号 + 密码必填(useDestroyConfirm/createTenant body)
+    // username 也加 random:DB 全局 unique,多次跑会和上次撞 CONFLICT
     const accountInput = page.getByLabel('账号名')
-    if (await isVisible(accountInput, 1000)) await accountInput.fill('e2e-admin')
+    if (await isVisible(accountInput, 1000)) await accountInput.fill(`e2e-admin-${Date.now().toString(36)}`)
     const pwdInput = page.getByLabel('初始密码')
     // 密码 ≥ 12 位(P0 强化)
     if (await isVisible(pwdInput, 1000)) await pwdInput.fill('Test@2026e2e1')

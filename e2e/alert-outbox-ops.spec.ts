@@ -75,46 +75,51 @@ test.describe('告警 — 操作流', () => {
     await box1.getByRole('button', { name: /^(确认告警|确认静默|确认关闭)$/ }).click({ timeout: 5000 })
 
     // ─── 第 2 步:optionalReason prompt(以 input 出现为信号)
-    // 等第一个对话框消失再等第二个有 input 的对话框
+    // FE optionalReason 用 ElMessageBox.prompt,confirmButton 文字是 i18n "提交" 不是默认"确定"
     await page.waitForTimeout(400)
     const prompt = page.locator('.el-message-box').filter({ has: page.locator('input,textarea') })
     if (await isVisible(prompt.first(), 3000)) {
       await prompt.first().locator('input,textarea').first().fill(reason)
-      await prompt.first().getByRole('button', { name: '确定' }).click({ timeout: 5000 })
+      // 接受多种 confirm 文字:提交 / 确定 / 确认
+      await prompt
+        .first()
+        .getByRole('button', { name: /^(提交|确定|确认)$/ })
+        .click({ timeout: 5000 })
     }
   }
 
+  // 验"toast 出"由"BE 收到 API 请求"代替 — toast 3s 自动消失,spec 等 8s race condition
+  async function clickAndWaitApi(
+    page: import('@playwright/test').Page,
+    btn: import('@playwright/test').Locator,
+    apiPathRe: RegExp,
+    reason: string,
+  ) {
+    const respP = page
+      .waitForResponse((r) => apiPathRe.test(r.url()), { timeout: 12000 })
+      .catch(() => null)
+    await btn.click()
+    await clickThroughTwoDialogs(page, reason)
+    const resp = await respP
+    expect(resp, `BE 未收到 ${apiPathRe} 请求`).not.toBeNull()
+  }
+
   test('确认告警 → 填写说明 → 提交 → toast', async ({ page }) => {
-    const confirmBtn = page
-      .locator('.table-actions')
-      .getByRole('button', { name: '确认' })
-      .first()
+    const confirmBtn = page.locator('.table-actions').getByRole('button', { name: '确认' }).first()
     if (!(await isVisible(confirmBtn))) return
-    await confirmBtn.click()
-    await clickThroughTwoDialogs(page, 'e2e 自动化确认')
-    await expect(page.locator('.el-message').first()).toBeVisible({ timeout: 8000 })
+    await clickAndWaitApi(page, confirmBtn, /\/alerts\/[^/]+\/ack/, 'e2e 自动化确认')
   })
 
   test('静默告警 → 填写说明 → 提交 → toast', async ({ page }) => {
-    const silenceBtn = page
-      .locator('.table-actions')
-      .getByRole('button', { name: '静默' })
-      .first()
+    const silenceBtn = page.locator('.table-actions').getByRole('button', { name: '静默' }).first()
     if (!(await isVisible(silenceBtn))) return
-    await silenceBtn.click()
-    await clickThroughTwoDialogs(page, 'e2e 自动化静默')
-    await expect(page.locator('.el-message').first()).toBeVisible({ timeout: 8000 })
+    await clickAndWaitApi(page, silenceBtn, /\/alerts\/[^/]+\/silence/, 'e2e 自动化静默')
   })
 
   test('关闭告警 → 填写说明 → 提交 → toast', async ({ page }) => {
-    const closeBtn = page
-      .locator('.table-actions')
-      .getByRole('button', { name: '关闭' })
-      .first()
+    const closeBtn = page.locator('.table-actions').getByRole('button', { name: '关闭' }).first()
     if (!(await isVisible(closeBtn))) return
-    await closeBtn.click()
-    await clickThroughTwoDialogs(page, 'e2e 自动化关闭')
-    await expect(page.locator('.el-message').first()).toBeVisible({ timeout: 8000 })
+    await clickAndWaitApi(page, closeBtn, /\/alerts\/[^/]+\/close/, 'e2e 自动化关闭')
   })
 })
 
