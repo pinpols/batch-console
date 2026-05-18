@@ -1,0 +1,41 @@
+diff --git a/batch-console-api/src/main/java/com/example/batch/console/support/web/ConsoleApiExceptionHandler.java b/batch-console-api/src/main/java/com/example/batch/console/support/web/ConsoleApiExceptionHandler.java
+index 8bef9496..2c4fc770 100644
+--- a/batch-console-api/src/main/java/com/example/batch/console/support/web/ConsoleApiExceptionHandler.java
++++ b/batch-console-api/src/main/java/com/example/batch/console/support/web/ConsoleApiExceptionHandler.java
+@@ -216,6 +216,18 @@ public class ConsoleApiExceptionHandler {
+         .body(responseFactory.failure(ResultCode.INVALID_ARGUMENT, exception.getMessage()));
+   }
+ 
++  // Multipart upload 缺 part / 错 content-type 应 400 而非 500。
++  // 触发场景:POST /excel/upload 没传 file part 或 Content-Type 不是 multipart/form-data。
++  @ExceptionHandler({
++    org.springframework.web.multipart.support.MissingServletRequestPartException.class,
++    org.springframework.web.multipart.MultipartException.class,
++  })
++  public ResponseEntity<?> handleMultipart(Exception exception) {
++    log.warn("console multipart error: {}", exception.getMessage());
++    return ResponseEntity.badRequest()
++        .body(responseFactory.failure(ResultCode.INVALID_ARGUMENT, exception.getMessage()));
++  }
++
+   /**
+    * SSE / 异步响应在客户端断开后再次写入会抛 {@link AsyncRequestNotUsableException}。 此时 response Content-Type 已锁为
+    * {@code text/event-stream}，再回写 {@code CommonResponse} 反而触发 {@code
+diff --git a/batch-console-api/src/main/java/com/example/batch/console/web/request/file/FileTemplateUpdateRequest.java b/batch-console-api/src/main/java/com/example/batch/console/web/request/file/FileTemplateUpdateRequest.java
+index 4018cad6..454095a3 100644
+--- a/batch-console-api/src/main/java/com/example/batch/console/web/request/file/FileTemplateUpdateRequest.java
++++ b/batch-console-api/src/main/java/com/example/batch/console/web/request/file/FileTemplateUpdateRequest.java
+@@ -85,4 +85,13 @@ public class FileTemplateUpdateRequest {
+ 
+   @Size(max = 512)
+   private String description;
++
++  // V29 引入的 plugin ref 字段。之前 DTO 未暴露 → FE/API 无法更新 → 部分 e2e
++  // 种子租户(如 ta)的 IMPORT 模板 load_target_ref 残缺,worker-import 报
++  // "jdbc_mapped_import spec missing"。补字段并通过 Service 透传。
++  @Size(max = 128)
++  private String loadTargetRef;
++
++  @Size(max = 128)
++  private String exportDataRef;
+ }

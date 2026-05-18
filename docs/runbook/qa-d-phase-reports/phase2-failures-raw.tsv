@@ -1,0 +1,116 @@
+alert-outbox-ops-告警-—-操作流-关闭告警-→-填写说明-→-提交-→-toast | Error: expect(locator).toHaveText(expected) failed|Locator: locator('.page-header .title').first()|
+alert-outbox-ops-告警-—-操作流-确认告警-→-填写说明-→-提交-→-toast | Error: expect(locator).toHaveText(expected) failed|Locator: locator('.page-header .title').first()|
+alert-outbox-ops-告警-—-操作流-静默告警-→-填写说明-→-提交-→-toast | Error: expect(locator).toHaveText(expected) failed|Locator: locator('.page-header .title').first()|
+alert-outbox-ops-告警-—-筛选查询-Trace-搜索-→-查询-→-重置 | Error: expect(locator).toHaveText(expected) failed|Locator: locator('.page-header .title').first()|
+alert-outbox-ops-告警-—-筛选查询-刷新 | Error: expect(locator).toHaveText(expected) failed|Locator: locator('.page-header .title').first()|
+alert-outbox-ops-告警-—-筛选查询-状态筛选-→-查询 | Error: expect(locator).toHaveText(expected) failed|Locator: locator('.page-header .title').first()|
+alert-outbox-ops-告警-—-筛选查询-级别筛选-→-查询 | Error: expect(locator).toHaveText(expected) failed|Locator: locator('.page-header .title').first()|
+alert-routing-crud-alert-routing-CRUD-告警路由-新增告警路由对话框可打开-验证字段 | Error: expect(locator).toBeVisible() failed|Locator: locator('.el-dialog').filter({ hasText: '新增告警路由' }).getByText('路由编码', { exact: true })|
+alert-routing-validation-a-1a61d-g-表单校验-receiver-超长被截断-≤256- | Error: expect(locator).toBeVisible() failed|Locator: locator('.el-dialog').first()|
+alert-routing-validation-a-f584e-ode-team-severity-receiver- | Error: expect(locator).toBeVisible() failed|Locator: locator('.el-dialog').first()|
+alert-routing-validation-alert-routing-表单校验-routeCode-超长被截断 | Error: expect(locator).toBeVisible() failed|Locator: locator('.el-dialog').first()|
+all-pages-zero-error--cros-dfdf9-无服务端错误-observability-alerts | Error: expect(locator).toHaveText(expected) failed|Locator: locator('.page-header .title').first()|
+api-key-validation-API-Key-表单校验-keyName-超长被截断-≤128- | Error: expect(locator).toBeVisible() failed|Locator: locator('.el-dialog').first()|
+api-key-validation-API-Key-表单校验-全空提交被拦截-keyName-NotBlank- | Error: expect(locator).toBeVisible() failed|Locator: locator('.el-dialog').first()|
+config-management-config-management-配置管理-Secrets-标签页可切换 | TimeoutError: locator.click: Timeout 10000ms exceeded.|
+config-management-config-management-配置管理-变更日志标签页展示表格与刷新按钮 | Error: expect(locator).toHaveClass(expected) failed|Locator: locator('.config-nav__item').filter({ hasText: '变更日志' }).first()|
+config-management-config-management-配置管理-同步日志标签页可切换 | TimeoutError: locator.click: Timeout 10000ms exceeded.|
+config-management-config-management-配置管理-配置同步标签页展示导出-导入区块 | TimeoutError: locator.click: Timeout 10000ms exceeded.|
+config-management-config-management-配置管理-配置管理页面可打开并展示-4-个标签页 | Error: expect(locator).toBeVisible() failed|Locator: locator('.config-nav__item').filter({ hasText: '变更日志' }).first()|
+config-management-ops-配置管理-81b66-轮转：确认后提交-→-success-toast-出现 | TimeoutError: locator.click: Timeout 10000ms exceeded.|
+config-management-ops-配置管理-e7157--详情：抽屉展示-Secret-Key-版本-原始响应 | TimeoutError: locator.click: Timeout 10000ms exceeded.|
+config-management-ops-配置管理-—-Secrets-刷新后表格或空态展示 | TimeoutError: locator.click: Timeout 10000ms exceeded.|
+config-management-ops-配置管理-—-变更日志-刷新后表格或空态展示 | Error: expect(locator).toHaveClass(expected) failed|Locator: locator('.config-nav__item').filter({ hasText: '变更日志' }).first()|
+config-management-ops-配置管理-—-变更日志-有数据时分页控件可见，切换页码正常 | Error: expect(locator).toHaveClass(expected) failed|Locator: locator('.config-nav__item').filter({ hasText: '变更日志' }).first()|
+config-management-ops-配置管理-—-同步日志-刷新后表格或空态展示 | TimeoutError: locator.click: Timeout 10000ms exceeded.|
+config-sync-配置同步-导出按钮触发-POST-sync-export | TimeoutError: locator.click: Timeout 10000ms exceeded.|
+config-sync-配置同步-配置同步-tab-可切换-导出-导入区块可见 | TimeoutError: locator.click: Timeout 10000ms exceeded.|
+config-sync-配置同步-预览变更按钮触发-POST-sync-preview | TimeoutError: locator.click: Timeout 10000ms exceeded.|
+cross-navigation-dashboard-4d5a0-ion-指标卡片跳转-点击未处理告警卡片跳转到告警列表 | Error: expect(locator).toHaveText(expected) failed|Locator: locator('.page-header .title').first()|
+cross-navigation-query-par-abfea-预填-告警列表通过-severity-参数预填筛选条件 | Error: expect(locator).toHaveText(expected) failed|Locator: locator('.page-header .title').first()|
+error-recovery-错误恢复-韧性-5xx-错误-→-toast-提示-不卡死 | NETWORK-ONLY: [500] GET http://localhost:5173/api/console/queries/job-definitions?tenantId=ta&pageNo=1&pageSize=20
+error-recovery-错误恢复-韧性-GET-404-→-友好提示-接口不存在- | NETWORK-ONLY: [404] GET http://localhost:5173/api/console/queries/job-definitions?tenantId=ta&pageNo=1&pageSize=20
+error-states-error-state-G-181dc--alert-routings-500-→-toast | NETWORK-ONLY: [500] GET http://localhost:5173/api/console/alert-routings?tenantId=ta&pageNo=1&pageSize=200
+error-states-error-state-G-7ea80-401-→-跳登录-interceptor-默认行为- | NETWORK-ONLY: [401] GET http://localhost:5173/api/console/queues?tenantId=ta&pageNo=1&pageSize=200
+error-states-error-state-a-3ea76--SYSTEM-ERROR-→-toast-含错误提示 | Error: expect(locator).toBeVisible() failed|Locator: locator('.el-dialog').first()|
+error-states-error-state-a-453c7-e-channels-POST-500-→-toast | Error: expect(locator).toBeVisible() failed|Locator: locator('.el-dialog').first()|
+error-states-error-state-a-707e7-ATION-ERROR-→-toast-form-保留 | Error: expect(locator).toBeVisible() failed|Locator: locator('.el-dialog').first()|
+error-states-error-state-a-91c16-gs-POST-400-→-toast-form-保留 | Error: expect(locator).toBeVisible() failed|Locator: locator('.el-dialog').first()|
+error-states-error-state-a-b63b9-ine-→-toast-或保持-loading-不卡死 | Error: expect(locator).toBeVisible() failed|Locator: locator('.el-dialog').first()|
+error-states-error-state-a-e8125-t-routings-POST-500-→-toast | Error: expect(locator).toBeVisible() failed|Locator: locator('.el-dialog').first()|
+error-states-error-state-a-fe5c3-T-409-CONFLICT-→-toast-表单保留 | Error: expect(locator).toBeVisible() failed|Locator: locator('.el-dialog').first()|
+file-template-channel-crud-169ed-新增模板对话框可打开-验证-i18n-field-字段 | Error: expect(locator).toBeVisible() failed|Locator: locator('.el-dialog').filter({ hasText: '新增文件模板' }).getByText('模板编码', { exact: true })|
+file-template-channel-crud-729dd-channel-CRUD-文件渠道页面-新增渠道对话框 | Error: expect(locator).toBeVisible() failed|Locator: locator('.el-dialog').filter({ hasText: '新增文件渠道' }).getByText('渠道编码', { exact: true })|
+file-template-validation-f-31090-ate-表单校验-templateCode-超长被截断 | Error: expect(locator).toBeVisible() failed|Locator: locator('.el-dialog').first()|
+file-template-validation-f-52c8b-表单校验-timeoutSeconds-数字框拒收字母 | Error: expect(locator).toBeVisible() failed|Locator: locator('.el-dialog').first()|
+file-template-validation-file-channel-表单校验-channelCode-超长被截断 | Error: expect(locator).toBeVisible() failed|Locator: locator('.el-dialog').first()|
+file-template-validation-file-channel-表单校验-全空提交被拦截 | Error: expect(locator).toBeVisible() failed|Locator: locator('.el-dialog').first()|
+file-template-validation-file-template-表单校验-version-数字框拒收字母 | Error: expect(locator).toBeVisible() failed|Locator: locator('.el-dialog').first()|
+file-template-validation-file-template-表单校验-全空提交被拦截 | Error: expect(locator).toBeVisible() failed|Locator: locator('.el-dialog').first()|
+governance-quota-panel-配额策略-配额策略可打开 | Error: expect(locator).toHaveText(expected) failed|Locator: locator('.page-header .title').first()|
+job-definition-crud-Job-De-4eafe--新增-→-表格出现-→-编辑-→-切换启停-→-克隆 | Error: expect(locator).toBeVisible() failed|Locator: getByRole('cell', { name: 'e2e-job-1779027567583' })|
+job-ops-Workflow-定义-—-筛选查询-Workflow-Code-搜索 | Error: page.goto: net::ERR_ABORTED at http://localhost:5173/workflow/definitions|
+keyboard-flow-keyboard-flo-9148f-页-Tab-顺序合理-用户名-→-密码-→-登录按钮- | NETWORK-ONLY: [401] GET http://localhost:5173/api/console/auth/me
+keyboard-flow-keyboard-flo-957f5-打开后-Tab-焦点应在-Dialog-内部-不溢出- | Error: expect(locator).toBeVisible() failed|Locator: locator('.el-dialog').first()|
+keyboard-flow-keyboard-flow-—-P0-页面-Dialog-打开-→-ESC-关闭 | Error: expect(locator).toBeVisible() failed|Locator: locator('.el-dialog').first()|
+mobile-ops-mobile-ops-·-MApprovals-列表加载-渲染至少-1-张卡片 | Error: expect(locator).toBeVisible() failed|Locator: locator('.m-card').first()|
+mobile-ops-mobile-ops-·-MApprovals-空数据时显示-m-empty | Error: expect(locator).toBeVisible() failed|Locator: locator('.m-empty')|
+mobile-ops-mobile-ops-·-MOutbox-列表加载-segmented-筛选 | Error: expect(locator).toBeVisible() failed|Locator: locator('.m-card').first()|
+monitor-ops-Job-Step-分片-—-操作流-取消分片-→-确认-→-toast | Error: page.evaluate: Execution context was destroyed, most likely because of a navigation|
+navigation-navigation-and-tabs-侧边栏导航可切换到关键页面 | TimeoutError: locator.click: Timeout 10000ms exceeded.|
+notification-crud-webhook--cc663-ok-增删改-新增-Webhook-对话框可打开并填写 | TimeoutError: locator.fill: Timeout 10000ms exceeded.|
+notification-rule-crud-not-f9ee3-rule-CRUD-新增订阅规则对话框可打开-字段可见 | Error: expect(locator).toBeVisible() failed|Locator: locator('.el-dialog').first()|
+observability-observability-pages-告警页可打开并展示治理操作列 | Error: expect(locator).toHaveText(expected) failed|Locator: locator('.page-header .title').first()|
+ops-diagnostic-ops-diagnos-44c19-标签页展示-Kafka-Lag-与-Outbox-面板 | Error: expect(locator).toHaveClass(expected) failed|Locator: getByRole('tab', { name: '运维工具箱' })|
+ops-diagnostic-ops-diagnostic-运维诊断-运维诊断页面可打开并展示-2-个标签页 | Error: expect(locator).toBeVisible() failed|Locator: getByRole('tab', { name: '运维工具箱' })|
+ops-diagnostic-ops-diagnostic-运维诊断-集群诊断标签页展示多个诊断区块 | TimeoutError: locator.click: Timeout 10000ms exceeded.|
+ops-diagnostic-ops-运维诊断-—--ad49b-重发布-Outbox-重发布-→-确认-→-toast | TimeoutError: locator.click: Timeout 10000ms exceeded.|
+ops-diagnostic-ops-运维诊断-—--e424d--重发布-Outbox-清理-→-确认-→-toast | TimeoutError: locator.click: Timeout 10000ms exceeded.|
+queue-config-crud-batch-window-CRUD-批次窗口-新建批次窗口对话框可打开 | Error: expect(locator).toBeVisible() failed|Locator: locator('.el-dialog').filter({ hasText: '新增批次窗口' }).getByText('窗口编码', { exact: true })|
+queue-config-crud-business-calendar-CRUD-业务日历-新建业务日历对话框可打开 | Error: expect(locator).toBeVisible() failed|Locator: locator('.el-dialog').filter({ hasText: '新增业务日历' }).getByText('日历编码', { exact: true })|
+queue-config-crud-queue-config-CRUD-资源队列-新建队列对话框可打开-必填字段校验 | Error: expect(locator).toBeVisible() failed|Locator: locator('.el-dialog').filter({ hasText: '新增资源队列' }).getByText('队列编码', { exact: true })|
+queue-config-validation-calendar-表单校验-calendarCode-超长被截断 | Error: expect(locator).toBeVisible() failed|Locator: locator('.el-dialog').first()|
+queue-config-validation-calendar-表单校验-catchUpMaxDays-数字框拒收字母 | Error: expect(locator).toBeVisible() failed|Locator: locator('.el-dialog').first()|
+queue-config-validation-calendar-表单校验-全空提交被拦截 | Error: expect(locator).toBeVisible() failed|Locator: locator('.el-dialog').first()|
+queue-config-validation-queue-表单校验-maxRunningJobs-数字框拒收字母 | Error: expect(locator).toBeVisible() failed|Locator: locator('.el-dialog').first()|
+queue-config-validation-queue-表单校验-queueCode-超过-128-字符被截断或报错 | Error: expect(locator).toBeVisible() failed|Locator: locator('.el-dialog').first()|
+queue-config-validation-queue-表单校验-全空提交被拦截 | Error: expect(locator).toBeVisible() failed|Locator: locator('.el-dialog').first()|
+queue-config-validation-queue-表单校验-取消后再开-表单-reset | Error: expect(locator).toBeVisible() failed|Locator: locator('.el-dialog').first()|
+queue-config-validation-window-表单校验-windowCode-超长被截断 | Error: expect(locator).toBeVisible() failed|Locator: locator('.el-dialog').first()|
+queue-config-validation-window-表单校验-全空提交被拦截 | Error: expect(locator).toBeVisible() failed|Locator: locator('.el-dialog').first()|
+quota-policy-crud-quota-policy-CRUD-配额策略-新增配额策略对话框可打开-验证字段 | Error: expect(locator).toBeVisible() failed|Locator: locator('.el-dialog').filter({ hasText: '新增配额策略' }).getByText('策略编码', { exact: true })|
+quota-policy-validation-qu-e48e2-unningJobsPerTenant-数字框拒收字母 | Error: expect(locator).toBeVisible() failed|Locator: locator('.el-dialog').first()|
+quota-policy-validation-quota-policy-表单校验-policyCode-超长被截断 | Error: expect(locator).toBeVisible() failed|Locator: locator('.el-dialog').first()|
+quota-policy-validation-quota-policy-表单校验-全空提交被拦截 | Error: expect(locator).toBeVisible() failed|Locator: locator('.el-dialog').first()|
+quota-policy-validation-quota-policy-表单校验-取消后-reset | Error: expect(locator).toBeVisible() failed|Locator: locator('.el-dialog').first()|
+rbac-denial-RBAC-拒绝行为-auth-me-401-→-清-token-跳登录-session-真过期- | NETWORK-ONLY: [401] GET http://localhost:5173/api/console/auth/me
+rbac-denial-RBAC-拒绝行为-业务-401-refresh-失败-→-不踢登录-只-toast | NETWORK-ONLY: [401] GET http://localhost:5173/api/console/ops/triggers?tenantId=ta
+self-service-forms-self-se-30591--自助服务表单-配额与用量-tab-展示当前配额和用量 | Error: expect(locator).toHaveClass(expected) failed|Locator: locator('.service-entry').filter({ hasText: '配额与用量' }).first()|
+self-service-forms-self-service-forms-自助服务表单-补偿申请表单可填写 | TimeoutError: locator.click: Timeout 10000ms exceeded.|
+self-service-forms-self-service-forms-自助服务表单-配额变更表单可填写并提交 | TimeoutError: locator.click: Timeout 10000ms exceeded.|
+self-service-forms-self-service-forms-自助服务表单-重跑申请表单可填写 | TimeoutError: locator.click: Timeout 10000ms exceeded.|
+self-service-self-service-panel-自助服务-自助服务页面可打开并展示-4-个标签页 | Error: expect(locator).toBeVisible() failed|Locator: locator('.service-entry').filter({ hasText: '配额与用量' }).first()|
+self-service-self-service-panel-自助服务-补偿申请标签展示表单 | TimeoutError: locator.click: Timeout 10000ms exceeded.|
+self-service-self-service-panel-自助服务-配额与用量标签展示刷新按钮与数据面板 | Error: expect(locator).toHaveClass(expected) failed|Locator: locator('.service-entry').filter({ hasText: '配额与用量' }).first()|
+self-service-self-service-panel-自助服务-配额变更标签展示表单 | TimeoutError: locator.click: Timeout 10000ms exceeded.|
+self-service-self-service-panel-自助服务-重跑申请标签展示表单 | TimeoutError: locator.click: Timeout 10000ms exceeded.|
+smoke--cross-browser-smoke-c2028-E-页面可达-observability-alerts | Error: expect(locator).toHaveText(expected) failed|Locator: locator('.page-header .title').first()|
+smoke--cross-browser-smoke-da03b--MODE-页面可达-governance-quota | Error: expect(locator).toHaveText(expected) failed|Locator: locator('.page-header .title').first()|
+soak-soak-·-长会话稳定性-dialog-反复开关-50-次不残留-DOM-节点 | Error: expect(locator).toBeVisible() failed|Locator: locator('.el-dialog').first()|
+tag-management-crud-tag-management-标签管理-按标签搜索-tab-可执行搜索 | TimeoutError: locator.click: Timeout 10000ms exceeded.|
+tag-ops-标签管理-—-按标签搜索-Tag-Key-Tag-Value-联合搜索 | TimeoutError: locator.click: Timeout 10000ms exceeded.|
+tag-ops-标签管理-—-按标签搜索-Tag-Key-搜索 | TimeoutError: locator.click: Timeout 10000ms exceeded.|
+tag-ops-标签管理-—-按标签搜索-搜索结果刷新 | TimeoutError: locator.click: Timeout 10000ms exceeded.|
+tag-resource-crud-tag-resource-CRUD-按标签搜索-tab-可切换 | TimeoutError: locator.click: Timeout 10000ms exceeded.|
+tenant-config-ops-tenant-b-0c159-t-批量建租户-配置初始化-选择源租户后初始化模式显示 | TimeoutError: locator.click: Timeout 10000ms exceeded.|
+tenant-config-ops-tenant-c-12ba2-g-跨租户复制配置-复制配置对话框可打开并展示完整表单 | Error: expect(locator).toBeVisible() failed|Locator: getByText('试运行').first()|
+tenant-ops-租户管理-—-初始化配置（试运行）-初始化配置-→-选类型-→-试运行-→-结果展示 | TimeoutError: locator.click: Timeout 10000ms exceeded.|
+tenant-ops-租户管理-—-复制配置（试运行）-复制配置-→-选类型-→-试运行-→-结果展示 | TimeoutError: locator.click: Timeout 10000ms exceeded.|
+tenant-ops-租户管理-—-新建租户-新建租户-→-填写-→-提交-→-toast | NETWORK-ONLY: [409] POST http://localhost:5173/api/console/tenants
+upload-full-chain-upload-f-195b3-Excel-导入-上传失败时不前进步骤-BE-500- | NETWORK-ONLY: [500] POST http://localhost:5173/api/console/config/tenant-package/excel/upload?tenantId=ta
+user-account-ops-用户账户-—-编辑对话框-修改显示名并保存-→-toast | Error: expect(locator).toBeVisible() failed|Locator: locator('.el-dialog')|
+user-account-ops-用户账户-—-编辑对话框-取消关闭对话框 | Error: expect(locator).toBeVisible() failed|Locator: locator('.el-dialog')|
+user-account-ops-用户账户-—-编辑对话框-点击编辑弹出对话框并展示用户名（只读） | Error: expect(locator).toBeVisible() failed|Locator: locator('.el-dialog')|
+worker-ops-Worker-管理-—-Worker-操作-Drain-→-确认-→-toast | NETWORK-ONLY: [409] POST http://localhost:5173/api/console/workers/worker-ta-export-001/drain
+worker-ops-Worker-管理-—-Worker-操作-接管-→-确认-→-toast | NETWORK-ONLY: [409] POST http://localhost:5173/api/console/workers/worker-ta-export-001/takeover
+worker-ops-Worker-管理-—-Worker-操作-预热-→-toast（无确认弹窗） | NETWORK-ONLY: [409] POST http://localhost:5173/api/console/workers/worker-ta-export-001/warmup?tenantId=ta
