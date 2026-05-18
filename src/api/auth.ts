@@ -1,5 +1,6 @@
 import type { AxiosRequestConfig } from 'axios'
 import { get, post } from '@/api/client'
+import { encryptLoginBody } from '@/utils/loginCrypto'
 
 import type { MenuGroup, Role, UserInfo } from '@/types'
 
@@ -47,10 +48,14 @@ export function mapProfileToUserInfo(p: ConsoleAuthProfilePayload): UserInfo {
 
 export const authApi = {
   login: async (params: LoginParams) => {
-    const payload = await post<ConsoleAuthTokenPayload>('/api/console/auth/login', {
-      username: params.username,
-      password: params.password,
-    })
+    // 2026-05-18: 优先 RSA+AES 混合加密 body;Web Crypto 不可用 / 公钥取失败时
+    // 回退明文 (BE 默认 required=false 接受双形态)。
+    // prod profile 强制 required=true 时,明文路径会被 401 error.auth.encryption_required
+    // 拦下,登录页捕获错误码提示用户。
+    const plaintext = { username: params.username, password: params.password }
+    const encrypted = await encryptLoginBody(plaintext)
+    const body: Record<string, unknown> = encrypted ?? plaintext
+    const payload = await post<ConsoleAuthTokenPayload>('/api/console/auth/login', body)
     return {
       token: payload.accessToken,
       userInfo: mapProfileToUserInfo({
