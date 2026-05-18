@@ -1,35 +1,37 @@
 # FE↔BE 联调测试方案
 
 > 目标:让前后端联调有一份**可执行、可复现、可量化**的测试流程。
-> 当前阶段:**B 档**(CRUD 闭环);C 档(完整 QA 级)留待后续。
+> 演进:**B 档**(CRUD 闭环,已完成 2026-05-16)→ **B+ 档**(联调验收级,本次扩充 2026-05-18)。
+> 覆盖范围从"12 核心实体 CRUD"扩到"RBAC 矩阵 + 3 业务剧本 + 多租户 + SSE + 设计器烟测"。
 
 ## 档位定义
 
-| 档位 | 含义 | 预估耗时 |
-|---|---|---|
-| A. 页面渲染冒烟 | 每页能打开、无 ErrorBoundary、无 console error | ~30 min |
-| **B. 页面 CRUD 闭环**(本次目标) | 每个有写操作的页跑 create → read → update → delete 全流程 | ~4–6 h |
-| C. 完整 QA 级覆盖 | 表单校验、错误态、权限拒绝、空态、边界值、键盘、移动端、a11y | ~3–5 天 |
+| 档位 | 含义 | 预估耗时 | 状态 |
+|---|---|---|---|
+| A. 页面渲染冒烟 | 每页能打开、无 ErrorBoundary、无 console error | ~30 min | ✅ 已做 |
+| B. 页面 CRUD 闭环 | 每个有写操作的页跑 create → read → update → delete 全流程 | ~4–6 h | ✅ 2026-05-16 完成 (42/42 PASS) |
+| **B+. 联调验收级**(本次新增) | 上一档基础上补 RBAC 矩阵 / 端到端业务流 / 多租户 / SSE / 设计器烟测 | ~4 天 | 🔵 Phase 5–9 |
+| C. 完整 QA 级覆盖 | 表单校验、错误态、权限拒绝、空态、边界值、键盘、移动端、a11y | ~3–5 天 | ✅ C 档 2026-05-15 完成 (qa-c-baseline 466/16/0) |
+| D. 生产前 sprint | 移动端 CRUD / 多浏览器 / i18n soak / upload 全链路 | ~4-5 天 | ✅ D 档 2026-05-17 完成 |
 
 ---
 
 ## 路线总览
 
 ```
-Phase 0 (准备 ~30 min)
-   └─ 建 tx 隔离租户 + 修 e2e session 互锁 + 写 cleanup
+B 档(CRUD 闭环,已完成 2026-05-16)
+├─ Phase 0  准备 ~30 min     建 tx 隔离租户 + 修 e2e session 互锁 + 写 cleanup
+├─ Phase 1  API CRUD ~1.5 h  按依赖序灌数据 + 跑全部写接口 + 输出 BE bug 清单
+├─ Phase 2  FE 渲染 ~45 min  拿 Phase 1 真实 BE 数据在 UI 目视核对字段渲染
+├─ Phase 3  UI 交互 ~1 h     跑 e2e 套件(含补的 5-8 个新 CRUD spec)
+└─ Phase 4  CI 候选          打包成 CI 候选脚本
 
-Phase 1 (API 层 CRUD ~1.5 h)
-   └─ 按依赖序灌数据 + 跑全部写接口 + 输出 BE bug 清单
-
-Phase 2 (FE 渲染对照 ~45 min)
-   └─ 拿 Phase 1 真实 BE 数据在 UI 目视核对字段渲染
-
-Phase 3 (UI 完整交互 ~1 h)
-   └─ 跑 e2e 套件(含补的 5-8 个新 CRUD spec)
-
-Phase 4 (可选)
-   └─ 打包成 CI 候选脚本
+B+ 档(联调验收级,2026-05-18 扩充)
+├─ Phase 5  Seed + 阻塞 spec 真跑   ~1 天   补 4 个未运行的 SQL/JSON seed,把 4 个被 skip 的 spec 真跑
+├─ Phase 6  RBAC 5 角色权限矩阵     ~1 天   5 真实角色 × 关键写接口,验权限/越权/兜底文案
+├─ Phase 7  3 个端到端业务剧本       ~2 天   任务失败→重跑→审批 / 文件到达→处理→回执 / 配置灰度→回滚
+├─ Phase 8  多租户切换 + SSE 重连    ~0.5 天 切租户竞态 + WebSocket/SSE 断线 + 长连保活
+└─ Phase 9  设计器 + AI Chat 烟测   ~0.5 天 X6 拖拽基础烟测 + AI Chat 基础烟测 (允许 mock 后端)
 ```
 
 为什么这个顺序:**API 失败信号最干净(直接定位 BE bug),FE 渲染失败次干净(BE 已确认 OK → drift 或 i18n 问题),UI 交互最复杂(校验 / 状态 / toast 等)**。倒过来跑会被多层 noise 淹掉。
@@ -234,6 +236,202 @@ preflight → phase 0 prepare → phase 1 api crud → phase 3 e2e → cleanup
 
 ---
 
+## Phase 5 — Seed 补全 + 阻塞型 spec 真跑(~1 天)
+
+**Why**: Plan 附录里 4 个 spec 长期"待 seed",一直没真跑过 BE。
+
+**产出**: `docs/runbook/scripts/seed/` 下 4 个可复跑脚本 + 4 个 spec 转绿。
+
+### 5.1 Seed 脚本清单
+
+| 文件 | 灌什么 | 谁用 |
+|---|---|---|
+| `seed/03-job-instances.sql` | 各状态 (CREATED/WAITING/RUNNING/FAILED/COMPLETED) 各 5 条 + 分区/步骤 | monitor-ops.spec / monitor-ops 各页 |
+| `seed/04-pending-approvals.sql` | 通用审批 5 + Catch-up 5 + Compensation 3 + Quota 3 | approval-ops.spec / approvals 页 |
+| `seed/07-outbox-stuck.sql` | 卡住的 outbox 各错误类 (KAFKA_DOWN/TIMEOUT/DLQ) 各 3 条 | alert-outbox-ops.spec / ops-diagnostic |
+| `seed/10-rbac-users.sql` | 5 个真实角色 × tx 租户 各 1 个测试账号 (e2e-admin / e2e-cfg / e2e-aud / e2e-tu / e2e-usr) | rbac-denial.spec / Phase 6 |
+
+### 5.2 落地约定
+- 所有 seed 用 `e2e-` 前缀 + tx 租户(同 Phase 1 数据隔离原则)
+- 每个 seed 配 `cleanup-XX.sql`,反向 DELETE
+- 主入口 `bash docs/runbook/scripts/seed-all.sh`,幂等执行(INSERT IGNORE / ON CONFLICT)
+- 失败兜底:`trap 'bash docs/runbook/scripts/cleanup-all.sh' EXIT`
+
+### 5.3 真跑前 spec(预期一次性转绿)
+```
+npx playwright test \
+  e2e/monitor-ops.spec.ts \
+  e2e/approval-ops.spec.ts \
+  e2e/alert-outbox-ops.spec.ts \
+  e2e/rbac-denial.spec.ts
+```
+
+### 5.4 失败优先级
+- BE 字段名/类型 drift → 写 `be-fix-backlog.md`
+- FE 选择器/文案过时 → 直接修 spec
+- seed 数据本身错(如外键不存在)→ 修 seed
+
+---
+
+## Phase 6 — RBAC 5 角色权限矩阵(~1 天)
+
+**Why**: [rbac_5roles_only](memory:rbac_5roles_only) memory:OPERATOR/VIEWER 是菜单档位标签不是 Spring authority,自由填会触发 URL 兜底 403。BE 实际只有 5 个真实 Spring authority,前端只跑 admin 路径意味着 4 个角色的权限边界**从来没真验过**。
+
+**产出**: `e2e/rbac-matrix.spec.ts`(单文件,~120 断言)+ 矩阵报告。
+
+### 6.1 5 真实角色 × 关键写接口矩阵
+
+| 角色 \ 接口 | tenants 写 | queues 写 | quotas 写 | configs 发布 | job-defs 写 | api-keys 写 | users 写 | self-service 提单 | reports 导 |
+|---|---|---|---|---|---|---|---|---|---|
+| ROLE_ADMIN | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| ROLE_CONFIG_ADMIN | ❌ | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ✅ | ✅ |
+| ROLE_AUDITOR | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ |
+| ROLE_TENANT_USER | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ |
+| ROLE_USER | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ |
+
+(✅ = 应返 200/202,❌ = 应返 403 且 toast 走"权限不足"i18n 不是裸 message)
+
+### 6.2 每格 3 个断言
+1. 后端 HTTP code 与期望一致
+2. toast title 命中(成功:无 toast;失败:"权限不足")
+3. 列表/创建按钮在 UI 上的可见性 vs 后端权限一致(`usePermission.canMutateConfig` / `canManageSystem` 已对齐)
+
+### 6.3 跨租户越权额外测
+- 任意非 admin 角色用 X-Tenant-Id: ta 调 tb 的资源 → 期望 403 或 NOT_FOUND(BE 选其一,不能 200)
+- 用 admin 切租户,验 `/auth/me` 在切前/切后返回的 permissions 是否一致
+
+### 6.4 落地
+- 用 Phase 5.1 的 `seed/10-rbac-users.sql` 灌 5 个测试账号
+- spec 用 storageState 在每个 test 切角色:`test.use({ storageState: 'e2e/.auth/role-${role}.json' })`
+
+---
+
+## Phase 7 — 3 个端到端业务剧本(~2 天)
+
+**Why**: 单实体 CRUD 全绿不等于业务流通。生产事故 80% 在"接口都 OK 但流程串不上"。
+
+**产出**: `e2e/scenario-*.spec.ts` × 3,每个剧本 ≤ 5 min,每步带 traceId。
+
+### 7.1 剧本 A:任务失败 → 重跑 → 审批
+
+```
+1. trigger job-def (e2e-job-fail-001)            POST /jobs/trigger
+2. 等实例落到 FAILED                              SSE /stream/job-instances/events
+3. 提自助重跑                                     POST /self-service/jobs/rerun-request
+4. admin 在 /approvals 看到待审                   GET /queries/approvals
+5. admin 批准                                     POST /approvals/batch-approve
+6. 等实例重跑 → COMPLETED                          SSE
+7. 验审计日志可查                                  GET /queries/audits?resourceId=...
+```
+
+断言:每步 status 转移 + 状态机不可逆 + 审批通过后 self-service 单状态变 APPROVED + 审计写入。
+
+### 7.2 剧本 B:文件到达 → 触发批次 → 回执
+
+```
+1. presign upload 拿 URL                          POST /files/presign-upload
+2. PUT 文件到 OSS / NAS                           直传
+3. 文件落 file_template 命中规则                   后台 /file-pipeline-observability
+4. 触发 pipeline 实例                              SSE
+5. pipeline 各 step 转 RUNNING → COMPLETED         /queries/file-pipelines
+6. file_receipt 表里有回执                         /queries/channel-receipts
+7. /files/arrival-groups 状态翻到 ARRIVED         /queries/file-arrival-groups
+```
+
+断言:文件 status 全链路一致性、step 顺序符合 DAG、回执 channel + receiptPolicy 对得上。
+
+### 7.3 剧本 C:配置灰度发布 → 全量 → 回滚
+
+```
+1. create config release v2 (draft)               POST /config/releases
+2. 提交审批                                       POST /config/releases/{id}/submit
+3. admin 批准                                     POST /config/releases/{id}/approve
+4. 灰度到 5% 租户                                  POST /config/releases/{id}/gray
+5. 验 5% 租户实际生效,95% 仍 v1                    GET /config/dependencies
+6. 全量发布                                       POST /config/releases/{id}/publish
+7. 模拟问题 → 回滚                                 POST /config/releases/{id}/rollback
+8. 验全部租户回到 v1                               GET /config/dependencies
+```
+
+断言:灰度比例真实生效 + 回滚不丢历史 + change-logs 记录完整路径。
+
+### 7.4 通用约束
+- 每个剧本独立 setup/teardown,失败不污染其他剧本数据
+- 用 `test.step('1. trigger job', ...)` 让 trace 可读
+- 失败截图 + HAR + console log 全保留
+
+---
+
+## Phase 8 — 多租户切换 + SSE 重连(~0.5 天)
+
+**Why**: 生产事故里"切租户后看到上一个租户的数据" / "WebSocket 断线后界面僵死" 高频。Plan B 档全程单租户,无并发。
+
+**产出**: `e2e/multi-tenant.spec.ts` + `e2e/stream-reconnect.spec.ts`。
+
+### 8.1 多租户切换
+
+```
+test('rapid tenant switch 不应错位 profile', async ({ page }) => {
+  for (const id of ['ta', 'tb', 'tc', 'tx']) {
+    await switchTenant(page, id)
+    // 立刻切下一个,不等 /auth/me 完成
+  }
+  // 最后验:UI 显示的 tenant + 实际 permissions + 菜单 都跟 tx 一致
+})
+```
+
+测点:
+- 切租户期间 inflight /auth/me 不被旧响应覆盖(`auth.ts` 的 inflightTenantId 校验)
+- 切完租户菜单 / role chip / 操作权限 都即时更新
+- 同一接口连续切 3 次 = 没有 cookie 串台
+
+### 8.2 SSE/WebSocket 重连
+
+```
+test('SSE 断线 5s 后自动重连,不丢消息', async ({ page }) => {
+  await page.goto('/monitor/instances')
+  // 模拟断网 5s
+  await page.context().setOffline(true)
+  await page.waitForTimeout(5000)
+  await page.context().setOffline(false)
+  // 期望:8s 内界面自动重连,后续推送继续显示
+})
+```
+
+测点:
+- 断线 toast / 重连 toast 都出
+- 重连后 ticket 重新换 + cursor 继续推不丢消息
+- 长连 5min 保活无超时(用 timer fake-time 加速)
+
+---
+
+## Phase 9 — 设计器 + AI Chat 烟测(~0.5 天)
+
+**Why**: B 档放弃这两块,但生产环境用户会用,即使不做完整交互也要确保"打得开 + 不崩"。
+
+**产出**: `e2e/workflow-designer-smoke.spec.ts` + `e2e/ai-chat-smoke.spec.ts`。
+
+### 9.1 工作流设计器烟测(X6)
+
+不测拖拽,只测:
+- /workflow/viewer/:id 打开能渲染节点 + 边 + 不崩
+- 工具栏所有按钮可点(zoom / fit / undo / 保存)
+- 节点点击出右侧详情抽屉
+- 真实存量定义 ID 走一遍渲染回归(防 BE 改了拓扑字段)
+
+### 9.2 AI Chat 烟测
+
+允许 BE mock(LLM 后端在 dev 不一定有):
+- /system/ai-chat 打得开 + 输入框可输入 + 发送按钮 enabled
+- mock 一条 SSE 响应,验流式渲染 + Markdown 解析不崩
+- 历史会话切换不串
+
+### 9.3 已知 OK 跳过
+- 真 LLM 调用质量(属业务 QA 不是联调)
+- 设计器拖拽创建/连线(C/D 档手测覆盖)
+
+---
+
 ## 测试数据策略
 
 **风格**: 完全脏数据 + 命名空间隔离(决议见后文 ADR)。
@@ -266,53 +464,96 @@ preflight → phase 0 prepare → phase 1 api crud → phase 3 e2e → cleanup
 
 ---
 
-## 现有 e2e spec 真实覆盖度(附录)
+## 现有 e2e spec 真实覆盖度(附录,2026-05-18 更新)
 
-| 实体 | spec | 实际深度 |
-|---|---|---|
-| API Key | `api-key-crud` | 真 CRUD(create + 详情 + revoke) |
-| Webhook | `webhook-crud` | 真 CRUD(create + delete) |
-| 通知渠道 | `notification-crud` | 渠道有 CRUD;订阅规则 / Webhook 子项只打开对话框 |
-| 系统参数 | `system-parameter-crud` | 真 CRUD |
-| 租户 | `tenant-ops` | 较全(新建/编辑/暂停/恢复/删除) |
-| 用户账户 | `user-account-ops` | 较全(改名/重置密码/启停) |
-| Tag | `tag-management-crud` | 只搜索 + 打开新建对话框,未提交 |
-| 队列/窗口/日历 | `governance` + `scheduler-governance-ops` | 只 tab 切换 + 启停 toggle;create/edit/delete **未测** |
-| 配额 | 同上 | 同 |
-| 告警路由 | 无 | **完全未覆盖**(Phase 3.2 补) |
-| Pipeline | `job-ops` 一部分 | 未做 create/edit/delete |
-| 文件模板/渠道 | `file-center` + `file-ops` | 模板/渠道 create/edit/delete **未覆盖** |
-| Job 定义 | `job-ops` | 触发/克隆有,完整 CRUD 半覆盖 |
-| RBAC 多角色 | `rbac-denial` | 需要 10-rbac SQL 灌账号(未运行) |
-| Job 实例操作 | `monitor-ops` | 需要 03 SQL 灌实例(未运行) |
-| 审批 | `approval-ops` | 需要 04 SQL 灌待审批(未运行) |
-| Outbox 重投 | `alert-outbox-ops` | 需要 07 SQL 灌 stuck(未运行) |
+| 实体 | spec | 实际深度 | 状态 |
+|---|---|---|---|
+| API Key | `api-key-crud` + `api-key-validation` | 真 CRUD + 校验矩阵 | ✅ |
+| Webhook | `webhook-crud` | 真 CRUD | ✅ |
+| 通知渠道 | `notification-crud` + `notification-rule-crud` | 渠道 + 规则真 CRUD | ✅ |
+| 系统参数 | `system-parameter-crud` | 真 CRUD | ✅ |
+| 租户 | `tenant-ops` + `tenant-config-ops` | 较全(新建/编辑/暂停/恢复/删除/配置导入) | ✅ |
+| 用户账户 | `user-account-ops` | 较全(改名/重置密码/启停) | ✅ |
+| Tag | `tag-management-crud` + `tag-resource-crud` + `tag-ops` | 真 CRUD + 资源关联 | ✅ |
+| 队列/窗口/日历 | `queue-config-crud` + `calendar-holiday-crud` + `governance` + `scheduler-governance-ops` | 真 CRUD + 启停 toggle | ✅ |
+| 配额 | `quota-policy-crud` + `quota-policy-validation` | 真 CRUD + 边界值 | ✅ |
+| 告警路由 | `alert-routing-crud` + `alert-routing-validation` | 真 CRUD + 校验 | ✅ |
+| Pipeline | `pipeline-definition-crud` + `pipeline-definition-validation` | 真 CRUD + 校验 | ✅ |
+| 文件模板/渠道 | `file-template-channel-crud` + `file-template-validation` + `file-center` + `file-ops` | 双对话框 CRUD + 校验 | ✅ |
+| Job 定义 | `job-definition-crud` + `job-ops` | 真 CRUD + 触发/克隆 | ✅ |
+| 工作流定义 | `workflow-definition-crud` | 真 CRUD | ✅ |
+| 触发器 | `trigger-crud` + `trigger-ops` | 真 CRUD | ✅ |
+| 配置发布 | `config-release-crud` + `config-release-advanced` + `config-release-ops` | 真 CRUD + 灰度/回滚操作 | ✅ |
+| 自助服务 | `self-service-forms` + `self-service` | 5 个 Tab 表单 | ✅ |
+| **RBAC 多角色** | `rbac-denial` → Phase 6 `rbac-matrix` | seed 10 已写 + 5 角色矩阵 spec | 🔵 B+ 补 |
+| **Job 实例操作** | `monitor-ops` | seed 03 已写 + 真跑 | 🔵 B+ 补 |
+| **审批** | `approval-ops` + `approval-actions` | seed 04 已写 + 真跑 | 🔵 B+ 补 |
+| **Outbox 重投** | `alert-outbox-ops` + `ops-diagnostic` | seed 07 已写 + 真跑 | 🔵 B+ 补 |
+| **业务剧本 A** | `scenario-job-fail-rerun-approve` | 任务失败 → 重跑 → 审批 全链路 | 🔵 B+ 新 |
+| **业务剧本 B** | `scenario-file-arrival-pipeline` | 文件到达 → 处理 → 回执 全链路 | 🔵 B+ 新 |
+| **业务剧本 C** | `scenario-config-gray-rollback` | 灰度发布 → 全量 → 回滚 全链路 | 🔵 B+ 新 |
+| **多租户切换** | `multi-tenant` | 切换竞态 + 越权 + cookie 串台 | 🔵 B+ 新 |
+| **SSE/WS 重连** | `stream-reconnect` | 断网恢复 + 长连保活 + cursor 续推 | 🔵 B+ 新 |
+| **工作流设计器** | `workflow-designer-smoke` | X6 渲染 + 工具栏 + 抽屉(不测拖拽) | 🔵 B+ 新 |
+| **AI Chat** | `ai-chat-smoke` | 打开 + 输入 + mock SSE 流式 | 🔵 B+ 新 |
+
+**覆盖度量化(B+ 档完成后)**:
+- 12 核心实体 CRUD:**100%**(B 档)
+- 全部 ~25 个写表单 CRUD:**100%**(B/C/D 档累计)
+- RBAC 5 角色 × 9 关键写接口 = **45 格矩阵**(Phase 6)
+- 端到端业务剧本:**3 个核心流**(Phase 7)
+- 异步/长连场景:**多租户 + SSE**(Phase 8)
+- 烟测兜底:**设计器 + AI Chat**(Phase 9)
+- 移动端 11 页 CRUD:**100%**(D 档)
+- a11y / 键盘 / 错误态 / soak:**已覆盖**(C/D 档)
 
 ---
 
-## 执行入口(等批准后填)
+## 执行入口
 
+### B 档(已完成,作历史参考)
 ```bash
-# Phase 0
 bash docs/runbook/scripts/phase0-prepare.sh
-
-# Phase 1
 bash docs/runbook/scripts/phase1-api-crud.sh
-
-# Phase 2 -- 手工 + 浏览器,看 fe-render-diff.md 模板
-
-# Phase 3
+# Phase 2 手工 + 浏览器
 npm run test:e2e
 npx playwright test e2e/queue-config-crud.spec.ts \
-  e2e/quota-policy-crud.spec.ts \
-  e2e/alert-routing-crud.spec.ts \
-  e2e/file-template-channel-crud.spec.ts \
-  e2e/pipeline-definition-crud.spec.ts
-
-# Phase 4 -- 一键
+  e2e/quota-policy-crud.spec.ts e2e/alert-routing-crud.spec.ts \
+  e2e/file-template-channel-crud.spec.ts e2e/pipeline-definition-crud.spec.ts
 bash tools/ci-fe-be-joint.sh
 ```
 
+### B+ 档(本次新增,4 天 sprint)
+```bash
+# Day 1 — Phase 5  Seed 补全 + 4 阻塞 spec
+bash docs/runbook/scripts/seed-all.sh
+npx playwright test \
+  e2e/monitor-ops.spec.ts e2e/approval-ops.spec.ts \
+  e2e/alert-outbox-ops.spec.ts e2e/rbac-denial.spec.ts
+
+# Day 2 — Phase 6  RBAC 5 角色矩阵
+npx playwright test e2e/rbac-matrix.spec.ts
+
+# Day 3-4 — Phase 7  3 业务剧本
+npx playwright test \
+  e2e/scenario-job-fail-rerun-approve.spec.ts \
+  e2e/scenario-file-arrival-pipeline.spec.ts \
+  e2e/scenario-config-gray-rollback.spec.ts
+
+# Day 4 下半天 — Phase 8 + 9
+npx playwright test \
+  e2e/multi-tenant.spec.ts e2e/stream-reconnect.spec.ts \
+  e2e/workflow-designer-smoke.spec.ts e2e/ai-chat-smoke.spec.ts
+
+# 一键全跑(Phase 5–9)
+bash tools/ci-fe-be-joint-bplus.sh
+```
+
+### 产出
+- `docs/runbook/fe-be-joint-test-report-bplus.md` —— B+ 档执行总结
+- `docs/runbook/qa-bplus-phase-reports/` —— 5 个 Phase 的日报
+- `docs/runbook/be-fix-backlog.md` —— 真跑出来的新 BE bug 追加
+
 ---
 
-**确认 "开始 Phase 0" 即可动手**。
+**B 档已落 (2026-05-16);B+ 档 5 个 Phase 待执行**。
