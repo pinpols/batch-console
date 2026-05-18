@@ -105,8 +105,24 @@
   })
 
   const { formRef: initFormRef, validate: validateInitForm } = useFormValidate()
+  // JSON 语法校验放进 rule:用户改一行 textarea 就能即时看到红字提示,
+  // 而不是填了一大坨 spec 点了"运行"才被 toast 拦回来。
   const initFormRules: FormRules = {
-    specJson: [rules.required(t('tenantInitConfigDialog.ruleSpec'))],
+    specJson: [
+      rules.required(t('tenantInitConfigDialog.ruleSpec')),
+      {
+        validator: (_r, value: string, cb: (err?: Error) => void) => {
+          if (!value || !value.trim()) return cb()
+          try {
+            JSON.parse(value)
+            cb()
+          } catch {
+            cb(new Error(t('tenantInitConfigDialog.errInvalidJson')))
+          }
+        },
+        trigger: 'change',
+      },
+    ],
   }
 
   watch(
@@ -123,13 +139,8 @@
 
   async function submit(dryRun: boolean) {
     if (!(await validateInitForm())) return
-    let spec: Record<string, unknown>
-    try {
-      spec = JSON.parse(form.specJson)
-    } catch {
-      ElMessage.error(t('tenantInitConfigDialog.errInvalidJson'))
-      return
-    }
+    // rule 已保证此处必合法
+    const spec: Record<string, unknown> = JSON.parse(form.specJson)
     saving.value = true
     lastDryRun.value = dryRun
     try {
