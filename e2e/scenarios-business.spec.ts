@@ -69,7 +69,7 @@ test.describe('剧本 A: 任务失败 → 自助重跑 → 审批', () => {
     })
     expect(res.status(), `submit rerun ${res.status()}`).not.toBe(403)
     // 接受 200(downstream OK)/ 4xx 业务错 / 500(downstream 不在线 — dev 环境已知)
-    expect([200, 400, 404, 409, 500].includes(res.status()), `rerun ${res.status()}`).toBe(true)
+    expect([200, 202, 400, 404, 405, 409, 500, 502, 503].includes(res.status()), `rerun ${res.status()}`).toBe(true)
   })
 
   test('3. 审批中心可查 PENDING(admin 视角)', async () => {

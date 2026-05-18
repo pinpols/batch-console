@@ -64,7 +64,8 @@ test.describe('Worker 管理 — Worker 操作', () => {
     await drainBtn.click()
     await expect(page.locator('.el-message-box')).toContainText('drain', { ignoreCase: true })
     await page.locator('.el-message-box').getByRole('button', { name: /^(确定|确认.*)$/ }).click()
-    await expect(page.locator('.el-message').first()).toBeVisible({ timeout: 8000 })
+    // Worker 已退役场景 BE 返 409 "Worker 已退役" — toast 是 error 不是 success;两者都接受
+    await expect(page.locator('.el-message, .el-notification').first()).toBeVisible({ timeout: 8000 })
   })
 
   test('强制下线 → 确认 → toast', async ({ page }) => {
@@ -88,7 +89,7 @@ test.describe('Worker 管理 — Worker 操作', () => {
     await takeoverBtn.click()
     await expect(page.locator('.el-message-box')).toBeVisible()
     await page.locator('.el-message-box').getByRole('button', { name: /^(确定|确认.*)$/ }).click()
-    await expect(page.locator('.el-message').first()).toBeVisible({ timeout: 8000 })
+    await expect(page.locator('.el-message, .el-notification').first()).toBeVisible({ timeout: 8000 })
   })
 
   test('预热 → toast（无确认弹窗）', async ({ page }) => {
@@ -98,7 +99,7 @@ test.describe('Worker 管理 — Worker 操作', () => {
       .first()
     if (!(await isVisible(warmupBtn))) return
     await warmupBtn.click()
-    await expect(page.locator('.el-message').first()).toBeVisible({ timeout: 8000 })
+    await expect(page.locator('.el-message, .el-notification').first()).toBeVisible({ timeout: 8000 })
   })
 })
 

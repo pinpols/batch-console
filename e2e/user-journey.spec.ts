@@ -12,7 +12,8 @@
 import { expect, test } from './support/app'
 import { enterDemoApp, expectPageTitle, isVisible } from './support/app'
 
-const STAMP = Date.now()
+// STAMP = Date.now() + random 后缀,防多 spec 文件并行加载时 jobCode 撞库 unique 约束
+const STAMP = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
 
 test.describe('@user-journey D 档真实用户端到端闭环', () => {
   test.beforeEach(async ({ page }) => {

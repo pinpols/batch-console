@@ -5,7 +5,8 @@
 import { expect, test } from './support/app'
 import { enterDemoApp, expectPageTitle, isVisible } from './support/app'
 
-const uniqueTenantId = `e2e-${Date.now()}`
+// 模块级 ID 加 random,防多 worker 并行加载时同毫秒撞 unique 约束(已有 21+ 个 e2e- 前缀租户)
+const uniqueTenantId = `e2e-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
 
 test.describe('租户管理 — 筛选查询', () => {
   test.beforeEach(async ({ page }) => {

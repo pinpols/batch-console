@@ -65,6 +65,24 @@ test.describe('告警 — 操作流', () => {
     await expectPageTitle(page, /事件告警|告警/)
   })
 
+  // FE 走两步对话框:① confirmDanger 危险确认(无 input) ② optionalReason 填写原因
+  // helper:处理两步链
+  async function clickThroughTwoDialogs(page: import('@playwright/test').Page, reason: string) {
+    // 第一个对话框 — confirmDanger
+    const box1 = page.locator('.el-message-box').first()
+    await expect(box1).toBeVisible({ timeout: 3000 })
+    await box1.getByRole('button', { name: /确认告警|确认静默|确认关闭|确定/ }).first().click()
+    // 等第一个关闭、第二个打开
+    await page.waitForTimeout(300)
+    // 第二个对话框 — optionalReason(可选)
+    const box2 = page.locator('.el-message-box').first()
+    if (await isVisible(box2, 2000)) {
+      const input = box2.locator('input,textarea').first()
+      if (await isVisible(input, 800)) await input.fill(reason)
+      await box2.getByRole('button', { name: /^(确定|确认.*)$/ }).first().click()
+    }
+  }
+
   test('确认告警 → 填写说明 → 提交 → toast', async ({ page }) => {
     const confirmBtn = page
       .locator('.table-actions')
@@ -72,10 +90,7 @@ test.describe('告警 — 操作流', () => {
       .first()
     if (!(await isVisible(confirmBtn))) return
     await confirmBtn.click()
-    await expect(page.locator('.el-message-box')).toBeVisible()
-    const input = page.locator('.el-message-box').locator('input,textarea').first()
-    if (await isVisible(input, 1000)) await input.fill('e2e 自动化确认')
-    await page.locator('.el-message-box').getByRole('button', { name: /^(确定|确认.*)$/ }).click()
+    await clickThroughTwoDialogs(page, 'e2e 自动化确认')
     await expect(page.locator('.el-message').first()).toBeVisible({ timeout: 8000 })
   })
 
@@ -86,10 +101,7 @@ test.describe('告警 — 操作流', () => {
       .first()
     if (!(await isVisible(silenceBtn))) return
     await silenceBtn.click()
-    await expect(page.locator('.el-message-box')).toBeVisible()
-    const input = page.locator('.el-message-box').locator('input,textarea').first()
-    if (await isVisible(input, 1000)) await input.fill('e2e 自动化静默')
-    await page.locator('.el-message-box').getByRole('button', { name: /^(确定|确认.*)$/ }).click()
+    await clickThroughTwoDialogs(page, 'e2e 自动化静默')
     await expect(page.locator('.el-message').first()).toBeVisible({ timeout: 8000 })
   })
 
@@ -100,10 +112,7 @@ test.describe('告警 — 操作流', () => {
       .first()
     if (!(await isVisible(closeBtn))) return
     await closeBtn.click()
-    await expect(page.locator('.el-message-box')).toBeVisible()
-    const input = page.locator('.el-message-box').locator('input,textarea').first()
-    if (await isVisible(input, 1000)) await input.fill('e2e 自动化关闭')
-    await page.locator('.el-message-box').getByRole('button', { name: /^(确定|确认.*)$/ }).click()
+    await clickThroughTwoDialogs(page, 'e2e 自动化关闭')
     await expect(page.locator('.el-message').first()).toBeVisible({ timeout: 8000 })
   })
 })
