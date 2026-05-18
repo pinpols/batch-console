@@ -47,6 +47,8 @@ type LoggedConfig = InternalAxiosRequestConfig & {
   _retryCount?: number
   /** 401 时已尝试过静默 refresh,避免无限循环 */
   _refreshAttempted?: boolean
+  /** 自动生成幂等键时使用的请求签名,供响应阶段收尾短窗口复用。 */
+  _autoIdempotencySignature?: string
   /**
    * 调用方主动声明该请求"失败也不弹 toast"。日志、reject、redirect 仍照常,
    * 仅抑制 UI 错误提示。典型场景:登录页挂载时预清 cookie 的 /auth/logout,
@@ -143,6 +145,122 @@ function isSessionAuthRequest(config?: { url?: string } | null): boolean {
 }
 
 const MUTATING = new Set(['post', 'put', 'patch', 'delete'])
+const IDEMPOTENCY_REUSE_WINDOW_MS = 2000
+const IDEMPOTENCY_PENDING_MAX_MS = 60000
+const IDEMPOTENCY_CACHE_MAX = 500
+
+type AutoIdempotencyEntry = {
+  key: string
+  expiresAt: number
+  pendingUntil: number
+}
+
+const autoIdempotencyKeys = new Map<string, AutoIdempotencyEntry>()
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return (
+    value != null && typeof value === 'object' && Object.getPrototypeOf(value) === Object.prototype
+  )
+}
+
+function normalizeFormDataValue(value: FormDataEntryValue): unknown {
+  if (typeof File !== 'undefined' && value instanceof File) {
+    return {
+      kind: 'file',
+      name: value.name,
+      size: value.size,
+      type: value.type,
+      lastModified: value.lastModified,
+    }
+  }
+  if (typeof Blob !== 'undefined' && value instanceof Blob) {
+    return { kind: 'blob', size: value.size, type: value.type }
+  }
+  return value
+}
+
+function normalizeForIdempotency(value: unknown): unknown {
+  if (value == null || typeof value !== 'object') return value
+  if (Array.isArray(value)) return value.map((item) => normalizeForIdempotency(item))
+  if (typeof URLSearchParams !== 'undefined' && value instanceof URLSearchParams) {
+    return Array.from(value.entries()).sort(([a], [b]) => a.localeCompare(b))
+  }
+  if (typeof FormData !== 'undefined' && value instanceof FormData) {
+    return Array.from(value.entries())
+      .map(([key, entry]) => [key, normalizeFormDataValue(entry)] as const)
+      .sort(([a], [b]) => a.localeCompare(b))
+  }
+  if (isRecord(value)) {
+    return Object.keys(value)
+      .sort()
+      .reduce<Record<string, unknown>>((acc, key) => {
+        acc[key] = normalizeForIdempotency(value[key])
+        return acc
+      }, {})
+  }
+  return String(value)
+}
+
+function stableStringifyForIdempotency(value: unknown): string {
+  try {
+    return JSON.stringify(normalizeForIdempotency(value))
+  } catch {
+    return String(value)
+  }
+}
+
+function pruneAutoIdempotencyKeys(now = Date.now()): void {
+  for (const [signature, entry] of autoIdempotencyKeys) {
+    if (now > entry.expiresAt && now > entry.pendingUntil) {
+      autoIdempotencyKeys.delete(signature)
+    }
+  }
+  while (autoIdempotencyKeys.size > IDEMPOTENCY_CACHE_MAX) {
+    const oldest = autoIdempotencyKeys.keys().next().value
+    if (!oldest) break
+    autoIdempotencyKeys.delete(oldest)
+  }
+}
+
+function resolveMutationSignature(
+  config: InternalAxiosRequestConfig,
+  method: string,
+  tenantId: string,
+): string {
+  return [
+    method,
+    config.baseURL ?? '',
+    config.url ?? '',
+    tenantId,
+    stableStringifyForIdempotency(config.params),
+    stableStringifyForIdempotency(config.data),
+  ].join('\n')
+}
+
+function getAutoIdempotencyKey(signature: string): string {
+  const now = Date.now()
+  pruneAutoIdempotencyKeys(now)
+  const existing = autoIdempotencyKeys.get(signature)
+  if (existing && (now <= existing.pendingUntil || now <= existing.expiresAt)) {
+    return existing.key
+  }
+  const key = createIdempotencyKey()
+  autoIdempotencyKeys.set(signature, {
+    key,
+    expiresAt: now + IDEMPOTENCY_REUSE_WINDOW_MS,
+    pendingUntil: now + IDEMPOTENCY_PENDING_MAX_MS,
+  })
+  return key
+}
+
+function markAutoIdempotencyCompleted(config?: LoggedConfig): void {
+  const signature = config?._autoIdempotencySignature
+  if (!signature) return
+  const entry = autoIdempotencyKeys.get(signature)
+  if (!entry) return
+  entry.expiresAt = Date.now() + IDEMPOTENCY_REUSE_WINDOW_MS
+  entry.pendingUntil = 0
+}
 
 type SpringLikeErrorBody = {
   message?: string
@@ -227,13 +345,15 @@ export function applyApiInterceptors(client: AxiosInstance): void {
       'zh-CN'
     config.headers['Accept-Language'] = locale === 'en-US' ? 'en-US,en;q=0.9' : 'zh-CN,zh;q=0.9'
 
+    const loggable = config as LoggedConfig
     const method = (config.method ?? 'get').toLowerCase()
     if (MUTATING.has(method) && !config.headers['Idempotency-Key']) {
-      config.headers['Idempotency-Key'] = createIdempotencyKey()
+      const signature = resolveMutationSignature(config, method, tenantId)
+      config.headers['Idempotency-Key'] = getAutoIdempotencyKey(signature)
+      loggable._autoIdempotencySignature = signature
     }
 
     // 记录请求发起时间 + 脱敏后的 params/body,供响应 / 错误拦截器写日志
-    const loggable = config as LoggedConfig
     loggable._startTime = Date.now()
     loggable._loggedParams = sanitizeParams(config.params)
     loggable._loggedRequestBody = sanitizeRequestBody(config.data)
@@ -244,6 +364,7 @@ export function applyApiInterceptors(client: AxiosInstance): void {
   client.interceptors.response.use(
     (response) => {
       const cfg = response.config as LoggedConfig
+      markAutoIdempotencyCompleted(cfg)
       const duration = cfg._startTime ? Date.now() - cfg._startTime : undefined
       const method = (cfg.method ?? 'get').toUpperCase()
       const url = cfg.url ?? ''
@@ -304,6 +425,7 @@ export function applyApiInterceptors(client: AxiosInstance): void {
     async (error) => {
       const status = error.response?.status as number | undefined
       const cfg = error.config as LoggedConfig | undefined
+      markAutoIdempotencyCompleted(cfg)
       const raw = error.response?.data
       {
         const duration = cfg?._startTime ? Date.now() - cfg._startTime : undefined

@@ -1,6 +1,6 @@
 let fallbackCounter = 0
 
-/** Per-request idempotency key for console write APIs (see console-api-protocol). */
+/** Generated idempotency key for console write APIs (see console-api-protocol). */
 export function createIdempotencyKey(): string {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
     return crypto.randomUUID()
