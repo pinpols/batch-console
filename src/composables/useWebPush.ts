@@ -6,16 +6,15 @@
  *   2. PWA 已"添加到主屏幕"(iOS 强制要求,不在 standalone 模式不让请求权限)
  *   3. Service Worker 已 register
  *
- * 后端要提供:
+ * 后端提供:
  *   - VAPID 公钥端点 `GET /api/console/push/vapid-public-key`
- *   - 订阅注册 `POST /api/console/push/subscribe` body: `{ endpoint, keys: { p256dh, auth } }`
- *   - 取消 `POST /api/console/push/unsubscribe`
+ *   - 订阅注册 `POST /api/console/push/subscribe?tenantId=...` body: `{ endpoint, keys: { p256dh, auth } }`
+ *   - 取消 `POST /api/console/push/unsubscribe?tenantId=...`
  *   - 推送发送 internal 端点(告警 / 审批触发时调)
- *
- * 当前后端这 3 个端点还没上,这里只实现前端逻辑 + 给后端留接口契约。
- * 接入步骤:后端实现完上述 endpoint 后,把下面 4 个 fetch URL 改回 `/api/...`
- * 然后在 MobileAppBar 或 MInstallHint 内合适时机调 `requestPushPermission()`。
  */
+
+import { get, post } from '@/api/client'
+import { readStoredTenantId } from '@/api/interceptors'
 
 const PUSH_API_BASE = '/api/console/push'
 
@@ -64,9 +63,8 @@ export async function requestPushPermission(): Promise<PushPermissionResult> {
   if (perm !== 'granted') return 'denied'
 
   // 2. 拿 VAPID 公钥
-  const keyResp = await fetch(`${PUSH_API_BASE}/vapid-public-key`)
-  if (!keyResp.ok) throw new Error(`VAPID key fetch failed: ${keyResp.status}`)
-  const { publicKey } = (await keyResp.json()) as { publicKey: string }
+  const { publicKey } = await get<{ publicKey: string }>(`${PUSH_API_BASE}/vapid-public-key`)
+  if (!publicKey) throw new Error('VAPID key missing')
 
   // 3. SW 注册 + 订阅
   const reg = await navigator.serviceWorker.ready
@@ -76,12 +74,9 @@ export async function requestPushPermission(): Promise<PushPermissionResult> {
   })
 
   // 4. 上报后端持久化
-  const reportResp = await fetch(`${PUSH_API_BASE}/subscribe`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(sub.toJSON()),
+  await post<void>(`${PUSH_API_BASE}/subscribe`, sub.toJSON(), {
+    params: { tenantId: readStoredTenantId() },
   })
-  if (!reportResp.ok) throw new Error(`subscribe report failed: ${reportResp.status}`)
 
   return 'granted'
 }
@@ -92,11 +87,13 @@ export async function unsubscribePush(): Promise<void> {
   const reg = await navigator.serviceWorker.ready
   const sub = await reg.pushManager.getSubscription()
   if (!sub) return
-  await fetch(`${PUSH_API_BASE}/unsubscribe`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ endpoint: sub.endpoint }),
-  }).catch(() => {
+  await post<void>(
+    `${PUSH_API_BASE}/unsubscribe`,
+    { endpoint: sub.endpoint },
+    {
+      params: { tenantId: readStoredTenantId() },
+    },
+  ).catch(() => {
     /* 后端失败也继续 unsubscribe,前端态优先 */
   })
   await sub.unsubscribe()
