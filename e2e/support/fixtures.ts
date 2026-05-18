@@ -29,11 +29,13 @@ export type NetworkWatchdog = {
 const API_URL_RE =
   /\/(api|auth|console|ops|fb|reports|approvals|files|jobs|workflow|monitor|observability|governance|workers|system|scheduler|config|self-service|tenants|operations|fb-console)\//
 
-// 默认忽略:SSE / WS close、vite hmr 噪声
+// 默认忽略:SSE / WS close、vite hmr 噪声、stream ticket idempotency 去重 409
 const IGNORED_DEFAULT_URL_HINTS = [/\/sse\b/, /\/ws\b/, /\/@vite\//, /\/__vite_ping/, /\/\.vite\//]
 
 function shouldIgnoreByDefault(entry: NetworkErrorEntry): boolean {
   if (entry.status === 0) return true
+  // SSE ticket 并发请求 409 是 BE 幂等去重设计行为(同一 idem-key 30s 内重复 → 409)
+  if (entry.status === 409 && /\/auth\/stream\/ticket\b/.test(entry.url)) return true
   return IGNORED_DEFAULT_URL_HINTS.some((r) => r.test(entry.url))
 }
 

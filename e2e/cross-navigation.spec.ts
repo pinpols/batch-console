@@ -107,8 +107,10 @@ test.describe('table cell-link navigation (表格链接跳转)', () => {
 
   test('Job Instance 列表中实例编号为可点击链接', async ({ page }) => {
     await page.goto('/monitor/job-instances')
-    const link = page.locator('.cell-link').first()
-    // 如果表格有数据，链接应可见
+    await page.waitForLoadState('networkidle', { timeout: 8000 }).catch(() => undefined)
+    // .cell-link 第一行可能是 jobCode 链接(→ /jobs/definitions),
+    // 用 href^=/monitor/job-instances/ 精确过滤到 instance id 链接
+    const link = page.locator('a.cell-link[href^="/monitor/job-instances/"]').first()
     if (await isVisible(link)) {
       const href = await link.getAttribute('href')
       expect(href).toMatch(/\/monitor\/job-instances\/\d+/)

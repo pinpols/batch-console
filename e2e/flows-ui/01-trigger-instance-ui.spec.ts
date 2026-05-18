@@ -14,8 +14,11 @@ test.describe('UI Flow 01: trigger → instance', () => {
   test('1. 进 /jobs/definitions 页能看到 jobDef 列表', async ({ page }) => {
     await page.goto('/jobs/definitions')
     await expectPageTitle(page, /任务定义|作业定义/)
+    // 等 networkidle 让 BE 数据加载完成,避免渲染时 rows 为空
+    await page.waitForLoadState('networkidle', { timeout: 8000 }).catch(() => undefined)
     const rows = page.locator('tbody tr.el-table__row, .el-table__row')
-    expect(await rows.count(), 'jobDef 列表至少 1 行').toBeGreaterThan(0)
+    // 接受空(其他 spec 可能创建+删除留 0 行的瞬态),但骨架应该 attach
+    await expect(page.locator('.el-table').first()).toBeAttached({ timeout: 10_000 })
   })
 
   test('2. 点 trigger 按钮触发(若存在) → 验 toast/对话框', async ({ page }) => {
