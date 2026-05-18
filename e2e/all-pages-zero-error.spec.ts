@@ -68,6 +68,8 @@ const PAGES: PageCheck[] = [
 ]
 
 test.describe('@cross-browser 全页面零 4xx/5xx 巡检', () => {
+  // 这些页面 list+drill+tab 多轮串行,默认 25s 不够;按页 60s 兜底
+  test.describe.configure({ timeout: 60_000 })
   for (const target of PAGES) {
     test(`无服务端错误: ${target.path}`, async ({ page, network }) => {
       for (const u of target.allowErrors ?? []) network.ignore(u)

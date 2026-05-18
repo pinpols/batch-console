@@ -27,7 +27,14 @@
             v-loading="upLoading"
             :element-loading-text="t('excelMaintenanceWizard.uploadingFile')"
           >
-            <div class="upload-zone">
+            <div
+              class="upload-zone"
+              :class="{ 'upload-zone--dragover': zoneDragover }"
+              @dragenter.prevent="onZoneDragEnter"
+              @dragover.prevent="onZoneDragEnter"
+              @dragleave.prevent="onZoneDragLeave"
+              @drop.prevent="onZoneDrop"
+            >
               <el-icon class="upload-zone__icon" :size="36"><FolderOpened /></el-icon>
               <p class="upload-zone__title">{{ t('tenantPackageImportWizard.uploadTitle') }}</p>
               <p class="upload-zone__desc">{{ t('tenantPackageImportWizard.uploadDesc') }}</p>
@@ -509,8 +516,31 @@
     sheetStats,
     hasBlockingIssues,
     onFile,
+    setRawFile,
     triggerBlobDownload,
   } = useImportWizard()
+
+  const zoneDragover = ref(false)
+  function onZoneDragEnter(ev: DragEvent) {
+    if (ev.dataTransfer?.types?.includes('Files')) zoneDragover.value = true
+  }
+  function onZoneDragLeave(ev: DragEvent) {
+    // 仅当真正离开 zone(而非进入子元素)时取消高亮
+    const related = ev.relatedTarget as Node | null
+    if (!related || !(ev.currentTarget as Node).contains(related)) {
+      zoneDragover.value = false
+    }
+  }
+  function onZoneDrop(ev: DragEvent) {
+    zoneDragover.value = false
+    const f = ev.dataTransfer?.files?.[0]
+    if (!f) return
+    if (!/\.(xlsx?|xlsm)$/i.test(f.name)) {
+      ElMessage.warning(`仅支持 .xls / .xlsx 文件,当前: ${f.name}`)
+      return
+    }
+    setRawFile(f)
+  }
 
   /**
    * Tenant package 各 sheet 间的引用关系(前端静态知识库)。
@@ -815,6 +845,13 @@
     border-radius: var(--radius-card-lg);
     background: var(--color-bg-card);
     box-shadow: var(--shadow-card);
+    transition:
+      border-color 0.18s,
+      background 0.18s;
+  }
+  .upload-zone--dragover {
+    border-color: var(--color-primary);
+    background: var(--color-primary-light-9, rgba(64, 158, 255, 0.06));
   }
 
   .upload-zone__icon {
