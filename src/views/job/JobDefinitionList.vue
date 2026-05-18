@@ -4,6 +4,13 @@
       <template #actions>
         <el-button
           v-if="canMutateConfig"
+          :icon="Plus"
+          @click="router.push('/jobs/definitions/new')"
+        >
+          向导新建
+        </el-button>
+        <el-button
+          v-if="canMutateConfig"
           type="primary"
           :icon="Plus"
           class="pretty-add-button"
@@ -141,7 +148,9 @@
 
         <el-table-column prop="jobCode" :label="t('jobDefinitionList.colJobCode')" width="220">
           <template #default="{ row }">
-            <CopyableText :text="row.jobCode" />
+            <router-link class="definition-link" :to="definitionDetailLocation(row)">
+              {{ row.jobCode }}
+            </router-link>
           </template>
         </el-table-column>
         <el-table-column
@@ -251,27 +260,54 @@
             :placeholder="t('jobDefinitionList.scheduleTypePlaceholder')"
           />
         </el-form-item>
-        <el-form-item :label="t('jobDefinitionList.fieldScheduleExpr')" prop="scheduleExpr">
-          <el-input
-            v-model="createForm.scheduleExpr"
-            :placeholder="t('jobDefinitionList.createScheduleExprPlaceholder')"
-          />
+        <el-form-item
+          v-if="createForm.scheduleType !== 'MANUAL'"
+          :label="t('jobDefinitionList.fieldScheduleExpr')"
+          prop="scheduleExpr"
+        >
+          <CronExprInput v-model="createForm.scheduleExpr" />
         </el-form-item>
         <el-form-item :label="t('jobDefinitionList.queueLabel')" prop="queueCode">
-          <MetaSelect
-            v-model="createForm.queueCode"
-            class="query-w-full"
-            clearable
-            filterable
-            :placeholder="t('jobDefinitionList.queuePlaceholder')"
-            :options="queueOptions"
-          />
+          <div class="queue-field">
+            <MetaSelect
+              v-model="createForm.queueCode"
+              class="query-w-full"
+              clearable
+              filterable
+              :placeholder="
+                queueOptions.length
+                  ? t('jobDefinitionList.queuePlaceholder')
+                  : '当前租户无队列,可前往治理页新建后再回来'
+              "
+              :options="queueOptions"
+            />
+            <el-button
+              v-if="!queueOptions.length"
+              link
+              type="primary"
+              @click="router.push('/governance/queues')"
+            >
+              + 新建队列
+            </el-button>
+          </div>
         </el-form-item>
         <el-form-item :label="t('jobDefinitionList.workerGroupLabel')" prop="workerGroup">
-          <el-input
+          <el-select
             v-model="createForm.workerGroup"
+            class="query-w-full"
+            filterable
+            allow-create
+            clearable
+            default-first-option
             :placeholder="t('jobDefinitionList.workerGroupPlaceholder')"
-          />
+          >
+            <el-option
+              v-for="option in workerGroupOptions"
+              :key="option"
+              :label="option"
+              :value="option"
+            />
+          </el-select>
         </el-form-item>
         <el-form-item :label="t('jobDefinitionList.fieldExecutionMode')" prop="executionMode">
           <MetaSelect
@@ -311,9 +347,13 @@
       :append-to-body="true"
       v-model="editDrawerVisible"
       :title="editDrawerTitle"
-      size="480px"
+      size="640px"
       :before-close="onEditDrawerClose"
     >
+      <!--
+        Day 2 (A.1):编辑 drawer 从 2 字段扩到 24 字段,对齐 BE JobDefinitionUpdateRequest。
+        表单内容抽到 <JobConfigBasicForm> 组件,后续 Day 8+ 新建向导复用相同组件。
+      -->
       <el-form
         ref="editFormRef"
         :model="editForm"
@@ -321,29 +361,14 @@
         label-width="120px"
         @submit.prevent
       >
-        <el-form-item :label="t('jobDefinitionList.fieldJobCode')">
-          <el-input :model-value="editingJobCode" disabled />
-        </el-form-item>
-        <el-form-item :label="t('jobDefinitionList.fieldExecutionMode')" prop="executionMode">
-          <MetaSelect
-            v-model="editForm.executionMode"
-            class="query-w-full"
-            enum-key="executionMode"
-            :options="executionModeOptions"
-          />
-        </el-form-item>
-        <el-form-item
-          v-if="editForm.executionMode === 'INCREMENTAL'"
-          :label="t('jobDefinitionList.fieldWatermark')"
-          prop="watermarkField"
-        >
-          <el-input
-            v-model="editForm.watermarkField"
-            :placeholder="t('jobDefinitionList.fieldWatermarkPlaceholder')"
-            maxlength="64"
-            show-word-limit
-          />
-        </el-form-item>
+        <JobConfigBasicForm
+          :model="editForm"
+          :tenant-id="editingTenantId"
+          :execution-mode-options="executionModeOptions"
+          :schedule-type-options="scheduleTypeOptions"
+          :queue-options="queueOptions"
+          :worker-group-options="workerGroupOptionsMeta"
+        />
         <div class="drawer-actions">
           <el-button @click="closeEditDrawer">{{ t('jobDefinitionList.drawerCancel') }}</el-button>
           <el-button type="primary" :loading="editSaving" @click="submitEdit">
@@ -362,47 +387,28 @@
     >
       <el-tabs v-if="detailRow" v-model="activeDetailTab">
         <el-tab-pane name="overview" :label="t('jobDefinitionList.detailTabOverview')">
-          <el-descriptions :column="2" border size="small">
-            <el-descriptions-item label="jobCode">{{ detailRow.jobCode }}</el-descriptions-item>
-            <el-descriptions-item label="jobName">{{ detailRow.jobName }}</el-descriptions-item>
-            <el-descriptions-item label="jobType">{{ detailRow.jobType }}</el-descriptions-item>
-            <el-descriptions-item label="enabled">
-              {{ detailRow.enabled ? t('common.yes') : t('common.no') }}
-            </el-descriptions-item>
-            <el-descriptions-item label="executionMode">
-              {{ resolveEnumLabel('executionMode', detailRow.executionMode) }}
-            </el-descriptions-item>
-            <el-descriptions-item v-if="detailRow.watermarkField" label="watermarkField">
-              {{ detailRow.watermarkField }}
-            </el-descriptions-item>
-            <el-descriptions-item label="queueCode">{{
-              detailRow.queueCode || '—'
-            }}</el-descriptions-item>
-            <el-descriptions-item label="workerGroup">{{
-              detailRow.workerGroup || '—'
-            }}</el-descriptions-item>
-            <el-descriptions-item label="scheduleType">{{
-              detailRow.scheduleType || '—'
-            }}</el-descriptions-item>
-            <el-descriptions-item label="scheduleExpr">{{
-              detailRow.scheduleExpr || '—'
-            }}</el-descriptions-item>
-            <el-descriptions-item label="retryPolicy">{{
-              detailRow.retryPolicy || '—'
-            }}</el-descriptions-item>
-            <el-descriptions-item label="retryMaxCount">{{
-              detailRow.retryMaxCount
-            }}</el-descriptions-item>
-            <el-descriptions-item label="timeoutSeconds">{{
-              detailRow.timeoutSeconds
-            }}</el-descriptions-item>
-            <el-descriptions-item label="createdAt">{{
-              detailRow.createdAt || '—'
-            }}</el-descriptions-item>
-            <el-descriptions-item label="updatedAt">{{
-              detailRow.updatedAt || '—'
-            }}</el-descriptions-item>
-          </el-descriptions>
+          <JobConfigBasicSection
+            :job="detailRow"
+            :execution-mode-label="resolveEnumLabel('executionMode', detailRow.executionMode)"
+          />
+        </el-tab-pane>
+
+        <!--
+          Day 6:关联文件 Tab。lazy 让 tab 真打开时才挂载。
+          ※ 不能用 `v-if` 在 el-tab-pane 上(EP unmount bug,panes.indexOf undefined)。
+          tab 标签常驻,内部按 jobType 条件渲染。
+        -->
+        <el-tab-pane
+          name="related-files"
+          :label="t('jobDefinitionList.detailTabRelatedFiles')"
+          :lazy="true"
+        >
+          <JobRelatedFilesTab
+            v-if="detailRow.jobType === 'IMPORT' || detailRow.jobType === 'EXPORT'"
+            :tenant-id="detailRow.tenantId"
+            :job-code="detailRow.jobCode"
+          />
+          <el-empty v-else description="此作业类型不涉及文件管道(仅 IMPORT / EXPORT 作业)" />
         </el-tab-pane>
 
         <el-tab-pane name="runs" :lazy="true">
@@ -478,6 +484,15 @@
   import { useTenantReload } from '@/composables/useTenantReload'
   import { showCreateSuccess } from '@/composables/useCreateSuccess'
   import PageContainer from '@/components/common/PageContainer.vue'
+  import JobConfigBasicSection from './components/JobConfigBasicSection.vue'
+  import JobConfigBasicForm from './components/JobConfigBasicForm.vue'
+  import CronExprInput from './components/CronExprInput.vue'
+  import JobRelatedFilesTab from './components/JobRelatedFilesTab.vue'
+  import {
+    type JobEditFormState,
+    createEmptyJobEditForm,
+    jobResponseToEditForm,
+  } from './jobEditFormTypes'
   import MetaSelect from '@/components/common/MetaSelect.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
@@ -486,7 +501,6 @@
   import ProTable from '@/components/table/ProTable.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
   import RowActions, { type RowAction } from '@/components/common/RowActions.vue'
-  import CopyableText from '@/components/common/CopyableText.vue'
   import HelpLabel from '@/components/common/HelpLabel.vue'
   import type {
     ConsoleJobDefinitionResponse,
@@ -500,6 +514,7 @@
   const page = ref(1)
   const pageSize = ref(20)
   const actingJobCode = ref('')
+  const exportingJobCode = ref('')
   const queueOptions = ref<MetaOption[]>([])
   const scheduleTypeOptions = ref<MetaOption[]>([])
   const filters = reactive({
@@ -547,6 +562,10 @@
     Array.from(
       new Set(pageRows.value.map((row) => row.workerGroup).filter((v): v is string => !!v)),
     ),
+  )
+  // JobConfigBasicForm 的 :worker-group-options 期望 MetaOption[] ({value,label})
+  const workerGroupOptionsMeta = computed(() =>
+    workerGroupOptions.value.map((v) => ({ value: v, label: v })),
   )
 
   /** 只对后端未暴露的次要 filter（jobName / workerGroup / queueCode / scheduleType）做本页过滤。 */
@@ -633,6 +652,12 @@
         onClick: () => cloneRow(row),
       },
       {
+        key: 'export-bundle',
+        label: '导出 Bundle',
+        loading: exportingJobCode.value === row.jobCode,
+        onClick: () => exportBundle(row),
+      },
+      {
         key: 'toggle',
         label: row.enabled
           ? t('jobDefinitionList.actionDisable')
@@ -643,6 +668,35 @@
         onClick: () => toggleRow(row),
       },
     ]
+  }
+
+  function definitionDetailLocation(row: ConsoleJobDefinitionResponse) {
+    return {
+      path: `/jobs/definitions/${row.id}`,
+      query: { tenantId: row.tenantId || filters.tenantId || tenant.tenantId },
+    }
+  }
+
+  async function exportBundle(row: ConsoleJobDefinitionResponse) {
+    exportingJobCode.value = row.jobCode
+    try {
+      const payload = await jobApi.exportBundle(
+        row.tenantId || filters.tenantId || tenant.tenantId,
+        row.jobCode,
+      )
+      const blob = new Blob([JSON.stringify(payload, null, 2)], {
+        type: 'application/json;charset=utf-8',
+      })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `job-bundle-${row.jobCode}.json`
+      a.click()
+      URL.revokeObjectURL(url)
+      ElMessage.success(`作业 ${row.jobCode} Bundle 已导出`)
+    } finally {
+      exportingJobCode.value = ''
+    }
   }
 
   async function loadMeta() {
@@ -815,19 +869,20 @@
   const editingId = ref<number | null>(null)
   const editingTenantId = ref('')
   const editingJobCode = ref('')
-  const editForm = reactive<{ executionMode: ExecutionMode; watermarkField: string }>({
-    executionMode: 'FULL',
-    watermarkField: '',
-  })
+  // Day 2 (A.1):editForm 从 2 字段(executionMode/watermarkField)扩到 24 字段,
+  // 对齐 BE JobDefinitionUpdateRequest。所有可编辑字段均通过 JobConfigBasicForm 暴露。
+  const editForm = reactive<JobEditFormState>(createEmptyJobEditForm())
   const createFormRef = ref<FormInstance>()
   const createDrawerVisible = ref(false)
   // 路由变化时自动关闭 detail / 编辑 / 新建 三个 drawer,避免跳到目标页 drawer 还罩着
   useDrawerAutoClose([detailVisible, editDrawerVisible, createDrawerVisible])
   const createSaving = ref(false)
+  // jobType BE 枚举:GENERAL/IMPORT/EXPORT/PROCESS/DISPATCH/WORKFLOW(见 JobType.java)。
+  // 此处默认 GENERAL,不能再用旧的 'SHELL'(早期遗留,BE 不认 → 400)。
   const createForm = reactive({
     jobCode: '',
     jobName: '',
-    jobType: 'SHELL',
+    jobType: 'GENERAL',
     scheduleType: 'MANUAL',
     scheduleExpr: '',
     queueCode: '',
@@ -869,7 +924,25 @@
     trigger: 'blur',
   }
 
+  // Day 2 (A.1):编辑必填字段。BE 24 字段全 optional(partial update),
+  // 但 UX 上 jobName / scheduleType / executionMode 三项空着无意义,在 FE 强制必填。
+  // paramSchema / defaultParams 是 JSON 字符串,非空时必须语法合法,否则 BE 报 500。
+  const jsonValidator = (
+    _rule: unknown,
+    value: string | undefined,
+    callback: (err?: Error) => void,
+  ) => {
+    if (!value || !value.trim()) return callback()
+    try {
+      JSON.parse(value)
+      callback()
+    } catch {
+      callback(new Error(t('jobConfigBasic.ruleInvalidJson')))
+    }
+  }
   const editFormRules: FormRules = {
+    jobName: [rulesRequired(t('jobDefinitionList.ruleJobNameRequired'))],
+    scheduleType: [rulesRequired(t('jobDefinitionList.ruleScheduleTypeRequired'))],
     executionMode: [
       {
         required: true,
@@ -878,9 +951,28 @@
       },
     ],
     watermarkField: [watermarkRule],
+    paramSchema: [{ validator: jsonValidator, trigger: 'blur' }],
+    defaultParams: [{ validator: jsonValidator, trigger: 'blur' }],
+  }
+  // jobCode 格式:字母开头 + 字母/数字/下划线/连字符,长度 ≤ 128。
+  // 不限制时用户可以输入 "q q q" 之类含空格,后端可入库但 URL 解码 / 路由会出错(空格跳转异常)。
+  const JOB_CODE_PATTERN = /^[a-zA-Z][a-zA-Z0-9_-]{0,127}$/
+  const jobCodePatternRule: FormItemRule = {
+    validator: (_r, v: unknown, cb) => {
+      const value = typeof v === 'string' ? v.trim() : ''
+      if (!value) return cb()
+      return JOB_CODE_PATTERN.test(value)
+        ? cb()
+        : cb(
+            new Error(
+              '字母开头,仅含字母/数字/下划线/连字符,长度 ≤ 128(不允许空格 / 中文 / 特殊符号)',
+            ),
+          )
+    },
+    trigger: 'blur',
   }
   const createFormRules: FormRules = {
-    jobCode: [rulesRequired(t('jobDefinitionList.ruleJobCodeRequired'))],
+    jobCode: [rulesRequired(t('jobDefinitionList.ruleJobCodeRequired')), jobCodePatternRule],
     jobType: [rulesRequired(t('jobDefinitionList.ruleJobTypeRequired'))],
     scheduleType: [rulesRequired(t('jobDefinitionList.ruleScheduleTypeRequired'))],
     watermarkField: [watermarkRule],
@@ -907,7 +999,7 @@
   function resetCreateForm() {
     createForm.jobCode = ''
     createForm.jobName = ''
-    createForm.jobType = 'SHELL'
+    createForm.jobType = 'GENERAL'
     createForm.scheduleType = 'MANUAL'
     createForm.scheduleExpr = ''
     createForm.queueCode = ''
@@ -975,10 +1067,9 @@
     editingId.value = row.id
     editingTenantId.value = row.tenantId || filters.tenantId || tenant.tenantId
     editingJobCode.value = row.jobCode
-    editForm.executionMode = (row.executionMode as ExecutionMode | undefined) || 'FULL'
-    editForm.watermarkField = row.watermarkField ?? ''
+    // Day 2 (A.1):从 row 拷贝全量字段到 editForm,而非仅 2 字段
+    Object.assign(editForm, jobResponseToEditForm(row))
     editDrawerVisible.value = true
-    // 抽屉打开后清掉历史校验态
     void editFormRef.value?.clearValidate()
   }
 
@@ -1004,12 +1095,36 @@
     if (!valid) return
     editSaving.value = true
     try {
+      // Day 2 (A.1):提交完整 24 字段(对齐 BE JobDefinitionUpdateRequest),
+      // 不再仅传 executionMode + watermarkField。
+      // jobCode / jobType 在 BE 视为不可改字段,这里不传。
       await jobApi.updateDefinition(editingId.value, {
         tenantId: editingTenantId.value,
+        jobName: editForm.jobName.trim() || undefined,
+        bizType: editForm.bizType.trim() || undefined,
+        scheduleType: editForm.scheduleType || undefined,
+        scheduleExpr: editForm.scheduleExpr.trim() || undefined,
+        timezone: editForm.timezone.trim() || undefined,
+        triggerMode: editForm.triggerMode.trim() || undefined,
+        workerGroup: editForm.workerGroup.trim() || undefined,
+        queueCode: editForm.queueCode || undefined,
+        calendarCode: editForm.calendarCode.trim() || undefined,
+        windowCode: editForm.windowCode.trim() || undefined,
+        dagEnabled: editForm.dagEnabled,
+        shardStrategy: editForm.shardStrategy.trim() || undefined,
         executionMode: editForm.executionMode,
         // 仅 INCREMENTAL 时回写值;其它模式回写空串让后端清字段
         watermarkField:
           editForm.executionMode === 'INCREMENTAL' ? editForm.watermarkField.trim() : '',
+        retryPolicy: editForm.retryPolicy.trim() || undefined,
+        retryMaxCount: editForm.retryMaxCount,
+        timeoutSeconds: editForm.timeoutSeconds,
+        executionHandler: editForm.executionHandler.trim() || undefined,
+        paramSchema: editForm.paramSchema.trim() || undefined,
+        defaultParams: editForm.defaultParams.trim() || undefined,
+        priority: editForm.priority,
+        enabled: editForm.enabled,
+        description: editForm.description.trim() || undefined,
       })
       ElMessage.success(t('jobDefinitionList.updateSuccess', { code: editingJobCode.value }))
       editDrawerVisible.value = false
@@ -1050,5 +1165,25 @@
     justify-content: flex-end;
     gap: 12px;
     margin-top: 8px;
+  }
+
+  .queue-field {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+  }
+  .queue-field .el-select {
+    flex: 1;
+  }
+
+  .definition-link {
+    color: var(--color-primary);
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .definition-link:hover {
+    text-decoration: underline;
   }
 </style>

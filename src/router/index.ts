@@ -150,6 +150,26 @@ const routes: RouteRecordRaw[] = [
         },
       },
       {
+        path: 'jobs/definitions/new',
+        name: 'job-definition-wizard',
+        component: () => import('@/views/job/JobDefinitionWizard.vue'),
+        meta: {
+          title: '新建作业向导',
+          activeMenu: '/jobs/definitions',
+          minRole: 'ADMIN',
+        },
+      },
+      {
+        path: 'jobs/definitions/:id',
+        name: 'job-definition-detail',
+        component: () => import('@/views/job/JobDefinitionDetail.vue'),
+        meta: {
+          title: '作业详情',
+          activeMenu: '/jobs/definitions',
+          minRole: 'VIEWER',
+        },
+      },
+      {
         path: 'workflow/definitions',
         name: 'workflow-definitions',
         component: () => import('@/views/workflow/WorkflowDefinitionList.vue'),

@@ -55,15 +55,21 @@
                 </div>
                 <div class="upload-zone__toolbar-right">
                   <el-upload
+                    drag
                     :auto-upload="false"
                     :limit="1"
                     accept=".xls,.xlsx"
                     :on-change="onFile"
                     :show-file-list="false"
+                    class="upload-zone__dropzone"
                   >
-                    <el-button class="upload-zone__ghost-btn" type="primary" plain size="large">
-                      {{ t('excelMaintenanceWizard.btnPickFile') }}
-                    </el-button>
+                    <el-icon class="upload-zone__icon"><UploadFilled /></el-icon>
+                    <div class="upload-zone__hint">
+                      <strong>拖入</strong>或<el-link type="primary" :underline="false">{{
+                        t('excelMaintenanceWizard.btnPickFile')
+                      }}</el-link>
+                      <div class="upload-zone__sub">.xls / .xlsx</div>
+                    </div>
                   </el-upload>
                   <el-button
                     class="upload-zone__primary-btn"
@@ -468,6 +474,7 @@
     FolderOpened,
     Refresh,
     Upload,
+    UploadFilled,
     WarningFilled,
   } from '@element-plus/icons-vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
@@ -886,6 +893,39 @@
     gap: var(--space-sm);
     flex-wrap: wrap;
     justify-content: flex-end;
+  }
+
+  /* drag 模式 dropzone */
+  .upload-zone__dropzone :deep(.el-upload-dragger) {
+    padding: 18px 28px;
+    border-radius: 8px;
+    background: var(--color-bg-page);
+    border: 1px dashed var(--color-border-light);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    transition:
+      border-color 0.18s,
+      background 0.18s;
+  }
+  .upload-zone__dropzone :deep(.el-upload-dragger:hover) {
+    border-color: var(--color-primary);
+    background: var(--color-primary-light-9, rgba(64, 158, 255, 0.06));
+  }
+  .upload-zone__icon {
+    font-size: 28px;
+    color: var(--color-primary);
+  }
+  .upload-zone__hint {
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    text-align: center;
+  }
+  .upload-zone__sub {
+    margin-top: 2px;
+    font-size: 11px;
+    color: var(--color-text-tertiary);
   }
 
   .upload-zone__toolbar-right :deep(.el-upload) {

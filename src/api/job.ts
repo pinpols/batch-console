@@ -67,6 +67,26 @@ export interface JobDefinitionUpdateRequest {
   description?: string
 }
 
+export type JobBundlePayload = {
+  jobDefinitions?: Array<Record<string, unknown>>
+  workflowDefinitions?: Array<Record<string, unknown>>
+  pipelineDefinitions?: Array<Record<string, unknown>>
+  fileChannels?: Array<Record<string, unknown>>
+  fileTemplates?: Array<Record<string, unknown>>
+  resourceQueues?: Array<Record<string, unknown>>
+  batchWindows?: Array<Record<string, unknown>>
+  businessCalendars?: Array<Record<string, unknown>>
+  quotaPolicies?: Array<Record<string, unknown>>
+  alertRoutings?: Array<Record<string, unknown>>
+}
+
+export interface JobBundleCreateRequest {
+  tenantId: string
+  mode?: 'SKIP_EXISTING' | 'UPSERT'
+  dryRun?: boolean
+  bundle: JobBundlePayload
+}
+
 async function resolveJobDefinitionId(jobCode: string, tenantId: string) {
   // 传入 jobCode 让后端过滤（后端不支持时忽略该参数，回退到全量）
   const rows = await fetchAllPageItems<ConsoleJobDefinitionResponse>(
@@ -190,4 +210,10 @@ export const jobApi = {
   /** POST /api/console/job-definitions/{id}/clone — newJobCode 必填(BE @NotBlank) */
   clone: (id: number, tenantId: string, newJobCode: string) =>
     post<number>(`/api/console/job-definitions/${id}/clone`, { tenantId, newJobCode }),
+
+  createBundle: (body: JobBundleCreateRequest) =>
+    post<Record<string, unknown>>('/api/console/jobs/bundle/create', body),
+
+  exportBundle: (tenantId: string, jobCode: string) =>
+    get<Record<string, unknown>>('/api/console/jobs/bundle/export', { tenantId, jobCode }),
 }

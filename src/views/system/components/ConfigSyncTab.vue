@@ -109,12 +109,11 @@
               </el-select>
             </el-form-item>
             <el-form-item :label="t('configSyncTab.payloadLabel')">
-              <el-input
+              <JsonTextareaInput
                 v-model="importPayload"
-                type="textarea"
                 :rows="7"
+                expect="object"
                 :placeholder="t('configSyncTab.payloadPlaceholder')"
-                class="sync__payload"
               />
             </el-form-item>
           </el-form>
@@ -167,6 +166,7 @@
   import { useTenantReload } from '@/composables/useTenantReload'
   import { confirmDanger } from '@/composables/useDangerConfirm'
   import JsonPreview from '@/components/common/JsonPreview.vue'
+  import JsonTextareaInput from '@/components/common/JsonTextareaInput.vue'
 
   const ENV_PRESETS = ['default', 'dev', 'staging', 'prod']
 

@@ -21,6 +21,28 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/console/auth/public-key': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Get login encryption public key
+     * @description Returns RSA-OAEP-256 public key metadata for encrypted login payloads.
+     *     When login encryption is disabled, the backend returns 404 and the frontend may use plain login.
+     *
+     */
+    get: operations['getConsoleLoginPublicKey']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/console/auth/token': {
     parameters: {
       query?: never
@@ -2510,6 +2532,66 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/console/jobs/bundle/create': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Create job bundle
+     * @description Creates one job definition and optional related workflow/file/alert/resource config in one backend transaction.
+     */
+    post: operations['createJobBundle']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/jobs/bundle/export': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Export job bundle
+     * @description Exports one job definition and directly related config as a reusable bundle payload.
+     */
+    get: operations['exportJobBundle']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/jobs/bundle/import': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Import job bundle
+     * @description Imports one job bundle into one or more target tenants in one backend transaction.
+     */
+    post: operations['importJobBundle']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/console/workflow-definitions': {
     parameters: {
       query?: never
@@ -2557,6 +2639,28 @@ export interface paths {
     put?: never
     /** Validate workflow DAG */
     post: operations['validateWorkflowDefinition']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/workflow-definitions/{id}/mermaid': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Render workflow DAG as mermaid flowchart text
+     * @description Returns the workflow's nodes + edges rendered as a mermaid flowchart
+     *     string. Used by the read-only viewer and for embedding in PR/Wiki/docs.
+     *
+     */
+    get: operations['renderWorkflowMermaid']
+    put?: never
+    post?: never
     delete?: never
     options?: never
     head?: never
@@ -4619,6 +4723,57 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/console/push/vapid-public-key': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Return VAPID public key for browser PushManager.subscribe() */
+    get: operations['getConsolePushVapidPublicKey']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/push/subscribe': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Register a browser PushSubscription for the current user */
+    post: operations['subscribeConsolePush']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/push/unsubscribe': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Remove a single browser PushSubscription by endpoint */
+    post: operations['unsubscribeConsolePush']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
 }
 export type webhooks = Record<string, never>
 export interface components {
@@ -4804,6 +4959,36 @@ export interface components {
     }
     CommonResponseDagValidationResult: components['schemas']['CommonResponseBase'] & {
       data?: components['schemas']['DagValidationResult']
+    }
+    WorkflowMermaidResponse: {
+      /** @description Workflow 渲染后的 mermaid flowchart 文本。可直接贴入 GitHub README /
+       *     PR description / 文档站,前端用 mermaid.js 渲染。
+       *      */
+      mermaid: string
+    }
+    CommonResponseWorkflowMermaidResponse: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['WorkflowMermaidResponse']
+    }
+    ConsolePushSubscribeRequest: {
+      /** @description 浏览器 PushManager.subscribe() 返回的 endpoint URL。 */
+      endpoint: string
+      /** Format: int64 */
+      expirationTime?: number | null
+      keys: components['schemas']['ConsolePushSubscribeRequestKeys']
+    }
+    ConsolePushSubscribeRequestKeys: {
+      p256dh: string
+      auth: string
+    }
+    ConsolePushUnsubscribeRequest: {
+      endpoint: string
+    }
+    ConsolePushVapidPublicKey: {
+      /** @description base64-url VAPID public key,前端传入 PushManager.subscribe()。 */
+      publicKey: string
+    }
+    CommonResponseConsolePushVapidPublicKey: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['ConsolePushVapidPublicKey']
     }
     CommonResponseObjectArray: components['schemas']['CommonResponseBase'] & {
       data?: Record<string, never>[]
@@ -5930,8 +6115,13 @@ export interface components {
       /** Format: date-time */
       drainDeadlineAt?: string | null
     }
+    /** @description 登录 / 换 token 响应。P1-1 (pre-launch audit 2026-05-18) 后 accessToken 不再出现在 response body,
+     *     token 走 HttpOnly cookie `batch_console_token`。schema 保留 accessToken 字段为可选(向后兼容旧客户端
+     *     反序列化),但服务端固定写 null,Jackson 配合 @JsonInclude(NON_NULL) 直接抹除该字段。
+     *      */
     ConsoleAuthTokenResponse: {
-      accessToken: string
+      /** @description 已废弃,固定为 null。客户端读 HttpOnly cookie batch_console_token,不再从 body 取。 */
+      accessToken?: string | null
       /** @example Bearer */
       tokenType: string
       /** Format: date-time */
@@ -6698,6 +6888,43 @@ export interface components {
       | 'BUSINESS_CALENDAR'
       | 'QUOTA_POLICY'
       | 'ALERT_ROUTING'
+    /** @description Reusable job/config bundle payload. All lists are optional; omitted lists are not imported.
+     *      */
+    ConfigSyncBundlePayload: {
+      jobDefinitions?: components['schemas']['JobDefinitionSpec'][]
+      workflowDefinitions?: components['schemas']['WorkflowDefinitionSpec'][]
+      pipelineDefinitions?: components['schemas']['PipelineDefinitionSpec'][]
+      fileChannels?: components['schemas']['FileChannelSpec'][]
+      fileTemplates?: components['schemas']['FileTemplateSpec'][]
+      resourceQueues?: components['schemas']['ResourceQueueSpec'][]
+      batchWindows?: components['schemas']['BatchWindowSpec'][]
+      businessCalendars?: components['schemas']['BusinessCalendarSpec'][]
+      quotaPolicies?: components['schemas']['TenantQuotaPolicySpec'][]
+      alertRoutings?: components['schemas']['AlertRoutingSpec'][]
+    }
+    JobBundleCreateRequest: {
+      tenantId: string
+      /**
+       * @default SKIP_EXISTING
+       * @enum {string}
+       */
+      mode: 'SKIP_EXISTING' | 'UPSERT'
+      /** @default false */
+      dryRun: boolean
+      bundle: components['schemas']['ConfigSyncBundlePayload']
+    }
+    JobBundleImportRequest: {
+      tenantId: string
+      targetTenantIds: string[]
+      /**
+       * @default UPSERT
+       * @enum {string}
+       */
+      mode: 'SKIP_EXISTING' | 'UPSERT'
+      /** @default false */
+      dryRun: boolean
+      bundle: components['schemas']['ConfigSyncBundlePayload']
+    }
     JobDefinitionSpec: {
       jobCode?: string
       jobName?: string
@@ -7142,6 +7369,33 @@ export interface operations {
         content: {
           'application/json': components['schemas']['CommonResponseConsoleAuthTokenResponse']
         }
+      }
+    }
+  }
+  getConsoleLoginPublicKey: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Login encryption public key */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseMapStringObject']
+        }
+      }
+      /** @description Login encryption is unavailable */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
       }
     }
   }
@@ -11003,6 +11257,81 @@ export interface operations {
       }
     }
   }
+  createJobBundle: {
+    parameters: {
+      query?: never
+      header: {
+        'Idempotency-Key': components['parameters']['IdempotencyKeyHeader']
+      }
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['JobBundleCreateRequest']
+      }
+    }
+    responses: {
+      /** @description Bundle creation result */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseObject']
+        }
+      }
+    }
+  }
+  exportJobBundle: {
+    parameters: {
+      query: {
+        tenantId: string
+        jobCode: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Bundle export result */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseObject']
+        }
+      }
+    }
+  }
+  importJobBundle: {
+    parameters: {
+      query?: never
+      header: {
+        'Idempotency-Key': components['parameters']['IdempotencyKeyHeader']
+      }
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['JobBundleImportRequest']
+      }
+    }
+    responses: {
+      /** @description Bundle import result */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseObject']
+        }
+      }
+    }
+  }
   createWorkflowDefinition: {
     parameters: {
       query?: never
@@ -11129,6 +11458,30 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['CommonResponseDagValidationResult']
+        }
+      }
+    }
+  }
+  renderWorkflowMermaid: {
+    parameters: {
+      query: {
+        tenantId: string
+      }
+      header?: never
+      path: {
+        id: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Rendered mermaid text */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseWorkflowMermaidResponse']
         }
       }
     }
@@ -14743,6 +15096,83 @@ export interface operations {
         content: {
           'application/json': components['schemas']['CommonResponseTenantConfigPackageExcelApply']
         }
+      }
+    }
+  }
+  getConsolePushVapidPublicKey: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description VAPID public key (base64-url) */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseConsolePushVapidPublicKey']
+        }
+      }
+      /** @description Push module disabled (BATCH_CONSOLE_PUSH_ENABLED=false) */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  subscribeConsolePush: {
+    parameters: {
+      query: {
+        tenantId: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ConsolePushSubscribeRequest']
+      }
+    }
+    responses: {
+      /** @description Subscription stored (or refreshed via upsert) */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseBase']
+        }
+      }
+    }
+  }
+  unsubscribeConsolePush: {
+    parameters: {
+      query: {
+        tenantId: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ConsolePushUnsubscribeRequest']
+      }
+    }
+    responses: {
+      /** @description Subscription removed (or already absent) */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
       }
     }
   }
