@@ -429,19 +429,30 @@ export default withMermaid({
           { text: '归档(archive)', link: '/archive/' },
         ],
       },
+      // 前端独立文档站(本仓 batch-console/docs/)— 互链统一入口
+      {
+        text: '前端文档 ↗',
+        items: [
+          { text: '前端首页', link: 'http://localhost:5175/fe-docs/' },
+          { text: '前端 QA D 档阶段报告', link: 'http://localhost:5175/fe-docs/runbook/qa-d-phase-reports/' },
+          { text: '前端方案设计 V3', link: 'http://localhost:5175/fe-docs/批量调度系统前端方案设计说明书_开发落地版_V3' },
+          { text: '前端设计文档', link: 'http://localhost:5175/fe-docs/design/' },
+        ],
+      },
     ],
 
-    // sidebar 全分区下线:每个分区只有一项"总览"指回当前页,纯重复 nav,占位无信息;
-    // 各 index 页正文已有"文件清单"表完成导航。需要时再按目录自动生成 sidebar(预留)。
+    // sidebar 走 vitepress 默认(不强配),保持简洁;
+    // 各 index 页正文已有"文件清单"表完成导航
 
     editLink: {
       pattern: 'https://github.com/pinpols/file-batch-system/edit/main/docs/:path',
       text: '在 GitHub 上编辑此页',
     },
 
-    socialLinks: [
-      { icon: 'github', link: 'https://github.com/pinpols/file-batch-system' },
-    ],
+    // GitHub 图标隐藏 — 内部文档站,无需对外引流
+    // socialLinks: [
+    //   { icon: 'github', link: 'https://github.com/pinpols/file-batch-system' },
+    // ],
 
     search: {
       provider: 'local',
