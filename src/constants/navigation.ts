@@ -180,6 +180,12 @@ export const navigationGroups: NavigationGroup[] = [
         minRole: 'VIEWER',
         icon: Collection,
       },
+      {
+        title: pageTitle('/config/tenant-package'),
+        path: '/config/tenant-package',
+        minRole: 'OPERATOR',
+        icon: Box,
+      },
     ],
   },
   {
@@ -386,13 +392,6 @@ export const navigationGroups: NavigationGroup[] = [
         icon: PriceTag,
       },
       // ─── hidden,⌘K 可达 ───
-      {
-        title: pageTitle('/config/tenant-package'),
-        path: '/config/tenant-package',
-        minRole: 'OPERATOR',
-        icon: Box,
-        hidden: true,
-      },
       {
         title: pageTitle('/system/event-catalog'),
         path: '/system/event-catalog',

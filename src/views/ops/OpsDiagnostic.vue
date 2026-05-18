@@ -595,9 +595,9 @@
     }
   }
 
-  // 进页面先并发预热前 3 张高优卡(集群整体 / Worker / Kafka 滞后),其他懒按需
+  // 进页面并发预热所有卡，避免用户手动逐个点"加载"
   onMounted(() => {
-    void Promise.all([cardCluster.run(), cardWorker.run(), cardKafkaLag.run()])
+    void Promise.all(diagCards.value.map((c) => c.run().catch(() => undefined)))
   })
 
   useTenantReload(() => {

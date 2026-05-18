@@ -70,3 +70,25 @@ export async function getMetaWorkerGroups(tenantId: string): Promise<MetaOption[
 export async function getMetaBizTypes(tenantId: string): Promise<MetaOption[]> {
   return toOptions(await get<unknown>('/api/console/meta/biz-types', { tenantId }))
 }
+
+/**
+ * Pipeline 9 stages 白名单,按 jobType 分组(IMPORT / EXPORT / PROCESS / DISPATCH)。
+ * 返回 { IMPORT: ['RECEIVE','PREPROCESS',...], EXPORT: [...], ... }。
+ */
+export async function getMetaPipelineStages(): Promise<Record<string, string[]>> {
+  const data = await get<unknown>('/api/console/meta/pipeline-stages')
+  if (!data || typeof data !== 'object') return {}
+  const result: Record<string, string[]> = {}
+  for (const [k, v] of Object.entries(data as Record<string, unknown>)) {
+    if (Array.isArray(v)) result[k] = v.filter((x): x is string => typeof x === 'string')
+  }
+  return result
+}
+
+/** step_registry 已注册的 impl_code 白名单。module=IMPORT/EXPORT/PROCESS/DISPATCH;不传返回全部。 */
+export async function getMetaStepImpls(module?: string): Promise<string[]> {
+  const params: Record<string, string> = {}
+  if (module) params.module = module
+  const data = await get<unknown>('/api/console/meta/step-impls', params)
+  return Array.isArray(data) ? data.filter((x): x is string => typeof x === 'string') : []
+}

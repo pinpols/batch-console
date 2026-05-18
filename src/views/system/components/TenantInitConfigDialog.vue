@@ -40,12 +40,11 @@
         </div>
       </el-form-item>
       <el-form-item :label="t('tenantInitConfigDialog.fieldSpecJson')" prop="specJson">
-        <el-input
+        <JsonTextareaInput
           v-model="form.specJson"
-          type="textarea"
-          :autosize="{ minRows: 8, maxRows: 20 }"
+          :rows="10"
+          expect="object"
           :placeholder="t('tenantInitConfigDialog.specPlaceholder')"
-          style="font-family: var(--font-family-mono, monospace); font-size: 12px"
         />
       </el-form-item>
     </el-form>
@@ -81,6 +80,7 @@
   const { t } = useI18n({ useScope: 'global' })
   import type { FormRules } from 'element-plus'
   import { batchInitTenantConfig, type ConfigType } from '@/api/ops'
+  import JsonTextareaInput from '@/components/common/JsonTextareaInput.vue'
   import { ALL_CONFIG_TYPES } from './tenantConfigTypes'
   import { useFormValidate, rules } from '@/composables/useFormValidate'
 

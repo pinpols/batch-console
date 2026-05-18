@@ -74,7 +74,7 @@
                 <router-link
                   v-if="row.fileId"
                   class="cell-link"
-                  :to="`/file-center/files?fileId=${row.fileId}`"
+                  :to="`/files/list?fileId=${row.fileId}`"
                 >
                   {{ row.fileId }}
                 </router-link>

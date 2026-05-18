@@ -48,9 +48,11 @@ test.describe('Job Definition CRUD', () => {
       // 等下拉容器(EP 渲染到 body 末尾)
       const popper = page.locator('.el-select-dropdown:visible').last()
       await expect(popper).toBeVisible({ timeout: 5000 })
-      // 等至少一个 option 出现(MetaSelect 异步填充)
       const opt = popper.locator('.el-select-dropdown__item').first()
       await expect(opt).toBeVisible({ timeout: 5000 })
+      // EP option 偶发渲染在 viewport 外(尤其 drawer 内容多了之后);
+      // scroll into view 后再 click。
+      await opt.scrollIntoViewIfNeeded().catch(() => {})
       await opt.click({ force: true })
       await page.waitForTimeout(150)
     }

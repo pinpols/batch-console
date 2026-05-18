@@ -14,8 +14,9 @@
         class="pill-tabs file-config-tabs"
         :class="{ 'single-mode': mode !== 'all' }"
       >
+        <!-- el-tab-pane 不能用 v-if(EP unmount bug panes.indexOf undefined);用 v-show 防崩 -->
         <el-tab-pane
-          v-if="showTemplatesTab"
+          v-show="showTemplatesTab"
           :label="t('fileTemplateList.tabTemplates')"
           name="templates"
         >
@@ -140,7 +141,7 @@
         </el-tab-pane>
 
         <el-tab-pane
-          v-if="showChannelsTab"
+          v-show="showChannelsTab"
           :label="t('fileTemplateList.tabChannels')"
           name="channels"
         >
@@ -367,12 +368,12 @@
         <el-form-item :label="t('fileTemplateList.fieldEnabled')"
           ><el-switch v-model="templateForm.enabled"
         /></el-form-item>
-        <el-form-item :label="t('fileTemplateList.fieldFieldMappingsJson')"
-          ><el-input v-model="templateForm.fieldMappingsJson" type="textarea" :rows="4"
-        /></el-form-item>
-        <el-form-item :label="t('fileTemplateList.fieldQueryParamSchemaJson')"
-          ><el-input v-model="templateForm.queryParamSchemaJson" type="textarea" :rows="3"
-        /></el-form-item>
+        <el-form-item :label="t('fileTemplateList.fieldFieldMappingsJson')">
+          <JsonTextareaInput v-model="templateForm.fieldMappingsJson" :rows="4" />
+        </el-form-item>
+        <el-form-item :label="t('fileTemplateList.fieldQueryParamSchemaJson')">
+          <JsonTextareaInput v-model="templateForm.queryParamSchemaJson" :rows="3" />
+        </el-form-item>
         <el-form-item :label="t('fileTemplateList.fieldDescription')"
           ><el-input
             v-model="templateForm.description"
@@ -441,9 +442,9 @@
         <el-form-item :label="t('fileTemplateList.fieldEnabled')"
           ><el-switch v-model="channelForm.enabled"
         /></el-form-item>
-        <el-form-item :label="t('fileTemplateList.fieldConfigJson')"
-          ><el-input v-model="channelForm.configJson" type="textarea" :rows="5"
-        /></el-form-item>
+        <el-form-item :label="t('fileTemplateList.fieldConfigJson')">
+          <JsonTextareaInput v-model="channelForm.configJson" :rows="5" expect="object" />
+        </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="channelDialogVisible = false">{{ t('common.cancel') }}</el-button>
@@ -504,6 +505,7 @@
   import ProTable from '@/components/table/ProTable.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
   import JsonPreview from '@/components/common/JsonPreview.vue'
+  import JsonTextareaInput from '@/components/common/JsonTextareaInput.vue'
   import RowActions, { type RowAction } from '@/components/common/RowActions.vue'
   import type { ConsoleFileChannelResponse, ConsoleFileTemplateResponse } from '@/types/console-api'
 

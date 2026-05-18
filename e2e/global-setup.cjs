@@ -257,10 +257,11 @@ async function globalSetup(config) {
 
   // ── 登录 ────────────────────────────────────────────────────────
   // D7 Stage B(commit 6405b5a):token 已迁到 HttpOnly cookie,localStorage 不再存。
-  // 旧实现只拿 accessToken 字段塞进 localStorage,FE 完全不读 → 全部测试掉登录页。
-  // 现在改为:
-  //   1) 拿 accessToken(用于本 setup 后续 seed 调用 Authorization header)
-  //   2) 解析响应 Set-Cookie,后面写进 storageState.cookies 让浏览器自动携带
+  // 2026-05-18 后续 BE 进一步把 accessToken 从响应 body 也移除 — 仅靠 Set-Cookie 下发。
+  // 所以 seed 路径若需要 Authorization header 应改用 cookie jar 调,不再走 Bearer。
+  // 当前 setup:
+  //   1) 解析响应 Set-Cookie,后面写进 storageState.cookies 让浏览器自动携带
+  //   2) 若 body 仍带 accessToken 兼容旧版,作为可选 seed token 使用
   let token
   let authCookies = []
   try {
@@ -271,19 +272,21 @@ async function globalSetup(config) {
     })
     if (!loginRes.ok) throw new Error(`HTTP ${loginRes.status}`)
     const loginJson = await loginRes.json()
-    token = loginJson?.data?.accessToken
-    if (!token) throw new Error('响应中无 accessToken')
+    token = loginJson?.data?.accessToken // 可空(2026-05 后 BE 不再回写 body)
     // Node 18+: Headers.getSetCookie() 返回 string[];老节点 fallback 到 raw Set-Cookie
     const setCookies =
       typeof loginRes.headers.getSetCookie === 'function'
         ? loginRes.headers.getSetCookie()
         : [loginRes.headers.get('set-cookie')].filter(Boolean)
     authCookies = setCookies.map((raw) => parseSetCookieForStorageState(raw, baseURL))
+    if (authCookies.length === 0) {
+      throw new Error('响应中既无 accessToken 也无 Set-Cookie,登录可能未成功')
+    }
     console.log(
-      `[global-setup] 登录成功,expires: ${loginJson?.data?.expiresAt},cookies: ${authCookies.length}`,
+      `[global-setup] 登录成功,expires: ${loginJson?.data?.expiresAt},cookies: ${authCookies.length}${token ? ',token: 有(body)' : ',token: 仅 cookie'}`,
     )
   } catch (err) {
-    console.warn(`[global-setup] 登录失败（${err.message}），跳过 seed，仅写入 storageState`)
+    console.warn(`[global-setup] 登录失败（${err.message}），跳过 seed,仅写入 storageState`)
   }
 
   // ── 导入测试数据 ─────────────────────────────────────────────────

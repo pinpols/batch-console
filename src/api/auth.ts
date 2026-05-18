@@ -1,6 +1,6 @@
-import type { AxiosRequestConfig } from 'axios'
+import axios, { type AxiosRequestConfig } from 'axios'
 import { get, post } from '@/api/client'
-import { encryptLoginBody } from '@/utils/loginCrypto'
+import { clearPublicKeyCache, encryptLoginBody } from '@/utils/loginCrypto'
 
 import type { MenuGroup, Role, UserInfo } from '@/types'
 
@@ -66,6 +66,33 @@ export function mapProfileToUserInfo(p: ConsoleAuthProfilePayload): UserInfo {
   }
 }
 
+async function postLoginWithEncryption(plaintext: {
+  username: string
+  password: string
+}): Promise<ConsoleAuthTokenPayload> {
+  const send = async () => {
+    const encrypted = await encryptLoginBody(plaintext)
+    const body: Record<string, unknown> = encrypted ?? plaintext
+    return post<ConsoleAuthTokenPayload>('/api/console/auth/login', body)
+  }
+  try {
+    return await send()
+  } catch (err) {
+    if (isEncryptionFailedError(err)) {
+      clearPublicKeyCache()
+      return await send()
+    }
+    throw err
+  }
+}
+
+function isEncryptionFailedError(err: unknown): boolean {
+  if (!axios.isAxiosError(err) || err.response?.status !== 401) return false
+  const raw = err.response.data as { message?: unknown } | undefined
+  const msg = typeof raw?.message === 'string' ? raw.message : ''
+  return msg.includes('error.auth.encryption_failed') || msg.includes('登录请求解密失败')
+}
+
 export const authApi = {
   login: async (params: LoginParams) => {
     // 2026-05-18: 优先 RSA+AES 混合加密 body;Web Crypto 不可用 / 公钥取失败时
@@ -73,9 +100,9 @@ export const authApi = {
     // prod profile 强制 required=true 时,明文路径会被 401 error.auth.encryption_required
     // 拦下,登录页捕获错误码提示用户。
     const plaintext = { username: params.username, password: params.password }
-    const encrypted = await encryptLoginBody(plaintext)
-    const body: Record<string, unknown> = encrypted ?? plaintext
-    const payload = await post<ConsoleAuthTokenPayload>('/api/console/auth/login', body)
+    // BE 重启会重新生成 RSA keypair,FE sessionStorage 缓存的旧公钥导致解密失败。
+    // 命中 error.auth.encryption_failed 时清缓存重取公钥再试一次,避免 5 分钟 TTL 内死循环。
+    const payload = await postLoginWithEncryption(plaintext)
     return {
       token: payload.accessToken,
       userInfo: mapProfileToUserInfo({

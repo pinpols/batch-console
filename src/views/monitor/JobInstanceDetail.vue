@@ -68,7 +68,7 @@
               </router-link>
             </el-descriptions-item>
             <el-descriptions-item v-if="row.relatedFileId" :label="t('monitor.detailRelatedFile')">
-              <router-link class="cell-link" :to="`/file-center/files?fileId=${row.relatedFileId}`">
+              <router-link class="cell-link" :to="`/files/list?fileId=${row.relatedFileId}`">
                 #{{ row.relatedFileId }}
               </router-link>
             </el-descriptions-item>

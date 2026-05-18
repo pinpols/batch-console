@@ -14,7 +14,8 @@
         class="pill-tabs governance-tabs"
         :class="{ 'single-mode': mode !== 'all' }"
       >
-        <el-tab-pane v-if="showQueuesTab" :label="t('queueConfig.tabQueues')" name="queues">
+        <!-- el-tab-pane 不能用 v-if(EP 2.9 unmount bug,panes.indexOf undefined);用 v-show 避免崩溃 -->
+        <el-tab-pane v-show="showQueuesTab" :label="t('queueConfig.tabQueues')" name="queues">
           <div class="panel-head">
             <div class="panel-title">
               <span class="dot dot--primary" />
@@ -107,7 +108,7 @@
           />
         </el-tab-pane>
 
-        <el-tab-pane v-if="showWindowsTab" :label="t('queueConfig.tabWindows')" name="windows">
+        <el-tab-pane v-show="showWindowsTab" :label="t('queueConfig.tabWindows')" name="windows">
           <div class="panel-head">
             <div class="panel-title">
               <span class="dot dot--warning" />
@@ -196,7 +197,7 @@
         </el-tab-pane>
 
         <el-tab-pane
-          v-if="showCalendarsTab"
+          v-show="showCalendarsTab"
           :label="t('queueConfig.tabCalendars')"
           name="calendars"
         >

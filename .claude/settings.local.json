@@ -25,7 +25,25 @@
       "Bash(rm -rf test-results/*)",
       "Bash(npx playwright *)",
       "Bash(E2E_REAL_BE=1 npx playwright test e2e/mobile-smoke.spec.ts e2e/mobile-ops.spec.ts --reporter=list --workers=2)",
-      "Bash(tee /tmp/mobile-real-be.log)"
+      "Bash(tee /tmp/mobile-real-be.log)",
+      "Bash(grep -rn \"public-key\\\\|publicKey\\\\|PublicKey\" /Users/dengchao/Downloads/file-batch-system/batch-console-api/src/main/java --include=\"*.java\" 2>/dev/null | head -20)",
+      "Bash(grep -rn \"auth/public-key\\\\|antMatchers\\\\|requestMatchers\\\\|permitAll\\\\|/auth/\" /Users/dengchao/Downloads/file-batch-system/batch-console-api/src/main/java --include=\"*Security*.java\" --include=\"*Config*.java\" 2>/dev/null | grep -iE \"permit|auth|public|matcher\" | head -30)",
+      "Bash(git -C /Users/dengchao/Downloads/file-batch-system log --oneline -10 -- batch-console-api/src/main/java/com/example/batch/console/web/ConsoleAuthController.java)",
+      "Bash(git -C /Users/dengchao/Downloads/file-batch-system log --oneline c7abe713^..HEAD)",
+      "Bash(git -C /Users/dengchao/Downloads/file-batch-system log --oneline origin/main..HEAD)",
+      "Bash(git -C /Users/dengchao/Downloads/file-batch-system log --oneline -1 HEAD)",
+      "Bash(git -C /Users/dengchao/Downloads/file-batch-system log --oneline -1 origin/main)",
+      "Bash(lsof -iTCP -sTCP:LISTEN -P)",
+      "Bash(ps -p 88508 -o lstart=,command=)",
+      "Bash(git -C /Users/dengchao/Downloads/file-batch-system log -1 --format='%cd %s' c7abe713)",
+      "Read(//Users/dengchao/Downloads/file-batch-system/build/runtime-jars/**)",
+      "Bash(unzip -p /Users/dengchao/Downloads/file-batch-system/build/runtime-jars/console.jar BOOT-INF/classes/com/example/batch/console/web/ConsoleAuthController.class)",
+      "Bash(find /Users/dengchao/Downloads/file-batch-system -maxdepth 3 -name \"*.sh\" -path \"*start*\" 2>/dev/null | head -5; echo \"---\"; ls /Users/dengchao/Downloads/file-batch-system/scripts/ 2>/dev/null | grep -iE \"start|build|run|restart\" | head -10; echo \"---rebuild candidate---\"; grep -rln \"runtime-jars/console.jar\" /Users/dengchao/Downloads/file-batch-system --include=\"*.sh\" --include=\"Makefile\" --include=\"*.mk\" 2>/dev/null | head -5)",
+      "Bash(BUILD=1 ./scripts/local/restart.sh console)",
+      "Bash(rm -f e2e/.auth/user.json)",
+      "Bash(ps -p 45887 -o pid=,lstart=,command=)",
+      "Bash(lsof -iTCP:18080 -sTCP:LISTEN -P)",
+      "Bash(curl -sS -o /dev/null -w \"via Vite 5178: %{http_code} %{time_total}s\\\\n\" -m 3 http://localhost:5178/api/console/auth/public-key; echo \"---LAST VITE LOG ENTRIES---\"; tail -40 /tmp/batch-console-vite-5178.log 2>&1 | grep -iE \"proxy|error|econnrefused|18080\" | tail -20)"
     ],
     "defaultMode": "bypassPermissions"
   }
