@@ -3,11 +3,17 @@ dist
 dist-ssr
 docs-site/.vitepress/dist
 docs-site/.vitepress/cache
+fe-docs-site/.vitepress/dist
+fe-docs-site/.vitepress/cache
 *.local
 .env.local
 .env.*.local
 src/types/auto-imports.d.ts
 src/types/components.d.ts
+
+# macOS
+.DS_Store
+**/.DS_Store
 
 # Playwright
 /test-results/

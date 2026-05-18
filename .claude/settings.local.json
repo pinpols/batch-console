@@ -1,6 +1,19 @@
 {
   "permissions": {
     "allow": [
+      "Bash(cd ../file-batch-system:*)",
+      "Bash(cd /Users/dengchao/Downloads/file-batch-system:*)",
+      "Bash(mvn:*)",
+      "Bash(grep:*)",
+      "Bash(find:*)",
+      "Bash(awk:*)",
+      "Bash(sed:*)",
+      "Bash(curl:*)",
+      "Bash(psql:*)",
+      "Bash(PGPASSWORD=*)",
+      "Edit(/Users/dengchao/Downloads/file-batch-system/**)",
+      "Read(/Users/dengchao/Downloads/file-batch-system/**)",
+      "Write(/Users/dengchao/Downloads/file-batch-system/**)",
       "Bash(npm install:*)",
       "Bash(npx vitest:*)",
       "Bash(npx vue-tsc:*)",
@@ -8,7 +21,11 @@
       "Bash(mvn -pl batch-orchestrator -am test -Dtest=DefaultWorkerDrainGovernanceServiceTest -Dsurefire.failIfNoSpecifiedTests=false)",
       "Bash(mvn -pl batch-orchestrator test -Dtest='DefaultWorkerDrainGovernanceServiceTest,WorkerControllerTest' -Dsurefire.failIfNoSpecifiedTests=false)",
       "Bash(git add *)",
-      "Bash(git commit -m ' *)"
+      "Bash(git commit -m ' *)",
+      "Bash(rm -rf test-results/*)",
+      "Bash(npx playwright *)",
+      "Bash(E2E_REAL_BE=1 npx playwright test e2e/mobile-smoke.spec.ts e2e/mobile-ops.spec.ts --reporter=list --workers=2)",
+      "Bash(tee /tmp/mobile-real-be.log)"
     ],
     "defaultMode": "bypassPermissions"
   }
