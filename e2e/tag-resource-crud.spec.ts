@@ -19,15 +19,36 @@ test.describe('tag resource CRUD', () => {
   })
 
   test('新建标签对话框可打开并填写', async ({ page }) => {
+    // 新增按钮现在受外层 resourceType+resourceCode 控制:两者齐备前 button.disabled,
+    // 防止用户走完整个新增弹窗后才在保存时被告知缺前置条件。
     const addBtn = page.getByRole('button', { name: /新增/ }).first()
     if (!(await isVisible(addBtn, 2000))) return
+    await expect(addBtn).toBeDisabled()
+
+    // 先填资源类型 + 资源编码 — 按钮才能解锁
+    const typeSelect = page
+      .locator('.el-form-item')
+      .filter({ hasText: /资源类型|类型/ })
+      .locator('.el-select')
+    if (await isVisible(typeSelect, 2000)) {
+      await typeSelect.click()
+      const opt = page.locator('.el-select-dropdown__item').first()
+      if (await isVisible(opt, 2000)) await opt.click()
+    }
+    const codeInput = page
+      .locator('.el-form-item')
+      .filter({ hasText: /资源编码|编码/ })
+      .getByRole('textbox')
+    if (await isVisible(codeInput, 2000)) await codeInput.fill('test-resource')
+
+    await expect(addBtn).toBeEnabled()
     await addBtn.click()
     await page.waitForTimeout(400)
-    const dialog = page.locator('.el-dialog:visible, .el-drawer:visible').first()
-    if (await isVisible(dialog, 2000)) {
-      await expect(dialog).toBeVisible()
-      // 关闭对话框
-      const cancelBtn = dialog.getByRole('button', { name: /取消|关闭/ }).first()
+    // 实际打开的是 el-drawer 不是 el-dialog(gifted-bell 分支修正)
+    const drawer = page.locator('.el-drawer').first()
+    if (await isVisible(drawer, 2000)) {
+      await expect(drawer).toBeVisible()
+      const cancelBtn = drawer.getByRole('button', { name: /取消|关闭/ }).first()
       if (await cancelBtn.count()) await cancelBtn.click({ force: true })
     }
   })

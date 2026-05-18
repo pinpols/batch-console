@@ -2,15 +2,25 @@
   <PageContainer>
     <PageHeader>
       <template #actions>
-        <el-button
+        <el-tooltip
           v-if="activeTab === 'resource'"
-          type="primary"
-          :icon="Plus"
-          class="pretty-add-button"
-          @click="openResourceCreate"
+          :content="t('tagResourceTab.needResourceTypeCode')"
+          placement="bottom-end"
+          :disabled="canCreateResourceTag"
         >
-          {{ t('tagResourceTab.btnAddTag') }}
-        </el-button>
+          <!-- el-button disabled 时 pointer-events:none 会吃掉 tooltip hover,wrap span 兜底 -->
+          <span class="add-tag-btn-wrap">
+            <el-button
+              type="primary"
+              :icon="Plus"
+              class="pretty-add-button"
+              :disabled="!canCreateResourceTag"
+              @click="openResourceCreate"
+            >
+              {{ t('tagResourceTab.btnAddTag') }}
+            </el-button>
+          </span>
+        </el-tooltip>
       </template>
     </PageHeader>
 
@@ -30,7 +40,8 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, watch } from 'vue'
+  import { computed, ref, watch } from 'vue'
+  import type { ComputedRef } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import { Plus } from '@element-plus/icons-vue'
@@ -50,7 +61,15 @@
   const activeTab = ref<TagTab>(
     validTabs.has(route.query.tab as TagTab) ? (route.query.tab as TagTab) : 'resource',
   )
-  const resourceTabRef = ref<{ openNewDialog: () => void } | null>(null)
+  const resourceTabRef = ref<{
+    openNewDialog: () => void
+    canCreate: ComputedRef<boolean>
+  } | null>(null)
+
+  // 资源类型+编码两者齐备才允许新增标签:避免用户填了表单到最后才发现外层缺前置
+  const canCreateResourceTag = computed(
+    () => activeTab.value === 'resource' && !!resourceTabRef.value?.canCreate?.value,
+  )
 
   function openResourceCreate() {
     resourceTabRef.value?.openNewDialog()
@@ -67,5 +86,10 @@
     font-size: 13px;
     color: var(--color-text-tertiary);
     line-height: 1.55;
+  }
+
+  /* tooltip wrap:disabled button 不接收 pointer events,只能 wrap span 兜 hover */
+  .add-tag-btn-wrap {
+    display: inline-flex;
   }
 </style>
