@@ -10,9 +10,11 @@
 |---|---|---|---|
 | A. 页面渲染冒烟 | 每页能打开、无 ErrorBoundary、无 console error | ~30 min | ✅ 已做 |
 | B. 页面 CRUD 闭环 | 每个有写操作的页跑 create → read → update → delete 全流程 | ~4–6 h | ✅ 2026-05-16 完成 (42/42 PASS) |
-| **B+. 联调验收级**(本次新增) | 上一档基础上补 RBAC 矩阵 / 端到端业务流 / 多租户 / SSE / 设计器烟测 | ~4 天 | 🔵 Phase 5–9 |
+| **B+. 联调验收级** | 上一档基础上补 RBAC 矩阵 / 端到端业务流 / 多租户 / SSE / 设计器烟测 | ~4 天 | 🔵 Phase 5–9 |
 | C. 完整 QA 级覆盖 | 表单校验、错误态、权限拒绝、空态、边界值、键盘、移动端、a11y | ~3–5 天 | ✅ C 档 2026-05-15 完成 (qa-c-baseline 466/16/0) |
+| **C+. 生产健壮性**(本次再扩) | 边界字符 / 安全注入 / 失败路径 / 可观测性 / 性能 / 视觉回归 | ~5 天 | 🟣 Phase 10–15 |
 | D. 生产前 sprint | 移动端 CRUD / 多浏览器 / i18n soak / upload 全链路 | ~4-5 天 | ✅ D 档 2026-05-17 完成 |
+| **Pro. 混沌+集成真打**(可选) | 故障注入 / 弱网 / 第三方真打(Kafka/OSS/SMTP) | ~2 天 | ⚪ Phase 16 (可选) |
 
 ---
 
@@ -32,6 +34,18 @@ B+ 档(联调验收级,2026-05-18 扩充)
 ├─ Phase 7  3 个端到端业务剧本       ~2 天   任务失败→重跑→审批 / 文件到达→处理→回执 / 配置灰度→回滚
 ├─ Phase 8  多租户切换 + SSE 重连    ~0.5 天 切租户竞态 + WebSocket/SSE 断线 + 长连保活
 └─ Phase 9  设计器 + AI Chat 烟测   ~0.5 天 X6 拖拽基础烟测 + AI Chat 基础烟测 (允许 mock 后端)
+
+C+ 档(生产健壮性,2026-05-18 再扩)
+├─ Phase 10 边界值 + 特殊字符矩阵    ~1 天   极大/极小 int / Unicode 全角 / 时区 DST / 大分页 / 空字符串 vs null
+├─ Phase 11 安全 / 越权 / 注入       ~1 天   XSS / SQL inj / CSRF / JWT 篡改 / 提权 / 文件越界 / 敏感字段不落日志
+├─ Phase 12 业务剧本失败路径深化     ~1 天   Phase 7 三剧本的中断/超时/重复提单/审批拒绝/回滚失败
+├─ Phase 13 可观测性自验             ~0.5 天 每个 API 有 traceId / 每个写操作有 audit / 关键指标暴露 / 错误日志结构化
+├─ Phase 14 性能 / 大数据量 / 高频   ~1 天   10K 列表 / 100 并发触发 / SSE 大流量 / 大分页 / 大附件
+└─ Phase 15 视觉回归 + a11y AA       ~0.5 天 主题切换截图基线 / WCAG AA 对比度 / 焦点陷阱 / 屏读叙述
+
+Pro 档(混沌 + 集成真打,可选)
+├─ Phase 16a 故障注入 / 弱网          ~1 天   BE 5xx 注入 / Redis down (fail-closed) / Kafka down / 2G 弱网
+└─ Phase 16b 第三方真打               ~1 天   Kafka 实消费 / OSS 实上传 / SMTP 实投递 / Webhook 实接收
 ```
 
 为什么这个顺序:**API 失败信号最干净(直接定位 BE bug),FE 渲染失败次干净(BE 已确认 OK → drift 或 i18n 问题),UI 交互最复杂(校验 / 状态 / toast 等)**。倒过来跑会被多层 noise 淹掉。
@@ -432,6 +446,230 @@ test('SSE 断线 5s 后自动重连,不丢消息', async ({ page }) => {
 
 ---
 
+## Phase 10 — 边界值 + 特殊字符矩阵(~1 天)
+
+**Why**: B/B+ 都用合法常态值。真正的 4xx 长尾在边界、特殊字符、跨时区。
+
+**产出**: `e2e/boundary-matrix.spec.ts`(约 80 断言)+ `e2e/i18n-coverage.spec.ts`。
+
+### 10.1 数字边界
+- int32 上下界:`-2147483648` / `2147483647` / `+1` / `-1`
+- 0 / 负数 / 浮点位数 / `Number.EPSILON`
+- 超界(`2147483648`):FE 拦截 + BE 也得返 400(已修 :max,这次端到端验)
+
+### 10.2 字符串边界
+- 长度 0 / 1 / max(@Size 上限)/ max+1
+- 空格 / 全空格 / 前后空格(应 trim)
+- Unicode:中日韩 / Emoji / RTL(عربي)/ 零宽字符(`​`)
+- 全角 vs 半角(`１２３` vs `123`)/ 罗马数字 / 上下标
+
+### 10.3 注入字符(防 XSS / SQL inj / 命令注入)
+- `<script>alert(1)</script>` / `';DROP TABLE--` / `${jndi:ldap://}` / `\`rm -rf\``
+- 路径穿越:`../../etc/passwd` / `..\..\windows\system32`
+- 期望:全部按字面值落库,渲染时转义不执行
+
+### 10.4 时间 / 时区
+- ISO 边界:`1970-01-01T00:00:00Z` / `2038-01-19T03:14:07Z`(int32 timestamp)
+- 时区:UTC / Asia/Shanghai / Pacific/Apia (UTC+13)
+- DST 跨越:2026 美国 3 月第二个周日
+- 闰年 2 月 29 / 跨年 12-31 23:59:59
+
+### 10.5 分页 / 排序
+- `page=0` / `page=-1` / `page=999999` / `pageSize=0` / `pageSize=10000`
+- 多字段排序 / 排序字段不存在 / 排序方向枚举越界
+
+### 10.6 空 vs null vs 缺字段
+- 空字符串、null、undefined、字段未传 三种,后端处理一致?
+
+### 10.7 i18n 完整性自动断言(`i18n-coverage.spec.ts`)
+- 所有 zh-CN key 都有 en-US 对应(用 vitest 跑,缺一报错)
+- 文案没残留 `{xxx}` 占位符未替换
+- 切到 en-US 跑全路由,不应出现中文字符(部分品牌词除外)
+
+---
+
+## Phase 11 — 安全 / 越权 / 注入(~1 天)
+
+**Why**: 生产泄露 / 提权 / 注入是 P0 安全事件。Plan B/B+ 都假设友善用户。
+
+**产出**: `e2e/security-matrix.spec.ts` + `tools/security-scan.sh`(被动扫)。
+
+### 11.1 XSS
+- 注入 payload 到所有可输入文本字段(name / description / configJson)
+- 渲染层应 escape(Vue `{{ }}` 默认 escape;v-html 已在 commit e54bebe 全部清掉,这次回归验)
+- JSON preview 不该 `eval` / 不该执行 `<script>`
+
+### 11.2 SQL 注入
+- 查询参数:`/queries/jobs?keyword=' OR '1'='1`
+- 期望:BE 返结果集为空(MyBatis #{}参数化),不报错不爆库
+
+### 11.3 CSRF
+- 跨域 POST 不带 Cookie 应失败(SameSite=Lax 已设)
+- Origin/Referer 校验
+
+### 11.4 JWT / Session
+- 篡改 JWT payload(改 role) → 应 401
+- 过期 JWT → 应触发 refresh 一次,refresh 失败踢登录
+- 别人的 token → 应 401(签名验证)
+- 并发登录(Plan B+ Phase 8 已部分覆盖)
+
+### 11.5 提权 / 越权
+- TENANT_USER 直接 POST /tenants → 403(配合 Phase 6 矩阵)
+- 篡改请求 body 里 tenantId 为 ta(自己是 tb) → BE 应忽略或拒绝
+- URL ID 替换:`/jobs/123/edit` 改成别的租户的 jobId → 403/404
+
+### 11.6 文件上传越界
+- `.exe` / `.bat` / 0 字节 / 超大文件(>500MB) / MIME 伪造 / ZIP bomb
+- 上传路径穿越 `../../etc/passwd`
+- 期望:校验拒绝,不落盘 / 不返回内部路径
+
+### 11.7 敏感字段日志清查
+- 跑一遍主流程,grep 后端日志:`password` / `secret` / `token` / `Authorization` 不应出现明文
+- FE console.log 同样不应有
+- `logRedact.ts` 已有 sanitize,这次回归确认
+
+### 11.8 速率限制
+- 同账号 1s 内调登录 100 次 → 应触发 429
+- 错配密码 5 次 → 应锁定(error.auth.account_locked i18n 已就位)
+
+---
+
+## Phase 12 — 业务剧本失败路径深化(~1 天)
+
+**Why**: Phase 7 三个剧本都是 happy path。生产 bug 80% 在失败/中断/重复路径。
+
+**产出**: `e2e/scenario-*-failure.spec.ts` × 3 + 容错矩阵。
+
+### 12.1 剧本 A 失败路径(任务失败→重跑→审批)
+- 审批被拒绝(非批准) → self-service 单状态 REJECTED + 不重跑
+- 审批超时(假装 admin 一直不审) → 单状态 EXPIRED(BE 有 expireAt)
+- 重复提单(同一 jobInstanceId 提 2 次重跑) → 第二次 409 + 友好提示
+- 重跑过程中 worker 挂掉 → 实例 status 应回 FAILED + 可再次重跑
+- 重跑后又失败 → 可再次提单(链式)
+
+### 12.2 剧本 B 失败路径(文件到达→处理→回执)
+- 文件上传中断(浏览器关) → presign URL 失效后清理
+- pipeline 某 step 失败 → 整个 pipeline FAILED + 失败 step 标记 + 不影响其他文件
+- 回执 channel 不可达 → 回执失败 + outbox 重投 + 最终落死信
+- 文件已处理过(checksum 重复) → 幂等返已有结果,不重复处理
+
+### 12.3 剧本 C 失败路径(灰度→全量→回滚)
+- 审批阶段被拒 → 不可发布
+- 灰度阶段发现错误 → 中止灰度 + 状态回 APPROVED
+- 全量发布后 5 分钟内回滚 vs 24 小时后回滚(应都 OK)
+- 回滚失败(配置依赖被新版本污染) → 友好错 + 不丢历史
+- 同时两人发布 → 乐观锁冲突 409
+
+### 12.4 通用容错断言
+- 每个失败路径不应留脏数据(下次创建不冲突)
+- 每个 4xx/5xx 都应有 i18n 友好文案(不能裸 `error.xxx.yyy`)
+- 每个失败都应在 audit log 留痕
+
+---
+
+## Phase 13 — 可观测性自验(~0.5 天)
+
+**Why**: 出事故时"找不到 traceId / 没 audit log / metrics 不上报" 比 bug 本身更致命。
+
+**产出**: `e2e/observability-coverage.spec.ts` + `tools/log-scan.sh`。
+
+### 13.1 traceId 覆盖
+- 抓 e2e 跑过的所有 HTTP 响应,断言 100% 带 `meta.traceId`
+- traceId 在 BE access.log + business.log + error.log 三处都能搜到
+- FE toast 失败时也要带 traceId(已实现,这次回归)
+
+### 13.2 audit log 覆盖
+- 所有写操作(POST/PUT/DELETE)应在 `/api/console/queries/audits` 查到
+- audit 字段完整:operator / operationType / resourceType / resourceId / before / after / traceId
+- 跑完 Phase 1 CRUD 后,audit 表条数 ≥ 写操作次数
+
+### 13.3 metrics 暴露
+- `/actuator/prometheus` 暴露 BE 关键指标:`http_server_requests_seconds` / `executor_active` / `jdbc_connections_active`
+- 跑压测后(Phase 14)指标曲线合理
+
+### 13.4 错误日志结构化
+- 所有 error 级日志带 traceId + level + class + message + stack
+- 不应有裸 print(`println`)
+- 不应有 `Exception:` 没堆栈的情况
+
+---
+
+## Phase 14 — 性能 / 大数据量 / 高频(~1 天)
+
+**Why**: 生产环境单租户 10K+ jobDef / 100K+ instance,Plan B 测试数据都 < 100 条。列表慢/卡死/超时 都属于"功能没坏但用不了"。
+
+**产出**: `e2e/performance.spec.ts` + `tools/load-test.sh`(k6 脚本)。
+
+### 14.1 大列表性能
+- jobDef 灌 10K 条,/jobs/definitions 列表首屏渲染 ≤ 2s
+- 滚动 / 分页切换 < 500ms
+- 排序 / 过滤 < 1s
+- ProTable 虚拟滚动是否真省内存(devtools heap snapshot)
+
+### 14.2 并发触发
+- k6 模拟 100 并发触发 / 1s 持续 60s
+- 期望:BE QPS 100+ / 错误率 < 0.1% / p99 < 500ms
+- FE 在此压力下打开列表仍正常
+
+### 14.3 SSE 大流量
+- 推 1000 事件 / s,持续 60s,FE 不掉帧不堆积
+- DOM 节点不应无限增长(用 LRU 截留最近 200 条)
+
+### 14.4 大附件
+- 上传 500MB 文件,进度条平滑 + 不卡 UI
+- 下载 500MB 文件,断点续传可工作
+
+### 14.5 大分页
+- pageSize=200 列表能渲染
+- pageSize=2000 应 BE 限制返 400(防内存爆炸)
+
+---
+
+## Phase 15 — 视觉回归 + a11y AA(~0.5 天)
+
+**Why**: D 档跑过 a11y 烟测,但没基线;品牌升级 / 主题切换时容易回归。
+
+**产出**: `e2e/visual-regression.spec.ts`(Playwright screenshot 基线) + `e2e/a11y-aa.spec.ts`。
+
+### 15.1 视觉基线
+- 主流路由 30 页 × 主题 2(明/暗) × 分辨率 2(1366/1920) = 120 截图
+- 首次跑生成基线,后续 diff ≤ 1% 通过
+- 失败要 review 截图(不是自动通过)
+
+### 15.2 WCAG AA
+- 颜色对比度 ≥ 4.5:1(正文) / 3:1(大字)
+- 焦点环可见(Phase C 已做基础,这次定量)
+- 屏读叙述:菜单 / 主操作 / 错误提示 都有 aria-label
+- 键盘可达:所有可点的都能 Tab + Enter / Space
+
+### 15.3 焦点陷阱
+- Modal/Drawer 打开后 Tab 不应跳出
+- ESC 关闭后焦点回到触发按钮(C 档已有 keyboard-flow,这次扩到全部抽屉)
+
+---
+
+## Phase 16 — 混沌 + 集成真打(Pro,可选 ~2 天)
+
+**Why**: 真实生产故障如 Redis 断线 / Kafka 挂 / OSS 限流,本地都没复现过,事故只能现场学习。
+
+**产出**: `e2e/chaos-*.spec.ts` + `tools/chaos/`。
+
+### 16a 故障注入(~1 天)
+- BE 5xx 注入(用 toxiproxy 拦 /api/* 返 500) → FE retry + toast 合理
+- Redis down(`docker stop redis`)→ 幂等接口 fail-closed 不雪崩(已 i18n)
+- Kafka down → outbox 堆积 + 重投 + 最终落死信(Phase 5 spec 已覆盖,这次端到端)
+- DB 慢查询(toxiproxy 注入 5s 延迟) → FE loading 出现 + 不卡死
+- 2G 弱网(Chrome devtools throttle) → 首屏 ≤ 8s + 关键操作可完成
+
+### 16b 第三方真打(~1 天)
+- Kafka:实发消息 → 实消费 → 实落库
+- OSS / NAS:实上传 → 实下载 → 校验 checksum
+- SMTP:实发邮件到测试邮箱(mailcatcher)→ 验内容 + headers
+- Webhook:启 mockoon 接收 webhook → 验 payload + retry on 5xx
+- (生产前必须做一次;本地 dev 通常 mock)
+
+---
+
 ## 测试数据策略
 
 **风格**: 完全脏数据 + 命名空间隔离(决议见后文 ADR)。
@@ -496,16 +734,36 @@ test('SSE 断线 5s 后自动重连,不丢消息', async ({ page }) => {
 | **SSE/WS 重连** | `stream-reconnect` | 断网恢复 + 长连保活 + cursor 续推 | 🔵 B+ 新 |
 | **工作流设计器** | `workflow-designer-smoke` | X6 渲染 + 工具栏 + 抽屉(不测拖拽) | 🔵 B+ 新 |
 | **AI Chat** | `ai-chat-smoke` | 打开 + 输入 + mock SSE 流式 | 🔵 B+ 新 |
+| **边界 + 特殊字符** | `boundary-matrix` + `i18n-coverage` | int32/Unicode/时区 DST/分页 + i18n key 完整性 | 🟣 C+ 新 |
+| **安全 + 注入** | `security-matrix` + `tools/security-scan.sh` | XSS/SQL inj/CSRF/JWT/提权/文件越界/敏感字段日志 | 🟣 C+ 新 |
+| **剧本失败路径** | `scenario-*-failure` × 3 | 拒绝/超时/重复提单/中断/乐观锁冲突 | 🟣 C+ 新 |
+| **可观测性自验** | `observability-coverage` + `log-scan.sh` | traceId 100%/audit 全/metrics 暴露/日志结构化 | 🟣 C+ 新 |
+| **性能压测** | `performance` + `tools/load-test.sh` (k6) | 10K 列表/100 并发/SSE 高频/500MB 附件 | 🟣 C+ 新 |
+| **视觉回归 + a11y AA** | `visual-regression` + `a11y-aa` | 120 截图基线/WCAG AA 对比度/焦点陷阱 | 🟣 C+ 新 |
+| **混沌注入** | `chaos-*` (Pro 档) | BE 5xx/Redis down/Kafka down/2G 弱网/DB 慢查询 | ⚪ Pro |
+| **第三方真打** | (Pro 档) | Kafka/OSS/SMTP/Webhook 实链路 | ⚪ Pro |
 
-**覆盖度量化(B+ 档完成后)**:
-- 12 核心实体 CRUD:**100%**(B 档)
-- 全部 ~25 个写表单 CRUD:**100%**(B/C/D 档累计)
-- RBAC 5 角色 × 9 关键写接口 = **45 格矩阵**(Phase 6)
-- 端到端业务剧本:**3 个核心流**(Phase 7)
-- 异步/长连场景:**多租户 + SSE**(Phase 8)
-- 烟测兜底:**设计器 + AI Chat**(Phase 9)
-- 移动端 11 页 CRUD:**100%**(D 档)
-- a11y / 键盘 / 错误态 / soak:**已覆盖**(C/D 档)
+**覆盖度量化阶段累积**
+
+| 维度 | A 档 | B 档 | B+ 档 | C 档 | C+ 档 | D 档 | Pro 档 |
+|---|---|---|---|---|---|---|---|
+| 页面冒烟 | ✅ 100% | | | | | | |
+| 核心实体 CRUD | | ✅ 100% | | | | | |
+| 全部写表单 CRUD | | 部分 | | ✅ 100% | | | |
+| RBAC 矩阵 | | | ✅ 45 格 | | | | |
+| 端到端业务流 | | | ✅ happy ×3 | | ✅ failure ×3 | | |
+| 异步/长连 | | | ✅ 切租+SSE | | | | |
+| 边界值/字符 | | | | 部分 | ✅ 全矩阵 | | |
+| 安全 | | | | | ✅ XSS/SQL/JWT/越权 | | |
+| 可观测性自验 | | | | | ✅ trace/audit/metrics | | |
+| 性能 | | | | | ✅ 10K/100QPS/SSE/500MB | | |
+| 视觉回归 + a11y AA | | | | 部分 | ✅ 120 基线/AA | | |
+| 移动端 | | | | | | ✅ 11 页 | |
+| i18n soak / 多浏览器 | | | | | | ✅ | |
+| 混沌注入 | | | | | | | ✅ |
+| 第三方真打 | | | | | | | ✅ |
+
+**A/B/B+/C/C+/D 累计完成后 → 联调验收 90%+ / 生产健壮性 95%+ / Pro 加完 ≈ 99%**
 
 ---
 
@@ -523,7 +781,7 @@ npx playwright test e2e/queue-config-crud.spec.ts \
 bash tools/ci-fe-be-joint.sh
 ```
 
-### B+ 档(本次新增,4 天 sprint)
+### B+ 档(4 天 sprint)
 ```bash
 # Day 1 — Phase 5  Seed 补全 + 4 阻塞 spec
 bash docs/runbook/scripts/seed-all.sh
@@ -549,11 +807,62 @@ npx playwright test \
 bash tools/ci-fe-be-joint-bplus.sh
 ```
 
+### C+ 档(生产健壮性 ~5 天 sprint)
+```bash
+# Day 1 — Phase 10  边界 + 特殊字符
+npx playwright test e2e/boundary-matrix.spec.ts e2e/i18n-coverage.spec.ts
+
+# Day 2 — Phase 11  安全
+npx playwright test e2e/security-matrix.spec.ts
+bash tools/security-scan.sh
+
+# Day 3 — Phase 12  剧本失败路径
+npx playwright test e2e/scenario-job-fail-rerun-approve-failure.spec.ts \
+  e2e/scenario-file-arrival-pipeline-failure.spec.ts \
+  e2e/scenario-config-gray-rollback-failure.spec.ts
+
+# Day 4 上半 — Phase 13  可观测性
+npx playwright test e2e/observability-coverage.spec.ts
+bash tools/log-scan.sh
+
+# Day 4 下半 — Phase 14  性能(k6)
+bash tools/load-test.sh
+npx playwright test e2e/performance.spec.ts
+
+# Day 5 — Phase 15  视觉回归 + a11y AA
+npx playwright test e2e/visual-regression.spec.ts e2e/a11y-aa.spec.ts
+
+# 一键全跑(Phase 10–15)
+bash tools/ci-fe-be-joint-cplus.sh
+```
+
+### Pro 档(混沌 + 集成真打 ~2 天,可选)
+```bash
+# 启混沌代理 (toxiproxy + docker stop redis/kafka 等)
+bash tools/chaos/setup.sh
+
+# Day 1 — Phase 16a  故障注入
+npx playwright test e2e/chaos-be-5xx.spec.ts e2e/chaos-redis-down.spec.ts \
+  e2e/chaos-kafka-down.spec.ts e2e/chaos-slow-network.spec.ts
+
+# Day 2 — Phase 16b  第三方真打
+bash tools/integration/kafka-real.sh
+bash tools/integration/oss-real.sh
+bash tools/integration/smtp-real.sh
+bash tools/integration/webhook-real.sh
+```
+
 ### 产出
-- `docs/runbook/fe-be-joint-test-report-bplus.md` —— B+ 档执行总结
-- `docs/runbook/qa-bplus-phase-reports/` —— 5 个 Phase 的日报
+- `docs/runbook/fe-be-joint-test-report-bplus.md` —— B+ 档总结
+- `docs/runbook/fe-be-joint-test-report-cplus.md` —— C+ 档总结
+- `docs/runbook/fe-be-joint-test-report-pro.md` —— Pro 档总结(可选)
+- `docs/runbook/qa-bplus-phase-reports/` / `qa-cplus-phase-reports/` / `qa-pro-phase-reports/`
 - `docs/runbook/be-fix-backlog.md` —— 真跑出来的新 BE bug 追加
+- `e2e/.visual-baseline/` —— 视觉回归基线截图
+- `tools/load-test-results/` —— k6 性能压测报告 + Grafana 仪表板
 
 ---
 
-**B 档已落 (2026-05-16);B+ 档 5 个 Phase 待执行**。
+**已落**:A 档 / B 档 (2026-05-16, 42/42) / C 档 (2026-05-15, 466/16/0) / D 档 (2026-05-17)。
+**待执行**:B+ 档 (Phase 5–9, ~4 天) / C+ 档 (Phase 10–15, ~5 天) / Pro 档 (Phase 16, 可选 ~2 天)。
+**全档累计 ≈ 99% 覆盖**(剩余 1% 是真实 LLM 调用质量、真实生产数据迁移、真实长跑稳定性,属业务 QA 不属联调)。
