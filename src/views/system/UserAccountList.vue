@@ -155,7 +155,20 @@
             show-password
             :placeholder="t('userAccountList.fieldNewPasswordPlaceholder')"
             maxlength="256"
-          />
+          >
+            <template #append>
+              <el-tooltip :content="t('common.passwordGenerate')" placement="top">
+                <el-button :icon="MagicStick" @click="onGenCreatePassword" />
+              </el-tooltip>
+              <el-tooltip :content="t('common.passwordCopy')" placement="top">
+                <el-button
+                  :icon="DocumentCopy"
+                  :disabled="!createForm.password"
+                  @click="onCopyCreatePassword"
+                />
+              </el-tooltip>
+            </template>
+          </el-input>
         </el-form-item>
         <el-form-item :label="t('userAccountList.fieldDisplayName')">
           <el-input
@@ -259,7 +272,20 @@
             show-password
             :placeholder="t('userAccountList.fieldNewPasswordPlaceholder')"
             maxlength="256"
-          />
+          >
+            <template #append>
+              <el-tooltip :content="t('common.passwordGenerate')" placement="top">
+                <el-button :icon="MagicStick" @click="onGenResetPassword" />
+              </el-tooltip>
+              <el-tooltip :content="t('common.passwordCopy')" placement="top">
+                <el-button
+                  :icon="DocumentCopy"
+                  :disabled="!resetForm.newPassword"
+                  @click="onCopyResetPassword"
+                />
+              </el-tooltip>
+            </template>
+          </el-input>
         </el-form-item>
       </el-form>
       <template #footer>
@@ -276,7 +302,8 @@
   import { computed, onMounted, reactive, ref } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
-  import { Plus } from '@element-plus/icons-vue'
+  import { DocumentCopy, MagicStick, Plus } from '@element-plus/icons-vue'
+  import { generatePassword } from '@/utils/passwordGenerator'
 
   const { t } = useI18n({ useScope: 'global' })
   import type { FormRules } from 'element-plus'
@@ -551,6 +578,34 @@
     resetTarget.value = row
     resetForm.newPassword = ''
     resetVisible.value = true
+  }
+
+  // ─── 密码生成 + 复制(创建表单 & 重置对话框各一组) ───
+  function onGenCreatePassword() {
+    createForm.password = generatePassword(16)
+    ElMessage.success(t('common.passwordGeneratedToast'))
+  }
+  async function onCopyCreatePassword() {
+    if (!createForm.password) return
+    try {
+      await navigator.clipboard.writeText(createForm.password)
+      ElMessage.success(t('common.passwordCopiedToast'))
+    } catch {
+      ElMessage.warning(t('common.passwordCopyFailed'))
+    }
+  }
+  function onGenResetPassword() {
+    resetForm.newPassword = generatePassword(16)
+    ElMessage.success(t('common.passwordGeneratedToast'))
+  }
+  async function onCopyResetPassword() {
+    if (!resetForm.newPassword) return
+    try {
+      await navigator.clipboard.writeText(resetForm.newPassword)
+      ElMessage.success(t('common.passwordCopiedToast'))
+    } catch {
+      ElMessage.warning(t('common.passwordCopyFailed'))
+    }
   }
 
   async function submitReset() {

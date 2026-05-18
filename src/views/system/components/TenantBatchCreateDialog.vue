@@ -31,7 +31,16 @@
           show-password
           :placeholder="t('tenantBatchCreateDialog.passwordPlaceholder')"
           maxlength="256"
-        />
+        >
+          <template #append>
+            <el-tooltip :content="t('common.passwordGenerate')" placement="top">
+              <el-button :icon="MagicStick" @click="onGenPassword" />
+            </el-tooltip>
+            <el-tooltip :content="t('common.passwordCopy')" placement="top">
+              <el-button :icon="DocumentCopy" :disabled="!form.password" @click="onCopyPassword" />
+            </el-tooltip>
+          </template>
+        </el-input>
         <div class="field-hint">{{ t('tenantBatchCreateDialog.passwordHint') }}</div>
       </el-form-item>
       <el-divider content-position="left">
@@ -90,6 +99,8 @@
   import { computed, reactive, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
+  import { DocumentCopy, MagicStick } from '@element-plus/icons-vue'
+  import { generatePassword } from '@/utils/passwordGenerator'
 
   const { t } = useI18n({ useScope: 'global' })
   import type { FormRules } from 'element-plus'
@@ -119,6 +130,20 @@
     initConfigFrom: '',
     initMode: 'SKIP_EXISTING' as 'SKIP_EXISTING' | 'UPSERT',
   })
+
+  function onGenPassword() {
+    form.password = generatePassword(16)
+    ElMessage.success(t('common.passwordGeneratedToast'))
+  }
+  async function onCopyPassword() {
+    if (!form.password) return
+    try {
+      await navigator.clipboard.writeText(form.password)
+      ElMessage.success(t('common.passwordCopiedToast'))
+    } catch {
+      ElMessage.warning(t('common.passwordCopyFailed'))
+    }
+  }
 
   watch(
     () => props.modelValue,
