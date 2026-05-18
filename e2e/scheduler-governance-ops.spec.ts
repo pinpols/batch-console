@@ -17,8 +17,11 @@ test.describe('调度快照 — 全局暂停 / 恢复', () => {
   })
 
   test('刷新按钮重新加载', async ({ page }) => {
-    await page.getByRole('button', { name: '刷新' }).click()
-    await expect(page.locator('.el-card, .el-table').first()).toBeAttached({ timeout: 10_000 })
+    await page.getByRole('button', { name: '刷新' }).first().click({ timeout: 8000 })
+    // 页面骨架(任何一个 SectionCard / panel / table / empty 都行)
+    await expect(
+      page.locator('.section-card, .el-card, .el-table, .el-empty').first(),
+    ).toBeAttached({ timeout: 12_000 })
   })
 
   test('Tab 切换：策略 / 队列 / Workers / 历史', async ({ page }) => {

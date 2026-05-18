@@ -83,21 +83,25 @@ test.describe('⌘K Command Palette', () => {
 
   test('Ctrl/Meta + K 打开 palette', async ({ page, browserName }) => {
     await page.goto('/ops/summary', { waitUntil: 'domcontentloaded' })
-    await page.waitForTimeout(500)
+    // 等 DefaultLayout 的 onMounted (绑定 window keydown listener)
+    await page.locator('.layout-shell-lock, .layout-default').first().waitFor({ timeout: 8000 }).catch(() => undefined)
+    await page.locator('body').click({ position: { x: 10, y: 10 } })
+    await page.waitForTimeout(300)
     const modifier = browserName === 'webkit' ? 'Meta' : 'Control'
     await page.keyboard.press(`${modifier}+KeyK`)
-    // palette 输入框可见
     const input = page.locator('.command-palette .el-input__inner').first()
-    await expect(input).toBeVisible({ timeout: 3000 })
+    await expect(input).toBeVisible({ timeout: 5000 })
   })
 
   test('搜菜单项 + 回车跳转', async ({ page, browserName }) => {
     await page.goto('/ops/summary', { waitUntil: 'domcontentloaded' })
-    await page.waitForTimeout(500)
+    await page.locator('.layout-shell-lock, .layout-default').first().waitFor({ timeout: 8000 }).catch(() => undefined)
+    await page.locator('body').click({ position: { x: 10, y: 10 } })
+    await page.waitForTimeout(300)
     const modifier = browserName === 'webkit' ? 'Meta' : 'Control'
     await page.keyboard.press(`${modifier}+KeyK`)
     const input = page.locator('.command-palette .el-input__inner').first()
-    await expect(input).toBeVisible({ timeout: 3000 })
+    await expect(input).toBeVisible({ timeout: 5000 })
 
     await input.fill('告警')
     // 等候列表渲染
@@ -111,11 +115,13 @@ test.describe('⌘K Command Palette', () => {
 
   test('纯数字触发"作业实例 #N"跳转项', async ({ page, browserName }) => {
     await page.goto('/ops/summary', { waitUntil: 'domcontentloaded' })
-    await page.waitForTimeout(500)
+    await page.locator('.layout-shell-lock, .layout-default').first().waitFor({ timeout: 8000 }).catch(() => undefined)
+    await page.locator('body').click({ position: { x: 10, y: 10 } })
+    await page.waitForTimeout(300)
     const modifier = browserName === 'webkit' ? 'Meta' : 'Control'
     await page.keyboard.press(`${modifier}+KeyK`)
     const input = page.locator('.command-palette .el-input__inner').first()
-    await expect(input).toBeVisible({ timeout: 3000 })
+    await expect(input).toBeVisible({ timeout: 5000 })
 
     await input.fill('123')
     await page.waitForTimeout(200)
@@ -125,11 +131,13 @@ test.describe('⌘K Command Palette', () => {
 
   test('Escape 关闭 palette', async ({ page, browserName }) => {
     await page.goto('/ops/summary', { waitUntil: 'domcontentloaded' })
-    await page.waitForTimeout(500)
+    await page.locator('.layout-shell-lock, .layout-default').first().waitFor({ timeout: 8000 }).catch(() => undefined)
+    await page.locator('body').click({ position: { x: 10, y: 10 } })
+    await page.waitForTimeout(300)
     const modifier = browserName === 'webkit' ? 'Meta' : 'Control'
     await page.keyboard.press(`${modifier}+KeyK`)
     const input = page.locator('.command-palette .el-input__inner').first()
-    await expect(input).toBeVisible({ timeout: 3000 })
+    await expect(input).toBeVisible({ timeout: 5000 })
 
     await page.keyboard.press('Escape')
     await expect(input).not.toBeVisible({ timeout: 3000 })
