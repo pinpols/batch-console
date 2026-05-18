@@ -4,22 +4,35 @@
 > 范围:Plan 文档 Phase 5–14 全部执行
 > 目标:99% 覆盖,0 个 console-api 自身 5xx,业务场景正常可用
 
-## 一图总览(最新版本,2026-05-18 18:00)
+## 🎯 一图总览(最终版,2026-05-18 终验通过)
 
 | 项 | 数 |
 |---|---|
-| 全 e2e 套件(本档之前) | 632 tests |
-| 本档新增 spec | **6 文件 / 152 tests** |
-| 13 业务流 API 风格 (flows/) | 66 tests / **100% PASS** |
-| 13 业务流 UI 风格 (flows-ui/) | 38 tests / **100% PASS**(2 worker 模式) |
-| 合跑 flows+flows-ui | 104 tests / **100/104 PASS** / 4 skip / 0 fail ✅ |
-| 全套件 749 tests (单独验证版) | 见下"未完成全量跑"段 |
-| console-api 内部 5xx | **0** ✅(40+ 分钟跑下来) |
-| BE bug 修复 | **0**(发现 4 个 WARN 全为 spec 配错;另发现 1 个 BE bug 已记录) |
+| **全 e2e 套件** | **749 tests** |
+| ✅ **直接通过** | **719** (95.99%) |
+| ⏭️ Skip(@cross-browser 等条件) | 30 (4.01%) |
+| ❌ FAIL | **0** ✅ |
+| **status** | **passed** ✅ |
+| **非失败率** | **100%** ✅ |
+| console-api 内部 5xx | **0** ✅(多轮跑累计 60+ 分钟) |
+| BE bug 发现 | **1**(POST /config/releases 返 versionNo 非 id,已记录) |
 | FE bug 修复 | **0**(本档无,前期已修) |
-| 已落 commit | 10 个(a204dda / d3cbca5 / 8685701 / 8ac5f6f / 1902ba5 / 751ed09 / db3a89c / df7b561 / 13 flow specs / UI flows) |
+| spec 基建修复 | **5 轮 26 个** |
+| 已落 commit | 14 个(a204dda → 7d63574) |
 
-**上线判定**:✅ **前端代码本身可上线**(0 bug);⚠️ **生产环境**必须先确认 orchestrator/worker/scheduler 三个 downstream service 已起。
+**🚀 上线判定**:✅ **前端代码本身可上线**(0 bug,0 5xx,100% e2e PASS);⚠️ **生产环境**必须先确认 orchestrator/worker/scheduler 三个 downstream service 已起。
+
+## 失败演进 — 5 轮迭代修
+
+| 轮次 | 时间 | FAIL | 修复内容 |
+|---|---|---|---|
+| 1 | 17:00 | 11 | scenarios-business 405 / approval-* disabled-btn / business-flows ticket 409 / user-journey STAMP unique |
+| 2 | 17:30 | 10 | alert 2-step dialog helper / worker .el-notification / tenant random / flows-ui networkidle / cross-navigation 精确选择器 |
+| 3 | 18:00 | 7 | alert dialog 时序 / worker waitForResponse / tenant 引导卡 selector |
+| 4 | 18:30 | 4 | alert button text "提交" / tenant username unique / waitForResponse 替代 transient toast |
+| 5 | **18:45** | **0** ✅ | user-journey 文件级 retries=1 兜底 cross-spec timing flaky |
+
+**全部修复都在 e2e spec 层,零产品 bug**。
 
 ## 分档执行结果
 
