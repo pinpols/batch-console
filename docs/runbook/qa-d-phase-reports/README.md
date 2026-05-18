@@ -18,6 +18,7 @@
 | **P5-API-Full** | 全 endpoint 扫描(302 个) | ✅ **218/0 全过 (83% 覆盖)** | [phase5-api-full-coverage.md](phase5-api-full-coverage.md) |
 | **P5-Final** | 最终联调总评 + BE/seed 修复 | ✅ **867/0 + 0 真 5xx** | [phase5-final-summary.md](phase5-final-summary.md) |
 | **P5b-Replication** | 主从断 11 天 → dev 止血 + prod 监控 + BE lag-aware | ✅ 落地 4 alert + BE 兜底 | [phase5b-replication-fix.md](phase5b-replication-fix.md) |
+| **P6-BusinessFlows** | SQL seed + 9 段真业务操作闭环 (approve/reject/cancel/republish/ack/diff/clone 等) | ✅ **9/0 + 0 真 5xx + DB CAS 真生效** | [phase6-business-flows.md](phase6-business-flows.md) |
 
 ## 总评
 
