@@ -27,14 +27,14 @@ test.describe('notification channel CRUD (通知渠道增删改)', () => {
     await page.getByLabel('名称').fill('E2E 测试渠道')
     // 填写"类型"下拉(在 dialog 内,避免多个 select 干扰)。用 force 跳过 stability 检测,
     // EP el-select 的 wrapper 在 popper 挂载时会做布局抖动,自动 wait 容易超时。
-    const typeSelect = page.locator('.el-dialog').locator('.el-form-item').filter({ hasText: '类型' }).locator('.el-select').first()
+    const typeSelect = page.locator('.el-dialog:visible, .el-drawer:visible').locator('.el-form-item').filter({ hasText: '类型' }).locator('.el-select').first()
     if (await isVisible(typeSelect, 2000)) {
       await typeSelect.click({ force: true })
       await page.locator('.el-select-dropdown:visible .el-select-dropdown__item').first().click()
     }
     await page.getByRole('button', { name: '保存' }).click()
     // 保存可能因缺少必填字段失败，检查对话框是否关闭
-    const dialog = page.locator('.el-dialog').filter({ hasText: '新增渠道' })
+    const dialog = page.locator('.el-dialog:visible, .el-drawer:visible').filter({ hasText: '新增渠道' })
     const cellVisible = await isVisible(page.getByRole('cell', { name: uniqueCode }), 5000)
     if (!cellVisible) {
       // 对话框仍开着说明保存失败，跳过后续
@@ -98,8 +98,8 @@ test.describe('webhook CRUD (Webhook 增删改)', () => {
     await expect(page.getByText(/新增 Webhook/).first()).toBeVisible()
     await page.waitForTimeout(400)
     // dialog 内的 URL input(避免与外面"搜索 URL / 事件类型"列表筛选 input 重名)
-    await page.locator('.el-dialog').getByLabel('URL').first().fill('https://example.com/hook')
-    await page.locator('.el-dialog').getByLabel('事件类型').first().fill('JOB_COMPLETED')
+    await page.locator('.el-dialog:visible, .el-drawer:visible').getByLabel('URL').first().fill('https://example.com/hook')
+    await page.locator('.el-dialog:visible, .el-drawer:visible').getByLabel('事件类型').first().fill('JOB_COMPLETED')
     await expect(page.getByRole('button', { name: '保存' })).toBeVisible()
     await page.getByRole('button', { name: '取消' }).click({ force: true })
   })

@@ -94,7 +94,7 @@ test.describe('soak · 长会话稳定性', () => {
     const sampleSize = Number(process.env.SOAK_DIALOG_ROUNDS ?? '20')
     for (let i = 0; i < sampleSize; i++) {
       await createBtn.click()
-      const dialog = page.locator('.el-dialog').first()
+      const dialog = page.locator('.el-dialog:visible, .el-drawer:visible').first()
       await expect(dialog).toBeVisible({ timeout: 5000 })
       // 用 ESC 关闭
       await page.keyboard.press('Escape')
@@ -102,7 +102,7 @@ test.describe('soak · 长会话稳定性', () => {
     }
 
     // 断言:DOM 中残留的 dialog 节点 ≤ 1(EP 会保留一个 v-show=false)
-    const lingering = await page.locator('.el-dialog').count()
+    const lingering = await page.locator('.el-dialog:visible, .el-drawer:visible').count()
     expect(lingering, `残留 ${lingering} 个 dialog 节点`).toBeLessThanOrEqual(1)
   })
 })

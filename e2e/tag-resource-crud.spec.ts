@@ -23,7 +23,7 @@ test.describe('tag resource CRUD', () => {
     if (!(await isVisible(addBtn, 2000))) return
     await addBtn.click()
     await page.waitForTimeout(400)
-    const dialog = page.locator('.el-dialog').first()
+    const dialog = page.locator('.el-dialog:visible, .el-drawer:visible').first()
     if (await isVisible(dialog, 2000)) {
       await expect(dialog).toBeVisible()
       // 关闭对话框
@@ -33,7 +33,7 @@ test.describe('tag resource CRUD', () => {
   })
 
   test('按标签搜索 tab 可切换', async ({ page }) => {
-    await page.getByRole('tab', { name: '按标签搜索' }).click()
-    await expect(page.getByRole('tab', { name: '按标签搜索' })).toHaveClass(/is-active/)
+    await page.getByRole('tab', { name: '搜索标签' }).click()
+    await expect(page.getByRole('tab', { name: '搜索标签' })).toHaveClass(/is-active/)
   })
 })

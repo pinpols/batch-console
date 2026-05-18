@@ -58,6 +58,8 @@ test.describe('运维诊断 — Outbox 清理 / 重发布', () => {
   test('Outbox 清理 → 确认 → toast', async ({ page }) => {
     const cleanBtn = page.getByRole('button', { name: '清理' })
     if (!(await isVisible(cleanBtn))) return
+    // 没数据时按钮 disabled,直接跳过避免 timeout
+    if (await cleanBtn.isDisabled().catch(() => false)) return
     await cleanBtn.click()
     await expect(page.locator('.el-message-box')).toBeVisible()
     await expect(page.locator('.el-message-box')).toContainText('清理 Outbox')
@@ -68,6 +70,7 @@ test.describe('运维诊断 — Outbox 清理 / 重发布', () => {
   test('Outbox 重发布 → 确认 → toast', async ({ page }) => {
     const republishBtn = page.getByRole('button', { name: '重发布' })
     if (!(await isVisible(republishBtn))) return
+    if (await republishBtn.isDisabled().catch(() => false)) return
     await republishBtn.click()
     await expect(page.locator('.el-message-box')).toBeVisible()
     await expect(page.locator('.el-message-box')).toContainText(/重发布|outbox 事件 ID/)

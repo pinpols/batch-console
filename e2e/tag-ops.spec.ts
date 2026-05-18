@@ -66,8 +66,8 @@ test.describe('标签管理 — 按标签搜索', () => {
     await enterDemoApp(page)
     await page.goto('/system/tags')
     await expectPageTitle(page, '标签管理')
-    await page.getByRole('tab', { name: '按标签搜索' }).click()
-    await expect(page.getByRole('tab', { name: '按标签搜索' })).toHaveClass(/is-active/)
+    await page.getByRole('tab', { name: '搜索标签' }).click()
+    await expect(page.getByRole('tab', { name: '搜索标签' })).toHaveClass(/is-active/)
   })
 
   test('Tag Key 搜索', async ({ page }) => {
@@ -101,7 +101,7 @@ test.describe('标签管理 — 已注册 Key sub-section', () => {
     await enterDemoApp(page)
     await page.goto('/system/tags')
     await expectPageTitle(page, '标签管理')
-    await page.getByRole('tab', { name: '按标签搜索' }).click()
+    await page.getByRole('tab', { name: '搜索标签' }).click()
   })
 
   // "已注册 Key" 子面板已下线(改成 tagKey autocomplete 下拉建议,见 commit 4601152)

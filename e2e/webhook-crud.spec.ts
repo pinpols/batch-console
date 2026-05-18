@@ -28,7 +28,7 @@ test.describe('Webhook CRUD', () => {
     await page.waitForTimeout(400) // 等 dialog 进场动画
 
     // 名称 / URL / 事件类型 — 用 form-item filter 定位,避开 getByLabel 在列表筛选区的歧义
-    const dialog = page.locator('.el-dialog')
+    const dialog = page.locator('.el-dialog:visible, .el-drawer:visible')
     await dialog.locator('.el-form-item').filter({ hasText: '名称' }).locator('input').first().fill(uniqueName)
     await dialog.locator('.el-form-item').filter({ hasText: 'URL' }).locator('input').first().fill('https://example.com/test-hook')
     await dialog.locator('.el-form-item').filter({ hasText: '事件类型' }).locator('input,textarea').first().fill('JOB_SUCCEEDED')

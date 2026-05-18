@@ -81,9 +81,9 @@ test.describe('用户账户 — 编辑对话框', () => {
     const editBtn = page.locator('.table-actions').getByRole('button', { name: '编辑' }).first()
     if (!(await isVisible(editBtn))) return
     await editBtn.click()
-    await expect(page.locator('.el-dialog')).toBeVisible()
+    await expect(page.locator('.el-dialog:visible, .el-drawer:visible')).toBeVisible()
     // 用户名字段应为只读
-    const usernameInput = page.locator('.el-dialog').locator('input[disabled]').first()
+    const usernameInput = page.locator('.el-dialog:visible, .el-drawer:visible').locator('input[disabled]').first()
     await expect(usernameInput).toBeVisible()
   })
 
@@ -91,24 +91,24 @@ test.describe('用户账户 — 编辑对话框', () => {
     const editBtn = page.locator('.table-actions').getByRole('button', { name: '编辑' }).first()
     if (!(await isVisible(editBtn))) return
     await editBtn.click()
-    await expect(page.locator('.el-dialog')).toBeVisible()
-    await page.locator('.el-dialog').getByRole('button', { name: '取消' }).click()
-    await expect(page.locator('.el-dialog')).not.toBeVisible()
+    await expect(page.locator('.el-dialog:visible, .el-drawer:visible')).toBeVisible()
+    await page.locator('.el-dialog:visible, .el-drawer:visible').getByRole('button', { name: '取消' }).click()
+    await expect(page.locator('.el-dialog:visible, .el-drawer:visible')).not.toBeVisible()
   })
 
   test('修改显示名并保存 → toast', async ({ page }) => {
     const editBtn = page.locator('.table-actions').getByRole('button', { name: '编辑' }).first()
     if (!(await isVisible(editBtn))) return
     await editBtn.click()
-    await expect(page.locator('.el-dialog')).toBeVisible()
+    await expect(page.locator('.el-dialog:visible, .el-drawer:visible')).toBeVisible()
     const displayNameInput = page
-      .locator('.el-dialog')
+      .locator('.el-dialog:visible, .el-drawer:visible')
       .locator('.el-form-item')
       .filter({ hasText: '显示名' })
       .getByRole('textbox')
     await displayNameInput.clear()
     await displayNameInput.fill('e2e-display-name')
-    await page.locator('.el-dialog').getByRole('button', { name: '保存' }).click()
+    await page.locator('.el-dialog:visible, .el-drawer:visible').getByRole('button', { name: '保存' }).click()
     const toast = page.locator('.el-message')
     if (await isVisible(toast, 8000)) {
       await expect(toast).toBeVisible()
@@ -130,8 +130,8 @@ test.describe('用户账户 — 重置密码', () => {
       .first()
     if (!(await isVisible(resetBtn))) return
     await resetBtn.click()
-    await expect(page.locator('.el-dialog')).toBeVisible()
-    await expect(page.locator('.el-dialog').getByRole('button', { name: '确认重置' })).toBeVisible()
+    await expect(page.locator('.el-dialog:visible, .el-drawer:visible')).toBeVisible()
+    await expect(page.locator('.el-dialog:visible, .el-drawer:visible').getByRole('button', { name: '确认重置' })).toBeVisible()
   })
 
   test('密码少于 8 字符提交触发 warning toast', async ({ page }) => {
@@ -141,10 +141,10 @@ test.describe('用户账户 — 重置密码', () => {
       .first()
     if (!(await isVisible(resetBtn))) return
     await resetBtn.click()
-    await expect(page.locator('.el-dialog')).toBeVisible()
-    const pwInput = page.locator('.el-dialog').locator('input[type="password"]')
+    await expect(page.locator('.el-dialog:visible, .el-drawer:visible')).toBeVisible()
+    const pwInput = page.locator('.el-dialog:visible, .el-drawer:visible').locator('input[type="password"]')
     await pwInput.fill('short')
-    await page.locator('.el-dialog').getByRole('button', { name: '确认重置' }).click()
+    await page.locator('.el-dialog:visible, .el-drawer:visible').getByRole('button', { name: '确认重置' }).click()
     await expect(page.locator('.el-message--warning')).toBeVisible({ timeout: 3000 })
   })
 
@@ -155,9 +155,9 @@ test.describe('用户账户 — 重置密码', () => {
       .first()
     if (!(await isVisible(resetBtn))) return
     await resetBtn.click()
-    await expect(page.locator('.el-dialog')).toBeVisible()
-    await page.locator('.el-dialog').getByRole('button', { name: '取消' }).click()
-    await expect(page.locator('.el-dialog')).not.toBeVisible()
+    await expect(page.locator('.el-dialog:visible, .el-drawer:visible')).toBeVisible()
+    await page.locator('.el-dialog:visible, .el-drawer:visible').getByRole('button', { name: '取消' }).click()
+    await expect(page.locator('.el-dialog:visible, .el-drawer:visible')).not.toBeVisible()
   })
 })
 

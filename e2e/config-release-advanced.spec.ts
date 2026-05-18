@@ -35,7 +35,7 @@ test.describe('config release dependency & diff (配置发布依赖与对比)', 
       await expect(page.getByText('版本 B')).toBeVisible()
       // 对比按钮存在
       await expect(
-        page.locator('.el-dialog').getByRole('button', { name: '对比' }),
+        page.locator('.el-dialog:visible, .el-drawer:visible').getByRole('button', { name: '对比' }),
       ).toBeVisible()
     }
   })

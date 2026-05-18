@@ -17,7 +17,7 @@ test.describe('dashboard metric card navigation (指标卡片跳转)', () => {
     await page.goto('/ops/summary')
     await page.locator('.metric-hit', { hasText: '未处理告警' }).click()
     await expect(page).toHaveURL(/\/observability\/alerts/)
-    await expectPageTitle(page, '告警')
+    await expectPageTitle(page, /事件告警|告警/)
   })
 
   test('点击严重告警卡片跳转到告警列表并筛选 severity=CRITICAL', async ({ page }) => {
@@ -164,7 +164,7 @@ test.describe('query parameter pre-fill (查询参数预填)', () => {
 
   test('告警列表通过 severity 参数预填筛选条件', async ({ page }) => {
     await page.goto('/observability/alerts?severity=CRITICAL')
-    await expectPageTitle(page, '告警')
+    await expectPageTitle(page, /事件告警|告警/)
     const severitySelect = page.locator('.el-form-item').filter({ hasText: '级别' }).locator('.el-select')
     await expect(severitySelect).toContainText('CRITICAL', { timeout: 10_000 })
   })

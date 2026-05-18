@@ -11,7 +11,7 @@ test.describe('告警 — 筛选查询', () => {
   test.beforeEach(async ({ page }) => {
     await enterDemoApp(page)
     await page.goto('/observability/alerts')
-    await expectPageTitle(page, '告警')
+    await expectPageTitle(page, /事件告警|告警/)
   })
 
   test('级别筛选 → 查询', async ({ page }) => {
@@ -62,7 +62,7 @@ test.describe('告警 — 操作流', () => {
   test.beforeEach(async ({ page }) => {
     await enterDemoApp(page)
     await page.goto('/observability/alerts')
-    await expectPageTitle(page, '告警')
+    await expectPageTitle(page, /事件告警|告警/)
   })
 
   test('确认告警 → 填写说明 → 提交 → toast', async ({ page }) => {

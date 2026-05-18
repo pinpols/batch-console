@@ -20,7 +20,7 @@ test.describe('keyboard flow — P0 页面', () => {
     await page.goto('/governance/queues')
     await page.getByRole('button', { name: '新建队列' }).click()
     await page.waitForTimeout(400)
-    const dialog = page.locator('.el-dialog').first()
+    const dialog = page.locator('.el-dialog:visible, .el-drawer:visible').first()
     await expect(dialog).toBeVisible({ timeout: 3000 })
     await page.keyboard.press('Escape')
     await expect(dialog).toBeHidden({ timeout: 3000 })
@@ -30,16 +30,16 @@ test.describe('keyboard flow — P0 页面', () => {
     await page.goto('/observability/alert-routings')
     await page.getByRole('button', { name: '新增路由' }).click()
     await page.waitForTimeout(400)
-    const dialog = page.locator('.el-dialog').first()
+    const dialog = page.locator('.el-dialog:visible, .el-drawer:visible').first()
     await expect(dialog).toBeVisible({ timeout: 3000 })
-    // 按 5 次 Tab,每次 active element 都应在 dialog 内
+    // 按 5 次 Tab,每次 active element 都应在 dialog/drawer 内(EP 多数已迁移 drawer)
     for (let i = 0; i < 5; i++) {
       await page.keyboard.press('Tab')
       const isInside = await page.evaluate(() => {
-        const dlg = document.querySelector('.el-dialog')
+        const dlg = document.querySelector('.el-dialog, .el-drawer')
         return dlg ? dlg.contains(document.activeElement) : false
       })
-      expect(isInside, `Tab ${i + 1} 后焦点应在 dialog 内`).toBe(true)
+      expect(isInside, `Tab ${i + 1} 后焦点应在 dialog/drawer 内`).toBe(true)
     }
     await page.keyboard.press('Escape')
   })

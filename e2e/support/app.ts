@@ -34,15 +34,15 @@ export const smokeRoutes: RouteCheck[] = [
   { path: '/monitor/job-steps', title: '作业步骤' },
   { path: '/monitor/workflow-runs', title: '工作流运行' },
   // /logs 已 redirect 到 /observability/queries?tab=executionLogs,smoke 不再列
-  { path: '/observability/alerts', title: '告警' },
+  { path: '/observability/alerts', title: /事件告警|告警/ },
   { path: '/observability/audits', title: '审计日志' },
   { path: '/observability/outbox', title: 'Outbox' },
   { path: '/observability/queries', title: '综合查询' },
   { path: '/system/event-catalog', title: '事件目录' },
   // 调度与治理
   // /scheduler/catch-up-approvals 已 redirect 到 /approvals?tab=catch-up,smoke 不再列
-  { path: '/governance/quota', title: '租户配额' },
-  { path: '/governance/queues', title: '队列与窗口' },
+  { path: '/governance/quota', title: /配额策略|租户配额/ },
+  { path: '/governance/queues', title: /队列/ },
   { path: '/workers/management', title: 'Worker' },
   { path: '/system/triggers', title: '触发器' },
   // 系统
