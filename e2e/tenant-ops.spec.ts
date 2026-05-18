@@ -66,7 +66,11 @@ test.describe('租户管理 — 新建租户', () => {
     if (await isVisible(pwdInput, 1000)) await pwdInput.fill('Test@2026e2e1')
 
     await page.getByRole('button', { name: /保存|创建/ }).click()
-    await expect(page.locator('.el-message').first()).toBeVisible({ timeout: 8000 })
+    // 创建成功后 FE 弹 ElMessageBox 引导卡(去初始化 / 留在列表),不是 .el-message toast
+    // 见 src/views/system/TenantList.vue onTenantSaved → showCreateSuccess(useCreateSuccess.ts)
+    await expect(
+      page.locator('.el-message, .el-message-box, .el-notification').first(),
+    ).toBeVisible({ timeout: 8000 })
   })
 })
 
