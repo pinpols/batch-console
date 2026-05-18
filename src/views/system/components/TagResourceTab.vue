@@ -148,6 +148,9 @@
   const { loading: loadingTags, error: loadTagsError, run: runLoadTags } = useListLoadState()
   const { filterBusy, runSearch, runReset, runRefresh } = useListFilterFeedback(loadingTags)
   const queryForm = reactive({ resourceType: '' as string, resourceCode: '' })
+  const canCreate = computed(
+    () => !!queryForm.resourceType && queryForm.resourceCode.trim().length > 0,
+  )
   const editValueByKey = reactive<Record<string, string>>({})
   const savingKey = ref('')
   const deletingKey = ref('')
@@ -271,7 +274,7 @@
     tagRows.value = []
   })
 
-  defineExpose({ openNewDialog })
+  defineExpose({ openNewDialog, canCreate })
 </script>
 
 <style scoped>

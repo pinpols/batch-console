@@ -691,6 +691,8 @@
   async function triggerRow(row: ConsoleJobDefinitionResponse) {
     let payloadText = ''
     try {
+      // inputValidator 在用户点"确认"时实时拦截 JSON 语法错,
+      // 而不是关掉对话框、ElMessage 再 toast,避免用户白填一大坨参数。
       const { value } = await ElMessageBox.prompt(
         t('jobDefinitionList.triggerPrompt'),
         t('jobDefinitionList.triggerTitle', { code: row.jobCode }),
@@ -699,10 +701,18 @@
           inputValue: '{}',
           confirmButtonText: t('jobDefinitionList.triggerConfirm'),
           cancelButtonText: t('common.cancel'),
+          inputValidator: (v: string) => {
+            const text = v?.trim() || '{}'
+            try {
+              JSON.parse(text)
+              return true
+            } catch {
+              return t('jobDefinitionList.triggerInvalidJson')
+            }
+          },
         },
       )
       payloadText = value?.trim() || '{}'
-      JSON.parse(payloadText)
     } catch (error) {
       if (error === 'cancel' || error === 'close') return
       ElMessage.error(t('jobDefinitionList.triggerInvalidJson'))
