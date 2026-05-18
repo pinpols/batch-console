@@ -153,6 +153,7 @@ type AutoIdempotencyEntry = {
   key: string
   expiresAt: number
   pendingUntil: number
+  activeCount: number
 }
 
 const autoIdempotencyKeys = new Map<string, AutoIdempotencyEntry>()
@@ -242,6 +243,7 @@ function getAutoIdempotencyKey(signature: string): string {
   pruneAutoIdempotencyKeys(now)
   const existing = autoIdempotencyKeys.get(signature)
   if (existing && (now <= existing.pendingUntil || now <= existing.expiresAt)) {
+    existing.activeCount += 1
     return existing.key
   }
   const key = createIdempotencyKey()
@@ -249,6 +251,7 @@ function getAutoIdempotencyKey(signature: string): string {
     key,
     expiresAt: now + IDEMPOTENCY_REUSE_WINDOW_MS,
     pendingUntil: now + IDEMPOTENCY_PENDING_MAX_MS,
+    activeCount: 1,
   })
   return key
 }
@@ -258,8 +261,11 @@ function markAutoIdempotencyCompleted(config?: LoggedConfig): void {
   if (!signature) return
   const entry = autoIdempotencyKeys.get(signature)
   if (!entry) return
-  entry.expiresAt = Date.now() + IDEMPOTENCY_REUSE_WINDOW_MS
-  entry.pendingUntil = 0
+  entry.activeCount = Math.max(0, entry.activeCount - 1)
+  if (entry.activeCount === 0) {
+    entry.expiresAt = Date.now() + IDEMPOTENCY_REUSE_WINDOW_MS
+    entry.pendingUntil = 0
+  }
 }
 
 type SpringLikeErrorBody = {
@@ -427,6 +433,45 @@ export function applyApiInterceptors(client: AxiosInstance): void {
       const cfg = error.config as LoggedConfig | undefined
       markAutoIdempotencyCompleted(cfg)
       const raw = error.response?.data
+
+      // L2/L3 协同的"幂等重放"识别:
+      //   FE 在 2s 复用窗口里给同签名重发请求时复用了同一个 Idempotency-Key,
+      //   BE 幂等拦截器看到重复 key → 409。这本质是 FE 自己防抖的副作用,
+      //   不是用户该被打扰的错误,这里:
+      //     - 不写 error 级别日志,改 info(留痕但不污染告警)
+      //     - 不弹 toast(主防线 useAsyncAction.loading 已让用户根本点不到,
+      //       走到这层一定是漏了 :loading 或非按钮触发的二次写)
+      //     - 仍 reject,把 idempotentReplay 标记挂到 error 上,业务方有需要可识别
+      //   触发条件二选一即可:
+      //     (a) FE 本次自动注入了 key(_autoIdempotencySignature 非空),即用户在
+      //         FE 的复用窗口内重复点击 — 这是 FE 自己造的重发,理应静默;
+      //     (b) BE envelope.code === 'IDEMPOTENT_REPLAY'(BE 协议未来若加此明示码),
+      //         即便 FE 没自动注入 key(例如调用方手写 header),BE 已确认这是重放
+      //         也按静默处理 — 比纯依赖 (a) 更稳。
+      //   双信号互补:任一命中即静默,都不命中(真冲突)走正常错误路径。
+      const replayEnvelopeCode =
+        raw && typeof raw === 'object' && 'code' in raw
+          ? String((raw as { code?: unknown }).code ?? '')
+          : ''
+      const idempotentReplay =
+        status === 409 &&
+        (!!cfg?._autoIdempotencySignature || replayEnvelopeCode === 'IDEMPOTENT_REPLAY')
+      if (idempotentReplay) {
+        logApi(
+          `${(cfg!.method ?? 'get').toUpperCase()} ${cfg!.url ?? ''} → 409 idempotent replay (silenced)`,
+          'info',
+          {
+            kind: 'api-idempotent-replay',
+            method: (cfg!.method ?? 'get').toUpperCase(),
+            url: cfg!.url ?? '',
+            status,
+          },
+        )
+        return Promise.reject(
+          Object.assign(error as object, { idempotentReplay: true, silenced: true }),
+        )
+      }
+
       {
         const duration = cfg?._startTime ? Date.now() - cfg._startTime : undefined
         const method = (cfg?.method ?? 'get').toUpperCase()
