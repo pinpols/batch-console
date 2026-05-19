@@ -184,7 +184,7 @@
   import DateRangePresetPicker from '@/components/common/DateRangePresetPicker.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import ProTable from '@/components/table/ProTable.vue'
-  import DatetimeColumn from '@/components/table/DatetimeColumn.vue'
+  import DatetimeColumn from '@/components/common/DatetimeColumn.vue'
 
   const { t } = useI18n({ useScope: 'global' })
 

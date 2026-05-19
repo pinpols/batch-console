@@ -354,7 +354,9 @@
   form.jobType = 'GENERAL'
   form.scheduleType = 'MANUAL'
   form.executionMode = 'FULL'
-  form.enabled = true
+  // 新建定义默认禁用:CRON 一旦启用就会按表达式持续触发,
+  // 强制创建者先在列表页 dry-run / 校验后再 enable,避免脏数据(参考 e2e-job-* 历史)
+  form.enabled = false
 
   // 表单校验:与编辑 drawer (JobDefinitionList) 一致的口径,避免向导提交后 BE 才报错
   const jobCodePattern = /^[a-zA-Z][a-zA-Z0-9_-]{0,127}$/
