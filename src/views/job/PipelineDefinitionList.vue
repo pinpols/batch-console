@@ -202,26 +202,77 @@
                   </div>
                 </div>
                 <div class="step-card__grid">
-                  <el-input
-                    v-model="row.stepCode"
-                    :placeholder="t('pipelineDefinitionList.stepFieldCodePlaceholder')"
-                  />
-                  <el-input
-                    v-model="row.stepName"
-                    :placeholder="t('pipelineDefinitionList.stepFieldNamePlaceholder')"
-                  />
-                  <el-input
-                    v-model="row.stageCode"
-                    :placeholder="t('pipelineDefinitionList.stepFieldStagePlaceholder')"
-                  />
-                  <el-input
-                    v-model="row.stepType"
-                    :placeholder="t('pipelineDefinitionList.stepFieldImplPlaceholder')"
-                  />
-                  <el-input
-                    v-model="row.description"
-                    :placeholder="t('pipelineDefinitionList.stepFieldDescriptionPlaceholder')"
-                  />
+                  <!-- stageCode 必填,从字典挑;选了之后自动给 stepCode/stepName/stepType 补默认值 -->
+                  <div class="step-field">
+                    <label class="step-field__label">{{
+                      t('pipelineDefinitionList.stepFieldStageLabel')
+                    }}</label>
+                    <el-select
+                      :model-value="row.stageCode"
+                      :placeholder="t('pipelineDefinitionList.stepFieldStagePlaceholder')"
+                      filterable
+                      class="step-field__input"
+                      @update:model-value="(v) => onStageChange(row, v)"
+                    >
+                      <el-option
+                        v-for="s in stageOptionsForCurrent"
+                        :key="s"
+                        :label="s"
+                        :value="s"
+                      />
+                    </el-select>
+                  </div>
+                  <div class="step-field">
+                    <label class="step-field__label">{{
+                      t('pipelineDefinitionList.stepFieldCodeLabel')
+                    }}</label>
+                    <el-input
+                      v-model="row.stepCode"
+                      :placeholder="t('pipelineDefinitionList.stepFieldCodePlaceholder')"
+                      class="step-field__input"
+                    />
+                  </div>
+                  <div class="step-field">
+                    <label class="step-field__label">{{
+                      t('pipelineDefinitionList.stepFieldNameLabel')
+                    }}</label>
+                    <el-input
+                      v-model="row.stepName"
+                      :placeholder="t('pipelineDefinitionList.stepFieldNamePlaceholder')"
+                      class="step-field__input"
+                    />
+                  </div>
+                  <div class="step-field">
+                    <label class="step-field__label">{{
+                      t('pipelineDefinitionList.stepFieldImplLabel')
+                    }}</label>
+                    <el-select
+                      v-model="row.stepType"
+                      :placeholder="t('pipelineDefinitionList.stepFieldImplPlaceholder')"
+                      filterable
+                      allow-create
+                      default-first-option
+                      clearable
+                      class="step-field__input"
+                    >
+                      <el-option
+                        v-for="impl in stepImplOptions"
+                        :key="impl"
+                        :label="impl"
+                        :value="impl"
+                      />
+                    </el-select>
+                  </div>
+                  <div class="step-field step-field--wide">
+                    <label class="step-field__label">{{
+                      t('pipelineDefinitionList.stepFieldDescriptionLabel')
+                    }}</label>
+                    <el-input
+                      v-model="row.description"
+                      :placeholder="t('pipelineDefinitionList.stepFieldDescriptionPlaceholder')"
+                      class="step-field__input"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -327,7 +378,7 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, ref, watch } from 'vue'
+  import { computed, onMounted, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
 
@@ -350,6 +401,7 @@
   import { useDrawerAutoClose } from '@/composables/useDrawerAutoClose'
   import { useAsyncAction } from '@/composables/useAsyncAction'
   import { instanceApi } from '@/api/instance'
+  import { fetchPipelineStages, fetchStepImpls, type PipelineStagesMap } from '@/api/pipelineMeta'
   import { fmtDatetime } from '@/utils/datetime'
   import StatusTag from '@/components/common/StatusTag.vue'
   import type { ConsoleJobInstanceResponse } from '@/types/console-api'
@@ -370,6 +422,22 @@
   const loadError = ref<unknown>(null)
   const { filterBusy, tableBlocking, runSearch, runReset, runRefresh } =
     useListFilterFeedback(loading)
+  // 9-stages 字典 + step impl 字典(BE 维护,FE 首次加载缓存。两个接口都 permitAll-style 缓存稳)
+  const stagesMap = ref<PipelineStagesMap>({})
+  const stepImplOptions = ref<string[]>([])
+  const stageOptionsForCurrent = computed<string[]>(() => {
+    const pt = form.pipelineType || 'IMPORT'
+    return stagesMap.value[pt] ?? []
+  })
+  onMounted(() => {
+    fetchPipelineStages()
+      .then((m) => (stagesMap.value = m || {}))
+      .catch(() => {})
+    fetchStepImpls()
+      .then((list) => (stepImplOptions.value = list || []))
+      .catch(() => {})
+  })
+
   const togglingId = ref<number | null>(null)
   const rows = ref<PipelineDefinitionRow[]>([])
   const allRows = ref<PipelineDefinitionRow[]>([])
@@ -684,6 +752,27 @@
     })
   }
 
+  /**
+   * 用户选 stageCode 时自动补默认值,避免「同一个 EXPORT_PREPARE 抄 3 遍」的混乱:
+   * - stepCode 空时 → `{PIPELINE_TYPE}_{STAGE}` (例 `EXPORT_PREPARE`)
+   * - stepName 空时 → 同 stepCode
+   * 用户后续手动改的不再覆盖。
+   */
+  function onStageChange(
+    row: { stepCode: string; stepName: string; stageCode: string },
+    stage: string,
+  ) {
+    const old = row.stageCode
+    row.stageCode = stage
+    if (!stage) return
+    const pt = (form.pipelineType || 'IMPORT').toUpperCase()
+    const auto = `${pt}_${stage}`
+    // 用户没改过(空 OR 跟上一次自动值一致)才覆盖
+    const prevAuto = old ? `${pt}_${old}` : ''
+    if (!row.stepCode || row.stepCode === prevAuto) row.stepCode = auto
+    if (!row.stepName || row.stepName === prevAuto) row.stepName = auto
+  }
+
   function removeStep(index: number) {
     steps.value.splice(index, 1)
   }
@@ -811,7 +900,28 @@
   .step-card__grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
+    gap: 10px 16px;
+  }
+
+  /* 单字段:label 在上,input 在下,5 个字段不再无标签裸排 → 用户立刻知道哪是 stage 哪是 code */
+  .step-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+  .step-field__label {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    font-weight: 500;
+    user-select: none;
+  }
+  .step-field__input {
+    width: 100%;
+  }
+  /* description 占满一整行 */
+  .step-field--wide {
+    grid-column: 1 / -1;
   }
 
   .steps-preview {
@@ -821,6 +931,9 @@
   @media (max-width: 900px) {
     .step-card__grid {
       grid-template-columns: 1fr;
+    }
+    .step-field--wide {
+      grid-column: auto;
     }
   }
 </style>
