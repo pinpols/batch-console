@@ -322,10 +322,13 @@
       <el-form :model="templateForm" label-width="120px">
         <el-form-item :label="t('fileTemplateList.fieldTemplateCode')" required>
           <el-input
+            v-if="templateEditingId != null"
             v-model="templateForm.templateCode"
-            :disabled="templateEditingId != null"
+            disabled
             maxlength="128"
           />
+          <!-- 新建态:CodeNameBuilder 默认 DOMAIN=IMPORT(文件模板多用于导入) -->
+          <CodeNameBuilder v-else v-model="templateForm.templateCode" default-domain="IMPORT" />
         </el-form-item>
         <el-form-item :label="t('fileTemplateList.fieldTemplateName')"
           ><el-input v-model="templateForm.templateName" maxlength="256"
@@ -405,10 +408,13 @@
       <el-form :model="channelForm" label-width="120px">
         <el-form-item :label="t('fileTemplateList.fieldChannelCode')" required>
           <el-input
+            v-if="channelEditingId != null"
             v-model="channelForm.channelCode"
-            :disabled="channelEditingId != null"
+            disabled
             maxlength="128"
           />
+          <!-- 文件渠道多用于 DISPATCH(也可 IMPORT/EXPORT),默认 DISPATCH 兼容性最好 -->
+          <CodeNameBuilder v-else v-model="channelForm.channelCode" default-domain="DISPATCH" />
         </el-form-item>
         <el-form-item :label="t('fileTemplateList.fieldChannelName')"
           ><el-input v-model="channelForm.channelName" maxlength="256"
@@ -483,6 +489,7 @@
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
   import { getMetaBizTypes, type MetaOption } from '@/api/meta'
   import MetaSelect from '@/components/common/MetaSelect.vue'
+  import CodeNameBuilder from '@/components/common/CodeNameBuilder.vue'
   import {
     createFileChannel,
     createFileTemplate,
