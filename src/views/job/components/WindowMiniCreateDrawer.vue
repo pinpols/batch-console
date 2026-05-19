@@ -24,7 +24,7 @@
         <el-input
           v-model="form.windowCode"
           :placeholder="t('jobConfigBasic.miniWindowCodePlaceholder')"
-          maxlength="64"
+          maxlength="128"
           show-word-limit
         />
       </el-form-item>
@@ -32,7 +32,8 @@
         <el-input
           v-model="form.windowName"
           :placeholder="t('jobConfigBasic.miniWindowNamePlaceholder')"
-          maxlength="128"
+          maxlength="256"
+          show-word-limit
         />
       </el-form-item>
       <el-form-item :label="t('jobConfigBasic.fieldTimezone')" prop="timezone">
@@ -133,7 +134,7 @@
     startTime: '',
     endTime: '',
     allowCrossDay: false,
-    enabled: true,
+    enabled: false,
   })
 
   // el-time-picker 返回 Date 或 null,form 字段是 string —— 用 computed proxy 桥接
@@ -154,8 +155,18 @@
         trigger: ['blur', 'change'],
       },
       {
-        pattern: /^[a-zA-Z][a-zA-Z0-9_-]*$/,
+        pattern: /^[a-zA-Z][a-zA-Z0-9_-]{0,127}$/,
         message: t('jobConfigBasic.miniCalendarCodePattern'),
+        trigger: 'blur',
+      },
+    ],
+    windowName: [
+      {
+        validator: (_r, v: unknown, cb) => {
+          const text = typeof v === 'string' ? v.trim() : ''
+          if (text && text.length > 256) return cb(new Error('长度不能超过 256'))
+          return cb()
+        },
         trigger: 'blur',
       },
     ],

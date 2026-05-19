@@ -91,11 +91,21 @@
       <template v-if="!isManualSchedule">
         <el-form-item :label="t('jobConfigBasic.fieldCalendarCode')" prop="calendarCode">
           <div class="inline-create-wrapper">
-            <el-input
+            <el-select
               v-model="model.calendarCode"
-              :placeholder="t('jobConfigBasic.placeholderCalendar')"
               class="inline-create-input"
-            />
+              filterable
+              clearable
+              allow-create
+              :placeholder="t('jobConfigBasic.placeholderCalendar')"
+            >
+              <el-option
+                v-for="c in calendarOptions ?? []"
+                :key="c.value"
+                :label="c.label ?? c.value"
+                :value="c.value"
+              />
+            </el-select>
             <el-button
               v-if="tenantId"
               :icon="Plus"
@@ -110,11 +120,21 @@
         </el-form-item>
         <el-form-item :label="t('jobConfigBasic.fieldWindowCode')" prop="windowCode">
           <div class="inline-create-wrapper">
-            <el-input
+            <el-select
               v-model="model.windowCode"
-              :placeholder="t('jobConfigBasic.placeholderWindow')"
               class="inline-create-input"
-            />
+              filterable
+              clearable
+              allow-create
+              :placeholder="t('jobConfigBasic.placeholderWindow')"
+            >
+              <el-option
+                v-for="w in windowOptions ?? []"
+                :key="w.value"
+                :label="w.label ?? w.value"
+                :value="w.value"
+              />
+            </el-select>
             <el-button
               v-if="tenantId"
               :icon="Plus"
@@ -243,7 +263,14 @@
         />
       </el-form-item>
       <el-form-item :label="t('jobConfigBasic.fieldBizType')" prop="bizType">
-        <el-input v-model="model.bizType" maxlength="64" />
+        <el-select v-model="model.bizType" class="query-w-full" filterable clearable allow-create>
+          <el-option
+            v-for="b in bizTypeOptions ?? []"
+            :key="b.value"
+            :label="b.label ?? b.value"
+            :value="b.value"
+          />
+        </el-select>
       </el-form-item>
       <el-form-item :label="t('jobConfigBasic.fieldDescription')" prop="description">
         <el-input
@@ -283,6 +310,11 @@
   import WindowMiniCreateDrawer from './WindowMiniCreateDrawer.vue'
   import CronExprInput from './CronExprInput.vue'
   import JsonTextareaInput from '@/components/common/JsonTextareaInput.vue'
+  import {
+    useMetaBizTypesQuery,
+    useMetaCalendarsQuery,
+    useMetaWindowsQuery,
+  } from '@/composables/queries/useConsoleMeta'
 
   // 不用 defineModel:父组件 const editForm = reactive(...) 是 reactive 对象,
   // v-model 反向赋值会触发 Vue「v-model cannot update const reactive binding」警告。
@@ -312,6 +344,11 @@
   // 「现场建子实体」mini drawer 状态。Day 3 calendar,Day 4 window。queue 不开放(运维角色管控)。
   const calendarMiniVisible = ref(false)
   const windowMiniVisible = ref(false)
+  // 下拉源:从 BE 拉取当前 tenant 的 calendar/window 列表,避免用户手输不存在的 code 造成脏引用
+  // allow-create 兜底:编辑历史数据时 code 可能指向已删除资源,要让 UI 仍能正常显示
+  const { data: calendarOptions } = useMetaCalendarsQuery()
+  const { data: windowOptions } = useMetaWindowsQuery()
+  const { data: bizTypeOptions } = useMetaBizTypesQuery()
   function onCalendarCreated(code: string) {
     model.calendarCode = code
   }

@@ -595,6 +595,16 @@
     if (!text) throw new Error(`${label} 必填`)
     return text
   }
+  // 资源 code 字段(templateCode / channelCode)统一校验,与 BE @ValidResourceCode 对齐:
+  // 字母开头 + 字母/数字/下划线/连字符,长度 ≤ 128
+  const RESOURCE_CODE_PATTERN = /^[a-zA-Z][a-zA-Z0-9_-]{0,127}$/
+  function requireCode(value: string, label: string) {
+    const text = requireText(value, label)
+    if (!RESOURCE_CODE_PATTERN.test(text)) {
+      throw new Error(`${label} 必须字母开头,仅含字母/数字/下划线/连字符,长度 ≤ 128`)
+    }
+    return text
+  }
 
   function handleValidationError(err: unknown) {
     if (err instanceof Error) ElMessage.warning(err.message)
@@ -759,7 +769,7 @@
     return {
       tenantId: tenant.tenantId,
       ...(templateEditingId.value == null
-        ? { templateCode: requireText(templateForm.templateCode, 'templateCode') }
+        ? { templateCode: requireCode(templateForm.templateCode, 'templateCode') }
         : {}),
       templateName: optionalText(templateForm.templateName),
       templateType: requireText(templateForm.templateType, 'templateType'),
@@ -840,7 +850,7 @@
     return {
       tenantId: tenant.tenantId,
       ...(channelEditingId.value == null
-        ? { channelCode: requireText(channelForm.channelCode, 'channelCode') }
+        ? { channelCode: requireCode(channelForm.channelCode, 'channelCode') }
         : {}),
       channelName: optionalText(channelForm.channelName),
       channelType: requireText(channelForm.channelType, 'channelType'),

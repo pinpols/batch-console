@@ -1,6 +1,12 @@
 import { computed } from 'vue'
 import { useQuery } from '@tanstack/vue-query'
-import { getMetaCalendars, getMetaEnums, getMetaWorkerGroups } from '@/api/meta'
+import {
+  getMetaBizTypes,
+  getMetaCalendars,
+  getMetaEnums,
+  getMetaWindows,
+  getMetaWorkerGroups,
+} from '@/api/meta'
 import { useTenantStore } from '@/stores/tenant'
 
 /**
@@ -31,6 +37,26 @@ export function useMetaCalendarsQuery() {
   return useQuery({
     queryKey: computed(() => ['console-meta', 'calendars', tenant.tenantId]),
     queryFn: () => getMetaCalendars(tenant.tenantId),
+    enabled: computed(() => !!tenant.tenantId?.trim()),
+    staleTime: 5 * 60_000,
+  })
+}
+
+export function useMetaWindowsQuery() {
+  const tenant = useTenantStore()
+  return useQuery({
+    queryKey: computed(() => ['console-meta', 'windows', tenant.tenantId]),
+    queryFn: () => getMetaWindows(tenant.tenantId),
+    enabled: computed(() => !!tenant.tenantId?.trim()),
+    staleTime: 5 * 60_000,
+  })
+}
+
+export function useMetaBizTypesQuery() {
+  const tenant = useTenantStore()
+  return useQuery({
+    queryKey: computed(() => ['console-meta', 'biz-types', tenant.tenantId]),
+    queryFn: () => getMetaBizTypes(tenant.tenantId),
     enabled: computed(() => !!tenant.tenantId?.trim()),
     staleTime: 5 * 60_000,
   })

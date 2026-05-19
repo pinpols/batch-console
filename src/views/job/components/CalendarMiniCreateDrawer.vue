@@ -24,7 +24,7 @@
         <el-input
           v-model="form.calendarCode"
           :placeholder="t('jobConfigBasic.miniCalendarCodePlaceholder')"
-          maxlength="64"
+          maxlength="128"
           show-word-limit
         />
       </el-form-item>
@@ -32,7 +32,8 @@
         <el-input
           v-model="form.calendarName"
           :placeholder="t('jobConfigBasic.miniCalendarNamePlaceholder')"
-          maxlength="128"
+          maxlength="256"
+          show-word-limit
         />
       </el-form-item>
       <el-form-item :label="t('jobConfigBasic.fieldTimezone')" prop="timezone">
@@ -101,7 +102,7 @@
     calendarCode: '',
     calendarName: '',
     timezone: 'Asia/Shanghai',
-    enabled: true,
+    enabled: false,
   })
 
   const rules: FormRules = {
@@ -112,7 +113,7 @@
         trigger: ['blur', 'change'],
       },
       {
-        pattern: /^[a-zA-Z][a-zA-Z0-9_-]*$/,
+        pattern: /^[a-zA-Z][a-zA-Z0-9_-]{0,127}$/,
         message: t('jobConfigBasic.miniCalendarCodePattern'),
         trigger: 'blur',
       },
@@ -122,6 +123,15 @@
         required: true,
         message: t('jobConfigBasic.miniCalendarNameRequired'),
         trigger: ['blur', 'change'],
+      },
+      {
+        validator: (_r, v: unknown, cb) => {
+          const text = typeof v === 'string' ? v.trim() : ''
+          if (!text) return cb(new Error(t('jobConfigBasic.miniCalendarNameRequired')))
+          if (text.length > 256) return cb(new Error('长度不能超过 256'))
+          return cb()
+        },
+        trigger: 'blur',
       },
     ],
     timezone: [
