@@ -124,6 +124,22 @@ export const useAppStore = defineStore('app', () => {
     localStorage.setItem(focusModeKey, value ? '1' : '0')
   })
 
+  // 维护 / 降级模式状态 — BE GET /api/console/system/maintenance + 503 拦截共同维护
+  // enabled=true 时全局 banner 显示;readOnly=true 时所有写按钮禁用;两者均 true 时降级页
+  const maintenance = ref<{
+    enabled: boolean
+    readOnly: boolean
+    message: string | null
+    etaAt: string | null
+  }>({ enabled: false, readOnly: false, message: null, etaAt: null })
+
+  function setMaintenance(state: Partial<typeof maintenance.value>) {
+    maintenance.value = { ...maintenance.value, ...state }
+  }
+
+  /** 写操作是否被冻结(enabled=true 或 readOnly=true)— 给写按钮 :disabled 用 */
+  const writesFrozen = computed(() => maintenance.value.enabled)
+
   return {
     sidebarCollapsed,
     contentDensity,
@@ -139,5 +155,8 @@ export const useAppStore = defineStore('app', () => {
     toggleTheme,
     setFocusMode,
     toggleFocusMode,
+    maintenance,
+    setMaintenance,
+    writesFrozen,
   }
 })

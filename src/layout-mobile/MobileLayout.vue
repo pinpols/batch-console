@@ -1,6 +1,7 @@
 <template>
   <div class="mobile-layout">
     <MobileAppBar :scrolled="scrolled" />
+    <MaintenanceBanner />
     <main ref="contentRef" class="mobile-layout__content" @scroll.passive="onScroll">
       <router-view v-slot="{ Component, route: r }">
         <transition :name="pageTransition">
@@ -26,8 +27,10 @@
   import { useRoute } from 'vue-router'
   import MobileAppBar from './MobileAppBar.vue'
   import MobileTabBar from './MobileTabBar.vue'
+  import MaintenanceBanner from '@/components/common/MaintenanceBanner.vue'
   import SwUpdatePrompt from '@/components/common/SwUpdatePrompt.vue'
   import CommandPalette from '@/components/common/CommandPalette.vue'
+  import { useMaintenancePolling } from '@/composables/useMaintenancePolling'
   import './styles/mobile-common.css'
   import { useMobileBadgesStore } from '@/stores/mobileBadges'
   import { useTenantStore } from '@/stores/tenant'
@@ -40,6 +43,9 @@
   const permission = usePermissionStore()
   const tabsStore = useTabsStore()
   const paletteOpen = ref(false)
+
+  // 维护模式探活共享 DefaultLayout 同一逻辑;两套布局只会有一个挂载,不会双轮询
+  useMaintenancePolling()
 
   // Large Title 滚动塌缩:scrollTop > 24px 时 AppBar 显示 inline title + 实底,
   // 否则透明,大标题在内容区(.m-page__title)。阈值 24 是经验值,刚好让大标题

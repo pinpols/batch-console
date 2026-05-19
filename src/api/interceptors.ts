@@ -500,6 +500,31 @@ export function applyApiInterceptors(client: AxiosInstance): void {
         setLastApiMeta((raw as CommonResponse<unknown>).meta ?? null)
       }
 
+      // 维护模式 503:BE MaintenanceModeFilter 返 {maintenance:true, readOnly, message, etaAt} +
+      // X-Maintenance header。识别到就把状态写进 appStore,后续 banner / 写按钮禁用 / 跳降级页
+      // 由 UI 层消费;此处不弹通用错误 toast,避免一堆 503 提示淹没用户视线。
+      if (status === 503) {
+        const maint = raw as
+          | { maintenance?: boolean; readOnly?: boolean; message?: string; etaAt?: string }
+          | undefined
+        const xMaint = error.response?.headers?.['x-maintenance']
+        if (maint?.maintenance === true || xMaint) {
+          // 动态 import 避开循环依赖(interceptors → store → api → interceptors)
+          void import('@/stores/app').then(({ useAppStore }) => {
+            const app = useAppStore()
+            app.setMaintenance({
+              enabled: true,
+              readOnly: !!maint?.readOnly || xMaint === 'read-only',
+              message: maint?.message ?? null,
+              etaAt: maint?.etaAt ?? null,
+            })
+          })
+          return Promise.reject(
+            Object.assign(error as object, { maintenance: true, silenced: true }),
+          )
+        }
+      }
+
       // 幂等 GET 在网络错 / 5xx / 429 时静默重试(指数退避),用户感知不到瞬时抖动
       const retryCount = cfg?._retryCount ?? 0
       if (cfg && retryCount < RETRY_MAX && isRetryableError(error as AxiosError, cfg)) {

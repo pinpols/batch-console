@@ -4,6 +4,7 @@ import {
   type RouteLocationNormalized,
   type RouteRecordRaw,
 } from 'vue-router'
+import { useAppStore } from '@/stores/app'
 import { useAuthStore } from '@/stores/auth'
 import { usePermissionStore } from '@/stores/permission'
 import { useRouteProgressStore } from '@/stores/routeProgress'
@@ -671,6 +672,12 @@ const routes: RouteRecordRaw[] = [
     ],
   },
   {
+    path: '/maintenance',
+    name: 'maintenance',
+    component: () => import('@/views/MaintenancePage.vue'),
+    meta: { requiresAuth: false, title: '系统维护中' },
+  },
+  {
     path: '/:pathMatch(.*)*',
     name: 'not-found',
     component: () => import('@/views/NotFound.vue'),
@@ -692,6 +699,18 @@ router.beforeEach(async (to, from) => {
 
   const auth = useAuthStore()
   const permission = usePermissionStore()
+
+  // 维护期(enabled=true 且非 readOnly):除维护页/登录页外都重定向到 /maintenance
+  // readOnly 模式不强跳,让用户继续读;写按钮由 store.writesFrozen 禁用
+  const app = useAppStore()
+  if (
+    app.maintenance.enabled &&
+    !app.maintenance.readOnly &&
+    to.name !== 'maintenance' &&
+    to.name !== 'login'
+  ) {
+    return { name: 'maintenance', query: { redirect: to.fullPath } }
+  }
 
   if (to.meta.requiresAuth === false) return true
 
