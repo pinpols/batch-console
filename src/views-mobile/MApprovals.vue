@@ -54,7 +54,12 @@
             {{ resolveEnumLabel('approvalStatus', row.approvalStatus) }}
           </span>
         </div>
-        <div class="m-card__sub">No: {{ row.approvalNo }}</div>
+        <div class="m-card__sub">
+          No:
+          <span class="m-copy-text" @click.stop="copy(row.approvalNo, 'approvalNo')">{{
+            row.approvalNo
+          }}</span>
+        </div>
         <div class="m-card__meta">
           <div>
             <span class="m-card__meta-key">target</span>{{ row.targetType }}/{{
@@ -97,6 +102,7 @@
   import { confirmActionSheet } from '@/layout-mobile/MActionSheet'
   import { useTenantStore } from '@/stores/tenant'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
+  import { useCopy } from '@/composables/useCopy'
   import MPullRefresh from '@/layout-mobile/MPullRefresh.vue'
   import MSkeleton from '@/layout-mobile/MSkeleton.vue'
   import MSearchBar from '@/layout-mobile/MSearchBar.vue'
@@ -105,6 +111,7 @@
 
   const { t, te } = useI18n({ useScope: 'global' })
   const tenant = useTenantStore()
+  const { copy } = useCopy()
 
   const { data: metaEnums } = useConsoleMetaEnumsQuery()
   function resolveEnumLabel(group: string, value?: string | null): string {
@@ -119,6 +126,18 @@
   type ApprovalFilter = 'pending' | 'approved' | 'rejected' | 'all'
   const filter = ref<ApprovalFilter>('pending')
   const keyword = ref('')
+  const searchOpen = ref(false)
+  const searchBarRef = ref<{ focus: () => void } | null>(null)
+  async function toggleSearch() {
+    if (searchOpen.value) {
+      keyword.value = ''
+      searchOpen.value = false
+    } else {
+      searchOpen.value = true
+      await nextTick()
+      searchBarRef.value?.focus()
+    }
+  }
 
   const filterOptions = computed(() => [
     { value: 'pending', label: t('mobile.approvals.filterPending') },

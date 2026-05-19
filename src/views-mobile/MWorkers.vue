@@ -67,7 +67,11 @@
 
       <div v-for="row in filtered" :key="row.workerCode" class="m-card">
         <div class="m-card__row">
-          <div class="m-card__title">{{ row.workerCode }}</div>
+          <div class="m-card__title">
+            <span class="m-copy-text" @click.stop="copy(row.workerCode, 'workerCode')">{{
+              row.workerCode
+            }}</span>
+          </div>
           <span :class="['m-chip', statusChipClass(row.status)]">
             {{ resolveEnumLabel('workerStatus', row.status) }}
           </span>
@@ -141,6 +145,7 @@
   import { useAutoRefresh } from '@/composables/useAutoRefresh'
   import { REFRESH_INTERVAL_COLD_MS } from '@/layout-mobile/composables/refreshIntervals'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
+  import { useCopy } from '@/composables/useCopy'
   import MPullRefresh from '@/layout-mobile/MPullRefresh.vue'
   import MSkeleton from '@/layout-mobile/MSkeleton.vue'
   import MSearchBar from '@/layout-mobile/MSearchBar.vue'
@@ -156,6 +161,7 @@
   const route = useRoute()
   const { t, te } = useI18n({ useScope: 'global' })
   const tenant = useTenantStore()
+  const { copy } = useCopy()
   type WorkerFilter = 'all' | 'online' | 'draining' | 'offline'
   const allowedFilters: WorkerFilter[] = ['all', 'online', 'draining', 'offline']
   const initialFilter = allowedFilters.includes(route.query.filter as WorkerFilter)
