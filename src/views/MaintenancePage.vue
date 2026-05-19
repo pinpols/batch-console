@@ -7,6 +7,21 @@
         {{ app.maintenance.message || t('maintenance.pageMessageFallback') }}
       </p>
       <p v-if="etaText" class="maintenance-page__eta">{{ etaText }}</p>
+      <!-- affectedServices:运维列出哪些子系统不可用;空 list = 整站,不渲染列表只走 message 兜底 -->
+      <div v-if="app.maintenance.affectedServices.length > 0" class="maintenance-page__services">
+        <div class="maintenance-page__services-title">
+          {{ t('maintenance.pageAffectedTitle') }}
+        </div>
+        <div class="maintenance-page__services-list">
+          <span
+            v-for="svc in app.maintenance.affectedServices"
+            :key="svc"
+            class="maintenance-page__svc"
+          >
+            {{ svc }}
+          </span>
+        </div>
+      </div>
       <p class="maintenance-page__hint">{{ t('maintenance.pageHint') }}</p>
       <p class="maintenance-page__contact">{{ t('maintenance.pageContact') }}</p>
       <el-button
@@ -124,6 +139,33 @@
     margin: 6px 0;
     font-size: 14px;
     color: var(--color-warning, #b45309);
+    font-weight: 600;
+  }
+  .maintenance-page__services {
+    margin: 16px 0 8px;
+    padding: 12px;
+    background: var(--color-bg-page, #f9fafb);
+    border-radius: 8px;
+    text-align: left;
+  }
+  .maintenance-page__services-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    margin-bottom: 6px;
+  }
+  .maintenance-page__services-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .maintenance-page__svc {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 12px;
+    background: var(--color-danger-light, #fee2e2);
+    color: var(--color-danger, #b91c1c);
+    font-size: 12px;
     font-weight: 600;
   }
   .maintenance-page__hint,

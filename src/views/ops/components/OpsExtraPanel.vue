@@ -12,6 +12,16 @@
       </el-button>
     </div>
     <div class="extra-panels">
+      <div class="extra-block extra-block--gauge">
+        <h4 class="extra-title">{{ t('opsExtraPanel.slaGaugeTitle') }}</h4>
+        <VChart
+          class="gauge-chart"
+          :option="slaGaugeOption"
+          :theme="chartTheme"
+          autoresize
+          :loading="extraLoading"
+        />
+      </div>
       <div class="extra-block">
         <h4 class="extra-title">{{ t('opsExtraPanel.slaReport') }}</h4>
         <JsonPreview v-if="slaReport" :data="slaReport" />
@@ -40,6 +50,7 @@
   import { useI18n } from 'vue-i18n'
   import { Refresh } from '@element-plus/icons-vue'
   import { RouterLink } from 'vue-router'
+  import VChart from 'vue-echarts'
   import SectionCard from '@/components/common/SectionCard.vue'
   import JsonPreview from '@/components/common/JsonPreview.vue'
   import { useRefreshAction } from '@/composables/useRefreshAction'
@@ -50,6 +61,8 @@
     extraLoading: boolean
     slaReport: unknown
     tenantUsage: unknown
+    slaGaugeOption: Record<string, unknown>
+    chartTheme: string | undefined
   }>()
 
   const emit = defineEmits<{
@@ -102,6 +115,14 @@
   .extra-empty {
     color: var(--color-text-tertiary);
     font-size: var(--font-size-xs);
+  }
+  .extra-block--gauge {
+    display: flex;
+    flex-direction: column;
+  }
+  .gauge-chart {
+    width: 100%;
+    height: 220px;
   }
 
   .extra-hint {

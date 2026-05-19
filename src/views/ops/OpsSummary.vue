@@ -77,7 +77,8 @@
           :chart-theme="chartTheme"
           :jobs-trend-option="jobsTrendOption"
           :alerts-trend-option="alertsTrendOption"
-          :outbox-trend-option="outboxTrendOption"
+          :sla-trend-option="slaTrendOption"
+          :fail-rate-trend-option="failRateTrendOption"
           @refresh-charts="loadCharts"
         />
 
@@ -85,8 +86,12 @@
           :active="opsTab === 'dist'"
           :charts-loading="chartsLoading"
           :chart-theme="chartTheme"
-          :alert-type-top-n-option="alertTypeTopNOption"
+          :trigger-type-top-n-option="triggerTypeTopNOption"
           :worker-load-top-n-option="workerLoadTopNOption"
+          :job-status-pie-option="jobStatusPieOption"
+          :worker-status-pie-option="workerStatusPieOption"
+          :alert-severity-pie-option="alertSeverityPieOption"
+          :outbox-health-pie-option="outboxHealthPieOption"
           @refresh-charts="loadCharts"
         />
       </div>
@@ -97,6 +102,8 @@
       :extra-loading="extraLoading"
       :sla-report="slaReport"
       :tenant-usage="tenantUsage"
+      :sla-gauge-option="slaGaugeOption"
+      :chart-theme="chartTheme"
       @load-extra="loadExtraPanels"
     />
 
@@ -137,9 +144,15 @@
     chartTheme,
     jobsTrendOption,
     alertsTrendOption,
-    outboxTrendOption,
-    alertTypeTopNOption,
+    slaTrendOption,
+    failRateTrendOption,
+    triggerTypeTopNOption,
     workerLoadTopNOption,
+    jobStatusPieOption,
+    workerStatusPieOption,
+    alertSeverityPieOption,
+    outboxHealthPieOption,
+    slaGaugeOption,
     extraLoading,
     slaReport,
     tenantUsage,
