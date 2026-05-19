@@ -121,8 +121,13 @@ export const pageMetaByPath = {
       '按 traceId 跨域聚合查询(作业实例/工作流运行/文件/审计/执行日志/告警/Outbox/死信),0 命中时引导去日志/链路平台。',
   },
   '/observability/audits': {
-    title: '审计日志',
-    description: '查询平台关键操作,追踪用户和接口行为。',
+    title: '文件审计',
+    description: '文件相关操作的审计(import / export / dispatch / receipt)。',
+  },
+  '/observability/operation-audits': {
+    title: '操作审计',
+    description:
+      '控制台所有用户写操作的留痕(告警/审批/Job/Worker/Outbox/API Key 等),由 @AuditAction 切面同事务落库。',
   },
   '/observability/outbox': {
     title: 'Outbox',

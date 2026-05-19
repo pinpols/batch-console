@@ -320,8 +320,19 @@ const routes: RouteRecordRaw[] = [
         name: 'observability-audits',
         component: () => import('@/views/observability/AuditList.vue'),
         meta: {
-          title: '审计日志',
+          title: '文件审计',
           activeMenu: '/observability/audits',
+          minRole: 'VIEWER',
+        },
+      },
+      {
+        path: 'observability/operation-audits',
+        name: 'observability-operation-audits',
+        component: () => import('@/views/observability/OperationAuditList.vue'),
+        meta: {
+          title: '操作审计',
+          description: '控制台用户写操作留痕(@AuditAction 切面)',
+          activeMenu: '/observability/operation-audits',
           minRole: 'VIEWER',
         },
       },
