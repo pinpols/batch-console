@@ -270,6 +270,10 @@
      * 顶边单独收紧；左右与底边仍用 --page-scroll-edge-bleed。
      */
     padding: var(--page-scroll-edge-top) var(--page-scroll-edge-bleed) var(--page-scroll-edge-bleed);
+    /* 大屏内容上限:>1600 时内容居中,避免 2K/4K 上行宽过长阅读困难 */
+    max-width: var(--content-max-width, 1600px);
+    margin-inline: auto;
+    width: 100%;
   }
 
   .layout-main__body :deep(.page-container) {
