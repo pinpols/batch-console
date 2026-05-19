@@ -984,7 +984,7 @@
     workerGroup: '',
     executionMode: 'FULL' as ExecutionMode,
     watermarkField: '',
-    enabled: true,
+    enabled: false,
   })
 
   const { data: metaEnumsData } = useConsoleMetaEnumsQuery()
@@ -1101,7 +1101,7 @@
     createForm.workerGroup = ''
     createForm.executionMode = 'FULL'
     createForm.watermarkField = ''
-    createForm.enabled = true
+    createForm.enabled = false
   }
 
   function openCreate() {
