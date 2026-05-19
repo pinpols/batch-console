@@ -49,5 +49,7 @@ export interface OperationAuditPage {
 }
 
 export async function queryOperationAudits(q: OperationAuditQuery): Promise<OperationAuditPage> {
-  return get<OperationAuditPage>('/api/console/queries/operation-audits', { params: q })
+  // client.get(url, params) 第二参就是 params 本身;原来 `{ params: q }` 嵌套后会发成
+  // ?params[tenantId]=... 后端 @ModelAttribute 收不到 → 过滤/分页/tenant 全失效
+  return get<OperationAuditPage>('/api/console/queries/operation-audits', q)
 }

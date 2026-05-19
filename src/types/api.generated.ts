@@ -77,6 +77,33 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/console/system/cron-preview': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Validate Quartz cron expression and preview next executions
+     * @description Parses the expression with the same Quartz `CronExpression` class used by the trigger
+     *     scheduler, so the previewed times match the real fire times exactly.
+     *
+     *     Returns `valid=false` + `error` message when the expression cannot be parsed (200, not 400),
+     *     or `valid=true` + `nextRuns` (ISO-8601 UTC, ascending) on success.
+     *
+     *     Timezone is taken from `batch.timezone.default-zone` (default `Asia/Shanghai`).
+     *
+     */
+    get: operations['previewCron']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/console/system/maintenance': {
     parameters: {
       query?: never
@@ -4971,6 +4998,21 @@ export interface components {
       /** Format: int64 */
       data?: number
     }
+    CronPreview: {
+      /** @description Echo of the input expression (trimmed) */
+      expr: string
+      /** @description Whether the expression parsed successfully */
+      valid: boolean
+      /** @description Parse error message when valid=false */
+      error?: string | null
+      /** @description Up to N next fire times in ISO-8601 UTC, ascending */
+      nextRuns: string[]
+      /** @description IANA timezone id used to compute the times (e.g. "Asia/Shanghai") */
+      timezone?: string | null
+    }
+    CommonResponseCronPreview: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['CronPreview']
+    }
     MaintenanceStatus: {
       /** @description Maintenance mode master switch */
       enabled: boolean
@@ -7646,6 +7688,31 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['CommonResponseConsoleAuthProfileResponse']
+        }
+      }
+    }
+  }
+  previewCron: {
+    parameters: {
+      query: {
+        /** @description Quartz 6 or 7 field expression (sec min hour dom mon dow [year]) */
+        expr: string
+        /** @description How many next executions to compute, clamped to [1, 20] */
+        count?: number
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Cron preview result */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseCronPreview']
         }
       }
     }
