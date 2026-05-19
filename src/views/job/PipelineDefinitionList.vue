@@ -157,149 +157,72 @@
           />
         </el-form-item>
         <el-form-item :label="t('pipelineDefinitionList.stepsTitle')">
-          <div class="steps-editor">
-            <div class="steps-toolbar">
-              <el-button
-                type="primary"
-                :icon="Plus"
-                class="pretty-add-button pretty-add-button--mini"
-                @click="addStep"
-              >
-                {{ t('pipelineDefinitionList.addStep') }}
-              </el-button>
+          <!-- 没选 pipelineType:提示先选,不显空白卡片 -->
+          <el-alert
+            v-if="!form.pipelineType"
+            type="info"
+            :closable="false"
+            show-icon
+            :title="t('pipelineDefinitionList.flowSelectTypeFirst')"
+          />
+          <div v-else class="pipeline-flow">
+            <div class="pipeline-flow__hint">
+              <el-icon><InfoFilled /></el-icon>
+              <span>{{
+                t('pipelineDefinitionList.flowHint', {
+                  type: form.pipelineType,
+                  n: steps.length,
+                })
+              }}</span>
             </div>
-            <div class="steps-list">
-              <div
-                v-for="(row, index) in steps"
-                :key="`${row.stepCode}-${index}`"
-                class="step-card"
-                :class="{ 'step-card--dragging': draggingIndex === index }"
-                draggable="true"
-                @dragstart="onDragStart(index)"
-                @dragover.prevent
-                @drop="onDrop(index)"
-                @dragend="onDragEnd"
-              >
-                <div class="step-card__head">
-                  <div class="step-card__title">
-                    <span class="step-card__drag">::</span>
-                    <span>{{ t('pipelineDefinitionList.stepLabel', { n: index + 1 }) }}</span>
-                  </div>
-                  <div class="step-card__actions">
-                    <el-button link :disabled="index === 0" @click="moveStepUp(index)">
-                      {{ t('pipelineDefinitionList.moveUp') }}
-                    </el-button>
-                    <el-button
-                      link
-                      :disabled="index === steps.length - 1"
-                      @click="moveStepDown(index)"
-                    >
-                      {{ t('pipelineDefinitionList.moveDown') }}
-                    </el-button>
-                    <el-button link type="danger" @click="removeStep(index)">
-                      {{ t('pipelineDefinitionList.deleteStep') }}
-                    </el-button>
-                  </div>
+            <div class="pipeline-flow__list">
+              <template v-for="(row, index) in steps" :key="row.stageCode">
+                <div v-if="index > 0" class="pipeline-flow__connector">
+                  <span class="pipeline-flow__arrow">↓</span>
                 </div>
-                <div class="step-card__grid">
-                  <!-- 主字段:只露 stage(决策)+ 描述(可选)。其它字段(code/name/impl)选完 stage 自动补默认值,默认折叠到「高级」 -->
-                  <div class="step-field">
-                    <label class="step-field__label">
-                      {{ t('pipelineDefinitionList.stepFieldStageLabel') }}
-                      <span class="step-field__required">*</span>
-                    </label>
-                    <el-select
-                      v-if="stageOptionsForCurrent.length > 0"
-                      :model-value="row.stageCode"
-                      :placeholder="t('pipelineDefinitionList.stepFieldStagePlaceholder')"
-                      filterable
-                      class="step-field__input"
-                      @update:model-value="(v) => onStageChange(row, v)"
-                    >
-                      <el-option
-                        v-for="s in stageOptionsForCurrent"
-                        :key="s"
-                        :label="s"
-                        :value="s"
-                      />
-                    </el-select>
-                    <el-input
-                      v-else
-                      :model-value="row.stageCode"
-                      :placeholder="t('pipelineDefinitionList.stepFieldStagePlaceholder')"
-                      class="step-field__input"
-                      @update:model-value="(v) => onStageChange(row, v)"
-                    />
+                <div class="stage-card">
+                  <div
+                    class="stage-card__icon"
+                    :style="{ background: stageMeta(row.stageCode).color }"
+                  >
+                    <el-icon :size="22" color="#fff">
+                      <component :is="stageMeta(row.stageCode).icon" />
+                    </el-icon>
                   </div>
-                  <div class="step-field">
-                    <label class="step-field__label">{{
-                      t('pipelineDefinitionList.stepFieldDescriptionLabel')
-                    }}</label>
-                    <el-input
-                      v-model="row.description"
-                      :placeholder="t('pipelineDefinitionList.stepFieldDescriptionPlaceholder')"
-                      class="step-field__input"
-                    />
-                  </div>
-
-                  <!-- 自动生成的灰字摘要:让用户看到选 stage 后系统给他生成了什么,无需展开 -->
-                  <div class="step-field step-field--wide step-summary" v-if="row.stageCode">
-                    <span class="step-summary__item">
-                      <span class="step-summary__k">{{
-                        t('pipelineDefinitionList.stepFieldCodeLabel')
-                      }}</span>
-                      <code>{{ row.stepCode || '—' }}</code>
-                    </span>
-                    <span class="step-summary__item">
-                      <span class="step-summary__k">{{
-                        t('pipelineDefinitionList.stepFieldImplLabel')
-                      }}</span>
-                      <code>{{ row.stepType || t('pipelineDefinitionList.stepImplAuto') }}</code>
-                    </span>
-                    <el-button link type="primary" size="small" @click="toggleAdvanced(index)">
-                      {{
-                        advancedOpen.has(index)
-                          ? t('pipelineDefinitionList.stepAdvancedCollapse')
-                          : t('pipelineDefinitionList.stepAdvancedExpand')
-                      }}
-                    </el-button>
-                  </div>
-
-                  <!-- 高级:罕见场景才需要(同 stage 配多 step / 用非默认 impl) -->
-                  <template v-if="advancedOpen.has(index)">
-                    <div class="step-field">
-                      <label class="step-field__label">{{
-                        t('pipelineDefinitionList.stepFieldCodeLabel')
-                      }}</label>
-                      <el-input
-                        v-model="row.stepCode"
-                        :placeholder="t('pipelineDefinitionList.stepFieldCodePlaceholder')"
-                        class="step-field__input"
-                      />
+                  <div class="stage-card__main">
+                    <div class="stage-card__head">
+                      <span class="stage-card__index">{{ index + 1 }}</span>
+                      <span class="stage-card__stage">{{ row.stageCode }}</span>
+                      <span class="stage-card__sub">{{ stageMeta(row.stageCode).desc }}</span>
+                      <span class="stage-card__impl">
+                        <el-icon><Cpu /></el-icon>
+                        <code>{{ row.stepType || t('pipelineDefinitionList.implAuto') }}</code>
+                      </span>
                     </div>
-                    <div class="step-field">
-                      <label class="step-field__label">{{
-                        t('pipelineDefinitionList.stepFieldNameLabel')
-                      }}</label>
+                    <div class="stage-card__row">
                       <el-input
                         v-model="row.stepName"
-                        :placeholder="t('pipelineDefinitionList.stepFieldNamePlaceholder')"
-                        class="step-field__input"
+                        size="small"
+                        :placeholder="
+                          t('pipelineDefinitionList.flowNamePlaceholder', { code: row.stepCode })
+                        "
+                        class="stage-card__name"
                       />
-                    </div>
-                    <div class="step-field step-field--wide">
-                      <label class="step-field__label">{{
-                        t('pipelineDefinitionList.stepFieldImplLabel')
-                      }}</label>
+                      <el-input
+                        v-model="row.description"
+                        size="small"
+                        :placeholder="t('pipelineDefinitionList.flowMemoPlaceholder')"
+                        class="stage-card__memo"
+                      />
                       <el-select
                         v-if="stepImplOptions.length > 0"
                         v-model="row.stepType"
-                        :placeholder="t('pipelineDefinitionList.stepFieldImplPlaceholder')"
+                        size="small"
                         filterable
                         allow-create
-                        default-first-option
                         clearable
-                        class="step-field__input"
+                        :placeholder="t('pipelineDefinitionList.flowImplPlaceholder')"
+                        class="stage-card__impl-select"
                       >
                         <el-option
                           v-for="impl in stepImplOptions"
@@ -308,24 +231,11 @@
                           :value="impl"
                         />
                       </el-select>
-                      <el-input
-                        v-else
-                        v-model="row.stepType"
-                        :placeholder="t('pipelineDefinitionList.stepFieldImplPlaceholder')"
-                        class="step-field__input"
-                      />
                     </div>
-                  </template>
+                  </div>
                 </div>
-              </div>
+              </template>
             </div>
-            <el-input
-              :model-value="stepsJsonPreview"
-              type="textarea"
-              :rows="8"
-              readonly
-              class="steps-preview"
-            />
           </div>
         </el-form-item>
         <div class="drawer-actions">
@@ -427,7 +337,54 @@
 
   const { t } = useI18n({ useScope: 'global' })
   import type { FormInstance, FormRules } from 'element-plus'
-  import { Plus } from '@element-plus/icons-vue'
+  import {
+    Plus,
+    InfoFilled,
+    Cpu,
+    Download,
+    MagicStick,
+    Document,
+    CircleCheck,
+    Upload,
+    ChatLineRound,
+    Setting,
+    DataLine,
+    DocumentAdd,
+    Folder,
+    Notebook,
+    Check,
+    Promotion,
+    Bell,
+    Refresh,
+    RefreshLeft,
+    Finished,
+  } from '@element-plus/icons-vue'
+  import type { Component } from 'vue'
+
+  // Stage → 图标 + 主题色 + 一句话描述。覆盖 STAGES_BY_TYPE 全 17 种,缺省走默认。
+  const STAGE_META: Record<string, { icon: Component; color: string; desc: string }> = {
+    RECEIVE: { icon: Download, color: '#3b82f6', desc: '接收源文件' },
+    PREPROCESS: { icon: MagicStick, color: '#8b5cf6', desc: '解密 / 预处理' },
+    PARSE: { icon: Document, color: '#06b6d4', desc: '解析为记录' },
+    VALIDATE: { icon: CircleCheck, color: '#10b981', desc: '校验' },
+    LOAD: { icon: Upload, color: '#f59e0b', desc: '入库' },
+    FEEDBACK: { icon: ChatLineRound, color: '#ec4899', desc: '回执 / 通知' },
+    PREPARE: { icon: Setting, color: '#6366f1', desc: '准备执行上下文' },
+    COMPUTE: { icon: DataLine, color: '#0ea5e9', desc: '业务计算' },
+    GENERATE: { icon: DocumentAdd, color: '#14b8a6', desc: '生成文件' },
+    STORE: { icon: Folder, color: '#a855f7', desc: '存档' },
+    REGISTER: { icon: Notebook, color: '#f43f5e', desc: '登记元数据' },
+    COMMIT: { icon: Check, color: '#22c55e', desc: '提交' },
+    COMPLETE: { icon: Finished, color: '#16a34a', desc: '完成' },
+    DISPATCH: { icon: Promotion, color: '#3b82f6', desc: '推送下游' },
+    ACK: { icon: Bell, color: '#f59e0b', desc: '等待 ACK' },
+    RETRY: { icon: Refresh, color: '#fb923c', desc: '失败重试' },
+    COMPENSATE: { icon: RefreshLeft, color: '#ef4444', desc: '补偿' },
+  }
+  const DEFAULT_META = { icon: Setting, color: '#94a3b8', desc: '' }
+  function stageMeta(code: string) {
+    return STAGE_META[code] ?? DEFAULT_META
+  }
   import {
     createPipelineDefinition,
     queryPipelineDefinitionDetail,
@@ -468,18 +425,7 @@
   // 9-stages 字典 + step impl 字典(BE 维护,FE 首次加载缓存。两个接口都 permitAll-style 缓存稳)
   const stagesMap = ref<PipelineStagesMap>({})
   const stepImplOptions = ref<string[]>([])
-  const advancedOpen = ref<Set<number>>(new Set())
-  function toggleAdvanced(i: number) {
-    const next = new Set(advancedOpen.value)
-    if (next.has(i)) next.delete(i)
-    else next.add(i)
-    advancedOpen.value = next
-  }
-  const stageOptionsForCurrent = computed<string[]>(() => {
-    const pt = form.pipelineType || 'IMPORT'
-    return stagesMap.value[pt] ?? []
-  })
-  /** 命名约定 impl_code 含 stage 名(如 ExportPrepareStep / ImportValidateStep) → 选 stage 后挑唯一匹配的 impl */
+  /** 命名约定 impl_code 含 stage 名(如 ExportPrepareStep) → 选 stage 后挑唯一匹配的 impl */
   function pickDefaultImpl(stage: string): string {
     if (!stage || stepImplOptions.value.length === 0) return ''
     const needle = stage.toLowerCase()
@@ -565,7 +511,6 @@
     if (tab === 'runs') void loadDetailRuns()
   })
   const editingId = ref<number | null>(null)
-  const draggingIndex = ref<number | null>(null)
   const form = ref<PipelineDefinitionForm>({
     tenantId: '',
     pipelineCode: '',
@@ -629,8 +574,6 @@
     }
     steps.value = []
   }
-
-  const stepsJsonPreview = computed(() => JSON.stringify(steps.value, null, 2))
 
   function onQueryBarSearch() {
     return runSearch(async () => {
@@ -799,75 +742,40 @@
     }
   }
 
-  function addStep() {
-    steps.value.push({
-      stepCode: '',
-      stepName: '',
-      stageCode: '',
-      stepType: '',
-      description: '',
+  /**
+   * Pipeline 是固定模板:type 决定固定的 stage 序列(STAGES_BY_TYPE 白名单)。
+   * pipelineType 变化时按 stagesMap[type] 重渲 stage 卡片,保留同 stageCode 已有定制(name / impl / desc)。
+   */
+  function regenerateStepsForType(newType: string) {
+    if (!newType) {
+      steps.value = []
+      return
+    }
+    const stageList = stagesMap.value[newType] ?? []
+    if (stageList.length === 0) return
+    const existingByStage = new Map(steps.value.map((s) => [s.stageCode, s]))
+    steps.value = stageList.map((stage) => {
+      const existing = existingByStage.get(stage)
+      if (existing) return existing
+      return {
+        stepCode: `${newType}_${stage}`,
+        stepName: '',
+        stageCode: stage,
+        stepType: pickDefaultImpl(stage),
+        description: '',
+      }
     })
   }
-
-  /**
-   * 用户选 stageCode 时自动补默认值,避免「同一个 EXPORT_PREPARE 抄 3 遍」的混乱:
-   * - stepCode 空时 → `{PIPELINE_TYPE}_{STAGE}` (例 `EXPORT_PREPARE`)
-   * - stepName 空时 → 同 stepCode
-   * 用户后续手动改的不再覆盖。
-   */
-  function onStageChange(
-    row: { stepCode: string; stepName: string; stageCode: string; stepType: string },
-    stage: string,
-  ) {
-    const old = row.stageCode
-    row.stageCode = stage
-    if (!stage) return
-    const pt = (form.pipelineType || 'IMPORT').toUpperCase()
-    const auto = `${pt}_${stage}`
-    // 用户没改过(空 OR 跟上一次自动值一致)才覆盖,避免覆盖用户手动定制
-    const prevAuto = old ? `${pt}_${old}` : ''
-    if (!row.stepCode || row.stepCode === prevAuto) row.stepCode = auto
-    if (!row.stepName || row.stepName === prevAuto) row.stepName = auto
-    if (!row.stepType) {
-      const defImpl = pickDefaultImpl(stage)
-      if (defImpl) row.stepType = defImpl
+  watch(
+    () => form.value.pipelineType,
+    (newType) => regenerateStepsForType(newType),
+  )
+  // 字典异步到位后,若已选 type 但 steps 是空(字典还没到时 watch 跑过一遍),补渲一次
+  watch(stagesMap, () => {
+    if (form.value.pipelineType && steps.value.length === 0) {
+      regenerateStepsForType(form.value.pipelineType)
     }
-  }
-
-  function removeStep(index: number) {
-    steps.value.splice(index, 1)
-  }
-
-  function swapSteps(from: number, to: number) {
-    if (from === to || from < 0 || to < 0 || from >= steps.value.length || to >= steps.value.length)
-      return
-    const list = [...steps.value]
-    const [moved] = list.splice(from, 1)
-    list.splice(to, 0, moved)
-    steps.value = list
-  }
-
-  function moveStepUp(index: number) {
-    swapSteps(index, index - 1)
-  }
-
-  function moveStepDown(index: number) {
-    swapSteps(index, index + 1)
-  }
-
-  function onDragStart(index: number) {
-    draggingIndex.value = index
-  }
-
-  function onDrop(index: number) {
-    if (draggingIndex.value == null) return
-    swapSteps(draggingIndex.value, index)
-    draggingIndex.value = null
-  }
-
-  function onDragEnd() {
-    draggingIndex.value = null
-  }
+  })
 
   watch([keyword, pipelineType, enabledFilter, page, pageSize], () => load())
 
@@ -903,129 +811,118 @@
     cursor: pointer;
   }
 
-  .steps-editor {
+  /* Pipeline flow:固定模板渲染,卡片列竖排 + 箭头连接,跟领域模型对齐(不可加减、不可拖) */
+  .pipeline-flow {
     width: 100%;
   }
-
-  .steps-toolbar {
-    display: flex;
-    justify-content: flex-end;
-    margin-bottom: 8px;
-  }
-
-  .steps-list {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .step-card {
-    border: 1px solid var(--color-border-light);
-    border-radius: var(--radius-card-lg);
-    padding: 12px;
-    background: var(--color-bg-card, #fff);
-  }
-
-  .step-card--dragging {
-    opacity: 0.6;
-  }
-
-  .step-card__head {
+  .pipeline-flow__hint {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 10px;
-    flex-wrap: wrap;
-  }
-
-  .step-card__title {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    font-weight: 600;
-  }
-
-  .step-card__drag {
-    cursor: grab;
-    color: var(--color-text-secondary);
-    user-select: none;
-  }
-
-  .step-card__actions {
-    display: inline-flex;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
-
-  .step-card__grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px 16px;
-  }
-
-  /* 单字段:label 在上,input 在下,5 个字段不再无标签裸排 → 用户立刻知道哪是 stage 哪是 code */
-  .step-field {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    min-width: 0;
-  }
-  .step-field__label {
-    font-size: 12px;
-    color: var(--color-text-secondary);
-    font-weight: 500;
-    user-select: none;
-  }
-  .step-field__input {
-    width: 100%;
-  }
-  .step-field__required {
-    color: var(--el-color-danger, #f56c6c);
-    margin-left: 2px;
-  }
-  /* description 占满一整行 */
-  .step-field--wide {
-    grid-column: 1 / -1;
-  }
-  /* 自动生成 summary:灰底圆角条,展示选 stage 后系统补出的 stepCode/impl,免用户展开 */
-  .step-summary {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 12px;
+    gap: 6px;
+    margin-bottom: 12px;
     padding: 8px 12px;
     background: var(--color-bg-subtle, #f5f7fa);
     border-radius: 6px;
     font-size: 12px;
     color: var(--color-text-secondary);
   }
-  .step-summary__item {
+  .pipeline-flow__list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+  .pipeline-flow__connector {
+    display: flex;
+    justify-content: center;
+    padding: 2px 0;
+  }
+  .pipeline-flow__arrow {
+    font-size: 18px;
+    color: var(--color-text-secondary);
+    opacity: 0.6;
+    line-height: 1;
+  }
+  .stage-card {
+    display: flex;
+    align-items: stretch;
+    gap: 12px;
+    padding: 12px;
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-card-lg, 8px);
+    background: var(--color-bg-card, #fff);
+    transition: box-shadow 0.15s ease;
+  }
+  .stage-card:hover {
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06);
+  }
+  .stage-card__icon {
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+  }
+  .stage-card__main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .stage-card__head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .stage-card__index {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--color-bg-subtle, #f5f7fa);
+    font-size: 11px;
+    color: var(--color-text-secondary);
+    font-weight: 600;
   }
-  .step-summary__k {
-    opacity: 0.8;
-  }
-  .step-summary code {
-    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  .stage-card__stage {
+    font-weight: 700;
+    font-size: 14px;
     color: var(--color-text-primary);
-    background: var(--color-bg-card, #fff);
+    letter-spacing: 0.5px;
+  }
+  .stage-card__sub {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+  }
+  .stage-card__impl {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: var(--color-text-secondary);
+  }
+  .stage-card__impl code {
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    background: var(--color-bg-subtle, #f5f7fa);
     padding: 1px 6px;
     border-radius: 4px;
+    color: var(--color-text-primary);
   }
-
-  .steps-preview {
-    margin-top: 10px;
+  .stage-card__row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 1.5fr);
+    gap: 8px;
   }
-
-  @media (max-width: 900px) {
-    .step-card__grid {
+  @media (max-width: 720px) {
+    .stage-card__row {
       grid-template-columns: 1fr;
-    }
-    .step-field--wide {
-      grid-column: auto;
     }
   }
 </style>
