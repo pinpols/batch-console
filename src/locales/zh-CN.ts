@@ -1614,6 +1614,12 @@ export default {
     stepImplAuto: '自动',
     stepAdvancedExpand: '高级 ▾',
     stepAdvancedCollapse: '收起 ▴',
+    flowSelectTypeFirst: '请先在上方选择 pipeline 类型,系统会按类型固定模板渲染各阶段',
+    flowHint: '{type} 流水线固定 {n} 个阶段(顺序由领域模型决定,不可加减 / 拖拽)',
+    flowNamePlaceholder: '名称(默认 {code})',
+    flowMemoPlaceholder: '备注(可选)',
+    flowImplPlaceholder: 'impl 类',
+    implAuto: '自动',
   },
   batchDayList: {
     calendarLabel: '日历',

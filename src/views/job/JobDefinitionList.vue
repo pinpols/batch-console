@@ -41,6 +41,7 @@
       >
         <template #query>
           <ListPageQueryBar
+            :cols="4"
             :model="filters"
             :filter-busy="queryActionBusy"
             :refresh-busy="isFetching"

@@ -855,12 +855,12 @@ html.dark .data-panel {
  * ListPageQueryBar（.query-form）：与 ProTable #query 槽内布局一致。
  * 治理页等场景未包 ProTable 时，查询/重置/刷新同样靠右、换行间距一致。
  */
+/* 注:.query-form.el-form--inline 的布局(display + 列宽)由 ListPageQueryBar 的 scoped grid
+   接管,这里**不再**写 `display: flex; flex-wrap: wrap`。
+   原 flex-wrap 在某些屏幕宽度下与 scoped grid 同时命中,聚焦输入框时控件宽度微抖 →
+   换行点漂移 → Worker Group 这种末位字段会「回缩」一档。统一用 grid,断点切换才稳。
+   公共字段保留(只重置 form-item 边距,与 scoped 不冲突)。 */
 .query-form.el-form--inline {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  row-gap: var(--space-sm);
-  column-gap: var(--space-md);
   width: 100%;
   min-width: 0;
   margin-bottom: 0;

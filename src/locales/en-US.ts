@@ -1662,6 +1662,13 @@ const messages: Messages = {
     stepImplAuto: 'auto',
     stepAdvancedExpand: 'Advanced ▾',
     stepAdvancedCollapse: 'Collapse ▴',
+    flowSelectTypeFirst: 'Pick a pipeline type above — stages render from the fixed template',
+    flowHint:
+      '{type} pipeline: {n} fixed stages (order is domain-defined, cannot add/remove/reorder)',
+    flowNamePlaceholder: 'Name (default {code})',
+    flowMemoPlaceholder: 'Memo (optional)',
+    flowImplPlaceholder: 'impl class',
+    implAuto: 'auto',
   },
   batchDayList: {
     calendarLabel: 'Calendar',
