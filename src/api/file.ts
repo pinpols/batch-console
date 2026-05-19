@@ -1,5 +1,5 @@
 import { apiClient, get, post, del } from '@/api/client'
-import { fetchAllPageItems, toPageResult } from '@/api/adapters'
+import { fetchAllPageItems } from '@/api/adapters'
 import { readStoredTenantId } from '@/api/interceptors'
 import type { PageResponse, PageResult } from '@/types'
 import type {
@@ -29,48 +29,15 @@ export interface FileQuery {
   pageSize: number
 }
 
-function filterFiles(
-  items: ConsoleFileRecordResponse[],
-  q: FileQuery,
-): ConsoleFileRecordResponse[] {
-  let rows = [...items]
-  if (q.fileStatus) rows = rows.filter((r) => r.fileStatus === q.fileStatus)
-  if (q.bizType) rows = rows.filter((r) => r.bizType?.includes(q.bizType!))
-  if (q.fileName) rows = rows.filter((r) => r.fileName?.includes(q.fileName!))
-  if (q.traceId) rows = rows.filter((r) => r.traceId?.includes(q.traceId!))
-  if (q.fileId) rows = rows.filter((r) => String(r.id).includes(q.fileId!))
-  if (q.startDate) rows = rows.filter((r) => String(r.bizDate ?? '') >= q.startDate!)
-  if (q.endDate) rows = rows.filter((r) => String(r.bizDate ?? '') <= q.endDate!)
-  return rows
-}
-
 export const fileApi = {
   list: async (query: FileQuery) => {
-    const hasFilter = !!(
-      query.fileStatus ||
-      query.bizType ||
-      query.fileName ||
-      query.traceId ||
-      query.fileId ||
-      query.startDate ||
-      query.endDate
-    )
-    if (!hasFilter) {
-      const pr = await get<PageResponse<ConsoleFileRecordResponse>>('/api/console/queries/files', {
-        tenantId: query.tenantId,
-        pageNo: query.page,
-        pageSize: query.pageSize,
-      })
-      return {
-        records: (pr.items ?? []) as ConsoleFileRecordResponse[],
-        total: pr.total ?? 0,
-        page: query.page,
-        pageSize: query.pageSize,
-      }
-    }
-    // 将过滤参数传给后端（后端支持时减少传输量，客户端 filterFiles 仍做兜底）
-    const items = await fetchAllPageItems<ConsoleFileRecordResponse>('/api/console/queries/files', {
+    // 全字段过滤后端原生支持（FileStatus/BizType/FileName/TraceId/FileId/Start/EndDate
+    // 均已在 console-api.openapi.yaml 的 /queries/files parameters 中声明），
+    // 直接走服务端分页 + 过滤，避免 fetchAllPageItems 4000 条全拉的内存与延迟代价。
+    const pr = await get<PageResponse<ConsoleFileRecordResponse>>('/api/console/queries/files', {
       tenantId: query.tenantId,
+      pageNo: query.page,
+      pageSize: query.pageSize,
       ...(query.fileStatus ? { fileStatus: query.fileStatus } : {}),
       ...(query.bizType ? { bizType: query.bizType } : {}),
       ...(query.fileName ? { fileName: query.fileName } : {}),
@@ -79,7 +46,12 @@ export const fileApi = {
       ...(query.startDate ? { startDate: query.startDate } : {}),
       ...(query.endDate ? { endDate: query.endDate } : {}),
     })
-    return toPageResult(filterFiles(items, query), query.page, query.pageSize)
+    return {
+      records: (pr.items ?? []) as ConsoleFileRecordResponse[],
+      total: pr.total ?? 0,
+      page: query.page,
+      pageSize: query.pageSize,
+    }
   },
 
   detail: (fileId: number, tenantId = readStoredTenantId()) =>

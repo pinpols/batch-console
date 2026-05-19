@@ -22,7 +22,17 @@ const autoImportGlobals = parseAutoImports()
 
 export default [
   {
-    ignores: ['dist/**', 'node_modules/**', 'src/types/auto-imports.d.ts', 'src/types/components.d.ts'],
+    ignores: [
+      'dist/**',
+      'node_modules/**',
+      'src/types/auto-imports.d.ts',
+      'src/types/components.d.ts',
+      'docs-site/.vitepress/**',
+      'fe-docs-site/.vitepress/**',
+      'playwright-report/**',
+      'test-results/**',
+      'coverage/**',
+    ],
   },
   {
     files: ['**/*.{ts,tsx,vue}'],

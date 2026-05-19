@@ -9,6 +9,9 @@
         >
           向导新建
         </el-button>
+        <el-button v-if="canMutateConfig" :icon="Upload" @click="openBundleImport">
+          Bundle 导入
+        </el-button>
         <el-button
           v-if="canMutateConfig"
           type="primary"
@@ -452,6 +455,50 @@
         </el-tab-pane>
       </el-tabs>
     </el-drawer>
+
+    <el-dialog
+      v-model="bundleImportVisible"
+      title="Bundle 跨环境导入"
+      width="640px"
+      :close-on-click-modal="false"
+    >
+      <el-form label-width="100px">
+        <el-form-item label="目标租户">
+          <el-select
+            v-model="bundleImportTargets"
+            multiple
+            filterable
+            allow-create
+            default-first-option
+            placeholder="选中或输入 tenantId（最多 50 个）"
+            style="width: 100%"
+          />
+        </el-form-item>
+        <el-form-item label="模式">
+          <el-radio-group v-model="bundleImportMode">
+            <el-radio value="UPSERT">UPSERT（覆盖已有）</el-radio>
+            <el-radio value="SKIP_EXISTING">SKIP_EXISTING（跳过已有）</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item>
+          <el-checkbox v-model="bundleImportDryRun">仅校验（dry-run，不落库）</el-checkbox>
+        </el-form-item>
+        <el-form-item label="Bundle JSON">
+          <el-input
+            v-model="bundleImportJson"
+            type="textarea"
+            :rows="14"
+            placeholder='粘贴 exportBundle 产出的 JSON，例如 {"jobDefinitions":[...],"fileChannels":[...],...}'
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="bundleImportVisible = false">取消</el-button>
+        <el-button type="primary" :loading="bundleImportSaving" @click="submitBundleImport">
+          {{ bundleImportDryRun ? '校验' : '导入' }}
+        </el-button>
+      </template>
+    </el-dialog>
   </PageContainer>
 </template>
 
@@ -471,7 +518,7 @@
     return te(key) ? t(key) : value
   }
   import type { FormInstance, FormItemRule, FormRules } from 'element-plus'
-  import { jobApi } from '@/api/job'
+  import { jobApi, type JobBundlePayload } from '@/api/job'
   import { instanceApi } from '@/api/instance'
   import { fmtDatetime } from '@/utils/datetime'
   import { getMetaEnums, getMetaQueues, type MetaOption } from '@/api/meta'
@@ -512,7 +559,7 @@
   const tenant = useTenantStore()
   const { canMutateConfig } = usePermission()
   const page = ref(1)
-  const pageSize = ref(20)
+  const pageSize = ref(15)
   const actingJobCode = ref('')
   const exportingJobCode = ref('')
   const queueOptions = ref<MetaOption[]>([])
@@ -677,6 +724,54 @@
     }
   }
 
+  const bundleImportVisible = ref(false)
+  const bundleImportJson = ref('')
+  const bundleImportTargets = ref<string[]>([])
+  const bundleImportMode = ref<'SKIP_EXISTING' | 'UPSERT'>('UPSERT')
+  const bundleImportDryRun = ref(false)
+  const bundleImportSaving = ref(false)
+
+  function openBundleImport() {
+    bundleImportJson.value = ''
+    bundleImportTargets.value = [tenant.tenantId]
+    bundleImportMode.value = 'UPSERT'
+    bundleImportDryRun.value = false
+    bundleImportVisible.value = true
+  }
+
+  async function submitBundleImport() {
+    if (!bundleImportTargets.value.length) {
+      ElMessage.warning('请至少选择 1 个目标租户')
+      return
+    }
+    let bundle: Record<string, unknown>
+    try {
+      bundle = JSON.parse(bundleImportJson.value) as Record<string, unknown>
+    } catch {
+      ElMessage.error('Bundle JSON 格式不正确')
+      return
+    }
+    bundleImportSaving.value = true
+    try {
+      await jobApi.importBundle({
+        tenantId: tenant.tenantId,
+        targetTenantIds: bundleImportTargets.value,
+        mode: bundleImportMode.value,
+        dryRun: bundleImportDryRun.value,
+        bundle: bundle as JobBundlePayload,
+      })
+      ElMessage.success(
+        bundleImportDryRun.value
+          ? `Bundle dry-run 已校验 ${bundleImportTargets.value.length} 个租户`
+          : `Bundle 已导入 ${bundleImportTargets.value.length} 个租户`,
+      )
+      bundleImportVisible.value = false
+      void refetch()
+    } finally {
+      bundleImportSaving.value = false
+    }
+  }
+
   async function exportBundle(row: ConsoleJobDefinitionResponse) {
     exportingJobCode.value = row.jobCode
     try {
@@ -834,7 +929,7 @@
         tenantId: def.tenantId ?? tenant.tenantId,
         jobCode: def.jobCode,
         page: 1,
-        pageSize: 20,
+        pageSize: 15,
       })
       detailRunsRows.value = pageResult.records ?? []
       detailRunsLoadedForJobCode.value = def.jobCode
