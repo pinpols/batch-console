@@ -71,6 +71,11 @@ export function presentActionSheet(opts: ActionSheetOptions): Promise<boolean> {
         ? 'm-action-sheet__btn--destructive'
         : 'm-action-sheet__btn--default')
     confirmBtn.textContent = opts.confirmText || '确定'
+    // 给全局 tracker(.m-action-sheet__btn 已在 selectors)更结构化的事件名
+    confirmBtn.setAttribute(
+      'data-track',
+      `actionSheet.confirm:${opts.title || opts.message || 'unknown'}`,
+    )
     card.appendChild(confirmBtn)
 
     const cancelCard = document.createElement('div')
@@ -79,6 +84,10 @@ export function presentActionSheet(opts: ActionSheetOptions): Promise<boolean> {
     cancelBtn.type = 'button'
     cancelBtn.className = 'm-action-sheet__btn m-action-sheet__btn--cancel'
     cancelBtn.textContent = opts.cancelText || '取消'
+    cancelBtn.setAttribute(
+      'data-track',
+      `actionSheet.cancel:${opts.title || opts.message || 'unknown'}`,
+    )
     cancelCard.appendChild(cancelBtn)
 
     sheet.appendChild(card)

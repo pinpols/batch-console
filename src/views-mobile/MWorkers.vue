@@ -98,6 +98,7 @@
           <button
             v-if="row.status === 'ONLINE'"
             class="m-btn"
+            data-track="workers.drain"
             :disabled="busyCode === row.workerCode"
             @click="doDrain(row)"
           >
@@ -106,6 +107,7 @@
           <button
             v-if="row.status === 'ONLINE'"
             class="m-btn"
+            data-track="workers.warmup"
             :disabled="busyCode === row.workerCode"
             @click="doWarmup(row)"
           >
@@ -114,6 +116,7 @@
           <button
             v-if="row.status === 'OFFLINE' || row.status === 'DRAINING'"
             class="m-btn"
+            data-track="workers.takeover"
             :disabled="busyCode === row.workerCode"
             @click="doTakeover(row)"
           >
@@ -122,6 +125,7 @@
           <button
             v-if="row.status !== 'OFFLINE'"
             class="m-btn m-btn--plain-danger"
+            data-track="workers.forceOffline"
             :disabled="busyCode === row.workerCode"
             @click="doForceOffline(row)"
           >

@@ -154,7 +154,7 @@
 </script>
 
 <style scoped>
-  /* iOS Navigation Bar:毛玻璃 + 极细下分隔线 + safe area 状态栏留白 */
+  /* iOS Liquid Glass Navigation Bar:毛玻璃 + 内底高光 + safe area 状态栏留白 */
   .mobile-appbar {
     position: sticky;
     top: 0;
@@ -163,20 +163,54 @@
     justify-content: space-between;
     padding: 8px 16px;
     padding-top: calc(env(safe-area-inset-top, 0) + 8px);
-    background: color-mix(in srgb, #ffffff 78%, transparent 22%);
-    backdrop-filter: saturate(180%) blur(24px);
-    -webkit-backdrop-filter: saturate(180%) blur(24px);
+    background: color-mix(in srgb, #ffffff 72%, transparent 28%);
+    backdrop-filter: saturate(180%) blur(28px);
+    -webkit-backdrop-filter: saturate(180%) blur(28px);
     border-bottom: 0.5px solid rgb(60 60 67 / 18%);
+    /* Liquid Glass:内底 0.5px 白高光 → 玻璃下缘折射;首屏无阴影,滚动塌缩时再加 */
+    box-shadow:
+      inset 0 -0.5px 0 rgb(255 255 255 / 60%),
+      inset 0 -8px 12px rgb(255 255 255 / 18%);
     z-index: 50;
   }
 
-  :global(html.dark) .mobile-appbar {
-    background: color-mix(in srgb, #1c1c1e 82%, transparent 18%);
-    border-bottom: 0.5px solid rgb(84 84 88 / 75%);
+  /* rim light:左右两端淡彩色辉光,对称 tabbar */
+  .mobile-appbar::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(circle at 0% 100%, rgb(0 122 255 / 8%) 0%, transparent 35%),
+      radial-gradient(circle at 100% 100%, rgb(90 200 250 / 8%) 0%, transparent 35%);
+    mix-blend-mode: screen;
   }
-  /* 暗色 + 滚动塌缩:底部分隔线 + 下投阴影,跟内容区拉开层级 */
+
+  :global(html.dark) .mobile-appbar {
+    background: color-mix(in srgb, #1c1c1e 78%, transparent 22%);
+    border-bottom: 0.5px solid rgb(84 84 88 / 75%);
+    box-shadow:
+      inset 0 -0.5px 0 rgb(255 255 255 / 14%),
+      inset 0 -8px 12px rgb(255 255 255 / 4%);
+  }
+  :global(html.dark) .mobile-appbar::after {
+    background:
+      radial-gradient(circle at 0% 100%, rgb(10 132 255 / 14%) 0%, transparent 40%),
+      radial-gradient(circle at 100% 100%, rgb(94 92 230 / 12%) 0%, transparent 40%);
+  }
+
+  /* 滚动塌缩:加投影拉开层级,inset 高光强度也增加 */
+  .mobile-appbar--scrolled {
+    box-shadow:
+      inset 0 -0.5px 0 rgb(255 255 255 / 80%),
+      inset 0 -8px 12px rgb(255 255 255 / 22%),
+      0 2px 12px rgb(0 0 0 / 8%);
+  }
   :global(html.dark) .mobile-appbar--scrolled {
-    box-shadow: 0 2px 12px rgb(0 0 0 / 40%);
+    box-shadow:
+      inset 0 -0.5px 0 rgb(255 255 255 / 18%),
+      inset 0 -8px 12px rgb(255 255 255 / 5%),
+      0 2px 12px rgb(0 0 0 / 40%);
   }
 
   .mobile-appbar__left {

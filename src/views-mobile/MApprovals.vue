@@ -81,10 +81,14 @@
           </div>
         </div>
         <div v-if="isPending(row)" class="m-card__actions">
-          <button class="m-btn m-btn--plain-danger" @click="reject(row)">
+          <button
+            class="m-btn m-btn--plain-danger"
+            data-track="approvals.reject"
+            @click="reject(row)"
+          >
             {{ t('mobile.approvals.reject') }}
           </button>
-          <button class="m-btn m-btn--primary" @click="approve(row)">
+          <button class="m-btn m-btn--primary" data-track="approvals.approve" @click="approve(row)">
             {{ t('mobile.approvals.approve') }}
           </button>
         </div>

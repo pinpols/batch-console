@@ -37,6 +37,7 @@
   import { usePermissionStore } from '@/stores/permission'
   import { useTabsStore } from '@/stores/tabs'
   import { useAutoRefresh } from '@/composables/useAutoRefresh'
+  import { useMobileTracker } from '@/composables/useMobileTracker'
 
   const badges = useMobileBadgesStore()
   const tenant = useTenantStore()
@@ -46,6 +47,9 @@
 
   // 维护模式探活共享 DefaultLayout 同一逻辑;两套布局只会有一个挂载,不会双轮询
   useMaintenancePolling()
+
+  // 移动端用户操作埋点:全局 click 委托,覆盖所有 .m-btn / .m-tab / .m-card 等共享组件
+  useMobileTracker()
 
   // Large Title 滚动塌缩:scrollTop > 24px 时 AppBar 显示 inline title + 实底,
   // 否则透明,大标题在内容区(.m-page__title)。阈值 24 是经验值,刚好让大标题

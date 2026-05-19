@@ -32,6 +32,7 @@
   import { ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { CircleCloseFilled, Search } from '@element-plus/icons-vue'
+  import { logClick } from '@/utils/logger'
 
   const { t } = useI18n({ useScope: 'global' })
 
@@ -66,10 +67,18 @@
   function onInput() {
     emit('update:modelValue', localValue.value)
     if (timer) clearTimeout(timer)
-    if (props.debounce > 0) {
-      timer = setTimeout(() => emit('search', localValue.value), props.debounce)
-    } else {
+    const fire = () => {
       emit('search', localValue.value)
+      // 提交搜索打点 — debounce 之后才记一次,避免每字符上报
+      // 只记 length,不记原文(避免日志里出现敏感关键字)
+      if (localValue.value.trim()) {
+        logClick('mobile:search.submit', { len: localValue.value.length })
+      }
+    }
+    if (props.debounce > 0) {
+      timer = setTimeout(fire, props.debounce)
+    } else {
+      fire()
     }
   }
 

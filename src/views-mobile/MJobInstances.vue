@@ -110,6 +110,7 @@
           <button
             v-if="row.instanceStatus === 'FAILED'"
             class="m-btn m-btn--primary"
+            data-track="jobs.retry"
             @click="retry(row)"
           >
             {{ t('mobile.jobs.retry') }}
@@ -117,6 +118,7 @@
           <button
             v-if="row.instanceStatus === 'RUNNING'"
             class="m-btn m-btn--danger"
+            data-track="jobs.terminate"
             @click="terminate(row)"
           >
             {{ t('mobile.jobs.terminate') }}
