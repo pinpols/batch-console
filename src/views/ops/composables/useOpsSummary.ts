@@ -97,7 +97,7 @@ export function useOpsSummary() {
         ],
       })
 
-      outboxTrendOption.value = buildLineOption({
+      slaTrendOption.value = buildLineOption({
         x: bundle.sla.labels,
         series: [
           { name: 'SLA 达标', data: bundle.sla.series.onTime, color: '#52c41a', area: true },
@@ -105,7 +105,23 @@ export function useOpsSummary() {
         ],
       })
 
-      alertTypeTopNOption.value =
+      // 失败率趋势:failed / (failed + running),用 % 表示;数据全 0 时显示空
+      const failRateSeries = bundle.jobs.labels.map((_, i) => {
+        const r = bundle.jobs.series.running[i] ?? 0
+        const f = bundle.jobs.series.failed[i] ?? 0
+        const total = r + f
+        return total > 0 ? Math.round((f / total) * 10000) / 100 : 0
+      })
+      failRateTrendOption.value =
+        bundle.jobs.labels.length === 0
+          ? emptyOption('暂无数据')
+          : buildLineOption({
+              x: bundle.jobs.labels,
+              series: [{ name: '失败率 %', data: failRateSeries, color: '#ff7a45', area: true }],
+              yAxisName: '%',
+            })
+
+      triggerTypeTopNOption.value =
         bundle.triggerTypes.items.length === 0
           ? emptyOption('暂无数据')
           : buildHorizontalTopNOption(bundle.triggerTypes.items, '#1677ff')
@@ -113,14 +129,93 @@ export function useOpsSummary() {
         bundle.workerLoads.items.length === 0
           ? emptyOption('暂无数据')
           : buildHorizontalTopNOption(bundle.workerLoads.items, '#52c41a')
+
+      // 状态分布饼图(数据来源:summary KPI 实时快照)
+      const s = summary.value
+      const running = Number(s?.runningJobs ?? 0)
+      const failed = Number(s?.failedJobs ?? 0)
+      const slaBreach = Number(s?.slaBreaches ?? 0)
+      jobStatusPieOption.value =
+        running + failed + slaBreach === 0
+          ? emptyOption('暂无数据')
+          : buildPieOption({
+              items: [
+                { name: '运行中', value: running, color: '#1677ff' },
+                { name: '失败', value: failed, color: '#ff4d4f' },
+                { name: 'SLA 违约', value: slaBreach, color: '#fa8c16' },
+              ],
+              innerRadius: '40%',
+            })
+
+      const online = Number(s?.onlineWorkers ?? 0)
+      const draining = Number(s?.drainingWorkers ?? 0)
+      const offline = Number(s?.offlineWorkers ?? 0)
+      workerStatusPieOption.value =
+        online + draining + offline === 0
+          ? emptyOption('暂无数据')
+          : buildPieOption({
+              items: [
+                { name: '在线', value: online, color: '#52c41a' },
+                { name: 'Draining', value: draining, color: '#faad14' },
+                { name: '离线', value: offline, color: '#8c8c8c' },
+              ],
+              innerRadius: '40%',
+            })
+
+      const openAlerts = Number(s?.openAlerts ?? 0)
+      const critical = Number(s?.criticalAlerts ?? 0)
+      const otherOpen = Math.max(openAlerts - critical, 0)
+      alertSeverityPieOption.value =
+        openAlerts === 0
+          ? emptyOption('暂无活跃告警')
+          : buildPieOption({
+              items: [
+                { name: 'Critical', value: critical, color: '#ff4d4f' },
+                { name: '其他 OPEN', value: otherOpen, color: '#faad14' },
+              ],
+              innerRadius: '40%',
+            })
+
+      const retry = Number(s?.outboxRetryBacklog ?? 0)
+      const delivFail = Number(s?.outboxDeliveryFailures ?? 0)
+      outboxHealthPieOption.value =
+        retry + delivFail === 0
+          ? emptyOption('Outbox 健康')
+          : buildPieOption({
+              items: [
+                { name: '重试积压', value: retry, color: '#faad14' },
+                { name: '投递失败', value: delivFail, color: '#ff4d4f' },
+              ],
+              innerRadius: '40%',
+            })
+
+      // SLA 仪表盘:onTime / (onTime + violation),百分比
+      const onTimeTotal = bundle.sla.series.onTime.reduce((a, b) => a + b, 0)
+      const violationTotal = bundle.sla.series.violation.reduce((a, b) => a + b, 0)
+      const slaPct =
+        onTimeTotal + violationTotal === 0
+          ? 100
+          : Math.round((onTimeTotal / (onTimeTotal + violationTotal)) * 1000) / 10
+      slaGaugeOption.value = buildGaugeOption({
+        value: slaPct,
+        max: 100,
+        unit: '%',
+        color: slaPct >= 99 ? '#52c41a' : slaPct >= 95 ? '#faad14' : '#ff4d4f',
+      })
     } catch (e) {
       console.error('[ops charts]', e)
       ElMessage.error('图表数据加载失败，请稍后重试')
       jobsTrendOption.value = emptyOption('加载失败')
       alertsTrendOption.value = emptyOption('加载失败')
-      outboxTrendOption.value = emptyOption('加载失败')
-      alertTypeTopNOption.value = emptyOption('加载失败')
+      slaTrendOption.value = emptyOption('加载失败')
+      failRateTrendOption.value = emptyOption('加载失败')
+      triggerTypeTopNOption.value = emptyOption('加载失败')
       workerLoadTopNOption.value = emptyOption('加载失败')
+      jobStatusPieOption.value = emptyOption('加载失败')
+      workerStatusPieOption.value = emptyOption('加载失败')
+      alertSeverityPieOption.value = emptyOption('加载失败')
+      outboxHealthPieOption.value = emptyOption('加载失败')
+      slaGaugeOption.value = emptyOption('加载失败')
     } finally {
       chartsLoading.value = false
     }
