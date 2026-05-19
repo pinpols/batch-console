@@ -2,22 +2,36 @@
   <MPullRefresh :on-refresh="load">
     <div class="m-page">
       <div class="m-page__header">
-        <div>
-          <div class="m-page__title">{{ t('mobile.approvals.title') }}</div>
-          <div class="m-page__subtitle">
-            {{ t('mobile.approvals.pendingCount', { n: pendingCount }) }}
-          </div>
-        </div>
-        <button class="m-page__refresh" :disabled="loading" @click="load">
-          <el-icon><Refresh /></el-icon>
-          {{ loading ? t('mobile.common.loading') : t('mobile.common.refresh') }}
+        <div class="m-page__title">{{ t('mobile.approvals.title') }}</div>
+      </div>
+
+      <!-- 4 tab + 搜索框,与 告警/Worker 一套交互 -->
+      <div class="m-tabs" role="tablist">
+        <button
+          v-for="opt in filterOptions"
+          :key="opt.value"
+          type="button"
+          role="tab"
+          :aria-selected="filter === opt.value"
+          class="m-tab"
+          :class="{ 'm-tab--active': filter === opt.value }"
+          @click="filter = opt.value as ApprovalFilter"
+        >
+          <span class="m-tab__label">{{ opt.label }}</span>
+          <span v-if="counts[opt.value] > 0" class="m-tab__badge" :class="badgeToneFor(opt.value)">
+            {{ counts[opt.value] > 99 ? '99+' : counts[opt.value] }}
+          </span>
         </button>
       </div>
 
-      <MSkeleton v-if="loading && rows.length === 0" :count="3" />
-      <div v-else-if="rows.length === 0" class="m-empty">{{ t('mobile.approvals.noPending') }}</div>
+      <MSearchBar v-model="keyword" :placeholder="t('mobile.approvals.searchPlaceholder')" />
 
-      <div v-for="row in rows" :key="row.approvalNo" class="m-card">
+      <MSkeleton v-if="loading && filtered.length === 0" :count="3" />
+      <div v-else-if="filtered.length === 0" class="m-empty">
+        {{ keyword ? t('mobile.common.emptyForSearch') : t('mobile.approvals.noPending') }}
+      </div>
+
+      <div v-for="row in filtered" :key="row.approvalNo" class="m-card">
         <div class="m-card__row">
           <div class="m-card__title">
             {{ resolveEnumLabel('approvalType', row.approvalType) }} · {{ row.actionType }}
@@ -65,11 +79,13 @@
   import { useTenantReload } from '@/composables/useTenantReload'
   import { useI18n } from 'vue-i18n'
   import { Refresh } from '@element-plus/icons-vue'
-  import { ElMessage, ElMessageBox } from 'element-plus'
+  import { ElMessage } from 'element-plus'
+  import { confirmActionSheet } from '@/layout-mobile/MActionSheet'
   import { useTenantStore } from '@/stores/tenant'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import MPullRefresh from '@/layout-mobile/MPullRefresh.vue'
   import MSkeleton from '@/layout-mobile/MSkeleton.vue'
+  import MSearchBar from '@/layout-mobile/MSearchBar.vue'
   import { queryApprovals, approveOne, rejectOne } from '@/api/approvals'
   import type { ConsoleApprovalCommandResponse } from '@/types/console-api'
 
@@ -86,9 +102,58 @@
   const loading = ref(false)
   const rows = ref<ConsoleApprovalCommandResponse[]>([])
 
-  const pendingCount = computed(
-    () => rows.value.filter((r) => r.approvalStatus === 'PENDING').length,
-  )
+  type ApprovalFilter = 'pending' | 'approved' | 'rejected' | 'all'
+  const filter = ref<ApprovalFilter>('pending')
+  const keyword = ref('')
+
+  const filterOptions = computed(() => [
+    { value: 'pending', label: t('mobile.approvals.filterPending') },
+    { value: 'approved', label: t('mobile.approvals.filterApproved') },
+    { value: 'rejected', label: t('mobile.approvals.filterRejected') },
+    { value: 'all', label: t('mobile.approvals.filterAll') },
+  ])
+
+  // 各 tab 的 count
+  const counts = computed<Record<string, number>>(() => ({
+    pending: rows.value.filter((r) => r.approvalStatus === 'PENDING').length,
+    approved: rows.value.filter(
+      (r) => r.approvalStatus === 'APPROVED' || r.approvalStatus === 'EXECUTED',
+    ).length,
+    rejected: rows.value.filter((r) => r.approvalStatus === 'REJECTED').length,
+    all: rows.value.length,
+  }))
+
+  function badgeToneFor(filterKey: string) {
+    if (filterKey === 'pending') return 'm-tab__badge--warning'
+    if (filterKey === 'approved') return 'm-tab__badge--success'
+    if (filterKey === 'rejected') return 'm-tab__badge--danger'
+    return '' // all → 默认灰
+  }
+
+  // tabs(状态)+ keyword(approvalNo/requesterId/target/actionType 模糊)
+  const filtered = computed(() => {
+    let list = rows.value
+    if (filter.value === 'pending') {
+      list = list.filter((r) => r.approvalStatus === 'PENDING')
+    } else if (filter.value === 'approved') {
+      list = list.filter((r) => r.approvalStatus === 'APPROVED' || r.approvalStatus === 'EXECUTED')
+    } else if (filter.value === 'rejected') {
+      list = list.filter((r) => r.approvalStatus === 'REJECTED')
+    }
+    const kw = keyword.value.trim().toLowerCase()
+    if (kw) {
+      list = list.filter((r) => {
+        return (
+          r.approvalNo?.toLowerCase().includes(kw) ||
+          r.requesterId?.toLowerCase().includes(kw) ||
+          r.targetId?.toLowerCase().includes(kw) ||
+          r.targetType?.toLowerCase().includes(kw) ||
+          r.actionType?.toLowerCase().includes(kw)
+        )
+      })
+    }
+    return list
+  })
 
   function fmt(ts?: string | null) {
     if (!ts) return '—'
@@ -130,7 +195,7 @@
 
   async function approve(row: ConsoleApprovalCommandResponse) {
     try {
-      await ElMessageBox.confirm(
+      await confirmActionSheet(
         `${t('mobile.approvals.approve')} ${row.approvalNo}?`,
         t('mobile.approvals.approve'),
         {
@@ -149,7 +214,7 @@
 
   async function reject(row: ConsoleApprovalCommandResponse) {
     try {
-      await ElMessageBox.confirm(
+      await confirmActionSheet(
         `${t('mobile.approvals.reject')} ${row.approvalNo}?`,
         t('mobile.approvals.reject'),
         {

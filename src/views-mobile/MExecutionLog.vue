@@ -8,10 +8,6 @@
             {{ t('mobile.executionLog.summary', { total: rows.length }) }}
           </div>
         </div>
-        <button class="m-page__refresh" :disabled="loading" @click="load">
-          <el-icon><Refresh /></el-icon>
-          {{ loading ? t('mobile.common.loading') : t('mobile.common.refresh') }}
-        </button>
       </div>
 
       <div class="m-page__header u-gap-8">

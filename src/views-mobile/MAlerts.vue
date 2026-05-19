@@ -1,66 +1,37 @@
 <template>
   <MPullRefresh :on-refresh="load">
     <div class="m-page">
+      <!-- 紧凑标题:tab 已经分档显示 count,subtitle 重复信息删掉 -->
       <div class="m-page__header">
-        <div>
-          <div class="m-page__title">{{ t('mobile.alerts.title') }}</div>
-          <div class="m-page__subtitle">{{ t('mobile.alerts.openCount', { n: openCount }) }}</div>
-        </div>
-        <button class="m-page__refresh" :disabled="loading" @click="load">
-          <el-icon><Refresh /></el-icon>
-          {{ loading ? t('mobile.common.loading') : t('mobile.common.refresh') }}
-        </button>
+        <div class="m-page__title">{{ t('mobile.alerts.title') }}</div>
       </div>
 
-      <div class="m-page__header">
-        <el-segmented v-model="filter" :options="filterOptions" size="small" class="u-w-full" />
-      </div>
-
-      <div class="m-page__header u-gap-8">
+      <!-- 共享 .m-tabs / .m-tab / .m-tab__badge — 跟 MWorkers 一套样式 -->
+      <MSearchBar v-model="keyword" :placeholder="t('mobile.alerts.searchPlaceholder')" />
+      <div class="m-tabs" role="tablist">
         <button
-          v-if="!bulkMode"
-          class="m-btn"
-          :disabled="filtered.length === 0"
-          @click="bulkMode = true"
+          v-for="opt in filterOptions"
+          :key="opt.value"
+          type="button"
+          role="tab"
+          :aria-selected="filter === opt.value"
+          class="m-tab"
+          :class="{ 'm-tab--active': filter === opt.value }"
+          @click="filter = opt.value as typeof filter"
         >
-          {{ t('mobile.alerts.bulkSelect') }}
-        </button>
-        <template v-else>
-          <button class="m-btn" @click="exitBulk">{{ t('mobile.alerts.bulkCancel') }}</button>
-          <span class="m-bulk-count">
-            {{ t('mobile.alerts.bulkSelected', { n: selected.size }) }}
+          <span class="m-tab__label">{{ opt.label }}</span>
+          <span v-if="counts[opt.value] > 0" class="m-tab__badge" :class="badgeToneFor(opt.value)">
+            {{ counts[opt.value] > 99 ? '99+' : counts[opt.value] }}
           </span>
-          <button class="m-btn" @click="toggleSelectAll">
-            {{ t('mobile.alerts.bulkSelectAll') }}
-          </button>
-          <button class="m-btn m-btn--primary" :disabled="bulkBusy" @click="bulkAck">
-            {{ t('mobile.alerts.bulkAck') }}
-          </button>
-          <button class="m-btn m-btn--plain-danger" :disabled="bulkBusy" @click="bulkClose">
-            {{ t('mobile.alerts.bulkClose') }}
-          </button>
-        </template>
+        </button>
       </div>
 
       <MSkeleton v-if="loading && filtered.length === 0" :count="3" />
       <div v-else-if="filtered.length === 0" class="m-empty">{{ t('mobile.alerts.empty') }}</div>
 
-      <div
-        v-for="row in filtered"
-        :key="row.id"
-        class="m-card"
-        :class="{ 'm-card--selected': bulkMode && selected.has(row.id) }"
-        @click="bulkMode && toggleOne(row.id)"
-      >
+      <div v-for="row in filtered" :key="row.id" class="m-card">
         <div class="m-card__row">
           <div class="m-card__title">
-            <input
-              v-if="bulkMode"
-              type="checkbox"
-              class="m-check"
-              :checked="selected.has(row.id)"
-              @click.stop="toggleOne(row.id)"
-            />
             {{ row.title || row.alertType }}
           </div>
           <span :class="['m-chip', severityChipClass(row.severity)]">
@@ -82,7 +53,7 @@
             {{ fmt(row.lastSeenAt) }}
           </div>
         </div>
-        <div v-if="!bulkMode && row.traceId" class="m-card__actions" @click.stop>
+        <div v-if="row.traceId" class="m-card__actions">
           <button
             class="m-btn"
             @click="$router.push({ path: '/observability/trace', query: { traceId: row.traceId } })"
@@ -90,7 +61,7 @@
             {{ t('mobile.alerts.viewLogs') }}
           </button>
         </div>
-        <div v-if="!bulkMode && row.status === 'OPEN'" class="m-card__actions" @click.stop>
+        <div v-if="row.status === 'OPEN'" class="m-card__actions">
           <button class="m-btn" @click="silence(row)">{{ t('mobile.alerts.silence') }}</button>
           <button class="m-btn" @click="ack(row)">{{ t('mobile.alerts.ack') }}</button>
           <button class="m-btn m-btn--primary" @click="close(row)">
@@ -105,8 +76,8 @@
 <script setup lang="ts">
   import { computed, ref } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { Refresh } from '@element-plus/icons-vue'
-  import { ElMessage, ElMessageBox } from 'element-plus'
+  import { ElMessage } from 'element-plus'
+  import { confirmActionSheet } from '@/layout-mobile/MActionSheet'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
   import { useAutoRefresh } from '@/composables/useAutoRefresh'
@@ -114,6 +85,7 @@
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import MPullRefresh from '@/layout-mobile/MPullRefresh.vue'
   import MSkeleton from '@/layout-mobile/MSkeleton.vue'
+  import MSearchBar from '@/layout-mobile/MSearchBar.vue'
   import { queryAlertsAll } from '@/api/alertsQuery'
   import { acknowledgeAlert, silenceAlert, closeAlert } from '@/api/alertsCommands'
   import type { ConsoleAlertEventResponse } from '@/types/console-api'
@@ -141,12 +113,54 @@
 
   const openCount = computed(() => rows.value.filter((r) => r.status === 'OPEN').length)
 
+  // 4 tab 的 count(open 显示当前未处理量,acked/closed 显示历史量,all 显示总数)。
+  // open 里如果有 CRITICAL/ERROR,badge 用红色突出
+  const counts = computed<Record<string, number>>(() => ({
+    open: rows.value.filter((r) => r.status === 'OPEN').length,
+    acked: rows.value.filter((r) => r.status === 'ACKED').length,
+    closed: rows.value.filter((r) => r.status === 'CLOSED').length,
+    all: rows.value.length,
+  }))
+  const criticalOpenCount = computed(
+    () =>
+      rows.value.filter(
+        (r) => r.status === 'OPEN' && (r.severity === 'CRITICAL' || r.severity === 'ERROR'),
+      ).length,
+  )
+
+  // tab 徽章按业务语义着色:
+  //   open    → 有 critical 时红、否则橙色(待处理告警)
+  //   acked   → 蓝(处理中)
+  //   closed  → 绿(已解决)
+  //   all     → 默认灰
+  function badgeToneFor(filterKey: string) {
+    if (filterKey === 'open') {
+      return criticalOpenCount.value > 0 ? 'm-tab__badge--danger' : 'm-tab__badge--warning'
+    }
+    if (filterKey === 'acked') return 'm-tab__badge--info'
+    if (filterKey === 'closed') return 'm-tab__badge--success'
+    return '' // all
+  }
+
+  const keyword = ref('')
+
+  // tabs(状态)+ keyword(title/serviceName/alertType/traceId 模糊)
   const filtered = computed(() => {
-    if (filter.value === 'all') return rows.value
-    if (filter.value === 'open') return rows.value.filter((r) => r.status === 'OPEN')
-    if (filter.value === 'acked') return rows.value.filter((r) => r.status === 'ACKED')
-    if (filter.value === 'closed') return rows.value.filter((r) => r.status === 'CLOSED')
-    return rows.value
+    let list = rows.value
+    if (filter.value === 'open') list = list.filter((r) => r.status === 'OPEN')
+    else if (filter.value === 'acked') list = list.filter((r) => r.status === 'ACKED')
+    else if (filter.value === 'closed') list = list.filter((r) => r.status === 'CLOSED')
+    const kw = keyword.value.trim().toLowerCase()
+    if (kw) {
+      list = list.filter(
+        (r) =>
+          r.title?.toLowerCase().includes(kw) ||
+          r.serviceName?.toLowerCase().includes(kw) ||
+          r.alertType?.toLowerCase().includes(kw) ||
+          r.traceId?.toLowerCase().includes(kw),
+      )
+    }
+    return list
   })
 
   function fmt(ts?: string | null) {
@@ -206,7 +220,7 @@
 
   async function close(row: ConsoleAlertEventResponse) {
     try {
-      await ElMessageBox.confirm(
+      await confirmActionSheet(
         `${t('mobile.alerts.close')} #${row.id}?`,
         t('mobile.alerts.close'),
         {
@@ -223,117 +237,8 @@
     }
   }
 
-  const bulkMode = ref(false)
-  const selected = ref<Set<number>>(new Set())
-  const bulkBusy = ref(false)
-
-  function exitBulk() {
-    bulkMode.value = false
-    selected.value.clear()
-  }
-
-  function toggleOne(id: number) {
-    if (selected.value.has(id)) selected.value.delete(id)
-    else selected.value.add(id)
-    // 触发响应式更新
-    selected.value = new Set(selected.value)
-  }
-
-  function toggleSelectAll() {
-    const allIds = filtered.value.map((r) => r.id)
-    if (allIds.every((id) => selected.value.has(id))) {
-      // 反选 → 清空
-      selected.value = new Set()
-    } else {
-      selected.value = new Set(allIds)
-    }
-  }
-
-  async function bulkAck() {
-    if (selected.value.size === 0) {
-      ElMessage.warning(t('mobile.alerts.bulkPickFirst'))
-      return
-    }
-    const ids = Array.from(selected.value)
-    bulkBusy.value = true
-    let ok = 0
-    try {
-      // BE 没有批量端点,顺序串行(避免压垮)
-      for (const id of ids) {
-        try {
-          await acknowledgeAlert(id, { tenantId: tenant.tenantId })
-          ok++
-        } catch {
-          /* 单条失败继续下一条 */
-        }
-      }
-      ElMessage.success(t('mobile.alerts.bulkAckedToast', { n: ok }))
-      exitBulk()
-      await load()
-    } finally {
-      bulkBusy.value = false
-    }
-  }
-
-  async function bulkClose() {
-    if (selected.value.size === 0) {
-      ElMessage.warning(t('mobile.alerts.bulkPickFirst'))
-      return
-    }
-    try {
-      await ElMessageBox.confirm(
-        t('mobile.alerts.bulkClose'),
-        t('mobile.alerts.bulkSelected', { n: selected.value.size }),
-        {
-          type: 'warning',
-          confirmButtonText: t('common.confirm'),
-          cancelButtonText: t('common.cancel'),
-        },
-      )
-    } catch {
-      return
-    }
-    const ids = Array.from(selected.value)
-    bulkBusy.value = true
-    let ok = 0
-    try {
-      for (const id of ids) {
-        try {
-          await closeAlert(id, { tenantId: tenant.tenantId })
-          ok++
-        } catch {
-          /* skip */
-        }
-      }
-      ElMessage.success(t('mobile.alerts.bulkClosedToast', { n: ok }))
-      exitBulk()
-      await load()
-    } finally {
-      bulkBusy.value = false
-    }
-  }
-
   // useTenantReload: setup 时 + tenant 切换时调用 load(替代 onMounted + watch 手写)
   useTenantReload(load)
   // oncall 关键页:20s 轮询,切后台时暂停
   useAutoRefresh(load, REFRESH_INTERVAL_WARM_MS)
 </script>
-
-<style scoped>
-  .m-bulk-count {
-    align-self: center;
-    font-size: 12px;
-    color: var(--color-text-secondary);
-  }
-
-  .m-check {
-    margin-right: 6px;
-    transform: scale(1.15);
-    vertical-align: middle;
-  }
-
-  .m-card--selected {
-    border-color: var(--color-primary);
-    background: color-mix(in srgb, var(--color-primary) 4%, var(--color-bg-card) 96%);
-  }
-</style>

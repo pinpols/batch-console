@@ -14,6 +14,8 @@ export interface InstanceQueryParams {
   endDate?: string
   /** partial match */
   traceId?: string
+  /** SLA 违约过滤:服务端按 deadline_at<now AND active status 判定 */
+  slaBreached?: boolean
   page: number
   pageSize: number
 }
@@ -34,6 +36,7 @@ export async function queryJobInstances(
     ...(query.startDate ? { startDate: query.startDate } : {}),
     ...(query.endDate ? { endDate: query.endDate } : {}),
     ...(query.traceId ? { traceId: query.traceId } : {}),
+    ...(query.slaBreached ? { slaBreached: true } : {}),
   })
   return {
     records: (pr.items ?? []) as ConsoleJobInstanceResponse[],

@@ -1,8 +1,9 @@
 <template>
-  <header class="mobile-appbar">
+  <header class="mobile-appbar" :class="{ 'mobile-appbar--scrolled': scrolled }">
     <div class="mobile-appbar__left">
-      <div class="mobile-appbar__logo">BC</div>
-      <div class="mobile-appbar__title">{{ title }}</div>
+      <transition name="appbar-title">
+        <div v-if="scrolled" key="t" class="mobile-appbar__title">{{ title }}</div>
+      </transition>
     </div>
     <div class="mobile-appbar__right">
       <button
@@ -12,73 +13,73 @@
       >
         <el-icon><Search /></el-icon>
       </button>
-      <el-popover placement="bottom-end" :width="290" trigger="click">
-        <template #reference>
-          <button class="mobile-appbar__btn" :aria-label="t('mobile.appBar.accountMenu')">
-            <el-icon><User /></el-icon>
-          </button>
-        </template>
-        <div class="mobile-appbar__panel">
-          <div class="mobile-appbar__row">
-            <span class="mobile-appbar__key">{{ t('mobile.appBar.user') }}</span>
-            <span class="mobile-appbar__val">{{ auth.userInfo?.username ?? '—' }}</span>
-          </div>
-          <div class="mobile-appbar__row">
-            <span class="mobile-appbar__key">{{ t('mobile.appBar.role') }}</span>
-            <span class="mobile-appbar__val">{{ auth.role ?? '—' }}</span>
-          </div>
-
-          <!-- 租户:有切换权限显示下拉,否则只读 -->
-          <div class="mobile-appbar__tenant">
-            <span class="mobile-appbar__key">{{ t('mobile.appBar.tenant') }}</span>
-            <TenantSelect
-              v-if="canSwitchTenant"
-              :model-value="tenant.tenantId"
-              size="small"
-              :placeholder="t('mobile.appBar.switchTenantPlaceholder')"
-              select-class="query-w-190"
-              @update:model-value="handleTenantSwitch"
-            />
-            <span v-else class="mobile-appbar__val">{{ tenant.tenantId }}</span>
-          </div>
-
-          <el-divider style="margin: 10px 0" />
-
-          <div class="mobile-appbar__row mobile-appbar__row--clickable" @click="app.toggleTheme()">
-            <span class="mobile-appbar__key">
-              <el-icon class="mobile-appbar__icon">
-                <Monitor v-if="app.themePreference === 'system'" />
-                <Sunny v-else-if="app.themePreference === 'light'" />
-                <Moon v-else />
-              </el-icon>
-              {{ t('mobile.appBar.theme') }}
-            </span>
-            <span class="mobile-appbar__val">{{ themeLabel }}</span>
-          </div>
-
-          <el-divider style="margin: 10px 0" />
-
-          <a class="mobile-appbar__link" @click="goDesktop">{{ t('mobile.appBar.goDesktop') }}</a>
-          <el-popconfirm
-            :title="t('mobile.appBar.confirmLogout')"
-            :confirm-button-text="t('mobile.appBar.logoutConfirmText')"
-            :cancel-button-text="t('common.cancel')"
-            @confirm="handleLogout"
-          >
-            <template #reference>
-              <a class="mobile-appbar__link mobile-appbar__link--danger">
-                {{ t('mobile.appBar.logout') }}
-              </a>
-            </template>
-          </el-popconfirm>
-        </div>
-      </el-popover>
+      <button
+        class="mobile-appbar__btn"
+        :aria-label="t('mobile.appBar.accountMenu')"
+        @click="accountOpen = true"
+      >
+        <el-icon><User /></el-icon>
+      </button>
     </div>
   </header>
+
+  <!-- 账号 BottomSheet:头像/用户/角色 + 租户切换 + 主题 + 跳桌面 / 退出 -->
+  <MBottomSheet v-model="accountOpen">
+    <div class="m-account">
+      <!-- profile 头部 -->
+      <div class="m-account__profile">
+        <div class="m-account__avatar">
+          {{ (auth.userInfo?.username || '?').slice(0, 1).toUpperCase() }}
+        </div>
+        <div class="m-account__profile-text">
+          <div class="m-account__name">{{ auth.userInfo?.username ?? '—' }}</div>
+          <div class="m-account__role">{{ auth.role ?? '—' }}</div>
+        </div>
+      </div>
+
+      <!-- 租户卡 -->
+      <div class="m-list">
+        <div class="m-list__row m-account__row">
+          <span class="m-account__key">{{ t('mobile.appBar.tenant') }}</span>
+          <TenantSelect
+            v-if="canSwitchTenant"
+            :model-value="tenant.tenantId"
+            size="small"
+            :placeholder="t('mobile.appBar.switchTenantPlaceholder')"
+            @update:model-value="handleTenantSwitch"
+          />
+          <span v-else class="m-account__val">{{ tenant.tenantId }}</span>
+        </div>
+      </div>
+
+      <!-- 主题切换卡 -->
+      <div class="m-list">
+        <div class="m-list__row m-list__row--clickable m-account__row" @click="app.toggleTheme()">
+          <span class="m-account__key">
+            <el-icon class="m-account__icon">
+              <Monitor v-if="app.themePreference === 'system'" />
+              <Sunny v-else-if="app.themePreference === 'light'" />
+              <Moon v-else />
+            </el-icon>
+            {{ t('mobile.appBar.theme') }}
+          </span>
+          <span class="m-account__val">{{ themeLabel }}</span>
+        </div>
+      </div>
+
+      <!-- 操作 -->
+      <button class="m-account__action" @click="goDesktop">
+        {{ t('mobile.appBar.goDesktop') }}
+      </button>
+      <button class="m-account__action m-account__action--danger" @click="onLogoutClick">
+        {{ t('mobile.appBar.logout') }}
+      </button>
+    </div>
+  </MBottomSheet>
 </template>
 
 <script setup lang="ts">
-  import { computed } from 'vue'
+  import { computed, ref } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import { User, Monitor, Moon, Sunny, Search } from '@element-plus/icons-vue'
@@ -90,8 +91,11 @@
   import { canSwitchTenant as checkCanSwitchTenant } from '@/utils/tenantAccess'
   import { pathToKey } from '@/constants/pathKey'
   import TenantSelect from '@/components/common/TenantSelect.vue'
+  import MBottomSheet from './MBottomSheet.vue'
+  import { confirmActionSheet } from './MActionSheet'
 
   defineEmits<{ (e: 'open-palette'): void }>()
+  withDefaults(defineProps<{ scrolled?: boolean }>(), { scrolled: false })
 
   const route = useRoute()
   const router = useRouter()
@@ -100,6 +104,7 @@
   const tenant = useTenantStore()
   const tabsStore = useTabsStore()
   const app = useAppStore()
+  const accountOpen = ref(false)
 
   const title = computed(() => {
     // 移动端路由 meta 也写了中文 title;若桌面端 page.<key>.title 命中就走 i18n,
@@ -127,6 +132,21 @@
     router.push('/login')
   }
 
+  // sheet 里点退出 → 先弹 iOS ActionSheet 二次确认
+  async function onLogoutClick() {
+    try {
+      await confirmActionSheet(t('mobile.appBar.confirmLogout'), t('mobile.appBar.logout'), {
+        type: 'warning',
+        confirmButtonText: t('mobile.appBar.logoutConfirmText'),
+        cancelButtonText: t('common.cancel'),
+      })
+    } catch {
+      return // cancelled
+    }
+    accountOpen.value = false
+    await handleLogout()
+  }
+
   async function handleTenantSwitch(newTenantId: string) {
     if (!newTenantId) return
     tenant.setTenantId(newTenantId)
@@ -146,17 +166,25 @@
 </script>
 
 <style scoped>
+  /* iOS Navigation Bar:毛玻璃 + 极细下分隔线 + safe area 状态栏留白 */
   .mobile-appbar {
     position: sticky;
     top: 0;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 10px 12px;
-    padding-top: calc(env(safe-area-inset-top, 0) + 10px);
-    background: var(--color-bg-card);
-    border-bottom: 1px solid var(--color-border-light);
+    padding: 8px 16px;
+    padding-top: calc(env(safe-area-inset-top, 0) + 8px);
+    background: color-mix(in srgb, #ffffff 78%, transparent 22%);
+    backdrop-filter: saturate(180%) blur(24px);
+    -webkit-backdrop-filter: saturate(180%) blur(24px);
+    border-bottom: 0.5px solid rgb(60 60 67 / 18%);
     z-index: 50;
+  }
+
+  :global(html.dark) .mobile-appbar {
+    background: color-mix(in srgb, #1c1c1e 78%, transparent 22%);
+    border-bottom-color: rgb(84 84 88 / 60%);
   }
 
   .mobile-appbar__left {
@@ -171,24 +199,53 @@
     place-items: center;
     width: 28px;
     height: 28px;
-    border-radius: 6px;
+    border-radius: 8px;
     color: #fff;
     font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.08em;
-    background: linear-gradient(135deg, #1677ff 0%, #4ca1ff 100%);
+    background: linear-gradient(135deg, #007aff 0%, #5ac8fa 100%);
     flex-shrink: 0;
   }
 
+  /* iOS Compact Title:17px / -0.4 tracking;Large Title 由各页面 .m-page__title 承担。
+     滚动塌缩时(.mobile-appbar--scrolled)才出现并 cross-fade in。 */
   .mobile-appbar__title {
-    font-size: 15px;
+    font-size: 17px;
     font-weight: 600;
-    color: var(--color-text-primary);
+    letter-spacing: -0.02em;
+    color: #000;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
+  :global(html.dark) .mobile-appbar__title {
+    color: #fff;
+  }
+
+  /* 滚动塌缩态:底部分隔线显出来(顶部 large title 已离开视线,需要视觉收口) */
+  .mobile-appbar--scrolled {
+    border-bottom-color: rgb(60 60 67 / 36%);
+  }
+  :global(html.dark) .mobile-appbar--scrolled {
+    border-bottom-color: rgb(84 84 88 / 90%);
+  }
+
+  /* compact title fade-in 动画 */
+  .appbar-title-enter-active,
+  .appbar-title-leave-active {
+    transition:
+      opacity 0.18s ease,
+      transform 0.18s ease;
+  }
+  .appbar-title-enter-from,
+  .appbar-title-leave-to {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  /* iOS Bar Button:圆角灰 fill,主色 icon */
   .mobile-appbar__btn {
     display: inline-flex;
     align-items: center;
@@ -198,80 +255,137 @@
     border: none;
     border-radius: 50%;
     background: transparent;
-    color: var(--color-text-secondary);
+    color: #007aff;
     cursor: pointer;
+    transition: opacity 0.1s ease;
   }
 
   .mobile-appbar__btn:active {
-    background: color-mix(in srgb, var(--color-primary) 10%, transparent 90%);
+    opacity: 0.4;
   }
 
   .mobile-appbar__btn :deep(.el-icon) {
-    font-size: 20px;
+    font-size: 22px;
   }
 
   .mobile-appbar__panel {
     padding: 4px 0;
+    font-family:
+      -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'PingFang SC', 'Helvetica Neue', sans-serif;
   }
 
-  .mobile-appbar__row {
+  /* ── 账号 BottomSheet 内容样式 ────────────────────── */
+  .m-account {
     display: flex;
-    justify-content: space-between;
+    flex-direction: column;
+    gap: 10px;
+    padding-top: 4px;
+  }
+
+  /* profile 头部:圆形 avatar + 用户名 + 角色 */
+  .m-account__profile {
+    display: flex;
     align-items: center;
-    padding: 6px 4px;
+    gap: 12px;
+    padding: 8px 4px 14px;
+  }
+
+  .m-account__avatar {
+    display: grid;
+    place-items: center;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #007aff 0%, #5ac8fa 100%);
+    color: #fff;
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    flex-shrink: 0;
+  }
+
+  .m-account__profile-text {
+    min-width: 0;
+  }
+
+  .m-account__name {
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: #000;
+    line-height: 1.2;
+  }
+
+  :global(html.dark) .m-account__name {
+    color: #fff;
+  }
+
+  .m-account__role {
+    margin-top: 2px;
     font-size: 13px;
+    color: rgb(60 60 67 / 60%);
   }
 
-  .mobile-appbar__key {
-    color: var(--color-text-tertiary);
+  /* list 行:左 key 右 value/select */
+  .m-account__row {
+    justify-content: space-between;
+    gap: 12px;
   }
 
-  .mobile-appbar__val {
-    color: var(--color-text-primary);
-    font-weight: 500;
-    max-width: 140px;
+  .m-account__key {
+    display: inline-flex;
+    align-items: center;
+    color: #000;
+    font-size: 15px;
+  }
+
+  :global(html.dark) .m-account__key {
+    color: #fff;
+  }
+
+  .m-account__val {
+    color: rgb(60 60 67 / 60%);
+    font-size: 15px;
+    max-width: 180px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
-  .mobile-appbar__link {
-    display: block;
-    padding: 10px 4px;
-    font-size: 14px;
-    color: var(--color-primary);
-    cursor: pointer;
-  }
-
-  .mobile-appbar__link:active {
-    opacity: 0.6;
-  }
-
-  .mobile-appbar__link--danger {
-    color: var(--el-color-danger);
-  }
-
-  .mobile-appbar__tenant {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    padding: 6px 4px;
-  }
-
-  .mobile-appbar__row--clickable {
-    cursor: pointer;
-    border-radius: 6px;
-    transition: background 0.15s ease;
-  }
-
-  .mobile-appbar__row--clickable:active {
-    background: var(--el-fill-color-light);
-  }
-
-  .mobile-appbar__icon {
-    margin-right: 6px;
+  .m-account__icon {
+    margin-right: 8px;
     vertical-align: -2px;
-    font-size: 15px;
+    font-size: 18px;
+    color: rgb(60 60 67 / 60%);
+  }
+
+  /* 主操作按钮:整宽 iOS button,与 .m-list 视觉一致 */
+  .m-account__action {
+    display: block;
+    width: 100%;
+    padding: 14px 16px;
+    border: none;
+    border-radius: 14px;
+    background: var(--ios-bg-elevated, #fff);
+    color: #007aff;
+    font-size: 17px;
+    font-weight: 400;
+    cursor: pointer;
+    font-family: inherit;
+    transition: opacity 0.1s ease;
+    box-shadow: 0 1px 2px rgb(0 0 0 / 4%);
+  }
+
+  .m-account__action:active {
+    opacity: 0.55;
+  }
+
+  .m-account__action--danger {
+    color: #ff3b30;
+    font-weight: 600;
+  }
+
+  :global(html.dark) .m-account__action {
+    background: #1c1c1e;
   }
 </style>
