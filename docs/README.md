@@ -26,6 +26,7 @@
 
 | 日期       | 报告                                                                             | 关注点                                           |
 | ---------- | -------------------------------------------------------------------------------- | ------------------------------------------------ |
+| 2026-05-19 | [前后端文档整理与深扫报告](./reports/2026-05-19-前后端文档整理与深扫报告.md)   | 前后端契约漂移、Job Bundle 事务语义、分页迁移与当前门禁 |
 | 2026-04-27 | [ExecutionMode 前端落地待办](./reports/2026-04-27-ExecutionMode-前端落地待办.md) | ExecutionMode 字段在表单、列表、详情中的落地计划 |
 | 2026-04-19 | [E2E 测试报告](./reports/2026-04-19-e2e测试报告.md)                              | E2E 稳定化过程、真实 bug 与验证结论              |
 | 2026-04-19 | [服务端分页迁移指南](./reports/2026-04-19-服务端分页迁移指南.md)                 | 前端全量聚合到服务端分页的迁移路径               |
@@ -48,6 +49,7 @@
 - 了解项目现状：根 [README.md](../README.md) → 本索引 → `ui/2026-05-13-ia-refactor-and-run-centric.md`
 - 新增页面：`design/page-naming-convention.md` → `src/router/index.ts` → `src/constants/pageMeta.ts` → `src/constants/navigation.ts` → `locales/`
 - 联调接口：`api/README.md` → 后端 `../file-batch-system/docs/api/console-api.openapi.yaml` → `npm run gen:api`
+- 排查契约漂移：后端先跑 `python3 scripts/ci/check-console-openapi-paths.py`，前端再跑 `npm run gen:api:check`
 - 改列表页：`components/table/ProTable.vue`、`ListPageQueryBar.vue` 与 `reports/2026-04-19-服务端分页迁移指南.md`
 - 改 Workflow Designer：`views/workflow/`、`reports/2026-04-08-作业编排-Bug与优化.md`
 - 跨仓协作规则：根目录 [AGENTS.md](../AGENTS.md)
