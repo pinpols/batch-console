@@ -18,12 +18,9 @@
         {{ t('jobConfigBasic.groupBasic') }}
       </div>
       <el-form-item :label="t('jobDefinitionList.fieldJobCode')">
-        <el-input
-          v-model="model.jobCode"
-          :disabled="readonlyIdentity"
-          maxlength="128"
-          show-word-limit
-        />
+        <!-- 编辑/详情态走只读;新建态走 CodeNameBuilder(DOMAIN_BIZ[_vN] 拼接) -->
+        <el-input v-if="readonlyIdentity" v-model="model.jobCode" disabled maxlength="128" />
+        <CodeNameBuilder v-else v-model="model.jobCode" />
       </el-form-item>
       <el-form-item :label="t('jobDefinitionList.fieldJobName')" prop="jobName">
         <el-input v-model="model.jobName" maxlength="256" show-word-limit />
@@ -304,6 +301,7 @@
   import { useI18n } from 'vue-i18n'
   import { Plus } from '@element-plus/icons-vue'
   import MetaSelect from '@/components/common/MetaSelect.vue'
+  import CodeNameBuilder from '@/components/common/CodeNameBuilder.vue'
   import type { MetaOption } from '@/api/meta'
   import type { JobEditFormState } from '@/views/job/jobEditFormTypes'
   import CalendarMiniCreateDrawer from './CalendarMiniCreateDrawer.vue'

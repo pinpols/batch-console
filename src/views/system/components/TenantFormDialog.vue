@@ -13,14 +13,20 @@
   >
     <el-form ref="formRef" :model="form" :rules="formRules" label-width="88px">
       <el-form-item :label="t('tenantFormDialog.fieldTenantId')" prop="tenantId">
+        <!-- 编辑态走只读 input(主键不可改);创建态走 TenantIdInput 带实时校验 + 保留前缀提示 -->
         <el-input
+          v-if="editing"
           v-model="form.tenantId"
-          :disabled="editing"
+          disabled
           :placeholder="t('tenantFormDialog.tenantIdPlaceholder')"
         />
-        <div class="field-hint">
-          {{ t('tenantFormDialog.tenantIdHint') }} ·
-          <strong>{{ t('tenantFormDialog.tenantIdHintLocked') }}</strong>
+        <TenantIdInput
+          v-else
+          v-model="form.tenantId"
+          :placeholder="t('tenantFormDialog.tenantIdPlaceholder')"
+        />
+        <div v-if="editing" class="field-hint">
+          {{ t('tenantFormDialog.tenantIdHintLocked') }}
         </div>
       </el-form-item>
       <el-form-item :label="t('tenantFormDialog.fieldTenantName')" prop="tenantName">
@@ -60,26 +66,10 @@
           />
         </el-form-item>
         <el-form-item :label="t('tenantFormDialog.fieldPassword')" prop="password">
-          <el-input
+          <StrongPasswordInput
             v-model="form.password"
-            type="password"
-            show-password
             :placeholder="t('tenantFormDialog.passwordPlaceholder')"
-            maxlength="256"
-          >
-            <template #append>
-              <el-tooltip :content="t('common.passwordGenerate')" placement="top">
-                <el-button :icon="MagicStick" @click="onGenPassword" />
-              </el-tooltip>
-              <el-tooltip :content="t('common.passwordCopy')" placement="top">
-                <el-button
-                  :icon="DocumentCopy"
-                  :disabled="!form.password"
-                  @click="onCopyPassword"
-                />
-              </el-tooltip>
-            </template>
-          </el-input>
+          />
           <div class="field-hint">{{ t('tenantFormDialog.passwordHint') }}</div>
         </el-form-item>
       </template>
@@ -99,8 +89,8 @@
   import { computed, reactive, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
-  import { DocumentCopy, MagicStick } from '@element-plus/icons-vue'
-  import { generatePassword } from '@/utils/passwordGenerator'
+  import StrongPasswordInput from '@/components/common/StrongPasswordInput.vue'
+  import TenantIdInput from '@/components/common/TenantIdInput.vue'
 
   const { t } = useI18n({ useScope: 'global' })
   import type { FormRules } from 'element-plus'
@@ -128,23 +118,7 @@
     password: '',
   })
 
-  /** 一键生成 16 位强密码并写入表单 */
-  function onGenPassword() {
-    form.password = generatePassword(16)
-    ElMessage.success(t('common.passwordGeneratedToast'))
-  }
-
-  /** 复制当前密码到剪贴板 — 创建租户后再忘了就只能 admin reset */
-  async function onCopyPassword() {
-    if (!form.password) return
-    try {
-      await navigator.clipboard.writeText(form.password)
-      ElMessage.success(t('common.passwordCopiedToast'))
-    } catch {
-      ElMessage.warning(t('common.passwordCopyFailed'))
-    }
-  }
-
+  // 密码生成 / 复制 / 强度 已下沉到 StrongPasswordInput,这里不再重复
   const { formRef, validate } = useFormValidate()
 
   // 编辑态下 tenantId / username / password 不校验(灰显或不显示);
