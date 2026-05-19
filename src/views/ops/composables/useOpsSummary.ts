@@ -146,8 +146,12 @@ export function useOpsSummary() {
   }
 
   function goFailedJobs() {
-    // 卡片统计是全量(不限 bizDate),列表默认锚今日 → 必须 range=all 才能看到历史失败实例
-    router.push({ path: '/monitor/job-instances', query: { status: 'FAILED', range: 'all' } })
+    // 卡片统计是全量(不限 bizDate)且同时计入 FAILED + PARTIAL_FAILED,
+    // 列表必须用 statuses CSV 才能匹配同一计数语义。range=all 清今日锚定。
+    router.push({
+      path: '/monitor/job-instances',
+      query: { statuses: 'FAILED,PARTIAL_FAILED', range: 'all' },
+    })
   }
 
   watch(rangeKey, () => {

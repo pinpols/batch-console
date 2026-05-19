@@ -9,7 +9,11 @@
           tone="warning"
         />
       </button>
-      <button type="button" class="metric-hit" @click="$emit('go', '/observability/alerts')">
+      <button
+        type="button"
+        class="metric-hit"
+        @click="$emit('go', '/observability/alerts?status=OPEN')"
+      >
         <MetricCard
           :label="t('opsMetricGrid.activeAlerts')"
           :value="String(summary.openAlerts)"
@@ -20,7 +24,7 @@
       <button
         type="button"
         class="metric-hit"
-        @click="$emit('go', '/observability/alerts?severity=CRITICAL')"
+        @click="$emit('go', '/observability/alerts?severity=CRITICAL&status=OPEN')"
       >
         <MetricCard
           :label="t('opsMetricGrid.criticalAlerts')"
@@ -52,7 +56,7 @@
       <button
         type="button"
         class="metric-hit"
-        @click="$emit('go', '/monitor/job-instances?range=all')"
+        @click="$emit('go', '/monitor/job-instances?slaBreached=1&range=all')"
       >
         <MetricCard
           :label="t('opsMetricGrid.slaViolations')"
@@ -88,7 +92,7 @@
       <button
         type="button"
         class="metric-hit"
-        @click="$emit('go', '/workers/management?status=OFFLINE')"
+        @click="$emit('go', '/workers/management?status=OFFLINE,DECOMMISSIONED')"
       >
         <MetricCard
           :label="t('opsMetricGrid.offlineWorkers')"
