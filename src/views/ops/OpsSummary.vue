@@ -3,7 +3,6 @@
     <PageHeader>
       <template #actions>
         <el-button
-          type="primary"
           :icon="Refresh"
           :loading="loading || refresh.loading.value"
           @click="refresh.run(load)"

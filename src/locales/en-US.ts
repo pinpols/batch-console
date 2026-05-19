@@ -3481,10 +3481,15 @@ const messages: Messages = {
     btnRefresh: 'Refresh',
     triggerType: 'Trigger-type distribution',
     workerGroup: 'Worker group / status distribution',
+    jobStatus: 'Job status distribution',
+    workerStatus: 'Worker status distribution',
+    alertSeverity: 'Alert severity distribution',
+    outboxHealth: 'Outbox health',
   },
   opsExtraPanel: {
     btnRefresh: 'Refresh',
     slaReport: 'SLA report',
+    slaGaugeTitle: 'SLA attainment',
     emptyData: 'No data',
     execProgress: 'Execution progress',
     execProgressHint: 'Requires Job + biz date; this overview page does not offer a selector.',
@@ -3498,6 +3503,7 @@ const messages: Messages = {
     runFailTrend: 'Running / failed task trend',
     alertTrend: 'Alert trend (by status)',
     slaTrend: 'SLA met / breach trend',
+    failRateTrend: 'Fail-rate trend %',
   },
   opsSummary: {
     btnRefresh: 'Refresh',
