@@ -588,12 +588,16 @@
     // 切到新的定义时重置 runs 缓存,避免显示上一次的 runs
     detailRunsRows.value = []
     detailRunsLoadedForId.value = null
+    detailMermaidText.value = ''
+    detailMermaidError.value = ''
+    detailMermaidLoadedForId.value = null
     activeDetailTab.value = 'overview'
     detailVisible.value = true
   }
 
   watch(activeDetailTab, (tab) => {
     if (tab === 'runs') void loadDetailRuns()
+    if (tab === 'dag') void loadDetailMermaid()
   })
 
   async function toggleRow(row: ConsoleWorkflowDefinitionResponse) {

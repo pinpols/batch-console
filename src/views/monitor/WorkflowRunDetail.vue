@@ -26,6 +26,23 @@
       </template>
     </PageHeader>
 
+    <SectionCard v-if="run && miniMermaid">
+      <template #header>
+        <div class="run-detail-mini-dag-header">
+          <span>{{ t('monitor.runDetailMiniDagHeader') }}</span>
+          <el-button text type="primary" size="small" @click="openDag">
+            {{ t('monitor.runDetailOpenFullDag') }}
+          </el-button>
+        </div>
+      </template>
+      <WorkflowMiniDag
+        :mermaid-text="miniMermaid"
+        :node-runs="nodeRuns"
+        :max-height="240"
+        :empty-text="t('monitor.runDetailMiniDagEmpty')"
+      />
+    </SectionCard>
+
     <SectionCard v-if="run">
       <template #header>{{ t('monitor.runDetailMaster') }}</template>
       <el-descriptions :column="2" border>
@@ -165,6 +182,8 @@
   import { confirmDanger } from '@/composables/useDangerConfirm'
   import { instanceApi } from '@/api/instance'
   import { cancelWorkflowRun, terminateWorkflowRun, skipWorkflowRunNode } from '@/api/workflowRuns'
+  import { workflowApi } from '@/api/workflow'
+  import WorkflowMiniDag from '@/components/workflow/WorkflowMiniDag.vue'
   import { queryWorkflowNodeRunsPaged } from '@/api/workflowQueries'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
@@ -192,6 +211,8 @@
   const { filterBusy, runSearch, runReset, runRefresh } = useListFilterFeedback(loading)
   const actionLoading = ref(false)
   const run = ref<ConsoleWorkflowRunResponse | null>(null)
+  const miniMermaid = ref('')
+  let miniMermaidLoadedForDefId: number | null = null
   const nodeRuns = ref<ConsoleWorkflowNodeRunResponse[]>([])
   const nodePage = ref(1)
   const nodePageSize = ref(15)
@@ -248,6 +269,18 @@
       run.value = await instanceApi.workflowRunDetail(runId.value, tenant.tenantId)
       nodePage.value = 1
       await loadNodeRuns()
+      // 顶部 mini-DAG 只在首次拿到 workflowDefinitionId 时拉一次,后续节点状态变化靠
+      // nodeRuns 重新渲染 overlay,不重拉 mermaid 文本(图骨架不变)
+      const defId = run.value?.workflowDefinitionId
+      if (defId && miniMermaidLoadedForDefId !== defId) {
+        try {
+          const mer = await workflowApi.mermaid(defId, tenant.tenantId)
+          miniMermaid.value = mer.mermaid ?? ''
+          miniMermaidLoadedForDefId = defId
+        } catch {
+          miniMermaid.value = ''
+        }
+      }
     } catch {
       run.value = null
       nodeRuns.value = []
@@ -345,3 +378,12 @@
     void load()
   })
 </script>
+
+<style scoped>
+  .run-detail-mini-dag-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+</style>
