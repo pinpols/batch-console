@@ -3,6 +3,7 @@
     <LayoutSidebar />
 
     <el-container class="layout-shell">
+      <MaintenanceBanner />
       <LayoutHeader @open-palette="paletteOpen = true" />
 
       <el-main class="layout-main">
@@ -50,17 +51,21 @@
   const { t } = useI18n({ useScope: 'global' })
   import CommandPalette from '@/components/common/CommandPalette.vue'
   import ErrorBoundary from '@/components/common/ErrorBoundary.vue'
+  import MaintenanceBanner from '@/components/common/MaintenanceBanner.vue'
   import SwUpdatePrompt from '@/components/common/SwUpdatePrompt.vue'
   import LayoutSidebar from '@/layout/LayoutSidebar.vue'
   import LayoutHeader from '@/layout/components/LayoutHeader.vue'
   import { useHeaderLogic } from '@/layout/composables/useHeaderLogic'
   import { useNetworkStatus } from '@/composables/useNetworkStatus'
+  import { useMaintenancePolling } from '@/composables/useMaintenancePolling'
   import { shouldShowOnboarding, startOnboarding } from '@/composables/useOnboardingTour'
 
   const route = useRoute()
   const { app, tabsStore, paletteOpen, visibleGroups } = useHeaderLogic()
   // 全局网络状态监听:断网/恢复弹消息(配合 axios retry,短抖用户无感)
   useNetworkStatus()
+  // 维护模式探活:30s 轮询 /system/maintenance,自动同步 banner / 写按钮 / 降级页
+  useMaintenancePolling()
 
   function onGlobalKeydown(e: KeyboardEvent) {
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
