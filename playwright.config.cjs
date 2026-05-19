@@ -10,8 +10,9 @@ module.exports = defineConfig({
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
   bail: 0,
-  // 单个测试 25s（从 15s 调大），容忍冷启动 + 网络抖动
-  timeout: 25_000,
+  // 单个测试 45s(从 25s 调大):dev server 在并发跑时单个路由首次编译/拉数可达 ~20s,
+  // 加上 list + drill + tab 巡检的多跳预算,25s 太紧
+  timeout: 45_000,
   expect: { timeout: 8_000 },
   // 全局兜底:本地 dev 60 min(suite 已增至 749 tests,workers=2 需要 ~40 min)
   // 原 3min → 30min → 60min

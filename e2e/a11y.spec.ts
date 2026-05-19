@@ -47,12 +47,21 @@ async function gotoStable(page: Page, route: string): Promise<void> {
 test.describe('@cross-browser a11y baseline (C 档):P0 10 页 axe critical+serious 审查', () => {
   // --- 原 5 页(回归) ---
 
-  test('/login 登录页', async ({ page }) => {
-    await gotoStable(page, '/login')
-    const { blockers, all } = await runAxe(page)
-    if (blockers.length > 0) console.error('A11y blockers:', JSON.stringify(blockers, null, 2))
-    expect(blockers, blockers.map((v) => v.id).join(', ')).toHaveLength(0)
-    if (all.length > 0) console.warn(`[axe] /login minor/moderate ${all.length}`)
+  // 必须用空 storageState — Login.vue 的 onMounted 会调 /auth/logout 把当前 cookie 的 jti
+  // 加进 revocation list,带 admin storageState 跑会把全局 user.json 的 token 杀掉,
+  // 导致并行跑的其它测试 → 整片 401。
+  test('/login 登录页', async ({ browser }) => {
+    const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } })
+    const page = await ctx.newPage()
+    try {
+      await gotoStable(page, '/login')
+      const { blockers, all } = await runAxe(page)
+      if (blockers.length > 0) console.error('A11y blockers:', JSON.stringify(blockers, null, 2))
+      expect(blockers, blockers.map((v) => v.id).join(', ')).toHaveLength(0)
+      if (all.length > 0) console.warn(`[axe] /login minor/moderate ${all.length}`)
+    } finally {
+      await ctx.close()
+    }
   })
 
   test('/ops/summary 运营概览', async ({ page }) => {

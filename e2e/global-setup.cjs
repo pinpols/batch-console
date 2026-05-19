@@ -326,6 +326,61 @@ async function globalSetup(config) {
 
   writeFileSync(path.join(authDir, 'user.json'), JSON.stringify(storageState, null, 2))
   console.log('[global-setup] storageState 已写入，默认测试租户: ta')
+
+  // ── 刷新分角色 storageState(role-*.json) ─────────────────────────
+  // scenarios-business / multi-tenant-and-stream / c-plus-coverage / rbac-matrix /
+  // flows/_watchdog 都直接读这些文件做 APIRequestContext。
+  // 旧版只生成 user.json,role-*.json 的 token 容易过期导致 401。
+  // 这里按已知账号矩阵重新登录刷新。
+  // !!! BE 对同一 username 只保留最近一次 login 的 token,后登录的 token 会让之前的失效。
+  //     所以 admin 这一项必须复用上面写到 user.json 的同一份 cookies,不能再 login 一次,
+  //     否则会反过来把 user.json 的 token 作废,导致全量 e2e 集体 401。
+  const ROLE_LOGINS = [
+    { file: 'role-tenantUser.json', username: 'op-tx', password: 'admin123', tenantId: 'tx', defaultTenant: 'tx' },
+    { file: 'role-auditor.json', username: 'auditor', password: 'admin123', tenantId: 'system', defaultTenant: 'ta' },
+    { file: 'role-configAdmin.json', username: 'config-admin', password: 'admin123', tenantId: 'system', defaultTenant: 'ta' },
+    { file: 'role-user.json', username: 'e2e-user', password: 'admin123', tenantId: 'tx', defaultTenant: 'tx' },
+  ]
+  // role-admin.json 直接复用 user.json 的 cookies(同 username,避免互踩 session)
+  writeFileSync(path.join(authDir, 'role-admin.json'), JSON.stringify(storageState, null, 2))
+  for (const role of ROLE_LOGINS) {
+    try {
+      const res = await fetchWithTimeout(`${API_BASE}/api/console/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Tenant-Id': role.tenantId },
+        body: JSON.stringify({ username: role.username, password: role.password }),
+      })
+      if (!res.ok) {
+        console.warn(`[global-setup] role 登录失败 ${role.username}: HTTP ${res.status},跳过 ${role.file}`)
+        continue
+      }
+      const body = await res.json()
+      const setCookies =
+        typeof res.headers.getSetCookie === 'function'
+          ? res.headers.getSetCookie()
+          : [res.headers.get('set-cookie')].filter(Boolean)
+      const cookies = setCookies.map((raw) => parseSetCookieForStorageState(raw, baseURL))
+      const roleState = {
+        cookies,
+        origins: [
+          {
+            origin: baseURL,
+            localStorage: [
+              { name: 'batch-console-tenant-id', value: role.defaultTenant },
+              { name: 'batch-console-session', value: '1' },
+              { name: 'token', value: body?.data?.accessToken ?? '' },
+              { name: 'batch-console:locale', value: 'zh-CN' },
+              { name: 'batch-console-onboarding-done', value: '1' },
+            ],
+          },
+        ],
+      }
+      writeFileSync(path.join(authDir, role.file), JSON.stringify(roleState, null, 2))
+    } catch (err) {
+      console.warn(`[global-setup] role 登录异常 ${role.username}: ${err.message},跳过 ${role.file}`)
+    }
+  }
+  console.log('[global-setup] role-*.json 已刷新')
 }
 
 module.exports = globalSetup

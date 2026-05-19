@@ -48,7 +48,12 @@ app.use(router)
 {
   const auth = useAuthStore(pinia)
   if (auth.isLoggedIn && !auth.userInfo) {
-    auth.fetchMe().catch(() => auth.logout())
+    // 只有 401(确认 token 无效)才主动 logout;5xx/网络抖动让 axios 拦截器或路由守卫
+    // 决定,避免一次偶发 /me 失败把 token 也 revoke 掉 → 整个 session 不可恢复
+    auth.fetchMe().catch((err: unknown) => {
+      const status = (err as { response?: { status?: number } })?.response?.status
+      if (status === 401) auth.logout()
+    })
   }
 }
 app.use(i18n)

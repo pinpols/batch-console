@@ -19,7 +19,8 @@ test.describe('Job Definition Wizard / Detail (Day 1-4 交付)', () => {
     await page.goto('/jobs/definitions/new')
     await expectPageTitle(page, '新建作业向导')
 
-    // 8 个 step 标题应可见
+    // 8 个 step 标题应可见 — 先等首个 step 节点挂载,避免读 DOM 时 wizard 还在 lazy 加载
+    await expect(page.locator('.el-step__title').first()).toBeVisible({ timeout: 8000 })
     const stepTitles = await page.locator('.el-step__title').allTextContents()
     for (const want of [
       '基本信息', '调度', '资源', '触发', '关联文件', '关联编排', '告警', '复核',

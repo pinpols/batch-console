@@ -32,10 +32,12 @@ test.describe('文件列表 — 筛选查询', () => {
     const opt = page.locator('.el-select-dropdown__item').first()
     if (await isVisible(opt, 2000)) {
       await opt.click()
+      // el-select 选完后 popper 偶发不收,会拦截后续按钮点击 → 主动 Esc 关掉
+      await page.keyboard.press('Escape')
       await page.getByRole('button', { name: '搜索' }).click()
       await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
     }
-    await page.getByRole('button', { name: '重置' }).click()
+    await page.getByRole('button', { name: '重置' }).click({ force: true })
   })
 
   test('业务日期搜索', async ({ page }) => {

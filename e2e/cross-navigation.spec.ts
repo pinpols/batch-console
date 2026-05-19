@@ -6,48 +6,50 @@ test.describe('dashboard metric card navigation (指标卡片跳转)', () => {
     await enterDemoApp(page)
   })
 
-  test('点击待审批卡片跳转到审批中心', async ({ page }) => {
+  // ops/summary 周期刷新会重建卡片节点,默认 click 的 stability check 偶发会等到超时;
+  // 直接 force-click 跳过 actionability 等待。networkidle 在 dev server 高并发下不收敛,不能等
+  async function clickMetric(page: import('@playwright/test').Page, text: string) {
     await page.goto('/ops/summary')
-    await page.locator('.metric-hit', { hasText: '待审批' }).click()
+    const card = page.locator('.metric-hit', { hasText: text }).first()
+    await card.waitFor({ state: 'visible', timeout: 10_000 })
+    await card.click({ force: true })
+  }
+
+  test('点击待审批卡片跳转到审批中心', async ({ page }) => {
+    await clickMetric(page, '待审批')
     await expect(page).toHaveURL(/\/approvals/)
     await expectPageTitle(page, '审批中心')
   })
 
   test('点击未处理告警卡片跳转到告警列表', async ({ page }) => {
-    await page.goto('/ops/summary')
-    await page.locator('.metric-hit', { hasText: '未处理告警' }).click()
+    await clickMetric(page, '未处理告警')
     await expect(page).toHaveURL(/\/observability\/alerts/)
     await expectPageTitle(page, /事件告警|告警/)
   })
 
   test('点击严重告警卡片跳转到告警列表并筛选 severity=CRITICAL', async ({ page }) => {
-    await page.goto('/ops/summary')
-    await page.locator('.metric-hit', { hasText: '严重告警' }).click()
+    await clickMetric(page, '严重告警')
     await expect(page).toHaveURL(/\/observability\/alerts.*severity=CRITICAL/)
   })
 
   test('点击运行中任务卡片跳转到实例列表并筛选 status=RUNNING', async ({ page }) => {
-    await page.goto('/ops/summary')
-    await page.locator('.metric-hit', { hasText: '运行中任务' }).click()
+    await clickMetric(page, '运行中任务')
     await expect(page).toHaveURL(/\/monitor\/job-instances.*status=RUNNING/)
   })
 
   test('点击失败任务卡片跳转到实例列表并筛选 status=FAILED', async ({ page }) => {
-    await page.goto('/ops/summary')
-    await page.locator('.metric-hit', { hasText: '失败任务' }).click()
+    await clickMetric(page, '失败任务')
     await expect(page).toHaveURL(/\/monitor\/job-instances.*status=FAILED/)
   })
 
   test('点击在线 Worker 卡片跳转到 Worker 管理', async ({ page }) => {
-    await page.goto('/ops/summary')
-    await page.locator('.metric-hit', { hasText: '在线 Worker' }).click()
+    await clickMetric(page, '在线 Worker')
     await expect(page).toHaveURL(/\/workers\/management/)
     await expectPageTitle(page, 'Worker')
   })
 
   test('点击 Outbox 重试积压卡片跳转到 Outbox', async ({ page }) => {
-    await page.goto('/ops/summary')
-    await page.locator('.metric-hit', { hasText: 'Outbox 重试积压' }).click()
+    await clickMetric(page, 'Outbox 重试积压')
     await expect(page).toHaveURL(/\/observability\/outbox/)
     await expectPageTitle(page, 'Outbox')
   })

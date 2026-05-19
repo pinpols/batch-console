@@ -51,6 +51,11 @@ test.describe('RBAC 拒绝行为', () => {
         body: JSON.stringify({ code: 'UNAUTHORIZED', message: 'session expired', data: null }),
       }),
     )
+    // 同时拦掉 Login.vue onMounted 的 /auth/logout — 否则会把全局 admin cookie 的 jti 加进
+    // revocation list,污染其它并行 worker 用同一份 storageState 的 token。
+    await context.route('**/api/console/auth/logout', (route) =>
+      route.fulfill({ status: 204, body: '' }),
+    )
 
     // 直接清掉 userInfo 强制路由守卫重新 fetchMe(addInitScript 在 enterDemoApp 里跑过)
     await page.addInitScript(() => {
