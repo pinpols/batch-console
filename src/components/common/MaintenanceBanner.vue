@@ -9,6 +9,14 @@
         {{ app.maintenance.message }}
       </span>
       <span v-if="etaText" class="maintenance-banner__eta">· {{ etaText }}</span>
+      <!-- 受影响子系统 chip:有 affectedServices 列表时按 service 展示,否则不渲染(banner 走 message 兜底) -->
+      <span
+        v-for="svc in app.maintenance.affectedServices"
+        :key="svc"
+        class="maintenance-banner__svc"
+      >
+        {{ svc }}
+      </span>
     </div>
   </div>
 </template>
@@ -28,13 +36,17 @@
   const app = useAppStore()
   const { t } = useI18n({ useScope: 'global' })
 
-  const toneClass = computed(() =>
-    app.maintenance.readOnly ? 'maintenance-banner--readonly' : 'maintenance-banner--blocked',
-  )
+  const toneClass = computed(() => {
+    if (app.maintenance.adminBypass) return 'maintenance-banner--admin'
+    return app.maintenance.readOnly ? 'maintenance-banner--readonly' : 'maintenance-banner--blocked'
+  })
 
-  const headline = computed(() =>
-    app.maintenance.readOnly ? t('maintenance.bannerReadonly') : t('maintenance.bannerBlocked'),
-  )
+  const headline = computed(() => {
+    if (app.maintenance.adminBypass) return t('maintenance.bannerAdminBypass')
+    return app.maintenance.readOnly
+      ? t('maintenance.bannerReadonly')
+      : t('maintenance.bannerBlocked')
+  })
 
   // ETA 倒计时 — 每分钟刷新一次,精度够,避免频繁 reactivity
   const now = ref(Date.now())
@@ -81,6 +93,20 @@
     background: var(--color-warning-light, #fef3c7);
     color: var(--color-warning, #b45309);
     border-bottom-color: rgb(180 83 9 / 18%);
+  }
+  .maintenance-banner--admin {
+    background: var(--color-info-light, #e0e7ff);
+    color: var(--color-info, #1e40af);
+    border-bottom-color: rgb(30 64 175 / 18%);
+  }
+  .maintenance-banner__svc {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 1px 8px;
+    border-radius: 10px;
+    background: rgb(255 255 255 / 60%);
+    font-size: 11px;
+    font-weight: 600;
   }
   .maintenance-banner__icon {
     flex-shrink: 0;

@@ -25,7 +25,7 @@
         </div>
         <VChart
           class="chart"
-          :option="alertTypeTopNOption"
+          :option="triggerTypeTopNOption"
           :theme="chartTheme"
           autoresize
           :loading="chartsLoading"
@@ -39,6 +39,58 @@
         <VChart
           class="chart"
           :option="workerLoadTopNOption"
+          :theme="chartTheme"
+          autoresize
+          :loading="chartsLoading"
+        />
+      </div>
+      <div class="chart-panel">
+        <div class="panel-title">
+          <span class="dot dot--primary" />
+          {{ t('opsDistPanel.jobStatus') }}
+        </div>
+        <VChart
+          class="chart"
+          :option="jobStatusPieOption"
+          :theme="chartTheme"
+          autoresize
+          :loading="chartsLoading"
+        />
+      </div>
+      <div class="chart-panel">
+        <div class="panel-title">
+          <span class="dot dot--success" />
+          {{ t('opsDistPanel.workerStatus') }}
+        </div>
+        <VChart
+          class="chart"
+          :option="workerStatusPieOption"
+          :theme="chartTheme"
+          autoresize
+          :loading="chartsLoading"
+        />
+      </div>
+      <div class="chart-panel">
+        <div class="panel-title">
+          <span class="dot dot--danger" />
+          {{ t('opsDistPanel.alertSeverity') }}
+        </div>
+        <VChart
+          class="chart"
+          :option="alertSeverityPieOption"
+          :theme="chartTheme"
+          autoresize
+          :loading="chartsLoading"
+        />
+      </div>
+      <div class="chart-panel">
+        <div class="panel-title">
+          <span class="dot dot--warning" />
+          {{ t('opsDistPanel.outboxHealth') }}
+        </div>
+        <VChart
+          class="chart"
+          :option="outboxHealthPieOption"
           :theme="chartTheme"
           autoresize
           :loading="chartsLoading"
@@ -61,8 +113,12 @@
     active: boolean
     chartsLoading: boolean
     chartTheme: string | undefined
-    alertTypeTopNOption: Record<string, unknown>
+    triggerTypeTopNOption: Record<string, unknown>
     workerLoadTopNOption: Record<string, unknown>
+    jobStatusPieOption: Record<string, unknown>
+    workerStatusPieOption: Record<string, unknown>
+    alertSeverityPieOption: Record<string, unknown>
+    outboxHealthPieOption: Record<string, unknown>
   }>()
 
   const emit = defineEmits<{
@@ -143,7 +199,7 @@
   }
 
   .charts-grid--dist {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .chart-panel {
@@ -175,13 +231,27 @@
   .dot--success {
     background: var(--color-success);
   }
+  .dot--primary {
+    background: var(--color-primary);
+  }
+  .dot--warning {
+    background: var(--color-warning);
+  }
+  .dot--danger {
+    background: var(--color-danger);
+  }
 
   .chart {
     width: 100%;
     height: 240px;
   }
 
-  @media (max-width: 1100px) {
+  @media (max-width: 1400px) {
+    .charts-grid--dist {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (max-width: 900px) {
     .charts-grid--dist {
       grid-template-columns: 1fr;
     }

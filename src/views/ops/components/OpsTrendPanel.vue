@@ -58,7 +58,21 @@
         </div>
         <VChart
           class="chart"
-          :option="outboxTrendOption"
+          :option="slaTrendOption"
+          :theme="chartTheme"
+          autoresize
+          :loading="chartsLoading"
+        />
+      </div>
+
+      <div class="chart-panel">
+        <div class="panel-title">
+          <span class="dot dot--danger" />
+          {{ t('opsTrendPanel.failRateTrend') }}
+        </div>
+        <VChart
+          class="chart"
+          :option="failRateTrendOption"
           :theme="chartTheme"
           autoresize
           :loading="chartsLoading"
@@ -84,7 +98,8 @@
     chartTheme: string | undefined
     jobsTrendOption: Record<string, unknown>
     alertsTrendOption: Record<string, unknown>
-    outboxTrendOption: Record<string, unknown>
+    slaTrendOption: Record<string, unknown>
+    failRateTrendOption: Record<string, unknown>
   }>()
 
   const emit = defineEmits<{
@@ -202,6 +217,9 @@
   }
   .dot--success {
     background: var(--color-success);
+  }
+  .dot--danger {
+    background: var(--color-danger);
   }
 
   .chart {
