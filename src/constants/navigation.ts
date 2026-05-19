@@ -372,6 +372,13 @@ export const navigationGroups: NavigationGroup[] = [
         minRole: 'VIEWER',
         icon: Notebook,
       },
+      // 通用操作审计 — @AuditAction 切面落库,覆盖 console 写操作
+      {
+        title: pageTitle('/observability/operation-audits'),
+        path: '/observability/operation-audits',
+        minRole: 'VIEWER',
+        icon: Notebook,
+      },
       // 配置(发布单 / 变更同步 / 标签 — 原 config 组保留高频 3 项)
       {
         title: pageTitle('/config/releases'),
