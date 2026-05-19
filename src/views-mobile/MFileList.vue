@@ -103,7 +103,7 @@
   }
 
   const list = useInfiniteList<ConsoleFileRecordResponse>({
-    pageSize: 20,
+    pageSize: 15,
     fetchPage: async (page, pageSize) => {
       const q: FileQuery = {
         tenantId: tenant.tenantId,

@@ -17,6 +17,7 @@
 
 <script setup lang="ts">
   import { computed } from 'vue'
+  import { DEFAULT_PAGE_SIZES } from '@/constants/pagination'
 
   const props = withDefaults(
     defineProps<{
@@ -30,7 +31,7 @@
       layout?: string
     }>(),
     {
-      pageSizes: () => [20, 50, 100, 200],
+      pageSizes: () => [...DEFAULT_PAGE_SIZES],
       hideWhenSinglePage: true,
       disabled: false,
       layout: 'total, sizes, prev, pager, next, jumper',
@@ -42,10 +43,14 @@
     (e: 'update:pageSize', v: number): void
   }>()
 
+  // 老逻辑:total <= pageSize 就隐藏整个分页条 → 用户切到 50/100 后看不见 page-size 选择器,
+  // 切不回小档。修正:只在「数据本来就装不满最小档」时隐藏(true single-page);
+  // 用户主动把档调大后,即便只剩 1 页也要保留 sizes + total,方便切回来。
   const visible = computed(() => {
     if (props.total <= 0) return false
     if (!props.hideWhenSinglePage) return true
-    return props.total > props.pageSize
+    const minSize = Math.min(...(props.pageSizes ?? [props.pageSize]))
+    return props.total > minSize
   })
 
   function onPageChange(p: number) {

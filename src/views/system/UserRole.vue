@@ -210,7 +210,7 @@
   const matrixExpanded = ref(false)
   const matrixAnchorRef = ref<HTMLElement | null>(null)
   const matrixPage = ref(1)
-  const matrixPageSize = ref(20)
+  const matrixPageSize = ref(15)
 
   function expandMatrix() {
     matrixExpanded.value = true

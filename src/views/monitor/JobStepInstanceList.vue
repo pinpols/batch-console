@@ -134,7 +134,7 @@
 
   const stepStatusOptions = computed(() => pickMetaEnumGroup(metaEnums.value, 'partitionStatus'))
   const page = ref(1)
-  const pageSize = ref(20)
+  const pageSize = ref(15)
   const total = ref(0)
   const rows = ref<ConsoleJobStepInstanceResponse[]>([])
 

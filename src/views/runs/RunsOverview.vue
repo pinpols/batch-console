@@ -142,7 +142,7 @@
         tenantId: tenant.tenantId,
         instanceStatus: statusCode(),
         page: 1,
-        pageSize: 20,
+        pageSize: 15,
       })
       jobRows.value = page.records ?? []
     } catch {
@@ -159,7 +159,7 @@
         tenantId: tenant.tenantId,
         runStatus: statusCode(),
         page: 1,
-        pageSize: 20,
+        pageSize: 15,
       })
       wfRows.value = page.records ?? []
     } catch {

@@ -217,9 +217,9 @@
   const eventTypes = ref<EventCatalogTypeRow[]>([])
   const topics = ref<EventCatalogTopicRow[]>([])
   const typePage = ref(1)
-  const typePageSize = ref(20)
+  const typePageSize = ref(15)
   const topicPage = ref(1)
-  const topicPageSize = ref(20)
+  const topicPageSize = ref(15)
 
   const detailVisible = ref(false)
   const detailKind = ref<'eventType' | 'topic'>('eventType')

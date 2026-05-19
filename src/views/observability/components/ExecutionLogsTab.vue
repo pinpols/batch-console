@@ -171,7 +171,7 @@
   const { filterBusy, runSearch, runReset, runRefresh } = useListFilterFeedback(loadingExec)
   const execRows = ref<Record<string, unknown>[]>([])
   const execPage = ref(1)
-  const execPageSize = ref(20)
+  const execPageSize = ref(15)
   const initialTrace = typeof route.query.traceId === 'string' ? route.query.traceId.trim() : ''
   const execDraft = reactive({ operationType: '', result: '', traceId: initialTrace })
   const execApplied = reactive({ operationType: '', result: '', traceId: initialTrace })

@@ -375,7 +375,7 @@
   const allRows = ref<PipelineDefinitionRow[]>([])
   const total = ref(0)
   const page = ref(1)
-  const pageSize = ref(20)
+  const pageSize = ref(15)
   const keyword = ref('')
   const pipelineType = ref('')
   const enabledFilter = ref<boolean | undefined>()
@@ -404,7 +404,7 @@
         tenantId: def.tenantId ?? tenant.tenantId,
         jobCode: def.pipelineCode,
         page: 1,
-        pageSize: 20,
+        pageSize: 15,
       })
       detailRunsRows.value = pageResult.records ?? []
       detailRunsLoadedFor.value = def.pipelineCode

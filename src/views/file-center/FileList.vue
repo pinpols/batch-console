@@ -268,13 +268,13 @@
   const rows = ref<ConsoleFileRecordResponse[]>([])
   const total = ref(0)
   const page = ref(1)
-  const pageSize = ref(20)
+  const pageSize = ref(15)
   const detailVisible = ref(false)
   const auditVisible = ref(false)
   const detail = ref<Record<string, unknown> | null>(null)
   const auditRows = ref<ConsoleAuditLogResponse[]>([])
   const auditPage = ref(1)
-  const auditPageSize = ref(20)
+  const auditPageSize = ref(15)
   // 列表筛选默认锚到"今日 + 全部状态";运维大多看当天文件
   function todayRange(): [string, string] {
     const d = new Date()

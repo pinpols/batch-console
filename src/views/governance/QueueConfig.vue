@@ -687,12 +687,12 @@
   const calendarEditingId = ref<number | null>(null)
   const holidayEditingId = ref<number | null>(null)
   const saving = ref(false)
-  const pageSize = ref(20)
+  const pageSize = ref(15)
   const pageQueues = ref(1)
   const pageWindows = ref(1)
   const pageCalendars = ref(1)
   const holidayPage = ref(1)
-  const holidayPageSize = ref(20)
+  const holidayPageSize = ref(15)
 
   const queueForm = reactive({
     queueCode: '',

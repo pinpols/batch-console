@@ -268,7 +268,7 @@
   // Worker 列表
   // ═══════════════════════════════════════
   const workerPage = ref(1)
-  const workerPageSize = ref(20)
+  const workerPageSize = ref(15)
 
   const {
     data: allWorkerData,
@@ -446,7 +446,7 @@
   const channelDetailRow = ref<ConsoleFileChannelResponse | null>(null)
   const channelTotal = ref(0)
   const channelPage = ref(1)
-  const channelPageSize = ref(20)
+  const channelPageSize = ref(15)
 
   const channelFilters = reactive({ channelCode: '', channelType: '' })
 

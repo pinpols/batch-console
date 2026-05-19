@@ -194,7 +194,7 @@
   const run = ref<ConsoleWorkflowRunResponse | null>(null)
   const nodeRuns = ref<ConsoleWorkflowNodeRunResponse[]>([])
   const nodePage = ref(1)
-  const nodePageSize = ref(20)
+  const nodePageSize = ref(15)
   const nodeTotal = ref(0)
 
   const { data: metaEnums } = useConsoleMetaEnumsQuery()

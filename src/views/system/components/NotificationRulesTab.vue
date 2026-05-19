@@ -170,7 +170,7 @@
   const ruleEditingId = ref<number | null>(null)
   const rules = ref<Record<string, unknown>[]>([])
   const rulePage = ref(1)
-  const rulePageSize = ref(20)
+  const rulePageSize = ref(15)
   const ruleFilterDraft = reactive({ keyword: '', enabled: undefined as boolean | undefined })
   const ruleFilterApplied = reactive({ keyword: '', enabled: undefined as boolean | undefined })
   const hasActiveRuleFilters = computed(

@@ -197,7 +197,7 @@
   const auditRows = ref<AiAuditLogResponse[]>([])
   const auditTotal = ref(0)
   const auditPage = ref(1)
-  const auditPageSize = ref(20)
+  const auditPageSize = ref(15)
   const auditTraceDraft = ref('')
   const auditOperatorDraft = ref('')
   const auditCategoryDraft = ref('')

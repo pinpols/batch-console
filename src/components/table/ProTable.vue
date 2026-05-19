@@ -59,6 +59,7 @@
   import TableSkeleton from '@/components/table/TableSkeleton.vue'
   import TablePagerBar from '@/components/table/TablePagerBar.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
+  import { DEFAULT_PAGE_SIZES } from '@/constants/pagination'
 
   defineOptions({ inheritAttrs: false })
 
@@ -103,7 +104,7 @@
       hasActiveFilters: false,
       showPager: true,
       hidePagerWhenSinglePage: true,
-      pageSizes: () => [20, 50, 100, 200],
+      pageSizes: () => [...DEFAULT_PAGE_SIZES],
       skeletonRows: 6,
       error: undefined,
       persistPageSize: true,

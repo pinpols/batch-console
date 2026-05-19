@@ -177,7 +177,7 @@
   const secretDetailVisible = ref(false)
   const secretRows = ref<ConsoleSecretVersionResponse[]>([])
   const secretPage = ref(1)
-  const secretPageSize = ref(20)
+  const secretPageSize = ref(15)
   const pagedSecrets = computed(() =>
     toPageResult(secretRows.value, secretPage.value, secretPageSize.value),
   )

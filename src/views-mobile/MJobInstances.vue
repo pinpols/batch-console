@@ -190,7 +190,7 @@
     startDate: '',
     endDate: '',
     page: 1,
-    pageSize: 20,
+    pageSize: 15,
   })
 
   function fmt(ts?: string | null) {

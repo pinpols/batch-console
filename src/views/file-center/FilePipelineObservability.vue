@@ -443,7 +443,7 @@
     runRefresh,
   } = useListFilterFeedback(loading)
   const page = ref(1)
-  const pageSize = ref(20)
+  const pageSize = ref(15)
   const kwDraft = ref('')
   const kwApplied = ref('')
 

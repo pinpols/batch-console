@@ -104,7 +104,7 @@
   const rows = ref<ConsolePendingCatchUpResponse[]>([])
   const total = ref(0)
   const page = ref(1)
-  const pageSize = ref(20)
+  const pageSize = ref(15)
   const kwDraft = ref('')
   const statusDraft = ref('')
   const bizDateDraft = ref<string | null>(null)

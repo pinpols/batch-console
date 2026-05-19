@@ -120,7 +120,7 @@
   const { filterBusy, runSearch, runReset, runRefresh } = useListFilterFeedback(loadingLogs)
   const logRows = ref<ConsoleConfigChangeLogResponse[]>([])
   const logPage = ref(1)
-  const logPageSize = ref(20)
+  const logPageSize = ref(15)
   const pagedLogs = computed(() => toPageResult(logRows.value, logPage.value, logPageSize.value))
 
   async function loadLogs() {

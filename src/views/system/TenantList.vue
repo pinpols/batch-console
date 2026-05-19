@@ -250,10 +250,10 @@
     keyword: '',
     status: '',
     pageNo: 1,
-    pageSize: 20,
+    pageSize: 15,
   })
 
-  const page = ref<TenantPage>({ total: 0, pageNo: 1, pageSize: 20, items: [] })
+  const page = ref<TenantPage>({ total: 0, pageNo: 1, pageSize: 15, items: [] })
 
   const { data: metaEnums } = useConsoleMetaEnumsQuery()
   const tenantStatusOptions = computed(() => pickMetaEnumGroup(metaEnums.value, 'tenantStatus'))

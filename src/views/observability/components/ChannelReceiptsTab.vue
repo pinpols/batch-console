@@ -145,7 +145,7 @@
   const { filterBusy, runSearch, runReset, runRefresh } = useListFilterFeedback(loadingReceipts)
   const receiptRows = ref<Record<string, unknown>[]>([])
   const receiptPage = ref(1)
-  const receiptPageSize = ref(20)
+  const receiptPageSize = ref(15)
   const receiptDraft = reactive({ channelCode: '', fileId: '', status: '' })
   const receiptApplied = reactive({ channelCode: '', fileId: '', status: '' })
 
