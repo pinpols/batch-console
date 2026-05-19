@@ -83,9 +83,13 @@
           </button>
         </div>
         <div v-if="row.status === 'OPEN'" class="m-card__actions">
-          <button class="m-btn" @click="silence(row)">{{ t('mobile.alerts.silence') }}</button>
-          <button class="m-btn" @click="ack(row)">{{ t('mobile.alerts.ack') }}</button>
-          <button class="m-btn m-btn--primary" @click="close(row)">
+          <button class="m-btn" data-track="alerts.silence" @click="silence(row)">
+            {{ t('mobile.alerts.silence') }}
+          </button>
+          <button class="m-btn" data-track="alerts.ack" @click="ack(row)">
+            {{ t('mobile.alerts.ack') }}
+          </button>
+          <button class="m-btn m-btn--primary" data-track="alerts.close" @click="close(row)">
             {{ t('mobile.alerts.close') }}
           </button>
         </div>

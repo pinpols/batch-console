@@ -1,5 +1,6 @@
 import { ElMessage } from 'element-plus'
 import { useI18n } from 'vue-i18n'
+import { logClick } from '@/utils/logger'
 
 /**
  * 一键复制文本 — 移动端列表里的 ID 字段(traceId / jobCode / instanceNo / workerCode /
@@ -27,9 +28,12 @@ export function useCopy() {
         ta.remove()
       }
       ElMessage.success(label ? `${label} ${t('common.copied')}` : t('common.copied'))
+      // 复制属于显式用户行为,记埋点;不记 text 原文(可能含敏感 ID,只记 label + len)
+      logClick(`mobile:copy:${label || 'text'}`, { len: text.length })
       return true
     } catch {
       ElMessage.error(t('mobile.common.copyFail') || t('common.copyFailed') || 'Copy failed')
+      logClick(`mobile:copy:fail:${label || 'text'}`)
       return false
     }
   }

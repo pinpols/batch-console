@@ -43,6 +43,7 @@
         >
           <button
             class="m-btn m-btn--primary"
+            data-track="outbox.republish"
             :disabled="busyId === row.id"
             @click="doRepublish(row)"
           >

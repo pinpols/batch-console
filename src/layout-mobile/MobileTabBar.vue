@@ -112,7 +112,7 @@
 </script>
 
 <style scoped>
-  /* iOS Tab Bar:毛玻璃 + 极细顶分隔线 + 跟随 home indicator 留白 + 顶向阴影抬起 */
+  /* iOS Liquid Glass Tab Bar:毛玻璃底 + 内顶高光 + rim glow + safe-area 留白 */
   .mobile-tab-bar {
     position: fixed;
     left: 0;
@@ -120,22 +120,51 @@
     bottom: 0;
     display: grid;
     grid-template-columns: repeat(5, 1fr);
-    background: color-mix(in srgb, #ffffff 78%, transparent 22%);
-    backdrop-filter: saturate(180%) blur(24px);
-    -webkit-backdrop-filter: saturate(180%) blur(24px);
+    background: color-mix(in srgb, #ffffff 72%, transparent 28%);
+    backdrop-filter: saturate(180%) blur(28px);
+    -webkit-backdrop-filter: saturate(180%) blur(28px);
     border-top: 0.5px solid rgb(60 60 67 / 18%);
-    box-shadow: 0 -2px 12px rgb(0 0 0 / 6%);
+    /* Liquid Glass:
+       1) inset 顶部 1px 半透白 → 玻璃顶缘折射 highlight
+       2) inset 顶部 6px 极淡白渐变 → specular(模拟漫反射)
+       3) 外向上阴影抬起 */
+    box-shadow:
+      inset 0 0.5px 0 rgb(255 255 255 / 80%),
+      inset 0 6px 12px rgb(255 255 255 / 20%),
+      0 -2px 12px rgb(0 0 0 / 6%);
     padding-bottom: env(safe-area-inset-bottom, 0);
     z-index: 100;
+    position: fixed; /* override 安全 */
   }
 
-  /* 暗色:全黑底容易跟内容糊在一起,加更明显顶分隔 + 强阴影 + 顶部高光线 */
+  /* rim light:左右两端微淡彩色辉光 — Liquid Glass 标志性边缘 chromatic aberration */
+  .mobile-tab-bar::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background:
+      radial-gradient(circle at 0% 0%, rgb(0 122 255 / 8%) 0%, transparent 35%),
+      radial-gradient(circle at 100% 0%, rgb(90 200 250 / 8%) 0%, transparent 35%);
+    mix-blend-mode: screen;
+  }
+
+  /* 暗色 Liquid Glass:把 inset 高光透明度调高一倍,黑底上才看得见折射 */
   :global(html.dark) .mobile-tab-bar {
-    background: color-mix(in srgb, #1c1c1e 82%, transparent 18%);
+    background: color-mix(in srgb, #1c1c1e 78%, transparent 22%);
     border-top: 0.5px solid rgb(84 84 88 / 75%);
     box-shadow:
+      inset 0 0.5px 0 rgb(255 255 255 / 14%),
+      inset 0 6px 12px rgb(255 255 255 / 4%),
       0 -1px 0 rgb(255 255 255 / 4%),
       0 -8px 24px rgb(0 0 0 / 50%);
+  }
+
+  :global(html.dark) .mobile-tab-bar::before {
+    background:
+      radial-gradient(circle at 0% 0%, rgb(10 132 255 / 14%) 0%, transparent 40%),
+      radial-gradient(circle at 100% 0%, rgb(94 92 230 / 12%) 0%, transparent 40%);
   }
 
   .mobile-tab {
