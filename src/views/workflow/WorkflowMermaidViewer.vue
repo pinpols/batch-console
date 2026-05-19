@@ -2,71 +2,260 @@
   <PageContainer>
     <PageHeader :title="title" :description="description" back-to="/workflow/definitions">
       <template #actions>
-        <el-button
-          :loading="loading || refresh.loading.value"
-          :icon="Refresh"
-          @click="refresh.run(reload)"
-        >
-          {{ t('common.refresh') }}
-        </el-button>
         <el-button :icon="DocumentCopy" :disabled="!mermaidText" @click="copyText">
           {{ t('workflowMermaidViewer.btnCopyMermaid') }}
         </el-button>
       </template>
     </PageHeader>
 
-    <!-- Legend 常驻:无 runId 也展示色板,避免用户首次看 DAG 不知道颜色含义。
-         有 runId 时额外叠"运行状态 + 自动刷新 + 回详情链接"。 -->
-    <SectionCard>
+    <!-- DAG 主体:工具栏 + chip Legend + 画布,所有控件收进 header 一行;
+         点击节点时右侧伸出 inspector panel(Dagster 风) -->
+    <SectionCard ref="dagCardRef" class="dag-card">
       <template #header>
-        <span>{{ t('workflowMermaidViewer.legendHeader') }}</span>
-        <el-tag
-          v-if="runId && runStatus"
-          size="small"
-          :type="runStatusTagType"
-          effect="plain"
-          class="run-overlay-status"
-        >
-          {{ runStatus }}
-        </el-tag>
-        <span v-if="pollingActive" class="run-overlay-poll">
-          <span class="run-overlay-poll-dot" />
-          {{ t('workflowMermaidViewer.pollEvery', { n: pollIntervalMs / 1000 }) }}
-        </span>
+        <div class="dag-header">
+          <div class="dag-header__left">
+            <span class="dag-header__title">{{ t('workflowMermaidViewer.dagHeader') }}</span>
+            <!-- 节点状态计数 chip(有 runId 时显示) -->
+            <span v-if="runId && totalNodes > 0" class="dag-header__counts">
+              <span
+                v-if="statusCounts.success > 0"
+                class="status-pill status-pill--success"
+                title="SUCCESS"
+              >
+                ✓ {{ statusCounts.success }}
+              </span>
+              <span
+                v-if="statusCounts.running > 0"
+                class="status-pill status-pill--running"
+                title="RUNNING"
+              >
+                ▶ {{ statusCounts.running }}
+              </span>
+              <span
+                v-if="statusCounts.failed > 0"
+                class="status-pill status-pill--failed"
+                title="FAILED"
+              >
+                ✗ {{ statusCounts.failed }}
+              </span>
+              <span
+                v-if="statusCounts.waiting > 0"
+                class="status-pill status-pill--waiting"
+                title="WAITING"
+              >
+                ⧗ {{ statusCounts.waiting }}
+              </span>
+              <span
+                v-if="statusCounts.cancelled > 0"
+                class="status-pill status-pill--cancelled"
+                title="CANCELLED"
+              >
+                ⊘ {{ statusCounts.cancelled }}
+              </span>
+              <span class="status-pill status-pill--pending" title="PENDING">
+                · {{ statusCounts.pending }}
+              </span>
+            </span>
+            <el-tag
+              v-if="runId && runStatus"
+              size="small"
+              :type="runStatusTagType"
+              effect="plain"
+              class="dag-header__status"
+            >
+              {{ runStatus }}
+            </el-tag>
+          </div>
+          <!-- 工具栏:Airflow 风,Fit / Reset / Zoom / Fullscreen / Auto-refresh / Refresh / Download -->
+          <div class="dag-header__tools">
+            <el-tooltip :content="t('workflowMermaidViewer.tipZoomIn')" placement="top">
+              <el-button :icon="ZoomIn" circle size="small" @click="zoomIn" />
+            </el-tooltip>
+            <el-tooltip :content="t('workflowMermaidViewer.tipZoomOut')" placement="top">
+              <el-button :icon="ZoomOut" circle size="small" @click="zoomOut" />
+            </el-tooltip>
+            <el-tooltip :content="t('workflowMermaidViewer.tipFit')" placement="top">
+              <el-button :icon="FullScreen" circle size="small" @click="fitGraph" />
+            </el-tooltip>
+            <el-tooltip :content="t('workflowMermaidViewer.tipReset')" placement="top">
+              <el-button :icon="RefreshLeft" circle size="small" @click="resetGraph" />
+            </el-tooltip>
+            <el-divider direction="vertical" />
+            <el-tooltip
+              v-if="runId"
+              :content="
+                paused
+                  ? t('workflowMermaidViewer.tipResumePoll')
+                  : t('workflowMermaidViewer.tipPausePoll', { n: pollCountdownSec })
+              "
+              placement="top"
+            >
+              <el-button
+                :icon="paused ? VideoPlay : VideoPause"
+                circle
+                size="small"
+                :type="paused ? 'default' : 'primary'"
+                @click="togglePause"
+              />
+            </el-tooltip>
+            <el-tooltip :content="t('common.refresh')" placement="top">
+              <el-button
+                :icon="Refresh"
+                circle
+                size="small"
+                :loading="loading || refresh.loading.value"
+                @click="refresh.run(reload)"
+              />
+            </el-tooltip>
+            <el-tooltip :content="t('workflowMermaidViewer.tipDownload')" placement="top">
+              <el-button
+                :icon="Download"
+                circle
+                size="small"
+                :disabled="!mermaidText"
+                @click="downloadSvg"
+              />
+            </el-tooltip>
+            <el-tooltip
+              :content="
+                isFullscreen
+                  ? t('workflowMermaidViewer.tipExitFullscreen')
+                  : t('workflowMermaidViewer.tipFullscreen')
+              "
+              placement="top"
+            >
+              <el-button
+                :icon="isFullscreen ? Aim : Rank"
+                circle
+                size="small"
+                @click="toggleFullscreen"
+              />
+            </el-tooltip>
+          </div>
+        </div>
+        <!-- 紧凑 chip Legend:取代原独立 Legend SectionCard -->
+        <div class="dag-legend">
+          <span class="legend-chip legend-chip--running">RUNNING</span>
+          <span class="legend-chip legend-chip--success">SUCCESS</span>
+          <span class="legend-chip legend-chip--failed">FAILED</span>
+          <span class="legend-chip legend-chip--waiting">WAITING / READY</span>
+          <span class="legend-chip legend-chip--cancelled">CANCELLED / SKIPPED</span>
+          <span class="legend-chip legend-chip--pending">
+            {{ t('workflowMermaidViewer.legendPending') }}
+          </span>
+          <el-link
+            v-if="runId"
+            type="primary"
+            :underline="false"
+            class="legend-back-link"
+            @click="goToRun"
+          >
+            {{ t('workflowMermaidViewer.backToRun', { id: runId }) }}
+          </el-link>
+        </div>
       </template>
-      <div class="run-overlay-legend">
-        <span class="legend-chip legend-chip--running">RUNNING</span>
-        <span class="legend-chip legend-chip--success">SUCCESS</span>
-        <span class="legend-chip legend-chip--failed">FAILED</span>
-        <span class="legend-chip legend-chip--waiting">WAITING / READY</span>
-        <span class="legend-chip legend-chip--cancelled">CANCELLED / SKIPPED</span>
-        <span class="legend-chip legend-chip--pending">
-          {{ t('workflowMermaidViewer.legendPending') }}
-        </span>
-        <el-link
-          v-if="runId"
-          type="primary"
-          :underline="false"
-          class="run-overlay-link"
-          @click="goToRun"
-        >
-          {{ t('workflowMermaidViewer.backToRun', { id: runId }) }}
-        </el-link>
-      </div>
-    </SectionCard>
 
-    <SectionCard>
-      <template #header>{{ t('workflowMermaidViewer.dagHeader') }}</template>
-      <DataState
-        :loading="loading"
-        :error="errorMessage"
-        :empty="!loading && !mermaidText"
-        :empty-text="t('workflowMermaidViewer.noRenderData')"
+      <!-- 分屏:DAG 画布 + 右侧 inspector(节点选中时伸出) -->
+      <div
+        class="dag-split"
+        :class="{
+          'dag-split--with-inspector': inspectorOpen,
+          'dag-split--fullscreen': isFullscreen,
+        }"
       >
-        <!-- mermaid 渲染目标。SVG 由 mermaid.render() 受信任输出,挂到 ref.innerHTML 而非
-             v-html(后者会被 ESLint vue/no-v-html 拦)。 -->
-        <div ref="graphRef" class="workflow-mermaid-graph" />
-      </DataState>
+        <div class="dag-split__graph">
+          <DataState
+            :loading="loading"
+            :error="errorMessage"
+            :empty="!loading && !mermaidText"
+            :empty-text="t('workflowMermaidViewer.noRenderData')"
+          >
+            <div ref="graphRef" class="workflow-mermaid-graph" />
+          </DataState>
+        </div>
+        <aside v-if="inspectorOpen" class="dag-split__inspector">
+          <div class="inspector-header">
+            <span class="inspector-title">
+              {{
+                selectedNodeMeta
+                  ? `${selectedNodeMeta.nodeCode}${selectedNodeMeta.nodeName ? ' · ' + selectedNodeMeta.nodeName : ''}`
+                  : t('workflowMermaidViewer.nodeDetailTitle')
+              }}
+            </span>
+            <el-button text :icon="Close" size="small" @click="closeInspector" />
+          </div>
+          <div class="inspector-body">
+            <el-descriptions v-if="selectedNodeMeta" :column="1" border size="small">
+              <el-descriptions-item :label="t('workflowMermaidViewer.fldNodeCode')">
+                <code>{{ selectedNodeMeta.nodeCode }}</code>
+              </el-descriptions-item>
+              <el-descriptions-item :label="t('workflowMermaidViewer.fldNodeName')">
+                {{ selectedNodeMeta.nodeName || '—' }}
+              </el-descriptions-item>
+              <el-descriptions-item :label="t('workflowMermaidViewer.fldNodeType')">
+                <el-tag size="small" effect="plain">{{ selectedNodeMeta.nodeType || '?' }}</el-tag>
+              </el-descriptions-item>
+              <el-descriptions-item
+                v-if="selectedNodeMeta.relatedJobCode"
+                :label="t('workflowMermaidViewer.fldRelatedJob')"
+              >
+                <el-link
+                  type="primary"
+                  :underline="false"
+                  @click="goToJobDef(selectedNodeMeta.relatedJobCode)"
+                >
+                  {{ selectedNodeMeta.relatedJobCode }}
+                </el-link>
+              </el-descriptions-item>
+              <el-descriptions-item
+                v-if="selectedNodeMeta.relatedPipelineCode"
+                :label="t('workflowMermaidViewer.fldRelatedPipeline')"
+              >
+                <el-link
+                  type="primary"
+                  :underline="false"
+                  @click="goToPipeline(selectedNodeMeta.relatedPipelineCode)"
+                >
+                  {{ selectedNodeMeta.relatedPipelineCode }}
+                </el-link>
+              </el-descriptions-item>
+              <el-descriptions-item
+                v-if="selectedNodeMeta.workerGroup"
+                :label="t('workflowMermaidViewer.fldWorkerGroup')"
+              >
+                {{ selectedNodeMeta.workerGroup }}
+              </el-descriptions-item>
+              <el-descriptions-item
+                v-if="selectedNodeMeta.retryPolicy"
+                :label="t('workflowMermaidViewer.fldRetryPolicy')"
+              >
+                {{ selectedNodeMeta.retryPolicy }}
+                <span v-if="selectedNodeMeta.retryMaxCount != null" class="cell-mute">
+                  × {{ selectedNodeMeta.retryMaxCount }}
+                </span>
+              </el-descriptions-item>
+              <el-descriptions-item
+                v-if="selectedNodeMeta.timeoutSeconds != null"
+                :label="t('workflowMermaidViewer.fldTimeout')"
+              >
+                {{ selectedNodeMeta.timeoutSeconds }} s
+              </el-descriptions-item>
+              <el-descriptions-item
+                v-if="selectedNodeDescription"
+                :label="t('workflowMermaidViewer.fldDescription')"
+              >
+                {{ selectedNodeDescription }}
+              </el-descriptions-item>
+              <el-descriptions-item
+                v-if="selectedNodeMeta.nodeParams"
+                :label="t('workflowMermaidViewer.fldParams')"
+              >
+                <pre class="node-detail-json">{{ selectedNodeMeta.nodeParams }}</pre>
+              </el-descriptions-item>
+            </el-descriptions>
+          </div>
+        </aside>
+      </div>
     </SectionCard>
 
     <!-- mermaid 源默认折叠,大多数用户不关心;需要时点开复制即可 -->
@@ -84,15 +273,11 @@
       <pre v-if="showSource" class="workflow-mermaid-source">{{ mermaidText }}</pre>
     </SectionCard>
 
-    <!-- 无 runId 时点节点弹出的元数据 drawer:取代原 ElMessage.info 拼字符串,
-         真正能看到 nodeName / relatedJobCode / pipelineCode / 参数 / 重试策略等。 -->
+    <!-- 节点详情已迁到 DAG card 内嵌 inspector(上方),此 drawer 保留为空壳兼容; -->
     <el-drawer
+      v-if="false"
       v-model="detailDrawerVisible"
-      :title="
-        selectedNodeMeta
-          ? `${selectedNodeMeta.nodeCode}${selectedNodeMeta.nodeName ? ' · ' + selectedNodeMeta.nodeName : ''}`
-          : t('workflowMermaidViewer.nodeDetailTitle')
-      "
+      :title="''"
       direction="rtl"
       size="420px"
       :append-to-body="true"
@@ -177,7 +362,21 @@
   import { ElMessage } from 'element-plus'
 
   const { t } = useI18n({ useScope: 'global' })
-  import { DocumentCopy, Refresh } from '@element-plus/icons-vue'
+  import {
+    Aim,
+    Close,
+    DocumentCopy,
+    Download,
+    FullScreen,
+    Rank,
+    Refresh,
+    RefreshLeft,
+    VideoPause,
+    VideoPlay,
+    ZoomIn,
+    ZoomOut,
+  } from '@element-plus/icons-vue'
+  import svgPanZoom from 'svg-pan-zoom'
   import { useRefreshAction } from '@/composables/useRefreshAction'
 
   const refresh = useRefreshAction()
@@ -225,11 +424,61 @@
   const pollingActive = ref(false)
   /** mermaid 源码默认折叠,大多数用户不关心 */
   const showSource = ref(false)
-  /** 无 runId 模式下点击节点弹出的详情抽屉 */
+  /** 旧 drawer 保留壳 (template v-if=false),实际节点详情走 inspector */
   const detailDrawerVisible = ref(false)
   useDrawerAutoClose(detailDrawerVisible)
+  /** 内嵌 inspector 是否展开;关闭后 DAG 占满宽度 */
+  const inspectorOpen = ref(false)
   type NodeMeta = NonNullable<WorkflowDefinitionDetailResponse['nodes']>[number]
   const selectedNodeMeta = ref<NodeMeta | null>(null)
+  /** svg-pan-zoom 实例,reload/卸载时销毁 */
+  let panZoomInstance: ReturnType<typeof svgPanZoom> | null = null
+  /** 节点状态计数(给 DAG header 的状态 pill) */
+  const nodeRunsCache = ref<ConsoleWorkflowNodeRunResponse[]>([])
+  const totalNodes = computed(() => detail.value?.nodes?.length ?? 0)
+  const statusCounts = computed(() => {
+    const counts = { success: 0, running: 0, failed: 0, waiting: 0, cancelled: 0, pending: 0 }
+    const latest = new Map<string, string>()
+    for (const r of nodeRunsCache.value) {
+      const code = r.nodeCode
+      if (!code) continue
+      const prior = latest.get(code)
+      const prevIdMatch = prior
+        ? nodeRunsCache.value.find((x) => x.nodeCode === code && x.nodeStatus === prior)
+        : null
+      void prevIdMatch
+      // 取该 nodeCode 最新 run(id 最大)
+      const prevRun = nodeRunsCache.value
+        .filter((x) => x.nodeCode === code && latest.has(code))
+        .reduce<ConsoleWorkflowNodeRunResponse | null>(
+          (a, b) => ((a?.id ?? 0) > (b.id ?? 0) ? a : b),
+          null,
+        )
+      if (prevRun && (prevRun.id ?? 0) > (r.id ?? 0)) continue
+      latest.set(code, r.nodeStatus ?? '')
+    }
+    for (const status of latest.values()) {
+      const klass = statusToClass(status)
+      if (klass === 'success') counts.success++
+      else if (klass === 'running') counts.running++
+      else if (klass === 'failed') counts.failed++
+      else if (klass === 'waiting') counts.waiting++
+      else if (klass === 'cancelled') counts.cancelled++
+    }
+    counts.pending = Math.max(
+      0,
+      totalNodes.value -
+        (counts.success + counts.running + counts.failed + counts.waiting + counts.cancelled),
+    )
+    return counts
+  })
+  /** 暂停轮询 + 倒计时 */
+  const paused = ref(false)
+  const pollCountdownSec = ref(0)
+  let countdownTimer: ReturnType<typeof setInterval> | null = null
+  /** 全屏切换 */
+  const dagCardRef = ref<{ $el?: HTMLElement } | null>(null)
+  const isFullscreen = ref(false)
   // description 字段在 OpenAPI schema 上是节点 extras 的可选字段;此处单独 computed 取值,
   // 模板不能写 `(x as T).description`(Vue 编译器不接受 TS 断言)。
   const selectedNodeDescription = computed<string | undefined>(
@@ -287,6 +536,7 @@
       detail.value = d
       mermaidText.value = mer.mermaid ?? ''
       runStatus.value = run?.runStatus ?? null
+      nodeRunsCache.value = nodeRuns
       buildNodeCodeMap(d)
       rendererText.value = applyStateOverlay(mermaidText.value, nodeRuns)
       await renderMermaid(rendererText.value)
@@ -315,6 +565,7 @@
         instanceApi.workflowRunDetail(runId.value, tenant.tenantId).catch(() => null),
       ])
       runStatus.value = run?.runStatus ?? null
+      nodeRunsCache.value = nodeRuns
       rendererText.value = applyStateOverlay(mermaidText.value, nodeRuns)
       await renderMermaid(rendererText.value)
       attachNodeClicks()
@@ -329,6 +580,7 @@
   function maybeStartPoll() {
     stopPoll()
     if (!runId.value) return
+    if (paused.value) return
     const s = (runStatus.value || '').toUpperCase()
     if (terminalStatuses.has(s)) return
     // tab 不可见时不开轮询,避免锁屏/切走还在打后端;visibilitychange 监听恢复
@@ -337,8 +589,12 @@
       return
     }
     pollingActive.value = true
+    startCountdown()
     pollTimer = setInterval(() => {
-      void tickPoll()
+      void tickPoll().then(() => {
+        // 每次 tick 完重置倒计时,让用户看到下次刷新还有几秒
+        if (pollingActive.value) startCountdown()
+      })
     }, pollIntervalMs)
   }
 
@@ -348,6 +604,7 @@
       pollTimer = null
     }
     pollingActive.value = false
+    stopCountdown()
   }
 
   /** tab 切走停轮询;切回来一是立即 tick 一次,二是重启 interval */
@@ -388,22 +645,23 @@
   }
 
   function onNodeClick(nodeCode: string) {
-    if (runId.value) {
-      void router.push({
-        path: `/monitor/workflow-runs/${runId.value}`,
-        query: { nodeCode },
-      })
-    } else {
-      // 无 runId 时打开侧抽屉展示完整节点元数据(原本仅 ElMessage.info 拼两个字段,
-      // 用户看不到关联 job/pipeline、参数、重试策略等关键字段)
-      const meta = detail.value?.nodes?.find((n) => n.nodeCode === nodeCode)
-      if (!meta) {
-        ElMessage.info(nodeCode)
-        return
-      }
-      selectedNodeMeta.value = meta
-      detailDrawerVisible.value = true
+    // 统一走内嵌 inspector(Dagster 风),不再跳走或弹 drawer 遮挡 DAG;
+    // 有 runId 时 inspector 顶部加"跳运行详情看此节点"按钮(下方 goToRunNode)
+    const meta = detail.value?.nodes?.find((n) => n.nodeCode === nodeCode)
+    if (!meta) {
+      ElMessage.info(nodeCode)
+      return
     }
+    selectedNodeMeta.value = meta
+    inspectorOpen.value = true
+    // 给 pan-zoom 留 100ms 让 layout reflow 后再 resize(否则视口尺寸是旧的)
+    setTimeout(() => panZoomInstance?.resize(), 100)
+  }
+
+  function closeInspector() {
+    inspectorOpen.value = false
+    selectedNodeMeta.value = null
+    setTimeout(() => panZoomInstance?.resize(), 100)
   }
 
   /**
@@ -490,12 +748,125 @@
       await nextTick()
       // SVG 来自 mermaid.render(可信),直接挂到 ref.innerHTML 而非 v-html(被 ESLint 拦)
       if (graphRef.value) graphRef.value.innerHTML = svg
+      // 销毁旧 pan-zoom 实例(reload 时 svg 元素被替换,旧实例引用悬挂)
+      if (panZoomInstance) {
+        try {
+          panZoomInstance.destroy()
+        } catch {
+          // ignore: 旧 svg 已被 innerHTML 覆盖,destroy 内部可能找不到引用
+        }
+        panZoomInstance = null
+      }
+      const svgEl = graphRef.value?.querySelector<SVGSVGElement>('svg')
+      if (svgEl) {
+        // 让 svg 跟着容器尺寸缩,svg-pan-zoom 才能正确计算视口
+        svgEl.setAttribute('width', '100%')
+        svgEl.setAttribute('height', '100%')
+        svgEl.style.maxWidth = ''
+        panZoomInstance = svgPanZoom(svgEl, {
+          panEnabled: true,
+          zoomEnabled: true,
+          controlIconsEnabled: false,
+          fit: true,
+          center: true,
+          minZoom: 0.2,
+          maxZoom: 8,
+          zoomScaleSensitivity: 0.4,
+          dblClickZoomEnabled: false,
+        })
+      }
     } catch (err: unknown) {
       errorMessage.value =
         t('workflowMermaidViewer.renderFailPrefix') +
         (err instanceof Error ? err.message : String(err))
       clearGraph()
     }
+  }
+
+  // ── DAG 工具栏函数 ────────────────────────────────────────────────
+  function zoomIn() {
+    panZoomInstance?.zoomIn()
+  }
+  function zoomOut() {
+    panZoomInstance?.zoomOut()
+  }
+  function fitGraph() {
+    panZoomInstance?.resize()
+    panZoomInstance?.fit()
+    panZoomInstance?.center()
+  }
+  function resetGraph() {
+    panZoomInstance?.resetZoom()
+    panZoomInstance?.resetPan()
+  }
+
+  function togglePause() {
+    if (paused.value) {
+      paused.value = false
+      maybeStartPoll()
+    } else {
+      paused.value = true
+      stopPoll()
+    }
+  }
+
+  function startCountdown() {
+    stopCountdown()
+    pollCountdownSec.value = Math.round(pollIntervalMs / 1000)
+    countdownTimer = setInterval(() => {
+      pollCountdownSec.value =
+        pollCountdownSec.value <= 1 ? Math.round(pollIntervalMs / 1000) : pollCountdownSec.value - 1
+    }, 1000)
+  }
+  function stopCountdown() {
+    if (countdownTimer) {
+      clearInterval(countdownTimer)
+      countdownTimer = null
+    }
+    pollCountdownSec.value = 0
+  }
+
+  function downloadSvg() {
+    const svgEl = graphRef.value?.querySelector<SVGSVGElement>('svg')
+    if (!svgEl) return
+    // 克隆 + serialize,避免 pan-zoom 注入的 transform 干扰
+    const clone = svgEl.cloneNode(true) as SVGSVGElement
+    // 重置 viewport transform,导出干净的 SVG
+    const viewport = clone.querySelector('.svg-pan-zoom_viewport')
+    if (viewport) viewport.removeAttribute('transform')
+    const xml = new XMLSerializer().serializeToString(clone)
+    const blob = new Blob([`<?xml version="1.0" encoding="UTF-8"?>\n${xml}`], {
+      type: 'image/svg+xml',
+    })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `workflow-${detail.value?.workflowCode ?? id.value}.svg`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  async function toggleFullscreen() {
+    const el = (dagCardRef.value as { $el?: HTMLElement } | null)?.$el
+    if (!el) return
+    if (!document.fullscreenElement) {
+      try {
+        await el.requestFullscreen()
+        isFullscreen.value = true
+      } catch {
+        ElMessage.warning(t('workflowMermaidViewer.fullscreenFail'))
+      }
+    } else {
+      await document.exitFullscreen()
+      isFullscreen.value = false
+    }
+    // 退出全屏后视口尺寸变,重新 fit
+    setTimeout(() => panZoomInstance?.resize(), 200)
+  }
+
+  function onFullscreenChange() {
+    isFullscreen.value = !!document.fullscreenElement
+    setTimeout(() => panZoomInstance?.resize(), 200)
   }
 
   function clearGraph() {
@@ -515,28 +886,163 @@
     void reload()
     if (typeof document !== 'undefined') {
       document.addEventListener('visibilitychange', onVisibilityChange)
+      document.addEventListener('fullscreenchange', onFullscreenChange)
     }
   })
   watch([() => route.params.id, () => route.query.runId], reload)
   onBeforeUnmount(() => {
     stopPoll()
+    if (panZoomInstance) {
+      try {
+        panZoomInstance.destroy()
+      } catch {
+        // ignore
+      }
+      panZoomInstance = null
+    }
     if (typeof document !== 'undefined') {
       document.removeEventListener('visibilitychange', onVisibilityChange)
+      document.removeEventListener('fullscreenchange', onFullscreenChange)
     }
   })
 </script>
 
 <style scoped>
+  .dag-card :deep(.el-card__body) {
+    padding: 0;
+  }
+  .dag-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .dag-header__left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .dag-header__title {
+    font-weight: 600;
+  }
+  .dag-header__counts {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .dag-header__status {
+    margin-left: 4px;
+  }
+  .dag-header__tools {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .dag-header__tools :deep(.el-divider--vertical) {
+    margin: 0 4px;
+    height: 16px;
+  }
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 0 8px;
+    height: 20px;
+    border-radius: 10px;
+    font-size: 12px;
+    line-height: 20px;
+    color: #fff;
+    background: var(--el-fill-color-darker);
+  }
+  .status-pill--success {
+    background: #10b981;
+  }
+  .status-pill--running {
+    background: #3b82f6;
+  }
+  .status-pill--failed {
+    background: #ef4444;
+  }
+  .status-pill--waiting {
+    background: #f59e0b;
+  }
+  .status-pill--cancelled {
+    background: #6b7280;
+  }
+  .status-pill--pending {
+    background: var(--el-fill-color-darker);
+    color: var(--el-text-color-secondary);
+  }
+  .dag-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+    padding: 8px 12px 0;
+  }
+  .legend-back-link {
+    margin-left: auto;
+  }
+  .dag-split {
+    display: flex;
+    width: 100%;
+    min-height: 420px;
+  }
+  .dag-split--fullscreen {
+    background: var(--el-bg-color);
+    min-height: 100vh;
+  }
+  .dag-split__graph {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .dag-split__inspector {
+    flex: 0 0 380px;
+    border-left: 1px solid var(--el-border-color-lighter);
+    background: var(--el-bg-color);
+    display: flex;
+    flex-direction: column;
+    max-height: 720px;
+  }
+  .dag-split--fullscreen .dag-split__inspector {
+    max-height: none;
+  }
+  .inspector-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--el-border-color-lighter);
+  }
+  .inspector-title {
+    font-weight: 600;
+    font-size: 13px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-right: 8px;
+  }
+  .inspector-body {
+    padding: 12px;
+    overflow: auto;
+    flex: 1 1 auto;
+  }
   .workflow-mermaid-graph {
     display: flex;
     justify-content: center;
-    padding: 24px 12px;
-    min-height: 200px;
-    overflow-x: auto;
+    align-items: center;
+    width: 100%;
+    min-height: 420px;
+    cursor: grab;
+  }
+  .workflow-mermaid-graph:active {
+    cursor: grabbing;
   }
   .workflow-mermaid-graph :deep(svg) {
-    max-width: 100%;
-    height: auto;
+    width: 100%;
+    height: 100%;
+    max-width: none;
   }
   .workflow-mermaid-source {
     margin: 0;

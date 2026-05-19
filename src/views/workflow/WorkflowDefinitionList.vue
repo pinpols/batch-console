@@ -223,6 +223,26 @@
           </el-table>
         </el-tab-pane>
 
+        <!-- Tab: DAG 预览(只读迷你图,要交互去 /workflow/viewer/{id})-->
+        <el-tab-pane name="dag" :lazy="true">
+          <template #label>
+            <span>{{ t('workflowDefinitionList.detailTabDag') }}</span>
+          </template>
+          <WorkflowMiniDag
+            :mermaid-text="detailMermaidText"
+            :loading="detailMermaidLoading"
+            :error-message="detailMermaidError"
+            :empty-text="t('workflowDefinitionList.dagPreviewEmpty')"
+            :max-height="360"
+          >
+            <template #footer>
+              <el-button text type="primary" @click="openFullDag">
+                {{ t('workflowDefinitionList.dagPreviewOpen') }}
+              </el-button>
+            </template>
+          </WorkflowMiniDag>
+        </el-tab-pane>
+
         <!-- Tab: DSL(节点 + 边的 JSON)-->
         <el-tab-pane name="dsl" :label="t('workflowDefinitionList.detailTabDsl')">
           <el-descriptions :column="1" border size="small">
@@ -333,6 +353,7 @@
   import ProTable from '@/components/table/ProTable.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
   import JsonPreview from '@/components/common/JsonPreview.vue'
+  import WorkflowMiniDag from '@/components/workflow/WorkflowMiniDag.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
@@ -359,7 +380,35 @@
   const actingIds = ref<Set<number>>(new Set())
   const detailVisible = ref(false)
   const detailRow = ref<WorkflowDefinitionDetailResponse | null>(null)
-  const activeDetailTab = ref<'overview' | 'runs' | 'dsl'>('overview')
+  const activeDetailTab = ref<'overview' | 'runs' | 'dag' | 'dsl'>('overview')
+  const detailMermaidText = ref('')
+  const detailMermaidLoading = ref(false)
+  const detailMermaidError = ref('')
+  const detailMermaidLoadedForId = ref<number | null>(null)
+
+  async function loadDetailMermaid() {
+    const def = detailRow.value
+    if (!def?.id || detailMermaidLoadedForId.value === def.id) return
+    detailMermaidLoading.value = true
+    detailMermaidError.value = ''
+    try {
+      const mer = await workflowApi.mermaid(def.id, def.tenantId ?? tenant.tenantId)
+      detailMermaidText.value = mer.mermaid ?? ''
+      detailMermaidLoadedForId.value = def.id
+    } catch (err: unknown) {
+      detailMermaidText.value = ''
+      detailMermaidError.value = err instanceof Error ? err.message : String(err)
+    } finally {
+      detailMermaidLoading.value = false
+    }
+  }
+
+  function openFullDag() {
+    const def = detailRow.value
+    if (!def?.id) return
+    detailVisible.value = false
+    void router.push(`/workflow/viewer/${def.id}`)
+  }
   const detailRunsRows = ref<ConsoleWorkflowRunResponse[]>([])
   const detailRunsLoading = ref(false)
   const detailRunsLoadedForId = ref<number | null>(null)
