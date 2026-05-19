@@ -19,9 +19,23 @@
             </span>
           </div>
         </div>
+        <button
+          type="button"
+          class="m-page__title-action"
+          :class="{ 'm-page__title-action--active': searchOpen }"
+          :aria-label="t('mobile.common.search')"
+          @click="toggleSearch"
+        >
+          <el-icon><Search /></el-icon>
+        </button>
       </div>
 
-      <MSearchBar v-model="keyword" :placeholder="t('mobile.workers.searchPlaceholder')" />
+      <MSearchBar
+        v-if="searchOpen"
+        ref="searchBarRef"
+        v-model="keyword"
+        :placeholder="t('mobile.workers.searchPlaceholder')"
+      />
 
       <!-- 跟告警 4-tab 同一套 .m-tabs 样式;各档 count 着色:online 绿、drain 橙、offline 红 -->
       <div class="m-tabs" role="tablist">
@@ -116,11 +130,11 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, ref } from 'vue'
+  import { computed, nextTick, ref } from 'vue'
   import { useTenantReload } from '@/composables/useTenantReload'
   import { useRoute } from 'vue-router'
   import { useI18n } from 'vue-i18n'
-  import { Refresh } from '@element-plus/icons-vue'
+  import { Search } from '@element-plus/icons-vue'
   import { ElMessage } from 'element-plus'
   import { confirmActionSheet } from '@/layout-mobile/MActionSheet'
   import { useTenantStore } from '@/stores/tenant'
@@ -172,6 +186,18 @@
   const offlineCount = computed(() => rows.value.filter((r) => r.status === 'OFFLINE').length)
 
   const keyword = ref('')
+  const searchOpen = ref(false)
+  const searchBarRef = ref<{ focus: () => void } | null>(null)
+  async function toggleSearch() {
+    if (searchOpen.value) {
+      keyword.value = ''
+      searchOpen.value = false
+    } else {
+      searchOpen.value = true
+      await nextTick()
+      searchBarRef.value?.focus()
+    }
+  }
 
   // tabs(状态)+ keyword(workerCode/workerGroup/capabilityTags 模糊)
   const filtered = computed(() => {
@@ -284,15 +310,19 @@
     )
   }
 
-  function doTakeover(row: ConsoleWorkerRegistryResponse) {
-    return runConfirmed(
-      row,
-      'mobile.workers.takeoverTitle',
-      'mobile.workers.takeoverText',
-      () =>
-        takeoverWorker(row.workerCode, { tenantId: tenant.tenantId, reason: 'mobile takeover' }),
-      'mobile.workers.takeoverDoneToast',
-    )
+  // 接管 = 构造性,直接执行(强制下线和 Drain 才确认 — 真破坏性)
+  async function doTakeover(row: ConsoleWorkerRegistryResponse) {
+    busyCode.value = row.workerCode
+    try {
+      await takeoverWorker(row.workerCode, {
+        tenantId: tenant.tenantId,
+        reason: 'mobile takeover',
+      })
+      ElMessage.success(t('mobile.workers.takeoverDoneToast'))
+      await load()
+    } finally {
+      busyCode.value = null
+    }
   }
 
   async function doWarmup(row: ConsoleWorkerRegistryResponse) {

@@ -131,6 +131,37 @@ html.dark .mobile-layout {
   opacity: 0.6;
 }
 
+/* iOS 标题旁小图标按钮:用于「搜索 / 设置 / 添加」入口
+   外形跟 nav bar __btn 类似,但放在 page 内容流里(.m-page__header 右侧) */
+.m-page__title-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  background: var(--ios-fill-tertiary);
+  color: var(--ios-blue);
+  cursor: pointer;
+  transition: opacity 0.12s ease;
+  flex-shrink: 0;
+}
+
+.m-page__title-action:active {
+  opacity: 0.5;
+}
+
+.m-page__title-action :deep(.el-icon),
+.m-page__title-action .el-icon {
+  font-size: 16px;
+}
+
+.m-page__title-action--active {
+  background: var(--ios-blue);
+  color: #fff;
+}
+
 /* iOS Back Button:无背景、纯蓝色,左箭头 + 文字 */
 .m-page__back {
   display: inline-flex;
@@ -164,6 +195,13 @@ html.dark .mobile-layout {
   border-radius: 14px;
   padding: 14px 16px;
   box-shadow: 0 1px 2px rgb(0 0 0 / 4%);
+}
+
+/* 暗色模式卡片:全黑背景拉开层级,1px 边框 + 深阴影 */
+html.dark .m-card {
+  box-shadow:
+    0 0 0 0.5px rgb(255 255 255 / 6%),
+    0 2px 8px rgb(0 0 0 / 40%);
 }
 
 .m-card + .m-card {
@@ -234,6 +272,25 @@ html.dark .mobile-layout {
   margin-right: 4px;
 }
 
+/* iOS 长 ID 字段:tap 复制。下划虚线提示「可点」,active 时 opacity 50% */
+.m-copy-text {
+  cursor: pointer;
+  text-decoration: underline dotted rgb(60 60 67 / 30%);
+  text-underline-offset: 3px;
+  transition: opacity 0.1s ease;
+  word-break: break-all;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+.m-copy-text:active {
+  opacity: 0.5;
+}
+
+html.dark .m-copy-text {
+  text-decoration-color: rgb(235 235 245 / 30%);
+}
+
 .m-card__actions {
   display: flex;
   gap: 10px;
@@ -262,6 +319,12 @@ html.dark .mobile-layout {
   border-radius: 14px;
   overflow: hidden;
   box-shadow: 0 1px 2px rgb(0 0 0 / 4%);
+}
+
+html.dark .m-list {
+  box-shadow:
+    0 0 0 0.5px rgb(255 255 255 / 6%),
+    0 2px 8px rgb(0 0 0 / 40%);
 }
 
 .m-list__row {
@@ -355,6 +418,12 @@ html.dark .mobile-layout {
   box-shadow: 0 1px 2px rgb(0 0 0 / 4%);
 }
 
+html.dark .m-metric {
+  box-shadow:
+    0 0 0 0.5px rgb(255 255 255 / 6%),
+    0 2px 8px rgb(0 0 0 / 40%);
+}
+
 .m-metric:active {
   transform: scale(0.97);
   background: var(--ios-fill-quaternary);
@@ -446,66 +515,46 @@ html.dark .m-chip--warning {
   color: var(--ios-orange);
 }
 
-/* ── CommandPalette 移动端转底部 Sheet ──────────────────────
-   桌面老组件直接复用,el-dialog 居中浮层在手机上又小又远;窄屏时
-   覆盖定位:贴底、占满宽、顶部圆角、滑入动画。 */
+/* ── 顶栏账号 popover 手机适配 ─────────────────────────────
+   桌面 el-popover 290px + 内部 TenantSelect 190px 在窄屏会被裁切 /
+   贴边显示得很挤。手机上把弹层撑到 92vw,内部 select 占满剩余空间。
+   弹层挂在 body,popper-class 上挂的样式必须在全局 css,不能 scoped。 */
 @media (max-width: 768px) {
-  .el-overlay-dialog {
-    align-items: flex-end !important;
-    padding: 0 !important;
+  .mobile-appbar__popover.el-popover {
+    /* el-popover 内联 width:290px,这里硬覆盖 */
+    width: min(92vw, 320px) !important;
+    min-width: 0 !important;
+    max-width: 92vw !important;
   }
-
-  .el-dialog.command-palette {
-    width: 100% !important;
-    max-width: none !important;
-    margin: 0 !important;
-    border-radius: 18px 18px 0 0 !important;
-    max-height: 85vh;
-    display: flex !important;
-    flex-direction: column;
-    padding-bottom: env(safe-area-inset-bottom, 0) !important;
-    background: rgba(255 255 255 / 96%) !important;
-    -webkit-backdrop-filter: saturate(180%) blur(24px);
-    backdrop-filter: saturate(180%) blur(24px);
-    overflow: hidden;
-    animation: m-cp-slide-up 0.28s cubic-bezier(0.32, 0.72, 0, 1);
-  }
-
-  html.dark .el-dialog.command-palette {
-    background: rgba(40 40 42 / 96%) !important;
-  }
-
-  /* sheet 顶部加一根 grabber */
-  .el-dialog.command-palette::before {
-    content: '';
-    display: block;
-    width: 36px;
-    height: 5px;
-    border-radius: 2.5px;
-    background: rgb(60 60 67 / 30%);
-    margin: 6px auto 0;
-    flex-shrink: 0;
-  }
-
-  html.dark .el-dialog.command-palette::before {
-    background: rgb(235 235 245 / 30%);
-  }
-
-  /* dialog body 让出空间滚动 */
-  .el-dialog.command-palette .el-dialog__body {
+  /* TenantSelect 内部固定宽度去掉,让它撑满租户行右半边 */
+  .mobile-appbar__panel .mobile-appbar__tenant-select {
     flex: 1;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    overscroll-behavior: contain;
+    min-width: 0;
   }
+  .mobile-appbar__panel .mobile-appbar__tenant-select .el-select {
+    width: 100% !important;
+  }
+}
 
-  @keyframes m-cp-slide-up {
-    from {
-      transform: translateY(100%);
-    }
-    to {
-      transform: translateY(0);
-    }
+/* ── CommandPalette 手机适配(不改桌面行为,只让手机能用) ───
+   1) 限宽到 viewport,640px 默认值在手机会触发横向裁切
+   2) item 拉到 48px tap area
+   3) 触屏隐藏 ⌘K 提示 */
+@media (max-width: 768px) {
+  .el-dialog.command-palette {
+    width: min(96vw, 640px) !important;
+    max-width: 96vw !important;
+    margin: 6vh auto !important;
+  }
+  .el-dialog.command-palette .cp-kbd {
+    display: none;
+  }
+  .el-dialog.command-palette .cp-item {
+    min-height: 48px;
+    padding: 8px 12px;
+  }
+  .el-dialog.command-palette .cp-item__title {
+    font-size: 15px;
   }
 }
 

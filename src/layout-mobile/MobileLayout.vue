@@ -1,10 +1,12 @@
 <template>
   <div class="mobile-layout">
-    <MobileAppBar :scrolled="scrolled" @open-palette="paletteOpen = true" />
+    <MobileAppBar :scrolled="scrolled" />
     <main ref="contentRef" class="mobile-layout__content" @scroll.passive="onScroll">
-      <router-view v-slot="{ Component }">
+      <router-view v-slot="{ Component, route: r }">
         <transition :name="pageTransition">
-          <component :is="Component" />
+          <keep-alive :max="10">
+            <component :is="Component" :key="r.fullPath" />
+          </keep-alive>
         </transition>
       </router-view>
     </main>
