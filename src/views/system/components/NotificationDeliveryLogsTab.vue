@@ -113,7 +113,7 @@
   const { filterBusy, runSearch, runReset, runRefresh } = useListFilterFeedback(loadingLogs)
   const deliveryLogs = ref<Record<string, unknown>[]>([])
   const logPage = ref(1)
-  const logPageSize = ref(20)
+  const logPageSize = ref(15)
   const logFilterDraft = reactive({ keyword: '', status: '' })
   const logFilterApplied = reactive({ keyword: '', status: '' })
 

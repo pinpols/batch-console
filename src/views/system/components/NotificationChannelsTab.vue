@@ -234,7 +234,7 @@
   const channelEditingCode = ref<string | null>(null)
   const channels = ref<Record<string, unknown>[]>([])
   const channelPage = ref(1)
-  const channelPageSize = ref(20)
+  const channelPageSize = ref(15)
   const channelFilterDraft = reactive({ keyword: '', enabled: undefined as boolean | undefined })
   const channelFilterApplied = reactive({ keyword: '', enabled: undefined as boolean | undefined })
   const hasActiveChannelFilters = computed(

@@ -548,7 +548,7 @@
   const channelRows = ref<ConsoleFileChannelResponse[]>([])
   const total = ref(0)
   const page = ref(1)
-  const pageSize = ref(20)
+  const pageSize = ref(15)
   const keyword = ref('')
   const templateType = ref('')
   const bizType = ref('')

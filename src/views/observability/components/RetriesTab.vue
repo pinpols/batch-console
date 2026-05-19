@@ -136,7 +136,7 @@
   const { filterBusy, runSearch, runReset, runRefresh } = useListFilterFeedback(loadingRetry)
   const retryRows = ref<ConsoleRetryScheduleResponse[]>([])
   const retryPage = ref(1)
-  const retryPageSize = ref(20)
+  const retryPageSize = ref(15)
   const retryDraft = reactive({ relatedType: '', relatedId: '', status: '' })
   const retryApplied = reactive({ relatedType: '', relatedId: '', status: '' })
 

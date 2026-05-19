@@ -228,7 +228,7 @@
   const rows = ref<ConsoleApprovalCommandResponse[]>([])
   const total = ref(0)
   const page = ref(1)
-  const pageSize = ref(20)
+  const pageSize = ref(15)
   const selection = ref<ConsoleApprovalCommandResponse[]>([])
 
   const route = useRoute()

@@ -122,7 +122,7 @@
   const { filterBusy, runSearch, runReset, runRefresh } = useListFilterFeedback(loadingDL)
   const dlRows = ref<ConsoleDeadLetterTaskResponse[]>([])
   const dlPage = ref(1)
-  const dlPageSize = ref(20)
+  const dlPageSize = ref(15)
   const dlDraft = reactive({ sourceType: '', sourceId: '', keyword: '' })
   const dlApplied = reactive({ sourceType: '', sourceId: '', keyword: '' })
 

@@ -177,7 +177,7 @@
   const rows = ref<ConsoleWorkflowRunResponse[]>([])
   const total = ref(0)
   const page = ref(1)
-  const pageSize = ref(20)
+  const pageSize = ref(15)
   const workflowCode = ref('')
   const runStatus = ref('')
   const traceId = ref('')

@@ -367,9 +367,9 @@
     tenantId: '',
     keyword: '',
     pageNo: 1,
-    pageSize: 20,
+    pageSize: 15,
   })
-  const page = ref<UserPage>({ total: 0, pageNo: 1, pageSize: 20, items: [] })
+  const page = ref<UserPage>({ total: 0, pageNo: 1, pageSize: 15, items: [] })
 
   const enabledCount = computed(() => page.value.items.filter((u) => u.enabled).length)
   const disabledCount = computed(() => page.value.items.filter((u) => !u.enabled).length)

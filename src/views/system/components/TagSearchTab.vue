@@ -151,7 +151,7 @@
   const hasSearched = ref(false)
 
   const searchPage = ref(1)
-  const searchPageSize = ref(20)
+  const searchPageSize = ref(15)
 
   const filteredSearchResults = computed(() => {
     let rows = searchResults.value

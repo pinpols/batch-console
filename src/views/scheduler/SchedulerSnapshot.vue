@@ -448,7 +448,7 @@
   const history = ref<ConsoleSchedulerSnapshotHistoryResponse[]>([])
   const activePanel = ref<PanelKey>('policies')
 
-  const pageSize = ref(20)
+  const pageSize = ref(15)
   const pagePolicies = ref(1)
   const pageQueues = ref(1)
   const pageWorkers = ref(1)

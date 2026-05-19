@@ -445,7 +445,7 @@
         tenantId: job.value.tenantId,
         jobCode: job.value.jobCode,
         page: 1,
-        pageSize: 20,
+        pageSize: 15,
       })
       runs.value = result.records ?? []
       runsLoaded.value = true

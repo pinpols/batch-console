@@ -355,7 +355,7 @@
   const allRows = ref<ConsoleWorkflowDefinitionResponse[]>([])
   const total = ref(0)
   const page = ref(1)
-  const pageSize = ref(20)
+  const pageSize = ref(15)
   const actingIds = ref<Set<number>>(new Set())
   const detailVisible = ref(false)
   const detailRow = ref<WorkflowDefinitionDetailResponse | null>(null)
@@ -373,7 +373,7 @@
         tenantId: def.tenantId ?? tenant.tenantId,
         workflowDefinitionId: def.id,
         page: 1,
-        pageSize: 20,
+        pageSize: 15,
       })
       detailRunsRows.value = page.records ?? []
       detailRunsLoadedForId.value = def.id

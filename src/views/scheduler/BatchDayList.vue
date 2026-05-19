@@ -152,7 +152,7 @@
   const rows = ref<ConsoleBatchDayResponse[]>([])
   const total = ref(0)
   const page = ref(1)
-  const pageSize = ref(20)
+  const pageSize = ref(15)
   const filters = reactive({
     calendarCode: 'DEFAULT',
     from: '' as string,

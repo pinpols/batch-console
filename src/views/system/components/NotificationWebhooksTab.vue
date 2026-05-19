@@ -221,7 +221,7 @@
   const webhookEditingId = ref<number | null>(null)
   const webhookRows = ref<Record<string, unknown>[]>([])
   const webhookPage = ref(1)
-  const webhookPageSize = ref(20)
+  const webhookPageSize = ref(15)
   const webhookFilterDraft = reactive({ keyword: '', enabled: undefined as boolean | undefined })
   const webhookFilterApplied = reactive({ keyword: '', enabled: undefined as boolean | undefined })
   const hasActiveWebhookFilters = computed(

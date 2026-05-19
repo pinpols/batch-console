@@ -27,7 +27,7 @@ export interface UseInfiniteListOptions<T> {
  * query 触发时能精确控制 reset 时机(避免初始化双拉)。
  */
 export function useInfiniteList<T>(opts: UseInfiniteListOptions<T>) {
-  const pageSize = opts.pageSize ?? 20
+  const pageSize = opts.pageSize ?? 15
   // 之前写 `as { value: T[] }` 想绕过 ref<T[]> 的 DeepReadonly,但同时把 Ref 类型也
   // 抹掉了,调用方解构后类型变成 { value }(失去 unwrap),tsc 报 "Property 'X' does
   // not exist on { value: T[] }"。改用 Ref<T[]> 显式标注,保持 ref 语义。

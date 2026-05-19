@@ -8,7 +8,7 @@ import { useTenantStore } from '@/stores/tenant'
  * 切租户也会自动失效（tenantId 进 queryKey）。保留上一页数据减少翻页时的闪烁。
  *
  * @example
- *   const page = ref(1), pageSize = ref(20)
+ *   const page = ref(1), pageSize = ref(15)
  *   const jobCode = ref('')
  *   const { data, isPending, refetch } = useJobDefinitionsPaged({
  *     page, pageSize, jobCode,
