@@ -8,10 +8,6 @@
             {{ t('mobile.outbox.summary', { total: rows.length }) }}
           </div>
         </div>
-        <button class="m-page__refresh" :disabled="loading" @click="load">
-          <el-icon><Refresh /></el-icon>
-          {{ loading ? t('mobile.common.loading') : t('mobile.common.refresh') }}
-        </button>
       </div>
 
       <div class="m-page__header u-gap-8">
@@ -63,7 +59,8 @@
   import { useTenantReload } from '@/composables/useTenantReload'
   import { useI18n } from 'vue-i18n'
   import { Refresh } from '@element-plus/icons-vue'
-  import { ElMessage, ElMessageBox } from 'element-plus'
+  import { ElMessage } from 'element-plus'
+  import { confirmActionSheet } from '@/layout-mobile/MActionSheet'
   import { useTenantStore } from '@/stores/tenant'
   import { useAutoRefresh } from '@/composables/useAutoRefresh'
   import { REFRESH_INTERVAL_COLD_MS } from '@/layout-mobile/composables/refreshIntervals'
@@ -127,7 +124,7 @@
 
   async function doRepublish(row: ConsoleOutboxRetryLogResponse) {
     try {
-      await ElMessageBox.confirm(
+      await confirmActionSheet(
         t('mobile.outbox.republishConfirmText', { id: row.id }),
         t('mobile.outbox.republishConfirmTitle'),
         {

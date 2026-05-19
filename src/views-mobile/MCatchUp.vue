@@ -8,10 +8,6 @@
             {{ t('mobile.catchup.pendingCount', { n: pendingCount }) }}
           </div>
         </div>
-        <button class="m-page__refresh" :disabled="loading" @click="load">
-          <el-icon><Refresh /></el-icon>
-          {{ loading ? t('mobile.common.loading') : t('mobile.common.refresh') }}
-        </button>
       </div>
 
       <MSkeleton v-if="loading && rows.length === 0" :count="3" />

@@ -168,5 +168,15 @@ export default defineConfig(({ mode }) => {
       ],
     },
   },
+  preview: {
+    port: 5173,
+    allowedHosts: true,
+    proxy: {
+      '/api': {
+        target: devProxyTarget,
+        changeOrigin: true,
+      },
+    },
+  },
   }
 })

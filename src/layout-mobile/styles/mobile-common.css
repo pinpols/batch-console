@@ -1,15 +1,63 @@
 /**
- * 移动端通用样式 tokens —— 在 MobileLayout 挂载时 import 即可。
- * 所有 mobile 视图共享此基础。
+ * 移动端通用样式 — iOS Human Interface Guidelines 取向。
+ *
+ * 设计基线:
+ *   - 字体:SF Pro / 系统字体栈,标题 700 / 正文 400
+ *   - 背景:`--ios-bg-grouped`(#F2F2F7)分组列表背景 + 白色 .m-card
+ *   - 卡片:14px 圆角、几乎无边框、低对比阴影
+ *   - 触感:点按 scale(0.97) + 100ms ease-out;原生橡皮筋,无 tap 高亮
+ *   - 信息层级:大标题(28px / -0.5px tracking)与正文(15px)对比强
+ *
+ * 所有 mobile 视图共用这套 token + class,改动这里 → 10 个页面一起变。
  */
+
+/* ── iOS 系统色板 ───────────────────────────────────────────── */
+.mobile-layout {
+  --ios-bg-grouped: #f2f2f7;
+  --ios-bg-elevated: #ffffff;
+  --ios-separator: rgb(60 60 67 / 12%);
+  --ios-separator-opaque: #c6c6c8;
+  --ios-label-primary: #000000;
+  --ios-label-secondary: rgb(60 60 67 / 60%);
+  --ios-label-tertiary: rgb(60 60 67 / 30%);
+  --ios-fill-quaternary: rgb(120 120 128 / 8%);
+  --ios-fill-tertiary: rgb(118 118 128 / 12%);
+  --ios-blue: #007aff;
+  --ios-green: #34c759;
+  --ios-orange: #ff9500;
+  --ios-red: #ff3b30;
+  --ios-yellow: #ffcc00;
+
+  /* iOS 系统字体栈 */
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', 'PingFang SC',
+    'Helvetica Neue', 'Segoe UI', sans-serif;
+}
+
+/* 暗色 token:只在 <html class="dark"> 时生效。
+   原先只听 @media (prefers-color-scheme: dark) → 用户手动切浅色但系统是暗色时,
+   mobile-common 仍用暗 token,与桌面 --color-bg/--color-text 浅色不同步,
+   表现为「背景黑块 / 文字看不清 / 切浅色样式不刷新」。
+   全局 theme 体系是 html.dark 类切换,这里跟随它。 */
+html.dark .mobile-layout {
+  --ios-bg-grouped: #000000;
+  --ios-bg-elevated: #1c1c1e;
+  --ios-separator: rgb(84 84 88 / 60%);
+  --ios-separator-opaque: #38383a;
+  --ios-label-primary: #ffffff;
+  --ios-label-secondary: rgb(235 235 245 / 60%);
+  --ios-label-tertiary: rgb(235 235 245 / 30%);
+  --ios-fill-quaternary: rgb(118 118 128 / 18%);
+  --ios-fill-tertiary: rgb(118 118 128 / 24%);
+}
 
 /* P6 原生感:消蓝 tap 高亮 + 非文本禁长按菜单 + 禁全局橡皮筋 + 防字体放大
    (status-bar-style=black-translucent 时,顶栏内容会延到状态栏下,MobileAppBar 自己用 safe-area-inset-top) */
 .mobile-layout {
   -webkit-tap-highlight-color: transparent;
   -webkit-text-size-adjust: 100%;
-  /* 禁页面整体橡皮筋:list 区自己滚,顶部 / 底部不橡皮 */
   overscroll-behavior-y: none;
+  background: var(--ios-bg-grouped) !important;
 }
 .mobile-layout * {
   -webkit-tap-highlight-color: transparent;
@@ -18,65 +66,104 @@
 .mobile-layout .m-card,
 .mobile-layout .m-chip,
 .mobile-layout .mobile-tab {
-  /* 禁长按弹"复制/查找"菜单 — 非文本元素 */
   -webkit-touch-callout: none;
   user-select: none;
 }
-/* 内容滚动区:允许内部橡皮筋,父级不橡皮 */
 .mobile-layout__content {
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
 }
 
+/* ── 页面骨架 ──────────────────────────────────────────────── */
 .m-page {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
 .m-page__header {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
-  padding: 4px 2px;
+  padding: 2px 4px 0;
 }
 
+/* iOS Title:从 28px 收到 22px,Large Title 留给 detail-less 单功能页;
+   工具型管理后台多 tab 多筛选,标题留 22px 即可,把空间让给业务卡片。
+   滚动塌缩后 nav bar 自动接管 17px compact title。 */
 .m-page__title {
-  font-size: 17px;
+  font-size: 22px;
   font-weight: 700;
-  color: var(--color-text-primary);
-  letter-spacing: 0.02em;
+  letter-spacing: -0.02em;
+  color: var(--ios-label-primary);
+  line-height: 1.2;
 }
 
 .m-page__subtitle {
   font-size: 12px;
-  color: var(--color-text-tertiary);
+  color: var(--ios-label-secondary);
   margin-top: 2px;
+  font-weight: 400;
 }
 
+/* iOS 风刷新键:小胶囊 ghost button(detail 页 goBack 仍用,正常页已删,由 pull-refresh 兜) */
 .m-page__refresh {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 6px 10px;
-  border-radius: 16px;
-  border: 1px solid var(--color-border);
-  background: var(--color-bg-card);
-  font-size: 12px;
-  color: var(--color-text-secondary);
+  padding: 6px 12px;
+  border-radius: 14px;
+  border: none;
+  background: var(--ios-fill-tertiary);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ios-blue);
   cursor: pointer;
+  transition: opacity 0.15s ease;
 }
 
 .m-page__refresh:active {
+  opacity: 0.5;
+}
+
+.m-page__refresh:disabled {
+  color: var(--ios-label-tertiary);
   opacity: 0.6;
 }
 
+/* iOS Back Button:无背景、纯蓝色,左箭头 + 文字 */
+.m-page__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 0;
+  border: none;
+  background: transparent;
+  color: var(--ios-blue);
+  font-size: 17px;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  transition: opacity 0.1s ease;
+}
+
+.m-page__back :deep(.el-icon),
+.m-page__back .el-icon {
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.m-page__back:active {
+  opacity: 0.4;
+}
+
+/* ── iOS 卡片:elevated white + 微阴影,没有 border ─────────── */
 .m-card {
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-border-light);
-  border-radius: 12px;
-  padding: 12px 14px;
-  box-shadow: 0 1px 2px rgb(15 23 42 / 4%);
+  background: var(--ios-bg-elevated);
+  border: none;
+  border-radius: 14px;
+  padding: 14px 16px;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 4%);
 }
 
 .m-card + .m-card {
@@ -85,15 +172,27 @@
 
 .m-card--clickable {
   cursor: pointer;
-  transition:
-    transform 0.15s ease,
-    box-shadow 0.15s ease,
-    border-color 0.15s ease;
+  transition: transform 0.12s ease-out;
+  position: relative;
+}
+
+/* 右侧 iOS chevron(可点卡片) */
+.m-card--clickable::after {
+  content: '';
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid var(--ios-label-tertiary);
+  border-bottom: 2px solid var(--ios-label-tertiary);
+  transform: translateY(-50%) rotate(-45deg);
+  pointer-events: none;
 }
 
 .m-card--clickable:active {
-  transform: scale(0.98);
-  border-color: color-mix(in srgb, var(--color-primary) 30%, var(--color-border-light) 70%);
+  background: var(--ios-fill-quaternary);
+  transform: scale(0.985);
 }
 
 .m-card__row {
@@ -104,177 +203,683 @@
 }
 
 .m-card__title {
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
-  color: var(--color-text-primary);
+  color: var(--ios-label-primary);
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  letter-spacing: -0.01em;
 }
 
 .m-card__sub {
-  font-size: 12px;
-  color: var(--color-text-tertiary);
+  font-size: 13px;
+  color: var(--ios-label-secondary);
   margin-top: 4px;
+  font-weight: 400;
 }
 
 .m-card__meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px 10px;
-  margin-top: 8px;
-  font-size: 12px;
-  color: var(--color-text-secondary);
+  gap: 6px 14px;
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--ios-label-secondary);
 }
 
 .m-card__meta-key {
-  color: var(--color-text-tertiary);
-  margin-right: 2px;
+  color: var(--ios-label-tertiary);
+  margin-right: 4px;
 }
 
 .m-card__actions {
   display: flex;
-  gap: 8px;
-  margin-top: 10px;
+  gap: 10px;
+  margin-top: 14px;
 }
 
 .m-card__notice {
   margin-top: 10px;
-  padding: 8px 10px;
-  border-radius: 6px;
-  background: var(--color-warning-bg, #fffbe6);
-  color: var(--color-text-secondary);
-  font-size: 12px;
-  line-height: 1.5;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--ios-orange) 12%, transparent 88%);
+  color: var(--ios-label-primary);
+  font-size: 13px;
+  line-height: 1.45;
 }
 
+/* ── iOS grouped list:外层 .m-list 包多行 .m-list__row ───────
+   用法:
+     <div class="m-list">
+       <div class="m-list__row">…</div>
+       <div class="m-list__row">…</div>
+     </div>
+   行间自动分隔线,首尾行自动圆角。 */
+.m-list {
+  background: var(--ios-bg-elevated);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 4%);
+}
+
+.m-list__row {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 11px 16px;
+  font-size: 15px;
+  color: var(--ios-label-primary);
+  position: relative;
+}
+
+.m-list__row + .m-list__row::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 16px;
+  right: 0;
+  height: 0.5px;
+  background: var(--ios-separator);
+}
+
+.m-list__row--clickable {
+  cursor: pointer;
+  transition: background 0.1s ease;
+}
+
+.m-list__row--clickable:active {
+  background: var(--ios-fill-quaternary);
+}
+
+/* ── iOS 按钮:填充实色 / 灰 fill / plain ─────────────────── */
 .m-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex: 1;
-  height: 32px;
-  padding: 0 12px;
-  border-radius: 8px;
-  border: 1px solid var(--color-border);
-  background: var(--color-bg-card);
-  color: var(--color-text-primary);
-  font-size: 13px;
+  height: 38px;
+  padding: 0 14px;
+  border-radius: 10px;
+  border: none;
+  background: var(--ios-fill-tertiary);
+  color: var(--ios-blue);
+  font-size: 15px;
   font-weight: 600;
+  letter-spacing: -0.01em;
   cursor: pointer;
+  transition:
+    opacity 0.12s ease,
+    transform 0.1s ease;
 }
 
 .m-btn:active {
-  transform: scale(0.97);
+  opacity: 0.55;
+  transform: scale(0.985);
 }
 
 .m-btn--primary {
-  background: var(--color-primary);
-  border-color: var(--color-primary);
+  background: var(--ios-blue);
   color: #fff;
 }
 
 .m-btn--danger {
-  background: var(--el-color-danger);
-  border-color: var(--el-color-danger);
+  background: var(--ios-red);
   color: #fff;
 }
 
 .m-btn--plain-danger {
-  color: var(--el-color-danger);
-  border-color: color-mix(in srgb, var(--el-color-danger) 40%, var(--color-border) 60%);
+  background: var(--ios-fill-tertiary);
+  color: var(--ios-red);
 }
 
+/* ── 指标网格:工作台用 ────────────────────────────────────── */
 .m-metric-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
+  gap: 12px;
 }
 
 .m-metric {
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-border-light);
-  border-radius: 12px;
-  padding: 14px;
+  background: var(--ios-bg-elevated);
+  border: none;
+  border-radius: 14px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
   text-decoration: none;
   color: inherit;
-  transition: transform 0.12s ease;
+  transition: transform 0.12s ease-out;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 4%);
 }
 
 .m-metric:active {
   transform: scale(0.97);
+  background: var(--ios-fill-quaternary);
 }
 
 .m-metric__label {
-  font-size: 12px;
-  color: var(--color-text-tertiary);
+  font-size: 13px;
+  color: var(--ios-label-secondary);
+  font-weight: 500;
 }
 
 .m-metric__value {
-  font-size: 22px;
+  font-size: 28px;
   font-weight: 700;
-  color: var(--color-text-primary);
+  letter-spacing: -0.02em;
+  color: var(--ios-label-primary);
   font-variant-numeric: tabular-nums;
 }
 
 .m-metric__value--danger {
-  color: var(--el-color-danger);
+  color: var(--ios-red);
 }
 
 .m-metric__value--warning {
-  color: var(--el-color-warning);
+  color: var(--ios-orange);
 }
 
 .m-metric__value--success {
-  color: var(--el-color-success);
+  color: var(--ios-green);
 }
 
+/* ── 空 / 加载态 ──────────────────────────────────────────── */
 .m-empty {
   text-align: center;
   padding: 60px 20px;
-  color: var(--color-text-tertiary);
-  font-size: 13px;
+  color: var(--ios-label-tertiary);
+  font-size: 15px;
 }
 
 .m-loading {
   padding: 40px 20px;
   text-align: center;
-  font-size: 12px;
-  color: var(--color-text-tertiary);
+  font-size: 13px;
+  color: var(--ios-label-tertiary);
 }
 
+/* ── iOS chip:更圆,更柔和的填充 ─────────────────────────── */
 .m-chip {
   display: inline-flex;
   align-items: center;
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 100px;
+  font-size: 12px;
   font-weight: 600;
-  line-height: 1.4;
-  background: var(--el-fill-color-lighter);
-  color: var(--color-text-secondary);
+  line-height: 1.3;
+  background: var(--ios-fill-tertiary);
+  color: var(--ios-label-secondary);
+  letter-spacing: -0.01em;
+  /* flex 容器(如 .m-card__row)里,标题占满后 chip 会被挤窄
+     → 中文字符按 1 字宽竖排成圆球。两条兜住:不换行 + 不收缩 */
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .m-chip--info {
-  background: color-mix(in srgb, var(--color-primary) 14%, transparent 86%);
-  color: var(--color-primary);
+  background: color-mix(in srgb, var(--ios-blue) 14%, transparent 86%);
+  color: var(--ios-blue);
 }
 
 .m-chip--success {
-  background: color-mix(in srgb, var(--el-color-success) 14%, transparent 86%);
-  color: var(--el-color-success);
+  background: color-mix(in srgb, var(--ios-green) 16%, transparent 84%);
+  color: color-mix(in srgb, var(--ios-green) 80%, #000 20%);
 }
 
 .m-chip--warning {
-  background: color-mix(in srgb, var(--el-color-warning) 14%, transparent 86%);
-  color: var(--el-color-warning);
+  background: color-mix(in srgb, var(--ios-orange) 18%, transparent 82%);
+  color: color-mix(in srgb, var(--ios-orange) 80%, #000 20%);
 }
 
 .m-chip--danger {
-  background: color-mix(in srgb, var(--el-color-danger) 14%, transparent 86%);
-  color: var(--el-color-danger);
+  background: color-mix(in srgb, var(--ios-red) 14%, transparent 86%);
+  color: var(--ios-red);
+}
+
+html.dark .m-chip--success {
+  color: var(--ios-green);
+}
+html.dark .m-chip--warning {
+  color: var(--ios-orange);
+}
+
+/* ── CommandPalette 移动端转底部 Sheet ──────────────────────
+   桌面老组件直接复用,el-dialog 居中浮层在手机上又小又远;窄屏时
+   覆盖定位:贴底、占满宽、顶部圆角、滑入动画。 */
+@media (max-width: 768px) {
+  .el-overlay-dialog {
+    align-items: flex-end !important;
+    padding: 0 !important;
+  }
+
+  .el-dialog.command-palette {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    border-radius: 18px 18px 0 0 !important;
+    max-height: 85vh;
+    display: flex !important;
+    flex-direction: column;
+    padding-bottom: env(safe-area-inset-bottom, 0) !important;
+    background: rgba(255 255 255 / 96%) !important;
+    -webkit-backdrop-filter: saturate(180%) blur(24px);
+    backdrop-filter: saturate(180%) blur(24px);
+    overflow: hidden;
+    animation: m-cp-slide-up 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
+  html.dark .el-dialog.command-palette {
+    background: rgba(40 40 42 / 96%) !important;
+  }
+
+  /* sheet 顶部加一根 grabber */
+  .el-dialog.command-palette::before {
+    content: '';
+    display: block;
+    width: 36px;
+    height: 5px;
+    border-radius: 2.5px;
+    background: rgb(60 60 67 / 30%);
+    margin: 6px auto 0;
+    flex-shrink: 0;
+  }
+
+  html.dark .el-dialog.command-palette::before {
+    background: rgb(235 235 245 / 30%);
+  }
+
+  /* dialog body 让出空间滚动 */
+  .el-dialog.command-palette .el-dialog__body {
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+
+  @keyframes m-cp-slide-up {
+    from {
+      transform: translateY(100%);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
+}
+
+/* ── iOS Input / Select / Textarea ──────────────────────────
+   el-input、el-select 默认是 1px border 描边 + 圆角 4px,移动端 iOS
+   习惯是 "rounded rect tile":灰底填充、无可见 border、38px tap area。
+   focus 时蓝色 ring 兜住。 */
+.mobile-layout :deep(.el-input__wrapper),
+.mobile-layout .el-input__wrapper {
+  background: var(--ios-fill-tertiary);
+  box-shadow: none !important;
+  border: none;
+  border-radius: 10px;
+  padding: 0 12px;
+  min-height: 38px;
+  transition: box-shadow 0.15s ease;
+}
+
+.mobile-layout :deep(.el-input__wrapper.is-focus),
+.mobile-layout .el-input__wrapper.is-focus {
+  box-shadow: 0 0 0 2px var(--ios-blue) !important;
+}
+
+.mobile-layout :deep(.el-input__inner),
+.mobile-layout .el-input__inner {
+  height: 34px;
+  font-size: 15px;
+  color: var(--ios-label-primary);
+  font-family: inherit;
+  letter-spacing: -0.01em;
+}
+
+.mobile-layout :deep(.el-input__inner::placeholder),
+.mobile-layout .el-input__inner::placeholder {
+  color: var(--ios-label-tertiary);
+}
+
+/* small size 不收缩,移动端 38px 是最小 hit target */
+.mobile-layout :deep(.el-input--small .el-input__wrapper),
+.mobile-layout .el-input--small .el-input__wrapper {
+  min-height: 38px;
+  padding: 0 12px;
+}
+
+.mobile-layout :deep(.el-input__suffix-inner > *),
+.mobile-layout .el-input__suffix-inner > * {
+  color: var(--ios-label-tertiary);
+  font-size: 16px;
+}
+
+/* el-select 复用 el-input wrapper,这里只调下拉箭头 */
+.mobile-layout :deep(.el-select__caret),
+.mobile-layout .el-select__caret {
+  color: var(--ios-label-tertiary);
+  font-size: 16px;
+}
+
+/* el-select 选中后的 placeholder/已选值色阶 */
+.mobile-layout :deep(.el-select .el-input.is-focus .el-input__wrapper),
+.mobile-layout .el-select .el-input.is-focus .el-input__wrapper {
+  box-shadow: 0 0 0 2px var(--ios-blue) !important;
+}
+
+/* select 下拉浮层:iOS 圆角 14 + 阴影柔和 + 选中项浅蓝染色 */
+.el-select-dropdown {
+  border-radius: 12px !important;
+  border: none !important;
+  box-shadow:
+    0 0 0 0.5px rgb(0 0 0 / 8%),
+    0 8px 24px rgb(0 0 0 / 16%) !important;
+  overflow: hidden;
+}
+
+.el-select-dropdown .el-select-dropdown__item {
+  font-size: 15px;
+  padding: 0 14px;
+  height: 38px;
+  line-height: 38px;
+  color: var(--ios-label-primary, #000);
+}
+
+.el-select-dropdown .el-select-dropdown__item.is-selected {
+  background: color-mix(in srgb, #007aff 12%, transparent 88%);
+  color: #007aff;
+  font-weight: 500;
+}
+
+/* ── iOS 通用 tab 行:多 tab + 每 tab 显示 count 徽章 ──────────
+   使用:
+     <div class="m-tabs">
+       <button class="m-tab m-tab--active">
+         <span class="m-tab__label">未处理</span>
+         <span class="m-tab__badge m-tab__badge--danger">3</span>
+       </button>
+     </div>
+   active 白底浮起,inactive 透明底;badge 4 种状态色(灰/info/success/warning/danger) */
+.m-tabs {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 6px;
+  padding: 4px;
+  background: var(--ios-fill-tertiary);
+  border-radius: 12px;
+}
+
+.m-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 8px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ios-label-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  font-family: inherit;
+  transition:
+    background 0.18s ease,
+    color 0.18s ease,
+    transform 0.1s ease;
+}
+
+.m-tab:active {
+  transform: scale(0.96);
+}
+
+.m-tab--active {
+  background: var(--ios-bg-elevated);
+  color: var(--ios-label-primary);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 12%);
+}
+
+.m-tab__label {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1;
+  padding-top: 1px;
+}
+
+.m-tab__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: 9px;
+  background: var(--ios-fill-tertiary);
+  color: var(--ios-label-secondary);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 18px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+  flex-shrink: 0;
+}
+
+.m-tab--active .m-tab__badge {
+  background: color-mix(in srgb, var(--ios-blue) 16%, transparent 84%);
+  color: var(--ios-blue);
+}
+
+.m-tab__badge--info {
+  background: color-mix(in srgb, var(--ios-blue) 16%, transparent 84%);
+  color: var(--ios-blue);
+}
+.m-tab__badge--success {
+  background: color-mix(in srgb, var(--ios-green) 18%, transparent 82%);
+  color: color-mix(in srgb, var(--ios-green) 80%, #000 20%);
+}
+.m-tab__badge--warning {
+  background: color-mix(in srgb, var(--ios-orange) 20%, transparent 80%);
+  color: color-mix(in srgb, var(--ios-orange) 80%, #000 20%);
+}
+.m-tab__badge--danger {
+  background: var(--ios-red);
+  color: #fff;
+}
+
+/* active 时 badge 保持自身颜色优先,不被 .m-tab--active .m-tab__badge 覆盖 */
+.m-tab--active .m-tab__badge--success,
+.m-tab--active .m-tab__badge--warning,
+.m-tab--active .m-tab__badge--danger,
+.m-tab--active .m-tab__badge--info {
+  background: inherit;
+  color: inherit;
+}
+.m-tab--active .m-tab__badge--success {
+  background: color-mix(in srgb, var(--ios-green) 18%, transparent 82%);
+  color: color-mix(in srgb, var(--ios-green) 80%, #000 20%);
+}
+.m-tab--active .m-tab__badge--warning {
+  background: color-mix(in srgb, var(--ios-orange) 20%, transparent 80%);
+  color: color-mix(in srgb, var(--ios-orange) 80%, #000 20%);
+}
+.m-tab--active .m-tab__badge--danger {
+  background: var(--ios-red);
+  color: #fff;
+}
+.m-tab--active .m-tab__badge--info {
+  background: color-mix(in srgb, var(--ios-blue) 16%, transparent 84%);
+  color: var(--ios-blue);
+}
+
+html.dark .m-tab__badge--success {
+  color: var(--ios-green);
+}
+html.dark .m-tab__badge--warning {
+  color: var(--ios-orange);
+}
+
+/* 小巧的状态点:用在 subtitle 这种 "在线 0 · Drain 0 · 离线 0" 行 */
+.m-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-variant-numeric: tabular-nums;
+}
+
+.m-stat + .m-stat {
+  margin-left: 10px;
+}
+
+.m-stat__dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ios-label-tertiary);
+}
+.m-stat__dot--success {
+  background: var(--ios-green);
+}
+.m-stat__dot--warning {
+  background: var(--ios-orange);
+}
+.m-stat__dot--danger {
+  background: var(--ios-red);
+}
+.m-stat__dot--info {
+  background: var(--ios-blue);
+}
+
+/* ── iOS segmented control:el-segmented 重写 ──────────────── */
+.mobile-layout :deep(.el-segmented),
+.mobile-layout .el-segmented {
+  --el-segmented-bg-color: var(--ios-fill-tertiary);
+  --el-segmented-item-selected-bg-color: var(--ios-bg-elevated);
+  --el-segmented-item-selected-color: var(--ios-label-primary);
+  border-radius: 9px;
+  padding: 2px;
+}
+
+/* ── el-message-box / el-dialog 在移动端给点 iOS 圆角 ──────── */
+.mobile-layout :deep(.el-message-box),
+.mobile-layout :deep(.el-dialog) {
+  border-radius: 14px;
+}
+
+/* ── iOS Action Sheet(MActionSheet.ts 命令式调用) ────────────
+   动画:backdrop fade 240ms,sheet slide-up 240ms cubic-bezier;
+   样式:两块圆角卡片(action group + cancel group)间留 8px gap;
+   主按钮蓝色 / destructive 红色 / cancel 加粗;
+   全凭 body 直接挂 DOM,不依赖 mobile-layout 上下文,放 :root 选择器。 */
+.m-action-sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgb(0 0 0 / 0%);
+  z-index: 2000;
+  transition: background 0.24s ease;
+}
+.m-action-sheet-backdrop--open {
+  background: rgb(0 0 0 / 40%);
+}
+
+.m-action-sheet {
+  position: fixed;
+  left: 8px;
+  right: 8px;
+  bottom: calc(8px + env(safe-area-inset-bottom, 0));
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 2001;
+  transform: translateY(110%);
+  transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'PingFang SC', 'Helvetica Neue', sans-serif;
+}
+.m-action-sheet--open {
+  transform: translateY(0);
+}
+
+.m-action-sheet__card,
+.m-action-sheet__cancel-card {
+  background: rgba(255 255 255 / 92%);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+html.dark .m-action-sheet__card,
+html.dark .m-action-sheet__cancel-card {
+  background: rgba(40 40 42 / 92%);
+}
+
+.m-action-sheet__header {
+  padding: 16px 16px 14px;
+  text-align: center;
+  border-bottom: 0.5px solid rgb(60 60 67 / 18%);
+}
+
+.m-action-sheet__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgb(60 60 67 / 60%);
+  letter-spacing: -0.01em;
+}
+
+.m-action-sheet__message {
+  margin-top: 4px;
+  font-size: 13px;
+  color: rgb(60 60 67 / 60%);
+  line-height: 1.45;
+}
+
+html.dark .m-action-sheet__header {
+  border-bottom-color: rgb(84 84 88 / 60%);
+}
+html.dark .m-action-sheet__title,
+html.dark .m-action-sheet__message {
+  color: rgb(235 235 245 / 60%);
+}
+
+.m-action-sheet__btn {
+  display: block;
+  width: 100%;
+  padding: 17px 16px;
+  border: none;
+  background: transparent;
+  font-size: 20px;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  color: #007aff;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.1s ease;
+}
+
+.m-action-sheet__btn:active {
+  background: rgb(0 0 0 / 6%);
+}
+
+.m-action-sheet__btn--default {
+  color: #007aff;
+}
+
+.m-action-sheet__btn--destructive {
+  color: #ff3b30;
+}
+
+.m-action-sheet__btn--cancel {
+  font-weight: 600;
+  color: #007aff;
 }

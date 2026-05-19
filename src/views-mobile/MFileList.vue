@@ -8,10 +8,6 @@
             {{ t('mobile.files.subtitle', { total: total || rows.length }) }}
           </div>
         </div>
-        <button class="m-page__refresh" :disabled="loading" @click="onPullRefresh">
-          <el-icon><Refresh /></el-icon>
-          {{ loading ? t('common.loading') : t('common.refresh') }}
-        </button>
       </div>
 
       <div class="m-page__header">

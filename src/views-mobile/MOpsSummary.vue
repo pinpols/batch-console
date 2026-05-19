@@ -8,10 +8,6 @@
             {{ t('mobile.summary.tenantPrefix', { id: tenant.tenantId }) }}
           </div>
         </div>
-        <button class="m-page__refresh" :disabled="loading" @click="load">
-          <el-icon><Refresh /></el-icon>
-          {{ loading ? t('mobile.common.loading') : t('mobile.common.refresh') }}
-        </button>
       </div>
 
       <div v-if="summary" class="m-metric-grid">
@@ -46,7 +42,7 @@
             {{ summary.openAlerts }}
           </span>
         </router-link>
-        <router-link to="/m/jobs" class="m-metric">
+        <router-link to="/m/jobs?slaBreached=1" class="m-metric">
           <span class="m-metric__label">{{ t('mobile.summary.slaBreaches') }}</span>
           <span
             class="m-metric__value"

@@ -9,7 +9,7 @@
     >
       <div class="mobile-tab__icon-wrap">
         <el-icon class="mobile-tab__icon">
-          <component :is="tab.icon" />
+          <component :is="isActive(tab.path) ? tab.iconFilled : tab.icon" />
         </el-icon>
         <span
           v-if="badgeOf(tab.path) > 0"
@@ -28,7 +28,18 @@
   import { computed } from 'vue'
   import { useRoute } from 'vue-router'
   import { useI18n } from 'vue-i18n'
-  import { Histogram, Stamp, WarningFilled, Monitor, Cpu } from '@element-plus/icons-vue'
+  import {
+    Histogram,
+    DataAnalysis,
+    Stamp,
+    Memo,
+    Warning,
+    WarningFilled,
+    Monitor,
+    Operation,
+    Cpu,
+    Coin,
+  } from '@element-plus/icons-vue'
   import { useMobileBadgesStore } from '@/stores/mobileBadges'
 
   const route = useRoute()
@@ -48,12 +59,39 @@
    *
    * 这是产品决策,不是遗漏。改动前请先确认是否需要把某条提升为常驻 Tab。
    */
+  // iOS Tab Bar:每个 tab 给 line/filled 一对图标,active 时切换到 filled
+  // Element Plus icons 集成对偶有限,这里挑接近 SF Symbols line/fill 视觉的成对图标
   const tabs = [
-    { path: '/m/alerts', labelKey: 'nav.mobileTab.alerts', icon: WarningFilled },
-    { path: '/m/approvals', labelKey: 'nav.mobileTab.approvals', icon: Stamp },
-    { path: '/m/ops/summary', labelKey: 'nav.mobileTab.summary', icon: Histogram },
-    { path: '/m/jobs', labelKey: 'nav.mobileTab.jobs', icon: Monitor },
-    { path: '/m/workers', labelKey: 'nav.mobileTab.workers', icon: Cpu },
+    {
+      path: '/m/alerts',
+      labelKey: 'nav.mobileTab.alerts',
+      icon: Warning,
+      iconFilled: WarningFilled,
+    },
+    {
+      path: '/m/approvals',
+      labelKey: 'nav.mobileTab.approvals',
+      icon: Memo,
+      iconFilled: Stamp,
+    },
+    {
+      path: '/m/ops/summary',
+      labelKey: 'nav.mobileTab.summary',
+      icon: DataAnalysis,
+      iconFilled: Histogram,
+    },
+    {
+      path: '/m/jobs',
+      labelKey: 'nav.mobileTab.jobs',
+      icon: Operation,
+      iconFilled: Monitor,
+    },
+    {
+      path: '/m/workers',
+      labelKey: 'nav.mobileTab.workers',
+      icon: Coin,
+      iconFilled: Cpu,
+    },
   ]
 
   const isActive = computed(() => (path: string) => route.path.startsWith(path))
@@ -74,6 +112,7 @@
 </script>
 
 <style scoped>
+  /* iOS Tab Bar:毛玻璃 + 极细顶分隔线 + 跟随 home indicator 留白 */
   .mobile-tab-bar {
     position: fixed;
     left: 0;
@@ -81,11 +120,17 @@
     bottom: 0;
     display: grid;
     grid-template-columns: repeat(5, 1fr);
-    background: var(--color-bg-card);
-    border-top: 1px solid var(--color-border-light);
+    background: color-mix(in srgb, #ffffff 78%, transparent 22%);
+    backdrop-filter: saturate(180%) blur(24px);
+    -webkit-backdrop-filter: saturate(180%) blur(24px);
+    border-top: 0.5px solid rgb(60 60 67 / 18%);
     padding-bottom: env(safe-area-inset-bottom, 0);
     z-index: 100;
-    box-shadow: 0 -2px 12px rgb(15 23 42 / 6%);
+  }
+
+  :global(html.dark) .mobile-tab-bar {
+    background: color-mix(in srgb, #1c1c1e 78%, transparent 22%);
+    border-top-color: rgb(84 84 88 / 60%);
   }
 
   .mobile-tab {
@@ -93,18 +138,22 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 2px;
-    padding: 8px 4px 6px;
-    color: var(--color-text-tertiary);
+    gap: 3px;
+    padding: 7px 4px 5px;
+    color: rgb(60 60 67 / 60%);
     text-decoration: none;
-    font-size: 11px;
-    transition:
-      color 0.15s ease,
-      transform 0.15s ease;
+    font-size: 10px;
+    letter-spacing: 0.01em;
+    font-weight: 500;
+    transition: color 0.1s ease;
+  }
+
+  :global(html.dark) .mobile-tab {
+    color: rgb(235 235 245 / 60%);
   }
 
   .mobile-tab:active {
-    transform: scale(0.94);
+    opacity: 0.5;
   }
 
   .mobile-tab__icon-wrap {
@@ -113,41 +162,44 @@
   }
 
   .mobile-tab__icon {
-    font-size: 22px;
+    font-size: 26px;
   }
 
   .mobile-tab__badge {
     position: absolute;
-    top: -4px;
+    top: -5px;
     right: -10px;
     min-width: 18px;
     height: 18px;
     padding: 0 5px;
     border-radius: 9px;
-    background: var(--color-primary);
+    background: #ff3b30;
     color: #fff;
-    font-size: 10px;
-    font-weight: 700;
+    font-size: 11px;
+    font-weight: 600;
     line-height: 18px;
     letter-spacing: 0;
     text-align: center;
-    box-shadow: 0 0 0 2px var(--color-bg-card);
+    box-shadow: 0 0 0 1.5px #ffffff;
+  }
+
+  :global(html.dark) .mobile-tab__badge {
+    box-shadow: 0 0 0 1.5px #1c1c1e;
   }
 
   .mobile-tab__badge--danger {
-    background: var(--el-color-danger);
+    background: #ff3b30;
   }
 
   .mobile-tab__label {
     font-weight: 500;
-    letter-spacing: 0.02em;
   }
 
   .mobile-tab--active {
-    color: var(--color-primary);
+    color: #007aff;
   }
 
   .mobile-tab--active .mobile-tab__label {
-    font-weight: 700;
+    font-weight: 600;
   }
 </style>

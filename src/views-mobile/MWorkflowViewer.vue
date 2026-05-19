@@ -2,13 +2,9 @@
   <MPullRefresh :on-refresh="load">
     <div class="m-page">
       <div class="m-page__header">
-        <button class="m-page__refresh" @click="goBack()">
+        <button class="m-page__back" @click="goBack()">
           <el-icon><ArrowLeft /></el-icon>
-          {{ t('common.backToPrev') }}
-        </button>
-        <button class="m-page__refresh" :disabled="loading" @click="load">
-          <el-icon><Refresh /></el-icon>
-          {{ loading ? t('mobile.common.loading') : t('mobile.common.refresh') }}
+          <span>{{ t('common.backToPrev') }}</span>
         </button>
       </div>
 

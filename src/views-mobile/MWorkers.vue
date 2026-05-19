@@ -5,23 +5,45 @@
         <div>
           <div class="m-page__title">{{ t('mobile.workers.title') }}</div>
           <div class="m-page__subtitle">
-            {{
-              t('mobile.workers.summary', {
-                online: onlineCount,
-                drain: drainCount,
-                offline: offlineCount,
-              })
-            }}
+            <span class="m-stat">
+              <i class="m-stat__dot m-stat__dot--success" />
+              {{ t('mobile.workers.filterOnline') }} {{ onlineCount }}
+            </span>
+            <span class="m-stat">
+              <i class="m-stat__dot m-stat__dot--warning" />
+              {{ t('mobile.workers.filterDraining') }} {{ drainCount }}
+            </span>
+            <span class="m-stat">
+              <i class="m-stat__dot m-stat__dot--danger" />
+              {{ t('mobile.workers.filterOffline') }} {{ offlineCount }}
+            </span>
           </div>
         </div>
-        <button class="m-page__refresh" :disabled="loading" @click="load">
-          <el-icon><Refresh /></el-icon>
-          {{ loading ? t('mobile.common.loading') : t('mobile.common.refresh') }}
-        </button>
       </div>
 
-      <div class="m-page__header u-gap-8">
-        <el-segmented v-model="filter" :options="filterOptions" size="small" class="u-w-full" />
+      <MSearchBar v-model="keyword" :placeholder="t('mobile.workers.searchPlaceholder')" />
+
+      <!-- 跟告警 4-tab 同一套 .m-tabs 样式;各档 count 着色:online 绿、drain 橙、offline 红 -->
+      <div class="m-tabs" role="tablist">
+        <button
+          v-for="opt in filterOptions"
+          :key="opt.value"
+          type="button"
+          role="tab"
+          :aria-selected="filter === opt.value"
+          class="m-tab"
+          :class="{ 'm-tab--active': filter === opt.value }"
+          @click="filter = opt.value as WorkerFilter"
+        >
+          <span class="m-tab__label">{{ opt.label }}</span>
+          <span
+            v-if="tabCounts[opt.value] > 0"
+            class="m-tab__badge"
+            :class="badgeToneFor(opt.value)"
+          >
+            {{ tabCounts[opt.value] > 99 ? '99+' : tabCounts[opt.value] }}
+          </span>
+        </button>
       </div>
 
       <MSkeleton v-if="loading && filtered.length === 0" :count="3" />
@@ -99,13 +121,15 @@
   import { useRoute } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import { Refresh } from '@element-plus/icons-vue'
-  import { ElMessage, ElMessageBox } from 'element-plus'
+  import { ElMessage } from 'element-plus'
+  import { confirmActionSheet } from '@/layout-mobile/MActionSheet'
   import { useTenantStore } from '@/stores/tenant'
   import { useAutoRefresh } from '@/composables/useAutoRefresh'
   import { REFRESH_INTERVAL_COLD_MS } from '@/layout-mobile/composables/refreshIntervals'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import MPullRefresh from '@/layout-mobile/MPullRefresh.vue'
   import MSkeleton from '@/layout-mobile/MSkeleton.vue'
+  import MSearchBar from '@/layout-mobile/MSearchBar.vue'
   import {
     queryWorkers,
     drainWorker,
@@ -147,12 +171,40 @@
   const drainCount = computed(() => rows.value.filter((r) => r.status === 'DRAINING').length)
   const offlineCount = computed(() => rows.value.filter((r) => r.status === 'OFFLINE').length)
 
+  const keyword = ref('')
+
+  // tabs(状态)+ keyword(workerCode/workerGroup/capabilityTags 模糊)
   const filtered = computed(() => {
-    if (filter.value === 'online') return rows.value.filter((r) => r.status === 'ONLINE')
-    if (filter.value === 'draining') return rows.value.filter((r) => r.status === 'DRAINING')
-    if (filter.value === 'offline') return rows.value.filter((r) => r.status === 'OFFLINE')
-    return rows.value
+    let list = rows.value
+    if (filter.value === 'online') list = list.filter((r) => r.status === 'ONLINE')
+    else if (filter.value === 'draining') list = list.filter((r) => r.status === 'DRAINING')
+    else if (filter.value === 'offline') list = list.filter((r) => r.status === 'OFFLINE')
+    const kw = keyword.value.trim().toLowerCase()
+    if (kw) {
+      list = list.filter(
+        (r) =>
+          r.workerCode?.toLowerCase().includes(kw) ||
+          r.workerGroup?.toLowerCase().includes(kw) ||
+          r.capabilityTags?.toLowerCase().includes(kw),
+      )
+    }
+    return list
   })
+
+  // tab 徽章 count
+  const tabCounts = computed<Record<string, number>>(() => ({
+    all: rows.value.length,
+    online: onlineCount.value,
+    draining: drainCount.value,
+    offline: offlineCount.value,
+  }))
+
+  function badgeToneFor(filterKey: string) {
+    if (filterKey === 'online') return 'm-tab__badge--success'
+    if (filterKey === 'draining') return 'm-tab__badge--warning'
+    if (filterKey === 'offline') return 'm-tab__badge--danger'
+    return '' // all → 默认灰
+  }
 
   function statusChipClass(s?: string) {
     if (s === 'ONLINE') return 'm-chip--success'
@@ -190,7 +242,7 @@
     toastKey: string,
   ) {
     try {
-      await ElMessageBox.confirm(t(textKey, { code: row.workerCode }), t(titleKey), {
+      await confirmActionSheet(t(textKey, { code: row.workerCode }), t(titleKey), {
         type: 'warning',
         confirmButtonText: t('common.confirm'),
         cancelButtonText: t('common.cancel'),

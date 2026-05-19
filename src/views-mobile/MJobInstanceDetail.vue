@@ -2,15 +2,9 @@
   <MPullRefresh :on-refresh="load">
     <div class="m-page">
       <div class="m-page__header">
-        <div>
-          <button class="m-page__refresh" @click="goBack()">
-            <el-icon><ArrowLeft /></el-icon>
-            {{ t('common.backToPrev') }}
-          </button>
-        </div>
-        <button class="m-page__refresh" :disabled="loading" @click="load">
-          <el-icon><Refresh /></el-icon>
-          {{ loading ? t('mobile.common.loading') : t('mobile.common.refresh') }}
+        <button class="m-page__back" @click="goBack()">
+          <el-icon><ArrowLeft /></el-icon>
+          <span>{{ t('common.backToPrev') }}</span>
         </button>
       </div>
 
@@ -142,7 +136,8 @@
   import { useRoute, useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import { ArrowLeft, Refresh } from '@element-plus/icons-vue'
-  import { ElMessage, ElMessageBox } from 'element-plus'
+  import { ElMessage } from 'element-plus'
+  import { confirmActionSheet } from '@/layout-mobile/MActionSheet'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
   import { useAutoRefresh } from '@/composables/useAutoRefresh'
@@ -254,7 +249,7 @@
   async function retry() {
     if (!row.value) return
     try {
-      await ElMessageBox.confirm(
+      await confirmActionSheet(
         `${t('mobile.jobs.retry')} ${row.value.instanceNo}?`,
         t('mobile.jobs.retry'),
         {
@@ -279,7 +274,7 @@
   async function terminate() {
     if (!row.value) return
     try {
-      await ElMessageBox.confirm(
+      await confirmActionSheet(
         `${t('mobile.jobs.terminate')} ${row.value.instanceNo}?`,
         t('mobile.jobs.terminate'),
         {
