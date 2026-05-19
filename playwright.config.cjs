@@ -5,6 +5,9 @@ module.exports = defineConfig({
   testDir: './e2e',
   // 每次运行前刷新 token + 上传 seed 到 ta/tb/tc（非 CI 也执行，避免 storageState 过期）
   globalSetup: require.resolve('./e2e/global-setup.cjs'),
+  // 跑完后调 admin 清理端点删 e2e-* 残留(集中清理,所有 spec 不用各自补 afterAll)。
+  // BC_E2E_SKIP_TEARDOWN=1 可临时关(调试用,留现场分析)。
+  globalTeardown: require.resolve('./e2e/global-teardown.cjs'),
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
