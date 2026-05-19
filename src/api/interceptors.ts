@@ -375,6 +375,19 @@ export function applyApiInterceptors(client: AxiosInstance): void {
       const method = (cfg.method ?? 'get').toUpperCase()
       const url = cfg.url ?? ''
       const isBlob = response.config.responseType === 'blob'
+      // X-Maintenance: admin-bypass / read-only — 由 MaintenanceModeFilter 在维护期透传
+      // 给 admin 时打的标志,前端据此渲染顶部 "维护中,你是 admin 旁路" 提醒
+      const xMaint = response.headers?.['x-maintenance']
+      if (xMaint === 'admin-bypass' || xMaint === 'read-only') {
+        void import('@/stores/app').then(({ useAppStore }) => {
+          const app = useAppStore()
+          app.setMaintenance({
+            enabled: true,
+            readOnly: xMaint === 'read-only',
+            adminBypass: xMaint === 'admin-bypass',
+          })
+        })
+      }
       // 成功路径:response 只留 envelope 的 code/message(必要时可从后端 meta 拿 traceId),
       // 不拖 data 字段,防止列表接口一次性塞几 KB。失败路径(error 分支)仍记完整 body。
       let responseField: unknown
@@ -505,7 +518,13 @@ export function applyApiInterceptors(client: AxiosInstance): void {
       // 由 UI 层消费;此处不弹通用错误 toast,避免一堆 503 提示淹没用户视线。
       if (status === 503) {
         const maint = raw as
-          | { maintenance?: boolean; readOnly?: boolean; message?: string; etaAt?: string }
+          | {
+              maintenance?: boolean
+              readOnly?: boolean
+              message?: string
+              etaAt?: string
+              affectedServices?: string[]
+            }
           | undefined
         const xMaint = error.response?.headers?.['x-maintenance']
         if (maint?.maintenance === true || xMaint) {
@@ -517,6 +536,10 @@ export function applyApiInterceptors(client: AxiosInstance): void {
               readOnly: !!maint?.readOnly || xMaint === 'read-only',
               message: maint?.message ?? null,
               etaAt: maint?.etaAt ?? null,
+              affectedServices: Array.isArray(maint?.affectedServices)
+                ? maint.affectedServices
+                : [],
+              adminBypass: false,
             })
           })
           return Promise.reject(
