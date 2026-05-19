@@ -1,4 +1,15 @@
 :root {
+  /* 响应式断点 token — 与 src/constants/breakpoints.ts 同源。
+     CSS 里无法直接在 @media 内插值,这里暴露 var 供组件 max-width / margin 等使用。 */
+  --bp-xs: 480px;
+  --bp-sm: 768px;
+  --bp-md: 1024px;
+  --bp-lg: 1280px;
+  --bp-xl: 1536px;
+  --bp-xxl: 1920px;
+  /* 内容容器最大宽度 — 大屏(>1920)避免内容拉满阅读距离过宽 */
+  --content-max-width: 1600px;
+
   --color-primary: #1677ff;
   --color-success: #52c41a;
   --color-warning: #faad14;
