@@ -311,7 +311,17 @@
     const g = workerFilters.workerGroup.trim()
     if (g) r = r.filter((x) => String(x.workerGroup ?? '') === g)
     const s = workerFilters.status.trim()
-    if (s) r = r.filter((x) => String(x.status ?? '').toUpperCase() === s.toUpperCase())
+    if (s) {
+      // 支持 CSV 多值,如 OpsSummary「离线 Worker」卡片传 "OFFLINE,DECOMMISSIONED"
+      // 与计数语义(OFFLINE + DECOMMISSIONED)对齐
+      const wanted = new Set(
+        s
+          .split(',')
+          .map((t) => t.trim().toUpperCase())
+          .filter(Boolean),
+      )
+      r = r.filter((x) => wanted.has(String(x.status ?? '').toUpperCase()))
+    }
     const k = workerFilters.keyword.trim()
     if (k) r = r.filter((x) => String(x.workerCode ?? '').includes(k))
     return r

@@ -243,6 +243,8 @@
     tenantId: tenant.tenantId,
     jobCode: '',
     instanceStatus: '',
+    /** CSV 多状态(优先于 instanceStatus 单值);OpsSummary 失败任务卡片用 */
+    instanceStatuses: '',
     startDate: initialRange[0],
     endDate: initialRange[1],
     traceId: '',
@@ -375,6 +377,8 @@
   {
     const q = route.query
     if (q.status) query.instanceStatus = String(q.status)
+    // statuses CSV(优先于 status 单值,例如 OpsSummary "失败任务"卡片传 "FAILED,PARTIAL_FAILED")
+    if (q.statuses) query.instanceStatuses = String(q.statuses)
     if (q.jobCode) query.jobCode = String(q.jobCode)
     if (q.startDate) query.startDate = String(q.startDate)
     if (q.endDate) query.endDate = String(q.endDate)

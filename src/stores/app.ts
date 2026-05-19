@@ -131,7 +131,18 @@ export const useAppStore = defineStore('app', () => {
     readOnly: boolean
     message: string | null
     etaAt: string | null
-  }>({ enabled: false, readOnly: false, message: null, etaAt: null })
+    /** 受影响子系统 code 列表;空 = 整站维护(banner 走 message 兜底) */
+    affectedServices: string[]
+    /** 当前用户是 admin 旁路(由响应头 X-Maintenance: admin-bypass 触发) */
+    adminBypass: boolean
+  }>({
+    enabled: false,
+    readOnly: false,
+    message: null,
+    etaAt: null,
+    affectedServices: [],
+    adminBypass: false,
+  })
 
   function setMaintenance(state: Partial<typeof maintenance.value>) {
     maintenance.value = { ...maintenance.value, ...state }

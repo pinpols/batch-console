@@ -117,6 +117,7 @@ export interface paths {
      *     1. Render a global banner with `message` + `etaAt` when `enabled=true`.
      *     2. Switch to read-only UI (disable write buttons) when `readOnly=true`.
      *     3. Auto-recover by polling (30s) and clearing banner when `enabled=false`.
+     *     4. List `affectedServices` so users see which features are down vs available.
      *
      *     This endpoint is whitelisted by `MaintenanceModeFilter`, so it returns 200 even
      *     during maintenance — otherwise the frontend would have no way to detect recovery.
@@ -124,6 +125,36 @@ export interface paths {
      */
     get: operations['getMaintenanceStatus']
     put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/admin/system/maintenance': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Get current maintenance state (admin) */
+    get: operations['getAdminMaintenanceState']
+    /**
+     * Hot-update maintenance state without restart (admin)
+     * @description ROLE_ADMIN only. Replaces the runtime maintenance state in
+     *     `MaintenanceStateHolder` (AtomicReference). Takes effect immediately on next
+     *     request — no restart needed. Whitelisted by `MaintenanceModeFilter` so admins
+     *     can disable maintenance even during a maintenance window.
+     *
+     *     Typical SOP:
+     *     - Pre-rollout: PUT `{enabled:true, readOnly:false, message:..., etaAt:...,
+     *       affectedServices:["job-schedule"]}`
+     *     - Post-rollout: PUT `{enabled:false}`
+     *
+     */
+    put: operations['updateAdminMaintenanceState']
     post?: never
     delete?: never
     options?: never
@@ -5022,6 +5053,19 @@ export interface components {
       message?: string | null
       /** @description ISO-8601 estimated recovery timestamp; null when unknown */
       etaAt?: string | null
+      /** @description Service codes that are down during this maintenance (empty list = whole site).
+       *     FE renders a per-service availability badge so users see what's still usable.
+       *      */
+      affectedServices?: string[]
+    }
+    UpdateMaintenanceRequest: {
+      enabled: boolean
+      /** @default false */
+      readOnly: boolean
+      message?: string
+      /** @description ISO-8601 estimated recovery timestamp */
+      etaAt?: string
+      affectedServices?: string[]
     }
     CommonResponseMaintenanceStatus: components['schemas']['CommonResponseBase'] & {
       data?: components['schemas']['MaintenanceStatus']
@@ -7727,6 +7771,50 @@ export interface operations {
     requestBody?: never
     responses: {
       /** @description Maintenance status payload */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseMaintenanceStatus']
+        }
+      }
+    }
+  }
+  getAdminMaintenanceState: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Current maintenance state */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseMaintenanceStatus']
+        }
+      }
+    }
+  }
+  updateAdminMaintenanceState: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['UpdateMaintenanceRequest']
+      }
+    }
+    responses: {
+      /** @description Updated maintenance state */
       200: {
         headers: {
           [name: string]: unknown
@@ -10949,6 +11037,11 @@ export interface operations {
         minDurationSeconds?: number
         /** @description When true, only returns instances with deadline_at < now and still in active status (CREATED/WAITING/READY/RUNNING/PARTIAL_FAILED). Matches the slaBreaches metric on OpsSummary. */
         slaBreached?: boolean
+        /** @description Comma-separated status list (e.g. `FAILED,PARTIAL_FAILED`). Takes precedence over
+         *     `instanceStatus`. Used by OpsSummary "failed jobs" card to match the same
+         *     FAILED + PARTIAL_FAILED predicate as the counter.
+         *      */
+        instanceStatuses?: string
       }
       header?: never
       path?: never

@@ -202,12 +202,14 @@
                   </div>
                 </div>
                 <div class="step-card__grid">
-                  <!-- stageCode 必填,从字典挑;选了之后自动给 stepCode/stepName/stepType 补默认值 -->
+                  <!-- 主字段:只露 stage(决策)+ 描述(可选)。其它字段(code/name/impl)选完 stage 自动补默认值,默认折叠到「高级」 -->
                   <div class="step-field">
-                    <label class="step-field__label">{{
-                      t('pipelineDefinitionList.stepFieldStageLabel')
-                    }}</label>
+                    <label class="step-field__label">
+                      {{ t('pipelineDefinitionList.stepFieldStageLabel') }}
+                      <span class="step-field__required">*</span>
+                    </label>
                     <el-select
+                      v-if="stageOptionsForCurrent.length > 0"
                       :model-value="row.stageCode"
                       :placeholder="t('pipelineDefinitionList.stepFieldStagePlaceholder')"
                       filterable
@@ -221,49 +223,15 @@
                         :value="s"
                       />
                     </el-select>
-                  </div>
-                  <div class="step-field">
-                    <label class="step-field__label">{{
-                      t('pipelineDefinitionList.stepFieldCodeLabel')
-                    }}</label>
                     <el-input
-                      v-model="row.stepCode"
-                      :placeholder="t('pipelineDefinitionList.stepFieldCodePlaceholder')"
+                      v-else
+                      :model-value="row.stageCode"
+                      :placeholder="t('pipelineDefinitionList.stepFieldStagePlaceholder')"
                       class="step-field__input"
+                      @update:model-value="(v) => onStageChange(row, v)"
                     />
                   </div>
                   <div class="step-field">
-                    <label class="step-field__label">{{
-                      t('pipelineDefinitionList.stepFieldNameLabel')
-                    }}</label>
-                    <el-input
-                      v-model="row.stepName"
-                      :placeholder="t('pipelineDefinitionList.stepFieldNamePlaceholder')"
-                      class="step-field__input"
-                    />
-                  </div>
-                  <div class="step-field">
-                    <label class="step-field__label">{{
-                      t('pipelineDefinitionList.stepFieldImplLabel')
-                    }}</label>
-                    <el-select
-                      v-model="row.stepType"
-                      :placeholder="t('pipelineDefinitionList.stepFieldImplPlaceholder')"
-                      filterable
-                      allow-create
-                      default-first-option
-                      clearable
-                      class="step-field__input"
-                    >
-                      <el-option
-                        v-for="impl in stepImplOptions"
-                        :key="impl"
-                        :label="impl"
-                        :value="impl"
-                      />
-                    </el-select>
-                  </div>
-                  <div class="step-field step-field--wide">
                     <label class="step-field__label">{{
                       t('pipelineDefinitionList.stepFieldDescriptionLabel')
                     }}</label>
@@ -273,6 +241,81 @@
                       class="step-field__input"
                     />
                   </div>
+
+                  <!-- 自动生成的灰字摘要:让用户看到选 stage 后系统给他生成了什么,无需展开 -->
+                  <div class="step-field step-field--wide step-summary" v-if="row.stageCode">
+                    <span class="step-summary__item">
+                      <span class="step-summary__k">{{
+                        t('pipelineDefinitionList.stepFieldCodeLabel')
+                      }}</span>
+                      <code>{{ row.stepCode || '—' }}</code>
+                    </span>
+                    <span class="step-summary__item">
+                      <span class="step-summary__k">{{
+                        t('pipelineDefinitionList.stepFieldImplLabel')
+                      }}</span>
+                      <code>{{ row.stepType || t('pipelineDefinitionList.stepImplAuto') }}</code>
+                    </span>
+                    <el-button link type="primary" size="small" @click="toggleAdvanced(index)">
+                      {{
+                        advancedOpen.has(index)
+                          ? t('pipelineDefinitionList.stepAdvancedCollapse')
+                          : t('pipelineDefinitionList.stepAdvancedExpand')
+                      }}
+                    </el-button>
+                  </div>
+
+                  <!-- 高级:罕见场景才需要(同 stage 配多 step / 用非默认 impl) -->
+                  <template v-if="advancedOpen.has(index)">
+                    <div class="step-field">
+                      <label class="step-field__label">{{
+                        t('pipelineDefinitionList.stepFieldCodeLabel')
+                      }}</label>
+                      <el-input
+                        v-model="row.stepCode"
+                        :placeholder="t('pipelineDefinitionList.stepFieldCodePlaceholder')"
+                        class="step-field__input"
+                      />
+                    </div>
+                    <div class="step-field">
+                      <label class="step-field__label">{{
+                        t('pipelineDefinitionList.stepFieldNameLabel')
+                      }}</label>
+                      <el-input
+                        v-model="row.stepName"
+                        :placeholder="t('pipelineDefinitionList.stepFieldNamePlaceholder')"
+                        class="step-field__input"
+                      />
+                    </div>
+                    <div class="step-field step-field--wide">
+                      <label class="step-field__label">{{
+                        t('pipelineDefinitionList.stepFieldImplLabel')
+                      }}</label>
+                      <el-select
+                        v-if="stepImplOptions.length > 0"
+                        v-model="row.stepType"
+                        :placeholder="t('pipelineDefinitionList.stepFieldImplPlaceholder')"
+                        filterable
+                        allow-create
+                        default-first-option
+                        clearable
+                        class="step-field__input"
+                      >
+                        <el-option
+                          v-for="impl in stepImplOptions"
+                          :key="impl"
+                          :label="impl"
+                          :value="impl"
+                        />
+                      </el-select>
+                      <el-input
+                        v-else
+                        v-model="row.stepType"
+                        :placeholder="t('pipelineDefinitionList.stepFieldImplPlaceholder')"
+                        class="step-field__input"
+                      />
+                    </div>
+                  </template>
                 </div>
               </div>
             </div>
@@ -425,10 +468,24 @@
   // 9-stages 字典 + step impl 字典(BE 维护,FE 首次加载缓存。两个接口都 permitAll-style 缓存稳)
   const stagesMap = ref<PipelineStagesMap>({})
   const stepImplOptions = ref<string[]>([])
+  const advancedOpen = ref<Set<number>>(new Set())
+  function toggleAdvanced(i: number) {
+    const next = new Set(advancedOpen.value)
+    if (next.has(i)) next.delete(i)
+    else next.add(i)
+    advancedOpen.value = next
+  }
   const stageOptionsForCurrent = computed<string[]>(() => {
     const pt = form.pipelineType || 'IMPORT'
     return stagesMap.value[pt] ?? []
   })
+  /** 命名约定 impl_code 含 stage 名(如 ExportPrepareStep / ImportValidateStep) → 选 stage 后挑唯一匹配的 impl */
+  function pickDefaultImpl(stage: string): string {
+    if (!stage || stepImplOptions.value.length === 0) return ''
+    const needle = stage.toLowerCase()
+    const matches = stepImplOptions.value.filter((c) => c.toLowerCase().includes(needle))
+    return matches.length === 1 ? matches[0] : ''
+  }
   onMounted(() => {
     fetchPipelineStages()
       .then((m) => (stagesMap.value = m || {}))
@@ -759,7 +816,7 @@
    * 用户后续手动改的不再覆盖。
    */
   function onStageChange(
-    row: { stepCode: string; stepName: string; stageCode: string },
+    row: { stepCode: string; stepName: string; stageCode: string; stepType: string },
     stage: string,
   ) {
     const old = row.stageCode
@@ -767,10 +824,14 @@
     if (!stage) return
     const pt = (form.pipelineType || 'IMPORT').toUpperCase()
     const auto = `${pt}_${stage}`
-    // 用户没改过(空 OR 跟上一次自动值一致)才覆盖
+    // 用户没改过(空 OR 跟上一次自动值一致)才覆盖,避免覆盖用户手动定制
     const prevAuto = old ? `${pt}_${old}` : ''
     if (!row.stepCode || row.stepCode === prevAuto) row.stepCode = auto
     if (!row.stepName || row.stepName === prevAuto) row.stepName = auto
+    if (!row.stepType) {
+      const defImpl = pickDefaultImpl(stage)
+      if (defImpl) row.stepType = defImpl
+    }
   }
 
   function removeStep(index: number) {
@@ -919,9 +980,40 @@
   .step-field__input {
     width: 100%;
   }
+  .step-field__required {
+    color: var(--el-color-danger, #f56c6c);
+    margin-left: 2px;
+  }
   /* description 占满一整行 */
   .step-field--wide {
     grid-column: 1 / -1;
+  }
+  /* 自动生成 summary:灰底圆角条,展示选 stage 后系统补出的 stepCode/impl,免用户展开 */
+  .step-summary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 12px;
+    background: var(--color-bg-subtle, #f5f7fa);
+    border-radius: 6px;
+    font-size: 12px;
+    color: var(--color-text-secondary);
+  }
+  .step-summary__item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .step-summary__k {
+    opacity: 0.8;
+  }
+  .step-summary code {
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    color: var(--color-text-primary);
+    background: var(--color-bg-card, #fff);
+    padding: 1px 6px;
+    border-radius: 4px;
   }
 
   .steps-preview {
