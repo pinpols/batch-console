@@ -131,6 +131,19 @@ html.dark .mobile-layout {
   opacity: 0.6;
 }
 
+/* iOS 列表触底加载指示行:loadMore in-flight 时显示「加载更多…」,无更多时显示「没有更多了」。
+   保持简洁,不显示 spinner,iOS 用户对触底加载有预期不需要重提示 */
+.m-infinite {
+  text-align: center;
+  padding: 20px 16px;
+  min-height: 44px;
+}
+
+.m-infinite__text {
+  font-size: 13px;
+  color: var(--ios-label-tertiary);
+}
+
 /* iOS 标题旁小图标按钮:用于「搜索 / 设置 / 添加」入口
    外形跟 nav bar __btn 类似,但放在 page 内容流里(.m-page__header 右侧) */
 .m-page__title-action {

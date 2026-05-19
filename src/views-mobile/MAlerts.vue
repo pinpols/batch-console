@@ -67,6 +67,12 @@
             <span class="m-card__meta-key">{{ t('mobile.alerts.lastSeen') }}</span>
             {{ fmt(row.lastSeenAt) }}
           </div>
+          <div v-if="row.traceId">
+            <span class="m-card__meta-key">traceId</span>
+            <span class="m-copy-text" @click.stop="copy(row.traceId, 'traceId')">{{
+              row.traceId
+            }}</span>
+          </div>
         </div>
         <div v-if="row.traceId" class="m-card__actions">
           <button
@@ -99,6 +105,7 @@
   import { useAutoRefresh } from '@/composables/useAutoRefresh'
   import { REFRESH_INTERVAL_WARM_MS } from '@/layout-mobile/composables/refreshIntervals'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
+  import { useCopy } from '@/composables/useCopy'
   import MPullRefresh from '@/layout-mobile/MPullRefresh.vue'
   import MSkeleton from '@/layout-mobile/MSkeleton.vue'
   import MSearchBar from '@/layout-mobile/MSearchBar.vue'
@@ -108,6 +115,7 @@
 
   const { t, te } = useI18n({ useScope: 'global' })
   const tenant = useTenantStore()
+  const { copy } = useCopy()
   const loading = ref(false)
   const rows = ref<ConsoleAlertEventResponse[]>([])
   const filter = ref<'all' | 'open' | 'acked' | 'closed'>('open')

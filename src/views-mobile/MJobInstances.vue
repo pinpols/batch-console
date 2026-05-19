@@ -8,6 +8,15 @@
             {{ t('mobile.jobs.summary', { total, page }) }}
           </div>
         </div>
+        <button
+          type="button"
+          class="m-page__title-action"
+          :class="{ 'm-page__title-action--active': searchOpen }"
+          :aria-label="t('mobile.common.search')"
+          @click="toggleSearch"
+        >
+          <el-icon><Search /></el-icon>
+        </button>
       </div>
 
       <!-- 4 状态 tab + jobCode 搜索栏,跟 告警/Worker/审批 一致 -->
@@ -30,6 +39,8 @@
       </div>
 
       <MSearchBar
+        v-if="searchOpen"
+        ref="searchBarRef"
         :model-value="query.jobCode ?? ''"
         :placeholder="t('mobile.jobs.placeholderJobCode')"
         @update:model-value="onJobCodeInput"
@@ -64,7 +75,11 @@
             {{ resolveEnumLabel('instanceStatus', row.instanceStatus) }}
           </span>
         </div>
-        <div class="m-card__sub">{{ row.instanceNo }}</div>
+        <div class="m-card__sub">
+          <span class="m-copy-text" @click.stop="copy(row.instanceNo, 'instanceNo')">{{
+            row.instanceNo
+          }}</span>
+        </div>
         <div class="m-card__meta">
           <div>
             <span class="m-card__meta-key">{{ t('mobile.jobs.bizDate') }}</span
@@ -109,27 +124,23 @@
         </div>
       </div>
 
-      <div v-if="total > query.pageSize" class="m-page__header" style="justify-content: center">
-        <el-pagination
-          small
-          background
-          layout="prev, pager, next"
-          :total="total"
-          :current-page="page"
-          :page-size="query.pageSize"
-          @current-change="onPageChange"
-        />
+      <!-- 触底自动加载 sentinel:IntersectionObserver 监听这个 div 进入视口 → 加载下一页 -->
+      <div v-if="rows.length > 0" ref="bottomSentinelRef" class="m-infinite">
+        <span v-if="loadingMore" class="m-infinite__text">{{
+          t('mobile.common.loadingMore')
+        }}</span>
+        <span v-else-if="!hasMore" class="m-infinite__text">{{ t('mobile.common.noMore') }}</span>
       </div>
     </div>
   </MPullRefresh>
 </template>
 
 <script setup lang="ts">
-  import { computed, reactive, ref } from 'vue'
+  import { computed, nextTick, reactive, ref, watch } from 'vue'
   import { useTenantReload } from '@/composables/useTenantReload'
   import { useRoute, useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
-  import { Refresh } from '@element-plus/icons-vue'
+  import { Search } from '@element-plus/icons-vue'
   import { ElMessage } from 'element-plus'
   import { confirmActionSheet } from '@/layout-mobile/MActionSheet'
   import { useTenantStore } from '@/stores/tenant'
@@ -137,6 +148,7 @@
   import MPullRefresh from '@/layout-mobile/MPullRefresh.vue'
   import MSkeleton from '@/layout-mobile/MSkeleton.vue'
   import MSearchBar from '@/layout-mobile/MSearchBar.vue'
+  import { useCopy } from '@/composables/useCopy'
   import { instanceApi } from '@/api/instance'
   import type { ConsoleJobInstanceResponse } from '@/types/console-api'
 
@@ -153,6 +165,7 @@
   }
 
   const tenant = useTenantStore()
+  const { copy } = useCopy()
   const loading = ref(false)
   const rows = ref<ConsoleJobInstanceResponse[]>([])
   const total = ref(0)
@@ -226,11 +239,13 @@
     }
   }
 
+  // load() = 重置:回第 1 页并替换 rows;loadMore() = 追加
   async function load() {
     loading.value = true
     try {
+      page.value = 1
       query.tenantId = tenant.tenantId
-      query.page = page.value
+      query.page = 1
       const res = await instanceApi.list(query)
       rows.value = res.records
       total.value = res.total
@@ -240,6 +255,45 @@
       loading.value = false
     }
   }
+
+  const loadingMore = ref(false)
+  const hasMore = computed(() => rows.value.length < total.value)
+
+  async function loadMore() {
+    if (loadingMore.value || loading.value || !hasMore.value) return
+    loadingMore.value = true
+    try {
+      query.tenantId = tenant.tenantId
+      query.page = page.value + 1
+      const res = await instanceApi.list(query)
+      // 追加去重(防止 BE 返回顺序变了导致重复 id)
+      const known = new Set(rows.value.map((r) => r.id))
+      const fresh = res.records.filter((r) => !known.has(r.id))
+      rows.value.push(...fresh)
+      total.value = res.total
+      page.value += 1
+    } catch {
+      /* 单次失败不刷状态,下次触底再重试 */
+    } finally {
+      loadingMore.value = false
+    }
+  }
+
+  // IntersectionObserver:sentinel 进入视口 → 触发 loadMore
+  const bottomSentinelRef = ref<HTMLElement | null>(null)
+  let io: IntersectionObserver | null = null
+  watch(bottomSentinelRef, (el, _old, onCleanup) => {
+    io?.disconnect()
+    if (!el) return
+    io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) loadMore()
+      },
+      { rootMargin: '200px' },
+    )
+    io.observe(el)
+    onCleanup(() => io?.disconnect())
+  })
 
   function openDetail(row: ConsoleJobInstanceResponse) {
     router.push(`/m/jobs/${row.id}`)
@@ -262,9 +316,22 @@
     }, 250)
   }
 
-  function onPageChange(p: number) {
-    page.value = p
-    load()
+  const searchOpen = ref(false)
+  const searchBarRef = ref<{ focus: () => void } | null>(null)
+  async function toggleSearch() {
+    if (searchOpen.value) {
+      // 收起 → 清空 keyword 并立即重查
+      if (query.jobCode) {
+        query.jobCode = ''
+        page.value = 1
+        load()
+      }
+      searchOpen.value = false
+    } else {
+      searchOpen.value = true
+      await nextTick()
+      searchBarRef.value?.focus()
+    }
   }
 
   // 重试 = 构造性,直接执行 + toast(终止才确认 — 真破坏性)
