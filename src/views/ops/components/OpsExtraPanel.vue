@@ -3,7 +3,6 @@
     <div class="section-toolbar">
       <span class="u-flex-1" />
       <el-button
-        type="primary"
         :icon="Refresh"
         :loading="extraLoading || refresh.loading.value"
         @click="onRefresh"
@@ -46,7 +45,7 @@
 </template>
 
 <script setup lang="ts">
-  import { watch } from 'vue'
+  import { onMounted, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { Refresh } from '@element-plus/icons-vue'
   import { RouterLink } from 'vue-router'
@@ -92,6 +91,14 @@
       await waitParentLoadDone()
     })
   }
+
+  // 挂载时主动加载:用户直接进 ?tab=extra 时,父级 loadCharts 还没跑,
+  // slaReport / tenantUsage / gauge 都没数据 → 卡片空白。这里触发一次。
+  onMounted(() => {
+    if (!props.slaReport && !props.tenantUsage) {
+      emit('loadExtra')
+    }
+  })
 </script>
 
 <style scoped>

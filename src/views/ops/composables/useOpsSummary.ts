@@ -43,7 +43,8 @@ export function useOpsSummary() {
   const alertSeverityPieOption = ref<Record<string, unknown>>({})
   const outboxHealthPieOption = ref<Record<string, unknown>>({})
   // 扩展(extra): gauge / 单值
-  const slaGaugeOption = ref<Record<string, unknown>>({})
+  // 初始 emptyOption('加载中…'),避免 loadCharts 还没跑完时 VChart 拿到 {} 渲染空白卡
+  const slaGaugeOption = ref<Record<string, unknown>>(emptyOption('加载中…'))
 
   // 用品牌主题(echarts.ts 里 registerTheme 注册),不再用 echarts 内置 'dark'。
   // 跟 tokens.css 的 --color-primary / 网格灰阶 / SectionCard 暗底配色都对得上。
@@ -236,10 +237,13 @@ export function useOpsSummary() {
 
   async function loadExtraPanels() {
     extraLoading.value = true
+    // SLA 达标率 gauge 依赖 dashboard bundle,与 SLA 报告 / 租户用量 一起刷,
+    // 避免「点了 extra 刷新但 gauge 不动」的不一致体验
     try {
       const [sla, usage] = await Promise.all([
         getDashboardSlaReport(tenant.tenantId).catch(() => null),
         getDashboardTenantUsage(tenant.tenantId).catch(() => null),
+        loadCharts().catch(() => undefined),
       ])
       slaReport.value = sla
       tenantUsage.value = usage
