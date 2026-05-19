@@ -201,18 +201,26 @@ html.dark .mobile-layout {
   opacity: 0.4;
 }
 
-/* ── iOS 卡片:elevated white + 微阴影,没有 border ─────────── */
+/* ── iOS 卡片:elevated white + 微阴影 + Liquid Glass 顶部高光 ─── */
 .m-card {
   background: var(--ios-bg-elevated);
   border: none;
   border-radius: 14px;
   padding: 14px 16px;
-  box-shadow: 0 1px 2px rgb(0 0 0 / 4%);
+  /* 1) 内顶 0.5px 白高光 → 玻璃顶边折射感
+     2) 内左 0.5px 极淡 → 侧面边缘
+     3) 外底阴影 → 浮起
+     不能用 backdrop-filter(.m-card 是实色不透明,但 inset highlight 仍能给出玻璃感) */
+  box-shadow:
+    inset 0 0.5px 0 rgb(255 255 255 / 70%),
+    0 1px 2px rgb(0 0 0 / 4%),
+    0 0.5px 0 rgb(0 0 0 / 5%);
 }
 
-/* 暗色模式卡片:全黑背景拉开层级,1px 边框 + 深阴影 */
+/* 暗色:更强的顶高光对比黑底,边缘 rim glow */
 html.dark .m-card {
   box-shadow:
+    inset 0 0.5px 0 rgb(255 255 255 / 12%),
     0 0 0 0.5px rgb(255 255 255 / 6%),
     0 2px 8px rgb(0 0 0 / 40%);
 }
@@ -331,11 +339,15 @@ html.dark .m-copy-text {
   background: var(--ios-bg-elevated);
   border-radius: 14px;
   overflow: hidden;
-  box-shadow: 0 1px 2px rgb(0 0 0 / 4%);
+  box-shadow:
+    inset 0 0.5px 0 rgb(255 255 255 / 70%),
+    0 1px 2px rgb(0 0 0 / 4%),
+    0 0.5px 0 rgb(0 0 0 / 5%);
 }
 
 html.dark .m-list {
   box-shadow:
+    inset 0 0.5px 0 rgb(255 255 255 / 12%),
     0 0 0 0.5px rgb(255 255 255 / 6%),
     0 2px 8px rgb(0 0 0 / 40%);
 }
@@ -428,11 +440,15 @@ html.dark .m-list {
   text-decoration: none;
   color: inherit;
   transition: transform 0.12s ease-out;
-  box-shadow: 0 1px 2px rgb(0 0 0 / 4%);
+  box-shadow:
+    inset 0 0.5px 0 rgb(255 255 255 / 70%),
+    0 1px 2px rgb(0 0 0 / 4%),
+    0 0.5px 0 rgb(0 0 0 / 5%);
 }
 
 html.dark .m-metric {
   box-shadow:
+    inset 0 0.5px 0 rgb(255 255 255 / 12%),
     0 0 0 0.5px rgb(255 255 255 / 6%),
     0 2px 8px rgb(0 0 0 / 40%);
 }
