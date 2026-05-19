@@ -253,6 +253,7 @@
     channelCode: [
       rules.required(t('notificationChannelsTab.ruleCode')),
       rules.code(t('notificationChannelsTab.ruleCodePattern')),
+      rules.maxLength(128),
     ],
     channelName: [rules.required(t('notificationChannelsTab.ruleName')), rules.maxLength(128)],
     channelType: [rules.required(t('notificationChannelsTab.ruleType'), 'change')],

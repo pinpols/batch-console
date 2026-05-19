@@ -113,12 +113,19 @@
           />
         </el-form-item>
         <el-form-item :label="t('notificationRulesTab.fieldChannelId')" prop="channelId">
-          <el-input-number
+          <el-select
             v-model="ruleForm.channelId"
-            :min="1"
-            :placeholder="t('notificationRulesTab.channelIdPlaceholder')"
             class="query-w-full"
-          />
+            filterable
+            :placeholder="t('notificationRulesTab.channelIdPlaceholder')"
+          >
+            <el-option
+              v-for="c in channelOptions"
+              :key="c.id"
+              :label="`${c.code}${c.name ? ' / ' + c.name : ''} (#${c.id})`"
+              :value="c.id"
+            />
+          </el-select>
         </el-form-item>
         <el-form-item :label="t('notificationCommon.enabledLabel')" prop="enabled">
           <el-switch v-model="ruleForm.enabled" />
@@ -147,6 +154,7 @@
   import { useFormValidate, rules as r } from '@/composables/useFormValidate'
   import { Plus } from '@element-plus/icons-vue'
   import {
+    listNotificationChannels,
     listNotificationRules,
     createNotificationRule,
     updateNotificationRule,
@@ -177,6 +185,24 @@
     () => !!(ruleFilterApplied.keyword.trim() || ruleFilterApplied.enabled !== undefined),
   )
   const ruleForm = reactive({ ruleName: '', eventTypes: '', channelId: 1, enabled: true })
+  // 通知渠道下拉源:避免手输不存在的 channelId 形成悬挂引用
+  const channelOptions = ref<Array<{ id: number; code: string; name: string }>>([])
+  async function loadChannelOptions() {
+    try {
+      const data = await listNotificationChannels(tenant.tenantId)
+      const list = Array.isArray(data) ? (data as Record<string, unknown>[]) : []
+      channelOptions.value = list
+        .map((c) => ({
+          id: Number(c.id ?? 0),
+          code: String(c.channelCode ?? ''),
+          name: String(c.channelName ?? ''),
+        }))
+        .filter((c) => c.id > 0)
+    } catch {
+      channelOptions.value = []
+    }
+  }
+  loadChannelOptions()
 
   const { formRef: ruleFormRef, validate: validateRuleForm } = useFormValidate()
   const ruleFormRules: FormRules = {
