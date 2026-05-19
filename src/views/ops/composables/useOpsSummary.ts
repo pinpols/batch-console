@@ -10,6 +10,8 @@ import {
   buildLineOption,
   buildStackBarOption,
   buildHorizontalTopNOption,
+  buildPieOption,
+  buildGaugeOption,
   emptyOption,
 } from './useChartOptions'
 
@@ -27,11 +29,21 @@ export function useOpsSummary() {
 
   // ---- chart options ----
   const chartsLoading = ref(false)
+  // 趋势(trend): 折线/堆叠柱,看时间序列上的变化
   const jobsTrendOption = ref<Record<string, unknown>>({})
   const alertsTrendOption = ref<Record<string, unknown>>({})
-  const outboxTrendOption = ref<Record<string, unknown>>({})
-  const alertTypeTopNOption = ref<Record<string, unknown>>({})
+  // 历史命名遗留(变量名 outbox 实际显示 SLA),保留为兼容 prop 名;新代码用 slaTrendOption。
+  const slaTrendOption = ref<Record<string, unknown>>({})
+  const failRateTrendOption = ref<Record<string, unknown>>({})
+  // 分布(distribution): TopN 横向柱 / 饼图,看维度上的占比
+  const triggerTypeTopNOption = ref<Record<string, unknown>>({})
   const workerLoadTopNOption = ref<Record<string, unknown>>({})
+  const jobStatusPieOption = ref<Record<string, unknown>>({})
+  const workerStatusPieOption = ref<Record<string, unknown>>({})
+  const alertSeverityPieOption = ref<Record<string, unknown>>({})
+  const outboxHealthPieOption = ref<Record<string, unknown>>({})
+  // 扩展(extra): gauge / 单值
+  const slaGaugeOption = ref<Record<string, unknown>>({})
 
   // 用品牌主题(echarts.ts 里 registerTheme 注册),不再用 echarts 内置 'dark'。
   // 跟 tokens.css 的 --color-primary / 网格灰阶 / SectionCard 暗底配色都对得上。

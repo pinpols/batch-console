@@ -119,6 +119,70 @@ export function buildStackBarOption(params: {
   }
 }
 
+export function buildPieOption(params: {
+  items: { name: string; value: number; color?: string }[]
+  /** ring 留空 → 实心饼;给值 → 环形 */
+  innerRadius?: string
+}) {
+  return {
+    backgroundColor: 'transparent',
+    tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+    legend: { bottom: 4, itemWidth: 10, itemHeight: 10, textStyle: { fontSize: 11 } },
+    series: [
+      {
+        type: 'pie',
+        radius: params.innerRadius ? [params.innerRadius, '70%'] : '65%',
+        center: ['50%', '46%'],
+        avoidLabelOverlap: true,
+        label: { show: false },
+        emphasis: { label: { show: true, fontSize: 12, fontWeight: 600 } },
+        data: params.items.map((it) => ({
+          name: it.name,
+          value: it.value,
+          itemStyle: it.color ? { color: it.color } : undefined,
+        })),
+      },
+    ],
+  }
+}
+
+export function buildGaugeOption(params: {
+  value: number
+  max?: number
+  unit?: string
+  color?: string
+}) {
+  const v = Math.max(0, Math.min(params.value, params.max ?? 100))
+  const color = params.color ?? '#52c41a'
+  return {
+    backgroundColor: 'transparent',
+    series: [
+      {
+        type: 'gauge',
+        startAngle: 200,
+        endAngle: -20,
+        min: 0,
+        max: params.max ?? 100,
+        progress: { show: true, width: 14, itemStyle: { color } },
+        axisLine: { lineStyle: { width: 14, color: [[1, 'rgba(128,128,128,0.18)']] } },
+        axisTick: { show: false },
+        splitLine: { show: false },
+        axisLabel: { distance: 18, fontSize: 10 },
+        pointer: { show: false },
+        anchor: { show: false },
+        detail: {
+          valueAnimation: true,
+          formatter: `{value}${params.unit ?? ''}`,
+          fontSize: 22,
+          fontWeight: 700,
+          offsetCenter: [0, 0],
+        },
+        data: [{ value: Math.round(v * 10) / 10 }],
+      },
+    ],
+  }
+}
+
 export function buildHorizontalTopNOption(items: { name: string; value: number }[], color: string) {
   const rows = [...items].sort((a, b) => b.value - a.value).slice(0, 10)
   const names = rows.map((x) => x.name).reverse()

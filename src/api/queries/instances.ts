@@ -6,8 +6,10 @@ export interface InstanceQueryParams {
   tenantId: string
   /** partial match */
   jobCode?: string
-  /** exact match */
+  /** exact match,instanceStatuses 非空时被忽略 */
   instanceStatus?: string
+  /** CSV 多状态(如 "FAILED,PARTIAL_FAILED"),优先于 instanceStatus 单值 */
+  instanceStatuses?: string
   /** ISO date range start */
   startDate?: string
   /** ISO date range end */
@@ -32,7 +34,11 @@ export async function queryJobInstances(
     pageNo: query.page,
     pageSize: query.pageSize,
     ...(query.jobCode ? { jobCode: query.jobCode } : {}),
-    ...(query.instanceStatus ? { instanceStatus: query.instanceStatus } : {}),
+    ...(query.instanceStatuses
+      ? { instanceStatuses: query.instanceStatuses }
+      : query.instanceStatus
+        ? { instanceStatus: query.instanceStatus }
+        : {}),
     ...(query.startDate ? { startDate: query.startDate } : {}),
     ...(query.endDate ? { endDate: query.endDate } : {}),
     ...(query.traceId ? { traceId: query.traceId } : {}),
