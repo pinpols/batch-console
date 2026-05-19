@@ -267,22 +267,14 @@
     load()
   }
 
+  // 重试 = 构造性,直接执行 + toast(终止才确认 — 真破坏性)
   async function retry(row: ConsoleJobInstanceResponse) {
     try {
-      await confirmActionSheet(
-        `${t('mobile.jobs.retry')} ${row.instanceNo}?`,
-        t('mobile.jobs.retry'),
-        {
-          type: 'warning',
-          confirmButtonText: t('common.confirm'),
-          cancelButtonText: t('common.cancel'),
-        },
-      )
       await instanceApi.retry(row.instanceNo, tenant.tenantId, row.jobCode, row.bizDate)
       ElMessage.success(t('mobile.jobs.retryToast'))
       await load()
     } catch {
-      /* cancelled */
+      /* api 失败已由 interceptor 处理 */
     }
   }
 

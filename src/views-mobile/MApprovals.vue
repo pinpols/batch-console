@@ -3,6 +3,15 @@
     <div class="m-page">
       <div class="m-page__header">
         <div class="m-page__title">{{ t('mobile.approvals.title') }}</div>
+        <button
+          type="button"
+          class="m-page__title-action"
+          :class="{ 'm-page__title-action--active': searchOpen }"
+          :aria-label="t('mobile.common.search')"
+          @click="toggleSearch"
+        >
+          <el-icon><Search /></el-icon>
+        </button>
       </div>
 
       <!-- 4 tab + 搜索框,与 告警/Worker 一套交互 -->
@@ -24,7 +33,12 @@
         </button>
       </div>
 
-      <MSearchBar v-model="keyword" :placeholder="t('mobile.approvals.searchPlaceholder')" />
+      <MSearchBar
+        v-if="searchOpen"
+        ref="searchBarRef"
+        v-model="keyword"
+        :placeholder="t('mobile.approvals.searchPlaceholder')"
+      />
 
       <MSkeleton v-if="loading && filtered.length === 0" :count="3" />
       <div v-else-if="filtered.length === 0" class="m-empty">
@@ -75,10 +89,10 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, ref } from 'vue'
+  import { computed, nextTick, ref } from 'vue'
   import { useTenantReload } from '@/composables/useTenantReload'
   import { useI18n } from 'vue-i18n'
-  import { Refresh } from '@element-plus/icons-vue'
+  import { Search } from '@element-plus/icons-vue'
   import { ElMessage } from 'element-plus'
   import { confirmActionSheet } from '@/layout-mobile/MActionSheet'
   import { useTenantStore } from '@/stores/tenant'
@@ -193,22 +207,14 @@
     }
   }
 
+  // 通过 = 构造性操作,直接执行 + toast,不弹二次确认(iOS 习惯)
   async function approve(row: ConsoleApprovalCommandResponse) {
     try {
-      await confirmActionSheet(
-        `${t('mobile.approvals.approve')} ${row.approvalNo}?`,
-        t('mobile.approvals.approve'),
-        {
-          type: 'info',
-          confirmButtonText: t('common.confirm'),
-          cancelButtonText: t('common.cancel'),
-        },
-      )
       await approveOne(row.approvalNo, { tenantId: tenant.tenantId })
       ElMessage.success(t('mobile.approvals.approvedToast'))
       await load()
     } catch {
-      /* cancelled */
+      /* api 错误已由 interceptor 弹 toast */
     }
   }
 

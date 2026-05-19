@@ -112,7 +112,7 @@
 </script>
 
 <style scoped>
-  /* iOS Tab Bar:毛玻璃 + 极细顶分隔线 + 跟随 home indicator 留白 */
+  /* iOS Tab Bar:毛玻璃 + 极细顶分隔线 + 跟随 home indicator 留白 + 顶向阴影抬起 */
   .mobile-tab-bar {
     position: fixed;
     left: 0;
@@ -124,13 +124,18 @@
     backdrop-filter: saturate(180%) blur(24px);
     -webkit-backdrop-filter: saturate(180%) blur(24px);
     border-top: 0.5px solid rgb(60 60 67 / 18%);
+    box-shadow: 0 -2px 12px rgb(0 0 0 / 6%);
     padding-bottom: env(safe-area-inset-bottom, 0);
     z-index: 100;
   }
 
+  /* 暗色:全黑底容易跟内容糊在一起,加更明显顶分隔 + 强阴影 + 顶部高光线 */
   :global(html.dark) .mobile-tab-bar {
-    background: color-mix(in srgb, #1c1c1e 78%, transparent 22%);
-    border-top-color: rgb(84 84 88 / 60%);
+    background: color-mix(in srgb, #1c1c1e 82%, transparent 18%);
+    border-top: 0.5px solid rgb(84 84 88 / 75%);
+    box-shadow:
+      0 -1px 0 rgb(255 255 255 / 4%),
+      0 -8px 24px rgb(0 0 0 / 50%);
   }
 
   .mobile-tab {

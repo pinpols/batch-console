@@ -84,16 +84,16 @@
 </script>
 
 <style scoped>
-  /* iOS SearchBar:fill-tertiary 灰底 / 圆角 10px / 左 search icon / 右 clear x;
-     focus 时 2px iOS-blue ring,跟 .el-input__wrapper 风格一致 */
+  /* iOS SearchBar:跟 .m-tabs 视觉对齐 — 同 fill-tertiary 底、同 12px 圆角、同 40px 总高,
+     上下并排时形成完整的「灰底卡组」分组列表感。focus 时 2px iOS-blue ring */
   .m-searchbar {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 0 10px;
-    min-height: 36px;
+    padding: 0 12px;
+    min-height: 40px;
     background: var(--ios-fill-tertiary);
-    border-radius: 10px;
+    border-radius: 12px;
     transition: box-shadow 0.15s ease;
   }
 

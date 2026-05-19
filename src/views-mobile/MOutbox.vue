@@ -60,7 +60,6 @@
   import { useI18n } from 'vue-i18n'
   import { Refresh } from '@element-plus/icons-vue'
   import { ElMessage } from 'element-plus'
-  import { confirmActionSheet } from '@/layout-mobile/MActionSheet'
   import { useTenantStore } from '@/stores/tenant'
   import { useAutoRefresh } from '@/composables/useAutoRefresh'
   import { REFRESH_INTERVAL_COLD_MS } from '@/layout-mobile/composables/refreshIntervals'
@@ -122,20 +121,8 @@
     }
   }
 
+  // 重投 = 构造性,直接执行 + toast
   async function doRepublish(row: ConsoleOutboxRetryLogResponse) {
-    try {
-      await confirmActionSheet(
-        t('mobile.outbox.republishConfirmText', { id: row.id }),
-        t('mobile.outbox.republishConfirmTitle'),
-        {
-          type: 'warning',
-          confirmButtonText: t('common.confirm'),
-          cancelButtonText: t('common.cancel'),
-        },
-      )
-    } catch {
-      return
-    }
     busyId.value = row.id
     try {
       await republishOutbox(tenant.tenantId, [row.id])

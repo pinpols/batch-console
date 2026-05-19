@@ -1,13 +1,28 @@
 <template>
   <MPullRefresh :on-refresh="load">
     <div class="m-page">
-      <!-- 紧凑标题:tab 已经分档显示 count,subtitle 重复信息删掉 -->
+      <!-- 紧凑标题 + 搜索按钮(默认收起,点开 inline 显示)-->
       <div class="m-page__header">
         <div class="m-page__title">{{ t('mobile.alerts.title') }}</div>
+        <button
+          type="button"
+          class="m-page__title-action"
+          :class="{ 'm-page__title-action--active': searchOpen }"
+          :aria-label="t('mobile.common.search')"
+          @click="toggleSearch"
+        >
+          <el-icon><Search /></el-icon>
+        </button>
       </div>
 
+      <MSearchBar
+        v-if="searchOpen"
+        ref="searchBarRef"
+        v-model="keyword"
+        :placeholder="t('mobile.alerts.searchPlaceholder')"
+      />
+
       <!-- 共享 .m-tabs / .m-tab / .m-tab__badge — 跟 MWorkers 一套样式 -->
-      <MSearchBar v-model="keyword" :placeholder="t('mobile.alerts.searchPlaceholder')" />
       <div class="m-tabs" role="tablist">
         <button
           v-for="opt in filterOptions"
@@ -74,8 +89,9 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, ref } from 'vue'
+  import { computed, nextTick, ref } from 'vue'
   import { useI18n } from 'vue-i18n'
+  import { Search } from '@element-plus/icons-vue'
   import { ElMessage } from 'element-plus'
   import { confirmActionSheet } from '@/layout-mobile/MActionSheet'
   import { useTenantStore } from '@/stores/tenant'
@@ -143,6 +159,20 @@
   }
 
   const keyword = ref('')
+  const searchOpen = ref(false)
+  const searchBarRef = ref<{ focus: () => void } | null>(null)
+
+  async function toggleSearch() {
+    if (searchOpen.value) {
+      // 收起时清空 keyword,避免「看不见的过滤器」
+      keyword.value = ''
+      searchOpen.value = false
+    } else {
+      searchOpen.value = true
+      await nextTick()
+      searchBarRef.value?.focus()
+    }
+  }
 
   // tabs(状态)+ keyword(title/serviceName/alertType/traceId 模糊)
   const filtered = computed(() => {
