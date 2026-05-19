@@ -77,6 +77,33 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/console/system/maintenance': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Maintenance mode status (always 200, no auth)
+     * @description Returns the current maintenance/degradation state so the frontend can:
+     *     1. Render a global banner with `message` + `etaAt` when `enabled=true`.
+     *     2. Switch to read-only UI (disable write buttons) when `readOnly=true`.
+     *     3. Auto-recover by polling (30s) and clearing banner when `enabled=false`.
+     *
+     *     This endpoint is whitelisted by `MaintenanceModeFilter`, so it returns 200 even
+     *     during maintenance — otherwise the frontend would have no way to detect recovery.
+     *
+     */
+    get: operations['getMaintenanceStatus']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/console/auth/check': {
     parameters: {
       query?: never
@@ -1747,6 +1774,57 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/console/admin/test-data': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    /**
+     * Cleanup e2e/test data by prefix (admin-only, cascading delete across 11 tables)
+     * @description 按 prefix 级联清理测试数据,解决 e2e 测试只 INSERT 不 DELETE 导致业务表 60-85% 是
+     *     e2e-* 残留的问题。通常由 playwright globalTeardown 自动调用,也可运维手动触发。
+     *
+     *     **安全约束**:
+     *     - ROLE_ADMIN only
+     *     - prefix 强制 `^[a-zA-Z][a-zA-Z0-9_-]{2,32}$` 正则(空 prefix / SQL 通配符 / 含
+     *       `'`/`;`/`%`/`_`/`\` 都 400)
+     *     - SQL LIKE 强制 `prefix-%`,只匹配 `prefix-xxx` 不会误删 `prefixer` 这种合法资源
+     *     - @Transactional 全表事务,任何一段失败整体回滚
+     *     - @AuditAction 留痕到 console_operation_audit
+     *
+     *     清理覆盖 11 张表(按 FK 反向):job_partition → job_instance → workflow_node →
+     *     workflow_edge → workflow_definition → job_definition → file_channel_config →
+     *     file_template_config → console_user_account → archive_policy → tenant。
+     *
+     */
+    delete: operations['cleanupTestData']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/queries/operation-audits': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Query console operation audits (general user-action audit, written by @AuditAction Aspect) */
+    get: operations['queryOperationAudits']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/console/queries/execution-logs': {
     parameters: {
       query?: never
@@ -2543,7 +2621,12 @@ export interface paths {
     put?: never
     /**
      * Create job bundle
-     * @description Creates one job definition and optional related workflow/file/alert/resource config in one backend transaction.
+     * @description Creates one job definition and optional related workflow/file/alert/resource config in
+     *     a single backend transaction. **Strict all-or-nothing**: if any spec fails to apply
+     *     the whole transaction is rolled back (no partial commits). The shared
+     *     `TenantConfigBatchInitRequest.strict` flag is forced to true on this path; the
+     *     unrelated ConfigSync path keeps `strict=false` and tolerates partial success.
+     *
      */
     post: operations['createJobBundle']
     delete?: never
@@ -2583,7 +2666,12 @@ export interface paths {
     put?: never
     /**
      * Import job bundle
-     * @description Imports one job bundle into one or more target tenants in one backend transaction.
+     * @description Imports one job bundle into one or more target tenants. Each target tenant runs in
+     *     its own backend transaction with **strict all-or-nothing** semantics — any spec
+     *     failure within a tenant rolls back that tenant's transaction. Other tenants are
+     *     independent (no cross-tenant rollback). The `TenantConfigBatchInitRequest.strict`
+     *     flag is forced to true on this path.
+     *
      */
     post: operations['importJobBundle']
     delete?: never
@@ -2952,6 +3040,52 @@ export interface paths {
      *
      */
     get: operations['getMetaBizTypes']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/meta/pipeline-stages': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Pipeline 9-stage whitelist by pipeline type
+     * @description Returns the canonical 9-stage pipeline whitelist keyed by pipeline type
+     *     (IMPORT / EXPORT / PROCESS / DISPATCH). Source-of-truth is
+     *     `ConfigPackageExcelValidator.STAGES_BY_TYPE`. Used by FE PipelineDefinitionList
+     *     step editor to render stageCode as dropdown.
+     *
+     */
+    get: operations['getMetaPipelineStages']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/meta/step-impls': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Registered step impl_code whitelist
+     * @description Returns the set of `impl_code` values registered in `step_registry`.
+     *     Pass `module` to filter by IMPORT / EXPORT / PROCESS / DISPATCH; omit to return all.
+     *
+     */
+    get: operations['getMetaStepImpls']
     put?: never
     post?: never
     delete?: never
@@ -4837,6 +4971,19 @@ export interface components {
       /** Format: int64 */
       data?: number
     }
+    MaintenanceStatus: {
+      /** @description Maintenance mode master switch */
+      enabled: boolean
+      /** @description When true, GET requests pass through but POST/PUT/PATCH/DELETE return 503 */
+      readOnly: boolean
+      /** @description User-facing reason; rendered verbatim in the FE banner */
+      message?: string | null
+      /** @description ISO-8601 estimated recovery timestamp; null when unknown */
+      etaAt?: string | null
+    }
+    CommonResponseMaintenanceStatus: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['MaintenanceStatus']
+    }
     CommonResponseWorkflowDefinitionDetailResponse: components['schemas']['CommonResponseBase'] & {
       data?: components['schemas']['WorkflowDefinitionDetailResponse']
     }
@@ -6521,6 +6668,70 @@ export interface components {
       /** Format: date-time */
       createdAt: string
     }
+    /** @description 通用控制台用户操作审计(@AuditAction Aspect 落库)。
+     *     字段顺序对齐 batch.console_operation_audit 表 + 将来 Kafka payload schema,
+     *     新增字段务必非必填 + 同步升 eventVersion。
+     *      */
+    ConsoleOperationAuditResponse: {
+      /** Format: int64 */
+      id: number
+      tenantId: string
+      /** @description alert / approval / job_instance / worker / auth / ... */
+      aggregateType: string
+      /** @description 资源 ID,字符串兼容数字 id 和 code */
+      aggregateId: string
+      /** @description alert.close / approval.approve / ...,与 FE 埋点 data-track 对齐 */
+      action: string
+      operatorId?: string | null
+      operatorRole?: string | null
+      /** @enum {string} */
+      result: 'SUCCESS' | 'FAILED'
+      errorCode?: string | null
+      errorMessage?: string | null
+      /** @description JSON 字符串(< 2KB),敏感操作 recordParams=false 时为 null */
+      params?: string | null
+      traceId?: string | null
+      requestId?: string | null
+      /** @description SHA-256 前 8 字节 */
+      ipHash?: string | null
+      uaHash?: string | null
+      /** Format: int32 */
+      eventVersion: number
+      /** Format: date-time */
+      createdAt: string
+    }
+    CommonResponseConsoleOperationAuditList: components['schemas']['CommonResponseBase'] & {
+      data?: {
+        /** Format: int64 */
+        total?: number
+        /** Format: int32 */
+        pageNo?: number
+        /** Format: int32 */
+        pageSize?: number
+        items?: components['schemas']['ConsoleOperationAuditResponse'][]
+      }
+    }
+    CommonResponseTestDataCleanupResult: components['schemas']['CommonResponseBase'] & {
+      /**
+       * @description 各表删除行数(键为表名,值为 affected rows)
+       * @example {
+       *       "job_partition": 0,
+       *       "job_instance": 201,
+       *       "workflow_node": 0,
+       *       "workflow_edge": 0,
+       *       "workflow_definition": 6,
+       *       "job_definition": 98,
+       *       "file_channel_config": 13,
+       *       "file_template_config": 10,
+       *       "console_user_account": 38,
+       *       "archive_policy": 20,
+       *       "tenant": 20
+       *     }
+       */
+      data?: {
+        [key: string]: number
+      }
+    }
     ConsoleSseEventResponse: {
       stream: string
       eventType: string
@@ -7435,6 +7646,26 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['CommonResponseConsoleAuthProfileResponse']
+        }
+      }
+    }
+  }
+  getMaintenanceStatus: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Maintenance status payload */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseMaintenanceStatus']
         }
       }
     }
@@ -10036,6 +10267,77 @@ export interface operations {
       }
     }
   }
+  cleanupTestData: {
+    parameters: {
+      query: {
+        /** @description 资源前缀(必须字母开头,3-33 字符,只含字母/数字/_/-) */
+        prefix: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Cleanup result, map of table → row count deleted */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseTestDataCleanupResult']
+        }
+      }
+      /** @description prefix validation failed */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description not ROLE_ADMIN */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  queryOperationAudits: {
+    parameters: {
+      query?: {
+        tenantId?: components['parameters']['TenantIdQuery']
+        pageNo?: components['parameters']['PageNoQuery']
+        pageSize?: components['parameters']['PageSizeQuery']
+        /** @description alert / approval / job_instance / worker / auth / api_key / outbox 等 */
+        aggregateType?: string
+        aggregateId?: string
+        /** @description 跟前端埋点 data-track 对齐(alert.close / approval.approve / ...) */
+        action?: string
+        operatorId?: string
+        result?: 'SUCCESS' | 'FAILED'
+        traceId?: string
+        startTime?: string
+        endTime?: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Operation audit list */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseConsoleOperationAuditList']
+        }
+      }
+    }
+  }
   queryExecutionLogs: {
     parameters: {
       query?: {
@@ -10578,6 +10880,8 @@ export interface operations {
         sortBy?: 'id' | 'duration'
         /** @description Minimum runtime threshold in seconds. Only returns instances running >= this value. */
         minDurationSeconds?: number
+        /** @description When true, only returns instances with deadline_at < now and still in active status (CREATED/WAITING/READY/RUNNING/PARTIAL_FAILED). Matches the slaBreaches metric on OpsSummary. */
+        slaBreached?: boolean
       }
       header?: never
       path?: never
@@ -11784,6 +12088,48 @@ export interface operations {
     requestBody?: never
     responses: {
       /** @description Biz type list */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseObject']
+        }
+      }
+    }
+  }
+  getMetaPipelineStages: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Map<pipelineType, List<stageCode>> */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseObject']
+        }
+      }
+    }
+  }
+  getMetaStepImpls: {
+    parameters: {
+      query?: {
+        module?: 'IMPORT' | 'EXPORT' | 'PROCESS' | 'DISPATCH'
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Step impl_code list */
       200: {
         headers: {
           [name: string]: unknown
