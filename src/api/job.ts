@@ -87,6 +87,14 @@ export interface JobBundleCreateRequest {
   bundle: JobBundlePayload
 }
 
+export interface JobBundleImportRequest {
+  tenantId: string
+  targetTenantIds: string[]
+  mode?: 'SKIP_EXISTING' | 'UPSERT'
+  dryRun?: boolean
+  bundle: JobBundlePayload
+}
+
 async function resolveJobDefinitionId(jobCode: string, tenantId: string) {
   // 传入 jobCode 让后端过滤（后端不支持时忽略该参数，回退到全量）
   const rows = await fetchAllPageItems<ConsoleJobDefinitionResponse>(
@@ -216,4 +224,7 @@ export const jobApi = {
 
   exportBundle: (tenantId: string, jobCode: string) =>
     get<Record<string, unknown>>('/api/console/jobs/bundle/export', { tenantId, jobCode }),
+
+  importBundle: (body: JobBundleImportRequest) =>
+    post<Record<string, unknown>>('/api/console/jobs/bundle/import', body),
 }

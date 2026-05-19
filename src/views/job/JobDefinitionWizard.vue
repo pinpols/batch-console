@@ -286,7 +286,7 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, onMounted, reactive, ref, watch } from 'vue'
+  import { computed, reactive, ref, watch } from 'vue'
   import { useRouter } from 'vue-router'
   import type { FormInstance, FormRules } from 'element-plus'
   import { ElMessage } from 'element-plus'
@@ -298,6 +298,7 @@
   import { workflowApi } from '@/api/workflow'
   import { governanceApi, type GovernanceAlertRoutingRow } from '@/api/governance'
   import { useTenantStore } from '@/stores/tenant'
+  import { useTenantReload } from '@/composables/useTenantReload'
   import type {
     ConsoleFileChannelResponse,
     ConsoleFileTemplateResponse,
@@ -440,7 +441,7 @@
     updatedAt: '',
   }))
 
-  onMounted(async () => {
+  useTenantReload(async () => {
     const [enums, queues] = await Promise.all([getMetaEnums(), getMetaQueues(tenant.tenantId)])
     executionModeOptions.value = enums.executionMode ?? []
     scheduleTypeOptions.value = enums.scheduleType ?? []
@@ -544,23 +545,27 @@
   }
 
   function buildBundle(): JobBundlePayload {
-    // 已有引用合并:由 id 携带的 ref 项 + 用户粘贴的新建 JSON
+    // 引用现有实体: 必须送完整 spec 字段(channelType/channelName/templateType/... 等),
+    // 不能只送 {id, code} —— TenantConfigInitApplyHandlers.fileChannelSpec/fileTemplateSpec/...
+    // 走 SpecHandler.upsertable() 路径,会读全字段做 upsert,缺字段直接 NPE / 持久化错列。
+    // 这里把下拉里选中的整条 response 透传(展开为 Record<string, unknown>),
+    // 由后端按 spec 字段名取用,缺失字段保留 null/undefined 不写。
     const channelRefs = selectedChannelIds.value
       .map((id) => channelOptions.value.find((c) => c.id === id))
       .filter((x): x is ConsoleFileChannelResponse => !!x)
-      .map((c) => ({ id: c.id, channelCode: c.channelCode }) as Record<string, unknown>)
+      .map((c) => ({ ...c }) as Record<string, unknown>)
     const templateRefs = selectedTemplateIds.value
       .map((id) => templateOptions.value.find((t) => t.id === id))
       .filter((x): x is ConsoleFileTemplateResponse => !!x)
-      .map((t) => ({ id: t.id, templateCode: t.templateCode }) as Record<string, unknown>)
+      .map((t) => ({ ...t }) as Record<string, unknown>)
     const workflowRefs = selectedWorkflowIds.value
       .map((id) => workflowOptions.value.find((w) => w.id === id))
       .filter((x): x is ConsoleWorkflowDefinitionResponse => !!x)
-      .map((w) => ({ id: w.id, workflowCode: w.workflowCode }) as Record<string, unknown>)
+      .map((w) => ({ ...w }) as Record<string, unknown>)
     const alertRoutingRefs = selectedAlertRoutingIds.value
       .map((id) => alertRoutingOptions.value.find((a) => a.id === id))
       .filter((x): x is GovernanceAlertRoutingRow => !!x)
-      .map((a) => ({ id: a.id, routeCode: a.routeCode }) as Record<string, unknown>)
+      .map((a) => ({ ...a }) as Record<string, unknown>)
 
     return {
       jobDefinitions: [

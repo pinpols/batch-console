@@ -171,6 +171,7 @@
   import { useTenantStore } from '@/stores/tenant'
   import { useAuthStore } from '@/stores/auth'
   import { useTenantReload } from '@/composables/useTenantReload'
+  import { purifyHtml } from '@/utils/safeHtml'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
@@ -365,7 +366,8 @@
         JsonPreview,
         { data },
         {
-          summary: ({ data: d }: { data: unknown }) => h('span', { innerHTML: summarizer(d) }),
+          summary: ({ data: d }: { data: unknown }) =>
+            h('span', { innerHTML: purifyHtml(summarizer(d)) }),
         },
       )
   }
