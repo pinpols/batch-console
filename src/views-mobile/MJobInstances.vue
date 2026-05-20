@@ -203,6 +203,8 @@
     slaBreached: slaBreachedOnly.value,
     page: 1,
     pageSize: 15,
+    /** ADR-031 cursor 模式:首屏 null,loadMore 用上次响应的 nextCursor */
+    cursor: null as string | null,
   })
 
   function clearSlaFilter() {
@@ -241,16 +243,19 @@
     }
   }
 
-  // load() = 重置:回第 1 页并替换 rows;loadMore() = 追加
+  // load() = 重置 cursor + 替换 rows;loadMore() = 用 nextCursor 追加(ADR-031)
+  // cursor 模式相比之前 offset+touch-bottom 拼接的优势:并发写时不漏/不重(token 锁定 id<N 区间)
+  const hasMoreRef = ref(false)
   async function load() {
     loading.value = true
     try {
-      page.value = 1
       query.tenantId = tenant.tenantId
-      query.page = 1
+      query.cursor = null
       const res = await instanceApi.list(query)
       rows.value = res.records
       total.value = res.total
+      query.cursor = res.nextCursor ?? null
+      hasMoreRef.value = res.hasMore ?? false
     } catch {
       ElMessage.error(t('mobile.common.loadFail'))
     } finally {
@@ -259,21 +264,20 @@
   }
 
   const loadingMore = ref(false)
-  const hasMore = computed(() => rows.value.length < total.value)
+  const hasMore = computed(() => hasMoreRef.value)
 
   async function loadMore() {
-    if (loadingMore.value || loading.value || !hasMore.value) return
+    if (loadingMore.value || loading.value || !hasMore.value || !query.cursor) return
     loadingMore.value = true
     try {
       query.tenantId = tenant.tenantId
-      query.page = page.value + 1
       const res = await instanceApi.list(query)
-      // 追加去重(防止 BE 返回顺序变了导致重复 id)
+      // 追加去重(虽然 cursor 保证不重,保留兜底防止 BE 异常)
       const known = new Set(rows.value.map((r) => r.id))
       const fresh = res.records.filter((r) => !known.has(r.id))
       rows.value.push(...fresh)
-      total.value = res.total
-      page.value += 1
+      query.cursor = res.nextCursor ?? null
+      hasMoreRef.value = res.hasMore ?? false
     } catch {
       /* 单次失败不刷状态,下次触底再重试 */
     } finally {
