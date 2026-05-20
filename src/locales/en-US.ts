@@ -1669,6 +1669,10 @@ const messages: Messages = {
     flowMemoPlaceholder: 'Memo (optional)',
     flowImplPlaceholder: 'impl class',
     implAuto: 'auto',
+    implReadonlyHint:
+      'Each (pipelineType, stage) maps to a fixed worker impl — manual change not expected',
+    implOverrideHint: 'Multiple impls registered for this stage — click to override (advanced)',
+    implOverrideLabel: 'override impl (advanced)',
   },
   batchDayList: {
     calendarLabel: 'Calendar',
