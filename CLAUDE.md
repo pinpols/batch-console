@@ -2,7 +2,11 @@
 
 批量调度系统前端控制台。Vue 3 + TypeScript + Element Plus + Pinia + vue-i18n + TanStack Query。桌面 (`src/views/`) + 移动 (`src/views-mobile/`) 双端,API 类型从配对后端 OpenAPI 生成。
 
-> **维护规则**:本文件只装「不能从代码推断的约束」+「高频违反的红线」+「关键路径指针」。细节去 `docs/`。配对后端约定见 [`../file-batch-system/CLAUDE.md`](../file-batch-system/CLAUDE.md)。
+> **维护规则**:本文件只装「不能从代码推断的约束」+「高频违反的红线」+「关键路径指针」。细节去 `docs/`。
+>
+> 影响本文件已有规范的改动 → 同步 [`docs/changelog.md`](docs/changelog.md)(日期倒序)。Feature / bugfix / 运维 → git commit + PR + 对应 `docs/` 子目录,**不要**写到本文件。
+>
+> 配对后端约定见 [`../file-batch-system/CLAUDE.md`](../file-batch-system/CLAUDE.md)。
 
 ## 配对后端仓库
 
