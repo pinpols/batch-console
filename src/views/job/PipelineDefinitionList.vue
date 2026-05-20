@@ -194,9 +194,27 @@
                       <span class="stage-card__index">{{ index + 1 }}</span>
                       <span class="stage-card__stage">{{ row.stageCode }}</span>
                       <span class="stage-card__sub">{{ stageMeta(row.stageCode).desc }}</span>
-                      <span class="stage-card__impl">
+                      <!-- impl 显示成 readonly chip:每个 (type,stage) 通常对应 1 个 worker 实现,用户不应选 -->
+                      <span
+                        class="stage-card__impl"
+                        :title="t('pipelineDefinitionList.implReadonlyHint')"
+                      >
                         <el-icon><Cpu /></el-icon>
                         <code>{{ row.stepType || t('pipelineDefinitionList.implAuto') }}</code>
+                        <el-tooltip
+                          v-if="implsForStage(row.stageCode).length > 1"
+                          :content="t('pipelineDefinitionList.implOverrideHint')"
+                          placement="top"
+                        >
+                          <el-button
+                            link
+                            size="small"
+                            class="stage-card__impl-override"
+                            @click="toggleImplEdit(index)"
+                          >
+                            {{ implEditOpen.has(index) ? '✕' : '✏' }}
+                          </el-button>
+                        </el-tooltip>
                       </span>
                     </div>
                     <div class="stage-card__row">
@@ -214,12 +232,16 @@
                         :placeholder="t('pipelineDefinitionList.flowMemoPlaceholder')"
                         class="stage-card__memo"
                       />
+                    </div>
+                    <!-- 高级:同 (type,stage) 注册多个 impl 时(A/B / 自定义 worker)才出现编辑入口 -->
+                    <div v-if="implEditOpen.has(index)" class="stage-card__impl-edit">
+                      <span class="stage-card__impl-edit-label">{{
+                        t('pipelineDefinitionList.implOverrideLabel')
+                      }}</span>
                       <el-select
-                        v-if="stepImplOptions.length > 0"
                         v-model="row.stepType"
                         size="small"
                         filterable
-                        allow-create
                         clearable
                         :placeholder="t('pipelineDefinitionList.flowImplPlaceholder')"
                         class="stage-card__impl-select"
@@ -427,6 +449,14 @@
   // stepImplOptions 按当前 pipelineType 拉(BE /meta/step-impls?module=IMPORT),
   // 而不是混所有 type 的 impl —— 之前 EXPORT pipeline 能看到 ImportXxxStep 是 bug
   const stepImplOptions = ref<string[]>([])
+  // 高级:仅同 (type,stage) 注册多 impl 时(A/B / 自定义 worker)用户才会主动展开 override
+  const implEditOpen = ref<Set<number>>(new Set())
+  function toggleImplEdit(i: number) {
+    const next = new Set(implEditOpen.value)
+    if (next.has(i)) next.delete(i)
+    else next.add(i)
+    implEditOpen.value = next
+  }
   /** 该 stage 卡片可选的 impl:命名含 stage 名(ExportPrepareStep 匹配 PREPARE),命名不含的不展示 */
   function implsForStage(stage: string): string[] {
     if (!stage) return stepImplOptions.value
@@ -933,12 +963,33 @@
   }
   .stage-card__row {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 1.5fr);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
     gap: 8px;
   }
   @media (max-width: 720px) {
     .stage-card__row {
       grid-template-columns: 1fr;
     }
+  }
+  .stage-card__impl-override {
+    margin-left: 4px !important;
+    padding: 0 4px !important;
+    height: auto !important;
+    font-size: 12px;
+    color: var(--color-text-secondary);
+  }
+  .stage-card__impl-edit {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    background: var(--color-bg-subtle, #f5f7fa);
+    border-radius: 6px;
+    margin-top: 4px;
+  }
+  .stage-card__impl-edit-label {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    white-space: nowrap;
   }
 </style>

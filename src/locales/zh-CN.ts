@@ -1620,6 +1620,9 @@ export default {
     flowMemoPlaceholder: '备注(可选)',
     flowImplPlaceholder: 'impl 类',
     implAuto: '自动',
+    implReadonlyHint: '每个 (pipelineType, stage) 对应固定 worker 实现,不应手动修改',
+    implOverrideHint: '该 stage 注册了多个 impl,可点开 override(高级)',
+    implOverrideLabel: 'override impl(高级)',
   },
   batchDayList: {
     calendarLabel: '日历',
