@@ -20,6 +20,11 @@ export interface InstanceQueryParams {
   slaBreached?: boolean
   page: number
   pageSize: number
+  /**
+   * 双轨分页(ADR-031):cursor 非空时 BE 走 cursor 模式,响应里 total/pageNo 为 0,
+   * 看 nextCursor + hasMore。FE 通常通过 usePagination 间接传入。
+   */
+  cursor?: string | null
 }
 
 /**
@@ -43,11 +48,14 @@ export async function queryJobInstances(
     ...(query.endDate ? { endDate: query.endDate } : {}),
     ...(query.traceId ? { traceId: query.traceId } : {}),
     ...(query.slaBreached ? { slaBreached: true } : {}),
+    ...(query.cursor ? { cursor: query.cursor } : {}),
   })
   return {
     records: (pr.items ?? []) as ConsoleJobInstanceResponse[],
     total: pr.total ?? 0,
     page: query.page,
     pageSize: query.pageSize,
+    nextCursor: pr.nextCursor ?? null,
+    hasMore: pr.hasMore ?? (pr.total != null && query.page * query.pageSize < pr.total),
   }
 }

@@ -25,12 +25,16 @@ export interface PageRequest {
   pageSize: number
 }
 
-/** OpenAPI PageResponse */
+/** OpenAPI PageResponse(ADR-031 双轨:cursor 模式下 total=0,看 nextCursor/hasMore) */
 export interface PageResponse<T> {
   total: number
   pageNo: number
   pageSize: number
   items: T[]
+  /** ADR-031:cursor 模式响应字段;offset 模式 null */
+  nextCursor?: string | null
+  /** ADR-031:offset 模式据 total 计算,cursor 模式据本次取到 size==pageSize 判定 */
+  hasMore?: boolean
 }
 
 /** 列表页兼容（records/page 命名 — 逐步迁到 PageResponse） */
@@ -39,6 +43,9 @@ export interface PageResult<T> {
   total: number
   page: number
   pageSize: number
+  /** ADR-031:cursor 模式回填 */
+  nextCursor?: string | null
+  hasMore?: boolean
 }
 
 // ─── 权限 ─────────────────────────────────────────────────────
