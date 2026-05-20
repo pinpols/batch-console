@@ -537,6 +537,12 @@ const messages: Messages = {
     updateLater: 'Later',
     offlineReady: 'The console core features are now available offline.',
   },
+  proPagination: {
+    prev: 'Prev',
+    next: 'Next',
+    pageSizeLabel: '{n} / page',
+    cursorHint: 'Cursor pagination · jump not supported',
+  },
   maintenance: {
     bannerBlocked: 'System under maintenance',
     bannerReadonly: 'System is in read-only mode',
