@@ -544,6 +544,12 @@ export default {
     updateLater: '稍后',
     offlineReady: '已可以离线使用控制台基础功能。',
   },
+  proPagination: {
+    prev: '上一页',
+    next: '下一页',
+    pageSizeLabel: '{n} 条/页',
+    cursorHint: '游标分页 · 不支持跳页',
+  },
   maintenance: {
     bannerBlocked: '系统维护中',
     bannerReadonly: '系统进入只读模式',
