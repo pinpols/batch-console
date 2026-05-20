@@ -225,7 +225,7 @@
                         class="stage-card__impl-select"
                       >
                         <el-option
-                          v-for="impl in stepImplOptions"
+                          v-for="impl in implsForStage(row.stageCode)"
                           :key="impl"
                           :label="impl"
                           :value="impl"
@@ -424,21 +424,33 @@
     useListFilterFeedback(loading)
   // 9-stages 字典 + step impl 字典(BE 维护,FE 首次加载缓存。两个接口都 permitAll-style 缓存稳)
   const stagesMap = ref<PipelineStagesMap>({})
+  // stepImplOptions 按当前 pipelineType 拉(BE /meta/step-impls?module=IMPORT),
+  // 而不是混所有 type 的 impl —— 之前 EXPORT pipeline 能看到 ImportXxxStep 是 bug
   const stepImplOptions = ref<string[]>([])
-  /** 命名约定 impl_code 含 stage 名(如 ExportPrepareStep) → 选 stage 后挑唯一匹配的 impl */
-  function pickDefaultImpl(stage: string): string {
-    if (!stage || stepImplOptions.value.length === 0) return ''
+  /** 该 stage 卡片可选的 impl:命名含 stage 名(ExportPrepareStep 匹配 PREPARE),命名不含的不展示 */
+  function implsForStage(stage: string): string[] {
+    if (!stage) return stepImplOptions.value
     const needle = stage.toLowerCase()
-    const matches = stepImplOptions.value.filter((c) => c.toLowerCase().includes(needle))
+    const matched = stepImplOptions.value.filter((c) => c.toLowerCase().includes(needle))
+    // 命名不规范时 fallback 露当前 module 全部 impl,不要让下拉空白
+    return matched.length > 0 ? matched : stepImplOptions.value
+  }
+  /** 选 stage 后挑唯一匹配的 impl 自动填 */
+  function pickDefaultImpl(stage: string): string {
+    const matches = implsForStage(stage)
     return matches.length === 1 ? matches[0] : ''
+  }
+  /** 按当前 pipelineType 拉 impl 字典 —— 没选 type 时拉全量(用于初次 mount 没数据可看) */
+  function reloadStepImpls(module?: string) {
+    fetchStepImpls(module)
+      .then((list) => (stepImplOptions.value = list || []))
+      .catch(() => {})
   }
   onMounted(() => {
     fetchPipelineStages()
       .then((m) => (stagesMap.value = m || {}))
       .catch(() => {})
-    fetchStepImpls()
-      .then((list) => (stepImplOptions.value = list || []))
-      .catch(() => {})
+    reloadStepImpls()
   })
 
   const togglingId = ref<number | null>(null)
@@ -768,7 +780,11 @@
   }
   watch(
     () => form.value.pipelineType,
-    (newType) => regenerateStepsForType(newType),
+    (newType) => {
+      // 切 type 时同步切 impl 字典:只显该 type 注册的 impl,避免下拉串味
+      reloadStepImpls(newType || undefined)
+      regenerateStepsForType(newType)
+    },
   )
   // 字典异步到位后,若已选 type 但 steps 是空(字典还没到时 watch 跑过一遍),补渲一次
   watch(stagesMap, () => {
