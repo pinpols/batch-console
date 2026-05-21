@@ -131,14 +131,14 @@ export default defineConfig(({ mode }) => {
      * watch.ignored:把 vitepress build 产物挡在 chokidar 之外。
      *
      * 不加这个,`make dev-all` 期间 vitepress 把 ~200 个 html 写到
-     * docs-site/.vitepress/{dist,cache} 时会触发 vite 上百次 full page reload
-     * (HMR 把 html 变更当成路由刷新),内存秒上 1GB 然后被 OOM-killer 干掉
+     * tools/docs-bridge/{backend,frontend}/.vitepress/{dist,cache} 时会触发 vite 上百次
+     * full page reload(HMR 把 html 变更当成路由刷新),内存秒上 1GB 然后被 OOM-killer 干掉
      * (上次现象是 SPA exit code 137 + DOCS exit 143 几乎同时收到)。
      *
-     * docs-site 跟 SPA 源代码完全解耦,vite 没必要 watch 它。
+     * tools/docs-bridge 跟 SPA 源代码完全解耦,vite 没必要 watch 它。
      */
     watch: {
-      ignored: ['**/docs-site/**', '**/dist/**', '**/playwright-report/**'],
+      ignored: ['**/tools/docs-bridge/**', '**/dist/**', '**/playwright-report/**'],
     },
     proxy: {
       '/api': {

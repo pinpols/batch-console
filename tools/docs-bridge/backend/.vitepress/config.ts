@@ -13,10 +13,11 @@ import { fileURLToPath, URL } from 'node:url'
  * 后端契约:`GET /api/console/auth/check`(204/401)
  */
 export default withMermaid({
-  // 跨仓 srcDir:相对 .vitepress/ 上推两级到 batch-console/,再 ../ 到 Downloads/,
-  // 然后到 file-batch-system/docs。本地约束:两仓必须放同一父目录(AGENTS.md)。
-  srcDir: '../../file-batch-system/docs',
-  // outDir 默认在 docs-site/.vitepress/dist;不绕到外层防止 rollup 跨包resolve 异常
+  // 跨仓 srcDir:相对 .vitepress/ 上推四级到 batch-console/,再 ../ 到 Downloads/,
+  // 然后到 file-batch-system/docs。本地约束:两仓必须放同一父目录(CLAUDE.md)。
+  // 路径段:.vitepress → backend → docs-bridge → tools → batch-console → Downloads → file-batch-system/docs
+  srcDir: '../../../../file-batch-system/docs',
+  // outDir 默认在 tools/docs-bridge/backend/.vitepress/dist;不绕到外层防止 rollup 跨包 resolve 异常
   base: '/docs/',
 
   title: '批量调度平台 文档中心',
@@ -231,7 +232,7 @@ export default withMermaid({
   vite: {
     // 跨仓 srcDir 时,Vite 的 root 默认会跑去 srcDir(file-batch-system/docs/),
     // 那边没 node_modules,导致 optimizeDeps 找不到 vitepress 子依赖 → dev 白屏。
-    // 显式 root 锚定到 docs-site/.vitepress 同级,确保依赖解析正确。
+    // 显式 root 锚定到 tools/docs-bridge/backend/.vitepress 同级,确保依赖解析正确。
     root: fileURLToPath(new URL('..', import.meta.url)),
     plugins: [
       {

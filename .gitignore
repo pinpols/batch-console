@@ -1,10 +1,10 @@
 node_modules
 dist
 dist-ssr
-docs-site/.vitepress/dist
-docs-site/.vitepress/cache
-fe-docs-site/.vitepress/dist
-fe-docs-site/.vitepress/cache
+tools/docs-bridge/backend/.vitepress/dist
+tools/docs-bridge/backend/.vitepress/cache
+tools/docs-bridge/frontend/.vitepress/dist
+tools/docs-bridge/frontend/.vitepress/cache
 *.local
 .env.local
 .env.*.local
