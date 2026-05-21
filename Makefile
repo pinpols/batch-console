@@ -28,7 +28,7 @@ help:
 	@echo "                         注:docs:dev 跨仓 srcDir+cleanUrls 已知失效,固定走 build+preview"
 	@echo "  make dev-bg            SPA 后台,日志 -> $(DEV_LOG_FILE)"
 	@echo "  make docs              只起文档站(http://localhost:$(DOCS_PORT)/docs/)"
-	@echo "  make docs-build        构建文档静态产物到 docs-site/.vitepress/dist/"
+	@echo "  make docs-build        构建文档静态产物到 tools/docs-bridge/backend/.vitepress/dist/"
 	@echo "  make stop              停掉后台 SPA(端口 $(PORT) + $(DOCS_PORT))"
 	@echo "  make stop-container    停掉 docker 里的 $(FE_CONTAINER) FE 容器(保留 db/redis/kafka)"
 	@echo "  make restart           重启后台 SPA"

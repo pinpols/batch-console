@@ -22,7 +22,7 @@ e2e/__snapshots__
 .env.*.local
 
 # 文档站点不进运行镜像(单独 vitepress build/部署)
-docs-site
+tools/docs-bridge
 docs
 
 # 截图 / 临时

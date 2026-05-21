@@ -2,12 +2,12 @@ import { withMermaid } from 'vitepress-plugin-mermaid'
 
 /**
  * 前端文档站 — 跨仓只看本 batch-console/docs/ 目录。
- * 与 docs-site/ 区别:
- *   - docs-site/  srcDir → ../../file-batch-system/docs (BE 主仓)        端口 5174 /docs/
- *   - fe-docs-site srcDir → ../docs (本 FE 仓自身文档,含 P1-P5 QA 报告) 端口 5175 /fe-docs/
+ * 跟 backend/ 区别(都在 tools/docs-bridge/ 下):
+ *   - backend/  srcDir → ../../../../file-batch-system/docs (BE 主仓)   端口 5174 /docs/
+ *   - frontend/ srcDir → ../../../docs (本 FE 仓自身 docs/)             端口 5175 /fe-docs/
  */
 export default withMermaid({
-  srcDir: '../docs',
+  srcDir: '../../../docs',
   base: '/fe-docs/',
   title: '批量调度前端 文档',
   description: 'batch-console 前端方案 / 设计 / 阶段联调报告',
