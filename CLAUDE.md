@@ -72,6 +72,21 @@ src/
 - **何时要补测**:移动端新增独立于桌面的业务逻辑 → Vitest 单测;移动端独有回归 bug → 单测固化
 - **桌面端**:照旧关键业务逻辑 Vitest 覆盖,e2e 覆盖主要用户路径
 
+## 测试约定
+
+**Vitest 单测**(`*.test.ts`):
+
+- 框架统一 Vitest,**禁** jest / chai / sinon。`import { describe, it, expect, vi, beforeEach } from 'vitest'`
+- 文件命名 `xxx.test.ts`,**同目录**与被测文件共存(不另开 `__tests__/`)
+- `describe(name)` 用**被测对象短名**:函数名(`mapProfileToUserInfo`)/ composable 名(`useTenantReload`)/ 导出对象名(`jobApi` / `instanceApi`)。**禁** `xxx API` / `xxx tests` 等冗余后缀
+- `it(desc)` 描述**行为**,**禁** `should ...` 前缀(全仓 0 处);中英不强制(跟同模块现有保持一致 —— API/utils 英文,业务 composable 可中文)
+- mock 风格:顶层 `vi.mock('./client', () => ({...}))` → `import { get } from './client'` → `const mockedGet = vi.mocked(get)`。`vi.hoisted` 仅在闭包必需时用(全仓 1 处)
+- 需要 DOM 时顶部加 `// @vitest-environment jsdom`(jsdom 已是 devDep)
+- 清理 mock 用 `beforeEach { mockReset() }`,不要 `afterEach`
+- SFC 测试受 element-plus auto-import .css 链路阻塞,**优先抽业务逻辑到 util 测**;非测不可时 vite.config 加 `server.deps.inline: [/element-plus/]` + `css: false`
+
+**Playwright e2e**(`e2e/*.spec.ts`):见 §移动端测试范围 + `playwright.config.cjs`。
+
 ## Vue / TS 编码细则
 
 **以下每条都常被违,写代码前必须先扫一遍**:

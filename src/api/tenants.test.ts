@@ -21,7 +21,7 @@ const mockedGet = vi.mocked(get)
 const mockedPost = vi.mocked(post)
 const mockedPut = vi.mocked(put)
 
-describe('tenants API', () => {
+describe('tenantsApi', () => {
   beforeEach(() => {
     mockedGet.mockReset()
     mockedPost.mockReset()
