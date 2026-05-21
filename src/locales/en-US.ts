@@ -543,6 +543,11 @@ const messages: Messages = {
     pageSizeLabel: '{n} / page',
     cursorHint: 'Cursor pagination · jump not supported',
   },
+  cronExprInput: {
+    previewLoading: 'Next runs (BE computing…)',
+    nextRunsLabel: 'Next 3 runs ({tz}):',
+    tzLocal: 'local',
+  },
   maintenance: {
     bannerBlocked: 'System under maintenance',
     bannerReadonly: 'System is in read-only mode',

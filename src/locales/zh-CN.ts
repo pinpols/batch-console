@@ -550,6 +550,11 @@ export default {
     pageSizeLabel: '{n} 条/页',
     cursorHint: '游标分页 · 不支持跳页',
   },
+  cronExprInput: {
+    previewLoading: '下次执行(BE 计算中…)',
+    nextRunsLabel: '最近 3 次执行({tz}):',
+    tzLocal: '本地',
+  },
   maintenance: {
     bannerBlocked: '系统维护中',
     bannerReadonly: '系统进入只读模式',
