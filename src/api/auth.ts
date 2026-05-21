@@ -48,7 +48,7 @@ export interface ChangePasswordBody {
 function mapAuthoritiesToRole(authorities: string[]): Role {
   const a = authorities.join(' ')
   if (a.includes('ROLE_ADMIN')) return 'ADMIN'
-  if (a.includes('ROLE_CONFIG_ADMIN')) return 'OPERATOR'
+  if (a.includes('ROLE_TENANT_ADMIN')) return 'OPERATOR'
   if (a.includes('ROLE_AUDITOR')) return 'VIEWER'
   return 'VIEWER'
 }
@@ -136,7 +136,7 @@ export const authApi = {
    * POST /api/console/auth/change-password — 自助改密码(待 BE 实施 P0.1)
    *
    * 见 docs/runbook/password-security-backlog.md
-   * - 5 角色全部可调(hasAnyAuthority ROLE_ADMIN/CONFIG_ADMIN/AUDITOR/TENANT_USER/USER)
+   * - 5 角色全部可调(hasAnyAuthority ROLE_ADMIN/TENANT_ADMIN/AUDITOR/TENANT_USER/USER)
    * - oldPassword 错 → 401
    * - newPassword 不合规(< 12 位)→ 400
    * - newPassword == oldPassword → 409 STATE_CONFLICT

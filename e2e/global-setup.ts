@@ -15,6 +15,11 @@ export default async function globalSetup(config: FullConfig) {
   await page.getByRole('button', { name: /登\s*录/ }).click()
   await page.waitForURL(/\/ops\/summary/, { timeout: 20_000 })
 
+  // 2026-05 角色重设计后:admin 登录 (tenantId='system') 不再自动落 tenant store,
+  // 首次登录由 FirstTenantPickerDialog 强制选业务租户。e2e 用 storageState 复用 session,
+  // 这里显式落一个业务租户 (ta),避免每个测试启动时被 picker dialog 拦住 sidebar 点击。
+  await page.evaluate(() => localStorage.setItem('batch-console-tenant-id', 'ta'))
+
   await page.context().storageState({ path: 'e2e/.auth/user.json' })
   await browser.close()
 }

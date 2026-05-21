@@ -27,13 +27,15 @@ export const useAuthStore = defineStore('auth', () => {
   /** 后端下发的侧边栏菜单（已按 authorities 过滤） */
   const menus = computed<MenuGroup[]>(() => userInfo.value?.menus ?? [])
 
-  /** 当前用户是否为租户用户（非系统角色，不可切换租户） */
+  /**
+   * 当前用户是否「租户级」角色(TENANT_ADMIN / TENANT_USER),不可切换租户。
+   * ADMIN / AUDITOR 是跨租户角色,允许切换。
+   */
   const isTenantUser = computed(() => {
     const perms = userInfoInternal.value?.permissions ?? []
     return (
-      perms.includes('ROLE_TENANT_USER') &&
+      (perms.includes('ROLE_TENANT_USER') || perms.includes('ROLE_TENANT_ADMIN')) &&
       !perms.includes('ROLE_ADMIN') &&
-      !perms.includes('ROLE_CONFIG_ADMIN') &&
       !perms.includes('ROLE_AUDITOR')
     )
   })
@@ -58,7 +60,9 @@ export const useAuthStore = defineStore('auth', () => {
     userInfoInternal.value = result.userInfo
     localStorage.setItem(SESSION_FLAG_KEY, '1')
     const tenant = useTenantStore()
-    if (result.tenantId) {
+    // 'system' 是 admin 账号宿主,不是业务工作租户;落地到 system 会让所有业务页空白。
+    // 保留 localStorage 里上次选的业务租户;首次登录 localStorage 为空时由 FirstTenantPicker 兜底。
+    if (result.tenantId && result.tenantId !== 'system') {
       tenant.setTenantId(result.tenantId)
     }
   }

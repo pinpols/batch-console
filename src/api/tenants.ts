@@ -2,7 +2,7 @@
  * 租户管理（管理员）—— /api/console/tenants
  *
  * 后端协议：console-api-protocol.md `Tenant Management`
- * - 读操作：ROLE_ADMIN / ROLE_CONFIG_ADMIN
+ * - 读操作：ROLE_ADMIN / ROLE_TENANT_ADMIN
  * - 写操作：ROLE_ADMIN
  */
 import { get, post, put } from '@/api/client'

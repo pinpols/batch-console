@@ -187,4 +187,95 @@ describe('useAuthStore', () => {
     await new Promise((r) => setTimeout(r, 0))
     expect(mockedGet).not.toHaveBeenCalled()
   })
+
+  describe('login tenant resolution (2026-05 角色重设计)', () => {
+    it('admin login with tenantId=system → 不写 tenant store,保留 localStorage 上次值', async () => {
+      // 模拟之前已选过业务租户 ta
+      storage.set('batch-console-tenant-id', 'ta')
+      setActivePinia(createPinia())
+      const { authApi } = await import('@/api/auth')
+      vi.mocked(authApi.login).mockResolvedValue({
+        tenantId: 'system',
+        userInfo: { permissions: ['ROLE_ADMIN'] } as unknown as Parameters<
+          (typeof import('./auth'))['useAuthStore']
+        > extends never
+          ? never
+          : never,
+      } as Awaited<ReturnType<typeof authApi.login>>)
+
+      const auth = useAuthStore()
+      const tenant = useTenantStore()
+      const before = tenant.tenantId
+      await auth.login('admin', 'pw')
+
+      // tenant.tenantId 应保留 ta(没被 system 覆盖)
+      expect(tenant.tenantId).toBe(before)
+      expect(tenant.tenantId).toBe('ta')
+    })
+
+    it('tenant 业务用户 login → tenant store 正常落到自己租户', async () => {
+      const { authApi } = await import('@/api/auth')
+      vi.mocked(authApi.login).mockResolvedValue({
+        tenantId: 'ta',
+        userInfo: { permissions: ['ROLE_TENANT_USER'] } as unknown as Parameters<
+          (typeof import('./auth'))['useAuthStore']
+        > extends never
+          ? never
+          : never,
+      } as Awaited<ReturnType<typeof authApi.login>>)
+
+      const auth = useAuthStore()
+      const tenant = useTenantStore()
+      await auth.login('op-ta', 'pw')
+
+      expect(tenant.tenantId).toBe('ta')
+    })
+  })
+
+  describe('isTenantUser (2026-05 角色重设计)', () => {
+    it('ROLE_TENANT_USER alone → isTenantUser=true', async () => {
+      const auth = useAuthStore()
+      auth.$patch({ userInfoInternal: { permissions: ['ROLE_TENANT_USER'] } } as never)
+      // pinia 通过 $patch 不能直接写内部 ref,这里改用 fetchMe 路径
+      const { get } = await import('@/api/client')
+      vi.mocked(get).mockResolvedValue({ permissions: ['ROLE_TENANT_USER'] } as never)
+      storage.set('batch-console-session', '1')
+      setActivePinia(createPinia())
+      const auth2 = useAuthStore()
+      await auth2.fetchMe()
+      expect(auth2.isTenantUser).toBe(true)
+    })
+
+    it('ROLE_TENANT_ADMIN 视为 tenant scoped → isTenantUser=true(不能跨租户切换)', async () => {
+      const { get } = await import('@/api/client')
+      vi.mocked(get).mockResolvedValue({ permissions: ['ROLE_TENANT_ADMIN'] } as never)
+      storage.set('batch-console-session', '1')
+      setActivePinia(createPinia())
+      const auth = useAuthStore()
+      await auth.fetchMe()
+      expect(auth.isTenantUser).toBe(true)
+    })
+
+    it('ROLE_ADMIN → isTenantUser=false(可跨租户)', async () => {
+      const { get } = await import('@/api/client')
+      vi.mocked(get).mockResolvedValue({ permissions: ['ROLE_ADMIN'] } as never)
+      storage.set('batch-console-session', '1')
+      setActivePinia(createPinia())
+      const auth = useAuthStore()
+      await auth.fetchMe()
+      expect(auth.isTenantUser).toBe(false)
+    })
+
+    it('ROLE_TENANT_ADMIN + ROLE_ADMIN 混合(平台 admin 兼挂租户身份)→ false', async () => {
+      const { get } = await import('@/api/client')
+      vi.mocked(get).mockResolvedValue({
+        permissions: ['ROLE_TENANT_ADMIN', 'ROLE_ADMIN'],
+      } as never)
+      storage.set('batch-console-session', '1')
+      setActivePinia(createPinia())
+      const auth = useAuthStore()
+      await auth.fetchMe()
+      expect(auth.isTenantUser).toBe(false)
+    })
+  })
 })

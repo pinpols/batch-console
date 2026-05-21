@@ -40,6 +40,7 @@
 
     <CommandPalette v-model="paletteOpen" :groups="visibleGroups" :recent-tabs="tabsStore.list" />
     <SwUpdatePrompt />
+    <FirstTenantPickerDialog />
   </el-container>
 </template>
 
@@ -53,6 +54,7 @@
   import ErrorBoundary from '@/components/common/ErrorBoundary.vue'
   import MaintenanceBanner from '@/components/common/MaintenanceBanner.vue'
   import SwUpdatePrompt from '@/components/common/SwUpdatePrompt.vue'
+  import FirstTenantPickerDialog from '@/components/common/FirstTenantPickerDialog.vue'
   import LayoutSidebar from '@/layout/LayoutSidebar.vue'
   import LayoutHeader from '@/layout/components/LayoutHeader.vue'
   import { useHeaderLogic } from '@/layout/composables/useHeaderLogic'

@@ -1866,6 +1866,39 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/console/admin/test-data/by-ids': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    /**
+     * Cleanup tenants by exact ID list (补刀 prefix 模式无法清纯短名残留)
+     * @description 按精确 tenantId 列表级联清理,补刀 `/api/console/admin/test-data?prefix=` 无法清纯短名
+     *     ID(如历史残留 `tx` / `td`,因 prefix 模式强制 `prefix-%` 后缀匹配)。
+     *
+     *     **白名单保护**(任何场景拒删):`system` / `default` / `default-tenant` / `ta` / `tb` / `tc`。
+     *
+     *     **安全约束**:
+     *     - ROLE_ADMIN only
+     *     - ids 必须字母开头,逗号分隔,总长 3-256(同一批最多 ~50 个 ID)
+     *     - @Transactional 全表事务,任何一段失败整体回滚
+     *     - @AuditAction 留痕到 console_operation_audit(aggregateId = #ids 整串)
+     *
+     *     清理顺序参考 scripts/db/wipe-non-system-tenants.sql:pipeline 运行 → workflow 运行 →
+     *     job 实例链 → file 相关 → workflow/pipeline/job 定义 → 配置 → 用户 → 租户本体。
+     *
+     */
+    delete: operations['cleanupTestDataByIds']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/console/queries/operation-audits': {
     parameters: {
       query?: never
@@ -10459,6 +10492,43 @@ export interface operations {
       }
     }
   }
+  cleanupTestDataByIds: {
+    parameters: {
+      query: {
+        /** @description 精确 tenantId 列表(逗号分隔) */
+        ids: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Cleanup result, map of table → row count deleted */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseTestDataCleanupResult']
+        }
+      }
+      /** @description ids validation failed / 列表含白名单保护租户 */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description not ROLE_ADMIN */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
   queryOperationAudits: {
     parameters: {
       query?: {
@@ -15505,7 +15575,7 @@ export interface operations {
   uploadTenantConfigPackageExcel: {
     parameters: {
       query?: {
-        /** @description 全局角色（ROLE_ADMIN / ROLE_CONFIG_ADMIN）必须显式指定目标租户； 租户级账号可不传（沿用 JWT 内 tenantId）。
+        /** @description 全局角色（ROLE_ADMIN / ROLE_TENANT_ADMIN）必须显式指定目标租户； 租户级账号可不传（沿用 JWT 内 tenantId）。
          *      */
         tenantId?: string
       }

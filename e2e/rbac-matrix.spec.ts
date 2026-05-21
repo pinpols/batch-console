@@ -4,12 +4,12 @@
  * Why:Plan B 档全程用 admin 跑,4 个角色的权限边界从未验证。
  *     生产事故里"权限越权"是 P0 级安全事件。
  *
- * 5 角色 (per [rbac_5roles_only] memory,OPERATOR/VIEWER 是菜单档位标签不是 Spring authority):
- *   ROLE_ADMIN          系统管理员
- *   ROLE_CONFIG_ADMIN   配置管理员
- *   ROLE_AUDITOR        审计员(只读)
- *   ROLE_TENANT_USER    租户操作员
- *   ROLE_USER           普通用户(默认)
+ * 5 角色 (ADR-032 2026-05 重设计,CONFIG_ADMIN 已合并到 ADMIN):
+ *   ROLE_ADMIN          平台管理员(跨租户)
+ *   ROLE_TENANT_ADMIN   租户管理员(本租户内,Service 层 enforceTenantScope 锁定)
+ *   ROLE_AUDITOR        审计员(跨租户只读)
+ *   ROLE_TENANT_USER    租户操作员(本租户,触发任务 + 自助)
+ *   ROLE_USER           兼容旧 JWT,等同 TENANT_USER
  *
  * 矩阵约定:
  *   ✅ = 200/201/202   ❌ = 403
@@ -21,19 +21,20 @@ import path from 'node:path'
 
 const API = process.env.BC_API_BASE || 'http://localhost:18080'
 
-// 5 角色 storageState 文件(由 e2e/scripts/build-role-storage-states.cjs 生成)
-type RoleKey = 'admin' | 'configAdmin' | 'auditor' | 'tenantUser' | 'user'
-const ROLE_KEYS: RoleKey[] = ['admin', 'configAdmin', 'auditor', 'tenantUser', 'user']
+// 2026-05 角色重设计后 5 角色(CONFIG_ADMIN 已升 ADMIN,新加 TENANT_ADMIN):
+// admin/auditor 跨租户,tenantAdmin/tenantUser/user 绑租户。storageState 由 global-setup.cjs 生成。
+type RoleKey = 'admin' | 'tenantAdmin' | 'auditor' | 'tenantUser' | 'user'
+const ROLE_KEYS: RoleKey[] = ['admin', 'tenantAdmin', 'auditor', 'tenantUser', 'user']
 const ROLE_LABEL: Record<RoleKey, string> = {
   admin: 'ROLE_ADMIN',
-  configAdmin: 'ROLE_CONFIG_ADMIN',
+  tenantAdmin: 'ROLE_TENANT_ADMIN',
   auditor: 'ROLE_AUDITOR',
   tenantUser: 'ROLE_TENANT_USER',
   user: 'ROLE_USER',
 }
 const ROLE_TENANT: Record<RoleKey, string> = {
   admin: 'system',
-  configAdmin: 'system',
+  tenantAdmin: 'ta', // TENANT_ADMIN 绑业务租户(tadmin-ta 账号在 ta 下)
   auditor: 'system',
   tenantUser: 'tx',
   user: 'tx',
@@ -76,7 +77,7 @@ const ENDPOINTS: Endpoint[] = [
         password: 'admin12345',
       }
     },
-    expect: { admin: true, configAdmin: false, auditor: false, tenantUser: false, user: false },
+    expect: { admin: true, tenantAdmin: false, auditor: false, tenantUser: false, user: false },
   },
   {
     // ConsoleResourceQueueController class-level @PreAuthorize ROLE_ADMIN
@@ -92,7 +93,7 @@ const ENDPOINTS: Endpoint[] = [
       fairShareWeight: 1,
       enabled: true,
     }),
-    expect: { admin: true, configAdmin: false, auditor: false, tenantUser: false, user: false },
+    expect: { admin: true, tenantAdmin: false, auditor: false, tenantUser: false, user: false },
   },
   {
     // ConsoleQuotaPolicyController class-level @PreAuthorize ROLE_ADMIN
@@ -108,7 +109,7 @@ const ENDPOINTS: Endpoint[] = [
       fairShareWeight: 1,
       enabled: true,
     }),
-    expect: { admin: true, configAdmin: false, auditor: false, tenantUser: false, user: false },
+    expect: { admin: true, tenantAdmin: false, auditor: false, tenantUser: false, user: false },
   },
   {
     // ConsoleConfigController.POST /releases @PreAuthorize ROLE_ADMIN (方法级别)
@@ -123,7 +124,7 @@ const ENDPOINTS: Endpoint[] = [
       configType: 'JSON',
       operatorId: 'admin',
     }),
-    expect: { admin: true, configAdmin: false, auditor: false, tenantUser: false, user: false },
+    expect: { admin: true, tenantAdmin: false, auditor: false, tenantUser: false, user: false },
   },
   {
     // ConsoleJobDefinitionController class-level @PreAuthorize ROLE_ADMIN
@@ -139,7 +140,7 @@ const ENDPOINTS: Endpoint[] = [
       executionMode: 'FULL',
       enabled: true,
     }),
-    expect: { admin: true, configAdmin: false, auditor: false, tenantUser: false, user: false },
+    expect: { admin: true, tenantAdmin: false, auditor: false, tenantUser: false, user: false },
   },
   {
     // ConsoleApiKeyController class-level @PreAuthorize hasAnyAuthority(ADMIN, TENANT_USER)
@@ -148,10 +149,11 @@ const ENDPOINTS: Endpoint[] = [
     method: 'POST',
     url: () => '/api/console/api-keys?tenantId=tx',
     body: () => ({ keyName: e2ePrefix() }),
-    expect: { admin: true, configAdmin: false, auditor: false, tenantUser: true, user: false },
+    expect: { admin: true, tenantAdmin: false, auditor: false, tenantUser: true, user: false },
   },
   {
-    // ConsoleUserAccountController class-level @PreAuthorize ROLE_ADMIN
+    // ConsoleUserAccountController class-level @PreAuthorize hasAnyAuthority('ROLE_ADMIN','ROLE_TENANT_ADMIN')
+    // (ADR-032):TENANT_ADMIN 可在本租户加员工,Service 层 enforceTenantScope 强制 tenantId=principal.tenantId
     key: 'POST /users',
     method: 'POST',
     url: () => '/api/console/users',
@@ -160,9 +162,9 @@ const ENDPOINTS: Endpoint[] = [
       password: 'admin123',
       displayName: '[E2E RBAC]',
       tenantId: 'tx',
-      authoritiesCsv: 'ROLE_USER',
+      authoritiesCsv: 'ROLE_TENANT_USER',
     }),
-    expect: { admin: true, configAdmin: false, auditor: false, tenantUser: false, user: false },
+    expect: { admin: true, tenantAdmin: true, auditor: false, tenantUser: false, user: false },
   },
   {
     // ConsoleSelfServiceJobController class-level @PreAuthorize hasAnyAuthority(ADMIN, TENANT_USER)
@@ -176,7 +178,7 @@ const ENDPOINTS: Endpoint[] = [
       bizDate: '2026-05-18',
       reason: '[E2E RBAC] rerun',
     }),
-    expect: { admin: true, configAdmin: false, auditor: false, tenantUser: true, user: false },
+    expect: { admin: true, tenantAdmin: false, auditor: false, tenantUser: true, user: false },
   },
   {
     // ConsoleAlertRoutingController class-level @PreAuthorize ROLE_ADMIN
@@ -191,7 +193,7 @@ const ENDPOINTS: Endpoint[] = [
       team: 'e2e',
       receiver: 'e2e@example.com',
     }),
-    expect: { admin: true, configAdmin: false, auditor: false, tenantUser: false, user: false },
+    expect: { admin: true, tenantAdmin: false, auditor: false, tenantUser: false, user: false },
   },
 ]
 
