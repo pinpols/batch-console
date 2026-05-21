@@ -6,9 +6,11 @@
       back-to="/jobs/definitions"
     >
       <template #actions>
-        <el-button :icon="Refresh" :loading="loading" @click="load">刷新</el-button>
+        <el-button :icon="Refresh" :loading="loading" @click="load">
+          {{ t('common.refresh') }}
+        </el-button>
         <el-button v-if="job" type="primary" :loading="triggering" @click="triggerJob">
-          手工触发
+          {{ t('jobDefinitionDetail.manualTrigger') }}
         </el-button>
       </template>
     </PageHeader>
@@ -77,8 +79,12 @@
               <div class="panel-actions">
                 <el-button @click="calendarMiniVisible = true">+ 新建日历</el-button>
                 <el-button @click="windowMiniVisible = true">+ 新建窗口</el-button>
-                <el-button @click="router.push('/governance/calendars')">维护日历</el-button>
-                <el-button @click="router.push('/governance/windows')">维护窗口</el-button>
+                <el-button @click="router.push('/governance/calendars')">
+                  {{ t('jobDefinitionDetail.maintainCalendar') }}
+                </el-button>
+                <el-button @click="router.push('/governance/windows')">
+                  {{ t('jobDefinitionDetail.maintainWindow') }}
+                </el-button>
               </div>
             </div>
           </el-tab-pane>
@@ -106,8 +112,12 @@
                 </el-descriptions-item>
               </el-descriptions>
               <div class="panel-actions">
-                <el-button @click="router.push('/governance/queues')">维护队列</el-button>
-                <el-button @click="router.push('/governance/quota')">维护配额</el-button>
+                <el-button @click="router.push('/governance/queues')">
+                  {{ t('jobDefinitionDetail.maintainQueue') }}
+                </el-button>
+                <el-button @click="router.push('/governance/quota')">
+                  {{ t('jobDefinitionDetail.maintainQuota') }}
+                </el-button>
               </div>
             </div>
           </el-tab-pane>
@@ -130,7 +140,7 @@
               </el-descriptions>
               <div class="panel-actions">
                 <el-button type="primary" :loading="triggering" @click="triggerJob">
-                  手工触发
+                  {{ t('jobDefinitionDetail.manualTrigger') }}
                 </el-button>
                 <el-button @click="router.push('/self-service')">补跑/自助入口</el-button>
               </div>
@@ -163,7 +173,9 @@
               </el-descriptions>
               <div class="panel-toolbar">
                 <span>租户内 Workflow 定义(WORKFLOW 类型作业可关联)</span>
-                <el-button :loading="workflowsLoading" @click="loadWorkflows">刷新</el-button>
+                <el-button :loading="workflowsLoading" @click="loadWorkflows">
+                  {{ t('common.refresh') }}
+                </el-button>
               </div>
               <el-table
                 v-loading="workflowsLoading"
@@ -190,7 +202,9 @@
                 </el-table-column>
               </el-table>
               <div class="panel-actions">
-                <el-button @click="router.push('/workflow/definitions')">维护工作流定义</el-button>
+                <el-button @click="router.push('/workflow/definitions')">
+                  {{ t('jobDefinitionDetail.maintainWorkflowDefinition') }}
+                </el-button>
               </div>
             </div>
           </el-tab-pane>
@@ -199,7 +213,9 @@
             <div class="tab-panel">
               <div class="panel-toolbar">
                 <span>当前租户告警路由(用于匹配 alertGroup / receiver,FE 仅列出可绑定路由)</span>
-                <el-button :loading="alertsLoading" @click="loadAlerts">刷新</el-button>
+                <el-button :loading="alertsLoading" @click="loadAlerts">
+                  {{ t('common.refresh') }}
+                </el-button>
               </div>
               <el-table
                 v-loading="alertsLoading"
@@ -227,7 +243,7 @@
               </el-table>
               <div class="panel-actions">
                 <el-button @click="router.push('/observability/alert-routings')">
-                  维护告警路由
+                  {{ t('jobDefinitionDetail.maintainAlertRouting') }}
                 </el-button>
               </div>
             </div>
@@ -237,7 +253,9 @@
             <div class="tab-panel">
               <div class="panel-toolbar">
                 <span>最近 20 次运行</span>
-                <el-button text type="primary" @click="goAllRuns">查看全部</el-button>
+                <el-button text type="primary" @click="goAllRuns">
+                  {{ t('jobDefinitionDetail.viewAll') }}
+                </el-button>
               </div>
               <el-table
                 v-loading="runsLoading"
@@ -272,7 +290,9 @@
             <div class="tab-panel">
               <div class="panel-toolbar">
                 <span>按作业编码匹配最近审计记录</span>
-                <el-button :loading="auditLoading" @click="loadAudits">刷新</el-button>
+                <el-button :loading="auditLoading" @click="loadAudits">
+                  {{ t('common.refresh') }}
+                </el-button>
               </div>
               <el-table
                 v-loading="auditLoading"
@@ -302,6 +322,7 @@
 
 <script setup lang="ts">
   import { computed, onMounted, ref, watch } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import { useRoute, useRouter } from 'vue-router'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { Refresh } from '@element-plus/icons-vue'
@@ -354,6 +375,7 @@
   const route = useRoute()
   const router = useRouter()
   const tenant = useTenantStore()
+  const { t } = useI18n({ useScope: 'global' })
   const { data: metaEnumsData } = useConsoleMetaEnumsQuery()
 
   type JobDefinitionDetailModel = ConsoleJobDefinitionResponse &
@@ -392,7 +414,11 @@
 
   const jobId = computed(() => Number(route.params.id))
   const tenantId = computed(() => String(route.query.tenantId || tenant.tenantId))
-  const pageTitle = computed(() => (job.value ? `作业详情 · ${job.value.jobCode}` : '作业详情'))
+  const pageTitle = computed(() =>
+    job.value
+      ? t('jobDefinitionDetail.pageTitleWithCode', { code: job.value.jobCode })
+      : t('jobDefinitionDetail.pageTitle'),
+  )
 
   function resolveEnumLabel(group: string, value?: string | null): string {
     if (!value) return '—'
@@ -524,20 +550,20 @@
     let payloadText = job.value.defaultParams?.trim() || '{}'
     try {
       const { value } = await ElMessageBox.prompt(
-        '确认本次手工触发参数',
-        `触发 ${job.value.jobCode}`,
+        t('jobDefinitionDetail.triggerPromptMessage'),
+        t('jobDefinitionDetail.triggerPromptTitle', { code: job.value.jobCode }),
         {
           inputType: 'textarea',
           inputValue: payloadText,
-          confirmButtonText: '触发',
-          cancelButtonText: '取消',
+          confirmButtonText: t('jobDefinitionDetail.triggerConfirm'),
+          cancelButtonText: t('common.cancel'),
           inputValidator: (v: string) => {
             const text = v?.trim() || '{}'
             try {
               JSON.parse(text)
               return true
             } catch {
-              return '请输入合法 JSON'
+              return t('jobDefinitionDetail.invalidJson')
             }
           },
         },
@@ -549,7 +575,7 @@
     triggering.value = true
     try {
       await jobApi.trigger(job.value.jobCode, job.value.tenantId, JSON.parse(payloadText))
-      ElMessage.success('已提交触发请求')
+      ElMessage.success(t('jobDefinitionDetail.triggerSubmitted'))
       runsLoaded.value = false
       if (activeTab.value === 'runs') await loadRuns()
     } finally {
