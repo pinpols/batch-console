@@ -37,9 +37,10 @@ test.describe('dashboard metric card navigation (指标卡片跳转)', () => {
     await expect(page).toHaveURL(/\/monitor\/job-instances.*status=RUNNING/)
   })
 
-  test('点击失败任务卡片跳转到实例列表并筛选 status=FAILED', async ({ page }) => {
+  test('点击失败任务卡片跳转到实例列表并筛选 statuses=FAILED', async ({ page }) => {
     await clickMetric(page, '失败任务')
-    await expect(page).toHaveURL(/\/monitor\/job-instances.*status=FAILED/)
+    // 卡片把 FAILED + PARTIAL_FAILED 一起带过去(运营视角"失败"含部分失败)
+    await expect(page).toHaveURL(/\/monitor\/job-instances.*statuses=FAILED/)
   })
 
   test('点击在线 Worker 卡片跳转到 Worker 管理', async ({ page }) => {
