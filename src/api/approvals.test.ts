@@ -15,7 +15,7 @@ import { fetchAllPageItems } from './adapters'
 const mockedPost = vi.mocked(post)
 const mockedAll = vi.mocked(fetchAllPageItems)
 
-describe('approvals API', () => {
+describe('approvalsApi', () => {
   beforeEach(() => {
     mockedPost.mockReset()
     mockedAll.mockReset()

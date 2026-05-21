@@ -17,7 +17,7 @@ import { get, post } from './client'
 const mockedGet = vi.mocked(get)
 const mockedPost = vi.mocked(post)
 
-describe('triggers API', () => {
+describe('triggersApi', () => {
   beforeEach(() => {
     mockedGet.mockReset()
     mockedPost.mockReset()

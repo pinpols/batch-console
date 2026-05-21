@@ -6,6 +6,10 @@
 >
 > 按日期倒序,使用绝对日期(`YYYY-MM-DD`)。
 
+### 2026-05-21
+
+- **CLAUDE.md §测试约定 新增**:扫 46 个 `*.test.ts` 后归纳已成事实的统一项 + 锁住(避免后续偏移):Vitest 唯一框架 / 同目录 `*.test.ts` / `describe` 用被测对象短名(`jobApi` 不是 `xxx API`) / 禁 `should` 前缀 / mock 顶层 `vi.mock` + `vi.mocked` / DOM 时 `@vitest-environment jsdom` / SFC 测试受 element-plus 阻塞优先抽 util。同时把上轮新加的 3 个 `describe('xxx API', ...)`(triggers/approvals/tenants)改成 `xxxApi` 跟 `jobApi`/`instanceApi` 对齐。
+
 ### 2026-05-20
 
 - **CLAUDE.md 新建**(107 行):FE 之前只有 AGENTS.md(41 行,Codex 约定),Claude Code 不自动 baseline 加载 → 进项目无规范,反复违反 i18n / API 客户端 / 类型生成等约定。按 BE CLAUDE.md 同样结构组织,首次落地:
