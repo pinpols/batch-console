@@ -62,11 +62,18 @@
   const searching = ref(false)
   const options = ref<Tenant[]>([])
 
+  // 永远从下拉里隐藏的 tenant_id:
+  //   - 'default'        配置模板库(V55 seed),新租户初始化时复制 queue/window/calendar
+  //   - 'default-tenant' V42 演示账号孤儿;V148 自动清,残留兜底
+  //   - 'system'         admin 账号宿主,不是业务工作租户(管理页 /system/* 不依赖切到这里)
+  // 后端列表接口若未过滤,前端兜底再过一遍(防御性双层)
+  const HIDDEN_TENANTS = new Set(['default', 'default-tenant', 'system'])
+
   async function fetchTenants(keyword?: string) {
     searching.value = true
     try {
       const res = await listTenants({ keyword, pageNo: 1, pageSize: 50 })
-      options.value = res.items
+      options.value = res.items.filter((t) => !HIDDEN_TENANTS.has(t.tenantId))
     } catch {
       options.value = []
     } finally {

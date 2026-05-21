@@ -12,11 +12,11 @@ describe('mapProfileToUserInfo (role mapping)', () => {
     expect(info.permissions).toEqual(['ROLE_ADMIN'])
   })
 
-  it('ROLE_CONFIG_ADMIN → OPERATOR', () => {
+  it('ROLE_TENANT_ADMIN → OPERATOR', () => {
     const info = mapProfileToUserInfo({
       username: 'u',
       tenantId: 'ta',
-      authorities: ['ROLE_CONFIG_ADMIN'],
+      authorities: ['ROLE_TENANT_ADMIN'],
     })
     expect(info.role).toBe('OPERATOR')
   })
@@ -43,11 +43,11 @@ describe('mapProfileToUserInfo (role mapping)', () => {
     )
   })
 
-  it('ADMIN wins over CONFIG_ADMIN when both present (priority order)', () => {
+  it('ADMIN wins over TENANT_ADMIN when both present (priority order)', () => {
     const info = mapProfileToUserInfo({
       username: 'u',
       tenantId: 'ta',
-      authorities: ['ROLE_CONFIG_ADMIN', 'ROLE_ADMIN'],
+      authorities: ['ROLE_TENANT_ADMIN', 'ROLE_ADMIN'],
     })
     expect(info.role).toBe('ADMIN')
   })

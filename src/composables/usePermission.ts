@@ -22,7 +22,7 @@ export function usePermission() {
    * (`rbac_5roles_only`:OPERATOR/VIEWER 是菜单档位标签不是 Spring authority,这里只看真实角色)
    */
   const canMutateConfig = computed(
-    () => auth.hasPermission('ROLE_ADMIN') || auth.hasPermission('ROLE_CONFIG_ADMIN'),
+    () => auth.hasPermission('ROLE_ADMIN') || auth.hasPermission('ROLE_TENANT_ADMIN'),
   )
 
   /** 仅 ADMIN 能做的高危操作(用户管理、租户管理等) */

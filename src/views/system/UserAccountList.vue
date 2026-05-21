@@ -137,9 +137,13 @@
         <el-form-item :label="t('userAccountList.fieldTenant')" prop="tenantId">
           <TenantSelect
             v-model="createForm.tenantId"
+            :disabled="!isPlatformAdmin"
             :placeholder="t('userAccountList.createTenantPlaceholder')"
             select-class="query-w-full"
           />
+          <div v-if="!isPlatformAdmin" class="field-hint">
+            {{ t('userAccountList.tenantScopeLockedHint') }}
+          </div>
         </el-form-item>
         <el-form-item :label="t('userAccountList.fieldUsername')" prop="username">
           <el-input
@@ -300,22 +304,21 @@
   import TenantSelect from '@/components/common/TenantSelect.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
   import { useTenantStore } from '@/stores/tenant'
+  import { useAuthStore } from '@/stores/auth'
+  import { filterRoleOptionsFor } from '@/utils/roleOptions'
 
   const { loading, error: loadError, run: runLoad } = useListLoadState()
   const tenant = useTenantStore()
+  const auth = useAuthStore()
+
+  /** 当前操作者是否平台 ADMIN(能授任意角色 + 任意租户);TENANT_ADMIN 只能管自己租户。 */
+  const isPlatformAdmin = computed(() => auth.hasPermission('ROLE_ADMIN'))
 
   /**
-   * BE 实际有效的 Spring authority(参考 rbac_5roles_only memory):
-   * OPERATOR / VIEWER 是菜单档位标签不是 Spring 角色,直接落 authoritiesCsv
-   * 会触发 URL 兜底 403。让用户多选这 5 个,避免手填错字。
+   * 角色选项 + 当前操作者过滤逻辑抽到 `utils/roleOptions.ts`(独立 vitest 守护)。
+   * BE Service 层有兜底:TENANT_ADMIN 提交 ADMIN/AUDITOR 一律 403。
    */
-  const ROLE_OPTIONS = [
-    { value: 'ROLE_ADMIN', label: 'ROLE_ADMIN (系统管理员)' },
-    { value: 'ROLE_CONFIG_ADMIN', label: 'ROLE_CONFIG_ADMIN (配置管理员)' },
-    { value: 'ROLE_AUDITOR', label: 'ROLE_AUDITOR (审计员)' },
-    { value: 'ROLE_TENANT_USER', label: 'ROLE_TENANT_USER (租户操作员)' },
-    { value: 'ROLE_USER', label: 'ROLE_USER (普通用户)' },
-  ] as const
+  const ROLE_OPTIONS = computed(() => filterRoleOptionsFor(isPlatformAdmin.value))
   function csvToRoles(csv: string): string[] {
     return (csv || '')
       .split(',')
