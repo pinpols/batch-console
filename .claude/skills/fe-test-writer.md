@@ -183,6 +183,23 @@ npx vitest run src/path/to/your.test.ts
 - 改 `afterEach` 清 mock(用 `beforeEach.mockReset`)
 - 在 test 文件里搞复杂 fixture builder(>20 行就该抽出 `xxx.fixture.ts`)
 
-## 高 ROI 缺测优先级(从 audit 沉淀)
+## Vitest vs Playwright 关系
 
-按重要度补:**API 模块 → 指令 → utils → composables → stores → SFC**
+**两条并行轨,职责不同**:
+
+- **Vitest 单测**:回归防线 + 快速失败(< 30s),粒度 = 函数 / 模块
+- **Playwright e2e**(`e2e/*.spec.ts`):用户路径冒烟 + 跨页交互,粒度 = 整页 / 跨页(~12 min)
+
+**实操顺序按场景选**:
+
+| 场景 | 推荐顺序 |
+|---|---|
+| 新 feature | e2e 主路径 happy path 先(outside-in 验证整体跑通)→ Vitest 补关键逻辑回归 |
+| bug fix | Vitest 先复现(< 30s 快迭代)→ 跨页 bug 再补 e2e |
+| 防线建设(补缺测) | e2e 已覆盖主路径 → **优先补 Vitest** 把慢路径下沉 |
+
+## 高 ROI 缺测优先级(Vitest 内部)
+
+补 Vitest 时按本顺序选目标(audit 沉淀):**API 模块 → 指令 → utils → composables → stores → SFC**
+
+理由:API 层零防线时业务回归全靠 e2e(慢、脆);指令是 security-critical 兜底;SFC 受 element-plus auto-import 阻塞,ROI 最低优先抽 util。
