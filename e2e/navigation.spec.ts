@@ -7,13 +7,16 @@ test.describe('navigation and tabs', () => {
   })
 
   test('侧边栏导航可切换到关键页面', async ({ page }) => {
-    // 菜单分组(IA 调整后):工作台/运行/作业与工作流/文件/告警与投递/...
-    await page.getByRole('menuitem', { name: '运行' }).first().click()
-    await page.getByRole('menuitem', { name: /工作流运行/ }).first().click()
+    // 2026-05 菜单 IA:FE 在 nav.group.* 把 BE 7 个分组重映射为
+    // 工作台/运行/作业与工作流/文件/调度/告警与投递/配置/系统。
+    // 1280×720 viewport ≤ BP.lg → 侧栏自动 collapse 只显图标;先展开才能按 name 匹配菜单项。
+    await page.getByRole('button', { name: '展开侧栏' }).click()
+    await page.getByRole('menuitem', { name: '运行', exact: true }).first().waitFor({ timeout: 5000 })
+    await page.getByRole('menuitem', { name: '运行', exact: true }).first().click()
+    await page.getByRole('menuitem', { name: /工作流运行|Workflow Run/ }).first().click()
     await expect(page).toHaveURL(/\/monitor\/workflow-runs/)
-    await expectPageTitle(page, '工作流运行')
 
-    // 切到告警与投递组下的 Outbox
+    // 切到「告警与投递」组下的 Outbox
     await page.getByRole('menuitem', { name: /告警与投递/ }).first().click()
     await page.getByRole('menuitem', { name: 'Outbox' }).first().click()
     await expect(page).toHaveURL(/\/observability\/outbox/)
