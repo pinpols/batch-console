@@ -10,6 +10,58 @@ Generate a Vitest unit test for a FE module following the project's established 
   `src/stores/*.ts` 补回归防线
 - 重构前要先固化现有行为
 
+## 工作流(触发后照走)
+
+```
+1. 识别被测对象类型(看文件路径)
+   ↓
+2. 选 skeleton(下面 4 个之一)
+   ↓
+3. 写测试(按 skeleton + §Conventions)
+   ↓
+4. npx vitest run <file> 单跑验证
+   ↓
+5. 通过 → git add + commit
+   失败 → 修测试或修代码,回 step 4
+```
+
+**每步实际动作**:
+
+| 步骤 | 动作 |
+|---|---|
+| 1. 识别类型 | 按文件路径走下面「决策树」 |
+| 2. 选 skeleton | 直接复制对应 skeleton,改名 + 改 mock 目标 + 改 import |
+| 3. 写测试 | 遵守 §Conventions(`describe` 用对象短名 / 禁 `should` 前缀 / mock 三件套 / DOM 时加 `@vitest-environment jsdom`) |
+| 4. 单跑验证 | `npx vitest run src/path/to/your.test.ts` —— **不要** `npm run test:unit`(扫全仓慢) |
+| 5. 提交 | spotless / prettier 会自动 fix;commit message 用 `test(fe): xxx` 前缀 |
+
+## 决策树(选 skeleton)
+
+```
+被测对象在哪?
+├── src/api/*.ts(非 api.generated.ts)
+│       → API skeleton + mock client.{get,post,put,patch}
+├── src/utils/*.ts(纯函数)
+│       → util skeleton(最简单,大多无 mock)
+├── src/directives/*.ts
+│       → directive skeleton + 顶部 // @vitest-environment jsdom
+├── src/composables/*.ts
+│       → composable skeleton + setActivePinia + 必要 mock
+│       → 复杂场景参考 src/composables/useSseAutoReload.test.ts / useOnboardingTour.test.ts
+├── src/stores/*.ts
+│       → 参考 src/stores/auth.test.ts(已有 4 个测,follow pattern)
+└── src/components/**/*.vue
+        → 先问:逻辑能抽到 src/utils/*.ts 吗?
+            ├── 能(校验 / 派生 / 状态机)
+            │    → 抽到 util/ + 走 util skeleton(已有先例:
+            │      tenantIdValidator / resourceCodeBuilder / passwordGenerator)
+            └── 不能(模板渲染 / 事件冒泡 / 生命周期)
+                 → SFC 测(踩雷:element-plus auto-import CSS,
+                    需 vite.config 加 css:false + server.deps.inline:[/element-plus/]
+                    + 用 @vue/test-utils mount,跟 ErrorBoundary 雷同)
+                 → 多数情况建议跳过,留给 Playwright e2e 兜底
+```
+
 ## File location & naming
 
 - **同目录共存**:`src/foo/bar.ts` → `src/foo/bar.test.ts`,**禁** `__tests__/` 子目录
