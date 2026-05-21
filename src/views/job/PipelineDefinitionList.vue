@@ -384,26 +384,27 @@
   import type { Component } from 'vue'
 
   // Stage → 图标 + 主题色 + 一句话描述。覆盖 STAGES_BY_TYPE 全 17 种,缺省走默认。
+  // 色板走 design token `--color-stage-*`(tokens.css),el-icon `color` 接受 CSS var()。
   const STAGE_META: Record<string, { icon: Component; color: string; desc: string }> = {
-    RECEIVE: { icon: Download, color: '#3b82f6', desc: '接收源文件' },
-    PREPROCESS: { icon: MagicStick, color: '#8b5cf6', desc: '解密 / 预处理' },
-    PARSE: { icon: Document, color: '#06b6d4', desc: '解析为记录' },
-    VALIDATE: { icon: CircleCheck, color: '#10b981', desc: '校验' },
-    LOAD: { icon: Upload, color: '#f59e0b', desc: '入库' },
-    FEEDBACK: { icon: ChatLineRound, color: '#ec4899', desc: '回执 / 通知' },
-    PREPARE: { icon: Setting, color: '#6366f1', desc: '准备执行上下文' },
-    COMPUTE: { icon: DataLine, color: '#0ea5e9', desc: '业务计算' },
-    GENERATE: { icon: DocumentAdd, color: '#14b8a6', desc: '生成文件' },
-    STORE: { icon: Folder, color: '#a855f7', desc: '存档' },
-    REGISTER: { icon: Notebook, color: '#f43f5e', desc: '登记元数据' },
-    COMMIT: { icon: Check, color: '#22c55e', desc: '提交' },
-    COMPLETE: { icon: Finished, color: '#16a34a', desc: '完成' },
-    DISPATCH: { icon: Promotion, color: '#3b82f6', desc: '推送下游' },
-    ACK: { icon: Bell, color: '#f59e0b', desc: '等待 ACK' },
-    RETRY: { icon: Refresh, color: '#fb923c', desc: '失败重试' },
-    COMPENSATE: { icon: RefreshLeft, color: '#ef4444', desc: '补偿' },
+    RECEIVE: { icon: Download, color: 'var(--color-stage-receive)', desc: '接收源文件' },
+    PREPROCESS: { icon: MagicStick, color: 'var(--color-stage-preprocess)', desc: '解密 / 预处理' },
+    PARSE: { icon: Document, color: 'var(--color-stage-parse)', desc: '解析为记录' },
+    VALIDATE: { icon: CircleCheck, color: 'var(--color-stage-validate)', desc: '校验' },
+    LOAD: { icon: Upload, color: 'var(--color-stage-load)', desc: '入库' },
+    FEEDBACK: { icon: ChatLineRound, color: 'var(--color-stage-feedback)', desc: '回执 / 通知' },
+    PREPARE: { icon: Setting, color: 'var(--color-stage-prepare)', desc: '准备执行上下文' },
+    COMPUTE: { icon: DataLine, color: 'var(--color-stage-compute)', desc: '业务计算' },
+    GENERATE: { icon: DocumentAdd, color: 'var(--color-stage-generate)', desc: '生成文件' },
+    STORE: { icon: Folder, color: 'var(--color-stage-store)', desc: '存档' },
+    REGISTER: { icon: Notebook, color: 'var(--color-stage-register)', desc: '登记元数据' },
+    COMMIT: { icon: Check, color: 'var(--color-stage-commit)', desc: '提交' },
+    COMPLETE: { icon: Finished, color: 'var(--color-stage-complete)', desc: '完成' },
+    DISPATCH: { icon: Promotion, color: 'var(--color-stage-dispatch)', desc: '推送下游' },
+    ACK: { icon: Bell, color: 'var(--color-stage-ack)', desc: '等待 ACK' },
+    RETRY: { icon: Refresh, color: 'var(--color-stage-retry)', desc: '失败重试' },
+    COMPENSATE: { icon: RefreshLeft, color: 'var(--color-stage-compensate)', desc: '补偿' },
   }
-  const DEFAULT_META = { icon: Setting, color: '#94a3b8', desc: '' }
+  const DEFAULT_META = { icon: Setting, color: 'var(--color-text-tertiary)', desc: '' }
   function stageMeta(code: string) {
     return STAGE_META[code] ?? DEFAULT_META
   }

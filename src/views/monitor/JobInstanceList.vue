@@ -92,9 +92,13 @@
 
         <!-- P2.4 列顺序优化:用户决策字段(状态/jobCode/bizDate/耗时/重跑)优先,
              工程字段(instanceNo/queue/traceId)后置 -->
-        <el-table-column :label="t('jobInstanceList.colStatus')" width="110">
+        <el-table-column :label="t('jobInstanceList.colStatus')" width="140">
           <template #default="{ row }">
             <StatusTag :value="row.instanceStatus" category="instance" />
+            <!-- ADR-026 dry-run 实例:badge 标识不写状态/不投递,避免误读为真实运行 -->
+            <el-tag v-if="row.dryRun" size="small" type="info" effect="plain" class="dry-run-badge">
+              {{ t('jobInstanceList.dryRunBadge') }}
+            </el-tag>
           </template>
         </el-table-column>
         <el-table-column prop="jobCode" :label="t('jobInstanceList.colJobCode')" width="140">

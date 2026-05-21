@@ -9,11 +9,22 @@
         <el-button :icon="Refresh" :loading="loading" @click="load">
           {{ t('common.refresh') }}
         </el-button>
+        <el-button v-if="job" :icon="MagicStick" @click="dryRunVisible = true">
+          {{ t('jobDefinitionDetail.dryRun') }}
+        </el-button>
         <el-button v-if="job" type="primary" :loading="triggering" @click="triggerJob">
           {{ t('jobDefinitionDetail.manualTrigger') }}
         </el-button>
       </template>
     </PageHeader>
+
+    <DryRunPlanDialog
+      v-if="job"
+      v-model="dryRunVisible"
+      :tenant-id="job.tenantId"
+      :job-code="job.jobCode"
+      :default-params="job.defaultParams"
+    />
 
     <CalendarMiniCreateDrawer
       v-if="job?.tenantId"
@@ -325,7 +336,8 @@
   import { useI18n } from 'vue-i18n'
   import { useRoute, useRouter } from 'vue-router'
   import { ElMessage, ElMessageBox } from 'element-plus'
-  import { Refresh } from '@element-plus/icons-vue'
+  import { Refresh, MagicStick } from '@element-plus/icons-vue'
+  import DryRunPlanDialog from '@/components/dialogs/DryRunPlanDialog.vue'
   import { jobApi } from '@/api/job'
   import { instanceApi } from '@/api/instance'
   import { governanceApi, type GovernanceAlertRoutingRow } from '@/api/governance'
@@ -396,6 +408,7 @@
   const activeTab = ref<DetailTab>(tabFromQuery())
   const loading = ref(false)
   const triggering = ref(false)
+  const dryRunVisible = ref(false)
   const job = ref<JobDefinitionDetailModel | null>(null)
   const runs = ref<ConsoleJobInstanceResponse[]>([])
   const runsLoading = ref(false)

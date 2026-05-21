@@ -16,6 +16,29 @@
   --color-danger: #ff4d4f;
   --color-info: #1677ff;
 
+  /**
+   * Pipeline stage 调色板 — 17 个 stage 各自语义化色,用于 PipelineDefinitionList 中
+   * 步骤 icon / 时间轴 节点配色,**仅业务图标用**,不是 UI 主题色。
+   * 沿用 Tailwind 500 区间,保持饱和度一致,色相按 stage 顺序均匀分布。
+   */
+  --color-stage-receive: #3b82f6;    /* blue-500 */
+  --color-stage-preprocess: #8b5cf6; /* violet-500 */
+  --color-stage-parse: #06b6d4;      /* cyan-500 */
+  --color-stage-validate: #10b981;   /* emerald-500 */
+  --color-stage-load: #f59e0b;       /* amber-500 */
+  --color-stage-feedback: #ec4899;   /* pink-500 */
+  --color-stage-prepare: #6366f1;    /* indigo-500 */
+  --color-stage-compute: #0ea5e9;    /* sky-500 */
+  --color-stage-generate: #14b8a6;   /* teal-500 */
+  --color-stage-store: #a855f7;      /* purple-500 */
+  --color-stage-register: #f43f5e;   /* rose-500 */
+  --color-stage-commit: #22c55e;     /* green-500 */
+  --color-stage-complete: #16a34a;   /* green-600 */
+  --color-stage-dispatch: #3b82f6;   /* blue-500(同 RECEIVE,语义同为「发送/接收」) */
+  --color-stage-ack: #f59e0b;        /* amber-500(同 LOAD,等待类) */
+  --color-stage-retry: #fb923c;      /* orange-400 */
+  --color-stage-compensate: #ef4444; /* red-500 */
+
   /** Button color system: 统一在 Tailwind 500/600 区间(行业基线 GitHub/Vercel/Linear)。
    *  Light mode 调整(2026-05-14):
    *    - primary 从 blue-600(#2563eb)→ #1677ff(与 --color-primary 一致),避免过深
