@@ -40,10 +40,12 @@
           {{ previewError }}
         </div>
         <div v-else-if="previewLoading" class="cron-next">
-          <span class="cron-next__label">下次执行(BE 计算中…)</span>
+          <span class="cron-next__label">{{ t('cronExprInput.previewLoading') }}</span>
         </div>
         <div v-else-if="nextRuns.length" class="cron-next">
-          <span class="cron-next__label">最近 3 次执行({{ previewTz || '本地' }}):</span>
+          <span class="cron-next__label">{{
+            t('cronExprInput.nextRunsLabel', { tz: previewTz || t('cronExprInput.tzLocal') })
+          }}</span>
           <span class="cron-next__list">
             <span v-for="(t, i) in nextRuns" :key="i" class="cron-next__time">
               {{ formatNext(t) }}
@@ -68,11 +70,14 @@
    * 公开 props/emits 与 el-input 类似,可直接 v-model 双向绑定。
    */
   import { computed, ref, watch } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import { Check, Warning } from '@element-plus/icons-vue'
   import cronstrue from 'cronstrue/i18n'
   // @ts-ignore — cronstrue/i18n 子包没有显式 type 声明,运行时存在
   import 'cronstrue/locales/zh_CN'
   import { previewCron } from '@/api/system.cron'
+
+  const { t } = useI18n({ useScope: 'global' })
 
   const props = withDefaults(
     defineProps<{
