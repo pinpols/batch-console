@@ -240,6 +240,24 @@
               >
                 {{ selectedNodeMeta.timeoutSeconds }} s
               </el-descriptions-item>
+              <!-- ADR-018 跨日依赖摘要(节点存在跨日依赖才展示) -->
+              <el-descriptions-item
+                v-if="crossDayInfo.count > 0"
+                :label="t('workflowMermaidViewer.fldCrossDayDeps')"
+              >
+                <div class="cross-day-info">
+                  <el-tag size="small" type="warning" effect="plain">
+                    {{ crossDayInfo.count }} {{ t('workflowMermaidViewer.crossDayCountSuffix') }}
+                  </el-tag>
+                  <span v-if="crossDayInfo.timeoutSeconds != null" class="cell-mute">
+                    · {{ t('workflowMermaidViewer.crossDayTimeoutLabel') }}:
+                    {{ crossDayInfo.timeoutSeconds }} s
+                  </span>
+                </div>
+                <ul class="cross-day-list">
+                  <li v-for="(line, idx) in crossDayInfo.lines" :key="idx">{{ line }}</li>
+                </ul>
+              </el-descriptions-item>
               <el-descriptions-item
                 v-if="selectedNodeDescription"
                 :label="t('workflowMermaidViewer.fldDescription')"
@@ -386,6 +404,7 @@
   import SectionCard from '@/components/common/SectionCard.vue'
   import DataState from '@/components/common/DataState.vue'
   import { workflowApi } from '@/api/workflow'
+  import { injectCrossDayEdges, describeCrossDayDeps } from '@/utils/crossDayMermaid'
   import { queryWorkflowNodeRuns } from '@/api/workflowQueries'
   import { instanceApi } from '@/api/instance'
   import { useTenantStore } from '@/stores/tenant'
@@ -485,6 +504,12 @@
     () => (selectedNodeMeta.value as { description?: string } | null)?.description,
   )
 
+  /** ADR-018 跨日依赖摘要,供 inspector 展示 */
+  const crossDayInfo = computed(() => {
+    if (!selectedNodeMeta.value) return { count: 0, timeoutSeconds: null, lines: [] as string[] }
+    return describeCrossDayDeps(selectedNodeMeta.value)
+  })
+
   const runStatusTagType = computed<'primary' | 'success' | 'danger' | 'info'>(() => {
     const s = (runStatus.value || '').toUpperCase()
     if (s === 'RUNNING') return 'primary'
@@ -538,7 +563,9 @@
       runStatus.value = run?.runStatus ?? null
       nodeRunsCache.value = nodeRuns
       buildNodeCodeMap(d)
-      rendererText.value = applyStateOverlay(mermaidText.value, nodeRuns)
+      // 先把跨日依赖的幽灵节点 + 虚线边注入 BE mermaid,再叠加状态高亮
+      const enrichedMermaid = injectCrossDayEdges(mermaidText.value, d?.nodes ?? [])
+      rendererText.value = applyStateOverlay(enrichedMermaid, nodeRuns)
       await renderMermaid(rendererText.value)
       attachNodeClicks()
       maybeStartPoll()
@@ -566,7 +593,9 @@
       ])
       runStatus.value = run?.runStatus ?? null
       nodeRunsCache.value = nodeRuns
-      rendererText.value = applyStateOverlay(mermaidText.value, nodeRuns)
+      // 先把跨日依赖的幽灵节点 + 虚线边注入 BE mermaid,再叠加状态高亮(tickPoll 不重拉 detail,沿用 detail.value)
+      const enrichedMermaid = injectCrossDayEdges(mermaidText.value, detail.value?.nodes ?? [])
+      rendererText.value = applyStateOverlay(enrichedMermaid, nodeRuns)
       await renderMermaid(rendererText.value)
       attachNodeClicks()
       if (run?.runStatus && terminalStatuses.has(run.runStatus.toUpperCase())) {

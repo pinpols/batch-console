@@ -20,6 +20,23 @@
       </template>
     </PageHeader>
 
+    <!-- ADR-026 dry-run 实例:醒目 banner 提醒"未真正写状态/未投递",并展示 failureClass(若有) -->
+    <el-alert
+      v-if="row?.dryRun"
+      :title="t('jobInstanceDetail.dryRunBannerTitle')"
+      type="info"
+      show-icon
+      :closable="false"
+      class="dry-run-banner"
+    >
+      <template #default>
+        <div>{{ t('jobInstanceDetail.dryRunBannerHint') }}</div>
+        <div v-if="row.failureClass" class="failure-class">
+          {{ t('jobInstanceDetail.failureClass') }}: <code>{{ row.failureClass }}</code>
+        </div>
+      </template>
+    </el-alert>
+
     <div v-if="row" class="detail-grid">
       <MetricCard
         :label="t('monitor.detailMetricInstanceNo')"

@@ -560,6 +560,17 @@ const routes: RouteRecordRaw[] = [
       { path: 'ops/toolbox', redirect: '/ops/diagnostic' },
       { path: 'system/cluster-diagnostic', redirect: '/ops/diagnostic' },
       {
+        path: 'ops/batch-day-replay',
+        name: 'batch-day-replay',
+        component: () => import('@/views/ops/BatchDayReplay.vue'),
+        meta: {
+          title: '批次日重放',
+          activeMenu: '/ops/batch-day-replay',
+          // TENANT_ADMIN 可以提交+查看(本租户),ADMIN 可以审批
+          minRole: 'OPERATOR',
+        },
+      },
+      {
         path: 'system/notifications',
         name: 'notification-management',
         component: () => import('@/views/system/NotificationManagement.vue'),
