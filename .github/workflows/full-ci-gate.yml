@@ -9,8 +9,10 @@ on:
   push:
     branches: [main]
   schedule:
-    # UTC 02:00 = Asia/Shanghai 10:00,早会前出报告
-    - cron: '0 2 * * *'
+    # 周一 UTC 02:00 = Asia/Shanghai 10:00,每周一次出周报告。
+    # 工作日 push main 已自动跑全量,daily nightly 是冗余;
+    # 每周保留一次仍能拦"无 push 但 transitive deps 漂移"类问题。
+    - cron: '0 2 * * 1'
   workflow_dispatch: {}
 
 concurrency:
