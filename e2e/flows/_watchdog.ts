@@ -49,7 +49,8 @@ export class FlowLog {
     fs.mkdirSync(outDir, { recursive: true })
     const f = path.join(outDir, `${flowName}-${ts()}.json`)
     fs.writeFileSync(f, JSON.stringify(this.events, null, 2))
-    console.log(`[flow] ${flowName} FAILED, log written to ${f}`)
+    // eslint no-console allows warn/error; flow 失败用 warn 而非 log,既保 CI 日志可见又通 lint
+    console.warn(`[flow] ${flowName} FAILED, log written to ${f}`)
   }
 }
 
