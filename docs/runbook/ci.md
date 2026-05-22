@@ -112,6 +112,35 @@ tag v* / 手动 ─────────┬─ e2e-against-staging
 | full-ci-gate Lighthouse perf < 0.8 | 包体增大 / 慢资源 | 看报告找 LCP / TBT 拖累项,常见:vendor chunk 拆分 / 图片压缩 |
 | staging-gate playwright fail | staging 服务挂 / 选择器漂 | 看 playwright-report artifact 截图 / 录屏 |
 
+## 耗时基线(2026-05-23 snapshot)
+
+最近一次成功跑的总耗时与 job 分布。指标用于回归告警:任一 wf 超基线 +50% 需排查。
+
+| Workflow | 总耗时 | 触发 | 目标 | 状态 |
+|---|---|---|---|---|
+| pr-gate | 1:37 | PR / push | ≤6m | ✅ |
+| full-ci-gate | 3:48 | push main / nightly / 手动 | ≤6m | ✅ |
+| release-please | 0:12 | push main | ≤6m | ✅ |
+| renovate | 1:23 | renovate bot | ≤6m | ✅ |
+| staging-gate | 0:12 | tag v* / 手动 | ≤6m | ✅ skip(无 STAGING_URL) |
+
+### Job 级分布
+
+**pr-gate(单 job)**
+- Lint / Typecheck / Unit / Build:1:32
+
+**full-ci-gate(4 job 并行,瓶颈 Lighthouse)**
+- Security audit (full) 0:25 / Static checks + Unit 1:21 / Docker build + Trivy 1:25 / **Lighthouse 2:18** ← critical path
+
+**staging-gate(precheck-only,无 STAGING_URL secret)**
+- precheck 4s → Playwright e2e + Lighthouse against staging 双 job skip,workflow 总 12s
+
+### staging-gate skip 机制
+
+precheck job 读 `secrets.STAGING_URL`(或 dispatch input `base_url`)。空 → 输出 `should_run=false`,Playwright + Lighthouse 双 job 跳过,workflow warning(非 failure)。配上 secret 后自动启用 82 specs Playwright + Lighthouse 全量。BE 对应模式见 `../file-batch-system/docs/runbook/ci.md`(2026-05-23 BE 仓 PR #23 对齐)。
+
+---
+
 ## 关联文件
 
 - `.github/workflows/*.yml` — 3 个 workflow
