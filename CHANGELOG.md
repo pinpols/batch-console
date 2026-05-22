@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.2](https://github.com/pinpols/batch-console/compare/v0.1.1...v0.1.2) (2026-05-22)
+
+
+### Docs
+
+* **ci:** add 2026-05-23 timing baseline + skip mechanism ([9877f35](https://github.com/pinpols/batch-console/commit/9877f354a14e2f29226ffe8a76f02168d79d53d3))
+* **runbook:** dev-workflow 加权限模型 / 谁能提代码 段 ([599f7b4](https://github.com/pinpols/batch-console/commit/599f7b4accc8d92c81956a4756f5efbae0ff0d93))
+
 ## [0.1.1](https://github.com/pinpols/batch-console/compare/v0.1.0...v0.1.1) (2026-05-22)
 
 
