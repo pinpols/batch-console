@@ -8,6 +8,26 @@ import { readFileSync } from 'node:fs'
 
 // 从 unplugin-auto-import 生成的 dts 解析自动注入的全局名,
 // 让 no-undef 不误报 computed / ref / onMounted 等(它们在 SFC 里看似未声明)。
+// CI 上 `npm ci` 后 auto-imports.d.ts 还没生成(只有 vite dev/build 才生成),
+// fallback 给硬编码的 vue/vue-router/pinia 常用 auto-import 列表,跟 vite.config.ts
+// AutoImport({imports: ['vue', 'vue-router', 'pinia']}) 配置对齐。
+const AUTO_IMPORT_FALLBACK = [
+  // vue
+  'computed', 'ref', 'reactive', 'readonly', 'shallowRef', 'shallowReactive',
+  'watch', 'watchEffect', 'watchPostEffect', 'watchSyncEffect', 'nextTick',
+  'onMounted', 'onUnmounted', 'onBeforeMount', 'onBeforeUnmount', 'onUpdated',
+  'onBeforeUpdate', 'onActivated', 'onDeactivated', 'onErrorCaptured',
+  'onRenderTracked', 'onRenderTriggered', 'onServerPrefetch',
+  'provide', 'inject', 'defineComponent', 'defineAsyncComponent', 'defineCustomElement',
+  'h', 'createApp', 'getCurrentInstance', 'useAttrs', 'useSlots', 'useCssModule',
+  'toRef', 'toRefs', 'toRaw', 'markRaw', 'isRef', 'isReactive', 'isReadonly', 'isProxy',
+  'unref', 'customRef', 'triggerRef', 'effectScope', 'getCurrentScope', 'onScopeDispose',
+  // vue-router
+  'useRouter', 'useRoute', 'useLink', 'onBeforeRouteUpdate', 'onBeforeRouteLeave',
+  // pinia
+  'defineStore', 'storeToRefs', 'createPinia', 'setActivePinia', 'getActivePinia',
+  'acceptHMRUpdate', 'mapStores', 'mapState', 'mapWritableState', 'mapActions',
+]
 function parseAutoImports() {
   try {
     const txt = readFileSync('./src/types/auto-imports.d.ts', 'utf8')
@@ -15,7 +35,8 @@ function parseAutoImports() {
       [...txt.matchAll(/^\s*const\s+(\w+):/gm)].map((m) => [m[1], 'readonly']),
     )
   } catch {
-    return {}
+    // dts 缺(CI npm ci 后 vite 还没跑过):用硬编码 fallback,跟 vite.config.ts 对齐
+    return Object.fromEntries(AUTO_IMPORT_FALLBACK.map((n) => [n, 'readonly']))
   }
 }
 const autoImportGlobals = parseAutoImports()
