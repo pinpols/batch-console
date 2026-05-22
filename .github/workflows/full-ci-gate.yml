@@ -1,0 +1,169 @@
+name: full-ci-gate
+
+# main push / nightly 全量门禁(20-30 min)
+# 内容:pr-gate 全套 + Docker build/Trivy 扫 + Lighthouse + 完整 npm audit
+# **不跑** Playwright e2e:CI 起 BE 太脆,交 staging-gate 真环境跑
+# 对齐 BE 仓 full-ci-gate.yml 角色定位
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    # UTC 02:00 = Asia/Shanghai 10:00,早会前出报告
+    - cron: '0 2 * * *'
+  workflow_dispatch: {}
+
+concurrency:
+  group: full-ci-gate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ── Job 1:静态检查 + 单测 + 完整 build(含 typecheck + i18n 二次跑) ────
+  static-and-unit:
+    name: Static checks + Unit
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci --no-audit --no-fund
+
+      - run: npm run lint:check
+      - run: npm run typecheck
+      - run: npm run check:i18n
+
+      - name: Check OpenAPI drift
+        env:
+          BE_OPENAPI_URL: ${{ secrets.BE_OPENAPI_URL }}
+        run: npm run gen:api:check
+
+      - run: npm run test:unit
+
+      # 完整 build(vue-tsc + i18n + vite build),验证生产产物可生成
+      - run: npm run build
+
+      - name: Upload dist artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          retention-days: 7
+
+  # ── Job 2:Docker 镜像 build + Trivy 漏洞扫描 ──────────────────────
+  docker-and-scan:
+    name: Docker build + Trivy
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: static-and-unit
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t batch-console:ci-${{ github.sha }} .
+
+      # Trivy 镜像漏洞扫:只挡 CRITICAL(HIGH 警告但不挡,zero-day 噪音降级)
+      - name: Trivy scan (CRITICAL only)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'batch-console:ci-${{ github.sha }}'
+          format: 'table'
+          exit-code: '1'
+          severity: 'CRITICAL'
+          ignore-unfixed: true
+
+      - name: Trivy scan (HIGH+CRITICAL report-only)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'batch-console:ci-${{ github.sha }}'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'HIGH,CRITICAL'
+          ignore-unfixed: true
+
+      - name: Upload Trivy SARIF
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: trivy-results
+          path: trivy-results.sarif
+          retention-days: 30
+
+  # ── Job 3:Lighthouse 性能 + a11y + seo ─────────────────────────────
+  lighthouse:
+    name: Lighthouse (perf / a11y / SEO)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: static-and-unit
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+
+      - name: Download dist
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      # 起 vite preview 后台跑 Lighthouse,首页 + login 两路径
+      - name: Start preview server
+        run: |
+          npx vite preview --port 4173 > /tmp/preview.log 2>&1 &
+          for i in {1..30}; do
+            curl -sf http://localhost:4173/ > /dev/null && break
+            sleep 1
+          done
+
+      - name: Run Lighthouse
+        uses: treosh/lighthouse-ci-action@v12
+        with:
+          urls: |
+            http://localhost:4173/
+            http://localhost:4173/login
+          uploadArtifacts: true
+          temporaryPublicStorage: true
+          configPath: '.github/lighthouse-budget.json'
+
+  # ── Job 4:完整 npm audit(所有依赖 + 详细报告) ────────────────────
+  security-audit:
+    name: Security audit (full)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+
+      # 全量 audit(含 dev),CRITICAL 挡 build,其他 report-only
+      - name: npm audit (all deps, critical only blocks)
+        run: |
+          npm audit --json > /tmp/audit.json || true
+          critical=$(jq '.metadata.vulnerabilities.critical // 0' /tmp/audit.json)
+          high=$(jq '.metadata.vulnerabilities.high // 0' /tmp/audit.json)
+          echo "Critical: $critical, High: $high"
+          if [ "$critical" -gt 0 ]; then
+            echo "::error::Critical vulnerabilities detected"
+            npm audit --audit-level=critical
+            exit 1
+          fi
+          if [ "$high" -gt 0 ]; then
+            echo "::warning::$high high-severity vulnerabilities (review)"
+          fi
+
+      - name: Upload audit report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: npm-audit
+          path: /tmp/audit.json
+          retention-days: 30

@@ -1,0 +1,73 @@
+name: staging-gate
+
+# staging / pre-prod 部署前最终关:against 真实 staging URL 跑 Playwright + Lighthouse
+# 触发:release tag(v*)/ 手动 workflow_dispatch
+# 对齐 BE 仓 staging-gate.yml 角色定位
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: 'Staging URL(默认从 secret STAGING_URL 读)'
+        required: false
+        type: string
+
+concurrency:
+  group: staging-gate-${{ github.ref }}
+  cancel-in-progress: false  # staging 验收不要被 push 抢断
+
+jobs:
+  e2e-against-staging:
+    name: Playwright e2e (full, against staging)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      # base URL 由 secret 或手动 input 提供,默认 secret;
+      # E2E_USERNAME/E2E_PASSWORD 走 secret,global-setup 用它建 storageState
+      - name: Playwright (full 82 specs against staging)
+        env:
+          PLAYWRIGHT_BASE_URL: ${{ github.event.inputs.base_url || secrets.STAGING_URL }}
+          E2E_USERNAME: ${{ secrets.STAGING_E2E_USERNAME }}
+          E2E_PASSWORD: ${{ secrets.STAGING_E2E_PASSWORD }}
+        run: npm run test:e2e
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report-staging
+          path: playwright-report/
+          retention-days: 30
+
+  lighthouse-against-staging:
+    name: Lighthouse (against staging)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Run Lighthouse on staging
+        uses: treosh/lighthouse-ci-action@v12
+        with:
+          urls: |
+            ${{ github.event.inputs.base_url || secrets.STAGING_URL }}/
+            ${{ github.event.inputs.base_url || secrets.STAGING_URL }}/login
+          uploadArtifacts: true
+          temporaryPublicStorage: true
+          configPath: '.github/lighthouse-budget.json'
