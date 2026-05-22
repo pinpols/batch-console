@@ -46,6 +46,10 @@ jobs:
       # 完整 build(vue-tsc + i18n + vite build),验证生产产物可生成
       - run: npm run build
 
+      # Bundle size budget(同 pr-gate)— full-ci 也复跑兜底
+      - name: Bundle size budget
+        run: npm run size
+
       - name: Upload dist artifact
         uses: actions/upload-artifact@v5
         with:

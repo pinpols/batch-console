@@ -1,0 +1,72 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":semanticCommits",
+    ":dependencyDashboard",
+    "group:allNonMajor",
+    "schedule:weekends"
+  ],
+  "timezone": "Asia/Shanghai",
+  "labels": ["deps"],
+  "prHourlyLimit": 4,
+  "prConcurrentLimit": 8,
+  "rangeStrategy": "bump",
+  "rebaseWhen": "behind-base-branch",
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 5am on monday"],
+    "commitMessageAction": "Refresh"
+  },
+  "vulnerabilityAlerts": {
+    "labels": ["security"],
+    "schedule": ["at any time"]
+  },
+  "packageRules": [
+    {
+      "matchPackageNames": ["vue", "vue-router", "pinia", "@vue/tsconfig", "vue-tsc"],
+      "groupName": "Vue ecosystem"
+    },
+    {
+      "matchPackageNames": ["vite", "@vitejs/plugin-vue", "vite-plugin-pwa"],
+      "groupName": "Vite ecosystem"
+    },
+    {
+      "matchPackageNames": ["element-plus", "@element-plus/icons-vue"],
+      "groupName": "Element Plus"
+    },
+    {
+      "matchPackageNames": ["typescript", "@typescript-eslint/eslint-plugin", "@typescript-eslint/parser"],
+      "groupName": "TypeScript ecosystem"
+    },
+    {
+      "matchPackageNames": ["eslint", "eslint-config-prettier", "eslint-plugin-vue", "prettier"],
+      "groupName": "Lint / format"
+    },
+    {
+      "matchPackageNames": ["vitest", "@vitest/coverage-v8", "@vue/test-utils", "jsdom"],
+      "groupName": "Test (Vitest)"
+    },
+    {
+      "matchPackageNames": ["@playwright/test", "@axe-core/playwright"],
+      "groupName": "Playwright"
+    },
+    {
+      "matchUpdateTypes": ["major"],
+      "labels": ["deps", "major"],
+      "automerge": false
+    },
+    {
+      "matchUpdateTypes": ["minor", "patch"],
+      "matchDepTypes": ["devDependencies"],
+      "automerge": true,
+      "automergeType": "pr",
+      "platformAutomerge": true
+    },
+    {
+      "matchPackageNames": ["@types/**"],
+      "groupName": "Types",
+      "automerge": true
+    }
+  ]
+}
