@@ -1,0 +1,48 @@
+name: renovate
+
+# Renovate self-hosted on GitHub Actions —— 无外部服务依赖。
+# 每 6 小时跑一次,扫描依赖并开 PR(策略走 renovate.json)。
+# 用 GITHUB_TOKEN(默认 permissions: contents/PR write)。
+
+on:
+  schedule:
+    # 每 6 小时:00:00 / 06:00 / 12:00 / 18:00 UTC
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+    inputs:
+      logLevel:
+        description: 'Renovate log level'
+        default: 'info'
+        type: choice
+        options: [info, debug, trace]
+      dryRun:
+        description: 'Dry-run only (不开 PR)'
+        default: false
+        type: boolean
+
+concurrency:
+  group: renovate-${{ github.ref }}
+  cancel-in-progress: false # 跨次跑不打断,排队
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  renovate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Self-hosted Renovate
+        uses: renovatebot/github-action@v40.3.6
+        with:
+          configurationFile: renovate.json
+          token: ${{ secrets.GITHUB_TOKEN }}
+        env:
+          LOG_LEVEL: ${{ inputs.logLevel || 'info' }}
+          RENOVATE_DRY_RUN: ${{ inputs.dryRun || 'false' }}
+          # 限制只跑本仓
+          RENOVATE_REPOSITORIES: ${{ github.repository }}

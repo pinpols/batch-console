@@ -60,6 +60,12 @@ jobs:
       - name: Build (Vite 生产产物,跳重复 typecheck/i18n)
         run: npm run build:fast
 
+      # Bundle size budget — vendor-element-plus 340KB / vendor-vue 60KB / index 200KB
+      # (brotli;实测 247/40/139KB,约 30% headroom)。超阈值 PR 直接 fail,
+      # 防 vendor 渐进膨胀。配置在 package.json#size-limit。
+      - name: Bundle size budget
+        run: npm run size
+
       # 只挡 high+critical 严重度,low/moderate 噪音忽略
       # --omit=dev 跳 devDep(eslint/playwright/vitest 等 dev-time vuln 不影响产物)
       - name: npm audit (prod deps, high+critical only)
