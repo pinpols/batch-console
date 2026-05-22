@@ -38,8 +38,11 @@ RUN if [ -d /app/../file-batch-system/docs ] || [ -d ../file-batch-system/docs ]
 # ───── Stage 2: runtime ─────
 FROM nginx:1.27-alpine AS runtime
 
-# alpine 默认不带 curl,装下方便 healthcheck / 排查
-RUN apk add --no-cache curl tzdata && \
+# apk upgrade:升级 base image 默认的 libcrypto3 / libssl3 等(治 CVE-2026-31789 CRITICAL,
+# nginx:1.27-alpine 镜像更新滞后,显式 upgrade 拿 alpine 仓库 latest patch);
+# 然后装 curl 方便 healthcheck / 排查
+RUN apk upgrade --no-cache && \
+    apk add --no-cache curl tzdata && \
     cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
     echo "Asia/Shanghai" > /etc/timezone && \
     apk del tzdata
