@@ -117,6 +117,16 @@ src/
 2. FE 跑 `npm run gen:api` 刷新 `src/types/api.generated.ts`
 3. CI `gen:api:check` 会比对漂移,不一致 reject
 
+## CI(3 个 workflow,对齐 BE)
+
+| Workflow | 触发 | 角色 | 耗时 |
+|---|---|---|---|
+| `pr-gate.yml` | PR / push main | PR 必过门禁(lint / typecheck / i18n / api-drift / unit / build / audit) | 5-7 min |
+| `full-ci-gate.yml` | push main / nightly cron / 手动 | 全量(+ Docker/Trivy + Lighthouse + 完整 audit) | 15-20 min |
+| `staging-gate.yml` | tag v* / 手动 | Playwright 82 specs against staging URL + Lighthouse | 10-15 min |
+
+**Playwright e2e 只在 staging-gate 跑**(against 真 staging URL),pr-gate / full-ci 故意不跑(CI 起 BE 太脆,业界 Vercel/Netlify 标准)。完整细则 + secrets / 阈值 / 排查表 → [`docs/runbook/ci.md`](docs/runbook/ci.md)。
+
 ## 桌面 vs 移动
 
 - 桌面路由 `/`(`src/views/` + `src/layout/`)
