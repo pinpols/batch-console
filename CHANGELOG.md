@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.3](https://github.com/pinpols/batch-console/compare/v0.1.2...v0.1.3) (2026-05-22)
+
+
+### Docs
+
+* **skill:** add branch-hygiene skill ([#8](https://github.com/pinpols/batch-console/issues/8)) ([9cb3cf3](https://github.com/pinpols/batch-console/commit/9cb3cf3a32dc71fa784dc6b457424745ae9605f3))
+
 ## [0.1.2](https://github.com/pinpols/batch-console/compare/v0.1.1...v0.1.2) (2026-05-22)
 
 
