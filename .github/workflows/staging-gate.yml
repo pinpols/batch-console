@@ -20,8 +20,35 @@ concurrency:
   cancel-in-progress: false  # staging 验收不要被 push 抢断
 
 jobs:
+  # 没配 STAGING_URL secret 且没手动传 base_url 时,整条流水线干净跳过
+  # (warning 而非 failure)。配上 secret / 传 input 后自动启用全套 Playwright +
+  # Lighthouse 检查。
+  precheck:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    outputs:
+      base_url: ${{ steps.s.outputs.base_url }}
+      should_run: ${{ steps.s.outputs.should_run }}
+    steps:
+      - id: s
+        env:
+          INPUT_URL: ${{ github.event.inputs.base_url }}
+          SECRET_URL: ${{ secrets.STAGING_URL }}
+        run: |
+          URL="${INPUT_URL:-$SECRET_URL}"
+          if [ -z "$URL" ]; then
+            echo "::warning::STAGING_URL 未配置,且 workflow_dispatch 未传 base_url — 跳过 staging-gate。"
+            echo "::warning::配置: Settings → Secrets and variables → Actions → STAGING_URL"
+            echo "should_run=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+            echo "base_url=$URL" >> "$GITHUB_OUTPUT"
+          fi
+
   e2e-against-staging:
     name: Playwright e2e (full, against staging)
+    needs: precheck
+    if: needs.precheck.outputs.should_run == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -35,11 +62,11 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
-      # base URL 由 secret 或手动 input 提供,默认 secret;
+      # base URL 由 precheck 统一计算;
       # E2E_USERNAME/E2E_PASSWORD 走 secret,global-setup 用它建 storageState
       - name: Playwright (full 82 specs against staging)
         env:
-          PLAYWRIGHT_BASE_URL: ${{ github.event.inputs.base_url || secrets.STAGING_URL }}
+          PLAYWRIGHT_BASE_URL: ${{ needs.precheck.outputs.base_url }}
           E2E_USERNAME: ${{ secrets.STAGING_E2E_USERNAME }}
           E2E_PASSWORD: ${{ secrets.STAGING_E2E_PASSWORD }}
         run: npm run test:e2e
@@ -54,6 +81,8 @@ jobs:
 
   lighthouse-against-staging:
     name: Lighthouse (against staging)
+    needs: precheck
+    if: needs.precheck.outputs.should_run == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -66,8 +95,8 @@ jobs:
         uses: treosh/lighthouse-ci-action@v12
         with:
           urls: |
-            ${{ github.event.inputs.base_url || secrets.STAGING_URL }}/
-            ${{ github.event.inputs.base_url || secrets.STAGING_URL }}/login
+            ${{ needs.precheck.outputs.base_url }}/
+            ${{ needs.precheck.outputs.base_url }}/login
           uploadArtifacts: true
           temporaryPublicStorage: true
           configPath: '.github/lighthouse-budget.json'
