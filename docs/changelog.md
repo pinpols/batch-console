@@ -8,6 +8,8 @@
 
 ### 2026-05-22
 
+- **CLAUDE.md §CI 新增**(同日)— 3 workflow 表 + 关键决策(e2e 只 staging 跑)+ 指针 `docs/runbook/ci.md`。
+- **`docs/runbook/ci.md` 新建**(195 行)— FE CI / CD 完整文档:3 workflow 详情(pr-gate 7 步 / full-ci 4 job / staging 2 job)+ 关键决策(锁住)+ Secrets 配置表 + 守护脚本↔workflow 覆盖矩阵 + 常见故障排查表。
 - **CI 扩 3 个 workflow 对齐 BE**(原 `ci.yml` 单 workflow → `pr-gate.yml` + `full-ci-gate.yml` + `staging-gate.yml`):
   - `pr-gate.yml`(改名原 ci.yml + 补 `check:i18n` + `npm audit --omit=dev --audit-level=high`)— PR 必过门禁,~7-10 min
   - `full-ci-gate.yml` 新建 — main push / nightly cron(02:00 UTC = 10:00 Asia/Shanghai)/ 手动,4 个并行 job:static-and-unit / docker-and-scan(Trivy CRITICAL 拒) / lighthouse(perf 0.8 / a11y 0.9)/ security-audit(全量 npm audit critical 拒),~20-30 min
