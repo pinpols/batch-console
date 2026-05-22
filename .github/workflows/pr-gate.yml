@@ -1,4 +1,9 @@
-name: CI
+name: pr-gate
+
+# PR 必过门禁 — fast feedback(< 10 min)
+# 内容:lint / typecheck / OpenAPI drift / i18n / unit / build / npm audit
+# **不跑**:Playwright e2e(慢 + 需 BE),交 staging-gate 真环境跑
+# 对齐 BE 仓 pr-gate.yml 角色定位
 
 on:
   push:
@@ -7,14 +12,14 @@ on:
     branches: [main]
   workflow_dispatch: {}
 
-# 取消同 PR 上的过期任务，节约 Actions 分钟数
+# 同 PR 上的过期任务取消,节约 Actions 分钟
 concurrency:
-  group: ci-${{ github.ref }}
+  group: pr-gate-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  lint-typecheck-test:
-    name: Lint / Typecheck / Unit Test
+  pr-gate:
+    name: Lint / Typecheck / Unit / Build
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -45,8 +50,17 @@ jobs:
       - name: TypeCheck
         run: npm run typecheck
 
-      - name: Unit tests
+      # zh-CN ↔ en-US 1:1 对齐检查 — build 隐含会跑,这里前置以便快失败
+      - name: i18n consistency
+        run: npm run check:i18n
+
+      - name: Unit tests (Vitest)
         run: npm run test:unit
 
-      - name: Build
+      - name: Build (Vite 生产产物,跳重复 typecheck/i18n)
         run: npm run build:fast
+
+      # 只挡 high+critical 严重度,low/moderate 噪音忽略
+      # --omit=dev 跳 devDep(eslint/playwright/vitest 等 dev-time vuln 不影响产物)
+      - name: npm audit (prod deps, high+critical only)
+        run: npm audit --audit-level=high --omit=dev

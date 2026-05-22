@@ -6,6 +6,15 @@
 >
 > 按日期倒序,使用绝对日期(`YYYY-MM-DD`)。
 
+### 2026-05-22
+
+- **CI 扩 3 个 workflow 对齐 BE**(原 `ci.yml` 单 workflow → `pr-gate.yml` + `full-ci-gate.yml` + `staging-gate.yml`):
+  - `pr-gate.yml`(改名原 ci.yml + 补 `check:i18n` + `npm audit --omit=dev --audit-level=high`)— PR 必过门禁,~7-10 min
+  - `full-ci-gate.yml` 新建 — main push / nightly cron(02:00 UTC = 10:00 Asia/Shanghai)/ 手动,4 个并行 job:static-and-unit / docker-and-scan(Trivy CRITICAL 拒) / lighthouse(perf 0.8 / a11y 0.9)/ security-audit(全量 npm audit critical 拒),~20-30 min
+  - `staging-gate.yml` 新建 — tag `v*` / 手动,Playwright 82 specs against staging URL + Lighthouse against staging,~15-25 min
+  - `.github/lighthouse-budget.json` 阈值统一管理(perf 0.8 / a11y 0.9 / SEO 0.8 / CLS 0.1 / LCP 2.5s)
+  - **关键决策**:Playwright e2e 不在 PR / nightly 跑(CI 起 BE 太脆,业界 Vercel/Netlify 也是 deploy-time 跑),只 staging 真环境跑;e2e fail block deploy 不 block merge
+
 ### 2026-05-21
 
 - **CLAUDE.md §测试约定 新增**:扫 46 个 `*.test.ts` 后归纳已成事实的统一项 + 锁住(避免后续偏移):Vitest 唯一框架 / 同目录 `*.test.ts` / `describe` 用被测对象短名(`jobApi` 不是 `xxx API`) / 禁 `should` 前缀 / mock 顶层 `vi.mock` + `vi.mocked` / DOM 时 `@vitest-environment jsdom` / SFC 测试受 element-plus 阻塞优先抽 util。同时把上轮新加的 3 个 `describe('xxx API', ...)`(triggers/approvals/tenants)改成 `xxxApi` 跟 `jobApi`/`instanceApi` 对齐。
