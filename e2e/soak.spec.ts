@@ -52,7 +52,8 @@ test.describe('soak · 长会话稳定性', () => {
       // 每 10 轮打一次心跳
       if ((i + 1) % 10 === 0) {
         const heapNow = await readHeapMB(page)
-        console.log(
+        // soak 心跳改 warn(no-console allows warn/error);信息性输出,非真错
+        console.warn(
           `[soak] round ${i + 1}/${SOAK_ROUNDS}  heap=${heapNow ?? '-'}MB  ` +
             `consoleErr=${consoleErrors.length}  pageErr=${pageErrors.length}`,
         )
@@ -74,7 +75,7 @@ test.describe('soak · 长会话稳定性', () => {
     // 断言:heap 增长不超阈值(performance.memory 仅 Chromium 有,其他浏览器跳过)
     if (heapStart !== null && heapEnd !== null) {
       const growth = heapEnd - heapStart
-      console.log(`[soak] heap delta = ${growth}MB (start=${heapStart}, end=${heapEnd})`)
+      console.warn(`[soak] heap delta = ${growth}MB (start=${heapStart}, end=${heapEnd})`)
       expect(
         growth,
         `heap 增长 ${growth}MB 超过 ${HEAP_GROWTH_LIMIT_MB}MB(SOAK_HEAP_LIMIT_MB 可调)`,

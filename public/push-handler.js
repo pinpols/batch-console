@@ -1,4 +1,3 @@
-/* eslint-disable no-restricted-globals */
 /**
  * Service Worker push handler 骨架。
  * 由 vite-plugin-pwa 的 workbox.importScripts 注入到生成的 SW。
