@@ -29,7 +29,8 @@ test.describe('Job Definition Wizard / Detail (Day 1-4 交付)', () => {
     }
 
     // step 1 基本表单(jobCode / jobName 输入框)应可见
-    await expect(page.locator('input[maxlength="128"]').first()).toBeVisible({ timeout: 6000 })
+    // 新建态 jobCode 走 CodeNameBuilder(不是裸 maxlength=128 input),jobName 是 maxlength=256
+    await expect(page.locator('.code-name-builder').first()).toBeVisible({ timeout: 6000 })
     await expect(page.locator('input[maxlength="256"]').first()).toBeVisible()
 
     // 顶部 "导入 Bundle JSON" 按钮存在(方案 3 Bundle 入口)

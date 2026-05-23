@@ -28,6 +28,10 @@ e2e/.auth/
 .vite-dev.log
 .vite-dev.pid
 
+# fe-acceptance wrapper 运行时产物(state + step 日志)
+.fe-acceptance-state
+/logs/
+
 # Local session memory
 .remember/
 
