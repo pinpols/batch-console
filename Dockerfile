@@ -3,7 +3,7 @@
 # 镜像最终 ~50MB(nginx alpine + dist),不含 node_modules。
 
 # ───── Stage 1: build ─────
-FROM node:20-alpine AS build
+FROM node:22-alpine AS build
 WORKDIR /app
 
 # 先拷依赖文件单独 COPY 以最大化 layer cache,只有 package*.json 变才重装
