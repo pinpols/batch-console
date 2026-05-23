@@ -1,0 +1,41 @@
+# CODEOWNERS — main 分支保护配套
+# 匹配路径的 PR 必须 listed owner approve 才能 merge(branch protection
+# require_code_owner_reviews=true)。admin(enforce_admins=false)可绕过,
+# 其他 contributor 必走 review。
+#
+# 文档:https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-security/customizing-your-repository/about-code-owners
+
+# 默认 — 任何文件改动都要 @pinpols
+*                                       @pinpols
+
+# CI / workflow 自身保护(防"改 workflow 关 gate")
+/.github/workflows/                     @pinpols
+/.github/CODEOWNERS                     @pinpols
+
+# 依赖 / 构建配置(防"加 GPL 包 / 改 lint 阈值")
+/package.json                           @pinpols
+/package-lock.json                      @pinpols
+/renovate.json                          @pinpols
+/eslint.config.js                       @pinpols
+/playwright.config.cjs                  @pinpols
+/Dockerfile                             @pinpols
+/nginx/                                 @pinpols
+/docker-compose.yml                     @pinpols
+
+# 测试代码(防"改 assertion / spec 让 CI 过")
+/e2e/                                   @pinpols
+/src/**/*.test.ts                       @pinpols
+/src/**/*.test.tsx                      @pinpols
+/src/**/*.spec.ts                       @pinpols
+
+# 生成代码 — 不应人工改(api.generated.ts 由 OpenAPI 同步)
+/src/**/api.generated.ts                @pinpols
+/src/**/*.generated.ts                  @pinpols
+
+# 鉴权 / 加解密(高风险)
+/src/**/auth/                           @pinpols
+/src/**/encryption/                     @pinpols
+/src/**/login/                          @pinpols
+
+# 文档
+/docs/                                  @pinpols
