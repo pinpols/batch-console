@@ -39,7 +39,9 @@ set -uo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT_DIR"
 
-BE_DIR="${BE_DIR:-/Users/dengchao/Downloads/file-batch-system}"
+# BE_DIR:默认走 sibling 仓相对路径(本仓和 file-batch-system 平级)。
+# 别人 clone 仓库到不同位置 / Linux 上跑,环境变量 export BE_DIR=/path 覆盖。
+BE_DIR="${BE_DIR:-$ROOT_DIR/../file-batch-system}"
 BE_PORT="${BE_PORT:-18080}"
 DEV_PORT="${DEV_PORT:-5173}"
 PREVIEW_PORT="${PREVIEW_PORT:-4173}"

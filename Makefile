@@ -91,6 +91,12 @@ status:
 logs:
 	DEV_HOST=$(HOST) PORT=$(PORT) NPM=$(NPM) DEV_PID_FILE=$(DEV_PID_FILE) DEV_LOG_FILE=$(DEV_LOG_FILE) $(DEV_SERVER_SCRIPT) logs
 
+# 联调环境健康检查(BE console-api / trigger / orchestrator + OpenAPI 漂移 + preview 端口)
+# env-var 驱动,详见 scripts/local/health-check.sh 顶部注释。
+# Staging:覆盖 BE_CONSOLE_URL / BE_TRIGGER_URL / BE_ORCH_URL 指向远端。
+health:
+	bash scripts/local/health-check.sh
+
 # ── Build / preview ────────────────────────────────────────────────────────
 
 build:
