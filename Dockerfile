@@ -7,7 +7,9 @@ FROM node:22-alpine AS build
 WORKDIR /app
 
 # 先拷依赖文件单独 COPY 以最大化 layer cache,只有 package*.json 变才重装
-COPY package.json package-lock.json* ./
+# .npmrc 必须一起拷:内含 legacy-peer-deps=true，否则 npm ci 会因 TS6 与
+# @typescript-eslint/openapi-typescript 的 peer 声明冲突而 ERESOLVE 失败。
+COPY package.json package-lock.json* .npmrc ./
 COPY scripts/prepare.mjs ./scripts/prepare.mjs
 
 # 默认 npm ci(干净安装,严格按 lock);CI 上可用 --omit=optional 进一步压
