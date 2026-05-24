@@ -6,7 +6,7 @@
 
 | 阶段 | 基础镜像 | 用途 |
 |---|---|---|
-| `build` | `node:20-alpine` | `npm ci` + `vite build` 出 `dist/` |
+| `build` | `node:22-alpine` | `npm ci` + `vite build` 出 `dist/` |
 | `runtime` | `nginx:1.27-alpine` | 拷 `dist` 到 `/usr/share/nginx/html`,装 nginx 配置 |
 
 ## 文件清单

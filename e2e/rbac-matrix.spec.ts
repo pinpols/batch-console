@@ -191,6 +191,7 @@ const ENDPOINTS: Endpoint[] = [
       routeName: '[E2E RBAC] route',
       severity: 'ERROR',
       team: 'e2e',
+      alertGroup: 'e2e',
       receiver: 'e2e@example.com',
     }),
     expect: { admin: true, tenantAdmin: false, auditor: false, tenantUser: false, user: false },

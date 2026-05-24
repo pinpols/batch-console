@@ -20,7 +20,7 @@ const ROLES = [
   { key: 'configAdmin', username: 'config-admin', password: 'admin123', tenantId: 'system' },
   { key: 'auditor', username: 'auditor', password: 'admin123', tenantId: 'system' },
   { key: 'tenantUser', username: 'op-tx', password: 'admin123', tenantId: 'tx' },
-  { key: 'user', username: 'e2e-user', password: 'admin123', tenantId: 'tx' },
+  { key: 'user', username: 'user-tx', password: 'admin123', tenantId: 'tx' },
 ]
 
 function parseSetCookie(raw, baseUrl) {

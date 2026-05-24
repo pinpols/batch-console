@@ -341,7 +341,7 @@ async function globalSetup(config) {
     // 2026-05 ADR-032:CONFIG_ADMIN 已合并 ADMIN;改为登录 TENANT_ADMIN(ta 租户管理员)。
     // tadmin-ta 由 admin 通过 POST /api/console/users 显式创建(密码 Admin@123abc),首次跑前手工种入。
     { file: 'role-tenantAdmin.json', username: 'tadmin-ta', password: 'Admin@123abc', tenantId: 'ta', defaultTenant: 'ta' },
-    { file: 'role-user.json', username: 'e2e-user', password: 'admin123', tenantId: 'tx', defaultTenant: 'tx' },
+    { file: 'role-user.json', username: 'user-tx', password: 'admin123', tenantId: 'tx', defaultTenant: 'tx' },
   ]
   // role-admin.json 直接复用 user.json 的 cookies(同 username,避免互踩 session)
   writeFileSync(path.join(authDir, 'role-admin.json'), JSON.stringify(storageState, null, 2))

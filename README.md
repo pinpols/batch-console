@@ -27,7 +27,12 @@ npm run build:fast     # 仅 Vite 构建
 npm run test:unit      # Vitest
 npm run test:e2e       # Playwright
 npm run docs:serve     # 构建并预览内嵌文档中心
+npm run check:health   # 联调健康检查(BE actuator + OpenAPI 漂移 + preview 端口),make health 别名
 ```
+
+> **联调遇怪问题先 `make health`** — 协议层探测 BE console-api / trigger / orchestrator + API 漂移。
+> Staging:覆盖 `BE_CONSOLE_URL` / `BE_TRIGGER_URL` / `BE_ORCH_URL` 指向远端。
+> 详见 [`scripts/local/health-check.sh`](scripts/local/health-check.sh) 顶部注释。
 
 ## 接口与契约
 

@@ -29,10 +29,13 @@ test.describe('Job Instance — 筛选查询', () => {
   })
 
   test('状态筛选 → 查询', async ({ page }) => {
+    // 筛选区可能有多个含「状态」的 form-item(如"状态" / "调度状态"),取 first 避免 strict-mode 命中多个
     const statusSelect = page
       .locator('.el-form-item')
       .filter({ hasText: '状态' })
+      .first()
       .locator('.el-select')
+      .first()
     await statusSelect.click()
     const opt = page.locator('.el-select-dropdown__item').first()
     if (await isVisible(opt, 2000)) {

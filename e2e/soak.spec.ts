@@ -34,6 +34,8 @@ async function readHeapMB(page: import('@playwright/test').Page): Promise<number
 
 test.describe('soak · 长会话稳定性', () => {
   test(`连续 ${SOAK_ROUNDS} 轮路由切换 — error 累积 ≤ ${ERROR_ACCUM_LIMIT}`, async ({ page }) => {
+    // 20 轮 × 多页 × goto 在 4-worker 并发 dev server 下需要更长预算;默认 45s 远远不够
+    test.setTimeout(300_000)
     const consoleErrors: string[] = []
     const pageErrors: string[] = []
     page.on('console', (msg) => {
