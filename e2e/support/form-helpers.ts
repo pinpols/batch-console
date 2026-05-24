@@ -68,7 +68,10 @@ export async function expectMaxLength(
   max: number,
 ): Promise<void> {
   const formItem = dialog.locator('.el-form-item').filter({ hasText: label })
-  const input = formItem.locator('input,textarea').first()
+  // 排除 el-select 的 readonly combobox(出现在 CodeNameBuilder 这类自定义组件里),只拿真正可编辑的 input/textarea
+  const input = formItem
+    .locator('input:not([readonly]):not([role="combobox"]):not([disabled]),textarea:not([disabled])')
+    .first()
   const tooLong = 'a'.repeat(max + 1)
   await input.fill(tooLong)
   const value = await input.inputValue()
@@ -107,7 +110,11 @@ export async function expectNumericRejection(
  * 多个同名 label 时取 first()。
  */
 export function fieldInput(dialog: Locator, label: string | RegExp): Locator {
-  return dialog.locator('.el-form-item').filter({ hasText: label }).locator('input,textarea').first()
+  return dialog
+    .locator('.el-form-item')
+    .filter({ hasText: label })
+    .locator('input:not([readonly]):not([role="combobox"]):not([disabled]),textarea:not([disabled])')
+    .first()
 }
 
 /**

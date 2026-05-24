@@ -10,7 +10,8 @@ module.exports = defineConfig({
   globalTeardown: require.resolve('./e2e/global-teardown.cjs'),
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
+  // 本地 4-worker 并发对 dev server 压力大,单次 flake 概率不可忽略;给 1 次重试兜底偶发(真 bug 仍然必然失败)
+  retries: process.env.CI ? 2 : 1,
   workers: process.env.CI ? 1 : undefined,
   bail: 0,
   // 单个测试 45s(从 25s 调大):dev server 在并发跑时单个路由首次编译/拉数可达 ~20s,

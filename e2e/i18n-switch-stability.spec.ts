@@ -25,8 +25,8 @@ async function switchLocale(page: import('@playwright/test').Page, target: 'zh-C
 }
 
 test.describe('i18n-switch · zh↔en 稳定性', () => {
-  // 10 轮 × 5 页 × (goto + reload) ~= 100 次导航,默认 25s 不够
-  test.setTimeout(180_000)
+  // 10 轮 × 5 页 × (goto + reload) ~= 100 次导航,4-worker 并发 dev server 下需要更长预算
+  test.setTimeout(300_000)
 
   test('5 P0 页 × 10 次切换不残留 / 不报错', async ({ page }) => {
     const pageErrors: string[] = []

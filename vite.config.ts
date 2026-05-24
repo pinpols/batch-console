@@ -89,12 +89,23 @@ export default defineConfig(({ mode }) => {
     chunkSizeWarningLimit: 1200,
     rollupOptions: {
       output: {
-        manualChunks: {
-          'vendor-element-plus': ['element-plus', '@element-plus/icons-vue'],
-          'vendor-vue': ['vue', 'vue-router', 'pinia'],
-          // echarts (181 KB gzip) 只 OpsSummary 用,x6 (155 KB gzip) 只 WorkflowDesigner 用,
-          // 不写进 manualChunks → rollup 自动跟随路由 lazy chunk 走,
-          // 不进首屏依赖图,非该页用户少下 ~336 KB gzip。
+        // Vite 8 默认 Rolldown bundler 不支持 manualChunks 的 object form;
+        // 改为 function 形式语义等价(element-plus / @element-plus/icons-vue → vendor-element-plus,
+        // vue / vue-router / pinia → vendor-vue,其余依赖默认按路由 lazy 拆分,
+        // echarts / x6 等不显式分块以保留路由级 lazy 加载)。
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('element-plus') || id.includes('@element-plus/icons-vue')) {
+              return 'vendor-element-plus'
+            }
+            if (
+              id.includes('/vue/') ||
+              id.includes('/vue-router/') ||
+              id.includes('/pinia/')
+            ) {
+              return 'vendor-vue'
+            }
+          }
         },
       },
     },
