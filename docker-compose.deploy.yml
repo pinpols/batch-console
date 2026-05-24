@@ -1,0 +1,14 @@
+# 部署模式 compose overlay (前端)
+# 用法:
+#   docker compose -f docker-compose.yml -f docker-compose.deploy.yml pull
+#   docker compose -f docker-compose.yml -f docker-compose.deploy.yml up -d --no-build
+#
+# 作用:
+#   - docker-compose.yml 默认 build: 本地构建,部署机要从 GHCR 拉。
+#   - pull_policy: always 强制每次 up 前拉最新。
+#   - IMAGE_TAG 默认 latest;CD 可传 sha-<full> 精确部署某次构建。
+
+services:
+  frontend:
+    image: ghcr.io/pinpols/batch-console:${IMAGE_TAG:-latest}
+    pull_policy: always
