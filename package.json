@@ -1,6 +1,6 @@
 {
   "name": "batch-console",
-  "version": "0.1.2",
+  "version": "0.1.4",
   "private": true,
   "license": "Apache-2.0",
   "type": "module",
@@ -74,7 +74,7 @@
     "dompurify": "^3.4.0",
     "driver.js": "^1.4.0",
     "echarts": "^6.0.0",
-    "element-plus": "^2.9.1",
+    "element-plus": "^2.14.0",
     "json-bigint": "^1.0.0",
     "pinia": "^3.0.4",
     "svg-pan-zoom": "^3.6.2",
@@ -86,7 +86,7 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.11.3",
-    "@element-plus/icons-vue": "^2.3.1",
+    "@element-plus/icons-vue": "^2.3.2",
     "@playwright/test": "^1.60.0",
     "@size-limit/preset-app": "^12.1.0",
     "@types/dagre": "^0.7.54",
