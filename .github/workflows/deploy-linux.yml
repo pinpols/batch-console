@@ -1,0 +1,106 @@
+name: deploy-linux
+
+# Linux 部署机变体(与 deploy.yml 并存)。
+# 仅 workflow_dispatch 手动触发,避免与 deploy.yml 双触发造成"两个 runner 同步部署"。
+#
+# 前提:
+#   1) 自托管 runner 装在 Linux 部署机, labels = [self-hosted, deploy, linux]。
+#   2) Docker Engine 在跑。
+#   3) Linux Docker 默认 host.docker.internal 不解析,靠 docker-compose.yml 里
+#      `extra_hosts: ['host.docker.internal:host-gateway']` 兜住(已配置)。
+#
+# 与 Windows 版差异:
+#   - shell: bash
+#   - 续行 \(不是反引号)
+#   - 容器 health 探测用 docker inspect (跨平台一致)
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: '镜像 tag (默认 latest,可填 sha-<full> 精确部署某次构建)'
+        required: false
+        default: 'latest'
+
+permissions:
+  contents: read
+  packages: read
+
+concurrency:
+  group: deploy-fe-linux-main
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, deploy, linux]
+    timeout-minutes: 10
+
+    env:
+      IMAGE_TAG: ${{ inputs.image_tag || 'latest' }}
+      HOST_PORT: '8080'
+      BACKEND_UPSTREAM_HOST: 'host.docker.internal:18090'
+
+    steps:
+      - name: Checkout 部署分支
+        uses: actions/checkout@v4
+        with:
+          ref: feature/docker-deploy
+
+      - name: 显示部署上下文
+        shell: bash
+        run: |
+          echo "触发:        $GITHUB_EVENT_NAME"
+          echo "镜像 tag:    $IMAGE_TAG"
+          echo "ref:         $GITHUB_REF"
+          echo "sha:         $GITHUB_SHA"
+          echo "frontend 端口: $HOST_PORT, 后端上游: $BACKEND_UPSTREAM_HOST"
+
+      - name: 登录 GHCR
+        shell: bash
+        run: echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 拉取镜像
+        shell: bash
+        run: |
+          docker compose \
+            -f docker-compose.yml \
+            -f docker-compose.deploy.yml \
+            pull
+
+      - name: 重启服务
+        shell: bash
+        run: |
+          docker compose \
+            -f docker-compose.yml \
+            -f docker-compose.deploy.yml \
+            up -d --no-build --remove-orphans
+
+      - name: 等待 healthy
+        shell: bash
+        run: |
+          deadline=$(( $(date +%s) + 60 ))
+          while :; do
+            status=$(docker inspect --format '{{.State.Health.Status}}' batch-console 2>/dev/null || echo "missing")
+            echo "  状态: $status"
+            [ "$status" = "healthy" ] && break
+            [ $(date +%s) -ge $deadline ] && { echo "batch-console 60s 内未 healthy" >&2; exit 1; }
+            sleep 2
+          done
+          echo "✔ batch-console healthy"
+
+      - name: probe 首页
+        shell: bash
+        run: |
+          code=$(curl -s -o /tmp/index.html -w "%{http_code}" --max-time 10 "http://localhost:${HOST_PORT}/")
+          if [ "$code" != "200" ]; then
+            echo "首页非 200: $code" >&2
+            exit 1
+          fi
+          echo "✔ 首页 200,长度 $(wc -c < /tmp/index.html) bytes"
+
+      - name: 清理悬挂镜像
+        if: always()
+        shell: bash
+        run: docker image prune -f
