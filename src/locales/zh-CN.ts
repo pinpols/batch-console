@@ -558,12 +558,6 @@ export default {
     nextRunsLabel: '最近 3 次执行({tz}):',
     tzLocal: '本地',
   },
-  firstTenantPicker: {
-    title: '请选择要进入的租户',
-    hint: '管理员账号未绑定固定业务租户。选择一个后再继续使用控制台,后续可在右上角随时切换。',
-    placeholder: '搜索租户',
-    confirm: '进入',
-  },
   maintenance: {
     bannerBlocked: '系统维护中',
     bannerReadonly: '系统进入只读模式',
