@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.5](https://github.com/pinpols/batch-console/compare/v0.1.4...v0.1.5) (2026-05-27)
+
+
+### Bug Fixes
+
+* **ci:** frontend deploy HOST_PORT 8080 → 19080 ([#16](https://github.com/pinpols/batch-console/issues/16)) ([4836710](https://github.com/pinpols/batch-console/commit/4836710242096ec5a237edf591a88ace392b4d7d))
+
 ## [0.1.4](https://github.com/pinpols/batch-console/compare/v0.1.3...v0.1.4) (2026-05-24)
 
 
