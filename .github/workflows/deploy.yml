@@ -38,8 +38,9 @@ jobs:
 
     env:
       IMAGE_TAG: ${{ inputs.image_tag || 'latest' }}
-      # 前端 docker-compose.yml 用到的端口/上游地址(对齐当前 default)
-      HOST_PORT: '8080'
+      # 前端 docker-compose.yml 用到的端口/上游地址(对齐 Windows 部署机实际映射)
+      # 19080 而非 8080:8080 落在 Hyper-V/WinNAT 保留段 8067-8166,绑不上。
+      HOST_PORT: '19080'
       BACKEND_UPSTREAM_HOST: 'host.docker.internal:18090'
 
     steps:
