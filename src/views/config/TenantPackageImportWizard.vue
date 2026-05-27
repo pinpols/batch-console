@@ -776,12 +776,28 @@
     gap: 8px;
   }
 
+  /* 大屏适配:仅本页作用域(.tenant-pkg-page),让 SectionCard 撑满可用高度,
+     使内部向导能填满纵向空间,而非矮卡片顶在最上、下方大片空白。其它页不受影响。 */
+  :deep(.tenant-pkg-page > .section-card) {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  :deep(.tenant-pkg-page > .section-card > .el-card__body) {
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
   .excel-wizard {
     display: flex;
     flex-direction: column;
     gap: 0;
     margin: 0;
     width: 100%;
+    /* 撑满可用高度;min-height 仅作下限(撑不满时不塌陷,零回归) */
+    flex: 1 1 auto;
     min-height: 360px;
     box-sizing: border-box;
   }
@@ -816,6 +832,8 @@
   }
 
   .excel-wizard__body {
+    display: flex;
+    flex-direction: column;
     flex: 1 1 auto;
     width: 100%;
     min-height: 180px;
@@ -835,6 +853,11 @@
   .excel-wizard__panel--wide {
     max-width: 100%;
     align-items: stretch;
+  }
+
+  /* 内容少的步骤(上传,非 --wide):在撑满的 body 里垂直居中,大屏下不顶在最上方 */
+  .excel-wizard__panel:not(.excel-wizard__panel--wide) {
+    margin-block: auto;
   }
 
   .upload-zone {
@@ -882,7 +905,7 @@
     gap: var(--space-md);
     margin: var(--card-inner-padding) auto 0;
     padding-top: var(--space-xs);
-    max-width: 720px;
+    max-width: min(960px, 100%);
     width: 100%;
   }
 
