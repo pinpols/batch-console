@@ -1,30 +1,26 @@
 name: deploy
 
-# build-image 成功 → 自托管 runner 拉 GHCR 镜像重启本地前端容器。
+# push main → 自托管 runner 在部署机本地 docker compose build 构建 nginx 镜像并重启前端容器。
+# (不再拉 GHCR:镜像私有 + 本机 VPN 代理 18081 拉取常被 reset(EOF);部署机即构建机,
+#  本地 build 更稳,与后端 deploy 一致。build-image 已删除以免双构建。)
+#
+# 端口/上游/项目名经 job env 注入,覆盖 docker-compose.yml 的 ${...} 默认值。
+#
 # 前提:
 #   1) 自托管 runner 装在部署机,labels = [self-hosted, deploy, windows]。
-#   2) Docker Desktop 在跑。
-#   3) GITHUB_TOKEN 自动有 packages:read,无需 PAT。
+#   2) Docker Desktop 在跑(部署机需能拉 docker.io 基础镜像 node/nginx)。
 #
 # 触发:
-#   - workflow_run: 监听 build-image 成功(只 main 分支)
-#   - workflow_dispatch: 手动重跑
+#   - push: main(每次 main 推送直接本地构建部署;不再经 build-image —— 本地构建用不到云端镜像)
+#   - workflow_dispatch: 手动重跑(回滚/调试用)
 
 on:
-  workflow_run:
-    workflows: ["build-image"]
-    types: [completed]
+  push:
     branches: [main]
   workflow_dispatch:
-    inputs:
-      image_tag:
-        description: '镜像 tag (默认 latest,可填 sha-<full> 精确部署某次构建)'
-        required: false
-        default: 'latest'
 
 permissions:
   contents: read
-  packages: read
 
 concurrency:
   group: deploy-fe-main
@@ -32,19 +28,19 @@ concurrency:
 
 jobs:
   deploy:
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: [self-hosted, deploy, windows]
-    timeout-minutes: 10
+    timeout-minutes: 15
 
     env:
-      IMAGE_TAG: ${{ inputs.image_tag || 'latest' }}
-      # 前端 docker-compose.yml 用到的端口/上游地址(对齐 Windows 部署机实际映射)
+      # 前端 docker-compose.yml 用到的端口/上游/项目名(env 注入,覆盖 compose 默认值)
       # 19080 而非 8080:8080 落在 Hyper-V/WinNAT 保留段 8067-8166,绑不上。
       HOST_PORT: '19080'
       BACKEND_UPSTREAM_HOST: 'host.docker.internal:18090'
+      # 对齐现有前端 stack 名(compose 无 name:,靠此 env 指定,否则取目录名)
+      COMPOSE_PROJECT_NAME: 'batch-platform-console'
 
     steps:
-      - name: Checkout 部署分支 (含 compose)
+      - name: Checkout 部署分支 feature/docker-deploy (含 src + compose/Dockerfile/nginx)
         uses: actions/checkout@v4
         with:
           ref: feature/docker-deploy
@@ -53,32 +49,22 @@ jobs:
         shell: pwsh
         run: |
           Write-Host "触发:        $env:GITHUB_EVENT_NAME"
-          Write-Host "镜像 tag:    $env:IMAGE_TAG"
           Write-Host "ref:         $env:GITHUB_REF"
           Write-Host "sha:         $env:GITHUB_SHA"
-          Write-Host "frontend 端口: $env:HOST_PORT, 后端上游: $env:BACKEND_UPSTREAM_HOST"
+          Write-Host "frontend 端口: $env:HOST_PORT, 后端上游: $env:BACKEND_UPSTREAM_HOST, stack: $env:COMPOSE_PROJECT_NAME"
 
-      - name: 登录 GHCR
-        shell: pwsh
-        run: |
-          $env:GITHUB_TOKEN | docker login ghcr.io -u $env:GITHUB_ACTOR --password-stdin
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: 拉取镜像
+      - name: 本地构建镜像 (部署机本地 build,不从 GHCR 拉)
         shell: pwsh
         run: |
           docker compose `
             -f docker-compose.yml `
-            -f docker-compose.deploy.yml `
-            pull
+            build
 
       - name: 重启服务
         shell: pwsh
         run: |
           docker compose `
             -f docker-compose.yml `
-            -f docker-compose.deploy.yml `
             up -d --no-build --remove-orphans
 
       - name: 等待 healthy
