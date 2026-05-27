@@ -551,12 +551,6 @@ const messages: Messages = {
     nextRunsLabel: 'Next 3 runs ({tz}):',
     tzLocal: 'local',
   },
-  firstTenantPicker: {
-    title: 'Choose a tenant to enter',
-    hint: 'Your admin account is not bound to a specific business tenant. Pick one to continue; you can switch any time from the top-right.',
-    placeholder: 'Search tenant',
-    confirm: 'Enter',
-  },
   maintenance: {
     bannerBlocked: 'System under maintenance',
     bannerReadonly: 'System is in read-only mode',
