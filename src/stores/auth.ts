@@ -61,7 +61,7 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.setItem(SESSION_FLAG_KEY, '1')
     const tenant = useTenantStore()
     // 'system' 是 admin 账号宿主,不是业务工作租户;落地到 system 会让所有业务页空白。
-    // 保留 localStorage 里上次选的业务租户;首次登录 localStorage 为空时由 FirstTenantPicker 兜底。
+    // 保留 localStorage 里上次选的业务租户;首次登录 localStorage 为空时走右上角租户切换器手动选。
     if (result.tenantId && result.tenantId !== 'system') {
       tenant.setTenantId(result.tenantId)
     }
