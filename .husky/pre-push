@@ -1,0 +1,32 @@
+#!/usr/bin/env sh
+# Pre-push hook (husky):
+# 1. 禁推 main / feature/docker-deploy(本地只读基线,2026-05-24 git 流约定)
+# 2. Auto-create PR to main after pushing a non-main branch (sleep 3 background)
+#
+# 注:husky 把 core.hooksPath 改为 .husky/_/,所以原生 .git/hooks/pre-push
+# 不再生效。所有 push 守护逻辑必须放这里。
+
+# ── 守护:禁推保护分支 ─────────────────────────────────────────────────
+# pre-push 通过 stdin 接收: <local_ref> <local_sha> <remote_ref> <remote_sha>
+while read local_ref local_sha remote_ref remote_sha; do
+  case "$remote_ref" in
+    refs/heads/main|refs/heads/feature/docker-deploy)
+      echo "❌ 禁推 $remote_ref(本地只读基线,本地 deploy 仅用于部署)" >&2
+      echo "   开发请用 feature/*-bugfixed 分支,经 PR 流向 main。" >&2
+      exit 1
+      ;;
+  esac
+done
+
+# ── Auto-PR ──────────────────────────────────────────────────────────
+branch=$(git symbolic-ref --short HEAD 2>/dev/null)
+
+if [ -n "$branch" ] && [ "$branch" != "main" ] && [ "$branch" != "master" ]; then
+  (
+    sleep 3
+    existing=$(gh pr list --head "$branch" --state open --json number -q '.[0].number' 2>/dev/null)
+    if [ -z "$existing" ]; then
+      gh pr create --base main --head "$branch" --fill >/dev/null 2>&1
+    fi
+  ) </dev/null >/dev/null 2>&1 &
+fi
