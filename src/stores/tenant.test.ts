@@ -16,9 +16,11 @@ describe('useTenantStore', () => {
     setActivePinia(createPinia())
   })
 
-  it('defaults to "default-tenant" when localStorage is empty', () => {
+  it('defaults to empty when localStorage is empty (no implicit default-tenant)', () => {
     const tenant = useTenantStore()
-    expect(tenant.tenantId).toBe('default-tenant')
+    // 安全收敛:未登录/未选租户时 tenantId 必须为空,不再静默落到 'default-tenant'
+    // 伪装合法请求 → 由 BE 拒绝。详见 PR #25。
+    expect(tenant.tenantId).toBe('')
   })
 
   it('reads initial value from localStorage', () => {
@@ -34,9 +36,12 @@ describe('useTenantStore', () => {
     expect(tenant.tenantId).toBe('new-tenant')
   })
 
-  it('setTenantId falls back to default-tenant for empty string', () => {
+  it('setTenantId clears to empty for empty / whitespace-only input (no default-tenant fallback)', () => {
+    storage.set('batch-console-tenant-id', 'pre-existing-tenant')
+    setActivePinia(createPinia())
     const tenant = useTenantStore()
-    tenant.setTenantId('')
-    expect(tenant.tenantId).toBe('default-tenant')
+    tenant.setTenantId('  ')
+    // trim 后空字符串 → 清空 + 从 localStorage removeItem(不回写,不伪装)
+    expect(tenant.tenantId).toBe('')
   })
 })
