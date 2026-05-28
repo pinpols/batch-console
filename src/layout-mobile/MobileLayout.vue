@@ -19,7 +19,6 @@
     />
     <MInstallHint />
     <SwUpdatePrompt />
-    <FirstTenantPickerDialog />
   </div>
 </template>
 
@@ -31,7 +30,6 @@
   import MaintenanceBanner from '@/components/common/MaintenanceBanner.vue'
   import SwUpdatePrompt from '@/components/common/SwUpdatePrompt.vue'
   import CommandPalette from '@/components/common/CommandPalette.vue'
-  import FirstTenantPickerDialog from '@/components/common/FirstTenantPickerDialog.vue'
   import { useMaintenancePolling } from '@/composables/useMaintenancePolling'
   import './styles/mobile-common.css'
   import { useMobileBadgesStore } from '@/stores/mobileBadges'
