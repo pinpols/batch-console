@@ -49,16 +49,29 @@ export const usePermissionStore = defineStore('permission', () => {
     canAccessRole,
     canAccessPermissions,
     filterGroups,
+    hasBackendMenuAccess: (path?: string) => hasBackendMenuAccess(auth.menus, path),
   }
 })
+
+export function backendVisiblePaths(backendMenus?: MenuGroup[] | null): Set<string> {
+  return new Set(
+    (backendMenus ?? []).flatMap((g) =>
+      Array.isArray(g.children) ? g.children.map((c) => c.path) : [],
+    ),
+  )
+}
+
+export function hasBackendMenuAccess(backendMenus?: MenuGroup[] | null, path?: string): boolean {
+  if (!path) return true
+  if (!backendMenus || backendMenus.length === 0) return true
+  return backendVisiblePaths(backendMenus).has(path)
+}
 
 export function filterNavigationByBackendMenus(
   groups: NavigationGroup[],
   backendMenus: MenuGroup[],
 ): NavigationGroup[] {
-  const visiblePaths = new Set(
-    backendMenus.flatMap((g) => (Array.isArray(g.children) ? g.children.map((c) => c.path) : [])),
-  )
+  const visiblePaths = backendVisiblePaths(backendMenus)
 
   return groups
     .map((group) => ({
