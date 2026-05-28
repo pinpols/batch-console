@@ -665,7 +665,7 @@ const routes: RouteRecordRaw[] = [
         path: 'catchup',
         name: 'm-catchup',
         component: () => import('@/views-mobile/MCatchUp.vue'),
-        meta: { title: 'Catch-up 审批', minRole: 'VIEWER' },
+        meta: { title: 'Catch-up 审批', minRole: 'OPERATOR' },
       },
       {
         path: 'files',
@@ -781,6 +781,16 @@ router.beforeEach(async (to, from) => {
 
   const permissions = to.meta.permissions as string[] | undefined
   if (permissions && !permission.canAccessPermissions(permissions)) {
+    return { path: '/' }
+  }
+
+  // 后端 /auth/me 下发的菜单是当前租户+authorities 的最终可见性来源。
+  // 静态 minRole 只表示前端粗粒度等级；当后端菜单存在时，路由也必须按菜单 allowlist 收口，
+  // 避免用户通过 URL、历史标签或命令面板进入已被后端隐藏的页面。
+  const activeMenu = to.meta.activeMenu as string | undefined
+  const menuPath = activeMenu || to.path
+  const allowWithoutMenu = to.path === '/system/me' || to.path.startsWith('/m/')
+  if (!allowWithoutMenu && !permission.hasBackendMenuAccess(menuPath)) {
     return { path: '/' }
   }
 

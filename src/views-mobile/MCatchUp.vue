@@ -28,7 +28,7 @@
           </div>
           <div><span class="m-card__meta-key">trace</span>{{ row.traceId }}</div>
         </div>
-        <div v-if="isActionable(row)" class="m-card__actions">
+        <div v-if="canOperate && isActionable(row)" class="m-card__actions">
           <button
             class="m-btn m-btn--primary"
             :disabled="busyKey === row.approvalNo"
@@ -71,6 +71,7 @@
   const tenant = useTenantStore()
   const auth = useAuthStore()
   const busyKey = ref<string | null>(null)
+  const canOperate = computed(() => auth.canAccess('OPERATOR'))
 
   const { data: metaEnums } = useConsoleMetaEnumsQuery()
   function resolveEnumLabel(group: string, value?: string | null): string {
