@@ -116,7 +116,7 @@ function nextRetryDelay(attempt: number): number {
 const TENANT_STORAGE_KEY = 'batch-console-tenant-id'
 
 export function readStoredTenantId(): string {
-  return localStorage.getItem(TENANT_STORAGE_KEY) ?? 'default-tenant'
+  return localStorage.getItem(TENANT_STORAGE_KEY) ?? ''
 }
 
 function isSuccessCode(code: string | number | undefined): boolean {
