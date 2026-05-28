@@ -32,6 +32,7 @@ export interface paths {
      * Get login encryption public key
      * @description Returns RSA-OAEP-256 public key metadata for encrypted login payloads.
      *     When login encryption is disabled, the backend returns 404 and the frontend may use plain login.
+     *
      */
     get: operations['getConsoleLoginPublicKey']
     put?: never
@@ -92,6 +93,7 @@ export interface paths {
      *     or `valid=true` + `nextRuns` (ISO-8601 UTC, ascending) on success.
      *
      *     Timezone is taken from `batch.timezone.default-zone` (default `Asia/Shanghai`).
+     *
      */
     get: operations['previewCron']
     put?: never
@@ -119,6 +121,7 @@ export interface paths {
      *
      *     This endpoint is whitelisted by `MaintenanceModeFilter`, so it returns 200 even
      *     during maintenance — otherwise the frontend would have no way to detect recovery.
+     *
      */
     get: operations['getMaintenanceStatus']
     put?: never
@@ -149,6 +152,7 @@ export interface paths {
      *     - Pre-rollout: PUT `{enabled:true, readOnly:false, message:..., etaAt:...,
      *       affectedServices:["job-schedule"]}`
      *     - Post-rollout: PUT `{enabled:false}`
+     *
      */
     put: operations['updateAdminMaintenanceState']
     post?: never
@@ -170,6 +174,7 @@ export interface paths {
      * @description Returns 204 if the current request carries a valid console session/JWT, 401 otherwise.
      *     Designed for high-frequency reverse-proxy auth checks (e.g. gating `/docs/*` static
      *     files); avoids the menu-assembly cost of `GET /api/console/auth/me`.
+     *
      */
     get: operations['checkConsoleAuth']
     put?: never
@@ -194,6 +199,7 @@ export interface paths {
      * @description Sets `Set-Cookie: batch_console_token=; Max-Age=0` so the browser drops the auth cookie.
      *     Idempotent and does not require authentication (permitAll). Front-end should also clear
      *     the `batch-console-session` localStorage flag.
+     *
      */
     post: operations['logoutConsole']
     delete?: never
@@ -491,6 +497,7 @@ export interface paths {
      * @description Subscribe to the first-screen operational summary stream. A shared realtime envelope with `summaryRefresh=true`
      *     causes the console consumer to reload the latest summary snapshot from the database and emit `ops-summary-updated`
      *     to SSE clients.
+     *
      */
     get: operations['streamConsoleOpsSummary']
     put?: never
@@ -1678,6 +1685,7 @@ export interface paths {
     /**
      * Download a file
      * @description Returns raw file bytes (Content-Disposition attachment), not CommonResponse JSON. When the file template requires download approval, pass approvalId from an approved flow.
+     *
      */
     get: operations['downloadFile']
     put?: never
@@ -1850,6 +1858,7 @@ export interface paths {
      *     清理覆盖 11 张表(按 FK 反向):job_partition → job_instance → workflow_node →
      *     workflow_edge → workflow_definition → job_definition → file_channel_config →
      *     file_template_config → console_user_account → archive_policy → tenant。
+     *
      */
     delete: operations['cleanupTestData']
     options?: never
@@ -1882,6 +1891,7 @@ export interface paths {
      *
      *     清理顺序参考 scripts/db/wipe-non-system-tenants.sql:pipeline 运行 → workflow 运行 →
      *     job 实例链 → file 相关 → workflow/pipeline/job 定义 → 配置 → 用户 → 租户本体。
+     *
      */
     delete: operations['cleanupTestDataByIds']
     options?: never
@@ -2707,6 +2717,7 @@ export interface paths {
      *     the whole transaction is rolled back (no partial commits). The shared
      *     `TenantConfigBatchInitRequest.strict` flag is forced to true on this path; the
      *     unrelated ConfigSync path keeps `strict=false` and tolerates partial success.
+     *
      */
     post: operations['createJobBundle']
     delete?: never
@@ -2751,6 +2762,7 @@ export interface paths {
      *     failure within a tenant rolls back that tenant's transaction. Other tenants are
      *     independent (no cross-tenant rollback). The `TenantConfigBatchInitRequest.strict`
      *     flag is forced to true on this path.
+     *
      */
     post: operations['importJobBundle']
     delete?: never
@@ -2823,6 +2835,7 @@ export interface paths {
      * Render workflow DAG as mermaid flowchart text
      * @description Returns the workflow's nodes + edges rendered as a mermaid flowchart
      *     string. Used by the read-only viewer and for embedding in PR/Wiki/docs.
+     *
      */
     get: operations['renderWorkflowMermaid']
     put?: never
@@ -3025,6 +3038,7 @@ export interface paths {
      *     | `deadLetterErrorClass` | 死信错误分类（BUSINESS / SYSTEM）|
      *     | `quotaExceededStrategy` | 租户配额超额策略（REJECT / QUEUE_DEFER / DEGRADE_PRIORITY）|
      *     | `skipThresholdMode` | 跳过阈值模式（ABSOLUTE / PERCENTAGE）|
+     *
      */
     get: operations['getMetaEnums']
     put?: never
@@ -3114,6 +3128,7 @@ export interface paths {
      * List distinct biz types for metadata selection
      * @description Returns distinct `biz_type` values present in `file_record` for the given tenant.
      *     Used as dropdown options for file list filtering. Values are free-text and tenant-specific.
+     *
      */
     get: operations['getMetaBizTypes']
     put?: never
@@ -3137,6 +3152,7 @@ export interface paths {
      *     (IMPORT / EXPORT / PROCESS / DISPATCH). Source-of-truth is
      *     `ConfigPackageExcelValidator.STAGES_BY_TYPE`. Used by FE PipelineDefinitionList
      *     step editor to render stageCode as dropdown.
+     *
      */
     get: operations['getMetaPipelineStages']
     put?: never
@@ -3158,6 +3174,7 @@ export interface paths {
      * Registered step impl_code whitelist
      * @description Returns the set of `impl_code` values registered in `step_registry`.
      *     Pass `module` to filter by IMPORT / EXPORT / PROCESS / DISPATCH; omit to return all.
+     *
      */
     get: operations['getMetaStepImpls']
     put?: never
@@ -4164,6 +4181,7 @@ export interface paths {
     /**
      * Batch-initialize tenant configurations
      * @description Pushes all 10 config types to one or more tenants: job definitions, workflow definitions, pipeline definitions, file channels, file templates, resource queues, batch windows, business calendars, quota policies, and alert routings. mode=SKIP_EXISTING (default) creates missing items only; mode=UPSERT creates or updates. dryRun=true validates without writing.
+     *
      */
     post: operations['batchInitTenantConfig']
     delete?: never
@@ -4184,6 +4202,7 @@ export interface paths {
     /**
      * Cross-tenant configuration copy
      * @description Reads configuration from a source tenant and pushes it to one or more target tenants. Supports selective config types and dry-run mode. Response format is identical to tenant-init.
+     *
      */
     post: operations['copyTenantConfig']
     delete?: never
@@ -4367,6 +4386,7 @@ export interface paths {
      *     复制到新建租户，等价于调用 `POST /api/console/config/tenant-copy`。
      *     `initConfigFrom` 不传时默认使用 `default` 模板租户。
      *     配置复制失败不影响租户记录，失败详情见响应 `configInit` 字段。
+     *
      */
     post: operations['batchCreateTenants']
     delete?: never
@@ -4998,7 +5018,7 @@ export interface components {
     }
     CommonResponseVoid: components['schemas']['CommonResponseBase'] & {
       /** @description Always null for void responses. */
-      data?: Record<string, never> | null
+      data?: Record<string, never>
     }
     EnabledPatchRequest: {
       /** @description Tenant identifier. */
@@ -5066,10 +5086,9 @@ export interface components {
       message?: string | null
       /** @description ISO-8601 estimated recovery timestamp; null when unknown */
       etaAt?: string | null
-      /**
-       * @description Service codes that are down during this maintenance (empty list = whole site).
+      /** @description Service codes that are down during this maintenance (empty list = whole site).
        *     FE renders a per-service availability badge so users see what's still usable.
-       */
+       *      */
       affectedServices?: string[]
     }
     UpdateMaintenanceRequest: {
@@ -5208,10 +5227,9 @@ export interface components {
       data?: components['schemas']['DagValidationResult']
     }
     WorkflowMermaidResponse: {
-      /**
-       * @description Workflow 渲染后的 mermaid flowchart 文本。可直接贴入 GitHub README /
+      /** @description Workflow 渲染后的 mermaid flowchart 文本。可直接贴入 GitHub README /
        *     PR description / 文档站,前端用 mermaid.js 渲染。
-       */
+       *      */
       mermaid: string
     }
     CommonResponseWorkflowMermaidResponse: components['schemas']['CommonResponseBase'] & {
@@ -5568,12 +5586,11 @@ export interface components {
        * @enum {string}
        */
       level?: 'CONFIG_VALIDATE' | 'SCHEDULE_PLAN' | 'EXECUTION_PLAN'
-      /**
-       * @description 可选 effectiveParams；L3 EXECUTION_PLAN 中识别以下 key 触发探测：
+      /** @description 可选 effectiveParams；L3 EXECUTION_PLAN 中识别以下 key 触发探测：
        *     - sql / querySql / sourceQuery / validationSql / selectSql → JdbcTemplate EXPLAIN
        *     - minioBucket → MinioClient.bucketExists（命名 DNS-style 校验）
        *     - endpointUrl / callbackUrl / channelEndpoint / dispatchTarget → HTTP HEAD（5s timeout）
-       */
+       *      */
       params?: {
         [key: string]: unknown
       }
@@ -5670,12 +5687,11 @@ export interface components {
       approvalId?: string
       strategy?: string
     }
-    /**
-     * @description Catch-up 双流程语义:
+    /** @description Catch-up 双流程语义:
      *     - 不传 approvalId: 创建审批 ticket,返回 approvalNo
      *     - 传 approvalId + requestId: 已批准的 ticket 触发实际补跑
      *     与 BE Java DTO `ConsoleCatchUpApprovalRequest` 对齐。
-     */
+     *      */
     ConsoleCatchUpApprovalRequest: {
       tenantId: string
       /** @description 用于幂等关联的业务 requestId(必填) */
@@ -5947,10 +5963,9 @@ export interface components {
       enabled?: boolean
       description?: string
     }
-    /**
-     * @description 更新作业定义。所有字段可选(缺省视为不修改),与 BE Java DTO `JobDefinitionUpdateRequest`
+    /** @description 更新作业定义。所有字段可选(缺省视为不修改),与 BE Java DTO `JobDefinitionUpdateRequest`
      *     对齐。jobCode/jobType 在更新场景不可改,故未列出。
-     */
+     *      */
     JobDefinitionUpdateRequest: {
       tenantId?: string
       jobName?: string
@@ -6366,11 +6381,10 @@ export interface components {
       /** Format: date-time */
       drainDeadlineAt?: string | null
     }
-    /**
-     * @description 登录 / 换 token 响应。P1-1 (pre-launch audit 2026-05-18) 后 accessToken 不再出现在 response body,
+    /** @description 登录 / 换 token 响应。P1-1 (pre-launch audit 2026-05-18) 后 accessToken 不再出现在 response body,
      *     token 走 HttpOnly cookie `batch_console_token`。schema 保留 accessToken 字段为可选(向后兼容旧客户端
      *     反序列化),但服务端固定写 null,Jackson 配合 @JsonInclude(NON_NULL) 直接抹除该字段。
-     */
+     *      */
     ConsoleAuthTokenResponse: {
       /** @description 已废弃,固定为 null。客户端读 HttpOnly cookie batch_console_token,不再从 body 取。 */
       accessToken?: string | null
@@ -6418,7 +6432,8 @@ export interface components {
       /** @enum {string} */
       minRole: 'VIEWER' | 'OPERATOR' | 'ADMIN'
     }
-    /** @description Username is globally unique. Tenant is resolved from the account record automatically; no tenantId field is needed. */
+    /** @description Username is globally unique. Tenant is resolved from the account record automatically; no tenantId field is needed.
+     *      */
     ConsoleLoginRequest: {
       username: string
       password: string
@@ -6772,11 +6787,10 @@ export interface components {
       /** Format: date-time */
       createdAt: string
     }
-    /**
-     * @description 通用控制台用户操作审计(@AuditAction Aspect 落库)。
+    /** @description 通用控制台用户操作审计(@AuditAction Aspect 落库)。
      *     字段顺序对齐 batch.console_operation_audit 表 + 将来 Kafka payload schema,
      *     新增字段务必非必填 + 同步升 eventVersion。
-     */
+     *      */
     ConsoleOperationAuditResponse: {
       /** Format: int64 */
       id: number
@@ -6842,7 +6856,7 @@ export interface components {
       eventType: string
       cursor?: string | null
       /** @description Stream-specific event payload. Depending on `stream` and `eventType`, this may be a console response DTO such as alert, worker, job instance, workflow run, file pipeline, dispatch, outbox log, audit log, or trace snapshot. */
-      data?: Record<string, never> | null
+      data?: Record<string, never>
       /** Format: date-time */
       emittedAt: string
     }
@@ -7144,12 +7158,11 @@ export interface components {
       /** Format: date-time */
       updatedAt?: string
     }
-    /**
-     * @description 批量租户配置初始化请求。
+    /** @description 批量租户配置初始化请求。
      *     mode=SKIP_EXISTING 已存在跳过；mode=UPSERT 已存在更新。
      *     dryRun=true 时只校验不落库。
      *     各 List<XxxSpec> 字段为可选；未传则该类配置不初始化。
-     */
+     *      */
     TenantConfigBatchInitRequest: {
       targetTenantIds: string[]
       /**
@@ -7170,10 +7183,9 @@ export interface components {
       quotaPolicies?: components['schemas']['TenantQuotaPolicySpec'][]
       alertRoutings?: components['schemas']['AlertRoutingSpec'][]
     }
-    /**
-     * @description 跨租户配置复制请求。从源租户读取配置，推送到目标租户列表。
+    /** @description 跨租户配置复制请求。从源租户读取配置，推送到目标租户列表。
      *     configTypes 为空表示复制全部 10 类。
-     */
+     *      */
     TenantConfigCopyRequest: {
       sourceTenantId: string
       targetTenantIds: string[]
@@ -7192,6 +7204,7 @@ export interface components {
      *     "JOB" → JOB_DEFINITION / "WORKFLOW" → WORKFLOW_DEFINITION /
      *     "PIPELINE" → PIPELINE_DEFINITION（仅 *_DEFINITION 三类支持简写）。
      *     其余类型必须传完整名称。
+     *
      * @enum {string}
      */
     TenantConfigCopyType:
@@ -7205,7 +7218,8 @@ export interface components {
       | 'BUSINESS_CALENDAR'
       | 'QUOTA_POLICY'
       | 'ALERT_ROUTING'
-    /** @description Reusable job/config bundle payload. All lists are optional; omitted lists are not imported. */
+    /** @description Reusable job/config bundle payload. All lists are optional; omitted lists are not imported.
+     *      */
     ConfigSyncBundlePayload: {
       jobDefinitions?: components['schemas']['JobDefinitionSpec'][]
       workflowDefinitions?: components['schemas']['WorkflowDefinitionSpec'][]
@@ -11093,11 +11107,10 @@ export interface operations {
         minDurationSeconds?: number
         /** @description When true, only returns instances with deadline_at < now and still in active status (CREATED/WAITING/READY/RUNNING/PARTIAL_FAILED). Matches the slaBreaches metric on OpsSummary. */
         slaBreached?: boolean
-        /**
-         * @description Comma-separated status list (e.g. `FAILED,PARTIAL_FAILED`). Takes precedence over
+        /** @description Comma-separated status list (e.g. `FAILED,PARTIAL_FAILED`). Takes precedence over
          *     `instanceStatus`. Used by OpsSummary "failed jobs" card to match the same
          *     FAILED + PARTIAL_FAILED predicate as the counter.
-         */
+         *      */
         instanceStatuses?: string
       }
       header?: never
@@ -14583,10 +14596,9 @@ export interface operations {
           usernamePrefix?: string
           /** @description 批量初始密码（≥12位高强度），首次登录后应立即修改 */
           password: string
-          /**
-           * @description 可选。配置初始化源租户 ID。不传时默认使用 default 模板租户。
+          /** @description 可选。配置初始化源租户 ID。不传时默认使用 default 模板租户。
            *     租户创建成功后自动将源租户的全部配置复制到新建租户。
-           */
+           *      */
           initConfigFrom?: string | null
           /**
            * @description 配置初始化模式，默认 SKIP_EXISTING
@@ -15563,7 +15575,8 @@ export interface operations {
   uploadTenantConfigPackageExcel: {
     parameters: {
       query?: {
-        /** @description 全局角色（ROLE_ADMIN / ROLE_TENANT_ADMIN）必须显式指定目标租户； 租户级账号可不传（沿用 JWT 内 tenantId）。 */
+        /** @description 全局角色（ROLE_ADMIN / ROLE_TENANT_ADMIN）必须显式指定目标租户； 租户级账号可不传（沿用 JWT 内 tenantId）。
+         *      */
         tenantId?: string
       }
       header?: never
