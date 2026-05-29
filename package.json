@@ -78,10 +78,10 @@
     "json-bigint": "^1.0.0",
     "pinia": "^3.0.4",
     "svg-pan-zoom": "^3.6.2",
-    "vue": "^3.5.13",
+    "vue": "^3.5.35",
     "vue-echarts": "^8.0.1",
     "vue-i18n": "^11.4.4",
-    "vue-router": "^5.0.7",
+    "vue-router": "^5.1.0",
     "web-vitals": "^5.2.0"
   },
   "devDependencies": {
@@ -120,7 +120,7 @@
     "vitepress-plugin-mermaid": "^2.0.17",
     "vitest": "^4.1.7",
     "vue-eslint-parser": "^10.4.0",
-    "vue-tsc": "^3.3.1"
+    "vue-tsc": "^3.3.2"
   },
   "lint-staged": {
     "src/**/*.{vue,ts,tsx}": [
