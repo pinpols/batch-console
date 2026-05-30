@@ -2,6 +2,7 @@
   <div class="mobile-layout">
     <MobileAppBar :scrolled="scrolled" />
     <MaintenanceBanner />
+    <DegradationBanner />
     <main ref="contentRef" class="mobile-layout__content" @scroll.passive="onScroll">
       <router-view v-slot="{ Component, route: r }">
         <transition :name="pageTransition">
@@ -28,6 +29,7 @@
   import MobileAppBar from './MobileAppBar.vue'
   import MobileTabBar from './MobileTabBar.vue'
   import MaintenanceBanner from '@/components/common/MaintenanceBanner.vue'
+  import DegradationBanner from '@/components/common/DegradationBanner.vue'
   import SwUpdatePrompt from '@/components/common/SwUpdatePrompt.vue'
   import CommandPalette from '@/components/common/CommandPalette.vue'
   import { useMaintenancePolling } from '@/composables/useMaintenancePolling'

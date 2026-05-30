@@ -388,6 +388,17 @@ export function applyApiInterceptors(client: AxiosInstance): void {
           })
         })
       }
+      // X-Degraded-Source:BE Resilience4j 触发 fallback 时透传降级源(如 trigger / push)。
+      // 写进 store,DegradationBanner 顶部展示;axios header 名大小写不敏感 → 同时容忍逗号分隔多源。
+      const xDeg = response.headers?.['x-degraded-source']
+      if (typeof xDeg === 'string' && xDeg.trim()) {
+        void import('@/stores/app').then(({ useAppStore }) => {
+          const app = useAppStore()
+          for (const src of xDeg.split(',').map((s) => s.trim()).filter(Boolean)) {
+            app.addDegradationSource(src)
+          }
+        })
+      }
       // 成功路径:response 只留 envelope 的 code/message(必要时可从后端 meta 拿 traceId),
       // 不拖 data 字段,防止列表接口一次性塞几 KB。失败路径(error 分支)仍记完整 body。
       let responseField: unknown

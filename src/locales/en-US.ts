@@ -566,6 +566,10 @@ const messages: Messages = {
     pageRetry: 'Retry now',
     writeBlocked: 'Write operations are disabled during maintenance',
   },
+  degradation: {
+    bannerHeadline: 'Some downstream services degraded',
+    bannerMessage: 'Affected downstreams are tripped; displayed data may be incomplete and will auto-recover.',
+  },
   copy: {
     success: 'Copied',
     linkSuccess: 'Link copied',
