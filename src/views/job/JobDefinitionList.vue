@@ -973,8 +973,8 @@
   // 路由变化时自动关闭 detail / 编辑 / 新建 三个 drawer,避免跳到目标页 drawer 还罩着
   useDrawerAutoClose([detailVisible, editDrawerVisible, createDrawerVisible])
   const createSaving = ref(false)
-  // jobType BE 枚举:GENERAL/IMPORT/EXPORT/PROCESS/DISPATCH/WORKFLOW(见 JobType.java)。
-  // 此处默认 GENERAL,不能再用旧的 'SHELL'(早期遗留,BE 不认 → 400)。
+  // jobType BE 枚举走 /api/console/meta/enums 动态字典;此处默认 GENERAL(通用任务,
+  // P0 Task SPI 落地后内部路由到 Shell/SQL/StoredProc/HTTP builtin)。
   const createForm = reactive({
     jobCode: '',
     jobName: '',

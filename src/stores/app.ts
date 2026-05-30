@@ -151,6 +151,37 @@ export const useAppStore = defineStore('app', () => {
   /** 写操作是否被冻结(enabled=true 或 readOnly=true)— 给写按钮 :disabled 用 */
   const writesFrozen = computed(() => maintenance.value.enabled)
 
+  // 降级模式状态 — BE Resilience4j circuit breaker 触发降级时,响应头加
+  //   X-Degraded-Source: <serviceCode>(如 trigger / orchestrator / push)
+  // FE interceptor 读到后调 addDegradationSource(),Banner 显示"X 服务暂不可用,数据可能不完整"。
+  // 单源最近 60s 没再收到 → 自动从 activeSources 清掉(circuit closed 后流量恢复)。
+  const DEGRADATION_TTL_MS = 60_000
+  const degradation = ref<{
+    /** 当前活跃降级源 → 最后一次见到的时间戳(ms) */
+    sources: Record<string, number>
+  }>({ sources: {} })
+
+  function addDegradationSource(source: string) {
+    if (!source) return
+    degradation.value = {
+      sources: { ...degradation.value.sources, [source]: Date.now() },
+    }
+  }
+
+  /** 清理过期降级源(被 Banner 周期调用,无副作用) */
+  function pruneDegradationSources(now: number = Date.now()) {
+    const next: Record<string, number> = {}
+    for (const [k, ts] of Object.entries(degradation.value.sources)) {
+      if (now - ts <= DEGRADATION_TTL_MS) next[k] = ts
+    }
+    if (Object.keys(next).length !== Object.keys(degradation.value.sources).length) {
+      degradation.value = { sources: next }
+    }
+  }
+
+  const activeDegradationSources = computed(() => Object.keys(degradation.value.sources))
+  const isDegraded = computed(() => activeDegradationSources.value.length > 0)
+
   return {
     sidebarCollapsed,
     contentDensity,
@@ -169,5 +200,10 @@ export const useAppStore = defineStore('app', () => {
     maintenance,
     setMaintenance,
     writesFrozen,
+    degradation,
+    addDegradationSource,
+    pruneDegradationSources,
+    activeDegradationSources,
+    isDegraded,
   }
 })

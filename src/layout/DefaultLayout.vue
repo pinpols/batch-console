@@ -4,6 +4,7 @@
 
     <el-container class="layout-shell">
       <MaintenanceBanner />
+      <DegradationBanner />
       <LayoutHeader @open-palette="paletteOpen = true" />
 
       <el-main class="layout-main">
@@ -52,6 +53,7 @@
   import CommandPalette from '@/components/common/CommandPalette.vue'
   import ErrorBoundary from '@/components/common/ErrorBoundary.vue'
   import MaintenanceBanner from '@/components/common/MaintenanceBanner.vue'
+  import DegradationBanner from '@/components/common/DegradationBanner.vue'
   import SwUpdatePrompt from '@/components/common/SwUpdatePrompt.vue'
   import LayoutSidebar from '@/layout/LayoutSidebar.vue'
   import LayoutHeader from '@/layout/components/LayoutHeader.vue'

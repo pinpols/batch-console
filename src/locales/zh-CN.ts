@@ -573,6 +573,10 @@ export default {
     pageRetry: '立即重试',
     writeBlocked: '维护期间禁止此操作',
   },
+  degradation: {
+    bannerHeadline: '后端部分下游降级中',
+    bannerMessage: '受影响的下游已熔断,展示数据可能不完整,稍后自动恢复。',
+  },
   copy: {
     success: '已复制',
     linkSuccess: '已复制链接',
