@@ -1,6 +1,6 @@
 {
   "name": "batch-console",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "private": true,
   "license": "Apache-2.0",
   "type": "module",
@@ -78,10 +78,10 @@
     "json-bigint": "^1.0.0",
     "pinia": "^3.0.4",
     "svg-pan-zoom": "^3.6.2",
-    "vue": "^3.5.35",
+    "vue": "^3.5.13",
     "vue-echarts": "^8.0.1",
     "vue-i18n": "^11.4.4",
-    "vue-router": "^5.1.0",
+    "vue-router": "^5.0.7",
     "web-vitals": "^5.2.0"
   },
   "devDependencies": {
@@ -91,8 +91,8 @@
     "@size-limit/preset-app": "^12.1.0",
     "@types/dagre": "^0.7.54",
     "@types/json-bigint": "^1.0.4",
-    "@typescript-eslint/eslint-plugin": "^8.60.0",
-    "@typescript-eslint/parser": "^8.60.0",
+    "@typescript-eslint/eslint-plugin": "^8.18.0",
+    "@typescript-eslint/parser": "^8.18.0",
     "@vitejs/plugin-vue": "^6.0.7",
     "@vitest/coverage-v8": "^4.1.7",
     "@vue/test-utils": "^2.4.10",
@@ -120,7 +120,7 @@
     "vitepress-plugin-mermaid": "^2.0.17",
     "vitest": "^4.1.7",
     "vue-eslint-parser": "^10.4.0",
-    "vue-tsc": "^3.3.2"
+    "vue-tsc": "^3.3.1"
   },
   "lint-staged": {
     "src/**/*.{vue,ts,tsx}": [
