@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.1.5](https://github.com/pinpols/batch-console/compare/v0.1.4...v0.1.5) (2026-05-30)
+
+
+### Bug Fixes
+
+* **ci:** frontend deploy HOST_PORT 8080 → 19080 ([#16](https://github.com/pinpols/batch-console/issues/16)) ([4836710](https://github.com/pinpols/batch-console/commit/4836710242096ec5a237edf591a88ace392b4d7d))
+* **deps:** update dependency element-plus to ^2.14.1 ([#31](https://github.com/pinpols/batch-console/issues/31)) ([b5c81a0](https://github.com/pinpols/batch-console/commit/b5c81a00b7fb313e11c772cf450aa51b510caaaa))
+* **deps:** update vue ecosystem ([#32](https://github.com/pinpols/batch-console/issues/32)) ([1d76b62](https://github.com/pinpols/batch-console/commit/1d76b6237c33ff9a909394c24225953ef92b40b3))
+* **layout:** 移除首次登录强制选租户弹窗 FirstTenantPicker ([#17](https://github.com/pinpols/batch-console/issues/17)) ([0d029c0](https://github.com/pinpols/batch-console/commit/0d029c05ec6c1cbb91a6ea443f30c59649068c07))
+* **security:** 租户/菜单/operator 权限硬化(去 default-tenant + 后端菜单 allowlist + mobile OPERATOR) ([#25](https://github.com/pinpols/batch-console/issues/25)) ([82b2510](https://github.com/pinpols/batch-console/commit/82b25100d805b7859cb7bd6b529483fdfe4c8bd4))
+* **ui:** tenant-package 导入向导大屏自适应(撑满高度 + 上传步骤垂直居中 + 放宽限宽) ([#21](https://github.com/pinpols/batch-console/issues/21)) ([d9ab142](https://github.com/pinpols/batch-console/commit/d9ab14251f293c1bfb8533fecb03d6581db65d12))
+
 ## [0.1.4](https://github.com/pinpols/batch-console/compare/v0.1.3...v0.1.4) (2026-05-24)
 
 
