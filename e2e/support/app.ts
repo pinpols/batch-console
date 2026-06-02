@@ -45,6 +45,7 @@ export const smokeRoutes: RouteCheck[] = [
   { path: '/governance/queues', title: /队列/ },
   { path: '/workers/management', title: 'Worker' },
   { path: '/system/triggers', title: '触发器' },
+  { path: '/ops/custom-task-types', title: /自定义\s*taskType|Custom\s*task\s*types/ },
   // 系统
   { path: '/system/tenants', title: '租户实例' },
   { path: '/system/user-accounts', title: '登录账户' },
@@ -53,6 +54,7 @@ export const smokeRoutes: RouteCheck[] = [
   { path: '/system/api-keys', title: 'API Key' },
   { path: '/system/parameters', title: '系统参数' },
   { path: '/system/notifications', title: '通知与投递' },
+  { path: '/system/atomic-task-types', title: /Atomic\s*节点配置中心|Atomic\s*task\s*type\s*center/ },
 ]
 
 export async function enterDemoApp(page: Page) {

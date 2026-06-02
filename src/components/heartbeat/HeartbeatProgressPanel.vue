@@ -83,11 +83,12 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, computed, onBeforeUnmount, watch } from 'vue'
+  import { ref, computed, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { Refresh } from '@element-plus/icons-vue'
   import JsonPreview from '@/components/common/JsonPreview.vue'
   import { fmtDatetime } from '@/utils/datetime'
+  import { useAutoRefresh } from '@/composables/useAutoRefresh'
   import {
     getTaskHeartbeatDetails,
     extractProgressPercent,
@@ -103,7 +104,6 @@
   const loadError = ref(false)
   const notFound = ref(false)
   const autoRefresh = ref(false)
-  let timer: ReturnType<typeof setInterval> | null = null
 
   const percent = computed(() => extractProgressPercent(details.value?.details))
 
@@ -141,24 +141,6 @@
     }
   }
 
-  function startPolling() {
-    stopPolling()
-    const interval = props.pollMs ?? 10_000
-    timer = setInterval(load, interval)
-  }
-
-  function stopPolling() {
-    if (timer) {
-      clearInterval(timer)
-      timer = null
-    }
-  }
-
-  watch(autoRefresh, (on) => {
-    if (on) startPolling()
-    else stopPolling()
-  })
-
   watch(
     () => props.taskId,
     (id) => {
@@ -167,7 +149,10 @@
     { immediate: true },
   )
 
-  onBeforeUnmount(stopPolling)
+  // useAutoRefresh:tab 不可见自动暂停 + 卸载自动清理。autoRefresh 关时不发请求。
+  useAutoRefresh(() => {
+    if (autoRefresh.value && props.taskId) void load()
+  }, props.pollMs ?? 10_000)
 </script>
 
 <style scoped>
