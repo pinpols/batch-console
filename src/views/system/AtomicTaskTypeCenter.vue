@@ -138,6 +138,10 @@
                 {{ t('atomicTaskTypeCenter.tryFormHintBody') }}
               </template>
             </el-alert>
+            <SensitiveFieldAlert
+              :value="getDraftDebounced(schema.taskType)"
+              :exempt-paths="schema.taskType === 'http' ? ['auth'] : []"
+            />
             <el-form
               :model="getDraft(schema.taskType)"
               label-width="160px"
@@ -199,7 +203,7 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, reactive } from 'vue'
+  import { ref, reactive, onUnmounted } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
   import { Refresh, DocumentCopy } from '@element-plus/icons-vue'
@@ -209,6 +213,7 @@
   import SectionCard from '@/components/common/SectionCard.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
   import JsonPreview from '@/components/common/JsonPreview.vue'
+  import SensitiveFieldAlert from '@/components/common/SensitiveFieldAlert.vue'
   import {
     listAtomicTaskTypeSchemas,
     type AtomicTaskTypeSchema,
@@ -242,6 +247,31 @@
     if (!drafts[taskType]) drafts[taskType] = {}
     return drafts[taskType]
   }
+
+  // Debounced snapshot for SensitiveFieldAlert(避免每字符触发递归扫描)。
+  // 200ms 内多次改动只跑最后一次。snapshot 是 plain object,scan 端只 read,不会 触发 reactivity 反复重算。
+  const draftSnapshots = reactive<Record<string, Record<string, unknown>>>({})
+  const snapshotTimers: Record<string, ReturnType<typeof setTimeout>> = {}
+
+  function getDraftDebounced(taskType: string): Record<string, unknown> {
+    if (!draftSnapshots[taskType]) draftSnapshots[taskType] = {}
+    // 触发对应 draft 的 reactivity 读取,使 effect 在 draft 改动时重跑(被 caller computed 包裹)
+    const live = getDraft(taskType)
+    if (snapshotTimers[taskType]) clearTimeout(snapshotTimers[taskType])
+    snapshotTimers[taskType] = setTimeout(() => {
+      // 浅拷贝 + JSON 序列化往返,确保 snapshot 是纯净对象(去 proxy)
+      try {
+        draftSnapshots[taskType] = JSON.parse(JSON.stringify(live))
+      } catch {
+        draftSnapshots[taskType] = { ...live }
+      }
+    }, 200)
+    return draftSnapshots[taskType]
+  }
+
+  onUnmounted(() => {
+    for (const k of Object.keys(snapshotTimers)) clearTimeout(snapshotTimers[k])
+  })
 
   function resetDraft(taskType: string) {
     drafts[taskType] = {}
