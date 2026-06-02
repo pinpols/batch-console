@@ -117,6 +117,40 @@
           </div>
         </div>
 
+        <div v-if="heartbeatTaskId" class="m-card">
+          <div class="m-card__row">
+            <div class="m-card__title">{{ t('mJobDetail.heartbeatTitle') }}</div>
+            <span v-if="heartbeatLoading" class="m-card__sub">{{ t('mobile.common.loading') }}</span>
+          </div>
+          <div v-if="heartbeatNotFound" class="m-card__sub">
+            {{ t('heartbeatPanel.notFoundBody') }}
+          </div>
+          <template v-else-if="heartbeatLatest">
+            <div v-if="heartbeatPercent !== null" class="m-progress">
+              <div
+                class="m-progress__bar"
+                :style="{ width: heartbeatPercent + '%' }"
+              />
+              <span class="m-progress__label">{{ heartbeatPercent }}%</span>
+            </div>
+            <div class="m-card__meta">
+              <div>
+                <span class="m-card__meta-key">{{ t('heartbeatPanel.heartbeatAt') }}</span>
+                {{ heartbeatLatest.heartbeatAt ? fmt(heartbeatLatest.heartbeatAt) : '—' }}
+              </div>
+              <div v-if="heartbeatLatest.cancelRequested">
+                <span class="m-card__meta-key">{{ t('heartbeatPanel.cancelRequested') }}</span>
+                ✓
+              </div>
+            </div>
+            <details v-if="heartbeatLatest.details" class="m-details">
+              <summary>{{ t('mJobDetail.heartbeatRaw') }}</summary>
+              <JsonPreview :data="heartbeatLatest.details" />
+            </details>
+            <div v-else class="m-card__sub">{{ t('heartbeatPanel.noDetailsBody') }}</div>
+          </template>
+        </div>
+
         <div class="m-card">
           <div class="m-card__title" style="margin-bottom: 6px">paramsSnapshot</div>
           <JsonPreview :data="row.paramsSnapshot" />
@@ -144,6 +178,11 @@
   import { useSmartBack } from '@/composables/useSmartBack'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { instanceApi } from '@/api/instance'
+  import {
+    getTaskHeartbeatDetails,
+    extractProgressPercent,
+    type TaskHeartbeatDetails,
+  } from '@/api/taskHeartbeat'
   import MPullRefresh from '@/layout-mobile/MPullRefresh.vue'
   import JsonPreview from '@/components/common/JsonPreview.vue'
   import type {
@@ -302,6 +341,50 @@
   useAutoRefresh(() => {
     if (isRunning.value) void load()
   }, 5_000)
+
+  // C 区(SDK Phase 4 / FE 2-C):优先取 RUNNING 步骤的 jobTaskId,否则取最后一个(序号最大)
+  const heartbeatTaskId = computed<number | null>(() => {
+    const opts = steps.value.filter(
+      (s) => typeof s.jobTaskId === 'number' && (s.jobTaskId as number) > 0,
+    )
+    if (opts.length === 0) return null
+    const running = opts.find((s) => s.stepStatus === 'RUNNING')
+    return (running?.jobTaskId ?? opts[opts.length - 1].jobTaskId) as number
+  })
+  const heartbeatLatest = ref<TaskHeartbeatDetails | null>(null)
+  const heartbeatLoading = ref(false)
+  const heartbeatNotFound = ref(false)
+  const heartbeatPercent = computed(() => extractProgressPercent(heartbeatLatest.value?.details))
+
+  async function loadHeartbeat() {
+    const id = heartbeatTaskId.value
+    if (!id) {
+      heartbeatLatest.value = null
+      heartbeatNotFound.value = false
+      return
+    }
+    heartbeatLoading.value = true
+    try {
+      const r = await getTaskHeartbeatDetails(id)
+      if (r === null) {
+        heartbeatNotFound.value = true
+        heartbeatLatest.value = null
+      } else {
+        heartbeatNotFound.value = false
+        heartbeatLatest.value = r
+      }
+    } catch {
+      heartbeatLatest.value = null
+    } finally {
+      heartbeatLoading.value = false
+    }
+  }
+
+  watch(heartbeatTaskId, () => void loadHeartbeat(), { immediate: true })
+  // 心跳跟随实例自动刷新一起拉(实例终态时也会跟随停)
+  useAutoRefresh(() => {
+    if (isRunning.value && heartbeatTaskId.value) void loadHeartbeat()
+  }, 10_000)
 </script>
 
 <style scoped>
@@ -363,5 +446,45 @@
   .m-step__err-code {
     font-weight: 700;
     margin-right: 4px;
+  }
+
+  .m-progress {
+    position: relative;
+    height: 14px;
+    border-radius: 999px;
+    background: var(--el-fill-color);
+    overflow: hidden;
+    margin: 8px 0 6px;
+  }
+
+  .m-progress__bar {
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      var(--color-primary, #1677ff),
+      color-mix(in srgb, var(--color-primary, #1677ff) 70%, white)
+    );
+    transition: width 0.3s ease;
+  }
+
+  .m-progress__label {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+  }
+
+  .m-details {
+    margin-top: 6px;
+  }
+
+  .m-details summary {
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    padding: 4px 0;
   }
 </style>
