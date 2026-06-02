@@ -2,15 +2,16 @@ name: release-please
 
 # Conventional Commits → 自动 changelog + 版本号 + PR + tag。
 # 工作流程:
-#   1. push main 触发,release-please-action 扫 commit log
-#   2. 发现自上次 release 后有 feat: / fix: / 等可发布的 commit → 开/更新 release PR
+#   1. 手动从 GitHub Actions UI 触发(workflow_dispatch)
+#   2. release-please-action 扫 commit log,发现自上次 release 后有 feat: / fix: / 等
+#      可发布的 commit → 开/更新 release PR
 #   3. release PR 合并 → 自动打 tag + 生成 GitHub Release + CHANGELOG.md
-# 完全跑在 GitHub Actions,无外部服务依赖。
 # 配置文件:.release-please-config.json / .release-please-manifest.json
+#
+# 历史:曾启用 `on: push: branches: [main]` 自动触发,但发版节奏不固定 + 自动 PR
+# 嘈杂,改为手动触发(2026-06-02)。
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch: {}
 
 permissions:
