@@ -299,6 +299,13 @@ export const navigationGroups: NavigationGroup[] = [
         minRole: 'OPERATOR',
         icon: PieChart,
       },
+      // SDK 自定义 taskType(只读,operator 排查租户 worker 注册情况)
+      {
+        title: pageTitle('/ops/custom-task-types'),
+        path: '/ops/custom-task-types',
+        minRole: 'OPERATOR',
+        icon: Cpu,
+      },
       // ↓ 以下 admin 治理低频项隐藏到 Command Palette
       {
         title: pageTitle('/governance/queues'),
@@ -364,6 +371,13 @@ export const navigationGroups: NavigationGroup[] = [
         path: '/system/parameters',
         minRole: 'ADMIN',
         icon: Setting,
+      },
+      // Atomic 节点配置中心(平台四类原子节点 schema + 安全闸只读)
+      {
+        title: pageTitle('/system/atomic-task-types'),
+        path: '/system/atomic-task-types',
+        minRole: 'OPERATOR',
+        icon: Box,
       },
       // 审计(原"告警与投递"挪入)
       {

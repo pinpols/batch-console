@@ -1539,6 +1539,125 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/console/my-workers': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** List self-hosted (SDK) workers for current tenant (ADR-035 P4) */
+    get: operations['listMyWorkers']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/my-workers/count': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Count self-hosted workers for current tenant (dashboard) */
+    get: operations['countMyWorkers']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/custom-task-types': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** List ACTIVE SDK-declared custom task types for current tenant (SDK Phase 3 M3.1) */
+    get: operations['listCustomTaskTypes']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/custom-task-types/count': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Count ACTIVE custom task types for current tenant */
+    get: operations['countCustomTaskTypes']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/custom-task-types/{taskTypeCode}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Get a single custom task type detail (incl. descriptor full text) */
+    get: operations['getCustomTaskType']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/atomic-task-types/schema': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Built-in atomic task type schemas (sql/shell/stored_proc/http) — params + security gates (FE 2-B) */
+    get: operations['getAtomicTaskTypeSchema']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/tasks/{taskId}/heartbeat-details': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Latest heartbeat progress/checkpoint details for a task (FE 2-C, tenant-scoped) */
+    get: operations['getTaskHeartbeatDetails']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/console/workers/{workerCode}/drain': {
     parameters: {
       query?: never
@@ -2297,6 +2416,28 @@ export interface paths {
     }
     /** Query job instance detail */
     get: operations['queryJobInstanceDetail']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/queries/job-execution-logs': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Query task-level execution logs (job_execution_log)
+     * @description 任务级执行日志查看,锚定单个 jobInstanceId。支持 logLevel / logType / keyword 过滤,
+     *     双轨分页(传 cursor 走 cursor 模式不返 total,否则 pageNo offset)。
+     *
+     */
+    get: operations['queryJobExecutionLogs']
     put?: never
     post?: never
     delete?: never
@@ -5296,6 +5437,9 @@ export interface components {
       data?: components['schemas']['PageResponse']
     }
     CommonResponseJobStepInstanceList: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['PageResponse']
+    }
+    CommonResponseJobExecutionLogList: components['schemas']['CommonResponseBase'] & {
       data?: components['schemas']['PageResponse']
     }
     CommonResponseJobPartitionList: components['schemas']['CommonResponseBase'] & {
@@ -9997,6 +10141,236 @@ export interface operations {
       }
     }
   }
+  listMyWorkers: {
+    parameters: {
+      query?: {
+        tenantId?: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description List of self-hosted workers (is_self_hosted=true), heartbeat_at desc */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            code?: string
+            message?: string
+            data?: {
+              [key: string]: unknown
+            }[]
+          }
+        }
+      }
+    }
+  }
+  countMyWorkers: {
+    parameters: {
+      query?: {
+        tenantId?: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Count of self-hosted workers */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            code?: string
+            message?: string
+            /** Format: int64 */
+            data?: number
+          }
+        }
+      }
+    }
+  }
+  listCustomTaskTypes: {
+    parameters: {
+      query?: {
+        tenantId?: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description List of ACTIVE custom task types, last_declared_at desc */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            code?: string
+            message?: string
+            data?: {
+              [key: string]: unknown
+            }[]
+          }
+        }
+      }
+    }
+  }
+  countCustomTaskTypes: {
+    parameters: {
+      query?: {
+        tenantId?: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Count of ACTIVE custom task types */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            code?: string
+            message?: string
+            /** Format: int64 */
+            data?: number
+          }
+        }
+      }
+    }
+  }
+  getCustomTaskType: {
+    parameters: {
+      query?: {
+        tenantId?: string
+      }
+      header?: never
+      path: {
+        taskTypeCode: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Custom task type detail */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            code?: string
+            message?: string
+            data?: {
+              [key: string]: unknown
+            }
+          }
+        }
+      }
+      /** @description Task type not found for tenant */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  getAtomicTaskTypeSchema: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Static schema catalog of the 4 built-in atomic task types */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            code?: string
+            message?: string
+            data?: {
+              taskType?: string
+              displayName?: string
+              enabledByDefault?: boolean
+              parameters?: {
+                name?: string
+                type?: string
+                required?: boolean
+                description?: string
+              }[]
+              securityGates?: {
+                field?: string
+                meaning?: string
+              }[]
+            }[]
+          }
+        }
+      }
+    }
+  }
+  getTaskHeartbeatDetails: {
+    parameters: {
+      query?: {
+        tenantId?: string
+      }
+      header?: never
+      path: {
+        taskId: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Latest heartbeat details (details=null when no heartbeat yet) */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            code?: string
+            message?: string
+            data?: {
+              /** Format: int64 */
+              taskId?: number
+              taskStatus?: string
+              details?: {
+                [key: string]: unknown
+              } | null
+              /** Format: date-time */
+              heartbeatAt?: string | null
+              cancelRequested?: boolean
+            }
+          }
+        }
+      }
+      /** @description Task not found for tenant */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
   drainWorker: {
     parameters: {
       query?: never
@@ -11150,6 +11524,42 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['CommonResponseConsoleJobInstanceResponse']
+        }
+      }
+    }
+  }
+  queryJobExecutionLogs: {
+    parameters: {
+      query: {
+        tenantId?: components['parameters']['TenantIdQuery']
+        pageNo?: components['parameters']['PageNoQuery']
+        pageSize?: components['parameters']['PageSizeQuery']
+        /** @description 锚定的作业实例 ID(必填)。 */
+        jobInstanceId: number
+        /** @description 可选,只看某个分区的日志。 */
+        jobPartitionId?: number
+        /** @description 可选,日志级别单值过滤。 */
+        logLevel?: 'DEBUG' | 'INFO' | 'WARN' | 'ERROR'
+        /** @description 可选,日志类型单值过滤。 */
+        logType?: 'SYSTEM' | 'BUSINESS' | 'RETRY' | 'ALARM' | 'AUDIT'
+        /** @description 可选,message 模糊匹配。 */
+        keyword?: string
+        /** @description cursor 分页 token(ADR-031),非空时走 cursor 模式。 */
+        cursor?: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Job execution log list */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseJobExecutionLogList']
         }
       }
     }
