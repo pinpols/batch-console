@@ -3122,6 +3122,42 @@ const messages: Messages = {
       'After archiving, this file no longer appears in the list. Running downstream tasks are unaffected, but new triggers will not find it. You can still query by fileId from the admin backend.',
     archiveSuccess: 'Archived',
   },
+  initialSetup: {
+    title: 'First-time setup: create initial tenant',
+    subtitle: 'No tenant exists yet. Create one to enter the console.',
+    intro:
+      'This screen only appears when the system has no tenants. After creation you will be switched to that tenant; add more later under System → Tenants.',
+    fieldTenantId: 'Tenant ID',
+    tenantIdHint:
+      'Lowercase letters / digits / hyphens, 2-64 chars, starts and ends with letter or digit. Immutable after creation.',
+    fieldTenantName: 'Tenant name',
+    tenantNamePlaceholder: 'e.g. Demo Tenant',
+    fieldDescription: 'Description',
+    descriptionPlaceholder: 'Optional',
+    sectionAdmin: 'Initial admin account',
+    fieldUsername: 'Username',
+    usernamePlaceholder: 'e.g. op-demo',
+    fieldPassword: 'Initial password',
+    passwordPlaceholder: '>= 12 chars, mixed case + digits',
+    passwordHint: 'User should change the password immediately after first login.',
+    btnCreate: 'Create and enter console',
+    btnLogout: 'Sign out',
+    toastCreated: 'Tenant created, entering console',
+    ruleTenantId: 'Tenant ID is required',
+    ruleTenantIdPattern:
+      'Lowercase letters / digits / hyphens, length 2-64, starts and ends with letter or digit',
+    ruleTenantName: 'Tenant name is required',
+    ruleUsername: 'Username is required',
+    ruleUsernamePattern: 'Letters / digits / . _ -, starting with a letter or digit',
+    rulePassword: 'Initial password is required',
+  },
+  noTenantBanner: {
+    title: 'No tenant selected',
+    descAdmin:
+      'No tenant context. All business pages will be empty. Pick one in the top-right switcher or create a new one.',
+    descUser: 'No tenant context is available. Contact your administrator to assign one.',
+    actionCreate: 'Create tenant',
+  },
   tenantList: {
     keyword: 'Keyword',
     keywordPlaceholder: 'Tenant name / tenantId / description (fuzzy)',

@@ -700,6 +700,12 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: false, title: '系统维护中' },
   },
   {
+    path: '/setup/initial-tenant',
+    name: 'initial-tenant-setup',
+    component: () => import('@/views/setup/InitialTenantSetup.vue'),
+    meta: { requiresAuth: true, title: '首次部署 · 创建租户' },
+  },
+  {
     path: '/:pathMatch(.*)*',
     name: 'not-found',
     component: () => import('@/views/NotFound.vue'),
@@ -772,6 +778,28 @@ router.beforeEach(async (to, from) => {
     !to.path.startsWith('/login')
   ) {
     return { path: '/system/me', query: { mustChange: '1' } }
+  }
+
+  // 首登向导:系统 0 租户时,ADMIN 必须先建第一个租户。其它角色无创建权限,
+  // 在登录页 BE 已校验过账户必有 tenant 绑定;到这里依旧 0 租户属于异常,放行让
+  // 业务页空态自行提示。检测带内存缓存(系统级状态变化频率极低),向导创建后
+  // 主动 invalidate。
+  if (
+    auth.hasPermission('ROLE_ADMIN') &&
+    to.path !== '/setup/initial-tenant' &&
+    to.name !== 'login'
+  ) {
+    try {
+      const { systemHasTenants } = await import('@/api/setup')
+      const hasTenants = await systemHasTenants()
+      if (!hasTenants) {
+        return { path: '/setup/initial-tenant' }
+      }
+    } catch (err) {
+      // 探测失败不拦截 —— 让用户继续,避免 BE 抖动把 admin 锁在向导外。
+      // 业务页加载失败由各自 loader 处理。
+      logError('[router] systemHasTenants probe failed', err)
+    }
   }
 
   const minRole = to.meta.minRole as string | undefined
