@@ -14,6 +14,7 @@ export type ConsoleFileRecordResponse = components['schemas']['ConsoleFileRecord
 export type ConsoleFileArrivalGroupResponse =
   components['schemas']['ConsoleFileArrivalGroupResponse']
 export type ConsoleWorkerRegistryResponse = components['schemas']['ConsoleWorkerRegistryResponse']
+export type ConsoleOperationAuditResponse = components['schemas']['ConsoleOperationAuditResponse']
 // 后端 OpenAPI schema 暂未单独命名 ConsoleFileChannelResponse(只暴露 FileChannelSpec
 // + 列表用的 PageResponse),前端仍在多处用强类型读 row.channelCode 等字段。
 // 本地补一个接口,保证调用侧类型不退化为 any。

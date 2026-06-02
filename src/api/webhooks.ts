@@ -1,19 +1,20 @@
 import { get, post, put, del } from '@/api/client'
+import type { operations } from '@/types/api.generated'
 
-export interface CreateWebhookBody {
-  name: string
-  callbackUrl: string
-  eventTypes: string[]
-  secret?: string
-  enabled?: boolean
-}
+/**
+ * R3-7 PoC:request body 类型从 OpenAPI 生成结果派生,
+ * 避免 BE schema 变了 FE 手写 interface 漂移。
+ *
+ * Response 侧 BE 当前为 generic `CommonResponseObject`(data: unknown),
+ * 没有具名 schema,仍保持 `unknown`(后续 BE 补 schema 后再回填强类型)。
+ */
+export type CreateWebhookBody = NonNullable<
+  operations['createWebhook']['requestBody']
+>['content']['application/json']
 
-export interface UpdateWebhookBody {
-  callbackUrl: string
-  eventTypes: string[]
-  secret?: string
-  enabled?: boolean
-}
+export type UpdateWebhookBody = NonNullable<
+  operations['updateWebhook']['requestBody']
+>['content']['application/json']
 
 /** GET /api/console/webhooks */
 export function listWebhooks(tenantId: string) {

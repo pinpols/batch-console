@@ -248,8 +248,8 @@
         pageNo: page.value,
         pageSize: pageSize.value,
       })
-      rows.value = resp.items
-      total.value = resp.total
+      rows.value = resp.items ?? []
+      total.value = resp.total ?? 0
     } catch (err) {
       loadError.value = err
       throw err
