@@ -98,6 +98,17 @@ const routes: RouteRecordRaw[] = [
         },
       },
       {
+        path: 'ops/worker-fingerprints',
+        name: 'worker-fingerprints',
+        component: () => import('@/views/ops/WorkerFingerprintBoard.vue'),
+        meta: {
+          title: 'Worker fingerprint 看板',
+          description: '按 build/sdk 维度查看本租户活跃 worker(SDK Phase 5 / 灰度切流)',
+          activeMenu: '/ops/worker-fingerprints',
+          minRole: 'OPERATOR',
+        },
+      },
+      {
         path: 'system/atomic-task-types',
         name: 'atomic-task-types',
         component: () => import('@/views/system/AtomicTaskTypeCenter.vue'),
