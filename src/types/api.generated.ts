@@ -1624,6 +1624,40 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/console/workers/fingerprints': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** List worker run-fingerprints (ONLINE+DRAINING) for a tenant (SDK Phase 5 / SDK-P5-3, console Lane D) */
+    get: operations['listWorkerFingerprints']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/workers/fingerprints/summary': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Aggregate ONLINE worker count by (buildId, sdkVersion) for grayscale rollout viz */
+    get: operations['summarizeWorkerFingerprints']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/console/atomic-task-types/schema': {
     parameters: {
       query?: never
@@ -5144,6 +5178,33 @@ export interface paths {
 export type webhooks = Record<string, never>
 export interface components {
   schemas: {
+    /** @description Single worker run-fingerprint (SDK Phase 5 / SDK-P5-3, console Lane D).
+     *     buildId / sdkVersion are nullable when worker did not report (e.g. legacy non-SDK file pipeline workers).
+     *      */
+    WorkerFingerprintResponse: {
+      /** Format: int64 */
+      id: number
+      tenantId: string
+      workerCode: string
+      /** @description Application build identifier reported by SDK register. */
+      buildId?: string | null
+      processId?: string | null
+      /** @description batch-worker-sdk library version detected from jar manifest. */
+      sdkVersion?: string | null
+      /** @enum {string} */
+      status: 'ONLINE' | 'OFFLINE' | 'DRAINING' | 'DECOMMISSIONED'
+      /** Format: date-time */
+      heartbeatAt?: string
+    }
+    /** @description (buildId, sdkVersion) aggregated count of ONLINE workers for grayscale rollout visualization.
+     *     NULL build_id / sdk_version are coalesced to literal "(unknown)" in SQL.
+     *      */
+    WorkerFingerprintSummaryResponse: {
+      buildId: string
+      sdkVersion: string
+      /** Format: int64 */
+      count: number
+    }
     CommonMeta: {
       requestId: string
       traceId: string
@@ -10285,6 +10346,58 @@ export interface operations {
           [name: string]: unknown
         }
         content?: never
+      }
+    }
+  }
+  listWorkerFingerprints: {
+    parameters: {
+      query?: {
+        tenantId?: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description List of worker fingerprints, heartbeat_at desc, max 200 rows */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            code?: string
+            message?: string
+            data?: components['schemas']['WorkerFingerprintResponse'][]
+          }
+        }
+      }
+    }
+  }
+  summarizeWorkerFingerprints: {
+    parameters: {
+      query?: {
+        tenantId?: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description (buildId, sdkVersion) groups, count desc; NULL coalesced to "(unknown)" */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            code?: string
+            message?: string
+            data?: components['schemas']['WorkerFingerprintSummaryResponse'][]
+          }
+        }
       }
     }
   }
