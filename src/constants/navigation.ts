@@ -306,6 +306,13 @@ export const navigationGroups: NavigationGroup[] = [
         minRole: 'OPERATOR',
         icon: Cpu,
       },
+      // Worker fingerprint 看板(SDK Phase 5,灰度切流可视化)
+      {
+        title: pageTitle('/ops/worker-fingerprints'),
+        path: '/ops/worker-fingerprints',
+        minRole: 'OPERATOR',
+        icon: Cpu,
+      },
       // ↓ 以下 admin 治理低频项隐藏到 Command Palette
       {
         title: pageTitle('/governance/queues'),
