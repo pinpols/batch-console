@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.7](https://github.com/pinpols/batch-console/compare/v0.1.6...v0.1.7) (2026-06-02)
+
+
+### Features
+
+* **ops:** Lane F worker fingerprint board (SDK Phase 5 / SDK-P5-3) ([#41](https://github.com/pinpols/batch-console/issues/41)) ([4d1c53b](https://github.com/pinpols/batch-console/commit/4d1c53b87cd5f4f05fd0267a637e798db06e912c))
+* **security:** Lane G SensitiveFieldAlert 凭据警示组件 + 接入 atomic/custom task type 视图 ([#40](https://github.com/pinpols/batch-console/issues/40)) ([e45913f](https://github.com/pinpols/batch-console/commit/e45913fc99a35e87b77e50cc3f59d2e2b3581a6e))
+
 ## [0.1.6](https://github.com/pinpols/batch-console/compare/v0.1.5...v0.1.6) (2026-06-02)
 
 
