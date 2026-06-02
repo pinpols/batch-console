@@ -1011,6 +1011,11 @@ const messages: Messages = {
       description:
         'View custom task types registered by this tenant’s SDK workers, including descriptor, version and reporting worker.',
     },
+    opsWorkerFingerprints: {
+      title: 'Worker fingerprint board',
+      description:
+        'Aggregate this tenant’s active workers by build / SDK version to support SDK rollout monitoring and on-call triage.',
+    },
     systemAtomicTaskTypes: {
       title: 'Atomic task type center',
       description:
@@ -3153,6 +3158,29 @@ const messages: Messages = {
     heartbeatTitle: 'Task heartbeat / progress',
     heartbeatRaw: 'Show raw details',
   },
+  workerFingerprintBoard: {
+    summaryTitle: 'Rollout overview',
+    summaryTotalOnline: '{n} active workers',
+    summaryEmpty:
+      'No ONLINE workers right now. They will appear here automatically once a worker registers.',
+    summaryLoadError: 'Failed to load aggregated data, please retry.',
+    listTitle: 'Active workers',
+    listTotal: '{n} total',
+    listEmpty: 'No ONLINE / DRAINING workers for this tenant.',
+    loadError: 'Failed to load, please retry',
+    autoRefreshOn: 'Auto refresh · on',
+    autoRefreshOff: 'Auto refresh · off',
+    introTitle: 'Worker run-fingerprints (SDK Phase 5)',
+    introBody:
+      'BE aggregates this tenant’s ONLINE workers by (buildId, sdkVersion) — useful for rollout monitoring (track build share after a new release) and on-call triage (spot stale heartbeats). Lists ONLINE / DRAINING only, capped at 200 rows.',
+    cardWorkers: 'workers',
+    colWorkerCode: 'Worker code',
+    colStatus: 'Status',
+    colBuildId: 'Build ID',
+    colSdkVersion: 'SDK version',
+    colPid: 'Process PID',
+    colHeartbeatAt: 'Last heartbeat',
+  },
   customTaskTypeList: {
     sectionTitle: 'Registered task types',
     totalActive: '{n} active',
@@ -4126,6 +4154,11 @@ const messages: Messages = {
     allPlaceholder: 'All',
     optEnabled: 'Enabled',
     optDisabled: 'Disabled',
+  },
+  sensitiveFieldAlert: {
+    title: '{n} suspected credential field(s) detected',
+    hint: 'Use environment variables; never embed credentials in parameters / descriptor. BE rejects such payloads statically (Lane C).',
+    inlineHint: 'Credentials must come from environment variables, not request payload.',
   },
 }
 

@@ -963,6 +963,10 @@ export default {
       title: '自定义 taskType',
       description: '查看本租户 SDK 已注册的自定义 taskType,含描述、版本与上报 worker。',
     },
+    opsWorkerFingerprints: {
+      title: 'Worker fingerprint 看板',
+      description: '按 build/sdk 维度聚合本租户活跃 worker,辅助 SDK 灰度切流与故障定位。',
+    },
     systemAtomicTaskTypes: {
       title: 'Atomic 节点配置中心',
       description: '查看平台内置 sql / shell / stored_proc / http 四类原子节点的参数 schema 与安全闸状态。',
@@ -3104,6 +3108,28 @@ export default {
     heartbeatTitle: '任务心跳进度',
     heartbeatRaw: '查看 details 原文',
   },
+  workerFingerprintBoard: {
+    summaryTitle: '灰度切流概览',
+    summaryTotalOnline: '活跃 worker {n} 个',
+    summaryEmpty: '当前没有任何 ONLINE worker。worker 上线后会自动出现在这里。',
+    summaryLoadError: '聚合数据加载失败,请稍后重试。',
+    listTitle: '活跃 worker 列表',
+    listTotal: '共 {n} 个',
+    listEmpty: '本租户暂无 ONLINE / DRAINING 状态的 worker。',
+    loadError: '加载失败,请稍后重试',
+    autoRefreshOn: '自动刷新 · 开',
+    autoRefreshOff: '自动刷新 · 关',
+    introTitle: 'Worker 运行指纹(SDK Phase 5)',
+    introBody:
+      'BE 按 (buildId, sdkVersion) 聚合本租户 ONLINE worker,辅助灰度切流(发新版后看 build 占比变化)与故障定位(看哪台 worker 心跳掉线)。仅展示 ONLINE / DRAINING,最多 200 行。',
+    cardWorkers: 'workers',
+    colWorkerCode: 'Worker 编码',
+    colStatus: '状态',
+    colBuildId: 'Build ID',
+    colSdkVersion: 'SDK 版本',
+    colPid: '进程 PID',
+    colHeartbeatAt: '最近心跳',
+  },
   customTaskTypeList: {
     sectionTitle: '已注册 taskType',
     totalActive: '共 {n} 项',
@@ -4065,6 +4091,11 @@ export default {
     allPlaceholder: '全部',
     optEnabled: '已启用',
     optDisabled: '已停用',
+  },
+  sensitiveFieldAlert: {
+    title: '检测到 {n} 个疑似凭据字段',
+    hint: '请改走环境变量,不要落入 parameters / descriptor;BE 已对凭据字段静态拒入(Lane C)。',
+    inlineHint: '凭据字段请走环境变量,不要落入提交内容。',
   },
 } as const
 
