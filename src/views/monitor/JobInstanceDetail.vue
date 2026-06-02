@@ -187,6 +187,36 @@
         </SectionCard>
       </el-tab-pane>
 
+      <!-- Tab: 心跳进度(SDK Phase 4 / FE 2-C) -->
+      <el-tab-pane name="heartbeat" :lazy="true">
+        <template #label>
+          <span>{{ t('jobInstanceDetail.heartbeatTab') }}</span>
+        </template>
+        <SectionCard>
+          <template #header>{{ t('jobInstanceDetail.heartbeatSection') }}</template>
+          <div v-if="taskOptions.length === 0" class="hb-empty">
+            <EmptyState
+              :description="t('jobInstanceDetail.heartbeatNoTasks')"
+              :image-size="60"
+            />
+          </div>
+          <div v-else class="hb-wrap">
+            <div class="hb-picker">
+              <span class="hb-picker__label">{{ t('jobInstanceDetail.heartbeatPickStep') }}</span>
+              <el-select v-model="selectedTaskId" size="small" class="hb-picker__select">
+                <el-option
+                  v-for="opt in taskOptions"
+                  :key="opt.taskId"
+                  :label="opt.label"
+                  :value="opt.taskId"
+                />
+              </el-select>
+            </div>
+            <HeartbeatProgressPanel v-if="selectedTaskId" :task-id="selectedTaskId" />
+          </div>
+        </SectionCard>
+      </el-tab-pane>
+
       <!-- Tab 3: 最近运行(同 jobCode) -->
       <el-tab-pane name="recent" :lazy="true">
         <template #label>
@@ -262,6 +292,7 @@
   import EmptyState from '@/components/common/EmptyState.vue'
   import MetricCard from '@/components/common/MetricCard.vue'
   import JsonPreview from '@/components/common/JsonPreview.vue'
+  import HeartbeatProgressPanel from '@/components/heartbeat/HeartbeatProgressPanel.vue'
   import type {
     ConsoleJobInstanceResponse,
     ConsoleJobStepInstanceResponse,
@@ -276,13 +307,45 @@
   const terminateLoading = ref(false)
   const row = ref<ConsoleJobInstanceResponse | null>(null)
 
-  const activeTab = ref<'overview' | 'steps' | 'recent'>('overview')
+  const activeTab = ref<'overview' | 'steps' | 'heartbeat' | 'recent'>('overview')
   const stepsLoading = ref(false)
   const stepsRows = ref<ConsoleJobStepInstanceResponse[]>([])
   const stepsLoaded = ref(false)
   const recentLoading = ref(false)
   const recentRows = ref<ConsoleJobInstanceResponse[]>([])
   const recentLoaded = ref(false)
+
+  const taskOptions = computed(() =>
+    stepsRows.value
+      .filter((s) => typeof s.jobTaskId === 'number' && s.jobTaskId > 0)
+      .map((s) => ({
+        taskId: s.jobTaskId as number,
+        label: `${s.stepCode} · #${s.jobTaskId} · ${s.stepStatus}`,
+        status: s.stepStatus,
+      })),
+  )
+  const selectedTaskId = ref<number | undefined>(undefined)
+  // 默认挑当前 RUNNING 步骤;否则取最后一个(序号最大)
+  watch(
+    taskOptions,
+    (opts) => {
+      if (selectedTaskId.value && opts.some((o) => o.taskId === selectedTaskId.value)) return
+      if (opts.length === 0) {
+        selectedTaskId.value = undefined
+        return
+      }
+      const running = opts.find((o) => o.status === 'RUNNING')
+      selectedTaskId.value = running?.taskId ?? opts[opts.length - 1].taskId
+    },
+    { immediate: true },
+  )
+
+  // 切到 heartbeat tab 时,确保 steps 已加载(taskOptions 依赖它)
+  watch(activeTab, async (tab) => {
+    if (tab === 'heartbeat' && !stepsLoaded.value && !stepsLoading.value) {
+      await loadSteps()
+    }
+  })
 
   function stepTagType(
     status: string,
@@ -596,5 +659,30 @@
     white-space: pre-wrap;
     word-break: break-all;
     font-size: 12px;
+  }
+
+  .hb-empty {
+    padding: 24px 0;
+  }
+
+  .hb-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .hb-picker {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .hb-picker__label {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+  }
+
+  .hb-picker__select {
+    width: 320px;
   }
 </style>

@@ -205,6 +205,14 @@ export const pageMetaByPath = {
     title: '执行日志',
     description: '查询执行操作日志,辅助审计和问题定位。',
   },
+  '/ops/custom-task-types': {
+    title: '自定义 taskType',
+    description: '查看本租户 SDK 已注册的自定义 taskType,含描述、版本与上报 worker。',
+  },
+  '/system/atomic-task-types': {
+    title: 'Atomic 节点配置中心',
+    description: '查看平台内置 sql / shell / stored_proc / http 四类原子节点的参数 schema 与安全闸状态。',
+  },
 } satisfies Record<string, PageMetaItem>
 
 export type PageMetaPath = keyof typeof pageMetaByPath

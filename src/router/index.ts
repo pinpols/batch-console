@@ -86,6 +86,28 @@ const routes: RouteRecordRaw[] = [
           minRole: 'VIEWER',
         },
       },
+      {
+        path: 'ops/custom-task-types',
+        name: 'custom-task-types',
+        component: () => import('@/views/ops/CustomTaskTypeList.vue'),
+        meta: {
+          title: '自定义 taskType',
+          description: '租户 SDK 上报的自定义 taskType(只读)',
+          activeMenu: '/ops/custom-task-types',
+          minRole: 'OPERATOR',
+        },
+      },
+      {
+        path: 'system/atomic-task-types',
+        name: 'atomic-task-types',
+        component: () => import('@/views/system/AtomicTaskTypeCenter.vue'),
+        meta: {
+          title: 'Atomic 节点配置中心',
+          description: '查看平台四类原子节点 schema + 安全闸状态',
+          activeMenu: '/system/atomic-task-types',
+          minRole: 'OPERATOR',
+        },
+      },
       { path: 'files', redirect: '/files/list' },
       {
         path: 'files/list',
