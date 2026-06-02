@@ -152,6 +152,8 @@
           </template>
         </el-alert>
 
+        <SensitiveFieldAlert :value="parsedDescriptor ?? detailRow.descriptor" />
+
         <div v-if="parsedDescriptor">
           <JsonPreview :data="parsedDescriptor" />
         </div>
@@ -175,6 +177,7 @@
   import ProTable from '@/components/table/ProTable.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
   import JsonPreview from '@/components/common/JsonPreview.vue'
+  import SensitiveFieldAlert from '@/components/common/SensitiveFieldAlert.vue'
   import { fmtDatetime } from '@/utils/datetime'
   import { useTenantReload } from '@/composables/useTenantReload'
   import {
