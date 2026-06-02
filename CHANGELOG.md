@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.6](https://github.com/pinpols/batch-console/compare/v0.1.5...v0.1.6) (2026-06-02)
+
+
+### Refactors
+
+* **heartbeat:** 用 useAutoRefresh 替换裸 setInterval + e2e smoke 收录两新路由 ([#38](https://github.com/pinpols/batch-console/issues/38)) ([0d366e5](https://github.com/pinpols/batch-console/commit/0d366e5b62006d9cc829543488f3ad12ef5dc3c7))
+
 ## [0.1.5](https://github.com/pinpols/batch-console/compare/v0.1.4...v0.1.5) (2026-05-30)
 
 
