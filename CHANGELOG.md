@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.8](https://github.com/pinpols/batch-console/compare/v0.1.7...v0.1.8) (2026-06-02)
+
+
+### Refactors
+
+* **fe:** R3-7 手写 wrapper 退役 PoC(2 个)— Round-1 TOP-10 启动 ([#43](https://github.com/pinpols/batch-console/issues/43)) ([8ed6ff4](https://github.com/pinpols/batch-console/commit/8ed6ff450639934e2291b91f48adeec544537974))
+
 ## [0.1.7](https://github.com/pinpols/batch-console/compare/v0.1.6...v0.1.7) (2026-06-02)
 
 
