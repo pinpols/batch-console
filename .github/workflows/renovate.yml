@@ -1,14 +1,14 @@
 name: renovate
 
 # Renovate self-hosted on GitHub Actions —— 无外部服务依赖。
-# 每 6 小时跑一次,扫描依赖并开 PR(策略走 renovate.json)。
+# 手动触发,扫依赖 + 开升级 PR(策略走 renovate.json)。
 # 用 GITHUB_TOKEN(默认 permissions: contents/PR write)。
+#
+# 历史:曾每天 UTC 21:00 cron(配合 renovate.json `schedule:weekends`),但自动 PR
+# 嘈杂,改为纯手动触发(2026-06-02)。
+# 想升依赖 → Actions UI → renovate → Run workflow(可选 dry-run 看会开什么 PR)。
 
 on:
-  schedule:
-    # 每天 UTC 21:00 = Asia/Shanghai 次日 05:00(夜深无 push 高峰窗口跑)
-    # 配合 renovate.json#schedule=schedule:weekends → 实际 PR 只在周末开,工作日只扫不开。
-    - cron: '0 21 * * *'
   workflow_dispatch:
     inputs:
       logLevel:
