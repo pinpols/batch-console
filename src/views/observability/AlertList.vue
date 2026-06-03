@@ -14,7 +14,6 @@
         :filtered-empty-text="alertFilteredEmptyText"
         v-model:page="page"
         v-model:page-size="pageSize"
-        @change="slicePage"
       >
         <template #query>
           <ListPageQueryBar
@@ -130,33 +129,60 @@
         <el-table-column :label="t('alertList.colActions')" width="260" fixed="right">
           <template #default="{ row }">
             <div class="table-actions">
-              <el-button
-                size="small"
-                plain
-                type="primary"
-                :loading="actingId === row.id"
-                @click="doAck(row)"
+              <el-tooltip
+                :content="canMutateConfig ? '' : t('common.permissionDenied')"
+                placement="top"
+                :disabled="canMutateConfig"
               >
-                {{ t('alertList.actionAck') }}
-              </el-button>
-              <el-button
-                size="small"
-                plain
-                type="warning"
-                :loading="actingId === row.id"
-                @click="doSilence(row)"
+                <span>
+                  <el-button
+                    size="small"
+                    plain
+                    type="primary"
+                    :disabled="!canMutateConfig"
+                    :loading="actingId === row.id"
+                    @click="doAck(row)"
+                  >
+                    {{ t('alertList.actionAck') }}
+                  </el-button>
+                </span>
+              </el-tooltip>
+              <el-tooltip
+                :content="canMutateConfig ? '' : t('common.permissionDenied')"
+                placement="top"
+                :disabled="canMutateConfig"
               >
-                {{ t('alertList.actionSilence') }}
-              </el-button>
-              <el-button
-                size="small"
-                plain
-                type="danger"
-                :loading="actingId === row.id"
-                @click="doClose(row)"
+                <span>
+                  <el-button
+                    size="small"
+                    plain
+                    type="warning"
+                    :disabled="!canMutateConfig"
+                    :loading="actingId === row.id"
+                    @click="doSilence(row)"
+                  >
+                    {{ t('alertList.actionSilence') }}
+                  </el-button>
+                </span>
+              </el-tooltip>
+              <el-tooltip
+                :content="canMutateConfig ? '' : t('common.permissionDenied')"
+                placement="top"
+                :disabled="canMutateConfig"
               >
-                {{ t('alertList.actionClose') }}
-              </el-button>
+                <span>
+                  <el-button
+                    size="small"
+                    plain
+                    type="danger"
+                    :disabled="!canMutateConfig"
+                    :loading="actingId === row.id"
+                    @click="doClose(row)"
+                  >
+                    {{ t('alertList.actionClose') }}
+                  </el-button>
+                </span>
+              </el-tooltip>
             </div>
           </template>
         </el-table-column>
@@ -167,7 +193,7 @@
 
 <script setup lang="ts">
   import { computed, reactive, ref, watch } from 'vue'
-  import { useRoute } from 'vue-router'
+  import { useRoute, useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { confirmDanger } from '@/composables/useDangerConfirm'
@@ -175,12 +201,12 @@
   const { t } = useI18n({ useScope: 'global' })
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { useSseAutoReload } from '@/composables/useSseAutoReload'
-  import { toPageResult } from '@/api/adapters'
-  import { queryAlertsAll } from '@/api/alertsQuery'
+  import { queryAlertsPage } from '@/api/alertsQuery'
   import { acknowledgeAlert, closeAlert, silenceAlert } from '@/api/alertsCommands'
   import { useAuthStore } from '@/stores/auth'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
+  import { usePermission } from '@/composables/usePermission'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
@@ -193,8 +219,13 @@
   import type { ConsoleAlertEventResponse } from '@/types/console-api'
 
   const route = useRoute()
+  const router = useRouter()
   const tenant = useTenantStore()
   const auth = useAuthStore()
+  // VIEWER 角色看不到/点不动破坏性按钮:ack/silence/close 都属于"会改告警状态"的 mutation,
+  // 旧版只是 v-if 隐藏顶部 Create 类按钮,行内 ack/silence/close 没 gate,VIEWER 点了才弹 403,
+  // bad surprise。这里复用 canMutateConfig 灰显 + tooltip。
+  const { canMutateConfig } = usePermission()
   const loading = ref(false)
   const {
     filterBusy: queryActionBusy,
@@ -203,6 +234,10 @@
     runReset,
     runRefresh,
   } = useListFilterFeedback(loading)
+  // 当前页原始数据(BE 已分页过滤完 acknowledged/startDate/endDate;
+  // severity/alertType/traceId 三个 BE 不支持的字段在前端做"当前页局部过滤")
+  const pageRaw = ref<ConsoleAlertEventResponse[]>([])
+  // 所有已加载页的 union,用来派生 alertType select 候选;限制最大 5 页避免膨胀
   const allRows = ref<ConsoleAlertEventResponse[]>([])
   const rows = ref<ConsoleAlertEventResponse[]>([])
   const total = ref(0)
@@ -255,26 +290,35 @@
     }
   }
 
-  function filteredRows() {
-    return allRows.value.filter((row) => {
+  /**
+   * 客户端"当前页"局部过滤(severity / alertType / traceId):BE 不支持这些过滤维度,
+   * 跨页全量过滤会拉爆大租户,所以仅在 BE 返回的当前页结果上再过滤,
+   * 配合 ProTable 的 filtered-empty-text 提示用户"当前页无匹配"。
+   * status 字段映射成 BE 的 acknowledged 在服务端处理;时间范围对应 startDate/endDate。
+   */
+  function applyLocalFilter(list: ConsoleAlertEventResponse[]): ConsoleAlertEventResponse[] {
+    return list.filter((row) => {
       if (filters.severity.trim() && !row.severity?.includes(filters.severity.trim())) return false
       if (filters.alertType.trim() && !row.alertType?.includes(filters.alertType.trim())) {
         return false
       }
-      if (filters.status.trim() && !row.status?.includes(filters.status.trim())) return false
       if (filters.traceId.trim() && !row.traceId?.includes(filters.traceId.trim())) return false
-      const lastSeenAt = String(row.lastSeenAt ?? '')
-      if (filters.startTime && lastSeenAt < filters.startTime) return false
-      if (filters.endTime && lastSeenAt > filters.endTime) return false
       return true
     })
   }
 
+  /** 把 UI 的 filters.status 映射成 BE 的 acknowledged 布尔(只有 OPEN / 非 OPEN 两档) */
+  function resolveAcknowledgedFilter(): boolean | undefined {
+    const s = filters.status.trim().toUpperCase()
+    if (!s) return undefined
+    if (s === 'OPEN') return false
+    // ACKNOWLEDGED / SILENCED / CLOSED 都属于非 OPEN
+    return true
+  }
+
   function slicePage() {
-    const filtered = filteredRows()
-    total.value = filtered.length
-    const pr = toPageResult(filtered, page.value, pageSize.value)
-    rows.value = pr.records as ConsoleAlertEventResponse[]
+    const filtered = applyLocalFilter(pageRaw.value)
+    rows.value = filtered
   }
 
   const loadError = ref<unknown>(null)
@@ -282,7 +326,22 @@
     loading.value = true
     loadError.value = null
     try {
-      allRows.value = await queryAlertsAll(filters.tenantId || tenant.tenantId)
+      const resp = await queryAlertsPage(
+        filters.tenantId || tenant.tenantId,
+        page.value,
+        pageSize.value,
+        {
+          acknowledged: resolveAcknowledgedFilter(),
+          startDate: filters.startTime || undefined,
+          endDate: filters.endTime || undefined,
+        },
+      )
+      pageRaw.value = (resp.items ?? []) as ConsoleAlertEventResponse[]
+      total.value = Number(resp.total ?? pageRaw.value.length)
+      // 维护 union,但限制大小避免 alertType 候选无穷膨胀(只保留最近 5 页 ≈ 1000 行)
+      const cap = pageSize.value * 5
+      const merged = [...allRows.value, ...pageRaw.value]
+      allRows.value = merged.slice(-cap)
       slicePage()
     } catch (err) {
       loadError.value = err
@@ -292,15 +351,20 @@
     }
   }
 
+  // 翻页 / 改 pageSize 都触发 BE 重拉(替代旧的纯前端 slice)
+  watch([page, pageSize], () => {
+    void load()
+  })
+
   function search() {
-    return runSearch(() => {
+    return runSearch(async () => {
       page.value = 1
-      slicePage()
+      await load()
     })
   }
 
   function reset() {
-    return runReset(() => {
+    return runReset(async () => {
       filters.tenantId = tenant.tenantId
       filters.severity = ''
       filters.alertType = ''
@@ -310,7 +374,7 @@
       filters.endTime = ''
       timeRange.value = null
       page.value = 1
-      slicePage()
+      await load()
     })
   }
 
@@ -412,7 +476,39 @@
     if (q.severity) filters.severity = String(q.severity)
     if (q.status) filters.status = String(q.status)
     if (q.traceId) filters.traceId = String(q.traceId)
+    if (q.alertType) filters.alertType = String(q.alertType)
+    if (q.page) {
+      const p = Number(q.page)
+      if (Number.isFinite(p) && p > 0) page.value = p
+    }
+    if (q.pageSize) {
+      const ps = Number(q.pageSize)
+      if (Number.isFinite(ps) && ps > 0) pageSize.value = ps
+    }
   }
+
+  // URL state:筛选 + 分页 round-trip
+  function syncFiltersToUrl() {
+    const params: Record<string, string> = {}
+    if (filters.severity) params.severity = filters.severity
+    if (filters.status) params.status = filters.status
+    if (filters.traceId) params.traceId = filters.traceId
+    if (filters.alertType) params.alertType = filters.alertType
+    if (page.value > 1) params.page = String(page.value)
+    if (pageSize.value !== 15) params.pageSize = String(pageSize.value)
+    void router.replace({ query: params })
+  }
+  watch(
+    () => [
+      filters.severity,
+      filters.status,
+      filters.traceId,
+      filters.alertType,
+      page.value,
+      pageSize.value,
+    ],
+    syncFiltersToUrl,
+  )
 
   useTenantReload(() => {
     page.value = 1

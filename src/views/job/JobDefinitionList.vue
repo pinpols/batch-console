@@ -700,17 +700,22 @@
   // ── 行操作工厂(给 <RowActions> 用)─────────────────────────
   function rowActions(row: ConsoleJobDefinitionResponse): RowAction[] {
     const acting = actingJobCode.value === row.jobCode
+    // VIEWER 无写权限:trigger / edit / clone / toggle 全部灰显
+    // 只保留只读类操作(查看实例 / 导出 bundle)
+    const noWrite = !canMutateConfig.value
     return [
       {
         key: 'trigger',
         label: t('jobDefinitionList.actionTrigger'),
         primary: true,
         loading: acting,
+        disabled: noWrite,
         onClick: () => triggerRow(row),
       },
       {
         key: 'edit',
         label: t('jobDefinitionList.actionEdit'),
+        disabled: noWrite,
         onClick: () => openEdit(row),
       },
       {
@@ -724,11 +729,12 @@
       {
         key: 'clone',
         label: t('jobDefinitionList.actionClone'),
+        disabled: noWrite,
         onClick: () => cloneRow(row),
       },
       {
         key: 'export-bundle',
-        label: '导出 Bundle',
+        label: t('jobDefinitionList.actionExportBundle'),
         loading: exportingJobCode.value === row.jobCode,
         onClick: () => exportBundle(row),
       },
@@ -739,7 +745,7 @@
           : t('jobDefinitionList.actionEnable'),
         danger: row.enabled,
         divided: true,
-        disabled: acting,
+        disabled: acting || noWrite,
         onClick: () => toggleRow(row),
       },
     ]
