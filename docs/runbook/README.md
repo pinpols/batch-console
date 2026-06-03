@@ -2,7 +2,7 @@
 
 ## QA 阶段报告(权威)
 
-- [D 档 QA 阶段总评](./qa-d-phase-reports/) — P1-P5 + P5b 完整闭环
+- [D 档 QA 阶段总评](../qa/d-tier/) — P1-P5 + P5b 完整闭环(2026-06-03 移到 `docs/qa/d-tier/` 统一 QA 目录)
 
 ## 联调计划 / 报告
 
