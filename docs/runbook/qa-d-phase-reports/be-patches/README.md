@@ -20,11 +20,11 @@ cd ../file-batch-system
 git apply ../batch-console/docs/runbook/qa-d-phase-reports/be-patches/01-exception-handler-multipart-+-template-ref-dto.patch
 # 编译 + 启动 console
 mvn -pl batch-console-api -am clean install -DskipTests
-# 用你已有的启动方式重启 console (port 18080)
+# 用现有方式重启 console (port 18080)
 
-# 待补 Service 透传(我看不到 Service 源码 — 你或 BE 同事确认 Service.update() 是否需要
-# 把 loadTargetRef / exportDataRef 显式 set 到 entity。如果是 BeanUtils.copyProperties 自动映射,
-# DTO 加字段就够了)
+# 待补 Service 透传:BE 同事需确认 Service.update() 是否要把 loadTargetRef /
+# exportDataRef 显式 set 到 entity;若用 BeanUtils.copyProperties 自动映射,
+# DTO 加字段即可
 ```
 
 ## 改动概览
