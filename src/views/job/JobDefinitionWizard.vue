@@ -42,7 +42,7 @@
             v-model="bundlePrefillJson"
             :rows="10"
             expect="object"
-            placeholder="把 job-bundle-*.json 拖进来,或选文件,或直接键入 / 粘贴"
+            :placeholder="t('jobDefinitionWizard.bundlePrefillJsonPlaceholder')"
           />
           <template #footer>
             <el-button @click="bundlePrefillVisible = false">取消</el-button>
@@ -120,7 +120,7 @@
               type="info"
               :closable="false"
             />
-            <el-form-item label="选择 channel">
+            <el-form-item :label="t('jobDefinitionWizard.selectChannelLabel')">
               <el-select
                 v-model="selectedChannelIds"
                 multiple
@@ -129,7 +129,7 @@
                 collapse-tags-tooltip
                 clearable
                 :loading="associationsLoading"
-                placeholder="从当前租户已有 channel 选(选中即复用,提交时按 id 引用)"
+                :placeholder="t('jobDefinitionWizard.selectChannelPlaceholder')"
                 class="query-w-full"
               >
                 <el-option
@@ -140,7 +140,7 @@
                 />
               </el-select>
             </el-form-item>
-            <el-form-item label="选择 template">
+            <el-form-item :label="t('jobDefinitionWizard.selectTemplateLabel')">
               <el-select
                 v-model="selectedTemplateIds"
                 multiple
@@ -149,7 +149,7 @@
                 collapse-tags-tooltip
                 clearable
                 :loading="associationsLoading"
-                placeholder="从当前租户已有 template 选(选中即复用,提交时按 id 引用)"
+                :placeholder="t('jobDefinitionWizard.selectTemplatePlaceholder')"
                 class="query-w-full"
               >
                 <el-option
@@ -164,20 +164,20 @@
                 />
               </el-select>
             </el-form-item>
-            <el-form-item label="新建 channels (JSON)">
+            <el-form-item :label="t('jobDefinitionWizard.newChannelsJsonLabel')">
               <JsonTextareaInput
                 v-model="fileChannelsJson"
                 :rows="4"
                 expect="array"
-                placeholder="可选,粘贴 / 拖入 / 选文件:JSON 数组用于新建 channel"
+                :placeholder="t('jobDefinitionWizard.newChannelsJsonPlaceholder')"
               />
             </el-form-item>
-            <el-form-item label="新建 templates (JSON)">
+            <el-form-item :label="t('jobDefinitionWizard.newTemplatesJsonLabel')">
               <JsonTextareaInput
                 v-model="fileTemplatesJson"
                 :rows="4"
                 expect="array"
-                placeholder="可选,粘贴 / 拖入 / 选文件:JSON 数组用于新建 template"
+                :placeholder="t('jobDefinitionWizard.newTemplatesJsonPlaceholder')"
               />
             </el-form-item>
           </div>
@@ -188,7 +188,7 @@
               type="info"
               :closable="false"
             />
-            <el-form-item label="选择 workflow">
+            <el-form-item :label="t('jobDefinitionWizard.selectWorkflowLabel')">
               <el-select
                 v-model="selectedWorkflowIds"
                 multiple
@@ -197,7 +197,7 @@
                 collapse-tags-tooltip
                 clearable
                 :loading="associationsLoading"
-                placeholder="从当前租户已有 workflow_definition 选"
+                :placeholder="t('jobDefinitionWizard.selectWorkflowPlaceholder')"
                 class="query-w-full"
               >
                 <el-option
@@ -210,12 +210,12 @@
                 />
               </el-select>
             </el-form-item>
-            <el-form-item label="新建 workflowDefinitions (JSON)">
+            <el-form-item :label="t('jobDefinitionWizard.newWorkflowsJsonLabel')">
               <JsonTextareaInput
                 v-model="workflowDefinitionsJson"
                 :rows="8"
                 expect="array"
-                placeholder="可选,粘贴 / 拖入 / 选文件:JSON 数组"
+                :placeholder="t('jobDefinitionWizard.newWorkflowsJsonPlaceholder')"
               />
             </el-form-item>
           </div>
@@ -226,7 +226,7 @@
               type="info"
               :closable="false"
             />
-            <el-form-item label="选择路由">
+            <el-form-item :label="t('jobDefinitionWizard.selectAlertRoutingLabel')">
               <el-select
                 v-model="selectedAlertRoutingIds"
                 multiple
@@ -235,7 +235,7 @@
                 collapse-tags-tooltip
                 clearable
                 :loading="associationsLoading"
-                placeholder="从当前租户已有 alert_routing 选"
+                :placeholder="t('jobDefinitionWizard.selectAlertRoutingPlaceholder')"
                 class="query-w-full"
               >
                 <el-option
@@ -246,12 +246,12 @@
                 />
               </el-select>
             </el-form-item>
-            <el-form-item label="新建 alertRoutings (JSON)">
+            <el-form-item :label="t('jobDefinitionWizard.newAlertRoutingsJsonLabel')">
               <JsonTextareaInput
                 v-model="alertRoutingsJson"
                 :rows="8"
                 expect="array"
-                placeholder="可选,粘贴 / 拖入 / 选文件:JSON 数组"
+                :placeholder="t('jobDefinitionWizard.newAlertRoutingsJsonPlaceholder')"
               />
             </el-form-item>
           </div>
@@ -287,6 +287,7 @@
 
 <script setup lang="ts">
   import { computed, reactive, ref, watch } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import { useRouter } from 'vue-router'
   import type { FormInstance, FormRules } from 'element-plus'
   import { ElMessage } from 'element-plus'
@@ -322,6 +323,7 @@
     { key: 'review', title: '复核', desc: '检查全部填写后提交' },
   ] as const
 
+  const { t } = useI18n({ useScope: 'global' })
   const router = useRouter()
   const tenant = useTenantStore()
   const formRef = ref<FormInstance>()

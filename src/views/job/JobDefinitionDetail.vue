@@ -58,14 +58,14 @@
         </div>
 
         <el-tabs v-model="activeTab" class="detail-tabs">
-          <el-tab-pane label="基本信息" name="basic">
+          <el-tab-pane :label="t('jobDefinitionDetail.tabBasic')" name="basic">
             <JobConfigBasicSection
               :job="job"
               :execution-mode-label="resolveEnumLabel('executionMode', job.executionMode)"
             />
           </el-tab-pane>
 
-          <el-tab-pane label="调度" name="schedule">
+          <el-tab-pane :label="t('jobDefinitionDetail.tabSchedule')" name="schedule">
             <div class="tab-panel">
               <el-descriptions :column="2" border size="small">
                 <el-descriptions-item label="scheduleType">
@@ -88,8 +88,12 @@
                 </el-descriptions-item>
               </el-descriptions>
               <div class="panel-actions">
-                <el-button @click="calendarMiniVisible = true">+ 新建日历</el-button>
-                <el-button @click="windowMiniVisible = true">+ 新建窗口</el-button>
+                <el-button @click="calendarMiniVisible = true">
+                  {{ t('jobDefinitionDetail.btnNewCalendar') }}
+                </el-button>
+                <el-button @click="windowMiniVisible = true">
+                  {{ t('jobDefinitionDetail.btnNewWindow') }}
+                </el-button>
                 <el-button @click="router.push('/governance/calendars')">
                   {{ t('jobDefinitionDetail.maintainCalendar') }}
                 </el-button>
@@ -100,7 +104,7 @@
             </div>
           </el-tab-pane>
 
-          <el-tab-pane label="资源" name="resource">
+          <el-tab-pane :label="t('jobDefinitionDetail.tabResource')" name="resource">
             <div class="tab-panel">
               <el-descriptions :column="2" border size="small">
                 <el-descriptions-item label="queueCode">
@@ -133,7 +137,7 @@
             </div>
           </el-tab-pane>
 
-          <el-tab-pane label="触发" name="trigger">
+          <el-tab-pane :label="t('jobDefinitionDetail.tabTrigger')" name="trigger">
             <div class="tab-panel">
               <el-descriptions :column="2" border size="small">
                 <el-descriptions-item label="triggerMode">
@@ -153,13 +157,15 @@
                 <el-button type="primary" :loading="triggering" @click="triggerJob">
                   {{ t('jobDefinitionDetail.manualTrigger') }}
                 </el-button>
-                <el-button @click="router.push('/self-service')">补跑/自助入口</el-button>
+                <el-button @click="router.push('/self-service')">
+                  {{ t('jobDefinitionDetail.btnSelfService') }}
+                </el-button>
               </div>
             </div>
           </el-tab-pane>
 
           <!-- el-tab-pane 不能用 v-if(EP unmount 时 panes.indexOf 报错),改在内部条件渲染 -->
-          <el-tab-pane label="关联文件" name="files" lazy>
+          <el-tab-pane :label="t('jobDefinitionDetail.tabFiles')" name="files" lazy>
             <JobRelatedFilesTab
               v-if="job.jobType === 'IMPORT' || job.jobType === 'EXPORT'"
               :tenant-id="job.tenantId"
@@ -171,7 +177,7 @@
             />
           </el-tab-pane>
 
-          <el-tab-pane label="关联编排" name="workflow" lazy>
+          <el-tab-pane :label="t('jobDefinitionDetail.tabWorkflow')" name="workflow" lazy>
             <div class="tab-panel">
               <el-descriptions :column="2" border size="small">
                 <el-descriptions-item label="jobType">{{ job.jobType }}</el-descriptions-item>
@@ -201,10 +207,10 @@
                     <span class="cell-link">{{ row.workflowCode }}</span>
                   </template>
                 </el-table-column>
-                <el-table-column prop="workflowName" label="名称" min-width="180" />
-                <el-table-column prop="workflowType" label="类型" width="120" />
-                <el-table-column prop="version" label="版本" width="80" />
-                <el-table-column label="启用" width="80">
+                <el-table-column prop="workflowName" :label="t('jobDefinitionDetail.colName')" min-width="180" />
+                <el-table-column prop="workflowType" :label="t('jobDefinitionDetail.colType')" width="120" />
+                <el-table-column prop="version" :label="t('jobDefinitionDetail.colVersion')" width="80" />
+                <el-table-column :label="t('jobDefinitionDetail.colEnabled')" width="80">
                   <template #default="{ row }">
                     <el-tag size="small" :type="row.enabled ? 'success' : 'info'">
                       {{ row.enabled ? '是' : '否' }}
@@ -220,7 +226,7 @@
             </div>
           </el-tab-pane>
 
-          <el-tab-pane label="告警" name="alerts" lazy>
+          <el-tab-pane :label="t('jobDefinitionDetail.tabAlerts')" name="alerts" lazy>
             <div class="tab-panel">
               <div class="panel-toolbar">
                 <span>当前租户告警路由(用于匹配 alertGroup / receiver,FE 仅列出可绑定路由)</span>
@@ -244,7 +250,7 @@
                   min-width="200"
                   show-overflow-tooltip
                 />
-                <el-table-column label="启用" width="80">
+                <el-table-column :label="t('jobDefinitionDetail.colEnabled')" width="80">
                   <template #default="{ row }">
                     <el-tag size="small" :type="row.enabled ? 'success' : 'info'">
                       {{ row.enabled ? '是' : '否' }}
@@ -260,7 +266,7 @@
             </div>
           </el-tab-pane>
 
-          <el-tab-pane label="运行历史" name="runs" lazy>
+          <el-tab-pane :label="t('jobDefinitionDetail.tabRuns')" name="runs" lazy>
             <div class="tab-panel">
               <div class="panel-toolbar">
                 <span>最近 20 次运行</span>
@@ -276,28 +282,28 @@
                 empty-text="暂无运行记录"
                 @row-click="goRunDetail"
               >
-                <el-table-column prop="instanceNo" label="实例号" min-width="220">
+                <el-table-column prop="instanceNo" :label="t('jobDefinitionDetail.colInstanceNo')" min-width="220">
                   <template #default="{ row }">
                     <span class="cell-link">{{ row.instanceNo }}</span>
                   </template>
                 </el-table-column>
-                <el-table-column label="状态" width="130">
+                <el-table-column :label="t('jobDefinitionDetail.colStatus')" width="130">
                   <template #default="{ row }">
                     <StatusTag :value="row.instanceStatus" category="instance" />
                   </template>
                 </el-table-column>
-                <el-table-column prop="bizDate" label="业务日期" width="120" />
-                <el-table-column label="开始时间" width="180">
+                <el-table-column prop="bizDate" :label="t('jobDefinitionDetail.colBizDate')" width="120" />
+                <el-table-column :label="t('jobDefinitionDetail.colStartedAt')" width="180">
                   <template #default="{ row }">{{ fmtDatetime(row.startedAt) }}</template>
                 </el-table-column>
-                <el-table-column label="结束时间" width="180">
+                <el-table-column :label="t('jobDefinitionDetail.colFinishedAt')" width="180">
                   <template #default="{ row }">{{ fmtDatetime(row.finishedAt) }}</template>
                 </el-table-column>
               </el-table>
             </div>
           </el-tab-pane>
 
-          <el-tab-pane label="审计" name="audit" lazy>
+          <el-tab-pane :label="t('jobDefinitionDetail.tabAudit')" name="audit" lazy>
             <div class="tab-panel">
               <div class="panel-toolbar">
                 <span>按作业编码匹配最近审计记录</span>
@@ -312,16 +318,16 @@
                 stripe
                 empty-text="暂无审计记录"
               >
-                <el-table-column prop="operationType" label="操作" width="180" />
-                <el-table-column prop="operationResult" label="结果" width="110" />
-                <el-table-column prop="operatorId" label="操作人" width="160" />
+                <el-table-column prop="operationType" :label="t('jobDefinitionDetail.colOperation')" width="180" />
+                <el-table-column prop="operationResult" :label="t('jobDefinitionDetail.colResult')" width="110" />
+                <el-table-column prop="operatorId" :label="t('jobDefinitionDetail.colOperator')" width="160" />
                 <el-table-column
                   prop="detailSummary"
-                  label="摘要"
+                  :label="t('jobDefinitionDetail.colSummary')"
                   min-width="260"
                   show-overflow-tooltip
                 />
-                <el-table-column prop="createdAt" label="时间" width="180" />
+                <el-table-column prop="createdAt" :label="t('jobDefinitionDetail.colCreatedAt')" width="180" />
               </el-table>
             </div>
           </el-tab-pane>

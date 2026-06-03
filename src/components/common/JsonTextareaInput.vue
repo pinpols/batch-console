@@ -33,7 +33,9 @@
             >({{ formatBytes(fileSize) }})</span
           >
         </span>
-        <span v-else class="json-textarea-input__tip"> 或拖入 / ⌘V 粘贴文件 </span>
+        <span v-else class="json-textarea-input__tip">
+          {{ t('jsonTextareaInput.dropOrPasteHint') }}
+        </span>
       </div>
       <div class="json-textarea-input__right">
         <span v-if="parseStatus.kind === 'error'" class="json-textarea-input__parse-err">
@@ -80,8 +82,11 @@
    *   - paste 事件:有文件走文件路径,纯文本不拦截让 el-input 原生 paste 接管
    */
   import { computed, onMounted, ref } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
   import { UploadFilled, Document, Warning, Check } from '@element-plus/icons-vue'
+
+  const { t } = useI18n({ useScope: 'global' })
 
   const props = withDefaults(
     defineProps<{

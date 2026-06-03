@@ -72,9 +72,11 @@
                   >
                     <el-icon class="upload-zone__icon"><UploadFilled /></el-icon>
                     <div class="upload-zone__hint">
-                      <strong>拖入</strong>或<el-link type="primary" :underline="false">{{
-                        t('excelMaintenanceWizard.btnPickFile')
-                      }}</el-link>
+                      <strong>{{ t('tenantPackageImportWizard.dropHintDrop') }}</strong>
+                      {{ t('tenantPackageImportWizard.dropHintOr') }}
+                      <el-link type="primary" :underline="false">
+                        {{ t('excelMaintenanceWizard.btnPickFile') }}
+                      </el-link>
                       <div class="upload-zone__sub">.xls / .xlsx</div>
                     </div>
                   </el-upload>
