@@ -2,25 +2,50 @@
   <PageContainer>
     <PageHeader>
       <template #actions>
-        <el-button
-          v-if="canMutateConfig"
-          :icon="Plus"
-          @click="router.push('/jobs/definitions/new')"
+        <el-tooltip
+          :content="canMutateConfig ? t('jobDefinitionList.headerWizardTip') : t('common.permissionDenied')"
+          placement="top"
         >
-          向导新建
-        </el-button>
-        <el-button v-if="canMutateConfig" :icon="Upload" @click="openBundleImport">
-          Bundle 导入
-        </el-button>
-        <el-button
-          v-if="canMutateConfig"
-          type="primary"
-          :icon="Plus"
-          class="pretty-add-button"
-          @click="openCreate"
+          <span>
+            <el-button
+              :icon="Plus"
+              :disabled="!canMutateConfig"
+              @click="router.push('/jobs/definitions/new')"
+            >
+              {{ t('jobDefinitionList.headerWizard') }}
+            </el-button>
+          </span>
+        </el-tooltip>
+        <el-tooltip
+          :content="canMutateConfig ? t('jobDefinitionList.headerBundleTip') : t('common.permissionDenied')"
+          placement="top"
         >
-          {{ t('jobDefinitionList.headerCreate') }}
-        </el-button>
+          <span>
+            <el-button
+              :icon="Upload"
+              :disabled="!canMutateConfig"
+              @click="openBundleImport"
+            >
+              {{ t('jobDefinitionList.headerBundle') }}
+            </el-button>
+          </span>
+        </el-tooltip>
+        <el-tooltip
+          :content="canMutateConfig ? t('jobDefinitionList.headerCreateTip') : t('common.permissionDenied')"
+          placement="top"
+        >
+          <span>
+            <el-button
+              type="primary"
+              :icon="Plus"
+              class="pretty-add-button"
+              :disabled="!canMutateConfig"
+              @click="openCreate"
+            >
+              {{ t('jobDefinitionList.headerCreate') }}
+            </el-button>
+          </span>
+        </el-tooltip>
       </template>
     </PageHeader>
 
@@ -507,6 +532,8 @@
   import { ref, reactive, computed, watch } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { useDrawerAutoClose } from '@/composables/useDrawerAutoClose'
+  import { useDirtyForm } from '@/composables/useDirtyForm'
+  import { useFormFocus } from '@/composables/useFormFocus'
   import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { Plus, Upload } from '@element-plus/icons-vue'
@@ -988,6 +1015,17 @@
     enabled: false,
   })
 
+  // 脏数据保护:抽屉关闭前若有未保存修改弹 confirm,避免点遮罩/Esc 丢失输入
+  const createDirty = useDirtyForm(() => createForm, {
+    enabled: () => createDrawerVisible.value,
+  })
+  const editDirty = useDirtyForm(() => editForm, {
+    enabled: () => editDrawerVisible.value,
+  })
+  // 抽屉打开后 autofocus 第一可编辑控件
+  useFormFocus(createFormRef, () => createDrawerVisible.value)
+  useFormFocus(editFormRef, () => editDrawerVisible.value)
+
   const { data: metaEnumsData } = useConsoleMetaEnumsQuery()
   const executionModeOptions = computed(() =>
     pickMetaEnumGroup(metaEnumsData.value, 'executionMode'),
@@ -1109,14 +1147,18 @@
     resetCreateForm()
     createDrawerVisible.value = true
     void createFormRef.value?.clearValidate()
+    // 表单已重置 → 基线对齐空表,后续修改触发 isDirty
+    createDirty.markPristine()
   }
 
-  function closeCreateDrawer() {
+  async function closeCreateDrawer() {
+    if (!(await createDirty.confirmDiscard())) return
     createDrawerVisible.value = false
   }
 
-  function onCreateDrawerClose(done: () => void) {
+  async function onCreateDrawerClose(done: () => void) {
     if (createSaving.value) return
+    if (!(await createDirty.confirmDiscard())) return
     done()
   }
 
@@ -1147,6 +1189,8 @@
         enabled: createForm.enabled,
       })
       ElMessage.success(t('jobDefinitionList.createSuccess', { code: createForm.jobCode }))
+      // 保存成功后基线对齐,关闭流程不再弹"放弃修改"
+      createDirty.markPristine()
       createDrawerVisible.value = false
       filters.jobCode = createForm.jobCode.trim()
       page.value = 1
@@ -1167,14 +1211,18 @@
     Object.assign(editForm, jobResponseToEditForm(row))
     editDrawerVisible.value = true
     void editFormRef.value?.clearValidate()
+    // 基线 = 加载完的当前 row,后续修改触发 isDirty
+    editDirty.markPristine()
   }
 
-  function closeEditDrawer() {
+  async function closeEditDrawer() {
+    if (!(await editDirty.confirmDiscard())) return
     editDrawerVisible.value = false
   }
 
-  function onEditDrawerClose(done: () => void) {
+  async function onEditDrawerClose(done: () => void) {
     if (editSaving.value) return
+    if (!(await editDirty.confirmDiscard())) return
     done()
   }
 
@@ -1223,6 +1271,7 @@
         description: editForm.description.trim() || undefined,
       })
       ElMessage.success(t('jobDefinitionList.updateSuccess', { code: editingJobCode.value }))
+      editDirty.markPristine()
       editDrawerVisible.value = false
       await refetch()
     } finally {

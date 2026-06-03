@@ -9,7 +9,9 @@
     "
     direction="rtl"
     size="640px"
-    @update:model-value="(v) => emit('update:modelValue', v)"
+    :close-on-click-modal="false"
+    :before-close="onBeforeClose"
+    @update:model-value="onModelValueUpdate"
   >
     <el-form ref="formRef" :model="form" :rules="formRules" label-width="88px">
       <el-form-item :label="t('tenantFormDialog.fieldTenantId')" prop="tenantId">
@@ -75,7 +77,7 @@
       </template>
     </el-form>
     <template #footer>
-      <el-button @click="emit('update:modelValue', false)">
+      <el-button @click="requestClose">
         {{ t('tenantConfigShared.cancel') }}
       </el-button>
       <el-button type="primary" :loading="submitAction.loading.value" @click="submit">
@@ -97,6 +99,8 @@
   import { createTenant, updateTenant, type Tenant } from '@/api/tenants'
   import { useFormValidate, rules } from '@/composables/useFormValidate'
   import { useAsyncAction } from '@/composables/useAsyncAction'
+  import { useDirtyForm } from '@/composables/useDirtyForm'
+  import { useFormFocus } from '@/composables/useFormFocus'
 
   const props = defineProps<{
     modelValue: boolean
@@ -149,6 +153,10 @@
     return base
   })
 
+  // 脏数据保护:抽屉关闭前若有未保存修改弹 confirm
+  const dirty = useDirtyForm(() => form, { enabled: () => props.modelValue })
+  useFormFocus(formRef, () => props.modelValue)
+
   watch(
     () => props.modelValue,
     (open) => {
@@ -160,8 +168,30 @@
       form.description = row?.description ?? ''
       form.username = ''
       form.password = ''
+      // 抽屉打开时对齐基线,后续编辑触发 isDirty
+      dirty.markPristine()
     },
   )
+
+  async function onModelValueUpdate(v: boolean) {
+    if (v) {
+      emit('update:modelValue', true)
+      return
+    }
+    if (!(await dirty.confirmDiscard())) return
+    emit('update:modelValue', false)
+  }
+
+  async function onBeforeClose(done: () => void) {
+    if (submitAction.loading.value) return
+    if (!(await dirty.confirmDiscard())) return
+    done()
+  }
+
+  async function requestClose() {
+    if (!(await dirty.confirmDiscard())) return
+    emit('update:modelValue', false)
+  }
 
   // useAsyncAction:连点抗抖,完成后 300ms 内 :loading 仍 true,防止用户在 emit
   // 关闭弹窗的动画期间二次点击触发重复 create/update
@@ -184,6 +214,8 @@
         })
         // 不再 toast"已创建"——父组件会展示带"去初始化 / 查看列表"的引导卡片
       }
+      // 保存成功:基线对齐,后续直接关闭不再弹"放弃修改"
+      dirty.markPristine()
       emit('saved', { tenantId, created: !editing.value })
       emit('update:modelValue', false)
     },
