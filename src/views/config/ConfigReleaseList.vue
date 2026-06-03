@@ -261,6 +261,8 @@
 
   const { t } = useI18n({ useScope: 'global' })
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
+  import { useDirtyForm } from '@/composables/useDirtyForm'
+  import { useFormFocus } from '@/composables/useFormFocus'
   import { usePermission } from '@/composables/usePermission'
   import {
     grayRelease,
@@ -401,18 +403,25 @@
     createForm.releaseNote = ''
   }
 
+  // 脏数据保护 + autofocus
+  const createDirty = useDirtyForm(() => createForm, { enabled: () => createVisible.value })
+  useFormFocus(createFormRef, () => createVisible.value)
+
   function openCreate() {
     resetCreateForm()
     createVisible.value = true
     void createFormRef.value?.clearValidate()
+    createDirty.markPristine()
   }
 
-  function closeCreate() {
+  async function closeCreate() {
+    if (!(await createDirty.confirmDiscard())) return
     createVisible.value = false
   }
 
-  function onCreateClose(done: () => void) {
+  async function onCreateClose(done: () => void) {
     if (createSaving.value) return
+    if (!(await createDirty.confirmDiscard())) return
     done()
   }
 
@@ -428,6 +437,7 @@
         releaseNote: createForm.releaseNote.trim() || undefined,
       })
       ElMessage.success(t('configReleaseList.createSuccess', { key: createForm.configCode }))
+      createDirty.markPristine()
       createVisible.value = false
       filters.key = createForm.configCode.trim()
       await load()

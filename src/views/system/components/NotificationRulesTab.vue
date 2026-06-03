@@ -97,6 +97,8 @@
       "
       direction="rtl"
       size="640px"
+      :close-on-click-modal="false"
+      :before-close="onRuleFormClose"
     >
       <el-form ref="ruleFormRef" :model="ruleForm" :rules="ruleFormRules" label-width="88px">
         <el-form-item :label="t('notificationRulesTab.fieldName')" prop="ruleName">
@@ -132,7 +134,7 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="ruleFormVisible = false">
+        <el-button @click="closeRuleForm">
           {{ t('common.cancel') }}
         </el-button>
         <el-button type="primary" :loading="savingRule" @click="saveRule">
@@ -152,6 +154,8 @@
   import { confirmDanger } from '@/composables/useDangerConfirm'
   import type { FormRules } from 'element-plus'
   import { useFormValidate, rules as r } from '@/composables/useFormValidate'
+  import { useDirtyForm } from '@/composables/useDirtyForm'
+  import { useFormFocus } from '@/composables/useFormFocus'
   import { Plus } from '@element-plus/icons-vue'
   import {
     listNotificationChannels,
@@ -220,6 +224,10 @@
     })
   }
 
+  // 脏数据保护
+  const ruleDirty = useDirtyForm(() => ruleForm, { enabled: () => ruleFormVisible.value })
+  useFormFocus(ruleFormRef, () => ruleFormVisible.value)
+
   function openRuleCreate() {
     ruleEditingId.value = null
     ruleForm.ruleName = ''
@@ -227,6 +235,7 @@
     ruleForm.channelId = 1
     ruleForm.enabled = true
     ruleFormVisible.value = true
+    ruleDirty.markPristine()
   }
 
   function openRuleEdit(row: Record<string, unknown>) {
@@ -236,6 +245,18 @@
     ruleForm.channelId = Number(row.channelId ?? 1)
     ruleForm.enabled = !!row.enabled
     ruleFormVisible.value = true
+    ruleDirty.markPristine()
+  }
+
+  async function closeRuleForm() {
+    if (!(await ruleDirty.confirmDiscard())) return
+    ruleFormVisible.value = false
+  }
+
+  async function onRuleFormClose(done: () => void) {
+    if (savingRule.value) return
+    if (!(await ruleDirty.confirmDiscard())) return
+    done()
   }
 
   async function saveRule() {
@@ -249,6 +270,7 @@
         await createNotificationRule(tenant.tenantId, body)
       }
       ElMessage.success(t('notificationCommon.savedToast'))
+      ruleDirty.markPristine()
       ruleFormVisible.value = false
       await loadRules()
     } finally {

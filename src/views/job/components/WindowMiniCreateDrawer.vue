@@ -98,10 +98,12 @@
    * Batch Window 现场建 mini 弹窗 — 从 el-drawer 改为 el-dialog,
    * 避免双层 drawer 互压;布局更紧凑(时段合并一行 + 跨天/启用一行)。
    */
-  import { computed, reactive, ref } from 'vue'
+  import { computed, reactive, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
   import { governanceApi, type GovernanceBatchWindowSavePayload } from '@/api/governance'
+  import { useDirtyForm } from '@/composables/useDirtyForm'
+  import { useFormFocus } from '@/composables/useFormFocus'
 
   const props = defineProps<{
     tenantId: string
@@ -181,13 +183,24 @@
     ],
   }
 
-  function onBeforeClose(done: () => void) {
+  // 脏数据保护:关闭前若有未保存修改弹 confirm
+  const dirty = useDirtyForm(() => form, { enabled: () => visible.value })
+  useFormFocus(formRef, () => visible.value)
+
+  // visible 由父传入,打开时重置基线(form 此时是默认值或上次提交后的残留)
+  watch(visible, (v) => {
+    if (v) dirty.markPristine()
+  })
+
+  async function onBeforeClose(done: () => void) {
     if (saving.value) return
+    if (!(await dirty.confirmDiscard())) return
     done()
   }
 
-  function close() {
+  async function close() {
     if (saving.value) return
+    if (!(await dirty.confirmDiscard())) return
     visible.value = false
   }
 
@@ -200,6 +213,7 @@
       await governanceApi.createBatchWindow(payload)
       ElMessage.success(t('jobConfigBasic.miniWindowCreated', { code: form.windowCode }))
       emit('created', form.windowCode || '')
+      dirty.markPristine()
       visible.value = false
       form.windowCode = ''
       form.windowName = ''

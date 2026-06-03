@@ -197,6 +197,8 @@
       :title="t('userAccountList.editTitle', { name: form.username })"
       direction="rtl"
       size="640px"
+      :close-on-click-modal="false"
+      :before-close="onEditClose"
     >
       <el-form label-width="88px">
         <el-form-item :label="t('userAccountList.fieldTenant')">
@@ -236,7 +238,7 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="formVisible = false">{{ t('common.cancel') }}</el-button>
+        <el-button @click="closeEdit">{{ t('common.cancel') }}</el-button>
         <el-button type="primary" :loading="submitAction.loading.value" @click="submitForm">
           {{ t('common.save') }}
         </el-button>
@@ -280,6 +282,8 @@
   import type { FormRules } from 'element-plus'
   import { useFormValidate, rules } from '@/composables/useFormValidate'
   import { useAsyncAction } from '@/composables/useAsyncAction'
+  import { useDirtyForm } from '@/composables/useDirtyForm'
+  import { useFormFocus } from '@/composables/useFormFocus'
   import {
     listUsers,
     createUser,
@@ -442,18 +446,25 @@
     clearCreateValidate()
   }
 
+  // 脏数据保护
+  const createDirty = useDirtyForm(() => createForm, { enabled: () => createVisible.value })
+  useFormFocus(createFormRef, () => createVisible.value)
+
   function openCreate() {
     resetCreateForm()
     createVisible.value = true
+    createDirty.markPristine()
   }
 
-  function closeCreate() {
+  async function closeCreate() {
+    if (!(await createDirty.confirmDiscard())) return
     createVisible.value = false
     resetCreateForm()
   }
 
-  function onCreateClose(done: () => void) {
+  async function onCreateClose(done: () => void) {
     if (creating.value) return
+    if (!(await createDirty.confirmDiscard())) return
     done()
     resetCreateForm()
   }
@@ -472,6 +483,7 @@
         authoritiesCsv: createForm.authoritiesCsv.trim() || undefined,
       })
       ElMessage.success(t('userAccountList.createSuccess', { name: username }))
+      createDirty.markPristine()
       createVisible.value = false
       resetCreateForm()
       queryDraft.keyword = username
@@ -507,6 +519,9 @@
     },
   })
 
+  // 编辑表单脏数据保护
+  const editDirty = useDirtyForm(() => form, { enabled: () => formVisible.value })
+
   function openEdit(row: UserAccount) {
     form.id = row.id
     form.tenantId = row.tenantId
@@ -514,6 +529,18 @@
     form.displayName = row.displayName ?? ''
     form.authoritiesCsv = row.authoritiesCsv ?? ''
     formVisible.value = true
+    editDirty.markPristine()
+  }
+
+  async function closeEdit() {
+    if (!(await editDirty.confirmDiscard())) return
+    formVisible.value = false
+  }
+
+  async function onEditClose(done: () => void) {
+    if (submitAction.loading.value) return
+    if (!(await editDirty.confirmDiscard())) return
+    done()
   }
 
   // useAsyncAction:防止用户在保存请求回包前 / 弹窗关闭动画期间二次点击触发重复 update
@@ -525,6 +552,7 @@
         authoritiesCsv: form.authoritiesCsv || undefined,
       })
       ElMessage.success(t('userAccountList.updateSuccess'))
+      editDirty.markPristine()
       formVisible.value = false
       await load()
     },

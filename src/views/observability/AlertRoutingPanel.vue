@@ -115,6 +115,8 @@
       direction="rtl"
       size="640px"
       destroy-on-close
+      :close-on-click-modal="false"
+      :before-close="onDialogClose"
     >
       <el-form ref="formRef" :model="form" :rules="rules" label-width="120px">
         <el-form-item :label="t('alertRoutingPanel.fieldRouteCode')" prop="routeCode">
@@ -165,7 +167,7 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialogVisible = false">{{ t('common.cancel') }}</el-button>
+        <el-button @click="cancelDialog">{{ t('common.cancel') }}</el-button>
         <el-button type="primary" :loading="submitAction.loading.value" @click="submitForm">
           {{ t('common.save') }}
         </el-button>
@@ -188,6 +190,8 @@
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { useTenantReload } from '@/composables/useTenantReload'
   import { useAsyncAction } from '@/composables/useAsyncAction'
+  import { useDirtyForm } from '@/composables/useDirtyForm'
+  import { useFormFocus } from '@/composables/useFormFocus'
   import { useTenantStore } from '@/stores/tenant'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
@@ -294,14 +298,31 @@
     form.description = row?.description ?? ''
   }
 
+  // 脏数据保护
+  const dirty = useDirtyForm(() => form, { enabled: () => dialogVisible.value })
+  useFormFocus(formRef, () => dialogVisible.value)
+
   function openCreate() {
     resetForm()
     dialogVisible.value = true
+    dirty.markPristine()
   }
 
   function openEdit(row: GovernanceAlertRoutingRow) {
     resetForm(row)
     dialogVisible.value = true
+    dirty.markPristine()
+  }
+
+  async function cancelDialog() {
+    if (!(await dirty.confirmDiscard())) return
+    dialogVisible.value = false
+  }
+
+  async function onDialogClose(done: () => void) {
+    if (submitAction.loading.value) return
+    if (!(await dirty.confirmDiscard())) return
+    done()
   }
 
   // useAsyncAction:连点抗抖,300ms cooldown 防关弹窗动画期间二次提交
@@ -314,6 +335,7 @@
         await governanceApi.updateAlertRouting(editingId.value, body)
       }
       ElMessage.success(t('alertRoutingPanel.saveSuccess', { code: form.routeCode }))
+      dirty.markPristine()
       dialogVisible.value = false
       await load()
     },
