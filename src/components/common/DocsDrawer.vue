@@ -9,7 +9,10 @@
   >
     <template #header>
       <div class="docs-drawer__header">
-        <span class="docs-drawer__title">📖 {{ resolvedTitle }}</span>
+        <span class="docs-drawer__title">
+          <el-icon><Document /></el-icon>
+          {{ resolvedTitle }}
+        </span>
         <el-button
           text
           type="primary"
@@ -48,7 +51,7 @@
    */
   import { computed } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { Top } from '@element-plus/icons-vue'
+  import { Top, Document } from '@element-plus/icons-vue'
   import { DOC_REGISTRY, resolveDocUrl } from './docsRegistry'
   const { t } = useI18n({ useScope: 'global' })
 
@@ -81,6 +84,9 @@
   .docs-drawer__title {
     font-size: 15px;
     font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
   }
   .docs-drawer__iframe {
     width: 100%;

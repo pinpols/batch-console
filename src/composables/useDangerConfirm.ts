@@ -50,7 +50,7 @@ export function confirmDanger(opts: DangerConfirmOptions): Promise<void> {
     cancelButtonText = '取消',
   } = opts
 
-  const title = irreversible ? `⚠️ ${verb}${target}` : `${verb}${target}`
+  const title = irreversible ? `${verb}${target}(不可恢复)` : `${verb}${target}`
   const reversibility = irreversible ? '此操作不可恢复' : '可在列表里恢复或重新启用'
 
   // 富文本内容:用 h() 而非纯字符串,避免转义;红字突出后果

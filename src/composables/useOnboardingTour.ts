@@ -36,7 +36,7 @@ const DEFAULT_STEPS: TourStep[] = [
   {
     element: '.icon-button[aria-label="打开文档中心"]',
     title: '文档中心',
-    description: '点 📖 看 ADR / 架构 / 运维手册 / 字段说明,排障必备。',
+    description: '点书本图标可查 ADR / 架构 / 运维手册 / 字段说明,排障必备。',
   },
   {
     element: '.tenant-chip',
