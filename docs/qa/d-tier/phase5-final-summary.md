@@ -78,7 +78,7 @@ Phase 4 mobile RealBE: 13/0  ta 租户                       ✅
 ## 阶段报告索引
 
 ```
-docs/runbook/qa-d-phase-reports/
+docs/qa/d-tier/
 ├── README.md                              ← 总索引
 ├── phase1-api-crud-stdout.log             ← 62/0
 ├── phase1-boundary.md                     ← 25/0
