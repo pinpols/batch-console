@@ -159,6 +159,12 @@
               {{ t('monitor.detailOpenStandalone') }}
             </el-button>
           </template>
+          <div class="step-toggle-bar">
+            <el-checkbox v-model="showStepProgressCols" size="small">
+              {{ t('filePipelineObservability.colRowsProcessed') }} /
+              {{ t('filePipelineObservability.colTotalRowsEta') }}
+            </el-checkbox>
+          </div>
           <el-table v-loading="stepsLoading" :data="stepsRows" size="small" empty-text="—" stripe>
             <el-table-column prop="stepCode" :label="t('monitor.stepColStep')" min-width="180" />
             <el-table-column :label="t('monitor.stepColStatus')" width="120">
@@ -172,6 +178,25 @@
               width="80"
               align="right"
             />
+            <el-table-column
+              v-if="showStepProgressCols"
+              :label="t('filePipelineObservability.colRowsProcessed')"
+              width="110"
+              align="right"
+            >
+              <template #default="{ row: s }">
+                {{ formatStepProcessed(s) }}
+              </template>
+            </el-table-column>
+            <el-table-column
+              v-if="showStepProgressCols"
+              :label="t('filePipelineObservability.colTotalRowsEta')"
+              width="170"
+            >
+              <template #default="{ row: s }">
+                {{ formatStepTotalEta(s) }}
+              </template>
+            </el-table-column>
             <el-table-column :label="t('monitor.stepColStarted')" width="170">
               <template #default="{ row: s }">{{ fmtDatetime(s.startedAt) }}</template>
             </el-table-column>
@@ -314,6 +339,29 @@
   const recentLoading = ref(false)
   const recentRows = ref<ConsoleJobInstanceResponse[]>([])
   const recentLoaded = ref(false)
+
+  // 行级进度列(默认隐藏);本视图无 pipelineInstanceId,暂走「—」降级,
+  // 等 BE 把 pipeline-progress 端点按 jobStepId 索引后补真实数据。详见
+  // `docs/design/pipeline-stage-progress-display.md`
+  const showStepProgressCols = ref(false)
+
+  const FILE_STAGE_STEP_TYPES = new Set(['LOAD', 'GENERATE', 'IMPORT', 'EXPORT', 'PROCESS'])
+
+  function isFileStageStep(s: ConsoleJobStepInstanceResponse): boolean {
+    const tp = String(s.stepType ?? '').toUpperCase()
+    return FILE_STAGE_STEP_TYPES.has(tp)
+  }
+
+  function formatStepProcessed(s: ConsoleJobStepInstanceResponse): string {
+    if (!isFileStageStep(s)) return '—'
+    // 当前视图未接入 pipeline-progress 端点(无 pipelineInstanceId 直查路径)
+    return '—'
+  }
+
+  function formatStepTotalEta(s: ConsoleJobStepInstanceResponse): string {
+    if (!isFileStageStep(s)) return '—'
+    return '—'
+  }
 
   const taskOptions = computed(() =>
     stepsRows.value
