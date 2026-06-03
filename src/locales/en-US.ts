@@ -47,6 +47,9 @@ const messages: Messages = {
     required: '(required)',
     tenantId: 'Tenant ID',
     updatedAt: 'Updated at',
+    etaUnknown: '—',
+    etaPattern: 'ETA ~{minutes}min',
+    etaStalled: 'No heartbeat',
   },
   workflowDesigner: {
     expandLeftPanel: 'Expand left panel',
@@ -3963,6 +3966,9 @@ const messages: Messages = {
     colTime: 'Time',
     colFileId: 'fileId',
     colTrace: 'Trace',
+    colRowsProcessed: 'Processed',
+    colTotalRowsEta: 'Total / ETA',
+    colToggleHint: 'Toggle columns',
   },
   userRole: {
     btnRefreshLogin: 'Refresh login',

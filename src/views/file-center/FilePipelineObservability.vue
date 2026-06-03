@@ -153,6 +153,12 @@
                     @keyup.enter="onSearch"
                   />
                 </el-form-item>
+                <el-form-item :label="t('filePipelineObservability.colToggleHint')">
+                  <el-checkbox v-model="showProgressColumns">
+                    {{ t('filePipelineObservability.colRowsProcessed') }} /
+                    {{ t('filePipelineObservability.colTotalRowsEta') }}
+                  </el-checkbox>
+                </el-form-item>
               </ListPageQueryBar>
             </template>
             <el-table-column prop="id" :label="t('filePipelineObservability.colId')" width="88" />
@@ -192,6 +198,25 @@
               width="72"
               align="right"
             />
+            <el-table-column
+              v-if="showProgressColumns"
+              :label="t('filePipelineObservability.colRowsProcessed')"
+              width="110"
+              align="right"
+            >
+              <template #default="{ row }">
+                {{ formatProcessed(row) }}
+              </template>
+            </el-table-column>
+            <el-table-column
+              v-if="showProgressColumns"
+              :label="t('filePipelineObservability.colTotalRowsEta')"
+              width="170"
+            >
+              <template #default="{ row }">
+                {{ formatTotalEta(row) }}
+              </template>
+            </el-table-column>
             <DatetimeColumn
               prop="startedAt"
               :label="t('filePipelineObservability.colStart')"
@@ -430,6 +455,11 @@
     ConsoleFilePipelineResponse,
     ConsoleFilePipelineStepResponse,
   } from '@/types/console-api'
+  import {
+    queryPipelineProgressSafe,
+    type PipelineStepProgress,
+  } from '@/api/filePipelineQuery'
+  import { useAutoRefresh } from '@/composables/useAutoRefresh'
 
   const tenant = useTenantStore()
   const activeTab = ref<'pipelines' | 'steps' | 'dispatches' | 'errors'>('pipelines')
@@ -451,6 +481,108 @@
   const allSteps = ref<ConsoleFilePipelineStepResponse[]>([])
   const allDispatches = ref<ConsoleFileDispatchRecordResponse[]>([])
   const allErrors = ref<ConsoleFileErrorRecordResponse[]>([])
+
+  // 行级进度:列默认隐藏(避免 stage 状态列宽爆,用户主动开)
+  const showProgressColumns = ref(false)
+  // stepId → 最新进度采样(BE pipeline-progress 端点上报)
+  const progressByStepId = ref<Map<number, PipelineStepProgress>>(new Map())
+  // stepId → 最近 60s 内的 rowsProcessed 历史(ETA 线性外推用,长度上限 6)
+  const historyByStepId = new Map<number, { ts: number; processed: number }[]>()
+
+  const HISTORY_WINDOW_MS = 60_000
+  const HEARTBEAT_STALL_MS = 90_000
+  const MIN_ETA_WINDOW_MS = 60_000
+  const MAX_HISTORY_SAMPLES = 12
+
+  function recordHistory(stepId: number, processed: number | null) {
+    if (processed == null) return
+    const now = Date.now()
+    const arr = historyByStepId.get(stepId) ?? []
+    arr.push({ ts: now, processed })
+    // 丢弃 > 2×WINDOW 的样本,保留尾部 MAX_HISTORY_SAMPLES 个
+    const cutoff = now - HISTORY_WINDOW_MS * 2
+    const trimmed = arr.filter((s) => s.ts >= cutoff).slice(-MAX_HISTORY_SAMPLES)
+    historyByStepId.set(stepId, trimmed)
+  }
+
+  function formatNumberWithCommas(n: number): string {
+    return n.toLocaleString('en-US')
+  }
+
+  function formatRowsCompact(n: number): string {
+    if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
+    if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`
+    return String(n)
+  }
+
+  function formatProcessed(row: ConsoleFilePipelineStepResponse): string {
+    const prog = progressByStepId.value.get(row.id)
+    if (!prog || prog.rowsProcessed == null) return '—'
+    return formatNumberWithCommas(prog.rowsProcessed)
+  }
+
+  function computeEtaText(prog: PipelineStepProgress): string {
+    const history = historyByStepId.get(prog.stepId) ?? []
+    if (history.length < 2) return ''
+    const first = history[0]
+    const last = history[history.length - 1]
+    const windowMs = last.ts - first.ts
+    if (windowMs < MIN_ETA_WINDOW_MS) return ''
+    if (prog.totalRowsHint == null) return ''
+    if ((prog.rowsProcessed ?? 0) >= prog.totalRowsHint) return ''
+    const delta = last.processed - first.processed
+    if (delta <= 0) return ''
+    const ratePerMs = delta / windowMs
+    const remaining = prog.totalRowsHint - (prog.rowsProcessed ?? 0)
+    const remainingMs = remaining / ratePerMs
+    const minutes = Math.max(1, Math.round(remainingMs / 60_000))
+    return t('common.etaPattern', { minutes })
+  }
+
+  function formatTotalEta(row: ConsoleFilePipelineStepResponse): string {
+    const prog = progressByStepId.value.get(row.id)
+    if (!prog || prog.totalRowsHint == null) return '—'
+    const totalStr = formatRowsCompact(prog.totalRowsHint)
+
+    // 心跳停滞:文本切「无响应」
+    if (
+      prog.lastHeartbeatAt != null &&
+      Date.now() - prog.lastHeartbeatAt > HEARTBEAT_STALL_MS
+    ) {
+      return `${totalStr} · ${t('common.etaStalled')}`
+    }
+    const etaText = computeEtaText(prog)
+    if (!etaText) return totalStr
+    return `${totalStr} · ${etaText}`
+  }
+
+  async function loadProgress() {
+    // 只在 steps tab 且需要时拉
+    if (activeTab.value !== 'steps' || !showProgressColumns.value) return
+    if (allSteps.value.length === 0) return
+    // 按 pipelineInstanceId 去重拉取
+    const pipelineIds = Array.from(
+      new Set(allSteps.value.map((s) => s.pipelineInstanceId).filter((id) => id != null)),
+    )
+    const next = new Map(progressByStepId.value)
+    for (const pid of pipelineIds) {
+      try {
+        const resp = await queryPipelineProgressSafe(pid)
+        for (const s of resp.steps) {
+          next.set(s.stepId, s)
+          recordHistory(s.stepId, s.rowsProcessed)
+        }
+      } catch {
+        // safe 版已吞错;此处 catch 兜底防 TS 警告
+      }
+    }
+    progressByStepId.value = next
+  }
+
+  // 30s 轮询(与心跳一致);页面隐藏自动暂停
+  useAutoRefresh(() => {
+    void loadProgress()
+  }, 30_000)
 
   const filteredPipelines = computed(() => {
     const k = kwApplied.value.trim().toLowerCase()
@@ -553,6 +685,9 @@
         '/api/console/queries/file-pipeline-steps',
         { tenantId: tenant.tenantId },
       )
+      if (showProgressColumns.value) {
+        void loadProgress()
+      }
     } finally {
       loading.value = false
     }
