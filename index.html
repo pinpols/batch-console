@@ -33,6 +33,29 @@
     <link rel="apple-touch-startup-image" media="(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2)" href="/icons/splash-2048x2732.png" />
 
     <title>%VITE_APP_TITLE%</title>
+    <script>
+      /**
+       * 主题首屏防 FOUC:在 vue 挂载前同步读 localStorage,立刻在 documentElement
+       * 上挂 `dark` class(与 applyThemeToDocument 完全一致)。否则 dark preference
+       * 用户每次刷新都看到一闪浅色背景。
+       *
+       * - storage key 与 src/constants/theme.ts 的 THEME_STORAGE_KEY 同步
+       * - 取值范围 `light` / `dark` / `system`(其余 / 缺省视为 system)
+       * - 失败(无 localStorage 等)静默 — 后续 vue 流程会再补一次,不影响功能
+       */
+      ;(function () {
+        try {
+          var v = localStorage.getItem('batch-console:theme')
+          var dark
+          if (v === 'dark') dark = true
+          else if (v === 'light') dark = false
+          else dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+          if (dark) document.documentElement.classList.add('dark')
+        } catch (_) {
+          /* localStorage 不可用 — 留给 vue 兜底 */
+        }
+      })()
+    </script>
   </head>
   <body>
     <div id="app"></div>

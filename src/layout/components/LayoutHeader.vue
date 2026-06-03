@@ -51,6 +51,26 @@
       </div>
 
       <div class="layout-header__right">
+        <!-- 通知 Bell:复用 mobileBadges store(原仅 mobile 用),桌面顶栏挂红点 + pending 计数。
+             点击直接跳 ops summary;无未读时不显 badge。-->
+        <el-tooltip :content="bellTooltip" placement="bottom">
+          <el-badge
+            :value="bellCount"
+            :hidden="bellCount === 0"
+            :max="99"
+            class="layout-header__bell"
+            :type="bellSeverity"
+          >
+            <el-button
+              text
+              class="icon-button"
+              :aria-label="bellTooltip"
+              @click="onBellClick"
+            >
+              <el-icon><Bell /></el-icon>
+            </el-button>
+          </el-badge>
+        </el-tooltip>
         <el-tooltip :content="`${t('nav.commandPalette')}(⌘/Ctrl + K)`" placement="bottom">
           <el-button
             text
@@ -171,6 +191,7 @@
   import { ElMessageBox } from 'element-plus'
   import {
     ArrowDown,
+    Bell,
     DocumentCopy,
     Expand,
     Compass,
@@ -189,9 +210,12 @@
   import LayoutTabs from '@/layout/LayoutTabs.vue'
   import TenantSelect from '@/components/common/TenantSelect.vue'
   import { useHeaderLogic } from '@/layout/composables/useHeaderLogic'
-  import { computed } from 'vue'
+  import { computed, onMounted, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { useLocale } from '@/composables/useLocale'
+  import { useMobileBadgesStore } from '@/stores/mobileBadges'
+  import { useTenantStore } from '@/stores/tenant'
+  import { useAutoRefresh } from '@/composables/useAutoRefresh'
 
   const { t } = useI18n({ useScope: 'global' })
   const { current: currentLocale, setLocale } = useLocale()
@@ -256,6 +280,34 @@
     commandPaletteShortcutLabel,
     handleLogout,
   } = useHeaderLogic()
+
+  // 通知 Bell:复用 mobileBadges store(原 mobile-only,desktop 也接入,语义一致)
+  // 红点 = pendingApprovals + openAlerts;有 critical 提为 danger,普通 warning
+  const badges = useMobileBadgesStore()
+  const tenant = useTenantStore()
+  const bellCount = computed(() => badges.pendingApprovals + badges.openAlerts)
+  const bellSeverity = computed<'danger' | 'warning' | 'info'>(() => {
+    if (badges.criticalAlerts > 0) return 'danger'
+    if (bellCount.value > 0) return 'warning'
+    return 'info'
+  })
+  const bellTooltip = computed(() => {
+    if (bellCount.value === 0) return t('nav.bellNoPending')
+    return t('nav.bellPendingHint', {
+      pending: badges.pendingApprovals,
+      alerts: badges.openAlerts,
+    })
+  })
+  function onBellClick() {
+    void router.push('/ops/summary')
+  }
+  onMounted(() => void badges.refresh())
+  watch(
+    () => tenant.tenantId,
+    () => void badges.refresh(),
+  )
+  // 30s 轮询 — 与 mobile layout 同节奏;后台切到隐藏会自动停(useAutoRefresh 内置)
+  useAutoRefresh(() => badges.refresh(), 30_000)
 
   async function onUserCommand(command: string) {
     if (command === 'profile') {
@@ -532,6 +584,12 @@
 
   .icon-button {
     padding: 6px;
+  }
+
+  /* Bell badge:el-badge 默认 offset 偏外,这里挤回 icon 右上角对齐其它 icon-button */
+  .layout-header__bell :deep(.el-badge__content) {
+    transform: translate(-2px, 2px) scale(0.85);
+    transform-origin: 100% 0%;
   }
 
   .locale-chip {

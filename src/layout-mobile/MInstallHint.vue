@@ -97,7 +97,8 @@
     left: 12px;
     right: 12px;
     bottom: calc(72px + env(safe-area-inset-bottom, 0) + 8px);
-    z-index: 90;
+    /* 略低于 tab bar (--z-tab-bar = 100),挂在 tabbar 之上但被覆盖 */
+    z-index: calc(var(--z-tab-bar) - 10);
     display: flex;
     align-items: flex-start;
     gap: 10px;

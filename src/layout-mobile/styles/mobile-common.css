@@ -908,7 +908,7 @@ html.dark .m-tab__badge--warning {
   position: fixed;
   inset: 0;
   background: rgb(0 0 0 / 0%);
-  z-index: 2000;
+  z-index: var(--z-modal);
   transition: background 0.24s ease;
 }
 .m-action-sheet-backdrop--open {
@@ -923,7 +923,7 @@ html.dark .m-tab__badge--warning {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  z-index: 2001;
+  z-index: calc(var(--z-modal) + 1);
   transform: translateY(110%);
   transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1);
   font-family:

@@ -145,8 +145,8 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, computed } from 'vue'
-  import { useRouter } from 'vue-router'
+  import { ref, computed, watch, onMounted } from 'vue'
+  import { useRouter, useRoute } from 'vue-router'
   import { useI18n } from 'vue-i18n'
 
   const { t } = useI18n({ useScope: 'global' })
@@ -170,6 +170,7 @@
   import type { ConsoleWorkflowRunResponse } from '@/types/console-api'
 
   const router = useRouter()
+  const route = useRoute()
   const tenant = useTenantStore()
   const loading = ref(false)
   const { filterBusy, tableBlocking, runSearch, runReset, runRefresh } =
@@ -270,4 +271,30 @@
     void loadWorkflowCodes()
     void load()
   })
+
+  // URL state:筛选 + 分页 round-trip,详情页 back 返回不丢上下文
+  function syncFiltersToUrl() {
+    const params: Record<string, string> = {}
+    if (workflowCode.value) params.workflowCode = workflowCode.value
+    if (runStatus.value) params.status = runStatus.value
+    if (traceId.value) params.traceId = traceId.value
+    if (page.value > 1) params.page = String(page.value)
+    if (pageSize.value !== 15) params.pageSize = String(pageSize.value)
+    void router.replace({ query: params })
+  }
+  onMounted(() => {
+    const q = route.query
+    if (q.workflowCode) workflowCode.value = String(q.workflowCode)
+    if (q.status) runStatus.value = String(q.status)
+    if (q.traceId) traceId.value = String(q.traceId)
+    if (q.page) {
+      const p = Number(q.page)
+      if (Number.isFinite(p) && p > 0) page.value = p
+    }
+    if (q.pageSize) {
+      const ps = Number(q.pageSize)
+      if (Number.isFinite(ps) && ps > 0) pageSize.value = ps
+    }
+  })
+  watch([workflowCode, runStatus, traceId, page, pageSize], syncFiltersToUrl)
 </script>

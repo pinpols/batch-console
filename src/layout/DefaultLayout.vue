@@ -108,6 +108,7 @@
 <style scoped>
   .layout-root {
     min-height: 100vh;
+    min-height: 100dvh;
     background: var(--color-bg-canvas);
     /* 四边等距：侧栏 | 顶栏 | 主区外缘对齐；内层由 --layout-panel-hover-safe 为 hover scale 留空 */
     padding: var(--layout-panel-hover-safe);
@@ -183,7 +184,8 @@
     position: fixed;
     right: 14px;
     bottom: 14px;
-    z-index: 1999;
+    /* --z-fab = 2050,高于 EP modal 2000,modal 打开时 FAB 不被遮 */
+    z-index: var(--z-fab);
   }
 
   .focus-fab__btn {

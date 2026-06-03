@@ -1,0 +1,28 @@
+/**
+ * z-index token 集中源 — 替代散落的字面量。
+ *
+ * 设计原则:
+ *   - tab-bar / nav / sidebar 等"框架装饰层"在 100 区间(50/100/200)
+ *   - sw-update / install-hint 等"提示横幅"在 1900-2200 区间
+ *   - FAB 必须高于 Element Plus modal(EP `--el-overlay-z-index` 默认 2000),
+ *     否则 modal 打开后 FAB 仍可点,焦点穿透 — 设 2050。
+ *   - popover < modal < toast,符合「点开抽屉看悬浮卡片不被遮」的预期。
+ *   - 与 EP 默认值对齐:overlay 2000、message 2003 都允许业务覆盖。
+ *
+ * 注意:sass 未安装,这里用 .css 而非 .scss(原计划名)。所有变量挂 :root
+ * 全局可用,与 tokens.css 同步加载。
+ */
+:root {
+  /* 框架装饰层 */
+  --z-app-bar: 50;
+  --z-tab-bar: 100;
+  --z-overlay-decoration: 200;
+
+  /* 业务层 */
+  --z-popover: 1500;
+  --z-modal: 2000;
+  --z-fab: 2050; /* 高于 EP modal 2000,FAB 不被遮 */
+  --z-toast: 2100;
+  --z-sw-update: 2200;
+  --z-route-progress: 4100; /* 路由切换进度条,最高,永远可见 */
+}

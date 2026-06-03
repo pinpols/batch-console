@@ -210,8 +210,8 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, ref, watch } from 'vue'
-  import { useRoute } from 'vue-router'
+  import { computed, ref, watch, onMounted } from 'vue'
+  import { useRoute, useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import { queryOutboxDeliveries, queryOutboxRetries } from '@/api/observabilityQueries'
 
@@ -238,6 +238,7 @@
 
   const tenant = useTenantStore()
   const route = useRoute()
+  const router = useRouter()
   const tab = ref<'retry' | 'delivery'>(route.query.tab === 'delivery' ? 'delivery' : 'retry')
   const loading = ref(false)
   const loadError = ref<unknown>(null)
@@ -435,4 +436,48 @@
     reload: () => (tab.value === 'delivery' ? loadTab() : Promise.resolve()),
     scope: () => tenant.tenantId,
   })
+
+  // URL state:tab + 当前活动 tab 的 status / page / pageSize round-trip
+  function syncFiltersToUrl() {
+    const params: Record<string, string> = { tab: tab.value }
+    if (tab.value === 'retry') {
+      if (retryStatusApplied.value) params.status = retryStatusApplied.value
+      if (retryPage.value > 1) params.page = String(retryPage.value)
+      if (retryPageSize.value !== 15) params.pageSize = String(retryPageSize.value)
+    } else {
+      if (deliveryStatusApplied.value) params.status = deliveryStatusApplied.value
+      if (deliveryPage.value > 1) params.page = String(deliveryPage.value)
+      if (deliveryPageSize.value !== 15) params.pageSize = String(deliveryPageSize.value)
+    }
+    void router.replace({ query: params })
+  }
+  onMounted(() => {
+    const q = route.query
+    if (q.page) {
+      const p = Number(q.page)
+      if (Number.isFinite(p) && p > 0) {
+        if (tab.value === 'retry') retryPage.value = p
+        else deliveryPage.value = p
+      }
+    }
+    if (q.pageSize) {
+      const ps = Number(q.pageSize)
+      if (Number.isFinite(ps) && ps > 0) {
+        if (tab.value === 'retry') retryPageSize.value = ps
+        else deliveryPageSize.value = ps
+      }
+    }
+  })
+  watch(
+    [
+      tab,
+      retryStatusApplied,
+      retryPage,
+      retryPageSize,
+      deliveryStatusApplied,
+      deliveryPage,
+      deliveryPageSize,
+    ],
+    syncFiltersToUrl,
+  )
 </script>
