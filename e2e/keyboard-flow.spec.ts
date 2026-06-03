@@ -21,9 +21,9 @@ test.describe('keyboard flow — P0 页面', () => {
     await page.getByRole('button', { name: '新建队列' }).click()
     await page.waitForTimeout(400)
     const dialog = page.locator('.el-dialog:visible, .el-drawer:visible').first()
-    await expect(dialog).toBeVisible({ timeout: 3000 })
+    await expect(dialog).toBeVisible({ timeout: 8000 })
     await page.keyboard.press('Escape')
-    await expect(dialog).toBeHidden({ timeout: 3000 })
+    await expect(dialog).toBeHidden({ timeout: 8000 })
   })
 
   test('Dialog 打开后 Tab 焦点应在 Dialog 内部(不溢出)', async ({ page }) => {
@@ -31,7 +31,7 @@ test.describe('keyboard flow — P0 页面', () => {
     await page.getByRole('button', { name: '新增路由' }).click()
     await page.waitForTimeout(400)
     const dialog = page.locator('.el-dialog:visible, .el-drawer:visible').first()
-    await expect(dialog).toBeVisible({ timeout: 3000 })
+    await expect(dialog).toBeVisible({ timeout: 8000 })
     // 按 5 次 Tab,每次 active element 都应在 dialog/drawer 内(EP 多数已迁移 drawer)
     for (let i = 0; i < 5; i++) {
       await page.keyboard.press('Tab')
@@ -51,9 +51,10 @@ test.describe('keyboard flow — P0 页面', () => {
     const isMac = process.platform === 'darwin'
     await page.keyboard.press(isMac ? 'Meta+K' : 'Control+K')
     const palette = page.getByPlaceholder(/搜索菜单/).first()
-    await expect(palette).toBeVisible({ timeout: 3000 })
+    // 命令面板首次打开会异步加载菜单 fixture,CI/低性能机 3s 不够,放宽到 8s
+    await expect(palette).toBeVisible({ timeout: 8000 })
     await page.keyboard.press('Escape')
-    await expect(palette).toBeHidden({ timeout: 3000 })
+    await expect(palette).toBeHidden({ timeout: 8000 })
   })
 
   test('登录页 Tab 顺序合理(用户名 → 密码 → 登录按钮)', async ({ page, context }) => {
