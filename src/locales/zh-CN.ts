@@ -53,6 +53,9 @@ export default {
     required: '(必填)',
     tenantId: '租户 ID',
     updatedAt: '更新时间',
+    etaUnknown: '—',
+    etaPattern: 'ETA ~{minutes}min',
+    etaStalled: '无响应',
   },
   workflowDesigner: {
     // 折叠左右侧栏(画布优先布局)
@@ -3902,6 +3905,9 @@ export default {
     colTime: '时间',
     colFileId: 'fileId',
     colTrace: 'Trace',
+    colRowsProcessed: '已处理',
+    colTotalRowsEta: '总量 / ETA',
+    colToggleHint: '显示/隐藏列',
   },
   userRole: {
     btnRefreshLogin: '刷新登录态',
