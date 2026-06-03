@@ -69,10 +69,12 @@
    *     @created="(code) => (model.calendarCode = code)"
    *   />
    */
-  import { reactive, ref } from 'vue'
+  import { reactive, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
   import { governanceApi, type GovernanceCalendarSavePayload } from '@/api/governance'
+  import { useDirtyForm } from '@/composables/useDirtyForm'
+  import { useFormFocus } from '@/composables/useFormFocus'
 
   const props = defineProps<{
     tenantId: string
@@ -139,13 +141,22 @@
     ],
   }
 
-  function onBeforeClose(done: () => void) {
+  // 脏数据保护
+  const dirty = useDirtyForm(() => form, { enabled: () => visible.value })
+  useFormFocus(formRef, () => visible.value)
+  watch(visible, (v) => {
+    if (v) dirty.markPristine()
+  })
+
+  async function onBeforeClose(done: () => void) {
     if (saving.value) return
+    if (!(await dirty.confirmDiscard())) return
     done()
   }
 
-  function close() {
+  async function close() {
     if (saving.value) return
+    if (!(await dirty.confirmDiscard())) return
     visible.value = false
   }
 
@@ -158,6 +169,7 @@
       await governanceApi.createCalendar(payload)
       ElMessage.success(t('jobConfigBasic.miniCalendarCreated', { code: form.calendarCode }))
       emit('created', form.calendarCode || '')
+      dirty.markPristine()
       visible.value = false
       form.calendarCode = ''
       form.calendarName = ''

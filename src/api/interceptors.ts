@@ -593,10 +593,23 @@ export function applyApiInterceptors(client: AxiosInstance): void {
           const msg = translateBizMessage(rawMsg) || rawMsg
           showApiErrorToast(msg || '用户名或密码错误')
         } else if (isSessionAuthRequest(cfg)) {
-          // /auth/me 401：session 真正失效 → 清登录 flag 跳登录
-          // (HttpOnly cookie 由后端 max-age=0 或服务端 token 已过期；前端只需清 UI flag)
+          // /auth/me 401:session 真正失效 → 清登录 flag 跳登录
+          // (HttpOnly cookie 由后端 max-age=0 或服务端 token 已过期;前端只需清 UI flag)
           localStorage.removeItem('batch-console-session')
-          window.location.href = '/login'
+          // 带上 redirect 参数,登录后 router.replace 回原页面,
+          // 否则用户深页面 session 过期 → 登录后被踢回首页 → 工作上下文全丢。
+          // Login.vue 已实现 `route.query.redirect` 跳转逻辑。
+          // 排除 /login 自身,避免循环;只带相对路径 + query,丢弃 hash 防 XSS。
+          const pathname =
+            typeof window.location.pathname === 'string' ? window.location.pathname : ''
+          const search = typeof window.location.search === 'string' ? window.location.search : ''
+          const here = pathname + search
+          const isOnLogin = pathname === '/login'
+          const target =
+            !here || isOnLogin || here === '/'
+              ? '/login'
+              : `/login?redirect=${encodeURIComponent(here)}`
+          window.location.href = target
         } else if (cfg && !cfg._refreshAttempted) {
           // 业务接口 401:先静默 refresh 一次,成功则 retry 原请求。
           // refresh 失败 ≠ session 一定过期(可能是后端 RBAC 不足、refresh 端点限流等);

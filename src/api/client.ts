@@ -9,9 +9,16 @@ export const apiClient = axios.create({
   baseURL,
   timeout: 30_000,
   // ADR-030 §D7：后端登录响应下发 HttpOnly cookie `batch_console_token`，浏览器自动随请求回带。
-  // 同源场景 axios 默认不带 cookie，必须显式 withCredentials=true。
-  // 兼容期 Authorization header 仍由 interceptor 注入（双轨），后续 PR 完成迁移后再删。
+  // 同源场景 axios 默认不带 cookie,必须显式 withCredentials=true。
+  // 兼容期 Authorization header 仍由 interceptor 注入(双轨),后续 PR 完成迁移后再删。
   withCredentials: true,
+  // CSRF 纵深防御:axios 默认会读 cookie `XSRF-TOKEN` 透传到 header `X-XSRF-TOKEN`。
+  // 显式声明避免被全局 defaults 覆盖。BE 侧若启用 Spring CookieCsrfTokenRepository
+  // (或等价方案)在初始 GET 时下发 non-HttpOnly `XSRF-TOKEN` cookie,后续 mutating
+  // 请求即可自动带上 token。BE 当前可能尚未配置,FE 先打底,无 cookie 时 axios
+  // 不会注 header,无破坏性。TODO(BE):#csrf 启用 CookieCsrfTokenRepository。
+  xsrfCookieName: 'XSRF-TOKEN',
+  xsrfHeaderName: 'X-XSRF-TOKEN',
   headers: { 'Content-Type': 'application/json' },
   // 重写默认 transformResponse：axios 默认 JSON.parse 会静默截断 > 2^53 的 Long。
   // 用 json-bigint 把超大数转成 string，保住精度；blob/stream/非 JSON 原样返回。

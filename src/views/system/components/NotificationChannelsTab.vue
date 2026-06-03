@@ -125,6 +125,8 @@
       "
       direction="rtl"
       size="640px"
+      :close-on-click-modal="false"
+      :before-close="onChannelFormClose"
     >
       <el-form
         ref="channelFormRef"
@@ -174,7 +176,7 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="channelFormVisible = false">
+        <el-button @click="closeChannelForm">
           {{ t('common.cancel') }}
         </el-button>
         <el-button type="primary" :loading="savingChannel" @click="saveChannel">
@@ -195,6 +197,8 @@
   import type { FormRules } from 'element-plus'
   import { Plus } from '@element-plus/icons-vue'
   import { useFormValidate, rules } from '@/composables/useFormValidate'
+  import { useDirtyForm } from '@/composables/useDirtyForm'
+  import { useFormFocus } from '@/composables/useFormFocus'
   import {
     listNotificationChannels,
     createNotificationChannel,
@@ -268,6 +272,12 @@
     })
   }
 
+  // 脏数据保护
+  const channelDirty = useDirtyForm(() => channelForm, {
+    enabled: () => channelFormVisible.value,
+  })
+  useFormFocus(channelFormRef, () => channelFormVisible.value)
+
   function openChannelCreate() {
     channelEditingCode.value = null
     channelForm.channelCode = ''
@@ -276,6 +286,7 @@
     channelForm.config = ''
     channelForm.enabled = true
     channelFormVisible.value = true
+    channelDirty.markPristine()
   }
 
   function openChannelEdit(row: Record<string, unknown>) {
@@ -286,6 +297,18 @@
     channelForm.config = String(row.config ?? '')
     channelForm.enabled = !!row.enabled
     channelFormVisible.value = true
+    channelDirty.markPristine()
+  }
+
+  async function closeChannelForm() {
+    if (!(await channelDirty.confirmDiscard())) return
+    channelFormVisible.value = false
+  }
+
+  async function onChannelFormClose(done: () => void) {
+    if (savingChannel.value) return
+    if (!(await channelDirty.confirmDiscard())) return
+    done()
   }
 
   async function saveChannel() {
@@ -299,6 +322,7 @@
         await createNotificationChannel(tenant.tenantId, body)
       }
       ElMessage.success(t('notificationCommon.savedToast'))
+      channelDirty.markPristine()
       channelFormVisible.value = false
       await loadChannels()
     } finally {

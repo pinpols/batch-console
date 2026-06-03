@@ -39,6 +39,17 @@ export function useFormValidate() {
       // 自动滚动到第一个 invalid field(EP form-item.scrollToField 内置)
       const firstField = pickFirstErrorField(errors)
       if (firstField) inst.scrollToField(firstField)
+      // 同时把焦点放到第一个 error 控件,避免用户还要鼠标找
+      try {
+        const root = (inst as unknown as { $el?: HTMLElement }).$el
+        const errItem = root?.querySelector<HTMLElement>('.el-form-item.is-error')
+        const focusable = errItem?.querySelector<HTMLElement>(
+          'input:not([type="hidden"]):not([disabled]):not([readonly]), textarea:not([disabled]):not([readonly]), .el-input__inner:not([disabled]):not([readonly])',
+        )
+        focusable?.focus()
+      } catch {
+        // focus 失败不影响校验结果
+      }
       return false
     }
   }
