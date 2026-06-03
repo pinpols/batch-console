@@ -9,6 +9,7 @@
     @selection-change="onSel"
     :error="loadError"
     :on-retry="load"
+    row-key="approvalNo"
   >
     <template #query>
       <ListPageQueryBar
@@ -63,7 +64,12 @@
       </el-button>
     </template>
 
-    <el-table-column type="selection" width="48" :selectable="selectableRow" />
+    <el-table-column
+      type="selection"
+      width="48"
+      :selectable="selectableRow"
+      :reserve-selection="true"
+    />
     <el-table-column prop="approvalNo" :label="t('approvals.colApprovalNo')" width="160">
       <template #default="{ row }">
         <CopyableText :text="row.approvalNo" />
@@ -168,7 +174,8 @@
   import { computed, ref, watch, reactive } from 'vue'
   import { useRoute } from 'vue-router'
   import { useI18n } from 'vue-i18n'
-  import { ElMessage, ElMessageBox } from 'element-plus'
+  import { ElMessage, ElMessageBox, ElNotification } from 'element-plus'
+  import { h } from 'vue'
 
   const { t, te } = useI18n({ useScope: 'global' })
 
@@ -359,6 +366,77 @@
     }
   }
 
+  /**
+   * 渲染批量结果:成功/失败计数走 BE 真实返回,失败列表用 ElNotification 持久通知。
+   * 不再用 selection.length 谎报全成功。
+   */
+  function reportBatchResult(
+    results: { approvalNo: string; success: boolean; message: string }[] | null | undefined,
+    fallbackTotal: number,
+    action: 'approve' | 'reject',
+  ) {
+    const list = Array.isArray(results) ? results : []
+    const okList = list.filter((r) => r.success)
+    const failList = list.filter((r) => !r.success)
+    const okN = okList.length
+    const failN = failList.length
+
+    // 防御:BE 没回数组时退化为旧语义(只能信任 length),但仍标记 unknown
+    if (list.length === 0) {
+      ElMessage.warning(
+        action === 'approve'
+          ? t('approvals.batchApprovedToastUnknown', { n: fallbackTotal })
+          : t('approvals.batchRejectedToastUnknown', { n: fallbackTotal }),
+      )
+      return
+    }
+
+    if (failN === 0) {
+      ElMessage.success(
+        action === 'approve'
+          ? t('approvals.batchApprovedToast', { n: okN })
+          : t('approvals.batchRejectedToast', { n: okN }),
+      )
+      return
+    }
+
+    // 部分失败 / 全部失败 → 持久通知 + 失败明细
+    const title =
+      action === 'approve'
+        ? t('approvals.batchApprovePartialTitle')
+        : t('approvals.batchRejectPartialTitle')
+    const summary =
+      action === 'approve'
+        ? t('approvals.batchApprovePartialSummary', { ok: okN, fail: failN })
+        : t('approvals.batchRejectPartialSummary', { ok: okN, fail: failN })
+    ElNotification({
+      title,
+      type: okN === 0 ? 'error' : 'warning',
+      duration: 0,
+      message: h('div', null, [
+        h('div', { style: 'margin-bottom:8px' }, summary),
+        h(
+          'ul',
+          { style: 'margin:0;padding-left:18px;max-height:200px;overflow:auto' },
+          failList.slice(0, 50).map((r) =>
+            h('li', { style: 'font-size:12px;line-height:1.6' }, [
+              h('code', null, r.approvalNo),
+              ' — ',
+              r.message || t('approvals.batchUnknownFailReason'),
+            ]),
+          ),
+        ),
+        failList.length > 50
+          ? h(
+              'div',
+              { style: 'font-size:12px;color:var(--el-text-color-secondary);margin-top:4px' },
+              t('approvals.batchMoreFailures', { n: failList.length - 50 }),
+            )
+          : null,
+      ]),
+    })
+  }
+
   async function runBatchApprove() {
     const nos = selection.value.map((r) => r.approvalNo)
     try {
@@ -371,18 +449,23 @@
           cancelButtonText: t('common.cancel'),
         },
       )
-      await batchApprove({ tenantId: tenant.tenantId, approvalNos: nos })
-      ElMessage.success(t('approvals.batchApprovedToast', { n: nos.length }))
-      await load()
     } catch {
-      /* cancel */
+      return
+    }
+    try {
+      const results = await batchApprove({ tenantId: tenant.tenantId, approvalNos: nos })
+      reportBatchResult(results, nos.length, 'approve')
+      await load()
+    } catch (err) {
+      ElMessage.error(err instanceof Error ? err.message : String(err))
     }
   }
 
   async function runBatchReject() {
     const nos = selection.value.map((r) => r.approvalNo)
+    let reason: string | undefined
     try {
-      const { value: reason } = await ElMessageBox.prompt(
+      const r = await ElMessageBox.prompt(
         t('approvals.batchRejectPrompt'),
         t('approvals.batchRejectTitle', { n: nos.length }),
         {
@@ -390,15 +473,20 @@
           cancelButtonText: t('common.cancel'),
         },
       )
-      await batchReject({
+      reason = r.value || undefined
+    } catch {
+      return
+    }
+    try {
+      const results = await batchReject({
         tenantId: tenant.tenantId,
         approvalNos: nos,
-        reason: reason || undefined,
+        reason,
       })
-      ElMessage.success(t('approvals.batchRejectedToast', { n: nos.length }))
+      reportBatchResult(results, nos.length, 'reject')
       await load()
-    } catch {
-      /* cancel */
+    } catch (err) {
+      ElMessage.error(err instanceof Error ? err.message : String(err))
     }
   }
 

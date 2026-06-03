@@ -433,11 +433,16 @@
 
   async function doApprove() {
     if (!currentSession.value) return
-    await ElMessageBox.confirm(
-      t('batchDayReplay.approveConfirmHint'),
-      t('batchDayReplay.approveBtn'),
-      { type: 'warning' },
-    ).catch(() => null)
+    try {
+      await ElMessageBox.confirm(
+        t('batchDayReplay.approveConfirmHint'),
+        t('batchDayReplay.approveBtn'),
+        { type: 'warning' },
+      )
+    } catch {
+      // 用户点取消 → early return,不执行高危 ops
+      return
+    }
     approving.value = true
     try {
       const fresh = await batchDayReplayApi.approve(
@@ -458,13 +463,18 @@
 
   async function doCancel() {
     if (!currentSession.value) return
-    await ElMessageBox.confirm(
-      t('batchDayReplay.cancelConfirmHint'),
-      t('batchDayReplay.cancelBtn'),
-      {
-        type: 'warning',
-      },
-    ).catch(() => null)
+    try {
+      await ElMessageBox.confirm(
+        t('batchDayReplay.cancelConfirmHint'),
+        t('batchDayReplay.cancelBtn'),
+        {
+          type: 'warning',
+        },
+      )
+    } catch {
+      // 用户点取消 → early return,不执行高危 ops
+      return
+    }
     cancelling.value = true
     try {
       const fresh = await batchDayReplayApi.cancel(currentSession.value.id, tenant.tenantId)

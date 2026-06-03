@@ -340,6 +340,7 @@
     return te(key) ? t(key) : value
   }
   import { confirmDanger } from '@/composables/useDangerConfirm'
+  import { usePermission } from '@/composables/usePermission'
   import { workflowApi, type DagValidationResult } from '@/api/workflow'
   import { instanceApi } from '@/api/instance'
   import { fmtDatetime } from '@/utils/datetime'
@@ -367,6 +368,8 @@
 
   const router = useRouter()
   const tenant = useTenantStore()
+  // VIEWER 角色 toggle/archive 都属于破坏性,行内按钮需要灰显 + tooltip,而不是点了才弹 403
+  const { canMutateConfig } = usePermission()
 
   const loading = ref(false)
   const loadError = ref<unknown>(null)
@@ -516,10 +519,13 @@
       },
       {
         key: 'toggle',
+        // VIEWER 角色看不写权限时,行内按钮通过 disabled 灰显(RowActions 已有 disabled 渲染样式),
+        // label 后缀 *(无权限)* 让用户秒懂(避免 tooltip 在 dropdown 项里实现复杂)。
         label: row.enabled
           ? t('workflowDefinitionList.actionDisable')
           : t('workflowDefinitionList.actionEnable'),
         loading: actingIds.value.has(row.id),
+        disabled: !canMutateConfig.value,
         onClick: () => toggleRow(row),
       },
       {
@@ -527,7 +533,8 @@
         label: t('workflowDefinitionList.actionArchive'),
         danger: true,
         divided: true,
-        disabled: !row.enabled, // 已禁用的不再让点
+        // 已禁用的不再让点 + VIEWER 无写权限
+        disabled: !row.enabled || !canMutateConfig.value,
         loading: actingIds.value.has(row.id),
         onClick: () => removeRow(row),
       },
