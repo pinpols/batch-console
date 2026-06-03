@@ -389,7 +389,7 @@
     position: fixed;
     inset: 0;
     background: rgb(0 0 0 / 35%);
-    z-index: 200;
+    z-index: var(--z-overlay-decoration);
     display: flex;
     align-items: flex-end;
     animation: m-sheet-mask-in 0.18s ease;

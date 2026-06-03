@@ -45,37 +45,34 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, onMounted, onUnmounted } from 'vue'
+  import { computed, watch } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import { useAppStore } from '@/stores/app'
   import { usePermissionStore } from '@/stores/permission'
   import type { NavigationGroup, NavigationItem } from '@/constants/navigation'
   import { pathToKey } from '@/constants/pathKey'
-  import { BP } from '@/constants/breakpoints'
+  import { useResponsive } from '@/composables/useResponsive'
 
   const app = useAppStore()
 
-  // ≤1280 自动 collapse 侧栏腾内容区,>=1281 还原用户偏好。用户在 ≤1280 区间手动展开后
-  // 这里不再强制 collapse,避免 fighting;窗口 resize 跨阈值才触发一次。
-  let lastNarrow: boolean | null = null
-  function syncSidebarToViewport() {
-    const narrow = window.innerWidth <= BP.lg
-    if (lastNarrow === null) {
-      lastNarrow = narrow
-      if (narrow) app.setSidebarCollapsed(true)
-      return
-    }
-    if (narrow !== lastNarrow) {
-      lastNarrow = narrow
-      app.setSidebarCollapsed(narrow)
-    }
-  }
-  onMounted(() => {
-    syncSidebarToViewport()
-    window.addEventListener('resize', syncSidebarToViewport)
-  })
-  onUnmounted(() => window.removeEventListener('resize', syncSidebarToViewport))
+  // ≤1280 (isMobile || isTablet) 自动 collapse 侧栏腾内容区,>=1281 还原用户偏好。
+  // 用户在 ≤1280 区间手动展开后这里不再强制 collapse(用 watch 跨阈值才触发),避免 fighting。
+  // 改造记录(2026-06-03):从 window.innerWidth + resize 监听迁到 useResponsive
+  // (matchMedia)以避免 cleanup 漏装 / SSR 警告。
+  const { isMobile, isTablet } = useResponsive()
+  const isNarrow = computed(() => isMobile.value || isTablet.value)
+  watch(
+    isNarrow,
+    (narrow, prev) => {
+      if (prev === undefined) {
+        if (narrow) app.setSidebarCollapsed(true)
+        return
+      }
+      if (narrow !== prev) app.setSidebarCollapsed(narrow)
+    },
+    { immediate: true },
+  )
   const permission = usePermissionStore()
   const route = useRoute()
   const router = useRouter()

@@ -1021,6 +1021,7 @@
   .dag-split--fullscreen {
     background: var(--el-bg-color);
     min-height: 100vh;
+    min-height: 100dvh;
   }
   .dag-split__graph {
     flex: 1 1 auto;

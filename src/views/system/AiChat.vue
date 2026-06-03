@@ -362,6 +362,7 @@
     gap: 12px;
     margin-bottom: 16px;
     max-height: min(520px, calc(100vh - 420px));
+    max-height: min(520px, calc(100dvh - 420px));
     overflow: auto;
     padding: 14px;
     border-radius: var(--radius-content);

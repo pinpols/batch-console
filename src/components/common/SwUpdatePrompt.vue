@@ -84,7 +84,7 @@
     box-shadow: 0 8px 24px rgb(15 23 42 / 12%);
     border: 1px solid var(--color-border-light);
     max-width: calc(100vw - 32px);
-    z-index: 2200;
+    z-index: var(--z-sw-update);
   }
 
   .sw-prompt__icon {
