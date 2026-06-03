@@ -417,6 +417,33 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/console/ops/atomic-runtime-status': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Atomic worker runtime defense status (Round-3
+     * @description Operator-facing dashboard for ADR-029 atomic worker's 4 executors
+     *     (shell/sql/http/storedProc): exposes enabled flag + safety-gate
+     *     snapshot (allowlist sizes, SQL dialect, effective enforce-allowlist
+     *     + its source: explicit/prod-default/dev-default). Console reverse-
+     *     proxies the atomic worker's `/actuator/atomicruntime` Actuator
+     *     endpoint. Returns `available=false` when reverse channel is disabled
+     *     or atomic worker is unreachable (UI shows degraded banner).
+     *
+     */
+    get: operations['getAtomicRuntimeStatus']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/console/ops/kafka-lag': {
     parameters: {
       query?: never
@@ -1669,6 +1696,24 @@ export interface paths {
     get: operations['getAtomicTaskTypeSchema']
     put?: never
     post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/ops/atomic-task-configs': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** List saved atomic task configs by tenant + taskType (R3-5 / Round-1 TOP-8) */
+    get: operations['listAtomicTaskConfigs']
+    put?: never
+    /** Create a saved atomic task config (schema-validated, sensitive keys rejected) */
+    post: operations['createAtomicTaskConfig']
     delete?: never
     options?: never
     head?: never
@@ -8385,6 +8430,26 @@ export interface operations {
       }
     }
   }
+  getAtomicRuntimeStatus: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Atomic runtime status snapshot */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseObject']
+        }
+      }
+    }
+  }
   getKafkaConsumerLag: {
     parameters: {
       query?: {
@@ -10436,6 +10501,79 @@ export interface operations {
             }[]
           }
         }
+      }
+    }
+  }
+  listAtomicTaskConfigs: {
+    parameters: {
+      query: {
+        taskType: string
+        tenantId?: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Saved atomic task configs, created_at desc */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            code?: string
+            message?: string
+            data?: {
+              [key: string]: unknown
+            }[]
+          }
+        }
+      }
+    }
+  }
+  createAtomicTaskConfig: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': {
+          tenantId?: string
+          taskType: string
+          name: string
+          parameters: {
+            [key: string]: unknown
+          }
+        }
+      }
+    }
+    responses: {
+      /** @description Persisted atomic task config */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            code?: string
+            message?: string
+            data?: {
+              [key: string]: unknown
+            }
+          }
+        }
+      }
+      /** @description Validation failure (unknown taskType / unknown key / missing required / sensitive credential key) */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
       }
     }
   }
