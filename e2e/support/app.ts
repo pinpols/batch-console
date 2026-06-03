@@ -104,11 +104,23 @@ export async function expectPageTitle(page: Page, title: string | RegExp) {
   // 部分页面(如 WorkflowDesigner 画布)没有 .page-header,直接放行
   const exists = await heading.count()
   if (exists === 0) return
-  if (title instanceof RegExp) {
+  // 路由守卫 redirect 兜底:若实际渲染的是默认页(控制面板),直接给清晰错误,
+  // 避免下游 button-not-visible / dialog-timeout 等误导性失败掩盖根因。
+  try {
     await expect(heading).toHaveText(title, { timeout: 10_000 })
-    return
+  } catch (e) {
+    const actual = (await heading.textContent({ timeout: 500 }).catch(() => null)) ?? ''
+    const expected = title instanceof RegExp ? title.source : title
+    if (actual.includes('控制面板') && !expected.includes('控制面板')) {
+      throw new Error(
+        `expectPageTitle: 期望 "${expected}",实际 "${actual}" — 页面被 router guard redirect 到控制面板,` +
+          '通常意味着当前角色对该路由无权限 / tenant seed 不全。' +
+          '不要在 e2e 层 mask:等 BE seed/ReservedPrefixGuard 决策落地后再开。' +
+          `\nURL: ${page.url()}`,
+      )
+    }
+    throw e
   }
-  await expect(heading).toHaveText(title, { timeout: 10_000 })
 }
 
 function escapeForRegex(value: string) {
