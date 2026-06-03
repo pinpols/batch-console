@@ -17,7 +17,7 @@
 
 ```bash
 cd ../file-batch-system
-git apply ../batch-console/docs/runbook/qa-d-phase-reports/be-patches/01-exception-handler-multipart-+-template-ref-dto.patch
+git apply ../batch-console/docs/qa/d-tier/be-patches/01-exception-handler-multipart-+-template-ref-dto.patch
 # 编译 + 启动 console
 mvn -pl batch-console-api -am clean install -DskipTests
 # 用现有方式重启 console (port 18080)
