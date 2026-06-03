@@ -1,6 +1,6 @@
 import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElNotification } from 'element-plus'
 import { getOpsSummary } from '@/api/ops'
 import { useTenantStore } from '@/stores/tenant'
 import { useTenantReload } from '@/composables/useTenantReload'
@@ -59,6 +59,9 @@ export function useOpsSummary() {
   const extraLoading = ref(false)
   const slaReport = ref<unknown>(null)
   const tenantUsage = ref<unknown>(null)
+  // 错误态:dashboard 接口失败时上抛,UI 区块据此渲染重试态而不是悄悄渲染 0(误导 oncall)
+  const slaReportError = ref<unknown>(null)
+  const tenantUsageError = ref<unknown>(null)
 
   // ---- actions ----
 
@@ -239,14 +242,36 @@ export function useOpsSummary() {
     extraLoading.value = true
     // SLA 达标率 gauge 依赖 dashboard bundle,与 SLA 报告 / 租户用量 一起刷,
     // 避免「点了 extra 刷新但 gauge 不动」的不一致体验
+    // 注:dashboard 子接口的错误必须保留(以前用 .catch(()=>null) 静默吞,会让 OpsSummary 渲染全 0,
+    //     oncall 工程师误判为"昨晚没事"),改为捕获到 *Error ref 让 UI 显式展示加载失败态。
+    slaReportError.value = null
+    tenantUsageError.value = null
     try {
-      const [sla, usage] = await Promise.all([
-        getDashboardSlaReport(tenant.tenantId).catch(() => null),
-        getDashboardTenantUsage(tenant.tenantId).catch(() => null),
-        loadCharts().catch(() => undefined),
+      const [slaResult, usageResult] = await Promise.allSettled([
+        getDashboardSlaReport(tenant.tenantId),
+        getDashboardTenantUsage(tenant.tenantId),
       ])
-      slaReport.value = sla
-      tenantUsage.value = usage
+      // 图表刷新失败 loadCharts 内部已有 ElMessage.error + emptyOption('加载失败') 兜底,这里 fire-and-forget
+      void loadCharts()
+      if (slaResult.status === 'fulfilled') {
+        slaReport.value = slaResult.value
+      } else {
+        slaReport.value = null
+        slaReportError.value = slaResult.reason
+      }
+      if (usageResult.status === 'fulfilled') {
+        tenantUsage.value = usageResult.value
+      } else {
+        tenantUsage.value = null
+        tenantUsageError.value = usageResult.reason
+      }
+      if (slaReportError.value || tenantUsageError.value) {
+        ElNotification.error({
+          title: 'Dashboard 数据加载失败',
+          message: '部分扩展面板数据获取失败,展示为占位。点击重试可重新加载。',
+          duration: 6000,
+        })
+      }
     } finally {
       extraLoading.value = false
     }
@@ -293,6 +318,8 @@ export function useOpsSummary() {
     extraLoading,
     slaReport,
     tenantUsage,
+    slaReportError,
+    tenantUsageError,
     // actions
     load,
     loadCharts,
