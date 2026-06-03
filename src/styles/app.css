@@ -1,9 +1,13 @@
 @import './tokens.css';
+@import './tokens/z-index.css';
 @import './reset.css';
 @import './element-override.css';
 
 #app {
+  /* 100vh 在 iOS Safari 含工具条会算成超出视口,改 dvh 自动减去动态 UI;
+     旧浏览器 fallback 走 vh */
   min-height: 100vh;
+  min-height: 100dvh;
 }
 
 /**

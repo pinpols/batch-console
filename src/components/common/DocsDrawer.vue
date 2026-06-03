@@ -85,6 +85,7 @@
   .docs-drawer__iframe {
     width: 100%;
     height: calc(100vh - 80px);
+    height: calc(100dvh - 80px);
     border: none;
   }
 </style>

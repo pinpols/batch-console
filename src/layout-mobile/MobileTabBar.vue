@@ -133,7 +133,7 @@
       inset 0 6px 12px rgb(255 255 255 / 20%),
       0 -2px 12px rgb(0 0 0 / 6%);
     padding-bottom: env(safe-area-inset-bottom, 0);
-    z-index: 100;
+    z-index: var(--z-tab-bar);
     position: fixed; /* override 安全 */
   }
 

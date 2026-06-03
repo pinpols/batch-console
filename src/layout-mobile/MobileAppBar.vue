@@ -171,7 +171,7 @@
     box-shadow:
       inset 0 -0.5px 0 rgb(255 255 255 / 60%),
       inset 0 -8px 12px rgb(255 255 255 / 18%);
-    z-index: 50;
+    z-index: var(--z-app-bar);
   }
 
   /* rim light:左右两端淡彩色辉光,对称 tabbar */
