@@ -464,18 +464,18 @@
       :close-on-click-modal="false"
     >
       <el-form label-width="100px">
-        <el-form-item label="目标租户">
+        <el-form-item :label="t('jobDefinitionList.bundleImportTargetLabel')">
           <el-select
             v-model="bundleImportTargets"
             multiple
             filterable
             allow-create
             default-first-option
-            placeholder="选中或输入 tenantId（最多 50 个）"
+            :placeholder="t('jobDefinitionList.bundleImportTargetPlaceholder')"
             style="width: 100%"
           />
         </el-form-item>
-        <el-form-item label="模式">
+        <el-form-item :label="t('jobDefinitionList.bundleImportModeLabel')">
           <el-radio-group v-model="bundleImportMode">
             <el-radio value="UPSERT">UPSERT（覆盖已有）</el-radio>
             <el-radio value="SKIP_EXISTING">SKIP_EXISTING（跳过已有）</el-radio>
@@ -494,7 +494,7 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="bundleImportVisible = false">取消</el-button>
+        <el-button @click="bundleImportVisible = false">{{ t('common.cancel') }}</el-button>
         <el-button type="primary" :loading="bundleImportSaving" @click="submitBundleImport">
           {{ bundleImportDryRun ? '校验' : '导入' }}
         </el-button>

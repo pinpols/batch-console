@@ -32,7 +32,7 @@
     </div>
     <div v-if="similar.length > 0" class="cnb-similar">
       {{ t('codeNameBuilder.bizHint') }}
-      <span>· 已有: {{ similar.slice(0, 3).join(' / ') }}</span>
+      <span>{{ t('codeNameBuilder.existingPrefix', { list: similar.slice(0, 3).join(' / ') }) }}</span>
     </div>
     <div v-else class="cnb-hint">{{ t('codeNameBuilder.bizHint') }}</div>
   </div>

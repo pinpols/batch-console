@@ -43,7 +43,7 @@
       </el-form-item>
 
       <!-- 开始/结束时间合并到一行,节省纵向空间 -->
-      <el-form-item label="时段">
+      <el-form-item :label="t('jobConfigBasic.miniWindowTimeRangeLabel')">
         <div class="time-range">
           <el-form-item prop="startTime" class="time-range__item">
             <el-time-picker
@@ -68,7 +68,7 @@
       </el-form-item>
 
       <!-- 跨天 + 启用合并一行,密度提升 -->
-      <el-form-item label="选项">
+      <el-form-item :label="t('jobConfigBasic.miniWindowOptionsLabel')">
         <div class="switch-row">
           <label class="switch-row__item">
             <el-switch v-model="form.allowCrossDay" />
