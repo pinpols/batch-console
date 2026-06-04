@@ -9,8 +9,10 @@ withDefaults(
   defineProps<{
     saving?: boolean
     canSave?: boolean
+    /** dagre 布局方向(Polish 阶段:可在 TB/LR 切换);默认 TB 维持向后兼容 */
+    layoutDirection?: 'TB' | 'LR'
   }>(),
-  { saving: false, canSave: true },
+  { saving: false, canSave: true, layoutDirection: 'TB' },
 )
 
 defineEmits<{
@@ -18,6 +20,9 @@ defineEmits<{
   (e: 'validate'): void
   (e: 'save'): void
   (e: 'exportMermaid'): void
+  (e: 'openQuickPalette'): void
+  (e: 'openTemplateLibrary'): void
+  (e: 'toggleLayoutDirection'): void
 }>()
 </script>
 
@@ -33,6 +38,15 @@ defineEmits<{
     </el-button-group>
     <el-button @click="$emit('autoLayout')">
       {{ t('workflowDesignerSpike.actionAutoLayout') }}
+    </el-button>
+    <el-button @click="$emit('toggleLayoutDirection')">
+      {{ t('workflowDesignerPolish.actionLayoutDirection', { dir: layoutDirection }) }}
+    </el-button>
+    <el-button @click="$emit('openQuickPalette')">
+      {{ t('workflowDesignerPolish.actionQuickPalette') }}
+    </el-button>
+    <el-button @click="$emit('openTemplateLibrary')">
+      {{ t('workflowDesignerPolish.actionTemplates') }}
     </el-button>
     <el-button @click="$emit('validate')">
       {{ t('workflowDesignerMvp.actionValidate') }}

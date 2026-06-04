@@ -20,7 +20,7 @@
  * - onUnmounted → useLockManager 内置 release + beforeunload sendBeacon 兜底
  */
 
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, onBeforeUnmount, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -37,6 +37,8 @@ import DagCanvas from './canvas/DagCanvas.vue'
 import DesignerToolbar from './toolbar/DesignerToolbar.vue'
 import NodePalette from './toolbar/NodePalette.vue'
 import NodeInspector from './inspector/NodeInspector.vue'
+import QuickPalette from './palette/QuickPalette.vue'
+import TemplateLibrary from './templates/TemplateLibrary.vue'
 
 const route = useRoute()
 const { t } = useI18n()
@@ -64,6 +66,23 @@ const readonlyBanner = computed(() => {
   const lock = store.lock
   return lock && !lock.isMine && lock.lockedBy ? lock : null
 })
+
+// Polish 阶段:Ctrl+K 节点 palette / 模板库 / dagre 布局方向开关
+const quickPaletteVisible = ref(false)
+const templateLibraryVisible = ref(false)
+const layoutDirection = ref<'TB' | 'LR'>('TB')
+const canvasCenter = ref<{ x: number; y: number }>({ x: 320, y: 200 })
+
+function openQuickPalette() {
+  quickPaletteVisible.value = true
+}
+function openTemplateLibrary() {
+  templateLibraryVisible.value = true
+}
+function toggleLayoutDirection() {
+  layoutDirection.value = layoutDirection.value === 'TB' ? 'LR' : 'TB'
+  canvasRef.value?.autoLayout(layoutDirection.value)
+}
 
 onMounted(async () => {
   store.reset({ nodes: [], edges: [] })
@@ -133,8 +152,78 @@ onMounted(async () => {
 
 // useLockManager 内部已在 onBeforeUnmount 兜底 release + beforeunload sendBeacon
 
+onMounted(() => {
+  window.addEventListener('keydown', onGlobalKeyDown)
+})
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', onGlobalKeyDown)
+})
+
 function onAutoLayout() {
-  canvasRef.value?.autoLayout()
+  canvasRef.value?.autoLayout(layoutDirection.value)
+}
+
+/**
+ * 全局键盘快捷键(Polish 阶段)。
+ * - Ctrl+K / Cmd+K → 打开 QuickPalette(拦截浏览器默认 chrome search)
+ * - Ctrl+S / Cmd+S → 触发保存(prevent 浏览器原生保存对话框)
+ * - Ctrl+A / Cmd+A → 全选所有节点(画布上下文)
+ * - Ctrl+D / Cmd+D → 复制选中节点(右下偏移 40px)
+ *
+ * 注:Ctrl+Z/Y 由 DagCanvas 内部处理(画布编辑上下文),保持兼容。
+ */
+function onGlobalKeyDown(ev: KeyboardEvent) {
+  const meta = ev.ctrlKey || ev.metaKey
+  if (!meta) return
+  const key = ev.key.toLowerCase()
+  const tag = (ev.target as HTMLElement | null)?.tagName ?? ''
+  const inInput = tag === 'INPUT' || tag === 'TEXTAREA'
+  if (key === 'k') {
+    ev.preventDefault()
+    openQuickPalette()
+    return
+  }
+  if (key === 's') {
+    ev.preventDefault()
+    void onSave()
+    return
+  }
+  if (key === 'a' && !inInput) {
+    ev.preventDefault()
+    store.setSelection(store.nodes.map((n) => n.id))
+    return
+  }
+  if (key === 'd' && !inInput) {
+    ev.preventDefault()
+    duplicateSelection()
+  }
+}
+
+/**
+ * 复制选中节点 — 粘贴到右下偏移 40px。
+ * 复制不带边(避免歧义引用),nodeCode 自动生成新后缀。
+ */
+function duplicateSelection() {
+  if (store.lock !== null && !store.editable) return
+  const ids = Array.from(store.selectedIds)
+  if (ids.length === 0) return
+  const newIds: string[] = []
+  const suffixBase = String(Date.now()).slice(-4)
+  for (const id of ids) {
+    const n = store.nodes.find((nn) => nn.id === id)
+    if (!n) continue
+    const newCode = `${n.nodeCode}_dup_${suffixBase}`
+    store.addNode({
+      nodeCode: newCode,
+      nodeName: n.nodeName,
+      nodeType: n.nodeType,
+      x: n.x + 40,
+      y: n.y + 40,
+      attrs: { ...(n.attrs ?? {}) },
+    })
+    newIds.push(newCode)
+  }
+  if (newIds.length > 0) store.setSelection(newIds)
 }
 
 function runValidation(): boolean {
@@ -242,10 +331,14 @@ function onExportMermaid() {
     <DesignerToolbar
       :saving="saving"
       :can-save="store.editable"
+      :layout-direction="layoutDirection"
       @auto-layout="onAutoLayout"
       @validate="onValidate"
       @save="onSave"
       @export-mermaid="onExportMermaid"
+      @open-quick-palette="openQuickPalette"
+      @open-template-library="openTemplateLibrary"
+      @toggle-layout-direction="toggleLayoutDirection"
     />
     <div
       v-if="readonlyBanner"
@@ -283,6 +376,13 @@ function onExportMermaid() {
         </li>
       </ul>
     </el-drawer>
+
+    <QuickPalette
+      v-model:visible="quickPaletteVisible"
+      :center-x="canvasCenter.x"
+      :center-y="canvasCenter.y"
+    />
+    <TemplateLibrary v-model:visible="templateLibraryVisible" />
 
     <el-dialog
       v-model="mermaidDialogVisible"
