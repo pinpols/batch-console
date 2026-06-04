@@ -11,9 +11,12 @@
   --content-max-width: 1600px;
 
   --color-primary: #1677ff;
-  --color-success: #52c41a;
-  --color-warning: #faad14;
-  --color-danger: #ff4d4f;
+  /* 语义色柔和化(2026-06-04):success/warning/danger 从 Ant 高饱和默认降一档,
+     减少仪表盘指标卡 / StatusTag 的"刺眼"感,保持语义可辨 + 强调用对比度(非正文,
+     accent/large 用途)。primary 因被大量 rgb(22 119 255) 字面量复用暂不动。 */
+  --color-success: #54a772;
+  --color-warning: #e6a23c;
+  --color-danger: #ef6a6c;
   --color-info: #1677ff;
 
   /**
@@ -224,7 +227,7 @@
 
   --login-page-bg:
     radial-gradient(circle at top left, rgb(22 119 255 / 12%), transparent 36%),
-    radial-gradient(circle at bottom right, rgb(82 196 26 / 10%), transparent 28%),
+    radial-gradient(circle at bottom right, rgb(84 167 114 / 12%), transparent 28%),
     linear-gradient(180deg, #f8fbff 0%, #f5f7fa 100%);
 
   --table-header-bg: #f1f4f8;
@@ -326,7 +329,7 @@ html.dark {
 
   --login-page-bg:
     radial-gradient(circle at top left, rgb(22 119 255 / 16%), transparent 38%),
-    radial-gradient(circle at bottom right, rgb(82 196 26 / 6%), transparent 30%),
+    radial-gradient(circle at bottom right, rgb(84 167 114 / 8%), transparent 30%),
     linear-gradient(180deg, #121820 0%, #0f1419 100%);
 
   --table-header-bg: #1c222c;
