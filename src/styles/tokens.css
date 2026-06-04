@@ -22,25 +22,26 @@
   /**
    * Pipeline stage 调色板 — 17 个 stage 各自语义化色,用于 PipelineDefinitionList 中
    * 步骤 icon / 时间轴 节点配色,**仅业务图标用**,不是 UI 主题色。
-   * 沿用 Tailwind 500 区间,保持饱和度一致,色相按 stage 顺序均匀分布。
+   * 柔和化(2026-06-04):原 Tailwind-500 饱和度偏高,17 色并排成"彩虹"略刺眼;
+   * 整体降饱和约 25%、微提亮,色相保持原序与可辨识度,仅作 pipeline 图标用。
    */
-  --color-stage-receive: #3b82f6;    /* blue-500 */
-  --color-stage-preprocess: #8b5cf6; /* violet-500 */
-  --color-stage-parse: #06b6d4;      /* cyan-500 */
-  --color-stage-validate: #10b981;   /* emerald-500 */
-  --color-stage-load: #f59e0b;       /* amber-500 */
-  --color-stage-feedback: #ec4899;   /* pink-500 */
-  --color-stage-prepare: #6366f1;    /* indigo-500 */
-  --color-stage-compute: #0ea5e9;    /* sky-500 */
-  --color-stage-generate: #14b8a6;   /* teal-500 */
-  --color-stage-store: #a855f7;      /* purple-500 */
-  --color-stage-register: #f43f5e;   /* rose-500 */
-  --color-stage-commit: #22c55e;     /* green-500 */
-  --color-stage-complete: #16a34a;   /* green-600 */
-  --color-stage-dispatch: #3b82f6;   /* blue-500(同 RECEIVE,语义同为「发送/接收」) */
-  --color-stage-ack: #f59e0b;        /* amber-500(同 LOAD,等待类) */
-  --color-stage-retry: #fb923c;      /* orange-400 */
-  --color-stage-compensate: #ef4444; /* red-500 */
+  --color-stage-receive: #6699e6;    /* blue 柔和 */
+  --color-stage-preprocess: #9d86e0; /* violet 柔和 */
+  --color-stage-parse: #4fb3c9;      /* cyan 柔和 */
+  --color-stage-validate: #4fb38c;   /* emerald 柔和 */
+  --color-stage-load: #e0a648;       /* amber 柔和 */
+  --color-stage-feedback: #db82ab;   /* pink 柔和 */
+  --color-stage-prepare: #8487df;    /* indigo 柔和 */
+  --color-stage-compute: #54a6d6;    /* sky 柔和 */
+  --color-stage-generate: #54b0a4;   /* teal 柔和 */
+  --color-stage-store: #b083e0;      /* purple 柔和 */
+  --color-stage-register: #e07d8d;   /* rose 柔和 */
+  --color-stage-commit: #63b885;     /* green 柔和 */
+  --color-stage-complete: #56a878;   /* green-deep 柔和 */
+  --color-stage-dispatch: #6699e6;   /* 同 RECEIVE */
+  --color-stage-ack: #e0a648;        /* 同 LOAD */
+  --color-stage-retry: #e8a86e;      /* orange 柔和 */
+  --color-stage-compensate: #e07476; /* red 柔和(与 danger 同调) */
 
   /** Button color system: 统一在 Tailwind 500/600 区间(行业基线 GitHub/Vercel/Linear)。
    *  Light mode 调整(2026-05-14):
