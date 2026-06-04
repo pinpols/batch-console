@@ -523,6 +523,20 @@
         label: t('workflowDefinitionList.actionOpenInDesigner'),
         onClick: () => openInDesigner(row),
       },
+      // Polish 阶段:行版本 ≥ 2 才显示"版本对比"入口(BE 暂无 versions 端点,
+      // 故仅展示当前版本 vs 空,后续 BE 加端点后可直接接入)
+      ...(row.version >= 2
+        ? [
+            {
+              key: 'version-diff',
+              label: t('workflowDesignerPolish.diffViewerTitle'),
+              onClick: () =>
+                router.push({
+                  path: `/workflow/designer/${row.id}/diff/${row.version - 1}/${row.version}`,
+                }),
+            } as RowAction,
+          ]
+        : []),
       {
         key: 'validate',
         label: t('workflowDefinitionList.actionValidate'),
