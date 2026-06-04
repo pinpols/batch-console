@@ -5,8 +5,17 @@ import { useDesignerStore } from '../store/useDesignerStore'
 const { t } = useI18n()
 const store = useDesignerStore()
 
+withDefaults(
+  defineProps<{
+    saving?: boolean
+    canSave?: boolean
+  }>(),
+  { saving: false, canSave: true },
+)
+
 defineEmits<{
   (e: 'autoLayout'): void
+  (e: 'validate'): void
   (e: 'save'): void
   (e: 'exportMermaid'): void
 }>()
@@ -25,7 +34,10 @@ defineEmits<{
     <el-button @click="$emit('autoLayout')">
       {{ t('workflowDesignerSpike.actionAutoLayout') }}
     </el-button>
-    <el-button type="primary" @click="$emit('save')">
+    <el-button @click="$emit('validate')">
+      {{ t('workflowDesignerMvp.actionValidate') }}
+    </el-button>
+    <el-button type="primary" :loading="saving" :disabled="!canSave" @click="$emit('save')">
       {{ t('workflowDesignerSpike.actionSave') }}
     </el-button>
     <el-button @click="$emit('exportMermaid')">

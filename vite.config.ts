@@ -20,6 +20,15 @@ export default defineConfig(({ mode }) => {
     globals: true,
     environment: 'node',
     include: ['src/**/*.{test,spec}.ts'],
+    // element-plus 子组件 SFC 编译时通过 unplugin-vue-components 注入
+    // `import 'element-plus/es/components/X/style/css'` 副作用,该模块再 import 真 .css。
+    // 单测无需样式,把所有命中的 css 模块在 vitest 端 transform 为空,避免 Node ESM
+    // loader 报 "Unknown file extension .css"。
+    server: {
+      deps: {
+        inline: [/element-plus/],
+      },
+    },
     coverage: {
       provider: 'v8',
       include: ['src/api/**', 'src/utils/**'],
