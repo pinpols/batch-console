@@ -384,7 +384,12 @@
               >
                 <template #title>{{ t('tenantPackageImportWizard.applySucceededTitle') }}</template>
                 <template #default>
+                  <!-- 全 0(源为空或已是最新):空表会被误读为"渲染坏了",改显明确提示 -->
+                  <div v-if="applyBreakdownRows.length === 0" class="apply-no-change">
+                    {{ t('tenantPackageImportWizard.applyNoChanges') }}
+                  </div>
                   <el-table
+                    v-else
                     class="apply-result-table"
                     :data="applyBreakdownRows"
                     size="small"
