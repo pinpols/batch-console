@@ -153,7 +153,7 @@ export function buildGaugeOption(params: {
   color?: string
 }) {
   const v = Math.max(0, Math.min(params.value, params.max ?? 100))
-  const color = params.color ?? '#52c41a'
+  const color = params.color ?? '#54a772'
   return {
     backgroundColor: 'transparent',
     series: [
@@ -163,19 +163,23 @@ export function buildGaugeOption(params: {
         endAngle: -20,
         min: 0,
         max: params.max ?? 100,
-        progress: { show: true, width: 14, itemStyle: { color } },
-        axisLine: { lineStyle: { width: 14, color: [[1, 'rgba(128,128,128,0.18)']] } },
+        progress: { show: true, width: 14, roundCap: true, itemStyle: { color } },
+        axisLine: { roundCap: true, lineStyle: { width: 14, color: [[1, 'rgba(128,128,128,0.16)']] } },
         axisTick: { show: false },
         splitLine: { show: false },
-        axisLabel: { distance: 18, fontSize: 10 },
+        // 隐藏 0-100 刻度数字:小仪表盘上画在弧内会与中心大字重叠成一团噪声,
+        // 数值已由中心 detail 表达,刻度无信息增益。
+        axisLabel: { show: false },
         pointer: { show: false },
         anchor: { show: false },
         detail: {
           valueAnimation: true,
           formatter: `{value}${params.unit ?? ''}`,
-          fontSize: 22,
+          fontSize: 26,
           fontWeight: 700,
-          offsetCenter: [0, 0],
+          // 随弧色(SLA 高=绿 / 低=告警色),与进度弧呼应;下沉到弧口居中。
+          color: 'inherit',
+          offsetCenter: [0, '8%'],
         },
         data: [{ value: Math.round(v * 10) / 10 }],
       },
