@@ -17,6 +17,9 @@ import { onBeforeUnmount, onMounted } from 'vue'
 import StartNode from './nodes/StartNode.vue'
 import EndNode from './nodes/EndNode.vue'
 import JobNode from './nodes/JobNode.vue'
+import GatewayNode from './nodes/GatewayNode.vue'
+import FileStepNode from './nodes/FileStepNode.vue'
+import ApprovalNode from './nodes/ApprovalNode.vue'
 import type { DesignerNode, DesignerNodeType } from '../types'
 import { useDesignerStore } from '../store/useDesignerStore'
 
@@ -32,6 +35,9 @@ function ensureRegistered() {
     { name: 'designer-start', component: StartNode as unknown as Component },
     { name: 'designer-end', component: EndNode as unknown as Component },
     { name: 'designer-job', component: JobNode as unknown as Component },
+    { name: 'designer-gateway', component: GatewayNode as unknown as Component },
+    { name: 'designer-file-step', component: FileStepNode as unknown as Component },
+    { name: 'designer-approval', component: ApprovalNode as unknown as Component },
   ]
   for (const s of shapes) {
     registerVueShape({ shape: s.name, component: s.component })
@@ -46,8 +52,13 @@ function shapeOf(type: DesignerNodeType): string {
       return 'designer-end'
     case 'JOB':
       return 'designer-job'
+    case 'GATEWAY':
+      return 'designer-gateway'
+    case 'FILE_STEP':
+      return 'designer-file-step'
+    case 'APPROVAL':
+      return 'designer-approval'
     default:
-      // GATEWAY / FILE_STEP / APPROVAL Spike 阶段占位为通用 rect
       return 'rect'
   }
 }
@@ -55,6 +66,9 @@ function shapeOf(type: DesignerNodeType): string {
 function sizeOf(type: DesignerNodeType): { width: number; height: number } {
   if (type === 'START' || type === 'END') {
     return { width: START_END_SIZE, height: START_END_SIZE }
+  }
+  if (type === 'GATEWAY') {
+    return { width: 80, height: 80 }
   }
   return { width: NODE_WIDTH, height: NODE_HEIGHT }
 }
