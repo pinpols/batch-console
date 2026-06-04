@@ -38,11 +38,15 @@ export function queryWorkflowRuns(
   tenantId: string,
   workflowDefinitionId?: number,
   runStatus?: string,
+  traceId?: string,
 ) {
   return fetchAllPageItems<ConsoleWorkflowRunResponse>('/api/console/queries/workflow-runs', {
     tenantId,
     ...(workflowDefinitionId != null ? { workflowDefinitionId } : {}),
     ...(runStatus ? { runStatus } : {}),
+    // BE 已支持 traceId 服务端过滤(/queries/workflow-runs?traceId=);Trace 诊断用它精准命中,
+    // 不再拉全量页客户端筛(大数据量下慢且若分页有上限会漏命中)。
+    ...(traceId ? { traceId } : {}),
   })
 }
 

@@ -168,6 +168,7 @@
   import EmptyState from '@/components/common/EmptyState.vue'
   import { fmtDatetime } from '@/utils/datetime'
   import { useTenantReload } from '@/composables/useTenantReload'
+  import { useTenantStore } from '@/stores/tenant'
   import { useAutoRefresh } from '@/composables/useAutoRefresh'
   import {
     listWorkerFingerprints,
@@ -177,6 +178,7 @@
   } from '@/api/workerFingerprint'
 
   const { t } = useI18n({ useScope: 'global' })
+  const tenant = useTenantStore()
 
   const rows = ref<WorkerFingerprint[]>([])
   const summary = ref<WorkerFingerprintSummary[]>([])
@@ -221,9 +223,10 @@
     loading.value = true
     loadError.value = null
     summaryError.value = null
+    // 这两个端点 tenantId 是 @RequestParam(query 必填),必须显式带,否则 BE 400「租户参数缺失」
     const [listRes, summaryRes] = await Promise.allSettled([
-      listWorkerFingerprints(),
-      getWorkerFingerprintSummary(),
+      listWorkerFingerprints(tenant.tenantId),
+      getWorkerFingerprintSummary(tenant.tenantId),
     ])
     if (listRes.status === 'fulfilled') {
       rows.value = listRes.value ?? []
