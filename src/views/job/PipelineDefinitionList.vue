@@ -636,8 +636,16 @@
   }
 
   async function load() {
-    loading.value = true
     loadError.value = null
+    // admin 多租户:未选当前租户时 tenantId 为空,直接返回空态;
+    // 否则会发 tenantId= 的请求,BE 返 400「租户参数缺失」,异常冒泡导致组件渲染崩溃。
+    if (!tenant.tenantId) {
+      allRows.value = []
+      rows.value = []
+      total.value = 0
+      return
+    }
+    loading.value = true
     try {
       const pr = await queryPipelineDefinitions(tenant.tenantId, 1, 200)
       allRows.value = pr.items
@@ -658,6 +666,13 @@
       total.value = refined.length
       const start = (page.value - 1) * pageSize.value
       rows.value = refined.slice(start, start + pageSize.value)
+    } catch (e) {
+      // 加载失败兜底:置 loadError,让 ProTable 渲染错误面板(:error / :on-retry 已绑定),
+      // 避免异常向上冒泡触发 Vue 渲染错误(整页「组件渲染异常」)。
+      loadError.value = e
+      allRows.value = []
+      rows.value = []
+      total.value = 0
     } finally {
       loading.value = false
     }
@@ -830,6 +845,8 @@
     domain: 'pipeline-definitions',
     reload: load,
     scope: () => tenant.tenantId,
+    // 未选当前租户(admin 多租户)时不开 SSE,避免 events?tenantId= 触发 500
+    enabled: computed(() => !!tenant.tenantId),
   })
 
   useTenantReload(() => {

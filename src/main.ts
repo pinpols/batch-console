@@ -94,6 +94,23 @@ initSentry({
   dsn: import.meta.env.VITE_SENTRY_DSN,
 })
 
+// 未捕获的 Promise 拒绝:API/网络错误(axios 拦截器已对 401/403/4xx/5xx 弹 toast)只记录并吞掉,
+// 避免控制台噪音 + 潜在错误边界升级(典型:页面副加载漏 catch 的 403)。非 API 错误保留默认行为。
+window.addEventListener('unhandledrejection', (event) => {
+  const err = event.reason as { isAxiosError?: boolean; response?: unknown; config?: unknown; message?: string } | null
+  const isApiError =
+    !!err &&
+    typeof err === 'object' &&
+    (err.isAxiosError === true ||
+      ('response' in err && 'config' in err) ||
+      (typeof err.message === 'string' &&
+        /Request failed with status code|Network Error|timeout of \d+ms exceeded/i.test(err.message)))
+  if (isApiError) {
+    event.preventDefault()
+    logError(`unhandledRejection(api):${err?.message ?? String(event.reason)}`, { kind: 'unhandledRejection' })
+  }
+})
+
 // Vue 组件内未捕获异常 → 记录组件名、info、message、stack(前 5 行)供前后端联调
 app.config.errorHandler = (err, instance, info) => {
   const component = instance?.$options?.name || instance?.$options?.__name || 'Unknown'

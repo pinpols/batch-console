@@ -24,31 +24,45 @@ describe('useTenantReload', () => {
     setActivePinia(createPinia())
   })
 
-  it('invokes fn immediately at setup time', () => {
+  it('invokes fn immediately at setup time when a tenant is already selected', () => {
     const fn = vi.fn()
+    const tenant = useTenantStore()
+    tenant.setTenantId('tenant-a')
     const scope = runInScope(() => useTenantReload(fn))
     expect(fn).toHaveBeenCalledTimes(1)
     scope.stop()
   })
 
-  it('invokes fn again when tenantId changes', async () => {
+  it('does NOT invoke fn at setup when no tenant is selected (empty tenantId)', async () => {
+    // admin 登录后尚未选租户:空 tenantId 不触发加载,避免页面用空 tenantId 发请求被 BE 拒为 400
+    const fn = vi.fn()
+    const scope = runInScope(() => useTenantReload(fn))
+    await nextTick()
+    expect(fn).not.toHaveBeenCalled()
+    scope.stop()
+  })
+
+  it('invokes fn once a tenant becomes selected, then again on each change', async () => {
     const fn = vi.fn()
     const scope = runInScope(() => useTenantReload(fn))
     const tenant = useTenantStore()
+    expect(fn).not.toHaveBeenCalled() // 起始空 tenantId,不触发
     tenant.setTenantId('tenant-b')
     await nextTick()
-    expect(fn).toHaveBeenCalledTimes(2)
+    expect(fn).toHaveBeenCalledTimes(1)
     tenant.setTenantId('tenant-c')
     await nextTick()
-    expect(fn).toHaveBeenCalledTimes(3)
+    expect(fn).toHaveBeenCalledTimes(2)
     scope.stop()
   })
 
   it('does not re-invoke when tenantId is set to the same value', async () => {
     const fn = vi.fn()
-    const scope = runInScope(() => useTenantReload(fn))
     const tenant = useTenantStore()
-    tenant.setTenantId(tenant.tenantId)
+    tenant.setTenantId('tenant-a')
+    const scope = runInScope(() => useTenantReload(fn))
+    expect(fn).toHaveBeenCalledTimes(1)
+    tenant.setTenantId('tenant-a')
     await nextTick()
     expect(fn).toHaveBeenCalledTimes(1)
     scope.stop()
@@ -56,9 +70,11 @@ describe('useTenantReload', () => {
 
   it('stops reloading after scope is disposed', async () => {
     const fn = vi.fn()
-    const scope = runInScope(() => useTenantReload(fn))
-    scope.stop()
     const tenant = useTenantStore()
+    tenant.setTenantId('tenant-a')
+    const scope = runInScope(() => useTenantReload(fn))
+    expect(fn).toHaveBeenCalledTimes(1)
+    scope.stop()
     tenant.setTenantId('tenant-d')
     await nextTick()
     expect(fn).toHaveBeenCalledTimes(1)
@@ -68,6 +84,8 @@ describe('useTenantReload', () => {
     const fn = vi.fn(async () => {
       throw new Error('boom')
     })
+    const tenant = useTenantStore()
+    tenant.setTenantId('tenant-a')
     const scope = runInScope(() => useTenantReload(fn))
     await nextTick()
     expect(fn).toHaveBeenCalledTimes(1)
