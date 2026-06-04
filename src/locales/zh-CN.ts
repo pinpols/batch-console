@@ -302,6 +302,15 @@ export default {
     diffStatus_modified: '改动',
     diffStatus_unchanged: '未变',
   },
+  // Workflow DAG 设计器 — JSON 同步底部 tab(designer 子功能)。
+  workflowDesignerJson: {
+    toolbarButton: 'JSON',
+    panelTitle: 'JSON 同步',
+    placeholder: '编辑后失焦或暂停 500ms 自动应用到画布',
+    parseError: 'JSON 解析失败:{msg}',
+    parseShapeError: 'JSON 结构非法:缺少 nodes / edges 数组',
+    applyTooltip: '编辑后 500ms 内暂停输入或失焦,自动应用到画布(可 Ctrl+Z 撤回)',
+  },
   workflowMermaidViewer: {
     defaultTitle: 'Workflow 视图',
     disabledTag: '已禁用',

@@ -39,6 +39,7 @@ import NodePalette from './toolbar/NodePalette.vue'
 import NodeInspector from './inspector/NodeInspector.vue'
 import QuickPalette from './palette/QuickPalette.vue'
 import TemplateLibrary from './templates/TemplateLibrary.vue'
+import JsonSyncPanel from './toolbar/JsonSyncPanel.vue'
 
 const route = useRoute()
 const { t } = useI18n()
@@ -72,6 +73,11 @@ const quickPaletteVisible = ref(false)
 const templateLibraryVisible = ref(false)
 const layoutDirection = ref<'TB' | 'LR'>('TB')
 const canvasCenter = ref<{ x: number; y: number }>({ x: 320, y: 200 })
+const jsonPanelCollapsed = ref(true)
+
+function toggleJsonPanel() {
+  jsonPanelCollapsed.value = !jsonPanelCollapsed.value
+}
 
 function openQuickPalette() {
   quickPaletteVisible.value = true
@@ -332,6 +338,7 @@ function onExportMermaid() {
       :saving="saving"
       :can-save="store.editable"
       :layout-direction="layoutDirection"
+      :json-panel-open="!jsonPanelCollapsed"
       @auto-layout="onAutoLayout"
       @validate="onValidate"
       @save="onSave"
@@ -339,6 +346,7 @@ function onExportMermaid() {
       @open-quick-palette="openQuickPalette"
       @open-template-library="openTemplateLibrary"
       @toggle-layout-direction="toggleLayoutDirection"
+      @toggle-json="toggleJsonPanel"
     />
     <div
       v-if="readonlyBanner"
@@ -357,6 +365,7 @@ function onExportMermaid() {
     >
       {{ t('workflowDesignerMvp.errorBanner', { count: errorCount }) }}
     </div>
+    <JsonSyncPanel v-model:collapsed="jsonPanelCollapsed" />
     <div class="workflow-designer__body">
       <NodePalette />
       <DagCanvas ref="canvasRef" />
