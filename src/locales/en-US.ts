@@ -158,6 +158,28 @@ const messages: Messages = {
     canvasHintDelete: 'to delete ·',
     canvasHintShiftKey: 'to quick-add downstream',
   },
+  // Workflow DAG designer — Spike phase (docs/design/workflow-dag-designer.md §8).
+  // Separate namespace from `workflowDesigner` (existing legacy keys, unused in current build).
+  workflowDesignerSpike: {
+    title: 'Workflow designer',
+    paletteTitle: 'Node palette',
+    paletteAriaLabel: 'Drag nodes onto canvas',
+    canvasAriaLabel: 'Workflow DAG canvas',
+    minimapAriaLabel: 'Canvas minimap',
+    toolbarAriaLabel: 'Designer toolbar',
+    nodeStart: 'START',
+    nodeEnd: 'END',
+    nodeJob: 'JOB',
+    actionUndo: 'Undo',
+    actionRedo: 'Redo',
+    actionAutoLayout: 'Auto layout',
+    actionSave: 'Save',
+    actionMermaid: 'Export Mermaid',
+    confirmDeleteNode: 'Delete selected node?',
+    dirtyTag: 'Unsaved',
+    saveSpikeToast: 'Spike: snapshot logged to console (backend save lands in MVP)',
+    mermaidDialogTitle: 'Mermaid export',
+  },
   workflowMermaidViewer: {
     defaultTitle: 'Workflow viewer',
     disabledTag: 'Disabled',
@@ -1854,7 +1876,9 @@ const messages: Messages = {
     actionDetail: 'Detail',
     actionDelete: 'Delete',
     actionArchive: 'Archive (disable)',
+    actionOpenInDesigner: 'Open in designer',
     headerCreate: 'Import config bundle',
+    headerDesigner: 'Designer',
     emptyDescription:
       'No workflow definitions for this tenant. Create one to start orchestrating jobs / pipelines / gateways.',
     archiveVerb: 'Archive',
