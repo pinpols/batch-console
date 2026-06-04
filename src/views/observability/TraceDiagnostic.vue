@@ -76,7 +76,7 @@
           }}
         </div>
 
-        <el-collapse v-model="expanded" class="trace-domains">
+        <el-collapse v-model="expanded" class="trace-domains" @change="onCollapseChange">
           <el-collapse-item
             v-for="d in results"
             :key="d.domain"
@@ -98,6 +98,7 @@
             <div class="trace-domain__body">
               <el-table
                 v-if="d.rows.length > 0"
+                :ref="(el) => setTableRef(d.domain, el)"
                 :data="d.rows"
                 stripe
                 size="small"
@@ -128,7 +129,8 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, computed, onMounted } from 'vue'
+  import { ref, computed, onMounted, nextTick } from 'vue'
+  import type { TableInstance } from 'element-plus'
   import { useRoute, useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import { Search, Refresh, DataLine, Loading, WarningFilled } from '@element-plus/icons-vue'
@@ -158,6 +160,18 @@
   const loading = ref(false)
   const hasSearched = ref(false)
   const expanded = ref<string[]>([])
+
+  // el-table 在 el-collapse 折叠态(display:none, width=0)算的列布局是错的,展开后表头/表体错位。
+  // 收集每个域表格 ref,展开时 doLayout() 重算列宽修正错位。
+  const tableRefs = new Map<string, TableInstance>()
+  function setTableRef(domain: string, el: unknown) {
+    if (el) tableRefs.set(domain, el as TableInstance)
+    else tableRefs.delete(domain)
+  }
+  function onCollapseChange(names: string | string[]) {
+    const opened = Array.isArray(names) ? names : [names]
+    nextTick(() => opened.forEach((n) => tableRefs.get(n)?.doLayout?.()))
+  }
 
   interface DomainColumn {
     prop: string
