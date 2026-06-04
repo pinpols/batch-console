@@ -369,28 +369,23 @@ html.layout-shell-lock .layout-root > .layout-sidebar.el-aside {
   filter: saturate(1.02);
 }
 
-/* 自助服务等场景的主操作按钮：深一度的渐变蓝、稍大尺寸（提交类 CTA）。 */
+/* 自助服务提交 CTA:与全站标准主按钮统一(同色 / 同高 / 同圆角),
+   不再加高加粗加重阴影 —— 原"深一度大尺寸+投影"显得突兀、与同排 reset 不等高。 */
 .pretty-primary-button {
-  border: none;
-  border-radius: 12px;
-  padding: 0 20px;
-  min-height: 42px;
-  font-weight: 650;
-  letter-spacing: 0.06em;
+  border-radius: var(--radius-button);
+  padding: 0 16px;
+  font-weight: 500;
   color: var(--button-primary-text);
   background: var(--button-primary-bg);
-  border: 1px solid var(--button-primary-bg);
-  box-shadow: 0 4px 12px color-mix(in srgb, var(--button-primary-bg) 18%, transparent);
+  border: 1px solid var(--button-primary-border);
   transition:
     background 0.18s ease,
-    border-color 0.18s ease,
-    box-shadow 0.18s ease;
+    border-color 0.18s ease;
 }
 
 .pretty-primary-button:hover {
   background: var(--button-primary-bg-hover);
   border-color: var(--button-primary-bg-hover);
-  box-shadow: 0 6px 16px color-mix(in srgb, var(--button-primary-bg) 22%, transparent);
 }
 
 /* 表单操作行:右下角 + 顶部分隔线;按钮间距 8px。配合自助服务等长表单。 */
