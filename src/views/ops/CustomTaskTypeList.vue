@@ -180,6 +180,7 @@
   import SensitiveFieldAlert from '@/components/common/SensitiveFieldAlert.vue'
   import { fmtDatetime } from '@/utils/datetime'
   import { useTenantReload } from '@/composables/useTenantReload'
+  import { useTenantStore } from '@/stores/tenant'
   import {
     listCustomTaskTypes,
     parseDescriptor,
@@ -187,6 +188,7 @@
   } from '@/api/customTaskTypes'
 
   const { t } = useI18n({ useScope: 'global' })
+  const tenant = useTenantStore()
 
   const rows = ref<CustomTaskType[]>([])
   const loading = ref(false)
@@ -202,8 +204,9 @@
     loading.value = true
     loadError.value = null
     try {
-      // tenantId 由 axios interceptor 自动注入 header,query 不重复传
-      rows.value = (await listCustomTaskTypes()) ?? []
+      // 该端点 tenantId 是 @RequestParam(query 必填),interceptor 只注入 X-Tenant-Id header
+      // 不够 → 必须显式带 query tenantId,否则 BE 400「租户参数缺失」。
+      rows.value = (await listCustomTaskTypes(tenant.tenantId)) ?? []
     } catch (err) {
       loadError.value = err
       rows.value = []
