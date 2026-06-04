@@ -5,6 +5,9 @@
         <el-button type="primary" :icon="Plus" @click="goCreate">
           {{ t('workflowDefinitionList.headerCreate') }}
         </el-button>
+        <el-button @click="goDesignerNew">
+          {{ t('workflowDefinitionList.headerDesigner') }}
+        </el-button>
       </template>
     </PageHeader>
 
@@ -491,6 +494,15 @@
     void router.push({ path: '/config/tenant-package' })
   }
 
+  /** 新建走 DAG 设计器(Spike 阶段),保留 Excel 导入路径不动 */
+  function goDesignerNew() {
+    void router.push({ path: '/workflow/designer' })
+  }
+
+  function openInDesigner(row: ConsoleWorkflowDefinitionResponse) {
+    void router.push({ path: `/workflow/designer/${row.id}` })
+  }
+
   /**
    * 按 row 状态组合行操作。
    * - "DAG" 是主操作,直显
@@ -505,6 +517,11 @@
         label: t('workflowDefinitionList.actionDag'),
         primary: true,
         onClick: () => openDag(row),
+      },
+      {
+        key: 'designer',
+        label: t('workflowDefinitionList.actionOpenInDesigner'),
+        onClick: () => openInDesigner(row),
       },
       {
         key: 'validate',
