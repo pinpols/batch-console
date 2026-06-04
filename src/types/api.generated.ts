@@ -3144,6 +3144,56 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/console/workflow-definitions/{id}/versions': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List all version snapshots for a workflow definition
+     * @description workflow-dag-designer Polish — reads `workflow_definition_version` (V167).
+     *     Returned list is sorted by `version desc`; the entry matching the master
+     *     `workflow_definition.version` carries `current=true`. When the history table
+     *     has no rows yet (e.g. just after V167 migration) the endpoint degrades to a
+     *     single `current` row built from the master table (compatible with the
+     *     pre-history single-version PR #370 behavior).
+     *
+     */
+    get: operations['listWorkflowDefinitionVersions']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/workflow-definitions/{id}/versions/{version}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Read a specific workflow definition version (current or historical)
+     * @description Current `version` (== master `workflow_definition.version`) is served from
+     *     the master tables (`workflow_definition` + `workflow_node` + `workflow_edge`);
+     *     historical versions are deserialized from `workflow_definition_version.nodes_json`
+     *     / `edges_json`. Unknown versions return NOT_FOUND.
+     *
+     */
+    get: operations['getWorkflowDefinitionVersion']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/console/workflow-definitions/{id}/lock': {
     parameters: {
       query?: never
@@ -5465,6 +5515,23 @@ export interface components {
     }
     CommonResponseWorkflowDefinitionDetailResponse: components['schemas']['CommonResponseBase'] & {
       data?: components['schemas']['WorkflowDefinitionDetailResponse']
+    }
+    CommonResponseWorkflowDefinitionVersionSummaryList: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['WorkflowDefinitionVersionSummaryResponse'][]
+    }
+    /** @description workflow-dag-designer Polish — entry in the per-definition version list.
+     *     `current=true` flags the version equal to master `workflow_definition.version`.
+     *      */
+    WorkflowDefinitionVersionSummaryResponse: {
+      /** Format: int32 */
+      version?: number
+      /** @description console account that triggered the fullUpdate (SecurityContext.username) */
+      savedBy?: string | null
+      /** Format: date-time */
+      savedAt?: string
+      /** @description optional change summary; Spike does not surface this in FE */
+      summary?: string | null
+      current?: boolean
     }
     CommonResponseConsoleAuthTokenResponse: components['schemas']['CommonResponseBase'] & {
       data?: components['schemas']['ConsoleAuthTokenResponse']
@@ -12925,6 +12992,62 @@ export interface operations {
         content: {
           'application/json': components['schemas']['CommonResponseWorkflowDefinitionDetailResponse']
         }
+      }
+    }
+  }
+  listWorkflowDefinitionVersions: {
+    parameters: {
+      query: {
+        tenantId: string
+      }
+      header?: never
+      path: {
+        id: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Version list */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseWorkflowDefinitionVersionSummaryList']
+        }
+      }
+    }
+  }
+  getWorkflowDefinitionVersion: {
+    parameters: {
+      query: {
+        tenantId: string
+      }
+      header?: never
+      path: {
+        id: number
+        version: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Workflow definition detail at the requested version */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseWorkflowDefinitionDetailResponse']
+        }
+      }
+      /** @description Version not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
       }
     }
   }
