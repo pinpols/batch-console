@@ -245,6 +245,18 @@ const routes: RouteRecordRaw[] = [
           minRole: 'OPERATOR',
         },
       },
+      {
+        // Workflow 版本对比 diff(Polish 阶段)。BE 暂无 versions 列表端点,
+        // from 端降级为空,仅展示当前版本 nodes;路由参数保留供后续扩展。
+        path: 'workflow/designer/:id/diff/:fromVersion/:toVersion',
+        name: 'workflow-designer-diff',
+        component: () => import('@/views/workflow/designer/diff/WorkflowDesignerDiff.vue'),
+        meta: {
+          title: 'Workflow 版本对比',
+          activeMenu: '/workflow/definitions',
+          minRole: 'VIEWER',
+        },
+      },
       { path: 'monitor/instances', redirect: '/monitor/job-instances' },
       {
         path: 'runs',

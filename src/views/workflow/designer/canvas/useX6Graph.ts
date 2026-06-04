@@ -75,7 +75,8 @@ function sizeOf(type: DesignerNodeType): { width: number; height: number } {
 
 export interface X6GraphHandle {
   graph: Graph | null
-  autoLayout: () => void
+  /** Polish 阶段:可选 dagre 布局方向(TB 默认 / LR 左右),不传保持原行为 */
+  autoLayout: (direction?: 'TB' | 'LR') => void
 }
 
 export function useX6Graph(containerRef: Ref<HTMLDivElement | null>, minimapRef: Ref<HTMLDivElement | null>): X6GraphHandle {
@@ -130,10 +131,10 @@ export function useX6Graph(containerRef: Ref<HTMLDivElement | null>, minimapRef:
     }
   }
 
-  function autoLayout() {
+  function autoLayout(direction: 'TB' | 'LR' = 'TB') {
     if (!handle.graph) return
     const g = new dagre.graphlib.Graph()
-    g.setGraph({ rankdir: 'TB', nodesep: 40, ranksep: 60 })
+    g.setGraph({ rankdir: direction, nodesep: 40, ranksep: 60 })
     g.setDefaultEdgeLabel(() => ({}))
     for (const n of store.nodes) {
       const { width, height } = sizeOf(n.nodeType)

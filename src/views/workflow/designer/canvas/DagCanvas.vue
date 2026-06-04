@@ -12,8 +12,8 @@ const store = useDesignerStore()
 const handle = useX6Graph(containerRef, minimapRef)
 
 defineExpose({
-  /** 暴露给 toolbar 的自动布局入口 */
-  autoLayout: () => handle.autoLayout(),
+  /** 暴露给 toolbar 的自动布局入口(Polish 阶段支持方向参数) */
+  autoLayout: (direction: 'TB' | 'LR' = 'TB') => handle.autoLayout(direction),
 })
 
 // store 变更 → 通过自定义 event 触发 X6 重画(useX6Graph 内部监听 `__rerender__`)
