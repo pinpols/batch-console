@@ -231,10 +231,12 @@
       }),
       fetchDomain('audit', () => queryAudits(tenantId, { traceId: trace })),
       fetchDomain('executionLog', () => queryExecutionLogs(tenantId, { traceId: trace })),
-      // 以下四域:BE 不支持 traceId 过滤,客户端按 row.traceId 兜底过滤
+      // workflowRun:BE 已支持 traceId 服务端过滤,直接传 trace 精准命中(原先拉全量页客户端筛,
+      // 大数据量下慢且可能漏命中)。filterByTrace 仅作兜底。
       fetchDomain('workflowRun', async () =>
-        filterByTrace(await queryWorkflowRuns(tenantId), trace),
+        filterByTrace(await queryWorkflowRuns(tenantId, undefined, undefined, trace), trace),
       ),
+      // 以下三域:BE 暂不支持 traceId 过滤,客户端按 row.traceId 兜底过滤
       fetchDomain('outbox', async () =>
         filterByTrace(await queryOutboxDeliveries(tenantId), trace),
       ),
