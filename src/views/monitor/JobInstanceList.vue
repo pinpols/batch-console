@@ -72,6 +72,14 @@
                 :placeholder="t('jobInstanceList.traceIdPlaceholder')"
               />
             </el-form-item>
+            <el-form-item>
+              <template #label>
+                <HelpLabel :tip="t('jobInstanceList.slaBreachedTip')">
+                  {{ t('jobInstanceList.slaBreachedLabel') }}
+                </HelpLabel>
+              </template>
+              <el-switch v-model="query.slaBreached" @change="onSlaBreachedChange" />
+            </el-form-item>
           </ListPageQueryBar>
         </template>
 
@@ -252,6 +260,8 @@
     startDate: initialRange[0],
     endDate: initialRange[1],
     traceId: '',
+    /** SLA 违约过滤(服务端 deadline_at<now AND active);OpsSummary「SLA 违规」卡片用 */
+    slaBreached: false,
     page: 1,
     pageSize: 15,
   })
@@ -294,6 +304,7 @@
       query.startDate = t[0]
       query.endDate = t[1]
       query.traceId = ''
+      query.slaBreached = false
       dateRange.value = t
       query.page = 1
       syncFiltersToUrl()
@@ -332,7 +343,14 @@
     if (query.startDate) params.startDate = query.startDate
     if (query.endDate) params.endDate = query.endDate
     if (query.traceId) params.traceId = query.traceId
+    if (query.slaBreached) params.slaBreached = '1'
     void router.replace({ query: params })
+  }
+
+  function onSlaBreachedChange() {
+    query.page = 1
+    syncFiltersToUrl()
+    void loadData()
   }
 
   function viewDetail(row: ConsoleJobInstanceResponse) {
@@ -387,6 +405,8 @@
     if (q.startDate) query.startDate = String(q.startDate)
     if (q.endDate) query.endDate = String(q.endDate)
     if (q.traceId) query.traceId = String(q.traceId)
+    // SLA 违约深链(OpsSummary「SLA 违规」卡片传 slaBreached=1)
+    if (q.slaBreached === '1') query.slaBreached = true
     // range=all:跨页跳转(如 Ops 卡片"失败任务"全量计数)主动清空默认的今日锚定
     if (q.range === 'all') {
       query.startDate = ''

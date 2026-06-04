@@ -3226,6 +3226,8 @@ export default {
     colFinishedAt: '完成时间',
     colDuration: '耗时',
     colSlaAlerted: 'SLA 告警',
+    slaBreachedLabel: 'SLA 违约',
+    slaBreachedTip: '仅看已超 SLA 截止且仍在运行的实例(服务端按 deadline_at<now 且活跃状态判定)',
     traceIdLabel: 'Trace ID',
     traceIdPlaceholder: '搜索 Trace ID',
     colTrace: 'Trace',
