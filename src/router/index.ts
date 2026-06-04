@@ -148,7 +148,9 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/file-center/FileTemplateList.vue'),
         meta: {
           title: '文件渠道',
-          activeMenu: '/files/channels',
+          // 与 /files/templates 同组件(FileTemplateList 的 channels tab)。activeMenu 指已注册的
+          // /files/templates,否则后端菜单 allowlist 守卫把本路由弹回首页(不跳转)。
+          activeMenu: '/files/templates',
           minRole: 'VIEWER',
           mode: 'channels',
         },
@@ -475,7 +477,9 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/governance/QueueConfig.vue'),
         meta: {
           title: '批次窗口',
-          activeMenu: '/governance/windows',
+          // 与 /governance/queues 同组件(QueueConfig 的 windows tab)。activeMenu 指向已注册菜单项
+          // /governance/queues,否则后端菜单 allowlist 守卫会把本路由弹回首页(不跳转)。
+          activeMenu: '/governance/queues',
           minRole: 'ADMIN',
           mode: 'windows',
         },
@@ -486,7 +490,8 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/governance/QueueConfig.vue'),
         meta: {
           title: '业务日历',
-          activeMenu: '/governance/calendars',
+          // 同上:QueueConfig 的 calendars tab,activeMenu 指 /governance/queues 避免被守卫弹回。
+          activeMenu: '/governance/queues',
           minRole: 'ADMIN',
           mode: 'calendars',
         },

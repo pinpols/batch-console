@@ -390,6 +390,7 @@ export default {
     applyingBtn: '正在写入…',
     applyFailedTitle: '应用失败',
     applySucceededTitle: '已成功写入',
+    applyNoChanges: '本次无新增 / 更新 —— 源数据为空,或与现有配置完全一致(幂等)。',
     btnRetryApply: '重试',
     btnResetWizard: '重新开始',
     colEntity: '实体',

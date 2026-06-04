@@ -255,11 +255,13 @@
 
   const filtered = computed(() => {
     let r = allRows.value
-    const s = filters.status.trim()
+    // clearable 控件点 X 清除会把 v-model 置为 null/undefined,直接 .trim() 会
+    // TypeError 击穿 computed → 整页渲染崩溃。统一 ?? '' 兜底。
+    const s = (filters.status ?? '').trim()
     if (s) r = r.filter((x) => String(x.approvalStatus ?? '').toUpperCase() === s.toUpperCase())
-    const t = filters.type.trim()
+    const t = (filters.type ?? '').trim()
     if (t) r = r.filter((x) => String(x.approvalType ?? '') === t)
-    const k = filters.keyword.trim()
+    const k = (filters.keyword ?? '').trim()
     if (k) {
       r = r.filter((x) => {
         const hay = `${x.approvalNo ?? ''} ${x.requesterId ?? ''} ${x.targetType ?? ''} ${x.targetId ?? ''}`

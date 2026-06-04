@@ -383,6 +383,7 @@ const messages: Messages = {
     applyingBtn: 'Applying…',
     applyFailedTitle: 'Apply failed',
     applySucceededTitle: 'Apply succeeded',
+    applyNoChanges: 'No inserts / updates this time — source is empty or identical to current config (idempotent).',
     btnRetryApply: 'Retry',
     btnResetWizard: 'Start over',
     colEntity: 'Entity',
