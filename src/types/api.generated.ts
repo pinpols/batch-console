@@ -964,6 +964,11 @@ export interface paths {
      *     L1 解析 cron / DAG / 参数；L2 复用 SchedulePlanBuilder 输出 partition / worker route；
      *     L3 在 L2 基础上叠加 SQL EXPLAIN / MinIO bucketExists / HTTP HEAD reachability。
      *     响应含 findings (PASS/WARN/ERROR) + summary。**不写 instance / 不调外部投递**（priority-scope §ADR-026 §5）。
+     *
+     *     **2026-06-04 wire 修复**：BFF 此前把 orchestrator 整层 `CommonResponse<T>` envelope
+     *     当 data 二次包装导致 FE 收到 `{data:{data:{...}}}` 嵌套（e2e ADR-026 spec 误判
+     *     success=false）。现走 `ConsoleResponseFactory.forwardOrchestrator(...)` 透传内层 data —
+     *     响应 schema 仍为单层 `CommonResponseObject`，**外层结构不变**，仅修复 nesting bug。
      */
     post: operations['dryRunPlan']
     delete?: never
@@ -2131,6 +2136,23 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/console/queries/pipeline-progress': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** 2026-06-03 拉取一组 worker 当前的 pipeline stage 行级进度(仅 IMPORT LOAD 流式 stage 在跑时有值) */
+    get: operations['queryPipelineProgress']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/console/queries/alerts': {
     parameters: {
       query?: never
@@ -2191,6 +2213,40 @@ export interface paths {
     }
     /** Query job definitions */
     get: operations['queryJobDefinitions']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/queries/job-definitions/codes': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Active job definition (code, name) options for workflow designer dropdown */
+    get: operations['queryJobDefinitionCodes']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/queries/pipeline-definitions/codes': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Active pipeline definition (code, name) options for workflow designer dropdown (FILE_STEP cross-domain ref) */
+    get: operations['queryPipelineDefinitionCodes']
     put?: never
     post?: never
     delete?: never
@@ -3059,6 +3115,63 @@ export interface paths {
      */
     get: operations['renderWorkflowMermaid']
     put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/workflow-definitions/{id}/full': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    /**
+     * Full replace workflow definition (definition + nodes + edges)
+     * @description Canvas Save: same-tx delete nodes/edges + rewrite + bump version.
+     *     Caller must hold the design lock; CONFLICT on lock not held / version mismatch.
+     *
+     */
+    put: operations['fullUpdateWorkflowDefinition']
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/workflow-definitions/{id}/lock': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    /** Acquire workflow design lock (5min TTL) */
+    put: operations['acquireWorkflowDesignLock']
+    post?: never
+    /** Release workflow design lock (owner only) */
+    delete: operations['releaseWorkflowDesignLock']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/workflow-definitions/{id}/lock/renew': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    /** Renew workflow design lock (extend TTL by 5min, owner only) */
+    put: operations['renewWorkflowDesignLock']
     post?: never
     delete?: never
     options?: never
@@ -5481,6 +5594,32 @@ export interface components {
     }
     CommonResponseWorkflowMermaidResponse: components['schemas']['CommonResponseBase'] & {
       data?: components['schemas']['WorkflowMermaidResponse']
+    }
+    WorkflowDefinitionFullUpdateRequest: {
+      definition: components['schemas']['WorkflowDefinitionSaveRequest']
+      /** @description 客户端最近 GET 拿到的 version,用于乐观锁;不传则跳过版本冲突校验。 */
+      expectedVersion?: number
+      /** @description 预留 lockToken;Spike 阶段以 SecurityContext.username 为权威。 */
+      lockToken?: string
+    }
+    WorkflowDesignLockResponse: {
+      /** @description 持锁人 console username。 */
+      lockedBy: string
+      /**
+       * Format: date-time
+       * @description 过期 UTC 时间(5min TTL)。
+       */
+      expiresAt: string
+    }
+    CommonResponseWorkflowDesignLockResponse: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['WorkflowDesignLockResponse']
+    }
+    CodeNameOption: {
+      code: string
+      name: string
+    }
+    CommonResponseCodeNameOptionList: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['CodeNameOption'][]
     }
     ConsolePushSubscribeRequest: {
       /** @description 浏览器 PushManager.subscribe() 返回的 endpoint URL。 */
@@ -11212,6 +11351,42 @@ export interface operations {
       }
     }
   }
+  queryPipelineProgress: {
+    parameters: {
+      query: {
+        tenantId: string
+        /** @description 逗号分隔的 workerCode 列表(Spring 自动按 comma split) */
+        workerCodes: string[]
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Pipeline progress list(仅含有进度的 worker;无进度 / 已过期 5min 不出现) */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            code?: string
+            message?: string
+            data?: {
+              workerCode?: string
+              /** Format: int64 */
+              rowsProcessed?: number | null
+              /** Format: int64 */
+              totalRowsHint?: number | null
+              /** Format: date-time */
+              heartbeatAt?: string
+            }[]
+          }
+        }
+      }
+    }
+  }
   queryAlerts: {
     parameters: {
       query?: {
@@ -11328,6 +11503,50 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['CommonResponseJobDefinitionList']
+        }
+      }
+    }
+  }
+  queryJobDefinitionCodes: {
+    parameters: {
+      query?: {
+        tenantId?: components['parameters']['TenantIdQuery']
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Active job (code, name) list */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseCodeNameOptionList']
+        }
+      }
+    }
+  }
+  queryPipelineDefinitionCodes: {
+    parameters: {
+      query?: {
+        tenantId?: components['parameters']['TenantIdQuery']
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Active pipeline (code, name) list */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseCodeNameOptionList']
         }
       }
     }
@@ -12678,6 +12897,118 @@ export interface operations {
         content: {
           'application/json': components['schemas']['CommonResponseWorkflowMermaidResponse']
         }
+      }
+    }
+  }
+  fullUpdateWorkflowDefinition: {
+    parameters: {
+      query?: never
+      header: {
+        'Idempotency-Key': components['parameters']['IdempotencyKeyHeader']
+      }
+      path: {
+        id: number
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['WorkflowDefinitionFullUpdateRequest']
+      }
+    }
+    responses: {
+      /** @description Updated workflow definition detail */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseWorkflowDefinitionDetailResponse']
+        }
+      }
+    }
+  }
+  acquireWorkflowDesignLock: {
+    parameters: {
+      query: {
+        tenantId: string
+      }
+      header?: never
+      path: {
+        id: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Lock acquired */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseWorkflowDesignLockResponse']
+        }
+      }
+      /** @description Lock held by other user (response body includes lockedBy) */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  releaseWorkflowDesignLock: {
+    parameters: {
+      query: {
+        tenantId: string
+      }
+      header?: never
+      path: {
+        id: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Released (or already expired — idempotent no-op) */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  renewWorkflowDesignLock: {
+    parameters: {
+      query: {
+        tenantId: string
+      }
+      header?: never
+      path: {
+        id: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Renewed */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseWorkflowDesignLockResponse']
+        }
+      }
+      /** @description Lock expired (caller must re-acquire) */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
       }
     }
   }
