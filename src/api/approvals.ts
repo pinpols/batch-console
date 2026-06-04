@@ -11,7 +11,9 @@ export function queryApprovals(tenantId: string) {
 
 export function approveOne(
   approvalNo: string,
-  body: { tenantId: string; operatorId?: string; reason?: string },
+  // compensationType:补偿类审批(SELF_SERVICE / COMPENSATION)BE 执行时必填,
+  // 取自审批单 payloadJson;漏传会被拒为 400「必须指定补偿类型」。
+  body: { tenantId: string; operatorId?: string; reason?: string; compensationType?: string },
 ) {
   return post<string>(`/api/console/approvals/${encodeURIComponent(approvalNo)}/approve`, body)
 }

@@ -420,7 +420,7 @@
   import { useSseAutoReload } from '@/composables/useSseAutoReload'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
-  import { useRouter } from 'vue-router'
+  import { useRoute, useRouter } from 'vue-router'
   import { useDrawerAutoClose } from '@/composables/useDrawerAutoClose'
   import { useAsyncAction } from '@/composables/useAsyncAction'
   import { instanceApi } from '@/api/instance'
@@ -490,7 +490,10 @@
   const total = ref(0)
   const page = ref(1)
   const pageSize = ref(15)
-  const keyword = ref('')
+  // 深链:WorkflowMermaidViewer 点 pipeline 节点跳转 /jobs/pipelines?pipelineCode=X,
+  // 用该 code 预填关键字过滤(queryKeyword 命中 pipelineCode),落地即定位到目标流水线。
+  const route = useRoute()
+  const keyword = ref(typeof route.query.pipelineCode === 'string' ? route.query.pipelineCode : '')
   const pipelineType = ref('')
   const enabledFilter = ref<boolean | undefined>()
   const hasActiveFilters = computed(
