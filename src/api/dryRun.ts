@@ -40,27 +40,14 @@ export interface DryRunPlanResult {
   [k: string]: unknown
 }
 
-/** 内层 envelope shape(console-api 透传 orchestrator 的 CommonResponse)。 */
-interface InnerEnvelope<T> {
-  code: string
-  message: string
-  data: T | null
-  meta?: unknown
-}
-
 export const dryRunApi = {
   async plan(req: DryRunPlanRequest): Promise<DryRunPlanResult> {
-    const inner = await post<InnerEnvelope<DryRunPlanResult>>('/api/console/ops/dry-run/plan', req)
-    // 双层 envelope:外层 axios 拦截器已解,内层手动解
-    if (!inner) {
+    // console-api 已修正为单层 envelope:axios 拦截器解外层后,直接得到 DryRunPlanResult。
+    // (此前 BE 双层嵌套是 bug,FE 这里多解一层;BE 修复后改回单层,否则 inner.code=undefined 必抛错。)
+    const result = await post<DryRunPlanResult>('/api/console/ops/dry-run/plan', req)
+    if (!result) {
       throw new Error('empty dry-run response')
     }
-    if (inner.code !== 'SUCCESS') {
-      throw new Error(inner.message || 'dry-run failed: ' + inner.code)
-    }
-    if (!inner.data) {
-      throw new Error('dry-run response missing data')
-    }
-    return inner.data
+    return result
   },
 }
