@@ -12,6 +12,7 @@
     "typecheck": "vue-tsc --noEmit",
     "check:i18n": "node --experimental-strip-types scripts/check-i18n-messages.mjs",
     "check:health": "bash scripts/local/health-check.sh",
+    "smoke:endpoints": "node scripts/local/fe-endpoint-smoke.mjs",
     "build": "vue-tsc && node --experimental-strip-types scripts/check-i18n-messages.mjs && vite build",
     "build:fast": "vite build",
     "preview": "vite preview",
