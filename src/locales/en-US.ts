@@ -3274,6 +3274,8 @@ const messages: Messages = {
     colFinishedAt: 'Finished at',
     colDuration: 'Duration',
     colSlaAlerted: 'SLA alerted',
+    slaBreachedLabel: 'SLA breached',
+    slaBreachedTip: 'Show only instances past their SLA deadline that are still active (server-side: deadline_at<now AND active status)',
     traceIdLabel: 'Trace ID',
     traceIdPlaceholder: 'Search Trace ID',
     colTrace: 'Trace',
