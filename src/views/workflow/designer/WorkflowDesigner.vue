@@ -167,33 +167,38 @@ async function onSave() {
   saving.value = true
   try {
     const def = graphToDefinition(store.snapshot)
+    // BE WorkflowDefinitionFullUpdateRequest 是 nested:{ definition: SaveRequest, expectedVersion, lockToken }
+    // SaveRequest 内含 tenantId / workflowCode / workflowName / workflowType / enabled / nodes / edges
+    // expectedVersion 与 lockToken 是顶层(乐观锁 + 锁归属预留)
     const body = {
-      tenantId: store.meta.tenantId,
-      workflowCode: store.meta.workflowCode,
-      workflowName: store.meta.workflowName,
-      workflowType: store.meta.workflowType,
-      enabled: store.meta.enabled,
-      description: store.meta.description,
+      definition: {
+        tenantId: store.meta.tenantId,
+        workflowCode: store.meta.workflowCode,
+        workflowName: store.meta.workflowName,
+        workflowType: store.meta.workflowType,
+        enabled: store.meta.enabled,
+        nodes: def.nodes.map((n) => {
+          const a = (n as unknown as Record<string, unknown>) ?? {}
+          return {
+            nodeCode: n.nodeCode,
+            nodeName: n.nodeName ?? n.nodeCode,
+            nodeType: n.nodeType,
+            relatedJobCode: typeof a.jobCode === 'string' ? a.jobCode : undefined,
+            relatedPipelineCode:
+              typeof a.pipelineCode === 'string' ? a.pipelineCode : undefined,
+            retryMaxCount: typeof a.maxRetries === 'number' ? a.maxRetries : undefined,
+            timeoutSeconds: typeof a.timeoutSeconds === 'number' ? a.timeoutSeconds : undefined,
+            nodeParams: JSON.stringify(a),
+          }
+        }),
+        edges: def.edges.map((e) => ({
+          fromNodeCode: e.sourceNodeCode,
+          toNodeCode: e.targetNodeCode,
+          edgeType: 'NEXT',
+          conditionExpr: typeof e.label === 'string' ? e.label : undefined,
+        })),
+      },
       expectedVersion: store.meta.version,
-      nodes: def.nodes.map((n) => {
-        const a = (n as unknown as Record<string, unknown>) ?? {}
-        return {
-          nodeCode: n.nodeCode,
-          nodeName: n.nodeName ?? n.nodeCode,
-          nodeType: n.nodeType,
-          relatedJobCode: typeof a.jobCode === 'string' ? a.jobCode : undefined,
-          relatedPipelineCode: typeof a.pipelineCode === 'string' ? a.pipelineCode : undefined,
-          retryMaxCount: typeof a.maxRetries === 'number' ? a.maxRetries : undefined,
-          timeoutSeconds: typeof a.timeoutSeconds === 'number' ? a.timeoutSeconds : undefined,
-          nodeParams: JSON.stringify(a),
-        }
-      }),
-      edges: def.edges.map((e) => ({
-        fromNodeCode: e.sourceNodeCode,
-        toNodeCode: e.targetNodeCode,
-        edgeType: 'NEXT',
-        conditionExpr: typeof e.label === 'string' ? e.label : undefined,
-      })),
     }
     const updated = await workflowDesignerApi.putFull(workflowId, body)
     store.setMeta({ version: updated.version })

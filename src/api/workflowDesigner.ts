@@ -13,34 +13,36 @@
 import { get, put, del } from '@/api/client'
 import type { WorkflowDefinitionDetailResponse } from '@/types/console-api'
 
-/** PUT /full 请求体:与 BE `WorkflowDefinitionFullUpdateRequest` 对齐 */
+/** PUT /full 请求体:与 BE `WorkflowDefinitionFullUpdateRequest` 对齐(nested:definition 包 nodes/edges) */
 export interface WorkflowDefinitionFullUpdateRequest {
-  tenantId: string
-  workflowCode: string
-  workflowName: string
-  workflowType: string
-  enabled: boolean
-  description?: string
+  definition: {
+    tenantId: string
+    workflowCode: string
+    workflowName: string
+    workflowType: string
+    enabled: boolean
+    nodes: Array<{
+      nodeCode: string
+      nodeName: string
+      nodeType: string
+      relatedJobCode?: string
+      relatedPipelineCode?: string
+      nodeParams?: string
+      nodeOrder?: number
+      retryMaxCount?: number
+      timeoutSeconds?: number
+      enabled?: boolean
+    }>
+    edges: Array<{
+      fromNodeCode: string
+      toNodeCode: string
+      edgeType: string
+      conditionExpr?: string
+      enabled?: boolean
+    }>
+  }
   expectedVersion: number
-  nodes: Array<{
-    nodeCode: string
-    nodeName: string
-    nodeType: string
-    relatedJobCode?: string
-    relatedPipelineCode?: string
-    nodeParams?: string
-    nodeOrder?: number
-    retryMaxCount?: number
-    timeoutSeconds?: number
-    enabled?: boolean
-  }>
-  edges: Array<{
-    fromNodeCode: string
-    toNodeCode: string
-    edgeType: string
-    conditionExpr?: string
-    enabled?: boolean
-  }>
+  lockToken?: string
 }
 
 /** 锁信息:isMine=true 表示当前用户持有锁,可编辑 */
