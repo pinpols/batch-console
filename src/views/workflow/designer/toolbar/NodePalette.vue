@@ -14,6 +14,21 @@ const items: PaletteItem[] = [
   { type: 'START', labelKey: 'workflowDesignerSpike.nodeStart', styleClass: 'palette-item--start' },
   { type: 'END', labelKey: 'workflowDesignerSpike.nodeEnd', styleClass: 'palette-item--end' },
   { type: 'JOB', labelKey: 'workflowDesignerSpike.nodeJob', styleClass: 'palette-item--job' },
+  {
+    type: 'GATEWAY',
+    labelKey: 'workflowDesignerMvp.nodeGateway',
+    styleClass: 'palette-item--gateway',
+  },
+  {
+    type: 'FILE_STEP',
+    labelKey: 'workflowDesignerMvp.nodeFileStep',
+    styleClass: 'palette-item--file',
+  },
+  {
+    type: 'APPROVAL',
+    labelKey: 'workflowDesignerMvp.nodeApproval',
+    styleClass: 'palette-item--approval',
+  },
 ]
 
 function onDragStart(ev: DragEvent, type: DesignerNodeType) {
@@ -79,5 +94,17 @@ function onDragStart(ev: DragEvent, type: DesignerNodeType) {
 .palette-item--job {
   background: var(--color-info-light, #ecf5ff);
   color: var(--color-primary, #409eff);
+}
+.palette-item--gateway {
+  background: var(--color-warning-light, #fdf6ec);
+  color: var(--color-warning-dark, #b88230);
+}
+.palette-item--file {
+  background: var(--color-success-light, #f0f9eb);
+  color: var(--color-success-dark, #529b2e);
+}
+.palette-item--approval {
+  background: #f5f0ff;
+  color: #6b3fcb;
 }
 </style>
