@@ -296,6 +296,15 @@ const messages: Messages = {
     diffStatus_modified: 'Modified',
     diffStatus_unchanged: 'Unchanged',
   },
+  // Workflow DAG designer — JSON sync bottom tab (designer sub-feature).
+  workflowDesignerJson: {
+    toolbarButton: 'JSON',
+    panelTitle: 'JSON sync',
+    placeholder: 'Edit then blur or pause 500ms to apply to canvas',
+    parseError: 'JSON parse error: {msg}',
+    parseShapeError: 'Invalid JSON shape: missing nodes / edges array',
+    applyTooltip: 'Auto-applies to canvas 500ms after you stop typing or blur (Ctrl+Z to undo)',
+  },
   workflowMermaidViewer: {
     defaultTitle: 'Workflow viewer',
     disabledTag: 'Disabled',

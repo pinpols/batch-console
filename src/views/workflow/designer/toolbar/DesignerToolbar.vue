@@ -11,8 +11,10 @@ withDefaults(
     canSave?: boolean
     /** dagre 布局方向(Polish 阶段:可在 TB/LR 切换);默认 TB 维持向后兼容 */
     layoutDirection?: 'TB' | 'LR'
+    /** JSON 同步面板当前展开状态(用于 button aria-pressed),默认折叠 */
+    jsonPanelOpen?: boolean
   }>(),
-  { saving: false, canSave: true, layoutDirection: 'TB' },
+  { saving: false, canSave: true, layoutDirection: 'TB', jsonPanelOpen: false },
 )
 
 defineEmits<{
@@ -23,6 +25,7 @@ defineEmits<{
   (e: 'openQuickPalette'): void
   (e: 'openTemplateLibrary'): void
   (e: 'toggleLayoutDirection'): void
+  (e: 'toggleJson'): void
 }>()
 </script>
 
@@ -56,6 +59,13 @@ defineEmits<{
     </el-button>
     <el-button @click="$emit('exportMermaid')">
       {{ t('workflowDesignerSpike.actionMermaid') }}
+    </el-button>
+    <el-button
+      class="designer-toolbar__json-btn"
+      :aria-pressed="jsonPanelOpen"
+      @click="$emit('toggleJson')"
+    >
+      {{ t('workflowDesignerJson.toolbarButton') }}
     </el-button>
     <el-tag v-if="store.dirty" type="warning" size="small">
       {{ t('workflowDesignerSpike.dirtyTag') }}
