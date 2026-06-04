@@ -297,19 +297,21 @@
    * status 字段映射成 BE 的 acknowledged 在服务端处理;时间范围对应 startDate/endDate。
    */
   function applyLocalFilter(list: ConsoleAlertEventResponse[]): ConsoleAlertEventResponse[] {
+    // clearable 控件点 X 清除会置 null/undefined → 直接 .trim() 会 TypeError 击穿渲染,统一 ?? '' 兜底
     return list.filter((row) => {
-      if (filters.severity.trim() && !row.severity?.includes(filters.severity.trim())) return false
-      if (filters.alertType.trim() && !row.alertType?.includes(filters.alertType.trim())) {
-        return false
-      }
-      if (filters.traceId.trim() && !row.traceId?.includes(filters.traceId.trim())) return false
+      const sev = (filters.severity ?? '').trim()
+      if (sev && !row.severity?.includes(sev)) return false
+      const at = (filters.alertType ?? '').trim()
+      if (at && !row.alertType?.includes(at)) return false
+      const tid = (filters.traceId ?? '').trim()
+      if (tid && !row.traceId?.includes(tid)) return false
       return true
     })
   }
 
   /** 把 UI 的 filters.status 映射成 BE 的 acknowledged 布尔(只有 OPEN / 非 OPEN 两档) */
   function resolveAcknowledgedFilter(): boolean | undefined {
-    const s = filters.status.trim().toUpperCase()
+    const s = (filters.status ?? '').trim().toUpperCase()
     if (!s) return undefined
     if (s === 'OPEN') return false
     // ACKNOWLEDGED / SILENCED / CLOSED 都属于非 OPEN
