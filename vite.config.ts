@@ -134,10 +134,10 @@ export default defineConfig(({ mode }) => {
       'axios',
       'echarts',
       'vue-echarts',
-      // X6 系必须一起预打包到同一份 x6 实例,否则 dev 下 x6 / x6-vue-shape / minimap
-      // 被各自懒优化成多个 x6 实例,x6-vue-shape 注册的 'vue-shape-view' 进了别的
-      // registry,画布 / 缩略图渲染节点时跨实例报「View with name 'vue-shape-view'
-      // does not exist」(dev 偶发,prod rollup 单实例无此问题)。深路径 minimap 也要列。
+      // X6 系必须一起预打包到同一份 x6 实例:否则 dev 下 x6 / x6-vue-shape / minimap
+      // 各自懒优化成多个 x6 实例,x6-vue-shape 注册的 'vue-shape-view' 进了别的 registry,
+      // 画布/缩略图渲染节点时跨实例报「View with name 'vue-shape-view' does not exist」
+      // (dev 偶发,prod rollup 单实例无此问题)。深路径 minimap 必须一并列出。
       '@antv/x6',
       '@antv/x6-vue-shape',
       '@antv/x6/es/plugin/minimap',
