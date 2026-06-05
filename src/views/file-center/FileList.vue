@@ -374,6 +374,13 @@
 
   function onSearch() {
     return runSearch(async () => {
+      // traceId 是全局唯一键,搜它时清掉默认的今日日期锚定——否则别的业务日的文件被日期挡掉
+      // 搜不到(与实例列表 JobInstanceList 同款修复)。
+      if (filters.traceId?.trim()) {
+        filters.startDate = ''
+        filters.endDate = ''
+        bizDateRange.value = null
+      }
       page.value = 1
       await load()
     })

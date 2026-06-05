@@ -360,6 +360,12 @@
 
   function search() {
     return runSearch(async () => {
+      // traceId 是全局唯一键,搜它时清掉时间范围(默认 today preset),否则别的业务日的告警搜不到。
+      if (filters.traceId?.trim()) {
+        timeRange.value = null
+        filters.startTime = ''
+        filters.endTime = ''
+      }
       page.value = 1
       await load()
     })
