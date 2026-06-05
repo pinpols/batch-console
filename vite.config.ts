@@ -134,11 +134,13 @@ export default defineConfig(({ mode }) => {
       'axios',
       'echarts',
       'vue-echarts',
-      // 工作流设计器懒加载路由首访时,若 x6 系未预打包,vite 会即时 optimize →
-      // 触发 504 Outdated-Optimize-Dep + 整页 reload,打断 X6/vue-shape 注册时序,
-      // 客户端导航(列表→设计器)进去偶发「组件渲染异常」。首启一次性预打包规避。
+      // X6 系必须一起预打包到同一份 x6 实例:否则 dev 下 x6 / x6-vue-shape / minimap
+      // 各自懒优化成多个 x6 实例,x6-vue-shape 注册的 'vue-shape-view' 进了别的 registry,
+      // 画布/缩略图渲染节点时跨实例报「View with name 'vue-shape-view' does not exist」
+      // (dev 偶发,prod rollup 单实例无此问题)。深路径 minimap 必须一并列出。
       '@antv/x6',
       '@antv/x6-vue-shape',
+      '@antv/x6/es/plugin/minimap',
     ],
   },
   server: {

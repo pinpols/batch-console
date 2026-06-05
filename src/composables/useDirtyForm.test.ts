@@ -75,8 +75,8 @@ describe('useDirtyForm', () => {
     scope.stop()
   })
 
-  it('confirmDiscard:已脏弹 confirm,用户确认 → true', async () => {
-    elMessageBoxConfirmMock.mockResolvedValueOnce('confirm')
+  // 产品决策:抽屉关闭统一不再弹「放弃修改?」确认框,confirmDiscard 恒放行(返回 true)。
+  it('confirmDiscard:已脏也直接 resolve true,不弹 confirm(统一去掉关闭确认)', async () => {
     const scope = effectScope()
     await scope.run(async () => {
       const form = reactive({ name: 'a' })
@@ -85,21 +85,7 @@ describe('useDirtyForm', () => {
       await nextTick()
       const result = await confirmDiscard()
       expect(result).toBe(true)
-      expect(elMessageBoxConfirmMock).toHaveBeenCalledTimes(1)
-    })
-    scope.stop()
-  })
-
-  it('confirmDiscard:已脏弹 confirm,用户取消 → false', async () => {
-    elMessageBoxConfirmMock.mockRejectedValueOnce('cancel')
-    const scope = effectScope()
-    await scope.run(async () => {
-      const form = reactive({ name: 'a' })
-      const { confirmDiscard } = useDirtyForm(() => form)
-      form.name = 'b'
-      await nextTick()
-      const result = await confirmDiscard()
-      expect(result).toBe(false)
+      expect(elMessageBoxConfirmMock).not.toHaveBeenCalled()
     })
     scope.stop()
   })

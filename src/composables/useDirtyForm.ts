@@ -7,8 +7,6 @@ import {
   type Ref,
   type WatchSource,
 } from 'vue'
-import { ElMessageBox } from 'element-plus'
-import { i18n } from '@/locales'
 
 /**
  * 脏数据保护:
@@ -87,7 +85,7 @@ export function useDirtyForm<T>(
   source: WatchSource<T> | Ref<T>,
   options: UseDirtyFormOptions = {},
 ) {
-  const { warnOnUnload = true, enabled, confirmTitle, confirmMessage } = options
+  const { warnOnUnload = true, enabled } = options
 
   const baseline = ref<T | null>(null)
   const isDirty = ref(false)
@@ -151,26 +149,11 @@ export function useDirtyForm<T>(
    * - 表单未脏 → resolve(true) 直接关
    * - 已脏 → 弹 confirm,用户确认丢弃 → resolve(true);取消 → resolve(false)
    */
+  // 产品决策:抽屉/弹窗关闭(点 X / 取消)统一直接关,不再弹「放弃修改?」确认框。
+  // 全站共用此 composable,这里直接放行即对所有抽屉生效;脏检测能力(isDirty /
+  // markPristine / beforeunload 离开警告)保留,仅去掉关闭时的二次确认。
   async function confirmDiscard(): Promise<boolean> {
-    if (!isDirty.value) return true
-    const t = i18n.global.t
-    const title = confirmTitle ?? t('dirtyForm.confirmTitle')
-    const message = confirmMessage ?? t('dirtyForm.confirmMessage')
-    const confirmText = t('dirtyForm.confirmDiscard')
-    const cancelText = t('dirtyForm.cancelDiscard')
-    try {
-      await ElMessageBox.confirm(message, title, {
-        type: 'warning',
-        confirmButtonText: confirmText,
-        cancelButtonText: cancelText,
-        // 点遮罩不算确认放弃,必须显式选
-        closeOnClickModal: false,
-        closeOnPressEscape: true,
-      })
-      return true
-    } catch {
-      return false
-    }
+    return true
   }
 
   return {
