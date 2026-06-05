@@ -1,44 +1,55 @@
 /**
  * UI Flow 01: 触发 Job → 实例列表能看 — 真正点页面按钮
  *
- * 风格:浏览器 + page.goto + 表单填写 + 点 trigger 按钮 + 验 toast/列表更新
+ * 风格:浏览器 + page.goto + 表单填写 + 点 trigger 按钮 + 验 toast/对话框
+ * 断言深度:每步硬断言「页面真到位(URL 未被守卫弹回)+ 数据视图真渲染」;
+ * trigger 操作有按钮时验对话框打开(数据无关,避免 seed 波动 flaky)。
  */
 import { test, expect } from '../support/app'
 import { enterDemoApp, expectPageTitle, isVisible } from '../support/app'
+
+const LIST_OR_EMPTY = 'tbody tr.el-table__row, .el-table__empty-block, .el-empty, .empty-state'
 
 test.describe('UI Flow 01: trigger → instance', () => {
   test.beforeEach(async ({ page }) => {
     await enterDemoApp(page)
   })
 
-  test('1. 进 /jobs/definitions 页能看到 jobDef 列表', async ({ page }) => {
+  test('1. /jobs/definitions 列表数据视图渲染', async ({ page }) => {
     await page.goto('/jobs/definitions')
+    await expect(page).toHaveURL(/\/jobs\/definitions/)
     await expectPageTitle(page, /任务定义|作业定义/)
-    // 等 networkidle 让 BE 数据加载完成,避免渲染时 rows 为空
     await page.waitForLoadState('networkidle', { timeout: 8000 }).catch(() => undefined)
-    const rows = page.locator('tbody tr.el-table__row, .el-table__row')
-    // 接受空(其他 spec 可能创建+删除留 0 行的瞬态),但骨架应该 attach
-    await expect(page.locator('.el-table').first()).toBeAttached({ timeout: 10_000 })
+    await expect(page.locator(LIST_OR_EMPTY).first()).toBeVisible({ timeout: 10_000 })
   })
 
-  test('2. 点 trigger 按钮触发(若存在) → 验 toast/对话框', async ({ page }) => {
+  test('2. 点 trigger 按钮(若存在)→ 确认对话框打开', async ({ page }) => {
     await page.goto('/jobs/definitions')
+    await expect(page).toHaveURL(/\/jobs\/definitions/)
     await page.waitForLoadState('networkidle', { timeout: 8000 }).catch(() => undefined)
-    const triggerBtn = page.locator('.table-actions, td').getByRole('button', { name: /触发|trigger/i }).first()
-    if (!(await isVisible(triggerBtn, 2000))) test.skip(true, '无 trigger 按钮')
+    await expect(page.locator(LIST_OR_EMPTY).first()).toBeVisible({ timeout: 10_000 })
+    const triggerBtn = page
+      .locator('.table-actions, td')
+      .getByRole('button', { name: /触发|trigger/i })
+      .first()
+    if (!(await isVisible(triggerBtn, 2000))) {
+      test.skip(true, '无 trigger 按钮(空列表 / RBAC)')
+      return
+    }
     await triggerBtn.click({ force: true })
-    // 确认对话框 / 表单
-    const ok = page.locator('.el-message-box, .el-dialog:visible').getByRole('button', { name: /确定|确认|触发/ }).first()
-    if (await isVisible(ok, 2000)) await ok.click({ force: true })
-    // toast 或错(无 downstream 时可能 toast 失败,容忍)
-    await page.waitForTimeout(800)
+    // 触发应弹确认对话框/表单(验交互真生效,而非静默)
+    const dlg = page.locator('.el-message-box, .el-dialog:visible').first()
+    await expect(dlg).toBeVisible({ timeout: 3000 })
+    const ok = dlg.getByRole('button', { name: /确定|确认|触发/ }).first()
+    if (await isVisible(ok, 1500)) await ok.click({ force: true })
+    await page.waitForTimeout(600)
   })
 
-  test('3. /monitor/job-instances 列表加载,可看实例', async ({ page }) => {
+  test('3. /monitor/job-instances 实例数据视图渲染', async ({ page }) => {
     await page.goto('/monitor/job-instances')
+    await expect(page).toHaveURL(/\/monitor\/job-instances/)
     await expectPageTitle(page, /作业|实例|运行/)
     await page.waitForLoadState('networkidle', { timeout: 8000 }).catch(() => undefined)
-    // seed 数据未必落在默认列表的「今日」过滤窗口里 → 接受空,只断言骨架/空态已挂载
-    await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
+    await expect(page.locator(LIST_OR_EMPTY).first()).toBeVisible({ timeout: 10_000 })
   })
 })
