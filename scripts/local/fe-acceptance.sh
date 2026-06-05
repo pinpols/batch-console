@@ -57,7 +57,7 @@ RESUME=0
 SKIP_E2E_FULL=0
 STATE_FILE="$ROOT_DIR/.fe-acceptance-state"
 
-ALL_STEPS=(0 1 2 3 4 5 6 7 8 9 10 11 12)
+ALL_STEPS=(0 1 2 3 4 5 6 7 8 9 10 13 11 12)
 
 step_name() {
   case "$1" in
@@ -72,6 +72,7 @@ step_name() {
     8)  echo "e2e smoke" ;;
     9)  echo "e2e full" ;;
     10) echo "preview 冒烟" ;;
+    13) echo "真实使用审计" ;;
     11) echo "近 3 天违约扫描" ;;
     12) echo "backlog 归档" ;;
     *)  echo "?" ;;
@@ -213,6 +214,18 @@ step_10_preview() {
   (( ok == 1 )) || { echo "preview 路由响应异常"; return 1; }
 }
 
+step_13_real_audit() {
+  # 真实使用视角审计:像用户/运维那样把页面用一遍(载入渲染 + 点击提交 + 操作员旅程),
+  # 抓「能打开但不能用」的问题。需 BE + 运行中的 FE(用 preview 端口,已代理 /api)。
+  if ! curl -sf http://localhost:18080/actuator/health -o /dev/null 2>/dev/null; then
+    echo "BE DOWN,跳过真实使用审计"; return 0
+  fi
+  if ! curl -sf "http://localhost:${PREVIEW_PORT}/" -o /dev/null 2>/dev/null; then
+    echo "preview(:${PREVIEW_PORT})未起,跳过(需先过 Step 10)"; return 0
+  fi
+  BASE="http://localhost:${PREVIEW_PORT}" node scripts/local/fe-real-usage-audit.cjs
+}
+
 step_11_diff_scan() {
   local out="$LOG_DIR/diff-scan.txt"
   echo "扫描近 3 天 *.vue / *.ts / *.tsx commit:" > "$out"
@@ -267,9 +280,10 @@ run_step 6 step_6_unit        || exit 1
 run_step 7 step_7_build       || exit 1
 run_step 8 step_8_e2e_smoke   || exit 1
 run_step 9 step_9_e2e_full    || exit 1
-run_step 10 step_10_preview   || true   # preview 失败不阻断后续归档
-run_step 11 step_11_diff_scan || true
-run_step 12 step_12_backlog   || true
+run_step 10 step_10_preview     || true   # preview 失败不阻断后续归档
+run_step 13 step_13_real_audit  || true   # 真实使用审计:发现真 bug 记入汇总(不硬阻断验收)
+run_step 11 step_11_diff_scan   || true
+run_step 12 step_12_backlog     || true
 
 TOTAL=$(( $(date +%s) - START_AT ))
 
