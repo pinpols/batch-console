@@ -144,6 +144,21 @@ await expect(page.locator('.error-state, .el-result')).toBeVisible()  // 有错�
   ```
 - 保存走 `graphToDefinition → PUT /full`,刷新后断言节点数不变(持久化往返)。
 
+### 4.8 断言深度模式(flows-ui 深化经验,稳健不 flaky)
+让 UI 业务流既"深"又不依赖具体 seed 数据:
+- **数据视图真渲染(行 or 空态)**,而非仅 `toBeAttached`:
+  ```ts
+  const LIST_OR_EMPTY = 'tbody tr.el-table__row, .el-table__empty-block, .el-empty, .empty-state'
+  await expect(page.locator(LIST_OR_EMPTY).first()).toBeVisible({ timeout: 10_000 })
+  ```
+- **页面真到位**:每步 `await expect(page).toHaveURL(/\/path/)` —— 验未被路由 menu-allowlist 守卫弹回(本项目真实 bug 类)。
+- **tab 切换验真激活**,**不要**切完去断 `LIST_OR_EMPTY.first()`——多 tab pane 下 `.first()` 会命中**隐藏**的非激活 pane(`display:none`)→ `toBeVisible` 失败:
+  ```ts
+  await deliveryTab.click({ force: true })
+  await expect(deliveryTab).toHaveAttribute('aria-selected', 'true')  // el-tabs 激活态
+  ```
+- **数据相关交互保持 best-effort**:`if (await isVisible(btn)) { ... }`,有数据才点;别硬断言某行/某按钮存在(seed 波动会 flaky)。
+
 ---
 
 ## 5. 运行方式
@@ -189,7 +204,9 @@ bash scripts/local/fe-acceptance.sh --skip-e2e-full
 
 | 症状 | 根因 | 处理 |
 |---|---|---|
-| e2e 全部 `test.skip` / 报「storageState token is expired」 | **登录态 token 过期**(会话/机器闲置久) | 跑 `npm run test:e2e`(会重跑 global-setup 刷新);确认 BE 在 18080 且 admin/admin123 可登录 |
+| e2e 全部 `test.skip` / 报「storageState token is expired」 | **登录态 token 过期**;只在**脱离 global-setup 直跑**(如手写 `chromium.launch + storageState` 的一次性脚本)时出现 | **必须走 `npx playwright test` / `npm run test:e2e`** —— 它每次自动重跑 global-setup 刷新 `e2e/.auth/*.json`;**别用独立脚本直接吃陈旧 storageState**;确认 BE 在 18080 且 admin/admin123 可登录 |
+| `toHaveURL` 断言失败但页面其实正常(如 `/scheduler/catch-up-approvals`) | 该路径是**别名,会重定向**(→ `/approvals?tab=catch-up`) | URL 断言写成接受重定向:`toHaveURL(/\/(scheduler\/catch-up-approvals\|approvals)/)` |
+| tab 切换后 `LIST_OR_EMPTY.first()` 报 `Received: hidden` | 多 tab pane 下 `.first()` 命中**隐藏的非激活 pane**(`display:none`) | 切 tab 后改断 `tab` 的 `aria-selected='true'`,别断隐藏 pane 的表(见 §4.8) |
 | 设计器 e2e 进去撞「只读 banner」被 skip | **设计锁按会话持有,跨运行不自动释放** | `beforeEach` 主动 DELETE 锁(见 §4.7) |
 | 设计器 dev 偶发「View with name 'vue-shape-view' does not exist」 | vite **optimizeDeps 把 x6 系预打包成多实例**(dev-only;prod rollup 单实例无此问题) | `vite.config optimizeDeps.include` 必须含 `@antv/x6` + `@antv/x6-vue-shape` + `@antv/x6/es/plugin/minimap`;`--force` 重启后**首次**加载可能撞 504 churn,优化器稳定后正常 |
 | 设计器拖节点崩 `clientToLocalPoint is not a function` | X6 v3 公开 API 是 `graph.clientToLocal(x,y)`(`clientToLocalPoint` 仅在 `graph.coord`) | 已修;新代码用 `clientToLocal` |
