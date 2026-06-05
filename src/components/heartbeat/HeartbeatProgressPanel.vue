@@ -94,8 +94,10 @@
     extractProgressPercent,
     type TaskHeartbeatDetails,
   } from '@/api/taskHeartbeat'
+  import { useTenantStore } from '@/stores/tenant'
 
   const { t } = useI18n({ useScope: 'global' })
+  const tenant = useTenantStore()
 
   const props = defineProps<{ taskId: number; pollMs?: number }>()
 
@@ -126,7 +128,7 @@
     loading.value = true
     loadError.value = false
     try {
-      const r = await getTaskHeartbeatDetails(props.taskId)
+      const r = await getTaskHeartbeatDetails(props.taskId, tenant.tenantId)
       if (r === null) {
         notFound.value = true
         details.value = null

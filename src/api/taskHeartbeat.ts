@@ -21,10 +21,13 @@ export interface TaskHeartbeatDetails {
  */
 export async function getTaskHeartbeatDetails(
   taskId: number,
+  tenantId?: string,
 ): Promise<TaskHeartbeatDetails | null> {
   try {
+    // 必须显式带 tenantId query:该端点的租户守卫读 query 参数,只靠拦截器注的 X-Tenant-Id 头会 400「租户参数缺失」。
     return await get<TaskHeartbeatDetails>(
       `/api/console/tasks/${encodeURIComponent(String(taskId))}/heartbeat-details`,
+      tenantId ? { tenantId } : undefined,
     )
   } catch (err) {
     const status = (err as { response?: { status?: number } })?.response?.status
