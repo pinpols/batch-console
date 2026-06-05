@@ -1401,6 +1401,12 @@ const messages: Messages = {
       DEPRECATED: 'Deprecated',
     },
     outboxPublishStatus: {
+      // actual BE OutboxPublishStatus enum codes
+      NEW: 'Pending',
+      PUBLISHING: 'Publishing',
+      PUBLISHED: 'Sent',
+      GIVE_UP: 'Given up',
+      // compatibility alias codes
       PENDING: 'Pending',
       SCHEDULED: 'Scheduled',
       RETRYING: 'Retrying',
@@ -4035,6 +4041,32 @@ const messages: Messages = {
     onboardingTenantDesc: 'Switch or create tenants for multi-business isolation',
     onboardingWorker: 'Check workers',
     onboardingWorkerDesc: 'Verify workers are up, otherwise jobs cannot run',
+    // chart legends / placeholders
+    legendNow: 'Now',
+    legendRunning: 'Running',
+    legendFailed: 'Failed',
+    legendSlaOnTime: 'SLA on-time',
+    legendSlaViolation: 'SLA violation',
+    legendFailRate: 'Fail rate %',
+    legendOnline: 'Online',
+    legendOffline: 'Offline',
+    legendOtherOpen: 'Other OPEN',
+    legendRetryBacklog: 'Retry backlog',
+    legendDeliveryFail: 'Delivery failures',
+    noActiveAlerts: 'No active alerts',
+    outboxHealthy: 'Outbox healthy',
+    loadFailed: 'Load failed',
+    chartsLoadFailed: 'Failed to load chart data, please retry later',
+    summaryLoadFailed: 'Failed to load ops summary, check network or retry later',
+    extraLoadFailedTitle: 'Failed to load dashboard data',
+    extraLoadFailedMessage:
+      'Some extra panels failed to load and show placeholders. Click retry to reload.',
+  },
+  dirtyForm: {
+    confirmTitle: 'Discard changes?',
+    confirmMessage: 'Unsaved changes will be lost. Close anyway?',
+    confirmDiscard: 'Discard',
+    cancelDiscard: 'Keep editing',
   },
   reportExportHub: {
     tenantTagPrefix: 'tenant: {id}',
