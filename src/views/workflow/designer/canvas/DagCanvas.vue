@@ -1,10 +1,16 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { getTeleport } from '@antv/x6-vue-shape'
 import { useDesignerStore } from '../store/useDesignerStore'
 import { useX6Graph } from './useX6Graph'
 
 const { t } = useI18n()
+
+// x6-vue-shape 的节点通过 Teleport 渲染进这个容器,从而复用主 app 上下文
+// (vue-i18n / pinia / element-plus 等插件);不挂它则 x6-vue-shape 退化为每节点
+// 独立 createApp,节点组件里的 useI18n() 会抛「Need to install with `app.use`」。
+const TeleportContainer = getTeleport()
 const containerRef = ref<HTMLDivElement | null>(null)
 const minimapRef = ref<HTMLDivElement | null>(null)
 
@@ -83,6 +89,7 @@ function onKeyDown(ev: KeyboardEvent) {
   >
     <div ref="containerRef" class="dag-canvas__graph" />
     <div ref="minimapRef" class="dag-canvas__minimap" :aria-label="t('workflowDesignerSpike.minimapAriaLabel')" />
+    <TeleportContainer />
   </div>
 </template>
 
