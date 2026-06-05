@@ -316,6 +316,13 @@
 
   function searchInstances() {
     return runSearch(async () => {
+      // traceId 是全局唯一键,搜它时清掉默认的今日日期锚定——否则别的业务日的 trace 会被
+      // 日期范围挡掉(从详情页拷 traceId 来搜却"搜不到")。
+      if (query.traceId) {
+        query.startDate = ''
+        query.endDate = ''
+        dateRange.value = null
+      }
       query.page = 1
       syncFiltersToUrl()
       await loadData()
