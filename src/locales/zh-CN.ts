@@ -2900,6 +2900,8 @@ export default {
     toggleConfirmText: '{action} Job「{code}」?',
     toggleSuccess: '已{action} {code}',
     triggerPrompt: '可选,输入 JSON payload;留空则发送空对象',
+    triggerPromptFileJob:
+      '{jobType} 作业需文件/内容参数才能跑通(已预填模板):IMPORT 需 templateCode+content(内联 CSV)、EXPORT 需 templateCode、DISPATCH 需 fileId。留空 {jobType} 会因缺必填字段失败。',
     triggerTitle: '手动触发 {code}',
     triggerConfirm: '触发',
     triggerInvalidJson: 'payload 需为合法 JSON',

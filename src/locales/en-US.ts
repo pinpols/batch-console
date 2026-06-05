@@ -2947,6 +2947,8 @@ const messages: Messages = {
     toggleConfirmText: '{action} Job "{code}"?',
     toggleSuccess: '{action} {code}',
     triggerPrompt: "Optional JSON payload; empty sends {'{'}{'}'}",
+    triggerPromptFileJob:
+      '{jobType} jobs need file/content params to run (template pre-filled): IMPORT needs templateCode+content (inline CSV), EXPORT needs templateCode, DISPATCH needs fileId. Triggering empty will fail on missing required fields.',
     triggerTitle: 'Trigger {code}',
     triggerConfirm: 'Trigger',
     triggerInvalidJson: 'payload must be valid JSON',

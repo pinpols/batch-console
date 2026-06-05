@@ -871,17 +871,37 @@
     }
   }
 
+  // 按 jobType 预填触发 payload 模板:文件/内容型作业需要的必填字段(英文字段名,非 i18n 文案)。
+  function triggerInputTemplate(jobType: string | undefined): string {
+    switch (jobType) {
+      case 'IMPORT':
+        return '{\n  "templateCode": "",\n  "content": "header1,header2\\nvalue1,value2"\n}'
+      case 'EXPORT':
+        return '{\n  "templateCode": ""\n}'
+      case 'DISPATCH':
+        return '{\n  "fileId": 0\n}'
+      default:
+        return '{}'
+    }
+  }
+
   async function triggerRow(row: ConsoleJobDefinitionResponse) {
     let payloadText = ''
     try {
+      // 文件/内容型作业(IMPORT/EXPORT/DISPATCH)裸触发(空 {})会失败(缺 templateCode/content/fileId),
+      // 预填 payload 模板引导用户填必填字段——字段名是英文,不涉 i18n;非文件型保持 {}。
+      const promptMsg =
+        row.jobType === 'IMPORT' || row.jobType === 'EXPORT' || row.jobType === 'DISPATCH'
+          ? t('jobDefinitionList.triggerPromptFileJob', { jobType: row.jobType })
+          : t('jobDefinitionList.triggerPrompt')
       // inputValidator 在用户点"确认"时实时拦截 JSON 语法错,
       // 而不是关掉对话框、ElMessage 再 toast,避免用户白填一大坨参数。
       const { value } = await ElMessageBox.prompt(
-        t('jobDefinitionList.triggerPrompt'),
+        promptMsg,
         t('jobDefinitionList.triggerTitle', { code: row.jobCode }),
         {
           inputType: 'textarea',
-          inputValue: '{}',
+          inputValue: triggerInputTemplate(row.jobType),
           confirmButtonText: t('jobDefinitionList.triggerConfirm'),
           cancelButtonText: t('common.cancel'),
           inputValidator: (v: string) => {
