@@ -14,7 +14,13 @@
         >
           {{ t('monitor.detailRefresh') }}
         </el-button>
-        <el-button v-if="row" type="danger" :loading="cancelLoading" @click="confirmCancel">
+        <el-button
+          v-if="row"
+          type="danger"
+          :loading="cancelLoading"
+          :disabled="isTerminal"
+          @click="confirmCancel"
+        >
           {{ t('monitor.detailCancel') }}
         </el-button>
       </template>
@@ -122,10 +128,20 @@
             <el-button type="warning" :loading="rerunLoading" @click="confirmRerun">
               {{ t('monitor.detailRerunBtn') }}
             </el-button>
-            <el-button type="danger" :loading="cancelLoading" @click="confirmCancel">
+            <el-button
+              type="danger"
+              :loading="cancelLoading"
+              :disabled="isTerminal"
+              @click="confirmCancel"
+            >
               {{ t('monitor.detailCancelBtn') }}
             </el-button>
-            <el-button type="danger" :loading="terminateLoading" @click="confirmTerminate">
+            <el-button
+              type="danger"
+              :loading="terminateLoading"
+              :disabled="isTerminal"
+              @click="confirmTerminate"
+            >
               {{ t('monitor.detailTerminateBtn') }}
             </el-button>
           </div>
@@ -331,6 +347,11 @@
   const cancelLoading = ref(false)
   const terminateLoading = ref(false)
   const row = ref<ConsoleJobInstanceResponse | null>(null)
+
+  // 终态实例不能取消/终止(BE 会 409 STATE_CONFLICT「cannot transition from FAILED/SUCCESS...」)——
+  // 按钮禁用,避免用户点了"没反应"(重跑不受此限,失败实例可重跑)。
+  const TERMINAL_STATUSES = ['SUCCESS', 'FAILED', 'CANCELLED', 'CANCELED', 'TERMINATED']
+  const isTerminal = computed(() => TERMINAL_STATUSES.includes(row.value?.instanceStatus ?? ''))
 
   const activeTab = ref<'overview' | 'steps' | 'heartbeat' | 'recent'>('overview')
   const stepsLoading = ref(false)
