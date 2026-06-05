@@ -14,7 +14,7 @@ describe('resolveStatusMeta — label 优先级', () => {
     })
     expect(resolveStatusMeta('RUNNING', 'instance', metaEnums)).toEqual({
       label: '运行中(后端)',
-      type: 'success',
+      type: 'primary', // 进行中 = 蓝(success 绿留给 SUCCESS 终态)
     })
   })
 
@@ -28,7 +28,7 @@ describe('resolveStatusMeta — label 优先级', () => {
   it('falls back to raw value when metaEnums undefined and no local label', () => {
     expect(resolveStatusMeta('RUNNING', 'instance', undefined)).toEqual({
       label: 'RUNNING',
-      type: 'success', // 颜色仍来自本地 color map
+      type: 'primary', // 颜色仍来自本地 color map(进行中 = 蓝)
     })
   })
 
