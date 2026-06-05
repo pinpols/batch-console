@@ -459,6 +459,7 @@
     queryPipelineProgressSafe,
     type PipelineStepProgress,
   } from '@/api/filePipelineQuery'
+  import { processedCountFromSummary } from '@/utils/pipelineStepSummary'
   import { useAutoRefresh } from '@/composables/useAutoRefresh'
 
   const tenant = useTenantStore()
@@ -516,9 +517,13 @@
   }
 
   function formatProcessed(row: ConsoleFilePipelineStepResponse): string {
+    // 运行中步骤:优先实时 cache(若 BE 实时端点可用);完成步骤:回落 outputSummary 计数
+    // (见 utils/pipelineStepSummary —— 完成步骤的计数本就在响应里,无需 BE 端点)。
     const prog = progressByStepId.value.get(row.id)
-    if (!prog || prog.rowsProcessed == null) return '—'
-    return formatNumberWithCommas(prog.rowsProcessed)
+    if (prog && prog.rowsProcessed != null) return formatNumberWithCommas(prog.rowsProcessed)
+    const fromSummary = processedCountFromSummary(row.stageCode, row.outputSummary)
+    if (fromSummary != null) return formatNumberWithCommas(fromSummary)
+    return '—'
   }
 
   function computeEtaText(prog: PipelineStepProgress): string {
