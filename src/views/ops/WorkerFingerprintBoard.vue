@@ -250,6 +250,10 @@
   // useAutoRefresh 自带页面隐藏自动暂停,无需手动管理 visibility。
   useAutoRefresh(() => {
     if (!autoRefreshOn.value) return
+    // 与 useTenantReload 同样的空租户守卫:admin 尚未选租户时 tenant.tenantId 为空,
+    // 直接 load() 会向 BE 发不带 tenantId 的请求被拒为 400「租户参数缺失」。
+    // useAutoRefresh 不经 useTenantReload,需在此自行 gating。
+    if (!tenant.tenantId) return
     void load()
   }, 10_000)
 </script>

@@ -41,9 +41,36 @@
 
   const errorText = ref('')
 
+  /**
+   * 是否为 API / 网络错误(axios)。这类错误应由各页自身的 loadError / 空态 / toast 处理,
+   * 不该让整个路由降级成「组件渲染异常」—— 否则加载期一个 4xx(如 admin 未选租户的
+   * 「租户参数缺失」、无权角色的 403)就会把整页打崩。仅真正的渲染 / 逻辑异常才进错误态边界。
+   */
+  function isApiError(err: unknown): boolean {
+    if (!err || typeof err !== 'object') return false
+    const e = err as Record<string, unknown>
+    if (e.isAxiosError === true) return true
+    if ('response' in e && 'config' in e) return true
+    return (
+      typeof e.message === 'string' &&
+      /Request failed with status code|Network Error|timeout of \d+ms exceeded/i.test(e.message)
+    )
+  }
+
   onErrorCaptured((err, instance, info) => {
-    error.value = err
     const message = err instanceof Error ? err.message : String(err)
+    if (isApiError(err)) {
+      // 记录后吞掉(返回 false 阻止冒泡),但不切换到错误态:页面保持自身渲染,
+      // 由其 loadError / EmptyState 或拦截器 toast 呈现失败,避免整页「组件渲染异常」。
+      logError(`ErrorBoundary(api-non-fatal):${message}`, {
+        kind: 'errorBoundary',
+        info,
+        message,
+        component: instance?.$options?.name || instance?.$options?.__name || 'Unknown',
+      })
+      return false
+    }
+    error.value = err
     errorText.value = `${message}(${info})`
     const stack = err instanceof Error ? err.stack?.split('\n').slice(0, 5).join('\n') : undefined
     logError(`ErrorBoundary:${message}`, {

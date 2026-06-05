@@ -1401,6 +1401,12 @@ const messages: Messages = {
       DEPRECATED: 'Deprecated',
     },
     outboxPublishStatus: {
+      // actual BE OutboxPublishStatus enum codes
+      NEW: 'Pending',
+      PUBLISHING: 'Publishing',
+      PUBLISHED: 'Sent',
+      GIVE_UP: 'Given up',
+      // compatibility alias codes
       PENDING: 'Pending',
       SCHEDULED: 'Scheduled',
       RETRYING: 'Retrying',
@@ -3464,6 +3470,72 @@ const messages: Messages = {
     securityEmpty: 'No additional safety gates declared',
     colSecurityField: 'Config field',
     colSecurityMeaning: 'Meaning',
+    typeLabel: {
+      sql: 'SQL execution',
+      stored_proc: 'Stored procedure call',
+      shell: 'Shell command',
+      http: 'HTTP call',
+    },
+    paramDesc: {
+      sql: {
+        sql: 'SQL to execute (non-empty)',
+        dataSourceBean: 'Target data source bean name (restricted by allowlist)',
+        statementTimeoutSeconds: 'Statement timeout in seconds',
+        autoCommit: 'Whether to auto-commit',
+      },
+      stored_proc: {
+        procedureName: 'Stored procedure name (restricted by allowedSchemas)',
+        inParams: 'Input parameters, ordered list',
+        outParams: 'Output parameter SQL type list',
+        statementTimeoutSeconds: 'Statement timeout in seconds',
+        dataSourceBean: 'Target data source bean name (restricted by allowlist)',
+        autoCommit: 'Whether to auto-commit',
+      },
+      shell: {
+        command: 'Command (must be within commandWhitelist)',
+        args: 'Arguments, list of strings',
+        timeoutSeconds: 'Timeout in seconds',
+        env: 'Environment variables, only keys within allowedEnvKeys are passed through',
+      },
+      http: {
+        url: 'Target URL (subject to host allow/deny list + SSRF check)',
+        method: 'HTTP method (default GET, restricted by allowedMethods)',
+        headers: 'Request headers',
+        body: 'Request body',
+        timeoutSeconds: 'Timeout in seconds',
+        expectStatus: 'Expected response status code',
+        auth: 'Authentication config (restricted by allowedAuthTypes)',
+      },
+    },
+    gateMeaning: {
+      sql: {
+        allowedDataSourceBeans: 'Data source allowlist; empty = allow all in dev only',
+        forbidOsCapableRole: 'Forbid using DB roles with OS capabilities',
+        maxResultRows: 'Upper limit on result set rows; truncated when exceeded',
+      },
+      stored_proc: {
+        allowedSchemas: 'Schema allowlist (default schema = batch)',
+        allowedDataSourceBeans: 'Data source allowlist',
+        forbidOsCapableRole: 'Forbid using DB roles with OS capabilities',
+        allowSecurityDefiner:
+          'Whether to allow SECURITY DEFINER procedures (denied by default, to prevent owner-based privilege escalation)',
+      },
+      shell: {
+        commandWhitelist: 'Command allowlist (empty by default = all denied, requires platform config)',
+        workdirBase: 'Isolation root for temporary working directories',
+        allowedEnvKeys: 'Allowlist of environment variable names that may be passed through',
+        argRegexAllowlist: 'Argument regex allowlist',
+        rejectParentDirRefs: 'Reject arguments containing parent directory references (../)',
+      },
+      http: {
+        allowedHostPatterns: 'Egress host allowlist (empty = allow all in dev only)',
+        blockedHostPatterns:
+          'Egress host denylist (takes precedence over allowlist; denies metadata/localhost by default)',
+        blockPrivateIps: 'Block private / loopback / link-local IPs (SSRF defense)',
+        allowedMethods: 'HTTP method allowlist',
+        allowedAuthTypes: 'Authentication type allowlist',
+      },
+    },
   },
   initialSetup: {
     title: 'First-time setup: create initial tenant',
@@ -4035,6 +4107,32 @@ const messages: Messages = {
     onboardingTenantDesc: 'Switch or create tenants for multi-business isolation',
     onboardingWorker: 'Check workers',
     onboardingWorkerDesc: 'Verify workers are up, otherwise jobs cannot run',
+    // chart legends / placeholders
+    legendNow: 'Now',
+    legendRunning: 'Running',
+    legendFailed: 'Failed',
+    legendSlaOnTime: 'SLA on-time',
+    legendSlaViolation: 'SLA violation',
+    legendFailRate: 'Fail rate %',
+    legendOnline: 'Online',
+    legendOffline: 'Offline',
+    legendOtherOpen: 'Other OPEN',
+    legendRetryBacklog: 'Retry backlog',
+    legendDeliveryFail: 'Delivery failures',
+    noActiveAlerts: 'No active alerts',
+    outboxHealthy: 'Outbox healthy',
+    loadFailed: 'Load failed',
+    chartsLoadFailed: 'Failed to load chart data, please retry later',
+    summaryLoadFailed: 'Failed to load ops summary, check network or retry later',
+    extraLoadFailedTitle: 'Failed to load dashboard data',
+    extraLoadFailedMessage:
+      'Some extra panels failed to load and show placeholders. Click retry to reload.',
+  },
+  dirtyForm: {
+    confirmTitle: 'Discard changes?',
+    confirmMessage: 'Unsaved changes will be lost. Close anyway?',
+    confirmDiscard: 'Discard',
+    cancelDiscard: 'Keep editing',
   },
   reportExportHub: {
     tenantTagPrefix: 'tenant: {id}',

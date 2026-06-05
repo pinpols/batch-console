@@ -98,6 +98,12 @@ export const approvalStatusColor: Record<string, StatusTagType> = {
 
 /** /meta/enums: `outboxPublishStatus`(取值含别名) */
 export const outboxPublishStatusColor: Record<string, StatusTagType> = {
+  // 后端 OutboxPublishStatus enum 实际取值
+  NEW: 'warning',
+  PUBLISHING: 'primary',
+  PUBLISHED: 'success',
+  GIVE_UP: 'danger',
+  // 别名 / 历史契约取值
   PENDING: 'warning',
   SCHEDULED: 'info',
   RETRYING: 'primary',

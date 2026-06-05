@@ -420,7 +420,7 @@
   import { useSseAutoReload } from '@/composables/useSseAutoReload'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
-  import { useRouter } from 'vue-router'
+  import { useRoute, useRouter } from 'vue-router'
   import { useDrawerAutoClose } from '@/composables/useDrawerAutoClose'
   import { useAsyncAction } from '@/composables/useAsyncAction'
   import { instanceApi } from '@/api/instance'
@@ -490,7 +490,10 @@
   const total = ref(0)
   const page = ref(1)
   const pageSize = ref(15)
-  const keyword = ref('')
+  // 深链:WorkflowMermaidViewer 点 pipeline 节点跳转 /jobs/pipelines?pipelineCode=X,
+  // 用该 code 预填关键字过滤(queryKeyword 命中 pipelineCode),落地即定位到目标流水线。
+  const route = useRoute()
+  const keyword = ref(typeof route.query.pipelineCode === 'string' ? route.query.pipelineCode : '')
   const pipelineType = ref('')
   const enabledFilter = ref<boolean | undefined>()
   const hasActiveFilters = computed(
@@ -636,8 +639,16 @@
   }
 
   async function load() {
-    loading.value = true
     loadError.value = null
+    // admin 多租户:未选当前租户时 tenantId 为空,直接返回空态;
+    // 否则会发 tenantId= 的请求,BE 返 400「租户参数缺失」,异常冒泡导致组件渲染崩溃。
+    if (!tenant.tenantId) {
+      allRows.value = []
+      rows.value = []
+      total.value = 0
+      return
+    }
+    loading.value = true
     try {
       const pr = await queryPipelineDefinitions(tenant.tenantId, 1, 200)
       allRows.value = pr.items
@@ -658,6 +669,13 @@
       total.value = refined.length
       const start = (page.value - 1) * pageSize.value
       rows.value = refined.slice(start, start + pageSize.value)
+    } catch (e) {
+      // 加载失败兜底:置 loadError,让 ProTable 渲染错误面板(:error / :on-retry 已绑定),
+      // 避免异常向上冒泡触发 Vue 渲染错误(整页「组件渲染异常」)。
+      loadError.value = e
+      allRows.value = []
+      rows.value = []
+      total.value = 0
     } finally {
       loading.value = false
     }
@@ -830,6 +848,8 @@
     domain: 'pipeline-definitions',
     reload: load,
     scope: () => tenant.tenantId,
+    // 未选当前租户(admin 多租户)时不开 SSE,避免 events?tenantId= 触发 500
+    enabled: computed(() => !!tenant.tenantId),
   })
 
   useTenantReload(() => {

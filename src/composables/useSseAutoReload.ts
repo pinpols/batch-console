@@ -76,6 +76,13 @@ export function useSseAutoReload(options: UseSseAutoReloadOptions): void {
     return typeof e === 'boolean' ? e : e.value
   }
 
+  /** scope(常为 tenantId)为空时不开流:空 tenantId 的 events 请求会被 BE 拒为 5xx/400。 */
+  function scopeEmpty(): boolean {
+    if (!scope) return false
+    const v = typeof scope === 'function' ? (scope as () => unknown)() : (scope as { value: unknown }).value
+    return v == null || v === ''
+  }
+
   function schedule() {
     if (reloadTimer) return
     reloadTimer = setTimeout(() => {
@@ -137,6 +144,7 @@ export function useSseAutoReload(options: UseSseAutoReloadOptions): void {
   async function open() {
     close()
     if (!isEnabled()) return
+    if (scopeEmpty()) return
     const my = generation
     try {
       const es = await createSseStream(
