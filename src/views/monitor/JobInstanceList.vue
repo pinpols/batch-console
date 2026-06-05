@@ -49,6 +49,7 @@
                 enum-key="instanceStatus"
                 :placeholder="t('jobInstanceList.statusPlaceholder')"
                 :options="statusOptions"
+                @change="onStatusChange"
               />
             </el-form-item>
             <el-form-item>
@@ -301,6 +302,7 @@
       query.tenantId = tenant.tenantId
       query.jobCode = ''
       query.instanceStatus = ''
+      query.instanceStatuses = ''
       query.startDate = t[0]
       query.endDate = t[1]
       query.traceId = ''
@@ -340,6 +342,11 @@
     const params: Record<string, string> = {}
     if (query.jobCode) params.jobCode = query.jobCode
     if (query.instanceStatus) params.status = query.instanceStatus
+    // deeplink 的多状态过滤也写回 URL(刷新/分享不丢失),与单值 status 互斥
+    if (query.instanceStatuses) {
+      params.statuses = query.instanceStatuses
+      params.range = 'all'
+    }
     if (query.startDate) params.startDate = query.startDate
     if (query.endDate) params.endDate = query.endDate
     if (query.traceId) params.traceId = query.traceId
@@ -348,6 +355,15 @@
   }
 
   function onSlaBreachedChange() {
+    query.page = 1
+    syncFiltersToUrl()
+    void loadData()
+  }
+
+  function onStatusChange() {
+    // 用户手动选单值状态时,清掉 deeplink(失败任务卡片)带来的 instanceStatuses CSV——
+    // CSV 优先级高于单值,不清会出现"选成功却仍列失败"(搜索条件不生效)。
+    query.instanceStatuses = ''
     query.page = 1
     syncFiltersToUrl()
     void loadData()
