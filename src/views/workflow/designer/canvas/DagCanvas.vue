@@ -30,8 +30,9 @@ function onDrop(ev: DragEvent) {
   const nodeType = ev.dataTransfer?.getData('application/x-designer-node-type')
   if (!nodeType || !containerRef.value || !handle.graph) return
   const rect = containerRef.value.getBoundingClientRect()
-  // X6 提供 clientToLocalPoint 把屏幕坐标 → 画布逻辑坐标
-  const point = handle.graph.clientToLocalPoint({ x: ev.clientX, y: ev.clientY })
+  // X6 v3 公开方法是 graph.clientToLocal(x, y)(clientToLocalPoint 仅在 graph.coord 子对象上,
+  // 直接 graph.clientToLocalPoint(...) 会 is-not-a-function);返回画布逻辑坐标点
+  const point = handle.graph.clientToLocal(ev.clientX, ev.clientY)
   // fallback 当 graph 还未挂载时:用相对容器坐标
   const x = Number.isFinite(point.x) ? point.x : ev.clientX - rect.left
   const y = Number.isFinite(point.y) ? point.y : ev.clientY - rect.top
