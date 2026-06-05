@@ -8,7 +8,10 @@
  */
 
 import { Graph } from '@antv/x6'
-import { MiniMap } from '@antv/x6/lib/plugin/minimap'
+// 必须走 es/ 构建:lib/(CJS)是另一份 x6 实例,其 NodeView.registry 里没有
+// x6-vue-shape 注册的 'vue-shape-view',minimap 渲染缩略图时会抛
+// 「View with name 'vue-shape-view' does not exist」(且随节点变化在 watcher 里间歇复现)。
+import { MiniMap } from '@antv/x6/es/plugin/minimap'
 import { register as registerVueShape } from '@antv/x6-vue-shape'
 // X6 v3 仍保留对老式 dagre 字符串布局算法的支持,但需要用户层手算 -> 走 npm dagre 自行布局
 import dagre from 'dagre'
@@ -159,7 +162,9 @@ export function useX6Graph(containerRef: Ref<HTMLDivElement | null>, minimapRef:
     ensureRegistered()
     const graph = new Graph({
       container: containerRef.value,
-      background: { color: 'var(--color-bg-base, #fafafa)' },
+      // --color-bg-canvas 是已定义且暗色感知的画布底色(light #e9eef5 / dark #0b0f14);
+      // 原 --color-bg-base 未定义 → 暗色下回退 #fafafa 变浅色画布。
+      background: { color: 'var(--color-bg-canvas, #e9eef5)' },
       grid: { visible: true, type: 'dot', size: 10 },
       panning: { enabled: true },
       mousewheel: { enabled: true, modifiers: 'ctrl', zoomAtMousePosition: true },

@@ -1,9 +1,17 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
+import { ArrowLeft } from '@element-plus/icons-vue'
 import { useDesignerStore } from '../store/useDesignerStore'
 
 const { t } = useI18n()
+const router = useRouter()
 const store = useDesignerStore()
+
+// 设计器是全屏路由(无侧边栏),需显式返回入口;回工作流定义列表
+function goBack() {
+  void router.push('/workflow/definitions')
+}
 
 withDefaults(
   defineProps<{
@@ -31,6 +39,10 @@ defineEmits<{
 
 <template>
   <div class="designer-toolbar" role="toolbar" :aria-label="t('workflowDesignerSpike.toolbarAriaLabel')">
+    <el-button :icon="ArrowLeft" @click="goBack">
+      {{ t('common.backToList') }}
+    </el-button>
+    <el-divider direction="vertical" />
     <el-button-group>
       <el-button :disabled="!store.canUndo" @click="store.undo()">
         {{ t('workflowDesignerSpike.actionUndo') }}

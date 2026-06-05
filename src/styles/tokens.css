@@ -127,6 +127,9 @@
   /** 主内容区画布（侧栏右侧），略深于卡片以突出卡片层次 */
   --color-bg-canvas: #e9eef5;
   --color-bg-card: #ffffff;
+  /* 卡片内"凹陷/次级"面板底色(嵌套表单、代码块等)。多处 ops 页在用,
+     此前未定义只靠 inline fallback #f7f8fa,导致暗色下渲染成白卡。 */
+  --color-bg-subtle: #f7f8fa;
   --color-bg-hero: linear-gradient(135deg, #eef5ff 0%, #f7faff 42%, #ffffff 100%);
   --color-border: #e5e6eb;
   --color-border-light: #f0f0f0;
@@ -248,6 +251,8 @@ html.dark {
   --color-bg-page: #0f1419;
   --color-bg-canvas: #0b0f14;
   --color-bg-card: #1a1f26;
+  /* 次级面板:比 page(#0f1419)略亮、比 card(#1a1f26)略沉,暗色下能与卡片区分 */
+  --color-bg-subtle: #161b22;
   --color-bg-hero: linear-gradient(135deg, #141920 0%, #1a2230 42%, #1a1f26 100%);
   --color-border: #2d333b;
   --color-border-light: #252a32;

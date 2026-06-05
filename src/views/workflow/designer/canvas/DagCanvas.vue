@@ -1,10 +1,16 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { getTeleport } from '@antv/x6-vue-shape'
 import { useDesignerStore } from '../store/useDesignerStore'
 import { useX6Graph } from './useX6Graph'
 
 const { t } = useI18n()
+
+// x6-vue-shape 的节点通过 Teleport 渲染进这个容器,从而复用主 app 上下文
+// (vue-i18n / pinia / element-plus 等插件);不挂它则 x6-vue-shape 退化为每节点
+// 独立 createApp,节点组件里的 useI18n() 会抛「Need to install with `app.use`」。
+const TeleportContainer = getTeleport()
 const containerRef = ref<HTMLDivElement | null>(null)
 const minimapRef = ref<HTMLDivElement | null>(null)
 
@@ -30,8 +36,9 @@ function onDrop(ev: DragEvent) {
   const nodeType = ev.dataTransfer?.getData('application/x-designer-node-type')
   if (!nodeType || !containerRef.value || !handle.graph) return
   const rect = containerRef.value.getBoundingClientRect()
-  // X6 提供 clientToLocalPoint 把屏幕坐标 → 画布逻辑坐标
-  const point = handle.graph.clientToLocalPoint({ x: ev.clientX, y: ev.clientY })
+  // X6 v3 公开方法是 graph.clientToLocal(x, y)(clientToLocalPoint 仅在 graph.coord 子对象上,
+  // 直接 graph.clientToLocalPoint(...) 会 is-not-a-function);返回画布逻辑坐标点
+  const point = handle.graph.clientToLocal(ev.clientX, ev.clientY)
   // fallback 当 graph 还未挂载时:用相对容器坐标
   const x = Number.isFinite(point.x) ? point.x : ev.clientX - rect.left
   const y = Number.isFinite(point.y) ? point.y : ev.clientY - rect.top
@@ -83,6 +90,7 @@ function onKeyDown(ev: KeyboardEvent) {
   >
     <div ref="containerRef" class="dag-canvas__graph" />
     <div ref="minimapRef" class="dag-canvas__minimap" :aria-label="t('workflowDesignerSpike.minimapAriaLabel')" />
+    <TeleportContainer />
   </div>
 </template>
 

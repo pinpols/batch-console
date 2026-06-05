@@ -75,11 +75,17 @@ export const workflowDesignerApi = {
       body,
     ),
 
+  // tenantId 是 BE @RequestParam(query 必填),必须走 config.params;
+  // put() 第 2 参是 body(会被 BE 当请求体丢弃 → 400「tenantId not present」),故传 undefined。
   acquireLock: (id: number, tenantId: string): Promise<WorkflowLockInfo> =>
-    put<WorkflowLockInfo>(`/api/console/workflow-definitions/${id}/lock`, { tenantId }),
+    put<WorkflowLockInfo>(`/api/console/workflow-definitions/${id}/lock`, undefined, {
+      params: { tenantId },
+    }),
 
   renewLock: (id: number, tenantId: string): Promise<WorkflowLockInfo> =>
-    put<WorkflowLockInfo>(`/api/console/workflow-definitions/${id}/lock/renew`, { tenantId }),
+    put<WorkflowLockInfo>(`/api/console/workflow-definitions/${id}/lock/renew`, undefined, {
+      params: { tenantId },
+    }),
 
   releaseLock: (id: number, tenantId: string): Promise<void> =>
     del<void>(`/api/console/workflow-definitions/${id}/lock`, { params: { tenantId } }),
