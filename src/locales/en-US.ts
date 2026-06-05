@@ -4308,6 +4308,7 @@ const messages: Messages = {
     reasonLabel: 'Reason',
     ruleJobCode: 'Job Code is required',
     ruleBizDate: 'Biz date is required',
+    ruleCompensationType: 'Compensation type is required',
   },
   selfServiceCompensationTab: {
     typeLabel: 'Compensation type',
