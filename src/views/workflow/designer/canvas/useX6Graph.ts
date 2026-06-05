@@ -8,7 +8,10 @@
  */
 
 import { Graph } from '@antv/x6'
-import { MiniMap } from '@antv/x6/lib/plugin/minimap'
+// 必须走 es/ 构建:lib/(CJS)是另一份 x6 实例,其 NodeView.registry 里没有
+// x6-vue-shape 注册的 'vue-shape-view',minimap 渲染缩略图时会抛
+// 「View with name 'vue-shape-view' does not exist」(且随节点变化在 watcher 里间歇复现)。
+import { MiniMap } from '@antv/x6/es/plugin/minimap'
 import { register as registerVueShape } from '@antv/x6-vue-shape'
 // X6 v3 仍保留对老式 dagre 字符串布局算法的支持,但需要用户层手算 -> 走 npm dagre 自行布局
 import dagre from 'dagre'

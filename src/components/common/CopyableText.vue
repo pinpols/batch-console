@@ -9,17 +9,17 @@
 
 <script setup lang="ts">
   import { DocumentCopy } from '@element-plus/icons-vue'
-  import { ElMessage } from 'element-plus'
+  import { useCopy } from '@/composables/useCopy'
 
   const props = defineProps<{
     text: string
   }>()
 
+  // 走统一 useCopy:Clipboard API 被拒(非安全上下文/无手势)时回退 execCommand,
+  // 不再抛未捕获 writeText 错、不再"点了没反应"。
+  const { copy: copyText } = useCopy()
   function copy() {
-    if (!props.text) return
-    void navigator.clipboard.writeText(props.text).then(() => {
-      ElMessage.success({ message: '已复制', duration: 1500 })
-    })
+    void copyText(props.text)
   }
 </script>
 

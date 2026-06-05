@@ -697,7 +697,7 @@
   const queueForm = reactive({
     queueCode: '',
     queueName: '',
-    queueType: 'DEFAULT',
+    queueType: 'MIXED',
     maxRunningJobs: undefined as number | undefined,
     maxRunningPartitions: undefined as number | undefined,
     maxQps: undefined as number | undefined,
@@ -952,7 +952,7 @@
     Object.assign(queueForm, {
       queueCode: '',
       queueName: '',
-      queueType: 'DEFAULT',
+      queueType: 'MIXED',
       maxRunningJobs: undefined,
       maxRunningPartitions: undefined,
       maxQps: undefined,
@@ -971,7 +971,7 @@
     Object.assign(queueForm, {
       queueCode: row.queueCode,
       queueName: row.queueName,
-      queueType: row.queueType || 'DEFAULT',
+      queueType: row.queueType || 'MIXED',
       maxRunningJobs: row.concurrentCap ?? undefined,
       maxRunningPartitions: undefined,
       maxQps: row.burstLimit ?? undefined,
