@@ -39,8 +39,15 @@ test.describe('API Key management CRUD (API Key 增删)', () => {
       await secretModal.getByRole('button', { name: /我已保存/ }).click({ force: true })
       await expect(secretModal).toBeHidden({ timeout: 5000 })
     }
-    // 等表格刷新
-    await expect(page.getByRole('cell', { name: uniqueName })).toBeVisible({ timeout: 5000 })
+    // 等表格刷新。先清掉明文 secret 弹窗的遮罩残留(否则 overlay 盖住表格,cell 被判为不可见),
+    // 并放宽超时:secret-modal 关闭 → 列表 reload 的链路在数据多时可能 >5s。
+    await page.evaluate(() => {
+      document
+        .querySelectorAll('.el-overlay, .el-overlay-dialog')
+        .forEach((el) => (el as HTMLElement).remove())
+      document.body.classList.remove('el-popup-parent--hidden')
+    })
+    await expect(page.getByRole('cell', { name: uniqueName })).toBeVisible({ timeout: 15000 })
 
     // —— 详情 (optional - 弹窗有 race condition,skip 也算流程通) ——
     await page.evaluate(() => {

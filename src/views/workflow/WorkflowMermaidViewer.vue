@@ -552,7 +552,9 @@
         workflowApi.detailById(id.value, tenant.tenantId),
         workflowApi.mermaid(id.value, tenant.tenantId),
         runId.value
-          ? queryWorkflowNodeRuns(tenant.tenantId, runId.value)
+          ? queryWorkflowNodeRuns(tenant.tenantId, runId.value).catch(
+              () => [] as ConsoleWorkflowNodeRunResponse[],
+            )
           : Promise.resolve<ConsoleWorkflowNodeRunResponse[]>([]),
         runId.value
           ? instanceApi.workflowRunDetail(runId.value, tenant.tenantId).catch(() => null)
@@ -684,13 +686,13 @@
     selectedNodeMeta.value = meta
     inspectorOpen.value = true
     // 给 pan-zoom 留 100ms 让 layout reflow 后再 resize(否则视口尺寸是旧的)
-    setTimeout(() => panZoomInstance?.resize(), 100)
+    setTimeout(safeResize, 100)
   }
 
   function closeInspector() {
     inspectorOpen.value = false
     selectedNodeMeta.value = null
-    setTimeout(() => panZoomInstance?.resize(), 100)
+    setTimeout(safeResize, 100)
   }
 
   /**
@@ -812,6 +814,20 @@
     }
   }
 
+  /**
+   * 安全 resize:svg-pan-zoom 的 resize() 会读取 viewport 元素的 class 调 .indexOf,若此时 SVG 已被
+   * innerHTML 覆盖 / 组件正在卸载,内部拿到 undefined.indexOf 会抛「Cannot read properties of undefined
+   * (reading 'indexOf')」。这些 resize 多由 setTimeout / fullscreenchange / visibilitychange 异步触发,
+   * 可能落在卸载之后,故统一吞掉异常,避免 beforeUnmount 期间未捕获报错。
+   */
+  function safeResize() {
+    try {
+      panZoomInstance?.resize()
+    } catch {
+      // SVG 已脱离文档(卸载 / 重渲染),resize 无意义,忽略
+    }
+  }
+
   // ── DAG 工具栏函数 ────────────────────────────────────────────────
   function zoomIn() {
     panZoomInstance?.zoomIn()
@@ -820,7 +836,7 @@
     panZoomInstance?.zoomOut()
   }
   function fitGraph() {
-    panZoomInstance?.resize()
+    safeResize()
     panZoomInstance?.fit()
     panZoomInstance?.center()
   }
@@ -890,12 +906,12 @@
       isFullscreen.value = false
     }
     // 退出全屏后视口尺寸变,重新 fit
-    setTimeout(() => panZoomInstance?.resize(), 200)
+    setTimeout(safeResize, 200)
   }
 
   function onFullscreenChange() {
     isFullscreen.value = !!document.fullscreenElement
-    setTimeout(() => panZoomInstance?.resize(), 200)
+    setTimeout(safeResize, 200)
   }
 
   function clearGraph() {
@@ -918,7 +934,14 @@
       document.addEventListener('fullscreenchange', onFullscreenChange)
     }
   })
-  watch([() => route.params.id, () => route.query.runId], reload)
+  // route.params.id 与 /monitor/workflow-runs/:id 共享 :id 占位:导航去运行详情页时本组件在
+  // 路由过渡期间仍挂载,route.params.id 会先变成 runId(如 17),触发 watch 用它当 workflowDefinitionId
+  // 重新 reload() → /workflow-definitions/17 + /mermaid 404「definition not found」、且叠加 run 查询
+  // 报「workflow run not found」。仅当当前路由仍是本 DAG 查看页时才重载,避免误用对方的 id。
+  watch([() => route.params.id, () => route.query.runId], () => {
+    if (route.name !== 'workflow-viewer') return
+    void reload()
+  })
   onBeforeUnmount(() => {
     stopPoll()
     if (panZoomInstance) {

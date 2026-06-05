@@ -127,6 +127,9 @@
   const compFormRules: FormRules = {
     jobCode: [rules.required(t('selfServiceCommon.ruleJobCode'), 'change')],
     bizDate: [rules.required(t('selfServiceCommon.ruleBizDate'), 'change')],
+    // compensationType 必选:BE 执行补偿时强制要求,留空会创建出无法审批的补偿单
+    // (审批时报「必须指定补偿类型」且无从补救)。
+    compensationType: [rules.required(t('selfServiceCommon.ruleCompensationType'), 'change')],
   }
 
   function resetCompForm() {

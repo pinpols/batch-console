@@ -4242,6 +4242,7 @@ export default {
     reasonLabel: '原因',
     ruleJobCode: 'Job Code 必选',
     ruleBizDate: '业务日必选',
+    ruleCompensationType: '补偿类型必选',
   },
   selfServiceCompensationTab: {
     typeLabel: '补偿类型',
