@@ -162,7 +162,9 @@ export function useX6Graph(containerRef: Ref<HTMLDivElement | null>, minimapRef:
     ensureRegistered()
     const graph = new Graph({
       container: containerRef.value,
-      background: { color: 'var(--color-bg-base, #fafafa)' },
+      // --color-bg-canvas 是已定义且暗色感知的画布底色(light #e9eef5 / dark #0b0f14);
+      // 原 --color-bg-base 未定义 → 暗色下回退 #fafafa 变浅色画布。
+      background: { color: 'var(--color-bg-canvas, #e9eef5)' },
       grid: { visible: true, type: 'dot', size: 10 },
       panning: { enabled: true },
       mousewheel: { enabled: true, modifiers: 'ctrl', zoomAtMousePosition: true },
