@@ -374,7 +374,12 @@
 
   useTenantReload(load)
 
+  // route.params.id 是全局共享的:点「看 DAG」跳 /workflow/viewer/:id 时,本组件在路由
+  // 过渡期间仍挂载,params.id 会先变成 workflowDefinitionId(如 5),触发 watch 用 defId 当
+  // runId 重新 load(),命中 /workflow-runs/5 → 404「workflow run not found」。仅当当前路由
+  // 仍是本运行详情页时才重载,避免把 defId 误当 runId。
   watch(runId, () => {
+    if (route.name !== 'workflow-run-detail') return
     void load()
   })
 </script>

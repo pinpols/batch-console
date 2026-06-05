@@ -13,6 +13,24 @@ import type { PageResponse } from '@/types'
 
 type RawObject = Record<string, unknown>
 
+// command-side 列表端点(/api/console/file-templates、/api/console/file-channels)
+// 当前 BE 直出实体快照,字段名是 snake_case(template_code / biz_type ...),
+// 与 OpenAPI 生成的 camelCase 类型(ConsoleFileTemplateResponse)漂移,导致表格列读 row.templateCode 全为空。
+// 在此边界把每行顶层 key 归一为 camelCase,使其对齐生成类型;不递归(嵌套 jsonb 值原样保留)。
+// query-side(/queries/*)已返回 camelCase,故仅这两个 command 列表函数复用本归一。
+function snakeKeyToCamel(key: string): string {
+  return key.includes('_') ? key.replace(/_([a-z0-9])/g, (_, c: string) => c.toUpperCase()) : key
+}
+
+function camelizeRowKeys<T>(row: unknown): T {
+  if (!row || typeof row !== 'object' || Array.isArray(row)) return row as T
+  const out: RawObject = {}
+  for (const [k, v] of Object.entries(row as RawObject)) {
+    out[snakeKeyToCamel(k)] = v
+  }
+  return out as T
+}
+
 export interface PipelineDefinitionRow {
   id: number
   tenantId: string
@@ -188,8 +206,11 @@ export function togglePipelineDefinition(id: number, tenantId: string, enabled: 
 }
 
 /** GET /api/console/file-channels — command-side list */
-export function listFileChannels(tenantId: string) {
-  return fetchAllPageItems<ConsoleFileChannelResponse>('/api/console/file-channels', { tenantId })
+export async function listFileChannels(tenantId: string) {
+  const rows = await fetchAllPageItems<ConsoleFileChannelResponse>('/api/console/file-channels', {
+    tenantId,
+  })
+  return rows.map((row) => camelizeRowKeys<ConsoleFileChannelResponse>(row))
 }
 
 export function createFileChannel(body: FileChannelSavePayload) {
@@ -214,8 +235,11 @@ export function queryFileChannelDetail(channelCode: string, tenantId: string) {
 }
 
 /** GET /api/console/file-templates — command-side list */
-export function listFileTemplates(tenantId: string) {
-  return fetchAllPageItems<ConsoleFileTemplateResponse>('/api/console/file-templates', { tenantId })
+export async function listFileTemplates(tenantId: string) {
+  const rows = await fetchAllPageItems<ConsoleFileTemplateResponse>('/api/console/file-templates', {
+    tenantId,
+  })
+  return rows.map((row) => camelizeRowKeys<ConsoleFileTemplateResponse>(row))
 }
 
 export function createFileTemplate(body: FileTemplateSavePayload) {
