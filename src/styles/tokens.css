@@ -130,6 +130,12 @@
   /* 卡片内"凹陷/次级"面板底色(嵌套表单、代码块等)。多处 ops 页在用,
      此前未定义只靠 inline fallback #f7f8fa,导致暗色下渲染成白卡。 */
   --color-bg-subtle: #f7f8fa;
+  /* 以下 5 个此前被组件引用但从未定义,只靠 inline 浅色 fallback → 暗色下错色/白卡,统一定义。 */
+  --color-bg-base: #fafafa;
+  --color-bg-elevated: #ffffff;
+  --color-bg-info: #ecf5ff;
+  --color-bg-overlay: #ffffff;
+  --color-fill-light: #f5f7fa;
   --color-bg-hero: linear-gradient(135deg, #eef5ff 0%, #f7faff 42%, #ffffff 100%);
   --color-border: #e5e6eb;
   --color-border-light: #f0f0f0;
@@ -253,6 +259,12 @@ html.dark {
   --color-bg-card: #1a1f26;
   /* 次级面板:比 page(#0f1419)略亮、比 card(#1a1f26)略沉,暗色下能与卡片区分 */
   --color-bg-subtle: #161b22;
+  /* 暗色覆盖:与亮色一一对应,避免回退到浅色 fallback */
+  --color-bg-base: #0f1419;
+  --color-bg-elevated: #232a33;
+  --color-bg-info: #16202e;
+  --color-bg-overlay: #1a1f26;
+  --color-fill-light: #20262e;
   --color-bg-hero: linear-gradient(135deg, #141920 0%, #1a2230 42%, #1a1f26 100%);
   --color-border: #2d333b;
   --color-border-light: #252a32;
