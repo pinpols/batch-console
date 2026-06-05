@@ -1,5 +1,14 @@
 # 运维 / QA 索引
 
+## 核心运维流程(权威)
+
+| 文档 | 用途 |
+|---|---|
+| [CI 门禁](./ci.md) | 3 个 workflow(pr-gate / full-ci / staging-gate)/ secrets / 阈值 / 排查表 |
+| [开发工作流](./dev-workflow.md) | 本地开发 / 分支 / 提交 / 联调日常流程 |
+| [回滚](./rollback.md) | 前端发布回滚步骤 |
+| [密码安全 backlog](./password-security-backlog.md) | 密码 / 凭据安全待办 |
+
 ## QA 阶段报告(权威)
 
 - [D 档 QA 阶段总评](../qa/d-tier/) — P1-P5 + P5b 完整闭环(2026-06-03 移到 `docs/qa/d-tier/` 统一 QA 目录)

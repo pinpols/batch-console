@@ -33,10 +33,14 @@ export type StatusTagType = 'primary' | 'success' | 'warning' | 'danger' | 'info
 export const instanceStatusColor: Record<InstanceStatus, StatusTagType> = {
   CREATED: 'info',
   WAITING: 'warning',
-  RUNNING: 'success',
-  COMPLETED: 'primary',
-  FAILED: 'danger',
+  READY: 'primary',
+  RUNNING: 'primary', // 进行中 = 蓝,与"成功 = 绿"区分
+  RETRYING: 'warning',
+  SUCCESS: 'success', // 成功 = 绿
+  FAILED: 'danger', // 失败 = 红
+  FAILED_DRY_RUN: 'danger',
   CANCELLED: 'info',
+  TERMINATED: 'danger',
 }
 
 /** /meta/enums: `fileStatus` */
@@ -53,9 +57,12 @@ export const partitionStatusColor: Record<PartitionStatus, StatusTagType> = {
   CREATED: 'info',
   READY: 'primary',
   WAITING: 'warning',
-  RUNNING: 'success',
-  COMPLETED: 'primary',
+  RUNNING: 'primary',
+  RETRYING: 'warning',
+  SUCCESS: 'success',
   FAILED: 'danger',
+  CANCELLED: 'info',
+  TERMINATED: 'danger',
 }
 
 /** /meta/enums: `workerStatus` */
@@ -68,9 +75,11 @@ export const workerStatusColor: Record<WorkerStatus, StatusTagType> = {
 /** /meta/enums: `workflowRunStatus` */
 export const workflowRunStatusColor: Record<WorkflowRunStatus, StatusTagType> = {
   CREATED: 'info',
-  RUNNING: 'success',
-  COMPLETED: 'primary',
+  RUNNING: 'primary',
+  SUCCESS: 'success',
   FAILED: 'danger',
+  CANCELLED: 'info',
+  TERMINATED: 'danger',
 }
 
 /** /meta/enums: `workflowDefinitionStatus` */
