@@ -155,10 +155,14 @@ export interface WorkflowDefinition {
 export type InstanceStatus =
   | 'CREATED'
   | 'WAITING'
+  | 'READY'
   | 'RUNNING'
-  | 'COMPLETED'
+  | 'RETRYING'
+  | 'SUCCESS'
   | 'FAILED'
+  | 'FAILED_DRY_RUN'
   | 'CANCELLED'
+  | 'TERMINATED'
 
 export interface JobInstance {
   id: number
@@ -180,7 +184,16 @@ export interface JobInstance {
   createdAt: string
 }
 
-export type PartitionStatus = 'CREATED' | 'READY' | 'WAITING' | 'RUNNING' | 'COMPLETED' | 'FAILED'
+export type PartitionStatus =
+  | 'CREATED'
+  | 'READY'
+  | 'WAITING'
+  | 'RUNNING'
+  | 'RETRYING'
+  | 'SUCCESS'
+  | 'FAILED'
+  | 'CANCELLED'
+  | 'TERMINATED'
 
 export interface JobPartition {
   id: number
@@ -194,7 +207,13 @@ export interface JobPartition {
   updatedAt: string
 }
 
-export type WorkflowRunStatus = 'CREATED' | 'RUNNING' | 'COMPLETED' | 'FAILED'
+export type WorkflowRunStatus =
+  | 'CREATED'
+  | 'RUNNING'
+  | 'SUCCESS'
+  | 'FAILED'
+  | 'CANCELLED'
+  | 'TERMINATED'
 
 export interface WorkflowRun {
   id: number
