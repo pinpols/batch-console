@@ -50,7 +50,9 @@
         >
           <template #label>
             <div class="atc__tab-label">
-              <span>{{ schema.displayName }}</span>
+              <span>{{
+                tOr(`atomicTaskTypeCenter.typeLabel.${schema.taskType}`, schema.displayName)
+              }}</span>
               <el-tag
                 v-if="!schema.enabledByDefault"
                 size="small"
@@ -121,7 +123,16 @@
                 prop="description"
                 :label="t('atomicTaskTypeCenter.colParamDescription')"
                 show-overflow-tooltip
-              />
+              >
+                <template #default="{ row }">
+                  {{
+                    tOr(
+                      `atomicTaskTypeCenter.paramDesc.${schema.taskType}.${row.name}`,
+                      row.description,
+                    )
+                  }}
+                </template>
+              </el-table-column>
             </el-table>
 
             <h3 class="atc__section-title">
@@ -158,7 +169,9 @@
                   v-model="getDraft(schema.taskType)[p.name]"
                   v-bind="inputPropsFor(p)"
                 />
-                <div v-if="p.description" class="atc__field-hint">{{ p.description }}</div>
+                <div v-if="p.description" class="atc__field-hint">
+                  {{ tOr(`atomicTaskTypeCenter.paramDesc.${schema.taskType}.${p.name}`, p.description) }}
+                </div>
               </el-form-item>
             </el-form>
             <div class="atc__form-actions">
@@ -193,7 +206,16 @@
                 prop="meaning"
                 :label="t('atomicTaskTypeCenter.colSecurityMeaning')"
                 show-overflow-tooltip
-              />
+              >
+                <template #default="{ row }">
+                  {{
+                    tOr(
+                      `atomicTaskTypeCenter.gateMeaning.${schema.taskType}.${row.field}`,
+                      row.meaning,
+                    )
+                  }}
+                </template>
+              </el-table-column>
             </el-table>
           </div>
         </el-tab-pane>
@@ -220,7 +242,12 @@
     type AtomicParamSpec,
   } from '@/api/atomicTaskTypes'
 
-  const { t } = useI18n({ useScope: 'global' })
+  const { t, te } = useI18n({ useScope: 'global' })
+
+  // 后端 schema 字段为中文字面量;若 FE 存在对应 i18n 覆盖 key 则用之,否则回退原始 BE 值。
+  function tOr(key: string, fallback: string): string {
+    return te(key) ? t(key) : fallback
+  }
 
   const schemas = ref<AtomicTaskTypeSchema[]>([])
   const loading = ref(false)
