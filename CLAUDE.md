@@ -82,6 +82,8 @@ src/
 
 ## 测试约定
 
+> 完整测试体系(分层 / 可复用 helper / 可复制案例模板 / 运行 / CI / 常见坑)见 [`docs/testing/README.md`](docs/testing/README.md)。写测试前先读。
+
 **Vitest 单测**(`*.test.ts`):
 
 - 框架统一 Vitest,**禁** jest / chai / sinon。`import { describe, it, expect, vi, beforeEach } from 'vitest'`

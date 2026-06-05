@@ -20,6 +20,7 @@
 
 | 文档 | 用途 |
 |---|---|
+| [**前端测试体系**](./testing/README.md) | ★ 测试分层 / 可复用 helper / 可复制测试案例模板 / 运行 / CI 门禁 / 常见坑(写测试先读) |
 | [运维 / QA 索引](./runbook/README.md) | CI / dev-workflow / rollback / 联测计划与报告入口 |
 | [QA D 档总评](./qa/d-tier/) | P1-P5 + P5b 完整闭环 |
 | [部署:Docker + Nginx](./deploy/docker-nginx.md) | 容器化部署 |
