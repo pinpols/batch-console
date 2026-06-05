@@ -154,18 +154,10 @@ export function useDirtyForm<T>(
   async function confirmDiscard(): Promise<boolean> {
     if (!isDirty.value) return true
     const t = i18n.global.t
-    const te = i18n.global.te
-    const title =
-      confirmTitle ?? (te('dirtyForm.confirmTitle') ? t('dirtyForm.confirmTitle') : '放弃修改?')
-    const message =
-      confirmMessage ??
-      (te('dirtyForm.confirmMessage')
-        ? t('dirtyForm.confirmMessage')
-        : '未保存的修改将丢失,确认关闭?')
-    const confirmText = te('dirtyForm.confirmDiscard')
-      ? t('dirtyForm.confirmDiscard')
-      : '放弃修改'
-    const cancelText = te('dirtyForm.cancelDiscard') ? t('dirtyForm.cancelDiscard') : '继续编辑'
+    const title = confirmTitle ?? t('dirtyForm.confirmTitle')
+    const message = confirmMessage ?? t('dirtyForm.confirmMessage')
+    const confirmText = t('dirtyForm.confirmDiscard')
+    const cancelText = t('dirtyForm.cancelDiscard')
     try {
       await ElMessageBox.confirm(message, title, {
         type: 'warning',

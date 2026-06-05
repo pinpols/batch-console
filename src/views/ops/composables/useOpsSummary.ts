@@ -1,4 +1,5 @@
 import { ref, computed, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElNotification } from 'element-plus'
 import { getOpsSummary } from '@/api/ops'
@@ -16,6 +17,7 @@ import {
 } from './useChartOptions'
 
 export function useOpsSummary() {
+  const { t } = useI18n({ useScope: 'global' })
   const router = useRouter()
   const tenant = useTenantStore()
 
@@ -44,7 +46,7 @@ export function useOpsSummary() {
   const outboxHealthPieOption = ref<Record<string, unknown>>({})
   // 扩展(extra): gauge / 单值
   // 初始 emptyOption('加载中…'),避免 loadCharts 还没跑完时 VChart 拿到 {} 渲染空白卡
-  const slaGaugeOption = ref<Record<string, unknown>>(emptyOption('加载中…'))
+  const slaGaugeOption = ref<Record<string, unknown>>(emptyOption(t('common.loading')))
 
   // 用品牌主题(echarts.ts 里 registerTheme 注册),不再用 echarts 内置 'dark'。
   // 跟 tokens.css 的 --color-primary / 网格灰阶 / SectionCard 暗底配色都对得上。
@@ -72,10 +74,10 @@ export function useOpsSummary() {
       const days = rangeKey.value === '1h' ? 1 : rangeKey.value === '6h' ? 1 : 7
       const bundle = await getDashboardBundle(tenant.tenantId, days)
       jobsTrendOption.value = buildLineOption({
-        x: bundle.jobs.labels.length ? bundle.jobs.labels : ['当前'],
+        x: bundle.jobs.labels.length ? bundle.jobs.labels : [t('opsSummary.legendNow')],
         series: [
           {
-            name: '运行中',
+            name: t('opsSummary.legendRunning'),
             data: bundle.jobs.series.running.length
               ? bundle.jobs.series.running
               : [Number(summary.value?.runningJobs ?? 0)],
@@ -83,7 +85,7 @@ export function useOpsSummary() {
             area: true,
           },
           {
-            name: '失败',
+            name: t('opsSummary.legendFailed'),
             data: bundle.jobs.series.failed.length
               ? bundle.jobs.series.failed
               : [Number(summary.value?.failedJobs ?? 0)],
@@ -104,8 +106,13 @@ export function useOpsSummary() {
       slaTrendOption.value = buildLineOption({
         x: bundle.sla.labels,
         series: [
-          { name: 'SLA 达标', data: bundle.sla.series.onTime, color: '#52c41a', area: true },
-          { name: 'SLA 违约', data: bundle.sla.series.violation, color: '#ff4d4f' },
+          {
+            name: t('opsSummary.legendSlaOnTime'),
+            data: bundle.sla.series.onTime,
+            color: '#52c41a',
+            area: true,
+          },
+          { name: t('opsSummary.legendSlaViolation'), data: bundle.sla.series.violation, color: '#ff4d4f' },
         ],
       })
 
@@ -118,20 +125,22 @@ export function useOpsSummary() {
       })
       failRateTrendOption.value =
         bundle.jobs.labels.length === 0
-          ? emptyOption('暂无数据')
+          ? emptyOption(t('common.noData'))
           : buildLineOption({
               x: bundle.jobs.labels,
-              series: [{ name: '失败率 %', data: failRateSeries, color: '#ff7a45', area: true }],
+              series: [
+                { name: t('opsSummary.legendFailRate'), data: failRateSeries, color: '#ff7a45', area: true },
+              ],
               yAxisName: '%',
             })
 
       triggerTypeTopNOption.value =
         bundle.triggerTypes.items.length === 0
-          ? emptyOption('暂无数据')
+          ? emptyOption(t('common.noData'))
           : buildHorizontalTopNOption(bundle.triggerTypes.items, '#1677ff')
       workerLoadTopNOption.value =
         bundle.workerLoads.items.length === 0
-          ? emptyOption('暂无数据')
+          ? emptyOption(t('common.noData'))
           : buildHorizontalTopNOption(bundle.workerLoads.items, '#52c41a')
 
       // 状态分布饼图(数据来源:summary KPI 实时快照)
@@ -141,12 +150,12 @@ export function useOpsSummary() {
       const slaBreach = Number(s?.slaBreaches ?? 0)
       jobStatusPieOption.value =
         running + failed + slaBreach === 0
-          ? emptyOption('暂无数据')
+          ? emptyOption(t('common.noData'))
           : buildPieOption({
               items: [
-                { name: '运行中', value: running, color: '#1677ff' },
-                { name: '失败', value: failed, color: '#ff4d4f' },
-                { name: 'SLA 违约', value: slaBreach, color: '#fa8c16' },
+                { name: t('opsSummary.legendRunning'), value: running, color: '#1677ff' },
+                { name: t('opsSummary.legendFailed'), value: failed, color: '#ff4d4f' },
+                { name: t('opsSummary.legendSlaViolation'), value: slaBreach, color: '#fa8c16' },
               ],
               innerRadius: '40%',
             })
@@ -156,12 +165,12 @@ export function useOpsSummary() {
       const offline = Number(s?.offlineWorkers ?? 0)
       workerStatusPieOption.value =
         online + draining + offline === 0
-          ? emptyOption('暂无数据')
+          ? emptyOption(t('common.noData'))
           : buildPieOption({
               items: [
-                { name: '在线', value: online, color: '#52c41a' },
+                { name: t('opsSummary.legendOnline'), value: online, color: '#52c41a' },
                 { name: 'Draining', value: draining, color: '#faad14' },
-                { name: '离线', value: offline, color: '#8c8c8c' },
+                { name: t('opsSummary.legendOffline'), value: offline, color: '#8c8c8c' },
               ],
               innerRadius: '40%',
             })
@@ -171,11 +180,11 @@ export function useOpsSummary() {
       const otherOpen = Math.max(openAlerts - critical, 0)
       alertSeverityPieOption.value =
         openAlerts === 0
-          ? emptyOption('暂无活跃告警')
+          ? emptyOption(t('opsSummary.noActiveAlerts'))
           : buildPieOption({
               items: [
                 { name: 'Critical', value: critical, color: '#ff4d4f' },
-                { name: '其他 OPEN', value: otherOpen, color: '#faad14' },
+                { name: t('opsSummary.legendOtherOpen'), value: otherOpen, color: '#faad14' },
               ],
               innerRadius: '40%',
             })
@@ -184,11 +193,11 @@ export function useOpsSummary() {
       const delivFail = Number(s?.outboxDeliveryFailures ?? 0)
       outboxHealthPieOption.value =
         retry + delivFail === 0
-          ? emptyOption('Outbox 健康')
+          ? emptyOption(t('opsSummary.outboxHealthy'))
           : buildPieOption({
               items: [
-                { name: '重试积压', value: retry, color: '#faad14' },
-                { name: '投递失败', value: delivFail, color: '#ff4d4f' },
+                { name: t('opsSummary.legendRetryBacklog'), value: retry, color: '#faad14' },
+                { name: t('opsSummary.legendDeliveryFail'), value: delivFail, color: '#ff4d4f' },
               ],
               innerRadius: '40%',
             })
@@ -208,18 +217,18 @@ export function useOpsSummary() {
       })
     } catch (e) {
       console.error('[ops charts]', e)
-      ElMessage.error('图表数据加载失败，请稍后重试')
-      jobsTrendOption.value = emptyOption('加载失败')
-      alertsTrendOption.value = emptyOption('加载失败')
-      slaTrendOption.value = emptyOption('加载失败')
-      failRateTrendOption.value = emptyOption('加载失败')
-      triggerTypeTopNOption.value = emptyOption('加载失败')
-      workerLoadTopNOption.value = emptyOption('加载失败')
-      jobStatusPieOption.value = emptyOption('加载失败')
-      workerStatusPieOption.value = emptyOption('加载失败')
-      alertSeverityPieOption.value = emptyOption('加载失败')
-      outboxHealthPieOption.value = emptyOption('加载失败')
-      slaGaugeOption.value = emptyOption('加载失败')
+      ElMessage.error(t('opsSummary.chartsLoadFailed'))
+      jobsTrendOption.value = emptyOption(t('opsSummary.loadFailed'))
+      alertsTrendOption.value = emptyOption(t('opsSummary.loadFailed'))
+      slaTrendOption.value = emptyOption(t('opsSummary.loadFailed'))
+      failRateTrendOption.value = emptyOption(t('opsSummary.loadFailed'))
+      triggerTypeTopNOption.value = emptyOption(t('opsSummary.loadFailed'))
+      workerLoadTopNOption.value = emptyOption(t('opsSummary.loadFailed'))
+      jobStatusPieOption.value = emptyOption(t('opsSummary.loadFailed'))
+      workerStatusPieOption.value = emptyOption(t('opsSummary.loadFailed'))
+      alertSeverityPieOption.value = emptyOption(t('opsSummary.loadFailed'))
+      outboxHealthPieOption.value = emptyOption(t('opsSummary.loadFailed'))
+      slaGaugeOption.value = emptyOption(t('opsSummary.loadFailed'))
     } finally {
       chartsLoading.value = false
     }
@@ -232,7 +241,7 @@ export function useOpsSummary() {
       void loadCharts()
     } catch {
       summary.value = null
-      ElMessage.error('运营概览加载失败，请检查网络或稍后重试')
+      ElMessage.error(t('opsSummary.summaryLoadFailed'))
     } finally {
       loading.value = false
     }
@@ -251,7 +260,7 @@ export function useOpsSummary() {
         getDashboardSlaReport(tenant.tenantId),
         getDashboardTenantUsage(tenant.tenantId),
       ])
-      // 图表刷新失败 loadCharts 内部已有 ElMessage.error + emptyOption('加载失败') 兜底,这里 fire-and-forget
+      // 图表刷新失败 loadCharts 内部已有 ElMessage.error + emptyOption(t('opsSummary.loadFailed')) 兜底,这里 fire-and-forget
       void loadCharts()
       if (slaResult.status === 'fulfilled') {
         slaReport.value = slaResult.value
@@ -267,8 +276,8 @@ export function useOpsSummary() {
       }
       if (slaReportError.value || tenantUsageError.value) {
         ElNotification.error({
-          title: 'Dashboard 数据加载失败',
-          message: '部分扩展面板数据获取失败,展示为占位。点击重试可重新加载。',
+          title: t('opsSummary.extraLoadFailedTitle'),
+          message: t('opsSummary.extraLoadFailedMessage'),
           duration: 6000,
         })
       }

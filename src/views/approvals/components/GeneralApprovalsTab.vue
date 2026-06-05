@@ -220,6 +220,7 @@
   import CopyableText from '@/components/common/CopyableText.vue'
   import DatetimeColumn from '@/components/common/DatetimeColumn.vue'
   import type { ConsoleApprovalCommandResponse } from '@/types/console-api'
+  import { useAuthStore } from '@/stores/auth'
 
   const tenant = useTenantStore()
   const loading = ref(false)
@@ -239,10 +240,19 @@
   const selection = ref<ConsoleApprovalCommandResponse[]>([])
 
   const route = useRoute()
+  const auth = useAuthStore()
+  // 深链 /approvals?requester=me(自助「我的申请」):把 me 解析成当前用户标识,
+  // 精确过滤 requesterId,使「我的申请」只显示本人提交的审批单(此前该条件被丢弃)。
+  const requesterParam = route.query.requester ? String(route.query.requester) : ''
+  const requesterFilter =
+    requesterParam === 'me'
+      ? (auth.userInfo?.username ?? auth.userInfo?.userId ?? '')
+      : requesterParam
   const filters = reactive({
     status: route.query.status ? String(route.query.status) : '',
     type: '',
     keyword: '',
+    requesterId: requesterFilter,
   })
 
   const { data: metaEnums } = useConsoleMetaEnumsQuery()
@@ -261,6 +271,8 @@
     if (s) r = r.filter((x) => String(x.approvalStatus ?? '').toUpperCase() === s.toUpperCase())
     const t = (filters.type ?? '').trim()
     if (t) r = r.filter((x) => String(x.approvalType ?? '') === t)
+    const rq = (filters.requesterId ?? '').trim()
+    if (rq) r = r.filter((x) => String(x.requesterId ?? '') === rq)
     const k = (filters.keyword ?? '').trim()
     if (k) {
       r = r.filter((x) => {
@@ -341,7 +353,20 @@
           inputPlaceholder: t('approvals.approveDialogPlaceholder'),
         },
       )
-      await approveOne(row.approvalNo, { tenantId: tenant.tenantId, reason: reason || undefined })
+      // 补偿类审批:从审批单 payloadJson 取出 compensationType 一并提交,
+      // 否则 BE 执行补偿时拒为 400「必须指定补偿类型」。非补偿单解析不到则为 undefined,不影响。
+      let compensationType: string | undefined
+      try {
+        compensationType = (JSON.parse(row.payloadJson || '{}') as { compensationType?: string })
+          .compensationType
+      } catch {
+        compensationType = undefined
+      }
+      await approveOne(row.approvalNo, {
+        tenantId: tenant.tenantId,
+        reason: reason || undefined,
+        compensationType,
+      })
       ElMessage.success(t('approvals.approvedToast', { no: row.approvalNo }))
       await load()
     } catch {
