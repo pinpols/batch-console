@@ -501,6 +501,7 @@
     tenantPackagePreview,
     tenantPackageDownloadPreviewWorkbook,
     tenantPackageApply,
+    type TenantPackageApplyResponse,
   } from '@/api/tenantPackageExcel'
   import { useImportWizard, type SheetStats } from '@/composables/useImportWizard'
   import PageContainer from '@/components/common/PageContainer.vue'
@@ -633,7 +634,7 @@
    */
   const applyLoading = ref(false)
   const applyError = ref<string | null>(null)
-  const applyResult = shallowRef<Record<string, number> | null>(null)
+  const applyResult = shallowRef<TenantPackageApplyResponse | null>(null)
 
   /** 把后端 apply 返回的 9 实体 insert/update 拆分,展平成表行 */
   const applyBreakdownRows = computed<Array<{ entity: string; inserted: number; updated: number }>>(
@@ -653,8 +654,8 @@
       return ents
         .map(([entity, ik, uk]) => ({
           entity,
-          inserted: r[ik] ?? 0,
-          updated: r[uk] ?? 0,
+          inserted: Number(r[ik as keyof TenantPackageApplyResponse] ?? 0),
+          updated: Number(r[uk as keyof TenantPackageApplyResponse] ?? 0),
         }))
         .filter((row) => row.inserted > 0 || row.updated > 0)
     },
@@ -765,7 +766,7 @@
     try {
       const res = await tenantPackageApply(uploadToken.value, {})
       // 后端 apply 返每实体 insert/update 拆分,放进 applyResult 让 I10 面板展示完整 breakdown
-      applyResult.value = res as unknown as Record<string, number>
+      applyResult.value = res
       ElMessage.success(t('tenantPackageImportWizard.appliedToast'))
     } catch (err: unknown) {
       // I11 失败展示:把后端 message / stack 完整保留供用户排障

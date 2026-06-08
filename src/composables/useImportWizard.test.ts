@@ -53,18 +53,23 @@ describe('useImportWizard — preview 衍生数据', () => {
     expect(w.previewStats.value).toBeNull()
   })
 
-  it('issueRows 把 messages 数组拼成分号串,缺字段降级空串', () => {
+  it('issueRows 读取后端 message / columnName 字段,缺字段降级空串', () => {
     const w = useImportWizard()
     w.previewRaw.value = {
       issues: [
-        { sheetName: 'Job', rowNo: 3, messages: ['col A 缺失', 'col B 非法'] },
-        { sheetName: 'File', rowNo: 1, messages: '单条字符串' },
+        { sheetName: 'job_definition', rowNo: 3, columnName: 'job_code', message: '不能为空' },
+        { sheetName: 'file_template_config', rowNo: 1, columnName: 'template_code', message: '不存在' },
         { sheetName: undefined, rowNo: undefined },
       ],
     }
     expect(w.issueRows.value).toEqual([
-      { sheetName: 'Job', rowNo: 3, messages: 'col A 缺失; col B 非法' },
-      { sheetName: 'File', rowNo: 1, messages: '单条字符串' },
+      { sheetName: 'job_definition', rowNo: 3, columnName: 'job_code', messages: '不能为空' },
+      {
+        sheetName: 'file_template_config',
+        rowNo: 1,
+        columnName: 'template_code',
+        messages: '不存在',
+      },
       { sheetName: '', rowNo: undefined, messages: '' },
     ])
   })

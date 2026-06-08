@@ -28,9 +28,24 @@ function pickSeed(): string | null {
 }
 
 const MOCK_TOKEN = 'mock-upload-token-' + Date.now()
-const MOCK_PREVIEW = {
+const MOCK_UPLOAD_RESULT = {
   uploadToken: MOCK_TOKEN,
   fileName: 'mock-tenant-config-package.xlsx',
+  resourceQueueRows: 1,
+  businessCalendarRows: 1,
+  batchWindowRows: 1,
+  jobRows: 1,
+  fileChannelRows: 1,
+  fileTemplateRows: 1,
+  pipelineRows: 1,
+  pipelineStepRows: 1,
+  workflowDefinitionRows: 1,
+  workflowNodeRows: 1,
+  workflowEdgeRows: 1,
+}
+const MOCK_PREVIEW = {
+  uploadToken: MOCK_TOKEN,
+  fileName: MOCK_UPLOAD_RESULT.fileName,
   totalRows: 11,
   validRows: 11,
   invalidRows: 0,
@@ -80,7 +95,7 @@ async function installUploadMocks(page: import('@playwright/test').Page) {
       body: JSON.stringify({
         code: 'SUCCESS',
         message: 'ok',
-        data: { uploadToken: MOCK_TOKEN },
+        data: MOCK_UPLOAD_RESULT,
       }),
     }),
   )
