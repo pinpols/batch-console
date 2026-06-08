@@ -273,10 +273,12 @@ const messages: Messages = {
     templateApprovalDesc: 'Prepare → approval → execute, for human-in-the-loop flows',
     templateStats: '{nodes} nodes · {edges} edges',
     templateOverwriteTitle: 'Overwrite current canvas?',
-    templateOverwriteConfirm: 'You have unsaved changes. Applying a template will overwrite them. Continue?',
+    templateOverwriteConfirm:
+      'You have unsaved changes. Applying a template will overwrite them. Continue?',
     diffViewerTitle: 'Version diff',
     diffBack: 'Back to designer',
-    diffNoVersionEndpoint: 'BE has no versions endpoint yet; from side is empty, only current version is shown',
+    diffNoVersionEndpoint:
+      'BE has no versions endpoint yet; from side is empty, only current version is shown',
     diffSideFrom: 'From',
     diffSideTo: 'To',
     diffEmptySide: '(empty)',
@@ -350,16 +352,16 @@ const messages: Messages = {
   tenantPackageImportWizard: {
     uploadTitle: 'Upload tenant config package',
     uploadDesc:
-      'Standard 8-sheet Excel package (job definitions, file channels, alert routings, pipelines, workflows …). Preview & validate after upload before applying.',
+      'Standard 9+2 / 11-sheet Excel package (job definitions, file channels, file templates, pipelines, workflows, plus resource queues/calendars/windows). Alert routings are not part of this package. Preview and validate after upload before applying.',
     btnDownloadTemplate: 'Download package template',
     btnExportCurrent: 'Export current package',
-    applyDescStart: 'Will apply the 8-sheet preview for the current',
+    applyDescStart: 'Will apply the 11-sheet preview for the current',
     applyDescMid: 'to tenant config as a',
     applyDescBold: 'single transaction',
     applyDescEnd: '. Verify in Preview first.',
     templateDownloadedToast: 'Package template downloaded',
     exportedToast: 'Current package exported',
-    applyConfirmText: 'Apply the 8-sheet preview as a single transaction? This cannot be undone.',
+    applyConfirmText: 'Apply the 11-sheet preview as a single transaction? This cannot be undone.',
     applyConfirmTitle: 'Apply merged import',
     applyConfirmYes: 'Apply',
     applyConfirmDetail:
@@ -383,7 +385,8 @@ const messages: Messages = {
     applyingBtn: 'Applying…',
     applyFailedTitle: 'Apply failed',
     applySucceededTitle: 'Apply succeeded',
-    applyNoChanges: 'No inserts / updates this time — source is empty or identical to current config (idempotent).',
+    applyNoChanges:
+      'No inserts / updates this time — source is empty or identical to current config (idempotent).',
     btnRetryApply: 'Retry',
     btnResetWizard: 'Start over',
     colEntity: 'Entity',
@@ -724,7 +727,8 @@ const messages: Messages = {
   },
   degradation: {
     bannerHeadline: 'Some downstream services degraded',
-    bannerMessage: 'Affected downstreams are tripped; displayed data may be incomplete and will auto-recover.',
+    bannerMessage:
+      'Affected downstreams are tripped; displayed data may be incomplete and will auto-recover.',
   },
   copy: {
     success: 'Copied',
@@ -2997,9 +3001,11 @@ const messages: Messages = {
     selectTemplateLabel: 'Select template',
     selectTemplatePlaceholder: 'Pick from tenant templates (reused by id at submit)',
     newChannelsJsonLabel: 'New channels (JSON)',
-    newChannelsJsonPlaceholder: 'Optional — paste / drop / pick file: JSON array to create new channels',
+    newChannelsJsonPlaceholder:
+      'Optional — paste / drop / pick file: JSON array to create new channels',
     newTemplatesJsonLabel: 'New templates (JSON)',
-    newTemplatesJsonPlaceholder: 'Optional — paste / drop / pick file: JSON array to create new templates',
+    newTemplatesJsonPlaceholder:
+      'Optional — paste / drop / pick file: JSON array to create new templates',
     selectWorkflowLabel: 'Select workflow',
     selectWorkflowPlaceholder: 'Pick from tenant workflow_definitions',
     newWorkflowsJsonLabel: 'New workflowDefinitions (JSON)',
@@ -3284,7 +3290,8 @@ const messages: Messages = {
     colDuration: 'Duration',
     colSlaAlerted: 'SLA alerted',
     slaBreachedLabel: 'SLA breached',
-    slaBreachedTip: 'Show only instances past their SLA deadline that are still active (server-side: deadline_at<now AND active status)',
+    slaBreachedTip:
+      'Show only instances past their SLA deadline that are still active (server-side: deadline_at<now AND active status)',
     traceIdLabel: 'Trace ID',
     traceIdPlaceholder: 'Search Trace ID',
     colTrace: 'Trace',
@@ -3523,7 +3530,8 @@ const messages: Messages = {
           'Whether to allow SECURITY DEFINER procedures (denied by default, to prevent owner-based privilege escalation)',
       },
       shell: {
-        commandWhitelist: 'Command allowlist (empty by default = all denied, requires platform config)',
+        commandWhitelist:
+          'Command allowlist (empty by default = all denied, requires platform config)',
         workdirBase: 'Isolation root for temporary working directories',
         allowedEnvKeys: 'Allowlist of environment variable names that may be passed through',
         argRegexAllowlist: 'Argument regex allowlist',

@@ -555,13 +555,15 @@
    * 修一处错误,下游 sheet 会受连带影响。
    */
   const SHEET_DEPENDENCY_GRAPH: Array<{ from: string; to: string[] }> = [
-    { from: 'business-calendar', to: ['batch-window', 'job'] },
-    { from: 'resource-queue', to: ['job'] },
-    { from: 'batch-window', to: ['job'] },
-    { from: 'job', to: ['pipeline', 'workflow'] },
-    { from: 'channel', to: ['file-template'] },
-    { from: 'file-template', to: ['pipeline'] },
-    { from: 'pipeline', to: ['workflow'] },
+    { from: 'resource-queue', to: ['job-definition'] },
+    { from: 'business-calendar', to: ['job-definition'] },
+    { from: 'batch-window', to: ['job-definition', 'workflow-node'] },
+    { from: 'file-template-config', to: ['job-definition', 'pipeline-step-definition'] },
+    { from: 'file-channel-config', to: ['pipeline-step-definition'] },
+    { from: 'job-definition', to: ['pipeline-definition', 'workflow-node'] },
+    { from: 'pipeline-definition', to: ['pipeline-step-definition', 'workflow-node'] },
+    { from: 'workflow-definition', to: ['workflow-node', 'workflow-edge'] },
+    { from: 'workflow-node', to: ['workflow-edge'] },
   ]
 
   /** 按 sheet 名归一化:后端可能返 `BusinessCalendar` 或 `business-calendar` 任何风格,统一成 kebab。 */
@@ -642,11 +644,11 @@
         ['resource-queue', 'resourceQueueInserted', 'resourceQueueUpdated'],
         ['business-calendar', 'businessCalendarInserted', 'businessCalendarUpdated'],
         ['batch-window', 'batchWindowInserted', 'batchWindowUpdated'],
-        ['job', 'jobInserted', 'jobUpdated'],
-        ['channel', 'channelInserted', 'channelUpdated'],
-        ['file-template', 'fileTemplateInserted', 'fileTemplateUpdated'],
-        ['pipeline', 'pipelineInserted', 'pipelineUpdated'],
-        ['workflow', 'workflowInserted', 'workflowUpdated'],
+        ['job-definition', 'jobInserted', 'jobUpdated'],
+        ['file-channel-config', 'channelInserted', 'channelUpdated'],
+        ['file-template-config', 'fileTemplateInserted', 'fileTemplateUpdated'],
+        ['pipeline-definition (+ steps)', 'pipelineInserted', 'pipelineUpdated'],
+        ['workflow-definition (+ nodes/edges)', 'workflowInserted', 'workflowUpdated'],
       ]
       return ents
         .map(([entity, ik, uk]) => ({
