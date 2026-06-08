@@ -334,7 +334,25 @@ describe('FormData 请求:只记 key 不记 value', () => {
     const client = makeClient()
     client.defaults.adapter = async (cfg) =>
       ({
-        data: { code: 'SUCCESS', data: { uploadToken: 'ut-1' }, message: '' },
+        data: {
+          code: 'SUCCESS',
+          data: {
+            uploadToken: 'ut-1',
+            fileName: 'a.xlsx',
+            resourceQueueRows: 1,
+            businessCalendarRows: 1,
+            batchWindowRows: 1,
+            jobRows: 1,
+            fileChannelRows: 1,
+            fileTemplateRows: 1,
+            pipelineRows: 1,
+            pipelineStepRows: 1,
+            workflowDefinitionRows: 1,
+            workflowNodeRows: 1,
+            workflowEdgeRows: 1,
+          },
+          message: '',
+        },
         status: 200,
         statusText: 'OK',
         headers: {},
