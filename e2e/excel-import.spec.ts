@@ -31,15 +31,17 @@ test.describe('合并导入 — 租户配置包', () => {
   test.beforeEach(async ({ page }) => {
     await enterDemoApp(page)
     await page.goto('/config/tenant-package')
-    await expect(page.locator('.page-header .title').first()).toHaveText(/配置批量导入/, { timeout: 15_000 })
+    await expect(page.locator('.page-header .title').first()).toHaveText(/配置批量导入/, {
+      timeout: 15_000,
+    })
   })
 
-  test('页面展示三步向导与 8-Sheet 描述', async ({ page }) => {
+  test('页面展示三步向导与 11-Sheet 描述', async ({ page }) => {
     await expect(page.getByText('上传').first()).toBeVisible()
     await expect(page.getByText('预览').first()).toBeVisible()
     await expect(page.getByText('应用').first()).toBeVisible()
-    // 描述包含 8-Sheet
-    await expect(page.getByText('8-Sheet').first()).toBeVisible()
+    // 描述包含 11-Sheet
+    await expect(page.getByText('11-Sheet').first()).toBeVisible()
   })
 
   test('下载配置包模板按钮可见', async ({ page }) => {
@@ -85,7 +87,9 @@ test.describe('合并导入 — 文件选择交互', () => {
   test.beforeEach(async ({ page }) => {
     await enterDemoApp(page)
     await page.goto('/config/tenant-package')
-    await expect(page.locator('.page-header .title').first()).toHaveText(/配置批量导入/, { timeout: 15_000 })
+    await expect(page.locator('.page-header .title').first()).toHaveText(/配置批量导入/, {
+      timeout: 15_000,
+    })
   })
 
   test('选择文件后「开始上传」按钮变为可用', async ({ page }) => {
@@ -109,7 +113,9 @@ test.describe('合并导入 — 完整上传链路（依赖后端）', () => {
     test.skip(!fs.existsSync(FIXTURES.seedA), '种子文件不存在，跳过上传链路')
     await enterDemoApp(page)
     await page.goto('/config/tenant-package')
-    await expect(page.locator('.page-header .title').first()).toHaveText(/配置批量导入/, { timeout: 15_000 })
+    await expect(page.locator('.page-header .title').first()).toHaveText(/配置批量导入/, {
+      timeout: 15_000,
+    })
   })
 
   test('上传 → uploadToken 出现 → 进入预览步骤', async ({ page }) => {
@@ -149,7 +155,9 @@ test.describe('合并导入 — 完整上传链路（依赖后端）', () => {
     if (await isVisible(nextBtnStep2, 2000)) {
       await nextBtnStep2.click()
       // 应用步骤：确认应用变更按钮应变为可用
-      await expect(page.getByRole('button', { name: '确认应用变更' })).toBeEnabled({ timeout: 5000 })
+      await expect(page.getByRole('button', { name: '确认应用变更' })).toBeEnabled({
+        timeout: 5000,
+      })
     }
   })
 })
