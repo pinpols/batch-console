@@ -357,16 +357,16 @@ export default {
   tenantPackageImportWizard: {
     uploadTitle: '上传租户配置包 Excel',
     uploadDesc:
-      '标准 8-Sheet Excel 配置包(覆盖作业定义、文件渠道、告警路由、管道、工作流等)。上传后进入预览校验,确认无误再应用。',
+      '标准 9+2 / 11-Sheet Excel 配置包(覆盖作业定义、文件渠道、文件模板、管道、工作流及资源队列/日历/窗口)。告警路由不在此包内。上传后进入预览校验,确认无误再应用。',
     btnDownloadTemplate: '下载配置包模板',
     btnExportCurrent: '导出当前配置包',
     applyDescStart: '将把当前',
-    applyDescMid: '对应的 8-Sheet 预览结果',
+    applyDescMid: '对应的 11-Sheet 预览结果',
     applyDescBold: '单事务',
     applyDescEnd: '写入租户配置。执行前请已在「预览」中确认数据无误。',
     templateDownloadedToast: '配置包模板已下载',
     exportedToast: '当前配置包已导出',
-    applyConfirmText: '确认将 8-Sheet 预览结果单事务应用到租户配置?此操作不可撤销。',
+    applyConfirmText: '确认将 11-Sheet 预览结果单事务应用到租户配置?此操作不可撤销。',
     applyConfirmTitle: '应用合并导入',
     applyConfirmYes: '确认应用',
     applyConfirmDetail:
@@ -1125,7 +1125,8 @@ export default {
     },
     systemAtomicTaskTypes: {
       title: 'Atomic 节点配置中心',
-      description: '查看平台内置 sql / shell / stored_proc / http 四类原子节点的参数 schema 与安全闸状态。',
+      description:
+        '查看平台内置 sql / shell / stored_proc / http 四类原子节点的参数 schema 与安全闸状态。',
     },
   },
   myAccount: {
@@ -3373,7 +3374,8 @@ export default {
     introBody:
       '由本租户 SDK worker 启动时通过 register 协议上报。注册由 SDK 维护,console 只读;若想下线,在 worker 侧移除并重启 — TTL 过后会自动归档。',
     loadError: '加载失败,请稍后重试',
-    emptyDescription: '本租户暂未注册任何自定义 taskType。先在 worker 端实现 SdkTaskHandler 并通过 SDK 上报。',
+    emptyDescription:
+      '本租户暂未注册任何自定义 taskType。先在 worker 端实现 SdkTaskHandler 并通过 SDK 上报。',
     colCode: 'taskType 编码',
     colDisplayName: '显示名',
     colVersion: 'descriptor 版本',
@@ -3398,7 +3400,8 @@ export default {
     empty: '未取到任何原子节点 schema(BE 端可能未启用 ConsoleAtomicTaskTypeController)',
     tagDefaultDisabled: '默认禁用',
     warnDefaultDisabledTitle: '{type} 类节点默认禁用',
-    warnDefaultDisabledBody: '该执行器需平台运维显式开启,且必须配置白名单后才能被工作流引用,否则运行时会被拒绝。',
+    warnDefaultDisabledBody:
+      '该执行器需平台运维显式开启,且必须配置白名单后才能被工作流引用,否则运行时会被拒绝。',
     sectionParameters: '参数清单',
     parametersEmpty: '该 type 暂未声明参数',
     colParamName: '字段',

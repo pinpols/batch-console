@@ -30,15 +30,45 @@ function pickSeed(): string | null {
 const MOCK_TOKEN = 'mock-upload-token-' + Date.now()
 const MOCK_PREVIEW = {
   uploadToken: MOCK_TOKEN,
+  fileName: 'mock-tenant-config-package.xlsx',
+  totalRows: 11,
+  validRows: 11,
+  invalidRows: 0,
   sheets: [
-    { sheet: 'Tenants', rows: 2, errors: 0 },
-    { sheet: 'Queues', rows: 4, errors: 0 },
+    { sheetName: 'resource_queue', totalRows: 1, validRows: 1, invalidRows: 0 },
+    { sheetName: 'business_calendar', totalRows: 1, validRows: 1, invalidRows: 0 },
+    { sheetName: 'batch_window', totalRows: 1, validRows: 1, invalidRows: 0 },
+    { sheetName: 'job_definition', totalRows: 1, validRows: 1, invalidRows: 0 },
+    { sheetName: 'file_channel_config', totalRows: 1, validRows: 1, invalidRows: 0 },
+    { sheetName: 'file_template_config', totalRows: 1, validRows: 1, invalidRows: 0 },
+    { sheetName: 'pipeline_definition', totalRows: 1, validRows: 1, invalidRows: 0 },
+    { sheetName: 'pipeline_step_definition', totalRows: 1, validRows: 1, invalidRows: 0 },
+    { sheetName: 'workflow_definition', totalRows: 1, validRows: 1, invalidRows: 0 },
+    { sheetName: 'workflow_node', totalRows: 1, validRows: 1, invalidRows: 0 },
+    { sheetName: 'workflow_edge', totalRows: 1, validRows: 1, invalidRows: 0 },
   ],
-  tenantCount: 2,
-  queueCount: 4,
-  validationErrors: [] as unknown[],
+  issues: [] as unknown[],
 }
-const MOCK_IMPORT_ID = 'import-' + Date.now()
+const MOCK_APPLY_RESULT = {
+  uploadToken: MOCK_TOKEN,
+  tenantId: 'ta',
+  resourceQueueInserted: 1,
+  resourceQueueUpdated: 0,
+  businessCalendarInserted: 1,
+  businessCalendarUpdated: 0,
+  batchWindowInserted: 1,
+  batchWindowUpdated: 0,
+  jobInserted: 1,
+  jobUpdated: 0,
+  channelInserted: 1,
+  channelUpdated: 0,
+  fileTemplateInserted: 1,
+  fileTemplateUpdated: 0,
+  pipelineInserted: 1,
+  pipelineUpdated: 0,
+  workflowInserted: 1,
+  workflowUpdated: 0,
+}
 
 async function installUploadMocks(page: import('@playwright/test').Page) {
   if (useRealBE) return
@@ -74,7 +104,7 @@ async function installUploadMocks(page: import('@playwright/test').Page) {
     route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({ code: 'SUCCESS', message: 'ok', data: MOCK_IMPORT_ID }),
+      body: JSON.stringify({ code: 'SUCCESS', message: 'ok', data: MOCK_APPLY_RESULT }),
     }),
   )
 
@@ -91,9 +121,9 @@ async function installUploadMocks(page: import('@playwright/test').Page) {
             {
               id: 1,
               eventType: 'TENANT_PACKAGE_APPLY',
-              targetId: MOCK_IMPORT_ID,
+              targetId: MOCK_TOKEN,
               createdAt: new Date().toISOString(),
-              description: `imported ${MOCK_PREVIEW.tenantCount} tenants`,
+              description: `applied ${MOCK_PREVIEW.validRows} config rows`,
             },
           ],
           total: 1,

@@ -1861,6 +1861,30 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/console/files/fs-download': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * HMAC-token download (FilesystemObjectStore backend only)
+     * @description Token-authenticated download for `batch.storage.backend=filesystem`. S3 backend
+     *     uses real presigned URLs (storage-direct); FS backend has no native presign, so
+     *     the application signs an HMAC token and serves bytes via this endpoint.
+     *     Anonymous — the token IS the authorization. Loaded only when backend=filesystem.
+     *
+     */
+    get: operations['filesystemPresignDownload']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/console/files/presign-download': {
     parameters: {
       query?: never
@@ -5236,7 +5260,7 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** Export current tenant config package as 8-sheet Excel (importable) */
+    /** Export current tenant config package as 11-sheet Excel (importable) */
     get: operations['exportTenantConfigPackageExcel']
     put?: never
     post?: never
@@ -6044,7 +6068,7 @@ export interface components {
       level?: 'CONFIG_VALIDATE' | 'SCHEDULE_PLAN' | 'EXECUTION_PLAN'
       /** @description 可选 effectiveParams；L3 EXECUTION_PLAN 中识别以下 key 触发探测：
        *     - sql / querySql / sourceQuery / validationSql / selectSql → JdbcTemplate EXPLAIN
-       *     - minioBucket → MinioClient.bucketExists（命名 DNS-style 校验）
+       *     - s3Bucket → S3Client.headBucket（命名 DNS-style 校验）
        *     - endpointUrl / callbackUrl / channelEndpoint / dispatchTarget → HTTP HEAD（5s timeout）
        *      */
       params?: {
@@ -11012,6 +11036,45 @@ export interface operations {
         content: {
           'application/json': components['schemas']['CommonResponseConsoleFileOperationResponse']
         }
+      }
+    }
+  }
+  filesystemPresignDownload: {
+    parameters: {
+      query: {
+        b: string
+        k: string
+        e: number
+        s: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description File content stream */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/octet-stream': string
+        }
+      }
+      /** @description Token invalid (bad signature / tampered / expired) */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description Object not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
       }
     }
   }
@@ -16656,7 +16719,7 @@ export interface operations {
     }
     requestBody?: never
     responses: {
-      /** @description 8-sheet Excel workbook containing all config data for the tenant */
+      /** @description 11-sheet Excel workbook containing all config data for the tenant */
       200: {
         headers: {
           [name: string]: unknown
@@ -16676,7 +16739,7 @@ export interface operations {
     }
     requestBody?: never
     responses: {
-      /** @description Empty Excel template with 8 data sheets */
+      /** @description Empty Excel template with 11 data sheets */
       200: {
         headers: {
           [name: string]: unknown
