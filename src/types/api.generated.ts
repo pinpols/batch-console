@@ -2167,7 +2167,7 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** 2026-06-03 拉取一组 worker 当前的 pipeline stage 行级进度(仅 IMPORT LOAD 流式 stage 在跑时有值) */
+    /** 按 pipelineInstanceId 拉取当前 pipeline step 行级进度 */
     get: operations['queryPipelineProgress']
     put?: never
     post?: never
@@ -11484,9 +11484,7 @@ export interface operations {
   queryPipelineProgress: {
     parameters: {
       query: {
-        tenantId: string
-        /** @description 逗号分隔的 workerCode 列表(Spring 自动按 comma split) */
-        workerCodes: string[]
+        pipelineInstanceId: number
       }
       header?: never
       path?: never
@@ -11494,7 +11492,7 @@ export interface operations {
     }
     requestBody?: never
     responses: {
-      /** @description Pipeline progress list(仅含有进度的 worker;无进度 / 已过期 5min 不出现) */
+      /** @description Pipeline step progress snapshot */
       200: {
         headers: {
           [name: string]: unknown
@@ -11504,14 +11502,23 @@ export interface operations {
             code?: string
             message?: string
             data?: {
-              workerCode?: string
               /** Format: int64 */
-              rowsProcessed?: number | null
-              /** Format: int64 */
-              totalRowsHint?: number | null
-              /** Format: date-time */
-              heartbeatAt?: string
-            }[]
+              pipelineInstanceId?: number
+              steps?: {
+                /** Format: int64 */
+                stepId?: number
+                /** Format: int64 */
+                pipelineInstanceId?: number
+                stepCode?: string
+                stageCode?: string
+                /** Format: int64 */
+                rowsProcessed?: number | null
+                /** Format: int64 */
+                totalRowsHint?: number | null
+                /** Format: int64 */
+                lastHeartbeatAt?: number | null
+              }[]
+            }
           }
         }
       }
