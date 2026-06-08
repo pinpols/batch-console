@@ -1,5 +1,5 @@
 <template>
-  <div v-if="tabsStore.list.length && !app.focusMode" class="floating-tabs">
+  <div v-if="tabsStore.list.length > 1 && !app.focusMode" class="floating-tabs">
     <div class="page-tabs floating-tabs__panel">
       <div class="page-tabs__scroll">
         <el-popover

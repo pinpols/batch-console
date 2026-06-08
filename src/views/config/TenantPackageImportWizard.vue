@@ -39,27 +39,6 @@
               <p class="upload-zone__title">{{ t('tenantPackageImportWizard.uploadTitle') }}</p>
               <p class="upload-zone__desc">{{ t('tenantPackageImportWizard.uploadDesc') }}</p>
               <div class="upload-zone__toolbar">
-                <div class="upload-zone__toolbar-left">
-                  <el-button
-                    link
-                    type="primary"
-                    :icon="Download"
-                    :loading="tplLoading"
-                    @click="doDownloadTemplate"
-                  >
-                    {{ t('tenantPackageImportWizard.btnDownloadTemplate') }}
-                  </el-button>
-                  <span class="upload-zone__toolbar-dot" aria-hidden="true">•</span>
-                  <el-button
-                    link
-                    type="primary"
-                    :icon="Download"
-                    :loading="exportLoading"
-                    @click="doExport"
-                  >
-                    {{ t('tenantPackageImportWizard.btnExportCurrent') }}
-                  </el-button>
-                </div>
                 <div class="upload-zone__toolbar-right">
                   <el-upload
                     drag
@@ -90,6 +69,26 @@
                     @click="doUpload"
                   >
                     {{ t('excelMaintenanceWizard.btnStartUpload') }}
+                  </el-button>
+                </div>
+                <div class="upload-zone__toolbar-left">
+                  <el-button
+                    link
+                    type="primary"
+                    :icon="Download"
+                    :loading="tplLoading"
+                    @click="doDownloadTemplate"
+                  >
+                    {{ t('tenantPackageImportWizard.btnDownloadTemplate') }}
+                  </el-button>
+                  <el-button
+                    link
+                    type="primary"
+                    :icon="Download"
+                    :loading="exportLoading"
+                    @click="doExport"
+                  >
+                    {{ t('tenantPackageImportWizard.btnExportCurrent') }}
                   </el-button>
                 </div>
               </div>
@@ -909,22 +908,26 @@
   }
 
   .upload-zone__toolbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: minmax(340px, 1fr) minmax(220px, 280px);
+    align-items: stretch;
     gap: var(--space-md);
     margin: var(--card-inner-padding) auto 0;
     padding-top: var(--space-xs);
-    max-width: min(960px, 100%);
+    max-width: min(840px, 100%);
     width: 100%;
   }
 
   .upload-zone__toolbar-left {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px;
+    border: 1px solid color-mix(in srgb, var(--color-border-light) 72%, var(--color-border) 28%);
+    border-radius: var(--radius-content);
+    background: color-mix(in srgb, var(--color-bg-card) 82%, var(--color-bg-canvas) 18%);
     color: var(--color-text-tertiary);
-    flex-wrap: wrap;
   }
 
   .upload-zone__toolbar-left :deep(.el-button.is-link) {
@@ -940,6 +943,13 @@
       border-color 0.18s ease;
   }
 
+  .upload-zone__toolbar-left :deep(.el-button) {
+    justify-content: flex-start;
+    width: 100%;
+    min-height: 34px;
+    margin-left: 0;
+  }
+
   .upload-zone__toolbar-left :deep(.el-button.is-link:hover) {
     transform: translateY(-1px);
     background: var(--button-primary-soft-bg-hover);
@@ -953,20 +963,21 @@
   }
 
   .upload-zone__toolbar-dot {
-    opacity: 0.55;
-    transform: translateY(-1px);
+    display: none;
   }
 
   .upload-zone__toolbar-right {
-    display: inline-flex;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
     gap: var(--space-sm);
-    flex-wrap: wrap;
-    justify-content: flex-end;
+    justify-content: stretch;
+    min-width: 0;
   }
 
   /* drag 模式 dropzone */
   .upload-zone__dropzone :deep(.el-upload-dragger) {
+    min-height: 116px;
     padding: 18px 28px;
     border-radius: 8px;
     background: var(--color-bg-page);
@@ -999,7 +1010,7 @@
   }
 
   .upload-zone__toolbar-right :deep(.el-upload) {
-    width: auto;
+    width: 100%;
   }
 
   .upload-zone__ghost-btn,
@@ -1070,14 +1081,13 @@
 
   @media (max-width: 720px) {
     .upload-zone__toolbar {
-      flex-direction: column;
-      align-items: stretch;
+      grid-template-columns: 1fr;
       max-width: 520px;
       gap: var(--space-sm);
     }
 
     .upload-zone__toolbar-right {
-      justify-content: center;
+      grid-template-columns: 1fr;
     }
   }
 

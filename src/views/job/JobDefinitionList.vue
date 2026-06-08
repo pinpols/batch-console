@@ -235,9 +235,9 @@
           min-width="220"
           show-overflow-tooltip
         />
-        <el-table-column :label="t('jobDefinitionList.colActions')" width="360" fixed="right">
+        <el-table-column :label="t('jobDefinitionList.colActions')" width="230" fixed="right">
           <template #default="{ row }">
-            <RowActions :actions="rowActions(row)" :inline-limit="4" />
+            <RowActions :actions="rowActions(row)" :inline-limit="2" />
           </template>
         </el-table-column>
       </ProTable>

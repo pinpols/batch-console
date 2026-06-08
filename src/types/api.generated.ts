@@ -552,6 +552,29 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/console/stream/pipeline-progress/events': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Subscribe to pipeline progress dirty events
+     * @description Emits low-frequency `pipeline-progress-dirty` named SSE events. The event payload only identifies the
+     *     dirty pipeline instance; clients must fetch `/api/console/queries/pipeline-progress?pipelineInstanceId=...`
+     *     for the current snapshot.
+     *
+     */
+    get: operations['streamPipelineProgressEvents']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/console/workflow-runs/events': {
     parameters: {
       query?: never
@@ -8836,6 +8859,31 @@ export interface operations {
     requestBody?: never
     responses: {
       /** @description SSE event stream of job instance realtime changes */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'text/event-stream': components['schemas']['ConsoleSseEventResponse']
+        }
+      }
+    }
+  }
+  streamPipelineProgressEvents: {
+    parameters: {
+      query?: {
+        tenantId?: components['parameters']['TenantIdQuery']
+        eventType?: string
+        cursor?: string
+        heartbeatMillis?: number
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description SSE dirty event stream for pipeline progress changes */
       200: {
         headers: {
           [name: string]: unknown
