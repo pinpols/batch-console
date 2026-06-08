@@ -435,8 +435,9 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, computed } from 'vue'
+  import { ref, computed, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
+  import { useRoute } from 'vue-router'
   import { fetchAllPageItems, toPageResult } from '@/api/adapters'
 
   const { t } = useI18n({ useScope: 'global' })
@@ -463,6 +464,7 @@
   import { useAutoRefresh } from '@/composables/useAutoRefresh'
 
   const tenant = useTenantStore()
+  const route = useRoute()
   const activeTab = ref<'pipelines' | 'steps' | 'dispatches' | 'errors'>('pipelines')
   const loading = ref(false)
   const loadError = ref<unknown>(null)
@@ -475,8 +477,9 @@
   } = useListFilterFeedback(loading)
   const page = ref(1)
   const pageSize = ref(15)
-  const kwDraft = ref('')
-  const kwApplied = ref('')
+  const initialPipelineInstanceId = String(route.query.pipelineInstanceId ?? '').trim()
+  const kwDraft = ref(initialPipelineInstanceId)
+  const kwApplied = ref(initialPipelineInstanceId)
 
   const allPipelines = ref<ConsoleFilePipelineResponse[]>([])
   const allSteps = ref<ConsoleFilePipelineStepResponse[]>([])
@@ -733,6 +736,18 @@
     kwApplied.value = ''
     void runActive()
   }
+
+  watch(
+    () => route.query.pipelineInstanceId,
+    (value) => {
+      const next = String(value ?? '').trim()
+      if (!next) return
+      activeTab.value = 'pipelines'
+      kwDraft.value = next
+      kwApplied.value = next
+      page.value = 1
+    },
+  )
 
   async function runActive() {
     if (activeTab.value === 'pipelines') await loadPipelines()

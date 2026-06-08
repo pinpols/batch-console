@@ -42,6 +42,33 @@ export interface OutboxDeliveryFilters {
   deliveryStatus?: string
   /** partial match */
   targetTopic?: string
+  /** exact match */
+  traceId?: string
+}
+
+export interface TraceSnapshotResponse {
+  traceId: string
+  jobInstances: Record<string, unknown>[]
+  workflowRuns: Record<string, unknown>[]
+  workflowNodeRuns: Record<string, unknown>[]
+  files: Record<string, unknown>[]
+  filePipelines: Record<string, unknown>[]
+  auditLogs: Record<string, unknown>[]
+  operationAudits: Record<string, unknown>[]
+  executionLogs: Record<string, unknown>[]
+  outboxDeliveries: Record<string, unknown>[]
+  alerts: Record<string, unknown>[]
+  deadLetters: Record<string, unknown>[]
+}
+
+export function queryTraceSnapshot(
+  tenantId: string,
+  traceId: string,
+): Promise<TraceSnapshotResponse> {
+  return get<TraceSnapshotResponse>('/api/console/queries/trace-snapshot', {
+    tenantId,
+    traceId,
+  })
 }
 
 /** OpenAPI data 均为 PageResponse；将过滤参数传给后端（后端支持时减少传输量，客户端仍做兜底过滤） */
@@ -76,14 +103,16 @@ export function queryOutboxDeliveries(tenantId: string, filters?: OutboxDelivery
       ...(filters?.eventKey ? { eventKey: filters.eventKey } : {}),
       ...(filters?.deliveryStatus ? { deliveryStatus: filters.deliveryStatus } : {}),
       ...(filters?.targetTopic ? { targetTopic: filters.targetTopic } : {}),
+      ...(filters?.traceId ? { traceId: filters.traceId } : {}),
     },
   )
 }
 
 /** GET /api/console/queries/dead-letters */
-export function queryDeadLetters(tenantId: string) {
+export function queryDeadLetters(tenantId: string, filters?: { traceId?: string }) {
   return fetchAllPageItems<ConsoleDeadLetterTaskResponse>('/api/console/queries/dead-letters', {
     tenantId,
+    ...(filters?.traceId ? { traceId: filters.traceId } : {}),
   })
 }
 
