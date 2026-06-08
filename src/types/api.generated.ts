@@ -2160,6 +2160,23 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/console/queries/trace-snapshot': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Query cross-domain trace snapshot */
+    get: operations['queryTraceSnapshot']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/console/queries/pipeline-progress': {
     parameters: {
       query?: never
@@ -2167,7 +2184,7 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** 2026-06-03 拉取一组 worker 当前的 pipeline stage 行级进度(仅 IMPORT LOAD 流式 stage 在跑时有值) */
+    /** 按 pipelineInstanceId 拉取当前 pipeline step 行级进度 */
     get: operations['queryPipelineProgress']
     put?: never
     post?: never
@@ -6709,8 +6726,14 @@ export interface components {
       jobInstances: components['schemas']['ConsoleJobInstanceResponse'][]
       workflowRuns: components['schemas']['ConsoleWorkflowRunResponse'][]
       workflowNodeRuns: components['schemas']['ConsoleWorkflowNodeRunResponse'][]
+      files: components['schemas']['ConsoleFileRecordResponse'][]
       filePipelines: components['schemas']['ConsoleFilePipelineResponse'][]
       auditLogs: components['schemas']['ConsoleAuditLogResponse'][]
+      operationAudits: components['schemas']['ConsoleOperationAuditResponse'][]
+      executionLogs: components['schemas']['ConsoleAuditLogResponse'][]
+      outboxDeliveries: components['schemas']['ConsoleOutboxDeliveryLogResponse'][]
+      alerts: components['schemas']['ConsoleAlertEventResponse'][]
+      deadLetters: components['schemas']['ConsoleDeadLetterTaskResponse'][]
     }
     ConsoleWorkflowTopologyResponse: {
       workflowDefinition?: components['schemas']['ConsoleWorkflowDefinitionResponse']
@@ -7525,6 +7548,7 @@ export interface components {
       tenantId: string
       eventType: string
       eventKey: string
+      traceId: string
       deliveryStatus: string
       targetTopic: string
       /** Format: int32 */
@@ -11481,12 +11505,11 @@ export interface operations {
       }
     }
   }
-  queryPipelineProgress: {
+  queryTraceSnapshot: {
     parameters: {
       query: {
-        tenantId: string
-        /** @description 逗号分隔的 workerCode 列表(Spring 自动按 comma split) */
-        workerCodes: string[]
+        tenantId?: components['parameters']['TenantIdQuery']
+        traceId: string
       }
       header?: never
       path?: never
@@ -11494,7 +11517,33 @@ export interface operations {
     }
     requestBody?: never
     responses: {
-      /** @description Pipeline progress list(仅含有进度的 worker;无进度 / 已过期 5min 不出现) */
+      /** @description Cross-domain trace snapshot */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            code?: string
+            message?: string
+            data?: components['schemas']['ConsoleTraceSnapshotResponse']
+          }
+        }
+      }
+    }
+  }
+  queryPipelineProgress: {
+    parameters: {
+      query: {
+        pipelineInstanceId: number
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Pipeline step progress snapshot */
       200: {
         headers: {
           [name: string]: unknown
@@ -11504,14 +11553,23 @@ export interface operations {
             code?: string
             message?: string
             data?: {
-              workerCode?: string
               /** Format: int64 */
-              rowsProcessed?: number | null
-              /** Format: int64 */
-              totalRowsHint?: number | null
-              /** Format: date-time */
-              heartbeatAt?: string
-            }[]
+              pipelineInstanceId?: number
+              steps?: {
+                /** Format: int64 */
+                stepId?: number
+                /** Format: int64 */
+                pipelineInstanceId?: number
+                stepCode?: string
+                stageCode?: string
+                /** Format: int64 */
+                rowsProcessed?: number | null
+                /** Format: int64 */
+                totalRowsHint?: number | null
+                /** Format: int64 */
+                lastHeartbeatAt?: number | null
+              }[]
+            }
           }
         }
       }
@@ -11529,6 +11587,7 @@ export interface operations {
         startDate?: components['parameters']['StartDateFilter']
         /** @description Filter end date (ISO date, inclusive) */
         endDate?: components['parameters']['EndDateFilter']
+        traceId?: string
       }
       header?: never
       path?: never
@@ -11725,6 +11784,7 @@ export interface operations {
         deliveryStatus?: components['parameters']['DeliveryStatusFilter']
         /** @description Filter by target topic (partial match) */
         targetTopic?: components['parameters']['TargetTopicFilter']
+        traceId?: string
       }
       header?: never
       path?: never

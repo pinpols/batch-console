@@ -3,12 +3,12 @@ import { get } from '@/api/client'
 /**
  * File pipeline 行级进度查询。
  *
- * BE 端点(由 BE lane 同步实现,可能未合入主干):
+ * BE 端点:
  *   `GET /api/console/queries/pipeline-progress?pipelineInstanceId=X`
  *
  * 设计书:`docs/design/pipeline-stage-progress-display.md`(file-batch-system 仓)
  *
- * 降级策略:BE 端点 404 / 500 时 `queryPipelineProgress` 抛出由调用方捕获,
+ * 降级策略:BE 端点异常时 `queryPipelineProgress` 抛出由调用方捕获,
  * 视图层显示「—」即可,不阻塞页面。
  */
 

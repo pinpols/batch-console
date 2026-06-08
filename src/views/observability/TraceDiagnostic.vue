@@ -139,16 +139,7 @@
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
   import { useTenantStore } from '@/stores/tenant'
-  import { jobApi } from '@/api/job'
-  import { fileApi } from '@/api/file'
-  import {
-    queryAudits,
-    queryExecutionLogs,
-    queryOutboxDeliveries,
-    queryDeadLetters,
-  } from '@/api/observabilityQueries'
-  import { queryWorkflowRuns } from '@/api/workflowQueries'
-  import { queryAlertsAll } from '@/api/alertsQuery'
+  import { queryTraceSnapshot } from '@/api/observabilityQueries'
 
   const { t } = useI18n({ useScope: 'global' })
   const route = useRoute()
@@ -195,25 +186,6 @@
   const totalHits = computed(() => results.value.reduce((s, d) => s + d.rows.length, 0))
   const hitDomains = computed(() => results.value.filter((d) => d.rows.length > 0))
 
-  // 多域并行 fetch,每个独立 try/catch,单域失败不影响整体。
-  // 部分 BE 接口不支持 traceId 过滤,统一在前端按 row.traceId 兜底过滤。
-  async function fetchDomain(domain: string, fn: () => Promise<unknown[]>): Promise<unknown[]> {
-    try {
-      return (await fn()) || []
-    } catch {
-      return []
-    }
-  }
-
-  /**
-   * 行级 traceId 过滤。某些行类型(outbox / deadLetter 等)在 OpenAPI schema 上没有
-   * `traceId` 字段声明,但后端实际下发或存在 props 里。这里用宽松约束让调用方
-   * 不必逐 row 类型扩展,只在运行时按 `r.traceId` 取值。
-   */
-  function filterByTrace<T>(rows: T[], trace: string): T[] {
-    return rows.filter((r) => (r as { traceId?: string | null } | null)?.traceId === trace)
-  }
-
   async function search() {
     const trace = traceIdInput.value.trim()
     if (!trace) return
@@ -225,38 +197,17 @@
     const t0 = Date.now()
     const tenantId = tenant.tenantId
 
-    const [
-      jobInstances,
-      files,
-      audits,
-      executionLogs,
-      workflowRuns,
-      outboxes,
-      alerts,
-      deadLetters,
-    ] = await Promise.all([
-      fetchDomain('jobInstance', async () => {
-        const r = await jobApi.listInstances({ tenantId, traceId: trace, page: 1, pageSize: 200 })
-        return r.records as unknown[]
-      }),
-      fetchDomain('file', async () => {
-        const r = await fileApi.list({ tenantId, traceId: trace, page: 1, pageSize: 200 })
-        return r.records as unknown[]
-      }),
-      fetchDomain('audit', () => queryAudits(tenantId, { traceId: trace })),
-      fetchDomain('executionLog', () => queryExecutionLogs(tenantId, { traceId: trace })),
-      // workflowRun:BE 已支持 traceId 服务端过滤,直接传 trace 精准命中(原先拉全量页客户端筛,
-      // 大数据量下慢且可能漏命中)。filterByTrace 仅作兜底。
-      fetchDomain('workflowRun', async () =>
-        filterByTrace(await queryWorkflowRuns(tenantId, undefined, undefined, trace), trace),
-      ),
-      // 以下三域:BE 暂不支持 traceId 过滤,客户端按 row.traceId 兜底过滤
-      fetchDomain('outbox', async () =>
-        filterByTrace(await queryOutboxDeliveries(tenantId), trace),
-      ),
-      fetchDomain('alert', async () => filterByTrace(await queryAlertsAll(tenantId), trace)),
-      fetchDomain('deadLetter', async () => filterByTrace(await queryDeadLetters(tenantId), trace)),
-    ])
+    const snapshot = await queryTraceSnapshot(tenantId, trace)
+    const jobInstances = snapshot.jobInstances ?? []
+    const files = snapshot.files ?? []
+    const filePipelines = snapshot.filePipelines ?? []
+    const audits = snapshot.auditLogs ?? []
+    const operationAudits = snapshot.operationAudits ?? []
+    const executionLogs = snapshot.executionLogs ?? []
+    const workflowRuns = snapshot.workflowRuns ?? []
+    const outboxes = snapshot.outboxDeliveries ?? []
+    const alerts = snapshot.alerts ?? []
+    const deadLetters = snapshot.deadLetters ?? []
 
     results.value = [
       {
@@ -293,6 +244,24 @@
         ],
       },
       {
+        domain: 'filePipeline',
+        label: t('traceDiagnostic.domainFilePipeline'),
+        rows: filePipelines as Record<string, unknown>[],
+        columns: [
+          {
+            prop: 'id',
+            label: 'ID',
+            width: 100,
+            linkTo: (row) => `/files/pipeline-obs?pipelineInstanceId=${row.id}`,
+          },
+          { prop: 'jobCode', label: t('traceDiagnostic.colJobCode'), width: 180 },
+          { prop: 'pipelineType', label: t('traceDiagnostic.colPipelineType'), width: 120 },
+          { prop: 'runStatus', label: t('traceDiagnostic.colStatus'), width: 110 },
+          { prop: 'currentStage', label: t('traceDiagnostic.colCurrentStage'), width: 140 },
+          { prop: 'createdAt', label: t('traceDiagnostic.colCreatedAt'), width: 170 },
+        ],
+      },
+      {
         domain: 'audit',
         label: t('traceDiagnostic.domainAudit'),
         rows: audits as Record<string, unknown>[],
@@ -300,6 +269,18 @@
           { prop: 'operationType', label: t('traceDiagnostic.colOperation'), width: 160 },
           { prop: 'operatorId', label: t('traceDiagnostic.colOperator'), width: 120 },
           { prop: 'operationResult', label: t('traceDiagnostic.colResult'), width: 100 },
+          { prop: 'createdAt', label: t('traceDiagnostic.colCreatedAt'), width: 170 },
+        ],
+      },
+      {
+        domain: 'operationAudit',
+        label: t('traceDiagnostic.domainOperationAudit'),
+        rows: operationAudits as Record<string, unknown>[],
+        columns: [
+          { prop: 'action', label: t('traceDiagnostic.colOperation'), width: 160 },
+          { prop: 'operatorId', label: t('traceDiagnostic.colOperator'), width: 120 },
+          { prop: 'result', label: t('traceDiagnostic.colResult'), width: 100 },
+          { prop: 'aggregateType', label: t('traceDiagnostic.colAggregateType'), width: 140 },
           { prop: 'createdAt', label: t('traceDiagnostic.colCreatedAt'), width: 170 },
         ],
       },
