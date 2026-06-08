@@ -10,6 +10,8 @@ export interface AlertQueryFilters {
   startDate?: string
   /** ISO date range end */
   endDate?: string
+  /** exact match */
+  traceId?: string
 }
 
 /**
@@ -22,6 +24,7 @@ export function queryAlertsAll(tenantId: string, filters?: AlertQueryFilters) {
     ...(filters?.acknowledged != null ? { acknowledged: filters.acknowledged } : {}),
     ...(filters?.startDate ? { startDate: filters.startDate } : {}),
     ...(filters?.endDate ? { endDate: filters.endDate } : {}),
+    ...(filters?.traceId ? { traceId: filters.traceId } : {}),
   })
 }
 
@@ -43,5 +46,6 @@ export function queryAlertsPage(
     ...(filters?.acknowledged != null ? { acknowledged: filters.acknowledged } : {}),
     ...(filters?.startDate ? { startDate: filters.startDate } : {}),
     ...(filters?.endDate ? { endDate: filters.endDate } : {}),
+    ...(filters?.traceId ? { traceId: filters.traceId } : {}),
   })
 }
