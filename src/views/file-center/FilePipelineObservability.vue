@@ -456,12 +456,10 @@
     ConsoleFilePipelineResponse,
     ConsoleFilePipelineStepResponse,
   } from '@/types/console-api'
-  import {
-    queryPipelineProgressSafe,
-    type PipelineStepProgress,
-  } from '@/api/filePipelineQuery'
+  import { queryPipelineProgressSafe, type PipelineStepProgress } from '@/api/filePipelineQuery'
   import { processedCountFromSummary } from '@/utils/pipelineStepSummary'
   import { useAutoRefresh } from '@/composables/useAutoRefresh'
+  import { useSseAutoReload } from '@/composables/useSseAutoReload'
 
   const tenant = useTenantStore()
   const route = useRoute()
@@ -553,10 +551,7 @@
     const totalStr = formatRowsCompact(prog.totalRowsHint)
 
     // 心跳停滞:文本切「无响应」
-    if (
-      prog.lastHeartbeatAt != null &&
-      Date.now() - prog.lastHeartbeatAt > HEARTBEAT_STALL_MS
-    ) {
+    if (prog.lastHeartbeatAt != null && Date.now() - prog.lastHeartbeatAt > HEARTBEAT_STALL_MS) {
       return `${totalStr} · ${t('common.etaStalled')}`
     }
     const etaText = computeEtaText(prog)
@@ -591,6 +586,18 @@
   useAutoRefresh(() => {
     void loadProgress()
   }, 30_000)
+
+  const progressSseEnabled = computed(
+    () => activeTab.value === 'steps' && showProgressColumns.value,
+  )
+  useSseAutoReload({
+    domain: 'pipeline-progress',
+    reload: loadProgress,
+    scope: () => tenant.tenantId,
+    debounceMs: 1_200,
+    enabled: progressSseEnabled,
+    onFallback: null,
+  })
 
   const filteredPipelines = computed(() => {
     const k = kwApplied.value.trim().toLowerCase()
