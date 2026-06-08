@@ -10,6 +10,7 @@ type SseStreamType =
   | 'workflow-runs'
   | 'alerts'
   | 'pipeline-definitions'
+  | 'pipeline-progress'
 
 /**
  * 用 Authorization 交换一次性 SSE ticket(后端 5 分钟过期、使用后立删)。
@@ -21,7 +22,12 @@ export async function fetchStreamTicket(): Promise<string> {
 }
 
 function resolvePath(domain: SseStreamType): string {
-  const streamDomains: SseStreamType[] = ['job-instances', 'outbox-deliveries', 'outbox-retries']
+  const streamDomains: SseStreamType[] = [
+    'job-instances',
+    'outbox-deliveries',
+    'outbox-retries',
+    'pipeline-progress',
+  ]
   return streamDomains.includes(domain)
     ? `/api/console/stream/${domain}/events`
     : `/api/console/${domain}/events`
@@ -46,13 +52,39 @@ export async function createSseStream(
   const ticket = await fetchStreamTicket()
   const url = buildStreamUrl(resolvePath(domain), ticket)
   const es = new EventSource(url)
-  es.onmessage = (e) => onMessage(typeof e.data === 'string' ? e.data : String(e.data ?? ''))
+  const forward = (e: MessageEvent) =>
+    onMessage(typeof e.data === 'string' ? e.data : String(e.data ?? ''))
+  es.onmessage = forward
+  for (const name of SSE_DOMAIN_EVENT_NAMES) {
+    es.addEventListener(name, forward)
+  }
   es.onerror = (e) => {
     onError?.(e)
     es.close()
   }
   return es
 }
+
+/** Spring SSE 使用命名 event；这里只转发业务 dirty 事件，避免 heartbeat 触发列表刷新。 */
+const SSE_DOMAIN_EVENT_NAMES = [
+  'alert-updated',
+  'job-instance-updated',
+  'outbox-cleanup',
+  'outbox-delivery-updated',
+  'outbox-republish',
+  'outbox-retry-updated',
+  'pipeline-definition-created',
+  'pipeline-definition-toggled',
+  'pipeline-definition-updated',
+  'pipeline-progress-dirty',
+  'worker-updated',
+  'worker-warmup',
+  'workflow-definition-created',
+  'workflow-definition-full-updated',
+  'workflow-definition-toggled',
+  'workflow-definition-updated',
+  'workflow-run-updated',
+] as const
 
 /** Spring SSE 使用命名 event;与 ConsoleRealtimeEventHub 生命周期及 job-instances 域事件对齐 */
 const JOB_INSTANCE_SSE_EVENT_NAMES = [
