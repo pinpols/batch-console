@@ -2160,6 +2160,23 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/console/queries/trace-snapshot': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Query cross-domain trace snapshot */
+    get: operations['queryTraceSnapshot']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/console/queries/pipeline-progress': {
     parameters: {
       query?: never
@@ -6709,8 +6726,14 @@ export interface components {
       jobInstances: components['schemas']['ConsoleJobInstanceResponse'][]
       workflowRuns: components['schemas']['ConsoleWorkflowRunResponse'][]
       workflowNodeRuns: components['schemas']['ConsoleWorkflowNodeRunResponse'][]
+      files: components['schemas']['ConsoleFileRecordResponse'][]
       filePipelines: components['schemas']['ConsoleFilePipelineResponse'][]
       auditLogs: components['schemas']['ConsoleAuditLogResponse'][]
+      operationAudits: components['schemas']['ConsoleOperationAuditResponse'][]
+      executionLogs: components['schemas']['ConsoleAuditLogResponse'][]
+      outboxDeliveries: components['schemas']['ConsoleOutboxDeliveryLogResponse'][]
+      alerts: components['schemas']['ConsoleAlertEventResponse'][]
+      deadLetters: components['schemas']['ConsoleDeadLetterTaskResponse'][]
     }
     ConsoleWorkflowTopologyResponse: {
       workflowDefinition?: components['schemas']['ConsoleWorkflowDefinitionResponse']
@@ -7525,6 +7548,7 @@ export interface components {
       tenantId: string
       eventType: string
       eventKey: string
+      traceId: string
       deliveryStatus: string
       targetTopic: string
       /** Format: int32 */
@@ -11481,6 +11505,33 @@ export interface operations {
       }
     }
   }
+  queryTraceSnapshot: {
+    parameters: {
+      query: {
+        tenantId?: components['parameters']['TenantIdQuery']
+        traceId: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Cross-domain trace snapshot */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            code?: string
+            message?: string
+            data?: components['schemas']['ConsoleTraceSnapshotResponse']
+          }
+        }
+      }
+    }
+  }
   queryPipelineProgress: {
     parameters: {
       query: {
@@ -11536,6 +11587,7 @@ export interface operations {
         startDate?: components['parameters']['StartDateFilter']
         /** @description Filter end date (ISO date, inclusive) */
         endDate?: components['parameters']['EndDateFilter']
+        traceId?: string
       }
       header?: never
       path?: never
@@ -11732,6 +11784,7 @@ export interface operations {
         deliveryStatus?: components['parameters']['DeliveryStatusFilter']
         /** @description Filter by target topic (partial match) */
         targetTopic?: components['parameters']['TargetTopicFilter']
+        traceId?: string
       }
       header?: never
       path?: never
