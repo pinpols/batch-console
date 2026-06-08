@@ -25,6 +25,13 @@
               </el-button>
             </el-tooltip>
           </div>
+          <div v-if="routeProgress.showSkeleton" class="layout-route-skeleton" aria-hidden="true">
+            <div class="layout-route-skeleton__header" />
+            <div class="layout-route-skeleton__toolbar" />
+            <div class="layout-route-skeleton__grid">
+              <span v-for="i in 8" :key="i" />
+            </div>
+          </div>
           <div class="layout-main__body">
             <div class="layout-main__content">
               <RouterView v-slot="{ Component, route: r }">
@@ -63,9 +70,11 @@
   import { useNetworkStatus } from '@/composables/useNetworkStatus'
   import { useMaintenancePolling } from '@/composables/useMaintenancePolling'
   import { shouldShowOnboarding, startOnboarding } from '@/composables/useOnboardingTour'
+  import { useRouteProgressStore } from '@/stores/routeProgress'
 
   const route = useRoute()
   const { app, tabsStore, paletteOpen, visibleGroups } = useHeaderLogic()
+  const routeProgress = useRouteProgressStore()
   // 全局网络状态监听:断网/恢复弹消息(配合 axios retry,短抖用户无感)
   useNetworkStatus()
   // 维护模式探活:30s 轮询 /system/maintenance,自动同步 banner / 写按钮 / 降级页
@@ -221,6 +230,80 @@
       transform var(--motion-duration-sm) var(--motion-ease-emphasized),
       box-shadow var(--motion-duration-md) var(--motion-ease-standard),
       border-color var(--motion-duration-sm) var(--motion-ease-standard);
+  }
+
+  .layout-route-skeleton {
+    position: absolute;
+    inset: var(--layout-card-padding);
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: var(--page-scroll-edge-top) var(--page-scroll-edge-bleed) var(--page-scroll-edge-bleed);
+    pointer-events: none;
+    opacity: 0.88;
+    border-radius: var(--layout-panel-radius);
+    background: color-mix(in srgb, var(--color-bg-card) 92%, var(--color-bg-canvas) 8%);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-border-light) 80%, transparent);
+  }
+
+  .layout-route-skeleton__header,
+  .layout-route-skeleton__toolbar,
+  .layout-route-skeleton__grid span {
+    position: relative;
+    overflow: hidden;
+    border-radius: var(--radius-content);
+    background: color-mix(in srgb, var(--color-bg-elevated) 74%, var(--color-bg-canvas) 26%);
+    border: 1px solid color-mix(in srgb, var(--color-border-light) 76%, var(--color-border) 24%);
+  }
+
+  .layout-route-skeleton__header::after,
+  .layout-route-skeleton__toolbar::after,
+  .layout-route-skeleton__grid span::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(
+      90deg,
+      transparent,
+      color-mix(in srgb, var(--color-primary) 10%, transparent),
+      transparent
+    );
+    animation: route-skeleton-shimmer 1.4s linear infinite;
+  }
+
+  .layout-route-skeleton__header {
+    width: min(420px, 52%);
+    height: 42px;
+  }
+
+  .layout-route-skeleton__toolbar {
+    height: 56px;
+  }
+
+  .layout-route-skeleton__grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .layout-route-skeleton__grid span {
+    height: 94px;
+  }
+
+  @keyframes route-skeleton-shimmer {
+    to {
+      transform: translateX(100%);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .layout-route-skeleton__header::after,
+    .layout-route-skeleton__toolbar::after,
+    .layout-route-skeleton__grid span::after {
+      animation: none;
+    }
   }
 
   /** 主壳保持稳定，仅通过描边反馈 hover，避免弹层/点击时定位闪烁。 */

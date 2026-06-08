@@ -95,6 +95,12 @@ describe('createSseStream', () => {
     expect(url.searchParams.get('ticket')).toBe('T-abc')
   })
 
+  it('constructs /stream/pipeline-progress/events for pipeline progress', async () => {
+    await createSseStream('pipeline-progress', () => {})
+    const url = new URL(FakeEventSource.instances[0].url, 'http://localhost')
+    expect(url.pathname).toBe('/api/console/stream/pipeline-progress/events')
+  })
+
   it('constructs /{domain}/events for non-prefixed domains', async () => {
     await createSseStream('alerts', () => {})
     const url = new URL(FakeEventSource.instances[0].url, 'http://localhost')
@@ -106,6 +112,21 @@ describe('createSseStream', () => {
     await createSseStream('workers', onMessage)
     FakeEventSource.instances[0].emit('hello')
     expect(onMessage).toHaveBeenCalledWith('hello')
+  })
+
+  it('forwards named business events but ignores heartbeat lifecycle events', async () => {
+    const onMessage = vi.fn()
+    await createSseStream('pipeline-progress', onMessage)
+    FakeEventSource.instances[0].emitNamed(
+      'pipeline-progress-dirty',
+      JSON.stringify({ data: { pipelineInstanceId: 123 } }),
+    )
+    FakeEventSource.instances[0].emitNamed(
+      'heartbeat',
+      JSON.stringify({ data: { status: 'alive' } }),
+    )
+    expect(onMessage).toHaveBeenCalledTimes(1)
+    expect(onMessage).toHaveBeenCalledWith(expect.stringContaining('pipelineInstanceId'))
   })
 
   it('calls onError handler then closes on onerror', async () => {
