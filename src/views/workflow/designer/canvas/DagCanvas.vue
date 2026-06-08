@@ -112,10 +112,26 @@ function onKeyDown(ev: KeyboardEvent) {
   bottom: 16px;
   width: 180px;
   height: 120px;
-  background: var(--color-bg-overlay, #fff);
-  border: 1px solid var(--color-border-base, #dcdfe6);
-  border-radius: 4px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+  background: color-mix(in srgb, var(--color-bg-elevated) 88%, var(--color-bg-canvas) 12%);
+  border: 1px solid color-mix(in srgb, var(--color-border) 82%, var(--color-primary) 18%);
+  border-radius: var(--radius-content);
+  box-shadow:
+    0 10px 24px rgb(0 0 0 / 22%),
+    inset 0 1px 0 rgb(255 255 255 / 8%);
   z-index: 2;
+}
+
+.dag-canvas__minimap :deep(.x6-widget-minimap),
+.dag-canvas__minimap :deep(.x6-graph),
+.dag-canvas__minimap :deep(.x6-graph-scroller) {
+  background: transparent !important;
+}
+
+.dag-canvas__minimap :deep(.x6-widget-minimap-viewport) {
+  border: 1px solid color-mix(in srgb, var(--color-primary) 46%, var(--color-border) 54%);
+  border-radius: calc(var(--radius-content) - 4px);
+  background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 8%);
 }
 </style>
