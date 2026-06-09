@@ -5041,8 +5041,25 @@ export interface paths {
     }
     get?: never
     put?: never
-    /** Get pre-signed upload URL */
+    /** Create an application-managed upload session */
     post: operations['presignUpload']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/files/{fileId}/content': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    /** Upload file content to the application-managed object store */
+    put: operations['uploadFileContent']
+    post?: never
     delete?: never
     options?: never
     head?: never
@@ -6589,6 +6606,23 @@ export interface components {
       /** @description ADR-012 失败分类码（FailureClass enum），仅终态 FAILED/PARTIAL_FAILED 时填值。 */
       failureClass?: string
     }
+    ConsoleJobExecutionLogResponse: {
+      /** Format: int64 */
+      id: number
+      tenantId: string
+      /** Format: int64 */
+      jobInstanceId: number
+      /** Format: int64 */
+      jobPartitionId: number
+      logLevel: string
+      logType: string
+      traceId: string
+      message: string
+      detailRef: string
+      extraJson: string
+      /** Format: date-time */
+      createdAt: string
+    }
     ConsoleJobStepInstanceResponse: {
       /** Format: int64 */
       id: number
@@ -6753,7 +6787,7 @@ export interface components {
       filePipelines: components['schemas']['ConsoleFilePipelineResponse'][]
       auditLogs: components['schemas']['ConsoleAuditLogResponse'][]
       operationAudits: components['schemas']['ConsoleOperationAuditResponse'][]
-      executionLogs: components['schemas']['ConsoleAuditLogResponse'][]
+      executionLogs: components['schemas']['ConsoleJobExecutionLogResponse'][]
       outboxDeliveries: components['schemas']['ConsoleOutboxDeliveryLogResponse'][]
       alerts: components['schemas']['ConsoleAlertEventResponse'][]
       deadLetters: components['schemas']['ConsoleDeadLetterTaskResponse'][]
@@ -16288,13 +16322,46 @@ export interface operations {
     }
     requestBody?: never
     responses: {
-      /** @description Pre-signed upload info */
+      /** @description Upload session info */
       200: {
         headers: {
           [name: string]: unknown
         }
         content: {
           'application/json': components['schemas']['CommonResponseObject']
+        }
+      }
+    }
+  }
+  uploadFileContent: {
+    parameters: {
+      query: {
+        tenantId: string
+      }
+      header: {
+        'Idempotency-Key': components['parameters']['IdempotencyKeyHeader']
+      }
+      path: {
+        fileId: number
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'multipart/form-data': {
+          /** Format: binary */
+          file: string
+        }
+      }
+    }
+    responses: {
+      /** @description Upload result */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseConsoleFileOperationResponse']
         }
       }
     }
@@ -16320,7 +16387,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseConsoleFileOperationResponse']
         }
       }
     }
