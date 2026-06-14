@@ -3,6 +3,7 @@ import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { ArrowLeft } from '@element-plus/icons-vue'
 import { useDesignerStore } from '../store/useDesignerStore'
+import ShortcutHelpButton from './ShortcutHelpButton.vue'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -82,6 +83,7 @@ defineEmits<{
     <el-tag v-if="store.dirty" type="warning" size="small">
       {{ t('workflowDesignerSpike.dirtyTag') }}
     </el-tag>
+    <ShortcutHelpButton class="designer-toolbar__help" />
   </div>
 </template>
 

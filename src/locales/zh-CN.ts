@@ -166,6 +166,17 @@ export default {
   },
   // Workflow DAG 设计器 — Spike 阶段(docs/design/workflow-dag-designer.md §8)。
   // 单独 namespace,不与已存在的 `workflowDesigner`(早期未启用 key)冲突。
+  workflowDesignerShortcuts: {
+    button: '快捷键',
+    title: '键盘快捷键',
+    quickPalette: '打开节点快捷面板',
+    save: '保存工作流',
+    selectAll: '全选节点',
+    duplicate: '复制选中节点',
+    undo: '撤销',
+    redo: '重做',
+    delete: '删除选中节点 / 边',
+  },
   workflowDesignerSpike: {
     title: 'Workflow 设计器',
     paletteTitle: '节点库',

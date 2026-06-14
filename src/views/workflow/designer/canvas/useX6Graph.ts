@@ -80,11 +80,23 @@ export interface X6GraphHandle {
   graph: Graph | null
   /** Polish 阶段:可选 dagre 布局方向(TB 默认 / LR 左右),不传保持原行为 */
   autoLayout: (direction?: 'TB' | 'LR') => void
+  /** 把指定节点居中到视口并选中(校验错误列表点击定位用);节点不存在则 no-op */
+  focusNode: (nodeId: string) => void
 }
 
 export function useX6Graph(containerRef: Ref<HTMLDivElement | null>, minimapRef: Ref<HTMLDivElement | null>): X6GraphHandle {
   const store = useDesignerStore()
-  const handle: X6GraphHandle = { graph: null, autoLayout: () => {} }
+  const handle: X6GraphHandle = { graph: null, autoLayout: () => {}, focusNode: () => {} }
+
+  function focusNode(nodeId: string) {
+    const graph = handle.graph
+    if (!graph) return
+    const cell = graph.getCellById(nodeId)
+    if (!cell || !cell.isNode()) return
+    graph.centerCell(cell, { padding: 24 })
+    store.setSelection([nodeId])
+  }
+  handle.focusNode = focusNode
 
   /**
    * 把 store 状态 → X6 cells(全量替换)。
@@ -204,9 +216,6 @@ export function useX6Graph(containerRef: Ref<HTMLDivElement | null>, minimapRef:
     })
     graph.on('cell:click', ({ cell }) => {
       store.setSelection([cell.id])
-      // Spike 阶段:用 console.log 验证选中事件路径(inspector 留 MVP)
-      // eslint-disable-next-line no-console
-      console.log('[designer] cell selected', cell.id, cell.isNode() ? 'node' : 'edge')
     })
     graph.on('blank:click', () => store.setSelection([]))
 
