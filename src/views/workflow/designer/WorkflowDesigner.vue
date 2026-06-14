@@ -353,6 +353,7 @@ function onExportMermaid() {
       @open-template-library="openTemplateLibrary"
       @toggle-layout-direction="toggleLayoutDirection"
       @toggle-json="toggleJsonPanel"
+      @focus-node="locateNode"
     />
     <div
       v-if="readonlyBanner"
