@@ -160,6 +160,11 @@ const messages: Messages = {
   },
   // Workflow DAG designer — Spike phase (docs/design/workflow-dag-designer.md §8).
   // Separate namespace from `workflowDesigner` (existing legacy keys, unused in current build).
+  workflowDesignerSearch: {
+    placeholder: 'Search nodes…',
+    noMatch: 'No matching node',
+    noData: 'No nodes on canvas',
+  },
   workflowDesignerShortcuts: {
     button: 'Shortcuts',
     title: 'Keyboard shortcuts',
