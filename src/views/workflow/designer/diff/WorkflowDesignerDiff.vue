@@ -4,11 +4,10 @@
  *
  * 路由:`/workflow/designer/:id/diff/:fromVersion/:toVersion`
  *
- * 现实约束:BE PR #366 当前未暴露 versions 列表端点(查 ConsoleWorkflowDefinitionController
- * 无 /{id}/versions)。降级策略:
- * - 拉取当前 definition 作 `to`
- * - `from` 退化为"空 definition"(等价于 newly created → current diff,展示 added 全集)
- * - 路由参数 fromVersion/toVersion 保留作为后续扩展点(BE 加端点后可直接渲染历史版本)
+ * 数据来源:BE 已提供版本快照端点 `GET /{id}/versions/{version}`(V167,返回与 getFull
+ * 同款 WorkflowDefinitionDetailResponse)。按路由 fromVersion/toVersion 拉两个真实快照对比。
+ * 降级:版本号非法 / 某快照拉取失败时,回退「当前 definition 作 to + 空 from」(展示 added 全集),
+ * 顶部 notice 提示已降级。
  *
  * 视觉:左右两个 readonly 小画布(纯 DOM 描述,无 X6 — 避免编辑事件污染 readonly 流),
  * 顶部 summary(增 / 删 / 改 计数),底部按 nodeCode 行列出每个 diff 项。
@@ -74,14 +73,39 @@ onMounted(async () => {
   }
   loading.value = true
   try {
-    const current = await workflowDesignerApi.getFull(workflowId, tenant.tenantId)
-    const currentDef = detailToDefinitionJson(current as never)
-    toDefinition.value = currentDef
-    fromDefinition.value = { nodes: [], edges: [] }
-    versionListAvailable.value = false
+    // BE 已提供版本快照端点(/{id}/versions/{version},返回与 getFull 同款 detail);
+    // 优先按路由 from/to 版本号拉真实快照做对比。版本号非法或拉取失败 → 回退到
+    // 「当前 vs 空」降级(兼容历史:无版本数据时仍展示 added 全集)。
+    const fromV = Number(fromVersion)
+    const toV = Number(toVersion)
+    if (Number.isFinite(fromV) && Number.isFinite(toV)) {
+      const [fromDetail, toDetail] = await Promise.all([
+        workflowDesignerApi.getVersion(workflowId, fromV, tenant.tenantId),
+        workflowDesignerApi.getVersion(workflowId, toV, tenant.tenantId),
+      ])
+      fromDefinition.value = detailToDefinitionJson(fromDetail as never)
+      toDefinition.value = detailToDefinitionJson(toDetail as never)
+      versionListAvailable.value = true
+    } else {
+      const current = await workflowDesignerApi.getFull(workflowId, tenant.tenantId)
+      toDefinition.value = detailToDefinitionJson(current as never)
+      fromDefinition.value = { nodes: [], edges: [] }
+      versionListAvailable.value = false
+    }
   } catch (err) {
-    logRoute('[designer-diff] load failed', { err: String(err) })
-    ElMessage.error(t('workflowDesignerPolish.diffLoadFailed'))
+    logRoute('[designer-diff] version load failed, falling back to current', {
+      err: String(err),
+    })
+    // 降级兜底:版本端点拉取失败(如该版本快照不存在)时退回「当前 vs 空」
+    try {
+      const current = await workflowDesignerApi.getFull(workflowId, tenant.tenantId)
+      toDefinition.value = detailToDefinitionJson(current as never)
+      fromDefinition.value = { nodes: [], edges: [] }
+      versionListAvailable.value = false
+    } catch (err2) {
+      logRoute('[designer-diff] load failed', { err: String(err2) })
+      ElMessage.error(t('workflowDesignerPolish.diffLoadFailed'))
+    }
   } finally {
     loading.value = false
   }

@@ -293,7 +293,7 @@ export default {
     templateOverwriteConfirm: '当前画布有未保存的变更,应用模板将覆盖。是否继续?',
     diffViewerTitle: '版本对比',
     diffBack: '返回设计器',
-    diffNoVersionEndpoint: 'BE 暂未暴露 versions 列表,from 端显示空,仅展示当前版本节点',
+    diffNoVersionEndpoint: '该版本快照不可用,已降级:from 端显示空,仅展示当前版本节点',
     diffSideFrom: 'From',
     diffSideTo: 'To',
     diffEmptySide: '(空)',
