@@ -66,6 +66,18 @@ export const workflowDesignerApi = {
   getFull: (id: number, tenantId: string): Promise<WorkflowDefinitionDetailResponse> =>
     get<WorkflowDefinitionDetailResponse>(`/api/console/workflow-definitions/${id}`, { tenantId }),
 
+  // 读某个历史/当前版本快照(BE 返回与 getFull 同款 WorkflowDefinitionDetailResponse);
+  // 版本对比 diff 用。GET /api/console/workflow-definitions/{id}/versions/{version}
+  getVersion: (
+    id: number,
+    version: number,
+    tenantId: string,
+  ): Promise<WorkflowDefinitionDetailResponse> =>
+    get<WorkflowDefinitionDetailResponse>(
+      `/api/console/workflow-definitions/${id}/versions/${version}`,
+      { tenantId },
+    ),
+
   putFull: (
     id: number,
     body: WorkflowDefinitionFullUpdateRequest,

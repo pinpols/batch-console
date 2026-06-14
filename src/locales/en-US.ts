@@ -289,7 +289,7 @@ const messages: Messages = {
     diffViewerTitle: 'Version diff',
     diffBack: 'Back to designer',
     diffNoVersionEndpoint:
-      'BE has no versions endpoint yet; from side is empty, only current version is shown',
+      'Version snapshot unavailable; degraded: from side is empty, only current version shown',
     diffSideFrom: 'From',
     diffSideTo: 'To',
     diffEmptySide: '(empty)',
