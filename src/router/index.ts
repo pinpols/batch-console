@@ -619,6 +619,26 @@ const routes: RouteRecordRaw[] = [
           minRole: 'ADMIN',
         },
       },
+      {
+        path: 'ops/shard-catalog',
+        name: 'shard-catalog',
+        component: () => import('@/views/ops/ShardCatalogList.vue'),
+        meta: {
+          title: '分片目录',
+          activeMenu: '/ops/shard-catalog',
+          minRole: 'ADMIN',
+        },
+      },
+      {
+        path: 'ops/tenant-placements',
+        name: 'tenant-placements',
+        component: () => import('@/views/ops/TenantPlacementList.vue'),
+        meta: {
+          title: '租户分片',
+          activeMenu: '/ops/tenant-placements',
+          minRole: 'ADMIN',
+        },
+      },
       { path: 'ops/toolbox', redirect: '/ops/diagnostic' },
       { path: 'system/cluster-diagnostic', redirect: '/ops/diagnostic' },
       {

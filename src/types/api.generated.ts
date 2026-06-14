@@ -4711,6 +4711,76 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/console/ops/tenant-placements': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** List biz tenant→shard placements (P2 tenant-routing, platform-wide) */
+    get: operations['listTenantPlacements']
+    /** Assign or migrate a tenant to a biz shard (upsert) */
+    put: operations['upsertTenantPlacement']
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/ops/tenant-placements/{tenantId}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    /** Unassign a tenant placement (falls back to hash routing) */
+    delete: operations['deleteTenantPlacement']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/ops/shard-catalog': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** List biz shard catalog (P2 tenant-routing topology, locations only no credentials) */
+    get: operations['listShardCatalog']
+    /** Register/update a biz shard (upsert; credentials NOT here, see secrets) */
+    put: operations['upsertShardCatalog']
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/ops/shard-catalog/{placementKey}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    /** Remove a shard catalog entry */
+    delete: operations['deleteShardCatalog']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/console/ops/cluster-diagnostic': {
     parameters: {
       query?: never
@@ -15715,6 +15785,152 @@ export interface operations {
     }
     responses: {
       /** @description Upserted */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseVoid']
+        }
+      }
+    }
+  }
+  listTenantPlacements: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Placement list (tenantId, placementKey, updatedAt, updatedBy) */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseObject']
+        }
+      }
+    }
+  }
+  upsertTenantPlacement: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': {
+          tenantId: string
+          /** @description shard key (e.g. shard-0 / silo-big); credentials are NOT here (secrets only) */
+          placementKey: string
+        }
+      }
+    }
+    responses: {
+      /** @description Upserted */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseVoid']
+        }
+      }
+    }
+  }
+  deleteTenantPlacement: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        tenantId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Deleted (idempotent) */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseVoid']
+        }
+      }
+    }
+  }
+  listShardCatalog: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Shard catalog list (placementKey, host, port, dbName, enabled, ...) */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseObject']
+        }
+      }
+    }
+  }
+  upsertShardCatalog: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': {
+          placementKey: string
+          host: string
+          port: number
+          dbName: string
+          /** @description name of the credential in secrets/vault (e.g. placement key); never the credential itself */
+          secretRef?: string
+          poolMaxSize?: number
+          enabled: boolean
+          description?: string
+        }
+      }
+    }
+    responses: {
+      /** @description Upserted */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseVoid']
+        }
+      }
+    }
+  }
+  deleteShardCatalog: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        placementKey: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Deleted (idempotent) */
       200: {
         headers: {
           [name: string]: unknown
