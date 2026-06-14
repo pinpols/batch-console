@@ -197,6 +197,14 @@ export const pageMetaByPath = {
     title: '运维诊断',
     description: '排查 Kafka、Outbox 和集群健康问题。',
   },
+  '/ops/shard-catalog': {
+    title: '分片目录',
+    description: '登记 biz 数据库分片拓扑(位置 / 状态),作为租户分片指派的权威源。',
+  },
+  '/ops/tenant-placements': {
+    title: '租户分片',
+    description: '维护租户到分片的映射:指派、迁片或取消(回退 hash)。',
+  },
   '/system/users': {
     title: '权限自查',
     description: '查看当前账号的角色、权限和可访问菜单。',
