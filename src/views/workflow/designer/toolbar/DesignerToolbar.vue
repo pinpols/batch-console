@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { ArrowLeft } from '@element-plus/icons-vue'
 import { useDesignerStore } from '../store/useDesignerStore'
 import ShortcutHelpButton from './ShortcutHelpButton.vue'
+import NodeSearchBox from './NodeSearchBox.vue'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -35,6 +36,7 @@ defineEmits<{
   (e: 'openTemplateLibrary'): void
   (e: 'toggleLayoutDirection'): void
   (e: 'toggleJson'): void
+  (e: 'focusNode', nodeId: string): void
 }>()
 </script>
 
@@ -83,6 +85,7 @@ defineEmits<{
     <el-tag v-if="store.dirty" type="warning" size="small">
       {{ t('workflowDesignerSpike.dirtyTag') }}
     </el-tag>
+    <NodeSearchBox class="designer-toolbar__search" @focus="$emit('focusNode', $event)" />
     <ShortcutHelpButton class="designer-toolbar__help" />
   </div>
 </template>

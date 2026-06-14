@@ -12,6 +12,8 @@ import { Graph } from '@antv/x6'
 // x6-vue-shape 注册的 'vue-shape-view',minimap 渲染缩略图时会抛
 // 「View with name 'vue-shape-view' does not exist」(且随节点变化在 watcher 里间歇复现)。
 import { MiniMap } from '@antv/x6/es/plugin/minimap'
+// 拖拽对齐辅助线(与其它节点边/中线对齐时显示参考线);纯视觉辅助,不改 store
+import { Snapline } from '@antv/x6/es/plugin/snapline'
 import { register as registerVueShape } from '@antv/x6-vue-shape'
 // X6 v3 仍保留对老式 dagre 字符串布局算法的支持,但需要用户层手算 -> 走 npm dagre 自行布局
 import dagre from 'dagre'
@@ -198,6 +200,7 @@ export function useX6Graph(containerRef: Ref<HTMLDivElement | null>, minimapRef:
         height: 120,
       }),
     )
+    graph.use(new Snapline({ enabled: true, sharp: true }))
 
     // 事件桥接 store
     graph.on('node:moved', ({ node }) => {

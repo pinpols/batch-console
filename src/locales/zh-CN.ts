@@ -166,6 +166,11 @@ export default {
   },
   // Workflow DAG 设计器 — Spike 阶段(docs/design/workflow-dag-designer.md §8)。
   // 单独 namespace,不与已存在的 `workflowDesigner`(早期未启用 key)冲突。
+  workflowDesignerSearch: {
+    placeholder: '搜索节点…',
+    noMatch: '无匹配节点',
+    noData: '画布暂无节点',
+  },
   workflowDesignerShortcuts: {
     button: '快捷键',
     title: '键盘快捷键',
