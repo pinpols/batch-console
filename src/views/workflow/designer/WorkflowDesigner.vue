@@ -63,6 +63,12 @@ const lockMgr = useLockManager({
 })
 
 const errorCount = computed(() => store.validationErrors.length)
+
+/** 校验错误项点击 → 关抽屉 + 画布居中并选中该节点 */
+function locateNode(nodeId: string) {
+  errorDrawerVisible.value = false
+  canvasRef.value?.focusNode(nodeId)
+}
 const readonlyBanner = computed(() => {
   const lock = store.lock
   return lock && !lock.isMine && lock.lockedBy ? lock : null
@@ -379,7 +385,16 @@ function onExportMermaid() {
       size="380px"
     >
       <ul class="error-list">
-        <li v-for="(e, idx) in store.validationErrors" :key="idx" class="error-list__item">
+        <li
+          v-for="(e, idx) in store.validationErrors"
+          :key="idx"
+          class="error-list__item"
+          :class="{ 'error-list__item--locatable': !!e.nodeId }"
+          :role="e.nodeId ? 'button' : undefined"
+          :tabindex="e.nodeId ? 0 : undefined"
+          @click="e.nodeId && locateNode(e.nodeId)"
+          @keydown.enter="e.nodeId && locateNode(e.nodeId)"
+        >
           <span v-if="e.nodeId" class="error-list__node">[{{ e.nodeId }}]</span>
           {{ t(e.messageKey, (e.args ?? {}) as Record<string, unknown>) }}
         </li>
@@ -447,6 +462,12 @@ function onExportMermaid() {
   border-bottom: 1px solid var(--color-border-light, #ebeef5);
   font-size: 12px;
   color: var(--color-text-primary, #303133);
+}
+.error-list__item--locatable {
+  cursor: pointer;
+}
+.error-list__item--locatable:hover {
+  background: var(--color-bg-subtle, #f5f7fa);
 }
 .error-list__node {
   color: var(--color-danger, #f56c6c);
