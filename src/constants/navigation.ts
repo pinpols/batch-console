@@ -419,6 +419,19 @@ export const navigationGroups: NavigationGroup[] = [
         minRole: 'OPERATOR',
         icon: PriceTag,
       },
+      // biz 多租分片路由(P2 tenant-routing,平台 ADMIN 运维)
+      {
+        title: pageTitle('/ops/shard-catalog'),
+        path: '/ops/shard-catalog',
+        minRole: 'ADMIN',
+        icon: Connection,
+      },
+      {
+        title: pageTitle('/ops/tenant-placements'),
+        path: '/ops/tenant-placements',
+        minRole: 'ADMIN',
+        icon: Collection,
+      },
       // ─── hidden,⌘K 可达 ───
       {
         title: pageTitle('/system/event-catalog'),
