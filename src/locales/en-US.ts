@@ -160,6 +160,17 @@ const messages: Messages = {
   },
   // Workflow DAG designer — Spike phase (docs/design/workflow-dag-designer.md §8).
   // Separate namespace from `workflowDesigner` (existing legacy keys, unused in current build).
+  workflowDesignerShortcuts: {
+    button: 'Shortcuts',
+    title: 'Keyboard shortcuts',
+    quickPalette: 'Open node quick palette',
+    save: 'Save workflow',
+    selectAll: 'Select all nodes',
+    duplicate: 'Duplicate selected node',
+    undo: 'Undo',
+    redo: 'Redo',
+    delete: 'Delete selected node / edge',
+  },
   workflowDesignerSpike: {
     title: 'Workflow designer',
     paletteTitle: 'Node palette',
