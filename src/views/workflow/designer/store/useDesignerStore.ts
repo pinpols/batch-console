@@ -236,6 +236,10 @@ export const useDesignerStore = defineStore('workflowDesigner', () => {
     dirty.value = false
   }
 
+  function markDirty() {
+    dirty.value = true
+  }
+
   return {
     // state
     nodes,
@@ -268,5 +272,7 @@ export const useDesignerStore = defineStore('workflowDesigner', () => {
     undo,
     redo,
     markClean,
+    markDirty,
+    pushUndo,
   }
 })

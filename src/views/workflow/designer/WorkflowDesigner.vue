@@ -21,7 +21,7 @@
  */
 
 import { computed, onMounted, onBeforeUnmount, ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useTenantStore } from '@/stores/tenant'
@@ -31,6 +31,7 @@ import { graphToDefinition } from './codec/graphToDefinition'
 import { definitionToGraph } from './codec/definitionToGraph'
 import { validateDag } from './validators/dagValidators'
 import { workflowDesignerApi } from '@/api/workflowDesigner'
+import { workflowApi } from '@/api/workflow'
 import { useLockManager } from '@/composables/useLockManager'
 import { logRoute } from '@/utils/logger'
 import DagCanvas from './canvas/DagCanvas.vue'
@@ -42,6 +43,7 @@ import TemplateLibrary from './templates/TemplateLibrary.vue'
 import JsonSyncPanel from './toolbar/JsonSyncPanel.vue'
 
 const route = useRoute()
+const router = useRouter()
 const { t } = useI18n()
 const tenantStore = useTenantStore()
 
@@ -99,6 +101,20 @@ function toggleLayoutDirection() {
 onMounted(async () => {
   store.reset({ nodes: [], edges: [] })
   if (workflowId == null || Number.isNaN(workflowId)) {
+    // P3 新建模式:无 id → 无远端锁。模拟自己持锁让画布 / 表单可编辑(editable=true),
+    // 保存时再调创建 API 拿真 id 并跳转到 /workflow/designer/{newId}。
+    store.setMeta({
+      id: null,
+      tenantId: tenantStore.tenantId,
+      workflowType: 'STANDARD',
+      enabled: true,
+      version: 0,
+    })
+    store.setLock({
+      isMine: true,
+      lockedBy: tenantStore.tenantId || 'me',
+      expiresAt: '',
+    })
     logRoute('[designer] mounted (new)', { tenantId: tenantStore.tenantId })
     return
   }
@@ -252,17 +268,98 @@ function onValidate() {
   }
 }
 
+const isNewWorkflow = computed(() => workflowId == null || Number.isNaN(workflowId))
+
+/**
+ * P3 新建闭环:无 id 时调创建 API。
+ * 设计器暂无元信息编辑面板(P5-P8 范围外),故 workflowCode / workflowName 用
+ * prompt 兜底收集(已有则复用 meta)。创建成功后跳转到带 id 的设计器路由(组件重挂载)。
+ */
+async function createNewWorkflow(): Promise<boolean> {
+  let workflowCode = store.meta.workflowCode
+  let workflowName = store.meta.workflowName
+  if (!workflowCode || !workflowName) {
+    try {
+      const codeRes = await ElMessageBox.prompt(
+        t('workflowDesignerMvp.create.codePrompt'),
+        t('workflowDesignerMvp.create.title'),
+        {
+          confirmButtonText: t('common.ok'),
+          cancelButtonText: t('common.cancel'),
+          inputValue: workflowCode,
+          inputPattern: /^[A-Za-z0-9_-]+$/,
+          inputErrorMessage: t('workflowDesignerMvp.create.codeInvalid'),
+        },
+      )
+      workflowCode = codeRes.value.trim()
+      const nameRes = await ElMessageBox.prompt(
+        t('workflowDesignerMvp.create.namePrompt'),
+        t('workflowDesignerMvp.create.title'),
+        {
+          confirmButtonText: t('common.ok'),
+          cancelButtonText: t('common.cancel'),
+          inputValue: workflowName || workflowCode,
+        },
+      )
+      workflowName = nameRes.value.trim() || workflowCode
+    } catch {
+      return false
+    }
+  }
+  const def = graphToDefinition(store.snapshot)
+  const body = {
+    tenantId: store.meta.tenantId || tenantStore.tenantId,
+    workflowCode,
+    workflowName,
+    workflowType: store.meta.workflowType || 'STANDARD',
+    enabled: store.meta.enabled,
+    nodes: def.nodes.map((n) => {
+      const a = (n as unknown as Record<string, unknown>) ?? {}
+      return {
+        nodeCode: n.nodeCode,
+        nodeName: n.nodeName ?? n.nodeCode,
+        nodeType: n.nodeType,
+        relatedJobCode: typeof a.jobCode === 'string' ? a.jobCode : undefined,
+        relatedPipelineCode: typeof a.pipelineCode === 'string' ? a.pipelineCode : undefined,
+        retryMaxCount: typeof a.maxRetries === 'number' ? a.maxRetries : undefined,
+        timeoutSeconds: typeof a.timeoutSeconds === 'number' ? a.timeoutSeconds : undefined,
+        nodeParams: JSON.stringify(a),
+      }
+    }),
+    edges: def.edges.map((e) => ({
+      fromNodeCode: e.sourceNodeCode,
+      toNodeCode: e.targetNodeCode,
+      edgeType: 'NEXT',
+      conditionExpr: typeof e.label === 'string' ? e.label : undefined,
+    })),
+  }
+  const created = await workflowApi.create(body)
+  store.markClean()
+  ElMessage.success(t('workflowDesignerMvp.saveOk'))
+  // 跳转到带 id 的设计器路由 → 组件重挂载并 acquire 真实锁
+  await router.replace({ path: `/workflow/designer/${created.id}` })
+  return true
+}
+
 async function onSave() {
   if (!store.editable) {
     ElMessage.warning(t('workflowDesignerMvp.lock.cannotSaveReadonly'))
     return
   }
-  if (workflowId == null || Number.isNaN(workflowId)) {
-    ElMessage.warning(t('workflowDesignerMvp.saveNeedsId'))
-    return
-  }
   if (!runValidation()) {
     errorDrawerVisible.value = true
+    return
+  }
+  if (isNewWorkflow.value) {
+    saving.value = true
+    try {
+      await createNewWorkflow()
+    } catch (err) {
+      logRoute('[designer] create failed', { err: String(err) })
+      ElMessage.error(t('workflowDesignerMvp.create.failed'))
+    } finally {
+      saving.value = false
+    }
     return
   }
   saving.value = true
@@ -301,7 +398,8 @@ async function onSave() {
       },
       expectedVersion: store.meta.version,
     }
-    const updated = await workflowDesignerApi.putFull(workflowId, body)
+    // 此处必非新建态(isNewWorkflow 已早返),workflowId 必为有效 number
+    const updated = await workflowDesignerApi.putFull(workflowId as number, body)
     store.setMeta({ version: updated.version })
     store.markClean()
     ElMessage.success(t('workflowDesignerMvp.saveOk'))
