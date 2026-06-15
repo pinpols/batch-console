@@ -43,6 +43,28 @@
   --color-stage-retry: #e8a86e;      /* orange 柔和 */
   --color-stage-compensate: #e07476; /* red 柔和(与 danger 同调) */
 
+  /**
+   * Workflow DAG 设计器节点配色 token(P8 视觉统一)。
+   * 每类节点一对 base / light:base 作描边 + 文字,light 作填充背景。
+   * START 绿 / END 红 / JOB 蓝 / GATEWAY 橙 / FILE_STEP 青绿(与 START 区分)/ APPROVAL 紫。
+   * 另含交互态:selected(选中描边)/ error(校验失败描边 + 浅底)。
+   */
+  --wf-node-start: #54a772;
+  --wf-node-start-light: #eef8f1;
+  --wf-node-end: #ef6a6c;
+  --wf-node-end-light: #fdeeee;
+  --wf-node-job: #1677ff;
+  --wf-node-job-light: #ecf3ff;
+  --wf-node-gateway: #d97706;
+  --wf-node-gateway-light: #fdf3e6;
+  --wf-node-file-step: #0d9aa6;
+  --wf-node-file-step-light: #e6f7f8;
+  --wf-node-approval: #8b5cf6;
+  --wf-node-approval-light: #f3eefe;
+  --wf-node-selected: var(--color-primary);
+  --wf-node-error: var(--color-danger);
+  --wf-node-error-light: #fdeeee;
+
   /** Button color system: 统一在 Tailwind 500/600 区间(行业基线 GitHub/Vercel/Linear)。
    *  Light mode 调整(2026-05-14):
    *    - primary 从 blue-600(#2563eb)→ #1677ff(与 --color-primary 一致),避免过深

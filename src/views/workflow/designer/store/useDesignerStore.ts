@@ -145,6 +145,8 @@ export const useDesignerStore = defineStore('workflowDesigner', () => {
       y: input.y,
       attrs: { ...(input.attrs ?? {}) },
     })
+    // 新增节点后自动选中,让右侧 inspector 立即聚焦该节点(drop 路径同样受益)
+    selectedIds.value = new Set([input.nodeCode])
     dirty.value = true
   }
 
