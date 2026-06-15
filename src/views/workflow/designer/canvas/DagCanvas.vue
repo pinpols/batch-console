@@ -23,6 +23,8 @@ defineExpose({
   autoLayout: (direction: 'TB' | 'LR' = 'TB') => handle.autoLayout(direction),
   /** 校验错误列表点击 → 居中并选中该节点 */
   focusNode: (nodeId: string) => handle.focusNode(nodeId),
+  /** 当前视口中心(画布逻辑坐标),供点击节点库 / QuickPalette 落点 */
+  getViewportCenter: () => handle.getViewportCenter(),
 })
 
 // store 变更 → 通过自定义 event 触发 X6 重画(useX6Graph 内部监听 `__rerender__`)

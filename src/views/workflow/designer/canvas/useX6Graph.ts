@@ -86,11 +86,36 @@ export interface X6GraphHandle {
   autoLayout: (direction?: 'TB' | 'LR') => void
   /** 把指定节点居中到视口并选中(校验错误列表点击定位用);节点不存在则 no-op */
   focusNode: (nodeId: string) => void
+  /** 返回当前视口中心对应的画布逻辑坐标(点击节点库 / QuickPalette 落点用) */
+  getViewportCenter: () => { x: number; y: number }
 }
 
 export function useX6Graph(containerRef: Ref<HTMLDivElement | null>, minimapRef: Ref<HTMLDivElement | null>): X6GraphHandle {
   const store = useDesignerStore()
-  const handle: X6GraphHandle = { graph: null, autoLayout: () => {}, focusNode: () => {} }
+  const handle: X6GraphHandle = {
+    graph: null,
+    autoLayout: () => {},
+    focusNode: () => {},
+    getViewportCenter: () => ({ x: 320, y: 200 }),
+  }
+
+  /**
+   * 视口中心 → 画布逻辑坐标。
+   * 用容器中点的 client 坐标经 graph.clientToLocal 反算,随平移 / 缩放正确跟随;
+   * graph 未挂载时回退到设计书默认落点。
+   */
+  function getViewportCenter(): { x: number; y: number } {
+    const graph = handle.graph
+    const el = containerRef.value
+    if (!graph || !el) return { x: 320, y: 200 }
+    const rect = el.getBoundingClientRect()
+    const point = graph.clientToLocal(rect.left + rect.width / 2, rect.top + rect.height / 2)
+    if (Number.isFinite(point.x) && Number.isFinite(point.y)) {
+      return { x: point.x, y: point.y }
+    }
+    return { x: 320, y: 200 }
+  }
+  handle.getViewportCenter = getViewportCenter
 
   function focusNode(nodeId: string) {
     const graph = handle.graph

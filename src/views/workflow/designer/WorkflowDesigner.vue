@@ -26,6 +26,7 @@ import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useTenantStore } from '@/stores/tenant'
 import { useDesignerStore } from './store/useDesignerStore'
+import type { DesignerNodeType } from './types'
 import { exportMermaid } from './codec/mermaidExporter'
 import { graphToDefinition } from './codec/graphToDefinition'
 import { definitionToGraph } from './codec/definitionToGraph'
@@ -87,8 +88,40 @@ function toggleJsonPanel() {
   jsonPanelCollapsed.value = !jsonPanelCollapsed.value
 }
 
+/** 从画布读取当前视口中心(画布逻辑坐标),graph 未就绪时保持上次值。 */
+function refreshCanvasCenter() {
+  const c = canvasRef.value?.getViewportCenter()
+  if (c && Number.isFinite(c.x) && Number.isFinite(c.y)) {
+    canvasCenter.value = { x: c.x, y: c.y }
+  }
+}
+
 function openQuickPalette() {
+  refreshCanvasCenter()
   quickPaletteVisible.value = true
+}
+
+/**
+ * P6 点击节点库添加:落到视口中心,并对同一会话内的重复点击做累加偏移避免重叠。
+ * P1 只读守卫:NodePalette 内部已拦只读,这里再兜底一次。
+ */
+const paletteClickOffset = ref(0)
+function onPaletteAdd(type: DesignerNodeType) {
+  if (!store.editable) {
+    ElMessage.warning(t('workflowDesignerMvp.lock.readonlyGuard'))
+    return
+  }
+  refreshCanvasCenter()
+  const off = paletteClickOffset.value
+  const code = `${type.toLowerCase()}_${String(Date.now()).slice(-4)}`
+  store.addNode({
+    nodeCode: code,
+    nodeName: code,
+    nodeType: type,
+    x: canvasCenter.value.x + off,
+    y: canvasCenter.value.y + off,
+  })
+  paletteClickOffset.value = off + 24
 }
 function openTemplateLibrary() {
   templateLibraryVisible.value = true
@@ -472,7 +505,7 @@ function onExportMermaid() {
     </div>
     <JsonSyncPanel v-model:collapsed="jsonPanelCollapsed" />
     <div class="workflow-designer__body">
-      <NodePalette />
+      <NodePalette @add="onPaletteAdd" />
       <DagCanvas ref="canvasRef" />
       <NodeInspector />
     </div>

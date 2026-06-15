@@ -16,6 +16,13 @@ describe('useDesignerStore', () => {
     expect(s.canUndo).toBe(true)
   })
 
+  it('addNode auto-selects the new node (inspector focus)', () => {
+    const s = useDesignerStore()
+    s.addNode({ nodeCode: 'a', nodeType: 'START', x: 0, y: 0 })
+    s.addNode({ nodeCode: 'b', nodeType: 'JOB', x: 100, y: 0 })
+    expect(Array.from(s.selectedIds)).toEqual(['b'])
+  })
+
   it('addEdge dedupes self-loop and duplicates', () => {
     const s = useDesignerStore()
     s.addNode({ nodeCode: 'a', nodeType: 'START', x: 0, y: 0 })
