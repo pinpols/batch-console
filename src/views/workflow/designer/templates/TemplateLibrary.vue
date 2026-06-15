@@ -7,7 +7,7 @@
  * - 不调任何 BE API
  */
 import { useI18n } from 'vue-i18n'
-import { ElMessageBox } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { useDesignerStore } from '../store/useDesignerStore'
 import { definitionToGraph } from '../codec/definitionToGraph'
 import { BUILTIN_TEMPLATES, type DesignerTemplate } from './templates'
@@ -26,6 +26,11 @@ function close() {
 }
 
 async function apply(tpl: DesignerTemplate) {
+  // 只读模式 / 未持有编辑锁:禁止套模板
+  if (!store.editable) {
+    ElMessage.warning(t('workflowDesignerMvp.lock.readonlyGuard'))
+    return
+  }
   if (store.dirty) {
     try {
       await ElMessageBox.confirm(
@@ -37,7 +42,9 @@ async function apply(tpl: DesignerTemplate) {
       return
     }
   }
+  // 套模板 = 加载新内容,必须标脏(reset 会把 dirty 置 false,这里补回)
   store.reset(definitionToGraph(tpl.definition))
+  store.markDirty()
   emit('applied', tpl.key)
   close()
 }

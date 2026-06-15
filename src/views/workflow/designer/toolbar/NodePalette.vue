@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
+import { ElMessage } from 'element-plus'
 import type { DesignerNodeType } from '../types'
+import { useDesignerStore } from '../store/useDesignerStore'
 
 const { t } = useI18n()
+const store = useDesignerStore()
 
 interface PaletteItem {
   type: DesignerNodeType
@@ -32,6 +35,12 @@ const items: PaletteItem[] = [
 ]
 
 function onDragStart(ev: DragEvent, type: DesignerNodeType) {
+  // P1 只读守卫:未持锁 / 他人持锁时禁止从节点库拖出
+  if (!store.editable) {
+    ev.preventDefault()
+    ElMessage.warning(t('workflowDesignerMvp.lock.readonlyGuard'))
+    return
+  }
   if (!ev.dataTransfer) return
   ev.dataTransfer.effectAllowed = 'copy'
   ev.dataTransfer.setData('application/x-designer-node-type', type)
