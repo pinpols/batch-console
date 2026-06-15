@@ -421,7 +421,7 @@ html.layout-shell-lock .layout-root > .layout-sidebar.el-aside {
 }
 
 /* 深色模式：底座更“黑里透灰”，选中块更干净 */
-:global(html.dark) .pill-tabs .el-tabs__nav-wrap {
+html.dark .pill-tabs .el-tabs__nav-wrap {
   background: color-mix(in srgb, var(--color-bg-card) 78%, #000 22%);
   border-color: color-mix(in srgb, var(--color-border-light) 45%, #000 55%);
   box-shadow:
@@ -429,12 +429,12 @@ html.layout-shell-lock .layout-root > .layout-sidebar.el-aside {
     0 1px 2px rgb(0 0 0 / 45%);
 }
 
-:global(html.dark) .pill-tabs .el-tabs__item:hover {
+html.dark .pill-tabs .el-tabs__item:hover {
   background-color: color-mix(in srgb, var(--color-bg-card) 86%, #ffffff 14%);
   border-color: color-mix(in srgb, var(--color-border) 86%, #ffffff 14%);
 }
 
-:global(html.dark) .pill-tabs .el-tabs__item.is-active {
+html.dark .pill-tabs .el-tabs__item.is-active {
   background-color: color-mix(in srgb, var(--color-primary) 16%, var(--color-bg-card) 84%);
   border-color: color-mix(in srgb, var(--color-primary) 34%, var(--color-border) 66%);
   box-shadow:
@@ -442,7 +442,7 @@ html.layout-shell-lock .layout-root > .layout-sidebar.el-aside {
     0 0 0 1px rgb(255 255 255 / 6%);
 }
 
-:global(html.dark) .pill-tabs .el-tabs__item.is-active:hover {
+html.dark .pill-tabs .el-tabs__item.is-active:hover {
   background-color: color-mix(in srgb, var(--color-primary) 18%, var(--color-bg-card) 82%);
   border-color: color-mix(in srgb, var(--color-primary) 38%, var(--color-border) 62%);
   box-shadow:
@@ -520,7 +520,7 @@ html.layout-shell-lock .layout-root > .layout-sidebar.el-aside {
     0 0 0 1px rgb(15 23 42 / 3%);
 }
 
-::global(html.dark) .pill-segmented {
+html.dark .pill-segmented {
   box-shadow:
     inset 0 1px 0 rgb(255 255 255 / 8%),
     0 1px 2px rgb(0 0 0 / 45%);
@@ -533,7 +533,7 @@ html.layout-shell-lock .layout-root > .layout-sidebar.el-aside {
     0 0 0 1px rgb(15 23 42 / 4%);
 }
 
-::global(html.dark) .pill-segmented .el-segmented__item.is-selected {
+html.dark .pill-segmented .el-segmented__item.is-selected {
   background-color: color-mix(in srgb, var(--color-primary) 16%, var(--color-bg-card) 84%);
   border-color: color-mix(in srgb, var(--color-primary) 34%, var(--color-border) 66%);
   box-shadow:
@@ -541,12 +541,12 @@ html.layout-shell-lock .layout-root > .layout-sidebar.el-aside {
     0 0 0 1px rgb(255 255 255 / 6%);
 }
 
-::global(html.dark) .pill-segmented .el-segmented__item:hover {
+html.dark .pill-segmented .el-segmented__item:hover {
   background-color: color-mix(in srgb, var(--color-bg-card) 86%, #ffffff 14%);
   border-color: color-mix(in srgb, var(--color-border) 86%, #ffffff 14%);
 }
 
-::global(html.dark) .pill-segmented .el-segmented__item.is-selected:hover {
+html.dark .pill-segmented .el-segmented__item.is-selected:hover {
   background-color: color-mix(in srgb, var(--color-primary) 18%, var(--color-bg-card) 82%);
   box-shadow:
     0 12px 26px rgb(0 0 0 / 46%),

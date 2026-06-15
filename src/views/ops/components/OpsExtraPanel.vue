@@ -45,6 +45,7 @@
 </template>
 
 <script setup lang="ts">
+  import '@/charts/echarts'
   import { onMounted, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { Refresh } from '@element-plus/icons-vue'

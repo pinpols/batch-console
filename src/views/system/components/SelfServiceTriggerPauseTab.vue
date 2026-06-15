@@ -63,11 +63,12 @@
 </template>
 
 <script setup lang="ts">
-  import { onMounted, ref } from 'vue'
+  import { ref } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
   import { Promotion, RefreshLeft } from '@element-plus/icons-vue'
   import { useTenantStore } from '@/stores/tenant'
+  import { useTenantReload } from '@/composables/useTenantReload'
   import { listTriggers, pauseTrigger, resumeTrigger } from '@/api/triggers'
 
   interface TriggerRow {
@@ -140,7 +141,7 @@
     }
   }
 
-  onMounted(loadTriggers)
+  useTenantReload(loadTriggers)
 </script>
 
 <style scoped>
