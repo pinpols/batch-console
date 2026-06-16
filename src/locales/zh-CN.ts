@@ -2145,6 +2145,8 @@ export default {
     outboxActionDetail: '详情',
     outboxRetryDetailTitle: '重试详情',
     outboxDeliveryDetailTitle: '投递详情',
+    outboxBulkRepublish: '批量重投',
+    outboxBulkRepublishNone: '没有可重投的事件(已发布/已放弃的事件不可重投)',
     // DeadLettersTab
     dlqSourceTypeLabel: '来源类型',
     dlqSourceTypePlaceholder: '全部',
@@ -2164,6 +2166,12 @@ export default {
     dlqMetaSourceType: '来源类型',
     dlqMetaSourceId: '来源 ID',
     dlqMetaStatus: '状态',
+    dlqReplay: '重放',
+    dlqBulkReplay: '批量重放',
+    dlqReplayConfirm: '确认重放死信 #{id}?',
+    dlqReplaySuccess: '重放已提交',
+    dlqReplayFailed: '重放失败',
+    dlqBulkReplayNone: '所选死信无可重放项(仅 NEW/FAILED 可重放)',
     // RetriesTab
     retryRelatedTypeLabel: '关联类型',
     retryRelatedTypePlaceholder: '全部',

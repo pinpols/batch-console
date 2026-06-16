@@ -6,12 +6,14 @@
       <el-tabs v-model="tab" class="pill-tabs">
         <el-tab-pane :label="t('observability.outboxTabRetry')" name="retry">
           <ProTable
+            ref="retryTableRef"
             :data="retryRows"
             :loading="tableBlocking"
             :total="retryTotal"
             v-model:page="retryPage"
             v-model:page-size="retryPageSize"
             @change="sliceRetry"
+            @selection-change="bulk.onSelectionChange"
             :error="loadError"
             :on-retry="loadTab"
           >
@@ -49,6 +51,26 @@
                 </el-form-item>
               </ListPageQueryBar>
             </template>
+            <template #toolbar>
+              <BulkActionBar
+                :count="bulk.count.value"
+                :running="bulk.running.value"
+                @clear="bulk.clear"
+              >
+                <template #default="{ running }">
+                  <el-button
+                    size="small"
+                    type="warning"
+                    plain
+                    :loading="running"
+                    @click="onBulkRepublish"
+                  >
+                    {{ t('observability.outboxBulkRepublish') }}
+                  </el-button>
+                </template>
+              </BulkActionBar>
+            </template>
+            <el-table-column type="selection" width="44" :selectable="() => true" />
             <el-table-column
               prop="eventType"
               :label="t('observability.outboxColEventType')"
@@ -213,7 +235,9 @@
   import { computed, ref, watch, onMounted } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
+  import { ElMessage, ElMessageBox } from 'element-plus'
   import { queryOutboxDeliveries, queryOutboxRetries } from '@/api/observabilityQueries'
+  import { republishOutbox } from '@/api/ops'
 
   const { t } = useI18n({ useScope: 'global' })
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
@@ -231,6 +255,8 @@
   import ProTable from '@/components/table/ProTable.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
   import DetailDrawer from '@/components/common/DetailDrawer.vue'
+  import BulkActionBar from '@/components/table/BulkActionBar.vue'
+  import { useBulkSelection } from '@/composables/useBulkSelection'
   import type {
     ConsoleOutboxDeliveryLogResponse,
     ConsoleOutboxRetryLogResponse,
@@ -295,6 +321,34 @@
   const retryStatusDraft = ref(tab.value === 'retry' ? String(route.query.status ?? '') : '')
   const retryKwApplied = ref('')
   const retryStatusApplied = ref(retryStatusDraft.value)
+
+  // ── 批量操作:多选 + 批量重投(仅未发布/可重试的 outbox 事件)──────────────
+  const retryTableRef = ref<{ clearSelection?: () => void } | null>(null)
+  const bulk = useBulkSelection<ConsoleOutboxRetryLogResponse>()
+  onMounted(() => bulk.bindTable(retryTableRef.value))
+  // 终态(已发布/已放弃)不可重投;其余(NEW/PENDING/FAILED/RETRYING/EXHAUSTED 等)视为可重投
+  const TERMINAL_RETRY_STATUSES = ['PUBLISHED', 'PUBLISHING', 'SUCCEEDED', 'SUCCESS', 'GIVE_UP']
+
+  async function onBulkRepublish() {
+    const eligible = bulk.selected.value.filter(
+      (r) => !TERMINAL_RETRY_STATUSES.includes(String(r.retryStatus ?? '')),
+    )
+    if (!eligible.length) {
+      ElMessage.warning(t('observability.outboxBulkRepublishNone'))
+      return
+    }
+    const label = t('observability.outboxBulkRepublish')
+    const confirmed = await ElMessageBox.confirm(
+      t('bulk.confirmBody', { label, n: eligible.length }),
+      label,
+      { type: 'warning', confirmButtonText: t('common.ok'), cancelButtonText: t('common.cancel') },
+    ).catch(() => false)
+    if (confirmed === false) return
+    await bulk.runBulk(eligible, (r) => republishOutbox(tenant.tenantId, [r.id]), {
+      actionLabel: label,
+    })
+    void loadTab()
+  }
 
   const deliveryRows = ref<ConsoleOutboxDeliveryLogResponse[]>([])
   const deliveryTotal = ref(0)
