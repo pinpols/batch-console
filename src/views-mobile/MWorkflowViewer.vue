@@ -1,6 +1,6 @@
 <template>
   <MPullRefresh :on-refresh="load">
-    <div class="m-page">
+    <div class="m-page" :style="workflowRunVisualCssVars">
       <div class="m-page__header">
         <button class="m-page__back" @click="goBack()">
           <el-icon><ArrowLeft /></el-icon>
@@ -119,6 +119,11 @@
   import { useTenantReload } from '@/composables/useTenantReload'
   import { useAutoRefresh } from '@/composables/useAutoRefresh'
   import { useSmartBack } from '@/composables/useSmartBack'
+  import {
+    workflowRunMermaidClassDefs,
+    workflowRunStatusClass,
+    workflowRunVisualCssVars,
+  } from '@/constants/workflowStatusTheme'
   import type {
     ConsoleWorkflowNodeRunResponse,
     WorkflowDefinitionDetailResponse,
@@ -241,31 +246,17 @@
     }
     const classLines: string[] = []
     for (const [code, r] of latest) {
-      const klass = statusToClass(r.nodeStatus)
+      const klass = workflowRunStatusClass(r.nodeStatus)
       if (klass) classLines.push(`class ${sanitize(code)} ${klass}`)
     }
     return (
       text.trimEnd() +
       '\n' +
-      '  classDef running fill:#3b82f6,stroke:#1d4ed8,color:#fff\n' +
-      '  classDef success fill:#10b981,stroke:#047857,color:#fff\n' +
-      '  classDef failed fill:#ef4444,stroke:#b91c1c,color:#fff\n' +
-      '  classDef waiting fill:#f59e0b,stroke:#b45309,color:#fff\n' +
-      '  classDef cancelled fill:#6b7280,stroke:#374151,color:#fff\n' +
+      workflowRunMermaidClassDefs() +
+      '\n' +
       classLines.map((l) => '  ' + l).join('\n') +
       '\n'
     )
-  }
-
-  function statusToClass(s?: string | null) {
-    if (!s) return null
-    const u = s.toUpperCase()
-    if (u === 'RUNNING') return 'running'
-    if (u === 'SUCCESS' || u === 'COMPLETED' || u === 'SUCCEEDED') return 'success'
-    if (u === 'FAILED' || u === 'PARTIAL_FAILED') return 'failed'
-    if (u === 'WAITING' || u === 'READY' || u === 'CREATED') return 'waiting'
-    if (u === 'CANCELLED' || u === 'SKIPPED' || u === 'TERMINATED') return 'cancelled'
-    return null
   }
 
   function sanitize(raw: string) {
@@ -342,19 +333,19 @@
     letter-spacing: 0.02em;
   }
   .m-legend-chip--running {
-    background: #3b82f6;
+    background: var(--workflow-run-running-fill);
   }
   .m-legend-chip--success {
-    background: #10b981;
+    background: var(--workflow-run-success-fill);
   }
   .m-legend-chip--failed {
-    background: #ef4444;
+    background: var(--workflow-run-failed-fill);
   }
   .m-legend-chip--waiting {
-    background: #f59e0b;
+    background: var(--workflow-run-waiting-fill);
   }
   .m-legend-chip--cancelled {
-    background: #6b7280;
+    background: var(--workflow-run-cancelled-fill);
   }
   .m-link {
     color: var(--color-primary);
@@ -372,7 +363,7 @@
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    background: #3b82f6;
+    background: var(--workflow-run-running-fill);
     animation: m-pulse 1.4s ease-in-out infinite;
   }
   @keyframes m-pulse {

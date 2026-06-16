@@ -69,7 +69,6 @@
   import { useHeaderLogic } from '@/layout/composables/useHeaderLogic'
   import { useNetworkStatus } from '@/composables/useNetworkStatus'
   import { useMaintenancePolling } from '@/composables/useMaintenancePolling'
-  import { shouldShowOnboarding, startOnboarding } from '@/composables/useOnboardingTour'
   import { useRouteProgressStore } from '@/stores/routeProgress'
 
   const route = useRoute()
@@ -98,9 +97,11 @@
     document.documentElement.classList.add(LAYOUT_SHELL_LOCK_CLASS)
     window.addEventListener('keydown', onGlobalKeydown)
     // 首次登录后引导;延迟 800ms 等 Header / Sidebar 渲染完再标 anchor
-    if (shouldShowOnboarding()) {
-      setTimeout(() => startOnboarding(), 800)
-    }
+    void import('@/composables/useOnboardingTour').then(
+      ({ shouldShowOnboarding, startOnboarding }) => {
+        if (shouldShowOnboarding()) setTimeout(() => startOnboarding(), 800)
+      },
+    )
   })
   onUnmounted(() => {
     document.documentElement.classList.remove(LAYOUT_SHELL_LOCK_CLASS)

@@ -8,22 +8,44 @@
       class="notif-subs__intro"
     />
 
-    <div v-if="loading" class="notif-subs__state">{{ t('selfServicePanel.listLoading') }}</div>
-    <div v-else-if="error" class="notif-subs__state notif-subs__state--error">
-      {{ t('selfServicePanel.listError') }}
-    </div>
-    <el-empty v-else-if="rules.length === 0" :description="t('selfServicePanel.listEmpty')" />
-    <el-table v-else :data="rules" size="small" stripe>
-      <el-table-column prop="ruleCode" label="ruleCode" min-width="160" show-overflow-tooltip />
-      <el-table-column prop="eventType" label="eventType" min-width="160" show-overflow-tooltip />
-      <el-table-column prop="severity" label="severity" width="90">
+    <ProTable
+      :data="rules"
+      :loading="loading"
+      :error="error"
+      :error-text="t('selfServicePanel.listError')"
+      :on-retry="load"
+      :total="rules.length"
+      :page="1"
+      :page-size="10"
+      :show-pager="false"
+      :persist-page-size="false"
+      :empty-text="t('selfServicePanel.listEmpty')"
+      :skeleton-rows="4"
+    >
+      <template #empty>
+        <EmptyState :description="t('selfServicePanel.listEmpty')" :image-size="72" />
+      </template>
+
+      <el-table-column
+        prop="ruleCode"
+        :label="t('selfServicePanel.colRuleCode')"
+        min-width="160"
+        show-overflow-tooltip
+      />
+      <el-table-column
+        prop="eventType"
+        :label="t('selfServicePanel.colEventType')"
+        min-width="160"
+        show-overflow-tooltip
+      />
+      <el-table-column prop="severity" :label="t('selfServicePanel.colSeverity')" width="100">
         <template #default="{ row }">
           <el-tag size="small" effect="plain" :type="severityType(row.severity)">
             {{ row.severity ?? '—' }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="status" width="90">
+      <el-table-column :label="t('common.status')" width="100">
         <template #default="{ row }">
           <el-tag size="small" effect="plain" :type="row.enabled ? 'success' : 'info'">
             {{
@@ -34,7 +56,7 @@
           </el-tag>
         </template>
       </el-table-column>
-    </el-table>
+    </ProTable>
 
     <div class="notif-subs__cta">
       <el-button type="primary" :icon="TopRight" @click="goNotifications">
@@ -45,11 +67,14 @@
 </template>
 
 <script setup lang="ts">
-  import { onMounted, ref } from 'vue'
+  import { ref } from 'vue'
   import { useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import { TopRight } from '@element-plus/icons-vue'
+  import ProTable from '@/components/table/ProTable.vue'
+  import EmptyState from '@/components/common/EmptyState.vue'
   import { useTenantStore } from '@/stores/tenant'
+  import { useTenantReload } from '@/composables/useTenantReload'
   import { listNotificationRules } from '@/api/notifications'
 
   type Severity = 'INFO' | 'WARNING' | 'CRITICAL' | string
@@ -93,23 +118,12 @@
     void router.push({ path: '/system/notifications' })
   }
 
-  onMounted(load)
+  useTenantReload(load)
 </script>
 
 <style scoped>
   .notif-subs__intro {
     margin-bottom: 16px;
-  }
-
-  .notif-subs__state {
-    padding: 24px;
-    text-align: center;
-    color: var(--color-text-secondary);
-    font-size: 13px;
-  }
-
-  .notif-subs__state--error {
-    color: var(--color-danger);
   }
 
   .notif-subs__cta {

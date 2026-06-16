@@ -1038,6 +1038,10 @@ const messages: Messages = {
       title: 'Workflow designer',
       description: 'Edit workflow nodes, conditional edges and join semantics.',
     },
+    workflowViewer: {
+      title: 'Workflow view',
+      description: 'Read-only mermaid view for workflows; edit through Excel package import.',
+    },
     monitorJobInstances: {
       title: 'Job runs',
       description: 'Inspect job runs and trigger rerun, cancel or terminate.',
@@ -1176,11 +1180,13 @@ const messages: Messages = {
     },
     opsShardCatalog: {
       title: 'Shard catalog',
-      description: 'Register the biz database shard topology (location / status) as the source of truth for tenant placement.',
+      description:
+        'Register the biz database shard topology (location / status) as the source of truth for tenant placement.',
     },
     opsTenantPlacements: {
       title: 'Tenant placements',
-      description: 'Maintain tenant-to-shard mapping: assign, move or unassign (fall back to hash).',
+      description:
+        'Maintain tenant-to-shard mapping: assign, move or unassign (fall back to hash).',
     },
     systemUsers: {
       title: 'Permission audit',
@@ -4555,6 +4561,18 @@ const messages: Messages = {
     actionGoApiKeys: 'API Key management',
     actionGoInstance: 'View detail',
     actionGoRerun: 'Submit rerun',
+    colInstanceNo: 'Instance no.',
+    colJobCode: 'Job code',
+    colBizDate: 'Business date',
+    colFinishedAt: 'Finished at',
+    colRuleCode: 'Rule code',
+    colEventType: 'Event type',
+    colSeverity: 'Severity',
+    colTime: 'Time',
+    colAction: 'Action',
+    colTarget: 'Target',
+    colResult: 'Result',
+    colTrace: 'Trace',
     triggerJobCodeLabel: 'Job code',
     triggerJobCodePlaceholder: 'Select job',
     triggerActionLabel: 'Action',
