@@ -23,6 +23,12 @@
         :on-retry="load"
         :has-active-filters="hasActiveFilters"
       >
+        <template #toolbar>
+          <OpsListToolbar
+            :status="live.status.value"
+            :last-refreshed-at="live.lastRefreshedAt.value"
+          />
+        </template>
         <template v-if="!hasActiveFilters" #empty>
           <EmptyState :description="t('workflowDefinitionList.emptyDescription')" :image-size="80">
             <template #action>
@@ -348,6 +354,7 @@
   import { instanceApi } from '@/api/instance'
   import { fmtDatetime } from '@/utils/datetime'
   import { useSseAutoReload } from '@/composables/useSseAutoReload'
+  import OpsListToolbar from '@/components/table/OpsListToolbar.vue'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
   import PageContainer from '@/components/common/PageContainer.vue'
@@ -596,6 +603,7 @@
       throw err
     } finally {
       loading.value = false
+      live.markRefreshed()
     }
   }
 
@@ -706,7 +714,7 @@
     }
   }
 
-  useSseAutoReload({
+  const live = useSseAutoReload({
     domain: 'workflow-definitions',
     reload: load,
     scope: () => tenant.tenantId,

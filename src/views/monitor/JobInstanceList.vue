@@ -4,6 +4,7 @@
 
     <SectionCard>
       <ProTable
+        ref="proTableRef"
         :data="rows"
         :loading="tableBlocking"
         :error="loadError"
@@ -12,6 +13,7 @@
         v-model:page="query.page"
         v-model:page-size="query.pageSize"
         @change="loadData"
+        @selection-change="bulk.onSelectionChange"
       >
         <template #query>
           <ListPageQueryBar
@@ -22,6 +24,17 @@
             @reset="resetQuery"
             @refresh="() => runRefresh(loadData)"
           >
+            <template #prepend>
+              <SavedFiltersMenu
+                :sets="savedFilters.sets.value"
+                :on-save="savedFilters.save"
+                :on-apply="savedFilters.applySet"
+                :on-remove="savedFilters.remove"
+                :on-rename="savedFilters.rename"
+                :on-export="savedFilters.exportSets"
+                :on-import="savedFilters.importSets"
+              />
+            </template>
             <el-form-item>
               <template #label>
                 <HelpLabel :tip="t('jobInstanceList.jobCodeTip')">
@@ -99,6 +112,41 @@
           </EmptyState>
         </template>
 
+        <template #toolbar>
+          <OpsListToolbar
+            :status="live.status.value"
+            :last-refreshed-at="live.lastRefreshedAt.value"
+          >
+            <BulkActionBar
+              :count="bulk.count.value"
+              :running="bulk.running.value"
+              @clear="bulk.clear"
+            >
+              <template #default="{ running }">
+                <el-button
+                  size="small"
+                  type="warning"
+                  plain
+                  :loading="running"
+                  @click="onBulkRetry"
+                >
+                  {{ t('jobInstanceList.bulkRetry') }}
+                </el-button>
+                <el-button
+                  size="small"
+                  type="danger"
+                  plain
+                  :loading="running"
+                  @click="onBulkCancel"
+                >
+                  {{ t('jobInstanceList.bulkCancel') }}
+                </el-button>
+              </template>
+            </BulkActionBar>
+          </OpsListToolbar>
+        </template>
+
+        <el-table-column type="selection" width="44" :selectable="() => true" />
         <!-- P2.4 列顺序优化:用户决策字段(状态/jobCode/bizDate/耗时/重跑)优先,
              工程字段(instanceNo/queue/traceId)后置 -->
         <el-table-column :label="t('jobInstanceList.colStatus')" width="140">
@@ -199,9 +247,10 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, reactive, computed } from 'vue'
+  import { ref, reactive, computed, onMounted } from 'vue'
   import { useRouter, useRoute } from 'vue-router'
   import { useI18n } from 'vue-i18n'
+  import { ElMessage, ElMessageBox } from 'element-plus'
 
   const { t, te } = useI18n({ useScope: 'global' })
 
@@ -216,12 +265,16 @@
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
   import PageContainer from '@/components/common/PageContainer.vue'
+  import OpsListToolbar from '@/components/table/OpsListToolbar.vue'
   import MetaSelect from '@/components/common/MetaSelect.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
   import { List } from '@element-plus/icons-vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
+  import SavedFiltersMenu from '@/components/table/SavedFiltersMenu.vue'
+  import { useSavedFilters } from '@/composables/useSavedFilters'
+  import { useAuthStore } from '@/stores/auth'
   import ProTable from '@/components/table/ProTable.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
   import HelpLabel from '@/components/common/HelpLabel.vue'
@@ -231,6 +284,8 @@
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import type { ConsoleJobInstanceResponse } from '@/types/console-api'
+  import BulkActionBar from '@/components/table/BulkActionBar.vue'
+  import { useBulkSelection } from '@/composables/useBulkSelection'
 
   const router = useRouter()
   const route = useRoute()
@@ -241,6 +296,54 @@
   const rows = ref<ConsoleJobInstanceResponse[]>([])
   const total = ref(0)
   const jobCodeOptions = ref<string[]>([])
+
+  // ── 批量操作:多选 + 批量重试(FAILED)/ 批量取消(非终态)──────────────
+  const proTableRef = ref<{ clearSelection?: () => void } | null>(null)
+  const bulk = useBulkSelection<ConsoleJobInstanceResponse>()
+  onMounted(() => bulk.bindTable(proTableRef.value))
+  const TERMINAL_STATUSES = ['SUCCESS', 'FAILED', 'CANCELLED', 'CANCELED', 'TERMINATED']
+
+  async function onBulkRetry() {
+    const eligible = bulk.selected.value.filter((r) => r.instanceStatus === 'FAILED')
+    if (!eligible.length) {
+      ElMessage.warning(t('jobInstanceList.bulkRetryNone'))
+      return
+    }
+    const label = t('jobInstanceList.bulkRetry')
+    const confirmed = await ElMessageBox.confirm(
+      t('bulk.confirmBody', { label, n: eligible.length }),
+      label,
+      { type: 'warning', confirmButtonText: t('common.ok'), cancelButtonText: t('common.cancel') },
+    ).catch(() => false)
+    if (confirmed === false) return
+    await bulk.runBulk(
+      eligible,
+      (r) => instanceApi.retry(r.instanceNo, tenant.tenantId, r.jobCode, r.bizDate),
+      { actionLabel: label },
+    )
+    void loadData()
+  }
+
+  async function onBulkCancel() {
+    const eligible = bulk.selected.value.filter(
+      (r) => !TERMINAL_STATUSES.includes(r.instanceStatus),
+    )
+    if (!eligible.length) {
+      ElMessage.warning(t('jobInstanceList.bulkCancelNone'))
+      return
+    }
+    const label = t('jobInstanceList.bulkCancel')
+    const confirmed = await ElMessageBox.confirm(
+      t('bulk.confirmBody', { label, n: eligible.length }),
+      label,
+      { type: 'warning', confirmButtonText: t('common.ok'), cancelButtonText: t('common.cancel') },
+    ).catch(() => false)
+    if (confirmed === false) return
+    await bulk.runBulk(eligible, (r) => instanceApi.cancel(r.id, tenant.tenantId), {
+      actionLabel: label,
+    })
+    void loadData()
+  }
 
   // 列表筛选默认锚到"今日",运维 80% 场景关心当天数据;URL query 会在下面覆盖
   function todayRange(): [string, string] {
@@ -265,6 +368,32 @@
     slaBreached: false,
     page: 1,
     pageSize: 15,
+  })
+
+  const auth = useAuthStore()
+  const savedFilters = useSavedFilters({
+    pageKey: 'job-instances',
+    userId: () => auth.userInfo?.userId,
+    getCurrent: () => ({
+      jobCode: query.jobCode,
+      instanceStatus: query.instanceStatus,
+      instanceStatuses: query.instanceStatuses,
+      startDate: query.startDate,
+      endDate: query.endDate,
+      traceId: query.traceId,
+      slaBreached: query.slaBreached,
+    }),
+    apply: (f) => {
+      query.jobCode = String(f.jobCode ?? '')
+      query.instanceStatus = String(f.instanceStatus ?? '')
+      query.instanceStatuses = String(f.instanceStatuses ?? '')
+      query.startDate = String(f.startDate ?? '')
+      query.endDate = String(f.endDate ?? '')
+      query.traceId = String(f.traceId ?? '')
+      query.slaBreached = !!f.slaBreached
+      query.page = 1
+      void loadData()
+    },
   })
 
   const { data: metaEnums } = useConsoleMetaEnumsQuery()
@@ -342,6 +471,7 @@
       throw err
     } finally {
       loading.value = false
+      live.markRefreshed()
     }
   }
 
@@ -413,7 +543,7 @@
     return `${s}s`
   }
 
-  useSseAutoReload({
+  const live = useSseAutoReload({
     domain: 'job-instances',
     reload: loadData,
     scope: () => tenant.tenantId,

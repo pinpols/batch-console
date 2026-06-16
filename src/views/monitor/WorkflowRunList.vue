@@ -13,6 +13,13 @@
         v-model:page-size="pageSize"
         @change="load"
       >
+        <template #toolbar>
+          <OpsListToolbar
+            :status="live.status.value"
+            :last-refreshed-at="live.lastRefreshedAt.value"
+          />
+        </template>
+
         <template #query>
           <ListPageQueryBar
             :filter-busy="filterBusy"
@@ -21,6 +28,17 @@
             @reset="resetQueryBar"
             @refresh="() => runRefresh(load)"
           >
+            <template #prepend>
+              <SavedFiltersMenu
+                :sets="savedFilters.sets.value"
+                :on-save="savedFilters.save"
+                :on-apply="savedFilters.applySet"
+                :on-remove="savedFilters.remove"
+                :on-rename="savedFilters.rename"
+                :on-export="savedFilters.exportSets"
+                :on-import="savedFilters.importSets"
+              />
+            </template>
             <el-form-item :label="t('monitor.runListWorkflowLabel')">
               <el-select
                 class="query-w-200"
@@ -163,7 +181,11 @@
   import SectionCard from '@/components/common/SectionCard.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
+  import SavedFiltersMenu from '@/components/table/SavedFiltersMenu.vue'
+  import { useSavedFilters } from '@/composables/useSavedFilters'
+  import { useAuthStore } from '@/stores/auth'
   import ProTable from '@/components/table/ProTable.vue'
+  import OpsListToolbar from '@/components/table/OpsListToolbar.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
   import CopyableText from '@/components/common/CopyableText.vue'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
@@ -183,6 +205,25 @@
   const runStatus = ref('')
   const traceId = ref('')
   const workflowCodeOptions = ref<string[]>([])
+
+  const auth = useAuthStore()
+  const savedFilters = useSavedFilters({
+    pageKey: 'workflow-runs',
+    userId: () => auth.userInfo?.userId,
+    getCurrent: () => ({
+      workflowCode: workflowCode.value,
+      runStatus: runStatus.value,
+      traceId: traceId.value,
+    }),
+    apply: (f) => {
+      workflowCode.value = String(f.workflowCode ?? '')
+      runStatus.value = String(f.runStatus ?? '')
+      traceId.value = String(f.traceId ?? '')
+      page.value = 1
+      void load()
+    },
+  })
+
   const { data: metaEnums } = useConsoleMetaEnumsQuery()
 
   const runStatusOptions = computed(() => pickMetaEnumGroup(metaEnums.value, 'workflowRunStatus'))
@@ -236,6 +277,7 @@
       throw err
     } finally {
       loading.value = false
+      live.markRefreshed()
     }
   }
 
@@ -260,7 +302,7 @@
     router.push(`/monitor/workflow-runs/${row.id}`)
   }
 
-  useSseAutoReload({
+  const live = useSseAutoReload({
     domain: 'workflow-runs',
     reload: load,
     scope: () => tenant.tenantId,

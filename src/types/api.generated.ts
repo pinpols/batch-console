@@ -60,6 +60,30 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/console/auth/change-password': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Change own password (first-login forced change landing path)
+     * @description 本人改密:username 取自已认证 principal(不接受 body 指定)。校验旧密码 → 写新密码 →
+     *     清除 must_change_password 标志 → 踢旧会话(强制用新密码重登)。
+     *     must_change_password=true 期间此端点必须可达(改密守护白名单)。
+     *     旧密码错误 401;新旧密码相同 400。
+     *
+     */
+    post: operations['changeOwnPassword']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/console/auth/me': {
     parameters: {
       query?: never
@@ -4876,7 +4900,15 @@ export interface paths {
     /** List tenants */
     get: operations['listTenants']
     put?: never
-    /** Create tenant */
+    /**
+     * Create tenant (one-click provision)
+     * @description 创建租户并绑定一个 ROLE_TENANT_ADMIN 首账号。
+     *     可选 `initConfigFrom` 非空时,建完租户后自动复制源租户配置(复用批量路径 configCopyService);
+     *     无论是否复制配置,创建后都会运行租户就绪自检并把结果一并返回(建租户→复制配置→就绪校验一次闭环)。
+     *     默认不传 `initConfigFrom` 即不复制配置,保持现行为(向后兼容)。
+     *     响应从单纯 tenant 改为 `{tenant, configInit?, readiness}`(superset,向后兼容)。
+     *
+     */
     post: operations['createTenant']
     delete?: never
     options?: never
@@ -4923,6 +4955,32 @@ export interface paths {
     get: operations['getTenant']
     /** Update tenant name / description */
     put: operations['updateTenant']
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/tenants/{tenantId}/readiness': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Tenant readiness self-check (read-only)
+     * @description 只读扫描该租户的配置闭环,返回 blocking / warning 清单。
+     *     检查项:enabled 模板关键字段空占位(default_query_sql / field_mappings)、
+     *     enabled 渠道凭据缺(非 NONE 鉴权但 config_json 空)、enabled job 引用的 queue_code 悬空。
+     *     ADR-026 dry-run 边界内:只看「配置完整性 / 会不会跑」,不执行取数、不比对业务结果。
+     *     blocking 为空即就绪(ready=true)。
+     *     每条 blocking 项附 hint(怎么补:在哪个 sheet 填哪个字段)+ docRef(指向 quickstart / 字段说明),向后兼容新增字段。
+     *
+     */
+    get: operations['tenantReadiness']
+    put?: never
     post?: never
     delete?: never
     options?: never
@@ -5580,6 +5638,30 @@ export interface components {
     CommonResponseVoid: components['schemas']['CommonResponseBase'] & {
       /** @description Always null for void responses. */
       data?: Record<string, never>
+    }
+    /** @description 单条就绪项。hint / docRef 为「报怎么补」的可操作引导(向后兼容新增字段):
+     *     告诉填写人具体在哪个 sheet 填哪个字段、参考哪份文档,而不是只报「缺什么」。
+     *     两字段对 blocking 项填具体值,对 warning 项可为空。
+     *      */
+    ReadinessItem: {
+      /** @description 检查项类别(template / channel / queue / job)。 */
+      item: string
+      /** @description 原因可读英文摘要。 */
+      reason: string
+      /** @description 关联配置引用(templateCode / channelCode / queueCode / jobCode)。 */
+      ref: string
+      /** @description 怎么填的可操作提示(如「在配置模板 file_template_config sheet 填 default_query_sql,参考『四类Worker示例』」)。 */
+      hint?: string | null
+      /** @description 指向 quickstart 文档 / 字段说明的引用路径(如 docs/runbook/first-tenant-config-quickstart.md)。 */
+      docRef?: string | null
+    }
+    /** @description 租户就绪自检结果(ADR-026 dry-run 边界内:只看配置完整性 / 会不会跑,不看业务结果)。 */
+    TenantReadinessResult: {
+      tenantId: string
+      /** @description blocking 为空即就绪。 */
+      ready: boolean
+      blocking: components['schemas']['ReadinessItem'][]
+      warnings: components['schemas']['ReadinessItem'][]
     }
     EnabledPatchRequest: {
       /** @description Tenant identifier. */
@@ -7027,6 +7109,8 @@ export interface components {
       username: string
       tenantId: string
       authorities: string[]
+      /** @description 首次登录强制改密标志;true 时 FE 应跳改密页,改密前敏感(写)操作被守护拦截为 403。 */
+      mustChangePassword: boolean
     }
     /** @description 一次性 SSE ticket（5min TTL），用作 EventSource 连接的 `?ticket=` 查询参数。 */
     ConsoleSseTicketResponse: {
@@ -8376,6 +8460,33 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['CommonResponseConsoleAuthTokenResponse']
+        }
+      }
+    }
+  }
+  changeOwnPassword: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': {
+          currentPassword: string
+          newPassword: string
+        }
+      }
+    }
+    responses: {
+      /** @description Password changed */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseObject']
         }
       }
     }
@@ -16091,15 +16202,22 @@ export interface operations {
           tenantId: string
           tenantName: string
           description?: string
-          /** @description Initial operator account username (ROLE_TENANT_USER) */
+          /** @description Initial operator account username (ROLE_TENANT_ADMIN) */
           username: string
           /** @description Initial operator account password (Argon2id hashed on server) */
           password: string
+          /** @description 可选;非空时建完租户后复制该源租户配置(如 default)。默认 null=不复制。 */
+          initConfigFrom?: string | null
+          /**
+           * @description 配置复制模式,默认 SKIP_EXISTING;仅 initConfigFrom 非空时生效。
+           * @enum {string|null}
+           */
+          initMode?: 'SKIP_EXISTING' | 'UPSERT' | null
         }
       }
     }
     responses: {
-      /** @description Created tenant */
+      /** @description Provision result (tenant + optional configInit + readiness) */
       200: {
         headers: {
           [name: string]: unknown
@@ -16212,6 +16330,32 @@ export interface operations {
     }
     responses: {
       /** @description Updated tenant */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseObject']
+        }
+      }
+    }
+  }
+  tenantReadiness: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        tenantId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Readiness result (blocking / warnings; 每项附 hint / docRef 引导)。
+       *     data 的结构见 schema TenantReadinessResult / ReadinessItem(文档参考型;
+       *     为保持与 #509 已发布契约的向后兼容,200 包装仍用通用 CommonResponseObject,
+       *     data 字段 type=object 不收窄,仅在新增的 hint / docRef 上做加法式扩展)。
+       *      */
       200: {
         headers: {
           [name: string]: unknown

@@ -23,6 +23,7 @@
         <el-button v-if="run" type="danger" :loading="actionLoading" @click="confirmTerminate">
           {{ t('monitor.runDetailTerminate') }}
         </el-button>
+        <PrintButton />
       </template>
     </PageHeader>
 
@@ -190,6 +191,7 @@
   import PageContainer from '@/components/common/PageContainer.vue'
   import MetaSelect from '@/components/common/MetaSelect.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
+  import PrintButton from '@/components/common/PrintButton.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
   import TablePagerBar from '@/components/table/TablePagerBar.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
