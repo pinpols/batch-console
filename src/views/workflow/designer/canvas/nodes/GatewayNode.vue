@@ -54,15 +54,21 @@ const hasError = computed(() => (data?.id ? store.errorNodeIds.has(data.id) : fa
   width: 100%;
   height: 100%;
   transform: rotate(45deg);
-  background: var(--color-warning-light, #fdf6ec);
-  border: 2px solid var(--color-warning, #e6a23c);
+  background: var(--wf-node-gateway-light);
+  border: 2px solid var(--wf-node-gateway);
   display: flex;
   align-items: center;
   justify-content: center;
+  transition:
+    box-shadow 0.12s ease,
+    border-color 0.12s ease;
+}
+.designer-gateway__diamond:hover {
+  box-shadow: 0 0 0 3px var(--wf-node-gateway-light);
 }
 .designer-gateway--error .designer-gateway__diamond {
-  border-color: var(--color-danger, #f56c6c);
-  background: var(--color-danger-light, #fef0f0);
+  border-color: var(--wf-node-error);
+  background: var(--wf-node-error-light);
 }
 .designer-gateway__inner {
   transform: rotate(-45deg);
@@ -74,7 +80,7 @@ const hasError = computed(() => (data?.id ? store.errorNodeIds.has(data.id) : fa
   display: block;
   font-size: 11px;
   font-weight: 700;
-  color: var(--color-warning-dark, #b88230);
+  color: var(--wf-node-gateway);
 }
 .designer-gateway__label {
   display: block;

@@ -55,12 +55,18 @@ const hasError = computed(() => (data?.id ? store.errorNodeIds.has(data.id) : fa
   user-select: none;
 }
 .designer-node--approval {
-  background: #f5f0ff;
-  border: 2px solid #8b5cf6;
+  background: var(--wf-node-approval-light);
+  border: 2px solid var(--wf-node-approval);
+  transition:
+    box-shadow 0.12s ease,
+    border-color 0.12s ease;
+}
+.designer-node--approval:hover {
+  box-shadow: 0 0 0 3px var(--wf-node-approval-light);
 }
 .designer-node--error {
-  border-color: var(--color-danger, #f56c6c) !important;
-  background: var(--color-danger-light, #fef0f0) !important;
+  border-color: var(--wf-node-error) !important;
+  background: var(--wf-node-error-light) !important;
 }
 .designer-node__row {
   display: flex;
@@ -69,12 +75,12 @@ const hasError = computed(() => (data?.id ? store.errorNodeIds.has(data.id) : fa
 }
 .designer-node__icon {
   font-size: 13px;
-  color: #8b5cf6;
+  color: var(--wf-node-approval);
 }
 .designer-node__badge {
   font-size: 10px;
   font-weight: 600;
-  color: #6b3fcb;
+  color: var(--wf-node-approval);
   text-transform: uppercase;
 }
 .designer-node__label {

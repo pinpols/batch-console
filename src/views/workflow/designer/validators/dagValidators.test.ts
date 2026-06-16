@@ -172,6 +172,127 @@ describe('validateDag', () => {
     ).toBeTruthy()
   })
 
+  it('R9 START 有入边 → startInDegree', () => {
+    const errs = validateDag(
+      snap(
+        [
+          { id: 's', type: 'START' },
+          { id: 'j', type: 'JOB', attrs: { jobCode: 'X' } },
+          { id: 'e', type: 'END' },
+        ],
+        [
+          ['s', 'j'],
+          ['j', 's'], // 入边打到 START
+          ['j', 'e'],
+        ],
+      ),
+    )
+    expect(
+      errs.some((e) => e.nodeId === 's' && e.messageKey.endsWith('.startInDegree')),
+    ).toBe(true)
+  })
+
+  it('R10 END 有出边 → endOutDegree', () => {
+    const errs = validateDag(
+      snap(
+        [
+          { id: 's', type: 'START' },
+          { id: 'e', type: 'END' },
+          { id: 'j', type: 'JOB', attrs: { jobCode: 'X' } },
+        ],
+        [
+          ['s', 'e'],
+          ['e', 'j'], // END 出边
+          ['j', 'e'],
+        ],
+      ),
+    )
+    expect(
+      errs.some((er) => er.nodeId === 'e' && er.messageKey.endsWith('.endOutDegree')),
+    ).toBe(true)
+  })
+
+  it('R11 非 END 节点缺出边 → noOutEdge', () => {
+    const errs = validateDag(
+      snap(
+        [
+          { id: 's', type: 'START' },
+          { id: 'j', type: 'JOB', attrs: { jobCode: 'X' } },
+          { id: 'e', type: 'END' },
+        ],
+        // j 没有出边
+        [['s', 'j']],
+      ),
+    )
+    expect(
+      errs.some((e) => e.nodeId === 'j' && e.messageKey.endsWith('.noOutEdge')),
+    ).toBe(true)
+  })
+
+  it('R11 START 缺出边 → noOutEdge', () => {
+    const errs = validateDag(snap([{ id: 's', type: 'START' }, { id: 'e', type: 'END' }], []))
+    expect(
+      errs.some((e) => e.nodeId === 's' && e.messageKey.endsWith('.noOutEdge')),
+    ).toBe(true)
+  })
+
+  it('R12 悬空连线(target 不存在)→ danglingEdge', () => {
+    const errs = validateDag(
+      snap(
+        [
+          { id: 's', type: 'START' },
+          { id: 'e', type: 'END' },
+        ],
+        [
+          ['s', 'e'],
+          ['s', 'ghost'], // ghost 不存在
+        ],
+      ),
+    )
+    expect(errs.some((e) => e.messageKey.endsWith('.danglingEdge'))).toBe(true)
+  })
+
+  it('R13 APPROVAL 缺 approvalTemplateCode', () => {
+    const errs = validateDag(
+      snap(
+        [
+          { id: 's', type: 'START' },
+          { id: 'a', type: 'APPROVAL' },
+          { id: 'e', type: 'END' },
+        ],
+        [
+          ['s', 'a'],
+          ['a', 'e'],
+        ],
+      ),
+    )
+    expect(
+      errs.find(
+        (e) =>
+          e.nodeId === 'a' &&
+          e.field === 'approvalTemplateCode' &&
+          e.messageKey.endsWith('.approvalTemplateCodeRequired'),
+      ),
+    ).toBeTruthy()
+  })
+
+  it('合法 APPROVAL DAG → 无错误', () => {
+    const errs = validateDag(
+      snap(
+        [
+          { id: 's', type: 'START' },
+          { id: 'a', type: 'APPROVAL', attrs: { approvalTemplateCode: 'TPL' } },
+          { id: 'e', type: 'END' },
+        ],
+        [
+          ['s', 'a'],
+          ['a', 'e'],
+        ],
+      ),
+    )
+    expect(errs).toEqual([])
+  })
+
   it('合法线性 DAG → 无错误', () => {
     const errs = validateDag(
       snap(
