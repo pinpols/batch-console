@@ -83,6 +83,7 @@
 </template>
 
 <script setup lang="ts">
+  import '@/charts/echarts'
   import { watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { RefreshRight } from '@element-plus/icons-vue'

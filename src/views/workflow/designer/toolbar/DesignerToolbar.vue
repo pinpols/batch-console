@@ -1,7 +1,20 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-import { ArrowLeft } from '@element-plus/icons-vue'
+import {
+  ArrowLeft,
+  RefreshLeft,
+  RefreshRight,
+  Rank,
+  Sort,
+  MagicStick,
+  Files,
+  Share,
+  Document,
+  CircleCheck,
+  Select,
+} from '@element-plus/icons-vue'
 import { useDesignerStore } from '../store/useDesignerStore'
 import ShortcutHelpButton from './ShortcutHelpButton.vue'
 import NodeSearchBox from './NodeSearchBox.vue'
@@ -15,7 +28,7 @@ function goBack() {
   void router.push('/workflow/definitions')
 }
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     saving?: boolean
     canSave?: boolean
@@ -38,50 +51,134 @@ defineEmits<{
   (e: 'toggleJson'): void
   (e: 'focusNode', nodeId: string): void
 }>()
+
+// 保存按钮在有未保存变更时更醒目(danger pill 语义 = "需要保存")
+const saveButtonType = computed<'primary' | 'danger'>(() =>
+  store.dirty && props.canSave ? 'danger' : 'primary',
+)
 </script>
 
 <template>
   <div class="designer-toolbar" role="toolbar" :aria-label="t('workflowDesignerSpike.toolbarAriaLabel')">
-    <el-button :icon="ArrowLeft" @click="goBack">
-      {{ t('common.backToList') }}
-    </el-button>
+    <!-- 分组:返回 -->
+    <div class="designer-toolbar__group">
+      <el-button :icon="ArrowLeft" :title="t('common.backToList')" @click="goBack">
+        <span class="designer-toolbar__btn-text">{{ t('common.backToList') }}</span>
+      </el-button>
+    </div>
+
     <el-divider direction="vertical" />
-    <el-button-group>
-      <el-button :disabled="!store.canUndo" @click="store.undo()">
-        {{ t('workflowDesignerSpike.actionUndo') }}
+
+    <!-- 分组:编辑(undo / redo) -->
+    <div class="designer-toolbar__group">
+      <el-button-group>
+        <el-button
+          :icon="RefreshLeft"
+          :disabled="!store.canUndo"
+          :title="t('workflowDesignerSpike.actionUndo')"
+          @click="store.undo()"
+        >
+          <span class="designer-toolbar__btn-text">{{ t('workflowDesignerSpike.actionUndo') }}</span>
+        </el-button>
+        <el-button
+          :icon="RefreshRight"
+          :disabled="!store.canRedo"
+          :title="t('workflowDesignerSpike.actionRedo')"
+          @click="store.redo()"
+        >
+          <span class="designer-toolbar__btn-text">{{ t('workflowDesignerSpike.actionRedo') }}</span>
+        </el-button>
+      </el-button-group>
+    </div>
+
+    <el-divider direction="vertical" />
+
+    <!-- 分组:布局(auto-layout / layout-direction) -->
+    <div class="designer-toolbar__group">
+      <el-button-group>
+        <el-button
+          :icon="Rank"
+          :title="t('workflowDesignerSpike.actionAutoLayout')"
+          @click="$emit('autoLayout')"
+        >
+          <span class="designer-toolbar__btn-text">{{ t('workflowDesignerSpike.actionAutoLayout') }}</span>
+        </el-button>
+        <el-button
+          :icon="Sort"
+          :title="t('workflowDesignerPolish.actionLayoutDirection', { dir: layoutDirection })"
+          @click="$emit('toggleLayoutDirection')"
+        >
+          <span class="designer-toolbar__btn-text">{{
+            t('workflowDesignerPolish.actionLayoutDirection', { dir: layoutDirection })
+          }}</span>
+        </el-button>
+      </el-button-group>
+    </div>
+
+    <el-divider direction="vertical" />
+
+    <!-- 分组:视图(quick-palette / templates / mermaid / json) -->
+    <div class="designer-toolbar__group">
+      <el-button-group>
+        <el-button
+          :icon="MagicStick"
+          :title="t('workflowDesignerPolish.actionQuickPalette')"
+          @click="$emit('openQuickPalette')"
+        >
+          <span class="designer-toolbar__btn-text">{{ t('workflowDesignerPolish.actionQuickPalette') }}</span>
+        </el-button>
+        <el-button
+          :icon="Files"
+          :title="t('workflowDesignerPolish.actionTemplates')"
+          @click="$emit('openTemplateLibrary')"
+        >
+          <span class="designer-toolbar__btn-text">{{ t('workflowDesignerPolish.actionTemplates') }}</span>
+        </el-button>
+        <el-button
+          :icon="Share"
+          :title="t('workflowDesignerSpike.actionMermaid')"
+          @click="$emit('exportMermaid')"
+        >
+          <span class="designer-toolbar__btn-text">{{ t('workflowDesignerSpike.actionMermaid') }}</span>
+        </el-button>
+        <el-button
+          class="designer-toolbar__json-btn"
+          :icon="Document"
+          :aria-pressed="jsonPanelOpen"
+          :title="t('workflowDesignerJson.toolbarButton')"
+          @click="$emit('toggleJson')"
+        >
+          <span class="designer-toolbar__btn-text">{{ t('workflowDesignerJson.toolbarButton') }}</span>
+        </el-button>
+      </el-button-group>
+    </div>
+
+    <el-divider direction="vertical" />
+
+    <!-- 分组:校验保存(validate / save) -->
+    <div class="designer-toolbar__group">
+      <el-button
+        :icon="CircleCheck"
+        :title="t('workflowDesignerMvp.actionValidate')"
+        @click="$emit('validate')"
+      >
+        <span class="designer-toolbar__btn-text">{{ t('workflowDesignerMvp.actionValidate') }}</span>
       </el-button>
-      <el-button :disabled="!store.canRedo" @click="store.redo()">
-        {{ t('workflowDesignerSpike.actionRedo') }}
+      <el-button
+        class="designer-toolbar__save-btn"
+        :type="saveButtonType"
+        :icon="Select"
+        :loading="saving"
+        :disabled="!canSave"
+        :title="t('workflowDesignerSpike.actionSave')"
+        @click="$emit('save')"
+      >
+        <span class="designer-toolbar__btn-text">{{ t('workflowDesignerSpike.actionSave') }}</span>
       </el-button>
-    </el-button-group>
-    <el-button @click="$emit('autoLayout')">
-      {{ t('workflowDesignerSpike.actionAutoLayout') }}
-    </el-button>
-    <el-button @click="$emit('toggleLayoutDirection')">
-      {{ t('workflowDesignerPolish.actionLayoutDirection', { dir: layoutDirection }) }}
-    </el-button>
-    <el-button @click="$emit('openQuickPalette')">
-      {{ t('workflowDesignerPolish.actionQuickPalette') }}
-    </el-button>
-    <el-button @click="$emit('openTemplateLibrary')">
-      {{ t('workflowDesignerPolish.actionTemplates') }}
-    </el-button>
-    <el-button @click="$emit('validate')">
-      {{ t('workflowDesignerMvp.actionValidate') }}
-    </el-button>
-    <el-button type="primary" :loading="saving" :disabled="!canSave" @click="$emit('save')">
-      {{ t('workflowDesignerSpike.actionSave') }}
-    </el-button>
-    <el-button @click="$emit('exportMermaid')">
-      {{ t('workflowDesignerSpike.actionMermaid') }}
-    </el-button>
-    <el-button
-      class="designer-toolbar__json-btn"
-      :aria-pressed="jsonPanelOpen"
-      @click="$emit('toggleJson')"
-    >
-      {{ t('workflowDesignerJson.toolbarButton') }}
-    </el-button>
+    </div>
+
+    <div class="designer-toolbar__spacer" />
+
     <el-tag v-if="store.dirty" type="warning" size="small">
       {{ t('workflowDesignerSpike.dirtyTag') }}
     </el-tag>
@@ -98,5 +195,32 @@ defineEmits<{
   padding: 8px 16px;
   border-bottom: 1px solid var(--color-border-base, #dcdfe6);
   background: var(--color-bg-overlay, #fff);
+}
+.designer-toolbar__group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.designer-toolbar__spacer {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+/* 保存按钮最突出:更大触达 + dirty 时 danger pill 提醒 */
+.designer-toolbar__save-btn {
+  font-weight: 600;
+}
+/* 窄屏:工具栏换行,文字按钮折叠为纯 icon(title/tooltip 兜底语义) */
+@media (max-width: 1024px) {
+  .designer-toolbar {
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+  .designer-toolbar__btn-text {
+    display: none;
+  }
+  .designer-toolbar__spacer {
+    flex-basis: 100%;
+    height: 0;
+  }
 }
 </style>

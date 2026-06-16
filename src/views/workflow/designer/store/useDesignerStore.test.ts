@@ -16,6 +16,13 @@ describe('useDesignerStore', () => {
     expect(s.canUndo).toBe(true)
   })
 
+  it('addNode auto-selects the new node (inspector focus)', () => {
+    const s = useDesignerStore()
+    s.addNode({ nodeCode: 'a', nodeType: 'START', x: 0, y: 0 })
+    s.addNode({ nodeCode: 'b', nodeType: 'JOB', x: 100, y: 0 })
+    expect(Array.from(s.selectedIds)).toEqual(['b'])
+  })
+
   it('addEdge dedupes self-loop and duplicates', () => {
     const s = useDesignerStore()
     s.addNode({ nodeCode: 'a', nodeType: 'START', x: 0, y: 0 })
@@ -66,5 +73,36 @@ describe('useDesignerStore', () => {
     expect(s.dirty).toBe(false)
     s.addNode({ nodeCode: 'b', nodeType: 'END', x: 100, y: 0 })
     expect(s.dirty).toBe(true)
+  })
+
+  // P2:套模板 = reset(新内容) 后必须标脏(reset 会把 dirty 置 false)
+  it('reset clears dirty but markDirty restores it (template-apply contract)', () => {
+    const s = useDesignerStore()
+    s.addNode({ nodeCode: 'a', nodeType: 'START', x: 0, y: 0 })
+    expect(s.dirty).toBe(true)
+    // 模拟 TemplateLibrary.apply():reset 新内容后补标脏
+    s.reset({
+      nodes: [{ id: 'x', nodeCode: 'x', nodeName: 'x', nodeType: 'START', x: 0, y: 0 }],
+      edges: [],
+    })
+    expect(s.dirty).toBe(false) // reset 自身把 dirty 清掉
+    s.markDirty()
+    expect(s.dirty).toBe(true) // 套模板后画布应被视为「未保存」
+  })
+
+  // P4:一次拖拽 = 一个可撤销单元 —— 拖前 pushUndo(快照旧位置)+ moveNode(写新位置)
+  it('pushUndo before moveNode makes a drag undoable back to the pre-drag position', () => {
+    const s = useDesignerStore()
+    s.addNode({ nodeCode: 'a', nodeType: 'JOB', x: 10, y: 20 })
+    s.markClean()
+    // 模拟 useX6Graph 的 node:moved 桥接:先 pushUndo(此刻 store 仍是旧坐标),再 moveNode
+    s.pushUndo()
+    s.moveNode('a', 200, 300)
+    expect(s.nodes[0].x).toBe(200)
+    expect(s.nodes[0].y).toBe(300)
+    expect(s.canUndo).toBe(true)
+    s.undo()
+    expect(s.nodes[0].x).toBe(10)
+    expect(s.nodes[0].y).toBe(20)
   })
 })
