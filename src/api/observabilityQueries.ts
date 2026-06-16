@@ -1,8 +1,9 @@
 import { fetchAllPageItems } from '@/api/adapters'
-import { get } from '@/api/client'
+import { get, post } from '@/api/client'
 import type {
   ConsoleAuditLogResponse,
   ConsoleDeadLetterTaskResponse,
+  DeadLetterReplayRequest,
   ConsoleOutboxDeliveryLogResponse,
   ConsoleOutboxRetryLogResponse,
   ConsoleRetryScheduleResponse,
@@ -114,6 +115,13 @@ export function queryDeadLetters(tenantId: string, filters?: { traceId?: string 
     tenantId,
     ...(filters?.traceId ? { traceId: filters.traceId } : {}),
   })
+}
+
+/** POST /api/console/jobs/dead-letters/replay — 重放单条死信 */
+export function replayDeadLetter(tenantId: string, deadLetterId: number, reason?: string) {
+  const body: DeadLetterReplayRequest = { tenantId, deadLetterId }
+  if (reason) body.reason = reason
+  return post<string>('/api/console/jobs/dead-letters/replay', body)
 }
 
 /** GET /api/console/queries/retries */

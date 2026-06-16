@@ -43,7 +43,20 @@
       :has-data="pagedDL.records.length > 0"
       :on-retry="loadDeadLetters"
     >
+      <BulkActionBar
+        v-if="bulk.count.value > 0"
+        :count="bulk.count.value"
+        :running="bulk.running.value"
+        @clear="bulk.clear"
+      >
+        <template #default="{ running }">
+          <el-button size="small" type="primary" plain :loading="running" @click="onBulkReplay">
+            {{ t('observability.dlqBulkReplay') }}
+          </el-button>
+        </template>
+      </BulkActionBar>
       <el-table
+        ref="dlTableRef"
         v-loading="loadingDL"
         :data="pagedDL.records"
         stripe
@@ -51,7 +64,9 @@
         :empty-text="t('common.noData')"
         size="small"
         class="console-table"
+        @selection-change="bulk.onSelectionChange"
       >
+        <el-table-column type="selection" width="44" :selectable="() => true" />
         <el-table-column prop="id" label="ID" width="80" />
         <el-table-column
           prop="sourceType"
@@ -72,11 +87,20 @@
           width="90"
         />
         <el-table-column prop="replayStatus" :label="t('observability.dlqColStatus')" width="100" />
-        <el-table-column :label="t('observability.dlqColActions')" width="120" fixed="right">
+        <el-table-column :label="t('observability.dlqColActions')" width="180" fixed="right">
           <template #default="{ row }">
             <div class="table-actions">
               <el-button size="small" plain type="primary" @click="openDetail(row)">
                 {{ t('observability.dlqActionDetail') }}
+              </el-button>
+              <el-button
+                v-if="isReplayable(row)"
+                size="small"
+                plain
+                type="warning"
+                @click="onReplay(row)"
+              >
+                {{ t('observability.dlqReplay') }}
               </el-button>
             </div>
           </template>
@@ -101,12 +125,15 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, reactive, computed } from 'vue'
+  import { ref, reactive, computed, onMounted } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { queryDeadLetters } from '@/api/observabilityQueries'
+  import { ElMessage, ElMessageBox } from 'element-plus'
+  import { queryDeadLetters, replayDeadLetter } from '@/api/observabilityQueries'
 
   const { t } = useI18n({ useScope: 'global' })
   import { toPageResult } from '@/api/adapters'
+  import BulkActionBar from '@/components/table/BulkActionBar.vue'
+  import { useBulkSelection } from '@/composables/useBulkSelection'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
@@ -128,6 +155,52 @@
 
   const detailVisible = ref(false)
   const detailRow = ref<ConsoleDeadLetterTaskResponse | null>(null)
+
+  // ── 批量重放:多选 + 单项重放 / 批量重放 ──────────────────────────────
+  // 可重放 = replayStatus 为 NEW / FAILED;SUCCESS(已成功)与 GIVE_UP(已放弃)不再重放
+  const REPLAYABLE_STATUSES = ['NEW', 'FAILED']
+  function isReplayable(row: ConsoleDeadLetterTaskResponse): boolean {
+    return REPLAYABLE_STATUSES.includes(String(row.replayStatus ?? '').toUpperCase())
+  }
+  const dlTableRef = ref<{ clearSelection?: () => void } | null>(null)
+  const bulk = useBulkSelection<ConsoleDeadLetterTaskResponse>()
+  onMounted(() => bulk.bindTable(dlTableRef.value))
+
+  async function onReplay(row: ConsoleDeadLetterTaskResponse) {
+    const label = t('observability.dlqReplay')
+    const confirmed = await ElMessageBox.confirm(
+      t('observability.dlqReplayConfirm', { id: row.id }),
+      label,
+      { type: 'warning', confirmButtonText: t('common.ok'), cancelButtonText: t('common.cancel') },
+    ).catch(() => false)
+    if (confirmed === false) return
+    try {
+      await replayDeadLetter(tenant.tenantId, row.id)
+      ElMessage.success(t('observability.dlqReplaySuccess'))
+    } catch {
+      ElMessage.error(t('observability.dlqReplayFailed'))
+    }
+    void loadDeadLetters()
+  }
+
+  async function onBulkReplay() {
+    const eligible = bulk.selected.value.filter(isReplayable)
+    if (!eligible.length) {
+      ElMessage.warning(t('observability.dlqBulkReplayNone'))
+      return
+    }
+    const label = t('observability.dlqBulkReplay')
+    const confirmed = await ElMessageBox.confirm(
+      t('bulk.confirmBody', { label, n: eligible.length }),
+      label,
+      { type: 'warning', confirmButtonText: t('common.ok'), cancelButtonText: t('common.cancel') },
+    ).catch(() => false)
+    if (confirmed === false) return
+    await bulk.runBulk(eligible, (r) => replayDeadLetter(tenant.tenantId, r.id), {
+      actionLabel: label,
+    })
+    void loadDeadLetters()
+  }
 
   const dlSourceTypeOptions = computed(() =>
     Array.from(

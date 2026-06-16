@@ -13,6 +13,13 @@
         v-model:page-size="pageSize"
         @change="load"
       >
+        <template #toolbar>
+          <OpsListToolbar
+            :status="live.status.value"
+            :last-refreshed-at="live.lastRefreshedAt.value"
+          />
+        </template>
+
         <template #query>
           <ListPageQueryBar
             :filter-busy="filterBusy"
@@ -164,6 +171,7 @@
   import EmptyState from '@/components/common/EmptyState.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import ProTable from '@/components/table/ProTable.vue'
+  import OpsListToolbar from '@/components/table/OpsListToolbar.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
   import CopyableText from '@/components/common/CopyableText.vue'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
@@ -236,6 +244,7 @@
       throw err
     } finally {
       loading.value = false
+      live.markRefreshed()
     }
   }
 
@@ -260,7 +269,7 @@
     router.push(`/monitor/workflow-runs/${row.id}`)
   }
 
-  useSseAutoReload({
+  const live = useSseAutoReload({
     domain: 'workflow-runs',
     reload: load,
     scope: () => tenant.tenantId,
