@@ -24,6 +24,17 @@
             @reset="resetQuery"
             @refresh="() => runRefresh(loadData)"
           >
+            <template #prepend>
+              <SavedFiltersMenu
+                :sets="savedFilters.sets.value"
+                :on-save="savedFilters.save"
+                :on-apply="savedFilters.applySet"
+                :on-remove="savedFilters.remove"
+                :on-rename="savedFilters.rename"
+                :on-export="savedFilters.exportSets"
+                :on-import="savedFilters.importSets"
+              />
+            </template>
             <el-form-item>
               <template #label>
                 <HelpLabel :tip="t('jobInstanceList.jobCodeTip')">
@@ -261,6 +272,9 @@
   import EmptyState from '@/components/common/EmptyState.vue'
   import { List } from '@element-plus/icons-vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
+  import SavedFiltersMenu from '@/components/table/SavedFiltersMenu.vue'
+  import { useSavedFilters } from '@/composables/useSavedFilters'
+  import { useAuthStore } from '@/stores/auth'
   import ProTable from '@/components/table/ProTable.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
   import HelpLabel from '@/components/common/HelpLabel.vue'
@@ -354,6 +368,32 @@
     slaBreached: false,
     page: 1,
     pageSize: 15,
+  })
+
+  const auth = useAuthStore()
+  const savedFilters = useSavedFilters({
+    pageKey: 'job-instances',
+    userId: () => auth.userInfo?.userId,
+    getCurrent: () => ({
+      jobCode: query.jobCode,
+      instanceStatus: query.instanceStatus,
+      instanceStatuses: query.instanceStatuses,
+      startDate: query.startDate,
+      endDate: query.endDate,
+      traceId: query.traceId,
+      slaBreached: query.slaBreached,
+    }),
+    apply: (f) => {
+      query.jobCode = String(f.jobCode ?? '')
+      query.instanceStatus = String(f.instanceStatus ?? '')
+      query.instanceStatuses = String(f.instanceStatuses ?? '')
+      query.startDate = String(f.startDate ?? '')
+      query.endDate = String(f.endDate ?? '')
+      query.traceId = String(f.traceId ?? '')
+      query.slaBreached = !!f.slaBreached
+      query.page = 1
+      void loadData()
+    },
   })
 
   const { data: metaEnums } = useConsoleMetaEnumsQuery()
