@@ -1,5 +1,11 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
-import { BP, BP_MQ, type BPName } from '@/constants/breakpoints'
+import {
+  BP,
+  BP_MQ,
+  SIDEBAR_AUTOCOLLAPSE_MQ,
+  SIDEBAR_AUTOCOLLAPSE_W,
+  type BPName,
+} from '@/constants/breakpoints'
 
 /**
  * 响应式视口探测 — 用 matchMedia 监听 `BP_MQ` 各档,避免散落的
@@ -9,6 +15,7 @@ import { BP, BP_MQ, type BPName } from '@/constants/breakpoints'
  * - `isMobile`: ≤ sm (768)
  * - `isTablet`: > sm 且 ≤ lg (1280) — 笔电 / 大平板
  * - `isDesktop`: > lg
+ * - `isCompact`: ≤ 1440(含 mobile/tablet)— 宽度紧时收起侧栏腾内容的 UX 阈值
  * - `breakpoint`: 当前匹配的最小命中档(xs/sm/md/lg/xl/xxl/ultrawide)
  *
  * 所有 listener 在 onMounted 注册 / onBeforeUnmount 自动清理。
@@ -17,6 +24,8 @@ export function useResponsive() {
   const isMobile = ref(false)
   const isTablet = ref(false)
   const isDesktop = ref(true)
+  // 紧凑桌面(≤1440,含笔电与手机)— 供侧栏等"宽度紧时收起腾内容"的 UX 用,独立于 isTablet 语义
+  const isCompact = ref(false)
   const breakpoint = ref<BPName | 'ultrawide'>('lg')
 
   // mq 句柄 + 对应 listener,统一 cleanup
@@ -28,6 +37,7 @@ export function useResponsive() {
     isMobile.value = w <= BP.sm
     isTablet.value = w > BP.sm && w <= BP.lg
     isDesktop.value = w > BP.lg
+    isCompact.value = w <= SIDEBAR_AUTOCOLLAPSE_W
     if (w <= BP.xs) breakpoint.value = 'xs'
     else if (w <= BP.sm) breakpoint.value = 'sm'
     else if (w <= BP.md) breakpoint.value = 'md'
@@ -55,6 +65,7 @@ export function useResponsive() {
     register(BP_MQ.lg)
     register(BP_MQ.xl)
     register(BP_MQ.xxl)
+    register(SIDEBAR_AUTOCOLLAPSE_MQ)
   })
 
   onBeforeUnmount(() => {
@@ -66,6 +77,7 @@ export function useResponsive() {
     isMobile,
     isTablet,
     isDesktop,
+    isCompact,
     breakpoint: computed(() => breakpoint.value),
   }
 }

@@ -44,3 +44,11 @@ export const BP_MQ = {
 
 /** 桌面内容最大宽度 — 仅超宽屏(>2400)才限宽;与 CSS token --content-max-width 保持一致 */
 export const CONTENT_MAX_WIDTH = 2400
+
+/**
+ * 侧栏自动收起阈值(≤此宽度默认收起侧栏腾内容)。取 1440 而非 lg(1280):
+ * 1366×768 这类最常见入门笔电落在 1280~1440 之间,原先保留满侧栏(224px)内容只剩 ~1100,
+ * 抬到 1440 让 1366/1440 笔电也自动收起 → 内容多 ~150px;1536+ 仍保留满侧栏。
+ */
+export const SIDEBAR_AUTOCOLLAPSE_W = 1440
+export const SIDEBAR_AUTOCOLLAPSE_MQ = `(max-width: ${SIDEBAR_AUTOCOLLAPSE_W}px)`
