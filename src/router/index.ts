@@ -418,6 +418,16 @@ const routes: RouteRecordRaw[] = [
           minRole: 'OPERATOR',
         },
       },
+      {
+        path: 'workers/my-workers',
+        name: 'my-workers',
+        component: () => import('@/views/worker/MyWorkers.vue'),
+        meta: {
+          title: '我的 Worker',
+          activeMenu: '/workers/my-workers',
+          minRole: 'VIEWER',
+        },
+      },
       { path: 'workers/list', redirect: '/workers/management' },
       { path: 'workers/channels', redirect: '/workers/management' },
       {
