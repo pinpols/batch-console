@@ -70,7 +70,8 @@
         />
 
         <OpsTrendPanel
-          :active="opsTab === 'trend'"
+          v-if="opsTab === 'trend'"
+          :active="true"
           v-model:range-key="rangeKey"
           :charts-loading="chartsLoading"
           :chart-theme="chartTheme"
@@ -82,7 +83,8 @@
         />
 
         <OpsDistPanel
-          :active="opsTab === 'dist'"
+          v-if="opsTab === 'dist'"
+          :active="true"
           :charts-loading="chartsLoading"
           :chart-theme="chartTheme"
           :trigger-type-top-n-option="triggerTypeTopNOption"
@@ -113,10 +115,7 @@
 </template>
 
 <script setup lang="ts">
-  // echarts/core 模块注册:本页是 echarts 的唯一使用入口,从 main.ts 挪到这里以
-  // 跟随路由 lazy chunk 加载,首屏不下 echarts(~181 KB gzip)。
-  import '@/charts/echarts'
-  import { computed } from 'vue'
+  import { computed, defineAsyncComponent } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { Refresh, FolderOpened, DocumentAdd, User, Cpu } from '@element-plus/icons-vue'
   import { useRefreshAction } from '@/composables/useRefreshAction'
@@ -129,10 +128,11 @@
   import SectionCard from '@/components/common/SectionCard.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
   import OpsMetricGrid from './components/OpsMetricGrid.vue'
-  import OpsTrendPanel from './components/OpsTrendPanel.vue'
-  import OpsDistPanel from './components/OpsDistPanel.vue'
-  import OpsExtraPanel from './components/OpsExtraPanel.vue'
   import { useOpsSummary } from './composables/useOpsSummary'
+
+  const OpsTrendPanel = defineAsyncComponent(() => import('./components/OpsTrendPanel.vue'))
+  const OpsDistPanel = defineAsyncComponent(() => import('./components/OpsDistPanel.vue'))
+  const OpsExtraPanel = defineAsyncComponent(() => import('./components/OpsExtraPanel.vue'))
 
   const {
     loading,

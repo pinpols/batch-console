@@ -18,6 +18,10 @@
   import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
   import mermaid from 'mermaid'
   import DataState from '@/components/common/DataState.vue'
+  import {
+    workflowRunMermaidClassDefs,
+    workflowRunStatusClass,
+  } from '@/constants/workflowStatusTheme'
   import type { ConsoleWorkflowNodeRunResponse } from '@/types/console-api'
 
   /**
@@ -61,17 +65,6 @@
     return firstIsAsciiLetter ? out : 'n' + out
   }
 
-  function statusToClass(status?: string | null): string | null {
-    if (!status) return null
-    const s = status.toUpperCase()
-    if (s === 'RUNNING') return 'running'
-    if (s === 'SUCCESS' || s === 'COMPLETED' || s === 'SUCCEEDED') return 'success'
-    if (s === 'FAILED' || s === 'PARTIAL_FAILED') return 'failed'
-    if (s === 'WAITING' || s === 'READY' || s === 'CREATED') return 'waiting'
-    if (s === 'CANCELLED' || s === 'SKIPPED' || s === 'TERMINATED') return 'cancelled'
-    return null
-  }
-
   function applyStateOverlay(text: string, nodeRuns: ConsoleWorkflowNodeRunResponse[]): string {
     if (!text || nodeRuns.length === 0) return text
     const latest = new Map<string, ConsoleWorkflowNodeRunResponse>()
@@ -83,17 +76,14 @@
     }
     const classLines: string[] = []
     for (const [code, r] of latest) {
-      const klass = statusToClass(r.nodeStatus)
+      const klass = workflowRunStatusClass(r.nodeStatus)
       if (klass) classLines.push(`class ${sanitizeMermaidId(code)} ${klass}`)
     }
     return (
       text.trimEnd() +
       '\n' +
-      '  classDef running fill:#3b82f6,stroke:#1d4ed8,color:#fff\n' +
-      '  classDef success fill:#10b981,stroke:#047857,color:#fff\n' +
-      '  classDef failed fill:#ef4444,stroke:#b91c1c,color:#fff\n' +
-      '  classDef waiting fill:#f59e0b,stroke:#b45309,color:#fff\n' +
-      '  classDef cancelled fill:#6b7280,stroke:#374151,color:#fff\n' +
+      workflowRunMermaidClassDefs() +
+      '\n' +
       classLines.map((l) => '  ' + l).join('\n') +
       '\n'
     )

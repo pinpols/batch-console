@@ -165,7 +165,6 @@ html.dark .mobile-layout {
   opacity: 0.5;
 }
 
-.m-page__title-action :deep(.el-icon),
 .m-page__title-action .el-icon {
   font-size: 16px;
 }
@@ -191,7 +190,6 @@ html.dark .mobile-layout {
   transition: opacity 0.1s ease;
 }
 
-.m-page__back :deep(.el-icon),
 .m-page__back .el-icon {
   font-size: 20px;
   font-weight: 600;
@@ -411,12 +409,7 @@ html.dark .m-list {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    115deg,
-    transparent 30%,
-    rgb(255 255 255 / 35%) 50%,
-    transparent 70%
-  );
+  background: linear-gradient(115deg, transparent 30%, rgb(255 255 255 / 35%) 50%, transparent 70%);
   transform: translateX(-100%);
   pointer-events: none;
   opacity: 0;
@@ -636,7 +629,6 @@ html.dark .m-chip--warning {
    el-input、el-select 默认是 1px border 描边 + 圆角 4px,移动端 iOS
    习惯是 "rounded rect tile":灰底填充、无可见 border、38px tap area。
    focus 时蓝色 ring 兜住。 */
-.mobile-layout :deep(.el-input__wrapper),
 .mobile-layout .el-input__wrapper {
   background: var(--ios-fill-tertiary);
   box-shadow: none !important;
@@ -647,12 +639,10 @@ html.dark .m-chip--warning {
   transition: box-shadow 0.15s ease;
 }
 
-.mobile-layout :deep(.el-input__wrapper.is-focus),
 .mobile-layout .el-input__wrapper.is-focus {
   box-shadow: 0 0 0 2px var(--ios-blue) !important;
 }
 
-.mobile-layout :deep(.el-input__inner),
 .mobile-layout .el-input__inner {
   height: 34px;
   font-size: 15px;
@@ -661,33 +651,28 @@ html.dark .m-chip--warning {
   letter-spacing: -0.01em;
 }
 
-.mobile-layout :deep(.el-input__inner::placeholder),
 .mobile-layout .el-input__inner::placeholder {
   color: var(--ios-label-tertiary);
 }
 
 /* small size 不收缩,移动端 38px 是最小 hit target */
-.mobile-layout :deep(.el-input--small .el-input__wrapper),
 .mobile-layout .el-input--small .el-input__wrapper {
   min-height: 38px;
   padding: 0 12px;
 }
 
-.mobile-layout :deep(.el-input__suffix-inner > *),
 .mobile-layout .el-input__suffix-inner > * {
   color: var(--ios-label-tertiary);
   font-size: 16px;
 }
 
 /* el-select 复用 el-input wrapper,这里只调下拉箭头 */
-.mobile-layout :deep(.el-select__caret),
 .mobile-layout .el-select__caret {
   color: var(--ios-label-tertiary);
   font-size: 16px;
 }
 
 /* el-select 选中后的 placeholder/已选值色阶 */
-.mobile-layout :deep(.el-select .el-input.is-focus .el-input__wrapper),
 .mobile-layout .el-select .el-input.is-focus .el-input__wrapper {
   box-shadow: 0 0 0 2px var(--ios-blue) !important;
 }
@@ -884,7 +869,6 @@ html.dark .m-tab__badge--warning {
 }
 
 /* ── iOS segmented control:el-segmented 重写 ──────────────── */
-.mobile-layout :deep(.el-segmented),
 .mobile-layout .el-segmented {
   --el-segmented-bg-color: var(--ios-fill-tertiary);
   --el-segmented-item-selected-bg-color: var(--ios-bg-elevated);
@@ -894,8 +878,8 @@ html.dark .m-tab__badge--warning {
 }
 
 /* ── el-message-box / el-dialog 在移动端给点 iOS 圆角 ──────── */
-.mobile-layout :deep(.el-message-box),
-.mobile-layout :deep(.el-dialog) {
+.mobile-layout .el-message-box,
+.mobile-layout .el-dialog {
   border-radius: 14px;
 }
 

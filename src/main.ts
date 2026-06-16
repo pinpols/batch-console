@@ -28,7 +28,7 @@ import { safeHtmlDirective } from '@/directives/safeHtml'
 import { initLogger, logClick, logError } from '@/utils/logger'
 import { initSentry } from '@/utils/sentry'
 import { initWebVitals } from '@/utils/webVitals'
-// echarts 初始化挪到 OpsSummary.vue 顶部 import,跟随路由 lazy chunk 加载,
+// echarts 初始化下沉到 OpsSummary 图表面板,跟随具体 tab lazy chunk 加载,
 // 不进首屏。非运维页用户(配置员/审批员等)少下 ~181 KB gzip。
 import '@/styles/app.css'
 
@@ -97,17 +97,26 @@ initSentry({
 // 未捕获的 Promise 拒绝:API/网络错误(axios 拦截器已对 401/403/4xx/5xx 弹 toast)只记录并吞掉,
 // 避免控制台噪音 + 潜在错误边界升级(典型:页面副加载漏 catch 的 403)。非 API 错误保留默认行为。
 window.addEventListener('unhandledrejection', (event) => {
-  const err = event.reason as { isAxiosError?: boolean; response?: unknown; config?: unknown; message?: string } | null
+  const err = event.reason as {
+    isAxiosError?: boolean
+    response?: unknown
+    config?: unknown
+    message?: string
+  } | null
   const isApiError =
     !!err &&
     typeof err === 'object' &&
     (err.isAxiosError === true ||
       ('response' in err && 'config' in err) ||
       (typeof err.message === 'string' &&
-        /Request failed with status code|Network Error|timeout of \d+ms exceeded/i.test(err.message)))
+        /Request failed with status code|Network Error|timeout of \d+ms exceeded/i.test(
+          err.message,
+        )))
   if (isApiError) {
     event.preventDefault()
-    logError(`unhandledRejection(api):${err?.message ?? String(event.reason)}`, { kind: 'unhandledRejection' })
+    logError(`unhandledRejection(api):${err?.message ?? String(event.reason)}`, {
+      kind: 'unhandledRejection',
+    })
   }
 })
 
