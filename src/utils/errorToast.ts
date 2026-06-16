@@ -8,6 +8,8 @@ type ErrorToastOptions = {
   message: string
   /** Optional traceId/requestId for backend correlation */
   traceId?: string
+  /** Optional "what to do next" suggestion line, shown below the message. */
+  suggestion?: string
   /** How long to show the toast (ms). Defaults based on traceId presence. */
   duration?: number
 }
@@ -49,6 +51,7 @@ export function showErrorToast(opts: ErrorToastOptions) {
       [
         h('div', { class: 'error-toast__title' }, opts.title),
         h('div', { class: 'error-toast__message' }, opts.message),
+        opts.suggestion ? h('div', { class: 'error-toast__suggestion' }, opts.suggestion) : null,
         trace
           ? h('div', { class: 'error-toast__trace' }, [
               h('span', { class: 'error-toast__trace-label' }, 'TraceId'),

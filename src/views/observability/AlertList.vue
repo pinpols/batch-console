@@ -31,6 +31,17 @@
             @reset="reset"
             @refresh="() => runRefresh(load)"
           >
+            <template #prepend>
+              <SavedFiltersMenu
+                :sets="savedFilters.sets.value"
+                :on-save="savedFilters.save"
+                :on-apply="savedFilters.applySet"
+                :on-remove="savedFilters.remove"
+                :on-rename="savedFilters.rename"
+                :on-export="savedFilters.exportSets"
+                :on-import="savedFilters.importSets"
+              />
+            </template>
             <el-form-item :label="t('alertList.severityLabel')">
               <MetaSelect
                 class="query-w-140"
@@ -218,6 +229,8 @@
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
+  import SavedFiltersMenu from '@/components/table/SavedFiltersMenu.vue'
+  import { useSavedFilters } from '@/composables/useSavedFilters'
   import ProTable from '@/components/table/ProTable.vue'
   import OpsListToolbar from '@/components/table/OpsListToolbar.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
@@ -261,6 +274,29 @@
     traceId: '',
     startTime: '',
     endTime: '',
+  })
+
+  const savedFilters = useSavedFilters({
+    pageKey: 'alerts',
+    userId: () => auth.userInfo?.userId,
+    getCurrent: () => ({
+      severity: filters.severity,
+      alertType: filters.alertType,
+      status: filters.status,
+      traceId: filters.traceId,
+      startTime: filters.startTime,
+      endTime: filters.endTime,
+    }),
+    apply: (f) => {
+      filters.severity = String(f.severity ?? '')
+      filters.alertType = String(f.alertType ?? '')
+      filters.status = String(f.status ?? '')
+      filters.traceId = String(f.traceId ?? '')
+      filters.startTime = String(f.startTime ?? '')
+      filters.endTime = String(f.endTime ?? '')
+      page.value = 1
+      void load()
+    },
   })
 
   // severity / alertStatus 走后端 enum 字典(完整候选);进页面就有数据,不依赖列表先加载
