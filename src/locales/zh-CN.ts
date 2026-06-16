@@ -7,6 +7,10 @@
  * - 业务页文案逐步迁移,本文件只先收纳:框架级 + 公共组件 + 核心 enum。
  */
 export default {
+  print: {
+    label: '打印 / PDF',
+    hint: '可在打印对话框中选择「另存为 PDF」',
+  },
   common: {
     ok: '确定',
     cancel: '取消',
@@ -615,6 +619,17 @@ export default {
     importedN: '已导入 {n} 组筛选',
     importNone: '没有可导入的筛选集',
     exportCopied: '筛选集 JSON 已复制到剪贴板',
+  },
+  notificationCenter: {
+    title: '通知中心',
+    empty: '暂无待处理事项',
+    pendingApprovals: '待审批',
+    openAlerts: '未确认告警',
+    criticalSuffix: '({n} 紧急)',
+    failedJobs: '失败任务',
+    viewOpsSummary: '查看运维概览',
+    newItems: '有新增待办',
+    srSummary: '{n} 项待处理',
   },
   proTable: {
     empty: '暂无数据',
