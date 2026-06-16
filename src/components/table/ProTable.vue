@@ -17,6 +17,7 @@
     </EmptyState>
     <template v-else>
       <el-table
+        ref="tableRef"
         :data="data"
         v-loading="loading"
         stripe
@@ -50,7 +51,8 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, onMounted } from 'vue'
+  import { computed, onMounted, ref } from 'vue'
+  import type { TableInstance } from 'element-plus'
   import { useRoute } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import { Refresh } from '@element-plus/icons-vue'
@@ -146,6 +148,14 @@
     (e: 'update:pageSize', v: number): void
     (e: 'change'): void
   }>()
+
+  // 暴露内部 el-table 句柄,供批量选择场景清空勾选(useBulkSelection.bindTable 用)
+  const tableRef = ref<TableInstance>()
+  defineExpose({
+    clearSelection: () => tableRef.value?.clearSelection(),
+    toggleRowSelection: (row: unknown, selected?: boolean) =>
+      tableRef.value?.toggleRowSelection(row as Record<string, unknown>, selected),
+  })
 
   function onPageChange(p: number) {
     emit('update:page', p)

@@ -217,7 +217,8 @@ const messages: Messages = {
     errorDrawerTitle: 'Validation errors',
     saveOk: 'Saved',
     saveNeedsId: 'workflowId is required to save',
-    mobileDesignerGuard: 'Workflow designing is desktop-only; switched to read-only view / home on mobile',
+    mobileDesignerGuard:
+      'Workflow designing is desktop-only; switched to read-only view / home on mobile',
     create: {
       title: 'New workflow',
       codePrompt: 'Enter the workflow code (workflowCode)',
@@ -567,6 +568,17 @@ const messages: Messages = {
     fieldEdgeType: 'Edge type',
     fieldCondition: 'Condition expr',
     conditionPlaceholder: 'Empty means show type name on edge',
+  },
+  bulk: {
+    actionDefault: 'Action',
+    selectedAria: 'Bulk action bar',
+    selectedCount: '{n} selected',
+    clear: 'Clear',
+    allSucceeded: '{label}: all {n} succeeded',
+    allFailed: '{label}: all {n} failed',
+    partial: '{label}: {ok} succeeded / {fail} failed (failed rows kept — retry)',
+    confirmTitle: 'Bulk {label}',
+    confirmBody: 'Run "{label}" on the {n} selected rows?',
   },
   proTable: {
     empty: 'No data',
@@ -3349,6 +3361,10 @@ const messages: Messages = {
     colActions: 'Actions',
     actionDetail: 'Detail',
     actionPartitions: 'Steps',
+    bulkRetry: 'Bulk retry',
+    bulkCancel: 'Bulk cancel',
+    bulkRetryNone: 'No FAILED instances among selection — nothing to retry',
+    bulkCancelNone: 'All selected are terminal — nothing to cancel',
   },
   heartbeatPanel: {
     title: 'task #{taskId}',
