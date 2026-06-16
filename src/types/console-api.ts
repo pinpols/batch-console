@@ -121,6 +121,7 @@ export type ConsolePresignDownloadResponse = components['schemas']['ConsolePresi
 
 // --- Dead letters / retries ---
 export type ConsoleDeadLetterTaskResponse = components['schemas']['ConsoleDeadLetterTaskResponse']
+export type DeadLetterReplayRequest = components['schemas']['DeadLetterReplayRequest']
 export type ConsoleRetryScheduleResponse = components['schemas']['ConsoleRetryScheduleResponse']
 
 // --- Worker ---

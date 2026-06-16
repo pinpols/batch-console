@@ -1,5 +1,6 @@
 <template>
   <ProTable
+    ref="proTableRef"
     :data="rows"
     :loading="tableBlocking"
     :total="total"
@@ -56,12 +57,16 @@
     </template>
 
     <template #toolbar>
-      <el-button type="primary" plain :disabled="!selection.length" @click="runBatchApprove">
-        {{ t('approvals.batchApprove') }}
-      </el-button>
-      <el-button type="danger" plain :disabled="!selection.length" @click="runBatchReject">
-        {{ t('approvals.batchReject') }}
-      </el-button>
+      <BulkActionBar :count="selection.length" :running="batchRunning" @clear="clearSelection">
+        <template #default="{ running }">
+          <el-button size="small" type="primary" plain :loading="running" @click="runBatchApprove">
+            {{ t('approvals.batchApprove') }}
+          </el-button>
+          <el-button size="small" type="danger" plain :loading="running" @click="runBatchReject">
+            {{ t('approvals.batchReject') }}
+          </el-button>
+        </template>
+      </BulkActionBar>
     </template>
 
     <el-table-column
@@ -215,6 +220,7 @@
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import ProTable from '@/components/table/ProTable.vue'
+  import BulkActionBar from '@/components/table/BulkActionBar.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
   import MetaSelect from '@/components/common/MetaSelect.vue'
   import CopyableText from '@/components/common/CopyableText.vue'
@@ -238,6 +244,14 @@
   const page = ref(1)
   const pageSize = ref(15)
   const selection = ref<ConsoleApprovalCommandResponse[]>([])
+  // 批量执行中:驱动 BulkActionBar 内动作按钮 loading + 禁用清除
+  const batchRunning = ref(false)
+  const proTableRef = ref<{ clearSelection?: () => void } | null>(null)
+
+  function clearSelection() {
+    selection.value = []
+    proTableRef.value?.clearSelection?.()
+  }
 
   const route = useRoute()
   const auth = useAuthStore()
@@ -445,13 +459,15 @@
         h(
           'ul',
           { style: 'margin:0;padding-left:18px;max-height:200px;overflow:auto' },
-          failList.slice(0, 50).map((r) =>
-            h('li', { style: 'font-size:12px;line-height:1.6' }, [
-              h('code', null, r.approvalNo),
-              ' — ',
-              r.message || t('approvals.batchUnknownFailReason'),
-            ]),
-          ),
+          failList
+            .slice(0, 50)
+            .map((r) =>
+              h('li', { style: 'font-size:12px;line-height:1.6' }, [
+                h('code', null, r.approvalNo),
+                ' — ',
+                r.message || t('approvals.batchUnknownFailReason'),
+              ]),
+            ),
         ),
         failList.length > 50
           ? h(
@@ -479,12 +495,16 @@
     } catch {
       return
     }
+    batchRunning.value = true
     try {
       const results = await batchApprove({ tenantId: tenant.tenantId, approvalNos: nos })
       reportBatchResult(results, nos.length, 'approve')
+      clearSelection()
       await load()
     } catch (err) {
       ElMessage.error(err instanceof Error ? err.message : String(err))
+    } finally {
+      batchRunning.value = false
     }
   }
 
@@ -504,6 +524,7 @@
     } catch {
       return
     }
+    batchRunning.value = true
     try {
       const results = await batchReject({
         tenantId: tenant.tenantId,
@@ -511,9 +532,12 @@
         reason,
       })
       reportBatchResult(results, nos.length, 'reject')
+      clearSelection()
       await load()
     } catch (err) {
       ElMessage.error(err instanceof Error ? err.message : String(err))
+    } finally {
+      batchRunning.value = false
     }
   }
 
