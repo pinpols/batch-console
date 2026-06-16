@@ -15,6 +15,13 @@
         v-model:page="page"
         v-model:page-size="pageSize"
       >
+        <template #toolbar>
+          <OpsListToolbar
+            :status="live.status.value"
+            :last-refreshed-at="live.lastRefreshedAt.value"
+          />
+        </template>
+
         <template #query>
           <ListPageQueryBar
             :filter-busy="queryActionBusy"
@@ -212,6 +219,7 @@
   import SectionCard from '@/components/common/SectionCard.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import ProTable from '@/components/table/ProTable.vue'
+  import OpsListToolbar from '@/components/table/OpsListToolbar.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
   import MetaSelect from '@/components/common/MetaSelect.vue'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
@@ -350,6 +358,7 @@
       throw err
     } finally {
       loading.value = false
+      live.markRefreshed()
     }
   }
 
@@ -473,7 +482,7 @@
     filters.endTime = value?.[1] ?? ''
   })
 
-  useSseAutoReload({
+  const live = useSseAutoReload({
     domain: 'alerts',
     reload: load,
     scope: () => tenant.tenantId,

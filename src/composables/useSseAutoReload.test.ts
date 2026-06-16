@@ -79,6 +79,60 @@ describe('useSseAutoReload', () => {
     scope.stop()
   })
 
+  it('exposes status: connecting → live, and stamps lastRefreshedAt on reload', async () => {
+    let capturedOnEvent: (() => void) | null = null
+    createSseStreamMock.mockImplementation(async (_dom: unknown, onEvent: () => void) => {
+      capturedOnEvent = onEvent
+      return makeFakeEs()
+    })
+
+    let handle!: ReturnType<typeof useSseAutoReload>
+    const scope = effectScope()
+    scope.run(() => {
+      handle = useSseAutoReload({ domain: 'alerts', reload: vi.fn(), debounceMs: 500 })
+    })
+
+    // 建流前是 connecting,且尚未刷新
+    expect(handle.status.value).toBe('connecting')
+    expect(handle.lastRefreshedAt.value).toBe(null)
+
+    await flushMicrotasks()
+    expect(handle.status.value).toBe('live')
+
+    capturedOnEvent!()
+    await vi.advanceTimersByTimeAsync(500)
+    await flushMicrotasks()
+    expect(handle.lastRefreshedAt.value).not.toBe(null)
+
+    scope.stop()
+  })
+
+  it('status goes reconnecting on error, then polling after maxRetries', async () => {
+    createSseStreamMock.mockRejectedValue(new Error('fail'))
+
+    let handle!: ReturnType<typeof useSseAutoReload>
+    const scope = effectScope()
+    scope.run(() => {
+      handle = useSseAutoReload({
+        domain: 'alerts',
+        reload: vi.fn(),
+        maxRetries: 1,
+        onFallback: null,
+      })
+    })
+
+    // 初次失败 → 退避重连中
+    await flushMicrotasks()
+    expect(handle.status.value).toBe('reconnecting')
+
+    // 1s 后重试再失败,retries(1) >= maxRetries(1) → 放弃,退回轮询
+    await vi.advanceTimersByTimeAsync(1_000)
+    await flushMicrotasks()
+    expect(handle.status.value).toBe('polling')
+
+    scope.stop()
+  })
+
   it('closes stream on scope change (tenant switch) and opens new one', async () => {
     const ess: FakeES[] = []
     createSseStreamMock.mockImplementation(async () => {

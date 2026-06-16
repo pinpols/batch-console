@@ -61,6 +61,12 @@
                 </el-form-item>
               </ListPageQueryBar>
             </template>
+            <template #toolbar>
+              <OpsListToolbar
+                :status="live.status.value"
+                :last-refreshed-at="live.lastRefreshedAt.value"
+              />
+            </template>
 
             <el-table-column
               prop="workerCode"
@@ -254,6 +260,7 @@
   import SectionCard from '@/components/common/SectionCard.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import ProTable from '@/components/table/ProTable.vue'
+  import OpsListToolbar from '@/components/table/OpsListToolbar.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
   import CopyableText from '@/components/common/CopyableText.vue'
   import JsonPreview from '@/components/common/JsonPreview.vue'
@@ -357,10 +364,14 @@
     })
   }
 
-  useSseAutoReload({
+  const live = useSseAutoReload({
     domain: 'workers',
     reload: async () => {
-      await refetchWorkers()
+      try {
+        await refetchWorkers()
+      } finally {
+        live.markRefreshed()
+      }
     },
     scope: () => tenant.tenantId,
   })
