@@ -42,5 +42,5 @@ export const BP_MQ = {
   ultrawide: `(min-width: ${BP.xxl + 1}px)`,
 } as const
 
-/** 桌面内容最大宽度 — 大屏避免内容拉成 4000px 阅读距离过宽 */
-export const CONTENT_MAX_WIDTH = 1600
+/** 桌面内容最大宽度 — 仅超宽屏(>2400)才限宽;与 CSS token --content-max-width 保持一致 */
+export const CONTENT_MAX_WIDTH = 2400
