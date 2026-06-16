@@ -51,26 +51,16 @@
       </div>
 
       <div class="layout-header__right">
-        <!-- 通知 Bell:复用 mobileBadges store(原仅 mobile 用),桌面顶栏挂红点 + pending 计数。
-             点击直接跳 ops summary;无未读时不显 badge。-->
-        <el-tooltip :content="bellTooltip" placement="bottom">
-          <el-badge
-            :value="bellCount"
-            :hidden="bellCount === 0"
-            :max="99"
-            class="layout-header__bell"
-            :type="bellSeverity"
-          >
-            <el-button
-              text
-              class="icon-button"
-              :aria-label="bellTooltip"
-              @click="onBellClick"
-            >
-              <el-icon><Bell /></el-icon>
-            </el-button>
-          </el-badge>
-        </el-tooltip>
+        <!-- 通知中心:复用 mobileBadges store(getOpsSummary)的待办计数,
+             点击展开分类面板(待审批 / 未确认告警 / 失败任务)+ 直达对应列表。-->
+        <NotificationCenter
+          class="layout-header__bell"
+          :pending-approvals="badges.pendingApprovals"
+          :open-alerts="badges.openAlerts"
+          :critical-alerts="badges.criticalAlerts"
+          :failed-jobs="badges.failedJobs"
+          :user-id="auth.userInfo?.userId"
+        />
         <el-tooltip :content="`${t('nav.commandPalette')}(⌘/Ctrl + K)`" placement="bottom">
           <el-button
             text
@@ -191,7 +181,6 @@
   import { ElMessageBox } from 'element-plus'
   import {
     ArrowDown,
-    Bell,
     DocumentCopy,
     Expand,
     Compass,
@@ -209,6 +198,7 @@
   } from '@element-plus/icons-vue'
   import LayoutTabs from '@/layout/LayoutTabs.vue'
   import TenantSelect from '@/components/common/TenantSelect.vue'
+  import NotificationCenter from './NotificationCenter.vue'
   import { useHeaderLogic } from '@/layout/composables/useHeaderLogic'
   import { computed, onMounted, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
@@ -281,26 +271,9 @@
     handleLogout,
   } = useHeaderLogic()
 
-  // 通知 Bell:复用 mobileBadges store(原 mobile-only,desktop 也接入,语义一致)
-  // 红点 = pendingApprovals + openAlerts;有 critical 提为 danger,普通 warning
+  // 通知中心:复用 mobileBadges store(getOpsSummary)的待办计数;桌面顶栏展开分类面板。
   const badges = useMobileBadgesStore()
   const tenant = useTenantStore()
-  const bellCount = computed(() => badges.pendingApprovals + badges.openAlerts)
-  const bellSeverity = computed<'danger' | 'warning' | 'info'>(() => {
-    if (badges.criticalAlerts > 0) return 'danger'
-    if (bellCount.value > 0) return 'warning'
-    return 'info'
-  })
-  const bellTooltip = computed(() => {
-    if (bellCount.value === 0) return t('nav.bellNoPending')
-    return t('nav.bellPendingHint', {
-      pending: badges.pendingApprovals,
-      alerts: badges.openAlerts,
-    })
-  })
-  function onBellClick() {
-    void router.push('/ops/summary')
-  }
   onMounted(() => void badges.refresh())
   watch(
     () => tenant.tenantId,

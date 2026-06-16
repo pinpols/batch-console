@@ -15,6 +15,8 @@
 - **联调约定**:验证后端行为直接搜 `../file-batch-system` 的 Controller / DTO / 权限配置,**不要凭空假设**
 - 后端 Agent 指南:[`../file-batch-system/CLAUDE.md`](../file-batch-system/CLAUDE.md)(优先阅读)
 
+## 分支用途
+
 **两条常驻分支 = `main` + `dev`**(2026-06-16 起;原 `feature/docker-deploy` 部署分支已并入 main 并删除):
 
 | 常驻分支 | 是什么 | 含什么 |
