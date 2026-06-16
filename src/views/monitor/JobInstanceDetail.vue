@@ -23,6 +23,7 @@
         >
           {{ t('monitor.detailCancel') }}
         </el-button>
+        <PrintButton />
       </template>
     </PageHeader>
 
@@ -236,10 +237,7 @@
         <SectionCard>
           <template #header>{{ t('jobInstanceDetail.heartbeatSection') }}</template>
           <div v-if="taskOptions.length === 0" class="hb-empty">
-            <EmptyState
-              :description="t('jobInstanceDetail.heartbeatNoTasks')"
-              :image-size="60"
-            />
+            <EmptyState :description="t('jobInstanceDetail.heartbeatNoTasks')" :image-size="60" />
           </div>
           <div v-else class="hb-wrap">
             <div class="hb-picker">
@@ -329,6 +327,7 @@
   import { useTenantReload } from '@/composables/useTenantReload'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
+  import PrintButton from '@/components/common/PrintButton.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
   import MetricCard from '@/components/common/MetricCard.vue'
