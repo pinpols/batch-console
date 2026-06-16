@@ -9,6 +9,7 @@
         >
           {{ t('opsSummary.btnRefresh') }}
         </el-button>
+        <PrintButton />
       </template>
     </PageHeader>
 
@@ -125,6 +126,7 @@
   const { t } = useI18n({ useScope: 'global' })
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
+  import PrintButton from '@/components/common/PrintButton.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
   import OpsMetricGrid from './components/OpsMetricGrid.vue'

@@ -1,6 +1,10 @@
 import type { Messages } from './zh-CN'
 
 const messages: Messages = {
+  print: {
+    label: 'Print / PDF',
+    hint: 'Choose "Save as PDF" in the print dialog',
+  },
   common: {
     ok: 'OK',
     cancel: 'Cancel',
@@ -612,6 +616,17 @@ const messages: Messages = {
     importedN: 'Imported {n} filter set(s)',
     importNone: 'No filter sets to import',
     exportCopied: 'Filter-set JSON copied to clipboard',
+  },
+  notificationCenter: {
+    title: 'Notifications',
+    empty: 'Nothing needs attention',
+    pendingApprovals: 'Pending approvals',
+    openAlerts: 'Open alerts',
+    criticalSuffix: '({n} critical)',
+    failedJobs: 'Failed jobs',
+    viewOpsSummary: 'View ops summary',
+    newItems: 'New items',
+    srSummary: '{n} items need attention',
   },
   proTable: {
     empty: 'No data',
