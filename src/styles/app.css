@@ -789,6 +789,14 @@ html.dark .form-panel {
   word-break: break-word;
 }
 
+.error-toast__suggestion {
+  margin-top: 2px;
+  color: var(--color-text-secondary);
+  line-height: 1.45;
+  font-size: 12px;
+  word-break: break-word;
+}
+
 .error-toast__trace {
   margin-top: 2px;
   display: inline-flex;

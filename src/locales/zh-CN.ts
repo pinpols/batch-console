@@ -1329,6 +1329,15 @@ export default {
     networkSub: '请检查网络连接后重试',
     boundary: '组件渲染异常',
   },
+  // 错误码 → 建议动作(errorCatalog 用;补在错误解释之后)
+  errorAction: {
+    relogin: '建议:请重新登录后再试',
+    retry: '建议:请稍后重试',
+    contactAdmin: '建议:请联系管理员处理',
+    checkNetwork: '建议:请检查网络连接后重试',
+    checkInput: '建议:请检查输入内容后重试',
+    reduceFrequency: '建议:操作过于频繁,请降低频率后再试',
+  },
   enum: {
     instanceStatus: {
       CREATED: '已创建',

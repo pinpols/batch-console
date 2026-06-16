@@ -6,6 +6,7 @@ import { setLastApiMeta } from '@/utils/lastApiMeta'
 import { logApi } from '@/utils/logger'
 import { sanitizeParams, sanitizeRequestBody, sanitizeResponseBody } from '@/utils/logRedact'
 import { showErrorToast } from '@/utils/errorToast'
+import { resolveErrorSuggestion, suggestionForBizKey } from '@/utils/errorCatalog'
 import { i18n } from '@/locales'
 
 /**
@@ -319,12 +320,30 @@ function extractErrorTrace(error: unknown): string | undefined {
   return undefined
 }
 
+/** 从 AxiosError 解析「下一步建议」:优先后端 BizException key,回退 HTTP 状态 / 网络错误。 */
+function suggestionFromError(error: unknown): string | undefined {
+  const ax = error as AxiosError<CommonResponse<unknown> | SpringLikeErrorBody | string>
+  const code = (ax as AxiosError & { code?: string }).code
+  const network =
+    !ax.response &&
+    (code === 'ECONNREFUSED' || code === 'ERR_NETWORK' || /Network Error/i.test(String(ax.message)))
+  const status = ax.response?.status
+  const d = ax.response?.data
+  let bizKey: string | undefined
+  if (d && typeof d === 'object' && 'message' in d) {
+    bizKey = String((d as { message?: unknown }).message ?? '')
+  }
+  return resolveErrorSuggestion({ bizKey, status, network })
+}
+
 function showApiErrorToast(message: string, error?: unknown) {
   const trace = error !== undefined ? extractErrorTrace(error) : undefined
+  const suggestion = error !== undefined ? suggestionFromError(error) : undefined
   showErrorToast({
     title: '请求失败',
     message,
     traceId: trace,
+    suggestion,
   })
 }
 
@@ -394,7 +413,10 @@ export function applyApiInterceptors(client: AxiosInstance): void {
       if (typeof xDeg === 'string' && xDeg.trim()) {
         void import('@/stores/app').then(({ useAppStore }) => {
           const app = useAppStore()
-          for (const src of xDeg.split(',').map((s) => s.trim()).filter(Boolean)) {
+          for (const src of xDeg
+            .split(',')
+            .map((s) => s.trim())
+            .filter(Boolean)) {
             app.addDegradationSource(src)
           }
         })
@@ -439,6 +461,7 @@ export function applyApiInterceptors(client: AxiosInstance): void {
             title: '请求失败',
             message: msg,
             traceId: tid ? String(tid) : undefined,
+            suggestion: suggestionForBizKey(envelope.message),
           })
           return Promise.reject(
             Object.assign(new Error(msg), {
@@ -627,6 +650,7 @@ export function applyApiInterceptors(client: AxiosInstance): void {
             title: '未授权',
             message: msg,
             traceId: extractErrorTrace(error),
+            suggestion: suggestionFromError(error),
           })
         } else {
           // 已尝试过 refresh 仍 401:权限真不够 / 接口 RBAC 限制,不登出,toast 提示
@@ -635,6 +659,7 @@ export function applyApiInterceptors(client: AxiosInstance): void {
             title: '未授权',
             message: msg,
             traceId: extractErrorTrace(error),
+            suggestion: suggestionFromError(error),
           })
         }
       } else if (status === 403) {
@@ -642,6 +667,7 @@ export function applyApiInterceptors(client: AxiosInstance): void {
           title: '权限不足',
           message: '你没有访问该功能的权限。',
           traceId: extractErrorTrace(error),
+          suggestion: suggestionFromError(error),
         })
       } else {
         const msg = extractHttpErrorMessage(error)

@@ -1384,6 +1384,15 @@ const messages: Messages = {
     },
     boundary: 'Component render error',
   },
+  // Error code → suggested action (used by errorCatalog; appended after the explanation)
+  errorAction: {
+    relogin: 'Suggestion: please sign in again and retry',
+    retry: 'Suggestion: please retry shortly',
+    contactAdmin: 'Suggestion: please contact an administrator',
+    checkNetwork: 'Suggestion: check your network connection and retry',
+    checkInput: 'Suggestion: check your input and retry',
+    reduceFrequency: 'Suggestion: too frequent — slow down and retry',
+  },
   enum: {
     instanceStatus: {
       CREATED: 'Created',
