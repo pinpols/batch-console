@@ -359,8 +359,9 @@
      * 顶边单独收紧；左右与底边仍用 --page-scroll-edge-bleed。
      */
     padding: var(--page-scroll-edge-top) var(--page-scroll-edge-bleed) var(--page-scroll-edge-bleed);
-    /* 大屏内容上限:>1600 时内容居中,避免 2K/4K 上行宽过长阅读困难 */
-    max-width: var(--content-max-width, 1600px);
+    /* 超宽屏内容上限:>--content-max-width(默认 2400)时内容居中,避免行宽过长;
+       2400 让 4K@150%(Win)与 Retina(macOS)两端都填满,消除左右 canvas 色带不一致 */
+    max-width: var(--content-max-width, 2400px);
     margin-inline: auto;
     width: 100%;
   }

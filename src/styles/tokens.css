@@ -7,8 +7,10 @@
   --bp-lg: 1280px;
   --bp-xl: 1536px;
   --bp-xxl: 1920px;
-  /* 内容容器最大宽度 — 大屏(>1920)避免内容拉满阅读距离过宽 */
-  --content-max-width: 1600px;
+  /* 内容容器最大宽度 — 仅超宽屏(>2400)才居中限宽避免行宽过长;
+     2400 覆盖 4K@150%(Win 默认,CSS 视口 ~2560)与 Retina(macOS ~1920),两端都填满,
+     不再出现 Win 4K 全屏左右露 canvas 色带的不一致(原 1600 只够 macOS 有效视口)。 */
+  --content-max-width: 2400px;
 
   --color-primary: #1677ff;
   /* 语义色柔和化(2026-06-04):success/warning/danger 从 Ant 高饱和默认降一档,

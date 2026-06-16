@@ -56,12 +56,14 @@
 
   const app = useAppStore()
 
-  // ≤1280 (isMobile || isTablet) 自动 collapse 侧栏腾内容区,>=1281 还原用户偏好。
-  // 用户在 ≤1280 区间手动展开后这里不再强制 collapse(用 watch 跨阈值才触发),避免 fighting。
+  // ≤1440 (isCompact) 自动 collapse 侧栏腾内容区,>1440 还原用户偏好。
+  // 阈值 1280→1440(2026-06-16):1366×768 这类最常见笔电原先保留满侧栏内容只剩 ~1100,
+  // 抬到 1440 让它也自动收起腾出 ~150px。用户在 ≤1440 手动展开后不再强制 collapse
+  // (watch 跨阈值才触发),避免 fighting。
   // 改造记录(2026-06-03):从 window.innerWidth + resize 监听迁到 useResponsive
   // (matchMedia)以避免 cleanup 漏装 / SSR 警告。
-  const { isMobile, isTablet } = useResponsive()
-  const isNarrow = computed(() => isMobile.value || isTablet.value)
+  const { isCompact } = useResponsive()
+  const isNarrow = computed(() => isCompact.value)
   watch(
     isNarrow,
     (narrow, prev) => {
