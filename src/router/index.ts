@@ -8,9 +8,11 @@ import { useAppStore } from '@/stores/app'
 import { useAuthStore } from '@/stores/auth'
 import { usePermissionStore } from '@/stores/permission'
 import { useRouteProgressStore } from '@/stores/routeProgress'
+import { ElMessage } from 'element-plus'
 import { logError, logRoute } from '@/utils/logger'
 import { isMobile } from '@/layout-mobile/composables/useMobileDetect'
 import { applyPageMetaToRoutes } from '@/constants/pageMeta'
+import { i18n } from '@/locales'
 import type { Role } from '@/types'
 
 /**
@@ -833,6 +835,16 @@ router.beforeEach(async (to, from) => {
     isMobile() &&
     !to.path.startsWith('/m')
   ) {
+    return { path: '/m/ops/summary' }
+  }
+
+  // Workflow 设计器是桌面专属编排工具(X6 画布拖拽,触摸屏不可用)。手机端兜底:
+  // 有 id → 转移动只读 DAG 查看器(看同一个 workflow,体验连贯);新建(无 id)→
+  // 提示用桌面 + 回移动首页。?desktop=1 强制留桌面版(同上 mobile 重定向约定)。
+  if (to.name === 'workflow-designer' && isMobile() && to.query.desktop !== '1') {
+    ElMessage.warning(i18n.global.t('workflowDesignerMvp.mobileDesignerGuard'))
+    const designerId = Array.isArray(to.params.id) ? to.params.id[0] : to.params.id
+    if (designerId) return { name: 'm-workflow-viewer', params: { id: designerId } }
     return { path: '/m/ops/summary' }
   }
 
