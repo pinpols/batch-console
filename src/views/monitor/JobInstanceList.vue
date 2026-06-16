@@ -102,20 +102,37 @@
         </template>
 
         <template #toolbar>
-          <BulkActionBar
-            :count="bulk.count.value"
-            :running="bulk.running.value"
-            @clear="bulk.clear"
+          <OpsListToolbar
+            :status="live.status.value"
+            :last-refreshed-at="live.lastRefreshedAt.value"
           >
-            <template #default="{ running }">
-              <el-button size="small" type="warning" plain :loading="running" @click="onBulkRetry">
-                {{ t('jobInstanceList.bulkRetry') }}
-              </el-button>
-              <el-button size="small" type="danger" plain :loading="running" @click="onBulkCancel">
-                {{ t('jobInstanceList.bulkCancel') }}
-              </el-button>
-            </template>
-          </BulkActionBar>
+            <BulkActionBar
+              :count="bulk.count.value"
+              :running="bulk.running.value"
+              @clear="bulk.clear"
+            >
+              <template #default="{ running }">
+                <el-button
+                  size="small"
+                  type="warning"
+                  plain
+                  :loading="running"
+                  @click="onBulkRetry"
+                >
+                  {{ t('jobInstanceList.bulkRetry') }}
+                </el-button>
+                <el-button
+                  size="small"
+                  type="danger"
+                  plain
+                  :loading="running"
+                  @click="onBulkCancel"
+                >
+                  {{ t('jobInstanceList.bulkCancel') }}
+                </el-button>
+              </template>
+            </BulkActionBar>
+          </OpsListToolbar>
         </template>
 
         <el-table-column type="selection" width="44" :selectable="() => true" />
@@ -237,6 +254,7 @@
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
   import PageContainer from '@/components/common/PageContainer.vue'
+  import OpsListToolbar from '@/components/table/OpsListToolbar.vue'
   import MetaSelect from '@/components/common/MetaSelect.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
@@ -413,6 +431,7 @@
       throw err
     } finally {
       loading.value = false
+      live.markRefreshed()
     }
   }
 
@@ -484,7 +503,7 @@
     return `${s}s`
   }
 
-  useSseAutoReload({
+  const live = useSseAutoReload({
     domain: 'job-instances',
     reload: loadData,
     scope: () => tenant.tenantId,

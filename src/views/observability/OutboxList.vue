@@ -52,23 +52,28 @@
               </ListPageQueryBar>
             </template>
             <template #toolbar>
-              <BulkActionBar
-                :count="bulk.count.value"
-                :running="bulk.running.value"
-                @clear="bulk.clear"
+              <OpsListToolbar
+                :status="live.status.value"
+                :last-refreshed-at="live.lastRefreshedAt.value"
               >
-                <template #default="{ running }">
-                  <el-button
-                    size="small"
-                    type="warning"
-                    plain
-                    :loading="running"
-                    @click="onBulkRepublish"
-                  >
-                    {{ t('observability.outboxBulkRepublish') }}
-                  </el-button>
-                </template>
-              </BulkActionBar>
+                <BulkActionBar
+                  :count="bulk.count.value"
+                  :running="bulk.running.value"
+                  @clear="bulk.clear"
+                >
+                  <template #default="{ running }">
+                    <el-button
+                      size="small"
+                      type="warning"
+                      plain
+                      :loading="running"
+                      @click="onBulkRepublish"
+                    >
+                      {{ t('observability.outboxBulkRepublish') }}
+                    </el-button>
+                  </template>
+                </BulkActionBar>
+              </OpsListToolbar>
             </template>
             <el-table-column type="selection" width="44" :selectable="() => true" />
             <el-table-column
@@ -256,6 +261,7 @@
   import StatusTag from '@/components/common/StatusTag.vue'
   import DetailDrawer from '@/components/common/DetailDrawer.vue'
   import BulkActionBar from '@/components/table/BulkActionBar.vue'
+  import OpsListToolbar from '@/components/table/OpsListToolbar.vue'
   import { useBulkSelection } from '@/composables/useBulkSelection'
   import type {
     ConsoleOutboxDeliveryLogResponse,
@@ -472,6 +478,7 @@
       }
     } finally {
       loading.value = false
+      live.markRefreshed()
     }
   }
 
@@ -479,7 +486,7 @@
 
   watch(tab, () => loadTab())
 
-  useSseAutoReload({
+  const live = useSseAutoReload({
     domain: 'outbox-retries',
     reload: () => (tab.value === 'retry' ? loadTab() : Promise.resolve()),
     scope: () => tenant.tenantId,
