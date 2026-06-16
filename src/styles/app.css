@@ -1304,3 +1304,87 @@ html.dark .dr-preset .el-radio-group {
     transition: none !important;
   }
 }
+
+/* ──────────────────────────────────────────────────────────────
+ * 打印 / 导出 PDF:隐藏导航壳与交互控件,内容平铺成可打印的报表。
+ * 浏览器「打印 → 另存为 PDF」即得 PDF,无需引入 jspdf/html2canvas。
+ * 用 .no-print 标记任何不该出现在纸上的元素;.print-only 反之。
+ * ────────────────────────────────────────────────────────────── */
+.print-only {
+  display: none;
+}
+
+@media print {
+  /* 1) 隐藏导航壳 + 交互件 */
+  .layout-sidebar,
+  .layout-header,
+  .floating-tabs,
+  .focus-fab,
+  .maintenance-banner,
+  .degradation-banner,
+  .no-tenant-banner,
+  .pro-table__pager,
+  .query-actions,
+  .el-message,
+  .el-notification,
+  .no-print {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block;
+  }
+
+  /* 2) 解除滚动容器约束,内容按真实高度平铺(否则只打印视口可见部分) */
+  html,
+  body,
+  .layout-root,
+  .layout-shell,
+  .layout-main,
+  .layout-main__surface,
+  .layout-main__body,
+  .layout-main__content {
+    display: block !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    width: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+    box-shadow: none !important;
+  }
+
+  /* 3) 打印友好的底色 / 去阴影 / 去圆角描边噪声 */
+  .app-surface,
+  .layout-panel,
+  .el-card,
+  .pro-table,
+  .query-form.el-form--inline {
+    background: #fff !important;
+    box-shadow: none !important;
+    border-color: #ddd !important;
+  }
+
+  /* 4) 表格不被截断,允许跨页 */
+  .el-table,
+  .el-table__body,
+  .el-table__inner-wrapper {
+    overflow: visible !important;
+  }
+
+  .el-table th,
+  .el-table td {
+    break-inside: avoid;
+  }
+
+  /* 5) 强制还原为浅色文本(暗色模式下打印不至于满纸黑) */
+  body,
+  .layout-main__content {
+    color: #1a1a1a !important;
+  }
+
+  @page {
+    margin: 14mm;
+  }
+}

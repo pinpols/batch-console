@@ -1,6 +1,10 @@
 import type { Messages } from './zh-CN'
 
 const messages: Messages = {
+  print: {
+    label: 'Print / PDF',
+    hint: 'Choose "Save as PDF" in the print dialog',
+  },
   common: {
     ok: 'OK',
     cancel: 'Cancel',

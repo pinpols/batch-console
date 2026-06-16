@@ -7,6 +7,10 @@
  * - 业务页文案逐步迁移,本文件只先收纳:框架级 + 公共组件 + 核心 enum。
  */
 export default {
+  print: {
+    label: '打印 / PDF',
+    hint: '可在打印对话框中选择「另存为 PDF」',
+  },
   common: {
     ok: '确定',
     cancel: '取消',
