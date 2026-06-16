@@ -6,6 +6,10 @@
 >
 > 按日期倒序,使用绝对日期(`YYYY-MM-DD`)。
 
+### 2026-06-16
+
+- **CLAUDE.md §分支用途 改写**——前端常驻分支从「main + 部署分支 `feature/docker-deploy`」改为 **`main` + `dev` 两条常驻**。部署文件(docker-compose / nginx / deploy.ps1 / sync-main / build-image·deploy workflow)**并入 main**(部署是产品一部分,与后端 main 同理),原 `feature/docker-deploy` 删除;`scripts/deploy.ps1` + `scripts/local/sync-main.ps1` 已 fold 进 main。日常 feature/fix 从 `dev` 开 → PR `dev`,发布 `dev → main`。
+
 ### 2026-05-22
 
 - **CLAUDE.md §CI 新增**(同日)— 3 workflow 表 + 关键决策(e2e 只 staging 跑)+ 指针 `docs/runbook/ci.md`。
