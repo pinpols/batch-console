@@ -580,6 +580,16 @@ const messages: Messages = {
     confirmTitle: 'Bulk {label}',
     confirmBody: 'Run "{label}" on the {n} selected rows?',
   },
+  liveStatus: {
+    connecting: 'Connecting',
+    live: 'Live',
+    reconnecting: 'Reconnecting',
+    polling: 'Push paused',
+    updatedJustNow: 'Updated just now',
+    updatedSecondsAgo: 'Updated {n}s ago',
+    updatedMinutesAgo: 'Updated {n}m ago',
+    updatedHoursAgo: 'Updated {n}h ago',
+  },
   proTable: {
     empty: 'No data',
     filteredEmpty: 'No matching data — adjust the filters and try again',

@@ -12,6 +12,12 @@
             v-model:page="page"
             v-model:page-size="pageSize"
           >
+            <template #toolbar>
+              <OpsListToolbar
+                :status="live.status.value"
+                :last-refreshed-at="live.lastRefreshedAt.value"
+              />
+            </template>
             <template #query>
               <ListPageQueryBar
                 :filter-busy="queryActionBusy"
@@ -460,6 +466,7 @@
   import { processedCountFromSummary } from '@/utils/pipelineStepSummary'
   import { useAutoRefresh } from '@/composables/useAutoRefresh'
   import { useSseAutoReload } from '@/composables/useSseAutoReload'
+  import OpsListToolbar from '@/components/table/OpsListToolbar.vue'
 
   const tenant = useTenantStore()
   const route = useRoute()
@@ -580,6 +587,7 @@
       }
     }
     progressByStepId.value = next
+    live.markRefreshed()
   }
 
   // 30s 轮询(与心跳一致);页面隐藏自动暂停
@@ -590,7 +598,7 @@
   const progressSseEnabled = computed(
     () => activeTab.value === 'steps' && showProgressColumns.value,
   )
-  useSseAutoReload({
+  const live = useSseAutoReload({
     domain: 'pipeline-progress',
     reload: loadProgress,
     scope: () => tenant.tenantId,

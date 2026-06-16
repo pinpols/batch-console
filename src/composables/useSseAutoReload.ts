@@ -3,7 +3,10 @@ import {
   onActivated,
   onDeactivated,
   onScopeDispose,
+  readonly,
+  ref,
   watch,
+  type DeepReadonly,
   type Ref,
   type WatchSource,
 } from 'vue'
@@ -11,6 +14,24 @@ import { ElMessage } from 'element-plus'
 import { createSseStream } from '@/api/stream'
 
 type SseStreamType = Parameters<typeof createSseStream>[0]
+
+/**
+ * 实时连接状态,供 LiveStatusBadge 展示:
+ * - `connecting` 正在建立流(初始 / scope 切换)
+ * - `live` 流已建立,数据实时推送
+ * - `reconnecting` 流断开,指数退避自愈中
+ * - `polling` 自愈到上限放弃,已退回手动刷新
+ */
+export type SseConnectionStatus = 'connecting' | 'live' | 'reconnecting' | 'polling'
+
+export interface UseSseAutoReloadHandle {
+  /** 实时连接状态(只读响应式)。 */
+  status: DeepReadonly<Ref<SseConnectionStatus>>
+  /** 最近一次数据刷新的时间戳(epoch ms),null 表示尚未刷新。 */
+  lastRefreshedAt: DeepReadonly<Ref<number | null>>
+  /** 由调用方在手动 / 初始加载完成后调用,刷新 “X 秒前更新” 计时。 */
+  markRefreshed: () => void
+}
 
 export interface UseSseAutoReloadOptions {
   /** SSE 接入的后端域,对应 `/api/console/stream/{domain}/events` 或 `/api/console/{domain}/events` */
@@ -58,8 +79,14 @@ export interface UseSseAutoReloadOptions {
  * useSseAutoReload({ domain: 'alerts', reload: load, scope: () => tenant.tenantId })
  * ```
  */
-export function useSseAutoReload(options: UseSseAutoReloadOptions): void {
+export function useSseAutoReload(options: UseSseAutoReloadOptions): UseSseAutoReloadHandle {
   const { domain, reload, scope, debounceMs = 800, maxRetries = 5 } = options
+
+  const status = ref<SseConnectionStatus>('connecting')
+  const lastRefreshedAt = ref<number | null>(null)
+  function markRefreshed() {
+    lastRefreshedAt.value = Date.now()
+  }
 
   let sse: EventSource | null = null
   let reloadTimer: ReturnType<typeof setTimeout> | null = null
@@ -79,7 +106,8 @@ export function useSseAutoReload(options: UseSseAutoReloadOptions): void {
   /** scope(常为 tenantId)为空时不开流:空 tenantId 的 events 请求会被 BE 拒为 5xx/400。 */
   function scopeEmpty(): boolean {
     if (!scope) return false
-    const v = typeof scope === 'function' ? (scope as () => unknown)() : (scope as { value: unknown }).value
+    const v =
+      typeof scope === 'function' ? (scope as () => unknown)() : (scope as { value: unknown }).value
     return v == null || v === ''
   }
 
@@ -87,7 +115,7 @@ export function useSseAutoReload(options: UseSseAutoReloadOptions): void {
     if (reloadTimer) return
     reloadTimer = setTimeout(() => {
       reloadTimer = null
-      void reload()
+      void Promise.resolve(reload()).finally(markRefreshed)
     }, debounceMs)
   }
 
@@ -112,6 +140,7 @@ export function useSseAutoReload(options: UseSseAutoReloadOptions): void {
   }
 
   function fireFallback() {
+    status.value = 'polling'
     if (fallbackNotified) return
     fallbackNotified = true
     if (options.onFallback === null) return // 显式禁用默认行为
@@ -132,6 +161,7 @@ export function useSseAutoReload(options: UseSseAutoReloadOptions): void {
       fireFallback()
       return
     }
+    status.value = 'reconnecting'
     clearReopenTimer()
     const delay = Math.min(30_000, 1_000 * 2 ** retries)
     retries += 1
@@ -145,6 +175,7 @@ export function useSseAutoReload(options: UseSseAutoReloadOptions): void {
     close()
     if (!isEnabled()) return
     if (scopeEmpty()) return
+    if (status.value !== 'reconnecting') status.value = 'connecting'
     const my = generation
     try {
       const es = await createSseStream(
@@ -159,6 +190,7 @@ export function useSseAutoReload(options: UseSseAutoReloadOptions): void {
       sse = es
       retries = 0
       fallbackNotified = false
+      status.value = 'live'
     } catch {
       scheduleReopen(my)
     }
@@ -204,4 +236,10 @@ export function useSseAutoReload(options: UseSseAutoReloadOptions): void {
   // onScopeDispose works both inside a component (auto-fires on unmount)
   // and inside a bare effectScope (for testing).
   onScopeDispose(close)
+
+  return {
+    status: readonly(status),
+    lastRefreshedAt: readonly(lastRefreshedAt),
+    markRefreshed,
+  }
 }

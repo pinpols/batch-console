@@ -26,6 +26,12 @@
         :on-retry="load"
         :has-active-filters="hasActiveFilters"
       >
+        <template #toolbar>
+          <OpsListToolbar
+            :status="live.status.value"
+            :last-refreshed-at="live.lastRefreshedAt.value"
+          />
+        </template>
         <template v-if="!hasActiveFilters" #empty>
           <EmptyState :description="t('pipelineDefinitionList.emptyDescription')" :image-size="80">
             <template #action>
@@ -418,6 +424,7 @@
     type PipelineDefinitionRow,
   } from '@/api/system'
   import { useSseAutoReload } from '@/composables/useSseAutoReload'
+  import OpsListToolbar from '@/components/table/OpsListToolbar.vue'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
   import { useRoute, useRouter } from 'vue-router'
@@ -678,6 +685,7 @@
       total.value = 0
     } finally {
       loading.value = false
+      live.markRefreshed()
     }
   }
 
@@ -844,7 +852,7 @@
 
   watch([keyword, pipelineType, enabledFilter, page, pageSize], () => load())
 
-  useSseAutoReload({
+  const live = useSseAutoReload({
     domain: 'pipeline-definitions',
     reload: load,
     scope: () => tenant.tenantId,

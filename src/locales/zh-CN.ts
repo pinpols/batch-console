@@ -583,6 +583,16 @@ export default {
     confirmTitle: '批量{label}',
     confirmBody: '将对选中的 {n} 项执行「{label}」,确认?',
   },
+  liveStatus: {
+    connecting: '连接中',
+    live: '实时',
+    reconnecting: '重连中',
+    polling: '推送中断',
+    updatedJustNow: '刚刚更新',
+    updatedSecondsAgo: '{n} 秒前更新',
+    updatedMinutesAgo: '{n} 分钟前更新',
+    updatedHoursAgo: '{n} 小时前更新',
+  },
   proTable: {
     empty: '暂无数据',
     filteredEmpty: '未找到符合条件的数据,请调整筛选条件',
