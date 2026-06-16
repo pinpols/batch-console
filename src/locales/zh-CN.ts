@@ -572,6 +572,17 @@ export default {
     fieldCondition: '条件表达式',
     conditionPlaceholder: '留空则边上显示类型名称',
   },
+  bulk: {
+    actionDefault: '操作',
+    selectedAria: '批量操作栏',
+    selectedCount: '已选 {n} 项',
+    clear: '清除',
+    allSucceeded: '{label}完成:{n} 项全部成功',
+    allFailed: '{label}失败:{n} 项全部失败',
+    partial: '{label}部分完成:{ok} 成功 / {fail} 失败(失败项仍在列表,可重试)',
+    confirmTitle: '批量{label}',
+    confirmBody: '将对选中的 {n} 项执行「{label}」,确认?',
+  },
   proTable: {
     empty: '暂无数据',
     filteredEmpty: '未找到符合条件的数据,请调整筛选条件',
@@ -3293,6 +3304,10 @@ export default {
     colActions: '操作',
     actionDetail: '详情',
     actionPartitions: '步骤',
+    bulkRetry: '批量重试',
+    bulkCancel: '批量取消',
+    bulkRetryNone: '所选实例无 FAILED 状态,无可重试项',
+    bulkCancelNone: '所选实例均为终态,无可取消项',
   },
   jobInstanceDetail: {
     dryRunBannerTitle: '演练实例 — 未真正运行',

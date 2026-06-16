@@ -4,6 +4,7 @@
 
     <SectionCard>
       <ProTable
+        ref="proTableRef"
         :data="rows"
         :loading="tableBlocking"
         :error="loadError"
@@ -12,6 +13,7 @@
         v-model:page="query.page"
         v-model:page-size="query.pageSize"
         @change="loadData"
+        @selection-change="bulk.onSelectionChange"
       >
         <template #query>
           <ListPageQueryBar
@@ -99,6 +101,24 @@
           </EmptyState>
         </template>
 
+        <template #toolbar>
+          <BulkActionBar
+            :count="bulk.count.value"
+            :running="bulk.running.value"
+            @clear="bulk.clear"
+          >
+            <template #default="{ running }">
+              <el-button size="small" type="warning" plain :loading="running" @click="onBulkRetry">
+                {{ t('jobInstanceList.bulkRetry') }}
+              </el-button>
+              <el-button size="small" type="danger" plain :loading="running" @click="onBulkCancel">
+                {{ t('jobInstanceList.bulkCancel') }}
+              </el-button>
+            </template>
+          </BulkActionBar>
+        </template>
+
+        <el-table-column type="selection" width="44" :selectable="() => true" />
         <!-- P2.4 列顺序优化:用户决策字段(状态/jobCode/bizDate/耗时/重跑)优先,
              工程字段(instanceNo/queue/traceId)后置 -->
         <el-table-column :label="t('jobInstanceList.colStatus')" width="140">
@@ -199,9 +219,10 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, reactive, computed } from 'vue'
+  import { ref, reactive, computed, onMounted } from 'vue'
   import { useRouter, useRoute } from 'vue-router'
   import { useI18n } from 'vue-i18n'
+  import { ElMessage, ElMessageBox } from 'element-plus'
 
   const { t, te } = useI18n({ useScope: 'global' })
 
@@ -231,6 +252,8 @@
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import type { ConsoleJobInstanceResponse } from '@/types/console-api'
+  import BulkActionBar from '@/components/table/BulkActionBar.vue'
+  import { useBulkSelection } from '@/composables/useBulkSelection'
 
   const router = useRouter()
   const route = useRoute()
@@ -241,6 +264,54 @@
   const rows = ref<ConsoleJobInstanceResponse[]>([])
   const total = ref(0)
   const jobCodeOptions = ref<string[]>([])
+
+  // ── 批量操作:多选 + 批量重试(FAILED)/ 批量取消(非终态)──────────────
+  const proTableRef = ref<{ clearSelection?: () => void } | null>(null)
+  const bulk = useBulkSelection<ConsoleJobInstanceResponse>()
+  onMounted(() => bulk.bindTable(proTableRef.value))
+  const TERMINAL_STATUSES = ['SUCCESS', 'FAILED', 'CANCELLED', 'CANCELED', 'TERMINATED']
+
+  async function onBulkRetry() {
+    const eligible = bulk.selected.value.filter((r) => r.instanceStatus === 'FAILED')
+    if (!eligible.length) {
+      ElMessage.warning(t('jobInstanceList.bulkRetryNone'))
+      return
+    }
+    const label = t('jobInstanceList.bulkRetry')
+    const confirmed = await ElMessageBox.confirm(
+      t('bulk.confirmBody', { label, n: eligible.length }),
+      label,
+      { type: 'warning', confirmButtonText: t('common.ok'), cancelButtonText: t('common.cancel') },
+    ).catch(() => false)
+    if (confirmed === false) return
+    await bulk.runBulk(
+      eligible,
+      (r) => instanceApi.retry(r.instanceNo, tenant.tenantId, r.jobCode, r.bizDate),
+      { actionLabel: label },
+    )
+    void loadData()
+  }
+
+  async function onBulkCancel() {
+    const eligible = bulk.selected.value.filter(
+      (r) => !TERMINAL_STATUSES.includes(r.instanceStatus),
+    )
+    if (!eligible.length) {
+      ElMessage.warning(t('jobInstanceList.bulkCancelNone'))
+      return
+    }
+    const label = t('jobInstanceList.bulkCancel')
+    const confirmed = await ElMessageBox.confirm(
+      t('bulk.confirmBody', { label, n: eligible.length }),
+      label,
+      { type: 'warning', confirmButtonText: t('common.ok'), cancelButtonText: t('common.cancel') },
+    ).catch(() => false)
+    if (confirmed === false) return
+    await bulk.runBulk(eligible, (r) => instanceApi.cancel(r.id, tenant.tenantId), {
+      actionLabel: label,
+    })
+    void loadData()
+  }
 
   // 列表筛选默认锚到"今日",运维 80% 场景关心当天数据;URL query 会在下面覆盖
   function todayRange(): [string, string] {
