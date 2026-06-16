@@ -17,8 +17,10 @@ import { Snapline } from '@antv/x6/es/plugin/snapline'
 import { register as registerVueShape } from '@antv/x6-vue-shape'
 // X6 v3 仍保留对老式 dagre 字符串布局算法的支持,但需要用户层手算 -> 走 npm dagre 自行布局
 import dagre from 'dagre'
+import { ElMessage } from 'element-plus'
 import type { Component, Ref } from 'vue'
 import { onBeforeUnmount, onMounted } from 'vue'
+import { i18n } from '@/locales'
 import StartNode from './nodes/StartNode.vue'
 import EndNode from './nodes/EndNode.vue'
 import JobNode from './nodes/JobNode.vue'
@@ -84,11 +86,36 @@ export interface X6GraphHandle {
   autoLayout: (direction?: 'TB' | 'LR') => void
   /** 把指定节点居中到视口并选中(校验错误列表点击定位用);节点不存在则 no-op */
   focusNode: (nodeId: string) => void
+  /** 返回当前视口中心对应的画布逻辑坐标(点击节点库 / QuickPalette 落点用) */
+  getViewportCenter: () => { x: number; y: number }
 }
 
 export function useX6Graph(containerRef: Ref<HTMLDivElement | null>, minimapRef: Ref<HTMLDivElement | null>): X6GraphHandle {
   const store = useDesignerStore()
-  const handle: X6GraphHandle = { graph: null, autoLayout: () => {}, focusNode: () => {} }
+  const handle: X6GraphHandle = {
+    graph: null,
+    autoLayout: () => {},
+    focusNode: () => {},
+    getViewportCenter: () => ({ x: 320, y: 200 }),
+  }
+
+  /**
+   * 视口中心 → 画布逻辑坐标。
+   * 用容器中点的 client 坐标经 graph.clientToLocal 反算,随平移 / 缩放正确跟随;
+   * graph 未挂载时回退到设计书默认落点。
+   */
+  function getViewportCenter(): { x: number; y: number } {
+    const graph = handle.graph
+    const el = containerRef.value
+    if (!graph || !el) return { x: 320, y: 200 }
+    const rect = el.getBoundingClientRect()
+    const point = graph.clientToLocal(rect.left + rect.width / 2, rect.top + rect.height / 2)
+    if (Number.isFinite(point.x) && Number.isFinite(point.y)) {
+      return { x: point.x, y: point.y }
+    }
+    return { x: 320, y: 200 }
+  }
+  handle.getViewportCenter = getViewportCenter
 
   function focusNode(nodeId: string) {
     const graph = handle.graph
@@ -204,10 +231,28 @@ export function useX6Graph(containerRef: Ref<HTMLDivElement | null>, minimapRef:
 
     // 事件桥接 store
     graph.on('node:moved', ({ node }) => {
+      // P1 只读守卫:未持锁 / 他人持锁时禁止移动。X6 此刻已把节点拖到新位置,
+      // 需把它还原回 store 里的旧坐标,避免画布与 store 不一致。
+      if (!store.editable) {
+        const orig = store.nodes.find((n) => n.id === node.id)
+        if (orig) node.setPosition(orig.x, orig.y, { silent: true })
+        store.setSelection([])
+        ElMessage.warning(i18n.global.t('workflowDesignerMvp.lock.readonlyGuard'))
+        return
+      }
+      // P4 拖拽入 undo 栈:此刻 store 仍是拖前坐标(moveNode 尚未调),
+      // pushUndo() 正好快照「拖前」状态 → 一次拖拽 = 一个可撤销单元。
+      store.pushUndo()
       const pos = node.getPosition()
       store.moveNode(node.id, pos.x, pos.y)
     })
     graph.on('edge:connected', ({ edge, isNew }) => {
+      // P1 只读守卫:未持锁 / 他人持锁时禁止连线。移除刚连出来的临时边并提示。
+      if (!store.editable) {
+        graph.removeEdge(edge.id, { silent: true })
+        ElMessage.warning(i18n.global.t('workflowDesignerMvp.lock.readonlyGuard'))
+        return
+      }
       if (!isNew) return
       const src = edge.getSourceCellId()
       const tgt = edge.getTargetCellId()

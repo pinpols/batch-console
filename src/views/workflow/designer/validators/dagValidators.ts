@@ -10,6 +10,11 @@
  *  R6 JOB.attrs.jobCode 必填
  *  R7 FILE_STEP.attrs.pipelineCode 必填
  *  R8 GATEWAY.attrs.gatewayStrategy 必填(AND/OR/XOR)
+ *  R9 START 入度 = 0(START 不应有入边)
+ *  R10 END 出度 = 0(END 不应有出边)
+ *  R11 非 END 节点出度 ≥ 1(除 END 外都要有出边,START 也要)
+ *  R12 边引用异常:edge.source/target 指向不存在的节点 → 报错
+ *  R13 APPROVAL.attrs.approvalTemplateCode 必填(与 JOB/FILE_STEP 对称)
  *
  * 返回 `ValidationError[]`,每条含 `{ nodeId, field, messageKey, args }`,
  * UI 层 t(messageKey, args) 渲染中/英文。
@@ -41,10 +46,27 @@ export function validateDag(snapshot: DesignerSnapshot): ValidationError[] {
   // 索引
   const idToNode = new Map(nodes.map((n) => [n.id, n] as const))
   const outAdj = new Map<string, string[]>()
-  for (const n of nodes) outAdj.set(n.id, [])
+  const inDegree = new Map<string, number>()
+  const outDegree = new Map<string, number>()
+  for (const n of nodes) {
+    outAdj.set(n.id, [])
+    inDegree.set(n.id, 0)
+    outDegree.set(n.id, 0)
+  }
   for (const e of edges) {
-    const arr = outAdj.get(e.source)
-    if (arr && idToNode.has(e.target)) arr.push(e.target)
+    const srcExists = idToNode.has(e.source)
+    const tgtExists = idToNode.has(e.target)
+    // R12 边引用异常:source/target 指向不存在的节点 → 报错(不再静默过滤)
+    if (!srcExists || !tgtExists) {
+      errors.push({
+        messageKey: NS + 'danglingEdge',
+        args: { source: e.source, target: e.target },
+      })
+      continue
+    }
+    outAdj.get(e.source)!.push(e.target)
+    outDegree.set(e.source, (outDegree.get(e.source) ?? 0) + 1)
+    inDegree.set(e.target, (inDegree.get(e.target) ?? 0) + 1)
   }
 
   // R1 / R2 起点终点计数
@@ -118,9 +140,23 @@ export function validateDag(snapshot: DesignerSnapshot): ValidationError[] {
     }
   }
 
-  // R5/R6/R7/R8 节点字段
+  // R5/R6/R7/R8/R9/R10/R11/R13 节点字段与度数
   for (const n of nodes) {
     const attrs = (n.attrs ?? {}) as Record<string, unknown>
+    const nIn = inDegree.get(n.id) ?? 0
+    const nOut = outDegree.get(n.id) ?? 0
+    // R9 START 入度 = 0
+    if (n.nodeType === 'START' && nIn > 0) {
+      errors.push({ nodeId: n.id, messageKey: NS + 'startInDegree', args: { count: nIn } })
+    }
+    // R10 END 出度 = 0
+    if (n.nodeType === 'END' && nOut > 0) {
+      errors.push({ nodeId: n.id, messageKey: NS + 'endOutDegree', args: { count: nOut } })
+    }
+    // R11 非 END 节点出度 ≥ 1(GATEWAY 的更严格出度由 R5 处理)
+    if (n.nodeType !== 'END' && n.nodeType !== 'GATEWAY' && nOut < 1) {
+      errors.push({ nodeId: n.id, messageKey: NS + 'noOutEdge' })
+    }
     if (n.nodeType === 'GATEWAY') {
       const out = (outAdj.get(n.id) ?? []).length
       if (out < 2) {
@@ -146,6 +182,16 @@ export function validateDag(snapshot: DesignerSnapshot): ValidationError[] {
           nodeId: n.id,
           field: 'pipelineCode',
           messageKey: NS + 'pipelineCodeRequired',
+        })
+      }
+    }
+    // R13 APPROVAL.approvalTemplateCode 必填
+    if (n.nodeType === 'APPROVAL') {
+      if (!attrs.approvalTemplateCode || String(attrs.approvalTemplateCode).trim() === '') {
+        errors.push({
+          nodeId: n.id,
+          field: 'approvalTemplateCode',
+          messageKey: NS + 'approvalTemplateCodeRequired',
         })
       }
     }

@@ -15,13 +15,17 @@
 - **联调约定**:验证后端行为直接搜 `../file-batch-system` 的 Controller / DTO / 权限配置,**不要凭空假设**
 - 后端 Agent 指南:[`../file-batch-system/CLAUDE.md`](../file-batch-system/CLAUDE.md)(优先阅读)
 
-## 分支用途
+**两条常驻分支 = `main` + `dev`**(2026-06-16 起;原 `feature/docker-deploy` 部署分支已并入 main 并删除):
 
-两类改动走两条分支,**绝不互相 PR**:
+| 常驻分支 | 是什么 | 含什么 |
+|---|---|---|
+| **`main`** | 稳定 / 发布主干、唯一真相源 | 全部前端代码 **+ 全部部署**(`docker-compose*.yml` / `Dockerfile` / `nginx/*` / `scripts/deploy.ps1` / `scripts/local/sync-main.{sh,ps1}` / `.github/workflows/{build-image,deploy,deploy-linux}.yml`)。部署是产品一部分,不再单独分支 |
+| **`dev`** | 集成开发分支 | 日常 feature/bugfix 汇聚地 |
 
-- **本地 Docker 部署相关**(`docker-compose*.yml` / `Dockerfile` / `nginx/*` / `scripts/deploy.ps1` / `scripts/local/sync-main.{sh,ps1}` / `.github/workflows/{build-image,deploy,deploy-linux}.yml`)→ 提交到 `feature/docker-deploy`(部署分支)
-- **业务开发 / bug 修复 / 测试 / 文档**(`src/` / `e2e/` / `docs/` / Vue 组件)→ 提交到 `feature/<topic>`(如 `feature/fe-bugfixed`),走标准 PR → `main`
-- **部署分支不进 main**(也不被 PR 到 main);只接收"main → 部署分支"单向 sync,工具 `scripts/local/sync-main.{sh,ps1}` / 跨仓 `C:\Users\aa\scripts\sync-all.ps1`
+**流程**:
+- **业务 / bugfix / 测试 / 文档 / 部署**:从 `dev` 开 `feature/<topic>`(或 `fix/<topic>`)→ PR → `dev`;短命分支合后即删。
+- **发布**:`dev` → `main`(PR 或定期合)。
+- **不再有独立部署分支**——部署文件直接在 main(自托管 / on-prem 的 compose/nginx/deploy 脚本是产品的一部分,与后端 main 同理)。
 
 ## 构建 / 测试
 

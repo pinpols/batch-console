@@ -1,5 +1,5 @@
 <template>
-  <PageContainer>
+  <PageContainer :style="workflowRunVisualCssVars">
     <PageHeader :title="title" :description="description" back-to="/workflow/definitions">
       <template #actions>
         <el-button :icon="DocumentCopy" :disabled="!mermaidText" @click="copyText">
@@ -408,6 +408,11 @@
   import { queryWorkflowNodeRuns } from '@/api/workflowQueries'
   import { instanceApi } from '@/api/instance'
   import { useTenantStore } from '@/stores/tenant'
+  import {
+    workflowRunMermaidClassDefs,
+    workflowRunStatusClass,
+    workflowRunVisualCssVars,
+  } from '@/constants/workflowStatusTheme'
   import type {
     ConsoleWorkflowNodeRunResponse,
     WorkflowDefinitionDetailResponse,
@@ -477,7 +482,7 @@
       latest.set(code, r.nodeStatus ?? '')
     }
     for (const status of latest.values()) {
-      const klass = statusToClass(status)
+      const klass = workflowRunStatusClass(status)
       if (klass === 'success') counts.success++
       else if (klass === 'running') counts.running++
       else if (klass === 'failed') counts.failed++
@@ -710,32 +715,18 @@
     }
     const classLines: string[] = []
     for (const [code, r] of latest) {
-      const klass = statusToClass(r.nodeStatus)
+      const klass = workflowRunStatusClass(r.nodeStatus)
       if (klass) classLines.push(`class ${sanitizeMermaidId(code)} ${klass}`)
     }
     return (
       text.trimEnd() +
       '\n' +
       // classDef 与后端 sanitize 同源 ASCII 化
-      '  classDef running fill:#3b82f6,stroke:#1d4ed8,color:#fff\n' +
-      '  classDef success fill:#10b981,stroke:#047857,color:#fff\n' +
-      '  classDef failed fill:#ef4444,stroke:#b91c1c,color:#fff\n' +
-      '  classDef waiting fill:#f59e0b,stroke:#b45309,color:#fff\n' +
-      '  classDef cancelled fill:#6b7280,stroke:#374151,color:#fff\n' +
+      workflowRunMermaidClassDefs() +
+      '\n' +
       classLines.map((l) => '  ' + l).join('\n') +
       '\n'
     )
-  }
-
-  function statusToClass(status?: string | null): string | null {
-    if (!status) return null
-    const s = status.toUpperCase()
-    if (s === 'RUNNING') return 'running'
-    if (s === 'SUCCESS' || s === 'COMPLETED' || s === 'SUCCEEDED') return 'success'
-    if (s === 'FAILED' || s === 'PARTIAL_FAILED') return 'failed'
-    if (s === 'WAITING' || s === 'READY' || s === 'CREATED') return 'waiting'
-    if (s === 'CANCELLED' || s === 'SKIPPED' || s === 'TERMINATED') return 'cancelled'
-    return null
   }
 
   /**
@@ -1008,19 +999,19 @@
     background: var(--el-fill-color-darker);
   }
   .status-pill--success {
-    background: #10b981;
+    background: var(--workflow-run-success-fill);
   }
   .status-pill--running {
-    background: #3b82f6;
+    background: var(--workflow-run-running-fill);
   }
   .status-pill--failed {
-    background: #ef4444;
+    background: var(--workflow-run-failed-fill);
   }
   .status-pill--waiting {
-    background: #f59e0b;
+    background: var(--workflow-run-waiting-fill);
   }
   .status-pill--cancelled {
-    background: #6b7280;
+    background: var(--workflow-run-cancelled-fill);
   }
   .status-pill--pending {
     background: var(--el-fill-color-darker);
@@ -1123,19 +1114,19 @@
     color: #fff;
   }
   .legend-chip--running {
-    background: #3b82f6;
+    background: var(--workflow-run-running-fill);
   }
   .legend-chip--success {
-    background: #10b981;
+    background: var(--workflow-run-success-fill);
   }
   .legend-chip--failed {
-    background: #ef4444;
+    background: var(--workflow-run-failed-fill);
   }
   .legend-chip--waiting {
-    background: #f59e0b;
+    background: var(--workflow-run-waiting-fill);
   }
   .legend-chip--cancelled {
-    background: #6b7280;
+    background: var(--workflow-run-cancelled-fill);
   }
   .legend-chip--pending {
     background: var(--el-fill-color-darker);
@@ -1159,7 +1150,7 @@
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    background: #3b82f6;
+    background: var(--workflow-run-running-fill);
     animation: workflow-mermaid-pulse 1.4s ease-in-out infinite;
   }
   @keyframes workflow-mermaid-pulse {
