@@ -613,6 +613,17 @@ const messages: Messages = {
     importNone: 'No filter sets to import',
     exportCopied: 'Filter-set JSON copied to clipboard',
   },
+  notificationCenter: {
+    title: 'Notifications',
+    empty: 'Nothing needs attention',
+    pendingApprovals: 'Pending approvals',
+    openAlerts: 'Open alerts',
+    criticalSuffix: '({n} critical)',
+    failedJobs: 'Failed jobs',
+    viewOpsSummary: 'View ops summary',
+    newItems: 'New items',
+    srSummary: '{n} items need attention',
+  },
   proTable: {
     empty: 'No data',
     filteredEmpty: 'No matching data — adjust the filters and try again',

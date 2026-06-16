@@ -616,6 +616,17 @@ export default {
     importNone: '没有可导入的筛选集',
     exportCopied: '筛选集 JSON 已复制到剪贴板',
   },
+  notificationCenter: {
+    title: '通知中心',
+    empty: '暂无待处理事项',
+    pendingApprovals: '待审批',
+    openAlerts: '未确认告警',
+    criticalSuffix: '({n} 紧急)',
+    failedJobs: '失败任务',
+    viewOpsSummary: '查看运维概览',
+    newItems: '有新增待办',
+    srSummary: '{n} 项待处理',
+  },
   proTable: {
     empty: '暂无数据',
     filteredEmpty: '未找到符合条件的数据,请调整筛选条件',
