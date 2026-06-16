@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { ElMessage } from 'element-plus'
 import { getTeleport } from '@antv/x6-vue-shape'
 import { useDesignerStore } from '../store/useDesignerStore'
 import { useX6Graph } from './useX6Graph'
@@ -22,6 +23,8 @@ defineExpose({
   autoLayout: (direction: 'TB' | 'LR' = 'TB') => handle.autoLayout(direction),
   /** 校验错误列表点击 → 居中并选中该节点 */
   focusNode: (nodeId: string) => handle.focusNode(nodeId),
+  /** 当前视口中心(画布逻辑坐标),供点击节点库 / QuickPalette 落点 */
+  getViewportCenter: () => handle.getViewportCenter(),
 })
 
 // store 变更 → 通过自定义 event 触发 X6 重画(useX6Graph 内部监听 `__rerender__`)
@@ -34,6 +37,12 @@ watch(
 
 // 拖入节点(从 palette HTML5 DnD 落点),由 DagCanvas 监听 drop
 function onDrop(ev: DragEvent) {
+  // P1 只读守卫:未持锁 / 他人持锁时禁止拖入新节点
+  if (!store.editable) {
+    ev.preventDefault()
+    ElMessage.warning(t('workflowDesignerMvp.lock.readonlyGuard'))
+    return
+  }
   ev.preventDefault()
   const nodeType = ev.dataTransfer?.getData('application/x-designer-node-type')
   if (!nodeType || !containerRef.value || !handle.graph) return
@@ -57,6 +66,13 @@ function onDrop(ev: DragEvent) {
 }
 
 function onKeyDown(ev: KeyboardEvent) {
+  // P1 只读守卫:未持锁 / 他人持锁时禁止删除 / 撤销 / 重做(均会改 store)
+  if (!store.editable) {
+    if (ev.key === 'Delete' || ev.key === 'Backspace') {
+      ElMessage.warning(t('workflowDesignerMvp.lock.readonlyGuard'))
+    }
+    return
+  }
   // Delete 删除选中
   if (ev.key === 'Delete' || ev.key === 'Backspace') {
     const ids = Array.from(store.selectedIds)

@@ -54,12 +54,18 @@ const hasError = computed(() => (data?.id ? store.errorNodeIds.has(data.id) : fa
   user-select: none;
 }
 .designer-node--file {
-  background: var(--color-success-light, #f0f9eb);
-  border: 2px solid var(--color-success, #67c23a);
+  background: var(--wf-node-file-step-light);
+  border: 2px solid var(--wf-node-file-step);
+  transition:
+    box-shadow 0.12s ease,
+    border-color 0.12s ease;
+}
+.designer-node--file:hover {
+  box-shadow: 0 0 0 3px var(--wf-node-file-step-light);
 }
 .designer-node--error {
-  border-color: var(--color-danger, #f56c6c) !important;
-  background: var(--color-danger-light, #fef0f0) !important;
+  border-color: var(--wf-node-error) !important;
+  background: var(--wf-node-error-light) !important;
 }
 .designer-node__row {
   display: flex;
@@ -68,11 +74,12 @@ const hasError = computed(() => (data?.id ? store.errorNodeIds.has(data.id) : fa
 }
 .designer-node__icon {
   font-size: 13px;
+  color: var(--wf-node-file-step);
 }
 .designer-node__badge {
   font-size: 10px;
   font-weight: 600;
-  color: var(--color-success-dark, #529b2e);
+  color: var(--wf-node-file-step);
   text-transform: uppercase;
 }
 .designer-node__label {
