@@ -223,6 +223,7 @@ export default {
     errorDrawerTitle: '校验错误',
     saveOk: '保存成功',
     saveNeedsId: '需要 workflowId 才能保存',
+    mobileDesignerGuard: '编排设计是桌面端功能,手机端已为你切到只读查看 / 返回首页',
     create: {
       title: '新建工作流',
       codePrompt: '请输入工作流编码(workflowCode)',
