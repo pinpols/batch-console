@@ -27,6 +27,8 @@ e2e/.auth/
 # Local dev server artifacts
 .vite-dev.log
 .vite-dev.pid
+.dev-stack.log
+.dev-stack.pid
 
 # fe-acceptance wrapper 运行时产物(state + step 日志)
 .fe-acceptance-state
