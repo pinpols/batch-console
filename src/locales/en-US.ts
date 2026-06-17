@@ -2919,6 +2919,21 @@ const messages: Messages = {
     yes: 'Yes',
     no: 'No',
   },
+  myWorkers: {
+    title: 'My Workers',
+    description:
+      'View the self-hosted SDK workers registered under your tenant and their health (read-only).',
+    countLabel: 'Self-hosted workers',
+    countDescription: 'Total self-hosted SDK workers registered for the current tenant',
+    colWorkerCode: 'Worker',
+    colGroup: 'Group',
+    colStatus: 'Status',
+    colLoad: 'Load',
+    colHeartbeat: 'Heartbeat',
+    empty:
+      'No self-hosted workers yet. Follow the SDK onboarding guide to start and register your worker.',
+    refresh: 'Refresh',
+  },
   configReleaseList: {
     headerCreate: 'New release',
     keyLabel: 'Key',
