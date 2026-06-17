@@ -20,7 +20,18 @@ test.describe('API Key management CRUD (API Key 增删)', () => {
     await page.getByRole('button', { name: '新增 API Key' }).click()
     await expect(page.getByText('新增 API Key').first()).toBeVisible()
     await page.getByLabel('名称').fill(uniqueName)
-    await page.getByLabel('权限范围').fill('READ,WRITE')
+    // 权限范围是 multiple el-select(可多选),不能 fill —— 打开下拉勾选最多两项
+    const scopeItem = page.locator('.el-form-item').filter({ hasText: '权限范围' }).first()
+    await scopeItem.locator('.el-select__wrapper, .el-select').first().click({ force: true })
+    const scopeDropdown = page.locator('.el-select-dropdown:visible').last()
+    await expect(scopeDropdown).toBeVisible({ timeout: 5000 })
+    const scopeOpts = scopeDropdown.locator('.el-select-dropdown__item')
+    const scopeCount = Math.min(2, await scopeOpts.count())
+    for (let i = 0; i < scopeCount; i++) {
+      await scopeOpts.nth(i).scrollIntoViewIfNeeded().catch(() => {})
+      await scopeOpts.nth(i).click({ force: true })
+    }
+    await page.keyboard.press('Escape')
     await page.getByRole('button', { name: '创建' }).click()
     // P0 上线"明文 secret modal":创建成功后强制弹窗(close-on-click-modal=false / ESC 禁用,
     // 关闭按钮在 clipboard 写入成功前 disabled)。
