@@ -116,7 +116,21 @@
           />
         </el-form-item>
         <el-form-item :label="t('apiKeyList.fieldScopes')" prop="scopes">
-          <el-input v-model="form.scopes" :placeholder="t('apiKeyList.fieldScopesPlaceholder')" />
+          <el-select
+            v-model="form.scopes"
+            multiple
+            collapse-tags
+            collapse-tags-tooltip
+            :placeholder="t('apiKeyList.fieldScopesPlaceholder')"
+            class="query-w-full"
+          >
+            <el-option
+              v-for="opt in scopeOptions"
+              :key="opt.value"
+              :label="opt.label"
+              :value="opt.value"
+            />
+          </el-select>
         </el-form-item>
         <el-form-item :label="t('apiKeyList.fieldExpiresAt')" prop="expiresAt">
           <el-date-picker
@@ -319,7 +333,16 @@
     })
   }
   const detail = ref<Record<string, unknown> | null>(null)
-  const form = reactive({ keyName: '', scopes: '', expiresAt: '' })
+  const form = reactive({ keyName: '', scopes: [] as string[], expiresAt: '' })
+
+  // 权限范围下拉可选集(后端不强制枚举,blank → "*" 全权限)。READ/WRITE/ADMIN 是技术码原样展示,
+  // "*" 用 i18n 标"全部"。提交时 join 成逗号串,匹配后端 scopes(逗号分隔字符串)。
+  const scopeOptions = computed(() => [
+    { value: 'READ', label: 'READ' },
+    { value: 'WRITE', label: 'WRITE' },
+    { value: 'ADMIN', label: 'ADMIN' },
+    { value: '*', label: t('apiKeyList.scopeAll') },
+  ])
 
   const { formRef: apiKeyFormRef, validate: validateApiKeyForm } = useFormValidate()
   const apiKeyFormRules: FormRules = {
@@ -341,7 +364,7 @@
 
   function openCreate() {
     form.keyName = ''
-    form.scopes = ''
+    form.scopes = []
     form.expiresAt = ''
     createVisible.value = true
   }
@@ -353,7 +376,7 @@
       const body: { keyName: string; scopes?: string; expiresAt?: string } = {
         keyName: form.keyName,
       }
-      if (form.scopes.trim()) body.scopes = form.scopes
+      if (form.scopes.length) body.scopes = form.scopes.join(',')
       if (form.expiresAt) body.expiresAt = form.expiresAt
       // BE 仅在 POST 响应里返回 rawKey 明文,之后任何 GET 都查不到 → 必须立即弹出引导用户保存
       const created = await createApiKey(tenant.tenantId, body)
