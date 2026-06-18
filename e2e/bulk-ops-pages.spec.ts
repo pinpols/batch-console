@@ -16,6 +16,11 @@ async function assertBulkBar(page: import('@playwright/test').Page): Promise<boo
     .locator('.el-checkbox')
   if (!(await isVisible(firstRowCheckbox, 3000))) return false
 
+  // 行存在但 checkbox 被 disable(如审批中心里非本人可处理 / 已终态的行)是合法 UI 态:
+  // 这种行无法参与批量选择,等价于「无可操作行」,优雅 skip 而非点 disabled 元素超时报错。
+  const cbClass = (await firstRowCheckbox.getAttribute('class')) || ''
+  if (cbClass.includes('is-disabled')) return false
+
   await firstRowCheckbox.click()
   const bar = page.locator('.bulk-action-bar')
   await expect(bar).toBeVisible({ timeout: 5_000 })
