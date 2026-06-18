@@ -1737,6 +1737,31 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/console/sdk/catalog': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * SDK developer-portal catalog (protocol version + per-language SDK metadata + shared constants + docs) — SDK runtime visibility ②
+     * @description Read-only data source for the developer portal. Static, non-tenant (same for all tenants).
+     *     Data sources: protocolVersion ← TaskDispatchMessage.SUPPORTED_MAJOR_VERSIONS (mirrored via
+     *     sdk-shared-constants.yaml); languages[].latestVersion ← per-SDK package metadata
+     *     (pyproject/package.json/Cargo.toml/pom); sharedConstants ← sdk-shared-constants.yaml; docs ← repo paths.
+     *     FE portal page lives in the separate batch-console frontend repo (not in this backend repo).
+     *
+     */
+    get: operations['getSdkCatalog']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/console/atomic-task-types/schema': {
     parameters: {
       query?: never
@@ -5612,6 +5637,51 @@ export interface components {
       status: 'ONLINE' | 'OFFLINE' | 'DRAINING' | 'DECOMMISSIONED'
       /** Format: date-time */
       heartbeatAt?: string
+      compatibility?: components['schemas']['WorkerCompatibility']
+    }
+    /** @description Protocol/SDK compatibility derived by backend from the worker's reported sdkVersion vs the
+     *     platform's current supported SDK major (SDK runtime visibility ①). worker_registry stores only
+     *     sdkVersion (no per-worker protocol schemaVersion), so the verdict is purely sdkVersion-major based;
+     *     unparseable/missing -> UNKNOWN (never guessed).
+     *      */
+    WorkerCompatibility: {
+      /** @enum {string} */
+      status?: 'OK' | 'SDK_OUTDATED' | 'PROTOCOL_UNSUPPORTED' | 'UNKNOWN'
+      /**
+       * @description Stable reason token for FE i18n (worker.compatibility.reason.*).
+       * @enum {string}
+       */
+      reasonCode?: 'COMPATIBLE' | 'SDK_VERSION_BEHIND' | 'SDK_VERSION_AHEAD' | 'SDK_VERSION_UNKNOWN'
+      reportedSdkVersion?: string | null
+      /** @description Platform current SDK major (e.g. v1) for "upgrade to" hint. */
+      platformSdkMajor?: string
+    }
+    /** @description SDK developer-portal catalog (SDK runtime visibility ②). */
+    SdkCatalog: {
+      protocolVersion?: {
+        /** @description Platform-supported protocol majors (e.g. [v1, v2]). */
+        supportedMajors?: string[]
+        /** @description Current canonical protocol major dispatched (e.g. v2). */
+        current?: string
+        /** @description Lowest rejected major (this and above are rejected, e.g. v3). */
+        rejectedFrom?: string
+      }
+      languages?: {
+        lang?: string
+        artifact?: string
+        /** @description Latest version; repo-version/unpublished when not published. */
+        latestVersion?: string
+        installSnippet?: string
+        conformanceStatus?: string
+      }[]
+      /** @description Cross-language key constants mirrored from sdk-shared-constants.yaml. */
+      sharedConstants?: {
+        [key: string]: string[]
+      }
+      docs?: {
+        title?: string
+        path?: string
+      }[]
     }
     /** @description (buildId, sdkVersion) aggregated count of ONLINE workers for grayscale rollout visualization.
      *     NULL build_id / sdk_version are coalesced to literal "(unknown)" in SQL.
@@ -10978,6 +11048,30 @@ export interface operations {
             code?: string
             message?: string
             data?: components['schemas']['WorkerFingerprintSummaryResponse'][]
+          }
+        }
+      }
+    }
+  }
+  getSdkCatalog: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description SDK catalog */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            code?: string
+            message?: string
+            data?: components['schemas']['SdkCatalog']
           }
         }
       }
