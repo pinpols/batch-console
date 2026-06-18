@@ -28,6 +28,48 @@ test.describe('queue config CRUD (资源队列)', () => {
     await expect(dialog.getByText('公平权重', { exact: true })).toBeVisible()
     await page.getByRole('button', { name: '取消' }).click({ force: true })
   })
+
+  test('真端到端:填队列 → 保存 → 成功提示 + 列表出现', async ({ page }) => {
+    const code = `e2e-queue-${Date.now()}`
+    await page.getByRole('button', { name: '新建队列' }).first().click()
+    const dialog = page
+      .locator('.el-dialog:visible, .el-drawer:visible')
+      .filter({ hasText: '新增资源队列' })
+    await expect(dialog).toBeVisible({ timeout: 5000 })
+
+    // 必填:队列编码(input)+ 类型(select);并发等为可选,填几个真实值
+    await dialog
+      .locator('.el-form-item')
+      .filter({ hasText: '队列编码' })
+      .locator('input')
+      .first()
+      .fill(code)
+    // 名称:FE 标可选但 BE 必填(queue_name),需填
+    await dialog
+      .locator('.el-form-item')
+      .filter({ hasText: /^名称/ })
+      .locator('input')
+      .first()
+      .fill(`E2E Queue ${Date.now()}`)
+    const typeItem = dialog.locator('.el-form-item').filter({ hasText: '类型' }).first()
+    await typeItem.locator('.el-select__wrapper, .el-select').first().click()
+    await page.waitForTimeout(300)
+    const opt = page.locator('.el-select-dropdown:visible').last().locator('.el-select-dropdown__item').first()
+    await expect(opt).toBeVisible({ timeout: 4000 })
+    await opt.click()
+    await dialog
+      .locator('.el-form-item')
+      .filter({ hasText: '并发上限' })
+      .locator('input')
+      .first()
+      .fill('10')
+
+    await dialog.getByRole('button', { name: /保存|确定|创建/ }).first().click()
+    await expect(page.locator('.el-message--success').first()).toBeVisible({ timeout: 6000 })
+    await expect(dialog).toBeHidden({ timeout: 6000 })
+    await page.waitForLoadState('networkidle', { timeout: 8000 }).catch(() => {})
+    await expect(page.getByText(code).first()).toBeVisible({ timeout: 8000 })
+  })
 })
 
 test.describe('batch window CRUD (批次窗口)', () => {
