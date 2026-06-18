@@ -121,7 +121,7 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, reactive, computed } from 'vue'
+  import { ref, reactive, computed, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
 
@@ -151,6 +151,11 @@
   const canCreate = computed(
     () => !!queryForm.resourceType && queryForm.resourceCode.trim().length > 0,
   )
+  // 父组件(TagManagement)的「新增」按钮按此 gating。此前父组件靠 ref 读本组件 expose 的
+  // computed(resourceTabRef.value?.canCreate?.value),跨组件 computed 依赖追踪偶发不触发 → 表单填好
+  // 按钮却不解锁(e2e 实测 ~1/3 偶发)。改为显式 emit,父组件用普通 ref 接,reactivity 可靠。
+  const emit = defineEmits<{ canCreateChange: [boolean] }>()
+  watch(canCreate, (v) => emit('canCreateChange', v), { immediate: true })
   const editValueByKey = reactive<Record<string, string>>({})
   const savingKey = ref('')
   const deletingKey = ref('')
