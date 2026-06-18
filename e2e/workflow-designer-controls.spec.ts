@@ -34,7 +34,9 @@ test.describe('编排设计器 — 桌面控件', () => {
     await expect(page.locator('.workflow-designer')).toBeVisible({ timeout: 15_000 })
 
     await page.locator('.designer-toolbar').getByRole('button', { name: '校验' }).first().click()
-    // 空图或有图,校验都会给 toast(校验通过 / 校验报错);只断言出现反馈,不锁定结果
-    await expect(page.locator('.el-message').first()).toBeVisible({ timeout: 8_000 })
+    // 反馈两种形态:校验通过 → toast(.el-message);校验失败 → 错误抽屉(.el-drawer)。
+    // 只断言"出现反馈",任一形态即可,不锁定结果(空图通常报错走 drawer)。
+    const feedback = page.locator('.el-message, .el-drawer.workflow-error-drawer, .el-drawer').first()
+    await expect(feedback).toBeVisible({ timeout: 8_000 })
   })
 })

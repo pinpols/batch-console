@@ -8,8 +8,16 @@ import { enterDemoApp, expectPageTitle, isVisible } from './support/app'
 test.describe('tag resource CRUD', () => {
   test.beforeEach(async ({ page }) => {
     await enterDemoApp(page)
+    // resourceType MetaSelect 的选项来自 /meta/enums(triggerResourceType);并行负载下字典异步
+    // 加载较慢,必须先等它拉完再交互,否则下拉为空 → 选不中 → canCreate 永远 false。
+    const enumsP = page
+      .waitForResponse((r) => r.url().includes('/meta/enums') && r.status() === 200, {
+        timeout: 10000,
+      })
+      .catch(() => null)
     await page.goto('/system/tags')
     await expectPageTitle(page, '标签管理')
+    await enumsP
   })
 
   test('资源标签 tab 默认激活 + 查询', async ({ page }) => {
@@ -25,23 +33,20 @@ test.describe('tag resource CRUD', () => {
     if (!(await isVisible(addBtn, 2000))) return
     await expect(addBtn).toBeDisabled()
 
-    // 先填资源类型 + 资源编码 — 按钮才能解锁
-    const typeSelect = page
-      .locator('.el-form-item')
-      .filter({ hasText: /资源类型|类型/ })
-      .locator('.el-select')
-    if (await isVisible(typeSelect, 2000)) {
-      await typeSelect.click()
-      const opt = page.locator('.el-select-dropdown__item').first()
-      if (await isVisible(opt, 2000)) await opt.click()
-    }
-    const codeInput = page
-      .locator('.el-form-item')
-      .filter({ hasText: /资源编码|编码/ })
-      .getByRole('textbox')
-    if (await isVisible(codeInput, 2000)) await codeInput.fill('test-resource')
-
-    await expect(addBtn).toBeEnabled()
+    // 填资源类型(MetaSelect)+ 资源编码 — 两者齐备按钮才解锁(canCreate,跨组件 expose)。
+    // 关键:option 点击【不要】force —— force 会跳过 Playwright 的可点稳定性等待,在 el-select
+    // 下拉的开场动画期点下去会落空、不写入 model(此前 ~1/3 偶发的根因)。不 force 则自动等动画结束。
+    const typeWrapper = page.locator('.tag-query__type')
+    await typeWrapper.locator('.el-select__wrapper').first().click()
+    const typeDropdown = page.locator('.el-select-dropdown:visible').last()
+    const jobOpt = typeDropdown.locator('.el-select-dropdown__item', { hasText: '作业' }).first()
+    await jobOpt.click() // 不 force,自动等稳定
+    // 真选中 → wrapper 显示 label「作业」
+    await expect(typeWrapper).toContainText('作业', { timeout: 3000 })
+    // 资源编码
+    await page.locator('.tag-query__code input').first().fill('test-resource')
+    // 两者齐备后按钮解锁
+    await expect(addBtn).toBeEnabled({ timeout: 8000 })
     await addBtn.click()
     await page.waitForTimeout(400)
     // 实际打开的是 el-drawer 不是 el-dialog(gifted-bell 分支修正)
