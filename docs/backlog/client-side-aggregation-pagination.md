@@ -28,6 +28,24 @@
 job-definition / fileChannels / queues / governance / system 等:数据量受租户配置规模限,远 <4000;
 端上聚合用于下拉/关联解析,迁移收益低。`operationAudits.ts` 已**主动避开** fetchAllPageItems(注释说明),可参考其服务端分页写法。
 
+## ⚠️ 关键约束:多数端点后端筛选参数不全 → 必须前后端协同,纯前端迁会退化
+
+实查(2026-06-21):这些 `/queries/*` 端点**当前只暴露 `tenantId/pageNo/pageSize`,没有业务筛选参数**。
+而前端是**端上全量拉取 + 端上多维筛选**(如 `CatchUpApprovalsTab` 按 status/bizDate/keyword 在
+`filtered` computed 里筛)。
+
+| 端点 | 后端现有 query 参数 | 前端端上筛选维度 | 能否纯前端迁 |
+|---|---|---|---|
+| `/queries/catch-up-approvals` | tenantId/pageNo/pageSize | keyword / requestStatus / bizDate | ❌ 后端缺 3 个筛选参数 |
+| `/queries/approvals` | tenantId/pageNo/pageSize | (视消费方) | ❌ 同上 |
+| `/queries/audits` `/queries/alerts` | tenantId/pageNo/pageSize | 时间/类型等 | ❌ 需核后端 |
+
+**若纯前端改服务端分页而后端筛选参数不补**:keyword/status/bizDate 筛选会退化成"只在当前页生效"
+(用户筛不到下一页的匹配项)→ **比现在的 4000 截断更糟**。所以这是**前后端协同任务**,不是纯前端 fix。
+
+**正确顺序**:① 后端给 `/queries/*` 补业务筛选 query 参数(catch-up: status/bizDate/keyword;
+audits/alerts 同理)→ ② 前端把端上 `filtered` 逻辑改成传参 → ③ ProTable 服务端 total/page。
+
 ## 迁移方向
 
 1. **后端**:确认这些 `/queries/*` 端点支持服务端筛选参数(jobCode/status/时间范围等);缺的补。

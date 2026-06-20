@@ -3160,6 +3160,12 @@ const messages: Messages = {
     bundleImportBadJson: 'Invalid Bundle JSON',
     bundleImportDryRunDone: 'Bundle dry-run validated {n} tenant(s)',
     bundleImportDone: 'Bundle imported to {n} tenant(s)',
+    exportBundleSuccess: 'Job {code} bundle exported',
+    queueEmptyPlaceholder: 'No queue for current tenant; create one in Governance first',
+    queueGoCreate: '+ New queue',
+    fileTabNotApplicable: 'This job type has no file pipeline (IMPORT / EXPORT jobs only)',
+    jobCodeRule:
+      'Start with a letter; letters/digits/underscore/hyphen only; max 128 (no spaces / CJK / special chars)',
   },
   jobDefinitionWizard: {
     bundlePrefillJsonPlaceholder: 'Drop a job-bundle-*.json, pick a file, or paste / type the JSON',

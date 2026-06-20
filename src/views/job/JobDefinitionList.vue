@@ -308,7 +308,7 @@
               :placeholder="
                 queueOptions.length
                   ? t('jobDefinitionList.queuePlaceholder')
-                  : '当前租户无队列,可前往治理页新建后再回来'
+                  : t('jobDefinitionList.queueEmptyPlaceholder')
               "
               :options="queueOptions"
             />
@@ -318,7 +318,7 @@
               type="primary"
               @click="router.push('/governance/queues')"
             >
-              + 新建队列
+              {{ t('jobDefinitionList.queueGoCreate') }}
             </el-button>
           </div>
         </el-form-item>
@@ -439,7 +439,7 @@
             :tenant-id="detailRow.tenantId"
             :job-code="detailRow.jobCode"
           />
-          <el-empty v-else description="此作业类型不涉及文件管道(仅 IMPORT / EXPORT 作业)" />
+          <el-empty v-else :description="t('jobDefinitionList.fileTabNotApplicable')" />
         </el-tab-pane>
 
         <el-tab-pane name="runs" :lazy="true">
@@ -851,7 +851,7 @@
       a.download = `job-bundle-${row.jobCode}.json`
       a.click()
       URL.revokeObjectURL(url)
-      ElMessage.success(`作业 ${row.jobCode} Bundle 已导出`)
+      ElMessage.success(t('jobDefinitionList.exportBundleSuccess', { code: row.jobCode }))
     } finally {
       exportingJobCode.value = ''
     }
@@ -1150,13 +1150,7 @@
     validator: (_r, v: unknown, cb) => {
       const value = typeof v === 'string' ? v.trim() : ''
       if (!value) return cb()
-      return JOB_CODE_PATTERN.test(value)
-        ? cb()
-        : cb(
-            new Error(
-              '字母开头,仅含字母/数字/下划线/连字符,长度 ≤ 128(不允许空格 / 中文 / 特殊符号)',
-            ),
-          )
+      return JOB_CODE_PATTERN.test(value) ? cb() : cb(new Error(t('jobDefinitionList.jobCodeRule')))
     },
     trigger: 'blur',
   }
