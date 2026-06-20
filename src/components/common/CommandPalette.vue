@@ -126,7 +126,8 @@
   }
 
   async function searchEntities(term: string) {
-    if (!shouldSearchEntity(term)) {
+    // 空租户保护:启动阶段 / 未选租户 / 租户切换瞬间不发空 tenantId 查询
+    if (!shouldSearchEntity(term) || !tenant.tenantId) {
       entityJobInstances.value = []
       entityWorkflowDefs.value = []
       return
