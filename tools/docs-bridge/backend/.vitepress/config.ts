@@ -106,6 +106,23 @@ export default withMermaid({
         }
         return orig(tokens, idx, opts, env, self)
       }
+
+      // 内联代码里的 {{ }}(如 GitHub Actions `${{ secrets.X }}`)会被 Vue 模板编译器当插值
+      // 求值 → SSR build 崩(Cannot read properties of undefined)。给 <code> 注入 v-pre,
+      // 让 Vue 跳过其内容编译,大括号原样渲染。一次性解决所有含 {{ }} 的内联代码。
+      const origCodeInline =
+        md.renderer.rules.code_inline ||
+        ((tokens: any, idx: number) => `<code>${md.utils.escapeHtml(tokens[idx].content)}</code>`)
+      md.renderer.rules.code_inline = (
+        tokens: any,
+        idx: number,
+        opts: any,
+        env: any,
+        self: any,
+      ) => {
+        const html = origCodeInline(tokens, idx, opts, env, self)
+        return html.replace(/^<code(?![^>]*\bv-pre\b)/, '<code v-pre')
+      }
     },
   },
 
@@ -234,6 +251,19 @@ export default withMermaid({
     // 那边没 node_modules,导致 optimizeDeps 找不到 vitepress 子依赖 → dev 白屏。
     // 显式 root 锚定到 tools/docs-bridge/backend/.vitepress 同级,确保依赖解析正确。
     root: fileURLToPath(new URL('..', import.meta.url)),
+    // 跨仓 srcDir(file-batch-system/docs)编出的 .md 模块 import 'vue',Rollup 从 srcDir
+    // 旁的 node_modules 找不到 → ENOENT build 失败。显式 alias 到本仓 node_modules,
+    // dedupe 防 SSR build 出现两份 vue 运行时。
+    resolve: {
+      alias: {
+        vue: fileURLToPath(new URL('../../../../node_modules/vue', import.meta.url)),
+        'vue/server-renderer': fileURLToPath(
+          new URL('../../../../node_modules/vue/server-renderer', import.meta.url),
+        ),
+        'vue-router': fileURLToPath(new URL('../../../../node_modules/vue-router', import.meta.url)),
+      },
+      dedupe: ['vue', 'vue-router'],
+    },
     plugins: [
       {
         // base 是 /docs/,vitepress dev server 严格要求尾斜杠 → /docs(无斜杠) 直接 404

@@ -17,6 +17,26 @@ export default withMermaid({
   // build 不阻断,运行时 nav 仍可点;真坏链由 CI 单独检查。
   ignoreDeadLinks: true,
 
+  markdown: {
+    // 内联代码里的 {{ }}(如 GitHub Actions `${{ secrets.X }}`)会被 Vue 模板编译器当插值
+    // 求值 → SSR build 崩。给 <code> 注入 v-pre,让 Vue 跳过其内容编译,大括号原样渲染。
+    config(md) {
+      const origCodeInline =
+        md.renderer.rules.code_inline ||
+        ((tokens: any, idx: number) => `<code>${md.utils.escapeHtml(tokens[idx].content)}</code>`)
+      md.renderer.rules.code_inline = (
+        tokens: any,
+        idx: number,
+        opts: any,
+        env: any,
+        self: any,
+      ) => {
+        const html = origCodeInline(tokens, idx, opts, env, self)
+        return html.replace(/^<code(?![^>]*\bv-pre\b)/, '<code v-pre')
+      }
+    },
+  },
+
   // README.md 作为目录入口(GitHub 习惯,不是 vitepress 默认的 index.md)
   rewrites: {
     'README.md': 'index.md',
