@@ -213,6 +213,14 @@ export const pageMetaByPath = {
     title: '执行日志',
     description: '查询执行操作日志,辅助审计和问题定位。',
   },
+  '/ops/batch-day-replay': {
+    title: '批次日重放',
+    description: '对历史批次日发起重放,补跑或修正某业务日的作业。',
+  },
+  '/scheduler/catch-up-approvals': {
+    title: 'Catch-up 审批',
+    description: '审批调度补登(catch-up)申请,控制历史区间补跑。',
+  },
   '/ops/custom-task-types': {
     title: '自定义任务类型',
     description: '查看本租户 SDK 已注册的自定义任务类型(taskType),含描述、版本与上报 worker。',
@@ -223,7 +231,8 @@ export const pageMetaByPath = {
   },
   '/system/atomic-task-types': {
     title: '原子节点配置中心',
-    description: '查看平台内置 sql / shell / stored_proc / http 四类原子节点的参数 schema 与安全闸状态。',
+    description:
+      '查看平台内置 sql / shell / stored_proc / http 四类原子节点的参数 schema 与安全闸状态。',
   },
 } satisfies Record<string, PageMetaItem>
 
