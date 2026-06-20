@@ -3104,6 +3104,11 @@ export default {
     bundleImportBadJson: 'Bundle JSON 格式不正确',
     bundleImportDryRunDone: 'Bundle dry-run 已校验 {n} 个租户',
     bundleImportDone: 'Bundle 已导入 {n} 个租户',
+    exportBundleSuccess: '作业 {code} Bundle 已导出',
+    queueEmptyPlaceholder: '当前租户无队列,可前往治理页新建后再回来',
+    queueGoCreate: '+ 新建队列',
+    fileTabNotApplicable: '此作业类型不涉及文件管道(仅 IMPORT / EXPORT 作业)',
+    jobCodeRule: '字母开头,仅含字母/数字/下划线/连字符,长度 ≤ 128(不允许空格 / 中文 / 特殊符号)',
   },
   jobDefinitionWizard: {
     bundlePrefillJsonPlaceholder: '把 job-bundle-*.json 拖进来,或选文件,或直接键入 / 粘贴',
