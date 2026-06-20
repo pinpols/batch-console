@@ -1272,6 +1272,14 @@ const messages: Messages = {
       title: 'Execution logs',
       description: 'Search execution/operation logs for audit and troubleshooting.',
     },
+    opsBatchDayReplay: {
+      title: 'Batch-day replay',
+      description: 'Replay a historical batch day to backfill or fix that business day’s jobs.',
+    },
+    schedulerCatchUpApprovals: {
+      title: 'Catch-up approvals',
+      description: 'Approve scheduler catch-up requests and control historical backfill ranges.',
+    },
     opsCustomTaskTypes: {
       title: 'Custom task types',
       description:
