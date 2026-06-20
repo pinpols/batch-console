@@ -220,6 +220,7 @@ const messages: Messages = {
     errorBannerAria: 'Expand validation error list',
     errorDrawerTitle: 'Validation errors',
     saveOk: 'Saved',
+    saveFailed: 'Save failed',
     saveNeedsId: 'workflowId is required to save',
     mobileDesignerGuard:
       'Workflow designing is desktop-only; switched to read-only view / home on mobile',
