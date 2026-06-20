@@ -3,7 +3,9 @@
     <PageHeader>
       <template #actions>
         <el-tooltip
-          :content="canMutateConfig ? t('jobDefinitionList.headerWizardTip') : t('common.permissionDenied')"
+          :content="
+            canMutateConfig ? t('jobDefinitionList.headerWizardTip') : t('common.permissionDenied')
+          "
           placement="top"
         >
           <span>
@@ -17,21 +19,21 @@
           </span>
         </el-tooltip>
         <el-tooltip
-          :content="canMutateConfig ? t('jobDefinitionList.headerBundleTip') : t('common.permissionDenied')"
+          :content="
+            canMutateConfig ? t('jobDefinitionList.headerBundleTip') : t('common.permissionDenied')
+          "
           placement="top"
         >
           <span>
-            <el-button
-              :icon="Upload"
-              :disabled="!canMutateConfig"
-              @click="openBundleImport"
-            >
+            <el-button :icon="Upload" :disabled="!canMutateConfig" @click="openBundleImport">
               {{ t('jobDefinitionList.headerBundle') }}
             </el-button>
           </span>
         </el-tooltip>
         <el-tooltip
-          :content="canMutateConfig ? t('jobDefinitionList.headerCreateTip') : t('common.permissionDenied')"
+          :content="
+            canMutateConfig ? t('jobDefinitionList.headerCreateTip') : t('common.permissionDenied')
+          "
           placement="top"
         >
           <span>
@@ -484,7 +486,7 @@
 
     <el-dialog
       v-model="bundleImportVisible"
-      title="Bundle 跨环境导入"
+      :title="t('jobDefinitionList.bundleImportTitle')"
       width="640px"
       :close-on-click-modal="false"
     >
@@ -502,26 +504,34 @@
         </el-form-item>
         <el-form-item :label="t('jobDefinitionList.bundleImportModeLabel')">
           <el-radio-group v-model="bundleImportMode">
-            <el-radio value="UPSERT">UPSERT（覆盖已有）</el-radio>
-            <el-radio value="SKIP_EXISTING">SKIP_EXISTING（跳过已有）</el-radio>
+            <el-radio value="UPSERT">{{ t('jobDefinitionList.bundleImportModeUpsert') }}</el-radio>
+            <el-radio value="SKIP_EXISTING">{{
+              t('jobDefinitionList.bundleImportModeSkip')
+            }}</el-radio>
           </el-radio-group>
         </el-form-item>
         <el-form-item>
-          <el-checkbox v-model="bundleImportDryRun">仅校验（dry-run，不落库）</el-checkbox>
+          <el-checkbox v-model="bundleImportDryRun">{{
+            t('jobDefinitionList.bundleImportDryRun')
+          }}</el-checkbox>
         </el-form-item>
-        <el-form-item label="Bundle JSON">
+        <el-form-item :label="t('jobDefinitionList.bundleImportJsonLabel')">
           <el-input
             v-model="bundleImportJson"
             type="textarea"
             :rows="14"
-            placeholder='粘贴 exportBundle 产出的 JSON，例如 {"jobDefinitions":[...],"fileChannels":[...],...}'
+            :placeholder="t('jobDefinitionList.bundleImportJsonPlaceholder')"
           />
         </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="bundleImportVisible = false">{{ t('common.cancel') }}</el-button>
         <el-button type="primary" :loading="bundleImportSaving" @click="submitBundleImport">
-          {{ bundleImportDryRun ? '校验' : '导入' }}
+          {{
+            bundleImportDryRun
+              ? t('jobDefinitionList.bundleImportValidate')
+              : t('jobDefinitionList.bundleImportConfirm')
+          }}
         </el-button>
       </template>
     </el-dialog>
@@ -774,30 +784,49 @@
   }
 
   async function submitBundleImport() {
-    if (!bundleImportTargets.value.length) {
-      ElMessage.warning('请至少选择 1 个目标租户')
+    // P2-3:防重复提交(快速连点 / 网络抖动)
+    if (bundleImportSaving.value) return
+    // P2:源租户必须非空(启动/切换瞬间 tenant 可能未就绪)
+    const sourceTenant = tenant.tenantId?.trim()
+    if (!sourceTenant) {
+      ElMessage.warning(t('jobDefinitionList.bundleImportNoSourceTenant'))
       return
     }
-    let bundle: Record<string, unknown>
+    // P2:目标租户 trim+去空+去重,再校验非空(原写法只看数组长度,会把 [''] 发给后端)
+    const targets = Array.from(
+      new Set(bundleImportTargets.value.map((x) => x?.trim()).filter(Boolean)),
+    ) as string[]
+    if (!targets.length) {
+      ElMessage.warning(t('jobDefinitionList.bundleImportNoTargetTenant'))
+      return
+    }
+    let parsed: Record<string, unknown>
     try {
-      bundle = JSON.parse(bundleImportJson.value) as Record<string, unknown>
+      parsed = JSON.parse(bundleImportJson.value) as Record<string, unknown>
     } catch {
-      ElMessage.error('Bundle JSON 格式不正确')
+      ElMessage.error(t('jobDefinitionList.bundleImportBadJson'))
       return
     }
+    // P1:导出文件可能是 { tenantId, jobCode, summary, bundle } 包装结构;
+    // 解包到真正的 ConfigSyncBundlePayload(与向导页 JobDefinitionWizard 同款兼容写法),
+    // 否则把整个 payload 当 bundle 传 → 字段不匹配 → 错误/空导入。
+    const bundle = (parsed?.bundle ??
+      (parsed?.data as Record<string, unknown>)?.bundle ??
+      parsed ??
+      {}) as JobBundlePayload
     bundleImportSaving.value = true
     try {
       await jobApi.importBundle({
-        tenantId: tenant.tenantId,
-        targetTenantIds: bundleImportTargets.value,
+        tenantId: sourceTenant,
+        targetTenantIds: targets,
         mode: bundleImportMode.value,
         dryRun: bundleImportDryRun.value,
-        bundle: bundle as JobBundlePayload,
+        bundle,
       })
       ElMessage.success(
         bundleImportDryRun.value
-          ? `Bundle dry-run 已校验 ${bundleImportTargets.value.length} 个租户`
-          : `Bundle 已导入 ${bundleImportTargets.value.length} 个租户`,
+          ? t('jobDefinitionList.bundleImportDryRunDone', { n: targets.length })
+          : t('jobDefinitionList.bundleImportDone', { n: targets.length }),
       )
       bundleImportVisible.value = false
       void refetch()
