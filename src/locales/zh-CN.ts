@@ -226,6 +226,7 @@ export default {
     errorBannerAria: '展开校验错误列表',
     errorDrawerTitle: '校验错误',
     saveOk: '保存成功',
+    saveFailed: '保存失败',
     saveNeedsId: '需要 workflowId 才能保存',
     mobileDesignerGuard: '编排设计是桌面端功能,手机端已为你切到只读查看 / 返回首页',
     create: {
