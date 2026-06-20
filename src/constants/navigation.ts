@@ -90,7 +90,13 @@ export const navigationGroups: NavigationGroup[] = [
         icon: TrendCharts,
       },
       { title: pageTitle('/approvals'), path: '/approvals', minRole: 'OPERATOR', icon: Stamp },
-      { title: pageTitle('/reports'), path: '/reports', minRole: 'VIEWER', icon: Download },
+      {
+        title: pageTitle('/reports'),
+        path: '/reports',
+        minRole: 'VIEWER',
+        icon: Download,
+        hidden: true,
+      },
       {
         title: pageTitle('/self-service'),
         path: '/self-service',
@@ -155,6 +161,22 @@ export const navigationGroups: NavigationGroup[] = [
         icon: Search,
         hidden: true,
       },
+      {
+        // 日志检索 — 后端 menu.yml 有、FE 路由存在(/logs),原导航漏登记;hidden + ⌘K 可达
+        title: pageTitle('/logs'),
+        path: '/logs',
+        minRole: 'VIEWER',
+        icon: Reading,
+        hidden: true,
+      },
+      {
+        // 批次日重放 — 后端 menu.yml 有、FE 路由存在;低频运维,hidden + ⌘K 可达
+        title: pageTitle('/ops/batch-day-replay'),
+        path: '/ops/batch-day-replay',
+        minRole: 'ADMIN',
+        icon: Calendar,
+        hidden: true,
+      },
     ],
   },
   {
@@ -185,6 +207,7 @@ export const navigationGroups: NavigationGroup[] = [
         path: '/config/tenant-package',
         minRole: 'OPERATOR',
         icon: Box,
+        hidden: true,
       },
     ],
   },
@@ -199,18 +222,21 @@ export const navigationGroups: NavigationGroup[] = [
         path: '/files/templates',
         minRole: 'VIEWER',
         icon: Document,
+        hidden: true,
       },
       {
         title: pageTitle('/files/channels'),
         path: '/files/channels',
         minRole: 'VIEWER',
         icon: Connection,
+        hidden: true,
       },
       {
         title: pageTitle('/files/arrival-groups'),
         path: '/files/arrival-groups',
         minRole: 'VIEWER',
         icon: CollectionTag,
+        hidden: true,
       },
       {
         title: pageTitle('/files/pipeline-obs'),
@@ -240,18 +266,21 @@ export const navigationGroups: NavigationGroup[] = [
         path: '/observability/alert-routings',
         minRole: 'OPERATOR',
         icon: Connection,
+        hidden: true,
       },
       {
         title: pageTitle('/observability/outbox'),
         path: '/observability/outbox',
         minRole: 'OPERATOR',
         icon: MessageBox,
+        hidden: true,
       },
       {
         title: pageTitle('/system/notifications'),
         path: '/system/notifications',
         minRole: 'OPERATOR',
         icon: Bell,
+        hidden: true,
       },
     ],
   },
@@ -298,6 +327,7 @@ export const navigationGroups: NavigationGroup[] = [
         path: '/governance/quota',
         minRole: 'OPERATOR',
         icon: PieChart,
+        hidden: true,
       },
       // SDK 自定义 taskType(只读,operator 排查租户 worker 注册情况)
       {
@@ -305,6 +335,7 @@ export const navigationGroups: NavigationGroup[] = [
         path: '/ops/custom-task-types',
         minRole: 'OPERATOR',
         icon: Cpu,
+        hidden: true,
       },
       // Worker fingerprint 看板(SDK Phase 5,灰度切流可视化)
       {
@@ -312,6 +343,7 @@ export const navigationGroups: NavigationGroup[] = [
         path: '/ops/worker-fingerprints',
         minRole: 'OPERATOR',
         icon: Cpu,
+        hidden: true,
       },
       // ↓ 以下 admin 治理低频项隐藏到 Command Palette
       {
@@ -333,6 +365,14 @@ export const navigationGroups: NavigationGroup[] = [
         path: '/governance/calendars',
         minRole: 'ADMIN',
         icon: Calendar,
+        hidden: true,
+      },
+      {
+        // Catch-up 审批 — 后端 menu.yml 有、FE 路由存在;低频审批,hidden + ⌘K 可达
+        title: pageTitle('/scheduler/catch-up-approvals'),
+        path: '/scheduler/catch-up-approvals',
+        minRole: 'OPERATOR',
+        icon: Stamp,
         hidden: true,
       },
     ],
@@ -368,16 +408,26 @@ export const navigationGroups: NavigationGroup[] = [
         icon: User,
       },
       {
+        // 权限自查(看当前账号角色/权限/可访问菜单)—— 后端 menu.yml 有、FE 路由存在;hidden + ⌘K 可达
+        title: pageTitle('/system/users'),
+        path: '/system/users',
+        minRole: 'VIEWER',
+        icon: User,
+        hidden: true,
+      },
+      {
         title: pageTitle('/system/api-keys'),
         path: '/system/api-keys',
         minRole: 'ADMIN',
         icon: Key,
+        hidden: true,
       },
       {
         title: pageTitle('/system/parameters'),
         path: '/system/parameters',
         minRole: 'ADMIN',
         icon: Setting,
+        hidden: true,
       },
       // Atomic 节点配置中心(平台四类原子节点 schema + 安全闸只读)
       {
@@ -385,6 +435,7 @@ export const navigationGroups: NavigationGroup[] = [
         path: '/system/atomic-task-types',
         minRole: 'OPERATOR',
         icon: Box,
+        hidden: true,
       },
       // 审计(原"告警与投递"挪入)
       {
@@ -392,6 +443,7 @@ export const navigationGroups: NavigationGroup[] = [
         path: '/observability/audits',
         minRole: 'VIEWER',
         icon: Notebook,
+        hidden: true,
       },
       // 通用操作审计 — @AuditAction 切面落库,覆盖 console 写操作
       {
@@ -399,6 +451,7 @@ export const navigationGroups: NavigationGroup[] = [
         path: '/observability/operation-audits',
         minRole: 'VIEWER',
         icon: Notebook,
+        hidden: true,
       },
       // 配置(发布单 / 变更同步 / 标签 — 原 config 组保留高频 3 项)
       {
@@ -418,6 +471,7 @@ export const navigationGroups: NavigationGroup[] = [
         path: '/system/tags',
         minRole: 'OPERATOR',
         icon: PriceTag,
+        hidden: true,
       },
       // biz 多租分片路由(P2 tenant-routing,平台 ADMIN 运维)
       {
@@ -425,12 +479,14 @@ export const navigationGroups: NavigationGroup[] = [
         path: '/ops/shard-catalog',
         minRole: 'ADMIN',
         icon: Connection,
+        hidden: true,
       },
       {
         title: pageTitle('/ops/tenant-placements'),
         path: '/ops/tenant-placements',
         minRole: 'ADMIN',
         icon: Collection,
+        hidden: true,
       },
       // ─── hidden,⌘K 可达 ───
       {

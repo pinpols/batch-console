@@ -1218,6 +1218,14 @@ export default {
     },
     systemUsers: { title: '权限自查', description: '查看当前账号的角色、权限和可访问菜单。' },
     logs: { title: '执行日志', description: '查询执行操作日志,辅助审计和问题定位。' },
+    opsBatchDayReplay: {
+      title: '批次日重放',
+      description: '对历史批次日发起重放,补跑或修正某业务日的作业。',
+    },
+    schedulerCatchUpApprovals: {
+      title: 'Catch-up 审批',
+      description: '审批调度补登(catch-up)申请,控制历史区间补跑。',
+    },
     opsCustomTaskTypes: {
       title: '自定义 taskType',
       description: '查看本租户 SDK 已注册的自定义 taskType,含描述、版本与上报 worker。',
