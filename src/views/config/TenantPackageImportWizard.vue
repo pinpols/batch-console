@@ -266,53 +266,86 @@
                   </a>
                 </template>
               </el-alert>
-              <div v-if="issueRows.length" class="excel-wizard__table-block">
+              <div v-if="errorRows.length" class="excel-wizard__table-block">
                 <div class="excel-wizard__table-caption issues-caption">
                   <span>
-                    {{ t('excelMaintenanceWizard.rowIssuesCaption') }}
+                    {{ t('tenantPackageImportWizard.errorRowsCaption') }}
                     <el-tag size="small" type="danger" effect="plain" class="issue-count-tag">
-                      {{ issueRows.length }}
+                      {{ errorRows.length }}
                     </el-tag>
                   </span>
-                  <!-- I7: 修完直接重传,不必再绕回 step 0 -->
+                  <!-- 内联编辑改不动的(如跨行去重)仍可重传 -->
                   <el-button text type="primary" :icon="ArrowLeft" size="small" @click="step = 0">
                     {{ t('tenantPackageImportWizard.btnReuploadFixed') }}
                   </el-button>
                 </div>
+                <p class="excel-wizard__mute-hint error-rows-hint">
+                  {{ t('tenantPackageImportWizard.errorRowsHint') }}
+                </p>
                 <el-table
                   class="wizard-stretch console-table"
-                  :data="issueRows"
+                  :data="errorRows"
+                  :row-key="rowKeyOf"
                   :max-height="issueTableMaxHeight"
                   stripe
                   border
-                  highlight-current-row
                   :empty-text="t('common.noData')"
                 >
+                  <el-table-column type="expand">
+                    <template #default="{ row }">
+                      <div class="error-row-editor">
+                        <el-alert
+                          v-for="(msg, mi) in row.messages"
+                          :key="mi"
+                          type="error"
+                          :closable="false"
+                          show-icon
+                          class="error-row-editor__msg"
+                          :title="msg"
+                        />
+                        <el-form label-position="top" class="error-row-editor__form">
+                          <el-form-item
+                            v-for="col in columnsOf(row)"
+                            :key="col"
+                            :label="col"
+                            class="error-row-editor__field"
+                          >
+                            <el-input
+                              v-model="draftFor(row)[col]"
+                              clearable
+                              :placeholder="t('tenantPackageImportWizard.cellPlaceholder')"
+                            />
+                          </el-form-item>
+                        </el-form>
+                        <div class="error-row-editor__actions">
+                          <el-button
+                            type="primary"
+                            :loading="patchSaving === rowKeyOf(row)"
+                            :disabled="patchSaving !== null"
+                            @click="saveRow(row)"
+                          >
+                            {{ t('tenantPackageImportWizard.btnSaveRow') }}
+                          </el-button>
+                          <el-button :disabled="patchSaving !== null" @click="resetDraft(row)">
+                            {{ t('tenantPackageImportWizard.btnResetRow') }}
+                          </el-button>
+                        </div>
+                      </div>
+                    </template>
+                  </el-table-column>
                   <el-table-column
                     prop="sheetName"
                     :label="t('excelMaintenanceWizard.colSheet')"
-                    width="160"
+                    width="180"
                   />
                   <el-table-column
                     prop="rowNo"
                     :label="t('excelMaintenanceWizard.colRowNo')"
-                    width="70"
+                    width="80"
                   />
-                  <el-table-column
-                    prop="columnName"
-                    :label="t('tenantPackageImportWizard.colColumn')"
-                    width="140"
-                  >
-                    <template #default="{ row }">
-                      <code v-if="row.columnName" class="cell-col-code">{{ row.columnName }}</code>
-                      <span v-else class="cell-mute">—</span>
-                    </template>
+                  <el-table-column :label="t('excelMaintenanceWizard.colMessages')" min-width="240">
+                    <template #default="{ row }">{{ row.messages.join('; ') }}</template>
                   </el-table-column>
-                  <el-table-column
-                    prop="messages"
-                    :label="t('excelMaintenanceWizard.colMessages')"
-                    min-width="200"
-                  />
                 </el-table>
               </div>
             </template>
@@ -477,7 +510,7 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, ref, shallowRef } from 'vue'
+  import { computed, reactive, ref, shallowRef } from 'vue'
   import { useI18n } from 'vue-i18n'
   import {
     ArrowLeft,
@@ -499,10 +532,15 @@
     tenantPackageUpload,
     tenantPackagePreview,
     tenantPackageDownloadPreviewWorkbook,
+    tenantPackagePatchRow,
     tenantPackageApply,
     type TenantPackageApplyResponse,
   } from '@/api/tenantPackageExcel'
-  import { useImportWizard, type SheetStats } from '@/composables/useImportWizard'
+  import {
+    useImportWizard,
+    type SheetStats,
+    type PreviewErrorRow,
+  } from '@/composables/useImportWizard'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
@@ -519,13 +557,61 @@
     previewRaw,
     previewStats,
     previewWorkbookUrl,
-    issueRows,
     sheetStats,
+    errorRows,
     hasBlockingIssues,
     onFile,
     setRawFile,
     triggerBlobDownload,
   } = useImportWizard()
+
+  // 出错行内联编辑:每行一份草稿(按 sheet#rowNo 键),保存调 patch 端点回写 + 重校验
+  const rowDrafts = reactive<Record<string, Record<string, string>>>({})
+  const patchSaving = ref<string | null>(null)
+
+  function rowKeyOf(row: PreviewErrorRow): string {
+    return `${row.sheetName}#${row.rowNo}`
+  }
+
+  function columnsOf(row: PreviewErrorRow): string[] {
+    return Object.keys(row.values)
+  }
+
+  /** 懒初始化该行草稿(从后端 values 拷贝);返回可双向绑定的对象 */
+  function draftFor(row: PreviewErrorRow): Record<string, string> {
+    const key = rowKeyOf(row)
+    if (!rowDrafts[key]) rowDrafts[key] = { ...row.values }
+    return rowDrafts[key]
+  }
+
+  function resetDraft(row: PreviewErrorRow) {
+    rowDrafts[rowKeyOf(row)] = { ...row.values }
+  }
+
+  async function saveRow(row: PreviewErrorRow) {
+    const key = rowKeyOf(row)
+    patchSaving.value = key
+    try {
+      const resp = await tenantPackagePatchRow(uploadToken.value, {
+        sheetName: row.sheetName,
+        rowNo: row.rowNo,
+        values: draftFor(row),
+      })
+      // 用重校验后的新预览覆盖,errorRows 随之重算;修好的行会消失
+      previewRaw.value = resp as unknown as Record<string, unknown>
+      delete rowDrafts[key]
+      ElMessage.success(t('tenantPackageImportWizard.rowSavedToast'))
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { message?: string } }; message?: string } | null
+      ElMessage.error(
+        e?.response?.data?.message ||
+          e?.message ||
+          t('tenantPackageImportWizard.rowSaveFailedToast'),
+      )
+    } finally {
+      patchSaving.value = null
+    }
+  }
 
   const zoneDragover = ref(false)
   function onZoneDragEnter(ev: DragEvent) {
@@ -580,8 +666,8 @@
     for (const sh of sheetStats.value) {
       if (sh.invalid > 0) s.add(normalizeSheetName(sh.sheetName))
     }
-    for (const i of issueRows.value) {
-      s.add(normalizeSheetName(i.sheetName))
+    for (const r of errorRows.value) {
+      s.add(normalizeSheetName(r.sheetName))
     }
     return s
   })
@@ -618,7 +704,7 @@
    * 比固定 320 体验更好:少 issue 不空旷,多 issue 滚动条也更长好操作。
    */
   const issueTableMaxHeight = computed<number>(() => {
-    const n = issueRows.value.length
+    const n = errorRows.value.length
     const rowH = 36
     const base = 64
     return Math.min(480, Math.max(160, base + n * rowH))

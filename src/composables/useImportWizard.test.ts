@@ -58,7 +58,12 @@ describe('useImportWizard — preview 衍生数据', () => {
     w.previewRaw.value = {
       issues: [
         { sheetName: 'job_definition', rowNo: 3, columnName: 'job_code', message: '不能为空' },
-        { sheetName: 'file_template_config', rowNo: 1, columnName: 'template_code', message: '不存在' },
+        {
+          sheetName: 'file_template_config',
+          rowNo: 1,
+          columnName: 'template_code',
+          message: '不存在',
+        },
         { sheetName: undefined, rowNo: undefined },
       ],
     }
@@ -72,6 +77,36 @@ describe('useImportWizard — preview 衍生数据', () => {
       },
       { sheetName: '', rowNo: undefined, messages: '' },
     ])
+  })
+
+  it('errorRows 读取后端 errorRows(整行值 + 问题),缺字段降级空', () => {
+    const w = useImportWizard()
+    w.previewRaw.value = {
+      errorRows: [
+        {
+          sheetName: 'file_channel_config',
+          rowNo: 2,
+          values: { channel_code: 'c1', channel_name: '' },
+          messages: ['channel_name 不能为空'],
+        },
+        { sheetName: undefined, rowNo: undefined },
+      ],
+    }
+    expect(w.errorRows.value).toEqual([
+      {
+        sheetName: 'file_channel_config',
+        rowNo: 2,
+        values: { channel_code: 'c1', channel_name: '' },
+        messages: ['channel_name 不能为空'],
+      },
+      { sheetName: '', rowNo: 0, values: {}, messages: [] },
+    ])
+  })
+
+  it('errorRows 缺 errorRows 字段时为空数组', () => {
+    const w = useImportWizard()
+    w.previewRaw.value = { issues: [] }
+    expect(w.errorRows.value).toEqual([])
   })
 
   it('previewWorkbookUrl 仅当字段为非空字符串时返回值', () => {

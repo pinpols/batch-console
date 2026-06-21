@@ -25,6 +25,14 @@ export interface SheetStats {
   invalid: number
 }
 
+/** 出错行明细(后端 errorRows):整行单元格值 + 该行所有问题,供预览页内联编辑。 */
+export interface PreviewErrorRow {
+  sheetName: string
+  rowNo: number
+  values: Record<string, string>
+  messages: string[]
+}
+
 export interface ImportWizardState {
   step: Ref<number>
   file: Ref<File | null>
@@ -40,6 +48,8 @@ export interface ImportWizardState {
   issueRows: ComputedRef<PreviewIssue[]>
   /** 后端 sheets[]:每张 sheet 的 valid/invalid 拆分,定位"哪张表坏了" */
   sheetStats: ComputedRef<SheetStats[]>
+  /** 后端 errorRows[]:出错行整行单元格值 + 问题,供预览页内联编辑 */
+  errorRows: ComputedRef<PreviewErrorRow[]>
   /** 是否存在阻塞性错误:`invalidRows > 0`。Apply 应当 disabled。 */
   hasBlockingIssues: ComputedRef<boolean>
   onFile: (u: UploadFile) => void
@@ -108,6 +118,17 @@ export function useImportWizard(): ImportWizardState {
     }))
   })
 
+  const errorRows = computed<PreviewErrorRow[]>(() => {
+    const p = previewRaw.value
+    if (!p || !Array.isArray(p.errorRows)) return []
+    return (p.errorRows as Record<string, unknown>[]).map((r) => ({
+      sheetName: String(r.sheetName ?? ''),
+      rowNo: typeof r.rowNo === 'number' ? r.rowNo : Number(r.rowNo ?? 0),
+      values: r.values && typeof r.values === 'object' ? (r.values as Record<string, string>) : {},
+      messages: Array.isArray(r.messages) ? (r.messages as string[]) : [],
+    }))
+  })
+
   const hasBlockingIssues = computed<boolean>(() => {
     const inv = previewStats.value?.invalid
     if (typeof inv === 'number') return inv > 0
@@ -147,6 +168,7 @@ export function useImportWizard(): ImportWizardState {
     previewWorkbookUrl,
     issueRows,
     sheetStats,
+    errorRows,
     hasBlockingIssues,
     onFile,
     setRawFile,

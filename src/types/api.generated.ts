@@ -2176,8 +2176,8 @@ export interface paths {
     put?: never
     post?: never
     /**
-     * Cleanup tenants by exact ID list (补刀 prefix 模式无法清纯短名残留)
-     * @description 按精确 tenantId 列表级联清理,补刀 `/api/console/admin/test-data?prefix=` 无法清纯短名
+     * Cleanup tenants by exact ID list (补充处理 prefix 模式无法清纯短名残留)
+     * @description 按精确 tenantId 列表级联清理,补充处理 `/api/console/admin/test-data?prefix=` 无法清纯短名
      *     ID(如历史残留 `tx` / `td`,因 prefix 模式强制 `prefix-%` 后缀匹配)。
      *
      *     **白名单保护**(任何场景拒删):`system` / `default` / `default-tenant` / `ta` / `tb` / `tc`。
@@ -5599,6 +5599,27 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/console/config/tenant-package/excel/preview/{uploadToken}/patch': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Inline-edit an error row of the previewed tenant config package, then re-validate
+     * @description 把预览出错行被改动的单元格回写到上传会话并重校验,返回新预览,免去"下 Excel→改→重传"。不落库,仍需 apply。
+     *
+     */
+    post: operations['patchTenantConfigPackageExcelPreviewRow']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/console/config/tenant-package/excel/preview/{uploadToken}/workbook': {
     parameters: {
       query?: never
@@ -6549,7 +6570,7 @@ export interface components {
       configType: string
       configKey: string
       configName: string
-      /** @description 配置内容序列化为 JSON 字符串(BE 不解析,直接落库) */
+      /** @description 配置内容序列化为 JSON 字符串(BE 不解析,直接写入数据库) */
       configPayloadJson?: string
       grayScopeJson?: string
       effectiveFromAt?: string
@@ -7862,7 +7883,7 @@ export interface components {
       /** Format: date-time */
       createdAt: string
     }
-    /** @description 通用控制台用户操作审计(@AuditAction Aspect 落库)。
+    /** @description 通用控制台用户操作审计(@AuditAction Aspect 写入数据库)。
      *     字段顺序对齐 batch.console_operation_audit 表 + 将来 Kafka payload schema,
      *     新增字段务必非必填 + 同步升 eventVersion。
      *      */
@@ -8236,7 +8257,7 @@ export interface components {
     }
     /** @description 批量租户配置初始化请求。
      *     mode=SKIP_EXISTING 已存在跳过；mode=UPSERT 已存在更新。
-     *     dryRun=true 时只校验不落库。
+     *     dryRun=true 时只校验不写入数据库。
      *     各 List<XxxSpec> 字段为可选；未传则该类配置不初始化。
      *      */
     TenantConfigBatchInitRequest: {
@@ -8609,6 +8630,31 @@ export interface components {
       invalidRows: number
       sheets: components['schemas']['TenantConfigPackageSheetStats'][]
       issues: components['schemas']['TenantConfigPackageIssueDto'][]
+      /** @description 按 (sheet, rowNo) 聚合的出错行明细(整行单元格值 + 该行所有问题),供前端内联编辑。 */
+      errorRows?: components['schemas']['TenantConfigPackageErrorRowDto'][]
+    }
+    TenantConfigPackageErrorRowDto: {
+      sheetName: string
+      /** Format: int32 */
+      rowNo: number
+      /** @description 该行整行单元格值(列键→值),迭代顺序 = 该 sheet 列顺序。 */
+      values: {
+        [key: string]: string
+      }
+      messages: string[]
+    }
+    TenantConfigPackageExcelPatchRequest: {
+      /** @description sheet 名(后端 validator SHEET 常量,如 job_definition / file_channel_config)。 */
+      sheetName: string
+      /**
+       * Format: int32
+       * @description 行号(与预览返回一致;数据行从 2 起,1 为表头)。
+       */
+      rowNo: number
+      /** @description 改动的单元格:列键→新值。仅合并该行已有的列键,未知键忽略。 */
+      values?: {
+        [key: string]: string
+      }
     }
     TenantConfigPackageSheetStats: {
       sheetName: string
@@ -17844,6 +17890,32 @@ export interface operations {
     requestBody?: never
     responses: {
       /** @description Preview result with per-sheet stats and issue list */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseTenantConfigPackageExcelPreview']
+        }
+      }
+    }
+  }
+  patchTenantConfigPackageExcelPreviewRow: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        uploadToken: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['TenantConfigPackageExcelPatchRequest']
+      }
+    }
+    responses: {
+      /** @description Re-validated preview after patching the row */
       200: {
         headers: {
           [name: string]: unknown
