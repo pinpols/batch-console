@@ -5,6 +5,12 @@ const messages: Messages = {
     label: 'Print / PDF',
     hint: 'Choose "Save as PDF" in the print dialog',
   },
+  jobApi: {
+    definitionNotFound: 'Job definition not found: {code}',
+  },
+  workflowApi: {
+    definitionNotFound: 'Workflow not found',
+  },
   common: {
     datetime: {
       today: 'Today',
