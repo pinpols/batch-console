@@ -10,6 +10,7 @@ import type {
   ConsolePendingCatchUpResponse,
 } from '@/types/console-api'
 import type { PageResponse } from '@/types'
+import type { components } from '@/types/api.generated'
 
 type RawObject = Record<string, unknown>
 
@@ -51,39 +52,11 @@ export interface PipelineDefinitionForm {
   description: string
 }
 
-export interface FileTemplateSavePayload {
-  tenantId: string
-  templateCode?: string
-  templateName?: string
-  templateType?: string
-  bizType?: string
-  fileFormatType?: string
-  charset?: string
-  targetCharset?: string
-  withBom?: boolean
-  lineSeparator?: string
-  delimiter?: string
-  quoteChar?: string
-  escapeChar?: string
-  fieldMappingsJson?: string
-  queryParamSchemaJson?: string
-  enabled?: boolean
-  version?: number
-  description?: string
-}
+/** 复用 OpenAPI 生成类型(create 超集,update 调用复用同体)。重新生成:`npm run gen:api`。 */
+export type FileTemplateSavePayload = components['schemas']['FileTemplateCreateRequest']
 
-export interface FileChannelSavePayload {
-  tenantId: string
-  channelCode?: string
-  channelName?: string
-  channelType?: string
-  targetEndpoint?: string
-  authType?: string
-  configJson?: string
-  receiptPolicy?: string
-  timeoutSeconds?: number
-  enabled?: boolean
-}
+/** 复用 OpenAPI 生成类型(create 超集,update 调用复用同体)。 */
+export type FileChannelSavePayload = components['schemas']['FileChannelCreateRequest']
 
 function readString(row: RawObject, ...keys: string[]) {
   for (const key of keys) {
