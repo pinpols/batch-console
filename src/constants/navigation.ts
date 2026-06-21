@@ -62,20 +62,21 @@ export interface NavigationGroup {
 }
 
 /**
- * 侧边栏分组(2026-05-14 IA v3:8 组 → 7 组,38 visible → 35 visible)。
+ * 侧边栏分组(2026-06-21 IA v4:7 组 → 5 组,激进精简整合)。
  *
- * 关键变化(对比 v2):
- * - **#3 运行链路收敛**:`ops/diagnostic` 从"系统"挪到"运行"(看运行健康同心智),
- *   `monitor/job-steps` 隐藏(从 job 实例 drill,不占主导航位)
- * - **#1 侧边栏 8→7**:`配置 + 系统` 合并为 `配置与系统`(都是 admin 维护类心智),
- *   `event-catalog` / `tenant-package` 折进 Command Palette
+ * 设计:把"运行 + 文件可观测 + 告警"合并为「运行监控」、"作业与工作流 + 文件资产"合并为
+ * 「作业与文件」,顶层从 7 组降到 5 组,减少扫描视窗。可见项保持精简(高频侧栏可见,
+ * 低频 hidden:true 仅从 ⌘K / 内嵌跳转可达——路由与页面零删除、功能零损失)。
  *
- * 设计原则:
- * - 每组单一心智、组项数 ≤8(运行组现 5、配置与系统 8)
- * - 高频在侧栏可见,低频走 Command Palette(hidden 项 ⌘K 仍可达)
- * - 旧 group key 在 i18n 留兜底,用户停留在旧 URL 不会出现 raw key
+ * 5 组单一心智:
+ *   ① 工作台   —— 进系统先看什么 + 待我处理(总览 / 审批 / 自助)
+ *   ② 运行监控 —— 跑得怎么样 + 出事看哪(运行/实例/工作流/链路/告警/诊断)
+ *   ③ 作业与文件 —— 我配了什么(作业 / 管道 / 工作流 / 文件资产)
+ *   ④ 调度治理 —— 谁在调度 + 资源配额(worker / 触发器 / 快照 / 批次日 / 治理)
+ *   ⑤ 系统管理 —— 租户账号 + 配置发布 + 审计(admin 维护)
  *
- * 参考 ADR docs/design/page-naming-convention.md(新页面三同命名约定)
+ * 原则:每组单一心智、组项数 ≤8;高频侧栏、低频 ⌘K;旧 group key i18n 留兜底。
+ * 参考 docs/design/page-naming-convention.md。
  */
 export const navigationGroups: NavigationGroup[] = [
   {
@@ -83,426 +84,98 @@ export const navigationGroups: NavigationGroup[] = [
     title: '工作台',
     icon: Histogram,
     children: [
-      {
-        title: pageTitle('/ops/summary'),
-        path: '/ops/summary',
-        minRole: 'VIEWER',
-        icon: TrendCharts,
-      },
+      { title: pageTitle('/ops/summary'), path: '/ops/summary', minRole: 'VIEWER', icon: TrendCharts },
       { title: pageTitle('/approvals'), path: '/approvals', minRole: 'OPERATOR', icon: Stamp },
-      {
-        title: pageTitle('/reports'),
-        path: '/reports',
-        minRole: 'VIEWER',
-        icon: Download,
-        hidden: true,
-      },
-      {
-        title: pageTitle('/self-service'),
-        path: '/self-service',
-        minRole: 'OPERATOR',
-        icon: Service,
-      },
+      { title: pageTitle('/self-service'), path: '/self-service', minRole: 'OPERATOR', icon: Service },
+      { title: pageTitle('/reports'), path: '/reports', minRole: 'VIEWER', icon: Download, hidden: true },
     ],
   },
   {
-    key: 'runs',
-    title: '运行',
+    // 运行监控:运行态 + 排障 + 告警同心智合一(原"运行"+"告警与投递"+文件可观测)
+    key: 'runtime',
+    title: '运行监控',
     icon: VideoPlay,
-    children: [
-      // 概览 — 唯一主入口
-      {
-        title: pageTitle('/runs'),
-        path: '/runs',
-        minRole: 'VIEWER',
-        icon: View,
-      },
-      // Drill-down 明细(job-steps 已从主导航撤,从 job 实例详情进入,见下)
-      {
-        title: pageTitle('/monitor/job-instances'),
-        path: '/monitor/job-instances',
-        minRole: 'VIEWER',
-        icon: Operation,
-      },
-      {
-        title: pageTitle('/monitor/workflow-runs'),
-        path: '/monitor/workflow-runs',
-        minRole: 'VIEWER',
-        icon: Promotion,
-      },
-      // 统一排障入口:Trace 主入口
-      {
-        title: pageTitle('/observability/trace'),
-        path: '/observability/trace',
-        minRole: 'VIEWER',
-        icon: Search,
-      },
-      // 运维诊断:看运行健康(原系统组,2026-05-14 挪到运行组,同心智更顺)
-      {
-        title: pageTitle('/ops/diagnostic'),
-        path: '/ops/diagnostic',
-        minRole: 'ADMIN',
-        icon: DataAnalysis,
-      },
-      // ─── 以下 hidden,⌘K / 内嵌跳转 仍可达 ───
-      {
-        // job-steps 是 job 实例的 drill-down,从实例详情进,不占主导航
-        title: pageTitle('/monitor/job-steps'),
-        path: '/monitor/job-steps',
-        minRole: 'VIEWER',
-        icon: Memo,
-        hidden: true,
-      },
-      {
-        // queries 与 Trace 心智重叠,Trace 作主入口
-        title: pageTitle('/observability/queries'),
-        path: '/observability/queries',
-        minRole: 'VIEWER',
-        icon: Search,
-        hidden: true,
-      },
-      {
-        // 日志检索 — 后端 menu.yml 有、FE 路由存在(/logs),原导航漏登记;hidden + ⌘K 可达
-        title: pageTitle('/logs'),
-        path: '/logs',
-        minRole: 'VIEWER',
-        icon: Reading,
-        hidden: true,
-      },
-      {
-        // 批次日重放 — 后端 menu.yml 有、FE 路由存在;低频运维,hidden + ⌘K 可达
-        title: pageTitle('/ops/batch-day-replay'),
-        path: '/ops/batch-day-replay',
-        minRole: 'ADMIN',
-        icon: Calendar,
-        hidden: true,
-      },
-    ],
-  },
-  {
-    key: 'definitions',
-    title: '作业与工作流',
-    icon: Management,
-    children: [
-      {
-        title: pageTitle('/jobs/definitions'),
-        path: '/jobs/definitions',
-        minRole: 'VIEWER',
-        icon: List,
-      },
-      {
-        title: pageTitle('/jobs/pipelines'),
-        path: '/jobs/pipelines',
-        minRole: 'VIEWER',
-        icon: Connection,
-      },
-      {
-        title: pageTitle('/workflow/definitions'),
-        path: '/workflow/definitions',
-        minRole: 'VIEWER',
-        icon: Collection,
-      },
-      {
-        title: pageTitle('/config/tenant-package'),
-        path: '/config/tenant-package',
-        minRole: 'OPERATOR',
-        icon: Box,
-        hidden: true,
-      },
-    ],
-  },
-  {
-    key: 'files',
-    title: '文件',
-    icon: FolderOpened,
-    children: [
-      { title: pageTitle('/files/list'), path: '/files/list', minRole: 'VIEWER', icon: Files },
-      {
-        title: pageTitle('/files/templates'),
-        path: '/files/templates',
-        minRole: 'VIEWER',
-        icon: Document,
-        hidden: true,
-      },
-      {
-        title: pageTitle('/files/channels'),
-        path: '/files/channels',
-        minRole: 'VIEWER',
-        icon: Connection,
-        hidden: true,
-      },
-      {
-        title: pageTitle('/files/arrival-groups'),
-        path: '/files/arrival-groups',
-        minRole: 'VIEWER',
-        icon: CollectionTag,
-        hidden: true,
-      },
-      {
-        title: pageTitle('/files/pipeline-obs'),
-        path: '/files/pipeline-obs',
-        minRole: 'VIEWER',
-        icon: DataAnalysis,
-      },
-    ],
-  },
-  {
-    // 告警与投递:严格"系统在发什么消息" + "怎么订阅它"
-    // 图标分工:组=广播(Promotion)/ 告警=警告(WarningFilled)/ 路由=连接拓扑(Connection)/
-    //          Outbox=收件箱(MessageBox)/ 通知订阅=铃铛(Bell),互不重复
-    key: 'alerting',
-    title: '告警与投递',
-    icon: BellFilled,
     minRole: 'VIEWER',
     children: [
-      {
-        title: pageTitle('/observability/alerts'),
-        path: '/observability/alerts',
-        minRole: 'VIEWER',
-        icon: WarningFilled,
-      },
-      {
-        title: pageTitle('/observability/alert-routings'),
-        path: '/observability/alert-routings',
-        minRole: 'OPERATOR',
-        icon: Connection,
-        hidden: true,
-      },
-      {
-        title: pageTitle('/observability/outbox'),
-        path: '/observability/outbox',
-        minRole: 'OPERATOR',
-        icon: MessageBox,
-        hidden: true,
-      },
-      {
-        title: pageTitle('/system/notifications'),
-        path: '/system/notifications',
-        minRole: 'OPERATOR',
-        icon: Bell,
-        hidden: true,
-      },
+      { title: pageTitle('/runs'), path: '/runs', minRole: 'VIEWER', icon: View },
+      { title: pageTitle('/monitor/job-instances'), path: '/monitor/job-instances', minRole: 'VIEWER', icon: Operation },
+      { title: pageTitle('/monitor/workflow-runs'), path: '/monitor/workflow-runs', minRole: 'VIEWER', icon: Promotion },
+      { title: pageTitle('/observability/trace'), path: '/observability/trace', minRole: 'VIEWER', icon: Search },
+      { title: pageTitle('/observability/alerts'), path: '/observability/alerts', minRole: 'VIEWER', icon: WarningFilled },
+      { title: pageTitle('/ops/diagnostic'), path: '/ops/diagnostic', minRole: 'ADMIN', icon: DataAnalysis },
+      // ─── hidden,⌘K / 内嵌跳转可达 ───
+      { title: pageTitle('/monitor/job-steps'), path: '/monitor/job-steps', minRole: 'VIEWER', icon: Memo, hidden: true },
+      { title: pageTitle('/observability/queries'), path: '/observability/queries', minRole: 'VIEWER', icon: Search, hidden: true },
+      { title: pageTitle('/logs'), path: '/logs', minRole: 'VIEWER', icon: Reading, hidden: true },
+      { title: pageTitle('/observability/alert-routings'), path: '/observability/alert-routings', minRole: 'OPERATOR', icon: Connection, hidden: true },
+      { title: pageTitle('/observability/outbox'), path: '/observability/outbox', minRole: 'OPERATOR', icon: MessageBox, hidden: true },
+      { title: pageTitle('/system/notifications'), path: '/system/notifications', minRole: 'OPERATOR', icon: Bell, hidden: true },
+      { title: pageTitle('/files/pipeline-obs'), path: '/files/pipeline-obs', minRole: 'VIEWER', icon: DataAnalysis, hidden: true },
+      { title: pageTitle('/ops/batch-day-replay'), path: '/ops/batch-day-replay', minRole: 'ADMIN', icon: Calendar, hidden: true },
     ],
   },
   {
-    /**
-     * 调度:operator 日常调参的运行时资源 + 治理配置。
-     * 2026-05-14 IA 调整:8 项 → 5 项侧栏可见。
-     * 治理类 (queues/windows/calendars) 是 admin 低频配置,藏到 Command Palette,
-     * 避免和高频运行时(workers/triggers/snapshot)混在同一扫描视窗里增加心智负担。
-     */
+    // 作业与文件:配置态资产(原"作业与工作流"+"文件")
+    key: 'assets',
+    title: '作业与文件',
+    icon: Management,
+    minRole: 'VIEWER',
+    children: [
+      { title: pageTitle('/jobs/definitions'), path: '/jobs/definitions', minRole: 'VIEWER', icon: List },
+      { title: pageTitle('/jobs/pipelines'), path: '/jobs/pipelines', minRole: 'VIEWER', icon: Connection },
+      { title: pageTitle('/workflow/definitions'), path: '/workflow/definitions', minRole: 'VIEWER', icon: Collection },
+      { title: pageTitle('/files/list'), path: '/files/list', minRole: 'VIEWER', icon: Files },
+      // ─── hidden,⌘K / 内嵌跳转可达 ───
+      { title: pageTitle('/files/templates'), path: '/files/templates', minRole: 'VIEWER', icon: Document, hidden: true },
+      { title: pageTitle('/files/channels'), path: '/files/channels', minRole: 'VIEWER', icon: Connection, hidden: true },
+      { title: pageTitle('/files/arrival-groups'), path: '/files/arrival-groups', minRole: 'VIEWER', icon: CollectionTag, hidden: true },
+      { title: pageTitle('/config/tenant-package'), path: '/config/tenant-package', minRole: 'OPERATOR', icon: Box, hidden: true },
+    ],
+  },
+  {
+    // 调度治理:运行时调度资源 + 治理配额
     key: 'scheduling',
-    title: '调度',
+    title: '调度治理',
     icon: Timer,
     minRole: 'VIEWER',
     children: [
-      // 高频运行时(operator 日常)
-      {
-        title: pageTitle('/workers/management'),
-        path: '/workers/management',
-        minRole: 'OPERATOR',
-        icon: Cpu,
-      },
-      {
-        title: pageTitle('/system/triggers'),
-        path: '/system/triggers',
-        minRole: 'OPERATOR',
-        icon: VideoPlay,
-      },
-      {
-        title: pageTitle('/scheduler/snapshot'),
-        path: '/scheduler/snapshot',
-        minRole: 'VIEWER',
-        icon: Aim,
-      },
-      {
-        title: pageTitle('/scheduler/batch-days'),
-        path: '/scheduler/batch-days',
-        minRole: 'VIEWER',
-        icon: Calendar,
-      },
-      // 治理 — operator 偶发,但仍是日常配额相关
-      {
-        title: pageTitle('/governance/quota'),
-        path: '/governance/quota',
-        minRole: 'OPERATOR',
-        icon: PieChart,
-        hidden: true,
-      },
-      // SDK 自定义 taskType(只读,operator 排查租户 worker 注册情况)
-      {
-        title: pageTitle('/ops/custom-task-types'),
-        path: '/ops/custom-task-types',
-        minRole: 'OPERATOR',
-        icon: Cpu,
-        hidden: true,
-      },
-      // Worker fingerprint 看板(SDK Phase 5,灰度切流可视化)
-      {
-        title: pageTitle('/ops/worker-fingerprints'),
-        path: '/ops/worker-fingerprints',
-        minRole: 'OPERATOR',
-        icon: Cpu,
-        hidden: true,
-      },
-      // ↓ 以下 admin 治理低频项隐藏到 Command Palette
-      {
-        title: pageTitle('/governance/queues'),
-        path: '/governance/queues',
-        minRole: 'ADMIN',
-        icon: Management,
-        hidden: true,
-      },
-      {
-        title: pageTitle('/governance/windows'),
-        path: '/governance/windows',
-        minRole: 'ADMIN',
-        icon: Timer,
-        hidden: true,
-      },
-      {
-        title: pageTitle('/governance/calendars'),
-        path: '/governance/calendars',
-        minRole: 'ADMIN',
-        icon: Calendar,
-        hidden: true,
-      },
-      {
-        // Catch-up 审批 — 后端 menu.yml 有、FE 路由存在;低频审批,hidden + ⌘K 可达
-        title: pageTitle('/scheduler/catch-up-approvals'),
-        path: '/scheduler/catch-up-approvals',
-        minRole: 'OPERATOR',
-        icon: Stamp,
-        hidden: true,
-      },
+      { title: pageTitle('/workers/management'), path: '/workers/management', minRole: 'OPERATOR', icon: Cpu },
+      { title: pageTitle('/system/triggers'), path: '/system/triggers', minRole: 'OPERATOR', icon: VideoPlay },
+      { title: pageTitle('/scheduler/snapshot'), path: '/scheduler/snapshot', minRole: 'VIEWER', icon: Aim },
+      { title: pageTitle('/scheduler/batch-days'), path: '/scheduler/batch-days', minRole: 'VIEWER', icon: Calendar },
+      // ─── hidden,⌘K / 内嵌跳转可达 ───
+      { title: pageTitle('/governance/quota'), path: '/governance/quota', minRole: 'OPERATOR', icon: PieChart, hidden: true },
+      { title: pageTitle('/governance/queues'), path: '/governance/queues', minRole: 'ADMIN', icon: Management, hidden: true },
+      { title: pageTitle('/governance/windows'), path: '/governance/windows', minRole: 'ADMIN', icon: Timer, hidden: true },
+      { title: pageTitle('/governance/calendars'), path: '/governance/calendars', minRole: 'ADMIN', icon: Calendar, hidden: true },
+      { title: pageTitle('/ops/custom-task-types'), path: '/ops/custom-task-types', minRole: 'OPERATOR', icon: Cpu, hidden: true },
+      { title: pageTitle('/ops/worker-fingerprints'), path: '/ops/worker-fingerprints', minRole: 'OPERATOR', icon: Cpu, hidden: true },
+      { title: pageTitle('/scheduler/catch-up-approvals'), path: '/scheduler/catch-up-approvals', minRole: 'OPERATOR', icon: Stamp, hidden: true },
     ],
   },
   {
-    /**
-     * 配置与系统(2026-05-14 IA v3:合并原 config + system 两组)。
-     *
-     * 高频 8 项侧栏可见:租户/账户/Key/参数/审计 + 发布单/变更同步/标签。
-     * 低频 3 项 hidden,⌘K / 内嵌跳转可达:
-     *   - tenant-package(批量导入,半年用一次)
-     *   - event-catalog(查阅类只读字典)
-     *   - ai-chat(实验入口)
-     *
-     * ops/diagnostic 已挪到"运行"组(看运行健康同心智)。
-     */
-    key: 'configSystem',
-    title: '配置与系统',
+    // 系统管理:租户账号 + 配置发布 + 审计 + 平台运维(原"配置与系统")
+    key: 'system',
+    title: '系统管理',
     icon: Tools,
     minRole: 'VIEWER',
     children: [
-      // 租户与账号(高频)
-      {
-        title: pageTitle('/system/tenants'),
-        path: '/system/tenants',
-        minRole: 'OPERATOR',
-        icon: OfficeBuilding,
-      },
-      {
-        title: pageTitle('/system/user-accounts'),
-        path: '/system/user-accounts',
-        minRole: 'ADMIN',
-        icon: User,
-      },
-      {
-        // 权限自查(看当前账号角色/权限/可访问菜单)—— 后端 menu.yml 有、FE 路由存在;hidden + ⌘K 可达
-        title: pageTitle('/system/users'),
-        path: '/system/users',
-        minRole: 'VIEWER',
-        icon: User,
-        hidden: true,
-      },
-      {
-        title: pageTitle('/system/api-keys'),
-        path: '/system/api-keys',
-        minRole: 'ADMIN',
-        icon: Key,
-        hidden: true,
-      },
-      {
-        title: pageTitle('/system/parameters'),
-        path: '/system/parameters',
-        minRole: 'ADMIN',
-        icon: Setting,
-        hidden: true,
-      },
-      // Atomic 节点配置中心(平台四类原子节点 schema + 安全闸只读)
-      {
-        title: pageTitle('/system/atomic-task-types'),
-        path: '/system/atomic-task-types',
-        minRole: 'OPERATOR',
-        icon: Box,
-        hidden: true,
-      },
-      // 审计(原"告警与投递"挪入)
-      {
-        title: pageTitle('/observability/audits'),
-        path: '/observability/audits',
-        minRole: 'VIEWER',
-        icon: Notebook,
-        hidden: true,
-      },
-      // 通用操作审计 — @AuditAction 切面落库,覆盖 console 写操作
-      {
-        title: pageTitle('/observability/operation-audits'),
-        path: '/observability/operation-audits',
-        minRole: 'VIEWER',
-        icon: Notebook,
-        hidden: true,
-      },
-      // 配置(发布单 / 变更同步 / 标签 — 原 config 组保留高频 3 项)
-      {
-        title: pageTitle('/config/releases'),
-        path: '/config/releases',
-        minRole: 'OPERATOR',
-        icon: DocumentChecked,
-      },
-      {
-        title: pageTitle('/config/management'),
-        path: '/config/management',
-        minRole: 'OPERATOR',
-        icon: Memo,
-      },
-      {
-        title: pageTitle('/system/tags'),
-        path: '/system/tags',
-        minRole: 'OPERATOR',
-        icon: PriceTag,
-        hidden: true,
-      },
-      // biz 多租分片路由(P2 tenant-routing,平台 ADMIN 运维)
-      {
-        title: pageTitle('/ops/shard-catalog'),
-        path: '/ops/shard-catalog',
-        minRole: 'ADMIN',
-        icon: Connection,
-        hidden: true,
-      },
-      {
-        title: pageTitle('/ops/tenant-placements'),
-        path: '/ops/tenant-placements',
-        minRole: 'ADMIN',
-        icon: Collection,
-        hidden: true,
-      },
-      // ─── hidden,⌘K 可达 ───
-      {
-        title: pageTitle('/system/event-catalog'),
-        path: '/system/event-catalog',
-        minRole: 'VIEWER',
-        icon: Reading,
-        hidden: true,
-      },
-      {
-        title: pageTitle('/system/ai-chat'),
-        path: '/system/ai-chat',
-        minRole: 'ADMIN',
-        icon: ChatLineRound,
-        hidden: true,
-      },
+      { title: pageTitle('/system/tenants'), path: '/system/tenants', minRole: 'OPERATOR', icon: OfficeBuilding },
+      { title: pageTitle('/system/user-accounts'), path: '/system/user-accounts', minRole: 'ADMIN', icon: User },
+      { title: pageTitle('/config/releases'), path: '/config/releases', minRole: 'OPERATOR', icon: DocumentChecked },
+      { title: pageTitle('/config/management'), path: '/config/management', minRole: 'OPERATOR', icon: Memo },
+      // ─── hidden,⌘K / 内嵌跳转可达 ───
+      { title: pageTitle('/system/users'), path: '/system/users', minRole: 'VIEWER', icon: User, hidden: true },
+      { title: pageTitle('/system/api-keys'), path: '/system/api-keys', minRole: 'ADMIN', icon: Key, hidden: true },
+      { title: pageTitle('/system/parameters'), path: '/system/parameters', minRole: 'ADMIN', icon: Setting, hidden: true },
+      { title: pageTitle('/system/atomic-task-types'), path: '/system/atomic-task-types', minRole: 'OPERATOR', icon: Box, hidden: true },
+      { title: pageTitle('/observability/audits'), path: '/observability/audits', minRole: 'VIEWER', icon: Notebook, hidden: true },
+      { title: pageTitle('/observability/operation-audits'), path: '/observability/operation-audits', minRole: 'VIEWER', icon: Notebook, hidden: true },
+      { title: pageTitle('/system/tags'), path: '/system/tags', minRole: 'OPERATOR', icon: PriceTag, hidden: true },
+      { title: pageTitle('/ops/shard-catalog'), path: '/ops/shard-catalog', minRole: 'ADMIN', icon: Connection, hidden: true },
+      { title: pageTitle('/ops/tenant-placements'), path: '/ops/tenant-placements', minRole: 'ADMIN', icon: Collection, hidden: true },
+      { title: pageTitle('/system/event-catalog'), path: '/system/event-catalog', minRole: 'VIEWER', icon: Reading, hidden: true },
+      { title: pageTitle('/system/ai-chat'), path: '/system/ai-chat', minRole: 'ADMIN', icon: ChatLineRound, hidden: true },
     ],
   },
 ]
