@@ -24,7 +24,7 @@
     <div class="json-textarea-input__bar">
       <div class="json-textarea-input__left">
         <el-button :icon="UploadFilled" size="small" :disabled="disabled" @click="onFilePick">
-          选择 JSON 文件
+          {{ t('jsonTextareaInput.chooseFile') }}
         </el-button>
         <span v-if="fileName" class="json-textarea-input__file">
           <el-icon><Document /></el-icon>
@@ -44,7 +44,7 @@
         </span>
         <span v-else-if="parseStatus.kind === 'ok'" class="json-textarea-input__parse-ok">
           <el-icon><Check /></el-icon>
-          JSON 合法 · {{ parseStatus.summary }}
+          {{ t('jsonTextareaInput.validPrefix') }} · {{ parseStatus.summary }}
         </span>
         <el-button
           v-if="modelValue?.toString().trim()"
@@ -54,7 +54,7 @@
           :disabled="disabled"
           @click="onClear"
         >
-          清空
+          {{ t('common.clear') }}
         </el-button>
       </div>
     </div>
@@ -130,7 +130,7 @@
   onMounted(ensureDefault)
 
   const effectivePlaceholder = computed(
-    () => props.placeholder || '把 .json 文件拖进来 / 点「选择文件」/ ⌘V 粘贴 / 直接键入',
+    () => props.placeholder || t('jsonTextareaInput.placeholder'),
   )
 
   type ParseStatus =
@@ -144,19 +144,19 @@
     try {
       const parsed = JSON.parse(raw)
       if (props.expect === 'array' && !Array.isArray(parsed)) {
-        return { kind: 'error', message: '期望根是 JSON 数组' }
+        return { kind: 'error', message: t('jsonTextareaInput.expectArray') }
       }
       if (
         props.expect === 'object' &&
         (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed))
       ) {
-        return { kind: 'error', message: '期望根是 JSON 对象' }
+        return { kind: 'error', message: t('jsonTextareaInput.expectObject') }
       }
       const summary = Array.isArray(parsed)
-        ? `数组 ${parsed.length} 项`
+        ? t('jsonTextareaInput.summaryArray', { n: parsed.length })
         : typeof parsed === 'object' && parsed !== null
-          ? `对象 ${Object.keys(parsed).length} 字段`
-          : `${typeof parsed} 值`
+          ? t('jsonTextareaInput.summaryObject', { n: Object.keys(parsed).length })
+          : t('jsonTextareaInput.summaryValue', { type: typeof parsed })
       return { kind: 'ok', summary }
     } catch (err) {
       return { kind: 'error', message: (err as Error).message.replace(/^JSON\.parse: /, '') }
@@ -169,11 +169,19 @@
 
   async function loadFile(file: File) {
     if (!/\.json$/i.test(file.name) && file.type !== 'application/json') {
-      ElMessage.warning(`仅支持 .json 文件,当前: ${file.name || file.type || '未知'}`)
+      ElMessage.warning(
+        t('jsonTextareaInput.onlyJsonFile', {
+          name: file.name || file.type || t('jsonTextareaInput.unknownFile'),
+        }),
+      )
       return
     }
     if (file.size > props.maxBytes) {
-      ElMessage.error(`文件超过 ${Math.round(props.maxBytes / 1024 / 1024)} MB,请精简后再导入`)
+      ElMessage.error(
+        t('jsonTextareaInput.fileTooLarge', {
+          mb: Math.round(props.maxBytes / 1024 / 1024),
+        }),
+      )
       return
     }
     try {
@@ -182,9 +190,9 @@
       emit('file-loaded', file)
       fileName.value = file.name
       fileSize.value = file.size
-      ElMessage.success(`已加载 ${file.name}`)
+      ElMessage.success(t('jsonTextareaInput.loaded', { name: file.name }))
     } catch (err) {
-      ElMessage.error(`文件读取失败:${(err as Error).message}`)
+      ElMessage.error(t('jsonTextareaInput.readFailed', { message: (err as Error).message }))
     }
   }
 

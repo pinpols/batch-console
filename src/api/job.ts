@@ -3,7 +3,13 @@ import { fetchAllPageItems } from '@/api/adapters'
 import { launchBatchDayCatchUp } from '@/api/batchDays'
 import { instanceApi } from '@/api/instance'
 import { queryJobInstances, type InstanceQueryParams } from '@/api/queries/instances'
-import type { BatchDayCatchUpRequest, ConsoleJobDefinitionResponse } from '@/types/console-api'
+import type {
+  BatchDayCatchUpRequest,
+  ConfigSyncBundlePayload,
+  ConsoleJobDefinitionResponse,
+  JobBundleCreateRequest,
+  JobBundleImportRequest,
+} from '@/types/console-api'
 import type { components } from '@/types/api.generated'
 
 export type InstanceQuery = InstanceQueryParams
@@ -19,33 +25,7 @@ export type JobDefinitionCreateRequest = components['schemas']['JobDefinitionCre
 /** PUT 接收任意子集(BE 用 null/未传区分"不改"),复用 OpenAPI 生成的 `JobDefinitionUpdateRequest`。 */
 export type JobDefinitionUpdateRequest = components['schemas']['JobDefinitionUpdateRequest']
 
-export type JobBundlePayload = {
-  jobDefinitions?: Array<Record<string, unknown>>
-  workflowDefinitions?: Array<Record<string, unknown>>
-  pipelineDefinitions?: Array<Record<string, unknown>>
-  fileChannels?: Array<Record<string, unknown>>
-  fileTemplates?: Array<Record<string, unknown>>
-  resourceQueues?: Array<Record<string, unknown>>
-  batchWindows?: Array<Record<string, unknown>>
-  businessCalendars?: Array<Record<string, unknown>>
-  quotaPolicies?: Array<Record<string, unknown>>
-  alertRoutings?: Array<Record<string, unknown>>
-}
-
-export interface JobBundleCreateRequest {
-  tenantId: string
-  mode?: 'SKIP_EXISTING' | 'UPSERT'
-  dryRun?: boolean
-  bundle: JobBundlePayload
-}
-
-export interface JobBundleImportRequest {
-  tenantId: string
-  targetTenantIds: string[]
-  mode?: 'SKIP_EXISTING' | 'UPSERT'
-  dryRun?: boolean
-  bundle: JobBundlePayload
-}
+export type JobBundlePayload = ConfigSyncBundlePayload
 
 async function resolveJobDefinitionId(jobCode: string, tenantId: string) {
   // 传入 jobCode 让后端过滤（后端不支持时忽略该参数，回退到全量）
