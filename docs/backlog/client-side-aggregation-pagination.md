@@ -36,9 +36,12 @@ job-definition / fileChannels / queues / governance / system 等:数据量受租
 
 | 端点 | 后端现有 query 参数 | 前端端上筛选维度 | 能否纯前端迁 |
 |---|---|---|---|
-| `/queries/catch-up-approvals` | tenantId/pageNo/pageSize | keyword / requestStatus / bizDate | ❌ 后端缺 3 个筛选参数 |
-| `/queries/approvals` | tenantId/pageNo/pageSize | (视消费方) | ❌ 同上 |
-| `/queries/audits` `/queries/alerts` | tenantId/pageNo/pageSize | 时间/类型等 | ❌ 需核后端 |
+| `/queries/catch-up-approvals` | tenantId/jobCode/requestId/**bizDate**/**keyword**/cursor/pageNo/pageSize | keyword / status / bizDate | ✅ **后端已补**(BE 2026-06-21:bizDate 精确 + keyword 跨列模糊;status 维度后端恒 ACCEPTED、前端 enum 退化 no-op,无需后端参数)→ 待 BE 合 main 后纯前端迁 |
+| `/queries/approvals` | tenantId/pageNo/pageSize | (视消费方) | ❌ 后端缺筛选参数(下一片) |
+| `/queries/audits` `/queries/alerts` | tenantId/pageNo/pageSize | 时间/类型等 | ❌ 需核后端(下一片) |
+
+> **进度(2026-06-21)**:catch-up-approvals 已完成后端筛选参数补齐(file-batch-system PR #602:DTO+Query+mapper+OpenAPI+IT),作为「服务端筛选 + 服务端分页」的样板端点。
+> 待该 BE PR 合入 `../file-batch-system` main → 前端 `npm run gen:api` 刷新类型 → `CatchUpApprovalsTab.vue` / `MCatchUp.vue` 去掉 `fetchAllPageItems`,把 `filtered` computed 改成把 bizDate/keyword 作为 query 参数传给后端 + ProTable 服务端 total/page。approvals/audits/alerts 按同样「先 BE 补参再 FE 迁」顺序逐个推进。
 
 **若纯前端改服务端分页而后端筛选参数不补**:keyword/status/bizDate 筛选会退化成"只在当前页生效"
 (用户筛不到下一页的匹配项)→ **比现在的 4000 截断更糟**。所以这是**前后端协同任务**,不是纯前端 fix。
