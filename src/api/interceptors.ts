@@ -284,9 +284,9 @@ function extractHttpErrorMessage(error: unknown): string {
   ) {
     const target = import.meta.env.VITE_DEV_PROXY_TARGET || 'http://localhost:18080'
     if (import.meta.env.DEV) {
-      return `无法连接后端（代理目标 ${target}）。请确认服务已启动，或与 VITE_DEV_PROXY_TARGET 一致。`
+      return i18n.global.t('apiError.backendUnreachableDev', { target })
     }
-    return '网络不可达或服务未响应，请稍后重试。'
+    return i18n.global.t('apiError.backendUnreachable')
   }
   const status = ax.response?.status
   const d = ax.response?.data
@@ -296,7 +296,9 @@ function extractHttpErrorMessage(error: unknown): string {
     // 这类信息对用户不友好，统一改成“接口不存在/版本不匹配”。
     if (status === 404 && typeof d.message === 'string' && /No static resource/i.test(d.message)) {
       const url = ax.config?.url || d.path
-      return url ? `接口不存在或后端版本不匹配（${url}）` : '接口不存在或后端版本不匹配'
+      return url
+        ? i18n.global.t('apiError.endpointVersionMismatchWithUrl', { url })
+        : i18n.global.t('apiError.endpointVersionMismatch')
     }
     const parts: string[] = []
     if (d.message) parts.push(translateBizMessage(String(d.message)) ?? String(d.message))
@@ -305,8 +307,8 @@ function extractHttpErrorMessage(error: unknown): string {
     if (parts.length) return parts.join(' ')
   }
   if (typeof d === 'string' && d.trim()) return d.trim().slice(0, 400)
-  if (status) return `请求失败（HTTP ${status}）`
-  return ax.message || '网络异常'
+  if (status) return i18n.global.t('apiError.requestFailedWithStatus', { status })
+  return ax.message || i18n.global.t('apiError.networkError')
 }
 
 function extractErrorTrace(error: unknown): string | undefined {
@@ -340,7 +342,7 @@ function showApiErrorToast(message: string, error?: unknown) {
   const trace = error !== undefined ? extractErrorTrace(error) : undefined
   const suggestion = error !== undefined ? suggestionFromError(error) : undefined
   showErrorToast({
-    title: '请求失败',
+    title: i18n.global.t('apiError.requestFailed'),
     message,
     traceId: trace,
     suggestion,
@@ -455,10 +457,13 @@ export function applyApiInterceptors(client: AxiosInstance): void {
         const envelope = body as CommonResponse<unknown>
         setLastApiMeta(envelope.meta ?? null)
         if (!isSuccessCode(envelope.code as string | number)) {
-          const msg = translateBizMessage(envelope.message) || envelope.message || '请求失败'
+          const msg =
+            translateBizMessage(envelope.message) ||
+            envelope.message ||
+            i18n.global.t('apiError.requestFailed')
           const tid = envelope.meta?.traceId || envelope.meta?.requestId
           showErrorToast({
-            title: '请求失败',
+            title: i18n.global.t('apiError.requestFailed'),
             message: msg,
             traceId: tid ? String(tid) : undefined,
             suggestion: suggestionForBizKey(envelope.message),
@@ -614,7 +619,7 @@ export function applyApiInterceptors(client: AxiosInstance): void {
               ? String((raw as CommonResponse<unknown>).message || '')
               : ''
           const msg = translateBizMessage(rawMsg) || rawMsg
-          showApiErrorToast(msg || '用户名或密码错误')
+          showApiErrorToast(msg || i18n.global.t('apiError.invalidCredentials'))
         } else if (isSessionAuthRequest(cfg)) {
           // /auth/me 401:session 真正失效 → 清登录 flag 跳登录
           // (HttpOnly cookie 由后端 max-age=0 或服务端 token 已过期;前端只需清 UI flag)
@@ -645,18 +650,20 @@ export function applyApiInterceptors(client: AxiosInstance): void {
             // 用新 token 重发(cookie 已被后端 Set-Cookie 更新，浏览器自动带最新值)
             return client.request(cfg)
           }
-          const msg = extractHttpErrorMessage(error) || '该操作未授权'
+          const msg =
+            extractHttpErrorMessage(error) || i18n.global.t('apiError.unauthorizedMessage')
           showErrorToast({
-            title: '未授权',
+            title: i18n.global.t('apiError.unauthorizedTitle'),
             message: msg,
             traceId: extractErrorTrace(error),
             suggestion: suggestionFromError(error),
           })
         } else {
           // 已尝试过 refresh 仍 401:权限真不够 / 接口 RBAC 限制,不登出,toast 提示
-          const msg = extractHttpErrorMessage(error) || '该操作未授权'
+          const msg =
+            extractHttpErrorMessage(error) || i18n.global.t('apiError.unauthorizedMessage')
           showErrorToast({
-            title: '未授权',
+            title: i18n.global.t('apiError.unauthorizedTitle'),
             message: msg,
             traceId: extractErrorTrace(error),
             suggestion: suggestionFromError(error),
@@ -664,8 +671,8 @@ export function applyApiInterceptors(client: AxiosInstance): void {
         }
       } else if (status === 403) {
         showErrorToast({
-          title: '权限不足',
-          message: '你没有访问该功能的权限。',
+          title: i18n.global.t('apiError.permissionDeniedTitle'),
+          message: i18n.global.t('apiError.permissionDeniedMessage'),
           traceId: extractErrorTrace(error),
           suggestion: suggestionFromError(error),
         })
@@ -681,10 +688,10 @@ export function applyApiInterceptors(client: AxiosInstance): void {
           const m = (cfg?.method ?? 'get').toUpperCase()
           const url = cfg?.url ?? (error as AxiosError)?.config?.url
           showErrorToast({
-            title: '参数缺失（jobCode）',
+            title: i18n.global.t('apiError.missingJobCodeTitle'),
             message: url
-              ? `接口要求必填参数 jobCode，但本次请求未携带。请检查该页面的查询条件/路由参数是否传了 jobCode。\n${m} ${url}`
-              : `接口要求必填参数 jobCode，但本次请求未携带。请检查该页面的查询条件/路由参数是否传了 jobCode。`,
+              ? i18n.global.t('apiError.missingJobCodeWithUrl', { method: m, url })
+              : i18n.global.t('apiError.missingJobCodeMessage'),
             traceId: extractErrorTrace(error),
             duration: 7500,
           })
@@ -706,24 +713,26 @@ export function applyApiInterceptors(client: AxiosInstance): void {
             'data' in body
           if (isBizNotFound) {
             showErrorToast({
-              title: '资源不存在',
-              message: msg || '请求的资源在后端未找到。',
+              title: i18n.global.t('apiError.resourceNotFoundTitle'),
+              message: msg || i18n.global.t('apiError.resourceNotFoundMessage'),
               traceId: extractErrorTrace(error),
             })
           } else {
             const url = (error as AxiosError)?.config?.url
             showErrorToast({
-              title: '接口不存在',
+              title: i18n.global.t('apiError.endpointNotFoundTitle'),
               message: url
-                ? `后端未提供该接口或版本不匹配：${url}。请确认后端已部署最新版本，并检查代理/网关路由配置。`
-                : `后端未提供该接口或版本不匹配。请确认后端已部署最新版本，并检查代理/网关路由配置。`,
+                ? i18n.global.t('apiError.endpointNotFoundWithUrl', { url })
+                : i18n.global.t('apiError.endpointNotFoundMessage'),
               traceId: extractErrorTrace(error),
               duration: 7500,
             })
           }
         } else {
           showErrorToast({
-            title: status ? `请求失败（HTTP ${status}）` : '请求失败',
+            title: status
+              ? i18n.global.t('apiError.requestFailedWithStatus', { status })
+              : i18n.global.t('apiError.requestFailed'),
             message: msg,
             traceId: extractErrorTrace(error),
           })
