@@ -1,5 +1,6 @@
 import { del, get, post, put } from '@/api/client'
 import { fetchAllPageItems } from '@/api/adapters'
+import type { components } from '@/types/api.generated'
 
 /**
  * 治理列表（queues / batch-windows / calendars / quota-policies）：OpenAPI 多为分页 JSON，
@@ -21,21 +22,8 @@ export interface GovernanceQueueRow {
   updatedAt: string
 }
 
-export interface GovernanceQueueSavePayload {
-  tenantId: string
-  queueCode?: string
-  queueName?: string
-  queueType?: string
-  maxRunningJobs?: number
-  maxRunningPartitions?: number
-  maxQps?: number
-  workerGroup?: string
-  resourceTag?: string
-  priorityPolicy?: string
-  fairShareWeight?: number
-  enabled?: boolean
-  description?: string
-}
+/** 复用 OpenAPI 生成类型(create 超集,update 调用复用同体)。重新生成:`npm run gen:api`。 */
+export type GovernanceQueueSavePayload = components['schemas']['ResourceQueueCreateRequest']
 
 export interface GovernanceBatchWindowRow {
   id: number
@@ -54,19 +42,9 @@ export interface GovernanceBatchWindowRow {
   updatedAt: string
 }
 
-export interface GovernanceBatchWindowSavePayload {
-  tenantId: string
-  windowCode?: string
-  windowName?: string
-  timezone?: string
-  startTime?: string
-  endTime?: string
-  endStrategy?: string
-  outOfWindowAction?: string
-  allowCrossDay?: boolean
-  enabled?: boolean
-  description?: string
-}
+/** 复用 OpenAPI 生成类型(create 超集,update 调用复用同体)。 */
+export type GovernanceBatchWindowSavePayload =
+  components['schemas']['BatchWindowCreateRequest']
 
 export interface GovernanceCalendarRow {
   id: number
@@ -78,16 +56,8 @@ export interface GovernanceCalendarRow {
   updatedAt: string
 }
 
-export interface GovernanceCalendarSavePayload {
-  tenantId: string
-  calendarCode?: string
-  calendarName: string
-  timezone: string
-  holidayRollRule?: string
-  catchUpPolicy?: string
-  catchUpMaxDays?: number
-  enabled?: boolean
-}
+/** 复用 OpenAPI 生成类型(BE create/update 同体 CalendarSaveRequest)。 */
+export type GovernanceCalendarSavePayload = components['schemas']['CalendarSaveRequest']
 
 export interface GovernanceCalendarHolidayRow {
   id: number
@@ -119,16 +89,8 @@ export interface GovernanceQuotaPolicyRow {
   updatedAt: string
 }
 
-export interface GovernanceQuotaPolicySavePayload {
-  tenantId: string
-  policyCode: string
-  maxRunningJobsPerTenant?: number
-  maxPartitionsPerTenant?: number
-  maxQpsPerTenant?: number
-  fairShareWeight?: number
-  enabled?: boolean
-  description?: string
-}
+/** 复用 OpenAPI 生成类型(BE create/update 同体 QuotaPolicySaveRequest)。 */
+export type GovernanceQuotaPolicySavePayload = components['schemas']['QuotaPolicySaveRequest']
 
 export interface GovernanceAlertRoutingRow {
   id: number
