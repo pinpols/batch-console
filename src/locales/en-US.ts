@@ -748,22 +748,22 @@ const messages: Messages = {
     themeLight: 'Light',
     themeDark: 'Dark',
     group: {
+      // IA v4 (2026-06-21, 7→5 groups) primary keys
       workspace: 'Workspace',
+      runtime: 'Runtime & Monitoring',
+      assets: 'Jobs & Files',
+      scheduling: 'Scheduling & Governance',
+      system: 'System Admin',
+      // Legacy fallback keys (stale HMR / cached nav won't show raw keys)
       runs: 'Runs',
       definitions: 'Jobs & Workflows',
       files: 'Files',
-      scheduling: 'Scheduling',
       alerting: 'Alerts & Delivery',
       configSystem: 'Config & System',
-      // Legacy fallback: keep each old key with its ORIGINAL label so a stale HMR
-      // navigation module (still holding 2 groups) doesn't show two identically
-      // titled groups; the new merged group uses `configSystem`.
       config: 'Config',
-      system: 'System',
       jobs: 'Jobs & Workflows',
       monitor: 'Runs',
       observability: 'Alerts & Delivery',
-      runtime: 'Scheduling',
       infra: 'Infrastructure',
     },
     closeLeft: 'Close all to the left',
