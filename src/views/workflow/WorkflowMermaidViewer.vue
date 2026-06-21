@@ -403,6 +403,7 @@
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
   import DataState from '@/components/common/DataState.vue'
+  import { clearTrustedSvg, setTrustedMermaidSvg } from '@/utils/trustedMermaidSvg'
   import { workflowApi } from '@/api/workflow'
   import { injectCrossDayEdges, describeCrossDayDeps } from '@/utils/crossDayMermaid'
   import { queryWorkflowNodeRuns } from '@/api/workflowQueries'
@@ -768,8 +769,7 @@
       const renderId = `wf-graph-${Date.now()}-${Math.floor(Math.random() * 1e4)}`
       const { svg } = await mermaid.render(renderId, text)
       await nextTick()
-      // SVG 来自 mermaid.render(可信),直接挂到 ref.innerHTML 而非 v-html(被 ESLint 拦)
-      if (graphRef.value) graphRef.value.innerHTML = svg
+      setTrustedMermaidSvg(graphRef.value, svg)
       // 销毁旧 pan-zoom 实例(reload 时 svg 元素被替换,旧实例引用悬挂)
       if (panZoomInstance) {
         try {
@@ -906,7 +906,7 @@
   }
 
   function clearGraph() {
-    if (graphRef.value) graphRef.value.innerHTML = ''
+    clearTrustedSvg(graphRef.value)
   }
 
   async function copyText() {

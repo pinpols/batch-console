@@ -1,5 +1,6 @@
 import { ElMessage } from 'element-plus'
 import { h } from 'vue'
+import { i18n } from '@/locales'
 
 type ErrorToastOptions = {
   /** Short title shown in bold */
@@ -59,7 +60,7 @@ export function showErrorToast(opts: ErrorToastOptions) {
                 'code',
                 {
                   class: 'error-toast__trace-code',
-                  title: '点击复制 TraceId',
+                  title: i18n.global.t('errorToast.copyTraceTitle'),
                   onClick: () => copyText(trace),
                 },
                 trace,
@@ -71,7 +72,7 @@ export function showErrorToast(opts: ErrorToastOptions) {
                   class: 'error-toast__trace-copy',
                   onClick: () => copyText(trace),
                 },
-                '复制',
+                i18n.global.t('common.copy'),
               ),
             ])
           : null,

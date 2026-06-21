@@ -115,6 +115,7 @@
   import { workflowApi } from '@/api/workflow'
   import { queryWorkflowNodeRuns } from '@/api/workflowQueries'
   import { instanceApi } from '@/api/instance'
+  import { clearTrustedSvg, setTrustedMermaidSvg } from '@/utils/trustedMermaidSvg'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
   import { useAutoRefresh } from '@/composables/useAutoRefresh'
@@ -274,14 +275,14 @@
 
   async function renderMermaid(text: string) {
     if (!text.trim()) {
-      if (graphRef.value) graphRef.value.innerHTML = ''
+      clearTrustedSvg(graphRef.value)
       return
     }
     try {
       const renderId = `m-wf-graph-${Date.now()}-${Math.floor(Math.random() * 1e4)}`
       const { svg } = await mermaid.render(renderId, text)
       await nextTick()
-      if (graphRef.value) graphRef.value.innerHTML = svg
+      setTrustedMermaidSvg(graphRef.value, svg)
     } catch (err: unknown) {
       errorMessage.value =
         t('mobile.workflowViewer.renderFailPrefix') +

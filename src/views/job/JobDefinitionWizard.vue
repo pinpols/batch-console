@@ -1,13 +1,13 @@
 <template>
   <PageContainer>
     <PageHeader
-      title="新建作业向导"
-      description="按作业、调度、资源、触发与关联配置分步创建。"
+      :title="t('jobDefinitionWizard.pageTitle')"
+      :description="t('jobDefinitionWizard.pageDescription')"
       back-to="/jobs/definitions"
     >
       <template #actions>
         <el-button @click="bundlePrefillVisible = !bundlePrefillVisible">
-          导入 Bundle JSON
+          {{ t('jobDefinitionWizard.importBundleJson') }}
         </el-button>
       </template>
     </PageHeader>
@@ -16,7 +16,7 @@
       <div class="wizard-layout">
         <el-dialog
           v-model="bundlePrefillVisible"
-          title="从 Bundle JSON 预填向导"
+          :title="t('jobDefinitionWizard.prefillDialogTitle')"
           width="640px"
           append-to-body
           :close-on-click-modal="false"
@@ -25,15 +25,17 @@
             <template #title>
               <div class="prefill-hint">
                 <div>
-                  Bundle 来源:<el-link type="primary" :underline="false" @click="goExportSource"
-                    >作业列表</el-link
-                  >
-                  → 任一作业行的操作菜单 →
-                  <strong>导出 Bundle</strong>,会下载 <code>job-bundle-&lt;jobCode&gt;.json</code>。
+                  {{ t('jobDefinitionWizard.prefillSourcePrefix') }}
+                  <el-link type="primary" :underline="false" @click="goExportSource">
+                    {{ t('jobDefinitionWizard.prefillSourceJobList') }}
+                  </el-link>
+                  {{ t('jobDefinitionWizard.prefillSourceMiddle') }}
+                  <strong>{{ t('jobDefinitionWizard.prefillExportBundle') }}</strong>
+                  {{ t('jobDefinitionWizard.prefillSourceSuffix') }}
+                  <code>job-bundle-&lt;jobCode&gt;.json</code>
                 </div>
                 <div class="prefill-hint__sub">
-                  把内容粘贴到下方文本框,可一键预填全部步骤(jobDefinitions / fileChannels /
-                  fileTemplates / workflowDefinitions / alertRoutings)。预填后仍可逐步编辑。
+                  {{ t('jobDefinitionWizard.prefillSourceHint') }}
                 </div>
               </div>
             </template>
@@ -45,13 +47,13 @@
             :placeholder="t('jobDefinitionWizard.bundlePrefillJsonPlaceholder')"
           />
           <template #footer>
-            <el-button @click="bundlePrefillVisible = false">取消</el-button>
+            <el-button @click="bundlePrefillVisible = false">{{ t('common.cancel') }}</el-button>
             <el-button
               type="primary"
               :disabled="!bundlePrefillJson.trim()"
               @click="applyBundlePrefill"
             >
-              预填向导
+              {{ t('jobDefinitionWizard.prefillConfirm') }}
             </el-button>
           </template>
         </el-dialog>
@@ -115,11 +117,7 @@
           />
 
           <div v-else-if="current.key === 'files'" class="json-step">
-            <el-alert
-              title="IMPORT/EXPORT 作业可绑定已有 fileChannels / fileTemplates,或粘贴新建 JSON 数组。两种来源会合并提交。"
-              type="info"
-              :closable="false"
-            />
+            <el-alert :title="t('jobDefinitionWizard.filesHint')" type="info" :closable="false" />
             <el-form-item :label="t('jobDefinitionWizard.selectChannelLabel')">
               <el-select
                 v-model="selectedChannelIds"
@@ -184,7 +182,7 @@
 
           <div v-else-if="current.key === 'workflow'" class="json-step">
             <el-alert
-              title="WORKFLOW 作业可关联已有 workflow_definition,或粘贴 JSON 数组同事务创建。"
+              :title="t('jobDefinitionWizard.workflowHint')"
               type="info"
               :closable="false"
             />
@@ -221,11 +219,7 @@
           </div>
 
           <div v-else-if="current.key === 'alerts'" class="json-step">
-            <el-alert
-              title="可勾选已有 alert_routing,或粘贴 JSON 数组同事务创建。留空则只创建作业定义。"
-              type="info"
-              :closable="false"
-            />
+            <el-alert :title="t('jobDefinitionWizard.alertsHint')" type="info" :closable="false" />
             <el-form-item :label="t('jobDefinitionWizard.selectAlertRoutingLabel')">
               <el-select
                 v-model="selectedAlertRoutingIds"
@@ -276,9 +270,15 @@
         </el-form>
 
         <div class="wizard-footer">
-          <el-button :disabled="step === 0 || saving" @click="step--">上一步</el-button>
-          <el-button v-if="step < steps.length - 1" type="primary" @click="next">下一步</el-button>
-          <el-button v-else type="primary" :loading="saving" @click="submit">提交创建</el-button>
+          <el-button :disabled="step === 0 || saving" @click="step--">
+            {{ t('jobDefinitionWizard.prevStep') }}
+          </el-button>
+          <el-button v-if="step < steps.length - 1" type="primary" @click="next">
+            {{ t('jobDefinitionWizard.nextStep') }}
+          </el-button>
+          <el-button v-else type="primary" :loading="saving" @click="submit">
+            {{ t('jobDefinitionWizard.submitCreate') }}
+          </el-button>
         </div>
       </div>
     </SectionCard>
@@ -312,23 +312,57 @@
   import JobConfigBasicSection from './components/JobConfigBasicSection.vue'
   import { createEmptyJobEditForm } from './jobEditFormTypes'
 
-  const steps = [
-    { key: 'basic', title: '基本信息', desc: '填写作业唯一标识与基础属性' },
-    { key: 'schedule', title: '调度', desc: '配置触发周期、Cron 与时区' },
-    { key: 'resource', title: '资源', desc: '指定执行队列、worker 分组与配额' },
-    { key: 'trigger', title: '触发', desc: '默认参数、参数 schema 与触发方式' },
-    { key: 'files', title: '关联文件', desc: 'IMPORT / EXPORT 关联 channel 与 template' },
-    { key: 'workflow', title: '关联编排', desc: 'WORKFLOW 作业绑定 workflow 定义' },
-    { key: 'alerts', title: '告警', desc: '匹配租户告警路由(可选)' },
-    { key: 'review', title: '复核', desc: '检查全部填写后提交' },
-  ] as const
-
   const { t } = useI18n({ useScope: 'global' })
+  const steps = computed(
+    () =>
+      [
+        {
+          key: 'basic',
+          title: t('jobDefinitionWizard.stepBasicTitle'),
+          desc: t('jobDefinitionWizard.stepBasicDesc'),
+        },
+        {
+          key: 'schedule',
+          title: t('jobDefinitionWizard.stepScheduleTitle'),
+          desc: t('jobDefinitionWizard.stepScheduleDesc'),
+        },
+        {
+          key: 'resource',
+          title: t('jobDefinitionWizard.stepResourceTitle'),
+          desc: t('jobDefinitionWizard.stepResourceDesc'),
+        },
+        {
+          key: 'trigger',
+          title: t('jobDefinitionWizard.stepTriggerTitle'),
+          desc: t('jobDefinitionWizard.stepTriggerDesc'),
+        },
+        {
+          key: 'files',
+          title: t('jobDefinitionWizard.stepFilesTitle'),
+          desc: t('jobDefinitionWizard.stepFilesDesc'),
+        },
+        {
+          key: 'workflow',
+          title: t('jobDefinitionWizard.stepWorkflowTitle'),
+          desc: t('jobDefinitionWizard.stepWorkflowDesc'),
+        },
+        {
+          key: 'alerts',
+          title: t('jobDefinitionWizard.stepAlertsTitle'),
+          desc: t('jobDefinitionWizard.stepAlertsDesc'),
+        },
+        {
+          key: 'review',
+          title: t('jobDefinitionWizard.stepReviewTitle'),
+          desc: t('jobDefinitionWizard.stepReviewDesc'),
+        },
+      ] as const,
+  )
   const router = useRouter()
   const tenant = useTenantStore()
   const formRef = ref<FormInstance>()
   const step = ref(0)
-  const current = computed(() => steps[step.value])
+  const current = computed(() => steps.value[step.value])
   const form = reactive(createEmptyJobEditForm())
   const saving = ref(false)
   const executionModeOptions = ref<MetaOption[]>([])
@@ -373,15 +407,15 @@
       JSON.parse(value)
       callback()
     } catch {
-      callback(new Error('JSON 格式不合法'))
+      callback(new Error(t('jobDefinitionWizard.errJsonInvalid')))
     }
   }
   const watermarkValidator = (_rule: unknown, value: unknown, callback: (err?: Error) => void) => {
     if (form.executionMode !== 'INCREMENTAL') return callback()
     const v = typeof value === 'string' ? value.trim() : ''
-    if (!v) return callback(new Error('INCREMENTAL 模式必须指定 watermarkField'))
+    if (!v) return callback(new Error(t('jobDefinitionWizard.errWatermarkRequired')))
     if (!watermarkPattern.test(v)) {
-      return callback(new Error('仅允许字母/数字/下划线,且必须字母或下划线开头'))
+      return callback(new Error(t('jobDefinitionWizard.errWatermarkPattern')))
     }
     return callback()
   }
@@ -392,26 +426,42 @@
   ) => {
     if (form.scheduleType === 'MANUAL') return callback()
     const v = typeof value === 'string' ? value.trim() : ''
-    if (!v) return callback(new Error('非 MANUAL 调度必须填写 scheduleExpr'))
+    if (!v) return callback(new Error(t('jobDefinitionWizard.errScheduleExprRequired')))
     return callback()
   }
   const rules: FormRules = {
     jobCode: [
-      { required: true, message: '请输入作业编码', trigger: 'blur' },
+      { required: true, message: t('jobDefinitionWizard.errJobCodeRequired'), trigger: 'blur' },
       {
         validator: (_r, v, cb) => {
           if (!v) return cb()
           return jobCodePattern.test(String(v))
             ? cb()
-            : cb(new Error('字母开头,仅含字母/数字/下划线/连字符,长度 ≤ 128'))
+            : cb(new Error(t('jobDefinitionWizard.errJobCodePattern')))
         },
         trigger: 'blur',
       },
     ],
-    jobName: [{ required: true, message: '请输入作业名称', trigger: 'blur' }],
-    jobType: [{ required: true, message: '请选择作业类型', trigger: 'change' }],
-    scheduleType: [{ required: true, message: '请选择调度类型', trigger: 'change' }],
-    executionMode: [{ required: true, message: '请选择执行模式', trigger: 'change' }],
+    jobName: [
+      { required: true, message: t('jobDefinitionWizard.errJobNameRequired'), trigger: 'blur' },
+    ],
+    jobType: [
+      { required: true, message: t('jobDefinitionWizard.errJobTypeRequired'), trigger: 'change' },
+    ],
+    scheduleType: [
+      {
+        required: true,
+        message: t('jobDefinitionWizard.errScheduleTypeRequired'),
+        trigger: 'change',
+      },
+    ],
+    executionMode: [
+      {
+        required: true,
+        message: t('jobDefinitionWizard.errExecutionModeRequired'),
+        trigger: 'change',
+      },
+    ],
     watermarkField: [{ validator: watermarkValidator, trigger: 'blur' }],
     scheduleExpr: [{ validator: scheduleExprValidator, trigger: 'blur' }],
     paramSchema: [{ validator: jsonValidator, trigger: 'blur' }],
@@ -489,7 +539,7 @@
   function parseArray(raw: string): Array<Record<string, unknown>> {
     if (!raw.trim()) return []
     const parsed = JSON.parse(raw)
-    if (!Array.isArray(parsed)) throw new Error('JSON 必须是数组')
+    if (!Array.isArray(parsed)) throw new Error(t('jobDefinitionWizard.errJsonMustBeArray'))
     return parsed as Array<Record<string, unknown>>
   }
 
@@ -497,7 +547,7 @@
     try {
       return parseArray(raw).length
     } catch {
-      return '格式错误'
+      return t('jobDefinitionWizard.countFormatError')
     }
   }
 
@@ -505,9 +555,9 @@
     const newCount = countArray(json)
     if (typeof newCount === 'string') return newCount
     if (refCount === 0 && newCount === 0) return 0
-    if (refCount === 0) return `新建 ${newCount}`
-    if (newCount === 0) return `引用 ${refCount}`
-    return `引用 ${refCount} + 新建 ${newCount}`
+    if (refCount === 0) return t('jobDefinitionWizard.countCreate', { n: newCount })
+    if (newCount === 0) return t('jobDefinitionWizard.countRef', { n: refCount })
+    return t('jobDefinitionWizard.countRefAndCreate', { ref: refCount, create: newCount })
   }
 
   function stringifyArray(value: unknown) {
@@ -541,10 +591,10 @@
       selectedWorkflowIds.value = []
       selectedAlertRoutingIds.value = []
       bundlePrefillVisible.value = false
-      ElMessage.success('Bundle JSON 已预填')
+      ElMessage.success(t('jobDefinitionWizard.prefillSuccess'))
       bundlePrefillJson.value = ''
     } catch {
-      ElMessage.error('Bundle JSON 格式不正确')
+      ElMessage.error(t('jobDefinitionWizard.prefillBadJson'))
     }
   }
 
@@ -618,11 +668,11 @@
         dryRun: false,
         bundle: buildBundle(),
       })
-      ElMessage.success('作业 Bundle 已创建')
+      ElMessage.success(t('jobDefinitionWizard.createBundleSuccess'))
       await router.push({ path: '/jobs/definitions', query: { jobCode: form.jobCode.trim() } })
     } catch (error) {
       if (error instanceof SyntaxError) {
-        ElMessage.error('关联配置 JSON 格式不正确')
+        ElMessage.error(t('jobDefinitionWizard.relatedJsonInvalid'))
       } else {
         throw error
       }
