@@ -3,35 +3,51 @@ import { fetchAllPageItems } from '@/api/adapters'
 import type { PageResponse } from '@/types'
 import type { ConsoleAlertEventResponse } from '@/types/console-api'
 
+/**
+ * 告警列表筛选维度。与后端 /api/console/queries/alerts 契约对齐(BE 2026-06-21 修正双向漂移):
+ * severity / status / alertType / traceId 后端精确过滤;startDate / endDate 按 last_seen_at 范围。
+ * 旧的 `acknowledged` 布尔已废弃 —— 直接传 `status` 的真值(OPEN/ACKED/SUPPRESSED/CLOSED)。
+ */
 export interface AlertQueryFilters {
-  /** true = non-OPEN, false = OPEN */
-  acknowledged?: boolean
-  /** ISO date range start */
-  startDate?: string
-  /** ISO date range end */
-  endDate?: string
-  /** exact match */
+  /** 严重级别精确过滤(severity enum) */
+  severity?: string
+  /** 告警状态精确过滤(alertStatus enum:OPEN/ACKED/SUPPRESSED/CLOSED) */
+  status?: string
+  /** 告警类型精确过滤 */
+  alertType?: string
+  /** traceId 精确过滤 */
   traceId?: string
+  /** last_seen_at 范围起(ISO date 或 datetime) */
+  startDate?: string
+  /** last_seen_at 范围止(ISO date 或 datetime) */
+  endDate?: string
+}
+
+function toQuery(filters?: AlertQueryFilters): Record<string, string> {
+  return {
+    ...(filters?.severity ? { severity: filters.severity } : {}),
+    ...(filters?.status ? { status: filters.status } : {}),
+    ...(filters?.alertType ? { alertType: filters.alertType } : {}),
+    ...(filters?.traceId ? { traceId: filters.traceId } : {}),
+    ...(filters?.startDate ? { startDate: filters.startDate } : {}),
+    ...(filters?.endDate ? { endDate: filters.endDate } : {}),
+  }
 }
 
 /**
- * @deprecated 全量拉回前端切片,大租户告警上万会卡;新代码用 queryAlertsPage(服务端分页)。
- *             仅保留给已有调用方过渡。
+ * @deprecated 端上全量聚合(大租户告警上万会卡 + 4000 截断);新代码用 queryAlertsPage 服务端分页。
+ *             仅保留给过渡调用方。
  */
 export function queryAlertsAll(tenantId: string, filters?: AlertQueryFilters) {
   return fetchAllPageItems<ConsoleAlertEventResponse>('/api/console/queries/alerts', {
     tenantId,
-    ...(filters?.acknowledged != null ? { acknowledged: filters.acknowledged } : {}),
-    ...(filters?.startDate ? { startDate: filters.startDate } : {}),
-    ...(filters?.endDate ? { endDate: filters.endDate } : {}),
-    ...(filters?.traceId ? { traceId: filters.traceId } : {}),
+    ...toQuery(filters),
   })
 }
 
 /**
- * 服务端分页查询告警列表。BE 仅支持 acknowledged / startDate / endDate 三个过滤维度,
- * severity / alertType / status / traceId 等客户端过滤需在调用方按当前页结果上做(局部过滤),
- * 不可在端上做"跨页全量过滤"——大租户量级会卡爆。
+ * 服务端分页查询告警列表。severity / status / alertType / traceId / 时间范围全部由后端过滤
+ * (BE 已支持全维度,前端不再做"当前页局部过滤")。
  */
 export function queryAlertsPage(
   tenantId: string,
@@ -43,9 +59,6 @@ export function queryAlertsPage(
     tenantId,
     pageNo,
     pageSize,
-    ...(filters?.acknowledged != null ? { acknowledged: filters.acknowledged } : {}),
-    ...(filters?.startDate ? { startDate: filters.startDate } : {}),
-    ...(filters?.endDate ? { endDate: filters.endDate } : {}),
-    ...(filters?.traceId ? { traceId: filters.traceId } : {}),
+    ...toQuery(filters),
   })
 }

@@ -6,6 +6,14 @@ const messages: Messages = {
     hint: 'Choose "Save as PDF" in the print dialog',
   },
   common: {
+    datetime: {
+      today: 'Today',
+      yesterday: 'Yesterday',
+      justNow: 'just now',
+      minutesAgo: '{n} min ago',
+      hoursAgo: '{n} h ago',
+      daysAgo: '{n} d ago',
+    },
     ok: 'OK',
     cancel: 'Cancel',
     permissionDenied: 'Your current role does not allow this action',
@@ -748,22 +756,22 @@ const messages: Messages = {
     themeLight: 'Light',
     themeDark: 'Dark',
     group: {
+      // IA v4 (2026-06-21, 7→5 groups) primary keys
       workspace: 'Workspace',
+      runtime: 'Runtime & Monitoring',
+      assets: 'Jobs & Files',
+      scheduling: 'Scheduling & Governance',
+      system: 'System Admin',
+      // Legacy fallback keys (stale HMR / cached nav won't show raw keys)
       runs: 'Runs',
       definitions: 'Jobs & Workflows',
       files: 'Files',
-      scheduling: 'Scheduling',
       alerting: 'Alerts & Delivery',
       configSystem: 'Config & System',
-      // Legacy fallback: keep each old key with its ORIGINAL label so a stale HMR
-      // navigation module (still holding 2 groups) doesn't show two identically
-      // titled groups; the new merged group uses `configSystem`.
       config: 'Config',
-      system: 'System',
       jobs: 'Jobs & Workflows',
       monitor: 'Runs',
       observability: 'Alerts & Delivery',
-      runtime: 'Scheduling',
       infra: 'Infrastructure',
     },
     closeLeft: 'Close all to the left',
@@ -3146,6 +3154,26 @@ const messages: Messages = {
     bundleImportTargetLabel: 'Target tenants',
     bundleImportTargetPlaceholder: 'Pick or type tenantId (up to 50)',
     bundleImportModeLabel: 'Mode',
+    bundleImportTitle: 'Bundle cross-env import',
+    bundleImportModeUpsert: 'UPSERT (overwrite existing)',
+    bundleImportModeSkip: 'SKIP_EXISTING (skip existing)',
+    bundleImportDryRun: 'Validate only (dry-run, no persist)',
+    bundleImportJsonLabel: 'Bundle JSON',
+    bundleImportJsonPlaceholder:
+      'Paste exportBundle JSON (with jobDefinitions / fileChannels / fileTemplates arrays)',
+    bundleImportValidate: 'Validate',
+    bundleImportConfirm: 'Import',
+    bundleImportNoSourceTenant: 'Source tenant not ready; wait or re-select a tenant',
+    bundleImportNoTargetTenant: 'Select at least 1 valid target tenant',
+    bundleImportBadJson: 'Invalid Bundle JSON',
+    bundleImportDryRunDone: 'Bundle dry-run validated {n} tenant(s)',
+    bundleImportDone: 'Bundle imported to {n} tenant(s)',
+    exportBundleSuccess: 'Job {code} bundle exported',
+    queueEmptyPlaceholder: 'No queue for current tenant; create one in Governance first',
+    queueGoCreate: '+ New queue',
+    fileTabNotApplicable: 'This job type has no file pipeline (IMPORT / EXPORT jobs only)',
+    jobCodeRule:
+      'Start with a letter; letters/digits/underscore/hyphen only; max 128 (no spaces / CJK / special chars)',
   },
   jobDefinitionWizard: {
     bundlePrefillJsonPlaceholder: 'Drop a job-bundle-*.json, pick a file, or paste / type the JSON',
