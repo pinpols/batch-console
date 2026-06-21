@@ -95,6 +95,9 @@ export type ConsoleAlertRoutingExcelApplyResponse =
 export type ConsoleAlertRoutingExcelRowIssueResponse =
   components['schemas']['ConsoleAlertRoutingExcelRowIssueResponse']
 export type AlertRoutingExcelApplyRequest = components['schemas']['AlertRoutingExcelApplyRequest']
+export type ConfigSyncBundlePayload = components['schemas']['ConfigSyncBundlePayload']
+export type JobBundleCreateRequest = components['schemas']['JobBundleCreateRequest']
+export type JobBundleImportRequest = components['schemas']['JobBundleImportRequest']
 
 // --- Excel shared types ---
 export type ExcelApplyRequest = components['schemas']['ExcelApplyRequest']

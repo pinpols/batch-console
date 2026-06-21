@@ -6753,6 +6753,229 @@ export interface components {
       /** Format: date-time */
       updatedAt: string
     }
+    /** @description 创建资源队列。与 BE Java DTO `ResourceQueueCreateRequest` 对齐。 */
+    ResourceQueueCreateRequest: {
+      tenantId?: string
+      queueCode?: string
+      queueName?: string
+      queueType?: string
+      /** Format: int32 */
+      maxRunningJobs?: number
+      /** Format: int32 */
+      maxRunningPartitions?: number
+      /** Format: int32 */
+      maxQps?: number
+      workerGroup?: string
+      resourceTag?: string
+      priorityPolicy?: string
+      /** Format: int32 */
+      fairShareWeight?: number
+      enabled?: boolean
+      description?: string
+    }
+    /** @description 更新资源队列(字段可选,缺省视为不修改)。与 BE Java DTO `ResourceQueueUpdateRequest` 对齐。 */
+    ResourceQueueUpdateRequest: {
+      tenantId?: string
+      queueName?: string
+      queueType?: string
+      /** Format: int32 */
+      maxRunningJobs?: number
+      /** Format: int32 */
+      maxRunningPartitions?: number
+      /** Format: int32 */
+      maxQps?: number
+      workerGroup?: string
+      resourceTag?: string
+      priorityPolicy?: string
+      /** Format: int32 */
+      fairShareWeight?: number
+      enabled?: boolean
+      description?: string
+    }
+    /** @description 创建批次窗口。与 BE Java DTO `BatchWindowCreateRequest` 对齐。 */
+    BatchWindowCreateRequest: {
+      tenantId?: string
+      windowCode?: string
+      windowName?: string
+      timezone?: string
+      startTime?: string
+      endTime?: string
+      endStrategy?: string
+      outOfWindowAction?: string
+      allowCrossDay?: boolean
+      enabled?: boolean
+      description?: string
+    }
+    /** @description 更新批次窗口(字段可选)。与 BE Java DTO `BatchWindowUpdateRequest` 对齐。 */
+    BatchWindowUpdateRequest: {
+      tenantId?: string
+      windowName?: string
+      timezone?: string
+      startTime?: string
+      endTime?: string
+      endStrategy?: string
+      outOfWindowAction?: string
+      allowCrossDay?: boolean
+      enabled?: boolean
+      description?: string
+    }
+    /** @description 创建/更新业务日历。与 BE Java DTO `CalendarSaveRequest` 对齐(create 与 update 同体)。 */
+    CalendarSaveRequest: {
+      tenantId?: string
+      calendarCode?: string
+      calendarName?: string
+      timezone?: string
+      holidayRollRule?: string
+      catchUpPolicy?: string
+      /** Format: int32 */
+      catchUpMaxDays?: number
+      enabled?: boolean
+    }
+    /** @description 创建/更新租户配额策略。与 BE Java DTO `QuotaPolicySaveRequest` 对齐(create 与 update 同体)。 */
+    QuotaPolicySaveRequest: {
+      tenantId?: string
+      policyCode?: string
+      /** Format: int32 */
+      maxRunningJobsPerTenant?: number
+      /** Format: int32 */
+      maxPartitionsPerTenant?: number
+      /** Format: int32 */
+      maxQpsPerTenant?: number
+      /** Format: int32 */
+      fairShareWeight?: number
+      enabled?: boolean
+      description?: string
+    }
+    /** @description 创建文件模板。与 BE Java DTO `FileTemplateCreateRequest` 对齐。 */
+    FileTemplateCreateRequest: {
+      tenantId?: string
+      templateCode?: string
+      templateName?: string
+      templateType?: string
+      bizType?: string
+      fileFormatType?: string
+      charset?: string
+      targetCharset?: string
+      withBom?: boolean
+      lineSeparator?: string
+      delimiter?: string
+      quoteChar?: string
+      escapeChar?: string
+      /** Format: int32 */
+      recordLength?: number
+      /** Format: int32 */
+      headerRows?: number
+      /** Format: int32 */
+      footerRows?: number
+      headerTemplateJson?: string
+      trailerTemplateJson?: string
+      checksumType?: string
+      compressType?: string
+      encryptType?: string
+      namingRule?: string
+      fieldMappingsJson?: string
+      validationRuleSetJson?: string
+      defaultQueryCode?: string
+      defaultQuerySql?: string
+      queryParamSchemaJson?: string
+      streamingEnabled?: boolean
+      /** Format: int32 */
+      pageSize?: number
+      /** Format: int32 */
+      fetchSize?: number
+      /** Format: int32 */
+      chunkSize?: number
+      previewMaskingEnabled?: boolean
+      errorLineMaskingEnabled?: boolean
+      logMaskingEnabled?: boolean
+      contentEncryptionEnabled?: boolean
+      encryptionKeyRef?: string
+      downloadRequiresApproval?: boolean
+      maskingRuleSet?: string
+      enabled?: boolean
+      /** Format: int32 */
+      version?: number
+      description?: string
+    }
+    /** @description 更新文件模板(字段可选)。与 BE Java DTO `FileTemplateUpdateRequest` 对齐。 */
+    FileTemplateUpdateRequest: {
+      tenantId?: string
+      templateName?: string
+      templateType?: string
+      bizType?: string
+      fileFormatType?: string
+      charset?: string
+      targetCharset?: string
+      withBom?: boolean
+      lineSeparator?: string
+      delimiter?: string
+      quoteChar?: string
+      escapeChar?: string
+      /** Format: int32 */
+      recordLength?: number
+      /** Format: int32 */
+      headerRows?: number
+      /** Format: int32 */
+      footerRows?: number
+      headerTemplateJson?: string
+      trailerTemplateJson?: string
+      checksumType?: string
+      compressType?: string
+      encryptType?: string
+      namingRule?: string
+      fieldMappingsJson?: string
+      validationRuleSetJson?: string
+      defaultQueryCode?: string
+      defaultQuerySql?: string
+      queryParamSchemaJson?: string
+      streamingEnabled?: boolean
+      /** Format: int32 */
+      pageSize?: number
+      /** Format: int32 */
+      fetchSize?: number
+      /** Format: int32 */
+      chunkSize?: number
+      previewMaskingEnabled?: boolean
+      errorLineMaskingEnabled?: boolean
+      logMaskingEnabled?: boolean
+      contentEncryptionEnabled?: boolean
+      encryptionKeyRef?: string
+      downloadRequiresApproval?: boolean
+      maskingRuleSet?: string
+      enabled?: boolean
+      /** Format: int32 */
+      version?: number
+      description?: string
+      loadTargetRef?: string
+      exportDataRef?: string
+    }
+    /** @description 创建文件渠道。与 BE Java DTO `FileChannelCreateRequest` 对齐。 */
+    FileChannelCreateRequest: {
+      tenantId?: string
+      channelCode?: string
+      channelName?: string
+      channelType?: string
+      targetEndpoint?: string
+      authType?: string
+      configJson?: string
+      receiptPolicy?: string
+      /** Format: int32 */
+      timeoutSeconds?: number
+      enabled?: boolean
+    }
+    /** @description 更新文件渠道(字段可选)。与 BE Java DTO `FileChannelUpdateRequest` 对齐。 */
+    FileChannelUpdateRequest: {
+      tenantId?: string
+      channelName?: string
+      channelType?: string
+      targetEndpoint?: string
+      authType?: string
+      configJson?: string
+      receiptPolicy?: string
+      /** Format: int32 */
+      timeoutSeconds?: number
+      enabled?: boolean
+    }
     /** @description 创建作业定义。与 BE Java DTO `JobDefinitionCreateRequest` 对齐。 */
     JobDefinitionCreateRequest: {
       tenantId?: string
@@ -14150,7 +14373,7 @@ export interface operations {
     }
     requestBody: {
       content: {
-        'application/json': Record<string, never>
+        'application/json': components['schemas']['ResourceQueueCreateRequest']
       }
     }
     responses: {
@@ -14178,7 +14401,7 @@ export interface operations {
     }
     requestBody: {
       content: {
-        'application/json': Record<string, never>
+        'application/json': components['schemas']['ResourceQueueUpdateRequest']
       }
     }
     responses: {
@@ -14257,7 +14480,7 @@ export interface operations {
     }
     requestBody: {
       content: {
-        'application/json': Record<string, never>
+        'application/json': components['schemas']['BatchWindowCreateRequest']
       }
     }
     responses: {
@@ -14285,7 +14508,7 @@ export interface operations {
     }
     requestBody: {
       content: {
-        'application/json': Record<string, never>
+        'application/json': components['schemas']['BatchWindowUpdateRequest']
       }
     }
     responses: {
@@ -14364,7 +14587,7 @@ export interface operations {
     }
     requestBody: {
       content: {
-        'application/json': Record<string, never>
+        'application/json': components['schemas']['CalendarSaveRequest']
       }
     }
     responses: {
@@ -14392,7 +14615,7 @@ export interface operations {
     }
     requestBody: {
       content: {
-        'application/json': Record<string, never>
+        'application/json': components['schemas']['CalendarSaveRequest']
       }
     }
     responses: {
@@ -15019,7 +15242,7 @@ export interface operations {
     }
     requestBody: {
       content: {
-        'application/json': Record<string, never>
+        'application/json': components['schemas']['QuotaPolicySaveRequest']
       }
     }
     responses: {
@@ -15047,7 +15270,7 @@ export interface operations {
     }
     requestBody: {
       content: {
-        'application/json': Record<string, never>
+        'application/json': components['schemas']['QuotaPolicySaveRequest']
       }
     }
     responses: {
@@ -15736,7 +15959,7 @@ export interface operations {
     }
     requestBody: {
       content: {
-        'application/json': Record<string, never>
+        'application/json': components['schemas']['FileChannelCreateRequest']
       }
     }
     responses: {
@@ -15788,7 +16011,7 @@ export interface operations {
     }
     requestBody: {
       content: {
-        'application/json': Record<string, never>
+        'application/json': components['schemas']['FileChannelUpdateRequest']
       }
     }
     responses: {
@@ -15868,7 +16091,7 @@ export interface operations {
     }
     requestBody: {
       content: {
-        'application/json': Record<string, never>
+        'application/json': components['schemas']['FileTemplateCreateRequest']
       }
     }
     responses: {
@@ -15920,7 +16143,7 @@ export interface operations {
     }
     requestBody: {
       content: {
-        'application/json': Record<string, never>
+        'application/json': components['schemas']['FileTemplateUpdateRequest']
       }
     }
     responses: {
