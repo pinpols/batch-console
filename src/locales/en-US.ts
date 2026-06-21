@@ -6,6 +6,14 @@ const messages: Messages = {
     hint: 'Choose "Save as PDF" in the print dialog',
   },
   common: {
+    datetime: {
+      today: 'Today',
+      yesterday: 'Yesterday',
+      justNow: 'just now',
+      minutesAgo: '{n} min ago',
+      hoursAgo: '{n} h ago',
+      daysAgo: '{n} d ago',
+    },
     ok: 'OK',
     cancel: 'Cancel',
     permissionDenied: 'Your current role does not allow this action',

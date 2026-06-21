@@ -212,11 +212,16 @@
     }
   }
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
-  import { batchApprove, batchReject, approveOne, queryApprovals, rejectOne } from '@/api/approvals'
+  import {
+    batchApprove,
+    batchReject,
+    approveOne,
+    queryApprovalsPage,
+    rejectOne,
+  } from '@/api/approvals'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
-  import { toPageResult } from '@/api/adapters'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import ProTable from '@/components/table/ProTable.vue'
@@ -238,7 +243,6 @@
     runReset,
     runRefresh,
   } = useListFilterFeedback(loading)
-  const allRows = ref<ConsoleApprovalCommandResponse[]>([])
   const rows = ref<ConsoleApprovalCommandResponse[]>([])
   const total = ref(0)
   const page = ref(1)
@@ -277,26 +281,6 @@
 
   const approvalTypeOptions = computed(() => pickMetaEnumGroup(metaEnums.value, 'approvalType'))
 
-  const filtered = computed(() => {
-    let r = allRows.value
-    // clearable 控件点 X 清除会把 v-model 置为 null/undefined,直接 .trim() 会
-    // TypeError 击穿 computed → 整页渲染崩溃。统一 ?? '' 兜底。
-    const s = (filters.status ?? '').trim()
-    if (s) r = r.filter((x) => String(x.approvalStatus ?? '').toUpperCase() === s.toUpperCase())
-    const t = (filters.type ?? '').trim()
-    if (t) r = r.filter((x) => String(x.approvalType ?? '') === t)
-    const rq = (filters.requesterId ?? '').trim()
-    if (rq) r = r.filter((x) => String(x.requesterId ?? '') === rq)
-    const k = (filters.keyword ?? '').trim()
-    if (k) {
-      r = r.filter((x) => {
-        const hay = `${x.approvalNo ?? ''} ${x.requesterId ?? ''} ${x.targetType ?? ''} ${x.targetId ?? ''}`
-        return hay.includes(k)
-      })
-    }
-    return r
-  })
-
   const terminal = new Set(['APPROVED', 'REJECTED', 'CLOSED', 'CANCELLED'])
 
   function isPending(row: ConsoleApprovalCommandResponse) {
@@ -311,21 +295,20 @@
     selection.value = s
   }
 
-  function slicePage() {
-    const list = filtered.value
-    total.value = list.length
-    const pr = toPageResult(list, page.value, pageSize.value)
-    rows.value = pr.records as ConsoleApprovalCommandResponse[]
-    total.value = pr.total
-  }
-
+  // 服务端分页 + 服务端筛选:status→approvalStatus / type→approvalType / keyword 跨列模糊 /
+  // requesterId(?requester=me 入口)全部传后端,不再端上全量聚合 + 当前页局部过滤。
   async function load() {
     loading.value = true
     loadError.value = null
     try {
-      allRows.value = await queryApprovals(tenant.tenantId)
-      page.value = 1
-      slicePage()
+      const resp = await queryApprovalsPage(tenant.tenantId, page.value, pageSize.value, {
+        approvalStatus: (filters.status ?? '').trim() || undefined,
+        approvalType: (filters.type ?? '').trim() || undefined,
+        keyword: (filters.keyword ?? '').trim() || undefined,
+        requesterId: (filters.requesterId ?? '').trim() || undefined,
+      })
+      rows.value = (resp.items ?? []) as ConsoleApprovalCommandResponse[]
+      total.value = Number(resp.total ?? rows.value.length)
     } catch (err) {
       loadError.value = err
       throw err
@@ -335,25 +318,25 @@
   }
 
   function onSearch() {
-    return runSearch(() => {
+    return runSearch(async () => {
       page.value = 1
-      slicePage()
+      await load()
     })
   }
 
   function reset() {
-    return runReset(() => {
+    return runReset(async () => {
       filters.status = ''
       filters.type = ''
       filters.keyword = ''
       page.value = 1
-      slicePage()
+      await load()
     })
   }
 
-  watch(filters, () => {
-    page.value = 1
-    slicePage()
+  // 翻页 / 改 pageSize 触发服务端重拉
+  watch([page, pageSize], () => {
+    void load()
   })
 
   async function approveRow(row: ConsoleApprovalCommandResponse) {

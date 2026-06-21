@@ -9,7 +9,7 @@
         :total="total"
         v-model:page="page"
         v-model:page-size="pageSize"
-        @change="slicePage"
+        @change="load"
         :error="loadError"
         :on-retry="load"
       >
@@ -153,11 +153,10 @@
     return decoded
   }
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
-  import { queryAudits } from '@/api/observabilityQueries'
+  import { queryAuditsPage } from '@/api/observabilityQueries'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
-  import { toPageResult } from '@/api/adapters'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
   import PageContainer from '@/components/common/PageContainer.vue'
   import MetaSelect from '@/components/common/MetaSelect.vue'
@@ -178,7 +177,6 @@
     runReset,
     runRefresh,
   } = useListFilterFeedback(loading)
-  const all = ref<ConsoleAuditLogResponse[]>([])
   const display = ref<ConsoleAuditLogResponse[]>([])
   const total = ref(0)
   const page = ref(1)
@@ -202,47 +200,13 @@
     pickMetaEnumGroup(metaEnums.value, 'operationResult'),
   )
 
-  function filterAll() {
-    return all.value.filter((row) => {
-      if (filters.traceId.trim() && !row.traceId?.includes(filters.traceId.trim())) return false
-      if (
-        filters.operationType.trim() &&
-        String(row.operationType ?? '') !== filters.operationType.trim()
-      ) {
-        return false
-      }
-      if (filters.operatorId.trim() && !row.operatorId?.includes(filters.operatorId.trim())) {
-        return false
-      }
-      if (filters.fileId.trim() && !String(row.fileId ?? '').includes(filters.fileId.trim())) {
-        return false
-      }
-      if (
-        filters.operationResult.trim() &&
-        String(row.operationResult ?? '').toUpperCase() !==
-          filters.operationResult.trim().toUpperCase()
-      ) {
-        return false
-      }
-      const createdAt = String(row.createdAt ?? '')
-      if (filters.startTime && createdAt < filters.startTime) return false
-      if (filters.endTime && createdAt > filters.endTime) return false
-      return true
-    })
-  }
-
-  function slicePage() {
-    const r = filterAll()
-    total.value = r.length
-    const pr = toPageResult(r, page.value, pageSize.value)
-    display.value = pr.records as ConsoleAuditLogResponse[]
-  }
-
+  // 服务端分页 + 服务端筛选:全部维度后端已支持(operationType/result/operatorId/fileId/
+  // traceId/时间范围),直接传后端 + 服务端 total/page,不再端上全量聚合 + 当前页局部过滤。
   async function load() {
     loading.value = true
     loadError.value = null
     try {
-      all.value = await queryAudits(tenant.tenantId, {
+      const resp = await queryAuditsPage(tenant.tenantId, page.value, pageSize.value, {
         traceId: filters.traceId.trim() || undefined,
         operationType: filters.operationType.trim() || undefined,
         operatorId: filters.operatorId.trim() || undefined,
@@ -251,7 +215,8 @@
         startTime: filters.startTime || undefined,
         endTime: filters.endTime || undefined,
       })
-      slicePage()
+      display.value = (resp.items ?? []) as ConsoleAuditLogResponse[]
+      total.value = Number(resp.total ?? display.value.length)
     } catch (err) {
       loadError.value = err
       throw err
@@ -261,14 +226,14 @@
   }
 
   function search() {
-    return runSearch(() => {
+    return runSearch(async () => {
       page.value = 1
-      slicePage()
+      await load()
     })
   }
 
   function reset() {
-    return runReset(() => {
+    return runReset(async () => {
       filters.traceId = ''
       filters.operationType = ''
       filters.operatorId = ''
@@ -278,7 +243,7 @@
       filters.endTime = ''
       timeRange.value = null
       page.value = 1
-      slicePage()
+      await load()
     })
   }
 

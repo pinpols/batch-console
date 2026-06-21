@@ -10,68 +10,20 @@ import type {
   JobBundleCreateRequest,
   JobBundleImportRequest,
 } from '@/types/console-api'
+import type { components } from '@/types/api.generated'
 
 export type InstanceQuery = InstanceQueryParams
 
 export type ExecutionMode = 'FULL' | 'INCREMENTAL' | 'CDC'
 
-/** 与 BE `JobDefinitionCreateRequest` (Java DTO) 对齐;BE openapi.yaml 同步补 schema。 */
-export interface JobDefinitionCreateRequest {
-  tenantId: string
-  jobCode: string
-  jobType: string
-  scheduleType: string
-  jobName?: string
-  bizType?: string
-  scheduleExpr?: string
-  timezone?: string
-  triggerMode?: string
-  workerGroup?: string
-  queueCode?: string
-  calendarCode?: string
-  windowCode?: string
-  dagEnabled?: boolean
-  shardStrategy?: string
-  executionMode?: ExecutionMode
-  watermarkField?: string
-  retryPolicy?: string
-  retryMaxCount?: number
-  timeoutSeconds?: number
-  executionHandler?: string
-  paramSchema?: string
-  defaultParams?: string
-  priority?: number
-  enabled?: boolean
-  description?: string
-}
+/**
+ * 与 BE `JobDefinitionCreateRequest` Java DTO 对齐 —— 直接复用 OpenAPI 生成类型,避免手写漂移。
+ * 重新生成:`npm run gen:api`。
+ */
+export type JobDefinitionCreateRequest = components['schemas']['JobDefinitionCreateRequest']
 
-/** PUT 接收任意子集(BE 用 null/未传区分"不改"),与 JobDefinitionUpdateRequest Java DTO 对齐。 */
-export interface JobDefinitionUpdateRequest {
-  tenantId: string
-  jobName?: string
-  bizType?: string
-  scheduleType?: string
-  scheduleExpr?: string
-  timezone?: string
-  triggerMode?: string
-  workerGroup?: string
-  queueCode?: string
-  calendarCode?: string
-  windowCode?: string
-  dagEnabled?: boolean
-  shardStrategy?: string
-  executionMode?: ExecutionMode
-  watermarkField?: string
-  retryPolicy?: string
-  retryMaxCount?: number
-  timeoutSeconds?: number
-  executionHandler?: string
-  paramSchema?: string
-  defaultParams?: string
-  priority?: number
-  enabled?: boolean
-  description?: string
-}
+/** PUT 接收任意子集(BE 用 null/未传区分"不改"),复用 OpenAPI 生成的 `JobDefinitionUpdateRequest`。 */
+export type JobDefinitionUpdateRequest = components['schemas']['JobDefinitionUpdateRequest']
 
 export type JobBundlePayload = ConfigSyncBundlePayload
 

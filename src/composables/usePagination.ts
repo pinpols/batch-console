@@ -12,7 +12,7 @@ import type {
  *
  * 用法:
  * ```ts
- * const pager = usePagination({ mode: 'page', pageSize: 20 })
+ * const pager = usePagination({ mode: 'page', pageSize: 15 })
  * async function load() {
  *   const result = await api.list({ ...query, ...pager.apiParams.value })
  *   pager.applyResponse(result)
@@ -22,7 +22,7 @@ import type {
  */
 export function usePagination(options?: { mode?: PaginationMode; pageSize?: number }) {
   const mode = ref<PaginationMode>(options?.mode ?? 'page')
-  const pageSize = ref(options?.pageSize ?? 20)
+  const pageSize = ref(options?.pageSize ?? 15)
   const pageNo = ref(1)
   const cursor = ref<string | null>(null)
   /** Cursor 模式下保留前页 token 栈,支持「上一页」 */
