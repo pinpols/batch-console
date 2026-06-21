@@ -255,10 +255,8 @@
     runReset,
     runRefresh,
   } = useListFilterFeedback(loading)
-  // 当前页原始数据(BE 已分页过滤完 acknowledged/startDate/endDate;
-  // severity/alertType/traceId 三个 BE 不支持的字段在前端做"当前页局部过滤")
-  const pageRaw = ref<ConsoleAlertEventResponse[]>([])
   // 所有已加载页的 union,用来派生 alertType select 候选;限制最大 5 页避免膨胀
+  // (alertType 后端无枚举字典,只能从已加载数据归纳候选)
   const allRows = ref<ConsoleAlertEventResponse[]>([])
   const rows = ref<ConsoleAlertEventResponse[]>([])
   const total = ref(0)
@@ -334,40 +332,10 @@
     }
   }
 
-  /**
-   * 客户端"当前页"局部过滤(severity / alertType / traceId):BE 不支持这些过滤维度,
-   * 跨页全量过滤会拉爆大租户,所以仅在 BE 返回的当前页结果上再过滤,
-   * 配合 ProTable 的 filtered-empty-text 提示用户"当前页无匹配"。
-   * status 字段映射成 BE 的 acknowledged 在服务端处理;时间范围对应 startDate/endDate。
-   */
-  function applyLocalFilter(list: ConsoleAlertEventResponse[]): ConsoleAlertEventResponse[] {
-    // clearable 控件点 X 清除会置 null/undefined → 直接 .trim() 会 TypeError 击穿渲染,统一 ?? '' 兜底
-    return list.filter((row) => {
-      const sev = (filters.severity ?? '').trim()
-      if (sev && !row.severity?.includes(sev)) return false
-      const at = (filters.alertType ?? '').trim()
-      if (at && !row.alertType?.includes(at)) return false
-      const tid = (filters.traceId ?? '').trim()
-      if (tid && !row.traceId?.includes(tid)) return false
-      return true
-    })
-  }
-
-  /** 把 UI 的 filters.status 映射成 BE 的 acknowledged 布尔(只有 OPEN / 非 OPEN 两档) */
-  function resolveAcknowledgedFilter(): boolean | undefined {
-    const s = (filters.status ?? '').trim().toUpperCase()
-    if (!s) return undefined
-    if (s === 'OPEN') return false
-    // ACKNOWLEDGED / SILENCED / CLOSED 都属于非 OPEN
-    return true
-  }
-
-  function slicePage() {
-    const filtered = applyLocalFilter(pageRaw.value)
-    rows.value = filtered
-  }
-
   const loadError = ref<unknown>(null)
+  // 服务端分页 + 服务端筛选:severity/status/alertType/traceId/时间范围全部传后端
+  // (BE 2026-06-21 契约对齐,status 传真值 OPEN/ACKED/SUPPRESSED/CLOSED,时间走 last_seen_at),
+  // 不再做 acknowledged 映射与"当前页局部过滤"。
   async function load() {
     loading.value = true
     loadError.value = null
@@ -377,18 +345,19 @@
         page.value,
         pageSize.value,
         {
-          acknowledged: resolveAcknowledgedFilter(),
+          severity: (filters.severity ?? '').trim() || undefined,
+          status: (filters.status ?? '').trim() || undefined,
+          alertType: (filters.alertType ?? '').trim() || undefined,
+          traceId: (filters.traceId ?? '').trim() || undefined,
           startDate: filters.startTime || undefined,
           endDate: filters.endTime || undefined,
         },
       )
-      pageRaw.value = (resp.items ?? []) as ConsoleAlertEventResponse[]
-      total.value = Number(resp.total ?? pageRaw.value.length)
-      // 维护 union,但限制大小避免 alertType 候选无穷膨胀(只保留最近 5 页 ≈ 1000 行)
+      rows.value = (resp.items ?? []) as ConsoleAlertEventResponse[]
+      total.value = Number(resp.total ?? rows.value.length)
+      // 维护 union 供 alertType 候选,限制最近 5 页 ≈ 1000 行避免膨胀
       const cap = pageSize.value * 5
-      const merged = [...allRows.value, ...pageRaw.value]
-      allRows.value = merged.slice(-cap)
-      slicePage()
+      allRows.value = [...allRows.value, ...rows.value].slice(-cap)
     } catch (err) {
       loadError.value = err
       throw err
