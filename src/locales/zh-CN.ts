@@ -11,6 +11,12 @@ export default {
     label: '打印 / PDF',
     hint: '可在打印对话框中选择「另存为 PDF」',
   },
+  jobApi: {
+    definitionNotFound: '作业定义不存在:{code}',
+  },
+  workflowApi: {
+    definitionNotFound: 'Workflow 不存在',
+  },
   common: {
     datetime: {
       today: '今天',

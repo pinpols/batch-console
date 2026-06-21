@@ -3,6 +3,7 @@
 </template>
 
 <script setup lang="ts">
+  import { computed } from 'vue'
   import { fmtDatetime } from '@/utils/datetime'
 
   interface Props {
