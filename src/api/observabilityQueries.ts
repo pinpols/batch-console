@@ -1,5 +1,6 @@
 import { fetchAllPageItems } from '@/api/adapters'
 import { get, post } from '@/api/client'
+import type { PageResponse } from '@/types'
 import type {
   ConsoleAuditLogResponse,
   ConsoleDeadLetterTaskResponse,
@@ -76,6 +77,31 @@ export function queryTraceSnapshot(
 export function queryAudits(tenantId: string, filters?: AuditQueryFilters) {
   return fetchAllPageItems<ConsoleAuditLogResponse>('/api/console/queries/audits', {
     tenantId,
+    ...(filters?.traceId ? { traceId: filters.traceId } : {}),
+    ...(filters?.operationType ? { operationType: filters.operationType } : {}),
+    ...(filters?.operatorId ? { operatorId: filters.operatorId } : {}),
+    ...(filters?.fileId ? { fileId: filters.fileId } : {}),
+    ...(filters?.operationResult ? { operationResult: filters.operationResult } : {}),
+    ...(filters?.startTime ? { startTime: filters.startTime } : {}),
+    ...(filters?.endTime ? { endTime: filters.endTime } : {}),
+  })
+}
+
+/**
+ * 服务端分页查询审计日志(P5:替代 queryAudits 的端上全量聚合)。
+ * 后端 /api/console/queries/audits 全维度筛选均已支持(operationType/operationResult/
+ * operatorId/fileId/traceId/startTime/endTime),直接传后端 + 服务端 total/page。
+ */
+export function queryAuditsPage(
+  tenantId: string,
+  pageNo: number,
+  pageSize: number,
+  filters?: AuditQueryFilters,
+): Promise<PageResponse<ConsoleAuditLogResponse>> {
+  return get<PageResponse<ConsoleAuditLogResponse>>('/api/console/queries/audits', {
+    tenantId,
+    pageNo,
+    pageSize,
     ...(filters?.traceId ? { traceId: filters.traceId } : {}),
     ...(filters?.operationType ? { operationType: filters.operationType } : {}),
     ...(filters?.operatorId ? { operatorId: filters.operatorId } : {}),
