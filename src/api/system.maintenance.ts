@@ -1,5 +1,6 @@
 import type { AxiosRequestConfig } from 'axios'
 import { get, put } from '@/api/client'
+import type { components } from '@/types/api.generated'
 
 export interface MaintenanceStatus {
   enabled: boolean
@@ -10,13 +11,8 @@ export interface MaintenanceStatus {
   affectedServices: string[]
 }
 
-export interface UpdateMaintenanceRequest {
-  enabled: boolean
-  readOnly?: boolean
-  message?: string | null
-  etaAt?: string | null
-  affectedServices?: string[]
-}
+/** 复用 OpenAPI 生成类型(与 BE `UpdateMaintenanceRequest` Java DTO 对齐)。重新生成:`npm run gen:api`。 */
+export type UpdateMaintenanceRequest = components['schemas']['UpdateMaintenanceRequest']
 
 /** GET /api/console/system/maintenance — 维护状态(始终 200,permitAll) */
 export async function getMaintenanceStatus(): Promise<MaintenanceStatus> {

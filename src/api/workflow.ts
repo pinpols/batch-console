@@ -5,6 +5,7 @@ import type {
   WorkflowDefinitionDetailResponse,
 } from '@/types/console-api'
 import type { PageResult } from '@/types'
+import type { components } from '@/types/api.generated'
 
 export interface WorkflowDefinitionQuery {
   tenantId?: string
@@ -18,42 +19,13 @@ export interface WorkflowDefinitionQuery {
 }
 
 /** 保存节点时传入的结构（字段与后端 WorkflowNode 表对齐） */
-export interface WorkflowNodeSaveItem {
-  nodeCode: string
-  nodeName: string
-  nodeType: string
-  relatedJobCode?: string
-  relatedPipelineCode?: string
-  workerGroup?: string
-  windowCode?: string
-  nodeOrder?: number
-  retryPolicy?: string
-  retryMaxCount?: number
-  timeoutSeconds?: number
-  nodeParams?: string
-  enabled?: boolean
-}
+export type WorkflowNodeSaveItem = components['schemas']['WorkflowDefinitionSaveNodeItem']
 
 /** 保存边时传入的结构 */
-export interface WorkflowEdgeSaveItem {
-  fromNodeCode: string
-  toNodeCode: string
-  edgeType: string
-  conditionExpr?: string
-  enabled?: boolean
-}
+export type WorkflowEdgeSaveItem = components['schemas']['WorkflowDefinitionSaveEdgeItem']
 
-/** 创建 / 更新工作流的完整请求体 */
-export interface SaveWorkflowRequest {
-  tenantId: string
-  workflowCode: string
-  workflowName: string
-  workflowType: string
-  enabled: boolean
-  description?: string
-  nodes: WorkflowNodeSaveItem[]
-  edges: WorkflowEdgeSaveItem[]
-}
+/** 创建 / 更新工作流的完整请求体——复用 OpenAPI 生成类型。重新生成:`npm run gen:api`。 */
+export type SaveWorkflowRequest = components['schemas']['WorkflowDefinitionSaveRequest']
 
 export const workflowApi = {
   /**
