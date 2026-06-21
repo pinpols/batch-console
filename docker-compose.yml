@@ -1,9 +1,13 @@
 # 单服务部署:前端 nginx 容器,反代到外部 BE
 # 用法:
-#   docker compose up -d --build              # 默认 BE 走 host.docker.internal:18080
-#   BACKEND_UPSTREAM_HOST=10.0.0.5:18080 docker compose up -d   # 覆盖 BE 地址
+#   docker compose up -d --build              # 默认 BE 走 host.docker.internal:18090
+#   BACKEND_UPSTREAM_HOST=10.0.0.5:18090 docker compose up -d   # 覆盖 BE 地址
 #   docker compose logs -f frontend           # 看日志
 #   docker compose down                       # 停
+
+# compose 项目名 = 在 Docker UI 里显示的 stack 名;与后端 batch-platform 统一前缀。
+# 不设则默认取目录名 batch-console。可被 -p / COMPOSE_PROJECT_NAME 覆盖。
+name: batch-platform-console
 
 services:
   frontend:
@@ -19,8 +23,10 @@ services:
     ports:
       - '${HOST_PORT:-8080}:80'
     environment:
-      # nginx upstream;开发本机:host.docker.internal:18080(macOS/Windows 可直接用,Linux 需要加 extra_hosts)
-      BACKEND_UPSTREAM_HOST: ${BACKEND_UPSTREAM_HOST:-host.docker.internal:18080}
+      # nginx upstream;开发本机:host.docker.internal:18090(macOS/Windows 可直接用,Linux 需要加 extra_hosts)
+      # 18090 = 后端 .env.local CONSOLE_API_PORT 的宿主机映射端口(容器内 18080 → 宿主 18090);
+      # 此默认必须与后端 console-api 实际发布端口一致,否则前端 nginx 反代 502。
+      BACKEND_UPSTREAM_HOST: ${BACKEND_UPSTREAM_HOST:-host.docker.internal:18090}
       NGINX_PORT: 80
     extra_hosts:
       # Linux 需要这行才能让容器解析 host.docker.internal(macOS/Windows 自带)
