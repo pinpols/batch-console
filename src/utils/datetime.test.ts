@@ -42,19 +42,19 @@ describe('fmtDate', () => {
 describe('fmtCompact', () => {
   it('uses zh-CN labels for today and yesterday', () => {
     vi.useFakeTimers()
-    vi.setSystemTime(new Date('2026-06-21T08:00:00+08:00'))
+    vi.setSystemTime(new Date(2026, 5, 21, 8, 0))
 
-    expect(fmtCompact('2026-06-21T07:30:00+08:00')).toBe('今天 07:30')
-    expect(fmtCompact('2026-06-20T09:15:00+08:00')).toBe('昨天 09:15')
+    expect(fmtCompact(new Date(2026, 5, 21, 7, 30).getTime())).toBe('今天 07:30')
+    expect(fmtCompact(new Date(2026, 5, 20, 9, 15).getTime())).toBe('昨天 09:15')
   })
 
   it('uses en-US labels when locale changes', () => {
     vi.useFakeTimers()
     setI18nLocale('en-US')
-    vi.setSystemTime(new Date('2026-06-21T08:00:00+08:00'))
+    vi.setSystemTime(new Date(2026, 5, 21, 8, 0))
 
-    expect(fmtCompact('2026-06-21T07:30:00+08:00')).toBe('Today 07:30')
-    expect(fmtCompact('2026-06-20T09:15:00+08:00')).toBe('Yesterday 09:15')
+    expect(fmtCompact(new Date(2026, 5, 21, 7, 30).getTime())).toBe('Today 07:30')
+    expect(fmtCompact(new Date(2026, 5, 20, 9, 15).getTime())).toBe('Yesterday 09:15')
   })
 })
 
