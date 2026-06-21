@@ -11,6 +11,23 @@ export default {
     label: '打印 / PDF',
     hint: '可在打印对话框中选择「另存为 PDF」',
   },
+  datetime: {
+    todayAt: '今天 {time}',
+    yesterdayAt: '昨天 {time}',
+    justNow: '刚刚',
+    minutesAgo: '{n} 分钟前',
+    hoursAgo: '{n} 小时前',
+    daysAgo: '{n} 天前',
+  },
+  jobApi: {
+    definitionNotFound: '作业定义不存在:{code}',
+  },
+  workflowApi: {
+    definitionNotFound: 'Workflow 不存在',
+  },
+  fetchAllPageItems: {
+    truncated: '当前列表仅加载前 {shown} 条,总计 {total} 条;请收窄筛选条件。',
+  },
   common: {
     ok: '确定',
     cancel: '取消',

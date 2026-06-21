@@ -5,6 +5,24 @@ const messages: Messages = {
     label: 'Print / PDF',
     hint: 'Choose "Save as PDF" in the print dialog',
   },
+  datetime: {
+    todayAt: 'Today {time}',
+    yesterdayAt: 'Yesterday {time}',
+    justNow: 'Just now',
+    minutesAgo: '{n} minutes ago',
+    hoursAgo: '{n} hours ago',
+    daysAgo: '{n} days ago',
+  },
+  jobApi: {
+    definitionNotFound: 'Job definition not found: {code}',
+  },
+  workflowApi: {
+    definitionNotFound: 'Workflow not found',
+  },
+  fetchAllPageItems: {
+    truncated:
+      'Only the first {shown} rows were loaded out of {total}; narrow the filters to see the rest.',
+  },
   common: {
     ok: 'OK',
     cancel: 'Cancel',

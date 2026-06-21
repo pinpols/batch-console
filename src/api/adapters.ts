@@ -1,5 +1,9 @@
+import { ElMessage } from 'element-plus'
 import { get } from '@/api/client'
+import { i18n } from '@/locales'
 import type { PageResponse, PageResult } from '@/types'
+
+const truncationNotified = new Set<string>()
 
 /** OpenAPI 多为数组返回时，列表页前端分页用 */
 export function toPageResult<T>(items: T[], page: number, pageSize: number): PageResult<T> {
@@ -60,6 +64,15 @@ export async function fetchAllPageItems<T>(
     console.warn(
       `[fetchAllPageItems] ${url} returned ${out.length} items — consider server-side filtering`,
     )
+  }
+  const cappedByMaxPages = total > 0 && Math.ceil(total / pageSize) > maxPages && out.length < total
+  if (typeof document !== 'undefined' && cappedByMaxPages && !truncationNotified.has(url)) {
+    truncationNotified.add(url)
+    ElMessage.warning({
+      message: i18n.global.t('fetchAllPageItems.truncated', { shown: out.length, total }),
+      duration: 6000,
+      showClose: true,
+    })
   }
   return out
 }

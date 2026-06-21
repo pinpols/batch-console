@@ -3,97 +3,28 @@ import { fetchAllPageItems } from '@/api/adapters'
 import { launchBatchDayCatchUp } from '@/api/batchDays'
 import { instanceApi } from '@/api/instance'
 import { queryJobInstances, type InstanceQueryParams } from '@/api/queries/instances'
-import type { BatchDayCatchUpRequest, ConsoleJobDefinitionResponse } from '@/types/console-api'
+import { i18n } from '@/locales'
+import type {
+  BatchDayCatchUpRequest,
+  ConfigSyncBundlePayload,
+  ConsoleJobDefinitionResponse,
+  JobBundleCreateRequest,
+  JobBundleImportRequest,
+  JobDefinitionCreateRequest,
+  JobDefinitionUpdateRequest,
+} from '@/types/console-api'
+
+export type {
+  JobBundleCreateRequest,
+  JobBundleImportRequest,
+  JobDefinitionCreateRequest,
+  JobDefinitionUpdateRequest,
+}
 
 export type InstanceQuery = InstanceQueryParams
 
-export type ExecutionMode = 'FULL' | 'INCREMENTAL' | 'CDC'
-
-/** 与 BE `JobDefinitionCreateRequest` (Java DTO) 对齐;BE openapi.yaml 同步补 schema。 */
-export interface JobDefinitionCreateRequest {
-  tenantId: string
-  jobCode: string
-  jobType: string
-  scheduleType: string
-  jobName?: string
-  bizType?: string
-  scheduleExpr?: string
-  timezone?: string
-  triggerMode?: string
-  workerGroup?: string
-  queueCode?: string
-  calendarCode?: string
-  windowCode?: string
-  dagEnabled?: boolean
-  shardStrategy?: string
-  executionMode?: ExecutionMode
-  watermarkField?: string
-  retryPolicy?: string
-  retryMaxCount?: number
-  timeoutSeconds?: number
-  executionHandler?: string
-  paramSchema?: string
-  defaultParams?: string
-  priority?: number
-  enabled?: boolean
-  description?: string
-}
-
-/** PUT 接收任意子集(BE 用 null/未传区分"不改"),与 JobDefinitionUpdateRequest Java DTO 对齐。 */
-export interface JobDefinitionUpdateRequest {
-  tenantId: string
-  jobName?: string
-  bizType?: string
-  scheduleType?: string
-  scheduleExpr?: string
-  timezone?: string
-  triggerMode?: string
-  workerGroup?: string
-  queueCode?: string
-  calendarCode?: string
-  windowCode?: string
-  dagEnabled?: boolean
-  shardStrategy?: string
-  executionMode?: ExecutionMode
-  watermarkField?: string
-  retryPolicy?: string
-  retryMaxCount?: number
-  timeoutSeconds?: number
-  executionHandler?: string
-  paramSchema?: string
-  defaultParams?: string
-  priority?: number
-  enabled?: boolean
-  description?: string
-}
-
-export type JobBundlePayload = {
-  jobDefinitions?: Array<Record<string, unknown>>
-  workflowDefinitions?: Array<Record<string, unknown>>
-  pipelineDefinitions?: Array<Record<string, unknown>>
-  fileChannels?: Array<Record<string, unknown>>
-  fileTemplates?: Array<Record<string, unknown>>
-  resourceQueues?: Array<Record<string, unknown>>
-  batchWindows?: Array<Record<string, unknown>>
-  businessCalendars?: Array<Record<string, unknown>>
-  quotaPolicies?: Array<Record<string, unknown>>
-  alertRoutings?: Array<Record<string, unknown>>
-}
-
-export interface JobBundleCreateRequest {
-  tenantId: string
-  mode?: 'SKIP_EXISTING' | 'UPSERT'
-  dryRun?: boolean
-  bundle: JobBundlePayload
-}
-
-export interface JobBundleImportRequest {
-  tenantId: string
-  targetTenantIds: string[]
-  mode?: 'SKIP_EXISTING' | 'UPSERT'
-  dryRun?: boolean
-  bundle: JobBundlePayload
-}
+export type ExecutionMode = NonNullable<JobDefinitionCreateRequest['executionMode']>
+export type JobBundlePayload = ConfigSyncBundlePayload
 
 async function resolveJobDefinitionId(jobCode: string, tenantId: string) {
   // 传入 jobCode 让后端过滤（后端不支持时忽略该参数，回退到全量）
@@ -102,7 +33,7 @@ async function resolveJobDefinitionId(jobCode: string, tenantId: string) {
     { tenantId, jobCode },
   )
   const matched = rows.find((row) => row.jobCode === jobCode)
-  if (!matched) throw new Error(`作业定义不存在：${jobCode}`)
+  if (!matched) throw new Error(i18n.global.t('jobApi.definitionNotFound', { code: jobCode }))
   return matched.id
 }
 

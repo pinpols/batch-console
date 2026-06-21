@@ -1,3 +1,9 @@
+import { i18n } from '@/locales'
+
+function tr(key: string, params?: Record<string, unknown>): string {
+  return i18n.global.t(key, params ?? {})
+}
+
 /**
  * 将后端 ISO-8601 时间字符串（或 number epoch ms）格式化为本地可读时间。
  * 输出示例：2026-04-12 13:12:18
@@ -42,7 +48,7 @@ export function fmtDate(val: unknown): string {
 }
 
 /**
- * 紧凑时间:今天/昨天显示「今天 14:47」「昨天 09:30」,本年内显示「5-17 14:47」,
+ * 紧凑时间:今天/昨天显示本地化的「今天 14:47」「昨天 09:30」,本年内显示「5-17 14:47」,
  * 跨年显示完整 `YYYY-MM-DD HH:mm`。适合列表单元格,信息密度高且语义清晰。
  */
 export function fmtCompact(val: unknown): string {
@@ -59,15 +65,15 @@ export function fmtCompact(val: unknown): string {
   y.setDate(now.getDate() - 1)
   const isYday = sameY && d.getMonth() === y.getMonth() && d.getDate() === y.getDate()
 
-  if (sameD) return `今天 ${hm}`
-  if (isYday) return `昨天 ${hm}`
+  if (sameD) return tr('datetime.todayAt', { time: hm })
+  if (isYday) return tr('datetime.yesterdayAt', { time: hm })
   if (sameY) return `${d.getMonth() + 1}-${pad(d.getDate())} ${hm}`
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${hm}`
 }
 
 /**
- * 相对时间:< 1m 显示「刚刚」,< 60m 显示「N 分钟前」,< 24h 显示「N 小时前」,
- * < 30d 显示「N 天前」,更早回退到 fmtCompact。最近活动场景用,如「最近更新 3 分钟前」。
+ * 相对时间:< 1m 显示本地化的「刚刚」,< 60m 显示「N 分钟前」,< 24h 显示「N 小时前」,
+ * < 30d 显示「N 天前」,更早回退到 fmtCompact。最近活动场景用。
  */
 export function fmtRelative(val: unknown): string {
   if (val === null || val === undefined || val === '') return '—'
@@ -76,13 +82,13 @@ export function fmtRelative(val: unknown): string {
   const diff = Date.now() - d.getTime()
   if (diff < 0) return fmtCompact(val) // 未来时间不走相对
   const sec = Math.floor(diff / 1000)
-  if (sec < 60) return '刚刚'
+  if (sec < 60) return tr('datetime.justNow')
   const min = Math.floor(sec / 60)
-  if (min < 60) return `${min} 分钟前`
+  if (min < 60) return tr('datetime.minutesAgo', { n: min })
   const hr = Math.floor(min / 60)
-  if (hr < 24) return `${hr} 小时前`
+  if (hr < 24) return tr('datetime.hoursAgo', { n: hr })
   const day = Math.floor(hr / 24)
-  if (day < 30) return `${day} 天前`
+  if (day < 30) return tr('datetime.daysAgo', { n: day })
   return fmtCompact(val)
 }
 

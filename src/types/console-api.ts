@@ -74,6 +74,11 @@ export type ConsoleBatchDayCatchUpResponse = components['schemas']['ConsoleBatch
 export type BatchDayCatchUpRequest = components['schemas']['BatchDayCatchUpRequest']
 export type ConsoleWorkflowTopologyResponse =
   components['schemas']['ConsoleWorkflowTopologyResponse']
+export type WorkflowDefinitionSaveRequest = components['schemas']['WorkflowDefinitionSaveRequest']
+export type WorkflowNodeSaveItem = components['schemas']['WorkflowDefinitionSaveNodeItem']
+export type WorkflowEdgeSaveItem = components['schemas']['WorkflowDefinitionSaveEdgeItem']
+export type DagValidationFinding = components['schemas']['DagValidationFinding']
+export type DagValidationResult = components['schemas']['DagValidationResult']
 export type ConsoleFilePipelineResponse = components['schemas']['ConsoleFilePipelineResponse']
 export type ConsoleFilePipelineStepResponse =
   components['schemas']['ConsoleFilePipelineStepResponse']
@@ -95,6 +100,11 @@ export type ConsoleAlertRoutingExcelApplyResponse =
 export type ConsoleAlertRoutingExcelRowIssueResponse =
   components['schemas']['ConsoleAlertRoutingExcelRowIssueResponse']
 export type AlertRoutingExcelApplyRequest = components['schemas']['AlertRoutingExcelApplyRequest']
+export type ConfigSyncBundlePayload = components['schemas']['ConfigSyncBundlePayload']
+export type JobBundleCreateRequest = components['schemas']['JobBundleCreateRequest']
+export type JobBundleImportRequest = components['schemas']['JobBundleImportRequest']
+export type JobDefinitionCreateRequest = components['schemas']['JobDefinitionCreateRequest']
+export type JobDefinitionUpdateRequest = components['schemas']['JobDefinitionUpdateRequest']
 
 // --- Excel shared types ---
 export type ExcelApplyRequest = components['schemas']['ExcelApplyRequest']
