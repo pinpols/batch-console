@@ -72,7 +72,7 @@ describe('fmtRelative', () => {
     setI18nLocale('en-US')
     vi.setSystemTime(new Date('2026-06-21T08:00:00+08:00'))
 
-    expect(fmtRelative('2026-06-21T07:59:30+08:00')).toBe('Just now')
-    expect(fmtRelative('2026-06-21T07:55:00+08:00')).toBe('5 minutes ago')
+    expect(fmtRelative('2026-06-21T07:59:30+08:00')).toBe('just now')
+    expect(fmtRelative('2026-06-21T07:55:00+08:00')).toBe('5 min ago')
   })
 })

@@ -1,7 +1,8 @@
 import { i18n } from '@/locales'
 
-function tr(key: string, params?: Record<string, unknown>): string {
-  return i18n.global.t(key, params ?? {})
+/** 取相对/紧凑时间词条(util 非组件,走全局 i18n 实例;缺 key 回退中文兜底)。 */
+function dt(key: string, named?: Record<string, unknown>): string {
+  return i18n.global.t(`common.datetime.${key}`, named ?? {})
 }
 
 /**
@@ -65,8 +66,8 @@ export function fmtCompact(val: unknown): string {
   y.setDate(now.getDate() - 1)
   const isYday = sameY && d.getMonth() === y.getMonth() && d.getDate() === y.getDate()
 
-  if (sameD) return tr('datetime.todayAt', { time: hm })
-  if (isYday) return tr('datetime.yesterdayAt', { time: hm })
+  if (sameD) return `${dt('today')} ${hm}`
+  if (isYday) return `${dt('yesterday')} ${hm}`
   if (sameY) return `${d.getMonth() + 1}-${pad(d.getDate())} ${hm}`
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${hm}`
 }
@@ -82,13 +83,13 @@ export function fmtRelative(val: unknown): string {
   const diff = Date.now() - d.getTime()
   if (diff < 0) return fmtCompact(val) // 未来时间不走相对
   const sec = Math.floor(diff / 1000)
-  if (sec < 60) return tr('datetime.justNow')
+  if (sec < 60) return dt('justNow')
   const min = Math.floor(sec / 60)
-  if (min < 60) return tr('datetime.minutesAgo', { n: min })
+  if (min < 60) return dt('minutesAgo', { n: min })
   const hr = Math.floor(min / 60)
-  if (hr < 24) return tr('datetime.hoursAgo', { n: hr })
+  if (hr < 24) return dt('hoursAgo', { n: hr })
   const day = Math.floor(hr / 24)
-  if (day < 30) return tr('datetime.daysAgo', { n: day })
+  if (day < 30) return dt('daysAgo', { n: day })
   return fmtCompact(val)
 }
 

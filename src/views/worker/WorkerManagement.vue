@@ -229,7 +229,7 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, reactive, ref, watch, onMounted } from 'vue'
+  import { computed, reactive, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
 
@@ -242,6 +242,7 @@
   const route = useRoute()
   import { useListLoadState } from '@/composables/useListLoadState'
   import { useSseAutoReload } from '@/composables/useSseAutoReload'
+  import { useTenantReload } from '@/composables/useTenantReload'
   import { useWorkers } from '@/composables/queries/useWorkers'
   import {
     useConsoleMetaEnumsQuery,
@@ -488,6 +489,7 @@
   }
 
   async function loadChannels() {
+    if (!tenant.tenantId) return
     await runLoadChannels(async () => {
       allChannelRows.value = await queryFileChannels(tenant.tenantId)
       const enums = await getMetaEnums()
@@ -523,16 +525,7 @@
     sliceChannelPage()
   })
 
-  watch(
-    () => tenant.tenantId,
-    () => {
-      void loadChannels()
-    },
-  )
-
-  onMounted(() => {
-    void loadChannels()
-  })
+  useTenantReload(loadChannels)
 </script>
 
 <style scoped></style>

@@ -65,13 +65,18 @@ export async function fetchAllPageItems<T>(
       `[fetchAllPageItems] ${url} returned ${out.length} items — consider server-side filtering`,
     )
   }
-  const cappedByMaxPages = total > 0 && Math.ceil(total / pageSize) > maxPages && out.length < total
-  if (typeof document !== 'undefined' && cappedByMaxPages && !truncationNotified.has(url)) {
+  const cappedByMaxPages = total > 0 && Math.ceil(total / pageSize) > maxPages
+  if (
+    cappedByMaxPages &&
+    out.length < total &&
+    typeof document !== 'undefined' &&
+    !truncationNotified.has(url)
+  ) {
     truncationNotified.add(url)
     ElMessage.warning({
       message: i18n.global.t('fetchAllPageItems.truncated', { shown: out.length, total }),
-      duration: 6000,
       showClose: true,
+      duration: 6500,
     })
   }
   return out

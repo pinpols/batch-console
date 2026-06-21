@@ -5,7 +5,7 @@
     :total="total"
     v-model:page="page"
     v-model:page-size="pageSize"
-    @change="slicePage"
+    @change="load"
     :error="loadError"
     :on-retry="load"
   >
@@ -25,20 +25,6 @@
             clearable
             :placeholder="t('approvals.catchUpKeywordPlaceholder')"
             @keyup.enter="onSearch"
-          />
-        </el-form-item>
-        <el-form-item :label="t('approvals.catchUpStatus')">
-          <MetaSelect
-            class="query-w-180"
-            v-model="statusDraft"
-            clearable
-            filterable
-            allow-create
-            default-first-option
-            enum-key="approvalStatus"
-            :placeholder="t('approvals.catchUpStatusPlaceholder')"
-            @keyup.enter="onSearch"
-            :options="catchUpStatusOptions"
           />
         </el-form-item>
         <el-form-item :label="t('approvals.catchUpColBizDate')">
@@ -74,20 +60,17 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, ref } from 'vue'
+  import { ref } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { fetchAllPageItems, toPageResult } from '@/api/adapters'
 
   const { t } = useI18n({ useScope: 'global' })
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
+  import { queryCatchUpApprovalsPage } from '@/api/approvals'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import ProTable from '@/components/table/ProTable.vue'
-  import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
-  import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
   import type { ConsolePendingCatchUpResponse } from '@/types/console-api'
-  import MetaSelect from '@/components/common/MetaSelect.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
 
   const tenant = useTenantStore()
@@ -100,87 +83,55 @@
     runReset,
     runRefresh,
   } = useListFilterFeedback(loading)
-  const allRows = ref<ConsolePendingCatchUpResponse[]>([])
   const rows = ref<ConsolePendingCatchUpResponse[]>([])
   const total = ref(0)
   const page = ref(1)
   const pageSize = ref(15)
   const kwDraft = ref('')
-  const statusDraft = ref('')
   const bizDateDraft = ref<string | null>(null)
+  // applied:实际生效的筛选(传后端),与 draft 解耦,翻页时不受未点搜索的 draft 影响
   const kwApplied = ref('')
-  const statusApplied = ref('')
   const bizDateApplied = ref('')
 
-  const { data: metaEnums } = useConsoleMetaEnumsQuery()
-
-  const catchUpStatusOptions = computed(() => pickMetaEnumGroup(metaEnums.value, 'approvalStatus'))
-
-  const filtered = computed(() => {
-    let r = allRows.value
-    const k = kwApplied.value.trim().toLowerCase()
-    if (k) {
-      r = r.filter(
-        (row) =>
-          row.requestId?.toLowerCase().includes(k) ||
-          row.jobCode?.toLowerCase().includes(k) ||
-          row.traceId?.toLowerCase().includes(k),
-      )
-    }
-    const s = statusApplied.value.trim()
-    if (s) r = r.filter((row) => String(row.requestStatus ?? '') === s)
-    const b = bizDateApplied.value.trim()
-    if (b) r = r.filter((row) => String(row.bizDate ?? '') === b)
-    return r
-  })
-
-  function slicePage() {
-    const list = filtered.value
-    total.value = list.length
-    const pr = toPageResult(list, page.value, pageSize.value)
-    rows.value = pr.records as ConsolePendingCatchUpResponse[]
-  }
-
-  function onSearch() {
-    return runSearch(() => {
-      kwApplied.value = kwDraft.value.trim()
-      statusApplied.value = statusDraft.value.trim()
-      bizDateApplied.value = (bizDateDraft.value ?? '').trim()
-      page.value = 1
-      slicePage()
-    })
-  }
-
-  function onReset() {
-    return runReset(() => {
-      kwDraft.value = ''
-      statusDraft.value = ''
-      bizDateDraft.value = null
-      kwApplied.value = ''
-      statusApplied.value = ''
-      bizDateApplied.value = ''
-      page.value = 1
-      slicePage()
-    })
-  }
-
+  // 服务端分页 + 服务端筛选(bizDate 精确 / keyword 跨 requestId·jobCode·traceId 模糊)。
+  // catch-up 列表后端恒为 ACCEPTED 状态,故无 status 维度。
   async function load() {
     loading.value = true
     loadError.value = null
     try {
-      allRows.value = await fetchAllPageItems<ConsolePendingCatchUpResponse>(
-        '/api/console/queries/catch-up-approvals',
-        { tenantId: tenant.tenantId },
-      )
-      page.value = 1
-      slicePage()
+      const resp = await queryCatchUpApprovalsPage(tenant.tenantId, page.value, pageSize.value, {
+        keyword: kwApplied.value || undefined,
+        bizDate: bizDateApplied.value || undefined,
+      })
+      rows.value = (resp.items ?? []) as ConsolePendingCatchUpResponse[]
+      total.value = Number(resp.total ?? rows.value.length)
     } catch (err) {
       loadError.value = err
-      allRows.value = []
-      slicePage()
+      rows.value = []
+      total.value = 0
     } finally {
       loading.value = false
     }
+  }
+
+  function onSearch() {
+    return runSearch(async () => {
+      kwApplied.value = kwDraft.value.trim()
+      bizDateApplied.value = (bizDateDraft.value ?? '').trim()
+      page.value = 1
+      await load()
+    })
+  }
+
+  function onReset() {
+    return runReset(async () => {
+      kwDraft.value = ''
+      bizDateDraft.value = null
+      kwApplied.value = ''
+      bizDateApplied.value = ''
+      page.value = 1
+      await load()
+    })
   }
 
   useTenantReload(() => {

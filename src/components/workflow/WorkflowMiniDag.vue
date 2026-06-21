@@ -18,6 +18,7 @@
   import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
   import mermaid from 'mermaid'
   import DataState from '@/components/common/DataState.vue'
+  import { clearTrustedSvg, setTrustedMermaidSvg } from '@/utils/trustedMermaidSvg'
   import {
     workflowRunMermaidClassDefs,
     workflowRunStatusClass,
@@ -92,7 +93,7 @@
   async function render() {
     errorMessage.value = ''
     if (!props.mermaidText.trim()) {
-      if (graphRef.value) graphRef.value.innerHTML = ''
+      clearTrustedSvg(graphRef.value)
       return
     }
     try {
@@ -100,7 +101,7 @@
       const renderId = `mini-dag-${Date.now()}-${Math.floor(Math.random() * 1e4)}`
       const { svg } = await mermaid.render(renderId, overlaid)
       await nextTick()
-      if (graphRef.value) graphRef.value.innerHTML = svg
+      setTrustedMermaidSvg(graphRef.value, svg)
     } catch (err: unknown) {
       errorMessage.value = err instanceof Error ? err.message : String(err)
     }
@@ -113,7 +114,7 @@
     { deep: true },
   )
   onBeforeUnmount(() => {
-    if (graphRef.value) graphRef.value.innerHTML = ''
+    clearTrustedSvg(graphRef.value)
   })
 </script>
 
