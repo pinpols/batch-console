@@ -3376,6 +3376,40 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/console/instances/{id}/pause': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Pause a RUNNING job instance (ADR-044, reversible) */
+    post: operations['pauseJobInstance']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/instances/{id}/resume': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Resume a PAUSED job instance (ADR-044) */
+    post: operations['resumeJobInstance']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/console/ops/triggers': {
     parameters: {
       query?: never
@@ -4398,6 +4432,40 @@ export interface paths {
     put?: never
     /** Terminate a workflow run */
     post: operations['terminateWorkflowRun']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/workflow-runs/{id}/pause': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Pause a RUNNING workflow run (ADR-044, halts DAG advance) */
+    post: operations['pauseWorkflowRun']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/workflow-runs/{id}/resume': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Resume a PAUSED workflow run (ADR-044) */
+    post: operations['resumeWorkflowRun']
     delete?: never
     options?: never
     head?: never
@@ -11936,15 +12004,20 @@ export interface operations {
     parameters: {
       query?: {
         tenantId?: components['parameters']['TenantIdQuery']
-        pageNo?: components['parameters']['PageNoQuery']
-        pageSize?: components['parameters']['PageSizeQuery']
-        /** @description Filter by acknowledged state (true = non-OPEN, false = OPEN) */
-        acknowledged?: components['parameters']['AcknowledgedFilter']
+        /** @description 可选,按严重级别精确过滤(severity enum)。 */
+        severity?: string
+        /** @description 可选,按告警状态精确过滤(alertStatus enum:OPEN/ACKED/SUPPRESSED/CLOSED)。 */
+        status?: string
+        /** @description 可选,按告警类型精确过滤。 */
+        alertType?: string
+        /** @description 可选,按 traceId 精确过滤。 */
+        traceId?: string
         /** @description Filter start date (ISO date, inclusive) */
         startDate?: components['parameters']['StartDateFilter']
         /** @description Filter end date (ISO date, inclusive) */
         endDate?: components['parameters']['EndDateFilter']
-        traceId?: string
+        pageNo?: components['parameters']['PageNoQuery']
+        pageSize?: components['parameters']['PageSizeQuery']
       }
       header?: never
       path?: never
@@ -11967,6 +12040,18 @@ export interface operations {
     parameters: {
       query?: {
         tenantId?: components['parameters']['TenantIdQuery']
+        /** @description 可选,按审批单号精确过滤。 */
+        approvalNo?: string
+        /** @description 可选,按审批类型精确过滤(approvalType enum)。 */
+        approvalType?: string
+        /** @description 可选,按动作类型精确过滤。 */
+        actionType?: string
+        /** @description 可选,按审批状态精确过滤(approvalStatus enum)。 */
+        approvalStatus?: string
+        /** @description 可选,按申请人精确过滤(前端 ?requester=me 入口)。 */
+        requesterId?: string
+        /** @description 可选,大小写不敏感模糊匹配 approvalNo / requesterId / targetType / targetId 任一。 */
+        keyword?: string
         pageNo?: components['parameters']['PageNoQuery']
         pageSize?: components['parameters']['PageSizeQuery']
       }
@@ -12941,6 +13026,16 @@ export interface operations {
     parameters: {
       query?: {
         tenantId?: components['parameters']['TenantIdQuery']
+        /** @description 可选,按 Job 编码精确过滤。 */
+        jobCode?: string
+        /** @description 可选,按调度请求 ID 精确过滤。 */
+        requestId?: string
+        /** @description 可选,按业务日期(ISO yyyy-MM-dd)精确过滤。 */
+        bizDate?: string
+        /** @description 可选,大小写不敏感模糊匹配 requestId / jobCode / traceId 任一。 */
+        keyword?: string
+        /** @description cursor 分页 token(ADR-031),非空时走 cursor 模式。 */
+        cursor?: string
         pageNo?: components['parameters']['PageNoQuery']
         pageSize?: components['parameters']['PageSizeQuery']
       }
@@ -13642,6 +13737,58 @@ export interface operations {
     }
   }
   terminateJobInstance: {
+    parameters: {
+      query: {
+        tenantId: string
+      }
+      header: {
+        'Idempotency-Key': components['parameters']['IdempotencyKeyHeader']
+      }
+      path: {
+        id: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseString']
+        }
+      }
+    }
+  }
+  pauseJobInstance: {
+    parameters: {
+      query: {
+        tenantId: string
+      }
+      header: {
+        'Idempotency-Key': components['parameters']['IdempotencyKeyHeader']
+      }
+      path: {
+        id: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseString']
+        }
+      }
+    }
+  }
+  resumeJobInstance: {
     parameters: {
       query: {
         tenantId: string
@@ -15262,6 +15409,58 @@ export interface operations {
     }
   }
   terminateWorkflowRun: {
+    parameters: {
+      query: {
+        tenantId: string
+      }
+      header: {
+        'Idempotency-Key': components['parameters']['IdempotencyKeyHeader']
+      }
+      path: {
+        id: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseString']
+        }
+      }
+    }
+  }
+  pauseWorkflowRun: {
+    parameters: {
+      query: {
+        tenantId: string
+      }
+      header: {
+        'Idempotency-Key': components['parameters']['IdempotencyKeyHeader']
+      }
+      path: {
+        id: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseString']
+        }
+      }
+    }
+  }
+  resumeWorkflowRun: {
     parameters: {
       query: {
         tenantId: string
