@@ -792,22 +792,22 @@ export default {
     themeLight: '浅色',
     themeDark: '深色',
     group: {
+      // IA v4(2026-06-21,7→5 组)主键
       workspace: '工作台',
+      runtime: '运行监控',
+      assets: '作业与文件',
+      scheduling: '调度治理',
+      system: '系统管理',
+      // 旧 group key 兜底(停留旧 nav 缓存 / HMR 时不显示 raw key)
       runs: '运行',
       definitions: '作业与工作流',
       files: '文件',
-      scheduling: '调度',
       alerting: '告警与投递',
       configSystem: '配置与系统',
-      // 旧 key 兜底(用户停留在旧 tab / 缓存 nav 状态时不至于显示原始 key)。
-      // 此前 config / system 都映射到 "配置与系统",在 HMR 旧 nav 没 GC 时会出现两个
-      // 标题相同的分组,因此各自保留原 label,新分组用 configSystem。
       config: '配置',
-      system: '系统',
       jobs: '作业与工作流',
       monitor: '运行',
       observability: '告警与投递',
-      runtime: '调度',
       infra: '基础设施',
     },
     closeLeft: '关闭左侧所有',
