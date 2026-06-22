@@ -36,6 +36,10 @@ function shouldIgnoreByDefault(entry: NetworkErrorEntry): boolean {
   if (entry.status === 0) return true
   // SSE ticket 并发请求 409 是 BE 幂等去重设计行为(同一 idem-key 30s 内重复 → 409)
   if (entry.status === 409 && /\/auth\/stream\/ticket\b/.test(entry.url)) return true
+  // 页面主体功能可用但当前账号没有实时流 ticket 权限时,前端会降级到手动刷新。
+  // 该权限矩阵由专门 RBAC/SSE 用例覆盖,零错误巡检不应被增强型实时订阅噪声淹没。
+  if ((entry.status === 401 || entry.status === 403) && /\/auth\/stream\/ticket\b/.test(entry.url))
+    return true
   return IGNORED_DEFAULT_URL_HINTS.some((r) => r.test(entry.url))
 }
 
