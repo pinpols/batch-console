@@ -1,5 +1,6 @@
 import { post } from '@/api/client'
 import { readStoredTenantId } from '@/api/interceptors'
+import type { AxiosRequestConfig } from 'axios'
 
 type SseStreamType =
   | 'job-instances'
@@ -17,7 +18,9 @@ type SseStreamType =
  * EventSource 不能自带 Authorization 头,因此须先换 ticket 再以 `?ticket=` 连流。
  */
 export async function fetchStreamTicket(): Promise<string> {
-  const res = await post<{ ticket: string }>('/api/console/auth/stream/ticket', {})
+  const res = await post<{ ticket: string }>('/api/console/auth/stream/ticket', {}, {
+    _silent: true,
+  } as AxiosRequestConfig)
   return res.ticket
 }
 

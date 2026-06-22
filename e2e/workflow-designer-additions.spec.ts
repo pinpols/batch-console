@@ -55,6 +55,8 @@ test.describe('@workflow-designer-additions 工具栏新增控件', () => {
       test.skip(true, '无可用 workflow 行 / 设计器未挂载(BE 未 seed),跳过')
       return
     }
-    await expect(page.getByPlaceholder('搜索节点…').first()).toBeVisible()
+    const toolbar = page.getByRole('toolbar', { name: '设计器工具栏' })
+    await expect(toolbar.getByRole('combobox').first()).toBeVisible()
+    await expect(toolbar.getByText('搜索节点…')).toBeVisible()
   })
 })
