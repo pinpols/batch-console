@@ -466,6 +466,14 @@ const messages: Messages = {
     applyBlockedBody:
       'Download the annotated workbook in the preview step, fix the {n} issues, then re-upload.',
     btnReuploadFixed: 'Re-upload after fix',
+    errorRowsCaption: 'Error rows (inline editable)',
+    errorRowsHint:
+      'Expand a row to edit its cells and save; it will be re-validated. For issues you cannot fix inline (e.g. cross-row dedup), use "Re-upload after fix".',
+    cellPlaceholder: 'Value for this column',
+    btnSaveRow: 'Save & re-validate',
+    btnResetRow: 'Reset row',
+    rowSavedToast: 'Saved and re-validated',
+    rowSaveFailedToast: 'Save failed',
     applyingLoading: 'Writing in a single transaction…',
     applyingBtn: 'Applying…',
     applyFailedTitle: 'Apply failed',
