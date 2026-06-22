@@ -44,7 +44,9 @@ async function gotoStable(page: Page, route: string): Promise<void> {
   await page.waitForTimeout(1500)
 }
 
-test.describe('@cross-browser a11y baseline (C 档):P0 10 页 axe critical+serious 审查', () => {
+// @slow lane:axe 本身 ~2s/页,但 10 页 × (页加载 + 1.5s 缓冲 + 重试)在 4-worker 并发下
+// 单页可达 1.5-2min,会吃爆主 e2e 的 1h globalTimeout。拆到 test:e2e:slow 单独跑。
+test.describe('@slow @cross-browser a11y baseline (C 档):P0 10 页 axe critical+serious 审查', () => {
   // --- 原 5 页(回归) ---
 
   // 必须用空 storageState — Login.vue 的 onMounted 会调 /auth/logout 把当前 cookie 的 jti
