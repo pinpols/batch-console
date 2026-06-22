@@ -3,28 +3,27 @@ import { fetchAllPageItems } from '@/api/adapters'
 import { launchBatchDayCatchUp } from '@/api/batchDays'
 import { instanceApi } from '@/api/instance'
 import { queryJobInstances, type InstanceQueryParams } from '@/api/queries/instances'
+import { i18n } from '@/locales'
 import type {
   BatchDayCatchUpRequest,
   ConfigSyncBundlePayload,
   ConsoleJobDefinitionResponse,
   JobBundleCreateRequest,
   JobBundleImportRequest,
+  JobDefinitionCreateRequest,
+  JobDefinitionUpdateRequest,
 } from '@/types/console-api'
-import type { components } from '@/types/api.generated'
+
+export type {
+  JobBundleCreateRequest,
+  JobBundleImportRequest,
+  JobDefinitionCreateRequest,
+  JobDefinitionUpdateRequest,
+}
 
 export type InstanceQuery = InstanceQueryParams
 
-export type ExecutionMode = 'FULL' | 'INCREMENTAL' | 'CDC'
-
-/**
- * 与 BE `JobDefinitionCreateRequest` Java DTO 对齐 —— 直接复用 OpenAPI 生成类型,避免手写漂移。
- * 重新生成:`npm run gen:api`。
- */
-export type JobDefinitionCreateRequest = components['schemas']['JobDefinitionCreateRequest']
-
-/** PUT 接收任意子集(BE 用 null/未传区分"不改"),复用 OpenAPI 生成的 `JobDefinitionUpdateRequest`。 */
-export type JobDefinitionUpdateRequest = components['schemas']['JobDefinitionUpdateRequest']
-
+export type ExecutionMode = NonNullable<JobDefinitionCreateRequest['executionMode']>
 export type JobBundlePayload = ConfigSyncBundlePayload
 
 async function resolveJobDefinitionId(jobCode: string, tenantId: string) {
@@ -34,7 +33,7 @@ async function resolveJobDefinitionId(jobCode: string, tenantId: string) {
     { tenantId, jobCode },
   )
   const matched = rows.find((row) => row.jobCode === jobCode)
-  if (!matched) throw new Error(`作业定义不存在：${jobCode}`)
+  if (!matched) throw new Error(i18n.global.t('jobApi.definitionNotFound', { code: jobCode }))
   return matched.id
 }
 

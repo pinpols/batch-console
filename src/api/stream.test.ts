@@ -80,7 +80,11 @@ afterEach(() => {
 describe('fetchStreamTicket', () => {
   it('POSTs to /api/console/auth/stream/ticket and returns ticket', async () => {
     const t = await fetchStreamTicket()
-    expect(mockedPost).toHaveBeenCalledWith('/api/console/auth/stream/ticket', {})
+    expect(mockedPost).toHaveBeenCalledWith(
+      '/api/console/auth/stream/ticket',
+      {},
+      expect.objectContaining({ _silent: true }),
+    )
     expect(t).toBe('T-abc')
   })
 })

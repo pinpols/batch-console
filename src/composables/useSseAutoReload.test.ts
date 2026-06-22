@@ -133,6 +133,32 @@ describe('useSseAutoReload', () => {
     scope.stop()
   })
 
+  it('falls back immediately on auth-denied ticket errors', async () => {
+    createSseStreamMock.mockRejectedValue({ response: { status: 403 } })
+
+    const onFallback = vi.fn()
+    let handle!: ReturnType<typeof useSseAutoReload>
+    const scope = effectScope()
+    scope.run(() => {
+      handle = useSseAutoReload({
+        domain: 'alerts',
+        reload: vi.fn(),
+        maxRetries: 5,
+        onFallback,
+      })
+    })
+
+    await flushMicrotasks()
+    expect(handle.status.value).toBe('polling')
+    expect(createSseStreamMock).toHaveBeenCalledTimes(1)
+    expect(onFallback).toHaveBeenCalledTimes(1)
+
+    await vi.advanceTimersByTimeAsync(30_000)
+    expect(createSseStreamMock).toHaveBeenCalledTimes(1)
+
+    scope.stop()
+  })
+
   it('closes stream on scope change (tenant switch) and opens new one', async () => {
     const ess: FakeES[] = []
     createSseStreamMock.mockImplementation(async () => {

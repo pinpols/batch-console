@@ -5,6 +5,14 @@
  */
 import { expect, test } from './support/app'
 import { enterDemoApp, expectPageTitle, getFirstCellLinkId, isVisible } from './support/app'
+import type { Page } from '@playwright/test'
+
+async function clickRefresh(page: Page) {
+  const refresh = page.getByRole('button', { name: '刷新' }).first()
+  await expect(refresh).toBeVisible({ timeout: 10_000 })
+  await expect(refresh).toBeEnabled({ timeout: 15_000 })
+  await refresh.click()
+}
 
 // ─── Job Instance 列表筛选 ────────────────────────────────────────
 
@@ -51,7 +59,7 @@ test.describe('Job Instance — 筛选查询', () => {
   })
 
   test('刷新', async ({ page }) => {
-    await page.getByRole('button', { name: '刷新' }).click()
+    await clickRefresh(page)
     await expect(page.getByRole('columnheader', { name: /Job Code|状态/ }).first()).toBeVisible({ timeout: 10_000 })
   })
 })
@@ -76,7 +84,7 @@ test.describe('Job Instance 详情 — 操作流', () => {
     if (!id) return
     await page.goto(`/monitor/job-instances/${id}`)
     await expectPageTitle(page, '作业实例详情')
-    await page.getByRole('button', { name: '刷新' }).click()
+    await clickRefresh(page)
     await expect(page.getByText('实例编号')).toBeVisible({ timeout: 10_000 })
   })
 
@@ -211,7 +219,7 @@ test.describe('Workflow Run — 筛选查询', () => {
   })
 
   test('刷新', async ({ page }) => {
-    await page.getByRole('button', { name: '刷新' }).click()
+    await clickRefresh(page)
     await expect(page.getByRole('columnheader', { name: /Workflow|状态/ }).first()).toBeVisible({ timeout: 10_000 })
   })
 })
@@ -250,7 +258,7 @@ test.describe('审计日志 — 筛选查询', () => {
   })
 
   test('刷新', async ({ page }) => {
-    await page.getByRole('button', { name: '刷新' }).click()
+    await clickRefresh(page)
     await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
   })
 })

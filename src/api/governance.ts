@@ -43,8 +43,7 @@ export interface GovernanceBatchWindowRow {
 }
 
 /** 复用 OpenAPI 生成类型(create 超集,update 调用复用同体)。 */
-export type GovernanceBatchWindowSavePayload =
-  components['schemas']['BatchWindowCreateRequest']
+export type GovernanceBatchWindowSavePayload = components['schemas']['BatchWindowCreateRequest']
 
 export interface GovernanceCalendarRow {
   id: number
