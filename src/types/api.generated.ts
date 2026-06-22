@@ -2176,8 +2176,8 @@ export interface paths {
     put?: never
     post?: never
     /**
-     * Cleanup tenants by exact ID list (补刀 prefix 模式无法清纯短名残留)
-     * @description 按精确 tenantId 列表级联清理,补刀 `/api/console/admin/test-data?prefix=` 无法清纯短名
+     * Cleanup tenants by exact ID list (补充处理 prefix 模式无法清纯短名残留)
+     * @description 按精确 tenantId 列表级联清理,补充处理 `/api/console/admin/test-data?prefix=` 无法清纯短名
      *     ID(如历史残留 `tx` / `td`,因 prefix 模式强制 `prefix-%` 后缀匹配)。
      *
      *     **白名单保护**(任何场景拒删):`system` / `default` / `default-tenant` / `ta` / `tb` / `tc`。
@@ -3376,6 +3376,40 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/console/instances/{id}/pause': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Pause a RUNNING job instance (ADR-044, reversible) */
+    post: operations['pauseJobInstance']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/instances/{id}/resume': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Resume a PAUSED job instance (ADR-044) */
+    post: operations['resumeJobInstance']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/console/ops/triggers': {
     parameters: {
       query?: never
@@ -4398,6 +4432,40 @@ export interface paths {
     put?: never
     /** Terminate a workflow run */
     post: operations['terminateWorkflowRun']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/workflow-runs/{id}/pause': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Pause a RUNNING workflow run (ADR-044, halts DAG advance) */
+    post: operations['pauseWorkflowRun']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/workflow-runs/{id}/resume': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Resume a PAUSED workflow run (ADR-044) */
+    post: operations['resumeWorkflowRun']
     delete?: never
     options?: never
     head?: never
@@ -5531,6 +5599,27 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/console/config/tenant-package/excel/preview/{uploadToken}/patch': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Inline-edit an error row of the previewed tenant config package, then re-validate
+     * @description 把预览出错行被改动的单元格回写到上传会话并重校验,返回新预览,免去"下 Excel→改→重传"。不落库,仍需 apply。
+     *
+     */
+    post: operations['patchTenantConfigPackageExcelPreviewRow']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/console/config/tenant-package/excel/preview/{uploadToken}/workbook': {
     parameters: {
       query?: never
@@ -6481,7 +6570,7 @@ export interface components {
       configType: string
       configKey: string
       configName: string
-      /** @description 配置内容序列化为 JSON 字符串(BE 不解析,直接落库) */
+      /** @description 配置内容序列化为 JSON 字符串(BE 不解析,直接写入数据库) */
       configPayloadJson?: string
       grayScopeJson?: string
       effectiveFromAt?: string
@@ -6684,6 +6773,229 @@ export interface components {
       createdAt: string
       /** Format: date-time */
       updatedAt: string
+    }
+    /** @description 创建资源队列。与 BE Java DTO `ResourceQueueCreateRequest` 对齐。 */
+    ResourceQueueCreateRequest: {
+      tenantId?: string
+      queueCode?: string
+      queueName?: string
+      queueType?: string
+      /** Format: int32 */
+      maxRunningJobs?: number
+      /** Format: int32 */
+      maxRunningPartitions?: number
+      /** Format: int32 */
+      maxQps?: number
+      workerGroup?: string
+      resourceTag?: string
+      priorityPolicy?: string
+      /** Format: int32 */
+      fairShareWeight?: number
+      enabled?: boolean
+      description?: string
+    }
+    /** @description 更新资源队列(字段可选,缺省视为不修改)。与 BE Java DTO `ResourceQueueUpdateRequest` 对齐。 */
+    ResourceQueueUpdateRequest: {
+      tenantId?: string
+      queueName?: string
+      queueType?: string
+      /** Format: int32 */
+      maxRunningJobs?: number
+      /** Format: int32 */
+      maxRunningPartitions?: number
+      /** Format: int32 */
+      maxQps?: number
+      workerGroup?: string
+      resourceTag?: string
+      priorityPolicy?: string
+      /** Format: int32 */
+      fairShareWeight?: number
+      enabled?: boolean
+      description?: string
+    }
+    /** @description 创建批次窗口。与 BE Java DTO `BatchWindowCreateRequest` 对齐。 */
+    BatchWindowCreateRequest: {
+      tenantId?: string
+      windowCode?: string
+      windowName?: string
+      timezone?: string
+      startTime?: string
+      endTime?: string
+      endStrategy?: string
+      outOfWindowAction?: string
+      allowCrossDay?: boolean
+      enabled?: boolean
+      description?: string
+    }
+    /** @description 更新批次窗口(字段可选)。与 BE Java DTO `BatchWindowUpdateRequest` 对齐。 */
+    BatchWindowUpdateRequest: {
+      tenantId?: string
+      windowName?: string
+      timezone?: string
+      startTime?: string
+      endTime?: string
+      endStrategy?: string
+      outOfWindowAction?: string
+      allowCrossDay?: boolean
+      enabled?: boolean
+      description?: string
+    }
+    /** @description 创建/更新业务日历。与 BE Java DTO `CalendarSaveRequest` 对齐(create 与 update 同体)。 */
+    CalendarSaveRequest: {
+      tenantId?: string
+      calendarCode?: string
+      calendarName?: string
+      timezone?: string
+      holidayRollRule?: string
+      catchUpPolicy?: string
+      /** Format: int32 */
+      catchUpMaxDays?: number
+      enabled?: boolean
+    }
+    /** @description 创建/更新租户配额策略。与 BE Java DTO `QuotaPolicySaveRequest` 对齐(create 与 update 同体)。 */
+    QuotaPolicySaveRequest: {
+      tenantId?: string
+      policyCode?: string
+      /** Format: int32 */
+      maxRunningJobsPerTenant?: number
+      /** Format: int32 */
+      maxPartitionsPerTenant?: number
+      /** Format: int32 */
+      maxQpsPerTenant?: number
+      /** Format: int32 */
+      fairShareWeight?: number
+      enabled?: boolean
+      description?: string
+    }
+    /** @description 创建文件模板。与 BE Java DTO `FileTemplateCreateRequest` 对齐。 */
+    FileTemplateCreateRequest: {
+      tenantId?: string
+      templateCode?: string
+      templateName?: string
+      templateType?: string
+      bizType?: string
+      fileFormatType?: string
+      charset?: string
+      targetCharset?: string
+      withBom?: boolean
+      lineSeparator?: string
+      delimiter?: string
+      quoteChar?: string
+      escapeChar?: string
+      /** Format: int32 */
+      recordLength?: number
+      /** Format: int32 */
+      headerRows?: number
+      /** Format: int32 */
+      footerRows?: number
+      headerTemplateJson?: string
+      trailerTemplateJson?: string
+      checksumType?: string
+      compressType?: string
+      encryptType?: string
+      namingRule?: string
+      fieldMappingsJson?: string
+      validationRuleSetJson?: string
+      defaultQueryCode?: string
+      defaultQuerySql?: string
+      queryParamSchemaJson?: string
+      streamingEnabled?: boolean
+      /** Format: int32 */
+      pageSize?: number
+      /** Format: int32 */
+      fetchSize?: number
+      /** Format: int32 */
+      chunkSize?: number
+      previewMaskingEnabled?: boolean
+      errorLineMaskingEnabled?: boolean
+      logMaskingEnabled?: boolean
+      contentEncryptionEnabled?: boolean
+      encryptionKeyRef?: string
+      downloadRequiresApproval?: boolean
+      maskingRuleSet?: string
+      enabled?: boolean
+      /** Format: int32 */
+      version?: number
+      description?: string
+    }
+    /** @description 更新文件模板(字段可选)。与 BE Java DTO `FileTemplateUpdateRequest` 对齐。 */
+    FileTemplateUpdateRequest: {
+      tenantId?: string
+      templateName?: string
+      templateType?: string
+      bizType?: string
+      fileFormatType?: string
+      charset?: string
+      targetCharset?: string
+      withBom?: boolean
+      lineSeparator?: string
+      delimiter?: string
+      quoteChar?: string
+      escapeChar?: string
+      /** Format: int32 */
+      recordLength?: number
+      /** Format: int32 */
+      headerRows?: number
+      /** Format: int32 */
+      footerRows?: number
+      headerTemplateJson?: string
+      trailerTemplateJson?: string
+      checksumType?: string
+      compressType?: string
+      encryptType?: string
+      namingRule?: string
+      fieldMappingsJson?: string
+      validationRuleSetJson?: string
+      defaultQueryCode?: string
+      defaultQuerySql?: string
+      queryParamSchemaJson?: string
+      streamingEnabled?: boolean
+      /** Format: int32 */
+      pageSize?: number
+      /** Format: int32 */
+      fetchSize?: number
+      /** Format: int32 */
+      chunkSize?: number
+      previewMaskingEnabled?: boolean
+      errorLineMaskingEnabled?: boolean
+      logMaskingEnabled?: boolean
+      contentEncryptionEnabled?: boolean
+      encryptionKeyRef?: string
+      downloadRequiresApproval?: boolean
+      maskingRuleSet?: string
+      enabled?: boolean
+      /** Format: int32 */
+      version?: number
+      description?: string
+      loadTargetRef?: string
+      exportDataRef?: string
+    }
+    /** @description 创建文件渠道。与 BE Java DTO `FileChannelCreateRequest` 对齐。 */
+    FileChannelCreateRequest: {
+      tenantId?: string
+      channelCode?: string
+      channelName?: string
+      channelType?: string
+      targetEndpoint?: string
+      authType?: string
+      configJson?: string
+      receiptPolicy?: string
+      /** Format: int32 */
+      timeoutSeconds?: number
+      enabled?: boolean
+    }
+    /** @description 更新文件渠道(字段可选)。与 BE Java DTO `FileChannelUpdateRequest` 对齐。 */
+    FileChannelUpdateRequest: {
+      tenantId?: string
+      channelName?: string
+      channelType?: string
+      targetEndpoint?: string
+      authType?: string
+      configJson?: string
+      receiptPolicy?: string
+      /** Format: int32 */
+      timeoutSeconds?: number
+      enabled?: boolean
     }
     /** @description 创建作业定义。与 BE Java DTO `JobDefinitionCreateRequest` 对齐。 */
     JobDefinitionCreateRequest: {
@@ -7571,7 +7883,7 @@ export interface components {
       /** Format: date-time */
       createdAt: string
     }
-    /** @description 通用控制台用户操作审计(@AuditAction Aspect 落库)。
+    /** @description 通用控制台用户操作审计(@AuditAction Aspect 写入数据库)。
      *     字段顺序对齐 batch.console_operation_audit 表 + 将来 Kafka payload schema,
      *     新增字段务必非必填 + 同步升 eventVersion。
      *      */
@@ -7945,7 +8257,7 @@ export interface components {
     }
     /** @description 批量租户配置初始化请求。
      *     mode=SKIP_EXISTING 已存在跳过；mode=UPSERT 已存在更新。
-     *     dryRun=true 时只校验不落库。
+     *     dryRun=true 时只校验不写入数据库。
      *     各 List<XxxSpec> 字段为可选；未传则该类配置不初始化。
      *      */
     TenantConfigBatchInitRequest: {
@@ -8318,6 +8630,31 @@ export interface components {
       invalidRows: number
       sheets: components['schemas']['TenantConfigPackageSheetStats'][]
       issues: components['schemas']['TenantConfigPackageIssueDto'][]
+      /** @description 按 (sheet, rowNo) 聚合的出错行明细(整行单元格值 + 该行所有问题),供前端内联编辑。 */
+      errorRows?: components['schemas']['TenantConfigPackageErrorRowDto'][]
+    }
+    TenantConfigPackageErrorRowDto: {
+      sheetName: string
+      /** Format: int32 */
+      rowNo: number
+      /** @description 该行整行单元格值(列键→值),迭代顺序 = 该 sheet 列顺序。 */
+      values: {
+        [key: string]: string
+      }
+      messages: string[]
+    }
+    TenantConfigPackageExcelPatchRequest: {
+      /** @description sheet 名(后端 validator SHEET 常量,如 job_definition / file_channel_config)。 */
+      sheetName: string
+      /**
+       * Format: int32
+       * @description 行号(与预览返回一致;数据行从 2 起,1 为表头)。
+       */
+      rowNo: number
+      /** @description 改动的单元格:列键→新值。仅合并该行已有的列键,未知键忽略。 */
+      values?: {
+        [key: string]: string
+      }
     }
     TenantConfigPackageSheetStats: {
       sheetName: string
@@ -11936,15 +12273,20 @@ export interface operations {
     parameters: {
       query?: {
         tenantId?: components['parameters']['TenantIdQuery']
-        pageNo?: components['parameters']['PageNoQuery']
-        pageSize?: components['parameters']['PageSizeQuery']
-        /** @description Filter by acknowledged state (true = non-OPEN, false = OPEN) */
-        acknowledged?: components['parameters']['AcknowledgedFilter']
+        /** @description 可选,按严重级别精确过滤(severity enum)。 */
+        severity?: string
+        /** @description 可选,按告警状态精确过滤(alertStatus enum:OPEN/ACKED/SUPPRESSED/CLOSED)。 */
+        status?: string
+        /** @description 可选,按告警类型精确过滤。 */
+        alertType?: string
+        /** @description 可选,按 traceId 精确过滤。 */
+        traceId?: string
         /** @description Filter start date (ISO date, inclusive) */
         startDate?: components['parameters']['StartDateFilter']
         /** @description Filter end date (ISO date, inclusive) */
         endDate?: components['parameters']['EndDateFilter']
-        traceId?: string
+        pageNo?: components['parameters']['PageNoQuery']
+        pageSize?: components['parameters']['PageSizeQuery']
       }
       header?: never
       path?: never
@@ -13689,6 +14031,58 @@ export interface operations {
       }
     }
   }
+  pauseJobInstance: {
+    parameters: {
+      query: {
+        tenantId: string
+      }
+      header: {
+        'Idempotency-Key': components['parameters']['IdempotencyKeyHeader']
+      }
+      path: {
+        id: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseString']
+        }
+      }
+    }
+  }
+  resumeJobInstance: {
+    parameters: {
+      query: {
+        tenantId: string
+      }
+      header: {
+        'Idempotency-Key': components['parameters']['IdempotencyKeyHeader']
+      }
+      path: {
+        id: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseString']
+        }
+      }
+    }
+  }
   listTriggers: {
     parameters: {
       query: {
@@ -14025,7 +14419,7 @@ export interface operations {
     }
     requestBody: {
       content: {
-        'application/json': Record<string, never>
+        'application/json': components['schemas']['ResourceQueueCreateRequest']
       }
     }
     responses: {
@@ -14053,7 +14447,7 @@ export interface operations {
     }
     requestBody: {
       content: {
-        'application/json': Record<string, never>
+        'application/json': components['schemas']['ResourceQueueUpdateRequest']
       }
     }
     responses: {
@@ -14132,7 +14526,7 @@ export interface operations {
     }
     requestBody: {
       content: {
-        'application/json': Record<string, never>
+        'application/json': components['schemas']['BatchWindowCreateRequest']
       }
     }
     responses: {
@@ -14160,7 +14554,7 @@ export interface operations {
     }
     requestBody: {
       content: {
-        'application/json': Record<string, never>
+        'application/json': components['schemas']['BatchWindowUpdateRequest']
       }
     }
     responses: {
@@ -14239,7 +14633,7 @@ export interface operations {
     }
     requestBody: {
       content: {
-        'application/json': Record<string, never>
+        'application/json': components['schemas']['CalendarSaveRequest']
       }
     }
     responses: {
@@ -14267,7 +14661,7 @@ export interface operations {
     }
     requestBody: {
       content: {
-        'application/json': Record<string, never>
+        'application/json': components['schemas']['CalendarSaveRequest']
       }
     }
     responses: {
@@ -14894,7 +15288,7 @@ export interface operations {
     }
     requestBody: {
       content: {
-        'application/json': Record<string, never>
+        'application/json': components['schemas']['QuotaPolicySaveRequest']
       }
     }
     responses: {
@@ -14922,7 +15316,7 @@ export interface operations {
     }
     requestBody: {
       content: {
-        'application/json': Record<string, never>
+        'application/json': components['schemas']['QuotaPolicySaveRequest']
       }
     }
     responses: {
@@ -15309,6 +15703,58 @@ export interface operations {
       }
     }
   }
+  pauseWorkflowRun: {
+    parameters: {
+      query: {
+        tenantId: string
+      }
+      header: {
+        'Idempotency-Key': components['parameters']['IdempotencyKeyHeader']
+      }
+      path: {
+        id: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseString']
+        }
+      }
+    }
+  }
+  resumeWorkflowRun: {
+    parameters: {
+      query: {
+        tenantId: string
+      }
+      header: {
+        'Idempotency-Key': components['parameters']['IdempotencyKeyHeader']
+      }
+      path: {
+        id: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseString']
+        }
+      }
+    }
+  }
   skipWorkflowRunNode: {
     parameters: {
       query: {
@@ -15559,7 +16005,7 @@ export interface operations {
     }
     requestBody: {
       content: {
-        'application/json': Record<string, never>
+        'application/json': components['schemas']['FileChannelCreateRequest']
       }
     }
     responses: {
@@ -15611,7 +16057,7 @@ export interface operations {
     }
     requestBody: {
       content: {
-        'application/json': Record<string, never>
+        'application/json': components['schemas']['FileChannelUpdateRequest']
       }
     }
     responses: {
@@ -15691,7 +16137,7 @@ export interface operations {
     }
     requestBody: {
       content: {
-        'application/json': Record<string, never>
+        'application/json': components['schemas']['FileTemplateCreateRequest']
       }
     }
     responses: {
@@ -15743,7 +16189,7 @@ export interface operations {
     }
     requestBody: {
       content: {
-        'application/json': Record<string, never>
+        'application/json': components['schemas']['FileTemplateUpdateRequest']
       }
     }
     responses: {
@@ -17444,6 +17890,32 @@ export interface operations {
     requestBody?: never
     responses: {
       /** @description Preview result with per-sheet stats and issue list */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseTenantConfigPackageExcelPreview']
+        }
+      }
+    }
+  }
+  patchTenantConfigPackageExcelPreviewRow: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        uploadToken: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['TenantConfigPackageExcelPatchRequest']
+      }
+    }
+    responses: {
+      /** @description Re-validated preview after patching the row */
       200: {
         headers: {
           [name: string]: unknown
