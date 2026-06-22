@@ -57,6 +57,11 @@ export interface UseSseAutoReloadOptions {
   onFallback?: (() => void) | null
 }
 
+function httpStatusOf(error: unknown): number | undefined {
+  const status = (error as { response?: { status?: unknown } })?.response?.status
+  return typeof status === 'number' ? status : undefined
+}
+
 /**
  * 订阅后端 SSE 流并在收到事件时去抖刷新列表。
  * 适用场景:告警、Worker、Workflow 运行、Outbox 等 view 原本靠轮询,
@@ -191,7 +196,14 @@ export function useSseAutoReload(options: UseSseAutoReloadOptions): UseSseAutoRe
       retries = 0
       fallbackNotified = false
       status.value = 'live'
-    } catch {
+    } catch (err) {
+      // 无实时流权限时直接降级。继续指数重试只会重复打 401/403 ticket 接口,
+      // 普通列表页依然可以通过手动刷新正常使用。
+      const status = httpStatusOf(err)
+      if (status === 401 || status === 403) {
+        fireFallback()
+        return
+      }
       scheduleReopen(my)
     }
   }

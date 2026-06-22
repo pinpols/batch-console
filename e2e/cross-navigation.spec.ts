@@ -8,8 +8,8 @@ test.describe('dashboard metric card navigation (指标卡片跳转)', () => {
 
   // ops/summary 周期刷新会重建卡片节点,默认 click 的 stability check 偶发会等到超时;
   // 直接 force-click 跳过 actionability 等待。networkidle 在 dev server 高并发下不收敛,不能等。
-  // click + waitForURL 用 Promise.all 串起来 — 4-worker 并发下,默认 expect 8s 等 URL 偶发不够,
-  // 需要在 click 触发后明确等到 router push 落地(15s 预算覆盖 dev server route lazy-chunk 编译).
+  // 4-worker 并发下,默认 expect 8s 等 URL 偶发不够;点击后显式等 SPA router URL 落地。
+  // 不用 page.waitForURL 的默认 load 等待,同页 history 跳转不一定触发完整 load 生命周期。
   async function clickMetric(
     page: import('@playwright/test').Page,
     text: string,
@@ -18,10 +18,8 @@ test.describe('dashboard metric card navigation (指标卡片跳转)', () => {
     await page.goto('/ops/summary')
     const card = page.locator('.metric-hit', { hasText: text }).first()
     await card.waitFor({ state: 'visible', timeout: 25_000 })
-    await Promise.all([
-      page.waitForURL(expectedUrl, { timeout: 15_000 }),
-      card.click({ force: true }),
-    ])
+    await card.click({ force: true })
+    await expect(page).toHaveURL(expectedUrl, { timeout: 15_000 })
   }
 
   test('点击待审批卡片跳转到审批中心', async ({ page }) => {

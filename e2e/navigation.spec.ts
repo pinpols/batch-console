@@ -1,10 +1,17 @@
 import { expect, test } from './support/app'
 import { enterDemoApp, expectPageTitle } from './support/app'
+import type { Page } from '@playwright/test'
 
 test.describe('navigation and tabs', () => {
   test.beforeEach(async ({ page }) => {
     await enterDemoApp(page)
   })
+
+  async function waitForRouteStable(page: Page) {
+    await expect(page.getByRole('progressbar', { name: '页面切换中' })).toBeHidden({
+      timeout: 15_000,
+    })
+  }
 
   test('侧边栏导航可切换到关键页面', async ({ page }) => {
     // 2026-06 菜单 IA v4(7→5 组):工作台/运行监控/作业与文件/调度治理/系统管理。
@@ -16,11 +23,13 @@ test.describe('navigation and tabs', () => {
       .first()
       .waitFor({ timeout: 5000 })
     await page.getByRole('menuitem', { name: '运行监控', exact: true }).first().click()
+    await waitForRouteStable(page)
     await page.getByRole('menuitem', { name: /工作流运行|Workflow Run/ }).first().click()
     await expect(page).toHaveURL(/\/monitor\/workflow-runs/)
 
     // 「运行监控」组下的「告警」(原"告警与投递"组已并入)
-    await page.getByRole('menuitem', { name: /^告警$|^Alerts?$/ }).first().click()
+    await waitForRouteStable(page)
+    await page.getByRole('menuitem', { name: /^事件告警$|^告警$|^Alerts?$/ }).first().click()
     await expect(page).toHaveURL(/\/observability\/alerts/)
   })
 
