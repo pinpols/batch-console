@@ -468,6 +468,14 @@ export default {
     applyBlockedTitle: '存在 {n} 条无效行,无法应用',
     applyBlockedBody: '请先在「预览」步骤下载带批注的工作簿,修复 {n} 条错误后重新上传。',
     btnReuploadFixed: '修完后重新上传',
+    errorRowsCaption: '出错行(可内联编辑)',
+    errorRowsHint:
+      '展开任一行直接改单元格并保存,系统会重新校验;改不动的(如跨行去重)再用「修完后重新上传」。',
+    cellPlaceholder: '填写该列的值',
+    btnSaveRow: '保存并重校验',
+    btnResetRow: '还原本行',
+    rowSavedToast: '已保存并重新校验',
+    rowSaveFailedToast: '保存失败',
     // I9-I12 Apply 阶段状态机
     applyingLoading: '正在写入,单事务进行中…',
     applyingBtn: '正在写入…',

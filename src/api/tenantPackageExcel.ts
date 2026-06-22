@@ -12,6 +12,8 @@ export type TenantPackageApplyRequest =
   components['schemas']['TenantConfigPackageExcelApplyRequest']
 export type TenantPackageApplyResponse =
   components['schemas']['TenantConfigPackageExcelApplyResponse']
+export type TenantPackagePatchRequest =
+  components['schemas']['TenantConfigPackageExcelPatchRequest']
 
 function currentTenantParams() {
   return { tenantId: readStoredTenantId() }
@@ -46,7 +48,23 @@ export async function tenantPackageUpload(file: File) {
 
 /** GET …/preview/{token} — 预览校验结果 */
 export function tenantPackagePreview(uploadToken: string) {
-  return get<TenantPackagePreviewResponse>(`${TENANT_PKG_BASE}/preview/${encodeURIComponent(uploadToken)}`)
+  return get<TenantPackagePreviewResponse>(
+    `${TENANT_PKG_BASE}/preview/${encodeURIComponent(uploadToken)}`,
+  )
+}
+
+/**
+ * POST …/preview/{token}/patch — 出错行内联编辑回写 + 重校验,返回新预览。
+ * 不落库,仍需 apply。values 只需传被改动的列(后端只合并该行已有列键)。
+ */
+export function tenantPackagePatchRow(
+  uploadToken: string,
+  body: TenantPackagePatchRequest,
+): Promise<TenantPackagePreviewResponse> {
+  return post<TenantPackagePreviewResponse>(
+    `${TENANT_PKG_BASE}/preview/${encodeURIComponent(uploadToken)}/patch`,
+    body,
+  )
 }
 
 /** GET …/preview/{token}/workbook — 下载带注释预览 workbook */

@@ -1,23 +1,11 @@
 import { fetchAllPageItems, toPageResult } from '@/api/adapters'
 import { get, patch, post, put } from '@/api/client'
-import { i18n } from '@/locales'
 import type {
   ConsoleWorkflowDefinitionResponse,
-  DagValidationFinding,
-  DagValidationResult,
   WorkflowDefinitionDetailResponse,
-  WorkflowDefinitionSaveRequest,
-  WorkflowEdgeSaveItem,
-  WorkflowNodeSaveItem,
 } from '@/types/console-api'
 import type { PageResult } from '@/types'
-
-export type {
-  DagValidationFinding,
-  DagValidationResult,
-  WorkflowEdgeSaveItem,
-  WorkflowNodeSaveItem,
-}
+import type { components } from '@/types/api.generated'
 
 export interface WorkflowDefinitionQuery {
   tenantId?: string
@@ -30,8 +18,14 @@ export interface WorkflowDefinitionQuery {
   pageSize: number
 }
 
-/** 创建 / 更新工作流的完整请求体。字段来自后端 OpenAPI `WorkflowDefinitionSaveRequest`。 */
-export type SaveWorkflowRequest = WorkflowDefinitionSaveRequest
+/** 保存节点时传入的结构（字段与后端 WorkflowNode 表对齐） */
+export type WorkflowNodeSaveItem = components['schemas']['WorkflowDefinitionSaveNodeItem']
+
+/** 保存边时传入的结构 */
+export type WorkflowEdgeSaveItem = components['schemas']['WorkflowDefinitionSaveEdgeItem']
+
+/** 创建 / 更新工作流的完整请求体——复用 OpenAPI 生成类型。重新生成:`npm run gen:api`。 */
+export type SaveWorkflowRequest = components['schemas']['WorkflowDefinitionSaveRequest']
 
 export const workflowApi = {
   /**
@@ -81,7 +75,7 @@ export const workflowApi = {
       { tenantId },
     )
     const row = items.find((x) => x.workflowCode === workflowCode)
-    if (!row) throw new Error(i18n.global.t('workflowApi.definitionNotFound'))
+    if (!row) throw new Error('Workflow 不存在')
     return row
   },
 
@@ -120,4 +114,20 @@ export const workflowApi = {
    */
   mermaid: (id: number, tenantId: string): Promise<{ mermaid: string }> =>
     get<{ mermaid: string }>(`/api/console/workflow-definitions/${id}/mermaid`, { tenantId }),
+}
+
+/** 单条校验发现，与后端 `DagValidationResult.Finding` 1:1。`nodeCode` 与 `edgeId` 至多一个非空。 */
+export interface DagValidationFinding {
+  code: string
+  level: 'ERROR' | 'WARNING'
+  message: string
+  nodeCode?: string | null
+  edgeId?: string | null
+}
+
+export interface DagValidationResult {
+  valid: boolean
+  /** @deprecated 兼容旧前端，next minor 删除。新代码请消费 findings */
+  errors: string[]
+  findings: DagValidationFinding[]
 }
