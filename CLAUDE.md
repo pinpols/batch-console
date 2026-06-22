@@ -17,17 +17,15 @@
 
 ## 分支用途
 
-**两条常驻分支 = `main` + `dev`**(2026-06-16 起;原 `feature/docker-deploy` 部署分支已并入 main 并删除):
+**唯一常驻分支 = `main`**(2026-06-23 起;此前的 `dev` 集成分支已并入 main 并删除,与配对后端 `file-batch-system` 的单 main 模型对齐):
 
 | 常驻分支 | 是什么 | 含什么 |
 |---|---|---|
-| **`main`** | 稳定 / 发布主干、唯一真相源 | 全部前端代码 **+ 全部部署**(`docker-compose*.yml` / `Dockerfile` / `nginx/*` / `scripts/deploy.ps1` / `scripts/local/sync-main.{sh,ps1}` / `.github/workflows/{build-image,deploy,deploy-linux}.yml`)。部署是产品一部分,不再单独分支 |
-| **`dev`** | 集成开发分支 | 日常 feature/bugfix 汇聚地 |
+| **`main`** | 稳定 / 发布 / 集成主干、唯一真相源 | 全部前端代码 **+ 全部部署**(`docker-compose*.yml` / `Dockerfile` / `nginx/*` / `scripts/deploy.ps1` / `.github/workflows/{build-image,deploy,deploy-linux}.yml`)。部署是产品一部分,不单独分支 |
 
 **流程**:
-- **业务 / bugfix / 测试 / 文档 / 部署**:从 `dev` 开 `feature/<topic>`(或 `fix/<topic>`)→ PR → `dev`;短命分支合后即删。
-- **发布**:`dev` → `main`(PR 或定期合)。
-- **不再有独立部署分支**——部署文件直接在 main(自托管 / on-prem 的 compose/nginx/deploy 脚本是产品的一部分,与后端 main 同理)。
+- **业务 / bugfix / 测试 / 文档 / 部署**:从 `main` 开 `feature/<topic>`(或 `fix/<topic>`)→ PR → `main`;短命分支合后即删(仓库 `deleteBranchOnMerge` 已开)。
+- **不再有独立 `dev` / 部署分支**——所有改动经 PR 直接进 main,部署文件直接在 main(自托管 / on-prem 的 compose/nginx/deploy 脚本是产品的一部分,与后端 main 同理)。
 
 ## 构建 / 测试
 
