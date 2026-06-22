@@ -56,17 +56,28 @@ test.describe('@manual-trigger 手动触发作业 真端到端', () => {
     if (await isVisible(ta, 1500)) await ta.fill('{}')
     await box.getByRole('button', { name: /^触发$|确定|提交/ }).first().click()
 
-    // 操作真受理 → success toast
-    await expect(page.locator('.el-message--success').first()).toBeVisible({ timeout: 10000 })
+    // 操作真受理 → success toast。注意:el-message 约 3s 自动消失,4-worker 高负载下
+    // 单次 toBeVisible 抓取窗口易错过 → 用 poll 容忍「toast 已出现过」或「弹窗已关闭」
+    // (提交成功后 message-box 会关闭)两者之一成立即判为受理。
+    await expect
+      .poll(
+        async () => {
+          const toast = await page.locator('.el-message--success').count()
+          const boxGone = !(await box.isVisible().catch(() => false))
+          return toast > 0 || boxGone
+        },
+        { timeout: 15000 },
+      )
+      .toBe(true)
 
     // 验真结果:监控页按 jobCode 过滤,出现该作业实例(刚触发产生)
     await page.goto(`/monitor/job-instances?jobCode=${JOB}`)
     await page.waitForLoadState('networkidle', { timeout: 8000 }).catch(() => {})
-    // 触发→实例落库有短延迟,用 poll 等行出现
+    // 触发→outbox→kafka→launch→实例落库这条异步链有延迟,poll 拉长到 30s 等行出现
     await expect
       .poll(
         async () => page.locator('tbody tr.el-table__row').filter({ hasText: JOB }).count(),
-        { timeout: 15000 },
+        { timeout: 30000 },
       )
       .toBeGreaterThan(0)
   })
