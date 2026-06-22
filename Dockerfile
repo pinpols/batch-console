@@ -23,18 +23,19 @@ COPY . .
 ARG BUILD_MODE=build:fast
 RUN npm run ${BUILD_MODE}
 
-# ── 文档站点(可选):跨仓 srcDir = ../../file-batch-system/docs ──
-# vitepress 配置:docs-site/.vitepress/config.ts(base: /docs/)
-# 仅当 build context 包含 file-batch-system/docs(用 docker build -f Dockerfile ../)
+# ── 文档站点(可选):跨仓 srcDir = ../../../../file-batch-system/docs ──
+# vitepress 配置:tools/docs-bridge/backend/.vitepress/config.ts(base: /docs/),
+# 产物 → tools/docs-bridge/backend/.vitepress/dist。
+# 仅当 build context 包含 file-batch-system/docs(用 docker build -f batch-console/Dockerfile ../)
 # 才能成功构建;否则回退占位页,nginx /docs/ 路径也不会 404 整面崩溃。
 RUN if [ -d /app/../file-batch-system/docs ] || [ -d ../file-batch-system/docs ]; then \
       echo "[docs] building vitepress from sibling repo..." && \
       npm run docs:build; \
     else \
       echo "[docs] sibling docs repo not in build context — fallback placeholder" && \
-      mkdir -p docs-site/.vitepress/dist && \
-      printf '<!doctype html><meta charset=utf-8><title>docs</title><h1>文档暂未构建</h1><p>请在 docker build 时把 build context 扩展到父目录,或预先 <code>npm run docs:build</code></p>' \
-        > docs-site/.vitepress/dist/index.html; \
+      mkdir -p tools/docs-bridge/backend/.vitepress/dist && \
+      printf '<!doctype html><meta charset=utf-8><title>docs</title><h1>文档暂未构建</h1><p>请用 <code>docker build -f batch-console/Dockerfile ..</code> 把 build context 扩展到父目录(含 file-batch-system/docs),或预先 <code>npm run docs:build</code></p>' \
+        > tools/docs-bridge/backend/.vitepress/dist/index.html; \
     fi
 
 # ───── Stage 2: runtime ─────
@@ -57,7 +58,7 @@ COPY nginx/default.conf.template /etc/nginx/templates/default.conf.template
 
 COPY --from=build /app/dist /usr/share/nginx/html
 # 文档站点(若上一阶段构建成功)→ /var/www/batch-docs,nginx /docs/ alias 指过去
-COPY --from=build /app/docs-site/.vitepress/dist /var/www/batch-docs
+COPY --from=build /app/tools/docs-bridge/backend/.vitepress/dist /var/www/batch-docs
 
 # 默认 BE 上游(可在 docker run/compose 中覆盖)
 ENV BACKEND_UPSTREAM_HOST=backend:18080 \

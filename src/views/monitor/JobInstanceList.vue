@@ -54,7 +54,20 @@
               </el-select>
             </el-form-item>
             <el-form-item :label="t('jobInstanceList.statusLabel')">
+              <!-- 多状态深链(如 OpsSummary「失败任务」卡片传 FAILED,PARTIAL_FAILED):
+                   单值下拉无法表达,改用可关闭 tag 回显,让用户看到过滤条件确实生效 -->
+              <el-tag
+                v-if="query.instanceStatuses"
+                class="query-w-180"
+                type="danger"
+                closable
+                disable-transitions
+                @close="clearMultiStatus"
+              >
+                {{ multiStatusLabel }}
+              </el-tag>
               <MetaSelect
+                v-else
                 class="query-w-180"
                 v-model="query.instanceStatus"
                 clearable
@@ -500,6 +513,22 @@
   function onStatusChange() {
     // 用户手动选单值状态时,清掉 deeplink(失败任务卡片)带来的 instanceStatuses CSV——
     // CSV 优先级高于单值,不清会出现"选成功却仍列失败"(搜索条件不生效)。
+    query.instanceStatuses = ''
+    query.page = 1
+    syncFiltersToUrl()
+    void loadData()
+  }
+
+  // 多状态深链回显:把 CSV 各码映射到枚举 label(映射不到则原样显示码)
+  const multiStatusLabel = computed(() =>
+    query.instanceStatuses
+      .split(',')
+      .map((c) => statusOptions.value.find((o) => o.value === c)?.label ?? c)
+      .join(' / '),
+  )
+
+  // 关闭多状态 tag = 清掉 CSV 过滤,回到普通单值筛选
+  function clearMultiStatus() {
     query.instanceStatuses = ''
     query.page = 1
     syncFiltersToUrl()
