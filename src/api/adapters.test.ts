@@ -1,5 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { toPageResult, fetchAllPageItems } from './adapters'
+import { ElMessage } from 'element-plus'
+
+vi.mock('element-plus', () => ({
+  ElMessage: {
+    warning: vi.fn(),
+  },
+}))
 
 // mock the get function from client
 vi.mock('./client', () => ({
@@ -47,6 +54,8 @@ describe('toPageResult', () => {
 describe('fetchAllPageItems', () => {
   beforeEach(() => {
     mockedGet.mockReset()
+    vi.mocked(ElMessage.warning).mockReset()
+    vi.unstubAllGlobals()
   })
 
   it('returns array directly when API returns an array', async () => {
@@ -87,5 +96,23 @@ describe('fetchAllPageItems', () => {
     const result = await fetchAllPageItems('/api/items', {}, { pageSize: 2, maxPages: 3 })
     expect(result).toHaveLength(6)
     expect(mockedGet).toHaveBeenCalledTimes(3)
+  })
+
+  it('does not show truncation warning outside browser environment', async () => {
+    mockedGet.mockResolvedValue({ items: ['x', 'x'], total: 1000 })
+
+    await fetchAllPageItems('/api/items-node', {}, { pageSize: 2, maxPages: 3 })
+
+    expect(ElMessage.warning).not.toHaveBeenCalled()
+  })
+
+  it('shows truncation warning once in browser environment', async () => {
+    vi.stubGlobal('document', {})
+    mockedGet.mockResolvedValue({ items: ['x', 'x'], total: 1000 })
+
+    await fetchAllPageItems('/api/items-browser', {}, { pageSize: 2, maxPages: 3 })
+    await fetchAllPageItems('/api/items-browser', {}, { pageSize: 2, maxPages: 3 })
+
+    expect(ElMessage.warning).toHaveBeenCalledTimes(1)
   })
 })

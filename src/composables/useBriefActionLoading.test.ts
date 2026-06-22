@@ -1,5 +1,9 @@
-import { describe, it, expect } from 'vitest'
+import { afterEach, describe, it, expect, vi } from 'vitest'
 import { useBriefActionLoading } from './useBriefActionLoading'
+
+afterEach(() => {
+  vi.useRealTimers()
+})
 
 describe('useBriefActionLoading', () => {
   it('sets busy to true during run and false after', async () => {
@@ -37,19 +41,32 @@ describe('useBriefActionLoading', () => {
   })
 
   it('honors minimum display duration', async () => {
+    vi.useFakeTimers()
     const { run } = useBriefActionLoading(50)
-    const start = Date.now()
-    await run(() => 'quick')
-    const elapsed = Date.now() - start
-    expect(elapsed).toBeGreaterThanOrEqual(45) // allow slight jitter
+    let settled = false
+    const promise = run(() => 'quick').finally(() => {
+      settled = true
+    })
+
+    await vi.advanceTimersByTimeAsync(49)
+    expect(settled).toBe(false)
+    await vi.advanceTimersByTimeAsync(1)
+    await promise
+    expect(settled).toBe(true)
   })
 
   it('does not artificially delay slow operations', async () => {
+    vi.useFakeTimers()
     const { run } = useBriefActionLoading(10)
-    const start = Date.now()
-    await run(() => new Promise((r) => setTimeout(r, 50)))
-    const elapsed = Date.now() - start
-    // Should be ~50ms, not 60ms — min already elapsed during the wait
-    expect(elapsed).toBeLessThan(80)
+    let settled = false
+    const promise = run(() => new Promise((r) => setTimeout(r, 50))).finally(() => {
+      settled = true
+    })
+
+    await vi.advanceTimersByTimeAsync(49)
+    expect(settled).toBe(false)
+    await vi.advanceTimersByTimeAsync(1)
+    await promise
+    expect(settled).toBe(true)
   })
 })

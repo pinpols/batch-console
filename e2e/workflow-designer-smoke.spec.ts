@@ -97,14 +97,19 @@ test.describe('@workflow-designer-smoke 工作流设计器主路径', () => {
       test.skip(true, '该 workflow 被他人持锁,本 spec 不验冲突场景(留 follow-up),跳过写入')
       return
     }
+    const saveBtn = page.getByRole('button', { name: '保存' }).first()
+    if (await saveBtn.isDisabled()) {
+      test.skip(true, '未取得 workflow 编辑锁或无保存权限,跳过写入主路径')
+      return
+    }
 
     // 读现有节点边数,作为 baseline(已 seed 的 workflow 会带原有节点)
     const baseline = await readGraphCounts(page)
 
-    // ── Step 3: 从 palette 拖 3 个节点(START / JOB / END)─────────
-    await dragPaletteNode(page, 'START', { offsetX: 120, offsetY: 120 })
-    await dragPaletteNode(page, 'JOB', { offsetX: 280, offsetY: 120 })
-    await dragPaletteNode(page, 'END', { offsetX: 440, offsetY: 120 })
+    // ── Step 3: 从 palette 添加 3 个节点(START / JOB / END)─────────
+    await addPaletteNode(page, 'START')
+    await addPaletteNode(page, 'JOB')
+    await addPaletteNode(page, 'END')
 
     // 验证三节点已入 store(store 通过 DagCanvas onDrop → store.addNode)
     await expect
@@ -186,7 +191,6 @@ test.describe('@workflow-designer-smoke 工作流设计器主路径', () => {
     }
 
     // ── Step 7: 点「保存」按钮 ────────────────────────────────────
-    const saveBtn = page.getByRole('button', { name: '保存' }).first()
     if (!(await isVisible(saveBtn, 2000))) {
       test.skip(true, '未找到「保存」按钮(可能 readonly 模式)')
       return
@@ -238,65 +242,16 @@ async function readGraphCounts(page: import('@playwright/test').Page) {
 }
 
 /**
- * 从 palette 拖一个 type 节点到画布。
- * X6 + DagCanvas 监听 native HTML5 DnD;Playwright 没有 native DnD API,
- * 这里用 dispatchEvent 合成 dragstart / dragover / drop,带 DataTransfer。
- *
- * MIME 与 NodePalette.vue 一致:'application/x-designer-node-type'
+ * 从 palette 添加一个 type 节点到画布。
+ * 当前节点库支持点击添加,比 headless Chromium 中合成 HTML5 DnD 更贴近可访问用户路径。
  */
-async function dragPaletteNode(
+async function addPaletteNode(
   page: import('@playwright/test').Page,
   type: 'START' | 'END' | 'JOB' | 'GATEWAY' | 'FILE_STEP' | 'APPROVAL',
-  drop: { offsetX: number; offsetY: number },
 ) {
   const paletteItem = page.locator('.palette-item').filter({ hasText: type }).first()
   await expect(paletteItem).toBeVisible({ timeout: 3_000 })
-
-  // 落点取 canvas 容器内的坐标
-  const canvas = page.locator('.dag-canvas__graph').first()
-  const box = await canvas.boundingBox()
-  if (!box) throw new Error('canvas no bounding box')
-  const clientX = box.x + drop.offsetX
-  const clientY = box.y + drop.offsetY
-
-  // 用 page.evaluate 在浏览器侧合成完整 dragstart → drop 链
-  await page.evaluate(
-    ({ type, clientX, clientY }) => {
-      const palettes = Array.from(document.querySelectorAll('.palette-item')) as HTMLElement[]
-      const item = palettes.find((el) => (el.textContent ?? '').trim() === type)
-      if (!item) throw new Error(`palette item ${type} not found`)
-      const canvasEl = document.querySelector('.dag-canvas') as HTMLElement | null
-      if (!canvasEl) throw new Error('.dag-canvas not found')
-
-      const dt = new DataTransfer()
-      const ds = new DragEvent('dragstart', { bubbles: true, cancelable: true, dataTransfer: dt })
-      item.dispatchEvent(ds)
-      // NodePalette.onDragStart 显式 set MIME — 兜底再 set 一次
-      dt.setData('application/x-designer-node-type', type)
-
-      const over = new DragEvent('dragover', {
-        bubbles: true,
-        cancelable: true,
-        clientX,
-        clientY,
-        dataTransfer: dt,
-      })
-      canvasEl.dispatchEvent(over)
-
-      const dropEv = new DragEvent('drop', {
-        bubbles: true,
-        cancelable: true,
-        clientX,
-        clientY,
-        dataTransfer: dt,
-      })
-      canvasEl.dispatchEvent(dropEv)
-
-      const end = new DragEvent('dragend', { bubbles: true, cancelable: true, dataTransfer: dt })
-      item.dispatchEvent(end)
-    },
-    { type, clientX, clientY },
-  )
+  await paletteItem.click({ force: true })
   // 小等让 Vue reactive 跑完一帧
   await page.waitForTimeout(80)
 }

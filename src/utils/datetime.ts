@@ -49,7 +49,7 @@ export function fmtDate(val: unknown): string {
 }
 
 /**
- * 紧凑时间:今天/昨天显示「今天 14:47」「昨天 09:30」,本年内显示「5-17 14:47」,
+ * 紧凑时间:今天/昨天显示本地化的「今天 14:47」「昨天 09:30」,本年内显示「5-17 14:47」,
  * 跨年显示完整 `YYYY-MM-DD HH:mm`。适合列表单元格,信息密度高且语义清晰。
  */
 export function fmtCompact(val: unknown): string {
@@ -73,8 +73,8 @@ export function fmtCompact(val: unknown): string {
 }
 
 /**
- * 相对时间:< 1m 显示「刚刚」,< 60m 显示「N 分钟前」,< 24h 显示「N 小时前」,
- * < 30d 显示「N 天前」,更早回退到 fmtCompact。最近活动场景用,如「最近更新 3 分钟前」。
+ * 相对时间:< 1m 显示本地化的「刚刚」,< 60m 显示「N 分钟前」,< 24h 显示「N 小时前」,
+ * < 30d 显示「N 天前」,更早回退到 fmtCompact。最近活动场景用。
  */
 export function fmtRelative(val: unknown): string {
   if (val === null || val === undefined || val === '') return '—'
