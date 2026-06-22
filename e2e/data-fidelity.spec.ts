@@ -13,14 +13,24 @@
 import { expect, test } from './support/app'
 import { enterDemoApp, expectPageTitle } from './support/app'
 
-type ListPage = { path: string; title: string | RegExp; listUrl: RegExp }
+type ListPage = {
+  path: string
+  title: string | RegExp
+  listUrl: RegExp
+  rowSelector?: string
+}
 
 // 每页一条「分页列表」API,URL 用子串正则匹配(避免 query 串细节脆弱)。
 const PAGES: ListPage[] = [
   { path: '/jobs/definitions', title: '作业定义', listUrl: /\/job-definitions(\?|\/?$|\/page)/ },
   { path: '/jobs/pipelines', title: /流水线定义|流水线/, listUrl: /\/pipeline-definitions(\?|\/?$)/ },
   { path: '/governance/queues', title: /队列|队列配置/, listUrl: /\/queues(\?|\/?$)/ },
-  { path: '/governance/quota', title: /配额|配额策略/, listUrl: /\/quota-policies/ },
+  {
+    path: '/governance/quota',
+    title: /配额|配额策略/,
+    listUrl: /\/quota-policies/,
+    rowSelector: '.quota-card:visible',
+  },
   { path: '/system/tags', title: '标签管理', listUrl: /\/tags\/keys/ },
   { path: '/system/api-keys', title: /API Key|密钥/, listUrl: /\/api-keys(\?|\/?$)/ },
   { path: '/system/parameters', title: /系统参数|参数/, listUrl: /\/system-parameters/ },
@@ -68,7 +78,9 @@ for (const pg of PAGES) {
     await page.waitForLoadState('networkidle', { timeout: 8000 }).catch(() => {})
 
     // 空集:断言空态出现(不应渲染残留行)。
-    const rows = page.locator('.el-table__body-wrapper:visible tbody tr.el-table__row')
+    const rows = page.locator(
+      pg.rowSelector ?? '.el-table__body-wrapper:visible tbody tr.el-table__row',
+    )
     if (items.length === 0) {
       const rowCount = await rows.count()
       expect(rowCount, `${pg.path} API 返回 0 条,前端不应渲染数据行`).toBe(0)
