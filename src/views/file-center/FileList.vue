@@ -65,7 +65,7 @@
               <DateRangePresetPicker
                 v-model="bizDateRange"
                 type="daterange"
-                default-preset="today"
+                default-preset="7d"
               />
             </el-form-item>
             <el-form-item :label="t('fileList.trace')">
@@ -307,14 +307,20 @@
   const auditRows = ref<ConsoleAuditLogResponse[]>([])
   const auditPage = ref(1)
   const auditPageSize = ref(15)
-  // 列表筛选默认锚到"今日 + 全部状态";运维大多看当天文件
-  function todayRange(): [string, string] {
-    const d = new Date()
-    const p = (n: number) => String(n).padStart(2, '0')
-    const s = `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`
-    return [s, s]
+  // 列表筛选默认锚到「近 7 天 + 全部状态」:文件 biz_date 多为 T-1 及更早,默认只看
+  // "今天单日"(start==end)常空屏(当天尚无文件到达时尤甚)。近 7 天更贴合运维诉求;
+  // 需精确单日用户自行收窄。
+  function recentRange(days = 7): [string, string] {
+    const fmt = (d: Date) => {
+      const p = (n: number) => String(n).padStart(2, '0')
+      return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`
+    }
+    const end = new Date()
+    const start = new Date()
+    start.setDate(start.getDate() - (days - 1))
+    return [fmt(start), fmt(end)]
   }
-  const initialBizRange = todayRange()
+  const initialBizRange = recentRange()
   const bizDateRange = ref<[string, string] | null>(initialBizRange)
   // 接受深链 ?fileId=xxx / ?traceId=xxx 跳入,自动套用筛选
   const initialFileId = (route.query.fileId as string) || ''
@@ -420,7 +426,7 @@
 
   function reset() {
     return runReset(async () => {
-      const t = todayRange()
+      const t = recentRange()
       filters.tenantId = tenant.tenantId
       filters.fileStatus = ''
       filters.bizType = ''

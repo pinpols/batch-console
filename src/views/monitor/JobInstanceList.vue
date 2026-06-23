@@ -89,7 +89,7 @@
               <DateRangePresetPicker
                 v-model="dateRange"
                 type="daterange"
-                default-preset="today"
+                default-preset="7d"
                 @update:model-value="onDateChange"
               />
             </el-form-item>
