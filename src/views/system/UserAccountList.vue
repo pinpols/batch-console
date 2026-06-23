@@ -279,6 +279,7 @@
   import { Plus } from '@element-plus/icons-vue'
 
   const { t } = useI18n({ useScope: 'global' })
+  import { confirmDanger } from '@/composables/useDangerConfirm'
   import type { FormRules } from 'element-plus'
   import { useFormValidate, rules } from '@/composables/useFormValidate'
   import { useAsyncAction } from '@/composables/useAsyncAction'
@@ -616,15 +617,13 @@
 
   async function confirmDisable(row: UserAccount) {
     try {
-      await ElMessageBox.confirm(
-        t('userAccountList.disableConfirmText', { name: row.username }),
-        t('userAccountList.disableConfirmTitle'),
-        {
-          type: 'warning',
-          confirmButtonText: t('common.confirm'),
-          cancelButtonText: t('common.cancel'),
-        },
-      )
+      await confirmDanger({
+        verb: t('userAccountList.disableConfirmTitle'),
+        target: '',
+        consequence: t('userAccountList.disableConfirmText', { name: row.username }),
+        confirmButtonText: t('common.confirm'),
+        cancelButtonText: t('common.cancel'),
+      })
       await disableUser(row.id)
       ElMessage.success(t('userAccountList.disableSuccess'))
       await load()

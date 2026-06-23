@@ -1,6 +1,7 @@
 import { ref, type Ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Refresh } from '@element-plus/icons-vue'
+import { i18n } from '@/locales'
 
 /**
  * 「刷新」按钮统一交互反馈(用于不走 ListPageQueryBar 的独立 PageHeader 刷新按钮)。
@@ -29,7 +30,7 @@ export function useRefreshAction(): {
       ok = true
     } catch (e) {
       ElMessage({
-        message: '刷新失败',
+        message: i18n.global.t('commonAction.refreshFailed'),
         type: 'error',
         icon: Refresh,
         duration: 2400,
@@ -44,7 +45,7 @@ export function useRefreshAction(): {
       loading.value = false
       if (ok) {
         ElMessage({
-          message: '已刷新',
+          message: i18n.global.t('commonAction.refreshed'),
           type: 'success',
           icon: Refresh,
           duration: 1400,

@@ -2,6 +2,8 @@
   <PageContainer>
     <PageHeader>
       <template #actions>
+        <!-- 单一主入口消除"3 个并列创建按钮"的选择困难:
+             主按钮 = 向导新建(推荐,引导式分步);次要路径(快速新建 / Bundle 导入)收进下拉。 -->
         <el-tooltip
           :content="
             canMutateConfig ? t('jobDefinitionList.headerWizardTip') : t('common.permissionDenied')
@@ -9,43 +11,28 @@
           placement="top"
         >
           <span>
-            <el-button
-              :icon="Plus"
-              :disabled="!canMutateConfig"
-              @click="router.push('/jobs/definitions/new')"
-            >
-              {{ t('jobDefinitionList.headerWizard') }}
-            </el-button>
-          </span>
-        </el-tooltip>
-        <el-tooltip
-          :content="
-            canMutateConfig ? t('jobDefinitionList.headerBundleTip') : t('common.permissionDenied')
-          "
-          placement="top"
-        >
-          <span>
-            <el-button :icon="Upload" :disabled="!canMutateConfig" @click="openBundleImport">
-              {{ t('jobDefinitionList.headerBundle') }}
-            </el-button>
-          </span>
-        </el-tooltip>
-        <el-tooltip
-          :content="
-            canMutateConfig ? t('jobDefinitionList.headerCreateTip') : t('common.permissionDenied')
-          "
-          placement="top"
-        >
-          <span>
-            <el-button
+            <el-dropdown
+              split-button
               type="primary"
-              :icon="Plus"
+              trigger="click"
               class="pretty-add-button"
               :disabled="!canMutateConfig"
-              @click="openCreate"
+              @click="router.push('/jobs/definitions/new')"
+              @command="onCreateCommand"
             >
-              {{ t('jobDefinitionList.headerCreate') }}
-            </el-button>
+              <el-icon class="create-split__icon"><Plus /></el-icon>
+              {{ t('jobDefinitionList.headerWizard') }}
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item command="quick" :icon="Plus">
+                    {{ t('jobDefinitionList.headerCreate') }}
+                  </el-dropdown-item>
+                  <el-dropdown-item command="bundle" :icon="Upload">
+                    {{ t('jobDefinitionList.headerBundle') }}
+                  </el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
           </span>
         </el-tooltip>
       </template>
@@ -62,6 +49,8 @@
           }
         "
         :total="total"
+        column-config-id="job-definitions"
+        :column-defs="columnDefs"
         v-model:page="page"
         v-model:page-size="pageSize"
         @change="() => {}"
@@ -177,6 +166,7 @@
           </EmptyState>
         </template>
 
+        <template #default="{ isColVisible }">
         <el-table-column prop="jobCode" :label="t('jobDefinitionList.colJobCode')" width="220">
           <template #default="{ row }">
             <router-link class="definition-link" :to="definitionDetailLocation(row)">
@@ -185,30 +175,35 @@
           </template>
         </el-table-column>
         <el-table-column
+          v-if="isColVisible('jobName')"
           prop="jobName"
           :label="t('jobDefinitionList.colJobName')"
           min-width="240"
           show-overflow-tooltip
         />
         <el-table-column
+          v-if="isColVisible('tenantId')"
           prop="tenantId"
           :label="t('jobDefinitionList.colTenant')"
           width="140"
           show-overflow-tooltip
         />
         <el-table-column
+          v-if="isColVisible('workerGroup')"
           prop="workerGroup"
           :label="t('jobDefinitionList.colWorkerGroup')"
           width="180"
           show-overflow-tooltip
         />
         <el-table-column
+          v-if="isColVisible('queueCode')"
           prop="queueCode"
           :label="t('jobDefinitionList.colQueue')"
           width="180"
           show-overflow-tooltip
         />
         <el-table-column
+          v-if="isColVisible('scheduleType')"
           prop="scheduleType"
           :label="t('jobDefinitionList.colScheduleType')"
           width="120"
@@ -218,6 +213,7 @@
           </template>
         </el-table-column>
         <el-table-column
+          v-if="isColVisible('executionMode')"
           prop="executionMode"
           :label="t('jobDefinitionList.colExecutionMode')"
           width="110"
@@ -226,12 +222,18 @@
             <StatusTag :value="row.executionMode || 'FULL'" category="executionMode" />
           </template>
         </el-table-column>
-        <el-table-column prop="enabled" :label="t('jobDefinitionList.colEnabled')" width="80">
+        <el-table-column
+          v-if="isColVisible('enabled')"
+          prop="enabled"
+          :label="t('jobDefinitionList.colEnabled')"
+          width="80"
+        >
           <template #default="{ row }">
             <StatusTag :value="String(row.enabled)" category="yn" />
           </template>
         </el-table-column>
         <el-table-column
+          v-if="isColVisible('scheduleExpr')"
           prop="scheduleExpr"
           :label="t('jobDefinitionList.colScheduleExpr')"
           min-width="220"
@@ -242,6 +244,7 @@
             <RowActions :actions="rowActions(row)" :inline-limit="2" />
           </template>
         </el-table-column>
+        </template>
       </ProTable>
     </SectionCard>
 
@@ -555,6 +558,18 @@
     const key = `enum.scheduleType.${value}`
     return te(key) ? t(key) : value
   }
+
+  // 列设置:jobCode(主链)/操作列始终显示;工程字段(租户/Worker组/队列/调度表达式)默认隐藏
+  const columnDefs = computed(() => [
+    { key: 'jobName', label: t('jobDefinitionList.colJobName') },
+    { key: 'tenantId', label: t('jobDefinitionList.colTenant'), defaultHidden: true },
+    { key: 'workerGroup', label: t('jobDefinitionList.colWorkerGroup'), defaultHidden: true },
+    { key: 'queueCode', label: t('jobDefinitionList.colQueue'), defaultHidden: true },
+    { key: 'scheduleType', label: t('jobDefinitionList.colScheduleType') },
+    { key: 'executionMode', label: t('jobDefinitionList.colExecutionMode') },
+    { key: 'enabled', label: t('jobDefinitionList.colEnabled') },
+    { key: 'scheduleExpr', label: t('jobDefinitionList.colScheduleExpr'), defaultHidden: true },
+  ])
   import type { FormInstance, FormItemRule, FormRules } from 'element-plus'
   import { jobApi, type JobBundlePayload } from '@/api/job'
   import { instanceApi } from '@/api/instance'
@@ -781,6 +796,12 @@
     bundleImportMode.value = 'UPSERT'
     bundleImportDryRun.value = false
     bundleImportVisible.value = true
+  }
+
+  // 创建入口下拉:主按钮走向导,次要路径(快速新建 / Bundle 导入)经此分发
+  function onCreateCommand(command: string) {
+    if (command === 'quick') openCreate()
+    else if (command === 'bundle') openBundleImport()
   }
 
   async function submitBundleImport() {

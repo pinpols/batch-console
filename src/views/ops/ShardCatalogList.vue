@@ -138,7 +138,8 @@
   import { ref, reactive, computed } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { Refresh, Plus } from '@element-plus/icons-vue'
-  import { ElMessage, ElMessageBox } from 'element-plus'
+  import { ElMessage } from 'element-plus'
+  import { confirmDanger } from '@/composables/useDangerConfirm'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
@@ -239,11 +240,12 @@
 
   async function confirmDelete(row: ShardCatalogRow) {
     try {
-      await ElMessageBox.confirm(
-        t('shardCatalogList.deleteConfirm', { key: row.placementKey }),
-        t('shardCatalogList.deleteTitle'),
-        { type: 'warning', confirmButtonText: t('common.confirm'), cancelButtonText: t('common.cancel') },
-      )
+      await confirmDanger({
+        verb: t('common.delete'),
+        target: String(row.placementKey ?? ''),
+        consequence: t('shardCatalogList.deleteConfirm', { key: row.placementKey }),
+        irreversible: true,
+      })
     } catch {
       return // 用户取消
     }

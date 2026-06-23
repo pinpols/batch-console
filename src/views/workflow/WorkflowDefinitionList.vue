@@ -337,7 +337,7 @@
   import { useRouter } from 'vue-router'
   import { useDrawerAutoClose } from '@/composables/useDrawerAutoClose'
   import { useI18n } from 'vue-i18n'
-  import { ElMessage, ElMessageBox } from 'element-plus'
+  import { ElMessage } from 'element-plus'
   import { Plus } from '@element-plus/icons-vue'
   import RowActions, { type RowAction } from '@/components/common/RowActions.vue'
 
@@ -651,15 +651,13 @@
       const action = row.enabled
         ? t('workflowDefinitionList.actionDisable')
         : t('workflowDefinitionList.actionEnable')
-      await ElMessageBox.confirm(
-        t('workflowDefinitionList.toggleConfirmText', { action, code: row.workflowCode }),
-        t('workflowDefinitionList.toggleConfirmTitle'),
-        {
-          type: 'warning',
-          confirmButtonText: t('common.confirm'),
-          cancelButtonText: t('common.cancel'),
-        },
-      )
+      await confirmDanger({
+        verb: t('workflowDefinitionList.toggleConfirmTitle'),
+        target: '',
+        consequence: t('workflowDefinitionList.toggleConfirmText', { action, code: row.workflowCode }),
+        confirmButtonText: t('common.confirm'),
+        cancelButtonText: t('common.cancel'),
+      })
     } catch {
       return
     }

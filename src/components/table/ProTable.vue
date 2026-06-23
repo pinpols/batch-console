@@ -3,8 +3,53 @@
     <div v-if="$slots.query" class="pro-table__query">
       <slot name="query" />
     </div>
-    <div v-if="$slots.toolbar" class="pro-table__toolbar">
+    <div v-if="$slots.toolbar || hasColumnSettings" class="pro-table__toolbar">
       <slot name="toolbar" />
+      <!-- 列设置:仅在传入 columnConfigId + columnDefs 时渲染,默认行为零变化 -->
+      <div v-if="hasColumnSettings" class="pro-table__col-settings">
+        <el-popover
+          placement="bottom-end"
+          trigger="click"
+          :width="240"
+          popper-class="pro-table__col-popover"
+        >
+          <template #reference>
+            <el-button size="small" :icon="Operation" plain>
+              {{ t('proTable.columnSettings.trigger') }}
+            </el-button>
+          </template>
+          <div class="pro-table__col-panel">
+            <div class="pro-table__col-panel-head">
+              <span class="pro-table__col-panel-title">{{
+                t('proTable.columnSettings.title')
+              }}</span>
+              <div class="pro-table__col-panel-ops">
+                <el-button link size="small" @click="selectAllColumns">{{
+                  t('proTable.columnSettings.selectAll')
+                }}</el-button>
+                <el-button link size="small" @click="invertColumns">{{
+                  t('proTable.columnSettings.invert')
+                }}</el-button>
+                <el-button link size="small" @click="resetColumns">{{
+                  t('proTable.columnSettings.reset')
+                }}</el-button>
+              </div>
+            </div>
+            <div class="pro-table__col-list">
+              <el-checkbox
+                v-for="def in columnDefs"
+                :key="def.key"
+                :model-value="isColVisible(def.key)"
+                :disabled="def.hideable === false"
+                :title="def.hideable === false ? t('proTable.columnSettings.required') : ''"
+                @update:model-value="(v: boolean) => toggleColumn(def.key, v)"
+              >
+                {{ def.label }}
+              </el-checkbox>
+            </div>
+          </div>
+        </el-popover>
+      </div>
     </div>
     <TableSkeleton v-if="loading && !data.length" :rows="skeletonRows" />
     <!-- 加载失败 + 没有历史数据时,展示错误态(可选 retry CTA);避免和"暂无数据"混淆 -->
@@ -28,7 +73,9 @@
         class="pro-table__table console-table"
         v-bind="$attrs"
       >
-        <slot />
+        <!-- 默认插槽透出 isColVisible:接入列设置的页面用它给每列加 v-if;
+             不读这两个 slot prop 的旧页面行为完全不变(向后兼容) -->
+        <slot :is-col-visible="isColVisible" :visible-keys="visibleKeys" />
         <!-- 过滤无结果时不抢 #empty 槽,继续走 filteredEmptyText;
              仅在"零数据 + 无筛选"时让父组件用 #empty 渲染引导卡片(EmptyState + CTA) -->
         <template v-if="!hasActiveFilters && $slots.empty" #empty>
@@ -51,11 +98,23 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, onMounted, ref } from 'vue'
+  import { computed, onMounted, ref, watch } from 'vue'
   import type { TableInstance } from 'element-plus'
   import { useRoute } from 'vue-router'
   import { useI18n } from 'vue-i18n'
-  import { Refresh } from '@element-plus/icons-vue'
+  import { Refresh, Operation } from '@element-plus/icons-vue'
+
+  /**
+   * 列设置的列描述。key 与页面里 el-table-column 的标识一一对应。
+   * - hideable:false → 必选列(状态/操作等),checkbox 灰显不可取消
+   * - defaultHidden:true → 默认隐藏的工程字段(instanceNo/queue/trace 等)
+   */
+  interface ProTableColumnDef {
+    key: string
+    label: string
+    hideable?: boolean
+    defaultHidden?: boolean
+  }
 
   const { t } = useI18n({ useScope: 'global' })
   import TableSkeleton from '@/components/table/TableSkeleton.vue'
@@ -99,6 +158,13 @@
       persistPageSize?: boolean
       /** 持久化 key 后缀;不传则自动用 route.path,确保每页独立 */
       persistKey?: string
+      /**
+       * 列设置能力开关:传入唯一 id(如 'job-instances')即启用列显隐工具,
+       * 选择持久化到 localStorage('protable-cols:<id>')。不传则该能力完全关闭,行为不变。
+       */
+      columnConfigId?: string
+      /** 列描述(配合 columnConfigId);声明每列 key/label/可隐藏性/默认隐藏 */
+      columnDefs?: ProTableColumnDef[]
     }>(),
     {
       loading: false,
@@ -131,6 +197,96 @@
       /* localStorage 不可用(隐身模式 / quota) — 忽略 */
     }
   })
+
+  // ── 列显隐(column settings)──────────────────────────────────────────────
+  // 仅当同时传入 columnConfigId + 非空 columnDefs 时启用;否则整套能力关闭。
+  const hasColumnSettings = computed(
+    () => !!props.columnConfigId && (props.columnDefs?.length ?? 0) > 0,
+  )
+  const colStorageKey = computed(() => 'protable-cols:' + (props.columnConfigId ?? ''))
+
+  // 用"隐藏 key 集合"建模:默认值 = 声明了 defaultHidden 的列。
+  const hiddenKeys = ref<Set<string>>(new Set())
+
+  function defaultHiddenSet(): Set<string> {
+    return new Set((props.columnDefs ?? []).filter((d) => d.defaultHidden).map((d) => d.key))
+  }
+
+  function loadHiddenFromStorage() {
+    if (!hasColumnSettings.value) return
+    let next = defaultHiddenSet()
+    try {
+      const raw = localStorage.getItem(colStorageKey.value)
+      if (raw) {
+        const saved = JSON.parse(raw) as string[]
+        if (Array.isArray(saved)) {
+          const known = new Set((props.columnDefs ?? []).map((d) => d.key))
+          // 必选列(hideable:false)永不隐藏,过滤掉脏数据
+          const required = new Set(
+            (props.columnDefs ?? []).filter((d) => d.hideable === false).map((d) => d.key),
+          )
+          next = new Set(saved.filter((k) => known.has(k) && !required.has(k)))
+        }
+      }
+    } catch {
+      /* localStorage 不可用 / JSON 坏 — 回退默认 */
+    }
+    hiddenKeys.value = next
+  }
+
+  function persistHidden() {
+    if (!hasColumnSettings.value) return
+    try {
+      localStorage.setItem(colStorageKey.value, JSON.stringify([...hiddenKeys.value]))
+    } catch {
+      /* localStorage 不可用 — 忽略 */
+    }
+  }
+
+  function isColVisible(key: string): boolean {
+    // 没启用列设置时一律可见,保证不接入的页面零影响
+    if (!hasColumnSettings.value) return true
+    return !hiddenKeys.value.has(key)
+  }
+
+  const visibleKeys = computed(
+    () => (props.columnDefs ?? []).map((d) => d.key).filter((k) => isColVisible(k)),
+  )
+
+  function toggleColumn(key: string, visible: boolean) {
+    const def = (props.columnDefs ?? []).find((d) => d.key === key)
+    if (def?.hideable === false) return // 必选列不可隐藏
+    const next = new Set(hiddenKeys.value)
+    if (visible) next.delete(key)
+    else next.add(key)
+    hiddenKeys.value = next
+    persistHidden()
+  }
+
+  function selectAllColumns() {
+    hiddenKeys.value = new Set()
+    persistHidden()
+  }
+
+  function invertColumns() {
+    const next = new Set<string>()
+    for (const def of props.columnDefs ?? []) {
+      // 必选列保持可见;其余取反
+      if (def.hideable === false) continue
+      if (!hiddenKeys.value.has(def.key)) next.add(def.key)
+    }
+    hiddenKeys.value = next
+    persistHidden()
+  }
+
+  function resetColumns() {
+    hiddenKeys.value = defaultHiddenSet()
+    persistHidden()
+  }
+
+  onMounted(loadHiddenFromStorage)
+  // columnConfigId 切换(如同组件复用到不同页面)时重载持久化选择
+  watch(() => props.columnConfigId, loadHiddenFromStorage)
 
   const resolvedEmpty = computed(() => props.emptyText?.trim() || t('proTable.empty'))
   const resolvedFilteredEmpty = computed(
@@ -193,6 +349,39 @@
 
   .pro-table__toolbar {
     margin-bottom: var(--page-block-gap);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* 列设置按钮始终靠右;toolbar 槽内容占据左侧 */
+  .pro-table__col-settings {
+    margin-left: auto;
+  }
+
+  .pro-table__col-panel-head {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 8px;
+  }
+
+  .pro-table__col-panel-title {
+    font-weight: 600;
+    font-size: 13px;
+  }
+
+  .pro-table__col-panel-ops {
+    display: flex;
+    gap: 8px;
+  }
+
+  .pro-table__col-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-height: 320px;
+    overflow-y: auto;
   }
 
   .pro-table__pager {

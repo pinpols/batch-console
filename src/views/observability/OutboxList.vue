@@ -240,7 +240,8 @@
   import { computed, ref, watch, onMounted } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
-  import { ElMessage, ElMessageBox } from 'element-plus'
+  import { ElMessage } from 'element-plus'
+  import { confirmDanger } from '@/composables/useDangerConfirm'
   import { queryOutboxDeliveries, queryOutboxRetries } from '@/api/observabilityQueries'
   import { republishOutbox } from '@/api/ops'
 
@@ -344,12 +345,15 @@
       return
     }
     const label = t('observability.outboxBulkRepublish')
-    const confirmed = await ElMessageBox.confirm(
-      t('bulk.confirmBody', { label, n: eligible.length }),
-      label,
-      { type: 'warning', confirmButtonText: t('common.ok'), cancelButtonText: t('common.cancel') },
-    ).catch(() => false)
-    if (confirmed === false) return
+    try {
+      await confirmDanger({
+        verb: label,
+        target: '',
+        consequence: t('bulk.confirmBody', { label, n: eligible.length }),
+      })
+    } catch {
+      return
+    }
     await bulk.runBulk(eligible, (r) => republishOutbox(tenant.tenantId, [r.id]), {
       actionLabel: label,
     })

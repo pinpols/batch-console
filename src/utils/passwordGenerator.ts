@@ -7,6 +7,7 @@
  *  - 排除易混淆字符:0/O/I/l/1
  *  - 符号集排除 BE / SQL / shell 危险字符 ('"`\;)
  */
+import { i18n } from '@/locales'
 
 const CHARSET = {
   upper: 'ABCDEFGHJKMNPQRSTUVWXYZ',
@@ -64,4 +65,28 @@ export function passwordStrength(pw: string): number {
   return Math.min(score, 4)
 }
 
+/**
+ * @deprecated UI 文案请用 getPasswordStrengthLabel(走 i18n)。此常量仅为旧调用方/测试兼容保留,
+ * 始终为简体中文,不随 locale 变化。
+ */
 export const PASSWORD_STRENGTH_LABEL = ['极弱', '弱', '中', '强', '极强'] as const
+
+/**
+ * 强度标签的 i18n key,索引对应 passwordStrength 返回的 0-4。
+ * 普通模块不能用 useI18n(),由 getPasswordStrengthLabel 走 i18n.global.t 解析。
+ */
+const PASSWORD_STRENGTH_LABEL_KEYS = [
+  'password.strength.veryWeak',
+  'password.strength.weak',
+  'password.strength.medium',
+  'password.strength.strong',
+  'password.strength.veryStrong',
+] as const
+
+/**
+ * 取强度标签的本地化文案。score 由 passwordStrength 给出(0-4),越界做兜底夹取。
+ */
+export function getPasswordStrengthLabel(score: number): string {
+  const i = Math.min(Math.max(score | 0, 0), PASSWORD_STRENGTH_LABEL_KEYS.length - 1)
+  return i18n.global.t(PASSWORD_STRENGTH_LABEL_KEYS[i]!)
+}
