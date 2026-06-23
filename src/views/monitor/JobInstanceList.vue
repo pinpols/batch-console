@@ -426,14 +426,20 @@
     void loadData()
   }
 
-  // 列表筛选默认锚到"今日",运维 80% 场景关心当天数据;URL query 会在下面覆盖
-  function todayRange(): [string, string] {
-    const d = new Date()
-    const p = (n: number) => String(n).padStart(2, '0')
-    const s = `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`
-    return [s, s]
+  // 列表筛选默认锚到「近 7 天」:批量作业的 biz_date 多为 T-1 及更早,默认只看"今天单日"
+  // 常常空屏(尤其当天尚无业务日数据),近 7 天更贴合运维"看最近一批运行"的真实诉求;
+  // URL query 会在下面覆盖。需要精确单日时用户自行收窄即可。
+  function recentRange(days = 7): [string, string] {
+    const fmt = (d: Date) => {
+      const p = (n: number) => String(n).padStart(2, '0')
+      return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`
+    }
+    const end = new Date()
+    const start = new Date()
+    start.setDate(start.getDate() - (days - 1))
+    return [fmt(start), fmt(end)]
   }
-  const initialRange = todayRange()
+  const initialRange = recentRange()
   const dateRange = ref<[string, string] | null>(initialRange)
 
   const query = reactive({
@@ -508,7 +514,7 @@
 
   function resetQuery() {
     return runReset(async () => {
-      const t = todayRange()
+      const t = recentRange()
       query.tenantId = tenant.tenantId
       query.jobCode = ''
       query.instanceStatus = ''
