@@ -112,6 +112,9 @@ export const STATUS_TAG_CATEGORIES: Record<StatusTagCategory, CategoryConfig> = 
   },
   apiKey: { color: {}, local: apiKeyStatusMeta },
   executionMode: { color: executionModeColor, metaKeys: ['executionMode'] },
+  // 作业类型(IMPORT/EXPORT/PROCESS/WORKFLOW/GENERAL/ATOMIC…):label 走 /meta/enums
+  // 或 i18n enum.jobType.*,统一 info 色。此前漏注册 → 作业详情页头 StatusTag 必崩。
+  jobType: { color: {}, metaKeys: ['jobType'] },
   // /meta/enums 未提供,label 由前端维护
   log: { color: {}, local: logLevelMeta },
   yn: { color: {}, local: ynStatusMeta },
@@ -145,6 +148,12 @@ export function resolveStatusMeta(
   translate?: StatusTagTranslate,
 ): ResolvedStatusMeta {
   const cfg = STATUS_TAG_CATEGORIES[category]
+  // 防御:未注册的 category 不该让整页 crash(历史上 jobType 等漏注册即触发
+  // "Cannot read properties of undefined (reading 'local')",经 StatusTag computed
+  // 冒泡到 ErrorBoundary,整张详情页白屏)。降级为 info 标签 + 原值文案。
+  if (!cfg) {
+    return { label: value || fallback || '—', type: 'info' }
+  }
   const localMeta = cfg.local?.[value]
   const type: StatusTagType = cfg.color[value] ?? localMeta?.type ?? 'info'
 
