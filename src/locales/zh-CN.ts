@@ -77,6 +77,7 @@ export default {
   },
   apiError: {
     requestFailed: '请求失败',
+    selectTenantFirst: '请先在顶部选择租户后查看数据',
     requestFailedWithStatus: '请求失败(HTTP {status})',
     unauthorizedTitle: '未授权',
     unauthorizedMessage: '该操作未授权',

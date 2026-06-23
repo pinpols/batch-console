@@ -2,6 +2,8 @@
   <PageContainer>
     <PageHeader>
       <template #actions>
+        <!-- 单一主入口消除"3 个并列创建按钮"的选择困难:
+             主按钮 = 向导新建(推荐,引导式分步);次要路径(快速新建 / Bundle 导入)收进下拉。 -->
         <el-tooltip
           :content="
             canMutateConfig ? t('jobDefinitionList.headerWizardTip') : t('common.permissionDenied')
@@ -9,43 +11,28 @@
           placement="top"
         >
           <span>
-            <el-button
-              :icon="Plus"
-              :disabled="!canMutateConfig"
-              @click="router.push('/jobs/definitions/new')"
-            >
-              {{ t('jobDefinitionList.headerWizard') }}
-            </el-button>
-          </span>
-        </el-tooltip>
-        <el-tooltip
-          :content="
-            canMutateConfig ? t('jobDefinitionList.headerBundleTip') : t('common.permissionDenied')
-          "
-          placement="top"
-        >
-          <span>
-            <el-button :icon="Upload" :disabled="!canMutateConfig" @click="openBundleImport">
-              {{ t('jobDefinitionList.headerBundle') }}
-            </el-button>
-          </span>
-        </el-tooltip>
-        <el-tooltip
-          :content="
-            canMutateConfig ? t('jobDefinitionList.headerCreateTip') : t('common.permissionDenied')
-          "
-          placement="top"
-        >
-          <span>
-            <el-button
+            <el-dropdown
+              split-button
               type="primary"
-              :icon="Plus"
+              trigger="click"
               class="pretty-add-button"
               :disabled="!canMutateConfig"
-              @click="openCreate"
+              @click="router.push('/jobs/definitions/new')"
+              @command="onCreateCommand"
             >
-              {{ t('jobDefinitionList.headerCreate') }}
-            </el-button>
+              <el-icon class="create-split__icon"><Plus /></el-icon>
+              {{ t('jobDefinitionList.headerWizard') }}
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item command="quick" :icon="Plus">
+                    {{ t('jobDefinitionList.headerCreate') }}
+                  </el-dropdown-item>
+                  <el-dropdown-item command="bundle" :icon="Upload">
+                    {{ t('jobDefinitionList.headerBundle') }}
+                  </el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
           </span>
         </el-tooltip>
       </template>
@@ -781,6 +768,12 @@
     bundleImportMode.value = 'UPSERT'
     bundleImportDryRun.value = false
     bundleImportVisible.value = true
+  }
+
+  // 创建入口下拉:主按钮走向导,次要路径(快速新建 / Bundle 导入)经此分发
+  function onCreateCommand(command: string) {
+    if (command === 'quick') openCreate()
+    else if (command === 'bundle') openBundleImport()
   }
 
   async function submitBundleImport() {

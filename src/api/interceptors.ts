@@ -628,7 +628,12 @@ export function applyApiInterceptors(client: AxiosInstance): void {
             'info',
             { kind: 'api-missing-tenant', url: cfg?.url ?? '', status },
           )
-          return Promise.reject(Object.assign(error as object, { missingTenant: true, silenced: true }))
+          // 把开发者级英文(Request failed with status code 400 / tenantId is required)替换成人话,
+          // 让页面级错误态(ProTable error slot 等读 err.message)显示"请先选择租户"而非吓人的英文。
+          const friendly = i18n.global.t('apiError.selectTenantFirst')
+          return Promise.reject(
+            Object.assign(error as object, { missingTenant: true, silenced: true, message: friendly }),
+          )
         }
       }
 

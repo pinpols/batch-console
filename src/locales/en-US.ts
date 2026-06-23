@@ -71,6 +71,7 @@ const messages: Messages = {
   },
   apiError: {
     requestFailed: 'Request failed',
+    selectTenantFirst: 'Select a tenant at the top to view data',
     requestFailedWithStatus: 'Request failed (HTTP {status})',
     unauthorizedTitle: 'Unauthorized',
     unauthorizedMessage: 'This operation is unauthorized',
