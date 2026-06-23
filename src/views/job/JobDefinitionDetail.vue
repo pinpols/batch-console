@@ -43,7 +43,7 @@
       <div v-if="loading && !job" class="detail-loading">
         <el-skeleton :rows="8" animated />
       </div>
-      <el-empty v-else-if="!job" description="作业定义不存在或当前租户无权访问" />
+      <el-empty v-else-if="!job" :description="t('jobDefinitionDetail.emptyJob')" />
       <template v-else>
         <div class="detail-summary">
           <div>
@@ -84,7 +84,7 @@
                   {{ job.windowCode || '—' }}
                 </el-descriptions-item>
                 <el-descriptions-item label="dagEnabled">
-                  {{ job.dagEnabled ? '是' : '否' }}
+                  {{ job.dagEnabled ? t('common.yes') : t('common.no') }}
                 </el-descriptions-item>
               </el-descriptions>
               <div class="panel-actions">
@@ -171,10 +171,7 @@
               :tenant-id="job.tenantId"
               :job-code="job.jobCode"
             />
-            <el-empty
-              v-else
-              description="此作业类型不涉及文件管道(仅 IMPORT / EXPORT 作业关联 fileChannels / fileTemplates)"
-            />
+            <el-empty v-else :description="t('jobDefinitionDetail.filesNotApplicable')" />
           </el-tab-pane>
 
           <el-tab-pane :label="t('jobDefinitionDetail.tabWorkflow')" name="workflow" lazy>
@@ -182,14 +179,14 @@
               <el-descriptions :column="2" border size="small">
                 <el-descriptions-item label="jobType">{{ job.jobType }}</el-descriptions-item>
                 <el-descriptions-item label="dagEnabled">
-                  {{ job.dagEnabled ? '是' : '否' }}
+                  {{ job.dagEnabled ? t('common.yes') : t('common.no') }}
                 </el-descriptions-item>
                 <el-descriptions-item label="executionHandler" :span="2">
                   <span class="mono">{{ job.executionHandler || '—' }}</span>
                 </el-descriptions-item>
               </el-descriptions>
               <div class="panel-toolbar">
-                <span>租户内 Workflow 定义(WORKFLOW 类型作业可关联)</span>
+                <span>{{ t('jobDefinitionDetail.workflowToolbarHint') }}</span>
                 <el-button :loading="workflowsLoading" @click="loadWorkflows">
                   {{ t('common.refresh') }}
                 </el-button>
@@ -199,7 +196,7 @@
                 :data="workflowRows"
                 size="small"
                 stripe
-                empty-text="当前租户暂无 workflow 定义"
+                :empty-text="t('jobDefinitionDetail.emptyWorkflows')"
                 @row-click="goWorkflowDesigner"
               >
                 <el-table-column prop="workflowCode" label="workflowCode" min-width="200">
@@ -213,7 +210,7 @@
                 <el-table-column :label="t('jobDefinitionDetail.colEnabled')" width="80">
                   <template #default="{ row }">
                     <el-tag size="small" :type="row.enabled ? 'success' : 'info'">
-                      {{ row.enabled ? '是' : '否' }}
+                      {{ row.enabled ? t('common.yes') : t('common.no') }}
                     </el-tag>
                   </template>
                 </el-table-column>
@@ -229,7 +226,7 @@
           <el-tab-pane :label="t('jobDefinitionDetail.tabAlerts')" name="alerts" lazy>
             <div class="tab-panel">
               <div class="panel-toolbar">
-                <span>当前租户告警路由(用于匹配 alertGroup / receiver,FE 仅列出可绑定路由)</span>
+                <span>{{ t('jobDefinitionDetail.alertsToolbarHint') }}</span>
                 <el-button :loading="alertsLoading" @click="loadAlerts">
                   {{ t('common.refresh') }}
                 </el-button>
@@ -239,7 +236,7 @@
                 :data="alertRows"
                 size="small"
                 stripe
-                empty-text="当前租户无告警路由,先去治理页新建"
+                :empty-text="t('jobDefinitionDetail.emptyAlerts')"
               >
                 <el-table-column prop="routeCode" label="routeCode" min-width="160" />
                 <el-table-column prop="team" label="team" width="140" />
@@ -253,7 +250,7 @@
                 <el-table-column :label="t('jobDefinitionDetail.colEnabled')" width="80">
                   <template #default="{ row }">
                     <el-tag size="small" :type="row.enabled ? 'success' : 'info'">
-                      {{ row.enabled ? '是' : '否' }}
+                      {{ row.enabled ? t('common.yes') : t('common.no') }}
                     </el-tag>
                   </template>
                 </el-table-column>
@@ -269,7 +266,7 @@
           <el-tab-pane :label="t('jobDefinitionDetail.tabRuns')" name="runs" lazy>
             <div class="tab-panel">
               <div class="panel-toolbar">
-                <span>最近 20 次运行</span>
+                <span>{{ t('jobDefinitionDetail.runsToolbarHint') }}</span>
                 <el-button text type="primary" @click="goAllRuns">
                   {{ t('jobDefinitionDetail.viewAll') }}
                 </el-button>
@@ -279,7 +276,7 @@
                 :data="runs"
                 size="small"
                 stripe
-                empty-text="暂无运行记录"
+                :empty-text="t('jobDefinitionDetail.emptyRuns')"
                 @row-click="goRunDetail"
               >
                 <el-table-column prop="instanceNo" :label="t('jobDefinitionDetail.colInstanceNo')" min-width="220">
@@ -306,7 +303,7 @@
           <el-tab-pane :label="t('jobDefinitionDetail.tabAudit')" name="audit" lazy>
             <div class="tab-panel">
               <div class="panel-toolbar">
-                <span>按作业编码匹配最近审计记录</span>
+                <span>{{ t('jobDefinitionDetail.auditToolbarHint') }}</span>
                 <el-button :loading="auditLoading" @click="loadAudits">
                   {{ t('common.refresh') }}
                 </el-button>
@@ -316,7 +313,7 @@
                 :data="auditRows"
                 size="small"
                 stripe
-                empty-text="暂无审计记录"
+                :empty-text="t('jobDefinitionDetail.emptyAudit')"
               >
                 <el-table-column prop="operationType" :label="t('jobDefinitionDetail.colOperation')" width="180" />
                 <el-table-column prop="operationResult" :label="t('jobDefinitionDetail.colResult')" width="110" />

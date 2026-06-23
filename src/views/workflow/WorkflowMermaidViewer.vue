@@ -69,16 +69,40 @@
           <!-- 工具栏:Airflow 风,Fit / Reset / Zoom / Fullscreen / Auto-refresh / Refresh / Download -->
           <div class="dag-header__tools">
             <el-tooltip :content="t('workflowMermaidViewer.tipZoomIn')" placement="top">
-              <el-button :icon="ZoomIn" circle size="small" @click="zoomIn" />
+              <el-button
+                :icon="ZoomIn"
+                circle
+                size="small"
+                :aria-label="t('workflowMermaidViewer.tipZoomIn')"
+                @click="zoomIn"
+              />
             </el-tooltip>
             <el-tooltip :content="t('workflowMermaidViewer.tipZoomOut')" placement="top">
-              <el-button :icon="ZoomOut" circle size="small" @click="zoomOut" />
+              <el-button
+                :icon="ZoomOut"
+                circle
+                size="small"
+                :aria-label="t('workflowMermaidViewer.tipZoomOut')"
+                @click="zoomOut"
+              />
             </el-tooltip>
             <el-tooltip :content="t('workflowMermaidViewer.tipFit')" placement="top">
-              <el-button :icon="FullScreen" circle size="small" @click="fitGraph" />
+              <el-button
+                :icon="FullScreen"
+                circle
+                size="small"
+                :aria-label="t('workflowMermaidViewer.tipFit')"
+                @click="fitGraph"
+              />
             </el-tooltip>
             <el-tooltip :content="t('workflowMermaidViewer.tipReset')" placement="top">
-              <el-button :icon="RefreshLeft" circle size="small" @click="resetGraph" />
+              <el-button
+                :icon="RefreshLeft"
+                circle
+                size="small"
+                :aria-label="t('workflowMermaidViewer.tipReset')"
+                @click="resetGraph"
+              />
             </el-tooltip>
             <el-divider direction="vertical" />
             <el-tooltip
@@ -95,6 +119,11 @@
                 circle
                 size="small"
                 :type="paused ? 'default' : 'primary'"
+                :aria-label="
+                  paused
+                    ? t('workflowMermaidViewer.tipResumePoll')
+                    : t('workflowMermaidViewer.tipPausePoll', { n: pollCountdownSec })
+                "
                 @click="togglePause"
               />
             </el-tooltip>
@@ -104,6 +133,7 @@
                 circle
                 size="small"
                 :loading="loading || refresh.loading.value"
+                :aria-label="t('common.refresh')"
                 @click="refresh.run(reload)"
               />
             </el-tooltip>
@@ -113,6 +143,7 @@
                 circle
                 size="small"
                 :disabled="!mermaidText"
+                :aria-label="t('workflowMermaidViewer.tipDownload')"
                 @click="downloadSvg"
               />
             </el-tooltip>
@@ -128,6 +159,11 @@
                 :icon="isFullscreen ? Aim : Rank"
                 circle
                 size="small"
+                :aria-label="
+                  isFullscreen
+                    ? t('workflowMermaidViewer.tipExitFullscreen')
+                    : t('workflowMermaidViewer.tipFullscreen')
+                "
                 @click="toggleFullscreen"
               />
             </el-tooltip>
@@ -182,7 +218,13 @@
                   : t('workflowMermaidViewer.nodeDetailTitle')
               }}
             </span>
-            <el-button text :icon="Close" size="small" @click="closeInspector" />
+            <el-button
+              text
+              :icon="Close"
+              size="small"
+              :aria-label="t('common.close')"
+              @click="closeInspector"
+            />
           </div>
           <div class="inspector-body">
             <el-descriptions v-if="selectedNodeMeta" :column="1" border size="small">

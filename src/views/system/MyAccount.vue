@@ -83,10 +83,15 @@
           >
             <template #append>
               <el-tooltip :content="t('common.passwordGenerate')" placement="top">
-                <el-button :icon="MagicStick" @click="onGen" />
+                <el-button :icon="MagicStick" :aria-label="t('common.passwordGenerate')" @click="onGen" />
               </el-tooltip>
               <el-tooltip :content="t('common.passwordCopy')" placement="top">
-                <el-button :icon="DocumentCopy" :disabled="!form.newPassword" @click="onCopy" />
+                <el-button
+                  :icon="DocumentCopy"
+                  :disabled="!form.newPassword"
+                  :aria-label="t('common.passwordCopy')"
+                  @click="onCopy"
+                />
               </el-tooltip>
             </template>
           </el-input>

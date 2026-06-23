@@ -864,6 +864,9 @@ const messages: Messages = {
     cursorHint: 'Cursor pagination · jump not supported',
   },
   cronExprInput: {
+    presetLabel: 'Quick presets:',
+    emptyHintPrefix: 'Quartz 6 fields (sec min hour day month weekday), e.g. ',
+    emptyHintSuffix: ' = daily at 02:00. Leave empty for manual scheduling.',
     previewLoading: 'Next runs (BE computing…)',
     nextRunsLabel: 'Next 3 runs ({tz}):',
     tzLocal: 'local',
@@ -3128,6 +3131,18 @@ const messages: Messages = {
     colOperator: 'Operator',
     colSummary: 'Summary',
     colCreatedAt: 'Time',
+    emptyJob: 'Job definition not found, or the current tenant has no access',
+    filesNotApplicable:
+      'This job type has no file pipeline (only IMPORT / EXPORT jobs link fileChannels / fileTemplates)',
+    workflowToolbarHint: 'Workflow definitions in this tenant (linkable by WORKFLOW-type jobs)',
+    emptyWorkflows: 'No workflow definitions in this tenant yet',
+    alertsToolbarHint:
+      'Alert routings in this tenant (matched by alertGroup / receiver; the console only lists bindable routes)',
+    emptyAlerts: 'No alert routings in this tenant — create one on the governance page first',
+    runsToolbarHint: 'Last 20 runs',
+    emptyRuns: 'No runs yet',
+    auditToolbarHint: 'Recent audit records matched by job code',
+    emptyAudit: 'No audit records',
   },
   jobDefinitionList: {
     emptyTitle: 'No job definitions for this tenant yet',
