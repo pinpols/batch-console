@@ -136,6 +136,7 @@
   import { useRoute } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
+  import { confirmDanger } from '@/composables/useDangerConfirm'
   import { Refresh } from '@element-plus/icons-vue'
   import { useRefreshAction } from '@/composables/useRefreshAction'
 
@@ -218,15 +219,12 @@
 
   async function cancelPartition(row: ConsoleJobPartitionResponse) {
     try {
-      await ElMessageBox.confirm(
-        t('monitor.partCancelConfirmText', { id: row.id }),
-        t('monitor.partCancelConfirmTitle'),
-        {
-          type: 'warning',
-          confirmButtonText: t('common.confirm'),
-          cancelButtonText: t('common.cancel'),
-        },
-      )
+      await confirmDanger({
+        verb: t('monitor.partActionCancel'),
+        target: `${t('monitor.partitionTitle')} #${row.id}`,
+        confirmButtonText: t('common.confirm'),
+        cancelButtonText: t('common.cancel'),
+      })
       await instanceApi.cancelPartition(row.id, row.tenantId ?? tenant.tenantId)
       ElMessage.success(t('monitor.partCanceled'))
       await load()

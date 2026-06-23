@@ -92,10 +92,9 @@
               />
             </el-form-item>
             <el-form-item :label="t('jobInstanceList.traceIdLabel')">
-              <el-input
+              <TraceIdInput
                 class="query-w-240"
                 v-model="query.traceId"
-                clearable
                 :placeholder="t('jobInstanceList.traceIdPlaceholder')"
               />
             </el-form-item>
@@ -264,6 +263,7 @@
   import { useRouter, useRoute } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
+  import { confirmDanger } from '@/composables/useDangerConfirm'
 
   const { t, te } = useI18n({ useScope: 'global' })
 
@@ -278,6 +278,7 @@
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
   import PageContainer from '@/components/common/PageContainer.vue'
+  import TraceIdInput from '@/components/common/TraceIdInput.vue'
   import OpsListToolbar from '@/components/table/OpsListToolbar.vue'
   import MetaSelect from '@/components/common/MetaSelect.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
@@ -346,12 +347,16 @@
       return
     }
     const label = t('jobInstanceList.bulkCancel')
-    const confirmed = await ElMessageBox.confirm(
-      t('bulk.confirmBody', { label, n: eligible.length }),
-      label,
-      { type: 'warning', confirmButtonText: t('common.ok'), cancelButtonText: t('common.cancel') },
-    ).catch(() => false)
-    if (confirmed === false) return
+    try {
+      await confirmDanger({
+        verb: label,
+        target: t('bulk.selectedCount', { n: eligible.length }),
+        confirmButtonText: t('common.ok'),
+        cancelButtonText: t('common.cancel'),
+      })
+    } catch {
+      return
+    }
     await bulk.runBulk(eligible, (r) => instanceApi.cancel(r.id, tenant.tenantId), {
       actionLabel: label,
     })

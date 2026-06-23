@@ -69,10 +69,9 @@
               />
             </el-form-item>
             <el-form-item :label="t('monitor.runListTraceIdLabel')">
-              <el-input
+              <TraceIdInput
                 class="query-w-240"
                 v-model="traceId"
-                clearable
                 :placeholder="t('monitor.runListTraceIdPlaceholder')"
               />
             </el-form-item>
@@ -176,6 +175,7 @@
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
   import PageContainer from '@/components/common/PageContainer.vue'
+  import TraceIdInput from '@/components/common/TraceIdInput.vue'
   import MetaSelect from '@/components/common/MetaSelect.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'

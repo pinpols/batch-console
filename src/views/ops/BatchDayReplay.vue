@@ -251,7 +251,8 @@
 <script setup lang="ts">
   import { ref, reactive, computed, onMounted } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { ElMessage, ElMessageBox } from 'element-plus'
+  import { ElMessage } from 'element-plus'
+  import { confirmDanger } from '@/composables/useDangerConfirm'
   import { Refresh, Plus } from '@element-plus/icons-vue'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
@@ -434,11 +435,12 @@
   async function doApprove() {
     if (!currentSession.value) return
     try {
-      await ElMessageBox.confirm(
-        t('batchDayReplay.approveConfirmHint'),
-        t('batchDayReplay.approveBtn'),
-        { type: 'warning' },
-      )
+      await confirmDanger({
+        verb: t('batchDayReplay.approveBtn'),
+        target: '',
+        consequence: t('batchDayReplay.approveConfirmHint'),
+        irreversible: true,
+      })
     } catch {
       // 用户点取消 → early return,不执行高危 ops
       return
@@ -464,13 +466,11 @@
   async function doCancel() {
     if (!currentSession.value) return
     try {
-      await ElMessageBox.confirm(
-        t('batchDayReplay.cancelConfirmHint'),
-        t('batchDayReplay.cancelBtn'),
-        {
-          type: 'warning',
-        },
-      )
+      await confirmDanger({
+        verb: t('batchDayReplay.cancelBtn'),
+        target: '',
+        consequence: t('batchDayReplay.cancelConfirmHint'),
+      })
     } catch {
       // 用户点取消 → early return,不执行高危 ops
       return

@@ -146,6 +146,7 @@
   import { computed, h, onMounted, reactive, ref, type Component } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
+  import { confirmDanger } from '@/composables/useDangerConfirm'
   import {
     ArrowDown,
     ArrowUp,
@@ -550,11 +551,11 @@
 
   async function doCleanup() {
     try {
-      await ElMessageBox.confirm(
-        t('opsDiagnostic.cleanupConfirmText'),
-        t('opsDiagnostic.cleanupConfirmTitle'),
-        { type: 'warning' },
-      )
+      await confirmDanger({
+        verb: t('opsDiagnostic.cleanupConfirmTitle'),
+        target: '',
+        consequence: t('opsDiagnostic.cleanupConfirmText'),
+      })
       cleaning.value = true
       await cleanupOutbox(tenant.tenantId)
       ElMessage.success(t('opsDiagnostic.cleanupDoneToast'))

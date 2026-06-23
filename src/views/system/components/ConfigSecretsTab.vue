@@ -150,9 +150,10 @@
 <script setup lang="ts">
   import { ref, computed } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { ElMessage, ElMessageBox } from 'element-plus'
+  import { ElMessage } from 'element-plus'
 
   const { t } = useI18n({ useScope: 'global' })
+  import { confirmDanger } from '@/composables/useDangerConfirm'
   import { listSecrets, getSecretVersion, rotateSecret } from '@/api/configReleases'
   import { toPageResult } from '@/api/adapters'
   import { useTenantStore } from '@/stores/tenant'
@@ -201,11 +202,11 @@
 
   async function confirmRotate(row: ConsoleSecretVersionResponse) {
     try {
-      await ElMessageBox.confirm(
-        t('configSecretsTab.rotateConfirmText', { name: row.secretRef }),
-        t('configSecretsTab.rotateConfirmTitle'),
-        { type: 'warning' },
-      )
+      await confirmDanger({
+        verb: t('configSecretsTab.rotateConfirmTitle'),
+        target: '',
+        consequence: t('configSecretsTab.rotateConfirmText', { name: row.secretRef }),
+      })
       await rotateSecret({ tenantId: tenant.tenantId, secretRef: row.secretRef })
       ElMessage.success(t('configSecretsTab.rotateDoneToast'))
       await loadSecrets()

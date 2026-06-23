@@ -67,10 +67,9 @@
               />
             </el-form-item>
             <el-form-item :label="t('fileList.trace')">
-              <el-input
+              <TraceIdInput
                 class="query-w-240"
                 v-model="filters.traceId"
-                clearable
                 :placeholder="t('fileList.tracePlaceholder')"
               />
             </el-form-item>
@@ -244,6 +243,7 @@
 
   const route = useRoute()
   import PageContainer from '@/components/common/PageContainer.vue'
+  import TraceIdInput from '@/components/common/TraceIdInput.vue'
   import MetaSelect from '@/components/common/MetaSelect.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'

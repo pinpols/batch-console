@@ -379,15 +379,13 @@
 
   async function drain(row: ConsoleWorkerRegistryResponse) {
     try {
-      await ElMessageBox.confirm(
-        t('workerManagement.drainConfirmText', { code: row.workerCode }),
-        t('workerManagement.drainConfirmTitle'),
-        {
-          type: 'warning',
-          confirmButtonText: t('common.confirm'),
-          cancelButtonText: t('common.cancel'),
-        },
-      )
+      await confirmDanger({
+        verb: t('workerManagement.drainConfirmTitle'),
+        target: '',
+        consequence: t('workerManagement.drainConfirmText', { code: row.workerCode }),
+        confirmButtonText: t('common.confirm'),
+        cancelButtonText: t('common.cancel'),
+      })
       await drainWorker(row.workerCode, { tenantId: tenant.tenantId, reason: 'console drain' })
       ElMessage.success(t('workerManagement.drainSuccess', { code: row.workerCode }))
       await queryClient.invalidateQueries({ queryKey: ['workers', tenant.tenantId] })
