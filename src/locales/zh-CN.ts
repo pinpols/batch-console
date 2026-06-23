@@ -755,6 +755,14 @@ export default {
     colResponse: '响应',
     colTime: '时间',
   },
+  dangerConfirm: {
+    cancel: '取消',
+    confirm: '确定',
+    confirmVerb: '确认{verb}',
+    irreversibleSuffix: '(不可恢复)',
+    irreversibleNote: '此操作不可恢复',
+    reversibleNote: '可在列表里恢复或重新启用',
+  },
   dateRangePicker: {
     rangeSeparator: '至',
     startDate: '开始日期',

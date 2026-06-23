@@ -753,6 +753,14 @@ const messages: Messages = {
     colResponse: 'Response',
     colTime: 'Time',
   },
+  dangerConfirm: {
+    cancel: 'Cancel',
+    confirm: 'OK',
+    confirmVerb: 'Confirm {verb}',
+    irreversibleSuffix: ' (irreversible)',
+    irreversibleNote: 'This action cannot be undone',
+    reversibleNote: 'You can restore or re-enable it from the list',
+  },
   dateRangePicker: {
     rangeSeparator: 'to',
     startDate: 'Start date',
