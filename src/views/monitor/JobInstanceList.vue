@@ -10,6 +10,8 @@
         :error="loadError"
         :on-retry="loadData"
         :total="total"
+        column-config-id="job-instances"
+        :column-defs="columnDefs"
         v-model:page="query.page"
         v-model:page-size="query.pageSize"
         @change="loadData"
@@ -158,6 +160,7 @@
           </OpsListToolbar>
         </template>
 
+        <template #default="{ isColVisible }">
         <el-table-column type="selection" width="44" :selectable="() => true" />
         <!-- P2.4 列顺序优化:用户决策字段(状态/jobCode/bizDate/耗时/重跑)优先,
              工程字段(instanceNo/queue/traceId)后置 -->
@@ -170,20 +173,38 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="jobCode" :label="t('jobInstanceList.colJobCode')" width="140">
+        <el-table-column
+          v-if="isColVisible('jobCode')"
+          prop="jobCode"
+          :label="t('jobInstanceList.colJobCode')"
+          width="140"
+        >
           <template #default="{ row }">
             <router-link class="cell-link" :to="`/jobs/definitions?jobCode=${row.jobCode}`">
               {{ row.jobCode }}
             </router-link>
           </template>
         </el-table-column>
-        <el-table-column prop="bizDate" :label="t('jobInstanceList.colBizDate')" width="110" />
-        <el-table-column :label="t('jobInstanceList.colDuration')" width="120">
+        <el-table-column
+          v-if="isColVisible('bizDate')"
+          prop="bizDate"
+          :label="t('jobInstanceList.colBizDate')"
+          width="110"
+        />
+        <el-table-column
+          v-if="isColVisible('duration')"
+          :label="t('jobInstanceList.colDuration')"
+          width="120"
+        >
           <template #default="{ row }">
             <span>{{ formatDurationMs(calcDurationMs(row.startedAt, row.finishedAt)) }}</span>
           </template>
         </el-table-column>
-        <el-table-column :label="t('jobInstanceList.colRerunRetry')" width="100">
+        <el-table-column
+          v-if="isColVisible('rerunRetry')"
+          :label="t('jobInstanceList.colRerunRetry')"
+          width="100"
+        >
           <template #default="{ row }">
             <el-tag v-if="row.rerunFlag" size="small" type="warning" effect="plain">
               {{ t('jobInstanceList.tagRerun') }}
@@ -194,27 +215,52 @@
             <span v-if="!row.rerunFlag && !row.retryFlag" class="muted">—</span>
           </template>
         </el-table-column>
-        <el-table-column prop="triggerType" :label="t('jobInstanceList.colTrigger')" width="100">
+        <el-table-column
+          v-if="isColVisible('triggerType')"
+          prop="triggerType"
+          :label="t('jobInstanceList.colTrigger')"
+          width="100"
+        >
           <template #default="{ row }">
             {{ resolveTriggerType(row.triggerType) }}
           </template>
         </el-table-column>
-        <DatetimeColumn prop="startedAt" :label="t('jobInstanceList.colStartedAt')" width="160" />
-        <DatetimeColumn prop="finishedAt" :label="t('jobInstanceList.colFinishedAt')" width="160" />
         <DatetimeColumn
+          v-if="isColVisible('startedAt')"
+          prop="startedAt"
+          :label="t('jobInstanceList.colStartedAt')"
+          width="160"
+        />
+        <DatetimeColumn
+          v-if="isColVisible('finishedAt')"
+          prop="finishedAt"
+          :label="t('jobInstanceList.colFinishedAt')"
+          width="160"
+        />
+        <DatetimeColumn
+          v-if="isColVisible('slaAlertedAt')"
           prop="slaAlertedAt"
           :label="t('jobInstanceList.colSlaAlerted')"
           width="160"
         />
-        <!-- 以下工程字段:实例号 / 队列+Worker / Trace -->
-        <el-table-column prop="instanceNo" :label="t('jobInstanceList.colInstanceNo')" width="180">
+        <!-- 以下工程字段:实例号 / 队列+Worker / Trace(默认隐藏) -->
+        <el-table-column
+          v-if="isColVisible('instanceNo')"
+          prop="instanceNo"
+          :label="t('jobInstanceList.colInstanceNo')"
+          width="180"
+        >
           <template #default="{ row }">
             <router-link class="cell-link" :to="`/monitor/job-instances/${row.id}`">
               {{ row.instanceNo }}
             </router-link>
           </template>
         </el-table-column>
-        <el-table-column :label="t('jobInstanceList.colQueueGroup')" width="160">
+        <el-table-column
+          v-if="isColVisible('queueGroup')"
+          :label="t('jobInstanceList.colQueueGroup')"
+          width="160"
+        >
           <template #default="{ row }">
             <div class="cell-stack">
               <span v-if="row.queueCode" class="cell-main">{{ row.queueCode }}</span>
@@ -224,6 +270,7 @@
           </template>
         </el-table-column>
         <el-table-column
+          v-if="isColVisible('traceId')"
           prop="traceId"
           :label="t('jobInstanceList.colTrace')"
           width="180"
@@ -253,6 +300,7 @@
             </div>
           </template>
         </el-table-column>
+        </template>
       </ProTable>
     </SectionCard>
   </PageContainer>
@@ -272,6 +320,21 @@
     const key = `enum.triggerType.${value}`
     return te(key) ? t(key) : value
   }
+
+  // 列设置:状态/操作列不在表里(始终显示);工程字段(实例号/队列/Trace/SLA 时间)默认隐藏
+  const columnDefs = computed(() => [
+    { key: 'jobCode', label: t('jobInstanceList.colJobCode') },
+    { key: 'bizDate', label: t('jobInstanceList.colBizDate') },
+    { key: 'duration', label: t('jobInstanceList.colDuration') },
+    { key: 'rerunRetry', label: t('jobInstanceList.colRerunRetry') },
+    { key: 'triggerType', label: t('jobInstanceList.colTrigger') },
+    { key: 'startedAt', label: t('jobInstanceList.colStartedAt') },
+    { key: 'finishedAt', label: t('jobInstanceList.colFinishedAt') },
+    { key: 'slaAlertedAt', label: t('jobInstanceList.colSlaAlerted'), defaultHidden: true },
+    { key: 'instanceNo', label: t('jobInstanceList.colInstanceNo'), defaultHidden: true },
+    { key: 'queueGroup', label: t('jobInstanceList.colQueueGroup'), defaultHidden: true },
+    { key: 'traceId', label: t('jobInstanceList.colTrace'), defaultHidden: true },
+  ])
   import { instanceApi } from '@/api/instance'
   import { jobApi } from '@/api/job'
   import { useSseAutoReload } from '@/composables/useSseAutoReload'

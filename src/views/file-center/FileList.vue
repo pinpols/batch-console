@@ -7,6 +7,8 @@
         :data="rows"
         :loading="tableBlocking"
         :total="total"
+        column-config-id="file-list"
+        :column-defs="columnDefs"
         v-model:page="page"
         v-model:page-size="pageSize"
         @change="load"
@@ -91,8 +93,10 @@
           </EmptyState>
         </template>
 
-        <el-table-column prop="id" label="ID" width="90" />
+        <template #default="{ isColVisible }">
+        <el-table-column v-if="isColVisible('id')" prop="id" label="ID" width="90" />
         <el-table-column
+          v-if="isColVisible('fileName')"
           prop="fileName"
           :label="t('fileList.fileName')"
           min-width="320"
@@ -103,9 +107,20 @@
             <StatusTag :value="String(row.fileStatus ?? '')" category="file" />
           </template>
         </el-table-column>
-        <el-table-column prop="bizType" :label="t('fileList.bizType')" width="120" />
-        <el-table-column prop="bizDate" :label="t('fileList.bizDate')" width="110" />
         <el-table-column
+          v-if="isColVisible('bizType')"
+          prop="bizType"
+          :label="t('fileList.bizType')"
+          width="120"
+        />
+        <el-table-column
+          v-if="isColVisible('bizDate')"
+          prop="bizDate"
+          :label="t('fileList.bizDate')"
+          width="110"
+        />
+        <el-table-column
+          v-if="isColVisible('traceId')"
           prop="traceId"
           :label="t('fileList.trace')"
           width="200"
@@ -122,12 +137,18 @@
             <span v-else class="cell-empty">—</span>
           </template>
         </el-table-column>
-        <DatetimeColumn prop="createdAt" :label="t('fileList.colCreatedAt')" width="160" />
+        <DatetimeColumn
+          v-if="isColVisible('createdAt')"
+          prop="createdAt"
+          :label="t('fileList.colCreatedAt')"
+          width="160"
+        />
         <el-table-column :label="t('fileList.colActions')" width="320" fixed="right">
           <template #default="{ row }">
             <RowActions :actions="rowActions(row)" :inline-limit="3" />
           </template>
         </el-table-column>
+        </template>
       </ProTable>
     </SectionCard>
 
@@ -261,6 +282,17 @@
   import type { ConsoleAuditLogResponse, ConsoleFileRecordResponse } from '@/types/console-api'
 
   const tenant = useTenantStore()
+
+  // 列设置:状态/操作列始终显示;工程字段(ID/Trace/创建时间)默认隐藏
+  const columnDefs = computed(() => [
+    { key: 'id', label: 'ID', defaultHidden: true },
+    { key: 'fileName', label: t('fileList.fileName') },
+    { key: 'bizType', label: t('fileList.bizType') },
+    { key: 'bizDate', label: t('fileList.bizDate') },
+    { key: 'traceId', label: t('fileList.trace'), defaultHidden: true },
+    { key: 'createdAt', label: t('fileList.colCreatedAt'), defaultHidden: true },
+  ])
+
   const loading = ref(false)
   const loadError = ref<unknown>(null)
   const { filterBusy, tableBlocking, runSearch, runReset, runRefresh } =

@@ -11,7 +11,9 @@
     <SectionCard>
       <template #header>
         <div class="ctt__header">
-          <span>{{ t('customTaskTypeList.sectionTitle') }}</span>
+          <HelpLabel :tip="t('customTaskTypeList.taskTypeTermTip')">
+            {{ t('customTaskTypeList.sectionTitle') }}
+          </HelpLabel>
           <el-tag size="small" type="info" effect="plain">
             {{ t('customTaskTypeList.totalActive', { n: rows.length }) }}
           </el-tag>
@@ -72,10 +74,14 @@
         </el-table-column>
         <el-table-column
           prop="declaredByWorkerCode"
-          :label="t('customTaskTypeList.colWorker')"
           min-width="160"
           show-overflow-tooltip
         >
+          <template #header>
+            <HelpLabel :tip="t('customTaskTypeList.colWorkerTip')">
+              {{ t('customTaskTypeList.colWorker') }}
+            </HelpLabel>
+          </template>
           <template #default="{ row }">
             <span v-if="row.declaredByWorkerCode">{{ row.declaredByWorkerCode }}</span>
             <span v-else class="muted">—</span>
@@ -174,6 +180,7 @@
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
+  import HelpLabel from '@/components/common/HelpLabel.vue'
   import ProTable from '@/components/table/ProTable.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
   import JsonPreview from '@/components/common/JsonPreview.vue'

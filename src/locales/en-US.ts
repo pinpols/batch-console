@@ -691,6 +691,14 @@ const messages: Messages = {
     filteredEmpty: 'No matching data — adjust the filters and try again',
     loadFailed: 'Failed to load. Please retry.',
     loadingMore: 'Loading…',
+    columnSettings: {
+      trigger: 'Columns',
+      title: 'Visible columns',
+      selectAll: 'Select all',
+      invert: 'Invert',
+      reset: 'Reset to default',
+      required: 'Required columns cannot be hidden',
+    },
   },
   executionLog: {
     title: 'Execution log (audit search)',
@@ -778,6 +786,7 @@ const messages: Messages = {
     commandPalette: 'Command palette',
     appTitle: 'Batch Console',
     copyLink: 'Copy full page URL (including query params)',
+    copyLinkAction: 'Copy link',
     copyLinkAria: 'Copy current URL',
     openCommandPalette: 'Open command palette',
     moreTools: 'More tools',
@@ -3708,6 +3717,10 @@ const messages: Messages = {
   },
   workerFingerprintBoard: {
     summaryTitle: 'Rollout overview',
+    fingerprintTermTip:
+      'A worker fingerprint is the identity of a running worker (buildId build version + sdkVersion). Use it to see each build’s share after a new release (gray rollout) and to spot which worker’s heartbeat dropped (fault location).',
+    colBuildIdTip:
+      'Build ID is the version identifier of the artifact the worker process runs; use it to tell new vs. old instances apart during a release.',
     summaryTotalOnline: '{n} active workers',
     summaryEmpty:
       'No ONLINE workers right now. They will appear here automatically once a worker registers.',
@@ -3780,6 +3793,10 @@ const messages: Messages = {
   },
   customTaskTypeList: {
     sectionTitle: 'Registered task types',
+    taskTypeTermTip:
+      'A taskType identifies a kind of task. On startup a worker declares which taskTypes it can handle, and the orchestrator dispatches each task to a matching worker. This lists the custom taskTypes registered by this tenant’s workers.',
+    colWorkerTip:
+      'The worker that reported this taskType; the orchestrator dispatches tasks of this kind to worker instances that declared the matching taskType.',
     totalActive: '{n} active',
     introTitle: 'Custom task types (read-only)',
     introBody:
@@ -3815,6 +3832,8 @@ const messages: Messages = {
     warnDefaultDisabledBody:
       'Platform operators must explicitly enable it and configure an allowlist before any workflow can reference it; otherwise execution is rejected at runtime.',
     sectionParameters: 'Parameters',
+    atomicTermTip:
+      'An atomic node is a built-in minimal execution unit shipped in the platform’s batch-worker-atomic (sql / shell / stored_proc / http). Workflow nodes can reference it directly without writing your own SDK worker. Below are this node’s parameter schema and security gates.',
     parametersEmpty: 'No parameters declared for this type',
     colParamName: 'Field',
     colParamType: 'Type',

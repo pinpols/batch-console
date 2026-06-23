@@ -693,6 +693,14 @@ export default {
     filteredEmpty: '未找到符合条件的数据,请调整筛选条件',
     loadFailed: '加载失败,请重试',
     loadingMore: '加载中…',
+    columnSettings: {
+      trigger: '列设置',
+      title: '显示列',
+      selectAll: '全选',
+      invert: '反选',
+      reset: '恢复默认',
+      required: '必选列不可隐藏',
+    },
   },
   executionLog: {
     title: '执行日志(审计检索)',
@@ -780,6 +788,7 @@ export default {
     commandPalette: '命令面板',
     appTitle: '批量调度平台',
     copyLink: '复制当前页面完整链接(含查询参数)',
+    copyLinkAction: '复制当前链接',
     copyLinkAria: '复制当前链接',
     openCommandPalette: '打开命令面板',
     moreTools: '更多工具',
@@ -3640,6 +3649,9 @@ export default {
   },
   workerFingerprintBoard: {
     summaryTitle: '灰度切流概览',
+    fingerprintTermTip:
+      'Worker 指纹 = 一台运行中 worker 的身份标识(buildId 构建版本 + sdkVersion SDK 版本)。用它看新版本上线后各构建占比(灰度切流),以及哪台 worker 心跳掉线(故障定位)。',
+    colBuildIdTip: 'Build ID 是 worker 进程所用构建产物的版本标识,发新版本时用它区分新旧实例。',
     summaryTotalOnline: '活跃 worker {n} 个',
     summaryEmpty: '当前没有任何 ONLINE worker。worker 上线后会自动出现在这里。',
     summaryLoadError: '聚合数据加载失败,请稍后重试。',
@@ -3711,6 +3723,9 @@ export default {
   },
   customTaskTypeList: {
     sectionTitle: '已注册 taskType',
+    taskTypeTermTip:
+      'taskType = 一类任务的类型标识。worker 启动时声明自己能处理哪些 taskType,编排器据此把任务派给匹配的 worker。这里列出本租户 worker 已注册的自定义 taskType。',
+    colWorkerTip: '上报该 taskType 的 worker;编排器会把此类任务派给声明了对应 taskType 的 worker 实例。',
     totalActive: '共 {n} 项',
     introTitle: 'SDK 自定义 taskType(只读)',
     introBody:
@@ -3745,6 +3760,8 @@ export default {
     warnDefaultDisabledBody:
       '该执行器需平台运维显式开启,且必须配置白名单后才能被工作流引用,否则运行时会被拒绝。',
     sectionParameters: '参数清单',
+    atomicTermTip:
+      '原子节点 = 平台 batch-worker-atomic 内置的最小执行单元(sql / shell / stored_proc / http 四类),可被工作流节点直接引用,无需自己写 SDK worker。下面是该类节点接收的参数 schema 与安全闸。',
     parametersEmpty: '该 type 暂未声明参数',
     colParamName: '字段',
     colParamType: '类型',
