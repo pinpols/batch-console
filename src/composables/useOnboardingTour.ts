@@ -22,11 +22,13 @@ export interface TourStep {
   description: string
 }
 
+// 首步必须是"选择租户":所有业务数据按租户隔离,未选租户时全站为空,
+// 这是新用户进来的第一个、也是唯一的必做动作,排在最前。低价值的"收起侧栏"放最后。
 const DEFAULT_STEPS: TourStep[] = [
   {
-    element: '.layout-header__fold',
-    title: '收起 / 展开侧边栏',
-    description: '左上角按钮控制菜单栏,内容区需要更多空间时可以收起。',
+    element: '.tenant-chip',
+    title: '第一步:选择租户',
+    description: '所有数据按租户隔离。先在这里选一个租户,业务页才会有数据;系统管理员可随时切换。',
   },
   {
     element: '.icon-button[aria-label="打开命令面板"]',
@@ -39,14 +41,14 @@ const DEFAULT_STEPS: TourStep[] = [
     description: '点书本图标可查 ADR / 架构 / 运维手册 / 字段说明,排障必备。',
   },
   {
-    element: '.tenant-chip',
-    title: '当前租户',
-    description: '所有数据按租户隔离;系统管理员可在这里切换其他租户。',
-  },
-  {
     element: '.username',
     title: '账户菜单',
     description: '右上角看权限角色 / 退出登录;管理员可以打开"权限自查"。',
+  },
+  {
+    element: '.layout-header__fold',
+    title: '收起 / 展开侧边栏',
+    description: '左上角按钮控制菜单栏,内容区需要更多空间时可以收起。',
   },
 ]
 

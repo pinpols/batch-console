@@ -611,6 +611,27 @@ export function applyApiInterceptors(client: AxiosInstance): void {
         return Promise.reject(error)
       }
 
+      // 冷启动静音:未选租户时业务接口会被后端以 400 "tenantId is required" 拒绝。
+      // 这是预期的"先选租户"状态(NoTenantBanner 已显著提示并提供内嵌选择器/自动选),
+      // 不该把同一句开发者级英文错误 + traceId 反复 toast 堆满屏幕。只在确实没选租户时
+      // 静音这一类 400,其余 400(真实参数错)照常提示。
+      if (status === 400 && !readStoredTenantId()) {
+        const rawMsg =
+          raw && typeof raw === 'object'
+            ? String((raw as { message?: unknown }).message ?? '')
+            : typeof raw === 'string'
+              ? raw
+              : ''
+        if (/tenant\s*id|tenantId|租户/i.test(rawMsg)) {
+          logApi(
+            `${(cfg?.method ?? 'get').toUpperCase()} ${cfg?.url ?? ''} → 400 missing-tenant (silenced)`,
+            'info',
+            { kind: 'api-missing-tenant', url: cfg?.url ?? '', status },
+          )
+          return Promise.reject(Object.assign(error as object, { missingTenant: true, silenced: true }))
+        }
+      }
+
       if (status === 401) {
         if (isTokenExchangeRequest(cfg)) {
           // 登录 / 刷 token 本身 401：用户名密码错 或 refresh 失败，提示不登出
