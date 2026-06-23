@@ -761,6 +761,50 @@ const messages: Messages = {
     irreversibleNote: 'This action cannot be undone',
     reversibleNote: 'You can restore or re-enable it from the list',
   },
+  commonAction: {
+    refreshFailed: 'Refresh failed',
+    refreshed: 'Refreshed',
+    operationSuccess: 'Success',
+    close: 'Close',
+    listUpdatedByFilter: 'List updated by filters',
+    filterReset: 'Filters reset',
+    sseUnavailable: 'Live updates are unavailable. Please refresh manually to get the latest data.',
+  },
+  password: {
+    strength: {
+      veryWeak: 'Very weak',
+      weak: 'Weak',
+      medium: 'Medium',
+      strong: 'Strong',
+      veryStrong: 'Very strong',
+    },
+  },
+  roleOptions: {
+    admin: 'Platform admin',
+    auditor: 'Auditor',
+    tenantAdmin: 'Tenant admin',
+    tenantUser: 'Tenant user',
+    user: 'Legacy JWT compatibility',
+  },
+  onboarding: {
+    nextBtn: 'Next →',
+    prevBtn: '← Back',
+    doneBtn: 'Done',
+    step1Title: 'Step 1: Select a tenant',
+    step1Desc:
+      'All data is isolated by tenant. Select a tenant here first so business pages show data; system admins can switch anytime.',
+    step2Title: 'Command palette',
+    step2Desc: 'Press ⌘/Ctrl + K anytime to search menus, jump to pages, or switch tenants.',
+    step3Title: 'Docs center',
+    step3Desc:
+      'Click the book icon to browse ADRs / architecture / ops runbooks / field references — essential for troubleshooting.',
+    step4Title: 'Account menu',
+    step4Desc:
+      'Top-right shows your roles / sign out; admins can open the permission self-check.',
+    step5Title: 'Collapse / expand sidebar',
+    step5Desc:
+      'The top-left button toggles the menu bar; collapse it when you need more space for content.',
+  },
   dateRangePicker: {
     rangeSeparator: 'to',
     startDate: 'Start date',

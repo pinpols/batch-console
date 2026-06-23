@@ -98,7 +98,7 @@
           <div class="field-hint">
             {{ t('myAccount.hintNewPassword') }}
             <span v-if="form.newPassword" class="me-strength" :class="`me-strength--${strength}`">
-              {{ PASSWORD_STRENGTH_LABEL[strength] }}
+              {{ getPasswordStrengthLabel(strength) }}
             </span>
           </div>
         </el-form-item>
@@ -138,7 +138,7 @@
   import {
     generatePassword,
     passwordStrength,
-    PASSWORD_STRENGTH_LABEL,
+    getPasswordStrengthLabel,
   } from '@/utils/passwordGenerator'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
