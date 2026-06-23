@@ -523,9 +523,10 @@
     UploadFilled,
     WarningFilled,
   } from '@element-plus/icons-vue'
-  import { ElMessage, ElMessageBox } from 'element-plus'
+  import { ElMessage } from 'element-plus'
 
   const { t } = useI18n({ useScope: 'global' })
+  import { confirmDanger } from '@/composables/useDangerConfirm'
   import {
     tenantPackageDownloadTemplate,
     tenantPackageExport,
@@ -837,11 +838,13 @@
             breakdown,
           })
         : t('tenantPackageImportWizard.applyConfirmText')
-      await ElMessageBox.confirm(detail, t('tenantPackageImportWizard.applyConfirmTitle'), {
-        type: 'warning',
+      await confirmDanger({
+        verb: t('tenantPackageImportWizard.applyConfirmTitle'),
+        target: '',
+        consequence: detail,
+        irreversible: true,
         confirmButtonText: t('tenantPackageImportWizard.applyConfirmYes'),
         cancelButtonText: t('common.cancel'),
-        dangerouslyUseHTMLString: false,
       })
     } catch {
       return /* user cancelled confirm */

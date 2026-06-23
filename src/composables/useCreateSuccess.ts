@@ -1,4 +1,5 @@
 import { ElMessageBox } from 'element-plus'
+import { i18n } from '@/locales'
 
 /**
  * 创建/触发后引导卡片。解决体检报告"病根 2:做完就完事,没下一步引导"——
@@ -31,11 +32,11 @@ export interface CreateSuccessOptions {
 
 export function showCreateSuccess(opts: CreateSuccessOptions): void {
   ElMessageBox({
-    title: opts.title ?? '操作成功',
+    title: opts.title ?? i18n.global.t('commonAction.operationSuccess'),
     message: opts.message,
     type: 'success',
     confirmButtonText: opts.primary.label,
-    cancelButtonText: opts.secondary?.label ?? '关闭',
+    cancelButtonText: opts.secondary?.label ?? i18n.global.t('commonAction.close'),
     showCancelButton: true,
     distinguishCancelAndClose: true,
     closeOnClickModal: false,

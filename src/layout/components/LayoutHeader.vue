@@ -32,16 +32,6 @@
               </el-breadcrumb>
               <div class="page-meta__title">{{ currentTitle }}</div>
             </div>
-            <el-tooltip :content="t('nav.copyLink')" placement="bottom">
-              <el-button
-                text
-                class="icon-button page-meta__copy-link"
-                :aria-label="t('nav.copyLinkAria')"
-                @click="copyCurrentUrl"
-              >
-                <el-icon><Link /></el-icon>
-              </el-button>
-            </el-tooltip>
           </div>
         </div>
       </div>
@@ -71,8 +61,8 @@
             <span class="palette-shortcut">{{ commandPaletteShortcutLabel }}</span>
           </el-button>
         </el-tooltip>
-        <!-- 低频工具(文档 / 语言 / 主题 / 全屏)收纳进一个 dropdown,
-             降低顶栏扫描负担。常驻只剩:命令面板 / 租户 / 用户 -->
+        <!-- 低频工具(复制链接 / 文档 / 语言 / 主题 / 全屏)收纳进一个溢出菜单 dropdown,
+             降低顶栏扫描负担。常驻高频只剩:通知 / 命令面板 / 租户 / 用户 -->
         <el-dropdown trigger="click" placement="bottom-end" @command="onToolsCommand">
           <el-button
             text
@@ -84,7 +74,10 @@
           </el-button>
           <template #dropdown>
             <el-dropdown-menu>
-              <el-dropdown-item command="docs" :icon="Reading">
+              <el-dropdown-item command="copyLink" :icon="Link">
+                {{ t('nav.copyLinkAction') }}
+              </el-dropdown-item>
+              <el-dropdown-item command="docs" :icon="Reading" :divided="true">
                 {{ t('nav.openDocs') }}
               </el-dropdown-item>
               <el-dropdown-item command="locale">
@@ -248,7 +241,8 @@
   }
 
   function onToolsCommand(command: string) {
-    if (command === 'docs') openDocs()
+    if (command === 'copyLink') void copyCurrentUrl()
+    else if (command === 'docs') openDocs()
     else if (command === 'locale') toggleLocale()
     else if (command === 'theme') app.toggleTheme()
     else if (command === 'focus') app.toggleFocusMode()
@@ -418,11 +412,6 @@
   .page-meta__title-block {
     flex: 1;
     min-width: 0;
-  }
-
-  .page-meta__copy-link {
-    flex-shrink: 0;
-    margin-top: 0;
   }
 
   .page-meta__crumb {

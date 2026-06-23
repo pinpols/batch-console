@@ -19,6 +19,7 @@ vi.mock('element-plus', () => ({
 }))
 
 import { useSseAutoReload } from './useSseAutoReload'
+import { i18n } from '@/locales'
 
 interface FakeES {
   closed: boolean
@@ -331,7 +332,7 @@ describe('useSseAutoReload', () => {
     await flushMicrotasks() // 第 2 次失败,retries 已达上限 → fireFallback
     expect(elMessageWarningMock).toHaveBeenCalledTimes(1)
     expect(elMessageWarningMock.mock.calls[0][0]).toMatchObject({
-      message: expect.stringContaining('实时推送'),
+      message: i18n.global.t('commonAction.sseUnavailable'),
     })
 
     scope.stop()

@@ -10,6 +10,7 @@
 import { driver } from 'driver.js'
 import 'driver.js/dist/driver.css'
 import { logRoute } from '@/utils/logger'
+import { i18n } from '@/locales'
 
 const STORAGE_KEY = 'batch-console-onboarding-done'
 
@@ -22,39 +23,46 @@ export interface TourStep {
   description: string
 }
 
-const DEFAULT_STEPS: TourStep[] = [
-  {
-    element: '.layout-header__fold',
-    title: '收起 / 展开侧边栏',
-    description: '左上角按钮控制菜单栏,内容区需要更多空间时可以收起。',
-  },
-  {
-    element: '.icon-button[aria-label="打开命令面板"]',
-    title: '命令面板',
-    description: '⌘/Ctrl + K 任何时候唤出,搜索菜单 / 跳转页面 / 切换租户。',
-  },
-  {
-    element: '.icon-button[aria-label="打开文档中心"]',
-    title: '文档中心',
-    description: '点书本图标可查 ADR / 架构 / 运维手册 / 字段说明,排障必备。',
-  },
-  {
-    element: '.tenant-chip',
-    title: '当前租户',
-    description: '所有数据按租户隔离;系统管理员可在这里切换其他租户。',
-  },
-  {
-    element: '.username',
-    title: '账户菜单',
-    description: '右上角看权限角色 / 退出登录;管理员可以打开"权限自查"。',
-  },
-]
+// 首步必须是"选择租户":所有业务数据按租户隔离,未选租户时全站为空,
+// 这是新用户进来的第一个、也是唯一的必做动作,排在最前。低价值的"收起侧栏"放最后。
+// 文案在调用时按当前 locale 解析(普通函数不能用 useI18n,走 i18n.global.t)。
+// 注意:element 里的 aria-label 是 DOM 选择器,不做 i18n。
+function defaultSteps(): TourStep[] {
+  const t = i18n.global.t
+  return [
+    {
+      element: '.tenant-chip',
+      title: t('onboarding.step1Title'),
+      description: t('onboarding.step1Desc'),
+    },
+    {
+      element: '.icon-button[aria-label="打开命令面板"]',
+      title: t('onboarding.step2Title'),
+      description: t('onboarding.step2Desc'),
+    },
+    {
+      element: '.icon-button[aria-label="打开文档中心"]',
+      title: t('onboarding.step3Title'),
+      description: t('onboarding.step3Desc'),
+    },
+    {
+      element: '.username',
+      title: t('onboarding.step4Title'),
+      description: t('onboarding.step4Desc'),
+    },
+    {
+      element: '.layout-header__fold',
+      title: t('onboarding.step5Title'),
+      description: t('onboarding.step5Desc'),
+    },
+  ]
+}
 
 export function shouldShowOnboarding(): boolean {
   return localStorage.getItem(STORAGE_KEY) !== '1'
 }
 
-export function startOnboarding(steps: TourStep[] = DEFAULT_STEPS) {
+export function startOnboarding(steps: TourStep[] = defaultSteps()) {
   // 校验 DOM 节点存在,否则跳过该步;driver.js 找不到 element 会直接报错挂掉
   const validSteps = steps.filter((s) => document.querySelector(s.element))
   if (validSteps.length === 0) {
@@ -65,9 +73,9 @@ export function startOnboarding(steps: TourStep[] = DEFAULT_STEPS) {
   logRoute('onboarding:start', { kind: 'onboarding', stepCount: validSteps.length })
   const d = driver({
     showProgress: true,
-    nextBtnText: '下一步 →',
-    prevBtnText: '← 上一步',
-    doneBtnText: '完成',
+    nextBtnText: i18n.global.t('onboarding.nextBtn'),
+    prevBtnText: i18n.global.t('onboarding.prevBtn'),
+    doneBtnText: i18n.global.t('onboarding.doneBtn'),
     progressText: '{{current}} / {{total}}',
     overlayOpacity: 0.55,
     smoothScroll: true,

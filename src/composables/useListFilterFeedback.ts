@@ -2,6 +2,7 @@ import { computed, type Component, type Ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Search, RefreshLeft, Refresh } from '@element-plus/icons-vue'
 import { useBriefActionLoading } from '@/composables/useBriefActionLoading'
+import { i18n } from '@/locales'
 
 /**
  * 列表页「查询 / 重置 / 刷新」统一交互反馈:
@@ -46,15 +47,15 @@ export function useListFilterFeedback(remoteLoading: Ref<boolean>) {
   }
 
   function runSearch(fn: () => void | Promise<void>) {
-    return runWith(fn, '已按条件更新列表', Search, 'success')
+    return runWith(fn, i18n.global.t('commonAction.listUpdatedByFilter'), Search, 'success')
   }
 
   function runReset(fn: () => void | Promise<void>) {
-    return runWith(fn, '已重置筛选条件', RefreshLeft, 'info')
+    return runWith(fn, i18n.global.t('commonAction.filterReset'), RefreshLeft, 'info')
   }
 
   function runRefresh(fn: () => void | Promise<void>) {
-    return runWith(fn, '已刷新', Refresh, 'success')
+    return runWith(fn, i18n.global.t('commonAction.refreshed'), Refresh, 'success')
   }
 
   return { filterBusy, tableBlocking, runSearch, runReset, runRefresh }

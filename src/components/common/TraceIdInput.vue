@@ -8,10 +8,15 @@
   >
     <template #append>
       <el-tooltip :content="t('traceIdInput.paste')" placement="top">
-        <el-button :icon="DocumentCopy" @click="onPaste" />
+        <el-button :icon="DocumentCopy" :aria-label="t('traceIdInput.paste')" @click="onPaste" />
       </el-tooltip>
       <el-tooltip v-if="goTo" :content="t('traceIdInput.go')" placement="top">
-        <el-button :icon="Search" :disabled="!model" @click="onGo" />
+        <el-button
+          :icon="Search"
+          :disabled="!model"
+          :aria-label="t('traceIdInput.go')"
+          @click="onGo"
+        />
       </el-tooltip>
     </template>
   </el-input>

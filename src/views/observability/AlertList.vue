@@ -89,7 +89,7 @@
               />
             </el-form-item>
             <el-form-item :label="t('alertList.timeRangeLabel')">
-              <DateRangePresetPicker v-model="timeRange" default-preset="today" />
+              <DateRangePresetPicker v-model="timeRange" default-preset="7d" />
             </el-form-item>
           </ListPageQueryBar>
         </template>

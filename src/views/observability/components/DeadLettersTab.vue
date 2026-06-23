@@ -127,7 +127,8 @@
 <script setup lang="ts">
   import { ref, reactive, computed, onMounted } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { ElMessage, ElMessageBox } from 'element-plus'
+  import { ElMessage } from 'element-plus'
+  import { confirmDanger } from '@/composables/useDangerConfirm'
   import { queryDeadLetters, replayDeadLetter } from '@/api/observabilityQueries'
 
   const { t } = useI18n({ useScope: 'global' })
@@ -167,13 +168,15 @@
   onMounted(() => bulk.bindTable(dlTableRef.value))
 
   async function onReplay(row: ConsoleDeadLetterTaskResponse) {
-    const label = t('observability.dlqReplay')
-    const confirmed = await ElMessageBox.confirm(
-      t('observability.dlqReplayConfirm', { id: row.id }),
-      label,
-      { type: 'warning', confirmButtonText: t('common.ok'), cancelButtonText: t('common.cancel') },
-    ).catch(() => false)
-    if (confirmed === false) return
+    try {
+      await confirmDanger({
+        verb: t('observability.dlqReplay'),
+        target: `#${row.id}`,
+        consequence: t('observability.dlqReplayConfirm', { id: row.id }),
+      })
+    } catch {
+      return
+    }
     try {
       await replayDeadLetter(tenant.tenantId, row.id)
       ElMessage.success(t('observability.dlqReplaySuccess'))
@@ -190,12 +193,15 @@
       return
     }
     const label = t('observability.dlqBulkReplay')
-    const confirmed = await ElMessageBox.confirm(
-      t('bulk.confirmBody', { label, n: eligible.length }),
-      label,
-      { type: 'warning', confirmButtonText: t('common.ok'), cancelButtonText: t('common.cancel') },
-    ).catch(() => false)
-    if (confirmed === false) return
+    try {
+      await confirmDanger({
+        verb: label,
+        target: '',
+        consequence: t('bulk.confirmBody', { label, n: eligible.length }),
+      })
+    } catch {
+      return
+    }
     await bulk.runBulk(eligible, (r) => replayDeadLetter(tenant.tenantId, r.id), {
       actionLabel: label,
     })
