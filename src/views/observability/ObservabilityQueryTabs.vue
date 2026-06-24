@@ -5,17 +5,11 @@
     <!-- P2.2 顶部全局 Trace 快搜:粘 traceId 直跳 Trace 诊断 -->
     <SectionCard class="obs-trace-bar">
       <div class="obs-trace-bar__row">
-        <el-input
+        <TraceIdInput
           v-model="traceQuick"
           :placeholder="t('observability.traceQuickPlaceholder')"
-          clearable
           class="obs-trace-bar__input"
-          @keyup.enter="jumpTrace"
-        >
-          <template #prefix>
-            <el-icon><Aim /></el-icon>
-          </template>
-        </el-input>
+        />
         <el-button type="primary" :disabled="!traceQuick.trim()" @click="jumpTrace">
           {{ t('observability.traceQuickGo') }}
         </el-button>
@@ -65,10 +59,10 @@
   import { ref, watch } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
-  import { Aim } from '@element-plus/icons-vue'
 
   const { t } = useI18n({ useScope: 'global' })
   import PageContainer from '@/components/common/PageContainer.vue'
+  import TraceIdInput from '@/components/common/TraceIdInput.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
   import DeadLettersTab from './components/DeadLettersTab.vue'

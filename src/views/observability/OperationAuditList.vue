@@ -85,7 +85,7 @@
               <DateRangePresetPicker
                 v-model="timeRange"
                 type="datetimerange"
-                default-preset="today"
+                default-preset="7d"
               />
             </el-form-item>
           </ListPageQueryBar>

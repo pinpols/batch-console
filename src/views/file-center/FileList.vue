@@ -7,6 +7,8 @@
         :data="rows"
         :loading="tableBlocking"
         :total="total"
+        column-config-id="file-list"
+        :column-defs="columnDefs"
         v-model:page="page"
         v-model:page-size="pageSize"
         @change="load"
@@ -63,14 +65,13 @@
               <DateRangePresetPicker
                 v-model="bizDateRange"
                 type="daterange"
-                default-preset="today"
+                default-preset="7d"
               />
             </el-form-item>
             <el-form-item :label="t('fileList.trace')">
-              <el-input
+              <TraceIdInput
                 class="query-w-240"
                 v-model="filters.traceId"
-                clearable
                 :placeholder="t('fileList.tracePlaceholder')"
               />
             </el-form-item>
@@ -92,8 +93,10 @@
           </EmptyState>
         </template>
 
-        <el-table-column prop="id" label="ID" width="90" />
+        <template #default="{ isColVisible }">
+        <el-table-column v-if="isColVisible('id')" prop="id" label="ID" width="90" />
         <el-table-column
+          v-if="isColVisible('fileName')"
           prop="fileName"
           :label="t('fileList.fileName')"
           min-width="320"
@@ -104,9 +107,20 @@
             <StatusTag :value="String(row.fileStatus ?? '')" category="file" />
           </template>
         </el-table-column>
-        <el-table-column prop="bizType" :label="t('fileList.bizType')" width="120" />
-        <el-table-column prop="bizDate" :label="t('fileList.bizDate')" width="110" />
         <el-table-column
+          v-if="isColVisible('bizType')"
+          prop="bizType"
+          :label="t('fileList.bizType')"
+          width="120"
+        />
+        <el-table-column
+          v-if="isColVisible('bizDate')"
+          prop="bizDate"
+          :label="t('fileList.bizDate')"
+          width="110"
+        />
+        <el-table-column
+          v-if="isColVisible('traceId')"
           prop="traceId"
           :label="t('fileList.trace')"
           width="200"
@@ -123,12 +137,18 @@
             <span v-else class="cell-empty">—</span>
           </template>
         </el-table-column>
-        <DatetimeColumn prop="createdAt" :label="t('fileList.colCreatedAt')" width="160" />
+        <DatetimeColumn
+          v-if="isColVisible('createdAt')"
+          prop="createdAt"
+          :label="t('fileList.colCreatedAt')"
+          width="160"
+        />
         <el-table-column :label="t('fileList.colActions')" width="320" fixed="right">
           <template #default="{ row }">
             <RowActions :actions="rowActions(row)" :inline-limit="3" />
           </template>
         </el-table-column>
+        </template>
       </ProTable>
     </SectionCard>
 
@@ -244,6 +264,7 @@
 
   const route = useRoute()
   import PageContainer from '@/components/common/PageContainer.vue'
+  import TraceIdInput from '@/components/common/TraceIdInput.vue'
   import MetaSelect from '@/components/common/MetaSelect.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
@@ -261,6 +282,17 @@
   import type { ConsoleAuditLogResponse, ConsoleFileRecordResponse } from '@/types/console-api'
 
   const tenant = useTenantStore()
+
+  // 列设置:状态/操作列始终显示;工程字段(ID/Trace/创建时间)默认隐藏
+  const columnDefs = computed(() => [
+    { key: 'id', label: 'ID', defaultHidden: true },
+    { key: 'fileName', label: t('fileList.fileName') },
+    { key: 'bizType', label: t('fileList.bizType') },
+    { key: 'bizDate', label: t('fileList.bizDate') },
+    { key: 'traceId', label: t('fileList.trace'), defaultHidden: true },
+    { key: 'createdAt', label: t('fileList.colCreatedAt'), defaultHidden: true },
+  ])
+
   const loading = ref(false)
   const loadError = ref<unknown>(null)
   const { filterBusy, tableBlocking, runSearch, runReset, runRefresh } =
@@ -275,14 +307,20 @@
   const auditRows = ref<ConsoleAuditLogResponse[]>([])
   const auditPage = ref(1)
   const auditPageSize = ref(15)
-  // 列表筛选默认锚到"今日 + 全部状态";运维大多看当天文件
-  function todayRange(): [string, string] {
-    const d = new Date()
-    const p = (n: number) => String(n).padStart(2, '0')
-    const s = `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`
-    return [s, s]
+  // 列表筛选默认锚到「近 7 天 + 全部状态」:文件 biz_date 多为 T-1 及更早,默认只看
+  // "今天单日"(start==end)常空屏(当天尚无文件到达时尤甚)。近 7 天更贴合运维诉求;
+  // 需精确单日用户自行收窄。
+  function recentRange(days = 7): [string, string] {
+    const fmt = (d: Date) => {
+      const p = (n: number) => String(n).padStart(2, '0')
+      return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`
+    }
+    const end = new Date()
+    const start = new Date()
+    start.setDate(start.getDate() - (days - 1))
+    return [fmt(start), fmt(end)]
   }
-  const initialBizRange = todayRange()
+  const initialBizRange = recentRange()
   const bizDateRange = ref<[string, string] | null>(initialBizRange)
   // 接受深链 ?fileId=xxx / ?traceId=xxx 跳入,自动套用筛选
   const initialFileId = (route.query.fileId as string) || ''
@@ -388,7 +426,7 @@
 
   function reset() {
     return runReset(async () => {
-      const t = todayRange()
+      const t = recentRange()
       filters.tenantId = tenant.tenantId
       filters.fileStatus = ''
       filters.bizType = ''

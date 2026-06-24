@@ -7,7 +7,8 @@
  * - 不调任何 BE API
  */
 import { useI18n } from 'vue-i18n'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
+import { confirmDanger } from '@/composables/useDangerConfirm'
 import { useDesignerStore } from '../store/useDesignerStore'
 import { definitionToGraph } from '../codec/definitionToGraph'
 import { BUILTIN_TEMPLATES, type DesignerTemplate } from './templates'
@@ -33,11 +34,12 @@ async function apply(tpl: DesignerTemplate) {
   }
   if (store.dirty) {
     try {
-      await ElMessageBox.confirm(
-        t('workflowDesignerPolish.templateOverwriteConfirm'),
-        t('workflowDesignerPolish.templateOverwriteTitle'),
-        { type: 'warning' },
-      )
+      await confirmDanger({
+        verb: t('workflowDesignerPolish.templateOverwriteTitle'),
+        target: '',
+        consequence: t('workflowDesignerPolish.templateOverwriteConfirm'),
+        irreversible: true,
+      })
     } catch {
       return
     }

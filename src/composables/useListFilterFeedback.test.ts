@@ -9,6 +9,9 @@ vi.mock('element-plus', () => ({
 }))
 
 import { useListFilterFeedback } from './useListFilterFeedback'
+import { i18n } from '@/locales'
+
+const t = i18n.global.t
 
 beforeEach(() => {
   elMessageMock.mockReset()
@@ -30,7 +33,7 @@ describe('useListFilterFeedback', () => {
     await api.runSearch(() => {})
     expect(elMessageMock).toHaveBeenCalledTimes(1)
     expect(elMessageMock.mock.calls[0][0]).toMatchObject({
-      message: '已按条件更新列表',
+      message: t('commonAction.listUpdatedByFilter'),
       type: 'success',
       plain: true,
       grouping: true,
@@ -43,7 +46,7 @@ describe('useListFilterFeedback', () => {
     const { api, dispose } = setup()
     await api.runReset(() => {})
     expect(elMessageMock.mock.calls[0][0]).toMatchObject({
-      message: '已重置筛选条件',
+      message: t('commonAction.filterReset'),
       type: 'info',
     })
     dispose()
@@ -53,7 +56,7 @@ describe('useListFilterFeedback', () => {
     const { api, dispose } = setup()
     await api.runRefresh(() => {})
     expect(elMessageMock.mock.calls[0][0]).toMatchObject({
-      message: '已刷新',
+      message: t('commonAction.refreshed'),
       type: 'success',
     })
     dispose()

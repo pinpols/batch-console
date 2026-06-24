@@ -1,5 +1,6 @@
 import { ElMessageBox } from 'element-plus'
 import { h } from 'vue'
+import { i18n } from '@/locales'
 
 /**
  * 销毁性 / 危险性操作的统一二次确认。
@@ -41,17 +42,22 @@ export interface DangerConfirmOptions {
  * 用户点确认 resolve void,继续后续业务逻辑。
  */
 export function confirmDanger(opts: DangerConfirmOptions): Promise<void> {
+  const t = i18n.global.t
   const {
     verb,
     target,
     consequence,
     irreversible = false,
     confirmButtonText,
-    cancelButtonText = '取消',
+    cancelButtonText = t('dangerConfirm.cancel'),
   } = opts
 
-  const title = irreversible ? `${verb}${target}(不可恢复)` : `${verb}${target}`
-  const reversibility = irreversible ? '此操作不可恢复' : '可在列表里恢复或重新启用'
+  const title = irreversible
+    ? `${verb}${target}${t('dangerConfirm.irreversibleSuffix')}`
+    : `${verb}${target}`
+  const reversibility = irreversible
+    ? t('dangerConfirm.irreversibleNote')
+    : t('dangerConfirm.reversibleNote')
 
   // 富文本内容:用 h() 而非纯字符串,避免转义;红字突出后果
   const content = h('div', { style: { lineHeight: '1.7' } }, [
@@ -73,7 +79,9 @@ export function confirmDanger(opts: DangerConfirmOptions): Promise<void> {
 
   return ElMessageBox.confirm(content, title, {
     type: irreversible ? 'error' : 'warning',
-    confirmButtonText: confirmButtonText ?? (irreversible ? `确认${verb}` : '确定'),
+    confirmButtonText:
+      confirmButtonText ??
+      (irreversible ? t('dangerConfirm.confirmVerb', { verb }) : t('dangerConfirm.confirm')),
     cancelButtonText,
     confirmButtonClass: irreversible ? 'el-button--danger' : '',
     // 不可恢复操作:不让点 mask 关闭(避免误操作)

@@ -12,6 +12,7 @@ import {
 } from 'vue'
 import { ElMessage } from 'element-plus'
 import { createSseStream } from '@/api/stream'
+import { i18n } from '@/locales'
 
 type SseStreamType = Parameters<typeof createSseStream>[0]
 
@@ -153,7 +154,7 @@ export function useSseAutoReload(options: UseSseAutoReloadOptions): UseSseAutoRe
       options.onFallback()
     } else {
       ElMessage.warning({
-        message: '实时推送暂不可用,请手动刷新获取最新数据',
+        message: i18n.global.t('commonAction.sseUnavailable'),
         duration: 5_000,
         showClose: true,
       })

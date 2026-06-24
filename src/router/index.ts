@@ -16,10 +16,89 @@ import { i18n } from '@/locales'
 import type { Role } from '@/types'
 
 /**
+ * 移动端兜底首页：没有对应移动页时的最终回退目标。
+ */
+const MOBILE_HOME = '/m/ops/summary'
+
+/**
  * 移动端仅覆盖关键 5 页。桌面其它路径在移动设备上不自动跳，
  * 但首次落到根路径 / /ops/summary 时会被判断为"首页场景"引导到 /m。
  */
 const MOBILE_AUTO_REDIRECT_PATHS = new Set<string>(['/', '/ops/summary'])
+
+/**
+ * 桌面深链 → 移动页的降级映射。
+ *
+ * 移动设备访问桌面深链时（手机上桌面 20 列表格几乎不可用），按下表把常见列表/详情
+ * 降级到对应 `/m/*` 移动页；表里没有的桌面路径回退到移动首页 `MOBILE_HOME`，
+ * 而不是渲染桌面页。?desktop=1 仍可强制留在桌面版（与 MOBILE_AUTO_REDIRECT 同约定）。
+ *
+ * - 字符串键：桌面路径前缀（精确或 startsWith 命中）。
+ * - 函数值：从 to 路径中解析 :id 等参数，返回移动目标 path；返回 null 则回退首页。
+ */
+type MobileMapper = (to: RouteLocationNormalized) => string | null
+
+const MOBILE_DEEPLINK_MAP: { prefix: string; to: string | MobileMapper }[] = [
+  // 作业实例：列表 + 详情（详情带 :id → /m/jobs/:id）
+  {
+    prefix: '/monitor/job-instances',
+    to: (to) => {
+      const m = /^\/monitor\/job-instances\/([^/]+)/.exec(to.path)
+      // 分片子页 /:id/partitions 等移动端无对应页，降级到作业详情
+      return m ? `/m/jobs/${m[1]}` : '/m/jobs'
+    },
+  },
+  { prefix: '/runs', to: '/m/jobs' },
+  { prefix: '/monitor/job-steps', to: '/m/jobs' },
+  // 工作流运行：移动端有只读 DAG viewer（/m/workflow/:id）
+  {
+    prefix: '/monitor/workflow-runs',
+    to: (to) => {
+      const m = /^\/monitor\/workflow-runs\/([^/]+)/.exec(to.path)
+      return m ? `/m/workflow/${m[1]}` : '/m/jobs'
+    },
+  },
+  {
+    prefix: '/workflow/viewer',
+    to: (to) => {
+      const m = /^\/workflow\/viewer\/([^/]+)/.exec(to.path)
+      return m ? `/m/workflow/${m[1]}` : null
+    },
+  },
+  // 作业/工作流/流水线定义：移动端无编辑页，回退首页
+  { prefix: '/jobs/definitions', to: MOBILE_HOME },
+  { prefix: '/jobs/pipelines', to: MOBILE_HOME },
+  { prefix: '/workflow/definitions', to: MOBILE_HOME },
+  // 文件中心：列表 + 模板/渠道/到达组等子页统一降级到移动文件页
+  { prefix: '/files', to: '/m/files' },
+  // 告警
+  { prefix: '/observability/alerts', to: '/m/alerts' },
+  { prefix: '/alerts', to: '/m/alerts' },
+  // 审批 / Catch-up
+  { prefix: '/scheduler/catch-up-approvals', to: '/m/catchup' },
+  { prefix: '/approvals', to: '/m/approvals' },
+  // 投递失败 Outbox
+  { prefix: '/observability/outbox', to: '/m/outbox' },
+  // 执行日志（旧 /logs 与综合查询日志 Tab）
+  { prefix: '/logs', to: '/m/logs' },
+  // Worker
+  { prefix: '/workers', to: '/m/workers' },
+  // 运维快照/控制面板
+  { prefix: '/ops/summary', to: MOBILE_HOME },
+]
+
+/**
+ * 解析移动设备访问桌面路径时应降级到的 `/m/*` 目标；无映射返回 null（不分流，保持原行为）。
+ */
+function resolveMobileTarget(to: RouteLocationNormalized): string | null {
+  for (const rule of MOBILE_DEEPLINK_MAP) {
+    if (to.path === rule.prefix || to.path.startsWith(`${rule.prefix}/`)) {
+      const target = typeof rule.to === 'function' ? rule.to(to) : rule.to
+      return target ?? MOBILE_HOME
+    }
+  }
+  return null
+}
 
 const routes: RouteRecordRaw[] = [
   {
@@ -838,14 +917,18 @@ router.beforeEach(async (to, from) => {
 
   if (!auth.isLoggedIn) return { name: 'login', query: { redirect: to.fullPath } }
 
-  // 移动设备访问桌面首页时自动跳到移动端。?desktop=1 可强制留在桌面版。
-  if (
-    MOBILE_AUTO_REDIRECT_PATHS.has(to.path) &&
-    to.query.desktop !== '1' &&
-    isMobile() &&
-    !to.path.startsWith('/m')
-  ) {
-    return { path: '/m/ops/summary' }
+  // 移动设备访问桌面首页/深链时自动分流到移动端。?desktop=1 可强制留在桌面版。
+  // 先处理首页场景，再按 MOBILE_DEEPLINK_MAP 把常见列表/详情降级到对应 /m/* 页，
+  // 没有对应移动页的桌面深链回退到 MOBILE_HOME，而不是渲染桌面 20 列页。
+  if (isMobile() && to.query.desktop !== '1' && !to.path.startsWith('/m')) {
+    if (MOBILE_AUTO_REDIRECT_PATHS.has(to.path)) {
+      return { path: MOBILE_HOME }
+    }
+    const mobileTarget = resolveMobileTarget(to)
+    // 透传原 query（traceId / tab / runId 等），避免降级丢上下文。
+    if (mobileTarget && mobileTarget !== to.path) {
+      return { path: mobileTarget, query: to.query }
+    }
   }
 
   // Workflow 设计器是桌面专属编排工具(X6 画布拖拽,触摸屏不可用)。手机端兜底:

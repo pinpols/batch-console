@@ -10,7 +10,7 @@
     <div class="cron-help">
       <!-- 5 个工程常用 preset,一键填入 -->
       <div class="cron-preset-row">
-        <span class="cron-preset-label">快速预设:</span>
+        <span class="cron-preset-label">{{ t('cronExprInput.presetLabel') }}</span>
         <el-button
           v-for="preset in PRESETS"
           :key="preset.expr"
@@ -26,8 +26,8 @@
 
       <!-- 实时解析:cronstrue 翻描述 + BE Quartz 算下次执行 -->
       <div v-if="!modelValue?.trim()" class="cron-empty-hint">
-        Quartz 6 字段(秒 分 时 日 月 星期),例:<code>0 0 2 * * ?</code> = 每天 02:00。
-        手动调度可留空。
+        {{ t('cronExprInput.emptyHintPrefix') }}<code>0 0 2 * * ?</code
+        >{{ t('cronExprInput.emptyHintSuffix') }}
       </div>
       <template v-else>
         <div v-if="desc" class="cron-desc">

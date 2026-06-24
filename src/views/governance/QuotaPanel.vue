@@ -193,10 +193,11 @@
   import { computed, reactive, ref } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { Edit, Plus } from '@element-plus/icons-vue'
-  import { ElMessage, ElMessageBox } from 'element-plus'
+  import { ElMessage } from 'element-plus'
   import type { FormInstance, FormRules } from 'element-plus'
 
   const { t } = useI18n({ useScope: 'global' })
+  import { confirmDanger } from '@/composables/useDangerConfirm'
   import { governanceApi, type GovernanceQuotaPolicyRow } from '@/api/governance'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { useTenantStore } from '@/stores/tenant'
@@ -358,15 +359,13 @@
     const target = !row.enabled
     try {
       const action = target ? t('quotaPanel.switchOn') : t('quotaPanel.switchOff')
-      await ElMessageBox.confirm(
-        t('quotaPanel.toggleConfirmText', { code: row.policyCode, action }),
-        t('quotaPanel.toggleConfirmTitle'),
-        {
-          type: 'warning',
-          confirmButtonText: t('common.confirm'),
-          cancelButtonText: t('common.cancel'),
-        },
-      )
+      await confirmDanger({
+        verb: t('quotaPanel.toggleConfirmTitle'),
+        target: '',
+        consequence: t('quotaPanel.toggleConfirmText', { code: row.policyCode, action }),
+        confirmButtonText: t('common.confirm'),
+        cancelButtonText: t('common.cancel'),
+      })
     } catch {
       return
     }

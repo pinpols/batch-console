@@ -71,6 +71,7 @@ const messages: Messages = {
   },
   apiError: {
     requestFailed: 'Request failed',
+    selectTenantFirst: 'Select a tenant at the top to view data',
     requestFailedWithStatus: 'Request failed (HTTP {status})',
     unauthorizedTitle: 'Unauthorized',
     unauthorizedMessage: 'This operation is unauthorized',
@@ -691,6 +692,14 @@ const messages: Messages = {
     filteredEmpty: 'No matching data — adjust the filters and try again',
     loadFailed: 'Failed to load. Please retry.',
     loadingMore: 'Loading…',
+    columnSettings: {
+      trigger: 'Columns',
+      title: 'Visible columns',
+      selectAll: 'Select all',
+      invert: 'Invert',
+      reset: 'Reset to default',
+      required: 'Required columns cannot be hidden',
+    },
   },
   executionLog: {
     title: 'Execution log (audit search)',
@@ -745,6 +754,58 @@ const messages: Messages = {
     colResponse: 'Response',
     colTime: 'Time',
   },
+  dangerConfirm: {
+    cancel: 'Cancel',
+    confirm: 'OK',
+    confirmVerb: 'Confirm {verb}',
+    irreversibleSuffix: ' (irreversible)',
+    irreversibleNote: 'This action cannot be undone',
+    reversibleNote: 'You can restore or re-enable it from the list',
+  },
+  commonAction: {
+    refreshFailed: 'Refresh failed',
+    refreshed: 'Refreshed',
+    operationSuccess: 'Success',
+    close: 'Close',
+    listUpdatedByFilter: 'List updated by filters',
+    filterReset: 'Filters reset',
+    sseUnavailable: 'Live updates are unavailable. Please refresh manually to get the latest data.',
+  },
+  password: {
+    strength: {
+      veryWeak: 'Very weak',
+      weak: 'Weak',
+      medium: 'Medium',
+      strong: 'Strong',
+      veryStrong: 'Very strong',
+    },
+  },
+  roleOptions: {
+    admin: 'Platform admin',
+    auditor: 'Auditor',
+    tenantAdmin: 'Tenant admin',
+    tenantUser: 'Tenant user',
+    user: 'Legacy JWT compatibility',
+  },
+  onboarding: {
+    nextBtn: 'Next →',
+    prevBtn: '← Back',
+    doneBtn: 'Done',
+    step1Title: 'Step 1: Select a tenant',
+    step1Desc:
+      'All data is isolated by tenant. Select a tenant here first so business pages show data; system admins can switch anytime.',
+    step2Title: 'Command palette',
+    step2Desc: 'Press ⌘/Ctrl + K anytime to search menus, jump to pages, or switch tenants.',
+    step3Title: 'Docs center',
+    step3Desc:
+      'Click the book icon to browse ADRs / architecture / ops runbooks / field references — essential for troubleshooting.',
+    step4Title: 'Account menu',
+    step4Desc:
+      'Top-right shows your roles / sign out; admins can open the permission self-check.',
+    step5Title: 'Collapse / expand sidebar',
+    step5Desc:
+      'The top-left button toggles the menu bar; collapse it when you need more space for content.',
+  },
   dateRangePicker: {
     rangeSeparator: 'to',
     startDate: 'Start date',
@@ -778,6 +839,7 @@ const messages: Messages = {
     commandPalette: 'Command palette',
     appTitle: 'Batch Console',
     copyLink: 'Copy full page URL (including query params)',
+    copyLinkAction: 'Copy link',
     copyLinkAria: 'Copy current URL',
     openCommandPalette: 'Open command palette',
     moreTools: 'More tools',
@@ -855,6 +917,9 @@ const messages: Messages = {
     cursorHint: 'Cursor pagination · jump not supported',
   },
   cronExprInput: {
+    presetLabel: 'Quick presets:',
+    emptyHintPrefix: 'Quartz 6 fields (sec min hour day month weekday), e.g. ',
+    emptyHintSuffix: ' = daily at 02:00. Leave empty for manual scheduling.',
     previewLoading: 'Next runs (BE computing…)',
     nextRunsLabel: 'Next 3 runs ({tz}):',
     tzLocal: 'local',
@@ -3129,6 +3194,18 @@ const messages: Messages = {
     colOperator: 'Operator',
     colSummary: 'Summary',
     colCreatedAt: 'Time',
+    emptyJob: 'Job definition not found, or the current tenant has no access',
+    filesNotApplicable:
+      'This job type has no file pipeline (only IMPORT / EXPORT jobs link fileChannels / fileTemplates)',
+    workflowToolbarHint: 'Workflow definitions in this tenant (linkable by WORKFLOW-type jobs)',
+    emptyWorkflows: 'No workflow definitions in this tenant yet',
+    alertsToolbarHint:
+      'Alert routings in this tenant (matched by alertGroup / receiver; the console only lists bindable routes)',
+    emptyAlerts: 'No alert routings in this tenant — create one on the governance page first',
+    runsToolbarHint: 'Last 20 runs',
+    emptyRuns: 'No runs yet',
+    auditToolbarHint: 'Recent audit records matched by job code',
+    emptyAudit: 'No audit records',
   },
   jobDefinitionList: {
     emptyTitle: 'No job definitions for this tenant yet',
@@ -3718,6 +3795,10 @@ const messages: Messages = {
   },
   workerFingerprintBoard: {
     summaryTitle: 'Rollout overview',
+    fingerprintTermTip:
+      'A worker fingerprint is the identity of a running worker (buildId build version + sdkVersion). Use it to see each build’s share after a new release (gray rollout) and to spot which worker’s heartbeat dropped (fault location).',
+    colBuildIdTip:
+      'Build ID is the version identifier of the artifact the worker process runs; use it to tell new vs. old instances apart during a release.',
     summaryTotalOnline: '{n} active workers',
     summaryEmpty:
       'No ONLINE workers right now. They will appear here automatically once a worker registers.',
@@ -3790,6 +3871,10 @@ const messages: Messages = {
   },
   customTaskTypeList: {
     sectionTitle: 'Registered task types',
+    taskTypeTermTip:
+      'A taskType identifies a kind of task. On startup a worker declares which taskTypes it can handle, and the orchestrator dispatches each task to a matching worker. This lists the custom taskTypes registered by this tenant’s workers.',
+    colWorkerTip:
+      'The worker that reported this taskType; the orchestrator dispatches tasks of this kind to worker instances that declared the matching taskType.',
     totalActive: '{n} active',
     introTitle: 'Custom task types (read-only)',
     introBody:
@@ -3825,6 +3910,8 @@ const messages: Messages = {
     warnDefaultDisabledBody:
       'Platform operators must explicitly enable it and configure an allowlist before any workflow can reference it; otherwise execution is rejected at runtime.',
     sectionParameters: 'Parameters',
+    atomicTermTip:
+      'An atomic node is a built-in minimal execution unit shipped in the platform’s batch-worker-atomic (sql / shell / stored_proc / http). Workflow nodes can reference it directly without writing your own SDK worker. Below are this node’s parameter schema and security gates.',
     parametersEmpty: 'No parameters declared for this type',
     colParamName: 'Field',
     colParamType: 'Type',

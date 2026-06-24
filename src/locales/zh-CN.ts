@@ -77,6 +77,7 @@ export default {
   },
   apiError: {
     requestFailed: '请求失败',
+    selectTenantFirst: '请先在顶部选择租户后查看数据',
     requestFailedWithStatus: '请求失败(HTTP {status})',
     unauthorizedTitle: '未授权',
     unauthorizedMessage: '该操作未授权',
@@ -693,6 +694,14 @@ export default {
     filteredEmpty: '未找到符合条件的数据,请调整筛选条件',
     loadFailed: '加载失败,请重试',
     loadingMore: '加载中…',
+    columnSettings: {
+      trigger: '列设置',
+      title: '显示列',
+      selectAll: '全选',
+      invert: '反选',
+      reset: '恢复默认',
+      required: '必选列不可隐藏',
+    },
   },
   executionLog: {
     title: '执行日志(审计检索)',
@@ -747,6 +756,55 @@ export default {
     colResponse: '响应',
     colTime: '时间',
   },
+  dangerConfirm: {
+    cancel: '取消',
+    confirm: '确定',
+    confirmVerb: '确认{verb}',
+    irreversibleSuffix: '(不可恢复)',
+    irreversibleNote: '此操作不可恢复',
+    reversibleNote: '可在列表里恢复或重新启用',
+  },
+  commonAction: {
+    refreshFailed: '刷新失败',
+    refreshed: '已刷新',
+    operationSuccess: '操作成功',
+    close: '关闭',
+    listUpdatedByFilter: '已按条件更新列表',
+    filterReset: '已重置筛选条件',
+    sseUnavailable: '实时推送暂不可用,请手动刷新获取最新数据',
+  },
+  password: {
+    strength: {
+      veryWeak: '极弱',
+      weak: '弱',
+      medium: '中',
+      strong: '强',
+      veryStrong: '极强',
+    },
+  },
+  roleOptions: {
+    admin: '平台管理员',
+    auditor: '审计员',
+    tenantAdmin: '租户管理员',
+    tenantUser: '租户用户',
+    user: '兼容旧 JWT',
+  },
+  onboarding: {
+    nextBtn: '下一步 →',
+    prevBtn: '← 上一步',
+    doneBtn: '完成',
+    step1Title: '第一步:选择租户',
+    step1Desc:
+      '所有数据按租户隔离。先在这里选一个租户,业务页才会有数据;系统管理员可随时切换。',
+    step2Title: '命令面板',
+    step2Desc: '⌘/Ctrl + K 任何时候唤出,搜索菜单 / 跳转页面 / 切换租户。',
+    step3Title: '文档中心',
+    step3Desc: '点书本图标可查 ADR / 架构 / 运维手册 / 字段说明,排障必备。',
+    step4Title: '账户菜单',
+    step4Desc: '右上角看权限角色 / 退出登录;管理员可以打开"权限自查"。',
+    step5Title: '收起 / 展开侧边栏',
+    step5Desc: '左上角按钮控制菜单栏,内容区需要更多空间时可以收起。',
+  },
   dateRangePicker: {
     rangeSeparator: '至',
     startDate: '开始日期',
@@ -780,6 +838,7 @@ export default {
     commandPalette: '命令面板',
     appTitle: '批量调度平台',
     copyLink: '复制当前页面完整链接(含查询参数)',
+    copyLinkAction: '复制当前链接',
     copyLinkAria: '复制当前链接',
     openCommandPalette: '打开命令面板',
     moreTools: '更多工具',
@@ -857,6 +916,9 @@ export default {
     cursorHint: '游标分页 · 不支持跳页',
   },
   cronExprInput: {
+    presetLabel: '快速预设:',
+    emptyHintPrefix: 'Quartz 6 字段(秒 分 时 日 月 星期),例:',
+    emptyHintSuffix: ' = 每天 02:00。手动调度可留空。',
     previewLoading: '下次执行(BE 计算中…)',
     nextRunsLabel: '最近 3 次执行({tz}):',
     tzLocal: '本地',
@@ -3072,6 +3134,16 @@ export default {
     colOperator: '操作人',
     colSummary: '摘要',
     colCreatedAt: '时间',
+    emptyJob: '作业定义不存在或当前租户无权访问',
+    filesNotApplicable: '此作业类型不涉及文件管道(仅 IMPORT / EXPORT 作业关联 fileChannels / fileTemplates)',
+    workflowToolbarHint: '租户内 Workflow 定义(WORKFLOW 类型作业可关联)',
+    emptyWorkflows: '当前租户暂无 workflow 定义',
+    alertsToolbarHint: '当前租户告警路由(用于匹配 alertGroup / receiver,FE 仅列出可绑定路由)',
+    emptyAlerts: '当前租户无告警路由,先去治理页新建',
+    runsToolbarHint: '最近 20 次运行',
+    emptyRuns: '暂无运行记录',
+    auditToolbarHint: '按作业编码匹配最近审计记录',
+    emptyAudit: '暂无审计记录',
   },
   jobDefinitionList: {
     emptyTitle: '当前租户还没有任何作业定义',
@@ -3650,6 +3722,9 @@ export default {
   },
   workerFingerprintBoard: {
     summaryTitle: '灰度切流概览',
+    fingerprintTermTip:
+      'Worker 指纹 = 一台运行中 worker 的身份标识(buildId 构建版本 + sdkVersion SDK 版本)。用它看新版本上线后各构建占比(灰度切流),以及哪台 worker 心跳掉线(故障定位)。',
+    colBuildIdTip: 'Build ID 是 worker 进程所用构建产物的版本标识,发新版本时用它区分新旧实例。',
     summaryTotalOnline: '活跃 worker {n} 个',
     summaryEmpty: '当前没有任何 ONLINE worker。worker 上线后会自动出现在这里。',
     summaryLoadError: '聚合数据加载失败,请稍后重试。',
@@ -3721,6 +3796,9 @@ export default {
   },
   customTaskTypeList: {
     sectionTitle: '已注册 taskType',
+    taskTypeTermTip:
+      'taskType = 一类任务的类型标识。worker 启动时声明自己能处理哪些 taskType,编排器据此把任务派给匹配的 worker。这里列出本租户 worker 已注册的自定义 taskType。',
+    colWorkerTip: '上报该 taskType 的 worker;编排器会把此类任务派给声明了对应 taskType 的 worker 实例。',
     totalActive: '共 {n} 项',
     introTitle: 'SDK 自定义 taskType(只读)',
     introBody:
@@ -3755,6 +3833,8 @@ export default {
     warnDefaultDisabledBody:
       '该执行器需平台运维显式开启,且必须配置白名单后才能被工作流引用,否则运行时会被拒绝。',
     sectionParameters: '参数清单',
+    atomicTermTip:
+      '原子节点 = 平台 batch-worker-atomic 内置的最小执行单元(sql / shell / stored_proc / http 四类),可被工作流节点直接引用,无需自己写 SDK worker。下面是该类节点接收的参数 schema 与安全闸。',
     parametersEmpty: '该 type 暂未声明参数',
     colParamName: '字段',
     colParamType: '类型',

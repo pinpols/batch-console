@@ -79,7 +79,11 @@
               </template>
             </el-alert>
 
-            <h3 class="atc__section-title">{{ t('atomicTaskTypeCenter.sectionParameters') }}</h3>
+            <h3 class="atc__section-title">
+              <HelpLabel :tip="t('atomicTaskTypeCenter.atomicTermTip')">
+                {{ t('atomicTaskTypeCenter.sectionParameters') }}
+              </HelpLabel>
+            </h3>
             <el-table
               :data="schema.parameters"
               border
@@ -233,6 +237,7 @@
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
+  import HelpLabel from '@/components/common/HelpLabel.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
   import JsonPreview from '@/components/common/JsonPreview.vue'
   import SensitiveFieldAlert from '@/components/common/SensitiveFieldAlert.vue'

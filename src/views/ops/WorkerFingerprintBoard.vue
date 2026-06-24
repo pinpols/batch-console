@@ -17,7 +17,9 @@
     <SectionCard>
       <template #header>
         <div class="wfb__header">
-          <span>{{ t('workerFingerprintBoard.summaryTitle') }}</span>
+          <HelpLabel :tip="t('workerFingerprintBoard.fingerprintTermTip')">
+            {{ t('workerFingerprintBoard.summaryTitle') }}
+          </HelpLabel>
           <el-tag size="small" type="info" effect="plain">
             {{ t('workerFingerprintBoard.summaryTotalOnline', { n: totalOnline }) }}
           </el-tag>
@@ -116,10 +118,14 @@
         </el-table-column>
         <el-table-column
           prop="buildId"
-          :label="t('workerFingerprintBoard.colBuildId')"
           min-width="160"
           show-overflow-tooltip
         >
+          <template #header>
+            <HelpLabel :tip="t('workerFingerprintBoard.colBuildIdTip')">
+              {{ t('workerFingerprintBoard.colBuildId') }}
+            </HelpLabel>
+          </template>
           <template #default="{ row }">
             <span v-if="row.buildId">{{ row.buildId }}</span>
             <span v-else class="muted">—</span>
@@ -164,6 +170,7 @@
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
+  import HelpLabel from '@/components/common/HelpLabel.vue'
   import ProTable from '@/components/table/ProTable.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
   import { fmtDatetime } from '@/utils/datetime'
