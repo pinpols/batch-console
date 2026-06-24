@@ -457,6 +457,18 @@ export function applyApiInterceptors(client: AxiosInstance): void {
         const envelope = body as CommonResponse<unknown>
         setLastApiMeta(envelope.meta ?? null)
         if (!isSuccessCode(envelope.code as string | number)) {
+          // RATE_LIMITED:后端在 envelope 里下发限流码(HTTP 200 包),轻提示即可,
+          // 不走通用红错 toast,避免各页都弹大红错。
+          if (String(envelope.code) === 'RATE_LIMITED') {
+            ElMessage.warning(i18n.global.t('apiError.rateLimited'))
+            return Promise.reject(
+              Object.assign(new Error(i18n.global.t('apiError.rateLimited')), {
+                rateLimited: true,
+                traceId: envelope.meta?.traceId,
+                requestId: envelope.meta?.requestId,
+              }),
+            )
+          }
           const msg =
             translateBizMessage(envelope.message) ||
             envelope.message ||
@@ -640,6 +652,16 @@ export function applyApiInterceptors(client: AxiosInstance): void {
       if (status === 401) {
         if (isTokenExchangeRequest(cfg)) {
           // 登录 / 刷 token 本身 401：用户名密码错 或 refresh 失败，提示不登出
+          const rawCode =
+            raw && typeof raw === 'object' && 'code' in raw
+              ? String((raw as { code?: unknown }).code ?? '')
+              : ''
+          // CAPTCHA_REQUIRED:登录失败计数达阈值,需用户过验证码重试。
+          // 不弹通用红错 toast —— 由 Login.vue 捕获此 code 后展示验证码组件引导用户;
+          // 仍 reject 把 code 挂到 error 上供登录页识别。
+          if (rawCode === 'CAPTCHA_REQUIRED') {
+            return Promise.reject(Object.assign(error as object, { captchaRequired: true }))
+          }
           const rawMsg =
             raw && typeof raw === 'object' && 'message' in raw
               ? String((raw as CommonResponse<unknown>).message || '')
@@ -702,6 +724,10 @@ export function applyApiInterceptors(client: AxiosInstance): void {
           traceId: extractErrorTrace(error),
           suggestion: suggestionFromError(error),
         })
+      } else if (status === 429) {
+        // 限流超额:轻提示即可,不弹通用红错 toast 干扰用户。
+        // (幂等 GET 已在上面 isRetryableError 重试过 RETRY_MAX 次仍 429 才走到这里)
+        ElMessage.warning(i18n.global.t('apiError.rateLimited'))
       } else {
         const msg = extractHttpErrorMessage(error)
         if (import.meta.env.DEV && status != null && status >= 500) {

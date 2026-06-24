@@ -7,6 +7,12 @@ import type { MenuGroup, Role, UserInfo } from '@/types'
 export interface LoginParams {
   username: string
   password: string
+  /**
+   * 可选验证码 token。登录失败计数达阈值后 BE 返回 code=CAPTCHA_REQUIRED,
+   * FE 让用户过验证拿到 token 后带此字段重新登录。各 provider 形态见 captcha.ts。
+   * 放在登录请求**外层**(不进加密体),BE 解密后会带到请求里。
+   */
+  captchaToken?: string
 }
 
 /** POST /api/console/auth/login 解包后的 data */
@@ -66,13 +72,18 @@ export function mapProfileToUserInfo(p: ConsoleAuthProfilePayload): UserInfo {
   }
 }
 
-async function postLoginWithEncryption(plaintext: {
-  username: string
-  password: string
-}): Promise<ConsoleAuthTokenPayload> {
+async function postLoginWithEncryption(
+  plaintext: {
+    username: string
+    password: string
+  },
+  captchaToken?: string,
+): Promise<ConsoleAuthTokenPayload> {
   const send = async () => {
     const encrypted = await encryptLoginBody(plaintext)
-    const body: Record<string, unknown> = encrypted ?? plaintext
+    const body: Record<string, unknown> = { ...(encrypted ?? plaintext) }
+    // captchaToken 放外层(不进加密体);BE 解密后会带到请求里。
+    if (captchaToken) body.captchaToken = captchaToken
     return post<ConsoleAuthTokenPayload>('/api/console/auth/login', body)
   }
   try {
@@ -102,7 +113,7 @@ export const authApi = {
     const plaintext = { username: params.username, password: params.password }
     // BE 重启会重新生成 RSA keypair,FE sessionStorage 缓存的旧公钥导致解密失败。
     // 命中 error.auth.encryption_failed 时清缓存重取公钥再试一次,避免 5 分钟 TTL 内死循环。
-    const payload = await postLoginWithEncryption(plaintext)
+    const payload = await postLoginWithEncryption(plaintext, params.captchaToken)
     return {
       token: payload.accessToken,
       userInfo: mapProfileToUserInfo({
