@@ -95,6 +95,7 @@ const messages: Messages = {
     endpointVersionMismatchWithUrl: 'Endpoint not found or backend version mismatch ({url})',
     networkError: 'Network error',
     invalidCredentials: 'Invalid username or password',
+    rateLimited: 'Too many requests, please try again later',
   },
   errorToast: {
     copyTraceTitle: 'Click to copy TraceId',
@@ -1801,6 +1802,16 @@ const messages: Messages = {
     submitting: 'Signing in…',
     usernameRequired: 'Username is required',
     passwordRequired: 'Password is required',
+    captchaHint: 'For security, please complete the verification below before signing in',
+    captchaRequired: 'Please complete the verification first',
+  },
+  captcha: {
+    slideHint: 'Drag the slider to the gap',
+    passed: 'Verified',
+    handleAria: 'Drag the slider to verify',
+    refresh: 'Refresh',
+    retry: 'Retry',
+    loadFailed: 'Failed to load captcha, please retry',
   },
   notFound: {
     title: 'Page not found',

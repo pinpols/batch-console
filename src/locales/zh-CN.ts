@@ -101,6 +101,7 @@ export default {
     endpointVersionMismatchWithUrl: '接口不存在或后端版本不匹配({url})',
     networkError: '网络异常',
     invalidCredentials: '用户名或密码错误',
+    rateLimited: '操作过于频繁,请稍后再试',
   },
   errorToast: {
     copyTraceTitle: '点击复制 TraceId',
@@ -1745,6 +1746,16 @@ export default {
     submitting: '登录中…',
     usernameRequired: '请填写账号',
     passwordRequired: '请填写密码',
+    captchaHint: '为保障安全,请完成以下验证后再登录',
+    captchaRequired: '请先完成验证',
+  },
+  captcha: {
+    slideHint: '拖动滑块到缺口处',
+    passed: '验证通过',
+    handleAria: '拖动滑块完成验证',
+    refresh: '换一张',
+    retry: '重试',
+    loadFailed: '验证码加载失败,请重试',
   },
   notFound: {
     title: '页面不存在',

@@ -71,6 +71,16 @@
             </template>
           </el-input>
         </el-form-item>
+        <div v-if="captchaVisible" class="login-captcha">
+          <div class="login-captcha__hint">{{ t('login.captchaHint') }}</div>
+          <CaptchaChallenge
+            :key="captchaKey"
+            :provider="captchaConfig.provider"
+            :site-key="captchaConfig.siteKey"
+            @token="onCaptchaToken"
+          />
+        </div>
+
         <el-button
           type="primary"
           native-type="submit"
@@ -96,6 +106,9 @@
   import { ElMessage } from 'element-plus'
   import { useAuthStore } from '@/stores/auth'
   import { authApi } from '@/api/auth'
+  import { getCaptchaConfig } from '@/api/captcha'
+  import type { CaptchaConfig } from '@/api/captcha'
+  import CaptchaChallenge from '@/components/common/CaptchaChallenge.vue'
   import type { AxiosRequestConfig } from 'axios'
   import { lastApiMeta } from '@/utils/lastApiMeta'
 
@@ -108,6 +121,24 @@
   const loginTrace = ref('')
   const form = reactive({ username: '', password: '' })
 
+  // ────────────────────────────── 验证码状态
+  const captchaConfig = ref<CaptchaConfig>({ provider: 'none', loginProtectionEnabled: false })
+  // 是否展示验证码组件:仅在登录失败返回 CAPTCHA_REQUIRED 后才展示。
+  const captchaVisible = ref(false)
+  // 用户过验证拿到的 token;提交后清空,token 用错/过期再回到验证态。
+  const captchaToken = ref('')
+  // 刷新 key:强制重建 CaptchaChallenge 组件(换一张挑战)。
+  const captchaKey = ref(0)
+
+  function isCaptchaRequiredError(e: unknown): boolean {
+    const err = e as { captchaRequired?: boolean }
+    return err?.captchaRequired === true
+  }
+
+  function onCaptchaToken(token: string) {
+    captchaToken.value = token
+  }
+
   // 兜底:登录页挂载时主动调一次 /auth/logout,让后端 Set-Cookie max-age=0
   // 清掉浏览器里可能残留的失效 HttpOnly cookie。否则 cookie 过期 / 服务端 secret
   // 轮换后,浏览器会把毒 cookie 自动带给后续 /auth/login,旧版后端 filter 会直接
@@ -117,7 +148,21 @@
     // _silent:抑制失败 toast(详见 src/api/interceptors.ts LoggedConfig._silent)。
     // 失效 cookie 时这次 logout 会 401,不该让用户在登录页一打开就看到"未授权"。
     void authApi.logout({ _silent: true } as AxiosRequestConfig).catch(() => {})
+    // 拉验证码配置:loginProtectionEnabled && provider!=none 时才可能需要验证码;
+    // 但只有登录失败返回 CAPTCHA_REQUIRED 才真正展示组件(渐进式,首登无摩擦)。
+    void getCaptchaConfig()
+      .then((cfg) => {
+        captchaConfig.value = cfg
+      })
+      .catch(() => {
+        // 配置拉取失败不阻断登录(后端会按需 401 CAPTCHA_REQUIRED 兜底)
+      })
   })
+
+  /** 当前 provider 是否具备展示验证码的条件(配置开启 + 非 none)。 */
+  function captchaAvailable(): boolean {
+    return captchaConfig.value.loginProtectionEnabled && captchaConfig.value.provider !== 'none'
+  }
 
   const rules = {
     username: [{ required: true, message: t('login.usernameRequired'), trigger: 'blur' }],
@@ -127,15 +172,32 @@
   async function handleLogin() {
     const valid = await formRef.value?.validate().catch(() => false)
     if (!valid) return
+    // 已进入验证码态:必须先过验证拿到 token 才能提交。
+    if (captchaVisible.value && !captchaToken.value) {
+      ElMessage.warning(t('login.captchaRequired'))
+      return
+    }
     loading.value = true
     loginTrace.value = ''
     try {
-      await auth.login(form.username, form.password)
+      await auth.login(form.username, form.password, captchaToken.value || undefined)
       const redirect = (route.query.redirect as string) || '/'
       router.push(redirect)
     } catch (e: unknown) {
       const err = e as { traceId?: string }
       loginTrace.value = err.traceId ?? lastApiMeta.value?.traceId ?? ''
+      if (isCaptchaRequiredError(e) && captchaAvailable()) {
+        // 触发验证码:展示组件,清掉旧 token,换一张新挑战。
+        // token 用错/过期再次登录仍会 CAPTCHA_REQUIRED → 回到此态并刷新挑战。
+        captchaVisible.value = true
+        captchaToken.value = ''
+        captchaKey.value += 1
+      } else if (captchaVisible.value) {
+        // 已在验证码态但本次登录失败(密码错/token 过期等):清 token + 换新挑战,
+        // 让用户重新拖。
+        captchaToken.value = ''
+        captchaKey.value += 1
+      }
     } finally {
       loading.value = false
     }
@@ -352,6 +414,16 @@
   }
 
   .input-clear-btn:hover {
+    color: var(--color-text-secondary);
+  }
+
+  .login-captcha {
+    margin-bottom: var(--space-md);
+  }
+
+  .login-captcha__hint {
+    margin-bottom: var(--space-sm);
+    font-size: 13px;
     color: var(--color-text-secondary);
   }
 
