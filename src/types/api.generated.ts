@@ -43,6 +43,50 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/console/captcha/config': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Get captcha provider config (public, pre-login)
+     * @description Returns the active captcha provider, public siteKey and whether login-protection is enabled,
+     *     so the frontend can decide whether/which captcha widget to preload. Never returns any secret.
+     *
+     */
+    get: operations['getConsoleCaptchaConfig']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/captcha/challenge': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Issue a self-hosted slider captcha challenge (pre-login)
+     * @description Self-hosted provider only: issues a single-use slider challenge {challengeId, gap}.
+     *     Returns 404 for any other provider (third-party providers handle challenges via their own SDK).
+     *
+     */
+    get: operations['issueConsoleCaptchaChallenge']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/console/auth/token': {
     parameters: {
       query?: never
@@ -7533,6 +7577,9 @@ export interface components {
     ConsoleLoginRequest: {
       username: string
       password: string
+      /** @description Optional risk-based captcha credential. Required only after the account/IP failure count crosses the threshold (login-protection enabled). Non-secret; always sent as a top-level plaintext field even on the encrypted login path. Format depends on the provider (self-hosted: "challengeId:position"; third-party: its ticket/randstr).
+       *      */
+      captchaToken?: string | null
     }
     ConsoleFileOperationResponse: {
       status: string
@@ -8843,6 +8890,53 @@ export interface operations {
         }
       }
       /** @description Login encryption is unavailable */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  getConsoleCaptchaConfig: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Captcha provider config */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseMapStringObject']
+        }
+      }
+    }
+  }
+  issueConsoleCaptchaChallenge: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Slider challenge */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseMapStringObject']
+        }
+      }
+      /** @description Captcha challenge is not available for the current provider */
       404: {
         headers: {
           [name: string]: unknown

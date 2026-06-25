@@ -32,6 +32,9 @@ export default defineConfig(({ mode }) => {
       coverage: {
         provider: 'v8',
         include: ['src/api/**', 'src/utils/**'],
+        // 实测基线(2026-06,scope=api+utils):stmts 53% / branch 50% / funcs 38% / lines 54%。
+        // 闸设其下留余量防回退;补 governance.ts 等高价值模块测试后逐步上调。CI 跑 `test:unit -- --coverage`。
+        thresholds: { statements: 50, branches: 45, functions: 35, lines: 50 },
       },
     } satisfies UserConfig['test'],
     plugins: [
@@ -113,14 +116,13 @@ export default defineConfig(({ mode }) => {
               if (id.includes('@antv/x6')) {
                 return 'vendor-x6'
               }
-              if (id.includes('cytoscape')) {
-                return 'vendor-cytoscape'
+              // mermaid 较重:独立成共享 chunk,3 个 workflow 路由块复用同一份(去重 + 长缓存),
+              // 否则 Rollup 在 WorkflowDefinitionList / WorkflowRunDetail / MermaidViewer 各塞一份。
+              if (id.includes('mermaid')) {
+                return 'vendor-mermaid'
               }
               if (id.includes('/dagre/')) {
                 return 'vendor-dagre'
-              }
-              if (id.includes('@codemirror') || id.includes('/codemirror/')) {
-                return 'vendor-codemirror'
               }
               if (id.includes('/vue/') || id.includes('/vue-router/') || id.includes('/pinia/')) {
                 return 'vendor-vue'

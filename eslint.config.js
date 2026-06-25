@@ -90,6 +90,20 @@ export default [
     files: ['**/*.vue'],
     rules: {
       'no-undef': 'error',
+      // CLAUDE.md 红线 #2:组件禁裸 axios,API 调用一律走 src/api/*(已配 client/interceptors:
+      // auth/tenant/幂等/解包)。允许 `import type`(类型零运行时)。把"靠自觉"变"靠门禁"。
+      '@typescript-eslint/no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: 'axios',
+              allowTypeImports: true,
+              message: '组件禁裸 axios,改用 src/api/* 的方法(get/post/put/del,走统一 client.ts)。',
+            },
+          ],
+        },
+      ],
     },
   },
 ]

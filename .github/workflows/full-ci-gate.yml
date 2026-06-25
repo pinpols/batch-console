@@ -43,7 +43,7 @@ jobs:
           BE_OPENAPI_URL: ${{ secrets.BE_OPENAPI_URL }}
         run: npm run gen:api:check
 
-      - run: npm run test:unit
+      - run: npm run test:unit -- --coverage
 
       # 完整 build(vue-tsc + i18n + vite build),验证生产产物可生成
       - run: npm run build

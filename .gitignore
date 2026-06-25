@@ -46,3 +46,6 @@ test-results-full/
 # export 文件由 global-setup 运行时生成，属本地产物。
 /test-excel-abc/*.xlsx
 /test-excel-abc/.DS_Store
+
+# vitest coverage output
+coverage/
