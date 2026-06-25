@@ -71,6 +71,15 @@ jobs:
           E2E_PASSWORD: ${{ secrets.STAGING_E2E_PASSWORD }}
         run: npm run test:e2e
 
+      # axe a11y 基线:test:e2e 默认 --grep-invert @slow 把它排除了 → 这里显式点名文件跑
+      # (点名文件不受 script 里的 grep-invert 影响),让"写好却从不跑"的 a11y 闸真正生效,挡 staging 发布。
+      - name: a11y axe baseline (P0 pages)
+        env:
+          PLAYWRIGHT_BASE_URL: ${{ needs.precheck.outputs.base_url }}
+          E2E_USERNAME: ${{ secrets.STAGING_E2E_USERNAME }}
+          E2E_PASSWORD: ${{ secrets.STAGING_E2E_PASSWORD }}
+        run: npx playwright test e2e/a11y.spec.ts
+
       - name: Upload Playwright report
         uses: actions/upload-artifact@v5
         if: always()
