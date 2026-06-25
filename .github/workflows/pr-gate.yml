@@ -54,8 +54,8 @@ jobs:
       - name: i18n consistency
         run: npm run check:i18n
 
-      - name: Unit tests (Vitest)
-        run: npm run test:unit
+      - name: Unit tests (Vitest) + coverage gate
+        run: npm run test:unit -- --coverage
 
       - name: Build (Vite 生产产物,跳重复 typecheck/i18n)
         run: npm run build:fast

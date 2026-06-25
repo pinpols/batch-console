@@ -261,7 +261,12 @@
               >
                 <template #title>
                   {{ t('excelMaintenanceWizard.annotatedReadyTitle') }}
-                  <a :href="previewWorkbookUrl" target="_blank" class="cell-link">
+                  <a
+                    :href="previewWorkbookUrl"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="cell-link"
+                  >
                     {{ t('excelMaintenanceWizard.annotatedReadyLink') }}
                   </a>
                 </template>
