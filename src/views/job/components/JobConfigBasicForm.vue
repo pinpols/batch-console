@@ -72,6 +72,15 @@
         <el-form-item :label="t('jobDefinitionList.fieldScheduleExpr')" prop="scheduleExpr">
           <CronExprInput v-model="model.scheduleExpr" />
         </el-form-item>
+        <el-form-item :label="t('jobConfigBasic.fieldDependsOnJobCode')" prop="dependsOnJobCode">
+          <el-input
+            v-model="model.dependsOnJobCode"
+            clearable
+            maxlength="128"
+            show-word-limit
+            :placeholder="t('jobConfigBasic.placeholderDependsOnJobCode')"
+          />
+        </el-form-item>
       </template>
       <el-form-item :label="t('jobConfigBasic.fieldTimezone')" prop="timezone">
         <el-select

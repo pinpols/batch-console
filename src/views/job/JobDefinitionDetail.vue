@@ -74,6 +74,9 @@
                 <el-descriptions-item :label="t('jobConfigBasic.fieldScheduleExpr')">
                   <span class="mono">{{ job.scheduleExpr || '—' }}</span>
                 </el-descriptions-item>
+                <el-descriptions-item label="dependsOnJobCode">
+                  <span class="mono">{{ job.dependsOnJobCode || '—' }}</span>
+                </el-descriptions-item>
                 <el-descriptions-item :label="t('jobConfigBasic.fieldTimezone')">
                   {{ job.timezone || '—' }}
                 </el-descriptions-item>

@@ -1,0 +1,4 @@
+# Put one authorized download URL per line.
+# Empty lines and lines starting with # are ignored.
+https://example.com/path/to/your-file.mp4
+https://example.com/path/to/your-document.pdf

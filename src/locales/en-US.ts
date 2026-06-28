@@ -3443,6 +3443,8 @@ const messages: Messages = {
     fieldWorkerGroup: 'Worker group',
     fieldTimezone: 'Timezone',
     placeholderTimezone: 'e.g. Asia/Shanghai',
+    fieldDependsOnJobCode: 'Upstream Job',
+    placeholderDependsOnJobCode: 'Upstream jobCode to wait for; empty = no dependency',
     fieldCalendarCode: 'Business Calendar',
     placeholderCalendar: 'calendarCode reference; empty = no working-day restriction',
     fieldWindowCode: 'Batch Window',

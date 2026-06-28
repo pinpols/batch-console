@@ -42,6 +42,9 @@
       <el-descriptions-item :label="t('jobConfigBasic.fieldScheduleExpr')">{{
         job.scheduleExpr || '—'
       }}</el-descriptions-item>
+      <el-descriptions-item label="dependsOnJobCode">{{
+        job.dependsOnJobCode || '—'
+      }}</el-descriptions-item>
       <el-descriptions-item :label="t('jobConfigBasic.fieldCalendarCode')">{{
         job.calendarCode || '—'
       }}</el-descriptions-item>

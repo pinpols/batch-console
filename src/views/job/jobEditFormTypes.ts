@@ -22,6 +22,7 @@ export interface JobEditFormState {
   bizType: string
   scheduleType: string
   scheduleExpr: string
+  dependsOnJobCode: string
   timezone: string
   triggerMode: string
   workerGroup: string
@@ -51,6 +52,7 @@ export function createEmptyJobEditForm(): JobEditFormState {
     bizType: '',
     scheduleType: '',
     scheduleExpr: '',
+    dependsOnJobCode: '',
     timezone: '',
     triggerMode: '',
     workerGroup: '',
@@ -81,6 +83,7 @@ export function jobResponseToEditForm(row: {
   bizType?: string
   scheduleType?: string
   scheduleExpr?: string
+  dependsOnJobCode?: string
   timezone?: string
   triggerMode?: string
   workerGroup?: string
@@ -110,6 +113,7 @@ export function jobResponseToEditForm(row: {
     bizType: row.bizType ?? '',
     scheduleType: row.scheduleType ?? '',
     scheduleExpr: row.scheduleExpr ?? '',
+    dependsOnJobCode: row.dependsOnJobCode ?? '',
     timezone: row.timezone ?? '',
     triggerMode: row.triggerMode ?? '',
     workerGroup: row.workerGroup ?? '',

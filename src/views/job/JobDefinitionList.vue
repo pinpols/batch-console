@@ -167,83 +167,83 @@
         </template>
 
         <template #default="{ isColVisible }">
-        <el-table-column prop="jobCode" :label="t('jobDefinitionList.colJobCode')" width="220">
-          <template #default="{ row }">
-            <router-link class="definition-link" :to="definitionDetailLocation(row)">
-              {{ row.jobCode }}
-            </router-link>
-          </template>
-        </el-table-column>
-        <el-table-column
-          v-if="isColVisible('jobName')"
-          prop="jobName"
-          :label="t('jobDefinitionList.colJobName')"
-          min-width="240"
-          show-overflow-tooltip
-        />
-        <el-table-column
-          v-if="isColVisible('tenantId')"
-          prop="tenantId"
-          :label="t('jobDefinitionList.colTenant')"
-          width="140"
-          show-overflow-tooltip
-        />
-        <el-table-column
-          v-if="isColVisible('workerGroup')"
-          prop="workerGroup"
-          :label="t('jobDefinitionList.colWorkerGroup')"
-          width="180"
-          show-overflow-tooltip
-        />
-        <el-table-column
-          v-if="isColVisible('queueCode')"
-          prop="queueCode"
-          :label="t('jobDefinitionList.colQueue')"
-          width="180"
-          show-overflow-tooltip
-        />
-        <el-table-column
-          v-if="isColVisible('scheduleType')"
-          prop="scheduleType"
-          :label="t('jobDefinitionList.colScheduleType')"
-          width="120"
-        >
-          <template #default="{ row }">
-            {{ resolveScheduleType(row.scheduleType) }}
-          </template>
-        </el-table-column>
-        <el-table-column
-          v-if="isColVisible('executionMode')"
-          prop="executionMode"
-          :label="t('jobDefinitionList.colExecutionMode')"
-          width="110"
-        >
-          <template #default="{ row }">
-            <StatusTag :value="row.executionMode || 'FULL'" category="executionMode" />
-          </template>
-        </el-table-column>
-        <el-table-column
-          v-if="isColVisible('enabled')"
-          prop="enabled"
-          :label="t('jobDefinitionList.colEnabled')"
-          width="80"
-        >
-          <template #default="{ row }">
-            <StatusTag :value="String(row.enabled)" category="yn" />
-          </template>
-        </el-table-column>
-        <el-table-column
-          v-if="isColVisible('scheduleExpr')"
-          prop="scheduleExpr"
-          :label="t('jobDefinitionList.colScheduleExpr')"
-          min-width="220"
-          show-overflow-tooltip
-        />
-        <el-table-column :label="t('jobDefinitionList.colActions')" width="230" fixed="right">
-          <template #default="{ row }">
-            <RowActions :actions="rowActions(row)" :inline-limit="2" />
-          </template>
-        </el-table-column>
+          <el-table-column prop="jobCode" :label="t('jobDefinitionList.colJobCode')" width="220">
+            <template #default="{ row }">
+              <router-link class="definition-link" :to="definitionDetailLocation(row)">
+                {{ row.jobCode }}
+              </router-link>
+            </template>
+          </el-table-column>
+          <el-table-column
+            v-if="isColVisible('jobName')"
+            prop="jobName"
+            :label="t('jobDefinitionList.colJobName')"
+            min-width="240"
+            show-overflow-tooltip
+          />
+          <el-table-column
+            v-if="isColVisible('tenantId')"
+            prop="tenantId"
+            :label="t('jobDefinitionList.colTenant')"
+            width="140"
+            show-overflow-tooltip
+          />
+          <el-table-column
+            v-if="isColVisible('workerGroup')"
+            prop="workerGroup"
+            :label="t('jobDefinitionList.colWorkerGroup')"
+            width="180"
+            show-overflow-tooltip
+          />
+          <el-table-column
+            v-if="isColVisible('queueCode')"
+            prop="queueCode"
+            :label="t('jobDefinitionList.colQueue')"
+            width="180"
+            show-overflow-tooltip
+          />
+          <el-table-column
+            v-if="isColVisible('scheduleType')"
+            prop="scheduleType"
+            :label="t('jobDefinitionList.colScheduleType')"
+            width="120"
+          >
+            <template #default="{ row }">
+              {{ resolveScheduleType(row.scheduleType) }}
+            </template>
+          </el-table-column>
+          <el-table-column
+            v-if="isColVisible('executionMode')"
+            prop="executionMode"
+            :label="t('jobDefinitionList.colExecutionMode')"
+            width="110"
+          >
+            <template #default="{ row }">
+              <StatusTag :value="row.executionMode || 'FULL'" category="executionMode" />
+            </template>
+          </el-table-column>
+          <el-table-column
+            v-if="isColVisible('enabled')"
+            prop="enabled"
+            :label="t('jobDefinitionList.colEnabled')"
+            width="80"
+          >
+            <template #default="{ row }">
+              <StatusTag :value="String(row.enabled)" category="yn" />
+            </template>
+          </el-table-column>
+          <el-table-column
+            v-if="isColVisible('scheduleExpr')"
+            prop="scheduleExpr"
+            :label="t('jobDefinitionList.colScheduleExpr')"
+            min-width="220"
+            show-overflow-tooltip
+          />
+          <el-table-column :label="t('jobDefinitionList.colActions')" width="230" fixed="right">
+            <template #default="{ row }">
+              <RowActions :actions="rowActions(row)" :inline-limit="2" />
+            </template>
+          </el-table-column>
         </template>
       </ProTable>
     </SectionCard>
@@ -300,6 +300,19 @@
           prop="scheduleExpr"
         >
           <CronExprInput v-model="createForm.scheduleExpr" />
+        </el-form-item>
+        <el-form-item
+          v-if="createForm.scheduleType !== 'MANUAL'"
+          :label="t('jobConfigBasic.fieldDependsOnJobCode')"
+          prop="dependsOnJobCode"
+        >
+          <el-input
+            v-model="createForm.dependsOnJobCode"
+            clearable
+            maxlength="128"
+            show-word-limit
+            :placeholder="t('jobConfigBasic.placeholderDependsOnJobCode')"
+          />
         </el-form-item>
         <el-form-item :label="t('jobDefinitionList.queueLabel')" prop="queueCode">
           <div class="queue-field">
@@ -1084,6 +1097,7 @@
     jobType: 'GENERAL',
     scheduleType: 'MANUAL',
     scheduleExpr: '',
+    dependsOnJobCode: '',
     queueCode: '',
     workerGroup: '',
     executionMode: 'FULL' as ExecutionMode,
@@ -1175,11 +1189,13 @@
     },
     trigger: 'blur',
   }
+  editFormRules.dependsOnJobCode = [jobCodePatternRule]
   const createFormRules: FormRules = {
     jobCode: [rulesRequired(t('jobDefinitionList.ruleJobCodeRequired')), jobCodePatternRule],
     jobType: [rulesRequired(t('jobDefinitionList.ruleJobTypeRequired'))],
     scheduleType: [rulesRequired(t('jobDefinitionList.ruleScheduleTypeRequired'))],
     watermarkField: [watermarkRule],
+    dependsOnJobCode: [jobCodePatternRule],
   }
 
   function rulesRequired(message: string): FormItemRule {
@@ -1199,6 +1215,26 @@
       if (mode !== 'INCREMENTAL') createForm.watermarkField = ''
     },
   )
+  watch(
+    () => editForm.scheduleType,
+    (type) => {
+      if (type === 'MANUAL') {
+        editForm.scheduleExpr = ''
+        editForm.dependsOnJobCode = ''
+        editForm.calendarCode = ''
+        editForm.windowCode = ''
+      }
+    },
+  )
+  watch(
+    () => createForm.scheduleType,
+    (type) => {
+      if (type === 'MANUAL') {
+        createForm.scheduleExpr = ''
+        createForm.dependsOnJobCode = ''
+      }
+    },
+  )
 
   function resetCreateForm() {
     createForm.jobCode = ''
@@ -1206,6 +1242,7 @@
     createForm.jobType = 'GENERAL'
     createForm.scheduleType = 'MANUAL'
     createForm.scheduleExpr = ''
+    createForm.dependsOnJobCode = ''
     createForm.queueCode = ''
     createForm.workerGroup = ''
     createForm.executionMode = 'FULL'
@@ -1251,6 +1288,10 @@
         jobType: createForm.jobType.trim(),
         scheduleType: createForm.scheduleType.trim(),
         scheduleExpr: createForm.scheduleExpr.trim() || undefined,
+        dependsOnJobCode:
+          createForm.scheduleType === 'MANUAL'
+            ? ''
+            : createForm.dependsOnJobCode.trim() || undefined,
         queueCode: createForm.queueCode.trim() || undefined,
         workerGroup: createForm.workerGroup.trim() || undefined,
         executionMode: createForm.executionMode,
@@ -1318,6 +1359,8 @@
         bizType: editForm.bizType.trim() || undefined,
         scheduleType: editForm.scheduleType || undefined,
         scheduleExpr: editForm.scheduleExpr.trim() || undefined,
+        dependsOnJobCode:
+          editForm.scheduleType === 'MANUAL' ? '' : editForm.dependsOnJobCode.trim() || undefined,
         timezone: editForm.timezone.trim() || undefined,
         triggerMode: editForm.triggerMode.trim() || undefined,
         workerGroup: editForm.workerGroup.trim() || undefined,
