@@ -7,18 +7,24 @@
       size="small"
       class="config-group"
     >
-      <el-descriptions-item label="jobCode">{{ job.jobCode || '—' }}</el-descriptions-item>
-      <el-descriptions-item label="jobName">{{ job.jobName || '—' }}</el-descriptions-item>
-      <el-descriptions-item label="jobType">{{ job.jobType || '—' }}</el-descriptions-item>
-      <el-descriptions-item label="enabled">
+      <el-descriptions-item :label="t('jobConfigBasic.fieldJobCode')">{{
+        job.jobCode || '—'
+      }}</el-descriptions-item>
+      <el-descriptions-item :label="t('jobConfigBasic.fieldJobName')">{{
+        job.jobName || '—'
+      }}</el-descriptions-item>
+      <el-descriptions-item :label="t('jobConfigBasic.fieldJobType')">{{
+        job.jobType || '—'
+      }}</el-descriptions-item>
+      <el-descriptions-item :label="t('jobConfigBasic.fieldEnabled')">
         <el-tag :type="job.enabled ? 'success' : 'info'" size="small">
           {{ job.enabled ? t('common.yes') : t('common.no') }}
         </el-tag>
       </el-descriptions-item>
-      <el-descriptions-item label="executionMode">
+      <el-descriptions-item :label="t('jobConfigBasic.fieldExecutionMode')">
         {{ executionModeLabel || '—' }}
       </el-descriptions-item>
-      <el-descriptions-item label="watermarkField">
+      <el-descriptions-item :label="t('jobConfigBasic.fieldWatermark')">
         {{ job.watermarkField || '—' }}
       </el-descriptions-item>
     </el-descriptions>
@@ -30,16 +36,18 @@
       size="small"
       class="config-group"
     >
-      <el-descriptions-item label="scheduleType">{{
+      <el-descriptions-item :label="t('jobConfigBasic.fieldScheduleType')">{{
         job.scheduleType || '—'
       }}</el-descriptions-item>
-      <el-descriptions-item label="scheduleExpr">{{
+      <el-descriptions-item :label="t('jobConfigBasic.fieldScheduleExpr')">{{
         job.scheduleExpr || '—'
       }}</el-descriptions-item>
-      <el-descriptions-item label="calendarCode">{{
+      <el-descriptions-item :label="t('jobConfigBasic.fieldCalendarCode')">{{
         job.calendarCode || '—'
       }}</el-descriptions-item>
-      <el-descriptions-item label="windowCode">{{ job.windowCode || '—' }}</el-descriptions-item>
+      <el-descriptions-item :label="t('jobConfigBasic.fieldWindowCode')">{{
+        job.windowCode || '—'
+      }}</el-descriptions-item>
     </el-descriptions>
 
     <el-descriptions
@@ -49,12 +57,16 @@
       size="small"
       class="config-group"
     >
-      <el-descriptions-item label="queueCode">{{ job.queueCode || '—' }}</el-descriptions-item>
-      <el-descriptions-item label="workerGroup">{{ job.workerGroup || '—' }}</el-descriptions-item>
-      <el-descriptions-item label="shardStrategy">{{
+      <el-descriptions-item :label="t('jobConfigBasic.fieldQueueCode')">{{
+        job.queueCode || '—'
+      }}</el-descriptions-item>
+      <el-descriptions-item :label="t('jobConfigBasic.fieldWorkerGroup')">{{
+        job.workerGroup || '—'
+      }}</el-descriptions-item>
+      <el-descriptions-item :label="t('jobConfigBasic.fieldShardStrategy')">{{
         job.shardStrategy || '—'
       }}</el-descriptions-item>
-      <el-descriptions-item label="timeoutSeconds">
+      <el-descriptions-item :label="t('jobConfigBasic.fieldTimeoutSeconds')">
         {{ job.timeoutSeconds ?? '—' }}
       </el-descriptions-item>
     </el-descriptions>
@@ -66,11 +78,13 @@
       size="small"
       class="config-group"
     >
-      <el-descriptions-item label="retryPolicy">{{ job.retryPolicy || '—' }}</el-descriptions-item>
-      <el-descriptions-item label="retryMaxCount">
+      <el-descriptions-item :label="t('jobConfigBasic.fieldRetryPolicy')">{{
+        job.retryPolicy || '—'
+      }}</el-descriptions-item>
+      <el-descriptions-item :label="t('jobConfigBasic.fieldRetryMaxCount')">
         {{ job.retryMaxCount ?? '—' }}
       </el-descriptions-item>
-      <el-descriptions-item label="executionHandler" :span="2">
+      <el-descriptions-item :label="t('jobConfigBasic.fieldExecutionHandler')" :span="2">
         <span class="config-mono">{{ job.executionHandler || '—' }}</span>
       </el-descriptions-item>
     </el-descriptions>
@@ -83,10 +97,13 @@
       size="small"
       class="config-group"
     >
-      <el-descriptions-item v-if="job.paramSchema" label="paramSchema">
+      <el-descriptions-item v-if="job.paramSchema" :label="t('jobConfigBasic.fieldParamSchema')">
         <pre class="config-json">{{ formatJson(job.paramSchema) }}</pre>
       </el-descriptions-item>
-      <el-descriptions-item v-if="job.defaultParams" label="defaultParams">
+      <el-descriptions-item
+        v-if="job.defaultParams"
+        :label="t('jobConfigBasic.fieldDefaultParams')"
+      >
         <pre class="config-json">{{ formatJson(job.defaultParams) }}</pre>
       </el-descriptions-item>
     </el-descriptions>
@@ -98,8 +115,12 @@
       size="small"
       class="config-group"
     >
-      <el-descriptions-item label="createdAt">{{ job.createdAt || '—' }}</el-descriptions-item>
-      <el-descriptions-item label="updatedAt">{{ job.updatedAt || '—' }}</el-descriptions-item>
+      <el-descriptions-item :label="t('jobConfigBasic.fieldCreatedAt')">{{
+        job.createdAt || '—'
+      }}</el-descriptions-item>
+      <el-descriptions-item :label="t('jobConfigBasic.fieldUpdatedAt')">{{
+        job.updatedAt || '—'
+      }}</el-descriptions-item>
     </el-descriptions>
   </div>
 </template>

@@ -68,22 +68,22 @@
           <el-tab-pane :label="t('jobDefinitionDetail.tabSchedule')" name="schedule">
             <div class="tab-panel">
               <el-descriptions :column="2" border size="small">
-                <el-descriptions-item label="scheduleType">
+                <el-descriptions-item :label="t('jobConfigBasic.fieldScheduleType')">
                   {{ job.scheduleType || '—' }}
                 </el-descriptions-item>
-                <el-descriptions-item label="scheduleExpr">
+                <el-descriptions-item :label="t('jobConfigBasic.fieldScheduleExpr')">
                   <span class="mono">{{ job.scheduleExpr || '—' }}</span>
                 </el-descriptions-item>
-                <el-descriptions-item label="timezone">
+                <el-descriptions-item :label="t('jobConfigBasic.fieldTimezone')">
                   {{ job.timezone || '—' }}
                 </el-descriptions-item>
-                <el-descriptions-item label="calendarCode">
+                <el-descriptions-item :label="t('jobConfigBasic.fieldCalendarCode')">
                   {{ job.calendarCode || '—' }}
                 </el-descriptions-item>
-                <el-descriptions-item label="windowCode">
+                <el-descriptions-item :label="t('jobConfigBasic.fieldWindowCode')">
                   {{ job.windowCode || '—' }}
                 </el-descriptions-item>
-                <el-descriptions-item label="dagEnabled">
+                <el-descriptions-item :label="t('jobConfigBasic.fieldDagEnabled')">
                   {{ job.dagEnabled ? t('common.yes') : t('common.no') }}
                 </el-descriptions-item>
               </el-descriptions>
@@ -107,22 +107,22 @@
           <el-tab-pane :label="t('jobDefinitionDetail.tabResource')" name="resource">
             <div class="tab-panel">
               <el-descriptions :column="2" border size="small">
-                <el-descriptions-item label="queueCode">
+                <el-descriptions-item :label="t('jobConfigBasic.fieldQueueCode')">
                   {{ job.queueCode || '—' }}
                 </el-descriptions-item>
-                <el-descriptions-item label="workerGroup">
+                <el-descriptions-item :label="t('jobConfigBasic.fieldWorkerGroup')">
                   {{ job.workerGroup || '—' }}
                 </el-descriptions-item>
-                <el-descriptions-item label="priority">
+                <el-descriptions-item :label="t('jobConfigBasic.fieldPriority')">
                   {{ job.priority ?? '—' }}
                 </el-descriptions-item>
-                <el-descriptions-item label="shardStrategy">
+                <el-descriptions-item :label="t('jobConfigBasic.fieldShardStrategy')">
                   {{ job.shardStrategy || '—' }}
                 </el-descriptions-item>
-                <el-descriptions-item label="timeoutSeconds">
+                <el-descriptions-item :label="t('jobConfigBasic.fieldTimeoutSeconds')">
                   {{ job.timeoutSeconds ?? '—' }}
                 </el-descriptions-item>
-                <el-descriptions-item label="retryPolicy">
+                <el-descriptions-item :label="t('jobConfigBasic.fieldRetryPolicy')">
                   {{ job.retryPolicy || '—' }}
                 </el-descriptions-item>
               </el-descriptions>
@@ -140,16 +140,16 @@
           <el-tab-pane :label="t('jobDefinitionDetail.tabTrigger')" name="trigger">
             <div class="tab-panel">
               <el-descriptions :column="2" border size="small">
-                <el-descriptions-item label="triggerMode">
+                <el-descriptions-item :label="t('jobConfigBasic.fieldTriggerMode')">
                   {{ job.triggerMode || '—' }}
                 </el-descriptions-item>
-                <el-descriptions-item label="scheduleType">
+                <el-descriptions-item :label="t('jobConfigBasic.fieldScheduleType')">
                   {{ job.scheduleType || '—' }}
                 </el-descriptions-item>
-                <el-descriptions-item label="defaultParams" :span="2">
+                <el-descriptions-item :label="t('jobConfigBasic.fieldDefaultParams')" :span="2">
                   <pre class="json-block">{{ formatJson(job.defaultParams) }}</pre>
                 </el-descriptions-item>
-                <el-descriptions-item label="paramSchema" :span="2">
+                <el-descriptions-item :label="t('jobConfigBasic.fieldParamSchema')" :span="2">
                   <pre class="json-block">{{ formatJson(job.paramSchema) }}</pre>
                 </el-descriptions-item>
               </el-descriptions>
@@ -177,11 +177,13 @@
           <el-tab-pane :label="t('jobDefinitionDetail.tabWorkflow')" name="workflow" lazy>
             <div class="tab-panel">
               <el-descriptions :column="2" border size="small">
-                <el-descriptions-item label="jobType">{{ job.jobType }}</el-descriptions-item>
-                <el-descriptions-item label="dagEnabled">
+                <el-descriptions-item :label="t('jobConfigBasic.fieldJobType')">{{
+                  job.jobType
+                }}</el-descriptions-item>
+                <el-descriptions-item :label="t('jobConfigBasic.fieldDagEnabled')">
                   {{ job.dagEnabled ? t('common.yes') : t('common.no') }}
                 </el-descriptions-item>
-                <el-descriptions-item label="executionHandler" :span="2">
+                <el-descriptions-item :label="t('jobConfigBasic.fieldExecutionHandler')" :span="2">
                   <span class="mono">{{ job.executionHandler || '—' }}</span>
                 </el-descriptions-item>
               </el-descriptions>
@@ -199,14 +201,30 @@
                 :empty-text="t('jobDefinitionDetail.emptyWorkflows')"
                 @row-click="goWorkflowDesigner"
               >
-                <el-table-column prop="workflowCode" label="workflowCode" min-width="200">
+                <el-table-column
+                  prop="workflowCode"
+                  :label="t('jobDefinitionDetail.colWorkflowCode')"
+                  min-width="200"
+                >
                   <template #default="{ row }">
                     <span class="cell-link">{{ row.workflowCode }}</span>
                   </template>
                 </el-table-column>
-                <el-table-column prop="workflowName" :label="t('jobDefinitionDetail.colName')" min-width="180" />
-                <el-table-column prop="workflowType" :label="t('jobDefinitionDetail.colType')" width="120" />
-                <el-table-column prop="version" :label="t('jobDefinitionDetail.colVersion')" width="80" />
+                <el-table-column
+                  prop="workflowName"
+                  :label="t('jobDefinitionDetail.colName')"
+                  min-width="180"
+                />
+                <el-table-column
+                  prop="workflowType"
+                  :label="t('jobDefinitionDetail.colType')"
+                  width="120"
+                />
+                <el-table-column
+                  prop="version"
+                  :label="t('jobDefinitionDetail.colVersion')"
+                  width="80"
+                />
                 <el-table-column :label="t('jobDefinitionDetail.colEnabled')" width="80">
                   <template #default="{ row }">
                     <el-tag size="small" :type="row.enabled ? 'success' : 'info'">
@@ -238,12 +256,24 @@
                 stripe
                 :empty-text="t('jobDefinitionDetail.emptyAlerts')"
               >
-                <el-table-column prop="routeCode" label="routeCode" min-width="160" />
-                <el-table-column prop="team" label="team" width="140" />
-                <el-table-column prop="severity" label="severity" width="100" />
+                <el-table-column
+                  prop="routeCode"
+                  :label="t('jobDefinitionDetail.colRouteCode')"
+                  min-width="160"
+                />
+                <el-table-column
+                  prop="team"
+                  :label="t('jobDefinitionDetail.colTeam')"
+                  width="140"
+                />
+                <el-table-column
+                  prop="severity"
+                  :label="t('jobDefinitionDetail.colSeverity')"
+                  width="100"
+                />
                 <el-table-column
                   prop="receiver"
-                  label="receiver"
+                  :label="t('jobDefinitionDetail.colReceiver')"
                   min-width="200"
                   show-overflow-tooltip
                 />
@@ -279,7 +309,11 @@
                 :empty-text="t('jobDefinitionDetail.emptyRuns')"
                 @row-click="goRunDetail"
               >
-                <el-table-column prop="instanceNo" :label="t('jobDefinitionDetail.colInstanceNo')" min-width="220">
+                <el-table-column
+                  prop="instanceNo"
+                  :label="t('jobDefinitionDetail.colInstanceNo')"
+                  min-width="220"
+                >
                   <template #default="{ row }">
                     <span class="cell-link">{{ row.instanceNo }}</span>
                   </template>
@@ -289,7 +323,11 @@
                     <StatusTag :value="row.instanceStatus" category="instance" />
                   </template>
                 </el-table-column>
-                <el-table-column prop="bizDate" :label="t('jobDefinitionDetail.colBizDate')" width="120" />
+                <el-table-column
+                  prop="bizDate"
+                  :label="t('jobDefinitionDetail.colBizDate')"
+                  width="120"
+                />
                 <el-table-column :label="t('jobDefinitionDetail.colStartedAt')" width="180">
                   <template #default="{ row }">{{ fmtDatetime(row.startedAt) }}</template>
                 </el-table-column>
@@ -315,16 +353,32 @@
                 stripe
                 :empty-text="t('jobDefinitionDetail.emptyAudit')"
               >
-                <el-table-column prop="operationType" :label="t('jobDefinitionDetail.colOperation')" width="180" />
-                <el-table-column prop="operationResult" :label="t('jobDefinitionDetail.colResult')" width="110" />
-                <el-table-column prop="operatorId" :label="t('jobDefinitionDetail.colOperator')" width="160" />
+                <el-table-column
+                  prop="operationType"
+                  :label="t('jobDefinitionDetail.colOperation')"
+                  width="180"
+                />
+                <el-table-column
+                  prop="operationResult"
+                  :label="t('jobDefinitionDetail.colResult')"
+                  width="110"
+                />
+                <el-table-column
+                  prop="operatorId"
+                  :label="t('jobDefinitionDetail.colOperator')"
+                  width="160"
+                />
                 <el-table-column
                   prop="detailSummary"
                   :label="t('jobDefinitionDetail.colSummary')"
                   min-width="260"
                   show-overflow-tooltip
                 />
-                <el-table-column prop="createdAt" :label="t('jobDefinitionDetail.colCreatedAt')" width="180" />
+                <el-table-column
+                  prop="createdAt"
+                  :label="t('jobDefinitionDetail.colCreatedAt')"
+                  width="180"
+                />
               </el-table>
             </div>
           </el-tab-pane>

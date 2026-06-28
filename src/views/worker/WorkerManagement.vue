@@ -15,6 +15,9 @@
               }
             "
             :total="workerTotal"
+            :has-active-filters="workerHasActiveFilters"
+            :empty-text="workerFilteredEmptyText"
+            :filtered-empty-text="workerFilteredEmptyText"
             v-model:page="workerPage"
             v-model:page-size="workerPageSize"
             @change="() => {}"
@@ -66,6 +69,33 @@
                 :status="live.status.value"
                 :last-refreshed-at="live.lastRefreshedAt.value"
               />
+            </template>
+            <template #empty>
+              <EmptyState
+                variant="tenant-empty"
+                :title="t('workerManagement.emptyTitle')"
+                :description="workerEmptyDescription"
+                :image-size="96"
+              >
+                <template #action>
+                  <div class="worker-empty-actions">
+                    <el-button
+                      type="primary"
+                      :icon="Refresh"
+                      :loading="workerIsFetching"
+                      @click="onRefreshWorkers"
+                    >
+                      {{ t('common.refresh') }}
+                    </el-button>
+                    <el-button @click="resetWorkers">
+                      {{ t('workerManagement.clearFilters') }}
+                    </el-button>
+                  </div>
+                  <div class="worker-empty-meta">
+                    {{ t('workerManagement.emptyLastRefresh', { time: workerLastRefreshText }) }}
+                  </div>
+                </template>
+              </EmptyState>
             </template>
 
             <el-table-column
@@ -232,6 +262,7 @@
   import { computed, reactive, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
+  import { Refresh } from '@element-plus/icons-vue'
 
   const { t } = useI18n({ useScope: 'global' })
   import { confirmDanger } from '@/composables/useDangerConfirm'
@@ -265,6 +296,7 @@
   import StatusTag from '@/components/common/StatusTag.vue'
   import CopyableText from '@/components/common/CopyableText.vue'
   import JsonPreview from '@/components/common/JsonPreview.vue'
+  import EmptyState from '@/components/common/EmptyState.vue'
   import type { ConsoleWorkerRegistryResponse } from '@/types/console-api'
   import type { ConsoleFileChannelResponse } from '@/types/console-api'
 
@@ -336,6 +368,20 @@
   })
 
   const workerTotal = computed(() => filteredWorkers.value.length)
+  const workerHasActiveFilters = computed(() =>
+    Boolean(
+      workerFilters.workerGroup.trim() ||
+      workerFilters.status.trim() ||
+      workerFilters.keyword.trim(),
+    ),
+  )
+  const workerFilteredEmptyText = computed(() => t('workerManagement.emptyFiltered'))
+  const workerEmptyDescription = computed(() =>
+    t('workerManagement.emptyDescription', { tenant: tenant.tenantId || '—' }),
+  )
+  const workerLastRefreshText = computed(() =>
+    live.lastRefreshedAt.value ? live.lastRefreshedAt.value.toLocaleString() : '—',
+  )
 
   const workerTableRows = computed(() => {
     const pr = toPageResult(filteredWorkers.value, workerPage.value, workerPageSize.value)
@@ -526,4 +572,20 @@
   useTenantReload(loadChannels)
 </script>
 
-<style scoped></style>
+<style scoped>
+  .worker-empty-actions {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .worker-empty-meta {
+    width: 100%;
+    margin-top: 4px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--color-text-tertiary);
+  }
+</style>

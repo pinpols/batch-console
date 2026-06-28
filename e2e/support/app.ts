@@ -99,7 +99,12 @@ export async function gotoAndAssertRoute(page: Page, route: RouteCheck) {
   await expectPageTitle(page, route.title)
 }
 
+export async function waitForRouteStable(page: Page, timeout = 15_000) {
+  await expect(page.getByRole('progressbar', { name: '页面切换中' })).toBeHidden({ timeout })
+}
+
 export async function expectPageTitle(page: Page, title: string | RegExp) {
+  await waitForRouteStable(page)
   const heading = page.locator('.page-header .title').first()
   // 部分页面(如 WorkflowDesigner 画布)没有 .page-header,直接放行
   const exists = await heading.count()

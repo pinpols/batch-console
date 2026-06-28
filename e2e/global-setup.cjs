@@ -58,6 +58,20 @@ function idempotencyKey() {
 }
 
 /**
+ * Seed / fixture endpoints run from Node fetch, not the browser context.
+ * Newer console-api builds issue auth only through HttpOnly cookies, so the
+ * setup must replay those cookies instead of relying on a response-body token.
+ */
+function buildAuthHeaders(token, cookies) {
+  const headers = {}
+  if (token) headers.Authorization = `Bearer ${token}`
+  if (Array.isArray(cookies) && cookies.length > 0) {
+    headers.Cookie = cookies.map((c) => `${c.name}=${c.value}`).join('; ')
+  }
+  return headers
+}
+
+/**
  * 带超时的 fetch 封装（AbortController + setTimeout，兼容所有环境）。
  * @param {string} url
  * @param {RequestInit & { timeoutMs?: number }} opts
@@ -82,14 +96,14 @@ async function fetchWithTimeout(url, opts = {}) {
 /**
  * 向指定租户上传并应用租户配置包 Excel。
  */
-async function seedTenant(token, tenantId, filePath) {
+async function seedTenant(authHeaders, tenantId, filePath) {
   if (!existsSync(filePath)) {
     console.warn(`[seed] 文件不存在，跳过 ${tenantId}: ${filePath}`)
     return
   }
 
   const commonHeaders = {
-    Authorization: `Bearer ${token}`,
+    ...authHeaders,
     'X-Tenant-Id': tenantId,
   }
 
@@ -203,7 +217,7 @@ async function seedTenant(token, tenantId, filePath) {
 /**
  * 导出租户配置包作为 UI 上传测试的 fixture 文件。
  */
-async function exportTenantPackageFixture(token) {
+async function exportTenantPackageFixture(authHeaders) {
   const outPath = path.resolve(__dirname, '../test-excel-abc/tenant-package-export.xlsx')
   if (existsSync(outPath)) {
     console.log('[fixture] 已存在，跳过租户包导出')
@@ -212,7 +226,7 @@ async function exportTenantPackageFixture(token) {
   try {
     const res = await fetchWithTimeout(
       `${API_BASE}/api/console/config/tenant-package/excel/export?tenantId=${encodeURIComponent(FIXTURE_TENANT)}`,
-      { headers: { Authorization: `Bearer ${token}`, 'X-Tenant-Id': FIXTURE_TENANT } },
+      { headers: { ...authHeaders, 'X-Tenant-Id': FIXTURE_TENANT } },
     )
     if (!res.ok) {
       console.warn(`[fixture] 租户包导出失败 status=${res.status}`)
@@ -290,11 +304,12 @@ async function globalSetup(config) {
   }
 
   // ── 导入测试数据 ─────────────────────────────────────────────────
-  if (token) {
+  const seedAuthHeaders = buildAuthHeaders(token, authCookies)
+  if (Object.keys(seedAuthHeaders).length > 0) {
     for (const { tenantId, file } of TENANT_EXCELS) {
-      await seedTenant(token, tenantId, file)
+      await seedTenant(seedAuthHeaders, tenantId, file)
     }
-    await exportTenantPackageFixture(token)
+    await exportTenantPackageFixture(seedAuthHeaders)
   }
 
   // ── 写 storageState（默认测试租户 ta，与 seedTenant 目标一致）──────

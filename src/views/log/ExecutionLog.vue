@@ -167,7 +167,30 @@
     const list = filtered.value
     total.value = list.length
     const pr = toPageResult(list, page.value, pageSize.value)
-    display.value = pr.records as ConsoleAuditLogResponse[]
+    display.value = (pr.records as ConsoleAuditLogResponse[]).map((row) => ({
+      ...row,
+      detailSummary: formatDetailSummary(row.detailSummary),
+    }))
+  }
+
+  function decodeHtmlEntities(value: string): string {
+    return value
+      .replace(/&quot;|&#34;/g, '"')
+      .replace(/&#39;|&apos;/g, "'")
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&amp;/g, '&')
+  }
+
+  function formatDetailSummary(value?: string | null): string {
+    if (!value) return ''
+    const decoded = decodeHtmlEntities(value)
+    try {
+      const parsed = JSON.parse(decoded)
+      return JSON.stringify(parsed)
+    } catch {
+      return decoded
+    }
   }
 
   function onSearch() {

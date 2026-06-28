@@ -1,17 +1,10 @@
 import { expect, test } from './support/app'
-import { enterDemoApp, expectPageTitle } from './support/app'
-import type { Page } from '@playwright/test'
+import { enterDemoApp, expectPageTitle, waitForRouteStable } from './support/app'
 
 test.describe('navigation and tabs', () => {
   test.beforeEach(async ({ page }) => {
     await enterDemoApp(page)
   })
-
-  async function waitForRouteStable(page: Page) {
-    await expect(page.getByRole('progressbar', { name: '页面切换中' })).toBeHidden({
-      timeout: 15_000,
-    })
-  }
 
   test('侧边栏导航可切换到关键页面', async ({ page }) => {
     // 2026-06 菜单 IA v4(7→5 组):工作台/运行监控/作业与文件/调度治理/系统管理。
