@@ -7050,6 +7050,8 @@ export interface components {
       jobName?: string
       bizType?: string
       scheduleExpr?: string
+      /** @description 上游作业编码；填写后 scheduled fire 前等待同 bizDate 上游就绪。 */
+      dependsOnJobCode?: string
       timezone?: string
       triggerMode?: string
       workerGroup?: string
@@ -7087,6 +7089,8 @@ export interface components {
       bizType?: string
       scheduleType?: string
       scheduleExpr?: string
+      /** @description 上游作业编码；填写后 scheduled fire 前等待同 bizDate 上游就绪。 */
+      dependsOnJobCode?: string
       timezone?: string
       triggerMode?: string
       workerGroup?: string
@@ -7116,6 +7120,7 @@ export interface components {
       id: number
       tenantId: string
       jobCode: string
+      dependsOnJobCode: string
       jobName: string
       jobType: string
       queueCode: string
@@ -8406,6 +8411,7 @@ export interface components {
       bizType?: string
       scheduleType?: string
       scheduleExpr?: string
+      dependsOnJobCode?: string
       timezone?: string
       triggerMode?: string
       workerGroup?: string

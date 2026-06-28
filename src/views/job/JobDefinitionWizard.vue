@@ -419,6 +419,13 @@
     }
     return callback()
   }
+  const jobCodeRefValidator = (_rule: unknown, value: unknown, callback: (err?: Error) => void) => {
+    const v = typeof value === 'string' ? value.trim() : ''
+    if (!v) return callback()
+    return jobCodePattern.test(v)
+      ? callback()
+      : callback(new Error('字母开头,仅含字母/数字/下划线/连字符,长度 ≤ 128'))
+  }
   const scheduleExprValidator = (
     _rule: unknown,
     value: unknown,
@@ -463,6 +470,7 @@
       },
     ],
     watermarkField: [{ validator: watermarkValidator, trigger: 'blur' }],
+    dependsOnJobCode: [{ validator: jobCodeRefValidator, trigger: 'blur' }],
     scheduleExpr: [{ validator: scheduleExprValidator, trigger: 'blur' }],
     paramSchema: [{ validator: jsonValidator, trigger: 'blur' }],
     defaultParams: [{ validator: jsonValidator, trigger: 'blur' }],
@@ -481,6 +489,7 @@
     (type) => {
       if (type === 'MANUAL') {
         form.scheduleExpr = ''
+        form.dependsOnJobCode = ''
         form.calendarCode = ''
         form.windowCode = ''
       }
@@ -630,6 +639,8 @@
           bizType: form.bizType.trim() || undefined,
           scheduleType: form.scheduleType,
           scheduleExpr: form.scheduleExpr.trim() || undefined,
+          dependsOnJobCode:
+            form.scheduleType === 'MANUAL' ? '' : form.dependsOnJobCode.trim() || undefined,
           timezone: form.timezone.trim() || undefined,
           triggerMode: form.triggerMode.trim() || undefined,
           workerGroup: form.workerGroup.trim() || undefined,

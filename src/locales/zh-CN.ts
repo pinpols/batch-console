@@ -3375,6 +3375,8 @@ export default {
     fieldWorkerGroup: 'Worker 分组',
     fieldTimezone: '时区',
     placeholderTimezone: '如 Asia/Shanghai',
+    fieldDependsOnJobCode: '上游作业',
+    placeholderDependsOnJobCode: '依赖的上游 jobCode,空表示不等待',
     fieldCalendarCode: '业务日历',
     placeholderCalendar: '关联 calendarCode,空表示不约束工作日',
     fieldWindowCode: '批次窗口',
