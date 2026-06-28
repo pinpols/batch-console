@@ -27,22 +27,22 @@
    * 柔和化(2026-06-04):原 Tailwind-500 饱和度偏高,17 色并排成"彩虹"略刺眼;
    * 整体降饱和约 25%、微提亮,色相保持原序与可辨识度,仅作 pipeline 图标用。
    */
-  --color-stage-receive: #6699e6;    /* blue 柔和 */
+  --color-stage-receive: #6699e6; /* blue 柔和 */
   --color-stage-preprocess: #9d86e0; /* violet 柔和 */
-  --color-stage-parse: #4fb3c9;      /* cyan 柔和 */
-  --color-stage-validate: #4fb38c;   /* emerald 柔和 */
-  --color-stage-load: #e0a648;       /* amber 柔和 */
-  --color-stage-feedback: #db82ab;   /* pink 柔和 */
-  --color-stage-prepare: #8487df;    /* indigo 柔和 */
-  --color-stage-compute: #54a6d6;    /* sky 柔和 */
-  --color-stage-generate: #54b0a4;   /* teal 柔和 */
-  --color-stage-store: #b083e0;      /* purple 柔和 */
-  --color-stage-register: #e07d8d;   /* rose 柔和 */
-  --color-stage-commit: #63b885;     /* green 柔和 */
-  --color-stage-complete: #56a878;   /* green-deep 柔和 */
-  --color-stage-dispatch: #6699e6;   /* 同 RECEIVE */
-  --color-stage-ack: #e0a648;        /* 同 LOAD */
-  --color-stage-retry: #e8a86e;      /* orange 柔和 */
+  --color-stage-parse: #4fb3c9; /* cyan 柔和 */
+  --color-stage-validate: #4fb38c; /* emerald 柔和 */
+  --color-stage-load: #e0a648; /* amber 柔和 */
+  --color-stage-feedback: #db82ab; /* pink 柔和 */
+  --color-stage-prepare: #8487df; /* indigo 柔和 */
+  --color-stage-compute: #54a6d6; /* sky 柔和 */
+  --color-stage-generate: #54b0a4; /* teal 柔和 */
+  --color-stage-store: #b083e0; /* purple 柔和 */
+  --color-stage-register: #e07d8d; /* rose 柔和 */
+  --color-stage-commit: #63b885; /* green 柔和 */
+  --color-stage-complete: #56a878; /* green-deep 柔和 */
+  --color-stage-dispatch: #6699e6; /* 同 RECEIVE */
+  --color-stage-ack: #e0a648; /* 同 LOAD */
+  --color-stage-retry: #e8a86e; /* orange 柔和 */
   --color-stage-compensate: #e07476; /* red 柔和(与 danger 同调) */
 
   /**
@@ -275,8 +275,8 @@ html.dark {
   color-scheme: dark;
 
   --color-text-primary: #e5eaf0;
-  --color-text-secondary: #a8b0bd;
-  --color-text-tertiary: #7d8796;
+  --color-text-secondary: #b8c0cc;
+  --color-text-tertiary: #96a0ae;
 
   --color-bg-page: #0f1419;
   --color-bg-canvas: #0b0f14;

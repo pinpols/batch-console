@@ -152,11 +152,11 @@
 
   /* 暗色 Liquid Glass:把 inset 高光透明度调高一倍,黑底上才看得见折射 */
   :global(html.dark) .mobile-tab-bar {
-    background: color-mix(in srgb, #1c1c1e 78%, transparent 22%);
-    border-top: 0.5px solid rgb(84 84 88 / 75%);
+    background: color-mix(in srgb, #10151d 88%, transparent 12%);
+    border-top: 0.5px solid rgb(148 163 184 / 28%);
     box-shadow:
-      inset 0 0.5px 0 rgb(255 255 255 / 14%),
-      inset 0 6px 12px rgb(255 255 255 / 4%),
+      inset 0 0.5px 0 rgb(255 255 255 / 16%),
+      inset 0 6px 12px rgb(96 165 250 / 5%),
       0 -1px 0 rgb(255 255 255 / 4%),
       0 -8px 24px rgb(0 0 0 / 50%);
   }

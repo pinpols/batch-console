@@ -8,7 +8,20 @@
  * 策略:不依赖 BE 写入,只验证页面可达 + 控件渲染 + 0 5xx。
  */
 import { expect, test } from './support/app'
-import { enterDemoApp, expectPageTitle } from './support/app'
+import { enterDemoApp, expectPageTitle, waitForRouteStable } from './support/app'
+import type { Page } from '@playwright/test'
+
+async function firstJobDefinition(page: Page, tenants: string[]) {
+  for (const tenantId of tenants) {
+    const res = await page.request.get(
+      `/api/console/queries/job-definitions?tenantId=${tenantId}&pageNo=1&pageSize=1`,
+    )
+    const body = await res.json().catch(() => null)
+    const items = body?.data?.items ?? body?.items ?? []
+    if (items.length) return { id: items[0].id as number, tenantId }
+  }
+  return null
+}
 
 test.describe('Job Definition Wizard / Detail (Day 1-4 交付)', () => {
   test.beforeEach(async ({ page }) => {
@@ -17,6 +30,7 @@ test.describe('Job Definition Wizard / Detail (Day 1-4 交付)', () => {
 
   test('Wizard 页可达 + 8 step 标题 + 默认表单可渲染', async ({ page, network }) => {
     await page.goto('/jobs/definitions/new')
+    await waitForRouteStable(page)
     await expectPageTitle(page, '新建作业向导')
 
     // 8 个 step 标题应可见 — 先等首个 step 节点挂载,避免读 DOM 时 wizard 还在 lazy 加载
@@ -42,24 +56,11 @@ test.describe('Job Definition Wizard / Detail (Day 1-4 交付)', () => {
 
   test('Detail 页直链可达 + 9 Tab 渲染', async ({ page, network }) => {
     // 用 API 直接抓一条 job id(管理员 admin 默认能看到 system / ta)
-    const candidates = ['ta', 'system']
-    let id: number | undefined
-    let tenantId: string | undefined
-    for (const t of candidates) {
-      const res = await page.request.get(
-        `/api/console/queries/job-definitions?tenantId=${t}&pageNo=1&pageSize=1`,
-      )
-      const body = await res.json().catch(() => null)
-      if (body?.items?.length) {
-        id = body.items[0].id
-        tenantId = t
-        break
-      }
-    }
-    if (!id || !tenantId) test.skip(true, 'no job definition available')
+    const job = await firstJobDefinition(page, ['ta', 'system'])
+    if (!job) test.skip(true, 'no job definition available')
 
-    await page.goto(`/jobs/definitions/${id}?tenantId=${tenantId}`)
-    await expectPageTitle(page, '作业详情')
+    await page.goto(`/jobs/definitions/${job.id}?tenantId=${job.tenantId}`)
+    await expectPageTitle(page, /作业详情/)
 
     // 详情加载完成后,任一 tab 标题应可见(Element Plus tabs 渲染为 div[role="tab"] 或 .el-tabs__item)
     const anyTab = page.locator('.el-tabs__item').first()
@@ -84,24 +85,11 @@ test.describe('Job Definition Wizard / Detail (Day 1-4 交付)', () => {
   // JobBundleImport.vue 已合并到系统模块,作业列表不再单独暴露入口。
 
   test('Detail 页 Tab 7 告警 lazy 加载 alert_routings 列表', async ({ page, network }) => {
-    const candidates = ['ta', 'system']
-    let id: number | undefined
-    let tenantId: string | undefined
-    for (const t of candidates) {
-      const res = await page.request.get(
-        `/api/console/queries/job-definitions?tenantId=${t}&pageNo=1&pageSize=1`,
-      )
-      const body = await res.json().catch(() => null)
-      if (body?.items?.length) {
-        id = body.items[0].id
-        tenantId = t
-        break
-      }
-    }
-    if (!id || !tenantId) test.skip(true, 'no job definition available')
+    const job = await firstJobDefinition(page, ['ta', 'system'])
+    if (!job) test.skip(true, 'no job definition available')
 
-    await page.goto(`/jobs/definitions/${id}?tenantId=${tenantId}`)
-    await expectPageTitle(page, '作业详情')
+    await page.goto(`/jobs/definitions/${job.id}?tenantId=${job.tenantId}`)
+    await expectPageTitle(page, /作业详情/)
 
     // 点 "告警" tab(lazy 加载会触发 listAlertRoutings 调用)
     const alertsTab = page.locator('.el-tabs__item').filter({ hasText: '告警' }).first()

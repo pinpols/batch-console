@@ -94,13 +94,18 @@
           </template>
         </el-dropdown>
         <!-- 当前租户：常驻醒目展示，不藏在悬浮面板里 -->
-        <div v-if="canSwitchTenant" class="tenant-chip tenant-chip--switch">
+        <div
+          v-if="canSwitchTenant"
+          class="tenant-chip tenant-chip--switch"
+          role="group"
+          :aria-label="t('nav.tenantSwitcherAria')"
+        >
           <el-icon class="tenant-chip__icon"><OfficeBuilding /></el-icon>
-          <span class="tenant-chip__label">{{ t('nav.tenant') }}</span>
+          <span class="tenant-chip__label">{{ t('nav.tenantCurrent') }}</span>
           <TenantSelect
             :model-value="tenantIdInput"
             size="small"
-            select-class="query-w-168"
+            select-class="tenant-chip__select"
             :placeholder="t('nav.switchTenantPlaceholder')"
             @update:model-value="handleTenantSwitch"
           />
@@ -119,7 +124,7 @@
         </div>
         <div v-else class="tenant-chip tenant-chip--readonly">
           <el-icon class="tenant-chip__icon"><OfficeBuilding /></el-icon>
-          <span class="tenant-chip__label">{{ t('nav.tenant') }}</span>
+          <span class="tenant-chip__label">{{ t('nav.tenantCurrent') }}</span>
           <span class="tenant-chip__value" :title="tenantIdInput">{{ tenantIdInput }}</span>
           <el-tooltip :content="t('nav.copyTenantId')" placement="bottom">
             <span
@@ -479,15 +484,43 @@
     gap: 6px;
     padding: 4px 10px;
     border-radius: var(--radius-content);
-    border: 1px solid color-mix(in srgb, var(--color-primary) 32%, var(--color-border) 68%);
-    background: color-mix(in srgb, var(--color-primary) 10%, var(--color-bg-card) 90%);
-    box-shadow: 0 1px 2px rgb(15 23 42 / 6%);
+    border: 1px solid color-mix(in srgb, var(--color-primary) 36%, var(--color-border) 64%);
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-primary) 13%, var(--color-bg-card) 87%),
+      color-mix(in srgb, var(--color-primary) 7%, var(--color-bg-card) 93%)
+    );
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 18%),
+      0 1px 2px rgb(15 23 42 / 6%);
     min-width: 0;
     flex-shrink: 0;
   }
 
   .tenant-chip--readonly {
     max-width: min(320px, 40vw);
+  }
+
+  .tenant-chip--switch :deep(.tenant-chip__select) {
+    width: 168px;
+  }
+
+  .tenant-chip--switch :deep(.el-select__wrapper) {
+    min-height: 26px;
+    border-radius: calc(var(--radius-content) - 2px);
+    background: color-mix(in srgb, var(--color-bg-card) 78%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-primary) 20%, transparent);
+  }
+
+  .tenant-chip--switch :deep(.el-select__wrapper:hover),
+  .tenant-chip--switch :deep(.el-select__wrapper.is-focused) {
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-primary) 45%, transparent);
+  }
+
+  .tenant-chip--switch :deep(.el-select__selected-item) {
+    font-size: 13px;
+    font-weight: 650;
+    color: var(--color-text-primary);
   }
 
   .tenant-chip__icon {

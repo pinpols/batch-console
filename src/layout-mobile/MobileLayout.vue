@@ -28,6 +28,7 @@
   import { useRoute } from 'vue-router'
   import MobileAppBar from './MobileAppBar.vue'
   import MobileTabBar from './MobileTabBar.vue'
+  import MInstallHint from './MInstallHint.vue'
   import MaintenanceBanner from '@/components/common/MaintenanceBanner.vue'
   import DegradationBanner from '@/components/common/DegradationBanner.vue'
   import SwUpdatePrompt from '@/components/common/SwUpdatePrompt.vue'

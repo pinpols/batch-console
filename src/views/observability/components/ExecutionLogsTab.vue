@@ -240,13 +240,36 @@
     return typeof v === 'string' ? v : String(v)
   }
 
+  function decodeHtmlEntities(value: string): string {
+    return value
+      .replace(/&quot;|&#34;/g, '"')
+      .replace(/&#39;|&apos;/g, "'")
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&amp;/g, '&')
+  }
+
+  function formatDetailSummary(value: unknown): string {
+    if (value == null) return ''
+    const decoded = decodeHtmlEntities(String(value))
+    try {
+      return JSON.stringify(JSON.parse(decoded))
+    } catch {
+      return decoded
+    }
+  }
+
   async function loadExecutionLogs() {
     await runLoadExec(async () => {
-      execRows.value = (await queryExecutionLogs(tenant.tenantId, {
+      const rows = (await queryExecutionLogs(tenant.tenantId, {
         traceId: execApplied.traceId.trim() || undefined,
         operationType: execApplied.operationType.trim() || undefined,
         operationResult: execApplied.result.trim() || undefined,
       })) as Record<string, unknown>[]
+      execRows.value = rows.map((row) => ({
+        ...row,
+        detailSummary: formatDetailSummary(row.detailSummary),
+      }))
     }).catch(() => {
       execRows.value = []
     })

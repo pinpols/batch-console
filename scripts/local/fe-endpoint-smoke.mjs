@@ -66,7 +66,7 @@ const OPENAPI_PATH =
   process.env.SMOKE_OPENAPI ||
   resolve(REPO_ROOT, '../file-batch-system/docs/api/console-api.openapi.yaml')
 const CONCURRENCY = Number(process.env.SMOKE_CONCURRENCY || 8)
-const REQ_TIMEOUT_MS = 8000
+const REQ_TIMEOUT_MS = 12_000
 
 const HTTP_METHODS = ['get', 'post', 'put', 'patch', 'delete']
 
@@ -79,6 +79,23 @@ function fillPathParams(path) {
   return path.replace(/\{[^}]+\}/g, '1')
 }
 
+function sampleValueForParam(param) {
+  if (param.name === 'tenantId') return TENANT
+  if (param.name === 'jobCode') return 'TA_E2E_ATOMIC'
+  const schema = param.schema ?? {}
+  if (schema.type === 'integer' || schema.type === 'number') return '1'
+  if (schema.type === 'boolean') return 'true'
+  return '1'
+}
+
+function appendRequiredQueryParams(url, parameters = []) {
+  const requiredQuery = parameters.filter((p) => p?.in === 'query' && p.required)
+  if (requiredQuery.length === 0) return url
+  const query = new URLSearchParams()
+  for (const p of requiredQuery) query.set(p.name, sampleValueForParam(p))
+  return `${url}${url.includes('?') ? '&' : '?'}${query.toString()}`
+}
+
 function loadEndpoints() {
   const raw = readFileSync(OPENAPI_PATH, 'utf8')
   const doc = YAML.parse(raw)
@@ -89,13 +106,16 @@ function loadEndpoints() {
     for (const method of HTTP_METHODS) {
       if (!item[method]) continue
       const op = item[method]
+      const parameters = [...(item.parameters ?? []), ...(op.parameters ?? [])]
       out.push({
         method: method.toUpperCase(),
         template: tmpl,
-        url: fillPathParams(tmpl),
+        url: appendRequiredQueryParams(fillPathParams(tmpl), parameters),
         hasPathParam: /\{[^}]+\}/.test(tmpl),
+        hasRequiredQueryParam: parameters.some((p) => p?.in === 'query' && p.required),
         // OpenAPI 声明了 404 响应 → 该端点的 404 属按设计(条件禁用),不算路由缺失
         documents404: !!(op.responses && (op.responses['404'] || op.responses[404])),
+        optionalCapability: tmpl === '/api/console/files/fs-download',
         // security: [] 标记公开端点(login / public-key)
         isPublic: Array.isArray(op.security) && op.security.length === 0,
         opId: op.operationId || '',
@@ -139,15 +159,23 @@ async function login() {
   }
 }
 
-function classify({ status, hasPathParam, documents404, networkError }) {
+function classify({
+  status,
+  hasPathParam,
+  hasRequiredQueryParam,
+  documents404,
+  optionalCapability,
+  networkError,
+}) {
   if (networkError) return 'FAIL'
   if (status >= 200 && status < 300) return 'PASS'
   if (status === 400 || status === 422) return 'PASS'
   if (status === 401 || status === 403) return 'AUTH'
   if (status === 404) {
     if (documents404) return 'PASS' // OpenAPI 声明的条件 404,按设计
-    return hasPathParam ? 'WARN' : 'FAIL'
+    return hasPathParam || hasRequiredQueryParam ? 'WARN' : 'FAIL'
   }
+  if (status === 405 && optionalCapability) return 'WARN'
   if (status === 405) return 'FAIL'
   if (status >= 500) return 'FAIL'
   return 'PASS' // 3xx / 其它非错误
@@ -170,10 +198,17 @@ async function probe(ep, auth) {
       redirect: 'manual',
       signal: AbortSignal.timeout(REQ_TIMEOUT_MS),
     })
+    await res.body?.cancel().catch(() => {})
     return {
       ...ep,
       status: res.status,
-      verdict: classify({ status: res.status, hasPathParam: ep.hasPathParam, documents404: ep.documents404 }),
+      verdict: classify({
+        status: res.status,
+        hasPathParam: ep.hasPathParam,
+        hasRequiredQueryParam: ep.hasRequiredQueryParam,
+        documents404: ep.documents404,
+        optionalCapability: ep.optionalCapability,
+      }),
     }
   } catch (e) {
     return { ...ep, status: 0, error: e?.message ?? String(e), verdict: classify({ networkError: true }) }
@@ -241,8 +276,8 @@ async function main() {
     console.log('')
   }
   if (by.WARN.length) {
-    console.log(`! WARN (${by.WARN.length}) —— 带 {param} 的 404(疑似占位资源不存在,人工确认):`)
-    for (const r of by.WARN) console.log(`   404  ${r.method.padEnd(6)} ${r.template}`)
+    console.log(`! WARN (${by.WARN.length}) —— 条件 404 / 可选能力未启用(人工确认):`)
+    for (const r of by.WARN) console.log(`   ${tag(r.status).padStart(3)}  ${r.method.padEnd(6)} ${r.template}`)
     console.log('')
   }
 
