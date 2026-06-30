@@ -876,6 +876,27 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/console/ops/batch-day-replay/sessions/preview': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * ADR-020 批次日重放影响预览（只读）
+     * @description 转发到 orchestrator `POST /internal/orchestrator/batch-day-replay/sessions/preview`。
+     *     复用 submit 的候选解析和 scope 校验，但不创建 session / entry，不触发审批；用于提交前确认会重跑哪些 job、影响哪些 result_version。
+     */
+    post: operations['previewBatchDayReplayImpact']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/console/ops/batch-day-replay/sessions/{sessionId}/approve': {
     parameters: {
       query?: never
@@ -6568,6 +6589,53 @@ export interface components {
       autoApprove?: boolean
       traceId?: string
     }
+    /** @description ADR-020 批次日重放影响预览；只读解析候选，不创建 session。 */
+    BatchDayReplayPreview: {
+      tenantId: string
+      calendarCode: string
+      /** Format: date */
+      bizDate: string
+      /** @enum {string} */
+      scope: 'ALL' | 'ALL_FAILED' | 'SUBSET_JOB_CODES' | 'OUTPUTS_ONLY'
+      /** @enum {string} */
+      resultPolicy: 'CREATE_NEW_VERSION' | 'KEEP_BOTH' | 'MANUAL_CONFIRM_EFFECTIVE'
+      /** @enum {string} */
+      configVersionPolicy: 'USE_ORIGINAL_CONFIG' | 'USE_CURRENT_CONFIG' | 'USE_SPECIFIC_VERSION'
+      /** Format: int32 */
+      configVersion?: number | null
+      /** Format: int32 */
+      totalCount: number
+      entries: components['schemas']['BatchDayReplayPreviewEntry'][]
+      resultVersionImpacts: components['schemas']['BatchDayReplayResultVersionImpact'][]
+      warnings: string[]
+    }
+    BatchDayReplayPreviewEntry: {
+      jobCode: string
+      /** Format: int64 */
+      sourceInstanceId?: number | null
+      /** Format: int64 */
+      resultVersionId?: number | null
+      /** @enum {string} */
+      action: 'RERUN_INSTANCE' | 'PROMOTE_RESULT_VERSION'
+      businessKey: string
+    }
+    BatchDayReplayResultVersionImpact: {
+      businessKey: string
+      /** Format: int64 */
+      sourceInstanceId?: number | null
+      /** Format: int64 */
+      resultVersionId?: number | null
+      /** @enum {string} */
+      action: 'CREATE_NEW_RESULT_VERSION' | 'PROMOTE_EXISTING_VERSION'
+      /** @enum {string} */
+      resultPolicy: 'CREATE_NEW_VERSION' | 'KEEP_BOTH' | 'MANUAL_CONFIRM_EFFECTIVE'
+    }
+    CommonResponseBatchDayReplayPreview: {
+      success: boolean
+      code: string
+      message: string
+      data: components['schemas']['BatchDayReplayPreview']
+    }
     /** @description ADR-026 演练计划请求 */
     DryRunPlanRequest: {
       tenantId: string
@@ -10126,6 +10194,30 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['CommonResponseObject']
+        }
+      }
+    }
+  }
+  previewBatchDayReplayImpact: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['BatchDayReplaySubmitRequest']
+      }
+    }
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseBatchDayReplayPreview']
         }
       }
     }
