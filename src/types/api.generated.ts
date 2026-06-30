@@ -969,6 +969,29 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/console/asset-partitions/readiness': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * 查询作业账期的资产分区就绪明细
+     * @description Console BFF 转发到 orchestrator `GET /internal/readiness/job`。
+     *     返回 readiness 裁决及其命中的 EFFECTIVE asset_partition 明细，用于前端 drill-down 展示
+     *     `ready/reason/assetCode/bizDate/partitionKey/businessKey/freshnessStatus/versionNo/jobInstanceId/payloadStorage/payloadRef`。
+     *     Console 只负责租户边界校验与统一响应包装，裁决语义以 orchestrator 为准。
+     */
+    get: operations['getAssetPartitionReadiness']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/console/result-versions/effective': {
     parameters: {
       query?: never
@@ -4724,6 +4747,23 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/console/file-templates/mapping-draft': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Generate file template mapping draft */
+    post: operations['draftFileTemplateMapping']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/console/file-templates/{id}': {
     parameters: {
       query?: never
@@ -6062,6 +6102,46 @@ export interface components {
     CommonResponseObject: components['schemas']['CommonResponseBase'] & {
       data?: unknown
     }
+    /** @description 作业账期 readiness 裁决及命中的 EFFECTIVE asset_partition 快照。 */
+    AssetPartitionReadiness: {
+      /** @description 该 jobCode 在 bizDate 是否满足依赖就绪条件。 */
+      ready: boolean
+      /** @description 稳定原因码，例如 READY / UPSTREAM_NOT_READY。 */
+      reason?: string
+      /** @description 命中的资产编码；未就绪或尚未产出时为空。 */
+      assetCode?: string | null
+      /**
+       * Format: date
+       * @description 被检查的业务日期。
+       */
+      bizDate?: string | null
+      /** @description 资产分区键，通常为 bizDate 或账期派生键。 */
+      partitionKey?: string | null
+      /** @description result_version 业务键，例如 job:{jobCode}:{bizDate}。 */
+      businessKey?: string | null
+      /** @description asset_partition 当前新鲜度状态，EFFECTIVE 表示可被下游读取。 */
+      freshnessStatus?: string | null
+      /**
+       * Format: int32
+       * @description 命中的 result_version 版本号。
+       */
+      versionNo?: number | null
+      /**
+       * Format: int64
+       * @description 产出该 EFFECTIVE 分区的 job_instance id。
+       */
+      jobInstanceId?: number | null
+      /** @description payload 存储类型，例如 JSON / OBJECT_STORE / TABLE。 */
+      payloadStorage?: string | null
+      /** @description payload 引用地址或对象键。 */
+      payloadRef?: string | null
+    }
+    CommonResponseAssetPartitionReadiness: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['AssetPartitionReadiness']
+    }
+    CommonResponseFileTemplateMappingDraftResponse: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['FileTemplateMappingDraftResponse']
+    }
     /** @description 工作流 DAG 静态校验的单条发现条目。`nodeCode` 与 `edgeId` 至多一个非空。 */
     DagValidationFinding: {
       /** @description 规则码，例如 MISSING_START / CYCLE_DETECTED / JOB_REF_MISSING */
@@ -6961,6 +7041,8 @@ export interface components {
       /** Format: int32 */
       version?: number
       description?: string
+      loadTargetRef?: string
+      exportDataRef?: string
     }
     /** @description 更新文件模板(字段可选)。与 BE Java DTO `FileTemplateUpdateRequest` 对齐。 */
     FileTemplateUpdateRequest: {
@@ -7013,6 +7095,41 @@ export interface components {
       description?: string
       loadTargetRef?: string
       exportDataRef?: string
+    }
+    /** @description 文件模板字段映射草案中的单字段输入。 */
+    FileTemplateMappingDraftField: {
+      sourceColumn?: string
+      targetColumn?: string
+      header?: string
+      type?: string
+      required?: boolean
+      persist?: boolean
+      format?: string
+    }
+    /** @description 文件模板映射草案请求。把向导式字段输入转换成现有 field_mappings / query_param_schema JSON。 */
+    FileTemplateMappingDraftRequest: {
+      tenantId?: string
+      /**
+       * @description 缺省按 IMPORT 生成。
+       * @enum {string}
+       */
+      direction?: 'IMPORT' | 'EXPORT'
+      schemaName?: string
+      tableName?: string
+      tenantColumn?: string
+      conflictColumns?: string[]
+      standardAuditBindings?: boolean
+      defaultQuerySql?: string
+      fields?: components['schemas']['FileTemplateMappingDraftField'][]
+    }
+    /** @description 文件模板字段映射草案。前端可直接带入 FileTemplateCreate/UpdateRequest。 */
+    FileTemplateMappingDraftResponse: {
+      /** @enum {string} */
+      direction?: 'IMPORT' | 'EXPORT'
+      fieldMappingsJson?: string
+      queryParamSchemaJson?: string
+      defaultQuerySql?: string | null
+      warnings?: string[]
     }
     /** @description 创建文件渠道。与 BE Java DTO `FileChannelCreateRequest` 对齐。 */
     FileChannelCreateRequest: {
@@ -7866,9 +7983,13 @@ export interface components {
       /** Format: int32 */
       maxRunningJobs: number
       /** Format: int32 */
+      maxRunningPartitions: number
+      /** Format: int32 */
       burstLimit: number
       /** Format: int32 */
       effectiveMaxRunningJobs: number
+      /** Format: int32 */
+      effectiveMaxRunningPartitions: number
       quotaResetPolicy: string
       /** Format: int32 */
       quotaBurstPeakBorrowed: number
@@ -7882,6 +8003,39 @@ export interface components {
       groupSharedMaxRunningJobs: number
       /** Format: int64 */
       activeJobs: number
+      /** Format: int64 */
+      createdPartitions: number
+      /** Format: int64 */
+      waitingPartitions: number
+      /** Format: int64 */
+      readyPartitions: number
+      /** Format: int64 */
+      runningPartitions: number
+      /** Format: int64 */
+      retryingPartitions: number
+      /** Format: int64 */
+      queuedPartitions: number
+      /** Format: int64 */
+      activePartitions: number
+      /** Format: int64 */
+      oldestWaitingSeconds: number
+      /**
+       * Format: int32
+       * @description 当前租户内该队列 WAITING partition 占全部 WAITING partition 的千分比。
+       */
+      tenantWaitingSharePermille: number
+      /**
+       * Format: int32
+       * @description activePartitions / maxRunningPartitions 的千分比；无分区上限时为 0。
+       */
+      partitionSaturationPermille: number
+      /** @enum {string} */
+      bottleneckReason:
+        | 'NONE'
+        | 'QUEUE_JOB_LIMIT'
+        | 'QUEUE_PARTITION_LIMIT'
+        | 'NO_ONLINE_WORKER'
+        | 'WAITING_DISPATCH_BACKLOG'
     }
     ConsoleSchedulerWorkerLoadSnapshot: {
       workerCode: string
@@ -10070,6 +10224,30 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['CommonResponseObjectArray']
+        }
+      }
+    }
+  }
+  getAssetPartitionReadiness: {
+    parameters: {
+      query: {
+        tenantId?: string
+        jobCode: string
+        bizDate: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseAssetPartitionReadiness']
         }
       }
     }
@@ -16248,6 +16426,32 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['CommonResponseObject']
+        }
+      }
+    }
+  }
+  draftFileTemplateMapping: {
+    parameters: {
+      query?: never
+      header: {
+        'Idempotency-Key': components['parameters']['IdempotencyKeyHeader']
+      }
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['FileTemplateMappingDraftRequest']
+      }
+    }
+    responses: {
+      /** @description Generated mapping JSON draft */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseFileTemplateMappingDraftResponse']
         }
       }
     }
