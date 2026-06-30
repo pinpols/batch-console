@@ -5067,6 +5067,30 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/console/ops/cluster-diagnostic/instances/{id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Diagnose why one job instance is stuck
+     * @description 只读诊断单个 job_instance 的卡住原因。返回 `healthy`、`instance` 摘要、`summary`
+     *     聚合计数以及 `findings[]`。每条 finding 包含 `severity`、机器可读 `reasonCode`、
+     *     人读 `message`、`suggestedActions[]` 和可扩展 `evidence`。
+     *     当前覆盖:活跃实例无 partition/task、终态实例仍有活跃子节点、workerGroup 无在线 worker、
+     *     活跃任务 worker/心跳异常、实例相关 outbox 事件未终结。
+     */
+    get: operations['diagnoseJobInstance']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/console/tenants': {
     parameters: {
       query?: never
@@ -17018,6 +17042,30 @@ export interface operations {
     requestBody?: never
     responses: {
       /** @description Terminal children health */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseObject']
+        }
+      }
+    }
+  }
+  diagnoseJobInstance: {
+    parameters: {
+      query?: {
+        tenantId?: components['parameters']['TenantIdQuery']
+      }
+      header?: never
+      path: {
+        id: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Instance stuck diagnosis */
       200: {
         headers: {
           [name: string]: unknown
