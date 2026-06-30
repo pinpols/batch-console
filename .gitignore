@@ -39,6 +39,7 @@ e2e/.auth/
 
 # Claude Code 本地运行时状态
 .claude/
+.codex-audit/
 test-results-full/
 
 # e2e 用的 Excel fixture：seed 文件权威源在后端仓库（file-batch-system/

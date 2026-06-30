@@ -190,6 +190,28 @@ const routes: RouteRecordRaw[] = [
         },
       },
       {
+        path: 'ops/capacity-profile',
+        name: 'ops-capacity-profile',
+        component: () => import('@/views/ops/CapacityProfile.vue'),
+        meta: {
+          title: '容量画像',
+          description: '按租户、作业或 Worker 聚合运行耗时、吞吐和文件处理量。',
+          activeMenu: '/ops/capacity-profile',
+          minRole: 'VIEWER',
+        },
+      },
+      {
+        path: 'ops/asset-freshness',
+        name: 'ops-asset-freshness',
+        component: () => import('@/views/ops/AssetFreshnessPolicies.vue'),
+        meta: {
+          title: '资产新鲜度策略',
+          description: '管理 JOB asset freshness SLA 策略,驱动缺失和过期告警。',
+          activeMenu: '/ops/asset-freshness',
+          minRole: 'OPERATOR',
+        },
+      },
+      {
         path: 'system/atomic-task-types',
         name: 'atomic-task-types',
         component: () => import('@/views/system/AtomicTaskTypeCenter.vue'),
@@ -452,6 +474,17 @@ const routes: RouteRecordRaw[] = [
           title: 'Trace 诊断',
           description: '按 traceId 跨域聚合查询(作业/工作流/文件/审计/告警/Outbox 等)',
           activeMenu: '/observability/trace',
+          minRole: 'VIEWER',
+        },
+      },
+      {
+        path: 'observability/lineage',
+        name: 'observability-lineage',
+        component: () => import('@/views/observability/LineageEvidence.vue'),
+        meta: {
+          title: '血缘证据',
+          description: '按 result_version 或 businessKey 查询证据链与资产分区就绪状态。',
+          activeMenu: '/observability/lineage',
           minRole: 'VIEWER',
         },
       },

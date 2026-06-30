@@ -141,8 +141,70 @@
           </span>
         </el-form-item>
       </el-form>
+
+      <div v-if="preview" class="preview-panel">
+        <div class="preview-panel__head">
+          <div>
+            <div class="preview-panel__title">{{ t('batchDayReplay.previewTitle') }}</div>
+            <div class="preview-panel__sub">
+              {{
+                t('batchDayReplay.previewSummary', {
+                  total: preview.totalCount,
+                  result: preview.resultVersionImpacts.length,
+                  asset: preview.assetPartitionImpacts.length,
+                  dispatch: preview.dispatchImpacts.length,
+                })
+              }}
+            </div>
+          </div>
+          <el-tag size="small" effect="plain">{{ preview.scope }}</el-tag>
+        </div>
+        <el-alert
+          v-if="preview.warnings.length"
+          type="warning"
+          show-icon
+          :closable="false"
+          class="preview-warning"
+        >
+          <template #default>
+            <div v-for="w in preview.warnings" :key="w">{{ w }}</div>
+          </template>
+        </el-alert>
+        <el-table
+          :data="preview.entries.slice(0, 8)"
+          size="small"
+          border
+          :empty-text="t('common.noData')"
+        >
+          <el-table-column prop="jobCode" :label="t('batchDayReplay.colJobCode')" min-width="160" />
+          <el-table-column
+            prop="action"
+            :label="t('batchDayReplay.previewColAction')"
+            width="180"
+          />
+          <el-table-column
+            prop="businessKey"
+            :label="t('batchDayReplay.previewColBusinessKey')"
+            min-width="220"
+            show-overflow-tooltip
+          />
+          <el-table-column
+            prop="sourceInstanceId"
+            :label="t('batchDayReplay.previewColSourceInstance')"
+            width="140"
+          />
+          <el-table-column
+            prop="resultVersionId"
+            :label="t('batchDayReplay.previewColResultVersion')"
+            width="140"
+          />
+        </el-table>
+      </div>
       <template #footer>
         <el-button @click="submitDrawerOpen = false">{{ t('common.cancel') }}</el-button>
+        <el-button :loading="previewing" @click="doPreview">
+          {{ t('batchDayReplay.previewBtn') }}
+        </el-button>
         <el-button type="primary" :loading="submitting" @click="doSubmit">
           {{ t('batchDayReplay.submitConfirm') }}
         </el-button>
@@ -249,7 +311,7 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, reactive, computed, onMounted } from 'vue'
+  import { ref, reactive, computed, onMounted, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
   import { confirmDanger } from '@/composables/useDangerConfirm'
@@ -262,6 +324,7 @@
     type BatchDayReplaySession,
     type BatchDayReplayEntry,
     type BatchDayReplaySubmitRequest,
+    type BatchDayReplayPreview,
   } from '@/api/batchDayReplay'
   import { useTenantStore } from '@/stores/tenant'
   import { useAuthStore } from '@/stores/auth'
@@ -293,6 +356,26 @@
   })
   const jobCodesText = ref('')
   const versionIdsText = ref('')
+  const preview = ref<BatchDayReplayPreview | null>(null)
+  const previewing = ref(false)
+
+  watch(
+    () => [
+      submitForm.calendarCode,
+      submitForm.bizDate,
+      submitForm.scope,
+      submitForm.resultPolicy,
+      submitForm.configVersionPolicy,
+      submitForm.configVersion,
+      submitForm.reason,
+      submitForm.autoApprove,
+      jobCodesText.value,
+      versionIdsText.value,
+    ],
+    () => {
+      preview.value = null
+    },
+  )
 
   const detailDrawerOpen = ref(false)
   const currentSession = ref<BatchDayReplaySession | null>(null)
@@ -346,38 +429,59 @@
     return undefined
   }
 
-  async function doSubmit() {
+  function buildSubmitRequest(): BatchDayReplaySubmitRequest | null {
     if (!submitForm.bizDate || !submitForm.reason.trim()) {
       ElMessage.warning(t('batchDayReplay.missingRequired'))
-      return
+      return null
     }
+    const req: BatchDayReplaySubmitRequest = { ...submitForm, tenantId: tenant.tenantId }
     if (submitForm.scope === 'SUBSET_JOB_CODES') {
-      submitForm.jobCodes = jobCodesText.value
+      req.jobCodes = jobCodesText.value
         .split(/[\s,]+/)
         .map((s) => s.trim())
         .filter(Boolean)
-      if (submitForm.jobCodes.length === 0) {
+      if (req.jobCodes.length === 0) {
         ElMessage.warning(t('batchDayReplay.missingJobCodes'))
-        return
+        return null
       }
     } else {
-      submitForm.jobCodes = undefined
+      req.jobCodes = undefined
     }
     if (submitForm.scope === 'OUTPUTS_ONLY') {
-      submitForm.versionIds = versionIdsText.value
+      req.versionIds = versionIdsText.value
         .split(/[\s,]+/)
         .map((s) => Number(s.trim()))
         .filter((n) => !Number.isNaN(n) && n > 0)
-      if (submitForm.versionIds.length === 0) {
+      if (req.versionIds.length === 0) {
         ElMessage.warning(t('batchDayReplay.missingVersionIds'))
-        return
+        return null
       }
     } else {
-      submitForm.versionIds = undefined
+      req.versionIds = undefined
     }
+    return req
+  }
+
+  async function doPreview() {
+    const req = buildSubmitRequest()
+    if (!req) return
+    previewing.value = true
+    try {
+      preview.value = await batchDayReplayApi.preview(req)
+      ElMessage.success(t('batchDayReplay.previewOk'))
+    } catch (err) {
+      ElMessage.error(err instanceof Error ? err.message : String(err))
+    } finally {
+      previewing.value = false
+    }
+  }
+
+  async function doSubmit() {
+    const req = buildSubmitRequest()
+    if (!req) return
     submitting.value = true
     try {
-      const session = await batchDayReplayApi.submit({ ...submitForm, tenantId: tenant.tenantId })
+      const session = await batchDayReplayApi.submit(req)
       sessions.value = [session, ...sessions.value]
       ElMessage.success(t('batchDayReplay.submitOk'))
       submitDrawerOpen.value = false
@@ -396,6 +500,7 @@
 
   function onSubmitClose() {
     submitDrawerOpen.value = false
+    preview.value = null
   }
 
   async function openDetail(row: BatchDayReplaySession) {
@@ -505,5 +610,37 @@
     color: var(--color-text-secondary);
     font-size: 12px;
     margin-left: 8px;
+  }
+
+  .preview-panel {
+    margin-top: 16px;
+    padding: 12px;
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-content);
+    background: var(--color-bg-subtle);
+  }
+
+  .preview-panel__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+
+  .preview-panel__title {
+    font-size: 14px;
+    font-weight: 650;
+    color: var(--color-text-primary);
+  }
+
+  .preview-panel__sub {
+    margin-top: 4px;
+    font-size: 12px;
+    color: var(--color-text-secondary);
+  }
+
+  .preview-warning {
+    margin-bottom: 10px;
   }
 </style>

@@ -120,6 +120,10 @@ export const pageMetaByPath = {
     description:
       '按 traceId 跨域聚合查询(作业实例/工作流运行/文件/审计/执行日志/告警/Outbox/死信),0 命中时引导去日志/链路平台。',
   },
+  '/observability/lineage': {
+    title: '血缘证据',
+    description: '按 result_version 或 businessKey 查询证据链,同时校验资产分区就绪状态。',
+  },
   '/observability/audits': {
     title: '文件审计',
     description: '文件相关操作的审计(import / export / dispatch / receipt)。',
@@ -228,6 +232,14 @@ export const pageMetaByPath = {
   '/ops/worker-fingerprints': {
     title: 'Worker 指纹看板',
     description: '按 build/sdk 维度聚合本租户活跃 worker,辅助 SDK 灰度切流与故障定位。',
+  },
+  '/ops/capacity-profile': {
+    title: '容量画像',
+    description: '按租户、作业或 Worker 聚合运行耗时、吞吐和文件处理量。',
+  },
+  '/ops/asset-freshness': {
+    title: '资产新鲜度策略',
+    description: '管理 JOB asset freshness SLA 策略,驱动缺失和过期告警。',
   },
   '/system/atomic-task-types': {
     title: '原子节点配置中心',
