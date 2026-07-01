@@ -64,9 +64,9 @@
         show-overflow-tooltip
       />
       <el-table-column
-        prop="channelId"
+        prop="channelCode"
         :label="t('notificationRulesTab.colChannelId')"
-        width="100"
+        width="120"
       />
       <el-table-column prop="enabled" :label="t('notificationCommon.colEnabled')" width="80">
         <template #default="{ row }">
@@ -114,18 +114,18 @@
             :placeholder="t('notificationRulesTab.eventTypesPlaceholder')"
           />
         </el-form-item>
-        <el-form-item :label="t('notificationRulesTab.fieldChannelId')" prop="channelId">
+        <el-form-item :label="t('notificationRulesTab.fieldChannelId')" prop="channelCode">
           <el-select
-            v-model="ruleForm.channelId"
+            v-model="ruleForm.channelCode"
             class="query-w-full"
             filterable
             :placeholder="t('notificationRulesTab.channelIdPlaceholder')"
           >
             <el-option
               v-for="c in channelOptions"
-              :key="c.id"
-              :label="`${c.code}${c.name ? ' / ' + c.name : ''} (#${c.id})`"
-              :value="c.id"
+              :key="c.code"
+              :label="`${c.code}${c.name ? ' / ' + c.name : ''}`"
+              :value="c.code"
             />
           </el-select>
         </el-form-item>
@@ -188,8 +188,8 @@
   const hasActiveRuleFilters = computed(
     () => !!(ruleFilterApplied.keyword.trim() || ruleFilterApplied.enabled !== undefined),
   )
-  const ruleForm = reactive({ ruleName: '', eventTypes: '', channelId: 1, enabled: true })
-  // 通知渠道下拉源:避免手输不存在的 channelId 形成悬挂引用
+  const ruleForm = reactive({ ruleName: '', eventTypes: '', channelCode: '', enabled: true })
+  // 通知渠道下拉源:避免手输不存在的 channelCode 形成悬挂引用
   const channelOptions = ref<Array<{ id: number; code: string; name: string }>>([])
   async function loadChannelOptions() {
     try {
@@ -201,7 +201,7 @@
           code: String(c.channelCode ?? ''),
           name: String(c.channelName ?? ''),
         }))
-        .filter((c) => c.id > 0)
+        .filter((c) => !!c.code)
     } catch {
       channelOptions.value = []
     }
@@ -212,7 +212,7 @@
   const ruleFormRules: FormRules = {
     ruleName: [r.required(t('notificationRulesTab.ruleName')), r.maxLength(128)],
     eventTypes: [r.required(t('notificationRulesTab.ruleEventTypes'))],
-    channelId: [r.required(t('notificationRulesTab.ruleChannelId'), 'change')],
+    channelCode: [r.required(t('notificationRulesTab.ruleChannelId'), 'change')],
   }
 
   async function loadRules() {
@@ -232,7 +232,7 @@
     ruleEditingId.value = null
     ruleForm.ruleName = ''
     ruleForm.eventTypes = ''
-    ruleForm.channelId = 1
+    ruleForm.channelCode = ''
     ruleForm.enabled = true
     ruleFormVisible.value = true
     ruleDirty.markPristine()
@@ -242,7 +242,7 @@
     ruleEditingId.value = Number(row.ruleId ?? row.id ?? 0) || null
     ruleForm.ruleName = String(row.ruleName ?? '')
     ruleForm.eventTypes = String(row.eventTypes ?? '')
-    ruleForm.channelId = Number(row.channelId ?? 1)
+    ruleForm.channelCode = String(row.channelCode ?? '')
     ruleForm.enabled = !!row.enabled
     ruleFormVisible.value = true
     ruleDirty.markPristine()
