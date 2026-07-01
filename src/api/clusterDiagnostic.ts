@@ -19,3 +19,13 @@ export function getWorkerConsistency(tenantId: string) {
 export function getOutboxHealth(tenantId: string) {
   return get<unknown>('/api/console/ops/cluster-diagnostic/outbox', { tenantId })
 }
+
+/** GET /api/console/ops/cluster-diagnostic/instances/{id} */
+export function diagnoseJobInstance(instanceId: number, tenantId: string) {
+  return get<Record<string, unknown>>(
+    `/api/console/ops/cluster-diagnostic/instances/${instanceId}`,
+    {
+      tenantId,
+    },
+  )
+}

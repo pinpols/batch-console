@@ -23,6 +23,9 @@
         >
           {{ t('monitor.detailCancel') }}
         </el-button>
+        <el-button v-if="row" :loading="diagnosisLoading" @click="runDiagnosis">
+          {{ t('monitor.detailDiagnose') }}
+        </el-button>
         <PrintButton />
       </template>
     </PageHeader>
@@ -47,8 +50,8 @@
     <div v-if="row" class="detail-grid">
       <MetricCard
         :label="t('monitor.detailMetricInstanceNo')"
-        :value="row.instanceNo"
-        description="instanceNo"
+        :value="compactIdentifier(row.instanceNo)"
+        :description="row.instanceNo"
       />
       <MetricCard
         :label="t('monitor.detailMetricStatus')"
@@ -57,8 +60,8 @@
       />
       <MetricCard
         :label="t('monitor.detailMetricJobCode')"
-        :value="row.jobCode"
-        description="jobCode"
+        :value="compactIdentifier(row.jobCode, 18, 8)"
+        :description="row.jobCode"
       />
       <MetricCard
         :label="t('monitor.detailMetricBizDate')"
@@ -67,8 +70,8 @@
       />
       <MetricCard
         :label="t('monitor.detailMetricTrace')"
-        :value="row.traceId || '—'"
-        description="traceId"
+        :value="compactIdentifier(row.traceId)"
+        :description="row.traceId || 'traceId'"
       />
       <MetricCard
         :label="t('monitor.detailMetricQueue')"
@@ -125,27 +128,57 @@
             </el-descriptions-item>
           </el-descriptions>
           <div class="actions">
-            <el-button @click="goLogs">{{ t('monitor.detailGoLogs') }}</el-button>
-            <el-button type="warning" :loading="rerunLoading" @click="confirmRerun">
-              {{ t('monitor.detailRerunBtn') }}
-            </el-button>
-            <el-button
-              type="danger"
-              :loading="cancelLoading"
-              :disabled="isTerminal"
-              @click="confirmCancel"
-            >
-              {{ t('monitor.detailCancelBtn') }}
-            </el-button>
-            <el-button
-              type="danger"
-              :loading="terminateLoading"
-              :disabled="isTerminal"
-              @click="confirmTerminate"
-            >
-              {{ t('monitor.detailTerminateBtn') }}
-            </el-button>
+            <div class="action-group">
+              <el-button @click="goLogs">{{ t('monitor.detailGoLogs') }}</el-button>
+              <el-button :loading="diagnosisLoading" @click="runDiagnosis">
+                {{ t('monitor.detailDiagnose') }}
+              </el-button>
+            </div>
+            <div class="action-group">
+              <el-tooltip
+                :disabled="canRetryFailedPartitions"
+                :content="t('monitor.detailRetryFailedPartitionsDisabled')"
+                placement="top"
+              >
+                <span class="action-button-wrap">
+                  <el-button
+                    type="warning"
+                    :loading="retryFailedPartitionsLoading"
+                    :disabled="!canRetryFailedPartitions"
+                    @click="confirmRetryFailedPartitions"
+                  >
+                    {{ t('monitor.detailRetryFailedPartitions') }}
+                  </el-button>
+                </span>
+              </el-tooltip>
+              <el-button type="warning" :loading="rerunLoading" @click="confirmRerun">
+                {{ t('monitor.detailRerunBtn') }}
+              </el-button>
+            </div>
+            <div class="action-group action-group--danger">
+              <el-button
+                type="danger"
+                :loading="cancelLoading"
+                :disabled="isTerminal"
+                @click="confirmCancel"
+              >
+                {{ t('monitor.detailCancelBtn') }}
+              </el-button>
+              <el-button
+                type="danger"
+                :loading="terminateLoading"
+                :disabled="isTerminal"
+                @click="confirmTerminate"
+              >
+                {{ t('monitor.detailTerminateBtn') }}
+              </el-button>
+            </div>
           </div>
+        </SectionCard>
+
+        <SectionCard v-if="diagnosisResult">
+          <template #header>{{ t('monitor.detailDiagnosisSection') }}</template>
+          <JsonPreview :data="diagnosisResult" />
         </SectionCard>
 
         <SectionCard>
@@ -304,6 +337,16 @@
     <SectionCard v-else-if="!loading">
       <EmptyState :description="t('monitor.detailEmpty')" />
     </SectionCard>
+
+    <el-drawer
+      v-model="diagnosisDrawerOpen"
+      :title="t('monitor.detailDiagnosisSection')"
+      size="720px"
+      direction="rtl"
+    >
+      <JsonPreview v-if="diagnosisResult" :data="diagnosisResult" />
+      <EmptyState v-else :description="t('monitor.detailDiagnosisEmpty')" />
+    </el-drawer>
   </PageContainer>
 </template>
 
@@ -321,6 +364,7 @@
   const refresh = useRefreshAction()
   import { confirmDanger } from '@/composables/useDangerConfirm'
   import { showCreateSuccess } from '@/composables/useCreateSuccess'
+  import { diagnoseJobInstance } from '@/api/clusterDiagnostic'
   import { instanceApi } from '@/api/instance'
   import { createLogStream } from '@/api/stream'
   import { useTenantStore } from '@/stores/tenant'
@@ -345,12 +389,20 @@
   const rerunLoading = ref(false)
   const cancelLoading = ref(false)
   const terminateLoading = ref(false)
+  const diagnosisLoading = ref(false)
+  const retryFailedPartitionsLoading = ref(false)
+  const diagnosisDrawerOpen = ref(false)
+  const diagnosisResult = ref<Record<string, unknown> | null>(null)
   const row = ref<ConsoleJobInstanceResponse | null>(null)
 
   // 终态实例不能取消/终止(BE 会 409 STATE_CONFLICT「cannot transition from FAILED/SUCCESS...」)——
   // 按钮禁用,避免用户点了"没反应"(重跑不受此限,失败实例可重跑)。
   const TERMINAL_STATUSES = ['SUCCESS', 'FAILED', 'CANCELLED', 'CANCELED', 'TERMINATED']
   const isTerminal = computed(() => TERMINAL_STATUSES.includes(row.value?.instanceStatus ?? ''))
+  const RETRY_FAILED_PARTITION_STATUSES = ['FAILED', 'PARTIAL_FAILED', 'ERROR']
+  const canRetryFailedPartitions = computed(() =>
+    RETRY_FAILED_PARTITION_STATUSES.includes(row.value?.instanceStatus ?? ''),
+  )
 
   const activeTab = ref<'overview' | 'steps' | 'heartbeat' | 'recent'>('overview')
   const stepsLoading = ref(false)
@@ -381,6 +433,13 @@
   function formatStepTotalEta(s: ConsoleJobStepInstanceResponse): string {
     if (!isFileStageStep(s)) return '—'
     return '—'
+  }
+
+  function compactIdentifier(value: string | null | undefined, head = 14, tail = 8): string {
+    const text = value?.trim()
+    if (!text) return '—'
+    if (text.length <= head + tail + 3) return text
+    return `${text.slice(0, head)}...${text.slice(-tail)}`
   }
 
   const taskOptions = computed(() =>
@@ -524,6 +583,41 @@
       })
     } finally {
       rerunLoading.value = false
+    }
+  }
+
+  async function runDiagnosis() {
+    if (!Number.isFinite(instanceId.value)) return
+    diagnosisLoading.value = true
+    try {
+      diagnosisResult.value = await diagnoseJobInstance(instanceId.value, tenant.tenantId)
+      diagnosisDrawerOpen.value = true
+    } finally {
+      diagnosisLoading.value = false
+    }
+  }
+
+  async function confirmRetryFailedPartitions() {
+    const r = row.value
+    if (!r) return
+    try {
+      await confirmDanger({
+        verb: t('monitor.detailRetryFailedPartitions'),
+        target: t('monitor.detailRetryFailedPartitionsTarget', { no: r.instanceNo }),
+        consequence: t('monitor.detailRetryFailedPartitionsConsequence'),
+        confirmButtonText: t('common.confirm'),
+      })
+    } catch {
+      return
+    }
+    retryFailedPartitionsLoading.value = true
+    try {
+      diagnosisResult.value = await instanceApi.retryFailedPartitions(r.id, tenant.tenantId)
+      diagnosisDrawerOpen.value = true
+      ElMessage.success(t('monitor.detailRetryFailedPartitionsOk'))
+      await Promise.all([load(), loadSteps()])
+    } finally {
+      retryFailedPartitionsLoading.value = false
     }
   }
 
@@ -718,8 +812,26 @@
   .actions {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--page-block-gap);
+    gap: var(--space-sm) var(--page-block-gap);
     margin-top: var(--space-md);
+  }
+
+  .action-group {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+  }
+
+  .action-group :deep(.el-button + .el-button) {
+    margin-left: 0;
+  }
+
+  .action-group--danger {
+    margin-left: auto;
+  }
+
+  .action-button-wrap {
+    display: inline-flex;
   }
 
   .mono {

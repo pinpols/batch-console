@@ -81,6 +81,16 @@ export const instanceApi = {
       params: { tenantId },
     }),
 
+  /** POST /api/console/instances/{id}/partitions/retry-failed */
+  retryFailedPartitions: (instanceId: number, tenantId: string) =>
+    post<Record<string, unknown>>(
+      `/api/console/instances/${instanceId}/partitions/retry-failed`,
+      undefined,
+      {
+        params: { tenantId },
+      },
+    ),
+
   /** GET /api/console/queries/instances/batch-status */
   batchStatus: (tenantId: string, instanceNos: string[]) =>
     get<unknown>('/api/console/queries/instances/batch-status', { tenantId, instanceNos }),

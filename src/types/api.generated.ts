@@ -990,6 +990,28 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/console/capacity-profile': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * P2 容量画像 / cost profile 只读聚合
+     * @description Console BFF 转发到 orchestrator `GET /internal/orchestrator/capacity-profile`。
+     *     仅基于 BFS 热表聚合 tenant/job/worker 维度的耗时、任务数、文件字节数和 pipeline_progress 记录数，
+     *     用于容量画像和调参建议；不表达云账单、财务成本分摊或业务金额裁定。
+     */
+    get: operations['getCapacityProfile']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/console/asset-partitions/readiness': {
     parameters: {
       query?: never
@@ -1005,6 +1027,107 @@ export interface paths {
      *     Console 只负责租户边界校验与统一响应包装，裁决语义以 orchestrator 为准。
      */
     get: operations['getAssetPartitionReadiness']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/asset-freshness-policies': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * 查询 JOB asset freshness policy
+     * @description 管理 BFS 最小 asset freshness SLA 策略。当前只支持 `assetType=JOB`，
+     *     用于 orchestrator 扫描 `asset_freshness_policy` 并产生 `ASSET_FRESHNESS_MISSING/STALE`
+     *     告警；不扩展为数据目录、字段级 lineage 或通用治理平台。
+     */
+    get: operations['listAssetFreshnessPolicies']
+    put?: never
+    /** 创建或按 tenant/asset upsert JOB asset freshness policy */
+    post: operations['createAssetFreshnessPolicy']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/asset-freshness-policies/{id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** 查询单条 JOB asset freshness policy */
+    get: operations['getAssetFreshnessPolicy']
+    /** 按 id 更新 JOB asset freshness policy */
+    put: operations['updateAssetFreshnessPolicy']
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/asset-freshness-policies/{id}/enabled': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    /** 启用或停用 JOB asset freshness policy */
+    patch: operations['toggleAssetFreshnessPolicy']
+    trace?: never
+  }
+  '/api/console/lineage/result-versions/{id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * BFS lineage 最小证据链（按 result_version id）
+     * @description Console BFF 转发到 orchestrator `GET /internal/orchestrator/lineage/result-versions/{id}`。
+     *     返回 `resultVersion/jobInstance/pipelineInstances/fileRecords/dispatchRecords/coverage`。
+     *     范围限定为 BFS hot tables forensic 查询，不做字段级/记录级 lineage 或外部 catalog。
+     */
+    get: operations['getLineageEvidenceByResultVersion']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/lineage/effective': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * BFS lineage 最小证据链（按当前 EFFECTIVE businessKey）
+     * @description Console BFF 转发到 orchestrator `GET /internal/orchestrator/lineage/effective`。
+     *     先按 `businessKey` 解析当前 EFFECTIVE result_version，再返回 BFS hot-table 证据链。
+     */
+    get: operations['getLineageEvidenceByEffectiveBusinessKey']
     put?: never
     post?: never
     delete?: never
@@ -4458,6 +4581,23 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/console/instances/{id}/partitions/retry-failed': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Retry all failed partitions under one job instance */
+    post: operations['retryFailedJobInstancePartitions']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/console/instances/partitions/{id}/cancel': {
     parameters: {
       query?: never
@@ -6147,6 +6287,72 @@ export interface components {
     CommonResponseObject: components['schemas']['CommonResponseBase'] & {
       data?: unknown
     }
+    /** @description JOB asset freshness SLA 策略。只服务 readiness/freshness 告警，不表达数据目录或业务正确性裁定。 */
+    AssetFreshnessPolicy: {
+      /** Format: int64 */
+      id: number
+      tenantId: string
+      /** @description JOB 类型下等于 jobCode。 */
+      assetCode: string
+      /** @enum {string} */
+      assetType: 'JOB'
+      /**
+       * Format: time
+       * @description 该 JOB asset 在策略时区内每天应完成的本地时间。
+       */
+      expectedByLocalTime: string
+      /** @example Asia/Shanghai */
+      timezone: string
+      /** Format: int32 */
+      staleAfterSeconds: number
+      /** Format: int32 */
+      lookbackDays: number
+      /** @enum {string} */
+      severity: 'INFO' | 'WARN' | 'ERROR' | 'CRITICAL'
+      enabled: boolean
+      /** Format: date-time */
+      createdAt?: string | null
+      /** Format: date-time */
+      updatedAt?: string | null
+    }
+    AssetFreshnessPolicyUpsertRequest: {
+      assetCode: string
+      /**
+       * @default JOB
+       * @enum {string|null}
+       */
+      assetType: 'JOB'
+      /** Format: time */
+      expectedByLocalTime: string
+      /** @default Asia/Shanghai */
+      timezone: string
+      /**
+       * Format: int32
+       * @default 0
+       */
+      staleAfterSeconds: number | null
+      /**
+       * Format: int32
+       * @default 1
+       */
+      lookbackDays: number
+      /**
+       * @default WARN
+       * @enum {string|null}
+       */
+      severity: 'INFO' | 'WARN' | 'ERROR' | 'CRITICAL'
+      /** @default true */
+      enabled: boolean
+    }
+    AssetFreshnessPolicyToggleRequest: {
+      enabled: boolean
+    }
+    CommonResponseAssetFreshnessPolicy: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['AssetFreshnessPolicy']
+    }
+    CommonResponseAssetFreshnessPolicyList: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['AssetFreshnessPolicy'][]
+    }
     /** @description 作业账期 readiness 裁决及命中的 EFFECTIVE asset_partition 快照。 */
     AssetPartitionReadiness: {
       /** @description 该 jobCode 在 bizDate 是否满足依赖就绪条件。 */
@@ -6607,6 +6813,8 @@ export interface components {
       totalCount: number
       entries: components['schemas']['BatchDayReplayPreviewEntry'][]
       resultVersionImpacts: components['schemas']['BatchDayReplayResultVersionImpact'][]
+      assetPartitionImpacts: components['schemas']['BatchDayReplayAssetPartitionImpact'][]
+      dispatchImpacts: components['schemas']['BatchDayReplayDispatchImpact'][]
       warnings: string[]
     }
     BatchDayReplayPreviewEntry: {
@@ -6629,6 +6837,26 @@ export interface components {
       action: 'CREATE_NEW_RESULT_VERSION' | 'PROMOTE_EXISTING_VERSION'
       /** @enum {string} */
       resultPolicy: 'CREATE_NEW_VERSION' | 'KEEP_BOTH' | 'MANUAL_CONFIRM_EFFECTIVE'
+    }
+    BatchDayReplayAssetPartitionImpact: {
+      businessKey: string
+      assetCode: string
+      partitionKey: string
+      /** Format: int64 */
+      currentResultVersionId?: number | null
+      freshnessStatus: string
+    }
+    BatchDayReplayDispatchImpact: {
+      /** Format: int64 */
+      sourceInstanceId?: number | null
+      /** Format: int64 */
+      recordCount: number
+      /** Format: int64 */
+      sentCount: number
+      /** Format: int64 */
+      failedCount: number
+      /** Format: int64 */
+      pendingReceiptCount: number
     }
     CommonResponseBatchDayReplayPreview: {
       success: boolean
@@ -10344,6 +10572,34 @@ export interface operations {
       }
     }
   }
+  getCapacityProfile: {
+    parameters: {
+      query?: {
+        tenantId?: string
+        /** @description ISO-8601 起始时间；缺省为 to 前 24 小时。 */
+        from?: string
+        /** @description ISO-8601 结束时间；缺省为服务端当前时间。 */
+        to?: string
+        groupBy?: 'TENANT' | 'JOB' | 'WORKER'
+        limit?: number
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseObject']
+        }
+      }
+    }
+  }
   getAssetPartitionReadiness: {
     parameters: {
       query: {
@@ -10364,6 +10620,184 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['CommonResponseAssetPartitionReadiness']
+        }
+      }
+    }
+  }
+  listAssetFreshnessPolicies: {
+    parameters: {
+      query?: {
+        tenantId?: string
+        assetCode?: string
+        enabled?: boolean
+        limit?: number
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseAssetFreshnessPolicyList']
+        }
+      }
+    }
+  }
+  createAssetFreshnessPolicy: {
+    parameters: {
+      query?: {
+        tenantId?: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['AssetFreshnessPolicyUpsertRequest']
+      }
+    }
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseVoid']
+        }
+      }
+    }
+  }
+  getAssetFreshnessPolicy: {
+    parameters: {
+      query?: {
+        tenantId?: string
+      }
+      header?: never
+      path: {
+        id: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseAssetFreshnessPolicy']
+        }
+      }
+    }
+  }
+  updateAssetFreshnessPolicy: {
+    parameters: {
+      query?: {
+        tenantId?: string
+      }
+      header?: never
+      path: {
+        id: number
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['AssetFreshnessPolicyUpsertRequest']
+      }
+    }
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseVoid']
+        }
+      }
+    }
+  }
+  toggleAssetFreshnessPolicy: {
+    parameters: {
+      query?: {
+        tenantId?: string
+      }
+      header?: never
+      path: {
+        id: number
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['AssetFreshnessPolicyToggleRequest']
+      }
+    }
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseVoid']
+        }
+      }
+    }
+  }
+  getLineageEvidenceByResultVersion: {
+    parameters: {
+      query?: {
+        tenantId?: string
+      }
+      header?: never
+      path: {
+        id: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseObject']
+        }
+      }
+    }
+  }
+  getLineageEvidenceByEffectiveBusinessKey: {
+    parameters: {
+      query: {
+        tenantId?: string
+        businessKey: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseObject']
         }
       }
     }
@@ -15989,6 +16423,32 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['CommonResponseString']
+        }
+      }
+    }
+  }
+  retryFailedJobInstancePartitions: {
+    parameters: {
+      query: {
+        tenantId: string
+      }
+      header: {
+        'Idempotency-Key': components['parameters']['IdempotencyKeyHeader']
+      }
+      path: {
+        id: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseObject']
         }
       }
     }

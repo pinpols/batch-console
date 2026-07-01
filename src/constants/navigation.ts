@@ -133,6 +133,13 @@ export const navigationGroups: NavigationGroup[] = [
         icon: Search,
       },
       {
+        title: pageTitle('/observability/lineage'),
+        path: '/observability/lineage',
+        minRole: 'VIEWER',
+        icon: Connection,
+        hidden: true,
+      },
+      {
         title: pageTitle('/observability/alerts'),
         path: '/observability/alerts',
         minRole: 'VIEWER',
@@ -326,6 +333,20 @@ export const navigationGroups: NavigationGroup[] = [
         path: '/ops/worker-fingerprints',
         minRole: 'OPERATOR',
         icon: Cpu,
+        hidden: true,
+      },
+      {
+        title: pageTitle('/ops/capacity-profile'),
+        path: '/ops/capacity-profile',
+        minRole: 'VIEWER',
+        icon: PieChart,
+        hidden: true,
+      },
+      {
+        title: pageTitle('/ops/asset-freshness'),
+        path: '/ops/asset-freshness',
+        minRole: 'OPERATOR',
+        icon: Timer,
         hidden: true,
       },
       {

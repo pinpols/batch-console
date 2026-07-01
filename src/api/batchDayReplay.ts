@@ -11,6 +11,7 @@ import { get, post } from './client'
 import type { components } from '@/types/api.generated'
 
 export type BatchDayReplaySubmitRequest = components['schemas']['BatchDayReplaySubmitRequest']
+export type BatchDayReplayPreview = components['schemas']['BatchDayReplayPreview']
 export type BatchDayReplayScope = BatchDayReplaySubmitRequest['scope']
 export type ResultPolicy = NonNullable<BatchDayReplaySubmitRequest['resultPolicy']>
 export type ConfigVersionPolicy = NonNullable<BatchDayReplaySubmitRequest['configVersionPolicy']>
@@ -77,6 +78,14 @@ function unwrap<T>(env: InnerEnvelope<T> | null | undefined): T {
 }
 
 export const batchDayReplayApi = {
+  async preview(req: BatchDayReplaySubmitRequest): Promise<BatchDayReplayPreview> {
+    return unwrap(
+      await post<InnerEnvelope<BatchDayReplayPreview>>(
+        '/api/console/ops/batch-day-replay/sessions/preview',
+        req,
+      ),
+    )
+  },
   async submit(req: BatchDayReplaySubmitRequest): Promise<BatchDayReplaySession> {
     return unwrap(
       await post<InnerEnvelope<BatchDayReplaySession>>(
