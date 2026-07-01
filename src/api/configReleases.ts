@@ -10,12 +10,15 @@ export function listConfigReleases(tenantId: string) {
   return get<ConsoleConfigReleaseResponse[]>('/api/console/config/releases', { tenantId })
 }
 
-/** POST /api/console/config/releases — create a config release */
+/** POST /api/console/config/releases — create a config release
+ * 字段对齐后端 DTO `ConfigReleaseUpsertRequest`(configType/configKey/configName 必填)。 */
 export function createConfigRelease(body: {
   tenantId: string
-  configType?: string
-  configCode?: string
-  releaseNote?: string
+  configType: string
+  configKey: string
+  configName: string
+  configPayloadJson?: string
+  reason?: string
 }) {
   return post<number>('/api/console/config/releases', body)
 }
