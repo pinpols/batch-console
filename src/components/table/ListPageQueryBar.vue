@@ -149,13 +149,14 @@
     }
   }
 
-  /* 日期范围:占 2 个 grid 列;datetime 范围更长占 3 列 */
+  /* 日期范围要放下两个日期,统一占 2 列(datetime 也从 3 列收到 2 列,避免超长)。
+     普通字段仍是 1 列等宽;个别页面需更宽可显式 .query-span-2 / .query-span-3。 */
+  .query-form :deep(.el-form-item.query-span-2),
   .query-form :deep(.el-form-item:has(.el-date-editor--daterange)),
-  .query-form :deep(.el-form-item.query-span-2) {
+  .query-form :deep(.el-form-item:has(.el-date-editor--datetimerange)) {
     grid-column: span 2;
   }
 
-  .query-form :deep(.el-form-item:has(.el-date-editor--datetimerange)),
   .query-form :deep(.el-form-item.query-span-3) {
     grid-column: span 3;
   }
@@ -183,7 +184,7 @@
   }
 
   .query-form :deep(.dr-preset__select) {
-    flex: 0 0 110px;
+    flex: 0 0 92px;
   }
 
   .query-form :deep(.dr-preset .el-date-editor) {
@@ -196,29 +197,38 @@
     width: 100%;
   }
 
+  /* 固定标签宽度 → 同一栅格里输入框起点一致、等宽对齐(不再因标签长短参差) */
   .query-form :deep(.el-form-item__label) {
     color: var(--color-text-secondary);
     font-size: 13px;
     justify-content: flex-end;
     text-align: right;
     padding-right: 8px;
-    flex: 0 0 auto;
-    min-width: 64px;
+    flex: 0 0 84px;
+    width: 84px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .query-form :deep(.el-form-item__content) {
     flex: 1;
     min-width: 0;
+    /* 复位 query-w-* 设的固定 --el-input-width,让筛选栏内控件统一填满栅格单元 */
+    --el-input-width: 100%;
   }
 
-  /* 输入控件默认填满 form-item content 区,query-w-* 类可覆盖 */
+  /* 统一:筛选栏内所有输入 / 下拉 / 时间选择 / 数字 / 级联控件一律填满栅格单元,
+     用 !important 覆盖 query-w-140/160/... 固定宽度 → 单页内(及全站)长短一致、对齐成网格。
+     直接子选择器保护 DateRangePresetPicker(.dr-preset)等复合控件的内部布局不被穿透。 */
   .query-form :deep(.el-form-item__content > .el-input),
   .query-form :deep(.el-form-item__content > .el-select),
   .query-form :deep(.el-form-item__content > .el-date-editor),
   .query-form :deep(.el-form-item__content > .el-cascader),
   .query-form :deep(.el-form-item__content > .el-input-number),
   .query-form :deep(.el-form-item__content > .el-autocomplete) {
-    width: 100%;
+    width: 100% !important;
+    max-width: none !important;
   }
 
   /* 操作按钮组 = 最后一行最右,buttons 横向排列;不会被 grid 拉伸 */
