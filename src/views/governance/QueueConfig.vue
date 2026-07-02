@@ -857,25 +857,54 @@
     clampPage(holidayPage, holidays.value.length, holidayPageSize.value),
   )
 
-  async function load() {
-    loading.value = true
+  // 按当前 tab 懒加载:首屏 / 切租户只拉可见 tab 的数据,切 tab 时按需拉并缓存,
+  // 避免原先一次性 Promise.all 拉 queues+windows+calendars 三子域拖慢首屏(routed 子页只显 1 个 tab 更明显)。
+  const loadedTabs = ref(new Set<string>())
+
+  async function fetchQueues() {
     try {
-      const [queueRows, windowRows, calendarRows] = await Promise.all([
-        governanceApi.listQueues(tenant.tenantId),
-        governanceApi.listBatchWindows(tenant.tenantId),
-        governanceApi.listCalendars(tenant.tenantId),
-      ])
-      queues.value = queueRows
-      windows.value = windowRows
-      calendars.value = calendarRows
+      queues.value = await governanceApi.listQueues(tenant.tenantId)
     } catch {
       queues.value = []
+    }
+  }
+  async function fetchWindows() {
+    try {
+      windows.value = await governanceApi.listBatchWindows(tenant.tenantId)
+    } catch {
       windows.value = []
+    }
+  }
+  async function fetchCalendars() {
+    try {
+      calendars.value = await governanceApi.listCalendars(tenant.tenantId)
+    } catch {
       calendars.value = []
+    }
+  }
+
+  async function loadActiveTab(force = false) {
+    const tab = activeTab.value
+    if (!force && loadedTabs.value.has(tab)) return
+    loading.value = true
+    try {
+      if (tab === 'queues') await fetchQueues()
+      else if (tab === 'windows') await fetchWindows()
+      else if (tab === 'calendars') await fetchCalendars()
+      loadedTabs.value.add(tab)
     } finally {
       loading.value = false
     }
   }
+
+  // 保留 load 名字给 useTenantReload / 刷新按钮 / 保存后刷新:清缓存并强制重载当前 tab。
+  async function load() {
+    loadedTabs.value.clear()
+    await loadActiveTab(true)
+  }
+
+  // 切 tab 时按需懒加载(命中缓存则不重复请求)。
+  watch(activeTab, () => loadActiveTab())
 
   /** 三种 toggle 的共同骨架:确认 → 调 API → 回写 row.enabled。 */
   async function confirmAndToggle(
