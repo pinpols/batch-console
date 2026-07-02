@@ -30,14 +30,15 @@ describe('mapProfileToUserInfo (role mapping)', () => {
     expect(info.role).toBe('VIEWER')
   })
 
-  it('unknown / tenant-only authorities → VIEWER (safe fallback)', () => {
+  it('ROLE_TENANT_USER → OPERATOR;未知 / 空 authorities → VIEWER (safe fallback)', () => {
+    // #175:ROLE_TENANT_USER 有自助写权限,映射到 OPERATOR(不再兜底成 VIEWER)。
     expect(
       mapProfileToUserInfo({
         username: 'u',
         tenantId: 'ta',
         authorities: ['ROLE_TENANT_USER'],
       }).role,
-    ).toBe('VIEWER')
+    ).toBe('OPERATOR')
     expect(mapProfileToUserInfo({ username: 'u', tenantId: 'ta', authorities: [] }).role).toBe(
       'VIEWER',
     )
