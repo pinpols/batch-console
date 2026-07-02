@@ -600,11 +600,10 @@
   async function doRollback(row: ConsoleConfigReleaseResponse) {
     try {
       await confirmDanger({
-        verb: '回滚',
-        target: `配置「${row.configKey}」`,
-        consequence:
-          '当前生效配置将被回滚到上一版本,所有正在读取该配置的应用会在下次拉取时获取旧值。请确认旧版本可正常工作。',
-        confirmButtonText: '我已确认,继续回滚',
+        verb: t('configReleaseList.rollbackConfirmVerb'),
+        target: t('configReleaseList.rollbackConfirmTarget', { key: row.configKey }),
+        consequence: t('configReleaseList.rollbackConfirmConsequence'),
+        confirmButtonText: t('configReleaseList.rollbackConfirmButton'),
       })
       const { value: reason } = await ElMessageBox.prompt(
         t('configReleaseList.rollbackPrompt'),

@@ -145,9 +145,16 @@
         <el-table-column :label="t('monitor.nodeColActions')" width="100" fixed="right">
           <template #default="{ row }">
             <div class="table-actions">
-              <el-button size="small" plain type="warning" @click="confirmSkipNode(row)">
+              <el-button
+                v-if="canSkipNode(row.nodeStatus)"
+                size="small"
+                plain
+                type="warning"
+                @click="confirmSkipNode(row)"
+              >
                 {{ t('monitor.nodeActionSkip') }}
               </el-button>
+              <span v-else class="muted">—</span>
             </div>
           </template>
         </el-table-column>
@@ -321,11 +328,10 @@
   async function confirmCancel() {
     try {
       await confirmDanger({
-        verb: '取消',
-        target: `工作流运行「#${runId.value}」`,
-        consequence:
-          '未开始的节点不再派发,正在运行的节点会按各自策略尽快收尾。已完成节点的产物保留。',
-        confirmButtonText: '确认取消',
+        verb: t('monitor.runCancelVerb'),
+        target: t('monitor.runCancelTarget', { id: runId.value }),
+        consequence: t('monitor.runCancelConsequence'),
+        confirmButtonText: t('monitor.runCancelButton'),
       })
       actionLoading.value = true
       await cancelWorkflowRun(runId.value, tenant.tenantId)
@@ -357,14 +363,28 @@
     }
   }
 
+  // 只有未终态节点(PENDING/RUNNING/WAITING/…)可跳过;已 SUCCESS/FAILED/SKIPPED/
+  // CANCELLED/TERMINATED 的终态节点不再显示"跳过"。
+  const NODE_TERMINAL_STATUSES = [
+    'SUCCESS',
+    'FAILED',
+    'SKIPPED',
+    'CANCELLED',
+    'CANCELED',
+    'TERMINATED',
+  ]
+  function canSkipNode(status?: string | null): boolean {
+    return !NODE_TERMINAL_STATUSES.includes(String(status ?? '').toUpperCase())
+  }
+
   async function confirmSkipNode(row: ConsoleWorkflowNodeRunResponse) {
     try {
       await confirmDanger({
-        verb: '跳过',
-        target: `节点「${row.nodeCode}」`,
-        consequence: '该节点状态置为 SKIPPED,下游节点按依赖正常推进,但本节点的输出不会产生。',
+        verb: t('monitor.skipNodeVerb'),
+        target: t('monitor.skipNodeTarget', { code: row.nodeCode }),
+        consequence: t('monitor.skipNodeConsequence'),
         irreversible: true,
-        confirmButtonText: '确认跳过',
+        confirmButtonText: t('monitor.skipNodeButton'),
       })
       await skipWorkflowRunNode(runId.value, tenant.tenantId, row.nodeCode)
       ElMessage.success(t('monitor.skipNodeSuccess'))

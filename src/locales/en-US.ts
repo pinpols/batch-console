@@ -1580,7 +1580,11 @@ const messages: Messages = {
     instanceStatus: {
       CREATED: 'Created',
       WAITING: 'Waiting',
+      READY: 'Ready',
       RUNNING: 'Running',
+      RETRYING: 'Retrying',
+      SUCCESS: 'Success',
+      PARTIAL_FAILED: 'Partially Failed',
       COMPLETED: 'Completed',
       SUCCESS: 'Success',
       FAILED: 'Failed',
@@ -1617,8 +1621,12 @@ const messages: Messages = {
     workflowRunStatus: {
       CREATED: 'Created',
       RUNNING: 'Running',
+      SUCCESS: 'Success',
+      PARTIAL_FAILED: 'Partially Failed',
       COMPLETED: 'Completed',
       FAILED: 'Failed',
+      CANCELLED: 'Cancelled',
+      TERMINATED: 'Terminated',
     },
     triggerStatus: {
       NORMAL: 'Normal',
@@ -2736,6 +2744,16 @@ const messages: Messages = {
     skipNodeText: 'Skip node {code}?',
     skipNodeTitle: 'Confirm skip',
     skipNodeSuccess: 'Skipped',
+    runCancelVerb: 'cancel',
+    runCancelTarget: 'workflow run "#{id}"',
+    runCancelConsequence:
+      'Nodes not yet started will not be dispatched; running nodes wind down per their own strategy as soon as possible. Outputs of completed nodes are kept.',
+    runCancelButton: 'Confirm cancel',
+    skipNodeVerb: 'skip',
+    skipNodeTarget: 'node "{code}"',
+    skipNodeConsequence:
+      'The node status is set to SKIPPED; downstream nodes proceed per dependencies, but this node produces no output.',
+    skipNodeButton: 'Confirm skip',
     detailTitle: 'Job run detail',
     detailLoading: 'Loading...',
     detailRefresh: 'Refresh',
@@ -2797,6 +2815,15 @@ const messages: Messages = {
     terminateConsequence:
       'Running steps are interrupted; written intermediate results are NOT rolled back and require manual cleanup or rerun.',
     terminateSuccess: 'Force-terminated {no}',
+    confirmInstanceTarget: 'instance "{no}"',
+    rerunConfirmVerb: 'rerun',
+    rerunConfirmConsequence:
+      'A new instance will be dispatched with the same jobCode + bizDate; the original instance data is kept. If downstream already consumed the old output, duplicate processing may occur.',
+    rerunConfirmButton: 'Confirm rerun',
+    cancelConfirmVerb: 'cancel',
+    cancelConfirmConsequence:
+      'The worker will stop the running process as soon as possible. Written intermediate results may remain and require manual cleanup.',
+    cancelConfirmButton: 'Confirm cancel',
     partitionTitle: 'Job partitions',
     partitionDescription: 'Partitions of run #{id}',
     partitionRefresh: 'Refresh',
@@ -3344,6 +3371,11 @@ const messages: Messages = {
     graySuccess: 'Canary applied: {key}',
     rollbackConfirmText: 'Confirm rollback of {key}?',
     rollbackTitle: 'Rollback',
+    rollbackConfirmVerb: 'roll back',
+    rollbackConfirmTarget: 'config "{key}"',
+    rollbackConfirmConsequence:
+      'The currently effective config will be rolled back to the previous version; every app reading it will get the old value on its next pull. Confirm the old version works correctly.',
+    rollbackConfirmButton: 'Confirmed, continue rollback',
     rollbackPrompt: 'Rollback reason (optional)',
     rollbackSubmit: 'Submit',
     rollbackSuccess: 'Rolled back {key}',
@@ -3753,6 +3785,19 @@ const messages: Messages = {
     reasonPlaceholder: 'reason',
     reasonSubmit: 'Submit',
     reasonSkip: 'Skip',
+    confirmTarget: '"{title}"',
+    ackConfirmVerb: 'acknowledge',
+    ackConfirmConsequence:
+      'The alert moves to the "acknowledged" state, pausing on-call escalation, but the root cause is not auto-fixed.',
+    ackConfirmButton: 'Confirm acknowledge',
+    silenceConfirmVerb: 'silence',
+    silenceConfirmConsequence:
+      'Similar events for this alert will no longer notify until the silence window ends or is manually cancelled.',
+    silenceConfirmButton: 'Confirm silence',
+    closeConfirmVerb: 'close',
+    closeConfirmConsequence:
+      'The alert is removed from the board. If the root cause is unresolved, similar events will reappear as new alerts.',
+    closeConfirmButton: 'Confirm close',
     ackReasonTitle: 'ACK note',
     silenceReasonTitle: 'Silence note',
     closeReasonTitle: 'Close note',
@@ -3863,6 +3908,15 @@ const messages: Messages = {
     resumeConfirmText: 'Resume all schedulers?',
     resumeConfirmTitle: 'Resume all',
     resumeSuccess: 'All schedulers resumed',
+    confirmAllTarget: 'all schedulers of the current tenant',
+    pauseAllConfirmVerb: 'pause',
+    pauseAllConfirmConsequence:
+      'All triggers stop dispatching new tasks; running instances are unaffected. Scheduled dispatch resumes only after resuming, which may cause a short backlog.',
+    pauseAllConfirmButton: 'Confirm pause',
+    resumeAllConfirmVerb: 'resume',
+    resumeAllConfirmConsequence:
+      'Triggers resume dispatching; tasks that came due during the pause are caught up or deferred per their configured policy.',
+    resumeAllConfirmButton: 'Confirm resume',
     refreshDone: 'Refreshed',
     refreshFailed: 'Refresh failed; check permissions or backend logs',
     refreshPartial: 'Refreshed, but some data failed to load',
@@ -4355,6 +4409,14 @@ const messages: Messages = {
     actionResume: 'Resume',
     suspendConfirm: 'Suspending tenant {id} affects related config and scheduling. Continue?',
     suspendTitle: 'Suspend tenant',
+    confirmTarget: 'tenant "{id}"',
+    suspendConfirmVerb: 'suspend',
+    suspendConfirmConsequence:
+      'All triggers under this tenant stop dispatching; running tasks are unaffected. Tenant users are denied login/API access. Click "activate" in the list to restore.',
+    suspendConfirmButton: 'Confirm suspend',
+    activateConfirmVerb: 'activate',
+    activateConfirmConsequence: "This tenant's triggers resume dispatching and users can log in again.",
+    activateConfirmButton: 'Confirm activate',
     suspendedToast: 'Suspended',
     activateConfirmTitle: 'Resume tenant',
     activateConfirmText: 'Resume tenant {id}?',
@@ -4651,6 +4713,9 @@ const messages: Messages = {
     toastImportDone: 'Applied to target',
     importConsequence:
       'This will overwrite matching config items on the target tenant, taking effect immediately. Run "Preview diff" first.',
+    importConfirmVerb: 'apply config',
+    importConfirmTarget: 'to {count} target tenant(s) ({sample})',
+    importConfirmButton: 'Confirm apply',
   },
   configSecretsTab: {
     colSecret: 'Secret',

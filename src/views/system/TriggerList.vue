@@ -69,6 +69,7 @@
           <template #default="{ row }">
             <div class="table-actions">
               <el-button
+                v-if="canRegister(row)"
                 size="small"
                 plain
                 type="primary"
@@ -78,6 +79,7 @@
                 {{ t('triggerList.actionRegister') }}
               </el-button>
               <el-button
+                v-if="canUnregister(row)"
                 size="small"
                 plain
                 type="danger"
@@ -87,6 +89,7 @@
                 {{ t('triggerList.actionUnregister') }}
               </el-button>
               <el-button
+                v-if="canPause(row)"
                 size="small"
                 plain
                 type="warning"
@@ -96,6 +99,7 @@
                 {{ t('triggerList.actionPause') }}
               </el-button>
               <el-button
+                v-if="canResume(row)"
                 size="small"
                 plain
                 type="success"
@@ -124,6 +128,26 @@
     if (!value) return '—'
     const key = `enum.triggerType.${value}`
     return te(key) ? t(key) : value
+  }
+
+  // 破坏性动作按行状态门控:未注册只显示"注册";已注册显示"注销";
+  // 运行中(NORMAL/REGISTERED)才可"暂停";仅"已暂停"可"恢复"。
+  function triggerStatusOf(row: Record<string, unknown>): string {
+    return String(row.triggerStatus ?? row.status ?? '').toUpperCase()
+  }
+  function canRegister(row: Record<string, unknown>): boolean {
+    const s = triggerStatusOf(row)
+    return !s || s === 'UNREGISTERED'
+  }
+  function canUnregister(row: Record<string, unknown>): boolean {
+    const s = triggerStatusOf(row)
+    return !!s && s !== 'UNREGISTERED'
+  }
+  function canPause(row: Record<string, unknown>): boolean {
+    return ['NORMAL', 'REGISTERED'].includes(triggerStatusOf(row))
+  }
+  function canResume(row: Record<string, unknown>): boolean {
+    return triggerStatusOf(row) === 'PAUSED'
   }
   import {
     listTriggers,
@@ -202,10 +226,10 @@
   async function doRegister(row: Record<string, unknown>) {
     try {
       await confirmDanger({
-        verb: '注册触发器',
-        target: `作业「${String(row.jobCode)}」`,
-        consequence: '按作业 cron 表达式开始派发任务,首次派发可能在几秒到几分钟内发生。',
-        confirmButtonText: '确认注册',
+        verb: t('triggerList.registerConfirmVerb'),
+        target: t('triggerList.confirmTarget', { code: String(row.jobCode) }),
+        consequence: t('triggerList.registerConfirmConsequence'),
+        confirmButtonText: t('triggerList.registerConfirmButton'),
       })
       await registerTrigger(String(row.jobCode), tenant.tenantId)
       ElMessage.success(t('triggerList.registerSuccess'))
@@ -218,11 +242,11 @@
   async function doUnregister(row: Record<string, unknown>) {
     try {
       await confirmDanger({
-        verb: '注销触发器',
-        target: `作业「${String(row.jobCode)}」`,
-        consequence: '该作业从调度器移除,不再派发新任务。需要再次注册才能恢复定时执行。',
+        verb: t('triggerList.unregisterConfirmVerb'),
+        target: t('triggerList.confirmTarget', { code: String(row.jobCode) }),
+        consequence: t('triggerList.unregisterConfirmConsequence'),
         irreversible: true,
-        confirmButtonText: '确认注销',
+        confirmButtonText: t('triggerList.unregisterConfirmButton'),
       })
       await unregisterTrigger(String(row.jobCode), tenant.tenantId)
       ElMessage.success(t('triggerList.unregisterSuccess'))
@@ -235,10 +259,10 @@
   async function doPause(row: Record<string, unknown>) {
     try {
       await confirmDanger({
-        verb: '暂停触发器',
-        target: `作业「${String(row.jobCode)}」`,
-        consequence: '触发器停止派发新任务,正在运行的实例不受影响。点"恢复"可重新派发。',
-        confirmButtonText: '确认暂停',
+        verb: t('triggerList.pauseConfirmVerb'),
+        target: t('triggerList.confirmTarget', { code: String(row.jobCode) }),
+        consequence: t('triggerList.pauseConfirmConsequence'),
+        confirmButtonText: t('triggerList.pauseConfirmButton'),
       })
       await pauseTrigger(String(row.jobCode), tenant.tenantId)
       ElMessage.success(t('triggerList.pauseSuccess'))
