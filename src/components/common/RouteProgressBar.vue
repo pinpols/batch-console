@@ -8,7 +8,7 @@
         aria-busy="true"
         aria-valuemin="0"
         aria-valuemax="1"
-        aria-label="页面切换中"
+        :aria-label="t('common.pageSwitching')"
       >
         <div class="route-progress__track">
           <div class="route-progress__lead" />
@@ -19,8 +19,10 @@
 </template>
 
 <script setup lang="ts">
+  import { useI18n } from 'vue-i18n'
   import { useRouteProgressStore } from '@/stores/routeProgress'
 
+  const { t } = useI18n()
   const progress = useRouteProgressStore()
 </script>
 
