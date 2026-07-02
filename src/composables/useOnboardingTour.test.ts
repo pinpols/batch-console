@@ -28,6 +28,8 @@ vi.stubGlobal('localStorage', {
 // stub document.querySelector(useOnboardingTour 校验 anchor 存在性)
 vi.stubGlobal('document', {
   querySelector: (sel: string) => {
+    // 模态守卫选择器:单测场景无弹窗/抽屉打开 → 返回 null,否则 startOnboarding 会被守卫跳过。
+    if (sel === '.el-overlay, .el-drawer, .el-dialog') return null
     // 返回非 null 模拟"anchor 存在"
     return sel === '.fake-missing' ? null : ({} as Element)
   },

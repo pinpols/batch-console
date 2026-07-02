@@ -424,7 +424,7 @@
     if (!v) return callback()
     return jobCodePattern.test(v)
       ? callback()
-      : callback(new Error('字母开头,仅含字母/数字/下划线/连字符,长度 ≤ 128'))
+      : callback(new Error(t('jobDefinitionWizard.errJobCodePattern')))
   }
   const scheduleExprValidator = (
     _rule: unknown,

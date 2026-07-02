@@ -130,7 +130,7 @@
         validator: (_r, v: unknown, cb) => {
           const text = typeof v === 'string' ? v.trim() : ''
           if (!text) return cb(new Error(t('jobConfigBasic.miniCalendarNameRequired')))
-          if (text.length > 256) return cb(new Error('长度不能超过 256'))
+          if (text.length > 256) return cb(new Error(t('common.maxLength', { max: 256 })))
           return cb()
         },
         trigger: 'blur',
