@@ -2005,6 +2005,8 @@ export default {
     reservedDescription:
       '此处仅保留历史配置供审计。当前告警通过 Prometheus / Alertmanager 静态模板及告警升级 Webhook 投递，运行时不会读取本页记录。',
     sectionTitle: '路由列表',
+    emptyTitle: '暂无告警路由',
+    emptyDescription: '当前租户还没有配置告警路由规则,新增一条以便按团队/严重级别分发告警。',
     enabledLabel: '启用状态',
     optEnabled: '已启用',
     optDisabled: '已停用',

@@ -2,6 +2,9 @@
   <div class="empty-state">
     <div v-if="computedTitle" class="empty-state__title">{{ computedTitle }}</div>
     <el-empty :description="computedDescription" :image-size="imageSize">
+      <template v-if="$slots.image" #image>
+        <slot name="image" />
+      </template>
       <template v-if="$slots.extra || $slots.action" #extra>
         <div class="empty-state__action">
           <slot name="extra"><slot name="action" /></slot>

@@ -47,7 +47,7 @@
         </el-form-item>
       </ListPageQueryBar>
 
-      <el-empty v-if="!loading && filtered.length === 0" :description="t('quotaPanel.empty')" />
+      <EmptyState v-if="!loading && filtered.length === 0" :description="t('quotaPanel.empty')" />
 
       <div v-else class="grid">
         <el-card
@@ -206,6 +206,8 @@
   import { useAsyncAction } from '@/composables/useAsyncAction'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
+  import SectionCard from '@/components/common/SectionCard.vue'
+  import EmptyState from '@/components/common/EmptyState.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
 
   const tenant = useTenantStore()

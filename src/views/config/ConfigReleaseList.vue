@@ -238,7 +238,7 @@
       size="640px"
     >
       <div v-loading="depsLoading">
-        <el-empty
+        <EmptyState
           v-if="!depsLoading && !depsData"
           :description="t('configReleaseList.depsEmpty')"
         />
@@ -349,6 +349,8 @@
   import MetaSelect from '@/components/common/MetaSelect.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   const { canMutateConfig } = usePermission()
+  import SectionCard from '@/components/common/SectionCard.vue'
+  import EmptyState from '@/components/common/EmptyState.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import JsonPreview from '@/components/common/JsonPreview.vue'
   import type { FormInstance, FormRules } from 'element-plus'

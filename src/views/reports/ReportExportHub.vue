@@ -130,11 +130,10 @@
         </article>
       </div>
 
-      <el-empty
+      <EmptyState
         v-if="filteredReports.length === 0"
         :description="t('reportExportHub.emptyDesc')"
         :image-size="72"
-        class="empty"
       />
 
       <p class="hint">{{ t('reportExportHub.hintText') }}</p>
@@ -156,6 +155,7 @@
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
+  import EmptyState from '@/components/common/EmptyState.vue'
 
   const tenant = useTenantStore()
   const loadingKey = ref<ReportExcelKey | ''>('')
@@ -710,10 +710,6 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-  }
-
-  .empty {
-    padding: 12px 0 4px;
   }
 
   .hint {

@@ -2067,6 +2067,9 @@ const messages: Messages = {
     reservedDescription:
       'Existing records are read-only for audit. Runtime alerts currently use static Prometheus / Alertmanager templates and the escalation webhook path; this page is not consumed.',
     sectionTitle: 'Routing rules',
+    emptyTitle: 'No alert routings',
+    emptyDescription:
+      'No alert routing rules for this tenant yet. Create one to dispatch alerts by team / severity.',
     enabledLabel: 'Enabled',
     optEnabled: 'Enabled',
     optDisabled: 'Disabled',

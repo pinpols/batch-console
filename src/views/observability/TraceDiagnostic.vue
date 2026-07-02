@@ -34,11 +34,11 @@
       </template>
 
       <!-- 未查询前的引导 -->
-      <el-empty v-if="!hasSearched" :description="t('traceDiagnostic.emptyTip')" :image-size="120">
+      <EmptyState v-if="!hasSearched" :description="t('traceDiagnostic.emptyTip')" :image-size="120">
         <template #image>
           <el-icon size="120" color="var(--color-text-tertiary)"><DataLine /></el-icon>
         </template>
-      </el-empty>
+      </EmptyState>
 
       <!-- 查询中 -->
       <div v-else-if="loading" class="trace-loading">
@@ -150,6 +150,7 @@
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
+  import EmptyState from '@/components/common/EmptyState.vue'
   import { useTenantStore } from '@/stores/tenant'
   import { queryTraceSnapshot } from '@/api/observabilityQueries'
 
