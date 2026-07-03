@@ -26,23 +26,23 @@
 
   --color-success: #22845a;
   --color-warning: #b57816;
-  --color-danger: #d64543;
-  --color-info: #1668e3;
+  --color-danger:  #d64543;
+  --color-info:    #1668e3;
 
-  --color-text-primary: #1b1e26;
+  --color-text-primary:   #1b1e26;
   --color-text-secondary: #5b6270;
   /* 设计值为 #8b919e;前端此前为 WCAG 4.5:1 提到 #6b6b6b。
      如需严格达标,保留 #6b6b6b(下行注释掉的设计原值)。 */
-  --color-text-tertiary: #6b6b6b; /* 设计原值:#8b919e */
+  --color-text-tertiary:  #6b6b6b; /* 设计原值:#8b919e */
 
-  --color-bg-page: #f5f6f8;
-  --color-bg-canvas: #eceef2; /* 画布略深于 page,维持卡片层次 */
-  --color-bg-card: #ffffff;
-  --color-bg-subtle: #fafbfc;
-  --color-bg-base: #fafafb;
+  --color-bg-page:     #f5f6f8;
+  --color-bg-canvas:   #eceef2; /* 画布略深于 page,维持卡片层次 */
+  --color-bg-card:     #ffffff;
+  --color-bg-subtle:   #fafbfc;
+  --color-bg-base:     #fafafb;
   --color-bg-elevated: #ffffff;
 
-  --color-border: rgba(15, 23, 42, 0.1);
+  --color-border:       rgba(15, 23, 42, 0.10);
   --color-border-light: rgba(15, 23, 42, 0.07);
 
   --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.05);
@@ -54,21 +54,21 @@ html.dark {
 
   --color-success: #5cb381;
   --color-warning: #e3a94f;
-  --color-danger: #f07a78;
-  --color-info: #5c9dff;
+  --color-danger:  #f07a78;
+  --color-info:    #5c9dff;
 
-  --color-text-primary: #e9ebf0;
+  --color-text-primary:   #e9ebf0;
   --color-text-secondary: #9aa1ae;
-  --color-text-tertiary: #676e7b;
+  --color-text-tertiary:  #676e7b;
 
-  --color-bg-page: #141519;
-  --color-bg-canvas: #0f1013;
-  --color-bg-card: #1b1d23;
-  --color-bg-subtle: #17181d;
-  --color-bg-base: #141519;
+  --color-bg-page:     #141519;
+  --color-bg-canvas:   #0f1013;
+  --color-bg-card:     #1b1d23;
+  --color-bg-subtle:   #17181d;
+  --color-bg-base:     #141519;
   --color-bg-elevated: #23262e;
 
-  --color-border: rgba(255, 255, 255, 0.08);
+  --color-border:       rgba(255, 255, 255, 0.08);
   --color-border-light: rgba(255, 255, 255, 0.055);
 
   --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.25);
