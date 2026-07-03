@@ -55,31 +55,31 @@ src/
 
 ## 模块划分(views/)
 
-| L1 模块 | 路由前缀 | 一句话职责 |
-|---|---|---|
-| `job` | `/job/*` | Job 定义 / Job 实例 / 历史 |
-| `workflow` | `/workflow/*` | Workflow DAG 编排 / Run / 节点干预 |
-| `observability` | `/obs/*` | Alert / Outbox / Trace / Metrics |
-| `ops` | `/ops/*` | BatchDayReplay / 数据对账 / Forensic 导出 |
-| `approvals` | `/approvals/*` | 审批列表 / 批量审批 / 历史 |
-| `config` | `/config/*` | 配置发布 / Schema / 字典 |
-| `system` | `/system/*` | 租户 / 用户 / RBAC / API Key / 通知通道 |
-| `auth` | `/login` / `/init` | 登录 / 初始化 |
-| `m/*` | `/m/*` | 移动端入口(双栈不共用 view) |
+| L1 模块         | 路由前缀           | 一句话职责                                |
+| --------------- | ------------------ | ----------------------------------------- |
+| `job`           | `/job/*`           | Job 定义 / Job 实例 / 历史                |
+| `workflow`      | `/workflow/*`      | Workflow DAG 编排 / Run / 节点干预        |
+| `observability` | `/obs/*`           | Alert / Outbox / Trace / Metrics          |
+| `ops`           | `/ops/*`           | BatchDayReplay / 数据对账 / Forensic 导出 |
+| `approvals`     | `/approvals/*`     | 审批列表 / 批量审批 / 历史                |
+| `config`        | `/config/*`        | 配置发布 / Schema / 字典                  |
+| `system`        | `/system/*`        | 租户 / 用户 / RBAC / API Key / 通知通道   |
+| `auth`          | `/login` / `/init` | 登录 / 初始化                             |
+| `m/*`           | `/m/*`             | 移动端入口(双栈不共用 view)               |
 
 ## 关键 composable / 基建
 
-| 名字 | 用途 |
-|---|---|
-| `useRouteFilters` | List 页 filters + page + pageSize 写入 URL query |
-| `useResponsive` | `matchMedia` 响应式断点(mobile / tablet / desktop) |
-| `useDirtyForm` | Form 改动追踪 + `beforeunload` + Dialog before-close 弹 confirm |
-| `useFormFocus` | Dialog/Drawer open autofocus 第一字段;validate fail focus 第一 error |
-| `useFormValidate` | 统一 form 校验(收集错误 → useFormFocus 接力) |
-| `useDangerConfirm` | 高危 ops 二次确认(打字校验 / 长按) |
-| `useWebPush` | Web Push 注册 / 解绑(VAPID) |
-| `useOpsSummary` | 运营总览数据聚合 |
-| `useAsyncAction` | 异步动作 loading / error / retry 包装 |
+| 名字               | 用途                                                                 |
+| ------------------ | -------------------------------------------------------------------- |
+| `useRouteFilters`  | List 页 filters + page + pageSize 写入 URL query                     |
+| `useResponsive`    | `matchMedia` 响应式断点(mobile / tablet / desktop)                   |
+| `useDirtyForm`     | Form 改动追踪 + `beforeunload` + Dialog before-close 弹 confirm      |
+| `useFormFocus`     | Dialog/Drawer open autofocus 第一字段;validate fail focus 第一 error |
+| `useFormValidate`  | 统一 form 校验(收集错误 → useFormFocus 接力)                         |
+| `useDangerConfirm` | 高危 ops 二次确认(打字校验 / 长按)                                   |
+| `useWebPush`       | Web Push 注册 / 解绑(VAPID)                                          |
+| `useOpsSummary`    | 运营总览数据聚合                                                     |
+| `useAsyncAction`   | 异步动作 loading / error / retry 包装                                |
 
 ## docs/ 体系
 
@@ -87,18 +87,18 @@ src/
 docs/
 ├── README.md                  文档入口
 ├── changelog.md               重要架构 / 约定变更日志
-├── 批量调度系统前端方案设计说明书_开发落地版_V3.md  最早设计稿(归 design/)
-├── fe-wrapper-migration-plan.md                  wrapper 迁移计划(归 design/)
+├── 批量调度系统前端方案设计说明书_开发落地版_V3.md  最早设计稿(归 engineering/)
+├── fe-wrapper-migration-plan.md                  wrapper 迁移计划(归 engineering/)
 │
 ├── api/                       OpenAPI 同步 / API 漂移检查
 ├── archive/                   历史归档(4 月旧 audit / 已失效方案)
+├── audits/                    设计 / 可用性审计证据
 ├── backlog/                   待办 / acceptance
 ├── deploy/                    部署文档(docker-nginx)
-├── design/                    设计文档(meta-enum / mobile-refresh / 可观测性 / 文档中心)
+├── engineering/               工程方案(meta-enum / mobile-refresh / 可观测性 / 文档中心)
 ├── qa/                        QA 阶段总评(D 档等)
 ├── reports/                   评审 / 扫描历史报告
 ├── runbook/                   运维手册(ci / dev-workflow / rollback / 联测)
-├── ui/                        UI / UX audit
 └── verifications/             验证记录(CD / e2e)
 ```
 
@@ -132,24 +132,24 @@ scripts/
 
 ## 构建命令
 
-| npm script | 用途 |
-|---|---|
-| `npm run dev` | Vite dev server(默认 http://localhost:5173) |
-| `npm run build` | 生产打包 → `dist/` |
-| `npm run preview` | 本地预览 build 产物 |
-| `npm run lint` | ESLint 检查 |
-| `npm run lint:fix` | ESLint 自动修复 |
-| `npm run type-check` | tsc 类型检查 |
-| `npm run test:unit` | Vitest 单测 |
-| `npm run test:e2e` | Playwright e2e |
-| `npm run test:e2e:smoke` | 冒烟子集 |
+| npm script               | 用途                                        |
+| ------------------------ | ------------------------------------------- |
+| `npm run dev`            | Vite dev server(默认 http://localhost:5173) |
+| `npm run build`          | 生产打包 → `dist/`                          |
+| `npm run preview`        | 本地预览 build 产物                         |
+| `npm run lint`           | ESLint 检查                                 |
+| `npm run lint:fix`       | ESLint 自动修复                             |
+| `npm run type-check`     | tsc 类型检查                                |
+| `npm run test:unit`      | Vitest 单测                                 |
+| `npm run test:e2e`       | Playwright e2e                              |
+| `npm run test:e2e:smoke` | 冒烟子集                                    |
 
 ## 分支策略(与 BE 一致)
 
-| 分支 | 用途 |
-|---|---|
-| `main` | 唯一发布分支 |
+| 分支              | 用途                      |
+| ----------------- | ------------------------- |
+| `main`            | 唯一发布分支              |
 | `feature/<topic>` | 业务 / bug fix(PR → main) |
-| `fix/<topic>` | bug 修复(PR → main) |
-| `docs/<topic>` | 纯文档(PR → main) |
-| `cleanup/<topic>` | 规范化清理(PR → main) |
+| `fix/<topic>`     | bug 修复(PR → main)       |
+| `docs/<topic>`    | 纯文档(PR → main)         |
+| `cleanup/<topic>` | 规范化清理(PR → main)     |

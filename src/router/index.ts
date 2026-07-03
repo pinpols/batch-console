@@ -339,7 +339,7 @@ const routes: RouteRecordRaw[] = [
         },
       },
       {
-        // Workflow DAG 编辑器 Spike 阶段(docs/design/workflow-dag-designer.md §8)。
+        // Workflow DAG 编辑器 Spike 阶段(file-batch-system/docs/design/workflow-dag-designer.md §8)。
         // :id 可选,空 = 新建;Spike 阶段保存只 console.log,MVP 接 BE PUT /full + 单人锁。
         path: 'workflow/designer/:id?',
         name: 'workflow-designer',

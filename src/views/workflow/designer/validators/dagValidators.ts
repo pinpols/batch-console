@@ -21,7 +21,7 @@
  *
  * 与 BE ADR-025 的关系:BE validators 是兜底权威(更严格);FE 仅做即时反馈以减少
  * 网络往返,允许略宽松(BE 拒绝则保存接口报错)。BE/FE 规则交叉见
- * docs/design/workflow-dag-designer.md §6。
+ * file-batch-system/docs/design/workflow-dag-designer.md §6。
  */
 
 import type { DesignerSnapshot } from '../types'

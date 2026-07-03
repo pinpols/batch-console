@@ -2,7 +2,7 @@
 
 > 本文件只记录 **CLAUDE.md 编码规范条款本身** 的变化(项目结构 / 构建命令 / 架构约束 / 编码红线 / i18n / 测试范围等文档自身内容变动)。
 >
-> Feature 完成、bug 修复、运维操作、临时数据动作等项目演进信息**不要**写到这里 —— 那些以 git commit + PR 描述 + 对应模块文档(`docs/design/*.md` / `docs/runbook/*.md` / `docs/reports/*.md`)为权威记录。
+> Feature 完成、bug 修复、运维操作、临时数据动作等项目演进信息**不要**写到这里 —— 那些以 git commit + PR 描述 + 对应模块文档(`docs/engineering/*.md` / `docs/runbook/*.md` / `docs/reports/*.md`)为权威记录。
 >
 > 按日期倒序,使用绝对日期(`YYYY-MM-DD`)。
 

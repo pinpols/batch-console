@@ -212,7 +212,7 @@ const messages: Messages = {
     canvasHintDelete: 'to delete ·',
     canvasHintShiftKey: 'to quick-add downstream',
   },
-  // Workflow DAG designer — Spike phase (docs/design/workflow-dag-designer.md §8).
+  // Workflow DAG designer — Spike phase (file-batch-system/docs/design/workflow-dag-designer.md §8).
   // Separate namespace from `workflowDesigner` (existing legacy keys, unused in current build).
   workflowDesignerSearch: {
     placeholder: 'Search nodes…',
@@ -251,7 +251,7 @@ const messages: Messages = {
     saveSpikeToast: 'Spike: snapshot logged to console (backend save lands in MVP)',
     mermaidDialogTitle: 'Mermaid export',
   },
-  // Workflow DAG designer — MVP phase (docs/design/workflow-dag-designer.md §FE MVP).
+  // Workflow DAG designer — MVP phase (file-batch-system/docs/design/workflow-dag-designer.md §FE MVP).
   workflowDesignerMvp: {
     nodeGateway: 'GATEWAY',
     nodeFileStep: 'FILE_STEP',
@@ -340,7 +340,7 @@ const messages: Messages = {
       lost_network: 'Lock renewal failed (network); auto-renew stopped',
     },
   },
-  // Workflow DAG designer — Polish phase (docs/design/workflow-dag-designer.md §Polish FE).
+  // Workflow DAG designer — Polish phase (file-batch-system/docs/design/workflow-dag-designer.md §Polish FE).
   workflowDesignerPolish: {
     actionQuickPalette: 'Quick palette',
     actionTemplates: 'Templates',
