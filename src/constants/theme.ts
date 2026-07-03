@@ -18,11 +18,11 @@ export function getSystemIsDark(): boolean {
   return window.matchMedia('(prefers-color-scheme: dark)').matches
 }
 
-/** 读本地存储；无记录时默认「跟随系统」 */
+/** 读本地存储；无记录时按 redesign 默认深色 */
 export function readThemePreference(): ThemePreference {
   const v = localStorage.getItem(THEME_STORAGE_KEY)
   if (v === 'dark' || v === 'light' || v === 'system') return v
-  return 'system'
+  return 'dark'
 }
 
 export function resolveEffectiveTheme(

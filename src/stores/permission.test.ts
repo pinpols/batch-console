@@ -73,9 +73,9 @@ describe('permission navigation filtering', () => {
     const result = filterNavigationByBackendMenus(navigationGroups, backendMenus)
 
     expect(result).toHaveLength(1)
-    // IA v4(7→5 组):/system/notifications 归入"运行监控"组(原"告警与投递"已并入)
-    expect(result[0].key).toBe('runtime')
-    expect(result[0].title).toBe('运行监控')
+    // IA v3(7 组):后端仍可把 path 放在 system,前端按设计归入"告警与投递"组
+    expect(result[0].key).toBe('alerting')
+    expect(result[0].title).toBe('告警与投递')
     expect(result[0].children.map((c) => c.path)).toEqual(['/system/notifications'])
     expect(result[0].children[0].title).toBe('通知与投递')
   })
