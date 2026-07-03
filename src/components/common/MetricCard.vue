@@ -11,7 +11,8 @@
   >
     <div class="metric-card__label">{{ label }}</div>
     <div class="metric-card__value" :class="{ 'metric-card__value--long': isLong }">
-      {{ value }}
+      <CopyableText v-if="copyValue" :text="copyValue" @click.stop>{{ value }}</CopyableText>
+      <template v-else>{{ value }}</template>
     </div>
     <div v-if="description" class="metric-card__description">{{ description }}</div>
   </el-card>
@@ -19,6 +20,7 @@
 
 <script setup lang="ts">
   import { computed } from 'vue'
+  import CopyableText from '@/components/common/CopyableText.vue'
 
   export type MetricTone = 'neutral' | 'info' | 'success' | 'warning' | 'danger'
 
@@ -32,6 +34,8 @@
       clickable?: boolean
       /** 当前是否为「激活」筛选项,边框 + 左侧色条加重 */
       active?: boolean
+      /** 传入完整值(如 traceId / instanceNo）后值区可点复制;value 常是截断展示态 */
+      copyValue?: string
     }>(),
     { tone: 'neutral', clickable: false, active: false },
   )
@@ -109,6 +113,15 @@
     font-weight: 700;
     line-height: var(--line-height-tight);
     letter-spacing: 0;
+  }
+
+  /* 复制态:值文本保持大号等宽,复制图标收敛到常规尺寸并弱化 */
+  .metric-card__value :deep(.copyable-text) {
+    max-width: 100%;
+  }
+  .metric-card__value :deep(.copyable-text__icon) {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
   }
 
   .metric-card__value--long {

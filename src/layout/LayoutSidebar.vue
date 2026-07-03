@@ -56,10 +56,9 @@
 
   const app = useAppStore()
 
-  // ≤1440 (isCompact) 自动 collapse 侧栏腾内容区,>1440 还原用户偏好。
-  // 阈值 1280→1440(2026-06-16):1366×768 这类最常见笔电原先保留满侧栏内容只剩 ~1100,
-  // 抬到 1440 让它也自动收起腾出 ~150px。用户在 ≤1440 手动展开后不再强制 collapse
-  // (watch 跨阈值才触发),避免 fighting。
+  // ≤1024 (isCompact) 才自动 collapse 侧栏(真·平板/窄屏),桌面/笔电一律保持设计稿的
+  // 展开标签态(2026-07-04 阈值 1440→1024,还原设计;此前 1440 把常见笔电全收成图标条)。
+  // 用户手动展开/收起后不再被跨阈值 watch 强制覆盖,避免 fighting。
   // 改造记录(2026-06-03):从 window.innerWidth + resize 监听迁到 useResponsive
   // (matchMedia)以避免 cleanup 漏装 / SSR 警告。
   const { isCompact } = useResponsive()
@@ -67,8 +66,10 @@
   watch(
     isNarrow,
     (narrow, prev) => {
+      // 首帧:以视口为准还原设计(桌面/笔电展开、窄屏收起),覆盖历史 localStorage 里
+      // 早期 1440 阈值残留的 collapsed=1;之后仅跨阈值才切换,session 内用户手动切换保留。
       if (prev === undefined) {
-        if (narrow) app.setSidebarCollapsed(true)
+        app.setSidebarCollapsed(narrow)
         return
       }
       if (narrow !== prev) app.setSidebarCollapsed(narrow)
