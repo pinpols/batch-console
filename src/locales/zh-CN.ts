@@ -218,7 +218,7 @@ export default {
     canvasHintDelete: '删除 ·',
     canvasHintShiftKey: '快速加下游',
   },
-  // Workflow DAG 设计器 — Spike 阶段(docs/design/workflow-dag-designer.md §8)。
+  // Workflow DAG 设计器 — Spike 阶段(file-batch-system/docs/design/workflow-dag-designer.md §8)。
   // 单独 namespace,不与已存在的 `workflowDesigner`(早期未启用 key)冲突。
   workflowDesignerSearch: {
     placeholder: '搜索节点…',
@@ -257,7 +257,7 @@ export default {
     saveSpikeToast: 'Spike 阶段:快照已 log 到控制台(MVP 阶段接 BE 真保存)',
     mermaidDialogTitle: 'Mermaid 导出',
   },
-  // Workflow DAG 设计器 — MVP 阶段(docs/design/workflow-dag-designer.md §FE MVP)。
+  // Workflow DAG 设计器 — MVP 阶段(file-batch-system/docs/design/workflow-dag-designer.md §FE MVP)。
   workflowDesignerMvp: {
     nodeGateway: 'GATEWAY',
     nodeFileStep: 'FILE_STEP',
@@ -345,7 +345,7 @@ export default {
       lost_network: '锁续期失败(网络),已停止自动续期',
     },
   },
-  // Workflow DAG 设计器 — Polish 阶段(docs/design/workflow-dag-designer.md §Polish FE)。
+  // Workflow DAG 设计器 — Polish 阶段(file-batch-system/docs/design/workflow-dag-designer.md §Polish FE)。
   workflowDesignerPolish: {
     actionQuickPalette: '快速节点',
     actionTemplates: '模板',

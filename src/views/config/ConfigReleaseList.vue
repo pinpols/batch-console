@@ -336,9 +336,7 @@
     releaseNote: '',
   })
   const createRules: FormRules = {
-    configKey: [
-      { required: true, message: t('configReleaseList.ruleCreateKey'), trigger: 'blur' },
-    ],
+    configKey: [{ required: true, message: t('configReleaseList.ruleCreateKey'), trigger: 'blur' }],
     configType: [
       { required: true, message: t('configReleaseList.ruleCreateType'), trigger: 'blur' },
     ],

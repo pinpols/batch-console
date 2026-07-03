@@ -169,7 +169,7 @@ oncall 排查典型路径从 4 跳压到 1 页:
 
 - 侧边栏只承载高频路径;低频但仍需要保留的入口使用 `hidden: true`,通过 Command Palette、页面内跳转或旧书签访问。
 - `navigationGroups` 仍由前端维护,负责产品文案、图标和排序;后端 `/auth/me` 菜单只作为权限过滤来源。
-- 新页面遵守 `docs/design/page-naming-convention.md`:URL、代码目录、侧边栏分组使用同一一级域。
+- 新页面遵守 `docs/engineering/page-naming-convention.md`:URL、代码目录、侧边栏分组使用同一一级域。
 - 旧路由优先保留 redirect / alias,避免破坏书签和外链。
 
 与第 7 节相比,主要变化:

@@ -18,7 +18,7 @@ import { useI18n } from 'vue-i18n'
  *  - `etaText`:本地化展示文本;ETA 未知时返回 `common.etaUnknown` 占位
  *      已完成态直接返「—」(由调用方决定;此处仍返「—」)
  *
- * 设计书:`docs/design/pipeline-stage-progress-display.md`(file-batch-system 仓)
+ * 设计书:`file-batch-system/docs/design/pipeline-stage-progress-display.md`(file-batch-system 仓)
  */
 
 export interface ProgressSample {

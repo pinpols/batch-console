@@ -414,7 +414,7 @@
 
   // 行级进度列(默认隐藏);本视图无 pipelineInstanceId,暂走「—」降级,
   // 等 BE 把 pipeline-progress 端点按 jobStepId 索引后补真实数据。详见
-  // `docs/design/pipeline-stage-progress-display.md`
+  // `file-batch-system/docs/design/pipeline-stage-progress-display.md`
   const showStepProgressCols = ref(false)
 
   const FILE_STAGE_STEP_TYPES = new Set(['LOAD', 'GENERATE', 'IMPORT', 'EXPORT', 'PROCESS'])

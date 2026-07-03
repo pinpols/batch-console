@@ -30,12 +30,12 @@ docs/qa/
 
 ## 与其他目录的分工
 
-| 目录 | 用途 |
-|---|---|
-| `docs/qa/`(本目录) | QA campaign 阶段细节 + 配套补丁 |
-| [`../runbook/`](../runbook/) | 运维 SOP / CI / 应急响应 + QA 顶层 plan/report |
-| [`../reports/`](../reports/) | 项目阶段报告(不局限于 QA) |
-| [`../design/`](../design/) | 长期权威设计文档 |
+| 目录                                 | 用途                                           |
+| ------------------------------------ | ---------------------------------------------- |
+| `docs/qa/`(本目录)                   | QA campaign 阶段细节 + 配套补丁                |
+| [`../runbook/`](../runbook/)         | 运维 SOP / CI / 应急响应 + QA 顶层 plan/report |
+| [`../reports/`](../reports/)         | 项目阶段报告(不局限于 QA)                      |
+| [`../engineering/`](../engineering/) | 长期工程方案与规范文档                         |
 
 ## 维护策略
 

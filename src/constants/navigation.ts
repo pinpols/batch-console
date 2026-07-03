@@ -76,7 +76,7 @@ export interface NavigationGroup {
  *   ⑤ 系统管理 —— 租户账号 + 配置发布 + 审计(admin 维护)
  *
  * 原则:每组单一心智、组项数 ≤8;高频侧栏、低频 ⌘K;旧 group key i18n 留兜底。
- * 参考 docs/design/page-naming-convention.md。
+ * 参考 docs/engineering/page-naming-convention.md。
  */
 export const navigationGroups: NavigationGroup[] = [
   {
