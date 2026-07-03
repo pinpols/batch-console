@@ -1464,7 +1464,10 @@ export interface paths {
     get: operations['getApiKey']
     put?: never
     post?: never
-    /** Revoke API key */
+    /**
+     * Revoke API key
+     * @description 撤销 API Key。授权与创建对称:ROLE_ADMIN 或 ROLE_TENANT_USER 均可撤销本租户 key (租户隔离由 tenantId 保证),避免"能建不能撤"的凭据无法自救。
+     */
     delete: operations['revokeApiKey']
     options?: never
     head?: never
