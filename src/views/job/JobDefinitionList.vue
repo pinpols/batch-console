@@ -2,39 +2,59 @@
   <PageContainer>
     <PageHeader>
       <template #actions>
-        <!-- 单一主入口消除"3 个并列创建按钮"的选择困难:
-             主按钮 = 向导新建(推荐,引导式分步);次要路径(快速新建 / Bundle 导入)收进下拉。 -->
-        <el-tooltip
-          :content="
-            canMutateConfig ? t('jobDefinitionList.headerWizardTip') : t('common.permissionDenied')
-          "
-          placement="top"
-        >
-          <span>
-            <el-dropdown
-              split-button
-              type="primary"
-              trigger="click"
-              class="pretty-add-button"
-              :disabled="!canMutateConfig"
-              @click="router.push('/jobs/definitions/new')"
-              @command="onCreateCommand"
-            >
-              <el-icon class="create-split__icon"><Plus /></el-icon>
-              {{ t('jobDefinitionList.headerWizard') }}
-              <template #dropdown>
-                <el-dropdown-menu>
-                  <el-dropdown-item command="quick" :icon="Plus">
-                    {{ t('jobDefinitionList.headerCreate') }}
-                  </el-dropdown-item>
-                  <el-dropdown-item command="bundle" :icon="Upload">
-                    {{ t('jobDefinitionList.headerBundle') }}
-                  </el-dropdown-item>
-                </el-dropdown-menu>
-              </template>
-            </el-dropdown>
-          </span>
-        </el-tooltip>
+        <div class="job-header-actions">
+          <el-tooltip
+            :content="
+              canMutateConfig
+                ? t('jobDefinitionList.headerWizardTip')
+                : t('common.permissionDenied')
+            "
+            placement="top"
+          >
+            <span>
+              <el-button
+                :icon="Plus"
+                :disabled="!canMutateConfig"
+                @click="router.push('/jobs/definitions/new')"
+              >
+                {{ t('jobDefinitionList.headerWizard') }}
+              </el-button>
+            </span>
+          </el-tooltip>
+          <el-tooltip
+            :content="
+              canMutateConfig
+                ? t('jobDefinitionList.headerBundleTip')
+                : t('common.permissionDenied')
+            "
+            placement="top"
+          >
+            <span>
+              <el-button :icon="Upload" :disabled="!canMutateConfig" @click="openBundleImport">
+                {{ t('jobDefinitionList.headerBundle') }}
+              </el-button>
+            </span>
+          </el-tooltip>
+          <el-tooltip
+            :content="
+              canMutateConfig
+                ? t('jobDefinitionList.headerCreateTip')
+                : t('common.permissionDenied')
+            "
+            placement="top"
+          >
+            <span>
+              <el-button
+                type="primary"
+                :icon="Plus"
+                :disabled="!canMutateConfig"
+                @click="openCreate"
+              >
+                {{ t('jobDefinitionList.headerCreate') }}
+              </el-button>
+            </span>
+          </el-tooltip>
+        </div>
       </template>
     </PageHeader>
 
@@ -51,6 +71,7 @@
         :total="total"
         column-config-id="job-definitions"
         :column-defs="columnDefs"
+        :show-column-settings="false"
         v-model:page="page"
         v-model:page-size="pageSize"
         @change="() => {}"
@@ -62,6 +83,7 @@
             :filter-busy="queryActionBusy"
             :refresh-busy="isFetching"
             :disabled="isPending"
+            :show-refresh="false"
             @search="onSearch"
             @reset="reset"
             @refresh="onRefreshDefinitions"
@@ -182,6 +204,16 @@
             show-overflow-tooltip
           />
           <el-table-column
+            v-if="isColVisible('jobType')"
+            prop="jobType"
+            :label="t('jobDefinitionList.colJobType')"
+            width="100"
+          >
+            <template #default="{ row }">
+              <StatusTag :value="row.jobType || 'GENERAL'" category="jobType" />
+            </template>
+          </el-table-column>
+          <el-table-column
             v-if="isColVisible('tenantId')"
             prop="tenantId"
             :label="t('jobDefinitionList.colTenant')"
@@ -192,14 +224,14 @@
             v-if="isColVisible('workerGroup')"
             prop="workerGroup"
             :label="t('jobDefinitionList.colWorkerGroup')"
-            width="180"
+            width="140"
             show-overflow-tooltip
           />
           <el-table-column
             v-if="isColVisible('queueCode')"
             prop="queueCode"
             :label="t('jobDefinitionList.colQueue')"
-            width="180"
+            width="130"
             show-overflow-tooltip
           />
           <el-table-column
@@ -226,10 +258,16 @@
             v-if="isColVisible('enabled')"
             prop="enabled"
             :label="t('jobDefinitionList.colEnabled')"
-            width="80"
+            width="70"
           >
             <template #default="{ row }">
-              <StatusTag :value="String(row.enabled)" category="yn" />
+              <el-switch
+                :model-value="row.enabled"
+                size="small"
+                :disabled="!canMutateConfig"
+                :loading="actingJobCode === row.jobCode"
+                @change="() => toggleRow(row)"
+              />
             </template>
           </el-table-column>
           <el-table-column
@@ -239,7 +277,7 @@
             min-width="220"
             show-overflow-tooltip
           />
-          <el-table-column :label="t('jobDefinitionList.colActions')" width="230" fixed="right">
+          <el-table-column :label="t('jobDefinitionList.colActions')" width="190">
             <template #default="{ row }">
               <RowActions :actions="rowActions(row)" :inline-limit="2" />
             </template>
@@ -572,14 +610,15 @@
     return te(key) ? t(key) : value
   }
 
-  // 列设置:jobCode(主链)/操作列始终显示;工程字段(租户/Worker组/队列/调度表达式)默认隐藏
+  // 列设置:jobCode(主链)/操作列始终显示;默认可见列按 redesign 作业定义表格稿对齐。
   const columnDefs = computed(() => [
     { key: 'jobName', label: t('jobDefinitionList.colJobName') },
+    { key: 'jobType', label: t('jobDefinitionList.colJobType') },
     { key: 'tenantId', label: t('jobDefinitionList.colTenant'), defaultHidden: true },
-    { key: 'workerGroup', label: t('jobDefinitionList.colWorkerGroup'), defaultHidden: true },
-    { key: 'queueCode', label: t('jobDefinitionList.colQueue'), defaultHidden: true },
-    { key: 'scheduleType', label: t('jobDefinitionList.colScheduleType') },
-    { key: 'executionMode', label: t('jobDefinitionList.colExecutionMode') },
+    { key: 'workerGroup', label: t('jobDefinitionList.colWorkerGroup') },
+    { key: 'queueCode', label: t('jobDefinitionList.colQueue') },
+    { key: 'scheduleType', label: t('jobDefinitionList.colScheduleType'), defaultHidden: true },
+    { key: 'executionMode', label: t('jobDefinitionList.colExecutionMode'), defaultHidden: true },
     { key: 'enabled', label: t('jobDefinitionList.colEnabled') },
     { key: 'scheduleExpr', label: t('jobDefinitionList.colScheduleExpr'), defaultHidden: true },
   ])
@@ -809,12 +848,6 @@
     bundleImportMode.value = 'UPSERT'
     bundleImportDryRun.value = false
     bundleImportVisible.value = true
-  }
-
-  // 创建入口下拉:主按钮走向导,次要路径(快速新建 / Bundle 导入)经此分发
-  function onCreateCommand(command: string) {
-    if (command === 'quick') openCreate()
-    else if (command === 'bundle') openBundleImport()
   }
 
   async function submitBundleImport() {
@@ -1405,6 +1438,14 @@
 </script>
 
 <style scoped>
+  .job-header-actions {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
   .detail-runs-header {
     display: flex;
     justify-content: space-between;
@@ -1437,6 +1478,8 @@
 
   .definition-link {
     color: var(--color-primary);
+    font-family: var(--font-mono);
+    font-size: 12px;
     font-weight: 600;
     text-decoration: none;
   }

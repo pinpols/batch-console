@@ -46,9 +46,8 @@ export const BP_MQ = {
 export const CONTENT_MAX_WIDTH = 2400
 
 /**
- * 侧栏自动收起阈值(≤此宽度默认收起侧栏腾内容)。取 1440 而非 lg(1280):
- * 1366×768 这类最常见入门笔电落在 1280~1440 之间,原先保留满侧栏(224px)内容只剩 ~1100,
- * 抬到 1440 让 1366/1440 笔电也自动收起 → 内容多 ~150px;1536+ 仍保留满侧栏。
+ * 侧栏自动收起阈值(≤此宽度默认收起侧栏腾内容)。设计定稿的 1280/1440 桌面基准是图标栏,
+ * 1366×768 这类入门笔电也自动收起,让内容区优先保留空间。
  */
 export const SIDEBAR_AUTOCOLLAPSE_W = 1440
 export const SIDEBAR_AUTOCOLLAPSE_MQ = `(max-width: ${SIDEBAR_AUTOCOLLAPSE_W}px)`

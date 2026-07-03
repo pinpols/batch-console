@@ -140,7 +140,7 @@
     box-shadow:
       var(--shadow-surface-hover),
       inset 0 1px 0 var(--layout-panel-inset-highlight);
-    border-color: color-mix(in srgb, var(--color-border) 68%, var(--color-primary) 32%);
+    border-color: var(--color-border-light);
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -168,12 +168,12 @@
     place-items: center;
     width: 34px;
     height: 34px;
-    border-radius: var(--radius-content);
+    border-radius: 8px;
     color: #fff;
     font-size: 14px;
     font-weight: 700;
-    letter-spacing: 0.08em;
-    background: linear-gradient(135deg, #1677ff 0%, #4ca1ff 100%);
+    letter-spacing: 0;
+    background: linear-gradient(135deg, #1d7dff 0%, #4c9dff 100%);
   }
 
   .brand__title {
@@ -211,20 +211,20 @@
   .layout-menu :deep(.el-sub-menu__title),
   .layout-menu :deep(.el-menu-item) {
     color: var(--layout-sidebar-text);
-    height: 38px;
-    line-height: 38px;
-    border-radius: var(--radius-content);
-    margin: 4px var(--layout-sidebar-inline);
-    padding-left: 9px !important;
-    padding-right: 9px !important;
-    font-size: 13px;
+    height: 34px;
+    line-height: 34px;
+    border-radius: var(--radius-button);
+    margin: 3px var(--layout-sidebar-inline);
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+    font-size: 12px;
     font-weight: 650;
-    letter-spacing: 0.1px;
+    letter-spacing: 0;
   }
 
   .layout-menu :deep(.el-sub-menu__title .el-icon),
   .layout-menu :deep(.el-menu-item .el-icon) {
-    margin-right: 7px;
+    margin-right: 9px;
     font-size: 16px;
     opacity: 0.95;
   }
@@ -234,91 +234,67 @@
   }
 
   .layout-menu :deep(.el-sub-menu .el-menu) {
-    background-color: var(--layout-sidebar-subnav-bg);
-    padding: 5px 0 8px;
-    margin: 0 var(--layout-sidebar-inline) 6px;
-    border-radius: var(--radius-content);
-    overflow: hidden;
+    background-color: transparent;
+    padding: 2px 0 7px;
+    margin: 0 0 6px;
+    border-radius: 0;
+    overflow: visible;
   }
 
-  /* 二级菜单卡片化（sub-menu 内的 item） */
+  /* 二级菜单:按设计稿回到克制列表,用左侧强调条表达当前项。 */
   .layout-menu :deep(.el-sub-menu .el-menu-item) {
-    height: 40px;
-    line-height: 40px;
-    margin: 4px 8px;
+    position: relative;
+    height: 32px;
+    line-height: 32px;
+    margin: 2px 10px 2px 18px;
     font-size: 12px;
-    border-radius: var(--radius-content);
-    background: color-mix(in srgb, var(--layout-sidebar-bg) 18%, var(--color-bg-card) 82%);
-    border: 1px solid color-mix(in srgb, var(--color-border-light) 70%, transparent 30%);
-    box-shadow: 0 6px 18px rgb(15 23 42 / 8%);
+    border-radius: var(--radius-button);
+    background: transparent !important;
+    border: 0;
+    box-shadow: none;
     transition:
-      transform var(--motion-duration-sm) var(--motion-ease-emphasized),
-      box-shadow var(--motion-duration-md) var(--motion-ease-standard),
-      border-color var(--motion-duration-sm) var(--motion-ease-standard),
       background-color var(--motion-duration-sm) var(--motion-ease-standard),
       color var(--motion-duration-sm) var(--motion-ease-standard);
   }
 
+  .layout-menu :deep(.el-sub-menu .el-menu-item::before) {
+    content: '';
+    position: absolute;
+    inset: 7px auto 7px 0;
+    width: 2px;
+    border-radius: 999px;
+    background: transparent;
+  }
+
   .layout-menu :deep(.el-sub-menu .el-menu-item:hover) {
-    transform: translateY(-1px);
-    box-shadow: 0 10px 26px rgb(15 23 42 / 12%);
     color: var(--layout-sidebar-active-text) !important;
-    border-color: color-mix(in srgb, var(--color-primary) 34%, var(--color-border) 66%) !important;
-    background-color: color-mix(
-      in srgb,
-      var(--color-primary) 16%,
-      var(--color-bg-card) 84%
-    ) !important;
+    background-color: var(--layout-sidebar-hover-bg) !important;
   }
 
   .layout-menu :deep(.el-sub-menu .el-menu-item.is-active) {
     color: var(--layout-sidebar-active-text) !important;
-    background-color: color-mix(
-      in srgb,
-      var(--color-primary) 20%,
-      var(--color-bg-card) 80%
-    ) !important;
-    border-color: color-mix(in srgb, var(--color-primary) 36%, var(--color-border) 64%) !important;
-    box-shadow:
-      0 16px 34px rgb(15 23 42 / 14%),
-      0 0 0 1px rgb(22 119 255 / 12%);
+    background-color: var(--layout-sidebar-active-bg) !important;
+    box-shadow: none;
   }
 
-  .layout-menu :deep(.el-sub-menu .el-menu-item.is-active:hover) {
-    background-color: color-mix(
-      in srgb,
-      var(--color-primary) 24%,
-      var(--color-bg-card) 76%
-    ) !important;
+  .layout-menu :deep(.el-sub-menu .el-menu-item.is-active::before) {
+    background: var(--layout-sidebar-active-text);
   }
 
   :global(html.dark) .layout-menu :deep(.el-sub-menu .el-menu-item) {
-    background: color-mix(in srgb, var(--color-bg-card) 92%, #000 8%);
-    border-color: color-mix(in srgb, var(--color-border-light) 55%, transparent 45%);
-    box-shadow: 0 10px 22px rgb(0 0 0 / 38%);
+    background: transparent !important;
+    border-color: transparent;
+    box-shadow: none;
   }
 
   :global(html.dark) .layout-menu :deep(.el-sub-menu .el-menu-item:hover) {
-    background-color: color-mix(
-      in srgb,
-      var(--color-primary) 20%,
-      var(--color-bg-card) 80%
-    ) !important;
+    background-color: var(--layout-sidebar-hover-bg) !important;
     color: var(--layout-sidebar-active-text) !important;
-    border-color: color-mix(in srgb, var(--color-primary) 44%, var(--color-border) 56%) !important;
-    box-shadow: 0 14px 30px rgb(0 0 0 / 46%);
   }
 
   :global(html.dark) .layout-menu :deep(.el-sub-menu .el-menu-item.is-active) {
-    background-color: color-mix(
-      in srgb,
-      var(--color-primary) 28%,
-      var(--color-bg-card) 72%
-    ) !important;
-    border-color: color-mix(in srgb, var(--color-primary) 46%, var(--color-border) 54%) !important;
-    box-shadow:
-      0 18px 36px rgb(0 0 0 / 52%),
-      0 0 0 1px rgb(255 255 255 / 6%);
+    background-color: var(--layout-sidebar-active-bg) !important;
+    box-shadow: none;
   }
 
   /* 一级菜单 & 分组标题 hover（避免覆盖二级卡片 hover/active） */
@@ -339,5 +315,27 @@
 
   .layout-menu :deep(.el-menu-item.is-active:hover) {
     background-color: var(--layout-sidebar-active-hover-bg) !important;
+  }
+
+  .layout-menu.el-menu--collapse {
+    width: 100%;
+  }
+
+  .layout-menu.el-menu--collapse :deep(.el-sub-menu__title) {
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    margin: 6px auto;
+    padding: 0 !important;
+  }
+
+  .layout-menu.el-menu--collapse :deep(.el-sub-menu__title .el-icon) {
+    margin-right: 0;
+    font-size: 17px;
+  }
+
+  .layout-menu.el-menu--collapse :deep(.el-sub-menu.is-active > .el-sub-menu__title) {
+    color: var(--layout-sidebar-active-text) !important;
+    background: var(--layout-sidebar-active-bg) !important;
   }
 </style>

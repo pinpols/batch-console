@@ -90,12 +90,14 @@ export const navigationGroups: NavigationGroup[] = [
         path: '/ops/capacity-profile',
         minRole: 'VIEWER',
         icon: PieChart,
+        hidden: true,
       },
       {
         title: pageTitle('/ops/asset-freshness'),
         path: '/ops/asset-freshness',
         minRole: 'OPERATOR',
         icon: Timer,
+        hidden: true,
       },
     ],
   },
@@ -125,6 +127,32 @@ export const navigationGroups: NavigationGroup[] = [
       },
       { title: pageTitle('/runs'), path: '/runs', minRole: 'VIEWER', icon: List },
       { title: pageTitle('/logs'), path: '/logs', minRole: 'VIEWER', icon: Reading },
+      {
+        title: pageTitle('/observability/trace'),
+        path: '/observability/trace',
+        minRole: 'VIEWER',
+        icon: Search,
+      },
+      {
+        title: pageTitle('/ops/diagnostic'),
+        path: '/ops/diagnostic',
+        minRole: 'ADMIN',
+        icon: Tools,
+      },
+      {
+        title: pageTitle('/observability/lineage'),
+        path: '/observability/lineage',
+        minRole: 'VIEWER',
+        icon: DataLine,
+        hidden: true,
+      },
+      {
+        title: pageTitle('/observability/queries'),
+        path: '/observability/queries',
+        minRole: 'VIEWER',
+        icon: Search,
+        hidden: true,
+      },
     ],
   },
   {
@@ -146,51 +174,10 @@ export const navigationGroups: NavigationGroup[] = [
         icon: Promotion,
       },
       {
-        title: pageTitle('/observability/audits'),
-        path: '/observability/audits',
-        minRole: 'VIEWER',
-        icon: Memo,
-        hidden: true,
-      },
-      {
-        title: pageTitle('/observability/operation-audits'),
-        path: '/observability/operation-audits',
-        minRole: 'VIEWER',
-        icon: Document,
-        hidden: true,
-      },
-      {
-        title: pageTitle('/observability/trace'),
-        path: '/observability/trace',
-        minRole: 'VIEWER',
-        icon: Search,
-      },
-      {
-        title: pageTitle('/observability/lineage'),
-        path: '/observability/lineage',
-        minRole: 'VIEWER',
-        icon: DataLine,
-        hidden: true,
-      },
-      {
         title: pageTitle('/system/notifications'),
         path: '/system/notifications',
         minRole: 'OPERATOR',
         icon: Bell,
-      },
-      {
-        title: pageTitle('/observability/queries'),
-        path: '/observability/queries',
-        minRole: 'VIEWER',
-        icon: Search,
-        hidden: true,
-      },
-      {
-        title: pageTitle('/system/event-catalog'),
-        path: '/system/event-catalog',
-        minRole: 'VIEWER',
-        icon: Collection,
-        hidden: true,
       },
       {
         title: pageTitle('/observability/outbox'),
@@ -213,22 +200,28 @@ export const navigationGroups: NavigationGroup[] = [
         icon: List,
       },
       {
-        title: pageTitle('/workflow/definitions'),
-        path: '/workflow/definitions',
-        minRole: 'VIEWER',
-        icon: Collection,
-      },
-      {
         title: pageTitle('/jobs/pipelines'),
         path: '/jobs/pipelines',
         minRole: 'VIEWER',
         icon: Connection,
       },
       {
+        title: pageTitle('/workflow/definitions'),
+        path: '/workflow/definitions',
+        minRole: 'VIEWER',
+        icon: Collection,
+      },
+      {
         title: pageTitle('/workflow/designer'),
         path: '/workflow/designer',
         minRole: 'OPERATOR',
         icon: Aim,
+      },
+      {
+        title: pageTitle('/config/tenant-package'),
+        path: '/config/tenant-package',
+        minRole: 'OPERATOR',
+        icon: Box,
       },
     ],
   },
@@ -239,18 +232,6 @@ export const navigationGroups: NavigationGroup[] = [
     minRole: 'VIEWER',
     children: [
       { title: pageTitle('/files/list'), path: '/files/list', minRole: 'VIEWER', icon: Files },
-      {
-        title: pageTitle('/files/templates'),
-        path: '/files/templates',
-        minRole: 'VIEWER',
-        icon: Document,
-      },
-      {
-        title: pageTitle('/files/channels'),
-        path: '/files/channels',
-        minRole: 'VIEWER',
-        icon: Connection,
-      },
       {
         title: pageTitle('/files/arrival-groups'),
         path: '/files/arrival-groups',
@@ -263,6 +244,18 @@ export const navigationGroups: NavigationGroup[] = [
         minRole: 'VIEWER',
         icon: DataAnalysis,
       },
+      {
+        title: pageTitle('/files/templates'),
+        path: '/files/templates',
+        minRole: 'VIEWER',
+        icon: Document,
+      },
+      {
+        title: pageTitle('/files/channels'),
+        path: '/files/channels',
+        minRole: 'VIEWER',
+        icon: Connection,
+      },
     ],
   },
   {
@@ -271,6 +264,18 @@ export const navigationGroups: NavigationGroup[] = [
     icon: DataAnalysis,
     minRole: 'VIEWER',
     children: [
+      {
+        title: pageTitle('/workers/management'),
+        path: '/workers/management',
+        minRole: 'OPERATOR',
+        icon: Cpu,
+      },
+      {
+        title: pageTitle('/system/triggers'),
+        path: '/system/triggers',
+        minRole: 'OPERATOR',
+        icon: Timer,
+      },
       {
         title: pageTitle('/scheduler/snapshot'),
         path: '/scheduler/snapshot',
@@ -314,6 +319,7 @@ export const navigationGroups: NavigationGroup[] = [
         path: '/governance/quota',
         minRole: 'OPERATOR',
         icon: Briefcase,
+        hidden: true,
       },
       {
         title: pageTitle('/governance/queues'),
@@ -321,18 +327,6 @@ export const navigationGroups: NavigationGroup[] = [
         minRole: 'OPERATOR',
         icon: Tools,
         hidden: true,
-      },
-      {
-        title: pageTitle('/workers/management'),
-        path: '/workers/management',
-        minRole: 'OPERATOR',
-        icon: Cpu,
-      },
-      {
-        title: pageTitle('/system/triggers'),
-        path: '/system/triggers',
-        minRole: 'OPERATOR',
-        icon: Timer,
       },
       {
         title: pageTitle('/ops/custom-task-types'),
@@ -346,13 +340,6 @@ export const navigationGroups: NavigationGroup[] = [
         path: '/ops/worker-fingerprints',
         minRole: 'OPERATOR',
         icon: Aim,
-        hidden: true,
-      },
-      {
-        title: pageTitle('/ops/diagnostic'),
-        path: '/ops/diagnostic',
-        minRole: 'ADMIN',
-        icon: Tools,
         hidden: true,
       },
       {
@@ -403,17 +390,28 @@ export const navigationGroups: NavigationGroup[] = [
         icon: DocumentChecked,
       },
       {
-        title: pageTitle('/config/tenant-package'),
-        path: '/config/tenant-package',
-        minRole: 'OPERATOR',
-        icon: Box,
-        hidden: true,
-      },
-      {
         title: pageTitle('/config/management'),
         path: '/config/management',
         minRole: 'OPERATOR',
         icon: Operation,
+      },
+      {
+        title: pageTitle('/observability/audits'),
+        path: '/observability/audits',
+        minRole: 'VIEWER',
+        icon: Memo,
+      },
+      {
+        title: pageTitle('/observability/operation-audits'),
+        path: '/observability/operation-audits',
+        minRole: 'VIEWER',
+        icon: Document,
+      },
+      {
+        title: pageTitle('/system/event-catalog'),
+        path: '/system/event-catalog',
+        minRole: 'VIEWER',
+        icon: Collection,
       },
       {
         title: pageTitle('/system/tags'),

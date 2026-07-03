@@ -158,6 +158,21 @@
     position: relative;
   }
 
+  .notif-center__badge :deep(.el-badge__content) {
+    top: 4px;
+    right: 5px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    border: 0;
+    border-radius: 999px;
+    font-size: 10px;
+    font-family: var(--font-mono);
+    font-weight: 700;
+    line-height: 16px;
+    box-shadow: 0 0 0 2px var(--layout-header-bg);
+  }
+
   .notif-center__new-dot {
     position: absolute;
     top: 2px;

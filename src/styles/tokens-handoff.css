@@ -2,6 +2,29 @@
    Source: design/refs/tokens-handoff.css, copied into src so app builds do not import from design/. */
 
 :root {
+  --font-sans:
+    'IBM Plex Sans', Inter, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue',
+    Arial, sans-serif;
+  --font-mono:
+    'IBM Plex Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Monaco, monospace;
+  --font-family-base: var(--font-sans);
+  --font-family-mono: var(--font-mono);
+  --el-font-family: var(--font-sans);
+  --el-font-family-mono: var(--font-mono);
+
+  --font-size-xs: 11px;
+  --font-size-sm: 12px;
+  --font-size-md: 13px;
+  --font-size-lg: 16px;
+  --font-size-xl: 18px;
+  --font-size-2xl: 22px;
+  --el-font-size-extra-small: 11px;
+  --el-font-size-small: 12px;
+  --el-font-size-base: 13px;
+  --el-font-size-medium: 13px;
+  --el-font-size-large: 14px;
+  --el-font-size-extra-large: 18px;
+
   --color-primary: #1668e3;
 
   --color-success: #22845a;
@@ -24,8 +47,39 @@
   --color-border-light: rgba(15, 23, 42, 0.07);
 
   --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --shadow-surface: 0 0 0 1px rgba(15, 23, 42, 0.05);
+  --shadow-surface-hover: 0 0 0 1px rgba(15, 23, 42, 0.1);
+
+  --radius-control: 8px;
+  --radius-button: var(--radius-control);
+  --radius-input: var(--radius-control);
+  --radius-content: 12px;
+  --radius-card: var(--radius-content);
+  --radius-card-lg: var(--radius-content);
+  --radius-surface: var(--radius-content);
+  --layout-panel-radius: var(--radius-content);
+
+  --card-inner-padding: 20px;
+  --page-section-gap: 12px;
+  --page-block-gap: 12px;
+  --page-scroll-edge-top: 8px;
+  --page-scroll-edge-bleed: 18px;
+  --layout-panel-gap: 14px;
+  --layout-header-main-gap: 10px;
+  --layout-panel-hover-safe: 14px;
+  --layout-panel-inset-highlight: rgba(255, 255, 255, 0.48);
 
   --layout-sidebar-bg: #fafbfc;
+  --layout-sidebar-text: #495060;
+  --layout-sidebar-text-muted: #737b8c;
+  --layout-sidebar-brand-divider: rgba(15, 23, 42, 0.08);
+  --layout-sidebar-subnav-bg: transparent;
+  --layout-sidebar-hover-bg: rgba(22, 104, 227, 0.08);
+  --layout-sidebar-hover-text: #1b1e26;
+  --layout-sidebar-active-bg: rgba(22, 104, 227, 0.12);
+  --layout-sidebar-active-text: #1668e3;
+  --layout-sidebar-active-hover-bg: rgba(22, 104, 227, 0.16);
+  --layout-header-bg: rgba(255, 255, 255, 0.86);
   --layout-menu-popup-bg: #fafbfc;
 }
 
@@ -52,7 +106,23 @@ html.dark {
   --color-border-light: rgba(255, 255, 255, 0.055);
 
   --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.25);
+  --shadow-surface: 0 0 0 1px rgba(255, 255, 255, 0.07);
+  --shadow-surface-hover: 0 0 0 1px rgba(255, 255, 255, 0.11);
+  --surface-hover-edge-inset: inset 0 0 0 1px
+    color-mix(in srgb, var(--color-primary) 34%, transparent);
 
-  --layout-sidebar-bg: #17181d;
+  --layout-panel-inset-highlight: rgba(255, 255, 255, 0.075);
+
+  --layout-sidebar-bg: #101724;
+  --layout-sidebar-text: rgba(233, 235, 240, 0.72);
+  --layout-sidebar-text-muted: rgba(233, 235, 240, 0.48);
+  --layout-sidebar-brand-divider: rgba(255, 255, 255, 0.08);
+  --layout-sidebar-subnav-bg: transparent;
+  --layout-sidebar-hover-bg: rgba(92, 157, 255, 0.11);
+  --layout-sidebar-hover-text: #e9ebf0;
+  --layout-sidebar-active-bg: rgba(92, 157, 255, 0.17);
+  --layout-sidebar-active-text: #5c9dff;
+  --layout-sidebar-active-hover-bg: rgba(92, 157, 255, 0.22);
+  --layout-header-bg: rgba(27, 29, 35, 0.9);
   --layout-menu-popup-bg: #17181d;
 }

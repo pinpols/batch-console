@@ -58,6 +58,7 @@
     border-radius: var(--radius-content);
     overflow: hidden;
     position: relative;
+    min-height: 132px;
     --metric-tone: var(--color-text-primary);
   }
 
@@ -99,13 +100,15 @@
     margin-bottom: 10px;
     color: var(--color-text-secondary);
     font-size: var(--font-size-sm);
+    font-weight: 500;
   }
 
   .metric-card__value {
-    font-size: var(--font-size-2xl);
+    font-family: var(--font-mono);
+    font-size: 28px;
     font-weight: 700;
     line-height: var(--line-height-tight);
-    letter-spacing: -0.02em;
+    letter-spacing: 0;
   }
 
   .metric-card__value--long {
@@ -120,6 +123,7 @@
     margin-top: 8px;
     color: var(--color-text-tertiary);
     font-size: var(--font-size-xs);
+    line-height: 1.35;
   }
 
   .metric-card--clickable {

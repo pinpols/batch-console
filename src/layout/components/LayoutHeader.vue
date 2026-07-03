@@ -30,7 +30,19 @@
                   {{ c.title }}
                 </el-breadcrumb-item>
               </el-breadcrumb>
-              <div class="page-meta__title">{{ currentTitle }}</div>
+              <div class="page-meta__title">
+                <span>{{ currentTitle }}</span>
+                <el-tooltip :content="t('nav.copyLink')" placement="bottom">
+                  <button
+                    type="button"
+                    class="page-meta__link"
+                    :aria-label="t('nav.copyLinkAria')"
+                    @click="copyCurrentUrl"
+                  >
+                    <el-icon><Link /></el-icon>
+                  </button>
+                </el-tooltip>
+              </div>
             </div>
           </div>
         </div>
@@ -41,59 +53,6 @@
       </div>
 
       <div class="layout-header__right">
-        <!-- 通知中心:复用 mobileBadges store(getOpsSummary)的待办计数,
-             点击展开分类面板(待审批 / 未确认告警 / 失败任务)+ 直达对应列表。-->
-        <NotificationCenter
-          class="layout-header__bell"
-          :pending-approvals="badges.pendingApprovals"
-          :open-alerts="badges.openAlerts"
-          :critical-alerts="badges.criticalAlerts"
-          :failed-jobs="badges.failedJobs"
-          :user-id="auth.userInfo?.userId"
-        />
-        <el-tooltip :content="`${t('nav.commandPalette')}(⌘/Ctrl + K)`" placement="bottom">
-          <el-button
-            text
-            class="icon-button"
-            :aria-label="t('nav.openCommandPalette')"
-            @click="$emit('open-palette')"
-          >
-            <span class="palette-shortcut">{{ commandPaletteShortcutLabel }}</span>
-          </el-button>
-        </el-tooltip>
-        <!-- 低频工具(复制链接 / 文档 / 语言 / 主题 / 全屏)收纳进一个溢出菜单 dropdown,
-             降低顶栏扫描负担。常驻高频只剩:通知 / 命令面板 / 租户 / 用户 -->
-        <el-dropdown trigger="click" placement="bottom-end" @command="onToolsCommand">
-          <el-button
-            text
-            class="icon-button"
-            :aria-label="t('nav.toolsMenu')"
-            :title="t('nav.toolsMenu')"
-          >
-            <el-icon><MoreFilled /></el-icon>
-          </el-button>
-          <template #dropdown>
-            <el-dropdown-menu>
-              <el-dropdown-item command="copyLink" :icon="Link">
-                {{ t('nav.copyLinkAction') }}
-              </el-dropdown-item>
-              <el-dropdown-item command="docs" :icon="Reading" :divided="true">
-                {{ t('nav.openDocs') }}
-              </el-dropdown-item>
-              <el-dropdown-item command="locale">
-                <span class="locale-chip-mini" aria-hidden="true">{{ localeChipLabel }}</span>
-                <span>{{ localeToggleTooltip }}</span>
-              </el-dropdown-item>
-              <el-dropdown-item command="theme" :icon="themeToolIcon">
-                {{ themeActionLabel }}
-              </el-dropdown-item>
-              <el-dropdown-item command="focus" :icon="FullScreen" :divided="true">
-                {{ app.focusMode ? t('nav.exitFullscreen') : t('nav.fullscreen') }}
-              </el-dropdown-item>
-            </el-dropdown-menu>
-          </template>
-        </el-dropdown>
-        <!-- 当前租户：常驻醒目展示，不藏在悬浮面板里 -->
         <div
           v-if="canSwitchTenant"
           class="tenant-chip tenant-chip--switch"
@@ -140,6 +99,52 @@
           </el-tooltip>
         </div>
 
+        <el-tooltip :content="`${t('nav.commandPalette')}(⌘/Ctrl + K)`" placement="bottom">
+          <button
+            type="button"
+            class="header-search"
+            :aria-label="t('nav.openCommandPalette')"
+            @click="$emit('open-palette')"
+          >
+            <el-icon><Search /></el-icon>
+            <span>{{ t('nav.search') }}</span>
+            <kbd>{{ commandPaletteShortcutLabel }}</kbd>
+          </button>
+        </el-tooltip>
+
+        <NotificationCenter
+          class="layout-header__bell"
+          :pending-approvals="badges.pendingApprovals"
+          :open-alerts="badges.openAlerts"
+          :critical-alerts="badges.criticalAlerts"
+          :failed-jobs="badges.failedJobs"
+          :user-id="auth.userInfo?.userId"
+        />
+
+        <el-tooltip :content="localeToggleTooltip" placement="bottom">
+          <button type="button" class="icon-button header-icon" @click="toggleLocale">
+            {{ localeChipLabel }}
+          </button>
+        </el-tooltip>
+
+        <el-tooltip :content="t('nav.mobilePreview')" placement="bottom">
+          <button type="button" class="icon-button header-icon" @click="openMobilePreview">
+            <el-icon><Iphone /></el-icon>
+          </button>
+        </el-tooltip>
+
+        <el-tooltip :content="t('nav.openDocsTooltip')" placement="bottom">
+          <button type="button" class="icon-button header-icon" @click="openDocs">
+            <el-icon><Reading /></el-icon>
+          </button>
+        </el-tooltip>
+
+        <el-tooltip :content="themeActionLabel" placement="bottom">
+          <button type="button" class="icon-button header-icon" @click="app.toggleTheme()">
+            <el-icon><component :is="themeToolIcon" /></el-icon>
+          </button>
+        </el-tooltip>
+
         <div class="user-area">
           <el-tag v-if="auth.role" size="small" type="info" class="user-area__role">
             {{ auth.role }}
@@ -183,14 +188,14 @@
     Expand,
     Compass,
     Fold,
-    FullScreen,
+    Iphone,
     Key,
     Link,
     Monitor,
     Moon,
-    MoreFilled,
     OfficeBuilding,
     Reading,
+    Search,
     Sunny,
     SwitchButton,
   } from '@element-plus/icons-vue'
@@ -245,12 +250,8 @@
     window.open(docsUrl, '_blank', 'noopener')
   }
 
-  function onToolsCommand(command: string) {
-    if (command === 'copyLink') void copyCurrentUrl()
-    else if (command === 'docs') openDocs()
-    else if (command === 'locale') toggleLocale()
-    else if (command === 'theme') app.toggleTheme()
-    else if (command === 'focus') app.toggleFocusMode()
+  function openMobilePreview() {
+    window.open('/m/ops/summary', '_blank', 'noopener,noreferrer,width=430,height=860')
   }
 
   const router = useRouter()
@@ -264,8 +265,6 @@
     handleTenantSwitch,
     copyTenant,
     currentTitle,
-    themeToggleLabel,
-    themeToggleAriaLabel,
     commandPaletteShortcutLabel,
     handleLogout,
   } = useHeaderLogic()
@@ -313,7 +312,7 @@
     --el-header-padding: 0;
     --el-header-height: auto;
     height: auto;
-    min-height: 48px;
+    min-height: 52px;
     /* 与 .layout-main 同宽：顶栏卡片与主内容卡片左右外缘对齐（未悬停时一致） */
     padding-block: 0 !important;
     padding-inline: var(--layout-main-gutter) !important;
@@ -321,19 +320,18 @@
   }
 
   .layout-header__surface {
-    min-height: 48px;
+    min-height: 52px;
     height: auto;
     width: 100%;
     display: grid;
-    /* 左随内容、中栏铺满：标签紧跟标题，避免大块中空 */
-    grid-template-columns: auto 1fr auto;
+    grid-template-columns: minmax(180px, auto) minmax(0, 1fr) auto;
     align-items: center;
-    column-gap: 12px;
+    column-gap: 10px;
     padding-inline: var(--layout-content-inset-inline);
-    padding-block: 5px;
+    padding-block: 6px;
     box-sizing: border-box;
     background: var(--layout-header-bg);
-    backdrop-filter: blur(12px);
+    backdrop-filter: blur(14px);
     position: relative;
   }
 
@@ -376,7 +374,7 @@
     max-width: 100%;
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
   }
 
   .layout-header__right {
@@ -385,7 +383,7 @@
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    gap: 8px;
+    gap: 6px;
     min-width: 0;
     width: 100%;
   }
@@ -431,21 +429,81 @@
   }
 
   .page-meta__title {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
     font-size: 15px;
-    font-weight: 600;
+    font-weight: 700;
     line-height: 1.2;
   }
 
-  .palette-shortcut {
-    display: inline-block;
-    font-size: 11px;
-    font-weight: 650;
-    letter-spacing: 0.02em;
+  .page-meta__link {
+    display: inline-grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-button);
+    background: transparent;
     color: var(--color-text-tertiary);
-    padding: 2px 6px;
-    border-radius: var(--radius-content);
+    cursor: pointer;
+  }
+
+  .page-meta__link:hover {
+    color: var(--color-primary);
+    background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+  }
+
+  .header-search {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    width: 170px;
+    height: 32px;
+    padding: 0 8px;
     border: 1px solid var(--color-border-light);
-    line-height: 1.2;
+    border-radius: var(--radius-button);
+    background: color-mix(in srgb, var(--color-bg-elevated) 74%, transparent);
+    color: var(--color-text-tertiary);
+    font-size: 13px;
+    cursor: pointer;
+    outline: none;
+    transition:
+      border-color 0.15s ease,
+      background-color 0.15s ease,
+      color 0.15s ease;
+  }
+
+  .header-search:hover,
+  .header-search:focus-visible {
+    color: var(--color-text-primary);
+    border-color: color-mix(in srgb, var(--color-primary) 48%, var(--color-border) 52%);
+    background: color-mix(in srgb, var(--color-primary) 9%, var(--color-bg-elevated) 91%);
+  }
+
+  .header-search span {
+    min-width: 0;
+    flex: 1;
+    text-align: left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .header-search kbd {
+    flex-shrink: 0;
+    min-width: 31px;
+    padding: 1px 5px;
+    border: 1px solid var(--color-border-light);
+    border-radius: 5px;
+    background: color-mix(in srgb, var(--color-bg-card) 70%, transparent);
+    color: var(--color-text-tertiary);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 16px;
+    text-align: center;
   }
 
   .username {
@@ -482,17 +540,12 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 4px 10px;
-    border-radius: var(--radius-content);
-    border: 1px solid color-mix(in srgb, var(--color-primary) 36%, var(--color-border) 64%);
-    background: linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--color-primary) 13%, var(--color-bg-card) 87%),
-      color-mix(in srgb, var(--color-primary) 7%, var(--color-bg-card) 93%)
-    );
-    box-shadow:
-      inset 0 1px 0 rgb(255 255 255 / 18%),
-      0 1px 2px rgb(15 23 42 / 6%);
+    height: 32px;
+    padding: 0 8px;
+    border-radius: var(--radius-button);
+    border: 1px solid color-mix(in srgb, var(--color-primary) 28%, var(--color-border) 72%);
+    background: color-mix(in srgb, var(--color-primary) 8%, var(--color-bg-elevated) 92%);
+    box-shadow: inset 0 1px 0 var(--layout-panel-inset-highlight);
     min-width: 0;
     flex-shrink: 0;
   }
@@ -502,13 +555,13 @@
   }
 
   .tenant-chip--switch :deep(.tenant-chip__select) {
-    width: 168px;
+    width: 154px;
   }
 
   .tenant-chip--switch :deep(.el-select__wrapper) {
-    min-height: 26px;
-    border-radius: calc(var(--radius-content) - 2px);
-    background: color-mix(in srgb, var(--color-bg-card) 78%, transparent);
+    min-height: 24px;
+    border-radius: calc(var(--radius-button) - 2px);
+    background: color-mix(in srgb, var(--color-bg-canvas) 72%, transparent);
     box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-primary) 20%, transparent);
   }
 
@@ -533,8 +586,8 @@
     flex-shrink: 0;
     color: var(--color-text-tertiary);
     font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 0.02em;
+    font-weight: 650;
+    letter-spacing: 0;
   }
 
   .tenant-chip__value {
@@ -554,7 +607,7 @@
     justify-content: center;
     padding: 2px;
     margin-left: 2px;
-    border-radius: var(--radius-content);
+    border-radius: var(--radius-button);
     color: var(--color-text-tertiary);
     cursor: pointer;
     outline: none;
@@ -578,7 +631,36 @@
   }
 
   .icon-button {
-    padding: 6px;
+    display: inline-grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    padding: 0;
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-button);
+    background: color-mix(in srgb, var(--color-bg-elevated) 74%, transparent);
+    color: var(--color-text-secondary);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    outline: none;
+    transition:
+      background-color 0.15s ease,
+      border-color 0.15s ease,
+      color 0.15s ease;
+  }
+
+  .icon-button:hover,
+  .icon-button:focus-visible {
+    color: var(--color-primary);
+    border-color: color-mix(in srgb, var(--color-primary) 40%, var(--color-border) 60%);
+    background: color-mix(in srgb, var(--color-primary) 10%, var(--color-bg-elevated) 90%);
+  }
+
+  .header-icon :deep(.el-icon),
+  .header-icon .el-icon {
+    font-size: 15px;
   }
 
   /* Bell badge:el-badge 默认 offset 偏外,这里挤回 icon 右上角对齐其它 icon-button */
@@ -608,7 +690,7 @@
     margin-right: 5px;
     font-size: 12px;
     font-weight: 700;
-    letter-spacing: -0.02em;
+    letter-spacing: 0;
     color: var(--color-text-secondary);
   }
 </style>

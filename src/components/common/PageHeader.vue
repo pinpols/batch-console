@@ -154,14 +154,19 @@
    * 仪表盘、登录页等入口页设置 meta.hideBackButton = true
    */
   const showBackButton = computed(() => {
+    if (hideDuplicateTitle.value && !props.backTo) return false
     if (props.backTo) return true
     if (route.meta.hideBackButton === true) return false
     return !!historyBackPath.value
   })
 
-  // 前进按钮常驻显示(用户要求),仅在无 forward 记录时置灰禁用。
-  // 隐藏条件只保留 meta.hideBackButton(登录页等入口页)。
-  const showForwardButton = computed(() => route.meta.hideBackButton !== true)
+  // 列表页按 redesign 稿隐藏历史导航;详情页或显式开启的页面才显示前进按钮。
+  const showForwardButton = computed(
+    () =>
+      !hideDuplicateTitle.value &&
+      route.meta.hideBackButton !== true &&
+      route.meta.showForwardButton === true,
+  )
   const forwardDisabled = computed(() => !historyForwardPath.value)
 
   function goBack() {

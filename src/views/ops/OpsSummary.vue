@@ -14,7 +14,7 @@
     </PageHeader>
 
     <!-- P2.1 全 0 引导:summary 加载完且所有核心指标 = 0,显示"开始接入"卡片 -->
-    <SectionCard v-if="summary && isFreshTenant" class="ops-onboarding">
+    <SectionCard v-if="summary && isFreshTenant && opsTab === 'extra'" class="ops-onboarding">
       <div class="ops-onboarding__head">
         <h3>{{ t('opsSummary.onboardingTitle') }}</h3>
         <p>{{ t('opsSummary.onboardingDesc') }}</p>

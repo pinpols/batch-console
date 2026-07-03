@@ -97,39 +97,34 @@
   }
 
   /* ──────────────────────────────────────────────
-   * Grid 布局:列等宽自动折行,扫视性 > 紧凑性
-   * 每列最小 300px,自适应填满容器宽度
+   * Redesign filter bar:紧凑横向 label,按 polished 截图自动折行。
    * ────────────────────────────────────────────── */
   .query-form.el-form--inline {
     display: grid;
-    gap: 12px 20px;
+    grid-template-columns: repeat(auto-fit, minmax(168px, 1fr));
+    gap: 12px 16px;
     align-items: center;
-    padding: 16px 20px;
-    background: color-mix(in srgb, var(--color-bg-card) 60%, var(--color-bg-subtle, #fafbfc));
-    border: 1px solid var(--color-border-light);
+    padding: 16px 18px;
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
     border-radius: var(--radius-content, 10px);
+    box-shadow: var(--shadow-card);
   }
 
-  /* 字段少 → 2 列;query-form 始终占满父容器宽度,与下方 ProTable 对齐 */
   .query-form--cols-2.el-form--inline {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
     width: 100%;
   }
 
-  /* 默认 3 列 */
   .query-form--cols-3.el-form--inline {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
     width: 100%;
   }
 
-  /* 字段多 → 4 列 */
   .query-form--cols-4.el-form--inline {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
     width: 100%;
   }
 
   html.dark .query-form.el-form--inline {
-    background: rgb(255 255 255 / 2%);
+    background: var(--color-bg-card);
   }
 
   /* 响应式降级:窄屏自动收 1 档 */
@@ -193,26 +188,35 @@
   }
 
   .query-form :deep(.el-form-item) {
+    display: flex;
+    align-items: center;
     margin: 0;
     width: 100%;
+    min-width: 0;
   }
 
-  /* 固定标签宽度 → 同一栅格里输入框起点一致、等宽对齐(不再因标签长短参差) */
+  /* Redesign:标签紧贴控件左侧,保持台账密度。 */
   .query-form :deep(.el-form-item__label) {
+    height: var(--control-height-sm, 32px);
+    margin-bottom: 0;
+    padding: 0 8px 0 0;
     color: var(--color-text-secondary);
-    font-size: 13px;
-    justify-content: flex-end;
-    text-align: right;
-    padding-right: 8px;
-    flex: 0 0 84px;
-    width: 84px;
+    font-size: 12px;
+    line-height: var(--control-height-sm, 32px);
+    justify-content: flex-start;
+    text-align: left;
+    flex: 0 0 auto;
+    width: auto;
+    max-width: 94px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
 
   .query-form :deep(.el-form-item__content) {
+    display: flex;
     flex: 1;
+    width: 100%;
     min-width: 0;
     /* 复位 query-w-* 设的固定 --el-input-width,让筛选栏内控件统一填满栅格单元 */
     --el-input-width: 100%;
@@ -233,8 +237,8 @@
 
   /* 操作按钮组 = 最后一行最右,buttons 横向排列;不会被 grid 拉伸 */
   .query-actions {
-    grid-column: -1 / -1;
-    justify-self: end;
+    align-self: center;
+    justify-self: start;
   }
 
   .query-actions :deep(.el-form-item__label) {
@@ -242,6 +246,8 @@
   }
 
   .query-actions :deep(.el-form-item__content) {
+    display: flex;
+    align-items: center;
     gap: 8px;
     flex-wrap: nowrap;
   }

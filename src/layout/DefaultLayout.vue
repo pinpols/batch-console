@@ -138,7 +138,7 @@
      * 顶栏卡片内边距 = 主内容壳 padding + 主区内层 page-scroll-edge-bleed，
      * 与 el-main 内「白卡片 + layout-main__content」文字起始线同一垂线。
      */
-    --layout-main-gutter: 6px;
+    --layout-main-gutter: 0px;
     --layout-card-border-width: 1px;
     --layout-card-padding: 16px;
     --layout-content-inset-inline: calc(var(--layout-card-padding) + var(--page-scroll-edge-bleed));
@@ -310,7 +310,7 @@
   /** 主壳保持稳定，仅通过描边反馈 hover，避免弹层/点击时定位闪烁。 */
   .layout-main__surface:hover {
     transform: none;
-    border-color: color-mix(in srgb, var(--color-border) 68%, var(--color-primary) 32%);
+    border-color: var(--color-border-light);
   }
 
   @media (prefers-reduced-motion: reduce) {

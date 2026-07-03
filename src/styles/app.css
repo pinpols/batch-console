@@ -1311,6 +1311,98 @@ html.dark .dr-preset .el-radio-group {
  * 浏览器「打印 → 另存为 PDF」即得 PDF,无需引入 jspdf/html2canvas。
  * 用 .no-print 标记任何不该出现在纸上的元素;.print-only 反之。
  * ────────────────────────────────────────────────────────────── */
+/* ──────────────────────────────────────────────────────────────
+ * Redesign system override
+ * 设计稿收口层:统一首屏、列表页和通用组件的密度/层级/交互噪声。
+ * ────────────────────────────────────────────────────────────── */
+.app-surface:hover,
+.layout-main__content .app-surface:hover,
+.layout-main__content .el-card:hover,
+.el-card:hover {
+  transform: none;
+  box-shadow: var(--shadow-surface-hover);
+  border-color: var(--color-border-light);
+}
+
+.layout-main__surface.layout-panel,
+.app-surface.layout-panel,
+.section-card.el-card,
+.metric-card.el-card {
+  box-shadow:
+    var(--shadow-surface),
+    inset 0 1px 0 var(--layout-panel-inset-highlight);
+}
+
+.layout-main__surface.layout-panel:hover,
+.app-surface.layout-panel:hover,
+.section-card.el-card:hover,
+.metric-card.el-card:hover {
+  box-shadow:
+    var(--shadow-surface-hover),
+    inset 0 1px 0 var(--layout-panel-inset-highlight);
+}
+
+.pill-tabs .el-tabs__nav-wrap {
+  padding: 3px;
+  border-radius: var(--radius-button);
+  background: color-mix(in srgb, var(--color-bg-card) 74%, var(--color-bg-canvas) 26%);
+  border-color: var(--color-border-light);
+  box-shadow: none;
+}
+
+.pill-tabs .el-tabs__nav {
+  gap: 2px;
+}
+
+.pill-tabs .el-tabs__item {
+  height: 32px;
+  line-height: 32px;
+  border-radius: var(--radius-button);
+  font-weight: 650;
+  letter-spacing: 0;
+}
+
+.pill-tabs .el-tabs__item.is-active,
+.pill-tabs .el-tabs__item.is-active:hover,
+html.dark .pill-tabs .el-tabs__item.is-active,
+html.dark .pill-tabs .el-tabs__item.is-active:hover {
+  color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 13%, var(--color-bg-card) 87%);
+  border-color: color-mix(in srgb, var(--color-primary) 28%, var(--color-border) 72%);
+  box-shadow: none;
+}
+
+.el-button,
+.el-input__wrapper,
+.el-select__wrapper,
+.el-textarea__inner,
+.el-date-editor.el-input__wrapper {
+  border-radius: var(--radius-input);
+}
+
+.el-button {
+  min-height: 32px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.el-button--small {
+  min-height: 28px;
+}
+
+.el-table .el-table__header-wrapper th.el-table__cell,
+.console-table .el-table__header-wrapper th.el-table__cell {
+  letter-spacing: 0;
+}
+
+.pretty-add-button.el-button,
+.pretty-primary-button,
+.section-title,
+.query-title,
+.page-section-title {
+  letter-spacing: 0;
+}
+
 .print-only {
   display: none;
 }

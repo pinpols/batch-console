@@ -3,6 +3,7 @@ import { defineStore } from 'pinia'
 import {
   applyThemeToDocument,
   getSystemIsDark,
+  markThemeRedesignDefaultApplied,
   readThemePreference,
   resolveEffectiveTheme,
   THEME_STORAGE_KEY,
@@ -102,6 +103,7 @@ export const useAppStore = defineStore('app', () => {
     themePreference,
     (p) => {
       localStorage.setItem(THEME_STORAGE_KEY, p)
+      markThemeRedesignDefaultApplied()
       if (p === 'system') {
         systemIsDark.value = getSystemIsDark()
       }
