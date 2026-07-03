@@ -8,7 +8,7 @@
 | -------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
 | [项目结构图](./architecture/project-structure.md)                                      | 顶层 + src 子目录 + 关键 composable + npm script(2026-06-03 新增) |
 | [前端方案设计说明书 V3](./engineering/批量调度系统前端方案设计说明书_开发落地版_V3.md) | 前端总体方案:业务域 / 路由 / 页面职责 / 组件分层 / 联调边界       |
-| [Batch Console 重设计实施准备](./engineering/frontend-redesign-implementation-plan.md) | 2026-07 最新重设计定稿、IA v3、Phase 拆分、后端菜单同步与验收门禁 |
+| [Batch Console 重设计实施准备](./redesign/frontend-redesign-implementation-plan.md)    | 2026-07 最新重设计定稿、IA v3、Phase 拆分、后端菜单同步与验收门禁 |
 | [wrapper 迁移计划](./engineering/fe-wrapper-migration-plan.md)                         | wrapper 迁移路径(过渡期方案)                                      |
 | [页面命名约定](./engineering/page-naming-convention.md)                                | URL / 代码目录 / 侧边栏分组三者一致规则                           |
 | [前端可观测性方案](./engineering/前端可观测性方案.md)                                  | 操作日志 / 行为埋点 / Sentry / 错误追踪                           |
