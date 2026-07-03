@@ -346,7 +346,7 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/workflow/designer/WorkflowDesigner.vue'),
         meta: {
           title: 'Workflow 设计器',
-          activeMenu: '/workflow/definitions',
+          activeMenu: '/workflow/designer',
           minRole: 'OPERATOR',
         },
       },
@@ -358,7 +358,7 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/workflow/designer/diff/WorkflowDesignerDiff.vue'),
         meta: {
           title: 'Workflow 版本对比',
-          activeMenu: '/workflow/definitions',
+          activeMenu: '/workflow/designer',
           minRole: 'VIEWER',
         },
       },

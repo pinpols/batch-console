@@ -868,21 +868,21 @@ export default {
     themeLight: '浅色',
     themeDark: '深色',
     group: {
-      // IA v4(2026-06-21,7→5 组)主键
+      // IA v3(2026-07-03,7 组)主键
       workspace: '工作台',
-      runtime: '运行监控',
-      assets: '作业与文件',
+      monitor: '运行监控',
+      alerting: '告警与投递',
+      definitions: '作业与流程',
+      files: '文件',
       scheduling: '调度治理',
       system: '系统管理',
       // 旧 group key 兜底(停留旧 nav 缓存 / HMR 时不显示 raw key)
       runs: '运行',
-      definitions: '作业与工作流',
-      files: '文件',
-      alerting: '告警与投递',
+      runtime: '运行监控',
+      assets: '作业与文件',
       configSystem: '配置与系统',
       config: '配置',
       jobs: '作业与工作流',
-      monitor: '运行',
       observability: '告警与投递',
       infra: '基础设施',
     },

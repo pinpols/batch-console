@@ -43,6 +43,10 @@ export const pageMetaByPath = {
     title: '工作流定义',
     description: '维护工作流定义、版本和启停状态。',
   },
+  '/workflow/designer': {
+    title: '编排设计器',
+    description: '选择 Workflow 后编辑节点、条件边和汇聚关系。',
+  },
   '/jobs/pipelines': {
     title: '流水线定义',
     description: '维护流水线定义和步骤执行顺序。',

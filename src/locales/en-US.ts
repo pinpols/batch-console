@@ -869,21 +869,21 @@ const messages: Messages = {
     themeLight: 'Light',
     themeDark: 'Dark',
     group: {
-      // IA v4 (2026-06-21, 7→5 groups) primary keys
+      // IA v3 (2026-07-03, 7 groups) primary keys
       workspace: 'Workspace',
-      runtime: 'Runtime & Monitoring',
-      assets: 'Jobs & Files',
+      monitor: 'Runtime monitoring',
+      alerting: 'Alerts & delivery',
+      definitions: 'Jobs & workflows',
+      files: 'Files',
       scheduling: 'Scheduling & Governance',
       system: 'System Admin',
       // Legacy fallback keys (stale HMR / cached nav won't show raw keys)
       runs: 'Runs',
-      definitions: 'Jobs & Workflows',
-      files: 'Files',
-      alerting: 'Alerts & Delivery',
+      runtime: 'Runtime & Monitoring',
+      assets: 'Jobs & Files',
       configSystem: 'Config & System',
       config: 'Config',
       jobs: 'Jobs & Workflows',
-      monitor: 'Runs',
       observability: 'Alerts & Delivery',
       infra: 'Infrastructure',
     },
