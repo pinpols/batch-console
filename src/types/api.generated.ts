@@ -2531,6 +2531,23 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/console/queries/files/summary': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** File list domain summary cards (arrived today / pending / processed / failed) */
+    get: operations['queryFileSummary']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/console/queries/job-definitions': {
     parameters: {
       query?: never
@@ -6512,6 +6529,9 @@ export interface components {
     CommonResponseFileRecordList: components['schemas']['CommonResponseBase'] & {
       data?: components['schemas']['PageResponse']
     }
+    CommonResponseFileSummary: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['ConsoleFileSummaryResponse']
+    }
     CommonResponseJobDefinitionList: components['schemas']['CommonResponseBase'] & {
       data?: components['schemas']['PageResponse']
     }
@@ -7220,6 +7240,29 @@ export interface components {
       createdAt: string
       /** Format: date-time */
       updatedAt: string
+    }
+    /** @description File list domain summary counts (all derived from existing file_record columns). */
+    ConsoleFileSummaryResponse: {
+      /**
+       * Format: int64
+       * @description Files whose created_at falls on the current day.
+       */
+      arrivedToday: number
+      /**
+       * Format: int64
+       * @description Files with file_status = RECEIVED.
+       */
+      pending: number
+      /**
+       * Format: int64
+       * @description Files with file_status = LOADED.
+       */
+      processed: number
+      /**
+       * Format: int64
+       * @description Files with file_status = FAILED.
+       */
+      failed: number
     }
     /** @description 创建资源队列。与 BE Java DTO `ResourceQueueCreateRequest` 对齐。 */
     ResourceQueueCreateRequest: {
@@ -13209,6 +13252,28 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['CommonResponseFileRecordList']
+        }
+      }
+    }
+  }
+  queryFileSummary: {
+    parameters: {
+      query?: {
+        tenantId?: components['parameters']['TenantIdQuery']
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description File summary counts */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseFileSummary']
         }
       }
     }

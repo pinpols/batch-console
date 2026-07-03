@@ -11,6 +11,7 @@ export type ConsoleOpsSummaryResponse = components['schemas']['ConsoleOpsSummary
 export type ConsoleApprovalCommandResponse = components['schemas']['ConsoleApprovalCommandResponse']
 export type ConsoleConfigReleaseResponse = components['schemas']['ConsoleConfigReleaseResponse']
 export type ConsoleFileRecordResponse = components['schemas']['ConsoleFileRecordResponse']
+export type ConsoleFileSummaryResponse = components['schemas']['ConsoleFileSummaryResponse']
 export type ConsoleFileArrivalGroupResponse =
   components['schemas']['ConsoleFileArrivalGroupResponse']
 export type ConsoleWorkerRegistryResponse = components['schemas']['ConsoleWorkerRegistryResponse']

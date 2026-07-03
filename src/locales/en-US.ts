@@ -3912,6 +3912,10 @@ const messages: Messages = {
     foundIssues: 'Found {n} ERROR finding(s)',
   },
   fileList: {
+    summaryArrivedToday: 'Arrived today',
+    summaryPending: 'Pending',
+    summaryProcessed: 'Processed',
+    summaryFailed: 'Failed',
     emptyTitle: 'No files for this tenant yet',
     emptyDescription:
       'Files arrive via template-defined channels. Configure a template first; matching files will appear here.',

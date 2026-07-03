@@ -2,6 +2,41 @@
   <PageContainer>
     <PageHeader />
 
+    <div class="file-summary">
+      <MetricCard
+        :label="t('fileList.summaryArrivedToday')"
+        :value="summary?.arrivedToday ?? 0"
+        tone="info"
+        clickable
+        :active="activeSummaryKey === 'today'"
+        @click="applyTodayFilter"
+      />
+      <MetricCard
+        :label="t('fileList.summaryPending')"
+        :value="summary?.pending ?? 0"
+        tone="warning"
+        clickable
+        :active="activeSummaryKey === 'RECEIVED'"
+        @click="() => applyStatusFilter('RECEIVED')"
+      />
+      <MetricCard
+        :label="t('fileList.summaryProcessed')"
+        :value="summary?.processed ?? 0"
+        tone="success"
+        clickable
+        :active="activeSummaryKey === 'LOADED'"
+        @click="() => applyStatusFilter('LOADED')"
+      />
+      <MetricCard
+        :label="t('fileList.summaryFailed')"
+        :value="summary?.failed ?? 0"
+        tone="danger"
+        clickable
+        :active="activeSummaryKey === 'FAILED'"
+        @click="() => applyStatusFilter('FAILED')"
+      />
+    </div>
+
     <SectionCard>
       <ProTable
         :data="rows"
@@ -62,11 +97,7 @@
               />
             </el-form-item>
             <el-form-item :label="t('fileList.bizDate')">
-              <DateRangePresetPicker
-                v-model="bizDateRange"
-                type="daterange"
-                default-preset="7d"
-              />
+              <DateRangePresetPicker v-model="bizDateRange" type="daterange" default-preset="7d" />
             </el-form-item>
             <el-form-item :label="t('fileList.trace')">
               <TraceIdInput
@@ -94,60 +125,60 @@
         </template>
 
         <template #default="{ isColVisible }">
-        <el-table-column v-if="isColVisible('id')" prop="id" label="ID" width="90" />
-        <el-table-column
-          v-if="isColVisible('fileName')"
-          prop="fileName"
-          :label="t('fileList.fileName')"
-          min-width="320"
-          show-overflow-tooltip
-        />
-        <el-table-column prop="fileStatus" :label="t('fileList.statusLabel')" width="120">
-          <template #default="{ row }">
-            <StatusTag :value="String(row.fileStatus ?? '')" category="file" />
-          </template>
-        </el-table-column>
-        <el-table-column
-          v-if="isColVisible('bizType')"
-          prop="bizType"
-          :label="t('fileList.bizType')"
-          width="120"
-        />
-        <el-table-column
-          v-if="isColVisible('bizDate')"
-          prop="bizDate"
-          :label="t('fileList.bizDate')"
-          width="110"
-        />
-        <el-table-column
-          v-if="isColVisible('traceId')"
-          prop="traceId"
-          :label="t('fileList.trace')"
-          width="200"
-          show-overflow-tooltip
-        >
-          <template #default="{ row }">
-            <router-link
-              v-if="row.traceId"
-              class="cell-link"
-              :to="`/observability/trace?traceId=${row.traceId}`"
-            >
-              {{ row.traceId }}
-            </router-link>
-            <span v-else class="cell-empty">—</span>
-          </template>
-        </el-table-column>
-        <DatetimeColumn
-          v-if="isColVisible('createdAt')"
-          prop="createdAt"
-          :label="t('fileList.colCreatedAt')"
-          width="160"
-        />
-        <el-table-column :label="t('fileList.colActions')" width="320" fixed="right">
-          <template #default="{ row }">
-            <RowActions :actions="rowActions(row)" :inline-limit="3" />
-          </template>
-        </el-table-column>
+          <el-table-column v-if="isColVisible('id')" prop="id" label="ID" width="90" />
+          <el-table-column
+            v-if="isColVisible('fileName')"
+            prop="fileName"
+            :label="t('fileList.fileName')"
+            min-width="320"
+            show-overflow-tooltip
+          />
+          <el-table-column prop="fileStatus" :label="t('fileList.statusLabel')" width="120">
+            <template #default="{ row }">
+              <StatusTag :value="String(row.fileStatus ?? '')" category="file" />
+            </template>
+          </el-table-column>
+          <el-table-column
+            v-if="isColVisible('bizType')"
+            prop="bizType"
+            :label="t('fileList.bizType')"
+            width="120"
+          />
+          <el-table-column
+            v-if="isColVisible('bizDate')"
+            prop="bizDate"
+            :label="t('fileList.bizDate')"
+            width="110"
+          />
+          <el-table-column
+            v-if="isColVisible('traceId')"
+            prop="traceId"
+            :label="t('fileList.trace')"
+            width="200"
+            show-overflow-tooltip
+          >
+            <template #default="{ row }">
+              <router-link
+                v-if="row.traceId"
+                class="cell-link"
+                :to="`/observability/trace?traceId=${row.traceId}`"
+              >
+                {{ row.traceId }}
+              </router-link>
+              <span v-else class="cell-empty">—</span>
+            </template>
+          </el-table-column>
+          <DatetimeColumn
+            v-if="isColVisible('createdAt')"
+            prop="createdAt"
+            :label="t('fileList.colCreatedAt')"
+            width="160"
+          />
+          <el-table-column :label="t('fileList.colActions')" width="320" fixed="right">
+            <template #default="{ row }">
+              <RowActions :actions="rowActions(row)" :inline-limit="3" />
+            </template>
+          </el-table-column>
         </template>
       </ProTable>
     </SectionCard>
@@ -273,13 +304,18 @@
   import ProTable from '@/components/table/ProTable.vue'
   import TablePagerBar from '@/components/table/TablePagerBar.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
+  import MetricCard from '@/components/common/MetricCard.vue'
   import JsonPreview from '@/components/common/JsonPreview.vue'
   import DateRangePresetPicker from '@/components/common/DateRangePresetPicker.vue'
   import RowActions, { type RowAction } from '@/components/common/RowActions.vue'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
   import { getMetaBizTypes } from '@/api/meta'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
-  import type { ConsoleAuditLogResponse, ConsoleFileRecordResponse } from '@/types/console-api'
+  import type {
+    ConsoleAuditLogResponse,
+    ConsoleFileRecordResponse,
+    ConsoleFileSummaryResponse,
+  } from '@/types/console-api'
 
   const tenant = useTenantStore()
 
@@ -374,6 +410,71 @@
     } catch {
       bizTypeOptions.value = []
     }
+  }
+
+  // 领域汇总卡:今日到达 / 待处理(RECEIVED)/ 已处理(LOADED)/ 失败(FAILED)。
+  // 后端 GET /queries/files/summary 按租户全量统计(不受列表日期/状态筛选影响)。
+  const summary = ref<ConsoleFileSummaryResponse | null>(null)
+
+  async function loadSummary() {
+    try {
+      summary.value = await fileApi.summary(filters.tenantId || tenant.tenantId)
+    } catch {
+      summary.value = null
+    }
+  }
+
+  // 当前筛选命中哪张卡(用于高亮激活态)。
+  const activeSummaryKey = computed(() => {
+    if (filters.fileStatus === 'RECEIVED') return 'RECEIVED'
+    if (filters.fileStatus === 'LOADED') return 'LOADED'
+    if (filters.fileStatus === 'FAILED') return 'FAILED'
+    const [today] = recentRange(1)
+    if (!filters.fileStatus && filters.startDate === today && filters.endDate === today) {
+      return 'today'
+    }
+    return ''
+  })
+
+  // 点状态卡:套用状态筛选并清日期锚(汇总为租户全量,清日期才与卡上数字口径一致);
+  // 再次点同一张 = 取消,恢复默认近 7 天。
+  function applyStatusFilter(status: string) {
+    return runSearch(async () => {
+      const active = filters.fileStatus === status
+      filters.fileStatus = active ? '' : status
+      if (active) {
+        const r = recentRange()
+        filters.startDate = r[0]
+        filters.endDate = r[1]
+        bizDateRange.value = r
+      } else {
+        filters.startDate = ''
+        filters.endDate = ''
+        bizDateRange.value = null
+      }
+      page.value = 1
+      await load()
+    })
+  }
+
+  // 点「今日到达」:锚到今天单日、清状态;再次点 = 取消,恢复默认近 7 天。
+  function applyTodayFilter() {
+    return runSearch(async () => {
+      if (activeSummaryKey.value === 'today') {
+        const r = recentRange()
+        filters.startDate = r[0]
+        filters.endDate = r[1]
+        bizDateRange.value = r
+      } else {
+        const today = recentRange(1)
+        filters.fileStatus = ''
+        filters.startDate = today[0]
+        filters.endDate = today[1]
+        bizDateRange.value = today
+      }
+      page.value = 1
+      await load()
+    })
   }
 
   const pagedAuditRows = computed(() =>
@@ -486,6 +587,7 @@
       await fileApi.redispatch({ tenantId: row.tenantId ?? tenant.tenantId, fileId: row.id })
       ElMessage.success(t('fileList.redispatchSuccess'))
       await load()
+      void loadSummary()
     } catch {
       /* cancel */
     }
@@ -502,6 +604,7 @@
       await fileApi.archive({ tenantId: row.tenantId ?? tenant.tenantId, fileId: row.id })
       ElMessage.success(t('fileList.archiveSuccess'))
       await load()
+      void loadSummary()
     } catch {
       /* cancel */
     }
@@ -516,7 +619,21 @@
     page.value = 1
     void load()
     void loadBizTypes()
+    void loadSummary()
   })
 </script>
 
-<style scoped></style>
+<style scoped>
+  .file-summary {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--space-md);
+    margin-bottom: var(--space-md);
+  }
+
+  @media (max-width: 768px) {
+    .file-summary {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+</style>

@@ -3837,6 +3837,10 @@ export default {
     foundIssues: '发现 {n} 项 ERROR',
   },
   fileList: {
+    summaryArrivedToday: '今日到达',
+    summaryPending: '待处理',
+    summaryProcessed: '已处理',
+    summaryFailed: '失败',
     emptyTitle: '当前租户还没有任何文件',
     emptyDescription: '文件通过模板渠道接入。先在"文件模板"配好渠道,匹配的文件到达后会出现在这里。',
     emptyGoTemplates: '去看文件模板',

@@ -7,6 +7,7 @@ import type {
   ConsoleFileArrivalGroupResponse,
   ConsoleFileOperationResponse,
   ConsoleFileRecordResponse,
+  ConsoleFileSummaryResponse,
 } from '@/types/console-api'
 
 export interface FileQuery {
@@ -53,6 +54,10 @@ export const fileApi = {
       pageSize: query.pageSize,
     }
   },
+
+  /** 文件列表页领域汇总卡:今日到达 / 待处理 / 已处理 / 失败。 */
+  summary: (tenantId = readStoredTenantId()) =>
+    get<ConsoleFileSummaryResponse>('/api/console/queries/files/summary', { tenantId }),
 
   detail: (fileId: number, tenantId = readStoredTenantId()) =>
     get<Record<string, unknown>>(`/api/console/queries/files/${fileId}`, { tenantId }),
