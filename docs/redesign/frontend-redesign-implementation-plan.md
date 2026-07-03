@@ -8,7 +8,7 @@
 
 ## 0. 开工前置(阻塞项,未关闭不进 Phase 1)
 
-- [ ] **IA 分组数定死**:本 plan 写 **7 组**,但 `design/CLAUDE.md` 记「已拍板 **5 组**」,两处矛盾。必须二选一,并把另一处同步改掉(直接决定 Phase 2 的 `navigation.ts` / `pageMeta.ts` / 后端 `menu.yml`,选错必返工)。
+- [x] **IA 分组数定死 → 7 组(2026-07-03 定)**:工作台、运行监控、告警与投递、作业与流程、文件、调度治理、系统管理;低频 admin 页不进侧栏走 Command Palette。`design/CLAUDE.md` 已同步(原"5 组"已改)。
 - [ ] **基线合并**:本轮 prep(根 `design/`、本 plan、tokens、目录 reorg)目前在 **codex 分支**,未推远端、不在 `main`;而 `main` 已含近期已合 UX:**#176 表单渐进披露 / #177 QueueConfig 懒加载 / #179 筛选栏等宽栅格 + 占位符文案清洗 / #180 设计文档**。两边已分叉(main 独有 8 / codex 独有 7)。**必须先合出一个同时含「设计 prep」与「#176–#180」的统一基线**,Phase 1 在该基线上开工——否则会覆盖回退这些已合修复。
 - [ ] **Token 定稿确认**:`design/refs/tokens-handoff.css` 为最终交付版(非占位),色/间距/字号齐全。
 
