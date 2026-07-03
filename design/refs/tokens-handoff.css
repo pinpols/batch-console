@@ -1,0 +1,101 @@
+/* ============================================================
+   Batch Console 重设计 — 色板交付(drop-in override)
+   生成:2026-07-03
+
+   用法:在 src/styles/tokens.css **之后**引入本文件即可,
+   它只覆盖既有 --color-* 语义变量的值,不新增命名、不改结构。
+     import '@/styles/tokens.css'
+     import '@/styles/tokens-handoff.css'   // ← 放最后
+
+   映射关系(设计侧 → 前端既有变量):
+     --bg-page   → --color-bg-page
+     --bg-card   → --color-bg-card
+     --bg-elev   → --color-bg-elevated
+     --bg-side   → --color-bg-subtle
+     --border    → --color-border
+     --text-1/2/3→ --color-text-primary/secondary/tertiary
+     --accent    → --color-primary
+     --danger/warning/success → --color-danger/warning/success
+
+   注意事项见文件末尾 ⚠ 段。
+   ============================================================ */
+
+/* ---------- Light(:root) ---------- */
+:root {
+  --color-primary: #1668e3;
+
+  --color-success: #22845a;
+  --color-warning: #b57816;
+  --color-danger: #d64543;
+  --color-info: #1668e3;
+
+  --color-text-primary: #1b1e26;
+  --color-text-secondary: #5b6270;
+  /* 设计值为 #8b919e;前端此前为 WCAG 4.5:1 提到 #6b6b6b。
+     如需严格达标,保留 #6b6b6b(下行注释掉的设计原值)。 */
+  --color-text-tertiary: #6b6b6b; /* 设计原值:#8b919e */
+
+  --color-bg-page: #f5f6f8;
+  --color-bg-canvas: #eceef2; /* 画布略深于 page,维持卡片层次 */
+  --color-bg-card: #ffffff;
+  --color-bg-subtle: #fafbfc;
+  --color-bg-base: #fafafb;
+  --color-bg-elevated: #ffffff;
+
+  --color-border: rgba(15, 23, 42, 0.1);
+  --color-border-light: rgba(15, 23, 42, 0.07);
+
+  --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.05);
+}
+
+/* ---------- Dark(html.dark) ---------- */
+html.dark {
+  --color-primary: #5c9dff; /* 暗色下提亮的强调蓝,对应设计 --accent(暗) */
+
+  --color-success: #5cb381;
+  --color-warning: #e3a94f;
+  --color-danger: #f07a78;
+  --color-info: #5c9dff;
+
+  --color-text-primary: #e9ebf0;
+  --color-text-secondary: #9aa1ae;
+  --color-text-tertiary: #676e7b;
+
+  --color-bg-page: #141519;
+  --color-bg-canvas: #0f1013;
+  --color-bg-card: #1b1d23;
+  --color-bg-subtle: #17181d;
+  --color-bg-base: #141519;
+  --color-bg-elevated: #23262e;
+
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-border-light: rgba(255, 255, 255, 0.055);
+
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+
+/* ============================================================
+   ⚠ 交付说明 / 未覆盖项
+
+   1. 侧栏底色:前端用渐变(--layout-sidebar-bg),设计用纯色
+      #17181d(暗)/ #fafafb(亮)。若要贴合设计,取消下方注释:
+        // :root      { --layout-sidebar-bg: #fafbfc; }
+        // html.dark   { --layout-sidebar-bg: #17181d; }
+
+   2. 强调色深浅两档:设计的 --accent-strong(实心按钮底)
+      亮=#1668e3 暗=#3d87ff,与前端 --button-primary-bg 体系
+      (亮 #1677ff / 暗 #3b82f6)基本一致,未覆盖,沿用前端按钮 token。
+
+   3. 语义"柔和底"(xxx-soft,如 accent-soft 12% alpha)在前端
+      多处以 color-mix / el-color-*-light-9 就地生成,无需单独 token。
+
+   4. Pipeline stage 与 Workflow DAG 节点色板(--color-stage-* /
+      --wf-node-*)前端已单独定义且更细,设计侧 --pal-* 与之同调,
+      不覆盖。
+
+   5. 圆角:设计控件 8px、卡片 12–14px;前端统一 --radius-content:12px。
+      建议沿用前端(密集台账 12px 更稳),不改。
+
+   6. 信息密度:设计 --control-h 32/28、--row-py 10/7 对应
+      前端 html[data-density='compact'] 一档,已有等价机制,不覆盖。
+   ============================================================ */
