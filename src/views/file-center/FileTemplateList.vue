@@ -320,70 +320,100 @@
       destroy-on-close
     >
       <el-form :model="templateForm" label-width="120px">
-        <el-form-item :label="t('fileTemplateList.fieldTemplateCode')" required>
-          <el-input
-            v-if="templateEditingId != null"
-            v-model="templateForm.templateCode"
-            disabled
-            maxlength="128"
-          />
-          <!-- 新建态:CodeNameBuilder 默认 DOMAIN=IMPORT(文件模板多用于导入) -->
-          <CodeNameBuilder v-else v-model="templateForm.templateCode" default-domain="IMPORT" />
-        </el-form-item>
-        <el-form-item :label="t('fileTemplateList.fieldTemplateName')"
-          ><el-input v-model="templateForm.templateName" maxlength="256"
-        /></el-form-item>
-        <el-form-item :label="t('fileTemplateList.fieldTemplateType')" required
-          ><MetaSelect
-            v-model="templateForm.templateType"
-            enum-key="fileTemplateType"
-            class="query-w-full"
-        /></el-form-item>
-        <el-form-item :label="t('fileTemplateList.fieldBizType')"
-          ><MetaSelect
-            v-model="templateForm.bizType"
-            :options="bizTypeOptions"
-            clearable
-            filterable
-        /></el-form-item>
-        <el-form-item :label="t('fileTemplateList.fieldFileFormatType')"
-          ><MetaSelect
-            v-model="templateForm.fileFormatType"
-            enum-key="fileTemplateFormat"
-            class="query-w-full"
-            clearable
-        /></el-form-item>
-        <el-form-item :label="t('fileTemplateList.fieldCharset')"
-          ><el-input v-model="templateForm.charset" maxlength="32"
-        /></el-form-item>
-        <el-form-item :label="t('fileTemplateList.fieldTargetCharset')"
-          ><el-input v-model="templateForm.targetCharset" maxlength="32"
-        /></el-form-item>
-        <el-form-item :label="t('fileTemplateList.fieldDelimiter')"
-          ><el-input v-model="templateForm.delimiter" maxlength="8"
-        /></el-form-item>
-        <el-form-item :label="t('fileTemplateList.fieldLineSeparator')"
-          ><el-input v-model="templateForm.lineSeparator" maxlength="16"
-        /></el-form-item>
-        <el-form-item :label="t('fileTemplateList.fieldVersion')"
-          ><el-input-number v-model="templateForm.version" :min="1"
-        /></el-form-item>
-        <el-form-item :label="t('fileTemplateList.fieldEnabled')"
-          ><el-switch v-model="templateForm.enabled"
-        /></el-form-item>
-        <el-form-item :label="t('fileTemplateList.fieldFieldMappingsJson')">
-          <JsonTextareaInput v-model="templateForm.fieldMappingsJson" :rows="4" />
-        </el-form-item>
-        <el-form-item :label="t('fileTemplateList.fieldQueryParamSchemaJson')">
-          <JsonTextareaInput v-model="templateForm.queryParamSchemaJson" :rows="3" />
-        </el-form-item>
-        <el-form-item :label="t('fileTemplateList.fieldDescription')"
-          ><el-input
-            v-model="templateForm.description"
-            type="textarea"
-            maxlength="512"
-            show-word-limit
-        /></el-form-item>
+        <!-- 基本信息 -->
+        <div class="form-section">
+          <div class="section-title">{{ t('fileTemplateList.sectionBasic') }}</div>
+          <el-form-item :label="t('fileTemplateList.fieldTemplateCode')" required>
+            <el-input
+              v-if="templateEditingId != null"
+              v-model="templateForm.templateCode"
+              disabled
+              maxlength="128"
+            />
+            <!-- 新建态:CodeNameBuilder 默认 DOMAIN=IMPORT(文件模板多用于导入) -->
+            <CodeNameBuilder v-else v-model="templateForm.templateCode" default-domain="IMPORT" />
+          </el-form-item>
+          <el-form-item :label="t('fileTemplateList.fieldTemplateName')"
+            ><el-input v-model="templateForm.templateName" maxlength="256"
+          /></el-form-item>
+          <el-form-item :label="t('fileTemplateList.fieldTemplateType')" required
+            ><MetaSelect
+              v-model="templateForm.templateType"
+              enum-key="fileTemplateType"
+              class="query-w-full"
+          /></el-form-item>
+          <el-form-item :label="t('fileTemplateList.fieldBizType')"
+            ><MetaSelect
+              v-model="templateForm.bizType"
+              :options="bizTypeOptions"
+              clearable
+              filterable
+          /></el-form-item>
+          <el-form-item :label="t('fileTemplateList.fieldEnabled')"
+            ><el-switch v-model="templateForm.enabled"
+          /></el-form-item>
+          <el-form-item :label="t('fileTemplateList.fieldVersion')"
+            ><el-input-number v-model="templateForm.version" :min="1"
+          /></el-form-item>
+          <el-form-item :label="t('fileTemplateList.fieldDescription')"
+            ><el-input
+              v-model="templateForm.description"
+              type="textarea"
+              maxlength="512"
+              show-word-limit
+          /></el-form-item>
+        </div>
+
+        <!-- 文件格式:按所选格式渐进披露;编码等高级项默认折叠 -->
+        <div class="form-section">
+          <div class="section-title">{{ t('fileTemplateList.sectionFormat') }}</div>
+          <el-form-item :label="t('fileTemplateList.fieldFileFormatType')"
+            ><MetaSelect
+              v-model="templateForm.fileFormatType"
+              enum-key="fileTemplateFormat"
+              class="query-w-full"
+              clearable
+          /></el-form-item>
+          <template v-if="isDelimited">
+            <el-form-item :label="t('fileTemplateList.fieldDelimiter')"
+              ><el-input v-model="templateForm.delimiter" maxlength="8"
+            /></el-form-item>
+            <el-form-item :label="t('fileTemplateList.fieldLineSeparator')"
+              ><el-input v-model="templateForm.lineSeparator" maxlength="16"
+            /></el-form-item>
+          </template>
+          <el-form-item>
+            <el-link
+              type="primary"
+              :underline="false"
+              @click="showFormatAdvanced = !showFormatAdvanced"
+              >{{
+                showFormatAdvanced
+                  ? t('fileTemplateList.hideAdvanced')
+                  : t('fileTemplateList.showAdvanced')
+              }}</el-link
+            >
+          </el-form-item>
+          <template v-if="showFormatAdvanced">
+            <el-form-item :label="t('fileTemplateList.fieldCharset')"
+              ><el-input v-model="templateForm.charset" maxlength="32"
+            /></el-form-item>
+            <el-form-item :label="t('fileTemplateList.fieldTargetCharset')"
+              ><el-input v-model="templateForm.targetCharset" maxlength="32"
+            /></el-form-item>
+          </template>
+        </div>
+
+        <!-- 字段映射 -->
+        <div class="form-section">
+          <div class="section-title">{{ t('fileTemplateList.sectionMapping') }}</div>
+          <el-form-item :label="t('fileTemplateList.fieldFieldMappingsJson')">
+            <JsonTextareaInput v-model="templateForm.fieldMappingsJson" :rows="4" />
+          </el-form-item>
+          <el-form-item :label="t('fileTemplateList.fieldQueryParamSchemaJson')">
+            <JsonTextareaInput v-model="templateForm.queryParamSchemaJson" :rows="3" />
+          </el-form-item>
+        </div>
       </el-form>
       <template #footer>
         <el-button @click="templateDialogVisible = false">{{ t('common.cancel') }}</el-button>
@@ -579,6 +609,11 @@
     version: 1,
     description: '',
   })
+
+  // 渐进式披露:分隔符/行分隔符仅对分隔符格式(DELIMITED)相关;其余格式隐藏(值仍保留在 model,提交语义不变)。
+  const isDelimited = computed(() => templateForm.fileFormatType === 'DELIMITED')
+  // 编码等高级项默认折叠(已给 UTF-8 合理默认),减少新建时的认知负担。
+  const showFormatAdvanced = ref(false)
 
   const channelForm = reactive({
     channelCode: '',

@@ -134,9 +134,9 @@
         label-width="120px"
         @submit.prevent
       >
-        <el-form-item :label="t('configReleaseList.createKeyLabel')" prop="configCode">
+        <el-form-item :label="t('configReleaseList.createKeyLabel')" prop="configKey">
           <el-input
-            v-model="createForm.configCode"
+            v-model="createForm.configKey"
             maxlength="128"
             show-word-limit
             :placeholder="t('configReleaseList.createKeyPlaceholder')"
@@ -147,6 +147,14 @@
             v-model="createForm.configType"
             maxlength="64"
             :placeholder="t('configReleaseList.createTypePlaceholder')"
+          />
+        </el-form-item>
+        <el-form-item :label="t('configReleaseList.createNameLabel')" prop="configName">
+          <el-input
+            v-model="createForm.configName"
+            maxlength="128"
+            show-word-limit
+            :placeholder="t('configReleaseList.createNamePlaceholder')"
           />
         </el-form-item>
         <el-form-item :label="t('configReleaseList.createNoteLabel')" prop="releaseNote">
@@ -322,16 +330,18 @@
   const createSaving = ref(false)
   const createFormRef = ref<FormInstance>()
   const createForm = reactive({
-    configCode: '',
+    configKey: '',
     configType: '',
+    configName: '',
     releaseNote: '',
   })
   const createRules: FormRules = {
-    configCode: [
-      { required: true, message: t('configReleaseList.ruleCreateKey'), trigger: 'blur' },
-    ],
+    configKey: [{ required: true, message: t('configReleaseList.ruleCreateKey'), trigger: 'blur' }],
     configType: [
       { required: true, message: t('configReleaseList.ruleCreateType'), trigger: 'blur' },
+    ],
+    configName: [
+      { required: true, message: t('configReleaseList.ruleCreateName'), trigger: 'blur' },
     ],
   }
 
@@ -398,8 +408,9 @@
   })
 
   function resetCreateForm() {
-    createForm.configCode = ''
+    createForm.configKey = ''
     createForm.configType = ''
+    createForm.configName = ''
     createForm.releaseNote = ''
   }
 
@@ -432,14 +443,15 @@
     try {
       await createConfigRelease({
         tenantId: tenant.tenantId,
-        configCode: createForm.configCode.trim(),
         configType: createForm.configType.trim(),
-        releaseNote: createForm.releaseNote.trim() || undefined,
+        configKey: createForm.configKey.trim(),
+        configName: createForm.configName.trim(),
+        reason: createForm.releaseNote.trim() || undefined,
       })
-      ElMessage.success(t('configReleaseList.createSuccess', { key: createForm.configCode }))
+      ElMessage.success(t('configReleaseList.createSuccess', { key: createForm.configKey }))
       createDirty.markPristine()
       createVisible.value = false
-      filters.key = createForm.configCode.trim()
+      filters.key = createForm.configKey.trim()
       await load()
     } finally {
       createSaving.value = false

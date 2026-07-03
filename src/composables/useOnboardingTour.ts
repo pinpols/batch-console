@@ -63,6 +63,12 @@ export function shouldShowOnboarding(): boolean {
 }
 
 export function startOnboarding(steps: TourStep[] = defaultSteps()) {
+  // 弹窗/抽屉打开时不启动引导:coach-mark 会盖住正在填写的表单(反人类)。
+  // Element Plus 的 overlay/drawer 仅在打开时挂到 DOM,存在即视为有模态在前台。
+  if (document.querySelector('.el-overlay, .el-drawer, .el-dialog')) {
+    logRoute('onboarding:skip', { kind: 'onboarding', reason: 'modal open' })
+    return
+  }
   // 校验 DOM 节点存在,否则跳过该步;driver.js 找不到 element 会直接报错挂掉
   const validSteps = steps.filter((s) => document.querySelector(s.element))
   if (validSteps.length === 0) {

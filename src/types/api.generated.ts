@@ -8903,6 +8903,9 @@ export interface components {
       priority?: number | null
       enabled?: boolean | null
       description?: string
+      /** @description FULL / INCREMENTAL / CDC,缺省 FULL */
+      executionMode?: string
+      watermarkField?: string
     }
     WorkflowDefinitionSpec: {
       workflowCode?: string

@@ -192,7 +192,13 @@
   const loading = ref(false)
   const loadError = ref('')
   const report = ref<CapacityProfileReport | null>(null)
-  const range = ref<[string, string] | null>(null)
+  // 默认最近 7 天窗口:后端 capacity-profile 端点缺省 from/to 会 500,首屏必须带窗口。
+  function defaultWindow(): [string, string] {
+    const iso = (d: Date) => d.toISOString().slice(0, 19) + 'Z'
+    const now = new Date()
+    return [iso(new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)), iso(now)]
+  }
+  const range = ref<[string, string] | null>(defaultWindow())
   const query = reactive<{ groupBy: CapacityProfileGroupBy; limit: number }>({
     groupBy: 'TENANT',
     limit: 50,
@@ -255,12 +261,13 @@
     loading.value = true
     loadError.value = ''
     try {
+      const [from, to] = range.value ?? defaultWindow()
       report.value = await getCapacityProfile({
         tenantId: tenant.tenantId,
         groupBy: query.groupBy,
         limit: query.limit,
-        from: range.value?.[0],
-        to: range.value?.[1],
+        from,
+        to,
       })
       ElMessage.success(t('capacityProfile.loadOk'))
     } catch (error) {

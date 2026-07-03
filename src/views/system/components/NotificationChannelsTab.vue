@@ -163,9 +163,9 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item :label="t('notificationChannelsTab.fieldConfig')" prop="config">
+        <el-form-item :label="t('notificationChannelsTab.fieldConfig')" prop="configJson">
           <el-input
-            v-model="channelForm.config"
+            v-model="channelForm.configJson"
             type="textarea"
             :rows="4"
             :placeholder="t('notificationChannelsTab.configPlaceholder')"
@@ -248,7 +248,7 @@
     channelCode: '',
     channelName: '',
     channelType: '',
-    config: '',
+    configJson: '',
     enabled: true,
   })
 
@@ -294,7 +294,7 @@
     channelForm.channelCode = channelEditingCode.value
     channelForm.channelName = String(row.channelName ?? '')
     channelForm.channelType = String(row.channelType ?? '')
-    channelForm.config = String(row.config ?? '')
+    channelForm.configJson = String(row.configJson ?? row.config ?? '')
     channelForm.enabled = !!row.enabled
     channelFormVisible.value = true
     channelDirty.markPristine()
