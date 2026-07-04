@@ -1,7 +1,7 @@
 # 设计源与实现侧记录(实现方维护;design/ 目录只读,不在其中做任何改动)
 
 ## 权威设计源
-- `design/Batch Console 重设计-v2-多屏.html`(13 页多屏交互原型,2026-07-04 12:37 版,md5 fbe2962a227e5e96236d5ff33277efe0)
+- `design/Batch Console 重设计-离线版.html`(2026-07-04 12:52 交付包主件,全站+组件总览+响应式动效规格;深链锚点见 design/交付说明.md)+ `design/全局质感合集.html`(Toast/空态/骨架)
 - 旧版(单屏 .dc.html / 设计定稿 / 旧离线版)已由用户确认删除(2026-07-04)。
 - 参考:`design/export/batch-console-设计规格.md`(文字规格)、`design/refs/`(token/关键页参考图)。
 
