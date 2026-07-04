@@ -842,6 +842,7 @@ export default {
     collapseToggle: '折叠 / 展开侧栏',
     back: '后退',
     forward: '前进',
+    tenantLabel: '租户',
     copyLink: '复制当前页面完整链接(含查询参数)',
     copyLinkAction: '复制当前链接',
     copyLinkAria: '复制当前链接',

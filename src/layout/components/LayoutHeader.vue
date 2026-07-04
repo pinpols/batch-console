@@ -40,7 +40,7 @@
           role="group"
           :aria-label="t('nav.tenantSwitcherAria')"
         >
-          <el-icon class="tenant-chip__icon"><OfficeBuilding /></el-icon>
+          <span class="tenant-chip__label">{{ t('nav.tenantLabel') }}</span>
           <TenantSelect
             :model-value="tenantIdInput"
             size="small"
@@ -50,7 +50,7 @@
           />
         </div>
         <div v-else class="tenant-chip tenant-chip--readonly">
-          <el-icon class="tenant-chip__icon"><OfficeBuilding /></el-icon>
+          <span class="tenant-chip__label">{{ t('nav.tenantLabel') }}</span>
           <span class="tenant-chip__value" :title="tenantIdInput">{{ tenantIdInput }}</span>
         </div>
 
@@ -77,8 +77,13 @@
         />
 
         <el-tooltip :content="localeToggleTooltip" placement="bottom">
-          <button type="button" class="icon-button header-icon" @click="toggleLocale">
-            {{ localeChipLabel }}
+          <button type="button" class="lang-toggle" @click="toggleLocale">
+            <span class="lang-toggle__seg" :class="{ 'is-active': currentLocale === 'zh-CN' }"
+              >中</span
+            >
+            <span class="lang-toggle__seg" :class="{ 'is-active': currentLocale !== 'zh-CN' }"
+              >EN</span
+            >
           </button>
         </el-tooltip>
 
@@ -101,17 +106,20 @@
         </el-tooltip>
 
         <div class="user-area">
-          <el-tag v-if="auth.role" size="small" type="info" class="user-area__role">
-            {{ auth.role }}
-          </el-tag>
           <el-dropdown
             trigger="click"
             placement="bottom-end"
             :hide-on-click="true"
             @command="onUserCommand"
           >
-            <span class="username username--clickable" tabindex="0">
-              {{ auth.userInfo?.username ?? t('nav.notLoggedIn') }}
+            <span class="user-chip username--clickable" tabindex="0">
+              <span class="user-chip__avatar">{{ userInitial }}</span>
+              <span class="user-chip__meta">
+                <span class="user-chip__name">{{
+                  auth.userInfo?.username ?? t('nav.notLoggedIn')
+                }}</span>
+                <span v-if="auth.role" class="user-chip__role">{{ auth.role }}</span>
+              </span>
               <el-icon class="username__caret"><ArrowDown /></el-icon>
             </span>
             <template #dropdown>
@@ -146,7 +154,6 @@
     Key,
     Monitor,
     Moon,
-    OfficeBuilding,
     Reading,
     Search,
     Sunny,
@@ -169,7 +176,9 @@
   const localeToggleTooltip = computed(() =>
     currentLocale.value === 'zh-CN' ? t('layoutHeader.switchToEn') : t('layoutHeader.switchToZh'),
   )
-  const localeChipLabel = computed(() => (currentLocale.value === 'zh-CN' ? 'EN' : '中'))
+  const userInitial = computed(() =>
+    (auth.userInfo?.username ?? '?').trim().charAt(0).toUpperCase(),
+  )
   const themeToolIcon = computed(() => {
     if (app.themePreference === 'system') return Monitor
     return app.themePreference === 'light' ? Sunny : Moon
@@ -359,8 +368,83 @@
     flex-shrink: 0;
   }
 
-  .user-area__role {
+  /* 用户 chip:头像 + 名/角色叠(还原设计 Ⓐ admin / ADMIN) */
+  .user-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 3px 6px 3px 4px;
+  }
+
+  .user-chip__avatar {
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--color-primary) 0%, #4c9dff 100%);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
     flex-shrink: 0;
+  }
+
+  .user-chip__meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    line-height: 1.15;
+    min-width: 0;
+  }
+
+  .user-chip__name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .user-chip__role {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: var(--color-text-tertiary);
+  }
+
+  /* 语言分段切换「中 EN」 */
+  .lang-toggle {
+    display: inline-flex;
+    align-items: center;
+    height: 30px;
+    padding: 2px;
+    gap: 2px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-button);
+    background: var(--color-bg-elevated);
+    cursor: pointer;
+  }
+
+  .lang-toggle__seg {
+    display: inline-grid;
+    place-items: center;
+    min-width: 22px;
+    height: 24px;
+    padding: 0 6px;
+    border-radius: calc(var(--radius-button) - 3px);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-text-tertiary);
+    transition:
+      color var(--motion-duration-sm) var(--motion-ease-standard),
+      background-color var(--motion-duration-sm) var(--motion-ease-standard);
+  }
+
+  .lang-toggle__seg.is-active {
+    color: var(--color-primary);
+    background: color-mix(in srgb, var(--color-primary) 16%, transparent);
   }
 
   .page-meta {
@@ -513,13 +597,12 @@
   .tenant-chip {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
     height: 32px;
-    padding: 0 8px;
+    padding: 0 10px;
     border-radius: var(--radius-button);
-    border: 1px solid color-mix(in srgb, var(--color-primary) 28%, var(--color-border) 72%);
-    background: color-mix(in srgb, var(--color-primary) 8%, var(--color-bg-elevated) 92%);
-    box-shadow: inset 0 1px 0 var(--layout-panel-inset-highlight);
+    border: 1px solid var(--color-border);
+    background: var(--color-bg-elevated);
     min-width: 0;
     flex-shrink: 0;
   }

@@ -843,6 +843,7 @@ const messages: Messages = {
     collapseToggle: 'Collapse / expand sidebar',
     back: 'Back',
     forward: 'Forward',
+    tenantLabel: 'Tenant',
     copyLink: 'Copy full page URL (including query params)',
     copyLinkAction: 'Copy link',
     copyLinkAria: 'Copy current URL',
