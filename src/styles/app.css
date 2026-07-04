@@ -224,19 +224,17 @@ html.layout-shell-lock .layout-root > .layout-sidebar.el-aside {
 }
 
 .pill-tabs .el-tabs__nav-wrap {
-  /* 分段控件底座：先稳住整体，再让单项更克制 */
-  padding: 4px;
-  border-radius: var(--radius-content);
-  background: color-mix(in srgb, var(--color-bg-card) 90%, var(--color-bg-canvas) 10%);
-  border: 1px solid color-mix(in srgb, var(--color-border-light) 70%, var(--color-border) 30%);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 55%),
-    0 1px 2px rgb(15 23 42 / 6%);
+  /* 还原设计:简单 pill 组,无外框盒子/无阴影 */
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
 }
 
 .pill-tabs .el-tabs__nav {
   border: none;
-  gap: 6px;
+  gap: 4px;
 }
 
 .pill-tabs .el-tabs__active-bar {
@@ -244,54 +242,48 @@ html.layout-shell-lock .layout-root > .layout-sidebar.el-aside {
 }
 
 .pill-tabs .el-tabs__item {
-  height: 34px;
-  line-height: 34px;
-  padding: 0 12px;
-  border-radius: var(--radius-content);
+  height: 28px;
+  line-height: 28px;
+  padding: 0 16px;
+  border-radius: 7px;
   overflow: hidden;
-  border: 1px solid transparent;
+  border: none;
   background: transparent;
   color: var(--color-text-secondary);
   font-weight: 600;
-  font-size: var(--font-size-sm);
-  letter-spacing: 0.1px;
+  font-size: var(--font-size-md);
+  letter-spacing: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   user-select: none;
   transition:
-    box-shadow var(--motion-duration-md) var(--motion-ease-standard),
     background-color var(--motion-duration-sm) var(--motion-ease-standard),
-    border-color var(--motion-duration-sm) var(--motion-ease-standard),
     color var(--motion-duration-sm) var(--motion-ease-standard);
 }
 
 .pill-tabs .el-tabs__item:hover {
   color: var(--color-text-primary);
-  background-color: color-mix(in srgb, var(--color-bg-card) 92%, var(--color-bg-canvas) 8%);
-  border-color: color-mix(in srgb, var(--color-border) 82%, var(--color-primary) 18%);
+  background-color: color-mix(in srgb, var(--color-text-primary) 6%, transparent);
 }
 
 .pill-tabs .el-tabs__item.is-active {
-  color: color-mix(in srgb, var(--color-primary) 96%, var(--color-text-primary) 4%);
-  background-color: color-mix(in srgb, var(--color-primary) 10%, var(--color-bg-card) 90%);
-  border-color: color-mix(in srgb, var(--color-primary) 24%, var(--color-border) 76%);
-  border-radius: var(--radius-content);
-  box-shadow:
-    0 6px 14px rgb(15 23 42 / 10%),
-    0 0 0 1px rgb(15 23 42 / 3%);
+  color: var(--color-primary);
+  background-color: color-mix(in srgb, var(--color-primary) 12%, transparent);
+  border-radius: 7px;
+  box-shadow: none;
 }
 
 /* Element Plus 会把首/尾 tab 的左右 padding 清零，导致“两边的字不居中”；这里统一回填 */
 .pill-tabs.el-tabs--top > .el-tabs__header .el-tabs__item:nth-child(2),
 .pill-tabs.el-tabs--bottom > .el-tabs__header .el-tabs__item:nth-child(2) {
-  padding-left: 12px !important;
+  padding-left: 16px !important;
 }
 
 .pill-tabs.el-tabs--top > .el-tabs__header .el-tabs__item:last-child,
 .pill-tabs.el-tabs--bottom > .el-tabs__header .el-tabs__item:last-child {
-  padding-right: 12px !important;
+  padding-right: 16px !important;
 }
 
 .pill-tabs.el-tabs--left > .el-tabs__header,
