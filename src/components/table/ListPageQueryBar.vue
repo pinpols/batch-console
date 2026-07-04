@@ -6,10 +6,10 @@
     v-bind="attrs"
     @submit.prevent="emit('search')"
   >
-    <!-- prepend: 查询条件之前的辅助内容；新增/创建类主操作应放 PageHeader 或子模块标题右侧。 -->
-    <slot name="prepend" />
     <slot />
     <el-form-item v-if="showTrailing" class="query-actions">
+      <!-- prepend(已保存筛选等辅助控件)与操作按钮同行,不再占字段格(label 上置布局下孤格突兀) -->
+      <slot name="prepend" />
       <el-button
         v-if="showSearch"
         type="primary"

@@ -354,21 +354,18 @@
     margin-bottom: 0;
   }
 
+  /* 工具行:实时状态/批量条在左、列设置在右,正常文档流一行。
+     此前 height:0 + 绝对定位把内容叠进表头(「●实时」压住「状态」列),已废弃该 hack。 */
   .pro-table__toolbar {
-    height: 0;
-    margin: 0;
+    min-height: 28px;
+    margin: 0 0 10px;
     display: flex;
     align-items: center;
     gap: 8px;
-    position: relative;
-    z-index: 2;
   }
 
-  /* 列设置按钮始终靠右;toolbar 槽内容占据左侧 */
   .pro-table__col-settings {
-    position: absolute;
-    right: 0;
-    top: calc(var(--page-block-gap) * -1 - 32px);
+    margin-left: auto;
   }
 
   .pro-table__col-panel-head {
