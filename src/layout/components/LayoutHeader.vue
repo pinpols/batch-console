@@ -309,17 +309,18 @@
   .nav-arrows {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    gap: 6px;
     flex-shrink: 0;
   }
 
+  /* 设计实测:← → 28×28 / r7 / 0.08 边框 */
   .nav-arrow {
     display: inline-grid;
     place-items: center;
-    width: 30px;
-    height: 30px;
+    width: 28px;
+    height: 28px;
     border: 1px solid var(--color-border);
-    border-radius: var(--radius-button);
+    border-radius: 7px;
     background: transparent;
     color: var(--color-text-secondary);
     cursor: pointer;

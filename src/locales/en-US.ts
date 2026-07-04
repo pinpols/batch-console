@@ -1197,8 +1197,10 @@ const messages: Messages = {
     },
   },
   palette: {
-    placeholder:
-      'Search menu/recent/jobCode/workflowCode; numeric → Job Instance; traceId → Trace Diagnostic',
+    placeholder: 'Search pages, jump to...',
+    footOpen: 'open',
+    footToggle: 'toggle',
+    footClose: 'close',
     empty: 'No matches',
     sectionJump: 'Quick jump',
     sectionEntity: 'Entity matches',

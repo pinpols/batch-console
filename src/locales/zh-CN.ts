@@ -1195,7 +1195,10 @@ export default {
     },
   },
   palette: {
-    placeholder: '搜索菜单/最近页面/jobCode/workflowCode;纯数字 → 作业实例;traceId → Trace 诊断',
+    placeholder: '搜索页面、跳转...',
+    footOpen: '打开',
+    footToggle: '开关',
+    footClose: '关闭',
     empty: '无匹配结果',
     sectionJump: '快捷跳转',
     sectionEntity: '实体匹配',
