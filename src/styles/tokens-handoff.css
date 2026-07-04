@@ -138,7 +138,7 @@ html.dark {
 
   /* 校正 tokens.css 深色里蓝味残留(表头 #1c222c / 行 #1677ff / 弹层 active #1d4ed8 /
      hero·info·fill 蓝渐变)→ 统一到设计中性表面 + 设计主色系。 */
-  --table-header-bg: color-mix(in srgb, var(--color-bg-card) 82%, #ffffff 5%);
+  --table-header-bg: var(--color-bg-subtle);
   --table-row-hover-bg: color-mix(in srgb, var(--color-primary) 12%, transparent);
   --table-current-row-bg: color-mix(in srgb, var(--color-primary) 18%, transparent);
   --table-stripe-bg: color-mix(in srgb, var(--color-bg-card) 94%, #ffffff 3%);

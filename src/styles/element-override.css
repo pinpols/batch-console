@@ -196,18 +196,18 @@ html.dark {
   overflow: hidden;
 }
 
-/* ProTable：size=small + 再压行高，减少列表页整页滚动 */
+/* 还原设计(02-audit 样张):数据行宽松(~48px),不再极限压行 */
 .console-table.el-table .el-table__cell {
-  padding-top: 3px;
-  padding-bottom: 3px;
+  padding-top: 10px;
+  padding-bottom: 10px;
 }
 
 .console-table.el-table .el-table__cell .cell {
-  line-height: 1.14;
+  line-height: 1.35;
   padding-top: 0;
   padding-bottom: 0;
-  padding-left: 8px;
-  padding-right: 8px;
+  padding-left: 10px;
+  padding-right: 10px;
 }
 
 .console-table.el-table .el-table__header-wrapper .el-table-column--selection > .cell,
