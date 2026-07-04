@@ -47,8 +47,9 @@ test.describe('Job 定义 — 筛选查询', () => {
     await expect(input).toHaveValue('')
   })
 
-  test('刷新按钮重新加载', async ({ page }) => {
-    await page.getByRole('button', { name: '刷新' }).click()
+  test('搜索按钮重新加载(新 UI 裁撤独立刷新钮)', async ({ page }) => {
+    // 新 UI:作业定义查询条 show-refresh=false,重查载体是「搜索」按钮
+    await page.getByRole('button', { name: '搜索' }).click()
     await expect(page.getByRole('columnheader', { name: 'Job Code' })).toBeVisible({ timeout: 6000 })
   })
 })

@@ -431,6 +431,18 @@
   function stageMeta(code: string) {
     return STAGE_META[code] ?? DEFAULT_META
   }
+
+  /** 类型徽章三档语义色软底(照 dump:IMPORT / EXPORT / 其他);e2e 曾抓到该函数缺失致整页渲染异常 */
+  function typeBadgeStyle(type: string) {
+    const s = String(type ?? '').toUpperCase()
+    const c =
+      s === 'IMPORT'
+        ? 'var(--color-primary)'
+        : s === 'EXPORT'
+          ? 'var(--color-success)'
+          : 'var(--color-warning)'
+    return { color: c, background: `color-mix(in srgb, ${c} 12%, transparent)` }
+  }
   import {
     createPipelineDefinition,
     queryPipelineDefinitionDetail,

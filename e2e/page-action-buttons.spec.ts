@@ -67,8 +67,8 @@ for (const pg of PAGES) {
           return
         }
         await createBtn.click()
-        // 抽屉或弹窗应打开
-        const panel = page.locator('.el-drawer:visible, .el-dialog:visible').first()
+        // 抽屉或弹窗应打开(.jdd = 作业定义新版三态右侧抽屉,非 el-drawer)
+        const panel = page.locator('.el-drawer:visible, .el-dialog:visible, .jdd:visible').first()
         await expect(panel, `${pg.path} 点新建应打开抽屉/弹窗`).toBeVisible({ timeout: 5000 })
         // 关闭(Esc 或关闭按钮),不提交
         await page.keyboard.press('Escape')

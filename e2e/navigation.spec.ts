@@ -52,8 +52,8 @@ test.describe('navigation and tabs', () => {
 
   test('命令面板可以打开和关闭', async ({ page }) => {
     await page.getByRole('button', { name: '打开命令面板' }).click()
-    await expect(page.getByPlaceholder(/搜索菜单/)).toBeVisible()
+    await expect(page.getByPlaceholder(/搜索页面/)).toBeVisible()
     await page.keyboard.press('Escape')
-    await expect(page.getByPlaceholder(/搜索菜单/)).toBeHidden()
+    await expect(page.getByPlaceholder(/搜索页面/)).toBeHidden()
   })
 })

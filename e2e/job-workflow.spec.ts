@@ -10,7 +10,9 @@ test.describe('job definitions (Job 定义)', () => {
     await page.goto('/jobs/definitions')
     await expectPageTitle(page, '作业定义')
     await expect(page.getByText('Job Code').first()).toBeVisible()
-    await expect(page.getByRole('button', { name: '刷新' })).toBeVisible()
+    // 新 UI:作业定义查询条裁撤独立「刷新」钮,查询控件 = 搜索/重置
+    await expect(page.getByRole('button', { name: '搜索' })).toBeVisible()
+    await expect(page.getByRole('button', { name: '重置' })).toBeVisible()
   })
 
   test('Job 定义列表支持 jobCode 查询参数预填', async ({ page }) => {

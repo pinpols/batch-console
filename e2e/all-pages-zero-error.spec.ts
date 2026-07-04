@@ -35,7 +35,13 @@ const PAGES: PageCheck[] = [
   { path: '/config/tenant-package', title: '配置批量导入' },
   { path: '/system/tags', title: '标签管理' },
   // 文件中心
-  { path: '/files/list', title: '文件列表', drillFirstRow: true },
+  {
+    path: '/files/list',
+    title: '文件列表',
+    drillFirstRow: true,
+    // files/summary 端点旧 jar 返回 500,FE 已 _silent 降级为 0(src/api/file.ts by-design)
+    allowErrors: [/\/queries\/files\/summary\b/],
+  },
   { path: '/files/templates', title: '文件模板' },
   { path: '/files/arrival-groups', title: '到达组治理' },
   { path: '/files/pipeline-obs', title: '流水线观测' },

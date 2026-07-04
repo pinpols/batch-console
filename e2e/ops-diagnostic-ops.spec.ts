@@ -48,11 +48,13 @@ test.describe('运维诊断 — Outbox 清理 / 重发布', () => {
   })
 
   test('Outbox 刷新', async ({ page }) => {
-    // 查找 Outbox 区域的刷新按钮
-    const refreshBtn = page.getByRole('button', { name: '刷新' }).first()
-    if (!(await isVisible(refreshBtn))) return
+    // 新 UI:诊断卡片进页并发预热,刷新钮初始 is-loading(disabled);等出现可用的刷新钮再点
+    const refreshBtn = page.getByRole('button', { name: '刷新', disabled: false }).first()
+    if (!(await isVisible(refreshBtn, 10_000))) return
     await refreshBtn.click()
-    await expect(page.locator('.el-card, .el-table').first()).toBeAttached({ timeout: 6000 })
+    await expect(page.locator('.diag-card, .el-card, .el-table').first()).toBeAttached({
+      timeout: 6000,
+    })
   })
 
   test('Outbox 清理 → 确认 → toast', async ({ page }) => {

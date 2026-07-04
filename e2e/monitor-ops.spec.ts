@@ -24,33 +24,24 @@ test.describe('Job Instance — 筛选查询', () => {
   })
 
   test('Job Code 搜索 → 查询', async ({ page }) => {
-    const input = page
-      .locator('.el-form-item')
-      .filter({ hasText: 'Job Code' })
-      .getByRole('textbox')
-      .or(page.locator('.el-form-item').filter({ hasText: 'Job Code' }).locator('.el-select'))
-    if (await isVisible(input.getByRole('textbox').first(), 2000)) {
-      await input.getByRole('textbox').first().fill('DEMO')
-    }
-    await page.getByRole('button', { name: '搜索' }).click()
+    // 新 UI:Job Code 搜索是 tab 行右侧 .jr-jobcode(el-select filterable allow-create),
+    // 选中/回车即触发查询,无独立「搜索」按钮
+    const jobCodeSelect = page.locator('.jr-jobcode')
+    await jobCodeSelect.click()
+    await jobCodeSelect.locator('input').first().fill('DEMO')
+    await page.keyboard.press('Enter')
     await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
   })
 
   test('状态筛选 → 查询', async ({ page }) => {
-    // 筛选区可能有多个含「状态」的 form-item(如"状态" / "调度状态"),取 first 避免 strict-mode 命中多个
-    const statusSelect = page
-      .locator('.el-form-item')
-      .filter({ hasText: '状态' })
-      .first()
-      .locator('.el-select')
-      .first()
-    await statusSelect.click()
-    const opt = page.locator('.el-select-dropdown__item').first()
-    if (await isVisible(opt, 2000)) {
-      await opt.click()
-      await page.getByRole('button', { name: '搜索' }).click()
-      await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
-    }
+    // 新 UI:状态下拉裁撤,改为 .jr-tab pill tab 行(全部/运行中/成功/失败/已取消),点击即筛选
+    const failedTab = page.locator('.jr-tab').filter({ hasText: '失败' }).first()
+    await failedTab.click()
+    await expect(failedTab).toHaveClass(/is-active/)
+    await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
+    const allTab = page.locator('.jr-tab').filter({ hasText: '全部' }).first()
+    await allTab.click()
+    await expect(allTab).toHaveClass(/is-active/)
   })
 
   test('重置清空筛选', async ({ page }) => {

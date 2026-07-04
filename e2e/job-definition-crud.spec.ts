@@ -33,12 +33,14 @@ test.describe('Job Definition CRUD', () => {
 
   test('新增 → 表格出现 → 编辑 → 切换启停 → 克隆', async ({ page, network }) => {
     // ─── C ───
+    // 新 UI:新增/编辑/详情合并为 .jdd 三态右侧抽屉(JobDefinitionDrawer,非 el-drawer)
     await page.getByRole('button', { name: '新增作业' }).first().click()
-    const drawer = page.locator('.el-drawer').filter({ hasText: /新增作业|新建作业/ }).first()
+    const drawer = page.locator('.jdd').filter({ hasText: '新建 · 作业定义' }).first()
     await expect(drawer).toBeVisible({ timeout: 5000 })
 
-    await drawer.getByLabel('Job Code').fill(jobCode)
-    await drawer.getByLabel('名称').fill(jobName)
+    // 新 UI 字段 label 中文化:作业编码 / 作业名称
+    await drawer.getByLabel('作业编码').fill(jobCode)
+    await drawer.getByLabel('作业名称').fill(jobName)
 
     // jobType / scheduleType 都是 MetaSelect(el-select)。
     // 等 wrapper 打开后任意第一项可点(MetaSelect 显示带 enum label 兜底)。
@@ -56,10 +58,12 @@ test.describe('Job Definition CRUD', () => {
       await opt.click({ force: true })
       await page.waitForTimeout(150)
     }
-    await selectByLabel('Job Type')
+    await selectByLabel('作业类型')
     await selectByLabel('调度类型')
 
-    await drawer.getByLabel('调度表达式').fill('0 0 * * * *')
+    // 调度类型选中 MANUAL 时表达式字段隐藏;仅在可见时填
+    const exprInput = drawer.getByLabel('调度表达式')
+    if (await isVisible(exprInput, 1500)) await exprInput.fill('0 0 * * * *')
 
     // 提交
     await drawer.getByRole('button', { name: '新增', exact: true }).click()
@@ -87,7 +91,8 @@ test.describe('Job Definition CRUD', () => {
     const editBtn = row.getByRole('button', { name: '编辑' }).first()
     if (await isVisible(editBtn, 2000)) {
       await editBtn.click()
-      const editDrawer = page.locator('.el-drawer').filter({ hasText: /编辑 Job/ }).first()
+      // 编辑态 .jdd 抽屉:头部 mono 标题 = jobCode
+      const editDrawer = page.locator('.jdd').filter({ hasText: jobCode }).first()
       await expect(editDrawer).toBeVisible({ timeout: 5000 })
       // 提交保存(不改字段也能保存,通过 PUT 验证 BE 接收)
       const saveBtn = editDrawer.getByRole('button', { name: /保存|确定|更新/ }).first()

@@ -144,32 +144,43 @@ test.describe('@business-flows D 档 P6 真实业务流程', () => {
     await expectPageTitle(page, /事件告警|告警/)
     await page.waitForLoadState('networkidle', { timeout: 8000 }).catch(() => {})
 
-    // 列表加载即算通过(页面渲染表格/空态);有数据则继续走 ack/silence/close 行操作。
+    // 列表加载即算通过(页面渲染卡片流/空态);有数据则继续走 ack/silence/close 卡片操作。
     // 不再硬断言「必须有 seed 数据」—— 告警是系统生成的,本地/CI 环境可能无 OPEN 告警,
     // 那种情况下页面正确显示空态也是合格,不应让本冒烟用例红。
-    const rows = page.locator('tbody tr.el-table__row')
-    await page.locator('.el-table').first().waitFor({ state: 'visible', timeout: 8000 }).catch(() => {})
-    if ((await rows.count()) === 0) {
+    // 新 UI:表格 → .al-card 卡片流,行操作 = .al-card__ops 的 .al-op 按钮
+    await page.locator('.al-list').first().waitFor({ state: 'visible', timeout: 8000 }).catch(() => {})
+    const cards = page.locator('.al-card')
+    if ((await cards.count()) === 0) {
       // 空态:确认页面没崩(标题已断言),直接结束
       network.assertClean('4. alert lifecycle (empty)')
       return
     }
 
-    for (const [actionRe, dialogBtnRe] of [
-      [/^确认|^ack/i, /确认|确定|提交/],
-      [/^静默|^silence/i, /确认|确定|提交/],
-      [/^关闭|^close/i, /确认|确定|提交/],
-    ] as const) {
-      const row = page.locator('tbody tr.el-table__row').first()
-      if (!(await isVisible(row, 2000))) break
-      const btn = row.getByRole('button', { name: actionRe }).first()
+    for (const actionRe of [/^确认$/, /^静默/, /^关闭$/] as const) {
+      const btn = page.locator('.al-card__ops').getByRole('button', { name: actionRe }).first()
       if (await isVisible(btn, 1500)) {
         await btn.click({ force: true })
-        // 填备注 + 提交
-        const reason = page.locator('.el-dialog:visible, .el-drawer:visible').locator('textarea').first()
-        if (await isVisible(reason, 1500)) await reason.fill('E2E 备注')
-        const submit = page.locator('.el-dialog:visible, .el-drawer:visible').getByRole('button', { name: dialogBtnRe }).first()
-        if (await isVisible(submit, 1500)) await submit.click({ force: true })
+        // 第 1 步:confirmDanger 危险确认(确认告警/确认静默/确认关闭)
+        const box = page.locator('.el-message-box').first()
+        if (await isVisible(box, 3000)) {
+          await box
+            .getByRole('button', { name: /^(确认告警|确认静默|确认关闭|确定)$/ })
+            .click({ force: true })
+            .catch(() => {})
+          // 第 2 步:optionalReason prompt(带 input,确认钮「提交」)
+          await page.waitForTimeout(400)
+          const prompt = page
+            .locator('.el-message-box')
+            .filter({ has: page.locator('input,textarea') })
+            .first()
+          if (await isVisible(prompt, 3000)) {
+            await prompt.locator('input,textarea').first().fill('E2E 备注')
+            await prompt
+              .getByRole('button', { name: /^(提交|确定|确认)$/ })
+              .click({ force: true })
+              .catch(() => {})
+          }
+        }
         await page.waitForTimeout(1000)
       }
     }
@@ -280,6 +291,9 @@ test.describe('@business-flows D 档 P6 真实业务流程', () => {
   // 8. File — 归档 / 审计
   // ───────────────────────────────────────────────────────────────
   test('8. File — 归档 + 审计行操作', async ({ page, network }) => {
+    // files/summary 端点旧 jar 返回 500,FE 已 _silent 降级为 0(src/api/file.ts by-design),
+    // 不属于本流程要守的错误面
+    network.ignore(/\/queries\/files\/summary\b/)
     await page.goto('/files/list')
     await page.waitForLoadState('networkidle', { timeout: 8000 }).catch(() => {})
     const row = page.locator('tbody tr.el-table__row').first()
@@ -309,8 +323,9 @@ test.describe('@business-flows D 档 P6 真实业务流程', () => {
     await expectPageTitle(page, '自助服务')
     await page.waitForLoadState('networkidle', { timeout: 8000 }).catch(() => {})
 
+    // 新 UI:service-card 整卡可点(role=button),卡内不再有独立按钮
     const card = page.locator('.service-card').filter({ hasText: '配额变更' }).first()
-    await card.locator('button').first().click({ force: true })
+    await card.click({ force: true })
     const drawer = page.locator('.el-drawer:visible').first()
     await expect(drawer).toBeVisible({ timeout: 5000 })
 

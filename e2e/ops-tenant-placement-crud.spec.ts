@@ -75,7 +75,12 @@ test.describe('租户分片 tenant-placements (ADMIN)', () => {
       }
     }
     await delBtn.click({ force: true })
-    await page.getByRole('button', { name: '确认' }).first().click({ force: true })
+    // 新 UI:confirmDanger 弹框确认钮文案为「确定」(非 irreversible 场景)
+    await page
+      .locator('.el-message-box')
+      .getByRole('button', { name: /^(确定|确认)/ })
+      .first()
+      .click({ force: true })
 
     await expect(page.getByRole('cell', { name: TENANT })).toBeHidden({ timeout: 8000 })
   })
