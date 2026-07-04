@@ -1374,7 +1374,9 @@ html.dark .pill-tabs .el-tabs__item.is-active:hover {
 
 .el-button {
   min-height: 32px;
-  font-weight: 600;
+  /* 还原设计:按钮 13px;次级 400(主按钮 700 由 element-override 的 --primary 块覆盖) */
+  font-size: 13px;
+  font-weight: 400;
   letter-spacing: 0;
 }
 

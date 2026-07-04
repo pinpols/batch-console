@@ -91,6 +91,12 @@
   --color-bg-info: color-mix(in srgb, var(--color-primary) 8%, var(--color-bg-card));
   --color-bg-hero: var(--color-bg-card);
   --input-bg: #ffffff;
+
+  /* 主按钮对齐设计 light:accent-strong #1668e3 */
+  --button-primary-bg: #1668e3;
+  --button-primary-bg-hover: #2f74e8;
+  --button-primary-bg-active: #1257c4;
+  --button-primary-border: #1668e3;
 }
 
 html.dark {
@@ -155,6 +161,13 @@ html.dark {
   --button-neutral-bg-active: rgba(255, 255, 255, 0.1);
   --button-neutral-border: rgba(255, 255, 255, 0.08);
   --button-neutral-border-hover: rgba(255, 255, 255, 0.16);
+  --button-neutral-text: var(--color-text-primary);
+
+  /* 主按钮对齐设计:accent-strong #3d87ff(比 --color-primary 更饱和一档) */
+  --button-primary-bg: #3d87ff;
+  --button-primary-bg-hover: #5c9dff;
+  --button-primary-bg-active: #2f74e8;
+  --button-primary-border: #3d87ff;
 
   /* 输入类控件底色(设计 --input-bg #15161b,比卡片更沉) */
   --input-bg: #15161b;

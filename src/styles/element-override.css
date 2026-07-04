@@ -386,7 +386,14 @@ html.dark {
 .pro-table .pro-table__toolbar .el-button {
   margin: 0;
   border-radius: var(--radius-button);
-  font-weight: 650;
+  /* 还原设计:次级按钮 13px/400(主按钮 700 由 --primary 块保持) */
+  font-size: 13px;
+  font-weight: 400;
+}
+
+.query-form .query-actions .el-button--primary,
+.pro-table .pro-table__toolbar .el-button--primary {
+  font-weight: 700;
 }
 
 .el-table--striped .el-table__body tr.el-table__row--striped td.el-table__cell {
@@ -424,7 +431,9 @@ html.dark {
   --button-soft-border: var(--button-neutral-border);
   --button-soft-text: var(--button-neutral-text);
   border-radius: var(--radius-button);
-  font-weight: 600;
+  /* 还原设计:按钮 13px;次级 400、主按钮 700(下方 primary 块覆盖) */
+  font-size: 13px;
+  font-weight: 400;
   /* 2026-05-17 统一按钮过渡:单条 transition 用一致的 motion token,
      比原先 0.15s/0.16s/0.18s 混搭节奏更"自然"。color/border/bg/shadow 一致 220ms standard-ease,
      transform 用更快的 emphasized ease 保持"按下即响应"。 */
@@ -440,6 +449,7 @@ html.dark {
 
 .el-button--primary,
 .el-button--info {
+  font-weight: 700;
   --button-bg: var(--button-primary-bg);
   --button-bg-hover: var(--button-primary-bg-hover);
   --button-bg-active: var(--button-primary-bg-active);
@@ -684,6 +694,20 @@ html.dark .el-button--default:not(.is-link):not(.is-text):not(.is-plain):not(.is
 .el-textarea__inner,
 .el-date-editor.el-input__wrapper {
   border-radius: var(--radius-input);
+  /* 还原设计:输入类控件底 = --input-bg(dark #15161b 比卡片更沉;light #fff),
+     边框 --border,替代 EP 默认 fill/shadow 边。 */
+  background-color: var(--input-bg, var(--color-bg-card));
+  box-shadow: 0 0 0 1px var(--color-border) inset;
+}
+
+.el-input__wrapper:hover,
+.el-select__wrapper:hover {
+  box-shadow: 0 0 0 1px var(--color-border-strong, rgba(255, 255, 255, 0.16)) inset;
+}
+
+.el-input__wrapper.is-focus,
+.el-select__wrapper.is-focused {
+  box-shadow: 0 0 0 1px var(--color-primary) inset;
 }
 
 /* 侧栏折叠时弹出层挂 body，随 html.light / html.dark 的 token 切换 */
