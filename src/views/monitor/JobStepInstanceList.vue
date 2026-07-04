@@ -2,7 +2,7 @@
   <PageContainer>
     <PageHeader />
 
-    <SectionCard>
+    <div>
       <ProTable
         :data="rows"
         :loading="loading"
@@ -90,7 +90,7 @@
           </template>
         </el-table-column>
       </ProTable>
-    </SectionCard>
+    </div>
   </PageContainer>
 </template>
 
@@ -107,7 +107,6 @@
   import PageContainer from '@/components/common/PageContainer.vue'
   import MetaSelect from '@/components/common/MetaSelect.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
-  import SectionCard from '@/components/common/SectionCard.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import ProTable from '@/components/table/ProTable.vue'
   import StatusTag from '@/components/common/StatusTag.vue'

@@ -2,39 +2,52 @@
   <PageContainer>
     <PageHeader />
 
+    <!-- 照设计 #files:汇总卡右上「›」跳转箭头(proto dump: docs/redesign/proto-files.html) -->
     <div class="file-summary">
-      <MetricCard
-        :label="t('fileList.summaryArrivedToday')"
-        :value="summary?.arrivedToday ?? 0"
-        tone="info"
-        clickable
-        :active="activeSummaryKey === 'today'"
-        @click="applyTodayFilter"
-      />
-      <MetricCard
-        :label="t('fileList.summaryPending')"
-        :value="summary?.pending ?? 0"
-        tone="warning"
-        clickable
-        :active="activeSummaryKey === 'RECEIVED'"
-        @click="() => applyStatusFilter('RECEIVED')"
-      />
-      <MetricCard
-        :label="t('fileList.summaryProcessed')"
-        :value="summary?.processed ?? 0"
-        tone="success"
-        clickable
-        :active="activeSummaryKey === 'LOADED'"
-        @click="() => applyStatusFilter('LOADED')"
-      />
-      <MetricCard
-        :label="t('fileList.summaryFailed')"
-        :value="summary?.failed ?? 0"
-        tone="danger"
-        clickable
-        :active="activeSummaryKey === 'FAILED'"
-        @click="() => applyStatusFilter('FAILED')"
-      />
+      <div class="file-summary__cell">
+        <MetricCard
+          :label="t('fileList.summaryArrivedToday')"
+          :value="summary?.arrivedToday ?? 0"
+          tone="info"
+          clickable
+          :active="activeSummaryKey === 'today'"
+          @click="applyTodayFilter"
+        />
+        <span class="file-summary__arrow" aria-hidden="true">›</span>
+      </div>
+      <div class="file-summary__cell">
+        <MetricCard
+          :label="t('fileList.summaryPending')"
+          :value="summary?.pending ?? 0"
+          tone="warning"
+          clickable
+          :active="activeSummaryKey === 'RECEIVED'"
+          @click="() => applyStatusFilter('RECEIVED')"
+        />
+        <span class="file-summary__arrow" aria-hidden="true">›</span>
+      </div>
+      <div class="file-summary__cell">
+        <MetricCard
+          :label="t('fileList.summaryProcessed')"
+          :value="summary?.processed ?? 0"
+          tone="success"
+          clickable
+          :active="activeSummaryKey === 'LOADED'"
+          @click="() => applyStatusFilter('LOADED')"
+        />
+        <span class="file-summary__arrow" aria-hidden="true">›</span>
+      </div>
+      <div class="file-summary__cell">
+        <MetricCard
+          :label="t('fileList.summaryFailed')"
+          :value="summary?.failed ?? 0"
+          tone="danger"
+          clickable
+          :active="activeSummaryKey === 'FAILED'"
+          @click="() => applyStatusFilter('FAILED')"
+        />
+        <span class="file-summary__arrow" aria-hidden="true">›</span>
+      </div>
     </div>
 
     <SectionCard>
@@ -75,6 +88,17 @@
                 :placeholder="t('fileList.fileIdPlaceholder')"
               />
             </el-form-item>
+            <el-form-item :label="t('fileList.bizDate')">
+              <DateRangePresetPicker v-model="bizDateRange" type="daterange" default-preset="7d" />
+            </el-form-item>
+            <el-form-item :label="t('fileList.trace')">
+              <TraceIdInput
+                class="query-w-240"
+                v-model="filters.traceId"
+                :placeholder="t('fileList.tracePlaceholder')"
+              />
+            </el-form-item>
+            <!-- 照设计 dump:渠道/状态两个下拉右置,紧邻搜索按钮 -->
             <el-form-item :label="t('fileList.bizType')">
               <MetaSelect
                 class="query-w-160"
@@ -94,16 +118,6 @@
                 enum-key="fileStatus"
                 :placeholder="t('fileList.statusPlaceholder')"
                 :options="fileStatusSelectOptions"
-              />
-            </el-form-item>
-            <el-form-item :label="t('fileList.bizDate')">
-              <DateRangePresetPicker v-model="bizDateRange" type="daterange" default-preset="7d" />
-            </el-form-item>
-            <el-form-item :label="t('fileList.trace')">
-              <TraceIdInput
-                class="query-w-240"
-                v-model="filters.traceId"
-                :placeholder="t('fileList.tracePlaceholder')"
               />
             </el-form-item>
           </ListPageQueryBar>
@@ -629,6 +643,22 @@
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: var(--space-md);
     margin-bottom: var(--space-md);
+  }
+
+  .file-summary__cell {
+    position: relative;
+    min-width: 0;
+  }
+
+  /* 照设计 dump:卡片标签行右端「›」(11px / text-3),提示卡片可点联动筛选 */
+  .file-summary__arrow {
+    position: absolute;
+    top: 16px;
+    right: 18px;
+    font-size: 11px;
+    line-height: 1;
+    color: var(--color-text-tertiary);
+    pointer-events: none;
   }
 
   @media (max-width: 768px) {

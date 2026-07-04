@@ -14,6 +14,55 @@
       </template>
     </PageHeader>
 
+    <!-- 照设计 dump(docs/redesign/proto-nav-流水线定义.html):独立筛选卡片(r12 / 16 18 / label 12 text-3) -->
+    <div class="pd-filter">
+      <div class="pd-filter__field pd-filter__field--code">
+        <div class="pd-filter__label">{{ t('pipelineDefinitionList.keywordLabel') }}</div>
+        <el-input
+          v-model="keyword"
+          clearable
+          :placeholder="t('pipelineDefinitionList.keywordPlaceholder')"
+          @keyup.enter="onQueryBarSearch"
+        />
+      </div>
+      <div class="pd-filter__field pd-filter__field--type">
+        <div class="pd-filter__label">{{ t('pipelineDefinitionList.typeLabel') }}</div>
+        <el-select
+          v-model="pipelineType"
+          clearable
+          filterable
+          :placeholder="t('pipelineDefinitionList.typePlaceholder')"
+        >
+          <el-option
+            v-for="option in pipelineTypeOptions"
+            :key="option"
+            :label="option"
+            :value="option"
+          />
+        </el-select>
+      </div>
+      <div class="pd-filter__field pd-filter__field--enabled">
+        <div class="pd-filter__label">{{ t('pipelineDefinitionList.enabledLabel') }}</div>
+        <el-select
+          v-model="enabledFilter"
+          clearable
+          :placeholder="t('pipelineDefinitionList.enabledPlaceholder')"
+        >
+          <el-option :label="t('pipelineDefinitionList.optEnabled')" :value="true" />
+          <el-option :label="t('pipelineDefinitionList.optDisabled')" :value="false" />
+        </el-select>
+      </div>
+      <div class="pd-filter__actions">
+        <el-button type="primary" :loading="filterBusy" @click="onQueryBarSearch">
+          {{ t('common.search') }}
+        </el-button>
+        <el-button @click="onQueryBarReset">{{ t('common.reset') }}</el-button>
+        <el-button :loading="loading" @click="() => runRefresh(load)">
+          {{ t('common.refresh') }}
+        </el-button>
+      </div>
+    </div>
+
     <SectionCard>
       <ProTable
         :data="rows"
@@ -41,67 +90,35 @@
             </template>
           </EmptyState>
         </template>
-        <template #query>
-          <ListPageQueryBar
-            :filter-busy="filterBusy"
-            :refresh-busy="loading"
-            @search="onQueryBarSearch"
-            @reset="onQueryBarReset"
-            @refresh="() => runRefresh(load)"
-          >
-            <el-form-item :label="t('pipelineDefinitionList.keywordLabel')">
-              <el-input
-                v-model="keyword"
-                clearable
-                :placeholder="t('pipelineDefinitionList.keywordPlaceholder')"
-              />
-            </el-form-item>
-            <el-form-item :label="t('pipelineDefinitionList.typeLabel')">
-              <el-select
-                class="query-w-160"
-                v-model="pipelineType"
-                clearable
-                filterable
-                :placeholder="t('pipelineDefinitionList.typePlaceholder')"
-              >
-                <el-option
-                  v-for="option in pipelineTypeOptions"
-                  :key="option"
-                  :label="option"
-                  :value="option"
-                />
-              </el-select>
-            </el-form-item>
-            <el-form-item :label="t('pipelineDefinitionList.enabledLabel')">
-              <el-select
-                class="query-w-120"
-                v-model="enabledFilter"
-                clearable
-                :placeholder="t('pipelineDefinitionList.enabledPlaceholder')"
-              >
-                <el-option :label="t('pipelineDefinitionList.optEnabled')" :value="true" />
-                <el-option :label="t('pipelineDefinitionList.optDisabled')" :value="false" />
-              </el-select>
-            </el-form-item>
-          </ListPageQueryBar>
-        </template>
         <el-table-column
           prop="pipelineCode"
           :label="t('pipelineDefinitionList.colCode')"
           width="220"
           show-overflow-tooltip
-        />
+        >
+          <template #default="{ row }">
+            <!-- 照 dump:code 走 mono + accent,点击开详情抽屉 -->
+            <span class="pd-code" @click="openDetail(row, 'overview')">{{ row.pipelineCode }}</span>
+          </template>
+        </el-table-column>
         <el-table-column
           prop="pipelineName"
           :label="t('pipelineDefinitionList.colName')"
           min-width="260"
           show-overflow-tooltip
         />
-        <el-table-column
-          prop="pipelineType"
-          :label="t('pipelineDefinitionList.colType')"
-          width="120"
-        />
+        <el-table-column :label="t('pipelineDefinitionList.colType')" width="120">
+          <template #default="{ row }">
+            <!-- 照 dump:类型徽章 mono 彩底(IMPORT/EXPORT/其他 三档语义色) -->
+            <span
+              v-if="row.pipelineType"
+              class="pd-badge"
+              :style="typeBadgeStyle(row.pipelineType)"
+              >{{ row.pipelineType }}</span
+            >
+            <span v-else class="muted">—</span>
+          </template>
+        </el-table-column>
         <DatetimeColumn
           prop="updatedAt"
           :label="t('pipelineDefinitionList.colUpdatedAt')"

@@ -2,20 +2,18 @@
   <PageContainer>
     <PageHeader />
 
-    <!-- P2.2 顶部全局 Trace 快搜:粘 traceId 直跳 Trace 诊断 -->
-    <SectionCard class="obs-trace-bar">
-      <div class="obs-trace-bar__row">
-        <TraceIdInput
-          v-model="traceQuick"
-          :placeholder="t('observability.traceQuickPlaceholder')"
-          class="obs-trace-bar__input"
-        />
-        <el-button type="primary" :disabled="!traceQuick.trim()" @click="jumpTrace">
-          {{ t('observability.traceQuickGo') }}
-        </el-button>
-        <span class="obs-trace-bar__hint">{{ t('observability.traceQuickHint') }}</span>
-      </div>
-    </SectionCard>
+    <!-- P2.2 顶部全局 Trace 快搜:粘 traceId 直跳 Trace 诊断(独立筛选条,无卡壳) -->
+    <div class="obs-trace-bar">
+      <TraceIdInput
+        v-model="traceQuick"
+        :placeholder="t('observability.traceQuickPlaceholder')"
+        class="obs-trace-bar__input"
+      />
+      <el-button type="primary" :disabled="!traceQuick.trim()" @click="jumpTrace">
+        {{ t('observability.traceQuickGo') }}
+      </el-button>
+      <span class="obs-trace-bar__hint">{{ t('observability.traceQuickHint') }}</span>
+    </div>
 
     <el-tabs v-model="activeTab" class="pill-tabs">
       <el-tab-pane :label="t('observability.tabDeadLetters')" name="deadLetters">
@@ -36,12 +34,14 @@
 
 <style scoped>
   .obs-trace-bar {
-    margin-bottom: 12px;
-  }
-  .obs-trace-bar__row {
     display: flex;
     gap: 8px;
     align-items: center;
+    padding: 7px 14px;
+    margin: 6px 0 12px;
+    border: 1px solid var(--color-border);
+    border-radius: 9px;
+    background: var(--color-bg-card);
   }
   .obs-trace-bar__input {
     flex: 0 0 480px;
@@ -62,7 +62,6 @@
   import PageContainer from '@/components/common/PageContainer.vue'
   import TraceIdInput from '@/components/common/TraceIdInput.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
-  import SectionCard from '@/components/common/SectionCard.vue'
   import DeadLettersTab from './components/DeadLettersTab.vue'
   import RetriesTab from './components/RetriesTab.vue'
   import ExecutionLogsTab from './components/ExecutionLogsTab.vue'

@@ -2425,9 +2425,16 @@ export default {
     colTaskType: '任务类型',
     colReason: '原因',
   },
+  runsOverview: {
+    recentHint: '最近 {n} 条',
+    todayCompleted: '今日完成',
+    todayFailed: '今日失败',
+    waiting: '等待中',
+  },
   observability: {
     // P2.2 顶部 Trace 快搜
     traceQuickPlaceholder: '粘 traceId,直跳 Trace 诊断聚合页',
+    outboxStatSuccess: '投递成功',
     traceQuickGo: '诊断 Trace',
     traceQuickHint: '从其它页"复制 traceId"过来粘贴,或直接输入 16-64 位 hex',
     // ObservabilityQueryTabs
@@ -3193,6 +3200,7 @@ export default {
     refresh: '刷新',
   },
   configReleaseList: {
+    panelInfoTitle: '发布信息',
     headerCreate: '新增发布',
     keyLabel: 'Key',
     keyPlaceholder: '搜索配置 Key',

@@ -2,7 +2,7 @@
   <PageContainer>
     <PageHeader />
 
-    <SectionCard>
+    <div>
       <ProTable
         :data="rows"
         :loading="tableBlocking"
@@ -157,7 +157,7 @@
           </template>
         </el-table-column>
       </ProTable>
-    </SectionCard>
+    </div>
   </PageContainer>
 </template>
 
@@ -178,7 +178,6 @@
   import TraceIdInput from '@/components/common/TraceIdInput.vue'
   import MetaSelect from '@/components/common/MetaSelect.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
-  import SectionCard from '@/components/common/SectionCard.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import SavedFiltersMenu from '@/components/table/SavedFiltersMenu.vue'

@@ -2493,8 +2493,15 @@ const messages: Messages = {
     colTaskType: 'Task Type',
     colReason: 'Reason',
   },
+  runsOverview: {
+    recentHint: 'Latest {n} items',
+    todayCompleted: 'Completed today',
+    todayFailed: 'Failed today',
+    waiting: 'Waiting',
+  },
   observability: {
     traceQuickPlaceholder: 'Paste traceId to jump to Trace Diagnostic',
+    outboxStatSuccess: 'Delivered',
     traceQuickGo: 'Diagnose',
     traceQuickHint: 'Paste a copied traceId from any page, or enter 16-64 hex chars',
     tabDeadLetters: 'Dead Letters',
@@ -3256,6 +3263,7 @@ const messages: Messages = {
     refresh: 'Refresh',
   },
   configReleaseList: {
+    panelInfoTitle: 'Release info',
     headerCreate: 'New release',
     keyLabel: 'Key',
     keyPlaceholder: 'Config key (fuzzy)',
