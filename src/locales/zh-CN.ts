@@ -3765,6 +3765,18 @@ export default {
     colOnlineWorkers: '在线 Worker',
   },
   jobInstanceList: {
+    savedFilters: '已保存筛选',
+    saveCurrentFilter: '保存当前筛选',
+    saveFilterPrompt: '为当前筛选组合命名',
+    tabAll: '全部',
+    tabRunning: '运行中',
+    tabSuccess: '成功',
+    tabFailed: '失败',
+    tabCancelled: '已取消',
+    liveTitle: '实时监控',
+    liveEvery: '每 10 秒自动刷新',
+    liveLast: '上次更新',
+    liveRunning: '{n} 个运行中',
     dryRunBadge: '演练',
     emptyTitle: '当前租户还没有任何作业实例',
     emptyDescription:

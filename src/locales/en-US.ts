@@ -3837,6 +3837,18 @@ const messages: Messages = {
     colOnlineWorkers: 'Online workers',
   },
   jobInstanceList: {
+    savedFilters: 'Saved filters',
+    saveCurrentFilter: 'Save current filter',
+    saveFilterPrompt: 'Name this filter set',
+    tabAll: 'All',
+    tabRunning: 'Running',
+    tabSuccess: 'Success',
+    tabFailed: 'Failed',
+    tabCancelled: 'Cancelled',
+    liveTitle: 'Live',
+    liveEvery: 'Auto refresh every 10s',
+    liveLast: 'Last updated',
+    liveRunning: '{n} running',
     dryRunBadge: 'Dry-run',
     emptyTitle: 'No job instances for this tenant yet',
     emptyDescription:
