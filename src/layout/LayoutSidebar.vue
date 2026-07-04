@@ -218,8 +218,14 @@
     display: none;
   }
 
+  /* 组间距:收起组之间紧凑(8px,组头自带 32 高);展开组由 items 的 padding-bottom
+     再补呼吸,展开内容到下一组头 ≈ 20px(设计节奏)。此前统一 24px 导致收起组间空隙过大。 */
   .nav__group + .nav__group {
-    margin-top: 24px;
+    margin-top: 8px;
+  }
+
+  .nav__items {
+    padding-bottom: 12px;
   }
 
   /* 组标题行:11.5px #9aa1ae + 右侧 chevron(收起 › / 展开 ⌄) */
