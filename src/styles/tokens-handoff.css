@@ -126,11 +126,11 @@ html.dark {
   --layout-sidebar-text-muted: rgba(233, 235, 240, 0.48);
   --layout-sidebar-brand-divider: rgba(255, 255, 255, 0.08);
   --layout-sidebar-subnav-bg: transparent;
-  --layout-sidebar-hover-bg: rgba(92, 157, 255, 0.11);
+  --layout-sidebar-hover-bg: rgba(92, 157, 255, 0.06);
   --layout-sidebar-hover-text: #e9ebf0;
-  --layout-sidebar-active-bg: rgba(92, 157, 255, 0.17);
+  --layout-sidebar-active-bg: rgba(92, 157, 255, 0.12);
   --layout-sidebar-active-text: #5c9dff;
-  --layout-sidebar-active-hover-bg: rgba(92, 157, 255, 0.22);
+  --layout-sidebar-active-hover-bg: rgba(92, 157, 255, 0.16);
   --layout-header-bg: rgba(27, 29, 35, 0.9);
   --layout-menu-popup-bg: #17181d;
 

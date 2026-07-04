@@ -41,6 +41,16 @@ import {
   TrendingUp as TrendCharts,
   Ticket as Tickets,
   TriangleAlert as WarningFilled,
+  // 按设计源逐项对齐的专用图标(从 .dc.html DOM 抠出的每个 nav 项真实图标)
+  Check,
+  Zap,
+  CirclePlay,
+  Play,
+  Server,
+  Building2,
+  CalendarCheck,
+  Folder as FolderClosed,
+  Upload,
 } from 'lucide-vue-next'
 
 export interface NavigationItem {
@@ -77,15 +87,15 @@ export const navigationGroups: NavigationGroup[] = [
         title: pageTitle('/ops/summary'),
         path: '/ops/summary',
         minRole: 'VIEWER',
-        icon: TrendCharts,
+        icon: Grid,
       },
-      { title: pageTitle('/approvals'), path: '/approvals', minRole: 'OPERATOR', icon: Stamp },
-      { title: pageTitle('/reports'), path: '/reports', minRole: 'VIEWER', icon: Download },
+      { title: pageTitle('/approvals'), path: '/approvals', minRole: 'OPERATOR', icon: Check },
+      { title: pageTitle('/reports'), path: '/reports', minRole: 'VIEWER', icon: DataAnalysis },
       {
         title: pageTitle('/self-service'),
         path: '/self-service',
         minRole: 'OPERATOR',
-        icon: Tickets,
+        icon: Zap,
       },
       {
         title: pageTitle('/ops/capacity-profile'),
@@ -113,7 +123,7 @@ export const navigationGroups: NavigationGroup[] = [
         title: pageTitle('/monitor/job-instances'),
         path: '/monitor/job-instances',
         minRole: 'VIEWER',
-        icon: Aim,
+        icon: Play,
       },
       {
         title: pageTitle('/monitor/job-steps'),
@@ -127,7 +137,7 @@ export const navigationGroups: NavigationGroup[] = [
         minRole: 'VIEWER',
         icon: Promotion,
       },
-      { title: pageTitle('/runs'), path: '/runs', minRole: 'VIEWER', icon: List },
+      { title: pageTitle('/runs'), path: '/runs', minRole: 'VIEWER', icon: CirclePlay },
       { title: pageTitle('/logs'), path: '/logs', minRole: 'VIEWER', icon: Reading },
       {
         title: pageTitle('/observability/trace'),
@@ -167,7 +177,7 @@ export const navigationGroups: NavigationGroup[] = [
         title: pageTitle('/observability/alerts'),
         path: '/observability/alerts',
         minRole: 'VIEWER',
-        icon: WarningFilled,
+        icon: Bell,
       },
       {
         title: pageTitle('/observability/alert-routings'),
@@ -185,7 +195,7 @@ export const navigationGroups: NavigationGroup[] = [
         title: pageTitle('/observability/outbox'),
         path: '/observability/outbox',
         minRole: 'OPERATOR',
-        icon: Box,
+        icon: Promotion,
       },
     ],
   },
@@ -199,13 +209,13 @@ export const navigationGroups: NavigationGroup[] = [
         title: pageTitle('/jobs/definitions'),
         path: '/jobs/definitions',
         minRole: 'VIEWER',
-        icon: List,
+        icon: Box,
       },
       {
         title: pageTitle('/jobs/pipelines'),
         path: '/jobs/pipelines',
         minRole: 'VIEWER',
-        icon: Connection,
+        icon: DataLine,
       },
       {
         title: pageTitle('/workflow/definitions'),
@@ -233,7 +243,12 @@ export const navigationGroups: NavigationGroup[] = [
     icon: FolderOpened,
     minRole: 'VIEWER',
     children: [
-      { title: pageTitle('/files/list'), path: '/files/list', minRole: 'VIEWER', icon: Files },
+      {
+        title: pageTitle('/files/list'),
+        path: '/files/list',
+        minRole: 'VIEWER',
+        icon: FolderClosed,
+      },
       {
         title: pageTitle('/files/arrival-groups'),
         path: '/files/arrival-groups',
@@ -270,7 +285,7 @@ export const navigationGroups: NavigationGroup[] = [
         title: pageTitle('/workers/management'),
         path: '/workers/management',
         minRole: 'OPERATOR',
-        icon: Cpu,
+        icon: Server,
       },
       {
         title: pageTitle('/system/triggers'),
@@ -288,7 +303,7 @@ export const navigationGroups: NavigationGroup[] = [
         title: pageTitle('/scheduler/batch-days'),
         path: '/scheduler/batch-days',
         minRole: 'VIEWER',
-        icon: Calendar,
+        icon: CalendarCheck,
       },
       {
         title: pageTitle('/ops/batch-day-replay'),
@@ -370,7 +385,7 @@ export const navigationGroups: NavigationGroup[] = [
         title: pageTitle('/system/tenants'),
         path: '/system/tenants',
         minRole: 'OPERATOR',
-        icon: Briefcase,
+        icon: Building2,
       },
       {
         title: pageTitle('/system/user-accounts'),
@@ -389,7 +404,7 @@ export const navigationGroups: NavigationGroup[] = [
         title: pageTitle('/config/releases'),
         path: '/config/releases',
         minRole: 'OPERATOR',
-        icon: DocumentChecked,
+        icon: Upload,
       },
       {
         title: pageTitle('/config/management'),

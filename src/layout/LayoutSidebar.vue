@@ -271,12 +271,12 @@
   .layout-menu :deep(.el-menu-item) {
     position: relative;
     color: var(--layout-sidebar-text);
-    height: 36px;
-    line-height: 36px;
-    border-radius: var(--radius-button);
-    margin: 2px var(--layout-sidebar-inline);
-    padding-left: 12px !important;
-    padding-right: 10px !important;
+    height: 32px;
+    line-height: 32px;
+    border-radius: 7px;
+    margin: 1px var(--layout-sidebar-inline);
+    padding-left: 8px !important;
+    padding-right: 8px !important;
     font-size: 13px;
     font-weight: 500;
     letter-spacing: 0;
@@ -286,8 +286,8 @@
   }
 
   .layout-menu :deep(.el-menu-item .el-icon) {
-    margin-right: 10px;
-    font-size: 16px;
+    margin-right: 9px;
+    font-size: 17px;
     opacity: 0.9;
   }
 
