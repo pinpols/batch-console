@@ -1816,7 +1816,14 @@ export default {
   },
   login: {
     appDesc: '批量调度控制台',
-    welcome: '欢迎回来',
+    heroTitle: '统一编排、监控与治理\n企业级批处理作业',
+    heroDesc:
+      '作业定义 · 工作流编排 · 调度治理 · 文件流水线 · 运行监控 · 审批与发布,一体化控制台。',
+    statAvailability: '调度可用性',
+    statDailyJobs: '日均作业',
+    statTenants: '在管租户',
+    subtitle: '使用租户账户登录控制台。',
+    welcome: '登录到控制台',
     traceLabel: 'Trace',
     copy: '复制',
     copySuccess: '已复制追踪 ID',

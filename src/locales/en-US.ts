@@ -1877,7 +1877,14 @@ const messages: Messages = {
   },
   login: {
     appDesc: 'Batch scheduling console',
-    welcome: 'Welcome back',
+    heroTitle: 'Orchestrate, monitor and govern\nenterprise batch jobs',
+    heroDesc:
+      'Job definitions · workflow orchestration · scheduling governance · file pipelines · run monitoring · approvals & releases, in one console.',
+    statAvailability: 'Scheduling availability',
+    statDailyJobs: 'Daily jobs',
+    statTenants: 'Managed tenants',
+    subtitle: 'Sign in with your tenant account.',
+    welcome: 'Sign in to console',
     traceLabel: 'Trace',
     copy: 'Copy',
     copySuccess: 'Trace ID copied',
