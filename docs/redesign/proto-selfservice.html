@@ -1,0 +1,51 @@
+<div data-dc-tpl="1356" class="bc-screen" data-screen-label="自助服务" style="max-width: 1080px; margin: 0px auto; padding: 28px 32px 40px;">
+          <div data-dc-tpl="1357" style="margin-bottom: 22px;">
+            <div data-dc-tpl="1358" style="font-size: 18px; font-weight: 600; letter-spacing: -0.01em;">自助服务</div>
+            <div data-dc-tpl="1359" style="margin-top: 3px; color: var(--text-2); font-size: 13px;">常用运维操作入口,提交后进入审批或直接执行</div>
+          </div>
+          <div data-dc-tpl="1360" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px;">
+            
+              <div data-dc-tpl="1362" class="scp3" style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 18px; box-shadow: var(--shadow-card); cursor: pointer; display: flex; flex-direction: column; gap: 10px;">
+                <div data-dc-tpl="1363" style="width: 32px; height: 32px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 15px; color: var(--accent); background: var(--accent-soft);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display: block;"><path d="M7 4l13 8-13 8z"></path></svg></div>
+                <div data-dc-tpl="1364" style="font-size: 14px; font-weight: 600;"><span class="sc-interp">手动触发作业</span></div>
+                <div data-dc-tpl="1365" style="font-size: 12.5px; color: var(--text-2); line-height: 1.6;"><span class="sc-interp">选择作业与业务日期,立即触发一次执行(可能进入审批)</span></div>
+                <div data-dc-tpl="1366" style="margin-top: auto; padding-top: 6px; font-size: 12px; color: var(--accent);">发起 →</div>
+              </div>
+            
+              <div data-dc-tpl="1362" class="scp3" style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 18px; box-shadow: var(--shadow-card); cursor: pointer; display: flex; flex-direction: column; gap: 10px;">
+                <div data-dc-tpl="1363" style="width: 32px; height: 32px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 15px; color: var(--warning); background: var(--warning-soft);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display: block;"><path d="M21 12a9 9 0 11-2.6-6.4"></path><path d="M21 4v5h-5"></path></svg></div>
+                <div data-dc-tpl="1364" style="font-size: 14px; font-weight: 600;"><span class="sc-interp">失败重跑</span></div>
+                <div data-dc-tpl="1365" style="font-size: 12.5px; color: var(--text-2); line-height: 1.6;"><span class="sc-interp">对失败实例发起重跑,支持整批或指定分片</span></div>
+                <div data-dc-tpl="1366" style="margin-top: auto; padding-top: 6px; font-size: 12px; color: var(--accent);">发起 →</div>
+              </div>
+            
+              <div data-dc-tpl="1362" class="scp3" style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 18px; box-shadow: var(--shadow-card); cursor: pointer; display: flex; flex-direction: column; gap: 10px;">
+                <div data-dc-tpl="1363" style="width: 32px; height: 32px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 15px; color: var(--success); background: var(--success-soft);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display: block;"><path d="M12 3v11"></path><path d="M8 11l4 4 4-4"></path><path d="M4 21h16"></path></svg></div>
+                <div data-dc-tpl="1364" style="font-size: 14px; font-weight: 600;"><span class="sc-interp">补跑历史批次</span></div>
+                <div data-dc-tpl="1365" style="font-size: 12.5px; color: var(--text-2); line-height: 1.6;"><span class="sc-interp">按业务日期区间补跑遗漏批次,提交后需审批</span></div>
+                <div data-dc-tpl="1366" style="margin-top: auto; padding-top: 6px; font-size: 12px; color: var(--accent);">发起 →</div>
+              </div>
+            
+              <div data-dc-tpl="1362" class="scp3" style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 18px; box-shadow: var(--shadow-card); cursor: pointer; display: flex; flex-direction: column; gap: 10px;">
+                <div data-dc-tpl="1363" style="width: 32px; height: 32px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 15px; color: var(--danger); background: var(--danger-soft);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display: block;"><path d="M9 4H6v16h3z"></path><path d="M18 4h-3v16h3z"></path></svg></div>
+                <div data-dc-tpl="1364" style="font-size: 14px; font-weight: 600;"><span class="sc-interp">暂停 / 恢复调度</span></div>
+                <div data-dc-tpl="1365" style="font-size: 12.5px; color: var(--text-2); line-height: 1.6;"><span class="sc-interp">临时暂停某作业的自动调度,恢复后按新窗口执行</span></div>
+                <div data-dc-tpl="1366" style="margin-top: auto; padding-top: 6px; font-size: 12px; color: var(--accent);">发起 →</div>
+              </div>
+            
+              <div data-dc-tpl="1362" class="scp3" style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 18px; box-shadow: var(--shadow-card); cursor: pointer; display: flex; flex-direction: column; gap: 10px;">
+                <div data-dc-tpl="1363" style="width: 32px; height: 32px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 15px; color: var(--accent); background: var(--accent-soft);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display: block;"><path d="M12 3v12"></path><path d="M7 10l5 5 5-5"></path><path d="M5 21h14"></path></svg></div>
+                <div data-dc-tpl="1364" style="font-size: 14px; font-weight: 600;"><span class="sc-interp">导出运行数据</span></div>
+                <div data-dc-tpl="1365" style="font-size: 12.5px; color: var(--text-2); line-height: 1.6;"><span class="sc-interp">导出作业运行、步骤日志与 Trace 明细为文件</span></div>
+                <div data-dc-tpl="1366" style="margin-top: auto; padding-top: 6px; font-size: 12px; color: var(--accent);">发起 →</div>
+              </div>
+            
+              <div data-dc-tpl="1362" class="scp3" style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 18px; box-shadow: var(--shadow-card); cursor: pointer; display: flex; flex-direction: column; gap: 10px;">
+                <div data-dc-tpl="1363" style="width: 32px; height: 32px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 15px; color: var(--warning); background: var(--warning-soft);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display: block;"><path d="M5 21V4"></path><path d="M5 4s1.2-1 4-1 5 2 8 2 3-.6 3-.6v9s-.9.6-3 .6-5-2-8-2-4 1-4 1z"></path></svg></div>
+                <div data-dc-tpl="1364" style="font-size: 14px; font-weight: 600;"><span class="sc-interp">提交配置变更</span></div>
+                <div data-dc-tpl="1365" style="font-size: 12.5px; color: var(--text-2); line-height: 1.6;"><span class="sc-interp">发起配置变更请求,进入发布流水线与审批</span></div>
+                <div data-dc-tpl="1366" style="margin-top: auto; padding-top: 6px; font-size: 12px; color: var(--accent);">发起 →</div>
+              </div>
+            
+          </div>
+        </div>
