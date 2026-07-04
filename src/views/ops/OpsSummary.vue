@@ -54,7 +54,7 @@
       </div>
     </SectionCard>
 
-    <SectionCard v-if="summary" class="ops-tabs-card">
+    <div v-if="summary" class="ops-tabs-card">
       <el-tabs v-model="opsTab" class="pill-tabs ops-tabs">
         <el-tab-pane :label="t('opsSummary.tabKpis')" name="kpis" />
         <el-tab-pane :label="t('opsSummary.tabTrend')" name="trend" />
@@ -97,7 +97,7 @@
           @refresh-charts="loadCharts"
         />
       </div>
-    </SectionCard>
+    </div>
 
     <OpsExtraPanel
       v-if="opsTab === 'extra'"
@@ -251,10 +251,6 @@
 
   .ops-tabs :deep(.el-tabs__content) {
     display: none;
-  }
-
-  .ops-tabs-card :deep(.el-card__body) {
-    overflow: visible;
   }
 
   .ops-panels {
