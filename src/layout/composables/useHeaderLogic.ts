@@ -23,6 +23,15 @@ export function useHeaderLogic() {
   const breadcrumbs = computed(() => {
     const out: { title: string; path: string }[] = []
     const seen = new Set<string>()
+    // 设计稿面包屑「分组 › 页面」:前置当前路由所属的侧栏分组名(分组非路由,不可点)。
+    const activePath = (route.meta?.activeMenu as string) ?? route.path
+    for (const group of permission.visibleGroups) {
+      if (!group.children?.some((c) => c.path === activePath)) continue
+      const gKey = `nav.group.${group.key}`
+      const gTitle = te(gKey) ? t(gKey) : group.title
+      if (gTitle) out.push({ title: gTitle, path: '' })
+      break
+    }
     for (const r of route.matched) {
       const fallback = r.meta?.title
       const pathKey = r.meta?.pathKey as string | undefined

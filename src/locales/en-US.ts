@@ -841,6 +841,8 @@ const messages: Messages = {
     appTitle: 'Batch Console',
     serviceHealthy: 'All systems normal',
     collapseToggle: 'Collapse / expand sidebar',
+    back: 'Back',
+    forward: 'Forward',
     copyLink: 'Copy full page URL (including query params)',
     copyLinkAction: 'Copy link',
     copyLinkAria: 'Copy current URL',

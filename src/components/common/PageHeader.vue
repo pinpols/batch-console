@@ -3,28 +3,11 @@
     hideDuplicateTitle 模式下:全局顶栏已经显示标题,本组件只剩描述 / 操作按钮。
     去掉 .app-surface(卡片阴影)+ 缩小内边距,避免"卡片套卡片"的视觉层叠。
   -->
-  <section
-    class="page-header"
-    :class="{
-      'app-surface': !hideDuplicateTitle,
-      'page-header--compact': effectiveCompact,
-      'page-header--toolbar': toolbar,
-      'page-header--summary': hideDuplicateTitle,
-    }"
-  >
+  <section class="page-header">
     <div class="page-header__left">
       <div>
-        <h1
-          class="title"
-          :class="{ 'title--muted': toolbar, 'title--sr-only': hideDuplicateTitle }"
-        >
-          {{ displayTitle }}
-        </h1>
-        <p
-          v-if="shouldShowDescription"
-          class="description"
-          :class="{ 'description--primary': hideDuplicateTitle }"
-        >
+        <h1 class="title">{{ displayTitle }}</h1>
+        <p v-if="shouldShowDescription" class="description">
           {{ displayDescription }}
         </p>
       </div>
@@ -96,7 +79,6 @@
   const router = useRouter()
   const route = useRoute()
 
-  const effectiveCompact = computed(() => props.compact ?? true)
   /** route.meta.title/description 是中文兜底,优先用 i18n `page.<pathKey>.*` 跟随语言切换。 */
   function i18nByPathKey(field: 'title' | 'description'): string {
     const pathKey = typeof route.meta.pathKey === 'string' ? route.meta.pathKey : ''
@@ -184,97 +166,32 @@
 </script>
 
 <style scoped>
+  /* 还原设计:页面以大标题 H1 领起 + 灰副标题,右侧操作;透明无卡片。 */
   .page-header {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    gap: var(--space-sm);
-    border-radius: var(--radius-content);
-    padding: 12px var(--page-align-inline);
-    /* 与下方 SectionCard 的间距由 PageContainer 的 gap（--page-section-gap）统一控制 */
+    gap: var(--space-md);
+    padding: 4px 0 0;
     margin-bottom: 0;
-  }
-
-  .page-header--compact {
-    padding: 9px var(--page-align-inline);
-  }
-
-  .page-header--toolbar {
-    align-items: center;
-    padding-top: 9px;
-    padding-bottom: 9px;
-  }
-
-  .page-header--summary {
-    /* 列表页 summary 模式:去卡片化(无阴影 / 仅左侧 3px 主色竖条)
-       + 紧凑内边距,从"卡片"降为"内容标识条" */
-    align-items: center;
-    padding: 6px 12px 6px 16px;
     background: transparent;
-    border: none;
-    border-left: 3px solid color-mix(in srgb, var(--color-primary) 60%, transparent);
-    border-radius: 0;
   }
 
   .title {
     margin: 0;
-    font-size: var(--font-size-xl);
-    font-weight: 600;
-    line-height: var(--line-height-tight);
-  }
-
-  .page-header--compact .title {
-    font-size: var(--font-size-lg);
-  }
-
-  .title--muted {
+    font-size: var(--font-size-2xl);
     font-weight: 650;
-    font-size: var(--font-size-md);
-    color: var(--color-text-secondary);
-    letter-spacing: 0.2px;
-  }
-
-  .page-header--toolbar .title {
-    font-size: var(--font-size-md);
-  }
-
-  .title--sr-only {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border: 0;
+    line-height: var(--line-height-tight);
+    letter-spacing: -0.01em;
+    color: var(--color-text-primary);
   }
 
   .description {
-    margin: 4px 0 0;
-    color: var(--color-text-tertiary, #909399);
-    font-size: var(--font-size-sm);
+    margin: 6px 0 0;
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-md);
     font-weight: 400;
-    line-height: 1.55;
-    letter-spacing: 0.2px;
-    /* 简介文案降一档色阶,跟标题层级拉开;字间距放一点点显得不挤 */
-  }
-
-  .page-header--compact .description {
-    font-size: 12.5px;
     line-height: 1.5;
-  }
-
-  .description--primary {
-    margin-top: 0;
-    max-width: 900px;
-    padding-left: 10px;
-    border-left: 3px solid color-mix(in srgb, var(--color-primary) 76%, transparent);
-    color: color-mix(in srgb, var(--color-text-primary) 74%, var(--color-text-secondary) 26%);
-    font-size: 13px;
-    font-weight: 550;
-    line-height: 1.5;
-    letter-spacing: 0;
   }
 
   .page-header__left {

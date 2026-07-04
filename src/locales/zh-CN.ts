@@ -840,6 +840,8 @@ export default {
     appTitle: '批量调度平台',
     serviceHealthy: '服务正常',
     collapseToggle: '折叠 / 展开侧栏',
+    back: '后退',
+    forward: '前进',
     copyLink: '复制当前页面完整链接(含查询参数)',
     copyLinkAction: '复制当前链接',
     copyLinkAria: '复制当前链接',

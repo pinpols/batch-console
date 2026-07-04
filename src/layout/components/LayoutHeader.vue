@@ -2,39 +2,34 @@
   <el-header class="layout-header">
     <div class="layout-header__surface app-surface layout-panel">
       <div class="layout-header__left">
-        <el-tooltip
-          :content="app.sidebarCollapsed ? t('nav.expandSidebar') : t('nav.foldSidebar')"
-          placement="bottom"
-        >
-          <el-button
-            text
-            class="icon-button layout-header__fold"
-            :aria-label="app.sidebarCollapsed ? t('nav.expandSidebar') : t('nav.foldSidebar')"
-            @click="app.toggleSidebar()"
+        <div class="nav-arrows">
+          <button
+            type="button"
+            class="nav-arrow"
+            :aria-label="t('nav.back')"
+            @click="router.back()"
           >
-            <el-icon>
-              <Fold v-if="!app.sidebarCollapsed" />
-              <Expand v-else />
-            </el-icon>
-          </el-button>
-        </el-tooltip>
+            <el-icon><ArrowLeft /></el-icon>
+          </button>
+          <button
+            type="button"
+            class="nav-arrow"
+            :aria-label="t('nav.forward')"
+            @click="router.forward()"
+          >
+            <el-icon><ArrowRight /></el-icon>
+          </button>
+        </div>
         <div class="page-meta">
-          <div class="page-meta__title-row">
-            <div class="page-meta__title-block">
-              <el-breadcrumb v-if="breadcrumbs.length > 1" class="page-meta__crumb" separator="/">
-                <el-breadcrumb-item
-                  v-for="(c, i) in breadcrumbs"
-                  :key="`${c.path}:${i}`"
-                  :to="i < breadcrumbs.length - 1 ? c.path : undefined"
-                >
-                  {{ c.title }}
-                </el-breadcrumb-item>
-              </el-breadcrumb>
-              <div class="page-meta__title">
-                <span>{{ currentTitle }}</span>
-              </div>
-            </div>
-          </div>
+          <el-breadcrumb class="page-meta__crumb" separator="›">
+            <el-breadcrumb-item
+              v-for="(c, i) in breadcrumbs"
+              :key="`${c.path}:${i}`"
+              :to="c.path && i < breadcrumbs.length - 1 ? c.path : undefined"
+            >
+              {{ c.title }}
+            </el-breadcrumb-item>
+          </el-breadcrumb>
         </div>
       </div>
 
@@ -144,9 +139,9 @@
   import { ElMessageBox } from 'element-plus'
   import {
     ArrowDown,
-    Expand,
+    ArrowLeft,
+    ArrowRight,
     Compass,
-    Fold,
     Iphone,
     Key,
     Monitor,
@@ -219,7 +214,6 @@
     tenantIdInput,
     canSwitchTenant,
     handleTenantSwitch,
-    currentTitle,
     commandPaletteShortcutLabel,
     handleLogout,
   } = useHeaderLogic()
@@ -301,25 +295,38 @@
     width: 100%;
   }
 
-  /**
-   * 折出文档流，避免把标题整体向右推；与顶栏 surface 内边距同源。
-   */
-  .layout-header__fold {
-    --fold-w: min(22px, calc(var(--layout-content-inset-inline) - 1px));
-    position: absolute;
-    left: calc(0px - var(--layout-content-inset-inline));
-    top: 50%;
-    width: var(--fold-w);
-    min-width: var(--fold-w) !important;
-    height: 28px;
-    padding: 0 !important;
-    margin: 0;
-    transform: translateY(-50%);
-    z-index: 2;
+  /* 顶栏左侧 ← → 导航箭头(还原设计) */
+  .nav-arrows {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
   }
 
-  .layout-header__fold :deep(.el-icon) {
-    font-size: 16px;
+  .nav-arrow {
+    display: inline-grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-button);
+    background: transparent;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition:
+      color var(--motion-duration-sm) var(--motion-ease-standard),
+      border-color var(--motion-duration-sm) var(--motion-ease-standard),
+      background-color var(--motion-duration-sm) var(--motion-ease-standard);
+  }
+
+  .nav-arrow:hover {
+    color: var(--color-text-primary);
+    border-color: var(--color-border-strong, var(--color-border));
+    background: var(--color-bg-hover, transparent);
+  }
+
+  .nav-arrow :deep(.el-icon) {
+    font-size: 15px;
   }
 
   .layout-header__center {
@@ -373,14 +380,26 @@
   }
 
   .page-meta__crumb {
-    margin-bottom: 2px;
-    --el-text-color-regular: var(--color-text-tertiary);
-    --el-text-color-primary: var(--color-text-secondary);
+    --el-text-color-regular: var(--color-text-secondary);
+    --el-text-color-primary: var(--color-text-primary);
+    line-height: 1.2;
   }
 
   .page-meta__crumb :deep(.el-breadcrumb__inner) {
-    font-size: 12px;
-    font-weight: 600;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+  }
+
+  .page-meta__crumb :deep(.el-breadcrumb__separator) {
+    color: var(--color-text-tertiary);
+    margin: 0 8px;
+  }
+
+  /* 末级(当前页)加重、主色文字 */
+  .page-meta__crumb :deep(.el-breadcrumb__item:last-child .el-breadcrumb__inner) {
+    color: var(--color-text-primary);
+    font-weight: 650;
   }
 
   .page-meta__title {
