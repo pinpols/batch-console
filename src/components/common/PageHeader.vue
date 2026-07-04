@@ -179,7 +179,7 @@
 
   .title {
     margin: 0;
-    font-size: var(--font-size-2xl);
+    font-size: var(--font-size-xl);
     font-weight: 650;
     line-height: var(--line-height-tight);
     letter-spacing: -0.01em;

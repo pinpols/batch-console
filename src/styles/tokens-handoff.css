@@ -62,8 +62,9 @@
   --card-inner-padding: 20px;
   --page-section-gap: 12px;
   --page-block-gap: 12px;
-  --page-scroll-edge-top: 8px;
-  --page-scroll-edge-bleed: 18px;
+  /* 还原设计:内容四周留白 ≈ 24 顶 / 32 两侧(设计源实测 28/32/40) */
+  --page-scroll-edge-top: 22px;
+  --page-scroll-edge-bleed: 32px;
   --layout-panel-gap: 14px;
   --layout-header-main-gap: 10px;
   --layout-panel-hover-safe: 14px;
@@ -123,7 +124,7 @@ html.dark {
 
   --layout-sidebar-bg: #17181d;
   --layout-sidebar-text: rgba(233, 235, 240, 0.72);
-  --layout-sidebar-text-muted: rgba(233, 235, 240, 0.48);
+  --layout-sidebar-text-muted: #9aa1ae;
   --layout-sidebar-brand-divider: rgba(255, 255, 255, 0.08);
   --layout-sidebar-subnav-bg: transparent;
   --layout-sidebar-hover-bg: rgba(92, 157, 255, 0.06);

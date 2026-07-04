@@ -107,8 +107,13 @@
 
   const activeMenu = computed(() => (route.meta.activeMenu as string) ?? route.path)
   const visibleGroups = computed(() => permission.visibleGroups)
-  // 默认展开全部分组(设计稿 01-ia:多组同时展开);非 unique-opened 允许用户各自折叠。
-  const openedGroups = computed(() => visibleGroups.value.map((g) => g.key))
+  // 还原设计:默认只展开「当前路由所在组」,其余分组收起(显示 › 箭头);非 unique-opened
+  // 允许用户再手动展开其它组。
+  const openedGroups = computed(() => {
+    const active = activeMenu.value
+    const g = visibleGroups.value.find((grp) => grp.children?.some((c) => c.path === active))
+    return g ? [g.key] : visibleGroups.value[0] ? [visibleGroups.value[0].key] : []
+  })
   const appVersion = __APP_VERSION__
 
   function prefetchRouteComponent(path: string) {
@@ -240,9 +245,9 @@
   }
 
   .layout-menu :deep(.el-sub-menu__title .group-title) {
-    font-size: 11px;
+    font-size: 11.5px;
     font-weight: 600;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.02em;
     text-transform: none;
   }
 
@@ -256,9 +261,17 @@
     background: transparent !important;
   }
 
+  /* 还原设计:分组箭头收起=›(右)、展开=⌄(下);EP 默认是 ⌄/^,这里改基态为右、展开转下 */
   .layout-menu :deep(.el-sub-menu__icon-arrow) {
     font-size: 12px;
     opacity: 0.7;
+    transform: rotate(-90deg) !important;
+    transition: transform var(--motion-duration-sm) var(--motion-ease-standard);
+    margin-top: 0;
+  }
+
+  .layout-menu :deep(.el-sub-menu.is-opened > .el-sub-menu__title .el-sub-menu__icon-arrow) {
+    transform: rotate(0deg) !important;
   }
 
   /* 组内子菜单容器留白 */
