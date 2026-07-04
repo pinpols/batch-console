@@ -652,6 +652,8 @@ html.dark .json-preview {
   text-decoration: none;
   cursor: pointer;
   transition: color 0.2s;
+  /* 还原设计:代码类链接(jobCode/traceId 等)等宽字体 */
+  font-family: var(--font-mono);
 }
 .cell-link:hover {
   color: var(--el-color-primary-light-3);
