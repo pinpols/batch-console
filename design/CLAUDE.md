@@ -5,7 +5,7 @@
 - 设计定稿目标路径:`docs/design/batch-console-设计定稿.html`
 
 ## 设计源文件
-- 唯一权威源:`Batch Console 重设计.dc.html`(项目根)
+- 唯一权威源:`Batch Console 重设计-v2-多屏.html`(13 页多屏交互原型,2026-07-04)
 - 交付时用 super_inline_html 导出离线单文件后再推 Git / 下载
 
 ## 关键决策(用户已拍板)
