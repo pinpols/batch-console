@@ -1,211 +1,184 @@
 <template>
   <PageContainer>
-    <PageHeader />
+    <!-- 照设计 #alerts:三分组 tab + 告警卡片流(proto dump: docs/redesign/proto-alerts.html) -->
+    <PageHeader>
+      <template #actions>
+        <DateRangePresetPicker
+          v-model="timeRange"
+          type="daterange"
+          @update:model-value="onTimeChange"
+        />
+        <el-button @click="$router.push('/observability/alert-routings')">
+          {{ t('alertList.actionRules') }}
+        </el-button>
+        <el-button :loading="loading" @click="() => runRefresh(load)">
+          {{ t('common.refresh') }}
+        </el-button>
+      </template>
+    </PageHeader>
 
-    <SectionCard>
-      <ProTable
-        :data="rows"
-        :loading="tableBlocking"
-        :error="loadError"
-        :on-retry="load"
-        :total="total"
-        :has-active-filters="hasAlertFilters"
-        :empty-text="t('alertList.empty')"
-        :filtered-empty-text="alertFilteredEmptyText"
-        v-model:page="page"
-        v-model:page-size="pageSize"
+    <div class="al-tabs">
+      <button
+        v-for="tab in groupTabs"
+        :key="tab.key"
+        type="button"
+        class="al-tab"
+        :class="{ 'is-active': tab.active }"
+        @click="pickGroup(tab.key)"
       >
-        <template #toolbar>
-          <OpsListToolbar
-            :status="live.status.value"
-            :last-refreshed-at="live.lastRefreshedAt.value"
-          />
-        </template>
+        <span v-if="tab.dot" class="al-tab__dot" :style="{ background: tab.dot }" />
+        <span>{{ tab.label }}</span>
+        <span v-if="tab.count !== null" class="al-tab__count">{{ tab.count }}</span>
+      </button>
+      <span class="al-tabs__spacer" />
+      <MetaSelect
+        class="al-sel"
+        v-model="filters.severity"
+        :options="severityOptions"
+        clearable
+        enum-key="severity"
+        :placeholder="t('alertList.severityPlaceholder')"
+        @change="search"
+      />
+      <MetaSelect
+        class="al-sel"
+        v-model="filters.alertType"
+        :options="alertTypeOptions.map((v) => ({ value: v, label: v }))"
+        clearable
+        filterable
+        :placeholder="t('alertList.typePlaceholder')"
+        @change="search"
+      />
+      <TraceIdInput
+        class="al-trace"
+        v-model="filters.traceId"
+        :placeholder="t('alertList.tracePlaceholder')"
+        @keyup.enter="search"
+      />
+      <el-button text @click="reset">{{ t('common.reset') }}</el-button>
+      <SavedFiltersMenu
+        :sets="savedFilters.sets.value"
+        :on-save="savedFilters.save"
+        :on-apply="savedFilters.applySet"
+        :on-remove="savedFilters.remove"
+        :on-rename="savedFilters.rename"
+        :on-export="savedFilters.exportSets"
+        :on-import="savedFilters.importSets"
+      />
+    </div>
 
-        <template #query>
-          <ListPageQueryBar
-            :filter-busy="queryActionBusy"
-            :refresh-busy="loading"
-            :disabled="loading"
-            @search="search"
-            @reset="reset"
-            @refresh="() => runRefresh(load)"
-          >
-            <template #prepend>
-              <SavedFiltersMenu
-                :sets="savedFilters.sets.value"
-                :on-save="savedFilters.save"
-                :on-apply="savedFilters.applySet"
-                :on-remove="savedFilters.remove"
-                :on-rename="savedFilters.rename"
-                :on-export="savedFilters.exportSets"
-                :on-import="savedFilters.importSets"
-              />
-            </template>
-            <el-form-item :label="t('alertList.severityLabel')">
-              <MetaSelect
-                class="query-w-140"
-                v-model="filters.severity"
-                :options="severityOptions"
-                clearable
-                filterable
-                enum-key="severity"
-                :placeholder="t('alertList.severityPlaceholder')"
-              />
-            </el-form-item>
-            <el-form-item :label="t('alertList.typeLabel')">
-              <el-select
-                class="query-w-160"
-                v-model="filters.alertType"
-                clearable
-                filterable
-                :placeholder="t('alertList.typePlaceholder')"
-              >
-                <el-option
-                  v-for="option in alertTypeOptions"
-                  :key="option"
-                  :label="option"
-                  :value="option"
-                />
-              </el-select>
-            </el-form-item>
-            <el-form-item :label="t('alertList.statusLabel')">
-              <MetaSelect
-                class="query-w-140"
-                v-model="filters.status"
-                :options="statusOptions"
-                clearable
-                filterable
-                enum-key="alertStatus"
-                :placeholder="t('alertList.statusPlaceholder')"
-              />
-            </el-form-item>
-            <el-form-item :label="t('alertList.traceLabel')">
-              <el-input
-                class="query-w-160"
-                v-model="filters.traceId"
-                clearable
-                :placeholder="t('alertList.tracePlaceholder')"
-              />
-            </el-form-item>
-            <el-form-item :label="t('alertList.timeRangeLabel')">
-              <DateRangePresetPicker v-model="timeRange" default-preset="7d" />
-            </el-form-item>
-          </ListPageQueryBar>
-        </template>
+    <div class="al-live">
+      <span class="al-live__dot" :class="{ 'is-off': live.status.value !== 'live' }" />
+      <span class="al-live__title">{{ t('jobInstanceList.liveTitle') }}</span>
+      <span class="al-live__sub">{{ t('jobInstanceList.liveEvery') }}</span>
+    </div>
 
-        <el-table-column prop="id" :label="t('alertList.colId')" width="80" />
-        <el-table-column prop="severity" :label="t('alertList.colSeverity')" width="100">
-          <template #default="{ row }">
-            <StatusTag :value="String(row.severity ?? '')" category="alertSeverity" />
-          </template>
-        </el-table-column>
-        <el-table-column prop="alertType" :label="t('alertList.colType')" width="120" />
-        <el-table-column
-          prop="serviceName"
-          :label="t('alertList.colService')"
-          width="140"
-          show-overflow-tooltip
-        />
-        <el-table-column
-          prop="title"
-          :label="t('alertList.colTitle')"
-          min-width="180"
-          show-overflow-tooltip
-        />
-        <DatetimeColumn prop="firstSeenAt" :label="t('alertList.colFirstSeen')" width="160" />
-        <el-table-column
-          prop="dedupFingerprint"
-          :label="t('alertList.colDedup')"
-          width="160"
-          show-overflow-tooltip
-        />
-        <el-table-column prop="status" :label="t('alertList.colStatus')" width="110">
-          <template #default="{ row }">
-            <StatusTag :value="String(row.status ?? '')" category="alertStatus" />
-          </template>
-        </el-table-column>
-        <el-table-column prop="occurrenceCount" :label="t('alertList.colCount')" width="80" />
-        <DatetimeColumn prop="lastSeenAt" :label="t('alertList.colLastSeen')" width="160" />
-        <el-table-column
-          prop="traceId"
-          :label="t('alertList.colTrace')"
-          min-width="120"
-          show-overflow-tooltip
+    <div v-loading="tableBlocking" class="al-list">
+      <article
+        v-for="row in rows"
+        :key="row.id"
+        class="al-card"
+        :style="{ borderLeftColor: sevMeta(row.severity).color }"
+      >
+        <span
+          class="al-card__icon"
+          :style="{ background: sevMeta(row.severity).soft, color: sevMeta(row.severity).color }"
         >
-          <template #default="{ row }">
+          <el-icon><TriangleAlert /></el-icon>
+        </span>
+        <div class="al-card__main">
+          <div class="al-card__meta">
+            <span
+              class="al-card__sev"
+              :style="{
+                background: sevMeta(row.severity).soft,
+                color: sevMeta(row.severity).color,
+              }"
+            >
+              {{ row.severity }}
+            </span>
+            <span class="al-card__time">{{ fmtDatetime(row.lastSeenAt) }}</span>
+            <span v-if="(row.occurrenceCount ?? 0) > 1" class="al-card__time"
+              >x{{ row.occurrenceCount }}</span
+            >
+          </div>
+          <div class="al-card__title">{{ row.title }}</div>
+          <div class="al-card__chips">
+            <span class="al-card__chip">{{ row.serviceName }} · {{ row.alertType }}</span>
             <router-link
               v-if="row.traceId"
-              class="cell-link"
+              class="al-card__chip al-card__chip--link"
               :to="`/observability/trace?traceId=${row.traceId}`"
             >
-              {{ row.traceId }}
+              {{ row.traceId.slice(0, 16) }}…
             </router-link>
-            <span v-else class="cell-empty">—</span>
+          </div>
+        </div>
+        <div class="al-card__ops">
+          <template v-if="row.status === 'OPEN'">
+            <button
+              type="button"
+              class="al-op al-op--ack"
+              :disabled="!canMutateConfig || actingId === row.id"
+              @click="doAck(row)"
+            >
+              {{ t('alertList.actionAck') }}
+            </button>
+            <button
+              type="button"
+              class="al-op"
+              :disabled="!canMutateConfig || actingId === row.id"
+              @click="doSilence(row)"
+            >
+              {{ t('alertList.actionSilence24') }}
+            </button>
+            <button
+              type="button"
+              class="al-op al-op--danger"
+              :disabled="!canMutateConfig || actingId === row.id"
+              @click="doClose(row)"
+            >
+              {{ t('alertList.actionClose') }}
+            </button>
           </template>
-        </el-table-column>
-        <el-table-column :label="t('alertList.colActions')" width="260" fixed="right">
-          <template #default="{ row }">
-            <div class="table-actions">
-              <el-tooltip
-                :content="canMutateConfig ? '' : t('common.permissionDenied')"
-                placement="top"
-                :disabled="canMutateConfig"
-              >
-                <span>
-                  <el-button
-                    size="small"
-                    plain
-                    type="primary"
-                    :disabled="!canMutateConfig"
-                    :loading="actingId === row.id"
-                    @click="doAck(row)"
-                  >
-                    {{ t('alertList.actionAck') }}
-                  </el-button>
-                </span>
-              </el-tooltip>
-              <el-tooltip
-                :content="canMutateConfig ? '' : t('common.permissionDenied')"
-                placement="top"
-                :disabled="canMutateConfig"
-              >
-                <span>
-                  <el-button
-                    size="small"
-                    plain
-                    type="warning"
-                    :disabled="!canMutateConfig"
-                    :loading="actingId === row.id"
-                    @click="doSilence(row)"
-                  >
-                    {{ t('alertList.actionSilence') }}
-                  </el-button>
-                </span>
-              </el-tooltip>
-              <el-tooltip
-                :content="canMutateConfig ? '' : t('common.permissionDenied')"
-                placement="top"
-                :disabled="canMutateConfig"
-              >
-                <span>
-                  <el-button
-                    size="small"
-                    plain
-                    type="danger"
-                    :disabled="!canMutateConfig"
-                    :loading="actingId === row.id"
-                    @click="doClose(row)"
-                  >
-                    {{ t('alertList.actionClose') }}
-                  </el-button>
-                </span>
-              </el-tooltip>
-            </div>
+          <template v-else-if="row.status === 'ACKED'">
+            <span class="al-acked">&#10003; {{ t('alertList.ackedBadge') }}</span>
+            <button
+              type="button"
+              class="al-op al-op--danger"
+              :disabled="!canMutateConfig || actingId === row.id"
+              @click="doClose(row)"
+            >
+              {{ t('alertList.actionClose') }}
+            </button>
           </template>
-        </el-table-column>
-      </ProTable>
-    </SectionCard>
+          <StatusTag v-else :value="String(row.status ?? '')" category="alertStatus" />
+        </div>
+      </article>
+
+      <div v-if="!tableBlocking && rows.length === 0" class="al-empty">
+        {{ hasAlertFilters ? alertFilteredEmptyText : t('alertList.emptyGroup') }}
+      </div>
+    </div>
+
+    <TablePagerBar
+      :page="page"
+      :page-size="pageSize"
+      :total="total"
+      @update:page="
+        (p) => {
+          page = p
+          void load()
+        }
+      "
+      @update:page-size="
+        (s) => {
+          pageSize = s
+          page = 1
+          void load()
+        }
+      "
+    />
   </PageContainer>
 </template>
 
@@ -227,14 +200,15 @@
   import { usePermission } from '@/composables/usePermission'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
-  import SectionCard from '@/components/common/SectionCard.vue'
-  import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import SavedFiltersMenu from '@/components/table/SavedFiltersMenu.vue'
   import { useSavedFilters } from '@/composables/useSavedFilters'
-  import ProTable from '@/components/table/ProTable.vue'
-  import OpsListToolbar from '@/components/table/OpsListToolbar.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
   import MetaSelect from '@/components/common/MetaSelect.vue'
+  import TraceIdInput from '@/components/common/TraceIdInput.vue'
+  import DateRangePresetPicker from '@/components/common/DateRangePresetPicker.vue'
+  import TablePagerBar from '@/components/table/TablePagerBar.vue'
+  import { TriangleAlert } from 'lucide-vue-next'
+  import { fmtDatetime } from '@/utils/datetime'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
   import type { ConsoleAlertEventResponse } from '@/types/console-api'
@@ -332,6 +306,87 @@
     }
   }
 
+  // ── 设计 #alerts:三分组 tab(未处理/已确认/全部)+ 真实计数 ──────────────
+  const GROUP_TABS = [
+    { key: 'OPEN', dot: 'var(--color-danger)', labelKey: 'alertList.tabOpen' },
+    { key: 'ACKED', dot: 'var(--color-success)', labelKey: 'alertList.tabAcked' },
+    { key: '', dot: '', labelKey: 'alertList.tabAll' },
+  ] as const
+
+  const groupCounts = reactive<Record<string, number | null>>({ OPEN: null, ACKED: null, '': null })
+  let lastCountSig = ''
+  async function loadGroupCounts() {
+    const sig = JSON.stringify([
+      tenant.tenantId,
+      filters.severity,
+      filters.alertType,
+      filters.traceId,
+      filters.startTime,
+      filters.endTime,
+    ])
+    if (sig === lastCountSig) return
+    lastCountSig = sig
+    await Promise.all(
+      GROUP_TABS.map(async (g) => {
+        try {
+          const resp = await queryAlertsPage(filters.tenantId || tenant.tenantId, 1, 1, {
+            severity: (filters.severity ?? '').trim() || undefined,
+            status: g.key || undefined,
+            alertType: (filters.alertType ?? '').trim() || undefined,
+            traceId: (filters.traceId ?? '').trim() || undefined,
+            startDate: filters.startTime || undefined,
+            endDate: filters.endTime || undefined,
+          })
+          groupCounts[g.key] = Number(resp.total ?? 0)
+        } catch {
+          groupCounts[g.key] = null
+        }
+      }),
+    )
+  }
+
+  const groupTabs = computed(() =>
+    GROUP_TABS.map((g) => ({
+      key: g.key,
+      dot: g.dot,
+      label: t(g.labelKey),
+      count: groupCounts[g.key],
+      active: g.key ? filters.status === g.key : !filters.status,
+    })),
+  )
+
+  function pickGroup(key: string) {
+    filters.status = filters.status === key ? '' : key
+    page.value = 1
+    void load()
+  }
+
+  /** 严重度 → 设计卡片配色(左条/图标块/pill) */
+  function sevMeta(sev: string | null | undefined) {
+    const s = String(sev ?? '').toUpperCase()
+    if (s === 'CRITICAL' || s === 'ERROR' || s === 'P0')
+      return {
+        color: 'var(--color-danger)',
+        soft: 'color-mix(in srgb, var(--color-danger) 12%, transparent)',
+      }
+    if (s === 'WARN' || s === 'WARNING' || s === 'P1')
+      return {
+        color: 'var(--color-warning)',
+        soft: 'color-mix(in srgb, var(--color-warning) 12%, transparent)',
+      }
+    return {
+      color: 'var(--color-primary)',
+      soft: 'color-mix(in srgb, var(--color-primary) 12%, transparent)',
+    }
+  }
+
+  function onTimeChange(val: [string, string] | null) {
+    filters.startTime = val?.[0] ?? ''
+    filters.endTime = val?.[1] ?? ''
+    page.value = 1
+    void load()
+  }
+
   const loadError = ref<unknown>(null)
   // 服务端分页 + 服务端筛选:severity/status/alertType/traceId/时间范围全部传后端
   // (BE 2026-06-21 契约对齐,status 传真值 OPEN/ACKED/SUPPRESSED/CLOSED,时间走 last_seen_at),
@@ -358,6 +413,7 @@
       // 维护 union 供 alertType 候选,限制最近 5 页 ≈ 1000 行避免膨胀
       const cap = pageSize.value * 5
       allRows.value = [...allRows.value, ...rows.value].slice(-cap)
+      void loadGroupCounts()
     } catch (err) {
       loadError.value = err
       throw err
@@ -537,3 +593,243 @@
     void load()
   })
 </script>
+
+<style scoped>
+  /* ── 照设计 #alerts dump 1:1(docs/redesign/proto-alerts.html) ── */
+  .al-tabs {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 6px 0 14px;
+    flex-wrap: wrap;
+  }
+
+  .al-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    height: 28px;
+    padding: 0 12px;
+    border-radius: 14px;
+    border: 1px solid var(--color-border);
+    background: transparent;
+    color: var(--color-text-secondary);
+    font-size: 12.5px;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+
+  .al-tab.is-active {
+    border-color: var(--color-text-secondary);
+    background: var(--color-bg-elevated);
+    font-weight: 600;
+  }
+
+  .al-tab__dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+  }
+
+  .al-tab__count {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--color-text-tertiary);
+  }
+
+  .al-tabs__spacer {
+    flex: 1;
+  }
+
+  .al-sel {
+    width: 150px;
+  }
+
+  .al-trace {
+    width: 200px;
+  }
+
+  .al-live {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 14px;
+    margin-bottom: 10px;
+    border: 1px solid var(--color-border);
+    border-radius: 9px;
+    background: var(--color-bg-card);
+    font-size: 12px;
+    color: var(--color-text-secondary);
+  }
+
+  .al-live__dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--color-success);
+  }
+
+  .al-live__dot.is-off {
+    background: var(--color-text-tertiary);
+  }
+
+  .al-live__title {
+    color: var(--color-text-primary);
+    font-weight: 500;
+  }
+
+  .al-live__sub {
+    color: var(--color-text-tertiary);
+  }
+
+  /* 告警卡片流(14 16 / r12 / 左 3px 严重度条) */
+  .al-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 120px;
+  }
+
+  .al-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 14px 16px;
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    border-left-width: 3px;
+    border-radius: 12px;
+  }
+
+  .al-card:hover {
+    border-color: var(--color-border-strong, rgba(255, 255, 255, 0.16));
+    box-shadow: var(--shadow-card);
+  }
+
+  .al-card__icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 17px;
+  }
+
+  .al-card__main {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .al-card__meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .al-card__sev {
+    font-size: 10.5px;
+    font-weight: 600;
+    padding: 1px 7px;
+    border-radius: 5px;
+  }
+
+  .al-card__time {
+    font-size: 11px;
+    color: var(--color-text-tertiary);
+    font-family: var(--font-mono);
+  }
+
+  .al-card__title {
+    font-size: 13.5px;
+    color: var(--color-text-primary);
+    margin-top: 6px;
+    line-height: 1.5;
+  }
+
+  .al-card__chips {
+    margin-top: 7px;
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .al-card__chip {
+    font-size: 11px;
+    padding: 1px 7px;
+    border-radius: 5px;
+    background: var(--color-bg-elevated);
+    color: var(--color-text-tertiary);
+    font-family: var(--font-mono);
+    text-decoration: none;
+  }
+
+  .al-card__chip--link {
+    color: var(--color-primary);
+  }
+
+  .al-card__ops {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .al-op {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    padding: 5px 11px;
+    border-radius: 7px;
+    border: 1px solid transparent;
+    background: transparent;
+  }
+
+  .al-op:hover:not(:disabled) {
+    background: var(--color-bg-elevated);
+    color: var(--color-text-primary);
+  }
+
+  .al-op:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  .al-op--ack {
+    color: var(--color-primary);
+    border-color: var(--color-border);
+  }
+
+  .al-op--ack:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+
+  .al-op--danger:hover:not(:disabled) {
+    color: var(--color-danger);
+    background: color-mix(in srgb, var(--color-danger) 10%, transparent);
+  }
+
+  .al-acked {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 9px;
+    border-radius: 7px;
+    font-size: 11px;
+    color: var(--color-success);
+    background: color-mix(in srgb, var(--color-success) 10%, transparent);
+  }
+
+  .al-empty {
+    padding: 56px;
+    text-align: center;
+    color: var(--color-text-tertiary);
+    font-size: 13px;
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+  }
+</style>
