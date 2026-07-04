@@ -57,13 +57,20 @@
 </script>
 
 <style scoped>
+  /* 严格对齐设计:bg #1b1d23 / radius 12px / padding 16 18 14 / shadow 0 1px 2px rgba(0,0,0,.25) */
   .metric-card {
-    border: 1px solid var(--color-border-light);
-    border-radius: var(--radius-content);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
     overflow: hidden;
     position: relative;
-    min-height: 132px;
+    min-height: 112px;
+    background: var(--color-bg-card);
+    box-shadow: var(--shadow-card);
     --metric-tone: var(--color-text-primary);
+  }
+
+  .metric-card :deep(.el-card__body) {
+    padding: 16px 18px 14px;
   }
 
   .metric-card::before {
@@ -103,14 +110,14 @@
   .metric-card__label {
     margin-bottom: 10px;
     color: var(--color-text-secondary);
-    font-size: var(--font-size-sm);
-    font-weight: 500;
+    font-size: var(--font-size-md);
+    font-weight: 400;
   }
 
   .metric-card__value {
     font-family: var(--font-mono);
-    font-size: 28px;
-    font-weight: 700;
+    font-size: 30px;
+    font-weight: 600;
     line-height: var(--line-height-tight);
     letter-spacing: 0;
   }

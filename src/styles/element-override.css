@@ -20,9 +20,57 @@
   --el-table-row-hover-bg-color: var(--table-row-hover-bg);
   --el-table-current-row-bg-color: var(--table-current-row-bg);
   --el-table-fixed-box-shadow: var(--table-fixed-shadow);
+
+  /* 消除 EP 默认外观:核心表面/文本/边框/填充全部钉到设计色板(var 随主题) */
+  --el-bg-color: var(--color-bg-page);
+  --el-bg-color-page: var(--color-bg-page);
+  --el-bg-color-overlay: var(--color-bg-card);
+  --el-card-bg-color: var(--color-bg-card);
+  --el-fill-color-blank: var(--color-bg-card);
+  --el-fill-color: var(--color-bg-elevated);
+  --el-fill-color-light: color-mix(in srgb, var(--color-bg-elevated) 55%, var(--color-bg-card));
+  --el-fill-color-lighter: var(--color-bg-card);
+  --el-fill-color-extra-light: var(--color-bg-subtle);
+  --el-fill-color-dark: var(--color-bg-elevated);
+  --el-fill-color-darker: var(--color-bg-elevated);
+  --el-text-color-primary: var(--color-text-primary);
+  --el-text-color-regular: var(--color-text-primary);
+  --el-text-color-secondary: var(--color-text-secondary);
+  --el-text-color-placeholder: var(--color-text-tertiary);
+  --el-text-color-disabled: var(--color-text-tertiary);
+  --el-border-color: var(--color-border);
+  --el-border-color-light: var(--color-border);
+  --el-border-color-lighter: var(--color-border-light);
+  --el-border-color-extra-light: var(--color-border-light);
+  --el-border-color-hover: var(--color-text-tertiary);
+  --el-border-color-dark: var(--color-border);
+  --el-border-color-darker: var(--color-border);
 }
 
 html.dark {
+  --el-bg-color: var(--color-bg-page);
+  --el-bg-color-page: var(--color-bg-page);
+  --el-bg-color-overlay: var(--color-bg-card);
+  --el-card-bg-color: var(--color-bg-card);
+  --el-fill-color-blank: var(--color-bg-card);
+  --el-fill-color: var(--color-bg-elevated);
+  --el-fill-color-light: color-mix(in srgb, var(--color-bg-elevated) 55%, var(--color-bg-card));
+  --el-fill-color-lighter: var(--color-bg-card);
+  --el-fill-color-extra-light: var(--color-bg-subtle);
+  --el-fill-color-dark: var(--color-bg-elevated);
+  --el-fill-color-darker: var(--color-bg-elevated);
+  --el-text-color-primary: var(--color-text-primary);
+  --el-text-color-regular: var(--color-text-primary);
+  --el-text-color-secondary: var(--color-text-secondary);
+  --el-text-color-placeholder: var(--color-text-tertiary);
+  --el-text-color-disabled: var(--color-text-tertiary);
+  --el-border-color: var(--color-border);
+  --el-border-color-light: var(--color-border);
+  --el-border-color-lighter: var(--color-border-light);
+  --el-border-color-extra-light: var(--color-border-light);
+  --el-border-color-hover: var(--color-text-tertiary);
+  --el-border-color-dark: var(--color-border);
+  --el-border-color-darker: var(--color-border);
   --el-table-border-color: var(--color-border);
   --el-table-bg-color: var(--color-bg-card);
   --el-table-tr-bg-color: var(--color-bg-card);
