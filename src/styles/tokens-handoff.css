@@ -34,7 +34,7 @@
 
   --color-text-primary: #1b1e26;
   --color-text-secondary: #5b6270;
-  --color-text-tertiary: #6b6b6b;
+  --color-text-tertiary: #676e7b;
 
   --color-bg-page: #f5f6f8;
   --color-bg-canvas: #eceef2;
@@ -69,7 +69,7 @@
   --layout-panel-hover-safe: 14px;
   --layout-panel-inset-highlight: rgba(255, 255, 255, 0.48);
 
-  --layout-sidebar-bg: #fafbfc;
+  --layout-sidebar-bg: #fafafb;
   --layout-sidebar-text: #495060;
   --layout-sidebar-text-muted: #737b8c;
   --layout-sidebar-brand-divider: rgba(15, 23, 42, 0.08);
@@ -93,7 +93,7 @@ html.dark {
 
   --color-text-primary: #e9ebf0;
   --color-text-secondary: #9aa1ae;
-  --color-text-tertiary: #676e7b;
+  --color-text-tertiary: #8b919e;
 
   --color-bg-page: #141519;
   --color-bg-canvas: #0f1013;
@@ -113,7 +113,7 @@ html.dark {
 
   --layout-panel-inset-highlight: rgba(255, 255, 255, 0.075);
 
-  --layout-sidebar-bg: #101724;
+  --layout-sidebar-bg: #17181d;
   --layout-sidebar-text: rgba(233, 235, 240, 0.72);
   --layout-sidebar-text-muted: rgba(233, 235, 240, 0.48);
   --layout-sidebar-brand-divider: rgba(255, 255, 255, 0.08);
