@@ -149,7 +149,9 @@
       border-color var(--motion-duration-sm) var(--motion-ease-standard);
     transform-origin: 50% 50%;
     overflow: hidden;
-    border: 1px solid var(--color-border-light);
+    /* 扁平设计:无 4 边边框(右侧 1px 分隔线由 app.css 全局提供),无阴影光圈 */
+    border: none;
+    box-shadow: none;
     --el-menu-bg-color: transparent;
     --el-menu-text-color: var(--layout-sidebar-text);
     --el-menu-hover-text-color: var(--layout-sidebar-hover-text);
@@ -183,7 +185,7 @@
     flex-shrink: 0;
     min-height: 56px;
     padding: var(--layout-sidebar-brand-pad-block) var(--layout-sidebar-inline);
-    border-bottom: 1px solid var(--layout-sidebar-brand-divider);
+    /* 还原设计:logo 区无底部分隔线(设计 brand border-bottom: none) */
   }
 
   .brand__logo {
