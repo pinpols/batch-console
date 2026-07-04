@@ -1481,3 +1481,24 @@ html.dark .pill-tabs .el-tabs__item.is-active:hover {
     margin: 14mm;
   }
 }
+
+/* ─────────────────────────────────────────────────────────────────────────
+ * 还原设计:无缝边到边 shell(三大区域非浮起卡片)。
+ * 侧栏 / 顶栏去圆角+阴影+浮起边框,改 1px 分隔线拼接;内容区已在 DefaultLayout 扁平化。
+ * ───────────────────────────────────────────────────────────────────────── */
+.layout-sidebar.app-surface.layout-panel {
+  border: none;
+  border-right: 1px solid var(--color-border);
+  border-radius: 0;
+  box-shadow: none;
+}
+.layout-header__surface.app-surface.layout-panel {
+  border: none;
+  border-bottom: 1px solid var(--color-border);
+  border-radius: 0;
+  box-shadow: none;
+}
+/* 顶栏外壳去内边距,让分隔线贴边 */
+.layout-header {
+  padding: 0 !important;
+}

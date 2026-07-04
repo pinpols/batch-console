@@ -32,24 +32,10 @@
               </el-breadcrumb>
               <div class="page-meta__title">
                 <span>{{ currentTitle }}</span>
-                <el-tooltip :content="t('nav.copyLink')" placement="bottom">
-                  <button
-                    type="button"
-                    class="page-meta__link"
-                    :aria-label="t('nav.copyLinkAria')"
-                    @click="copyCurrentUrl"
-                  >
-                    <el-icon><Link /></el-icon>
-                  </button>
-                </el-tooltip>
               </div>
             </div>
           </div>
         </div>
-      </div>
-
-      <div class="layout-header__center">
-        <LayoutTabs />
       </div>
 
       <div class="layout-header__right">
@@ -60,7 +46,6 @@
           :aria-label="t('nav.tenantSwitcherAria')"
         >
           <el-icon class="tenant-chip__icon"><OfficeBuilding /></el-icon>
-          <span class="tenant-chip__label">{{ t('nav.tenantCurrent') }}</span>
           <TenantSelect
             :model-value="tenantIdInput"
             size="small"
@@ -68,35 +53,10 @@
             :placeholder="t('nav.switchTenantPlaceholder')"
             @update:model-value="handleTenantSwitch"
           />
-          <el-tooltip :content="t('nav.copyTenantId')" placement="bottom">
-            <span
-              class="tenant-chip__copy"
-              role="button"
-              tabindex="0"
-              :aria-label="t('nav.copyTenantIdAria')"
-              @click.stop="copyTenant"
-              @keydown.enter.prevent.stop="copyTenant"
-            >
-              <el-icon><DocumentCopy /></el-icon>
-            </span>
-          </el-tooltip>
         </div>
         <div v-else class="tenant-chip tenant-chip--readonly">
           <el-icon class="tenant-chip__icon"><OfficeBuilding /></el-icon>
-          <span class="tenant-chip__label">{{ t('nav.tenantCurrent') }}</span>
           <span class="tenant-chip__value" :title="tenantIdInput">{{ tenantIdInput }}</span>
-          <el-tooltip :content="t('nav.copyTenantId')" placement="bottom">
-            <span
-              class="tenant-chip__copy"
-              role="button"
-              tabindex="0"
-              :aria-label="t('nav.copyTenantIdAria')"
-              @click.stop="copyTenant"
-              @keydown.enter.prevent.stop="copyTenant"
-            >
-              <el-icon><DocumentCopy /></el-icon>
-            </span>
-          </el-tooltip>
         </div>
 
         <el-tooltip :content="`${t('nav.commandPalette')}(⌘/Ctrl + K)`" placement="bottom">
@@ -184,13 +144,11 @@
   import { ElMessageBox } from 'element-plus'
   import {
     ArrowDown,
-    DocumentCopy,
     Expand,
     Compass,
     Fold,
     Iphone,
     Key,
-    Link,
     Monitor,
     Moon,
     OfficeBuilding,
@@ -199,7 +157,6 @@
     Sunny,
     SwitchButton,
   } from '@element-plus/icons-vue'
-  import LayoutTabs from '@/layout/LayoutTabs.vue'
   import TenantSelect from '@/components/common/TenantSelect.vue'
   import NotificationCenter from './NotificationCenter.vue'
   import { useHeaderLogic } from '@/layout/composables/useHeaderLogic'
@@ -259,11 +216,9 @@
     app,
     auth,
     breadcrumbs,
-    copyCurrentUrl,
     tenantIdInput,
     canSwitchTenant,
     handleTenantSwitch,
-    copyTenant,
     currentTitle,
     commandPaletteShortcutLabel,
     handleLogout,
