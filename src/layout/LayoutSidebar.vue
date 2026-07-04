@@ -15,32 +15,42 @@
       class="layout-menu"
       :collapse="app.sidebarCollapsed"
       :default-active="activeMenu"
-      :unique-opened="true"
       router
     >
-      <template v-for="group in visibleGroups" :key="group.key">
-        <el-sub-menu :index="group.key">
-          <template #title>
-            <el-icon>
-              <component :is="group.icon" />
-            </el-icon>
-            <span>{{ resolveGroupTitle(group) }}</span>
-          </template>
-          <el-menu-item
-            v-for="item in group.children.filter((c) => !c.hidden)"
-            :key="item.path"
-            :index="item.path"
-            @mouseenter="prefetchRouteComponent(item.path)"
-            @focus="prefetchRouteComponent(item.path)"
-          >
-            <el-icon v-if="item.icon">
-              <component :is="item.icon" />
-            </el-icon>
-            {{ resolveItemTitle(item) }}
-          </el-menu-item>
-        </el-sub-menu>
-      </template>
+      <el-menu-item-group v-for="group in visibleGroups" :key="group.key">
+        <template #title>
+          <span class="group-title">{{ resolveGroupTitle(group) }}</span>
+        </template>
+        <el-menu-item
+          v-for="item in group.children.filter((c) => !c.hidden)"
+          :key="item.path"
+          :index="item.path"
+          @mouseenter="prefetchRouteComponent(item.path)"
+          @focus="prefetchRouteComponent(item.path)"
+        >
+          <el-icon v-if="item.icon">
+            <component :is="item.icon" />
+          </el-icon>
+          <template #title>{{ resolveItemTitle(item) }}</template>
+        </el-menu-item>
+      </el-menu-item-group>
     </el-menu>
+
+    <button
+      class="sidebar-foot"
+      type="button"
+      :title="t('nav.collapseToggle')"
+      @click="app.toggleSidebar()"
+    >
+      <span v-if="!app.sidebarCollapsed" class="sidebar-foot__status">
+        <span class="sidebar-foot__dot" />
+        {{ t('nav.serviceHealthy') }}
+        <span class="sidebar-foot__ver">· v{{ appVersion }}</span>
+      </span>
+      <el-icon class="sidebar-foot__chevron"
+        ><Fold v-if="!app.sidebarCollapsed" /><Expand v-else
+      /></el-icon>
+    </button>
   </el-aside>
 </template>
 
@@ -48,6 +58,7 @@
   import { computed, watch } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
+  import { Fold, Expand } from '@element-plus/icons-vue'
   import { useAppStore } from '@/stores/app'
   import { usePermissionStore } from '@/stores/permission'
   import type { NavigationGroup, NavigationItem } from '@/constants/navigation'
@@ -93,6 +104,7 @@
 
   const activeMenu = computed(() => (route.meta.activeMenu as string) ?? route.path)
   const visibleGroups = computed(() => permission.visibleGroups)
+  const appVersion = __APP_VERSION__
 
   function prefetchRouteComponent(path: string) {
     try {
@@ -209,134 +221,142 @@
     display: none;
   }
 
-  .layout-menu :deep(.el-sub-menu__title),
-  .layout-menu :deep(.el-menu-item) {
-    color: var(--layout-sidebar-text);
-    height: 34px;
-    line-height: 34px;
-    border-radius: var(--radius-button);
-    margin: 3px var(--layout-sidebar-inline);
-    padding-left: 10px !important;
-    padding-right: 10px !important;
-    font-size: 12px;
-    font-weight: 650;
-    letter-spacing: 0;
+  /* 分组小标题:设计稿的克制灰色 section 标签,不可折叠、常显。 */
+  .layout-menu :deep(.el-menu-item-group__title) {
+    padding: 14px var(--layout-sidebar-inline) 6px;
+    color: var(--layout-sidebar-text-muted);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    line-height: 1.2;
   }
 
-  .layout-menu :deep(.el-sub-menu__title .el-icon),
+  .layout-menu :deep(.el-menu-item-group:first-child .el-menu-item-group__title) {
+    padding-top: 6px;
+  }
+
+  /* 导航项:图标 + 文字,始终可见;当前项 = 高亮底 + 左强调条。 */
+  .layout-menu :deep(.el-menu-item) {
+    position: relative;
+    color: var(--layout-sidebar-text);
+    height: 36px;
+    line-height: 36px;
+    border-radius: var(--radius-button);
+    margin: 2px var(--layout-sidebar-inline);
+    padding-left: 12px !important;
+    padding-right: 10px !important;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0;
+    transition:
+      background-color var(--motion-duration-sm) var(--motion-ease-standard),
+      color var(--motion-duration-sm) var(--motion-ease-standard);
+  }
+
   .layout-menu :deep(.el-menu-item .el-icon) {
-    margin-right: 9px;
+    margin-right: 10px;
     font-size: 16px;
-    opacity: 0.95;
+    opacity: 0.9;
+  }
+
+  .layout-menu :deep(.el-menu-item::before) {
+    content: '';
+    position: absolute;
+    inset: 8px auto 8px 0;
+    width: 3px;
+    border-radius: 999px;
+    background: transparent;
+  }
+
+  .layout-menu :deep(.el-menu-item:hover) {
+    color: var(--layout-sidebar-active-text) !important;
+    background-color: var(--layout-sidebar-hover-bg) !important;
+  }
+
+  .layout-menu :deep(.el-menu-item.is-active) {
+    color: var(--layout-sidebar-active-text) !important;
+    background-color: var(--layout-sidebar-active-bg) !important;
+    font-weight: 600;
   }
 
   .layout-menu :deep(.el-menu-item.is-active .el-icon) {
     opacity: 1;
   }
 
-  .layout-menu :deep(.el-sub-menu .el-menu) {
-    background-color: transparent;
-    padding: 2px 0 7px;
-    margin: 0 0 6px;
-    border-radius: 0;
-    overflow: visible;
-  }
-
-  /* 二级菜单:按设计稿回到克制列表,用左侧强调条表达当前项。 */
-  .layout-menu :deep(.el-sub-menu .el-menu-item) {
-    position: relative;
-    height: 32px;
-    line-height: 32px;
-    margin: 2px 10px 2px 18px;
-    font-size: 12px;
-    border-radius: var(--radius-button);
-    background: transparent !important;
-    border: 0;
-    box-shadow: none;
-    transition:
-      background-color var(--motion-duration-sm) var(--motion-ease-standard),
-      color var(--motion-duration-sm) var(--motion-ease-standard);
-  }
-
-  .layout-menu :deep(.el-sub-menu .el-menu-item::before) {
-    content: '';
-    position: absolute;
-    inset: 7px auto 7px 0;
-    width: 2px;
-    border-radius: 999px;
-    background: transparent;
-  }
-
-  .layout-menu :deep(.el-sub-menu .el-menu-item:hover) {
-    color: var(--layout-sidebar-active-text) !important;
-    background-color: var(--layout-sidebar-hover-bg) !important;
-  }
-
-  .layout-menu :deep(.el-sub-menu .el-menu-item.is-active) {
-    color: var(--layout-sidebar-active-text) !important;
-    background-color: var(--layout-sidebar-active-bg) !important;
-    box-shadow: none;
-  }
-
-  .layout-menu :deep(.el-sub-menu .el-menu-item.is-active::before) {
+  .layout-menu :deep(.el-menu-item.is-active::before) {
     background: var(--layout-sidebar-active-text);
   }
 
-  :global(html.dark) .layout-menu :deep(.el-sub-menu .el-menu-item) {
-    background: transparent !important;
-    border-color: transparent;
-    box-shadow: none;
-  }
-
-  :global(html.dark) .layout-menu :deep(.el-sub-menu .el-menu-item:hover) {
-    background-color: var(--layout-sidebar-hover-bg) !important;
-    color: var(--layout-sidebar-active-text) !important;
-  }
-
-  :global(html.dark) .layout-menu :deep(.el-sub-menu .el-menu-item.is-active) {
-    background-color: var(--layout-sidebar-active-bg) !important;
-    box-shadow: none;
-  }
-
-  /* 一级菜单 & 分组标题 hover（避免覆盖二级卡片 hover/active） */
-  .layout-menu :deep(.el-menu > .el-sub-menu > .el-sub-menu__title:hover),
-  .layout-menu :deep(.el-menu > .el-menu-item:hover) {
-    color: color-mix(in srgb, var(--layout-sidebar-text) 70%, #ffffff 30%) !important;
-    background-color: color-mix(
-      in srgb,
-      var(--layout-sidebar-hover-bg) 55%,
-      transparent 45%
-    ) !important;
-  }
-
-  .layout-menu :deep(.el-menu-item.is-active) {
-    color: var(--layout-sidebar-active-text) !important;
-    background-color: var(--layout-sidebar-active-bg) !important;
-  }
-
-  .layout-menu :deep(.el-menu-item.is-active:hover) {
-    background-color: var(--layout-sidebar-active-hover-bg) !important;
-  }
-
+  /* 收起态(≤1024 / 手动):图标居中,隐藏分组标题文字。 */
   .layout-menu.el-menu--collapse {
     width: 100%;
   }
 
-  .layout-menu.el-menu--collapse :deep(.el-sub-menu__title) {
+  .layout-menu.el-menu--collapse :deep(.el-menu-item-group__title) {
+    display: none;
+  }
+
+  .layout-menu.el-menu--collapse :deep(.el-menu-item) {
     justify-content: center;
-    width: 40px;
-    height: 40px;
-    margin: 6px auto;
-    padding: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
   }
 
-  .layout-menu.el-menu--collapse :deep(.el-sub-menu__title .el-icon) {
+  .layout-menu.el-menu--collapse :deep(.el-menu-item .el-icon) {
     margin-right: 0;
-    font-size: 17px;
   }
 
-  .layout-menu.el-menu--collapse :deep(.el-sub-menu.is-active > .el-sub-menu__title) {
-    color: var(--layout-sidebar-active-text) !important;
-    background: var(--layout-sidebar-active-bg) !important;
+  /* 底部状态行 + 折叠钮(还原设计稿「● 服务正常 · vX.Y」)。 */
+  .sidebar-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-shrink: 0;
+    height: 40px;
+    padding: 0 var(--layout-sidebar-inline);
+    border-top: 1px solid var(--layout-sidebar-brand-divider);
+    background: transparent;
+    color: var(--layout-sidebar-text-muted);
+    font-size: 12px;
+    cursor: pointer;
+    transition: color var(--motion-duration-sm) var(--motion-ease-standard);
+  }
+
+  .sidebar-foot:hover {
+    color: var(--layout-sidebar-active-text);
+  }
+
+  .sidebar-foot__status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+
+  .sidebar-foot__dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+    background: var(--el-color-success);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--el-color-success) 22%, transparent);
+    flex-shrink: 0;
+  }
+
+  .sidebar-foot__ver {
+    color: var(--layout-sidebar-text-muted);
+    font-family: var(--font-mono);
+    font-size: 11px;
+  }
+
+  .sidebar-foot__chevron {
+    font-size: 15px;
+    flex-shrink: 0;
+  }
+
+  .layout-sidebar.el-aside :deep(.el-menu--collapse) + .sidebar-foot,
+  :deep(.el-menu--collapse) ~ .sidebar-foot {
+    justify-content: center;
   }
 </style>
