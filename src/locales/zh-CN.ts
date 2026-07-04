@@ -3112,6 +3112,11 @@ export default {
     disableSuccess: '已停用',
   },
   workerManagement: {
+    statOnline: '在线',
+    statOffline: '离线',
+    hbSecondsAgo: '{n}s 前',
+    hbMinutesAgo: '{n}m 前',
+    hbHoursAgo: '{n}h 前',
     tabWorkers: 'Worker 列表',
     tabChannels: '文件渠道',
     groupLabel: '组',

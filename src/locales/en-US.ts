@@ -3174,6 +3174,11 @@ const messages: Messages = {
     disableSuccess: 'Disabled',
   },
   workerManagement: {
+    statOnline: 'Online',
+    statOffline: 'Offline',
+    hbSecondsAgo: '{n}s ago',
+    hbMinutesAgo: '{n}m ago',
+    hbHoursAgo: '{n}h ago',
     tabWorkers: 'Workers',
     tabChannels: 'File channels',
     groupLabel: 'Group',
