@@ -142,7 +142,7 @@
   .metric-card__description {
     margin-top: 8px;
     color: var(--color-text-tertiary);
-    font-size: var(--font-size-xs);
+    font-size: var(--font-size-sm);
     line-height: 1.35;
   }
 

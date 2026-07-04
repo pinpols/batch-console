@@ -34,7 +34,7 @@
 
   --color-text-primary: #1b1e26;
   --color-text-secondary: #5b6270;
-  --color-text-tertiary: #676e7b;
+  --color-text-tertiary: #8b919e;
 
   --color-bg-page: #f5f6f8;
   --color-bg-canvas: #eceef2;
@@ -103,7 +103,7 @@ html.dark {
 
   --color-text-primary: #e9ebf0;
   --color-text-secondary: #9aa1ae;
-  --color-text-tertiary: #8b919e;
+  --color-text-tertiary: #676e7b;
 
   --color-bg-page: #141519;
   --color-bg-canvas: #0f1013;
