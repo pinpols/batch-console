@@ -3327,6 +3327,8 @@ export default {
     emptyAudit: '暂无审计记录',
   },
   jobDefinitionList: {
+    jdDrawerKindLabel: '作业定义',
+    jdDrawerCreateTitle: '新建 · 作业定义',
     emptyTitle: '当前租户还没有任何作业定义',
     emptyDescription:
       '作业定义是调度的最小单位,通常通过"配置批量导入"批量创建。也可以由管理员手工新增。',

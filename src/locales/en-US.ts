@@ -3392,6 +3392,8 @@ const messages: Messages = {
     emptyAudit: 'No audit records',
   },
   jobDefinitionList: {
+    jdDrawerKindLabel: 'Job Definition',
+    jdDrawerCreateTitle: 'New · Job Definition',
     emptyTitle: 'No job definitions for this tenant yet',
     emptyDescription:
       'Job definitions are the scheduling unit. The common way is bulk import via a tenant config package. Admins can also create them manually.',
