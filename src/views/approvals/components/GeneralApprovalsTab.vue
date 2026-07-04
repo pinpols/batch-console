@@ -77,7 +77,8 @@
     />
     <el-table-column prop="approvalNo" :label="t('approvals.colApprovalNo')" width="160">
       <template #default="{ row }">
-        <CopyableText :text="row.approvalNo" />
+        <!-- dump:审批单号 mono + accent 蓝 -->
+        <CopyableText class="ap-no" :text="row.approvalNo" />
       </template>
     </el-table-column>
     <el-table-column
@@ -114,10 +115,10 @@
       show-overflow-tooltip
     >
       <template #default="{ row }">
-        <router-link v-if="targetLink(row)" class="cell-link" :to="targetLink(row) || ''">
+        <router-link v-if="targetLink(row)" class="cell-link ap-mono" :to="targetLink(row) || ''">
           {{ row.targetId }}
         </router-link>
-        <span v-else>{{ row.targetId || '—' }}</span>
+        <span v-else class="ap-mono">{{ row.targetId || '—' }}</span>
       </template>
     </el-table-column>
     <el-table-column
@@ -528,6 +529,18 @@
 </script>
 
 <style scoped>
+  /* dump proto-approvals:单号 mono 蓝、目标 mono */
+  .ap-no {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--color-primary);
+  }
+
+  .ap-mono {
+    font-family: var(--font-mono);
+    font-size: 12px;
+  }
+
   .trace {
     font-size: 12px;
     color: var(--el-text-color-secondary);

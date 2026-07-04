@@ -3191,6 +3191,8 @@ const messages: Messages = {
   },
   workerManagement: {
     statOnline: 'Online',
+    loadBarTitle:
+      'Load is the current in-flight task count; bar length is relative to the peak among listed workers (backend provides no capacity denominator)',
     statOffline: 'Offline',
     hbSecondsAgo: '{n}s ago',
     hbMinutesAgo: '{n}m ago',
@@ -4817,6 +4819,16 @@ const messages: Messages = {
     cancelDiscard: 'Keep editing',
   },
   reportExportHub: {
+    tabTrend: 'Trends',
+    tabExports: 'Export Center',
+    kpiTotalRuns: 'Total Runs',
+    kpiSuccessRate: 'Success Rate',
+    kpiAvgDuration: 'Avg Duration',
+    kpiSlaRate: 'SLA Compliance',
+    trendTitle: 'Runs (last 7 days)',
+    legendSuccess: 'Success',
+    legendFailed: 'Failed',
+    trendEmpty: 'No run data in the last 7 days',
     tenantTagPrefix: 'tenant: {id}',
     btnCopy: 'Copy',
     cardTitle: 'Available reports',

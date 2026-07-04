@@ -107,23 +107,32 @@
               </template>
             </EmptyState>
           </template>
+          <!--
+            列结构照设计 proto-nav-租户实例.html:TENANT(mono 主色,点击即切换)→ 名称 →
+            其余信息列 → 状态 pill → 操作。作业数/Worker/分片 三列 BE 未暴露统计,按现有数据列呈现。
+          -->
           <el-table-column
             prop="tenantId"
             :label="t('tenantList.colTenantId')"
             width="220"
             show-overflow-tooltip
-          />
+          >
+            <template #default="{ row }">
+              <span
+                class="tl-code"
+                :class="{ 'is-current': row.tenantId === tenant.tenantId }"
+                @click="switchToTenant(row)"
+              >
+                {{ row.tenantId }}
+              </span>
+            </template>
+          </el-table-column>
           <el-table-column
             prop="tenantName"
             :label="t('tenantList.colName')"
             width="240"
             show-overflow-tooltip
           />
-          <el-table-column :label="t('tenantList.statusLabel')" width="96">
-            <template #default="{ row }">
-              <StatusTag :value="String(row.status ?? '')" category="tenant" />
-            </template>
-          </el-table-column>
           <el-table-column
             prop="description"
             :label="t('tenantList.colDescription')"
@@ -137,6 +146,11 @@
             show-overflow-tooltip
           />
           <DatetimeColumn prop="createdAt" :label="t('tenantList.colCreatedAt')" width="180" />
+          <el-table-column :label="t('tenantList.statusLabel')" width="96">
+            <template #default="{ row }">
+              <StatusTag :value="String(row.status ?? '')" category="tenant" />
+            </template>
+          </el-table-column>
           <el-table-column :label="t('tenantList.colActions')" width="260" fixed="right">
             <template #default="{ row }">
               <div class="table-actions tenant-row-actions">
@@ -149,7 +163,8 @@
                 >
                   {{ t('tenantList.currentTag') }}
                 </el-tag>
-                <RowActions :actions="rowActions(row)" :inline-limit="2" />
+                <!-- 设计操作列:1 个外露文字操作 + ⋯ 收纳其余(proto: 配置 + ⋯) -->
+                <RowActions :actions="rowActions(row)" :inline-limit="1" />
               </div>
             </template>
           </el-table-column>
@@ -505,6 +520,26 @@
     border-radius: var(--radius-input, 4px);
     background: var(--el-fill-color-light);
     border: 1px solid var(--color-border-light);
+  }
+
+  /* TENANT 列:mono 主色可点(dump: 12px / accent / IBM Plex Mono / pointer);当前租户不可再切 */
+  .tl-code {
+    font-size: 12px;
+    color: var(--color-primary);
+    font-family: var(--font-mono);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+  }
+
+  .tl-code:hover {
+    text-decoration: underline;
+  }
+
+  .tl-code.is-current {
+    cursor: default;
+    text-decoration: none;
   }
 
   .tenant-row-actions {

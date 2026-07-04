@@ -40,9 +40,22 @@
         </el-form-item>
       </ListPageQueryBar>
     </template>
-    <el-table-column prop="requestId" :label="t('approvals.catchUpColRequestId')" min-width="180" />
-    <el-table-column prop="jobCode" :label="t('approvals.catchUpColJobCode')" min-width="140" />
-    <el-table-column prop="bizDate" :label="t('approvals.catchUpColBizDate')" width="120" />
+    <el-table-column prop="requestId" :label="t('approvals.catchUpColRequestId')" min-width="180">
+      <template #default="{ row }">
+        <!-- dump:单号 mono 蓝 -->
+        <span class="cu-no">{{ row.requestId }}</span>
+      </template>
+    </el-table-column>
+    <el-table-column prop="jobCode" :label="t('approvals.catchUpColJobCode')" min-width="140">
+      <template #default="{ row }">
+        <span class="cu-mono">{{ row.jobCode }}</span>
+      </template>
+    </el-table-column>
+    <el-table-column prop="bizDate" :label="t('approvals.catchUpColBizDate')" width="120">
+      <template #default="{ row }">
+        <span class="cu-mono">{{ row.bizDate }}</span>
+      </template>
+    </el-table-column>
     <el-table-column prop="requestStatus" :label="t('approvals.colStatus')" width="120">
       <template #default="{ row }">
         <StatusTag :value="String(row.requestStatus ?? '')" category="approval" />
@@ -139,3 +152,17 @@
     void load()
   })
 </script>
+
+<style scoped>
+  /* dump proto-approvals:单号 mono 蓝、目标 mono */
+  .cu-no {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--color-primary);
+  }
+
+  .cu-mono {
+    font-family: var(--font-mono);
+    font-size: 12px;
+  }
+</style>

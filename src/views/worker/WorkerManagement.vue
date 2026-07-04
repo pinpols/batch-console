@@ -6,32 +6,23 @@
     <div>
       <el-tabs v-model="activeTab" class="pill-tabs">
         <el-tab-pane :label="t('workerManagement.tabWorkers')" name="workers">
-          <!-- 还原设计(workercards 样张):状态统计卡 + Worker 卡片网格,非表格。逻辑/操作全保留。 -->
+          <!-- 照设计 proto-workers dump:横排状态统计卡(色点 + 标签 + mono 大数),点击联动状态筛选 -->
           <div class="wk-stats">
-            <MetricCard
-              :label="t('workerManagement.statOnline')"
-              :value="workerStats.online"
-              tone="success"
-              clickable
-              :active="workerFilters.status === 'ONLINE'"
-              @click="toggleStatusFilter('ONLINE')"
-            />
-            <MetricCard
-              label="Draining"
-              :value="workerStats.draining"
-              tone="warning"
-              clickable
-              :active="workerFilters.status === 'DRAINING'"
-              @click="toggleStatusFilter('DRAINING')"
-            />
-            <MetricCard
-              :label="t('workerManagement.statOffline')"
-              :value="workerStats.offline"
-              tone="danger"
-              clickable
-              :active="workerFilters.status === 'OFFLINE'"
-              @click="toggleStatusFilter('OFFLINE')"
-            />
+            <button
+              v-for="s in statCards"
+              :key="s.status"
+              type="button"
+              class="wk-stat"
+              :class="{ 'is-active': workerFilters.status === s.status }"
+              @click="toggleStatusFilter(s.status)"
+            >
+              <span class="wk-stat__dot" :style="{ background: s.color }" />
+              <span class="wk-stat__label">{{ s.label }}</span>
+              <span class="wk-stat__spacer" />
+              <span class="wk-stat__num" :style="s.value > 0 ? { color: s.numColor } : undefined">
+                {{ s.value }}
+              </span>
+            </button>
           </div>
 
           <ListPageQueryBar
@@ -108,21 +99,32 @@
           </EmptyState>
 
           <div v-else v-loading="workerTableBlocking" class="wk-grid">
-            <div v-for="row in workerTableRows" :key="row.id" class="wk-card">
+            <div
+              v-for="row in workerTableRows"
+              :key="row.id"
+              class="wk-card"
+              :class="cardStateClass(row.status)"
+            >
               <div class="wk-card__head">
                 <div class="wk-card__id">
                   <CopyableText class="wk-card__code" :text="row.workerCode" />
                   <div class="wk-card__group">{{ row.workerGroup }}</div>
                 </div>
-                <StatusTag :value="String(row.status ?? '')" category="worker" />
               </div>
               <div class="wk-card__meta">
+                <StatusTag :value="String(row.status ?? '')" category="worker" />
+                <span class="wk-card__spacer" />
                 <span class="wk-card__hb" :title="String(row.heartbeatAt ?? '')">
                   ♥ {{ relTime(row.heartbeatAt) }}
                 </span>
-                <span class="wk-card__load">
-                  {{ t('workerManagement.colLoad') }} {{ row.currentLoad ?? 0 }}
-                </span>
+              </div>
+              <!-- 负载:后端仅有 currentLoad(无容量分母),显示真实数字;
+                   mini bar 为相对当前列表峰值的比例,title 注明口径,不编造 x/y 分母 -->
+              <div class="wk-card__loadrow" :title="t('workerManagement.loadBarTitle')">
+                <div class="wk-card__bar">
+                  <div class="wk-card__bar-fill" :style="{ width: loadBarWidth(row) }" />
+                </div>
+                <span class="wk-card__load">{{ row.currentLoad ?? 0 }}</span>
               </div>
               <div class="wk-card__actions">
                 <el-button size="small" plain type="warning" @click="drain(row)">
@@ -307,7 +309,6 @@
   import CopyableText from '@/components/common/CopyableText.vue'
   import JsonPreview from '@/components/common/JsonPreview.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
-  import MetricCard from '@/components/common/MetricCard.vue'
   import TablePagerBar from '@/components/table/TablePagerBar.vue'
   import type { ConsoleWorkerRegistryResponse } from '@/types/console-api'
   import type { ConsoleFileChannelResponse } from '@/types/console-api'
@@ -410,6 +411,51 @@
   function toggleStatusFilter(status: string) {
     workerFilters.status = workerFilters.status === status ? '' : status
     workerPage.value = 1
+  }
+
+  // 照 dump 统计卡三件套(在线/Draining/离线):色点 + 标签 + mono 数值
+  const statCards = computed(() => [
+    {
+      status: 'ONLINE',
+      label: t('workerManagement.statOnline'),
+      value: workerStats.value.online,
+      color: 'var(--color-success)',
+      numColor: 'var(--color-text-primary)',
+    },
+    {
+      status: 'DRAINING',
+      label: 'Draining',
+      value: workerStats.value.draining,
+      color: 'var(--color-warning)',
+      numColor: 'var(--color-warning)',
+    },
+    {
+      status: 'OFFLINE',
+      label: t('workerManagement.statOffline'),
+      value: workerStats.value.offline,
+      color: 'var(--color-danger)',
+      numColor: 'var(--color-danger)',
+    },
+  ])
+
+  /** 卡片描边跟状态走(dump:Draining=warning 边、离线=danger 边) */
+  function cardStateClass(status: string | null | undefined) {
+    const s = String(status ?? '').toUpperCase()
+    if (s === 'DRAINING') return 'wk-card--draining'
+    if (s === 'OFFLINE' || s === 'DECOMMISSIONED') return 'wk-card--offline'
+    return ''
+  }
+
+  // mini bar 口径:相对当前筛选结果中的负载峰值(后端无容量分母,不编造 x/y)
+  const workerLoadPeak = computed(() =>
+    filteredWorkers.value.reduce((m, x) => Math.max(m, Number(x.currentLoad ?? 0)), 0),
+  )
+
+  function loadBarWidth(row: ConsoleWorkerRegistryResponse): string {
+    const peak = workerLoadPeak.value
+    const load = Number(row.currentLoad ?? 0)
+    if (!peak || !Number.isFinite(load) || load <= 0) return '0%'
+    return `${Math.min(100, Math.round((load / peak) * 100))}%`
   }
 
   /** 心跳相对时间(设计「♥ 3s 前」) */
@@ -626,17 +672,60 @@
     color: var(--color-text-tertiary);
   }
 
-  /* ── 还原设计 workercards:状态统计卡 + Worker 卡片网格 ── */
+  /* ── 照设计 proto-workers dump(docs/redesign/proto-workers.html) ── */
+  /* 统计卡:横排 色点 + 标签 + spacer + mono 22px 数值,卡底 r12 padding 14 18 */
   .wk-stats {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 14px;
-    margin-bottom: 14px;
+    margin-bottom: 18px;
   }
 
+  .wk-stat {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 18px;
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    cursor: pointer;
+    font-family: inherit;
+    text-align: left;
+  }
+
+  .wk-stat.is-active {
+    border-color: var(--color-primary);
+  }
+
+  .wk-stat__dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .wk-stat__label {
+    color: var(--color-text-secondary);
+    font-size: 13px;
+  }
+
+  .wk-stat__spacer,
+  .wk-card__spacer {
+    flex: 1;
+  }
+
+  .wk-stat__num {
+    font-family: var(--font-mono);
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+  }
+
+  /* Worker 卡片:r14 padding 16 18,auto-fill 网格 */
   .wk-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 14px;
     margin-top: 4px;
   }
@@ -644,45 +733,93 @@
   .wk-card {
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    padding: 16px 18px 14px;
+    padding: 16px 18px;
     background: var(--color-bg-card);
     border: 1px solid var(--color-border);
-    border-radius: 12px;
+    border-radius: 14px;
     box-shadow: var(--shadow-card);
+  }
+
+  .wk-card--draining {
+    border-color: var(--color-warning);
+  }
+
+  .wk-card--offline {
+    border-color: var(--color-danger);
   }
 
   .wk-card__head {
     display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 10px;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+  }
+
+  .wk-card__id {
+    min-width: 0;
+    flex: 1;
   }
 
   .wk-card__code {
     font-family: var(--font-mono);
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
     color: var(--color-text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .wk-card__group {
-    margin-top: 3px;
-    font-size: 12px;
-    color: var(--color-text-secondary);
+    margin-top: 2px;
+    font-size: 11.5px;
+    color: var(--color-text-tertiary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .wk-card__meta {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    font-size: 12px;
+    gap: 8px;
+    margin-top: 14px;
+  }
+
+  .wk-card__hb {
+    font-family: var(--font-mono);
+    font-size: 11px;
     color: var(--color-text-tertiary);
+  }
+
+  /* 负载行:mini bar(5px 圆角轨道)+ 真实负载数(mono,右对齐) */
+  .wk-card__loadrow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .wk-card__bar {
+    flex: 1;
+    height: 5px;
+    border-radius: 3px;
+    background: var(--color-bg-elevated);
+    overflow: hidden;
+  }
+
+  .wk-card__bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    background: var(--color-primary);
   }
 
   .wk-card__load {
     font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--color-text-secondary);
+    min-width: 24px;
+    text-align: right;
   }
 
   .wk-card__actions {
@@ -690,8 +827,9 @@
     align-items: center;
     gap: 6px;
     flex-wrap: wrap;
-    padding-top: 12px;
-    border-top: 1px solid var(--color-border-light);
+    margin-top: 14px;
+    padding-top: 13px;
+    border-top: 1px solid var(--color-border);
   }
 
   .wk-card__actions .el-button + .el-button {

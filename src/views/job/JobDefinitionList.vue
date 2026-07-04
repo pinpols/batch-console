@@ -286,18 +286,133 @@
       </ProTable>
     </SectionCard>
 
-    <el-drawer
-      :append-to-body="true"
-      v-model="createDrawerVisible"
-      :title="t('jobDefinitionList.drawerCreateTitle')"
-      size="520px"
-      :before-close="onCreateDrawerClose"
+    <!--
+      设计 560px 右侧抽屉三态(查看/编辑/新建):
+      docs/redesign/proto-jobs_view.html / proto-jobs_edit.html / proto-jobs_create.html。
+      查看↔编辑可切换;业务逻辑/校验/API/权限全部平移自原三个 el-drawer。
+    -->
+    <JobDefinitionDrawer
+      :visible="jdVisible"
+      :mode="jdMode"
+      :head-label="t('jobDefinitionList.jdDrawerKindLabel')"
+      :title="jdTitle"
+      :pill="jdPill"
+      :saving="jdMode === 'create' ? createSaving : editSaving"
+      :save-label="
+        jdMode === 'create'
+          ? t('jobDefinitionList.drawerCreateSubmit')
+          : t('jobDefinitionList.drawerSave')
+      "
+      :exporting="!!detailRow && exportingJobCode === detailRow.jobCode"
+      :can-edit="canMutateConfig"
+      @close="onJdClose"
+      @cancel="onJdCancel"
+      @save="onJdSave"
+      @edit="onJdEdit"
+      @export="onJdExport"
     >
+      <!-- 查看态:分区字段块(label 上置)+ 关联文件 + 最近运行 -->
+      <template v-if="jdMode === 'view' && detailRow">
+        <section v-for="group in viewGroups" :key="group.title" class="jd-section">
+          <div class="jd-section__label">{{ group.title }}</div>
+          <div class="jd-grid">
+            <div
+              v-for="field in group.fields"
+              :key="field.label"
+              class="jd-field"
+              :class="{ 'jd-field--wide': field.wide }"
+            >
+              <div class="jd-field__label">{{ field.label }}</div>
+              <pre v-if="field.json" class="jd-field__json">{{ field.value }}</pre>
+              <div v-else class="jd-field__value" :class="{ 'is-mono': field.mono }">
+                {{ field.value }}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="jd-section">
+          <div class="jd-section__label">{{ t('jobDefinitionList.detailTabRelatedFiles') }}</div>
+          <JobRelatedFilesTab
+            v-if="detailRow.jobType === 'IMPORT' || detailRow.jobType === 'EXPORT'"
+            :tenant-id="detailRow.tenantId"
+            :job-code="detailRow.jobCode"
+          />
+          <el-empty
+            v-else
+            :description="t('jobDefinitionList.fileTabNotApplicable')"
+            :image-size="60"
+          />
+        </section>
+
+        <section class="jd-section">
+          <div class="jd-section__label">
+            {{ t('jobDefinitionList.detailTabRuns') }}
+            <el-tag v-if="detailRunsRows.length" size="small" round>{{
+              detailRunsRows.length
+            }}</el-tag>
+          </div>
+          <div class="detail-runs-header">
+            <span>{{ t('jobDefinitionList.detailRunsHint', { code: detailRow.jobCode }) }}</span>
+            <el-button text type="primary" @click="goInstances(detailRow.jobCode)">
+              {{ t('runs.viewAll') }} →
+            </el-button>
+          </div>
+          <el-table
+            v-loading="detailRunsLoading"
+            :data="detailRunsRows"
+            size="small"
+            empty-text="—"
+            stripe
+            @row-click="goJobInstance"
+          >
+            <el-table-column :label="t('runs.colInstance')" min-width="200">
+              <template #default="{ row }">
+                <span class="cell-link">{{ row.instanceNo }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column :label="t('runs.colStatus')" width="110">
+              <template #default="{ row }">
+                <StatusTag :value="row.instanceStatus" category="instance" />
+              </template>
+            </el-table-column>
+            <el-table-column prop="bizDate" :label="t('runs.colBizDate')" width="110" />
+            <el-table-column :label="t('runs.colStarted')" width="160">
+              <template #default="{ row }">{{ fmtDatetime(row.startedAt) }}</template>
+            </el-table-column>
+          </el-table>
+        </section>
+      </template>
+
+      <!--
+        编辑态。Day 2 (A.1):编辑表单 2 字段扩到 24 字段,对齐 BE JobDefinitionUpdateRequest。
+        表单内容抽在 <JobConfigBasicForm> 组件,与新建向导共用。
+      -->
       <el-form
+        v-else-if="jdMode === 'edit'"
+        ref="editFormRef"
+        :model="editForm"
+        :rules="editFormRules"
+        label-position="top"
+        @submit.prevent
+      >
+        <JobConfigBasicForm
+          :model="editForm"
+          :tenant-id="editingTenantId"
+          :execution-mode-options="executionModeOptions"
+          :schedule-type-options="scheduleTypeOptions"
+          :queue-options="queueOptions"
+          :worker-group-options="workerGroupOptionsMeta"
+        />
+      </el-form>
+
+      <!-- 新建态 -->
+      <el-form
+        v-else
         ref="createFormRef"
         :model="createForm"
         :rules="createFormRules"
-        label-width="120px"
+        label-position="top"
         @submit.prevent
       >
         <el-form-item :label="t('jobDefinitionList.fieldJobCode')" prop="jobCode">
@@ -417,126 +532,8 @@
         <el-form-item :label="t('jobDefinitionList.enabledLabel')" prop="enabled">
           <el-switch v-model="createForm.enabled" />
         </el-form-item>
-        <div class="drawer-actions">
-          <el-button @click="closeCreateDrawer">{{
-            t('jobDefinitionList.drawerCancel')
-          }}</el-button>
-          <el-button type="primary" :loading="createSaving" @click="submitCreate">
-            {{ t('jobDefinitionList.drawerCreateSubmit') }}
-          </el-button>
-        </div>
       </el-form>
-    </el-drawer>
-
-    <el-drawer
-      :append-to-body="true"
-      v-model="editDrawerVisible"
-      :title="editDrawerTitle"
-      size="640px"
-      :before-close="onEditDrawerClose"
-    >
-      <!--
-        Day 2 (A.1):编辑 drawer 从 2 字段扩到 24 字段,对齐 BE JobDefinitionUpdateRequest。
-        表单内容抽到 <JobConfigBasicForm> 组件,后续 Day 8+ 新建向导复用相同组件。
-      -->
-      <el-form
-        ref="editFormRef"
-        :model="editForm"
-        :rules="editFormRules"
-        label-width="120px"
-        @submit.prevent
-      >
-        <JobConfigBasicForm
-          :model="editForm"
-          :tenant-id="editingTenantId"
-          :execution-mode-options="executionModeOptions"
-          :schedule-type-options="scheduleTypeOptions"
-          :queue-options="queueOptions"
-          :worker-group-options="workerGroupOptionsMeta"
-        />
-        <div class="drawer-actions">
-          <el-button @click="closeEditDrawer">{{ t('jobDefinitionList.drawerCancel') }}</el-button>
-          <el-button type="primary" :loading="editSaving" @click="submitEdit">
-            {{ t('jobDefinitionList.drawerSave') }}
-          </el-button>
-        </div>
-      </el-form>
-    </el-drawer>
-
-    <!-- Run-centric 详情抽屉(P2):Overview + 最近运行 inline -->
-    <el-drawer
-      :append-to-body="true"
-      v-model="detailVisible"
-      :title="t('jobDefinitionList.detailTitle', { code: detailRow?.jobCode || '' })"
-      size="720px"
-    >
-      <el-tabs v-if="detailRow" v-model="activeDetailTab">
-        <el-tab-pane name="overview" :label="t('jobDefinitionList.detailTabOverview')">
-          <JobConfigBasicSection
-            :job="detailRow"
-            :execution-mode-label="resolveEnumLabel('executionMode', detailRow.executionMode)"
-          />
-        </el-tab-pane>
-
-        <!--
-          Day 6:关联文件 Tab。lazy 让 tab 真打开时才挂载。
-          ※ 不能用 `v-if` 在 el-tab-pane 上(EP unmount bug,panes.indexOf undefined)。
-          tab 标签常驻,内部按 jobType 条件渲染。
-        -->
-        <el-tab-pane
-          name="related-files"
-          :label="t('jobDefinitionList.detailTabRelatedFiles')"
-          :lazy="true"
-        >
-          <JobRelatedFilesTab
-            v-if="detailRow.jobType === 'IMPORT' || detailRow.jobType === 'EXPORT'"
-            :tenant-id="detailRow.tenantId"
-            :job-code="detailRow.jobCode"
-          />
-          <el-empty v-else :description="t('jobDefinitionList.fileTabNotApplicable')" />
-        </el-tab-pane>
-
-        <el-tab-pane name="runs" :lazy="true">
-          <template #label>
-            <span>
-              {{ t('jobDefinitionList.detailTabRuns') }}
-              <el-tag v-if="detailRunsRows.length" size="small" round>{{
-                detailRunsRows.length
-              }}</el-tag>
-            </span>
-          </template>
-          <div class="detail-runs-header">
-            <span>{{ t('jobDefinitionList.detailRunsHint', { code: detailRow.jobCode }) }}</span>
-            <el-button text type="primary" @click="goInstances(detailRow.jobCode)">
-              {{ t('runs.viewAll') }} →
-            </el-button>
-          </div>
-          <el-table
-            v-loading="detailRunsLoading"
-            :data="detailRunsRows"
-            size="small"
-            empty-text="—"
-            stripe
-            @row-click="goJobInstance"
-          >
-            <el-table-column :label="t('runs.colInstance')" min-width="200">
-              <template #default="{ row }">
-                <span class="cell-link">{{ row.instanceNo }}</span>
-              </template>
-            </el-table-column>
-            <el-table-column :label="t('runs.colStatus')" width="110">
-              <template #default="{ row }">
-                <StatusTag :value="row.instanceStatus" category="instance" />
-              </template>
-            </el-table-column>
-            <el-table-column prop="bizDate" :label="t('runs.colBizDate')" width="110" />
-            <el-table-column :label="t('runs.colStarted')" width="160">
-              <template #default="{ row }">{{ fmtDatetime(row.startedAt) }}</template>
-            </el-table-column>
-          </el-table>
-        </el-tab-pane>
-      </el-tabs>
-    </el-drawer>
+    </JobDefinitionDrawer>
 
     <el-dialog
       v-model="bundleImportVisible"
@@ -636,8 +633,8 @@
   import { useTenantReload } from '@/composables/useTenantReload'
   import { showCreateSuccess } from '@/composables/useCreateSuccess'
   import PageContainer from '@/components/common/PageContainer.vue'
-  import JobConfigBasicSection from './components/JobConfigBasicSection.vue'
   import JobConfigBasicForm from './components/JobConfigBasicForm.vue'
+  import JobDefinitionDrawer from './components/JobDefinitionDrawer.vue'
   import CronExprInput from './components/CronExprInput.vue'
   import JobRelatedFilesTab from './components/JobRelatedFilesTab.vue'
   import {
@@ -766,8 +763,8 @@
 
   function goInstances(jobCode: string) {
     // 从定义跳到该 job 的实例列表:列表默认锚今日,这里看的是"该 job 的历史运行",清掉日期
-    // 跳转前关闭详情 drawer,避免跳到目标页 drawer 还罩着(同路由 query-only 跳转不会触发组件卸载)
-    detailVisible.value = false
+    // 跳转前关闭抽屉,避免跳到目标页 drawer 还罩着(同路由 query-only 跳转不会触发组件卸载)
+    jdVisible.value = false
     void router.push({
       path: '/monitor/job-instances',
       query: { jobCode, range: 'all' },
@@ -801,7 +798,7 @@
         // 现在改成 inline detail drawer + Runs tab,保留 oncall 上下文,
         // tab 内仍有"查看全部"链接通向完整可筛列表。
         label: t('jobDefinitionList.actionInstances'),
-        onClick: () => openDetail(row, 'runs'),
+        onClick: () => openDetail(row),
       },
       {
         key: 'clone',
@@ -1062,10 +1059,8 @@
     }
   }
 
-  // ── Run-centric 详情抽屉(P2)─────
-  const detailVisible = ref(false)
+  // ── Run-centric 详情(设计三态抽屉的查看态)─────
   const detailRow = ref<ConsoleJobDefinitionResponse | null>(null)
-  const activeDetailTab = ref<'overview' | 'runs'>('overview')
   const detailRunsRows = ref<ConsoleJobInstanceResponse[]>([])
   const detailRunsLoading = ref(false)
   const detailRunsLoadedForJobCode = ref('')
@@ -1090,26 +1085,28 @@
     }
   }
 
-  function openDetail(row: ConsoleJobDefinitionResponse, initialTab: 'overview' | 'runs') {
+  function openDetail(row: ConsoleJobDefinitionResponse) {
     detailRow.value = row
     detailRunsRows.value = []
     detailRunsLoadedForJobCode.value = ''
-    activeDetailTab.value = initialTab
-    detailVisible.value = true
-    if (initialTab === 'runs') void loadDetailRuns()
+    jdMode.value = 'view'
+    jdVisible.value = true
+    // 三态抽屉里"最近运行"是常驻分区(不再是 lazy tab),打开即拉
+    void loadDetailRuns()
   }
 
   function goJobInstance(row: ConsoleJobInstanceResponse) {
     void router.push(`/monitor/job-instances/${row.id}`)
   }
 
-  watch(activeDetailTab, (tab) => {
-    if (tab === 'runs') void loadDetailRuns()
-  })
+  // ── 设计三态抽屉(view/edit/create)状态机 ─────
+  const jdVisible = ref(false)
+  const jdMode = ref<'view' | 'edit' | 'create'>('view')
+  // 编辑态是否从查看态切入(取消时回到查看态而非直接关闭)
+  const editFromView = ref(false)
 
-  // ── 编辑抽屉(轻量版,只露 ExecutionMode + watermarkField,部分更新) ─────
+  // ── 编辑态表单 ─────
   const editFormRef = ref<FormInstance>()
-  const editDrawerVisible = ref(false)
   const editSaving = ref(false)
   const editingId = ref<number | null>(null)
   const editingTenantId = ref('')
@@ -1118,9 +1115,8 @@
   // 对齐 BE JobDefinitionUpdateRequest。所有可编辑字段均通过 JobConfigBasicForm 暴露。
   const editForm = reactive<JobEditFormState>(createEmptyJobEditForm())
   const createFormRef = ref<FormInstance>()
-  const createDrawerVisible = ref(false)
-  // 路由变化时自动关闭 detail / 编辑 / 新建 三个 drawer,避免跳到目标页 drawer 还罩着
-  useDrawerAutoClose([detailVisible, editDrawerVisible, createDrawerVisible])
+  // 路由变化时自动关闭抽屉,避免跳到目标页 drawer 还罩着
+  useDrawerAutoClose([jdVisible])
   const createSaving = ref(false)
   // jobType BE 枚举走 /api/console/meta/enums 动态字典;此处默认 GENERAL(通用任务,
   // P0 Task SPI 落地后内部路由到 Shell/SQL/StoredProc/HTTP builtin)。
@@ -1138,16 +1134,16 @@
     enabled: false,
   })
 
-  // 脏数据保护:抽屉关闭前若有未保存修改弹 confirm,避免点遮罩/Esc 丢失输入
+  // 脏数据保护:抽屉关闭前若有未保存修改弹 confirm,避免点 Esc 丢失输入
   const createDirty = useDirtyForm(() => createForm, {
-    enabled: () => createDrawerVisible.value,
+    enabled: () => jdVisible.value && jdMode.value === 'create',
   })
   const editDirty = useDirtyForm(() => editForm, {
-    enabled: () => editDrawerVisible.value,
+    enabled: () => jdVisible.value && jdMode.value === 'edit',
   })
   // 抽屉打开后 autofocus 第一可编辑控件
-  useFormFocus(createFormRef, () => createDrawerVisible.value)
-  useFormFocus(editFormRef, () => editDrawerVisible.value)
+  useFormFocus(createFormRef, () => jdVisible.value && jdMode.value === 'create')
+  useFormFocus(editFormRef, () => jdVisible.value && jdMode.value === 'edit')
 
   const { data: metaEnumsData } = useConsoleMetaEnumsQuery()
   const executionModeOptions = computed(() =>
@@ -1162,11 +1158,189 @@
     return metaEnumsData.value?.[group]?.find((o) => o.value === value)?.label ?? value
   }
 
-  const editDrawerTitle = computed(() =>
-    editingJobCode.value
-      ? t('jobDefinitionList.drawerEditTitleWithCode', { code: editingJobCode.value })
-      : t('jobDefinitionList.drawerEditTitle'),
-  )
+  // ── 三态抽屉:头部标题 / 状态 pill / 查看态字段分区 ─────
+  const jdTitle = computed(() => {
+    if (jdMode.value === 'create') return t('jobDefinitionList.jdDrawerCreateTitle')
+    if (jdMode.value === 'edit') return editingJobCode.value
+    return detailRow.value?.jobCode ?? ''
+  })
+
+  const jdPill = computed(() => {
+    if (jdMode.value === 'create') return null
+    const enabled = jdMode.value === 'edit' ? editForm.enabled : detailRow.value?.enabled
+    return {
+      text: enabled ? t('jobDefinitionList.optEnabled') : t('jobDefinitionList.optDisabled'),
+      on: !!enabled,
+    }
+  })
+
+  interface JdField {
+    label: string
+    value: string
+    mono?: boolean
+    wide?: boolean
+    json?: boolean
+  }
+
+  function formatJson(raw: string | undefined | null): string {
+    if (!raw) return '—'
+    try {
+      return JSON.stringify(JSON.parse(raw), null, 2)
+    } catch {
+      return raw
+    }
+  }
+
+  /** 查看态字段分组:口径与原 JobConfigBasicSection 六组(基本/调度/资源/重试/参数/审计)一致。 */
+  const viewGroups = computed<Array<{ title: string; fields: JdField[] }>>(() => {
+    const job = detailRow.value
+    if (!job) return []
+    const dash = (v: unknown) => (v === undefined || v === null || v === '' ? '—' : String(v))
+    const groups: Array<{ title: string; fields: JdField[] }> = [
+      {
+        title: t('jobConfigBasic.groupBasic'),
+        fields: [
+          { label: t('jobConfigBasic.fieldJobCode'), value: dash(job.jobCode), mono: true },
+          { label: t('jobConfigBasic.fieldJobName'), value: dash(job.jobName) },
+          { label: t('jobConfigBasic.fieldJobType'), value: dash(job.jobType), mono: true },
+          {
+            label: t('jobConfigBasic.fieldEnabled'),
+            value: job.enabled ? t('common.yes') : t('common.no'),
+          },
+          {
+            label: t('jobConfigBasic.fieldExecutionMode'),
+            value: resolveEnumLabel('executionMode', job.executionMode),
+          },
+          {
+            label: t('jobConfigBasic.fieldWatermark'),
+            value: dash(job.watermarkField),
+            mono: true,
+          },
+        ],
+      },
+      {
+        title: t('jobConfigBasic.groupSchedule'),
+        fields: [
+          {
+            label: t('jobConfigBasic.fieldScheduleType'),
+            value: dash(job.scheduleType),
+            mono: true,
+          },
+          {
+            label: t('jobConfigBasic.fieldScheduleExpr'),
+            value: dash(job.scheduleExpr),
+            mono: true,
+          },
+          { label: 'dependsOnJobCode', value: dash(job.dependsOnJobCode), mono: true },
+          {
+            label: t('jobConfigBasic.fieldCalendarCode'),
+            value: dash(job.calendarCode),
+            mono: true,
+          },
+          { label: t('jobConfigBasic.fieldWindowCode'), value: dash(job.windowCode), mono: true },
+        ],
+      },
+      {
+        title: t('jobConfigBasic.groupResource'),
+        fields: [
+          { label: t('jobConfigBasic.fieldQueueCode'), value: dash(job.queueCode), mono: true },
+          { label: t('jobConfigBasic.fieldWorkerGroup'), value: dash(job.workerGroup) },
+          {
+            label: t('jobConfigBasic.fieldShardStrategy'),
+            value: dash(job.shardStrategy),
+            mono: true,
+          },
+          {
+            label: t('jobConfigBasic.fieldTimeoutSeconds'),
+            value: dash(job.timeoutSeconds),
+            mono: true,
+          },
+        ],
+      },
+      {
+        title: t('jobConfigBasic.groupRetry'),
+        fields: [
+          { label: t('jobConfigBasic.fieldRetryPolicy'), value: dash(job.retryPolicy), mono: true },
+          {
+            label: t('jobConfigBasic.fieldRetryMaxCount'),
+            value: dash(job.retryMaxCount),
+            mono: true,
+          },
+          {
+            label: t('jobConfigBasic.fieldExecutionHandler'),
+            value: dash(job.executionHandler),
+            mono: true,
+            wide: true,
+          },
+        ],
+      },
+    ]
+    const paramFields: JdField[] = []
+    if (job.paramSchema) {
+      paramFields.push({
+        label: t('jobConfigBasic.fieldParamSchema'),
+        value: formatJson(job.paramSchema),
+        json: true,
+        wide: true,
+      })
+    }
+    if (job.defaultParams) {
+      paramFields.push({
+        label: t('jobConfigBasic.fieldDefaultParams'),
+        value: formatJson(job.defaultParams),
+        json: true,
+        wide: true,
+      })
+    }
+    if (paramFields.length) {
+      groups.push({ title: t('jobConfigBasic.groupParams'), fields: paramFields })
+    }
+    groups.push({
+      title: t('jobConfigBasic.groupAudit'),
+      fields: [
+        { label: t('jobConfigBasic.fieldCreatedAt'), value: dash(job.createdAt), mono: true },
+        { label: t('jobConfigBasic.fieldUpdatedAt'), value: dash(job.updatedAt), mono: true },
+      ],
+    })
+    return groups
+  })
+
+  // ── 三态抽屉底部操作 ─────
+  async function onJdClose() {
+    if (jdMode.value === 'create') {
+      if (createSaving.value) return
+      if (!(await createDirty.confirmDiscard())) return
+    } else if (jdMode.value === 'edit') {
+      if (editSaving.value) return
+      if (!(await editDirty.confirmDiscard())) return
+    }
+    jdVisible.value = false
+  }
+
+  async function onJdCancel() {
+    // 编辑态且从查看态切入:取消回到查看态;其余直接关闭
+    if (jdMode.value === 'edit' && editFromView.value && detailRow.value) {
+      if (editSaving.value) return
+      if (!(await editDirty.confirmDiscard())) return
+      jdMode.value = 'view'
+      return
+    }
+    await onJdClose()
+  }
+
+  function onJdSave() {
+    if (jdMode.value === 'create') void submitCreate()
+    else if (jdMode.value === 'edit') void submitEdit()
+  }
+
+  function onJdEdit() {
+    if (!canMutateConfig.value || !detailRow.value) return
+    openEdit(detailRow.value, true)
+  }
+
+  function onJdExport() {
+    if (detailRow.value) void exportBundle(detailRow.value)
+  }
 
   const watermarkRule: FormItemRule = {
     validator: (_rule, value: unknown, callback) => {
@@ -1285,21 +1459,11 @@
 
   function openCreate() {
     resetCreateForm()
-    createDrawerVisible.value = true
+    jdMode.value = 'create'
+    jdVisible.value = true
     void createFormRef.value?.clearValidate()
     // 表单已重置 → 基线对齐空表,后续修改触发 isDirty
     createDirty.markPristine()
-  }
-
-  async function closeCreateDrawer() {
-    if (!(await createDirty.confirmDiscard())) return
-    createDrawerVisible.value = false
-  }
-
-  async function onCreateDrawerClose(done: () => void) {
-    if (createSaving.value) return
-    if (!(await createDirty.confirmDiscard())) return
-    done()
   }
 
   async function submitCreate() {
@@ -1335,7 +1499,7 @@
       ElMessage.success(t('jobDefinitionList.createSuccess', { code: createForm.jobCode }))
       // 保存成功后基线对齐,关闭流程不再弹"放弃修改"
       createDirty.markPristine()
-      createDrawerVisible.value = false
+      jdVisible.value = false
       filters.jobCode = createForm.jobCode.trim()
       page.value = 1
       await refetch()
@@ -1347,27 +1511,18 @@
     }
   }
 
-  function openEdit(row: ConsoleJobDefinitionResponse) {
+  function openEdit(row: ConsoleJobDefinitionResponse, fromView = false) {
     editingId.value = row.id
     editingTenantId.value = row.tenantId || filters.tenantId || tenant.tenantId
     editingJobCode.value = row.jobCode
     // Day 2 (A.1):从 row 拷贝全量字段到 editForm,而非仅 2 字段
     Object.assign(editForm, jobResponseToEditForm(row))
-    editDrawerVisible.value = true
+    editFromView.value = fromView
+    jdMode.value = 'edit'
+    jdVisible.value = true
     void editFormRef.value?.clearValidate()
     // 基线 = 加载完的当前 row,后续修改触发 isDirty
     editDirty.markPristine()
-  }
-
-  async function closeEditDrawer() {
-    if (!(await editDirty.confirmDiscard())) return
-    editDrawerVisible.value = false
-  }
-
-  async function onEditDrawerClose(done: () => void) {
-    if (editSaving.value) return
-    if (!(await editDirty.confirmDiscard())) return
-    done()
   }
 
   async function submitEdit() {
@@ -1418,7 +1573,7 @@
       })
       ElMessage.success(t('jobDefinitionList.updateSuccess', { code: editingJobCode.value }))
       editDirty.markPristine()
-      editDrawerVisible.value = false
+      jdVisible.value = false
       await refetch()
     } finally {
       editSaving.value = false
@@ -1459,11 +1614,71 @@
     cursor: pointer;
   }
 
-  .drawer-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 12px;
-    margin-top: 8px;
+  /* ── 三态抽屉查看态:分区 + 字段块(dump: proto-jobs_edit.html OVERLAY 数值) ── */
+  .jd-section {
+    margin-bottom: 20px;
+  }
+
+  .jd-section:last-child {
+    margin-bottom: 0;
+  }
+
+  .jd-section__label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    color: var(--color-text-tertiary);
+    margin-bottom: 12px;
+  }
+
+  .jd-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--color-border);
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .jd-field {
+    background: var(--color-bg-card);
+    padding: 11px 14px;
+  }
+
+  .jd-field--wide {
+    grid-column: 1 / -1;
+  }
+
+  .jd-field__label {
+    font-size: 11px;
+    color: var(--color-text-tertiary);
+  }
+
+  .jd-field__value {
+    margin-top: 5px;
+    font-size: 13px;
+    color: var(--color-text-primary);
+    word-break: break-all;
+  }
+
+  .jd-field__value.is-mono {
+    font-family: var(--font-mono);
+    font-size: 12px;
+  }
+
+  .jd-field__json {
+    margin: 5px 0 0;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    white-space: pre-wrap;
+    word-break: break-all;
+    background: var(--input-bg);
+    padding: 8px 10px;
+    border-radius: 7px;
+    max-height: 200px;
+    overflow: auto;
   }
 
   .queue-field {
