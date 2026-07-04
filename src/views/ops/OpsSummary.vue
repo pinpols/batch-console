@@ -245,8 +245,13 @@
     color: var(--color-text-tertiary);
   }
 
+  /* 还原设计纵向节奏:副标题→Tab ≈ 32px、Tab→卡片 ≈ 28px */
+  .ops-tabs-card {
+    margin-top: 20px;
+  }
+
   .ops-tabs {
-    margin-top: 2px;
+    margin-top: 0;
   }
 
   .ops-tabs :deep(.el-tabs__content) {
@@ -255,7 +260,7 @@
 
   .ops-panels {
     position: relative;
-    margin-top: 10px;
+    margin-top: 24px;
     overflow: visible;
   }
 </style>

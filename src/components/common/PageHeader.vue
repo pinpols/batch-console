@@ -172,7 +172,7 @@
     align-items: flex-start;
     justify-content: space-between;
     gap: var(--space-md);
-    padding: 4px 0 0;
+    padding: 10px 0 2px;
     margin-bottom: 0;
     background: transparent;
   }
