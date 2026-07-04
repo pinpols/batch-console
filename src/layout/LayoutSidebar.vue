@@ -15,10 +15,13 @@
       class="layout-menu"
       :collapse="app.sidebarCollapsed"
       :default-active="activeMenu"
+      :default-openeds="openedGroups"
+      :unique-opened="false"
       router
     >
-      <el-menu-item-group v-for="group in visibleGroups" :key="group.key">
+      <el-sub-menu v-for="group in visibleGroups" :key="group.key" :index="group.key">
         <template #title>
+          <el-icon v-if="group.icon" class="group-icon"><component :is="group.icon" /></el-icon>
           <span class="group-title">{{ resolveGroupTitle(group) }}</span>
         </template>
         <el-menu-item
@@ -33,7 +36,7 @@
           </el-icon>
           <template #title>{{ resolveItemTitle(item) }}</template>
         </el-menu-item>
-      </el-menu-item-group>
+      </el-sub-menu>
     </el-menu>
 
     <button
@@ -104,6 +107,8 @@
 
   const activeMenu = computed(() => (route.meta.activeMenu as string) ?? route.path)
   const visibleGroups = computed(() => permission.visibleGroups)
+  // 默认展开全部分组(设计稿 01-ia:多组同时展开);非 unique-opened 允许用户各自折叠。
+  const openedGroups = computed(() => visibleGroups.value.map((g) => g.key))
   const appVersion = __APP_VERSION__
 
   function prefetchRouteComponent(path: string) {
@@ -221,18 +226,45 @@
     display: none;
   }
 
-  /* 分组小标题:设计稿的克制灰色 section 标签,不可折叠、常显。 */
-  .layout-menu :deep(.el-menu-item-group__title) {
-    padding: 14px var(--layout-sidebar-inline) 6px;
+  /* 分组标题(可折叠,带箭头 chevron):设计稿的克制灰色 section 标签。 */
+  .layout-menu :deep(.el-sub-menu__title) {
+    height: 34px;
+    padding: 0 var(--layout-sidebar-inline) !important;
+    margin-top: 8px;
     color: var(--layout-sidebar-text-muted);
+    background: transparent !important;
+  }
+
+  .layout-menu :deep(.el-sub-menu:first-child .el-sub-menu__title) {
+    margin-top: 2px;
+  }
+
+  .layout-menu :deep(.el-sub-menu__title .group-title) {
     font-size: 11px;
     font-weight: 600;
     letter-spacing: 0.04em;
-    line-height: 1.2;
+    text-transform: none;
   }
 
-  .layout-menu :deep(.el-menu-item-group:first-child .el-menu-item-group__title) {
-    padding-top: 6px;
+  /* 展开态:分组标题只显文字(还原设计,无组图标);组图标仅收起态用于图标轨。 */
+  .layout-menu:not(.el-menu--collapse) :deep(.el-sub-menu__title .group-icon) {
+    display: none;
+  }
+
+  .layout-menu :deep(.el-sub-menu__title:hover) {
+    color: var(--layout-sidebar-hover-text) !important;
+    background: transparent !important;
+  }
+
+  .layout-menu :deep(.el-sub-menu__icon-arrow) {
+    font-size: 12px;
+    opacity: 0.7;
+  }
+
+  /* 组内子菜单容器留白 */
+  .layout-menu :deep(.el-sub-menu .el-menu) {
+    background: transparent;
+    padding: 2px 0 4px;
   }
 
   /* 导航项:图标 + 文字,始终可见;当前项 = 高亮底 + 左强调条。 */
@@ -292,8 +324,16 @@
     width: 100%;
   }
 
-  .layout-menu.el-menu--collapse :deep(.el-menu-item-group__title) {
-    display: none;
+  .layout-menu.el-menu--collapse :deep(.el-sub-menu__title) {
+    justify-content: center;
+    height: 40px;
+    margin: 4px auto;
+    padding: 0 !important;
+  }
+
+  .layout-menu.el-menu--collapse :deep(.el-sub-menu__title .group-icon) {
+    margin-right: 0;
+    font-size: 17px;
   }
 
   .layout-menu.el-menu--collapse :deep(.el-menu-item) {
