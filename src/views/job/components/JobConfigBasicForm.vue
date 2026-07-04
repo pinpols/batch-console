@@ -326,20 +326,25 @@
   // 不用 defineModel:父组件 const editForm = reactive(...) 是 reactive 对象,
   // v-model 反向赋值会触发 Vue「v-model cannot update const reactive binding」警告。
   // reactive 已是 mutable proxy,直接接 props 让子组件 mutate model 字段即可。
-  const props = defineProps<{
-    model: JobEditFormState
-    /** 调用方当前 tenantId,用于「现场建子实体」(如新建 calendar 时知道挂到哪个租户) */
-    tenantId?: string
-    executionModeOptions?: MetaOption[]
-    scheduleTypeOptions?: MetaOption[]
-    queueOptions?: MetaOption[]
-    /** 当前 tenant 已知的 worker group(从 job 列表去重 computed),可空时仅 allow-create */
-    workerGroupOptions?: MetaOption[]
-    readonlyIdentity?: boolean
-    sections?: Array<'basic' | 'schedule' | 'resource' | 'retry' | 'params'>
-  }>()
+  const props = withDefaults(
+    defineProps<{
+      model: JobEditFormState
+      /** 调用方当前 tenantId,用于「现场建子实体」(如新建 calendar 时知道挂到哪个租户) */
+      tenantId?: string
+      executionModeOptions?: MetaOption[]
+      scheduleTypeOptions?: MetaOption[]
+      queueOptions?: MetaOption[]
+      /** 当前 tenant 已知的 worker group(从 job 列表去重 computed),可空时仅 allow-create */
+      workerGroupOptions?: MetaOption[]
+      /** 编辑态身份字段只读(jobCode/jobType)。Vue 对缺省 Boolean prop 强转 false,
+       *  曾使 `!== false` 判定失效渲染出 CodeNameBuilder 并触发其 TDZ 崩溃 → 显式默认 true。 */
+      readonlyIdentity?: boolean
+      sections?: Array<'basic' | 'schedule' | 'resource' | 'retry' | 'params'>
+    }>(),
+    { readonlyIdentity: true },
+  )
   const model = props.model
-  const readonlyIdentity = computed(() => props.readonlyIdentity !== false)
+  const readonlyIdentity = computed(() => props.readonlyIdentity)
 
   function showSection(section: 'basic' | 'schedule' | 'resource' | 'retry' | 'params') {
     return !props.sections || props.sections.includes(section)

@@ -242,7 +242,8 @@
     tenantId: tenant.tenantId,
     severity: '',
     alertType: '',
-    status: '',
+    // 设计 #alerts 默认分组=「未处理」;深链 ?status= 预填仍会覆盖(见下方 route.query 块)
+    status: 'OPEN',
     traceId: '',
     startTime: '',
     endTime: '',

@@ -32,7 +32,9 @@
     </div>
     <div v-if="similar.length > 0" class="cnb-similar">
       {{ t('codeNameBuilder.bizHint') }}
-      <span>{{ t('codeNameBuilder.existingPrefix', { list: similar.slice(0, 3).join(' / ') }) }}</span>
+      <span>{{
+        t('codeNameBuilder.existingPrefix', { list: similar.slice(0, 3).join(' / ') })
+      }}</span>
     </div>
     <div v-else class="cnb-hint">{{ t('codeNameBuilder.bizHint') }}</div>
   </div>
@@ -70,23 +72,6 @@
   const biz = ref('')
   const version = ref('')
 
-  // 反解 modelValue:DOMAIN_BIZ[_vN]
-  watch(
-    () => props.modelValue,
-    (v) => {
-      if (!v || v === finalCode.value) return
-      const m = /^([A-Z]+)_([A-Z][A-Z0-9_]*?)(?:_v(\d+))?$/.exec(v)
-      if (m && DOMAINS.includes(m[1])) {
-        domain.value = m[1]
-        biz.value = m[2]
-        version.value = m[3] ? `v${m[3]}` : ''
-      } else {
-        biz.value = v
-      }
-    },
-    { immediate: true },
-  )
-
   function onBizInput(v: string) {
     biz.value = v.toUpperCase().replace(/[^A-Z0-9_]/g, '_')
   }
@@ -102,6 +87,25 @@
     if (!biz.value) return ''
     return `${domain.value}_${biz.value}${versionSuffix.value}`
   })
+
+  // 反解 modelValue:DOMAIN_BIZ[_vN]。
+  // 必须声明在 finalCode 之后:immediate watch 同步执行,若在其前会因 TDZ
+  // (Cannot access 'finalCode' before initialization)在 modelValue 非空时整组件崩溃。
+  watch(
+    () => props.modelValue,
+    (v) => {
+      if (!v || v === finalCode.value) return
+      const m = /^([A-Z]+)_([A-Z][A-Z0-9_]*?)(?:_v(\d+))?$/.exec(v)
+      if (m && DOMAINS.includes(m[1])) {
+        domain.value = m[1]
+        biz.value = m[2]
+        version.value = m[3] ? `v${m[3]}` : ''
+      } else {
+        biz.value = v
+      }
+    },
+    { immediate: true },
+  )
 
   const validation = computed(() => {
     if (!biz.value) return { ok: false, errMsg: '' }
