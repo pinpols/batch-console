@@ -170,7 +170,7 @@
   import { computed, reactive, ref } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
-  import { Refresh } from '@element-plus/icons-vue'
+  import { RefreshCw as Refresh } from 'lucide-vue-next'
   import {
     getCapacityProfile,
     type CapacityProfileGroupBy,

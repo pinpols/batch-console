@@ -21,7 +21,7 @@
 <script setup lang="ts">
   import { ref } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { QuestionFilled } from '@element-plus/icons-vue'
+  import { CircleHelp as QuestionFilled } from 'lucide-vue-next'
 
   const { t } = useI18n({ useScope: 'global' })
   const visible = ref(false)

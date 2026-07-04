@@ -96,7 +96,12 @@
   import { ref } from 'vue'
   import { useTenantReload } from '@/composables/useTenantReload'
   import { useI18n } from 'vue-i18n'
-  import { Refresh, Files, Memo, Promotion } from '@element-plus/icons-vue'
+  import {
+    RefreshCw as Refresh,
+    Files,
+    ClipboardList as Memo,
+    Send as Promotion,
+  } from 'lucide-vue-next'
   import { ElMessage } from 'element-plus'
 
   const { t } = useI18n({ useScope: 'global' })

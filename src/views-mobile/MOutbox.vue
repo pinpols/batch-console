@@ -59,7 +59,7 @@
   import { computed, ref } from 'vue'
   import { useTenantReload } from '@/composables/useTenantReload'
   import { useI18n } from 'vue-i18n'
-  import { Refresh } from '@element-plus/icons-vue'
+  import { RefreshCw as Refresh } from 'lucide-vue-next'
   import { ElMessage } from 'element-plus'
   import { useTenantStore } from '@/stores/tenant'
   import { useAutoRefresh } from '@/composables/useAutoRefresh'

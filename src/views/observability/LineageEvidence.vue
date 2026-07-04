@@ -172,7 +172,7 @@
   import { computed, defineComponent, h, reactive, ref, type PropType } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage, ElTable, ElTableColumn } from 'element-plus'
-  import { Refresh } from '@element-plus/icons-vue'
+  import { RefreshCw as Refresh } from 'lucide-vue-next'
   import {
     getAssetPartitionReadiness,
     getLineageEvidenceByBusinessKey,

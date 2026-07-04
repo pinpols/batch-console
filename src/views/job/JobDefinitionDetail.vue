@@ -396,7 +396,7 @@
   import { useI18n } from 'vue-i18n'
   import { useRoute, useRouter } from 'vue-router'
   import { ElMessage, ElMessageBox } from 'element-plus'
-  import { Refresh, MagicStick } from '@element-plus/icons-vue'
+  import { RefreshCw as Refresh, Sparkles as MagicStick } from 'lucide-vue-next'
   import DryRunPlanDialog from '@/components/dialogs/DryRunPlanDialog.vue'
   import { jobApi } from '@/api/job'
   import { instanceApi } from '@/api/instance'

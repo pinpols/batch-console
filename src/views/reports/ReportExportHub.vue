@@ -73,7 +73,7 @@
   import { ref, computed } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
-  import { Download } from '@element-plus/icons-vue'
+  import { Download } from 'lucide-vue-next'
 
   const { t } = useI18n({ useScope: 'global' })
   import { downloadReportExcel, type ReportExcelKey } from '@/api/reports'

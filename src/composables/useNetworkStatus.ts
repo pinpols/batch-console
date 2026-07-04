@@ -1,6 +1,6 @@
 import { onScopeDispose, ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import { CircleCloseFilled, CircleCheckFilled } from '@element-plus/icons-vue'
+import { CircleX as CircleCloseFilled, CircleCheck as CircleCheckFilled } from 'lucide-vue-next'
 import { i18n } from '@/locales'
 import { logRoute } from '@/utils/logger'
 

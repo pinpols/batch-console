@@ -64,7 +64,7 @@
   import { useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import type { Component } from 'vue'
-  import { Search } from '@element-plus/icons-vue'
+  import { Search } from 'lucide-vue-next'
   import type { NavigationGroup } from '@/constants/navigation'
   import type { PageTab } from '@/stores/tabs'
   import { pathToKey } from '@/constants/pathKey'

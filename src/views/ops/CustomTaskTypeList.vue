@@ -45,7 +45,11 @@
           <EmptyState :description="t('customTaskTypeList.emptyDescription')" :image-size="80" />
         </template>
 
-        <el-table-column prop="taskTypeCode" :label="t('customTaskTypeList.colCode')" min-width="200">
+        <el-table-column
+          prop="taskTypeCode"
+          :label="t('customTaskTypeList.colCode')"
+          min-width="200"
+        >
           <template #default="{ row }">
             <el-link type="primary" @click="openDetail(row)">{{ row.taskTypeCode }}</el-link>
           </template>
@@ -72,11 +76,7 @@
             <span v-else class="muted">—</span>
           </template>
         </el-table-column>
-        <el-table-column
-          prop="declaredByWorkerCode"
-          min-width="160"
-          show-overflow-tooltip
-        >
+        <el-table-column prop="declaredByWorkerCode" min-width="160" show-overflow-tooltip>
           <template #header>
             <HelpLabel :tip="t('customTaskTypeList.colWorkerTip')">
               {{ t('customTaskTypeList.colWorker') }}
@@ -166,7 +166,11 @@
         <div v-else-if="detailRow.descriptor" class="ctt-detail__raw">
           <pre>{{ detailRow.descriptor }}</pre>
         </div>
-        <EmptyState v-else :description="t('customTaskTypeList.descriptorEmpty')" :image-size="60" />
+        <EmptyState
+          v-else
+          :description="t('customTaskTypeList.descriptorEmpty')"
+          :image-size="60"
+        />
       </div>
     </el-drawer>
   </PageContainer>
@@ -175,7 +179,7 @@
 <script setup lang="ts">
   import { ref, computed } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { Refresh } from '@element-plus/icons-vue'
+  import { RefreshCw as Refresh } from 'lucide-vue-next'
   import { ElMessage } from 'element-plus'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
@@ -188,11 +192,7 @@
   import { fmtDatetime } from '@/utils/datetime'
   import { useTenantReload } from '@/composables/useTenantReload'
   import { useTenantStore } from '@/stores/tenant'
-  import {
-    listCustomTaskTypes,
-    parseDescriptor,
-    type CustomTaskType,
-  } from '@/api/customTaskTypes'
+  import { listCustomTaskTypes, parseDescriptor, type CustomTaskType } from '@/api/customTaskTypes'
 
   const { t } = useI18n({ useScope: 'global' })
   const tenant = useTenantStore()

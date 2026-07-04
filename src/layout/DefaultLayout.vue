@@ -56,7 +56,7 @@
   import { watch, onMounted, onUnmounted } from 'vue'
   import { useRoute } from 'vue-router'
   import { useI18n } from 'vue-i18n'
-  import { FullScreen } from '@element-plus/icons-vue'
+  import { Maximize as FullScreen } from 'lucide-vue-next'
   const { t } = useI18n({ useScope: 'global' })
   import CommandPalette from '@/components/common/CommandPalette.vue'
   import ErrorBoundary from '@/components/common/ErrorBoundary.vue'

@@ -1,6 +1,6 @@
 import { ref, type Ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Refresh } from '@element-plus/icons-vue'
+import { RefreshCw as Refresh } from 'lucide-vue-next'
 import { i18n } from '@/locales'
 
 /**

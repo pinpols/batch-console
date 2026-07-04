@@ -148,20 +148,20 @@
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { confirmDanger } from '@/composables/useDangerConfirm'
   import {
-    ArrowDown,
-    ArrowUp,
+    ChevronDown as ArrowDown,
+    ChevronUp as ArrowUp,
     Cpu,
-    DataAnalysis,
-    Delete,
-    InfoFilled,
+    BarChart3 as DataAnalysis,
+    Trash2 as Delete,
+    Info as InfoFilled,
     Lock,
-    MessageBox,
+    MessageSquare as MessageBox,
     Monitor,
-    Promotion,
-    Refresh,
-    Tools,
-    Warning,
-  } from '@element-plus/icons-vue'
+    Send as Promotion,
+    RefreshCw as Refresh,
+    Wrench as Tools,
+    TriangleAlert as Warning,
+  } from 'lucide-vue-next'
   import { getKafkaLag, getOutboxStats, cleanupOutbox, republishOutbox } from '@/api/ops'
   import {
     getClusterDiagnostic,

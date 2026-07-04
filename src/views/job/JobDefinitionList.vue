@@ -600,7 +600,7 @@
   import { useFormFocus } from '@/composables/useFormFocus'
   import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
-  import { Plus, Upload } from '@element-plus/icons-vue'
+  import { Plus, Upload } from 'lucide-vue-next'
   type ExecutionMode = 'FULL' | 'INCREMENTAL' | 'CDC'
   const { t, te } = useI18n({ useScope: 'global' })
 

@@ -57,15 +57,14 @@
         <el-table-column :label="t('common.updatedAt')" width="170">
           <template #default="{ row }">{{ fmtDatetime(row.updatedAt) }}</template>
         </el-table-column>
-        <el-table-column prop="updatedBy" :label="t('tenantPlacementList.colUpdatedBy')" width="140">
+        <el-table-column
+          prop="updatedBy"
+          :label="t('tenantPlacementList.colUpdatedBy')"
+          width="140"
+        >
           <template #default="{ row }">{{ row.updatedBy ?? '—' }}</template>
         </el-table-column>
-        <el-table-column
-          v-if="canManage"
-          :label="t('common.actions')"
-          width="160"
-          fixed="right"
-        >
+        <el-table-column v-if="canManage" :label="t('common.actions')" width="160" fixed="right">
           <template #default="{ row }">
             <RowActions :actions="rowActions(row)" />
           </template>
@@ -98,16 +97,13 @@
             class="tpl__select"
             :placeholder="t('tenantPlacementList.placementPlaceholder')"
           >
-            <el-option
-              v-for="key in placementKeyOptions"
-              :key="key"
-              :label="key"
-              :value="key"
-            />
+            <el-option v-for="key in placementKeyOptions" :key="key" :label="key" :value="key" />
           </el-select>
         </el-form-item>
         <el-form-item v-if="placementKeyInvalid">
-          <el-text type="danger" size="small">{{ t('tenantPlacementList.keyPatternError') }}</el-text>
+          <el-text type="danger" size="small">{{
+            t('tenantPlacementList.keyPatternError')
+          }}</el-text>
         </el-form-item>
       </el-form>
       <template #footer>
@@ -123,7 +119,7 @@
 <script setup lang="ts">
   import { ref, reactive, computed } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { Refresh, Plus } from '@element-plus/icons-vue'
+  import { RefreshCw as Refresh, Plus } from 'lucide-vue-next'
   import { ElMessage } from 'element-plus'
   import { confirmDanger } from '@/composables/useDangerConfirm'
   import PageContainer from '@/components/common/PageContainer.vue'
@@ -239,8 +235,18 @@
 
   function rowActions(row: TenantPlacementRow): RowAction[] {
     return [
-      { key: 'edit', label: t('tenantPlacementList.actionReassign'), primary: true, onClick: () => openEdit(row) },
-      { key: 'delete', label: t('tenantPlacementList.actionUnassign'), danger: true, onClick: () => confirmDelete(row) },
+      {
+        key: 'edit',
+        label: t('tenantPlacementList.actionReassign'),
+        primary: true,
+        onClick: () => openEdit(row),
+      },
+      {
+        key: 'delete',
+        label: t('tenantPlacementList.actionUnassign'),
+        danger: true,
+        onClick: () => confirmDelete(row),
+      },
     ]
   }
 

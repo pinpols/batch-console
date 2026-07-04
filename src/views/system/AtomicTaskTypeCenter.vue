@@ -43,11 +43,7 @@
       />
 
       <el-tabs v-else v-model="activeType" class="atc__tabs">
-        <el-tab-pane
-          v-for="schema in schemas"
-          :key="schema.taskType"
-          :name="schema.taskType"
-        >
+        <el-tab-pane v-for="schema in schemas" :key="schema.taskType" :name="schema.taskType">
           <template #label>
             <div class="atc__tab-label">
               <span>{{
@@ -112,12 +108,7 @@
                 align="center"
               >
                 <template #default="{ row }">
-                  <el-tag
-                    v-if="row.required"
-                    size="small"
-                    type="danger"
-                    effect="plain"
-                  >
+                  <el-tag v-if="row.required" size="small" type="danger" effect="plain">
                     {{ t('atomicTaskTypeCenter.requiredYes') }}
                   </el-tag>
                   <span v-else class="muted">{{ t('atomicTaskTypeCenter.requiredNo') }}</span>
@@ -163,18 +154,19 @@
               size="small"
               class="atc__form"
             >
-              <el-form-item
-                v-for="p in schema.parameters"
-                :key="p.name"
-                :label="p.name"
-              >
+              <el-form-item v-for="p in schema.parameters" :key="p.name" :label="p.name">
                 <component
                   :is="inputComponentFor(p)"
                   v-model="getDraft(schema.taskType)[p.name]"
                   v-bind="inputPropsFor(p)"
                 />
                 <div v-if="p.description" class="atc__field-hint">
-                  {{ tOr(`atomicTaskTypeCenter.paramDesc.${schema.taskType}.${p.name}`, p.description) }}
+                  {{
+                    tOr(
+                      `atomicTaskTypeCenter.paramDesc.${schema.taskType}.${p.name}`,
+                      p.description,
+                    )
+                  }}
                 </div>
               </el-form-item>
             </el-form>
@@ -232,7 +224,7 @@
   import { ref, reactive, onUnmounted } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
-  import { Refresh, DocumentCopy } from '@element-plus/icons-vue'
+  import { RefreshCw as Refresh, Copy as DocumentCopy } from 'lucide-vue-next'
   import { ElInput, ElInputNumber, ElSwitch } from 'element-plus'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'

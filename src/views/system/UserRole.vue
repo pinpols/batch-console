@@ -179,7 +179,7 @@
   import { ElMessage } from 'element-plus'
 
   const { t } = useI18n({ useScope: 'global' })
-  import { ArrowUp, Plus, Refresh } from '@element-plus/icons-vue'
+  import { ChevronUp as ArrowUp, Plus, RefreshCw as Refresh } from 'lucide-vue-next'
   import { useRefreshAction } from '@/composables/useRefreshAction'
 
   const refreshAction = useRefreshAction()

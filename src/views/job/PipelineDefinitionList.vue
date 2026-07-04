@@ -367,26 +367,26 @@
   import type { FormInstance, FormRules } from 'element-plus'
   import {
     Plus,
-    InfoFilled,
+    Info as InfoFilled,
     Cpu,
     Download,
-    MagicStick,
-    Document,
+    Sparkles as MagicStick,
+    FileText as Document,
     CircleCheck,
     Upload,
-    ChatLineRound,
-    Setting,
-    DataLine,
-    DocumentAdd,
+    MessageCircle as ChatLineRound,
+    Settings as Setting,
+    Activity as DataLine,
+    FilePlus as DocumentAdd,
     Folder,
     Notebook,
     Check,
-    Promotion,
+    Send as Promotion,
     Bell,
-    Refresh,
-    RefreshLeft,
-    Finished,
-  } from '@element-plus/icons-vue'
+    RefreshCw as Refresh,
+    RotateCcw as RefreshLeft,
+    CircleCheckBig as Finished,
+  } from 'lucide-vue-next'
   import type { Component } from 'vue'
 
   // Stage → 图标 + 主题色 + 一句话描述。覆盖 STAGES_BY_TYPE 全 17 种,缺省走默认。

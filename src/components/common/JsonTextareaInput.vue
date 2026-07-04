@@ -84,7 +84,12 @@
   import { computed, onMounted, ref } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
-  import { UploadFilled, Document, Warning, Check } from '@element-plus/icons-vue'
+  import {
+    Upload as UploadFilled,
+    FileText as Document,
+    TriangleAlert as Warning,
+    Check,
+  } from 'lucide-vue-next'
 
   const { t } = useI18n({ useScope: 'global' })
 

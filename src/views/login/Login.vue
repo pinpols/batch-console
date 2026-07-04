@@ -98,7 +98,7 @@
 <script setup lang="ts">
   import { ref, reactive, onMounted } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { CircleClose, Lock, User } from '@element-plus/icons-vue'
+  import { CircleX as CircleClose, Lock, User } from 'lucide-vue-next'
 
   const { t } = useI18n({ useScope: 'global' })
   import { useRouter, useRoute } from 'vue-router'

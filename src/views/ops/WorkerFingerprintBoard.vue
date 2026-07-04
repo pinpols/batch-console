@@ -54,11 +54,7 @@
       />
 
       <div v-else class="wfb__cards">
-        <div
-          v-for="item in summary"
-          :key="`${item.buildId}__${item.sdkVersion}`"
-          class="wfb__card"
-        >
+        <div v-for="item in summary" :key="`${item.buildId}__${item.sdkVersion}`" class="wfb__card">
           <div class="wfb__card-head">
             <el-tag size="small" effect="plain" type="primary">{{ item.buildId }}</el-tag>
             <el-tag size="small" effect="plain">SDK {{ item.sdkVersion }}</el-tag>
@@ -97,10 +93,7 @@
         :on-retry="load"
       >
         <template #empty>
-          <EmptyState
-            :description="t('workerFingerprintBoard.listEmpty')"
-            :image-size="80"
-          />
+          <EmptyState :description="t('workerFingerprintBoard.listEmpty')" :image-size="80" />
         </template>
 
         <el-table-column
@@ -116,11 +109,7 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column
-          prop="buildId"
-          min-width="160"
-          show-overflow-tooltip
-        >
+        <el-table-column prop="buildId" min-width="160" show-overflow-tooltip>
           <template #header>
             <HelpLabel :tip="t('workerFingerprintBoard.colBuildIdTip')">
               {{ t('workerFingerprintBoard.colBuildId') }}
@@ -141,20 +130,13 @@
             <span v-else class="muted">—</span>
           </template>
         </el-table-column>
-        <el-table-column
-          prop="processId"
-          :label="t('workerFingerprintBoard.colPid')"
-          width="120"
-        >
+        <el-table-column prop="processId" :label="t('workerFingerprintBoard.colPid')" width="120">
           <template #default="{ row }">
             <span v-if="row.processId">{{ row.processId }}</span>
             <span v-else class="muted">—</span>
           </template>
         </el-table-column>
-        <el-table-column
-          :label="t('workerFingerprintBoard.colHeartbeatAt')"
-          width="180"
-        >
+        <el-table-column :label="t('workerFingerprintBoard.colHeartbeatAt')" width="180">
           <template #default="{ row }">{{ fmtDatetime(row.heartbeatAt) }}</template>
         </el-table-column>
       </ProTable>
@@ -165,7 +147,7 @@
 <script setup lang="ts">
   import { ref, computed } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { Refresh } from '@element-plus/icons-vue'
+  import { RefreshCw as Refresh } from 'lucide-vue-next'
   import { ElMessage } from 'element-plus'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'

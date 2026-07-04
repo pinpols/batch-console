@@ -338,7 +338,7 @@
   import { useDrawerAutoClose } from '@/composables/useDrawerAutoClose'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
-  import { Plus } from '@element-plus/icons-vue'
+  import { Plus } from 'lucide-vue-next'
   import RowActions, { type RowAction } from '@/components/common/RowActions.vue'
 
   const { t, te } = useI18n({ useScope: 'global' })
@@ -654,7 +654,10 @@
       await confirmDanger({
         verb: t('workflowDefinitionList.toggleConfirmTitle'),
         target: '',
-        consequence: t('workflowDefinitionList.toggleConfirmText', { action, code: row.workflowCode }),
+        consequence: t('workflowDefinitionList.toggleConfirmText', {
+          action,
+          code: row.workflowCode,
+        }),
         confirmButtonText: t('common.confirm'),
         cancelButtonText: t('common.cancel'),
       })

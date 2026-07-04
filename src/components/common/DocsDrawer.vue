@@ -51,7 +51,7 @@
    */
   import { computed } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { Top, Document } from '@element-plus/icons-vue'
+  import { ArrowUp as Top, FileText as Document } from 'lucide-vue-next'
   import { DOC_REGISTRY, resolveDocUrl } from './docsRegistry'
   const { t } = useI18n({ useScope: 'global' })
 

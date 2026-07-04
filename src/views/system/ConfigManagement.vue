@@ -37,7 +37,12 @@
   import { computed, ref, watch } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
-  import { Connection, Key, List, Operation } from '@element-plus/icons-vue'
+  import {
+    Share2 as Connection,
+    KeyRound as Key,
+    List,
+    SlidersHorizontal as Operation,
+  } from 'lucide-vue-next'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'

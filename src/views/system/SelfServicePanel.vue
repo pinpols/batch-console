@@ -93,19 +93,19 @@
   import { useRoute, useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import {
-    ArrowDown,
-    ArrowUp,
+    ChevronDown as ArrowDown,
+    ChevronUp as ArrowUp,
     Bell,
-    DataAnalysis,
-    Document,
-    EditPen,
-    Key,
-    Memo,
-    RefreshRight,
-    SetUp,
+    BarChart3 as DataAnalysis,
+    FileText as Document,
+    PencilLine as EditPen,
+    KeyRound as Key,
+    ClipboardList as Memo,
+    RotateCw as RefreshRight,
+    Settings2 as SetUp,
     Timer,
-    Warning,
-  } from '@element-plus/icons-vue'
+    TriangleAlert as Warning,
+  } from 'lucide-vue-next'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'

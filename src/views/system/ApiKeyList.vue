@@ -229,7 +229,7 @@
   const { t } = useI18n({ useScope: 'global' })
   import { confirmDanger } from '@/composables/useDangerConfirm'
   import type { FormRules } from 'element-plus'
-  import { Check, DocumentCopy, Plus } from '@element-plus/icons-vue'
+  import { Check, Copy as DocumentCopy, Plus } from 'lucide-vue-next'
   import { useFormValidate, rules } from '@/composables/useFormValidate'
   import { useAsyncAction } from '@/composables/useAsyncAction'
   import {

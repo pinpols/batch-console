@@ -102,7 +102,7 @@
   import type { TableInstance } from 'element-plus'
   import { useRoute } from 'vue-router'
   import { useI18n } from 'vue-i18n'
-  import { Refresh, Operation } from '@element-plus/icons-vue'
+  import { RefreshCw as Refresh, SlidersHorizontal as Operation } from 'lucide-vue-next'
 
   /**
    * 列设置的列描述。key 与页面里 el-table-column 的标识一一对应。

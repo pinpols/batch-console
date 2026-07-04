@@ -36,7 +36,7 @@
   import { useI18n } from 'vue-i18n'
   import { useRouter } from 'vue-router'
   import { ElMessage } from 'element-plus'
-  import { DocumentCopy, Search } from '@element-plus/icons-vue'
+  import { Copy as DocumentCopy, Search } from 'lucide-vue-next'
 
   const { t } = useI18n({ useScope: 'global' })
   const router = useRouter()

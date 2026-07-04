@@ -497,7 +497,7 @@
   import { useRoute } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
-  import { Edit, Plus, View } from '@element-plus/icons-vue'
+  import { Pencil as Edit, Plus, Eye as View } from 'lucide-vue-next'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
 
   const { t, te } = useI18n({ useScope: 'global' })

@@ -520,14 +520,14 @@
   import {
     ArrowLeft,
     ArrowRight,
-    Document,
+    FileText as Document,
     Download,
-    FolderOpened,
-    Refresh,
+    FolderOpen as FolderOpened,
+    RefreshCw as Refresh,
     Upload,
-    UploadFilled,
-    WarningFilled,
-  } from '@element-plus/icons-vue'
+    Upload as UploadFilled,
+    TriangleAlert as WarningFilled,
+  } from 'lucide-vue-next'
   import { ElMessage } from 'element-plus'
 
   const { t } = useI18n({ useScope: 'global' })

@@ -29,17 +29,17 @@
   import { useRoute } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import {
-    Histogram,
-    DataAnalysis,
+    BarChart3 as Histogram,
+    BarChart3 as DataAnalysis,
     Stamp,
-    Memo,
-    Warning,
-    WarningFilled,
+    ClipboardList as Memo,
+    TriangleAlert as Warning,
+    TriangleAlert as WarningFilled,
     Monitor,
-    Operation,
+    SlidersHorizontal as Operation,
     Cpu,
-    Coin,
-  } from '@element-plus/icons-vue'
+    Coins as Coin,
+  } from 'lucide-vue-next'
   import { useMobileBadgesStore } from '@/stores/mobileBadges'
 
   const route = useRoute()

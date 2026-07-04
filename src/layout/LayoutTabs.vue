@@ -130,7 +130,7 @@
   import { ref, computed } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
-  import { ArrowDown, MoreFilled } from '@element-plus/icons-vue'
+  import { ChevronDown as ArrowDown, Ellipsis as MoreFilled } from 'lucide-vue-next'
   import { useTabsStore, type PageTab } from '@/stores/tabs'
   import { useAppStore } from '@/stores/app'
   import { pathToKey } from '@/constants/pathKey'

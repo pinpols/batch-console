@@ -118,7 +118,13 @@
 <script setup lang="ts">
   import { computed, defineAsyncComponent } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { Refresh, FolderOpened, DocumentAdd, User, Cpu } from '@element-plus/icons-vue'
+  import {
+    RefreshCw as Refresh,
+    FolderOpen as FolderOpened,
+    FilePlus as DocumentAdd,
+    User,
+    Cpu,
+  } from 'lucide-vue-next'
   import { useRefreshAction } from '@/composables/useRefreshAction'
 
   const refresh = useRefreshAction()

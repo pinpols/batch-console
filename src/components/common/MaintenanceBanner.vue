@@ -30,7 +30,7 @@
    */
   import { computed, onMounted, onUnmounted, ref } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { Warning } from '@element-plus/icons-vue'
+  import { TriangleAlert as Warning } from 'lucide-vue-next'
   import { useAppStore } from '@/stores/app'
 
   const app = useAppStore()

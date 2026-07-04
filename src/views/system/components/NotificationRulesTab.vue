@@ -156,7 +156,7 @@
   import { useFormValidate, rules as r } from '@/composables/useFormValidate'
   import { useDirtyForm } from '@/composables/useDirtyForm'
   import { useFormFocus } from '@/composables/useFormFocus'
-  import { Plus } from '@element-plus/icons-vue'
+  import { Plus } from 'lucide-vue-next'
   import {
     listNotificationChannels,
     listNotificationRules,
