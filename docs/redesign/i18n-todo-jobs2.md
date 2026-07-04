@@ -1,3 +1,4 @@
+> ✅ 已全部落库(2026-07-04):本清单键值已补进 src/locales zh/en,check:i18n 绿。留档仅作追溯。
 # i18n TODO — JobDefinitionList 三态抽屉 / TenantList redesign(proto-jobs_* / proto-nav-租户实例 对齐)
 
 > 本轮 redesign 禁改 `src/locales/`,以下新 key 已在模板中以 `t()` 正常引用,
