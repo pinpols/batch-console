@@ -101,10 +101,10 @@
    * ────────────────────────────────────────────── */
   .query-form.el-form--inline {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(168px, 1fr));
-    gap: 12px 16px;
-    align-items: center;
-    padding: 16px 18px;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 14px 16px;
+    align-items: end;
+    padding: 16px 18px 18px;
     background: var(--color-bg-card);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-content, 10px);
@@ -187,30 +187,28 @@
     min-width: 0;
   }
 
+  /* 还原设计(02-audit 样张):字段块 = label 上置 + 控件全宽,非 label 左贴。 */
   .query-form :deep(.el-form-item) {
     display: flex;
-    align-items: center;
+    flex-direction: column;
+    align-items: stretch;
     margin: 0;
     width: 100%;
     min-width: 0;
   }
 
-  /* Redesign:标签紧贴控件左侧,保持台账密度。 */
   .query-form :deep(.el-form-item__label) {
-    height: var(--control-height-sm, 32px);
-    margin-bottom: 0;
-    padding: 0 8px 0 0;
+    height: auto;
+    margin-bottom: 6px;
+    padding: 0;
     color: var(--color-text-secondary);
     font-size: 12px;
-    line-height: var(--control-height-sm, 32px);
+    line-height: 1.2;
     justify-content: flex-start;
     text-align: left;
-    flex: 0 0 auto;
     width: auto;
-    max-width: 94px;
+    max-width: none;
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
   }
 
   .query-form :deep(.el-form-item__content) {
@@ -235,9 +233,9 @@
     max-width: none !important;
   }
 
-  /* 操作按钮组 = 最后一行最右,buttons 横向排列;不会被 grid 拉伸 */
+  /* 操作按钮组:与字段控件行底对齐(字段带上置 label) */
   .query-actions {
-    align-self: center;
+    align-self: end;
     justify-self: start;
   }
 
