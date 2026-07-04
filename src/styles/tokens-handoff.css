@@ -90,6 +90,7 @@
   --layout-menu-popup-active-text: var(--color-primary);
   --color-bg-info: color-mix(in srgb, var(--color-primary) 8%, var(--color-bg-card));
   --color-bg-hero: var(--color-bg-card);
+  --input-bg: #ffffff;
 }
 
 html.dark {
@@ -147,4 +148,14 @@ html.dark {
   --color-bg-overlay: var(--color-bg-card);
   --color-fill-light: var(--color-bg-elevated);
   --color-bg-hero: var(--color-bg-card);
+
+  /* 次级按钮对齐设计(刷新/打印等):透明底 + --border 边框,非蓝灰实底 */
+  --button-neutral-bg: transparent;
+  --button-neutral-bg-hover: rgba(255, 255, 255, 0.06);
+  --button-neutral-bg-active: rgba(255, 255, 255, 0.1);
+  --button-neutral-border: rgba(255, 255, 255, 0.08);
+  --button-neutral-border-hover: rgba(255, 255, 255, 0.16);
+
+  /* 输入类控件底色(设计 --input-bg #15161b,比卡片更沉) */
+  --input-bg: #15161b;
 }

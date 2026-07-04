@@ -108,7 +108,7 @@
   }
 
   .metric-card__label {
-    margin-bottom: 10px;
+    margin-bottom: 7px;
     color: var(--color-text-secondary);
     font-size: var(--font-size-md);
     font-weight: 400;
