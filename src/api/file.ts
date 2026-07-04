@@ -55,9 +55,12 @@ export const fileApi = {
     }
   },
 
-  /** 文件列表页领域汇总卡:今日到达 / 待处理 / 已处理 / 失败。 */
+  /** 文件列表页领域汇总卡:今日到达 / 待处理 / 已处理 / 失败。
+   *  _silent:BE 未部署该端点期间(旧 jar 返回 500)静默降级为 0,不弹全局错误 toast。 */
   summary: (tenantId = readStoredTenantId()) =>
-    get<ConsoleFileSummaryResponse>('/api/console/queries/files/summary', { tenantId }),
+    get<ConsoleFileSummaryResponse>('/api/console/queries/files/summary', { tenantId }, {
+      _silent: true,
+    } as import('axios').AxiosRequestConfig),
 
   detail: (fileId: number, tenantId = readStoredTenantId()) =>
     get<Record<string, unknown>>(`/api/console/queries/files/${fileId}`, { tenantId }),
