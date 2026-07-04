@@ -145,20 +145,21 @@
 <script setup lang="ts">
   import { useRouter } from 'vue-router'
   import { ElMessageBox } from 'element-plus'
+  // 还原设计:顶栏图标统一 Lucide 线性图标(与侧栏一致)
   import {
-    ArrowDown,
+    ChevronDown as ArrowDown,
     ArrowLeft,
     ArrowRight,
     Compass,
-    Iphone,
-    Key,
+    Smartphone as Iphone,
+    KeyRound as Key,
     Monitor,
     Moon,
-    Reading,
+    CircleHelp as Reading,
     Search,
-    Sunny,
-    SwitchButton,
-  } from '@element-plus/icons-vue'
+    Sun as Sunny,
+    LogOut as SwitchButton,
+  } from 'lucide-vue-next'
   import TenantSelect from '@/components/common/TenantSelect.vue'
   import NotificationCenter from './NotificationCenter.vue'
   import { useHeaderLogic } from '@/layout/composables/useHeaderLogic'

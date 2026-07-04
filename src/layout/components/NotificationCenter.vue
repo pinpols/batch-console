@@ -96,7 +96,13 @@
   import { computed, ref } from 'vue'
   import { useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
-  import { Bell, Stamp, Warning, CircleClose, ArrowRight } from '@element-plus/icons-vue'
+  import {
+    Bell,
+    Stamp,
+    TriangleAlert as Warning,
+    CircleX as CircleClose,
+    ArrowRight,
+  } from 'lucide-vue-next'
 
   const props = defineProps<{
     pendingApprovals: number
