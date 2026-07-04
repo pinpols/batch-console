@@ -172,8 +172,8 @@
     align-items: center;
     gap: 11px;
     flex-shrink: 0;
-    min-height: 56px;
-    padding: 12px 14px;
+    min-height: 66px;
+    padding: 16px 14px;
   }
 
   .brand__logo {
@@ -208,7 +208,7 @@
   .nav {
     flex: 1;
     min-height: 0;
-    padding: 4px 10px 8px;
+    padding: 19px 10px 8px;
     overflow-y: auto;
     overflow-x: hidden;
     scrollbar-width: none;
@@ -219,7 +219,7 @@
   }
 
   .nav__group + .nav__group {
-    margin-top: 6px;
+    margin-top: 24px;
   }
 
   /* 组标题行:11.5px #9aa1ae + 右侧 chevron(收起 › / 展开 ⌄) */
