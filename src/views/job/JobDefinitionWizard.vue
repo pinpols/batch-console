@@ -811,7 +811,7 @@
     display: flex;
     justify-content: flex-end;
     gap: 12px;
-    border-top: 1px solid var(--color-border-subtle);
+    border-top: 1px solid var(--color-border-light);
     padding-top: 16px;
   }
 </style>

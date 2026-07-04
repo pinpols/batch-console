@@ -928,7 +928,7 @@
     transition: box-shadow 0.15s ease;
   }
   .stage-card:hover {
-    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06);
+    box-shadow: var(--shadow-surface-hover);
   }
   .stage-card__icon {
     width: 44px;

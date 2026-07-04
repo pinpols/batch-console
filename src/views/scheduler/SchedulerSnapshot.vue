@@ -674,7 +674,7 @@
     width: 10px;
     height: 10px;
     border-radius: var(--radius-content);
-    box-shadow: 0 0 0 3px rgb(0 0 0 / 4%);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-text-primary) 4%, transparent);
   }
 
   .dot--primary {

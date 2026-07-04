@@ -186,7 +186,7 @@
   .mini-create-dialog :deep(.el-dialog__header) {
     padding: 18px 22px 12px;
     margin-right: 0;
-    border-bottom: 1px solid var(--color-border-subtle);
+    border-bottom: 1px solid var(--color-border-light);
   }
 
   .mini-create-dialog :deep(.el-dialog__title) {
@@ -201,7 +201,7 @@
 
   .mini-create-dialog :deep(.el-dialog__footer) {
     padding: 12px 22px 18px;
-    border-top: 1px solid var(--color-border-subtle);
+    border-top: 1px solid var(--color-border-light);
   }
 
   .mini-create-form :deep(.el-form-item) {

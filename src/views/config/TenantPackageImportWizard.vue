@@ -977,7 +977,7 @@
   }
   .upload-zone--dragover {
     border-color: var(--color-primary);
-    background: var(--color-primary-light-9, rgba(64, 158, 255, 0.06));
+    background: color-mix(in srgb, var(--color-primary) 6%, transparent);
   }
 
   .upload-zone__icon {
@@ -1086,7 +1086,7 @@
   }
   .upload-zone__dropzone :deep(.el-upload-dragger:hover) {
     border-color: var(--color-primary);
-    background: var(--color-primary-light-9, rgba(64, 158, 255, 0.06));
+    background: color-mix(in srgb, var(--color-primary) 6%, transparent);
   }
   .upload-zone__icon {
     font-size: 28px;

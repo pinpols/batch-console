@@ -8,7 +8,8 @@
       </template>
     </PageHeader>
 
-    <SectionCard>
+    <!-- 还原设计:tabs 与内容直铺底色,无外层卡片壳 -->
+    <div>
       <el-tabs
         v-model="activeTab"
         class="pill-tabs governance-tabs"
@@ -286,7 +287,7 @@
           />
         </el-tab-pane>
       </el-tabs>
-    </SectionCard>
+    </div>
 
     <el-drawer
       :append-to-body="true"
@@ -628,7 +629,6 @@
   import MetaSelect from '@/components/common/MetaSelect.vue'
   import { usePermission } from '@/composables/usePermission'
   import PageHeader from '@/components/common/PageHeader.vue'
-  import SectionCard from '@/components/common/SectionCard.vue'
   const { canMutateConfig } = usePermission()
   // 后端 Quota / Queue 这类计数字段是 int32:防止 999999999999999 这种超界值落到 Jackson
   // (会回 400 "Numeric value out of range of int")。BE 日志里 8 次 4xx 全是这原因。

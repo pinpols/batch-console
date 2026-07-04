@@ -24,7 +24,7 @@
       </template>
     </PageHeader>
 
-    <SectionCard>
+    <div>
       <el-tabs v-model="activeTab" class="pill-tabs">
         <el-tab-pane :label="t('tagManagement.tabResource')" name="resource">
           <p class="tag-tabs__desc">{{ t('tagManagement.descResource') }}</p>
@@ -35,7 +35,7 @@
           <TagSearchTab />
         </el-tab-pane>
       </el-tabs>
-    </SectionCard>
+    </div>
   </PageContainer>
 </template>
 
@@ -47,7 +47,6 @@
   import { Plus } from 'lucide-vue-next'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
-  import SectionCard from '@/components/common/SectionCard.vue'
   import TagResourceTab from './components/TagResourceTab.vue'
   import TagSearchTab from './components/TagSearchTab.vue'
 

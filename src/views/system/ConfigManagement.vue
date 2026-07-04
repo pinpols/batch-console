@@ -2,7 +2,7 @@
   <PageContainer>
     <PageHeader />
 
-    <SectionCard>
+    <div>
       <el-tabs v-model="activeTab" class="pill-tabs">
         <el-tab-pane v-for="item in navItems" :key="item.key" :name="item.key">
           <template #label>
@@ -29,7 +29,7 @@
           </template>
         </el-tab-pane>
       </el-tabs>
-    </SectionCard>
+    </div>
   </PageContainer>
 </template>
 
@@ -45,7 +45,6 @@
   } from 'lucide-vue-next'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
-  import SectionCard from '@/components/common/SectionCard.vue'
   import ConfigChangeLogsTab from './components/ConfigChangeLogsTab.vue'
   import ConfigSecretsTab from './components/ConfigSecretsTab.vue'
   import ConfigSyncTab from './components/ConfigSyncTab.vue'

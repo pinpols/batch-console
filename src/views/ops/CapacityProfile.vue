@@ -8,7 +8,8 @@
       </template>
     </PageHeader>
 
-    <SectionCard>
+    <!-- 还原设计:查询区直铺底色,无卡片壳 -->
+    <div>
       <ListPageQueryBar
         :filter-busy="loading"
         :refresh-busy="loading"
@@ -34,7 +35,7 @@
           />
         </el-form-item>
       </ListPageQueryBar>
-    </SectionCard>
+    </div>
 
     <SectionCard v-if="!report && !loading" class="mt">
       <EmptyState

@@ -11,7 +11,8 @@
       </template>
     </PageHeader>
 
-    <SectionCard>
+    <!-- 还原设计:查询区与表格直铺底色,无卡片壳 -->
+    <div>
       <ListPageQueryBar
         :cols="2"
         :filter-busy="loading"
@@ -39,9 +40,9 @@
           </el-select>
         </el-form-item>
       </ListPageQueryBar>
-    </SectionCard>
+    </div>
 
-    <SectionCard class="mt">
+    <div class="mt">
       <EmptyState v-if="loadError && rows.length === 0" variant="error" :description="loadError">
         <template #action>
           <el-button type="primary" :icon="Refresh" :loading="loading" @click="load">
@@ -97,7 +98,7 @@
           </template>
         </el-table-column>
       </el-table>
-    </SectionCard>
+    </div>
 
     <el-drawer
       v-model="drawerOpen"
@@ -172,7 +173,6 @@
   import { useTenantReload } from '@/composables/useTenantReload'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
-  import SectionCard from '@/components/common/SectionCard.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
 

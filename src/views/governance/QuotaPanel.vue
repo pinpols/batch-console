@@ -8,7 +8,8 @@
       </template>
     </PageHeader>
 
-    <SectionCard>
+    <!-- 还原设计:内容直铺底色,无外层卡片壳 -->
+    <div>
       <div class="panel-head">
         <div class="panel-title">
           <span class="dot dot--primary" />
@@ -132,7 +133,7 @@
           </el-collapse>
         </el-card>
       </div>
-    </SectionCard>
+    </div>
 
     <el-drawer
       :append-to-body="true"
@@ -205,7 +206,6 @@
   import { useAsyncAction } from '@/composables/useAsyncAction'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
-  import SectionCard from '@/components/common/SectionCard.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
 
   const tenant = useTenantStore()
@@ -515,7 +515,7 @@
     align-items: center;
     gap: 4px;
     padding: 1px 8px;
-    background: var(--color-bg-subtle, #f4f5f7);
+    background: var(--color-bg-subtle);
     border-radius: 10px;
     font-size: 11.5px;
     line-height: 18px;

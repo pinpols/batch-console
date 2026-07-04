@@ -17,22 +17,20 @@
       </div>
     </SectionCard>
 
-    <SectionCard>
-      <el-tabs v-model="activeTab" class="pill-tabs">
-        <el-tab-pane :label="t('observability.tabDeadLetters')" name="deadLetters">
-          <DeadLettersTab />
-        </el-tab-pane>
-        <el-tab-pane :label="t('observability.tabRetries')" name="retries" lazy>
-          <RetriesTab />
-        </el-tab-pane>
-        <el-tab-pane :label="t('observability.tabExecLogs')" name="executionLogs" lazy>
-          <ExecutionLogsTab />
-        </el-tab-pane>
-        <el-tab-pane :label="t('observability.tabChannelReceipts')" name="channelReceipts" lazy>
-          <ChannelReceiptsTab />
-        </el-tab-pane>
-      </el-tabs>
-    </SectionCard>
+    <el-tabs v-model="activeTab" class="pill-tabs">
+      <el-tab-pane :label="t('observability.tabDeadLetters')" name="deadLetters">
+        <DeadLettersTab />
+      </el-tab-pane>
+      <el-tab-pane :label="t('observability.tabRetries')" name="retries" lazy>
+        <RetriesTab />
+      </el-tab-pane>
+      <el-tab-pane :label="t('observability.tabExecLogs')" name="executionLogs" lazy>
+        <ExecutionLogsTab />
+      </el-tab-pane>
+      <el-tab-pane :label="t('observability.tabChannelReceipts')" name="channelReceipts" lazy>
+        <ChannelReceiptsTab />
+      </el-tab-pane>
+    </el-tabs>
   </PageContainer>
 </template>
 

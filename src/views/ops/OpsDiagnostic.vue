@@ -8,7 +8,8 @@
       </template>
     </PageHeader>
 
-    <SectionCard>
+    <!-- 还原设计:诊断卡片网格直铺底色,无外层卡片壳 -->
+    <div>
       <div class="diag-catalog">
         <article
           v-for="card in diagCards"
@@ -138,7 +139,7 @@
           </footer>
         </article>
       </div>
-    </SectionCard>
+    </div>
   </PageContainer>
 </template>
 
@@ -175,7 +176,6 @@
   import { purifyHtml } from '@/utils/safeHtml'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
-  import SectionCard from '@/components/common/SectionCard.vue'
   import JsonPreview from '@/components/common/JsonPreview.vue'
 
   const { t } = useI18n({ useScope: 'global' })
@@ -635,7 +635,7 @@
   .diag-card:hover {
     transform: translateY(-1px);
     border-color: color-mix(in srgb, var(--color-border) 75%, var(--color-primary) 25%);
-    box-shadow: 0 8px 20px rgb(15 23 42 / 8%);
+    box-shadow: 0 8px 20px color-mix(in srgb, var(--color-text-primary) 8%, transparent);
   }
 
   .diag-card.is-active {

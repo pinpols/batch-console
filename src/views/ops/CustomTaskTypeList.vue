@@ -266,7 +266,7 @@
     font-family: var(--font-mono, ui-monospace, SFMono-Regular, monospace);
     font-size: 12px;
     padding: 12px;
-    background: var(--color-bg-subtle, #f5f7fa);
+    background: var(--color-bg-subtle);
     border: 1px solid var(--color-border-light);
     border-radius: var(--radius-content, 8px);
     overflow: auto;

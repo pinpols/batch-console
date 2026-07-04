@@ -291,6 +291,19 @@
     color: var(--layout-sidebar-active-text);
     background: var(--layout-sidebar-active-bg);
     font-weight: 600;
+    position: relative;
+  }
+
+  /* 设计规格:激活项左强调条 */
+  .nav__item.is-active::before {
+    content: '';
+    position: absolute;
+    left: -10px;
+    top: 7px;
+    bottom: 7px;
+    width: 3px;
+    border-radius: 999px;
+    background: var(--layout-sidebar-active-text);
   }
 
   .nav__icon {

@@ -213,7 +213,7 @@
     align-items: center;
     gap: 8px;
     padding: 8px 16px;
-    border-bottom: 1px solid var(--color-border-base, #dcdfe6);
+    border-bottom: 1px solid var(--color-border);
     background: var(--color-bg-overlay, #fff);
   }
   .designer-toolbar__group {
