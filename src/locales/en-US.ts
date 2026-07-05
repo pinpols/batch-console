@@ -3858,6 +3858,7 @@ const messages: Messages = {
   },
   jobInstanceList: {
     savedFilters: 'Saved filters',
+    actionSteps: 'Steps',
     saveCurrentFilter: 'Save current filter',
     saveFilterPrompt: 'Name this filter set',
     tabAll: 'All',
@@ -3869,6 +3870,8 @@ const messages: Messages = {
     liveEvery: 'Auto refresh every 10s',
     liveLast: 'Last updated',
     liveRunning: '{n} running',
+    livePause: 'Pause',
+    liveResume: 'Resume',
     dryRunBadge: 'Dry-run',
     emptyTitle: 'No job instances for this tenant yet',
     emptyDescription:
