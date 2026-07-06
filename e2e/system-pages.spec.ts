@@ -9,8 +9,9 @@ test.describe('tenant management (租户管理)', () => {
   test('租户列表可打开并展示表格与操作列', async ({ page }) => {
     await page.goto('/system/tenants')
     await expectPageTitle(page, '租户实例')
-    await expect(page.getByRole('button', { name: '刷新' }).first()).toBeVisible()
-    await expect(page.getByRole('columnheader', { name: 'tenantId' })).toBeVisible()
+    // 设计稿查询区无独立刷新按钮;TENANT 列头对齐 proto
+    await expect(page.getByRole('button', { name: '搜索' }).first()).toBeVisible()
+    await expect(page.getByRole('columnheader', { name: 'TENANT' })).toBeVisible()
   })
 })
 

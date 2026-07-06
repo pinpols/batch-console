@@ -1,7 +1,8 @@
 <template>
   <PageContainer>
     <!-- 照设计 #alerts:三分组 tab + 告警卡片流(proto dump: docs/redesign/proto-alerts.html) -->
-    <PageHeader>
+    <!-- i18n-todo: 设计稿页头文案,建议 key alertList.pageTitle=告警中心 / alertList.pageDescription=按严重程度处理运行告警,确认后自动归档 -->
+    <PageHeader title="告警中心" description="按严重程度处理运行告警,确认后自动归档">
       <template #actions>
         <DateRangePresetPicker
           v-model="timeRange"
@@ -24,6 +25,7 @@
         type="button"
         class="al-tab"
         :class="{ 'is-active': tab.active }"
+        :style="tab.active && tab.dot ? { '--al-tab-tint': tab.dot } : undefined"
         @click="pickGroup(tab.key)"
       >
         <span v-if="tab.dot" class="al-tab__dot" :style="{ background: tab.dot }" />
@@ -95,9 +97,9 @@
                 color: sevMeta(row.severity).color,
               }"
             >
-              {{ row.severity }}
+              {{ sevLabel(row.severity) }}
             </span>
-            <span class="al-card__time">{{ fmtDatetime(row.lastSeenAt) }}</span>
+            <span class="al-card__time">{{ fmtAlertTime(row.lastSeenAt) }}</span>
             <span v-if="(row.occurrenceCount ?? 0) > 1" class="al-card__time"
               >x{{ row.occurrenceCount }}</span
             >
@@ -208,7 +210,7 @@
   import DateRangePresetPicker from '@/components/common/DateRangePresetPicker.vue'
   import TablePagerBar from '@/components/table/TablePagerBar.vue'
   import { TriangleAlert } from 'lucide-vue-next'
-  import { fmtDatetime } from '@/utils/datetime'
+  import { fmtCompact, fmtDatetime } from '@/utils/datetime'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
   import type { ConsoleAlertEventResponse } from '@/types/console-api'
@@ -309,7 +311,8 @@
 
   // ── 设计 #alerts:三分组 tab(未处理/已确认/全部)+ 真实计数 ──────────────
   const GROUP_TABS = [
-    { key: 'OPEN', dot: 'var(--color-danger)', labelKey: 'alertList.tabOpen' },
+    // 设计原型:「未处理」分组 pill 用琥珀(warning)点/描边,非 danger 红
+    { key: 'OPEN', dot: 'var(--color-warning)', labelKey: 'alertList.tabOpen' },
     { key: 'ACKED', dot: 'var(--color-success)', labelKey: 'alertList.tabAcked' },
     { key: '', dot: '', labelKey: 'alertList.tabAll' },
   ] as const
@@ -375,10 +378,33 @@
         color: 'var(--color-warning)',
         soft: 'color-mix(in srgb, var(--color-warning) 12%, transparent)',
       }
+    // INFO/未知级别:设计原型是中性灰(icon/pill 灰字 + bg-elev 底),不是主色蓝
     return {
-      color: 'var(--color-primary)',
-      soft: 'color-mix(in srgb, var(--color-primary) 12%, transparent)',
+      color: 'var(--color-text-secondary)',
+      soft: 'var(--color-bg-elevated)',
     }
+  }
+
+  /** severity pill 文案:复用 enum.severity.* 字典(严重/警告/错误/提示),缺字典回退原值 */
+  function sevLabel(sev: string | null | undefined): string {
+    const s = String(sev ?? '').toUpperCase()
+    if (!s) return ''
+    const key = `enum.severity.${s}`
+    const v = t(key)
+    return v && v !== key ? v : s
+  }
+
+  /** 设计原型时间格式:仅今天显示「今天 HH:mm」,非今天保持完整时间 */
+  function fmtAlertTime(val: unknown): string {
+    if (val === null || val === undefined || val === '') return '—'
+    const d = typeof val === 'number' ? new Date(val) : new Date(String(val))
+    if (isNaN(d.getTime())) return fmtDatetime(val)
+    const now = new Date()
+    const sameDay =
+      d.getFullYear() === now.getFullYear() &&
+      d.getMonth() === now.getMonth() &&
+      d.getDate() === now.getDate()
+    return sameDay ? fmtCompact(val) : fmtDatetime(val)
   }
 
   function onTimeChange(val: [string, string] | null) {
@@ -620,10 +646,16 @@
     cursor: pointer;
   }
 
+  /* 激活 pill 跟随分组色(未处理=琥珀/已确认=绿),无分组色(全部)回退中性 */
   .al-tab.is-active {
-    border-color: var(--color-text-secondary);
+    border-color: var(--al-tab-tint, var(--color-text-secondary));
     background: var(--color-bg-elevated);
+    color: var(--al-tab-tint, var(--color-text-primary));
     font-weight: 600;
+  }
+
+  .al-tab.is-active .al-tab__count {
+    color: inherit;
   }
 
   .al-tab__dot {

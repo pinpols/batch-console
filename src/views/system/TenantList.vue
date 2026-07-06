@@ -1,6 +1,8 @@
 <template>
   <PageContainer>
-    <PageHeader>
+    <!-- 副标题对齐 proto:多租户实例与隔离配置 -->
+    <!-- i18n-todo: tenantList.pageDescription = '多租户实例与隔离配置' -->
+    <PageHeader description="多租户实例与隔离配置">
       <template #actions>
         <el-button
           v-if="canManageTenants"
@@ -11,7 +13,8 @@
         >
           {{ t('tenantList.headerCreate') }}
         </el-button>
-        <el-button v-if="canManageTenants" type="primary" plain @click="batchVisible = true">
+        <!-- proto 头部只有一个主色按钮;批量/复制保留逻辑但降为次级形态 -->
+        <el-button v-if="canManageTenants" plain @click="batchVisible = true">
           {{ t('tenantList.headerBatch') }}
         </el-button>
         <el-button v-if="canManageTenants" plain @click="copyVisible = true">
@@ -20,103 +23,80 @@
       </template>
     </PageHeader>
 
-    <div class="metrics">
-      <MetricCard
-        :label="t('tenantList.metricTotal')"
-        :value="page.total"
-        clickable
-        :active="queryApplied.status === ''"
-        @click="filterByStatus('')"
-      />
-      <MetricCard
-        :label="t('tenantList.metricActive')"
-        :value="activeCount"
-        tone="success"
-        clickable
-        :active="queryApplied.status === 'ACTIVE'"
-        @click="filterByStatus('ACTIVE')"
-      />
-      <MetricCard
-        :label="t('tenantList.metricSuspended')"
-        :value="suspendedCount"
-        :tone="suspendedCount > 0 ? 'warning' : 'neutral'"
-        clickable
-        :active="queryApplied.status === 'SUSPENDED'"
-        @click="filterByStatus('SUSPENDED')"
-      />
-      <MetricCard :label="t('tenantList.metricCurrent')" :value="tenant.tenantId" />
-    </div>
-
     <SectionCard>
-      <template #header>
-        <span>{{ t('tenantList.sectionTitle') }}</span>
-      </template>
-
-      <ListPageQueryBar
-        :filter-busy="filterBusy"
-        :refresh-busy="loading"
-        @search="onSearch"
-        @reset="onReset"
-        @refresh="() => runRefresh(load)"
-      >
-        <el-form-item :label="t('tenantList.keyword')">
-          <el-input
-            class="query-w-220"
-            v-model="queryDraft.keyword"
-            clearable
-            :placeholder="t('tenantList.keywordPlaceholderLite')"
-            @keyup.enter="onSearch"
-          />
-        </el-form-item>
-        <el-form-item :label="t('tenantList.statusLabel')">
-          <MetaSelect
-            class="query-w-140"
-            v-model="queryDraft.status"
-            clearable
-            enum-key="tenantStatus"
-            :placeholder="t('tenantList.statusPlaceholder')"
-            :options="tenantStatusOptions"
-          />
-        </el-form-item>
-      </ListPageQueryBar>
-
-      <DataState
+      <!--
+        proto 布局:筛选卡 + 表格卡,无统计卡、无区块标题、无刷新按钮;
+        表格卡右上「☰ 列」= ProTable 列设置(proto 未展示的 描述/创建人/创建时间 收进列设置,默认隐藏)
+      -->
+      <ProTable
+        :data="page.items"
         :loading="loading"
         :error="loadError"
-        :has-data="page.items.length > 0"
         :on-retry="load"
+        :total="page.total"
+        :page="queryApplied.pageNo"
+        :page-size="queryApplied.pageSize"
+        :has-active-filters="hasActiveFilters"
+        :filtered-empty-text="t('tenantList.emptyFiltered')"
+        column-config-id="tenants"
+        :column-defs="columnDefs"
+        @update:page="onPage"
+        @update:page-size="onPageSize"
       >
-        <el-table
-          v-loading="loading"
-          :data="page.items"
-          stripe
-          border
-          :empty-text="hasActiveFilters ? t('tenantList.emptyFiltered') : t('common.noData')"
-          class="console-table"
-        >
-          <!-- 引导式空状态:仅"无筛选 + 零数据"时显示 CTA;有筛选/状态过滤时回落到默认 empty-text -->
-          <template v-if="!hasActiveFilters" #empty>
-            <EmptyState :description="t('tenantList.emptyDescription')" :image-size="80">
-              <template v-if="canManageTenants" #action>
-                <el-button type="primary" :icon="Plus" @click="openCreate">
-                  {{ t('tenantList.headerCreate') }}
-                </el-button>
-                <el-button plain @click="batchVisible = true">
-                  {{ t('tenantList.headerBatch') }}
-                </el-button>
-              </template>
-            </EmptyState>
-          </template>
-          <!--
-            列结构照设计 proto-nav-租户实例.html:TENANT(mono 主色,点击即切换)→ 名称 →
-            其余信息列 → 状态 pill → 操作。作业数/Worker/分片 三列 BE 未暴露统计,按现有数据列呈现。
-          -->
-          <el-table-column
-            prop="tenantId"
-            :label="t('tenantList.colTenantId')"
-            width="220"
-            show-overflow-tooltip
+        <template #query>
+          <ListPageQueryBar
+            :filter-busy="filterBusy"
+            :show-refresh="false"
+            @search="onSearch"
+            @reset="onReset"
           >
+            <!-- i18n-todo: tenantList.keywordLabelProto = '租户 Code';tenantList.keywordPlaceholderProto = '搜索' -->
+            <el-form-item label="租户 Code">
+              <el-input
+                class="query-w-220"
+                v-model="queryDraft.keyword"
+                clearable
+                placeholder="搜索"
+                @keyup.enter="onSearch"
+              />
+            </el-form-item>
+            <el-form-item :label="t('tenantList.statusLabel')">
+              <!-- i18n-todo: tenantList.statusPlaceholderProto = '全部' -->
+              <MetaSelect
+                class="query-w-140"
+                v-model="queryDraft.status"
+                clearable
+                enum-key="tenantStatus"
+                placeholder="全部"
+                :options="tenantStatusOptions"
+              />
+            </el-form-item>
+          </ListPageQueryBar>
+        </template>
+
+        <!-- 引导式空状态:仅"无筛选 + 零数据"时显示 CTA(ProTable 已按 hasActiveFilters 门禁) -->
+        <template #empty>
+          <EmptyState :description="t('tenantList.emptyDescription')" :image-size="80">
+            <template v-if="canManageTenants" #action>
+              <el-button type="primary" :icon="Plus" @click="openCreate">
+                {{ t('tenantList.headerCreate') }}
+              </el-button>
+              <el-button plain @click="batchVisible = true">
+                {{ t('tenantList.headerBatch') }}
+              </el-button>
+            </template>
+          </EmptyState>
+        </template>
+
+        <!--
+          列结构照设计 proto-nav-租户实例.html:勾选 → TENANT(mono 主色,点击即切换)→ 名称 →
+          状态 pill → 操作(右对齐)。作业数/Worker/分片 三列 BE 未暴露统计,不编造;
+          描述/创建人/创建时间 为实现侧多出的列,收进列设置且默认隐藏。
+        -->
+        <template #default="{ isColVisible }">
+          <el-table-column type="selection" width="38" />
+          <!-- i18n-todo: tenantList.colTenantProto = 'TENANT' -->
+          <el-table-column prop="tenantId" label="TENANT" width="140" show-overflow-tooltip>
             <template #default="{ row }">
               <span
                 class="tl-code"
@@ -128,30 +108,38 @@
             </template>
           </el-table-column>
           <el-table-column
+            v-if="isColVisible('tenantName')"
             prop="tenantName"
             :label="t('tenantList.colName')"
-            width="240"
+            min-width="180"
             show-overflow-tooltip
           />
           <el-table-column
+            v-if="isColVisible('description')"
             prop="description"
             :label="t('tenantList.colDescription')"
-            min-width="360"
+            min-width="240"
             show-overflow-tooltip
           />
           <el-table-column
+            v-if="isColVisible('createdBy')"
             prop="createdBy"
             :label="t('tenantList.colCreatedBy')"
             width="120"
             show-overflow-tooltip
           />
-          <DatetimeColumn prop="createdAt" :label="t('tenantList.colCreatedAt')" width="180" />
-          <el-table-column :label="t('tenantList.statusLabel')" width="96">
+          <DatetimeColumn
+            v-if="isColVisible('createdAt')"
+            prop="createdAt"
+            :label="t('tenantList.colCreatedAt')"
+            width="180"
+          />
+          <el-table-column :label="t('tenantList.statusLabel')" width="100">
             <template #default="{ row }">
               <StatusTag :value="String(row.status ?? '')" category="tenant" />
             </template>
           </el-table-column>
-          <el-table-column :label="t('tenantList.colActions')" width="260" fixed="right">
+          <el-table-column :label="t('tenantList.colActions')" width="200" align="right">
             <template #default="{ row }">
               <div class="table-actions tenant-row-actions">
                 <el-tag
@@ -168,16 +156,8 @@
               </div>
             </template>
           </el-table-column>
-        </el-table>
-      </DataState>
-
-      <TablePagerBar
-        :page="queryApplied.pageNo"
-        :page-size="queryApplied.pageSize"
-        :total="page.total"
-        @update:page="onPage"
-        @update:page-size="onPageSize"
-      />
+        </template>
+      </ProTable>
     </SectionCard>
 
     <TenantFormDialog v-model="formVisible" :initial="formInitial" @saved="onTenantSaved" />
@@ -224,20 +204,18 @@
   import { useTenantStore } from '@/stores/tenant'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { useListLoadState } from '@/composables/useListLoadState'
-  import DataState from '@/components/common/DataState.vue'
   import MetaSelect from '@/components/common/MetaSelect.vue'
   import { canManageTenants as hasTenantAdminAccess } from '@/utils/tenantAccess'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
-  import MetricCard from '@/components/common/MetricCard.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
   import RowActions, { type RowAction } from '@/components/common/RowActions.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
   import JsonPreview from '@/components/common/JsonPreview.vue'
   import { showCreateSuccess } from '@/composables/useCreateSuccess'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
-  import TablePagerBar from '@/components/table/TablePagerBar.vue'
+  import ProTable from '@/components/table/ProTable.vue'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
   import TenantFormDialog from './components/TenantFormDialog.vue'
@@ -249,7 +227,7 @@
   const tenant = useTenantStore()
   const { loading, error: loadError, run: runLoad } = useListLoadState()
   const listRemote = ref(true)
-  const { filterBusy, runSearch, runReset, runRefresh } = useListFilterFeedback(listRemote)
+  const { filterBusy, runSearch, runReset } = useListFilterFeedback(listRemote)
 
   const queryDraft = reactive<{
     keyword: string
@@ -273,13 +251,18 @@
   const { data: metaEnums } = useConsoleMetaEnumsQuery()
   const tenantStatusOptions = computed(() => pickMetaEnumGroup(metaEnums.value, 'tenantStatus'))
 
-  const activeCount = computed(
-    () => page.value.items.filter((item) => item.status === 'ACTIVE').length,
-  )
-  const suspendedCount = computed(
-    () => page.value.items.filter((item) => item.status === 'SUSPENDED').length,
-  )
   const canManageTenants = computed(() => hasTenantAdminAccess(auth.userInfo?.permissions ?? []))
+
+  // 列设置(proto 头部「☰ 列」):TENANT/状态为必选;proto 未展示的列默认隐藏,可按需开
+  const columnDefs = computed(() => [
+    // i18n-todo: tenantList.colTenantProto = 'TENANT'
+    { key: 'tenantId', label: 'TENANT', hideable: false },
+    { key: 'tenantName', label: t('tenantList.colName') },
+    { key: 'description', label: t('tenantList.colDescription'), defaultHidden: true },
+    { key: 'createdBy', label: t('tenantList.colCreatedBy'), defaultHidden: true },
+    { key: 'createdAt', label: t('tenantList.colCreatedAt'), defaultHidden: true },
+    { key: 'status', label: t('tenantList.statusLabel'), hideable: false },
+  ])
 
   // 用于"引导式空状态":仅在没有筛选 + 没数据时才展示"新增第一个"CTA
   // 有 keyword 或 status 过滤时,空数据应说"未找到符合条件",而不是诱导新增
@@ -312,14 +295,6 @@
       queryApplied.pageNo = 1
       await load()
     })
-  }
-
-  /** 指标卡点击 → 同步 status 到 draft 与 applied,重拉列表 */
-  function filterByStatus(status: TenantStatus | '') {
-    queryDraft.status = status
-    queryApplied.status = status
-    queryApplied.pageNo = 1
-    void load()
   }
 
   function onReset() {
@@ -501,12 +476,6 @@
 </script>
 
 <style scoped>
-  .metrics {
-    display: grid;
-    gap: var(--space-md);
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  }
-
   .result-json {
     margin: 0;
     padding: 12px;
@@ -542,8 +511,9 @@
     text-decoration: none;
   }
 
+  /* proto 操作列右对齐:配置 + ⋯ 靠右 */
   .tenant-row-actions {
-    justify-content: flex-start;
+    justify-content: flex-end;
     flex-wrap: nowrap;
     gap: 6px;
   }

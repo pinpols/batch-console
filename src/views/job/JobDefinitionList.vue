@@ -12,11 +12,8 @@
             placement="top"
           >
             <span>
-              <el-button
-                :icon="Plus"
-                :disabled="!canMutateConfig"
-                @click="router.push('/jobs/definitions/new')"
-              >
+              <!-- 照设计 proto-jobs_view:向导新建 / Bundle 导入 = 无图标 ghost 按钮 -->
+              <el-button :disabled="!canMutateConfig" @click="router.push('/jobs/definitions/new')">
                 {{ t('jobDefinitionList.headerWizard') }}
               </el-button>
             </span>
@@ -30,7 +27,7 @@
             placement="top"
           >
             <span>
-              <el-button :icon="Upload" :disabled="!canMutateConfig" @click="openBundleImport">
+              <el-button :disabled="!canMutateConfig" @click="openBundleImport">
                 {{ t('jobDefinitionList.headerBundle') }}
               </el-button>
             </span>
@@ -71,7 +68,6 @@
         :total="total"
         column-config-id="job-definitions"
         :column-defs="columnDefs"
-        :show-column-settings="false"
         v-model:page="page"
         v-model:page-size="pageSize"
         @change="() => {}"
@@ -189,7 +185,8 @@
         </template>
 
         <template #default="{ isColVisible }">
-          <el-table-column prop="jobCode" :label="t('jobDefinitionList.colJobCode')" width="220">
+          <!-- 列序照设计 proto-jobs_view:JOB CODE(250) 名称 类型 WORKER GROUP QUEUE 启用 操作 -->
+          <el-table-column prop="jobCode" :label="t('jobDefinitionList.colJobCode')" width="250">
             <template #default="{ row }">
               <router-link class="definition-link" :to="definitionDetailLocation(row)">
                 {{ row.jobCode }}
@@ -210,7 +207,10 @@
             width="100"
           >
             <template #default="{ row }">
-              <StatusTag :value="row.jobType || 'GENERAL'" category="jobType" />
+              <!-- 照设计:类型 = mono 彩底 pill(ATOMIC 紫 / PROCESS 蓝 / IMPORT 青 / EXPORT 琥珀),值为原枚举码 -->
+              <span class="jd-type-pill" :style="jobTypePillStyle(row.jobType || 'GENERAL')">
+                {{ row.jobType || 'GENERAL' }}
+              </span>
             </template>
           </el-table-column>
           <el-table-column
@@ -226,14 +226,22 @@
             :label="t('jobDefinitionList.colWorkerGroup')"
             width="140"
             show-overflow-tooltip
-          />
+          >
+            <template #default="{ row }">
+              <span class="jd-cell-sub">{{ row.workerGroup || '—' }}</span>
+            </template>
+          </el-table-column>
           <el-table-column
             v-if="isColVisible('queueCode')"
             prop="queueCode"
             :label="t('jobDefinitionList.colQueue')"
             width="130"
             show-overflow-tooltip
-          />
+          >
+            <template #default="{ row }">
+              <span class="jd-cell-sub jd-cell-mono">{{ row.queueCode || '—' }}</span>
+            </template>
+          </el-table-column>
           <el-table-column
             v-if="isColVisible('scheduleType')"
             prop="scheduleType"

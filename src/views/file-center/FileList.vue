@@ -140,29 +140,59 @@
 
         <template #default="{ isColVisible }">
           <el-table-column v-if="isColVisible('id')" prop="id" label="ID" width="90" />
+          <!-- 照设计 dump 列序:文件名 / 渠道(→业务类型) / 大小(后端无,缺) / 状态 / 到达时间 / 操作 -->
+          <!-- 文件名 = mono 强调色可点(点击开详情抽屉,对应 dump scpn accent + cursor:pointer) -->
           <el-table-column
             v-if="isColVisible('fileName')"
             prop="fileName"
             :label="t('fileList.fileName')"
             min-width="320"
             show-overflow-tooltip
-          />
-          <el-table-column prop="fileStatus" :label="t('fileList.statusLabel')" width="120">
+          >
             <template #default="{ row }">
-              <StatusTag :value="String(row.fileStatus ?? '')" category="file" />
+              <span
+                class="cell-link file-name-link"
+                role="link"
+                tabindex="0"
+                @click="openDetail(row)"
+                @keydown.enter="openDetail(row)"
+              >
+                {{ row.fileName }}
+              </span>
             </template>
           </el-table-column>
           <el-table-column
             v-if="isColVisible('bizType')"
             prop="bizType"
             :label="t('fileList.bizType')"
-            width="120"
-          />
+            width="140"
+            show-overflow-tooltip
+          >
+            <template #default="{ row }">
+              <span class="cell-mono">{{ row.bizType }}</span>
+            </template>
+          </el-table-column>
           <el-table-column
             v-if="isColVisible('bizDate')"
             prop="bizDate"
             :label="t('fileList.bizDate')"
             width="110"
+          >
+            <template #default="{ row }">
+              <span class="cell-mono">{{ row.bizDate }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="fileStatus" :label="t('fileList.statusLabel')" width="120">
+            <template #default="{ row }">
+              <StatusTag :value="String(row.fileStatus ?? '')" category="file" />
+            </template>
+          </el-table-column>
+          <!-- 到达时间(file_record.created_at = 文件登记/到达时刻;dump 列名「到达时间」) -->
+          <DatetimeColumn
+            v-if="isColVisible('createdAt')"
+            prop="createdAt"
+            :label="t('fileList.colArrivedAt')"
+            width="160"
           />
           <el-table-column
             v-if="isColVisible('traceId')"
@@ -182,15 +212,15 @@
               <span v-else class="cell-empty">—</span>
             </template>
           </el-table-column>
-          <DatetimeColumn
-            v-if="isColVisible('createdAt')"
-            prop="createdAt"
-            :label="t('fileList.colCreatedAt')"
-            width="160"
-          />
-          <el-table-column :label="t('fileList.colActions')" width="320" fixed="right">
+          <!-- 照设计 dump:行内仅 1 个主操作「下载」+「⋯」更多;详情走文件名链接,低频操作全收进更多 -->
+          <el-table-column
+            :label="t('fileList.colActions')"
+            width="170"
+            align="right"
+            fixed="right"
+          >
             <template #default="{ row }">
-              <RowActions :actions="rowActions(row)" :inline-limit="3" />
+              <RowActions :actions="rowActions(row)" :inline-limit="1" />
             </template>
           </el-table-column>
         </template>
@@ -333,14 +363,15 @@
 
   const tenant = useTenantStore()
 
-  // 列设置:状态/操作列始终显示;工程字段(ID/Trace/创建时间)默认隐藏
+  // 列设置:状态/操作列始终显示;工程字段(ID/Trace)默认隐藏。
+  // 到达时间(createdAt)照设计 dump 是主表列,默认显示。
   const columnDefs = computed(() => [
     { key: 'id', label: 'ID', defaultHidden: true },
     { key: 'fileName', label: t('fileList.fileName') },
     { key: 'bizType', label: t('fileList.bizType') },
     { key: 'bizDate', label: t('fileList.bizDate') },
+    { key: 'createdAt', label: t('fileList.colArrivedAt') },
     { key: 'traceId', label: t('fileList.trace'), defaultHidden: true },
-    { key: 'createdAt', label: t('fileList.colCreatedAt'), defaultHidden: true },
   ])
 
   const loading = ref(false)

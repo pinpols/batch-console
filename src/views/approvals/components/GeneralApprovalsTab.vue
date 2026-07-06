@@ -91,17 +91,6 @@
         {{ resolveType(row.approvalType) }}
       </template>
     </el-table-column>
-    <el-table-column prop="approvalStatus" :label="t('approvals.colStatus')" width="120">
-      <template #default="{ row }">
-        <StatusTag :value="String(row.approvalStatus ?? '')" category="approval" />
-      </template>
-    </el-table-column>
-    <el-table-column
-      prop="actionType"
-      :label="t('approvals.colAction')"
-      width="100"
-      show-overflow-tooltip
-    />
     <el-table-column
       prop="targetType"
       :label="t('approvals.colTargetType')"
@@ -125,6 +114,25 @@
       prop="requesterId"
       :label="t('approvals.colRequester')"
       width="110"
+      show-overflow-tooltip
+    />
+    <!-- dump 列序:目标/申请人之后是「申请时间」,相对格式(今天 13:52 / 昨天 18:03) -->
+    <el-table-column prop="createdAt" :label="requestedAtLabel" width="130">
+      <template #default="{ row }">
+        <span class="ap-mono ap-time" :title="String(row.createdAt ?? '')">
+          {{ relativeDayTime(row.createdAt) }}
+        </span>
+      </template>
+    </el-table-column>
+    <el-table-column prop="approvalStatus" :label="t('approvals.colStatus')" width="120">
+      <template #default="{ row }">
+        <StatusTag :value="String(row.approvalStatus ?? '')" category="approval" />
+      </template>
+    </el-table-column>
+    <el-table-column
+      prop="actionType"
+      :label="t('approvals.colAction')"
+      width="100"
       show-overflow-tooltip
     />
     <el-table-column

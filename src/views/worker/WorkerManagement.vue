@@ -2,29 +2,30 @@
   <PageContainer>
     <PageHeader />
 
+    <!-- 照设计 proto-workers dump:统计卡位于 tab pill 之上、常显(执行通道 tab 也可见);
+         横排状态统计卡(色点 + 标签 + mono 大数),点击联动状态筛选并切回 Workers tab -->
+    <div class="wk-stats">
+      <button
+        v-for="s in statCards"
+        :key="s.status"
+        type="button"
+        class="wk-stat"
+        :class="{ 'is-active': workerFilters.status === s.status }"
+        @click="toggleStatusFilter(s.status)"
+      >
+        <span class="wk-stat__dot" :style="{ background: s.color }" />
+        <span class="wk-stat__label">{{ s.label }}</span>
+        <span class="wk-stat__spacer" />
+        <span class="wk-stat__num" :style="s.value > 0 ? { color: s.numColor } : undefined">
+          {{ s.value }}
+        </span>
+      </button>
+    </div>
+
     <!-- 还原设计:tabs 与内容直铺底色,无外层卡片壳 -->
     <div>
       <el-tabs v-model="activeTab" class="pill-tabs">
         <el-tab-pane :label="t('workerManagement.tabWorkers')" name="workers">
-          <!-- 照设计 proto-workers dump:横排状态统计卡(色点 + 标签 + mono 大数),点击联动状态筛选 -->
-          <div class="wk-stats">
-            <button
-              v-for="s in statCards"
-              :key="s.status"
-              type="button"
-              class="wk-stat"
-              :class="{ 'is-active': workerFilters.status === s.status }"
-              @click="toggleStatusFilter(s.status)"
-            >
-              <span class="wk-stat__dot" :style="{ background: s.color }" />
-              <span class="wk-stat__label">{{ s.label }}</span>
-              <span class="wk-stat__spacer" />
-              <span class="wk-stat__num" :style="s.value > 0 ? { color: s.numColor } : undefined">
-                {{ s.value }}
-              </span>
-            </button>
-          </div>
-
           <ListPageQueryBar
             :model="workerFilters"
             :filter-busy="workerQueryBusy"
@@ -411,6 +412,8 @@
   function toggleStatusFilter(status: string) {
     workerFilters.status = workerFilters.status === status ? '' : status
     workerPage.value = 1
+    // 统计卡常显(含执行通道 tab):点击筛选时切回 Workers tab 展示结果
+    activeTab.value = 'workers'
   }
 
   // 照 dump 统计卡三件套(在线/Draining/离线):色点 + 标签 + mono 数值

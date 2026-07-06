@@ -16,7 +16,8 @@ test.describe('租户管理 — 筛选查询', () => {
   })
 
   test('关键字搜索', async ({ page }) => {
-    const input = page.getByPlaceholder(/tenantId|名称/)
+    // 关键字输入框对齐设计稿:label「租户 Code」+ placeholder「搜索」;限定在查询表单内,避免命中顶栏全局搜索
+    const input = page.locator('.query-form').getByPlaceholder('搜索')
     if (!(await isVisible(input, 2000))) return
     await input.fill('test')
     await page.getByRole('button', { name: '搜索' }).click()
@@ -39,11 +40,10 @@ test.describe('租户管理 — 筛选查询', () => {
     await page.getByRole('button', { name: '重置' }).click()
   })
 
-  test('刷新按钮', async ({ page }) => {
-    await page.getByRole('button', { name: '刷新' }).first().click()
-    await expect(page.getByRole('columnheader', { name: 'tenantId' }).or(
-      page.getByRole('columnheader', { name: '租户' }),
-    )).toBeVisible({ timeout: 6000 })
+  test('搜索按钮重新拉取列表', async ({ page }) => {
+    // 设计稿查询区只有「搜索/重置」,无独立刷新按钮;点搜索即重新拉取
+    await page.getByRole('button', { name: '搜索' }).first().click()
+    await expect(page.getByRole('columnheader', { name: 'TENANT' })).toBeVisible({ timeout: 6000 })
   })
 })
 
