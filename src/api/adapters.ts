@@ -24,10 +24,11 @@ export function toPageResult<T>(items: T[], page: number, pageSize: number): Pag
 export async function fetchAllPageItems<T>(
   url: string,
   baseParams: Record<string, string | number | boolean | undefined>,
-  opts?: { pageSize?: number; maxPages?: number },
+  opts?: { pageSize?: number; maxPages?: number; devWarnThreshold?: number },
 ): Promise<T[]> {
   const pageSize = opts?.pageSize ?? 200
   const maxPages = opts?.maxPages ?? 20
+  const devWarnThreshold = opts?.devWarnThreshold ?? 2000
 
   const first = await get<PageResponse<T> | T[]>(url, {
     ...baseParams,
@@ -60,7 +61,7 @@ export async function fetchAllPageItems<T>(
       if (total > 0 && out.length >= total) break
     }
   }
-  if (import.meta.env.DEV && out.length > 2000) {
+  if (import.meta.env.DEV && devWarnThreshold > 0 && out.length > devWarnThreshold) {
     console.warn(
       `[fetchAllPageItems] ${url} returned ${out.length} items — consider server-side filtering`,
     )

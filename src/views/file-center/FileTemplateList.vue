@@ -379,7 +379,7 @@
           <el-form-item>
             <el-link
               type="primary"
-              :underline="false"
+              underline="never"
               @click="showFormatAdvanced = !showFormatAdvanced"
               >{{
                 showFormatAdvanced

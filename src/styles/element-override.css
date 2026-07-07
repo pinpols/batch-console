@@ -712,6 +712,49 @@ html.dark .el-button--default:not(.is-link):not(.is-text):not(.is-plain):not(.is
   box-shadow: 0 0 0 1px var(--color-primary) inset;
 }
 
+/* input 带 append/prepend(如 TraceIdInput 的「粘贴 / 直达」图标)时,EP 默认把 append
+   渲染成独立灰块,与 --input-bg 皮肤脱节 → 看着像一个「悬浮的深色小方块」。
+   这里让整组作为一个控件:wrapper 仅圆靠字段侧的角,append/prepend 共享 --input-bg +
+   同一道 ring 只圆外侧角,内部图标按钮 ghost 化(无自己的底/边,hover 才提亮)。 */
+.el-input-group > .el-input__wrapper {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+.el-input-group--prepend > .el-input__wrapper {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+.el-input-group__append,
+.el-input-group__prepend {
+  padding: 0;
+  border: none;
+  color: var(--color-text-secondary);
+  background-color: var(--input-bg, var(--color-bg-card));
+  box-shadow: 0 0 0 1px var(--color-border) inset;
+}
+.el-input-group__append {
+  border-top-right-radius: var(--radius-input);
+  border-bottom-right-radius: var(--radius-input);
+}
+.el-input-group__prepend {
+  border-top-left-radius: var(--radius-input);
+  border-bottom-left-radius: var(--radius-input);
+}
+.el-input-group__append .el-button,
+.el-input-group__prepend .el-button {
+  height: 100%;
+  margin: 0;
+  border: none;
+  color: inherit;
+  background: transparent;
+  box-shadow: none;
+}
+.el-input-group__append .el-button:hover,
+.el-input-group__prepend .el-button:hover {
+  color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 8%, transparent);
+}
+
 /* 侧栏折叠时弹出层挂 body，随 html.light / html.dark 的 token 切换 */
 .el-menu--popup.el-menu {
   --el-menu-bg-color: var(--layout-menu-popup-bg);

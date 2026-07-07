@@ -112,8 +112,45 @@
     return te(key) ? t(key) : item.title
   }
 
-  const activeMenu = computed(() => (route.meta.activeMenu as string) ?? route.path)
   const visibleGroups = computed(() => permission.visibleGroups)
+
+  // 侧栏高亮:优先「真实路径 + query 最具体命中」的菜单项,再回退 meta.activeMenu。
+  // 修复两类「点了不高亮 = 选不中」:
+  //  ① 借用 activeMenu 的项(文件渠道 /files/channels 把 activeMenu 借给 /files/templates
+  //     以躲后端菜单守卫弹回)—— 靠真实 path 直接命中自己;
+  //  ② 同 path 多 tab(Catch-up = /approvals?tab=catch-up 与「审批」= /approvals 同 path)
+  //     —— query 约束更多者更具体,tab 命中时让位给 Catch-up。
+  // 真实路径不是任何菜单项时(详情/编辑等子页)才回退 meta.activeMenu 指回列表。
+  function splitTarget(p: string): { path: string; query: Record<string, string> } {
+    const qi = p.indexOf('?')
+    if (qi < 0) return { path: p, query: {} }
+    const query: Record<string, string> = {}
+    new URLSearchParams(p.slice(qi + 1)).forEach((v, k) => {
+      query[k] = v
+    })
+    return { path: p.slice(0, qi), query }
+  }
+
+  const flatItems = computed<NavigationItem[]>(() =>
+    visibleGroups.value.flatMap((g) => g.children ?? []),
+  )
+
+  const activeMenu = computed(() => {
+    let best: string | null = null
+    let bestScore = -1
+    for (const it of flatItems.value) {
+      const tgt = splitTarget(it.path)
+      if (route.path !== tgt.path) continue
+      const entries = Object.entries(tgt.query)
+      if (!entries.every(([k, v]) => String(route.query[k] ?? '') === v)) continue
+      if (entries.length > bestScore) {
+        best = it.path
+        bestScore = entries.length
+      }
+    }
+    if (best !== null) return best
+    return (route.meta.activeMenu as string) ?? route.path
+  })
 
   // 还原设计默认态:只展开「当前路由所在组」,其余收起(›);用户可手动开合任意组。
   const manualOpen = ref<Record<string, boolean>>({})

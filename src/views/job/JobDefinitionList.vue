@@ -615,6 +615,23 @@
     return te(key) ? t(key) : value
   }
 
+  function jobTypePillStyle(value?: string | null): Record<string, string> {
+    const palette: Record<string, string> = {
+      ATOMIC: '#8b5cf6',
+      PROCESS: 'var(--color-primary)',
+      IMPORT: '#0891b2',
+      EXPORT: 'var(--color-warning)',
+      WORKFLOW: '#7c3aed',
+      GENERAL: 'var(--color-text-secondary)',
+    }
+    const color = palette[String(value || 'GENERAL').toUpperCase()] ?? palette.GENERAL
+    return {
+      color,
+      background: `color-mix(in srgb, ${color} 12%, transparent)`,
+      borderColor: `color-mix(in srgb, ${color} 32%, var(--color-border) 68%)`,
+    }
+  }
+
   // 列设置:jobCode(主链)/操作列始终显示;默认可见列按 redesign 作业定义表格稿对齐。
   const columnDefs = computed(() => [
     { key: 'jobName', label: t('jobDefinitionList.colJobName') },
@@ -1709,5 +1726,30 @@
 
   .definition-link:hover {
     text-decoration: underline;
+  }
+
+  .jd-type-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 64px;
+    height: 22px;
+    padding: 0 8px;
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .jd-cell-sub {
+    color: var(--color-text-secondary);
+  }
+
+  .jd-cell-mono {
+    font-family: var(--font-mono);
+    font-size: 12px;
   }
 </style>

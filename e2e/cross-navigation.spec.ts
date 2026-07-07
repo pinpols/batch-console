@@ -18,7 +18,10 @@ test.describe('dashboard metric card navigation (指标卡片跳转)', () => {
     await page.goto('/ops/summary')
     const card = page.locator('.metric-hit', { hasText: text }).first()
     await card.waitFor({ state: 'visible', timeout: 25_000 })
-    await card.click({ force: true })
+    // Vue router 的 history 跳转在高并发 e2e 下会让 Playwright 的 click
+    // 挂在 "waiting for scheduled navigations";这里显式触发 DOM click,
+    // 再只等待 URL 这一项业务可观察结果。
+    await card.evaluate((el: HTMLElement) => el.click())
     await expect(page).toHaveURL(expectedUrl, { timeout: 15_000 })
   }
 

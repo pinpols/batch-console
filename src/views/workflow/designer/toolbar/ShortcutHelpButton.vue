@@ -1,5 +1,5 @@
 <template>
-  <el-button :icon="QuestionFilled" text @click="visible = true">
+  <el-button v-bind="attrs" :icon="QuestionFilled" text @click="visible = true">
     {{ t('workflowDesignerShortcuts.button') }}
   </el-button>
 
@@ -19,11 +19,13 @@
 </template>
 
 <script setup lang="ts">
-  import { ref } from 'vue'
+  import { ref, useAttrs } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { CircleHelp as QuestionFilled } from 'lucide-vue-next'
 
   const { t } = useI18n({ useScope: 'global' })
+  defineOptions({ inheritAttrs: false })
+  const attrs = useAttrs()
   const visible = ref(false)
 
   // 与 DagCanvas / WorkflowDesigner 的 keydown 实现一一对应(改键位时同步此表)

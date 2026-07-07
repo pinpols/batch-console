@@ -53,7 +53,7 @@
                     <div class="upload-zone__hint">
                       <strong>{{ t('tenantPackageImportWizard.dropHintDrop') }}</strong>
                       {{ t('tenantPackageImportWizard.dropHintOr') }}
-                      <el-link type="primary" :underline="false">
+                      <el-link type="primary" underline="never">
                         {{ t('excelMaintenanceWizard.btnPickFile') }}
                       </el-link>
                       <div class="upload-zone__sub">.xls / .xlsx</div>

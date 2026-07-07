@@ -232,6 +232,7 @@
   import { useTenantReload } from '@/composables/useTenantReload'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
+  import { fmtCompact } from '@/utils/datetime'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import ProTable from '@/components/table/ProTable.vue'
   import BulkActionBar from '@/components/table/BulkActionBar.vue'
@@ -291,6 +292,11 @@
   const approvalTypeOptions = computed(() => pickMetaEnumGroup(metaEnums.value, 'approvalType'))
 
   const terminal = new Set(['APPROVED', 'REJECTED', 'CLOSED', 'CANCELLED'])
+  const requestedAtLabel = computed(() => t('approvals.colRequestedAt'))
+
+  function relativeDayTime(value: unknown): string {
+    return fmtCompact(value)
+  }
 
   function isPending(row: ConsoleApprovalCommandResponse) {
     return !terminal.has(row.approvalStatus)
@@ -302,6 +308,10 @@
 
   function onSel(s: ConsoleApprovalCommandResponse[]) {
     selection.value = s
+  }
+
+  function slicePage() {
+    // 服务端分页由 page/pageSize watcher 触发 load;保留 ProTable change 回调避免模板漂移。
   }
 
   // 服务端分页 + 服务端筛选:status→approvalStatus / type→approvalType / keyword 跨列模糊 /

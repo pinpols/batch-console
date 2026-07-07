@@ -14,53 +14,47 @@
       </template>
     </PageHeader>
 
-    <!-- 照设计 dump(docs/redesign/proto-nav-流水线定义.html):独立筛选卡片(r12 / 16 18 / label 12 text-3) -->
-    <div class="pd-filter">
-      <div class="pd-filter__field pd-filter__field--code">
-        <div class="pd-filter__label">{{ t('pipelineDefinitionList.keywordLabel') }}</div>
-        <el-input
-          v-model="keyword"
-          clearable
-          :placeholder="t('pipelineDefinitionList.keywordPlaceholder')"
-          @keyup.enter="onQueryBarSearch"
+    <!-- 照设计 dump(proto-nav-流水线定义):紧凑单行筛选条(搜索框 + 搜索/重置)。
+         类型/启用为本实现保留的额外筛选(设计仅一个搜索框),inline 收纳不铺开成标签表单卡。 -->
+    <div class="pd-bar">
+      <el-input
+        v-model="keyword"
+        class="pd-bar__search"
+        clearable
+        :placeholder="t('pipelineDefinitionList.keywordPlaceholder')"
+        @keyup.enter="onQueryBarSearch"
+      />
+      <el-select
+        v-model="pipelineType"
+        class="pd-bar__sel"
+        clearable
+        filterable
+        :placeholder="t('pipelineDefinitionList.typePlaceholder')"
+      >
+        <el-option
+          v-for="option in pipelineTypeOptions"
+          :key="option"
+          :label="option"
+          :value="option"
         />
-      </div>
-      <div class="pd-filter__field pd-filter__field--type">
-        <div class="pd-filter__label">{{ t('pipelineDefinitionList.typeLabel') }}</div>
-        <el-select
-          v-model="pipelineType"
-          clearable
-          filterable
-          :placeholder="t('pipelineDefinitionList.typePlaceholder')"
-        >
-          <el-option
-            v-for="option in pipelineTypeOptions"
-            :key="option"
-            :label="option"
-            :value="option"
-          />
-        </el-select>
-      </div>
-      <div class="pd-filter__field pd-filter__field--enabled">
-        <div class="pd-filter__label">{{ t('pipelineDefinitionList.enabledLabel') }}</div>
-        <el-select
-          v-model="enabledFilter"
-          clearable
-          :placeholder="t('pipelineDefinitionList.enabledPlaceholder')"
-        >
-          <el-option :label="t('pipelineDefinitionList.optEnabled')" :value="true" />
-          <el-option :label="t('pipelineDefinitionList.optDisabled')" :value="false" />
-        </el-select>
-      </div>
-      <div class="pd-filter__actions">
-        <el-button type="primary" :loading="filterBusy" @click="onQueryBarSearch">
-          {{ t('common.search') }}
-        </el-button>
-        <el-button @click="onQueryBarReset">{{ t('common.reset') }}</el-button>
-        <el-button :loading="loading" @click="() => runRefresh(load)">
-          {{ t('common.refresh') }}
-        </el-button>
-      </div>
+      </el-select>
+      <el-select
+        v-model="enabledFilter"
+        class="pd-bar__sel"
+        clearable
+        :placeholder="t('pipelineDefinitionList.enabledPlaceholder')"
+      >
+        <el-option :label="t('pipelineDefinitionList.optEnabled')" :value="true" />
+        <el-option :label="t('pipelineDefinitionList.optDisabled')" :value="false" />
+      </el-select>
+      <el-button type="primary" :loading="filterBusy" @click="onQueryBarSearch">
+        {{ t('common.search') }}
+      </el-button>
+      <el-button text @click="onQueryBarReset">{{ t('common.reset') }}</el-button>
+      <span class="pd-bar__spacer" />
+      <el-button :loading="loading" @click="() => runRefresh(load)">
+        {{ t('common.refresh') }}
+      </el-button>
     </div>
 
     <SectionCard>
@@ -896,6 +890,46 @@
 </script>
 
 <style scoped>
+  /* 紧凑筛选条(照设计:控件同高一行,搜索主按钮 + 重置 ghost;刷新推到右侧) */
+  .pd-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+  .pd-bar__search {
+    width: 280px;
+  }
+  .pd-bar__sel {
+    width: 180px;
+  }
+  .pd-bar__spacer {
+    flex: 1;
+  }
+
+  /* 表格:code 走 mono + accent 可点(开详情抽屉) */
+  .pd-code {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--color-primary);
+    cursor: pointer;
+  }
+  .pd-code:hover {
+    text-decoration: underline;
+  }
+
+  /* 类型徽章:mono 彩底 pill(配色由 typeBadgeStyle 按 IMPORT/EXPORT/其他 给) */
+  .pd-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    font-weight: 600;
+    line-height: 1.6;
+  }
+
   .drawer-actions {
     display: flex;
     justify-content: flex-end;

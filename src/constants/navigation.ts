@@ -313,7 +313,9 @@ export const navigationGroups: NavigationGroup[] = [
       },
       {
         title: pageTitle('/scheduler/catch-up-approvals'),
-        path: '/scheduler/catch-up-approvals',
+        // 补跑审批已并入审批页的 catch-up tab;直接指向真实目的地(去掉 /scheduler/catch-up-approvals
+        // 的 redirect 空跳),侧栏据 ?tab=catch-up 精确高亮本项而非「审批」。
+        path: '/approvals?tab=catch-up',
         minRole: 'VIEWER',
         icon: Memo,
       },

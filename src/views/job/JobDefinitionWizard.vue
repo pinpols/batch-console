@@ -26,7 +26,7 @@
               <div class="prefill-hint">
                 <div>
                   {{ t('jobDefinitionWizard.prefillSourcePrefix') }}
-                  <el-link type="primary" :underline="false" @click="goExportSource">
+                  <el-link type="primary" underline="never" @click="goExportSource">
                     {{ t('jobDefinitionWizard.prefillSourceJobList') }}
                   </el-link>
                   {{ t('jobDefinitionWizard.prefillSourceMiddle') }}

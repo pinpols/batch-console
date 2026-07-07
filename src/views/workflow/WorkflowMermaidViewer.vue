@@ -182,7 +182,7 @@
           <el-link
             v-if="runId"
             type="primary"
-            :underline="false"
+            underline="never"
             class="legend-back-link"
             @click="goToRun"
           >
@@ -243,7 +243,7 @@
               >
                 <el-link
                   type="primary"
-                  :underline="false"
+                  underline="never"
                   @click="goToJobDef(selectedNodeMeta.relatedJobCode)"
                 >
                   {{ selectedNodeMeta.relatedJobCode }}
@@ -255,7 +255,7 @@
               >
                 <el-link
                   type="primary"
-                  :underline="false"
+                  underline="never"
                   @click="goToPipeline(selectedNodeMeta.relatedPipelineCode)"
                 >
                   {{ selectedNodeMeta.relatedPipelineCode }}
@@ -358,7 +358,7 @@
         >
           <el-link
             type="primary"
-            :underline="false"
+            underline="never"
             @click="goToJobDef(selectedNodeMeta.relatedJobCode)"
           >
             {{ selectedNodeMeta.relatedJobCode }}
@@ -370,7 +370,7 @@
         >
           <el-link
             type="primary"
-            :underline="false"
+            underline="never"
             @click="goToPipeline(selectedNodeMeta.relatedPipelineCode)"
           >
             {{ selectedNodeMeta.relatedPipelineCode }}
