@@ -40,9 +40,6 @@
                 :options="stepStatusOptions"
               />
             </el-form-item>
-            <el-form-item>
-              <p class="query-hint">{{ t('monitor.stepHint') }}</p>
-            </el-form-item>
           </ListPageQueryBar>
         </template>
         <el-table-column prop="jobInstanceId" :label="t('monitor.stepColInstanceId')" width="100">

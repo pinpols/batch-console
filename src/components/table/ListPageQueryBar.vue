@@ -93,67 +93,50 @@
   /* 自管 margin-bottom:让裸用 ListPageQueryBar(不套 ProTable)的页面也跟下方表格
      有标准间距。ProTable 那边把 .pro-table__query 的 margin 清 0 避免叠加 */
   .query-form {
-    margin-bottom: var(--page-block-gap);
+    margin-bottom: 12px;
   }
 
   /* ──────────────────────────────────────────────
-   * Redesign filter bar:紧凑横向 label,按 polished 截图自动折行。
+   * Redesign filter bar:去冗余卡片壳(无边框/阴影/大内边距),拍扁贴页背景,
+   * 提升信息密度、缩短到表格的距离(用户要求主数据默认一页不下滑)。
+   * 字段仍是自适应网格,窄屏自动折行。
    * ────────────────────────────────────────────── */
   .query-form.el-form--inline {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 14px 16px;
+    display: flex;
+    flex-wrap: wrap;
     align-items: end;
-    padding: 16px 18px 18px;
-    background: var(--color-bg-card);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-content, 10px);
-    box-shadow: var(--shadow-card);
-  }
-
-  .query-form--cols-2.el-form--inline {
+    gap: 8px 12px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
     width: 100%;
   }
 
-  .query-form--cols-3.el-form--inline {
-    width: 100%;
-  }
-
+  .query-form--cols-2.el-form--inline,
+  .query-form--cols-3.el-form--inline,
   .query-form--cols-4.el-form--inline {
     width: 100%;
   }
 
-  html.dark .query-form.el-form--inline {
-    background: var(--color-bg-card);
-  }
-
-  /* 响应式降级:窄屏自动收 1 档 */
-  @media (max-width: 1100px) {
-    .query-form--cols-4.el-form--inline {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-    .query-form--cols-3.el-form--inline {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-  }
-
   @media (max-width: 720px) {
     .query-form.el-form--inline {
-      grid-template-columns: 1fr !important;
-      padding: 12px;
+      padding: 0;
     }
   }
 
-  /* 日期范围要放下两个日期,统一占 2 列(datetime 也从 3 列收到 2 列,避免超长)。
-     普通字段仍是 1 列等宽;个别页面需更宽可显式 .query-span-2 / .query-span-3。 */
+  /* 日期范围要放下两个日期,给更宽的弹性基准(flex 折行下自然更宽)。 */
   .query-form :deep(.el-form-item.query-span-2),
   .query-form :deep(.el-form-item:has(.el-date-editor--daterange)),
   .query-form :deep(.el-form-item:has(.el-date-editor--datetimerange)) {
-    grid-column: span 2;
+    flex: 1 1 340px;
+    max-width: 460px;
   }
 
   .query-form :deep(.el-form-item.query-span-3) {
-    grid-column: span 3;
+    flex: 1 1 480px;
+    max-width: 640px;
   }
 
   /* 控件填满 form-item 余下空间,不让 EP 默认 220px 卡死 */
@@ -187,14 +170,16 @@
     min-width: 0;
   }
 
-  /* 还原设计(02-audit 样张):字段块 = label 上置 + 控件全宽,非 label 左贴。 */
+  /* 字段块 = label 上置 + 控件全宽。flex 弹性项:不长满整行(留右侧空位给操作按钮
+     内嵌),窄了自动折行,提升信息密度。 */
   .query-form :deep(.el-form-item) {
     display: flex;
     flex-direction: column;
     align-items: stretch;
     margin: 0;
-    width: 100%;
-    min-width: 0;
+    flex: 1 1 180px;
+    min-width: 150px;
+    max-width: 240px;
   }
 
   .query-form :deep(.el-form-item__label) {
@@ -233,10 +218,14 @@
     max-width: none !important;
   }
 
-  /* 操作按钮组:与字段控件行底对齐(字段带上置 label) */
+  /* 操作按钮组:尺寸自适应内容 + margin-left:auto 塞进当前行右侧空位;有空同行、
+     没空才折行(省行、修此前独占整行/溢出两种毛病)。覆盖字段的 flex 弹性。 */
   .query-actions {
+    flex: 0 0 auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    margin-left: auto;
     align-self: end;
-    justify-self: start;
   }
 
   .query-actions :deep(.el-form-item__label) {

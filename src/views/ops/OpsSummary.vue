@@ -62,7 +62,7 @@
         <el-tab-pane :label="t('opsSummary.tabExtra')" name="extra" />
       </el-tabs>
 
-      <div class="ops-panels">
+      <div v-show="opsTab !== 'extra'" class="ops-panels">
         <OpsMetricGrid
           :summary="summary"
           :active="opsTab === 'kpis'"

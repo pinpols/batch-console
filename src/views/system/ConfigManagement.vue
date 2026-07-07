@@ -12,11 +12,9 @@
             </span>
           </template>
 
+          <!-- 去掉与 tab 名重复的 h2 子标题(占屏);描述 + badge 压成一行轻量说明 -->
           <div class="config-tab__head">
-            <div>
-              <h2>{{ item.title }}</h2>
-              <p>{{ item.desc }}</p>
-            </div>
+            <p>{{ item.desc }}</p>
             <el-tag effect="plain" size="small" type="info">{{ item.badge }}</el-tag>
           </div>
 
@@ -111,26 +109,16 @@
   .config-tab__head {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
+    align-items: center;
     gap: var(--space-md);
-    padding: 4px 0 12px;
-    border-bottom: 1px solid var(--color-border-light);
-    margin-bottom: var(--page-block-gap);
-  }
-
-  .config-tab__head h2 {
-    margin: 0;
-    font-size: 18px;
-    font-weight: 650;
-    line-height: 1.35;
-    color: var(--color-text-primary);
+    margin-bottom: 10px;
   }
 
   .config-tab__head p {
-    margin: 4px 0 0;
-    font-size: 13px;
-    line-height: 1.55;
-    color: var(--color-text-secondary);
+    margin: 0;
+    font-size: 12.5px;
+    line-height: 1.4;
+    color: var(--color-text-tertiary);
   }
 
   @media (max-width: 640px) {
