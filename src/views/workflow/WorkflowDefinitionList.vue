@@ -130,7 +130,9 @@
           :label="t('workflowDefinitionList.colDescription')"
           min-width="320"
           show-overflow-tooltip
-        />
+        >
+          <template #default="{ row }">{{ decodeBasicEntities(row.description) }}</template>
+        </el-table-column>
         <el-table-column prop="enabled" :label="t('workflowDefinitionList.colEnabled')" width="80">
           <template #default="{ row }">
             <StatusTag :value="String(row.enabled)" category="yn" />
@@ -353,6 +355,7 @@
   import { workflowApi, type DagValidationResult } from '@/api/workflow'
   import { instanceApi } from '@/api/instance'
   import { fmtDatetime } from '@/utils/datetime'
+  import { decodeBasicEntities } from '@/utils/text'
   import { useSseAutoReload } from '@/composables/useSseAutoReload'
   import OpsListToolbar from '@/components/table/OpsListToolbar.vue'
   import { useTenantStore } from '@/stores/tenant'
