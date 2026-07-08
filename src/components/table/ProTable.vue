@@ -1,5 +1,5 @@
 <template>
-  <div class="pro-table">
+  <div ref="rootRef" class="pro-table">
     <div v-if="$slots.query" class="pro-table__query">
       <slot name="query" />
     </div>
@@ -65,6 +65,7 @@
         ref="tableRef"
         :data="data"
         v-loading="loading"
+        :max-height="autoFillHeight ? fillMaxHeight : undefined"
         stripe
         size="small"
         highlight-current-row
@@ -98,7 +99,7 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, onMounted, ref, watch } from 'vue'
+  import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
   import type { TableInstance } from 'element-plus'
   import { useRoute } from 'vue-router'
   import { useI18n } from 'vue-i18n'
@@ -167,6 +168,11 @@
       columnConfigId?: string
       /** 列描述(配合 columnConfigId);声明每列 key/label/可隐藏性/默认隐藏 */
       columnDefs?: ProTableColumnDef[]
+      /**
+       * 表格自适应视口高度:表体内部滚动、表头 + 分页钉住、页面本身不滚(笔记本首屏零滚)。
+       * 默认开;下方还有内容/需要整页滚的页面传 false 关闭。
+       */
+      autoFillHeight?: boolean
     }>(),
     {
       loading: false,
@@ -179,6 +185,7 @@
       skeletonRows: 6,
       error: undefined,
       persistPageSize: true,
+      autoFillHeight: true,
     },
   )
 
@@ -318,6 +325,43 @@
     toggleRowSelection: (row: unknown, selected?: boolean) =>
       tableRef.value?.toggleRowSelection(row as Record<string, unknown>, selected),
   })
+
+  // ── 自适应视口高度:表体内滚、表头/分页钉住、页面不滚(笔记本首屏零滚) ──────────
+  const rootRef = ref<HTMLElement>()
+  const fillMaxHeight = ref<number | undefined>(undefined)
+
+  function recomputeFillHeight() {
+    if (!props.autoFillHeight) {
+      fillMaxHeight.value = undefined
+      return
+    }
+    const tableEl = rootRef.value?.querySelector('.pro-table__table') as HTMLElement | null
+    if (!tableEl) return
+    const top = tableEl.getBoundingClientRect().top
+    const pagerEl = rootRef.value?.querySelector('.pro-table__pager') as HTMLElement | null
+    const pagerH = pagerEl ? pagerEl.getBoundingClientRect().height + 8 : 0
+    const bottomGap = 16
+    const avail = Math.round(window.innerHeight - top - pagerH - bottomGap)
+    // 低于阈值不强撑(太矮的表格反而难看);高于才启用内部滚动
+    fillMaxHeight.value = avail > 240 ? avail : undefined
+  }
+
+  const scheduleRecompute = () => nextTick(recomputeFillHeight)
+  let ro: ResizeObserver | undefined
+  onMounted(() => {
+    scheduleRecompute()
+    if (typeof ResizeObserver !== 'undefined' && rootRef.value) {
+      ro = new ResizeObserver(() => recomputeFillHeight())
+      ro.observe(rootRef.value)
+    }
+    window.addEventListener('resize', recomputeFillHeight)
+  })
+  onBeforeUnmount(() => {
+    ro?.disconnect()
+    window.removeEventListener('resize', recomputeFillHeight)
+  })
+  // 数据/加载态变化(行数变了、筛选收起展开导致表格上移)后重算
+  watch(() => [props.data?.length, props.loading, props.autoFillHeight], scheduleRecompute)
 
   function onPageChange(p: number) {
     emit('update:page', p)
