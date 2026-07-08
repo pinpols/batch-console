@@ -732,11 +732,27 @@
     border: 1px solid var(--color-border);
     border-left-width: 3px;
     border-radius: 12px;
+    transition:
+      transform 140ms ease,
+      border-color 120ms ease,
+      box-shadow 120ms ease;
   }
 
   .al-card:hover {
+    transform: translateY(-2px);
     border-color: var(--color-border-strong, rgba(255, 255, 255, 0.16));
-    box-shadow: var(--shadow-card);
+    box-shadow:
+      0 10px 22px rgb(15 23 42 / 10%),
+      var(--shadow-card);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .al-card {
+      transition: none;
+    }
+    .al-card:hover {
+      transform: none;
+    }
   }
 
   .al-card__icon {

@@ -695,6 +695,14 @@
     cursor: pointer;
     font-family: inherit;
     text-align: left;
+    transition:
+      border-color 120ms ease,
+      background 120ms ease;
+  }
+
+  .wk-stat:hover {
+    border-color: var(--color-border-strong, rgba(255, 255, 255, 0.16));
+    background: color-mix(in srgb, var(--color-bg-card) 94%, var(--color-primary) 6%);
   }
 
   .wk-stat.is-active {
