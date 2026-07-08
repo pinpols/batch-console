@@ -694,6 +694,8 @@ export default {
     empty: '暂无数据',
     filteredEmpty: '未找到符合条件的数据,请调整筛选条件',
     loadFailed: '加载失败,请重试',
+    filterCollapse: '收起',
+    filterExpand: '展开筛选',
     loadingMore: '加载中…',
     columnSettings: {
       trigger: '列设置',

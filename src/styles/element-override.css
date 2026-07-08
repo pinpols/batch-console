@@ -954,6 +954,22 @@ html.dark .el-drawer {
   overflow: hidden;
 }
 
+/* el-tooltip(默认 is-dark)统一皮肤:设计圆角 + elevated 底 + 细边,深色下不糊成一团 */
+.el-popper.is-dark {
+  padding: 6px 10px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--color-text-primary);
+  background: var(--color-bg-elevated, #1f2128);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  box-shadow: var(--shadow-surface, 0 6px 20px rgb(0 0 0 / 28%));
+}
+.el-popper.is-dark .el-popper__arrow::before {
+  background: var(--color-bg-elevated, #1f2128);
+  border: 1px solid var(--color-border);
+}
+
 /* ---------- Select / 同类下拉的滚动条：隐藏轨道与条，仍可用滚轮、触控板滚动 ---------- */
 .el-select-dropdown .el-scrollbar__bar,
 .el-select__popper .el-scrollbar__bar,

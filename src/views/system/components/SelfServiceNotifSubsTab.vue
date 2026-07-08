@@ -18,6 +18,7 @@
       :page="1"
       :page-size="10"
       :show-pager="false"
+      :auto-fill-height="false"
       :persist-page-size="false"
       :empty-text="t('selfServicePanel.listEmpty')"
       :skeleton-rows="4"
