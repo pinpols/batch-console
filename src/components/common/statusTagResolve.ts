@@ -158,8 +158,11 @@ export function resolveStatusMeta(
   const type: StatusTagType = cfg.color[value] ?? localMeta?.type ?? 'info'
 
   let label: string | undefined
-  if (translate && cfg.metaKeys && value) {
-    for (const k of cfg.metaKeys) {
+  // i18n label 优先:依次试 metaKeys 分组键 + 类目名(后者让本地类目 yn/log/… 也能走
+  // enum.<category>.<value>,如 enum.yn.true;缺键自然回退 BE label / 本地 local)。
+  if (translate && value) {
+    const i18nGroups = cfg.metaKeys ? [...cfg.metaKeys, category] : [category]
+    for (const k of i18nGroups) {
       const i18nKey = `enum.${k}.${value}`
       if (translate.exists(i18nKey)) {
         label = translate.translate(i18nKey)

@@ -108,6 +108,8 @@
   }
 
   function resolveItemTitle(item: NavigationItem): string {
+    // 显式 titleKey 优先(path 带 query 时 pathToKey 推不出正确 key)
+    if (item.titleKey && te(item.titleKey)) return t(item.titleKey)
     const key = `page.${pathToKey(item.path)}.title`
     return te(key) ? t(key) : item.title
   }
