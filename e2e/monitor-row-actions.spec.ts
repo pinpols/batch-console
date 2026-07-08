@@ -36,7 +36,7 @@ test.describe('@row-actions 作业实例行操作', () => {
       test.skip(true, '无作业实例数据')
       return
     }
-    await row.getByRole('button', { name: /详情/ }).first().click()
+    await row.getByRole('link', { name: /详情/ }).first().click()
     await expect(page).toHaveURL(/\/monitor\/job-instances\/\d+/, { timeout: 8000 })
     // 详情页有实例状态/编号区块
     await expect(page.locator('.page-header, .el-descriptions, .detail-header').first()).toBeVisible({
@@ -51,7 +51,7 @@ test.describe('@row-actions 作业实例行操作', () => {
       return
     }
     // 行内第二个动作按钮(label「步骤」,即分片视图入口)
-    const partBtn = row.getByRole('button', { name: /步骤|分片|partition/i }).first()
+    const partBtn = row.getByRole('link', { name: /步骤|分片|partition/i }).first()
     if (!(await isVisible(partBtn, 2000))) {
       test.skip(true, '该行无步骤/分片入口')
       return
@@ -83,7 +83,7 @@ test.describe('@row-actions 作业实例行操作', () => {
       test.skip(true, '无作业实例数据')
       return
     }
-    await row.getByRole('button', { name: /详情/ }).first().click()
+    await row.getByRole('link', { name: /详情/ }).first().click()
     await expect(page).toHaveURL(/\/monitor\/job-instances\/\d+/, { timeout: 8000 })
 
     const rerunBtn = page.getByRole('button', { name: /重跑|重新运行/ }).first()

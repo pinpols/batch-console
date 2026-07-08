@@ -14,7 +14,8 @@ test.describe('self-service forms (自助服务表单)', () => {
 
   async function openCardDrawer(page: import('@playwright/test').Page, cardText: string) {
     const card = page.locator('.service-card').filter({ hasText: cardText }).first()
-    await card.locator('button').first().click({ force: true })
+    // 改版后整卡可点(div role=button @click),卡内已无 <button>
+    await card.click()
     const drawer = page.locator('.el-drawer:visible').first()
     await expect(drawer).toBeVisible({ timeout: 6000 })
     return drawer
@@ -50,7 +51,7 @@ test.describe('self-service forms (自助服务表单)', () => {
     const quotaCard = page.locator('.service-card').filter({ hasText: /我的配额用量|配额用量/ }).first()
     await expect(quotaCard).toBeVisible()
     if (!(await quotaCard.evaluate((el) => el.classList.contains('is-active')))) {
-      await quotaCard.locator('button').first().click({ force: true })
+      await quotaCard.click()
     }
     const inline = page.locator('.service-catalog__inline')
     // 关键词宽松匹配,允许:「当前配额」「配额」「用量」
