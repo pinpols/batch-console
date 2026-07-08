@@ -14,23 +14,16 @@
     <SectionCard>
       <template #header>
         <div class="tpl__header">
-          <span>{{ t('tenantPlacementList.sectionTitle') }}</span>
+          <HelpLabel :tip="t('tenantPlacementList.introBody')">
+            {{ t('tenantPlacementList.sectionTitle') }}
+          </HelpLabel>
           <el-tag size="small" type="info" effect="plain">
             {{ t('tenantPlacementList.total', { n: rows.length }) }}
           </el-tag>
         </div>
       </template>
 
-      <el-alert
-        type="info"
-        :closable="false"
-        show-icon
-        class="tpl__intro"
-        :title="t('tenantPlacementList.introTitle')"
-      >
-        <template #default>{{ t('tenantPlacementList.introBody') }}</template>
-      </el-alert>
-
+      <!-- 说明搬进标题 HelpLabel 悬浮提示,去掉常驻大说明条(密度) -->
       <ProTable
         :data="rows"
         :loading="loading"
@@ -128,6 +121,7 @@
   import ProTable from '@/components/table/ProTable.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
   import RowActions, { type RowAction } from '@/components/common/RowActions.vue'
+  import HelpLabel from '@/components/common/HelpLabel.vue'
   import { fmtDatetime } from '@/utils/datetime'
   import { useAuthStore } from '@/stores/auth'
   import {

@@ -14,22 +14,16 @@
     <SectionCard>
       <template #header>
         <div class="scl__header">
-          <span>{{ t('shardCatalogList.sectionTitle') }}</span>
+          <HelpLabel :tip="t('shardCatalogList.introBody')">
+            {{ t('shardCatalogList.sectionTitle') }}
+          </HelpLabel>
           <el-tag size="small" type="info" effect="plain">
             {{ t('shardCatalogList.total', { n: rows.length }) }}
           </el-tag>
         </div>
       </template>
 
-      <el-alert
-        type="info"
-        :closable="false"
-        show-icon
-        class="scl__intro"
-        :title="t('shardCatalogList.introTitle')"
-      >
-        <template #default>{{ t('shardCatalogList.introBody') }}</template>
-      </el-alert>
+      <!-- 说明搬进标题 HelpLabel 悬浮提示,去掉常驻大说明条(密度) -->
 
       <ProTable
         :data="rows"
@@ -141,6 +135,7 @@
   import ProTable from '@/components/table/ProTable.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
   import RowActions, { type RowAction } from '@/components/common/RowActions.vue'
+  import HelpLabel from '@/components/common/HelpLabel.vue'
   import { fmtDatetime } from '@/utils/datetime'
   import { useAuthStore } from '@/stores/auth'
   import {
