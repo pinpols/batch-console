@@ -60,6 +60,12 @@ export interface NavigationItem {
   minRole?: Role
   /** 隐藏出现在侧边栏,但 Command Palette / 内嵌跳转 仍可达 */
   hidden?: boolean
+  /**
+   * 显式 i18n 标题 key(覆盖按 path 推导的 page.<pathKey>.title)。
+   * path 带 query(如 Catch-up = /approvals?tab=catch-up)时,pathToKey 推不出正确 key,
+   * 用它指向原页的 key 保证中英都翻。
+   */
+  titleKey?: string
 }
 
 export interface NavigationGroup {
@@ -313,6 +319,8 @@ export const navigationGroups: NavigationGroup[] = [
       },
       {
         title: pageTitle('/scheduler/catch-up-approvals'),
+        // path 带 query,pathToKey 推不出 key → 显式指向原页 i18n 键,保证中英都翻。
+        titleKey: 'page.schedulerCatchUpApprovals.title',
         // 补跑审批已并入审批页的 catch-up tab;直接指向真实目的地(去掉 /scheduler/catch-up-approvals
         // 的 redirect 空跳),侧栏据 ?tab=catch-up 精确高亮本项而非「审批」。
         path: '/approvals?tab=catch-up',

@@ -117,7 +117,8 @@ export const STATUS_TAG_CATEGORIES: Record<StatusTagCategory, CategoryConfig> = 
   jobType: { color: {}, metaKeys: ['jobType'] },
   // /meta/enums 未提供,label 由前端维护
   log: { color: {}, local: logLevelMeta },
-  yn: { color: {}, local: ynStatusMeta },
+  // metaKeys 让 label 先走 i18n `enum.yn.<true|false>`(中英),缺则回退本地 ynStatusMeta
+  yn: { color: {}, metaKeys: ['yn'], local: ynStatusMeta },
   batchDay: { color: {}, local: batchDayStatusMeta },
   sla: { color: {}, local: slaStatusMeta },
 }

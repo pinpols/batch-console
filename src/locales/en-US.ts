@@ -1257,6 +1257,10 @@ const messages: Messages = {
       title: 'Job runs',
       description: 'Inspect job runs and trigger rerun, cancel or terminate.',
     },
+    runs: {
+      title: 'All runs',
+      description: 'Aggregated recent runs across jobs / workflows — a unified oncall entry.',
+    },
     monitorJobSteps: {
       title: 'Job steps',
       description: 'Search job steps to locate step-level issues.',
@@ -1313,6 +1317,11 @@ const messages: Messages = {
     observabilityAudits: {
       title: 'Audit log',
       description: 'Query platform key actions and trace user/API behavior.',
+    },
+    observabilityOperationAudits: {
+      title: 'Operation audit',
+      description:
+        'Trail of all console user write actions (alerts / approvals / jobs / workers / outbox / API keys).',
     },
     observabilityOutbox: {
       title: 'Outbox',
@@ -1567,13 +1576,18 @@ const messages: Messages = {
     reduceFrequency: 'Suggestion: too frequent — slow down and retry',
   },
   enum: {
+    yn: { true: 'Yes', false: 'No' },
     instanceStatus: {
       CREATED: 'Created',
       WAITING: 'Waiting',
       RUNNING: 'Running',
       COMPLETED: 'Completed',
+      SUCCESS: 'Success',
       FAILED: 'Failed',
       CANCELLED: 'Cancelled',
+      CANCELED: 'Cancelled',
+      TERMINATED: 'Terminated',
+      TIMEOUT: 'Timeout',
     },
     fileStatus: {
       RECEIVED: 'Received',
@@ -3687,6 +3701,8 @@ const messages: Messages = {
     fieldUpdatedAt: 'Updated at',
   },
   alertList: {
+    pageTitle: 'Alert center',
+    pageDescription: 'Handle running alerts by severity; auto-archived after acknowledgment',
     actionRules: 'Alert routing rules',
     tabOpen: 'Open',
     tabAcked: 'Acked',
@@ -4268,6 +4284,9 @@ const messages: Messages = {
     actionCreate: 'Create tenant',
   },
   tenantList: {
+    pageDescription: 'Multi-tenant instances and isolation config',
+    keywordLabelProto: 'Tenant code',
+    statusPlaceholderProto: 'All',
     keyword: 'Keyword',
     keywordPlaceholder: 'Tenant name / tenantId / description (fuzzy)',
     statusLabel: 'Status',

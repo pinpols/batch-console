@@ -1240,6 +1240,10 @@ export default {
       title: '作业运行',
       description: '查询作业运行记录,执行重跑、取消与终止。',
     },
+    runs: {
+      title: '全部运行',
+      description: '跨作业 / 工作流的最近运行聚合,oncall 排障的统一入口。',
+    },
     monitorJobSteps: { title: '作业步骤', description: '按条件查询作业步骤,定位步骤级执行问题。' },
     monitorWorkflowRuns: {
       title: '工作流运行',
@@ -1284,6 +1288,10 @@ export default {
     observabilityAudits: {
       title: '审计日志',
       description: '查询平台关键操作,追踪用户和接口行为。',
+    },
+    observabilityOperationAudits: {
+      title: '操作审计',
+      description: '控制台所有用户写操作的留痕(告警/审批/Job/Worker/Outbox/API Key 等)。',
     },
     observabilityOutbox: { title: 'Outbox', description: '查看 Outbox 投递状态与重试记录。' },
     observabilityTrace: {
@@ -1507,13 +1515,18 @@ export default {
     reduceFrequency: '建议:操作过于频繁,请降低频率后再试',
   },
   enum: {
+    yn: { true: '是', false: '否' },
     instanceStatus: {
       CREATED: '已创建',
       WAITING: '等待中',
       RUNNING: '运行中',
       COMPLETED: '已完成',
+      SUCCESS: '成功',
       FAILED: '失败',
       CANCELLED: '已取消',
+      CANCELED: '已取消',
+      TERMINATED: '已终止',
+      TIMEOUT: '超时',
     },
     fileStatus: {
       RECEIVED: '已接收',
@@ -3615,6 +3628,8 @@ export default {
     fieldUpdatedAt: '更新时间',
   },
   alertList: {
+    pageTitle: '告警中心',
+    pageDescription: '按严重程度处理运行告警,确认后自动归档',
     actionRules: '告警路由规则',
     tabOpen: '未处理',
     tabAcked: '已确认',
@@ -4183,6 +4198,9 @@ export default {
     actionCreate: '前往创建',
   },
   tenantList: {
+    pageDescription: '多租户实例与隔离配置',
+    keywordLabelProto: '租户 Code',
+    statusPlaceholderProto: '全部',
     keyword: '关键字',
     keywordPlaceholder: '搜索租户名、tenantId 或描述',
     statusLabel: '状态',

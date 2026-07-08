@@ -1,8 +1,7 @@
 <template>
   <PageContainer>
     <!-- 照设计 #alerts:三分组 tab + 告警卡片流(proto dump: docs/redesign/proto-alerts.html) -->
-    <!-- i18n-todo: 设计稿页头文案,建议 key alertList.pageTitle=告警中心 / alertList.pageDescription=按严重程度处理运行告警,确认后自动归档 -->
-    <PageHeader title="告警中心" description="按严重程度处理运行告警,确认后自动归档">
+    <PageHeader :title="t('alertList.pageTitle')" :description="t('alertList.pageDescription')">
       <template #actions>
         <DateRangePresetPicker
           v-model="timeRange"

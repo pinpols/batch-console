@@ -1,8 +1,6 @@
 <template>
   <PageContainer>
-    <!-- 副标题对齐 proto:多租户实例与隔离配置 -->
-    <!-- i18n-todo: tenantList.pageDescription = '多租户实例与隔离配置' -->
-    <PageHeader description="多租户实例与隔离配置">
+    <PageHeader :description="t('tenantList.pageDescription')">
       <template #actions>
         <el-button
           v-if="canManageTenants"
@@ -50,8 +48,7 @@
             @search="onSearch"
             @reset="onReset"
           >
-            <!-- i18n-todo: tenantList.keywordLabelProto = '租户 Code';tenantList.keywordPlaceholderProto = '搜索' -->
-            <el-form-item label="租户 Code">
+            <el-form-item :label="t('tenantList.keywordLabelProto')">
               <el-input
                 class="query-w-220"
                 v-model="queryDraft.keyword"
@@ -61,13 +58,12 @@
               />
             </el-form-item>
             <el-form-item :label="t('tenantList.statusLabel')">
-              <!-- i18n-todo: tenantList.statusPlaceholderProto = '全部' -->
               <MetaSelect
                 class="query-w-140"
                 v-model="queryDraft.status"
                 clearable
                 enum-key="tenantStatus"
-                placeholder="全部"
+                :placeholder="t('tenantList.statusPlaceholderProto')"
                 :options="tenantStatusOptions"
               />
             </el-form-item>
