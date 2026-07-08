@@ -13,20 +13,6 @@
       <div class="login-hero__body">
         <h1 class="login-hero__title">{{ t('login.heroTitle') }}</h1>
         <p class="login-hero__desc">{{ t('login.heroDesc') }}</p>
-        <div class="login-hero__stats">
-          <div class="login-hero__stat">
-            <div class="login-hero__stat-value login-hero__stat-value--accent">99.98%</div>
-            <div class="login-hero__stat-label">{{ t('login.statAvailability') }}</div>
-          </div>
-          <div class="login-hero__stat">
-            <div class="login-hero__stat-value">3.8k+</div>
-            <div class="login-hero__stat-label">{{ t('login.statDailyJobs') }}</div>
-          </div>
-          <div class="login-hero__stat">
-            <div class="login-hero__stat-value">128</div>
-            <div class="login-hero__stat-label">{{ t('login.statTenants') }}</div>
-          </div>
-        </div>
       </div>
 
       <div class="login-hero__foot">© 2026 Batch Console · v{{ appVersion }}</div>
@@ -271,28 +257,6 @@
     font-size: 14px;
     line-height: 1.7;
     color: var(--color-text-secondary);
-  }
-
-  .login-hero__stats {
-    display: flex;
-    gap: 40px;
-  }
-
-  .login-hero__stat-value {
-    font-family: var(--font-mono);
-    font-size: 22px;
-    font-weight: 700;
-    color: var(--color-text-primary);
-  }
-
-  .login-hero__stat-value--accent {
-    color: var(--color-primary);
-  }
-
-  .login-hero__stat-label {
-    margin-top: 4px;
-    font-size: 12px;
-    color: var(--color-text-tertiary);
   }
 
   .login-hero__foot {

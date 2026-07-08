@@ -12,12 +12,7 @@
             </span>
           </template>
 
-          <!-- 去掉与 tab 名重复的 h2 子标题(占屏);描述 + badge 压成一行轻量说明 -->
-          <div class="config-tab__head">
-            <p>{{ item.desc }}</p>
-            <el-tag effect="plain" size="small" type="info">{{ item.badge }}</el-tag>
-          </div>
-
+          <!-- 头部说明行已去(用户反馈:desc+badge 一行松散啰嗦;各 tab 内容自带 hint) -->
           <!-- 仅在该 tab 激活时才挂载子组件,避免一进页面拉 4 套接口 -->
           <template v-if="activeTab === item.key">
             <ConfigChangeLogsTab v-if="item.key === 'logs'" />
@@ -64,29 +59,21 @@
       key: 'logs' as const,
       icon: List,
       title: t('configManagement.tabLogs'),
-      desc: t('configManagement.descLogs'),
-      badge: t('configManagement.badgeAudit'),
     },
     {
       key: 'secrets' as const,
       icon: Key,
       title: t('configManagement.tabSecrets'),
-      desc: t('configManagement.descSecrets'),
-      badge: t('configManagement.badgeSecurity'),
     },
     {
       key: 'sync' as const,
       icon: Connection,
       title: t('configManagement.tabSync'),
-      desc: t('configManagement.descSync'),
-      badge: t('configManagement.badgeAction'),
     },
     {
       key: 'syncLogs' as const,
       icon: Operation,
       title: t('configManagement.tabSyncLogs'),
-      desc: t('configManagement.descSyncLogs'),
-      badge: t('configManagement.badgeAudit'),
     },
   ])
 
@@ -104,27 +91,5 @@
 
   .config-tab__icon {
     font-size: 15px;
-  }
-
-  .config-tab__head {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: var(--space-md);
-    margin-bottom: 10px;
-  }
-
-  .config-tab__head p {
-    margin: 0;
-    font-size: 12.5px;
-    line-height: 1.4;
-    color: var(--color-text-tertiary);
-  }
-
-  @media (max-width: 640px) {
-    .config-tab__head {
-      flex-direction: column;
-      align-items: stretch;
-    }
   }
 </style>

@@ -8,15 +8,7 @@
       </template>
     </PageHeader>
 
-    <div class="metric-row">
-      <MetricCard
-        :label="t('myWorkers.countLabel')"
-        :value="count"
-        tone="info"
-        :description="t('myWorkers.countDescription')"
-      />
-    </div>
-
+    <!-- 单张计数卡已去(用户反馈:1 卡独占一行浪费;计数与表格分页 total 重复) -->
     <SectionCard>
       <ProTable
         :data="rows"
@@ -58,13 +50,12 @@
   import { useListLoadState } from '@/composables/useListLoadState'
   import { useTenantReload } from '@/composables/useTenantReload'
   import { useSseAutoReload } from '@/composables/useSseAutoReload'
-  import { listMyWorkers, countMyWorkers } from '@/api/myWorkers'
+  import { listMyWorkers } from '@/api/myWorkers'
   import { toPageResult } from '@/api/adapters'
   import { useTenantStore } from '@/stores/tenant'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
-  import MetricCard from '@/components/common/MetricCard.vue'
   import ProTable from '@/components/table/ProTable.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
   import CopyableText from '@/components/common/CopyableText.vue'
@@ -75,7 +66,6 @@
 
   const page = ref(1)
   const pageSize = ref(15)
-  const count = ref(0)
   const allWorkers = ref<ConsoleWorkerRegistryResponse[]>([])
 
   const { loading, error: loadError, run } = useListLoadState()
@@ -88,12 +78,8 @@
 
   async function loadData() {
     await run(async () => {
-      const [list, c] = await Promise.all([
-        listMyWorkers(tenant.tenantId),
-        countMyWorkers(tenant.tenantId),
-      ])
+      const list = await listMyWorkers(tenant.tenantId)
       allWorkers.value = list ?? []
-      count.value = typeof c === 'number' ? c : (list?.length ?? 0)
       page.value = 1
     })
   }
@@ -110,11 +96,3 @@
     scope: () => tenant.tenantId,
   })
 </script>
-
-<style scoped>
-  .metric-row {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 240px));
-    gap: var(--space-sm);
-  }
-</style>

@@ -169,8 +169,9 @@
       /** 列描述(配合 columnConfigId);声明每列 key/label/可隐藏性/默认隐藏 */
       columnDefs?: ProTableColumnDef[]
       /**
-       * 表格自适应视口高度:表体内部滚动、表头 + 分页钉住、页面本身不滚(笔记本首屏零滚)。
-       * 默认开;下方还有内容/需要整页滚的页面传 false 关闭。
+       * 表格自适应视口高度:表体内部滚动、表头 + 分页钉住、页面本身不滚。
+       * 默认关(用户反馈:15 行/页的表格不应出现表内滚动条,整页自然滚动);
+       * 确需首屏钉住表头+分页的页面显式传 true 开启。
        */
       autoFillHeight?: boolean
     }>(),
@@ -185,7 +186,7 @@
       skeletonRows: 6,
       error: undefined,
       persistPageSize: true,
-      autoFillHeight: true,
+      autoFillHeight: false,
     },
   )
 

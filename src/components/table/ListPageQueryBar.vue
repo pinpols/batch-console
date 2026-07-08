@@ -1,8 +1,12 @@
 <template>
   <el-form
+    ref="formRef"
     inline
     class="query-form"
-    :class="[`query-form--cols-${cols}`, { 'is-collapsed': collapsible && collapsed }]"
+    :class="[
+      `query-form--cols-${cols}`,
+      { 'is-collapsed': collapsible && collapsed, 'query-form--label-left': labelLeft },
+    ]"
     v-bind="attrs"
     @submit.prevent="emit('search')"
   >
@@ -10,6 +14,13 @@
     <el-form-item v-if="showTrailing || collapsible" class="query-actions">
       <!-- prepend(已保存筛选等辅助控件)与操作按钮同行,不再占字段格(label 上置布局下孤格突兀) -->
       <slot name="prepend" />
+      <!-- 收起/展开筛选:放操作组最左(用户反馈),笔记本首屏省 ~113px 竖向空间,状态按路由持久化 -->
+      <el-button v-if="collapsible" text class="query-collapse-toggle" @click="toggleCollapsed">
+        {{ collapsed ? t('proTable.filterExpand') : t('proTable.filterCollapse') }}
+        <el-icon class="query-collapse-toggle__chev" :class="{ 'is-collapsed': collapsed }">
+          <ChevronUp />
+        </el-icon>
+      </el-button>
       <el-button
         v-if="showSearch && !(collapsible && collapsed)"
         type="primary"
@@ -38,19 +49,12 @@
       >
         {{ t('common.refresh') }}
       </el-button>
-      <!-- 收起/展开筛选:笔记本首屏省 ~113px 竖向空间,状态按路由持久化 -->
-      <el-button v-if="collapsible" text class="query-collapse-toggle" @click="toggleCollapsed">
-        {{ collapsed ? t('proTable.filterExpand') : t('proTable.filterCollapse') }}
-        <el-icon class="query-collapse-toggle__chev" :class="{ 'is-collapsed': collapsed }">
-          <ChevronUp />
-        </el-icon>
-      </el-button>
     </el-form-item>
   </el-form>
 </template>
 
 <script setup lang="ts">
-  import { computed, ref, useAttrs } from 'vue'
+  import { computed, onMounted, onUpdated, ref, useAttrs } from 'vue'
   import { useRoute } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import {
@@ -77,6 +81,11 @@
       cols?: 2 | 3 | 4
       /** 是否提供「收起/展开筛选」开关(笔记本首屏省竖向空间),默认开 */
       collapsible?: boolean
+      /**
+       * label 位置:'auto'(默认)= 字段 ≤3 时 label 放字段左侧同行(紧凑,用户反馈),
+       * 字段多时 label 上置网格;也可显式 'top' / 'left' 锁定。
+       */
+      labelPosition?: 'auto' | 'top' | 'left'
     }>(),
     {
       filterBusy: false,
@@ -87,6 +96,7 @@
       showRefresh: true,
       cols: 3,
       collapsible: true,
+      labelPosition: 'auto',
     },
   )
 
@@ -117,6 +127,26 @@
   }>()
 
   const attrs = useAttrs()
+
+  // 'auto' 模式:数 DOM 里的字段格(不含操作格)决定 label 左置还是上置。
+  // 收起态字段仅 display:none 仍在 DOM,计数不受影响;字段动态 v-if 时 onUpdated 重数。
+  const formRef = ref<{ $el?: HTMLElement } | null>(null)
+  const fieldCount = ref(99)
+  function recountFields() {
+    const el = formRef.value?.$el
+    if (!el) return
+    fieldCount.value = el.querySelectorAll('.el-form-item:not(.query-actions)').length
+  }
+  onMounted(recountFields)
+  onUpdated(recountFields)
+
+  const labelLeft = computed(() =>
+    props.labelPosition === 'left'
+      ? true
+      : props.labelPosition === 'top'
+        ? false
+        : fieldCount.value <= 3,
+  )
 
   const refreshLoading = computed(() =>
     props.refreshBusy === undefined ? props.filterBusy : props.refreshBusy,
@@ -266,13 +296,42 @@
     max-width: none !important;
   }
 
+  /* ── label 左置紧凑模式(字段 ≤3 自动启用):label 与控件同行,整条筛选栏收成单行 ── */
+  .query-form--label-left :deep(.el-form-item:not(.query-actions)) {
+    flex-direction: row;
+    align-items: center;
+    flex: 0 0 auto;
+    min-width: 0;
+    max-width: none;
+  }
+
+  .query-form--label-left :deep(.el-form-item:not(.query-actions) .el-form-item__label) {
+    margin-bottom: 0;
+    margin-right: 8px;
+  }
+
+  /* 行内模式下控件不再吃满栅格,给固定宽度(query-w-* 固定宽类恢复生效) */
+  .query-form--label-left :deep(.el-form-item__content > .el-input),
+  .query-form--label-left :deep(.el-form-item__content > .el-select),
+  .query-form--label-left :deep(.el-form-item__content > .el-date-editor),
+  .query-form--label-left :deep(.el-form-item__content > .el-cascader),
+  .query-form--label-left :deep(.el-form-item__content > .el-input-number),
+  .query-form--label-left :deep(.el-form-item__content > .el-autocomplete) {
+    width: var(--el-input-width, 200px) !important;
+  }
+
+  .query-form--label-left :deep(.el-form-item__content) {
+    --el-input-width: 200px;
+  }
+
   /* 操作按钮组:尺寸自适应内容 + margin-left:auto 塞进当前行右侧空位;有空同行、
-     没空才折行(省行、修此前独占整行/溢出两种毛病)。覆盖字段的 flex 弹性。 */
+     没空才折行(省行、修此前独占整行/溢出两种毛病)。覆盖字段的 flex 弹性。
+     margin 需 !important:上方 :deep(.el-form-item) 的 margin:0 特异度更高,否则靠右失效。 */
   .query-actions {
     flex: 0 0 auto !important;
     min-width: 0 !important;
     max-width: none !important;
-    margin-left: auto;
+    margin: 0 0 0 auto !important;
     align-self: end;
   }
 

@@ -1,19 +1,23 @@
 <template>
   <PageContainer>
-    <PageHeader />
-
-    <!-- P2.2 顶部全局 Trace 快搜:粘 traceId 直跳 Trace 诊断(独立筛选条,无卡壳) -->
-    <div class="obs-trace-bar">
-      <TraceIdInput
-        v-model="traceQuick"
-        :placeholder="t('observability.traceQuickPlaceholder')"
-        class="obs-trace-bar__input"
-      />
-      <el-button type="primary" :disabled="!traceQuick.trim()" @click="jumpTrace">
-        {{ t('observability.traceQuickGo') }}
-      </el-button>
-      <span class="obs-trace-bar__hint">{{ t('observability.traceQuickHint') }}</span>
-    </div>
+    <PageHeader>
+      <!-- Trace 快搜收进页头右侧(用户反馈:原独占整行大条太浪费);hint 收进 tooltip -->
+      <template #actions>
+        <el-tooltip :content="t('observability.traceQuickHint')" placement="bottom">
+          <div class="obs-trace-quick">
+            <TraceIdInput
+              v-model="traceQuick"
+              :placeholder="t('observability.traceQuickPlaceholder')"
+              class="obs-trace-quick__input"
+              @keyup.enter="jumpTrace"
+            />
+            <el-button type="primary" :disabled="!traceQuick.trim()" @click="jumpTrace">
+              {{ t('observability.traceQuickGo') }}
+            </el-button>
+          </div>
+        </el-tooltip>
+      </template>
+    </PageHeader>
 
     <el-tabs v-model="activeTab" class="pill-tabs">
       <el-tab-pane :label="t('observability.tabDeadLetters')" name="deadLetters">
@@ -33,23 +37,13 @@
 </template>
 
 <style scoped>
-  .obs-trace-bar {
+  .obs-trace-quick {
     display: flex;
     gap: 8px;
     align-items: center;
-    padding: 7px 14px;
-    margin: 6px 0 12px;
-    border: 1px solid var(--color-border);
-    border-radius: 9px;
-    background: var(--color-bg-card);
   }
-  .obs-trace-bar__input {
-    flex: 0 0 480px;
-    max-width: 60%;
-  }
-  .obs-trace-bar__hint {
-    color: var(--color-text-tertiary);
-    font-size: 12px;
+  .obs-trace-quick__input {
+    width: 320px;
   }
 </style>
 
