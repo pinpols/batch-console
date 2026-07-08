@@ -2,16 +2,16 @@
   <el-form
     inline
     class="query-form"
-    :class="`query-form--cols-${cols}`"
+    :class="[`query-form--cols-${cols}`, { 'is-collapsed': collapsible && collapsed }]"
     v-bind="attrs"
     @submit.prevent="emit('search')"
   >
     <slot />
-    <el-form-item v-if="showTrailing" class="query-actions">
+    <el-form-item v-if="showTrailing || collapsible" class="query-actions">
       <!-- prepend(已保存筛选等辅助控件)与操作按钮同行,不再占字段格(label 上置布局下孤格突兀) -->
       <slot name="prepend" />
       <el-button
-        v-if="showSearch"
+        v-if="showSearch && !(collapsible && collapsed)"
         type="primary"
         :icon="Search"
         :loading="filterBusy"
@@ -21,7 +21,7 @@
         {{ t('common.search') }}
       </el-button>
       <el-button
-        v-if="showReset"
+        v-if="showReset && !(collapsible && collapsed)"
         :icon="RefreshLeft"
         :loading="filterBusy"
         :disabled="disabled"
@@ -38,14 +38,27 @@
       >
         {{ t('common.refresh') }}
       </el-button>
+      <!-- 收起/展开筛选:笔记本首屏省 ~113px 竖向空间,状态按路由持久化 -->
+      <el-button v-if="collapsible" text class="query-collapse-toggle" @click="toggleCollapsed">
+        {{ collapsed ? t('proTable.filterExpand') : t('proTable.filterCollapse') }}
+        <el-icon class="query-collapse-toggle__chev" :class="{ 'is-collapsed': collapsed }">
+          <ChevronUp />
+        </el-icon>
+      </el-button>
     </el-form-item>
   </el-form>
 </template>
 
 <script setup lang="ts">
-  import { computed, useAttrs } from 'vue'
+  import { computed, ref, useAttrs } from 'vue'
+  import { useRoute } from 'vue-router'
   import { useI18n } from 'vue-i18n'
-  import { RefreshCw as Refresh, RotateCcw as RefreshLeft, Search } from 'lucide-vue-next'
+  import {
+    RefreshCw as Refresh,
+    RotateCcw as RefreshLeft,
+    Search,
+    ChevronUp,
+  } from 'lucide-vue-next'
   const { t } = useI18n({ useScope: 'global' })
 
   defineOptions({ inheritAttrs: false })
@@ -62,6 +75,8 @@
       showRefresh?: boolean
       /** 网格列数 2/3/4 三档,默认 3。字段少用 2,字段多用 4 */
       cols?: 2 | 3 | 4
+      /** 是否提供「收起/展开筛选」开关(笔记本首屏省竖向空间),默认开 */
+      collapsible?: boolean
     }>(),
     {
       filterBusy: false,
@@ -71,8 +86,29 @@
       showReset: true,
       showRefresh: true,
       cols: 3,
+      collapsible: true,
     },
   )
+
+  // 收起状态按路由持久化:同一页记住用户的收起/展开偏好。
+  const route = useRoute()
+  const collapseKey = computed(() => `bc:filter-collapsed:${route.path}`)
+  const collapsed = ref(readCollapsed())
+  function readCollapsed(): boolean {
+    try {
+      return localStorage.getItem(`bc:filter-collapsed:${route.path}`) === '1'
+    } catch {
+      return false
+    }
+  }
+  function toggleCollapsed() {
+    collapsed.value = !collapsed.value
+    try {
+      localStorage.setItem(collapseKey.value, collapsed.value ? '1' : '0')
+    } catch {
+      /* ignore quota / private-mode */
+    }
+  }
 
   const emit = defineEmits<{
     search: []
@@ -118,6 +154,18 @@
   .query-form--cols-3.el-form--inline,
   .query-form--cols-4.el-form--inline {
     width: 100%;
+  }
+
+  /* 收起态:隐藏所有字段格,只留操作行(收起/展开 + 刷新);筛选栏 ~113px → ~40px */
+  .query-form.is-collapsed :deep(.el-form-item):not(.query-actions) {
+    display: none;
+  }
+  .query-collapse-toggle__chev {
+    margin-left: 2px;
+    transition: transform 0.15s ease;
+  }
+  .query-collapse-toggle__chev.is-collapsed {
+    transform: rotate(180deg);
   }
 
   @media (max-width: 720px) {

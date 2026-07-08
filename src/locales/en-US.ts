@@ -692,6 +692,8 @@ const messages: Messages = {
     empty: 'No data',
     filteredEmpty: 'No matching data — adjust the filters and try again',
     loadFailed: 'Failed to load. Please retry.',
+    filterCollapse: 'Collapse',
+    filterExpand: 'Filters',
     loadingMore: 'Loading…',
     columnSettings: {
       trigger: 'Columns',
