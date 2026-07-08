@@ -7,11 +7,18 @@ import { enterDemoApp, expectPageTitle, isVisible } from './support/app'
 
 const TOTAL_REPORTS = 9
 
+// 重构后(#182)报表页拆为「趋势分析 / 导出中心」双 tab,报表卡片在导出中心 tab 内。
+async function openExports(page: import('@playwright/test').Page) {
+  await page.locator('.rp-tab', { hasText: '导出中心' }).click()
+  await expect(page.locator('.report-card').first()).toBeVisible()
+}
+
 test.describe('报表导出中心 — 页面基础', () => {
   test.beforeEach(async ({ page }) => {
     await enterDemoApp(page)
     await page.goto('/reports')
     await expectPageTitle(page, /报表中心/)
+    await openExports(page)
   })
 
   test('展示所有报表卡片', async ({ page }) => {
@@ -44,6 +51,7 @@ test.describe('报表导出中心 — 搜索过滤', () => {
     await enterDemoApp(page)
     await page.goto('/reports')
     await expectPageTitle(page, /报表中心/)
+    await openExports(page)
   })
 
   test('关键字搜索"调度"只展示调度相关卡片', async ({ page }) => {
@@ -96,6 +104,7 @@ test.describe('报表导出中心 — 下载交互', () => {
     await enterDemoApp(page)
     await page.goto('/reports')
     await expectPageTitle(page, /报表中心/)
+    await openExports(page)
   })
 
   test('点击下载按钮触发请求并出现 toast', async ({ page }) => {

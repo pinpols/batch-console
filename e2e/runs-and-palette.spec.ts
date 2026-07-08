@@ -89,7 +89,7 @@ test.describe('⌘K Command Palette', () => {
     await page.waitForTimeout(300)
     const modifier = browserName === 'webkit' ? 'Meta' : 'Control'
     await page.keyboard.press(`${modifier}+KeyK`)
-    const input = page.locator('.command-palette .el-input__inner').first()
+    const input = page.locator('.command-palette .cp-header__input').first()
     await expect(input).toBeVisible({ timeout: 5000 })
   })
 
@@ -100,7 +100,7 @@ test.describe('⌘K Command Palette', () => {
     await page.waitForTimeout(300)
     const modifier = browserName === 'webkit' ? 'Meta' : 'Control'
     await page.keyboard.press(`${modifier}+KeyK`)
-    const input = page.locator('.command-palette .el-input__inner').first()
+    const input = page.locator('.command-palette .cp-header__input').first()
     await expect(input).toBeVisible({ timeout: 5000 })
 
     await input.fill('告警')
@@ -120,7 +120,7 @@ test.describe('⌘K Command Palette', () => {
     await page.waitForTimeout(300)
     const modifier = browserName === 'webkit' ? 'Meta' : 'Control'
     await page.keyboard.press(`${modifier}+KeyK`)
-    const input = page.locator('.command-palette .el-input__inner').first()
+    const input = page.locator('.command-palette .cp-header__input').first()
     await expect(input).toBeVisible({ timeout: 5000 })
 
     await input.fill('123')
@@ -136,7 +136,7 @@ test.describe('⌘K Command Palette', () => {
     await page.waitForTimeout(300)
     const modifier = browserName === 'webkit' ? 'Meta' : 'Control'
     await page.keyboard.press(`${modifier}+KeyK`)
-    const input = page.locator('.command-palette .el-input__inner').first()
+    const input = page.locator('.command-palette .cp-header__input').first()
     await expect(input).toBeVisible({ timeout: 5000 })
 
     await page.keyboard.press('Escape')

@@ -221,7 +221,10 @@ test.describe('租户配额 — 筛选与启用切换', () => {
     if (!(await isVisible(input, 2000))) return
     await input.fill('quota')
     await page.getByRole('button', { name: '搜索' }).first().click()
-    await expect(page.locator('.el-table, .el-card').first()).toBeAttached({ timeout: 10_000 })
+    // 搜索能执行并渲染结果区(表格 / 卡片 / 空态皆可 —— 关键字可能无匹配)
+    await expect(
+      page.locator('.el-table, .el-card, .el-empty, .empty-state').first(),
+    ).toBeAttached({ timeout: 10_000 })
   })
 
   test('启用状态筛选 → 查询', async ({ page }) => {
