@@ -36,9 +36,11 @@
             <div class="layout-main__content">
               <RouterView v-slot="{ Component, route: r }">
                 <ErrorBoundary :route-key="r.fullPath">
-                  <KeepAlive :max="20">
-                    <component :is="Component" :key="r.path" />
-                  </KeepAlive>
+                  <Transition name="page-fade" mode="out-in">
+                    <KeepAlive :max="20">
+                      <component :is="Component" :key="r.path" />
+                    </KeepAlive>
+                  </Transition>
                 </ErrorBoundary>
               </RouterView>
             </div>

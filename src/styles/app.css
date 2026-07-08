@@ -1498,3 +1498,29 @@ html.dark .pill-tabs .el-tabs__item.is-active:hover {
 .layout-header {
   padding: 0 !important;
 }
+
+/* ── 路由内容进场淡入(subtle,快)：切页更有质感,不干扰交互 ── */
+.page-fade-enter-active {
+  transition:
+    opacity 0.16s ease,
+    transform 0.16s ease;
+}
+.page-fade-leave-active {
+  transition: opacity 0.1s ease;
+}
+.page-fade-enter-from {
+  opacity: 0;
+  transform: translateY(6px);
+}
+.page-fade-leave-to {
+  opacity: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .page-fade-enter-active,
+  .page-fade-leave-active {
+    transition: none;
+  }
+  .page-fade-enter-from {
+    transform: none;
+  }
+}
