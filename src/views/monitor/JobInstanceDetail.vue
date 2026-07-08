@@ -51,16 +51,19 @@
       <MetricCard
         :label="t('monitor.detailMetricInstanceNo')"
         :value="compactIdentifier(row.instanceNo)"
+        :copy-value="row.instanceNo"
         :description="row.instanceNo"
       />
       <MetricCard
         :label="t('monitor.detailMetricStatus')"
         :value="row.instanceStatus"
+        :tone="statusTone(row.instanceStatus)"
         description="instanceStatus"
       />
       <MetricCard
         :label="t('monitor.detailMetricJobCode')"
         :value="compactIdentifier(row.jobCode, 18, 8)"
+        :copy-value="row.jobCode"
         :description="row.jobCode"
       />
       <MetricCard
@@ -71,6 +74,7 @@
       <MetricCard
         :label="t('monitor.detailMetricTrace')"
         :value="compactIdentifier(row.traceId)"
+        :copy-value="row.traceId || ''"
         :description="row.traceId || 'traceId'"
       />
       <MetricCard
@@ -358,7 +362,7 @@
   const { t } = useI18n({ useScope: 'global' })
   import { useRoute, useRouter } from 'vue-router'
   import { ElMessage } from 'element-plus'
-  import { Refresh } from '@element-plus/icons-vue'
+  import { RefreshCw as Refresh } from 'lucide-vue-next'
   import { useRefreshAction } from '@/composables/useRefreshAction'
 
   const refresh = useRefreshAction()
@@ -440,6 +444,17 @@
     if (!text) return '—'
     if (text.length <= head + tail + 3) return text
     return `${text.slice(0, head)}...${text.slice(-tail)}`
+  }
+
+  function statusTone(
+    status: string | null | undefined,
+  ): 'neutral' | 'info' | 'success' | 'warning' | 'danger' {
+    const s = (status ?? '').toUpperCase()
+    if (['SUCCESS', 'COMPLETED', 'SUCCEEDED'].includes(s)) return 'success'
+    if (['FAILED', 'ERROR', 'CANCELLED', 'CANCELED'].includes(s)) return 'danger'
+    if (['RUNNING', 'EXECUTING', 'CLAIMED', 'DISPATCHED'].includes(s)) return 'info'
+    if (['WAITING', 'PENDING', 'QUEUED', 'PAUSED', 'COMPENSATING'].includes(s)) return 'warning'
+    return 'neutral'
   }
 
   const taskOptions = computed(() =>

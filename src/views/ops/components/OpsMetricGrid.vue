@@ -150,8 +150,8 @@
 <style scoped>
   .metric-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: var(--page-section-gap);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
   }
 
   .metric-hit {
@@ -183,5 +183,23 @@
     visibility: visible;
     pointer-events: auto;
     opacity: 1;
+  }
+
+  @media (max-width: 1160px) {
+    .metric-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 860px) {
+    .metric-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 560px) {
+    .metric-grid {
+      grid-template-columns: 1fr;
+    }
   }
 </style>

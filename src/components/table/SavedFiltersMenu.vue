@@ -49,7 +49,15 @@
 
 <script setup lang="ts">
   import { ElMessage, ElMessageBox } from 'element-plus'
-  import { Star, Plus, Search, EditPen, Delete, Upload, Download } from '@element-plus/icons-vue'
+  import {
+    Star,
+    Plus,
+    Search,
+    PencilLine as EditPen,
+    Trash2 as Delete,
+    Upload,
+    Download,
+  } from 'lucide-vue-next'
   import { useI18n } from 'vue-i18n'
   import type { SavedFilterSet } from '@/composables/useSavedFilters'
 

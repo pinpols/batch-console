@@ -14,7 +14,7 @@
       </template>
     </PageHeader>
 
-    <SectionCard>
+    <div>
       <el-tabs v-model="activeTab" class="pill-tabs">
         <el-tab-pane :label="t('notificationManagement.tabChannels')" name="channels">
           <NotificationChannelsTab ref="channelsTabRef" />
@@ -29,17 +29,16 @@
           <NotificationDeliveryLogsTab />
         </el-tab-pane>
       </el-tabs>
-    </SectionCard>
+    </div>
   </PageContainer>
 </template>
 
 <script setup lang="ts">
   import { computed, ref } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { Plus } from '@element-plus/icons-vue'
+  import { Plus } from 'lucide-vue-next'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
-  import SectionCard from '@/components/common/SectionCard.vue'
   import NotificationChannelsTab from './components/NotificationChannelsTab.vue'
   import NotificationRulesTab from './components/NotificationRulesTab.vue'
   import NotificationWebhooksTab from './components/NotificationWebhooksTab.vue'

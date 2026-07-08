@@ -3,10 +3,10 @@
     <div v-if="$slots.query" class="pro-table__query">
       <slot name="query" />
     </div>
-    <div v-if="$slots.toolbar || hasColumnSettings" class="pro-table__toolbar">
+    <div v-if="$slots.toolbar || showColumnSettingsControl" class="pro-table__toolbar">
       <slot name="toolbar" />
       <!-- 列设置:仅在传入 columnConfigId + columnDefs 时渲染,默认行为零变化 -->
-      <div v-if="hasColumnSettings" class="pro-table__col-settings">
+      <div v-if="showColumnSettingsControl" class="pro-table__col-settings">
         <el-popover
           placement="bottom-end"
           trigger="click"
@@ -102,7 +102,7 @@
   import type { TableInstance } from 'element-plus'
   import { useRoute } from 'vue-router'
   import { useI18n } from 'vue-i18n'
-  import { Refresh, Operation } from '@element-plus/icons-vue'
+  import { RefreshCw as Refresh, SlidersHorizontal as Operation } from 'lucide-vue-next'
 
   /**
    * 列设置的列描述。key 与页面里 el-table-column 的标识一一对应。
@@ -146,6 +146,8 @@
       /** 仅一页数据时隐藏分页条 */
       hidePagerWhenSinglePage?: boolean
       pageSizes?: number[]
+      /** 启用列显隐逻辑时是否展示列设置入口;设计还原页可关闭入口但保留默认列集 */
+      showColumnSettings?: boolean
       /** 骨架屏行数（首次加载时显示） */
       skeletonRows?: number
       /** 加载失败状态(优先于 emptyText 展示);传 Error 或任意 truthy 值 */
@@ -173,6 +175,7 @@
       showPager: true,
       hidePagerWhenSinglePage: true,
       pageSizes: () => [...DEFAULT_PAGE_SIZES],
+      showColumnSettings: true,
       skeletonRows: 6,
       error: undefined,
       persistPageSize: true,
@@ -202,6 +205,9 @@
   // 仅当同时传入 columnConfigId + 非空 columnDefs 时启用;否则整套能力关闭。
   const hasColumnSettings = computed(
     () => !!props.columnConfigId && (props.columnDefs?.length ?? 0) > 0,
+  )
+  const showColumnSettingsControl = computed(
+    () => props.showColumnSettings && hasColumnSettings.value,
   )
   const colStorageKey = computed(() => 'protable-cols:' + (props.columnConfigId ?? ''))
 
@@ -249,8 +255,8 @@
     return !hiddenKeys.value.has(key)
   }
 
-  const visibleKeys = computed(
-    () => (props.columnDefs ?? []).map((d) => d.key).filter((k) => isColVisible(k)),
+  const visibleKeys = computed(() =>
+    (props.columnDefs ?? []).map((d) => d.key).filter((k) => isColVisible(k)),
   )
 
   function toggleColumn(key: string, visible: boolean) {
@@ -334,6 +340,7 @@
 
 <style scoped>
   .pro-table {
+    position: relative;
     display: flex;
     flex-direction: column;
     width: 100%;
@@ -347,14 +354,16 @@
     margin-bottom: 0;
   }
 
+  /* 工具行:实时状态/批量条在左、列设置在右,正常文档流一行。
+     此前 height:0 + 绝对定位把内容叠进表头(「●实时」压住「状态」列),已废弃该 hack。 */
   .pro-table__toolbar {
-    margin-bottom: var(--page-block-gap);
+    min-height: 28px;
+    margin: 0 0 10px;
     display: flex;
     align-items: center;
     gap: 8px;
   }
 
-  /* 列设置按钮始终靠右;toolbar 槽内容占据左侧 */
   .pro-table__col-settings {
     margin-left: auto;
   }

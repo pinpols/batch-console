@@ -1,5 +1,10 @@
 <template>
-  <el-table-column v-bind="colProps" :formatter="formatter" />
+  <el-table-column v-bind="colProps">
+    <template #default="{ row }">
+      <!-- 还原设计:时间/编号一律等宽字体 -->
+      <span class="dt-mono">{{ fmtDatetime(cellValue(row)) }}</span>
+    </template>
+  </el-table-column>
 </template>
 
 <script setup lang="ts">
@@ -30,7 +35,15 @@
     showOverflowTooltip: props.showOverflowTooltip,
   }))
 
-  function formatter(_row: unknown, _col: unknown, val: unknown): string {
-    return fmtDatetime(val)
+  function cellValue(row: unknown): unknown {
+    return (row as Record<string, unknown>)?.[props.prop]
   }
 </script>
+
+<style scoped>
+  .dt-mono {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--color-text-secondary);
+  }
+</style>

@@ -1,231 +1,245 @@
 <template>
   <PageContainer>
-    <PageHeader />
+    <!-- 照设计 #outbox:头部统计 pill + 彩点计数 tab 行 + 实时条(proto dump: docs/redesign/proto-outbox.html)。
+         dump 的「全部重试」批量钮无后端端点,不做(批量重投走表格多选 BulkActionBar)。 -->
+    <PageHeader>
+      <template #actions>
+        <div class="ob-stat">
+          <span class="ob-stat__dot" />
+          <span class="ob-stat__label">{{ t('observability.outboxStatSuccess') }}</span>
+          <span class="ob-stat__value">{{ successCount.toLocaleString() }}</span>
+        </div>
+      </template>
+    </PageHeader>
 
-    <SectionCard>
-      <el-tabs v-model="tab" class="pill-tabs">
-        <el-tab-pane :label="t('observability.outboxTabRetry')" name="retry">
-          <ProTable
-            ref="retryTableRef"
-            :data="retryRows"
-            :loading="tableBlocking"
-            :total="retryTotal"
-            v-model:page="retryPage"
-            v-model:page-size="retryPageSize"
-            @change="sliceRetry"
-            @selection-change="bulk.onSelectionChange"
-            :error="loadError"
-            :on-retry="loadTab"
+    <div class="ob-tabs">
+      <button
+        v-for="tb in obTabs"
+        :key="tb.key"
+        type="button"
+        class="ob-tab"
+        :class="{ 'is-active': tab === tb.key }"
+        @click="tab = tb.key"
+      >
+        <span class="ob-tab__dot" :style="{ background: tb.dot }" />
+        <span>{{ tb.label }}</span>
+        <span v-if="tb.count !== null" class="ob-tab__count">{{ tb.count }}</span>
+      </button>
+    </div>
+
+    <div class="ob-live">
+      <span class="ob-live__dot" :class="{ 'is-off': live.status.value !== 'live' }" />
+      <span class="ob-live__title">{{ t('jobInstanceList.liveTitle') }}</span>
+      <span class="ob-live__sub">{{ t('jobInstanceList.liveEvery') }}</span>
+      <span class="ob-live__spacer" />
+      <span class="ob-live__time">{{ t('jobInstanceList.liveLast') }} {{ lastRefreshText }}</span>
+    </div>
+
+    <div v-show="tab === 'retry'">
+      <ProTable
+        ref="retryTableRef"
+        :data="retryRows"
+        :loading="tableBlocking"
+        :total="retryTotal"
+        v-model:page="retryPage"
+        v-model:page-size="retryPageSize"
+        @change="sliceRetry"
+        @selection-change="bulk.onSelectionChange"
+        :error="loadError"
+        :on-retry="loadTab"
+      >
+        <template #query>
+          <ListPageQueryBar
+            :filter-busy="queryActionBusy"
+            :refresh-busy="loading"
+            :disabled="loading"
+            @search="onRetrySearch"
+            @reset="onRetryReset"
+            @refresh="() => runRefresh(loadTab)"
           >
-            <template #query>
-              <ListPageQueryBar
-                :filter-busy="queryActionBusy"
-                :refresh-busy="loading"
-                :disabled="loading"
-                @search="onRetrySearch"
-                @reset="onRetryReset"
-                @refresh="() => runRefresh(loadTab)"
-              >
-                <el-form-item :label="t('observability.outboxKeywordLabel')">
-                  <el-input
-                    class="query-w-220"
-                    v-model="retryKwDraft"
-                    clearable
-                    :placeholder="t('observability.outboxRetryKeywordPlaceholder')"
-                    @keyup.enter="onRetrySearch"
-                  />
-                </el-form-item>
-                <el-form-item :label="t('observability.outboxStatusLabel')">
-                  <MetaSelect
-                    class="query-w-200"
-                    v-model="retryStatusDraft"
-                    clearable
-                    filterable
-                    allow-create
-                    default-first-option
-                    enum-key="outboxPublishStatus"
-                    :placeholder="t('observability.outboxRetryStatusPlaceholder')"
-                    @keyup.enter="onRetrySearch"
-                    :options="retryStatusSelectOptions"
-                  />
-                </el-form-item>
-              </ListPageQueryBar>
-            </template>
-            <template #toolbar>
-              <OpsListToolbar
-                :status="live.status.value"
-                :last-refreshed-at="live.lastRefreshedAt.value"
-              >
-                <BulkActionBar
-                  :count="bulk.count.value"
-                  :running="bulk.running.value"
-                  @clear="bulk.clear"
-                >
-                  <template #default="{ running }">
-                    <el-button
-                      size="small"
-                      type="warning"
-                      plain
-                      :loading="running"
-                      @click="onBulkRepublish"
-                    >
-                      {{ t('observability.outboxBulkRepublish') }}
-                    </el-button>
-                  </template>
-                </BulkActionBar>
-              </OpsListToolbar>
-            </template>
-            <el-table-column type="selection" width="44" :selectable="() => true" />
-            <el-table-column
-              prop="eventType"
-              :label="t('observability.outboxColEventType')"
-              width="140"
-            />
-            <el-table-column
-              prop="eventKey"
-              :label="t('observability.outboxColKey')"
-              min-width="160"
-              show-overflow-tooltip
-            />
-            <el-table-column
-              prop="retryStatus"
-              :label="t('observability.outboxColStatus')"
-              width="120"
-            >
-              <template #default="{ row }">
-                <StatusTag :value="String(row.retryStatus ?? '')" category="outboxPublishStatus" />
-              </template>
-            </el-table-column>
-            <el-table-column
-              prop="retryCount"
-              :label="t('observability.outboxColCount')"
-              width="70"
-              align="right"
-            />
-            <el-table-column
-              prop="retryPolicy"
-              :label="t('observability.outboxColPolicy')"
-              width="120"
-              show-overflow-tooltip
-            />
-            <DatetimeColumn
-              prop="nextRetryAt"
-              :label="t('observability.outboxColNextRetry')"
-              width="160"
-            />
-            <el-table-column :label="t('observability.outboxColActions')" width="120" fixed="right">
-              <template #default="{ row }">
-                <div class="table-actions">
-                  <el-button size="small" plain type="primary" @click="openDetail('retry', row)">
-                    {{ t('observability.outboxActionDetail') }}
-                  </el-button>
-                </div>
-              </template>
-            </el-table-column>
-          </ProTable>
-        </el-tab-pane>
-        <el-tab-pane :label="t('observability.outboxTabDelivery')" name="delivery">
-          <ProTable
-            :data="deliveryRows"
-            :loading="tableBlocking"
-            :total="deliveryTotal"
-            v-model:page="deliveryPage"
-            v-model:page-size="deliveryPageSize"
-            @change="sliceDelivery"
+            <el-form-item :label="t('observability.outboxKeywordLabel')">
+              <el-input
+                class="query-w-220"
+                v-model="retryKwDraft"
+                clearable
+                :placeholder="t('observability.outboxRetryKeywordPlaceholder')"
+                @keyup.enter="onRetrySearch"
+              />
+            </el-form-item>
+            <el-form-item :label="t('observability.outboxStatusLabel')">
+              <MetaSelect
+                class="query-w-200"
+                v-model="retryStatusDraft"
+                clearable
+                filterable
+                allow-create
+                default-first-option
+                enum-key="outboxPublishStatus"
+                :placeholder="t('observability.outboxRetryStatusPlaceholder')"
+                @keyup.enter="onRetrySearch"
+                :options="retryStatusSelectOptions"
+              />
+            </el-form-item>
+          </ListPageQueryBar>
+        </template>
+        <template #toolbar>
+          <!-- 实时状态已上移到页级 ob-live 条(照 jr-live/al-live 模式),toolbar 只留批量栏 -->
+          <BulkActionBar
+            :count="bulk.count.value"
+            :running="bulk.running.value"
+            @clear="bulk.clear"
           >
-            <template #query>
-              <ListPageQueryBar
-                :filter-busy="queryActionBusy"
-                :refresh-busy="loading"
-                :disabled="loading"
-                @search="onDeliverySearch"
-                @reset="onDeliveryReset"
-                @refresh="() => runRefresh(loadTab)"
+            <template #default="{ running }">
+              <el-button
+                size="small"
+                type="warning"
+                plain
+                :loading="running"
+                @click="onBulkRepublish"
               >
-                <el-form-item :label="t('observability.outboxKeywordLabel')">
-                  <el-input
-                    class="query-w-220"
-                    v-model="deliveryKwDraft"
-                    clearable
-                    :placeholder="t('observability.outboxDeliveryKeywordPlaceholder')"
-                    @keyup.enter="onDeliverySearch"
-                  />
-                </el-form-item>
-                <el-form-item :label="t('observability.outboxStatusLabel')">
-                  <MetaSelect
-                    class="query-w-200"
-                    v-model="deliveryStatusDraft"
-                    clearable
-                    filterable
-                    allow-create
-                    default-first-option
-                    enum-key="outboxPublishStatus"
-                    :placeholder="t('observability.outboxDeliveryStatusPlaceholder')"
-                    @keyup.enter="onDeliverySearch"
-                    :options="deliveryStatusSelectOptions"
-                  />
-                </el-form-item>
-              </ListPageQueryBar>
+                {{ t('observability.outboxBulkRepublish') }}
+              </el-button>
             </template>
-            <el-table-column
-              prop="eventType"
-              :label="t('observability.outboxColEventType')"
-              width="140"
-            />
-            <el-table-column
-              prop="eventKey"
-              :label="t('observability.outboxColKey')"
-              min-width="160"
-              show-overflow-tooltip
-            />
-            <el-table-column
-              prop="deliveryStatus"
-              :label="t('observability.outboxColStatus')"
-              width="120"
-            >
-              <template #default="{ row }">
-                <StatusTag
-                  :value="String(row.deliveryStatus ?? '')"
-                  category="outboxPublishStatus"
-                />
-              </template>
-            </el-table-column>
-            <el-table-column
-              prop="targetTopic"
-              :label="t('observability.outboxColTopic')"
-              min-width="140"
-              show-overflow-tooltip
-            />
-            <el-table-column
-              prop="deliveryAttempt"
-              :label="t('observability.outboxColAttempt')"
-              width="70"
-              align="right"
-            />
-            <el-table-column
-              prop="errorMessage"
-              :label="t('observability.outboxColError')"
-              min-width="180"
-              show-overflow-tooltip
-            />
-            <DatetimeColumn
-              prop="updatedAt"
-              :label="t('observability.outboxColUpdated')"
-              width="160"
-            />
-            <el-table-column :label="t('observability.outboxColActions')" width="120" fixed="right">
-              <template #default="{ row }">
-                <div class="table-actions">
-                  <el-button size="small" plain type="primary" @click="openDetail('delivery', row)">
-                    {{ t('observability.outboxActionDetail') }}
-                  </el-button>
-                </div>
-              </template>
-            </el-table-column>
-          </ProTable>
-        </el-tab-pane>
-      </el-tabs>
-    </SectionCard>
+          </BulkActionBar>
+        </template>
+        <el-table-column type="selection" width="44" :selectable="() => true" />
+        <el-table-column
+          prop="eventType"
+          :label="t('observability.outboxColEventType')"
+          width="140"
+        />
+        <el-table-column
+          prop="eventKey"
+          :label="t('observability.outboxColKey')"
+          min-width="160"
+          show-overflow-tooltip
+        />
+        <el-table-column prop="retryStatus" :label="t('observability.outboxColStatus')" width="120">
+          <template #default="{ row }">
+            <StatusTag :value="String(row.retryStatus ?? '')" category="outboxPublishStatus" />
+          </template>
+        </el-table-column>
+        <el-table-column
+          prop="retryCount"
+          :label="t('observability.outboxColCount')"
+          width="70"
+          align="right"
+        />
+        <el-table-column
+          prop="retryPolicy"
+          :label="t('observability.outboxColPolicy')"
+          width="120"
+          show-overflow-tooltip
+        />
+        <DatetimeColumn
+          prop="nextRetryAt"
+          :label="t('observability.outboxColNextRetry')"
+          width="160"
+        />
+        <el-table-column :label="t('observability.outboxColActions')" width="120" fixed="right">
+          <template #default="{ row }">
+            <div class="table-actions">
+              <el-button size="small" plain type="primary" @click="openDetail('retry', row)">
+                {{ t('observability.outboxActionDetail') }}
+              </el-button>
+            </div>
+          </template>
+        </el-table-column>
+      </ProTable>
+    </div>
+    <div v-show="tab === 'delivery'">
+      <ProTable
+        :data="deliveryRows"
+        :loading="tableBlocking"
+        :total="deliveryTotal"
+        v-model:page="deliveryPage"
+        v-model:page-size="deliveryPageSize"
+        @change="sliceDelivery"
+      >
+        <template #query>
+          <ListPageQueryBar
+            :filter-busy="queryActionBusy"
+            :refresh-busy="loading"
+            :disabled="loading"
+            @search="onDeliverySearch"
+            @reset="onDeliveryReset"
+            @refresh="() => runRefresh(loadTab)"
+          >
+            <el-form-item :label="t('observability.outboxKeywordLabel')">
+              <el-input
+                class="query-w-220"
+                v-model="deliveryKwDraft"
+                clearable
+                :placeholder="t('observability.outboxDeliveryKeywordPlaceholder')"
+                @keyup.enter="onDeliverySearch"
+              />
+            </el-form-item>
+            <el-form-item :label="t('observability.outboxStatusLabel')">
+              <MetaSelect
+                class="query-w-200"
+                v-model="deliveryStatusDraft"
+                clearable
+                filterable
+                allow-create
+                default-first-option
+                enum-key="outboxPublishStatus"
+                :placeholder="t('observability.outboxDeliveryStatusPlaceholder')"
+                @keyup.enter="onDeliverySearch"
+                :options="deliveryStatusSelectOptions"
+              />
+            </el-form-item>
+          </ListPageQueryBar>
+        </template>
+        <el-table-column
+          prop="eventType"
+          :label="t('observability.outboxColEventType')"
+          width="140"
+        />
+        <el-table-column
+          prop="eventKey"
+          :label="t('observability.outboxColKey')"
+          min-width="160"
+          show-overflow-tooltip
+        />
+        <el-table-column
+          prop="deliveryStatus"
+          :label="t('observability.outboxColStatus')"
+          width="120"
+        >
+          <template #default="{ row }">
+            <StatusTag :value="String(row.deliveryStatus ?? '')" category="outboxPublishStatus" />
+          </template>
+        </el-table-column>
+        <el-table-column
+          prop="targetTopic"
+          :label="t('observability.outboxColTopic')"
+          min-width="140"
+          show-overflow-tooltip
+        />
+        <el-table-column
+          prop="deliveryAttempt"
+          :label="t('observability.outboxColAttempt')"
+          width="70"
+          align="right"
+        />
+        <el-table-column
+          prop="errorMessage"
+          :label="t('observability.outboxColError')"
+          min-width="180"
+          show-overflow-tooltip
+        />
+        <DatetimeColumn prop="updatedAt" :label="t('observability.outboxColUpdated')" width="160" />
+        <el-table-column :label="t('observability.outboxColActions')" width="120" fixed="right">
+          <template #default="{ row }">
+            <div class="table-actions">
+              <el-button size="small" plain type="primary" @click="openDetail('delivery', row)">
+                {{ t('observability.outboxActionDetail') }}
+              </el-button>
+            </div>
+          </template>
+        </el-table-column>
+      </ProTable>
+    </div>
 
     <DetailDrawer
       v-model:visible="detailVisible"
@@ -256,13 +270,11 @@
   import PageContainer from '@/components/common/PageContainer.vue'
   import MetaSelect from '@/components/common/MetaSelect.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
-  import SectionCard from '@/components/common/SectionCard.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import ProTable from '@/components/table/ProTable.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
   import DetailDrawer from '@/components/common/DetailDrawer.vue'
   import BulkActionBar from '@/components/table/BulkActionBar.vue'
-  import OpsListToolbar from '@/components/table/OpsListToolbar.vue'
   import { useBulkSelection } from '@/composables/useBulkSelection'
   import type {
     ConsoleOutboxDeliveryLogResponse,
@@ -285,6 +297,9 @@
 
   const retriesAll = ref<ConsoleOutboxRetryLogResponse[]>([])
   const deliveriesAll = ref<ConsoleOutboxDeliveryLogResponse[]>([])
+  // 各 tab 是否已拉过数据:未拉过时 tab 计数不显示(0 会误导)
+  const retryLoaded = ref(false)
+  const deliveryLoaded = ref(false)
 
   const detailVisible = ref(false)
   const detailKind = ref<'retry' | 'delivery'>('retry')
@@ -471,12 +486,14 @@
         retriesAll.value = await queryOutboxRetries(tenant.tenantId, {
           retryStatus: retryStatusApplied.value.trim() || undefined,
         })
+        retryLoaded.value = true
         retryPage.value = 1
         sliceRetry()
       } else {
         deliveriesAll.value = await queryOutboxDeliveries(tenant.tenantId, {
           deliveryStatus: deliveryStatusApplied.value.trim() || undefined,
         })
+        deliveryLoaded.value = true
         deliveryPage.value = 1
         sliceDelivery()
       }
@@ -500,6 +517,47 @@
     domain: 'outbox-deliveries',
     reload: () => (tab.value === 'delivery' ? loadTab() : Promise.resolve()),
     scope: () => tenant.tenantId,
+  })
+
+  // ── 照设计 #outbox:彩点 + mono 计数 pill tab 行(jr-tabs / al-tabs 同款)──────
+  const obTabs = computed(
+    () =>
+      [
+        {
+          key: 'retry',
+          dot: 'var(--color-warning)',
+          label: t('observability.outboxTabRetry'),
+          count: retryLoaded.value ? filteredRetries.value.length : null,
+        },
+        {
+          key: 'delivery',
+          dot: 'var(--color-primary)',
+          label: t('observability.outboxTabDelivery'),
+          count: deliveryLoaded.value ? filteredDeliveries.value.length : null,
+        },
+      ] as const,
+  )
+
+  // 头部「投递成功」统计 pill:从当前 tab 已加载数据里数成功态(dump 的「今日成功」
+  // 后端无独立汇总端点,取已加载集合口径)
+  const OUTBOX_SUCCESS_STATUSES = ['PUBLISHED', 'SUCCEEDED', 'SUCCESS']
+  const successCount = computed(() =>
+    tab.value === 'retry'
+      ? retriesAll.value.filter((r) =>
+          OUTBOX_SUCCESS_STATUSES.includes(String(r.retryStatus ?? '')),
+        ).length
+      : deliveriesAll.value.filter((r) =>
+          OUTBOX_SUCCESS_STATUSES.includes(String(r.deliveryStatus ?? '')),
+        ).length,
+  )
+
+  const lastRefreshText = computed(() => {
+    const v = live.lastRefreshedAt.value
+    if (!v) return '—'
+    const d = v instanceof Date ? v : new Date(v)
+    if (Number.isNaN(d.getTime())) return '—'
+    const p = (n: number) => String(n).padStart(2, '0')
+    return `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`
   })
 
   // URL state:tab + 当前活动 tab 的 status / page / pageSize round-trip
@@ -546,3 +604,120 @@
     syncFiltersToUrl,
   )
 </script>
+
+<style scoped>
+  /* ── 照设计 #outbox dump(docs/redesign/proto-outbox.html):
+     头部统计 pill / 彩点+mono计数 tab 行(28h/r14,jr-tabs 同款)/ 实时条 ── */
+  .ob-stat {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    height: 32px;
+    padding: 0 13px;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    background: var(--color-bg-card);
+  }
+
+  .ob-stat__dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--color-success);
+  }
+
+  .ob-stat__label {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+  }
+
+  .ob-stat__value {
+    font-size: 13px;
+    font-weight: 600;
+    font-family: var(--font-mono);
+    color: var(--color-text-primary);
+  }
+
+  .ob-tabs {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 6px 0 14px;
+    flex-wrap: wrap;
+  }
+
+  .ob-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    height: 28px;
+    padding: 0 12px;
+    border-radius: 14px;
+    border: 1px solid var(--color-border);
+    background: transparent;
+    color: var(--color-text-secondary);
+    font-size: 12.5px;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+
+  .ob-tab.is-active {
+    border-color: var(--color-text-secondary);
+    background: var(--color-bg-elevated);
+    font-weight: 600;
+  }
+
+  .ob-tab__dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+  }
+
+  .ob-tab__count {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--color-text-tertiary);
+  }
+
+  .ob-live {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 14px;
+    margin-bottom: 10px;
+    border: 1px solid var(--color-border);
+    border-radius: 9px;
+    background: var(--color-bg-card);
+    font-size: 12px;
+    color: var(--color-text-secondary);
+  }
+
+  .ob-live__dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--color-success);
+  }
+
+  .ob-live__dot.is-off {
+    background: var(--color-text-tertiary);
+  }
+
+  .ob-live__title {
+    color: var(--color-text-primary);
+    font-weight: 500;
+  }
+
+  .ob-live__sub {
+    color: var(--color-text-tertiary);
+  }
+
+  .ob-live__spacer {
+    flex: 1;
+  }
+
+  .ob-live__time {
+    color: var(--color-text-tertiary);
+    font-family: var(--font-mono);
+  }
+</style>

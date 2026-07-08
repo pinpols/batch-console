@@ -101,7 +101,7 @@
 <script setup lang="ts">
   import { computed, nextTick, ref } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { Search } from '@element-plus/icons-vue'
+  import { Search } from 'lucide-vue-next'
   import { ElMessage } from 'element-plus'
   import { confirmActionSheet } from '@/layout-mobile/MActionSheet'
   import { useTenantStore } from '@/stores/tenant'

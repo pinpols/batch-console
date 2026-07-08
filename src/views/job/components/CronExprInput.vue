@@ -71,7 +71,7 @@
    */
   import { computed, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { Check, Warning } from '@element-plus/icons-vue'
+  import { Check, TriangleAlert as Warning } from 'lucide-vue-next'
   import cronstrue from 'cronstrue/i18n'
   // @ts-ignore — cronstrue/i18n 子包没有显式 type 声明,运行时存在
   import 'cronstrue/locales/zh_CN'

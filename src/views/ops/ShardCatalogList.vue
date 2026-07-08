@@ -14,22 +14,16 @@
     <SectionCard>
       <template #header>
         <div class="scl__header">
-          <span>{{ t('shardCatalogList.sectionTitle') }}</span>
+          <HelpLabel :tip="t('shardCatalogList.introBody')">
+            {{ t('shardCatalogList.sectionTitle') }}
+          </HelpLabel>
           <el-tag size="small" type="info" effect="plain">
             {{ t('shardCatalogList.total', { n: rows.length }) }}
           </el-tag>
         </div>
       </template>
 
-      <el-alert
-        type="info"
-        :closable="false"
-        show-icon
-        class="scl__intro"
-        :title="t('shardCatalogList.introTitle')"
-      >
-        <template #default>{{ t('shardCatalogList.introBody') }}</template>
-      </el-alert>
+      <!-- 说明搬进标题 HelpLabel 悬浮提示,去掉常驻大说明条(密度) -->
 
       <ProTable
         :data="rows"
@@ -71,12 +65,7 @@
         <el-table-column :label="t('common.updatedAt')" width="170">
           <template #default="{ row }">{{ fmtDatetime(row.updatedAt) }}</template>
         </el-table-column>
-        <el-table-column
-          v-if="canManage"
-          :label="t('common.actions')"
-          width="140"
-          fixed="right"
-        >
+        <el-table-column v-if="canManage" :label="t('common.actions')" width="140" fixed="right">
           <template #default="{ row }">
             <RowActions :actions="rowActions(row)" />
           </template>
@@ -137,7 +126,7 @@
 <script setup lang="ts">
   import { ref, reactive, computed } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { Refresh, Plus } from '@element-plus/icons-vue'
+  import { RefreshCw as Refresh, Plus } from 'lucide-vue-next'
   import { ElMessage } from 'element-plus'
   import { confirmDanger } from '@/composables/useDangerConfirm'
   import PageContainer from '@/components/common/PageContainer.vue'
@@ -146,6 +135,7 @@
   import ProTable from '@/components/table/ProTable.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
   import RowActions, { type RowAction } from '@/components/common/RowActions.vue'
+  import HelpLabel from '@/components/common/HelpLabel.vue'
   import { fmtDatetime } from '@/utils/datetime'
   import { useAuthStore } from '@/stores/auth'
   import {

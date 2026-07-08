@@ -109,7 +109,7 @@
   import { computed, nextTick, ref, watch } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
-  import { ArrowLeft, Refresh } from '@element-plus/icons-vue'
+  import { ArrowLeft, RefreshCw as Refresh } from 'lucide-vue-next'
   import mermaid from 'mermaid'
   import MPullRefresh from '@/layout-mobile/MPullRefresh.vue'
   import { workflowApi } from '@/api/workflow'

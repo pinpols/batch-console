@@ -1,6 +1,12 @@
 <template>
-  <el-tag class="status-tag" :type="meta.type" :size="size" effect="light">
-    <span class="status-tag__dot" aria-hidden="true" />
+  <el-tag
+    class="status-tag"
+    :class="{ 'status-tag--enum': !showDot }"
+    :type="meta.type"
+    :size="size"
+    effect="light"
+  >
+    <span v-if="showDot" class="status-tag__dot" aria-hidden="true" />
     {{ meta.label }}
   </el-tag>
 </template>
@@ -10,7 +16,15 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 500;
   }
+
+  .status-tag--enum {
+    gap: 0;
+  }
+
   .status-tag__dot {
     width: 6px;
     height: 6px;
@@ -49,4 +63,6 @@
       translate: (key: string) => t(key),
     }),
   )
+
+  const showDot = computed(() => !['executionMode', 'jobType'].includes(props.category))
 </script>

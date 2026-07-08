@@ -2,7 +2,8 @@
   <!-- ElConfigProvider 把 :locale 透传给所有 Element Plus 声明式组件
        (Pagination / DatePicker / Dialog 等内置文案);imperative API
        (ElMessageBox / ElMessage)由 main.ts use(ElementPlus, { locale }) 提供。 -->
-  <ElConfigProvider :locale="elementLocale">
+  <!-- message duration 2200ms = 设计 #states Toast 规范(底部居中样式见 element-override) -->
+  <ElConfigProvider :locale="elementLocale" :message="{ duration: 2200 }">
     <RouteProgressBar />
     <RouterView />
   </ElConfigProvider>

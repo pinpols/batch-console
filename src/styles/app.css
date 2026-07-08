@@ -1,4 +1,5 @@
 @import './tokens.css';
+@import './tokens-handoff.css';
 @import './tokens/z-index.css';
 @import './reset.css';
 @import './element-override.css';
@@ -223,19 +224,17 @@ html.layout-shell-lock .layout-root > .layout-sidebar.el-aside {
 }
 
 .pill-tabs .el-tabs__nav-wrap {
-  /* 分段控件底座：先稳住整体，再让单项更克制 */
-  padding: 4px;
-  border-radius: var(--radius-content);
-  background: color-mix(in srgb, var(--color-bg-card) 90%, var(--color-bg-canvas) 10%);
-  border: 1px solid color-mix(in srgb, var(--color-border-light) 70%, var(--color-border) 30%);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 55%),
-    0 1px 2px rgb(15 23 42 / 6%);
+  /* 还原设计:简单 pill 组,无外框盒子/无阴影 */
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
 }
 
 .pill-tabs .el-tabs__nav {
   border: none;
-  gap: 6px;
+  gap: 4px;
 }
 
 .pill-tabs .el-tabs__active-bar {
@@ -243,54 +242,48 @@ html.layout-shell-lock .layout-root > .layout-sidebar.el-aside {
 }
 
 .pill-tabs .el-tabs__item {
-  height: 34px;
-  line-height: 34px;
-  padding: 0 12px;
-  border-radius: var(--radius-content);
+  height: 28px;
+  line-height: 28px;
+  padding: 0 16px;
+  border-radius: 7px;
   overflow: hidden;
-  border: 1px solid transparent;
+  border: none;
   background: transparent;
   color: var(--color-text-secondary);
   font-weight: 600;
-  font-size: var(--font-size-sm);
-  letter-spacing: 0.1px;
+  font-size: var(--font-size-md);
+  letter-spacing: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   user-select: none;
   transition:
-    box-shadow var(--motion-duration-md) var(--motion-ease-standard),
     background-color var(--motion-duration-sm) var(--motion-ease-standard),
-    border-color var(--motion-duration-sm) var(--motion-ease-standard),
     color var(--motion-duration-sm) var(--motion-ease-standard);
 }
 
 .pill-tabs .el-tabs__item:hover {
   color: var(--color-text-primary);
-  background-color: color-mix(in srgb, var(--color-bg-card) 92%, var(--color-bg-canvas) 8%);
-  border-color: color-mix(in srgb, var(--color-border) 82%, var(--color-primary) 18%);
+  background-color: color-mix(in srgb, var(--color-text-primary) 6%, transparent);
 }
 
 .pill-tabs .el-tabs__item.is-active {
-  color: color-mix(in srgb, var(--color-primary) 96%, var(--color-text-primary) 4%);
-  background-color: color-mix(in srgb, var(--color-primary) 10%, var(--color-bg-card) 90%);
-  border-color: color-mix(in srgb, var(--color-primary) 24%, var(--color-border) 76%);
-  border-radius: var(--radius-content);
-  box-shadow:
-    0 6px 14px rgb(15 23 42 / 10%),
-    0 0 0 1px rgb(15 23 42 / 3%);
+  color: var(--color-primary);
+  background-color: color-mix(in srgb, var(--color-primary) 12%, transparent);
+  border-radius: 7px;
+  box-shadow: none;
 }
 
 /* Element Plus 会把首/尾 tab 的左右 padding 清零，导致“两边的字不居中”；这里统一回填 */
 .pill-tabs.el-tabs--top > .el-tabs__header .el-tabs__item:nth-child(2),
 .pill-tabs.el-tabs--bottom > .el-tabs__header .el-tabs__item:nth-child(2) {
-  padding-left: 12px !important;
+  padding-left: 16px !important;
 }
 
 .pill-tabs.el-tabs--top > .el-tabs__header .el-tabs__item:last-child,
 .pill-tabs.el-tabs--bottom > .el-tabs__header .el-tabs__item:last-child {
-  padding-right: 12px !important;
+  padding-right: 16px !important;
 }
 
 .pill-tabs.el-tabs--left > .el-tabs__header,
@@ -659,6 +652,8 @@ html.dark .json-preview {
   text-decoration: none;
   cursor: pointer;
   transition: color 0.2s;
+  /* 还原设计:代码类链接(jobCode/traceId 等)等宽字体 */
+  font-family: var(--font-mono);
 }
 .cell-link:hover {
   color: var(--el-color-primary-light-3);
@@ -1310,6 +1305,100 @@ html.dark .dr-preset .el-radio-group {
  * 浏览器「打印 → 另存为 PDF」即得 PDF,无需引入 jspdf/html2canvas。
  * 用 .no-print 标记任何不该出现在纸上的元素;.print-only 反之。
  * ────────────────────────────────────────────────────────────── */
+/* ──────────────────────────────────────────────────────────────
+ * Redesign system override
+ * 设计稿收口层:统一首屏、列表页和通用组件的密度/层级/交互噪声。
+ * ────────────────────────────────────────────────────────────── */
+.app-surface:hover,
+.layout-main__content .app-surface:hover,
+.layout-main__content .el-card:hover,
+.el-card:hover {
+  transform: none;
+  box-shadow: var(--shadow-surface-hover);
+  border-color: var(--color-border-light);
+}
+
+.layout-main__surface.layout-panel,
+.app-surface.layout-panel,
+.section-card.el-card,
+.metric-card.el-card {
+  box-shadow:
+    var(--shadow-surface),
+    inset 0 1px 0 var(--layout-panel-inset-highlight);
+}
+
+.layout-main__surface.layout-panel:hover,
+.app-surface.layout-panel:hover,
+.section-card.el-card:hover,
+.metric-card.el-card:hover {
+  box-shadow:
+    var(--shadow-surface-hover),
+    inset 0 1px 0 var(--layout-panel-inset-highlight);
+}
+
+.pill-tabs .el-tabs__nav-wrap {
+  padding: 3px;
+  border-radius: var(--radius-button);
+  background: color-mix(in srgb, var(--color-bg-card) 74%, var(--color-bg-canvas) 26%);
+  border-color: var(--color-border-light);
+  box-shadow: none;
+}
+
+.pill-tabs .el-tabs__nav {
+  gap: 2px;
+}
+
+.pill-tabs .el-tabs__item {
+  height: 32px;
+  line-height: 32px;
+  border-radius: var(--radius-button);
+  font-weight: 650;
+  letter-spacing: 0;
+}
+
+.pill-tabs .el-tabs__item.is-active,
+.pill-tabs .el-tabs__item.is-active:hover,
+html.dark .pill-tabs .el-tabs__item.is-active,
+html.dark .pill-tabs .el-tabs__item.is-active:hover {
+  color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 13%, var(--color-bg-card) 87%);
+  border-color: color-mix(in srgb, var(--color-primary) 28%, var(--color-border) 72%);
+  box-shadow: none;
+}
+
+.el-button,
+.el-input__wrapper,
+.el-select__wrapper,
+.el-textarea__inner,
+.el-date-editor.el-input__wrapper {
+  border-radius: var(--radius-input);
+}
+
+.el-button {
+  min-height: 32px;
+  /* 还原设计:按钮 13px;次级 400(主按钮 700 由 element-override 的 --primary 块覆盖) */
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+.el-button--small {
+  min-height: 28px;
+}
+
+.el-table .el-table__header-wrapper th.el-table__cell,
+.console-table .el-table__header-wrapper th.el-table__cell {
+  letter-spacing: 0;
+}
+
+.pretty-add-button.el-button,
+.pretty-primary-button,
+.section-title,
+.query-title,
+.page-section-title {
+  letter-spacing: 0;
+}
+
 .print-only {
   display: none;
 }
@@ -1387,4 +1476,25 @@ html.dark .dr-preset .el-radio-group {
   @page {
     margin: 14mm;
   }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+ * 还原设计:无缝边到边 shell(三大区域非浮起卡片)。
+ * 侧栏 / 顶栏去圆角+阴影+浮起边框,改 1px 分隔线拼接;内容区已在 DefaultLayout 扁平化。
+ * ───────────────────────────────────────────────────────────────────────── */
+.layout-sidebar.app-surface.layout-panel {
+  border: none;
+  border-right: 1px solid var(--color-border);
+  border-radius: 0;
+  box-shadow: none;
+}
+.layout-header__surface.app-surface.layout-panel {
+  border: none;
+  border-bottom: 1px solid var(--color-border);
+  border-radius: 0;
+  box-shadow: none;
+}
+/* 顶栏外壳去内边距,让分隔线贴边 */
+.layout-header {
+  padding: 0 !important;
 }

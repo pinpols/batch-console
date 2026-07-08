@@ -6,11 +6,7 @@
     <div class="degradation-banner__text">
       <strong>{{ t('degradation.bannerHeadline') }}</strong>
       <span class="degradation-banner__msg">{{ t('degradation.bannerMessage') }}</span>
-      <span
-        v-for="src in app.activeDegradationSources"
-        :key="src"
-        class="degradation-banner__chip"
-      >
+      <span v-for="src in app.activeDegradationSources" :key="src" class="degradation-banner__chip">
         {{ src }}
       </span>
     </div>
@@ -29,7 +25,7 @@
    */
   import { onMounted, onUnmounted } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { WarningFilled } from '@element-plus/icons-vue'
+  import { TriangleAlert as WarningFilled } from 'lucide-vue-next'
   import { useAppStore } from '@/stores/app'
 
   const app = useAppStore()

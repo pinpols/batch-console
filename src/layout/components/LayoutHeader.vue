@@ -2,47 +2,71 @@
   <el-header class="layout-header">
     <div class="layout-header__surface app-surface layout-panel">
       <div class="layout-header__left">
-        <el-tooltip
-          :content="app.sidebarCollapsed ? t('nav.expandSidebar') : t('nav.foldSidebar')"
-          placement="bottom"
-        >
-          <el-button
-            text
-            class="icon-button layout-header__fold"
-            :aria-label="app.sidebarCollapsed ? t('nav.expandSidebar') : t('nav.foldSidebar')"
-            @click="app.toggleSidebar()"
+        <div class="nav-arrows">
+          <button
+            type="button"
+            class="nav-arrow"
+            :aria-label="t('nav.back')"
+            @click="router.back()"
           >
-            <el-icon>
-              <Fold v-if="!app.sidebarCollapsed" />
-              <Expand v-else />
-            </el-icon>
-          </el-button>
-        </el-tooltip>
+            <el-icon><ArrowLeft /></el-icon>
+          </button>
+          <button
+            type="button"
+            class="nav-arrow"
+            :aria-label="t('nav.forward')"
+            @click="router.forward()"
+          >
+            <el-icon><ArrowRight /></el-icon>
+          </button>
+        </div>
         <div class="page-meta">
-          <div class="page-meta__title-row">
-            <div class="page-meta__title-block">
-              <el-breadcrumb v-if="breadcrumbs.length > 1" class="page-meta__crumb" separator="/">
-                <el-breadcrumb-item
-                  v-for="(c, i) in breadcrumbs"
-                  :key="`${c.path}:${i}`"
-                  :to="i < breadcrumbs.length - 1 ? c.path : undefined"
-                >
-                  {{ c.title }}
-                </el-breadcrumb-item>
-              </el-breadcrumb>
-              <div class="page-meta__title">{{ currentTitle }}</div>
-            </div>
-          </div>
+          <el-breadcrumb class="page-meta__crumb" separator="›">
+            <el-breadcrumb-item
+              v-for="(c, i) in breadcrumbs"
+              :key="`${c.path}:${i}`"
+              :to="c.path && i < breadcrumbs.length - 1 ? c.path : undefined"
+            >
+              {{ c.title }}
+            </el-breadcrumb-item>
+          </el-breadcrumb>
         </div>
       </div>
 
-      <div class="layout-header__center">
-        <LayoutTabs />
-      </div>
-
       <div class="layout-header__right">
-        <!-- 通知中心:复用 mobileBadges store(getOpsSummary)的待办计数,
-             点击展开分类面板(待审批 / 未确认告警 / 失败任务)+ 直达对应列表。-->
+        <div
+          v-if="canSwitchTenant"
+          class="tenant-chip tenant-chip--switch"
+          role="group"
+          :aria-label="t('nav.tenantSwitcherAria')"
+        >
+          <span class="tenant-chip__label">{{ t('nav.tenantLabel') }}</span>
+          <TenantSelect
+            :model-value="tenantIdInput"
+            size="small"
+            select-class="tenant-chip__select"
+            :placeholder="t('nav.switchTenantPlaceholder')"
+            @update:model-value="handleTenantSwitch"
+          />
+        </div>
+        <div v-else class="tenant-chip tenant-chip--readonly">
+          <span class="tenant-chip__label">{{ t('nav.tenantLabel') }}</span>
+          <span class="tenant-chip__value" :title="tenantIdInput">{{ tenantIdInput }}</span>
+        </div>
+
+        <el-tooltip :content="`${t('nav.commandPalette')}(⌘/Ctrl + K)`" placement="bottom">
+          <button
+            type="button"
+            class="header-search"
+            :aria-label="t('nav.openCommandPalette')"
+            @click="$emit('open-palette')"
+          >
+            <el-icon><Search /></el-icon>
+            <span>{{ t('nav.search') }}</span>
+            <kbd>{{ commandPaletteShortcutLabel }}</kbd>
+          </button>
+        </el-tooltip>
+
         <NotificationCenter
           class="layout-header__bell"
           :pending-approvals="badges.pendingApprovals"
@@ -51,107 +75,51 @@
           :failed-jobs="badges.failedJobs"
           :user-id="auth.userInfo?.userId"
         />
-        <el-tooltip :content="`${t('nav.commandPalette')}(⌘/Ctrl + K)`" placement="bottom">
-          <el-button
-            text
-            class="icon-button"
-            :aria-label="t('nav.openCommandPalette')"
-            @click="$emit('open-palette')"
-          >
-            <span class="palette-shortcut">{{ commandPaletteShortcutLabel }}</span>
-          </el-button>
+
+        <el-tooltip :content="localeToggleTooltip" placement="bottom">
+          <button type="button" class="lang-toggle" @click="toggleLocale">
+            <span class="lang-toggle__seg" :class="{ 'is-active': currentLocale === 'zh-CN' }"
+              >中</span
+            >
+            <span class="lang-toggle__seg" :class="{ 'is-active': currentLocale !== 'zh-CN' }"
+              >EN</span
+            >
+          </button>
         </el-tooltip>
-        <!-- 低频工具(复制链接 / 文档 / 语言 / 主题 / 全屏)收纳进一个溢出菜单 dropdown,
-             降低顶栏扫描负担。常驻高频只剩:通知 / 命令面板 / 租户 / 用户 -->
-        <el-dropdown trigger="click" placement="bottom-end" @command="onToolsCommand">
-          <el-button
-            text
-            class="icon-button"
-            :aria-label="t('nav.toolsMenu')"
-            :title="t('nav.toolsMenu')"
-          >
-            <el-icon><MoreFilled /></el-icon>
-          </el-button>
-          <template #dropdown>
-            <el-dropdown-menu>
-              <el-dropdown-item command="copyLink" :icon="Link">
-                {{ t('nav.copyLinkAction') }}
-              </el-dropdown-item>
-              <el-dropdown-item command="docs" :icon="Reading" :divided="true">
-                {{ t('nav.openDocs') }}
-              </el-dropdown-item>
-              <el-dropdown-item command="locale">
-                <span class="locale-chip-mini" aria-hidden="true">{{ localeChipLabel }}</span>
-                <span>{{ localeToggleTooltip }}</span>
-              </el-dropdown-item>
-              <el-dropdown-item command="theme" :icon="themeToolIcon">
-                {{ themeActionLabel }}
-              </el-dropdown-item>
-              <el-dropdown-item command="focus" :icon="FullScreen" :divided="true">
-                {{ app.focusMode ? t('nav.exitFullscreen') : t('nav.fullscreen') }}
-              </el-dropdown-item>
-            </el-dropdown-menu>
-          </template>
-        </el-dropdown>
-        <!-- 当前租户：常驻醒目展示，不藏在悬浮面板里 -->
-        <div
-          v-if="canSwitchTenant"
-          class="tenant-chip tenant-chip--switch"
-          role="group"
-          :aria-label="t('nav.tenantSwitcherAria')"
-        >
-          <el-icon class="tenant-chip__icon"><OfficeBuilding /></el-icon>
-          <span class="tenant-chip__label">{{ t('nav.tenantCurrent') }}</span>
-          <TenantSelect
-            :model-value="tenantIdInput"
-            size="small"
-            select-class="tenant-chip__select"
-            :placeholder="t('nav.switchTenantPlaceholder')"
-            @update:model-value="handleTenantSwitch"
-          />
-          <el-tooltip :content="t('nav.copyTenantId')" placement="bottom">
-            <span
-              class="tenant-chip__copy"
-              role="button"
-              tabindex="0"
-              :aria-label="t('nav.copyTenantIdAria')"
-              @click.stop="copyTenant"
-              @keydown.enter.prevent.stop="copyTenant"
-            >
-              <el-icon><DocumentCopy /></el-icon>
-            </span>
-          </el-tooltip>
-        </div>
-        <div v-else class="tenant-chip tenant-chip--readonly">
-          <el-icon class="tenant-chip__icon"><OfficeBuilding /></el-icon>
-          <span class="tenant-chip__label">{{ t('nav.tenantCurrent') }}</span>
-          <span class="tenant-chip__value" :title="tenantIdInput">{{ tenantIdInput }}</span>
-          <el-tooltip :content="t('nav.copyTenantId')" placement="bottom">
-            <span
-              class="tenant-chip__copy"
-              role="button"
-              tabindex="0"
-              :aria-label="t('nav.copyTenantIdAria')"
-              @click.stop="copyTenant"
-              @keydown.enter.prevent.stop="copyTenant"
-            >
-              <el-icon><DocumentCopy /></el-icon>
-            </span>
-          </el-tooltip>
-        </div>
+
+        <el-tooltip :content="t('nav.mobilePreview')" placement="bottom">
+          <button type="button" class="icon-button header-icon" @click="openMobilePreview">
+            <el-icon><Iphone /></el-icon>
+          </button>
+        </el-tooltip>
+
+        <el-tooltip :content="t('nav.openDocsTooltip')" placement="bottom">
+          <button type="button" class="icon-button header-icon" @click="openDocs">
+            <el-icon><Reading /></el-icon>
+          </button>
+        </el-tooltip>
+
+        <el-tooltip :content="themeActionLabel" placement="bottom">
+          <button type="button" class="icon-button header-icon" @click="app.toggleTheme()">
+            <el-icon><component :is="themeToolIcon" /></el-icon>
+          </button>
+        </el-tooltip>
 
         <div class="user-area">
-          <el-tag v-if="auth.role" size="small" type="info" class="user-area__role">
-            {{ auth.role }}
-          </el-tag>
           <el-dropdown
             trigger="click"
             placement="bottom-end"
             :hide-on-click="true"
             @command="onUserCommand"
           >
-            <span class="username username--clickable" tabindex="0">
-              {{ auth.userInfo?.username ?? t('nav.notLoggedIn') }}
+            <span class="user-chip username--clickable" tabindex="0">
+              <span class="user-chip__avatar">{{ userInitial }}</span>
+              <span class="user-chip__meta">
+                <span class="user-chip__name">{{
+                  auth.userInfo?.username ?? t('nav.notLoggedIn')
+                }}</span>
+                <span v-if="auth.role" class="user-chip__role">{{ auth.role }}</span>
+              </span>
               <el-icon class="username__caret"><ArrowDown /></el-icon>
             </span>
             <template #dropdown>
@@ -177,24 +145,21 @@
 <script setup lang="ts">
   import { useRouter } from 'vue-router'
   import { ElMessageBox } from 'element-plus'
+  // 还原设计:顶栏图标统一 Lucide 线性图标(与侧栏一致)
   import {
-    ArrowDown,
-    DocumentCopy,
-    Expand,
+    ChevronDown as ArrowDown,
+    ArrowLeft,
+    ArrowRight,
     Compass,
-    Fold,
-    FullScreen,
-    Key,
-    Link,
+    Smartphone as Iphone,
+    KeyRound as Key,
     Monitor,
     Moon,
-    MoreFilled,
-    OfficeBuilding,
-    Reading,
-    Sunny,
-    SwitchButton,
-  } from '@element-plus/icons-vue'
-  import LayoutTabs from '@/layout/LayoutTabs.vue'
+    CircleHelp as Reading,
+    Search,
+    Sun as Sunny,
+    LogOut as SwitchButton,
+  } from 'lucide-vue-next'
   import TenantSelect from '@/components/common/TenantSelect.vue'
   import NotificationCenter from './NotificationCenter.vue'
   import { useHeaderLogic } from '@/layout/composables/useHeaderLogic'
@@ -212,7 +177,9 @@
   const localeToggleTooltip = computed(() =>
     currentLocale.value === 'zh-CN' ? t('layoutHeader.switchToEn') : t('layoutHeader.switchToZh'),
   )
-  const localeChipLabel = computed(() => (currentLocale.value === 'zh-CN' ? 'EN' : '中'))
+  const userInitial = computed(() =>
+    (auth.userInfo?.username ?? '?').trim().charAt(0).toUpperCase(),
+  )
   const themeToolIcon = computed(() => {
     if (app.themePreference === 'system') return Monitor
     return app.themePreference === 'light' ? Sunny : Moon
@@ -245,12 +212,8 @@
     window.open(docsUrl, '_blank', 'noopener')
   }
 
-  function onToolsCommand(command: string) {
-    if (command === 'copyLink') void copyCurrentUrl()
-    else if (command === 'docs') openDocs()
-    else if (command === 'locale') toggleLocale()
-    else if (command === 'theme') app.toggleTheme()
-    else if (command === 'focus') app.toggleFocusMode()
+  function openMobilePreview() {
+    window.open('/m/ops/summary', '_blank', 'noopener,noreferrer,width=430,height=860')
   }
 
   const router = useRouter()
@@ -258,14 +221,9 @@
     app,
     auth,
     breadcrumbs,
-    copyCurrentUrl,
     tenantIdInput,
     canSwitchTenant,
     handleTenantSwitch,
-    copyTenant,
-    currentTitle,
-    themeToggleLabel,
-    themeToggleAriaLabel,
     commandPaletteShortcutLabel,
     handleLogout,
   } = useHeaderLogic()
@@ -313,7 +271,7 @@
     --el-header-padding: 0;
     --el-header-height: auto;
     height: auto;
-    min-height: 48px;
+    min-height: 52px;
     /* 与 .layout-main 同宽：顶栏卡片与主内容卡片左右外缘对齐（未悬停时一致） */
     padding-block: 0 !important;
     padding-inline: var(--layout-main-gutter) !important;
@@ -321,19 +279,18 @@
   }
 
   .layout-header__surface {
-    min-height: 48px;
+    min-height: 52px;
     height: auto;
     width: 100%;
     display: grid;
-    /* 左随内容、中栏铺满：标签紧跟标题，避免大块中空 */
-    grid-template-columns: auto 1fr auto;
+    grid-template-columns: minmax(180px, auto) minmax(0, 1fr) auto;
     align-items: center;
-    column-gap: 12px;
+    column-gap: 10px;
     padding-inline: var(--layout-content-inset-inline);
-    padding-block: 5px;
+    padding-block: 6px;
     box-sizing: border-box;
     background: var(--layout-header-bg);
-    backdrop-filter: blur(12px);
+    backdrop-filter: blur(14px);
     position: relative;
   }
 
@@ -348,25 +305,39 @@
     width: 100%;
   }
 
-  /**
-   * 折出文档流，避免把标题整体向右推；与顶栏 surface 内边距同源。
-   */
-  .layout-header__fold {
-    --fold-w: min(22px, calc(var(--layout-content-inset-inline) - 1px));
-    position: absolute;
-    left: calc(0px - var(--layout-content-inset-inline));
-    top: 50%;
-    width: var(--fold-w);
-    min-width: var(--fold-w) !important;
-    height: 28px;
-    padding: 0 !important;
-    margin: 0;
-    transform: translateY(-50%);
-    z-index: 2;
+  /* 顶栏左侧 ← → 导航箭头(还原设计) */
+  .nav-arrows {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
   }
 
-  .layout-header__fold :deep(.el-icon) {
-    font-size: 16px;
+  /* 设计实测:← → 28×28 / r7 / 0.08 边框 */
+  .nav-arrow {
+    display: inline-grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    border: 1px solid var(--color-border);
+    border-radius: 7px;
+    background: transparent;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition:
+      color var(--motion-duration-sm) var(--motion-ease-standard),
+      border-color var(--motion-duration-sm) var(--motion-ease-standard),
+      background-color var(--motion-duration-sm) var(--motion-ease-standard);
+  }
+
+  .nav-arrow:hover {
+    color: var(--color-text-primary);
+    border-color: var(--color-border-strong, var(--color-border));
+    background: var(--color-bg-hover, transparent);
+  }
+
+  .nav-arrow :deep(.el-icon) {
+    font-size: 15px;
   }
 
   .layout-header__center {
@@ -376,7 +347,7 @@
     max-width: 100%;
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
   }
 
   .layout-header__right {
@@ -385,7 +356,7 @@
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    gap: 8px;
+    gap: 6px;
     min-width: 0;
     width: 100%;
   }
@@ -399,8 +370,83 @@
     flex-shrink: 0;
   }
 
-  .user-area__role {
+  /* 用户 chip:头像 + 名/角色叠(还原设计 Ⓐ admin / ADMIN) */
+  .user-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 3px 6px 3px 4px;
+  }
+
+  .user-chip__avatar {
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--color-primary) 0%, #4c9dff 100%);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
     flex-shrink: 0;
+  }
+
+  .user-chip__meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    line-height: 1.15;
+    min-width: 0;
+  }
+
+  .user-chip__name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .user-chip__role {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: var(--color-text-tertiary);
+  }
+
+  /* 语言分段切换「中 EN」 */
+  .lang-toggle {
+    display: inline-flex;
+    align-items: center;
+    height: 30px;
+    padding: 2px;
+    gap: 2px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-button);
+    background: var(--color-bg-elevated);
+    cursor: pointer;
+  }
+
+  .lang-toggle__seg {
+    display: inline-grid;
+    place-items: center;
+    min-width: 22px;
+    height: 24px;
+    padding: 0 6px;
+    border-radius: calc(var(--radius-button) - 3px);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-text-tertiary);
+    transition:
+      color var(--motion-duration-sm) var(--motion-ease-standard),
+      background-color var(--motion-duration-sm) var(--motion-ease-standard);
+  }
+
+  .lang-toggle__seg.is-active {
+    color: var(--color-primary);
+    background: color-mix(in srgb, var(--color-primary) 16%, transparent);
   }
 
   .page-meta {
@@ -420,32 +466,104 @@
   }
 
   .page-meta__crumb {
-    margin-bottom: 2px;
-    --el-text-color-regular: var(--color-text-tertiary);
-    --el-text-color-primary: var(--color-text-secondary);
+    --el-text-color-regular: var(--color-text-secondary);
+    --el-text-color-primary: var(--color-text-primary);
+    line-height: 1.2;
   }
 
   .page-meta__crumb :deep(.el-breadcrumb__inner) {
-    font-size: 12px;
-    font-weight: 600;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+  }
+
+  .page-meta__crumb :deep(.el-breadcrumb__separator) {
+    color: var(--color-text-tertiary);
+    margin: 0 8px;
+  }
+
+  /* 末级(当前页)加重、主色文字 */
+  .page-meta__crumb :deep(.el-breadcrumb__item:last-child .el-breadcrumb__inner) {
+    color: var(--color-text-primary);
+    font-weight: 650;
   }
 
   .page-meta__title {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
     font-size: 15px;
-    font-weight: 600;
+    font-weight: 700;
     line-height: 1.2;
   }
 
-  .palette-shortcut {
-    display: inline-block;
-    font-size: 11px;
-    font-weight: 650;
-    letter-spacing: 0.02em;
+  .page-meta__link {
+    display: inline-grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-button);
+    background: transparent;
     color: var(--color-text-tertiary);
-    padding: 2px 6px;
-    border-radius: var(--radius-content);
+    cursor: pointer;
+  }
+
+  .page-meta__link:hover {
+    color: var(--color-primary);
+    background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+  }
+
+  .header-search {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    width: 150px;
+    height: 32px;
+    padding: 0 8px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-button);
+    background: var(--input-bg, var(--color-bg-subtle));
+    color: var(--color-text-tertiary);
+    font-size: 13px;
+    cursor: pointer;
+    outline: none;
+    transition:
+      border-color 0.15s ease,
+      background-color 0.15s ease,
+      color 0.15s ease;
+  }
+
+  .header-search:hover,
+  .header-search:focus-visible {
+    color: var(--color-text-primary);
+    border-color: color-mix(in srgb, var(--color-primary) 48%, var(--color-border) 52%);
+    background: color-mix(in srgb, var(--color-primary) 9%, var(--color-bg-elevated) 91%);
+  }
+
+  .header-search span {
+    min-width: 0;
+    flex: 1;
+    text-align: left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .header-search kbd {
+    flex-shrink: 0;
+    min-width: 31px;
+    padding: 1px 5px;
     border: 1px solid var(--color-border-light);
-    line-height: 1.2;
+    border-radius: 5px;
+    background: color-mix(in srgb, var(--color-bg-card) 70%, transparent);
+    color: var(--color-text-tertiary);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 16px;
+    text-align: center;
   }
 
   .username {
@@ -481,18 +599,12 @@
   .tenant-chip {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    padding: 4px 10px;
-    border-radius: var(--radius-content);
-    border: 1px solid color-mix(in srgb, var(--color-primary) 36%, var(--color-border) 64%);
-    background: linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--color-primary) 13%, var(--color-bg-card) 87%),
-      color-mix(in srgb, var(--color-primary) 7%, var(--color-bg-card) 93%)
-    );
-    box-shadow:
-      inset 0 1px 0 rgb(255 255 255 / 18%),
-      0 1px 2px rgb(15 23 42 / 6%);
+    gap: 8px;
+    height: 32px;
+    padding: 0 10px;
+    border-radius: var(--radius-button);
+    border: 1px solid var(--color-border);
+    background: var(--input-bg, var(--color-bg-subtle));
     min-width: 0;
     flex-shrink: 0;
   }
@@ -502,13 +614,13 @@
   }
 
   .tenant-chip--switch :deep(.tenant-chip__select) {
-    width: 168px;
+    width: 96px;
   }
 
   .tenant-chip--switch :deep(.el-select__wrapper) {
-    min-height: 26px;
-    border-radius: calc(var(--radius-content) - 2px);
-    background: color-mix(in srgb, var(--color-bg-card) 78%, transparent);
+    min-height: 24px;
+    border-radius: calc(var(--radius-button) - 2px);
+    background: color-mix(in srgb, var(--color-bg-canvas) 72%, transparent);
     box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-primary) 20%, transparent);
   }
 
@@ -533,8 +645,8 @@
     flex-shrink: 0;
     color: var(--color-text-tertiary);
     font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 0.02em;
+    font-weight: 650;
+    letter-spacing: 0;
   }
 
   .tenant-chip__value {
@@ -554,7 +666,7 @@
     justify-content: center;
     padding: 2px;
     margin-left: 2px;
-    border-radius: var(--radius-content);
+    border-radius: var(--radius-button);
     color: var(--color-text-tertiary);
     cursor: pointer;
     outline: none;
@@ -578,7 +690,36 @@
   }
 
   .icon-button {
-    padding: 6px;
+    display: inline-grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    padding: 0;
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-button);
+    background: color-mix(in srgb, var(--color-bg-elevated) 74%, transparent);
+    color: var(--color-text-secondary);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    outline: none;
+    transition:
+      background-color 0.15s ease,
+      border-color 0.15s ease,
+      color 0.15s ease;
+  }
+
+  .icon-button:hover,
+  .icon-button:focus-visible {
+    color: var(--color-primary);
+    border-color: color-mix(in srgb, var(--color-primary) 40%, var(--color-border) 60%);
+    background: color-mix(in srgb, var(--color-primary) 10%, var(--color-bg-elevated) 90%);
+  }
+
+  .header-icon :deep(.el-icon),
+  .header-icon .el-icon {
+    font-size: 15px;
   }
 
   /* Bell badge:el-badge 默认 offset 偏外,这里挤回 icon 右上角对齐其它 icon-button */
@@ -608,7 +749,7 @@
     margin-right: 5px;
     font-size: 12px;
     font-weight: 700;
-    letter-spacing: -0.02em;
+    letter-spacing: 0;
     color: var(--color-text-secondary);
   }
 </style>

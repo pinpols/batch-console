@@ -14,7 +14,7 @@
     </PageHeader>
 
     <!-- P2.1 全 0 引导:summary 加载完且所有核心指标 = 0,显示"开始接入"卡片 -->
-    <SectionCard v-if="summary && isFreshTenant" class="ops-onboarding">
+    <SectionCard v-if="summary && isFreshTenant && opsTab === 'extra'" class="ops-onboarding">
       <div class="ops-onboarding__head">
         <h3>{{ t('opsSummary.onboardingTitle') }}</h3>
         <p>{{ t('opsSummary.onboardingDesc') }}</p>
@@ -54,7 +54,7 @@
       </div>
     </SectionCard>
 
-    <SectionCard v-if="summary" class="ops-tabs-card">
+    <div v-if="summary" class="ops-tabs-card">
       <el-tabs v-model="opsTab" class="pill-tabs ops-tabs">
         <el-tab-pane :label="t('opsSummary.tabKpis')" name="kpis" />
         <el-tab-pane :label="t('opsSummary.tabTrend')" name="trend" />
@@ -62,7 +62,7 @@
         <el-tab-pane :label="t('opsSummary.tabExtra')" name="extra" />
       </el-tabs>
 
-      <div class="ops-panels">
+      <div v-show="opsTab !== 'extra'" class="ops-panels">
         <OpsMetricGrid
           :summary="summary"
           :active="opsTab === 'kpis'"
@@ -97,7 +97,7 @@
           @refresh-charts="loadCharts"
         />
       </div>
-    </SectionCard>
+    </div>
 
     <OpsExtraPanel
       v-if="opsTab === 'extra'"
@@ -118,7 +118,13 @@
 <script setup lang="ts">
   import { computed, defineAsyncComponent } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { Refresh, FolderOpened, DocumentAdd, User, Cpu } from '@element-plus/icons-vue'
+  import {
+    RefreshCw as Refresh,
+    FolderOpen as FolderOpened,
+    FilePlus as DocumentAdd,
+    User,
+    Cpu,
+  } from 'lucide-vue-next'
   import { useRefreshAction } from '@/composables/useRefreshAction'
 
   const refresh = useRefreshAction()
@@ -245,21 +251,22 @@
     color: var(--color-text-tertiary);
   }
 
+  /* 还原设计纵向节奏:副标题→Tab ≈ 32px、Tab→卡片 ≈ 28px */
+  .ops-tabs-card {
+    margin-top: 20px;
+  }
+
   .ops-tabs {
-    margin-top: 2px;
+    margin-top: 0;
   }
 
   .ops-tabs :deep(.el-tabs__content) {
     display: none;
   }
 
-  .ops-tabs-card :deep(.el-card__body) {
-    overflow: visible;
-  }
-
   .ops-panels {
     position: relative;
-    margin-top: 10px;
+    margin-top: 24px;
     overflow: visible;
   }
 </style>

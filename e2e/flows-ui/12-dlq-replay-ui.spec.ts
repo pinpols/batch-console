@@ -19,8 +19,9 @@ test.describe('UI Flow 12: DLQ replay UI', () => {
     await page.goto('/ops/diagnostic')
     await expect(page).toHaveURL(/\/ops\/diagnostic/)
     await page.waitForLoadState('networkidle', { timeout: 8000 }).catch(() => undefined)
+    // 新 UI:运维诊断改为 .diag-card 卡片目录
     await expect(
-      page.locator('.section-card, .el-card, .el-table, .el-empty').first(),
+      page.locator('.diag-card, .section-card, .el-card, .el-table, .el-empty').first(),
     ).toBeVisible({ timeout: 10_000 })
   })
 
@@ -29,11 +30,11 @@ test.describe('UI Flow 12: DLQ replay UI', () => {
     await expect(page).toHaveURL(/\/observability\/outbox/)
     await page.waitForLoadState('networkidle', { timeout: 8000 }).catch(() => undefined)
     await expect(page.locator(LIST_OR_EMPTY).first()).toBeVisible({ timeout: 10_000 })
-    const dlqTab = page.getByRole('tab', { name: /死信|dead.?letter|DLQ/i }).first()
+    // 新 UI:el-tabs 换自绘 pill tab(.ob-tab);死信 tab 若存在则点击并验激活态
+    const dlqTab = page.locator('.ob-tab').filter({ hasText: /死信|dead.?letter|DLQ/i }).first()
     if (await isVisible(dlqTab, 2000)) {
       await dlqTab.click({ force: true })
-      // 验 tab 真切换(激活态);不去断隐藏 pane 的表
-      await expect(dlqTab).toHaveAttribute('aria-selected', 'true', { timeout: 4000 })
+      await expect(dlqTab).toHaveClass(/is-active/, { timeout: 4000 })
     }
   })
 

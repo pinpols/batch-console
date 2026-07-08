@@ -3,6 +3,7 @@ import { defineStore } from 'pinia'
 import {
   applyThemeToDocument,
   getSystemIsDark,
+  markThemeRedesignDefaultApplied,
   readThemePreference,
   resolveEffectiveTheme,
   THEME_STORAGE_KEY,
@@ -21,7 +22,10 @@ const focusModeKey = 'batch-console:focus-mode'
 export type ContentDensity = ContentDensityMode
 
 export const useAppStore = defineStore('app', () => {
-  const sidebarCollapsed = ref(localStorage.getItem(sidebarCollapsedKey) === '1')
+  const storedSidebarCollapsed = localStorage.getItem(sidebarCollapsedKey)
+  const sidebarCollapsed = ref(
+    storedSidebarCollapsed == null ? true : storedSidebarCollapsed === '1',
+  )
   const contentDensity = ref<ContentDensity>(
     (localStorage.getItem(CONTENT_DENSITY_STORAGE_KEY) as ContentDensity | null) ?? 'comfortable',
   )
@@ -102,6 +106,7 @@ export const useAppStore = defineStore('app', () => {
     themePreference,
     (p) => {
       localStorage.setItem(THEME_STORAGE_KEY, p)
+      markThemeRedesignDefaultApplied()
       if (p === 'system') {
         systemIsDark.value = getSystemIsDark()
       }

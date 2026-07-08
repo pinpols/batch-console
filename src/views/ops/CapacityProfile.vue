@@ -8,7 +8,8 @@
       </template>
     </PageHeader>
 
-    <SectionCard>
+    <!-- 还原设计:查询区直铺底色,无卡片壳 -->
+    <div>
       <ListPageQueryBar
         :filter-busy="loading"
         :refresh-busy="loading"
@@ -34,7 +35,7 @@
           />
         </el-form-item>
       </ListPageQueryBar>
-    </SectionCard>
+    </div>
 
     <SectionCard v-if="!report && !loading" class="mt">
       <EmptyState
@@ -170,7 +171,7 @@
   import { computed, reactive, ref } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
-  import { Refresh } from '@element-plus/icons-vue'
+  import { RefreshCw as Refresh } from 'lucide-vue-next'
   import {
     getCapacityProfile,
     type CapacityProfileGroupBy,

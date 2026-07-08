@@ -2,146 +2,160 @@
   <PageContainer>
     <PageHeader />
 
-    <SectionCard>
+    <!-- 照设计 proto-workers dump:统计卡位于 tab pill 之上、常显(执行通道 tab 也可见);
+         横排状态统计卡(色点 + 标签 + mono 大数),点击联动状态筛选并切回 Workers tab -->
+    <div class="wk-stats">
+      <button
+        v-for="s in statCards"
+        :key="s.status"
+        type="button"
+        class="wk-stat"
+        :class="{ 'is-active': workerFilters.status === s.status }"
+        @click="toggleStatusFilter(s.status)"
+      >
+        <span class="wk-stat__dot" :style="{ background: s.color }" />
+        <span class="wk-stat__label">{{ s.label }}</span>
+        <span class="wk-stat__spacer" />
+        <span class="wk-stat__num" :style="s.value > 0 ? { color: s.numColor } : undefined">
+          {{ s.value }}
+        </span>
+      </button>
+    </div>
+
+    <!-- 还原设计:tabs 与内容直铺底色,无外层卡片壳 -->
+    <div>
       <el-tabs v-model="activeTab" class="pill-tabs">
         <el-tab-pane :label="t('workerManagement.tabWorkers')" name="workers">
-          <ProTable
-            :data="workerTableRows"
-            :loading="workerTableBlocking"
-            :error="workerLoadError"
-            :on-retry="
-              () => {
-                void refetchWorkers()
+          <ListPageQueryBar
+            :model="workerFilters"
+            :filter-busy="workerQueryBusy"
+            :refresh-busy="workerIsFetching"
+            :disabled="workerIsPending"
+            @search="onWorkerSearch"
+            @reset="resetWorkers"
+            @refresh="onRefreshWorkers"
+          >
+            <el-form-item :label="t('workerManagement.groupLabel')">
+              <MetaSelect
+                class="query-w-180"
+                v-model="workerFilters.workerGroup"
+                clearable
+                filterable
+                allow-create
+                default-first-option
+                :placeholder="t('workerManagement.groupPlaceholder')"
+                :options="workerGroupOptions"
+              />
+            </el-form-item>
+            <el-form-item :label="t('workerManagement.statusLabel')">
+              <MetaSelect
+                class="query-w-200"
+                v-model="workerFilters.status"
+                clearable
+                enum-key="workerStatus"
+                :placeholder="t('workerManagement.statusPlaceholder')"
+                :options="workerStatusOptions"
+              />
+            </el-form-item>
+            <el-form-item :label="t('workerManagement.keywordLabel')">
+              <el-input
+                class="query-w-200"
+                v-model="workerFilters.keyword"
+                clearable
+                :placeholder="t('workerManagement.keywordPlaceholder')"
+              />
+            </el-form-item>
+          </ListPageQueryBar>
+
+          <OpsListToolbar
+            :status="live.status.value"
+            :last-refreshed-at="live.lastRefreshedAt.value"
+          />
+
+          <EmptyState
+            v-if="!workerTableBlocking && workerTableRows.length === 0"
+            variant="tenant-empty"
+            :title="t('workerManagement.emptyTitle')"
+            :description="workerEmptyDescription"
+            :image-size="96"
+          >
+            <template #action>
+              <div class="worker-empty-actions">
+                <el-button
+                  type="primary"
+                  :icon="Refresh"
+                  :loading="workerIsFetching"
+                  @click="onRefreshWorkers"
+                >
+                  {{ t('common.refresh') }}
+                </el-button>
+                <el-button @click="resetWorkers">
+                  {{ t('workerManagement.clearFilters') }}
+                </el-button>
+              </div>
+              <div class="worker-empty-meta">
+                {{ t('workerManagement.emptyLastRefresh', { time: workerLastRefreshText }) }}
+              </div>
+            </template>
+          </EmptyState>
+
+          <div v-else v-loading="workerTableBlocking" class="wk-grid">
+            <div
+              v-for="row in workerTableRows"
+              :key="row.id"
+              class="wk-card"
+              :class="cardStateClass(row.status)"
+            >
+              <div class="wk-card__head">
+                <div class="wk-card__id">
+                  <CopyableText class="wk-card__code" :text="row.workerCode" />
+                  <div class="wk-card__group">{{ row.workerGroup }}</div>
+                </div>
+              </div>
+              <div class="wk-card__meta">
+                <StatusTag :value="String(row.status ?? '')" category="worker" />
+                <span class="wk-card__spacer" />
+                <span class="wk-card__hb" :title="String(row.heartbeatAt ?? '')">
+                  ♥ {{ relTime(row.heartbeatAt) }}
+                </span>
+              </div>
+              <!-- 负载:后端仅有 currentLoad(无容量分母),显示真实数字;
+                   mini bar 为相对当前列表峰值的比例,title 注明口径,不编造 x/y 分母 -->
+              <div class="wk-card__loadrow" :title="t('workerManagement.loadBarTitle')">
+                <div class="wk-card__bar">
+                  <div class="wk-card__bar-fill" :style="{ width: loadBarWidth(row) }" />
+                </div>
+                <span class="wk-card__load">{{ row.currentLoad ?? 0 }}</span>
+              </div>
+              <div class="wk-card__actions">
+                <el-button size="small" plain type="warning" @click="drain(row)">
+                  {{ t('workerManagement.actionDrain') }}
+                </el-button>
+                <el-button size="small" plain type="danger" @click="offline(row)">
+                  {{ t('workerManagement.actionOffline') }}
+                </el-button>
+                <el-button size="small" plain @click="takeover(row)">
+                  {{ t('workerManagement.actionTakeover') }}
+                </el-button>
+                <el-button size="small" plain type="success" @click="warmup(row)">
+                  {{ t('workerManagement.actionWarmup') }}
+                </el-button>
+              </div>
+            </div>
+          </div>
+
+          <TablePagerBar
+            :page="workerPage"
+            :page-size="workerPageSize"
+            :total="workerTotal"
+            @update:page="(p: number) => (workerPage = p)"
+            @update:page-size="
+              (s: number) => {
+                workerPageSize = s
+                workerPage = 1
               }
             "
-            :total="workerTotal"
-            :has-active-filters="workerHasActiveFilters"
-            :empty-text="workerFilteredEmptyText"
-            :filtered-empty-text="workerFilteredEmptyText"
-            v-model:page="workerPage"
-            v-model:page-size="workerPageSize"
-            @change="() => {}"
-          >
-            <template #query>
-              <ListPageQueryBar
-                :model="workerFilters"
-                :filter-busy="workerQueryBusy"
-                :refresh-busy="workerIsFetching"
-                :disabled="workerIsPending"
-                @search="onWorkerSearch"
-                @reset="resetWorkers"
-                @refresh="onRefreshWorkers"
-              >
-                <el-form-item :label="t('workerManagement.groupLabel')">
-                  <MetaSelect
-                    class="query-w-180"
-                    v-model="workerFilters.workerGroup"
-                    clearable
-                    filterable
-                    allow-create
-                    default-first-option
-                    :placeholder="t('workerManagement.groupPlaceholder')"
-                    :options="workerGroupOptions"
-                  />
-                </el-form-item>
-                <el-form-item :label="t('workerManagement.statusLabel')">
-                  <MetaSelect
-                    class="query-w-200"
-                    v-model="workerFilters.status"
-                    clearable
-                    enum-key="workerStatus"
-                    :placeholder="t('workerManagement.statusPlaceholder')"
-                    :options="workerStatusOptions"
-                  />
-                </el-form-item>
-                <el-form-item :label="t('workerManagement.keywordLabel')">
-                  <el-input
-                    class="query-w-200"
-                    v-model="workerFilters.keyword"
-                    clearable
-                    :placeholder="t('workerManagement.keywordPlaceholder')"
-                  />
-                </el-form-item>
-              </ListPageQueryBar>
-            </template>
-            <template #toolbar>
-              <OpsListToolbar
-                :status="live.status.value"
-                :last-refreshed-at="live.lastRefreshedAt.value"
-              />
-            </template>
-            <template #empty>
-              <EmptyState
-                variant="tenant-empty"
-                :title="t('workerManagement.emptyTitle')"
-                :description="workerEmptyDescription"
-                :image-size="96"
-              >
-                <template #action>
-                  <div class="worker-empty-actions">
-                    <el-button
-                      type="primary"
-                      :icon="Refresh"
-                      :loading="workerIsFetching"
-                      @click="onRefreshWorkers"
-                    >
-                      {{ t('common.refresh') }}
-                    </el-button>
-                    <el-button @click="resetWorkers">
-                      {{ t('workerManagement.clearFilters') }}
-                    </el-button>
-                  </div>
-                  <div class="worker-empty-meta">
-                    {{ t('workerManagement.emptyLastRefresh', { time: workerLastRefreshText }) }}
-                  </div>
-                </template>
-              </EmptyState>
-            </template>
-
-            <el-table-column
-              prop="workerCode"
-              :label="t('workerManagement.colWorker')"
-              min-width="140"
-            >
-              <template #default="{ row }">
-                <CopyableText :text="row.workerCode" />
-              </template>
-            </el-table-column>
-            <el-table-column
-              prop="workerGroup"
-              :label="t('workerManagement.colGroup')"
-              width="120"
-            />
-            <el-table-column prop="status" :label="t('workerManagement.colStatus')" width="110">
-              <template #default="{ row }">
-                <StatusTag :value="String(row.status ?? '')" category="worker" />
-              </template>
-            </el-table-column>
-            <el-table-column prop="currentLoad" :label="t('workerManagement.colLoad')" width="80" />
-            <DatetimeColumn
-              prop="heartbeatAt"
-              :label="t('workerManagement.colHeartbeat')"
-              width="160"
-            />
-            <el-table-column :label="t('workerManagement.colActions')" width="220" fixed="right">
-              <template #default="{ row }">
-                <div class="table-actions">
-                  <el-button size="small" plain type="warning" @click="drain(row)">
-                    {{ t('workerManagement.actionDrain') }}
-                  </el-button>
-                  <el-button size="small" plain type="danger" @click="offline(row)">
-                    {{ t('workerManagement.actionOffline') }}
-                  </el-button>
-                  <el-button size="small" plain @click="takeover(row)">
-                    {{ t('workerManagement.actionTakeover') }}
-                  </el-button>
-                  <el-button size="small" plain type="success" @click="warmup(row)">
-                    {{ t('workerManagement.actionWarmup') }}
-                  </el-button>
-                </div>
-              </template>
-            </el-table-column>
-          </ProTable>
+          />
         </el-tab-pane>
 
         <el-tab-pane :label="t('workerManagement.tabChannels')" name="channels">
@@ -226,7 +240,7 @@
           </ProTable>
         </el-tab-pane>
       </el-tabs>
-    </SectionCard>
+    </div>
 
     <el-drawer
       :append-to-body="true"
@@ -262,7 +276,7 @@
   import { computed, reactive, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
-  import { Refresh } from '@element-plus/icons-vue'
+  import { RefreshCw as Refresh } from 'lucide-vue-next'
 
   const { t } = useI18n({ useScope: 'global' })
   import { confirmDanger } from '@/composables/useDangerConfirm'
@@ -289,7 +303,6 @@
   import PageContainer from '@/components/common/PageContainer.vue'
   import MetaSelect from '@/components/common/MetaSelect.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
-  import SectionCard from '@/components/common/SectionCard.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import ProTable from '@/components/table/ProTable.vue'
   import OpsListToolbar from '@/components/table/OpsListToolbar.vue'
@@ -297,6 +310,7 @@
   import CopyableText from '@/components/common/CopyableText.vue'
   import JsonPreview from '@/components/common/JsonPreview.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
+  import TablePagerBar from '@/components/table/TablePagerBar.vue'
   import type { ConsoleWorkerRegistryResponse } from '@/types/console-api'
   import type { ConsoleFileChannelResponse } from '@/types/console-api'
 
@@ -387,6 +401,78 @@
     const pr = toPageResult(filteredWorkers.value, workerPage.value, workerPageSize.value)
     return pr.records
   })
+
+  // 状态统计卡(还原设计 workercards):按全量(未过滤)数据聚合,点击联动状态筛选
+  const workerStats = computed(() => {
+    const all = allWorkerData.value ?? []
+    const by = (s: string) => all.filter((x) => String(x.status ?? '').toUpperCase() === s).length
+    return { online: by('ONLINE'), draining: by('DRAINING'), offline: by('OFFLINE') }
+  })
+
+  function toggleStatusFilter(status: string) {
+    workerFilters.status = workerFilters.status === status ? '' : status
+    workerPage.value = 1
+    // 统计卡常显(含执行通道 tab):点击筛选时切回 Workers tab 展示结果
+    activeTab.value = 'workers'
+  }
+
+  // 照 dump 统计卡三件套(在线/Draining/离线):色点 + 标签 + mono 数值
+  const statCards = computed(() => [
+    {
+      status: 'ONLINE',
+      label: t('workerManagement.statOnline'),
+      value: workerStats.value.online,
+      color: 'var(--color-success)',
+      numColor: 'var(--color-text-primary)',
+    },
+    {
+      status: 'DRAINING',
+      label: 'Draining',
+      value: workerStats.value.draining,
+      color: 'var(--color-warning)',
+      numColor: 'var(--color-warning)',
+    },
+    {
+      status: 'OFFLINE',
+      label: t('workerManagement.statOffline'),
+      value: workerStats.value.offline,
+      color: 'var(--color-danger)',
+      numColor: 'var(--color-danger)',
+    },
+  ])
+
+  /** 卡片描边跟状态走(dump:Draining=warning 边、离线=danger 边) */
+  function cardStateClass(status: string | null | undefined) {
+    const s = String(status ?? '').toUpperCase()
+    if (s === 'DRAINING') return 'wk-card--draining'
+    if (s === 'OFFLINE' || s === 'DECOMMISSIONED') return 'wk-card--offline'
+    return ''
+  }
+
+  // mini bar 口径:相对当前筛选结果中的负载峰值(后端无容量分母,不编造 x/y)
+  const workerLoadPeak = computed(() =>
+    filteredWorkers.value.reduce((m, x) => Math.max(m, Number(x.currentLoad ?? 0)), 0),
+  )
+
+  function loadBarWidth(row: ConsoleWorkerRegistryResponse): string {
+    const peak = workerLoadPeak.value
+    const load = Number(row.currentLoad ?? 0)
+    if (!peak || !Number.isFinite(load) || load <= 0) return '0%'
+    return `${Math.min(100, Math.round((load / peak) * 100))}%`
+  }
+
+  /** 心跳相对时间(设计「♥ 3s 前」) */
+  function relTime(iso: string | null | undefined): string {
+    if (!iso) return '—'
+    const diff = Date.now() - new Date(iso).getTime()
+    if (!Number.isFinite(diff) || diff < 0) return '—'
+    const s = Math.floor(diff / 1000)
+    if (s < 60) return t('workerManagement.hbSecondsAgo', { n: s })
+    const m = Math.floor(s / 60)
+    if (m < 60) return t('workerManagement.hbMinutesAgo', { n: m })
+    const h = Math.floor(m / 60)
+    return t('workerManagement.hbHoursAgo', { n: h })
+  }
 
   function onWorkerSearch() {
     return runWorkerSearch(() => {
@@ -587,5 +673,175 @@
     text-align: center;
     font-size: 12px;
     color: var(--color-text-tertiary);
+  }
+
+  /* ── 照设计 proto-workers dump(docs/redesign/proto-workers.html) ── */
+  /* 统计卡:横排 色点 + 标签 + spacer + mono 22px 数值,卡底 r12 padding 14 18 */
+  .wk-stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+    margin-bottom: 18px;
+  }
+
+  .wk-stat {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 18px;
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    cursor: pointer;
+    font-family: inherit;
+    text-align: left;
+  }
+
+  .wk-stat.is-active {
+    border-color: var(--color-primary);
+  }
+
+  .wk-stat__dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .wk-stat__label {
+    color: var(--color-text-secondary);
+    font-size: 13px;
+  }
+
+  .wk-stat__spacer,
+  .wk-card__spacer {
+    flex: 1;
+  }
+
+  .wk-stat__num {
+    font-family: var(--font-mono);
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+  }
+
+  /* Worker 卡片:r14 padding 16 18,auto-fill 网格 */
+  .wk-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 14px;
+    margin-top: 4px;
+  }
+
+  .wk-card {
+    display: flex;
+    flex-direction: column;
+    padding: 16px 18px;
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    border-radius: 14px;
+    box-shadow: var(--shadow-card);
+  }
+
+  .wk-card--draining {
+    border-color: var(--color-warning);
+  }
+
+  .wk-card--offline {
+    border-color: var(--color-danger);
+  }
+
+  .wk-card__head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+  }
+
+  .wk-card__id {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .wk-card__code {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .wk-card__group {
+    margin-top: 2px;
+    font-size: 11.5px;
+    color: var(--color-text-tertiary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .wk-card__meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 14px;
+  }
+
+  .wk-card__hb {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--color-text-tertiary);
+  }
+
+  /* 负载行:mini bar(5px 圆角轨道)+ 真实负载数(mono,右对齐) */
+  .wk-card__loadrow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .wk-card__bar {
+    flex: 1;
+    height: 5px;
+    border-radius: 3px;
+    background: var(--color-bg-elevated);
+    overflow: hidden;
+  }
+
+  .wk-card__bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    background: var(--color-primary);
+  }
+
+  .wk-card__load {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--color-text-secondary);
+    min-width: 24px;
+    text-align: right;
+  }
+
+  .wk-card__actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 14px;
+    padding-top: 13px;
+    border-top: 1px solid var(--color-border);
+  }
+
+  .wk-card__actions .el-button + .el-button {
+    margin-left: 0;
+  }
+
+  @media (max-width: 900px) {
+    .wk-stats {
+      grid-template-columns: 1fr;
+    }
   }
 </style>

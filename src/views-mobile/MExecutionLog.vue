@@ -59,7 +59,7 @@
   import { useTenantReload } from '@/composables/useTenantReload'
   import { useRoute, useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
-  import { Refresh } from '@element-plus/icons-vue'
+  import { RefreshCw as Refresh } from 'lucide-vue-next'
   import { ElMessage } from 'element-plus'
   import { useTenantStore } from '@/stores/tenant'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'

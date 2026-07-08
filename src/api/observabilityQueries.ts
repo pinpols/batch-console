@@ -137,10 +137,14 @@ export function queryOutboxDeliveries(tenantId: string, filters?: OutboxDelivery
 
 /** GET /api/console/queries/dead-letters */
 export function queryDeadLetters(tenantId: string, filters?: { traceId?: string }) {
-  return fetchAllPageItems<ConsoleDeadLetterTaskResponse>('/api/console/queries/dead-letters', {
-    tenantId,
-    ...(filters?.traceId ? { traceId: filters.traceId } : {}),
-  })
+  return fetchAllPageItems<ConsoleDeadLetterTaskResponse>(
+    '/api/console/queries/dead-letters',
+    {
+      tenantId,
+      ...(filters?.traceId ? { traceId: filters.traceId } : {}),
+    },
+    { devWarnThreshold: 5000 },
+  )
 }
 
 /** POST /api/console/jobs/dead-letters/replay — 重放单条死信 */
@@ -159,12 +163,16 @@ export function queryRetries(tenantId: string) {
 
 /** GET /api/console/queries/execution-logs */
 export function queryExecutionLogs(tenantId: string, filters?: ExecutionLogFilters) {
-  return fetchAllPageItems<Record<string, unknown>>('/api/console/queries/execution-logs', {
-    tenantId,
-    ...(filters?.traceId ? { traceId: filters.traceId } : {}),
-    ...(filters?.operationType ? { operationType: filters.operationType } : {}),
-    ...(filters?.operationResult ? { operationResult: filters.operationResult } : {}),
-  })
+  return fetchAllPageItems<Record<string, unknown>>(
+    '/api/console/queries/execution-logs',
+    {
+      tenantId,
+      ...(filters?.traceId ? { traceId: filters.traceId } : {}),
+      ...(filters?.operationType ? { operationType: filters.operationType } : {}),
+      ...(filters?.operationResult ? { operationResult: filters.operationResult } : {}),
+    },
+    { devWarnThreshold: 5000 },
+  )
 }
 
 /** GET /api/console/queries/channel-receipts */

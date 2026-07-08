@@ -76,7 +76,9 @@ export function filterNavigationByBackendMenus(
   return groups
     .map((group) => ({
       ...group,
-      children: group.children.filter((item) => visiblePaths.has(item.path)),
+      // 菜单项可带 query(如补跑审批 /approvals?tab=catch-up 复用审批页);后端菜单按真实页
+      // path 收录,匹配时去掉 query 部分,避免带 tab 的项被误滤掉。
+      children: group.children.filter((item) => visiblePaths.has(item.path.split('?')[0])),
     }))
     .filter((group) => group.children.length > 0)
 }

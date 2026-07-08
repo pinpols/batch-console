@@ -77,7 +77,8 @@
     />
     <el-table-column prop="approvalNo" :label="t('approvals.colApprovalNo')" width="160">
       <template #default="{ row }">
-        <CopyableText :text="row.approvalNo" />
+        <!-- dump:审批单号 mono + accent 蓝 -->
+        <CopyableText class="ap-no" :text="row.approvalNo" />
       </template>
     </el-table-column>
     <el-table-column
@@ -90,17 +91,6 @@
         {{ resolveType(row.approvalType) }}
       </template>
     </el-table-column>
-    <el-table-column prop="approvalStatus" :label="t('approvals.colStatus')" width="120">
-      <template #default="{ row }">
-        <StatusTag :value="String(row.approvalStatus ?? '')" category="approval" />
-      </template>
-    </el-table-column>
-    <el-table-column
-      prop="actionType"
-      :label="t('approvals.colAction')"
-      width="100"
-      show-overflow-tooltip
-    />
     <el-table-column
       prop="targetType"
       :label="t('approvals.colTargetType')"
@@ -114,16 +104,35 @@
       show-overflow-tooltip
     >
       <template #default="{ row }">
-        <router-link v-if="targetLink(row)" class="cell-link" :to="targetLink(row) || ''">
+        <router-link v-if="targetLink(row)" class="cell-link ap-mono" :to="targetLink(row) || ''">
           {{ row.targetId }}
         </router-link>
-        <span v-else>{{ row.targetId || '—' }}</span>
+        <span v-else class="ap-mono">{{ row.targetId || '—' }}</span>
       </template>
     </el-table-column>
     <el-table-column
       prop="requesterId"
       :label="t('approvals.colRequester')"
       width="110"
+      show-overflow-tooltip
+    />
+    <!-- dump 列序:目标/申请人之后是「申请时间」,相对格式(今天 13:52 / 昨天 18:03) -->
+    <el-table-column prop="createdAt" :label="requestedAtLabel" width="130">
+      <template #default="{ row }">
+        <span class="ap-mono ap-time" :title="String(row.createdAt ?? '')">
+          {{ relativeDayTime(row.createdAt) }}
+        </span>
+      </template>
+    </el-table-column>
+    <el-table-column prop="approvalStatus" :label="t('approvals.colStatus')" width="120">
+      <template #default="{ row }">
+        <StatusTag :value="String(row.approvalStatus ?? '')" category="approval" />
+      </template>
+    </el-table-column>
+    <el-table-column
+      prop="actionType"
+      :label="t('approvals.colAction')"
+      width="100"
       show-overflow-tooltip
     />
     <el-table-column
@@ -223,6 +232,7 @@
   import { useTenantReload } from '@/composables/useTenantReload'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
+  import { fmtCompact } from '@/utils/datetime'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import ProTable from '@/components/table/ProTable.vue'
   import BulkActionBar from '@/components/table/BulkActionBar.vue'
@@ -282,6 +292,11 @@
   const approvalTypeOptions = computed(() => pickMetaEnumGroup(metaEnums.value, 'approvalType'))
 
   const terminal = new Set(['APPROVED', 'REJECTED', 'CLOSED', 'CANCELLED'])
+  const requestedAtLabel = computed(() => t('approvals.colRequestedAt'))
+
+  function relativeDayTime(value: unknown): string {
+    return fmtCompact(value)
+  }
 
   function isPending(row: ConsoleApprovalCommandResponse) {
     return !terminal.has(row.approvalStatus)
@@ -293,6 +308,10 @@
 
   function onSel(s: ConsoleApprovalCommandResponse[]) {
     selection.value = s
+  }
+
+  function slicePage() {
+    // 服务端分页由 page/pageSize watcher 触发 load;保留 ProTable change 回调避免模板漂移。
   }
 
   // 服务端分页 + 服务端筛选:status→approvalStatus / type→approvalType / keyword 跨列模糊 /
@@ -528,6 +547,18 @@
 </script>
 
 <style scoped>
+  /* dump proto-approvals:单号 mono 蓝、目标 mono */
+  .ap-no {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--color-primary);
+  }
+
+  .ap-mono {
+    font-family: var(--font-mono);
+    font-size: 12px;
+  }
+
   .trace {
     font-size: 12px;
     color: var(--el-text-color-secondary);

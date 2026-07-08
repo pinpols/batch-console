@@ -1,19 +1,41 @@
 <template>
+  <!-- 还原设计(login 样张):左营销面板(标语+指标)+ 右表单分屏。 -->
   <div class="login-page">
-    <div class="login-bg-glow login-bg-glow--1" aria-hidden="true" />
-    <div class="login-bg-glow login-bg-glow--2" aria-hidden="true" />
-
-    <main class="login-card">
+    <aside class="login-hero">
       <div class="login-brand">
         <span class="login-brand__logo">BC</span>
         <div>
-          <div class="login-brand__name">Batch Console</div>
-          <div class="login-brand__desc">{{ t('login.appDesc') }}</div>
+          <div class="login-brand__name">{{ t('nav.appTitle') }}</div>
+          <div class="login-brand__desc">Batch Console</div>
         </div>
       </div>
 
+      <div class="login-hero__body">
+        <h1 class="login-hero__title">{{ t('login.heroTitle') }}</h1>
+        <p class="login-hero__desc">{{ t('login.heroDesc') }}</p>
+        <div class="login-hero__stats">
+          <div class="login-hero__stat">
+            <div class="login-hero__stat-value login-hero__stat-value--accent">99.98%</div>
+            <div class="login-hero__stat-label">{{ t('login.statAvailability') }}</div>
+          </div>
+          <div class="login-hero__stat">
+            <div class="login-hero__stat-value">3.8k+</div>
+            <div class="login-hero__stat-label">{{ t('login.statDailyJobs') }}</div>
+          </div>
+          <div class="login-hero__stat">
+            <div class="login-hero__stat-value">128</div>
+            <div class="login-hero__stat-label">{{ t('login.statTenants') }}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="login-hero__foot">© 2026 Batch Console · v{{ appVersion }}</div>
+    </aside>
+
+    <main class="login-card">
       <header class="login-card__header">
         <h2 class="login-card__title">{{ t('login.welcome') }}</h2>
+        <p class="login-card__subtitle">{{ t('login.subtitle') }}</p>
       </header>
 
       <div v-if="loginTrace" class="login-trace" role="status">
@@ -98,7 +120,7 @@
 <script setup lang="ts">
   import { ref, reactive, onMounted } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { CircleClose, Lock, User } from '@element-plus/icons-vue'
+  import { CircleX as CircleClose, Lock, User } from 'lucide-vue-next'
 
   const { t } = useI18n({ useScope: 'global' })
   import { useRouter, useRoute } from 'vue-router'
@@ -118,6 +140,7 @@
 
   const formRef = ref<FormInstance>()
   const loading = ref(false)
+  const appVersion = __APP_VERSION__
   const loginTrace = ref('')
   const form = reactive({ username: '', password: '' })
 
@@ -211,63 +234,90 @@
 </script>
 
 <style scoped>
+  /* 还原设计:左右分屏 —— 左营销面板(page 底)+ 右表单区(card 底),1px 分隔线。 */
   .login-page {
     min-height: 100vh;
     min-height: 100dvh;
     display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 24px;
-    background: var(--login-page-bg);
-    position: relative;
-    overflow: hidden;
+    align-items: stretch;
+    background: var(--color-bg-page);
   }
 
-  /* 背景光晕 */
-  .login-bg-glow {
-    position: absolute;
-    border-radius: 50%;
-    pointer-events: none;
-    filter: blur(80px);
+  .login-hero {
+    flex: 1 1 56%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 44px 56px 32px;
+    min-width: 0;
   }
 
-  .login-bg-glow--1 {
-    width: 480px;
-    height: 480px;
-    top: -120px;
-    left: -80px;
-    background: rgb(22 119 255 / 10%);
+  .login-hero__body {
+    max-width: 460px;
   }
 
-  .login-bg-glow--2 {
-    width: 400px;
-    height: 400px;
-    bottom: -100px;
-    right: -60px;
-    background: rgb(16 185 129 / 8%);
+  .login-hero__title {
+    margin: 0 0 16px;
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1.4;
+    color: var(--color-text-primary);
+    letter-spacing: -0.01em;
+    white-space: pre-line;
   }
 
-  /* 卡片 */
+  .login-hero__desc {
+    margin: 0 0 36px;
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--color-text-secondary);
+  }
+
+  .login-hero__stats {
+    display: flex;
+    gap: 40px;
+  }
+
+  .login-hero__stat-value {
+    font-family: var(--font-mono);
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--color-text-primary);
+  }
+
+  .login-hero__stat-value--accent {
+    color: var(--color-primary);
+  }
+
+  .login-hero__stat-label {
+    margin-top: 4px;
+    font-size: 12px;
+    color: var(--color-text-tertiary);
+  }
+
+  .login-hero__foot {
+    font-size: 12px;
+    color: var(--color-text-tertiary);
+  }
+
+  /* 右表单区:边到边面板,非浮卡 */
   .login-card {
     position: relative;
-    width: 100%;
-    max-width: 420px;
-    padding: 40px 36px 32px;
-    border-radius: 24px;
-    background: rgb(255 255 255 / 82%);
-    border: 1px solid rgb(255 255 255 / 60%);
-    backdrop-filter: blur(20px) saturate(1.4);
-    box-shadow:
-      0 1px 3px rgb(0 0 0 / 4%),
-      0 12px 40px rgb(15 23 42 / 8%);
+    flex: 0 0 44%;
+    max-width: 560px;
+    min-width: 380px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 48px 56px;
+    background: var(--color-bg-card);
+    border-left: 1px solid var(--color-border);
   }
 
-  html.dark .login-card {
-    background: rgb(15 23 42 / 72%);
-    border-color: rgb(148 163 184 / 14%);
-    box-shadow:
-      0 1px 3px rgb(0 0 0 / 12%),
-      0 12px 40px rgb(0 0 0 / 28%);
+  .login-card__subtitle {
+    margin: 6px 0 0;
+    font-size: 13px;
+    color: var(--color-text-secondary);
   }
 
   /* 品牌 */
@@ -462,49 +512,18 @@
     transform: translateY(0);
   }
 
-  /* 动画 */
-  @media (prefers-reduced-motion: no-preference) {
+  /* 窄屏:营销面板收起,只留表单 */
+  @media (max-width: 860px) {
+    .login-hero {
+      display: none;
+    }
+
     .login-card {
-      animation: card-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
-    }
-
-    .login-bg-glow--1 {
-      animation: glow-drift 12s ease-in-out infinite alternate;
-    }
-
-    .login-bg-glow--2 {
-      animation: glow-drift 14s ease-in-out 2s infinite alternate-reverse;
-    }
-  }
-
-  @keyframes card-in {
-    from {
-      opacity: 0;
-      transform: translateY(16px) scale(0.98);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0) scale(1);
-    }
-  }
-
-  @keyframes glow-drift {
-    from {
-      transform: translate(0, 0);
-    }
-    to {
-      transform: translate(30px, 20px);
-    }
-  }
-
-  @media (max-width: 480px) {
-    .login-card {
-      padding: 32px 24px 24px;
-      border-radius: 20px;
-    }
-
-    .login-card__title {
-      font-size: 22px;
+      flex: 1;
+      max-width: none;
+      min-width: 0;
+      border-left: none;
+      padding: 40px 28px;
     }
   }
 </style>

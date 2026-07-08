@@ -10,21 +10,23 @@
 
     <SectionCard>
       <div class="service-catalog">
+        <!-- 照设计 proto-selfservice dump:卡片整卡可点,tone 图标块 + 标题/描述 + 底部「发起 →」式链接 -->
         <article
-          v-for="card in cards"
+          v-for="(card, idx) in cards"
           :key="card.key"
           class="service-card"
-          :class="{ 'is-active': expandedKey === card.key }"
+          :class="[`service-card--${toneOf(idx)}`, { 'is-active': expandedKey === card.key }]"
+          role="button"
+          tabindex="0"
+          @click="onCardClick(card)"
+          @keydown.enter.prevent="onCardClick(card)"
+          @keydown.space.prevent="onCardClick(card)"
         >
-          <header class="service-card__head">
-            <span class="service-card__icon">
-              <el-icon><component :is="card.icon" /></el-icon>
-            </span>
-            <div class="service-card__title">
-              <h3>{{ card.title }}</h3>
-              <p>{{ card.desc }}</p>
-            </div>
-          </header>
+          <span class="service-card__icon">
+            <el-icon><component :is="card.icon" /></el-icon>
+          </span>
+          <h3 class="service-card__title">{{ card.title }}</h3>
+          <p class="service-card__desc">{{ card.desc }}</p>
 
           <div class="service-card__meta">
             <el-tag size="small" effect="plain" :type="kindTagType(card.kind)">
@@ -40,23 +42,7 @@
             </el-tag>
           </div>
 
-          <footer class="service-card__action">
-            <el-button
-              type="primary"
-              plain
-              size="small"
-              :icon="
-                card.kind === 'view'
-                  ? expandedKey === card.key
-                    ? ArrowUp
-                    : ArrowDown
-                  : card.cta.icon
-              "
-              @click="onCardClick(card)"
-            >
-              {{ ctaLabel(card) }}
-            </el-button>
-          </footer>
+          <footer class="service-card__go">{{ ctaLabel(card) }} →</footer>
         </article>
       </div>
 
@@ -93,19 +79,18 @@
   import { useRoute, useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import {
-    ArrowDown,
-    ArrowUp,
+    ChevronDown as ArrowDown,
     Bell,
-    DataAnalysis,
-    Document,
-    EditPen,
-    Key,
-    Memo,
-    RefreshRight,
-    SetUp,
+    BarChart3 as DataAnalysis,
+    FileText as Document,
+    PencilLine as EditPen,
+    KeyRound as Key,
+    ClipboardList as Memo,
+    RotateCw as RefreshRight,
+    Settings2 as SetUp,
     Timer,
-    Warning,
-  } from '@element-plus/icons-vue'
+    TriangleAlert as Warning,
+  } from 'lucide-vue-next'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
@@ -258,6 +243,12 @@
     return t('selfServicePanel.badgeRequest')
   }
 
+  // dump 图标块四色轮转(accent/warning/success/danger),纯视觉
+  const TONES = ['accent', 'warning', 'success', 'danger'] as const
+  function toneOf(idx: number): (typeof TONES)[number] {
+    return TONES[idx % TONES.length] ?? 'accent'
+  }
+
   function ctaLabel(card: ServiceCard): string {
     if (card.kind === 'view') {
       return expandedKey.value === card.key ? t('selfServicePanel.cardCtaCollapse') : card.cta.label
@@ -390,14 +381,17 @@
     gap: var(--space-md);
   }
 
+  /* ── 照 proto-selfservice dump:r12 padding 18 卡,列布局 gap 10,整卡可点 ── */
   .service-card {
-    display: grid;
-    grid-template-rows: auto auto 1fr;
-    gap: 12px;
-    padding: 16px;
-    border: 1px solid var(--color-border-light);
-    border-radius: var(--radius-content);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 18px;
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
     background: var(--color-bg-card);
+    box-shadow: var(--shadow-card);
+    cursor: pointer;
     transition:
       transform var(--motion-duration-sm) var(--motion-ease-emphasized),
       border-color var(--motion-duration-md) var(--motion-ease-standard),
@@ -415,23 +409,33 @@
     background: color-mix(in srgb, var(--color-primary) 5%, var(--color-bg-card) 95%);
   }
 
-  .service-card__head {
-    display: flex;
-    gap: 12px;
-    align-items: flex-start;
-  }
-
+  /* 图标块:32px r9,tone 四色轮转(dump 内联值) */
   .service-card__icon {
     flex: 0 0 auto;
-    width: 38px;
-    height: 38px;
+    width: 32px;
+    height: 32px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border-radius: var(--radius-input);
-    background: color-mix(in srgb, var(--color-primary) 12%, var(--color-bg-card) 88%);
-    border: 1px solid color-mix(in srgb, var(--color-primary) 22%, var(--color-border) 78%);
-    color: var(--color-primary);
+    border-radius: 9px;
+    color: var(--service-tone, var(--color-primary));
+    background: color-mix(in srgb, var(--service-tone, var(--color-primary)) 12%, transparent);
+  }
+
+  .service-card--accent {
+    --service-tone: var(--color-primary);
+  }
+
+  .service-card--warning {
+    --service-tone: var(--color-warning);
+  }
+
+  .service-card--success {
+    --service-tone: var(--color-success);
+  }
+
+  .service-card--danger {
+    --service-tone: var(--color-danger);
   }
 
   .service-card__icon :deep(svg) {
@@ -440,22 +444,17 @@
   }
 
   .service-card__title {
-    min-width: 0;
-    flex: 1;
-  }
-
-  .service-card__title h3 {
     margin: 0;
-    font-size: 15px;
-    font-weight: 650;
+    font-size: 14px;
+    font-weight: 600;
     line-height: 1.35;
     color: var(--color-text-primary);
   }
 
-  .service-card__title p {
-    margin: 4px 0 0;
-    font-size: 12px;
-    line-height: 1.5;
+  .service-card__desc {
+    margin: 0;
+    font-size: 12.5px;
+    line-height: 1.6;
     color: var(--color-text-secondary);
   }
 
@@ -465,10 +464,12 @@
     flex-wrap: wrap;
   }
 
-  .service-card__action {
-    display: flex;
-    justify-content: flex-end;
-    align-items: flex-end;
+  /* dump「发起 →」:底部 accent 12px 文本链接 */
+  .service-card__go {
+    margin-top: auto;
+    padding-top: 6px;
+    font-size: 12px;
+    color: var(--color-primary);
   }
 
   .service-catalog__inline {

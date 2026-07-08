@@ -46,9 +46,10 @@ export const BP_MQ = {
 export const CONTENT_MAX_WIDTH = 2400
 
 /**
- * 侧栏自动收起阈值(≤此宽度默认收起侧栏腾内容)。取 1440 而非 lg(1280):
- * 1366×768 这类最常见入门笔电落在 1280~1440 之间,原先保留满侧栏(224px)内容只剩 ~1100,
- * 抬到 1440 让 1366/1440 笔电也自动收起 → 内容多 ~150px;1536+ 仍保留满侧栏。
+ * 侧栏自动收起阈值(≤此宽度默认收起侧栏腾内容)。设计定稿的标志性外观是「展开 + 分组标题 +
+ * 文字标签」的侧栏(见 design/screenshots/01-ia.png),故桌面/笔电一律保持展开还原设计;
+ * 仅真·平板/窄屏(≤1024)才自动收起图标栏。用户仍可用顶栏折叠钮手动收起。
+ * (2026-07-04:阈值 1440→1024,此前 1440 把常见笔电全收成图标条,与设计稿展开态不符。)
  */
-export const SIDEBAR_AUTOCOLLAPSE_W = 1440
+export const SIDEBAR_AUTOCOLLAPSE_W = 1024
 export const SIDEBAR_AUTOCOLLAPSE_MQ = `(max-width: ${SIDEBAR_AUTOCOLLAPSE_W}px)`

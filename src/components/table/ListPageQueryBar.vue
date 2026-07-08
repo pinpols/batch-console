@@ -6,10 +6,10 @@
     v-bind="attrs"
     @submit.prevent="emit('search')"
   >
-    <!-- prepend: 查询条件之前的辅助内容；新增/创建类主操作应放 PageHeader 或子模块标题右侧。 -->
-    <slot name="prepend" />
     <slot />
     <el-form-item v-if="showTrailing" class="query-actions">
+      <!-- prepend(已保存筛选等辅助控件)与操作按钮同行,不再占字段格(label 上置布局下孤格突兀) -->
+      <slot name="prepend" />
       <el-button
         v-if="showSearch"
         type="primary"
@@ -45,7 +45,7 @@
 <script setup lang="ts">
   import { computed, useAttrs } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { Refresh, RefreshLeft, Search } from '@element-plus/icons-vue'
+  import { RefreshCw as Refresh, RotateCcw as RefreshLeft, Search } from 'lucide-vue-next'
   const { t } = useI18n({ useScope: 'global' })
 
   defineOptions({ inheritAttrs: false })
@@ -93,72 +93,50 @@
   /* 自管 margin-bottom:让裸用 ListPageQueryBar(不套 ProTable)的页面也跟下方表格
      有标准间距。ProTable 那边把 .pro-table__query 的 margin 清 0 避免叠加 */
   .query-form {
-    margin-bottom: var(--page-block-gap);
+    margin-bottom: 12px;
   }
 
   /* ──────────────────────────────────────────────
-   * Grid 布局:列等宽自动折行,扫视性 > 紧凑性
-   * 每列最小 300px,自适应填满容器宽度
+   * Redesign filter bar:去冗余卡片壳(无边框/阴影/大内边距),拍扁贴页背景,
+   * 提升信息密度、缩短到表格的距离(用户要求主数据默认一页不下滑)。
+   * 字段仍是自适应网格,窄屏自动折行。
    * ────────────────────────────────────────────── */
   .query-form.el-form--inline {
-    display: grid;
-    gap: 12px 20px;
-    align-items: center;
-    padding: 16px 20px;
-    background: color-mix(in srgb, var(--color-bg-card) 60%, var(--color-bg-subtle, #fafbfc));
-    border: 1px solid var(--color-border-light);
-    border-radius: var(--radius-content, 10px);
-  }
-
-  /* 字段少 → 2 列;query-form 始终占满父容器宽度,与下方 ProTable 对齐 */
-  .query-form--cols-2.el-form--inline {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: 8px 12px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
     width: 100%;
   }
 
-  /* 默认 3 列 */
-  .query-form--cols-3.el-form--inline {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    width: 100%;
-  }
-
-  /* 字段多 → 4 列 */
+  .query-form--cols-2.el-form--inline,
+  .query-form--cols-3.el-form--inline,
   .query-form--cols-4.el-form--inline {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
     width: 100%;
-  }
-
-  html.dark .query-form.el-form--inline {
-    background: rgb(255 255 255 / 2%);
-  }
-
-  /* 响应式降级:窄屏自动收 1 档 */
-  @media (max-width: 1100px) {
-    .query-form--cols-4.el-form--inline {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-    .query-form--cols-3.el-form--inline {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
   }
 
   @media (max-width: 720px) {
     .query-form.el-form--inline {
-      grid-template-columns: 1fr !important;
-      padding: 12px;
+      padding: 0;
     }
   }
 
-  /* 日期范围要放下两个日期,统一占 2 列(datetime 也从 3 列收到 2 列,避免超长)。
-     普通字段仍是 1 列等宽;个别页面需更宽可显式 .query-span-2 / .query-span-3。 */
+  /* 日期范围要放下两个日期,给更宽的弹性基准(flex 折行下自然更宽)。 */
   .query-form :deep(.el-form-item.query-span-2),
   .query-form :deep(.el-form-item:has(.el-date-editor--daterange)),
   .query-form :deep(.el-form-item:has(.el-date-editor--datetimerange)) {
-    grid-column: span 2;
+    flex: 1 1 340px;
+    max-width: 460px;
   }
 
   .query-form :deep(.el-form-item.query-span-3) {
-    grid-column: span 3;
+    flex: 1 1 480px;
+    max-width: 640px;
   }
 
   /* 控件填满 form-item 余下空间,不让 EP 默认 220px 卡死 */
@@ -192,27 +170,36 @@
     min-width: 0;
   }
 
+  /* 字段块 = label 上置 + 控件全宽。flex 弹性项:不长满整行(留右侧空位给操作按钮
+     内嵌),窄了自动折行,提升信息密度。 */
   .query-form :deep(.el-form-item) {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
     margin: 0;
-    width: 100%;
+    flex: 1 1 180px;
+    min-width: 150px;
+    max-width: 240px;
   }
 
-  /* 固定标签宽度 → 同一栅格里输入框起点一致、等宽对齐(不再因标签长短参差) */
   .query-form :deep(.el-form-item__label) {
+    height: auto;
+    margin-bottom: 6px;
+    padding: 0;
     color: var(--color-text-secondary);
-    font-size: 13px;
-    justify-content: flex-end;
-    text-align: right;
-    padding-right: 8px;
-    flex: 0 0 84px;
-    width: 84px;
+    font-size: 12px;
+    line-height: 1.2;
+    justify-content: flex-start;
+    text-align: left;
+    width: auto;
+    max-width: none;
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
   }
 
   .query-form :deep(.el-form-item__content) {
+    display: flex;
     flex: 1;
+    width: 100%;
     min-width: 0;
     /* 复位 query-w-* 设的固定 --el-input-width,让筛选栏内控件统一填满栅格单元 */
     --el-input-width: 100%;
@@ -231,10 +218,14 @@
     max-width: none !important;
   }
 
-  /* 操作按钮组 = 最后一行最右,buttons 横向排列;不会被 grid 拉伸 */
+  /* 操作按钮组:尺寸自适应内容 + margin-left:auto 塞进当前行右侧空位;有空同行、
+     没空才折行(省行、修此前独占整行/溢出两种毛病)。覆盖字段的 flex 弹性。 */
   .query-actions {
-    grid-column: -1 / -1;
-    justify-self: end;
+    flex: 0 0 auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    margin-left: auto;
+    align-self: end;
   }
 
   .query-actions :deep(.el-form-item__label) {
@@ -242,6 +233,8 @@
   }
 
   .query-actions :deep(.el-form-item__content) {
+    display: flex;
+    align-items: center;
     gap: 8px;
     flex-wrap: nowrap;
   }

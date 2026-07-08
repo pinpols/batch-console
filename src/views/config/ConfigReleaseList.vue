@@ -1,5 +1,6 @@
 <template>
   <PageContainer>
+    <!-- 照设计 proto-nav-发布管理 dump:页头 18/600 + 右侧新增发布 -->
     <PageHeader>
       <template #actions>
         <el-button
@@ -14,111 +15,165 @@
       </template>
     </PageHeader>
 
-    <SectionCard>
-      <ProTable
-        :data="rows"
-        :loading="tableBlocking"
-        :total="total"
-        v-model:page="page"
-        v-model:page-size="pageSize"
-        @change="slicePage"
-        :error="loadError"
-        :on-retry="load"
-      >
-        <template #query>
-          <ListPageQueryBar
-            :filter-busy="queryActionBusy"
-            :refresh-busy="loading"
-            :disabled="loading"
-            @search="onSearch"
-            @reset="reset"
-            @refresh="() => runRefresh(load)"
+    <ListPageQueryBar
+      class="cr-query"
+      :filter-busy="queryActionBusy"
+      :refresh-busy="loading"
+      :disabled="loading"
+      @search="onSearch"
+      @reset="reset"
+      @refresh="() => runRefresh(load)"
+    >
+      <el-form-item :label="t('configReleaseList.keyLabel')">
+        <el-input
+          class="query-w-180"
+          v-model="filters.key"
+          clearable
+          :placeholder="t('configReleaseList.keyPlaceholder')"
+        />
+      </el-form-item>
+      <el-form-item :label="t('configReleaseList.nameLabel')">
+        <el-input
+          class="query-w-180"
+          v-model="filters.name"
+          clearable
+          :placeholder="t('configReleaseList.namePlaceholder')"
+        />
+      </el-form-item>
+      <el-form-item :label="t('configReleaseList.statusLabel')">
+        <MetaSelect
+          class="query-w-200"
+          v-model="filters.status"
+          clearable
+          filterable
+          enum-key="configStatus"
+          :placeholder="t('configReleaseList.statusPlaceholder')"
+          :options="configReleaseStatusOptions"
+        />
+      </el-form-item>
+    </ListPageQueryBar>
+
+    <el-alert
+      v-if="loadError"
+      class="cr-load-error"
+      type="error"
+      :closable="false"
+      :title="t('configReleaseList.loadError')"
+    >
+      <el-button size="small" @click="load">{{ t('common.retry') }}</el-button>
+    </el-alert>
+
+    <!-- 主体:左时间线卡片流 + 右侧 sticky 详情面板(照 dump 双栏结构) -->
+    <div class="cr-layout" v-loading="tableBlocking">
+      <div class="cr-timeline">
+        <el-empty
+          v-if="!tableBlocking && rows.length === 0"
+          :description="t('configReleaseList.listEmpty')"
+        />
+        <div v-for="row in rows" :key="row.id" class="cr-item">
+          <div class="cr-rail">
+            <span class="cr-rail__dot" :class="`cr-tone-border--${statusTone(row.configStatus)}`" />
+            <span class="cr-rail__line" />
+          </div>
+          <div
+            class="cr-card"
+            :class="{ 'is-active': selectedRow?.id === row.id }"
+            role="button"
+            tabindex="0"
+            @click="selectRelease(row)"
+            @keydown.enter="selectRelease(row)"
           >
-            <el-form-item :label="t('configReleaseList.keyLabel')">
-              <el-input
-                class="query-w-180"
-                v-model="filters.key"
-                clearable
-                :placeholder="t('configReleaseList.keyPlaceholder')"
-              />
-            </el-form-item>
-            <el-form-item :label="t('configReleaseList.nameLabel')">
-              <el-input
-                class="query-w-180"
-                v-model="filters.name"
-                clearable
-                :placeholder="t('configReleaseList.namePlaceholder')"
-              />
-            </el-form-item>
-            <el-form-item :label="t('configReleaseList.statusLabel')">
-              <MetaSelect
-                class="query-w-200"
-                v-model="filters.status"
-                clearable
-                filterable
-                enum-key="configStatus"
-                :placeholder="t('configReleaseList.statusPlaceholder')"
-                :options="configReleaseStatusOptions"
-              />
-            </el-form-item>
-          </ListPageQueryBar>
-        </template>
-        <el-table-column
-          prop="configKey"
-          :label="t('configReleaseList.colKey')"
-          min-width="140"
-          show-overflow-tooltip
-        />
-        <el-table-column
-          prop="configName"
-          :label="t('configReleaseList.colName')"
-          min-width="140"
-        />
-        <el-table-column prop="configType" :label="t('configReleaseList.colType')" width="120" />
-        <el-table-column prop="configStatus" :label="t('configReleaseList.colStatus')" width="120">
-          <template #default="{ row }">
-            <StatusTag :value="String(row.configStatus ?? '')" category="configStatus" />
-          </template>
-        </el-table-column>
-        <el-table-column
-          prop="versionNo"
-          :label="t('configReleaseList.colVersion')"
-          width="80"
-          align="right"
-        />
-        <DatetimeColumn
-          prop="publishedAt"
-          :label="t('configReleaseList.colPublishedAt')"
-          width="160"
-        />
-        <DatetimeColumn
-          prop="effectiveFromAt"
-          :label="t('configReleaseList.colEffectiveFrom')"
-          width="160"
-        />
-        <DatetimeColumn
-          prop="effectiveToAt"
-          :label="t('configReleaseList.colEffectiveTo')"
-          width="160"
-        />
-        <DatetimeColumn
-          prop="rolledBackAt"
-          :label="t('configReleaseList.colRolledBackAt')"
-          width="160"
-        />
-        <el-table-column
-          prop="createdBy"
-          :label="t('configReleaseList.colCreatedBy')"
-          width="120"
-          show-overflow-tooltip
-        />
-        <el-table-column :label="t('configReleaseList.colActions')" width="240" fixed="right">
-          <template #default="{ row }">
-            <RowActions :actions="rowActions(row)" :inline-limit="2" />
-          </template>
-        </el-table-column>
-      </ProTable>
-    </SectionCard>
+            <div class="cr-card__head">
+              <span class="cr-card__key">{{ row.configKey }}</span>
+              <span class="cr-pill" :class="`cr-tone--${statusTone(row.configStatus)}`">
+                {{ statusLabel(row.configStatus) }}
+              </span>
+              <span class="cr-card__spacer" />
+              <span class="cr-card__time">{{ fmtDatetime(row.publishedAt ?? row.createdAt) }}</span>
+            </div>
+            <div class="cr-card__name">{{ row.configName || row.configKey }}</div>
+            <div class="cr-card__meta">
+              <span>
+                {{ t('configReleaseList.colVersion') }}
+                <span class="cr-card__meta-num">v{{ row.versionNo }}</span>
+              </span>
+              <span>
+                {{ t('configReleaseList.colType') }}
+                <span class="cr-card__meta-val">{{ row.configType || '—' }}</span>
+              </span>
+              <span>
+                {{ t('configReleaseList.colCreatedBy') }}
+                <span class="cr-card__meta-val">{{ row.createdBy || '—' }}</span>
+              </span>
+            </div>
+          </div>
+        </div>
+        <div v-if="total > 0" class="cr-pagination">
+          <el-pagination
+            background
+            layout="total, sizes, prev, pager, next"
+            :total="total"
+            :page-sizes="[15, 30, 50, 100]"
+            v-model:current-page="page"
+            v-model:page-size="pageSize"
+            @current-change="slicePage"
+            @size-change="onPageSizeChange"
+          />
+        </div>
+      </div>
+
+      <aside v-if="selectedRow" class="cr-panel">
+        <div class="cr-panel__head">
+          <span class="cr-panel__key">{{ selectedRow.configKey }}</span>
+          <span class="cr-pill" :class="`cr-tone--${statusTone(selectedRow.configStatus)}`">
+            {{ statusLabel(selectedRow.configStatus) }}
+          </span>
+        </div>
+        <div class="cr-panel__name">{{ selectedRow.configName || selectedRow.configKey }}</div>
+        <div class="cr-panel__grid">
+          <div class="cr-panel__stat">
+            <div class="cr-panel__stat-label">{{ t('configReleaseList.colVersion') }}</div>
+            <div class="cr-panel__stat-num">v{{ selectedRow.versionNo }}</div>
+          </div>
+          <div class="cr-panel__stat">
+            <div class="cr-panel__stat-label">{{ t('configReleaseList.colCreatedBy') }}</div>
+            <div class="cr-panel__stat-text">{{ selectedRow.createdBy || '—' }}</div>
+          </div>
+        </div>
+        <div class="cr-panel__section">{{ t('configReleaseList.panelInfoTitle') }}</div>
+        <div class="cr-panel__list">
+          <div v-for="item in panelInfoItems" :key="item.label" class="cr-panel__list-item">
+            <span class="cr-panel__list-dot">·</span>
+            <span class="cr-panel__list-text">{{ item.label }}: {{ item.value }}</span>
+          </div>
+        </div>
+        <div class="cr-panel__actions">
+          <el-button type="primary" class="cr-panel__btn" @click="doPublish(selectedRow)">
+            {{ t('configReleaseList.actionPublish') }}
+          </el-button>
+          <el-button class="cr-panel__btn" @click="viewDetail(selectedRow)">
+            {{ t('configReleaseList.actionDetail') }}
+          </el-button>
+        </div>
+        <div class="cr-panel__actions cr-panel__actions--secondary">
+          <el-button size="small" plain @click="doGray(selectedRow)">
+            {{ t('configReleaseList.actionGray') }}
+          </el-button>
+          <el-button size="small" plain @click="openDiff(selectedRow)">
+            {{ t('configReleaseList.actionDiff') }}
+          </el-button>
+          <el-button size="small" plain @click="doDeps(selectedRow)">
+            {{ t('configReleaseList.actionDeps') }}
+          </el-button>
+          <el-button size="small" plain @click="doSubmitApproval(selectedRow)">
+            {{ t('configReleaseList.actionSubmit') }}
+          </el-button>
+          <el-button size="small" plain type="danger" @click="doRollback(selectedRow)">
+            {{ t('configReleaseList.actionRollback') }}
+          </el-button>
+        </div>
+      </aside>
+    </div>
 
     <el-drawer
       :append-to-body="true"
@@ -264,10 +319,10 @@
   import { ref, watch, computed, reactive } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
-  import { Plus } from '@element-plus/icons-vue'
+  import { Plus } from 'lucide-vue-next'
   import { confirmDanger } from '@/composables/useDangerConfirm'
 
-  const { t } = useI18n({ useScope: 'global' })
+  const { t, te } = useI18n({ useScope: 'global' })
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { useDirtyForm } from '@/composables/useDirtyForm'
   import { useFormFocus } from '@/composables/useFormFocus'
@@ -289,16 +344,13 @@
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { toPageResult } from '@/api/adapters'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
+  import { fmtDatetime } from '@/utils/datetime'
   import PageContainer from '@/components/common/PageContainer.vue'
   import MetaSelect from '@/components/common/MetaSelect.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   const { canMutateConfig } = usePermission()
-  import SectionCard from '@/components/common/SectionCard.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
-  import ProTable from '@/components/table/ProTable.vue'
-  import StatusTag from '@/components/common/StatusTag.vue'
   import JsonPreview from '@/components/common/JsonPreview.vue'
-  import RowActions, { type RowAction } from '@/components/common/RowActions.vue'
   import type { FormInstance, FormRules } from 'element-plus'
   import type { ConsoleConfigReleaseResponse } from '@/types/console-api'
 
@@ -369,6 +421,48 @@
     rows.value = pr.records as ConsoleConfigReleaseResponse[]
     total.value = pr.total
   }
+
+  function onPageSizeChange() {
+    page.value = 1
+    slicePage()
+  }
+
+  // ── 照 dump 双栏结构:左侧时间线卡片选中项驱动右侧 sticky 面板 ────────────
+  const selectedId = ref<number | null>(null)
+  const selectedRow = computed<ConsoleConfigReleaseResponse | null>(
+    () => rows.value.find((r) => r.id === selectedId.value) ?? rows.value[0] ?? null,
+  )
+
+  function selectRelease(row: ConsoleConfigReleaseResponse) {
+    selectedId.value = row.id
+  }
+
+  /** 状态→语义色调(时间线圆点描边 + 状态 pill 共用) */
+  function statusTone(status?: string | null): 'success' | 'warning' | 'muted' {
+    const s = String(status ?? '').toUpperCase()
+    if (s === 'PUBLISHED') return 'success'
+    if (s === 'DRAFT' || s === 'GRAY' || s === 'ROLLING_BACK') return 'warning'
+    return 'muted'
+  }
+
+  function statusLabel(status?: string | null): string {
+    const s = String(status ?? '')
+    if (!s) return '—'
+    const key = `enum.configStatus.${s}`
+    return te(key) ? t(key) : s
+  }
+
+  const panelInfoItems = computed(() => {
+    const r = selectedRow.value
+    if (!r) return []
+    return [
+      { label: t('configReleaseList.colType'), value: r.configType || '—' },
+      { label: t('configReleaseList.colPublishedAt'), value: fmtDatetime(r.publishedAt) },
+      { label: t('configReleaseList.colEffectiveFrom'), value: fmtDatetime(r.effectiveFromAt) },
+      { label: t('configReleaseList.colEffectiveTo'), value: fmtDatetime(r.effectiveToAt) },
+      { label: t('configReleaseList.colRolledBackAt'), value: fmtDatetime(r.rolledBackAt) },
+    ]
+  })
 
   async function load() {
     loading.value = true
@@ -598,34 +692,6 @@
     diffVisible.value = true
   }
 
-  function rowActions(row: ConsoleConfigReleaseResponse): RowAction[] {
-    return [
-      { key: 'detail', label: t('configReleaseList.actionDetail'), onClick: () => viewDetail(row) },
-      {
-        key: 'publish',
-        label: t('configReleaseList.actionPublish'),
-        primary: true,
-        onClick: () => doPublish(row),
-      },
-      { key: 'gray', label: t('configReleaseList.actionGray'), onClick: () => doGray(row) },
-      { key: 'diff', label: t('configReleaseList.actionDiff'), onClick: () => openDiff(row) },
-      { key: 'deps', label: t('configReleaseList.actionDeps'), onClick: () => doDeps(row) },
-      {
-        key: 'submit',
-        label: t('configReleaseList.actionSubmit'),
-        divided: true,
-        onClick: () => doSubmitApproval(row),
-      },
-      {
-        key: 'rollback',
-        label: t('configReleaseList.actionRollback'),
-        danger: true,
-        divided: true,
-        onClick: () => doRollback(row),
-      },
-    ]
-  }
-
   async function doDiff() {
     diffLoading.value = true
     try {
@@ -643,6 +709,287 @@
 </script>
 
 <style scoped>
+  /* ── 照设计 proto-nav-发布管理 dump 1:1(数值取 dump 内联值) ── */
+
+  .cr-query {
+    margin-bottom: 14px;
+  }
+
+  .cr-load-error {
+    margin-bottom: 14px;
+  }
+
+  /* 双栏:左时间线 flex:1 + 右 352px sticky 面板 */
+  .cr-layout {
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+  }
+
+  .cr-timeline {
+    flex: 1 1 0%;
+    min-width: 0;
+    padding-left: 6px;
+  }
+
+  .cr-item {
+    display: flex;
+    gap: 16px;
+  }
+
+  /* 时间线轨道:13px 圆点(3px 语义色描边)+ 2px 竖线 */
+  .cr-rail {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 14px;
+    flex-shrink: 0;
+  }
+
+  .cr-rail__dot {
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    background: var(--color-bg-page, var(--color-bg-card));
+    border: 3px solid var(--color-border);
+    margin-top: 6px;
+    z-index: 1;
+  }
+
+  .cr-tone-border--success {
+    border-color: var(--color-success);
+  }
+
+  .cr-tone-border--warning {
+    border-color: var(--color-warning);
+  }
+
+  .cr-tone-border--muted {
+    border-color: var(--color-text-tertiary);
+  }
+
+  .cr-rail__line {
+    flex: 1 1 0%;
+    width: 2px;
+    background: var(--color-border);
+    margin: 2px 0;
+  }
+
+  /* 发布卡片 */
+  .cr-card {
+    flex: 1 1 0%;
+    margin-bottom: 14px;
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    box-shadow: var(--shadow-card);
+    padding: 15px 18px;
+    cursor: pointer;
+  }
+
+  .cr-card.is-active {
+    background: color-mix(in srgb, var(--color-primary) 8%, transparent);
+    border-color: var(--color-primary);
+  }
+
+  .cr-card__head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .cr-card__key {
+    font-size: 13px;
+    font-weight: 600;
+    font-family: var(--font-mono, monospace);
+    color: var(--color-primary);
+  }
+
+  .cr-card__spacer {
+    flex: 1 1 0%;
+  }
+
+  .cr-card__time {
+    font-size: 11px;
+    color: var(--color-text-tertiary);
+    font-family: var(--font-mono, monospace);
+  }
+
+  .cr-card__name {
+    margin-top: 9px;
+    font-size: 14px;
+    color: var(--color-text-primary);
+  }
+
+  .cr-card__meta {
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 12px;
+    color: var(--color-text-secondary);
+  }
+
+  .cr-card__meta-num {
+    font-family: var(--font-mono, monospace);
+    color: var(--color-text-primary);
+  }
+
+  .cr-card__meta-val {
+    color: var(--color-text-primary);
+  }
+
+  /* 状态 pill(11px / 2px 8px / r6,语义软底) */
+  .cr-pill {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 6px;
+    white-space: nowrap;
+  }
+
+  .cr-tone--success {
+    color: var(--color-success);
+    background: color-mix(in srgb, var(--color-success) 14%, transparent);
+  }
+
+  .cr-tone--warning {
+    color: var(--color-warning);
+    background: color-mix(in srgb, var(--color-warning) 14%, transparent);
+  }
+
+  .cr-tone--muted {
+    color: var(--color-text-tertiary);
+    background: var(--color-bg-elevated);
+  }
+
+  .cr-pagination {
+    display: flex;
+    justify-content: flex-end;
+    padding: 4px 0 8px;
+  }
+
+  /* 右侧 sticky 详情面板(352px / r14 / p20) */
+  .cr-panel {
+    width: 352px;
+    flex-shrink: 0;
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    border-radius: 14px;
+    box-shadow: var(--shadow-card);
+    padding: 20px;
+    position: sticky;
+    top: 12px;
+  }
+
+  .cr-panel__head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .cr-panel__key {
+    font-size: 14px;
+    font-weight: 600;
+    font-family: var(--font-mono, monospace);
+    color: var(--color-primary);
+  }
+
+  .cr-panel__name {
+    margin-top: 8px;
+    font-size: 14px;
+    color: var(--color-text-primary);
+  }
+
+  .cr-panel__grid {
+    margin-top: 14px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .cr-panel__stat {
+    padding: 10px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: 9px;
+  }
+
+  .cr-panel__stat-label {
+    font-size: 11px;
+    color: var(--color-text-tertiary);
+  }
+
+  .cr-panel__stat-num {
+    font-size: 16px;
+    font-weight: 600;
+    font-family: var(--font-mono, monospace);
+    margin-top: 3px;
+    color: var(--color-text-primary);
+  }
+
+  .cr-panel__stat-text {
+    font-size: 14px;
+    margin-top: 5px;
+    color: var(--color-text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .cr-panel__section {
+    margin-top: 18px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    color: var(--color-text-tertiary);
+  }
+
+  .cr-panel__list {
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+
+  .cr-panel__list-item {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    font-size: 12.5px;
+    color: var(--color-text-secondary);
+    font-family: var(--font-mono, monospace);
+  }
+
+  .cr-panel__list-dot {
+    color: var(--color-text-tertiary);
+  }
+
+  .cr-panel__list-text {
+    min-width: 0;
+    word-break: break-all;
+  }
+
+  .cr-panel__actions {
+    margin-top: 20px;
+    display: flex;
+    gap: 8px;
+  }
+
+  .cr-panel__actions .cr-panel__btn {
+    flex: 1 1 0%;
+    height: 34px;
+    border-radius: 9px;
+    margin-left: 0;
+  }
+
+  .cr-panel__actions--secondary {
+    margin-top: 10px;
+    flex-wrap: wrap;
+  }
+
+  .cr-panel__actions--secondary .el-button {
+    margin-left: 0;
+  }
+
   .release-json {
     margin: 0;
     padding: var(--card-inner-padding);

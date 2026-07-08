@@ -56,7 +56,7 @@
   import { watch, onMounted, onUnmounted } from 'vue'
   import { useRoute } from 'vue-router'
   import { useI18n } from 'vue-i18n'
-  import { FullScreen } from '@element-plus/icons-vue'
+  import { Maximize as FullScreen } from 'lucide-vue-next'
   const { t } = useI18n({ useScope: 'global' })
   import CommandPalette from '@/components/common/CommandPalette.vue'
   import ErrorBoundary from '@/components/common/ErrorBoundary.vue'
@@ -119,10 +119,10 @@
   .layout-root {
     min-height: 100vh;
     min-height: 100dvh;
-    background: var(--color-bg-canvas);
-    /* 四边等距：侧栏 | 顶栏 | 主区外缘对齐；内层由 --layout-panel-hover-safe 为 hover scale 留空 */
-    padding: var(--layout-panel-hover-safe);
-    gap: var(--layout-panel-gap);
+    background: var(--color-bg-page);
+    /* 还原设计:无缝边到边 shell —— 零内边距 / 零间隙,三区靠 1px 分隔线拼接,非浮起卡片。 */
+    padding: 0;
+    gap: 0;
     overflow: hidden;
   }
 
@@ -133,12 +133,12 @@
     flex-direction: column;
     background: transparent;
     overflow: visible;
-    gap: var(--layout-header-main-gap);
+    gap: 0;
     /**
      * 顶栏卡片内边距 = 主内容壳 padding + 主区内层 page-scroll-edge-bleed，
      * 与 el-main 内「白卡片 + layout-main__content」文字起始线同一垂线。
      */
-    --layout-main-gutter: 6px;
+    --layout-main-gutter: 0px;
     --layout-card-border-width: 1px;
     --layout-card-padding: 16px;
     --layout-content-inset-inline: calc(var(--layout-card-padding) + var(--page-scroll-edge-bleed));
@@ -222,10 +222,11 @@
     flex-direction: column;
     position: relative;
     overflow: visible;
-    padding: var(--layout-card-padding);
-    background: var(--color-bg-card);
-    border: var(--layout-card-border-width) solid var(--color-border-light);
-    border-radius: var(--layout-panel-radius);
+    /* 还原设计:内容区无缝铺满,背景=页面底色,内部各卡片自然浮现;无圆角/边框/阴影。 */
+    padding: 0;
+    background: var(--color-bg-page);
+    border: none;
+    border-radius: 0;
     transform-origin: 50% 50%;
     transition:
       transform var(--motion-duration-sm) var(--motion-ease-emphasized),
@@ -310,7 +311,7 @@
   /** 主壳保持稳定，仅通过描边反馈 hover，避免弹层/点击时定位闪烁。 */
   .layout-main__surface:hover {
     transform: none;
-    border-color: color-mix(in srgb, var(--color-border) 68%, var(--color-primary) 32%);
+    border-color: var(--color-border-light);
   }
 
   @media (prefers-reduced-motion: reduce) {

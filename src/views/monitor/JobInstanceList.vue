@@ -1,8 +1,116 @@
 <template>
   <PageContainer>
-    <PageHeader />
+    <!-- 照设计 #instances 母版:页头右侧=业务日期+刷新;下方 预设条/状态tab行/实时条 -->
+    <PageHeader>
+      <template #actions>
+        <DateRangePresetPicker
+          v-model="dateRange"
+          type="daterange"
+          default-preset="7d"
+          @update:model-value="onDateChange"
+        />
+        <el-button :loading="loading" @click="() => runRefresh(loadData)">
+          {{ t('common.refresh') }}
+        </el-button>
+      </template>
+    </PageHeader>
 
-    <SectionCard>
+    <!-- 已保存筛选 chip 条(26h/r13;active=★+accent 软底;虚线=保存当前) -->
+    <div class="jr-presets">
+      <span class="jr-presets__label">{{ t('jobInstanceList.savedFilters') }}</span>
+      <button
+        v-for="s in savedFilters.sets.value"
+        :key="s.id"
+        type="button"
+        class="jr-chip"
+        :class="{ 'is-active': activePresetId === s.id }"
+        @click="applyPreset(s.id)"
+      >
+        <span v-if="activePresetId === s.id" class="jr-chip__star">★</span>{{ s.name }}
+      </button>
+      <button type="button" class="jr-chip jr-chip--save" @click="promptSaveFilter">
+        <span class="jr-chip__plus">＋</span>{{ t('jobInstanceList.saveCurrentFilter') }}
+      </button>
+      <span class="jr-presets__spacer" />
+      <SavedFiltersMenu
+        class="jr-presets__menu"
+        :sets="savedFilters.sets.value"
+        :on-save="savedFilters.save"
+        :on-apply="savedFilters.applySet"
+        :on-remove="savedFilters.remove"
+        :on-rename="savedFilters.rename"
+        :on-export="savedFilters.exportSets"
+        :on-import="savedFilters.importSets"
+      />
+    </div>
+
+    <!-- 状态 tab 行(28h/r14 彩点+mono计数)+ 右侧 JobCode/Trace/SLA -->
+    <div class="jr-tabs">
+      <button
+        v-for="tab in statusTabs"
+        :key="tab.key"
+        type="button"
+        class="jr-tab"
+        :class="{ 'is-active': tab.active }"
+        @click="pickStatusTab(tab.key)"
+      >
+        <span v-if="tab.dot" class="jr-tab__dot" :style="{ background: tab.dot }" />
+        <span>{{ tab.label }}</span>
+        <span v-if="tab.count !== null" class="jr-tab__count">{{ tab.count }}</span>
+      </button>
+      <span class="jr-tabs__spacer" />
+      <el-select
+        class="jr-jobcode"
+        v-model="query.jobCode"
+        clearable
+        filterable
+        allow-create
+        default-first-option
+        :placeholder="t('jobInstanceList.jobCodePlaceholder')"
+        @change="searchInstances"
+      >
+        <el-option v-for="code in jobCodeOptions" :key="code" :label="code" :value="code" />
+      </el-select>
+      <TraceIdInput
+        class="jr-trace"
+        v-model="query.traceId"
+        :placeholder="t('jobInstanceList.traceIdPlaceholder')"
+        @keyup.enter="searchInstances"
+      />
+      <label class="jr-sla">
+        <span>{{ t('jobInstanceList.slaBreachedLabel') }}</span>
+        <el-switch size="small" v-model="query.slaBreached" @change="onSlaBreachedChange" />
+      </label>
+      <el-button text class="jr-reset" @click="resetQuery">{{ t('common.reset') }}</el-button>
+    </div>
+
+    <!-- 多状态深链回显(OpsSummary 失败任务卡 FAILED,PARTIAL_FAILED) -->
+    <div v-if="query.instanceStatuses" class="jr-multistatus">
+      <el-tag type="danger" closable disable-transitions @close="clearMultiStatus">
+        {{ multiStatusLabel }}
+      </el-tag>
+    </div>
+
+    <!-- 实时监控条(7 14/r9/bg-card) -->
+    <div class="jr-live">
+      <span class="jr-live__dot" :class="{ 'is-off': live.status.value !== 'live' }" />
+      <span class="jr-live__title">{{ t('jobInstanceList.liveTitle') }}</span>
+      <span class="jr-live__sub">{{ t('jobInstanceList.liveEvery') }}</span>
+      <span class="jr-live__sep" />
+      <span class="jr-live__time">{{ t('jobInstanceList.liveLast') }} {{ lastRefreshText }}</span>
+      <span class="jr-live__spacer" />
+      <span v-if="statusCounts.RUNNING" class="jr-live__running">
+        <span class="jr-live__minidot" />{{
+          t('jobInstanceList.liveRunning', { n: statusCounts.RUNNING })
+        }}
+      </span>
+      <span v-if="statusCounts.RUNNING" class="jr-live__sep" />
+      <button type="button" class="jr-live__pause" @click="livePaused = !livePaused">
+        {{ livePaused ? t('jobInstanceList.liveResume') : t('jobInstanceList.livePause') }}
+      </button>
+    </div>
+
+    <div>
       <ProTable
         ref="proTableRef"
         :data="rows"
@@ -17,100 +125,6 @@
         @change="loadData"
         @selection-change="bulk.onSelectionChange"
       >
-        <template #query>
-          <ListPageQueryBar
-            :model="query"
-            :filter-busy="filterBusy"
-            :refresh-busy="loading"
-            @search="searchInstances"
-            @reset="resetQuery"
-            @refresh="() => runRefresh(loadData)"
-          >
-            <template #prepend>
-              <SavedFiltersMenu
-                :sets="savedFilters.sets.value"
-                :on-save="savedFilters.save"
-                :on-apply="savedFilters.applySet"
-                :on-remove="savedFilters.remove"
-                :on-rename="savedFilters.rename"
-                :on-export="savedFilters.exportSets"
-                :on-import="savedFilters.importSets"
-              />
-            </template>
-            <el-form-item>
-              <template #label>
-                <HelpLabel :tip="t('jobInstanceList.jobCodeTip')">
-                  {{ t('jobInstanceList.jobCodeLabel') }}
-                </HelpLabel>
-              </template>
-              <el-select
-                class="query-w-200"
-                v-model="query.jobCode"
-                clearable
-                filterable
-                allow-create
-                default-first-option
-                :placeholder="t('jobInstanceList.jobCodePlaceholder')"
-              >
-                <el-option v-for="code in jobCodeOptions" :key="code" :label="code" :value="code" />
-              </el-select>
-            </el-form-item>
-            <el-form-item :label="t('jobInstanceList.statusLabel')">
-              <!-- 多状态深链(如 OpsSummary「失败任务」卡片传 FAILED,PARTIAL_FAILED):
-                   单值下拉无法表达,改用可关闭 tag 回显,让用户看到过滤条件确实生效 -->
-              <el-tag
-                v-if="query.instanceStatuses"
-                class="query-w-180"
-                type="danger"
-                closable
-                disable-transitions
-                @close="clearMultiStatus"
-              >
-                {{ multiStatusLabel }}
-              </el-tag>
-              <MetaSelect
-                v-else
-                class="query-w-180"
-                v-model="query.instanceStatus"
-                clearable
-                filterable
-                enum-key="instanceStatus"
-                :placeholder="t('jobInstanceList.statusPlaceholder')"
-                :options="statusOptions"
-                @change="onStatusChange"
-              />
-            </el-form-item>
-            <el-form-item>
-              <template #label>
-                <HelpLabel :tip="t('jobInstanceList.bizDateTip')">
-                  {{ t('jobInstanceList.bizDateLabel') }}
-                </HelpLabel>
-              </template>
-              <DateRangePresetPicker
-                v-model="dateRange"
-                type="daterange"
-                default-preset="7d"
-                @update:model-value="onDateChange"
-              />
-            </el-form-item>
-            <el-form-item :label="t('jobInstanceList.traceIdLabel')">
-              <TraceIdInput
-                class="query-w-240"
-                v-model="query.traceId"
-                :placeholder="t('jobInstanceList.traceIdPlaceholder')"
-              />
-            </el-form-item>
-            <el-form-item>
-              <template #label>
-                <HelpLabel :tip="t('jobInstanceList.slaBreachedTip')">
-                  {{ t('jobInstanceList.slaBreachedLabel') }}
-                </HelpLabel>
-              </template>
-              <el-switch v-model="query.slaBreached" @change="onSlaBreachedChange" />
-            </el-form-item>
-          </ListPageQueryBar>
-        </template>
-
         <template #empty>
           <EmptyState
             variant="tenant-empty"
@@ -127,182 +141,169 @@
         </template>
 
         <template #toolbar>
-          <OpsListToolbar
-            :status="live.status.value"
-            :last-refreshed-at="live.lastRefreshedAt.value"
+          <BulkActionBar
+            :count="bulk.count.value"
+            :running="bulk.running.value"
+            @clear="bulk.clear"
           >
-            <BulkActionBar
-              :count="bulk.count.value"
-              :running="bulk.running.value"
-              @clear="bulk.clear"
-            >
-              <template #default="{ running }">
-                <el-button
-                  size="small"
-                  type="warning"
-                  plain
-                  :loading="running"
-                  @click="onBulkRetry"
-                >
-                  {{ t('jobInstanceList.bulkRetry') }}
-                </el-button>
-                <el-button
-                  size="small"
-                  type="danger"
-                  plain
-                  :loading="running"
-                  @click="onBulkCancel"
-                >
-                  {{ t('jobInstanceList.bulkCancel') }}
-                </el-button>
-              </template>
-            </BulkActionBar>
-          </OpsListToolbar>
+            <template #default="{ running }">
+              <el-button size="small" type="warning" plain :loading="running" @click="onBulkRetry">
+                {{ t('jobInstanceList.bulkRetry') }}
+              </el-button>
+              <el-button size="small" type="danger" plain :loading="running" @click="onBulkCancel">
+                {{ t('jobInstanceList.bulkCancel') }}
+              </el-button>
+            </template>
+          </BulkActionBar>
         </template>
 
         <template #default="{ isColVisible }">
-        <el-table-column type="selection" width="44" :selectable="() => true" />
-        <!-- P2.4 列顺序优化:用户决策字段(状态/jobCode/bizDate/耗时/重跑)优先,
-             工程字段(instanceNo/queue/traceId)后置 -->
-        <el-table-column :label="t('jobInstanceList.colStatus')" width="140">
-          <template #default="{ row }">
-            <StatusTag :value="row.instanceStatus" category="instance" />
-            <!-- ADR-026 dry-run 实例:badge 标识不写状态/不投递,避免误读为真实运行 -->
-            <el-tag v-if="row.dryRun" size="small" type="info" effect="plain" class="dry-run-badge">
-              {{ t('jobInstanceList.dryRunBadge') }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column
-          v-if="isColVisible('jobCode')"
-          prop="jobCode"
-          :label="t('jobInstanceList.colJobCode')"
-          width="140"
-        >
-          <template #default="{ row }">
-            <router-link class="cell-link" :to="`/jobs/definitions?jobCode=${row.jobCode}`">
-              {{ row.jobCode }}
-            </router-link>
-          </template>
-        </el-table-column>
-        <el-table-column
-          v-if="isColVisible('bizDate')"
-          prop="bizDate"
-          :label="t('jobInstanceList.colBizDate')"
-          width="110"
-        />
-        <el-table-column
-          v-if="isColVisible('duration')"
-          :label="t('jobInstanceList.colDuration')"
-          width="120"
-        >
-          <template #default="{ row }">
-            <span>{{ formatDurationMs(calcDurationMs(row.startedAt, row.finishedAt)) }}</span>
-          </template>
-        </el-table-column>
-        <el-table-column
-          v-if="isColVisible('rerunRetry')"
-          :label="t('jobInstanceList.colRerunRetry')"
-          width="100"
-        >
-          <template #default="{ row }">
-            <el-tag v-if="row.rerunFlag" size="small" type="warning" effect="plain">
-              {{ t('jobInstanceList.tagRerun') }}
-            </el-tag>
-            <el-tag v-if="row.retryFlag" size="small" type="info" effect="plain">
-              {{ t('jobInstanceList.tagRetry') }}
-            </el-tag>
-            <span v-if="!row.rerunFlag && !row.retryFlag" class="muted">—</span>
-          </template>
-        </el-table-column>
-        <el-table-column
-          v-if="isColVisible('triggerType')"
-          prop="triggerType"
-          :label="t('jobInstanceList.colTrigger')"
-          width="100"
-        >
-          <template #default="{ row }">
-            {{ resolveTriggerType(row.triggerType) }}
-          </template>
-        </el-table-column>
-        <DatetimeColumn
-          v-if="isColVisible('startedAt')"
-          prop="startedAt"
-          :label="t('jobInstanceList.colStartedAt')"
-          width="160"
-        />
-        <DatetimeColumn
-          v-if="isColVisible('finishedAt')"
-          prop="finishedAt"
-          :label="t('jobInstanceList.colFinishedAt')"
-          width="160"
-        />
-        <DatetimeColumn
-          v-if="isColVisible('slaAlertedAt')"
-          prop="slaAlertedAt"
-          :label="t('jobInstanceList.colSlaAlerted')"
-          width="160"
-        />
-        <!-- 以下工程字段:实例号 / 队列+Worker / Trace(默认隐藏) -->
-        <el-table-column
-          v-if="isColVisible('instanceNo')"
-          prop="instanceNo"
-          :label="t('jobInstanceList.colInstanceNo')"
-          width="180"
-        >
-          <template #default="{ row }">
-            <router-link class="cell-link" :to="`/monitor/job-instances/${row.id}`">
-              {{ row.instanceNo }}
-            </router-link>
-          </template>
-        </el-table-column>
-        <el-table-column
-          v-if="isColVisible('queueGroup')"
-          :label="t('jobInstanceList.colQueueGroup')"
-          width="160"
-        >
-          <template #default="{ row }">
-            <div class="cell-stack">
-              <span v-if="row.queueCode" class="cell-main">{{ row.queueCode }}</span>
-              <span v-if="row.workerGroup" class="cell-sub">{{ row.workerGroup }}</span>
-              <span v-if="!row.queueCode && !row.workerGroup" class="muted">—</span>
-            </div>
-          </template>
-        </el-table-column>
-        <el-table-column
-          v-if="isColVisible('traceId')"
-          prop="traceId"
-          :label="t('jobInstanceList.colTrace')"
-          width="180"
-          show-overflow-tooltip
-        >
-          <template #default="{ row }">
-            <router-link
-              v-if="row.traceId"
-              class="cell-link"
-              :to="`/observability/trace?traceId=${row.traceId}`"
-              :title="t('jobInstanceList.colTraceJumpTip')"
-            >
-              {{ row.traceId }}
-            </router-link>
-            <span v-else class="muted">—</span>
-          </template>
-        </el-table-column>
-        <el-table-column :label="t('jobInstanceList.colActions')" fixed="right" width="200">
-          <template #default="{ row }">
-            <div class="table-actions">
-              <el-button size="small" plain type="primary" @click="viewDetail(row)">
-                {{ t('jobInstanceList.actionDetail') }}
-              </el-button>
-              <el-button size="small" plain @click="viewPartitions(row)">
-                {{ t('jobInstanceList.actionPartitions') }}
-              </el-button>
-            </div>
-          </template>
-        </el-table-column>
+          <el-table-column type="selection" width="44" :selectable="() => true" />
+          <!-- 列序照设计 #instances:JOB CODE 首列,状态第三,TRACE 短码,操作=文字链 -->
+          <el-table-column
+            v-if="isColVisible('jobCode')"
+            prop="jobCode"
+            :label="t('jobInstanceList.colJobCode')"
+            min-width="200"
+          >
+            <template #default="{ row }">
+              <router-link class="cell-link" :to="`/jobs/definitions?jobCode=${row.jobCode}`">
+                {{ row.jobCode }}
+              </router-link>
+            </template>
+          </el-table-column>
+          <el-table-column
+            v-if="isColVisible('bizDate')"
+            prop="bizDate"
+            :label="t('jobInstanceList.colBizDate')"
+            width="110"
+          />
+          <el-table-column :label="t('jobInstanceList.colStatus')" width="120">
+            <template #default="{ row }">
+              <StatusTag :value="row.instanceStatus" category="instance" />
+              <el-tag
+                v-if="row.dryRun"
+                size="small"
+                type="info"
+                effect="plain"
+                class="dry-run-badge"
+              >
+                {{ t('jobInstanceList.dryRunBadge') }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column
+            v-if="isColVisible('triggerType')"
+            prop="triggerType"
+            :label="t('jobInstanceList.colTrigger')"
+            width="100"
+          >
+            <template #default="{ row }">
+              {{ resolveTriggerType(row.triggerType) }}
+            </template>
+          </el-table-column>
+          <DatetimeColumn
+            v-if="isColVisible('startedAt')"
+            prop="startedAt"
+            :label="t('jobInstanceList.colStartedAt')"
+            width="160"
+          />
+          <el-table-column
+            v-if="isColVisible('duration')"
+            :label="t('jobInstanceList.colDuration')"
+            width="100"
+          >
+            <template #default="{ row }">
+              <span class="jr-mono">{{
+                formatDurationMs(calcDurationMs(row.startedAt, row.finishedAt))
+              }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column
+            v-if="isColVisible('traceId')"
+            prop="traceId"
+            :label="t('jobInstanceList.colTrace')"
+            width="110"
+          >
+            <template #default="{ row }">
+              <router-link
+                v-if="row.traceId"
+                class="jr-trace-link"
+                :to="`/observability/trace?traceId=${row.traceId}`"
+                :title="row.traceId"
+              >
+                {{ row.traceId.slice(0, 6) }}
+              </router-link>
+              <span v-else class="muted">&#8212;</span>
+            </template>
+          </el-table-column>
+          <el-table-column
+            v-if="isColVisible('rerunRetry')"
+            :label="t('jobInstanceList.colRerunRetry')"
+            width="100"
+          >
+            <template #default="{ row }">
+              <el-tag v-if="row.rerunFlag" size="small" type="warning" effect="plain">
+                {{ t('jobInstanceList.tagRerun') }}
+              </el-tag>
+              <el-tag v-if="row.retryFlag" size="small" type="info" effect="plain">
+                {{ t('jobInstanceList.tagRetry') }}
+              </el-tag>
+              <span v-if="!row.rerunFlag && !row.retryFlag" class="muted">&#8212;</span>
+            </template>
+          </el-table-column>
+          <DatetimeColumn
+            v-if="isColVisible('finishedAt')"
+            prop="finishedAt"
+            :label="t('jobInstanceList.colFinishedAt')"
+            width="160"
+          />
+          <DatetimeColumn
+            v-if="isColVisible('slaAlertedAt')"
+            prop="slaAlertedAt"
+            :label="t('jobInstanceList.colSlaAlerted')"
+            width="160"
+          />
+          <el-table-column
+            v-if="isColVisible('instanceNo')"
+            prop="instanceNo"
+            :label="t('jobInstanceList.colInstanceNo')"
+            width="180"
+          >
+            <template #default="{ row }">
+              <router-link class="cell-link" :to="`/monitor/job-instances/${row.id}`">
+                {{ row.instanceNo }}
+              </router-link>
+            </template>
+          </el-table-column>
+          <el-table-column
+            v-if="isColVisible('queueGroup')"
+            :label="t('jobInstanceList.colQueueGroup')"
+            width="160"
+          >
+            <template #default="{ row }">
+              <div class="cell-stack">
+                <span v-if="row.queueCode" class="cell-main">{{ row.queueCode }}</span>
+                <span v-if="row.workerGroup" class="cell-sub">{{ row.workerGroup }}</span>
+                <span v-if="!row.queueCode && !row.workerGroup" class="muted">&#8212;</span>
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column :label="t('jobInstanceList.colActions')" width="110" fixed="right">
+            <template #default="{ row }">
+              <span class="jr-acts">
+                <router-link class="jr-act" :to="`/monitor/job-instances/${row.id}`">
+                  {{ t('jobInstanceList.actionDetail') }}
+                </router-link>
+                <router-link class="jr-act" :to="`/monitor/job-steps?instanceId=${row.id}`">
+                  {{ t('jobInstanceList.actionSteps') }}
+                </router-link>
+              </span>
+            </template>
+          </el-table-column>
         </template>
       </ProTable>
-    </SectionCard>
+    </div>
   </PageContainer>
 </template>
 
@@ -322,18 +323,20 @@
   }
 
   // 列设置:状态/操作列不在表里(始终显示);工程字段(实例号/队列/Trace/SLA 时间)默认隐藏
+  // 列口径照设计 #instances:JOB CODE 首/业务日期/状态/触发/开始时间/耗时/TRACE/操作;
+  // 重跑重试/完成时间/SLA/实例号/队列 收进列设置(默认隐藏,功能不丢)。
   const columnDefs = computed(() => [
     { key: 'jobCode', label: t('jobInstanceList.colJobCode') },
     { key: 'bizDate', label: t('jobInstanceList.colBizDate') },
-    { key: 'duration', label: t('jobInstanceList.colDuration') },
-    { key: 'rerunRetry', label: t('jobInstanceList.colRerunRetry') },
     { key: 'triggerType', label: t('jobInstanceList.colTrigger') },
     { key: 'startedAt', label: t('jobInstanceList.colStartedAt') },
-    { key: 'finishedAt', label: t('jobInstanceList.colFinishedAt') },
+    { key: 'duration', label: t('jobInstanceList.colDuration') },
+    { key: 'traceId', label: t('jobInstanceList.colTrace') },
+    { key: 'rerunRetry', label: t('jobInstanceList.colRerunRetry'), defaultHidden: true },
+    { key: 'finishedAt', label: t('jobInstanceList.colFinishedAt'), defaultHidden: true },
     { key: 'slaAlertedAt', label: t('jobInstanceList.colSlaAlerted'), defaultHidden: true },
     { key: 'instanceNo', label: t('jobInstanceList.colInstanceNo'), defaultHidden: true },
     { key: 'queueGroup', label: t('jobInstanceList.colQueueGroup'), defaultHidden: true },
-    { key: 'traceId', label: t('jobInstanceList.colTrace'), defaultHidden: true },
   ])
   import { instanceApi } from '@/api/instance'
   import { jobApi } from '@/api/job'
@@ -347,7 +350,7 @@
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
-  import { List } from '@element-plus/icons-vue'
+  import { List } from 'lucide-vue-next'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import SavedFiltersMenu from '@/components/table/SavedFiltersMenu.vue'
   import { useSavedFilters } from '@/composables/useSavedFilters'
@@ -487,6 +490,126 @@
 
   const statusOptions = computed(() => pickMetaEnumGroup(metaEnums.value, 'instanceStatus'))
 
+  // ── 设计 #instances 母版:状态 tab + 真实计数 ────────────────────────────
+  // 计数 = 同筛选(除状态外)下各状态 total(pageSize=1 轻查询);仅筛选签名变化时刷,
+  // 不随 10s 实时轮询放大 QPS。
+  const TAB_DEFS = [
+    { key: '', dot: '', labelKey: 'jobInstanceList.tabAll' },
+    { key: 'RUNNING', dot: 'var(--color-primary)', labelKey: 'jobInstanceList.tabRunning' },
+    { key: 'SUCCESS', dot: 'var(--color-success)', labelKey: 'jobInstanceList.tabSuccess' },
+    { key: 'FAILED', dot: 'var(--color-danger)', labelKey: 'jobInstanceList.tabFailed' },
+    {
+      key: 'CANCELLED',
+      dot: 'var(--color-text-tertiary)',
+      labelKey: 'jobInstanceList.tabCancelled',
+    },
+  ] as const
+
+  const statusCounts = reactive<Record<string, number | null>>({
+    '': null,
+    RUNNING: null,
+    SUCCESS: null,
+    FAILED: null,
+    CANCELLED: null,
+  })
+
+  let lastCountSig = ''
+  async function loadStatusCounts() {
+    const sig = JSON.stringify([
+      tenant.tenantId,
+      query.jobCode,
+      query.startDate,
+      query.endDate,
+      query.traceId,
+      query.slaBreached,
+    ])
+    if (sig === lastCountSig) return
+    lastCountSig = sig
+    await Promise.all(
+      TAB_DEFS.map(async (tab) => {
+        try {
+          const pr = await instanceApi.list({
+            tenantId: query.tenantId || tenant.tenantId,
+            jobCode: query.jobCode,
+            instanceStatus: tab.key,
+            startDate: query.startDate,
+            endDate: query.endDate,
+            traceId: query.traceId,
+            slaBreached: query.slaBreached,
+            page: 1,
+            pageSize: 1,
+          })
+          statusCounts[tab.key] = pr.total ?? 0
+        } catch {
+          statusCounts[tab.key] = null
+        }
+      }),
+    )
+  }
+
+  const statusTabs = computed(() =>
+    TAB_DEFS.map((tab) => ({
+      key: tab.key,
+      dot: tab.dot,
+      label: t(tab.labelKey),
+      count: statusCounts[tab.key],
+      active: tab.key
+        ? query.instanceStatus === tab.key ||
+          (tab.key === 'FAILED' && query.instanceStatuses.includes('FAILED'))
+        : !query.instanceStatus && !query.instanceStatuses,
+    })),
+  )
+
+  function pickStatusTab(key: string) {
+    query.instanceStatuses = ''
+    query.instanceStatus = query.instanceStatus === key ? '' : key
+    if (!key) query.instanceStatus = ''
+    query.page = 1
+    syncFiltersToUrl()
+    void loadData()
+  }
+
+  // 预设 chip:当前 query 与某套保存值完全一致时该 chip 高亮
+  const activePresetId = computed(() => {
+    const cur = JSON.stringify({
+      jobCode: query.jobCode,
+      instanceStatus: query.instanceStatus,
+      instanceStatuses: query.instanceStatuses,
+      startDate: query.startDate,
+      endDate: query.endDate,
+      traceId: query.traceId,
+      slaBreached: query.slaBreached,
+    })
+    return savedFilters.sets.value.find((s) => JSON.stringify(s.filters) === cur)?.id ?? ''
+  })
+
+  function applyPreset(id: string) {
+    savedFilters.applySet(id)
+    dateRange.value = query.startDate && query.endDate ? [query.startDate, query.endDate] : null
+  }
+
+  async function promptSaveFilter() {
+    try {
+      const { value } = await ElMessageBox.prompt(
+        t('jobInstanceList.saveFilterPrompt'),
+        t('jobInstanceList.saveCurrentFilter'),
+        { confirmButtonText: t('common.confirm'), cancelButtonText: t('common.cancel') },
+      )
+      if (value?.trim()) savedFilters.save(value.trim())
+    } catch {
+      /* cancel */
+    }
+  }
+
+  const lastRefreshText = computed(() => {
+    const v = live.lastRefreshedAt.value
+    if (!v) return '—'
+    const d = v instanceof Date ? v : new Date(v)
+    if (Number.isNaN(d.getTime())) return '—'
+    const p = (n: number) => String(n).padStart(2, '0')
+    return `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`
+  })
+
   async function loadJobCodes() {
     // 仅用于下拉"常用 jobCode"提示，取前 500 条即可；超过 500 的租户让用户手输或搜索
     // （旧实现走 fetchAllPageItems，大租户会拉回万级数据，浪费带宽）
@@ -553,6 +676,7 @@
       const result = await instanceApi.list(query)
       rows.value = result.records
       total.value = result.total
+      void loadStatusCounts()
     } catch (err) {
       loadError.value = err
       throw err
@@ -646,9 +770,14 @@
     return `${s}s`
   }
 
+  // 设计实时条右侧「暂停」:暂停期间自动刷新直接跳过(手动搜索/刷新不受影响)
+  const livePaused = ref(false)
   const live = useSseAutoReload({
     domain: 'job-instances',
-    reload: loadData,
+    reload: async () => {
+      if (livePaused.value) return
+      await loadData()
+    },
     scope: () => tenant.tenantId,
   })
 
@@ -680,3 +809,274 @@
     void loadData()
   })
 </script>
+
+<style scoped>
+  /* ── 照设计 #instances 母版 dump(docs/redesign/proto-instances.html)1:1 ── */
+
+  /* 已保存筛选 chip 条 */
+  .jr-presets {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 6px 0 12px;
+    flex-wrap: wrap;
+  }
+
+  .jr-presets__label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    color: var(--color-text-tertiary);
+    flex-shrink: 0;
+  }
+
+  .jr-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 26px;
+    padding: 0 12px;
+    border-radius: 13px;
+    border: 1px solid var(--color-border);
+    background: var(--color-bg-card);
+    color: var(--color-text-secondary);
+    font-size: 12px;
+    cursor: pointer;
+  }
+
+  .jr-chip.is-active {
+    padding: 0 11px;
+    border-color: var(--color-primary);
+    background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+    color: var(--color-primary);
+    font-weight: 500;
+  }
+
+  .jr-chip__star,
+  .jr-chip__plus {
+    line-height: 1;
+  }
+
+  .jr-chip--save {
+    gap: 4px;
+    padding: 0 11px;
+    border-style: dashed;
+    border-color: var(--color-border-strong, rgba(255, 255, 255, 0.16));
+    background: transparent;
+    color: var(--color-text-tertiary);
+  }
+
+  .jr-presets__menu {
+    margin-left: 2px;
+  }
+
+  /* 状态 tab 行 */
+  .jr-tabs {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+
+  .jr-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    height: 28px;
+    padding: 0 12px;
+    border-radius: 14px;
+    border: 1px solid var(--color-border);
+    background: transparent;
+    color: var(--color-text-secondary);
+    font-size: 12.5px;
+    font-weight: 400;
+    white-space: nowrap;
+    flex-shrink: 0;
+    cursor: pointer;
+  }
+
+  .jr-tab.is-active {
+    border-color: var(--color-text-secondary);
+    background: var(--color-bg-elevated);
+    font-weight: 600;
+  }
+
+  .jr-tab__dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+  }
+
+  .jr-tab__count {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--color-text-tertiary);
+  }
+
+  .jr-tabs__spacer {
+    flex: 1;
+  }
+
+  .jr-jobcode {
+    width: 200px;
+  }
+
+  .jr-trace {
+    width: 200px;
+  }
+
+  .jr-sla {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--color-text-tertiary);
+    white-space: nowrap;
+  }
+
+  .jr-multistatus {
+    margin-bottom: 10px;
+  }
+
+  /* 实时监控条 */
+  .jr-live {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 14px;
+    margin-bottom: 10px;
+    border: 1px solid var(--color-border);
+    border-radius: 9px;
+    background: var(--color-bg-card);
+    font-size: 12px;
+    color: var(--color-text-secondary);
+  }
+
+  .jr-live__dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--color-success);
+    flex-shrink: 0;
+  }
+
+  .jr-live__dot.is-off {
+    background: var(--color-text-tertiary);
+  }
+
+  .jr-live__title {
+    color: var(--color-text-primary);
+    font-weight: 500;
+  }
+
+  .jr-live__sub {
+    color: var(--color-text-tertiary);
+  }
+
+  .jr-live__sep {
+    width: 1px;
+    height: 12px;
+    background: var(--color-border);
+  }
+
+  .jr-live__time {
+    font-family: var(--font-mono);
+    color: var(--color-text-tertiary);
+  }
+
+  .jr-live__spacer {
+    flex: 1;
+  }
+
+  .jr-live__running {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--color-text-tertiary);
+  }
+
+  .jr-live__minidot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--color-primary);
+  }
+
+  /* 设计实时条右侧「暂停」文字钮 */
+  .jr-live__pause {
+    border: none;
+    background: transparent;
+    color: var(--color-text-secondary);
+    font-size: 12px;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 6px;
+  }
+
+  .jr-live__pause:hover {
+    color: var(--color-text-primary);
+    background: color-mix(in srgb, var(--color-text-primary) 6%, transparent);
+  }
+
+  .jr-presets__spacer {
+    flex: 1;
+  }
+
+  /* 「已保存筛选」管理入口收敛为与 chip 同语言的 ghost 小钮,不再是突兀实底大钮 */
+  .jr-presets__menu :deep(.el-button) {
+    height: 26px;
+    padding: 0 12px;
+    border-radius: 13px;
+    border: 1px solid var(--color-border);
+    background: transparent;
+    color: var(--color-text-tertiary);
+    font-size: 12px;
+    font-weight: 400;
+  }
+
+  /* 列设置行:无批量选择时只有右侧小钮,收紧上下距,消除整行空白感 */
+  :deep(.pro-table__toolbar) {
+    min-height: 0;
+    margin: 0 0 6px;
+  }
+
+  .jr-live {
+    margin-bottom: 8px;
+  }
+</style>
+
+<style scoped>
+  /* 设计操作列:蓝色文字链(详情/步骤),非描边按钮 */
+  .jr-acts {
+    display: inline-flex;
+    gap: 12px;
+  }
+
+  .jr-act {
+    color: var(--color-primary);
+    font-size: 12.5px;
+    text-decoration: none;
+  }
+
+  .jr-act:hover {
+    text-decoration: underline;
+  }
+
+  /* TRACE 短码(灰 mono,hover 转主色) */
+  .jr-trace-link {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--color-text-tertiary);
+    text-decoration: none;
+  }
+
+  .jr-trace-link:hover {
+    color: var(--color-primary);
+  }
+
+  .jr-mono {
+    font-family: var(--font-mono);
+    font-size: 12px;
+  }
+</style>

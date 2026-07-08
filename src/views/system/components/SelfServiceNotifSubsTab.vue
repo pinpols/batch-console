@@ -70,7 +70,7 @@
   import { ref } from 'vue'
   import { useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
-  import { TopRight } from '@element-plus/icons-vue'
+  import { ArrowUpRight as TopRight } from 'lucide-vue-next'
   import ProTable from '@/components/table/ProTable.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
   import { useTenantStore } from '@/stores/tenant'

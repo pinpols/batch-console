@@ -86,7 +86,7 @@
   import { computed } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
-  import { User, Monitor, Moon, Sunny, Promotion } from '@element-plus/icons-vue'
+  import { User, Monitor, Moon, Sun as Sunny, Send as Promotion } from 'lucide-vue-next'
   import { ElMessage } from 'element-plus'
   import { useAuthStore } from '@/stores/auth'
   import { useTenantStore } from '@/stores/tenant'

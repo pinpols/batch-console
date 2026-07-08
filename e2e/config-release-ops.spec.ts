@@ -28,21 +28,24 @@ test.describe('配置发布 — 筛选与查询', () => {
     await expectPageTitle(page, '发布管理')
   })
 
-  test('Key 模糊搜索 → 表格按条件刷新', async ({ page }) => {
+  // 新 UI:表格改时间线卡片流,查询后断卡片流容器(.cr-timeline)与卡片/空态
+  test('Key 模糊搜索 → 列表按条件刷新', async ({ page }) => {
     const keyInput = page.locator('.el-form-item').filter({ hasText: 'Key' }).getByRole('textbox')
     await keyInput.fill('test')
     await page.getByRole('button', { name: '搜索' }).click()
-    await expect(page.getByRole('columnheader', { name: 'Key' })).toBeVisible()
+    await expect(page.locator('.cr-timeline').first()).toBeAttached({ timeout: 8000 })
+    await expect(page.locator('.cr-item, .el-empty').first()).toBeAttached({ timeout: 8000 })
   })
 
-  test('名称模糊搜索 → 表格按条件刷新', async ({ page }) => {
+  test('名称模糊搜索 → 列表按条件刷新', async ({ page }) => {
     const nameInput = page
       .locator('.el-form-item')
       .filter({ hasText: '名称' })
       .getByRole('textbox')
     await nameInput.fill('config')
     await page.getByRole('button', { name: '搜索' }).click()
-    await expect(page.getByRole('columnheader', { name: '名称' })).toBeVisible()
+    await expect(page.locator('.cr-timeline').first()).toBeAttached({ timeout: 8000 })
+    await expect(page.locator('.cr-item, .el-empty').first()).toBeAttached({ timeout: 8000 })
   })
 
   test('状态下拉筛选 → 表格按状态过滤', async ({ page }) => {
@@ -79,7 +82,8 @@ test.describe('配置发布 — 筛选与查询', () => {
 
   test('刷新按钮重新加载数据', async ({ page }) => {
     await page.getByRole('button', { name: '刷新' }).click()
-    await expect(page.getByRole('columnheader', { name: 'Key' })).toBeVisible({ timeout: 6000 })
+    await expect(page.locator('.cr-timeline').first()).toBeAttached({ timeout: 6000 })
+    await expect(page.locator('.cr-item, .el-empty').first()).toBeAttached({ timeout: 6000 })
   })
 })
 

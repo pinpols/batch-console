@@ -69,7 +69,7 @@
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
   import { useRouter } from 'vue-router'
-  import { Refresh, TopRight } from '@element-plus/icons-vue'
+  import { RefreshCw as Refresh, ArrowUpRight as TopRight } from 'lucide-vue-next'
   import { useRefreshAction } from '@/composables/useRefreshAction'
 
   const refreshQuotaAction = useRefreshAction()

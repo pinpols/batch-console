@@ -26,7 +26,7 @@
   import { ref, onErrorCaptured, watch } from 'vue'
   import { useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
-  import { Refresh, HomeFilled } from '@element-plus/icons-vue'
+  import { RefreshCw as Refresh, House as HomeFilled } from 'lucide-vue-next'
   import EmptyState from '@/components/common/EmptyState.vue'
   import { logError } from '@/utils/logger'
 

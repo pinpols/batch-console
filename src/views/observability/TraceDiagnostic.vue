@@ -133,7 +133,13 @@
   import type { TableInstance } from 'element-plus'
   import { useRoute, useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
-  import { Search, Refresh, DataLine, Loading, WarningFilled } from '@element-plus/icons-vue'
+  import {
+    Search,
+    RefreshCw as Refresh,
+    Activity as DataLine,
+    LoaderCircle as Loading,
+    TriangleAlert as WarningFilled,
+  } from 'lucide-vue-next'
   import { ElMessage } from 'element-plus'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'

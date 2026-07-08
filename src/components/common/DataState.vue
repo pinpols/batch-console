@@ -37,7 +37,7 @@
    */
   import { ref, reactive, computed, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { Refresh } from '@element-plus/icons-vue'
+  import { RefreshCw as Refresh } from 'lucide-vue-next'
   import EmptyState from '@/components/common/EmptyState.vue'
   import TableSkeleton from '@/components/table/TableSkeleton.vue'
 

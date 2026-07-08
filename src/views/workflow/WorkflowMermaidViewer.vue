@@ -182,7 +182,7 @@
           <el-link
             v-if="runId"
             type="primary"
-            :underline="false"
+            underline="never"
             class="legend-back-link"
             @click="goToRun"
           >
@@ -243,7 +243,7 @@
               >
                 <el-link
                   type="primary"
-                  :underline="false"
+                  underline="never"
                   @click="goToJobDef(selectedNodeMeta.relatedJobCode)"
                 >
                   {{ selectedNodeMeta.relatedJobCode }}
@@ -255,7 +255,7 @@
               >
                 <el-link
                   type="primary"
-                  :underline="false"
+                  underline="never"
                   @click="goToPipeline(selectedNodeMeta.relatedPipelineCode)"
                 >
                   {{ selectedNodeMeta.relatedPipelineCode }}
@@ -358,7 +358,7 @@
         >
           <el-link
             type="primary"
-            :underline="false"
+            underline="never"
             @click="goToJobDef(selectedNodeMeta.relatedJobCode)"
           >
             {{ selectedNodeMeta.relatedJobCode }}
@@ -370,7 +370,7 @@
         >
           <el-link
             type="primary"
-            :underline="false"
+            underline="never"
             @click="goToPipeline(selectedNodeMeta.relatedPipelineCode)"
           >
             {{ selectedNodeMeta.relatedPipelineCode }}
@@ -423,19 +423,19 @@
 
   const { t } = useI18n({ useScope: 'global' })
   import {
-    Aim,
-    Close,
-    DocumentCopy,
+    Crosshair as Aim,
+    X as Close,
+    Copy as DocumentCopy,
     Download,
-    FullScreen,
-    Rank,
-    Refresh,
-    RefreshLeft,
-    VideoPause,
-    VideoPlay,
+    Maximize as FullScreen,
+    ArrowUpDown as Rank,
+    RefreshCw as Refresh,
+    RotateCcw as RefreshLeft,
+    Pause as VideoPause,
+    Play as VideoPlay,
     ZoomIn,
     ZoomOut,
-  } from '@element-plus/icons-vue'
+  } from 'lucide-vue-next'
   import svgPanZoom from 'svg-pan-zoom'
   import { useRefreshAction } from '@/composables/useRefreshAction'
 

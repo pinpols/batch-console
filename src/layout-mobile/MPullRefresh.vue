@@ -26,7 +26,7 @@
 <script setup lang="ts">
   import { computed, ref } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { Refresh, Loading } from '@element-plus/icons-vue'
+  import { RefreshCw as Refresh, LoaderCircle as Loading } from 'lucide-vue-next'
 
   const { t } = useI18n({ useScope: 'global' })
 

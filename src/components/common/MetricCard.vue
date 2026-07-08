@@ -11,7 +11,8 @@
   >
     <div class="metric-card__label">{{ label }}</div>
     <div class="metric-card__value" :class="{ 'metric-card__value--long': isLong }">
-      {{ value }}
+      <CopyableText v-if="copyValue" :text="copyValue" @click.stop>{{ value }}</CopyableText>
+      <template v-else>{{ value }}</template>
     </div>
     <div v-if="description" class="metric-card__description">{{ description }}</div>
   </el-card>
@@ -19,6 +20,7 @@
 
 <script setup lang="ts">
   import { computed } from 'vue'
+  import CopyableText from '@/components/common/CopyableText.vue'
 
   export type MetricTone = 'neutral' | 'info' | 'success' | 'warning' | 'danger'
 
@@ -32,6 +34,8 @@
       clickable?: boolean
       /** 当前是否为「激活」筛选项,边框 + 左侧色条加重 */
       active?: boolean
+      /** 传入完整值(如 traceId / instanceNo）后值区可点复制;value 常是截断展示态 */
+      copyValue?: string
     }>(),
     { tone: 'neutral', clickable: false, active: false },
   )
@@ -53,12 +57,20 @@
 </script>
 
 <style scoped>
+  /* 严格对齐设计:bg #1b1d23 / radius 12px / padding 16 18 14 / shadow 0 1px 2px rgba(0,0,0,.25) */
   .metric-card {
-    border: 1px solid var(--color-border-light);
-    border-radius: var(--radius-content);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
     overflow: hidden;
     position: relative;
+    min-height: 112px;
+    background: var(--color-bg-card);
+    box-shadow: var(--shadow-card);
     --metric-tone: var(--color-text-primary);
+  }
+
+  .metric-card :deep(.el-card__body) {
+    padding: 16px 18px 14px;
   }
 
   .metric-card::before {
@@ -96,16 +108,27 @@
   }
 
   .metric-card__label {
-    margin-bottom: 10px;
+    margin-bottom: 7px;
     color: var(--color-text-secondary);
-    font-size: var(--font-size-sm);
+    font-size: var(--font-size-md);
+    font-weight: 400;
   }
 
   .metric-card__value {
-    font-size: var(--font-size-2xl);
-    font-weight: 700;
+    font-family: var(--font-mono);
+    font-size: 30px;
+    font-weight: 600;
     line-height: var(--line-height-tight);
-    letter-spacing: -0.02em;
+    letter-spacing: 0;
+  }
+
+  /* 复制态:值文本保持大号等宽,复制图标收敛到常规尺寸并弱化 */
+  .metric-card__value :deep(.copyable-text) {
+    max-width: 100%;
+  }
+  .metric-card__value :deep(.copyable-text__icon) {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
   }
 
   .metric-card__value--long {
@@ -119,7 +142,8 @@
   .metric-card__description {
     margin-top: 8px;
     color: var(--color-text-tertiary);
-    font-size: var(--font-size-xs);
+    font-size: var(--font-size-sm);
+    line-height: 1.35;
   }
 
   .metric-card--clickable {

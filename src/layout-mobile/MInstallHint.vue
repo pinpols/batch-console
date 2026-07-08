@@ -34,7 +34,7 @@
 <script setup lang="ts">
   import { onMounted, ref } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { Close, Download as DownloadIcon, Share } from '@element-plus/icons-vue'
+  import { X as Close, Download as DownloadIcon, Share2 as Share } from 'lucide-vue-next'
 
   const { t } = useI18n({ useScope: 'global' })
 

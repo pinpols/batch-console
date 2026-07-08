@@ -9,14 +9,15 @@
     @closed="onClosed"
     @opened="onOpened"
   >
+    <!-- 设计稿直出(cmdk 样张):⌘ 搜索行 + ESC 徽标 / 蓝点行 + 右侧组名 / 底部快捷键条 -->
     <template #header>
       <div class="cp-header">
-        <el-input
+        <span class="cp-header__cmd" aria-hidden="true">⌘</span>
+        <input
           ref="inputRef"
           v-model="q"
+          class="cp-header__input"
           :placeholder="t('palette.placeholder')"
-          clearable
-          :prefix-icon="Search"
           @keydown.down.prevent="move(1)"
           @keydown.up.prevent="move(-1)"
           @keydown.enter.prevent="goActive()"
@@ -24,38 +25,36 @@
         <span v-if="entityLoading" class="cp-kbd cp-kbd--loading">{{
           t('palette.searching')
         }}</span>
-        <span v-else class="cp-kbd">⌘/Ctrl + K</span>
+        <span v-else class="cp-kbd">ESC</span>
       </div>
     </template>
 
-    <div class="cp-body">
+    <div class="cp-body" role="listbox">
       <div v-if="!flatItems.length" class="cp-empty">{{ t('palette.empty') }}</div>
-      <div v-for="section in sections" v-else :key="section.key" class="cp-section">
-        <div class="cp-section__title">{{ section.title }}</div>
-        <div class="cp-list" role="listbox">
-          <button
-            v-for="it in section.items"
-            :key="it.key"
-            type="button"
-            class="cp-item"
-            :class="{ 'is-active': activeIndex === it.globalIndex }"
-            role="option"
-            @mousemove="activeIndex = it.globalIndex"
-            @click="go(it)"
-          >
-            <span class="cp-item__icon">
-              <el-icon v-if="it.icon"><component :is="it.icon" /></el-icon>
-              <span v-else class="cp-item__dot" />
-            </span>
-            <span class="cp-item__main">
-              <span class="cp-item__title">{{ it.title }}</span>
-              <span v-if="it.subtitle" class="cp-item__sub">{{ it.subtitle }}</span>
-            </span>
-            <span class="cp-item__meta">{{ it.meta }}</span>
-          </button>
-        </div>
-      </div>
+      <button
+        v-for="it in flatItems"
+        v-else
+        :key="it.key"
+        type="button"
+        class="cp-item"
+        :class="{ 'is-active': activeIndex === it.globalIndex }"
+        role="option"
+        @mousemove="activeIndex = it.globalIndex"
+        @click="go(it)"
+      >
+        <span class="cp-item__dot" aria-hidden="true" />
+        <span class="cp-item__title">{{ it.title }}</span>
+        <span class="cp-item__meta">{{ it.subtitle || it.meta }}</span>
+      </button>
     </div>
+
+    <template #footer>
+      <div class="cp-foot">
+        <span>↵ {{ t('palette.footOpen') }}</span>
+        <span>⌘K {{ t('palette.footToggle') }}</span>
+        <span>ESC {{ t('palette.footClose') }}</span>
+      </div>
+    </template>
   </el-dialog>
 </template>
 
@@ -64,7 +63,6 @@
   import { useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import type { Component } from 'vue'
-  import { Search } from '@element-plus/icons-vue'
   import type { NavigationGroup } from '@/constants/navigation'
   import type { PageTab } from '@/stores/tabs'
   import { pathToKey } from '@/constants/pathKey'
@@ -367,203 +365,145 @@
 </script>
 
 <style scoped>
+  /* 设计稿直出(cmdk 样张) */
   .cp-header {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding-bottom: 0;
+    gap: 14px;
   }
 
-  .cp-header :deep(.el-input) {
+  .cp-header__cmd {
+    font-size: 17px;
+    color: var(--color-text-tertiary);
+    flex-shrink: 0;
+  }
+
+  .cp-header__input {
     flex: 1;
+    min-width: 0;
+    background: transparent;
+    border: none;
+    outline: none;
+    font-size: 15px;
+    color: var(--color-text-primary);
+    font-family: inherit;
   }
 
-  /* el-input 默认 box-shadow 在聚焦时延展到下方，上面那条"空白条"其实是 shadow 阴影 */
-  /* 收紧成一条细描边而非阴影外溢，避免搜索框下面看起来多一根分割线 */
-  .cp-header :deep(.el-input__wrapper) {
-    border-radius: var(--radius-content);
-    box-shadow: 0 0 0 1px var(--color-border-light, #ebeef5);
-    transition: box-shadow 0.15s ease;
-  }
-
-  .cp-header :deep(.el-input__wrapper:hover) {
-    box-shadow: 0 0 0 1px var(--color-border, #dcdfe6);
-  }
-
-  .cp-header :deep(.el-input__wrapper.is-focus) {
-    box-shadow:
-      0 0 0 1px var(--color-primary, #1677ff),
-      0 0 0 3px color-mix(in srgb, var(--color-primary, #1677ff) 18%, transparent);
+  .cp-header__input::placeholder {
+    color: var(--color-text-tertiary);
   }
 
   .cp-kbd {
     flex-shrink: 0;
-    font-size: 11px;
-    color: var(--color-text-tertiary, #909399);
-    white-space: nowrap;
+    padding: 4px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: 7px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--color-text-tertiary);
+  }
+
+  .cp-kbd--loading {
+    color: var(--color-primary);
   }
 
   .cp-body {
-    max-height: min(52vh, 420px);
+    max-height: 430px;
     overflow-y: auto;
-    margin-top: 14px;
-    /* 给滚动条留出 6px 内边距,避免贴边 */
-    padding-right: 4px;
-    /* Firefox 细滚动条 */
-    scrollbar-width: thin;
-    scrollbar-color: color-mix(in srgb, var(--color-text-tertiary, #909399) 35%, transparent)
-      transparent;
-  }
-
-  /* WebKit 系(Chrome/Safari/Edge)细滑滚动条 */
-  .cp-body::-webkit-scrollbar {
-    width: 6px;
-  }
-
-  .cp-body::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  .cp-body::-webkit-scrollbar-thumb {
-    background: color-mix(in srgb, var(--color-text-tertiary, #909399) 30%, transparent);
-    border-radius: 3px;
-    transition: background 0.15s ease;
-  }
-
-  .cp-body::-webkit-scrollbar-thumb:hover {
-    background: color-mix(in srgb, var(--color-text-tertiary, #909399) 60%, transparent);
+    padding: 4px 8px;
   }
 
   .cp-empty {
-    padding: 24px;
+    padding: 44px 0;
     text-align: center;
-    color: var(--color-text-tertiary, #909399);
+    color: var(--color-text-tertiary);
     font-size: 13px;
-  }
-
-  .cp-section__title {
-    font-size: 12px;
-    font-weight: 650;
-    color: var(--color-text-tertiary, #909399);
-    padding: 10px 4px 6px;
-    letter-spacing: 0.2px;
-  }
-
-  .cp-list {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
   }
 
   .cp-item {
     display: flex;
-    align-items: flex-start;
-    gap: 10px;
+    align-items: center;
+    gap: 13px;
     width: 100%;
-    text-align: left;
-    border: 1px solid var(--color-border-light, #ebeef5);
-    border-radius: var(--radius-content);
-    padding: 10px 12px;
-    background: var(--color-bg-card, #fff);
+    height: 48px;
+    padding: 0 14px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
     cursor: pointer;
-    transition:
-      background 0.15s ease,
-      border-color 0.15s ease;
-  }
-
-  .cp-item:hover,
-  .cp-item.is-active {
-    border-color: color-mix(
-      in srgb,
-      var(--color-primary, #1677ff) 35%,
-      var(--color-border, #dcdfe6)
-    );
-    background: color-mix(
-      in srgb,
-      var(--color-bg-card, #fff) 90%,
-      var(--color-primary, #1677ff) 10%
-    );
-  }
-
-  .cp-item__icon {
-    flex-shrink: 0;
-    width: 22px;
-    display: flex;
-    justify-content: center;
-    padding-top: 1px;
-    color: var(--color-text-secondary, #606266);
+    text-align: left;
   }
 
   .cp-item__dot {
-    width: 6px;
-    height: 6px;
-    border-radius: var(--radius-content);
-    background: var(--color-text-tertiary, #c0c4cc);
-    margin-top: 6px;
-  }
-
-  .cp-item__main {
-    flex: 1;
-    min-width: 0;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--color-primary);
+    flex-shrink: 0;
   }
 
   .cp-item__title {
-    display: block;
+    flex: 1;
+    min-width: 0;
     font-size: 14px;
-    font-weight: 650;
-    color: var(--color-text-primary, #303133);
-  }
-
-  .cp-item__sub {
-    display: block;
-    margin-top: 2px;
-    font-size: 12px;
-    color: var(--color-text-tertiary, #909399);
+    color: var(--color-text-primary);
+    white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    white-space: nowrap;
   }
 
   .cp-item__meta {
     flex-shrink: 0;
-    font-size: 11px;
-    color: var(--color-text-tertiary, #909399);
-    padding-top: 2px;
+    font-size: 13px;
+    color: var(--color-text-tertiary);
   }
 
-  @media (prefers-reduced-motion: reduce) {
-    .cp-item {
-      transition: none;
-    }
+  .cp-item:hover,
+  .cp-item.is-active {
+    background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+  }
+
+  .cp-item.is-active .cp-item__title {
+    color: var(--color-primary);
+  }
+
+  .cp-foot {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    font-size: 12.5px;
+    color: var(--color-text-tertiary);
   }
 </style>
 
 <style>
   .command-palette.el-dialog {
     padding: 0;
-    border-radius: var(--radius-content);
+    border-radius: 14px;
     overflow: hidden;
-    /* 阴影柔和一点(spotlight 风),避免 dialog 下边出现明显矩形阴影 */
-    box-shadow:
-      0 18px 50px -12px rgb(0 0 0 / 16%),
-      0 4px 12px -2px rgb(0 0 0 / 8%);
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-pop, 0 8px 24px rgba(0, 0, 0, 0.45));
   }
 
   .command-palette .el-dialog__header {
     margin: 0;
-    /* 去掉 header 默认 margin-bottom + padding-bottom,完全交给 cp-body margin-top 控制间距,
-       消除搜索框下方那条莫名的空白条(原是 el-dialog header 默认 22px padding-bottom + 无视觉占位) */
-    padding: 16px 16px 0;
+    padding: 18px 20px 14px;
+    border-bottom: 1px solid var(--color-border-light);
   }
 
   .command-palette .el-dialog__headerbtn {
-    /* 默认右上角 close 按钮我们不显示(show-close=false),但保留位置会偷高度;隐藏掉 */
     display: none;
   }
 
   .command-palette .el-dialog__body {
-    padding: 0 12px 14px 16px;
-    /* dialog body 自己不滚动,滚动委托给内部 cp-body */
+    padding: 0 10px;
     overflow: hidden;
+  }
+
+  .command-palette .el-dialog__footer {
+    margin: 0;
+    padding: 12px 20px 14px;
+    border-top: 1px solid var(--color-border-light);
   }
 </style>

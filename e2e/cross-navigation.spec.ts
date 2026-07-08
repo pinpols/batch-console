@@ -18,7 +18,10 @@ test.describe('dashboard metric card navigation (指标卡片跳转)', () => {
     await page.goto('/ops/summary')
     const card = page.locator('.metric-hit', { hasText: text }).first()
     await card.waitFor({ state: 'visible', timeout: 25_000 })
-    await card.click({ force: true })
+    // Vue router 的 history 跳转在高并发 e2e 下会让 Playwright 的 click
+    // 挂在 "waiting for scheduled navigations";这里显式触发 DOM click,
+    // 再只等待 URL 这一项业务可观察结果。
+    await card.evaluate((el: HTMLElement) => el.click())
     await expect(page).toHaveURL(expectedUrl, { timeout: 15_000 })
   }
 
@@ -157,9 +160,11 @@ test.describe('query parameter pre-fill (查询参数预填)', () => {
   test('Job Instance 列表通过 status 参数预填筛选条件', async ({ page }) => {
     await page.goto('/monitor/job-instances?status=FAILED')
     await expectPageTitle(page, '作业运行')
-    // 状态筛选应已选中 FAILED
-    const statusSelect = page.locator('.el-form-item').filter({ hasText: '状态' }).locator('.el-select')
-    await expect(statusSelect).toContainText('FAILED', { timeout: 10_000 })
+    // 新 UI:状态下拉裁撤,预填载体 = .jr-tab pill(status=FAILED → 「失败」tab 激活)
+    await expect(page.locator('.jr-tab').filter({ hasText: '失败' }).first()).toHaveClass(
+      /is-active/,
+      { timeout: 10_000 },
+    )
   })
 
   test('Job Instance 列表通过 jobCode 参数预填筛选条件', async ({ page }) => {
@@ -170,8 +175,8 @@ test.describe('query parameter pre-fill (查询参数预填)', () => {
   test('告警列表通过 severity 参数预填筛选条件', async ({ page }) => {
     await page.goto('/observability/alerts?severity=CRITICAL')
     await expectPageTitle(page, /事件告警|告警/)
-    const severitySelect = page.locator('.el-form-item').filter({ hasText: '级别' }).locator('.el-select')
-    await expect(severitySelect).toContainText('CRITICAL', { timeout: 10_000 })
+    // 新 UI:级别下拉是 tab 行右侧第一个 .al-sel(MetaSelect)
+    await expect(page.locator('.al-sel').first()).toContainText('CRITICAL', { timeout: 10_000 })
   })
 
   test('执行日志通过 traceId 参数预填搜索条件', async ({ page }) => {

@@ -29,12 +29,7 @@
     </div>
 
     <div v-if="loadError" class="hb-panel__row">
-      <el-alert
-        type="error"
-        show-icon
-        :closable="false"
-        :title="t('heartbeatPanel.loadError')"
-      />
+      <el-alert type="error" show-icon :closable="false" :title="t('heartbeatPanel.loadError')" />
     </div>
 
     <div v-else-if="loading && !details" class="hb-panel__row">
@@ -42,12 +37,7 @@
     </div>
 
     <div v-else-if="notFound" class="hb-panel__row">
-      <el-alert
-        type="info"
-        show-icon
-        :closable="false"
-        :title="t('heartbeatPanel.notFoundTitle')"
-      >
+      <el-alert type="info" show-icon :closable="false" :title="t('heartbeatPanel.notFoundTitle')">
         <template #default>{{ t('heartbeatPanel.notFoundBody') }}</template>
       </el-alert>
     </div>
@@ -85,7 +75,7 @@
 <script setup lang="ts">
   import { ref, computed, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { Refresh } from '@element-plus/icons-vue'
+  import { RefreshCw as Refresh } from 'lucide-vue-next'
   import JsonPreview from '@/components/common/JsonPreview.vue'
   import { fmtDatetime } from '@/utils/datetime'
   import { useAutoRefresh } from '@/composables/useAutoRefresh'

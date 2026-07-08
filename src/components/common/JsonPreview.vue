@@ -20,7 +20,7 @@
 <script setup lang="ts">
   import { computed, ref } from 'vue'
   import { ElIcon } from 'element-plus'
-  import { DocumentCopy, Check } from '@element-plus/icons-vue'
+  import { Copy as DocumentCopy, Check } from 'lucide-vue-next'
   import { useI18n } from 'vue-i18n'
   import JsonNode from './JsonNode.vue'
 

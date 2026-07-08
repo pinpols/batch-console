@@ -7,6 +7,7 @@ import type {
   ConsoleFileArrivalGroupResponse,
   ConsoleFileOperationResponse,
   ConsoleFileRecordResponse,
+  ConsoleFileSummaryResponse,
 } from '@/types/console-api'
 
 export interface FileQuery {
@@ -52,6 +53,33 @@ export const fileApi = {
       page: query.page,
       pageSize: query.pageSize,
     }
+  },
+
+  /**
+   * 文件列表页领域汇总卡:今日到达 / 待处理 / 已处理 / 失败。
+   * 当前本地 BE 的 /queries/files/summary 仍会 500;这里用稳定的 /queries/files total
+   * 兜底组成汇总,避免页面统计卡显示全 0 且污染浏览器控制台。
+   */
+  summary: async (tenantId = readStoredTenantId()): Promise<ConsoleFileSummaryResponse> => {
+    const today = new Date()
+    const p = (n: number) => String(n).padStart(2, '0')
+    const todayText = `${today.getFullYear()}-${p(today.getMonth() + 1)}-${p(today.getDate())}`
+    const count = async (params: Record<string, string | number | undefined>) => {
+      const pr = await get<PageResponse<ConsoleFileRecordResponse>>('/api/console/queries/files', {
+        tenantId,
+        pageNo: 1,
+        pageSize: 1,
+        ...params,
+      })
+      return Number(pr.total ?? 0)
+    }
+    const [arrivedToday, pending, processed, failed] = await Promise.all([
+      count({ startDate: todayText, endDate: todayText }),
+      count({ fileStatus: 'RECEIVED' }),
+      count({ fileStatus: 'LOADED' }),
+      count({ fileStatus: 'FAILED' }),
+    ])
+    return { arrivedToday, pending, processed, failed }
   },
 
   detail: (fileId: number, tenantId = readStoredTenantId()) =>

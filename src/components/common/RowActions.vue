@@ -47,7 +47,7 @@
   import { useI18n } from 'vue-i18n'
 
   const { t } = useI18n({ useScope: 'global' })
-  import { ArrowDown } from '@element-plus/icons-vue'
+  import { ChevronDown as ArrowDown } from 'lucide-vue-next'
 
   /**
    * 行操作的统一抽象。一个 primary 主按钮 + N 个次操作折进"更多"下拉。

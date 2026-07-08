@@ -47,7 +47,7 @@
   import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
   import { useRouter, useRoute } from 'vue-router'
   import { useI18n } from 'vue-i18n'
-  import { Tools, Refresh } from '@element-plus/icons-vue'
+  import { Wrench as Tools, RefreshCw as Refresh } from 'lucide-vue-next'
   import { useAppStore } from '@/stores/app'
   import { getMaintenanceStatus } from '@/api/system.maintenance'
 

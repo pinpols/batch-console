@@ -50,7 +50,7 @@ test.describe('keyboard flow — P0 页面', () => {
     // 跨平台:同时尝试 ⌘+K / Control+K
     const isMac = process.platform === 'darwin'
     await page.keyboard.press(isMac ? 'Meta+K' : 'Control+K')
-    const palette = page.getByPlaceholder(/搜索菜单/).first()
+    const palette = page.getByPlaceholder(/搜索页面/).first()
     // 命令面板首次打开会异步加载菜单 fixture,CI/低性能机 3s 不够,放宽到 8s
     await expect(palette).toBeVisible({ timeout: 8000 })
     await page.keyboard.press('Escape')

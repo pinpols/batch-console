@@ -18,8 +18,9 @@ test.describe('file template + channel CRUD', () => {
     const dialog = page.locator('.el-dialog:visible, .el-drawer:visible').filter({ hasText: '新增文件模板' })
     await expect(dialog.getByText('模板编码', { exact: true })).toBeVisible()
     await expect(dialog.getByText('模板类型', { exact: true })).toBeVisible()
-    await expect(dialog.getByText('文件格式', { exact: true })).toBeVisible()
-    await expect(dialog.getByText('字符集', { exact: true })).toBeVisible()
+    // 新 UI:「文件格式」同时是分区标题 + 字段 label,只断 form label;「字符集」字段已裁撤,改断「分隔符」
+    await expect(dialog.locator('.el-form-item__label', { hasText: '文件格式' })).toBeVisible()
+    await expect(dialog.getByText('分隔符', { exact: true })).toBeVisible()
     await page.getByRole('button', { name: '取消' }).click({ force: true })
   })
 

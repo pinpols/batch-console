@@ -2,7 +2,7 @@
   <PageContainer>
     <PageHeader />
 
-    <SectionCard>
+    <div>
       <el-tabs v-model="activeTab" tab-position="left" class="pill-tabs">
         <el-tab-pane :label="t('aiChat.tabChat')" name="chat">
           <div class="chat-layout">
@@ -143,7 +143,7 @@
           </ProTable>
         </el-tab-pane>
       </el-tabs>
-    </SectionCard>
+    </div>
   </PageContainer>
 </template>
 
@@ -163,7 +163,6 @@
   import PageContainer from '@/components/common/PageContainer.vue'
   import MetaSelect from '@/components/common/MetaSelect.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
-  import SectionCard from '@/components/common/SectionCard.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import ProTable from '@/components/table/ProTable.vue'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
@@ -313,10 +312,6 @@
 </script>
 
 <style scoped>
-  :deep(.el-card__body) {
-    overflow: visible;
-  }
-
   :deep(.el-tabs__content) {
     min-width: 0;
     overflow: visible;

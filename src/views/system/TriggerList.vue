@@ -2,7 +2,7 @@
   <PageContainer>
     <PageHeader />
 
-    <SectionCard>
+    <div>
       <ProTable
         :data="pagedRows"
         :loading="tableBlocking"
@@ -108,7 +108,7 @@
           </template>
         </el-table-column>
       </ProTable>
-    </SectionCard>
+    </div>
   </PageContainer>
 </template>
 
@@ -137,7 +137,6 @@
   import { useTenantReload } from '@/composables/useTenantReload'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
-  import SectionCard from '@/components/common/SectionCard.vue'
   import ProTable from '@/components/table/ProTable.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import StatusTag from '@/components/common/StatusTag.vue'

@@ -8,255 +8,249 @@
       </template>
     </PageHeader>
 
-    <SectionCard>
-      <el-tabs
-        v-model="activeTab"
-        class="pill-tabs file-config-tabs"
-        :class="{ 'single-mode': mode !== 'all' }"
+    <el-tabs
+      v-model="activeTab"
+      class="pill-tabs file-config-tabs"
+      :class="{ 'single-mode': mode !== 'all' }"
+    >
+      <!-- el-tab-pane 不能用 v-if(EP unmount bug panes.indexOf undefined);用 v-show 防崩 -->
+      <el-tab-pane
+        v-show="showTemplatesTab"
+        :label="t('fileTemplateList.tabTemplates')"
+        name="templates"
       >
-        <!-- el-tab-pane 不能用 v-if(EP unmount bug panes.indexOf undefined);用 v-show 防崩 -->
-        <el-tab-pane
-          v-show="showTemplatesTab"
-          :label="t('fileTemplateList.tabTemplates')"
-          name="templates"
-        >
-          <div class="panel-head">
-            <div class="panel-title">
-              <span class="dot dot--primary" />
-              {{ t('fileTemplateList.sectionTemplates') }}
-            </div>
+        <div class="panel-head">
+          <div class="panel-title">
+            <span class="dot dot--primary" />
+            {{ t('fileTemplateList.sectionTemplates') }}
           </div>
-          <ProTable
-            :data="rows"
-            :loading="tableBlocking"
-            :total="total"
-            v-model:page="page"
-            v-model:page-size="pageSize"
-            @change="load"
-            :error="loadError"
-            :on-retry="load"
-          >
-            <template #query>
-              <ListPageQueryBar
-                :filter-busy="queryActionBusy"
-                :refresh-busy="loading"
-                :disabled="loading"
-                @search="onSearch"
-                @reset="reset"
-                @refresh="() => runRefresh(load)"
-              >
-                <el-form-item :label="t('fileTemplateList.codeLabel')">
-                  <el-input
-                    v-model="keyword"
-                    clearable
-                    :placeholder="t('fileTemplateList.codePlaceholder')"
-                  />
-                </el-form-item>
-                <el-form-item :label="t('fileTemplateList.typeLabel')">
-                  <MetaSelect
-                    class="query-w-160"
-                    v-model="templateType"
-                    :options="templateTypeOptions"
-                    clearable
-                    filterable
-                    enum-key="fileTemplateType"
-                    :placeholder="t('fileTemplateList.typePlaceholder')"
-                  />
-                </el-form-item>
-                <el-form-item :label="t('fileTemplateList.bizTypeLabel')">
-                  <MetaSelect
-                    class="query-w-160"
-                    v-model="bizType"
-                    :options="bizTypeOptions"
-                    clearable
-                    filterable
-                    :placeholder="t('fileTemplateList.bizTypePlaceholder')"
-                  />
-                </el-form-item>
-                <el-form-item :label="t('fileTemplateList.enabledLabel')">
-                  <el-select
-                    v-model="enabled"
-                    clearable
-                    :placeholder="t('fileTemplateList.enabledPlaceholder')"
-                    class="query-w-120"
-                  >
-                    <el-option :label="t('fileTemplateList.optEnabled')" :value="true" />
-                    <el-option :label="t('fileTemplateList.optDisabled')" :value="false" />
-                  </el-select>
-                </el-form-item>
-              </ListPageQueryBar>
-            </template>
-
-            <el-table-column
-              prop="templateCode"
-              :label="t('fileTemplateList.colCode')"
-              width="220"
-              show-overflow-tooltip
-            />
-            <el-table-column
-              prop="templateName"
-              :label="t('fileTemplateList.colName')"
-              min-width="260"
-              show-overflow-tooltip
-            />
-            <el-table-column prop="templateType" :label="t('fileTemplateList.colType')" width="120">
-              <template #default="{ row }">
-                {{ resolveEnumLabel('fileTemplateType', row.templateType) }}
-              </template>
-            </el-table-column>
-            <el-table-column
-              prop="fileFormatType"
-              :label="t('fileTemplateList.colFormat')"
-              width="120"
+        </div>
+        <ProTable
+          :data="rows"
+          :loading="tableBlocking"
+          :total="total"
+          v-model:page="page"
+          v-model:page-size="pageSize"
+          @change="load"
+          :error="loadError"
+          :on-retry="load"
+        >
+          <template #query>
+            <ListPageQueryBar
+              :filter-busy="queryActionBusy"
+              :refresh-busy="loading"
+              :disabled="loading"
+              @search="onSearch"
+              @reset="reset"
+              @refresh="() => runRefresh(load)"
             >
-              <template #default="{ row }">
-                {{ resolveEnumLabel('fileTemplateFormat', row.fileFormatType) }}
-              </template>
-            </el-table-column>
-            <el-table-column prop="bizType" :label="t('fileTemplateList.colBizType')" width="120" />
-            <el-table-column prop="version" :label="t('fileTemplateList.colVersion')" width="90" />
-            <el-table-column :label="t('fileTemplateList.colEnabled')" width="90">
-              <template #default="{ row }">
-                <el-switch
-                  :model-value="row.enabled"
-                  inline-prompt
-                  :active-text="t('fileTemplateList.switchOn')"
-                  :inactive-text="t('fileTemplateList.switchOff')"
-                  :loading="togglingTemplateId === row.id"
-                  @change="toggleTemplate(row)"
+              <el-form-item :label="t('fileTemplateList.codeLabel')">
+                <el-input
+                  v-model="keyword"
+                  clearable
+                  :placeholder="t('fileTemplateList.codePlaceholder')"
                 />
-              </template>
-            </el-table-column>
-            <DatetimeColumn
-              prop="updatedAt"
-              :label="t('fileTemplateList.colUpdatedAt')"
-              width="180"
-            />
-            <el-table-column :label="t('fileTemplateList.colActions')" width="180" fixed="right">
-              <template #default="{ row }">
-                <RowActions :actions="templateRowActions(row)" :inline-limit="2" />
-              </template>
-            </el-table-column>
-          </ProTable>
-        </el-tab-pane>
-
-        <el-tab-pane
-          v-show="showChannelsTab"
-          :label="t('fileTemplateList.tabChannels')"
-          name="channels"
-        >
-          <div class="panel-head">
-            <div class="panel-title">
-              <span class="dot dot--success" />
-              {{ t('fileTemplateList.sectionChannels') }}
-            </div>
-          </div>
-          <ListPageQueryBar
-            class="query"
-            :filter-busy="queryActionBusy"
-            :refresh-busy="loading"
-            :disabled="loading"
-            @search="onChannelSearch"
-            @reset="resetChannels"
-            @refresh="() => runRefresh(loadChannels)"
-          >
-            <el-form-item :label="t('fileTemplateList.channelKeywordLabel')">
-              <el-input
-                v-model="channelKeyword"
-                clearable
-                :placeholder="t('fileTemplateList.channelKeywordPlaceholder')"
-                class="query__search"
-              />
-            </el-form-item>
-            <el-form-item :label="t('fileTemplateList.enabledLabel')">
-              <el-select
-                v-model="channelEnabled"
-                clearable
-                class="query-w-120"
-                :placeholder="t('fileTemplateList.enabledPlaceholder')"
-              >
-                <el-option :label="t('fileTemplateList.optEnabled')" :value="true" />
-                <el-option :label="t('fileTemplateList.optDisabled')" :value="false" />
-              </el-select>
-            </el-form-item>
-          </ListPageQueryBar>
-          <el-table
-            v-loading="loading"
-            :data="channelRows"
-            stripe
-            border
-            size="small"
-            highlight-current-row
-            :empty-text="t('common.noData')"
-            class="console-table"
-          >
-            <el-table-column
-              prop="channelCode"
-              :label="t('fileTemplateList.colChannelCode')"
-              width="220"
-              show-overflow-tooltip
-            />
-            <el-table-column
-              prop="channelName"
-              :label="t('fileTemplateList.colChannelName')"
-              min-width="240"
-              show-overflow-tooltip
-            />
-            <el-table-column
-              prop="channelType"
-              :label="t('fileTemplateList.colChannelType')"
-              width="130"
-            />
-            <el-table-column
-              prop="targetEndpoint"
-              :label="t('fileTemplateList.colTargetEndpoint')"
-              min-width="320"
-              show-overflow-tooltip
-            />
-            <el-table-column
-              prop="authType"
-              :label="t('fileTemplateList.colAuthType')"
-              width="120"
-            />
-            <el-table-column
-              prop="receiptPolicy"
-              :label="t('fileTemplateList.colReceiptPolicy')"
-              width="140"
-            />
-            <el-table-column :label="t('fileTemplateList.colEnabled')" width="110">
-              <template #default="{ row }">
-                <el-switch
-                  :model-value="row.enabled"
-                  inline-prompt
-                  :active-text="t('fileTemplateList.switchOn')"
-                  :inactive-text="t('fileTemplateList.switchOff')"
-                  :loading="togglingChannelId === row.id"
-                  @change="toggleChannel(row)"
+              </el-form-item>
+              <el-form-item :label="t('fileTemplateList.typeLabel')">
+                <MetaSelect
+                  class="query-w-160"
+                  v-model="templateType"
+                  :options="templateTypeOptions"
+                  clearable
+                  filterable
+                  enum-key="fileTemplateType"
+                  :placeholder="t('fileTemplateList.typePlaceholder')"
                 />
-              </template>
-            </el-table-column>
-            <DatetimeColumn
-              prop="updatedAt"
-              :label="t('fileTemplateList.colUpdatedAt')"
-              width="180"
-            />
-            <el-table-column :label="t('fileTemplateList.colActions')" width="120" fixed="right">
-              <template #default="{ row }">
-                <el-button
-                  type="primary"
-                  plain
-                  size="small"
-                  :icon="Edit"
-                  @click="openChannelEdit(row)"
+              </el-form-item>
+              <el-form-item :label="t('fileTemplateList.bizTypeLabel')">
+                <MetaSelect
+                  class="query-w-160"
+                  v-model="bizType"
+                  :options="bizTypeOptions"
+                  clearable
+                  filterable
+                  :placeholder="t('fileTemplateList.bizTypePlaceholder')"
+                />
+              </el-form-item>
+              <el-form-item :label="t('fileTemplateList.enabledLabel')">
+                <el-select
+                  v-model="enabled"
+                  clearable
+                  :placeholder="t('fileTemplateList.enabledPlaceholder')"
+                  class="query-w-120"
                 >
-                  {{ t('common.edit') }}
-                </el-button>
-              </template>
-            </el-table-column>
-          </el-table>
-        </el-tab-pane>
-      </el-tabs>
-    </SectionCard>
+                  <el-option :label="t('fileTemplateList.optEnabled')" :value="true" />
+                  <el-option :label="t('fileTemplateList.optDisabled')" :value="false" />
+                </el-select>
+              </el-form-item>
+            </ListPageQueryBar>
+          </template>
+
+          <el-table-column
+            prop="templateCode"
+            :label="t('fileTemplateList.colCode')"
+            width="220"
+            show-overflow-tooltip
+          />
+          <el-table-column
+            prop="templateName"
+            :label="t('fileTemplateList.colName')"
+            min-width="260"
+            show-overflow-tooltip
+          />
+          <el-table-column prop="templateType" :label="t('fileTemplateList.colType')" width="120">
+            <template #default="{ row }">
+              {{ resolveEnumLabel('fileTemplateType', row.templateType) }}
+            </template>
+          </el-table-column>
+          <el-table-column
+            prop="fileFormatType"
+            :label="t('fileTemplateList.colFormat')"
+            width="120"
+          >
+            <template #default="{ row }">
+              {{ resolveEnumLabel('fileTemplateFormat', row.fileFormatType) }}
+            </template>
+          </el-table-column>
+          <el-table-column prop="bizType" :label="t('fileTemplateList.colBizType')" width="120" />
+          <el-table-column prop="version" :label="t('fileTemplateList.colVersion')" width="90" />
+          <el-table-column :label="t('fileTemplateList.colEnabled')" width="90">
+            <template #default="{ row }">
+              <el-switch
+                :model-value="row.enabled"
+                inline-prompt
+                :active-text="t('fileTemplateList.switchOn')"
+                :inactive-text="t('fileTemplateList.switchOff')"
+                :loading="togglingTemplateId === row.id"
+                @change="toggleTemplate(row)"
+              />
+            </template>
+          </el-table-column>
+          <DatetimeColumn
+            prop="updatedAt"
+            :label="t('fileTemplateList.colUpdatedAt')"
+            width="180"
+          />
+          <el-table-column :label="t('fileTemplateList.colActions')" width="180" fixed="right">
+            <template #default="{ row }">
+              <RowActions :actions="templateRowActions(row)" :inline-limit="2" />
+            </template>
+          </el-table-column>
+        </ProTable>
+      </el-tab-pane>
+
+      <el-tab-pane
+        v-show="showChannelsTab"
+        :label="t('fileTemplateList.tabChannels')"
+        name="channels"
+      >
+        <div class="panel-head">
+          <div class="panel-title">
+            <span class="dot dot--success" />
+            {{ t('fileTemplateList.sectionChannels') }}
+          </div>
+        </div>
+        <ListPageQueryBar
+          class="query"
+          :filter-busy="queryActionBusy"
+          :refresh-busy="loading"
+          :disabled="loading"
+          @search="onChannelSearch"
+          @reset="resetChannels"
+          @refresh="() => runRefresh(loadChannels)"
+        >
+          <el-form-item :label="t('fileTemplateList.channelKeywordLabel')">
+            <el-input
+              v-model="channelKeyword"
+              clearable
+              :placeholder="t('fileTemplateList.channelKeywordPlaceholder')"
+              class="query__search"
+            />
+          </el-form-item>
+          <el-form-item :label="t('fileTemplateList.enabledLabel')">
+            <el-select
+              v-model="channelEnabled"
+              clearable
+              class="query-w-120"
+              :placeholder="t('fileTemplateList.enabledPlaceholder')"
+            >
+              <el-option :label="t('fileTemplateList.optEnabled')" :value="true" />
+              <el-option :label="t('fileTemplateList.optDisabled')" :value="false" />
+            </el-select>
+          </el-form-item>
+        </ListPageQueryBar>
+        <el-table
+          v-loading="loading"
+          :data="channelRows"
+          stripe
+          border
+          size="small"
+          highlight-current-row
+          :empty-text="t('common.noData')"
+          class="console-table"
+        >
+          <el-table-column
+            prop="channelCode"
+            :label="t('fileTemplateList.colChannelCode')"
+            width="220"
+            show-overflow-tooltip
+          />
+          <el-table-column
+            prop="channelName"
+            :label="t('fileTemplateList.colChannelName')"
+            min-width="240"
+            show-overflow-tooltip
+          />
+          <el-table-column
+            prop="channelType"
+            :label="t('fileTemplateList.colChannelType')"
+            width="130"
+          />
+          <el-table-column
+            prop="targetEndpoint"
+            :label="t('fileTemplateList.colTargetEndpoint')"
+            min-width="320"
+            show-overflow-tooltip
+          />
+          <el-table-column prop="authType" :label="t('fileTemplateList.colAuthType')" width="120" />
+          <el-table-column
+            prop="receiptPolicy"
+            :label="t('fileTemplateList.colReceiptPolicy')"
+            width="140"
+          />
+          <el-table-column :label="t('fileTemplateList.colEnabled')" width="110">
+            <template #default="{ row }">
+              <el-switch
+                :model-value="row.enabled"
+                inline-prompt
+                :active-text="t('fileTemplateList.switchOn')"
+                :inactive-text="t('fileTemplateList.switchOff')"
+                :loading="togglingChannelId === row.id"
+                @change="toggleChannel(row)"
+              />
+            </template>
+          </el-table-column>
+          <DatetimeColumn
+            prop="updatedAt"
+            :label="t('fileTemplateList.colUpdatedAt')"
+            width="180"
+          />
+          <el-table-column :label="t('fileTemplateList.colActions')" width="120" fixed="right">
+            <template #default="{ row }">
+              <el-button
+                type="primary"
+                plain
+                size="small"
+                :icon="Edit"
+                @click="openChannelEdit(row)"
+              >
+                {{ t('common.edit') }}
+              </el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </el-tab-pane>
+    </el-tabs>
 
     <el-drawer
       :append-to-body="true"
@@ -385,7 +379,7 @@
           <el-form-item>
             <el-link
               type="primary"
-              :underline="false"
+              underline="never"
               @click="showFormatAdvanced = !showFormatAdvanced"
               >{{
                 showFormatAdvanced
@@ -497,7 +491,7 @@
   import { useRoute } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
-  import { Edit, Plus, View } from '@element-plus/icons-vue'
+  import { Pencil as Edit, Plus, Eye as View } from 'lucide-vue-next'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
 
   const { t, te } = useI18n({ useScope: 'global' })
@@ -537,7 +531,6 @@
   import { useTenantReload } from '@/composables/useTenantReload'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
-  import SectionCard from '@/components/common/SectionCard.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import ProTable from '@/components/table/ProTable.vue'
   import StatusTag from '@/components/common/StatusTag.vue'

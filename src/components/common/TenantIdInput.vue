@@ -37,7 +37,7 @@
    */
   import { computed, ref } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { CircleCheckFilled, WarningFilled } from '@element-plus/icons-vue'
+  import { CircleCheck as CircleCheckFilled, TriangleAlert as WarningFilled } from 'lucide-vue-next'
 
   const { t } = useI18n({ useScope: 'global' })
 

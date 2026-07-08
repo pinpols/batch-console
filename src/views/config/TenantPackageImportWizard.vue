@@ -53,7 +53,7 @@
                     <div class="upload-zone__hint">
                       <strong>{{ t('tenantPackageImportWizard.dropHintDrop') }}</strong>
                       {{ t('tenantPackageImportWizard.dropHintOr') }}
-                      <el-link type="primary" :underline="false">
+                      <el-link type="primary" underline="never">
                         {{ t('excelMaintenanceWizard.btnPickFile') }}
                       </el-link>
                       <div class="upload-zone__sub">.xls / .xlsx</div>
@@ -520,14 +520,14 @@
   import {
     ArrowLeft,
     ArrowRight,
-    Document,
+    FileText as Document,
     Download,
-    FolderOpened,
-    Refresh,
+    FolderOpen as FolderOpened,
+    RefreshCw as Refresh,
     Upload,
-    UploadFilled,
-    WarningFilled,
-  } from '@element-plus/icons-vue'
+    Upload as UploadFilled,
+    TriangleAlert as WarningFilled,
+  } from 'lucide-vue-next'
   import { ElMessage } from 'element-plus'
 
   const { t } = useI18n({ useScope: 'global' })
@@ -977,7 +977,7 @@
   }
   .upload-zone--dragover {
     border-color: var(--color-primary);
-    background: var(--color-primary-light-9, rgba(64, 158, 255, 0.06));
+    background: color-mix(in srgb, var(--color-primary) 6%, transparent);
   }
 
   .upload-zone__icon {
@@ -1086,7 +1086,7 @@
   }
   .upload-zone__dropzone :deep(.el-upload-dragger:hover) {
     border-color: var(--color-primary);
-    background: var(--color-primary-light-9, rgba(64, 158, 255, 0.06));
+    background: color-mix(in srgb, var(--color-primary) 6%, transparent);
   }
   .upload-zone__icon {
     font-size: 28px;

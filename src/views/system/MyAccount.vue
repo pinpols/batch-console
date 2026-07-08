@@ -83,7 +83,11 @@
           >
             <template #append>
               <el-tooltip :content="t('common.passwordGenerate')" placement="top">
-                <el-button :icon="MagicStick" :aria-label="t('common.passwordGenerate')" @click="onGen" />
+                <el-button
+                  :icon="MagicStick"
+                  :aria-label="t('common.passwordGenerate')"
+                  @click="onGen"
+                />
               </el-tooltip>
               <el-tooltip :content="t('common.passwordCopy')" placement="top">
                 <el-button
@@ -131,7 +135,7 @@
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
   import type { FormInstance, FormRules } from 'element-plus'
-  import { DocumentCopy, MagicStick } from '@element-plus/icons-vue'
+  import { Copy as DocumentCopy, Sparkles as MagicStick } from 'lucide-vue-next'
   import { authApi } from '@/api/auth'
   import { useAuthStore } from '@/stores/auth'
   import { useTenantStore } from '@/stores/tenant'

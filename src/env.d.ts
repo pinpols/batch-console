@@ -42,3 +42,6 @@ declare module 'virtual:pwa-register' {
   }
   export function registerSW(options?: RegisterSWOptions): (reloadPage?: boolean) => Promise<void>
 }
+
+/** vite define 注入的构建期版本号(见 vite.config.ts define）。全局环境常量。 */
+declare const __APP_VERSION__: string

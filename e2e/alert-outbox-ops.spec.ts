@@ -14,47 +14,43 @@ test.describe('告警 — 筛选查询', () => {
     await expectPageTitle(page, /事件告警|告警/)
   })
 
-  test('级别筛选 → 查询', async ({ page }) => {
-    const levelSelect = page
-      .locator('.el-form-item')
-      .filter({ hasText: '级别' })
-      .locator('.el-select')
+  test('级别筛选(al-sel 下拉,选后自动查询)', async ({ page }) => {
+    // 新 UI:级别下拉是 tab 行右侧第一个 .al-sel(MetaSelect),@change 自动触发搜索
+    const levelSelect = page.locator('.al-sel').first()
     await levelSelect.click()
-    const opt = page.locator('.el-select-dropdown__item').first()
+    const opt = page.locator('.el-select-dropdown__item:visible').first()
     if (await isVisible(opt, 2000)) {
       await opt.click()
-      await page.getByRole('button', { name: '搜索' }).click()
-      await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
+      await expect(page.locator('.al-list').first()).toBeAttached({ timeout: 10_000 })
     }
   })
 
-  test('状态筛选 → 查询', async ({ page }) => {
-    const statusSelect = page
-      .locator('.el-form-item')
-      .filter({ hasText: '状态' })
-      .locator('.el-select')
-    await statusSelect.click()
-    const opt = page.locator('.el-select-dropdown__item').first()
-    if (await isVisible(opt, 2000)) {
-      await opt.click()
-      await page.getByRole('button', { name: '搜索' }).click()
-      await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
-    }
+  test('分组 tab 筛选(未处理/已确认/全部)', async ({ page }) => {
+    // 新 UI:状态下拉裁撤,改为分组 pill tab(.al-tab)
+    const ackedTab = page.locator('.al-tab').filter({ hasText: '已确认' })
+    await ackedTab.click()
+    await expect(ackedTab).toHaveClass(/is-active/)
+    await expect(page.locator('.al-list').first()).toBeAttached({ timeout: 10_000 })
+    const allTab = page.locator('.al-tab').filter({ hasText: '全部' })
+    await allTab.click()
+    await expect(allTab).toHaveClass(/is-active/)
   })
 
-  test('Trace 搜索 → 查询 → 重置', async ({ page }) => {
-    const input = page.locator('.el-form-item').filter({ hasText: 'Trace' }).getByRole('textbox')
+  test('Trace 输入 → 带条件刷新 → 重置', async ({ page }) => {
+    // 新 UI:TraceIdInput 的 Enter 是「跳 Trace 诊断页」(组件内 @keydown.enter=onGo),
+    // 列表内按 traceId 过滤的载体 = 填入后点「刷新」重查(load 带 filters.traceId)
+    const input = page.locator('.al-trace input').first()
     if (!(await isVisible(input, 2000))) return
     await input.fill('trace-test')
-    await page.getByRole('button', { name: '搜索' }).click()
-    await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
+    await page.getByRole('button', { name: '刷新' }).click()
+    await expect(page.locator('.al-list').first()).toBeAttached({ timeout: 10_000 })
     await page.getByRole('button', { name: '重置' }).click()
     await expect(input).toHaveValue('')
   })
 
   test('刷新', async ({ page }) => {
     await page.getByRole('button', { name: '刷新' }).click()
-    await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
+    await expect(page.locator('.al-list').first()).toBeAttached({ timeout: 10_000 })
   })
 })
 
@@ -104,20 +100,24 @@ test.describe('告警 — 操作流', () => {
     expect(resp, `BE 未收到 ${apiPathRe} 请求`).not.toBeNull()
   }
 
+  // 新 UI:行操作从表格 .table-actions 迁到卡片 .al-card__ops 内的 .al-op 按钮
   test('确认告警 → 填写说明 → 提交 → toast', async ({ page }) => {
-    const confirmBtn = page.locator('.table-actions').getByRole('button', { name: '确认' }).first()
+    const confirmBtn = page.locator('.al-card__ops .al-op--ack').first()
     if (!(await isVisible(confirmBtn))) return
     await clickAndWaitApi(page, confirmBtn, /\/alerts\/[^/]+\/ack/, 'e2e 自动化确认')
   })
 
   test('静默告警 → 填写说明 → 提交 → toast', async ({ page }) => {
-    const silenceBtn = page.locator('.table-actions').getByRole('button', { name: '静默' }).first()
+    const silenceBtn = page
+      .locator('.al-card__ops')
+      .getByRole('button', { name: '静默 24h' })
+      .first()
     if (!(await isVisible(silenceBtn))) return
     await clickAndWaitApi(page, silenceBtn, /\/alerts\/[^/]+\/silence/, 'e2e 自动化静默')
   })
 
   test('关闭告警 → 填写说明 → 提交 → toast', async ({ page }) => {
-    const closeBtn = page.locator('.table-actions').getByRole('button', { name: '关闭' }).first()
+    const closeBtn = page.locator('.al-card__ops').getByRole('button', { name: '关闭' }).first()
     if (!(await isVisible(closeBtn))) return
     await clickAndWaitApi(page, closeBtn, /\/alerts\/[^/]+\/close/, 'e2e 自动化关闭')
   })
@@ -132,13 +132,15 @@ test.describe('Outbox — Tab 与筛选', () => {
     await expectPageTitle(page, 'Outbox')
   })
 
+  // 新 UI:el-tabs 换自绘 pill tab(.ob-tab 按钮),按可见文本定位
   test('重试 tab 默认激活', async ({ page }) => {
-    await expect(page.getByRole('tab', { name: '重试' })).toHaveClass(/is-active/)
+    await expect(page.locator('.ob-tab').filter({ hasText: '重试' })).toHaveClass(/is-active/)
   })
 
   test('切换到投递 tab', async ({ page }) => {
-    await page.getByRole('tab', { name: '投递' }).click()
-    await expect(page.getByRole('tab', { name: '投递' })).toHaveClass(/is-active/)
+    const deliveryTab = page.locator('.ob-tab').filter({ hasText: '投递' })
+    await deliveryTab.click()
+    await expect(deliveryTab).toHaveClass(/is-active/)
   })
 
   test('重试 tab — 关键字搜索', async ({ page }) => {
@@ -165,7 +167,7 @@ test.describe('Outbox — Tab 与筛选', () => {
   })
 
   test('投递 tab — 关键字搜索', async ({ page }) => {
-    await page.getByRole('tab', { name: '投递' }).click()
+    await page.locator('.ob-tab').filter({ hasText: '投递' }).click()
     const input = page.locator('.el-form-item').filter({ hasText: '关键字' }).getByRole('textbox')
     if (!(await isVisible(input, 2000))) return
     await input.fill('test')

@@ -1,4 +1,5 @@
 export const THEME_STORAGE_KEY = 'batch-console:theme'
+export const THEME_REDESIGN_DEFAULT_STORAGE_KEY = 'batch-console:theme-redesign-default-v1'
 
 /** 实际应用到页面的明暗值 */
 export type ThemeMode = 'light' | 'dark'
@@ -18,11 +19,18 @@ export function getSystemIsDark(): boolean {
   return window.matchMedia('(prefers-color-scheme: dark)').matches
 }
 
-/** 读本地存储；无记录时默认「跟随系统」 */
+/** 读本地存储；无记录时按 redesign 默认深色 */
 export function readThemePreference(): ThemePreference {
   const v = localStorage.getItem(THEME_STORAGE_KEY)
+  if (v === 'system' && localStorage.getItem(THEME_REDESIGN_DEFAULT_STORAGE_KEY) !== '1') {
+    return 'dark'
+  }
   if (v === 'dark' || v === 'light' || v === 'system') return v
-  return 'system'
+  return 'dark'
+}
+
+export function markThemeRedesignDefaultApplied(): void {
+  localStorage.setItem(THEME_REDESIGN_DEFAULT_STORAGE_KEY, '1')
 }
 
 export function resolveEffectiveTheme(

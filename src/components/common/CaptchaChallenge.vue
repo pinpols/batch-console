@@ -58,7 +58,7 @@
 <script setup lang="ts">
   import { onBeforeUnmount, onMounted, ref } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { Check, DArrowRight } from '@element-plus/icons-vue'
+  import { Check, ChevronsRight as DArrowRight } from 'lucide-vue-next'
   import { getSelfHostedChallenge } from '@/api/captcha'
   import type { CaptchaProvider } from '@/api/captcha'
   import { loadScript } from '@/utils/loadScript'

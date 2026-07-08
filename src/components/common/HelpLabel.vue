@@ -8,7 +8,7 @@
 </template>
 
 <script setup lang="ts">
-  import { QuestionFilled } from '@element-plus/icons-vue'
+  import { CircleHelp as QuestionFilled } from 'lucide-vue-next'
 
   defineProps<{
     label?: string

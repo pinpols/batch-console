@@ -67,6 +67,7 @@ export default [
         ...globals.browser,
         ...globals.es2024,
         ...autoImportGlobals,
+        __APP_VERSION__: 'readonly',
       },
     },
     plugins: {

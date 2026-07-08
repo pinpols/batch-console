@@ -1,0 +1,174 @@
+/* Redesign token handoff.
+   Source: design/refs/tokens-handoff.css, copied into src so app builds do not import from design/. */
+
+:root {
+  --font-sans:
+    'IBM Plex Sans', Inter, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue',
+    Arial, sans-serif;
+  --font-mono:
+    'IBM Plex Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Monaco, monospace;
+  --font-family-base: var(--font-sans);
+  --font-family-mono: var(--font-mono);
+  --el-font-family: var(--font-sans);
+  --el-font-family-mono: var(--font-mono);
+
+  --font-size-xs: 11px;
+  --font-size-sm: 12px;
+  --font-size-md: 13px;
+  --font-size-lg: 16px;
+  --font-size-xl: 18px;
+  --font-size-2xl: 22px;
+  --el-font-size-extra-small: 11px;
+  --el-font-size-small: 12px;
+  --el-font-size-base: 13px;
+  --el-font-size-medium: 13px;
+  --el-font-size-large: 14px;
+  --el-font-size-extra-large: 18px;
+
+  --color-primary: #1668e3;
+
+  --color-success: #22845a;
+  --color-warning: #b57816;
+  --color-danger: #d64543;
+  --color-info: #1668e3;
+
+  --color-text-primary: #1b1e26;
+  --color-text-secondary: #5b6270;
+  --color-text-tertiary: #8b919e;
+
+  --color-bg-page: #f5f6f8;
+  --color-bg-canvas: #eceef2;
+  --color-bg-card: #ffffff;
+  --color-bg-subtle: #fafbfc;
+  --color-bg-base: #fafafb;
+  --color-bg-elevated: #ffffff;
+
+  --color-border: rgba(15, 23, 42, 0.1);
+  --color-border-light: rgba(15, 23, 42, 0.07);
+
+  --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --shadow-surface: 0 0 0 1px rgba(15, 23, 42, 0.05);
+  --shadow-surface-hover: 0 0 0 1px rgba(15, 23, 42, 0.1);
+
+  --radius-control: 8px;
+  --radius-button: var(--radius-control);
+  --radius-input: var(--radius-control);
+  --radius-content: 12px;
+  --radius-card: var(--radius-content);
+  --radius-card-lg: var(--radius-content);
+  --radius-surface: var(--radius-content);
+  --layout-panel-radius: var(--radius-content);
+
+  --card-inner-padding: 20px;
+  --page-section-gap: 12px;
+  --page-block-gap: 12px;
+  /* 还原设计:内容四周留白 ≈ 24 顶 / 32 两侧(设计源实测 28/32/40) */
+  --page-scroll-edge-top: 22px;
+  --page-scroll-edge-bleed: 32px;
+  --layout-panel-gap: 14px;
+  --layout-header-main-gap: 10px;
+  --layout-panel-hover-safe: 14px;
+  --layout-panel-inset-highlight: rgba(255, 255, 255, 0.48);
+
+  --layout-sidebar-bg: #fafafb;
+  --layout-sidebar-text: #495060;
+  --layout-sidebar-text-muted: #737b8c;
+  --layout-sidebar-brand-divider: rgba(15, 23, 42, 0.08);
+  --layout-sidebar-subnav-bg: transparent;
+  --layout-sidebar-hover-bg: rgba(22, 104, 227, 0.08);
+  --layout-sidebar-hover-text: #1b1e26;
+  --layout-sidebar-active-bg: rgba(22, 104, 227, 0.12);
+  --layout-sidebar-active-text: #1668e3;
+  --layout-sidebar-active-hover-bg: rgba(22, 104, 227, 0.16);
+  --layout-header-bg: rgba(255, 255, 255, 0.86);
+  --layout-menu-popup-bg: #fafbfc;
+
+  /* 校正 tokens.css 里 #1677ff 旧蓝残留 → 统一到设计主色系(color-mix 跟随 --color-primary) */
+  --table-row-hover-bg: color-mix(in srgb, var(--color-primary) 7%, transparent);
+  --table-current-row-bg: color-mix(in srgb, var(--color-primary) 12%, transparent);
+  --layout-menu-popup-active-bg: color-mix(in srgb, var(--color-primary) 12%, transparent);
+  --layout-menu-popup-active-text: var(--color-primary);
+  --color-bg-info: color-mix(in srgb, var(--color-primary) 8%, var(--color-bg-card));
+  --color-bg-hero: var(--color-bg-card);
+  --input-bg: #ffffff;
+
+  /* 主按钮对齐设计 light:accent-strong #1668e3 */
+  --button-primary-bg: #1668e3;
+  --button-primary-bg-hover: #2f74e8;
+  --button-primary-bg-active: #1257c4;
+  --button-primary-border: #1668e3;
+}
+
+html.dark {
+  --color-primary: #5c9dff;
+
+  --color-success: #5cb381;
+  --color-warning: #e3a94f;
+  --color-danger: #f07a78;
+  --color-info: #5c9dff;
+
+  --color-text-primary: #e9ebf0;
+  --color-text-secondary: #9aa1ae;
+  --color-text-tertiary: #676e7b;
+
+  --color-bg-page: #141519;
+  --color-bg-canvas: #0f1013;
+  --color-bg-card: #1b1d23;
+  --color-bg-subtle: #17181d;
+  --color-bg-base: #141519;
+  --color-bg-elevated: #23262e;
+
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-border-light: rgba(255, 255, 255, 0.055);
+
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.25);
+  --shadow-surface: 0 0 0 1px rgba(255, 255, 255, 0.07);
+  --shadow-surface-hover: 0 0 0 1px rgba(255, 255, 255, 0.11);
+  --surface-hover-edge-inset: inset 0 0 0 1px
+    color-mix(in srgb, var(--color-primary) 34%, transparent);
+
+  --layout-panel-inset-highlight: rgba(255, 255, 255, 0.075);
+
+  --layout-sidebar-bg: #17181d;
+  --layout-sidebar-text: rgba(233, 235, 240, 0.72);
+  --layout-sidebar-text-muted: #9aa1ae;
+  --layout-sidebar-brand-divider: rgba(255, 255, 255, 0.08);
+  --layout-sidebar-subnav-bg: transparent;
+  --layout-sidebar-hover-bg: rgba(92, 157, 255, 0.06);
+  --layout-sidebar-hover-text: #e9ebf0;
+  --layout-sidebar-active-bg: rgba(92, 157, 255, 0.12);
+  --layout-sidebar-active-text: #5c9dff;
+  --layout-sidebar-active-hover-bg: rgba(92, 157, 255, 0.16);
+  --layout-header-bg: rgba(27, 29, 35, 0.9);
+  --layout-menu-popup-bg: #17181d;
+
+  /* 校正 tokens.css 深色里蓝味残留(表头 #1c222c / 行 #1677ff / 弹层 active #1d4ed8 /
+     hero·info·fill 蓝渐变)→ 统一到设计中性表面 + 设计主色系。 */
+  --table-header-bg: var(--color-bg-subtle);
+  --table-row-hover-bg: color-mix(in srgb, var(--color-primary) 12%, transparent);
+  --table-current-row-bg: color-mix(in srgb, var(--color-primary) 18%, transparent);
+  --table-stripe-bg: color-mix(in srgb, var(--color-bg-card) 94%, #ffffff 3%);
+  --layout-menu-popup-active-bg: color-mix(in srgb, var(--color-primary) 20%, transparent);
+  --layout-menu-popup-active-text: var(--color-primary);
+  --color-bg-info: color-mix(in srgb, var(--color-primary) 10%, var(--color-bg-card));
+  --color-bg-overlay: var(--color-bg-card);
+  --color-fill-light: var(--color-bg-elevated);
+  --color-bg-hero: var(--color-bg-card);
+
+  /* 次级按钮对齐设计(刷新/打印等):透明底 + --border 边框,非蓝灰实底 */
+  --button-neutral-bg: transparent;
+  --button-neutral-bg-hover: rgba(255, 255, 255, 0.06);
+  --button-neutral-bg-active: rgba(255, 255, 255, 0.1);
+  --button-neutral-border: rgba(255, 255, 255, 0.08);
+  --button-neutral-border-hover: rgba(255, 255, 255, 0.16);
+  --button-neutral-text: var(--color-text-primary);
+
+  /* 主按钮对齐设计:accent-strong #3d87ff(比 --color-primary 更饱和一档) */
+  --button-primary-bg: #3d87ff;
+  --button-primary-bg-hover: #5c9dff;
+  --button-primary-bg-active: #2f74e8;
+  --button-primary-border: #3d87ff;
+
+  /* 输入类控件底色(设计 --input-bg #15161b,比卡片更沉) */
+  --input-bg: #15161b;
+}

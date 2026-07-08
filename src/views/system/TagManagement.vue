@@ -24,7 +24,7 @@
       </template>
     </PageHeader>
 
-    <SectionCard>
+    <div>
       <el-tabs v-model="activeTab" class="pill-tabs">
         <el-tab-pane :label="t('tagManagement.tabResource')" name="resource">
           <p class="tag-tabs__desc">{{ t('tagManagement.descResource') }}</p>
@@ -35,7 +35,7 @@
           <TagSearchTab />
         </el-tab-pane>
       </el-tabs>
-    </SectionCard>
+    </div>
   </PageContainer>
 </template>
 
@@ -44,10 +44,9 @@
   import type { ComputedRef } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
-  import { Plus } from '@element-plus/icons-vue'
+  import { Plus } from 'lucide-vue-next'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
-  import SectionCard from '@/components/common/SectionCard.vue'
   import TagResourceTab from './components/TagResourceTab.vue'
   import TagSearchTab from './components/TagSearchTab.vue'
 

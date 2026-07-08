@@ -591,12 +591,12 @@
     cursor: pointer;
   }
   .workflow-designer__banner--readonly {
-    background: var(--color-warning-light, #fdf6ec);
-    color: var(--color-warning-dark, #b88230);
+    background: var(--el-color-warning-light-9);
+    color: var(--el-color-warning-dark-2);
     cursor: default;
   }
   .workflow-designer__banner--error {
-    background: var(--color-danger-light, #fef0f0);
+    background: var(--el-color-danger-light-9);
     color: var(--color-danger, #f56c6c);
   }
   .error-list {

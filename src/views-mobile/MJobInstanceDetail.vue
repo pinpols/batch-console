@@ -120,17 +120,16 @@
         <div v-if="heartbeatTaskId" class="m-card">
           <div class="m-card__row">
             <div class="m-card__title">{{ t('mJobDetail.heartbeatTitle') }}</div>
-            <span v-if="heartbeatLoading" class="m-card__sub">{{ t('mobile.common.loading') }}</span>
+            <span v-if="heartbeatLoading" class="m-card__sub">{{
+              t('mobile.common.loading')
+            }}</span>
           </div>
           <div v-if="heartbeatNotFound" class="m-card__sub">
             {{ t('heartbeatPanel.notFoundBody') }}
           </div>
           <template v-else-if="heartbeatLatest">
             <div v-if="heartbeatPercent !== null" class="m-progress">
-              <div
-                class="m-progress__bar"
-                :style="{ width: heartbeatPercent + '%' }"
-              />
+              <div class="m-progress__bar" :style="{ width: heartbeatPercent + '%' }" />
               <span class="m-progress__label">{{ heartbeatPercent }}%</span>
             </div>
             <div class="m-card__meta">
@@ -169,7 +168,7 @@
   import { computed, ref, watch } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
-  import { ArrowLeft, Refresh } from '@element-plus/icons-vue'
+  import { ArrowLeft, RefreshCw as Refresh } from 'lucide-vue-next'
   import { ElMessage } from 'element-plus'
   import { confirmActionSheet } from '@/layout-mobile/MActionSheet'
   import { useTenantStore } from '@/stores/tenant'

@@ -96,7 +96,13 @@
   import { computed, ref } from 'vue'
   import { useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
-  import { Bell, Stamp, Warning, CircleClose, ArrowRight } from '@element-plus/icons-vue'
+  import {
+    Bell,
+    Stamp,
+    TriangleAlert as Warning,
+    CircleX as CircleClose,
+    ArrowRight,
+  } from 'lucide-vue-next'
 
   const props = defineProps<{
     pendingApprovals: number
@@ -156,6 +162,21 @@
 <style scoped>
   .notif-center__badge {
     position: relative;
+  }
+
+  .notif-center__badge :deep(.el-badge__content) {
+    top: 4px;
+    right: 5px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    border: 0;
+    border-radius: 999px;
+    font-size: 10px;
+    font-family: var(--font-mono);
+    font-weight: 700;
+    line-height: 16px;
+    box-shadow: 0 0 0 2px var(--layout-header-bg);
   }
 
   .notif-center__new-dot {

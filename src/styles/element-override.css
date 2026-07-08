@@ -20,9 +20,57 @@
   --el-table-row-hover-bg-color: var(--table-row-hover-bg);
   --el-table-current-row-bg-color: var(--table-current-row-bg);
   --el-table-fixed-box-shadow: var(--table-fixed-shadow);
+
+  /* 消除 EP 默认外观:核心表面/文本/边框/填充全部钉到设计色板(var 随主题) */
+  --el-bg-color: var(--color-bg-page);
+  --el-bg-color-page: var(--color-bg-page);
+  --el-bg-color-overlay: var(--color-bg-card);
+  --el-card-bg-color: var(--color-bg-card);
+  --el-fill-color-blank: var(--color-bg-card);
+  --el-fill-color: var(--color-bg-elevated);
+  --el-fill-color-light: color-mix(in srgb, var(--color-bg-elevated) 55%, var(--color-bg-card));
+  --el-fill-color-lighter: var(--color-bg-card);
+  --el-fill-color-extra-light: var(--color-bg-subtle);
+  --el-fill-color-dark: var(--color-bg-elevated);
+  --el-fill-color-darker: var(--color-bg-elevated);
+  --el-text-color-primary: var(--color-text-primary);
+  --el-text-color-regular: var(--color-text-primary);
+  --el-text-color-secondary: var(--color-text-secondary);
+  --el-text-color-placeholder: var(--color-text-tertiary);
+  --el-text-color-disabled: var(--color-text-tertiary);
+  --el-border-color: var(--color-border);
+  --el-border-color-light: var(--color-border);
+  --el-border-color-lighter: var(--color-border-light);
+  --el-border-color-extra-light: var(--color-border-light);
+  --el-border-color-hover: var(--color-text-tertiary);
+  --el-border-color-dark: var(--color-border);
+  --el-border-color-darker: var(--color-border);
 }
 
 html.dark {
+  --el-bg-color: var(--color-bg-page);
+  --el-bg-color-page: var(--color-bg-page);
+  --el-bg-color-overlay: var(--color-bg-card);
+  --el-card-bg-color: var(--color-bg-card);
+  --el-fill-color-blank: var(--color-bg-card);
+  --el-fill-color: var(--color-bg-elevated);
+  --el-fill-color-light: color-mix(in srgb, var(--color-bg-elevated) 55%, var(--color-bg-card));
+  --el-fill-color-lighter: var(--color-bg-card);
+  --el-fill-color-extra-light: var(--color-bg-subtle);
+  --el-fill-color-dark: var(--color-bg-elevated);
+  --el-fill-color-darker: var(--color-bg-elevated);
+  --el-text-color-primary: var(--color-text-primary);
+  --el-text-color-regular: var(--color-text-primary);
+  --el-text-color-secondary: var(--color-text-secondary);
+  --el-text-color-placeholder: var(--color-text-tertiary);
+  --el-text-color-disabled: var(--color-text-tertiary);
+  --el-border-color: var(--color-border);
+  --el-border-color-light: var(--color-border);
+  --el-border-color-lighter: var(--color-border-light);
+  --el-border-color-extra-light: var(--color-border-light);
+  --el-border-color-hover: var(--color-text-tertiary);
+  --el-border-color-dark: var(--color-border);
+  --el-border-color-darker: var(--color-border);
   --el-table-border-color: var(--color-border);
   --el-table-bg-color: var(--color-bg-card);
   --el-table-tr-bg-color: var(--color-bg-card);
@@ -92,6 +140,36 @@ html.dark {
   border-radius: inherit;
 }
 
+/* 还原设计(01-drawer 样张):键值格子 = label 小灰字 + 值,细分隔线,无重表格边框。
+   全局生效于所有详情页/抽屉的 el-descriptions(border 模式)。 */
+.el-descriptions .el-descriptions__label.el-descriptions__cell {
+  background: transparent;
+  color: var(--color-text-tertiary);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  vertical-align: middle;
+  width: 120px;
+  min-width: 96px;
+}
+
+.el-descriptions .el-descriptions__content.el-descriptions__cell {
+  background: transparent;
+  color: var(--color-text-primary);
+  font-size: 13px;
+}
+
+.el-descriptions.is-bordered .el-descriptions__cell {
+  border-color: var(--color-border-light);
+  padding: 10px 14px;
+}
+
+.el-descriptions__body {
+  background: transparent;
+  border: 1px solid var(--color-border-light);
+}
+
 /* 表格：与全局 token 对齐，略抬表头与斑马纹，圆角与卡片一致。
  * .console-table / .pro-table__table 为全站列表统一挂载类（对齐 /monitor/job-instances） */
 .el-table {
@@ -119,11 +197,13 @@ html.dark {
   border-color: color-mix(in srgb, var(--color-border) 72%, var(--color-primary) 28%);
 }
 
+/* 还原设计(editctrl 样张):表头 = 大写小字宽字距的次级灰 label(JOB CODE 风格) */
 .el-table .el-table__header-wrapper th.el-table__cell {
-  font-weight: 700;
-  font-size: 11px;
-  color: var(--color-text-primary);
-  letter-spacing: 0.2px;
+  font-weight: 600;
+  font-size: 11.5px;
+  color: var(--color-text-secondary);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 
 .el-table .el-table__cell .cell {
@@ -148,18 +228,18 @@ html.dark {
   overflow: hidden;
 }
 
-/* ProTable：size=small + 再压行高，减少列表页整页滚动 */
+/* 还原设计(02-audit 样张):数据行宽松(~48px),不再极限压行 */
 .console-table.el-table .el-table__cell {
-  padding-top: 3px;
-  padding-bottom: 3px;
+  padding-top: 10px;
+  padding-bottom: 10px;
 }
 
 .console-table.el-table .el-table__cell .cell {
-  line-height: 1.14;
+  line-height: 1.35;
   padding-top: 0;
   padding-bottom: 0;
-  padding-left: 8px;
-  padding-right: 8px;
+  padding-left: 10px;
+  padding-right: 10px;
 }
 
 .console-table.el-table .el-table__header-wrapper .el-table-column--selection > .cell,
@@ -308,7 +388,14 @@ html.dark {
 .pro-table .pro-table__toolbar .el-button {
   margin: 0;
   border-radius: var(--radius-button);
-  font-weight: 650;
+  /* 还原设计:次级按钮 13px/400(主按钮 700 由 --primary 块保持) */
+  font-size: 13px;
+  font-weight: 400;
+}
+
+.query-form .query-actions .el-button--primary,
+.pro-table .pro-table__toolbar .el-button--primary {
+  font-weight: 700;
 }
 
 .el-table--striped .el-table__body tr.el-table__row--striped td.el-table__cell {
@@ -346,7 +433,9 @@ html.dark {
   --button-soft-border: var(--button-neutral-border);
   --button-soft-text: var(--button-neutral-text);
   border-radius: var(--radius-button);
-  font-weight: 600;
+  /* 还原设计:按钮 13px;次级 400、主按钮 700(下方 primary 块覆盖) */
+  font-size: 13px;
+  font-weight: 400;
   /* 2026-05-17 统一按钮过渡:单条 transition 用一致的 motion token,
      比原先 0.15s/0.16s/0.18s 混搭节奏更"自然"。color/border/bg/shadow 一致 220ms standard-ease,
      transform 用更快的 emphasized ease 保持"按下即响应"。 */
@@ -362,6 +451,7 @@ html.dark {
 
 .el-button--primary,
 .el-button--info {
+  font-weight: 700;
   --button-bg: var(--button-primary-bg);
   --button-bg-hover: var(--button-primary-bg-hover);
   --button-bg-active: var(--button-primary-bg-active);
@@ -606,6 +696,63 @@ html.dark .el-button--default:not(.is-link):not(.is-text):not(.is-plain):not(.is
 .el-textarea__inner,
 .el-date-editor.el-input__wrapper {
   border-radius: var(--radius-input);
+  /* 还原设计:输入类控件底 = --input-bg(dark #15161b 比卡片更沉;light #fff),
+     边框 --border,替代 EP 默认 fill/shadow 边。 */
+  background-color: var(--input-bg, var(--color-bg-card));
+  box-shadow: 0 0 0 1px var(--color-border) inset;
+}
+
+.el-input__wrapper:hover,
+.el-select__wrapper:hover {
+  box-shadow: 0 0 0 1px var(--color-border-strong, rgba(255, 255, 255, 0.16)) inset;
+}
+
+.el-input__wrapper.is-focus,
+.el-select__wrapper.is-focused {
+  box-shadow: 0 0 0 1px var(--color-primary) inset;
+}
+
+/* input 带 append/prepend(如 TraceIdInput 的「粘贴 / 直达」图标)时,EP 默认把 append
+   渲染成独立灰块,与 --input-bg 皮肤脱节 → 看着像一个「悬浮的深色小方块」。
+   这里让整组作为一个控件:wrapper 仅圆靠字段侧的角,append/prepend 共享 --input-bg +
+   同一道 ring 只圆外侧角,内部图标按钮 ghost 化(无自己的底/边,hover 才提亮)。 */
+.el-input-group > .el-input__wrapper {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+.el-input-group--prepend > .el-input__wrapper {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+.el-input-group__append,
+.el-input-group__prepend {
+  padding: 0;
+  border: none;
+  color: var(--color-text-secondary);
+  background-color: var(--input-bg, var(--color-bg-card));
+  box-shadow: 0 0 0 1px var(--color-border) inset;
+}
+.el-input-group__append {
+  border-top-right-radius: var(--radius-input);
+  border-bottom-right-radius: var(--radius-input);
+}
+.el-input-group__prepend {
+  border-top-left-radius: var(--radius-input);
+  border-bottom-left-radius: var(--radius-input);
+}
+.el-input-group__append .el-button,
+.el-input-group__prepend .el-button {
+  height: 100%;
+  margin: 0;
+  border: none;
+  color: inherit;
+  background: transparent;
+  box-shadow: none;
+}
+.el-input-group__append .el-button:hover,
+.el-input-group__prepend .el-button:hover {
+  color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 8%, transparent);
 }
 
 /* 侧栏折叠时弹出层挂 body，随 html.light / html.dark 的 token 切换 */
@@ -1016,4 +1163,132 @@ a:focus-visible,
 .el-form-item.is-error .field-hint,
 .el-form-item.is-error .form-hint {
   display: none;
+}
+
+/* ─────────────────────────────────────────────────────────────
+ * 还原设计(editctrl 样张)追加:
+ * ① 徽标 = 软底无描边 pill(ATOMIC/PROCESS 风格),radius 6。
+ * ② 弹窗/抽屉内编辑表单 = label 上置字段块(与筛选区一致),
+ *    替代 EP 默认 label 左贴,全站弹窗表单统一设计形态。
+ * ──────────────────────────────────────────────────────────── */
+.el-tag {
+  border-color: transparent;
+  border-radius: 6px;
+}
+
+.el-form:not(.el-form--inline) .el-form-item {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.el-form:not(.el-form--inline) .el-form-item__label {
+  justify-content: flex-start;
+  height: auto;
+  margin-bottom: 6px;
+  padding: 0;
+  line-height: 1.2;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  text-align: left;
+  width: auto !important;
+}
+
+.el-form:not(.el-form--inline) .el-form-item__content {
+  margin-left: 0 !important;
+  width: 100%;
+}
+
+/* ─────────────────────────────────────────────────────────────
+ * 还原设计 #states:确认弹窗 + Toast 全局皮
+ * 弹窗:360 max / r14 / border-strong / shadow-pop / 22 24;标题 15·600;正文 13 次级 1.6;
+ *       主钮 accent-strong 实底白字(danger 操作= danger 实底,EP type 自带)。
+ * Toast:底部居中胶囊 11 18 / r10 / bg-elev / border-strong / 彩点 8px / 文字 13 主色。
+ * ──────────────────────────────────────────────────────────── */
+.el-message-box {
+  max-width: 360px;
+  width: 92vw;
+  border-radius: 14px;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border-strong, rgba(255, 255, 255, 0.16));
+  box-shadow: var(--shadow-pop, 0 8px 24px rgba(0, 0, 0, 0.45));
+  padding: 22px 24px;
+}
+
+.el-message-box__header {
+  padding: 0;
+}
+
+.el-message-box__title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.el-message-box__content {
+  margin-top: 10px;
+  padding: 0;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+}
+
+.el-message-box__btns {
+  margin-top: 22px;
+  padding: 0;
+  gap: 8px;
+}
+
+.el-message-box__btns .el-button {
+  height: 32px;
+  padding: 0 16px;
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.el-message-box__btns .el-button--primary {
+  padding: 0 18px;
+  font-weight: 500;
+}
+
+/* Toast:底部居中(EP 默认顶部;多条并发短时可接受轻微堆叠) */
+.el-message {
+  top: auto !important;
+  bottom: 36px;
+  padding: 11px 18px;
+  border-radius: 10px;
+  background: var(--color-bg-elevated) !important;
+  border: 1px solid var(--color-border-strong, rgba(255, 255, 255, 0.16)) !important;
+  box-shadow: var(--shadow-pop, 0 8px 24px rgba(0, 0, 0, 0.45));
+  gap: 9px;
+}
+
+.el-message .el-message__icon {
+  display: none;
+}
+
+.el-message::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--color-primary);
+}
+
+.el-message--success::before {
+  background: var(--color-success);
+}
+
+.el-message--warning::before {
+  background: var(--color-warning);
+}
+
+.el-message--error::before {
+  background: var(--color-danger);
+}
+
+.el-message .el-message__content {
+  font-size: 13px;
+  color: var(--color-text-primary) !important;
 }

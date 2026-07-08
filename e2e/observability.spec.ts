@@ -6,11 +6,13 @@ test.describe('observability pages', () => {
     await enterDemoApp(page)
   })
 
-  test('告警页可打开并展示治理操作列', async ({ page }) => {
+  test('告警页可打开并展示分组 tab 与卡片流', async ({ page }) => {
     await page.goto('/observability/alerts')
     await expectPageTitle(page, /事件告警|告警/)
     await expect(page.getByRole('button', { name: '刷新' })).toBeVisible()
-    await expect(page.getByRole('columnheader', { name: '治理' }).first()).toBeVisible()
+    // 新 UI:表格治理列裁撤,治理操作在卡片 .al-card__ops;页面骨架 = 分组 tab + 卡片流
+    await expect(page.locator('.al-tab').filter({ hasText: '未处理' })).toBeVisible()
+    await expect(page.locator('.al-list').first()).toBeAttached({ timeout: 10_000 })
   })
 
   test('审计日志支持输入过滤条件并查询', async ({ page }) => {
@@ -28,16 +30,20 @@ test.describe('observability pages', () => {
     const traceInput = page.locator('.el-form-item').filter({ hasText: /Trace/i }).getByRole('textbox')
     await traceInput.fill('trace-001')
     await page.getByRole('button', { name: '搜索' }).click()
-    await page.getByRole('button', { name: '重置' }).click()
+    // 查询进行中重置钮短暂 is-loading/disabled,先等它恢复可用
+    const resetBtn = page.getByRole('button', { name: '重置' })
+    await expect(resetBtn).toBeEnabled({ timeout: 10_000 })
+    await resetBtn.click()
     await expect(traceInput).toHaveValue('')
   })
 
   test('Outbox 支持切换重试与投递标签', async ({ page }) => {
     await page.goto('/observability/outbox')
     await expectPageTitle(page, 'Outbox')
-    await page.getByRole('tab', { name: '投递' }).click()
+    // 新 UI:el-tabs 换自绘 pill tab(.ob-tab 按钮)
+    await page.locator('.ob-tab').filter({ hasText: '投递' }).click()
     await expect(page.getByRole('columnheader', { name: 'Topic' })).toBeVisible()
-    await page.getByRole('tab', { name: '重试' }).click()
+    await page.locator('.ob-tab').filter({ hasText: '重试' }).click()
     await expect(page.getByRole('columnheader', { name: '下次重试' })).toBeVisible()
   })
 

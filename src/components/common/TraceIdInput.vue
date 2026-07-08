@@ -1,22 +1,23 @@
 <template>
   <el-input
     v-model="model"
+    class="trace-id-input"
     :placeholder="placeholder || t('traceIdInput.placeholder')"
+    :prefix-icon="Search"
     clearable
     @input="onInput"
     @keydown.enter="onGo"
   >
-    <template #append>
-      <el-tooltip :content="t('traceIdInput.paste')" placement="top">
-        <el-button :icon="DocumentCopy" :aria-label="t('traceIdInput.paste')" @click="onPaste" />
-      </el-tooltip>
-      <el-tooltip v-if="goTo" :content="t('traceIdInput.go')" placement="top">
-        <el-button
-          :icon="Search"
-          :disabled="!model"
-          :aria-label="t('traceIdInput.go')"
-          @click="onGo"
-        />
+    <!-- 空态:右侧一个轻量「粘贴」图标(有值时 EP 清除键接管,互不打架);回车 / 点前缀直达。 -->
+    <template #suffix>
+      <el-tooltip v-if="!model" :content="t('traceIdInput.paste')" placement="top">
+        <el-icon
+          class="trace-id-input__paste"
+          :aria-label="t('traceIdInput.paste')"
+          @click.stop="onPaste"
+        >
+          <ClipboardPaste />
+        </el-icon>
       </el-tooltip>
     </template>
   </el-input>
@@ -36,7 +37,7 @@
   import { useI18n } from 'vue-i18n'
   import { useRouter } from 'vue-router'
   import { ElMessage } from 'element-plus'
-  import { DocumentCopy, Search } from '@element-plus/icons-vue'
+  import { Search, ClipboardPaste } from 'lucide-vue-next'
 
   const { t } = useI18n({ useScope: 'global' })
   const router = useRouter()
@@ -77,7 +78,18 @@
   }
 
   function onGo() {
-    if (!props.modelValue) return
+    if (!props.goTo || !props.modelValue) return
     router.push({ path: '/observability/trace', query: { traceId: props.modelValue } })
   }
 </script>
+
+<style scoped>
+  .trace-id-input__paste {
+    cursor: pointer;
+    color: var(--color-text-tertiary);
+    transition: color 0.15s ease;
+  }
+  .trace-id-input__paste:hover {
+    color: var(--color-primary);
+  }
+</style>

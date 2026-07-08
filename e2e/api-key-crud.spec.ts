@@ -100,7 +100,11 @@ test.describe('API Key management CRUD (API Key 增删)', () => {
 
   test('吊销任意已有 API Key', async ({ page }) => {
     // 如果有可吊销的 Key 则验证吊销流程
-    const revokeBtn = page.locator('.table-actions').getByRole('button', { name: '吊销' }).first()
+    // 新 UI:已吊销行的「吊销」按钮保留但 disabled,只取可用的那颗
+    const revokeBtn = page
+      .locator('.table-actions')
+      .getByRole('button', { name: '吊销', disabled: false })
+      .first()
     if (!(await isVisible(revokeBtn))) return
     await revokeBtn.click()
     const confirmBtn = page.getByRole('button', { name: '确定' })

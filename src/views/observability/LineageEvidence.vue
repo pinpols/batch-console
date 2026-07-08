@@ -8,163 +8,161 @@
       </template>
     </PageHeader>
 
-    <SectionCard>
-      <el-tabs v-model="activeTab" class="pill-tabs">
-        <el-tab-pane :label="t('lineageEvidence.tabEvidence')" name="evidence">
-          <ListPageQueryBar
-            :filter-busy="loadingEvidence"
-            :refresh-busy="loadingEvidence"
-            :disabled="loadingEvidence"
-            @search="loadEvidence"
-            @reset="resetEvidence"
-            @refresh="loadEvidence"
+    <el-tabs v-model="activeTab" class="pill-tabs">
+      <el-tab-pane :label="t('lineageEvidence.tabEvidence')" name="evidence">
+        <ListPageQueryBar
+          :filter-busy="loadingEvidence"
+          :refresh-busy="loadingEvidence"
+          :disabled="loadingEvidence"
+          @search="loadEvidence"
+          @reset="resetEvidence"
+          @refresh="loadEvidence"
+        >
+          <el-form-item :label="t('lineageEvidence.queryMode')">
+            <el-segmented v-model="evidenceMode" :options="evidenceModeOptions" />
+          </el-form-item>
+          <el-form-item
+            v-if="evidenceMode === 'businessKey'"
+            :label="t('lineageEvidence.businessKeyLabel')"
           >
-            <el-form-item :label="t('lineageEvidence.queryMode')">
-              <el-segmented v-model="evidenceMode" :options="evidenceModeOptions" />
-            </el-form-item>
-            <el-form-item
-              v-if="evidenceMode === 'businessKey'"
-              :label="t('lineageEvidence.businessKeyLabel')"
-            >
-              <el-input
-                v-model="businessKey"
-                class="query-w-320"
-                clearable
-                :placeholder="t('lineageEvidence.businessKeyPlaceholder')"
-                @keyup.enter="loadEvidence"
-              />
-            </el-form-item>
-            <el-form-item v-else :label="t('lineageEvidence.resultVersionIdLabel')">
-              <el-input-number v-model="resultVersionId" :min="1" controls-position="right" />
-            </el-form-item>
-          </ListPageQueryBar>
+            <el-input
+              v-model="businessKey"
+              class="query-w-320"
+              clearable
+              :placeholder="t('lineageEvidence.businessKeyPlaceholder')"
+              @keyup.enter="loadEvidence"
+            />
+          </el-form-item>
+          <el-form-item v-else :label="t('lineageEvidence.resultVersionIdLabel')">
+            <el-input-number v-model="resultVersionId" :min="1" controls-position="right" />
+          </el-form-item>
+        </ListPageQueryBar>
 
-          <div v-if="evidence" class="evidence-grid">
-            <MetricCard
-              :label="t('lineageEvidence.metricScope')"
-              :value="evidence.coverage?.scope || '—'"
-              :description="t('lineageEvidence.metricScopeDesc')"
+        <div v-if="evidence" class="evidence-grid">
+          <MetricCard
+            :label="t('lineageEvidence.metricScope')"
+            :value="evidence.coverage?.scope || '—'"
+            :description="t('lineageEvidence.metricScopeDesc')"
+          />
+          <MetricCard
+            :label="t('lineageEvidence.metricPipelines')"
+            :value="String(evidence.coverage?.pipelineInstanceCount ?? 0)"
+            :description="t('lineageEvidence.metricPipelinesDesc')"
+          />
+          <MetricCard
+            :label="t('lineageEvidence.metricFiles')"
+            :value="String(evidence.coverage?.fileRecordCount ?? 0)"
+            :description="t('lineageEvidence.metricFilesDesc')"
+          />
+          <MetricCard
+            :label="t('lineageEvidence.metricDispatches')"
+            :value="String(evidence.coverage?.dispatchRecordCount ?? 0)"
+            :description="t('lineageEvidence.metricDispatchesDesc')"
+          />
+        </div>
+
+        <section v-if="evidence" class="lineage-section">
+          <div class="lineage-section__header">{{ t('lineageEvidence.resultVersionTitle') }}</div>
+          <JsonPreview :data="evidence.resultVersion || {}" />
+        </section>
+
+        <section v-if="evidence" class="lineage-section">
+          <div class="lineage-section__header">{{ t('lineageEvidence.jobInstanceTitle') }}</div>
+          <JsonPreview :data="evidence.jobInstance || {}" />
+        </section>
+
+        <section v-if="evidence" class="lineage-section">
+          <div class="lineage-section__header">{{ t('lineageEvidence.coverageTitle') }}</div>
+          <JsonPreview :data="evidence.coverage || {}" />
+        </section>
+
+        <section v-if="evidence" class="lineage-section">
+          <div class="lineage-section__header">{{ t('lineageEvidence.relatedRowsTitle') }}</div>
+          <el-tabs v-model="relatedTab">
+            <el-tab-pane :label="t('lineageEvidence.pipelineInstances')" name="pipelines">
+              <GenericRowsTable :rows="evidence.pipelineInstances || []" />
+            </el-tab-pane>
+            <el-tab-pane :label="t('lineageEvidence.fileRecords')" name="files">
+              <GenericRowsTable :rows="evidence.fileRecords || []" />
+            </el-tab-pane>
+            <el-tab-pane :label="t('lineageEvidence.dispatchRecords')" name="dispatches">
+              <GenericRowsTable :rows="evidence.dispatchRecords || []" />
+            </el-tab-pane>
+          </el-tabs>
+        </section>
+      </el-tab-pane>
+
+      <el-tab-pane :label="t('lineageEvidence.tabReadiness')" name="readiness">
+        <ListPageQueryBar
+          :filter-busy="loadingReadiness"
+          :refresh-busy="loadingReadiness"
+          :disabled="loadingReadiness"
+          @search="loadReadiness"
+          @reset="resetReadiness"
+          @refresh="loadReadiness"
+        >
+          <el-form-item :label="t('lineageEvidence.jobCodeLabel')">
+            <el-input
+              v-model="readinessQuery.jobCode"
+              class="query-w-260"
+              clearable
+              :placeholder="t('lineageEvidence.jobCodePlaceholder')"
+              @keyup.enter="loadReadiness"
             />
-            <MetricCard
-              :label="t('lineageEvidence.metricPipelines')"
-              :value="String(evidence.coverage?.pipelineInstanceCount ?? 0)"
-              :description="t('lineageEvidence.metricPipelinesDesc')"
+          </el-form-item>
+          <el-form-item :label="t('lineageEvidence.bizDateLabel')">
+            <el-date-picker
+              v-model="readinessQuery.bizDate"
+              type="date"
+              value-format="YYYY-MM-DD"
+              :placeholder="t('lineageEvidence.bizDatePlaceholder')"
             />
-            <MetricCard
-              :label="t('lineageEvidence.metricFiles')"
-              :value="String(evidence.coverage?.fileRecordCount ?? 0)"
-              :description="t('lineageEvidence.metricFilesDesc')"
-            />
-            <MetricCard
-              :label="t('lineageEvidence.metricDispatches')"
-              :value="String(evidence.coverage?.dispatchRecordCount ?? 0)"
-              :description="t('lineageEvidence.metricDispatchesDesc')"
-            />
+          </el-form-item>
+        </ListPageQueryBar>
+
+        <section v-if="readiness" class="lineage-section">
+          <div class="lineage-section__header readiness-header">
+            <span>{{ t('lineageEvidence.readinessTitle') }}</span>
+            <el-tag :type="readiness.ready ? 'success' : 'warning'" effect="plain">
+              {{ readiness.ready ? t('common.yes') : t('common.no') }}
+            </el-tag>
           </div>
-
-          <section v-if="evidence" class="lineage-section">
-            <div class="lineage-section__header">{{ t('lineageEvidence.resultVersionTitle') }}</div>
-            <JsonPreview :data="evidence.resultVersion || {}" />
-          </section>
-
-          <section v-if="evidence" class="lineage-section">
-            <div class="lineage-section__header">{{ t('lineageEvidence.jobInstanceTitle') }}</div>
-            <JsonPreview :data="evidence.jobInstance || {}" />
-          </section>
-
-          <section v-if="evidence" class="lineage-section">
-            <div class="lineage-section__header">{{ t('lineageEvidence.coverageTitle') }}</div>
-            <JsonPreview :data="evidence.coverage || {}" />
-          </section>
-
-          <section v-if="evidence" class="lineage-section">
-            <div class="lineage-section__header">{{ t('lineageEvidence.relatedRowsTitle') }}</div>
-            <el-tabs v-model="relatedTab">
-              <el-tab-pane :label="t('lineageEvidence.pipelineInstances')" name="pipelines">
-                <GenericRowsTable :rows="evidence.pipelineInstances || []" />
-              </el-tab-pane>
-              <el-tab-pane :label="t('lineageEvidence.fileRecords')" name="files">
-                <GenericRowsTable :rows="evidence.fileRecords || []" />
-              </el-tab-pane>
-              <el-tab-pane :label="t('lineageEvidence.dispatchRecords')" name="dispatches">
-                <GenericRowsTable :rows="evidence.dispatchRecords || []" />
-              </el-tab-pane>
-            </el-tabs>
-          </section>
-        </el-tab-pane>
-
-        <el-tab-pane :label="t('lineageEvidence.tabReadiness')" name="readiness">
-          <ListPageQueryBar
-            :filter-busy="loadingReadiness"
-            :refresh-busy="loadingReadiness"
-            :disabled="loadingReadiness"
-            @search="loadReadiness"
-            @reset="resetReadiness"
-            @refresh="loadReadiness"
-          >
-            <el-form-item :label="t('lineageEvidence.jobCodeLabel')">
-              <el-input
-                v-model="readinessQuery.jobCode"
-                class="query-w-260"
-                clearable
-                :placeholder="t('lineageEvidence.jobCodePlaceholder')"
-                @keyup.enter="loadReadiness"
-              />
-            </el-form-item>
-            <el-form-item :label="t('lineageEvidence.bizDateLabel')">
-              <el-date-picker
-                v-model="readinessQuery.bizDate"
-                type="date"
-                value-format="YYYY-MM-DD"
-                :placeholder="t('lineageEvidence.bizDatePlaceholder')"
-              />
-            </el-form-item>
-          </ListPageQueryBar>
-
-          <section v-if="readiness" class="lineage-section">
-            <div class="lineage-section__header readiness-header">
-              <span>{{ t('lineageEvidence.readinessTitle') }}</span>
-              <el-tag :type="readiness.ready ? 'success' : 'warning'" effect="plain">
-                {{ readiness.ready ? t('common.yes') : t('common.no') }}
-              </el-tag>
-            </div>
-            <el-descriptions :column="2" border size="small">
-              <el-descriptions-item :label="t('lineageEvidence.reason')">
-                {{ readiness.reason || '—' }}
-              </el-descriptions-item>
-              <el-descriptions-item :label="t('lineageEvidence.assetCode')">
-                {{ readiness.assetCode || '—' }}
-              </el-descriptions-item>
-              <el-descriptions-item :label="t('lineageEvidence.partitionKey')">
-                {{ readiness.partitionKey || '—' }}
-              </el-descriptions-item>
-              <el-descriptions-item :label="t('lineageEvidence.businessKeyLabel')">
-                {{ readiness.businessKey || '—' }}
-              </el-descriptions-item>
-              <el-descriptions-item :label="t('lineageEvidence.freshnessStatus')">
-                {{ readiness.freshnessStatus || '—' }}
-              </el-descriptions-item>
-              <el-descriptions-item :label="t('lineageEvidence.versionNo')">
-                {{ readiness.versionNo ?? '—' }}
-              </el-descriptions-item>
-              <el-descriptions-item :label="t('lineageEvidence.jobInstanceId')">
-                <router-link
-                  v-if="readiness.jobInstanceId"
-                  class="cell-link"
-                  :to="`/monitor/job-instances/${readiness.jobInstanceId}`"
-                >
-                  #{{ readiness.jobInstanceId }}
-                </router-link>
-                <span v-else>—</span>
-              </el-descriptions-item>
-              <el-descriptions-item :label="t('lineageEvidence.payloadRef')">
-                {{ readiness.payloadRef || '—' }}
-              </el-descriptions-item>
-            </el-descriptions>
-          </section>
-        </el-tab-pane>
-      </el-tabs>
-    </SectionCard>
+          <el-descriptions :column="2" border size="small">
+            <el-descriptions-item :label="t('lineageEvidence.reason')">
+              {{ readiness.reason || '—' }}
+            </el-descriptions-item>
+            <el-descriptions-item :label="t('lineageEvidence.assetCode')">
+              {{ readiness.assetCode || '—' }}
+            </el-descriptions-item>
+            <el-descriptions-item :label="t('lineageEvidence.partitionKey')">
+              {{ readiness.partitionKey || '—' }}
+            </el-descriptions-item>
+            <el-descriptions-item :label="t('lineageEvidence.businessKeyLabel')">
+              {{ readiness.businessKey || '—' }}
+            </el-descriptions-item>
+            <el-descriptions-item :label="t('lineageEvidence.freshnessStatus')">
+              {{ readiness.freshnessStatus || '—' }}
+            </el-descriptions-item>
+            <el-descriptions-item :label="t('lineageEvidence.versionNo')">
+              {{ readiness.versionNo ?? '—' }}
+            </el-descriptions-item>
+            <el-descriptions-item :label="t('lineageEvidence.jobInstanceId')">
+              <router-link
+                v-if="readiness.jobInstanceId"
+                class="cell-link"
+                :to="`/monitor/job-instances/${readiness.jobInstanceId}`"
+              >
+                #{{ readiness.jobInstanceId }}
+              </router-link>
+              <span v-else>—</span>
+            </el-descriptions-item>
+            <el-descriptions-item :label="t('lineageEvidence.payloadRef')">
+              {{ readiness.payloadRef || '—' }}
+            </el-descriptions-item>
+          </el-descriptions>
+        </section>
+      </el-tab-pane>
+    </el-tabs>
   </PageContainer>
 </template>
 
@@ -172,7 +170,7 @@
   import { computed, defineComponent, h, reactive, ref, type PropType } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage, ElTable, ElTableColumn } from 'element-plus'
-  import { Refresh } from '@element-plus/icons-vue'
+  import { RefreshCw as Refresh } from 'lucide-vue-next'
   import {
     getAssetPartitionReadiness,
     getLineageEvidenceByBusinessKey,
@@ -184,7 +182,6 @@
   import { useTenantReload } from '@/composables/useTenantReload'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
-  import SectionCard from '@/components/common/SectionCard.vue'
   import MetricCard from '@/components/common/MetricCard.vue'
   import JsonPreview from '@/components/common/JsonPreview.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'

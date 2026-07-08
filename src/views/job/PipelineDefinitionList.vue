@@ -14,6 +14,49 @@
       </template>
     </PageHeader>
 
+    <!-- 照设计 dump(proto-nav-流水线定义):紧凑单行筛选条(搜索框 + 搜索/重置)。
+         类型/启用为本实现保留的额外筛选(设计仅一个搜索框),inline 收纳不铺开成标签表单卡。 -->
+    <div class="pd-bar">
+      <el-input
+        v-model="keyword"
+        class="pd-bar__search"
+        clearable
+        :placeholder="t('pipelineDefinitionList.keywordPlaceholder')"
+        @keyup.enter="onQueryBarSearch"
+      />
+      <el-select
+        v-model="pipelineType"
+        class="pd-bar__sel"
+        clearable
+        filterable
+        :placeholder="t('pipelineDefinitionList.typePlaceholder')"
+      >
+        <el-option
+          v-for="option in pipelineTypeOptions"
+          :key="option"
+          :label="option"
+          :value="option"
+        />
+      </el-select>
+      <el-select
+        v-model="enabledFilter"
+        class="pd-bar__sel"
+        clearable
+        :placeholder="t('pipelineDefinitionList.enabledPlaceholder')"
+      >
+        <el-option :label="t('pipelineDefinitionList.optEnabled')" :value="true" />
+        <el-option :label="t('pipelineDefinitionList.optDisabled')" :value="false" />
+      </el-select>
+      <el-button type="primary" :loading="filterBusy" @click="onQueryBarSearch">
+        {{ t('common.search') }}
+      </el-button>
+      <el-button text @click="onQueryBarReset">{{ t('common.reset') }}</el-button>
+      <span class="pd-bar__spacer" />
+      <el-button :loading="loading" @click="() => runRefresh(load)">
+        {{ t('common.refresh') }}
+      </el-button>
+    </div>
+
     <SectionCard>
       <ProTable
         :data="rows"
@@ -41,67 +84,35 @@
             </template>
           </EmptyState>
         </template>
-        <template #query>
-          <ListPageQueryBar
-            :filter-busy="filterBusy"
-            :refresh-busy="loading"
-            @search="onQueryBarSearch"
-            @reset="onQueryBarReset"
-            @refresh="() => runRefresh(load)"
-          >
-            <el-form-item :label="t('pipelineDefinitionList.keywordLabel')">
-              <el-input
-                v-model="keyword"
-                clearable
-                :placeholder="t('pipelineDefinitionList.keywordPlaceholder')"
-              />
-            </el-form-item>
-            <el-form-item :label="t('pipelineDefinitionList.typeLabel')">
-              <el-select
-                class="query-w-160"
-                v-model="pipelineType"
-                clearable
-                filterable
-                :placeholder="t('pipelineDefinitionList.typePlaceholder')"
-              >
-                <el-option
-                  v-for="option in pipelineTypeOptions"
-                  :key="option"
-                  :label="option"
-                  :value="option"
-                />
-              </el-select>
-            </el-form-item>
-            <el-form-item :label="t('pipelineDefinitionList.enabledLabel')">
-              <el-select
-                class="query-w-120"
-                v-model="enabledFilter"
-                clearable
-                :placeholder="t('pipelineDefinitionList.enabledPlaceholder')"
-              >
-                <el-option :label="t('pipelineDefinitionList.optEnabled')" :value="true" />
-                <el-option :label="t('pipelineDefinitionList.optDisabled')" :value="false" />
-              </el-select>
-            </el-form-item>
-          </ListPageQueryBar>
-        </template>
         <el-table-column
           prop="pipelineCode"
           :label="t('pipelineDefinitionList.colCode')"
           width="220"
           show-overflow-tooltip
-        />
+        >
+          <template #default="{ row }">
+            <!-- 照 dump:code 走 mono + accent,点击开详情抽屉 -->
+            <span class="pd-code" @click="openDetail(row, 'overview')">{{ row.pipelineCode }}</span>
+          </template>
+        </el-table-column>
         <el-table-column
           prop="pipelineName"
           :label="t('pipelineDefinitionList.colName')"
           min-width="260"
           show-overflow-tooltip
         />
-        <el-table-column
-          prop="pipelineType"
-          :label="t('pipelineDefinitionList.colType')"
-          width="120"
-        />
+        <el-table-column :label="t('pipelineDefinitionList.colType')" width="120">
+          <template #default="{ row }">
+            <!-- 照 dump:类型徽章 mono 彩底(IMPORT/EXPORT/其他 三档语义色) -->
+            <span
+              v-if="row.pipelineType"
+              class="pd-badge"
+              :style="typeBadgeStyle(row.pipelineType)"
+              >{{ row.pipelineType }}</span
+            >
+            <span v-else class="muted">—</span>
+          </template>
+        </el-table-column>
         <DatetimeColumn
           prop="updatedAt"
           :label="t('pipelineDefinitionList.colUpdatedAt')"
@@ -367,26 +378,26 @@
   import type { FormInstance, FormRules } from 'element-plus'
   import {
     Plus,
-    InfoFilled,
+    Info as InfoFilled,
     Cpu,
     Download,
-    MagicStick,
-    Document,
+    Sparkles as MagicStick,
+    FileText as Document,
     CircleCheck,
     Upload,
-    ChatLineRound,
-    Setting,
-    DataLine,
-    DocumentAdd,
+    MessageCircle as ChatLineRound,
+    Settings as Setting,
+    Activity as DataLine,
+    FilePlus as DocumentAdd,
     Folder,
     Notebook,
     Check,
-    Promotion,
+    Send as Promotion,
     Bell,
-    Refresh,
-    RefreshLeft,
-    Finished,
-  } from '@element-plus/icons-vue'
+    RefreshCw as Refresh,
+    RotateCcw as RefreshLeft,
+    CircleCheckBig as Finished,
+  } from 'lucide-vue-next'
   import type { Component } from 'vue'
 
   // Stage → 图标 + 主题色 + 一句话描述。覆盖 STAGES_BY_TYPE 全 17 种,缺省走默认。
@@ -413,6 +424,18 @@
   const DEFAULT_META = { icon: Setting, color: 'var(--color-text-tertiary)', desc: '' }
   function stageMeta(code: string) {
     return STAGE_META[code] ?? DEFAULT_META
+  }
+
+  /** 类型徽章三档语义色软底(照 dump:IMPORT / EXPORT / 其他);e2e 曾抓到该函数缺失致整页渲染异常 */
+  function typeBadgeStyle(type: string) {
+    const s = String(type ?? '').toUpperCase()
+    const c =
+      s === 'IMPORT'
+        ? 'var(--color-primary)'
+        : s === 'EXPORT'
+          ? 'var(--color-success)'
+          : 'var(--color-warning)'
+    return { color: c, background: `color-mix(in srgb, ${c} 12%, transparent)` }
   }
   import {
     createPipelineDefinition,
@@ -867,6 +890,46 @@
 </script>
 
 <style scoped>
+  /* 紧凑筛选条(照设计:控件同高一行,搜索主按钮 + 重置 ghost;刷新推到右侧) */
+  .pd-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+  .pd-bar__search {
+    width: 280px;
+  }
+  .pd-bar__sel {
+    width: 180px;
+  }
+  .pd-bar__spacer {
+    flex: 1;
+  }
+
+  /* 表格:code 走 mono + accent 可点(开详情抽屉) */
+  .pd-code {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--color-primary);
+    cursor: pointer;
+  }
+  .pd-code:hover {
+    text-decoration: underline;
+  }
+
+  /* 类型徽章:mono 彩底 pill(配色由 typeBadgeStyle 按 IMPORT/EXPORT/其他 给) */
+  .pd-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    font-weight: 600;
+    line-height: 1.6;
+  }
+
   .drawer-actions {
     display: flex;
     justify-content: flex-end;
@@ -928,7 +991,7 @@
     transition: box-shadow 0.15s ease;
   }
   .stage-card:hover {
-    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06);
+    box-shadow: var(--shadow-surface-hover);
   }
   .stage-card__icon {
     width: 44px;
