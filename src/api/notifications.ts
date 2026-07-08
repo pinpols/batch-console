@@ -1,3 +1,4 @@
+import type { AxiosRequestConfig } from 'axios'
 import { get, post, put, del } from '@/api/client'
 
 // 后端契约：
@@ -45,10 +46,12 @@ export function deleteNotificationChannel(channelCode: string, tenantId: string)
 
 /** POST /api/console/notifications/channels/{channelCode}/test?tenantId= */
 export function testNotificationChannel(channelCode: string, tenantId: string) {
+  // _silent:测试失败由 testChannel 自己弹友好提示,抑制拦截器的后端裸报错
+  //(如 "notification channel not found",无渠道时会出现)
   return post<unknown>(
     `/api/console/notifications/channels/${encodeURIComponent(channelCode)}/test`,
     undefined,
-    { params: { tenantId } },
+    { params: { tenantId }, _silent: true } as AxiosRequestConfig,
   )
 }
 
