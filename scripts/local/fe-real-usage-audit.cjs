@@ -168,15 +168,22 @@ async function main() {
     // 注:各配置实体的「新增→真提交」由 --interact 模式逐页覆盖(含队列/模板,即发现
     // ck_resource_queue_type / CSV 默认值非法等 bug 的地方),此处场景聚焦多步操作员主链路。
 
-    await step('触发作业 TA_PROCESS_INCR', async () => {
+    await step('触发作业(列表首行)', async () => {
       let ok = false
       const on = (r) => { if (r.url().includes('/jobs/trigger') && r.request().method() === 'POST') ok = r.status() < 300 }
       page.on('response', on)
       await page.goto(BASE + '/jobs/definitions', { waitUntil: 'domcontentloaded' }); await sleep(1800)
-      await searchHasRow('TA_PROCESS_INCR')
+      // 触发任意作业即验证链路 —— 用未过滤列表首行(不硬编码 code,避免 seed 差异)
       const row = page.locator('.el-table__row').first()
-      let trg = row.locator('button').filter({ hasText: /手动触发|Trigger/ }).first()
-      if (!(await trg.count().catch(() => 0))) { const more = row.locator('button').filter({ hasText: /更多|More/ }).first(); if (await more.count()) { await nClick(more); await sleep(500); trg = page.locator('.el-dropdown-menu__item:visible').filter({ hasText: /手动触发|Trigger/ }).first() } }
+      if (!(await row.count().catch(() => 0))) throw new Error('作业定义列表无数据可触发')
+      await sleep(600) // 等 RowActions 渲染完(避开骨架行)
+      // 行操作 = RowActions(根 .row-actions;手动触发 primary 首个 → inline el-button)
+      let trg = page.locator('.row-actions').getByRole('button', { name: /手动触发|Trigger/ }).first()
+      if (!(await trg.count().catch(() => 0))) {
+        // 若被收进「更多」dropdown:点 .row-actions__more 展开再取菜单项
+        const more = page.locator('.row-actions__more').first()
+        if (await more.count()) { await nClick(more); await sleep(500); trg = page.locator('.el-dropdown-menu__item:visible, [role="menuitem"]:visible').filter({ hasText: /手动触发|Trigger/ }).first() }
+      }
       if (!(await trg.count().catch(() => 0))) throw new Error('找不到触发按钮')
       await nClick(trg); await sleep(1000)
       const ta = page.locator('.el-message-box textarea').first(); if (await ta.count()) await ta.fill('{}')
