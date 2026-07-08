@@ -131,7 +131,8 @@
 
   .jdd-slide-enter-active,
   .jdd-slide-leave-active {
-    transition: transform 0.2s ease;
+    /* 更顺的减速缓动(ease-out-expo 系),滑入更有质感 */
+    transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .jdd-slide-enter-from,

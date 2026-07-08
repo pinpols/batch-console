@@ -1498,3 +1498,82 @@ html.dark .pill-tabs .el-tabs__item.is-active:hover {
 .layout-header {
   padding: 0 !important;
 }
+
+/* ── 路由内容进场淡入(subtle,快)：切页更有质感,不干扰交互 ── */
+.page-fade-enter-active {
+  transition:
+    opacity 0.16s ease,
+    transform 0.16s ease;
+}
+.page-fade-leave-active {
+  transition: opacity 0.1s ease;
+}
+.page-fade-enter-from {
+  opacity: 0;
+  transform: translateY(6px);
+}
+.page-fade-leave-to {
+  opacity: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .page-fade-enter-active,
+  .page-fade-leave-active {
+    transition: none;
+  }
+  .page-fade-enter-from {
+    transform: none;
+  }
+}
+
+/* ═══════════════ 交互质感统一(polish batch) ═══════════════ */
+
+/* 按钮:统一过渡 + 按下 0.5px 微反馈(仅实心按钮,text/link 不位移);不改配色只加手感 */
+.el-button {
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.06s ease;
+}
+.el-button:not(.is-text):not(.is-link):active {
+  transform: translateY(0.5px);
+}
+
+/* 表格行:hover 背景平滑过渡(配合已有 --el-table-row-hover-bg-color) */
+.el-table__body tr.el-table__row {
+  transition: background-color 0.12s ease;
+}
+
+/* 行内文字操作链:hover 统一下划线反馈 */
+.el-table .table-actions .el-button.is-link:hover,
+.el-table .table-actions .el-button.is-text:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* el-tag:轻微过渡,状态切换不生硬 */
+.el-tag {
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+/* el-switch / el-select 焦点态过渡已由 EP 提供,这里补齐开关把手更顺滑 */
+.el-switch__core {
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .el-button,
+  .el-table__body tr.el-table__row,
+  .el-tag {
+    transition: none;
+  }
+  .el-button:not(.is-text):not(.is-link):active {
+    transform: none;
+  }
+}
