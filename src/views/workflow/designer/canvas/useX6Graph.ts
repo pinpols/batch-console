@@ -80,6 +80,47 @@ function sizeOf(type: DesignerNodeType): { width: number; height: number } {
   return { width: NODE_WIDTH, height: NODE_HEIGHT }
 }
 
+// 连接桩(x6 port):in 在顶、out 在底(TB 布局);默认隐藏,hover 节点时显现。
+// 从 out 拖到另一节点 in 即连线(见 connecting.validateMagnet/validateConnection)。
+// 常态半透明可见(让用户一眼看出"从这里连线"),hover 全亮;用 opacity 而非
+// visibility:hidden —— 后者藏着时不接收指针事件,会导致桩抓不住、连不了线。
+const PORT_ATTRS = {
+  circle: {
+    r: 5,
+    magnet: true,
+    stroke: 'var(--color-primary, #1668e3)',
+    strokeWidth: 1.5,
+    fill: 'var(--color-bg-card, #fff)',
+    opacity: 0.45,
+  },
+} as const
+const PORT_GROUPS = {
+  in: { position: 'top', attrs: PORT_ATTRS },
+  out: { position: 'bottom', attrs: PORT_ATTRS },
+} as const
+
+function portsOf(type: DesignerNodeType) {
+  const items =
+    type === 'START'
+      ? [{ id: 'out', group: 'out' }]
+      : type === 'END'
+        ? [{ id: 'in', group: 'in' }]
+        : [
+            { id: 'in', group: 'in' },
+            { id: 'out', group: 'out' },
+          ]
+  return { groups: PORT_GROUPS, items }
+}
+
+/** hover 全亮 / 离开半透明 连接桩(常态即可见可抓,hover 强调) */
+function togglePorts(graph: Graph, nodeId: string, hovered: boolean) {
+  const node = graph.getCellById(nodeId)
+  if (!node || !node.isNode()) return
+  for (const port of node.getPorts()) {
+    node.setPortProp(port.id as string, 'attrs/circle/opacity', hovered ? 1 : 0.45)
+  }
+}
+
 export interface X6GraphHandle {
   graph: Graph | null
   /** Polish 阶段:可选 dagre 布局方向(TB 默认 / LR 左右),不传保持原行为 */
@@ -90,7 +131,10 @@ export interface X6GraphHandle {
   getViewportCenter: () => { x: number; y: number }
 }
 
-export function useX6Graph(containerRef: Ref<HTMLDivElement | null>, minimapRef: Ref<HTMLDivElement | null>): X6GraphHandle {
+export function useX6Graph(
+  containerRef: Ref<HTMLDivElement | null>,
+  minimapRef: Ref<HTMLDivElement | null>,
+): X6GraphHandle {
   const store = useDesignerStore()
   const handle: X6GraphHandle = {
     graph: null,
@@ -145,6 +189,7 @@ export function useX6Graph(containerRef: Ref<HTMLDivElement | null>, minimapRef:
           y: n.y,
           width,
           height,
+          ports: portsOf(n.nodeType),
           // GATEWAY 等占位矩形需要显式 label,vue-shape 自渲染则忽略 label
           label: n.nodeName || n.nodeCode,
           data: {
@@ -212,10 +257,33 @@ export function useX6Graph(containerRef: Ref<HTMLDivElement | null>, minimapRef:
       connecting: {
         router: 'manhattan',
         connector: 'rounded',
+        snap: { radius: 24 },
         allowBlank: false,
         allowLoop: false,
         allowNode: false,
         allowMulti: false,
+        allowPort: true,
+        // 只能从 out 桩起线
+        validateMagnet({ magnet }) {
+          return magnet?.getAttribute('port-group') === 'out'
+        },
+        // out → in 才成立(禁 out→out / in→in / 反向)
+        validateConnection({ sourceMagnet, targetMagnet }) {
+          if (sourceMagnet?.getAttribute('port-group') !== 'out') return false
+          if (targetMagnet?.getAttribute('port-group') !== 'in') return false
+          return true
+        },
+        createEdge() {
+          return this.createEdge({
+            attrs: {
+              line: {
+                stroke: 'var(--color-primary, #1668e3)',
+                strokeWidth: 1.5,
+                targetMarker: { name: 'block', size: 8 },
+              },
+            },
+          })
+        },
       },
       interacting: { nodeMovable: true, edgeMovable: true },
     })
@@ -266,6 +334,9 @@ export function useX6Graph(containerRef: Ref<HTMLDivElement | null>, minimapRef:
       store.setSelection([cell.id])
     })
     graph.on('blank:click', () => store.setSelection([]))
+    // hover 显 / 离开隐 连接桩,提升"从哪连线"的可发现性
+    graph.on('node:mouseenter', ({ node }) => togglePorts(graph, node.id, true))
+    graph.on('node:mouseleave', ({ node }) => togglePorts(graph, node.id, false))
 
     syncFromStore(graph)
     // store 变更 → 重画
