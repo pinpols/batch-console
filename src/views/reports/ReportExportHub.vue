@@ -36,7 +36,7 @@
     <!-- 趋势分析 tab:KPI 行 + 近 7 日执行量堆叠柱(全部真实数据;dump 的环比 ±% 无数据源,不编造) -->
     <div v-if="activeTab === 'trend'" v-loading="trendLoading">
       <div class="rp-kpis">
-        <div v-for="k in kpis" :key="k.label" class="rp-kpi">
+        <div v-for="k in kpis" :key="k.label" class="rp-kpi" :style="{ '--kpi-tone': k.tone }">
           <div class="rp-kpi__label">{{ k.label }}</div>
           <div class="rp-kpi__row">
             <span class="rp-kpi__value">{{ k.value }}</span>
@@ -261,10 +261,19 @@
       {
         label: t('reportExportHub.kpiTotalRuns'),
         value: total != null ? total.toLocaleString() : '—',
+        tone: 'var(--color-primary)',
       },
-      { label: t('reportExportHub.kpiSuccessRate'), value: successRate },
-      { label: t('reportExportHub.kpiAvgDuration'), value: avg },
-      { label: t('reportExportHub.kpiSlaRate'), value: slaRate },
+      {
+        label: t('reportExportHub.kpiSuccessRate'),
+        value: successRate,
+        tone: 'var(--color-success)',
+      },
+      {
+        label: t('reportExportHub.kpiAvgDuration'),
+        value: avg,
+        tone: 'var(--color-text-secondary)',
+      },
+      { label: t('reportExportHub.kpiSlaRate'), value: slaRate, tone: 'var(--color-success)' },
     ]
   })
 
@@ -438,12 +447,22 @@
     margin-bottom: 16px;
   }
 
+  /* 与控制面板 MetricCard 统一:左强调条 + tone 值色 */
   .rp-kpi {
+    position: relative;
+    overflow: hidden;
     background: var(--color-bg-card);
     border: 1px solid var(--color-border);
     border-radius: 12px;
     padding: 16px 18px;
     box-shadow: var(--shadow-card);
+  }
+  .rp-kpi::before {
+    content: '';
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 3px;
+    background: var(--kpi-tone, var(--color-text-secondary));
   }
 
   .rp-kpi__label {
@@ -463,7 +482,7 @@
     font-size: 26px;
     font-weight: 600;
     white-space: nowrap;
-    color: var(--color-text-primary);
+    color: var(--kpi-tone, var(--color-text-primary));
   }
 
   /* 近 7 日执行量:堆叠柱(成功 accent / 失败 danger),220px 高 */

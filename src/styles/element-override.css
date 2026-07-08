@@ -816,6 +816,18 @@ html[data-density='compact'] .console-table .el-table__header-wrapper th.el-tabl
 }
 
 /* ---------- Dialog / Drawer：圆角、分区描边、间距统一 ---------- */
+/* 模态遮罩:2px 背景模糊,弹窗/抽屉打开时与背景拉开层次(reduced-motion 关闭) */
+.el-overlay {
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .el-overlay {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
 .el-dialog {
   border-radius: var(--radius-content);
   overflow: hidden;
