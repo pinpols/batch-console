@@ -179,8 +179,31 @@ export function useX6Graph(
   function syncFromStore(graph: Graph) {
     graph.startBatch('sync-from-store')
     try {
-      graph.clearCells()
+      // 增量 reconcile(不 clearCells 全量重建):x6-vue-shape 节点销毁是异步的(Teleport),
+      // 「clear + 立刻重加同 id」会残留幽灵 DOM 节点(连带其端口成为游离圆圈)。
+      // 改为:删掉 store 里已无的、复用已有的(只更新位置/数据)、只新增新的。
+      const nodeIds = new Set(store.nodes.map((n) => n.id))
+      const edgeIds = new Set(store.edges.map((e) => e.id))
+      for (const cell of graph.getCells()) {
+        if (cell.isNode() && !nodeIds.has(cell.id)) graph.removeCell(cell)
+        else if (cell.isEdge() && !edgeIds.has(cell.id)) graph.removeCell(cell)
+      }
       for (const n of store.nodes) {
+        const existing = graph.getCellById(n.id)
+        if (existing?.isNode()) {
+          existing.position(n.x, n.y)
+          existing.setData(
+            {
+              nodeCode: n.nodeCode,
+              nodeName: n.nodeName,
+              nodeType: n.nodeType,
+              getData: () => n satisfies DesignerNode,
+            },
+            { overwrite: true },
+          )
+          existing.attr('text/text', n.nodeName || n.nodeCode, { silent: true })
+          continue
+        }
         const { width, height } = sizeOf(n.nodeType)
         graph.addNode({
           id: n.id,
@@ -201,6 +224,7 @@ export function useX6Graph(
         })
       }
       for (const e of store.edges) {
+        if (graph.getCellById(e.id)) continue
         graph.addEdge({
           id: e.id,
           source: e.source,
