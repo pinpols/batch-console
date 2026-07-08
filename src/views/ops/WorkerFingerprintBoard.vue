@@ -26,18 +26,7 @@
         </div>
       </template>
 
-      <el-alert
-        type="info"
-        :closable="false"
-        show-icon
-        class="wfb__intro"
-        :title="t('workerFingerprintBoard.introTitle')"
-      >
-        <template #default>
-          {{ t('workerFingerprintBoard.introBody') }}
-        </template>
-      </el-alert>
-
+      <!-- 去掉常驻大说明条(密度):同样信息已在标题 HelpLabel 的悬浮提示里 -->
       <el-alert
         v-if="summaryError"
         type="error"

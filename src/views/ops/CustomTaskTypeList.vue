@@ -20,18 +20,7 @@
         </div>
       </template>
 
-      <el-alert
-        type="info"
-        :closable="false"
-        show-icon
-        class="ctt__intro"
-        :title="t('customTaskTypeList.introTitle')"
-      >
-        <template #default>
-          {{ t('customTaskTypeList.introBody') }}
-        </template>
-      </el-alert>
-
+      <!-- 去掉常驻大说明条(密度):同样信息已在标题 HelpLabel 的悬浮提示里 -->
       <ProTable
         :data="rows"
         :loading="loading"
