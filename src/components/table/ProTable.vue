@@ -335,6 +335,11 @@
       fillMaxHeight.value = undefined
       return
     }
+    // 弹层(抽屉/对话框)内的表格不按视口算高:那里由弹层自身滚动,视口高度会算错。
+    if (rootRef.value?.closest('.el-drawer__body, .el-dialog__body')) {
+      fillMaxHeight.value = undefined
+      return
+    }
     const tableEl = rootRef.value?.querySelector('.pro-table__table') as HTMLElement | null
     if (!tableEl) return
     const top = tableEl.getBoundingClientRect().top
