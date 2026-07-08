@@ -15,10 +15,6 @@
     </div>
 
     <SectionCard>
-      <template #header>
-        <span>{{ t('userAccountList.sectionTitle') }}</span>
-      </template>
-
       <ListPageQueryBar
         :filter-busy="filterBusy"
         :refresh-busy="loading"
@@ -636,10 +632,11 @@
 </script>
 
 <style scoped>
+  /* 少量统计卡不撑满整行:限宽避免宽屏下 3 张巨卡空一大片(用户反馈浪费区域) */
   .metrics {
     display: grid;
     gap: var(--space-md);
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(180px, 240px));
   }
 
   .role-tags {

@@ -286,7 +286,9 @@
     grid-template-columns: minmax(180px, auto) minmax(0, 1fr) auto;
     align-items: center;
     column-gap: 10px;
-    padding-inline: var(--layout-content-inset-inline);
+    /* 与正文文字起始线同垂线:页面标题实际起始 = main 边 + --page-scroll-edge-bleed(32px),
+       原 --layout-content-inset-inline(+card-padding=48px)多缩进 16px,用户反馈左侧距离过大 */
+    padding-inline: var(--page-scroll-edge-bleed);
     padding-block: 6px;
     box-sizing: border-box;
     background: var(--layout-header-bg);

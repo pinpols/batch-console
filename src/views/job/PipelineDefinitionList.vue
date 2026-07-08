@@ -14,49 +14,6 @@
       </template>
     </PageHeader>
 
-    <!-- 照设计 dump(proto-nav-流水线定义):紧凑单行筛选条(搜索框 + 搜索/重置)。
-         类型/启用为本实现保留的额外筛选(设计仅一个搜索框),inline 收纳不铺开成标签表单卡。 -->
-    <div class="pd-bar">
-      <el-input
-        v-model="keyword"
-        class="pd-bar__search"
-        clearable
-        :placeholder="t('pipelineDefinitionList.keywordPlaceholder')"
-        @keyup.enter="onQueryBarSearch"
-      />
-      <el-select
-        v-model="pipelineType"
-        class="pd-bar__sel"
-        clearable
-        filterable
-        :placeholder="t('pipelineDefinitionList.typePlaceholder')"
-      >
-        <el-option
-          v-for="option in pipelineTypeOptions"
-          :key="option"
-          :label="option"
-          :value="option"
-        />
-      </el-select>
-      <el-select
-        v-model="enabledFilter"
-        class="pd-bar__sel"
-        clearable
-        :placeholder="t('pipelineDefinitionList.enabledPlaceholder')"
-      >
-        <el-option :label="t('pipelineDefinitionList.optEnabled')" :value="true" />
-        <el-option :label="t('pipelineDefinitionList.optDisabled')" :value="false" />
-      </el-select>
-      <el-button type="primary" :loading="filterBusy" @click="onQueryBarSearch">
-        {{ t('common.search') }}
-      </el-button>
-      <el-button text @click="onQueryBarReset">{{ t('common.reset') }}</el-button>
-      <span class="pd-bar__spacer" />
-      <el-button :loading="loading" @click="() => runRefresh(load)">
-        {{ t('common.refresh') }}
-      </el-button>
-    </div>
-
     <SectionCard>
       <ProTable
         :data="rows"
@@ -69,6 +26,50 @@
         :on-retry="load"
         :has-active-filters="hasActiveFilters"
       >
+        <template #query>
+          <!-- 统一标准筛选栏(用户反馈:原手写 pd-bar 散排与全站不一致) -->
+          <ListPageQueryBar
+            :filter-busy="filterBusy"
+            :refresh-busy="loading"
+            @search="onQueryBarSearch"
+            @reset="onQueryBarReset"
+            @refresh="() => runRefresh(load)"
+          >
+            <el-form-item :label="t('pipelineDefinitionList.keywordLabel')">
+              <el-input
+                v-model="keyword"
+                clearable
+                :placeholder="t('pipelineDefinitionList.keywordPlaceholder')"
+                @keyup.enter="onQueryBarSearch"
+              />
+            </el-form-item>
+            <el-form-item :label="t('pipelineDefinitionList.typeLabel')">
+              <el-select
+                v-model="pipelineType"
+                clearable
+                filterable
+                :placeholder="t('pipelineDefinitionList.typePlaceholder')"
+              >
+                <el-option
+                  v-for="option in pipelineTypeOptions"
+                  :key="option"
+                  :label="option"
+                  :value="option"
+                />
+              </el-select>
+            </el-form-item>
+            <el-form-item :label="t('pipelineDefinitionList.enabledLabel')">
+              <el-select
+                v-model="enabledFilter"
+                clearable
+                :placeholder="t('pipelineDefinitionList.enabledPlaceholder')"
+              >
+                <el-option :label="t('pipelineDefinitionList.optEnabled')" :value="true" />
+                <el-option :label="t('pipelineDefinitionList.optDisabled')" :value="false" />
+              </el-select>
+            </el-form-item>
+          </ListPageQueryBar>
+        </template>
         <template #toolbar>
           <OpsListToolbar
             :status="live.status.value"
@@ -890,24 +891,6 @@
 </script>
 
 <style scoped>
-  /* 紧凑筛选条(照设计:控件同高一行,搜索主按钮 + 重置 ghost;刷新推到右侧) */
-  .pd-bar {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 12px;
-    flex-wrap: wrap;
-  }
-  .pd-bar__search {
-    width: 280px;
-  }
-  .pd-bar__sel {
-    width: 180px;
-  }
-  .pd-bar__spacer {
-    flex: 1;
-  }
-
   /* 表格:code 走 mono + accent 可点(开详情抽屉) */
   .pd-code {
     font-family: var(--font-mono);
