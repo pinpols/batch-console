@@ -3695,7 +3695,7 @@ const messages: Messages = {
     fieldUpdatedAt: 'Updated at',
   },
   alertList: {
-    pageTitle: 'Alert center',
+    pageTitle: 'Event alerts',
     pageDescription: 'Handle running alerts by severity; auto-archived after acknowledgment',
     actionRules: 'Alert routing rules',
     tabOpen: 'Open',

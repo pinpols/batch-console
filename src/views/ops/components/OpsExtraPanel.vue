@@ -1,15 +1,6 @@
 <template>
   <SectionCard class="extra-panel-card">
-    <div class="section-toolbar">
-      <span class="u-flex-1" />
-      <el-button
-        :icon="Refresh"
-        :loading="extraLoading || refresh.loading.value"
-        @click="onRefresh"
-      >
-        {{ t('opsExtraPanel.btnRefresh') }}
-      </el-button>
-    </div>
+    <!-- 刷新钮已上提到 OpsSummary tabs 行(用户反馈:原独占一行造成空带) -->
     <div class="extra-panels">
       <div class="extra-block extra-block--gauge">
         <h4 class="extra-title">{{ t('opsExtraPanel.slaGaugeTitle') }}</h4>
@@ -46,15 +37,12 @@
 
 <script setup lang="ts">
   import '@/charts/echarts'
-  import { onMounted, watch } from 'vue'
+  import { onMounted } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { RefreshCw as Refresh } from 'lucide-vue-next'
   import { RouterLink } from 'vue-router'
   import VChart from 'vue-echarts'
   import SectionCard from '@/components/common/SectionCard.vue'
   import JsonPreview from '@/components/common/JsonPreview.vue'
-  import { useRefreshAction } from '@/composables/useRefreshAction'
-
   const { t } = useI18n({ useScope: 'global' })
 
   const props = defineProps<{
@@ -68,30 +56,6 @@
   const emit = defineEmits<{
     loadExtra: []
   }>()
-
-  const refresh = useRefreshAction()
-
-  /** 等父组件 extraLoading 从 true 翻回 false,即视为本轮加载完成 */
-  function waitParentLoadDone(): Promise<void> {
-    return new Promise<void>((resolve) => {
-      const stop = watch(
-        () => props.extraLoading,
-        (v, old) => {
-          if (old && !v) {
-            stop()
-            resolve()
-          }
-        },
-      )
-    })
-  }
-
-  function onRefresh() {
-    void refresh.run(async () => {
-      emit('loadExtra')
-      await waitParentLoadDone()
-    })
-  }
 
   // 挂载时主动加载:用户直接进 ?tab=extra 时,父级 loadCharts 还没跑,
   // slaReport / tenantUsage / gauge 都没数据 → 卡片空白。这里触发一次。

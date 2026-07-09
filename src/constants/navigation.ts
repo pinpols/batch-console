@@ -144,7 +144,14 @@ export const navigationGroups: NavigationGroup[] = [
         icon: Promotion,
       },
       { title: pageTitle('/runs'), path: '/runs', minRole: 'VIEWER', icon: CirclePlay },
-      { title: pageTitle('/logs'), path: '/logs', minRole: 'VIEWER', icon: Reading },
+      // 「执行日志」入口改为「综合查询」直达(用户反馈:点执行日志落到标题为综合查询的
+      // tab 页,导航高亮与页标题对不上);/logs 路由 redirect 保留兼容旧深链。
+      {
+        title: pageTitle('/observability/queries'),
+        path: '/observability/queries',
+        minRole: 'VIEWER',
+        icon: Reading,
+      },
       {
         title: pageTitle('/observability/trace'),
         path: '/observability/trace',
@@ -162,13 +169,6 @@ export const navigationGroups: NavigationGroup[] = [
         path: '/observability/lineage',
         minRole: 'VIEWER',
         icon: DataLine,
-        hidden: true,
-      },
-      {
-        title: pageTitle('/observability/queries'),
-        path: '/observability/queries',
-        minRole: 'VIEWER',
-        icon: Search,
         hidden: true,
       },
     ],
@@ -317,16 +317,8 @@ export const navigationGroups: NavigationGroup[] = [
         minRole: 'OPERATOR',
         icon: DataAnalysis,
       },
-      {
-        title: pageTitle('/scheduler/catch-up-approvals'),
-        // path 带 query,pathToKey 推不出 key → 显式指向原页 i18n 键,保证中英都翻。
-        titleKey: 'page.schedulerCatchUpApprovals.title',
-        // 补跑审批已并入审批页的 catch-up tab;直接指向真实目的地(去掉 /scheduler/catch-up-approvals
-        // 的 redirect 空跳),侧栏据 ?tab=catch-up 精确高亮本项而非「审批」。
-        path: '/approvals?tab=catch-up',
-        minRole: 'VIEWER',
-        icon: Memo,
-      },
+      // 「Catch-up 审批」入口已去重(用户反馈):与工作台「审批中心」的 catch-up tab
+      // 指向同一页面,双入口重复;审批统一从审批中心进。
       {
         title: pageTitle('/governance/calendars'),
         path: '/governance/calendars',

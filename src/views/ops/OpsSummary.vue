@@ -55,12 +55,24 @@
     </SectionCard>
 
     <div v-if="summary" class="ops-tabs-card">
-      <el-tabs v-model="opsTab" class="pill-tabs ops-tabs">
-        <el-tab-pane :label="t('opsSummary.tabKpis')" name="kpis" />
-        <el-tab-pane :label="t('opsSummary.tabTrend')" name="trend" />
-        <el-tab-pane :label="t('opsSummary.tabDist')" name="dist" />
-        <el-tab-pane :label="t('opsSummary.tabExtra')" name="extra" />
-      </el-tabs>
+      <!-- 扩展面板的刷新钮上提到 tabs 同行右侧(用户反馈:原独占一行造成空带) -->
+      <div class="ops-tabs-row">
+        <el-tabs v-model="opsTab" class="pill-tabs ops-tabs">
+          <el-tab-pane :label="t('opsSummary.tabKpis')" name="kpis" />
+          <el-tab-pane :label="t('opsSummary.tabTrend')" name="trend" />
+          <el-tab-pane :label="t('opsSummary.tabDist')" name="dist" />
+          <el-tab-pane :label="t('opsSummary.tabExtra')" name="extra" />
+        </el-tabs>
+        <el-button
+          v-if="opsTab === 'extra'"
+          class="ops-tabs-row__refresh"
+          :icon="Refresh"
+          :loading="extraLoading"
+          @click="loadExtraPanels"
+        >
+          {{ t('opsExtraPanel.btnRefresh') }}
+        </el-button>
+      </div>
 
       <div v-show="opsTab !== 'extra'" class="ops-panels">
         <OpsMetricGrid
@@ -253,7 +265,18 @@
 
   /* 还原设计纵向节奏:副标题→Tab ≈ 32px、Tab→卡片 ≈ 28px */
   .ops-tabs-card {
-    margin-top: 20px;
+    margin-top: 12px;
+  }
+
+  .ops-tabs-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .ops-tabs-row__refresh {
+    flex: 0 0 auto;
   }
 
   .ops-tabs {
@@ -266,7 +289,7 @@
 
   .ops-panels {
     position: relative;
-    margin-top: 24px;
+    margin-top: 12px;
     overflow: visible;
   }
 </style>
