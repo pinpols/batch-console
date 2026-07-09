@@ -490,6 +490,11 @@
     font-weight: 650;
   }
 
+  /* 末级不渲染尾随分隔符(EP 默认规则被局部样式链路盖掉,显式兜底;用户反馈「综合查询›」) */
+  .page-meta__crumb :deep(.el-breadcrumb__item:last-child .el-breadcrumb__separator) {
+    display: none;
+  }
+
   .page-meta__title {
     display: inline-flex;
     align-items: center;

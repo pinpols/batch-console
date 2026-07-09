@@ -1,13 +1,9 @@
 <template>
   <PageContainer>
     <!-- 照设计 #alerts:三分组 tab + 告警卡片流(proto dump: docs/redesign/proto-alerts.html) -->
+    <!-- 页头只留动作钮;日期范围下移到筛选行(用户反馈:右上一排挤压溢出) -->
     <PageHeader :title="t('alertList.pageTitle')" :description="t('alertList.pageDescription')">
       <template #actions>
-        <DateRangePresetPicker
-          v-model="timeRange"
-          type="daterange"
-          @update:model-value="onTimeChange"
-        />
         <el-button @click="$router.push('/observability/alert-routings')">
           {{ t('alertList.actionRules') }}
         </el-button>
@@ -32,6 +28,12 @@
         <span v-if="tab.count !== null" class="al-tab__count">{{ tab.count }}</span>
       </button>
       <span class="al-tabs__spacer" />
+      <DateRangePresetPicker
+        class="al-range"
+        v-model="timeRange"
+        type="daterange"
+        @update:model-value="onTimeChange"
+      />
       <MetaSelect
         class="al-sel"
         v-model="filters.severity"
@@ -675,6 +677,12 @@
 
   .al-sel {
     width: 150px;
+  }
+
+  /* 日期范围(自页头下移):限宽,窄屏随 flex-wrap 折行 */
+  .al-range {
+    width: 300px;
+    flex: 0 1 300px;
   }
 
   .al-trace {

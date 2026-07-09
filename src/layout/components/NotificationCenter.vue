@@ -64,11 +64,16 @@
             <el-icon class="notif-center__chev"><ArrowRight /></el-icon>
           </button>
         </li>
+        <!-- 口径对齐(用户反馈:铃铛计数 vs 页内失败 pill 打架):badge 来自 ops summary 全量
+             FAILED+PARTIAL_FAILED,故落地深链用同口径(statuses CSV + range=all 清今日锚定),
+             点进去列表总数=badge 数 -->
         <li v-if="failedJobs > 0">
           <button
             type="button"
             class="notif-center__row"
-            @click="go('/monitor/job-instances', { status: 'FAILED' })"
+            @click="
+              go('/monitor/job-instances', { statuses: 'FAILED,PARTIAL_FAILED', range: 'all' })
+            "
           >
             <el-icon class="notif-center__icon is-critical"><CircleClose /></el-icon>
             <span class="notif-center__label">{{ t('notificationCenter.failedJobs') }}</span>

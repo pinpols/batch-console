@@ -3622,7 +3622,7 @@ export default {
     fieldUpdatedAt: '更新时间',
   },
   alertList: {
-    pageTitle: '告警中心',
+    pageTitle: '事件告警',
     pageDescription: '按严重程度处理运行告警,确认后自动归档',
     actionRules: '告警路由规则',
     tabOpen: '未处理',
