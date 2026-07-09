@@ -22,11 +22,12 @@ test.describe('作业运行列表 — 列表页新控件', () => {
   })
 
   test('实时状态徽标渲染 + 含状态文案', async ({ page }) => {
-    const badge = page.locator('.live-status-badge').first()
-    await expect(badge).toBeVisible({ timeout: 10_000 })
-    await expect(badge).toHaveAttribute('role', 'status')
-    // label 非空(在线/离线/同步中等)
-    await expect(badge.locator('.live-status-badge__label')).not.toBeEmpty()
+    // 该页按设计用自定义实时监控条 .jr-live(还原 proto 样张),非共享 LiveStatusBadge
+    const live = page.locator('.jr-live').first()
+    await expect(live).toBeVisible({ timeout: 10_000 })
+    // 标题 + 最近刷新时间文案非空
+    await expect(live.locator('.jr-live__title')).not.toBeEmpty()
+    await expect(live.locator('.jr-live__time')).not.toBeEmpty()
   })
 
   test('保存的筛选器 — 下拉可打开,含「保存当前」入口', async ({ page }) => {

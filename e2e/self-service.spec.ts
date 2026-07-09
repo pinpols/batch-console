@@ -25,7 +25,8 @@ test.describe('self-service panel (自助服务)', () => {
     const quotaCard = page.locator('.service-card').filter({ hasText: /我的配额用量|配额用量/ }).first()
     await expect(quotaCard).toBeVisible()
     if (!(await quotaCard.evaluate((el) => el.classList.contains('is-active')))) {
-      await quotaCard.locator('button').first().click({ force: true })
+      // 卡片是整卡可点(article[role=button],内部无 <button>)
+      await quotaCard.click({ force: true })
     }
     // inline 区域出现刷新按钮或"当前配额"文字
     const refreshBtn = page.locator('.service-catalog__inline').getByRole('button', { name: /刷新|当前配额/ })
@@ -41,8 +42,9 @@ test.describe('self-service panel (自助服务)', () => {
     ['补偿申请', '提交补偿申请'],
   ] as const) {
     test(`${cardText}卡片 → drawer 打开 → 提交按钮可见`, async ({ page }) => {
+      // 卡片是整卡可点(article[role=button],内部无 <button>)
       const card = page.locator('.service-card').filter({ hasText: cardText }).first()
-      await card.locator('button').first().click({ force: true })
+      await card.click({ force: true })
       const drawer = page.locator('.el-drawer:visible').first()
       await expect(drawer).toBeVisible({ timeout: 6000 })
       await expect(drawer.getByRole('button', { name: drawerBtn })).toBeVisible({ timeout: 5000 })

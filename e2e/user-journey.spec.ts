@@ -65,25 +65,14 @@ test.describe('@user-journey D 档真实用户端到端闭环', () => {
     await enumsP
     await page.waitForLoadState('networkidle', { timeout: 8000 }).catch(() => {})
 
-    // C.1 Create
+    // C.1 Create — job-def 三态重构后为自定义右滑面板 aside.jdd(非 el-drawer)
     await page.getByRole('button', { name: '新增作业' }).first().click()
-    const drawer = page.locator('.el-drawer:visible').first()
+    const drawer = page.locator('.jdd').first()
     await expect(drawer).toBeVisible({ timeout: 5000 })
 
-    await drawer.getByLabel('Job Code').fill(jobCode)
-    await drawer.getByLabel('名称').fill(`E2E Journey ${STAMP}`)
-
-    const selectFirst = async (label: string) => {
-      const item = drawer.locator('.el-form-item').filter({ hasText: label }).first()
-      await item.locator('.el-select__wrapper, .el-input__inner').first().click({ force: true })
-      const popper = page.locator('.el-select-dropdown:visible').last()
-      await expect(popper).toBeVisible({ timeout: 5000 })
-      await popper.locator('.el-select-dropdown__item').first().click({ force: true })
-      await page.waitForTimeout(150)
-    }
-    await selectFirst('Job Type')
-    await selectFirst('调度类型')
-    await drawer.getByLabel('调度表达式').fill('0 0 * * * *')
+    await drawer.getByLabel('作业编码').fill(jobCode)
+    await drawer.getByLabel('作业名称').fill(`E2E Journey ${STAMP}`)
+    // 作业类型/调度类型有默认值(GENERAL/MANUAL);MANUAL 下无调度表达式字段
     await drawer.getByRole('button', { name: '新增', exact: true }).click()
     await expect(drawer).toBeHidden({ timeout: 8000 })
 

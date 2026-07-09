@@ -57,7 +57,7 @@ test.describe('租户管理 — 新建租户', () => {
     await expect(page.getByText('新增租户').first()).toBeVisible()
 
     await page.getByLabel('租户 ID').fill(uniqueTenantId)
-    await page.getByLabel('名称').fill('E2E 测试租户')
+    await page.getByRole('textbox', { name: /名称/ }).fill('E2E 测试租户')
     // 账号 + 密码必填(useDestroyConfirm/createTenant body)
     // username 也加 random:DB 全局 unique,多次跑会和上次撞 CONFLICT
     const accountInput = page.getByLabel('账号名')
@@ -87,7 +87,7 @@ test.describe('租户管理 — 编辑租户', () => {
     if (!(await isVisible(editBtn))) return
     await editBtn.click()
     await expect(page.getByText('编辑租户')).toBeVisible()
-    const nameInput = page.getByLabel('名称')
+    const nameInput = page.getByRole('textbox', { name: /名称/ })
     await nameInput.clear()
     await nameInput.fill('E2E Tenant Updated')
     await page.getByRole('button', { name: /保存|确定/ }).click()
