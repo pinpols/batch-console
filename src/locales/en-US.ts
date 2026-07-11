@@ -1311,8 +1311,8 @@ const messages: Messages = {
       description: 'View alert events and execute ack, silence and close.',
     },
     observabilityAlertRoutings: {
-      title: 'Alert routing',
-      description: 'Maintain alert routing receivers, grouping and repeat rules.',
+      title: 'Alert routing (reserved)',
+      description: 'View reserved routing records; runtime alert delivery does not consume them.',
     },
     observabilityAudits: {
       title: 'Audit log',
@@ -2053,6 +2053,9 @@ const messages: Messages = {
     descUpdatedAt: 'Updated at',
   },
   alertRoutingPanel: {
+    reservedTitle: 'Reserved configuration; not active',
+    reservedDescription:
+      'Existing records are read-only for audit. Runtime alerts currently use static Prometheus / Alertmanager templates and the escalation webhook path; this page is not consumed.',
     sectionTitle: 'Routing rules',
     enabledLabel: 'Enabled',
     optEnabled: 'Enabled',

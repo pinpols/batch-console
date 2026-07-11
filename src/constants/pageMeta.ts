@@ -116,8 +116,8 @@ export const pageMetaByPath = {
     description: '查看告警事件,并执行确认、静默和关闭。',
   },
   '/observability/alert-routings': {
-    title: '告警路由',
-    description: '维护告警路由、接收人、聚合和重复通知规则。',
+    title: '告警路由（预留）',
+    description: '查看预留路由配置；当前运行时告警投递不读取这些记录。',
   },
   '/observability/trace': {
     title: 'Trace 诊断',
