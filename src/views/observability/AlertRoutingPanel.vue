@@ -2,13 +2,27 @@
   <PageContainer>
     <PageHeader>
       <template #actions>
-        <el-button v-if="canMutateConfig" type="primary" :icon="Plus" @click="openCreate">
+        <el-button
+          v-if="canMutateConfig && routingRuntimeEnabled"
+          type="primary"
+          :icon="Plus"
+          @click="openCreate"
+        >
           {{ t('alertRoutingPanel.actionCreate') }}
         </el-button>
       </template>
     </PageHeader>
 
     <SectionCard>
+      <el-alert
+        class="reserved-alert"
+        type="warning"
+        show-icon
+        :closable="false"
+        :title="t('alertRoutingPanel.reservedTitle')"
+        :description="t('alertRoutingPanel.reservedDescription')"
+      />
+
       <div class="panel-head">
         <div class="panel-title">
           <span class="dot dot--warning" />
@@ -78,6 +92,7 @@
               :active-text="t('alertRoutingPanel.switchOn')"
               :inactive-text="t('alertRoutingPanel.switchOff')"
               :loading="togglingId === row.id"
+              :disabled="!routingRuntimeEnabled"
               @change="toggleRouting(row)"
             />
           </template>
@@ -94,7 +109,7 @@
               plain
               size="small"
               :icon="Edit"
-              :disabled="!row?.routeCode"
+              :disabled="!routingRuntimeEnabled || !row?.routeCode"
               @click="openEdit(row)"
             >
               {{ t('alertRoutingPanel.actionEdit') }}
@@ -201,6 +216,8 @@
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
 
   const { canMutateConfig } = usePermission()
+  // 运行时消费者尚未落地；保留只读列表用于审计历史配置，避免产生“保存即生效”的错误预期。
+  const routingRuntimeEnabled = false
   const INT32_MAX = 2147483647
   const { t } = useI18n({ useScope: 'global' })
   const tenant = useTenantStore()
@@ -393,6 +410,10 @@
     justify-content: space-between;
     gap: var(--space-md);
     flex-wrap: wrap;
+  }
+
+  .reserved-alert {
+    margin-bottom: var(--page-block-gap);
   }
 
   .panel-title {

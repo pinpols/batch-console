@@ -1282,8 +1282,8 @@ export default {
       description: '查看告警事件,并执行确认、静默和关闭。',
     },
     observabilityAlertRoutings: {
-      title: '告警路由',
-      description: '维护告警路由、接收人、聚合与去重策略。',
+      title: '告警路由（预留）',
+      description: '查看预留路由配置；当前运行时告警投递不读取这些记录。',
     },
     observabilityAudits: {
       title: '审计日志',
@@ -1991,6 +1991,9 @@ export default {
     descUpdatedAt: '更新时间',
   },
   alertRoutingPanel: {
+    reservedTitle: '预留配置，当前不生效',
+    reservedDescription:
+      '此处仅保留历史配置供审计。当前告警通过 Prometheus / Alertmanager 静态模板及告警升级 Webhook 投递，运行时不会读取本页记录。',
     sectionTitle: '路由列表',
     enabledLabel: '启用状态',
     optEnabled: '已启用',
