@@ -1,56 +1,15 @@
 import { get } from '@/api/client'
+import type { components } from '@/types/api.generated'
 
-export type CapacityProfileGroupBy = 'TENANT' | 'JOB' | 'WORKER'
-
-export interface CapacityProfileWindow {
-  from?: string
-  to?: string
-}
-
-export interface CapacityProfileTotals {
-  instanceCount: number
-  taskCount: number
-  successCount: number
-  failureCount: number
-  totalDurationMs: number
-  totalFileBytes: number
-  processedRecords: number
-}
-
-export interface CapacityProfileCoverage {
-  evidenceSource?: string
-  knownGaps?: string[]
-  rejectedScopes?: string[]
-}
-
-export interface CapacityProfileRow {
-  tenantId?: string
-  jobCode?: string
-  workerCode?: string
-  workerGroup?: string
-  instanceCount: number
-  taskCount: number
-  successCount: number
-  failureCount: number
-  totalDurationMs: number
-  avgDurationMs: number
-  p95DurationMs: number
-  totalFileBytes: number
-  processedRecords: number
-  recordsPerSecond: number
-  mbPerSecond: number
-}
-
-export interface CapacityProfileReport {
-  generatedAt?: string
-  tenantId?: string
-  window?: CapacityProfileWindow
-  groupBy?: CapacityProfileGroupBy
-  scope?: string
-  rows?: CapacityProfileRow[]
-  totals?: CapacityProfileTotals
-  coverage?: CapacityProfileCoverage
-}
+// 后端 #801-804 Map 收敛后已生成真类型;此前手写的 CapacityProfile* interface 与
+// generated schema 字段逐一对齐,统一切到生成类型(重新生成:npm run gen:api)。
+export type CapacityProfileGroupBy = NonNullable<
+  components['schemas']['CapacityProfileResponse']['groupBy']
+>
+export type CapacityProfileTotals = components['schemas']['CapacityProfileTotals']
+export type CapacityProfileCoverage = components['schemas']['CapacityProfileCoverage']
+export type CapacityProfileRow = components['schemas']['CapacityProfileRow']
+export type CapacityProfileReport = components['schemas']['CapacityProfileResponse']
 
 export interface CapacityProfileQuery {
   tenantId: string
