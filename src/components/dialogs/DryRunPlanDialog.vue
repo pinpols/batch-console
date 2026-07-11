@@ -39,7 +39,7 @@
       </el-form-item>
     </el-form>
 
-    <!-- 结果展示:findings + probes -->
+    <!-- 结果展示:findings(L3 探针结果由 BE 以 EXEC_* code 并入 findings,无顶层 probes) -->
     <div v-if="result" class="dry-run-result">
       <el-divider>{{ t('dryRunDialog.resultDivider') }}</el-divider>
       <el-alert
@@ -134,10 +134,7 @@
         : t('dryRunDialog.l3Hint'),
   )
 
-  const allFindings = computed<DryRunFinding[]>(() => [
-    ...(result.value?.findings ?? []),
-    ...(result.value?.probes ?? []),
-  ])
+  const allFindings = computed<DryRunFinding[]>(() => result.value?.findings ?? [])
   const hasError = computed(() => allFindings.value.some((f) => f.severity === 'ERROR'))
   const hasWarn = computed(() => allFindings.value.some((f) => f.severity === 'WARN'))
   const errorCount = computed(() => allFindings.value.filter((f) => f.severity === 'ERROR').length)

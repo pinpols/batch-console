@@ -16,51 +16,15 @@ export type BatchDayReplayScope = BatchDayReplaySubmitRequest['scope']
 export type ResultPolicy = NonNullable<BatchDayReplaySubmitRequest['resultPolicy']>
 export type ConfigVersionPolicy = NonNullable<BatchDayReplaySubmitRequest['configVersionPolicy']>
 
-/** Session 状态(对齐 BE 枚举)。 */
-export type ReplaySessionStatus =
-  | 'PENDING_APPROVAL'
-  | 'RUNNING'
-  | 'SUCCEEDED'
-  | 'FAILED'
-  | 'CANCELLED'
+/** Entry 状态(BE 枚举;生成 schema 里 status 是 string,保留字面量联合供筛选参数)。 */
+export type ReplayEntryStatus = 'PENDING' | 'SUCCEEDED' | 'FAILED'
 
-/** Session 实体(BE 返回 Object,这里给 FE 预期 shape)。 */
-export interface BatchDayReplaySession {
-  id: number
-  tenantId: string
-  calendarCode: string
-  bizDate: string
-  scope: BatchDayReplayScope
-  jobCodes?: string[]
-  versionIds?: number[]
-  resultPolicy: ResultPolicy
-  configVersionPolicy: ConfigVersionPolicy
-  status: ReplaySessionStatus
-  requestedBy: string
-  approvedBy?: string
-  cancelledBy?: string
-  reason: string
-  totalEntries?: number
-  succeededEntries?: number
-  failedEntries?: number
-  pendingEntries?: number
-  createdAt: string
-  updatedAt?: string
-  finishedAt?: string
-}
-
-/** Session entry(实例进度)。 */
-export interface BatchDayReplayEntry {
-  id: number
-  sessionId: number
-  jobCode: string
-  bizDate: string
-  status: 'PENDING' | 'SUCCEEDED' | 'FAILED'
-  newInstanceId?: number
-  newVersionId?: number
-  failureReason?: string
-  updatedAt?: string
-}
+// #801-804 Map 收敛后 BE 暴露真 schema(已逐字段对照 orchestrator BatchDayReplaySessionEntity):
+// 计数字段是 totalCount/succeededCount/failedCount/inFlightCount,完成时间是 completedAt。
+// 此前手写 shape 猜的 totalEntries/succeededEntries/finishedAt/jobCodes/versionIds/cancelledBy
+// 在 wire 上从不存在(读到 undefined 静默显 0),统一切生成类型。
+export type BatchDayReplaySession = components['schemas']['BatchDayReplaySession']
+export type BatchDayReplayEntry = components['schemas']['BatchDayReplayEntry']
 
 /** 内层 envelope shape(console-api 透传 orchestrator 的 CommonResponse)。 */
 interface InnerEnvelope<T> {
@@ -127,7 +91,7 @@ export const batchDayReplayApi = {
   },
   async entries(
     sessionId: number,
-    opts: { status?: BatchDayReplayEntry['status']; limit?: number; tenantId?: string } = {},
+    opts: { status?: ReplayEntryStatus; limit?: number; tenantId?: string } = {},
   ): Promise<BatchDayReplayEntry[]> {
     const qs = new URLSearchParams()
     if (opts.status) qs.set('status', opts.status)

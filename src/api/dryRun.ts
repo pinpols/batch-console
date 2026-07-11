@@ -12,33 +12,15 @@ import type { components } from '@/types/api.generated'
 export type DryRunPlanRequest = components['schemas']['DryRunPlanRequest']
 export type DryRunLevel = NonNullable<DryRunPlanRequest['level']>
 
-/**
- * 单条 finding。BE 实际字段(联调确认):
- *   { code, severity, scope, message, detail }
- * severity 是 PASS / WARN / ERROR 三态。
- */
-export interface DryRunFinding {
-  code: string
-  severity: 'PASS' | 'WARN' | 'ERROR'
-  scope: string
-  message: string
-  detail?: string | Record<string, unknown> | null
-}
+// #801-804 Map 收敛后 BE 暴露真 schema(对照 orchestrator DryRunPlanResult / DefaultDryRunPlanService):
+// wire 就是 {level, success, findings, summary} 四字段。L3 探测结果(EXPLAIN / headBucket /
+// HTTP HEAD)以 EXEC_* code 并入 findings;分区计划细节(queueCode/workerGroup/partitionCount 等)
+// 与探测计数(l3SqlProbed/l3S3Probed/l3EndpointProbed)在 summary(动态 Map)里。
+// 此前手写 shape 猜的顶层 probes / schedulePlan 在 wire 上从不存在,统一切生成类型。
+export type DryRunFinding = components['schemas']['DryRunFinding']
 
 /** dry-run 计划响应。 */
-export interface DryRunPlanResult {
-  level: DryRunLevel
-  success: boolean
-  findings?: DryRunFinding[]
-  /** L1/L2/L3 各自的 summary,字段视 level 不同;BE 透传任意 shape。 */
-  summary?: Record<string, unknown>
-  /** L2 / L3 输出的分区计划摘要(若 BE 返回)。 */
-  schedulePlan?: Record<string, unknown>
-  /** L3 探测结果(JdbcTemplate EXPLAIN / Minio bucketExists / HTTP HEAD)。 */
-  probes?: DryRunFinding[]
-  /** 未知字段透传,不解读。 */
-  [k: string]: unknown
-}
+export type DryRunPlanResult = components['schemas']['DryRunPlan']
 
 export const dryRunApi = {
   async plan(req: DryRunPlanRequest): Promise<DryRunPlanResult> {

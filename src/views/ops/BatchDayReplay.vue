@@ -41,7 +41,7 @@
           <template #default="{ row }">
             <el-progress :percentage="progressPct(row)" :status="progressStatus(row)" />
             <span class="cell-mute">
-              {{ row.succeededEntries ?? 0 }} / {{ row.totalEntries ?? 0 }}
+              {{ row.succeededCount ?? 0 }} / {{ row.totalCount ?? 0 }}
             </span>
           </template>
         </el-table-column>
@@ -260,10 +260,10 @@
         <div class="cell-mute">
           {{
             t('batchDayReplay.entriesSummary', {
-              ok: currentSession.succeededEntries ?? 0,
-              fail: currentSession.failedEntries ?? 0,
-              pending: currentSession.pendingEntries ?? 0,
-              total: currentSession.totalEntries ?? 0,
+              ok: currentSession.succeededCount ?? 0,
+              fail: currentSession.failedCount ?? 0,
+              pending: currentSession.inFlightCount ?? 0,
+              total: currentSession.totalCount ?? 0,
             })
           }}
         </div>
@@ -418,9 +418,9 @@
     return 'info'
   }
   function progressPct(s: BatchDayReplaySession): number {
-    const total = s.totalEntries ?? 0
+    const total = s.totalCount ?? 0
     if (total === 0) return 0
-    const done = (s.succeededEntries ?? 0) + (s.failedEntries ?? 0)
+    const done = (s.succeededCount ?? 0) + (s.failedCount ?? 0)
     return Math.round((done / total) * 100)
   }
   function progressStatus(s: BatchDayReplaySession): 'success' | 'exception' | undefined {
