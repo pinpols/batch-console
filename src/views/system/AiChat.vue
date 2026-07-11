@@ -17,7 +17,24 @@
                   <div class="bubble__meta">
                     {{ item.role === 'user' ? t('aiChat.bubbleMe') : t('aiChat.bubbleAi') }}
                   </div>
+                  <div
+                    v-if="
+                      item.role === 'assistant' && item.decision && item.decision !== 'APPROVED'
+                    "
+                    class="gate-notice"
+                  >
+                    <div class="gate-notice__head">
+                      <span class="gate-notice__title">{{ t('aiChat.gateTitle') }}</span>
+                      <span class="gate-notice__tag">{{ decisionLabel(item.decision) }}</span>
+                    </div>
+                    <div v-if="item.refusalReason" class="gate-notice__reason">
+                      {{ item.refusalReason }}
+                    </div>
+                  </div>
                   <div class="bubble__body">{{ item.content }}</div>
+                  <div v-if="item.role === 'assistant' && item.modelName" class="bubble__model">
+                    {{ t('aiChat.modelBy', { model: item.modelName }) }}
+                  </div>
                 </div>
               </div>
               <el-form class="composer" @submit.prevent>
@@ -30,11 +47,9 @@
                   class="composer__editor"
                 />
                 <div class="composer__actions">
-                  <el-input
-                    class="query-w-240"
-                    v-model="modelName"
-                    :placeholder="t('aiChat.modelPlaceholder')"
-                  />
+                  <el-button :disabled="sending || !messages.length" @click="resetSession">
+                    {{ t('aiChat.btnNewSession') }}
+                  </el-button>
                   <div class="composer__actions-right">
                     <div class="composer__hint">{{ t('aiChat.composerHint') }}</div>
                     <el-button type="primary" :loading="sending" @click="send">
@@ -166,12 +181,17 @@
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import ProTable from '@/components/table/ProTable.vue'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
-  import type { AiAuditLogResponse } from '@/types/console-api'
+  import type { AiAuditLogResponse, AiChatResponse } from '@/types/console-api'
+
+  type PromptDecision = AiChatResponse['promptDecision']
 
   interface ChatMessage {
     id: string
     role: 'user' | 'assistant'
     content: string
+    decision?: PromptDecision
+    refusalReason?: string | null
+    modelName?: string
   }
 
   const tenant = useTenantStore()
@@ -179,10 +199,22 @@
   const router = useRouter()
   const activeTab = ref<'chat' | 'audits'>('chat')
   const prompt = ref('')
-  const modelName = ref('')
   const sending = ref(false)
-  const conversationId = ref('')
+  const sessionId = ref('')
   const messages = ref<ChatMessage[]>([])
+
+  const DECISION_LABEL_KEY: Record<Exclude<PromptDecision, 'APPROVED'>, string> = {
+    REJECTED_SCOPE: 'aiChat.decision.rejectedScope',
+    REJECTED_AUTH: 'aiChat.decision.rejectedAuth',
+    REJECTED_DISABLED: 'aiChat.decision.rejectedDisabled',
+    REJECTED_SAFETY: 'aiChat.decision.rejectedSafety',
+    FAILED: 'aiChat.decision.failed',
+  }
+
+  function decisionLabel(decision: PromptDecision): string {
+    if (decision === 'APPROVED') return ''
+    return t(DECISION_LABEL_KEY[decision])
+  }
 
   const { loading: auditLoading, error: auditLoadError, run: runLoadAudits } = useListLoadState()
   const {
@@ -251,6 +283,11 @@
     })
   }
 
+  function resetSession() {
+    sessionId.value = ''
+    messages.value = []
+  }
+
   async function send() {
     const content = prompt.value.trim()
     if (!content) return
@@ -260,14 +297,16 @@
       const res = await chatWithAi({
         tenantId: tenant.tenantId,
         prompt: content,
-        model: modelName.value.trim() || undefined,
-        conversationId: conversationId.value || undefined,
+        sessionId: sessionId.value || undefined,
       })
-      if (res.conversationId) conversationId.value = res.conversationId
+      if (res.sessionId) sessionId.value = res.sessionId
       messages.value.push({
         id: `${Date.now()}-a`,
         role: 'assistant',
         content: res.answer || t('aiChat.emptyAnswer'),
+        decision: res.promptDecision,
+        refusalReason: res.refusalReason,
+        modelName: res.modelName,
       })
       prompt.value = ''
       void loadAudits()
@@ -399,6 +438,52 @@
     margin-bottom: 6px;
     font-size: 12px;
     font-weight: 700;
+    color: var(--color-text-tertiary);
+  }
+
+  .gate-notice {
+    margin-bottom: 8px;
+    padding: 8px 10px;
+    border-radius: var(--radius-content);
+    border: 1px solid color-mix(in srgb, var(--color-warning) 32%, var(--color-border) 68%);
+    border-left: 3px solid color-mix(in srgb, var(--color-warning) 62%, var(--color-border) 38%);
+    background: color-mix(in srgb, var(--color-warning) 8%, var(--color-bg-card) 92%);
+  }
+
+  .gate-notice__head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .gate-notice__title {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--color-text-secondary);
+  }
+
+  .gate-notice__tag {
+    padding: 1px 8px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    color: color-mix(in srgb, var(--color-warning) 78%, var(--color-text-primary) 22%);
+    background: color-mix(in srgb, var(--color-warning) 16%, var(--color-bg-card) 84%);
+    border: 1px solid color-mix(in srgb, var(--color-warning) 30%, var(--color-border) 70%);
+  }
+
+  .gate-notice__reason {
+    margin-top: 6px;
+    font-size: 13px;
+    line-height: 1.55;
+    white-space: pre-wrap;
+    word-break: break-word;
+    color: var(--color-text-secondary);
+  }
+
+  .bubble__model {
+    margin-top: 6px;
+    font-size: 12px;
     color: var(--color-text-tertiary);
   }
 

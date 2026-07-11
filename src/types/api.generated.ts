@@ -5758,7 +5758,11 @@ export interface paths {
     }
     get?: never
     put?: never
-    /** Test notification channel */
+    /**
+     * Test notification channel
+     * @description 真正按渠道类型发一条测试消息(WEBHOOK 走带 SSRF 防护+超时的投递路径,其余渠道走对应 NotificationSender),如实反映投递结果并落一条 notification_delivery_log。 data 为无类型 map:{channelCode, channelType, success(boolean), status("OK"|"FAILED"), message, httpStatus(nullable), errorSummary(nullable)};失败时 errorSummary 透传发送器错误。
+     *
+     */
     post: operations['testNotificationChannel']
     delete?: never
     options?: never
@@ -6790,7 +6794,8 @@ export interface components {
     }
     /** @description ADR-020 批次日重放提交命令 */
     BatchDayReplaySubmitRequest: {
-      tenantId: string
+      /** @description 可省略；由 JWT 经 ConsoleTenantGuard 解析后强制覆盖 */
+      tenantId?: string
       calendarCode: string
       /** Format: date */
       bizDate: string
@@ -6889,7 +6894,8 @@ export interface components {
     }
     /** @description ADR-026 演练计划请求 */
     DryRunPlanRequest: {
-      tenantId: string
+      /** @description 可省略；由 JWT 经 ConsoleTenantGuard 解析后强制覆盖 */
+      tenantId?: string
       jobCode: string
       /**
        * Format: date
@@ -6909,6 +6915,38 @@ export interface components {
       params?: {
         [key: string]: unknown
       }
+    }
+    /** @description 通知渠道创建请求（2026-07-09 写路径类型化，字段名与既有 Map 消费键一致） */
+    NotificationChannelUpsertRequest: {
+      channelCode?: string
+      channelName?: string
+      /** @enum {string} */
+      channelType?: 'EMAIL' | 'DINGTALK' | 'WECOM' | 'WEBHOOK' | 'SMS'
+      /** @description 渠道配置 JSON 字符串（原样写入 jsonb 列） */
+      configJson?: string
+      /** @default true */
+      enabled: boolean
+    }
+    /** @description 通知渠道更新请求；channelCode 取路径参数，body 不含。mapper 为全量覆盖更新，channelName/channelType 必填。 */
+    NotificationChannelUpdateRequest: {
+      channelName?: string
+      /** @enum {string} */
+      channelType?: 'EMAIL' | 'DINGTALK' | 'WECOM' | 'WEBHOOK' | 'SMS'
+      /** @description 渠道配置 JSON 字符串（原样写入 jsonb 列） */
+      configJson?: string
+      /** @default true */
+      enabled: boolean
+    }
+    /** @description 订阅规则创建/更新请求（2026-07-09 写路径类型化，字段名与既有 Map 消费键一致） */
+    SubscriptionRuleUpsertRequest: {
+      ruleName?: string
+      channelCode?: string
+      /** @description 逗号分隔事件类型，如 JOB_FAILED,JOB_TIMEOUT */
+      eventTypes?: string
+      severityFilter?: string
+      jobCodeFilter?: string
+      /** @default true */
+      enabled: boolean
     }
     BatchDayOperateRequest: {
       tenantId?: string
@@ -7162,17 +7200,46 @@ export interface components {
       reason?: string
     }
     AiChatRequest: {
-      tenantId: string
+      /** @description 租户 id;可由请求体或请求头携带(两者都给时须一致)。 */
+      tenantId?: string
+      /** @description 会话 id,多轮对话续接时回传上一轮响应的 sessionId;不传则后端以本次 requestId 起新会话。 */
+      sessionId?: string
+      /** @description 用户问题(必填,@NotBlank)。 */
       prompt: string
-      model?: string
-      conversationId?: string
+      /** @description 可选的附加上下文,任意 JSON 键值对(Map<String,Object>)。 */
+      context?: {
+        [key: string]: unknown
+      }
     }
     AiChatResponse: {
+      /** @description 本次请求 id（沿用请求元数据 requestId，缺失时后端生成）。 */
+      requestId: string
+      /** @description 链路追踪 id。 */
+      traceId: string
+      /** @description 会话 id，用于多轮对话续接（请求未带时回退为 requestId）。前端多轮对话请回传此值。 */
+      sessionId: string
+      /**
+       * @description 提示词门禁分类（AiPromptCategory）。
+       * @enum {string}
+       */
+      promptCategory: 'PLATFORM' | 'FILE_GOVERNANCE' | 'WORKFLOW' | 'OPERATIONS' | 'OUT_OF_SCOPE'
+      /**
+       * @description 提示词门禁决策（AiPromptDecision）。APPROVED=通过并作答；REJECTED_SCOPE=超出范围； REJECTED_AUTH=权限不足；REJECTED_DISABLED=功能关闭；REJECTED_SAFETY=安全策略拒绝；FAILED=失败。 前端据此判断是否被拒。
+       * @enum {string}
+       */
+      promptDecision:
+        | 'APPROVED'
+        | 'REJECTED_SCOPE'
+        | 'REJECTED_AUTH'
+        | 'REJECTED_DISABLED'
+        | 'REJECTED_SAFETY'
+        | 'FAILED'
+      /** @description 实际使用的模型名（来自服务端配置）。 */
+      modelName: string
+      /** @description 助手回答；被门禁拒绝时为对应的拒绝提示文案。 */
       answer: string
-      conversationId?: string
-      model?: string
-      promptTokens?: number
-      completionTokens?: number
+      /** @description 拒绝原因；APPROVED 时为 null，被门禁拒绝时给出原因。 */
+      refusalReason: string | null
     }
     AiAuditLogResponse: {
       /** Format: int64 */
@@ -9296,7 +9363,7 @@ export interface components {
     /** @enum {string} */
     WebhookDeliveryStatus: 'SUCCESS' | 'FAILED' | 'EXHAUSTED'
     /** @enum {string} */
-    NotificationChannelType: 'EMAIL' | 'WEBHOOK' | 'DINGTALK' | 'WECHAT' | 'SMS'
+    NotificationChannelType: 'EMAIL' | 'WEBHOOK' | 'DINGTALK' | 'WECOM' | 'SMS'
     /** @enum {string} */
     TenantStatus: 'ACTIVE' | 'SUSPENDED'
     /** @enum {string} */
@@ -9317,6 +9384,7 @@ export interface components {
     TenantIdHeader: string
     TenantIdQuery: string
     CalendarCodeQuery: string
+    /** @description 深翻页上限 10000;超深页请改用 cursor 分页(ADR-031) */
     PageNoQuery: number
     PageSizeQuery: number
     /** @description Filter by job code (partial match) */
@@ -12910,6 +12978,7 @@ export interface operations {
     parameters: {
       query?: {
         tenantId?: components['parameters']['TenantIdQuery']
+        /** @description 深翻页上限 10000;超深页请改用 cursor 分页(ADR-031) */
         pageNo?: components['parameters']['PageNoQuery']
         pageSize?: components['parameters']['PageSizeQuery']
         /** @description Filter by trace ID (partial match) */
@@ -13022,6 +13091,7 @@ export interface operations {
     parameters: {
       query?: {
         tenantId?: components['parameters']['TenantIdQuery']
+        /** @description 深翻页上限 10000;超深页请改用 cursor 分页(ADR-031) */
         pageNo?: components['parameters']['PageNoQuery']
         pageSize?: components['parameters']['PageSizeQuery']
         /** @description alert / approval / job_instance / worker / auth / api_key / outbox 等 */
@@ -13056,6 +13126,7 @@ export interface operations {
     parameters: {
       query?: {
         tenantId?: components['parameters']['TenantIdQuery']
+        /** @description 深翻页上限 10000;超深页请改用 cursor 分页(ADR-031) */
         pageNo?: components['parameters']['PageNoQuery']
         pageSize?: components['parameters']['PageSizeQuery']
       }
@@ -13162,6 +13233,7 @@ export interface operations {
         startDate?: components['parameters']['StartDateFilter']
         /** @description Filter end date (ISO date, inclusive) */
         endDate?: components['parameters']['EndDateFilter']
+        /** @description 深翻页上限 10000;超深页请改用 cursor 分页(ADR-031) */
         pageNo?: components['parameters']['PageNoQuery']
         pageSize?: components['parameters']['PageSizeQuery']
       }
@@ -13198,6 +13270,7 @@ export interface operations {
         requesterId?: string
         /** @description 可选,大小写不敏感模糊匹配 approvalNo / requesterId / targetType / targetId 任一。 */
         keyword?: string
+        /** @description 深翻页上限 10000;超深页请改用 cursor 分页(ADR-031) */
         pageNo?: components['parameters']['PageNoQuery']
         pageSize?: components['parameters']['PageSizeQuery']
       }
@@ -13222,6 +13295,7 @@ export interface operations {
     parameters: {
       query?: {
         tenantId?: components['parameters']['TenantIdQuery']
+        /** @description 深翻页上限 10000;超深页请改用 cursor 分页(ADR-031) */
         pageNo?: components['parameters']['PageNoQuery']
         pageSize?: components['parameters']['PageSizeQuery']
         /** @description Filter by file status (exact match) */
@@ -13282,6 +13356,7 @@ export interface operations {
     parameters: {
       query?: {
         tenantId?: components['parameters']['TenantIdQuery']
+        /** @description 深翻页上限 10000;超深页请改用 cursor 分页(ADR-031) */
         pageNo?: components['parameters']['PageNoQuery']
         pageSize?: components['parameters']['PageSizeQuery']
         /** @description Filter by job code (partial match) */
@@ -13354,6 +13429,7 @@ export interface operations {
     parameters: {
       query?: {
         tenantId?: components['parameters']['TenantIdQuery']
+        /** @description 深翻页上限 10000;超深页请改用 cursor 分页(ADR-031) */
         pageNo?: components['parameters']['PageNoQuery']
         pageSize?: components['parameters']['PageSizeQuery']
         /** @description Filter by event type (exact match) */
@@ -13384,6 +13460,7 @@ export interface operations {
     parameters: {
       query?: {
         tenantId?: components['parameters']['TenantIdQuery']
+        /** @description 深翻页上限 10000;超深页请改用 cursor 分页(ADR-031) */
         pageNo?: components['parameters']['PageNoQuery']
         pageSize?: components['parameters']['PageSizeQuery']
         /** @description Filter by event type (exact match) */
@@ -13417,6 +13494,7 @@ export interface operations {
     parameters: {
       query?: {
         tenantId?: components['parameters']['TenantIdQuery']
+        /** @description 深翻页上限 10000;超深页请改用 cursor 分页(ADR-031) */
         pageNo?: components['parameters']['PageNoQuery']
         pageSize?: components['parameters']['PageSizeQuery']
       }
@@ -13465,6 +13543,7 @@ export interface operations {
     parameters: {
       query?: {
         tenantId?: components['parameters']['TenantIdQuery']
+        /** @description 深翻页上限 10000;超深页请改用 cursor 分页(ADR-031) */
         pageNo?: components['parameters']['PageNoQuery']
         pageSize?: components['parameters']['PageSizeQuery']
       }
@@ -13513,6 +13592,7 @@ export interface operations {
     parameters: {
       query?: {
         tenantId?: components['parameters']['TenantIdQuery']
+        /** @description 深翻页上限 10000;超深页请改用 cursor 分页(ADR-031) */
         pageNo?: components['parameters']['PageNoQuery']
         pageSize?: components['parameters']['PageSizeQuery']
       }
@@ -13561,6 +13641,7 @@ export interface operations {
     parameters: {
       query?: {
         tenantId?: components['parameters']['TenantIdQuery']
+        /** @description 深翻页上限 10000;超深页请改用 cursor 分页(ADR-031) */
         pageNo?: components['parameters']['PageNoQuery']
         pageSize?: components['parameters']['PageSizeQuery']
       }
@@ -13585,6 +13666,7 @@ export interface operations {
     parameters: {
       query?: {
         tenantId?: components['parameters']['TenantIdQuery']
+        /** @description 深翻页上限 10000;超深页请改用 cursor 分页(ADR-031) */
         pageNo?: components['parameters']['PageNoQuery']
         pageSize?: components['parameters']['PageSizeQuery']
       }
@@ -13609,6 +13691,7 @@ export interface operations {
     parameters: {
       query?: {
         tenantId?: components['parameters']['TenantIdQuery']
+        /** @description 深翻页上限 10000;超深页请改用 cursor 分页(ADR-031) */
         pageNo?: components['parameters']['PageNoQuery']
         pageSize?: components['parameters']['PageSizeQuery']
       }
@@ -13633,6 +13716,7 @@ export interface operations {
     parameters: {
       query?: {
         tenantId?: components['parameters']['TenantIdQuery']
+        /** @description 深翻页上限 10000;超深页请改用 cursor 分页(ADR-031) */
         pageNo?: components['parameters']['PageNoQuery']
         pageSize?: components['parameters']['PageSizeQuery']
         /** @description Filter by enabled status. Defaults to true (only enabled records returned unless overridden). */
@@ -13659,6 +13743,7 @@ export interface operations {
     parameters: {
       query?: {
         tenantId?: components['parameters']['TenantIdQuery']
+        /** @description 深翻页上限 10000;超深页请改用 cursor 分页(ADR-031) */
         pageNo?: components['parameters']['PageNoQuery']
         pageSize?: components['parameters']['PageSizeQuery']
       }
@@ -13683,6 +13768,7 @@ export interface operations {
     parameters: {
       query?: {
         tenantId?: components['parameters']['TenantIdQuery']
+        /** @description 深翻页上限 10000;超深页请改用 cursor 分页(ADR-031) */
         pageNo?: components['parameters']['PageNoQuery']
         pageSize?: components['parameters']['PageSizeQuery']
       }
@@ -13707,6 +13793,7 @@ export interface operations {
     parameters: {
       query?: {
         tenantId?: components['parameters']['TenantIdQuery']
+        /** @description 深翻页上限 10000;超深页请改用 cursor 分页(ADR-031) */
         pageNo?: components['parameters']['PageNoQuery']
         pageSize?: components['parameters']['PageSizeQuery']
         /** @description Filter by enabled status. Defaults to true (only enabled records returned unless overridden). */
@@ -13733,6 +13820,7 @@ export interface operations {
     parameters: {
       query?: {
         tenantId?: components['parameters']['TenantIdQuery']
+        /** @description 深翻页上限 10000;超深页请改用 cursor 分页(ADR-031) */
         pageNo?: components['parameters']['PageNoQuery']
         pageSize?: components['parameters']['PageSizeQuery']
         /** @description Filter by job code (partial match) */
@@ -13802,6 +13890,7 @@ export interface operations {
     parameters: {
       query: {
         tenantId?: components['parameters']['TenantIdQuery']
+        /** @description 深翻页上限 10000;超深页请改用 cursor 分页(ADR-031) */
         pageNo?: components['parameters']['PageNoQuery']
         pageSize?: components['parameters']['PageSizeQuery']
         /** @description 锚定的作业实例 ID(必填)。 */
@@ -13838,6 +13927,7 @@ export interface operations {
     parameters: {
       query?: {
         tenantId?: components['parameters']['TenantIdQuery']
+        /** @description 深翻页上限 10000;超深页请改用 cursor 分页(ADR-031) */
         pageNo?: components['parameters']['PageNoQuery']
         pageSize?: components['parameters']['PageSizeQuery']
         /** @description Filter by job instance ID */
@@ -13888,6 +13978,7 @@ export interface operations {
     parameters: {
       query?: {
         tenantId?: components['parameters']['TenantIdQuery']
+        /** @description 深翻页上限 10000;超深页请改用 cursor 分页(ADR-031) */
         pageNo?: components['parameters']['PageNoQuery']
         pageSize?: components['parameters']['PageSizeQuery']
         /** @description Filter by job instance ID */
@@ -13916,6 +14007,7 @@ export interface operations {
     parameters: {
       query?: {
         tenantId?: components['parameters']['TenantIdQuery']
+        /** @description 深翻页上限 10000;超深页请改用 cursor 分页(ADR-031) */
         pageNo?: components['parameters']['PageNoQuery']
         pageSize?: components['parameters']['PageSizeQuery']
         /** @description Filter by workflow code (partial match) */
@@ -13944,6 +14036,7 @@ export interface operations {
     parameters: {
       query?: {
         tenantId?: components['parameters']['TenantIdQuery']
+        /** @description 深翻页上限 10000;超深页请改用 cursor 分页(ADR-031) */
         pageNo?: components['parameters']['PageNoQuery']
         pageSize?: components['parameters']['PageSizeQuery']
         /** @description Filter by workflow definition ID */
@@ -13970,6 +14063,7 @@ export interface operations {
     parameters: {
       query?: {
         tenantId?: components['parameters']['TenantIdQuery']
+        /** @description 深翻页上限 10000;超深页请改用 cursor 分页(ADR-031) */
         pageNo?: components['parameters']['PageNoQuery']
         pageSize?: components['parameters']['PageSizeQuery']
         /** @description Filter by workflow definition ID */
@@ -13996,6 +14090,7 @@ export interface operations {
     parameters: {
       query?: {
         tenantId?: components['parameters']['TenantIdQuery']
+        /** @description 深翻页上限 10000;超深页请改用 cursor 分页(ADR-031) */
         pageNo?: components['parameters']['PageNoQuery']
         pageSize?: components['parameters']['PageSizeQuery']
         /** @description Filter by workflow definition ID */
@@ -14050,6 +14145,7 @@ export interface operations {
     parameters: {
       query?: {
         tenantId?: components['parameters']['TenantIdQuery']
+        /** @description 深翻页上限 10000;超深页请改用 cursor 分页(ADR-031) */
         pageNo?: components['parameters']['PageNoQuery']
         pageSize?: components['parameters']['PageSizeQuery']
         /** @description Filter by workflow run ID */
@@ -14122,6 +14218,7 @@ export interface operations {
     parameters: {
       query?: {
         tenantId?: components['parameters']['TenantIdQuery']
+        /** @description 深翻页上限 10000;超深页请改用 cursor 分页(ADR-031) */
         pageNo?: components['parameters']['PageNoQuery']
         pageSize?: components['parameters']['PageSizeQuery']
       }
@@ -14146,6 +14243,7 @@ export interface operations {
     parameters: {
       query?: {
         tenantId?: components['parameters']['TenantIdQuery']
+        /** @description 深翻页上限 10000;超深页请改用 cursor 分页(ADR-031) */
         pageNo?: components['parameters']['PageNoQuery']
         pageSize?: components['parameters']['PageSizeQuery']
       }
@@ -14170,6 +14268,7 @@ export interface operations {
     parameters: {
       query?: {
         tenantId?: components['parameters']['TenantIdQuery']
+        /** @description 深翻页上限 10000;超深页请改用 cursor 分页(ADR-031) */
         pageNo?: components['parameters']['PageNoQuery']
         pageSize?: components['parameters']['PageSizeQuery']
       }
@@ -14204,6 +14303,7 @@ export interface operations {
         keyword?: string
         /** @description cursor 分页 token(ADR-031),非空时走 cursor 模式。 */
         cursor?: string
+        /** @description 深翻页上限 10000;超深页请改用 cursor 分页(ADR-031) */
         pageNo?: components['parameters']['PageNoQuery']
         pageSize?: components['parameters']['PageSizeQuery']
       }
@@ -14231,6 +14331,7 @@ export interface operations {
         calendarCode: components['parameters']['CalendarCodeQuery']
         from?: string
         to?: string
+        /** @description 深翻页上限 10000;超深页请改用 cursor 分页(ADR-031) */
         pageNo?: components['parameters']['PageNoQuery']
         pageSize?: components['parameters']['PageSizeQuery']
       }
@@ -14280,6 +14381,7 @@ export interface operations {
     parameters: {
       query?: {
         tenantId?: components['parameters']['TenantIdQuery']
+        /** @description 深翻页上限 10000;超深页请改用 cursor 分页(ADR-031) */
         pageNo?: components['parameters']['PageNoQuery']
         pageSize?: components['parameters']['PageSizeQuery']
       }
@@ -15287,6 +15389,7 @@ export interface operations {
         queueCode?: string
         queueType?: string
         enabled?: boolean
+        /** @description 深翻页上限 10000;超深页请改用 cursor 分页(ADR-031) */
         pageNo?: components['parameters']['PageNoQuery']
         pageSize?: components['parameters']['PageSizeQuery']
       }
@@ -15394,6 +15497,7 @@ export interface operations {
         tenantId: string
         windowCode?: string
         enabled?: boolean
+        /** @description 深翻页上限 10000;超深页请改用 cursor 分页(ADR-031) */
         pageNo?: components['parameters']['PageNoQuery']
         pageSize?: components['parameters']['PageSizeQuery']
       }
@@ -15501,6 +15605,7 @@ export interface operations {
         tenantId: string
         calendarCode?: string
         enabled?: boolean
+        /** @description 深翻页上限 10000;超深页请改用 cursor 分页(ADR-031) */
         pageNo?: components['parameters']['PageNoQuery']
         pageSize?: components['parameters']['PageSizeQuery']
       }
@@ -16156,6 +16261,7 @@ export interface operations {
         tenantId: string
         policyCode?: string
         enabled?: boolean
+        /** @description 深翻页上限 10000;超深页请改用 cursor 分页(ADR-031) */
         pageNo?: components['parameters']['PageNoQuery']
         pageSize?: components['parameters']['PageSizeQuery']
       }
@@ -16265,6 +16371,7 @@ export interface operations {
         team?: string
         severity?: string
         enabled?: boolean
+        /** @description 深翻页上限 10000;超深页请改用 cursor 分页(ADR-031) */
         pageNo?: components['parameters']['PageNoQuery']
         pageSize?: components['parameters']['PageSizeQuery']
       }
@@ -16373,6 +16480,7 @@ export interface operations {
         jobCode?: string
         pipelineType?: string
         enabled?: boolean
+        /** @description 深翻页上限 10000;超深页请改用 cursor 分页(ADR-031) */
         pageNo?: components['parameters']['PageNoQuery']
         pageSize?: components['parameters']['PageSizeQuery']
       }
@@ -16899,6 +17007,7 @@ export interface operations {
         channelType?: string
         /** @description Filter by enabled status. Defaults to true (only enabled records returned unless overridden). */
         enabled?: boolean
+        /** @description 深翻页上限 10000;超深页请改用 cursor 分页(ADR-031) */
         pageNo?: components['parameters']['PageNoQuery']
         pageSize?: components['parameters']['PageSizeQuery']
       }
@@ -17031,6 +17140,7 @@ export interface operations {
         fileType?: string
         /** @description Filter by enabled status. Defaults to true (only enabled records returned unless overridden). */
         enabled?: boolean
+        /** @description 深翻页上限 10000;超深页请改用 cursor 分页(ADR-031) */
         pageNo?: components['parameters']['PageNoQuery']
         pageSize?: components['parameters']['PageSizeQuery']
       }
@@ -18518,7 +18628,7 @@ export interface operations {
     }
     requestBody: {
       content: {
-        'application/json': Record<string, never>
+        'application/json': components['schemas']['NotificationChannelUpsertRequest']
       }
     }
     responses: {
@@ -18570,7 +18680,7 @@ export interface operations {
     }
     requestBody: {
       content: {
-        'application/json': Record<string, never>
+        'application/json': components['schemas']['NotificationChannelUpdateRequest']
       }
     }
     responses: {
@@ -18622,7 +18732,7 @@ export interface operations {
     }
     requestBody?: never
     responses: {
-      /** @description Test result */
+      /** @description Test result（真实投递结果，非固定成功） */
       200: {
         headers: {
           [name: string]: unknown
@@ -18666,7 +18776,7 @@ export interface operations {
     }
     requestBody: {
       content: {
-        'application/json': Record<string, never>
+        'application/json': components['schemas']['SubscriptionRuleUpsertRequest']
       }
     }
     responses: {
@@ -18718,7 +18828,7 @@ export interface operations {
     }
     requestBody: {
       content: {
-        'application/json': Record<string, never>
+        'application/json': components['schemas']['SubscriptionRuleUpsertRequest']
       }
     }
     responses: {
