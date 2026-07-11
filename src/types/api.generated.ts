@@ -6311,6 +6311,291 @@ export interface components {
     CommonResponseObject: components['schemas']['CommonResponseBase'] & {
       data?: unknown
     }
+    CacheEvictionResponse: {
+      /** @description 已失效的缓存键描述。 */
+      evicted: string
+    }
+    CommonResponseCacheEviction: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['CacheEvictionResponse']
+    }
+    ResourceQueueResponse: {
+      /** Format: int64 */
+      id: number
+      tenantId: string
+      queueCode: string
+      queueName?: string | null
+      queueType: string
+      /** Format: int32 */
+      maxRunningJobs?: number | null
+      /** Format: int32 */
+      maxRunningPartitions?: number | null
+      /** Format: int32 */
+      maxQps?: number | null
+      workerGroup?: string | null
+      resourceTag?: string | null
+      priorityPolicy?: string | null
+      /** Format: int32 */
+      fairShareWeight?: number | null
+      enabled: boolean
+      description?: string | null
+      /** Format: date-time */
+      createdAt?: string | null
+      /** Format: date-time */
+      updatedAt?: string | null
+    }
+    ResourceQueuePageResponse: {
+      /** Format: int64 */
+      total: number
+      /** Format: int32 */
+      pageNo: number
+      /** Format: int32 */
+      pageSize: number
+      items: components['schemas']['ResourceQueueResponse'][]
+    }
+    CommonResponseResourceQueue: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['ResourceQueueResponse']
+    }
+    CommonResponseResourceQueuePage: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['ResourceQueuePageResponse']
+    }
+    QuotaPolicyResponse: {
+      /** Format: int64 */
+      id: number
+      tenantId: string
+      policyCode: string
+      /** Format: int32 */
+      maxRunningJobsPerTenant?: number | null
+      /** Format: int32 */
+      maxPartitionsPerTenant?: number | null
+      /** Format: int32 */
+      maxQpsPerTenant?: number | null
+      /** Format: int32 */
+      fairShareWeight?: number | null
+      enabled: boolean
+      description?: string | null
+      /** Format: date-time */
+      createdAt?: string | null
+      /** Format: date-time */
+      updatedAt?: string | null
+    }
+    QuotaPolicyPageResponse: {
+      /** Format: int64 */
+      total: number
+      /** Format: int32 */
+      pageNo: number
+      /** Format: int32 */
+      pageSize: number
+      items: components['schemas']['QuotaPolicyResponse'][]
+    }
+    CommonResponseQuotaPolicy: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['QuotaPolicyResponse']
+    }
+    CommonResponseQuotaPolicyPage: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['QuotaPolicyPageResponse']
+    }
+    ConfigDependentJobResponse: {
+      /** Format: int64 */
+      id: number
+      code: string
+      name: string
+    }
+    ConfigDependenciesResponse: {
+      configType: string
+      configCode: string
+      dependentJobs: components['schemas']['ConfigDependentJobResponse'][]
+      /** Format: int32 */
+      dependentJobCount: number
+    }
+    CommonResponseConfigDependencies: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['ConfigDependenciesResponse']
+    }
+    ConfigReleaseDiffResponse: {
+      releaseA: components['schemas']['ConsoleConfigReleaseResponse']
+      releaseB: components['schemas']['ConsoleConfigReleaseResponse']
+      payloadChanged: boolean
+      payloadA?: unknown
+      payloadB?: unknown
+      grayScopeChanged: boolean
+      statusChanged: boolean
+    }
+    CommonResponseConfigReleaseDiff: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['ConfigReleaseDiffResponse']
+    }
+    ConfigSyncSummaryResponse: {
+      /** Format: int32 */
+      jobDefinitions: number
+      /** Format: int32 */
+      workflowDefinitions: number
+      /** Format: int32 */
+      pipelineDefinitions: number
+      /** Format: int32 */
+      fileChannels: number
+      /** Format: int32 */
+      fileTemplates: number
+    }
+    ConfigSyncExportResponse: {
+      sourceTenantId: string
+      sourceEnv: string
+      targetEnv: string
+      summary: components['schemas']['ConfigSyncSummaryResponse']
+      bundle: components['schemas']['ConfigSyncBundlePayload']
+    }
+    ConfigSyncPreviewResponse: {
+      tenantId: string
+      sourceTenantId: string
+      sourceEnv: string
+      targetEnv: string
+      summary: components['schemas']['ConfigSyncSummaryResponse']
+    }
+    ConfigSyncImportResponse: {
+      /** Format: int64 */
+      syncLogId: number
+      summary: components['schemas']['ConfigSyncSummaryResponse']
+      result: components['schemas']['TenantConfigBatchInitResponse']
+    }
+    ConfigSyncLogResponse: {
+      /** Format: int64 */
+      id: number
+      tenantId: string
+      syncDirection: string
+      sourceEnv?: string | null
+      targetEnv?: string | null
+      configTypes?: string | null
+      /** Format: int32 */
+      totalItems: number
+      /** Format: int32 */
+      successItems: number
+      /** Format: int32 */
+      failedItems: number
+      /** Format: int32 */
+      skippedItems: number
+      syncStatus: string
+      detailJson?: unknown
+      operatorId?: string | null
+      /** Format: date-time */
+      createdAt?: string | null
+    }
+    CommonResponseConfigSyncExport: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['ConfigSyncExportResponse']
+    }
+    CommonResponseConfigSyncPreview: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['ConfigSyncPreviewResponse']
+    }
+    CommonResponseConfigSyncImport: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['ConfigSyncImportResponse']
+    }
+    CommonResponseConfigSyncLogList: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['ConfigSyncLogResponse'][]
+    }
+    CapacityProfileResponse: {
+      /** Format: date-time */
+      generatedAt: string
+      tenantId: string
+      window: {
+        /** Format: date-time */
+        from: string
+        /** Format: date-time */
+        to: string
+      }
+      /** @enum {string} */
+      groupBy: 'TENANT' | 'JOB' | 'WORKER'
+      scope: string
+      rows: components['schemas']['CapacityProfileRow'][]
+      totals: components['schemas']['CapacityProfileTotals']
+      coverage: components['schemas']['CapacityProfileCoverage']
+    }
+    CapacityProfileRow: {
+      tenantId?: string | null
+      jobCode?: string | null
+      workerCode?: string | null
+      workerGroup?: string | null
+      /** Format: int64 */
+      instanceCount: number
+      /** Format: int64 */
+      taskCount: number
+      /** Format: int64 */
+      successCount: number
+      /** Format: int64 */
+      failureCount: number
+      /** Format: int64 */
+      totalDurationMs: number
+      /** Format: int64 */
+      avgDurationMs: number
+      /** Format: int64 */
+      p95DurationMs: number
+      /** Format: int64 */
+      totalFileBytes: number
+      /** Format: int64 */
+      processedRecords: number
+      /** Format: double */
+      recordsPerSecond: number
+      /** Format: double */
+      mbPerSecond: number
+    }
+    CapacityProfileTotals: {
+      /** Format: int64 */
+      instanceCount: number
+      /** Format: int64 */
+      taskCount: number
+      /** Format: int64 */
+      successCount: number
+      /** Format: int64 */
+      failureCount: number
+      /** Format: int64 */
+      totalDurationMs: number
+      /** Format: int64 */
+      totalFileBytes: number
+      /** Format: int64 */
+      processedRecords: number
+    }
+    CapacityProfileCoverage: {
+      evidenceSource?: string | null
+      knownGaps?: string[]
+      rejectedScopes?: string[]
+    }
+    CommonResponseCapacityProfile: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['CapacityProfileResponse']
+    }
+    LineageCoverage: {
+      scope: string
+      /** Format: int64 */
+      resultVersionId: number
+      sources: {
+        [key: string]: string
+      }
+      jobInstanceFound: boolean
+      /** Format: int64 */
+      payloadFileId?: number | null
+      payloadFileResolved: boolean
+      /** Format: int32 */
+      pipelineInstanceCount: number
+      /** Format: int32 */
+      fileRecordCount: number
+      /** Format: int32 */
+      dispatchRecordCount: number
+      knownGaps: string[]
+    }
+    LineageEvidenceResponse: {
+      resultVersion: {
+        [key: string]: unknown
+      }
+      jobInstance?: {
+        [key: string]: unknown
+      } | null
+      pipelineInstances: {
+        [key: string]: unknown
+      }[]
+      fileRecords: {
+        [key: string]: unknown
+      }[]
+      dispatchRecords: {
+        [key: string]: unknown
+      }[]
+      coverage: components['schemas']['LineageCoverage']
+    }
+    CommonResponseLineageEvidence: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['LineageEvidenceResponse']
+    }
     /** @description JOB asset freshness SLA 策略。只服务 readiness/freshness 告警，不表达数据目录或业务正确性裁定。 */
     AssetFreshnessPolicy: {
       /** Format: int64 */
@@ -9376,6 +9661,1004 @@ export interface components {
     TriggerResourceType: 'JOB' | 'WORKFLOW' | 'FILE_CHANNEL' | 'FILE_TEMPLATE'
     /** @enum {string} */
     ArrivalState: 'WAITING' | 'PARTIAL' | 'COMPLETE' | 'TIMEOUT' | 'TRIGGERED'
+    /** @description 实例生命周期动作结果；cancelRequestedTasks 仅对 RUNNING 实例的 cancel 出现。 */
+    InstanceActionResponse: {
+      /** Format: int64 */
+      id: number
+      instanceNo: string
+      status: string
+      /** Format: int32 */
+      cancelRequestedTasks?: number | null
+    }
+    CommonResponseInstanceAction: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['InstanceActionResponse']
+    }
+    PartitionActionResponse: {
+      /** Format: int64 */
+      id: number
+      status: string
+    }
+    CommonResponsePartitionAction: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['PartitionActionResponse']
+    }
+    RetryFailedPartitionsResponse: {
+      /** Format: int64 */
+      id: number
+      instanceNo: string
+      /** Format: int32 */
+      requested: number
+      /** Format: int32 */
+      retried: number
+      /** Format: int32 */
+      conflicts: number
+      partitionIds: number[]
+    }
+    CommonResponseRetryFailedPartitions: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['RetryFailedPartitionsResponse']
+    }
+    BatchDayOperateResponse: {
+      /** Format: int64 */
+      batchDayId: number
+      dayStatus: string
+      frozen: boolean
+      /** Format: int32 */
+      releasedLaunchCount: number
+    }
+    CommonResponseBatchDayOperate: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['BatchDayOperateResponse']
+    }
+    /** @description ADR-020 批次日重放 session 投影（console 透传 orchestrator 实体）。 */
+    BatchDayReplaySession: {
+      /** Format: int64 */
+      id: number
+      tenantId: string
+      calendarCode: string
+      /** Format: date */
+      bizDate: string
+      scope: string
+      scopePayload?: string | null
+      resultPolicy?: string | null
+      configVersionPolicy?: string | null
+      /** Format: int32 */
+      configVersion?: number | null
+      reason?: string | null
+      /** Format: int64 */
+      approvalId?: number | null
+      status: string
+      /** Format: int32 */
+      totalCount?: number | null
+      /** Format: int32 */
+      succeededCount?: number | null
+      /** Format: int32 */
+      failedCount?: number | null
+      /** Format: int32 */
+      inFlightCount?: number | null
+      requestedBy?: string | null
+      approvedBy?: string | null
+      /** Format: date-time */
+      startedAt?: string | null
+      /** Format: date-time */
+      completedAt?: string | null
+      traceId?: string | null
+      /** Format: date-time */
+      createdAt?: string | null
+      /** Format: date-time */
+      updatedAt?: string | null
+    }
+    CommonResponseBatchDayReplaySession: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['BatchDayReplaySession']
+    }
+    /** @description ADR-020 批次日重放 entry 投影（console 透传 orchestrator 实体）。 */
+    BatchDayReplayEntry: {
+      /** Format: int64 */
+      id: number
+      /** Format: int64 */
+      sessionId: number
+      tenantId: string
+      jobCode?: string | null
+      /** Format: int64 */
+      sourceInstanceId?: number | null
+      /** Format: int64 */
+      rerunInstanceId?: number | null
+      status: string
+      failureReason?: string | null
+      /** Format: date-time */
+      startedAt?: string | null
+      /** Format: date-time */
+      finishedAt?: string | null
+      /** Format: int64 */
+      resultVersionId?: number | null
+      /** Format: date-time */
+      createdAt?: string | null
+      /** Format: date-time */
+      updatedAt?: string | null
+    }
+    CommonResponseBatchDayReplayEntryList: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['BatchDayReplayEntry'][]
+    }
+    /** @description ADR-017 结果版本投影（console 透传 orchestrator 实体）。 */
+    ResultVersion: {
+      /** Format: int64 */
+      id: number
+      tenantId: string
+      businessKey: string
+      /** Format: int32 */
+      versionNo: number
+      /** Format: int64 */
+      jobInstanceId?: number | null
+      status: string
+      /** Format: date-time */
+      effectiveAt?: string | null
+      /** Format: date-time */
+      deactivatedAt?: string | null
+      payloadStorage?: string | null
+      payloadJson?: string | null
+      payloadRef?: string | null
+      /** Format: date-time */
+      generatedAt?: string | null
+      generatedBy?: string | null
+      promotionPolicy?: string | null
+      /** Format: int64 */
+      approvalId?: number | null
+      /** Format: date-time */
+      createdAt?: string | null
+      /** Format: date-time */
+      updatedAt?: string | null
+      dqGateStatus?: string | null
+    }
+    CommonResponseResultVersion: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['ResultVersion']
+    }
+    CommonResponseResultVersionList: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['ResultVersion'][]
+    }
+    DryRunFinding: {
+      code: string
+      /** @enum {string} */
+      severity: 'PASS' | 'WARN' | 'ERROR'
+      scope: string
+      message: string
+      /** @description 任意结构的附加上下文。 */
+      detail?: unknown
+    }
+    /** @description ADR-026 演练计划结果（console 透传 orchestrator DryRunPlanResult）。 */
+    DryRunPlan: {
+      /** @enum {string} */
+      level: 'CONFIG_VALIDATE' | 'SCHEDULE_PLAN' | 'EXECUTION_PLAN'
+      success: boolean
+      findings: components['schemas']['DryRunFinding'][]
+      /** @description 真动态汇总（counts / scheduledJobs / estimatedPartitions 等按 level 与命中规则变化的键集），保留自由键。 */
+      summary?: {
+        [key: string]: unknown
+      } | null
+    }
+    CommonResponseDryRunPlan: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['DryRunPlan']
+    }
+    CalendarResponse: {
+      /** Format: int64 */
+      id: number
+      tenantId: string
+      calendarCode: string
+      calendarName?: string | null
+      timezone?: string | null
+      holidayRollRule?: string | null
+      catchUpPolicy?: string | null
+      /** Format: int32 */
+      catchUpMaxDays?: number | null
+      enabled?: boolean | null
+      description?: string | null
+      /** Format: date-time */
+      createdAt?: string | null
+      /** Format: date-time */
+      updatedAt?: string | null
+    }
+    CalendarPageResponse: {
+      /** Format: int64 */
+      total: number
+      /** Format: int32 */
+      pageNo: number
+      /** Format: int32 */
+      pageSize: number
+      items: components['schemas']['CalendarResponse'][]
+    }
+    CommonResponseCalendar: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['CalendarResponse']
+    }
+    CommonResponseCalendarPage: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['CalendarPageResponse']
+    }
+    HolidayResponse: {
+      /** Format: int64 */
+      id: number
+      /** Format: int64 */
+      calendarId: number
+      /** Format: date */
+      bizDate: string
+      dayType: string
+      holidayName?: string | null
+      description?: string | null
+      /** Format: date-time */
+      createdAt?: string | null
+      /** Format: date-time */
+      updatedAt?: string | null
+    }
+    CommonResponseHoliday: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['HolidayResponse']
+    }
+    CommonResponseHolidayList: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['HolidayResponse'][]
+    }
+    TriggerActionResponse: {
+      tenantId: string
+      jobCode: string
+      status: string
+    }
+    CommonResponseTriggerAction: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['TriggerActionResponse']
+    }
+    SchedulerCommandResponse: {
+      status: string
+    }
+    CommonResponseSchedulerCommand: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['SchedulerCommandResponse']
+    }
+    JobBundleSummaryResponse: {
+      /** Format: int32 */
+      jobDefinitions: number
+      /** Format: int32 */
+      workflowDefinitions: number
+      /** Format: int32 */
+      pipelineDefinitions: number
+      /** Format: int32 */
+      fileChannels: number
+      /** Format: int32 */
+      fileTemplates: number
+      /** Format: int32 */
+      resourceQueues: number
+      /** Format: int32 */
+      batchWindows: number
+      /** Format: int32 */
+      businessCalendars: number
+      /** Format: int32 */
+      quotaPolicies: number
+      /** Format: int32 */
+      alertRoutings: number
+    }
+    JobBundleExportResponse: {
+      tenantId: string
+      jobCode: string
+      summary: components['schemas']['JobBundleSummaryResponse']
+      bundle: components['schemas']['ConfigSyncBundlePayload']
+    }
+    JobBundleResultResponse: {
+      tenantId: string
+      summary: components['schemas']['JobBundleSummaryResponse']
+      result: components['schemas']['TenantConfigBatchInitResponse']
+    }
+    CommonResponseJobBundleExport: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['JobBundleExportResponse']
+    }
+    CommonResponseJobBundleResult: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['JobBundleResultResponse']
+    }
+    /** @description 批量窗口投影。wire 红线：mapper 无列别名，历史响应键为 snake_case，故此处属性名保持 snake_case。 */
+    BatchWindowResponse: {
+      /** Format: int64 */
+      id: number
+      tenant_id: string
+      window_code: string
+      window_name?: string | null
+      timezone?: string | null
+      /** @description 局部时间 HH:mm[:ss]。 */
+      start_time?: string | null
+      /** @description 局部时间 HH:mm[:ss]。 */
+      end_time?: string | null
+      end_strategy?: string | null
+      out_of_window_action?: string | null
+      allow_cross_day?: boolean | null
+      enabled?: boolean | null
+      description?: string | null
+      /** Format: date-time */
+      created_at?: string | null
+      /** Format: date-time */
+      updated_at?: string | null
+    }
+    BatchWindowPageResponse: {
+      /** Format: int64 */
+      total: number
+      /** Format: int32 */
+      pageNo: number
+      /** Format: int32 */
+      pageSize: number
+      items: components['schemas']['BatchWindowResponse'][]
+    }
+    CommonResponseBatchWindow: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['BatchWindowResponse']
+    }
+    CommonResponseBatchWindowPage: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['BatchWindowPageResponse']
+    }
+    /** @description 手工触发 dry-run 校验结果；errors 仅在存在校验错误时出现。 */
+    DryRunResultResponse: {
+      tenantId: string
+      jobCode: string
+      bizDate?: string | null
+      valid: boolean
+      errors?: string[] | null
+    }
+    /** @description 批量触发单条结果；dryRun/result/instanceNo/error 依分支存在。 */
+    BatchTriggerEntryResponse: {
+      /** Format: int32 */
+      index: number
+      jobCode: string
+      bizDate?: string | null
+      dryRun?: boolean | null
+      status: string
+      result?: components['schemas']['DryRunResultResponse']
+      instanceNo?: string | null
+      error?: string | null
+    }
+    CommonResponseBatchTriggerList: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['BatchTriggerEntryResponse'][]
+    }
+    JobStatsDailyTrendEntry: {
+      /** @description LocalDate ISO 或占位符 UNKNOWN。 */
+      day: string
+      status: string
+      /** Format: int64 */
+      count: number
+    }
+    JobStatsResponse: {
+      /** @description job 实例状态值 → 计数（动态维度键，含 UNKNOWN 占位）。 */
+      byStatus: {
+        [key: string]: number
+      }
+      /** Format: int64 */
+      total: number
+      dailyTrend: components['schemas']['JobStatsDailyTrendEntry'][]
+    }
+    CommonResponseJobStats: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['JobStatsResponse']
+    }
+    TriggerTypeCountEntry: {
+      type: string
+      /** Format: int64 */
+      count: number
+    }
+    DayCountEntry: {
+      day: string
+      /** Format: int64 */
+      count: number
+    }
+    TriggerStatsResponse: {
+      byTriggerType: components['schemas']['TriggerTypeCountEntry'][]
+      dailyTrend: components['schemas']['DayCountEntry'][]
+    }
+    CommonResponseTriggerStats: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['TriggerStatsResponse']
+    }
+    WorkerStatusCountEntry: {
+      status: string
+      /** Format: int64 */
+      count: number
+    }
+    WorkerGroupStatusCountEntry: {
+      workerGroup: string
+      status: string
+      /** Format: int64 */
+      count: number
+    }
+    WorkerActivePartitionsEntry: {
+      workerCode: string
+      /** Format: int64 */
+      activePartitions: number
+    }
+    WorkerLoadResponse: {
+      byStatus: components['schemas']['WorkerStatusCountEntry'][]
+      byWorkerGroup: components['schemas']['WorkerGroupStatusCountEntry'][]
+      activePartitionsByWorker: components['schemas']['WorkerActivePartitionsEntry'][]
+    }
+    CommonResponseWorkerLoad: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['WorkerLoadResponse']
+    }
+    AlertSeverityCountEntry: {
+      severity: string
+      /** Format: int64 */
+      count: number
+    }
+    AlertDaySeverityCountEntry: {
+      day: string
+      severity: string
+      /** Format: int64 */
+      count: number
+    }
+    AlertTrendResponse: {
+      bySeverity: components['schemas']['AlertSeverityCountEntry'][]
+      dailyTrend: components['schemas']['AlertDaySeverityCountEntry'][]
+    }
+    CommonResponseAlertTrend: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['AlertTrendResponse']
+    }
+    SlaComplianceDayEntry: {
+      day: string
+      /** Format: int64 */
+      breached: number
+      /** Format: int64 */
+      onTime: number
+    }
+    SlaComplianceResponse: {
+      /** Format: int64 */
+      breached: number
+      /** Format: int64 */
+      onTime: number
+      /** Format: int64 */
+      totalWithSla: number
+      avgDurationSeconds?: number | null
+      dailyTrend: components['schemas']['SlaComplianceDayEntry'][]
+    }
+    CommonResponseSlaCompliance: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['SlaComplianceResponse']
+    }
+    SlaJobReportEntry: {
+      jobCode: string
+      jobName: string | null
+      /** Format: int64 */
+      totalInstances: number
+      /** Format: int64 */
+      successCount: number
+      /** Format: int64 */
+      failedCount: number
+      /** Format: int64 */
+      slaBreached: number
+      /** Format: int64 */
+      slaOnTime: number
+      avgDurationSeconds?: number | null
+      maxDurationSeconds?: number | null
+      /** Format: int64 */
+      totalPartitions: number
+    }
+    SlaReportResponse: {
+      tenantId: string
+      /** Format: int32 */
+      periodDays: number
+      jobs: components['schemas']['SlaJobReportEntry'][]
+    }
+    CommonResponseSlaReport: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['SlaReportResponse']
+    }
+    ExecutionProgressResponse: {
+      /** Format: int64 */
+      id: number
+      jobCode: string
+      instanceNo: string
+      instanceStatus: string
+      /** Format: int32 */
+      expectedPartitions: number
+      /** Format: int32 */
+      successPartitions: number
+      /** Format: int32 */
+      failedPartitions: number
+      /** Format: int32 */
+      completedPartitions: number
+      /** Format: int64 */
+      progressPercent: number
+      /** Format: date-time */
+      startedAt?: string | null
+      /** Format: date-time */
+      finishedAt?: string | null
+    }
+    CommonResponseExecutionProgressList: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['ExecutionProgressResponse'][]
+    }
+    TenantUsageResponse: {
+      tenantId: string
+      /** Format: int64 */
+      jobDefinitions: number
+      /** Format: int64 */
+      workflowDefinitions: number
+      /** Format: int64 */
+      fileChannels: number
+      /** Format: int64 */
+      fileTemplates: number
+      /** Format: int64 */
+      recentJobInstances: number
+      /** Format: int64 */
+      recentFiles: number
+      /** Format: int32 */
+      periodDays: number
+    }
+    CommonResponseTenantUsage: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['TenantUsageResponse']
+    }
+    /** @description 命中返回 {key,value}；未命中仅 {key}（value 省略）。 */
+    SystemParameterValueResponse: {
+      key: string
+      value?: string | null
+    }
+    CommonResponseSystemParameterValue: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['SystemParameterValueResponse']
+    }
+    ShedLockEntry: {
+      name: string
+      /** Format: date-time */
+      lockUntil?: string | null
+      /** Format: date-time */
+      lockedAt?: string | null
+      lockedBy?: string | null
+    }
+    ShedLockStatusResponse: {
+      /** Format: int32 */
+      totalLocks: number
+      /** Format: int64 */
+      activeLocks: number
+      locks: components['schemas']['ShedLockEntry'][]
+    }
+    CommonResponseShedLockStatus: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['ShedLockStatusResponse']
+    }
+    WorkerGroupCapacity: {
+      workerGroup?: string | null
+      /** Format: int64 */
+      totalWorkers: number
+      /** Format: int64 */
+      onlineWorkers: number
+      /** Format: int64 */
+      drainingWorkers: number
+      /** Format: int64 */
+      offlineWorkers: number
+      /** Format: int64 */
+      decommissionedWorkers: number
+      /** Format: int64 */
+      currentLoad: number
+      /** Format: int64 */
+      maxConcurrent: number
+    }
+    WorkerConsistencyResponse: {
+      /** Format: int64 */
+      onlineWorkers: number
+      /** Format: int64 */
+      drainingWorkers: number
+      /** Format: int64 */
+      offlineWorkers: number
+      /** Format: int64 */
+      staleOnlineWorkers: number
+      /** Format: int64 */
+      drainingPastDeadlineWorkers: number
+      /** Format: int64 */
+      decommissionedWorkersWithActiveTasks: number
+      /** Format: int64 */
+      invalidCapabilityTags: number
+      workerGroups: components['schemas']['WorkerGroupCapacity'][]
+      /** Format: int64 */
+      runningInstances: number
+      healthy: boolean
+    }
+    CommonResponseWorkerConsistency: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['WorkerConsistencyResponse']
+    }
+    DeliveryStatEntry: {
+      deliveryStatus?: string | null
+      /** Format: int64 */
+      cnt: number
+    }
+    OutboxHealthResponse: {
+      /** Format: int64 */
+      pendingEvents: number
+      /** Format: int64 */
+      activeEvents: number
+      /** Format: int64 */
+      stalePublishingEvents: number
+      deliveryStats: components['schemas']['DeliveryStatEntry'][]
+      healthy: boolean
+    }
+    CommonResponseOutboxHealth: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['OutboxHealthResponse']
+    }
+    TerminalChildrenHealthResponse: {
+      /** Format: int64 */
+      terminalInstancesWithActiveChildren: number
+      healthy: boolean
+    }
+    CommonResponseTerminalChildrenHealth: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['TerminalChildrenHealthResponse']
+    }
+    ClusterDiagnosticResponse: {
+      shedLock: components['schemas']['ShedLockStatusResponse']
+      workers: components['schemas']['WorkerConsistencyResponse']
+      outbox: components['schemas']['OutboxHealthResponse']
+      terminalChildren: components['schemas']['TerminalChildrenHealthResponse']
+    }
+    CommonResponseClusterDiagnostic: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['ClusterDiagnosticResponse']
+    }
+    /** @description job_instance 摘要；键恒定，值可 null。 */
+    DiagnosisInstanceSummary: {
+      /** Format: int64 */
+      id: number
+      instanceNo: string
+      jobCode: string
+      /** Format: date */
+      bizDate?: string | null
+      instanceStatus: string
+      queueCode?: string | null
+      workerGroup?: string | null
+      traceId?: string | null
+      /** Format: date-time */
+      startedAt?: string | null
+      /** Format: date-time */
+      deadlineAt?: string | null
+      /** Format: date-time */
+      now: string
+    }
+    DiagnosisStatusCount: {
+      status?: string | null
+      /** Format: int64 */
+      count: number
+    }
+    DiagnosisOutboxStatusCount: {
+      status?: string | null
+      /** Format: int64 */
+      count: number
+      /** Format: date-time */
+      oldest?: string | null
+      /** Format: date-time */
+      newest?: string | null
+    }
+    DiagnosisSummary: {
+      partitionStatusCounts: components['schemas']['DiagnosisStatusCount'][]
+      taskStatusCounts: components['schemas']['DiagnosisStatusCount'][]
+      outboxStatusCounts: components['schemas']['DiagnosisOutboxStatusCount'][]
+      /** Format: int64 */
+      onlineWorkersForGroup: number
+    }
+    DiagnosisFinding: {
+      severity: string
+      reasonCode: string
+      message: string
+      suggestedActions: string[]
+      /** @description 每条 finding 依类型携带异构键（instanceStatus / activePartitions / workerGroup / statusCounts …），真动态负载。 */
+      evidence: {
+        [key: string]: unknown
+      }
+    }
+    InstanceDiagnosisResponse: {
+      tenantId: string
+      /** Format: int64 */
+      jobInstanceId: number
+      healthy: boolean
+      instance: components['schemas']['DiagnosisInstanceSummary']
+      summary: components['schemas']['DiagnosisSummary']
+      findings: components['schemas']['DiagnosisFinding'][]
+    }
+    CommonResponseInstanceDiagnosis: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['InstanceDiagnosisResponse']
+    }
+    /** @description config_approval 单行（MyBatis map，省略 null 列）。 */
+    ConfigApprovalRow: {
+      /** Format: int64 */
+      id: number
+      tenantId?: string | null
+      /** Format: int64 */
+      releaseId?: number | null
+      approvalStatus: string
+      requestedBy?: string | null
+      /** Format: date-time */
+      requestedAt?: string | null
+      reviewedBy?: string | null
+      /** Format: date-time */
+      reviewedAt?: string | null
+      reviewComment?: string | null
+      /** Format: date-time */
+      expiredAt?: string | null
+      /** Format: date-time */
+      createdAt?: string | null
+      /** Format: date-time */
+      updatedAt?: string | null
+    }
+    ConfigApprovalDetailResponse: {
+      /** Format: int64 */
+      releaseId: number
+      tenantId: string
+      configType: string
+      configKey: string
+      configStatus: string
+      /** @description 最新审批行；无审批时为 null（键保留）。 */
+      approval?: components['schemas']['ConfigApprovalRow'] | null
+    }
+    CommonResponseConfigApprovalDetail: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['ConfigApprovalDetailResponse']
+    }
+    KafkaPartitionLag: {
+      topic: string
+      /** Format: int32 */
+      partition: number
+      /** Format: int64 */
+      committedOffset: number
+      /** Format: int64 */
+      endOffset: number
+      /** Format: int64 */
+      lag: number
+    }
+    /** @description 混合两种形态：正常组 {groupId,totalLag,partitionCount[,partitionsWithLag]}；出错条目 {[groupId,]error}。缺失键省略。 */
+    KafkaConsumerLagResponse: {
+      groupId?: string | null
+      /** Format: int64 */
+      totalLag?: number | null
+      /** Format: int32 */
+      partitionCount?: number | null
+      partitionsWithLag?: components['schemas']['KafkaPartitionLag'][] | null
+      error?: string | null
+    }
+    CommonResponseKafkaConsumerLagList: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['KafkaConsumerLagResponse'][]
+    }
+    /** @description 透传自 orchestrator ForensicExportResponse，字段 1:1；downloadUrl v0.1 恒为 null（键保留）。 */
+    ForensicExportResponse: {
+      exportId: string
+      status: string
+      storagePath?: string | null
+      /** Format: int64 */
+      fileSizeBytes?: number | null
+      sha256?: string | null
+      downloadUrl?: string | null
+    }
+    CommonResponseForensicExport: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['ForensicExportResponse']
+    }
+    /** @description 登录 RSA 公钥（PEM），供前端加密 login body。 */
+    ConsoleLoginPublicKeyResponse: {
+      algorithm: string
+      publicKey: string
+      fingerprint: string
+    }
+    CommonResponseConsoleLoginPublicKey: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['ConsoleLoginPublicKeyResponse']
+    }
+    /** @description 验证码公开配置（不含 secretKey）。 */
+    ConsoleCaptchaConfigResponse: {
+      provider: string
+      siteKey: string
+      loginProtectionEnabled: boolean
+    }
+    CommonResponseConsoleCaptchaConfig: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['ConsoleCaptchaConfigResponse']
+    }
+    /** @description 创建 API Key 结果；rawKey 明文仅此一次可见。 */
+    ConsoleApiKeyCreateResponse: {
+      /** Format: int64 */
+      id: number
+      keyName: string
+      keyPrefix: string
+      rawKey: string
+      /** Format: date-time */
+      createdAt: string
+    }
+    CommonResponseConsoleApiKeyCreate: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['ConsoleApiKeyCreateResponse']
+    }
+    /** @description 租户配额用量摘要；系统参数缺失时对应键省略（NON_NULL）。 */
+    ConsoleTenantUsageSummaryResponse: {
+      runningJobs?: string | null
+      dailyTriggers?: string | null
+      fileCount?: string | null
+    }
+    CommonResponseConsoleTenantUsageSummary: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['ConsoleTenantUsageSummaryResponse']
+    }
+    /** @description 通知渠道行（mapper 显式列，snake_case 键；config_json 为 jsonb 原样透传）。 */
+    ConsoleNotificationChannelResponse: {
+      /** Format: int64 */
+      id: number
+      tenant_id?: string | null
+      channel_code?: string | null
+      channel_name?: string | null
+      channel_type?: string | null
+      /** @description jsonb 渠道配置原样透传 */
+      config_json?: unknown
+      enabled?: boolean | null
+      created_by?: string | null
+      updated_by?: string | null
+      /** Format: date-time */
+      created_at?: string | null
+      /** Format: date-time */
+      updated_at?: string | null
+    }
+    CommonResponseConsoleNotificationChannel: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['ConsoleNotificationChannelResponse']
+    }
+    CommonResponseConsoleNotificationChannelList: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['ConsoleNotificationChannelResponse'][]
+    }
+    /** @description 订阅规则行（mapper 显式列，snake_case 键）。 */
+    ConsoleSubscriptionRuleResponse: {
+      /** Format: int64 */
+      id: number
+      tenant_id?: string | null
+      rule_name?: string | null
+      channel_code?: string | null
+      event_types?: string | null
+      severity_filter?: string | null
+      job_code_filter?: string | null
+      enabled?: boolean | null
+      created_by?: string | null
+      updated_by?: string | null
+      /** Format: date-time */
+      created_at?: string | null
+      /** Format: date-time */
+      updated_at?: string | null
+    }
+    CommonResponseConsoleSubscriptionRule: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['ConsoleSubscriptionRuleResponse']
+    }
+    CommonResponseConsoleSubscriptionRuleList: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['ConsoleSubscriptionRuleResponse'][]
+    }
+    /** @description 通知投递日志行（mapper 显式列，snake_case 键；payload_json/error_args 为 jsonb 原样透传）。 */
+    ConsoleNotificationDeliveryLogResponse: {
+      /** Format: int64 */
+      id: number
+      tenant_id?: string | null
+      /** Format: int64 */
+      rule_id?: number | null
+      channel_code?: string | null
+      event_type?: string | null
+      /** Format: int64 */
+      alert_event_id?: number | null
+      /** @description jsonb 投递负载原样透传 */
+      payload_json?: unknown
+      delivery_status?: string | null
+      error_message?: string | null
+      error_key?: string | null
+      /** @description jsonb i18n 占位参数原样透传 */
+      error_args?: unknown
+      /** Format: int32 */
+      attempt?: number | null
+      /** Format: date-time */
+      created_at?: string | null
+    }
+    CommonResponseConsoleNotificationDeliveryLogList: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['ConsoleNotificationDeliveryLogResponse'][]
+    }
+    /** @description 通知渠道测试结果（camelCase；httpStatus/errorSummary 键恒存在，值可空）。 */
+    ConsoleNotificationTestResultResponse: {
+      channelCode: string
+      channelType: string
+      success: boolean
+      status: string
+      message: string
+      /** Format: int32 */
+      httpStatus: number | null
+      errorSummary: string | null
+    }
+    CommonResponseConsoleNotificationTestResult: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['ConsoleNotificationTestResultResponse']
+    }
+    /** @description 告警路由配置行（snake_case 键，全列标量）。list 端点省略 created_by/updated_by/is_deleted；create/update（select *）含全部列。 */
+    ConsoleAlertRoutingConfigResponse: {
+      /** Format: int64 */
+      id: number
+      tenant_id?: string | null
+      route_code?: string | null
+      route_name?: string | null
+      team?: string | null
+      alert_group?: string | null
+      severity?: string | null
+      receiver?: string | null
+      group_by?: string | null
+      /** Format: int32 */
+      group_wait_seconds?: number | null
+      /** Format: int32 */
+      group_interval_seconds?: number | null
+      /** Format: int32 */
+      repeat_interval_seconds?: number | null
+      enabled?: boolean | null
+      description?: string | null
+      created_by?: string | null
+      updated_by?: string | null
+      /** Format: date-time */
+      created_at?: string | null
+      /** Format: date-time */
+      updated_at?: string | null
+      is_deleted?: boolean | null
+    }
+    ConsoleAlertRoutingConfigPageResponse: {
+      /** Format: int64 */
+      total: number
+      /** Format: int32 */
+      pageNo: number
+      /** Format: int32 */
+      pageSize: number
+      items: components['schemas']['ConsoleAlertRoutingConfigResponse'][]
+    }
+    CommonResponseConsoleAlertRouting: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['ConsoleAlertRoutingConfigResponse']
+    }
+    CommonResponseConsoleAlertRoutingPage: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['ConsoleAlertRoutingConfigPageResponse']
+    }
+    /** @description 可订阅事件类型（code + 本地化 description）。 */
+    ConsoleEventTypeResponse: {
+      code: string
+      description: string
+    }
+    CommonResponseConsoleEventTypeList: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['ConsoleEventTypeResponse'][]
+    }
+    /** @description Kafka Topic 映射（name + 本地化 description）。 */
+    ConsoleEventTopicResponse: {
+      name: string
+      description: string
+    }
+    CommonResponseConsoleEventTopicList: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['ConsoleEventTopicResponse'][]
+    }
+    /** @description 工作流运行实例生命周期动作结果（cancel/terminate/pause/resume）。 */
+    ConsoleWorkflowRunActionResponse: {
+      /** Format: int64 */
+      id: number
+      status: string
+    }
+    CommonResponseConsoleWorkflowRunAction: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['ConsoleWorkflowRunActionResponse']
+    }
+    /** @description 工作流运行实例跳过节点结果（nodeStatus 恒为 SKIPPED）。 */
+    ConsoleWorkflowRunSkipNodeResponse: {
+      /** Format: int64 */
+      id: number
+      nodeCode: string
+      nodeStatus: string
+    }
+    CommonResponseConsoleWorkflowRunSkipNode: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['ConsoleWorkflowRunSkipNodeResponse']
+    }
+    /** @description 流水线定义列表项（mapper 显式列，snake_case 键，全列标量）。 */
+    ConsolePipelineDefinitionListItemResponse: {
+      /** Format: int64 */
+      id: number
+      tenant_id?: string | null
+      job_code?: string | null
+      pipeline_name?: string | null
+      pipeline_type?: string | null
+      biz_type?: string | null
+      worker_group?: string | null
+      /** Format: int32 */
+      version?: number | null
+      enabled?: boolean | null
+      description?: string | null
+      /** Format: date-time */
+      created_at?: string | null
+      /** Format: date-time */
+      updated_at?: string | null
+    }
+    ConsolePipelineDefinitionListPageResponse: {
+      /** Format: int64 */
+      total: number
+      /** Format: int32 */
+      pageNo: number
+      /** Format: int32 */
+      pageSize: number
+      items: components['schemas']['ConsolePipelineDefinitionListItemResponse'][]
+    }
+    CommonResponseConsolePipelineDefinitionListPage: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['ConsolePipelineDefinitionListPageResponse']
+    }
+    /** @description 托管上传会话（camelCase，9 固定字段均恒存在）。 */
+    ConsoleFilePresignUploadResponse: {
+      /** Format: int64 */
+      fileId: number
+      status: string
+      uploadMode: string
+      uploadMethod: string
+      contentField: string
+      uploadUrl: string
+      storageBucket: string
+      storagePath: string
+      fileName: string
+    }
+    CommonResponseConsoleFilePresignUpload: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['ConsoleFilePresignUploadResponse']
+    }
   }
   responses: never
   parameters: {
@@ -9483,7 +10766,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseMapStringObject']
+          'application/json': components['schemas']['CommonResponseConsoleLoginPublicKey']
         }
       }
       /** @description Login encryption is unavailable */
@@ -9510,7 +10793,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseMapStringObject']
+          'application/json': components['schemas']['CommonResponseConsoleCaptchaConfig']
         }
       }
     }
@@ -9879,7 +11162,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseCacheEviction']
         }
       }
     }
@@ -9901,7 +11184,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseCacheEviction']
         }
       }
     }
@@ -9924,7 +11207,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseCacheEviction']
         }
       }
     }
@@ -9947,7 +11230,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseCacheEviction']
         }
       }
     }
@@ -9970,7 +11253,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseCacheEviction']
         }
       }
     }
@@ -9992,7 +11275,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseCacheEviction']
         }
       }
     }
@@ -10057,7 +11340,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseKafkaConsumerLagList']
         }
       }
     }
@@ -10490,7 +11773,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseMapStringObject']
+          'application/json': components['schemas']['CommonResponseForensicExport']
         }
       }
     }
@@ -10538,7 +11821,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseBatchDayReplaySession']
         }
       }
     }
@@ -10587,7 +11870,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseBatchDayReplaySession']
         }
       }
     }
@@ -10611,7 +11894,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseBatchDayReplaySession']
         }
       }
     }
@@ -10635,7 +11918,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseBatchDayReplaySession']
         }
       }
     }
@@ -10660,7 +11943,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObjectArray']
+          'application/json': components['schemas']['CommonResponseBatchDayReplayEntryList']
         }
       }
     }
@@ -10684,7 +11967,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObjectArray']
+          'application/json': components['schemas']['CommonResponseResultVersionList']
         }
       }
     }
@@ -10712,7 +11995,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseCapacityProfile']
         }
       }
     }
@@ -10891,7 +12174,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseLineageEvidence']
         }
       }
     }
@@ -10914,7 +12197,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseLineageEvidence']
         }
       }
     }
@@ -10937,7 +12220,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseResultVersion']
         }
       }
     }
@@ -10961,7 +12244,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseResultVersion']
         }
       }
     }
@@ -10985,7 +12268,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseResultVersion']
         }
       }
     }
@@ -11009,7 +12292,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseResultVersion']
         }
       }
     }
@@ -11033,7 +12316,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseDryRunPlan']
         }
       }
     }
@@ -11059,7 +12342,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseMapStringObject']
+          'application/json': components['schemas']['CommonResponseBatchDayOperate']
         }
       }
     }
@@ -11085,7 +12368,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseBatchTriggerList']
         }
       }
     }
@@ -11183,7 +12466,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseSystemParameterValue']
         }
       }
     }
@@ -11547,7 +12830,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseConsoleApiKeyCreate']
         }
       }
     }
@@ -14604,7 +15887,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseJobBundleResult']
         }
       }
     }
@@ -14627,7 +15910,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseJobBundleExport']
         }
       }
     }
@@ -14653,7 +15936,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseJobBundleResult']
         }
       }
     }
@@ -15001,7 +16284,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseString']
+          'application/json': components['schemas']['CommonResponseInstanceAction']
         }
       }
     }
@@ -15027,7 +16310,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseString']
+          'application/json': components['schemas']['CommonResponseInstanceAction']
         }
       }
     }
@@ -15053,7 +16336,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseString']
+          'application/json': components['schemas']['CommonResponseInstanceAction']
         }
       }
     }
@@ -15079,7 +16362,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseString']
+          'application/json': components['schemas']['CommonResponseInstanceAction']
         }
       }
     }
@@ -15127,7 +16410,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseString']
+          'application/json': components['schemas']['CommonResponseTriggerAction']
         }
       }
     }
@@ -15153,7 +16436,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseString']
+          'application/json': components['schemas']['CommonResponseTriggerAction']
         }
       }
     }
@@ -15179,7 +16462,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseString']
+          'application/json': components['schemas']['CommonResponseTriggerAction']
         }
       }
     }
@@ -15205,7 +16488,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseString']
+          'application/json': components['schemas']['CommonResponseTriggerAction']
         }
       }
     }
@@ -15405,7 +16688,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseResourceQueuePage']
         }
       }
     }
@@ -15431,7 +16714,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseResourceQueue']
         }
       }
     }
@@ -15459,7 +16742,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseResourceQueue']
         }
       }
     }
@@ -15513,7 +16796,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseBatchWindowPage']
         }
       }
     }
@@ -15539,7 +16822,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseBatchWindow']
         }
       }
     }
@@ -15567,7 +16850,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseBatchWindow']
         }
       }
     }
@@ -15621,7 +16904,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseCalendarPage']
         }
       }
     }
@@ -15647,7 +16930,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseCalendar']
         }
       }
     }
@@ -15675,7 +16958,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseCalendar']
         }
       }
     }
@@ -15726,7 +17009,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseHolidayList']
         }
       }
     }
@@ -15783,7 +17066,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseHoliday']
         }
       }
     }
@@ -15828,7 +17111,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseSchedulerCommand']
         }
       }
     }
@@ -15850,7 +17133,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseString']
+          'application/json': components['schemas']['CommonResponseSchedulerCommand']
         }
       }
     }
@@ -15872,7 +17155,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseString']
+          'application/json': components['schemas']['CommonResponseSchedulerCommand']
         }
       }
     }
@@ -15969,7 +17252,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseConfigDependencies']
         }
       }
     }
@@ -15993,7 +17276,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseConfigReleaseDiff']
         }
       }
     }
@@ -16017,7 +17300,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseConfigApprovalDetail']
         }
       }
     }
@@ -16045,7 +17328,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseConfigApprovalDetail']
         }
       }
     }
@@ -16073,7 +17356,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseConfigApprovalDetail']
         }
       }
     }
@@ -16101,7 +17384,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseConfigApprovalDetail']
         }
       }
     }
@@ -16127,7 +17410,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseConfigSyncExport']
         }
       }
     }
@@ -16153,7 +17436,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseConfigSyncPreview']
         }
       }
     }
@@ -16179,7 +17462,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseConfigSyncImport']
         }
       }
     }
@@ -16202,7 +17485,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseConfigSyncLogList']
         }
       }
     }
@@ -16277,7 +17560,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseQuotaPolicyPage']
         }
       }
     }
@@ -16303,7 +17586,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseQuotaPolicy']
         }
       }
     }
@@ -16331,7 +17614,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseQuotaPolicy']
         }
       }
     }
@@ -16387,7 +17670,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseConsoleAlertRoutingPage']
         }
       }
     }
@@ -16413,7 +17696,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseConsoleAlertRouting']
         }
       }
     }
@@ -16441,7 +17724,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseConsoleAlertRouting']
         }
       }
     }
@@ -16496,7 +17779,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseConsolePipelineDefinitionListPage']
         }
       }
     }
@@ -16627,7 +17910,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseRetryFailedPartitions']
         }
       }
     }
@@ -16653,7 +17936,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseString']
+          'application/json': components['schemas']['CommonResponsePartitionAction']
         }
       }
     }
@@ -16679,7 +17962,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseString']
+          'application/json': components['schemas']['CommonResponsePartitionAction']
         }
       }
     }
@@ -16705,7 +17988,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseString']
+          'application/json': components['schemas']['CommonResponseConsoleWorkflowRunAction']
         }
       }
     }
@@ -16731,7 +18014,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseString']
+          'application/json': components['schemas']['CommonResponseConsoleWorkflowRunAction']
         }
       }
     }
@@ -16757,7 +18040,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseString']
+          'application/json': components['schemas']['CommonResponseConsoleWorkflowRunAction']
         }
       }
     }
@@ -16783,7 +18066,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseString']
+          'application/json': components['schemas']['CommonResponseConsoleWorkflowRunAction']
         }
       }
     }
@@ -16810,7 +18093,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseString']
+          'application/json': components['schemas']['CommonResponseConsoleWorkflowRunSkipNode']
         }
       }
     }
@@ -16833,7 +18116,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseJobStats']
         }
       }
     }
@@ -16856,7 +18139,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseTriggerStats']
         }
       }
     }
@@ -16878,7 +18161,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseWorkerLoad']
         }
       }
     }
@@ -16901,7 +18184,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseAlertTrend']
         }
       }
     }
@@ -16924,7 +18207,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseSlaCompliance']
         }
       }
     }
@@ -16947,7 +18230,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseSlaReport']
         }
       }
     }
@@ -16971,7 +18254,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseExecutionProgressList']
         }
       }
     }
@@ -16994,7 +18277,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseTenantUsage']
         }
       }
     }
@@ -17692,7 +18975,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseClusterDiagnostic']
         }
       }
     }
@@ -17714,7 +18997,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseShedLockStatus']
         }
       }
     }
@@ -17736,7 +19019,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseWorkerConsistency']
         }
       }
     }
@@ -17758,7 +19041,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseOutboxHealth']
         }
       }
     }
@@ -17780,7 +19063,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseTerminalChildrenHealth']
         }
       }
     }
@@ -17804,7 +19087,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseInstanceDiagnosis']
         }
       }
     }
@@ -18278,7 +19561,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseConsoleTenantUsageSummary']
         }
       }
     }
@@ -18335,7 +19618,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseConsoleFilePresignUpload']
         }
       }
     }
@@ -18479,7 +19762,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseConsoleEventTypeList']
         }
       }
     }
@@ -18499,7 +19782,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseConsoleEventTopicList']
         }
       }
     }
@@ -18612,7 +19895,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseConsoleNotificationChannelList']
         }
       }
     }
@@ -18662,7 +19945,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseConsoleNotificationChannel']
         }
       }
     }
@@ -18738,7 +20021,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseConsoleNotificationTestResult']
         }
       }
     }
@@ -18760,7 +20043,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseConsoleSubscriptionRuleList']
         }
       }
     }
@@ -18810,7 +20093,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseConsoleSubscriptionRule']
         }
       }
     }
@@ -18885,7 +20168,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseConsoleNotificationDeliveryLogList']
         }
       }
     }

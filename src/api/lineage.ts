@@ -3,27 +3,10 @@ import type { components } from '@/types/api.generated'
 
 export type AssetPartitionReadiness = components['schemas']['AssetPartitionReadiness']
 
-export interface LineageCoverage {
-  scope?: string
-  resultVersionId?: number
-  sources?: Record<string, string>
-  jobInstanceFound?: boolean
-  payloadFileId?: number | null
-  payloadFileResolved?: boolean
-  pipelineInstanceCount?: number
-  fileRecordCount?: number
-  dispatchRecordCount?: number
-  knownGaps?: string[]
-}
-
-export interface LineageEvidence {
-  resultVersion?: Record<string, unknown>
-  jobInstance?: Record<string, unknown> | null
-  pipelineInstances?: Record<string, unknown>[]
-  fileRecords?: Record<string, unknown>[]
-  dispatchRecords?: Record<string, unknown>[]
-  coverage?: LineageCoverage
-}
+// 后端 #801-804 Map 收敛后已生成 LineageCoverage / LineageEvidenceResponse 真类型,
+// 字段与此前手写 interface 逐一对齐,切到生成类型(重新生成:npm run gen:api)。
+export type LineageCoverage = components['schemas']['LineageCoverage']
+export type LineageEvidence = components['schemas']['LineageEvidenceResponse']
 
 export function getLineageEvidenceByResultVersion(id: number, tenantId: string) {
   return get<LineageEvidence>(`/api/console/lineage/result-versions/${id}`, { tenantId })
