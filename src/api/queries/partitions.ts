@@ -11,12 +11,8 @@ export interface PartitionQueryParams {
 }
 
 // 复用 OpenAPI codegen 生成的强类型,避免 row.id 等沦为 unknown。
-// BE #811 起 FAILED 分区透出 errorCode / errorMessage,但配对 sibling 仓 OpenAPI 落后,
-// codegen 尚未纳入该两字段。本地补交集,codegen 追上后删。
-export type ConsoleJobPartitionResponse = components['schemas']['ConsoleJobPartitionResponse'] & {
-  errorCode?: string | null
-  errorMessage?: string | null
-}
+// errorCode / errorMessage(FAILED 分区失败原因,#811)已由 codegen 纳入。
+export type ConsoleJobPartitionResponse = components['schemas']['ConsoleJobPartitionResponse']
 
 export async function queryPartitionsPaged(
   query: PartitionQueryParams,
