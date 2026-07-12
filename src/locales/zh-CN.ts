@@ -2748,6 +2748,7 @@ export default {
     partColWorkerGroup: 'Worker 组',
     partColWorker: 'Worker',
     partColRetry: '重试',
+    partColError: '失败原因',
     partColLeaseExpire: 'Lease 过期',
     partColStarted: '开始',
     partColFinished: '结束',

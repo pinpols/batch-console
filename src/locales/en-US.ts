@@ -2808,6 +2808,7 @@ const messages: Messages = {
     partColWorkerGroup: 'Worker group',
     partColWorker: 'Worker',
     partColRetry: 'Retry',
+    partColError: 'Failure reason',
     partColLeaseExpire: 'Lease expires',
     partColStarted: 'Started',
     partColFinished: 'Finished',
