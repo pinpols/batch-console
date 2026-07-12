@@ -2835,6 +2835,8 @@ const messages: Messages = {
     stepColFinished: 'Finished',
     stepColError: 'Error',
     stepColActions: 'Actions',
+    stepColPipelineProgress: 'Pipeline progress',
+    stepViewPipelineProgress: 'View pipeline progress →',
     stepActionInstance: 'Run',
   },
   fileTemplateList: {

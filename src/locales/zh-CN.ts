@@ -2776,6 +2776,8 @@ export default {
     stepColFinished: '完成',
     stepColError: '错误',
     stepColActions: '操作',
+    stepColPipelineProgress: 'Pipeline 进度',
+    stepViewPipelineProgress: '查看 pipeline 进度 →',
     stepActionInstance: '实例',
   },
   fileTemplateList: {
