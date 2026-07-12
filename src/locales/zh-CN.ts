@@ -4848,6 +4848,7 @@ export default {
     colRowsProcessed: '已处理',
     colTotalRowsEta: '总量 / ETA',
     colToggleHint: '显示/隐藏列',
+    currentFile: '当前文件',
   },
   userRole: {
     btnRefreshLogin: '刷新登录态',

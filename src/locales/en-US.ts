@@ -4939,6 +4939,7 @@ const messages: Messages = {
     colRowsProcessed: 'Processed',
     colTotalRowsEta: 'Total / ETA',
     colToggleHint: 'Toggle columns',
+    currentFile: 'Current file',
   },
   userRole: {
     btnRefreshLogin: 'Refresh login',
