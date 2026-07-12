@@ -6,12 +6,7 @@ import type { components } from '@/types/api.generated'
 
 export type ConsoleJobDefinitionResponse = components['schemas']['ConsoleJobDefinitionResponse']
 export type ConsoleJobInstanceResponse = components['schemas']['ConsoleJobInstanceResponse']
-// BE #811 起 step 透出 relatedPipelineInstanceId(文件类 job step 才有,用于跳 file pipeline 观测),
-// 但配对 sibling 仓 OpenAPI 落后于 #811,codegen 尚未纳入该字段。本地补交集,codegen 追上后删。
-export type ConsoleJobStepInstanceResponse =
-  components['schemas']['ConsoleJobStepInstanceResponse'] & {
-    relatedPipelineInstanceId?: number | null
-  }
+export type ConsoleJobStepInstanceResponse = components['schemas']['ConsoleJobStepInstanceResponse']
 export type ConsoleOpsSummaryResponse = components['schemas']['ConsoleOpsSummaryResponse']
 export type ConsoleApprovalCommandResponse = components['schemas']['ConsoleApprovalCommandResponse']
 export type ConsoleConfigReleaseResponse = components['schemas']['ConsoleConfigReleaseResponse']
