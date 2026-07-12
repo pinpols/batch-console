@@ -2748,6 +2748,7 @@ export default {
     partColWorkerGroup: 'Worker 组',
     partColWorker: 'Worker',
     partColRetry: '重试',
+    partColError: '失败原因',
     partColLeaseExpire: 'Lease 过期',
     partColStarted: '开始',
     partColFinished: '结束',
@@ -2775,6 +2776,8 @@ export default {
     stepColFinished: '完成',
     stepColError: '错误',
     stepColActions: '操作',
+    stepColPipelineProgress: 'Pipeline 进度',
+    stepViewPipelineProgress: '查看 pipeline 进度 →',
     stepActionInstance: '实例',
   },
   fileTemplateList: {
@@ -4848,6 +4851,7 @@ export default {
     colRowsProcessed: '已处理',
     colTotalRowsEta: '总量 / ETA',
     colToggleHint: '显示/隐藏列',
+    currentFile: '当前文件',
   },
   userRole: {
     btnRefreshLogin: '刷新登录态',

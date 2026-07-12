@@ -2808,6 +2808,7 @@ const messages: Messages = {
     partColWorkerGroup: 'Worker group',
     partColWorker: 'Worker',
     partColRetry: 'Retry',
+    partColError: 'Failure reason',
     partColLeaseExpire: 'Lease expires',
     partColStarted: 'Started',
     partColFinished: 'Finished',
@@ -2834,6 +2835,8 @@ const messages: Messages = {
     stepColFinished: 'Finished',
     stepColError: 'Error',
     stepColActions: 'Actions',
+    stepColPipelineProgress: 'Pipeline progress',
+    stepViewPipelineProgress: 'View pipeline progress →',
     stepActionInstance: 'Run',
   },
   fileTemplateList: {
@@ -4939,6 +4942,7 @@ const messages: Messages = {
     colRowsProcessed: 'Processed',
     colTotalRowsEta: 'Total / ETA',
     colToggleHint: 'Toggle columns',
+    currentFile: 'Current file',
   },
   userRole: {
     btnRefreshLogin: 'Refresh login',

@@ -2,6 +2,21 @@
   <PageContainer>
     <PageHeader />
 
+    <div v-if="currentFile" class="current-file-bar">
+      <span class="current-file-bar__label">{{ t('filePipelineObservability.currentFile') }}</span>
+      <span v-if="currentFile.fileName" class="current-file-bar__name">
+        {{ currentFile.fileName }}
+      </span>
+      <router-link
+        v-if="currentFile.fileId"
+        class="cell-link"
+        :to="`/files/list?fileId=${currentFile.fileId}`"
+      >
+        #{{ currentFile.fileId }}
+      </router-link>
+      <span v-if="!currentFile.fileName && !currentFile.fileId" class="muted">—</span>
+    </div>
+
     <el-tabs v-model="activeTab" class="pill-tabs" @tab-change="onTabChange">
       <el-tab-pane :label="t('filePipelineObservability.tabPipelines')" name="pipelines">
         <ProTable
@@ -480,13 +495,27 @@
   const kwDraft = ref(initialPipelineInstanceId)
   const kwApplied = ref(initialPipelineInstanceId)
 
+  // 缺口2:当前文件摘要(深链 ?pipelineInstanceId=X 进入时,从 pipeline-progress 顶层拿 fileName/fileId)
+  const currentFile = ref<{ fileId: number | null; fileName: string | null } | null>(null)
+
+  async function loadCurrentFile(pipelineInstanceId: string) {
+    const pid = Number(pipelineInstanceId)
+    if (!Number.isFinite(pid) || pid <= 0) {
+      currentFile.value = null
+      return
+    }
+    const resp = await queryPipelineProgressSafe(pid)
+    currentFile.value = { fileId: resp.fileId ?? null, fileName: resp.fileName ?? null }
+  }
+
   const allPipelines = ref<ConsoleFilePipelineResponse[]>([])
   const allSteps = ref<ConsoleFilePipelineStepResponse[]>([])
   const allDispatches = ref<ConsoleFileDispatchRecordResponse[]>([])
   const allErrors = ref<ConsoleFileErrorRecordResponse[]>([])
 
-  // 行级进度:列默认隐藏(避免 stage 状态列宽爆,用户主动开)
-  const showProgressColumns = ref(false)
+  // 行级进度:默认开启(BE 已服务端桥接运行中实时行数,未开 checkpoint 也有值;
+  // 用户反馈默认看不到实时行数是主痛点)。total 恒 null 时 ETA 列优雅降级为 '—'。
+  const showProgressColumns = ref(true)
   // stepId → 最新进度采样(BE pipeline-progress 端点上报)
   const progressByStepId = ref<Map<number, PipelineStepProgress>>(new Map())
   // stepId → 最近 60s 内的 rowsProcessed 历史(ETA 线性外推用,长度上限 6)
@@ -755,8 +784,11 @@
       kwDraft.value = next
       kwApplied.value = next
       page.value = 1
+      void loadCurrentFile(next)
     },
   )
+
+  if (initialPipelineInstanceId) void loadCurrentFile(initialPipelineInstanceId)
 
   async function runActive() {
     if (activeTab.value === 'pipelines') await loadPipelines()
@@ -770,3 +802,26 @@
     void runActive()
   })
 </script>
+
+<style scoped>
+  .current-file-bar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-md);
+    padding: var(--space-sm) var(--space-md);
+    background: var(--color-bg-info);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-content);
+    font-size: var(--font-size-md);
+  }
+
+  .current-file-bar__label {
+    color: var(--color-text-secondary);
+  }
+
+  .current-file-bar__name {
+    color: var(--color-text-primary);
+    font-weight: 600;
+  }
+</style>

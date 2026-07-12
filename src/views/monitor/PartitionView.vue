@@ -98,6 +98,13 @@
           </template>
         </el-table-column>
         <el-table-column prop="retryCount" :label="t('monitor.partColRetry')" width="70" />
+        <el-table-column :label="t('monitor.partColError')" min-width="200" show-overflow-tooltip>
+          <template #default="{ row }">
+            <span v-if="row.errorCode" class="mono">[{{ row.errorCode }}]</span>
+            <span v-if="row.errorMessage">{{ row.errorMessage }}</span>
+            <span v-if="!row.errorCode && !row.errorMessage" class="cell-empty">—</span>
+          </template>
+        </el-table-column>
         <DatetimeColumn prop="leaseExpireAt" :label="t('monitor.partColLeaseExpire')" width="160" />
         <DatetimeColumn prop="startedAt" :label="t('monitor.partColStarted')" width="160" />
         <DatetimeColumn prop="finishedAt" :label="t('monitor.partColFinished')" width="160" />

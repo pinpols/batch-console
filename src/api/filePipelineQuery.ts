@@ -29,6 +29,10 @@ export interface PipelineStepProgress {
 
 export interface PipelineProgressResponse {
   pipelineInstanceId: number
+  /** 当前 pipeline 关联的文件 id;BE #811 起顶层透出,未知则 null */
+  fileId?: number | null
+  /** 当前 pipeline 关联的文件名;BE #811 起顶层透出,未知则 null,UI 回退显 fileId */
+  fileName?: string | null
   steps: PipelineStepProgress[]
 }
 
@@ -50,6 +54,11 @@ export async function queryPipelineProgressSafe(
   try {
     return await queryPipelineProgress(pipelineInstanceId)
   } catch {
-    return { pipelineInstanceId: Number(pipelineInstanceId), steps: [] }
+    return {
+      pipelineInstanceId: Number(pipelineInstanceId),
+      fileId: null,
+      fileName: null,
+      steps: [],
+    }
   }
 }

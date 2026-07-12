@@ -8061,6 +8061,11 @@ export interface components {
       resultSummary: string
       errorCode: string
       errorMessage: string
+      /**
+       * Format: int64
+       * @description 反查 pipeline_instance.related_job_instance_id 得到的 pipeline 观测入口 id;文件类 job 才有值,普通 job 为 null,供作业详情跳转 pipeline 观测
+       */
+      relatedPipelineInstanceId?: number | null
       /** Format: date-time */
       startedAt: string
       /** Format: date-time */
@@ -8088,6 +8093,10 @@ export interface components {
       startedAt: string
       /** Format: date-time */
       finishedAt: string
+      /** @description FAILED 分区最近一次失败 job_task 的错误码(JOIN 透出,非失败分区为 null) */
+      errorCode?: string | null
+      /** @description FAILED 分区最近一次失败 job_task 的错误消息(JOIN 透出,非失败分区为 null) */
+      errorMessage?: string | null
     }
     ConsoleWorkflowDefinitionResponse: {
       /** Format: int64 */
@@ -14480,6 +14489,13 @@ export interface operations {
             data?: {
               /** Format: int64 */
               pipelineInstanceId?: number
+              /**
+               * Format: int64
+               * @description pipeline 级源文件 id(EXPORT 等无源文件时为 null)
+               */
+              fileId?: number | null
+              /** @description pipeline 级源文件名,便于观测直接展示文件而非纯 fileId 数字 */
+              fileName?: string | null
               steps?: {
                 /** Format: int64 */
                 stepId?: number
@@ -14487,7 +14503,10 @@ export interface operations {
                 pipelineInstanceId?: number
                 stepCode?: string
                 stageCode?: string
-                /** Format: int64 */
+                /**
+                 * Format: int64
+                 * @description 实时已处理行数;持久 checkpoint 为空时服务端按当前 worker 从 orchestrator 内存 cache 桥接补上,均无则 null
+                 */
                 rowsProcessed?: number | null
                 /** Format: int64 */
                 totalRowsHint?: number | null

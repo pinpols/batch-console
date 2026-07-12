@@ -10,8 +10,13 @@ export interface PartitionQueryParams {
   pageSize: number
 }
 
-// 复用 OpenAPI codegen 生成的强类型,避免 row.id 等沦为 unknown
-export type ConsoleJobPartitionResponse = components['schemas']['ConsoleJobPartitionResponse']
+// 复用 OpenAPI codegen 生成的强类型,避免 row.id 等沦为 unknown。
+// BE #811 起 FAILED 分区透出 errorCode / errorMessage,但配对 sibling 仓 OpenAPI 落后,
+// codegen 尚未纳入该两字段。本地补交集,codegen 追上后删。
+export type ConsoleJobPartitionResponse = components['schemas']['ConsoleJobPartitionResponse'] & {
+  errorCode?: string | null
+  errorMessage?: string | null
+}
 
 export async function queryPartitionsPaged(
   query: PartitionQueryParams,
