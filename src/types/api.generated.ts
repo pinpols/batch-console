@@ -18438,8 +18438,16 @@ export interface operations {
     parameters: {
       query: {
         tenantId: string
+        /** @description Fuzzy match on template code. */
         templateCode?: string
-        fileType?: string
+        /** @description Fuzzy match on template name. */
+        templateName?: string
+        /** @description Exact match on template type. */
+        templateType?: string
+        /** @description Exact match on business type. */
+        bizType?: string
+        /** @description Fuzzy keyword across template code/name. */
+        keyword?: string
         /** @description Filter by enabled status. Defaults to true (only enabled records returned unless overridden). */
         enabled?: boolean
         /** @description 深翻页上限 10000;超深页请改用 cursor 分页(ADR-031) */
