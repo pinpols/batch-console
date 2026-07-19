@@ -1570,7 +1570,9 @@ export default {
     },
     tenantStatus: {
       ACTIVE: '正常',
+      SUSPENDING: '暂停中',
       SUSPENDED: '已停用',
+      ACTIVATING: '恢复中',
       ARCHIVED: '已归档',
     },
     severity: {

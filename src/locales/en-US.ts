@@ -1631,7 +1631,9 @@ const messages: Messages = {
     },
     tenantStatus: {
       ACTIVE: 'Active',
+      SUSPENDING: 'Suspending',
       SUSPENDED: 'Suspended',
+      ACTIVATING: 'Activating',
       ARCHIVED: 'Archived',
     },
     severity: {

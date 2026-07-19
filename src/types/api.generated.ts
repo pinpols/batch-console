@@ -827,7 +827,8 @@ export interface paths {
      * @description 转发到 orchestrator `POST /internal/forensic/export`。同步生成 ZIP bundle
      *     含 manifest.json + job-instances.json + batch-day-operation-audits.json，
      *     SHA-256 attestation。v0.1 落本地 fs；v0.2 才接 OSS / 对象锁 / *_history。
-     *     仅 ROLE_ADMIN。
+     *     仅 ROLE_ADMIN。请求体中的 `requestedBy` 不作为可信身份使用，服务端以当前认证请求
+     *     的 operator metadata 作为审计操作者；导出日期范围最多 31 天，审计明细最多 100000 行。
      */
     post: operations['requestForensicExport']
     delete?: never
@@ -9182,7 +9183,7 @@ export interface components {
       tenantName: string
       description?: string | null
       /** @enum {string} */
-      status: 'ACTIVE' | 'SUSPENDED'
+      status: 'ACTIVE' | 'SUSPENDING' | 'SUSPENDED' | 'ACTIVATING'
       /** Format: date-time */
       createdAt?: string
       /** Format: date-time */
@@ -9659,7 +9660,7 @@ export interface components {
     /** @enum {string} */
     NotificationChannelType: 'EMAIL' | 'WEBHOOK' | 'DINGTALK' | 'WECOM' | 'SMS'
     /** @enum {string} */
-    TenantStatus: 'ACTIVE' | 'SUSPENDED'
+    TenantStatus: 'ACTIVE' | 'SUSPENDING' | 'SUSPENDED' | 'ACTIVATING'
     /** @enum {string} */
     LogType: 'SYSTEM' | 'BUSINESS' | 'ALARM'
     /** @enum {string} */
@@ -11800,7 +11801,8 @@ export interface operations {
     }
     requestBody?: never
     responses: {
-      /** @description Bundle zip */
+      /** @description Bundle zip。Console 以流式响应转发对象内容，不在内存中完整构造 byte[]；
+       *     租户边界仍由认证身份与 `tenantId` 联合校验。 */
       200: {
         headers: {
           [name: string]: unknown
@@ -19124,7 +19126,7 @@ export interface operations {
       query?: {
         /** @description Fuzzy match on tenantId or tenantName */
         keyword?: string
-        status?: 'ACTIVE' | 'SUSPENDED'
+        status?: 'ACTIVE' | 'SUSPENDING' | 'SUSPENDED' | 'ACTIVATING'
         pageNo?: number
         pageSize?: number
       }

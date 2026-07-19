@@ -7,7 +7,7 @@
  */
 import { get, post, put } from '@/api/client'
 
-export type TenantStatus = 'ACTIVE' | 'SUSPENDED'
+export type TenantStatus = 'ACTIVE' | 'SUSPENDING' | 'SUSPENDED' | 'ACTIVATING'
 
 export interface Tenant {
   id?: number

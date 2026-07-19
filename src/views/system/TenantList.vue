@@ -342,6 +342,7 @@
         key: 'switch',
         label: t('tenantList.actionSwitch'),
         primary: true,
+        disabled: !isActive,
         onClick: () => switchToTenant(row),
       })
     }
@@ -359,7 +360,7 @@
         divided: true,
         onClick: () => openInitConfig(row),
       })
-      if (isActive) {
+      if (isActive || row.status === 'SUSPENDING') {
         acts.push({
           key: 'suspend',
           label: t('tenantList.actionSuspend'),
