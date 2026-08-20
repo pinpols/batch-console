@@ -2373,6 +2373,8 @@ export interface paths {
      *     workflow_edge → workflow_definition → job_definition → file_channel_config →
      *     file_template_config → console_user_account → archive_policy → tenant。
      *
+     *     事务由 orchestrator 内部接口对应的服务统一承载, Console 仅负责入口校验、鉴权和审计委派。
+     *
      */
     delete: operations['cleanupTestData']
     options?: never
@@ -2405,6 +2407,8 @@ export interface paths {
      *
      *     清理顺序参考 scripts/db/wipe-non-system-tenants.sql:pipeline 运行 → workflow 运行 →
      *     job 实例链 → file 相关 → workflow/pipeline/job 定义 → 配置 → 用户 → 租户本体。
+     *
+     *     事务由 orchestrator 内部接口对应的服务统一承载, Console 仅负责入口校验、鉴权和审计委派。
      *
      */
     delete: operations['cleanupTestDataByIds']
@@ -2471,7 +2475,10 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** 按 pipelineInstanceId 拉取当前 pipeline step 行级进度 */
+    /**
+     * 按 pipelineInstanceId 拉取当前 pipeline step 行级进度
+     * @description 返回类型化的 pipeline progress item；稳定字段由 ConsolePipelineProgressItemResponse 保证，totalRowsHint 可为空。
+     */
     get: operations['queryPipelineProgress']
     put?: never
     post?: never
@@ -6962,6 +6969,15 @@ export interface components {
     CommonResponseConsoleFileTemplateList: components['schemas']['CommonResponseBase'] & {
       data?: components['schemas']['PageResponse']
     }
+    CommonResponseConsoleFileChannel: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['ConsoleFileChannelResponse']
+    }
+    CommonResponseConsoleFileTemplate: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['ConsoleFileTemplateResponse']
+    }
+    CommonResponseConsoleFileRecordDetail: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['ConsoleFileRecordDetailResponse']
+    }
     CommonResponseExcelUpload: components['schemas']['CommonResponseBase'] & {
       data?: components['schemas']['ExcelUploadResponse']
     }
@@ -8219,6 +8235,18 @@ export interface components {
       outboxDeliveries: components['schemas']['ConsoleOutboxDeliveryLogResponse'][]
       alerts: components['schemas']['ConsoleAlertEventResponse'][]
       deadLetters: components['schemas']['ConsoleDeadLetterTaskResponse'][]
+      timeline: components['schemas']['ConsoleTraceTimelineItem'][]
+    }
+    ConsoleTraceTimelineItem: {
+      source: string
+      eventType: string
+      /** Format: int64 */
+      referenceId?: number | null
+      status?: string | null
+      message?: string | null
+      /** Format: date-time */
+      occurredAt: string
+      traceId?: string | null
     }
     ConsoleWorkflowTopologyResponse: {
       workflowDefinition?: components['schemas']['ConsoleWorkflowDefinitionResponse']
@@ -9023,6 +9051,38 @@ export interface components {
       /** Format: date-time */
       updatedAt: string
     }
+    ConsoleFileChannelResponse: {
+      /** Format: int64 */
+      id?: number
+      tenantId?: string
+      channelCode?: string
+      channelName?: string
+      channelType?: string
+      targetEndpoint?: string
+      authType?: string
+      configJson?: string
+      receiptPolicy?: string
+      /** Format: int32 */
+      timeoutSeconds?: number
+      enabled?: boolean
+      /** Format: date-time */
+      createdAt?: string
+      /** Format: date-time */
+      updatedAt?: string
+    }
+    /** @description 固定存储投影；metadata_json 为文件处理链路可扩展的原始 JSONB 载荷。 */
+    ConsoleFileRecordDetailResponse: {
+      /** Format: int64 */
+      id?: number
+      tenant_id?: string | null
+      file_name?: string | null
+      mime_type?: string | null
+      storage_type?: string | null
+      storage_path?: string | null
+      storage_bucket?: string | null
+      /** @description 原始 JSONB 扩展元数据。 */
+      metadata_json?: unknown
+    }
     ConsoleExcelRowIssueResponse: components['schemas']['ExcelRowIssue']
     ExcelChangeSummary: {
       /** Format: int32 */
@@ -9183,7 +9243,7 @@ export interface components {
       tenantName: string
       description?: string | null
       /** @enum {string} */
-      status: 'ACTIVE' | 'SUSPENDING' | 'SUSPENDED' | 'ACTIVATING'
+      status: 'ACTIVE' | 'SUSPENDED'
       /** Format: date-time */
       createdAt?: string
       /** Format: date-time */
@@ -9660,7 +9720,7 @@ export interface components {
     /** @enum {string} */
     NotificationChannelType: 'EMAIL' | 'WEBHOOK' | 'DINGTALK' | 'WECOM' | 'SMS'
     /** @enum {string} */
-    TenantStatus: 'ACTIVE' | 'SUSPENDING' | 'SUSPENDED' | 'ACTIVATING'
+    TenantStatus: 'ACTIVE' | 'SUSPENDED'
     /** @enum {string} */
     LogType: 'SYSTEM' | 'BUSINESS' | 'ALARM'
     /** @enum {string} */
@@ -17200,7 +17260,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseConsoleFileChannel']
         }
       }
     }
@@ -17225,7 +17285,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseConsoleFileTemplate']
         }
       }
     }
@@ -17249,7 +17309,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseConsoleFileRecordDetail']
         }
       }
     }
@@ -19126,7 +19186,7 @@ export interface operations {
       query?: {
         /** @description Fuzzy match on tenantId or tenantName */
         keyword?: string
-        status?: 'ACTIVE' | 'SUSPENDING' | 'SUSPENDED' | 'ACTIVATING'
+        status?: 'ACTIVE' | 'SUSPENDED'
         pageNo?: number
         pageSize?: number
       }

@@ -4,10 +4,19 @@ import type { PageResponse } from '@/types'
 import type {
   ConsoleAuditLogResponse,
   ConsoleDeadLetterTaskResponse,
+  ConsoleAlertEventResponse,
+  ConsoleFilePipelineResponse,
+  ConsoleFileRecordResponse,
+  ConsoleJobExecutionLogResponse,
+  ConsoleJobInstanceResponse,
+  ConsoleOperationAuditResponse,
   DeadLetterReplayRequest,
   ConsoleOutboxDeliveryLogResponse,
   ConsoleOutboxRetryLogResponse,
   ConsoleRetryScheduleResponse,
+  ConsoleWorkflowNodeRunResponse,
+  ConsoleWorkflowRunResponse,
+  ConsoleTraceTimelineItem,
 } from '@/types/console-api'
 
 export interface AuditQueryFilters {
@@ -50,17 +59,18 @@ export interface OutboxDeliveryFilters {
 
 export interface TraceSnapshotResponse {
   traceId: string
-  jobInstances: Record<string, unknown>[]
-  workflowRuns: Record<string, unknown>[]
-  workflowNodeRuns: Record<string, unknown>[]
-  files: Record<string, unknown>[]
-  filePipelines: Record<string, unknown>[]
-  auditLogs: Record<string, unknown>[]
-  operationAudits: Record<string, unknown>[]
-  executionLogs: Record<string, unknown>[]
-  outboxDeliveries: Record<string, unknown>[]
-  alerts: Record<string, unknown>[]
-  deadLetters: Record<string, unknown>[]
+  jobInstances: ConsoleJobInstanceResponse[]
+  workflowRuns: ConsoleWorkflowRunResponse[]
+  workflowNodeRuns: ConsoleWorkflowNodeRunResponse[]
+  files: ConsoleFileRecordResponse[]
+  filePipelines: ConsoleFilePipelineResponse[]
+  auditLogs: ConsoleAuditLogResponse[]
+  operationAudits: ConsoleOperationAuditResponse[]
+  executionLogs: ConsoleJobExecutionLogResponse[]
+  outboxDeliveries: ConsoleOutboxDeliveryLogResponse[]
+  alerts: ConsoleAlertEventResponse[]
+  deadLetters: ConsoleDeadLetterTaskResponse[]
+  timeline: ConsoleTraceTimelineItem[]
 }
 
 export function queryTraceSnapshot(

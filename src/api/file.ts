@@ -5,6 +5,7 @@ import type { PageResponse, PageResult } from '@/types'
 import type {
   ConsoleAuditLogResponse,
   ConsoleFileArrivalGroupResponse,
+  ConsoleFileRecordDetailResponse,
   ConsoleFileOperationResponse,
   ConsoleFileRecordResponse,
   ConsoleFileSummaryResponse,
@@ -83,7 +84,7 @@ export const fileApi = {
   },
 
   detail: (fileId: number, tenantId = readStoredTenantId()) =>
-    get<Record<string, unknown>>(`/api/console/queries/files/${fileId}`, { tenantId }),
+    get<ConsoleFileRecordDetailResponse>(`/api/console/queries/files/${fileId}`, { tenantId }),
 
   audit: async (fileId: number, tenantId = readStoredTenantId()) => {
     // 传入 fileId 让后端过滤（不支持时忽略，客户端仍做 filter 兜底）
