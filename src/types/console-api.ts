@@ -11,44 +11,14 @@ export type ConsoleOpsSummaryResponse = components['schemas']['ConsoleOpsSummary
 export type ConsoleApprovalCommandResponse = components['schemas']['ConsoleApprovalCommandResponse']
 export type ConsoleConfigReleaseResponse = components['schemas']['ConsoleConfigReleaseResponse']
 export type ConsoleFileRecordResponse = components['schemas']['ConsoleFileRecordResponse']
+export type ConsoleFileRecordDetailResponse =
+  components['schemas']['ConsoleFileRecordDetailResponse']
 export type ConsoleFileSummaryResponse = components['schemas']['ConsoleFileSummaryResponse']
 export type ConsoleFileArrivalGroupResponse =
   components['schemas']['ConsoleFileArrivalGroupResponse']
 export type ConsoleWorkerRegistryResponse = components['schemas']['ConsoleWorkerRegistryResponse']
 export type ConsoleOperationAuditResponse = components['schemas']['ConsoleOperationAuditResponse']
-// 后端 OpenAPI schema 暂未单独命名 ConsoleFileChannelResponse(只暴露 FileChannelSpec
-// + 列表用的 PageResponse),前端仍在多处用强类型读 row.channelCode 等字段。
-// 本地补一个接口,保证调用侧类型不退化为 any。
-// codegen 把这个 schema 加进来后,删除本接口,改回 components['schemas']['...']。
-export interface ConsoleFileChannelResponse {
-  id: number
-  tenantId: string
-  channelCode: string
-  channelName: string
-  channelType: string
-  targetEndpoint?: string | null
-  authType?: string | null
-  configJson?: string | null
-  receiptPolicy?: string | null
-  timeoutSeconds?: number | null
-  enabled: boolean
-  description?: string | null
-  version?: number | null
-  filter?: string | null
-  charset?: string | null
-  targetCharset?: string | null
-  fileFormatType?: string | null
-  lineSeparator?: string | null
-  delimiter?: string | null
-  fieldMappings?: unknown
-  queryParamSchema?: string | null
-  bizType?: string | null
-  templateCode?: string | null
-  templateName?: string | null
-  templateType?: string | null
-  createdAt?: string | null
-  updatedAt?: string | null
-}
+export type ConsoleFileChannelResponse = components['schemas']['ConsoleFileChannelResponse']
 export type ConsoleWorkflowDefinitionResponse =
   components['schemas']['ConsoleWorkflowDefinitionResponse']
 export type WorkflowDefinitionDetailResponse =
@@ -148,6 +118,7 @@ export type ConsoleBatchDayCatchUpItemResponse =
 // --- SSE ---
 export type ConsoleSseEventResponse = components['schemas']['ConsoleSseEventResponse']
 export type ConsoleTraceSnapshotResponse = components['schemas']['ConsoleTraceSnapshotResponse']
+export type ConsoleTraceTimelineItem = components['schemas']['ConsoleTraceTimelineItem']
 
 // --- Excel CRUD responses (file-templates) ---
 export type ConsoleFileTemplateExcelUploadResponse =

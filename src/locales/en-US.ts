@@ -1631,7 +1631,9 @@ const messages: Messages = {
     },
     tenantStatus: {
       ACTIVE: 'Active',
+      SUSPENDING: 'Suspending',
       SUSPENDED: 'Suspended',
+      ACTIVATING: 'Activating',
       ARCHIVED: 'Archived',
     },
     severity: {
@@ -2891,6 +2893,7 @@ const messages: Messages = {
     descVersion: 'Version',
     descCharset: 'Charset',
     descTargetCharset: 'Target charset',
+    descWithBom: 'BOM',
     descDelimiter: 'Delimiter',
     descLineSeparator: 'Line separator',
     descQueryParamSchema: 'Query param schema',
@@ -2908,6 +2911,7 @@ const messages: Messages = {
     fieldFileFormatType: 'File format',
     fieldCharset: 'Charset',
     fieldTargetCharset: 'Target charset',
+    fieldWithBom: 'Write BOM',
     fieldDelimiter: 'Delimiter',
     fieldLineSeparator: 'Line separator',
     fieldVersion: 'Version',

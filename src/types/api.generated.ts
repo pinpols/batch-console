@@ -827,7 +827,8 @@ export interface paths {
      * @description 转发到 orchestrator `POST /internal/forensic/export`。同步生成 ZIP bundle
      *     含 manifest.json + job-instances.json + batch-day-operation-audits.json，
      *     SHA-256 attestation。v0.1 落本地 fs；v0.2 才接 OSS / 对象锁 / *_history。
-     *     仅 ROLE_ADMIN。
+     *     仅 ROLE_ADMIN。请求体中的 `requestedBy` 不作为可信身份使用，服务端以当前认证请求
+     *     的 operator metadata 作为审计操作者；导出日期范围最多 31 天，审计明细最多 100000 行。
      */
     post: operations['requestForensicExport']
     delete?: never
@@ -2372,6 +2373,8 @@ export interface paths {
      *     workflow_edge → workflow_definition → job_definition → file_channel_config →
      *     file_template_config → console_user_account → archive_policy → tenant。
      *
+     *     事务由 orchestrator 内部接口对应的服务统一承载, Console 仅负责入口校验、鉴权和审计委派。
+     *
      */
     delete: operations['cleanupTestData']
     options?: never
@@ -2404,6 +2407,8 @@ export interface paths {
      *
      *     清理顺序参考 scripts/db/wipe-non-system-tenants.sql:pipeline 运行 → workflow 运行 →
      *     job 实例链 → file 相关 → workflow/pipeline/job 定义 → 配置 → 用户 → 租户本体。
+     *
+     *     事务由 orchestrator 内部接口对应的服务统一承载, Console 仅负责入口校验、鉴权和审计委派。
      *
      */
     delete: operations['cleanupTestDataByIds']
@@ -2470,7 +2475,10 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** 按 pipelineInstanceId 拉取当前 pipeline step 行级进度 */
+    /**
+     * 按 pipelineInstanceId 拉取当前 pipeline step 行级进度
+     * @description 返回类型化的 pipeline progress item；稳定字段由 ConsolePipelineProgressItemResponse 保证，totalRowsHint 可为空。
+     */
     get: operations['queryPipelineProgress']
     put?: never
     post?: never
@@ -6961,6 +6969,15 @@ export interface components {
     CommonResponseConsoleFileTemplateList: components['schemas']['CommonResponseBase'] & {
       data?: components['schemas']['PageResponse']
     }
+    CommonResponseConsoleFileChannel: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['ConsoleFileChannelResponse']
+    }
+    CommonResponseConsoleFileTemplate: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['ConsoleFileTemplateResponse']
+    }
+    CommonResponseConsoleFileRecordDetail: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['ConsoleFileRecordDetailResponse']
+    }
     CommonResponseExcelUpload: components['schemas']['CommonResponseBase'] & {
       data?: components['schemas']['ExcelUploadResponse']
     }
@@ -8218,6 +8235,18 @@ export interface components {
       outboxDeliveries: components['schemas']['ConsoleOutboxDeliveryLogResponse'][]
       alerts: components['schemas']['ConsoleAlertEventResponse'][]
       deadLetters: components['schemas']['ConsoleDeadLetterTaskResponse'][]
+      timeline: components['schemas']['ConsoleTraceTimelineItem'][]
+    }
+    ConsoleTraceTimelineItem: {
+      source: string
+      eventType: string
+      /** Format: int64 */
+      referenceId?: number | null
+      status?: string | null
+      message?: string | null
+      /** Format: date-time */
+      occurredAt: string
+      traceId?: string | null
     }
     ConsoleWorkflowTopologyResponse: {
       workflowDefinition?: components['schemas']['ConsoleWorkflowDefinitionResponse']
@@ -9021,6 +9050,38 @@ export interface components {
       createdAt: string
       /** Format: date-time */
       updatedAt: string
+    }
+    ConsoleFileChannelResponse: {
+      /** Format: int64 */
+      id?: number
+      tenantId?: string
+      channelCode?: string
+      channelName?: string
+      channelType?: string
+      targetEndpoint?: string
+      authType?: string
+      configJson?: string
+      receiptPolicy?: string
+      /** Format: int32 */
+      timeoutSeconds?: number
+      enabled?: boolean
+      /** Format: date-time */
+      createdAt?: string
+      /** Format: date-time */
+      updatedAt?: string
+    }
+    /** @description 固定存储投影；metadata_json 为文件处理链路可扩展的原始 JSONB 载荷。 */
+    ConsoleFileRecordDetailResponse: {
+      /** Format: int64 */
+      id?: number
+      tenant_id?: string | null
+      file_name?: string | null
+      mime_type?: string | null
+      storage_type?: string | null
+      storage_path?: string | null
+      storage_bucket?: string | null
+      /** @description 原始 JSONB 扩展元数据。 */
+      metadata_json?: unknown
     }
     ConsoleExcelRowIssueResponse: components['schemas']['ExcelRowIssue']
     ExcelChangeSummary: {
@@ -11800,7 +11861,8 @@ export interface operations {
     }
     requestBody?: never
     responses: {
-      /** @description Bundle zip */
+      /** @description Bundle zip。Console 以流式响应转发对象内容，不在内存中完整构造 byte[]；
+       *     租户边界仍由认证身份与 `tenantId` 联合校验。 */
       200: {
         headers: {
           [name: string]: unknown
@@ -17198,7 +17260,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseConsoleFileChannel']
         }
       }
     }
@@ -17223,7 +17285,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseConsoleFileTemplate']
         }
       }
     }
@@ -17247,7 +17309,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseConsoleFileRecordDetail']
         }
       }
     }

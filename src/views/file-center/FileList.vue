@@ -235,23 +235,21 @@
     >
       <el-descriptions v-if="detail" :column="2" border size="small">
         <el-descriptions-item label="ID">{{ detail.id }}</el-descriptions-item>
-        <el-descriptions-item label="tenantId">{{ detail.tenantId }}</el-descriptions-item>
-        <el-descriptions-item label="fileName">{{ detail.fileName }}</el-descriptions-item>
-        <el-descriptions-item label="fileStatus">{{ detail.fileStatus }}</el-descriptions-item>
-        <el-descriptions-item label="bizType">{{ detail.bizType }}</el-descriptions-item>
-        <el-descriptions-item label="bizDate">{{ detail.bizDate }}</el-descriptions-item>
-        <el-descriptions-item label="traceId" :span="2">
-          <router-link
-            v-if="detail.traceId"
-            class="cell-link"
-            :to="`/observability/trace?traceId=${detail.traceId}`"
-          >
-            {{ detail.traceId }}
-          </router-link>
-          <span v-else>—</span>
+        <el-descriptions-item label="tenant_id">{{ detail.tenant_id ?? '—' }}</el-descriptions-item>
+        <el-descriptions-item label="file_name">{{ detail.file_name ?? '—' }}</el-descriptions-item>
+        <el-descriptions-item label="mime_type">{{ detail.mime_type ?? '—' }}</el-descriptions-item>
+        <el-descriptions-item label="storage_type">{{
+          detail.storage_type ?? '—'
+        }}</el-descriptions-item>
+        <el-descriptions-item label="storage_bucket">{{
+          detail.storage_bucket ?? '—'
+        }}</el-descriptions-item>
+        <el-descriptions-item label="storage_path" :span="2">
+          <span class="cell-mono">{{ detail.storage_path ?? '—' }}</span>
         </el-descriptions-item>
-        <el-descriptions-item label="createdAt">{{ detail.createdAt }}</el-descriptions-item>
-        <el-descriptions-item label="updatedAt">{{ detail.updatedAt }}</el-descriptions-item>
+        <el-descriptions-item label="metadata_json" :span="2">
+          <JsonPreview :data="detail.metadata_json ?? null" />
+        </el-descriptions-item>
         <el-descriptions-item :label="t('fileList.detailRawResponse')" :span="2">
           <JsonPreview :data="detail" />
         </el-descriptions-item>
@@ -357,6 +355,7 @@
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import type {
     ConsoleAuditLogResponse,
+    ConsoleFileRecordDetailResponse,
     ConsoleFileRecordResponse,
     ConsoleFileSummaryResponse,
   } from '@/types/console-api'
@@ -384,7 +383,7 @@
   const pageSize = ref(15)
   const detailVisible = ref(false)
   const auditVisible = ref(false)
-  const detail = ref<Record<string, unknown> | null>(null)
+  const detail = ref<ConsoleFileRecordDetailResponse | null>(null)
   const auditRows = ref<ConsoleAuditLogResponse[]>([])
   const auditPage = ref(1)
   const auditPageSize = ref(15)

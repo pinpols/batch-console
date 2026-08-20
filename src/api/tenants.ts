@@ -6,8 +6,9 @@
  * - 写操作：ROLE_ADMIN
  */
 import { get, post, put } from '@/api/client'
+import type { components } from '@/types/api.generated'
 
-export type TenantStatus = 'ACTIVE' | 'SUSPENDED'
+export type TenantStatus = components['schemas']['TenantStatus']
 
 export interface Tenant {
   id?: number

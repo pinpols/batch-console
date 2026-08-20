@@ -1570,7 +1570,9 @@ export default {
     },
     tenantStatus: {
       ACTIVE: '正常',
+      SUSPENDING: '暂停中',
       SUSPENDED: '已停用',
+      ACTIVATING: '恢复中',
       ARCHIVED: '已归档',
     },
     severity: {
@@ -2831,6 +2833,7 @@ export default {
     descVersion: '版本',
     descCharset: '字符集',
     descTargetCharset: '目标字符集',
+    descWithBom: 'BOM',
     descDelimiter: '分隔符',
     descLineSeparator: '行分隔符',
     descQueryParamSchema: '查询参数 Schema',
@@ -2848,6 +2851,7 @@ export default {
     fieldFileFormatType: '文件格式',
     fieldCharset: '字符集',
     fieldTargetCharset: '目标字符集',
+    fieldWithBom: '写入 BOM',
     fieldDelimiter: '分隔符',
     fieldLineSeparator: '行分隔符',
     fieldVersion: '版本',

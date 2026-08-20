@@ -283,6 +283,9 @@
         <el-descriptions-item :label="t('fileTemplateList.descTargetCharset')">{{
           detail.targetCharset
         }}</el-descriptions-item>
+        <el-descriptions-item :label="t('fileTemplateList.descWithBom')">{{
+          detail.withBom ? t('common.yes') : t('common.no')
+        }}</el-descriptions-item>
         <el-descriptions-item :label="t('fileTemplateList.descDelimiter')">{{
           detail.delimiter || '—'
         }}</el-descriptions-item>
@@ -395,6 +398,9 @@
             <el-form-item :label="t('fileTemplateList.fieldTargetCharset')"
               ><el-input v-model="templateForm.targetCharset" maxlength="32"
             /></el-form-item>
+            <el-form-item :label="t('fileTemplateList.fieldWithBom')">
+              <el-checkbox v-model="templateForm.withBom" />
+            </el-form-item>
           </template>
         </div>
 
@@ -589,11 +595,12 @@
   const templateForm = reactive({
     templateCode: '',
     templateName: '',
-    templateType: 'EXPORT',
+    templateType: 'IMPORT',
     bizType: '',
     fileFormatType: 'DELIMITED',
     charset: 'UTF-8',
     targetCharset: 'UTF-8',
+    withBom: false,
     delimiter: ',',
     lineSeparator: '\\n',
     fieldMappingsJson: '',
@@ -763,11 +770,12 @@
     Object.assign(templateForm, {
       templateCode: '',
       templateName: '',
-      templateType: 'EXPORT',
+      templateType: 'IMPORT',
       bizType: '',
       fileFormatType: 'DELIMITED',
       charset: 'UTF-8',
       targetCharset: 'UTF-8',
+      withBom: false,
       delimiter: ',',
       lineSeparator: '\\n',
       fieldMappingsJson: '',
@@ -789,6 +797,7 @@
       fileFormatType: row.fileFormatType ?? 'CSV',
       charset: row.charset ?? 'UTF-8',
       targetCharset: row.targetCharset ?? 'UTF-8',
+      withBom: row.withBom ?? false,
       delimiter: row.delimiter ?? ',',
       lineSeparator: row.lineSeparator ?? '\\n',
       fieldMappingsJson: row.fieldMappings ?? '',
@@ -812,6 +821,7 @@
       fileFormatType: optionalText(templateForm.fileFormatType),
       charset: optionalText(templateForm.charset),
       targetCharset: optionalText(templateForm.targetCharset),
+      withBom: templateForm.withBom,
       delimiter: optionalText(templateForm.delimiter),
       lineSeparator: optionalText(templateForm.lineSeparator),
       fieldMappingsJson: optionalText(templateForm.fieldMappingsJson),

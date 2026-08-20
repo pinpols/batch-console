@@ -177,9 +177,11 @@ export const configStatusColor: Record<string, StatusTagType> = {
 }
 
 /** /meta/enums: `tenantStatus` */
-export const tenantStatusColor: Record<TenantStatus, StatusTagType> = {
+export const tenantStatusColor: Record<string, StatusTagType> = {
   ACTIVE: 'success',
+  SUSPENDING: 'warning',
   SUSPENDED: 'info',
+  ACTIVATING: 'warning',
 }
 
 /** /meta/enums: `triggerStatus` */
