@@ -595,7 +595,7 @@
   const templateForm = reactive({
     templateCode: '',
     templateName: '',
-    templateType: 'EXPORT',
+    templateType: 'IMPORT',
     bizType: '',
     fileFormatType: 'DELIMITED',
     charset: 'UTF-8',
@@ -770,7 +770,7 @@
     Object.assign(templateForm, {
       templateCode: '',
       templateName: '',
-      templateType: 'EXPORT',
+      templateType: 'IMPORT',
       bizType: '',
       fileFormatType: 'DELIMITED',
       charset: 'UTF-8',
