@@ -1,5 +1,6 @@
 import { expect, test } from './support/app'
 import { enterDemoApp, expectPageTitle, isVisible } from './support/app'
+import type { Locator, Page } from '@playwright/test'
 
 test.describe('tenant batch create with config init (批量建租户 + 配置初始化)', () => {
   test.beforeEach(async ({ page }) => {
@@ -22,7 +23,10 @@ test.describe('tenant batch create with config init (批量建租户 + 配置初
   test('选择源租户后初始化模式显示', async ({ page }) => {
     await page.getByRole('button', { name: '批量新增' }).click()
     // 点源租户下拉
-    const sourceSelect = page.locator('.el-dialog:visible, .el-drawer:visible').locator('.el-select').last()
+    const sourceSelect = page
+      .locator('.el-dialog:visible, .el-drawer:visible')
+      .locator('.el-select')
+      .last()
     await sourceSelect.click()
     // 选第一个选项
     const firstOption = page.locator('.el-select-dropdown__item').first()
@@ -86,4 +90,50 @@ test.describe('tenant copy config dialog (跨租户复制配置)', () => {
     await expect(page.getByRole('button', { name: /试运行|预览/ }).first()).toBeVisible()
     await page.getByRole('button', { name: '取消' }).click()
   })
+
+  test('复制配置对话框支持作业范围预览和矩阵比对', async ({ page }) => {
+    await page.getByRole('button', { name: '复制配置' }).click()
+    const drawer = page.locator('.el-drawer:visible')
+    await expect(drawer.getByText('跨租户复制配置')).toBeVisible()
+
+    await selectFirstFormOption(page, drawer, '源租户')
+    await selectFirstFormOption(page, drawer, '目标租户')
+    await fillJobCode(page, drawer, 'TA_IMPORT_CUSTOMER')
+    await expect(drawer.locator('.el-form-item', { hasText: '作业范围' })).toContainText(
+      'TA_IMPORT_CUSTOMER',
+    )
+
+    const copyPreview = page.waitForResponse(
+      (resp) => resp.url().includes('/api/console/config/tenant-copy/preview') && resp.ok(),
+    )
+    await drawer.getByRole('button', { name: '复制预览' }).click()
+    await copyPreview
+    await expect(drawer.getByText('差异预览')).toBeVisible()
+    await expect(drawer.getByText('配置项明细')).toBeVisible()
+
+    const matrixPreview = page.waitForResponse(
+      (resp) => resp.url().includes('/api/console/config/tenant-config-matrix') && resp.ok(),
+    )
+    await drawer.getByRole('button', { name: '作业矩阵' }).click()
+    await matrixPreview
+    await expect(drawer.getByText('TA_IMPORT_CUSTOMER').first()).toBeVisible()
+
+    await page.getByRole('button', { name: '取消' }).click()
+  })
 })
+
+async function selectFirstFormOption(page: Page, scope: Locator, label: string) {
+  const item = scope.locator('.el-form-item', { hasText: label })
+  await item.locator('input').first().click({ force: true })
+  await page.keyboard.press('ArrowDown')
+  await page.keyboard.press('Enter')
+  await page.keyboard.press('Escape')
+}
+
+async function fillJobCode(page: Page, scope: Locator, jobCode: string) {
+  const item = scope.locator('.el-form-item', { hasText: '作业范围' })
+  await page.keyboard.press('Escape')
+  await item.locator('input').click({ force: true })
+  await item.locator('input').fill(jobCode)
+  await item.locator('input').press('Enter')
+}

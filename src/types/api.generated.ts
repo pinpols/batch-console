@@ -5048,6 +5048,69 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/console/config/tenant-copy/preview': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Preview cross-tenant configuration copy impact
+     * @description Read-only preview for cross-tenant config copy. Returns add/update/unchanged/delete-candidate items, environment-specific review hints, and a target-specific overlay bundle.
+     *
+     */
+    post: operations['previewTenantConfigCopy']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/config/tenant-overlay/preview': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Preview base-package plus tenant overlay
+     * @description Read-only preview that treats sourceTenantId as the base package tenant and returns the target tenant overlay bundle containing only add/update differences.
+     *
+     */
+    post: operations['previewTenantConfigOverlay']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/config/tenant-config-matrix': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Compare same job config across tenants
+     * @description Returns a tenant/job matrix for schedule, queue, window, calendar, template and channel drift.
+     *
+     */
+    post: operations['compareTenantJobConfigMatrix']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/console/ops/governance': {
     parameters: {
       query?: never
@@ -9282,6 +9345,8 @@ export interface components {
       targetTenantIds: string[]
       /** @description 空表示复制全部 10 类 */
       configTypes?: components['schemas']['TenantConfigCopyType'][]
+      /** @description 非空时按 jobCode 构建 dependency-aware 最小配置包，而不是复制整类配置。 */
+      jobCodes?: string[]
       /**
        * @default SKIP_EXISTING
        * @enum {string}
@@ -9289,6 +9354,89 @@ export interface components {
       mode: 'SKIP_EXISTING' | 'UPSERT'
       /** @default false */
       dryRun: boolean
+    }
+    /** @description Read-only config diff request. `jobCodes` narrows the source to dependency-aware job bundles;
+     *     omitted `configTypes` means all tenant config types.
+     *      */
+    TenantConfigPreviewRequest: {
+      sourceTenantId: string
+      targetTenantIds: string[]
+      configTypes?: components['schemas']['TenantConfigCopyType'][]
+      jobCodes?: string[]
+      /** @default false */
+      includeUnchanged: boolean
+      /** @default false */
+      includeDeleteCandidates: boolean
+    }
+    TenantConfigMatrixRequest: {
+      tenantIds: string[]
+      jobCodes: string[]
+      baselineTenantId?: string | null
+    }
+    TenantConfigDiffPreviewResponse: {
+      sourceTenantId?: string
+      targetTenantIds?: string[]
+      tenants?: components['schemas']['TenantConfigDiffResult'][]
+      summary?: components['schemas']['TenantConfigDiffSummary']
+    }
+    TenantConfigDiffResult: {
+      tenantId?: string
+      addCount?: number
+      updateCount?: number
+      unchangedCount?: number
+      deleteCandidateCount?: number
+      items?: components['schemas']['TenantConfigDiffItem'][]
+      impacts?: components['schemas']['TenantConfigImpactItem'][]
+      overlayBundle?: components['schemas']['ConfigSyncBundlePayload']
+    }
+    TenantConfigDiffItem: {
+      configType?: components['schemas']['TenantConfigCopyType']
+      configKey?: string
+      /** @enum {string} */
+      action?: 'ADD' | 'UPDATE' | 'UNCHANGED' | 'DELETE_CANDIDATE'
+      reason?: string
+      source?: {
+        [key: string]: unknown
+      }
+      target?: {
+        [key: string]: unknown
+      }
+    }
+    TenantConfigImpactItem: {
+      impactType?: string
+      ref?: string
+      message?: string
+    }
+    TenantConfigDiffSummary: {
+      targetTenantCount?: number
+      addCount?: number
+      updateCount?: number
+      unchangedCount?: number
+      deleteCandidateCount?: number
+    }
+    TenantConfigMatrixResponse: {
+      baselineTenantId?: string
+      tenantIds?: string[]
+      jobCodes?: string[]
+      rows?: components['schemas']['TenantConfigMatrixRow'][]
+    }
+    TenantConfigMatrixRow: {
+      tenantId?: string
+      jobCode?: string
+      exists?: boolean
+      enabled?: boolean | null
+      scheduleType?: string | null
+      scheduleExpr?: string | null
+      timezone?: string | null
+      queueCode?: string | null
+      calendarCode?: string | null
+      windowCode?: string | null
+      workerGroup?: string | null
+      pipelineJobCodes?: string[]
+      workflowCodes?: string[]
+      templateCodes?: string[]
+      channelCodes?: string[]
+      driftFields?: string[]
     }
     /**
      * @description 配置类型枚举。后端 @JsonCreator 兼容简写：
@@ -9587,6 +9735,16 @@ export interface components {
       code: string
       message: string
       data: components['schemas']['TenantConfigPackageExcelApplyResponse']
+    }
+    CommonResponseTenantConfigDiffPreviewResponse: {
+      code: string
+      message: string
+      data: components['schemas']['TenantConfigDiffPreviewResponse']
+    }
+    CommonResponseTenantConfigMatrixResponse: {
+      code: string
+      message: string
+      data: components['schemas']['TenantConfigMatrixResponse']
     }
     TenantConfigPackageExcelApplyRequest: {
       reason?: string
@@ -18763,6 +18921,78 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['CommonResponseObject']
+        }
+      }
+    }
+  }
+  previewTenantConfigCopy: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['TenantConfigPreviewRequest']
+      }
+    }
+    responses: {
+      /** @description Read-only copy preview */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseTenantConfigDiffPreviewResponse']
+        }
+      }
+    }
+  }
+  previewTenantConfigOverlay: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['TenantConfigPreviewRequest']
+      }
+    }
+    responses: {
+      /** @description Read-only overlay preview */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseTenantConfigDiffPreviewResponse']
+        }
+      }
+    }
+  }
+  compareTenantJobConfigMatrix: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['TenantConfigMatrixRequest']
+      }
+    }
+    responses: {
+      /** @description Same-job cross-tenant matrix */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseTenantConfigMatrixResponse']
         }
       }
     }

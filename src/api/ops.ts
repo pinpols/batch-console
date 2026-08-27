@@ -1,4 +1,5 @@
 import { get, post, put } from '@/api/client'
+import type { components } from '@/types/api.generated'
 
 export type ConfigType =
   | 'JOB_DEFINITION'
@@ -12,6 +13,13 @@ export type ConfigType =
   | 'QUOTA_POLICY'
   | 'ALERT_ROUTING'
 import type { ConsoleOpsSummaryResponse } from '@/types/console-api'
+
+export type TenantConfigCopyRequest = components['schemas']['TenantConfigCopyRequest']
+export type TenantConfigPreviewRequest = components['schemas']['TenantConfigPreviewRequest']
+export type TenantConfigMatrixRequest = components['schemas']['TenantConfigMatrixRequest']
+export type TenantConfigDiffPreviewResponse =
+  components['schemas']['TenantConfigDiffPreviewResponse']
+export type TenantConfigMatrixResponse = components['schemas']['TenantConfigMatrixResponse']
 
 /** 运营概览 — GET /api/console/ops/summary?tenantId= */
 export function getOpsSummary(tenantId: string) {
@@ -124,8 +132,24 @@ export function copyTenantConfig(body: {
   sourceTenantId: string
   targetTenantIds: string[]
   configTypes?: ConfigType[]
+  jobCodes?: string[]
   mode?: 'SKIP_EXISTING' | 'UPSERT'
   dryRun?: boolean
 }) {
   return post<unknown>('/api/console/config/tenant-copy', body)
+}
+
+/** POST /api/console/config/tenant-copy/preview */
+export function previewTenantConfigCopy(body: TenantConfigPreviewRequest) {
+  return post<TenantConfigDiffPreviewResponse>('/api/console/config/tenant-copy/preview', body)
+}
+
+/** POST /api/console/config/tenant-overlay/preview */
+export function previewTenantConfigOverlay(body: TenantConfigPreviewRequest) {
+  return post<TenantConfigDiffPreviewResponse>('/api/console/config/tenant-overlay/preview', body)
+}
+
+/** POST /api/console/config/tenant-config-matrix */
+export function compareTenantJobConfigMatrix(body: TenantConfigMatrixRequest) {
+  return post<TenantConfigMatrixResponse>('/api/console/config/tenant-config-matrix', body)
 }
