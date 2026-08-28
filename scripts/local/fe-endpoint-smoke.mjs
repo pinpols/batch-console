@@ -83,6 +83,9 @@ function sampleValueForParam(param) {
   if (param.name === 'tenantId') return TENANT
   if (param.name === 'jobCode') return 'TA_E2E_ATOMIC'
   const schema = param.schema ?? {}
+  if (schema.format === 'date') return '2026-08-28'
+  if (schema.format === 'date-time') return '2026-08-28T00:00:00Z'
+  if (/date$/i.test(param.name)) return '2026-08-28'
   if (schema.type === 'integer' || schema.type === 'number') return '1'
   if (schema.type === 'boolean') return 'true'
   return '1'
