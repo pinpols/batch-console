@@ -96,30 +96,36 @@
               </div>
             </template>
             <div class="trace-domain__body">
-              <el-table
-                v-if="d.rows.length > 0"
-                :ref="(el) => setTableRef(d.domain, el)"
-                :data="d.rows"
-                stripe
-                size="small"
-                class="console-table"
-              >
-                <el-table-column
-                  v-for="col in d.columns"
-                  :key="col.prop"
-                  :prop="col.prop"
-                  :label="col.label"
-                  :width="col.width"
-                  show-overflow-tooltip
+              <div v-if="d.rows.length > 0" class="trace-table-wrap">
+                <el-table
+                  :ref="(el) => setTableRef(d.domain, el)"
+                  :data="d.rows"
+                  stripe
+                  size="small"
+                  table-layout="fixed"
+                  class="console-table trace-domain__table"
                 >
-                  <template v-if="col.linkTo" #default="{ row }">
-                    <router-link v-if="row[col.prop]" :to="col.linkTo(row)" class="cell-link">
-                      {{ row[col.prop] }}
-                    </router-link>
-                    <span v-else>—</span>
-                  </template>
-                </el-table-column>
-              </el-table>
+                  <el-table-column
+                    v-for="col in d.columns"
+                    :key="col.prop"
+                    :prop="col.prop"
+                    :label="col.label"
+                    :width="col.width"
+                    show-overflow-tooltip
+                  >
+                    <template #default="{ row }">
+                      <router-link
+                        v-if="col.linkTo && hasCellValue(row[col.prop])"
+                        :to="col.linkTo(row)"
+                        class="cell-link"
+                      >
+                        {{ formatCell(row[col.prop]) }}
+                      </router-link>
+                      <span v-else>{{ formatCell(row[col.prop]) }}</span>
+                    </template>
+                  </el-table-column>
+                </el-table>
+              </div>
             </div>
           </el-collapse-item>
         </el-collapse>
@@ -165,9 +171,17 @@
     if (el) tableRefs.set(domain, el as TableInstance)
     else tableRefs.delete(domain)
   }
+  function relayoutTables(domains: string[]) {
+    nextTick(() => {
+      domains.forEach((n) => tableRefs.get(n)?.doLayout?.())
+      window.requestAnimationFrame(() => {
+        domains.forEach((n) => tableRefs.get(n)?.doLayout?.())
+      })
+      window.setTimeout(() => domains.forEach((n) => tableRefs.get(n)?.doLayout?.()), 160)
+    })
+  }
   function onCollapseChange(names: string | string[]) {
-    const opened = Array.isArray(names) ? names : [names]
-    nextTick(() => opened.forEach((n) => tableRefs.get(n)?.doLayout?.()))
+    relayoutTables(Array.isArray(names) ? names : [names])
   }
 
   interface DomainColumn {
@@ -191,6 +205,15 @@
   })
   const totalHits = computed(() => results.value.reduce((s, d) => s + d.rows.length, 0))
   const hitDomains = computed(() => results.value.filter((d) => d.rows.length > 0))
+
+  function hasCellValue(value: unknown): boolean {
+    return value !== null && value !== undefined && String(value).trim() !== ''
+  }
+
+  function formatCell(value: unknown): string {
+    if (!hasCellValue(value)) return '—'
+    return typeof value === 'object' ? JSON.stringify(value) : String(value)
+  }
 
   async function search() {
     const trace = traceIdInput.value.trim()
@@ -353,6 +376,7 @@
 
     // 自动展开所有有结果的域
     expanded.value = hitDomains.value.map((d) => d.domain)
+    relayoutTables(expanded.value)
     loading.value = false
 
     void router.replace({ query: { ...route.query, traceId: trace } })
@@ -459,5 +483,13 @@
   }
   .trace-domain__body {
     padding: 8px 0;
+  }
+  .trace-table-wrap {
+    width: 100%;
+    overflow-x: auto;
+  }
+  .trace-domain__table {
+    width: 100%;
+    min-width: 760px;
   }
 </style>

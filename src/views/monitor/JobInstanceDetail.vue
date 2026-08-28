@@ -89,7 +89,7 @@
       <el-tab-pane name="overview" :label="t('monitor.detailTabOverview')">
         <SectionCard v-if="row.parentInstanceId || row.relatedFileId || row.failureClass">
           <template #header>{{ t('monitor.detailRelatedSection') }}</template>
-          <el-descriptions :column="2" border>
+          <el-descriptions class="detail-descriptions" :column="2" border size="small">
             <el-descriptions-item
               v-if="row.parentInstanceId"
               :label="t('monitor.detailParentInstance')"
@@ -111,7 +111,7 @@
 
         <SectionCard>
           <template #header>{{ t('monitor.detailTimeSection') }}</template>
-          <el-descriptions :column="2" border>
+          <el-descriptions class="detail-descriptions" :column="2" border size="small">
             <el-descriptions-item :label="t('monitor.detailStarted')">{{
               fmtDatetime(row.startedAt)
             }}</el-descriptions-item>
@@ -187,7 +187,7 @@
 
         <SectionCard>
           <template #header>{{ t('monitor.detailParamsSection') }}</template>
-          <el-descriptions :column="1" border>
+          <el-descriptions class="detail-descriptions" :column="1" border size="small">
             <el-descriptions-item label="paramsSnapshot">
               <JsonPreview :data="row.paramsSnapshot" />
             </el-descriptions-item>
@@ -213,43 +213,53 @@
               {{ t('monitor.detailOpenStandalone') }}
             </el-button>
           </template>
-          <el-table v-loading="stepsLoading" :data="stepsRows" size="small" empty-text="—" stripe>
-            <el-table-column prop="stepCode" :label="t('monitor.stepColStep')" min-width="180" />
-            <el-table-column :label="t('monitor.stepColStatus')" width="120">
-              <template #default="{ row: s }">
-                <el-tag size="small" :type="stepTagType(s.stepStatus)">{{ s.stepStatus }}</el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column
-              prop="retryCount"
-              :label="t('monitor.stepColRetry')"
-              width="80"
-              align="right"
-            />
-            <el-table-column :label="t('monitor.stepColPipelineProgress')" width="180">
-              <template #default="{ row: s }">
-                <router-link
-                  v-if="s.relatedPipelineInstanceId"
-                  class="cell-link"
-                  :to="`/files/pipeline-obs?pipelineInstanceId=${s.relatedPipelineInstanceId}`"
-                >
-                  {{ t('monitor.stepViewPipelineProgress') }}
-                </router-link>
-                <span v-else class="cell-empty">—</span>
-              </template>
-            </el-table-column>
-            <el-table-column :label="t('monitor.stepColStarted')" width="170">
-              <template #default="{ row: s }">{{ fmtDatetime(s.startedAt) }}</template>
-            </el-table-column>
-            <el-table-column :label="t('monitor.stepColFinished')" width="170">
-              <template #default="{ row: s }">{{ fmtDatetime(s.finishedAt) }}</template>
-            </el-table-column>
-            <el-table-column
-              prop="errorMessage"
-              :label="t('monitor.stepColError')"
-              show-overflow-tooltip
-            />
-          </el-table>
+          <div class="detail-table-wrap">
+            <el-table
+              v-loading="stepsLoading"
+              :data="stepsRows"
+              size="small"
+              empty-text="—"
+              stripe
+              table-layout="fixed"
+              class="console-table detail-table detail-table--steps"
+            >
+              <el-table-column prop="stepCode" :label="t('monitor.stepColStep')" min-width="180" />
+              <el-table-column :label="t('monitor.stepColStatus')" width="120">
+                <template #default="{ row: s }">
+                  <el-tag size="small" :type="stepTagType(s.stepStatus)">{{ s.stepStatus }}</el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column
+                prop="retryCount"
+                :label="t('monitor.stepColRetry')"
+                width="80"
+                align="right"
+              />
+              <el-table-column :label="t('monitor.stepColPipelineProgress')" width="180">
+                <template #default="{ row: s }">
+                  <router-link
+                    v-if="s.relatedPipelineInstanceId"
+                    class="cell-link"
+                    :to="`/files/pipeline-obs?pipelineInstanceId=${s.relatedPipelineInstanceId}`"
+                  >
+                    {{ t('monitor.stepViewPipelineProgress') }}
+                  </router-link>
+                  <span v-else class="cell-empty">—</span>
+                </template>
+              </el-table-column>
+              <el-table-column :label="t('monitor.stepColStarted')" width="170">
+                <template #default="{ row: s }">{{ fmtDatetime(s.startedAt) }}</template>
+              </el-table-column>
+              <el-table-column :label="t('monitor.stepColFinished')" width="170">
+                <template #default="{ row: s }">{{ fmtDatetime(s.finishedAt) }}</template>
+              </el-table-column>
+              <el-table-column
+                prop="errorMessage"
+                :label="t('monitor.stepColError')"
+                show-overflow-tooltip
+              />
+            </el-table>
+          </div>
         </SectionCard>
       </el-tab-pane>
 
@@ -290,37 +300,51 @@
         </template>
         <SectionCard>
           <template #header>{{ t('monitor.detailRecentHeader', { code: row.jobCode }) }}</template>
-          <el-table v-loading="recentLoading" :data="recentRows" size="small" empty-text="—" stripe>
-            <el-table-column :label="t('monitor.detailMetricInstanceNo')" min-width="220">
-              <template #default="{ row: r }">
-                <router-link class="cell-link" :to="`/monitor/job-instances/${r.id}`">
-                  {{ r.instanceNo }}
-                </router-link>
-                <el-tag
-                  v-if="r.id === row?.id"
-                  size="small"
-                  effect="plain"
-                  style="margin-left: 6px"
-                >
-                  {{ t('monitor.detailRecentSelf') }}
-                </el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column prop="bizDate" :label="t('monitor.detailMetricBizDate')" width="120" />
-            <el-table-column :label="t('monitor.detailMetricStatus')" width="120">
-              <template #default="{ row: r }">
-                <el-tag size="small" :type="stepTagType(r.instanceStatus)">{{
-                  r.instanceStatus
-                }}</el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column :label="t('monitor.detailStarted')" width="170">
-              <template #default="{ row: r }">{{ fmtDatetime(r.startedAt) }}</template>
-            </el-table-column>
-            <el-table-column :label="t('monitor.detailFinished')" width="170">
-              <template #default="{ row: r }">{{ fmtDatetime(r.finishedAt) }}</template>
-            </el-table-column>
-          </el-table>
+          <div class="detail-table-wrap">
+            <el-table
+              v-loading="recentLoading"
+              :data="recentRows"
+              size="small"
+              empty-text="—"
+              stripe
+              table-layout="fixed"
+              class="console-table detail-table detail-table--recent"
+            >
+              <el-table-column :label="t('monitor.detailMetricInstanceNo')" min-width="220">
+                <template #default="{ row: r }">
+                  <router-link class="cell-link" :to="`/monitor/job-instances/${r.id}`">
+                    {{ r.instanceNo }}
+                  </router-link>
+                  <el-tag
+                    v-if="r.id === row?.id"
+                    size="small"
+                    effect="plain"
+                    style="margin-left: 6px"
+                  >
+                    {{ t('monitor.detailRecentSelf') }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column
+                prop="bizDate"
+                :label="t('monitor.detailMetricBizDate')"
+                width="120"
+              />
+              <el-table-column :label="t('monitor.detailMetricStatus')" width="120">
+                <template #default="{ row: r }">
+                  <el-tag size="small" :type="stepTagType(r.instanceStatus)">{{
+                    r.instanceStatus
+                  }}</el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column :label="t('monitor.detailStarted')" width="170">
+                <template #default="{ row: r }">{{ fmtDatetime(r.startedAt) }}</template>
+              </el-table-column>
+              <el-table-column :label="t('monitor.detailFinished')" width="170">
+                <template #default="{ row: r }">{{ fmtDatetime(r.finishedAt) }}</template>
+              </el-table-column>
+            </el-table>
+          </div>
         </SectionCard>
       </el-tab-pane>
     </el-tabs>
@@ -779,9 +803,68 @@
 <style scoped>
   .detail-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     gap: var(--space-md);
     margin-bottom: var(--space-md);
+  }
+
+  .detail-grid :deep(.metric-card) {
+    min-height: 96px;
+    border-radius: var(--radius-content);
+  }
+
+  .detail-grid :deep(.metric-card .el-card__body) {
+    padding: 14px 16px 12px;
+  }
+
+  .detail-grid :deep(.metric-card__label) {
+    margin-bottom: 6px;
+    font-size: var(--font-size-sm);
+  }
+
+  .detail-grid :deep(.metric-card__value) {
+    font-size: 24px;
+  }
+
+  .detail-grid :deep(.metric-card__value--long) {
+    font-size: 16px;
+  }
+
+  .detail-grid :deep(.metric-card__description) {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .detail-descriptions :deep(.el-descriptions__label) {
+    width: 132px;
+    color: var(--color-text-secondary);
+    font-weight: 500;
+  }
+
+  .detail-descriptions :deep(.el-descriptions__content) {
+    min-width: 0;
+    word-break: break-word;
+  }
+
+  .detail-table-wrap {
+    width: 100%;
+    overflow-x: auto;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-content);
+    background: var(--color-bg-card);
+  }
+
+  .detail-table {
+    width: 100%;
+  }
+
+  .detail-table--steps {
+    min-width: 1080px;
+  }
+
+  .detail-table--recent {
+    min-width: 820px;
   }
 
   .detail-tabs :deep(.el-tabs__header) {

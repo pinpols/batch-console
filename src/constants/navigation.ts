@@ -190,6 +190,7 @@ export const navigationGroups: NavigationGroup[] = [
         path: '/observability/alert-routings',
         minRole: 'OPERATOR',
         icon: Promotion,
+        hidden: true,
       },
       {
         title: pageTitle('/system/notifications'),
