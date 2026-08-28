@@ -462,7 +462,7 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/observability/AlertRoutingPanel.vue'),
         meta: {
           title: '告警路由',
-          activeMenu: '/observability/alert-routings',
+          activeMenu: '/observability/alerts',
           minRole: 'OPERATOR',
         },
       },
