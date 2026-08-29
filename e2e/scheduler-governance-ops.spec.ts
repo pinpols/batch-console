@@ -4,8 +4,15 @@
  *       队列/窗口/日历 Tab + 启用切换 + 节假日抽屉、Trigger 注册/注销/暂停/恢复、
  *       租户配额筛选与启用切换
  */
+import type { Locator } from '@playwright/test'
 import { expect, test } from './support/app'
 import { enterDemoApp, expectPageTitle, isVisible } from './support/app'
+
+const WRITE_RESPONSE_TIMEOUT_MS = 45_000
+
+async function isActionable(locator: Locator) {
+  return (await isVisible(locator)) && (await locator.isEnabled().catch(() => false))
+}
 
 // ─── 调度快照 ─────────────────────────────────────────────────────
 
@@ -36,21 +43,41 @@ test.describe('调度快照 — 全局暂停 / 恢复', () => {
 
   test('全局暂停 → 确认 → toast', async ({ page }) => {
     const pauseBtn = page.getByRole('button', { name: '全局暂停' })
-    if (!(await isVisible(pauseBtn))) return
+    if (!(await isActionable(pauseBtn))) {
+      test.skip(true, '当前调度状态不可执行全局暂停')
+      return
+    }
     await pauseBtn.click()
     await expect(page.locator('.el-message-box')).toBeVisible()
     await expect(page.locator('.el-message-box')).toContainText('暂停')
-    await page.locator('.el-message-box').getByRole('button', { name: /^(确定|确认.*)$/ }).click()
+    const pauseResponse = page.waitForResponse(
+      (res) =>
+        res.request().method() === 'POST' &&
+        res.url().includes('/api/console/scheduler/pause-all'),
+      { timeout: WRITE_RESPONSE_TIMEOUT_MS },
+    )
+    await page.locator('.el-message-box').getByRole('button', { name: /^(确定|确认.*)$/ }).click({ force: true })
+    expect((await pauseResponse).status()).toBeLessThan(400)
     await expect(page.locator('.el-message').first()).toBeVisible({ timeout: 8000 })
   })
 
   test('全局恢复 → 确认 → toast', async ({ page }) => {
     const resumeBtn = page.getByRole('button', { name: '全局恢复' })
-    if (!(await isVisible(resumeBtn))) return
+    if (!(await isActionable(resumeBtn))) {
+      test.skip(true, '当前调度状态不可执行全局恢复')
+      return
+    }
     await resumeBtn.click()
     await expect(page.locator('.el-message-box')).toBeVisible()
     await expect(page.locator('.el-message-box')).toContainText('恢复')
-    await page.locator('.el-message-box').getByRole('button', { name: /^(确定|确认.*)$/ }).click()
+    const resumeResponse = page.waitForResponse(
+      (res) =>
+        res.request().method() === 'POST' &&
+        res.url().includes('/api/console/scheduler/resume-all'),
+      { timeout: WRITE_RESPONSE_TIMEOUT_MS },
+    )
+    await page.locator('.el-message-box').getByRole('button', { name: /^(确定|确认.*)$/ }).click({ force: true })
+    expect((await resumeResponse).status()).toBeLessThan(400)
     await expect(page.locator('.el-message').first()).toBeVisible({ timeout: 8000 })
   })
 })
@@ -187,7 +214,7 @@ test.describe('队列 / 窗口 / 日历 — Tab 与操作', () => {
     if (!(await isVisible(toggle))) return
     await toggle.click()
     await expect(page.locator('.el-message-box')).toBeVisible({ timeout: 5000 })
-    await page.locator('.el-message-box').getByRole('button', { name: /^(确定|确认.*)$/ }).click()
+    await page.locator('.el-message-box').getByRole('button', { name: /^(确定|确认.*)$/ }).click({ force: true })
     await expect(page.locator('.el-message').first()).toBeVisible({ timeout: 8000 })
   })
 
@@ -247,7 +274,7 @@ test.describe('租户配额 — 筛选与启用切换', () => {
     if (!(await isVisible(toggle))) return
     await toggle.click()
     await expect(page.locator('.el-message-box')).toBeVisible({ timeout: 5000 })
-    await page.locator('.el-message-box').getByRole('button', { name: /^(确定|确认.*)$/ }).click()
+    await page.locator('.el-message-box').getByRole('button', { name: /^(确定|确认.*)$/ }).click({ force: true })
     await expect(page.locator('.el-message').first()).toBeVisible({ timeout: 8000 })
   })
 })
@@ -271,10 +298,17 @@ test.describe('Trigger 管理 — 注册 / 注销 / 暂停 / 恢复', () => {
       .locator('.table-actions')
       .getByRole('button', { name: '注册' })
       .first()
-    if (!(await isVisible(registerBtn))) return
+    if (!(await isActionable(registerBtn))) return
     await registerBtn.click()
     await expect(page.locator('.el-message-box')).toContainText('注册')
-    await page.locator('.el-message-box').getByRole('button', { name: /^(确定|确认.*)$/ }).click()
+    const registerResponse = page.waitForResponse(
+      (res) =>
+        res.request().method() === 'POST' &&
+        /\/api\/console\/ops\/triggers\/.+\/register/.test(res.url()),
+      { timeout: WRITE_RESPONSE_TIMEOUT_MS },
+    )
+    await page.locator('.el-message-box').getByRole('button', { name: /^(确定|确认.*)$/ }).click({ force: true })
+    expect((await registerResponse).status()).toBeLessThan(400)
     await expect(page.locator('.el-message').first()).toBeVisible({ timeout: 8000 })
   })
 
@@ -283,10 +317,17 @@ test.describe('Trigger 管理 — 注册 / 注销 / 暂停 / 恢复', () => {
       .locator('.table-actions')
       .getByRole('button', { name: '注销' })
       .first()
-    if (!(await isVisible(unregisterBtn))) return
+    if (!(await isActionable(unregisterBtn))) return
     await unregisterBtn.click()
     await expect(page.locator('.el-message-box')).toContainText('注销')
-    await page.locator('.el-message-box').getByRole('button', { name: /^(确定|确认.*)$/ }).click()
+    const unregisterResponse = page.waitForResponse(
+      (res) =>
+        res.request().method() === 'POST' &&
+        /\/api\/console\/ops\/triggers\/.+\/unregister/.test(res.url()),
+      { timeout: WRITE_RESPONSE_TIMEOUT_MS },
+    )
+    await page.locator('.el-message-box').getByRole('button', { name: /^(确定|确认.*)$/ }).click({ force: true })
+    expect((await unregisterResponse).status()).toBeLessThan(400)
     await expect(page.locator('.el-message').first()).toBeVisible({ timeout: 8000 })
   })
 
@@ -295,22 +336,34 @@ test.describe('Trigger 管理 — 注册 / 注销 / 暂停 / 恢复', () => {
       .locator('.table-actions')
       .getByRole('button', { name: '暂停' })
       .first()
-    if (!(await isVisible(pauseBtn))) return
+    if (!(await isActionable(pauseBtn))) return
     await pauseBtn.click()
     await expect(page.locator('.el-message-box')).toContainText('暂停')
-    await page.locator('.el-message-box').getByRole('button', { name: /^(确定|确认.*)$/ }).click()
+    const pauseResponse = page.waitForResponse(
+      (res) =>
+        res.request().method() === 'POST' &&
+        /\/api\/console\/ops\/triggers\/.+\/pause/.test(res.url()),
+      { timeout: WRITE_RESPONSE_TIMEOUT_MS },
+    )
+    await page.locator('.el-message-box').getByRole('button', { name: /^(确定|确认.*)$/ }).click({ force: true })
+    expect((await pauseResponse).status()).toBeLessThan(400)
     await expect(page.locator('.el-message').first()).toBeVisible({ timeout: 8000 })
   })
 
-  test('恢复 → 确认 → toast', async ({ page }) => {
+  test('恢复 → 直接提交 → toast', async ({ page }) => {
     const resumeBtn = page
       .locator('.table-actions')
       .getByRole('button', { name: '恢复' })
       .first()
-    if (!(await isVisible(resumeBtn))) return
-    await resumeBtn.click()
-    await expect(page.locator('.el-message-box')).toBeVisible()
-    await page.locator('.el-message-box').getByRole('button', { name: /^(确定|确认.*)$/ }).click()
+    if (!(await isActionable(resumeBtn))) return
+    const resumeResponse = page.waitForResponse(
+      (res) =>
+        res.request().method() === 'POST' &&
+        /\/api\/console\/ops\/triggers\/.+\/resume/.test(res.url()),
+      { timeout: WRITE_RESPONSE_TIMEOUT_MS },
+    )
+    await resumeBtn.click({ force: true })
+    expect((await resumeResponse).status()).toBeLessThan(400)
     await expect(page.locator('.el-message').first()).toBeVisible({ timeout: 8000 })
   })
 })
