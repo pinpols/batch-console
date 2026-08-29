@@ -35,8 +35,18 @@ const PAGES: ListPage[] = [
   { path: '/system/api-keys', title: /API Key|密钥/, listUrl: /\/api-keys(\?|\/?$)/ },
   { path: '/system/parameters', title: /系统参数|参数/, listUrl: /\/system-parameters/ },
   { path: '/system/triggers', title: /触发器|Trigger/, listUrl: /\/ops\/triggers/ },
-  { path: '/workers/management', title: /Worker/, listUrl: /\/queries\/workers/ },
-  { path: '/observability/alerts', title: /告警|事件告警/, listUrl: /\/queries\/alerts/ },
+  {
+    path: '/workers/management',
+    title: /Worker/,
+    listUrl: /\/queries\/workers/,
+    rowSelector: '.wk-card:visible',
+  },
+  {
+    path: '/observability/alerts',
+    title: /告警|事件告警/,
+    listUrl: /\/queries\/alerts/,
+    rowSelector: '.al-card:visible',
+  },
 ]
 
 for (const pg of PAGES) {

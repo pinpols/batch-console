@@ -13,7 +13,13 @@ import { enterDemoApp, isVisible } from './support/app'
 
 const useRealBE = process.env.E2E_REAL_BE === '1'
 
+const BACKEND_SEED_SUITE_DIR = path.resolve(
+  __dirname,
+  '../../file-batch-system/docs/test-data/test-full-coverage-import-suite',
+)
+
 const FIXTURE_DIRS = [
+  BACKEND_SEED_SUITE_DIR,
   path.resolve(__dirname, '../e2e-data/01-tenant-config-import'),
   path.resolve(__dirname, '../e2e-data/00-tenant-lifecycle'),
 ]

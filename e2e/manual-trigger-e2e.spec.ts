@@ -73,11 +73,16 @@ test.describe('@manual-trigger 手动触发作业 真端到端', () => {
     // 验真结果:监控页按 jobCode 过滤,出现该作业实例(刚触发产生)
     await page.goto(`/monitor/job-instances?jobCode=${JOB}`)
     await page.waitForLoadState('networkidle', { timeout: 8000 }).catch(() => {})
-    // 触发→outbox→kafka→launch→实例落库这条异步链有延迟,poll 拉长到 30s 等行出现
+    // 触发→outbox→kafka→launch→实例落库这条异步链有延迟。监控页虽有自动刷新,
+    // 但首轮刷新窗口可能错过刚落库实例;主动刷新让断言跟业务事实对齐。
     await expect
       .poll(
-        async () => page.locator('tbody tr.el-table__row').filter({ hasText: JOB }).count(),
-        { timeout: 30000 },
+        async () => {
+          await page.getByRole('button', { name: '刷新' }).click().catch(() => {})
+          await page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => {})
+          return page.locator('tbody tr.el-table__row').filter({ hasText: JOB }).count()
+        },
+        { timeout: 60000, intervals: [2000, 3000, 5000] },
       )
       .toBeGreaterThan(0)
   })

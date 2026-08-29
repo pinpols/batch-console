@@ -10,6 +10,8 @@ const FIXTURE_TENANT = 'system'
 const T_SHORT = 8_000 // 登录、导出等轻量接口
 const T_UPLOAD = 20_000 // 文件上传
 const T_APPLY = 30_000 // 配置包应用（事务较重）
+const RATE_LIMIT_RETRY_DELAYS_MS = [1_500, 3_000, 5_000]
+const FORCE_SEED = process.env.E2E_FORCE_SEED === '1'
 
 /**
  * 把 fetch 响应的 Set-Cookie 头解析成 Playwright storageState cookie 对象。
@@ -57,6 +59,10 @@ function idempotencyKey() {
   return crypto.randomUUID()
 }
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
 /**
  * Seed / fixture endpoints run from Node fetch, not the browser context.
  * Newer console-api builds issue auth only through HttpOnly cookies, so the
@@ -93,6 +99,25 @@ async function fetchWithTimeout(url, opts = {}) {
   }
 }
 
+async function tenantConfigAlreadyPresent(commonHeaders, tenantId) {
+  try {
+    const res = await fetchWithTimeout(
+      `${API_BASE}/api/console/queries/job-definitions?tenantId=${encodeURIComponent(tenantId)}&pageSize=1`,
+      {
+        headers: commonHeaders,
+        timeoutMs: T_SHORT,
+      },
+    )
+    if (!res.ok) return false
+    const body = await res.json().catch(() => null)
+    const data = body?.data ?? body
+    const items = Array.isArray(data) ? data : (data?.items ?? data?.records ?? [])
+    return Array.isArray(items) && items.length > 0
+  } catch {
+    return false
+  }
+}
+
 /**
  * 向指定租户上传并应用租户配置包 Excel。
  */
@@ -105,6 +130,11 @@ async function seedTenant(authHeaders, tenantId, filePath) {
   const commonHeaders = {
     ...authHeaders,
     'X-Tenant-Id': tenantId,
+  }
+
+  if (!FORCE_SEED && (await tenantConfigAlreadyPresent(commonHeaders, tenantId))) {
+    console.log(`[seed] tenant=${tenantId} 已存在作业配置，跳过配置包导入(E2E_FORCE_SEED=1 可强制重刷)`)
+    return
   }
 
   const fileBuffer = readFileSync(filePath)
@@ -189,25 +219,38 @@ async function seedTenant(authHeaders, tenantId, filePath) {
 
   // ── ③ 应用 ──────────────────────────────────────────────────────
   try {
-    const applyRes = await fetchWithTimeout(
-      `${API_BASE}/api/console/config/tenant-package/excel/apply/${encodeURIComponent(uploadToken)}`,
-      {
-        method: 'POST',
-        headers: {
-          ...commonHeaders,
-          'Content-Type': 'application/json',
-          'Idempotency-Key': idempotencyKey(),
+    for (let attempt = 0; attempt <= RATE_LIMIT_RETRY_DELAYS_MS.length; attempt += 1) {
+      const applyRes = await fetchWithTimeout(
+        `${API_BASE}/api/console/config/tenant-package/excel/apply/${encodeURIComponent(uploadToken)}`,
+        {
+          method: 'POST',
+          headers: {
+            ...commonHeaders,
+            'Content-Type': 'application/json',
+            'Idempotency-Key': idempotencyKey(),
+          },
+          body: JSON.stringify({}),
+          timeoutMs: T_APPLY,
         },
-        body: JSON.stringify({}),
-        timeoutMs: T_APPLY,
-      },
-    )
+      )
 
-    if (!applyRes.ok) {
+      if (applyRes.ok) {
+        console.log(`[seed] ✓ tenant=${tenantId} 配置包导入完成`)
+        return
+      }
+
       const text = await applyRes.text().catch(() => '')
+      if (applyRes.status === 429 && attempt < RATE_LIMIT_RETRY_DELAYS_MS.length) {
+        const delay = RATE_LIMIT_RETRY_DELAYS_MS[attempt]
+        console.warn(
+          `[seed] 应用被限流 tenant=${tenantId} status=429, ${delay}ms 后重试(${attempt + 1}/${RATE_LIMIT_RETRY_DELAYS_MS.length})`,
+        )
+        await sleep(delay)
+        continue
+      }
+
       console.warn(`[seed] 应用失败 tenant=${tenantId} status=${applyRes.status} ${text}`)
-    } else {
-      console.log(`[seed] ✓ tenant=${tenantId} 配置包导入完成`)
+      return
     }
   } catch (err) {
     console.warn(`[seed] 应用异常 tenant=${tenantId}: ${err.message}`)
