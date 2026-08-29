@@ -9,6 +9,7 @@ import { test, expect } from '../support/app'
 import { enterDemoApp, expectPageTitle, isVisible } from '../support/app'
 
 const LIST_OR_EMPTY = 'tbody tr.el-table__row, .el-table__empty-block, .el-empty, .empty-state'
+const WRITE_RESPONSE_TIMEOUT_MS = 45_000
 
 test.describe('UI Flow 01: trigger → instance', () => {
   test.beforeEach(async ({ page }) => {
@@ -41,7 +42,16 @@ test.describe('UI Flow 01: trigger → instance', () => {
     const dlg = page.locator('.el-message-box, .el-dialog:visible').first()
     await expect(dlg).toBeVisible({ timeout: 3000 })
     const ok = dlg.getByRole('button', { name: /确定|确认|触发/ }).first()
-    if (await isVisible(ok, 1500)) await ok.click({ force: true })
+    if (await isVisible(ok, 1500)) {
+      const triggerResponse = page.waitForResponse(
+        (res) =>
+          res.request().method() === 'POST' &&
+          res.url().includes('/api/console/jobs/trigger'),
+        { timeout: WRITE_RESPONSE_TIMEOUT_MS },
+      )
+      await ok.click({ force: true })
+      expect((await triggerResponse).status()).toBeLessThan(400)
+    }
     await page.waitForTimeout(600)
   })
 

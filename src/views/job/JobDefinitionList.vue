@@ -1057,6 +1057,8 @@
         },
         secondary: { label: t('jobDefinitionList.triggerSuccessSecondary') },
       })
+    } catch {
+      // 错误 toast 由 API interceptor 统一展示；这里负责吞掉已处理异常，避免全局 unhandled rejection。
     } finally {
       actingJobCode.value = ''
     }
