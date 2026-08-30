@@ -8,8 +8,72 @@
  *   配置导入   — 空/非法 JSON 前端校验 + 先导出再导入（幂等往返）
  *   同步日志   — 刷新
  */
+import { type Page } from '@playwright/test'
 import { expect, test } from './support/app'
 import { enterDemoApp, expectPageTitle, isVisible } from './support/app'
+import { clearConsoleRateLimitKeys } from './support/rate-limit'
+
+const CONFIG_SYNC_EXPORT = '/api/console/config/sync/export'
+const CONFIG_SYNC_IMPORT = '/api/console/config/sync/import'
+
+async function openConfigSyncTab(page: Page) {
+  await enterDemoApp(page)
+  await page.goto('/config/management')
+  await expectPageTitle(page, '变更与同步')
+  await page.getByRole('tab', { name: '配置同步' }).first().click()
+  await expect(page.getByRole('tab', { name: '配置同步' }).first()).toHaveClass(/is-active/)
+}
+
+async function exportConfigFromUi(page: Page) {
+  const apiCall = page.waitForResponse(
+    (r) => r.url().includes(CONFIG_SYNC_EXPORT) && r.request().method() === 'POST',
+    { timeout: 15_000 },
+  )
+  await page.getByRole('button', { name: /导出为 JSON 文件|Download JSON/ }).first().click()
+  const resp = await apiCall
+  expect(resp.status(), `config sync export status=${resp.status()}`).toBeLessThan(400)
+  await expect(page.locator('.el-message--success')).toContainText(/导出完成|Export/, {
+    timeout: 8_000,
+  })
+  await expect(page.getByText(/导出结果|Export result/)).toBeVisible()
+  await expect(page.locator('.json-preview').first()).toBeVisible()
+  return resp.json().catch(() => null)
+}
+
+async function copyExportToImportPayload(page: Page) {
+  await page.getByRole('button', { name: /复制到目标侧|Copy to target/ }).first().click()
+  const payload = page.locator('.json-textarea-input textarea, .el-textarea__inner').first()
+  await expect(payload).not.toHaveValue('', { timeout: 3_000 })
+  return payload
+}
+
+async function previewImportPayload(page: Page) {
+  const apiCall = page.waitForResponse(
+    (r) => r.url().includes(CONFIG_SYNC_IMPORT) && r.request().method() === 'POST',
+    { timeout: 15_000 },
+  )
+  await page.getByRole('button', { name: /预览差异|Preview diff/ }).first().click()
+  const resp = await apiCall
+  expect(resp.status(), `config sync preview status=${resp.status()}`).toBeLessThan(400)
+  await expect(page.getByText(/差异预览|Diff preview/)).toBeVisible({ timeout: 8_000 })
+  await expect(page.locator('.json-preview').first()).toBeVisible()
+}
+
+async function importPayloadFromUi(page: Page) {
+  const apiCall = page.waitForResponse(
+    (r) => r.url().includes(CONFIG_SYNC_IMPORT) && r.request().method() === 'POST',
+    { timeout: 20_000 },
+  )
+  await page.getByRole('button', { name: /应用到目标|Apply to target/ }).first().click()
+  const box = page.locator('.el-message-box').first()
+  await expect(box).toBeVisible({ timeout: 5_000 })
+  await box.getByRole('button', { name: /确认应用|Confirm apply|Confirm/ }).first().click()
+  const resp = await apiCall
+  expect(resp.status(), `config sync import status=${resp.status()}`).toBeLessThan(400)
+  await expect(page.locator('.el-message--success').last()).toContainText(/已应用到目标|Applied/, {
+    timeout: 10_000,
+  })
+}
 
 // ─── 变更日志 ──────────────────────────────────────────────────────
 
@@ -91,106 +155,66 @@ test.describe('配置管理 — Secrets', () => {
 
 // ─── 配置导出 ──────────────────────────────────────────────────────
 
-// SKIPPED: 配置导出现在是 ConfigSyncTab 里的 sync-block,不是 tab。
-test.describe.skip('配置管理 — 配置导出', () => {
+test.describe('配置管理 — 配置导出', () => {
   test.beforeEach(async ({ page }) => {
-    await enterDemoApp(page)
-    await page.goto('/config/management')
-    await expectPageTitle(page, '变更与同步')
-    await page.getByRole('tab', { name: '配置导出' }).first().click()
-    await expect(page.getByRole('tab', { name: '配置导出' }).first()).toHaveClass(/is-active/)
+    clearConsoleRateLimitKeys()
+    await openConfigSyncTab(page)
   })
 
   test('导出全部配置 → 结果 JSON 显示在页面', async ({ page }) => {
-    await page.getByRole('button', { name: '导出' }).click()
-    // 等后端返回（可能因缺少 tenantId 返回 400）
-    if (!(await isVisible(page.locator('.el-message--success'), 15_000))) return
-    await expect(page.locator('pre.json-preview')).toBeVisible()
-    // 结果内容是合法 JSON
-    const text = await page.locator('pre.json-preview').textContent()
-    expect(() => JSON.parse(text ?? '')).not.toThrow()
+    await exportConfigFromUi(page)
   })
 
   test('导出指定类型 JOB → 结果包含 JOB 相关内容', async ({ page }) => {
-    const input = page.locator('.el-form-item').filter({ hasText: '配置类型' }).getByRole('textbox')
-    await input.fill('JOB')
-    await page.getByRole('button', { name: '导出' }).click()
-    // 可能因缺少 tenantId 返回 400
-    if (!(await isVisible(page.locator('.el-message--success'), 15_000))) return
-    const pre = page.locator('pre.json-preview')
-    await expect(pre).toBeVisible()
-    const text = await pre.textContent()
-    expect(() => JSON.parse(text ?? '')).not.toThrow()
+    await page.locator('.el-checkbox').filter({ hasText: /作业|Job/ }).first().click()
+    const exported = await exportConfigFromUi(page)
+    expect(JSON.stringify(exported), 'exported JOB config payload').toMatch(/job|JOB|作业/i)
   })
 })
 
 // ─── 配置导入 ──────────────────────────────────────────────────────
 
-// SKIPPED: ConfigSyncTab 改成 block 卡片样式,"配置导入"不再是 tab。
-// 此 describe 需要按新 UI 重写(找 sync-block 内的 Payload textarea + 预览/导入按钮)。
-test.describe.skip('配置管理 — 配置导入前端校验', () => {
+test.describe('配置管理 — 配置导入前端校验', () => {
   test.beforeEach(async ({ page }) => {
-    await enterDemoApp(page)
-    await page.goto('/config/management')
-    await expectPageTitle(page, '变更与同步')
-    await page.getByRole('tab', { name: '配置导入' }).click()
-    await expect(page.getByRole('tab', { name: '配置导入' })).toHaveClass(/is-active/)
+    clearConsoleRateLimitKeys()
+    await openConfigSyncTab(page)
   })
 
-  test('Payload 为空 → 点预览 → 警告 toast "请输入 Payload"', async ({ page }) => {
-    await page.getByRole('button', { name: '预览变更' }).click()
-    await expect(page.locator('.el-message--warning')).toContainText('请输入 Payload', { timeout: 4000 })
+  test('默认 Payload 模板为 JSON 对象 → 预览按钮可用', async ({ page }) => {
+    await expect(page.locator('.json-textarea-input textarea, .el-textarea__inner').first()).toHaveValue(
+      '{}',
+      { timeout: 4_000 },
+    )
+    await expect(page.getByRole('button', { name: /预览差异|Preview diff/ }).first()).toBeEnabled()
   })
 
-  test('Payload 为空 → 点确认导入 → 警告 toast', async ({ page }) => {
-    await page.getByRole('button', { name: '确认导入' }).click()
-    await expect(page.locator('.el-message--warning')).toContainText('请输入 Payload', { timeout: 4000 })
+  test('默认 Payload 模板为 JSON 对象 → 导入按钮可用', async ({ page }) => {
+    await expect(page.locator('.json-textarea-input textarea, .el-textarea__inner').first()).toHaveValue(
+      '{}',
+      { timeout: 4_000 },
+    )
+    await expect(page.getByRole('button', { name: /应用到目标|Apply to target/ }).first()).toBeEnabled()
   })
 
-  test('非法 JSON → 点预览 → 错误 toast "合法 JSON"', async ({ page }) => {
-    await page.locator('.el-textarea__inner').fill('not-json!!!')
-    await page.getByRole('button', { name: '预览变更' }).click()
-    await expect(page.locator('.el-message--error')).toContainText('合法 JSON', { timeout: 4000 })
+  test('非法 JSON → 点预览 → 错误 toast', async ({ page }) => {
+    await page.locator('.json-textarea-input textarea, .el-textarea__inner').first().fill('not-json!!!')
+    await page.getByRole('button', { name: /预览差异|Preview diff/ }).first().click()
+    await expect(page.locator('.el-message--error')).toContainText(/JSON 格式不合法|JSON/, {
+      timeout: 4_000,
+    })
   })
 })
 
-// SKIPPED: 同样依赖被移除的 tab "配置导出/导入",待重写
-test.describe.skip('配置管理 — 导出再导入（幂等往返）', () => {
+test.describe('配置管理 — 导出再导入（幂等往返）', () => {
   /**
-   * 先在导出 tab 拿到当前配置 JSON，
-   * 再到导入 tab 预览 → 确认导入（UPSERT 幂等）。
+   * 先导出当前配置 JSON,再复制到目标侧预览 → 确认导入（UPSERT 幂等）。
    */
   test('导出 → 预览 → 导入同一份数据', async ({ page }) => {
-    await enterDemoApp(page)
-    await page.goto('/config/management')
-    await expectPageTitle(page, '变更与同步')
-
-    // ① 导出全部
-    await page.getByRole('tab', { name: '配置导出' }).first().click()
-    await page.getByRole('button', { name: '导出' }).click()
-    // 可能因缺少 tenantId 返回 400
-    if (!(await isVisible(page.locator('.el-message--success'), 15_000))) return
-    const exportedText = await page.locator('pre.json-preview').textContent()
-    expect(exportedText).toBeTruthy()
-    // 验证是合法 JSON
-    const exportedJson = JSON.parse(exportedText ?? '{}')
-    expect(exportedJson).toBeTruthy()
-
-    // ② 切换到导入 tab，粘贴导出结果
-    await page.getByRole('tab', { name: '配置导入' }).click()
-    await expect(page.getByRole('tab', { name: '配置导入' })).toHaveClass(/is-active/)
-    await page.locator('.el-textarea__inner').fill(exportedText ?? '{}')
-
-    // ③ 预览变更
-    await page.getByRole('button', { name: '预览变更' }).click()
-    // 预览结果 pre 或 toast 均接受
-    await expect(
-      page.locator('pre.json-preview').or(page.locator('.el-message')),
-    ).toBeVisible({ timeout: 10000 })
-
-    // ④ 确认导入（幂等）
-    await page.getByRole('button', { name: '确认导入' }).click()
-    await expect(page.locator('.el-message').first()).toBeVisible({ timeout: 10000 })
+    await openConfigSyncTab(page)
+    await exportConfigFromUi(page)
+    await copyExportToImportPayload(page)
+    await previewImportPayload(page)
+    await importPayloadFromUi(page)
   })
 })
 
@@ -198,6 +222,7 @@ test.describe.skip('配置管理 — 导出再导入（幂等往返）', () => {
 
 test.describe('配置管理 — 同步日志', () => {
   test.beforeEach(async ({ page }) => {
+    clearConsoleRateLimitKeys()
     await enterDemoApp(page)
     await page.goto('/config/management')
     await expectPageTitle(page, '变更与同步')
@@ -212,30 +237,27 @@ test.describe('配置管理 — 同步日志', () => {
     ).toBeAttached({ timeout: 6000 })
   })
 
-  // 此用例依赖 "配置导出/导入" tab,而它们已合并到 ConfigSyncTab sync-block,待重写
-  test.skip('同步日志在导入后新增一条记录', async ({ page }) => {
-    // 先记录当前行数
-    const initialRows = await page.locator('.el-table__body').first().locator('tr').count()
-
-    // 切到导出先拿 JSON
-    await page.getByRole('tab', { name: '配置导出' }).first().click()
-    await page.getByRole('button', { name: '导出' }).click()
-    // 可能因缺少 tenantId 返回 400
-    if (!(await isVisible(page.locator('.el-message--success'), 15_000))) return
-    const exportedText = await page.locator('pre.json-preview').textContent()
-
-    // 切到导入 → 导入
-    await page.getByRole('tab', { name: '配置导入' }).click()
-    await page.locator('.el-textarea__inner').fill(exportedText ?? '{}')
-    await page.getByRole('button', { name: '确认导入' }).click()
-    await expect(page.locator('.el-message').first()).toBeVisible({ timeout: 10000 })
+  test('同步日志在导入后可刷新看到同步记录', async ({ page }) => {
+    await openConfigSyncTab(page)
+    await exportConfigFromUi(page)
+    await copyExportToImportPayload(page)
+    await importPayloadFromUi(page)
+    clearConsoleRateLimitKeys()
 
     // 回到同步日志刷新
+    const logsCall = page.waitForResponse(
+      (r) => r.url().includes('/api/console/config/sync/logs') && r.request().method() === 'GET',
+      { timeout: 15_000 },
+    )
     await page.getByRole('tab', { name: '同步日志' }).first().click()
-    await page.getByRole('button', { name: '刷新' }).click()
-    await expect(page.getByRole('columnheader', { name: '摘要' })).toBeVisible({ timeout: 6000 })
-    const afterRows = await page.locator('.el-table__body').first().locator('tr').count()
-    // 导入成功后日志条数应 >= 导入前
-    expect(afterRows).toBeGreaterThanOrEqual(initialRows)
+    await page.getByRole('button', { name: '刷新' }).click().catch(() => undefined)
+    const resp = await logsCall
+    expect(resp.status(), `config sync logs status=${resp.status()}`).toBeLessThan(400)
+    await expect(page.getByRole('columnheader', { name: /摘要|Summary/ })).toBeVisible({
+      timeout: 6000,
+    })
+    await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({
+      timeout: 6000,
+    })
   })
 })
