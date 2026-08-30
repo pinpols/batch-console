@@ -2,6 +2,7 @@ import * as fs from 'fs'
 import * as path from 'path'
 import { expect, test } from './support/app'
 import { enterDemoApp, expectPageTitle, isVisible } from './support/app'
+import { clearConsoleRateLimitKeys } from './support/rate-limit'
 
 /**
  * Excel 导入测试 — 覆盖唯一入口：租户配置包
@@ -25,10 +26,50 @@ const FIXTURES = {
   seedA: path.join(SEED_SUITE_DIR, 'ta-tenant-config-package-test.xlsx'),
 }
 
+async function uploadTenantPackage(page: import('@playwright/test').Page) {
+  let uploadResp
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    const uploadCall = page.waitForResponse(
+      (r) =>
+        r.url().includes('/api/console/config/tenant-package/excel/upload') &&
+        r.request().method() === 'POST',
+      { timeout: 20_000 },
+    )
+    await expect(page.getByRole('button', { name: '开始上传' })).toBeEnabled({ timeout: 10_000 })
+    await page.getByRole('button', { name: '开始上传' }).click()
+    uploadResp = await uploadCall
+    if (uploadResp.status() !== 429) return uploadResp
+    await page.waitForTimeout(2_000 * (attempt + 1))
+  }
+  return uploadResp
+}
+
+async function clickWithRateLimitRetry(
+  page: import('@playwright/test').Page,
+  buttonName: string | RegExp,
+  matchesResponse: (url: string, method: string) => boolean,
+  timeout = 20_000,
+) {
+  let response
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    const apiCall = page.waitForResponse(
+      (r) => matchesResponse(r.url(), r.request().method()),
+      { timeout },
+    )
+    await page.getByRole('button', { name: buttonName }).click()
+    response = await apiCall
+    if (response.status() !== 429) return response
+    clearConsoleRateLimitKeys()
+    await page.waitForTimeout(1_500 * (attempt + 1))
+  }
+  return response
+}
+
 // ─── 合并导入（租户配置包）──────────────────────────────────────────
 
 test.describe('合并导入 — 租户配置包', () => {
   test.beforeEach(async ({ page }) => {
+    clearConsoleRateLimitKeys()
     await enterDemoApp(page)
     await page.goto('/config/tenant-package')
     await expect(page.locator('.page-header .title').first()).toHaveText(/配置批量导入/, {
@@ -85,6 +126,7 @@ test.describe('合并导入 — 租户配置包', () => {
 
 test.describe('合并导入 — 文件选择交互', () => {
   test.beforeEach(async ({ page }) => {
+    clearConsoleRateLimitKeys()
     await enterDemoApp(page)
     await page.goto('/config/tenant-package')
     await expect(page.locator('.page-header .title').first()).toHaveText(/配置批量导入/, {
@@ -111,6 +153,7 @@ test.describe('合并导入 — 完整上传链路（依赖后端）', () => {
   // seedA 文件始终存在，用它来跑链路（格式与后端期望一致）
   test.beforeEach(async ({ page }) => {
     test.skip(!fs.existsSync(FIXTURES.seedA), '种子文件不存在，跳过上传链路')
+    clearConsoleRateLimitKeys()
     await enterDemoApp(page)
     await page.goto('/config/tenant-package')
     await expect(page.locator('.page-header .title').first()).toHaveText(/配置批量导入/, {
@@ -118,46 +161,65 @@ test.describe('合并导入 — 完整上传链路（依赖后端）', () => {
     })
   })
 
-  test('上传 → uploadToken 出现 → 进入预览步骤', async ({ page }) => {
+  test('上传 → 预览 → 确认应用成功', async ({ page }) => {
     const [fileChooser] = await Promise.all([
       page.waitForEvent('filechooser'),
       page.getByRole('button', { name: '选择文件' }).first().click(),
     ])
-    const fixtureFile = fs.existsSync(FIXTURES.tenantPackage)
-      ? FIXTURES.tenantPackage
-      : FIXTURES.seedA
-    await fileChooser.setFiles(fixtureFile)
-    await page.getByRole('button', { name: '开始上传' }).click()
+    await fileChooser.setFiles(FIXTURES.seedA)
+    const uploadResp = await uploadTenantPackage(page)
+    expect(uploadResp.status(), `tenant package upload status=${uploadResp.status()}`).toBeLessThan(
+      400,
+    )
 
     const tokenAlert = page.locator('.excel-wizard__token-alert, .el-alert').first()
-    const errorToast = page.locator('.el-message--error,.el-message--warning')
-    await Promise.race([
-      tokenAlert.waitFor({ state: 'visible', timeout: 15000 }),
-      errorToast.waitFor({ state: 'visible', timeout: 15000 }),
-    ]).catch(() => {})
-
-    if (!(await isVisible(tokenAlert, 500))) return
+    await expect(tokenAlert).toBeVisible({ timeout: 15_000 })
 
     await expect(page.getByRole('button', { name: '下一步' })).toBeEnabled()
     await page.getByRole('button', { name: '下一步' }).click()
 
     // 预览步骤：拉取预览
     await expect(page.getByRole('button', { name: '拉取预览' })).toBeVisible()
-    await page.getByRole('button', { name: '拉取预览' }).click()
+    const previewResp = await clickWithRateLimitRetry(
+      page,
+      '拉取预览',
+      (url, method) =>
+        url.includes('/api/console/config/tenant-package/excel/preview/') && method === 'GET',
+    )
+    expect(
+      previewResp.status(),
+      `tenant package preview status=${previewResp.status()}`,
+    ).toBeLessThan(400)
 
     const previewResult = page.locator('.excel-wizard__preview-summary,.el-table__body').first()
-    if (await isVisible(previewResult, 10000)) {
-      await expect(previewResult).toBeVisible()
-    }
+    await expect(previewResult).toBeVisible({ timeout: 10_000 })
 
     // 进入应用步骤
     const nextBtnStep2 = page.getByRole('button', { name: '下一步' })
-    if (await isVisible(nextBtnStep2, 2000)) {
-      await nextBtnStep2.click()
-      // 应用步骤：确认应用变更按钮应变为可用
-      await expect(page.getByRole('button', { name: '确认应用变更' })).toBeEnabled({
-        timeout: 5000,
-      })
-    }
+    await expect(nextBtnStep2).toBeEnabled({ timeout: 5_000 })
+    await nextBtnStep2.click()
+
+    const applyButton = page.getByRole('button', { name: '确认应用变更' })
+    await expect(applyButton).toBeEnabled({ timeout: 5_000 })
+    await applyButton.click()
+    const box = page.locator('.el-message-box').first()
+    await expect(box).toBeVisible({ timeout: 5_000 })
+
+    clearConsoleRateLimitKeys()
+    const applyCall = page.waitForResponse(
+      (r) =>
+        r.url().includes('/api/console/config/tenant-package/excel/apply/') &&
+        r.request().method() === 'POST',
+      { timeout: 30_000 },
+    )
+    await box.getByRole('button', { name: /确认应用|Confirm apply|Confirm/ }).first().click()
+    const applyResp = await applyCall
+    expect(applyResp.status(), `tenant package apply status=${applyResp.status()}`).toBeLessThan(
+      400,
+    )
+    await expect(page.locator('.el-message--success')).toBeVisible({ timeout: 10_000 })
+    await expect(
+      page.locator('.apply-zone__block.el-alert--success, .apply-result-table').first(),
+    ).toBeVisible({ timeout: 10_000 })
   })
 })
