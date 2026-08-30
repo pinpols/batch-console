@@ -416,11 +416,10 @@
     if (!canManageTenants.value) return
     try {
       await confirmDanger({
-        verb: '停用',
-        target: `租户「${row.tenantId}」`,
-        consequence:
-          '该租户下所有触发器停止派发,正在运行的任务不受影响。租户用户登录/调用 API 将被拒绝。可在列表点"启用"恢复。',
-        confirmButtonText: '确认停用',
+        verb: t('tenantList.suspendConfirmVerb'),
+        target: t('tenantList.confirmTarget', { id: row.tenantId }),
+        consequence: t('tenantList.suspendConfirmConsequence'),
+        confirmButtonText: t('tenantList.suspendConfirmButton'),
       })
       await suspendTenant(row.tenantId)
       ElMessage.success(t('tenantList.suspendedToast'))
@@ -434,10 +433,10 @@
     if (!canManageTenants.value) return
     try {
       await confirmDanger({
-        verb: '启用',
-        target: `租户「${row.tenantId}」`,
-        consequence: '该租户的触发器恢复派发,用户可重新登录。',
-        confirmButtonText: '确认启用',
+        verb: t('tenantList.activateConfirmVerb'),
+        target: t('tenantList.confirmTarget', { id: row.tenantId }),
+        consequence: t('tenantList.activateConfirmConsequence'),
+        confirmButtonText: t('tenantList.activateConfirmButton'),
       })
       await activateTenant(row.tenantId)
       ElMessage.success(t('tenantList.activatedToast'))

@@ -313,12 +313,13 @@
     }
     const tenants = resolvedTargetTenants()
     try {
+      const sample = `${tenants.slice(0, 3).join(', ')}${tenants.length > 3 ? '…' : ''}`
       await confirmDanger({
-        verb: '应用配置',
-        target: `到 ${tenants.length} 个目标租户(${tenants.slice(0, 3).join(', ')}${tenants.length > 3 ? '…' : ''})`,
+        verb: t('configSyncTab.importConfirmVerb'),
+        target: t('configSyncTab.importConfirmTarget', { count: tenants.length, sample }),
         consequence: t('configSyncTab.importConsequence'),
         irreversible: true,
-        confirmButtonText: '确认应用',
+        confirmButtonText: t('configSyncTab.importConfirmButton'),
       })
     } catch {
       return

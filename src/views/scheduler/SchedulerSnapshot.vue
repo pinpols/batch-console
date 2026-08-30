@@ -604,11 +604,10 @@
   async function confirmPauseAll() {
     try {
       await confirmDanger({
-        verb: '暂停',
-        target: '当前租户全部调度器',
-        consequence:
-          '所有触发器停止派发新任务,正在运行的实例不受影响。恢复后才会继续按计划派发,可能造成短时间窗口积压。',
-        confirmButtonText: '确认暂停',
+        verb: t('schedulerSnapshot.pauseAllConfirmVerb'),
+        target: t('schedulerSnapshot.confirmAllTarget'),
+        consequence: t('schedulerSnapshot.pauseAllConfirmConsequence'),
+        confirmButtonText: t('schedulerSnapshot.pauseAllConfirmButton'),
       })
       pauseLoading.value = true
       await pauseAllSchedulers()
@@ -624,10 +623,10 @@
   async function confirmResumeAll() {
     try {
       await confirmDanger({
-        verb: '恢复',
-        target: '当前租户全部调度器',
-        consequence: '触发器恢复派发,暂停期间到点的任务会按既定策略追跑或顺延。',
-        confirmButtonText: '确认恢复',
+        verb: t('schedulerSnapshot.resumeAllConfirmVerb'),
+        target: t('schedulerSnapshot.confirmAllTarget'),
+        consequence: t('schedulerSnapshot.resumeAllConfirmConsequence'),
+        confirmButtonText: t('schedulerSnapshot.resumeAllConfirmButton'),
       })
       resumeLoading.value = true
       await resumeAllSchedulers()

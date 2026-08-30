@@ -502,10 +502,10 @@
   async function doAck(row: ConsoleAlertEventResponse) {
     try {
       await confirmDanger({
-        verb: '确认告警',
-        target: `「${row.title}」`,
-        consequence: '该告警将进入"已确认"状态,通知值班暂停升级,但不会自动修复根因。',
-        confirmButtonText: '确认告警',
+        verb: t('alertList.ackConfirmVerb'),
+        target: t('alertList.confirmTarget', { title: row.title }),
+        consequence: t('alertList.ackConfirmConsequence'),
+        confirmButtonText: t('alertList.ackConfirmButton'),
       })
       actingId.value = row.id
       const reason = await optionalReason(t('alertList.ackReasonTitle'))
@@ -524,10 +524,10 @@
   async function doSilence(row: ConsoleAlertEventResponse) {
     try {
       await confirmDanger({
-        verb: '静默',
-        target: `「${row.title}」`,
-        consequence: '该告警的同类事件将不再发出通知,直到静默期结束或被手动取消。',
-        confirmButtonText: '确认静默',
+        verb: t('alertList.silenceConfirmVerb'),
+        target: t('alertList.confirmTarget', { title: row.title }),
+        consequence: t('alertList.silenceConfirmConsequence'),
+        confirmButtonText: t('alertList.silenceConfirmButton'),
       })
       actingId.value = row.id
       const reason = await optionalReason(t('alertList.silenceReasonTitle'))
@@ -546,11 +546,11 @@
   async function doClose(row: ConsoleAlertEventResponse) {
     try {
       await confirmDanger({
-        verb: '关闭',
-        target: `「${row.title}」`,
-        consequence: '告警从看板下架。若根因未解决,同类事件仍会以新告警形式重新产生。',
+        verb: t('alertList.closeConfirmVerb'),
+        target: t('alertList.confirmTarget', { title: row.title }),
+        consequence: t('alertList.closeConfirmConsequence'),
         irreversible: true,
-        confirmButtonText: '确认关闭',
+        confirmButtonText: t('alertList.closeConfirmButton'),
       })
       actingId.value = row.id
       const reason = await optionalReason(t('alertList.closeReasonTitle'))

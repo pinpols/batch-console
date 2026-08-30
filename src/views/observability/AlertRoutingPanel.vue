@@ -56,6 +56,20 @@
       </ListPageQueryBar>
 
       <el-table v-loading="loading" :data="filtered" class="routing-table">
+        <template #empty>
+          <EmptyState
+            variant="tenant-empty"
+            :title="t('alertRoutingPanel.emptyTitle')"
+            :description="t('alertRoutingPanel.emptyDescription')"
+            :image-size="80"
+          >
+            <template v-if="canMutateConfig" #action>
+              <el-button type="primary" :icon="Plus" @click="openCreate">
+                {{ t('alertRoutingPanel.actionCreate') }}
+              </el-button>
+            </template>
+          </EmptyState>
+        </template>
         <el-table-column
           prop="routeCode"
           :label="t('alertRoutingPanel.colRouteCode')"
@@ -211,6 +225,7 @@
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
+  import EmptyState from '@/components/common/EmptyState.vue'
   import MetaSelect from '@/components/common/MetaSelect.vue'
   import { usePermission } from '@/composables/usePermission'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'

@@ -37,6 +37,7 @@ export const instanceStatusColor: Record<InstanceStatus, StatusTagType> = {
   RUNNING: 'primary', // 进行中 = 蓝,与"成功 = 绿"区分
   RETRYING: 'warning',
   SUCCESS: 'success', // 成功 = 绿
+  PARTIAL_FAILED: 'warning', // 部分失败 = 黄/橙(既非全成功也非全失败)
   FAILED: 'danger', // 失败 = 红
   FAILED_DRY_RUN: 'danger',
   CANCELLED: 'info',
@@ -77,6 +78,7 @@ export const workflowRunStatusColor: Record<WorkflowRunStatus, StatusTagType> = 
   CREATED: 'info',
   RUNNING: 'primary',
   SUCCESS: 'success',
+  PARTIAL_FAILED: 'warning', // 部分失败 = 黄/橙
   FAILED: 'danger',
   CANCELLED: 'info',
   TERMINATED: 'danger',

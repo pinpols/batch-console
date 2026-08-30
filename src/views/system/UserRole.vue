@@ -76,7 +76,7 @@
         <span>{{ t('userRole.sectionPermissionList') }}</span>
       </template>
 
-      <el-empty v-if="permissionList.length === 0" :description="t('userRole.emptyPermissions')" />
+      <EmptyState v-if="permissionList.length === 0" :description="t('userRole.emptyPermissions')" />
 
       <div v-else class="permission-list">
         <el-tag v-for="permissionName in permissionList" :key="permissionName" effect="plain">
@@ -192,6 +192,7 @@
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
+  import EmptyState from '@/components/common/EmptyState.vue'
   import MetricCard from '@/components/common/MetricCard.vue'
   import TablePagerBar from '@/components/table/TablePagerBar.vue'
 

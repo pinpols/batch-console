@@ -43,7 +43,7 @@
       <div v-if="loading && !job" class="detail-loading">
         <el-skeleton :rows="8" animated />
       </div>
-      <el-empty v-else-if="!job" :description="t('jobDefinitionDetail.emptyJob')" />
+      <EmptyState v-else-if="!job" :description="t('jobDefinitionDetail.emptyJob')" />
       <template v-else>
         <div class="detail-summary">
           <div>
@@ -174,7 +174,7 @@
               :tenant-id="job.tenantId"
               :job-code="job.jobCode"
             />
-            <el-empty v-else :description="t('jobDefinitionDetail.filesNotApplicable')" />
+            <EmptyState v-else :description="t('jobDefinitionDetail.filesNotApplicable')" />
           </el-tab-pane>
 
           <el-tab-pane :label="t('jobDefinitionDetail.tabWorkflow')" name="workflow" lazy>
@@ -410,6 +410,7 @@
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
+  import EmptyState from '@/components/common/EmptyState.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
   import JobConfigBasicSection from './components/JobConfigBasicSection.vue'
   import JobRelatedFilesTab from './components/JobRelatedFilesTab.vue'

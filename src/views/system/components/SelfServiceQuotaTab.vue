@@ -29,7 +29,7 @@
         </el-button>
       </div>
       <JsonPreview v-if="hasQuotaData" :data="quota" />
-      <el-empty v-else :description="t('selfServiceQuotaTab.emptyQuota')" :image-size="72" />
+      <EmptyState v-else :description="t('selfServiceQuotaTab.emptyQuota')" :image-size="72" />
     </div>
 
     <div class="data-panel quota-data-panel" v-loading="loadingUsage">
@@ -51,7 +51,7 @@
         </el-button>
       </div>
       <JsonPreview v-if="hasUsageData" :data="usage" />
-      <el-empty v-else :description="t('selfServiceQuotaTab.emptyUsage')" :image-size="72" />
+      <EmptyState v-else :description="t('selfServiceQuotaTab.emptyUsage')" :image-size="72" />
     </div>
 
     <!-- admin / operator 角色才看得到「去配额策略」入口,tenant 用户看不到避免误导 -->
@@ -81,6 +81,7 @@
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
   import JsonPreview from '@/components/common/JsonPreview.vue'
+  import EmptyState from '@/components/common/EmptyState.vue'
 
   const tenant = useTenantStore()
   const auth = useAuthStore()

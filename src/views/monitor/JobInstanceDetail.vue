@@ -226,7 +226,7 @@
               <el-table-column prop="stepCode" :label="t('monitor.stepColStep')" min-width="180" />
               <el-table-column :label="t('monitor.stepColStatus')" width="120">
                 <template #default="{ row: s }">
-                  <el-tag size="small" :type="stepTagType(s.stepStatus)">{{ s.stepStatus }}</el-tag>
+                  <StatusTag :value="String(s.stepStatus ?? '')" category="partition" />
                 </template>
               </el-table-column>
               <el-table-column
@@ -332,9 +332,7 @@
               />
               <el-table-column :label="t('monitor.detailMetricStatus')" width="120">
                 <template #default="{ row: r }">
-                  <el-tag size="small" :type="stepTagType(r.instanceStatus)">{{
-                    r.instanceStatus
-                  }}</el-tag>
+                  <StatusTag :value="String(r.instanceStatus ?? '')" category="instance" />
                 </template>
               </el-table-column>
               <el-table-column :label="t('monitor.detailStarted')" width="170">
@@ -391,6 +389,7 @@
   import EmptyState from '@/components/common/EmptyState.vue'
   import MetricCard from '@/components/common/MetricCard.vue'
   import JsonPreview from '@/components/common/JsonPreview.vue'
+  import StatusTag from '@/components/common/StatusTag.vue'
   import HeartbeatProgressPanel from '@/components/heartbeat/HeartbeatProgressPanel.vue'
   import type {
     ConsoleJobInstanceResponse,
@@ -477,16 +476,6 @@
     }
   })
 
-  function stepTagType(
-    status: string,
-  ): 'success' | 'danger' | 'warning' | 'info' | 'primary' | undefined {
-    const s = (status || '').toUpperCase()
-    if (s === 'SUCCESS' || s === 'SUCCEEDED') return 'success'
-    if (s === 'FAILED' || s === 'CANCELLED' || s === 'CANCELED') return 'danger'
-    if (s === 'RUNNING' || s === 'RETRYING') return 'warning'
-    return 'info'
-  }
-
   async function loadSteps() {
     if (!row.value || !Number.isFinite(instanceId.value)) return
     stepsLoading.value = true
@@ -557,11 +546,10 @@
     if (!r) return
     try {
       await confirmDanger({
-        verb: '重跑',
-        target: `实例「${r.instanceNo}」`,
-        consequence:
-          '将基于相同 jobCode + bizDate 派发一条新实例,原实例数据保留。下游若已消费旧实例输出,可能产生重复处理。',
-        confirmButtonText: '确认重跑',
+        verb: t('monitor.rerunConfirmVerb'),
+        target: t('monitor.confirmInstanceTarget', { no: r.instanceNo }),
+        consequence: t('monitor.rerunConfirmConsequence'),
+        confirmButtonText: t('monitor.rerunConfirmButton'),
       })
     } catch {
       return
@@ -629,11 +617,11 @@
     if (!r) return
     try {
       await confirmDanger({
-        verb: '终止',
-        target: `实例「${r.instanceNo}」`,
-        consequence: 'Worker 会尽快终止运行中的进程。已写入的中间结果可能保留,需手动清理。',
+        verb: t('monitor.cancelConfirmVerb'),
+        target: t('monitor.confirmInstanceTarget', { no: r.instanceNo }),
+        consequence: t('monitor.cancelConfirmConsequence'),
         irreversible: true,
-        confirmButtonText: '确认终止',
+        confirmButtonText: t('monitor.cancelConfirmButton'),
       })
     } catch {
       return
