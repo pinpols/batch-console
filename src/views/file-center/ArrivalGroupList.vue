@@ -197,6 +197,14 @@
   }
 
   async function load() {
+    if (!tenant.tenantId) {
+      allRows.value = []
+      rows.value = []
+      total.value = 0
+      loadError.value = null
+      loading.value = false
+      return
+    }
     loading.value = true
     loadError.value = null
     try {

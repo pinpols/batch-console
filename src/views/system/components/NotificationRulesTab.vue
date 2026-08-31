@@ -192,6 +192,10 @@
   // 通知渠道下拉源:避免手输不存在的 channelCode 形成悬挂引用
   const channelOptions = ref<Array<{ id: number; code: string; name: string }>>([])
   async function loadChannelOptions() {
+    if (!tenant.tenantId) {
+      channelOptions.value = []
+      return
+    }
     try {
       const data = await listNotificationChannels(tenant.tenantId)
       const list = Array.isArray(data) ? (data as Record<string, unknown>[]) : []
@@ -216,6 +220,10 @@
   }
 
   async function loadRules() {
+    if (!tenant.tenantId) {
+      rules.value = []
+      return
+    }
     await runLoadingRules(async () => {
       const data = await listNotificationRules(tenant.tenantId)
       rules.value = Array.isArray(data) ? (data as Record<string, unknown>[]) : []
@@ -229,6 +237,7 @@
   useFormFocus(ruleFormRef, () => ruleFormVisible.value)
 
   function openRuleCreate() {
+    if (!tenant.tenantId) return
     ruleEditingId.value = null
     ruleForm.ruleName = ''
     ruleForm.eventTypes = ''
@@ -260,6 +269,7 @@
   }
 
   async function saveRule() {
+    if (!tenant.tenantId) return
     if (!(await validateRuleForm())) return
     savingRule.value = true
     try {
@@ -279,6 +289,7 @@
   }
 
   async function confirmDeleteRule(row: Record<string, unknown>) {
+    if (!tenant.tenantId) return
     const ruleId = Number(row.ruleId ?? row.id ?? 0)
     try {
       await confirmDanger({

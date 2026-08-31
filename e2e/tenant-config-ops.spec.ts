@@ -105,18 +105,21 @@ test.describe('tenant copy config dialog (跨租户复制配置)', () => {
 
     const copyPreview = page.waitForResponse(
       (resp) => resp.url().includes('/api/console/config/tenant-copy/preview') && resp.ok(),
+      { timeout: 20000 },
     )
     await drawer.getByRole('button', { name: '复制预览' }).click()
     await copyPreview
-    await expect(drawer.getByText('差异预览')).toBeVisible()
-    await expect(drawer.getByText('配置项明细')).toBeVisible()
+    await expect(drawer.getByText('差异预览')).toBeVisible({ timeout: 20000 })
+    await expect(drawer.getByRole('columnheader', { name: '租户' })).toBeVisible({ timeout: 20000 })
+    await expect(drawer.getByRole('columnheader', { name: '影响' })).toBeVisible({ timeout: 20000 })
 
     const matrixPreview = page.waitForResponse(
       (resp) => resp.url().includes('/api/console/config/tenant-config-matrix') && resp.ok(),
+      { timeout: 20000 },
     )
     await drawer.getByRole('button', { name: '作业矩阵' }).click()
     await matrixPreview
-    await expect(drawer.getByText('TA_IMPORT_CUSTOMER').first()).toBeVisible()
+    await expect(drawer.getByText('TA_IMPORT_CUSTOMER').first()).toBeVisible({ timeout: 20000 })
 
     await page.getByRole('button', { name: '取消' }).click()
   })

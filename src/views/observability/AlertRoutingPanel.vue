@@ -63,7 +63,7 @@
             :description="t('alertRoutingPanel.emptyDescription')"
             :image-size="80"
           >
-            <template v-if="canMutateConfig" #action>
+            <template v-if="canMutateConfig && routingRuntimeEnabled" #action>
               <el-button type="primary" :icon="Plus" @click="openCreate">
                 {{ t('alertRoutingPanel.actionCreate') }}
               </el-button>
@@ -335,12 +335,14 @@
   useFormFocus(formRef, () => dialogVisible.value)
 
   function openCreate() {
+    if (!routingRuntimeEnabled) return
     resetForm()
     dialogVisible.value = true
     dirty.markPristine()
   }
 
   function openEdit(row: GovernanceAlertRoutingRow) {
+    if (!routingRuntimeEnabled) return
     resetForm(row)
     dialogVisible.value = true
     dirty.markPristine()
@@ -375,6 +377,7 @@
   )
 
   async function submitForm() {
+    if (!routingRuntimeEnabled) return
     const valid = await formRef.value
       ?.validate()
       .catch((errors: Record<string, Array<{ message?: string }>> | unknown) => {
@@ -388,6 +391,7 @@
   }
 
   async function toggleRouting(row: GovernanceAlertRoutingRow) {
+    if (!routingRuntimeEnabled) return
     if (!row.id) return
     const target = !row.enabled
     try {

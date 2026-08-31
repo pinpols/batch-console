@@ -9,9 +9,11 @@ import { useTenantStore } from '@/stores/tenant'
  */
 export function useWorkers() {
   const tenant = useTenantStore()
+  const enabled = computed(() => !!tenant.tenantId)
 
   return useQuery({
     queryKey: computed(() => ['workers', tenant.tenantId]),
     queryFn: () => queryWorkers(tenant.tenantId),
+    enabled,
   })
 }

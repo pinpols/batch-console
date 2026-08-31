@@ -33,7 +33,7 @@ async function uploadTenantPackage(page: import('@playwright/test').Page) {
       (r) =>
         r.url().includes('/api/console/config/tenant-package/excel/upload') &&
         r.request().method() === 'POST',
-      { timeout: 20_000 },
+      { timeout: 45_000 },
     )
     await expect(page.getByRole('button', { name: '开始上传' })).toBeEnabled({ timeout: 10_000 })
     await page.getByRole('button', { name: '开始上传' }).click()

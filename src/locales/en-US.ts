@@ -992,6 +992,9 @@ const messages: Messages = {
       loadMore: 'Load more',
       allLoaded: '— end of list —',
     },
+    tenants: {
+      created: 'Created at',
+    },
     workers: {
       title: 'Worker nodes',
       summary: 'Online {online} · Drain {drain} · Offline {offline}',
@@ -2957,6 +2960,7 @@ const messages: Messages = {
     fieldReceiptPolicy: 'Receipt policy',
     fieldTimeoutSeconds: 'Timeout (s)',
     fieldConfigJson: 'Config (JSON)',
+    saveSuccess: 'Saved',
   },
   arrivalGroupList: {
     groupCodeLabel: 'Group code',

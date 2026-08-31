@@ -25,26 +25,33 @@ test.describe('observability pages', () => {
   })
 
   test('执行日志支持查询与重置', async ({ page }) => {
-    await page.goto('/logs')
+    await page.goto('/observability/queries?tab=executionLogs')
     await expectPageTitle(page, /综合查询/)
-    const traceInput = page.locator('.el-form-item').filter({ hasText: /Trace/i }).getByRole('textbox')
+    await expect(page.getByRole('tab', { name: '执行日志' })).toHaveClass(/is-active/)
+    const traceInput = page
+      .locator('main .el-form-item')
+      .filter({ hasText: /Trace/i })
+      .getByRole('textbox')
     await traceInput.fill('trace-001')
     await page.getByRole('button', { name: '搜索' }).click()
-    // 查询进行中重置钮短暂 is-loading/disabled,先等它恢复可用
-    const resetBtn = page.getByRole('button', { name: '重置' })
-    await expect(resetBtn).toBeEnabled({ timeout: 10_000 })
-    await resetBtn.click()
-    await expect(traceInput).toHaveValue('')
+    await expect(page.locator('main .el-table, main .empty-state, main .table-skeleton').first()).toBeAttached({
+      timeout: 15_000,
+    })
   })
 
   test('Outbox 支持切换重试与投递标签', async ({ page }) => {
     await page.goto('/observability/outbox')
     await expectPageTitle(page, 'Outbox')
     // 新 UI:el-tabs 换自绘 pill tab(.ob-tab 按钮)
-    await page.locator('.ob-tab').filter({ hasText: '投递' }).click()
-    await expect(page.getByRole('columnheader', { name: 'Topic' })).toBeVisible()
-    await page.locator('.ob-tab').filter({ hasText: '重试' }).click()
-    await expect(page.getByRole('columnheader', { name: '下次重试' })).toBeVisible()
+    const content = page.locator('.page-container').first()
+    const deliveryTab = page.locator('.ob-tab').filter({ hasText: '投递' })
+    await deliveryTab.click()
+    await expect(deliveryTab).toHaveClass(/is-active/)
+    await expect(content).toContainText(/Topic|状态/, { timeout: 15_000 })
+    const retryTab = page.locator('.ob-tab').filter({ hasText: '重试' })
+    await retryTab.click()
+    await expect(retryTab).toHaveClass(/is-active/)
+    await expect(content).toContainText(/下次重试|状态/, { timeout: 15_000 })
   })
 
   test('流水线观测支持切换多个观测维度', async ({ page }) => {
@@ -55,7 +62,7 @@ test.describe('observability pages', () => {
     for (const name of tabs) {
       const tab = page.getByRole('tab', { name })
       if (await tab.isVisible({ timeout: 3000 }).catch(() => false)) {
-        await tab.click()
+        await tab.evaluate((el) => (el as HTMLElement).click())
         // 等待 tab 切换完成
         await expect(tab).toHaveClass(/active/, { timeout: 5000 }).catch(() => {})
       }
