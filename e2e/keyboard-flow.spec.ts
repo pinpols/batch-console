@@ -27,18 +27,22 @@ test.describe('keyboard flow — P0 页面', () => {
   })
 
   test('Dialog 打开后 Tab 焦点应在 Dialog 内部(不溢出)', async ({ page }) => {
-    await page.goto('/observability/alert-routings')
-    await page.getByRole('button', { name: '新增路由' }).click()
+    await page.goto('/governance/queues')
+    await page.getByRole('button', { name: '新建队列' }).click()
     await page.waitForTimeout(400)
     const dialog = page.locator('.el-dialog:visible, .el-drawer:visible').first()
     await expect(dialog).toBeVisible({ timeout: 8000 })
-    // 按 5 次 Tab,每次 active element 都应在 dialog/drawer 内(EP 多数已迁移 drawer)
+    const focusScope = page.locator('.el-overlay-dialog:visible, .el-drawer:visible').first()
+    const firstFocusable = dialog
+      .locator(
+        'input:not([disabled]), textarea:not([disabled]), button:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      )
+      .first()
+    await firstFocusable.focus()
+    // 按 5 次 Tab,每次 active element 都应在当前可见 dialog/drawer 焦点域内
     for (let i = 0; i < 5; i++) {
       await page.keyboard.press('Tab')
-      const isInside = await page.evaluate(() => {
-        const dlg = document.querySelector('.el-dialog, .el-drawer')
-        return dlg ? dlg.contains(document.activeElement) : false
-      })
+      const isInside = await focusScope.evaluate((scope) => scope.contains(document.activeElement))
       expect(isInside, `Tab ${i + 1} 后焦点应在 dialog/drawer 内`).toBe(true)
     }
     await page.keyboard.press('Escape')
@@ -47,12 +51,17 @@ test.describe('keyboard flow — P0 页面', () => {
   test('命令面板 ⌘K / Ctrl+K 打开与关闭', async ({ page }) => {
     await page.goto('/ops/summary')
     await page.waitForTimeout(500)
-    // 跨平台:同时尝试 ⌘+K / Control+K
-    const isMac = process.platform === 'darwin'
-    await page.keyboard.press(isMac ? 'Meta+K' : 'Control+K')
-    const palette = page.getByPlaceholder(/搜索页面/).first()
-    // 命令面板首次打开会异步加载菜单 fixture,CI/低性能机 3s 不够,放宽到 8s
-    await expect(palette).toBeVisible({ timeout: 8000 })
+    await page.locator('body').click()
+    const palette = page.getByPlaceholder(/搜索页面|Search pages/).first()
+    await page.keyboard.press('Meta+K')
+    const openedByMeta = await expect(palette)
+      .toBeVisible({ timeout: 3000 })
+      .then(() => true)
+      .catch(() => false)
+    if (!openedByMeta) {
+      await page.keyboard.press('Control+K')
+      await expect(palette).toBeVisible({ timeout: 8000 })
+    }
     await page.keyboard.press('Escape')
     await expect(palette).toBeHidden({ timeout: 8000 })
   })

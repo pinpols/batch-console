@@ -259,6 +259,11 @@
   }
 
   async function load() {
+    if (!tenant.tenantId) {
+      rows.value = []
+      loading.value = false
+      return
+    }
     loading.value = true
     try {
       rows.value = await queryWorkers(tenant.tenantId)

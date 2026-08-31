@@ -264,6 +264,10 @@
   }
 
   async function loadChannels() {
+    if (!tenant.tenantId) {
+      channels.value = []
+      return
+    }
     await runLoadingChannels(async () => {
       const data = await listNotificationChannels(tenant.tenantId)
       channels.value = Array.isArray(data) ? (data as Record<string, unknown>[]) : []
@@ -279,6 +283,7 @@
   useFormFocus(channelFormRef, () => channelFormVisible.value)
 
   function openChannelCreate() {
+    if (!tenant.tenantId) return
     channelEditingCode.value = null
     channelForm.channelCode = ''
     channelForm.channelName = ''
@@ -312,6 +317,7 @@
   }
 
   async function saveChannel() {
+    if (!tenant.tenantId) return
     if (!(await validateChannelForm())) return
     savingChannel.value = true
     try {
@@ -331,6 +337,7 @@
   }
 
   async function testChannel(row: Record<string, unknown>) {
+    if (!tenant.tenantId) return
     try {
       await testNotificationChannel(String(row.channelCode), tenant.tenantId)
       ElMessage.success(t('notificationChannelsTab.testSent'))
@@ -340,6 +347,7 @@
   }
 
   async function confirmDeleteChannel(row: Record<string, unknown>) {
+    if (!tenant.tenantId) return
     try {
       await confirmDanger({
         verb: t('notificationCommon.deleteVerb'),

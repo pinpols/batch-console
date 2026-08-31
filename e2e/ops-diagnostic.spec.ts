@@ -27,7 +27,9 @@ test.describe('ops diagnostic (运维诊断)', () => {
   })
 
   test('集群诊断区块存在', async ({ page }) => {
-    await expect(page.getByText(/集群|诊断|节点/).first()).toBeVisible({ timeout: 8000 })
+    await expect(page.locator('main').getByText(/集群|诊断|节点/).first()).toBeVisible({
+      timeout: 8000,
+    })
   })
 
   test('旧路由重定向到运维诊断', async ({ page }) => {

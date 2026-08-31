@@ -82,36 +82,36 @@ test.describe('error-state: /api/console/queues POST', () => {
   })
 })
 
-test.describe('error-state: /api/console/alert-routings POST', () => {
+test.describe('error-state: alert routing reserved write contract', () => {
   test.beforeEach(async ({ page }) => {
     await enterDemoApp(page)
     await page.goto('/observability/alert-routings')
   })
 
-  test('500 → toast', async ({ page }) => {
-    await injectError(page, '**/api/console/alert-routings', '500')
-    const dialog = await openDialog(page, '新增路由')
-    await fieldInput(dialog, '路由编码').fill('e2e-ar-500')
-    await fieldInput(dialog, '团队').fill('t')
-    await fieldInput(dialog, '告警分组').fill('g')
-    await fieldInput(dialog, '接收人').fill('r@e.com')
-    await submitForm(dialog)
-    await expectToastAndStay(page)
-    await clearInjection(page, '**/api/console/alert-routings')
-    await cancelDialog(dialog)
+  test('reserved state hides create action and never emits POST', async ({ page }) => {
+    let writeAttempted = false
+    await page.route('**/api/console/alert-routings', async (route) => {
+      if (route.request().method() === 'POST') {
+        writeAttempted = true
+        return route.fulfill({ status: 500, body: '{}' })
+      }
+      return route.continue()
+    })
+    await expect(page.getByText('预留配置，当前不生效')).toBeVisible()
+    await expect(page.getByRole('button', { name: '新增路由' })).toHaveCount(0)
+    await page.waitForTimeout(300)
+    expect(writeAttempted, 'reserved alert routing UI must not issue POST').toBe(false)
+    await page.unroute('**/api/console/alert-routings')
   })
 
-  test('400 → toast,form 保留', async ({ page }) => {
-    await injectError(page, '**/api/console/alert-routings', '400')
-    const dialog = await openDialog(page, '新增路由')
-    await fieldInput(dialog, '路由编码').fill('e2e-ar-400')
-    await fieldInput(dialog, '团队').fill('t')
-    await fieldInput(dialog, '告警分组').fill('g')
-    await fieldInput(dialog, '接收人').fill('r@e.com')
-    await submitForm(dialog)
-    await expectToastAndStay(page)
+  test('reserved state keeps filtering readable when mutation API is unavailable', async ({
+    page,
+  }) => {
+    await injectError(page, '**/api/console/alert-routings', '500')
+    await page.locator('.query__search input').first().fill('e2e')
+    await page.getByRole('button', { name: '搜索' }).click()
+    await expect(page.getByRole('columnheader', { name: '路由编码' })).toBeVisible()
     await clearInjection(page, '**/api/console/alert-routings')
-    await cancelDialog(dialog)
   })
 })
 

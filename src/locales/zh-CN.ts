@@ -990,6 +990,9 @@ export default {
       loadMore: '加载更多',
       allLoaded: '— 已加载全部 —',
     },
+    tenants: {
+      created: '创建时间',
+    },
     workers: {
       title: 'Worker 节点',
       summary: '在线 {online} · Drain {drain} · 离线 {offline}',
@@ -2895,6 +2898,7 @@ export default {
     fieldReceiptPolicy: '回执策略',
     fieldTimeoutSeconds: '超时(秒)',
     fieldConfigJson: '配置(JSON)',
+    saveSuccess: '保存成功',
   },
   arrivalGroupList: {
     groupCodeLabel: '组编码',

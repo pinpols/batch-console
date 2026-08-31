@@ -703,11 +703,11 @@
     loadError.value = null
     try {
       allRows.value = await listFileTemplates(tenant.tenantId)
-      syncPage()
     } catch (err) {
       loadError.value = err
-      throw err
+      allRows.value = []
     } finally {
+      syncPage()
       loading.value = false
     }
   }
@@ -732,8 +732,10 @@
     loading.value = true
     try {
       allChannelRows.value = await listFileChannels(tenant.tenantId)
-      syncChannelRows()
+    } catch {
+      allChannelRows.value = []
     } finally {
+      syncChannelRows()
       loading.value = false
     }
   }
