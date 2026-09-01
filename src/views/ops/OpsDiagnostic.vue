@@ -614,15 +614,16 @@
 <style scoped>
   .diag-catalog {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: var(--space-md);
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 12px;
   }
 
   .diag-card {
     display: grid;
     grid-template-rows: auto auto auto auto;
-    gap: 12px;
-    padding: 16px;
+    align-content: start;
+    gap: 10px;
+    padding: 13px;
     border: 1px solid var(--color-border-light);
     border-radius: var(--radius-content);
     background: var(--color-bg-card);
@@ -653,14 +654,14 @@
 
   .diag-card__head {
     display: flex;
-    gap: 12px;
+    gap: 10px;
     align-items: flex-start;
   }
 
   .diag-card__icon {
     flex: 0 0 auto;
-    width: 38px;
-    height: 38px;
+    width: 34px;
+    height: 34px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -688,7 +689,7 @@
 
   .diag-card__title h3 {
     margin: 0;
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 650;
     line-height: 1.35;
     color: var(--color-text-primary);
@@ -716,7 +717,8 @@
   .diag-card__action {
     display: flex;
     gap: 8px;
-    justify-content: flex-end;
+    justify-content: flex-start;
+    flex-wrap: wrap;
   }
 
   .diag-card__action--dual {

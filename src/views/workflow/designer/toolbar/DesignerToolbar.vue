@@ -10,6 +10,7 @@
     ArrowUpDown as Sort,
     Sparkles as MagicStick,
     Files,
+    MoreHorizontal as More,
     Share2 as Share,
     FileText as Document,
     CircleCheck,
@@ -40,7 +41,7 @@
     { saving: false, canSave: true, layoutDirection: 'TB', jsonPanelOpen: false },
   )
 
-  defineEmits<{
+  const emit = defineEmits<{
     (e: 'autoLayout'): void
     (e: 'validate'): void
     (e: 'save'): void
@@ -51,6 +52,12 @@
     (e: 'toggleJson'): void
     (e: 'focusNode', nodeId: string): void
   }>()
+
+  function onMoreCommand(command: string) {
+    if (command === 'templates') emit('openTemplateLibrary')
+    if (command === 'mermaid') emit('exportMermaid')
+    if (command === 'json') emit('toggleJson')
+  }
 
   // 保存按钮在有未保存变更时更醒目(danger pill 语义 = "需要保存")
   const saveButtonType = computed<'primary' | 'danger'>(() =>
@@ -127,48 +134,39 @@
 
     <el-divider direction="vertical" />
 
-    <!-- 分组:视图(quick-palette / templates / mermaid / json) -->
+    <!-- 分组:视图。快捷添加保留直显，低频工具收进菜单减少工具栏拥挤。 -->
     <div class="designer-toolbar__group">
-      <el-button-group>
-        <el-button
-          :icon="MagicStick"
-          :title="t('workflowDesignerPolish.actionQuickPalette')"
-          @click="$emit('openQuickPalette')"
-        >
-          <span class="designer-toolbar__btn-text">{{
-            t('workflowDesignerPolish.actionQuickPalette')
-          }}</span>
+      <el-button
+        :icon="MagicStick"
+        :title="t('workflowDesignerPolish.actionQuickPalette')"
+        @click="$emit('openQuickPalette')"
+      >
+        <span class="designer-toolbar__btn-text">{{
+          t('workflowDesignerPolish.actionQuickPalette')
+        }}</span>
+      </el-button>
+      <el-dropdown trigger="click" @command="onMoreCommand">
+        <el-button :icon="More" :title="t('common.more')">
+          <span class="designer-toolbar__btn-text">{{ t('common.more') }}</span>
         </el-button>
-        <el-button
-          :icon="Files"
-          :title="t('workflowDesignerPolish.actionTemplates')"
-          @click="$emit('openTemplateLibrary')"
-        >
-          <span class="designer-toolbar__btn-text">{{
-            t('workflowDesignerPolish.actionTemplates')
-          }}</span>
-        </el-button>
-        <el-button
-          :icon="Share"
-          :title="t('workflowDesignerSpike.actionMermaid')"
-          @click="$emit('exportMermaid')"
-        >
-          <span class="designer-toolbar__btn-text">{{
-            t('workflowDesignerSpike.actionMermaid')
-          }}</span>
-        </el-button>
-        <el-button
-          class="designer-toolbar__json-btn"
-          :icon="Document"
-          :aria-pressed="jsonPanelOpen"
-          :title="t('workflowDesignerJson.toolbarButton')"
-          @click="$emit('toggleJson')"
-        >
-          <span class="designer-toolbar__btn-text">{{
-            t('workflowDesignerJson.toolbarButton')
-          }}</span>
-        </el-button>
-      </el-button-group>
+        <template #dropdown>
+          <el-dropdown-menu>
+            <el-dropdown-item command="templates">
+              <el-icon><Files /></el-icon>
+              {{ t('workflowDesignerPolish.actionTemplates') }}
+            </el-dropdown-item>
+            <el-dropdown-item command="mermaid">
+              <el-icon><Share /></el-icon>
+              {{ t('workflowDesignerSpike.actionMermaid') }}
+            </el-dropdown-item>
+            <el-dropdown-item command="json">
+              <el-icon><Document /></el-icon>
+              {{ t('workflowDesignerJson.toolbarButton') }}
+              <span v-if="jsonPanelOpen" class="designer-toolbar__menu-state">●</span>
+            </el-dropdown-item>
+          </el-dropdown-menu>
+        </template>
+      </el-dropdown>
     </div>
 
     <el-divider direction="vertical" />
@@ -215,6 +213,7 @@
     padding: 8px 16px;
     border-bottom: 1px solid var(--color-border);
     background: var(--color-bg-overlay, #fff);
+    min-width: 0;
   }
   .designer-toolbar__group {
     display: flex;
@@ -224,6 +223,15 @@
   .designer-toolbar__spacer {
     flex: 1 1 auto;
     min-width: 0;
+  }
+  .designer-toolbar__search {
+    min-width: 0;
+    max-width: 220px;
+  }
+  .designer-toolbar__menu-state {
+    margin-left: 8px;
+    color: var(--el-color-primary);
+    font-size: 10px;
   }
   /* 保存按钮最突出:更大触达 + dirty 时 danger pill 提醒 */
   .designer-toolbar__save-btn {
@@ -241,6 +249,10 @@
     .designer-toolbar__spacer {
       flex-basis: 100%;
       height: 0;
+    }
+    .designer-toolbar__search {
+      flex: 1 1 180px;
+      max-width: none;
     }
   }
 </style>

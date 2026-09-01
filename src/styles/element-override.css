@@ -243,6 +243,20 @@ html.dark {
   overflow: hidden;
 }
 
+/* 表格位于 flex/card 容器内时允许自身收缩，避免列内容把整个布局顶出可视区。 */
+.pro-table,
+.pro-table__table,
+.pro-table .el-table__cell .cell {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.pro-table .row-actions,
+.pro-table .table-actions {
+  min-width: 0;
+  max-width: 100%;
+}
+
 /* 还原设计(02-audit 样张):数据行宽松(~48px),不再极限压行 */
 .console-table.el-table .el-table__cell {
   padding-top: 10px;

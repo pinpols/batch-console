@@ -185,4 +185,17 @@
   .dr-preset__select {
     width: 130px;
   }
+
+  @media (max-width: 720px) {
+    .dr-preset {
+      width: 100%;
+      align-items: stretch;
+    }
+
+    .dr-preset__select,
+    .dr-preset__picker {
+      width: 100% !important;
+      min-width: 0;
+    }
+  }
 </style>

@@ -57,6 +57,7 @@
 
     <SectionCard>
       <ProTable
+        class="job-definition-table"
         :data="filtered"
         :loading="tableBlocking"
         :error="jobLoadError"
@@ -71,6 +72,7 @@
         v-model:page="page"
         v-model:page-size="pageSize"
         @change="() => {}"
+        table-layout="fixed"
       >
         <template #query>
           <ListPageQueryBar
@@ -186,7 +188,7 @@
 
         <template #default="{ isColVisible }">
           <!-- 列序照设计 proto-jobs_view:JOB CODE(250) 名称 类型 WORKER GROUP QUEUE 启用 操作 -->
-          <el-table-column prop="jobCode" :label="t('jobDefinitionList.colJobCode')" width="250">
+          <el-table-column prop="jobCode" :label="t('jobDefinitionList.colJobCode')" width="210">
             <template #default="{ row }">
               <router-link class="definition-link" :to="definitionDetailLocation(row)">
                 {{ row.jobCode }}
@@ -197,7 +199,7 @@
             v-if="isColVisible('jobName')"
             prop="jobName"
             :label="t('jobDefinitionList.colJobName')"
-            min-width="240"
+            min-width="190"
             show-overflow-tooltip
           />
           <el-table-column
@@ -285,7 +287,7 @@
             min-width="220"
             show-overflow-tooltip
           />
-          <el-table-column :label="t('jobDefinitionList.colActions')" width="190">
+          <el-table-column :label="t('jobDefinitionList.colActions')" width="190" fixed="right">
             <template #default="{ row }">
               <RowActions :actions="rowActions(row)" :inline-limit="2" />
             </template>
