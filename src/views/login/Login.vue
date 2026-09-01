@@ -298,8 +298,8 @@
     min-width: 380px;
     display: flex;
     flex-direction: column;
-    justify-content: flex-start;
-    padding: clamp(120px, 20vh, 184px) 56px 48px;
+    justify-content: center;
+    padding: 48px 56px;
     background: var(--color-bg-card);
     border-left: 1px solid var(--color-border);
   }
