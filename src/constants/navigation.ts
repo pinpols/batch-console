@@ -229,6 +229,12 @@ export const navigationGroups: NavigationGroup[] = [
         minRole: 'OPERATOR',
         icon: Aim,
       },
+      {
+        title: pageTitle('/config/tenant-package'),
+        path: '/config/tenant-package',
+        minRole: 'OPERATOR',
+        icon: Box,
+      },
     ],
   },
   {
@@ -415,12 +421,6 @@ export const navigationGroups: NavigationGroup[] = [
         path: '/config/management',
         minRole: 'OPERATOR',
         icon: Operation,
-      },
-      {
-        title: pageTitle('/config/tenant-package'),
-        path: '/config/tenant-package',
-        minRole: 'OPERATOR',
-        icon: Box,
       },
       {
         title: pageTitle('/observability/audits'),

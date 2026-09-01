@@ -84,17 +84,16 @@ describe('permission navigation filtering', () => {
     const groupFor = (key: string) => navigationGroups.find((group) => group.key === key)
     const definitions = groupFor('definitions')
     const scheduling = groupFor('scheduling')
-    const system = groupFor('system')
 
     expect(definitions?.children.map((item) => item.path)).toEqual([
       '/jobs/definitions',
       '/jobs/pipelines',
       '/workflow/definitions',
       '/workflow/designer',
+      '/config/tenant-package',
     ])
     expect(scheduling?.children.map((item) => item.path)).toContain('/ops/capacity-profile')
     expect(scheduling?.children.map((item) => item.path)).toContain('/ops/asset-freshness')
-    expect(system?.children.map((item) => item.path)).toContain('/config/tenant-package')
 
     const runs = groupFor('monitor')?.children.find((item) => item.path === '/runs')
     expect(runs?.hidden).toBe(true)
