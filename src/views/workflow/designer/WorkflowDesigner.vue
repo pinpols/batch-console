@@ -583,6 +583,7 @@
     display: flex;
     flex: 1 1 auto;
     min-height: 0;
+    min-width: 0;
   }
   .workflow-designer__banner {
     padding: 8px 16px;
@@ -620,5 +621,33 @@
     color: var(--color-danger, #f56c6c);
     margin-right: 4px;
     font-family: monospace;
+  }
+
+  @media (max-width: 1100px) {
+    .workflow-designer__body :deep(.node-palette) {
+      width: 152px;
+    }
+
+    .workflow-designer__body :deep(.node-inspector) {
+      width: 280px;
+    }
+  }
+
+  @media (max-width: 760px) {
+    .workflow-designer {
+      min-height: calc(100vh - 48px);
+    }
+
+    .workflow-designer__body {
+      overflow: auto;
+    }
+
+    .workflow-designer__body :deep(.node-palette) {
+      width: 132px;
+    }
+
+    .workflow-designer__body :deep(.node-inspector) {
+      width: 250px;
+    }
   }
 </style>

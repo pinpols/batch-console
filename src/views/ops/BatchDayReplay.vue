@@ -17,11 +17,13 @@
         <span>{{ t('batchDayReplay.sessionsHeader') }}</span>
       </template>
       <el-table
+        class="replay-sessions-table"
         :data="sessions"
         v-loading="loadingSessions"
         :empty-text="t('batchDayReplay.noSessions')"
         row-key="id"
         @row-click="openDetail"
+        table-layout="fixed"
       >
         <el-table-column :label="t('batchDayReplay.colId')" prop="id" width="80" />
         <el-table-column :label="t('batchDayReplay.colBizDate')" prop="bizDate" width="120" />
@@ -59,6 +61,7 @@
       :before-close="onSubmitClose"
     >
       <el-form
+        class="replay-submit-form"
         ref="submitFormRef"
         :model="submitForm"
         label-width="120px"
@@ -71,7 +74,7 @@
           <el-date-picker v-model="submitForm.bizDate" type="date" value-format="YYYY-MM-DD" />
         </el-form-item>
         <el-form-item :label="t('batchDayReplay.fieldScope')" required>
-          <el-radio-group v-model="submitForm.scope">
+          <el-radio-group v-model="submitForm.scope" class="replay-scope-group">
             <el-radio value="ALL">ALL</el-radio>
             <el-radio value="ALL_FAILED">ALL_FAILED</el-radio>
             <el-radio value="SUBSET_JOB_CODES">SUBSET_JOB_CODES</el-radio>
@@ -171,6 +174,7 @@
           </template>
         </el-alert>
         <el-table
+          class="replay-preview-table"
           :data="preview.entries.slice(0, 8)"
           size="small"
           border
@@ -278,6 +282,7 @@
           </el-radio-group>
         </div>
         <el-table
+          class="replay-entries-table"
           :data="entries"
           v-loading="loadingEntries"
           :empty-text="t('batchDayReplay.noEntries')"
@@ -601,7 +606,7 @@
 
 <style scoped>
   .detail-progress {
-    margin: 16px 0 8px;
+    margin: 14px 0 6px;
   }
   .entries-toolbar {
     margin: 8px 0;
@@ -618,6 +623,27 @@
     border: 1px solid var(--color-border-light);
     border-radius: var(--radius-content);
     background: var(--color-bg-subtle);
+  }
+
+  .replay-sessions-table :deep(.el-table__cell .cell),
+  .replay-preview-table :deep(.el-table__cell .cell),
+  .replay-entries-table :deep(.el-table__cell .cell) {
+    min-width: 0;
+  }
+
+  .replay-submit-form :deep(.el-form-item) {
+    margin-bottom: 16px;
+  }
+
+  .replay-scope-group {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .replay-scope-group :deep(.el-radio) {
+    margin-right: 0;
+    min-width: 0;
   }
 
   .preview-panel__head {
@@ -642,5 +668,15 @@
 
   .preview-warning {
     margin-bottom: 10px;
+  }
+
+  @media (max-width: 720px) {
+    .replay-scope-group {
+      grid-template-columns: 1fr;
+    }
+
+    .preview-panel__head {
+      flex-direction: column;
+    }
   }
 </style>

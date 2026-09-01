@@ -791,31 +791,31 @@
 <style scoped>
   .detail-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: var(--space-md);
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 10px;
     margin-bottom: var(--space-md);
   }
 
   .detail-grid :deep(.metric-card) {
-    min-height: 96px;
+    min-height: 82px;
     border-radius: var(--radius-content);
   }
 
   .detail-grid :deep(.metric-card .el-card__body) {
-    padding: 14px 16px 12px;
+    padding: 11px 12px 10px;
   }
 
   .detail-grid :deep(.metric-card__label) {
-    margin-bottom: 6px;
-    font-size: var(--font-size-sm);
+    margin-bottom: 5px;
+    font-size: 12px;
   }
 
   .detail-grid :deep(.metric-card__value) {
-    font-size: 24px;
+    font-size: 18px;
   }
 
   .detail-grid :deep(.metric-card__value--long) {
-    font-size: 16px;
+    font-size: 14px;
   }
 
   .detail-grid :deep(.metric-card__description) {
@@ -862,7 +862,7 @@
   .actions {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--space-sm) var(--page-block-gap);
+    gap: 10px 16px;
     margin-top: var(--space-md);
   }
 
@@ -913,6 +913,28 @@
   }
 
   .hb-picker__select {
-    width: 320px;
+    width: min(320px, 100%);
+    max-width: 100%;
+  }
+
+  @media (max-width: 1100px) {
+    .detail-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 720px) {
+    .detail-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .action-group--danger {
+      margin-left: 0;
+    }
+
+    .hb-picker {
+      align-items: flex-start;
+      flex-direction: column;
+    }
   }
 </style>

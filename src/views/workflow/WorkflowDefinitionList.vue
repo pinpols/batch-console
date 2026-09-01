@@ -13,6 +13,7 @@
 
     <SectionCard>
       <ProTable
+        class="workflow-definition-table"
         :data="rows"
         :loading="tableBlocking"
         :total="total"
@@ -22,6 +23,7 @@
         :error="loadError"
         :on-retry="load"
         :has-active-filters="hasActiveFilters"
+        table-layout="fixed"
       >
         <template #toolbar>
           <OpsListToolbar
@@ -143,9 +145,9 @@
           :label="t('workflowDefinitionList.colUpdatedAt')"
           width="180"
         />
-        <el-table-column :label="t('workflowDefinitionList.colActions')" width="260" fixed="right">
+        <el-table-column :label="t('workflowDefinitionList.colActions')" width="220" fixed="right">
           <template #default="{ row }">
-            <RowActions :actions="rowActions(row)" :inline-limit="3" />
+            <RowActions :actions="rowActions(row)" :inline-limit="2" />
           </template>
         </el-table-column>
       </ProTable>
@@ -730,4 +732,18 @@
   })
 </script>
 
-<style scoped></style>
+<style scoped>
+  .workflow-definition-table :deep(.el-table__cell .cell) {
+    min-width: 0;
+  }
+
+  .workflow-definition-table :deep(.el-table__fixed-right) {
+    box-shadow: -8px 0 16px rgb(15 23 42 / 6%);
+  }
+
+  @media (max-width: 720px) {
+    .workflow-definition-table :deep(.el-table__fixed-right) {
+      box-shadow: -4px 0 10px rgb(15 23 42 / 8%);
+    }
+  }
+</style>
