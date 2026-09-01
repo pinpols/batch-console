@@ -172,6 +172,7 @@
     align-items: flex-start;
     justify-content: space-between;
     gap: var(--space-md);
+    min-width: 0;
     padding: 10px 0 2px;
     margin-bottom: 0;
     background: transparent;
@@ -182,7 +183,7 @@
     font-size: var(--font-size-xl);
     font-weight: 650;
     line-height: var(--line-height-tight);
-    letter-spacing: -0.01em;
+    letter-spacing: 0;
     color: var(--color-text-primary);
   }
 
@@ -198,6 +199,11 @@
     display: flex;
     align-items: center;
     gap: 8px;
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  .page-header__left > div {
     min-width: 0;
   }
 
@@ -248,5 +254,32 @@
     align-items: center;
     gap: var(--space-sm);
     flex-wrap: wrap;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  @media (max-width: 720px) {
+    .page-header {
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .page-header__left,
+    .actions {
+      width: 100%;
+    }
+
+    .title {
+      font-size: 18px;
+      overflow-wrap: anywhere;
+    }
+
+    .description {
+      font-size: 13px;
+    }
+
+    .actions {
+      justify-content: flex-start;
+    }
   }
 </style>

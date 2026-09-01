@@ -164,7 +164,7 @@
             v-if="isColVisible('jobCode')"
             prop="jobCode"
             :label="t('jobInstanceList.colJobCode')"
-            min-width="200"
+            min-width="160"
           >
             <template #default="{ row }">
               <router-link class="cell-link" :to="`/jobs/definitions?jobCode=${row.jobCode}`">
@@ -206,7 +206,7 @@
             v-if="isColVisible('startedAt')"
             prop="startedAt"
             :label="t('jobInstanceList.colStartedAt')"
-            width="160"
+            width="145"
           />
           <el-table-column
             v-if="isColVisible('duration')"
@@ -223,7 +223,7 @@
             v-if="isColVisible('traceId')"
             prop="traceId"
             :label="t('jobInstanceList.colTrace')"
-            width="110"
+            width="90"
           >
             <template #default="{ row }">
               <router-link
@@ -918,11 +918,15 @@
   }
 
   .jr-jobcode {
-    width: 200px;
+    width: 180px;
+    min-width: 0;
+    max-width: 100%;
   }
 
   .jr-trace {
-    width: 200px;
+    width: 180px;
+    min-width: 0;
+    max-width: 100%;
   }
 
   .jr-sla {
@@ -967,10 +971,16 @@
   .jr-live__title {
     color: var(--color-text-primary);
     font-weight: 500;
+    white-space: nowrap;
+    flex-shrink: 0;
   }
 
   .jr-live__sub {
     color: var(--color-text-tertiary);
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .jr-live__sep {
@@ -982,6 +992,10 @@
   .jr-live__time {
     font-family: var(--font-mono);
     color: var(--color-text-tertiary);
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .jr-live__spacer {
@@ -1048,8 +1062,11 @@
 <style scoped>
   /* 设计操作列:蓝色文字链(详情/步骤),非描边按钮 */
   .jr-acts {
-    display: inline-flex;
-    gap: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 8px;
+    min-width: 0;
+    max-width: 100%;
   }
 
   .jr-act {
@@ -1077,5 +1094,47 @@
   .jr-mono {
     font-family: var(--font-mono);
     font-size: 12px;
+  }
+
+  @media (max-width: 720px) {
+    .jr-presets,
+    .jr-tabs {
+      align-items: stretch;
+    }
+
+    .jr-presets__spacer,
+    .jr-tabs__spacer {
+      display: none;
+    }
+
+    .jr-jobcode,
+    .jr-trace {
+      width: 100%;
+      flex: 1 1 100%;
+    }
+
+    .jr-sla {
+      margin-left: 0;
+    }
+
+    .jr-live {
+      flex-wrap: wrap;
+      gap: 6px 8px;
+    }
+
+    .jr-live__sub,
+    .jr-live__time,
+    .jr-live__sep {
+      display: none;
+    }
+
+    .jr-live__spacer {
+      flex: 1 1 auto;
+      min-width: 8px;
+    }
+
+    .jr-live__pause {
+      margin-left: auto;
+    }
   }
 </style>

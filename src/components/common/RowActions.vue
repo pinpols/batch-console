@@ -145,9 +145,18 @@
 
 <style scoped>
   .row-actions {
-    display: inline-flex;
+    display: flex;
     align-items: center;
-    gap: 6px;
+    flex-wrap: wrap;
+    gap: 4px;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .row-actions :deep(.el-button) {
+    min-width: 0;
+    max-width: 100%;
+    padding-inline: 8px;
   }
 
   .row-actions__more {
