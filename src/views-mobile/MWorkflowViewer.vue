@@ -110,7 +110,6 @@
   import { useRoute, useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import { ArrowLeft, RefreshCw as Refresh } from 'lucide-vue-next'
-  import mermaid from 'mermaid'
   import MPullRefresh from '@/layout-mobile/MPullRefresh.vue'
   import { workflowApi } from '@/api/workflow'
   import { queryWorkflowNodeRuns } from '@/api/workflowQueries'
@@ -120,6 +119,7 @@
   import { useTenantReload } from '@/composables/useTenantReload'
   import { useAutoRefresh } from '@/composables/useAutoRefresh'
   import { useSmartBack } from '@/composables/useSmartBack'
+  import { loadMermaid } from '@/utils/mermaid'
   import {
     workflowRunMermaidClassDefs,
     workflowRunStatusClass,
@@ -169,13 +169,6 @@
     if (!runId.value) return false
     const s = (runStatus.value || '').toUpperCase()
     return !TERMINAL.has(s)
-  })
-
-  mermaid.initialize({
-    startOnLoad: false,
-    theme: 'default',
-    flowchart: { htmlLabels: true, curve: 'basis' },
-    securityLevel: 'strict',
   })
 
   async function load() {
@@ -279,6 +272,7 @@
       return
     }
     try {
+      const mermaid = await loadMermaid()
       const renderId = `m-wf-graph-${Date.now()}-${Math.floor(Math.random() * 1e4)}`
       const { svg } = await mermaid.render(renderId, text)
       await nextTick()

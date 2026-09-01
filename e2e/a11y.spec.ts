@@ -14,18 +14,10 @@ import type { Page } from '@playwright/test'
 
 const SEVERITY_TO_FAIL = ['critical', 'serious'] as const
 
-// EP 上游已知问题豁免清单(每条标注理由)
-const GLOBAL_DISABLE_RULES = [
-  // EP el-button plain 模式浅蓝 + 浅灰背景对比度低(WCAG 1.4.3 AA 4.5:1 边界)
-  // 整套设计语言调色后可移除,issue: element-plus/element-plus#14523
-  'color-contrast',
-]
+// 全局不豁免规则。第三方 canvas/chart 的局部问题应在具体测试中按选择器排除。
+const GLOBAL_DISABLE_RULES: string[] = []
 
-async function runAxe(
-  page: Page,
-  exclude: string[] = [],
-  extraDisable: string[] = [],
-) {
+async function runAxe(page: Page, exclude: string[] = [], extraDisable: string[] = []) {
   let builder = new AxeBuilder({ page })
     .withTags(['wcag2aa', 'best-practice'])
     .disableRules([...GLOBAL_DISABLE_RULES, ...extraDisable])

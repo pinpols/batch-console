@@ -89,13 +89,8 @@ const SSE_DOMAIN_EVENT_NAMES = [
   'workflow-run-updated',
 ] as const
 
-/** Spring SSE 使用命名 event;与 ConsoleRealtimeEventHub 生命周期及 job-instances 域事件对齐 */
-const JOB_INSTANCE_SSE_EVENT_NAMES = [
-  'ready',
-  'heartbeat',
-  'reset-required',
-  'job-instance-updated',
-] as const
+/** 详情页只消费会使实例数据变脏的事件；ready/heartbeat 仅用于保活，不应触发重复 GET。 */
+const JOB_INSTANCE_SSE_EVENT_NAMES = ['reset-required', 'job-instance-updated'] as const
 
 function jobInstancePayloadId(data: unknown): number | undefined {
   if (!data || typeof data !== 'object') return undefined
@@ -107,7 +102,7 @@ function jobInstancePayloadId(data: unknown): number | undefined {
  * 订阅作业实例实时 SSE(`/api/console/stream/job-instances/events`)。
  * 命名事件会序列化为 JSON 字符串交给回调。
  *
- * @param instanceId 若传入,则仅在解析到 `data.id` 与该 id 一致时回调(心跳/ready 等仍原样回调)。
+ * @param instanceId 若传入,则仅在解析到 `data.id` 与该 id 一致时回调；无 id 的 reset-required 仍会回调。
  */
 export async function createLogStream(
   instanceId: number,
@@ -133,7 +128,6 @@ export async function createLogStream(
   for (const name of JOB_INSTANCE_SSE_EVENT_NAMES) {
     es.addEventListener(name, forward)
   }
-  es.onmessage = forward
   es.onerror = (e) => {
     onError?.(e)
     es.close()

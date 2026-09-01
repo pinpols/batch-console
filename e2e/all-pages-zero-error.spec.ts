@@ -39,8 +39,6 @@ const PAGES: PageCheck[] = [
     path: '/files/list',
     title: '文件列表',
     drillFirstRow: true,
-    // files/summary 端点旧 jar 返回 500,FE 已 _silent 降级为 0(src/api/file.ts by-design)
-    allowErrors: [/\/queries\/files\/summary\b/],
   },
   { path: '/files/templates', title: '文件模板' },
   { path: '/files/arrival-groups', title: '到达组治理' },

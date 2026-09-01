@@ -104,9 +104,8 @@
   }
 
   function isDangerBadge(path: string): boolean {
-    // 告警 + 失败任务用红色徽章；待审批用普通
+    // 只有真正的待办/告警才显示导航徽章；历史失败数在运维摘要中查看。
     if (path === '/m/alerts') return badges.criticalAlerts > 0 || badges.openAlerts > 0
-    if (path === '/m/jobs') return badges.failedJobs > 0
     return false
   }
 </script>
@@ -151,7 +150,7 @@
   }
 
   /* 暗色 Liquid Glass:把 inset 高光透明度调高一倍,黑底上才看得见折射 */
-  :global(html.dark) .mobile-tab-bar {
+  :global(html.dark .mobile-tab-bar) {
     background: color-mix(in srgb, #10151d 88%, transparent 12%);
     border-top: 0.5px solid rgb(148 163 184 / 28%);
     box-shadow:
@@ -161,7 +160,7 @@
       0 -8px 24px rgb(0 0 0 / 50%);
   }
 
-  :global(html.dark) .mobile-tab-bar::before {
+  :global(html.dark .mobile-tab-bar::before) {
     background:
       radial-gradient(circle at 0% 0%, rgb(10 132 255 / 14%) 0%, transparent 40%),
       radial-gradient(circle at 100% 0%, rgb(94 92 230 / 12%) 0%, transparent 40%);
@@ -182,7 +181,7 @@
     transition: color 0.1s ease;
   }
 
-  :global(html.dark) .mobile-tab {
+  :global(html.dark .mobile-tab) {
     color: rgb(235 235 245 / 60%);
   }
 
@@ -217,7 +216,7 @@
     box-shadow: 0 0 0 1.5px #ffffff;
   }
 
-  :global(html.dark) .mobile-tab__badge {
+  :global(html.dark .mobile-tab__badge) {
     box-shadow: 0 0 0 1.5px #1c1c1e;
   }
 
