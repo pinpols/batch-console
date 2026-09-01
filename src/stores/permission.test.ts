@@ -79,4 +79,29 @@ describe('permission navigation filtering', () => {
     expect(result[0].children.map((c) => c.path)).toEqual(['/system/notifications'])
     expect(result[0].children[0].title).toBe('通知与投递')
   })
+
+  it('keeps compatibility paths while consolidating sidebar ownership', () => {
+    const groupFor = (key: string) => navigationGroups.find((group) => group.key === key)
+    const definitions = groupFor('definitions')
+    const scheduling = groupFor('scheduling')
+    const system = groupFor('system')
+
+    expect(definitions?.children.map((item) => item.path)).toEqual([
+      '/jobs/definitions',
+      '/jobs/pipelines',
+      '/workflow/definitions',
+      '/workflow/designer',
+    ])
+    expect(scheduling?.children.map((item) => item.path)).toContain('/ops/capacity-profile')
+    expect(scheduling?.children.map((item) => item.path)).toContain('/ops/asset-freshness')
+    expect(system?.children.map((item) => item.path)).toContain('/config/tenant-package')
+
+    const runs = groupFor('monitor')?.children.find((item) => item.path === '/runs')
+    expect(runs?.hidden).toBe(true)
+
+    const visiblePaths = navigationGroups.flatMap((group) =>
+      group.children.filter((item) => !item.hidden).map((item) => item.path),
+    )
+    expect(new Set(visiblePaths).size).toBe(visiblePaths.length)
+  })
 })
