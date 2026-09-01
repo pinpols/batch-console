@@ -1908,10 +1908,10 @@ const messages: Messages = {
   },
   login: {
     appDesc: 'Batch scheduling console',
-    heroTitle: 'Manage batch operations\nfrom trigger to delivery',
+    heroTitle: 'One control plane for batch jobs\nfrom trigger to delivery',
     heroDesc:
-      'Connect jobs, workflows, files, and workers across the full run, retry, and delivery lifecycle.',
-    subtitle: 'Sign in to your tenant batch console.',
+      'Connect jobs, workflows, files, and workers across scheduling, execution, retry, and delivery.',
+    subtitle: 'Sign in to manage your tenant batch jobs.',
     welcome: 'Sign in to the console',
     traceLabel: 'Trace',
     copy: 'Copy',

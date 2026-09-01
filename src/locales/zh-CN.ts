@@ -1847,9 +1847,9 @@ export default {
   },
   login: {
     appDesc: '批量调度控制台',
-    heroTitle: '统一管理批量作业\n从触发到交付，全程可见',
-    heroDesc: '连接作业、工作流、文件与执行节点，覆盖触发、运行、重试和交付全链路。',
-    subtitle: '使用租户账号登录批量调度控制台。',
+    heroTitle: '批量作业，统一调度\n从触发到交付，全程可见',
+    heroDesc: '统一连接作业、工作流、文件与执行节点，覆盖调度、执行、重试和交付。',
+    subtitle: '登录租户控制台，管理批量作业。',
     welcome: '登录控制台',
     traceLabel: 'Trace',
     copy: '复制',

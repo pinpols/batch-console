@@ -6,7 +6,7 @@
         <span class="login-brand__logo">BC</span>
         <div>
           <div class="login-brand__name">{{ t('nav.appTitle') }}</div>
-          <div class="login-brand__desc">Batch Console</div>
+          <div class="login-brand__desc">{{ t('login.appDesc') }}</div>
         </div>
       </div>
 
