@@ -68,17 +68,22 @@
         @submit.prevent="doSubmit"
       >
         <el-form-item :label="t('batchDayReplay.fieldCalendar')" required>
-          <el-input v-model="submitForm.calendarCode" placeholder="default" />
+          <el-input
+            v-model="submitForm.calendarCode"
+            :placeholder="t('batchDayReplay.calendarPlaceholder')"
+          />
         </el-form-item>
         <el-form-item :label="t('batchDayReplay.fieldBizDate')" required>
           <el-date-picker v-model="submitForm.bizDate" type="date" value-format="YYYY-MM-DD" />
         </el-form-item>
         <el-form-item :label="t('batchDayReplay.fieldScope')" required>
           <el-radio-group v-model="submitForm.scope" class="replay-scope-group">
-            <el-radio value="ALL">ALL</el-radio>
-            <el-radio value="ALL_FAILED">ALL_FAILED</el-radio>
-            <el-radio value="SUBSET_JOB_CODES">SUBSET_JOB_CODES</el-radio>
-            <el-radio value="OUTPUTS_ONLY">OUTPUTS_ONLY</el-radio>
+            <el-radio value="ALL">{{ t('batchDayReplay.scopeAll') }}</el-radio>
+            <el-radio value="ALL_FAILED">{{ t('batchDayReplay.scopeAllFailed') }}</el-radio>
+            <el-radio value="SUBSET_JOB_CODES">{{
+              t('batchDayReplay.scopeSubsetJobCodes')
+            }}</el-radio>
+            <el-radio value="OUTPUTS_ONLY">{{ t('batchDayReplay.scopeOutputsOnly') }}</el-radio>
           </el-radio-group>
         </el-form-item>
         <el-form-item
@@ -107,16 +112,31 @@
         </el-form-item>
         <el-form-item :label="t('batchDayReplay.fieldResultPolicy')">
           <el-select v-model="submitForm.resultPolicy" class="query-w-full">
-            <el-option label="CREATE_NEW_VERSION" value="CREATE_NEW_VERSION" />
-            <el-option label="KEEP_BOTH" value="KEEP_BOTH" />
-            <el-option label="MANUAL_CONFIRM_EFFECTIVE" value="MANUAL_CONFIRM_EFFECTIVE" />
+            <el-option
+              :label="t('batchDayReplay.resultPolicyCreateNewVersion')"
+              value="CREATE_NEW_VERSION"
+            />
+            <el-option :label="t('batchDayReplay.resultPolicyKeepBoth')" value="KEEP_BOTH" />
+            <el-option
+              :label="t('batchDayReplay.resultPolicyManualConfirmEffective')"
+              value="MANUAL_CONFIRM_EFFECTIVE"
+            />
           </el-select>
         </el-form-item>
         <el-form-item :label="t('batchDayReplay.fieldConfigPolicy')">
           <el-select v-model="submitForm.configVersionPolicy" class="query-w-full">
-            <el-option label="USE_ORIGINAL_CONFIG" value="USE_ORIGINAL_CONFIG" />
-            <el-option label="USE_CURRENT_CONFIG" value="USE_CURRENT_CONFIG" />
-            <el-option label="USE_SPECIFIC_VERSION" value="USE_SPECIFIC_VERSION" />
+            <el-option
+              :label="t('batchDayReplay.configPolicyUseOriginal')"
+              value="USE_ORIGINAL_CONFIG"
+            />
+            <el-option
+              :label="t('batchDayReplay.configPolicyUseCurrent')"
+              value="USE_CURRENT_CONFIG"
+            />
+            <el-option
+              :label="t('batchDayReplay.configPolicyUseSpecific')"
+              value="USE_SPECIFIC_VERSION"
+            />
           </el-select>
         </el-form-item>
         <el-form-item
@@ -276,9 +296,15 @@
         <div class="entries-toolbar">
           <el-radio-group v-model="entriesStatusFilter" size="small" @change="loadEntries">
             <el-radio-button value="">{{ t('batchDayReplay.allEntries') }}</el-radio-button>
-            <el-radio-button value="PENDING">PENDING</el-radio-button>
-            <el-radio-button value="SUCCEEDED">SUCCEEDED</el-radio-button>
-            <el-radio-button value="FAILED">FAILED</el-radio-button>
+            <el-radio-button value="PENDING">{{
+              t('batchDayReplay.entryStatusPending')
+            }}</el-radio-button>
+            <el-radio-button value="SUCCEEDED">{{
+              t('batchDayReplay.entryStatusSucceeded')
+            }}</el-radio-button>
+            <el-radio-button value="FAILED">{{
+              t('batchDayReplay.entryStatusFailed')
+            }}</el-radio-button>
           </el-radio-group>
         </div>
         <el-table
@@ -292,7 +318,15 @@
           <el-table-column :label="t('batchDayReplay.colJobCode')" prop="jobCode" />
           <el-table-column :label="t('batchDayReplay.colStatus')" width="120">
             <template #default="{ row }">
-              <el-tag size="small" :type="entryStatusTagType(row.status)">{{ row.status }}</el-tag>
+              <el-tag size="small" :type="entryStatusTagType(row.status)">
+                {{
+                  row.status === 'SUCCEEDED'
+                    ? t('batchDayReplay.entryStatusSucceeded')
+                    : row.status === 'FAILED'
+                      ? t('batchDayReplay.entryStatusFailed')
+                      : t('batchDayReplay.entryStatusPending')
+                }}
+              </el-tag>
             </template>
           </el-table-column>
           <el-table-column
