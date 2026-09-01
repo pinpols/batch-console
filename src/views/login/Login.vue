@@ -479,10 +479,10 @@
     color: var(--button-primary-text);
     background: linear-gradient(
       180deg,
-      color-mix(in srgb, var(--button-primary-bg) 88%, #ffffff 12%) 0%,
-      var(--button-primary-bg) 100%
+      color-mix(in srgb, var(--button-primary-bg) 78%, #ffffff 22%) 0%,
+      color-mix(in srgb, var(--button-primary-bg) 94%, #ffffff 6%) 100%
     );
-    box-shadow: 0 4px 16px color-mix(in srgb, var(--button-primary-bg) 20%, transparent);
+    box-shadow: 0 4px 14px color-mix(in srgb, var(--button-primary-bg) 16%, transparent);
     transition:
       transform 0.2s ease,
       box-shadow 0.2s ease;
@@ -492,8 +492,8 @@
     transform: translateY(-1px);
     background: linear-gradient(
       180deg,
-      color-mix(in srgb, var(--button-primary-bg-hover) 88%, #ffffff 12%) 0%,
-      var(--button-primary-bg-hover) 100%
+      color-mix(in srgb, var(--button-primary-bg-hover) 78%, #ffffff 22%) 0%,
+      color-mix(in srgb, var(--button-primary-bg-hover) 94%, #ffffff 6%) 100%
     );
     box-shadow: 0 6px 20px color-mix(in srgb, var(--button-primary-bg) 26%, transparent);
   }
