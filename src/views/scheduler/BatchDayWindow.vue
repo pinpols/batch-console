@@ -61,7 +61,7 @@
         "
         @refresh="() => runRefresh(load)"
       >
-        <el-form-item label="Job">
+        <el-form-item :label="t('batchDayWindow.colJob')">
           <el-input
             class="query-w-240"
             v-model="jobKeyword"

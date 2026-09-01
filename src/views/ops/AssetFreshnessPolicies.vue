@@ -121,7 +121,10 @@
           />
         </el-form-item>
         <el-form-item :label="t('assetFreshness.timezone')">
-          <el-input v-model="form.timezone" placeholder="Asia/Shanghai" />
+          <el-input
+            v-model="form.timezone"
+            :placeholder="t('assetFreshness.timezonePlaceholder')"
+          />
         </el-form-item>
         <el-form-item :label="t('assetFreshness.staleAfter')">
           <el-input-number v-model="form.staleAfterSeconds" :min="0" controls-position="right" />
@@ -136,10 +139,10 @@
         </el-form-item>
         <el-form-item :label="t('assetFreshness.severity')">
           <el-select v-model="form.severity">
-            <el-option label="INFO" value="INFO" />
-            <el-option label="WARN" value="WARN" />
-            <el-option label="ERROR" value="ERROR" />
-            <el-option label="CRITICAL" value="CRITICAL" />
+            <el-option :label="t('enum.severity.INFO')" value="INFO" />
+            <el-option :label="t('enum.severity.WARN')" value="WARN" />
+            <el-option :label="t('enum.severity.ERROR')" value="ERROR" />
+            <el-option :label="t('enum.severity.CRITICAL')" value="CRITICAL" />
           </el-select>
         </el-form-item>
         <el-form-item :label="t('assetFreshness.enabled')">
