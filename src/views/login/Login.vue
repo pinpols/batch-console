@@ -23,6 +23,21 @@
     </aside>
 
     <main class="login-card">
+      <el-tooltip :content="localeToggleTooltip" placement="bottom-start">
+        <button
+          type="button"
+          class="login-locale-toggle"
+          :aria-label="t('nav.switchLocale')"
+          @click="toggleLocale"
+        >
+          <span class="login-locale-toggle__seg" :class="{ 'is-active': currentLocale === 'zh-CN' }"
+            >中</span
+          >
+          <span class="login-locale-toggle__seg" :class="{ 'is-active': currentLocale !== 'zh-CN' }"
+            >EN</span
+          >
+        </button>
+      </el-tooltip>
       <header class="login-card__header">
         <h2 class="login-card__title">{{ t('login.welcome') }}</h2>
         <p class="login-card__subtitle">{{ t('login.subtitle') }}</p>
@@ -108,7 +123,7 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, reactive, onMounted } from 'vue'
+  import { computed, ref, reactive, onMounted } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { CircleX as CircleClose, Lock, User } from 'lucide-vue-next'
 
@@ -117,6 +132,7 @@
   import type { FormInstance } from 'element-plus'
   import { ElMessage } from 'element-plus'
   import { useAuthStore } from '@/stores/auth'
+  import { useLocale } from '@/composables/useLocale'
   import { authApi } from '@/api/auth'
   import { getCaptchaConfig } from '@/api/captcha'
   import type { CaptchaConfig } from '@/api/captcha'
@@ -127,6 +143,10 @@
   const router = useRouter()
   const route = useRoute()
   const auth = useAuthStore()
+  const { current: currentLocale, setLocale } = useLocale()
+  const localeToggleTooltip = computed(() =>
+    currentLocale.value === 'zh-CN' ? t('layoutHeader.switchToEn') : t('layoutHeader.switchToZh'),
+  )
 
   const formRef = ref<FormInstance>()
   const loading = ref(false)
@@ -221,6 +241,10 @@
     void navigator.clipboard.writeText(loginTrace.value)
     ElMessage.success(t('login.copySuccess'))
   }
+
+  function toggleLocale() {
+    setLocale(currentLocale.value === 'zh-CN' ? 'en-US' : 'zh-CN')
+  }
 </script>
 
 <style scoped>
@@ -302,6 +326,39 @@
     padding: 48px 56px;
     background: var(--color-bg-card);
     border-left: 1px solid var(--color-border);
+  }
+
+  .login-locale-toggle {
+    position: absolute;
+    top: 24px;
+    right: 32px;
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    height: 30px;
+    gap: 2px;
+    padding: 2px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-button);
+    background: var(--color-bg-elevated);
+    cursor: pointer;
+  }
+
+  .login-locale-toggle__seg {
+    display: inline-grid;
+    place-items: center;
+    min-width: 22px;
+    height: 24px;
+    padding: 0 6px;
+    border-radius: calc(var(--radius-button) - 3px);
+    color: var(--color-text-tertiary);
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .login-locale-toggle__seg.is-active {
+    color: var(--color-primary);
+    background: color-mix(in srgb, var(--color-primary) 16%, transparent);
   }
 
   .login-card__subtitle {

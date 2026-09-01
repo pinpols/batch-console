@@ -10,8 +10,8 @@ export default async function globalSetup(config: FullConfig) {
   const page = await browser.newPage()
 
   await page.goto(`${baseURL}/login`)
-  await page.getByPlaceholder('请输入用户名').fill('admin')
-  await page.getByPlaceholder('请输入密码').fill('admin123')
+  await page.getByPlaceholder('请输入租户账号').fill('admin')
+  await page.getByPlaceholder('请输入租户密码').fill('admin123')
   await page.getByRole('button', { name: /登\s*录/ }).click()
   await page.waitForURL(/\/ops\/summary/, { timeout: 20_000 })
 
