@@ -1908,11 +1908,11 @@ const messages: Messages = {
   },
   login: {
     appDesc: 'Batch scheduling console',
-    heroTitle: 'Orchestrate, monitor and govern\nenterprise batch jobs',
+    heroTitle: 'Manage batch operations\nfrom trigger to delivery',
     heroDesc:
-      'Job definitions · workflow orchestration · scheduling governance · file pipelines · run monitoring · approvals & releases, in one console.',
-    subtitle: 'Sign in with your tenant account.',
-    welcome: 'Sign in to console',
+      'Connect jobs, workflows, files, and workers across the full run, retry, and delivery lifecycle.',
+    subtitle: 'Sign in to your tenant batch console.',
+    welcome: 'Sign in to the console',
     traceLabel: 'Trace',
     copy: 'Copy',
     copySuccess: 'Trace ID copied',

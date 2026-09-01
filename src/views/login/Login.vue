@@ -15,6 +15,10 @@
         <p class="login-hero__desc">{{ t('login.heroDesc') }}</p>
       </div>
 
+      <div class="login-hero__visual" aria-hidden="true">
+        <img src="/images/login-batch-pipeline.png" alt="" />
+      </div>
+
       <div class="login-hero__foot">© 2026 Batch Console · v{{ appVersion }}</div>
     </aside>
 
@@ -233,13 +237,14 @@
     flex: 1 1 56%;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
-    padding: 44px 56px 32px;
+    justify-content: flex-start;
+    padding: 44px 56px 24px;
     min-width: 0;
   }
 
   .login-hero__body {
     max-width: 460px;
+    margin-top: clamp(28px, 5vh, 60px);
   }
 
   .login-hero__title {
@@ -248,7 +253,7 @@
     font-weight: 700;
     line-height: 1.4;
     color: var(--color-text-primary);
-    letter-spacing: -0.01em;
+    letter-spacing: 0;
     white-space: pre-line;
   }
 
@@ -259,7 +264,28 @@
     color: var(--color-text-secondary);
   }
 
+  .login-hero__visual {
+    width: min(100%, 540px, 74vh);
+    aspect-ratio: 2 / 1;
+    margin-top: clamp(16px, 2.5vh, 28px);
+    overflow: hidden;
+    border: 1px solid rgb(96 165 250 / 22%);
+    border-radius: 14px;
+    background: #06111f;
+    box-shadow: 0 18px 44px rgb(0 0 0 / 18%);
+  }
+
+  .login-hero__visual img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.94;
+  }
+
   .login-hero__foot {
+    margin-top: auto;
+    padding-top: 16px;
     font-size: 12px;
     color: var(--color-text-tertiary);
   }
@@ -272,8 +298,8 @@
     min-width: 380px;
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    padding: 48px 56px;
+    justify-content: flex-start;
+    padding: clamp(120px, 20vh, 184px) 56px 48px;
     background: var(--color-bg-card);
     border-left: 1px solid var(--color-border);
   }
@@ -322,14 +348,14 @@
 
   /* 标题 */
   .login-card__header {
-    margin-bottom: 18px;
+    margin-bottom: 24px;
   }
 
   .login-card__title {
     margin: 0 0 6px;
     font-size: 24px;
     font-weight: 700;
-    letter-spacing: -0.02em;
+    letter-spacing: 0;
     color: var(--color-text-primary);
   }
 
@@ -447,7 +473,7 @@
     margin-top: 4px;
     font-size: 15px;
     font-weight: 600;
-    letter-spacing: 0.08em;
+    letter-spacing: 0;
     border: none;
     border-radius: var(--radius-content);
     color: var(--button-primary-text);
