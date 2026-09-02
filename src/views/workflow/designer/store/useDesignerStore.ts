@@ -10,12 +10,7 @@
 
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import type {
-  DesignerEdge,
-  DesignerNode,
-  DesignerNodeType,
-  DesignerSnapshot,
-} from '../types'
+import type { DesignerEdge, DesignerNode, DesignerNodeType, DesignerSnapshot } from '../types'
 import type { ValidationError } from '../validators/dagValidators'
 
 const UNDO_STACK_LIMIT = 50
@@ -23,7 +18,7 @@ const UNDO_STACK_LIMIT = 50
 function cloneSnapshot(nodes: DesignerNode[], edges: DesignerEdge[]): DesignerSnapshot {
   return {
     nodes: nodes.map((n) => ({ ...n, attrs: { ...(n.attrs ?? {}) } })),
-    edges: edges.map((e) => ({ ...e })),
+    edges: edges.map((e) => ({ ...e, attrs: { ...(e.attrs ?? {}) } })),
   }
 }
 
@@ -78,9 +73,7 @@ export const useDesignerStore = defineStore('workflowDesigner', () => {
 
   const canUndo = computed(() => undoStack.value.length > 0)
   const canRedo = computed(() => redoStack.value.length > 0)
-  const snapshot = computed<DesignerSnapshot>(() =>
-    cloneSnapshot(nodes.value, edges.value),
-  )
+  const snapshot = computed<DesignerSnapshot>(() => cloneSnapshot(nodes.value, edges.value))
   /** 当前是否可编辑:锁状态为自己持有 才允许提交变更(只读态下 UI 禁用) */
   const editable = computed(() => lock.value !== null && lock.value.isMine === true)
   /** 节点级错误索引,供画布高亮使用 */
@@ -153,9 +146,7 @@ export const useDesignerStore = defineStore('workflowDesigner', () => {
   function addEdge(input: { source: string; target: string; label?: string }) {
     // 平凡校验:同节点 / 已存在 → 静默忽略(不污染 undoStack)
     if (input.source === input.target) return
-    const exists = edges.value.some(
-      (e) => e.source === input.source && e.target === input.target,
-    )
+    const exists = edges.value.some((e) => e.source === input.source && e.target === input.target)
     if (exists) return
     pushUndo()
     edges.value.push({
@@ -187,6 +178,17 @@ export const useDesignerStore = defineStore('workflowDesigner', () => {
     dirty.value = true
   }
 
+  function updateEdge(id: string, patch: { label?: string; attrs?: Record<string, unknown> }) {
+    const edge = edges.value.find((item) => item.id === id)
+    if (!edge) return
+    pushUndo()
+    if (Object.hasOwn(patch, 'label')) edge.label = patch.label
+    if (patch.attrs) {
+      edge.attrs = { ...(edge.attrs ?? {}), ...patch.attrs }
+    }
+    dirty.value = true
+  }
+
   function moveNode(id: string, x: number, y: number) {
     const n = nodes.value.find((nn) => nn.id === id)
     if (!n) return
@@ -200,10 +202,7 @@ export const useDesignerStore = defineStore('workflowDesigner', () => {
    * 更新节点字段(nodeName / attrs.* 等)。inspector 表单失焦回写走此入口,
    * 会 pushUndo,可由 Ctrl+Z 撤销。
    */
-  function updateNode(
-    id: string,
-    patch: { nodeName?: string; attrs?: Record<string, unknown> },
-  ) {
+  function updateNode(id: string, patch: { nodeName?: string; attrs?: Record<string, unknown> }) {
     const n = nodes.value.find((nn) => nn.id === id)
     if (!n) return
     pushUndo()
@@ -268,6 +267,7 @@ export const useDesignerStore = defineStore('workflowDesigner', () => {
     addEdge,
     deleteNode,
     deleteEdge,
+    updateEdge,
     moveNode,
     updateNode,
     setSelection,

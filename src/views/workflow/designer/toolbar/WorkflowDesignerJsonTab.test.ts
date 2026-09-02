@@ -42,11 +42,11 @@ const i18n = createI18n({
   },
 })
 
-function factory(collapsed = false) {
+function factory(collapsed = false, readonly = false) {
   setActivePinia(createPinia())
   const store = useDesignerStore()
   const wrapper = mount(JsonSyncPanel, {
-    props: { collapsed },
+    props: { collapsed, readonly },
     global: { plugins: [i18n] },
   })
   return { store, wrapper }
@@ -114,5 +114,21 @@ describe('JsonSyncPanel', () => {
     // 画布保留原节点
     expect(store.nodes).toHaveLength(1)
     expect(store.nodes[0].nodeCode).toBe('keep')
+  })
+
+  it('只读态展示 JSON 但不会把手工文本应用到画布', async () => {
+    const { store, wrapper } = factory(false, true)
+    const taWrap = wrapper.find('textarea')
+    const next = JSON.stringify({
+      nodes: [{ nodeCode: 'blocked', nodeType: 'START' }],
+      edges: [],
+    })
+
+    await taWrap.setValue(next)
+    await taWrap.trigger('blur')
+    await nextTick()
+
+    expect((taWrap.element as HTMLTextAreaElement).readOnly).toBe(true)
+    expect(store.nodes).toHaveLength(0)
   })
 })

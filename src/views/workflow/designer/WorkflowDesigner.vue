@@ -20,7 +20,7 @@
    * - onUnmounted → useLockManager 内置 release + beforeunload sendBeacon 兜底
    */
 
-  import { computed, onMounted, onBeforeUnmount, ref } from 'vue'
+  import { computed, onMounted, onBeforeUnmount, ref, watch } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
@@ -30,6 +30,7 @@
   import { exportMermaid } from './codec/mermaidExporter'
   import { graphToDefinition } from './codec/graphToDefinition'
   import { definitionToGraph } from './codec/definitionToGraph'
+  import { toWorkflowSaveEdges, toWorkflowSaveNodes } from './codec/workflowSaveMapper'
   import { validateDag } from './validators/dagValidators'
   import { workflowDesignerApi } from '@/api/workflowDesigner'
   import { workflowApi } from '@/api/workflow'
@@ -56,8 +57,12 @@
   const saving = ref(false)
   const loading = ref(false)
 
-  const workflowIdRaw = route.params.id as string | undefined
-  const workflowId = workflowIdRaw ? Number(workflowIdRaw) : null
+  const workflowId = computed<number | null>(() => {
+    const raw = Array.isArray(route.params.id) ? route.params.id[0] : route.params.id
+    if (typeof raw !== 'string' || raw.trim() === '') return null
+    const id = Number(raw)
+    return Number.isNaN(id) ? null : id
+  })
 
   const lockMgr = useLockManager({
     onLost: (reason) => {
@@ -136,13 +141,27 @@
     templateLibraryVisible.value = true
   }
   function toggleLayoutDirection() {
+    if (!store.editable) {
+      ElMessage.warning(t('workflowDesignerMvp.lock.readonlyGuard'))
+      return
+    }
     layoutDirection.value = layoutDirection.value === 'TB' ? 'LR' : 'TB'
     canvasRef.value?.autoLayout(layoutDirection.value)
   }
 
-  onMounted(async () => {
+  /**
+   * 根据当前路由加载画布。
+   *
+   * `/workflow/designer` 与 `/workflow/designer/:id` 使用同一个路由记录，Vue Router
+   * 会复用组件实例。新建成功后仅靠 `router.replace` 不会再次触发 `onMounted`，因此必须
+   * 由路由参数监听来完成新建态→已有定义态的重新加载与真实编辑锁获取。
+   */
+  async function loadWorkflow(id: number | null) {
+    loading.value = true
+    await lockMgr.release()
     store.reset({ nodes: [], edges: [] })
-    if (workflowId == null || Number.isNaN(workflowId)) {
+    store.setLock(null)
+    if (id == null) {
       // P3 新建模式:无 id → 无远端锁。模拟自己持锁让画布 / 表单可编辑(editable=true),
       // 保存时再调创建 API 拿真 id 并跳转到 /workflow/designer/{newId}。
       store.setMeta({
@@ -158,11 +177,11 @@
         expiresAt: '',
       })
       logRoute('[designer] mounted (new)', { tenantId: tenantStore.tenantId })
+      loading.value = false
       return
     }
-    loading.value = true
     try {
-      const detail = await workflowDesignerApi.getFull(workflowId, tenantStore.tenantId)
+      const detail = await workflowDesignerApi.getFull(id, tenantStore.tenantId)
       // 反序列化 BE detail → designer snapshot。BE 的 ConsoleWorkflowNodeResponse
       // 字段名(relatedJobCode / relatedPipelineCode / nodeParams JSON 等)与设计书的
       // attrs key(jobCode / pipelineCode 等)之间走显式映射 + attrs 透传保底。
@@ -185,10 +204,20 @@
             nodeType: n.nodeType,
             // attrs 形态:把 BE 列名平翻成 inspector 期待的 key
             ...parsedParams,
-            jobCode: parsedParams.jobCode ?? raw.relatedJobCode,
-            pipelineCode: parsedParams.pipelineCode ?? raw.relatedPipelineCode,
-            maxRetries: parsedParams.maxRetries ?? raw.retryMaxCount,
-            timeoutSeconds: parsedParams.timeoutSeconds ?? raw.timeoutSeconds,
+            // 持久化列是权威来源；旧 nodeParams 只作为兼容回退，避免保存时把旧 JSON
+            // 中的值覆盖当前已更新的显式列。
+            jobCode: raw.relatedJobCode ?? parsedParams.jobCode,
+            pipelineCode: raw.relatedPipelineCode ?? parsedParams.pipelineCode,
+            workerGroup: raw.workerGroup ?? parsedParams.workerGroup,
+            windowCode: raw.windowCode ?? parsedParams.windowCode,
+            nodeOrder: raw.nodeOrder ?? parsedParams.nodeOrder,
+            retryPolicy: raw.retryPolicy ?? parsedParams.retryPolicy,
+            maxRetries: raw.retryMaxCount ?? parsedParams.maxRetries,
+            timeoutSeconds: raw.timeoutSeconds ?? parsedParams.timeoutSeconds,
+            crossDayDependencies: raw.crossDayDependencies ?? parsedParams.crossDayDependencies,
+            crossDayDependencyTimeoutSeconds:
+              raw.crossDayDependencyTimeoutSeconds ?? parsedParams.crossDayDependencyTimeoutSeconds,
+            enabled: raw.enabled ?? parsedParams.enabled,
           }
         }),
         edges: (detail.edges ?? []).map((e) => {
@@ -197,6 +226,8 @@
             sourceNodeCode: typeof raw.fromNodeCode === 'string' ? raw.fromNodeCode : '',
             targetNodeCode: typeof raw.toNodeCode === 'string' ? raw.toNodeCode : '',
             label: typeof raw.conditionExpr === 'string' ? raw.conditionExpr : undefined,
+            edgeType: raw.edgeType,
+            enabled: raw.enabled,
           }
         }),
       }
@@ -211,14 +242,22 @@
         description: detail.description,
         version: detail.version,
       })
-      await lockMgr.acquire(workflowId, tenantStore.tenantId)
+      await lockMgr.acquire(id, tenantStore.tenantId)
     } catch (err) {
       logRoute('[designer] load failed', { err: String(err) })
       ElMessage.error(t('workflowDesignerMvp.loadFailed'))
     } finally {
       loading.value = false
     }
-  })
+  }
+
+  watch(
+    workflowId,
+    (id) => {
+      void loadWorkflow(id)
+    },
+    { immediate: true },
+  )
 
   // useLockManager 内部已在 onBeforeUnmount 兜底 release + beforeunload sendBeacon
 
@@ -230,6 +269,10 @@
   })
 
   function onAutoLayout() {
+    if (!store.editable) {
+      ElMessage.warning(t('workflowDesignerMvp.lock.readonlyGuard'))
+      return
+    }
     canvasRef.value?.autoLayout(layoutDirection.value)
   }
 
@@ -274,7 +317,7 @@
    * 复制不带边(避免歧义引用),nodeCode 自动生成新后缀。
    */
   function duplicateSelection() {
-    if (store.lock !== null && !store.editable) return
+    if (!store.editable) return
     const ids = Array.from(store.selectedIds)
     if (ids.length === 0) return
     const newIds: string[] = []
@@ -310,7 +353,7 @@
     }
   }
 
-  const isNewWorkflow = computed(() => workflowId == null || Number.isNaN(workflowId))
+  const isNewWorkflow = computed(() => workflowId.value == null)
 
   /**
    * P3 新建闭环:无 id 时调创建 API。
@@ -355,25 +398,8 @@
       workflowName,
       workflowType: store.meta.workflowType || 'STANDARD',
       enabled: store.meta.enabled,
-      nodes: def.nodes.map((n) => {
-        const a = (n as unknown as Record<string, unknown>) ?? {}
-        return {
-          nodeCode: n.nodeCode,
-          nodeName: n.nodeName ?? n.nodeCode,
-          nodeType: n.nodeType,
-          relatedJobCode: typeof a.jobCode === 'string' ? a.jobCode : undefined,
-          relatedPipelineCode: typeof a.pipelineCode === 'string' ? a.pipelineCode : undefined,
-          retryMaxCount: typeof a.maxRetries === 'number' ? a.maxRetries : undefined,
-          timeoutSeconds: typeof a.timeoutSeconds === 'number' ? a.timeoutSeconds : undefined,
-          nodeParams: JSON.stringify(a),
-        }
-      }),
-      edges: def.edges.map((e) => ({
-        fromNodeCode: e.sourceNodeCode,
-        toNodeCode: e.targetNodeCode,
-        edgeType: 'NEXT',
-        conditionExpr: typeof e.label === 'string' ? e.label : undefined,
-      })),
+      nodes: toWorkflowSaveNodes(def.nodes),
+      edges: toWorkflowSaveEdges(def.edges),
     }
     const created = await workflowApi.create(body)
     store.markClean()
@@ -417,30 +443,13 @@
           workflowName: store.meta.workflowName,
           workflowType: store.meta.workflowType,
           enabled: store.meta.enabled,
-          nodes: def.nodes.map((n) => {
-            const a = (n as unknown as Record<string, unknown>) ?? {}
-            return {
-              nodeCode: n.nodeCode,
-              nodeName: n.nodeName ?? n.nodeCode,
-              nodeType: n.nodeType,
-              relatedJobCode: typeof a.jobCode === 'string' ? a.jobCode : undefined,
-              relatedPipelineCode: typeof a.pipelineCode === 'string' ? a.pipelineCode : undefined,
-              retryMaxCount: typeof a.maxRetries === 'number' ? a.maxRetries : undefined,
-              timeoutSeconds: typeof a.timeoutSeconds === 'number' ? a.timeoutSeconds : undefined,
-              nodeParams: JSON.stringify(a),
-            }
-          }),
-          edges: def.edges.map((e) => ({
-            fromNodeCode: e.sourceNodeCode,
-            toNodeCode: e.targetNodeCode,
-            edgeType: 'NEXT',
-            conditionExpr: typeof e.label === 'string' ? e.label : undefined,
-          })),
+          nodes: toWorkflowSaveNodes(def.nodes),
+          edges: toWorkflowSaveEdges(def.edges),
         },
         expectedVersion: store.meta.version,
       }
       // 此处必非新建态(isNewWorkflow 已早返),workflowId 必为有效 number
-      const updated = await workflowDesignerApi.putFull(workflowId as number, body)
+      const updated = await workflowDesignerApi.putFull(workflowId.value as number, body)
       store.setMeta({ version: updated.version })
       store.markClean()
       ElMessage.success(t('workflowDesignerMvp.saveOk'))
@@ -518,7 +527,7 @@
     >
       {{ t('workflowDesignerMvp.errorBanner', { count: errorCount }) }}
     </div>
-    <JsonSyncPanel v-model:collapsed="jsonPanelCollapsed" />
+    <JsonSyncPanel v-model:collapsed="jsonPanelCollapsed" :readonly="!store.editable" />
     <div class="workflow-designer__body">
       <NodePalette @add="onPaletteAdd" />
       <DagCanvas ref="canvasRef" />

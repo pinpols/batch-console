@@ -1,6 +1,8 @@
 // @ts-check
 const { defineConfig, devices } = require('@playwright/test')
 
+const baseURL = process.env.E2E_BASE_URL || 'http://localhost:5173'
+
 module.exports = defineConfig({
   testDir: './e2e',
   // 每次运行前刷新 token + 上传 seed 到 ta/tb/tc（非 CI 也执行，避免 storageState 过期）
@@ -27,7 +29,7 @@ module.exports = defineConfig({
     ['json', { outputFile: 'playwright-report/results.json' }],
   ],
   use: {
-    baseURL: 'http://localhost:5173',
+    baseURL,
     storageState: 'e2e/.auth/user.json',
     // 4-worker 并发对 dev server + backend 的压力较大，偶发 page.goto 10s
     // 和 click 5s 超时都不是代码 bug；给出更稳的预算
@@ -52,7 +54,7 @@ module.exports = defineConfig({
   ],
   webServer: {
     command: 'npm run dev',
-    url: 'http://localhost:5173',
+    url: baseURL,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
   },

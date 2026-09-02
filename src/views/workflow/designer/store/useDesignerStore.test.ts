@@ -33,6 +33,25 @@ describe('useDesignerStore', () => {
     expect(s.edges).toHaveLength(1)
   })
 
+  it('updateEdge preserves execution semantics and can clear a condition label', () => {
+    const s = useDesignerStore()
+    s.addEdge({ source: 'gateway', target: 'fallback', label: 'ctx.retryable' })
+    const edge = s.edges[0]!
+    edge.attrs = { edgeType: 'CONDITION', enabled: true }
+
+    s.updateEdge(edge.id, { label: undefined, attrs: { edgeType: 'FAILURE', enabled: false } })
+
+    expect(s.edges[0]).toMatchObject({
+      label: undefined,
+      attrs: { edgeType: 'FAILURE', enabled: false },
+    })
+    s.undo()
+    expect(s.edges[0]).toMatchObject({
+      label: 'ctx.retryable',
+      attrs: { edgeType: 'CONDITION', enabled: true },
+    })
+  })
+
   it('deleteNode cascades incident edges', () => {
     const s = useDesignerStore()
     s.addNode({ nodeCode: 'a', nodeType: 'START', x: 0, y: 0 })

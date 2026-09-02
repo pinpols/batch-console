@@ -50,7 +50,7 @@
     padding: 6px 12px;
     border-radius: 6px;
     font-size: 12px;
-    color: var(--color-text-primary, #303133);
+    color: #243247;
     user-select: none;
   }
   .designer-node--file {
@@ -92,7 +92,7 @@
   }
   .designer-node__name {
     font-size: 10px;
-    color: var(--color-text-secondary, #909399);
+    color: #52677f;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;

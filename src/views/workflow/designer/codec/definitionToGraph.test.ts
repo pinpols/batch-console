@@ -38,6 +38,28 @@ describe('definitionToGraph', () => {
     expect(snap.edges[1]).toMatchObject({ source: 'j', target: 'e' })
   })
 
+  it('preserves edge execution attributes for a later full save', () => {
+    const snap = definitionToGraph({
+      nodes: [],
+      edges: [
+        {
+          sourceNodeCode: 'gateway',
+          targetNodeCode: 'fallback',
+          label: 'onFailure',
+          edgeType: 'FAILURE',
+          enabled: false,
+        },
+      ],
+    })
+
+    expect(snap.edges[0]).toMatchObject({
+      source: 'gateway',
+      target: 'fallback',
+      label: 'onFailure',
+      attrs: { edgeType: 'FAILURE', enabled: false },
+    })
+  })
+
   it('GATEWAY node normalizes type and preserves passthrough attrs', () => {
     const snap = definitionToGraph({
       nodes: [
