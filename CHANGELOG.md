@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.0.0] - 2026-09-02
+
+- 统一前端应用发布版本，与 batch-platform `v1.0.0` 对齐。
+
 ## [0.1.7](https://github.com/pinpols/batch-console/compare/v0.1.6...v0.1.7) (2026-06-02)
 
 
