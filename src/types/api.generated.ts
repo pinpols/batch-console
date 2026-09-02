@@ -6936,6 +6936,13 @@ export interface components {
       /** Format: int32 */
       timeoutSeconds?: number
       nodeParams?: string
+      /** @description ADR-018 跨日依赖 JSONB 数组；未声明时省略。 */
+      crossDayDependencies?: string
+      /**
+       * Format: int32
+       * @description ADR-018 跨日依赖等待上限秒数；0 表示永久等待，未传默认 86400。
+       */
+      crossDayDependencyTimeoutSeconds?: number
       enabled?: boolean
     }
     WorkflowDefinitionSaveEdgeItem: {

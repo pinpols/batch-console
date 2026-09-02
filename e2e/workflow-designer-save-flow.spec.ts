@@ -25,14 +25,6 @@ import { enterDemoApp, isVisible } from './support/app'
 test.describe('@workflow-designer-save 工作流设计器保存流', () => {
   test.beforeEach(async ({ page }) => {
     await enterDemoApp(page)
-    // 释放可能残留的设计锁(设计锁按会话持有,跨 e2e 运行不自动释放),避免撞「只读」被 skip。
-    for (let id = 1; id <= 15; id++) {
-      await page.request
-        .delete(`/api/console/workflow-definitions/${id}/lock?tenantId=ta`, {
-          headers: { 'X-Tenant-Id': 'ta', 'Idempotency-Key': `e2e-rellock-${id}-${Date.now()}` },
-        })
-        .catch(() => undefined)
-    }
   })
 
   test('进入 → 自动布局改图 → 保存 → 刷新后节点仍在', async ({ page }) => {
@@ -68,6 +60,20 @@ test.describe('@workflow-designer-save 工作流设计器保存流', () => {
     }
     await openBtn.click({ force: true })
     await expect(page).toHaveURL(/\/workflow\/designer\/\d+/, { timeout: 10_000 })
+
+    // 锁是按工作流 ID 持有的。历史实现只清 1..15，在真实自增 ID 下会遗留旧会话的锁，
+    // 让这个写入用例无意义地 skip。导航完成后精确释放当前工作流，再刷新以当前会话重新获取。
+    const workflowId = new URL(page.url()).pathname.match(/\/workflow\/designer\/(\d+)/)?.[1]
+    if (!workflowId) {
+      test.skip(true, '无法从设计器路由解析工作流 ID,跳过保存断言')
+      return
+    }
+    await page.request
+      .delete(`/api/console/workflow-definitions/${workflowId}/lock?tenantId=ta`, {
+        headers: { 'X-Tenant-Id': 'ta', 'Idempotency-Key': `e2e-release-lock-${workflowId}-${Date.now()}` },
+      })
+      .catch(() => undefined)
+    await page.reload()
 
     // ── 画布渲染验证(修复后不再崩溃)──
     await expect(page.locator('.node-palette').first()).toBeVisible({ timeout: 12_000 })

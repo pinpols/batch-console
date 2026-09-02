@@ -23,8 +23,9 @@
   const props = withDefaults(
     defineProps<{
       collapsed?: boolean
+      readonly?: boolean
     }>(),
-    { collapsed: true },
+    { collapsed: true, readonly: false },
   )
   const emit = defineEmits<{
     (e: 'update:collapsed', v: boolean): void
@@ -69,6 +70,7 @@
   )
 
   function tryApplyToStore(raw: string) {
+    if (props.readonly) return
     let parsed: unknown
     try {
       parsed = JSON.parse(raw)
@@ -151,6 +153,7 @@
         :placeholder="t('workflowDesignerJson.placeholder')"
         spellcheck="false"
         class="json-sync-panel__textarea"
+        :readonly="props.readonly"
         :aria-label="t('workflowDesignerJson.panelTitle')"
         @update:model-value="onTextInput"
         @blur="onBlur"

@@ -66,9 +66,9 @@ jobs:
           # main push:只构 amd64(快)。tag(v*)release 才构 multi-arch 兼容 ARM 服务器。
           platforms: ${{ startsWith(github.ref, 'refs/tags/v') && 'linux/amd64,linux/arm64' || 'linux/amd64' }}
           push: true
-          # build:fast = 只跑 vite build(typecheck 已由 pr-gate / full-ci-gate 单独门禁过)
+          # 与 Dockerfile 默认值一致：镜像构建同时执行 typecheck、i18n 检查和 Vite build。
           build-args: |
-            BUILD_MODE=build:fast
+            BUILD_MODE=build
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha

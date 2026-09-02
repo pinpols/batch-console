@@ -186,14 +186,14 @@
     mix-blend-mode: screen;
   }
 
-  :global(html.dark) .mobile-appbar {
+  :global(html.dark .mobile-appbar) {
     background: color-mix(in srgb, #10151d 86%, transparent 14%);
     border-bottom: 0.5px solid rgb(148 163 184 / 28%);
     box-shadow:
       inset 0 -0.5px 0 rgb(255 255 255 / 16%),
       inset 0 -8px 12px rgb(96 165 250 / 5%);
   }
-  :global(html.dark) .mobile-appbar::after {
+  :global(html.dark .mobile-appbar::after) {
     background:
       radial-gradient(circle at 0% 100%, rgb(10 132 255 / 14%) 0%, transparent 40%),
       radial-gradient(circle at 100% 100%, rgb(94 92 230 / 12%) 0%, transparent 40%);
@@ -206,7 +206,7 @@
       inset 0 -8px 12px rgb(255 255 255 / 22%),
       0 2px 12px rgb(0 0 0 / 8%);
   }
-  :global(html.dark) .mobile-appbar--scrolled {
+  :global(html.dark .mobile-appbar--scrolled) {
     box-shadow:
       inset 0 -0.5px 0 rgb(255 255 255 / 18%),
       inset 0 -8px 12px rgb(255 255 255 / 5%),
@@ -246,7 +246,7 @@
     white-space: nowrap;
   }
 
-  :global(html.dark) .mobile-appbar__title {
+  :global(html.dark .mobile-appbar__title) {
     color: #fff;
   }
 
@@ -254,7 +254,7 @@
   .mobile-appbar--scrolled {
     border-bottom-color: rgb(60 60 67 / 36%);
   }
-  :global(html.dark) .mobile-appbar--scrolled {
+  :global(html.dark .mobile-appbar--scrolled) {
     border-bottom-color: rgb(84 84 88 / 90%);
   }
 

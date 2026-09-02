@@ -381,7 +381,6 @@
   import { instanceApi } from '@/api/instance'
   import { createLogStream } from '@/api/stream'
   import { useTenantStore } from '@/stores/tenant'
-  import { useTenantReload } from '@/composables/useTenantReload'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import PrintButton from '@/components/common/PrintButton.vue'
@@ -520,16 +519,31 @@
     return `${row.value.jobCode} · ${row.value.bizDate || ''} · ${t('monitor.detailKeyHint')}`
   })
 
-  async function load() {
-    if (!Number.isFinite(instanceId.value)) return
-    loading.value = true
-    try {
-      row.value = await instanceApi.detail(instanceId.value, tenant.tenantId)
-    } catch {
-      row.value = null
-    } finally {
-      loading.value = false
-    }
+  let activeLoadKey: string | null = null
+  let activeLoadPromise: Promise<void> | null = null
+
+  async function load(): Promise<void> {
+    if (!Number.isFinite(instanceId.value) || !tenant.tenantId) return
+    const loadKey = `${tenant.tenantId}:${instanceId.value}`
+    if (activeLoadKey === loadKey && activeLoadPromise) return activeLoadPromise
+
+    const request = (async () => {
+      loading.value = true
+      try {
+        row.value = await instanceApi.detail(instanceId.value, tenant.tenantId)
+      } catch {
+        row.value = null
+      } finally {
+        loading.value = false
+        if (activeLoadKey === loadKey) {
+          activeLoadKey = null
+          activeLoadPromise = null
+        }
+      }
+    })()
+    activeLoadKey = loadKey
+    activeLoadPromise = request
+    return request
   }
 
   function goSteps() {
@@ -727,29 +741,28 @@
     }
   }
 
-  useTenantReload(() => {
-    void load()
-    void openStream()
-  })
-
-  watch(instanceId, () => {
-    // 切到不同实例时,steps/recent 数据要重新拉,但只在当前 tab 触发,避免无谓请求
-    stepsLoaded.value = false
-    recentLoaded.value = false
-    stepsRows.value = []
-    recentRows.value = []
-    // load() reject 不应升级为 unhandled rejection;失败时也尝试拉 tab 数据(其中
-    // load 内部已 toast 提示,这里只静默 catch)。
-    load()
-      .then(() => {
-        if (activeTab.value === 'steps') void loadSteps()
-        else if (activeTab.value === 'recent') void loadRecent()
-      })
-      .catch(() => {
-        /* 已在 load() 内 toast 提示,无需重复 */
-      })
-    void openStream()
-  })
+  watch(
+    [instanceId, () => tenant.tenantId],
+    () => {
+      // 切到不同实例时,steps/recent 数据要重新拉,但只在当前 tab 触发,避免无谓请求
+      stepsLoaded.value = false
+      recentLoaded.value = false
+      stepsRows.value = []
+      recentRows.value = []
+      // load() reject 不应升级为 unhandled rejection;失败时也尝试拉 tab 数据(其中
+      // load 内部已 toast 提示,这里只静默 catch)。
+      load()
+        .then(() => {
+          if (activeTab.value === 'steps') void loadSteps()
+          else if (activeTab.value === 'recent') void loadRecent()
+        })
+        .catch(() => {
+          /* 已在 load() 内 toast 提示,无需重复 */
+        })
+      void openStream()
+    },
+    { immediate: true },
+  )
 
   onBeforeUnmount(closeStream)
 

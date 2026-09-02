@@ -6,7 +6,7 @@
         <span class="login-brand__logo">BC</span>
         <div>
           <div class="login-brand__name">{{ t('nav.appTitle') }}</div>
-          <div class="login-brand__desc">Batch Console</div>
+          <div class="login-brand__desc">{{ t('login.appDesc') }}</div>
         </div>
       </div>
 
@@ -15,10 +15,29 @@
         <p class="login-hero__desc">{{ t('login.heroDesc') }}</p>
       </div>
 
+      <div class="login-hero__visual" aria-hidden="true">
+        <img src="/images/login-batch-pipeline.png" alt="" />
+      </div>
+
       <div class="login-hero__foot">© 2026 Batch Console · v{{ appVersion }}</div>
     </aside>
 
     <main class="login-card">
+      <el-tooltip :content="localeToggleTooltip" placement="bottom-start">
+        <button
+          type="button"
+          class="login-locale-toggle"
+          :aria-label="t('nav.switchLocale')"
+          @click="toggleLocale"
+        >
+          <span class="login-locale-toggle__seg" :class="{ 'is-active': currentLocale === 'zh-CN' }"
+            >中</span
+          >
+          <span class="login-locale-toggle__seg" :class="{ 'is-active': currentLocale !== 'zh-CN' }"
+            >EN</span
+          >
+        </button>
+      </el-tooltip>
       <header class="login-card__header">
         <h2 class="login-card__title">{{ t('login.welcome') }}</h2>
         <p class="login-card__subtitle">{{ t('login.subtitle') }}</p>
@@ -104,7 +123,7 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, reactive, onMounted } from 'vue'
+  import { computed, ref, reactive, onMounted } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { CircleX as CircleClose, Lock, User } from 'lucide-vue-next'
 
@@ -113,6 +132,7 @@
   import type { FormInstance } from 'element-plus'
   import { ElMessage } from 'element-plus'
   import { useAuthStore } from '@/stores/auth'
+  import { useLocale } from '@/composables/useLocale'
   import { authApi } from '@/api/auth'
   import { getCaptchaConfig } from '@/api/captcha'
   import type { CaptchaConfig } from '@/api/captcha'
@@ -123,6 +143,10 @@
   const router = useRouter()
   const route = useRoute()
   const auth = useAuthStore()
+  const { current: currentLocale, setLocale } = useLocale()
+  const localeToggleTooltip = computed(() =>
+    currentLocale.value === 'zh-CN' ? t('layoutHeader.switchToEn') : t('layoutHeader.switchToZh'),
+  )
 
   const formRef = ref<FormInstance>()
   const loading = ref(false)
@@ -217,6 +241,10 @@
     void navigator.clipboard.writeText(loginTrace.value)
     ElMessage.success(t('login.copySuccess'))
   }
+
+  function toggleLocale() {
+    setLocale(currentLocale.value === 'zh-CN' ? 'en-US' : 'zh-CN')
+  }
 </script>
 
 <style scoped>
@@ -233,13 +261,14 @@
     flex: 1 1 56%;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
-    padding: 44px 56px 32px;
+    justify-content: flex-start;
+    padding: 44px 56px 24px;
     min-width: 0;
   }
 
   .login-hero__body {
     max-width: 460px;
+    margin-top: clamp(28px, 5vh, 60px);
   }
 
   .login-hero__title {
@@ -248,7 +277,7 @@
     font-weight: 700;
     line-height: 1.4;
     color: var(--color-text-primary);
-    letter-spacing: -0.01em;
+    letter-spacing: 0;
     white-space: pre-line;
   }
 
@@ -259,7 +288,28 @@
     color: var(--color-text-secondary);
   }
 
+  .login-hero__visual {
+    width: min(100%, 540px, 74vh);
+    aspect-ratio: 2 / 1;
+    margin-top: clamp(16px, 2.5vh, 28px);
+    overflow: hidden;
+    border: 1px solid rgb(96 165 250 / 22%);
+    border-radius: 14px;
+    background: #06111f;
+    box-shadow: 0 18px 44px rgb(0 0 0 / 18%);
+  }
+
+  .login-hero__visual img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.94;
+  }
+
   .login-hero__foot {
+    margin-top: auto;
+    padding-top: 16px;
     font-size: 12px;
     color: var(--color-text-tertiary);
   }
@@ -276,6 +326,39 @@
     padding: 48px 56px;
     background: var(--color-bg-card);
     border-left: 1px solid var(--color-border);
+  }
+
+  .login-locale-toggle {
+    position: absolute;
+    top: 24px;
+    right: 32px;
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    height: 30px;
+    gap: 2px;
+    padding: 2px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-button);
+    background: var(--color-bg-elevated);
+    cursor: pointer;
+  }
+
+  .login-locale-toggle__seg {
+    display: inline-grid;
+    place-items: center;
+    min-width: 22px;
+    height: 24px;
+    padding: 0 6px;
+    border-radius: calc(var(--radius-button) - 3px);
+    color: var(--color-text-tertiary);
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .login-locale-toggle__seg.is-active {
+    color: var(--color-primary);
+    background: color-mix(in srgb, var(--color-primary) 16%, transparent);
   }
 
   .login-card__subtitle {
@@ -322,14 +405,14 @@
 
   /* 标题 */
   .login-card__header {
-    margin-bottom: 18px;
+    margin-bottom: 24px;
   }
 
   .login-card__title {
     margin: 0 0 6px;
     font-size: 24px;
     font-weight: 700;
-    letter-spacing: -0.02em;
+    letter-spacing: 0;
     color: var(--color-text-primary);
   }
 
@@ -447,16 +530,16 @@
     margin-top: 4px;
     font-size: 15px;
     font-weight: 600;
-    letter-spacing: 0.08em;
+    letter-spacing: 0;
     border: none;
     border-radius: var(--radius-content);
     color: var(--button-primary-text);
     background: linear-gradient(
       180deg,
-      color-mix(in srgb, var(--button-primary-bg) 88%, #ffffff 12%) 0%,
-      var(--button-primary-bg) 100%
+      color-mix(in srgb, var(--button-primary-bg) 78%, #ffffff 22%) 0%,
+      color-mix(in srgb, var(--button-primary-bg) 94%, #ffffff 6%) 100%
     );
-    box-shadow: 0 4px 16px color-mix(in srgb, var(--button-primary-bg) 20%, transparent);
+    box-shadow: 0 4px 14px color-mix(in srgb, var(--button-primary-bg) 16%, transparent);
     transition:
       transform 0.2s ease,
       box-shadow 0.2s ease;
@@ -466,8 +549,8 @@
     transform: translateY(-1px);
     background: linear-gradient(
       180deg,
-      color-mix(in srgb, var(--button-primary-bg-hover) 88%, #ffffff 12%) 0%,
-      var(--button-primary-bg-hover) 100%
+      color-mix(in srgb, var(--button-primary-bg-hover) 78%, #ffffff 22%) 0%,
+      color-mix(in srgb, var(--button-primary-bg-hover) 94%, #ffffff 6%) 100%
     );
     box-shadow: 0 6px 20px color-mix(in srgb, var(--button-primary-bg) 26%, transparent);
   }

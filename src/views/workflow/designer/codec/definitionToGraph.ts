@@ -29,7 +29,9 @@ function normalizeNodeType(raw: string): DesignerNodeType {
   return KNOWN_NODE_TYPES.has(upper as DesignerNodeType) ? (upper as DesignerNodeType) : 'JOB'
 }
 
-export function definitionToGraph(def: WorkflowDefinitionJson | null | undefined): DesignerSnapshot {
+export function definitionToGraph(
+  def: WorkflowDefinitionJson | null | undefined,
+): DesignerSnapshot {
   if (!def) return { nodes: [], edges: [] }
   const nodes: DesignerNode[] = (def.nodes ?? []).map((raw, idx) => ({
     id: raw.nodeCode,
@@ -45,6 +47,7 @@ export function definitionToGraph(def: WorkflowDefinitionJson | null | undefined
     source: raw.sourceNodeCode,
     target: raw.targetNodeCode,
     label: typeof raw.label === 'string' ? raw.label : undefined,
+    attrs: { ...raw },
   }))
   return { nodes, edges }
 }

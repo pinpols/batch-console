@@ -116,11 +116,6 @@ export default defineConfig(({ mode }) => {
               if (id.includes('@antv/x6')) {
                 return 'vendor-x6'
               }
-              // mermaid 较重:独立成共享 chunk,3 个 workflow 路由块复用同一份(去重 + 长缓存),
-              // 否则 Rollup 在 WorkflowDefinitionList / WorkflowRunDetail / MermaidViewer 各塞一份。
-              if (id.includes('mermaid')) {
-                return 'vendor-mermaid'
-              }
               if (id.includes('/dagre/')) {
                 return 'vendor-dagre'
               }

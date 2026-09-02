@@ -154,24 +154,24 @@ describe('createLogStream', () => {
     await createLogStream(42, onMessage)
     const es = FakeEventSource.instances[0]
 
-    es.emit(JSON.stringify({ data: { id: 42, status: 'RUNNING' } }))
-    es.emit(JSON.stringify({ data: { id: 99, status: 'OTHER' } }))
+    es.emitNamed('job-instance-updated', JSON.stringify({ data: { id: 42, status: 'RUNNING' } }))
+    es.emitNamed('job-instance-updated', JSON.stringify({ data: { id: 99, status: 'OTHER' } }))
 
     expect(onMessage).toHaveBeenCalledTimes(1)
     expect(onMessage).toHaveBeenCalledWith(expect.stringContaining('RUNNING'))
   })
 
-  it('forwards non-JSON messages without filtering', async () => {
+  it('does not forward heartbeat messages', async () => {
     const onMessage = vi.fn()
     await createLogStream(42, onMessage)
-    FakeEventSource.instances[0].emit('heartbeat')
-    expect(onMessage).toHaveBeenCalledWith('heartbeat')
+    FakeEventSource.instances[0].emitNamed('heartbeat', 'heartbeat')
+    expect(onMessage).not.toHaveBeenCalled()
   })
 
-  it('forwards messages without payload id (heartbeat/ready) without filtering', async () => {
+  it('forwards reset-required without an instance id', async () => {
     const onMessage = vi.fn()
     await createLogStream(42, onMessage)
-    FakeEventSource.instances[0].emit(JSON.stringify({ data: {} }))
+    FakeEventSource.instances[0].emitNamed('reset-required', JSON.stringify({ data: {} }))
     expect(onMessage).toHaveBeenCalledTimes(1)
   })
 

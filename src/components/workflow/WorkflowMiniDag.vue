@@ -16,8 +16,8 @@
 
 <script setup lang="ts">
   import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-  import mermaid from 'mermaid'
   import DataState from '@/components/common/DataState.vue'
+  import { loadMermaid } from '@/utils/mermaid'
   import { clearTrustedSvg, setTrustedMermaidSvg } from '@/utils/trustedMermaidSvg'
   import {
     workflowRunMermaidClassDefs,
@@ -46,13 +46,6 @@
     maxHeight: `${props.maxHeight ?? 280}px`,
   }))
   const errorMessage = ref<string>('')
-
-  mermaid.initialize({
-    startOnLoad: false,
-    theme: 'default',
-    flowchart: { htmlLabels: true, curve: 'basis' },
-    securityLevel: 'strict',
-  })
 
   function sanitizeMermaidId(raw: string): string {
     let out = ''
@@ -97,6 +90,7 @@
       return
     }
     try {
+      const mermaid = await loadMermaid()
       const overlaid = applyStateOverlay(props.mermaidText, props.nodeRuns ?? [])
       const renderId = `mini-dag-${Date.now()}-${Math.floor(Math.random() * 1e4)}`
       const { svg } = await mermaid.render(renderId, overlaid)
