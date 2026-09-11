@@ -15,7 +15,7 @@
           {{ t('monitor.runDetailRefresh') }}
         </el-button>
         <el-button v-if="run?.workflowDefinitionId" :icon="View" @click="openDag">
-          看 DAG
+          {{ t('monitor.runDetailOpenFullDag') }}
         </el-button>
         <el-button v-if="run" type="warning" :loading="actionLoading" @click="confirmCancel">
           {{ t('monitor.runDetailCancel') }}
@@ -90,7 +90,7 @@
         @reset="resetNodeFilter"
         @refresh="() => runRefresh(loadNodeRuns)"
       >
-        <el-form-item label="nodeCode">
+        <el-form-item :label="t('monitor.nodeFilterCodeLabel')">
           <el-input
             class="query-w-200"
             v-model="nodeFilterDraft.nodeCode"
@@ -99,7 +99,7 @@
             @keyup.enter="applyNodeFilter"
           />
         </el-form-item>
-        <el-form-item label="nodeStatus">
+        <el-form-item :label="t('monitor.nodeFilterStatusLabel')">
           <MetaSelect
             class="query-w-200"
             v-model="nodeFilterDraft.nodeStatus"

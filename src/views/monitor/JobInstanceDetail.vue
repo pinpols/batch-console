@@ -188,10 +188,10 @@
         <SectionCard>
           <template #header>{{ t('monitor.detailParamsSection') }}</template>
           <el-descriptions class="detail-descriptions" :column="1" border size="small">
-            <el-descriptions-item label="paramsSnapshot">
+            <el-descriptions-item :label="t('jobInstanceDetail.paramsSnapshot')">
               <JsonPreview :data="row.paramsSnapshot" />
             </el-descriptions-item>
-            <el-descriptions-item label="resultSummary">
+            <el-descriptions-item :label="t('jobInstanceDetail.resultSummary')">
               <JsonPreview :data="row.resultSummary" />
             </el-descriptions-item>
           </el-descriptions>

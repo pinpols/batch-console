@@ -249,19 +249,19 @@
       size="640px"
     >
       <el-descriptions v-if="channelDetailRow" :column="2" border size="small">
-        <el-descriptions-item label="channelCode">{{
+        <el-descriptions-item :label="t('workerManagement.channelCodeLabel')">{{
           channelDetailRow.channelCode
         }}</el-descriptions-item>
-        <el-descriptions-item label="channelType">{{
+        <el-descriptions-item :label="t('workerManagement.channelTypeLabel')">{{
           channelDetailRow.channelType
         }}</el-descriptions-item>
-        <el-descriptions-item label="enabled">
+        <el-descriptions-item :label="t('workerManagement.channelColEnabled')">
           {{ channelDetailRow.enabled ? t('workerManagement.yes') : t('workerManagement.no') }}
         </el-descriptions-item>
-        <el-descriptions-item label="timeoutSeconds">{{
+        <el-descriptions-item :label="t('workerManagement.channelColTimeout')">{{
           channelDetailRow.timeoutSeconds ?? '—'
         }}</el-descriptions-item>
-        <el-descriptions-item label="updatedAt" :span="2">{{
+        <el-descriptions-item :label="t('workerManagement.channelColUpdated')" :span="2">{{
           channelDetailRow.updatedAt || '—'
         }}</el-descriptions-item>
         <el-descriptions-item :label="t('workerManagement.channelDetailRawResponse')" :span="2">
@@ -427,7 +427,7 @@
     },
     {
       status: 'DRAINING',
-      label: 'Draining',
+      label: t('enum.workerStatus.DRAINING'),
       value: workerStats.value.draining,
       color: 'var(--color-warning)',
       numColor: 'var(--color-warning)',

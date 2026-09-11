@@ -43,11 +43,21 @@
             {{ t('mobile.workflowViewer.legend') }}
           </div>
           <div class="m-legend">
-            <span class="m-legend-chip m-legend-chip--running">RUNNING</span>
-            <span class="m-legend-chip m-legend-chip--success">SUCCESS</span>
-            <span class="m-legend-chip m-legend-chip--failed">FAILED</span>
-            <span class="m-legend-chip m-legend-chip--waiting">WAITING</span>
-            <span class="m-legend-chip m-legend-chip--cancelled">CANCELLED</span>
+            <span class="m-legend-chip m-legend-chip--running">{{
+              t('mobile.workflowViewer.statusRunning')
+            }}</span>
+            <span class="m-legend-chip m-legend-chip--success">{{
+              t('mobile.workflowViewer.statusSuccess')
+            }}</span>
+            <span class="m-legend-chip m-legend-chip--failed">{{
+              t('mobile.workflowViewer.statusFailed')
+            }}</span>
+            <span class="m-legend-chip m-legend-chip--waiting">{{
+              t('mobile.workflowViewer.statusWaiting')
+            }}</span>
+            <span class="m-legend-chip m-legend-chip--cancelled">{{
+              t('mobile.workflowViewer.statusCancelled')
+            }}</span>
           </div>
         </div>
 

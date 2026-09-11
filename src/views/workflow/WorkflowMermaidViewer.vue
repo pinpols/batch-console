@@ -20,39 +20,42 @@
               <span
                 v-if="statusCounts.success > 0"
                 class="status-pill status-pill--success"
-                title="SUCCESS"
+                :title="t('workflowMermaidViewer.statusSuccess')"
               >
                 ✓ {{ statusCounts.success }}
               </span>
               <span
                 v-if="statusCounts.running > 0"
                 class="status-pill status-pill--running"
-                title="RUNNING"
+                :title="t('workflowMermaidViewer.statusRunning')"
               >
                 ▶ {{ statusCounts.running }}
               </span>
               <span
                 v-if="statusCounts.failed > 0"
                 class="status-pill status-pill--failed"
-                title="FAILED"
+                :title="t('workflowMermaidViewer.statusFailed')"
               >
                 ✗ {{ statusCounts.failed }}
               </span>
               <span
                 v-if="statusCounts.waiting > 0"
                 class="status-pill status-pill--waiting"
-                title="WAITING"
+                :title="t('workflowMermaidViewer.statusWaiting')"
               >
                 ⧗ {{ statusCounts.waiting }}
               </span>
               <span
                 v-if="statusCounts.cancelled > 0"
                 class="status-pill status-pill--cancelled"
-                title="CANCELLED"
+                :title="t('workflowMermaidViewer.statusCancelled')"
               >
                 ⊘ {{ statusCounts.cancelled }}
               </span>
-              <span class="status-pill status-pill--pending" title="PENDING">
+              <span
+                class="status-pill status-pill--pending"
+                :title="t('workflowMermaidViewer.statusPending')"
+              >
                 · {{ statusCounts.pending }}
               </span>
             </span>

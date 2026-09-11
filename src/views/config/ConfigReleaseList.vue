@@ -301,12 +301,22 @@
       size="640px"
     >
       <el-descriptions v-if="detail" :column="2" border size="small">
-        <el-descriptions-item label="ID">{{ detail.id }}</el-descriptions-item>
-        <el-descriptions-item label="configKey">{{ detail.configKey }}</el-descriptions-item>
-        <el-descriptions-item label="configName">{{ detail.configName }}</el-descriptions-item>
-        <el-descriptions-item label="configStatus">{{ detail.configStatus }}</el-descriptions-item>
-        <el-descriptions-item label="versionNo">{{ detail.versionNo }}</el-descriptions-item>
-        <el-descriptions-item label="publishedAt">{{ detail.publishedAt }}</el-descriptions-item>
+        <el-descriptions-item :label="t('common.id')">{{ detail.id }}</el-descriptions-item>
+        <el-descriptions-item :label="t('configReleaseList.detailConfigKey')">{{
+          detail.configKey
+        }}</el-descriptions-item>
+        <el-descriptions-item :label="t('configReleaseList.detailConfigName')">{{
+          detail.configName
+        }}</el-descriptions-item>
+        <el-descriptions-item :label="t('configReleaseList.detailConfigStatus')">{{
+          detail.configStatus
+        }}</el-descriptions-item>
+        <el-descriptions-item :label="t('configReleaseList.detailVersion')">{{
+          detail.versionNo
+        }}</el-descriptions-item>
+        <el-descriptions-item :label="t('configReleaseList.detailPublishedAt')">{{
+          detail.publishedAt
+        }}</el-descriptions-item>
         <el-descriptions-item :label="t('configReleaseList.detailRawResponse')" :span="2">
           <JsonPreview :data="detail" />
         </el-descriptions-item>

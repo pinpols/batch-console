@@ -163,24 +163,28 @@
         <!-- Tab: 概览 -->
         <el-tab-pane name="overview" :label="t('workflowDefinitionList.detailTabOverview')">
           <el-descriptions :column="2" border size="small">
-            <el-descriptions-item label="workflowCode">{{
+            <el-descriptions-item :label="t('workflowDefinitionList.detailCode')">{{
               detailRow.workflowCode
             }}</el-descriptions-item>
-            <el-descriptions-item label="workflowName">{{
+            <el-descriptions-item :label="t('workflowDefinitionList.detailName')">{{
               detailRow.workflowName
             }}</el-descriptions-item>
-            <el-descriptions-item label="workflowType">{{
-              detailRow.workflowType
+            <el-descriptions-item :label="t('workflowDefinitionList.detailType')">{{
+              resolveEnumLabel('workflowType', detailRow.workflowType)
             }}</el-descriptions-item>
-            <el-descriptions-item label="version">{{ detailRow.version }}</el-descriptions-item>
-            <el-descriptions-item label="enabled">
+            <el-descriptions-item :label="t('workflowDefinitionList.detailVersion')">{{
+              detailRow.version
+            }}</el-descriptions-item>
+            <el-descriptions-item :label="t('workflowDefinitionList.detailEnabled')">
               {{ detailRow.enabled ? t('common.yes') : t('common.no') }}
             </el-descriptions-item>
-            <el-descriptions-item label="tenantId">{{ detailRow.tenantId }}</el-descriptions-item>
-            <el-descriptions-item label="createdAt">{{
+            <el-descriptions-item :label="t('common.tenantId')">{{
+              detailRow.tenantId
+            }}</el-descriptions-item>
+            <el-descriptions-item :label="t('common.createdAt')">{{
               detailRow.createdAt || '—'
             }}</el-descriptions-item>
-            <el-descriptions-item label="updatedAt">{{
+            <el-descriptions-item :label="t('common.updatedAt')">{{
               detailRow.updatedAt || '—'
             }}</el-descriptions-item>
             <el-descriptions-item :label="t('workflowDefinitionList.detailNodes')">{{
@@ -259,10 +263,10 @@
         <!-- Tab: DSL(节点 + 边的 JSON)-->
         <el-tab-pane name="dsl" :label="t('workflowDefinitionList.detailTabDsl')">
           <el-descriptions :column="1" border size="small">
-            <el-descriptions-item label="nodes">
+            <el-descriptions-item :label="t('workflowDefinitionList.detailNodes')">
               <JsonPreview :data="detailRow.nodes ?? []" />
             </el-descriptions-item>
-            <el-descriptions-item label="edges">
+            <el-descriptions-item :label="t('workflowDefinitionList.detailEdges')">
               <JsonPreview :data="detailRow.edges ?? []" />
             </el-descriptions-item>
           </el-descriptions>
