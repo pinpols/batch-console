@@ -16,6 +16,7 @@
   import FileStepNodeForm from './FileStepNodeForm.vue'
   import GatewayNodeForm from './GatewayNodeForm.vue'
   import ApprovalNodeForm from './ApprovalNodeForm.vue'
+  import EdgeInspector from './EdgeInspector.vue'
 
   const { t } = useI18n()
   const store = useDesignerStore()
@@ -24,6 +25,12 @@
     const ids = Array.from(store.selectedIds)
     if (ids.length !== 1) return null
     return store.nodes.find((n) => n.id === ids[0]) ?? null
+  })
+
+  const selectedEdge = computed(() => {
+    const ids = Array.from(store.selectedIds)
+    if (ids.length !== 1) return null
+    return store.edges.find((edge) => edge.id === ids[0]) ?? null
   })
 
   const readonly = computed(() => !store.editable)
@@ -37,13 +44,14 @@
         {{ t('workflowDesignerMvp.readonlyTag') }}
       </el-tag>
     </div>
-    <div v-if="!selectedNode" class="node-inspector__empty">
+    <div v-if="!selectedNode && !selectedEdge" class="node-inspector__empty">
       {{
         Array.from(store.selectedIds).length > 1
           ? t('workflowDesignerMvp.multiSelectNotice')
           : t('workflowDesignerMvp.noSelectNotice')
       }}
     </div>
+    <EdgeInspector v-else-if="selectedEdge" :edge="selectedEdge" :readonly="readonly" />
     <template v-else>
       <StartNodeForm
         v-if="selectedNode.nodeType === 'START'"

@@ -224,7 +224,13 @@ export function useX6Graph(
         })
       }
       for (const e of store.edges) {
-        if (graph.getCellById(e.id)) continue
+        const existing = graph.getCellById(e.id)
+        if (existing?.isEdge()) {
+          existing.setSource(e.source)
+          existing.setTarget(e.target)
+          existing.setLabels(e.label ? [{ attrs: { text: { text: e.label } } }] : [])
+          continue
+        }
         graph.addEdge({
           id: e.id,
           source: e.source,
@@ -245,7 +251,12 @@ export function useX6Graph(
   }
 
   function autoLayout(direction: 'TB' | 'LR' = 'TB') {
-    if (!handle.graph) return
+    if (!handle.graph || !store.editable) {
+      if (!store.editable) {
+        ElMessage.warning(i18n.global.t('workflowDesignerMvp.lock.readonlyGuard'))
+      }
+      return
+    }
     const g = new dagre.graphlib.Graph()
     g.setGraph({ rankdir: direction, nodesep: 40, ranksep: 60 })
     g.setDefaultEdgeLabel(() => ({}))
@@ -257,11 +268,29 @@ export function useX6Graph(
       g.setEdge(e.source, e.target)
     }
     dagre.layout(g)
-    // 将 dagre 算出来的中心点转回左上角坐标写回 store(走 moveNode,不污染 undoStack)
-    for (const n of store.nodes) {
-      const v = g.node(n.id)
-      if (!v) continue
-      store.moveNode(n.id, v.x - v.width / 2, v.y - v.height / 2)
+    const nextPositions = store.nodes
+      .map((node) => {
+        const layoutNode = g.node(node.id)
+        if (!layoutNode) return null
+        return {
+          id: node.id,
+          x: layoutNode.x - layoutNode.width / 2,
+          y: layoutNode.y - layoutNode.height / 2,
+        }
+      })
+      .filter((position): position is { id: string; x: number; y: number } => position !== null)
+    if (
+      !nextPositions.some((position) => {
+        const current = store.nodes.find((node) => node.id === position.id)
+        return current !== undefined && (current.x !== position.x || current.y !== position.y)
+      })
+    ) {
+      return
+    }
+    // 自动布局是一次用户操作，整批坐标变更只压入一个撤销快照。
+    store.pushUndo()
+    for (const position of nextPositions) {
+      store.moveNode(position.id, position.x, position.y)
     }
     syncFromStore(handle.graph)
   }

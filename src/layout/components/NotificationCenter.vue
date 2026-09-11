@@ -30,7 +30,7 @@
         <span class="notif-center__title">{{ t('notificationCenter.title') }}</span>
       </header>
 
-      <p v-if="total === 0" class="notif-center__empty">
+      <p v-if="!hasItems" class="notif-center__empty">
         {{ t('notificationCenter.empty') }}
       </p>
 
@@ -64,9 +64,7 @@
             <el-icon class="notif-center__chev"><ArrowRight /></el-icon>
           </button>
         </li>
-        <!-- 口径对齐(用户反馈:铃铛计数 vs 页内失败 pill 打架):badge 来自 ops summary 全量
-             FAILED+PARTIAL_FAILED,故落地深链用同口径(statuses CSV + range=all 清今日锚定),
-             点进去列表总数=badge 数 -->
+        <!-- failedJobs 是历史终态失败数，不是待处理队列；保留入口，但不计入铃铛待办徽章。 -->
         <li v-if="failedJobs > 0">
           <button
             type="button"
@@ -121,10 +119,12 @@
   const { t } = useI18n({ useScope: 'global' })
   const router = useRouter()
 
-  const total = computed(() => props.pendingApprovals + props.openAlerts + props.failedJobs)
+  // 失败任务是运维摘要中的历史计数，不能与待审批/未关闭告警相加后伪装成待办数量。
+  const total = computed(() => props.pendingApprovals + props.openAlerts)
+  const hasItems = computed(() => total.value > 0 || props.failedJobs > 0)
 
   const severity = computed<'danger' | 'warning' | 'info'>(() => {
-    if (props.criticalAlerts > 0 || props.failedJobs > 0) return 'danger'
+    if (props.criticalAlerts > 0) return 'danger'
     if (total.value > 0) return 'warning'
     return 'info'
   })

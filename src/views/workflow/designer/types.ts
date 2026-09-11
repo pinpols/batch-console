@@ -25,6 +25,8 @@ export interface DesignerEdge {
   target: string
   /** GATEWAY 分支条件等(本 Spike 阶段透传) */
   label?: string
+  /** 边扩展属性(edgeType / enabled 等),codec 透传，保存时不得丢失。 */
+  attrs?: Record<string, unknown>
 }
 
 /**

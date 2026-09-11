@@ -443,7 +443,6 @@
   import { useRefreshAction } from '@/composables/useRefreshAction'
 
   const refresh = useRefreshAction()
-  import mermaid from 'mermaid'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
@@ -454,6 +453,7 @@
   import { queryWorkflowNodeRuns } from '@/api/workflowQueries'
   import { instanceApi } from '@/api/instance'
   import { useTenantStore } from '@/stores/tenant'
+  import { loadMermaid } from '@/utils/mermaid'
   import {
     workflowRunMermaidClassDefs,
     workflowRunStatusClass,
@@ -581,13 +581,6 @@
     if (detail.value.workflowType) parts.push(`type=${detail.value.workflowType}`)
     if (detail.value.enabled === false) parts.push(t('workflowMermaidViewer.disabledTag'))
     return parts.join(' · ')
-  })
-
-  mermaid.initialize({
-    startOnLoad: false,
-    theme: 'default',
-    flowchart: { htmlLabels: true, curve: 'basis' },
-    securityLevel: 'strict',
   })
 
   async function reload() {
@@ -810,6 +803,7 @@
       return
     }
     try {
+      const mermaid = await loadMermaid()
       // 唯一 renderId 防 mermaid 内部 cache 影响刷新
       const renderId = `wf-graph-${Date.now()}-${Math.floor(Math.random() * 1e4)}`
       const { svg } = await mermaid.render(renderId, text)

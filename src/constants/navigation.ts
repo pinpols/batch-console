@@ -103,20 +103,6 @@ export const navigationGroups: NavigationGroup[] = [
         minRole: 'OPERATOR',
         icon: Zap,
       },
-      {
-        title: pageTitle('/ops/capacity-profile'),
-        path: '/ops/capacity-profile',
-        minRole: 'VIEWER',
-        icon: PieChart,
-        hidden: true,
-      },
-      {
-        title: pageTitle('/ops/asset-freshness'),
-        path: '/ops/asset-freshness',
-        minRole: 'OPERATOR',
-        icon: Timer,
-        hidden: true,
-      },
     ],
   },
   {
@@ -143,7 +129,14 @@ export const navigationGroups: NavigationGroup[] = [
         minRole: 'VIEWER',
         icon: Promotion,
       },
-      { title: pageTitle('/runs'), path: '/runs', minRole: 'VIEWER', icon: CirclePlay },
+      // 保留兼容深链和命令面板入口,侧栏统一使用工作流运行监控入口。
+      {
+        title: pageTitle('/runs'),
+        path: '/runs',
+        minRole: 'VIEWER',
+        icon: CirclePlay,
+        hidden: true,
+      },
       // 「执行日志」入口改为「综合查询」直达(用户反馈:点执行日志落到标题为综合查询的
       // tab 页,导航高亮与页标题对不上);/logs 路由 redirect 保留兼容旧深链。
       {
@@ -317,6 +310,20 @@ export const navigationGroups: NavigationGroup[] = [
         path: '/ops/batch-day-replay',
         minRole: 'OPERATOR',
         icon: DataAnalysis,
+      },
+      {
+        title: pageTitle('/ops/capacity-profile'),
+        path: '/ops/capacity-profile',
+        minRole: 'VIEWER',
+        icon: PieChart,
+        hidden: true,
+      },
+      {
+        title: pageTitle('/ops/asset-freshness'),
+        path: '/ops/asset-freshness',
+        minRole: 'OPERATOR',
+        icon: Timer,
+        hidden: true,
       },
       // 「Catch-up 审批」入口已去重(用户反馈):与工作台「审批中心」的 catch-up tab
       // 指向同一页面,双入口重复;审批统一从审批中心进。
