@@ -6936,6 +6936,13 @@ export interface components {
       /** Format: int32 */
       timeoutSeconds?: number
       nodeParams?: string
+      /** @description ADR-018 跨日依赖 JSONB 数组；未声明时省略。 */
+      crossDayDependencies?: string
+      /**
+       * Format: int32
+       * @description ADR-018 跨日依赖等待上限秒数；0 表示永久等待，未传默认 86400。
+       */
+      crossDayDependencyTimeoutSeconds?: number
       enabled?: boolean
     }
     WorkflowDefinitionSaveEdgeItem: {
@@ -7157,7 +7164,7 @@ export interface components {
       exportFormat?: 'BUNDLE' | 'JSON' | 'CSV'
       requestedBy?: string
     }
-    /** @description ADR-020 批次日重放提交命令 */
+    /** @description ADR-020 批次日重放或 ADR-026 整批量日演练提交命令 */
     BatchDayReplaySubmitRequest: {
       /** @description 可省略；由 JWT 经 ConsoleTenantGuard 解析后强制覆盖 */
       tenantId?: string
@@ -7166,20 +7173,34 @@ export interface components {
       bizDate: string
       /** @enum {string} */
       scope: 'ALL' | 'ALL_FAILED' | 'SUBSET_JOB_CODES' | 'OUTPUTS_ONLY'
+      /**
+       * @default REPLAY
+       * @enum {string}
+       */
+      executionMode: 'REPLAY' | 'DRY_RUN'
+      /**
+       * @default EXISTING_INSTANCES
+       * @enum {string}
+       */
+      candidateSource: 'EXISTING_INSTANCES' | 'SCHEDULE_PLAN'
       /** @description 仅 SUBSET_JOB_CODES scope 必填 */
       jobCodes?: string[]
       /** @description 仅 OUTPUTS_ONLY scope 必填，要 promote 的 result_version id 列表 */
       versionIds?: number[]
       /**
-       * @description 缺省 CREATE_NEW_VERSION
+       * @description 缺省 CREATE_NEW_VERSION；DRY_RUN 时服务端强制为 DRY_RUN_ONLY
        * @enum {string}
        */
-      resultPolicy?: 'CREATE_NEW_VERSION' | 'KEEP_BOTH' | 'MANUAL_CONFIRM_EFFECTIVE'
+      resultPolicy?:
+        | 'CREATE_NEW_VERSION'
+        | 'KEEP_BOTH'
+        | 'MANUAL_CONFIRM_EFFECTIVE'
+        | 'DRY_RUN_ONLY'
       /**
        * @description 缺省 USE_ORIGINAL_CONFIG
        * @enum {string}
        */
-      configVersionPolicy?: 'USE_ORIGINAL_CONFIG' | 'USE_CURRENT_CONFIG' | 'USE_SPECIFIC_VERSION'
+      configVersionPolicy?: 'USE_ORIGINAL_CONFIG' | 'USE_LATEST_CONFIG' | 'USE_SPECIFIED_VERSION'
       /** Format: int32 */
       configVersion?: number
       reason: string
@@ -7197,9 +7218,13 @@ export interface components {
       /** @enum {string} */
       scope: 'ALL' | 'ALL_FAILED' | 'SUBSET_JOB_CODES' | 'OUTPUTS_ONLY'
       /** @enum {string} */
-      resultPolicy: 'CREATE_NEW_VERSION' | 'KEEP_BOTH' | 'MANUAL_CONFIRM_EFFECTIVE'
+      executionMode: 'REPLAY' | 'DRY_RUN'
       /** @enum {string} */
-      configVersionPolicy: 'USE_ORIGINAL_CONFIG' | 'USE_CURRENT_CONFIG' | 'USE_SPECIFIC_VERSION'
+      candidateSource: 'EXISTING_INSTANCES' | 'SCHEDULE_PLAN'
+      /** @enum {string} */
+      resultPolicy: 'CREATE_NEW_VERSION' | 'KEEP_BOTH' | 'MANUAL_CONFIRM_EFFECTIVE' | 'DRY_RUN_ONLY'
+      /** @enum {string} */
+      configVersionPolicy: 'USE_ORIGINAL_CONFIG' | 'USE_LATEST_CONFIG' | 'USE_SPECIFIED_VERSION'
       /** Format: int32 */
       configVersion?: number | null
       /** Format: int32 */
@@ -7217,7 +7242,7 @@ export interface components {
       /** Format: int64 */
       resultVersionId?: number | null
       /** @enum {string} */
-      action: 'RERUN_INSTANCE' | 'PROMOTE_RESULT_VERSION'
+      action: 'RERUN_INSTANCE' | 'PROMOTE_RESULT_VERSION' | 'LAUNCH_SCHEDULE_PLAN'
       businessKey: string
     }
     BatchDayReplayResultVersionImpact: {
@@ -9944,6 +9969,10 @@ export interface components {
       /** Format: date */
       bizDate: string
       scope: string
+      /** @enum {string} */
+      executionMode: 'REPLAY' | 'DRY_RUN'
+      /** @enum {string} */
+      candidateSource: 'EXISTING_INSTANCES' | 'SCHEDULE_PLAN'
       scopePayload?: string | null
       resultPolicy?: string | null
       configVersionPolicy?: string | null
@@ -9996,6 +10025,8 @@ export interface components {
       finishedAt?: string | null
       /** Format: int64 */
       resultVersionId?: number | null
+      /** @description SCHEDULE_PLAN 候选的不可变 JSON 计划快照 */
+      planSnapshot?: string | null
       /** Format: date-time */
       createdAt?: string | null
       /** Format: date-time */

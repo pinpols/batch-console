@@ -13,6 +13,8 @@ import type { components } from '@/types/api.generated'
 export type BatchDayReplaySubmitRequest = components['schemas']['BatchDayReplaySubmitRequest']
 export type BatchDayReplayPreview = components['schemas']['BatchDayReplayPreview']
 export type BatchDayReplayScope = BatchDayReplaySubmitRequest['scope']
+export type ReplayExecutionMode = NonNullable<BatchDayReplaySubmitRequest['executionMode']>
+export type ReplayCandidateSource = NonNullable<BatchDayReplaySubmitRequest['candidateSource']>
 export type ResultPolicy = NonNullable<BatchDayReplaySubmitRequest['resultPolicy']>
 export type ConfigVersionPolicy = NonNullable<BatchDayReplaySubmitRequest['configVersionPolicy']>
 
