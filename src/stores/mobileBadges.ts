@@ -34,7 +34,8 @@ export const useMobileBadgesStore = defineStore('mobile-badges', () => {
 
   const approvalsBadge = computed(() => pendingApprovals.value)
   const alertsBadge = computed(() => openAlerts.value)
-  const jobsBadge = computed(() => failedJobs.value)
+  // failedJobs 是历史失败数；后端暂未提供“未处理失败”计数，不能作为导航待办徽章。
+  const jobsBadge = computed(() => 0)
 
   return {
     pendingApprovals,

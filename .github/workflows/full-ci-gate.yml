@@ -34,6 +34,9 @@ jobs:
 
       - run: npm ci --no-audit --no-fund
 
+      - name: Check package version alignment
+        run: npm run check:version
+
       - run: npm run lint:check
       - run: npm run typecheck
       - run: npm run check:i18n

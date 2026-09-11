@@ -1,6 +1,6 @@
 {
   "name": "batch-console",
-  "version": "0.1.7",
+  "version": "1.0.0",
   "private": true,
   "license": "Apache-2.0",
   "type": "module",
@@ -12,6 +12,7 @@
     "dev": "vite",
     "gen:api": "openapi-typescript ../file-batch-system/docs/api/console-api.openapi.yaml -o src/types/api.generated.ts && prettier --write src/types/api.generated.ts",
     "gen:api:check": "bash scripts/check-api-drift.sh",
+    "check:version": "bash scripts/check-version-alignment.sh",
     "typecheck": "vue-tsc --noEmit",
     "check:i18n": "node --experimental-strip-types scripts/check-i18n-messages.mjs",
     "check:health": "bash scripts/local/health-check.sh",

@@ -198,21 +198,25 @@
       size="640px"
     >
       <el-descriptions v-if="detail" :column="1" border size="small">
-        <el-descriptions-item label="ID">{{ detail.id }}</el-descriptions-item>
+        <el-descriptions-item :label="t('common.id')">{{ detail.id }}</el-descriptions-item>
         <el-descriptions-item :label="t('apiKeyList.colName')">
           {{ detail.keyName }}
         </el-descriptions-item>
         <el-descriptions-item :label="t('apiKeyList.detailScopes')">
           {{ detail.scopes }}
         </el-descriptions-item>
-        <el-descriptions-item label="enabled">{{
+        <el-descriptions-item :label="t('common.status')">{{
           String(detail.enabled ?? '')
         }}</el-descriptions-item>
         <el-descriptions-item :label="t('apiKeyList.detailExpiresAt')">
           {{ detail.expiresAt }}
         </el-descriptions-item>
-        <el-descriptions-item label="revokedAt">{{ detail.revokedAt ?? '—' }}</el-descriptions-item>
-        <el-descriptions-item label="revokedBy">{{ detail.revokedBy ?? '—' }}</el-descriptions-item>
+        <el-descriptions-item :label="t('apiKeyList.detailRevokedAt')">{{
+          detail.revokedAt ?? '—'
+        }}</el-descriptions-item>
+        <el-descriptions-item :label="t('apiKeyList.detailRevokedBy')">{{
+          detail.revokedBy ?? '—'
+        }}</el-descriptions-item>
         <el-descriptions-item :label="t('apiKeyList.detailRawResponse')">
           <JsonPreview :data="detail" />
         </el-descriptions-item>

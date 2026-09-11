@@ -20,7 +20,7 @@ COPY . .
 
 # build:fast = vite build 不跑 vue-tsc(CI 已跑过 typecheck),节省 ~20s 构建时间
 # 想严格类型检查的把这里改成 npm run build
-ARG BUILD_MODE=build:fast
+ARG BUILD_MODE=build
 RUN npm run ${BUILD_MODE}
 
 # ── 文档站点(可选):跨仓 srcDir = ../../../../file-batch-system/docs ──

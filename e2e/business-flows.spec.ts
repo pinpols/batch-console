@@ -291,9 +291,6 @@ test.describe('@business-flows D 档 P6 真实业务流程', () => {
   // 8. File — 归档 / 审计
   // ───────────────────────────────────────────────────────────────
   test('8. File — 归档 + 审计行操作', async ({ page, network }) => {
-    // files/summary 端点旧 jar 返回 500,FE 已 _silent 降级为 0(src/api/file.ts by-design),
-    // 不属于本流程要守的错误面
-    network.ignore(/\/queries\/files\/summary\b/)
     await page.goto('/files/list')
     await page.waitForLoadState('networkidle', { timeout: 8000 }).catch(() => {})
     const row = page.locator('tbody tr.el-table__row').first()

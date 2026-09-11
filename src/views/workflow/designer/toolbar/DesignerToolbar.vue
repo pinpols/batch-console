@@ -85,7 +85,7 @@
       <el-button-group>
         <el-button
           :icon="RefreshLeft"
-          :disabled="!store.canUndo"
+          :disabled="!store.editable || !store.canUndo"
           :title="t('workflowDesignerSpike.actionUndo')"
           @click="store.undo()"
         >
@@ -95,7 +95,7 @@
         </el-button>
         <el-button
           :icon="RefreshRight"
-          :disabled="!store.canRedo"
+          :disabled="!store.editable || !store.canRedo"
           :title="t('workflowDesignerSpike.actionRedo')"
           @click="store.redo()"
         >
@@ -113,6 +113,7 @@
       <el-button-group>
         <el-button
           :icon="Rank"
+          :disabled="!store.editable"
           :title="t('workflowDesignerSpike.actionAutoLayout')"
           @click="$emit('autoLayout')"
         >
@@ -122,6 +123,7 @@
         </el-button>
         <el-button
           :icon="Sort"
+          :disabled="!store.editable"
           :title="t('workflowDesignerPolish.actionLayoutDirection', { dir: layoutDirection })"
           @click="$emit('toggleLayoutDirection')"
         >

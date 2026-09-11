@@ -25,10 +25,17 @@ export function graphToDefinition(snapshot: DesignerSnapshot): WorkflowDefinitio
         ...passthrough,
       }
     }),
-    edges: snapshot.edges.map((e) => ({
-      sourceNodeCode: e.source,
-      targetNodeCode: e.target,
-      ...(e.label ? { label: e.label } : {}),
-    })),
+    edges: snapshot.edges.map((e) => {
+      const passthrough = { ...(e.attrs ?? {}) }
+      delete passthrough.sourceNodeCode
+      delete passthrough.targetNodeCode
+      delete passthrough.label
+      return {
+        ...passthrough,
+        sourceNodeCode: e.source,
+        targetNodeCode: e.target,
+        ...(e.label ? { label: e.label } : {}),
+      }
+    }),
   }
 }

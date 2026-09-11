@@ -65,7 +65,7 @@
           </template>
         </el-table-column>
         <el-table-column prop="scope" :label="t('dryRunDialog.colCategory')" width="100" />
-        <el-table-column prop="code" label="Code" width="200" />
+        <el-table-column prop="code" :label="t('dryRunDialog.colCode')" width="200" />
         <el-table-column
           prop="message"
           :label="t('dryRunDialog.colMessage')"

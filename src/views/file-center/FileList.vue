@@ -456,8 +456,7 @@
     }
   }
 
-  // 领域汇总卡:今日到达 / 待处理(RECEIVED)/ 已处理(LOADED)/ 失败(FAILED)。
-  // 后端 GET /queries/files/summary 按租户全量统计(不受列表日期/状态筛选影响)。
+  // 领域汇总卡:今日到达 / 待处理(RECEIVED) / 已处理(LOADED) / 失败(FAILED)。
   const summary = ref<ConsoleFileSummaryResponse | null>(null)
 
   async function loadSummary() {

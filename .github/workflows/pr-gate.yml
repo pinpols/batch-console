@@ -35,6 +35,9 @@ jobs:
       - name: Install deps
         run: npm ci --no-audit --no-fund
 
+      - name: Check package version alignment
+        run: npm run check:version
+
       - name: ESLint（check 模式，不 auto-fix）
         run: npm run lint:check
 

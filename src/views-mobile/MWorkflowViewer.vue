@@ -43,11 +43,21 @@
             {{ t('mobile.workflowViewer.legend') }}
           </div>
           <div class="m-legend">
-            <span class="m-legend-chip m-legend-chip--running">RUNNING</span>
-            <span class="m-legend-chip m-legend-chip--success">SUCCESS</span>
-            <span class="m-legend-chip m-legend-chip--failed">FAILED</span>
-            <span class="m-legend-chip m-legend-chip--waiting">WAITING</span>
-            <span class="m-legend-chip m-legend-chip--cancelled">CANCELLED</span>
+            <span class="m-legend-chip m-legend-chip--running">{{
+              t('mobile.workflowViewer.statusRunning')
+            }}</span>
+            <span class="m-legend-chip m-legend-chip--success">{{
+              t('mobile.workflowViewer.statusSuccess')
+            }}</span>
+            <span class="m-legend-chip m-legend-chip--failed">{{
+              t('mobile.workflowViewer.statusFailed')
+            }}</span>
+            <span class="m-legend-chip m-legend-chip--waiting">{{
+              t('mobile.workflowViewer.statusWaiting')
+            }}</span>
+            <span class="m-legend-chip m-legend-chip--cancelled">{{
+              t('mobile.workflowViewer.statusCancelled')
+            }}</span>
           </div>
         </div>
 
@@ -110,7 +120,6 @@
   import { useRoute, useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import { ArrowLeft, RefreshCw as Refresh } from 'lucide-vue-next'
-  import mermaid from 'mermaid'
   import MPullRefresh from '@/layout-mobile/MPullRefresh.vue'
   import { workflowApi } from '@/api/workflow'
   import { queryWorkflowNodeRuns } from '@/api/workflowQueries'
@@ -120,6 +129,7 @@
   import { useTenantReload } from '@/composables/useTenantReload'
   import { useAutoRefresh } from '@/composables/useAutoRefresh'
   import { useSmartBack } from '@/composables/useSmartBack'
+  import { loadMermaid } from '@/utils/mermaid'
   import {
     workflowRunMermaidClassDefs,
     workflowRunStatusClass,
@@ -169,13 +179,6 @@
     if (!runId.value) return false
     const s = (runStatus.value || '').toUpperCase()
     return !TERMINAL.has(s)
-  })
-
-  mermaid.initialize({
-    startOnLoad: false,
-    theme: 'default',
-    flowchart: { htmlLabels: true, curve: 'basis' },
-    securityLevel: 'strict',
   })
 
   async function load() {
@@ -279,6 +282,7 @@
       return
     }
     try {
+      const mermaid = await loadMermaid()
       const renderId = `m-wf-graph-${Date.now()}-${Math.floor(Math.random() * 1e4)}`
       const { svg } = await mermaid.render(renderId, text)
       await nextTick()

@@ -58,8 +58,7 @@ export const fileApi = {
 
   /**
    * 文件列表页领域汇总卡:今日到达 / 待处理 / 已处理 / 失败。
-   * 当前本地 BE 的 /queries/files/summary 仍会 500;这里用稳定的 /queries/files total
-   * 兜底组成汇总,避免页面统计卡显示全 0 且污染浏览器控制台。
+   * 通过稳定的 /queries/files 分页总数按口径组成汇总，避免依赖额外的聚合接口。
    */
   summary: async (tenantId = readStoredTenantId()): Promise<ConsoleFileSummaryResponse> => {
     const today = new Date()
