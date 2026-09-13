@@ -17,6 +17,7 @@ import type {
   ConsoleWorkflowNodeRunResponse,
   ConsoleWorkflowRunResponse,
   ConsoleTraceTimelineItem,
+  AiAuditLogResponse,
 } from '@/types/console-api'
 
 export interface AuditQueryFilters {
@@ -55,6 +56,12 @@ export interface OutboxDeliveryFilters {
   targetTopic?: string
   /** exact match */
   traceId?: string
+}
+
+export interface AiAuditFilters {
+  traceId?: string
+  operatorId?: string
+  promptCategory?: string
 }
 
 export interface TraceSnapshotResponse {
@@ -143,6 +150,22 @@ export function queryOutboxDeliveries(tenantId: string, filters?: OutboxDelivery
       ...(filters?.traceId ? { traceId: filters.traceId } : {}),
     },
   )
+}
+
+export function queryAiAuditsPage(
+  tenantId: string,
+  pageSize: number,
+  cursor: string | null,
+  filters?: AiAuditFilters,
+): Promise<PageResponse<AiAuditLogResponse>> {
+  return get<PageResponse<AiAuditLogResponse>>('/api/console/queries/ai-audits', {
+    tenantId,
+    pageSize,
+    cursor: cursor ?? '',
+    ...(filters?.traceId ? { traceId: filters.traceId } : {}),
+    ...(filters?.operatorId ? { operatorId: filters.operatorId } : {}),
+    ...(filters?.promptCategory ? { promptCategory: filters.promptCategory } : {}),
+  })
 }
 
 /** GET /api/console/queries/dead-letters */

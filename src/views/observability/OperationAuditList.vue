@@ -7,9 +7,14 @@
         :data="rows"
         :loading="tableBlocking"
         :total="total"
+        pagination-mode="cursor"
+        :has-more="hasMore"
+        :has-prev="cursorStack.length > 0"
         v-model:page="page"
         v-model:page-size="pageSize"
-        @change="load"
+        @change="resetCursorAndLoad"
+        @cursor-next="nextPage"
+        @cursor-prev="prevPage"
         :error="loadError"
         :on-retry="load"
       >
@@ -82,11 +87,7 @@
               />
             </el-form-item>
             <el-form-item :label="t('operationAuditList.timeRangeLabel')">
-              <DateRangePresetPicker
-                v-model="timeRange"
-                type="datetimerange"
-                default-preset="7d"
-              />
+              <DateRangePresetPicker v-model="timeRange" type="datetimerange" default-preset="7d" />
             </el-form-item>
           </ListPageQueryBar>
         </template>
@@ -203,6 +204,10 @@
   const total = ref(0)
   const page = ref(1)
   const pageSize = ref(15)
+  const cursor = ref<string | null>(null)
+  const nextCursor = ref<string | null>(null)
+  const cursorStack = ref<(string | null)[]>([])
+  const hasMore = ref(false)
   const timeRange = ref<[string, string] | null>(null)
 
   // 共 11 个聚合根类型,跟后端 @AuditAction 的 aggregateType 一一对应
@@ -247,9 +252,12 @@
         endTime: filters.endTime || undefined,
         pageNo: page.value,
         pageSize: pageSize.value,
+        cursor: cursor.value ?? '',
       })
       rows.value = resp.items ?? []
       total.value = resp.total ?? 0
+      nextCursor.value = resp.nextCursor ?? null
+      hasMore.value = Boolean(resp.hasMore)
     } catch (err) {
       loadError.value = err
       throw err
@@ -258,9 +266,37 @@
     }
   }
 
+  function resetCursor() {
+    cursor.value = null
+    nextCursor.value = null
+    cursorStack.value = []
+    hasMore.value = false
+    page.value = 1
+  }
+
+  async function resetCursorAndLoad() {
+    resetCursor()
+    await load()
+  }
+
+  async function nextPage() {
+    if (!hasMore.value || !nextCursor.value) return
+    cursorStack.value.push(cursor.value)
+    cursor.value = nextCursor.value
+    page.value += 1
+    await load()
+  }
+
+  async function prevPage() {
+    const prev = cursorStack.value.pop()
+    cursor.value = prev ?? null
+    page.value = Math.max(1, page.value - 1)
+    await load()
+  }
+
   function search() {
     return runSearch(() => {
-      page.value = 1
+      resetCursor()
       return load()
     })
   }
@@ -276,7 +312,7 @@
       filters.startTime = ''
       filters.endTime = ''
       timeRange.value = null
-      page.value = 1
+      resetCursor()
       return load()
     })
   }

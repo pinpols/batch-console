@@ -83,8 +83,20 @@
           <slot name="empty" />
         </template>
       </el-table>
+      <ProPagination
+        v-if="showPager && paginationMode === 'cursor'"
+        class="pro-table__pager"
+        mode="cursor"
+        :page-size="pageSize"
+        :has-more="hasMore"
+        :has-prev="hasPrev"
+        :page-sizes="pageSizes"
+        @next="emit('cursorNext')"
+        @prev="emit('cursorPrev')"
+        @size-change="onSizeChange"
+      />
       <TablePagerBar
-        v-if="showPager"
+        v-if="showPager && paginationMode === 'page'"
         class="pro-table__pager"
         :page="page"
         :page-size="pageSize"
@@ -104,6 +116,7 @@
   import { useRoute } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import { RefreshCw as Refresh, SlidersHorizontal as Operation } from 'lucide-vue-next'
+  import type { PaginationMode } from '@/api/pagination'
 
   /**
    * 列设置的列描述。key 与页面里 el-table-column 的标识一一对应。
@@ -120,6 +133,7 @@
   const { t } = useI18n({ useScope: 'global' })
   import TableSkeleton from '@/components/table/TableSkeleton.vue'
   import TablePagerBar from '@/components/table/TablePagerBar.vue'
+  import ProPagination from '@/components/common/ProPagination.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
   import { DEFAULT_PAGE_SIZES } from '@/constants/pagination'
 
@@ -147,6 +161,9 @@
       /** 仅一页数据时隐藏分页条 */
       hidePagerWhenSinglePage?: boolean
       pageSizes?: number[]
+      paginationMode?: PaginationMode
+      hasMore?: boolean
+      hasPrev?: boolean
       /** 启用列显隐逻辑时是否展示列设置入口;设计还原页可关闭入口但保留默认列集 */
       showColumnSettings?: boolean
       /** 骨架屏行数（首次加载时显示） */
@@ -182,6 +199,9 @@
       showPager: true,
       hidePagerWhenSinglePage: true,
       pageSizes: () => [...DEFAULT_PAGE_SIZES],
+      paginationMode: 'page',
+      hasMore: false,
+      hasPrev: false,
       showColumnSettings: true,
       skeletonRows: 6,
       error: undefined,
@@ -317,6 +337,8 @@
     (e: 'update:page', v: number): void
     (e: 'update:pageSize', v: number): void
     (e: 'change'): void
+    (e: 'cursorNext'): void
+    (e: 'cursorPrev'): void
   }>()
 
   // 暴露内部 el-table 句柄,供批量选择场景清空勾选(useBulkSelection.bindTable 用)

@@ -29,6 +29,7 @@ export interface FileQuery {
   endDate?: string
   page: number
   pageSize: number
+  cursor?: string | null
 }
 
 export const fileApi = {
@@ -40,6 +41,7 @@ export const fileApi = {
       tenantId: query.tenantId,
       pageNo: query.page,
       pageSize: query.pageSize,
+      ...(query.cursor !== undefined ? { cursor: query.cursor ?? '' } : {}),
       ...(query.fileStatus ? { fileStatus: query.fileStatus } : {}),
       ...(query.bizType ? { bizType: query.bizType } : {}),
       ...(query.fileName ? { fileName: query.fileName } : {}),
@@ -53,6 +55,8 @@ export const fileApi = {
       total: pr.total ?? 0,
       page: query.page,
       pageSize: query.pageSize,
+      nextCursor: pr.nextCursor ?? null,
+      hasMore: pr.hasMore ?? (pr.total != null && query.page * query.pageSize < pr.total),
     }
   },
 
