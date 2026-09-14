@@ -55,11 +55,16 @@
         :data="rows"
         :loading="tableBlocking"
         :total="total"
+        pagination-mode="cursor"
+        :has-more="fileHasMore"
+        :has-prev="fileCursorStack.length > 0"
         column-config-id="file-list"
         :column-defs="columnDefs"
         v-model:page="page"
         v-model:page-size="pageSize"
-        @change="load"
+        @change="resetFileCursorAndLoad"
+        @cursor-next="nextFilePage"
+        @cursor-prev="prevFilePage"
         :error="loadError"
         :on-retry="load"
       >
@@ -381,6 +386,10 @@
   const total = ref(0)
   const page = ref(1)
   const pageSize = ref(15)
+  const fileCursor = ref<string | null>(null)
+  const fileNextCursor = ref<string | null>(null)
+  const fileCursorStack = ref<(string | null)[]>([])
+  const fileHasMore = ref(false)
   const detailVisible = ref(false)
   const auditVisible = ref(false)
   const detail = ref<ConsoleFileRecordDetailResponse | null>(null)
@@ -496,6 +505,7 @@
         bizDateRange.value = null
       }
       page.value = 1
+      resetFileCursor()
       await load()
     })
   }
@@ -516,6 +526,7 @@
         bizDateRange.value = today
       }
       page.value = 1
+      resetFileCursor()
       await load()
     })
   }
@@ -543,15 +554,46 @@
         tenantId: filters.tenantId || tenant.tenantId,
         page: page.value,
         pageSize: pageSize.value,
+        cursor: fileCursor.value,
       })
       rows.value = pr.records
       total.value = pr.total
+      fileNextCursor.value = pr.nextCursor ?? null
+      fileHasMore.value = Boolean(pr.hasMore)
     } catch (err) {
       loadError.value = err
       throw err
     } finally {
       loading.value = false
     }
+  }
+
+  function resetFileCursor() {
+    fileCursor.value = null
+    fileNextCursor.value = null
+    fileCursorStack.value = []
+    fileHasMore.value = false
+    page.value = 1
+  }
+
+  async function resetFileCursorAndLoad() {
+    resetFileCursor()
+    await load()
+  }
+
+  async function nextFilePage() {
+    if (!fileHasMore.value || !fileNextCursor.value) return
+    fileCursorStack.value.push(fileCursor.value)
+    fileCursor.value = fileNextCursor.value
+    page.value += 1
+    await load()
+  }
+
+  async function prevFilePage() {
+    const prev = fileCursorStack.value.pop()
+    fileCursor.value = prev ?? null
+    page.value = Math.max(1, page.value - 1)
+    await load()
   }
 
   function onSearch() {
@@ -564,6 +606,7 @@
         bizDateRange.value = null
       }
       page.value = 1
+      resetFileCursor()
       await load()
     })
   }
@@ -581,6 +624,7 @@
       filters.endDate = t[1]
       bizDateRange.value = t
       page.value = 1
+      resetFileCursor()
       await load()
     })
   }

@@ -68,9 +68,14 @@
             :data="auditRows"
             :loading="auditTableBlocking"
             :total="auditTotal"
+            pagination-mode="cursor"
+            :has-more="auditHasMore"
+            :has-prev="auditCursorStack.length > 0"
             v-model:page="auditPage"
             v-model:page-size="auditPageSize"
-            @change="sliceAuditPage"
+            @change="resetAuditCursorAndLoad"
+            @cursor-next="nextAuditPage"
+            @cursor-prev="prevAuditPage"
           >
             <template #query>
               <ListPageQueryBar
@@ -168,8 +173,8 @@
   import { useRoute, useRouter } from 'vue-router'
 
   const { t } = useI18n({ useScope: 'global' })
-  import { fetchAllPageItems, toPageResult } from '@/api/adapters'
   import { chatWithAi } from '@/api/system'
+  import { queryAiAuditsPage } from '@/api/observabilityQueries'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { useListLoadState } from '@/composables/useListLoadState'
@@ -224,11 +229,14 @@
     runReset: runAuditReset,
     runRefresh: runAuditRefresh,
   } = useListFilterFeedback(auditLoading)
-  const auditAll = ref<AiAuditLogResponse[]>([])
   const auditRows = ref<AiAuditLogResponse[]>([])
   const auditTotal = ref(0)
   const auditPage = ref(1)
   const auditPageSize = ref(15)
+  const auditCursor = ref<string | null>(null)
+  const auditNextCursor = ref<string | null>(null)
+  const auditCursorStack = ref<(string | null)[]>([])
+  const auditHasMore = ref(false)
   const auditTraceDraft = ref('')
   const auditOperatorDraft = ref('')
   const auditCategoryDraft = ref('')
@@ -242,44 +250,26 @@
     pickMetaEnumGroup(metaEnums.value, 'aiPromptCategory'),
   )
 
-  const auditFiltered = computed(() => {
-    let r = auditAll.value
-    const t = auditTraceApplied.value.trim()
-    if (t) r = r.filter((row) => row.traceId?.includes(t))
-    const o = auditOperatorApplied.value.trim()
-    if (o) r = r.filter((row) => row.operatorId?.includes(o))
-    const c = auditCategoryApplied.value.trim()
-    if (c) r = r.filter((row) => String(row.promptCategory ?? '') === c)
-    return r
-  })
-
-  function sliceAuditPage() {
-    const list = auditFiltered.value
-    auditTotal.value = list.length
-    const pr = toPageResult(list, auditPage.value, auditPageSize.value)
-    auditRows.value = pr.records as AiAuditLogResponse[]
-  }
-
   function onAuditSearch() {
-    return runAuditSearch(() => {
+    return runAuditSearch(async () => {
       auditTraceApplied.value = auditTraceDraft.value.trim()
       auditOperatorApplied.value = auditOperatorDraft.value.trim()
       auditCategoryApplied.value = auditCategoryDraft.value.trim()
-      auditPage.value = 1
-      sliceAuditPage()
+      resetAuditCursor()
+      await loadAudits()
     })
   }
 
   function onAuditReset() {
-    return runAuditReset(() => {
+    return runAuditReset(async () => {
       auditTraceDraft.value = ''
       auditOperatorDraft.value = ''
       auditCategoryDraft.value = ''
       auditTraceApplied.value = ''
       auditOperatorApplied.value = ''
       auditCategoryApplied.value = ''
-      auditPage.value = 1
-      sliceAuditPage()
+      resetAuditCursor()
+      await loadAudits()
     })
   }
 
@@ -317,18 +307,54 @@
 
   async function loadAudits() {
     await runLoadAudits(async () => {
-      auditAll.value = await fetchAllPageItems<AiAuditLogResponse>(
-        '/api/console/queries/ai-audits',
+      const resp = await queryAiAuditsPage(
+        tenant.tenantId,
+        auditPageSize.value,
+        auditCursor.value,
         {
-          tenantId: tenant.tenantId,
+          traceId: auditTraceApplied.value.trim() || undefined,
+          operatorId: auditOperatorApplied.value.trim() || undefined,
+          promptCategory: auditCategoryApplied.value.trim() || undefined,
         },
       )
-      auditPage.value = 1
-      sliceAuditPage()
+      auditRows.value = resp.items ?? []
+      auditTotal.value = resp.total ?? 0
+      auditNextCursor.value = resp.nextCursor ?? null
+      auditHasMore.value = Boolean(resp.hasMore)
     }).catch(() => {
-      auditAll.value = []
-      sliceAuditPage()
+      auditRows.value = []
+      auditTotal.value = 0
+      auditNextCursor.value = null
+      auditHasMore.value = false
     })
+  }
+
+  function resetAuditCursor() {
+    auditCursor.value = null
+    auditNextCursor.value = null
+    auditCursorStack.value = []
+    auditHasMore.value = false
+    auditPage.value = 1
+  }
+
+  async function resetAuditCursorAndLoad() {
+    resetAuditCursor()
+    await loadAudits()
+  }
+
+  async function nextAuditPage() {
+    if (!auditHasMore.value || !auditNextCursor.value) return
+    auditCursorStack.value.push(auditCursor.value)
+    auditCursor.value = auditNextCursor.value
+    auditPage.value += 1
+    await loadAudits()
+  }
+
+  async function prevAuditPage() {
+    const prev = auditCursorStack.value.pop()
+    auditCursor.value = prev ?? null
+    auditPage.value = Math.max(1, auditPage.value - 1)
+    await loadAudits()
   }
 
   if (route.query.tab === 'audits') activeTab.value = 'audits'
