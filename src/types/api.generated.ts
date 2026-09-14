@@ -6590,6 +6590,11 @@ export interface components {
       failureCount: number
       /** Format: int64 */
       totalDurationMs: number
+      /**
+       * Format: int64
+       * @description 并行任务最早开始到最晚结束的墙钟时间，吞吐率以此为分母
+       */
+      wallClockDurationMs: number
       /** Format: int64 */
       avgDurationMs: number
       /** Format: int64 */
@@ -7197,10 +7202,15 @@ export interface components {
         | 'MANUAL_CONFIRM_EFFECTIVE'
         | 'DRY_RUN_ONLY'
       /**
-       * @description 缺省 USE_ORIGINAL_CONFIG
+       * @description 缺省 USE_ORIGINAL_CONFIG；后两个旧值仅用于入站兼容，服务端分别归一为 USE_LATEST_CONFIG、USE_SPECIFIED_VERSION
        * @enum {string}
        */
-      configVersionPolicy?: 'USE_ORIGINAL_CONFIG' | 'USE_LATEST_CONFIG' | 'USE_SPECIFIED_VERSION'
+      configVersionPolicy?:
+        | 'USE_ORIGINAL_CONFIG'
+        | 'USE_LATEST_CONFIG'
+        | 'USE_SPECIFIED_VERSION'
+        | 'USE_CURRENT_CONFIG'
+        | 'USE_SPECIFIC_VERSION'
       /** Format: int32 */
       configVersion?: number
       reason: string
