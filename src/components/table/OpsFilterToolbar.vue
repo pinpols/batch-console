@@ -123,6 +123,7 @@
   .ops-filter-toolbar__filters {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: 8px;
     min-width: 0;
     flex: 1 1 auto;

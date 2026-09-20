@@ -874,7 +874,7 @@
   }
 
   .jr-date {
-    width: min(360px, 32vw);
+    width: min(520px, 46vw);
   }
 
   .jr-jobcode {

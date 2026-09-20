@@ -671,7 +671,7 @@
   }
 
   .al-range {
-    width: min(340px, 30vw);
+    width: min(520px, 46vw);
   }
 
   .al-trace {
