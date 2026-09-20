@@ -385,7 +385,7 @@
   const selectedWorkflowIds = ref<number[]>([])
   const selectedAlertRoutingIds = ref<number[]>([])
 
-  // jobType BE 枚举:GENERAL/IMPORT/EXPORT/PROCESS/DISPATCH/WORKFLOW(JobType.java)
+  // jobType 由 BE /meta/enums 提供；包含五类 Worker、GENERAL/WORKFLOW 与文件束类型。
   // GENERAL 是默认通用任务,绝大部分场景用这个;切到其他业务类型时 MetaSelect 加载 BE 选项
   form.jobType = 'GENERAL'
   form.scheduleType = 'MANUAL'

@@ -6230,7 +6230,7 @@ export interface components {
       reason: string
       /** @description 关联配置引用(templateCode / channelCode / queueCode / jobCode)。 */
       ref: string
-      /** @description 怎么填的可操作提示(如「在配置模板 file_template_config sheet 填 default_query_sql,参考『四类Worker示例』」)。 */
+      /** @description 怎么填的可操作提示(如「在配置模板 file_template_config sheet 填 default_query_sql,参考『五类Worker示例』」)。 */
       hint?: string | null
       /** @description 指向 quickstart 文档 / 字段说明的引用路径(如 docs/runbook/first-tenant-config-quickstart.md)。 */
       docRef?: string | null
@@ -8066,6 +8066,7 @@ export interface components {
     JobDefinitionCreateRequest: {
       tenantId?: string
       jobCode: string
+      /** @description 作业类型。当前支持 GENERAL、IMPORT、EXPORT、PROCESS、DISPATCH、ATOMIC、WORKFLOW、 BUNDLE_IMPORT、BUNDLE_EXPORT、BUNDLE_DISPATCH；服务端按公共 JobType 词表校验。 */
       jobType: string
       scheduleType: string
       jobName?: string
@@ -20733,7 +20734,7 @@ export interface operations {
     parameters: {
       query?: {
         /** @description Scenario filter. ALL keeps all sample scenarios. */
-        scenario?: 'ALL' | 'IMPORT' | 'EXPORT' | 'PROCESS' | 'DISPATCH' | 'WORKFLOW'
+        scenario?: 'ALL' | 'IMPORT' | 'EXPORT' | 'PROCESS' | 'DISPATCH' | 'ATOMIC' | 'WORKFLOW'
       }
       header?: never
       path?: never

@@ -1790,6 +1790,7 @@ export default {
       EXPORT: '导出任务',
       PROCESS: '加工任务',
       DISPATCH: '分发任务',
+      ATOMIC: '原子任务',
       WORKFLOW: '工作流任务',
     },
     shardStrategy: {
@@ -3061,7 +3062,7 @@ export default {
     versionLabel: '版本',
     versionPlaceholder: '可选,如 v2',
     previewLabel: '最终 code',
-    domainHint: '5 个固定域:IMPORT/EXPORT/PROCESS/DISPATCH/WORKFLOW',
+    domainHint: '6 个固定域:IMPORT/EXPORT/PROCESS/DISPATCH/ATOMIC/WORKFLOW',
     bizHint: '3-30 字符,只能 A-Z / 0-9 / _,大写字母开头',
     errBizFormat: '业务名格式不对:必须大写字母开头,只能含 A-Z 0-9 _',
     errBizLength: '业务名长度 3-30',
