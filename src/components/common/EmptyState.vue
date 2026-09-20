@@ -1,9 +1,24 @@
 <template>
   <div class="empty-state">
-    <div v-if="computedTitle" class="empty-state__title">{{ computedTitle }}</div>
-    <el-empty :description="computedDescription" :image-size="imageSize">
-      <template v-if="$slots.image" #image>
-        <slot name="image" />
+    <el-empty :image-size="imageSize">
+      <template #image>
+        <slot name="image">
+          <div
+            class="empty-state__image"
+            :style="{
+              width: `${Math.min(imageSize, 64)}px`,
+              height: `${Math.min(imageSize, 64)}px`,
+            }"
+          >
+            <component :is="computedIcon" :size="30" :stroke-width="1.7" aria-hidden="true" />
+          </div>
+        </slot>
+      </template>
+      <template #description>
+        <div class="empty-state__copy">
+          <div v-if="computedTitle" class="empty-state__title">{{ computedTitle }}</div>
+          <p class="empty-state__description">{{ computedDescription }}</p>
+        </div>
       </template>
       <template v-if="$slots.extra || $slots.action" #extra>
         <div class="empty-state__action">
@@ -15,6 +30,15 @@
 </template>
 
 <script setup lang="ts">
+  import {
+    Building2,
+    Inbox,
+    SearchX,
+    ServerOff,
+    ShieldAlert,
+    TriangleAlert,
+    WifiOff,
+  } from 'lucide-vue-next'
   import { computed } from 'vue'
   import { useI18n } from 'vue-i18n'
 
@@ -81,19 +105,64 @@
     if (props.description?.trim()) return props.description.trim()
     return presets.value[props.variant].description
   })
+
+  const computedIcon = computed(() => {
+    const icons: Record<EmptyStateVariant, typeof Inbox> = {
+      empty: Inbox,
+      forbidden: ShieldAlert,
+      error: TriangleAlert,
+      offline: WifiOff,
+      network: WifiOff,
+      'filter-empty': SearchX,
+      'tenant-empty': Building2,
+      'no-permission': ShieldAlert,
+      'service-down': ServerOff,
+    }
+
+    return icons[props.variant]
+  })
 </script>
 
 <style scoped>
   .empty-state {
-    padding: 12px 0 8px;
+    width: 100%;
+    padding: 20px 16px;
+  }
+
+  .empty-state :deep(.el-empty) {
+    padding: 16px 0;
+  }
+
+  .empty-state__image {
+    display: grid;
+    place-items: center;
+    margin: 0 auto;
+    border: 1px solid color-mix(in srgb, var(--color-primary) 30%, var(--color-border) 70%);
+    border-radius: var(--radius-content);
+    color: var(--color-primary);
+    background: color-mix(in srgb, var(--color-primary) 10%, var(--color-bg-elevated) 90%);
+  }
+
+  .empty-state__copy {
+    display: grid;
+    gap: 6px;
+    max-width: 520px;
+    margin: 0 auto;
   }
 
   .empty-state__title {
-    margin-bottom: 8px;
     text-align: center;
     font-size: var(--font-size-md);
     font-weight: 650;
     color: var(--color-text-primary);
+  }
+
+  .empty-state__description {
+    margin: 0;
+    color: var(--color-text-tertiary);
+    font-size: var(--font-size-sm);
+    line-height: 1.6;
+    text-align: center;
   }
 
   .empty-state__action {

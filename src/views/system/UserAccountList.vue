@@ -8,49 +8,62 @@
       </template>
     </PageHeader>
 
-    <div class="account-metrics" aria-label="account summary">
-      <div class="account-metric">
-        <span class="account-metric__label">{{ t('userAccountList.metricTotal') }}</span>
-        <strong class="account-metric__value">{{ page.total }}</strong>
-      </div>
-      <div class="account-metric account-metric--success">
-        <span class="account-metric__label">{{ t('userAccountList.metricEnabled') }}</span>
-        <strong class="account-metric__value">{{ enabledCount }}</strong>
-      </div>
-      <div class="account-metric account-metric--muted">
-        <span class="account-metric__label">{{ t('userAccountList.metricDisabled') }}</span>
-        <strong class="account-metric__value">{{ disabledCount }}</strong>
-      </div>
-    </div>
+    <OpsFilterToolbar
+      :filter-busy="filterBusy"
+      :refresh-busy="loading"
+      :disabled="loading"
+      @search="onSearch"
+      @reset="onReset"
+      @refresh="() => runRefresh(load)"
+    >
+      <template #status>
+        <StatusSegment
+          v-model="accountStatus"
+          :items="accountStatusItems"
+          :aria-label="t('userAccountList.colStatus')"
+        />
+      </template>
+
+      <el-input
+        class="account-keyword"
+        v-model="queryDraft.keyword"
+        clearable
+        :placeholder="t('userAccountList.keywordPlaceholder')"
+        @keyup.enter="onSearch"
+      />
+
+      <template #monitor>
+        <LiveMonitorBar
+          :live="!loadError"
+          :title="t('userAccountList.monitorTitle')"
+          :subtitle="t('userAccountList.monitorSubtitle')"
+          :last-label="t('jobInstanceList.liveLast')"
+          :last-value="lastRefreshText"
+        />
+      </template>
+    </OpsFilterToolbar>
 
     <SectionCard>
-      <ListPageQueryBar
-        :filter-busy="filterBusy"
-        :refresh-busy="loading"
-        @search="onSearch"
-        @reset="onReset"
-        @refresh="() => runRefresh(load)"
-      >
-        <el-form-item :label="t('userAccountList.keywordLabel')">
-          <el-input
-            class="query-w-220"
-            v-model="queryDraft.keyword"
-            clearable
-            :placeholder="t('userAccountList.keywordPlaceholder')"
-            @keyup.enter="onSearch"
-          />
-        </el-form-item>
-      </ListPageQueryBar>
-
       <DataState
         :loading="loading"
         :error="loadError"
-        :has-data="page.items.length > 0"
+        :has-data="visibleItems.length > 0"
         :on-retry="load"
       >
+        <template #empty>
+          <EmptyState
+            :variant="hasAccountFilters ? 'filter-empty' : 'empty'"
+            :title="hasAccountFilters ? t('empty.filterTitle') : t('userAccountList.emptyTitle')"
+            :description="t('userAccountList.emptyDescription')"
+          >
+            <template v-if="hasAccountFilters" #action>
+              <el-button plain @click="resetAccountFilters">{{ t('common.reset') }}</el-button>
+            </template>
+          </EmptyState>
+        </template>
         <el-table
           v-loading="loading"
-          :data="page.items"
+          :data="visibleItems"
           stripe
           border
           :empty-text="t('common.noData')"
@@ -94,25 +107,25 @@
             </template>
           </el-table-column>
           <DatetimeColumn prop="createdAt" :label="t('userAccountList.colCreatedAt')" width="160" />
-          <el-table-column :label="t('userAccountList.colActions')" width="260" fixed="right">
+          <el-table-column :label="t('userAccountList.colActions')" width="230" fixed="right">
             <template #default="{ row }">
               <div class="table-actions">
-                <el-button size="small" plain type="primary" @click="openEdit(row)">
+                <el-button size="small" link type="primary" @click="openEdit(row)">
                   {{ t('userAccountList.actionEdit') }}
                 </el-button>
-                <el-button size="small" plain @click="openResetPassword(row)">
+                <el-button size="small" link @click="openResetPassword(row)">
                   {{ t('userAccountList.actionResetPassword') }}
                 </el-button>
                 <el-button
                   v-if="row.enabled"
                   size="small"
-                  plain
-                  type="warning"
+                  link
+                  type="danger"
                   @click="confirmDisable(row)"
                 >
                   {{ t('userAccountList.actionDisable') }}
                 </el-button>
-                <el-button v-else size="small" plain type="success" @click="confirmEnable(row)">
+                <el-button v-else size="small" link type="success" @click="confirmEnable(row)">
                   {{ t('userAccountList.actionEnable') }}
                 </el-button>
               </div>
@@ -308,8 +321,11 @@
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
   import StrongPasswordInput from '@/components/common/StrongPasswordInput.vue'
-  import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import TablePagerBar from '@/components/table/TablePagerBar.vue'
+  import OpsFilterToolbar from '@/components/table/OpsFilterToolbar.vue'
+  import StatusSegment from '@/components/table/StatusSegment.vue'
+  import LiveMonitorBar from '@/components/table/LiveMonitorBar.vue'
+  import EmptyState from '@/components/common/EmptyState.vue'
   import TenantSelect from '@/components/common/TenantSelect.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
   import { useTenantStore } from '@/stores/tenant'
@@ -351,8 +367,36 @@
   })
   const page = ref<UserPage>({ total: 0, pageNo: 1, pageSize: 15, items: [] })
 
-  const enabledCount = computed(() => page.value.items.filter((u) => u.enabled).length)
-  const disabledCount = computed(() => page.value.items.filter((u) => !u.enabled).length)
+  const accountStatus = ref('')
+  const lastLoadedAt = ref<Date | null>(null)
+
+  const accountStatusItems = computed(() => [
+    { value: '', label: t('userAccountList.statusAll') },
+    {
+      value: 'enabled',
+      label: t('userAccountList.metricEnabled'),
+      accent: 'var(--color-success)',
+    },
+    {
+      value: 'disabled',
+      label: t('userAccountList.metricDisabled'),
+      accent: 'var(--color-text-tertiary)',
+    },
+  ])
+
+  const visibleItems = computed(() => {
+    if (accountStatus.value === 'enabled') return page.value.items.filter((user) => user.enabled)
+    if (accountStatus.value === 'disabled') return page.value.items.filter((user) => !user.enabled)
+    return page.value.items
+  })
+
+  const hasAccountFilters = computed(() => !!(queryApplied.keyword.trim() || accountStatus.value))
+
+  const lastRefreshText = computed(() => {
+    if (!lastLoadedAt.value) return '—'
+    const part = (n: number) => String(n).padStart(2, '0')
+    return `${part(lastLoadedAt.value.getHours())}:${part(lastLoadedAt.value.getMinutes())}:${part(lastLoadedAt.value.getSeconds())}`
+  })
 
   function parseRoles(csv?: string): string[] {
     if (!csv) return []
@@ -371,6 +415,7 @@
       if (queryApplied.tenantId) q.tenantId = queryApplied.tenantId
       if (queryApplied.keyword) q.keyword = queryApplied.keyword
       page.value = await listUsers(q)
+      lastLoadedAt.value = new Date()
     }).catch(() => {
       page.value = {
         total: 0,
@@ -396,9 +441,15 @@
       queryDraft.keyword = ''
       queryApplied.tenantId = ''
       queryApplied.keyword = ''
+      accountStatus.value = ''
       queryApplied.pageNo = 1
       await load()
     })
+  }
+
+  function resetAccountFilters() {
+    accountStatus.value = ''
+    if (queryApplied.keyword) return onReset()
   }
 
   function onPage(p: number) {
@@ -640,53 +691,8 @@
 </script>
 
 <style scoped>
-  .account-metrics {
-    display: inline-flex;
-    align-items: stretch;
-    width: fit-content;
-    max-width: 100%;
-    margin: 2px 0 8px;
-    overflow: hidden;
-    border: 1px solid var(--color-border-light, var(--color-border));
-    border-radius: 10px;
-    background: color-mix(in srgb, var(--color-bg-card) 88%, transparent);
-    box-shadow: 0 1px 2px color-mix(in srgb, #1f2937 4%, transparent);
-  }
-
-  .account-metric {
-    display: grid;
-    grid-template-columns: auto auto;
-    align-items: baseline;
-    gap: 10px;
-    min-width: 148px;
-    padding: 10px 16px;
-    border-right: 1px solid var(--color-border-light, var(--color-border));
-  }
-
-  .account-metric:last-child {
-    border-right: 0;
-  }
-
-  .account-metric__label {
-    font-size: 12px;
-    color: var(--color-text-tertiary);
-    white-space: nowrap;
-  }
-
-  .account-metric__value {
-    font-family: var(--font-mono);
-    font-size: 20px;
-    font-weight: 700;
-    line-height: 1;
-    color: var(--color-text-primary);
-  }
-
-  .account-metric--success .account-metric__value {
-    color: var(--color-success);
-  }
-
-  .account-metric--muted .account-metric__value {
-    color: var(--color-text-secondary);
+  .account-keyword {
+    width: min(360px, 36vw);
   }
 
   .role-tags {
@@ -696,19 +702,9 @@
   }
 
   @media (max-width: 720px) {
-    .account-metrics {
-      display: grid;
+    .account-keyword {
       width: 100%;
-    }
-
-    .account-metric {
-      grid-template-columns: 1fr auto;
-      border-right: 0;
-      border-bottom: 1px solid var(--color-border-light, var(--color-border));
-    }
-
-    .account-metric:last-child {
-      border-bottom: 0;
+      max-width: none;
     }
   }
 </style>

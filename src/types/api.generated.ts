@@ -10109,6 +10109,27 @@ export interface components {
     CommonResponseCustomTaskTypeList: components['schemas']['CommonResponseBase'] & {
       data?: components['schemas']['CustomTaskTypeResponse'][]
     }
+    MyWorkerResponse: {
+      /** Format: int64 */
+      id: number
+      tenantId: string
+      workerCode: string
+      workerGroup: string
+      status: string
+      /** Format: date-time */
+      heartbeatAt: string
+      /** Format: int32 */
+      currentLoad?: number | null
+      /** Format: int32 */
+      maxConcurrent?: number | null
+      /** Format: date-time */
+      drainStartedAt?: string | null
+      /** Format: date-time */
+      drainDeadlineAt?: string | null
+    }
+    CommonResponseMyWorkerList: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['MyWorkerResponse'][]
+    }
     /** @enum {string} */
     TriggerStatus:
       | 'NORMAL'
@@ -13965,7 +13986,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseCustomTaskTypeList']
+          'application/json': components['schemas']['CommonResponseMyWorkerList']
         }
       }
     }
