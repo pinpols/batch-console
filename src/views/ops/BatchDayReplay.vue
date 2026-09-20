@@ -44,20 +44,21 @@
         table-layout="fixed"
       >
         <template #empty>
-          <div class="replay-empty">
-            <FileClock :size="36" aria-hidden="true" />
-            <div class="replay-empty__title">{{ t('batchDayReplay.emptyTitle') }}</div>
-            <div class="replay-empty__desc">
-              {{
-                historyUnavailable
-                  ? t('batchDayReplay.emptyLegacyDesc')
-                  : t('batchDayReplay.emptyDesc')
-              }}
-            </div>
-            <el-button type="primary" :icon="Plus" @click.stop="submitDrawerOpen = true">
-              {{ t('batchDayReplay.submitBtn') }}
-            </el-button>
-          </div>
+          <EmptyState
+            variant="empty"
+            :title="t('batchDayReplay.emptyTitle')"
+            :description="
+              historyUnavailable
+                ? t('batchDayReplay.emptyLegacyDesc')
+                : t('batchDayReplay.emptyDesc')
+            "
+          >
+            <template #action>
+              <el-button type="primary" :icon="Plus" @click.stop="submitDrawerOpen = true">
+                {{ t('batchDayReplay.submitBtn') }}
+              </el-button>
+            </template>
+          </EmptyState>
         </template>
         <el-table-column :label="t('batchDayReplay.colId')" prop="id" width="80" />
         <el-table-column :label="t('batchDayReplay.colBizDate')" prop="bizDate" width="120" />
@@ -425,10 +426,11 @@
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
   import { confirmDanger } from '@/composables/useDangerConfirm'
-  import { FileClock, RefreshCw as Refresh, Plus } from 'lucide-vue-next'
+  import { RefreshCw as Refresh, Plus } from 'lucide-vue-next'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
+  import EmptyState from '@/components/common/EmptyState.vue'
   import {
     batchDayReplayApi,
     type BatchDayReplaySession,
@@ -753,33 +755,6 @@
 
   .replay-compat-alert {
     margin-bottom: 12px;
-  }
-
-  .replay-empty {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-    padding: 28px 12px;
-    color: var(--color-text-secondary);
-  }
-
-  .replay-empty svg {
-    color: var(--color-primary);
-    opacity: 0.85;
-  }
-
-  .replay-empty__title {
-    font-size: 15px;
-    font-weight: 650;
-    color: var(--color-text-primary);
-  }
-
-  .replay-empty__desc {
-    max-width: 520px;
-    font-size: 13px;
-    line-height: 1.6;
-    color: var(--color-text-tertiary);
   }
 
   .detail-progress {

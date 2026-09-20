@@ -97,8 +97,7 @@
     border: 1px solid var(--color-border-light);
     border-right: none;
     border-radius: var(--radius-content) 0 0 var(--radius-content);
-    background: var(--color-bg-card, #fff);
-    box-shadow: 0 10px 24px color-mix(in srgb, #1f2937 5%, transparent);
+    background: var(--color-bg-card);
   }
   .node-palette__title {
     font-size: 13px;
@@ -112,59 +111,73 @@
     line-height: 1.5;
   }
   .palette-item {
+    --palette-accent: var(--color-text-tertiary);
+
+    position: relative;
     min-height: 42px;
-    padding: 8px 12px;
+    padding: 8px 12px 8px 22px;
     border-radius: var(--radius-content);
     font-size: 13px;
-    font-weight: 650;
-    text-align: center;
+    font-weight: 600;
+    text-align: left;
     cursor: grab;
     user-select: none;
     width: 100%;
     font: inherit;
-    border: 1px dashed var(--color-border);
+    border: 1px solid var(--color-border-light);
+    background: color-mix(in srgb, var(--color-bg-canvas) 68%, var(--color-bg-card) 32%);
+    color: var(--color-text-secondary);
     overflow-wrap: anywhere;
     transition:
-      box-shadow 0.12s ease,
-      transform 0.06s ease;
+      border-color 120ms ease,
+      background-color 120ms ease,
+      color 120ms ease;
   }
+
+  .palette-item::before {
+    content: '';
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    width: 3px;
+    height: 16px;
+    border-radius: var(--radius-pill);
+    background: var(--palette-accent);
+    transform: translateY(-50%);
+  }
+
+  .palette-item:hover {
+    border-color: color-mix(in srgb, var(--palette-accent) 50%, var(--color-border) 50%);
+    background: color-mix(in srgb, var(--palette-accent) 6%, var(--color-bg-card) 94%);
+    color: var(--color-text-primary);
+  }
+
   .palette-item:active {
     cursor: grabbing;
+    background: color-mix(in srgb, var(--palette-accent) 10%, var(--color-bg-card) 90%);
   }
-  .palette-item:hover {
-    box-shadow: 0 8px 18px color-mix(in srgb, #1f2937 10%, transparent);
+
+  .palette-item:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--palette-accent) 42%, transparent);
+    outline-offset: 2px;
   }
-  .palette-item:active {
-    transform: translateY(1px);
-  }
+
   .palette-item--start {
-    background: var(--wf-node-start-light);
-    color: var(--wf-node-start);
-    border-color: var(--wf-node-start);
+    --palette-accent: var(--wf-node-start);
   }
   .palette-item--end {
-    background: var(--wf-node-end-light);
-    color: var(--wf-node-end);
-    border-color: var(--wf-node-end);
+    --palette-accent: var(--wf-node-end);
   }
   .palette-item--job {
-    background: var(--wf-node-job-light);
-    color: var(--wf-node-job);
-    border-color: var(--wf-node-job);
+    --palette-accent: var(--wf-node-job);
   }
   .palette-item--gateway {
-    background: var(--wf-node-gateway-light);
-    color: var(--wf-node-gateway);
-    border-color: var(--wf-node-gateway);
+    --palette-accent: var(--wf-node-gateway);
   }
   .palette-item--file {
-    background: var(--wf-node-file-step-light);
-    color: var(--wf-node-file-step);
-    border-color: var(--wf-node-file-step);
+    --palette-accent: var(--wf-node-file-step);
   }
   .palette-item--approval {
-    background: var(--wf-node-approval-light);
-    color: var(--wf-node-approval);
-    border-color: var(--wf-node-approval);
+    --palette-accent: var(--wf-node-approval);
   }
 </style>

@@ -119,36 +119,36 @@
             <el-form-item :label="t('configSyncTab.payloadLabel')" class="sync__payload">
               <JsonTextareaInput
                 v-model="importPayload"
-                :rows="11"
+                :rows="8"
                 expect="object"
                 :placeholder="t('configSyncTab.payloadPlaceholder')"
-              />
+              >
+                <template #actions>
+                  <el-button
+                    :loading="previewing"
+                    :disabled="!importPayload.trim()"
+                    :icon="View"
+                    v-track-click="t('configSyncTab.trackPreview')"
+                    @click="doPreview"
+                  >
+                    {{ t('configSyncTab.btnPreview') }}
+                  </el-button>
+                  <el-button
+                    type="primary"
+                    :loading="importing"
+                    :disabled="!importPayload.trim()"
+                    :icon="Upload"
+                    class="sync__apply"
+                    v-track-click="t('configSyncTab.trackImport')"
+                    @click="doImport"
+                  >
+                    {{ t('configSyncTab.btnImport') }}
+                  </el-button>
+                </template>
+              </JsonTextareaInput>
             </el-form-item>
           </el-form>
         </div>
-
-        <footer class="sync__footer">
-          <el-button
-            :loading="previewing"
-            :disabled="!importPayload.trim()"
-            :icon="View"
-            v-track-click="t('configSyncTab.trackPreview')"
-            @click="doPreview"
-          >
-            {{ t('configSyncTab.btnPreview') }}
-          </el-button>
-          <el-button
-            type="primary"
-            :loading="importing"
-            :disabled="!importPayload.trim()"
-            :icon="Upload"
-            class="sync__apply"
-            v-track-click="t('configSyncTab.trackImport')"
-            @click="doImport"
-          >
-            {{ t('configSyncTab.btnImport') }}
-          </el-button>
-        </footer>
       </section>
     </div>
 
@@ -380,7 +380,7 @@
   .sync__pane {
     display: flex;
     flex-direction: column;
-    min-height: 492px;
+    min-height: 460px;
     border-radius: 10px;
     border: 1px solid var(--color-border-light);
     background: var(--color-bg-card);
@@ -565,12 +565,17 @@
     min-height: 0;
   }
 
+  .sync__payload :deep(.json-textarea-input) {
+    height: 100%;
+    min-height: 0;
+  }
+
   .sync__payload :deep(.el-textarea__inner) {
     font-family: var(--font-family-mono, ui-monospace, Menlo, Monaco, Consolas, monospace);
     font-size: 12px;
     line-height: 1.55;
     background: color-mix(in srgb, var(--color-bg-canvas) 60%, var(--color-bg-card) 40%);
-    min-height: 252px;
+    min-height: 196px;
     height: 100%;
   }
 

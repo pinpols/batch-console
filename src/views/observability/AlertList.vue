@@ -7,61 +7,57 @@
         <el-button @click="$router.push('/observability/alert-routings')">
           {{ t('alertList.actionRules') }}
         </el-button>
-        <el-button :loading="loading" @click="() => runRefresh(load)">
-          {{ t('common.refresh') }}
-        </el-button>
       </template>
     </PageHeader>
 
-    <div class="al-toolbar">
-      <div class="al-tabs" :aria-label="t('alertList.pageTitle')">
-        <button
-          v-for="tab in groupTabs"
-          :key="tab.key"
-          type="button"
-          class="al-tab"
-          :class="{ 'is-active': tab.active }"
-          :style="tab.active && tab.dot ? { '--al-tab-tint': tab.dot } : undefined"
-          @click="pickGroup(tab.key)"
-        >
-          <span v-if="tab.dot" class="al-tab__dot" :style="{ background: tab.dot }" />
-          <span>{{ tab.label }}</span>
-          <span v-if="tab.count !== null" class="al-tab__count">{{ tab.count }}</span>
-        </button>
-      </div>
+    <OpsFilterToolbar
+      :filter-busy="queryActionBusy"
+      :refresh-busy="loading"
+      :disabled="loading"
+      @search="search"
+      @reset="reset"
+      @refresh="() => runRefresh(load)"
+    >
+      <template #status>
+        <StatusSegment
+          v-model="groupSegmentValue"
+          :items="groupSegmentItems"
+          :aria-label="t('alertList.statusLabel')"
+        />
+      </template>
 
-      <div class="al-filters">
-        <DateRangePresetPicker
-          class="al-range"
-          v-model="timeRange"
-          type="daterange"
-          @update:model-value="onTimeChange"
-        />
-        <MetaSelect
-          class="al-sel"
-          v-model="filters.severity"
-          :options="severityOptions"
-          clearable
-          enum-key="severity"
-          :placeholder="t('alertList.severityPlaceholder')"
-          @change="search"
-        />
-        <MetaSelect
-          class="al-sel"
-          v-model="filters.alertType"
-          :options="alertTypeOptions.map((v) => ({ value: v, label: v }))"
-          clearable
-          filterable
-          :placeholder="t('alertList.typePlaceholder')"
-          @change="search"
-        />
-        <TraceIdInput
-          class="al-trace"
-          v-model="filters.traceId"
-          :placeholder="t('alertList.tracePlaceholder')"
-          @keyup.enter="search"
-        />
-        <el-button class="al-reset" text @click="reset">{{ t('common.reset') }}</el-button>
+      <DateRangePresetPicker
+        class="al-range"
+        v-model="timeRange"
+        type="daterange"
+        @update:model-value="onTimeChange"
+      />
+      <MetaSelect
+        class="al-sel"
+        v-model="filters.severity"
+        :options="severityOptions"
+        clearable
+        enum-key="severity"
+        :placeholder="t('alertList.severityPlaceholder')"
+        @change="search"
+      />
+      <MetaSelect
+        class="al-sel"
+        v-model="filters.alertType"
+        :options="alertTypeOptions.map((v) => ({ value: v, label: v }))"
+        clearable
+        filterable
+        :placeholder="t('alertList.typePlaceholder')"
+        @change="search"
+      />
+      <TraceIdInput
+        class="al-trace"
+        v-model="filters.traceId"
+        :placeholder="t('alertList.tracePlaceholder')"
+        @keyup.enter="search"
+      />
+
+      <template #actions>
         <SavedFiltersMenu
           class="al-saved"
           :sets="savedFilters.sets.value"
@@ -72,14 +68,18 @@
           :on-export="savedFilters.exportSets"
           :on-import="savedFilters.importSets"
         />
-      </div>
-    </div>
+      </template>
 
-    <div class="al-live">
-      <span class="al-live__dot" :class="{ 'is-off': live.status.value !== 'live' }" />
-      <span class="al-live__title">{{ t('jobInstanceList.liveTitle') }}</span>
-      <span class="al-live__sub">{{ t('jobInstanceList.liveEvery') }}</span>
-    </div>
+      <template #monitor>
+        <LiveMonitorBar
+          :live="live.status.value === 'live'"
+          :title="t('jobInstanceList.liveTitle')"
+          :subtitle="t('jobInstanceList.liveEvery')"
+          :last-label="t('jobInstanceList.liveLast')"
+          :last-value="lastRefreshText"
+        />
+      </template>
+    </OpsFilterToolbar>
 
     <div v-loading="tableBlocking" class="al-list">
       <article
@@ -164,9 +164,16 @@
         </div>
       </article>
 
-      <div v-if="!tableBlocking && rows.length === 0" class="al-empty">
-        {{ hasAlertFilters ? alertFilteredEmptyText : t('alertList.emptyGroup') }}
-      </div>
+      <EmptyState
+        v-if="!tableBlocking && rows.length === 0"
+        :variant="hasAlertFilters ? 'filter-empty' : 'empty'"
+        :title="hasAlertFilters ? t('empty.filterTitle') : t('alertList.emptyGroup')"
+        :description="alertEmptyDescription"
+      >
+        <template v-if="hasAlertFilters" #action>
+          <el-button plain @click="reset">{{ t('common.reset') }}</el-button>
+        </template>
+      </EmptyState>
     </div>
 
     <TablePagerBar
@@ -215,6 +222,10 @@
   import TraceIdInput from '@/components/common/TraceIdInput.vue'
   import DateRangePresetPicker from '@/components/common/DateRangePresetPicker.vue'
   import TablePagerBar from '@/components/table/TablePagerBar.vue'
+  import OpsFilterToolbar from '@/components/table/OpsFilterToolbar.vue'
+  import StatusSegment from '@/components/table/StatusSegment.vue'
+  import LiveMonitorBar from '@/components/table/LiveMonitorBar.vue'
+  import EmptyState from '@/components/common/EmptyState.vue'
   import { TriangleAlert } from 'lucide-vue-next'
   import { fmtCompact, fmtDatetime } from '@/utils/datetime'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
@@ -307,6 +318,10 @@
     filters.traceId.trim() ? t('alertList.emptyTrace') : t('alertList.emptyFiltered'),
   )
 
+  const alertEmptyDescription = computed(() =>
+    hasAlertFilters.value ? alertFilteredEmptyText.value : t('alertList.emptyDescription'),
+  )
+
   function actionBody(reason?: string) {
     return {
       tenantId: tenant.tenantId,
@@ -365,11 +380,34 @@
     })),
   )
 
+  const groupSegmentValue = computed({
+    get: () => filters.status,
+    set: (value: string) => pickGroup(value),
+  })
+
+  const groupSegmentItems = computed(() =>
+    groupTabs.value.map((tab) => ({
+      value: tab.key,
+      label: tab.label,
+      count: tab.count,
+      accent: tab.dot || undefined,
+    })),
+  )
+
   function pickGroup(key: string) {
-    filters.status = filters.status === key ? '' : key
+    filters.status = key
     page.value = 1
     void load()
   }
+
+  const lastRefreshText = computed(() => {
+    const value = live.lastRefreshedAt.value
+    if (!value) return '—'
+    const date = value instanceof Date ? value : new Date(value)
+    if (Number.isNaN(date.getTime())) return '—'
+    const part = (n: number) => String(n).padStart(2, '0')
+    return `${part(date.getHours())}:${part(date.getMinutes())}:${part(date.getSeconds())}`
+  })
 
   /** 严重度 → 设计卡片配色(左条/图标块/pill) */
   function sevMeta(sev: string | null | undefined) {
@@ -628,140 +666,20 @@
 </script>
 
 <style scoped>
-  /* ── 照设计 #alerts dump 1:1(docs/redesign/proto-alerts.html) ── */
-  .al-toolbar {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    min-width: 0;
-    margin: 6px 0 12px;
-    padding: 10px 12px;
-    border: 1px solid var(--color-border-light, var(--color-border));
-    border-radius: 10px;
-    background: color-mix(in srgb, var(--color-bg-card) 88%, transparent);
-    box-shadow: 0 1px 2px color-mix(in srgb, #1f2937 4%, transparent);
-  }
-
-  .al-tabs {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    flex: 0 0 auto;
-    min-width: 0;
-  }
-
-  .al-tab {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    height: 30px;
-    padding: 0 11px;
-    border-radius: 14px;
-    border: 1px solid var(--color-border);
-    background: transparent;
-    color: var(--color-text-secondary);
-    font-size: 12.5px;
-    white-space: nowrap;
-    cursor: pointer;
-  }
-
-  /* 激活 pill 跟随分组色(未处理=琥珀/已确认=绿),无分组色(全部)回退中性 */
-  .al-tab.is-active {
-    border-color: var(--al-tab-tint, var(--color-text-secondary));
-    background: var(--color-bg-elevated);
-    color: var(--al-tab-tint, var(--color-text-primary));
-    font-weight: 600;
-  }
-
-  .al-tab.is-active .al-tab__count {
-    color: inherit;
-  }
-
-  .al-tab__dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-  }
-
-  .al-tab__count {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    color: var(--color-text-tertiary);
-  }
-
-  .al-filters {
-    display: grid;
-    grid-template-columns:
-      minmax(240px, 1.15fr)
-      minmax(148px, 0.72fr)
-      minmax(156px, 0.78fr)
-      minmax(188px, 0.96fr)
-      auto
-      auto;
-    align-items: center;
-    gap: 8px;
-    flex: 1 1 auto;
-    min-width: 0;
-  }
-
-  .al-filters :deep(.el-select),
-  .al-filters :deep(.el-input),
-  .al-filters :deep(.el-date-editor) {
-    width: 100%;
-  }
-
   .al-sel {
-    min-width: 0;
+    width: min(176px, 17vw);
   }
 
   .al-range {
-    min-width: 0;
+    width: min(340px, 30vw);
   }
 
   .al-trace {
-    min-width: 0;
+    width: min(210px, 19vw);
   }
 
-  .al-reset {
-    justify-self: end;
-    padding-inline: 10px;
-  }
-
-  .al-saved {
-    justify-self: end;
-  }
-
-  .al-live {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 7px 14px;
-    margin-bottom: 10px;
-    border: 1px solid var(--color-border);
-    border-radius: 9px;
-    background: var(--color-bg-card);
-    font-size: 12px;
-    color: var(--color-text-secondary);
-  }
-
-  .al-live__dot {
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: var(--color-success);
-  }
-
-  .al-live__dot.is-off {
-    background: var(--color-text-tertiary);
-  }
-
-  .al-live__title {
-    color: var(--color-text-primary);
-    font-weight: 500;
-  }
-
-  .al-live__sub {
-    color: var(--color-text-tertiary);
+  .al-saved :deep(.el-button) {
+    min-width: auto;
   }
 
   /* 告警卡片流(14 16 / r12 / 左 3px 严重度条) */
@@ -921,58 +839,18 @@
     background: color-mix(in srgb, var(--color-success) 10%, transparent);
   }
 
-  .al-empty {
-    padding: 56px;
-    text-align: center;
-    color: var(--color-text-tertiary);
-    font-size: 13px;
+  .al-list > :deep(.empty-state) {
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-content);
     background: var(--color-bg-card);
-    border: 1px solid var(--color-border);
-    border-radius: 12px;
-  }
-
-  @media (max-width: 1320px) {
-    .al-toolbar {
-      align-items: flex-start;
-      flex-direction: column;
-    }
-
-    .al-filters {
-      width: 100%;
-      grid-template-columns:
-        minmax(240px, 1.2fr) repeat(2, minmax(150px, 0.8fr)) minmax(188px, 1fr)
-        auto auto;
-    }
-  }
-
-  @media (max-width: 980px) {
-    .al-filters {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .al-reset,
-    .al-saved {
-      justify-self: stretch;
-    }
   }
 
   @media (max-width: 640px) {
-    .al-toolbar {
-      padding: 10px;
-    }
-
-    .al-tabs {
+    .al-range,
+    .al-sel,
+    .al-trace {
       width: 100%;
-      overflow-x: auto;
-      padding-bottom: 2px;
-    }
-
-    .al-tab {
-      flex: 0 0 auto;
-    }
-
-    .al-filters {
-      grid-template-columns: 1fr;
+      max-width: none;
     }
   }
 </style>

@@ -10,11 +10,9 @@
   </EmptyState>
 
   <!-- empty:已加载但没数据 — 支持 5 类细分文案(filter-empty/tenant-empty/no-permission/...) -->
-  <EmptyState
-    v-else-if="!hasData"
-    :variant="emptyVariant"
-    :description="emptyTextResolved || undefined"
-  />
+  <slot v-else-if="!hasData" name="empty">
+    <EmptyState :variant="emptyVariant" :description="emptyTextResolved || undefined" />
+  </slot>
 
   <!-- 有数据:把内容交给 default slot,父组件渲染 el-table 等 -->
   <slot v-else />
@@ -35,7 +33,7 @@
    *    用户分不清是真空还是失败
    *  - 不强制迁移,新页 + 高流量页用,存量页可保留 v-loading + empty-text 范式
    */
-  import { ref, reactive, computed, watch } from 'vue'
+  import { computed } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { RefreshCw as Refresh } from 'lucide-vue-next'
   import EmptyState from '@/components/common/EmptyState.vue'

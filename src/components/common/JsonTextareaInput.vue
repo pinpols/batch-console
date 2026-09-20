@@ -56,6 +56,9 @@
         >
           {{ t('common.clear') }}
         </el-button>
+        <span v-if="$slots.actions" class="json-textarea-input__actions">
+          <slot name="actions" />
+        </span>
       </div>
     </div>
     <input
@@ -239,6 +242,8 @@
 <style scoped>
   .json-textarea-input {
     position: relative;
+    display: flex;
+    flex-direction: column;
     border: 1px dashed var(--color-border-subtle);
     border-radius: 8px;
     padding: 4px 4px 0;
@@ -246,6 +251,15 @@
       border-color 0.18s,
       background 0.18s;
     width: 100%;
+  }
+
+  .json-textarea-input__textarea {
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
+  .json-textarea-input__textarea :deep(.el-textarea) {
+    height: 100%;
   }
   .json-textarea-input--dragover {
     border-color: var(--color-primary);
@@ -280,6 +294,23 @@
     gap: 8px;
     flex-wrap: wrap;
     font-size: 12px;
+  }
+
+  .json-textarea-input__right {
+    flex: 1 1 auto;
+    justify-content: flex-end;
+  }
+
+  .json-textarea-input__actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding-left: 8px;
+    border-left: 1px solid var(--color-border-light);
+  }
+
+  .json-textarea-input__actions :deep(.el-button + .el-button) {
+    margin-left: 0;
   }
 
   .json-textarea-input__file {

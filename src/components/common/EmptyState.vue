@@ -1,9 +1,14 @@
 <template>
   <div class="empty-state">
-    <div v-if="computedTitle" class="empty-state__title">{{ computedTitle }}</div>
-    <el-empty :description="computedDescription" :image-size="imageSize">
+    <el-empty :image-size="imageSize">
       <template v-if="$slots.image" #image>
         <slot name="image" />
+      </template>
+      <template #description>
+        <div class="empty-state__copy">
+          <div v-if="computedTitle" class="empty-state__title">{{ computedTitle }}</div>
+          <p class="empty-state__description">{{ computedDescription }}</p>
+        </div>
       </template>
       <template v-if="$slots.extra || $slots.action" #extra>
         <div class="empty-state__action">
@@ -85,15 +90,34 @@
 
 <style scoped>
   .empty-state {
-    padding: 12px 0 8px;
+    width: 100%;
+    padding: 20px 16px;
+  }
+
+  .empty-state :deep(.el-empty) {
+    padding: 16px 0;
+  }
+
+  .empty-state__copy {
+    display: grid;
+    gap: 6px;
+    max-width: 520px;
+    margin: 0 auto;
   }
 
   .empty-state__title {
-    margin-bottom: 8px;
     text-align: center;
     font-size: var(--font-size-md);
     font-weight: 650;
     color: var(--color-text-primary);
+  }
+
+  .empty-state__description {
+    margin: 0;
+    color: var(--color-text-tertiary);
+    font-size: var(--font-size-sm);
+    line-height: 1.6;
+    text-align: center;
   }
 
   .empty-state__action {
