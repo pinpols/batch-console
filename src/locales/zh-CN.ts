@@ -458,7 +458,7 @@ export default {
   tenantPackageImportWizard: {
     uploadTitle: '上传租户配置包 Excel',
     uploadDesc:
-      '标准 9+2 / 11-Sheet Excel 配置包(覆盖作业定义、文件渠道、文件模板、管道、工作流及资源队列/日历/窗口)。告警路由不在此包内。上传后进入预览校验,确认无误再应用。',
+      '标准 11 张配置表 Excel 包(覆盖作业定义、文件渠道、文件模板、管道、工作流及资源队列/日历/窗口)。告警路由不在此包内。上传后会自动进入预览校验,确认无误再应用。',
     btnDownloadTemplate: '下载配置包模板',
     btnExportCurrent: '导出当前配置包',
     applyDescStart: '将把当前',
@@ -475,6 +475,9 @@ export default {
     appliedToast: '合并导入已应用',
     // I1 sheet 拆分 / 列名 / 依赖图谱 / Apply 闸门
     sheetStatsCaption: '各 sheet 校验拆分',
+    onlyInvalidSheets: '只看错误 sheet',
+    previewReadyTitle: '预览通过，可应用 {n} 条有效行',
+    previewReadyBody: '未发现阻塞性错误。继续下一步前，建议仍检查各 sheet 行数和影响范围。',
     colSheet: 'Sheet 名',
     colSheetTotal: '总行',
     colSheetValid: '有效',

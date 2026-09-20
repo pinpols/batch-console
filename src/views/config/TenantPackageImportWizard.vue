@@ -171,12 +171,18 @@
 
               <!-- 每张 sheet 的拆分 — 后端 sheets[] 之前被前端丢弃,现在显式展开 -->
               <div v-if="sheetStats.length" class="excel-wizard__table-block">
-                <div class="excel-wizard__table-caption">
-                  {{ t('tenantPackageImportWizard.sheetStatsCaption') }}
+                <div class="excel-wizard__table-caption sheet-stats-caption">
+                  <span>{{ t('tenantPackageImportWizard.sheetStatsCaption') }}</span>
+                  <el-switch
+                    v-model="showOnlyInvalidSheets"
+                    size="small"
+                    :disabled="!hasInvalidSheets"
+                    :active-text="t('tenantPackageImportWizard.onlyInvalidSheets')"
+                  />
                 </div>
                 <el-table
                   class="wizard-stretch console-table"
-                  :data="sheetStats"
+                  :data="displaySheetStats"
                   size="small"
                   stripe
                   border
@@ -269,6 +275,20 @@
                   >
                     {{ t('excelMaintenanceWizard.annotatedReadyLink') }}
                   </a>
+                </template>
+              </el-alert>
+              <el-alert
+                v-if="previewStats && !hasBlockingIssues"
+                type="success"
+                :closable="false"
+                show-icon
+                class="excel-wizard__desc"
+              >
+                <template #title>
+                  {{ t('tenantPackageImportWizard.previewReadyTitle', { n: previewStats.valid }) }}
+                </template>
+                <template #default>
+                  {{ t('tenantPackageImportWizard.previewReadyBody') }}
                 </template>
               </el-alert>
               <div v-if="errorRows.length" class="excel-wizard__table-block">
@@ -501,7 +521,7 @@
           <el-tooltip :content="t('excelMaintenanceWizard.btnNext')" placement="top">
             <button
               class="wizard-nav wizard-nav--next"
-              :disabled="step >= 2 || (step === 0 && !uploadToken)"
+              :disabled="nextDisabled"
               :aria-label="t('excelMaintenanceWizard.btnNext')"
               @click="step++"
             >
@@ -574,6 +594,7 @@
   // 出错行内联编辑:每行一份草稿(按 sheet#rowNo 键),保存调 patch 端点回写 + 重校验
   const rowDrafts = reactive<Record<string, Record<string, string>>>({})
   const patchSaving = ref<string | null>(null)
+  const showOnlyInvalidSheets = ref(false)
 
   function rowKeyOf(row: PreviewErrorRow): string {
     return `${row.sheetName}#${row.rowNo}`
@@ -705,6 +726,22 @@
     return [...affectedSheets.value].filter((s) => !failing.has(s))
   })
 
+  const hasInvalidSheets = computed<boolean>(() =>
+    sheetStats.value.some((sheet) => sheet.invalid > 0),
+  )
+
+  const displaySheetStats = computed<SheetStats[]>(() => {
+    if (!showOnlyInvalidSheets.value) return sheetStats.value
+    return sheetStats.value.filter((sheet) => sheet.invalid > 0)
+  })
+
+  const nextDisabled = computed<boolean>(
+    () =>
+      step.value >= 2 ||
+      (step.value === 0 && !uploadToken.value) ||
+      (step.value === 1 && (!previewStats.value || hasBlockingIssues.value)),
+  )
+
   /**
    * I8: issue 表高度自适应:每行 ~36px,base 帧 64;少于 8 条紧凑,多于 8 条限到 480 给出滚动条。
    * 比固定 320 体验更好:少 issue 不空旷,多 issue 滚动条也更长好操作。
@@ -793,7 +830,10 @@
       uploadToken.value = res.uploadToken ?? ''
       if (!uploadToken.value) {
         ElMessage.warning(t('excelMaintenanceWizard.noUploadTokenWarn'))
+        return
       }
+      step.value = 1
+      await doPreview()
     } finally {
       upLoading.value = false
     }
@@ -804,6 +844,7 @@
     pvLoading.value = true
     try {
       previewRaw.value = (await tenantPackagePreview(uploadToken.value)) as Record<string, unknown>
+      showOnlyInvalidSheets.value = hasInvalidSheets.value
     } finally {
       pvLoading.value = false
     }
@@ -1277,6 +1318,13 @@
     font-size: 13px;
     font-weight: 600;
     color: var(--color-text-secondary);
+  }
+
+  .sheet-stats-caption {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
   }
 
   .wizard-stretch {

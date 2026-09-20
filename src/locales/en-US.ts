@@ -455,7 +455,7 @@ const messages: Messages = {
   tenantPackageImportWizard: {
     uploadTitle: 'Upload tenant config package',
     uploadDesc:
-      'Standard 9+2 / 11-sheet Excel package (job definitions, file channels, file templates, pipelines, workflows, plus resource queues/calendars/windows). Alert routings are not part of this package. Preview and validate after upload before applying.',
+      'Standard 11-sheet Excel package (job definitions, file channels, file templates, pipelines, workflows, plus resource queues/calendars/windows). Alert routings are not part of this package. Upload automatically opens validation preview before applying.',
     btnDownloadTemplate: 'Download package template',
     btnExportCurrent: 'Export current package',
     applyDescStart: 'Will apply the 11-sheet preview for the current',
@@ -471,6 +471,10 @@ const messages: Messages = {
       'Write {n} valid rows to tenant config in a single transaction (by sheet: {breakdown}). This cannot be undone.',
     appliedToast: 'Merged import applied',
     sheetStatsCaption: 'Per-sheet validation',
+    onlyInvalidSheets: 'Only error sheets',
+    previewReadyTitle: 'Preview passed, {n} valid rows ready',
+    previewReadyBody:
+      'No blocking errors found. Before continuing, still review per-sheet row counts and impact scope.',
     colSheet: 'Sheet',
     colSheetTotal: 'Rows',
     colSheetValid: 'Valid',
