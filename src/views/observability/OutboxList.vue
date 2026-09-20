@@ -7,7 +7,7 @@
         <div class="ob-stat">
           <span class="ob-stat__dot" />
           <span class="ob-stat__label">{{ t('observability.outboxStatSuccess') }}</span>
-          <span class="ob-stat__value">{{ successCount.toLocaleString() }}</span>
+          <span class="ob-stat__value">{{ fmtNumber(successCount) }}</span>
         </div>
       </template>
     </PageHeader>
@@ -276,6 +276,7 @@
   import DetailDrawer from '@/components/common/DetailDrawer.vue'
   import BulkActionBar from '@/components/table/BulkActionBar.vue'
   import { useBulkSelection } from '@/composables/useBulkSelection'
+  import { fmtNumber } from '@/utils/number'
   import type {
     ConsoleOutboxDeliveryLogResponse,
     ConsoleOutboxRetryLogResponse,

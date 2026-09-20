@@ -182,6 +182,7 @@
   import { useTenantReload } from '@/composables/useTenantReload'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
+  import { fmtNumber } from '@/utils/number'
   import SectionCard from '@/components/common/SectionCard.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
   import MetricCard from '@/components/common/MetricCard.vue'
@@ -232,8 +233,7 @@
   }
 
   function formatNumber(value: unknown): string {
-    const n = Number(value)
-    return Number.isFinite(n) ? n.toLocaleString() : '0'
+    return fmtNumber(value)
   }
 
   function formatDuration(value: unknown): string {

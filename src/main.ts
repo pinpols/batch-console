@@ -1,4 +1,4 @@
-import { createApp } from 'vue'
+import { createApp, shallowReactive, watch } from 'vue'
 import { createPinia } from 'pinia'
 import { VueQueryPlugin } from '@tanstack/vue-query'
 import ElementPlus, { ElSelect } from 'element-plus'
@@ -49,6 +49,14 @@ if (selectProps) {
 const app = createApp(App)
 const pinia = createPinia()
 
+// Element Plus 的 imperative API 挂载到 body 外部，不能只依赖 App.vue 的 ConfigProvider。
+// 保持同一个 reactive locale 对象，确保语言切换后 Message/Notification/MessageBox 立即同步。
+const elementPlusLocale = shallowReactive(resolveElementPlusLocale(i18n.global.locale.value))
+watch(
+  () => i18n.global.locale.value,
+  (locale) => Object.assign(elementPlusLocale, resolveElementPlusLocale(locale)),
+)
+
 app.use(pinia)
 app.use(router)
 
@@ -67,7 +75,7 @@ app.use(router)
 app.use(i18n)
 // Element Plus imperative API(ElMessageBox / ElNotification / ElMessage)依赖全局 locale。
 // 声明式组件由 App.vue 的 ElConfigProvider 响应式覆盖,这里只设置初始值。
-app.use(ElementPlus, { locale: resolveElementPlusLocale(i18n.global.locale.value) })
+app.use(ElementPlus, { locale: elementPlusLocale })
 // Toast 去重:相同 message+type 不重复堆叠,显示 ×N 计数
 import { installMessagePatch } from '@/utils/messagePatch'
 installMessagePatch()

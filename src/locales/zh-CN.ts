@@ -457,6 +457,7 @@ export default {
   },
   tenantPackageImportWizard: {
     uploadTitle: '上传租户配置包 Excel',
+    unsupportedFileType: '仅支持 .xls / .xlsx 文件,当前: {name}',
     uploadDesc:
       '标准 11 张配置表 Excel 包(覆盖作业定义、文件渠道、文件模板、管道、工作流及资源队列/日历/窗口)。告警路由不在此包内。上传后会自动进入预览校验,确认无误再应用。',
     btnDownloadTemplate: '下载配置包模板',
@@ -746,6 +747,9 @@ export default {
   layoutHeader: {
     switchToEn: '切换英文',
     switchToZh: '切换中文',
+    timezoneTooltip: '切换展示时区',
+    timezoneLabel: '展示时区',
+    invalidTimezone: '时区格式无效',
     exitFullscreenTooltip: '退出全屏(Esc)',
   },
   rowActions: {

@@ -15,7 +15,7 @@ npm install
 npm run dev
 ```
 
-默认开发地址为 `http://localhost:5173`。本地开发通过 Vite 代理把 `/api` 转发到后端，目标地址可在 `.env.development` 中用 `VITE_DEV_PROXY_TARGET` 覆盖。
+默认开发地址为 `http://localhost:5173`。本地开发通过 Vite 代理把 `/api` 转发到后端，目标地址可在 `.env.development` 中用 `VITE_DEV_PROXY_TARGET` 覆盖。日期时间默认按浏览器 IANA 时区展示，也可通过 `VITE_DISPLAY_TIMEZONE=Asia/Shanghai` 固定展示时区；用户偏好保存到浏览器后优先使用。
 
 常用命令：
 

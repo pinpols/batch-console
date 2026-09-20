@@ -1,8 +1,82 @@
 import { i18n } from '@/locales'
+import { readDisplayTimezone } from '@/constants/timezone'
 
-/** 取相对/紧凑时间词条(util 非组件,走全局 i18n 实例;缺 key 回退中文兜底)。 */
+type CalendarParts = {
+  year: number
+  month: number
+  day: number
+  hour: number
+  minute: number
+  second: number
+}
+
+/** 取相对/紧凑时间词条(util 非组件,走全局 i18n 实例)。 */
 function dt(key: string, named?: Record<string, unknown>): string {
   return i18n.global.t(`common.datetime.${key}`, named ?? {})
+}
+
+function parseDate(value: unknown): Date | null {
+  if (value === null || value === undefined || value === '') return null
+  const date = typeof value === 'number' ? new Date(value) : new Date(String(value))
+  return Number.isNaN(date.getTime()) ? null : date
+}
+
+function safeTimezone(timezone?: string): string {
+  if (timezone) {
+    try {
+      new Intl.DateTimeFormat('en-US', { timeZone: timezone }).format()
+      return timezone
+    } catch {
+      // Invalid caller input must not break an operational page.
+    }
+  }
+  return readDisplayTimezone()
+}
+
+function partsOf(date: Date, timezone?: string): CalendarParts {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: safeTimezone(timezone),
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(date)
+
+  const value = (type: Intl.DateTimeFormatPartTypes) =>
+    Number(parts.find((part) => part.type === type)?.value ?? 0)
+  return {
+    year: value('year'),
+    month: value('month'),
+    day: value('day'),
+    hour: value('hour'),
+    minute: value('minute'),
+    second: value('second'),
+  }
+}
+
+function pad(value: number): string {
+  return String(value).padStart(2, '0')
+}
+
+function dateText(parts: CalendarParts): string {
+  return `${parts.year}-${pad(parts.month)}-${pad(parts.day)}`
+}
+
+function datetimeText(parts: CalendarParts): string {
+  return `${dateText(parts)} ${pad(parts.hour)}:${pad(parts.minute)}:${pad(parts.second)}`
+}
+
+function previousCalendarDate(parts: CalendarParts): CalendarParts {
+  const date = new Date(Date.UTC(parts.year, parts.month - 1, parts.day - 1))
+  return {
+    ...parts,
+    year: date.getUTCFullYear(),
+    month: date.getUTCMonth() + 1,
+    day: date.getUTCDate(),
+  }
 }
 
 /**
@@ -10,16 +84,10 @@ function dt(key: string, named?: Record<string, unknown>): string {
  * 输出示例：2026-04-12 13:12:18
  * 对 null / undefined / 空字符串返回 '—'。
  */
-export function fmtDatetime(val: unknown): string {
-  if (val === null || val === undefined || val === '') return '—'
-  const d = typeof val === 'number' ? new Date(val) : new Date(String(val))
-  if (isNaN(d.getTime())) return String(val)
-
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return (
-    `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}` +
-    ` ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
-  )
+export function fmtDatetime(val: unknown, timezone?: string): string {
+  const date = parseDate(val)
+  if (!date) return val === null || val === undefined || val === '' ? '—' : String(val)
+  return datetimeText(partsOf(date, timezone))
 }
 
 /**
@@ -31,57 +99,53 @@ export function fmtDatetime(val: unknown): string {
  */
 export function toIsoDateTime(val: unknown): string | undefined {
   if (val === null || val === undefined || val === '') return undefined
-  const d = val instanceof Date ? val : new Date(String(val))
-  if (isNaN(d.getTime())) return undefined
-  return d.toISOString()
+  const date = val instanceof Date ? val : new Date(String(val))
+  if (Number.isNaN(date.getTime())) return undefined
+  return date.toISOString()
 }
 
 /**
  * 仅格式化日期部分，输出示例：2026-04-12
  */
-export function fmtDate(val: unknown): string {
+export function fmtDate(val: unknown, timezone?: string): string {
   if (val === null || val === undefined || val === '') return '—'
-  const d = typeof val === 'number' ? new Date(val) : new Date(String(val))
-  if (isNaN(d.getTime())) return String(val)
-
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+  const raw = String(val)
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw
+  const date = parseDate(val)
+  return date ? dateText(partsOf(date, timezone)) : raw
 }
 
 /**
  * 紧凑时间:今天/昨天显示本地化的「今天 14:47」「昨天 09:30」,本年内显示「5-17 14:47」,
  * 跨年显示完整 `YYYY-MM-DD HH:mm`。适合列表单元格,信息密度高且语义清晰。
  */
-export function fmtCompact(val: unknown): string {
-  if (val === null || val === undefined || val === '') return '—'
-  const d = typeof val === 'number' ? new Date(val) : new Date(String(val))
-  if (isNaN(d.getTime())) return String(val)
-  const pad = (n: number) => String(n).padStart(2, '0')
-  const hm = `${pad(d.getHours())}:${pad(d.getMinutes())}`
+export function fmtCompact(val: unknown, timezone?: string): string {
+  const date = parseDate(val)
+  if (!date) return val === null || val === undefined || val === '' ? '—' : String(val)
 
-  const now = new Date()
-  const sameY = d.getFullYear() === now.getFullYear()
-  const sameD = sameY && d.getMonth() === now.getMonth() && d.getDate() === now.getDate()
-  const y = new Date(now)
-  y.setDate(now.getDate() - 1)
-  const isYday = sameY && d.getMonth() === y.getMonth() && d.getDate() === y.getDate()
+  const displayParts = partsOf(date, timezone)
+  const nowParts = partsOf(new Date(), timezone)
+  const yesterday = previousCalendarDate(nowParts)
+  const hm = `${pad(displayParts.hour)}:${pad(displayParts.minute)}`
+  const sameDay = dateText(displayParts) === dateText(nowParts)
+  const isYesterday = dateText(displayParts) === dateText(yesterday)
 
-  if (sameD) return `${dt('today')} ${hm}`
-  if (isYday) return `${dt('yesterday')} ${hm}`
-  if (sameY) return `${d.getMonth() + 1}-${pad(d.getDate())} ${hm}`
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${hm}`
+  if (sameDay) return `${dt('today')} ${hm}`
+  if (isYesterday) return `${dt('yesterday')} ${hm}`
+  if (displayParts.year === nowParts.year)
+    return `${displayParts.month}-${pad(displayParts.day)} ${hm}`
+  return `${dateText(displayParts)} ${hm}`
 }
 
 /**
  * 相对时间:< 1m 显示本地化的「刚刚」,< 60m 显示「N 分钟前」,< 24h 显示「N 小时前」,
  * < 30d 显示「N 天前」,更早回退到 fmtCompact。最近活动场景用。
  */
-export function fmtRelative(val: unknown): string {
-  if (val === null || val === undefined || val === '') return '—'
-  const d = typeof val === 'number' ? new Date(val) : new Date(String(val))
-  if (isNaN(d.getTime())) return String(val)
-  const diff = Date.now() - d.getTime()
-  if (diff < 0) return fmtCompact(val) // 未来时间不走相对
+export function fmtRelative(val: unknown, timezone?: string): string {
+  const date = parseDate(val)
+  if (!date) return val === null || val === undefined || val === '' ? '—' : String(val)
+  const diff = Date.now() - date.getTime()
+  if (diff < 0) return fmtCompact(val, timezone) // 未来时间不走相对
   const sec = Math.floor(diff / 1000)
   if (sec < 60) return dt('justNow')
   const min = Math.floor(sec / 60)
@@ -90,7 +154,7 @@ export function fmtRelative(val: unknown): string {
   if (hr < 24) return dt('hoursAgo', { n: hr })
   const day = Math.floor(hr / 24)
   if (day < 30) return dt('daysAgo', { n: day })
-  return fmtCompact(val)
+  return fmtCompact(val, timezone)
 }
 
 /**

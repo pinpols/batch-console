@@ -153,6 +153,7 @@
   import MPullRefresh from '@/layout-mobile/MPullRefresh.vue'
   import MSkeleton from '@/layout-mobile/MSkeleton.vue'
   import MSearchBar from '@/layout-mobile/MSearchBar.vue'
+  import { fmtDatetime } from '@/utils/datetime'
   import {
     queryWorkers,
     drainWorker,
@@ -250,12 +251,7 @@
   }
 
   function fmt(ts?: string | null) {
-    if (!ts) return '—'
-    try {
-      return new Date(ts).toLocaleString('zh-CN', { hour12: false })
-    } catch {
-      return ts
-    }
+    return fmtDatetime(ts)
   }
 
   async function load() {

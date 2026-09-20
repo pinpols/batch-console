@@ -112,6 +112,7 @@
   import MSearchBar from '@/layout-mobile/MSearchBar.vue'
   import { queryApprovals, approveOne, rejectOne } from '@/api/approvals'
   import type { ConsoleApprovalCommandResponse } from '@/types/console-api'
+  import { fmtDatetime } from '@/utils/datetime'
 
   const { t, te } = useI18n({ useScope: 'global' })
   const tenant = useTenantStore()
@@ -193,12 +194,7 @@
   })
 
   function fmt(ts?: string | null) {
-    if (!ts) return '—'
-    try {
-      return new Date(ts).toLocaleString('zh-CN', { hour12: false })
-    } catch {
-      return ts
-    }
+    return fmtDatetime(ts)
   }
 
   function isPending(row: ConsoleApprovalCommandResponse) {

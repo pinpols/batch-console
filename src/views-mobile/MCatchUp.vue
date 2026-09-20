@@ -66,6 +66,7 @@
   import { fetchAllPageItems } from '@/api/adapters'
   import { approveOne, rejectOne } from '@/api/approvals'
   import type { ConsolePendingCatchUpResponse } from '@/types/console-api'
+  import { fmtDatetime } from '@/utils/datetime'
 
   const { t, te } = useI18n({ useScope: 'global' })
   const tenant = useTenantStore()
@@ -86,12 +87,7 @@
   const pendingCount = computed(() => rows.value.filter((r) => isPending(r.requestStatus)).length)
 
   function fmt(ts?: string | null) {
-    if (!ts) return '—'
-    try {
-      return new Date(ts).toLocaleString('zh-CN', { hour12: false })
-    } catch {
-      return ts
-    }
+    return fmtDatetime(ts)
   }
 
   function isPending(s?: string) {

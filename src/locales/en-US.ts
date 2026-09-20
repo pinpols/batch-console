@@ -454,6 +454,7 @@ const messages: Messages = {
   },
   tenantPackageImportWizard: {
     uploadTitle: 'Upload tenant config package',
+    unsupportedFileType: 'Only .xls / .xlsx files are supported. Current: {name}',
     uploadDesc:
       'Standard 11-sheet Excel package (job definitions, file channels, file templates, pipelines, workflows, plus resource queues/calendars/windows). Alert routings are not part of this package. Upload automatically opens validation preview before applying.',
     btnDownloadTemplate: 'Download package template',
@@ -745,6 +746,9 @@ const messages: Messages = {
   layoutHeader: {
     switchToEn: 'Switch to English',
     switchToZh: 'Switch to Chinese',
+    timezoneTooltip: 'Change display timezone',
+    timezoneLabel: 'Display timezone',
+    invalidTimezone: 'Invalid timezone',
     exitFullscreenTooltip: 'Exit fullscreen (Esc)',
   },
   rowActions: {

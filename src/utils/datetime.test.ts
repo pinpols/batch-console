@@ -8,10 +8,9 @@ afterEach(() => {
 })
 
 describe('fmtDatetime', () => {
-  it('formats ISO string to local datetime', () => {
-    // Use a fixed offset-0 string; result is local time
-    const result = fmtDatetime('2026-04-12T05:12:18.905Z')
-    expect(result).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)
+  it('formats ISO string in the requested IANA timezone', () => {
+    expect(fmtDatetime('2026-04-12T05:12:18.905Z', 'Asia/Shanghai')).toBe('2026-04-12 13:12:18')
+    expect(fmtDatetime('2026-04-12T05:12:18.905Z', 'America/New_York')).toBe('2026-04-12 01:12:18')
   })
 
   it('returns — for null', () => expect(fmtDatetime(null)).toBe('—'))
@@ -31,8 +30,8 @@ describe('fmtDatetime', () => {
 
 describe('fmtDate', () => {
   it('formats ISO string to date only', () => {
-    const result = fmtDate('2026-04-12T05:12:18.905Z')
-    expect(result).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+    expect(fmtDate('2026-04-12T05:12:18.905Z', 'Asia/Shanghai')).toBe('2026-04-12')
+    expect(fmtDate('2026-04-12')).toBe('2026-04-12')
   })
 
   it('returns — for null', () => expect(fmtDate(null)).toBe('—'))

@@ -655,8 +655,8 @@
     zoneDragover.value = false
     const f = ev.dataTransfer?.files?.[0]
     if (!f) return
-    if (!/\.(xlsx?|xlsm)$/i.test(f.name)) {
-      ElMessage.warning(`仅支持 .xls / .xlsx 文件,当前: ${f.name}`)
+    if (!/\.(xlsx?|xls)$/i.test(f.name)) {
+      ElMessage.warning(t('tenantPackageImportWizard.unsupportedFileType', { name: f.name }))
       return
     }
     setRawFile(f)

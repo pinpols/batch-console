@@ -87,6 +87,31 @@
           </button>
         </el-tooltip>
 
+        <el-dropdown trigger="click" @command="changeDisplayTimezone">
+          <el-tooltip :content="t('layoutHeader.timezoneTooltip')" placement="bottom">
+            <button
+              type="button"
+              class="icon-button header-icon"
+              :aria-label="t('layoutHeader.timezoneTooltip')"
+            >
+              <el-icon><TimezoneIcon /></el-icon>
+            </button>
+          </el-tooltip>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item disabled>{{ t('layoutHeader.timezoneLabel') }}</el-dropdown-item>
+              <el-dropdown-item
+                v-for="timezone in timezoneOptions"
+                :key="timezone"
+                :command="timezone"
+                :disabled="timezone === currentTimezone"
+              >
+                {{ timezone }}
+              </el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
+
         <el-tooltip :content="t('nav.mobilePreview')" placement="bottom">
           <button type="button" class="icon-button header-icon" @click="openMobilePreview">
             <el-icon><Iphone /></el-icon>
@@ -144,7 +169,7 @@
 
 <script setup lang="ts">
   import { useRouter } from 'vue-router'
-  import { ElMessageBox } from 'element-plus'
+  import { ElMessage, ElMessageBox } from 'element-plus'
   // 还原设计:顶栏图标统一 Lucide 线性图标(与侧栏一致)
   import {
     ChevronDown as ArrowDown,
@@ -159,6 +184,7 @@
     Search,
     Sun as Sunny,
     LogOut as SwitchButton,
+    Globe2 as TimezoneIcon,
   } from 'lucide-vue-next'
   import TenantSelect from '@/components/common/TenantSelect.vue'
   import NotificationCenter from './NotificationCenter.vue'
@@ -169,9 +195,25 @@
   import { useMobileBadgesStore } from '@/stores/mobileBadges'
   import { useTenantStore } from '@/stores/tenant'
   import { useAutoRefresh } from '@/composables/useAutoRefresh'
+  import {
+    DISPLAY_TIMEZONE_OPTIONS,
+    displayTimezone,
+    writeDisplayTimezone,
+  } from '@/constants/timezone'
 
   const { t } = useI18n({ useScope: 'global' })
   const { current: currentLocale, setLocale } = useLocale()
+  const timezoneOptions = DISPLAY_TIMEZONE_OPTIONS
+  const currentTimezone = displayTimezone
+
+  function changeDisplayTimezone(timezone: string | number | object) {
+    if (typeof timezone !== 'string' || timezone === currentTimezone.value) return
+    try {
+      writeDisplayTimezone(timezone)
+    } catch {
+      ElMessage.error(t('layoutHeader.invalidTimezone'))
+    }
+  }
 
   // 只有两种语言,直接切而不是下拉:tooltip 显示"切到对端"提示
   const localeToggleTooltip = computed(() =>
