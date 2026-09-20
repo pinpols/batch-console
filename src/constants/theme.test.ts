@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   readThemePreference,
   resolveEffectiveTheme,
+  resolveThemeForPath,
   THEME_REDESIGN_DEFAULT_STORAGE_KEY,
   THEME_STORAGE_KEY,
 } from './theme'
@@ -46,5 +47,12 @@ describe('theme', () => {
   it('resolves system preference from current color scheme', () => {
     expect(resolveEffectiveTheme('system', true)).toBe('dark')
     expect(resolveEffectiveTheme('system', false)).toBe('light')
+  })
+
+  it('keeps the login entry dark without changing other route preferences', () => {
+    expect(resolveThemeForPath('/login', 'light', false)).toBe('dark')
+    expect(resolveThemeForPath('/login/', 'system', false)).toBe('dark')
+    expect(resolveThemeForPath('/ops/summary', 'light', true)).toBe('light')
+    expect(resolveThemeForPath('/ops/summary', 'system', true)).toBe('dark')
   })
 })

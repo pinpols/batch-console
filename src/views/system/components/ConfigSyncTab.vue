@@ -36,9 +36,11 @@
                   v-for="opt in exportTypeOptions"
                   :key="opt.value"
                   class="sync__type-option"
-                  :class="{ 'is-checked': opt.checked }"
+                  :class="{ 'is-checked': selectedExportTypes.includes(opt.value) }"
                 >
-                  <el-checkbox v-model="opt.checked">{{ opt.label }}</el-checkbox>
+                  <el-checkbox v-model="selectedExportTypes" :value="opt.value">
+                    {{ opt.label }}
+                  </el-checkbox>
                 </label>
               </div>
               <p class="sync__types-hint">{{ t('configSyncTab.typesDescAll') }}</p>
@@ -173,6 +175,7 @@
   import { confirmDanger } from '@/composables/useDangerConfirm'
   import JsonPreview from '@/components/common/JsonPreview.vue'
   import JsonTextareaInput from '@/components/common/JsonTextareaInput.vue'
+  import { localizeConfigSyncTypeOptions, type ConfigSyncType } from './configSyncTypeOptions'
 
   const ENV_PRESETS = ['default', 'dev', 'staging', 'prod']
 
@@ -202,23 +205,9 @@
 
   onMounted(loadTenants)
 
-  // BE TenantConfigCopyRequest.ConfigType 短别名
-  const exportTypeOptions = ref([
-    { value: 'JOB', label: t('configSyncTab.typeJob'), checked: false },
-    { value: 'WORKFLOW', label: t('configSyncTab.typeWorkflow'), checked: false },
-    { value: 'PIPELINE', label: t('configSyncTab.typePipeline'), checked: false },
-    { value: 'FILE_CHANNEL', label: t('configSyncTab.typeFileChannel'), checked: false },
-    { value: 'FILE_TEMPLATE', label: t('configSyncTab.typeFileTemplate'), checked: false },
-    { value: 'RESOURCE_QUEUE', label: t('configSyncTab.typeResourceQueue'), checked: false },
-    { value: 'BATCH_WINDOW', label: t('configSyncTab.typeBatchWindow'), checked: false },
-    {
-      value: 'BUSINESS_CALENDAR',
-      label: t('configSyncTab.typeBusinessCalendar'),
-      checked: false,
-    },
-    { value: 'QUOTA_POLICY', label: t('configSyncTab.typeQuotaPolicy'), checked: false },
-    { value: 'ALERT_ROUTING', label: t('configSyncTab.typeAlertRouting'), checked: false },
-  ])
+  // 文案必须由 computed 生成,否则切换 locale 后初始化时的翻译会残留。
+  const exportTypeOptions = computed(() => localizeConfigSyncTypeOptions(t))
+  const selectedExportTypes = ref<ConfigSyncType[]>([])
 
   const exporting = ref(false)
   const previewing = ref(false)
@@ -253,7 +242,7 @@
   async function doExport() {
     exporting.value = true
     try {
-      const types = exportTypeOptions.value.filter((o) => o.checked).map((o) => o.value)
+      const types = selectedExportTypes.value
       exportResult.value = await exportConfigSync({
         sourceTenantId: tenant.tenantId,
         sourceEnv: sourceEnv.value.trim() || 'default',
@@ -352,7 +341,7 @@
     previewResult.value = null
     importPayload.value = ''
     targetTenantIds.value = []
-    exportTypeOptions.value.forEach((o) => (o.checked = false))
+    selectedExportTypes.value = []
     void loadTenants()
   })
 </script>

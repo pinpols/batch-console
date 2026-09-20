@@ -123,7 +123,7 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, ref, reactive, onMounted } from 'vue'
+  import { computed, ref, reactive, onBeforeUnmount, onMounted } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { CircleX as CircleClose, Lock, User } from 'lucide-vue-next'
 
@@ -139,6 +139,12 @@
   import CaptchaChallenge from '@/components/common/CaptchaChallenge.vue'
   import type { AxiosRequestConfig } from 'axios'
   import { lastApiMeta } from '@/utils/lastApiMeta'
+  import {
+    applyThemeToDocument,
+    getSystemIsDark,
+    readThemePreference,
+    resolveEffectiveTheme,
+  } from '@/constants/theme'
 
   const router = useRouter()
   const route = useRoute()
@@ -147,6 +153,12 @@
   const localeToggleTooltip = computed(() =>
     currentLocale.value === 'zh-CN' ? t('layoutHeader.switchToEn') : t('layoutHeader.switchToZh'),
   )
+
+  // 登录入口始终采用深色视觉；离开后恢复用户在控制台内保存的主题偏好。
+  applyThemeToDocument('dark')
+  onBeforeUnmount(() => {
+    applyThemeToDocument(resolveEffectiveTheme(readThemePreference(), getSystemIsDark()))
+  })
 
   const formRef = ref<FormInstance>()
   const loading = ref(false)
@@ -386,8 +398,8 @@
     font-weight: 700;
     letter-spacing: 0.06em;
     color: #fff;
-    background: linear-gradient(135deg, var(--color-primary), #0f5ed9);
-    box-shadow: 0 4px 12px rgb(22 119 255 / 20%);
+    background: var(--button-primary-bg);
+    box-shadow: 0 4px 12px color-mix(in srgb, var(--button-primary-bg) 20%, transparent);
   }
 
   .login-brand__name {
@@ -424,14 +436,9 @@
     margin-bottom: 20px;
     padding: 10px 12px;
     font-size: 12px;
-    background: rgb(241 245 249 / 60%);
+    background: var(--color-bg-subtle);
     border: 1px solid var(--color-border-light);
     border-radius: var(--radius-content);
-  }
-
-  html.dark .login-trace {
-    background: rgb(30 41 59 / 50%);
-    border-color: rgb(148 163 184 / 14%);
   }
 
   .login-trace__label {
@@ -471,7 +478,7 @@
     min-height: 46px;
     border-radius: var(--radius-content);
     box-shadow: none;
-    background: rgb(248 250 252 / 80%);
+    background: var(--input-bg);
     border: 1px solid var(--color-border-light);
     transition:
       border-color 0.2s ease,
@@ -479,24 +486,24 @@
       background 0.2s ease;
   }
 
-  html.dark .login-form :deep(.el-input__wrapper) {
-    background: rgb(15 23 42 / 50%);
-    border-color: rgb(148 163 184 / 16%);
-  }
-
   .login-form :deep(.el-input__wrapper:hover) {
     border-color: color-mix(in srgb, var(--color-primary) 30%, var(--color-border));
   }
 
   .login-form :deep(.el-input__wrapper.is-focus) {
-    background: #fff;
+    background: var(--input-bg);
     border-color: var(--color-primary);
-    box-shadow: 0 0 0 3px rgb(22 119 255 / 10%);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 14%, transparent);
   }
 
-  html.dark .login-form :deep(.el-input__wrapper.is-focus) {
-    background: rgb(15 23 42 / 80%);
-    box-shadow: 0 0 0 3px rgb(59 130 246 / 14%);
+  /* 浏览器自动填充不能盖掉登录页主题色。 */
+  .login-form :deep(.el-input__inner:-webkit-autofill),
+  .login-form :deep(.el-input__inner:-webkit-autofill:hover),
+  .login-form :deep(.el-input__inner:-webkit-autofill:focus) {
+    caret-color: var(--color-text-primary);
+    -webkit-text-fill-color: var(--color-text-primary);
+    -webkit-box-shadow: 0 0 0 1000px var(--input-bg) inset;
+    transition: background-color 9999s ease-out 0s;
   }
 
   .login-form :deep(.el-input__prefix) {
@@ -534,11 +541,7 @@
     border: none;
     border-radius: var(--radius-content);
     color: var(--button-primary-text);
-    background: linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--button-primary-bg) 78%, #ffffff 22%) 0%,
-      color-mix(in srgb, var(--button-primary-bg) 94%, #ffffff 6%) 100%
-    );
+    background: var(--button-primary-bg);
     box-shadow: 0 4px 14px color-mix(in srgb, var(--button-primary-bg) 16%, transparent);
     transition:
       transform 0.2s ease,
@@ -547,11 +550,7 @@
 
   .login-submit:hover {
     transform: translateY(-1px);
-    background: linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--button-primary-bg-hover) 78%, #ffffff 22%) 0%,
-      color-mix(in srgb, var(--button-primary-bg-hover) 94%, #ffffff 6%) 100%
-    );
+    background: var(--button-primary-bg-hover);
     box-shadow: 0 6px 20px color-mix(in srgb, var(--button-primary-bg) 26%, transparent);
   }
 
