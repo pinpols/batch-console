@@ -189,6 +189,10 @@ export const pageMetaByPath = {
     title: '登录账户',
     description: '控制台登录账号:username、显示名、角色、启停、密码重置等。',
   },
+  '/system/me': {
+    title: '我的账户',
+    description: '查看当前登录身份并管理账号安全。',
+  },
   '/system/parameters': {
     title: '系统参数',
     description: '维护系统级参数键值,控制平台运行开关。',

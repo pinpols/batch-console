@@ -4,11 +4,18 @@ import { useAuthStore } from './auth'
 import { useTenantStore } from './tenant'
 
 const storage = new Map<string, string>()
+const sessionStorageState = new Map<string, string>()
 vi.stubGlobal('localStorage', {
   getItem: (k: string) => storage.get(k) ?? null,
   setItem: (k: string, v: string) => storage.set(k, v),
   removeItem: (k: string) => storage.delete(k),
   clear: () => storage.clear(),
+})
+vi.stubGlobal('sessionStorage', {
+  getItem: (k: string) => sessionStorageState.get(k) ?? null,
+  setItem: (k: string, v: string) => sessionStorageState.set(k, v),
+  removeItem: (k: string) => sessionStorageState.delete(k),
+  clear: () => sessionStorageState.clear(),
 })
 
 vi.mock('@/api/client', () => ({
@@ -26,12 +33,14 @@ vi.mock('@/api/auth', () => ({
     role: p.role,
     permissions: p.permissions ?? [],
     menus: p.menus,
+    mustChangePassword: p.mustChangePassword,
   })),
 }))
 
 describe('useAuthStore', () => {
   beforeEach(() => {
     storage.clear()
+    sessionStorageState.clear()
     setActivePinia(createPinia())
     vi.clearAllMocks()
   })
@@ -73,6 +82,48 @@ describe('useAuthStore', () => {
     expect(auth.isLoggedIn).toBe(false)
     expect(auth.userInfo).toBeNull()
     expect(storage.get('batch-console-session')).toBeUndefined()
+  })
+
+  it('preserves a login password reminder when legacy /auth/me omits the field', async () => {
+    const { authApi } = await import('@/api/auth')
+    vi.mocked(authApi.login).mockResolvedValue({
+      tenantId: 'system',
+      userInfo: {
+        username: 'admin',
+        mustChangePassword: true,
+        permissions: ['ROLE_ADMIN'],
+      },
+    } as Awaited<ReturnType<typeof authApi.login>>)
+    const { get } = await import('@/api/client')
+    vi.mocked(get).mockResolvedValue({
+      username: 'admin',
+      permissions: ['ROLE_ADMIN'],
+    } as never)
+
+    const auth = useAuthStore()
+    await auth.login('admin', 'pw')
+    await auth.fetchMe()
+
+    expect(auth.userInfo?.mustChangePassword).toBe(true)
+  })
+
+  it('clears the cached password reminder after a successful password change', async () => {
+    const { authApi } = await import('@/api/auth')
+    vi.mocked(authApi.login).mockResolvedValue({
+      tenantId: 'system',
+      userInfo: {
+        username: 'admin',
+        mustChangePassword: true,
+        permissions: ['ROLE_ADMIN'],
+      },
+    } as Awaited<ReturnType<typeof authApi.login>>)
+
+    const auth = useAuthStore()
+    await auth.login('admin', 'pw')
+    auth.clearPasswordReminder()
+
+    expect(auth.userInfo?.mustChangePassword).toBe(false)
+    expect(sessionStorageState.get('batch-console-password-notice')).toBeUndefined()
   })
 
   it('fetchMe deduplicates concurrent calls', async () => {

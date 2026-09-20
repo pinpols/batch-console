@@ -1449,6 +1449,10 @@ const messages: Messages = {
       description:
         'Console accounts: username, display name, role, enable/disable, password reset.',
     },
+    systemMe: {
+      title: 'My account',
+      description: 'Review the signed-in identity and manage account security.',
+    },
     systemParameters: {
       title: 'System parameters',
       description: 'Maintain system-level key-value params for platform switches.',
@@ -1520,12 +1524,12 @@ const messages: Messages = {
     sectionTitle: 'Current account',
     changePasswordTitle: 'Change password',
     changePasswordDescription:
-      'The account state is refreshed after update; forced-change flow returns home.',
+      'The account state is refreshed after update and the password reminder disappears.',
     accountDescription:
       'Review the signed-in identity and tenant context, then update the login password when needed.',
     accountContextTitle: 'Account context',
     accountContextDescription: 'Confirm which signed-in identity this password change affects.',
-    securityRequired: 'Security required',
+    securityRequired: 'Security reminder',
     securityNormal: 'Account security',
     fieldUsername: 'Username',
     fieldRole: 'Role',
@@ -1540,9 +1544,9 @@ const messages: Messages = {
     placeholderConfirmPassword: 'Re-enter new password',
     hintNewPassword: 'At least 12 chars, must differ from current',
     btnSubmit: 'Update password',
-    mustChangeTitle: 'Please change your password',
+    mustChangeTitle: 'Consider changing your password',
     mustChangeDescription:
-      'Your password was just set or reset by an admin. Please update it before continuing.',
+      'Your password was initially set or reset by an admin. You can continue using the console, but should update it soon.',
     expiringTitle: 'Password expires in {days} days — please update soon',
     changeSuccess: 'Password changed',
     ruleOldPassword: 'Please enter current password',
@@ -1551,6 +1555,13 @@ const messages: Messages = {
     ruleNewSameAsOld: 'New password must differ from current',
     ruleConfirmRequired: 'Please re-enter new password',
     ruleConfirmMismatch: 'Passwords do not match',
+  },
+  passwordNotice: {
+    updateTitle: 'Password update recommended',
+    updateDescription: 'This password was initially set or reset by an admin. Update it soon.',
+    expiringTitle: 'Password expires in {days} days',
+    expiringDescription: 'Update it before expiry to avoid a future sign-in interruption.',
+    action: 'Change password',
   },
   toast: {
     saveSuccess: 'Saved',

@@ -990,19 +990,6 @@ router.beforeEach(async (to, from) => {
     }
   }
 
-  // P1 强制首次/重置后改密码(BE 字段 mustChangePassword);字段缺失视为 false 不拦
-  // 例外:/system/me 自己,以及 login/logout 类路径,不能拦否则死循环
-  const localUiAuditBypass =
-    import.meta.env.DEV && window.location.hostname === 'localhost' && to.query.__uiAudit === '1'
-  if (
-    auth.userInfo?.mustChangePassword === true &&
-    to.path !== '/system/me' &&
-    !to.path.startsWith('/login') &&
-    !localUiAuditBypass
-  ) {
-    return { path: '/system/me', query: { mustChange: '1' } }
-  }
-
   // 首登向导:系统 0 租户时,ADMIN 必须先建第一个租户。其它角色无创建权限,
   // 在登录页 BE 已校验过账户必有 tenant 绑定;到这里依旧 0 租户属于异常,放行让
   // 业务页空态自行提示。检测带内存缓存(系统级状态变化频率极低),向导创建后

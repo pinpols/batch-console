@@ -1,27 +1,27 @@
 <template>
   <PageContainer>
-    <PageHeader v-if="!isForcedPasswordFlow" />
+    <PageHeader />
 
-    <section class="me-hero" :class="{ 'me-hero--forced': isForcedPasswordFlow }">
+    <section class="me-hero" :class="{ 'me-hero--reminder': showPasswordReminder }">
       <div class="me-hero__icon" aria-hidden="true">
-        <ShieldCheck v-if="isForcedPasswordFlow" :size="26" />
+        <ShieldCheck v-if="showPasswordReminder" :size="26" />
         <UserRound v-else :size="26" />
       </div>
       <div class="me-hero__content">
         <div class="me-hero__topline">
-          <el-tag :type="isForcedPasswordFlow ? 'warning' : 'info'" effect="plain" size="small">
+          <el-tag :type="showPasswordReminder ? 'warning' : 'info'" effect="plain" size="small">
             {{
-              isForcedPasswordFlow ? t('myAccount.securityRequired') : t('myAccount.securityNormal')
+              showPasswordReminder ? t('myAccount.securityRequired') : t('myAccount.securityNormal')
             }}
           </el-tag>
           <span class="me-hero__tenant">{{ tenant.tenantId || '—' }}</span>
         </div>
-        <h1>
-          {{ isForcedPasswordFlow ? t('myAccount.mustChangeTitle') : t('myAccount.sectionTitle') }}
-        </h1>
+        <h2>
+          {{ showPasswordReminder ? t('myAccount.mustChangeTitle') : t('myAccount.sectionTitle') }}
+        </h2>
         <p>
           {{
-            isForcedPasswordFlow
+            showPasswordReminder
               ? t('myAccount.mustChangeDescription')
               : t('myAccount.accountDescription')
           }}
@@ -74,7 +74,7 @@
         </div>
 
         <el-alert
-          v-if="!isForcedPasswordFlow && isPasswordExpiringSoon"
+          v-if="!showPasswordReminder && isPasswordExpiringSoon"
           type="warning"
           :title="t('myAccount.expiringTitle', { days: auth.userInfo?.passwordExpiringIn })"
           show-icon
@@ -206,7 +206,7 @@
   const hiddenPermissionCount = computed(() =>
     Math.max((auth.userInfo?.permissions?.length ?? 0) - visiblePermissions.value.length, 0),
   )
-  const isForcedPasswordFlow = computed(
+  const showPasswordReminder = computed(
     () => route.query.mustChange === '1' || auth.userInfo?.mustChangePassword === true,
   )
   const isPasswordExpiringSoon = computed(
@@ -268,10 +268,11 @@
         newPassword: form.newPassword,
       })
       ElMessage.success(t('myAccount.changeSuccess'))
-      // 改完后,如果之前是 mustChangePassword,清掉本地态,让 guard 放行
+      auth.clearPasswordReminder()
+      // 改完后重新拉取账号状态,使全局提醒自动消失。
       await auth.fetchMe().catch(() => undefined)
       formRef.value?.resetFields()
-      // 若强制改流程,改完跳回首页
+      // 从密码提醒进入时,改完回到首页。
       if (wasMustChangePassword || auth.userInfo?.mustChangePassword === false) {
         await router.push('/')
       }
@@ -300,7 +301,7 @@
     box-shadow: 0 1px 2px color-mix(in srgb, #1f2937 5%, transparent);
   }
 
-  .me-hero--forced {
+  .me-hero--reminder {
     border-color: color-mix(in srgb, var(--color-warning) 32%, var(--color-border-light));
     background: linear-gradient(
       135deg,
@@ -321,7 +322,7 @@
     background: color-mix(in srgb, var(--color-primary) 8%, var(--color-bg-card));
   }
 
-  .me-hero--forced .me-hero__icon {
+  .me-hero--reminder .me-hero__icon {
     color: var(--color-warning);
     border-color: color-mix(in srgb, var(--color-warning) 28%, var(--color-border-light));
     background: color-mix(in srgb, var(--color-warning) 12%, var(--color-bg-card));
@@ -344,7 +345,7 @@
     color: var(--color-text-tertiary);
   }
 
-  .me-hero h1 {
+  .me-hero h2 {
     margin: 0;
     font-size: 19px;
     font-weight: 650;

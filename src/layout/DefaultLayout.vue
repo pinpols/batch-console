@@ -6,6 +6,7 @@
       <MaintenanceBanner />
       <DegradationBanner />
       <NoTenantBanner />
+      <PasswordNoticeBanner />
       <LayoutHeader @open-palette="paletteOpen = true" />
 
       <el-main class="layout-main">
@@ -65,6 +66,7 @@
   import MaintenanceBanner from '@/components/common/MaintenanceBanner.vue'
   import DegradationBanner from '@/components/common/DegradationBanner.vue'
   import NoTenantBanner from '@/components/common/NoTenantBanner.vue'
+  import PasswordNoticeBanner from '@/components/common/PasswordNoticeBanner.vue'
   import SwUpdatePrompt from '@/components/common/SwUpdatePrompt.vue'
   import LayoutSidebar from '@/layout/LayoutSidebar.vue'
   import LayoutHeader from '@/layout/components/LayoutHeader.vue'

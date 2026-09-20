@@ -12,6 +12,34 @@ import type { UserInfo, Role, MenuGroup } from '@/types'
  * 内容是常量 "1"，无敏感信息；页面刷新后避免登录态闪烁。真正鉴权靠后端 cookie。
  */
 const SESSION_FLAG_KEY = 'batch-console-session'
+const PASSWORD_NOTICE_KEY = 'batch-console-password-notice'
+
+interface PasswordNoticeState {
+  username: string
+  mustChangePassword: true
+}
+
+function readPasswordNotice(username: string): boolean {
+  try {
+    const raw = sessionStorage.getItem(PASSWORD_NOTICE_KEY)
+    if (!raw) return false
+    const state = JSON.parse(raw) as Partial<PasswordNoticeState>
+    return state.username === username && state.mustChangePassword === true
+  } catch {
+    return false
+  }
+}
+
+function writePasswordNotice(username: string, mustChangePassword: boolean | undefined) {
+  if (mustChangePassword === true) {
+    sessionStorage.setItem(
+      PASSWORD_NOTICE_KEY,
+      JSON.stringify({ username, mustChangePassword: true } satisfies PasswordNoticeState),
+    )
+    return
+  }
+  if (mustChangePassword === false) sessionStorage.removeItem(PASSWORD_NOTICE_KEY)
+}
 
 export const useAuthStore = defineStore('auth', () => {
   const sessionActive = ref<boolean>(localStorage.getItem(SESSION_FLAG_KEY) === '1')
@@ -59,6 +87,7 @@ export const useAuthStore = defineStore('auth', () => {
     sessionActive.value = true
     userInfoInternal.value = result.userInfo
     localStorage.setItem(SESSION_FLAG_KEY, '1')
+    writePasswordNotice(result.userInfo.username, result.userInfo.mustChangePassword)
     const tenant = useTenantStore()
     // 'system' 是 admin 账号宿主,不是业务工作租户;落地到 system 会让所有业务页空白。
     // 保留 localStorage 里上次选的业务租户;首次登录 localStorage 为空时走右上角租户切换器手动选。
@@ -75,6 +104,7 @@ export const useAuthStore = defineStore('auth', () => {
     sessionActive.value = false
     userInfoInternal.value = null
     localStorage.removeItem(SESSION_FLAG_KEY)
+    sessionStorage.removeItem(PASSWORD_NOTICE_KEY)
   }
 
   async function fetchMe() {
@@ -92,7 +122,15 @@ export const useAuthStore = defineStore('auth', () => {
         // 落地前再校验一次:如果用户切租户在响应回来前发生,丢弃当前响应,
         // 避免 A 租户的 profile 写到 B 租户上下文里(role / menus / permissions 错配)
         if (tenant.tenantId === requestedTenantId) {
-          userInfoInternal.value = mapProfileToUserInfo(profile)
+          const nextUserInfo = mapProfileToUserInfo(profile)
+          if (
+            nextUserInfo.mustChangePassword == null &&
+            readPasswordNotice(nextUserInfo.username)
+          ) {
+            nextUserInfo.mustChangePassword = true
+          }
+          userInfoInternal.value = nextUserInfo
+          writePasswordNotice(nextUserInfo.username, nextUserInfo.mustChangePassword)
         }
         // 注意：不要在这里 setTenantId(profile.tenantId)。
         // 客户端是 tenant 选择的唯一真源（login/localStorage/切换都走 tenant store），
@@ -120,6 +158,13 @@ export const useAuthStore = defineStore('auth', () => {
     },
   )
 
+  function clearPasswordReminder() {
+    sessionStorage.removeItem(PASSWORD_NOTICE_KEY)
+    if (userInfoInternal.value) {
+      userInfoInternal.value = { ...userInfoInternal.value, mustChangePassword: false }
+    }
+  }
+
   return {
     userInfo,
     isLoggedIn,
@@ -131,5 +176,6 @@ export const useAuthStore = defineStore('auth', () => {
     login,
     logout,
     fetchMe,
+    clearPasswordReminder,
   }
 })

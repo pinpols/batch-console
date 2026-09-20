@@ -75,15 +75,15 @@ export interface UserInfo {
   /** 后端下发的侧边栏菜单（已按当前 authorities 过滤） */
   menus?: MenuGroup[]
   /**
-   * 首次登录 / admin reset 后强制改密码。
+   * 首次登录 / admin reset 后提示用户修改密码。
    * BE 在 /auth/login + /auth/me response 带此字段。
-   * 字段缺失时视为 false(向后兼容老 BE 版本)。
+   * 字段缺失时 auth store 可复用本次登录的会话级提示状态。
    */
   mustChangePassword?: boolean
   /**
    * P3 待 BE 实施:密码距离过期剩余天数。
    * BE schema 加 password_expires_at,login response 计算返回。
-   * < 7 时 FE banner 提示;≤ 0 时强制改(同 mustChangePassword 路径)。
+   * <= 7 时 FE 以非阻断 banner 提醒修改密码。
    */
   passwordExpiringIn?: number
 }
