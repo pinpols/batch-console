@@ -861,7 +861,11 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    get?: never
+    /**
+     * ADR-020 批次日重放 session 历史列表
+     * @description 转发到 orchestrator `GET /internal/orchestrator/batch-day-replay/sessions`，按 created_at desc / id desc 返回最近 session。
+     */
+    get: operations['listBatchDayReplaySessions']
     put?: never
     /**
      * ADR-020 提交批次日重放 session
@@ -8596,6 +8600,8 @@ export interface components {
       authorities: string[]
       /** @description 按当前用户 authorities 过滤后的侧边栏菜单树，由后端 ConsoleMenuRegistry 下发，前端不再硬编码。 */
       menus: components['schemas']['ConsoleMenuGroup'][]
+      /** @description 首次登录/重置后强制改密标志；true 时 FE 应跳改密页。 */
+      mustChangePassword: boolean
     }
     /** @description 侧边栏菜单分组。 */
     ConsoleMenuGroup: {
@@ -10020,6 +10026,89 @@ export interface components {
       /** Format: int32 */
       workflowUpdated: number
     }
+    CreateWebhookRequest: {
+      name: string
+      callbackUrl: string
+      eventTypes: string[]
+      /** @description HMAC signing secret; accepted on write and never returned by subscription responses. */
+      secret?: string | null
+      /** @default true */
+      enabled: boolean
+    }
+    UpdateWebhookRequest: {
+      callbackUrl: string
+      eventTypes: string[]
+      /** @description HMAC signing secret; accepted on write and never returned by subscription responses. */
+      secret?: string | null
+      enabled?: boolean | null
+    }
+    WebhookSubscriptionResponse: {
+      /** Format: int64 */
+      id: number
+      tenantId: string
+      name: string
+      callbackUrl: string
+      /** @description Comma-separated event type list as persisted by ConsoleWebhookService. */
+      eventTypes: string
+      enabled?: boolean | null
+      createdBy?: string | null
+      updatedBy?: string | null
+      /** Format: date-time */
+      createdAt?: string | null
+      /** Format: date-time */
+      updatedAt?: string | null
+    }
+    WebhookDeliveryLogResponse: {
+      /** Format: int64 */
+      id: number
+      tenantId: string
+      /** Format: int64 */
+      subscriptionId: number
+      eventType: string
+      payloadJson?: string | null
+      /** Format: int32 */
+      httpStatus?: number | null
+      responseBody?: string | null
+      deliveryStatus: components['schemas']['WebhookDeliveryStatus']
+      /** Format: int32 */
+      attempt: number
+      /** Format: date-time */
+      nextRetryAt?: string | null
+      /** Format: date-time */
+      createdAt: string
+    }
+    CommonResponseWebhookSubscription: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['WebhookSubscriptionResponse']
+    }
+    CommonResponseWebhookSubscriptionList: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['WebhookSubscriptionResponse'][]
+    }
+    CommonResponseWebhookDeliveryLogList: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['WebhookDeliveryLogResponse'][]
+    }
+    CustomTaskTypeResponse: {
+      /** Format: int64 */
+      id: number
+      tenantId: string
+      taskTypeCode: string
+      displayName: string
+      /** @description Full custom task descriptor JSON string declared by SDK worker. */
+      descriptor: string
+      descriptorVersion: string
+      source: string
+      declaredByWorkerCode?: string | null
+      status: string
+      /** Format: date-time */
+      firstDeclaredAt?: string | null
+      /** Format: date-time */
+      lastDeclaredAt?: string | null
+    }
+    CommonResponseCustomTaskType: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['CustomTaskTypeResponse']
+    }
+    CommonResponseCustomTaskTypeList: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['CustomTaskTypeResponse'][]
+    }
     /** @enum {string} */
     TriggerStatus:
       | 'NORMAL'
@@ -10135,6 +10224,9 @@ export interface components {
     }
     CommonResponseBatchDayReplaySession: components['schemas']['CommonResponseBase'] & {
       data?: components['schemas']['BatchDayReplaySession']
+    }
+    CommonResponseBatchDayReplaySessionList: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['BatchDayReplaySession'][]
     }
     /** @description ADR-020 批次日重放 entry 投影（console 透传 orchestrator 实体）。 */
     BatchDayReplayEntry: {
@@ -12193,6 +12285,30 @@ export interface operations {
       }
     }
   }
+  listBatchDayReplaySessions: {
+    parameters: {
+      query?: {
+        tenantId?: string
+        status?: string
+        limit?: number
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseBatchDayReplaySessionList']
+        }
+      }
+    }
+  }
   submitBatchDayReplay: {
     parameters: {
       query?: never
@@ -12879,7 +12995,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseWebhookSubscriptionList']
         }
       }
     }
@@ -12895,14 +13011,7 @@ export interface operations {
     }
     requestBody: {
       content: {
-        'application/json': {
-          name: string
-          callbackUrl: string
-          eventTypes: string[]
-          secret?: string
-          /** @default true */
-          enabled?: boolean
-        }
+        'application/json': components['schemas']['CreateWebhookRequest']
       }
     }
     responses: {
@@ -12912,7 +13021,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseWebhookSubscription']
         }
       }
     }
@@ -12936,7 +13045,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseWebhookSubscription']
         }
       }
     }
@@ -12954,12 +13063,7 @@ export interface operations {
     }
     requestBody: {
       content: {
-        'application/json': {
-          callbackUrl: string
-          eventTypes: string[]
-          secret?: string
-          enabled?: boolean
-        }
+        'application/json': components['schemas']['UpdateWebhookRequest']
       }
     }
     responses: {
@@ -12969,7 +13073,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseWebhookSubscription']
         }
       }
     }
@@ -13017,7 +13121,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseWebhookDeliveryLogList']
         }
       }
     }
@@ -13861,13 +13965,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': {
-            code?: string
-            message?: string
-            data?: {
-              [key: string]: unknown
-            }[]
-          }
+          'application/json': components['schemas']['CommonResponseCustomTaskTypeList']
         }
       }
     }
@@ -13973,13 +14071,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': {
-            code?: string
-            message?: string
-            data?: {
-              [key: string]: unknown
-            }
-          }
+          'application/json': components['schemas']['CommonResponseCustomTaskType']
         }
       }
       /** @description Task type not found for tenant */
@@ -20733,8 +20825,10 @@ export interface operations {
   downloadTenantConfigPackageExcelSampleTemplate: {
     parameters: {
       query?: {
-        /** @description Scenario filter. ALL keeps all sample scenarios. */
+        /** @description Legacy single scenario filter. ALL keeps all sample scenarios. */
         scenario?: 'ALL' | 'IMPORT' | 'EXPORT' | 'PROCESS' | 'DISPATCH' | 'ATOMIC' | 'WORKFLOW'
+        /** @description Multi-select scenario filter. Repeat the parameter for multiple scenarios; ALL keeps all sample scenarios. */
+        scenarios?: ('ALL' | 'IMPORT' | 'EXPORT' | 'PROCESS' | 'DISPATCH' | 'ATOMIC' | 'WORKFLOW')[]
       }
       header?: never
       path?: never

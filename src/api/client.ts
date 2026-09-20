@@ -13,10 +13,8 @@ export const apiClient = axios.create({
   // 兼容期 Authorization header 仍由 interceptor 注入(双轨),后续 PR 完成迁移后再删。
   withCredentials: true,
   // CSRF 纵深防御:axios 默认会读 cookie `XSRF-TOKEN` 透传到 header `X-XSRF-TOKEN`。
-  // 显式声明避免被全局 defaults 覆盖。BE 侧若启用 Spring CookieCsrfTokenRepository
-  // (或等价方案)在初始 GET 时下发 non-HttpOnly `XSRF-TOKEN` cookie,后续 mutating
-  // 请求即可自动带上 token。BE 当前可能尚未配置,FE 先打底,无 cookie 时 axios
-  // 不会注 header,无破坏性。TODO(BE):#csrf 启用 CookieCsrfTokenRepository。
+  // 显式声明避免被全局 defaults 覆盖。BE 侧 Spring CookieCsrfTokenRepository
+  // 在初始 GET 时下发 non-HttpOnly `XSRF-TOKEN` cookie,后续 mutating 请求自动带 token。
   xsrfCookieName: 'XSRF-TOKEN',
   xsrfHeaderName: 'X-XSRF-TOKEN',
   headers: { 'Content-Type': 'application/json' },

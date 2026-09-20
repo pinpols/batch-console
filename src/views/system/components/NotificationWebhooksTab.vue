@@ -196,6 +196,8 @@
     updateWebhook,
     deleteWebhook,
     listWebhookDeliveryLogs,
+    type WebhookDeliveryLog,
+    type WebhookSubscription,
   } from '@/api/webhooks'
   import { toPageResult } from '@/api/adapters'
   import { useTenantStore } from '@/stores/tenant'
@@ -219,7 +221,7 @@
   const webhookFormVisible = ref(false)
   const webhookLogVisible = ref(false)
   const webhookEditingId = ref<number | null>(null)
-  const webhookRows = ref<Record<string, unknown>[]>([])
+  const webhookRows = ref<WebhookSubscription[]>([])
   const webhookPage = ref(1)
   const webhookPageSize = ref(15)
   const webhookFilterDraft = reactive({ keyword: '', enabled: undefined as boolean | undefined })
@@ -227,7 +229,7 @@
   const hasActiveWebhookFilters = computed(
     () => !!(webhookFilterApplied.keyword.trim() || webhookFilterApplied.enabled !== undefined),
   )
-  const webhookDeliveryLogs = ref<Record<string, unknown>[]>([])
+  const webhookDeliveryLogs = ref<WebhookDeliveryLog[]>([])
   const webhookForm = reactive({
     name: '',
     callbackUrl: '',
@@ -247,7 +249,7 @@
 
   async function loadWebhooks() {
     await runLoadingWebhooks(async () => {
-      webhookRows.value = (await listWebhooks(tenant.tenantId)) as Record<string, unknown>[]
+      webhookRows.value = await listWebhooks(tenant.tenantId)
     }).catch(() => {
       webhookRows.value = []
     })
@@ -263,13 +265,13 @@
     webhookFormVisible.value = true
   }
 
-  function openWebhookEdit(row: Record<string, unknown>) {
-    webhookEditingId.value = row.id as number
-    webhookForm.name = String(row.name ?? '')
-    webhookForm.callbackUrl = String(row.callbackUrl ?? '')
-    webhookForm.eventTypes = String(row.eventTypes ?? '')
-    webhookForm.secret = String(row.secret ?? '')
-    webhookForm.enabled = !!row.enabled
+  function openWebhookEdit(row: WebhookSubscription) {
+    webhookEditingId.value = row.id
+    webhookForm.name = row.name
+    webhookForm.callbackUrl = row.callbackUrl
+    webhookForm.eventTypes = row.eventTypes
+    webhookForm.secret = ''
+    webhookForm.enabled = row.enabled !== false
     webhookFormVisible.value = true
   }
 
@@ -300,7 +302,7 @@
     }
   }
 
-  async function confirmDeleteWebhook(row: Record<string, unknown>) {
+  async function confirmDeleteWebhook(row: WebhookSubscription) {
     try {
       await confirmDanger({
         verb: t('notificationCommon.deleteVerb'),
@@ -310,7 +312,7 @@
         consequence: t('notificationWebhooksTab.deleteConsequence'),
         irreversible: false,
       })
-      await deleteWebhook(row.id as number, tenant.tenantId)
+      await deleteWebhook(row.id, tenant.tenantId)
       ElMessage.success(t('notificationCommon.deletedToast'))
       await loadWebhooks()
     } catch {
@@ -318,11 +320,8 @@
     }
   }
 
-  async function viewWebhookLogs(row: Record<string, unknown>) {
-    webhookDeliveryLogs.value = (await listWebhookDeliveryLogs(
-      tenant.tenantId,
-      row.id as number,
-    )) as Record<string, unknown>[]
+  async function viewWebhookLogs(row: WebhookSubscription) {
+    webhookDeliveryLogs.value = await listWebhookDeliveryLogs(tenant.tenantId, row.id)
     webhookLogVisible.value = true
   }
 
@@ -339,7 +338,7 @@
       const okEnabled = en === undefined ? true : !!row.enabled === en
       if (!okEnabled) return false
       if (!k) return true
-      const hay = `${row.url ?? ''} ${row.eventTypes ?? ''}`.toLowerCase()
+      const hay = `${row.callbackUrl ?? ''} ${row.eventTypes ?? ''}`.toLowerCase()
       return hay.includes(k)
     })
   })

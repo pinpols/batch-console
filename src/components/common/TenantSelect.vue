@@ -4,6 +4,7 @@
     filterable
     remote
     reserve-keyword
+    :popper-class="resolvedPopperClass"
     clearable
     :remote-method="search"
     :loading="searching"
@@ -15,9 +16,23 @@
     @update:model-value="$emit('update:modelValue', $event)"
     @clear="onClear"
   >
-    <el-option v-for="t in options" :key="t.tenantId" :label="t.tenantId" :value="t.tenantId">
-      <span>{{ t.tenantId }}</span>
-      <span v-if="t.tenantName" class="tenant-option-name">{{ t.tenantName }}</span>
+    <el-option
+      v-for="tenant in options"
+      :key="tenant.tenantId"
+      :label="tenant.tenantId"
+      :value="tenant.tenantId"
+    >
+      <div class="tenant-option" :title="optionLabel(tenant)">
+        <span class="tenant-option__id">{{ tenant.tenantId }}</span>
+        <span v-if="tenant.tenantName" class="tenant-option__name">{{ tenant.tenantName }}</span>
+        <span
+          v-if="tenant.status && tenant.status !== 'ACTIVE'"
+          class="tenant-option__status"
+          :data-status="tenant.status"
+        >
+          {{ tenant.status }}
+        </span>
+      </div>
     </el-option>
   </el-select>
 </template>
@@ -36,6 +51,8 @@
       selectStyle?: string
       /** Utility classes applied to the underlying `el-select` */
       selectClass?: string
+      /** Classes applied to the dropdown popper. */
+      popperClass?: string
     }>(),
     {
       modelValue: '',
@@ -44,6 +61,7 @@
       disabled: false,
       selectStyle: 'width: 200px',
       selectClass: '',
+      popperClass: '',
     },
   )
 
@@ -52,6 +70,9 @@
   }>()
 
   const resolvedSelectClass = computed(() => props.selectClass?.trim() || undefined)
+  const resolvedPopperClass = computed(() =>
+    ['tenant-select-popper', props.popperClass?.trim()].filter(Boolean).join(' '),
+  )
 
   const selectStyleNormalized = computed(() => {
     // When callers use width utility classes, inline `width:` would win and defeat the class.
@@ -89,13 +110,70 @@
     fetchTenants()
   }
 
+  function optionLabel(tenant: Tenant) {
+    return tenant.tenantName ? `${tenant.tenantId} ${tenant.tenantName}` : tenant.tenantId
+  }
+
   onMounted(() => fetchTenants())
 </script>
 
 <style scoped>
-  .tenant-option-name {
-    margin-left: 8px;
+  .tenant-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    min-width: 0;
+    line-height: 1.2;
+  }
+
+  .tenant-option__id {
+    flex: 0 0 auto;
+    max-width: 104px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--color-text-primary, #303133);
+    font-size: 13px;
+    font-weight: 650;
+  }
+
+  .tenant-option__name {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     color: var(--color-text-tertiary, #909399);
     font-size: 12px;
+  }
+
+  .tenant-option__status {
+    flex: 0 0 auto;
+    padding: 1px 6px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--color-warning, #e6a23c) 14%, transparent);
+    color: var(--color-warning, #b88230);
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 16px;
+  }
+
+  :deep(.el-select__selected-item .tenant-option__name),
+  :deep(.el-select__selected-item .tenant-option__status) {
+    display: none;
+  }
+
+  :deep(.el-select__selected-item .tenant-option__id) {
+    max-width: 100%;
+  }
+
+  :global(.tenant-select-popper) {
+    min-width: min(320px, calc(100vw - 32px)) !important;
+  }
+
+  :global(.tenant-select-popper .el-select-dropdown__item) {
+    height: 36px;
+    padding-inline: 12px;
   }
 </style>

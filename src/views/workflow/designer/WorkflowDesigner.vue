@@ -530,7 +530,32 @@
     <JsonSyncPanel v-model:collapsed="jsonPanelCollapsed" :readonly="!store.editable" />
     <div class="workflow-designer__body">
       <NodePalette @add="onPaletteAdd" />
-      <DagCanvas ref="canvasRef" />
+      <section class="workflow-designer__canvas-shell">
+        <div class="workflow-designer__canvas-status">
+          <span>{{ store.meta.workflowCode || t('workflowDesignerMvp.untitledWorkflow') }}</span>
+          <el-tag size="small" effect="plain">
+            {{ store.nodes.length }} nodes / {{ store.edges.length }} edges
+          </el-tag>
+          <el-tag size="small" type="info" effect="plain"> {{ layoutDirection }} </el-tag>
+        </div>
+        <DagCanvas ref="canvasRef" />
+        <div v-if="store.nodes.length === 0" class="workflow-designer__empty-canvas">
+          <div class="workflow-designer__empty-title">
+            {{ t('workflowDesignerMvp.canvasEmptyTitle') }}
+          </div>
+          <div class="workflow-designer__empty-desc">
+            {{ t('workflowDesignerMvp.canvasEmptyDesc') }}
+          </div>
+          <div class="workflow-designer__empty-actions">
+            <el-button type="primary" @click="openQuickPalette">
+              {{ t('workflowDesignerPolish.actionQuickPalette') }}
+            </el-button>
+            <el-button @click="openTemplateLibrary">
+              {{ t('workflowDesignerPolish.actionTemplates') }}
+            </el-button>
+          </div>
+        </div>
+      </section>
       <NodeInspector />
     </div>
 
@@ -587,12 +612,87 @@
     width: 100%;
     height: 100%;
     min-height: calc(100vh - 60px);
+    min-width: 0;
+    overflow: hidden;
+    background: var(--color-bg-page);
   }
   .workflow-designer__body {
-    display: flex;
+    display: grid;
+    grid-template-columns: 190px minmax(520px, 1fr) 320px;
     flex: 1 1 auto;
     min-height: 0;
     min-width: 0;
+    gap: 0;
+    padding: 12px;
+    overflow: hidden;
+  }
+  .workflow-designer__canvas-shell {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-content);
+    background: var(--color-bg-canvas, #e9eef5);
+  }
+  .workflow-designer__canvas-status {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    z-index: 3;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    max-width: calc(100% - 24px);
+    padding: 6px 8px;
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-content);
+    background: color-mix(in srgb, var(--color-bg-card) 92%, transparent);
+    box-shadow: 0 8px 20px color-mix(in srgb, #1f2937 8%, transparent);
+    color: var(--color-text-secondary);
+    font-size: 12px;
+  }
+  .workflow-designer__canvas-status > span {
+    min-width: 0;
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 650;
+    color: var(--color-text-primary);
+  }
+  .workflow-designer__empty-canvas {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    z-index: 2;
+    width: min(360px, calc(100% - 48px));
+    padding: 18px;
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-content);
+    background: color-mix(in srgb, var(--color-bg-card) 94%, transparent);
+    box-shadow: 0 16px 36px color-mix(in srgb, #1f2937 10%, transparent);
+    text-align: center;
+    transform: translate(-50%, -50%);
+  }
+  .workflow-designer__empty-title {
+    font-size: 15px;
+    font-weight: 650;
+    color: var(--color-text-primary);
+  }
+  .workflow-designer__empty-desc {
+    margin-top: 6px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--color-text-secondary);
+  }
+  .workflow-designer__empty-actions {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 14px;
   }
   .workflow-designer__banner {
     padding: 8px 16px;
@@ -633,12 +733,8 @@
   }
 
   @media (max-width: 1100px) {
-    .workflow-designer__body :deep(.node-palette) {
-      width: 152px;
-    }
-
-    .workflow-designer__body :deep(.node-inspector) {
-      width: 280px;
+    .workflow-designer__body {
+      grid-template-columns: 160px minmax(420px, 1fr) 280px;
     }
   }
 
@@ -648,15 +744,8 @@
     }
 
     .workflow-designer__body {
+      grid-template-columns: 132px minmax(360px, 1fr) 250px;
       overflow: auto;
-    }
-
-    .workflow-designer__body :deep(.node-palette) {
-      width: 132px;
-    }
-
-    .workflow-designer__body :deep(.node-inspector) {
-      width: 250px;
     }
   }
 </style>

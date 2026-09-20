@@ -45,6 +45,7 @@
             :model-value="tenantIdInput"
             size="small"
             select-class="tenant-chip__select"
+            popper-class="tenant-select-popper--header"
             :placeholder="t('nav.switchTenantPlaceholder')"
             @update:model-value="handleTenantSwitch"
           />
@@ -137,12 +138,15 @@
             :hide-on-click="true"
             @command="onUserCommand"
           >
-            <span class="user-chip username--clickable" tabindex="0">
+            <span
+              class="user-chip username--clickable"
+              tabindex="0"
+              :title="userChipTitle"
+              :aria-label="userChipTitle"
+            >
               <span class="user-chip__avatar">{{ userInitial }}</span>
               <span class="user-chip__meta">
-                <span class="user-chip__name">{{
-                  auth.userInfo?.username ?? t('nav.notLoggedIn')
-                }}</span>
+                <span class="user-chip__name">{{ userDisplayName }}</span>
                 <span v-if="auth.role" class="user-chip__role">{{ auth.role }}</span>
               </span>
               <el-icon class="username__caret"><ArrowDown /></el-icon>
@@ -221,6 +225,10 @@
   )
   const userInitial = computed(() =>
     (auth.userInfo?.username ?? '?').trim().charAt(0).toUpperCase(),
+  )
+  const userDisplayName = computed(() => auth.userInfo?.username ?? t('nav.notLoggedIn'))
+  const userChipTitle = computed(() =>
+    auth.role ? `${userDisplayName.value} · ${auth.role}` : userDisplayName.value,
   )
   const themeToolIcon = computed(() => {
     if (app.themePreference === 'system') return Monitor
@@ -419,14 +427,21 @@
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    padding: 3px 6px 3px 4px;
+    width: auto;
+    max-width: 184px;
+    min-width: 0;
+    height: 32px;
+    padding: 2px 6px 2px 3px;
+    border: 1px solid transparent;
+    border-radius: var(--radius-button);
+    box-sizing: border-box;
   }
 
   .user-chip__avatar {
     display: grid;
     place-items: center;
-    width: 30px;
-    height: 30px;
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
     background: linear-gradient(135deg, var(--color-primary) 0%, #4c9dff 100%);
     color: #fff;
@@ -439,22 +454,24 @@
     display: flex;
     flex-direction: column;
     align-items: flex-start;
+    flex: 1 1 auto;
     line-height: 1.15;
     min-width: 0;
+    max-width: 128px;
   }
 
   .user-chip__name {
+    width: 100%;
     font-size: 13px;
     font-weight: 600;
     color: var(--color-text-primary);
-    max-width: 120px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
   .user-chip__role {
-    font-size: 10px;
+    font-size: 9px;
     font-weight: 600;
     letter-spacing: 0.04em;
     color: var(--color-text-tertiary);
@@ -627,19 +644,23 @@
     align-items: center;
     gap: 4px;
     cursor: pointer;
-    border-radius: 6px;
-    padding: 2px 6px;
     outline: none;
-    transition: background var(--motion-duration-sm) var(--motion-ease-standard);
+    transition:
+      border-color var(--motion-duration-sm) var(--motion-ease-standard),
+      background var(--motion-duration-sm) var(--motion-ease-standard),
+      box-shadow var(--motion-duration-sm) var(--motion-ease-standard);
   }
 
   .username--clickable:hover,
   .username--clickable:focus-visible {
-    background: var(--color-bg-elevated, color-mix(in srgb, var(--color-primary) 8%, transparent));
+    border-color: color-mix(in srgb, var(--color-primary) 30%, var(--color-border) 70%);
+    background: color-mix(in srgb, var(--color-primary) 7%, var(--color-bg-elevated) 93%);
+    box-shadow: 0 6px 18px color-mix(in srgb, var(--color-primary) 10%, transparent);
     color: var(--color-text-primary);
   }
 
   .username__caret {
+    flex-shrink: 0;
     font-size: 12px;
     color: var(--color-text-secondary);
   }
@@ -658,12 +679,16 @@
     flex-shrink: 0;
   }
 
+  .tenant-chip--switch {
+    padding-right: 6px;
+  }
+
   .tenant-chip--readonly {
     max-width: min(320px, 40vw);
   }
 
   .tenant-chip--switch :deep(.tenant-chip__select) {
-    width: 96px;
+    width: 128px;
   }
 
   .tenant-chip--switch :deep(.el-select__wrapper) {
@@ -682,6 +707,10 @@
     font-size: 13px;
     font-weight: 650;
     color: var(--color-text-primary);
+  }
+
+  :global(.tenant-select-popper--header) {
+    min-width: min(300px, calc(100vw - 32px)) !important;
   }
 
   .tenant-chip__icon {
@@ -755,8 +784,12 @@
       width: 126px;
     }
 
-    .user-chip__name {
-      max-width: 92px;
+    .user-chip {
+      max-width: 156px;
+    }
+
+    .user-chip__meta {
+      max-width: 102px;
     }
   }
 
@@ -781,8 +814,12 @@
       display: none;
     }
 
-    .user-chip__name {
-      max-width: 110px;
+    .user-chip {
+      max-width: 168px;
+    }
+
+    .user-chip__meta {
+      max-width: 114px;
     }
   }
 
@@ -801,7 +838,7 @@
     }
 
     .tenant-chip--switch :deep(.tenant-chip__select) {
-      width: 72px;
+      width: 86px;
     }
 
     .user-chip__meta {

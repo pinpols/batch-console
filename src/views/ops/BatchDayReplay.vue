@@ -12,10 +12,28 @@
     </PageHeader>
 
     <!-- Sessions 列表 -->
-    <SectionCard>
+    <SectionCard class="replay-card">
       <template #header>
-        <span>{{ t('batchDayReplay.sessionsHeader') }}</span>
+        <div class="replay-card__title">
+          <span>{{ t('batchDayReplay.sessionsHeader') }}</span>
+          <el-tag v-if="historyUnavailable" size="small" type="info" effect="plain">
+            {{ t('batchDayReplay.historyUnavailableTag') }}
+          </el-tag>
+        </div>
+        <el-button text type="primary" :icon="Plus" @click="submitDrawerOpen = true">
+          {{ t('batchDayReplay.submitBtn') }}
+        </el-button>
       </template>
+      <el-alert
+        v-if="historyUnavailable"
+        type="info"
+        :closable="false"
+        show-icon
+        class="replay-compat-alert"
+      >
+        <template #title>{{ t('batchDayReplay.historyUnavailableTitle') }}</template>
+        <template #default>{{ t('batchDayReplay.historyUnavailableBody') }}</template>
+      </el-alert>
       <el-table
         class="replay-sessions-table"
         :data="sessions"
@@ -25,6 +43,22 @@
         @row-click="openDetail"
         table-layout="fixed"
       >
+        <template #empty>
+          <div class="replay-empty">
+            <FileClock :size="36" aria-hidden="true" />
+            <div class="replay-empty__title">{{ t('batchDayReplay.emptyTitle') }}</div>
+            <div class="replay-empty__desc">
+              {{
+                historyUnavailable
+                  ? t('batchDayReplay.emptyLegacyDesc')
+                  : t('batchDayReplay.emptyDesc')
+              }}
+            </div>
+            <el-button type="primary" :icon="Plus" @click.stop="submitDrawerOpen = true">
+              {{ t('batchDayReplay.submitBtn') }}
+            </el-button>
+          </div>
+        </template>
         <el-table-column :label="t('batchDayReplay.colId')" prop="id" width="80" />
         <el-table-column :label="t('batchDayReplay.colBizDate')" prop="bizDate" width="120" />
         <el-table-column :label="t('batchDayReplay.colMode')" width="110">
@@ -391,7 +425,7 @@
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
   import { confirmDanger } from '@/composables/useDangerConfirm'
-  import { RefreshCw as Refresh, Plus } from 'lucide-vue-next'
+  import { FileClock, RefreshCw as Refresh, Plus } from 'lucide-vue-next'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
@@ -410,13 +444,10 @@
   const tenant = useTenantStore()
   const auth = useAuthStore()
 
-  /**
-   * Session 列表本地维护(BE 暂无 list 端点,本组件 detail 出来后塞回前面;新建后直接 push 到顶部)。
-   * 若 BE 后续补 list 端点,迁到 useTenantReload 自动拉。
-   */
   const sessions = ref<BatchDayReplaySession[]>([])
   const loadingSessions = ref(false)
   const loadingDetail = ref(false)
+  const historyUnavailable = ref(false)
 
   const submitDrawerOpen = ref(false)
   const submitting = ref(false)
@@ -566,7 +597,7 @@
     submitting.value = true
     try {
       const session = await batchDayReplayApi.submit(req)
-      sessions.value = [session, ...sessions.value]
+      upsertSession(session)
       ElMessage.success(t('batchDayReplay.submitOk'))
       submitDrawerOpen.value = false
       // 自动打开新建的 session detail 看进度
@@ -601,8 +632,7 @@
     try {
       const fresh = await batchDayReplayApi.detail(currentSession.value.id, tenant.tenantId)
       currentSession.value = fresh
-      const idx = sessions.value.findIndex((s) => s.id === fresh.id)
-      if (idx >= 0) sessions.value.splice(idx, 1, fresh)
+      upsertSession(fresh)
     } finally {
       loadingDetail.value = false
     }
@@ -642,8 +672,7 @@
         tenant.tenantId,
       )
       currentSession.value = fresh
-      const idx = sessions.value.findIndex((s) => s.id === fresh.id)
-      if (idx >= 0) sessions.value.splice(idx, 1, fresh)
+      upsertSession(fresh)
       ElMessage.success(t('batchDayReplay.approveOk'))
     } catch (err) {
       ElMessage.error(err instanceof Error ? err.message : String(err))
@@ -668,8 +697,7 @@
     try {
       const fresh = await batchDayReplayApi.cancel(currentSession.value.id, tenant.tenantId)
       currentSession.value = fresh
-      const idx = sessions.value.findIndex((s) => s.id === fresh.id)
-      if (idx >= 0) sessions.value.splice(idx, 1, fresh)
+      upsertSession(fresh)
       ElMessage.success(t('batchDayReplay.cancelOk'))
     } catch (err) {
       ElMessage.error(err instanceof Error ? err.message : String(err))
@@ -678,12 +706,82 @@
     }
   }
 
+  function upsertSession(session: BatchDayReplaySession) {
+    const idx = sessions.value.findIndex((s) => s.id === session.id)
+    if (idx >= 0) sessions.value.splice(idx, 1, session)
+    else sessions.value.unshift(session)
+  }
+
+  async function loadSessions() {
+    loadingSessions.value = true
+    try {
+      sessions.value = await batchDayReplayApi.list({ tenantId: tenant.tenantId, limit: 50 })
+      historyUnavailable.value = false
+    } catch (err) {
+      const status = (err as { response?: { status?: number } })?.response?.status
+      historyUnavailable.value = status === 404 || status === 405
+      sessions.value = []
+    } finally {
+      loadingSessions.value = false
+    }
+  }
+
   onMounted(() => {
-    // BE 暂无 list 端点(本 PR 范围),保持空列表;后续若新增按 useTenantReload 接入
+    void loadSessions()
   })
+
+  watch(
+    () => tenant.tenantId,
+    () => {
+      sessions.value = []
+      currentSession.value = null
+      entries.value = []
+      historyUnavailable.value = false
+      void loadSessions()
+    },
+  )
 </script>
 
 <style scoped>
+  .replay-card__title {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .replay-compat-alert {
+    margin-bottom: 12px;
+  }
+
+  .replay-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 28px 12px;
+    color: var(--color-text-secondary);
+  }
+
+  .replay-empty svg {
+    color: var(--color-primary);
+    opacity: 0.85;
+  }
+
+  .replay-empty__title {
+    font-size: 15px;
+    font-weight: 650;
+    color: var(--color-text-primary);
+  }
+
+  .replay-empty__desc {
+    max-width: 520px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--color-text-tertiary);
+  }
+
   .detail-progress {
     margin: 14px 0 6px;
   }

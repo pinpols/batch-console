@@ -70,6 +70,10 @@
                   >
                     {{ t('excelMaintenanceWizard.btnStartUpload') }}
                   </el-button>
+                  <div v-if="file" class="upload-zone__file">
+                    <el-icon><Document /></el-icon>
+                    <span class="upload-zone__file-name">{{ file.name }}</span>
+                  </div>
                 </div>
                 <div class="upload-zone__toolbar-left">
                   <el-button
@@ -83,8 +87,12 @@
                   </el-button>
                   <div class="sample-template-control">
                     <el-select
-                      v-model="selectedScenario"
+                      v-model="selectedSampleScenarios"
                       size="small"
+                      multiple
+                      collapse-tags
+                      collapse-tags-tooltip
+                      :max-collapse-tags="1"
                       :placeholder="t('tenantPackageImportWizard.scenarioPlaceholder')"
                     >
                       <el-option
@@ -99,6 +107,7 @@
                       type="primary"
                       :icon="Download"
                       :loading="sampleTplLoading"
+                      class="sample-template-control__button"
                       @click="doDownloadSampleTemplate"
                     >
                       {{ t('tenantPackageImportWizard.btnDownloadSampleTemplate') }}
@@ -123,10 +132,6 @@
                     {{ t('tenantPackageImportWizard.btnFieldGuide') }}
                   </el-button>
                 </div>
-              </div>
-              <div v-if="file" class="upload-zone__file">
-                <el-icon><Document /></el-icon>
-                <span class="upload-zone__file-name">{{ file.name }}</span>
               </div>
             </div>
 
@@ -601,7 +606,7 @@
             />
           </el-select>
           <el-segmented v-model="guideLevelFilter" :options="guideLevelOptions" />
-          <el-segmented v-model="selectedScenario" :options="scenarioOptions" />
+          <el-segmented v-model="selectedGuideScenario" :options="scenarioOptions" />
         </div>
 
         <div v-if="activeGuideSheet" class="guide-drawer__summary">
@@ -777,7 +782,8 @@
   const guideSheetName = ref('')
   const guideKeyword = ref('')
   const sampleTplLoading = ref(false)
-  const selectedScenario = ref<TenantPackageSampleScenario>('ALL')
+  const selectedSampleScenarios = ref<TenantPackageSampleScenario[]>(['ALL'])
+  const selectedGuideScenario = ref<TenantPackageSampleScenario>('ALL')
   const scenarioOptions = computed<Array<{ label: string; value: TenantPackageSampleScenario }>>(
     () => [
       { label: t('tenantPackageImportWizard.scenarioAll'), value: 'ALL' },
@@ -785,6 +791,7 @@
       { label: 'EXPORT', value: 'EXPORT' },
       { label: 'PROCESS', value: 'PROCESS' },
       { label: 'DISPATCH', value: 'DISPATCH' },
+      { label: 'ATOMIC', value: 'ATOMIC' },
       { label: 'WORKFLOW', value: 'WORKFLOW' },
     ],
   )
@@ -812,7 +819,7 @@
   const filteredGuideColumns = computed<TenantPackageColumnGuide[]>(() => {
     const columns = activeGuideSheet.value?.columns ?? []
     const keyword = guideKeyword.value.trim().toLowerCase()
-    const scenario = selectedScenario.value
+    const scenario = selectedGuideScenario.value
     return columns.filter((column) => {
       if (!guideColumnMatchesScenario(column, activeGuideSheet.value, scenario)) return false
       if (guideLevelFilter.value === 'required' && !column.required) return false
@@ -1080,11 +1087,12 @@
   async function doDownloadSampleTemplate() {
     sampleTplLoading.value = true
     try {
-      const blob = await tenantPackageDownloadSampleTemplate(selectedScenario.value)
-      triggerBlobDownload(
-        blob,
-        `tenant-package-sample-${selectedScenario.value.toLowerCase()}.xlsx`,
-      )
+      const scenarios = selectedSampleScenarios.value.length
+        ? selectedSampleScenarios.value
+        : ['ALL']
+      const blob = await tenantPackageDownloadSampleTemplate(scenarios)
+      const scenarioName = scenarios.join('-').toLowerCase()
+      triggerBlobDownload(blob, `tenant-package-sample-${scenarioName}.xlsx`)
       ElMessage.success(t('tenantPackageImportWizard.sampleTemplateDownloadedToast'))
     } finally {
       sampleTplLoading.value = false
@@ -1196,22 +1204,27 @@
 </script>
 
 <style scoped>
-  :deep(.tenant-pkg-page) {
+  .tenant-pkg-page {
     gap: 8px;
+    min-width: 0;
+    overflow-x: hidden;
   }
 
   /* 大屏适配:仅本页作用域(.tenant-pkg-page),让 SectionCard 撑满可用高度,
      使内部向导能填满纵向空间,而非矮卡片顶在最上、下方大片空白。其它页不受影响。 */
-  :deep(.tenant-pkg-page > .section-card) {
+  .tenant-pkg-page :deep(.section-card) {
     display: flex;
     flex: 1 1 auto;
     flex-direction: column;
     min-height: 0;
+    min-width: 0;
   }
 
-  :deep(.tenant-pkg-page > .section-card > .el-card__body) {
+  .tenant-pkg-page :deep(.section-card > .el-card__body) {
     flex: 1 1 auto;
     min-height: 0;
+    min-width: 0;
+    overflow: hidden;
   }
 
   .excel-wizard {
@@ -1223,6 +1236,7 @@
     /* 撑满可用高度;min-height 仅作下限(撑不满时不塌陷,零回归) */
     flex: 1 1 auto;
     min-height: 360px;
+    min-width: 0;
     box-sizing: border-box;
   }
 
@@ -1261,6 +1275,7 @@
     flex: 1 1 auto;
     width: 100%;
     min-height: 180px;
+    min-width: 0;
   }
 
   .excel-wizard__panel {
@@ -1269,6 +1284,7 @@
     align-items: stretch;
     width: 100%;
     max-width: 100%;
+    min-width: 0;
     margin: 0;
     padding-bottom: 12px;
     box-sizing: border-box;
@@ -1286,6 +1302,7 @@
 
   .upload-zone {
     width: 100%;
+    min-width: 0;
     padding: 16px 12px;
     text-align: center;
     border: 1px dashed var(--color-border);
@@ -1324,29 +1341,32 @@
 
   .upload-zone__toolbar {
     display: grid;
-    grid-template-columns: minmax(340px, 1fr) minmax(220px, 280px);
+    grid-template-columns: minmax(360px, 1fr) minmax(230px, 300px);
     align-items: stretch;
     gap: var(--space-md);
     margin: var(--card-inner-padding) auto 0;
     padding-top: var(--space-xs);
-    max-width: min(840px, 100%);
+    max-width: min(920px, 100%);
     width: 100%;
+    min-width: 0;
   }
 
   .upload-zone__toolbar-left {
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: stretch;
     gap: 8px;
     padding: 12px;
     border: 1px solid color-mix(in srgb, var(--color-border-light) 72%, var(--color-border) 28%);
     border-radius: var(--radius-content);
     background: color-mix(in srgb, var(--color-bg-card) 82%, var(--color-bg-canvas) 18%);
     color: var(--color-text-tertiary);
+    min-width: 0;
+    min-height: 216px;
   }
 
   .upload-zone__toolbar-left :deep(.el-button.is-link) {
-    border-radius: 999px;
+    border-radius: var(--radius-input);
     padding: 6px 12px;
     background: var(--button-primary-soft-bg);
     border: 1px solid var(--button-primary-soft-border);
@@ -1367,14 +1387,51 @@
 
   .sample-template-control {
     display: grid;
-    grid-template-columns: minmax(0, 112px) minmax(0, 1fr);
-    gap: 6px;
+    grid-template-columns: 112px minmax(0, 1fr);
+    gap: 8px;
     align-items: center;
     width: 100%;
+    min-width: 0;
+    padding: 2px;
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-input);
+    background: color-mix(in srgb, var(--color-bg-card) 88%, var(--color-bg-page) 12%);
   }
 
   .sample-template-control :deep(.el-select) {
     width: 100%;
+  }
+
+  .sample-template-control :deep(.el-select__wrapper) {
+    min-height: 30px;
+    border-radius: calc(var(--radius-input) - 2px);
+    box-shadow: none;
+    background: var(--color-bg-card);
+  }
+
+  .sample-template-control :deep(.el-button.sample-template-control__button) {
+    justify-content: center;
+    width: 100%;
+    min-height: 30px;
+    padding: 0 10px;
+    border: none;
+    border-radius: calc(var(--radius-input) - 2px);
+    background: transparent;
+    box-shadow: none;
+    font-weight: 600;
+  }
+
+  .sample-template-control :deep(.el-button.sample-template-control__button:hover) {
+    transform: none;
+    background: color-mix(in srgb, var(--color-primary) 8%, transparent);
+    border-color: transparent;
+    box-shadow: none;
+  }
+
+  .sample-template-control :deep(.el-button.sample-template-control__button span) {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .upload-zone__toolbar-left :deep(.el-button.is-link:hover) {
@@ -1395,17 +1452,24 @@
 
   .upload-zone__toolbar-right {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: center;
-    gap: var(--space-sm);
+    grid-template-rows: minmax(0, 1fr) auto auto;
+    align-items: stretch;
+    gap: 10px;
     justify-content: stretch;
     min-width: 0;
+    min-height: 216px;
+    padding: 12px;
+    border: 1px solid color-mix(in srgb, var(--color-border-light) 72%, var(--color-border) 28%);
+    border-radius: var(--radius-content);
+    background: color-mix(in srgb, var(--color-bg-card) 82%, var(--color-bg-canvas) 18%);
   }
 
   /* drag 模式 dropzone */
   .upload-zone__dropzone :deep(.el-upload-dragger) {
-    min-height: 116px;
+    min-height: 128px;
+    height: 100%;
     padding: 18px 28px;
+    min-width: 0;
     border-radius: 8px;
     background: var(--color-bg-page);
     border: 1px dashed var(--color-border-light);
@@ -1438,14 +1502,16 @@
 
   .upload-zone__toolbar-right :deep(.el-upload) {
     width: 100%;
+    min-width: 0;
   }
 
   .upload-zone__ghost-btn,
   .upload-zone__primary-btn {
     min-height: 44px;
-    border-radius: var(--radius-content);
+    border-radius: var(--radius-input);
     font-weight: 650;
     padding: 0 18px;
+    width: 100%;
   }
 
   .upload-zone__ghost-btn {
@@ -1580,18 +1646,10 @@
     color: var(--color-text-primary);
   }
 
-  @media (max-width: 720px) {
-    .guide-drawer__filters {
-      grid-template-columns: 1fr;
-    }
-
-    .guide-row-detail {
-      grid-template-columns: 1fr;
-    }
-
+  @media (max-width: 960px) {
     .upload-zone__toolbar {
       grid-template-columns: 1fr;
-      max-width: 520px;
+      max-width: 620px;
       gap: var(--space-sm);
     }
 
@@ -1600,17 +1658,28 @@
     }
   }
 
+  @media (max-width: 720px) {
+    .guide-drawer__filters {
+      grid-template-columns: 1fr;
+    }
+
+    .guide-row-detail {
+      grid-template-columns: 1fr;
+    }
+  }
+
   .upload-zone__file {
-    display: inline-flex;
+    display: flex;
     align-items: center;
     gap: 6px;
-    margin-top: 10px;
+    margin-top: 0;
     padding: 6px 10px;
     max-width: 100%;
     border-radius: var(--radius-input);
     background: var(--el-fill-color-light);
     color: var(--color-text-secondary);
     font-size: 13px;
+    text-align: left;
   }
 
   .upload-zone__file-name {
