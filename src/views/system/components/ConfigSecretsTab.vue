@@ -150,7 +150,7 @@
 <script setup lang="ts">
   import { ref, computed } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { ElMessage } from 'element-plus'
+  import { ElMessage, ElMessageBox } from 'element-plus'
 
   const { t } = useI18n({ useScope: 'global' })
   import { confirmDanger } from '@/composables/useDangerConfirm'
@@ -207,7 +207,30 @@
         target: '',
         consequence: t('configSecretsTab.rotateConfirmText', { name: row.secretRef }),
       })
-      await rotateSecret({ tenantId: tenant.tenantId, secretRef: row.secretRef })
+      const { value: secretPayloadJson } = await ElMessageBox.prompt(
+        t('configSecretsTab.rotatePayloadPrompt'),
+        t('configSecretsTab.rotatePayloadTitle'),
+        {
+          confirmButtonText: t('common.confirm'),
+          cancelButtonText: t('common.cancel'),
+          inputType: 'textarea',
+          inputValidator: (value) => {
+            if (!value?.trim()) return t('configSecretsTab.rotatePayloadRequired')
+            try {
+              JSON.parse(value)
+              return true
+            } catch {
+              return t('configSecretsTab.rotatePayloadInvalid')
+            }
+          },
+        },
+      )
+      await rotateSecret({
+        tenantId: tenant.tenantId,
+        secretRef: row.secretRef,
+        secretName: row.secretName,
+        secretPayloadJson,
+      })
       ElMessage.success(t('configSecretsTab.rotateDoneToast'))
       await loadSecrets()
     } catch {

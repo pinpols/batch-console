@@ -2,12 +2,17 @@ import { get, post } from '@/api/client'
 import { fetchAllPageItems } from '@/api/adapters'
 import type {
   ConsoleConfigReleaseResponse,
+  ConfigGovernanceItemResponse,
   ConsoleConfigChangeLogResponse,
   ConsoleSecretVersionResponse,
 } from '@/types/console-api'
 
 export function listConfigReleases(tenantId: string) {
   return get<ConsoleConfigReleaseResponse[]>('/api/console/config/releases', { tenantId })
+}
+
+export function listConfigGovernance() {
+  return get<ConfigGovernanceItemResponse[]>('/api/console/config/governance')
 }
 
 /** POST /api/console/config/releases — create a config release
@@ -17,34 +22,19 @@ export function createConfigRelease(body: {
   configType: string
   configKey: string
   configName: string
-  configPayloadJson?: string
+  configPayloadJson: string
   reason?: string
 }) {
   return post<number>('/api/console/config/releases', body)
 }
 
-export function publishRelease(
-  releaseId: number,
-  body: { tenantId: string; operatorId?: string; reason?: string; traceId?: string },
-) {
-  return post<string>(`/api/console/config/releases/${releaseId}/publish`, body)
-}
-
-export function grayRelease(
+export function rollbackRelease(
   releaseId: number,
   body: {
     tenantId: string
-    operatorId?: string
+    expectedVersionNo: number
     reason?: string
-    grayScopeJson?: string
   },
-) {
-  return post<string>(`/api/console/config/releases/${releaseId}/gray`, body)
-}
-
-export function rollbackRelease(
-  releaseId: number,
-  body: { tenantId: string; operatorId?: string; reason?: string; traceId?: string },
 ) {
   return post<string>(`/api/console/config/releases/${releaseId}/rollback`, body)
 }
@@ -78,8 +68,14 @@ export function getSecretVersion(secretVersionId: number, tenantId: string) {
 }
 
 /** POST /api/console/config/secrets/rotate */
-export function rotateSecret(body: { tenantId: string; secretRef: string; reason?: string }) {
-  return post<string>('/api/console/config/secrets/rotate', body)
+export function rotateSecret(body: {
+  tenantId: string
+  secretRef: string
+  secretName: string
+  secretPayloadJson: string
+  reason?: string
+}) {
+  return post<number>('/api/console/config/secrets/rotate', body)
 }
 
 /** GET /api/console/config/dependencies?tenantId=&configType=&configCode= */
@@ -95,7 +91,7 @@ export function diffConfigReleases(tenantId: string, releaseIdA: number, release
 /** POST /api/console/config/releases/{releaseId}/submit-approval — submit for approval */
 export function submitReleaseApproval(
   releaseId: number,
-  body: { tenantId: string; operatorId?: string; reason?: string },
+  body: { tenantId: string; reason?: string },
 ) {
   return post<string>(`/api/console/config/releases/${releaseId}/submit-approval`, body)
 }
@@ -103,7 +99,7 @@ export function submitReleaseApproval(
 /** POST /api/console/config/approvals/{approvalId}/approve */
 export function approveConfigApproval(
   approvalId: number,
-  body: { tenantId: string; operatorId?: string; reason?: string },
+  body: { tenantId: string; reason?: string },
 ) {
   return post<string>(`/api/console/config/approvals/${approvalId}/approve`, body)
 }
@@ -111,7 +107,7 @@ export function approveConfigApproval(
 /** POST /api/console/config/approvals/{approvalId}/reject */
 export function rejectConfigApproval(
   approvalId: number,
-  body: { tenantId: string; operatorId?: string; reason?: string },
+  body: { tenantId: string; reason?: string },
 ) {
   return post<string>(`/api/console/config/approvals/${approvalId}/reject`, body)
 }

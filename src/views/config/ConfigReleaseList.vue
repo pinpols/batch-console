@@ -3,6 +3,9 @@
     <!-- 照设计 proto-nav-发布管理 dump:页头 18/600 + 右侧新增发布 -->
     <PageHeader>
       <template #actions>
+        <el-button :icon="Settings2" @click="openGovernance">
+          {{ t('configReleaseList.governanceCatalog') }}
+        </el-button>
         <el-button
           v-if="canMutateConfig"
           type="primary"
@@ -148,32 +151,76 @@
           </div>
         </div>
         <div class="cr-panel__actions">
-          <el-button type="primary" class="cr-panel__btn" @click="doPublish(selectedRow)">
-            {{ t('configReleaseList.actionPublish') }}
+          <el-button
+            v-if="canMutateConfig && selectedRow.configStatus === 'DRAFT'"
+            type="primary"
+            class="cr-panel__btn"
+            @click="doSubmitApproval(selectedRow)"
+          >
+            {{ t('configReleaseList.actionSubmit') }}
           </el-button>
           <el-button class="cr-panel__btn" @click="viewDetail(selectedRow)">
             {{ t('configReleaseList.actionDetail') }}
           </el-button>
         </div>
         <div class="cr-panel__actions cr-panel__actions--secondary">
-          <el-button size="small" plain @click="doGray(selectedRow)">
-            {{ t('configReleaseList.actionGray') }}
-          </el-button>
           <el-button size="small" plain @click="openDiff(selectedRow)">
             {{ t('configReleaseList.actionDiff') }}
           </el-button>
           <el-button size="small" plain @click="doDeps(selectedRow)">
             {{ t('configReleaseList.actionDeps') }}
           </el-button>
-          <el-button size="small" plain @click="doSubmitApproval(selectedRow)">
-            {{ t('configReleaseList.actionSubmit') }}
-          </el-button>
-          <el-button size="small" plain type="danger" @click="doRollback(selectedRow)">
+          <el-button
+            v-if="canMutateConfig && ['PUBLISHED', 'GRAY'].includes(selectedRow.configStatus)"
+            size="small"
+            plain
+            type="danger"
+            @click="doRollback(selectedRow)"
+          >
             {{ t('configReleaseList.actionRollback') }}
           </el-button>
         </div>
       </aside>
     </div>
+
+    <el-drawer
+      :append-to-body="true"
+      v-model="governanceVisible"
+      :title="t('configReleaseList.governanceCatalog')"
+      size="760px"
+    >
+      <el-table v-loading="governanceLoading" :data="governanceItems" height="calc(100vh - 180px)">
+        <el-table-column :label="t('configReleaseList.governanceClass')" min-width="210">
+          <template #default="{ row }">
+            <span class="cr-governance__class">{{ row.className }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column
+          prop="prefix"
+          :label="t('configReleaseList.governancePrefix')"
+          min-width="240"
+        />
+        <el-table-column :label="t('configReleaseList.configSource')" width="140">
+          <template #default="{ row }">
+            <el-tag size="small" effect="plain">{{ configSourceLabel(row.source) }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column :label="t('configReleaseList.activationMode')" min-width="190">
+          <template #default="{ row }">
+            <el-tag :type="row.restartRequired ? 'warning' : 'success'" size="small" effect="plain">
+              {{ activationLabel(row.activation) }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column :label="t('configReleaseList.governanceSensitivity')" width="120">
+          <template #default="{ row }">
+            <el-tag :type="row.sensitivity === 'SECRET' ? 'danger' : 'info'" size="small">
+              {{ sensitivityLabel(row.sensitivity) }}
+            </el-tag>
+          </template>
+        </el-table-column>
+      </el-table>
+    </el-drawer>
 
     <el-drawer
       :append-to-body="true"
@@ -210,6 +257,15 @@
             maxlength="128"
             show-word-limit
             :placeholder="t('configReleaseList.createNamePlaceholder')"
+          />
+        </el-form-item>
+        <el-form-item :label="t('configReleaseList.createPayloadLabel')" prop="configPayloadJson">
+          <el-input
+            v-model="createForm.configPayloadJson"
+            type="textarea"
+            :rows="12"
+            maxlength="1048576"
+            :placeholder="t('configReleaseList.createPayloadPlaceholder')"
           />
         </el-form-item>
         <el-form-item :label="t('configReleaseList.createNoteLabel')" prop="releaseNote">
@@ -329,7 +385,7 @@
   import { ref, watch, computed, reactive } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
-  import { Plus } from 'lucide-vue-next'
+  import { Plus, Settings2 } from 'lucide-vue-next'
   import { confirmDanger } from '@/composables/useDangerConfirm'
 
   const { t, te } = useI18n({ useScope: 'global' })
@@ -338,18 +394,16 @@
   import { useFormFocus } from '@/composables/useFormFocus'
   import { usePermission } from '@/composables/usePermission'
   import {
-    grayRelease,
     createConfigRelease,
     listConfigReleases,
-    publishRelease,
     rollbackRelease,
     getConfigRelease,
     submitReleaseApproval,
     listConfigDependencies,
     diffConfigReleases,
+    listConfigGovernance,
   } from '@/api/configReleases'
   import { useTenantStore } from '@/stores/tenant'
-  import { useAuthStore } from '@/stores/auth'
   import { useTenantReload } from '@/composables/useTenantReload'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { toPageResult } from '@/api/adapters'
@@ -359,17 +413,16 @@
   import MetaSelect from '@/components/common/MetaSelect.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   const { canMutateConfig } = usePermission()
-  import SectionCard from '@/components/common/SectionCard.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import JsonPreview from '@/components/common/JsonPreview.vue'
   import type { FormInstance, FormRules } from 'element-plus'
-  import type { ConsoleConfigReleaseResponse } from '@/types/console-api'
+  import type {
+    ConfigGovernanceItemResponse,
+    ConsoleConfigReleaseResponse,
+  } from '@/types/console-api'
 
   const tenant = useTenantStore()
-  const auth = useAuthStore()
-  // 配置发布所有写操作的 BE DTO 都 @NotBlank operatorId — 不传会 400 "不能为空"
-  const operatorId = () => auth.userInfo?.username ?? auth.userInfo?.userId ?? ''
   const loading = ref(false)
   const loadError = ref<unknown>(null)
   const {
@@ -391,12 +444,16 @@
     status: '',
   })
   const createVisible = ref(false)
+  const governanceVisible = ref(false)
+  const governanceLoading = ref(false)
+  const governanceItems = ref<ConfigGovernanceItemResponse[]>([])
   const createSaving = ref(false)
   const createFormRef = ref<FormInstance>()
   const createForm = reactive({
     configKey: '',
     configType: '',
     configName: '',
+    configPayloadJson: '',
     releaseNote: '',
   })
   const createRules: FormRules = {
@@ -407,6 +464,24 @@
     configName: [
       { required: true, message: t('configReleaseList.ruleCreateName'), trigger: 'blur' },
     ],
+    configPayloadJson: [
+      { required: true, message: t('configReleaseList.ruleCreatePayload'), trigger: 'blur' },
+      {
+        validator: (_rule, value: string, callback) => {
+          try {
+            const parsed = JSON.parse(value)
+            if (!parsed || Array.isArray(parsed) || typeof parsed !== 'object') {
+              callback(new Error(t('configReleaseList.ruleCreatePayloadObject')))
+              return
+            }
+            callback()
+          } catch {
+            callback(new Error(t('configReleaseList.ruleCreatePayloadJson')))
+          }
+        },
+        trigger: 'blur',
+      },
+    ],
   }
 
   const { data: metaEnums } = useConsoleMetaEnumsQuery()
@@ -414,6 +489,17 @@
   const configReleaseStatusOptions = computed(() =>
     pickMetaEnumGroup(metaEnums.value, 'configStatus'),
   )
+
+  async function openGovernance() {
+    governanceVisible.value = true
+    if (governanceItems.value.length > 0) return
+    governanceLoading.value = true
+    try {
+      governanceItems.value = await listConfigGovernance()
+    } finally {
+      governanceLoading.value = false
+    }
+  }
 
   const filtered = computed(() => {
     let r = allRows.value
@@ -464,11 +550,40 @@
     return te(key) ? t(key) : s
   }
 
+  function enumLabel(group: string, value?: string | null): string {
+    const v = String(value ?? '')
+    if (!v) return '—'
+    const key = `configReleaseList.${group}.${v}`
+    return te(key) ? t(key) : v
+  }
+
+  function configSourceLabel(value?: string | null): string {
+    return enumLabel('configSourceEnum', value)
+  }
+
+  function activationLabel(value?: string | null): string {
+    return enumLabel('activationEnum', value)
+  }
+
+  function sensitivityLabel(value?: string | null): string {
+    return enumLabel('sensitivityEnum', value)
+  }
+
   const panelInfoItems = computed(() => {
     const r = selectedRow.value
     if (!r) return []
     return [
       { label: t('configReleaseList.colType'), value: r.configType || '—' },
+      { label: t('configReleaseList.configSource'), value: configSourceLabel(r.configSource) },
+      { label: t('configReleaseList.activationMode'), value: activationLabel(r.activationMode) },
+      {
+        label: t('configReleaseList.restartRequired'),
+        value: r.restartRequired ? t('common.yes') : t('common.no'),
+      },
+      {
+        label: t('configReleaseList.applyConfirmationStatus'),
+        value: r.applyConfirmationStatus || '—',
+      },
       { label: t('configReleaseList.colPublishedAt'), value: fmtDatetime(r.publishedAt) },
       { label: t('configReleaseList.colEffectiveFrom'), value: fmtDatetime(r.effectiveFromAt) },
       { label: t('configReleaseList.colEffectiveTo'), value: fmtDatetime(r.effectiveToAt) },
@@ -517,6 +632,7 @@
     createForm.configKey = ''
     createForm.configType = ''
     createForm.configName = ''
+    createForm.configPayloadJson = ''
     createForm.releaseNote = ''
   }
 
@@ -552,6 +668,7 @@
         configType: createForm.configType.trim(),
         configKey: createForm.configKey.trim(),
         configName: createForm.configName.trim(),
+        configPayloadJson: createForm.configPayloadJson.trim(),
         reason: createForm.releaseNote.trim() || undefined,
       })
       ElMessage.success(t('configReleaseList.createSuccess', { key: createForm.configKey }))
@@ -561,51 +678,6 @@
       await load()
     } finally {
       createSaving.value = false
-    }
-  }
-
-  async function doPublish(row: ConsoleConfigReleaseResponse) {
-    try {
-      const { value: reason } = await ElMessageBox.prompt(
-        t('configReleaseList.publishPrompt'),
-        t('configReleaseList.publishTitle', { key: row.configKey }),
-        {
-          confirmButtonText: t('configReleaseList.publishConfirm'),
-          cancelButtonText: t('common.cancel'),
-        },
-      )
-      await publishRelease(row.id, {
-        tenantId: row.tenantId ?? tenant.tenantId,
-        operatorId: operatorId(),
-        reason: reason || undefined,
-      })
-      ElMessage.success(t('configReleaseList.publishSuccess', { key: row.configKey }))
-      await load()
-    } catch {
-      /* cancel */
-    }
-  }
-
-  async function doGray(row: ConsoleConfigReleaseResponse) {
-    try {
-      const { value: grayScopeJson } = await ElMessageBox.prompt(
-        t('configReleaseList.grayPrompt'),
-        t('configReleaseList.grayTitle', { key: row.configKey }),
-        {
-          confirmButtonText: t('common.confirm'),
-          cancelButtonText: t('common.cancel'),
-          inputType: 'textarea',
-        },
-      )
-      await grayRelease(row.id, {
-        tenantId: row.tenantId ?? tenant.tenantId,
-        operatorId: operatorId(),
-        grayScopeJson: grayScopeJson || undefined,
-      })
-      ElMessage.success(t('configReleaseList.graySuccess', { key: row.configKey }))
-      await load()
-    } catch {
-      /* cancel */
     }
   }
 
@@ -627,7 +699,7 @@
       )
       await rollbackRelease(row.id, {
         tenantId: row.tenantId ?? tenant.tenantId,
-        operatorId: operatorId(),
+        expectedVersionNo: row.versionNo,
         reason: reason || undefined,
       })
       ElMessage.success(t('configReleaseList.rollbackSuccess', { key: row.configKey }))
@@ -660,7 +732,6 @@
       )
       await submitReleaseApproval(row.id, {
         tenantId: row.tenantId ?? tenant.tenantId,
-        operatorId: operatorId(),
         reason: reason || undefined,
       })
       ElMessage.success(t('configReleaseList.submitSuccess', { key: row.configKey }))
@@ -877,6 +948,12 @@
     display: flex;
     justify-content: flex-end;
     padding: 4px 0 8px;
+  }
+
+  .cr-governance__class {
+    font-family: var(--font-mono, monospace);
+    font-size: 12px;
+    word-break: break-all;
   }
 
   /* 右侧 sticky 详情面板(352px / r14 / p20) */
