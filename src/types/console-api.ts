@@ -10,6 +10,7 @@ export type ConsoleJobStepInstanceResponse = components['schemas']['ConsoleJobSt
 export type ConsoleOpsSummaryResponse = components['schemas']['ConsoleOpsSummaryResponse']
 export type ConsoleApprovalCommandResponse = components['schemas']['ConsoleApprovalCommandResponse']
 export type ConsoleConfigReleaseResponse = components['schemas']['ConsoleConfigReleaseResponse']
+export type ConfigGovernanceItemResponse = components['schemas']['ConfigGovernanceItemResponse']
 export type ConsoleFileRecordResponse = components['schemas']['ConsoleFileRecordResponse']
 export type ConsoleFileRecordDetailResponse =
   components['schemas']['ConsoleFileRecordDetailResponse']

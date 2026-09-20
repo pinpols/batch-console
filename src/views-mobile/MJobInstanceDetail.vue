@@ -188,6 +188,7 @@
     ConsoleJobInstanceResponse,
     ConsoleJobStepInstanceResponse,
   } from '@/types/console-api'
+  import { fmtDatetime } from '@/utils/datetime'
 
   const { t, te } = useI18n({ useScope: 'global' })
   const route = useRoute()
@@ -210,12 +211,7 @@
   const instanceId = () => Number(route.params.id)
 
   function fmt(ts?: string | null) {
-    if (!ts) return '—'
-    try {
-      return new Date(ts).toLocaleString('zh-CN', { hour12: false })
-    } catch {
-      return ts
-    }
+    return fmtDatetime(ts)
   }
 
   function pretty(raw?: string | null): string {

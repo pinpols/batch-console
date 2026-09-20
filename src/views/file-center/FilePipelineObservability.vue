@@ -473,6 +473,7 @@
   } from '@/types/console-api'
   import { queryPipelineProgressSafe, type PipelineStepProgress } from '@/api/filePipelineQuery'
   import { processedCountFromSummary } from '@/utils/pipelineStepSummary'
+  import { fmtNumber } from '@/utils/number'
   import { useAutoRefresh } from '@/composables/useAutoRefresh'
   import { useSseAutoReload } from '@/composables/useSseAutoReload'
   import OpsListToolbar from '@/components/table/OpsListToolbar.vue'
@@ -538,7 +539,7 @@
   }
 
   function formatNumberWithCommas(n: number): string {
-    return n.toLocaleString('en-US')
+    return fmtNumber(n)
   }
 
   function formatRowsCompact(n: number): string {

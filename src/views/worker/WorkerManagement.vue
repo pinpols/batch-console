@@ -313,6 +313,7 @@
   import TablePagerBar from '@/components/table/TablePagerBar.vue'
   import type { ConsoleWorkerRegistryResponse } from '@/types/console-api'
   import type { ConsoleFileChannelResponse } from '@/types/console-api'
+  import { fmtDatetime } from '@/utils/datetime'
 
   const tenant = useTenantStore()
   const queryClient = useQueryClient()
@@ -393,9 +394,7 @@
   const workerEmptyDescription = computed(() =>
     t('workerManagement.emptyDescription', { tenant: tenant.tenantId || '—' }),
   )
-  const workerLastRefreshText = computed(() =>
-    live.lastRefreshedAt.value ? live.lastRefreshedAt.value.toLocaleString() : '—',
-  )
+  const workerLastRefreshText = computed(() => fmtDatetime(live.lastRefreshedAt.value))
 
   const workerTableRows = computed(() => {
     const pr = toPageResult(filteredWorkers.value, workerPage.value, workerPageSize.value)

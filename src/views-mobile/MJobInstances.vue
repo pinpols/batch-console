@@ -153,6 +153,7 @@
   import { useCopy } from '@/composables/useCopy'
   import { instanceApi } from '@/api/instance'
   import type { ConsoleJobInstanceResponse } from '@/types/console-api'
+  import { fmtDatetime } from '@/utils/datetime'
 
   const route = useRoute()
   const router = useRouter()
@@ -217,12 +218,7 @@
   }
 
   function fmt(ts?: string | null) {
-    if (!ts) return '—'
-    try {
-      return new Date(ts).toLocaleString('zh-CN', { hour12: false })
-    } catch {
-      return ts
-    }
+    return fmtDatetime(ts)
   }
 
   function statusChipClass(s?: string) {

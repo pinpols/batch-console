@@ -156,6 +156,7 @@
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
+  import { fmtNumber } from '@/utils/number'
 
   const tenant = useTenantStore()
   const loadingKey = ref<ReportExcelKey | ''>('')
@@ -260,7 +261,7 @@
     return [
       {
         label: t('reportExportHub.kpiTotalRuns'),
-        value: total != null ? total.toLocaleString() : '—',
+        value: total != null ? fmtNumber(total) : '—',
         tone: 'var(--color-primary)',
       },
       {

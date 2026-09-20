@@ -1560,6 +1560,23 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/console/config/governance': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** 查询配置治理绑定目录 */
+    get: operations['listConfigGovernance']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/console/config/releases': {
     parameters: {
       query?: never
@@ -1587,8 +1604,11 @@ export interface paths {
     }
     get?: never
     put?: never
-    /** Publish config release */
-    post: operations['publishConfigRelease']
+    /**
+     * 已弃用的直接发布端点；请改用提交审批和批准流程
+     * @deprecated
+     */
+    post: operations['deprecatedPublishConfigRelease']
     delete?: never
     options?: never
     head?: never
@@ -1604,8 +1624,11 @@ export interface paths {
     }
     get?: never
     put?: never
-    /** Gray release */
-    post: operations['grayConfigRelease']
+    /**
+     * 已弃用的灰度发布端点；请改用提交审批和批准流程
+     * @deprecated
+     */
+    post: operations['deprecatedGrayConfigRelease']
     delete?: never
     options?: never
     head?: never
@@ -5929,6 +5952,40 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/console/config/tenant-package/excel/sample-template': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Download scenario sample tenant config package Excel template */
+    get: operations['downloadTenantConfigPackageExcelSampleTemplate']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/config/tenant-package/excel/guide': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Return 11-sheet tenant config package field guide */
+    get: operations['getTenantConfigPackageExcelGuide']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/console/config/tenant-package/excel/upload': {
     parameters: {
       query?: never
@@ -6879,6 +6936,9 @@ export interface components {
     CommonResponseConfigReleaseList: components['schemas']['CommonResponseBase'] & {
       data?: components['schemas']['ConsoleConfigReleaseResponse'][]
     }
+    CommonResponseConfigGovernanceList: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['ConfigGovernanceItemResponse'][]
+    }
     CommonResponseSecretVersionList: components['schemas']['CommonResponseBase'] & {
       data?: components['schemas']['ConsoleSecretVersionResponse'][]
     }
@@ -7469,37 +7529,48 @@ export interface components {
       operatorId?: string
       reason?: string
     }
-    /** @description 与 BE Java DTO `ConfigReleaseUpsertRequest` 对齐(注:configPayload 在 BE 是 JSON-string,字段名 configPayloadJson)。 */
+    /** @description 与 BE Java DTO `ConfigReleaseUpsertRequest` 对齐；载荷在创建时和提交审批时均执行配置类型校验。 */
     ConfigReleaseUpsertRequest: {
       tenantId: string
       configType: string
       configKey: string
       configName: string
-      /** @description 配置内容序列化为 JSON 字符串(BE 不解析,直接写入数据库) */
-      configPayloadJson?: string
-      grayScopeJson?: string
+      /** @description 与配置类型匹配的 JSON 对象字符串；服务端严格解析并校验对象标识。 */
+      configPayloadJson: string
       effectiveFromAt?: string
       effectiveToAt?: string
-      operatorId?: string
-      traceId?: string
       reason?: string
     }
     ConfigReleaseActionRequest: {
       tenantId: string
-      operatorId?: string
-      traceId?: string
       reason?: string
-      grayScopeJson?: string
+      /**
+       * Format: int32
+       * @description 页面读取到的发布版本；服务端拒绝旧版本和并发状态变更。
+       */
+      expectedVersionNo?: number
     }
     SecretVersionRotateRequest: {
       tenantId: string
       secretRef: string
       secretName: string
+      secretPayloadJson?: string
+      /**
+       * @deprecated
+       * @description 旧客户端兼容字段；服务端会转换为 JSON 字符串并使用相同加密流程。
+       */
       secretPayload?: {
         [key: string]: unknown
       }
       secretStatus?: string
-      operatorId?: string
+      reason?: string
+    }
+    ConfigReleaseApprovalSubmitRequest: {
+      tenantId?: string
+      reason?: string
+    }
+    ConfigApprovalActionRequest: {
+      tenantId?: string
       reason?: string
     }
     FileTemplateExcelApplyRequest: components['schemas']['ExcelApplyRequest']
@@ -8666,6 +8737,18 @@ export interface components {
       catchUpPolicy: string
       items: components['schemas']['ConsoleBatchDayCatchUpItemResponse'][]
     }
+    ConfigGovernanceItemResponse: {
+      id: string
+      className: string
+      prefix: string
+      /** @enum {string} */
+      source: 'STATIC' | 'DYNAMIC_DB'
+      /** @enum {string} */
+      activation: 'RESTART_REQUIRED' | 'IMMEDIATE_AFTER_CONFIRMATION'
+      /** @enum {string} */
+      sensitivity: 'PUBLIC' | 'SECRET'
+      restartRequired: boolean
+    }
     ConsoleConfigReleaseResponse: {
       /** Format: int64 */
       id: number
@@ -8676,6 +8759,13 @@ export interface components {
       configStatus: string
       /** Format: int32 */
       versionNo: number
+      /** @enum {string} */
+      configSource: 'DYNAMIC_DB'
+      /** @enum {string} */
+      activationMode: 'IMMEDIATE_AFTER_CONFIRMATION'
+      restartRequired: boolean
+      /** @enum {string} */
+      applyConfirmationStatus: 'NOT_RELEASED' | 'CONFIRMATION_REQUIRED' | 'ROLLED_BACK'
       grayScopeJson: string
       configPayloadJson: string
       /** Format: date-time */
@@ -8711,7 +8801,11 @@ export interface components {
       effectiveFromAt: string
       /** Format: date-time */
       effectiveToAt: string
-      secretPayloadJson: string
+      /**
+       * @description 始终返回固定的 redacted JSON；不会返回持久化密钥载荷或密文。
+       * @example {"redacted":true}
+       */
+      readonly secretPayloadJson: string
       rotationReason: string
       createdBy: string
       updatedBy: string
@@ -9766,6 +9860,11 @@ export interface components {
       message: string
       data: components['schemas']['TenantConfigPackageExcelPreviewResponse']
     }
+    CommonResponseTenantConfigPackageExcelGuide: {
+      code: string
+      message: string
+      data: components['schemas']['TenantConfigPackageExcelGuideResponse']
+    }
     CommonResponseTenantConfigPackageExcelApply: {
       code: string
       message: string
@@ -9809,6 +9908,27 @@ export interface components {
       workflowNodeRows: number
       /** Format: int32 */
       workflowEdgeRows: number
+    }
+    TenantConfigPackageExcelGuideResponse: {
+      sheets: components['schemas']['TenantConfigPackageSheetGuide'][]
+    }
+    TenantConfigPackageSheetGuide: {
+      sheetName: string
+      appliesTo: string
+      columns: components['schemas']['TenantConfigPackageColumnGuide'][]
+    }
+    TenantConfigPackageColumnGuide: {
+      columnName: string
+      required: boolean
+      readOnly: boolean
+      guideLevel: string
+      format: string
+      allowedValues: string[]
+      description: string
+      example: string
+      fillExample: string
+      defaultBehavior: string
+      appliesTo: string
     }
     TenantConfigPackageExcelPreviewResponse: {
       uploadToken: string
@@ -13284,6 +13404,26 @@ export interface operations {
       }
     }
   }
+  listConfigGovernance: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description 配置来源、生效方式和敏感级别目录 */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseConfigGovernanceList']
+        }
+      }
+    }
+  }
   listConfigReleases: {
     parameters: {
       query?: {
@@ -13332,7 +13472,7 @@ export interface operations {
       }
     }
   }
-  publishConfigRelease: {
+  deprecatedPublishConfigRelease: {
     parameters: {
       query?: never
       header: {
@@ -13349,7 +13489,7 @@ export interface operations {
       }
     }
     responses: {
-      /** @description Publish result */
+      /** @description 为兼容历史契约而保留的响应结构 */
       200: {
         headers: {
           [name: string]: unknown
@@ -13357,10 +13497,17 @@ export interface operations {
         content: {
           'application/json': components['schemas']['CommonResponseString']
         }
+      }
+      /** @description 已禁用直接发布；请提交发布单并由独立审批人批准 */
+      410: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
       }
     }
   }
-  grayConfigRelease: {
+  deprecatedGrayConfigRelease: {
     parameters: {
       query?: never
       header: {
@@ -13377,7 +13524,7 @@ export interface operations {
       }
     }
     responses: {
-      /** @description Gray result */
+      /** @description 为兼容历史契约而保留的响应结构 */
       200: {
         headers: {
           [name: string]: unknown
@@ -13385,6 +13532,13 @@ export interface operations {
         content: {
           'application/json': components['schemas']['CommonResponseString']
         }
+      }
+      /** @description 已禁用直接灰度发布；请提交发布单并由独立审批人批准 */
+      410: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
       }
     }
   }
@@ -17598,7 +17752,7 @@ export interface operations {
     }
     requestBody: {
       content: {
-        'application/json': Record<string, never>
+        'application/json': components['schemas']['ConfigReleaseApprovalSubmitRequest']
       }
     }
     responses: {
@@ -17626,7 +17780,7 @@ export interface operations {
     }
     requestBody: {
       content: {
-        'application/json': Record<string, never>
+        'application/json': components['schemas']['ConfigApprovalActionRequest']
       }
     }
     responses: {
@@ -17654,7 +17808,7 @@ export interface operations {
     }
     requestBody: {
       content: {
-        'application/json': Record<string, never>
+        'application/json': components['schemas']['ConfigApprovalActionRequest']
       }
     }
     responses: {
@@ -20571,6 +20725,49 @@ export interface operations {
         }
         content: {
           'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': string
+        }
+      }
+    }
+  }
+  downloadTenantConfigPackageExcelSampleTemplate: {
+    parameters: {
+      query?: {
+        /** @description Scenario filter. ALL keeps all sample scenarios. */
+        scenario?: 'ALL' | 'IMPORT' | 'EXPORT' | 'PROCESS' | 'DISPATCH' | 'WORKFLOW'
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Scenario sample Excel template with 11 data sheets */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': string
+        }
+      }
+    }
+  }
+  getTenantConfigPackageExcelGuide: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Field guide for required columns, defaults, formats, enums, and examples */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseTenantConfigPackageExcelGuide']
         }
       }
     }

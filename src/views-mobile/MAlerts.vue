@@ -116,6 +116,7 @@
   import { queryAlertsAll } from '@/api/alertsQuery'
   import { acknowledgeAlert, silenceAlert, closeAlert } from '@/api/alertsCommands'
   import type { ConsoleAlertEventResponse } from '@/types/console-api'
+  import { fmtDatetime } from '@/utils/datetime'
 
   const { t, te } = useI18n({ useScope: 'global' })
   const tenant = useTenantStore()
@@ -206,12 +207,7 @@
   })
 
   function fmt(ts?: string | null) {
-    if (!ts) return '—'
-    try {
-      return new Date(ts).toLocaleString('zh-CN', { hour12: false })
-    } catch {
-      return ts
-    }
+    return fmtDatetime(ts)
   }
 
   function severityChipClass(sev?: string | null) {
