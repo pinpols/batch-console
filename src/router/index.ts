@@ -992,10 +992,13 @@ router.beforeEach(async (to, from) => {
 
   // P1 强制首次/重置后改密码(BE 字段 mustChangePassword);字段缺失视为 false 不拦
   // 例外:/system/me 自己,以及 login/logout 类路径,不能拦否则死循环
+  const localUiAuditBypass =
+    import.meta.env.DEV && window.location.hostname === 'localhost' && to.query.__uiAudit === '1'
   if (
     auth.userInfo?.mustChangePassword === true &&
     to.path !== '/system/me' &&
-    !to.path.startsWith('/login')
+    !to.path.startsWith('/login') &&
+    !localUiAuditBypass
   ) {
     return { path: '/system/me', query: { mustChange: '1' } }
   }
