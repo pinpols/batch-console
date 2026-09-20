@@ -5952,6 +5952,40 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/console/config/tenant-package/excel/sample-template': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Download scenario sample tenant config package Excel template */
+    get: operations['downloadTenantConfigPackageExcelSampleTemplate']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/config/tenant-package/excel/guide': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Return 11-sheet tenant config package field guide */
+    get: operations['getTenantConfigPackageExcelGuide']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/console/config/tenant-package/excel/upload': {
     parameters: {
       query?: never
@@ -9826,6 +9860,11 @@ export interface components {
       message: string
       data: components['schemas']['TenantConfigPackageExcelPreviewResponse']
     }
+    CommonResponseTenantConfigPackageExcelGuide: {
+      code: string
+      message: string
+      data: components['schemas']['TenantConfigPackageExcelGuideResponse']
+    }
     CommonResponseTenantConfigPackageExcelApply: {
       code: string
       message: string
@@ -9869,6 +9908,27 @@ export interface components {
       workflowNodeRows: number
       /** Format: int32 */
       workflowEdgeRows: number
+    }
+    TenantConfigPackageExcelGuideResponse: {
+      sheets: components['schemas']['TenantConfigPackageSheetGuide'][]
+    }
+    TenantConfigPackageSheetGuide: {
+      sheetName: string
+      appliesTo: string
+      columns: components['schemas']['TenantConfigPackageColumnGuide'][]
+    }
+    TenantConfigPackageColumnGuide: {
+      columnName: string
+      required: boolean
+      readOnly: boolean
+      guideLevel: string
+      format: string
+      allowedValues: string[]
+      description: string
+      example: string
+      fillExample: string
+      defaultBehavior: string
+      appliesTo: string
     }
     TenantConfigPackageExcelPreviewResponse: {
       uploadToken: string
@@ -20665,6 +20725,49 @@ export interface operations {
         }
         content: {
           'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': string
+        }
+      }
+    }
+  }
+  downloadTenantConfigPackageExcelSampleTemplate: {
+    parameters: {
+      query?: {
+        /** @description Scenario filter. ALL keeps all sample scenarios. */
+        scenario?: 'ALL' | 'IMPORT' | 'EXPORT' | 'PROCESS' | 'DISPATCH' | 'WORKFLOW'
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Scenario sample Excel template with 11 data sheets */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': string
+        }
+      }
+    }
+  }
+  getTenantConfigPackageExcelGuide: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Field guide for required columns, defaults, formats, enums, and examples */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseTenantConfigPackageExcelGuide']
         }
       }
     }

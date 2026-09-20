@@ -81,6 +81,29 @@
                   >
                     {{ t('tenantPackageImportWizard.btnDownloadTemplate') }}
                   </el-button>
+                  <div class="sample-template-control">
+                    <el-select
+                      v-model="selectedScenario"
+                      size="small"
+                      :placeholder="t('tenantPackageImportWizard.scenarioPlaceholder')"
+                    >
+                      <el-option
+                        v-for="option in scenarioOptions"
+                        :key="option.value"
+                        :label="option.label"
+                        :value="option.value"
+                      />
+                    </el-select>
+                    <el-button
+                      link
+                      type="primary"
+                      :icon="Download"
+                      :loading="sampleTplLoading"
+                      @click="doDownloadSampleTemplate"
+                    >
+                      {{ t('tenantPackageImportWizard.btnDownloadSampleTemplate') }}
+                    </el-button>
+                  </div>
                   <el-button
                     link
                     type="primary"
@@ -89,6 +112,15 @@
                     @click="doExport"
                   >
                     {{ t('tenantPackageImportWizard.btnExportCurrent') }}
+                  </el-button>
+                  <el-button
+                    link
+                    type="primary"
+                    :icon="BookOpen"
+                    :loading="guideLoading"
+                    @click="openGuideDrawer"
+                  >
+                    {{ t('tenantPackageImportWizard.btnFieldGuide') }}
                   </el-button>
                 </div>
               </div>
@@ -147,6 +179,9 @@
                       {{ t('excelMaintenanceWizard.btnDownloadAnnotated') }}
                     </el-button>
                   </el-tooltip>
+                  <el-button :icon="BookOpen" :loading="guideLoading" @click="openGuideDrawer">
+                    {{ t('tenantPackageImportWizard.btnFieldGuide') }}
+                  </el-button>
                 </div>
               </div>
               <el-descriptions
@@ -531,6 +566,140 @@
         </div>
       </div>
     </SectionCard>
+
+    <el-drawer
+      v-model="guideDrawerVisible"
+      class="tenant-pkg-guide-drawer"
+      :title="t('tenantPackageImportWizard.guideDrawerTitle')"
+      size="78%"
+      append-to-body
+      destroy-on-close
+    >
+      <div class="guide-drawer">
+        <el-alert type="info" show-icon :closable="false" class="guide-drawer__intro">
+          <template #title>{{ t('tenantPackageImportWizard.guideDrawerIntroTitle') }}</template>
+          <template #default>{{ t('tenantPackageImportWizard.guideDrawerIntroBody') }}</template>
+        </el-alert>
+
+        <div class="guide-drawer__filters">
+          <el-input
+            v-model="guideKeyword"
+            clearable
+            :prefix-icon="Search"
+            :placeholder="t('tenantPackageImportWizard.guideSearchPlaceholder')"
+          />
+          <el-select
+            v-model="guideSheetName"
+            filterable
+            :placeholder="t('tenantPackageImportWizard.guideSheetPlaceholder')"
+          >
+            <el-option
+              v-for="sheet in guideSheets"
+              :key="sheet.sheetName"
+              :label="sheet.sheetName"
+              :value="sheet.sheetName"
+            />
+          </el-select>
+          <el-segmented v-model="guideLevelFilter" :options="guideLevelOptions" />
+          <el-segmented v-model="selectedScenario" :options="scenarioOptions" />
+        </div>
+
+        <div v-if="activeGuideSheet" class="guide-drawer__summary">
+          <el-tag effect="plain">{{ activeGuideSheet.sheetName }}</el-tag>
+          <span>{{ activeGuideSheet.appliesTo }}</span>
+          <span>
+            {{
+              t('tenantPackageImportWizard.guideSheetSummary', {
+                total: activeGuideSheet.columns.length,
+                required: activeGuideRequiredCount,
+              })
+            }}
+          </span>
+        </div>
+
+        <el-table
+          v-loading="guideLoading"
+          class="guide-drawer__table console-table"
+          :data="filteredGuideColumns"
+          stripe
+          border
+          size="small"
+          :empty-text="t('common.noData')"
+        >
+          <el-table-column type="expand" width="42">
+            <template #default="{ row }">
+              <div class="guide-row-detail">
+                <div>
+                  <strong>{{ t('tenantPackageImportWizard.guideColFillExample') }}</strong>
+                  <pre>{{ row.fillExample || row.example || '-' }}</pre>
+                </div>
+                <div>
+                  <strong>{{ t('tenantPackageImportWizard.guideColAppliesTo') }}</strong>
+                  <p>{{ row.appliesTo || '-' }}</p>
+                </div>
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column
+            prop="columnName"
+            :label="t('tenantPackageImportWizard.guideColColumn')"
+            min-width="210"
+            fixed="left"
+          >
+            <template #default="{ row }">
+              <div class="guide-column-name">
+                <code>{{ row.columnName }}</code>
+                <el-tag v-if="row.required" size="small" type="danger" effect="plain">
+                  {{ t('tenantPackageImportWizard.guideRequired') }}
+                </el-tag>
+                <el-tag v-else size="small" effect="plain">
+                  {{ t('tenantPackageImportWizard.guideOptional') }}
+                </el-tag>
+                <el-tag v-if="row.readOnly" size="small" type="info" effect="plain">
+                  {{ t('tenantPackageImportWizard.guideReadOnly') }}
+                </el-tag>
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column
+            prop="guideLevel"
+            :label="t('tenantPackageImportWizard.guideColLevel')"
+            width="100"
+          />
+          <el-table-column
+            prop="format"
+            :label="t('tenantPackageImportWizard.guideColFormat')"
+            min-width="110"
+          />
+          <el-table-column
+            prop="defaultBehavior"
+            :label="t('tenantPackageImportWizard.guideColDefault')"
+            min-width="220"
+          />
+          <el-table-column
+            prop="description"
+            :label="t('tenantPackageImportWizard.guideColDescription')"
+            min-width="280"
+            show-overflow-tooltip
+          />
+          <el-table-column
+            prop="allowedValues"
+            :label="t('tenantPackageImportWizard.guideColAllowed')"
+            min-width="240"
+          >
+            <template #default="{ row }">
+              <span>{{ row.allowedValues?.join(' / ') || '-' }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column
+            prop="example"
+            :label="t('tenantPackageImportWizard.guideColExample')"
+            min-width="180"
+            show-overflow-tooltip
+          />
+        </el-table>
+      </div>
+    </el-drawer>
   </PageContainer>
 </template>
 
@@ -540,10 +709,12 @@
   import {
     ArrowLeft,
     ArrowRight,
+    BookOpen,
     FileText as Document,
     Download,
     FolderOpen as FolderOpened,
     RefreshCw as Refresh,
+    Search,
     Upload,
     Upload as UploadFilled,
     TriangleAlert as WarningFilled,
@@ -554,13 +725,18 @@
   import { confirmDanger } from '@/composables/useDangerConfirm'
   import {
     tenantPackageDownloadTemplate,
+    tenantPackageDownloadSampleTemplate,
     tenantPackageExport,
     tenantPackageUpload,
     tenantPackagePreview,
+    tenantPackageGuide,
     tenantPackageDownloadPreviewWorkbook,
     tenantPackagePatchRow,
     tenantPackageApply,
     type TenantPackageApplyResponse,
+    type TenantPackageColumnGuide,
+    type TenantPackageSampleScenario,
+    type TenantPackageSheetGuide,
   } from '@/api/tenantPackageExcel'
   import {
     useImportWizard,
@@ -595,6 +771,96 @@
   const rowDrafts = reactive<Record<string, Record<string, string>>>({})
   const patchSaving = ref<string | null>(null)
   const showOnlyInvalidSheets = ref(false)
+  const guideDrawerVisible = ref(false)
+  const guideLoading = ref(false)
+  const guideSheets = shallowRef<TenantPackageSheetGuide[]>([])
+  const guideSheetName = ref('')
+  const guideKeyword = ref('')
+  const sampleTplLoading = ref(false)
+  const selectedScenario = ref<TenantPackageSampleScenario>('ALL')
+  const scenarioOptions = computed<Array<{ label: string; value: TenantPackageSampleScenario }>>(
+    () => [
+      { label: t('tenantPackageImportWizard.scenarioAll'), value: 'ALL' },
+      { label: 'IMPORT', value: 'IMPORT' },
+      { label: 'EXPORT', value: 'EXPORT' },
+      { label: 'PROCESS', value: 'PROCESS' },
+      { label: 'DISPATCH', value: 'DISPATCH' },
+      { label: 'WORKFLOW', value: 'WORKFLOW' },
+    ],
+  )
+  const guideLevelFilter = ref<'all' | 'required' | 'common' | 'advanced'>('all')
+  const guideLevelOptions = computed(() => [
+    { label: t('tenantPackageImportWizard.guideFilterAll'), value: 'all' },
+    { label: t('tenantPackageImportWizard.guideFilterRequired'), value: 'required' },
+    { label: t('tenantPackageImportWizard.guideFilterCommon'), value: 'common' },
+    { label: t('tenantPackageImportWizard.guideFilterAdvanced'), value: 'advanced' },
+  ])
+
+  const activeGuideSheet = computed<TenantPackageSheetGuide | null>(() => {
+    if (!guideSheets.value.length) return null
+    return (
+      guideSheets.value.find((sheet) => sheet.sheetName === guideSheetName.value) ??
+      guideSheets.value[0] ??
+      null
+    )
+  })
+
+  const activeGuideRequiredCount = computed<number>(() => {
+    return activeGuideSheet.value?.columns.filter((column) => column.required).length ?? 0
+  })
+
+  const filteredGuideColumns = computed<TenantPackageColumnGuide[]>(() => {
+    const columns = activeGuideSheet.value?.columns ?? []
+    const keyword = guideKeyword.value.trim().toLowerCase()
+    const scenario = selectedScenario.value
+    return columns.filter((column) => {
+      if (!guideColumnMatchesScenario(column, activeGuideSheet.value, scenario)) return false
+      if (guideLevelFilter.value === 'required' && !column.required) return false
+      if (guideLevelFilter.value === 'common' && column.guideLevel !== '常用') return false
+      if (guideLevelFilter.value === 'advanced' && column.guideLevel !== '高级') return false
+      if (!keyword) return true
+      return [
+        column.columnName,
+        column.guideLevel,
+        column.format,
+        column.description,
+        column.example,
+        column.fillExample,
+        column.defaultBehavior,
+        column.appliesTo,
+        ...(column.allowedValues ?? []),
+      ]
+        .filter(Boolean)
+        .some((text) => String(text).toLowerCase().includes(keyword))
+    })
+  })
+
+  async function loadGuideIfNeeded() {
+    if (guideSheets.value.length || guideLoading.value) return
+    guideLoading.value = true
+    try {
+      const resp = await tenantPackageGuide()
+      guideSheets.value = resp.sheets ?? []
+      guideSheetName.value = guideSheets.value[0]?.sheetName ?? ''
+    } finally {
+      guideLoading.value = false
+    }
+  }
+
+  async function openGuideDrawer() {
+    guideDrawerVisible.value = true
+    await loadGuideIfNeeded()
+  }
+
+  function guideColumnMatchesScenario(
+    column: TenantPackageColumnGuide,
+    sheet: TenantPackageSheetGuide | null,
+    scenario: TenantPackageSampleScenario,
+  ): boolean {
+    if (scenario === 'ALL') return true
+    const text = `${sheet?.appliesTo ?? ''} ${column.appliesTo ?? ''}`.toUpperCase()
+    return text.includes('ALL') || text.includes(scenario)
+  }
 
   function rowKeyOf(row: PreviewErrorRow): string {
     return `${row.sheetName}#${row.rowNo}`
@@ -808,6 +1074,20 @@
       ElMessage.success(t('tenantPackageImportWizard.templateDownloadedToast'))
     } finally {
       tplLoading.value = false
+    }
+  }
+
+  async function doDownloadSampleTemplate() {
+    sampleTplLoading.value = true
+    try {
+      const blob = await tenantPackageDownloadSampleTemplate(selectedScenario.value)
+      triggerBlobDownload(
+        blob,
+        `tenant-package-sample-${selectedScenario.value.toLowerCase()}.xlsx`,
+      )
+      ElMessage.success(t('tenantPackageImportWizard.sampleTemplateDownloadedToast'))
+    } finally {
+      sampleTplLoading.value = false
     }
   }
 
@@ -1085,6 +1365,18 @@
     margin-left: 0;
   }
 
+  .sample-template-control {
+    display: grid;
+    grid-template-columns: minmax(0, 112px) minmax(0, 1fr);
+    gap: 6px;
+    align-items: center;
+    width: 100%;
+  }
+
+  .sample-template-control :deep(.el-select) {
+    width: 100%;
+  }
+
   .upload-zone__toolbar-left :deep(.el-button.is-link:hover) {
     transform: translateY(-1px);
     background: var(--button-primary-soft-bg-hover);
@@ -1214,7 +1506,89 @@
     transform: none;
   }
 
+  :global(.tenant-pkg-guide-drawer .el-drawer__body) {
+    padding-top: 8px;
+  }
+
+  .guide-drawer {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-height: 0;
+  }
+
+  .guide-drawer__filters {
+    display: grid;
+    grid-template-columns: minmax(240px, 1fr) minmax(220px, 300px) auto;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .guide-drawer__summary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    color: var(--color-text-secondary);
+    font-size: 13px;
+  }
+
+  .guide-drawer__table {
+    width: 100%;
+  }
+
+  .guide-column-name {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+  }
+
+  .guide-column-name code {
+    padding: 2px 5px;
+    border-radius: 4px;
+    background: var(--el-fill-color-light);
+    color: var(--color-text-primary);
+    word-break: break-all;
+  }
+
+  .guide-row-detail {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(220px, 1fr);
+    gap: 16px;
+    padding: 8px 14px 12px;
+    color: var(--color-text-secondary);
+  }
+
+  .guide-row-detail strong {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--color-text-primary);
+  }
+
+  .guide-row-detail pre {
+    margin: 0;
+    padding: 10px;
+    max-height: 260px;
+    overflow: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    border-radius: var(--radius-input);
+    border: 1px solid var(--color-border-light);
+    background: var(--el-fill-color-lighter);
+    color: var(--color-text-primary);
+  }
+
   @media (max-width: 720px) {
+    .guide-drawer__filters {
+      grid-template-columns: 1fr;
+    }
+
+    .guide-row-detail {
+      grid-template-columns: 1fr;
+    }
+
     .upload-zone__toolbar {
       grid-template-columns: 1fr;
       max-width: 520px;
