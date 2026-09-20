@@ -13,61 +13,66 @@
       </template>
     </PageHeader>
 
-    <div class="al-tabs">
-      <button
-        v-for="tab in groupTabs"
-        :key="tab.key"
-        type="button"
-        class="al-tab"
-        :class="{ 'is-active': tab.active }"
-        :style="tab.active && tab.dot ? { '--al-tab-tint': tab.dot } : undefined"
-        @click="pickGroup(tab.key)"
-      >
-        <span v-if="tab.dot" class="al-tab__dot" :style="{ background: tab.dot }" />
-        <span>{{ tab.label }}</span>
-        <span v-if="tab.count !== null" class="al-tab__count">{{ tab.count }}</span>
-      </button>
-      <span class="al-tabs__spacer" />
-      <DateRangePresetPicker
-        class="al-range"
-        v-model="timeRange"
-        type="daterange"
-        @update:model-value="onTimeChange"
-      />
-      <MetaSelect
-        class="al-sel"
-        v-model="filters.severity"
-        :options="severityOptions"
-        clearable
-        enum-key="severity"
-        :placeholder="t('alertList.severityPlaceholder')"
-        @change="search"
-      />
-      <MetaSelect
-        class="al-sel"
-        v-model="filters.alertType"
-        :options="alertTypeOptions.map((v) => ({ value: v, label: v }))"
-        clearable
-        filterable
-        :placeholder="t('alertList.typePlaceholder')"
-        @change="search"
-      />
-      <TraceIdInput
-        class="al-trace"
-        v-model="filters.traceId"
-        :placeholder="t('alertList.tracePlaceholder')"
-        @keyup.enter="search"
-      />
-      <el-button text @click="reset">{{ t('common.reset') }}</el-button>
-      <SavedFiltersMenu
-        :sets="savedFilters.sets.value"
-        :on-save="savedFilters.save"
-        :on-apply="savedFilters.applySet"
-        :on-remove="savedFilters.remove"
-        :on-rename="savedFilters.rename"
-        :on-export="savedFilters.exportSets"
-        :on-import="savedFilters.importSets"
-      />
+    <div class="al-toolbar">
+      <div class="al-tabs" :aria-label="t('alertList.pageTitle')">
+        <button
+          v-for="tab in groupTabs"
+          :key="tab.key"
+          type="button"
+          class="al-tab"
+          :class="{ 'is-active': tab.active }"
+          :style="tab.active && tab.dot ? { '--al-tab-tint': tab.dot } : undefined"
+          @click="pickGroup(tab.key)"
+        >
+          <span v-if="tab.dot" class="al-tab__dot" :style="{ background: tab.dot }" />
+          <span>{{ tab.label }}</span>
+          <span v-if="tab.count !== null" class="al-tab__count">{{ tab.count }}</span>
+        </button>
+      </div>
+
+      <div class="al-filters">
+        <DateRangePresetPicker
+          class="al-range"
+          v-model="timeRange"
+          type="daterange"
+          @update:model-value="onTimeChange"
+        />
+        <MetaSelect
+          class="al-sel"
+          v-model="filters.severity"
+          :options="severityOptions"
+          clearable
+          enum-key="severity"
+          :placeholder="t('alertList.severityPlaceholder')"
+          @change="search"
+        />
+        <MetaSelect
+          class="al-sel"
+          v-model="filters.alertType"
+          :options="alertTypeOptions.map((v) => ({ value: v, label: v }))"
+          clearable
+          filterable
+          :placeholder="t('alertList.typePlaceholder')"
+          @change="search"
+        />
+        <TraceIdInput
+          class="al-trace"
+          v-model="filters.traceId"
+          :placeholder="t('alertList.tracePlaceholder')"
+          @keyup.enter="search"
+        />
+        <el-button class="al-reset" text @click="reset">{{ t('common.reset') }}</el-button>
+        <SavedFiltersMenu
+          class="al-saved"
+          :sets="savedFilters.sets.value"
+          :on-save="savedFilters.save"
+          :on-apply="savedFilters.applySet"
+          :on-remove="savedFilters.remove"
+          :on-rename="savedFilters.rename"
+          :on-export="savedFilters.exportSets"
+          :on-import="savedFilters.importSets"
+        />
+      </div>
     </div>
 
     <div class="al-live">
@@ -624,20 +629,33 @@
 
 <style scoped>
   /* ── 照设计 #alerts dump 1:1(docs/redesign/proto-alerts.html) ── */
-  .al-tabs {
+  .al-toolbar {
     display: flex;
     align-items: center;
+    gap: 14px;
+    min-width: 0;
+    margin: 6px 0 12px;
+    padding: 10px 12px;
+    border: 1px solid var(--color-border-light, var(--color-border));
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--color-bg-card) 88%, transparent);
+    box-shadow: 0 1px 2px color-mix(in srgb, #1f2937 4%, transparent);
+  }
+
+  .al-tabs {
+    display: inline-flex;
+    align-items: center;
     gap: 6px;
-    margin: 6px 0 14px;
-    flex-wrap: wrap;
+    flex: 0 0 auto;
+    min-width: 0;
   }
 
   .al-tab {
     display: inline-flex;
     align-items: center;
     gap: 7px;
-    height: 28px;
-    padding: 0 12px;
+    height: 30px;
+    padding: 0 11px;
     border-radius: 14px;
     border: 1px solid var(--color-border);
     background: transparent;
@@ -671,22 +689,46 @@
     color: var(--color-text-tertiary);
   }
 
-  .al-tabs__spacer {
-    flex: 1;
+  .al-filters {
+    display: grid;
+    grid-template-columns:
+      minmax(240px, 1.15fr)
+      minmax(148px, 0.72fr)
+      minmax(156px, 0.78fr)
+      minmax(188px, 0.96fr)
+      auto
+      auto;
+    align-items: center;
+    gap: 8px;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .al-filters :deep(.el-select),
+  .al-filters :deep(.el-input),
+  .al-filters :deep(.el-date-editor) {
+    width: 100%;
   }
 
   .al-sel {
-    width: 150px;
+    min-width: 0;
   }
 
-  /* 日期范围(自页头下移):限宽,窄屏随 flex-wrap 折行 */
   .al-range {
-    width: 300px;
-    flex: 0 1 300px;
+    min-width: 0;
   }
 
   .al-trace {
-    width: 200px;
+    min-width: 0;
+  }
+
+  .al-reset {
+    justify-self: end;
+    padding-inline: 10px;
+  }
+
+  .al-saved {
+    justify-self: end;
   }
 
   .al-live {
@@ -887,5 +929,50 @@
     background: var(--color-bg-card);
     border: 1px solid var(--color-border);
     border-radius: 12px;
+  }
+
+  @media (max-width: 1320px) {
+    .al-toolbar {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+
+    .al-filters {
+      width: 100%;
+      grid-template-columns:
+        minmax(240px, 1.2fr) repeat(2, minmax(150px, 0.8fr)) minmax(188px, 1fr)
+        auto auto;
+    }
+  }
+
+  @media (max-width: 980px) {
+    .al-filters {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .al-reset,
+    .al-saved {
+      justify-self: stretch;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .al-toolbar {
+      padding: 10px;
+    }
+
+    .al-tabs {
+      width: 100%;
+      overflow-x: auto;
+      padding-bottom: 2px;
+    }
+
+    .al-tab {
+      flex: 0 0 auto;
+    }
+
+    .al-filters {
+      grid-template-columns: 1fr;
+    }
   }
 </style>

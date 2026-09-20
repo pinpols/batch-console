@@ -1,5 +1,5 @@
 /**
- * ADR-020 批次日重放 API。5 个端点:submit / approve / cancel / detail / list-entries。
+ * ADR-020 批次日重放 API。端点: list / submit / approve / cancel / detail / list-entries。
  * BE 转发到 orchestrator,Console 角色门:
  *   - submit / cancel / detail / entries:ADMIN + TENANT_ADMIN(本租户范围由 BE 校验)
  *   - approve:仅 ADMIN(审批人需要独立于 submit 人)
@@ -7,6 +7,7 @@
  * 2026-05-21 联调发现:console-api 透传 orchestrator 响应时是「双层 CommonResponse 嵌套」,
  * client.ts 拦截器只解一层外壳;本 API 手动再解一层。
  */
+import type { AxiosRequestConfig } from 'axios'
 import { get, post } from './client'
 import type { components } from '@/types/api.generated'
 
@@ -57,6 +58,15 @@ export const batchDayReplayApi = {
       await post<InnerEnvelope<BatchDayReplaySession>>(
         '/api/console/ops/batch-day-replay/sessions',
         req,
+      ),
+    )
+  },
+  async list(opts: { tenantId?: string; status?: string; limit?: number } = {}) {
+    return unwrap(
+      await get<InnerEnvelope<BatchDayReplaySession[]>>(
+        '/api/console/ops/batch-day-replay/sessions',
+        opts,
+        { _silent: true } as AxiosRequestConfig & { _silent: boolean },
       ),
     )
   },

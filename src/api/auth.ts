@@ -24,6 +24,7 @@ export interface ConsoleAuthTokenPayload {
   username: string
   tenantId: string
   authorities: string[]
+  mustChangePassword: boolean
 }
 
 export interface ConsoleAuthProfilePayload {
@@ -33,8 +34,7 @@ export interface ConsoleAuthProfilePayload {
   /** 后端 ConsoleMenuRegistry 按 authorities 过滤后的菜单树；老版本后端可能无该字段 */
   menus?: MenuGroup[]
   /**
-   * P1 待 BE 实施(见 docs/runbook/password-security-backlog.md):
-   * BE schema 加 password_must_change BOOLEAN + login/me response 带此字段。
+   * BE 登录响应已带此字段；/auth/me 老版本可能无该字段。
    * 字段缺失时 FE 视为 false(向后兼容老版本 BE)。
    */
   mustChangePassword?: boolean
@@ -45,9 +45,9 @@ export interface ConsoleAuthProfilePayload {
   passwordExpiringIn?: number
 }
 
-/** POST /api/console/auth/change-password — 待 BE 实施 (P0.1) */
+/** POST /api/console/auth/change-password */
 export interface ChangePasswordBody {
-  oldPassword: string
+  currentPassword: string
   newPassword: string
 }
 
@@ -123,6 +123,7 @@ export const authApi = {
         username: payload.username,
         tenantId: payload.tenantId,
         authorities: payload.authorities,
+        mustChangePassword: payload.mustChangePassword,
       }),
       tenantId: payload.tenantId,
     }
@@ -147,13 +148,12 @@ export const authApi = {
     post<void>('/api/console/auth/logout', undefined, config),
 
   /**
-   * POST /api/console/auth/change-password — 自助改密码(待 BE 实施 P0.1)
+   * POST /api/console/auth/change-password — 自助改密码
    *
-   * 见 docs/runbook/password-security-backlog.md
    * - 5 角色全部可调(hasAnyAuthority ROLE_ADMIN/TENANT_ADMIN/AUDITOR/TENANT_USER/USER)
-   * - oldPassword 错 → 401
+   * - currentPassword 错 → 401
    * - newPassword 不合规(< 12 位)→ 400
-   * - newPassword == oldPassword → 409 STATE_CONFLICT
+   * - newPassword == currentPassword → 409 STATE_CONFLICT
    * - 成功后 BE 自动清 password_must_change flag
    */
   changePassword: (body: ChangePasswordBody) =>

@@ -8,10 +8,19 @@
       </template>
     </PageHeader>
 
-    <div class="metrics">
-      <MetricCard :label="t('userAccountList.metricTotal')" :value="page.total" />
-      <MetricCard :label="t('userAccountList.metricEnabled')" :value="enabledCount" />
-      <MetricCard :label="t('userAccountList.metricDisabled')" :value="disabledCount" />
+    <div class="account-metrics" aria-label="account summary">
+      <div class="account-metric">
+        <span class="account-metric__label">{{ t('userAccountList.metricTotal') }}</span>
+        <strong class="account-metric__value">{{ page.total }}</strong>
+      </div>
+      <div class="account-metric account-metric--success">
+        <span class="account-metric__label">{{ t('userAccountList.metricEnabled') }}</span>
+        <strong class="account-metric__value">{{ enabledCount }}</strong>
+      </div>
+      <div class="account-metric account-metric--muted">
+        <span class="account-metric__label">{{ t('userAccountList.metricDisabled') }}</span>
+        <strong class="account-metric__value">{{ disabledCount }}</strong>
+      </div>
     </div>
 
     <SectionCard>
@@ -298,7 +307,6 @@
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
-  import MetricCard from '@/components/common/MetricCard.vue'
   import StrongPasswordInput from '@/components/common/StrongPasswordInput.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import TablePagerBar from '@/components/table/TablePagerBar.vue'
@@ -632,16 +640,75 @@
 </script>
 
 <style scoped>
-  /* 少量统计卡不撑满整行:限宽避免宽屏下 3 张巨卡空一大片(用户反馈浪费区域) */
-  .metrics {
+  .account-metrics {
+    display: inline-flex;
+    align-items: stretch;
+    width: fit-content;
+    max-width: 100%;
+    margin: 2px 0 8px;
+    overflow: hidden;
+    border: 1px solid var(--color-border-light, var(--color-border));
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--color-bg-card) 88%, transparent);
+    box-shadow: 0 1px 2px color-mix(in srgb, #1f2937 4%, transparent);
+  }
+
+  .account-metric {
     display: grid;
-    gap: var(--space-md);
-    grid-template-columns: repeat(auto-fill, minmax(180px, 240px));
+    grid-template-columns: auto auto;
+    align-items: baseline;
+    gap: 10px;
+    min-width: 148px;
+    padding: 10px 16px;
+    border-right: 1px solid var(--color-border-light, var(--color-border));
+  }
+
+  .account-metric:last-child {
+    border-right: 0;
+  }
+
+  .account-metric__label {
+    font-size: 12px;
+    color: var(--color-text-tertiary);
+    white-space: nowrap;
+  }
+
+  .account-metric__value {
+    font-family: var(--font-mono);
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--color-text-primary);
+  }
+
+  .account-metric--success .account-metric__value {
+    color: var(--color-success);
+  }
+
+  .account-metric--muted .account-metric__value {
+    color: var(--color-text-secondary);
   }
 
   .role-tags {
     display: flex;
     flex-wrap: wrap;
     gap: 4px;
+  }
+
+  @media (max-width: 720px) {
+    .account-metrics {
+      display: grid;
+      width: 100%;
+    }
+
+    .account-metric {
+      grid-template-columns: 1fr auto;
+      border-right: 0;
+      border-bottom: 1px solid var(--color-border-light, var(--color-border));
+    }
+
+    .account-metric:last-child {
+      border-bottom: 0;
+    }
   }
 </style>

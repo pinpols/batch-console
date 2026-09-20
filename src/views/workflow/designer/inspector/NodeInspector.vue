@@ -89,29 +89,37 @@
 
 <style scoped>
   .node-inspector {
-    width: 320px;
-    border-left: 1px solid var(--color-border);
-    background: var(--color-bg-overlay, #fff);
-    padding: 12px;
+    width: 100%;
+    min-width: 0;
+    border: 1px solid var(--color-border-light);
+    border-left: none;
+    border-radius: 0 var(--radius-content) var(--radius-content) 0;
+    background: var(--color-bg-card, #fff);
+    padding: 14px;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
     gap: 12px;
+    box-shadow: 0 10px 24px color-mix(in srgb, #1f2937 5%, transparent);
   }
   .node-inspector__header {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 8px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--color-border-light);
   }
   .node-inspector__title {
     font-size: 13px;
-    font-weight: 600;
+    font-weight: 650;
     color: var(--color-text-primary, #303133);
   }
   .node-inspector__empty {
     font-size: 12px;
     color: var(--color-text-secondary, #909399);
     text-align: center;
-    padding: 24px 8px;
+    padding: 32px 8px;
+    line-height: 1.6;
   }
 </style>

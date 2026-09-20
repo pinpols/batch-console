@@ -13,32 +13,38 @@
           </div>
         </header>
 
-        <div class="sync__body">
-          <el-form label-width="56px" class="sync__form" size="default">
-            <el-form-item :label="t('configSyncTab.sourceEnvLabel')">
-              <el-select
-                v-model="sourceEnv"
-                filterable
-                allow-create
-                default-first-option
-                :placeholder="t('configSyncTab.sourceEnvPlaceholder')"
-              >
-                <el-option v-for="e in ENV_PRESETS" :key="e" :label="e" :value="e" />
-              </el-select>
-            </el-form-item>
+        <div class="sync__body sync__body--source">
+          <el-form label-position="top" class="sync__form" size="default">
+            <div class="sync__section">
+              <el-form-item :label="t('configSyncTab.sourceEnvLabel')">
+                <el-select
+                  v-model="sourceEnv"
+                  filterable
+                  allow-create
+                  default-first-option
+                  :placeholder="t('configSyncTab.sourceEnvPlaceholder')"
+                >
+                  <el-option v-for="e in ENV_PRESETS" :key="e" :label="e" :value="e" />
+                </el-select>
+              </el-form-item>
+            </div>
 
-            <el-form-item :label="t('configSyncTab.typesTitle')">
+            <div class="sync__section sync__section--grow">
+              <div class="sync__section-title">{{ t('configSyncTab.typesTitle') }}</div>
               <div class="sync__types">
-                <el-checkbox
+                <label
                   v-for="opt in exportTypeOptions"
                   :key="opt.value"
-                  v-model="opt.checked"
+                  class="sync__type-option"
+                  :class="{ 'is-checked': selectedExportTypes.includes(opt.value) }"
                 >
-                  {{ opt.label }}
-                </el-checkbox>
+                  <el-checkbox v-model="selectedExportTypes" :value="opt.value">
+                    {{ opt.label }}
+                  </el-checkbox>
+                </label>
               </div>
               <p class="sync__types-hint">{{ t('configSyncTab.typesDescAll') }}</p>
-            </el-form-item>
+            </div>
           </el-form>
         </div>
 
@@ -77,41 +83,43 @@
           </div>
         </header>
 
-        <div class="sync__body">
-          <el-form label-width="72px" class="sync__form" size="default">
-            <el-form-item :label="t('configSyncTab.targetEnvLabel')">
-              <el-select
-                v-model="targetEnv"
-                filterable
-                allow-create
-                default-first-option
-                :placeholder="t('configSyncTab.targetEnvPlaceholder')"
-              >
-                <el-option v-for="e in ENV_PRESETS" :key="e" :label="e" :value="e" />
-              </el-select>
-            </el-form-item>
-            <el-form-item :label="t('configSyncTab.targetTenantsLabel')">
-              <el-select
-                v-model="targetTenantIds"
-                multiple
-                filterable
-                collapse-tags
-                collapse-tags-tooltip
-                :loading="tenantsLoading"
-                :placeholder="t('configSyncTab.targetTenantsPlaceholder')"
-              >
-                <el-option
-                  v-for="ten in tenantOptions"
-                  :key="ten.tenantId"
-                  :label="`${ten.tenantId} — ${ten.tenantName}`"
-                  :value="ten.tenantId"
-                />
-              </el-select>
-            </el-form-item>
-            <el-form-item :label="t('configSyncTab.payloadLabel')">
+        <div class="sync__body sync__body--target">
+          <el-form label-position="top" class="sync__form sync__form--target" size="default">
+            <div class="sync__target-grid">
+              <el-form-item :label="t('configSyncTab.targetEnvLabel')">
+                <el-select
+                  v-model="targetEnv"
+                  filterable
+                  allow-create
+                  default-first-option
+                  :placeholder="t('configSyncTab.targetEnvPlaceholder')"
+                >
+                  <el-option v-for="e in ENV_PRESETS" :key="e" :label="e" :value="e" />
+                </el-select>
+              </el-form-item>
+              <el-form-item :label="t('configSyncTab.targetTenantsLabel')">
+                <el-select
+                  v-model="targetTenantIds"
+                  multiple
+                  filterable
+                  collapse-tags
+                  collapse-tags-tooltip
+                  :loading="tenantsLoading"
+                  :placeholder="t('configSyncTab.targetTenantsPlaceholder')"
+                >
+                  <el-option
+                    v-for="ten in tenantOptions"
+                    :key="ten.tenantId"
+                    :label="`${ten.tenantId} — ${ten.tenantName}`"
+                    :value="ten.tenantId"
+                  />
+                </el-select>
+              </el-form-item>
+            </div>
+            <el-form-item :label="t('configSyncTab.payloadLabel')" class="sync__payload">
               <JsonTextareaInput
                 v-model="importPayload"
-                :rows="7"
+                :rows="11"
                 expect="object"
                 :placeholder="t('configSyncTab.payloadPlaceholder')"
               />
@@ -167,6 +175,7 @@
   import { confirmDanger } from '@/composables/useDangerConfirm'
   import JsonPreview from '@/components/common/JsonPreview.vue'
   import JsonTextareaInput from '@/components/common/JsonTextareaInput.vue'
+  import { localizeConfigSyncTypeOptions, type ConfigSyncType } from './configSyncTypeOptions'
 
   const ENV_PRESETS = ['default', 'dev', 'staging', 'prod']
 
@@ -196,23 +205,9 @@
 
   onMounted(loadTenants)
 
-  // BE TenantConfigCopyRequest.ConfigType 短别名
-  const exportTypeOptions = ref([
-    { value: 'JOB', label: t('configSyncTab.typeJob'), checked: false },
-    { value: 'WORKFLOW', label: t('configSyncTab.typeWorkflow'), checked: false },
-    { value: 'PIPELINE', label: t('configSyncTab.typePipeline'), checked: false },
-    { value: 'FILE_CHANNEL', label: t('configSyncTab.typeFileChannel'), checked: false },
-    { value: 'FILE_TEMPLATE', label: t('configSyncTab.typeFileTemplate'), checked: false },
-    { value: 'RESOURCE_QUEUE', label: t('configSyncTab.typeResourceQueue'), checked: false },
-    { value: 'BATCH_WINDOW', label: t('configSyncTab.typeBatchWindow'), checked: false },
-    {
-      value: 'BUSINESS_CALENDAR',
-      label: t('configSyncTab.typeBusinessCalendar'),
-      checked: false,
-    },
-    { value: 'QUOTA_POLICY', label: t('configSyncTab.typeQuotaPolicy'), checked: false },
-    { value: 'ALERT_ROUTING', label: t('configSyncTab.typeAlertRouting'), checked: false },
-  ])
+  // 文案必须由 computed 生成,否则切换 locale 后初始化时的翻译会残留。
+  const exportTypeOptions = computed(() => localizeConfigSyncTypeOptions(t))
+  const selectedExportTypes = ref<ConfigSyncType[]>([])
 
   const exporting = ref(false)
   const previewing = ref(false)
@@ -247,7 +242,7 @@
   async function doExport() {
     exporting.value = true
     try {
-      const types = exportTypeOptions.value.filter((o) => o.checked).map((o) => o.value)
+      const types = selectedExportTypes.value
       exportResult.value = await exportConfigSync({
         sourceTenantId: tenant.tenantId,
         sourceEnv: sourceEnv.value.trim() || 'default',
@@ -346,7 +341,7 @@
     previewResult.value = null
     importPayload.value = ''
     targetTenantIds.value = []
-    exportTypeOptions.value.forEach((o) => (o.checked = false))
+    selectedExportTypes.value = []
     void loadTenants()
   })
 </script>
@@ -354,12 +349,13 @@
 <style scoped>
   .sync {
     display: grid;
-    gap: 20px;
+    gap: 14px;
   }
 
   /* 顶部说明:纯文字,不再用色块抢视觉 */
   .sync__hint {
     margin: 0;
+    padding: 0 2px;
     color: var(--color-text-tertiary);
     font-size: 13px;
     line-height: 1.65;
@@ -369,13 +365,13 @@
   .sync__flow {
     display: grid;
     grid-template-columns: 1fr;
-    gap: 16px;
+    gap: 14px;
     align-items: stretch;
   }
 
   @media (min-width: 1100px) {
     .sync__flow {
-      grid-template-columns: minmax(0, 1fr) 56px minmax(0, 1fr);
+      grid-template-columns: minmax(360px, 0.95fr) 44px minmax(420px, 1.05fr);
       gap: 0;
     }
   }
@@ -384,7 +380,8 @@
   .sync__pane {
     display: flex;
     flex-direction: column;
-    border-radius: var(--radius-content);
+    min-height: 492px;
+    border-radius: 10px;
     border: 1px solid var(--color-border-light);
     background: var(--color-bg-card);
     overflow: hidden;
@@ -400,8 +397,10 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 14px 18px 10px;
+    min-height: 64px;
+    padding: 14px 18px;
     border-bottom: 1px solid var(--color-border-light);
+    background: color-mix(in srgb, var(--color-bg-card) 84%, var(--color-bg-canvas) 16%);
   }
 
   .sync__step {
@@ -446,8 +445,18 @@
 
   /* 内容区:占满中间,使 footer 自动贴底 */
   .sync__body {
-    flex: 1;
-    padding: 16px 18px 4px;
+    flex: 1 1 auto;
+    min-height: 0;
+    padding: 16px 18px;
+  }
+
+  .sync__body--source,
+  .sync__body--target {
+    display: flex;
+  }
+
+  .sync__form {
+    width: 100%;
   }
 
   .sync__form {
@@ -455,21 +464,75 @@
   }
 
   .sync__form :deep(.el-form-item) {
-    margin-bottom: 14px;
+    margin-bottom: 0;
+  }
+
+  .sync__form :deep(.el-form-item__label) {
+    padding-bottom: 6px;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+  }
+
+  .sync__section {
+    min-width: 0;
+  }
+
+  .sync__section + .sync__section {
+    margin-top: 16px;
+  }
+
+  .sync__section-title {
+    margin-bottom: 8px;
+    color: var(--color-text-secondary);
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .sync__section--grow {
+    display: flex;
+    min-height: 0;
+    flex-direction: column;
   }
 
   /* 配置类型 checkbox 网格 */
   .sync__types {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(108px, 1fr));
-    gap: 8px 12px;
+    grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+    gap: 8px;
     width: 100%;
   }
 
+  .sync__type-option {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    min-height: 36px;
+    padding: 0 10px;
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-input);
+    background: color-mix(in srgb, var(--color-bg-card) 84%, var(--color-bg-canvas) 16%);
+    transition:
+      border-color 0.15s ease,
+      background-color 0.15s ease;
+  }
+
+  .sync__type-option.is-checked {
+    border-color: color-mix(in srgb, var(--color-primary) 45%, var(--color-border) 55%);
+    background: color-mix(in srgb, var(--color-primary) 9%, var(--color-bg-card) 91%);
+  }
+
   .sync__types :deep(.el-checkbox) {
+    width: 100%;
     margin-right: 0;
     height: auto;
     line-height: 1.5;
+  }
+
+  .sync__types :deep(.el-checkbox__label) {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .sync__types-hint {
@@ -478,13 +541,37 @@
     color: var(--color-text-tertiary);
   }
 
+  .sync__form--target {
+    display: flex;
+    min-height: 0;
+    flex-direction: column;
+  }
+
+  .sync__target-grid {
+    display: grid;
+    grid-template-columns: minmax(140px, 0.62fr) minmax(220px, 1fr);
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+
   /* JSON textarea:等宽字体 + 浅底 */
+  .sync__payload {
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
+  .sync__payload :deep(.el-form-item__content) {
+    height: 100%;
+    min-height: 0;
+  }
+
   .sync__payload :deep(.el-textarea__inner) {
     font-family: var(--font-family-mono, ui-monospace, Menlo, Monaco, Consolas, monospace);
     font-size: 12px;
     line-height: 1.55;
     background: color-mix(in srgb, var(--color-bg-canvas) 60%, var(--color-bg-card) 40%);
-    min-height: 168px;
+    min-height: 252px;
+    height: 100%;
   }
 
   /* 底部操作区:两边一致地右对齐 + 上边线 */
@@ -564,7 +651,7 @@
 
   /* 结果区:全宽,中性卡片样式 */
   .sync__result {
-    border-radius: var(--radius-content);
+    border-radius: 10px;
     border: 1px solid var(--color-border-light);
     background: var(--color-bg-card);
     overflow: hidden;
@@ -585,5 +672,15 @@
   .sync__result :deep(.json-preview) {
     margin: 0;
     border-radius: 0;
+  }
+
+  @media (max-width: 720px) {
+    .sync__pane {
+      min-height: 0;
+    }
+
+    .sync__target-grid {
+      grid-template-columns: 1fr;
+    }
   }
 </style>

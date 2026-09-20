@@ -24,6 +24,7 @@ export type TenantPackageSampleScenario =
   | 'EXPORT'
   | 'PROCESS'
   | 'DISPATCH'
+  | 'ATOMIC'
   | 'WORKFLOW'
 
 function currentTenantParams() {
@@ -41,10 +42,15 @@ export async function tenantPackageDownloadTemplate(): Promise<Blob> {
 
 /** GET …/sample-template — 下载场景化示例配置包模板 */
 export async function tenantPackageDownloadSampleTemplate(
-  scenario: TenantPackageSampleScenario,
+  scenarios: TenantPackageSampleScenario[],
 ): Promise<Blob> {
+  const params = new URLSearchParams()
+  const effectiveScenarios = scenarios.length > 0 ? scenarios : ['ALL']
+  for (const scenario of effectiveScenarios) {
+    params.append('scenarios', scenario)
+  }
   const res = await apiClient.get(`${TENANT_PKG_BASE}/sample-template`, {
-    params: { scenario },
+    params,
     responseType: 'blob',
   })
   return res.data as Blob

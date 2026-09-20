@@ -19,12 +19,14 @@ import {
   applyThemeToDocument,
   getSystemIsDark,
   readThemePreference,
-  resolveEffectiveTheme,
+  resolveThemeForPath,
 } from '@/constants/theme'
 import { applyContentDensityToDocument, readStoredContentDensity } from '@/constants/contentDensity'
 import App from './App.vue'
 
-applyThemeToDocument(resolveEffectiveTheme(readThemePreference(), getSystemIsDark()))
+applyThemeToDocument(
+  resolveThemeForPath(window.location.pathname, readThemePreference(), getSystemIsDark()),
+)
 applyContentDensityToDocument(readStoredContentDensity())
 import router from './router'
 import { useAuthStore } from '@/stores/auth'

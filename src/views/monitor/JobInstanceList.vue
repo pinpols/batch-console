@@ -1,87 +1,92 @@
 <template>
   <PageContainer>
-    <!-- 照设计 #instances 母版:页头右侧=业务日期+刷新;下方 预设条/状态tab行/实时条 -->
-    <PageHeader>
-      <template #actions>
-        <DateRangePresetPicker
-          v-model="dateRange"
-          type="daterange"
-          default-preset="7d"
-          @update:model-value="onDateChange"
-        />
-        <el-button :loading="loading" @click="() => runRefresh(loadData)">
-          {{ t('common.refresh') }}
-        </el-button>
-      </template>
-    </PageHeader>
+    <PageHeader />
 
-    <!-- 已保存筛选 chip 条(26h/r13;active=★+accent 软底;虚线=保存当前) -->
-    <div class="jr-presets">
-      <span class="jr-presets__label">{{ t('jobInstanceList.savedFilters') }}</span>
-      <button
-        v-for="s in savedFilters.sets.value"
-        :key="s.id"
-        type="button"
-        class="jr-chip"
-        :class="{ 'is-active': activePresetId === s.id }"
-        @click="applyPreset(s.id)"
-      >
-        <span v-if="activePresetId === s.id" class="jr-chip__star">★</span>{{ s.name }}
-      </button>
-      <button type="button" class="jr-chip jr-chip--save" @click="promptSaveFilter">
-        <span class="jr-chip__plus">＋</span>{{ t('jobInstanceList.saveCurrentFilter') }}
-      </button>
-      <span class="jr-presets__spacer" />
-      <SavedFiltersMenu
-        class="jr-presets__menu"
-        :sets="savedFilters.sets.value"
-        :on-save="savedFilters.save"
-        :on-apply="savedFilters.applySet"
-        :on-remove="savedFilters.remove"
-        :on-rename="savedFilters.rename"
-        :on-export="savedFilters.exportSets"
-        :on-import="savedFilters.importSets"
-      />
-    </div>
+    <div class="jr-toolbar">
+      <!-- 已保存筛选 chip 条(26h/r13;active=★+accent 软底;虚线=保存当前) -->
+      <div class="jr-toolbar__row jr-toolbar__row--top">
+        <div class="jr-presets">
+          <span class="jr-presets__label">{{ t('jobInstanceList.savedFilters') }}</span>
+          <button
+            v-for="s in savedFilters.sets.value"
+            :key="s.id"
+            type="button"
+            class="jr-chip"
+            :class="{ 'is-active': activePresetId === s.id }"
+            @click="applyPreset(s.id)"
+          >
+            <span v-if="activePresetId === s.id" class="jr-chip__star">★</span>{{ s.name }}
+          </button>
+          <button type="button" class="jr-chip jr-chip--save" @click="promptSaveFilter">
+            <span class="jr-chip__plus">＋</span>{{ t('jobInstanceList.saveCurrentFilter') }}
+          </button>
+        </div>
+        <div class="jr-date-actions">
+          <DateRangePresetPicker
+            class="jr-date"
+            v-model="dateRange"
+            type="daterange"
+            default-preset="7d"
+            @update:model-value="onDateChange"
+          />
+          <el-button :loading="loading" @click="() => runRefresh(loadData)">
+            {{ t('common.refresh') }}
+          </el-button>
+        </div>
+      </div>
 
-    <!-- 状态 tab 行(28h/r14 彩点+mono计数)+ 右侧 JobCode/Trace/SLA -->
-    <div class="jr-tabs">
-      <button
-        v-for="tab in statusTabs"
-        :key="tab.key"
-        type="button"
-        class="jr-tab"
-        :class="{ 'is-active': tab.active }"
-        @click="pickStatusTab(tab.key)"
-      >
-        <span v-if="tab.dot" class="jr-tab__dot" :style="{ background: tab.dot }" />
-        <span>{{ tab.label }}</span>
-        <span v-if="tab.count !== null" class="jr-tab__count">{{ tab.count }}</span>
-      </button>
-      <span class="jr-tabs__spacer" />
-      <el-select
-        class="jr-jobcode"
-        v-model="query.jobCode"
-        clearable
-        filterable
-        allow-create
-        default-first-option
-        :placeholder="t('jobInstanceList.jobCodePlaceholder')"
-        @change="searchInstances"
-      >
-        <el-option v-for="code in jobCodeOptions" :key="code" :label="code" :value="code" />
-      </el-select>
-      <TraceIdInput
-        class="jr-trace"
-        v-model="query.traceId"
-        :placeholder="t('jobInstanceList.traceIdPlaceholder')"
-        @keyup.enter="searchInstances"
-      />
-      <label class="jr-sla">
-        <span>{{ t('jobInstanceList.slaBreachedLabel') }}</span>
-        <el-switch size="small" v-model="query.slaBreached" @change="onSlaBreachedChange" />
-      </label>
-      <el-button text class="jr-reset" @click="resetQuery">{{ t('common.reset') }}</el-button>
+      <!-- 状态 tab 行(28h/r14 彩点+mono计数)+ 右侧 JobCode/Trace/SLA -->
+      <div class="jr-toolbar__row jr-toolbar__row--filters">
+        <div class="jr-tabs">
+          <button
+            v-for="tab in statusTabs"
+            :key="tab.key"
+            type="button"
+            class="jr-tab"
+            :class="{ 'is-active': tab.active }"
+            @click="pickStatusTab(tab.key)"
+          >
+            <span v-if="tab.dot" class="jr-tab__dot" :style="{ background: tab.dot }" />
+            <span>{{ tab.label }}</span>
+            <span v-if="tab.count !== null" class="jr-tab__count">{{ tab.count }}</span>
+          </button>
+        </div>
+        <div class="jr-filters">
+          <el-select
+            class="jr-jobcode"
+            v-model="query.jobCode"
+            clearable
+            filterable
+            allow-create
+            default-first-option
+            :placeholder="t('jobInstanceList.jobCodePlaceholder')"
+            @change="searchInstances"
+          >
+            <el-option v-for="code in jobCodeOptions" :key="code" :label="code" :value="code" />
+          </el-select>
+          <TraceIdInput
+            class="jr-trace"
+            v-model="query.traceId"
+            :placeholder="t('jobInstanceList.traceIdPlaceholder')"
+            @keyup.enter="searchInstances"
+          />
+          <label class="jr-sla">
+            <span>{{ t('jobInstanceList.slaBreachedLabel') }}</span>
+            <el-switch size="small" v-model="query.slaBreached" @change="onSlaBreachedChange" />
+          </label>
+          <el-button text class="jr-reset" @click="resetQuery">{{ t('common.reset') }}</el-button>
+          <SavedFiltersMenu
+            class="jr-presets__menu"
+            :sets="savedFilters.sets.value"
+            :on-save="savedFilters.save"
+            :on-apply="savedFilters.applySet"
+            :on-remove="savedFilters.remove"
+            :on-rename="savedFilters.rename"
+            :on-export="savedFilters.exportSets"
+            :on-import="savedFilters.importSets"
+          />
+        </div>
+      </div>
     </div>
 
     <!-- 多状态深链回显(OpsSummary 失败任务卡 FAILED,PARTIAL_FAILED) -->
@@ -812,13 +817,40 @@
 <style scoped>
   /* ── 照设计 #instances 母版 dump(docs/redesign/proto-instances.html)1:1 ── */
 
+  .jr-toolbar {
+    display: grid;
+    gap: 10px;
+    margin: 6px 0 12px;
+    padding: 10px 12px;
+    border: 1px solid var(--color-border-light, var(--color-border));
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--color-bg-card) 88%, transparent);
+    box-shadow: 0 1px 2px color-mix(in srgb, #1f2937 4%, transparent);
+  }
+
+  .jr-toolbar__row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+  }
+
+  .jr-toolbar__row--top {
+    justify-content: space-between;
+  }
+
+  .jr-toolbar__row--filters {
+    align-items: center;
+  }
+
   /* 已保存筛选 chip 条 */
   .jr-presets {
     display: flex;
     align-items: center;
     gap: 8px;
-    margin: 6px 0 12px;
     flex-wrap: wrap;
+    min-width: 0;
+    flex: 1 1 auto;
   }
 
   .jr-presets__label {
@@ -865,8 +897,17 @@
     color: var(--color-text-tertiary);
   }
 
-  .jr-presets__menu {
-    margin-left: 2px;
+  .jr-date-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex: 0 0 auto;
+    min-width: 0;
+  }
+
+  .jr-date {
+    width: 520px;
+    max-width: 52vw;
   }
 
   /* 状态 tab 行 */
@@ -874,8 +915,9 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    margin-bottom: 14px;
     flex-wrap: wrap;
+    flex: 0 0 auto;
+    min-width: 0;
   }
 
   .jr-tab {
@@ -913,20 +955,26 @@
     color: var(--color-text-tertiary);
   }
 
-  .jr-tabs__spacer {
-    flex: 1;
+  .jr-filters {
+    display: grid;
+    grid-template-columns: minmax(170px, 0.95fr) minmax(180px, 1fr) auto auto auto;
+    align-items: center;
+    gap: 8px;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .jr-filters :deep(.el-select),
+  .jr-filters :deep(.el-input) {
+    width: 100%;
   }
 
   .jr-jobcode {
-    width: 180px;
     min-width: 0;
-    max-width: 100%;
   }
 
   .jr-trace {
-    width: 180px;
     min-width: 0;
-    max-width: 100%;
   }
 
   .jr-sla {
@@ -936,6 +984,11 @@
     font-size: 12px;
     color: var(--color-text-tertiary);
     white-space: nowrap;
+  }
+
+  .jr-reset {
+    justify-self: end;
+    padding-inline: 10px;
   }
 
   .jr-multistatus {
@@ -1032,15 +1085,11 @@
     background: color-mix(in srgb, var(--color-text-primary) 6%, transparent);
   }
 
-  .jr-presets__spacer {
-    flex: 1;
-  }
-
   /* 「已保存筛选」管理入口收敛为与 chip 同语言的 ghost 小钮,不再是突兀实底大钮 */
   .jr-presets__menu :deep(.el-button) {
-    height: 26px;
+    height: 30px;
     padding: 0 12px;
-    border-radius: 13px;
+    border-radius: var(--radius-button);
     border: 1px solid var(--color-border);
     background: transparent;
     color: var(--color-text-tertiary);
@@ -1097,24 +1146,33 @@
   }
 
   @media (max-width: 720px) {
+    .jr-toolbar__row,
     .jr-presets,
-    .jr-tabs {
+    .jr-tabs,
+    .jr-date-actions {
       align-items: stretch;
+      flex-direction: column;
     }
 
-    .jr-presets__spacer,
-    .jr-tabs__spacer {
-      display: none;
-    }
-
-    .jr-jobcode,
-    .jr-trace {
+    .jr-date,
+    .jr-date-actions,
+    .jr-filters {
       width: 100%;
-      flex: 1 1 100%;
+      max-width: none;
+    }
+
+    .jr-filters {
+      grid-template-columns: 1fr;
     }
 
     .jr-sla {
       margin-left: 0;
+      justify-content: space-between;
+    }
+
+    .jr-reset,
+    .jr-presets__menu {
+      justify-self: stretch;
     }
 
     .jr-live {

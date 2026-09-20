@@ -75,9 +75,8 @@ export interface UserInfo {
   /** 后端下发的侧边栏菜单（已按当前 authorities 过滤） */
   menus?: MenuGroup[]
   /**
-   * P1 待 BE 实施:首次登录 / admin reset 后强制改密码。
-   * BE 在 console_user_account 加 password_must_change BOOLEAN,
-   * /auth/login + /auth/me response 带此字段。
+   * 首次登录 / admin reset 后强制改密码。
+   * BE 在 /auth/login + /auth/me response 带此字段。
    * 字段缺失时视为 false(向后兼容老 BE 版本)。
    */
   mustChangePassword?: boolean

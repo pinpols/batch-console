@@ -42,6 +42,16 @@ export function resolveEffectiveTheme(
   return systemIsDark ? 'dark' : 'light'
 }
 
+/** 登录入口固定使用深色视觉，进入控制台后仍按用户偏好解析主题。 */
+export function resolveThemeForPath(
+  pathname: string,
+  preference: ThemePreference,
+  systemIsDark: boolean,
+): ThemeMode {
+  if (pathname === '/login' || pathname.startsWith('/login/')) return 'dark'
+  return resolveEffectiveTheme(preference, systemIsDark)
+}
+
 function prefersReducedMotion(): boolean {
   return (
     typeof window !== 'undefined' &&

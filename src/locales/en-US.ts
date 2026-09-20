@@ -270,6 +270,9 @@ const messages: Messages = {
     readonlyTag: 'Read-only',
     noSelectNotice: 'Select a node or edge to view its properties',
     multiSelectNotice: 'Multiple nodes selected; pick one to edit',
+    untitledWorkflow: 'Untitled workflow',
+    canvasEmptyTitle: 'Start composing with nodes',
+    canvasEmptyDesc: 'Add START, JOB, and END, connect ports, then validate and save.',
     actionValidate: 'Validate',
     validateOk: 'Validation passed, ready to save',
     errorBanner: '{count} validation errors found, click to inspect',
@@ -1516,10 +1519,19 @@ const messages: Messages = {
   myAccount: {
     sectionTitle: 'Current account',
     changePasswordTitle: 'Change password',
+    changePasswordDescription:
+      'The account state is refreshed after update; forced-change flow returns home.',
+    accountDescription:
+      'Review the signed-in identity and tenant context, then update the login password when needed.',
+    accountContextTitle: 'Account context',
+    accountContextDescription: 'Confirm which signed-in identity this password change affects.',
+    securityRequired: 'Security required',
+    securityNormal: 'Account security',
     fieldUsername: 'Username',
     fieldRole: 'Role',
     fieldTenant: 'Current tenant',
     fieldPermissions: 'Permissions',
+    permissionsMore: '+{count} more',
     fieldOldPassword: 'Current password',
     fieldNewPassword: 'New password',
     fieldConfirmPassword: 'Confirm new password',
@@ -2278,8 +2290,16 @@ const messages: Messages = {
     description:
       'Replay a business date by calendar. Choose all candidates, failed items, selected jobs, or output results. Auto approval starts it immediately; otherwise an administrator must approve it.',
     sessionsHeader: 'Sessions submitted by this tenant',
-    noSessions:
-      'No sessions yet. This page shows sessions opened or created in the current browser session.',
+    noSessions: 'No sessions',
+    emptyTitle: 'No replay sessions yet',
+    emptyDesc:
+      'Create a session to track approval state, execution progress, and entry results here.',
+    emptyLegacyDesc:
+      'The current backend does not expose the history list yet. Newly created or opened sessions still appear on this page.',
+    historyUnavailableTag: 'History unavailable',
+    historyUnavailableTitle: 'Replay history list is not available on this backend',
+    historyUnavailableBody:
+      'The page has fallen back to an in-page session view. Recent submitted sessions will appear after the backend is updated.',
     submitBtn: 'New replay',
     submitTitle: 'New batch-day replay',
     submitConfirm: 'Submit',
