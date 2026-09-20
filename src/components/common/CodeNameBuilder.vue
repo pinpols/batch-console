@@ -44,7 +44,7 @@
   /**
    * 资源 code 命名向导(jobCode / workflowCode / templateCode / channelCode 通用)。
    *
-   * 3 段:DOMAIN 下拉(5 固定) + 业务名 input(自动转大写 + 非法字符转 _) + 可选版本。
+   * 3 段:DOMAIN 下拉(五类 Worker + WORKFLOW) + 业务名 input(自动转大写 + 非法字符转 _) + 可选版本。
    * 实时拼接为 `{DOMAIN}_{BIZ}[_v{N}]`,emit 给父组件。可选 existingCodes 显示同前缀已有,
    * 帮助避免重名 / 跟现有命名风格保持一致。
    */
@@ -53,7 +53,7 @@
 
   const { t } = useI18n({ useScope: 'global' })
 
-  const DOMAINS = ['IMPORT', 'EXPORT', 'PROCESS', 'DISPATCH', 'WORKFLOW']
+  const DOMAINS = ['IMPORT', 'EXPORT', 'PROCESS', 'DISPATCH', 'ATOMIC', 'WORKFLOW']
   const BIZ_RE = /^[A-Z][A-Z0-9_]{2,29}$/
 
   const props = withDefaults(

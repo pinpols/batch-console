@@ -1852,6 +1852,7 @@ const messages: Messages = {
       EXPORT: 'Export',
       PROCESS: 'Process',
       DISPATCH: 'Dispatch',
+      ATOMIC: 'Atomic',
       WORKFLOW: 'Workflow',
     },
     shardStrategy: {
@@ -3126,7 +3127,7 @@ const messages: Messages = {
     versionLabel: 'Version',
     versionPlaceholder: 'optional, e.g. v2',
     previewLabel: 'Final code',
-    domainHint: '5 fixed domains: IMPORT/EXPORT/PROCESS/DISPATCH/WORKFLOW',
+    domainHint: '6 fixed domains: IMPORT/EXPORT/PROCESS/DISPATCH/ATOMIC/WORKFLOW',
     bizHint: '3-30 chars, only A-Z / 0-9 / _, upper-letter start',
     errBizFormat: 'Invalid: must start with uppercase letter, only A-Z 0-9 _',
     errBizLength: 'Length must be 3-30',
