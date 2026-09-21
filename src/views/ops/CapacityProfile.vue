@@ -1,12 +1,6 @@
 <template>
   <PageContainer>
-    <PageHeader>
-      <template #actions>
-        <el-button type="primary" :icon="Refresh" :loading="loading" @click="load">
-          {{ t('capacityProfile.refresh') }}
-        </el-button>
-      </template>
-    </PageHeader>
+    <PageHeader />
 
     <!-- 还原设计:查询区直铺底色,无卡片壳 -->
     <div>
@@ -73,10 +67,46 @@
       />
     </div>
 
-    <SectionCard v-if="report" class="mt">
+    <div v-if="report" class="capacity-charts">
+      <SectionCard>
+        <template #header>{{ t('capacityProfile.trendTitle') }}</template>
+        <VChart
+          class="capacity-chart"
+          :option="trendOption"
+          :theme="chartTheme"
+          autoresize
+          :loading="loading"
+        />
+      </SectionCard>
+      <SectionCard>
+        <template #header>{{ t('capacityProfile.rankingTitle') }}</template>
+        <VChart
+          class="capacity-chart"
+          :option="rankingOption"
+          :theme="chartTheme"
+          autoresize
+          :loading="loading"
+        />
+      </SectionCard>
+      <SectionCard>
+        <template #header>{{ t('capacityProfile.p95Title') }}</template>
+        <VChart
+          class="capacity-chart"
+          :option="latencyOption"
+          :theme="chartTheme"
+          autoresize
+          :loading="loading"
+        />
+      </SectionCard>
+    </div>
+
+    <SectionCard v-if="report" class="mt capacity-detail">
       <template #header>
         <div class="profile-header">
-          <span>{{ t('capacityProfile.resultTitle') }}</span>
+          <div>
+            <div>{{ t('capacityProfile.resultTitle') }}</div>
+            <div class="profile-header__hint">{{ t('capacityProfile.resultHint') }}</div>
+          </div>
           <div class="profile-header__meta">
             <el-tag size="small" effect="plain">{{ report.groupBy || query.groupBy }}</el-tag>
             <el-tag v-if="report.scope" size="small" effect="plain" type="info">
@@ -89,75 +119,79 @@
         </div>
       </template>
 
-      <el-table
-        v-loading="loading"
-        :data="report.rows ?? []"
-        stripe
-        border
-        size="small"
-        :empty-text="t('common.noData')"
-        class="console-table"
-      >
-        <el-table-column :label="dimensionLabel" min-width="220">
-          <template #default="{ row }">
-            <div class="cell-stack">
-              <div class="cell-main">{{ dimensionValue(row) }}</div>
-              <div class="cell-sub">{{ secondaryDimensionValue(row) }}</div>
-            </div>
-          </template>
-        </el-table-column>
-        <el-table-column
-          prop="instanceCount"
-          :label="t('capacityProfile.colInstances')"
-          width="110"
-          align="right"
-        />
-        <el-table-column
-          prop="taskCount"
-          :label="t('capacityProfile.colTasks')"
-          width="100"
-          align="right"
-        />
-        <el-table-column
-          prop="successCount"
-          :label="t('capacityProfile.colSuccess')"
-          width="100"
-          align="right"
-        />
-        <el-table-column
-          prop="failureCount"
-          :label="t('capacityProfile.colFailure')"
-          width="100"
-          align="right"
-        />
-        <el-table-column :label="t('capacityProfile.colAvg')" width="120" align="right">
-          <template #default="{ row }">{{ formatDuration(row.avgDurationMs) }}</template>
-        </el-table-column>
-        <el-table-column :label="t('capacityProfile.colP95')" width="120" align="right">
-          <template #default="{ row }">{{ formatDuration(row.p95DurationMs) }}</template>
-        </el-table-column>
-        <el-table-column :label="t('capacityProfile.colBytes')" width="130" align="right">
-          <template #default="{ row }">{{ formatBytes(row.totalFileBytes) }}</template>
-        </el-table-column>
-        <el-table-column
-          prop="processedRecords"
-          :label="t('capacityProfile.colRecords')"
-          width="130"
-          align="right"
-        />
-        <el-table-column
-          prop="recordsPerSecond"
-          :label="t('capacityProfile.colRecordsRate')"
-          width="130"
-          align="right"
-        />
-        <el-table-column
-          prop="mbPerSecond"
-          :label="t('capacityProfile.colMbRate')"
-          width="110"
-          align="right"
-        />
-      </el-table>
+      <el-collapse v-model="detailSections">
+        <el-collapse-item name="rows" :title="t('capacityProfile.detailToggle')">
+          <el-table
+            v-loading="loading"
+            :data="report.rows ?? []"
+            stripe
+            border
+            size="small"
+            :empty-text="t('common.noData')"
+            class="console-table"
+          >
+            <el-table-column :label="dimensionLabel" min-width="220">
+              <template #default="{ row }">
+                <div class="cell-stack">
+                  <div class="cell-main">{{ dimensionValue(row) }}</div>
+                  <div class="cell-sub">{{ secondaryDimensionValue(row) }}</div>
+                </div>
+              </template>
+            </el-table-column>
+            <el-table-column
+              prop="instanceCount"
+              :label="t('capacityProfile.colInstances')"
+              width="110"
+              align="right"
+            />
+            <el-table-column
+              prop="taskCount"
+              :label="t('capacityProfile.colTasks')"
+              width="100"
+              align="right"
+            />
+            <el-table-column
+              prop="successCount"
+              :label="t('capacityProfile.colSuccess')"
+              width="100"
+              align="right"
+            />
+            <el-table-column
+              prop="failureCount"
+              :label="t('capacityProfile.colFailure')"
+              width="100"
+              align="right"
+            />
+            <el-table-column :label="t('capacityProfile.colAvg')" width="120" align="right">
+              <template #default="{ row }">{{ formatDuration(row.avgDurationMs) }}</template>
+            </el-table-column>
+            <el-table-column :label="t('capacityProfile.colP95')" width="120" align="right">
+              <template #default="{ row }">{{ formatDuration(row.p95DurationMs) }}</template>
+            </el-table-column>
+            <el-table-column :label="t('capacityProfile.colBytes')" width="130" align="right">
+              <template #default="{ row }">{{ formatBytes(row.totalFileBytes) }}</template>
+            </el-table-column>
+            <el-table-column
+              prop="processedRecords"
+              :label="t('capacityProfile.colRecords')"
+              width="130"
+              align="right"
+            />
+            <el-table-column
+              prop="recordsPerSecond"
+              :label="t('capacityProfile.colRecordsRate')"
+              width="130"
+              align="right"
+            />
+            <el-table-column
+              prop="mbPerSecond"
+              :label="t('capacityProfile.colMbRate')"
+              width="110"
+              align="right"
+            />
+          </el-table>
+        </el-collapse-item>
+      </el-collapse>
     </SectionCard>
 
     <SectionCard v-if="report?.coverage" class="mt">
@@ -168,10 +202,12 @@
 </template>
 
 <script setup lang="ts">
+  import '@/charts/echarts'
   import { computed, reactive, ref } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
   import { RefreshCw as Refresh } from 'lucide-vue-next'
+  import VChart from 'vue-echarts'
   import {
     getCapacityProfile,
     type CapacityProfileGroupBy,
@@ -179,6 +215,7 @@
     type CapacityProfileRow,
   } from '@/api/capacityProfile'
   import { useTenantStore } from '@/stores/tenant'
+  import { useAppStore } from '@/stores/app'
   import { useTenantReload } from '@/composables/useTenantReload'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
@@ -188,12 +225,30 @@
   import MetricCard from '@/components/common/MetricCard.vue'
   import JsonPreview from '@/components/common/JsonPreview.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
+  import {
+    buildGroupedBarOption,
+    buildHorizontalTopNOption,
+    buildLineOption,
+    emptyOption,
+  } from './composables/useChartOptions'
+  import {
+    buildCapacityBuckets,
+    buildCapacityTrend,
+    buildLatencyComparison,
+    buildThroughputRanking,
+    capacityDimensionValue,
+    type CapacityBucket,
+  } from './capacityProfilePresentation'
 
   const { t } = useI18n({ useScope: 'global' })
   const tenant = useTenantStore()
+  const app = useAppStore()
   const loading = ref(false)
   const loadError = ref('')
   const report = ref<CapacityProfileReport | null>(null)
+  const trendBuckets = ref<CapacityBucket[]>([])
+  const trendReports = ref<Array<CapacityProfileReport | null>>([])
+  const detailSections = ref<string[]>([])
   // 默认最近 7 天窗口:后端 capacity-profile 端点缺省 from/to 会 500,首屏必须带窗口。
   function defaultWindow(): [string, string] {
     const iso = (d: Date) => d.toISOString().slice(0, 19) + 'Z'
@@ -211,6 +266,51 @@
     { label: t('capacityProfile.groupByJob'), value: 'JOB' },
     { label: t('capacityProfile.groupByWorker'), value: 'WORKER' },
   ])
+  const chartTheme = computed(() => (app.theme === 'dark' ? 'console-dark' : 'console-light'))
+  const trendOption = computed(() => {
+    const points = buildCapacityTrend(trendBuckets.value, trendReports.value)
+    if (
+      !points.length ||
+      points.every((point) => point.instanceCount === 0 && point.taskCount === 0)
+    ) {
+      return emptyOption(t('common.noData'))
+    }
+    return buildLineOption({
+      x: points.map((point) => point.label),
+      series: [
+        {
+          name: t('capacityProfile.metricInstances'),
+          data: points.map((point) => point.instanceCount),
+          color: '#1677ff',
+          area: true,
+        },
+        {
+          name: t('capacityProfile.metricTasks'),
+          data: points.map((point) => point.taskCount),
+          color: '#13c2c2',
+        },
+      ],
+    })
+  })
+  const rankingOption = computed(() => {
+    const items = buildThroughputRanking(report.value?.rows ?? [], query.groupBy, tenant.tenantId)
+    return items.length
+      ? buildHorizontalTopNOption(items, '#52c41a')
+      : emptyOption(t('common.noData'))
+  })
+  const latencyOption = computed(() => {
+    const latency = buildLatencyComparison(report.value?.rows ?? [], query.groupBy, tenant.tenantId)
+    return latency.labels.length
+      ? buildGroupedBarOption({
+          x: latency.labels,
+          yAxisName: 'ms',
+          series: [
+            { name: t('capacityProfile.colAvg'), data: latency.average, color: '#91caff' },
+            { name: t('capacityProfile.colP95'), data: latency.p95, color: '#ff7a45' },
+          ],
+        })
+      : emptyOption(t('common.noData'))
+  })
 
   const dimensionLabel = computed(() => {
     if (query.groupBy === 'JOB') return t('capacityProfile.dimensionJob')
@@ -219,9 +319,7 @@
   })
 
   function dimensionValue(row: CapacityProfileRow): string {
-    if (query.groupBy === 'JOB') return row.jobCode || '—'
-    if (query.groupBy === 'WORKER') return row.workerCode || '—'
-    return row.tenantId || tenant.tenantId || '—'
+    return capacityDimensionValue(row, query.groupBy, tenant.tenantId)
   }
 
   function secondaryDimensionValue(row: CapacityProfileRow): string {
@@ -263,16 +361,37 @@
     loadError.value = ''
     try {
       const [from, to] = range.value ?? defaultWindow()
-      report.value = await getCapacityProfile({
-        tenantId: tenant.tenantId,
-        groupBy: query.groupBy,
-        limit: query.limit,
-        from,
-        to,
-      })
+      const buckets = buildCapacityBuckets([from, to])
+      const [mainReport, bucketResults] = await Promise.all([
+        getCapacityProfile({
+          tenantId: tenant.tenantId,
+          groupBy: query.groupBy,
+          limit: query.limit,
+          from,
+          to,
+        }),
+        Promise.allSettled(
+          buckets.map((bucket) =>
+            getCapacityProfile({
+              tenantId: tenant.tenantId,
+              groupBy: 'TENANT',
+              limit: 1,
+              from: bucket.from,
+              to: bucket.to,
+            }),
+          ),
+        ),
+      ])
+      report.value = mainReport
+      trendBuckets.value = buckets
+      trendReports.value = bucketResults.map((result) =>
+        result.status === 'fulfilled' ? result.value : null,
+      )
       ElMessage.success(t('capacityProfile.loadOk'))
     } catch (error) {
       report.value = null
+      trendBuckets.value = []
+      trendReports.value = []
       loadError.value = error instanceof Error ? error.message : t('capacityProfile.loadFailed')
     } finally {
       loading.value = false
@@ -282,7 +401,7 @@
   function resetFilters() {
     query.groupBy = 'TENANT'
     query.limit = 50
-    range.value = null
+    range.value = defaultWindow()
     void load()
   }
 
@@ -297,6 +416,18 @@
     margin-top: var(--page-block-gap);
   }
 
+  .capacity-charts {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-md);
+    margin-top: var(--page-block-gap);
+  }
+
+  .capacity-chart {
+    width: 100%;
+    height: 18rem;
+  }
+
   .profile-header {
     display: flex;
     align-items: center;
@@ -309,6 +440,13 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
+  }
+
+  .profile-header__hint {
+    margin-top: var(--space-xs);
+    color: var(--color-text-tertiary);
+    font-size: var(--font-size-sm);
+    font-weight: 400;
   }
 
   .cell-stack {
@@ -329,6 +467,29 @@
   @media (max-width: 1080px) {
     .profile-grid {
       grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .capacity-charts {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .profile-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .capacity-chart {
+      height: 16rem;
+    }
+
+    .profile-header {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+
+    .profile-header__meta {
+      flex-wrap: wrap;
     }
   }
 </style>

@@ -39,7 +39,14 @@ registerTheme('console-light', {
     textStyle: { color: '#1f2937' },
     extraCssText: 'box-shadow: 0 4px 16px rgba(0,0,0,0.08); border-radius: 8px;',
   },
-  grid: { left: 40, right: 16, top: 32, bottom: 32, containLabel: true },
+  grid: {
+    left: 40,
+    right: 16,
+    top: 32,
+    bottom: 32,
+    outerBoundsMode: 'same',
+    outerBoundsContain: 'axisLabel',
+  },
   categoryAxis: {
     axisLine: { lineStyle: { color: '#cbd5e1' } },
     axisTick: { show: false },
@@ -68,7 +75,14 @@ registerTheme('console-dark', {
     textStyle: { color: '#e2e8f0' },
     extraCssText: 'box-shadow: 0 4px 16px rgba(0,0,0,0.32); border-radius: 8px;',
   },
-  grid: { left: 40, right: 16, top: 32, bottom: 32, containLabel: true },
+  grid: {
+    left: 40,
+    right: 16,
+    top: 32,
+    bottom: 32,
+    outerBoundsMode: 'same',
+    outerBoundsContain: 'axisLabel',
+  },
   categoryAxis: {
     axisLine: { lineStyle: { color: '#334155' } },
     axisTick: { show: false },
