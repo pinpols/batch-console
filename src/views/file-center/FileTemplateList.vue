@@ -2,7 +2,7 @@
   <PageContainer>
     <PageHeader>
       <template #actions>
-        <el-button type="primary" :icon="Plus" @click="onCreateClick">
+        <el-button v-if="canMutateConfig" type="primary" :icon="Plus" @click="onCreateClick">
           {{ activeCreateLabel }}
         </el-button>
       </template>
@@ -122,6 +122,7 @@
                 :active-text="t('fileTemplateList.switchOn')"
                 :inactive-text="t('fileTemplateList.switchOff')"
                 :loading="togglingTemplateId === row.id"
+                :disabled="!canMutateConfig"
                 @change="toggleTemplate(row)"
               />
             </template>
@@ -226,6 +227,7 @@
                 :active-text="t('fileTemplateList.switchOn')"
                 :inactive-text="t('fileTemplateList.switchOff')"
                 :loading="togglingChannelId === row.id"
+                :disabled="!canMutateConfig"
                 @change="toggleChannel(row)"
               />
             </template>
@@ -235,7 +237,12 @@
             :label="t('fileTemplateList.colUpdatedAt')"
             width="180"
           />
-          <el-table-column :label="t('fileTemplateList.colActions')" width="120" fixed="right">
+          <el-table-column
+            v-if="canMutateConfig"
+            :label="t('fileTemplateList.colActions')"
+            width="120"
+            fixed="right"
+          >
             <template #default="{ row }">
               <el-button
                 type="primary"
@@ -535,6 +542,7 @@
   } from '@/api/system'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
+  import { usePermission } from '@/composables/usePermission'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
@@ -546,6 +554,7 @@
   import type { ConsoleFileChannelResponse, ConsoleFileTemplateResponse } from '@/types/console-api'
 
   const tenant = useTenantStore()
+  const { canMutateConfig } = usePermission()
   const loading = ref(false)
   const loadError = ref<unknown>(null)
   const {
@@ -574,6 +583,7 @@
       : t('fileTemplateList.actionCreateChannel'),
   )
   function onCreateClick() {
+    if (!canMutateConfig.value) return
     if (activeTab.value === 'templates') openTemplateCreate()
     else openChannelCreate()
   }
@@ -752,19 +762,23 @@
   }
 
   function templateRowActions(row: ConsoleFileTemplateResponse): RowAction[] {
-    return [
+    const actions: RowAction[] = [
       {
+        key: 'detail',
+        label: t('fileTemplateList.actionDetail'),
+        primary: !canMutateConfig.value,
+        onClick: () => openDetail(row),
+      },
+    ]
+    if (canMutateConfig.value) {
+      actions.unshift({
         key: 'edit',
         label: t('common.edit'),
         primary: true,
         onClick: () => openTemplateEdit(row),
-      },
-      {
-        key: 'detail',
-        label: t('fileTemplateList.actionDetail'),
-        onClick: () => openDetail(row),
-      },
-    ]
+      })
+    }
+    return actions
   }
 
   function openTemplateCreate() {
@@ -851,6 +865,7 @@
   }
 
   async function toggleTemplate(row: ConsoleFileTemplateResponse) {
+    if (!canMutateConfig.value) return
     togglingTemplateId.value = row.id
     try {
       await toggleFileTemplate(row.id, row.tenantId ?? tenant.tenantId, !row.enabled)
@@ -927,6 +942,7 @@
   }
 
   async function toggleChannel(row: ConsoleFileChannelResponse) {
+    if (!canMutateConfig.value) return
     togglingChannelId.value = row.id
     try {
       await toggleFileChannel(row.id, row.tenantId ?? tenant.tenantId, !row.enabled)

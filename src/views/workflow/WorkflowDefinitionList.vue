@@ -2,10 +2,10 @@
   <PageContainer>
     <PageHeader>
       <template #actions>
-        <el-button type="primary" :icon="Plus" @click="goCreate">
+        <el-button v-if="canMutateConfig" type="primary" :icon="Plus" @click="goCreate">
           {{ t('workflowDefinitionList.headerCreate') }}
         </el-button>
-        <el-button @click="goDesignerNew">
+        <el-button v-if="canMutateConfig" @click="goDesignerNew">
           {{ t('workflowDefinitionList.headerDesigner') }}
         </el-button>
       </template>
@@ -34,7 +34,7 @@
         <template v-if="!hasActiveFilters" #empty>
           <EmptyState :description="t('workflowDefinitionList.emptyDescription')" :image-size="80">
             <template #action>
-              <el-button type="primary" :icon="Plus" @click="goCreate">
+              <el-button v-if="canMutateConfig" type="primary" :icon="Plus" @click="goCreate">
                 {{ t('workflowDefinitionList.headerCreate') }}
               </el-button>
             </template>
@@ -507,11 +507,13 @@
 
   /** 新建走配置包 Excel 导入向导(workflow_definition/node/edge 3 个 sheet 在同包内) */
   function goCreate() {
+    if (!canMutateConfig.value) return
     void router.push({ path: '/config/tenant-package' })
   }
 
   /** 新建走 DAG 设计器(Spike 阶段),保留 Excel 导入路径不动 */
   function goDesignerNew() {
+    if (!canMutateConfig.value) return
     void router.push({ path: '/workflow/designer' })
   }
 

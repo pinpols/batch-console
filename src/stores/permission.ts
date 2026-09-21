@@ -25,7 +25,12 @@ export const usePermissionStore = defineStore('permission', () => {
       .filter((group) => canAccessRole(group.minRole))
       .map((group) => ({
         ...group,
-        children: group.children.filter((item) => canAccessRole(item.minRole)),
+        children: group.children.filter((item) => {
+          if (item.authorities?.length) {
+            return item.authorities.some((authority) => auth.hasPermission(authority))
+          }
+          return canAccessRole(item.minRole)
+        }),
       }))
       .filter((group) => group.children.length > 0)
   }

@@ -58,6 +58,8 @@ export interface NavigationItem {
   path: string
   icon?: Component
   minRole?: Role
+  /** 精确 authority 白名单；用于无法由 VIEWER/OPERATOR/ADMIN 层级表达的角色能力。 */
+  authorities?: string[]
   /** 隐藏出现在侧边栏,但 Command Palette / 内嵌跳转 仍可达 */
   hidden?: boolean
   /**
@@ -101,6 +103,7 @@ export const navigationGroups: NavigationGroup[] = [
         title: pageTitle('/self-service'),
         path: '/self-service',
         minRole: 'OPERATOR',
+        authorities: ['ROLE_ADMIN', 'ROLE_TENANT_ADMIN', 'ROLE_TENANT_USER', 'ROLE_USER'],
         icon: Zap,
       },
     ],
@@ -122,6 +125,7 @@ export const navigationGroups: NavigationGroup[] = [
         path: '/monitor/job-steps',
         minRole: 'VIEWER',
         icon: Timer,
+        hidden: true,
       },
       {
         title: pageTitle('/monitor/workflow-runs'),
@@ -260,18 +264,22 @@ export const navigationGroups: NavigationGroup[] = [
         path: '/files/pipeline-obs',
         minRole: 'VIEWER',
         icon: DataAnalysis,
+        hidden: true,
       },
       {
         title: pageTitle('/files/templates'),
         path: '/files/templates',
         minRole: 'VIEWER',
+        authorities: ['ROLE_ADMIN', 'ROLE_TENANT_ADMIN', 'ROLE_AUDITOR'],
         icon: Document,
       },
       {
         title: pageTitle('/files/channels'),
         path: '/files/channels',
         minRole: 'VIEWER',
+        authorities: ['ROLE_ADMIN', 'ROLE_TENANT_ADMIN', 'ROLE_AUDITOR'],
         icon: Connection,
+        hidden: true,
       },
     ],
   },
@@ -389,7 +397,7 @@ export const navigationGroups: NavigationGroup[] = [
     key: 'system',
     title: '系统管理',
     icon: Setting,
-    minRole: 'OPERATOR',
+    minRole: 'VIEWER',
     children: [
       {
         title: pageTitle('/system/tenants'),
@@ -400,7 +408,8 @@ export const navigationGroups: NavigationGroup[] = [
       {
         title: pageTitle('/system/user-accounts'),
         path: '/system/user-accounts',
-        minRole: 'ADMIN',
+        minRole: 'OPERATOR',
+        authorities: ['ROLE_ADMIN', 'ROLE_TENANT_ADMIN'],
         icon: Tickets,
       },
       {
@@ -413,26 +422,31 @@ export const navigationGroups: NavigationGroup[] = [
       {
         title: pageTitle('/config/releases'),
         path: '/config/releases',
-        minRole: 'OPERATOR',
+        minRole: 'VIEWER',
+        authorities: ['ROLE_ADMIN', 'ROLE_TENANT_ADMIN', 'ROLE_AUDITOR'],
         icon: Upload,
       },
       {
         title: pageTitle('/config/management'),
         path: '/config/management',
-        minRole: 'OPERATOR',
+        minRole: 'VIEWER',
+        authorities: ['ROLE_ADMIN', 'ROLE_TENANT_ADMIN', 'ROLE_AUDITOR'],
         icon: Operation,
       },
       {
         title: pageTitle('/observability/audits'),
         path: '/observability/audits',
         minRole: 'VIEWER',
+        authorities: ['ROLE_ADMIN', 'ROLE_TENANT_ADMIN', 'ROLE_AUDITOR'],
         icon: Memo,
       },
       {
         title: pageTitle('/observability/operation-audits'),
         path: '/observability/operation-audits',
         minRole: 'VIEWER',
+        authorities: ['ROLE_ADMIN', 'ROLE_TENANT_ADMIN', 'ROLE_AUDITOR'],
         icon: Document,
+        hidden: true,
       },
       {
         title: pageTitle('/system/event-catalog'),
@@ -457,7 +471,8 @@ export const navigationGroups: NavigationGroup[] = [
       {
         title: pageTitle('/system/api-keys'),
         path: '/system/api-keys',
-        minRole: 'ADMIN',
+        minRole: 'OPERATOR',
+        authorities: ['ROLE_ADMIN', 'ROLE_TENANT_ADMIN', 'ROLE_TENANT_USER', 'ROLE_USER'],
         icon: Key,
         hidden: true,
       },

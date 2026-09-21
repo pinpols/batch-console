@@ -53,6 +53,7 @@
     <button
       class="sidebar-foot"
       type="button"
+      data-onboarding="sidebar-toggle"
       :title="t('nav.collapseToggle')"
       @click="app.toggleSidebar()"
     >

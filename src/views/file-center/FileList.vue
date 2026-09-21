@@ -339,6 +339,7 @@
   import { useTenantStore } from '@/stores/tenant'
   import { useRoute } from 'vue-router'
   import { useTenantReload } from '@/composables/useTenantReload'
+  import { usePermission } from '@/composables/usePermission'
 
   const route = useRoute()
   import PageContainer from '@/components/common/PageContainer.vue'
@@ -366,6 +367,7 @@
   } from '@/types/console-api'
 
   const tenant = useTenantStore()
+  const { canMutateConfig } = usePermission()
 
   // 列设置:状态/操作列始终显示;工程字段(ID/Trace)默认隐藏。
   // 到达时间(createdAt)照设计 dump 是主表列,默认显示。
@@ -427,7 +429,7 @@
 
   // 行操作:1 主 + 4 次,折进"更多"避免一行 5 个 plain 按钮
   function rowActions(row: ConsoleFileRecordResponse): RowAction[] {
-    return [
+    const actions: RowAction[] = [
       {
         key: 'detail',
         label: t('fileList.actionDetail'),
@@ -436,19 +438,22 @@
       },
       { key: 'audit', label: t('fileList.actionAudit'), onClick: () => openAudit(row) },
       { key: 'download', label: t('fileList.actionDownload'), onClick: () => downloadFile(row) },
-      {
+    ]
+    if (canMutateConfig.value) {
+      actions.push({
         key: 'redispatch',
         label: t('fileList.actionRedispatch'),
         divided: true,
         onClick: () => redispatchFile(row),
-      },
-      {
+      })
+      actions.push({
         key: 'archive',
         label: t('fileList.actionArchive'),
         danger: true,
         onClick: () => archiveFile(row),
-      },
-    ]
+      })
+    }
+    return actions
   }
 
   const { data: metaEnums } = useConsoleMetaEnumsQuery()

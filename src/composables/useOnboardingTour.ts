@@ -26,32 +26,32 @@ export interface TourStep {
 // 首步必须是"选择租户":所有业务数据按租户隔离,未选租户时全站为空,
 // 这是新用户进来的第一个、也是唯一的必做动作,排在最前。低价值的"收起侧栏"放最后。
 // 文案在调用时按当前 locale 解析(普通函数不能用 useI18n,走 i18n.global.t)。
-// 注意:element 里的 aria-label 是 DOM 选择器,不做 i18n。
+// 锚点统一用 data-onboarding,不依赖样式类名或 i18n 后的 aria-label。
 function defaultSteps(): TourStep[] {
   const t = i18n.global.t
   return [
     {
-      element: '.tenant-chip',
+      element: '[data-onboarding="tenant"]',
       title: t('onboarding.step1Title'),
       description: t('onboarding.step1Desc'),
     },
     {
-      element: '.icon-button[aria-label="打开命令面板"]',
+      element: '[data-onboarding="command-palette"]',
       title: t('onboarding.step2Title'),
       description: t('onboarding.step2Desc'),
     },
     {
-      element: '.icon-button[aria-label="打开文档中心"]',
+      element: '[data-onboarding="docs"]',
       title: t('onboarding.step3Title'),
       description: t('onboarding.step3Desc'),
     },
     {
-      element: '.username',
+      element: '[data-onboarding="account"]',
       title: t('onboarding.step4Title'),
       description: t('onboarding.step4Desc'),
     },
     {
-      element: '.layout-header__fold',
+      element: '[data-onboarding="sidebar-toggle"]',
       title: t('onboarding.step5Title'),
       description: t('onboarding.step5Desc'),
     },
@@ -64,8 +64,14 @@ export function shouldShowOnboarding(): boolean {
 
 export function startOnboarding(steps: TourStep[] = defaultSteps()) {
   // 弹窗/抽屉打开时不启动引导:coach-mark 会盖住正在填写的表单(反人类)。
-  // Element Plus 的 overlay/drawer 仅在打开时挂到 DOM,存在即视为有模态在前台。
-  if (document.querySelector('.el-overlay, .el-drawer, .el-dialog')) {
+  // Element Plus 会把关闭后的 overlay 留在 DOM 并设为 display:none,不能仅按节点存在判断。
+  const hasVisibleModal = Array.from(
+    document.querySelectorAll<HTMLElement>('.el-overlay, .el-drawer, .el-dialog'),
+  ).some((element) => {
+    const style = getComputedStyle(element)
+    return style.display !== 'none' && style.visibility !== 'hidden'
+  })
+  if (hasVisibleModal) {
     logRoute('onboarding:skip', { kind: 'onboarding', reason: 'modal open' })
     return
   }

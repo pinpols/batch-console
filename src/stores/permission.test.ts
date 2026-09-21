@@ -98,9 +98,22 @@ describe('permission navigation filtering', () => {
     const runs = groupFor('monitor')?.children.find((item) => item.path === '/runs')
     expect(runs?.hidden).toBe(true)
 
+    for (const path of [
+      '/monitor/job-steps',
+      '/files/pipeline-obs',
+      '/files/channels',
+      '/observability/operation-audits',
+    ]) {
+      const item = navigationGroups
+        .flatMap((group) => group.children)
+        .find((it) => it.path === path)
+      expect(item?.hidden, `${path} should remain command-palette only`).toBe(true)
+    }
+
     const visiblePaths = navigationGroups.flatMap((group) =>
       group.children.filter((item) => !item.hidden).map((item) => item.path),
     )
+    expect(visiblePaths).toHaveLength(31)
     expect(new Set(visiblePaths).size).toBe(visiblePaths.length)
   })
 })

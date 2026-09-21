@@ -18,6 +18,9 @@ vi.mock('driver.js', () => ({
 vi.mock('driver.js/dist/driver.css', () => ({}))
 
 const storage = new Map<string, string>()
+type ModalStub = Element & { display?: string; visibility?: string }
+const modalElements: ModalStub[] = []
+
 vi.stubGlobal('localStorage', {
   getItem: (k: string) => storage.get(k) ?? null,
   setItem: (k: string, v: string) => storage.set(k, v),
@@ -27,18 +30,23 @@ vi.stubGlobal('localStorage', {
 
 // stub document.querySelector(useOnboardingTour 校验 anchor 存在性)
 vi.stubGlobal('document', {
+  querySelectorAll: (sel: string) =>
+    sel === '.el-overlay, .el-drawer, .el-dialog' ? modalElements : [],
   querySelector: (sel: string) => {
-    // 模态守卫选择器:单测场景无弹窗/抽屉打开 → 返回 null,否则 startOnboarding 会被守卫跳过。
-    if (sel === '.el-overlay, .el-drawer, .el-dialog') return null
     // 返回非 null 模拟"anchor 存在"
     return sel === '.fake-missing' ? null : ({} as Element)
   },
 })
+vi.stubGlobal('getComputedStyle', (element: ModalStub) => ({
+  display: element.display ?? 'block',
+  visibility: element.visibility ?? 'visible',
+}))
 
 import { shouldShowOnboarding, resetOnboarding, startOnboarding } from './useOnboardingTour'
 
 beforeEach(() => {
   storage.clear()
+  modalElements.length = 0
   driverConstructorMock.mockClear()
   driverDriveMock.mockClear()
 })
@@ -71,6 +79,22 @@ describe('useOnboardingTour', () => {
     expect(cfg.steps).toHaveLength(2)
   })
 
+  it('startOnboarding:默认 5 步使用与文案和样式无关的稳定锚点', () => {
+    startOnboarding()
+
+    const cfg = driverConstructorMock.mock.calls[0][0]
+    expect(cfg.steps).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ element: '[data-onboarding="tenant"]' }),
+        expect.objectContaining({ element: '[data-onboarding="command-palette"]' }),
+        expect.objectContaining({ element: '[data-onboarding="docs"]' }),
+        expect.objectContaining({ element: '[data-onboarding="account"]' }),
+        expect.objectContaining({ element: '[data-onboarding="sidebar-toggle"]' }),
+      ]),
+    )
+    expect(cfg.steps).toHaveLength(5)
+  })
+
   it('startOnboarding:全部 anchor DOM 不存在时 跳过启动(避免 driver 报错)', () => {
     startOnboarding([{ element: '.fake-missing', title: 't', description: 'd' }])
     expect(driverConstructorMock).not.toHaveBeenCalled()
@@ -84,5 +108,21 @@ describe('useOnboardingTour', () => {
     expect(driverConstructorMock).toHaveBeenCalledTimes(1)
     const cfg = driverConstructorMock.mock.calls[0][0]
     expect(cfg.steps).toHaveLength(1)
+  })
+
+  it('startOnboarding:已隐藏的 Element Plus overlay 不阻止引导', () => {
+    modalElements.push({ display: 'none' } as ModalStub)
+
+    startOnboarding([{ element: '.real', title: 't', description: 'd' }])
+
+    expect(driverDriveMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('startOnboarding:可见模态层存在时不启动', () => {
+    modalElements.push({ display: 'block', visibility: 'visible' } as ModalStub)
+
+    startOnboarding([{ element: '.real', title: 't', description: 'd' }])
+
+    expect(driverConstructorMock).not.toHaveBeenCalled()
   })
 })

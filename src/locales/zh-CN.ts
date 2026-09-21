@@ -780,6 +780,7 @@ export default {
     switchToZh: '切换中文',
     timezoneTooltip: '切换展示时区',
     timezoneLabel: '展示时区',
+    timezoneChanged: '展示时区已切换为 {timezone}',
     invalidTimezone: '时区格式无效',
     exitFullscreenTooltip: '退出全屏(Esc)',
   },
@@ -858,7 +859,7 @@ export default {
     step4Title: '账户菜单',
     step4Desc: '右上角看权限角色 / 退出登录;管理员可以打开"权限自查"。',
     step5Title: '收起 / 展开侧边栏',
-    step5Desc: '左上角按钮控制菜单栏,内容区需要更多空间时可以收起。',
+    step5Desc: '侧边栏底部按钮控制菜单栏,内容区需要更多空间时可以收起。',
   },
   dateRangePicker: {
     rangeSeparator: '至',
@@ -1315,7 +1316,7 @@ export default {
       description: '查看调度器实时状态、队列负载和 Worker 采样。',
     },
     filesList: { title: '文件列表', description: '查询文件记录,按状态和业务类型筛选。' },
-    filesTemplates: { title: '文件模板', description: '维护文件模板、格式和业务分类。' },
+    filesTemplates: { title: '文件配置', description: '统一维护文件模板、格式和接入渠道。' },
     filesChannels: {
       title: '文件渠道',
       description: '维护文件接入渠道,关联模板与触发策略。',

@@ -107,7 +107,12 @@
           :label="t('arrivalGroupList.colUpdated')"
           width="160"
         />
-        <el-table-column :label="t('arrivalGroupList.colActions')" width="130" fixed="right">
+        <el-table-column
+          v-if="canMutateConfig"
+          :label="t('arrivalGroupList.colActions')"
+          width="130"
+          fixed="right"
+        >
           <template #default="{ row }">
             <div class="table-actions">
               <el-button size="small" plain type="primary" @click="confirm(row)">
@@ -132,6 +137,7 @@
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
+  import { usePermission } from '@/composables/usePermission'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
@@ -141,6 +147,7 @@
   import type { ConsoleFileArrivalGroupResponse } from '@/types/console-api'
 
   const tenant = useTenantStore()
+  const { canMutateConfig } = usePermission()
   const loading = ref(false)
   const loadError = ref<unknown>(null)
   const {
@@ -220,6 +227,7 @@
   }
 
   async function confirm(row: ConsoleFileArrivalGroupResponse) {
+    if (!canMutateConfig.value) return
     try {
       await ElMessageBox.confirm(
         t('arrivalGroupList.confirmText', { code: row.fileGroupCode }),
