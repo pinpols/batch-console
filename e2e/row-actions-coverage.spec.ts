@@ -9,6 +9,7 @@
  */
 import { expect, test } from './support/app'
 import { enterDemoApp, expectPageTitle, isVisible } from './support/app'
+import { createDraftConfigRelease } from './support/test-data'
 
 test.describe('@row-actions 行操作覆盖缺口补丁', () => {
   test.beforeEach(async ({ page }) => {
@@ -91,24 +92,19 @@ test.describe('@row-actions 行操作覆盖缺口补丁', () => {
   })
 
   test('ConfigReleaseList → 差异', async ({ page, network }) => {
+    const release = await createDraftConfigRelease(page.request)
     await page.goto('/config/releases')
     await page.waitForLoadState('networkidle', { timeout: 8000 }).catch(() => {})
-    const row = page.locator('tr.el-table__row').first()
-    if (!(await isVisible(row, 2000))) {
-      test.skip(true, '无 release 数据')
-    }
-    // 「更多」或直接行内
-    // 4 case 并发跑会让 FE /ops/summary 重定向卡住,增大单测超时
+    const keyInput = page.getByPlaceholder(/搜索配置 Key|Search config key/i)
+    await keyInput.fill(release.configKey)
+    await page.getByRole('button', { name: /搜索|Search/ }).click()
+    const card = page.locator('.cr-item').filter({ hasText: release.configKey }).first()
+    await expect(card).toBeVisible({ timeout: 8_000 })
+    await card.locator('.cr-card').click()
     test.setTimeout(60000)
-    const moreBtn = row.getByRole('button', { name: /^更多/ }).first()
-    if (await isVisible(moreBtn, 1500)) {
-      await moreBtn.click({ force: true })
-      const item = page.getByRole('menuitem', { name: '差异' }).first()
-      if (await isVisible(item, 1500)) await item.click({ force: true })
-    } else {
-      const inline = row.getByRole('button', { name: '差异' }).first()
-      if (await isVisible(inline, 1500)) await inline.click({ force: true })
-    }
+    const diffBtn = page.locator('.cr-panel').getByRole('button', { name: /对比|差异|Diff/i })
+    await expect(diffBtn).toBeVisible()
+    await diffBtn.click()
     await page.waitForTimeout(800)
     // 差异面板出来,可能是 drawer / dialog
     const panel = page.locator('.el-dialog:visible, .el-drawer:visible').first()

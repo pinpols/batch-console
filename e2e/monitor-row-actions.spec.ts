@@ -87,10 +87,7 @@ test.describe('@row-actions 作业实例行操作', () => {
     await expect(page).toHaveURL(/\/monitor\/job-instances\/\d+/, { timeout: 8000 })
 
     const rerunBtn = page.getByRole('button', { name: /重跑|重新运行/ }).first()
-    if (!(await isVisible(rerunBtn, 3000))) {
-      test.skip(true, '该实例状态无重跑入口(可能非终态)')
-      return
-    }
+    await expect(rerunBtn).toBeVisible({ timeout: 10_000 })
     await rerunBtn.click()
     // 确认弹窗出现(ElMessageBox)
     const confirmBox = page.locator('.el-message-box, .el-dialog:visible').first()

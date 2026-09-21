@@ -192,29 +192,30 @@ async function triggerImportFromUi(
 ): Promise<TriggeredInstance | null> {
   await useTenant(page, scenario.tenantId)
   await enterDemoApp(page)
-  await page.goto('/jobs/definitions')
+  const definitionsResponse = page.waitForResponse(
+    (response) => {
+      const url = new URL(response.url())
+      return (
+        response.request().method() === 'GET' &&
+        url.pathname === '/api/console/queries/job-definitions' &&
+        url.searchParams.get('tenantId') === scenario.tenantId &&
+        url.searchParams.get('jobCode') === scenario.jobCode &&
+        response.status() === 200
+      )
+    },
+    { timeout: 20_000 },
+  )
+  await page.goto(`/jobs/definitions?jobCode=${encodeURIComponent(scenario.jobCode)}`)
   await expectPageTitle(page, '作业定义')
-  await page.waitForLoadState('networkidle', { timeout: 8_000 }).catch(() => undefined)
-
-  const codeInput = page
-    .locator('.el-form-item')
-    .filter({ hasText: /Job Code|作业编码|编码/ })
-    .locator('input')
-    .first()
-  if (await isVisible(codeInput, 3_000)) {
-    await codeInput.fill(scenario.jobCode)
-    await page.getByRole('button', { name: /搜索|查询/ }).first().click()
-    await page.waitForLoadState('networkidle', { timeout: 8_000 }).catch(() => undefined)
-  }
+  await definitionsResponse
 
   const exactJobCodeCell = page.locator('td').filter({
     hasText: new RegExp(`^\\s*${escapeRegExp(scenario.jobCode)}\\s*$`),
   })
   const row = page.locator('tbody tr.el-table__row').filter({ has: exactJobCodeCell }).first()
-  if (!(await isVisible(row, 5_000))) {
-    test.skip(true, `${scenario.tenantId}/${scenario.jobCode} 未 seed 到作业定义`)
-    return null
-  }
+  await expect(row, `${scenario.tenantId}/${scenario.jobCode} 应出现在作业定义列表`).toBeVisible({
+    timeout: 10_000,
+  })
 
   let triggerBtn = row.getByRole('button', { name: /手动触发|触发|trigger/i }).first()
   if (!(await isVisible(triggerBtn, 1_500))) {
@@ -227,10 +228,10 @@ async function triggerImportFromUi(
         .first()
     }
   }
-  if (!(await isVisible(triggerBtn, 2_000))) {
-    test.skip(true, `${scenario.tenantId}/${scenario.jobCode} 无前台触发入口`)
-    return null
-  }
+  await expect(
+    triggerBtn,
+    `${scenario.tenantId}/${scenario.jobCode} 应提供前台触发入口`,
+  ).toBeVisible({ timeout: 5_000 })
 
   const rows = [1, 2, 3].map((i) => scenario.row(token, bizDate, i)).join('\n')
   const payload = {

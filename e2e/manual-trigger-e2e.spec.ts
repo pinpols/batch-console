@@ -2,15 +2,15 @@
  * 手动触发作业 — 真端到端操作验证(不止 toast,要验真产生实例)。
  *
  * 既有 job-ops 的「手动触发 → toast」只断言出现了 toast,不验操作结果。本 spec 补真闭环:
- * 在作业定义页对一个可干净触发的作业(TA_E2E_ATOMIC,本地 seed)点手动触发 → 填 payload → 提交
+ * 在作业定义页对配置包稳定提供的手动作业(TA_EXPORT_REPORT)点手动触发 → 填 payload → 提交
  * → 断言 success toast → 跳监控页按 jobCode 过滤 → 断言【新实例出现】(操作真的产生了运行态)。
  *
- * 需 ta 有 TA_E2E_ATOMIC 这个 ATOMIC 作业(本地由 atomic_shell_demo 克隆 seed);无则优雅 skip。
+ * TA_EXPORT_REPORT 来自 ta 标准租户配置包，E2E_FORCE_SEED=1 时由 global setup 刷新。
  */
 import { expect, test } from './support/app'
 import { enterDemoApp, expectPageTitle, isVisible } from './support/app'
 
-const JOB = 'TA_E2E_ATOMIC'
+const JOB = 'TA_EXPORT_REPORT'
 
 test.describe('@manual-trigger 手动触发作业 真端到端', () => {
   test('手动触发 → 成功 → 监控页出现该作业新实例', async ({ page }) => {
@@ -31,10 +31,7 @@ test.describe('@manual-trigger 手动触发作业 真端到端', () => {
       await page.waitForLoadState('networkidle', { timeout: 6000 }).catch(() => {})
     }
     const row = page.locator('tbody tr.el-table__row').filter({ hasText: JOB }).first()
-    if (!(await isVisible(row, 4000))) {
-      test.skip(true, `无 ${JOB} 作业(需本地 seed TA_E2E_ATOMIC),跳过`)
-      return
-    }
+    await expect(row, `未找到标准 seed 作业 ${JOB}`).toBeVisible({ timeout: 8_000 })
 
     // 手动触发(行内更多/直接按钮)
     let triggerBtn = row.getByRole('button', { name: '手动触发' }).first()
@@ -45,10 +42,7 @@ test.describe('@manual-trigger 手动触发作业 真端到端', () => {
         triggerBtn = page.locator('.el-dropdown-menu__item, [role="menuitem"]').filter({ hasText: '手动触发' }).first()
       }
     }
-    if (!(await isVisible(triggerBtn, 2000))) {
-      test.skip(true, '该行无手动触发入口')
-      return
-    }
+    await expect(triggerBtn, `${JOB} 应提供手动触发入口`).toBeVisible({ timeout: 4_000 })
     await triggerBtn.click()
     const box = page.locator('.el-message-box, .el-dialog:visible').first()
     await expect(box).toBeVisible({ timeout: 5000 })

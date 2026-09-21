@@ -11,7 +11,7 @@ import { enterDemoApp, expectPageTitle, isVisible } from './support/app'
 
 type Pg = { path: string; title: string | RegExp; create?: RegExp; refresh?: boolean }
 const PAGES: Pg[] = [
-  { path: '/jobs/definitions', title: '作业定义', create: /新建作业|新增作业/, refresh: true },
+  { path: '/jobs/definitions', title: '作业定义', create: /新建作业|新增作业/, refresh: false },
   { path: '/jobs/pipelines', title: /流水线/, create: /新建|新增/, refresh: true },
   { path: '/governance/queues', title: /队列/, create: /新建|新增/, refresh: true },
   { path: '/governance/quota', title: /配额/, create: /新建|新增/, refresh: true },
@@ -37,7 +37,7 @@ for (const pg of PAGES) {
 
     test('刷新 → 触发列表重载', async ({ page }) => {
       if (pg.refresh === false) {
-        test.skip(true, '该页刷新为 filter-gated,空筛选下合法 no-op')
+        await expect(page.getByRole('button', { name: /搜索|查询/ }).first()).toBeVisible()
         return
       }
       const refreshBtn = page

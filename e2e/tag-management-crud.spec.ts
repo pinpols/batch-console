@@ -22,8 +22,6 @@ test.describe('tag management (标签管理)', () => {
   })
 
   // "已注册 Key" 已从 tab 降为 TagSearchTab 内的 sub-section,不再是独立 tab
-  test.skip('已注册 Key tab 展示 Key 列表(已合并到 TagSearchTab)', async () => {})
-
   test('标签查询可输入条件并提交', async ({ page }) => {
     // 填充查询条件
     const keyInput = page.getByPlaceholder('Tag Key').first()

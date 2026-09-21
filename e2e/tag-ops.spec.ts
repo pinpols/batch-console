@@ -93,17 +93,3 @@ test.describe('标签管理 — 按标签搜索', () => {
     await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
   })
 })
-
-// "已注册 Key" 已从 tab 降为 TagSearchTab 内的 sub-section,
-// 进入"按标签搜索"tab 后可见,不再是独立 tab。
-test.describe('标签管理 — 已注册 Key sub-section', () => {
-  test.beforeEach(async ({ page }) => {
-    await enterDemoApp(page)
-    await page.goto('/system/tags')
-    await expectPageTitle(page, '标签管理')
-    await page.getByRole('tab', { name: '搜索标签' }).click()
-  })
-
-  // "已注册 Key" 子面板已下线(改成 tagKey autocomplete 下拉建议,见 commit 4601152)
-  test.skip('已注册 Key sub-section 在按标签搜索 tab 内可见(已下线)', async () => {})
-})

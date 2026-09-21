@@ -11,7 +11,7 @@
  *     ③ 有数据的表格:首行关键列不全是「—」(抓字段映射漂移,如 file-templates/channels)
  *
  *   覆盖 admin(跨租户,最易暴露)+ tenantAdmin + tenantUser(非 admin 角色)。
- *   role-*.json 由 global-setup.cjs 生成;无权页会被守卫重定向,按 skip 处理不算失败。
+ *   role-*.json 由 global-setup.cjs 生成;无权页必须明确断言守卫重定向成功。
  */
 import { test, expect, type Page } from '@playwright/test'
 
@@ -103,9 +103,11 @@ for (const role of ROLES) {
         await page.goto(route, { waitUntil: 'domcontentloaded' })
         await page.waitForTimeout(1800)
 
-        // 无权角色会被守卫重定向到别处:不在该 route 即视为该角色无此页,跳过断言
+        // 无权角色会被守卫重定向到允许访问的页面。拒绝路径本身是验证目标，
+        // 不能用 skip 隐藏，否则发布报告会把已验证的 RBAC 行为记成未覆盖。
         if (!page.url().includes(route)) {
-          test.skip(true, `${role.key} 无权访问 ${route}(已重定向)`)
+          expect(page.url(), `${role.key} 访问 ${route} 应被守卫重定向`).not.toContain('/login')
+          await assertNoCustomerVisibleError(page, new URL(page.url()).pathname, pageErrors)
           return
         }
         await assertNoCustomerVisibleError(page, route, pageErrors)

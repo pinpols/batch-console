@@ -30,12 +30,28 @@ test.describe('notification rule CRUD', () => {
   })
 
   test('真端到端:填订阅规则 → 保存 → 成功提示 + 列表出现', async ({ page }) => {
+    const suffix = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
+    const channelCode = `e2e-rule-channel-${suffix}`
+    const channelResponse = await page.request.post(
+      `/api/console/notifications/channels?tenantId=ta`,
+      {
+        headers: { 'X-Tenant-Id': 'ta', 'Idempotency-Key': `e2e-rule-channel-${suffix}` },
+        data: {
+          channelCode,
+          channelName: `E2E rule channel ${suffix}`,
+          channelType: 'EMAIL',
+          configJson: '{}',
+          enabled: true,
+        },
+      },
+    )
+    expect(channelResponse.ok(), await channelResponse.text()).toBe(true)
+    await page.reload({ waitUntil: 'domcontentloaded' })
+    await page.getByRole('tab', { name: '订阅规则' }).click()
+
     const addBtn = page.getByRole('button', { name: /^新增/ }).first()
-    if (!(await isVisible(addBtn, 2000))) {
-      test.skip(true, '无新增按钮(权限/路由)')
-      return
-    }
-    const name = `e2e-rule-${Date.now()}`
+    await expect(addBtn).toBeVisible()
+    const name = `e2e-rule-${suffix}`
     await addBtn.click()
     const dialog = page.locator('.el-dialog:visible, .el-drawer:visible').filter({ hasText: '新增规则' })
     await expect(dialog).toBeVisible({ timeout: 5000 })
@@ -48,33 +64,35 @@ test.describe('notification rule CRUD', () => {
       .locator('input')
       .first()
       .fill('JOB_FAILED')
-    // 渠道 ID:打开下拉选第一个可用渠道;无渠道则该环境无法建规则,优雅 skip
+    // 渠道 ID:选择本用例刚创建的隔离渠道。
     const chanItem = dialog.locator('.el-form-item').filter({ hasText: '渠道' }).first()
     await chanItem.locator('.el-select__wrapper, .el-select').first().click()
     await page.waitForTimeout(400) // 等下拉动画 + channelOptions 异步加载
-    const chanOpt = page.locator('.el-select-dropdown:visible').last().locator('.el-select-dropdown__item').first()
-    if (!(await chanOpt.isVisible({ timeout: 4000 }).catch(() => false))) {
-      test.skip(true, '无可选通知渠道,无法建订阅规则(需先建渠道)')
-      return
-    }
+    const chanOpt = page
+      .locator('.el-select-dropdown:visible')
+      .last()
+      .locator('.el-select-dropdown__item', { hasText: channelCode })
+    await expect(chanOpt).toBeVisible({ timeout: 4000 })
     await chanOpt.click()
     // 等 el-select v-model 绑定落定(否则保存时 channelId 可能仍是 null);校验 select 已显示选中值
     await expect(chanItem.locator('.el-select__wrapper')).not.toContainText('选择渠道', { timeout: 3000 }).catch(() => {})
     await page.waitForTimeout(400)
 
     await dialog.getByRole('button', { name: /保存|确定|创建/ }).first().click()
-    // 真端到端期望成功;若该环境渠道绑定/数据未就绪导致非成功,优雅 skip 而非 false-fail(不掩盖也不误报)
-    const ok = await page
-      .locator('.el-message--success')
-      .first()
-      .isVisible({ timeout: 6000 })
-      .catch(() => false)
-    if (!ok) {
-      test.skip(true, '订阅规则保存未返回成功(渠道绑定/环境数据未就绪),本次不验创建结果')
-      return
-    }
+    await expect(page.locator('.el-message--success').first()).toBeVisible({ timeout: 6000 })
     await expect(dialog).toBeHidden({ timeout: 6000 })
     await page.waitForLoadState('networkidle', { timeout: 8000 }).catch(() => {})
-    await expect(page.getByText(name).first()).toBeVisible({ timeout: 8000 })
+    const row = page.locator('tr.el-table__row', { hasText: name })
+    await expect(row).toHaveCount(1)
+
+    await row.getByRole('button', { name: '删除' }).click()
+    await page.locator('.el-message-box').getByRole('button', { name: /^(确定|确认.*)$/ }).click()
+    await expect(row).toHaveCount(0)
+
+    const cleanupResponse = await page.request.delete(
+      `/api/console/notifications/channels/${encodeURIComponent(channelCode)}?tenantId=ta`,
+      { headers: { 'X-Tenant-Id': 'ta' } },
+    )
+    expect(cleanupResponse.ok(), await cleanupResponse.text()).toBe(true)
   })
 })

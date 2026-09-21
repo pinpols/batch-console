@@ -87,12 +87,10 @@ test.describe('soak · 长会话稳定性', () => {
 
   test('dialog 反复开关 50 次不残留 DOM 节点', async ({ page }) => {
     await enterDemoApp(page)
-    await page.goto('/governance/queues', { waitUntil: 'domcontentloaded' })
+    await page.goto('/system/parameters', { waitUntil: 'domcontentloaded' })
     // 等待新建按钮出现
     const createBtn = page.getByRole('button', { name: /新建|创建|新增|create/i }).first()
-    if (!(await createBtn.isVisible({ timeout: 5000 }).catch(() => false))) {
-      test.skip(true, '无新建按钮(权限或路由)')
-    }
+    await expect(createBtn).toBeVisible({ timeout: 5000 })
 
     const sampleSize = Number(process.env.SOAK_DIALOG_ROUNDS ?? '20')
     for (let i = 0; i < sampleSize; i++) {

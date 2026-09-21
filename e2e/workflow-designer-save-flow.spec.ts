@@ -88,8 +88,8 @@ test.describe('@workflow-designer-save 工作流设计器保存流', () => {
 
     await expect(page.locator('.workflow-designer__banner--readonly')).toHaveCount(0)
 
+    await expect.poll(() => mainCanvasNodeCount(page), { timeout: 12_000 }).toBe(3)
     const initialNodes = await mainCanvasNodeCount(page)
-    expect(initialNodes).toBe(3)
 
     // ── 自动布局:改节点坐标 → 图 dirty 但仍合法(借既有合法图,绕 JOB-jobCode 校验)──
     const autoLayoutBtn = page.getByRole('button', { name: '自动布局' }).first()

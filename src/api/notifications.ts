@@ -1,5 +1,58 @@
 import type { AxiosRequestConfig } from 'axios'
 import { get, post, put, del } from '@/api/client'
+import type { components } from '@/types/api.generated'
+
+type NotificationChannelWire = components['schemas']['ConsoleNotificationChannelResponse']
+type NotificationRuleWire = components['schemas']['ConsoleSubscriptionRuleResponse']
+type NotificationDeliveryWire = components['schemas']['ConsoleNotificationDeliveryLogResponse']
+
+function normalizeChannel(row: NotificationChannelWire) {
+  return {
+    ...row,
+    tenantId: row.tenant_id,
+    channelCode: row.channel_code,
+    channelName: row.channel_name,
+    channelType: row.channel_type,
+    configJson: row.config_json,
+    createdBy: row.created_by,
+    updatedBy: row.updated_by,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  }
+}
+
+function normalizeRule(row: NotificationRuleWire) {
+  return {
+    ...row,
+    tenantId: row.tenant_id,
+    ruleName: row.rule_name,
+    channelCode: row.channel_code,
+    eventTypes: row.event_types,
+    severityFilter: row.severity_filter,
+    jobCodeFilter: row.job_code_filter,
+    createdBy: row.created_by,
+    updatedBy: row.updated_by,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  }
+}
+
+function normalizeDelivery(row: NotificationDeliveryWire) {
+  return {
+    ...row,
+    tenantId: row.tenant_id,
+    ruleId: row.rule_id,
+    channelCode: row.channel_code,
+    eventType: row.event_type,
+    alertEventId: row.alert_event_id,
+    payloadJson: row.payload_json,
+    deliveryStatus: row.delivery_status,
+    errorMessage: row.error_message,
+    errorKey: row.error_key,
+    errorArgs: row.error_args,
+    createdAt: row.created_at,
+  }
+}
 
 // 后端契约：
 //  - 所有端点的 tenantId 均为 query 参数（不在 body 内）
@@ -10,15 +63,20 @@ import { get, post, put, del } from '@/api/client'
 // ── Notification Channels ──
 
 /** GET /api/console/notifications/channels?tenantId= */
-export function listNotificationChannels(tenantId: string) {
-  return get<unknown[]>('/api/console/notifications/channels', { tenantId })
+export async function listNotificationChannels(tenantId: string) {
+  const rows = await get<NotificationChannelWire[]>('/api/console/notifications/channels', {
+    tenantId,
+  })
+  return rows.map(normalizeChannel)
 }
 
 /** GET /api/console/notifications/channels/{channelCode}?tenantId= */
-export function getNotificationChannel(channelCode: string, tenantId: string) {
-  return get<unknown>(`/api/console/notifications/channels/${encodeURIComponent(channelCode)}`, {
-    tenantId,
-  })
+export async function getNotificationChannel(channelCode: string, tenantId: string) {
+  const row = await get<NotificationChannelWire>(
+    `/api/console/notifications/channels/${encodeURIComponent(channelCode)}`,
+    { tenantId },
+  )
+  return normalizeChannel(row)
 }
 
 /** POST /api/console/notifications/channels?tenantId= */
@@ -58,13 +116,17 @@ export function testNotificationChannel(channelCode: string, tenantId: string) {
 // ── Notification Rules ──
 
 /** GET /api/console/notifications/rules?tenantId= */
-export function listNotificationRules(tenantId: string) {
-  return get<unknown[]>('/api/console/notifications/rules', { tenantId })
+export async function listNotificationRules(tenantId: string) {
+  const rows = await get<NotificationRuleWire[]>('/api/console/notifications/rules', { tenantId })
+  return rows.map(normalizeRule)
 }
 
 /** GET /api/console/notifications/rules/{ruleId}?tenantId= */
-export function getNotificationRule(ruleId: number, tenantId: string) {
-  return get<unknown>(`/api/console/notifications/rules/${ruleId}`, { tenantId })
+export async function getNotificationRule(ruleId: number, tenantId: string) {
+  const row = await get<NotificationRuleWire>(`/api/console/notifications/rules/${ruleId}`, {
+    tenantId,
+  })
+  return normalizeRule(row)
 }
 
 /** POST /api/console/notifications/rules?tenantId= */
@@ -91,6 +153,10 @@ export function deleteNotificationRule(ruleId: number, tenantId: string) {
 // ── Delivery Logs ──
 
 /** GET /api/console/notifications/delivery-logs?tenantId=&limit= */
-export function listNotificationDeliveryLogs(tenantId: string, limit = 100) {
-  return get<unknown[]>('/api/console/notifications/delivery-logs', { tenantId, limit })
+export async function listNotificationDeliveryLogs(tenantId: string, limit = 100) {
+  const rows = await get<NotificationDeliveryWire[]>('/api/console/notifications/delivery-logs', {
+    tenantId,
+    limit,
+  })
+  return rows.map(normalizeDelivery)
 }

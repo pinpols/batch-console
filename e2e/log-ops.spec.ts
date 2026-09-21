@@ -86,27 +86,16 @@ test.describe('执行日志 — 筛选查询', () => {
   })
 })
 
-test.describe('执行日志 — 自动刷新', () => {
+test.describe('执行日志 — 刷新模式', () => {
   test.beforeEach(async ({ page }) => {
     await enterDemoApp(page)
     await page.goto('/logs')
     await expectPageTitle(page, /综合查询/)
   })
 
-  test('自动刷新开关默认关闭', async ({ page }) => {
-    const switchEl = page.locator('.el-switch').first()
-    if ((await switchEl.count()) === 0) test.skip(true, '该页已无 .el-switch(组件已重构)')
-    await expect(switchEl).toBeVisible()
-    await expect(switchEl).not.toHaveClass(/is-checked/)
-  })
-
-  test('开启自动刷新开关', async ({ page }) => {
-    const switchEl = page.locator('.el-switch').first()
-    if ((await switchEl.count()) === 0) test.skip(true, '该页已无 .el-switch')
-    await switchEl.click()
-    await expect(switchEl).toHaveClass(/is-checked/)
-    await switchEl.click()
-    await expect(switchEl).not.toHaveClass(/is-checked/)
+  test('重构后使用显式刷新且不残留自动刷新开关', async ({ page }) => {
+    await expect(page.locator('.el-switch')).toHaveCount(0)
+    await expect(page.getByRole('button', { name: '刷新' })).toBeVisible()
   })
 })
 

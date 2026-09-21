@@ -11,6 +11,22 @@ import { enterDemoApp, isVisible } from './support/app'
 
 test.describe('顶栏通知中心', () => {
   test.beforeEach(async ({ page }) => {
+    await page.route('**/api/console/ops/summary*', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          code: 'SUCCESS',
+          message: 'ok',
+          data: {
+            pendingApprovals: 2,
+            openAlerts: 1,
+            criticalAlerts: 1,
+            failedJobs: 1,
+          },
+        }),
+      }),
+    )
     await enterDemoApp(page) // 落在 /ops/summary
   })
 
@@ -40,9 +56,7 @@ test.describe('顶栏通知中心', () => {
     await bell.locator('button').first().click()
 
     const firstRow = page.locator('.notif-center__row').first()
-    if (!(await isVisible(firstRow, 2000))) {
-      test.skip(true, '通知面板为空(无待审批/严重告警),无可点击分类行')
-    }
+    await expect(firstRow).toBeVisible({ timeout: 5_000 })
     await firstRow.click()
     // 跳到某个内部路由(approvals / alerts 等),URL 离开 ops/summary
     await expect(page).not.toHaveURL(/\/ops\/summary$/, { timeout: 5_000 })

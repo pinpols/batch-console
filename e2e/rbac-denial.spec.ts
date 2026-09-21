@@ -69,9 +69,7 @@ test.describe('RBAC 拒绝行为', () => {
     expect(page.url()).toContain('/login')
   })
 
-  // 5xx 路由守卫行为已由 src/api/interceptors.integration.test.ts 单元/集成测试覆盖
-  // (有 mock-axios 控制响应,比 e2e 网络拦截更可靠)。e2e 这条留作可视回归参考。
-  test.skip('5xx 错误 → 路由守卫不踢登录(保留登录态)', async ({ page, context }) => {
+  test('5xx 错误 → 路由守卫不踢登录(保留登录态)', async ({ page, context }) => {
     // /auth/me 返 502 — router 守卫的旧 bug 会清 token 跳登录,新版应保持原页
     // 在 storageState 已经写好 userInfo + token 的情况下,fetchMe 是按需触发的;
     // 守卫见 src/router/index.ts:581-588 — 5xx catch 后 transparent passthrough
