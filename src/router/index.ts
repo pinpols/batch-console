@@ -144,7 +144,8 @@ const routes: RouteRecordRaw[] = [
         meta: {
           title: '发布管理',
           activeMenu: '/config/releases',
-          minRole: 'OPERATOR',
+          minRole: 'VIEWER',
+          permissions: ['ROLE_ADMIN', 'ROLE_TENANT_ADMIN', 'ROLE_AUDITOR'],
         },
       },
       {
@@ -242,7 +243,8 @@ const routes: RouteRecordRaw[] = [
           title: '文件模板',
           activeMenu: '/files/templates',
           minRole: 'VIEWER',
-          mode: 'templates',
+          permissions: ['ROLE_ADMIN', 'ROLE_TENANT_ADMIN', 'ROLE_AUDITOR'],
+          mode: 'all',
         },
       },
       {
@@ -255,6 +257,7 @@ const routes: RouteRecordRaw[] = [
           // /files/templates,否则后端菜单 allowlist 守卫把本路由弹回首页(不跳转)。
           activeMenu: '/files/templates',
           minRole: 'VIEWER',
+          permissions: ['ROLE_ADMIN', 'ROLE_TENANT_ADMIN', 'ROLE_AUDITOR'],
           mode: 'channels',
         },
       },
@@ -496,6 +499,7 @@ const routes: RouteRecordRaw[] = [
           title: '文件审计',
           activeMenu: '/observability/audits',
           minRole: 'VIEWER',
+          permissions: ['ROLE_ADMIN', 'ROLE_TENANT_ADMIN', 'ROLE_AUDITOR'],
         },
       },
       {
@@ -505,8 +509,9 @@ const routes: RouteRecordRaw[] = [
         meta: {
           title: '操作审计',
           description: '控制台用户写操作留痕(@AuditAction 切面)',
-          activeMenu: '/observability/operation-audits',
+          activeMenu: '/observability/audits',
           minRole: 'VIEWER',
+          permissions: ['ROLE_ADMIN', 'ROLE_TENANT_ADMIN', 'ROLE_AUDITOR'],
         },
       },
       {
@@ -637,7 +642,8 @@ const routes: RouteRecordRaw[] = [
         meta: {
           title: '登录账户',
           activeMenu: '/system/user-accounts',
-          minRole: 'ADMIN',
+          minRole: 'OPERATOR',
+          permissions: ['ROLE_ADMIN', 'ROLE_TENANT_ADMIN'],
         },
       },
       {
@@ -677,7 +683,8 @@ const routes: RouteRecordRaw[] = [
         meta: {
           title: 'API Key',
           activeMenu: '/system/api-keys',
-          minRole: 'ADMIN',
+          minRole: 'OPERATOR',
+          permissions: ['ROLE_ADMIN', 'ROLE_TENANT_ADMIN', 'ROLE_TENANT_USER', 'ROLE_USER'],
         },
       },
       {
@@ -728,7 +735,8 @@ const routes: RouteRecordRaw[] = [
         meta: {
           title: '变更与同步',
           activeMenu: '/config/management',
-          minRole: 'OPERATOR',
+          minRole: 'VIEWER',
+          permissions: ['ROLE_ADMIN', 'ROLE_TENANT_ADMIN', 'ROLE_AUDITOR'],
         },
       },
       { path: 'config/change-logs', redirect: '/config/management' },
@@ -804,6 +812,7 @@ const routes: RouteRecordRaw[] = [
           title: '自助服务',
           activeMenu: '/self-service',
           minRole: 'OPERATOR',
+          permissions: ['ROLE_ADMIN', 'ROLE_TENANT_ADMIN', 'ROLE_TENANT_USER', 'ROLE_USER'],
         },
       },
       { path: 'self-service/tenant', redirect: '/self-service' },

@@ -39,6 +39,53 @@ const ROLE_TENANT: Record<RoleKey, string> = {
   tenantUser: 'tx',
   user: 'tx',
 }
+const ROLE_TARGET_TENANT: Record<RoleKey, string> = {
+  admin: 'tx',
+  tenantAdmin: 'ta',
+  auditor: 'tx',
+  tenantUser: 'tx',
+  user: 'tx',
+}
+const MENU_EXPECTATIONS: Record<
+  RoleKey,
+  { count: number; includes: string[]; excludes: string[] }
+> = {
+  admin: {
+    count: 54,
+    includes: ['/ops/diagnostic', '/system/tenants', '/system/api-keys'],
+    excludes: [],
+  },
+  tenantAdmin: {
+    count: 48,
+    includes: [
+      '/self-service',
+      '/system/user-accounts',
+      '/system/api-keys',
+      '/observability/audits',
+    ],
+    excludes: ['/ops/diagnostic', '/ops/tenant-placements', '/system/ai-chat'],
+  },
+  auditor: {
+    count: 26,
+    includes: [
+      '/files/templates',
+      '/config/releases',
+      '/observability/audits',
+      '/observability/operation-audits',
+    ],
+    excludes: ['/self-service', '/system/api-keys', '/system/user-accounts'],
+  },
+  tenantUser: {
+    count: 22,
+    includes: ['/self-service', '/system/api-keys', '/jobs/pipelines'],
+    excludes: ['/files/templates', '/config/releases', '/observability/audits'],
+  },
+  user: {
+    count: 22,
+    includes: ['/self-service', '/system/api-keys', '/jobs/pipelines'],
+    excludes: ['/files/templates', '/config/releases', '/observability/audits'],
+  },
+}
 
 // 期望矩阵:true = 允许 (期望 2xx);false = 拒绝 (期望 403)
 // 注:这是基于 BE 当前 RBAC 设计的预期;若 BE 实际返不一致,有 2 种可能:
@@ -48,7 +95,7 @@ type Endpoint = {
   key: string
   method: 'POST' | 'PUT' | 'DELETE'
   url: (tenantId: string) => string
-  body?: () => Record<string, unknown>
+  body?: (tenantId: string) => Record<string, unknown>
   expect: Record<RoleKey, boolean>
   /** 测完成功后清理(避免脏数据) */
   cleanup?: (ctx: APIRequestContext, response: unknown) => Promise<void>
@@ -84,8 +131,8 @@ const ENDPOINTS: Endpoint[] = [
     key: 'POST /queues',
     method: 'POST',
     url: () => '/api/console/queues',
-    body: () => ({
-      tenantId: 'tx',
+    body: (tenantId) => ({
+      tenantId,
       queueCode: e2ePrefix(),
       queueName: '[E2E RBAC] queue',
       queueType: 'MIXED',
@@ -113,7 +160,7 @@ const ENDPOINTS: Endpoint[] = [
   },
   {
     // ConsoleConfigController.POST /releases @PreAuthorize ROLE_ADMIN (方法级别)
-    // ConfigReleaseUpsertRequest 字段:tenantId/configType/configKey/configName 全 @NotBlank
+    // ConfigReleaseUpsertRequest 字段:tenantId/configType/configKey/configName/configPayloadJson 必填
     key: 'POST /config/releases',
     method: 'POST',
     url: () => '/api/console/config/releases',
@@ -122,17 +169,17 @@ const ENDPOINTS: Endpoint[] = [
       configKey: e2ePrefix(),
       configName: '[E2E RBAC] release ' + rand(),
       configType: 'JSON',
-      operatorId: 'admin',
+      configPayloadJson: '{}',
     }),
     expect: { admin: true, tenantAdmin: false, auditor: false, tenantUser: false, user: false },
   },
   {
-    // ConsoleJobDefinitionController class-level @PreAuthorize ROLE_ADMIN
+    // ConsoleJobDefinitionController class-level允许 ADMIN / TENANT_ADMIN
     key: 'POST /job-definitions',
     method: 'POST',
     url: () => '/api/console/job-definitions',
-    body: () => ({
-      tenantId: 'tx',
+    body: (tenantId) => ({
+      tenantId,
       jobCode: e2ePrefix(),
       jobName: '[E2E RBAC] job',
       jobType: 'GENERAL',
@@ -140,16 +187,16 @@ const ENDPOINTS: Endpoint[] = [
       executionMode: 'FULL',
       enabled: true,
     }),
-    expect: { admin: true, tenantAdmin: false, auditor: false, tenantUser: false, user: false },
+    expect: { admin: true, tenantAdmin: true, auditor: false, tenantUser: false, user: false },
   },
   {
-    // ConsoleApiKeyController class-level @PreAuthorize hasAnyAuthority(ADMIN, TENANT_USER)
+    // ConsoleApiKeyController 允许 ADMIN / TENANT_ADMIN / TENANT_USER / legacy USER
     // create() 用 @RequestParam("tenantId"),在 query 不在 body
     key: 'POST /api-keys',
     method: 'POST',
-    url: () => '/api/console/api-keys?tenantId=tx',
+    url: (tenantId) => `/api/console/api-keys?tenantId=${tenantId}`,
     body: () => ({ keyName: e2ePrefix() }),
-    expect: { admin: true, tenantAdmin: false, auditor: false, tenantUser: true, user: false },
+    expect: { admin: true, tenantAdmin: true, auditor: false, tenantUser: true, user: true },
   },
   {
     // ConsoleUserAccountController class-level @PreAuthorize hasAnyAuthority('ROLE_ADMIN','ROLE_TENANT_ADMIN')
@@ -157,36 +204,36 @@ const ENDPOINTS: Endpoint[] = [
     key: 'POST /users',
     method: 'POST',
     url: () => '/api/console/users',
-    body: () => ({
+    body: (tenantId) => ({
       username: e2ePrefix(),
       password: 'admin123',
       displayName: '[E2E RBAC]',
-      tenantId: 'tx',
+      tenantId,
       authoritiesCsv: 'ROLE_TENANT_USER',
     }),
     expect: { admin: true, tenantAdmin: true, auditor: false, tenantUser: false, user: false },
   },
   {
-    // ConsoleSelfServiceJobController class-level @PreAuthorize hasAnyAuthority(ADMIN, TENANT_USER)
+    // ConsoleSelfServiceJobController 允许 ADMIN / TENANT_ADMIN / TENANT_USER / legacy USER
     // RerunRequest: tenantId/jobCode/bizDate @NotBlank
     key: 'POST /self-service/rerun-request',
     method: 'POST',
     url: () => '/api/console/self-service/jobs/rerun-request',
-    body: () => ({
-      tenantId: 'tx',
+    body: (tenantId) => ({
+      tenantId,
       jobCode: 'nonexistent-job-' + rand(),
       bizDate: '2026-05-18',
       reason: '[E2E RBAC] rerun',
     }),
-    expect: { admin: true, tenantAdmin: false, auditor: false, tenantUser: true, user: false },
+    expect: { admin: true, tenantAdmin: true, auditor: false, tenantUser: true, user: true },
   },
   {
-    // ConsoleAlertRoutingController class-level @PreAuthorize ROLE_ADMIN
+    // ConsoleAlertRoutingController 允许 ADMIN / TENANT_ADMIN
     key: 'POST /alert-routings',
     method: 'POST',
     url: () => '/api/console/alert-routings',
-    body: () => ({
-      tenantId: 'tx',
+    body: (tenantId) => ({
+      tenantId,
       routeCode: e2ePrefix(),
       routeName: '[E2E RBAC] route',
       severity: 'ERROR',
@@ -194,14 +241,13 @@ const ENDPOINTS: Endpoint[] = [
       alertGroup: 'e2e',
       receiver: 'e2e@example.com',
     }),
-    expect: { admin: true, tenantAdmin: false, auditor: false, tenantUser: false, user: false },
+    expect: { admin: true, tenantAdmin: true, auditor: false, tenantUser: false, user: false },
   },
 ]
 
-// 业务 4xx 也视为"通过"——只要不是 403 即可
+// 业务 4xx 可表示已通过权限校验但数据条件不足；401/403 和 5xx 不能视为授权成功。
 function isAuthorized(status: number): boolean {
-  // 403 = 拒绝;其余(包括 200/201/202/400/404/409/500)都表示"接口能调到"
-  return status !== 403
+  return status >= 200 && status < 500 && status !== 401 && status !== 403
 }
 function isDenied(status: number): boolean {
   return status === 403
@@ -213,11 +259,30 @@ for (const role of ROLE_KEYS) {
       storageState: path.resolve(__dirname, `.auth/role-${role}.json`),
     })
 
+    test('/auth/me 返回匹配角色能力的菜单', async ({ request }) => {
+      const res = await request.get('/api/console/auth/me', {
+        headers: { 'X-Tenant-Id': ROLE_TARGET_TENANT[role] },
+        failOnStatusCode: false,
+      })
+      expect(res.status()).toBe(200)
+      const body = (await res.json()) as {
+        data?: { menus?: Array<{ children?: Array<{ path?: string }> }> }
+      }
+      const paths = (body.data?.menus ?? []).flatMap((group) =>
+        (group.children ?? []).flatMap((item) => (item.path ? [item.path] : [])),
+      )
+      const expected = MENU_EXPECTATIONS[role]
+      expect(new Set(paths).size).toBe(expected.count)
+      expect(paths).toEqual(expect.arrayContaining(expected.includes))
+      for (const path of expected.excludes) expect(paths).not.toContain(path)
+    })
+
     for (const ep of ENDPOINTS) {
       const expected = ep.expect[role]
       const verdict = expected ? '✅ 允许' : '❌ 拒绝'
       test(`${ep.key} → 期望 ${verdict}`, async ({ request }) => {
-        const url = ep.url(ROLE_TENANT[role])
+        const targetTenant = ROLE_TARGET_TENANT[role]
+        const url = ep.url(targetTenant)
         const idemKey = `e2e-rbac-${ts()}-${rand()}`
         const init: Parameters<typeof request.post>[1] = {
           headers: {
@@ -225,7 +290,7 @@ for (const role of ROLE_KEYS) {
             'X-Tenant-Id': ROLE_TENANT[role],
             'Idempotency-Key': idemKey,
           },
-          data: ep.body ? ep.body() : undefined,
+          data: ep.body ? ep.body(targetTenant) : undefined,
           failOnStatusCode: false,
         }
         let res
@@ -238,8 +303,8 @@ for (const role of ROLE_KEYS) {
         const ctx = `${role} → ${ep.method} ${url}\n  status=${status}\n  body=${body.slice(0, 200)}`
 
         if (expected) {
-          // 允许:不应 403。其他 4xx/5xx 表示业务错或资源不足,不算授权失败。
-          expect(isDenied(status), `期望非 403,实际:\n${ctx}`).toBe(false)
+          // 允许:2xx 或业务 4xx 均可，但会话失效、权限拒绝和服务端异常都必须失败。
+          expect(isAuthorized(status), `期望已授权且无 5xx,实际:\n${ctx}`).toBe(true)
         } else {
           // 拒绝:必须 403。若 BE 返 200 就是越权 bug。
           expect(status, `期望 403,实际:\n${ctx}`).toBe(403)
@@ -272,6 +337,9 @@ test.describe('跨租户越权', () => {
       },
       failOnStatusCode: false,
     })
-    expect([403, 404].includes(res.status()), `cross-tenant write 应拒绝,实际 ${res.status()}`).toBe(true)
+    expect(
+      [403, 404].includes(res.status()),
+      `cross-tenant write 应拒绝,实际 ${res.status()}`,
+    ).toBe(true)
   })
 })

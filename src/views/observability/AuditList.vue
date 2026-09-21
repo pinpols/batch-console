@@ -1,6 +1,12 @@
 <template>
   <PageContainer>
-    <PageHeader />
+    <PageHeader>
+      <template #actions>
+        <el-button :icon="ScrollText" @click="router.push('/observability/operation-audits')">
+          {{ t('page.observabilityOperationAudits.title') }}
+        </el-button>
+      </template>
+    </PageHeader>
 
     <SectionCard>
       <ProTable
@@ -71,11 +77,7 @@
               />
             </el-form-item>
             <el-form-item :label="t('auditList.timeRangeLabel')">
-              <DateRangePresetPicker
-                v-model="timeRange"
-                type="datetimerange"
-                default-preset="7d"
-              />
+              <DateRangePresetPicker v-model="timeRange" type="datetimerange" default-preset="7d" />
             </el-form-item>
           </ListPageQueryBar>
         </template>
@@ -128,8 +130,11 @@
 <script setup lang="ts">
   import { computed, reactive, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
+  import { useRouter } from 'vue-router'
+  import { ScrollText } from 'lucide-vue-next'
 
   const { t, te } = useI18n({ useScope: 'global' })
+  const router = useRouter()
 
   function resolveEnumLabel(group: string, value?: string | null): string {
     if (!value) return ''

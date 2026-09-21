@@ -779,6 +779,7 @@ const messages: Messages = {
     switchToZh: 'Switch to Chinese',
     timezoneTooltip: 'Change display timezone',
     timezoneLabel: 'Display timezone',
+    timezoneChanged: 'Display timezone changed to {timezone}',
     invalidTimezone: 'Invalid timezone',
     exitFullscreenTooltip: 'Exit fullscreen (Esc)',
   },
@@ -860,7 +861,7 @@ const messages: Messages = {
     step4Desc: 'Top-right shows your roles / sign out; admins can open the permission self-check.',
     step5Title: 'Collapse / expand sidebar',
     step5Desc:
-      'The top-left button toggles the menu bar; collapse it when you need more space for content.',
+      'The button at the bottom of the sidebar toggles the menu; collapse it when you need more space for content.',
   },
   dateRangePicker: {
     rangeSeparator: 'to',
@@ -1337,8 +1338,8 @@ const messages: Messages = {
     },
     filesList: { title: 'Files', description: 'Search file records by status and business type.' },
     filesTemplates: {
-      title: 'File templates',
-      description: 'Maintain file templates, formats and business categories.',
+      title: 'File configuration',
+      description: 'Maintain file templates, formats and ingress channels in one place.',
     },
     filesChannels: {
       title: 'File channels',

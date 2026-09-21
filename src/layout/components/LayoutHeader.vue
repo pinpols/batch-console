@@ -37,6 +37,7 @@
         <div
           v-if="canSwitchTenant"
           class="tenant-chip tenant-chip--switch"
+          data-onboarding="tenant"
           role="group"
           :aria-label="t('nav.tenantSwitcherAria')"
         >
@@ -50,7 +51,7 @@
             @update:model-value="handleTenantSwitch"
           />
         </div>
-        <div v-else class="tenant-chip tenant-chip--readonly">
+        <div v-else class="tenant-chip tenant-chip--readonly" data-onboarding="tenant">
           <span class="tenant-chip__label">{{ t('nav.tenantLabel') }}</span>
           <span class="tenant-chip__value" :title="tenantIdInput">{{ tenantIdInput }}</span>
         </div>
@@ -59,6 +60,7 @@
           <button
             type="button"
             class="header-search"
+            data-onboarding="command-palette"
             :aria-label="t('nav.openCommandPalette')"
             @click="$emit('open-palette')"
           >
@@ -88,16 +90,15 @@
           </button>
         </el-tooltip>
 
-        <el-dropdown trigger="click" @command="changeDisplayTimezone">
-          <el-tooltip :content="t('layoutHeader.timezoneTooltip')" placement="bottom">
-            <button
-              type="button"
-              class="icon-button header-icon"
-              :aria-label="t('layoutHeader.timezoneTooltip')"
-            >
-              <el-icon><TimezoneIcon /></el-icon>
-            </button>
-          </el-tooltip>
+        <el-dropdown trigger="click" placement="bottom-end" @command="changeDisplayTimezone">
+          <button
+            type="button"
+            class="icon-button header-icon"
+            :aria-label="t('layoutHeader.timezoneTooltip')"
+            :title="t('layoutHeader.timezoneTooltip')"
+          >
+            <el-icon><TimezoneIcon /></el-icon>
+          </button>
           <template #dropdown>
             <el-dropdown-menu>
               <el-dropdown-item disabled>{{ t('layoutHeader.timezoneLabel') }}</el-dropdown-item>
@@ -107,6 +108,7 @@
                 :command="timezone"
                 :disabled="timezone === currentTimezone"
               >
+                <el-icon v-if="timezone === currentTimezone"><Check /></el-icon>
                 {{ timezone }}
               </el-dropdown-item>
             </el-dropdown-menu>
@@ -120,7 +122,12 @@
         </el-tooltip>
 
         <el-tooltip :content="t('nav.openDocsTooltip')" placement="bottom">
-          <button type="button" class="icon-button header-icon" @click="openDocs">
+          <button
+            type="button"
+            class="icon-button header-icon"
+            data-onboarding="docs"
+            @click="openDocs"
+          >
             <el-icon><Reading /></el-icon>
           </button>
         </el-tooltip>
@@ -140,6 +147,7 @@
           >
             <span
               class="user-chip username--clickable"
+              data-onboarding="account"
               tabindex="0"
               :title="userChipTitle"
               :aria-label="userChipTitle"
@@ -179,6 +187,7 @@
     ChevronDown as ArrowDown,
     ArrowLeft,
     ArrowRight,
+    Check,
     Compass,
     Smartphone as Iphone,
     KeyRound as Key,
@@ -214,6 +223,7 @@
     if (typeof timezone !== 'string' || timezone === currentTimezone.value) return
     try {
       writeDisplayTimezone(timezone)
+      ElMessage.success(t('layoutHeader.timezoneChanged', { timezone }))
     } catch {
       ElMessage.error(t('layoutHeader.invalidTimezone'))
     }
@@ -295,10 +305,10 @@
       return
     }
     if (command === 'onboarding') {
-      // 清掉"已完成"标记 + 立即启动 tour
+      // 等下拉菜单完成关闭后再启动,避免 popper 与引导层争夺焦点和定位。
       const { resetOnboarding, startOnboarding } = await import('@/composables/useOnboardingTour')
       resetOnboarding()
-      startOnboarding()
+      window.requestAnimationFrame(() => startOnboarding())
       return
     }
     if (command === 'logout') {

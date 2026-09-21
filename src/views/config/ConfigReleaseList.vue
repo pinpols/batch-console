@@ -7,7 +7,7 @@
           {{ t('configReleaseList.governanceCatalog') }}
         </el-button>
         <el-button
-          v-if="canMutateConfig"
+          v-if="canManageSystem"
           type="primary"
           :icon="Plus"
           class="pretty-add-button"
@@ -152,7 +152,7 @@
         </div>
         <div class="cr-panel__actions">
           <el-button
-            v-if="canMutateConfig && selectedRow.configStatus === 'DRAFT'"
+            v-if="canManageSystem && selectedRow.configStatus === 'DRAFT'"
             type="primary"
             class="cr-panel__btn"
             @click="doSubmitApproval(selectedRow)"
@@ -171,7 +171,7 @@
             {{ t('configReleaseList.actionDeps') }}
           </el-button>
           <el-button
-            v-if="canMutateConfig && ['PUBLISHED', 'GRAY'].includes(selectedRow.configStatus)"
+            v-if="canManageSystem && ['PUBLISHED', 'GRAY'].includes(selectedRow.configStatus)"
             size="small"
             plain
             type="danger"
@@ -412,7 +412,7 @@
   import PageContainer from '@/components/common/PageContainer.vue'
   import MetaSelect from '@/components/common/MetaSelect.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
-  const { canMutateConfig } = usePermission()
+  const { canManageSystem } = usePermission()
   import EmptyState from '@/components/common/EmptyState.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import JsonPreview from '@/components/common/JsonPreview.vue'
