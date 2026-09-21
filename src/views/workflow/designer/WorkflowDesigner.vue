@@ -167,7 +167,7 @@
       store.setMeta({
         id: null,
         tenantId: tenantStore.tenantId,
-        workflowType: 'STANDARD',
+        workflowType: 'DAG',
         enabled: true,
         version: 0,
       })
@@ -396,7 +396,7 @@
       tenantId: store.meta.tenantId || tenantStore.tenantId,
       workflowCode,
       workflowName,
-      workflowType: store.meta.workflowType || 'STANDARD',
+      workflowType: store.meta.workflowType || 'DAG',
       enabled: store.meta.enabled,
       nodes: toWorkflowSaveNodes(def.nodes),
       edges: toWorkflowSaveEdges(def.edges),

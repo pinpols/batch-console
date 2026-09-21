@@ -54,7 +54,7 @@ const EMPTY_META: DesignerMeta = {
   tenantId: '',
   workflowCode: '',
   workflowName: '',
-  workflowType: 'STANDARD',
+  workflowType: 'DAG',
   enabled: true,
   description: undefined,
   version: 0,

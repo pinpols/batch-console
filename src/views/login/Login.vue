@@ -398,8 +398,8 @@
     font-weight: 700;
     letter-spacing: 0.06em;
     color: #fff;
-    background: var(--button-primary-bg);
-    box-shadow: 0 4px 12px color-mix(in srgb, var(--button-primary-bg) 20%, transparent);
+    background: #1d4ed8;
+    box-shadow: 0 4px 12px rgb(29 78 216 / 20%);
   }
 
   .login-brand__name {
