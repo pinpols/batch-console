@@ -36,6 +36,37 @@
         :title="t('workerFingerprintBoard.summaryLoadError')"
       />
 
+      <div v-if="!summaryError" class="wfb__metrics">
+        <MetricCard
+          :label="t('workerFingerprintBoard.metricDominantBuild')"
+          :value="fingerprintStats.dominantBuild"
+          :description="
+            t('workerFingerprintBoard.metricDominantBuildDesc', {
+              sdk: fingerprintStats.dominantSdk,
+            })
+          "
+          tone="info"
+        />
+        <MetricCard
+          :label="t('workerFingerprintBoard.metricDrifted')"
+          :value="fingerprintStats.drifted"
+          :description="t('workerFingerprintBoard.metricDriftedDesc')"
+          :tone="fingerprintStats.drifted > 0 ? 'warning' : 'success'"
+        />
+        <MetricCard
+          :label="t('workerFingerprintBoard.metricAvailability')"
+          :value="`${fingerprintStats.online} / ${fingerprintStats.draining}`"
+          :description="t('workerFingerprintBoard.metricAvailabilityDesc')"
+          tone="success"
+        />
+        <MetricCard
+          :label="t('workerFingerprintBoard.metricVersions')"
+          :value="fingerprintStats.versions"
+          :description="t('workerFingerprintBoard.metricVersionsDesc')"
+          tone="neutral"
+        />
+      </div>
+
       <EmptyState
         v-else-if="!loading && summary.length === 0"
         :description="t('workerFingerprintBoard.summaryEmpty')"
@@ -43,10 +74,23 @@
       />
 
       <div v-else class="wfb__cards">
-        <div v-for="item in summary" :key="`${item.buildId}__${item.sdkVersion}`" class="wfb__card">
+        <div
+          v-for="item in summary"
+          :key="`${item.buildId}__${item.sdkVersion}`"
+          class="wfb__card"
+          :class="{ 'wfb__card--dominant': item.buildId === fingerprintStats.dominantBuild }"
+        >
           <div class="wfb__card-head">
             <el-tag size="small" effect="plain" type="primary">{{ item.buildId }}</el-tag>
             <el-tag size="small" effect="plain">SDK {{ item.sdkVersion }}</el-tag>
+            <el-tag
+              v-if="item.buildId === fingerprintStats.dominantBuild"
+              size="small"
+              effect="plain"
+              type="success"
+            >
+              {{ t('workerFingerprintBoard.dominantTag') }}
+            </el-tag>
           </div>
           <div class="wfb__card-count">{{ item.count }}</div>
           <div class="wfb__card-meta">
@@ -144,6 +188,7 @@
   import HelpLabel from '@/components/common/HelpLabel.vue'
   import ProTable from '@/components/table/ProTable.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
+  import MetricCard from '@/components/common/MetricCard.vue'
   import { fmtDatetime } from '@/utils/datetime'
   import { useTenantReload } from '@/composables/useTenantReload'
   import { useTenantStore } from '@/stores/tenant'
@@ -154,6 +199,7 @@
     type WorkerFingerprint,
     type WorkerFingerprintSummary,
   } from '@/api/workerFingerprint'
+  import { summarizeWorkerFingerprints } from './workerFingerprintPresentation'
 
   const { t } = useI18n({ useScope: 'global' })
   const tenant = useTenantStore()
@@ -170,6 +216,7 @@
   const totalOnline = computed(() =>
     summary.value.reduce((sum, item) => sum + (item.count ?? 0), 0),
   )
+  const fingerprintStats = computed(() => summarizeWorkerFingerprints(rows.value, summary.value))
 
   function rawPercentOf(count: number): number {
     const total = totalOnline.value
@@ -253,6 +300,13 @@
     gap: var(--space-md, 16px);
   }
 
+  .wfb__metrics {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--space-md);
+    margin-bottom: var(--space-md);
+  }
+
   .wfb__card {
     display: flex;
     flex-direction: column;
@@ -261,6 +315,11 @@
     border: 1px solid var(--color-border-light);
     border-radius: var(--radius-content, 8px);
     background: var(--color-bg-subtle, var(--el-fill-color-light));
+  }
+
+  .wfb__card--dominant {
+    border-color: var(--el-color-success-light-5);
+    background: var(--el-color-success-light-9);
   }
 
   .wfb__card-head {
@@ -289,5 +348,22 @@
 
   .muted {
     color: var(--color-text-tertiary);
+  }
+
+  @media (max-width: 1080px) {
+    .wfb__metrics {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 640px) {
+    .wfb__header {
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+
+    .wfb__metrics {
+      grid-template-columns: 1fr;
+    }
   }
 </style>

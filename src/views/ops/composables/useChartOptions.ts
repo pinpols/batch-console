@@ -119,6 +119,30 @@ export function buildStackBarOption(params: {
   }
 }
 
+export function buildGroupedBarOption(params: {
+  x: string[]
+  series: { name: string; data: number[]; color?: string }[]
+  yAxisName?: string
+}) {
+  return {
+    ...baseGridOption(),
+    legend: { top: 6, itemWidth: 10, itemHeight: 10 },
+    xAxis: {
+      type: 'category',
+      data: params.x,
+      axisLabel: { fontSize: 11, margin: 12, overflow: 'truncate', width: 80 },
+    },
+    yAxis: { type: 'value', name: params.yAxisName ?? '', nameTextStyle: { fontSize: 11 } },
+    series: params.series.map((series) => ({
+      name: series.name,
+      type: 'bar',
+      data: series.data,
+      barMaxWidth: 20,
+      itemStyle: { color: series.color },
+    })),
+  }
+}
+
 export function buildPieOption(params: {
   items: { name: string; value: number; color?: string }[]
   /** ring 留空 → 实心饼;给值 → 环形 */
@@ -164,7 +188,10 @@ export function buildGaugeOption(params: {
         min: 0,
         max: params.max ?? 100,
         progress: { show: true, width: 14, roundCap: true, itemStyle: { color } },
-        axisLine: { roundCap: true, lineStyle: { width: 14, color: [[1, 'rgba(128,128,128,0.16)']] } },
+        axisLine: {
+          roundCap: true,
+          lineStyle: { width: 14, color: [[1, 'rgba(128,128,128,0.16)']] },
+        },
         axisTick: { show: false },
         splitLine: { show: false },
         // 隐藏 0-100 刻度数字:小仪表盘上画在弧内会与中心大字重叠成一团噪声,

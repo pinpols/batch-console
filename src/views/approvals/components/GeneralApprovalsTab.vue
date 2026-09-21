@@ -1,187 +1,216 @@
 <template>
-  <ProTable
-    ref="proTableRef"
-    :data="rows"
-    :loading="tableBlocking"
-    :total="total"
-    v-model:page="page"
-    v-model:page-size="pageSize"
-    @change="slicePage"
-    @selection-change="onSel"
-    :error="loadError"
-    :on-retry="load"
-    row-key="approvalNo"
-  >
-    <template #query>
-      <ListPageQueryBar
-        :filter-busy="queryActionBusy"
-        :refresh-busy="loading"
-        :disabled="loading"
-        @search="onSearch"
-        @reset="reset"
-        @refresh="() => runRefresh(load)"
-      >
-        <el-form-item :label="t('approvals.statusLabel')">
-          <MetaSelect
-            class="query-w-200"
-            v-model="filters.status"
-            clearable
-            filterable
-            enum-key="approvalStatus"
-            :placeholder="t('approvals.statusPlaceholder')"
-            :options="approvalStatusSelectOptions"
-          />
-        </el-form-item>
-        <el-form-item :label="t('approvals.typeLabel')">
-          <MetaSelect
-            class="query-w-180"
-            v-model="filters.type"
-            clearable
-            filterable
-            allow-create
-            default-first-option
-            enum-key="approvalType"
-            :placeholder="t('approvals.typePlaceholder')"
-            :options="approvalTypeOptions"
-          />
-        </el-form-item>
-        <el-form-item :label="t('approvals.keywordLabel')">
-          <el-input
-            class="query-w-240"
-            v-model="filters.keyword"
-            clearable
-            :placeholder="t('approvals.keywordPlaceholder')"
-          />
-        </el-form-item>
-      </ListPageQueryBar>
-    </template>
+  <div class="approval-tab">
+    <ProTable
+      ref="proTableRef"
+      :data="rows"
+      :loading="tableBlocking"
+      :total="total"
+      v-model:page="page"
+      v-model:page-size="pageSize"
+      @change="slicePage"
+      @selection-change="onSel"
+      @row-click="openDetail"
+      :error="loadError"
+      :on-retry="load"
+      row-key="approvalNo"
+      class="approval-table"
+    >
+      <template #query>
+        <ListPageQueryBar
+          :filter-busy="queryActionBusy"
+          :refresh-busy="loading"
+          :disabled="loading"
+          @search="onSearch"
+          @reset="reset"
+          @refresh="() => runRefresh(load)"
+        >
+          <el-form-item :label="t('approvals.statusLabel')">
+            <MetaSelect
+              class="query-w-200"
+              v-model="filters.status"
+              clearable
+              filterable
+              enum-key="approvalStatus"
+              :placeholder="t('approvals.statusPlaceholder')"
+              :options="approvalStatusSelectOptions"
+            />
+          </el-form-item>
+          <el-form-item :label="t('approvals.typeLabel')">
+            <MetaSelect
+              class="query-w-180"
+              v-model="filters.type"
+              clearable
+              filterable
+              allow-create
+              default-first-option
+              enum-key="approvalType"
+              :placeholder="t('approvals.typePlaceholder')"
+              :options="approvalTypeOptions"
+            />
+          </el-form-item>
+          <el-form-item :label="t('approvals.keywordLabel')">
+            <el-input
+              class="query-w-240"
+              v-model="filters.keyword"
+              clearable
+              :placeholder="t('approvals.keywordPlaceholder')"
+            />
+          </el-form-item>
+        </ListPageQueryBar>
+      </template>
 
-    <template #toolbar>
-      <BulkActionBar :count="selection.length" :running="batchRunning" @clear="clearSelection">
-        <template #default="{ running }">
-          <el-button size="small" type="primary" plain :loading="running" @click="runBatchApprove">
-            {{ t('approvals.batchApprove') }}
-          </el-button>
-          <el-button size="small" type="danger" plain :loading="running" @click="runBatchReject">
-            {{ t('approvals.batchReject') }}
-          </el-button>
+      <template #toolbar>
+        <BulkActionBar :count="selection.length" :running="batchRunning" @clear="clearSelection">
+          <template #default="{ running }">
+            <el-button
+              size="small"
+              type="primary"
+              plain
+              :loading="running"
+              @click="runBatchApprove"
+            >
+              {{ t('approvals.batchApprove') }}
+            </el-button>
+            <el-button size="small" type="danger" plain :loading="running" @click="runBatchReject">
+              {{ t('approvals.batchReject') }}
+            </el-button>
+          </template>
+        </BulkActionBar>
+      </template>
+
+      <el-table-column
+        type="selection"
+        width="48"
+        :selectable="selectableRow"
+        :reserve-selection="true"
+      />
+      <el-table-column prop="approvalNo" :label="t('approvals.colApprovalNo')" width="160">
+        <template #default="{ row }">
+          <!-- dump:审批单号 mono + accent 蓝 -->
+          <CopyableText class="ap-no" :text="row.approvalNo" />
         </template>
-      </BulkActionBar>
-    </template>
+      </el-table-column>
+      <el-table-column
+        prop="approvalType"
+        :label="t('approvals.colType')"
+        width="110"
+        show-overflow-tooltip
+      >
+        <template #default="{ row }">
+          {{ resolveType(row.approvalType) }}
+        </template>
+      </el-table-column>
+      <el-table-column :label="t('approvals.colTarget')" min-width="220" show-overflow-tooltip>
+        <template #default="{ row }">
+          <div class="target-cell">
+            <span class="target-cell__type">{{ row.targetType || '—' }}</span>
+            <router-link
+              v-if="targetLink(row)"
+              class="cell-link ap-mono"
+              :to="targetLink(row) || ''"
+              @click.stop
+            >
+              {{ row.targetId }}
+            </router-link>
+            <span v-else class="ap-mono">{{ row.targetId || '—' }}</span>
+          </div>
+        </template>
+      </el-table-column>
+      <el-table-column
+        prop="requesterId"
+        :label="t('approvals.colRequester')"
+        width="110"
+        show-overflow-tooltip
+      />
+      <!-- dump 列序:目标/申请人之后是「申请时间」,相对格式(今天 13:52 / 昨天 18:03) -->
+      <el-table-column prop="createdAt" :label="requestedAtLabel" width="130">
+        <template #default="{ row }">
+          <span class="ap-mono ap-time" :title="String(row.createdAt ?? '')">
+            {{ relativeDayTime(row.createdAt) }}
+          </span>
+        </template>
+      </el-table-column>
+      <el-table-column prop="approvalStatus" :label="t('approvals.colStatus')" width="120">
+        <template #default="{ row }">
+          <StatusTag :value="String(row.approvalStatus ?? '')" category="approval" />
+        </template>
+      </el-table-column>
+      <el-table-column :label="t('approvals.colActions')" width="176" fixed="right" align="center">
+        <template #default="{ row }">
+          <div class="table-actions">
+            <el-button size="small" text type="primary" @click.stop="openDetail(row)">
+              {{ t('approvals.actionDetail') }}
+            </el-button>
+            <el-button size="small" text :disabled="!isPending(row)" @click.stop="approveRow(row)">
+              {{ t('approvals.actionApprove') }}
+            </el-button>
+            <el-button
+              size="small"
+              text
+              type="danger"
+              :disabled="!isPending(row)"
+              @click.stop="rejectRow(row)"
+            >
+              {{ t('approvals.actionReject') }}
+            </el-button>
+          </div>
+        </template>
+      </el-table-column>
+    </ProTable>
 
-    <el-table-column
-      type="selection"
-      width="48"
-      :selectable="selectableRow"
-      :reserve-selection="true"
-    />
-    <el-table-column prop="approvalNo" :label="t('approvals.colApprovalNo')" width="160">
-      <template #default="{ row }">
-        <!-- dump:审批单号 mono + accent 蓝 -->
-        <CopyableText class="ap-no" :text="row.approvalNo" />
-      </template>
-    </el-table-column>
-    <el-table-column
-      prop="approvalType"
-      :label="t('approvals.colType')"
-      width="110"
-      show-overflow-tooltip
+    <DetailDrawer
+      v-model:visible="detailVisible"
+      :title="t('approvals.detailTitle')"
+      size="min(44rem, 92vw)"
+      :raw="detailPayload"
     >
-      <template #default="{ row }">
-        {{ resolveType(row.approvalType) }}
-      </template>
-    </el-table-column>
-    <el-table-column
-      prop="targetType"
-      :label="t('approvals.colTargetType')"
-      width="110"
-      show-overflow-tooltip
-    />
-    <el-table-column
-      prop="targetId"
-      :label="t('approvals.colTargetId')"
-      min-width="180"
-      show-overflow-tooltip
-    >
-      <template #default="{ row }">
-        <router-link v-if="targetLink(row)" class="cell-link ap-mono" :to="targetLink(row) || ''">
-          {{ row.targetId }}
-        </router-link>
-        <span v-else class="ap-mono">{{ row.targetId || '—' }}</span>
-      </template>
-    </el-table-column>
-    <el-table-column
-      prop="requesterId"
-      :label="t('approvals.colRequester')"
-      width="110"
-      show-overflow-tooltip
-    />
-    <!-- dump 列序:目标/申请人之后是「申请时间」,相对格式(今天 13:52 / 昨天 18:03) -->
-    <el-table-column prop="createdAt" :label="requestedAtLabel" width="130">
-      <template #default="{ row }">
-        <span class="ap-mono ap-time" :title="String(row.createdAt ?? '')">
-          {{ relativeDayTime(row.createdAt) }}
-        </span>
-      </template>
-    </el-table-column>
-    <el-table-column prop="approvalStatus" :label="t('approvals.colStatus')" width="120">
-      <template #default="{ row }">
-        <StatusTag :value="String(row.approvalStatus ?? '')" category="approval" />
-      </template>
-    </el-table-column>
-    <el-table-column
-      prop="actionType"
-      :label="t('approvals.colAction')"
-      width="100"
-      show-overflow-tooltip
-    />
-    <el-table-column
-      prop="approverId"
-      :label="t('approvals.colApprover')"
-      width="110"
-      show-overflow-tooltip
-    >
-      <template #default="{ row }">
-        <span v-if="row.approverId">{{ row.approverId }}</span>
-        <span v-else class="muted">—</span>
-      </template>
-    </el-table-column>
-    <el-table-column :label="t('approvals.colReason')" min-width="200" show-overflow-tooltip>
-      <template #default="{ row }">
-        <span v-if="row.approvalReason">{{ row.approvalReason }}</span>
-        <span v-else-if="row.rejectionReason" class="muted">
-          {{ t('approvals.rejectPrefix') }}{{ row.rejectionReason }}
-        </span>
-        <span v-else class="muted">—</span>
-      </template>
-    </el-table-column>
-    <DatetimeColumn prop="approvedAt" :label="t('approvals.colApprovedAt')" width="160" />
-    <DatetimeColumn prop="executedAt" :label="t('approvals.colExecutedAt')" width="160" />
-    <el-table-column :label="t('approvals.colActions')" width="160" fixed="right" align="center">
-      <template #default="{ row }">
-        <div class="table-actions">
-          <el-button
-            size="small"
-            plain
-            type="primary"
-            :disabled="!isPending(row)"
-            @click="approveRow(row)"
-          >
-            {{ t('approvals.actionApprove') }}
-          </el-button>
-          <el-button
-            size="small"
-            plain
-            type="danger"
-            :disabled="!isPending(row)"
-            @click="rejectRow(row)"
-          >
-            {{ t('approvals.actionReject') }}
-          </el-button>
+      <div v-if="detailRow" class="approval-detail">
+        <div class="approval-detail__hero">
+          <div>
+            <div class="approval-detail__eyebrow">{{ resolveType(detailRow.approvalType) }}</div>
+            <CopyableText class="ap-no" :text="detailRow.approvalNo" />
+          </div>
+          <StatusTag :value="String(detailRow.approvalStatus ?? '')" category="approval" />
         </div>
-      </template>
-    </el-table-column>
-  </ProTable>
+        <el-descriptions :column="1" border>
+          <el-descriptions-item :label="t('approvals.colTarget')">
+            {{ detailRow.targetType || '—' }} / {{ detailRow.targetId || '—' }}
+          </el-descriptions-item>
+          <el-descriptions-item :label="t('approvals.colAction')">
+            {{ detailRow.actionType || '—' }}
+          </el-descriptions-item>
+          <el-descriptions-item :label="t('approvals.colRequester')">
+            {{ detailRow.requesterId || '—' }}
+          </el-descriptions-item>
+          <el-descriptions-item :label="t('approvals.colApprover')">
+            {{ detailRow.approverId || '—' }}
+          </el-descriptions-item>
+          <el-descriptions-item :label="t('approvals.colReason')">
+            {{ approvalReason(detailRow) }}
+          </el-descriptions-item>
+          <el-descriptions-item :label="t('approvals.colRequestedAt')">
+            {{ fmtDatetime(detailRow.createdAt) }}
+          </el-descriptions-item>
+          <el-descriptions-item :label="t('approvals.colApprovedAt')">
+            {{ fmtDatetime(detailRow.approvedAt) }}
+          </el-descriptions-item>
+          <el-descriptions-item :label="t('approvals.colExecutedAt')">
+            {{ fmtDatetime(detailRow.executedAt) }}
+          </el-descriptions-item>
+          <el-descriptions-item :label="t('approvals.colUpdatedAt')">
+            {{ fmtDatetime(detailRow.updatedAt) }}
+          </el-descriptions-item>
+          <el-descriptions-item :label="t('approvals.colTraceId')">
+            <CopyableText :text="detailRow.sourceTraceId || '—'" />
+          </el-descriptions-item>
+          <el-descriptions-item :label="t('approvals.colIdempotencyKey')">
+            <CopyableText :text="detailRow.sourceIdempotencyKey || '—'" />
+          </el-descriptions-item>
+        </el-descriptions>
+        <div class="approval-detail__payload-title">{{ t('approvals.payloadTitle') }}</div>
+      </div>
+    </DetailDrawer>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -232,14 +261,14 @@
   import { useTenantReload } from '@/composables/useTenantReload'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
-  import { fmtCompact } from '@/utils/datetime'
+  import { fmtCompact, fmtDatetime } from '@/utils/datetime'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import ProTable from '@/components/table/ProTable.vue'
   import BulkActionBar from '@/components/table/BulkActionBar.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
   import MetaSelect from '@/components/common/MetaSelect.vue'
   import CopyableText from '@/components/common/CopyableText.vue'
-  import DatetimeColumn from '@/components/common/DatetimeColumn.vue'
+  import DetailDrawer from '@/components/common/DetailDrawer.vue'
   import type { ConsoleApprovalCommandResponse } from '@/types/console-api'
   import { useAuthStore } from '@/stores/auth'
 
@@ -258,6 +287,17 @@
   const page = ref(1)
   const pageSize = ref(15)
   const selection = ref<ConsoleApprovalCommandResponse[]>([])
+  const detailVisible = ref(false)
+  const detailRow = ref<ConsoleApprovalCommandResponse | null>(null)
+  const detailPayload = computed(() => {
+    const payload = detailRow.value?.payloadJson
+    if (!payload) return {}
+    try {
+      return JSON.parse(payload) as unknown
+    } catch {
+      return payload
+    }
+  })
   // 批量执行中:驱动 BulkActionBar 内动作按钮 loading + 禁用清除
   const batchRunning = ref(false)
   const proTableRef = ref<{ clearSelection?: () => void } | null>(null)
@@ -308,6 +348,18 @@
 
   function onSel(s: ConsoleApprovalCommandResponse[]) {
     selection.value = s
+  }
+
+  function openDetail(row: ConsoleApprovalCommandResponse, column?: { type?: string }) {
+    if (column?.type === 'selection') return
+    detailRow.value = row
+    detailVisible.value = true
+  }
+
+  function approvalReason(row: ConsoleApprovalCommandResponse): string {
+    if (row.approvalReason) return row.approvalReason
+    if (row.rejectionReason) return `${t('approvals.rejectPrefix')}${row.rejectionReason}`
+    return '—'
   }
 
   function slicePage() {
@@ -566,5 +618,45 @@
 
   .trace code {
     font-size: 11px;
+  }
+
+  .approval-table :deep(.el-table__row) {
+    cursor: pointer;
+  }
+
+  .target-cell {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: var(--space-xs);
+  }
+
+  .target-cell__type,
+  .approval-detail__eyebrow {
+    color: var(--color-text-tertiary);
+    font-size: var(--font-size-sm);
+  }
+
+  .approval-detail {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+  }
+
+  .approval-detail__hero {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-md);
+    padding: var(--space-md);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-content);
+    background: var(--color-bg-subtle);
+  }
+
+  .approval-detail__payload-title {
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
   }
 </style>

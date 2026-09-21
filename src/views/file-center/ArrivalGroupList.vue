@@ -2,6 +2,40 @@
   <PageContainer>
     <PageHeader />
 
+    <div class="arrival-summary">
+      <MetricCard
+        :label="t('arrivalGroupList.metricProgress')"
+        :value="`${arrivalSummary.progress}%`"
+        :description="
+          t('arrivalGroupList.metricProgressDesc', {
+            arrived: arrivalSummary.arrivedFiles,
+            waiting: arrivalSummary.waitingFiles,
+          })
+        "
+        tone="info"
+      />
+      <MetricCard
+        :label="t('arrivalGroupList.metricReady')"
+        :value="arrivalSummary.readyGroups"
+        :description="t('arrivalGroupList.metricReadyDesc', { total: arrivalSummary.totalGroups })"
+        tone="success"
+      />
+      <MetricCard
+        :label="t('arrivalGroupList.metricWaiting')"
+        :value="arrivalSummary.waitingGroups"
+        :description="t('arrivalGroupList.metricWaitingDesc')"
+        :tone="arrivalSummary.waitingGroups > 0 ? 'warning' : 'neutral'"
+      />
+      <MetricCard
+        :label="t('arrivalGroupList.metricTimeout')"
+        :value="arrivalSummary.timeoutGroups"
+        :description="
+          t('arrivalGroupList.metricTimeoutDesc', { files: arrivalSummary.timeoutFiles })
+        "
+        :tone="arrivalSummary.timeoutGroups > 0 ? 'danger' : 'neutral'"
+      />
+    </div>
+
     <SectionCard>
       <ProTable
         :data="rows"
@@ -144,7 +178,9 @@
   import ProTable from '@/components/table/ProTable.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
+  import MetricCard from '@/components/common/MetricCard.vue'
   import type { ConsoleFileArrivalGroupResponse } from '@/types/console-api'
+  import { summarizeArrivalGroups } from './arrivalGroupPresentation'
 
   const tenant = useTenantStore()
   const { canMutateConfig } = usePermission()
@@ -175,6 +211,7 @@
     if (s) r = r.filter((row) => String(row.arrivalState ?? '').includes(s))
     return r
   })
+  const arrivalSummary = computed(() => summarizeArrivalGroups(filtered.value))
 
   function slicePage() {
     const list = filtered.value
@@ -247,3 +284,24 @@
 
   useTenantReload(load)
 </script>
+
+<style scoped>
+  .arrival-summary {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--space-md);
+    margin-bottom: var(--page-block-gap);
+  }
+
+  @media (max-width: 1080px) {
+    .arrival-summary {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 640px) {
+    .arrival-summary {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

@@ -14,6 +14,8 @@ test.describe('approval actions (审批操作)', () => {
     await expect(page.getByRole('columnheader', { name: '类型' }).first()).toBeVisible()
     await expect(page.getByRole('columnheader', { name: '状态' })).toBeVisible()
     await expect(page.getByRole('columnheader', { name: '操作' })).toBeVisible()
+    await expect(page.getByRole('columnheader', { name: '审批人' })).toHaveCount(0)
+    await expect(page.getByRole('columnheader', { name: '执行时间' })).toHaveCount(0)
   })
 
   test('批量操作按钮在无选择时禁用', async ({ page }) => {
