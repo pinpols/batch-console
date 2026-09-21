@@ -114,10 +114,10 @@ export interface paths {
     get?: never
     put?: never
     /**
-     * Change own password (first-login forced change landing path)
+     * Change own password
      * @description 本人改密:username 取自已认证 principal(不接受 body 指定)。校验旧密码 → 写新密码 →
-     *     清除 must_change_password 标志 → 踢旧会话(强制用新密码重登)。
-     *     must_change_password=true 期间此端点必须可达(改密守护白名单)。
+     *     清除 must_change_password 提示标志 → 踢旧会话(强制用新密码重登)。
+     *     must_change_password 仅用于提醒,不会限制控制台访问或业务写操作。
      *     旧密码错误 401;新旧密码相同 400。
      *
      */
@@ -8587,7 +8587,7 @@ export interface components {
       username: string
       tenantId: string
       authorities: string[]
-      /** @description 首次登录强制改密标志;true 时 FE 应跳改密页,改密前敏感(写)操作被守护拦截为 403。 */
+      /** @description 建议更新密码提示标志;true 时 FE 显示非阻断提醒,不限制控制台访问或业务写操作。 */
       mustChangePassword: boolean
     }
     /** @description 一次性 SSE ticket（5min TTL），用作 EventSource 连接的 `?ticket=` 查询参数。 */
@@ -8600,7 +8600,7 @@ export interface components {
       authorities: string[]
       /** @description 按当前用户 authorities 过滤后的侧边栏菜单树，由后端 ConsoleMenuRegistry 下发，前端不再硬编码。 */
       menus: components['schemas']['ConsoleMenuGroup'][]
-      /** @description 首次登录/重置后强制改密标志；true 时 FE 应跳改密页。 */
+      /** @description 首次登录/重置后建议更新密码提示标志；true 时 FE 显示非阻断提醒。 */
       mustChangePassword: boolean
     }
     /** @description 侧边栏菜单分组。 */

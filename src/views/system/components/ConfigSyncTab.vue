@@ -497,7 +497,7 @@
   /* 配置类型 checkbox 网格 */
   .sync__types {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
     gap: 8px;
     width: 100%;
   }
@@ -506,8 +506,8 @@
     display: flex;
     align-items: center;
     min-width: 0;
-    min-height: 36px;
-    padding: 0 10px;
+    min-height: 40px;
+    padding: 6px 10px;
     border: 1px solid var(--color-border-light);
     border-radius: var(--radius-input);
     background: color-mix(in srgb, var(--color-bg-card) 84%, var(--color-bg-canvas) 16%);
@@ -530,9 +530,10 @@
 
   .sync__types :deep(.el-checkbox__label) {
     min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    overflow: visible;
+    overflow-wrap: anywhere;
+    text-overflow: clip;
+    white-space: normal;
   }
 
   .sync__types-hint {
@@ -679,11 +680,13 @@
     border-radius: 0;
   }
 
-  @media (max-width: 720px) {
+  @media (max-width: 1099px) {
     .sync__pane {
       min-height: 0;
     }
+  }
 
+  @media (max-width: 720px) {
     .sync__target-grid {
       grid-template-columns: 1fr;
     }

@@ -35,7 +35,7 @@ export interface ConsoleAuthProfilePayload {
   menus?: MenuGroup[]
   /**
    * BE 登录响应已带此字段；/auth/me 老版本可能无该字段。
-   * 字段缺失时 FE 视为 false(向后兼容老版本 BE)。
+   * 字段缺失时 auth store 复用本次登录的会话级提示状态。
    */
   mustChangePassword?: boolean
   /**
@@ -69,7 +69,7 @@ export function mapProfileToUserInfo(p: ConsoleAuthProfilePayload): UserInfo {
     role: mapAuthoritiesToRole(p.authorities ?? []),
     permissions: p.authorities ?? [],
     menus: p.menus,
-    // P1/P3 待 BE:字段缺失 → undefined,FE 视为不需强制 / 不显 banner
+    // 字段缺失保持 undefined,由 auth store 按本次登录的会话级提示状态补齐。
     mustChangePassword: p.mustChangePassword,
     passwordExpiringIn: p.passwordExpiringIn,
   }

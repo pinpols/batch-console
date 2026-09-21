@@ -1406,6 +1406,10 @@ export default {
       title: '登录账户',
       description: '管理控制台登录账号,包含角色分配、启停与密码重置。',
     },
+    systemMe: {
+      title: '我的账户',
+      description: '查看当前登录身份并管理账号安全。',
+    },
     systemParameters: {
       title: '系统参数',
       description: '维护系统级参数键值,控制平台运行开关。',
@@ -1456,11 +1460,11 @@ export default {
   myAccount: {
     sectionTitle: '当前账号',
     changePasswordTitle: '修改密码',
-    changePasswordDescription: '更新后会重新拉取账号状态,强制改密流程会自动返回首页。',
+    changePasswordDescription: '更新后会重新拉取账号状态,密码提醒会自动消失。',
     accountDescription: '查看当前登录身份和租户上下文,必要时更新登录密码。',
     accountContextTitle: '账号上下文',
     accountContextDescription: '用于确认本次改密会影响的登录身份。',
-    securityRequired: '安全处理',
+    securityRequired: '安全提醒',
     securityNormal: '账号安全',
     fieldUsername: '账号',
     fieldRole: '角色',
@@ -1475,8 +1479,9 @@ export default {
     placeholderConfirmPassword: '再次输入新密码',
     hintNewPassword: '至少 12 位,与原密码不同',
     btnSubmit: '提交修改',
-    mustChangeTitle: '请先修改密码',
-    mustChangeDescription: '系统检测到您是首次登录或密码已被管理员重置,请立即修改密码。',
+    mustChangeTitle: '建议修改密码',
+    mustChangeDescription:
+      '系统检测到密码为首次设置或已由管理员重置。你可以继续使用控制台,建议尽快修改。',
     expiringTitle: '密码还有 {days} 天过期,请尽快修改',
     changeSuccess: '密码修改成功',
     ruleOldPassword: '请输入当前密码',
@@ -1485,6 +1490,13 @@ export default {
     ruleNewSameAsOld: '新密码不能与原密码相同',
     ruleConfirmRequired: '请再次输入新密码',
     ruleConfirmMismatch: '两次输入的密码不一致',
+  },
+  passwordNotice: {
+    updateTitle: '建议更新密码',
+    updateDescription: '密码为首次设置或已由管理员重置,建议尽快修改。',
+    expiringTitle: '密码将在 {days} 天后过期',
+    expiringDescription: '请在到期前更新密码,避免影响后续登录。',
+    action: '前往修改',
   },
   toast: {
     saveSuccess: '保存成功',
