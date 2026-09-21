@@ -42,9 +42,13 @@ test.describe('@row-actions 行操作覆盖缺口补丁', () => {
   test('FileList → 下载', async ({ page, network }) => {
     await page.goto('/files/list')
     await page.waitForLoadState('networkidle', { timeout: 8000 }).catch(() => {})
-    const row = page.locator('tbody tr.el-table__row').first()
+    // 导入临时文件可能已被对象存储清理；GENERATED 导出文件是可下载的稳定种子。
+    const row = page
+      .locator('tbody tr.el-table__row')
+      .filter({ hasText: /GENERATED|已生成/ })
+      .first()
     if (!(await isVisible(row, 2000))) {
-      test.skip(true, '无文件数据')
+      test.skip(true, '无可下载的 GENERATED 文件数据')
     }
     // 4 case 并发跑会让 FE /ops/summary 重定向卡住,增大单测超时
     test.setTimeout(60000)

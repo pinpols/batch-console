@@ -5,6 +5,37 @@
 import { expect, test } from './support/app'
 import { enterDemoApp, expectPageTitle, isVisible } from './support/app'
 
+async function createPendingApproval(page: Parameters<typeof enterDemoApp>[0], label: string) {
+  const suffix = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
+  const response = await page.request.post('/api/console/self-service/jobs/rerun-request', {
+    headers: {
+      'X-Tenant-Id': 'ta',
+      'Idempotency-Key': `e2e-approval-${label}-${suffix}`,
+    },
+    data: {
+      tenantId: 'ta',
+      jobCode: `e2e-approval-${label}-${suffix}`,
+      bizDate: '2026-09-21',
+      reason: `e2e ${label} approval action`,
+    },
+  })
+  expect(response.status(), `create ${label} approval`).toBe(200)
+  const body = (await response.json()) as { data?: string }
+  expect(body.data, `create ${label} approval number`).toBeTruthy()
+  return body.data!
+}
+
+async function openApprovalRow(page: Parameters<typeof enterDemoApp>[0], approvalNo: string) {
+  await page.goto('/approvals')
+  await expectPageTitle(page, '审批中心')
+  const keyword = page.getByPlaceholder(/审批单号|申请人/)
+  await keyword.fill(approvalNo)
+  await page.getByRole('button', { name: '搜索' }).click()
+  const row = page.locator('tr.el-table__row').filter({ hasText: approvalNo })
+  await expect(row).toHaveCount(1)
+  return row
+}
+
 test.describe('审批中心 — 筛选查询', () => {
   test.beforeEach(async ({ page }) => {
     await enterDemoApp(page)
@@ -61,20 +92,13 @@ test.describe('审批中心 — 筛选查询', () => {
 test.describe('审批中心 — 单条审批操作', () => {
   test.beforeEach(async ({ page }) => {
     await enterDemoApp(page)
-    await page.goto('/approvals')
-    await expectPageTitle(page, '审批中心')
   })
 
   test('通过审批 → 填写意见 → 提交 → toast', async ({ page }) => {
-    const approveBtn = page
-      .locator('.table-actions')
-      .getByRole('button', { name: '通过' })
-      .first()
-    if (!(await isVisible(approveBtn))) return
-    // 按钮可能 disabled(如 ta 只剩 CATCH_UP/COMPENSATION 类型的 PENDING,通用 approve 按钮不可用)
-    if (await approveBtn.isDisabled()) {
-      test.skip(true, '无可通用 approve 的 PENDING (可能仅剩 CATCH_UP / COMPENSATION 类型)')
-    }
+    const approvalNo = await createPendingApproval(page, 'approve')
+    const row = await openApprovalRow(page, approvalNo)
+    const approveBtn = row.getByRole('button', { name: '通过' })
+    await expect(approveBtn).toBeEnabled()
     await approveBtn.click()
     await expect(page.locator('.el-message-box')).toBeVisible()
     // 填写审批意见（可选）
@@ -86,14 +110,10 @@ test.describe('审批中心 — 单条审批操作', () => {
   })
 
   test('拒绝审批 → 填写原因 → 提交 → toast', async ({ page }) => {
-    const rejectBtn = page
-      .locator('.table-actions')
-      .getByRole('button', { name: '拒绝' })
-      .first()
-    if (!(await isVisible(rejectBtn))) return
-    if (await rejectBtn.isDisabled()) {
-      test.skip(true, '无可通用 reject 的 PENDING')
-    }
+    const approvalNo = await createPendingApproval(page, 'reject')
+    const row = await openApprovalRow(page, approvalNo)
+    const rejectBtn = row.getByRole('button', { name: '拒绝' })
+    await expect(rejectBtn).toBeEnabled()
     await rejectBtn.click()
     await expect(page.locator('.el-message-box')).toBeVisible()
     // 填写拒绝原因
@@ -107,22 +127,16 @@ test.describe('审批中心 — 单条审批操作', () => {
 test.describe('审批中心 — 批量审批操作', () => {
   test.beforeEach(async ({ page }) => {
     await enterDemoApp(page)
-    await page.goto('/approvals')
-    await expectPageTitle(page, '审批中心')
   })
 
   test('批量通过：勾选第一行 → 批量通过 → 确认 → toast', async ({ page }) => {
-    const checkbox = page.locator('.el-table__body .el-checkbox').first()
-    if (!(await isVisible(checkbox))) return
-    // 第一行可能是 terminal 状态(APPROVED/REJECTED),checkbox 不可勾选 → enabled() 为 false
-    if (await checkbox.isDisabled().catch(() => false)) {
-      test.skip(true, '第一行 checkbox disabled(可能是 terminal 状态)')
-    }
+    const approvalNo = await createPendingApproval(page, 'batch-approve')
+    const row = await openApprovalRow(page, approvalNo)
+    const checkbox = row.locator('label.el-checkbox')
+    await expect(checkbox).toBeVisible()
     await checkbox.click()
     const batchApproveBtn = page.getByRole('button', { name: '批量通过' })
-    if (!(await batchApproveBtn.isEnabled().catch(() => false))) {
-      test.skip(true, '批量通过按钮 disabled(可能无可批量审的 PENDING)')
-    }
+    await expect(batchApproveBtn).toBeEnabled()
     await batchApproveBtn.click()
     await expect(page.locator('.el-message-box')).toBeVisible()
     await page.locator('.el-message-box').getByRole('button', { name: /^(确定|确认.*)$/ }).click()
@@ -130,16 +144,13 @@ test.describe('审批中心 — 批量审批操作', () => {
   })
 
   test('批量拒绝：勾选第一行 → 批量拒绝 → 填原因 → 提交 → toast', async ({ page }) => {
-    const checkbox = page.locator('.el-table__body .el-checkbox').first()
-    if (!(await isVisible(checkbox))) return
-    if (await checkbox.isDisabled().catch(() => false)) {
-      test.skip(true, '第一行 checkbox disabled')
-    }
+    const approvalNo = await createPendingApproval(page, 'batch-reject')
+    const row = await openApprovalRow(page, approvalNo)
+    const checkbox = row.locator('label.el-checkbox')
+    await expect(checkbox).toBeVisible()
     await checkbox.click()
     const batchRejectBtn = page.getByRole('button', { name: '批量拒绝' })
-    if (!(await batchRejectBtn.isEnabled().catch(() => false))) {
-      test.skip(true, '批量拒绝按钮 disabled')
-    }
+    await expect(batchRejectBtn).toBeEnabled()
     await batchRejectBtn.click()
     await expect(page.locator('.el-message-box')).toBeVisible()
     const input = page.locator('.el-message-box').locator('input,textarea').first()
@@ -149,6 +160,8 @@ test.describe('审批中心 — 批量审批操作', () => {
   })
 
   test('无勾选时批量按钮禁用', async ({ page }) => {
+    await page.goto('/approvals')
+    await expectPageTitle(page, '审批中心')
     const batchApproveBtn = page.getByRole('button', { name: '批量通过' })
     if (await isVisible(batchApproveBtn)) {
       await expect(batchApproveBtn).toBeDisabled()

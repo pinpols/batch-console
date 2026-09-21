@@ -177,50 +177,36 @@ test.describe('upload-full-chain · 租户配置包 Excel 导入', () => {
     await expect(page.getByRole('button', { name: '开始上传' })).toBeEnabled()
     await page.getByRole('button', { name: '开始上传' }).click()
 
-    // 步骤 2:token alert 可见 → 进预览
-    const tokenAlert = page.locator('.excel-wizard__token-alert, .el-alert').first()
-    await expect(tokenAlert).toBeVisible({ timeout: 15_000 })
-
-    const nextBtn = page.getByRole('button', { name: '下一步' })
-    await expect(nextBtn).toBeEnabled({ timeout: 5000 })
-    await nextBtn.click()
-
-    // 步骤 3:拉预览
+    // 上传成功后自动进入预览步骤并拉取结果。
     const fetchPreview = page.getByRole('button', { name: '拉取预览' })
     await expect(fetchPreview).toBeVisible({ timeout: 5000 })
-    await fetchPreview.click()
 
     // 预览结果可见(summary 或 table)
     const previewResult = page
-      .locator('.excel-wizard__preview-summary, .el-table__body, .el-descriptions')
+      .locator('.excel-wizard__desc, .el-table__body, .el-descriptions')
       .first()
     await expect(previewResult).toBeVisible({ timeout: 15_000 })
 
-    // 步骤 4:进 apply(若可达)
+    // 进入 apply 并确认，断言真正发出 apply 请求。
     const next2 = page.getByRole('button', { name: '下一步' })
-    if (await isVisible(next2, 3000)) {
-      await next2.click()
-      const applyBtn = page.getByRole('button', { name: '确认应用变更' })
-      if (await applyBtn.isEnabled({ timeout: 3000 }).catch(() => false)) {
-        // 监听 apply 请求,确认 FE 真发了(若 8s 内无 → 视为 wizard 实现差异,不强失败)
-        const applyRequestP = page
-          .waitForRequest(
-            (req) =>
-              req.url().includes('/api/console/config/tenant-package/excel/apply/') &&
-              req.method() === 'POST',
-            { timeout: 8000 },
-          )
-          .catch(() => null)
-        await applyBtn.click()
-        await applyRequestP
-
-        // 步骤 5:apply 后 2s 不应出现 error toast
-        const errorToast = page.locator('.el-message--error, .el-message--warning').first()
-        await page.waitForTimeout(2000)
-        const hasError = await errorToast.isVisible().catch(() => false)
-        expect(hasError, 'apply 后出现 error toast').toBe(false)
-      }
-    }
+    await expect(next2).toBeEnabled({ timeout: 5000 })
+    await next2.click()
+    const applyBtn = page.getByRole('button', { name: '确认应用变更' })
+    await expect(applyBtn).toBeEnabled({ timeout: 5000 })
+    await applyBtn.click()
+    const confirm = page.locator('.el-message-box:visible').first()
+    await expect(confirm).toBeVisible({ timeout: 5000 })
+    const applyResponseP = page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/console/config/tenant-package/excel/apply/') &&
+        response.request().method() === 'POST',
+      { timeout: 10_000 },
+    )
+    await confirm.getByRole('button', { name: /确认应用|Confirm apply|Confirm/ }).click()
+    expect((await applyResponseP).status()).toBeLessThan(400)
+    await expect(page.locator('.apply-zone__block.el-alert--success')).toBeVisible({
+      timeout: 10_000,
+    })
   })
 
   test('上传失败时不前进步骤(BE 500)', async ({ page }) => {

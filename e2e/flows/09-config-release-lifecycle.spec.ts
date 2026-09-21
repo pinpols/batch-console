@@ -1,82 +1,213 @@
 /**
- * Flow 09: 配置发布:草稿 → 提交审批 → 灰度 → 全量 → rollback
+ * Flow 09: 配置发布完整生命周期。
  *
- * 状态:DRAFT → PENDING_APPROVAL → APPROVED → GRAY → PUBLISHED → ROLLED_BACK
+ * 真实路径：DRAFT -> PENDING_APPROVAL -> PUBLISHED -> ROLLED_BACK。
+ * 审批使用独立 ROLE_ADMIN 账号，确保服务端的禁止自审规则被真实执行。
  */
+import {
+  request as pwRequest,
+  type APIRequestContext,
+} from '@playwright/test'
 import { test, expect } from '@playwright/test'
 import { adminCtx, call, FlowLog, e2eCode } from './_watchdog'
 
+const API = process.env.BC_API_BASE || 'http://localhost:18080'
+
+type ReleaseRow = {
+  id: number
+  configKey: string
+  configStatus: string
+  versionNo: number
+}
+
+type ApprovalDetail = {
+  releaseId: number
+  configStatus: string
+  approval?: { id?: number; approvalStatus?: string } | null
+}
+
 test.describe.serial('Flow 09: config release full lifecycle', () => {
-  let ctx: Awaited<ReturnType<typeof adminCtx>>
+  let submitter: APIRequestContext
+  let approver: APIRequestContext
   const log = new FlowLog()
   let failed = false
-  let releaseId: number | null = null
-  const key = e2eCode('flow09-cfg')
+  let releaseV1: ReleaseRow | null = null
+  let releaseV2: ReleaseRow | null = null
+  const key = e2eCode('flow09_queue').replaceAll('-', '_')
 
-  test.beforeAll(async () => { ctx = await adminCtx() })
-  test.afterAll(async () => { log.flushIfFailed(failed, 'flow-09-config-release'); await ctx.dispose() })
+  test.beforeAll(async () => {
+    submitter = await adminCtx()
+    approver = await pwRequest.newContext({
+      baseURL: API,
+      extraHTTPHeaders: { 'Content-Type': 'application/json' },
+    })
+    const login = await approver.post('/api/console/auth/login', {
+      headers: { 'X-Tenant-Id': 'system' },
+      data: { username: 'config-admin', password: 'admin123' },
+      failOnStatusCode: false,
+    })
+    if (login.status() !== 200) {
+      throw new Error(`config-admin login failed: HTTP ${login.status()}`)
+    }
+  })
 
-  test('1. 创建 DRAFT release', async () => {
-    const r = await call(ctx, 'POST', '/api/console/config/releases', {
-      tenantId: 'tx', log,
+  test.afterAll(async () => {
+    log.flushIfFailed(failed, 'flow-09-config-release')
+    await submitter.dispose()
+    await approver.dispose()
+  })
+
+  test.afterEach(({}, testInfo) => {
+    failed ||= testInfo.status !== testInfo.expectedStatus
+  })
+
+  async function findRelease(versionNo: number): Promise<ReleaseRow | null> {
+    const list = await call(
+      submitter,
+      'GET',
+      '/api/console/config/releases?tenantId=tx&pageSize=200',
+      { tenantId: 'tx', log },
+    )
+    expect(list.status).toBe(200)
+    const rows = (list.body as { data?: ReleaseRow[] }).data ?? []
+    return rows.find((row) => row.configKey === key && row.versionNo === versionNo) ?? null
+  }
+
+  async function createRelease(versionNo: number, maxRunningJobs: number) {
+    const response = await call(submitter, 'POST', '/api/console/config/releases', {
+      tenantId: 'tx',
+      log,
       body: {
-        tenantId: 'tx', configKey: key, configName: '[flow-09]', configType: 'JSON',
-        configPayloadJson: '{"feature":"v1"}', operatorId: 'admin',
+        tenantId: 'tx',
+        configKey: key,
+        configName: `[flow-09] queue v${versionNo}`,
+        configType: 'RESOURCE_QUEUE',
+        configPayloadJson: JSON.stringify({
+          queueCode: key,
+          queueName: '[flow-09] release queue',
+          queueType: 'MIXED',
+          maxRunningJobs,
+          maxRunningPartitions: 20,
+          maxQps: 10,
+          priorityPolicy: 'FIFO',
+          fairShareWeight: 1,
+          enabled: true,
+        }),
+        operatorId: 'admin',
       },
     })
-    expect(r.status, `create ${r.status}`).toBe(200)
-    // 已知 BE bug: POST /releases.data 返 versionNo 不是 id (DefaultConsoleConfigApplicationService:151)
-    // 兜底走列表 + configKey 反查真 id
-    const list = await call(ctx, 'GET', `/api/console/config/releases?tenantId=tx&pageSize=50`, { tenantId: 'tx', log })
-    const items = (list.body as { data?: Array<{ id: number; configKey: string }> }).data ?? []
-    releaseId = items.find((x) => x.configKey === key)?.id ?? null
-    expect(releaseId, `find by configKey=${key}`).toBeTruthy()
+    expect(response.status, `create v${versionNo}`).toBe(200)
+    const release = await findRelease(versionNo)
+    expect(release, `find ${key} v${versionNo}`).not.toBeNull()
+    expect(release?.configStatus).toBe('DRAFT')
+    return release!
+  }
+
+  async function submitAndApprove(release: ReleaseRow) {
+    const submitted = await call(
+      submitter,
+      'POST',
+      `/api/console/config/releases/${release.id}/submit-approval`,
+      {
+        tenantId: 'tx',
+        log,
+        body: { tenantId: 'tx', reason: `[flow-09] submit v${release.versionNo}` },
+      },
+    )
+    expect(submitted.status, `submit v${release.versionNo}`).toBe(200)
+    const detail = (submitted.body as { data?: ApprovalDetail }).data
+    expect(detail?.configStatus).toBe('PENDING_APPROVAL')
+    const approvalId = detail?.approval?.id
+    expect(approvalId, `approval id v${release.versionNo}`).toBeTruthy()
+
+    const approved = await call(
+      approver,
+      'POST',
+      `/api/console/config/approvals/${approvalId}/approve`,
+      {
+        tenantId: 'tx',
+        log,
+        body: { tenantId: 'tx', reason: `[flow-09] approve v${release.versionNo}` },
+      },
+    )
+    expect(approved.status, `approve v${release.versionNo}`).toBe(200)
+    const approvedDetail = (approved.body as { data?: ApprovalDetail }).data
+    expect(approvedDetail?.configStatus).toBe('PUBLISHED')
+  }
+
+  test('1. 创建并独立审批 v1', async () => {
+    releaseV1 = await createRelease(1, 2)
+    await submitAndApprove(releaseV1)
   })
 
-  test('2. 查详情验初始状态 = DRAFT 或 PENDING_APPROVAL', async () => {
-    if (releaseId == null) test.skip(true)
-    const r = await call(ctx, 'GET', `/api/console/config/releases/${releaseId}?tenantId=tx`, { tenantId: 'tx', log })
-    expect(r.status).toBe(200)
-    const status = (r.body as { data?: { configStatus?: string } }).data?.configStatus
-    // BE 可能默认走 DRAFT 也可能直接 PENDING_APPROVAL,两个都接受
-    expect(['DRAFT', 'PENDING_APPROVAL'].includes(status ?? ''), `status=${status}`).toBe(true)
+  test('2. 查询运行时配置，v1 已生效', async () => {
+    const response = await call(
+      submitter,
+      'GET',
+      `/api/console/queues?tenantId=tx&queueCode=${encodeURIComponent(key)}&pageSize=20`,
+      { tenantId: 'tx', log },
+    )
+    expect(response.status).toBe(200)
+    expect(JSON.stringify(response.body)).toContain(key)
+    expect(JSON.stringify(response.body)).toContain('"maxRunningJobs":2')
   })
 
-  test('3. 提交审批(POST /config/releases/{id}/submit-approval)', async () => {
-    if (releaseId == null) test.skip(true)
-    const r = await call(ctx, 'POST', `/api/console/config/releases/${releaseId}/submit-approval`, {
-      tenantId: 'tx', log, body: { tenantId: 'tx', reason: '[flow-09] submit', operatorId: 'admin' },
-    })
-    expect(r.status, `submit ${r.status}`).toBeLessThan(600)
+  test('3. 创建并独立审批 v2', async () => {
+    releaseV2 = await createRelease(2, 4)
+    await submitAndApprove(releaseV2)
   })
 
-  test('4. 灰度发布 POST /releases/{id}/gray', async () => {
-    if (releaseId == null) test.skip(true)
-    const r = await call(ctx, 'POST', `/api/console/config/releases/${releaseId}/gray`, {
-      tenantId: 'tx', log, body: { tenantId: 'tx', percentage: 5, operatorId: 'admin' },
-    })
-    expect(r.status, `gray ${r.status}`).toBeLessThan(600)
+  test('4. 回滚 v2 到前一有效版本', async () => {
+    expect(releaseV2).not.toBeNull()
+    const response = await call(
+      submitter,
+      'POST',
+      `/api/console/config/releases/${releaseV2!.id}/rollback`,
+      {
+        tenantId: 'tx',
+        log,
+        body: {
+          tenantId: 'tx',
+          reason: '[flow-09] rollback v2',
+          expectedVersionNo: releaseV2!.versionNo,
+        },
+      },
+    )
+    expect(response.status, 'rollback v2').toBe(200)
+
+    const detail = await call(
+      submitter,
+      'GET',
+      `/api/console/config/releases/${releaseV2!.id}?tenantId=tx`,
+      { tenantId: 'tx', log },
+    )
+    expect(detail.status).toBe(200)
+    expect((detail.body as { data?: ReleaseRow }).data?.configStatus).toBe('ROLLED_BACK')
   })
 
-  test('5. 全量发布 POST /releases/{id}/publish', async () => {
-    if (releaseId == null) test.skip(true)
-    const r = await call(ctx, 'POST', `/api/console/config/releases/${releaseId}/publish`, {
-      tenantId: 'tx', log, body: { tenantId: 'tx', operatorId: 'admin' },
-    })
-    expect(r.status, `publish ${r.status}`).toBeLessThan(600)
+  test('5. 回滚后运行时配置恢复 v1', async () => {
+    const response = await call(
+      submitter,
+      'GET',
+      `/api/console/queues?tenantId=tx&queueCode=${encodeURIComponent(key)}&pageSize=20`,
+      { tenantId: 'tx', log },
+    )
+    expect(response.status).toBe(200)
+    expect(JSON.stringify(response.body)).toContain('"maxRunningJobs":2')
   })
 
-  test('6. 回滚 POST /releases/{id}/rollback', async () => {
-    if (releaseId == null) test.skip(true)
-    const r = await call(ctx, 'POST', `/api/console/config/releases/${releaseId}/rollback`, {
-      tenantId: 'tx', log, body: { tenantId: 'tx', reason: '[flow-09] rollback', operatorId: 'admin' },
-    })
-    expect(r.status, `rollback ${r.status}`).toBeLessThan(600)
-  })
-
-  test('7. change-logs 留痕', async () => {
-    const r = await call(ctx, 'GET', '/api/console/config/change-logs?tenantId=tx&pageSize=10', { tenantId: 'tx', log })
-    failed = failed || r.status !== 200
-    expect(r.status).toBe(200)
+  test('6. change-logs 包含发布与回滚留痕', async () => {
+    const response = await call(
+      submitter,
+      'GET',
+      '/api/console/config/change-logs?tenantId=tx&pageSize=200',
+      { tenantId: 'tx', log },
+    )
+    failed = response.status !== 200
+    expect(response.status).toBe(200)
+    const serialized = JSON.stringify(response.body)
+    expect(serialized).toContain(key)
+    expect(serialized).toContain('APPROVE')
+    expect(serialized).toContain('ROLLBACK')
   })
 })

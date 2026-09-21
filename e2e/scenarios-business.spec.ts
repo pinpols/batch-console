@@ -145,6 +145,7 @@ test.describe('剧本 B: 文件操作链路', () => {
 test.describe.serial('剧本 C: 配置发布生命周期', () => {
   let adminApi: APIRequestContext
   let createdReleaseId: number | null = null
+  const createdConfigKey = `e2e-scenario-queue-${ts()}-${rand()}`
 
   test.beforeAll(async () => {
     adminApi = await loadStateRequest(STATE_ADMIN, { 'X-Tenant-Id': 'tx' })
@@ -166,18 +167,38 @@ test.describe.serial('剧本 C: 配置发布生命周期', () => {
       headers: { 'X-Tenant-Id': 'tx', 'Idempotency-Key': idem() },
       data: {
         tenantId: 'tx',
-        configKey: `e2e-scenario-cfg-${ts()}-${rand()}`,
+        configKey: createdConfigKey,
         configName: '[E2E scenario C] release',
-        configType: 'JSON',
-        configPayloadJson: '{"feature":true}',
+        configType: 'RESOURCE_QUEUE',
+        configPayloadJson: JSON.stringify({
+          queueCode: createdConfigKey,
+          queueName: '[E2E scenario C] queue',
+          queueType: 'MIXED',
+          maxRunningJobs: 2,
+          maxRunningPartitions: 20,
+          maxQps: 10,
+          priorityPolicy: 'FIFO',
+          fairShareWeight: 1,
+          enabled: true,
+        }),
         operatorId: 'admin',
       },
     })
     expect(res.status(), `create release ${res.status()}`).toBe(200)
     const json = (await res.json()) as { data?: number; code?: string }
     expect(json.code).toBe('SUCCESS')
-    createdReleaseId = json.data ?? null
-    expect(typeof createdReleaseId).toBe('number')
+    // create 返回的是 versionNo，通过 configKey 回查真实 release id。
+    const listRes = await adminApi.get('/api/console/config/releases?tenantId=tx&pageSize=200', {
+      headers: { 'X-Tenant-Id': 'tx' },
+    })
+    expect(listRes.status()).toBe(200)
+    const listJson = (await listRes.json()) as {
+      data?: Array<{ id: number; configKey: string; versionNo: number }>
+    }
+    createdReleaseId =
+      listJson.data?.find((row) => row.configKey === createdConfigKey && row.versionNo === 1)?.id ??
+      null
+    expect(createdReleaseId).not.toBeNull()
   })
 
   test('2. 查 release 列表能看到刚创的', async () => {

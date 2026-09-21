@@ -15,40 +15,40 @@ test.describe('@batch-day-replay 批次日重放', () => {
   })
 
   test('ALL scope:打开表单显示默认值', async ({ page }) => {
-    await page.getByRole('button', { name: '新建重放' }).click()
+    await page.getByRole('button', { name: '新建重放' }).first().click()
     // 两个 drawer 都在 DOM(submit + detail),定位到可见的那个
     const submitDrawer = page.locator('.el-drawer', { hasText: '新建批次日重放' })
     await expect(submitDrawer).toBeVisible()
 
     // 不应该显示 SUBSET / OUTPUTS 字段(ALL 是默认 scope)
-    await expect(submitDrawer.getByLabel('Job Codes')).toHaveCount(0)
-    await expect(submitDrawer.getByLabel('Version IDs')).toHaveCount(0)
+    await expect(submitDrawer.getByRole('textbox', { name: /作业编码/ })).toHaveCount(0)
+    await expect(submitDrawer.getByRole('textbox', { name: /结果版本 ID/ })).toHaveCount(0)
   })
 
   test('ALL_FAILED scope:不需要 jobCodes 字段', async ({ page }) => {
-    await page.getByRole('button', { name: '新建重放' }).click()
+    await page.getByRole('button', { name: '新建重放' }).first().click()
     const d = page.locator('.el-drawer', { hasText: '新建批次日重放' })
     await expect(d).toBeVisible()
-    await d.locator('label.el-radio', { hasText: /^ALL_FAILED$/ }).click()
-    await expect(d.getByLabel('Job Codes')).toHaveCount(0)
-    await expect(d.getByLabel('Version IDs')).toHaveCount(0)
+    await d.locator('label.el-radio', { hasText: '仅失败项' }).click()
+    await expect(d.getByRole('textbox', { name: /作业编码/ })).toHaveCount(0)
+    await expect(d.getByRole('textbox', { name: /结果版本 ID/ })).toHaveCount(0)
   })
 
   test('SUBSET_JOB_CODES scope:显示 jobCodes 输入框', async ({ page }) => {
-    await page.getByRole('button', { name: '新建重放' }).click()
+    await page.getByRole('button', { name: '新建重放' }).first().click()
     const d = page.locator('.el-drawer', { hasText: '新建批次日重放' })
     await expect(d).toBeVisible()
-    await d.locator('label.el-radio', { hasText: /^SUBSET_JOB_CODES$/ }).click()
-    await expect(d.getByLabel('Job Codes')).toBeVisible()
-    await expect(d.getByLabel('Version IDs')).toHaveCount(0)
+    await d.locator('label.el-radio', { hasText: '指定作业' }).click()
+    await expect(d.getByRole('textbox', { name: /作业编码/ })).toBeVisible()
+    await expect(d.getByRole('textbox', { name: /结果版本 ID/ })).toHaveCount(0)
   })
 
   test('OUTPUTS_ONLY scope:显示 Version IDs 输入框', async ({ page }) => {
-    await page.getByRole('button', { name: '新建重放' }).click()
+    await page.getByRole('button', { name: '新建重放' }).first().click()
     const d = page.locator('.el-drawer', { hasText: '新建批次日重放' })
     await expect(d).toBeVisible()
-    await d.locator('label.el-radio', { hasText: /^OUTPUTS_ONLY$/ }).click()
-    await expect(d.getByLabel('Version IDs')).toBeVisible()
-    await expect(d.getByLabel('Job Codes')).toHaveCount(0)
+    await d.locator('label.el-radio', { hasText: '仅输出结果' }).click()
+    await expect(d.getByRole('textbox', { name: /结果版本 ID/ })).toBeVisible()
+    await expect(d.getByRole('textbox', { name: /作业编码/ })).toHaveCount(0)
   })
 })

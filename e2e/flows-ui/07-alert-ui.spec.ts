@@ -9,8 +9,7 @@ import { test, expect } from '../support/app'
 import { enterDemoApp, expectPageTitle, isVisible } from '../support/app'
 
 const LIST_OR_EMPTY = 'tbody tr.el-table__row, .el-table__empty-block, .el-empty, .empty-state'
-// 新 UI:告警页从表格换成卡片流(.al-card)/空态(.al-empty)
-const ALERT_LIST_OR_EMPTY = '.al-card, .al-empty'
+const ALERT_LIST_OR_EMPTY = '.al-card, .empty-state'
 
 test.describe('UI Flow 07: alert page (readonly)', () => {
   test.beforeEach(async ({ page }) => {

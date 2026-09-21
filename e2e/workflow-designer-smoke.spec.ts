@@ -4,12 +4,10 @@
  * 验收依据:Spike #56 + MVP #57 + Contract fix #58 已合,设计文档 §10 验收主路径。
  *
  * 覆盖主路径(8 步,符合设计文档验收 §10):
- *   1. 登录 → 进 /workflow/definitions
- *   2. 点「设计器」按钮 → 跳 /workflow/designer/:id(借现有 row 进入,非新建——
- *      新建模式 saveNeedsId 会拦,见 WorkflowDesigner.vue onSave 早返回)
- *   3. 从 palette 拖 3 个节点(START / JOB / END)到画布
- *   4. 连线(START → JOB → END)— 通过 X6 graph API 触发(headless 真鼠标拖
- *      X6 边端口 在 chromium 上非常脆,改用合成事件 + graph.addEdge 兜底)
+ *   1. 登录 → API 创建 e2e 前缀的隔离最小合法图
+ *   2. 进入 /workflow/designer/:id 并取得编辑锁
+ *   3. 从 palette 添加 JOB 节点到画布，复用基线 START / END
+ *   4. 连线(START → JOB → END)— 真鼠标从 X6 out 端口拖到 in 端口
  *   5. 点 JOB 节点 → inspector 渲染 → 填 jobCode 下拉
  *   6. 点「校验」按钮 — 验证无 error banner
  *   7. 点「保存」按钮 — 验证 toast「保存成功」
@@ -42,47 +40,46 @@ test.describe('@workflow-designer-smoke 工作流设计器主路径', () => {
   test('主路径:进入 → 拖 3 节点 → 连边 → 填 jobCode → 校验 → 保存 → 重开仍在', async ({
     page,
   }) => {
-    // ── Step 1: 进 /workflow/definitions 列表 ────────────────────────
-    await page.goto('/workflow/definitions')
-    const listMounted = await page
-      .locator('.el-table, .empty-state, .table-skeleton')
-      .first()
-      .waitFor({ state: 'attached', timeout: 10_000 })
-      .then(() => true)
-      .catch(() => false)
-    if (!listMounted) {
-      test.skip(true, '工作流定义列表未挂载 — BE 未启动或路由权限拦截,跳过主路径')
-      return
+    // ── Step 1-2: 创建隔离的最小合法图 → 进入设计器 ────────────────
+    // 测试数据用 API 建立，核心编排动作仍全部走 UI；避免反复修改公共 seed 工作流。
+    const stamp = Date.now()
+    const createResponse = await page.request.post('/api/console/workflow-definitions', {
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Tenant-Id': 'ta',
+        'Idempotency-Key': `e2e-wfd-create-${stamp}`,
+      },
+      data: {
+        tenantId: 'ta',
+        workflowCode: `e2e_wfd_${stamp}`,
+        workflowName: `E2E workflow designer ${stamp}`,
+        workflowType: 'DAG',
+        enabled: true,
+        nodes: [
+          { nodeCode: `start_${stamp}`, nodeName: '开始', nodeType: 'START', enabled: true },
+          { nodeCode: `end_${stamp}`, nodeName: '结束', nodeType: 'END', enabled: true },
+        ],
+        edges: [
+          {
+            fromNodeCode: `start_${stamp}`,
+            toNodeCode: `end_${stamp}`,
+            edgeType: 'SUCCESS',
+            enabled: true,
+          },
+        ],
+      },
+    })
+    const createPayload = (await createResponse.json()) as {
+      data?: { id?: number | string }
+      id?: number | string
     }
-
-    // ── Step 2: 找一行 → 点「设计器」按钮进 /workflow/designer/:id ────
-    // 实现层 WorkflowDefinitionList.vue:openInDesigner(row) → /workflow/designer/${row.id}
-    // 现有 row action label = 'workflowDefinitionList.actionOpenInDesigner'(中文:设计器)
-    const firstRow = page.locator('tbody tr.el-table__row').first()
-    if (!(await isVisible(firstRow, 4000))) {
-      test.skip(
-        true,
-        'workflow 列表为空 — BE 未启动 / tenant=ta 未 seed workflow_definition,跳过主路径',
-      )
-      return
-    }
-
-    // 行操作里「设计器」可能在 dropdown 折叠;先试直显,再展 More
-    let openBtn = firstRow.getByRole('button', { name: '设计器' }).first()
-    if (!(await isVisible(openBtn, 1500))) {
-      // 折在 More 里:点 More 后在 dropdown 找
-      const moreBtn = firstRow.getByRole('button', { name: /更多|More/i }).first()
-      if (await isVisible(moreBtn, 1000)) {
-        await moreBtn.click()
-        openBtn = page.getByRole('menuitem', { name: '设计器' }).first()
-      }
-    }
-    if (!(await isVisible(openBtn, 2000))) {
-      test.skip(true, '未找到「设计器」入口按钮,可能 RBAC 拦截或行无该 action,跳过')
-      return
-    }
-    await openBtn.click({ force: true })
-    await expect(page).toHaveURL(/\/workflow\/designer\/\d+/, { timeout: 10_000 })
+    expect(createResponse.ok(), JSON.stringify(createPayload)).toBe(true)
+    const workflowId = Number(createPayload.data?.id ?? createPayload.id)
+    expect(Number.isFinite(workflowId), '创建工作流响应缺少 id').toBe(true)
+    await page.goto(`/workflow/designer/${workflowId}`)
+    await expect(page).toHaveURL(new RegExp(`/workflow/designer/${workflowId}$`), {
+      timeout: 10_000,
+    })
 
     // ── 等 designer 三栏 mount ─────────────────────────────────────
     const palette = page.locator('.node-palette').first()
@@ -106,20 +103,30 @@ test.describe('@workflow-designer-smoke 工作流设计器主路径', () => {
     // 读现有节点边数,作为 baseline(已 seed 的 workflow 会带原有节点)
     const baseline = await readGraphCounts(page)
 
-    // ── Step 3: 从 palette 添加 3 个节点(START / JOB / END)─────────
-    await addPaletteNode(page, 'START')
+    // ── Step 3: 从 palette 补齐 START / JOB / END ─────────────────
+    // 合法种子通常已有唯一 START / END，设计器会阻止重复创建；这种情况下复用既有节点。
+    let startId = await pickIdByType(page, 'start')
+    let endId = await pickIdByType(page, 'end')
+    let addedNodes = 1
+    if (!startId) {
+      await addPaletteNode(page, 'START')
+      addedNodes += 1
+    }
     await addPaletteNode(page, 'JOB')
-    await addPaletteNode(page, 'END')
+    if (!endId) {
+      await addPaletteNode(page, 'END')
+      addedNodes += 1
+    }
 
-    // 验证三节点已入 store(store 通过 DagCanvas onDrop → store.addNode)
+    // 验证补充节点已入 store(store 通过 DagCanvas onDrop → store.addNode)
     await expect
       .poll(async () => (await readGraphCounts(page)).nodes, { timeout: 5_000 })
-      .toBeGreaterThanOrEqual(baseline.nodes + 3)
+      .toBeGreaterThanOrEqual(baseline.nodes + addedNodes)
 
-    // 兜底从 DOM 抓刚加进去的 3 个节点 id(start_/job_/end_ + ts 后 4 位)
-    const startId = await pickIdByType(page, 'start')
+    // 从 DOM 抓完整链路的节点 id；START / END 可能来自既有合法图。
+    startId = startId ?? (await pickIdByType(page, 'start'))
     const jobId = await pickIdByType(page, 'job')
-    const endId = await pickIdByType(page, 'end')
+    endId = endId ?? (await pickIdByType(page, 'end'))
     if (!startId || !jobId || !endId) {
       test.skip(
         true,
@@ -128,66 +135,39 @@ test.describe('@workflow-designer-smoke 工作流设计器主路径', () => {
       return
     }
 
-    // ── Step 4: 连边 START → JOB → END(走 X6 graph.addEdge 合成)──
-    const edgeOk = await page.evaluate(
-      ({ a, b, c }) => {
-        const x6 = (window as unknown as { x6Graph?: {
-          addEdge: (opts: Record<string, unknown>) => unknown
-        } }).x6Graph
-        if (!x6) return false
-        try {
-          x6.addEdge({ source: a, target: b, shape: 'edge' })
-          x6.addEdge({ source: b, target: c, shape: 'edge' })
-          return true
-        } catch {
-          return false
-        }
-      },
-      { a: startId, b: jobId, c: endId },
-    )
-    if (!edgeOk) {
-      // X6 实例未挂 window — 设计器 useX6Graph 没暴露;
-      // 退化为真鼠标拖 port,但 chromium headless 上 X6 port 命中率低,先标记 skip
-      test.skip(true, 'X6 graph 实例未暴露 window.x6Graph,连边步骤无可靠驱动,跳过')
-      return
-    }
+    // ── Step 4: 连边 START → JOB → END ───────────────────────────
+    await connectNodes(page, startId, jobId)
+    await connectNodes(page, jobId, endId)
+    await expect
+      .poll(async () => (await readGraphCounts(page)).edges, { timeout: 5_000 })
+      .toBeGreaterThanOrEqual(baseline.edges + 2)
 
     // ── Step 5: 选 JOB 节点 → inspector → 填 jobCode ────────────
-    // X6 选中走 graph.select 合成,inspector 监听 store.selectedIds
-    await page.evaluate((id) => {
-      const x6 = (window as unknown as {
-        x6Graph?: { select?: (id: string) => void; resetSelection?: (id: string) => void }
-      }).x6Graph
-      x6?.resetSelection?.(id) ?? x6?.select?.(id)
-    }, jobId)
+    await page.locator(`.x6-node[data-cell-id="${jobId}"]`).first().click({ force: true })
 
     // ElSelect 下拉:打开 → 选第一个 option
-    const jobCodeFormItem = inspector
-      .locator('.el-form-item')
-      .filter({ hasText: /jobCode|Job\s*Code|作业\s*Code/i })
+    const jobCodeInput = inspector
+      .getByRole('combobox', { name: /关联\s*Job|jobCode|Job\s*Code|作业\s*Code/i })
       .first()
-    if (await isVisible(jobCodeFormItem, 3000)) {
-      const select = jobCodeFormItem.locator('.el-select').first()
-      await select.click({ force: true })
-      const firstOption = page.locator('.el-select-dropdown__item').first()
-      if (await isVisible(firstOption, 3000)) {
-        await firstOption.click({ force: true })
-      } else {
-        // 下拉为空(BE /queries/job-definitions/codes 无数据 / 401)→ allow-create 手输
-        const input = select.locator('input').first()
-        await input.fill(`${PREFIX}-job`)
-        await page.keyboard.press('Enter')
-      }
-    }
+    await expect(jobCodeInput).toBeVisible({ timeout: 3_000 })
+    // el-select 开启 allow-create；直接录入唯一编码并回车，确保触发 @change 写回 store。
+    // 输入后等待 Element Plus 生成精确 option，再点击确认，避免异步下拉尚未就绪。
+    const selectedJobCode = `${PREFIX}-job`
+    const jobCodeFormItem = jobCodeInput.locator(
+      'xpath=ancestor::div[contains(concat(" ", normalize-space(@class), " "), " el-form-item ")][1]',
+    )
+    await jobCodeInput.click({ force: true })
+    await jobCodeInput.fill(selectedJobCode)
+    const createdOption = page.getByRole('option', { name: selectedJobCode, exact: true }).last()
+    await expect(createdOption).toBeVisible({ timeout: 5_000 })
+    await createdOption.click({ force: true })
+    await expect(jobCodeFormItem).toContainText(selectedJobCode)
 
     // ── Step 6: 点「校验」按钮 ────────────────────────────────────
     const validateBtn = page.getByRole('button', { name: '校验' }).first()
     if (await isVisible(validateBtn, 2000)) {
       await validateBtn.click({ force: true })
-      // 校验通过 → success toast;失败 → error banner 出现
-      // 这里不强断言 0 error(BE seed 的 workflow 已有节点,可能本来就有校验错),
-      // 仅断言点击不崩
-      await page.waitForTimeout(500)
+      await expect(page.getByRole('dialog', { name: /校验错误|Validation errors/i })).toHaveCount(0)
     }
 
     // ── Step 7: 点「保存」按钮 ────────────────────────────────────
@@ -201,20 +181,14 @@ test.describe('@workflow-designer-smoke 工作流设计器主路径', () => {
     }
     await saveBtn.click({ force: true })
 
-    // 期望出现「保存成功」toast — 真实 BE 在场才会有;允许超时降级
+    // 期望出现「保存成功」toast — 真实 BE 写入失败必须让核心冒烟失败。
     const successToast = page.locator('.el-message--success').filter({ hasText: /保存成功|Saved/ })
     const saved = await successToast
       .waitFor({ state: 'visible', timeout: 8_000 })
       .then(() => true)
       .catch(() => false)
 
-    if (!saved) {
-      // 可能 BE 返回 409 / 400 — 设计师本身已经处理 alert,不再强失败
-      console.warn(
-        '[wfd-smoke] 未捕获保存成功 toast — BE 可能返回 409/400 或 toast 选择器变化,跳过 reload 验证',
-      )
-      return
-    }
+    expect(saved, '保存后未出现成功提示，工作流定义可能未持久化').toBe(true)
 
     // ── Step 8: 刷新页面 → 画布重渲染,节点/边还在 ───────────────
     const urlBeforeReload = page.url()
@@ -235,8 +209,13 @@ test.describe('@workflow-designer-smoke 工作流设计器主路径', () => {
  */
 async function readGraphCounts(page: import('@playwright/test').Page) {
   return await page.evaluate(() => {
-    const nodes = document.querySelectorAll('.x6-node').length
-    const edges = document.querySelectorAll('.x6-edge').length
+    const isMainCanvasCell = (element: Element) => !element.closest('.x6-widget-minimap')
+    const nodes = Array.from(document.querySelectorAll('.dag-canvas .x6-node')).filter(
+      isMainCanvasCell,
+    ).length
+    const edges = Array.from(document.querySelectorAll('.dag-canvas .x6-edge')).filter(
+      isMainCanvasCell,
+    ).length
     return { nodes, edges }
   })
 }
@@ -249,11 +228,44 @@ async function addPaletteNode(
   page: import('@playwright/test').Page,
   type: 'START' | 'END' | 'JOB' | 'GATEWAY' | 'FILE_STEP' | 'APPROVAL',
 ) {
+  const before = (await readGraphCounts(page)).nodes
   const paletteItem = page.locator('.palette-item').filter({ hasText: type }).first()
   await expect(paletteItem).toBeVisible({ timeout: 3_000 })
-  await paletteItem.click({ force: true })
-  // 小等让 Vue reactive 跑完一帧
-  await page.waitForTimeout(80)
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    await paletteItem.click({ force: true })
+    const added = await expect
+      .poll(async () => (await readGraphCounts(page)).nodes, { timeout: 1_500 })
+      .toBeGreaterThan(before)
+      .then(() => true)
+      .catch(() => false)
+    if (added) return
+  }
+  expect((await readGraphCounts(page)).nodes, `${type} 节点未添加到主画布`).toBeGreaterThan(before)
+}
+
+async function connectNodes(
+  page: import('@playwright/test').Page,
+  sourceId: string,
+  targetId: string,
+) {
+  const sourcePort = page.locator(
+    `.x6-node[data-cell-id="${sourceId}"] .x6-port-body[port="out"]`,
+  ).first()
+  const targetPort = page.locator(
+    `.x6-node[data-cell-id="${targetId}"] .x6-port-body[port="in"]`,
+  ).first()
+  await expect(sourcePort).toBeAttached()
+  await expect(targetPort).toBeAttached()
+  const source = await sourcePort.boundingBox()
+  const target = await targetPort.boundingBox()
+  expect(source, `source port ${sourceId}`).not.toBeNull()
+  expect(target, `target port ${targetId}`).not.toBeNull()
+  await page.mouse.move(source!.x + source!.width / 2, source!.y + source!.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(target!.x + target!.width / 2, target!.y + target!.height / 2, {
+    steps: 12,
+  })
+  await page.mouse.up()
 }
 
 /**
@@ -273,10 +285,16 @@ async function pickIdByType(
       return matches[matches.length - 1]?.id ?? null
     }
     // DOM 兜底:.x6-node 的 data-cell-id 包含 nodeCode
-    const nodes = Array.from(document.querySelectorAll('.x6-node[data-cell-id]')) as HTMLElement[]
+    const nodes = Array.from(document.querySelectorAll('.x6-node[data-cell-id]')).filter(
+      (node) => !node.closest('.x6-widget-minimap'),
+    ) as HTMLElement[]
     const ids = nodes
       .map((n) => n.getAttribute('data-cell-id') ?? '')
       .filter((id) => id.startsWith(`${pfx}_`))
-    return ids[ids.length - 1] ?? null
+    if (ids.length > 0) return ids[ids.length - 1]
+    const existing = Array.from(
+      document.querySelectorAll(`.dag-canvas .x6-node[data-shape="designer-${pfx}"]`),
+    ).find((node) => !node.closest('.x6-widget-minimap'))
+    return existing?.getAttribute('data-cell-id') ?? null
   }, prefix)
 }

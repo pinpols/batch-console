@@ -20,7 +20,7 @@ test.describe('file templates (文件模板)', () => {
 
   test('文件模板列表可打开并展示表格', async ({ page }) => {
     await page.goto('/files/templates')
-    await expectPageTitle(page, '文件模板')
+    await expectPageTitle(page, '文件配置')
     await expect(page.getByRole('button', { name: '刷新' })).toBeVisible()
   })
 })

@@ -49,7 +49,7 @@ const SCENARIOS: ImportScenario[] = [
   {
     tenantId: 'ta',
     jobCode: 'TA_IMPORT_CUSTOMER',
-    templateCode: 'TA_IMPORT_CUSTOMER_TPL',
+    templateCode: 'ta_import_customer_tpl',
     header: 'customer_no,customer_name,customer_type,certificate_no,mobile_no,email,status',
     row: (token, _bizDate, i) =>
       `C${token}${i},UI Customer ${i},PERSONAL,ID${token}${i},138${i.toString().padStart(8, '0')},ui${i}@e2e.local,ACTIVE`,
@@ -59,7 +59,7 @@ const SCENARIOS: ImportScenario[] = [
   {
     tenantId: 'tb',
     jobCode: 'TB_IMPORT_TRANSACTION',
-    templateCode: 'TB_IMPORT_TRANSACTION_TPL',
+    templateCode: 'tb_import_transaction_tpl',
     header: 'txn_no,account_no,txn_type,amount,currency_code,txn_date,remark',
     row: (token, bizDate, i) =>
       `T${token}${i},ACC${i.toString().padStart(10, '0')},DEPOSIT,${100 + i}.50,CNY,${bizDate},ui-business-${token}-${i}`,
@@ -69,7 +69,7 @@ const SCENARIOS: ImportScenario[] = [
   {
     tenantId: 'tc',
     jobCode: 'TC_IMPORT_RISK_SCORE',
-    templateCode: 'TC_IMPORT_RISK_SCORE_TPL',
+    templateCode: 'tc_import_risk_score_tpl',
     header: 'entity_id,entity_type,score_value,score_band,score_date',
     row: (token, bizDate, i) => `E${token}${i},ACCOUNT,${600 + i},${i % 2 ? 'LOW' : 'MEDIUM'},${bizDate}`,
     businessCountSql: (token, bizDate) =>
@@ -160,6 +160,7 @@ function assertImportRuntimeSeed() {
          from batch.file_template_config
         where tenant_id=${sqlLiteral(scenario.tenantId)}
           and template_code=${sqlLiteral(scenario.templateCode)}
+        order by version desc
         limit 1;`,
     )
     expect(loadSpec, `${scenario.tenantId}/${scenario.templateCode} jdbcMappedImport`).toBeTruthy()
@@ -262,6 +263,7 @@ async function triggerImportFromUi(
 }
 
 async function waitForSuccessfulInstance(triggered: TriggeredInstance) {
+  let terminalStatus = ''
   await expect
     .poll(
       () => {
@@ -273,11 +275,29 @@ async function waitForSuccessfulInstance(triggered: TriggeredInstance) {
             order by id desc
             limit 1;`,
         )
-        return TERMINAL_STATUSES.has(status) ? status : ''
+        if (TERMINAL_STATUSES.has(status)) terminalStatus = status
+        return terminalStatus !== ''
       },
       { timeout: 180_000, intervals: [2_000, 3_000, 5_000] },
     )
-    .toBe('SUCCESS')
+    .toBe(true)
+
+  if (terminalStatus !== 'SUCCESS') {
+    const taskFailure = psql(
+      PLATFORM_DB,
+      `select concat_ws(' | ', task_status, error_code, error_message)
+         from batch.job_task t
+         join batch.job_instance i on i.id = t.job_instance_id
+        where (i.instance_no=${sqlLiteral(triggered.instanceNo)}
+               or i.dedup_key=${sqlLiteral(triggered.idempotencyKey)})
+          and t.task_status in ('FAILED','COMPENSATED','REJECTED')
+        order by t.id desc
+        limit 1;`,
+    )
+    throw new Error(
+      `import instance ${triggered.instanceNo} ended as ${terminalStatus}: ${taskFailure || 'no failed task detail'}`,
+    )
+  }
 }
 
 function expectNoFailedTasks(triggered: TriggeredInstance) {

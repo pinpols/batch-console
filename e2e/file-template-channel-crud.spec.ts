@@ -8,7 +8,7 @@ test.describe('file template + channel CRUD', () => {
   test.beforeEach(async ({ page }) => {
     await enterDemoApp(page)
     await page.goto('/files/templates')
-    await expectPageTitle(page, '文件模板')
+    await expectPageTitle(page, '文件配置')
   })
 
   test('新增模板对话框可打开 + 验证 i18n field 字段', async ({ page }) => {

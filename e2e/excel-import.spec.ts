@@ -44,27 +44,6 @@ async function uploadTenantPackage(page: import('@playwright/test').Page) {
   return uploadResp
 }
 
-async function clickWithRateLimitRetry(
-  page: import('@playwright/test').Page,
-  buttonName: string | RegExp,
-  matchesResponse: (url: string, method: string) => boolean,
-  timeout = 20_000,
-) {
-  let response
-  for (let attempt = 0; attempt < 4; attempt += 1) {
-    const apiCall = page.waitForResponse(
-      (r) => matchesResponse(r.url(), r.request().method()),
-      { timeout },
-    )
-    await page.getByRole('button', { name: buttonName }).click()
-    response = await apiCall
-    if (response.status() !== 429) return response
-    clearConsoleRateLimitKeys()
-    await page.waitForTimeout(1_500 * (attempt + 1))
-  }
-  return response
-}
-
 // ─── 合并导入（租户配置包）──────────────────────────────────────────
 
 test.describe('合并导入 — 租户配置包', () => {
@@ -77,12 +56,11 @@ test.describe('合并导入 — 租户配置包', () => {
     })
   })
 
-  test('页面展示三步向导与 11-Sheet 描述', async ({ page }) => {
+  test('页面展示三步向导与 11 张配置表描述', async ({ page }) => {
     await expect(page.getByText('上传').first()).toBeVisible()
     await expect(page.getByText('预览').first()).toBeVisible()
     await expect(page.getByText('应用').first()).toBeVisible()
-    // 描述包含 11-Sheet
-    await expect(page.getByText('11-Sheet').first()).toBeVisible()
+    await expect(page.getByText(/11 张配置表/).first()).toBeVisible()
   })
 
   test('下载配置包模板按钮可见', async ({ page }) => {
@@ -172,26 +150,9 @@ test.describe('合并导入 — 完整上传链路（依赖后端）', () => {
       400,
     )
 
-    const tokenAlert = page.locator('.excel-wizard__token-alert, .el-alert').first()
-    await expect(tokenAlert).toBeVisible({ timeout: 15_000 })
-
-    await expect(page.getByRole('button', { name: '下一步' })).toBeEnabled()
-    await page.getByRole('button', { name: '下一步' }).click()
-
-    // 预览步骤：拉取预览
+    // 上传成功后向导会自动进入预览并拉取结果。
     await expect(page.getByRole('button', { name: '拉取预览' })).toBeVisible()
-    const previewResp = await clickWithRateLimitRetry(
-      page,
-      '拉取预览',
-      (url, method) =>
-        url.includes('/api/console/config/tenant-package/excel/preview/') && method === 'GET',
-    )
-    expect(
-      previewResp.status(),
-      `tenant package preview status=${previewResp.status()}`,
-    ).toBeLessThan(400)
-
-    const previewResult = page.locator('.excel-wizard__preview-summary,.el-table__body').first()
+    const previewResult = page.locator('.excel-wizard__desc, .el-table__body').first()
     await expect(previewResult).toBeVisible({ timeout: 10_000 })
 
     // 进入应用步骤

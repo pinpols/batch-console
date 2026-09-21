@@ -26,14 +26,13 @@ test.describe('告警 — 筛选查询', () => {
   })
 
   test('分组 tab 筛选(未处理/已确认/全部)', async ({ page }) => {
-    // 新 UI:状态下拉裁撤,改为分组 pill tab(.al-tab)
-    const ackedTab = page.locator('.al-tab').filter({ hasText: '已确认' })
+    const ackedTab = page.getByRole('radio', { name: /已确认/ })
     await ackedTab.click()
-    await expect(ackedTab).toHaveClass(/is-active/)
+    await expect(ackedTab).toHaveAttribute('aria-checked', 'true')
     await expect(page.locator('.al-list').first()).toBeAttached({ timeout: 10_000 })
-    const allTab = page.locator('.al-tab').filter({ hasText: '全部' })
+    const allTab = page.getByRole('radio', { name: /^全部/ })
     await allTab.click()
-    await expect(allTab).toHaveClass(/is-active/)
+    await expect(allTab).toHaveAttribute('aria-checked', 'true')
   })
 
   test('Trace 输入 → 带条件刷新 → 重置', async ({ page }) => {
@@ -132,15 +131,17 @@ test.describe('Outbox — Tab 与筛选', () => {
     await expectPageTitle(page, 'Outbox')
   })
 
-  // 新 UI:el-tabs 换自绘 pill tab(.ob-tab 按钮),按可见文本定位
   test('重试 tab 默认激活', async ({ page }) => {
-    await expect(page.locator('.ob-tab').filter({ hasText: '重试' })).toHaveClass(/is-active/)
+    await expect(page.getByRole('radio', { name: /重试/ })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    )
   })
 
   test('切换到投递 tab', async ({ page }) => {
-    const deliveryTab = page.locator('.ob-tab').filter({ hasText: '投递' })
+    const deliveryTab = page.getByRole('radio', { name: /投递/ })
     await deliveryTab.click()
-    await expect(deliveryTab).toHaveClass(/is-active/)
+    await expect(deliveryTab).toHaveAttribute('aria-checked', 'true')
   })
 
   test('重试 tab — 关键字搜索', async ({ page }) => {
@@ -167,7 +168,7 @@ test.describe('Outbox — Tab 与筛选', () => {
   })
 
   test('投递 tab — 关键字搜索', async ({ page }) => {
-    await page.locator('.ob-tab').filter({ hasText: '投递' }).click()
+    await page.getByRole('radio', { name: /投递/ }).click()
     const input = page.locator('.el-form-item').filter({ hasText: '关键字' }).getByRole('textbox')
     if (!(await isVisible(input, 2000))) return
     await input.fill('test')
