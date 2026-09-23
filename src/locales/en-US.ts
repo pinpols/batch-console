@@ -2608,7 +2608,7 @@ const messages: Messages = {
     deleteSuccess: 'Disabled {code}',
   },
   traceDiagnostic: {
-    placeholder: 'Enter traceId (32-64 hex chars)',
+    placeholder: 'Enter the complete traceId (exact match, up to 128 characters)',
     search: 'Search',
     reset: 'Reset',
     hint: 'Aggregates core domains by traceId: jobInstance / workflowRun / file / pipeline / audit / operationAudit / executionLog / alert / outbox / deadLetter. Falls back to logs/trace platforms on 0 hits.',
@@ -2624,6 +2624,10 @@ const messages: Messages = {
       'Logs platform is down or unreachable: {url}. Start the observability stack first.',
     tempoDown: 'Trace platform is down or unreachable: {url}. Start the observability stack first.',
     summary: 'traceId "{trace}" — {hits} hits across {domains} domains',
+    truncatedWarning:
+      'These domains exceed the snapshot limit; showing the first 200 rows: {domains}',
+    tempoRequiresW3cTraceId:
+      'The trace platform requires a 32-character W3C Trace ID. Search this business Trace ID in the logs platform.',
     hitCount: '{n} hits',
     domainErr: 'query failed',
     domainJobInstance: 'Job Instance',
@@ -2633,6 +2637,7 @@ const messages: Messages = {
     domainOperationAudit: 'Operation Audit',
     domainExecLog: 'Execution Log',
     domainWorkflowRun: 'Workflow Run',
+    domainWorkflowNodeRun: 'Workflow Node Run',
     domainAlert: 'Alert',
     domainOutbox: 'Outbox Delivery',
     domainDeadLetter: 'Dead Letter',
@@ -2651,6 +2656,9 @@ const messages: Messages = {
     colAggregateType: 'Aggregate Type',
     colMessage: 'Message',
     colWorkflowCode: 'Workflow Code',
+    colNodeCode: 'Node Code',
+    colNodeType: 'Node Type',
+    colRetryCount: 'Retries',
     colAlertType: 'Alert Type',
     colSeverity: 'Severity',
     colEventType: 'Event Type',
@@ -2668,7 +2676,8 @@ const messages: Messages = {
     traceQuickPlaceholder: 'Paste traceId to jump to Trace Diagnostic',
     outboxStatSuccess: 'Delivered',
     traceQuickGo: 'Diagnose',
-    traceQuickHint: 'Paste a copied traceId from any page, or enter 16-64 hex chars',
+    traceQuickHint:
+      'Paste the complete traceId copied from another page; diagnostics use exact matching',
     tabDeadLetters: 'Dead Letters',
     tabRetries: 'Retries',
     tabExecLogs: 'Execution logs',
@@ -3218,7 +3227,7 @@ const messages: Messages = {
   },
   auditList: {
     traceLabel: 'Trace',
-    tracePlaceholder: 'Trace ID (fuzzy)',
+    tracePlaceholder: 'Complete Trace ID (exact match)',
     operationTypeLabel: 'Operation type',
     operationTypePlaceholder: 'Search operationType',
     operatorLabel: 'Operator',

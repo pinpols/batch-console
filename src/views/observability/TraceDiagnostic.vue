@@ -8,6 +8,7 @@
           <el-input
             v-model="traceIdInput"
             :placeholder="t('traceDiagnostic.placeholder')"
+            :maxlength="128"
             clearable
             class="trace-search__input"
             @keyup.enter="search"
@@ -34,7 +35,11 @@
       </template>
 
       <!-- 未查询前的引导 -->
-      <EmptyState v-if="!hasSearched" :description="t('traceDiagnostic.emptyTip')" :image-size="120">
+      <EmptyState
+        v-if="!hasSearched"
+        :description="t('traceDiagnostic.emptyTip')"
+        :image-size="120"
+      >
         <template #image>
           <el-icon size="120" color="var(--color-text-tertiary)"><DataLine /></el-icon>
         </template>
@@ -75,6 +80,15 @@
             })
           }}
         </div>
+
+        <el-alert
+          v-if="truncatedDomainLabels"
+          class="trace-result__warning"
+          type="warning"
+          :closable="false"
+          show-icon
+          :title="t('traceDiagnostic.truncatedWarning', { domains: truncatedDomainLabels })"
+        />
 
         <el-collapse v-model="expanded" class="trace-domains" @change="onCollapseChange">
           <el-collapse-item
@@ -164,6 +178,7 @@
   const loading = ref(false)
   const hasSearched = ref(false)
   const expanded = ref<string[]>([])
+  const truncatedDomains = ref<string[]>([])
 
   // el-table 在 el-collapse 折叠态(display:none, width=0)算的列布局是错的,展开后表头/表体错位。
   // 收集每个域表格 ref,展开时 doLayout() 重算列宽修正错位。
@@ -206,6 +221,27 @@
   })
   const totalHits = computed(() => results.value.reduce((s, d) => s + d.rows.length, 0))
   const hitDomains = computed(() => results.value.filter((d) => d.rows.length > 0))
+  const truncatedDomainI18nKeys: Record<string, string> = {
+    jobInstances: 'traceDiagnostic.domainJobInstance',
+    workflowRuns: 'traceDiagnostic.domainWorkflowRun',
+    workflowNodeRuns: 'traceDiagnostic.domainWorkflowNodeRun',
+    files: 'traceDiagnostic.domainFile',
+    filePipelines: 'traceDiagnostic.domainFilePipeline',
+    auditLogs: 'traceDiagnostic.domainAudit',
+    operationAudits: 'traceDiagnostic.domainOperationAudit',
+    executionLogs: 'traceDiagnostic.domainExecLog',
+    outboxDeliveries: 'traceDiagnostic.domainOutbox',
+    alerts: 'traceDiagnostic.domainAlert',
+    deadLetters: 'traceDiagnostic.domainDeadLetter',
+  }
+  const truncatedDomainLabels = computed(() =>
+    truncatedDomains.value
+      .map((domain) => {
+        const key = truncatedDomainI18nKeys[domain]
+        return key ? t(key) : domain
+      })
+      .join(', '),
+  )
 
   function hasCellValue(value: unknown): boolean {
     return value !== null && value !== undefined && String(value).trim() !== ''
@@ -223,11 +259,14 @@
     loading.value = true
     hasSearched.value = true
     expanded.value = []
+    truncatedDomains.value = []
 
     const t0 = Date.now()
     const tenantId = tenant.tenantId
 
-    const snapshot = await queryTraceSnapshot(tenantId, trace)
+    const snapshot = await queryTraceSnapshot(tenantId, trace).finally(() => {
+      loading.value = false
+    })
     const jobInstances = snapshot.jobInstances ?? []
     const files = snapshot.files ?? []
     const filePipelines = snapshot.filePipelines ?? []
@@ -235,9 +274,11 @@
     const operationAudits = snapshot.operationAudits ?? []
     const executionLogs = snapshot.executionLogs ?? []
     const workflowRuns = snapshot.workflowRuns ?? []
+    const workflowNodeRuns = snapshot.workflowNodeRuns ?? []
     const outboxes = snapshot.outboxDeliveries ?? []
     const alerts = snapshot.alerts ?? []
     const deadLetters = snapshot.deadLetters ?? []
+    truncatedDomains.value = snapshot.truncatedDomains ?? []
 
     results.value = [
       {
@@ -342,6 +383,18 @@
         ],
       },
       {
+        domain: 'workflowNodeRun',
+        label: t('traceDiagnostic.domainWorkflowNodeRun'),
+        rows: workflowNodeRuns as Record<string, unknown>[],
+        columns: [
+          { prop: 'nodeCode', label: t('traceDiagnostic.colNodeCode'), width: 180 },
+          { prop: 'nodeType', label: t('traceDiagnostic.colNodeType'), width: 120 },
+          { prop: 'nodeStatus', label: t('traceDiagnostic.colStatus'), width: 110 },
+          { prop: 'retryCount', label: t('traceDiagnostic.colRetryCount'), width: 100 },
+          { prop: 'startedAt', label: t('traceDiagnostic.colStartedAt'), width: 170 },
+        ],
+      },
+      {
         domain: 'alert',
         label: t('traceDiagnostic.domainAlert'),
         rows: alerts as Record<string, unknown>[],
@@ -378,8 +431,6 @@
     // 自动展开所有有结果的域
     expanded.value = hitDomains.value.map((d) => d.domain)
     relayoutTables(expanded.value)
-    loading.value = false
-
     void router.replace({ query: { ...route.query, traceId: trace } })
 
     // 用时埋点(成功)
@@ -392,11 +443,16 @@
     hasSearched.value = false
     results.value = []
     expanded.value = []
+    truncatedDomains.value = []
     void router.replace({ query: { ...route.query, traceId: undefined } })
   }
 
   async function openExternal(target: 'grafana' | 'tempo') {
     const trace = lastSearchedTrace.value
+    if (target === 'tempo' && !/^[0-9a-f]{32}$/i.test(trace)) {
+      ElMessage.warning(t('traceDiagnostic.tempoRequiresW3cTraceId'))
+      return
+    }
     const base = target === 'grafana' ? 'http://localhost:13000' : 'http://localhost:13200'
     const probe = target === 'grafana' ? `${base}/api/health` : `${base}/ready`
     // P2.6 健康检查:先 ping 2s 看观测栈是否启动,挂掉就提示而非直接跳浏览器拒绝连接页
@@ -465,6 +521,9 @@
     background: var(--color-bg-info);
     border-radius: var(--radius-content);
     color: var(--color-text-primary);
+  }
+  .trace-result__warning {
+    margin-bottom: 12px;
   }
   .trace-domain__title {
     display: flex;

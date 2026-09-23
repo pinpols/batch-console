@@ -4,6 +4,7 @@
     class="trace-id-input"
     :placeholder="placeholder || t('traceIdInput.placeholder')"
     :prefix-icon="Search"
+    :maxlength="128"
     clearable
     @input="onInput"
     @keydown.enter="onGo"
@@ -31,7 +32,7 @@
    *   2) 不用挖菜单,直接在任意页面的工具栏粘贴
    *   3) 回车直达
    *
-   * 容错:32 字符 hex(W3C TraceContext 标准)以外的字符自动 trim;过短不阻止(允许片段)。
+   * 业务 traceId 最多 128 字符，诊断页使用完整值精确查询；不把业务 ID 强制限定为 W3C 十六进制格式。
    */
   import { computed } from 'vue'
   import { useI18n } from 'vue-i18n'
@@ -60,7 +61,7 @@
   })
 
   function onInput(v: string) {
-    emit('update:modelValue', v.trim())
+    emit('update:modelValue', v.trim().slice(0, 128))
   }
 
   async function onPaste() {
@@ -71,15 +72,16 @@
         ElMessage.warning(t('traceIdInput.emptyClipboard'))
         return
       }
-      emit('update:modelValue', cleaned)
+      emit('update:modelValue', cleaned.slice(0, 128))
     } catch {
       ElMessage.warning(t('traceIdInput.pasteFailed'))
     }
   }
 
   function onGo() {
-    if (!props.goTo || !props.modelValue) return
-    router.push({ path: '/observability/trace', query: { traceId: props.modelValue } })
+    const traceId = props.modelValue.trim().slice(0, 128)
+    if (!props.goTo || !traceId) return
+    router.push({ path: '/observability/trace', query: { traceId } })
   }
 </script>
 
