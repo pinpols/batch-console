@@ -101,7 +101,7 @@ test.describe('批次日历日 — 筛选查询', () => {
     if (await isVisible(opt, 2000)) {
       await opt.click()
       await page.getByRole('button', { name: '搜索' }).click()
-      await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
+      await expect(page.locator('.batch-calendar, .el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
     }
   })
 
@@ -118,13 +118,13 @@ test.describe('批次日历日 — 筛选查询', () => {
       await startInput.fill('2026-04-01')
       await endInput.fill('2026-04-30')
       await page.getByRole('button', { name: '搜索' }).click()
-      await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
+      await expect(page.locator('.batch-calendar, .el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
     }
   })
 
   test('刷新', async ({ page }) => {
     await page.getByRole('button', { name: '刷新' }).click()
-    await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
+    await expect(page.locator('.batch-calendar, .el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
   })
 })
 

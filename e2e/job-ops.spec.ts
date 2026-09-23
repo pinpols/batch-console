@@ -86,13 +86,17 @@ test.describe('Job 定义 — 操作流', () => {
       .first()
     if (!(await isVisible(triggerBtn))) return
     await triggerBtn.click()
-    await expect(page.locator('.el-message-box')).toBeVisible()
+    const triggerDialog = page.locator('.el-message-box').filter({ hasText: '手动触发' })
+    await expect(triggerDialog).toBeVisible()
     // 填写触发 payload（prompt textarea）
-    const ta = page.locator('.el-message-box').locator('textarea')
+    const ta = triggerDialog.locator('textarea')
     if (await isVisible(ta, 1000)) await ta.fill('{}')
-    await page.locator('.el-message-box').getByRole('button', { name: '触发' }).click()
-    // 提交后对话框关闭即视为触发已发起;成功/失败 toast 取决于首行作业类型与 payload,不强断言
-    await expect(page.locator('.el-message-box')).toBeHidden({ timeout: 8000 })
+    await triggerDialog.getByRole('button', { name: '触发' }).click()
+    await expect(triggerDialog).toBeHidden({ timeout: 8000 })
+    const resultDialog = page.locator('.el-message-box:visible').filter({ hasText: /已触发|触发失败/ })
+    if (await isVisible(resultDialog, 3000)) {
+      await resultDialog.getByRole('button', { name: /留在当前页|查看实例/ }).first().click()
+    }
   })
 
   test('克隆 Job → 确认 → toast', async ({ page }) => {

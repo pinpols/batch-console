@@ -5,7 +5,7 @@
  *   - BulkActionBar    (components/table/BulkActionBar.vue,选行后出现)
  *   - LiveStatusBadge  (components/common/LiveStatusBadge.vue,经 OpsListToolbar 渲染)
  *
- * 用稳定的 class/role 选择器,不依赖 i18n 文案;无数据时按 isVisible 优雅跳过。
+ * 用稳定的 class/role 选择器,不依赖 i18n 文案;批量选择用例自备响应数据。
  */
 import { expect, test } from './support/app'
 import { enterDemoApp, expectPageTitle, isVisible } from './support/app'
@@ -22,12 +22,11 @@ test.describe('作业运行列表 — 列表页新控件', () => {
   })
 
   test('实时状态徽标渲染 + 含状态文案', async ({ page }) => {
-    // 该页按设计用自定义实时监控条 .jr-live(还原 proto 样张),非共享 LiveStatusBadge
-    const live = page.locator('.jr-live').first()
+    const live = page.locator('.live-monitor-bar').first()
     await expect(live).toBeVisible({ timeout: 10_000 })
     // 标题 + 最近刷新时间文案非空
-    await expect(live.locator('.jr-live__title')).not.toBeEmpty()
-    await expect(live.locator('.jr-live__time')).not.toBeEmpty()
+    await expect(live.locator('.live-monitor-bar__title')).not.toBeEmpty()
+    await expect(live.locator('.live-monitor-bar__time')).not.toBeEmpty()
   })
 
   test('保存的筛选器 — 下拉可打开,含「保存当前」入口', async ({ page }) => {
@@ -42,13 +41,57 @@ test.describe('作业运行列表 — 列表页新控件', () => {
   })
 
   test('批量操作栏 — 选行后出现并显示计数,清空后消失', async ({ page }) => {
+    await page.route('**/api/console/queries/instances*', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          code: 'SUCCESS',
+          message: 'ok',
+          data: {
+            items: [
+              {
+                id: 99001,
+                tenantId: 'ta',
+                jobCode: 'E2E_BULK_JOB',
+                instanceNo: 'e2e-bulk-instance-99001',
+                bizDate: '2026-09-21',
+                triggerType: 'MANUAL',
+                instanceStatus: 'FAILED',
+                batchNo: 'e2e-bulk-batch',
+                operatorId: 'e2e',
+                rerunFlag: false,
+                retryFlag: false,
+                rerunReason: '',
+                relatedFileId: 0,
+                parentInstanceId: 0,
+                queueCode: 'default',
+                workerGroup: 'default',
+                priority: 0,
+                traceId: 'e2e-bulk-trace',
+                paramsSnapshot: '{}',
+                resultSummary: '{}',
+                deadlineAt: '2026-09-21T10:00:00Z',
+                expectedDurationSeconds: 60,
+                slaAlertedAt: '2026-09-21T10:01:00Z',
+                startedAt: '2026-09-21T09:00:00Z',
+                finishedAt: '2026-09-21T09:01:00Z',
+              },
+            ],
+            total: 1,
+            pageNo: 1,
+            pageSize: 15,
+          },
+        }),
+      }),
+    )
+    await page.reload()
+
     const firstRowCheckbox = page
       .locator('.el-table__body-wrapper tbody tr')
       .first()
       .locator('.el-checkbox')
-    if (!(await isVisible(firstRowCheckbox, 3000))) {
-      test.skip(true, '列表无数据行,无法验证批量选择(seed 未含运行态实例)')
-    }
+    await expect(firstRowCheckbox).toBeVisible({ timeout: 10_000 })
     await firstRowCheckbox.click()
 
     const bar = page.locator('.bulk-action-bar')

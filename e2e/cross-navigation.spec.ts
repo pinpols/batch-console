@@ -160,9 +160,9 @@ test.describe('query parameter pre-fill (查询参数预填)', () => {
   test('Job Instance 列表通过 status 参数预填筛选条件', async ({ page }) => {
     await page.goto('/monitor/job-instances?status=FAILED')
     await expectPageTitle(page, '作业运行')
-    // 新 UI:状态下拉裁撤,预填载体 = .jr-tab pill(status=FAILED → 「失败」tab 激活)
-    await expect(page.locator('.jr-tab').filter({ hasText: '失败' }).first()).toHaveClass(
-      /is-active/,
+    await expect(page.getByRole('radio', { name: /失败/ })).toHaveAttribute(
+      'aria-checked',
+      'true',
       { timeout: 10_000 },
     )
   })

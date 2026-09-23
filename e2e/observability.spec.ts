@@ -10,8 +10,7 @@ test.describe('observability pages', () => {
     await page.goto('/observability/alerts')
     await expectPageTitle(page, /事件告警|告警/)
     await expect(page.getByRole('button', { name: '刷新' })).toBeVisible()
-    // 新 UI:表格治理列裁撤,治理操作在卡片 .al-card__ops;页面骨架 = 分组 tab + 卡片流
-    await expect(page.locator('.al-tab').filter({ hasText: '未处理' })).toBeVisible()
+    await expect(page.getByRole('radio', { name: /未处理/ })).toBeVisible()
     await expect(page.locator('.al-list').first()).toBeAttached({ timeout: 10_000 })
   })
 
@@ -42,15 +41,14 @@ test.describe('observability pages', () => {
   test('Outbox 支持切换重试与投递标签', async ({ page }) => {
     await page.goto('/observability/outbox')
     await expectPageTitle(page, 'Outbox')
-    // 新 UI:el-tabs 换自绘 pill tab(.ob-tab 按钮)
     const content = page.locator('.page-container').first()
-    const deliveryTab = page.locator('.ob-tab').filter({ hasText: '投递' })
+    const deliveryTab = page.getByRole('radio', { name: /投递/ })
     await deliveryTab.click()
-    await expect(deliveryTab).toHaveClass(/is-active/)
+    await expect(deliveryTab).toHaveAttribute('aria-checked', 'true')
     await expect(content).toContainText(/Topic|状态/, { timeout: 15_000 })
-    const retryTab = page.locator('.ob-tab').filter({ hasText: '重试' })
+    const retryTab = page.getByRole('radio', { name: /重试/ })
     await retryTab.click()
-    await expect(retryTab).toHaveClass(/is-active/)
+    await expect(retryTab).toHaveAttribute('aria-checked', 'true')
     await expect(content).toContainText(/下次重试|状态/, { timeout: 15_000 })
   })
 

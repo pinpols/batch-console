@@ -36,12 +36,6 @@ const PAGES: ListPage[] = [
   { path: '/system/parameters', title: /系统参数|参数/, listUrl: /\/system-parameters/ },
   { path: '/system/triggers', title: /触发器|Trigger/, listUrl: /\/ops\/triggers/ },
   {
-    path: '/workers/management',
-    title: /Worker/,
-    listUrl: /\/queries\/workers/,
-    rowSelector: '.wk-card:visible',
-  },
-  {
     path: '/observability/alerts',
     title: /告警|事件告警/,
     listUrl: /\/queries\/alerts/,
@@ -56,7 +50,11 @@ for (const pg of PAGES) {
     // 进页前挂上响应捕获:抓第一条命中 listUrl 且 body 是分页结构的响应。
     const respP = page
       .waitForResponse(
-        (r) => pg.listUrl.test(r.url()) && r.request().method() === 'GET' && r.status() === 200,
+        (r) =>
+          pg.listUrl.test(r.url()) &&
+          r.request().method() === 'GET' &&
+          r.status() === 200 &&
+          (r.headers()['content-type'] ?? '').includes('application/json'),
         { timeout: 12000 },
       )
       .catch(() => null)
@@ -64,18 +62,8 @@ for (const pg of PAGES) {
     await page.goto(pg.path)
     await expectPageTitle(page, pg.title)
     const resp = await respP
-    if (!resp) {
-      test.skip(true, `未捕获到 ${pg.path} 的列表响应(路径模式不匹配 / 该页非分页列表)`)
-      return
-    }
-
-    let body: unknown
-    try {
-      body = await resp.json()
-    } catch {
-      test.skip(true, `${pg.path} 列表响应非 JSON`)
-      return
-    }
+    expect(resp, `未捕获到 ${pg.path} 的 JSON 列表响应`).not.toBeNull()
+    const body = await resp!.json()
     // 解析分页结构:data.items(主流)/ data.records / data 直接是数组。
     const data = (body as { data?: unknown })?.data as
       | { items?: unknown[]; records?: unknown[]; total?: number }

@@ -1,35 +1,60 @@
 /**
  * Workflow 设计器新增能力 e2e(本会话 A/C 组:快捷键帮助面板 + 节点搜索框)。
- * 复用 smoke spec 的"经列表进设计器 + skip 容错"模式;只验我新增的工具栏控件。
+ * 每条用例通过 API 创建隔离工作流后直达设计器，避免依赖共享 seed 或列表首行状态。
  */
-import { enterDemoApp, isVisible, expect, test } from './support/app'
+import { enterDemoApp, expect, test } from './support/app'
 
-async function openDesigner(page): Promise<boolean> {
-  // 与 smoke spec 对齐用 domcontentloaded:默认 'load' 在 SW/重定向下偶发 net::ERR_ABORTED
-  await page.goto('/workflow/definitions', { waitUntil: 'domcontentloaded' })
-  const listMounted = await page
-    .locator('.el-table, .empty-state, .table-skeleton')
-    .first()
-    .waitFor({ state: 'attached', timeout: 10_000 })
-    .then(() => true)
-    .catch(() => false)
-  if (!listMounted) return false
+async function openDesigner(page): Promise<void> {
+  const stamp = `${Date.now()}_${Math.random().toString(36).slice(2, 7)}`
+  const response = await page.request.post('/api/console/workflow-definitions', {
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Tenant-Id': 'ta',
+      'Idempotency-Key': `e2e-wfd-tools-${stamp}`,
+    },
+    data: {
+      tenantId: 'ta',
+      workflowCode: `e2e_wfd_tools_${stamp}`,
+      workflowName: `E2E workflow tools ${stamp}`,
+      workflowType: 'DAG',
+      enabled: true,
+      nodes: [
+        { nodeCode: `start_${stamp}`, nodeName: '开始', nodeType: 'START', enabled: true },
+        {
+          nodeCode: `job_${stamp}`,
+          nodeName: '作业',
+          nodeType: 'JOB',
+          relatedJobCode: `e2e_job_${stamp}`,
+          enabled: true,
+        },
+        { nodeCode: `end_${stamp}`, nodeName: '结束', nodeType: 'END', enabled: true },
+      ],
+      edges: [
+        {
+          fromNodeCode: `start_${stamp}`,
+          toNodeCode: `job_${stamp}`,
+          edgeType: 'SUCCESS',
+          enabled: true,
+        },
+        {
+          fromNodeCode: `job_${stamp}`,
+          toNodeCode: `end_${stamp}`,
+          edgeType: 'SUCCESS',
+          enabled: true,
+        },
+      ],
+    },
+  })
+  const payload = (await response.json()) as { data?: { id?: number | string } }
+  expect(response.ok(), JSON.stringify(payload)).toBe(true)
+  const workflowId = Number(payload.data?.id)
+  expect(Number.isFinite(workflowId), '创建工作流响应缺少 id').toBe(true)
 
-  const firstRow = page.locator('tbody tr.el-table__row').first()
-  if (!(await isVisible(firstRow, 4000))) return false
-
-  let openBtn = firstRow.getByRole('button', { name: '设计器' }).first()
-  if (!(await isVisible(openBtn, 1500))) {
-    const moreBtn = firstRow.getByRole('button', { name: /更多|More/i }).first()
-    if (await isVisible(moreBtn, 1000)) {
-      await moreBtn.click()
-      openBtn = page.getByRole('menuitem', { name: '设计器' }).first()
-    }
-  }
-  if (!(await isVisible(openBtn, 2000))) return false
-  await openBtn.click({ force: true })
-  await expect(page).toHaveURL(/\/workflow\/designer\/\d+/, { timeout: 10_000 })
-  return await isVisible(page.locator('.dag-canvas').first(), 10_000)
+  await page.goto(`/workflow/designer/${workflowId}`, { waitUntil: 'domcontentloaded' })
+  await expect(page).toHaveURL(new RegExp(`/workflow/designer/${workflowId}$`), {
+    timeout: 10_000,
+  })
+  await expect(page.locator('.dag-canvas').first()).toBeVisible({ timeout: 10_000 })
 }
 
 test.describe('@workflow-designer-additions 工具栏新增控件', () => {
@@ -38,10 +63,7 @@ test.describe('@workflow-designer-additions 工具栏新增控件', () => {
   })
 
   test('快捷键帮助:按钮打开面板,列出快捷键', async ({ page }) => {
-    if (!(await openDesigner(page))) {
-      test.skip(true, '无可用 workflow 行 / 设计器未挂载(BE 未 seed),跳过')
-      return
-    }
+    await openDesigner(page)
     await page.getByRole('button', { name: '快捷键' }).first().click()
     const dialog = page.locator('.el-dialog:visible').filter({ hasText: '键盘快捷键' })
     await expect(dialog).toBeVisible()
@@ -51,10 +73,7 @@ test.describe('@workflow-designer-additions 工具栏新增控件', () => {
   })
 
   test('节点搜索:工具栏存在搜索框', async ({ page }) => {
-    if (!(await openDesigner(page))) {
-      test.skip(true, '无可用 workflow 行 / 设计器未挂载(BE 未 seed),跳过')
-      return
-    }
+    await openDesigner(page)
     const toolbar = page.getByRole('toolbar', { name: '设计器工具栏' })
     await expect(toolbar.getByRole('combobox').first()).toBeVisible()
     await expect(toolbar.getByText('搜索节点…')).toBeVisible()

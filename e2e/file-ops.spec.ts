@@ -114,7 +114,7 @@ test.describe('文件模板 — 筛选与详情', () => {
   test.beforeEach(async ({ page }) => {
     await enterDemoApp(page)
     await page.goto('/files/templates')
-    await expectPageTitle(page, '文件模板')
+    await expectPageTitle(page, '文件配置')
   })
 
   test('模板编码搜索 → 查询', async ({ page }) => {

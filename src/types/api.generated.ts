@@ -9319,6 +9319,11 @@ export interface components {
     ConsoleOutboxRetryLogResponse: {
       /** Format: int64 */
       id: number
+      /**
+       * Format: int64
+       * @description 关联的 outbox_event.id；重投接口必须使用该值，而不是重试日志 id。
+       */
+      outboxEventId: number
       tenantId: string
       eventType: string
       eventKey: string

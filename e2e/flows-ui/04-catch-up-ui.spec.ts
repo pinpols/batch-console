@@ -8,7 +8,7 @@ import { test, expect } from '../support/app'
 import { enterDemoApp, isVisible } from '../support/app'
 
 const LIST_OR_EMPTY =
-  'tbody tr.el-table__row, .el-table__empty-block, .el-empty, .el-card, .empty-state'
+  'tbody tr.el-table__row, .el-table__empty-block, .el-empty, .el-card, .empty-state, .batch-calendar'
 
 test.describe('UI Flow 04: catch-up', () => {
   test.beforeEach(async ({ page }) => {

@@ -376,7 +376,7 @@
     } catch {
       return
     }
-    await bulk.runBulk(eligible, (r) => republishOutbox(tenant.tenantId, [r.id]), {
+    await bulk.runBulk(eligible, (r) => republishOutbox(tenant.tenantId, [r.outboxEventId]), {
       actionLabel: label,
     })
     void loadTab()

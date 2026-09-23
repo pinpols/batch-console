@@ -40,7 +40,7 @@ const PAGES: PageCheck[] = [
     title: '文件列表',
     drillFirstRow: true,
   },
-  { path: '/files/templates', title: '文件模板' },
+  { path: '/files/templates', title: '文件配置' },
   { path: '/files/arrival-groups', title: '到达组治理' },
   { path: '/files/pipeline-obs', title: '流水线观测' },
   // 定义

@@ -1,5 +1,5 @@
 import { expect, test } from './support/app'
-import { enterDemoApp, expectPageTitle, waitForRouteStable } from './support/app'
+import { enterDemoApp, waitForRouteStable } from './support/app'
 
 test.describe('navigation and tabs', () => {
   test.beforeEach(async ({ page }) => {
@@ -23,31 +23,6 @@ test.describe('navigation and tabs', () => {
       .first()
       .click()
     await expect(page).toHaveURL(/\/observability\/alerts/)
-  })
-
-  test('打开多个页面后会显示页签', async ({ page }) => {
-    test.skip(true, '页签组件已重构，待更新选择器')
-    await page.goto('/ops/summary')
-    await page.goto('/monitor/job-instances')
-    await page.goto('/observability/alerts')
-
-    // Hover over the floating tabs to reveal all tabs (non-active tabs are hidden until hover)
-    await page.locator('.floating-tabs').hover()
-    await expect(page.locator('.page-tab__title', { hasText: '运营概览' })).toBeVisible()
-    await expect(page.locator('.page-tab__title', { hasText: 'Job Instance 列表' })).toBeVisible()
-    await expect(page.locator('.page-tab__title', { hasText: '告警' })).toBeVisible()
-  })
-
-  test('关闭当前页签后回退到其他已打开页面', async ({ page }) => {
-    test.skip(true, '页签组件已重构，待更新选择器')
-    await page.goto('/ops/summary')
-    await page.goto('/monitor/job-instances')
-    await page.goto('/observability/alerts')
-
-    await page.locator('.floating-tabs').hover()
-    await page.locator('.page-tab.page-tab--active .page-tab__close').click()
-    await expect(page).toHaveURL(/\/monitor\/job-instances/)
-    await expectPageTitle(page, '作业运行')
   })
 
   test('命令面板可以打开和关闭', async ({ page }) => {

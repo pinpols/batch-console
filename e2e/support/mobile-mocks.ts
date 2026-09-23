@@ -167,6 +167,7 @@ export async function installMobileMocks(page: Page, spec: MockSpec = {}) {
   await page.route('**/api/console/approvals/batch-approve*', (r) => ok(r, [] as unknown[]))
   await page.route('**/api/console/approvals/batch-reject*', (r) => ok(r, [] as unknown[]))
   await page.route('**/api/console/ops/outbox/republish*', (r) => ok(r, null))
+  await page.route('**/api/console/jobs/rerun*', (r) => ok(r, 'JI-E2E-RETRY'))
   await page.route('**/api/console/instances/*/retry*', (r) => ok(r, null))
   await page.route('**/api/console/instances/*/terminate*', (r) => ok(r, null))
 }

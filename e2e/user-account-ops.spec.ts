@@ -12,10 +12,11 @@ test.describe('用户账户 — 页面基础', () => {
     await expectPageTitle(page, '登录账户')
   })
 
-  test('展示账户总数 / 已启用 / 已停用指标卡', async ({ page }) => {
-    await expect(page.locator('.metric-card').filter({ hasText: '账户总数' })).toBeVisible()
-    await expect(page.locator('.metric-card').filter({ hasText: '已启用' })).toBeVisible()
-    await expect(page.locator('.metric-card').filter({ hasText: '已停用' })).toBeVisible()
+  test('展示全部 / 已启用 / 已停用状态段', async ({ page }) => {
+    const statuses = page.locator('.status-segment')
+    await expect(statuses.getByRole('radio', { name: /^全部/ })).toBeVisible()
+    await expect(statuses.getByRole('radio', { name: /已启用/ })).toBeVisible()
+    await expect(statuses.getByRole('radio', { name: /已停用/ })).toBeVisible()
   })
 
   test('表格展示 username / 状态 / 操作列', async ({ page }) => {
@@ -38,30 +39,21 @@ test.describe('用户账户 — 筛选查询', () => {
   })
 
   test('关键字筛选 → 查询', async ({ page }) => {
-    const input = page
-      .locator('.el-form-item')
-      .filter({ hasText: '关键字' })
-      .getByRole('textbox')
+    const input = page.locator('.account-keyword input')
     await input.fill('admin')
     await page.getByRole('button', { name: '搜索' }).click()
     await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
   })
 
   test('回车触发查询', async ({ page }) => {
-    const input = page
-      .locator('.el-form-item')
-      .filter({ hasText: '关键字' })
-      .getByRole('textbox')
+    const input = page.locator('.account-keyword input')
     await input.fill('test')
     await input.press('Enter')
     await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
   })
 
   test('重置清空关键字', async ({ page }) => {
-    const input = page
-      .locator('.el-form-item')
-      .filter({ hasText: '关键字' })
-      .getByRole('textbox')
+    const input = page.locator('.account-keyword input')
     await input.fill('admin')
     await page.getByRole('button', { name: '搜索' }).click()
     await page.getByRole('button', { name: '重置' }).first().click()

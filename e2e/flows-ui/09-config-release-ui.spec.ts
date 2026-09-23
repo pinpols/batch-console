@@ -12,7 +12,7 @@ test.describe('UI Flow 09: config release lifecycle UI', () => {
     await page.goto('/config/releases')
     await expectPageTitle(page, /发布管理|配置发布/)
     await page.waitForLoadState('networkidle', { timeout: 8000 }).catch(() => undefined)
-    await expect(page.locator('.section-card, .el-table, .el-empty').first()).toBeAttached({ timeout: 10_000 })
+    await expect(page.locator('.cr-timeline, .el-empty').first()).toBeAttached({ timeout: 10_000 })
   })
 
   test('2. 新建按钮 → 抽屉 → 填表 → 关闭(不真提交)', async ({ page }) => {

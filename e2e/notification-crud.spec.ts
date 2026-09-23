@@ -11,9 +11,7 @@ test.describe('notification channel CRUD (通知渠道增删改)', () => {
     await expectPageTitle(page, '通知与投递')
   })
 
-  // 已知 flaky:select dropdown 在 workers=2 并发下偶发不展开 (workers=1 通过);
-  // Phase 1 api-crud.sh 已完整覆盖通知渠道 CREATE/LIST,UI 层闭环留作后续 race 调研。
-  test.skip('新增渠道 → 表格出现 → 编辑 → 删除(flaky,API 层已验证)', async ({ page }) => {
+  test('新增渠道 → 表格出现 → 编辑 → 删除', async ({ page }) => {
     uniqueCode = `e2e_ch_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
     await expect(page.getByRole('tab', { name: '通知渠道' })).toHaveClass(/is-active/)
 
@@ -28,18 +26,16 @@ test.describe('notification channel CRUD (通知渠道增删改)', () => {
     // 填写"类型"下拉(在 dialog 内,避免多个 select 干扰)。用 force 跳过 stability 检测,
     // EP el-select 的 wrapper 在 popper 挂载时会做布局抖动,自动 wait 容易超时。
     const typeSelect = page.locator('.el-dialog:visible, .el-drawer:visible').locator('.el-form-item').filter({ hasText: '类型' }).locator('.el-select').first()
-    if (await isVisible(typeSelect, 2000)) {
-      await typeSelect.click({ force: true })
-      await page.locator('.el-select-dropdown:visible .el-select-dropdown__item').first().click()
-    }
+    await expect(typeSelect).toBeVisible()
+    await typeSelect.click({ force: true })
+    await page
+      .locator('.el-select-dropdown:visible .el-select-dropdown__item', { hasText: 'EMAIL' })
+      .click()
+    await page.getByLabel('配置').fill('{}')
     await page.getByRole('button', { name: '保存' }).click()
-    // 保存可能因缺少必填字段失败，检查对话框是否关闭
     const dialog = page.locator('.el-dialog:visible, .el-drawer:visible').filter({ hasText: '新增渠道' })
-    const cellVisible = await isVisible(page.getByRole('cell', { name: uniqueCode }), 5000)
-    if (!cellVisible) {
-      // 对话框仍开着说明保存失败，跳过后续
-      if (await isVisible(dialog, 1000)) return
-    }
+    await expect(page.locator('.el-message--success').first()).toBeVisible({ timeout: 8000 })
+    await expect(dialog).toBeHidden({ timeout: 6000 })
     await expect(page.getByRole('cell', { name: uniqueCode })).toBeVisible()
 
     // —— 编辑 ——

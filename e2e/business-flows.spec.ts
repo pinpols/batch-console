@@ -15,6 +15,7 @@
  */
 import { expect, test } from './support/app'
 import { enterDemoApp, expectPageTitle, isVisible } from './support/app'
+import { createDraftConfigRelease, createPendingApproval } from './support/test-data'
 
 test.describe('@business-flows D 档 P6 真实业务流程', () => {
   test.beforeEach(async ({ page }) => {
@@ -63,6 +64,7 @@ test.describe('@business-flows D 档 P6 真实业务流程', () => {
   // 2. 审批中心 — 通用审批 approve + reject(2 case)
   // ───────────────────────────────────────────────────────────────
   test('2a. 审批 — 列表加载 + approve 第一条', async ({ page, network }) => {
+    const approvalNo = await createPendingApproval(page.request, 'business-approve')
     await page.goto('/approvals')
     await expectPageTitle(page, '审批中心')
     await page.waitForLoadState('networkidle', { timeout: 8000 }).catch(() => {})
@@ -71,10 +73,13 @@ test.describe('@business-flows D 档 P6 真实业务流程', () => {
     if (await isVisible(tab, 1500)) await tab.click({ force: true })
     await page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => {})
 
-    const row = page.locator('tbody tr.el-table__row').first()
-    if (!(await isVisible(row, 2000))) test.skip(true, '无 PENDING 审批')
+    const keyword = page.getByPlaceholder(/审批单号|申请人/)
+    await keyword.fill(approvalNo)
+    await page.getByRole('button', { name: '搜索' }).click()
+    const row = page.locator('tbody tr.el-table__row').filter({ hasText: approvalNo })
+    await expect(row).toHaveCount(1)
 
-    const approveBtn = row.getByRole('button', { name: /批准|approve/i }).first()
+    const approveBtn = row.getByRole('button', { name: /通过|批准|approve/i }).first()
     if (await isVisible(approveBtn, 1500)) {
       await approveBtn.click({ force: true })
       // 确认对话框 / 备注表单
@@ -88,11 +93,15 @@ test.describe('@business-flows D 档 P6 真实业务流程', () => {
   })
 
   test('2b. 审批 — reject', async ({ page, network }) => {
+    const approvalNo = await createPendingApproval(page.request, 'business-reject')
     await page.goto('/approvals')
     await expectPageTitle(page, '审批中心')
     await page.waitForLoadState('networkidle', { timeout: 8000 }).catch(() => {})
-    const row = page.locator('tbody tr.el-table__row').first()
-    if (!(await isVisible(row, 2000))) test.skip(true, '无 PENDING')
+    const keyword = page.getByPlaceholder(/审批单号|申请人/)
+    await keyword.fill(approvalNo)
+    await page.getByRole('button', { name: '搜索' }).click()
+    const row = page.locator('tbody tr.el-table__row').filter({ hasText: approvalNo })
+    await expect(row).toHaveCount(1)
     const rejectBtn = row.getByRole('button', { name: /拒绝|reject/i }).first()
     if (await isVisible(rejectBtn, 1500)) {
       await rejectBtn.click({ force: true })
@@ -188,40 +197,38 @@ test.describe('@business-flows D 档 P6 真实业务流程', () => {
   })
 
   // ───────────────────────────────────────────────────────────────
-  // 5. Config release — diff / publish
+  // 5. Config release — diff / submit approval
   // ───────────────────────────────────────────────────────────────
-  test('5. Config release — diff / publish 行操作', async ({ page, network }) => {
+  test('5. Config release — diff / submit approval 行操作', async ({ page, network }) => {
+    const release = await createDraftConfigRelease(page.request)
     await page.goto('/config/releases')
     await expectPageTitle(page, '发布管理')
     await page.waitForLoadState('networkidle', { timeout: 8000 }).catch(() => {})
 
-    const row = page.locator('tbody tr.el-table__row').first()
-    if (!(await isVisible(row, 2000))) test.skip(true, '无 release 数据')
+    const keyInput = page.getByPlaceholder(/搜索配置 Key|Search config key/i)
+    await keyInput.fill(release.configKey)
+    await page.getByRole('button', { name: /搜索|Search/ }).click()
+    const card = page.locator('.cr-item').filter({ hasText: release.configKey }).first()
+    await expect(card).toBeVisible({ timeout: 8_000 })
+    await card.locator('.cr-card').click()
 
-    // 试点「差异」
-    const diffBtn = row.getByRole('button', { name: '差异' }).first()
-    if (await isVisible(diffBtn, 1500)) {
-      await diffBtn.click({ force: true })
-      await page.waitForTimeout(800)
-      const panel = page.locator('.el-dialog:visible, .el-drawer:visible').first()
-      if (await isVisible(panel, 1500)) await page.keyboard.press('Escape')
-    }
+    const diffBtn = page.locator('.cr-panel').getByRole('button', { name: /对比|差异|Diff/i })
+    await expect(diffBtn).toBeVisible()
+    await diffBtn.click()
+    const diffPanel = page.locator('.el-dialog:visible, .el-drawer:visible').first()
+    await expect(diffPanel).toBeVisible()
+    await page.keyboard.press('Escape')
 
-    // 「更多」→ 发布
-    const moreBtn = row.getByRole('button', { name: /^更多/ }).first()
-    if (await isVisible(moreBtn, 1500)) {
-      await moreBtn.click({ force: true })
-      const item = page.getByRole('menuitem', { name: /^发布|^全量/ }).first()
-      if (await isVisible(item, 1500)) {
-        await item.click({ force: true })
-        const ok = page.locator('.el-message-box, .el-dialog:visible').getByRole('button', { name: /确定|确认/ }).first()
-        if (await isVisible(ok, 1500)) await ok.click({ force: true })
-        await page.waitForTimeout(800)
-      } else {
-        await page.keyboard.press('Escape')
-      }
-    }
-    network.assertClean('5. config release')
+    const submitBtn = page.locator('.cr-panel').getByRole('button', { name: /提审|提交审批|Submit/i })
+    await expect(submitBtn).toBeVisible()
+    await submitBtn.click()
+    const confirm = page.locator('.el-message-box:visible')
+    await expect(confirm).toBeVisible()
+    const reason = confirm.locator('input,textarea').first()
+    if (await isVisible(reason, 1_000)) await reason.fill('e2e business flow submit')
+    await confirm.getByRole('button', { name: /确定|确认|提交/ }).last().click()
+    await expect(page.locator('.el-message--success')).toBeVisible({ timeout: 8_000 })
+    network.assertClean('5. config release diff and submit')
   })
 
   // ───────────────────────────────────────────────────────────────

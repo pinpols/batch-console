@@ -288,7 +288,7 @@
     channelForm.channelCode = ''
     channelForm.channelName = ''
     channelForm.channelType = ''
-    channelForm.config = ''
+    channelForm.configJson = ''
     channelForm.enabled = true
     channelFormVisible.value = true
     channelDirty.markPristine()
@@ -299,7 +299,8 @@
     channelForm.channelCode = channelEditingCode.value
     channelForm.channelName = String(row.channelName ?? '')
     channelForm.channelType = String(row.channelType ?? '')
-    channelForm.configJson = String(row.configJson ?? row.config ?? '')
+    const config = row.configJson ?? row.config ?? ''
+    channelForm.configJson = typeof config === 'string' ? config : JSON.stringify(config, null, 2)
     channelForm.enabled = !!row.enabled
     channelFormVisible.value = true
     channelDirty.markPristine()

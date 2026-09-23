@@ -34,14 +34,13 @@ test.describe('Job Instance — 筛选查询', () => {
   })
 
   test('状态筛选 → 查询', async ({ page }) => {
-    // 新 UI:状态下拉裁撤,改为 .jr-tab pill tab 行(全部/运行中/成功/失败/已取消),点击即筛选
-    const failedTab = page.locator('.jr-tab').filter({ hasText: '失败' }).first()
+    const failedTab = page.getByRole('radio', { name: /失败/ })
     await failedTab.click()
-    await expect(failedTab).toHaveClass(/is-active/)
+    await expect(failedTab).toHaveAttribute('aria-checked', 'true')
     await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
-    const allTab = page.locator('.jr-tab').filter({ hasText: '全部' }).first()
+    const allTab = page.getByRole('radio', { name: /^全部/ })
     await allTab.click()
-    await expect(allTab).toHaveClass(/is-active/)
+    await expect(allTab).toHaveAttribute('aria-checked', 'true')
   })
 
   test('重置清空筛选', async ({ page }) => {

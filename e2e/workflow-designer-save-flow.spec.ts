@@ -4,7 +4,7 @@
  * 背景:`workflow-designer-smoke.spec.ts` 用原生拖拽建图,Playwright 无法可靠驱动
  *   native HTML5 DnD → 长期 flaky / skip,save/persist 业务逻辑从未端到端验证。
  *
- * 策略:借「现有已合法的 workflow 定义」进设计器(避免新建/模板的 JOB 缺 jobCode 校验坑),
+ * 策略:用 API 建立 e2e 前缀的隔离合法图，再进入设计器，避免修改公共 seed 工作流；
  *   用工具栏「自动布局」(store.moveNode,纯点击) 改动节点坐标 → 图变 dirty 但仍合法,
  *   端到端验证真实业务流:
  *     进入 → 自动布局(改图)→ 保存(graphToDefinition → PUT /full)→ 刷新 → 节点仍在。
@@ -13,14 +13,11 @@
  *     - 全屏设计器「返回列表」按钮存在(B)
  *     - save → getFull 持久化往返(核心业务逻辑)
  *
- * 容忍(非红线 → test.skip,绝不 fail suite):
- *   - BE 未起 / 列表空 / 无「设计器」入口 / 被他人持锁 / 无节点可布局 / 保存未成功
- *
- * 数据:仅改节点坐标后保存(幂等、非破坏性);global-setup 每轮重 seed,teardown prefix=e2e 兜底。
+ * 数据:每次创建独立 e2e 工作流，仅改节点坐标后保存；global-teardown 按 prefix=e2e 清理。
  */
 
 import { test, expect } from './support/app'
-import { enterDemoApp, isVisible } from './support/app'
+import { enterDemoApp } from './support/app'
 
 test.describe('@workflow-designer-save 工作流设计器保存流', () => {
   test.beforeEach(async ({ page }) => {
@@ -28,52 +25,60 @@ test.describe('@workflow-designer-save 工作流设计器保存流', () => {
   })
 
   test('进入 → 自动布局改图 → 保存 → 刷新后节点仍在', async ({ page }) => {
-    await page.goto('/workflow/definitions')
-    const listMounted = await page
-      .locator('.el-table, .empty-state, .table-skeleton')
-      .first()
-      .waitFor({ state: 'attached', timeout: 10_000 })
-      .then(() => true)
-      .catch(() => false)
-    if (!listMounted) {
-      test.skip(true, 'workflow 列表未挂载(BE 未起 / 权限拦截),跳过')
-      return
+    const stamp = Date.now()
+    const startCode = `start_${stamp}`
+    const jobCode = `job_${stamp}`
+    const endCode = `end_${stamp}`
+    const createResponse = await page.request.post('/api/console/workflow-definitions', {
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Tenant-Id': 'ta',
+        'Idempotency-Key': `e2e-wfd-save-create-${stamp}`,
+      },
+      data: {
+        tenantId: 'ta',
+        workflowCode: `e2e_wfd_save_${stamp}`,
+        workflowName: `E2E workflow save ${stamp}`,
+        workflowType: 'DAG',
+        enabled: true,
+        nodes: [
+          { nodeCode: startCode, nodeName: '开始', nodeType: 'START', enabled: true },
+          {
+            nodeCode: jobCode,
+            nodeName: '作业',
+            nodeType: 'JOB',
+            relatedJobCode: `e2e_job_${stamp}`,
+            enabled: true,
+          },
+          { nodeCode: endCode, nodeName: '结束', nodeType: 'END', enabled: true },
+        ],
+        edges: [
+          {
+            fromNodeCode: startCode,
+            toNodeCode: jobCode,
+            edgeType: 'SUCCESS',
+            enabled: true,
+          },
+          {
+            fromNodeCode: jobCode,
+            toNodeCode: endCode,
+            edgeType: 'SUCCESS',
+            enabled: true,
+          },
+        ],
+      },
+    })
+    const createPayload = (await createResponse.json()) as {
+      data?: { id?: number | string }
+      id?: number | string
     }
-
-    const firstRow = page.locator('tbody tr.el-table__row').first()
-    if (!(await isVisible(firstRow, 4000))) {
-      test.skip(true, 'workflow 列表为空(未 seed),跳过')
-      return
-    }
-
-    let openBtn = firstRow.getByRole('button', { name: '设计器' }).first()
-    if (!(await isVisible(openBtn, 1500))) {
-      const moreBtn = firstRow.getByRole('button', { name: /更多|More/i }).first()
-      if (await isVisible(moreBtn, 1000)) {
-        await moreBtn.click()
-        openBtn = page.getByRole('menuitem', { name: '设计器' }).first()
-      }
-    }
-    if (!(await isVisible(openBtn, 2000))) {
-      test.skip(true, '未找到「设计器」入口(RBAC / 行无该 action),跳过')
-      return
-    }
-    await openBtn.click({ force: true })
-    await expect(page).toHaveURL(/\/workflow\/designer\/\d+/, { timeout: 10_000 })
-
-    // 锁是按工作流 ID 持有的。历史实现只清 1..15，在真实自增 ID 下会遗留旧会话的锁，
-    // 让这个写入用例无意义地 skip。导航完成后精确释放当前工作流，再刷新以当前会话重新获取。
-    const workflowId = new URL(page.url()).pathname.match(/\/workflow\/designer\/(\d+)/)?.[1]
-    if (!workflowId) {
-      test.skip(true, '无法从设计器路由解析工作流 ID,跳过保存断言')
-      return
-    }
-    await page.request
-      .delete(`/api/console/workflow-definitions/${workflowId}/lock?tenantId=ta`, {
-        headers: { 'X-Tenant-Id': 'ta', 'Idempotency-Key': `e2e-release-lock-${workflowId}-${Date.now()}` },
-      })
-      .catch(() => undefined)
-    await page.reload()
+    expect(createResponse.ok(), JSON.stringify(createPayload)).toBe(true)
+    const workflowId = Number(createPayload.data?.id ?? createPayload.id)
+    expect(Number.isFinite(workflowId), '创建工作流响应缺少 id').toBe(true)
+    await page.goto(`/workflow/designer/${workflowId}`)
+    await expect(page).toHaveURL(new RegExp(`/workflow/designer/${workflowId}$`), {
+      timeout: 10_000,
+    })
 
     // ── 画布渲染验证(修复后不再崩溃)──
     await expect(page.locator('.node-palette').first()).toBeVisible({ timeout: 12_000 })
@@ -81,51 +86,36 @@ test.describe('@workflow-designer-save 工作流设计器保存流', () => {
     // 全屏设计器返回入口(B)
     await expect(page.getByRole('button', { name: /返回列表/ }).first()).toBeVisible()
 
-    // 锁被他人持有 → 只读 → 写入路径不可达
-    if (await isVisible(page.locator('.workflow-designer__banner--readonly'), 2000)) {
-      test.skip(true, 'workflow 被他人持锁,跳过写入流')
-      return
-    }
+    await expect(page.locator('.workflow-designer__banner--readonly')).toHaveCount(0)
 
-    // 既有 workflow 应已有节点;无则无可保存内容,跳过
-    const initialNodes = await page.locator('.designer-node').count()
-    if (initialNodes === 0) {
-      test.skip(true, '该 workflow 无 vue-shape 节点(可能空图 / 占位类型),跳过保存断言')
-      return
-    }
+    await expect.poll(() => mainCanvasNodeCount(page), { timeout: 12_000 }).toBe(3)
+    const initialNodes = await mainCanvasNodeCount(page)
 
     // ── 自动布局:改节点坐标 → 图 dirty 但仍合法(借既有合法图,绕 JOB-jobCode 校验)──
-    await page.getByRole('button', { name: '自动布局' }).first().click()
+    const autoLayoutBtn = page.getByRole('button', { name: '自动布局' }).first()
+    await expect(autoLayoutBtn).toBeEnabled()
+    await autoLayoutBtn.click()
     await page.waitForTimeout(800)
 
-    // ── 保存(禁用 = 锁丢失 / 只读,跳过)──
     const saveBtn = page.getByRole('button', { name: '保存' }).first()
-    const saveReady = await saveBtn
-      .waitFor({ state: 'visible', timeout: 5_000 })
-      .then(() => saveBtn.isEnabled())
-      .catch(() => false)
-    if (!saveReady) {
-      test.skip(true, '保存按钮禁用(锁丢失 / 只读),跳过')
-      return
-    }
+    await expect(saveBtn).toBeEnabled({ timeout: 5_000 })
     await saveBtn.click({ timeout: 15_000 })
 
-    // 成功 toast;若校验失败弹 drawer(既有图理应合法)→ 视为环境问题跳过
-    const saved = await page
-      .locator('.el-message--success')
-      .first()
-      .waitFor({ state: 'visible', timeout: 8_000 })
-      .then(() => true)
-      .catch(() => false)
-    if (!saved) {
-      test.skip(true, '保存未返回成功(既有图校验未过 / 锁丢失);save 路径已触发但不断言持久化')
-      return
-    }
+    await expect(page.locator('.el-message--success').first()).toBeVisible({ timeout: 8_000 })
 
     // ── 刷新 → getFull 重渲染 → 节点数不变(持久化业务逻辑)──
     await page.reload()
     await expect(page.locator('.dag-canvas').first()).toBeVisible({ timeout: 12_000 })
     await expect(page.locator('.designer-node').first()).toBeVisible({ timeout: 8_000 })
-    expect(await page.locator('.designer-node').count()).toBe(initialNodes)
+    expect(await mainCanvasNodeCount(page)).toBe(initialNodes)
   })
 })
+
+async function mainCanvasNodeCount(page: import('@playwright/test').Page): Promise<number> {
+  return await page.evaluate(
+    () =>
+      Array.from(document.querySelectorAll('.dag-canvas .x6-node')).filter(
+        (node) => !node.closest('.x6-widget-minimap'),
+      ).length,
+  )
+}

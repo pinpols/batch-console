@@ -21,7 +21,7 @@ export const smokeRoutes: RouteCheck[] = [
   { path: '/system/tags', title: '标签管理' },
   // 文件中心
   { path: '/files/list', title: '文件列表' },
-  { path: '/files/templates', title: '文件模板' },
+  { path: '/files/templates', title: '文件配置' },
   { path: '/files/arrival-groups', title: '到达组治理' },
   { path: '/files/pipeline-obs', title: '流水线观测' },
   // 定义与编排

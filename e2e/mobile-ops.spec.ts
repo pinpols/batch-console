@@ -32,9 +32,10 @@ test.describe('mobile-ops · MApprovals', () => {
 
   test('approve 主操作触发 toast', async ({ page }) => {
     await page.goto('/m/approvals', { waitUntil: 'domcontentloaded' })
-    const approveBtn = page.getByRole('button', { name: /批准|approve/i }).first()
+    const approveBtn = page.getByRole('button', { name: /通过|批准|approve/i }).first()
     if (!(await approveBtn.isVisible({ timeout: 5000 }).catch(() => false))) {
-      test.skip(true, '无待审批数据(可能 RBAC 限制或真 BE 空数据)')
+      if (useRealBE) test.skip(true, '无待审批数据(可能 RBAC 限制或真 BE 空数据)')
+      await expect(approveBtn).toBeVisible()
     }
     await approveBtn.click()
     // 处理可能弹出的二次确认 dialog
@@ -76,35 +77,27 @@ test.describe('mobile-ops · MJobInstances', () => {
     }
   })
 
-  test('bulk 选择 → 批量重试', async ({ page }) => {
+  test('失败实例 → 重试操作', async ({ page }) => {
     await page.goto('/m/jobs', { waitUntil: 'domcontentloaded' })
     const cards = page.locator('.m-card')
     const empty = page.locator('.m-empty')
     await expect(cards.first().or(empty.first())).toBeVisible({ timeout: 8000 })
     if (await empty.first().isVisible({ timeout: 500 }).catch(() => false)) {
-      test.skip(true, '租户列表空(real BE 无 instances seed)')
+      if (useRealBE) test.skip(true, '租户列表空(real BE 无 instances seed)')
+      await expect(cards.first()).toBeVisible()
     }
-    const bulkBtn = page.getByRole('button', { name: /批量|bulk/i }).first()
-    if (!(await bulkBtn.isVisible({ timeout: 2000 }).catch(() => false))) {
-      test.skip(true, 'bulk 按钮不可见(列表为空)')
-    }
-    await bulkBtn.click()
-    const checkbox = page.locator('.m-check:not([disabled])').first()
-    if (await checkbox.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await checkbox.click()
-      // 不强制点重试(回 mock toast 即可)
-      const retryBtn = page.getByRole('button', { name: /批量重试|bulk retry|重试/i }).last()
-      if (await retryBtn.isEnabled({ timeout: 1500 }).catch(() => false)) {
-        await retryBtn.click()
-      }
-    }
+    const retryBtn = page.getByRole('button', { name: /重试|retry/i }).first()
+    await expect(retryBtn).toBeVisible({ timeout: 3000 })
+    await retryBtn.click()
+    await expect(page.locator('.el-message')).toBeVisible({ timeout: 6000 })
   })
 
   test('行点击进入详情', async ({ page }) => {
     await page.goto('/m/jobs', { waitUntil: 'domcontentloaded' })
     const card = page.locator('.m-card--clickable').first()
     if (!(await card.isVisible({ timeout: 5000 }).catch(() => false))) {
-      test.skip(true, '无可点击行')
+      if (useRealBE) test.skip(true, '无可点击行')
+      await expect(card).toBeVisible()
     }
     await card.click()
     await expect(page).toHaveURL(/\/m\/jobs\/\d+/, { timeout: 6000 })
@@ -136,7 +129,8 @@ test.describe('mobile-ops · MOutbox', () => {
     await page.goto('/m/outbox', { waitUntil: 'domcontentloaded' })
     const btn = page.getByRole('button', { name: /重新发布|republish|重投/i }).first()
     if (!(await btn.isVisible({ timeout: 5000 }).catch(() => false))) {
-      test.skip(true, '无可重投行(可能 BE 空)')
+      if (useRealBE) test.skip(true, '无可重投行(可能 BE 空)')
+      await expect(btn).toBeVisible()
     }
     await btn.click()
     const confirm = page.getByRole('button', { name: /确定|confirm|ok/i }).last()
