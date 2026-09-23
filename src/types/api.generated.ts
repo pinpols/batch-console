@@ -2485,7 +2485,10 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** Query cross-domain trace snapshot */
+    /**
+     * 查询跨领域 Trace 诊断快照
+     * @description 使用完整业务 traceId 精确匹配，不支持前缀或模糊查询。
+     */
     get: operations['queryTraceSnapshot']
     put?: never
     post?: never
@@ -8410,6 +8413,8 @@ export interface components {
       alerts: components['schemas']['ConsoleAlertEventResponse'][]
       deadLetters: components['schemas']['ConsoleDeadLetterTaskResponse'][]
       timeline: components['schemas']['ConsoleTraceTimelineItem'][]
+      /** @description 因单领域最多返回 200 条而发生截断的响应字段名。 */
+      truncatedDomains: string[]
     }
     ConsoleTraceTimelineItem: {
       source: string
@@ -14980,7 +14985,7 @@ export interface operations {
     }
     requestBody?: never
     responses: {
-      /** @description Cross-domain trace snapshot */
+      /** @description 跨领域 Trace 诊断快照 */
       200: {
         headers: {
           [name: string]: unknown

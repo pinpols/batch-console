@@ -2532,7 +2532,7 @@ export default {
     deleteSuccess: '已禁用 {code}',
   },
   traceDiagnostic: {
-    placeholder: '输入 traceId(32-64 位 16 进制字符)',
+    placeholder: '输入完整 traceId(精确匹配,最多 128 字符)',
     search: '查询',
     reset: '清空',
     hint: '按 traceId 跨域聚合:作业实例 / 工作流运行 / 文件 / 流水线 / 审计 / 操作审计 / 执行日志 / 告警 / Outbox / 死信。0 命中时引导去日志/链路平台。',
@@ -2546,6 +2546,9 @@ export default {
     grafanaDown: '日志平台未启动或不可达:{url}。请先启动观测栈。',
     tempoDown: '链路平台未启动或不可达:{url}。请先启动观测栈。',
     summary: 'traceId 「{trace}」共命中 {hits} 条,跨 {domains} 个域',
+    truncatedWarning: '以下领域结果超过快照上限,当前仅展示前 200 条:{domains}',
+    tempoRequiresW3cTraceId:
+      '链路平台只接受 32 位 W3C Trace ID；当前业务 Trace ID 请到日志平台查询。',
     hitCount: '{n} 条',
     domainErr: '查询失败',
     // 域
@@ -2556,6 +2559,7 @@ export default {
     domainOperationAudit: '操作审计',
     domainExecLog: '执行日志',
     domainWorkflowRun: '工作流运行',
+    domainWorkflowNodeRun: '工作流节点运行',
     domainAlert: '告警',
     domainOutbox: 'Outbox 投递',
     domainDeadLetter: '死信',
@@ -2575,6 +2579,9 @@ export default {
     colAggregateType: '聚合类型',
     colMessage: '消息',
     colWorkflowCode: '工作流编码',
+    colNodeCode: '节点编码',
+    colNodeType: '节点类型',
+    colRetryCount: '重试次数',
     colAlertType: '告警类型',
     colSeverity: '严重级',
     colEventType: '事件类型',
@@ -2593,7 +2600,7 @@ export default {
     traceQuickPlaceholder: '粘 traceId,直跳 Trace 诊断聚合页',
     outboxStatSuccess: '投递成功',
     traceQuickGo: '诊断 Trace',
-    traceQuickHint: '从其它页"复制 traceId"过来粘贴,或直接输入 16-64 位 hex',
+    traceQuickHint: '从其它页复制完整 traceId 后粘贴,诊断页按完整值精确查询',
     // ObservabilityQueryTabs
     tabDeadLetters: 'Dead Letters',
     tabRetries: '重试调度',

@@ -17,6 +17,7 @@ import type {
   ConsoleWorkflowNodeRunResponse,
   ConsoleWorkflowRunResponse,
   ConsoleTraceTimelineItem,
+  ConsoleTraceSnapshotResponse,
   AiAuditLogResponse,
 } from '@/types/console-api'
 
@@ -64,21 +65,7 @@ export interface AiAuditFilters {
   promptCategory?: string
 }
 
-export interface TraceSnapshotResponse {
-  traceId: string
-  jobInstances: ConsoleJobInstanceResponse[]
-  workflowRuns: ConsoleWorkflowRunResponse[]
-  workflowNodeRuns: ConsoleWorkflowNodeRunResponse[]
-  files: ConsoleFileRecordResponse[]
-  filePipelines: ConsoleFilePipelineResponse[]
-  auditLogs: ConsoleAuditLogResponse[]
-  operationAudits: ConsoleOperationAuditResponse[]
-  executionLogs: ConsoleJobExecutionLogResponse[]
-  outboxDeliveries: ConsoleOutboxDeliveryLogResponse[]
-  alerts: ConsoleAlertEventResponse[]
-  deadLetters: ConsoleDeadLetterTaskResponse[]
-  timeline: ConsoleTraceTimelineItem[]
-}
+export type TraceSnapshotResponse = ConsoleTraceSnapshotResponse
 
 export function queryTraceSnapshot(
   tenantId: string,

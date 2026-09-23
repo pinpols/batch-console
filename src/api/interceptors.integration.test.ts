@@ -142,6 +142,32 @@ describe('API 4xx 错误日志:trace / request / response / error 全部保留',
     })
     expect(typeof e.props?.durationMs).toBe('number')
   })
+
+  it('响应体没有 meta 时从响应头读取关联 ID', async () => {
+    const client = makeClient()
+    client.defaults.adapter = async (cfg) => {
+      throw Object.assign(new Error('Request failed with status code 403'), {
+        isAxiosError: true,
+        response: {
+          status: 403,
+          statusText: 'Forbidden',
+          headers: { 'x-trace-id': 'trace-from-header', 'x-request-id': 'req-from-header' },
+          data: { code: 'FORBIDDEN', message: '无权限' },
+          config: cfg,
+        },
+        config: cfg,
+        code: 'ERR_BAD_REQUEST',
+      })
+    }
+
+    await expect(client.get('/api/console/admin-only')).rejects.toThrow()
+
+    const entry = getLogs().find((item) => item.type === 'error')
+    expect(entry?.props).toMatchObject({
+      traceId: 'trace-from-header',
+      requestId: 'req-from-header',
+    })
+  })
 })
 
 describe('401 分级处理:业务 401 不登出', () => {

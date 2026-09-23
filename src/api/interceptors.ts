@@ -311,15 +311,43 @@ function extractHttpErrorMessage(error: unknown): string {
   return ax.message || i18n.global.t('apiError.networkError')
 }
 
-function extractErrorTrace(error: unknown): string | undefined {
+type ErrorCorrelation = {
+  traceId?: string
+  requestId?: string
+}
+
+function readResponseHeader(headers: unknown, name: string): string | undefined {
+  if (!headers || typeof headers !== 'object') return undefined
+  const getter = (headers as { get?: (headerName: string) => unknown }).get
+  const value =
+    typeof getter === 'function'
+      ? getter.call(headers, name)
+      : (headers as Record<string, unknown>)[name.toLowerCase()]
+  if (value == null || String(value).trim() === '') return undefined
+  return String(value)
+}
+
+function extractErrorCorrelation(error: unknown): ErrorCorrelation {
   const ax = error as AxiosError<CommonResponse<unknown> | SpringLikeErrorBody>
   const d = ax.response?.data
   if (d && typeof d === 'object' && 'meta' in d) {
     const meta = (d as CommonResponse<unknown>).meta
-    const t = meta?.traceId || meta?.requestId
-    if (t) return String(t)
+    if (meta?.traceId || meta?.requestId) {
+      return {
+        ...(meta.traceId ? { traceId: String(meta.traceId) } : {}),
+        ...(meta.requestId ? { requestId: String(meta.requestId) } : {}),
+      }
+    }
   }
-  return undefined
+  return {
+    traceId: readResponseHeader(ax.response?.headers, 'x-trace-id'),
+    requestId: readResponseHeader(ax.response?.headers, 'x-request-id'),
+  }
+}
+
+function extractErrorTrace(error: unknown): string | undefined {
+  const correlation = extractErrorCorrelation(error)
+  return correlation.traceId ?? correlation.requestId
 }
 
 /** 从 AxiosError 解析「下一步建议」:优先后端 BizException key,回退 HTTP 状态 / 网络错误。 */
@@ -540,10 +568,7 @@ export function applyApiInterceptors(client: AxiosInstance): void {
         const duration = cfg?._startTime ? Date.now() - cfg._startTime : undefined
         const method = (cfg?.method ?? 'get').toUpperCase()
         const url = cfg?.url ?? ''
-        const meta =
-          raw && typeof raw === 'object' && 'meta' in raw
-            ? (raw as CommonResponse<unknown>).meta
-            : undefined
+        const correlation = extractErrorCorrelation(error)
         const axErr = error as AxiosError & { code?: string }
         logApi(`${method} ${url} → ${status ?? 'ERR'}`, 'error', {
           kind: 'api',
@@ -552,8 +577,8 @@ export function applyApiInterceptors(client: AxiosInstance): void {
           status,
           error: extractHttpErrorMessage(error),
           ...(duration != null ? { durationMs: duration } : {}),
-          ...(meta?.traceId ? { traceId: meta.traceId } : {}),
-          ...(meta?.requestId ? { requestId: meta.requestId } : {}),
+          ...(correlation.traceId ? { traceId: correlation.traceId } : {}),
+          ...(correlation.requestId ? { requestId: correlation.requestId } : {}),
           ...(axErr.code ? { errorCode: axErr.code } : {}),
           ...(cfg?._loggedParams !== undefined ? { params: cfg._loggedParams } : {}),
           ...(cfg?._loggedRequestBody !== undefined ? { request: cfg._loggedRequestBody } : {}),
@@ -644,7 +669,11 @@ export function applyApiInterceptors(client: AxiosInstance): void {
           // 让页面级错误态(ProTable error slot 等读 err.message)显示"请先选择租户"而非吓人的英文。
           const friendly = i18n.global.t('apiError.selectTenantFirst')
           return Promise.reject(
-            Object.assign(error as object, { missingTenant: true, silenced: true, message: friendly }),
+            Object.assign(error as object, {
+              missingTenant: true,
+              silenced: true,
+              message: friendly,
+            }),
           )
         }
       }
