@@ -5,7 +5,7 @@ vi.mock('@/api/client', () => ({
 }))
 
 import { get } from '@/api/client'
-import { getCaptchaConfig, getSelfHostedChallenge } from './captcha'
+import { getCaptchaConfig } from './captcha'
 
 const mockedGet = vi.mocked(get)
 
@@ -28,7 +28,7 @@ describe('captchaApi', () => {
 
   it('lowercases and falls back unknown provider to none', async () => {
     mockedGet.mockResolvedValue({ provider: 'SELFHOSTED', loginProtectionEnabled: true })
-    expect((await getCaptchaConfig()).provider).toBe('selfhosted')
+    expect((await getCaptchaConfig()).provider).toBe('none')
 
     mockedGet.mockResolvedValue({ provider: 'mystery', loginProtectionEnabled: true })
     expect((await getCaptchaConfig()).provider).toBe('none')
@@ -37,15 +37,5 @@ describe('captchaApi', () => {
   it('defaults loginProtectionEnabled to false when missing', async () => {
     mockedGet.mockResolvedValue({ provider: 'none' })
     expect((await getCaptchaConfig()).loginProtectionEnabled).toBe(false)
-  })
-
-  it('coerces challenge gap to a number', async () => {
-    mockedGet.mockResolvedValue({ challengeId: 'abc', gap: '42' })
-    expect(await getSelfHostedChallenge()).toEqual({ challengeId: 'abc', gap: 42 })
-  })
-
-  it('tolerates a missing challengeId', async () => {
-    mockedGet.mockResolvedValue({ gap: 10 })
-    expect(await getSelfHostedChallenge()).toEqual({ challengeId: '', gap: 10 })
   })
 })

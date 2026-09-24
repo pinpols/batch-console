@@ -1,49 +1,6 @@
 <template>
   <div class="captcha-challenge">
-    <!-- selfhosted:滑块拖到缺口 -->
-    <div v-if="provider === 'selfhosted'" class="captcha-selfhosted">
-      <div v-if="selfHostedError" class="captcha-fallback" role="alert">
-        {{ t('captcha.loadFailed') }}
-        <el-button size="small" link type="primary" @click="refreshChallenge">
-          {{ t('captcha.refresh') }}
-        </el-button>
-      </div>
-      <template v-else>
-        <div ref="trackRef" class="captcha-track" :class="{ 'is-passed': passed }">
-          <!-- 缺口标记(目标位置) -->
-          <div class="captcha-gap" :style="{ left: gapPx }" aria-hidden="true" />
-          <div class="captcha-track__hint">
-            {{ passed ? t('captcha.passed') : t('captcha.slideHint') }}
-          </div>
-          <button
-            type="button"
-            class="captcha-handle"
-            :class="{ 'is-passed': passed }"
-            :style="{ left: handlePx }"
-            :aria-label="t('captcha.handleAria')"
-            @mousedown="onDragStart"
-            @touchstart.passive="onDragStart"
-          >
-            <el-icon v-if="passed"><Check /></el-icon>
-            <el-icon v-else><DArrowRight /></el-icon>
-          </button>
-        </div>
-        <div class="captcha-actions">
-          <el-button
-            size="small"
-            link
-            type="primary"
-            :loading="challengeLoading"
-            @click="refreshChallenge"
-          >
-            {{ t('captcha.refresh') }}
-          </el-button>
-        </div>
-      </template>
-    </div>
-
-    <!-- 第三方 provider:动态加载官方 SDK,渲染容器 -->
-    <div v-else class="captcha-thirdparty">
+    <div class="captcha-thirdparty">
       <div v-if="thirdPartyError" class="captcha-fallback" role="alert">
         {{ t('captcha.loadFailed') }}
         <el-button size="small" link type="primary" @click="initThirdParty">
@@ -56,10 +13,8 @@
 </template>
 
 <script setup lang="ts">
-  import { onBeforeUnmount, onMounted, ref } from 'vue'
+  import { onMounted, ref } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { Check, ChevronsRight as DArrowRight } from 'lucide-vue-next'
-  import { getSelfHostedChallenge } from '@/api/captcha'
   import type { CaptchaProvider } from '@/api/captcha'
   import { loadScript } from '@/utils/loadScript'
   import { logError } from '@/utils/logger'
@@ -74,93 +29,6 @@
   }>()
 
   const { t } = useI18n({ useScope: 'global' })
-
-  // ────────────────────────────── selfhosted 滑块
-  const TRACK_WIDTH = 300
-  const HANDLE_WIDTH = 40
-  const MAX_X = TRACK_WIDTH - HANDLE_WIDTH
-
-  const trackRef = ref<HTMLElement>()
-  const challengeId = ref('')
-  const gap = ref(0)
-  const handleX = ref(0)
-  const passed = ref(false)
-  const challengeLoading = ref(false)
-  const selfHostedError = ref(false)
-
-  const handlePx = ref('0px')
-  const gapPx = ref('0px')
-
-  function syncPx() {
-    handlePx.value = `${handleX.value}px`
-    // 缺口中心对齐到 gap(以 handle 宽度居中显示)
-    const clampedGap = Math.max(0, Math.min(gap.value, MAX_X))
-    gapPx.value = `${clampedGap}px`
-  }
-
-  let dragging = false
-  let startPointerX = 0
-  let startHandleX = 0
-
-  function pointerX(e: MouseEvent | TouchEvent): number {
-    if ('touches' in e && e.touches.length) return e.touches[0].clientX
-    if ('changedTouches' in e && e.changedTouches.length) return e.changedTouches[0].clientX
-    return (e as MouseEvent).clientX
-  }
-
-  function onDragStart(e: MouseEvent | TouchEvent) {
-    if (passed.value || selfHostedError.value) return
-    dragging = true
-    startPointerX = pointerX(e)
-    startHandleX = handleX.value
-    window.addEventListener('mousemove', onDragMove)
-    window.addEventListener('mouseup', onDragEnd)
-    window.addEventListener('touchmove', onDragMove, { passive: false })
-    window.addEventListener('touchend', onDragEnd)
-  }
-
-  function onDragMove(e: MouseEvent | TouchEvent) {
-    if (!dragging) return
-    if ('preventDefault' in e && typeof e.preventDefault === 'function') e.preventDefault()
-    const delta = pointerX(e) - startPointerX
-    handleX.value = Math.max(0, Math.min(startHandleX + delta, MAX_X))
-    syncPx()
-  }
-
-  function onDragEnd() {
-    if (!dragging) return
-    dragging = false
-    removeDragListeners()
-    // 用户松手位置即 position(像素 X);emit "challengeId:position"
-    const position = Math.round(handleX.value)
-    passed.value = true
-    emit('token', `${challengeId.value}:${position}`)
-  }
-
-  function removeDragListeners() {
-    window.removeEventListener('mousemove', onDragMove)
-    window.removeEventListener('mouseup', onDragEnd)
-    window.removeEventListener('touchmove', onDragMove)
-    window.removeEventListener('touchend', onDragEnd)
-  }
-
-  async function refreshChallenge() {
-    challengeLoading.value = true
-    selfHostedError.value = false
-    passed.value = false
-    handleX.value = 0
-    try {
-      const c = await getSelfHostedChallenge()
-      challengeId.value = c.challengeId
-      gap.value = c.gap
-      syncPx()
-    } catch (err) {
-      selfHostedError.value = true
-      logError('captcha.selfhosted.challenge_failed', { message: String(err) })
-    } finally {
-      challengeLoading.value = false
-    }
-  }
 
   // ────────────────────────────── 第三方 provider
   const widgetRef = ref<HTMLElement>()
@@ -246,97 +114,15 @@
   }
 
   onMounted(() => {
-    if (props.provider === 'selfhosted') {
-      void refreshChallenge()
-    } else if (props.provider !== 'none') {
+    if (props.provider !== 'none') {
       void initThirdParty()
     }
-  })
-
-  onBeforeUnmount(() => {
-    removeDragListeners()
   })
 </script>
 
 <style scoped>
   .captcha-challenge {
     width: 100%;
-  }
-
-  .captcha-track {
-    position: relative;
-    width: 100%;
-    max-width: 300px;
-    height: 44px;
-    margin: 0 auto;
-    border-radius: var(--radius-content);
-    background: var(--color-bg-subtle);
-    border: 1px solid var(--color-border-light);
-    overflow: hidden;
-    user-select: none;
-  }
-
-  .captcha-track.is-passed {
-    border-color: var(--color-success);
-  }
-
-  .captcha-track__hint {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 13px;
-    color: var(--color-text-tertiary);
-    pointer-events: none;
-  }
-
-  .captcha-track.is-passed .captcha-track__hint {
-    color: var(--color-success);
-  }
-
-  .captcha-gap {
-    position: absolute;
-    top: 50%;
-    width: var(--space-lg);
-    height: var(--space-lg);
-    transform: translateY(-50%);
-    border-radius: var(--space-xs);
-    background: color-mix(in srgb, var(--color-primary) 16%, transparent);
-    border: 1px dashed var(--color-primary);
-  }
-
-  .captcha-handle {
-    position: absolute;
-    top: 0;
-    width: 40px;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-    border: none;
-    border-radius: var(--radius-content);
-    cursor: grab;
-    color: var(--button-primary-text);
-    background: var(--color-primary);
-    box-shadow: 0 2px 8px color-mix(in srgb, var(--color-primary) 30%, transparent);
-    touch-action: none;
-  }
-
-  .captcha-handle:active {
-    cursor: grabbing;
-  }
-
-  .captcha-handle.is-passed {
-    background: var(--color-success);
-    cursor: default;
-  }
-
-  .captcha-actions {
-    display: flex;
-    justify-content: flex-end;
-    margin-top: var(--space-xs);
   }
 
   .captcha-fallback {
