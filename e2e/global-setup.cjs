@@ -22,7 +22,9 @@ const FORCE_SEED = process.env.E2E_FORCE_SEED === '1'
  * Max-Age / Expires 暂不处理(测试场景内不会过期)。
  */
 function parseSetCookieForStorageState(raw, originUrl) {
-  const segments = String(raw).split(';').map((s) => s.trim())
+  const segments = String(raw)
+    .split(';')
+    .map((s) => s.trim())
   const [first, ...attrs] = segments
   const eq = first.indexOf('=')
   const name = first.slice(0, eq).trim()
@@ -47,8 +49,7 @@ function parseSetCookieForStorageState(raw, originUrl) {
     else if (lk === 'secure') cookie.secure = true
     else if (lk === 'samesite') {
       const normalized = v.toLowerCase()
-      cookie.sameSite =
-        normalized === 'strict' ? 'Strict' : normalized === 'none' ? 'None' : 'Lax'
+      cookie.sameSite = normalized === 'strict' ? 'Strict' : normalized === 'none' ? 'None' : 'Lax'
     }
   }
   return cookie
@@ -75,6 +76,171 @@ function buildAuthHeaders(token, cookies) {
     headers.Cookie = cookies.map((c) => `${c.name}=${c.value}`).join('; ')
   }
   return headers
+}
+
+function getSetCookies(response) {
+  return typeof response.headers.getSetCookie === 'function'
+    ? response.headers.getSetCookie()
+    : [response.headers.get('set-cookie')].filter(Boolean)
+}
+
+async function loginRoleAccount(role, baseURL) {
+  for (let attempt = 0; attempt <= RATE_LIMIT_RETRY_DELAYS_MS.length; attempt += 1) {
+    const response = await fetchWithTimeout(`${API_BASE}/api/console/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Tenant-Id': role.tenantId },
+      body: JSON.stringify({ username: role.username, password: role.password }),
+    })
+    if (response.status === 429 && attempt < RATE_LIMIT_RETRY_DELAYS_MS.length) {
+      await sleep(RATE_LIMIT_RETRY_DELAYS_MS[attempt])
+      continue
+    }
+
+    const body = await response.json().catch(() => null)
+    const cookies = response.ok
+      ? getSetCookies(response).map((raw) => parseSetCookieForStorageState(raw, baseURL))
+      : []
+    return { response, body, cookies }
+  }
+  throw new Error(`role login retry exhausted: ${role.username}`)
+}
+
+function roleStorageState(login, role, baseURL) {
+  return {
+    cookies: login.cookies,
+    origins: [
+      {
+        origin: baseURL,
+        localStorage: [
+          { name: 'batch-console-tenant-id', value: role.defaultTenant },
+          { name: 'batch-console-session', value: '1' },
+          { name: 'token', value: login.body?.data?.accessToken ?? '' },
+          { name: 'batch-console:locale', value: 'zh-CN' },
+          { name: 'batch-console-onboarding-done', value: '1' },
+        ],
+      },
+    ],
+  }
+}
+
+async function callAdminUserApi(authHeaders, pathname, init = {}) {
+  const method = init.method ?? 'GET'
+  const response = await fetchWithTimeout(`${API_BASE}${pathname}`, {
+    ...init,
+    headers: {
+      ...authHeaders,
+      'X-Tenant-Id': 'system',
+      ...(method === 'GET' ? {} : { 'Idempotency-Key': idempotencyKey() }),
+      ...(init.body ? { 'Content-Type': 'application/json' } : {}),
+      ...init.headers,
+    },
+  })
+  const body = await response.json().catch(() => null)
+  if (!response.ok) {
+    throw new Error(`${method} ${pathname} failed: HTTP ${response.status} ${JSON.stringify(body)}`)
+  }
+  return body?.data ?? body
+}
+
+async function findRoleAccount(authHeaders, role) {
+  const params = new URLSearchParams({
+    tenantId: role.tenantId,
+    keyword: role.username,
+    pageNo: '1',
+    pageSize: '100',
+  })
+  const page = await callAdminUserApi(authHeaders, `/api/console/users?${params}`)
+  const items = Array.isArray(page) ? page : (page?.items ?? page?.records ?? [])
+  return items.find((item) => item.username === role.username)
+}
+
+async function ensureRoleAccount(authHeaders, role) {
+  let account = await findRoleAccount(authHeaders, role)
+  if (!account) {
+    account = await callAdminUserApi(authHeaders, '/api/console/users', {
+      method: 'POST',
+      body: JSON.stringify({
+        tenantId: role.tenantId,
+        username: role.username,
+        password: role.password,
+        displayName: role.displayName,
+        authoritiesCsv: role.authority,
+      }),
+    })
+    console.log(`[global-setup] role 账号已创建 ${role.username} (${role.authority})`)
+    return account
+  }
+
+  if (account.tenantId !== role.tenantId) {
+    throw new Error(
+      `role account tenant mismatch: ${role.username}, expected=${role.tenantId}, actual=${account.tenantId}`,
+    )
+  }
+  if (account.authoritiesCsv !== role.authority) {
+    account = await callAdminUserApi(authHeaders, `/api/console/users/${account.id}`, {
+      method: 'PUT',
+      body: JSON.stringify({
+        displayName: account.displayName ?? role.displayName,
+        authoritiesCsv: role.authority,
+      }),
+    })
+    console.log(`[global-setup] role 权限已校正 ${role.username} → ${role.authority}`)
+  }
+  if (!account.enabled) {
+    account = await callAdminUserApi(authHeaders, `/api/console/users/${account.id}/enable`, {
+      method: 'POST',
+    })
+    console.log(`[global-setup] role 账号已启用 ${role.username}`)
+  }
+  return account
+}
+
+async function changeRolePassword(login, currentPassword, newPassword) {
+  const response = await fetchWithTimeout(`${API_BASE}/api/console/auth/change-password`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Cookie: login.cookies.map((cookie) => `${cookie.name}=${cookie.value}`).join('; '),
+    },
+    body: JSON.stringify({ currentPassword, newPassword }),
+  })
+  if (!response.ok) {
+    const body = await response.text().catch(() => '')
+    throw new Error(`change password failed: HTTP ${response.status} ${body}`)
+  }
+}
+
+async function prepareRoleLogin(authHeaders, role, baseURL) {
+  const account = await ensureRoleAccount(authHeaders, role)
+  let login = await loginRoleAccount(role, baseURL)
+  const mustChangePassword = login.body?.data?.mustChangePassword === true
+  if (login.response.ok && !mustChangePassword && login.cookies.length > 0) return login
+
+  const temporaryPassword = 'E2eReset@9371'
+  if (login.response.ok && mustChangePassword) {
+    await changeRolePassword(login, role.password, temporaryPassword)
+  } else {
+    await callAdminUserApi(authHeaders, `/api/console/users/${account.id}/reset-password`, {
+      method: 'POST',
+      body: JSON.stringify({ newPassword: temporaryPassword }),
+    })
+  }
+
+  const temporaryLogin = await loginRoleAccount({ ...role, password: temporaryPassword }, baseURL)
+  if (!temporaryLogin.response.ok || temporaryLogin.cookies.length === 0) {
+    throw new Error(
+      `temporary role login failed: ${role.username}, HTTP ${temporaryLogin.response.status}`,
+    )
+  }
+  await changeRolePassword(temporaryLogin, temporaryPassword, role.password)
+  login = await loginRoleAccount(role, baseURL)
+  if (!login.response.ok || login.cookies.length === 0) {
+    throw new Error(
+      `role login failed after repair: ${role.username}, HTTP ${login.response.status}`,
+    )
+  }
+  console.log(`[global-setup] role 密码状态已修复 ${role.username}`)
+  return login
 }
 
 /**
@@ -133,7 +299,9 @@ async function seedTenant(authHeaders, tenantId, filePath) {
   }
 
   if (!FORCE_SEED && (await tenantConfigAlreadyPresent(commonHeaders, tenantId))) {
-    console.log(`[seed] tenant=${tenantId} 已存在作业配置，跳过配置包导入(E2E_FORCE_SEED=1 可强制重刷)`)
+    console.log(
+      `[seed] tenant=${tenantId} 已存在作业配置，跳过配置包导入(E2E_FORCE_SEED=1 可强制重刷)`,
+    )
     return
   }
 
@@ -331,10 +499,7 @@ async function globalSetup(config) {
     const loginJson = await loginRes.json()
     token = loginJson?.data?.accessToken // 可空(2026-05 后 BE 不再回写 body)
     // Node 18+: Headers.getSetCookie() 返回 string[];老节点 fallback 到 raw Set-Cookie
-    const setCookies =
-      typeof loginRes.headers.getSetCookie === 'function'
-        ? loginRes.headers.getSetCookie()
-        : [loginRes.headers.get('set-cookie')].filter(Boolean)
+    const setCookies = getSetCookies(loginRes)
     authCookies = setCookies.map((raw) => parseSetCookieForStorageState(raw, baseURL))
     if (authCookies.length === 0) {
       throw new Error('响应中既无 accessToken 也无 Set-Cookie,登录可能未成功')
@@ -389,56 +554,54 @@ async function globalSetup(config) {
   // scenarios-business / multi-tenant-and-stream / c-plus-coverage / rbac-matrix /
   // flows/_watchdog 都直接读这些文件做 APIRequestContext。
   // 旧版只生成 user.json,role-*.json 的 token 容易过期导致 401。
-  // 这里按已知账号矩阵重新登录刷新。
+  // 这里幂等准备账号并重新登录刷新，避免本地数据库缺账号时静默跳过 RBAC 覆盖。
   // !!! BE 对同一 username 只保留最近一次 login 的 token,后登录的 token 会让之前的失效。
   //     所以 admin 这一项必须复用上面写到 user.json 的同一份 cookies,不能再 login 一次,
   //     否则会反过来把 user.json 的 token 作废,导致全量 e2e 集体 401。
   const ROLE_LOGINS = [
-    { file: 'role-tenantUser.json', username: 'op-tx', password: 'admin123', tenantId: 'tx', defaultTenant: 'tx' },
-    { file: 'role-auditor.json', username: 'auditor', password: 'admin123', tenantId: 'system', defaultTenant: 'ta' },
-    // 2026-05 ADR-032:CONFIG_ADMIN 已合并 ADMIN;改为登录 TENANT_ADMIN(ta 租户管理员)。
-    // tadmin-ta 由 admin 通过 POST /api/console/users 显式创建(密码 Admin@123abc),首次跑前手工种入。
-    { file: 'role-tenantAdmin.json', username: 'tadmin-ta', password: 'Admin@123abc', tenantId: 'ta', defaultTenant: 'ta' },
-    { file: 'role-user.json', username: 'user-tx', password: 'admin123', tenantId: 'tx', defaultTenant: 'tx' },
+    {
+      file: 'role-tenantUser.json',
+      username: 'op-tx',
+      password: 'admin123',
+      tenantId: 'tx',
+      defaultTenant: 'tx',
+      displayName: 'E2E Tenant User',
+      authority: 'ROLE_TENANT_USER',
+    },
+    {
+      file: 'role-auditor.json',
+      username: 'auditor',
+      password: 'admin123',
+      tenantId: 'system',
+      defaultTenant: 'ta',
+      displayName: 'Console Auditor',
+      authority: 'ROLE_AUDITOR',
+    },
+    {
+      file: 'role-tenantAdmin.json',
+      username: 'tadmin-ta',
+      password: 'Admin@123abc',
+      tenantId: 'ta',
+      defaultTenant: 'ta',
+      displayName: 'E2E Tenant Admin',
+      authority: 'ROLE_TENANT_ADMIN',
+    },
+    {
+      file: 'role-user.json',
+      username: 'user-tx',
+      password: 'admin123',
+      tenantId: 'tx',
+      defaultTenant: 'tx',
+      displayName: 'E2E Legacy User',
+      authority: 'ROLE_USER',
+    },
   ]
   // role-admin.json 直接复用 user.json 的 cookies(同 username,避免互踩 session)
   writeFileSync(path.join(authDir, 'role-admin.json'), JSON.stringify(storageState, null, 2))
   for (const role of ROLE_LOGINS) {
-    try {
-      const res = await fetchWithTimeout(`${API_BASE}/api/console/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Tenant-Id': role.tenantId },
-        body: JSON.stringify({ username: role.username, password: role.password }),
-      })
-      if (!res.ok) {
-        console.warn(`[global-setup] role 登录失败 ${role.username}: HTTP ${res.status},跳过 ${role.file}`)
-        continue
-      }
-      const body = await res.json()
-      const setCookies =
-        typeof res.headers.getSetCookie === 'function'
-          ? res.headers.getSetCookie()
-          : [res.headers.get('set-cookie')].filter(Boolean)
-      const cookies = setCookies.map((raw) => parseSetCookieForStorageState(raw, baseURL))
-      const roleState = {
-        cookies,
-        origins: [
-          {
-            origin: baseURL,
-            localStorage: [
-              { name: 'batch-console-tenant-id', value: role.defaultTenant },
-              { name: 'batch-console-session', value: '1' },
-              { name: 'token', value: body?.data?.accessToken ?? '' },
-              { name: 'batch-console:locale', value: 'zh-CN' },
-              { name: 'batch-console-onboarding-done', value: '1' },
-            ],
-          },
-        ],
-      }
-      writeFileSync(path.join(authDir, role.file), JSON.stringify(roleState, null, 2))
-    } catch (err) {
-      console.warn(`[global-setup] role 登录异常 ${role.username}: ${err.message},跳过 ${role.file}`)
-    }
+    const login = await prepareRoleLogin(seedAuthHeaders, role, baseURL)
+    const state = roleStorageState(login, role, baseURL)
+    writeFileSync(path.join(authDir, role.file), JSON.stringify(state, null, 2))
   }
   console.log('[global-setup] role-*.json 已刷新')
 }

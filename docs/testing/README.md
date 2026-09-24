@@ -31,7 +31,7 @@ e2e/
     form-helpers.ts   # 表单:openDialog / submitForm / expectRequiredBlocked / expectMaxLength …
     crud-smoke.ts     # readOnlyPageSmoke(只读页一键冒烟)
     error-injection.ts# injectError / runErrorMatrix(注入 4xx/5xx/超时 验错误态)
-  global-setup.cjs    # 每轮跑:登录刷新 storageState + seed 数据到 ta/tb/tc
+  global-setup.cjs    # 每轮跑:登录、幂等准备 5 角色账号、刷新 storageState、seed ta/tb/tc
   global-teardown.cjs # 按 prefix=e2e 清测试脏数据
   .auth/              # storageState(user.json + role-*.json),global-setup 写入
   *.spec.ts           # 顶层 spec
@@ -77,7 +77,7 @@ scripts/
 ## 4. 测试案例模板(复制即用)
 
 > 所有 e2e 一律 `import { test, expect } from './support/app'`(拿到带 watchdog 的 fixture)。
-> **容忍策略**:环境不满足(BE 未起 / 数据未 seed / 锁冲突 / RBAC)用 `test.skip(true, '原因')` —— **跳过不 fail**,别让环境问题红 suite。
+> **容忍策略**:仅依赖可选业务数据的场景允许用 `test.skip(true, '原因')`;BE 未启动、登录失败、RBAC 账号准备失败属于联测基础设施错误,必须 fail,不得用 skip 掩盖覆盖缺口。
 
 ### 4.1 只读页冒烟
 ```ts
@@ -127,7 +127,7 @@ await expect(page.locator('.error-state, .el-result')).toBeVisible()  // 有错�
 ```
 
 ### 4.5 RBAC(角色可见性)
-用 `e2e/.auth/role-*.json`(global-setup 生成 admin/tenantAdmin/auditor/tenantUser/user 五种)切换 storageState;参考 `e2e/rbac-matrix.spec.ts` / `rbac-denial.spec.ts`。
+用 `e2e/.auth/role-*.json` 切换 storageState;global-setup 会幂等查找或创建 admin/tenantAdmin/auditor/tenantUser/user 五类账号,校正角色与启用状态,必要时完成重置密码和首次改密。角色准备失败会终止 suite,RBAC 矩阵不得条件跳过。参考 `e2e/rbac-matrix.spec.ts` / `rbac-denial.spec.ts`。
 
 ### 4.6 跨页业务流
 - API 序列:`e2e/flows/*.spec.ts`(如 `09-config-release-lifecycle`、`10-tenant-copy`)。
@@ -204,7 +204,7 @@ bash scripts/local/fe-acceptance.sh --skip-e2e-full
 
 | 症状 | 根因 | 处理 |
 |---|---|---|
-| e2e 全部 `test.skip` / 报「storageState token is expired」 | **登录态 token 过期**;只在**脱离 global-setup 直跑**(如手写 `chromium.launch + storageState` 的一次性脚本)时出现 | **必须走 `npx playwright test` / `npm run test:e2e`** —— 它每次自动重跑 global-setup 刷新 `e2e/.auth/*.json`;**别用独立脚本直接吃陈旧 storageState**;确认 BE 在 18080 且 admin/admin123 可登录 |
+| e2e 报「storageState token is expired」或角色账号准备失败 | 登录态过期,或脱离 global-setup 直跑(如手写 `chromium.launch + storageState` 的一次性脚本) | **必须走 `npx playwright test` / `npm run test:e2e`** —— 它每次自动准备角色账号并刷新 `e2e/.auth/*.json`;**别用独立脚本直接吃陈旧 storageState**;确认 BE 在 18080 且 admin/admin123 可登录 |
 | `toHaveURL` 断言失败但页面其实正常(如 `/scheduler/catch-up-approvals`) | 该路径是**别名,会重定向**(→ `/approvals?tab=catch-up`) | URL 断言写成接受重定向:`toHaveURL(/\/(scheduler\/catch-up-approvals\|approvals)/)` |
 | tab 切换后 `LIST_OR_EMPTY.first()` 报 `Received: hidden` | 多 tab pane 下 `.first()` 命中**隐藏的非激活 pane**(`display:none`) | 切 tab 后改断 `tab` 的 `aria-selected='true'`,别断隐藏 pane 的表(见 §4.8) |
 | 设计器 e2e 进去撞「只读 banner」被 skip | **设计锁按会话持有,跨运行不自动释放** | `beforeEach` 主动 DELETE 锁(见 §4.7) |
