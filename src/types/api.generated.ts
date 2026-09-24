@@ -65,6 +65,29 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/console/captcha/challenge': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Deprecated self-hosted slider CAPTCHA challenge
+     * @deprecated
+     * @description Deprecated compatibility route. Challenge issuance is disabled; supported providers return 404.
+     *     The insecure self-hosted provider is rejected during application startup.
+     *
+     */
+    get: operations['issueConsoleCaptchaChallenge']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/console/auth/token': {
     parameters: {
       query?: never
@@ -11286,6 +11309,33 @@ export interface operations {
         content: {
           'application/json': components['schemas']['CommonResponseConsoleCaptchaConfig']
         }
+      }
+    }
+  }
+  issueConsoleCaptchaChallenge: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Legacy response shape; no longer issued by supported providers */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseMapStringObject']
+        }
+      }
+      /** @description Challenge issuance is disabled */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
       }
     }
   }
