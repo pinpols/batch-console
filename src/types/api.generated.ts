@@ -73,9 +73,10 @@ export interface paths {
       cookie?: never
     }
     /**
-     * Issue a self-hosted slider captcha challenge (pre-login)
-     * @description Self-hosted provider only: issues a single-use slider challenge {challengeId, gap}.
-     *     Returns 404 for any other provider (third-party providers handle challenges via their own SDK).
+     * Deprecated self-hosted slider CAPTCHA challenge
+     * @deprecated
+     * @description Deprecated compatibility route. Challenge issuance is disabled; supported providers return 404.
+     *     The insecure self-hosted provider is rejected during application startup.
      *
      */
     get: operations['issueConsoleCaptchaChallenge']
@@ -8636,7 +8637,7 @@ export interface components {
     ConsoleLoginRequest: {
       username: string
       password: string
-      /** @description Optional risk-based captcha credential. Required only after the account/IP failure count crosses the threshold (login-protection enabled). Non-secret; always sent as a top-level plaintext field even on the encrypted login path. Format depends on the provider (self-hosted: "challengeId:position"; third-party: its ticket/randstr).
+      /** @description Optional risk-based captcha credential. Required only after the account/IP failure count crosses the threshold (login-protection enabled). Non-secret; always sent as a top-level plaintext field even on the encrypted login path. Format depends on the provider-specific token returned by the configured third-party CAPTCHA service.
        *      */
       captchaToken?: string | null
     }
@@ -11320,7 +11321,7 @@ export interface operations {
     }
     requestBody?: never
     responses: {
-      /** @description Slider challenge */
+      /** @description Legacy response shape; no longer issued by supported providers */
       200: {
         headers: {
           [name: string]: unknown
@@ -11329,7 +11330,7 @@ export interface operations {
           'application/json': components['schemas']['CommonResponseMapStringObject']
         }
       }
-      /** @description Captcha challenge is not available for the current provider */
+      /** @description Challenge issuance is disabled */
       404: {
         headers: {
           [name: string]: unknown
