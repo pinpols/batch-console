@@ -112,7 +112,11 @@ export function useOpsSummary() {
             color: '#52c41a',
             area: true,
           },
-          { name: t('opsSummary.legendSlaViolation'), data: bundle.sla.series.violation, color: '#ff4d4f' },
+          {
+            name: t('opsSummary.legendSlaViolation'),
+            data: bundle.sla.series.violation,
+            color: '#ff4d4f',
+          },
         ],
       })
 
@@ -129,7 +133,12 @@ export function useOpsSummary() {
           : buildLineOption({
               x: bundle.jobs.labels,
               series: [
-                { name: t('opsSummary.legendFailRate'), data: failRateSeries, color: '#ff7a45', area: true },
+                {
+                  name: t('opsSummary.legendFailRate'),
+                  data: failRateSeries,
+                  color: '#ff7a45',
+                  area: true,
+                },
               ],
               yAxisName: '%',
             })
@@ -169,7 +178,7 @@ export function useOpsSummary() {
           : buildPieOption({
               items: [
                 { name: t('opsSummary.legendOnline'), value: online, color: '#52c41a' },
-                { name: 'Draining', value: draining, color: '#faad14' },
+                { name: t('opsSummary.legendDraining'), value: draining, color: '#faad14' },
                 { name: t('opsSummary.legendOffline'), value: offline, color: '#8c8c8c' },
               ],
               innerRadius: '40%',
@@ -183,7 +192,7 @@ export function useOpsSummary() {
           ? emptyOption(t('opsSummary.noActiveAlerts'))
           : buildPieOption({
               items: [
-                { name: 'Critical', value: critical, color: '#ff4d4f' },
+                { name: t('opsSummary.legendCritical'), value: critical, color: '#ff4d4f' },
                 { name: t('opsSummary.legendOtherOpen'), value: otherOpen, color: '#faad14' },
               ],
               innerRadius: '40%',

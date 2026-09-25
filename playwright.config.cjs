@@ -6,10 +6,16 @@ const baseURL = process.env.E2E_BASE_URL || 'http://localhost:5173'
 module.exports = defineConfig({
   testDir: './e2e',
   // 每次运行前刷新 token + 上传 seed 到 ta/tb/tc（非 CI 也执行，避免 storageState 过期）
-  globalSetup: require.resolve('./e2e/global-setup.cjs'),
+  globalSetup:
+    process.env.E2E_SKIP_GLOBAL_SETUP === '1'
+      ? undefined
+      : require.resolve('./e2e/global-setup.cjs'),
   // 跑完后调 admin 清理端点删 e2e-* 残留(集中清理,所有 spec 不用各自补 afterAll)。
   // BC_E2E_SKIP_TEARDOWN=1 可临时关(调试用,留现场分析)。
-  globalTeardown: require.resolve('./e2e/global-teardown.cjs'),
+  globalTeardown:
+    process.env.E2E_SKIP_GLOBAL_SETUP === '1'
+      ? undefined
+      : require.resolve('./e2e/global-teardown.cjs'),
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   // 本地 4-worker 并发对 dev server 压力大,单次 flake 概率不可忽略;给 1 次重试兜底偶发(真 bug 仍然必然失败)

@@ -94,6 +94,33 @@ describe('useDesignerStore', () => {
     expect(s.dirty).toBe(true)
   })
 
+  it('undo restores an edited node to the clean baseline', () => {
+    const s = useDesignerStore()
+    s.reset({
+      nodes: [
+        {
+          id: 'job-1',
+          nodeCode: 'job-1',
+          nodeName: 'Original name',
+          nodeType: 'JOB',
+          x: 10,
+          y: 20,
+          attrs: { jobCode: 'job-a' },
+        },
+      ],
+      edges: [],
+    })
+
+    s.updateNode('job-1', { nodeName: 'Edited name' })
+    expect(s.nodes[0].nodeName).toBe('Edited name')
+    expect(s.dirty).toBe(true)
+
+    s.undo()
+    expect(s.nodes[0].nodeName).toBe('Original name')
+    expect(s.dirty).toBe(false)
+    expect(s.canRedo).toBe(true)
+  })
+
   // P2:套模板 = reset(新内容) 后必须标脏(reset 会把 dirty 置 false)
   it('reset clears dirty but markDirty restores it (template-apply contract)', () => {
     const s = useDesignerStore()
@@ -123,5 +150,8 @@ describe('useDesignerStore', () => {
     s.undo()
     expect(s.nodes[0].x).toBe(10)
     expect(s.nodes[0].y).toBe(20)
+    expect(s.dirty).toBe(false)
+    s.redo()
+    expect(s.dirty).toBe(true)
   })
 })

@@ -10,6 +10,7 @@
       @row-click="openDetail"
       :error="loadError"
       :on-retry="load"
+      :has-active-filters="hasActiveFilters"
       class="catch-up-table"
     >
       <template #query>
@@ -42,6 +43,18 @@
             />
           </el-form-item>
         </ListPageQueryBar>
+      </template>
+      <template #empty>
+        <EmptyState
+          variant="tenant-empty"
+          :title="t('approvals.catchUpEmptyTitle')"
+          :description="t('approvals.catchUpEmptyDescription')"
+          :image-size="64"
+        >
+          <template #action>
+            <el-button type="primary" plain @click="load">{{ t('common.refresh') }}</el-button>
+          </template>
+        </EmptyState>
       </template>
       <el-table-column prop="requestId" :label="t('approvals.catchUpColRequestId')" min-width="180">
         <template #default="{ row }">
@@ -116,7 +129,7 @@
 </template>
 
 <script setup lang="ts">
-  import { ref } from 'vue'
+  import { computed, ref } from 'vue'
   import { useI18n } from 'vue-i18n'
 
   const { t } = useI18n({ useScope: 'global' })
@@ -130,6 +143,7 @@
   import StatusTag from '@/components/common/StatusTag.vue'
   import DetailDrawer from '@/components/common/DetailDrawer.vue'
   import CopyableText from '@/components/common/CopyableText.vue'
+  import EmptyState from '@/components/common/EmptyState.vue'
   import DatetimeColumn from '@/components/common/DatetimeColumn.vue'
   import { fmtDatetime } from '@/utils/datetime'
 
@@ -154,6 +168,7 @@
   // applied:实际生效的筛选(传后端),与 draft 解耦,翻页时不受未点搜索的 draft 影响
   const kwApplied = ref('')
   const bizDateApplied = ref('')
+  const hasActiveFilters = computed(() => !!(kwApplied.value || bizDateApplied.value))
 
   // 服务端分页 + 服务端筛选(bizDate 精确 / keyword 跨 requestId·jobCode·traceId 模糊)。
   // catch-up 列表后端恒为 ACCEPTED 状态,故无 status 维度。

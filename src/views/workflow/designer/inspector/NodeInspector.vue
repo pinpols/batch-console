@@ -9,6 +9,7 @@
    */
   import { computed } from 'vue'
   import { useI18n } from 'vue-i18n'
+  import { X } from 'lucide-vue-next'
   import { useDesignerStore } from '../store/useDesignerStore'
   import StartNodeForm from './StartNodeForm.vue'
   import EndNodeForm from './EndNodeForm.vue'
@@ -17,9 +18,11 @@
   import GatewayNodeForm from './GatewayNodeForm.vue'
   import ApprovalNodeForm from './ApprovalNodeForm.vue'
   import EdgeInspector from './EdgeInspector.vue'
+  import { edgeTypeOf } from '../canvas/edgePresentation'
 
   const { t } = useI18n()
   const store = useDesignerStore()
+  const emit = defineEmits<{ (e: 'close'): void }>()
 
   const selectedNode = computed(() => {
     const ids = Array.from(store.selectedIds)
@@ -34,16 +37,61 @@
   })
 
   const readonly = computed(() => !store.editable)
+
+  const selectedEdgeId = computed(() => selectedEdge.value?.id ?? '')
+
+  function nodeLabel(nodeId: string): string {
+    const node = store.nodes.find((item) => item.id === nodeId)
+    if (!node) return nodeId
+    return node.nodeName === node.nodeCode ? node.nodeCode : `${node.nodeName} (${node.nodeCode})`
+  }
+
+  function edgeOptionLabel(edge: (typeof store.edges)[number]): string {
+    const type = edgeTypeOf(edge)
+    return `${nodeLabel(edge.source)} → ${nodeLabel(edge.target)} · ${t(`enum.edgeType.${type}`)}`
+  }
+
+  function selectEdge(edgeId: string) {
+    store.setSelection(edgeId ? [edgeId] : [])
+  }
 </script>
 
 <template>
   <aside class="node-inspector" :aria-label="t('workflowDesignerMvp.inspectorAriaLabel')">
     <div class="node-inspector__header">
       <span class="node-inspector__title">{{ t('workflowDesignerMvp.inspectorTitle') }}</span>
-      <el-tag v-if="readonly" type="info" size="small">
-        {{ t('workflowDesignerMvp.readonlyTag') }}
-      </el-tag>
+      <div class="node-inspector__header-actions">
+        <el-tag v-if="readonly" type="info" size="small">
+          {{ t('workflowDesignerMvp.readonlyTag') }}
+        </el-tag>
+        <el-button
+          text
+          circle
+          size="small"
+          :icon="X"
+          :title="t('workflowDesignerMvp.layout.closeInspector')"
+          :aria-label="t('workflowDesignerMvp.layout.closeInspector')"
+          @click="emit('close')"
+        />
+      </div>
     </div>
+    <el-select
+      v-if="store.edges.length > 0"
+      class="node-inspector__dependency-picker"
+      :model-value="selectedEdgeId"
+      :placeholder="t('workflowDesignerMvp.dependencyPickerPlaceholder')"
+      :aria-label="t('workflowDesignerMvp.dependencyPickerAria')"
+      filterable
+      clearable
+      @change="selectEdge(String($event ?? ''))"
+    >
+      <el-option
+        v-for="edge in store.edges"
+        :key="edge.id"
+        :label="edgeOptionLabel(edge)"
+        :value="edge.id"
+      />
+    </el-select>
     <div v-if="!selectedNode && !selectedEdge" class="node-inspector__empty">
       {{
         Array.from(store.selectedIds).length > 1
@@ -115,11 +163,19 @@
     font-weight: 650;
     color: var(--color-text-primary, #303133);
   }
+  .node-inspector__header-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
   .node-inspector__empty {
     font-size: 12px;
     color: var(--color-text-secondary, #909399);
     text-align: center;
     padding: 32px 8px;
     line-height: 1.6;
+  }
+  .node-inspector__dependency-picker {
+    width: 100%;
   }
 </style>

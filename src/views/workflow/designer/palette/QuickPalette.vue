@@ -16,6 +16,7 @@
   import { useJobCodeOptions } from '@/composables/useJobCodeOptions'
   import { usePipelineCodeOptions } from '@/composables/usePipelineCodeOptions'
   import type { DesignerNodeType } from '../types'
+  import { findVacantNodePosition } from '../canvas/nodePlacement'
 
   const props = defineProps<{
     visible: boolean
@@ -114,12 +115,17 @@
     const attrs: Record<string, unknown> = {}
     if (row.nodeType === 'JOB' && row.related) attrs.jobCode = row.related
     if (row.nodeType === 'FILE_STEP' && row.related) attrs.pipelineCode = row.related
+    const position = findVacantNodePosition(
+      row.nodeType,
+      { x: props.centerX, y: props.centerY },
+      store.nodes,
+    )
     store.addNode({
       nodeCode: code,
       nodeName: row.display,
       nodeType: row.nodeType,
-      x: props.centerX,
-      y: props.centerY,
+      x: position.x,
+      y: position.y,
       attrs,
     })
     emit('created', code)

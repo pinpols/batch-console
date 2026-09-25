@@ -37,7 +37,7 @@ test.describe('@workflow-designer-save 工作流设计器保存流', () => {
       },
       data: {
         tenantId: 'ta',
-        workflowCode: `e2e_wfd_save_${stamp}`,
+        workflowCode: `e2e-wfd-save-${stamp}`,
         workflowName: `E2E workflow save ${stamp}`,
         workflowType: 'DAG',
         enabled: true,
@@ -91,11 +91,58 @@ test.describe('@workflow-designer-save 工作流设计器保存流', () => {
     await expect.poll(() => mainCanvasNodeCount(page), { timeout: 12_000 }).toBe(3)
     const initialNodes = await mainCanvasNodeCount(page)
 
+    // ── 属性编辑 + 撤销:画布、表单和 dirty 状态必须同步恢复 ──
+    await page.locator(`.dag-canvas .x6-node[data-cell-id="${jobCode}"]`).first().click()
+    const nodeNameInput = page.getByRole('textbox', { name: '节点名称' }).first()
+    await expect(nodeNameInput).toHaveValue('作业')
+    await nodeNameInput.fill('作业-验收修改')
+    await nodeNameInput.blur()
+    await expect(page.getByText('未保存', { exact: true })).toBeVisible()
+    await page.getByRole('button', { name: '撤销' }).first().click()
+    await expect(nodeNameInput).toHaveValue('作业')
+    await expect(page.getByText('未保存', { exact: true })).toHaveCount(0)
+
     // ── 自动布局:改节点坐标 → 图 dirty 但仍合法(借既有合法图,绕 JOB-jobCode 校验)──
     const autoLayoutBtn = page.getByRole('button', { name: '自动布局' }).first()
     await expect(autoLayoutBtn).toBeEnabled()
     await autoLayoutBtn.click()
     await page.waitForTimeout(800)
+    await expectNodesInsideCanvas(page)
+    await expectEdgesRendered(page, 2)
+
+    const undoBtn = page.getByRole('button', { name: '撤销' }).first()
+    const redoBtn = page.getByRole('button', { name: '重做' }).first()
+    await undoBtn.click()
+    await expect(page.getByText('未保存', { exact: true })).toHaveCount(0)
+    await expectNodesInsideCanvas(page)
+    await expectEdgesRendered(page, 2)
+    await redoBtn.click()
+    await expect(page.getByText('未保存', { exact: true })).toBeVisible()
+    await expectNodesInsideCanvas(page)
+    await expectEdgesRendered(page, 2)
+
+    // ── 连线语义:依赖方向可读,CONDITION 表达式可编辑并参与保存 ──
+    const firstEdgeId = `e_${startCode}_${jobCode}_0`
+    if ((await page.locator('.node-inspector').count()) === 0) {
+      await page.getByRole('button', { name: '打开属性面板' }).click()
+    }
+    await page.getByRole('combobox', { name: '依赖连线选择器' }).click()
+    await page.getByRole('option', { name: new RegExp(`${startCode}.*${jobCode}.*成功`) }).click()
+    const inspectorInputs = page.locator('.edge-inspector input[readonly]')
+    await expect(inspectorInputs.nth(0)).toHaveValue(`开始 (${startCode})`)
+    await expect(inspectorInputs.nth(1)).toHaveValue(`作业 (${jobCode})`)
+
+    await page.locator('.edge-inspector .el-select').first().click()
+    await page.getByRole('option', { name: /条件.*CONDITION/ }).click()
+    const conditionExpr = page.locator('.node-inspector textarea').first()
+    await expect(conditionExpr).toBeVisible()
+    await expect(page.getByText(/必须配置表达式/)).toBeVisible()
+    await conditionExpr.fill('amount > 1000')
+    await conditionExpr.blur()
+    await expect(page.getByText(/必须配置表达式/)).toHaveCount(0)
+    await expect(
+      page.locator('.dag-canvas__graph .x6-edge-label').filter({ hasText: 'CONDITION' }),
+    ).toBeVisible()
 
     const saveBtn = page.getByRole('button', { name: '保存' }).first()
     await expect(saveBtn).toBeEnabled({ timeout: 5_000 })
@@ -108,6 +155,38 @@ test.describe('@workflow-designer-save 工作流设计器保存流', () => {
     await expect(page.locator('.dag-canvas').first()).toBeVisible({ timeout: 12_000 })
     await expect(page.locator('.designer-node').first()).toBeVisible({ timeout: 8_000 })
     expect(await mainCanvasNodeCount(page)).toBe(initialNodes)
+
+    await expect(
+      page.locator(`.dag-canvas__graph .x6-edge[data-cell-id="${firstEdgeId}"] .x6-edge-label`),
+    ).toContainText('CONDITION · amount > 1000')
+
+    await page.getByRole('button', { name: '打开属性面板' }).click()
+    await page.getByRole('combobox', { name: '依赖连线选择器' }).click()
+    await page.getByRole('option', { name: new RegExp(`${startCode}.*${jobCode}.*条件`) }).click()
+    await expect(page.locator('.edge-inspector .el-select').first()).toContainText('CONDITION')
+    await expect(page.locator('.edge-inspector textarea').first()).toHaveValue('amount > 1000')
+
+    const persistedResponse = await page.request.get(
+      `/api/console/workflow-definitions/${workflowId}?tenantId=ta`,
+      { headers: { 'X-Tenant-Id': 'ta' } },
+    )
+    const persistedPayload = (await persistedResponse.json()) as {
+      data?: { edges?: Array<Record<string, unknown>> }
+      edges?: Array<Record<string, unknown>>
+    }
+    expect(persistedResponse.ok(), JSON.stringify(persistedPayload)).toBe(true)
+    const persistedEdges = persistedPayload.data?.edges ?? persistedPayload.edges ?? []
+    expect(persistedEdges).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          fromNodeCode: startCode,
+          toNodeCode: jobCode,
+          edgeType: 'CONDITION',
+          conditionExpr: 'amount > 1000',
+          enabled: true,
+        }),
+      ]),
+    )
   })
 })
 
@@ -118,4 +197,52 @@ async function mainCanvasNodeCount(page: import('@playwright/test').Page): Promi
         (node) => !node.closest('.x6-widget-minimap'),
       ).length,
   )
+}
+
+async function expectNodesInsideCanvas(page: import('@playwright/test').Page) {
+  const result = await page.evaluate(() => {
+    const canvas = document.querySelector('.dag-canvas__graph')?.getBoundingClientRect()
+    const nodes = Array.from(document.querySelectorAll('.dag-canvas__graph .x6-node'))
+      .filter((node) => !node.closest('.x6-widget-minimap'))
+      .map((node) => node.getBoundingClientRect())
+    if (!canvas) return { canvas: false, outside: nodes.length }
+    const tolerance = 2
+    const outside = nodes.filter(
+      (node) =>
+        node.left < canvas.left - tolerance ||
+        node.top < canvas.top - tolerance ||
+        node.right > canvas.right + tolerance ||
+        node.bottom > canvas.bottom + tolerance,
+    ).length
+    return { canvas: true, outside }
+  })
+  expect(result.canvas, '工作流画布不存在').toBe(true)
+  expect(result.outside, '自动布局后仍有节点被画布裁切').toBe(0)
+}
+
+async function expectEdgesRendered(page: import('@playwright/test').Page, expected: number) {
+  const rendered = await page.evaluate(() => {
+    const canvas = document.querySelector('.dag-canvas__graph')?.getBoundingClientRect()
+    if (!canvas) return 0
+    return Array.from(document.querySelectorAll('.dag-canvas__graph .x6-edge')).filter((edge) => {
+      if (edge.closest('.x6-widget-minimap')) return false
+      return Array.from(edge.querySelectorAll('path')).some((path) => {
+        const style = window.getComputedStyle(path)
+        const length = typeof path.getTotalLength === 'function' ? path.getTotalLength() : 0
+        const bounds = path.getBoundingClientRect()
+        const intersectsCanvas =
+          bounds.right >= canvas.left &&
+          bounds.left <= canvas.right &&
+          bounds.bottom >= canvas.top &&
+          bounds.top <= canvas.bottom
+        return (
+          style.stroke !== 'none' &&
+          style.stroke !== 'transparent' &&
+          length > 0 &&
+          intersectsCanvas
+        )
+      })
+    }).length
+  })
+  expect(rendered, '自动布局后连线没有实际渲染').toBe(expected)
 }

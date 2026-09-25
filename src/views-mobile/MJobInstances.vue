@@ -75,31 +75,34 @@
             {{ resolveEnumLabel('instanceStatus', row.instanceStatus) }}
           </span>
         </div>
-        <div class="m-card__sub">
+        <div class="m-card__sub m-job-card__instance">
+          <span class="m-job-card__instance-label">{{ t('mobile.jobs.instanceNo') }}</span>
           <span class="m-copy-text" @click.stop="copy(row.instanceNo, 'instanceNo')">{{
             row.instanceNo
           }}</span>
         </div>
-        <div class="m-card__meta">
-          <div>
-            <span class="m-card__meta-key">{{ t('mobile.jobs.bizDate') }}</span
-            >{{ row.bizDate }}
+        <div class="m-card__meta m-job-card__meta">
+          <div class="m-job-card__meta-item">
+            <span class="m-card__meta-key">{{ t('mobile.jobs.bizDate') }}</span>
+            <span class="m-job-card__meta-value">{{ row.bizDate }}</span>
           </div>
-          <div>
+          <div class="m-job-card__meta-item">
             <span class="m-card__meta-key">{{ t('mobile.jobs.trigger') }}</span>
-            {{ resolveEnumLabel('triggerType', row.triggerType) }}
+            <span class="m-job-card__meta-value">{{
+              resolveEnumLabel('triggerType', row.triggerType)
+            }}</span>
           </div>
-          <div>
-            <span class="m-card__meta-key">{{ t('mobile.jobs.priority') }}</span
-            >{{ row.priority }}
+          <div class="m-job-card__meta-item">
+            <span class="m-card__meta-key">{{ t('mobile.jobs.priority') }}</span>
+            <span class="m-job-card__meta-value">{{ row.priority }}</span>
           </div>
-          <div>
+          <div class="m-job-card__meta-item m-job-card__meta-item--wide">
             <span class="m-card__meta-key">{{ t('mobile.jobs.startedAt') }}</span>
-            {{ fmt(row.startedAt) }}
+            <span class="m-job-card__meta-value">{{ fmt(row.startedAt) }}</span>
           </div>
-          <div v-if="row.finishedAt">
+          <div v-if="row.finishedAt" class="m-job-card__meta-item m-job-card__meta-item--wide">
             <span class="m-card__meta-key">{{ t('mobile.jobs.finishedAt') }}</span>
-            {{ fmt(row.finishedAt) }}
+            <span class="m-job-card__meta-value">{{ fmt(row.finishedAt) }}</span>
           </div>
         </div>
         <div
@@ -370,6 +373,55 @@
 </script>
 
 <style scoped>
+  .m-job-card__instance {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    min-width: 0;
+  }
+
+  .m-job-card__instance-label {
+    flex-shrink: 0;
+    color: var(--ios-label-tertiary);
+    font-size: 12px;
+  }
+
+  .m-job-card__instance .m-copy-text {
+    min-width: 0;
+    overflow: hidden;
+    color: var(--ios-blue);
+    font-family: var(--font-mono);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .m-job-card__meta {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px 14px;
+  }
+
+  .m-job-card__meta-item {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .m-job-card__meta-item--wide {
+    grid-column: 1 / -1;
+  }
+
+  .m-job-card__meta-item .m-card__meta-key {
+    margin-right: 0;
+    font-size: 11px;
+  }
+
+  .m-job-card__meta-value {
+    overflow-wrap: anywhere;
+    color: var(--ios-label-secondary);
+    line-height: 1.35;
+  }
   .m-filter-chip {
     display: flex;
     align-items: center;

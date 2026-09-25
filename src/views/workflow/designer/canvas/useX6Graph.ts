@@ -7,7 +7,7 @@
  * - 拖入节点 / 连线 / 删除 / 选中事件全部回写 store
  */
 
-import { Graph } from '@antv/x6'
+import { Graph, Point } from '@antv/x6'
 // 必须走 es/ 构建:lib/(CJS)是另一份 x6 实例,其 NodeView.registry 里没有
 // x6-vue-shape 注册的 'vue-shape-view',minimap 渲染缩略图时会抛
 // 「View with name 'vue-shape-view' does not exist」(且随节点变化在 watcher 里间歇复现)。
@@ -29,10 +29,8 @@ import FileStepNode from './nodes/FileStepNode.vue'
 import ApprovalNode from './nodes/ApprovalNode.vue'
 import type { DesignerNode, DesignerNodeType } from '../types'
 import { useDesignerStore } from '../store/useDesignerStore'
-
-const NODE_WIDTH = 140
-const NODE_HEIGHT = 60
-const START_END_SIZE = 60
+import { designerNodeSize } from './nodePlacement'
+import { edgeCanvasAttrs } from './edgePresentation'
 
 let registered = false
 function ensureRegistered() {
@@ -71,13 +69,7 @@ function shapeOf(type: DesignerNodeType): string {
 }
 
 function sizeOf(type: DesignerNodeType): { width: number; height: number } {
-  if (type === 'START' || type === 'END') {
-    return { width: START_END_SIZE, height: START_END_SIZE }
-  }
-  if (type === 'GATEWAY') {
-    return { width: 80, height: 80 }
-  }
-  return { width: NODE_WIDTH, height: NODE_HEIGHT }
+  return designerNodeSize(type)
 }
 
 // 连接桩(x6 port):in 在顶、out 在底(TB 布局);默认隐藏,hover 节点时显现。
@@ -86,7 +78,7 @@ function sizeOf(type: DesignerNodeType): { width: number; height: number } {
 // visibility:hidden —— 后者藏着时不接收指针事件,会导致桩抓不住、连不了线。
 const PORT_ATTRS = {
   circle: {
-    r: 5,
+    r: 6,
     magnet: true,
     stroke: 'var(--color-primary, #1668e3)',
     strokeWidth: 1.5,
@@ -125,8 +117,12 @@ export interface X6GraphHandle {
   graph: Graph | null
   /** Polish 阶段:可选 dagre 布局方向(TB 默认 / LR 左右),不传保持原行为 */
   autoLayout: (direction?: 'TB' | 'LR') => void
+  /** 将全部节点缩放并居中到当前画布视口,避免加载或自动布局后节点被裁切。 */
+  fitToViewport: () => void
   /** 把指定节点居中到视口并选中(校验错误列表点击定位用);节点不存在则 no-op */
   focusNode: (nodeId: string) => void
+  /** 把指定连线居中到视口并选中(边校验错误定位用);连线不存在则 no-op */
+  focusEdge: (edgeId: string) => void
   /** 返回当前视口中心对应的画布逻辑坐标(点击节点库 / QuickPalette 落点用) */
   getViewportCenter: () => { x: number; y: number }
 }
@@ -139,7 +135,9 @@ export function useX6Graph(
   const handle: X6GraphHandle = {
     graph: null,
     autoLayout: () => {},
+    fitToViewport: () => {},
     focusNode: () => {},
+    focusEdge: () => {},
     getViewportCenter: () => ({ x: 320, y: 200 }),
   }
 
@@ -170,6 +168,29 @@ export function useX6Graph(
     store.setSelection([nodeId])
   }
   handle.focusNode = focusNode
+
+  function focusEdge(edgeId: string) {
+    const graph = handle.graph
+    if (!graph) return
+    const cell = graph.getCellById(edgeId)
+    if (!cell || !cell.isEdge()) return
+    graph.centerCell(cell, { padding: 24 })
+    store.setSelection([edgeId])
+  }
+  handle.focusEdge = focusEdge
+
+  function fitToViewport() {
+    const graph = handle.graph
+    if (!graph || graph.getNodes().length === 0) return
+    graph.zoomToFit({
+      padding: 40,
+      minScale: 0.2,
+      maxScale: 1,
+      preserveAspectRatio: true,
+      useCellGeometry: true,
+    })
+  }
+  handle.fitToViewport = fitToViewport
 
   /**
    * 把 store 状态 → X6 cells(全量替换)。
@@ -224,29 +245,31 @@ export function useX6Graph(
         })
       }
       for (const e of store.edges) {
+        const presentation = edgeCanvasAttrs(e, store.errorEdgeIds.has(e.id))
+        const labels = presentation.label.text.text ? [{ attrs: presentation.label }] : []
         const existing = graph.getCellById(e.id)
         if (existing?.isEdge()) {
-          existing.setSource(e.source)
-          existing.setTarget(e.target)
-          existing.setLabels(e.label ? [{ attrs: { text: { text: e.label } } }] : [])
+          existing.setSource({ cell: e.source, port: 'out' })
+          existing.setTarget({ cell: e.target, port: 'in' })
+          existing.attr(presentation.line)
+          existing.setLabels(labels)
           continue
         }
         graph.addEdge({
           id: e.id,
-          source: e.source,
-          target: e.target,
-          attrs: {
-            line: {
-              stroke: 'var(--color-text-secondary, #909399)',
-              strokeWidth: 1.5,
-              targetMarker: { name: 'block', size: 8 },
-            },
-          },
-          labels: e.label ? [{ attrs: { text: { text: e.label } } }] : undefined,
+          source: { cell: e.source, port: 'out' },
+          target: { cell: e.target, port: 'in' },
+          attrs: presentation.line,
+          labels,
         })
       }
     } finally {
       graph.stopBatch('sync-from-store')
+    }
+    // 批量移动节点后 X6 不一定同步刷新既有 EdgeView；显式更新确保路径跟随新坐标。
+    for (const edge of graph.getEdges()) {
+      const view = graph.findViewByCell(edge)
+      if (view?.isEdgeView()) view.update()
     }
   }
 
@@ -293,6 +316,7 @@ export function useX6Graph(
       store.moveNode(position.id, position.x, position.y)
     }
     syncFromStore(handle.graph)
+    fitToViewport()
   }
   handle.autoLayout = autoLayout
 
@@ -301,6 +325,9 @@ export function useX6Graph(
     ensureRegistered()
     const graph = new Graph({
       container: containerRef.value,
+      // The designer body, JSON panel and responsive shell can all change the available canvas size.
+      // X6 otherwise keeps the mount-time dimensions and may render a blank or clipped interaction area.
+      autoResize: true,
       // --color-bg-canvas 是已定义且暗色感知的画布底色(light #e9eef5 / dark #0b0f14);
       // 原 --color-bg-base 未定义 → 暗色下回退 #fafafa 变浅色画布。
       background: { color: 'var(--color-bg-canvas, #e9eef5)' },
@@ -308,7 +335,21 @@ export function useX6Graph(
       panning: { enabled: true },
       mousewheel: { enabled: true, modifiers: 'ctrl', zoomAtMousePosition: true },
       connecting: {
-        router: 'manhattan',
+        router: {
+          name: 'manhattan',
+          args: {
+            padding: 8,
+            excludeTerminals: ['source', 'target'],
+            maxLoopCount: 5000,
+            // X6 会在紧凑拓扑找不到完整避障路径时降级到 orth 并打印 warning。
+            // 设计器端口固定为下出上入,用中线折返可保持正交连线且避免无意义告警。
+            fallbackRoute(from, to) {
+              if (from.x === to.x || from.y === to.y) return []
+              const middleY = Math.round((from.y + to.y) / 20) * 10
+              return [new Point(from.x, middleY), new Point(to.x, middleY)]
+            },
+          },
+        },
         connector: 'rounded',
         snap: { radius: 24 },
         allowBlank: false,
@@ -332,6 +373,7 @@ export function useX6Graph(
               line: {
                 stroke: 'var(--color-primary, #1668e3)',
                 strokeWidth: 1.5,
+                vectorEffect: 'non-scaling-stroke',
                 targetMarker: { name: 'block', size: 8 },
               },
             },
@@ -392,6 +434,7 @@ export function useX6Graph(
     graph.on('node:mouseleave', ({ node }) => togglePorts(graph, node.id, false))
 
     syncFromStore(graph)
+    fitToViewport()
     // store 变更 → 重画
     graph.on('__rerender__', () => syncFromStore(graph))
   })

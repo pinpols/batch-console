@@ -14,3 +14,12 @@ export function parseCatalogSchema(value: unknown): unknown {
     return value
   }
 }
+
+export function hasCatalogSchema(value: unknown): boolean {
+  const parsed = parseCatalogSchema(value)
+  if (parsed == null) return false
+  if (typeof parsed === 'string') return parsed.trim().length > 0 && parsed.trim() !== '—'
+  if (Array.isArray(parsed)) return parsed.length > 0
+  if (typeof parsed === 'object') return Object.keys(parsed as Record<string, unknown>).length > 0
+  return true
+}

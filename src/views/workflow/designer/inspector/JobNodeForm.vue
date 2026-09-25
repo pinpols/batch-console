@@ -1,78 +1,78 @@
 <script setup lang="ts">
-/**
- * JOB 节点表单。
- *  - jobCode 下拉(useJobCodeOptions,失败可手输)
- *  - maxRetries / timeoutSeconds 数字输入
- *  - skipExpression 文本(粗校验:非空字符串)
- * 表单不立即保存,失焦写回 store(走 updateNode → 入 undo 栈)。
- */
-import { computed, onMounted, ref, watch } from 'vue'
-import { useI18n } from 'vue-i18n'
-import { useDesignerStore } from '../store/useDesignerStore'
-import { useJobCodeOptions } from '@/composables/useJobCodeOptions'
-import type { DesignerNode } from '../types'
+  /**
+   * JOB 节点表单。
+   *  - jobCode 下拉(useJobCodeOptions,失败可手输)
+   *  - maxRetries / timeoutSeconds 数字输入
+   *  - skipExpression 文本(粗校验:非空字符串)
+   * 表单不立即保存,失焦写回 store(走 updateNode → 入 undo 栈)。
+   */
+  import { computed, onMounted, ref, watch } from 'vue'
+  import { useI18n } from 'vue-i18n'
+  import { useDesignerStore } from '../store/useDesignerStore'
+  import { useJobCodeOptions } from '@/composables/useJobCodeOptions'
+  import type { DesignerNode } from '../types'
 
-const props = defineProps<{ node: DesignerNode; readonly: boolean }>()
-const { t } = useI18n()
-const store = useDesignerStore()
-const { loading, options, load } = useJobCodeOptions()
+  const props = defineProps<{ node: DesignerNode; readonly: boolean }>()
+  const { t } = useI18n()
+  const store = useDesignerStore()
+  const { loading, options, load } = useJobCodeOptions()
 
-interface JobAttrs {
-  jobCode?: string
-  maxRetries?: number
-  timeoutSeconds?: number
-  skipExpression?: string
-}
-
-function readAttrs(n: DesignerNode): JobAttrs {
-  const a = (n.attrs ?? {}) as Record<string, unknown>
-  return {
-    jobCode: typeof a.jobCode === 'string' ? a.jobCode : '',
-    maxRetries: typeof a.maxRetries === 'number' ? a.maxRetries : undefined,
-    timeoutSeconds: typeof a.timeoutSeconds === 'number' ? a.timeoutSeconds : undefined,
-    skipExpression: typeof a.skipExpression === 'string' ? a.skipExpression : '',
+  interface JobAttrs {
+    jobCode?: string
+    maxRetries?: number
+    timeoutSeconds?: number
+    skipExpression?: string
   }
-}
 
-const local = ref<JobAttrs>(readAttrs(props.node))
-const localName = ref(props.node.nodeName)
-const fieldErrors = computed(() => {
-  const m = new Map<string, string>()
-  for (const e of store.validationErrors) {
-    if (e.nodeId === props.node.id && e.field) m.set(e.field, e.messageKey)
+  function readAttrs(n: DesignerNode): JobAttrs {
+    const a = (n.attrs ?? {}) as Record<string, unknown>
+    return {
+      jobCode: typeof a.jobCode === 'string' ? a.jobCode : '',
+      maxRetries: typeof a.maxRetries === 'number' ? a.maxRetries : undefined,
+      timeoutSeconds: typeof a.timeoutSeconds === 'number' ? a.timeoutSeconds : undefined,
+      skipExpression: typeof a.skipExpression === 'string' ? a.skipExpression : '',
+    }
   }
-  return m
-})
 
-watch(
-  () => props.node.id,
-  () => {
-    local.value = readAttrs(props.node)
-    localName.value = props.node.nodeName
-  },
-)
+  const local = ref<JobAttrs>(readAttrs(props.node))
+  const localName = ref(props.node.nodeName)
+  const fieldErrors = computed(() => {
+    const m = new Map<string, string>()
+    for (const e of store.validationErrors) {
+      if (e.nodeId === props.node.id && e.field) m.set(e.field, e.messageKey)
+    }
+    return m
+  })
 
-onMounted(() => {
-  if (store.meta.tenantId) void load(store.meta.tenantId)
-})
+  watch(
+    () => [props.node.id, props.node.nodeName, JSON.stringify(props.node.attrs ?? {})],
+    () => {
+      local.value = readAttrs(props.node)
+      localName.value = props.node.nodeName
+    },
+  )
 
-function writeAttr(field: keyof JobAttrs, raw: unknown) {
-  if (props.readonly) return
-  // 数字字段空 → undefined(避免落 0 覆盖 default)
-  let v: unknown = raw
-  if (field === 'maxRetries' || field === 'timeoutSeconds') {
-    v = raw === '' || raw == null ? undefined : Number(raw)
+  onMounted(() => {
+    if (store.meta.tenantId) void load(store.meta.tenantId)
+  })
+
+  function writeAttr(field: keyof JobAttrs, raw: unknown) {
+    if (props.readonly) return
+    // 数字字段空 → undefined(避免落 0 覆盖 default)
+    let v: unknown = raw
+    if (field === 'maxRetries' || field === 'timeoutSeconds') {
+      v = raw === '' || raw == null ? undefined : Number(raw)
+    }
+    const prevAttrs = (props.node.attrs ?? {}) as Record<string, unknown>
+    if (prevAttrs[field] === v) return
+    store.updateNode(props.node.id, { attrs: { [field]: v } })
   }
-  const prevAttrs = (props.node.attrs ?? {}) as Record<string, unknown>
-  if (prevAttrs[field] === v) return
-  store.updateNode(props.node.id, { attrs: { [field]: v } })
-}
 
-function onBlurName() {
-  if (props.readonly) return
-  if (localName.value === props.node.nodeName) return
-  store.updateNode(props.node.id, { nodeName: localName.value })
-}
+  function onBlurName() {
+    if (props.readonly) return
+    if (localName.value === props.node.nodeName) return
+    store.updateNode(props.node.id, { nodeName: localName.value })
+  }
 </script>
 
 <template>

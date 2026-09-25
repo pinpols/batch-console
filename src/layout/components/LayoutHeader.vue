@@ -80,7 +80,13 @@
         />
 
         <el-tooltip :content="localeToggleTooltip" placement="bottom">
-          <button type="button" class="lang-toggle" @click="toggleLocale">
+          <button
+            type="button"
+            class="lang-toggle"
+            :aria-label="localeToggleTooltip"
+            :title="localeToggleTooltip"
+            @click="toggleLocale"
+          >
             <span class="lang-toggle__seg" :class="{ 'is-active': currentLocale === 'zh-CN' }"
               >中</span
             >
@@ -115,28 +121,33 @@
           </template>
         </el-dropdown>
 
-        <el-tooltip :content="t('nav.mobilePreview')" placement="bottom">
-          <button type="button" class="icon-button header-icon" @click="openMobilePreview">
-            <el-icon><Iphone /></el-icon>
-          </button>
-        </el-tooltip>
-
-        <el-tooltip :content="t('nav.openDocsTooltip')" placement="bottom">
+        <el-dropdown trigger="click" placement="bottom-end" @command="onUtilityCommand">
           <button
             type="button"
             class="icon-button header-icon"
             data-onboarding="docs"
-            @click="openDocs"
+            :aria-label="t('nav.toolsMenu')"
+            :title="t('nav.toolsMenu')"
           >
-            <el-icon><Reading /></el-icon>
+            <el-icon><UtilityIcon /></el-icon>
           </button>
-        </el-tooltip>
-
-        <el-tooltip :content="themeActionLabel" placement="bottom">
-          <button type="button" class="icon-button header-icon" @click="app.toggleTheme()">
-            <el-icon><component :is="themeToolIcon" /></el-icon>
-          </button>
-        </el-tooltip>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item command="mobile">
+                <el-icon><Iphone /></el-icon>
+                {{ t('nav.mobilePreview') }}
+              </el-dropdown-item>
+              <el-dropdown-item command="docs">
+                <el-icon><Reading /></el-icon>
+                {{ t('nav.openDocs') }}
+              </el-dropdown-item>
+              <el-dropdown-item command="theme" divided>
+                <el-icon><component :is="themeToolIcon" /></el-icon>
+                {{ themeActionLabel }}
+              </el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
 
         <div class="user-area">
           <el-dropdown
@@ -195,6 +206,7 @@
     Moon,
     CircleHelp as Reading,
     Search,
+    SlidersHorizontal as UtilityIcon,
     Sun as Sunny,
     LogOut as SwitchButton,
     Globe2 as TimezoneIcon,
@@ -274,6 +286,12 @@
 
   function openMobilePreview() {
     window.open('/m/ops/summary', '_blank', 'noopener,noreferrer,width=430,height=860')
+  }
+
+  function onUtilityCommand(command: string | number | object) {
+    if (command === 'mobile') openMobilePreview()
+    else if (command === 'docs') openDocs()
+    else if (command === 'theme') app.toggleTheme()
   }
 
   const router = useRouter()

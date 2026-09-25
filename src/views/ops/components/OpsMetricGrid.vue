@@ -83,7 +83,7 @@
         @click="$emit('go', '/workers/management?status=DRAINING')"
       >
         <MetricCard
-          label="Draining"
+          :label="t('opsMetricGrid.drainingWorkers')"
           :value="String(summary.drainingWorkers)"
           :description="t('opsMetricGrid.workerListDesc')"
           tone="warning"
@@ -150,7 +150,7 @@
 <style scoped>
   .metric-grid {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(12, minmax(0, 1fr));
     gap: 14px;
   }
 
@@ -162,6 +162,11 @@
     cursor: pointer;
     border-radius: var(--radius-content);
     text-align: left;
+    grid-column: span 3;
+  }
+
+  .metric-hit:nth-child(-n + 3) {
+    grid-column: span 4;
   }
 
   .metric-hit:focus-visible {
@@ -187,7 +192,12 @@
 
   @media (max-width: 1160px) {
     .metric-grid {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .metric-hit,
+    .metric-hit:nth-child(-n + 3) {
+      grid-column: auto;
     }
   }
 

@@ -65,13 +65,13 @@
             </div>
           </div>
           <p class="catalog-detail__description">
-            {{ selectedRow.description || t('common.noData') }}
+            {{ selectedRow.description || t('observability.eventCatalogDescriptionMissing') }}
           </p>
 
           <template v-if="activeTab === 'eventTypes'">
             <el-descriptions :column="2" border>
               <el-descriptions-item :label="t('observability.eventCatalogColCategory')">
-                {{ selectedEventType?.category || '—' }}
+                {{ selectedCategory }}
               </el-descriptions-item>
               <el-descriptions-item :label="t('observability.eventCatalogColEventType')">
                 {{ selectedEventType?.eventType || '—' }}
@@ -80,7 +80,14 @@
             <div class="catalog-detail__section-title">
               {{ t('observability.eventCatalogSchemaTitle') }}
             </div>
-            <JsonPreview :data="selectedSchema" />
+            <JsonPreview v-if="selectedHasSchema" :data="selectedSchema" />
+            <EmptyState
+              v-else
+              class="catalog-detail__schema-empty"
+              :title="t('observability.eventCatalogSchemaMissingTitle')"
+              :description="t('observability.eventCatalogSchemaMissingDescription')"
+              :image-size="56"
+            />
           </template>
 
           <template v-else>
@@ -226,7 +233,11 @@
   import JsonPreview from '@/components/common/JsonPreview.vue'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { useListLoadState } from '@/composables/useListLoadState'
-  import { filterCatalogRows, parseCatalogSchema } from './eventCatalogPresentation'
+  import {
+    filterCatalogRows,
+    hasCatalogSchema,
+    parseCatalogSchema,
+  } from './eventCatalogPresentation'
 
   type CatalogRow = EventCatalogTypeRow | EventCatalogTopicRow
 
@@ -284,6 +295,13 @@
       ? parseCatalogSchema(selectedEventType.value.schema)
       : {},
   )
+  const selectedHasSchema = computed(
+    () => activeTab.value === 'eventTypes' && hasCatalogSchema(selectedEventType.value?.schema),
+  )
+  const selectedCategory = computed(() => {
+    const category = selectedEventType.value?.category?.trim()
+    return category && category !== '—' ? category : t('observability.eventCatalogCategoryMissing')
+  })
   const activeTabLabel = computed(() =>
     activeTab.value === 'eventTypes'
       ? t('observability.eventCatalogTabEventTypes')
@@ -523,6 +541,12 @@
   .catalog-detail__section-title {
     margin: var(--space-lg) 0 var(--space-sm);
     font-weight: 600;
+  }
+
+  .catalog-detail__schema-empty {
+    border: 1px dashed var(--color-border-light);
+    border-radius: var(--radius-content);
+    background: var(--color-bg-subtle);
   }
 
   @media (max-width: 960px) {

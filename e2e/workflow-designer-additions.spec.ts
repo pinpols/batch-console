@@ -14,7 +14,7 @@ async function openDesigner(page): Promise<void> {
     },
     data: {
       tenantId: 'ta',
-      workflowCode: `e2e_wfd_tools_${stamp}`,
+      workflowCode: `e2e-wfd-tools-${stamp}`,
       workflowName: `E2E workflow tools ${stamp}`,
       workflowType: 'DAG',
       enabled: true,
