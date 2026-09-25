@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+- 将前端默认 Node 构建基线升级到 24，保留 Node 22 与 24 两条兼容线；Docker build stage 同步 Node 24。
+- 刷新 npm 锁文件中的兼容范围依赖；移除带已知高危传递依赖的浏览器测量工具，保留同样的 gzip bundle 预算检查。
+- 新增 Node 22/24 双版本前端 CI，覆盖 lint、类型、单测、生产构建、bundle 预算、依赖审计和前端文档构建。
+
 ## [1.0.0] - 2026-09-02
 
 - 统一前端应用发布版本，与 batch-platform `v1.0.0` 对齐。
