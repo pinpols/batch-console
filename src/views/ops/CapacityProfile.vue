@@ -16,10 +16,17 @@
           <el-segmented v-model="query.groupBy" :options="groupByOptions" />
         </el-form-item>
         <el-form-item :label="t('capacityProfile.limitLabel')">
-          <el-input-number v-model="query.limit" :min="1" :max="200" controls-position="right" />
+          <el-input-number
+            v-model="query.limit"
+            class="capacity-limit-input"
+            :min="1"
+            :max="200"
+            controls-position="right"
+          />
         </el-form-item>
         <el-form-item :label="t('capacityProfile.windowLabel')">
           <el-date-picker
+            class="capacity-window-picker"
             v-model="range"
             type="datetimerange"
             unlink-panels
@@ -68,7 +75,7 @@
     </div>
 
     <div v-if="report" class="capacity-charts">
-      <SectionCard>
+      <SectionCard class="capacity-charts__trend">
         <template #header>{{ t('capacityProfile.trendTitle') }}</template>
         <VChart
           class="capacity-chart"
@@ -277,6 +284,7 @@
     }
     return buildLineOption({
       x: points.map((point) => point.label),
+      xAxisLabelFormatter: (value) => value.replace(' - ', '\n'),
       series: [
         {
           name: t('capacityProfile.metricInstances'),
@@ -295,7 +303,7 @@
   const rankingOption = computed(() => {
     const items = buildThroughputRanking(report.value?.rows ?? [], query.groupBy, tenant.tenantId)
     return items.length
-      ? buildHorizontalTopNOption(items, '#52c41a')
+      ? buildHorizontalTopNOption(items, '#52c41a', t('capacityProfile.recordsPerSecondUnit'))
       : emptyOption(t('common.noData'))
   })
   const latencyOption = computed(() => {
@@ -418,14 +426,28 @@
 
   .capacity-charts {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--space-md);
     margin-top: var(--page-block-gap);
+  }
+
+  .capacity-charts__trend {
+    grid-column: 1 / -1;
   }
 
   .capacity-chart {
     width: 100%;
     height: 18rem;
+  }
+
+  :deep(.capacity-window-picker) {
+    flex: 0 0 27rem;
+    width: 27rem !important;
+    max-width: min(27rem, calc(100vw - 3rem));
+  }
+
+  :deep(.capacity-limit-input) {
+    width: 7.5rem;
   }
 
   .profile-header {
@@ -471,6 +493,10 @@
 
     .capacity-charts {
       grid-template-columns: 1fr;
+    }
+
+    .capacity-charts__trend {
+      grid-column: auto;
     }
   }
 

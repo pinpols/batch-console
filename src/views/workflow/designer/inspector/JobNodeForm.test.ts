@@ -141,6 +141,25 @@ describe('JobNodeForm', () => {
     expect(store.dirty).toBe(true)
   })
 
+  it('同一节点被撤销或重做时刷新本地表单值', async () => {
+    const node = mkNode({ jobCode: 'job-a', maxRetries: 1 })
+    const { wrapper } = factory(node)
+
+    await wrapper.setProps({
+      node: {
+        ...node,
+        nodeName: 'Restored name',
+        attrs: { jobCode: 'job-b', maxRetries: 3 },
+      },
+    })
+    await wrapper.vm.$nextTick()
+
+    const inputs = wrapper.findAll('input')
+    expect(inputs.some((input) => input.element.value === 'Restored name')).toBe(true)
+    expect(wrapper.find('select').element.value).toBe('job-b')
+    expect(inputs.some((input) => input.element.value === '3')).toBe(true)
+  })
+
   it('校验错误时 jobCode el-form-item 携带 error 文案', async () => {
     const { wrapper, store } = factory(mkNode({}))
     store.setValidationErrors([

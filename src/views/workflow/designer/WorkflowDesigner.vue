@@ -20,10 +20,11 @@
    * - onUnmounted → useLockManager 内置 release + beforeunload sendBeacon 兜底
    */
 
-  import { computed, onMounted, onBeforeUnmount, ref, watch } from 'vue'
+  import { computed, nextTick, onMounted, onBeforeUnmount, ref, watch } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
+  import { PanelRightOpen } from 'lucide-vue-next'
   import { useTenantStore } from '@/stores/tenant'
   import { useDesignerStore } from './store/useDesignerStore'
   import type { DesignerNodeType } from './types'
@@ -37,6 +38,7 @@
   import { useLockManager } from '@/composables/useLockManager'
   import { logRoute } from '@/utils/logger'
   import DagCanvas from './canvas/DagCanvas.vue'
+  import { findVacantNodePosition } from './canvas/nodePlacement'
   import DesignerToolbar from './toolbar/DesignerToolbar.vue'
   import NodePalette from './toolbar/NodePalette.vue'
   import NodeInspector from './inspector/NodeInspector.vue'
@@ -78,6 +80,11 @@
     canvasRef.value?.focusNode(nodeId)
   }
 
+  function locateEdge(edgeId: string) {
+    errorDrawerVisible.value = false
+    canvasRef.value?.focusEdge(edgeId)
+  }
+
   /**
    * 本地化单条校验错误。原本在模板内联 `t(e.messageKey, (e.args ?? {}) as ...)`,模板里的 `{}`
    * 会被 prettier 3.8 的 vue 解析器误判为 mustache 提前闭合 → 整个 `<li>` 报 "Unexpected closing
@@ -97,9 +104,37 @@
   const layoutDirection = ref<'TB' | 'LR'>('TB')
   const canvasCenter = ref<{ x: number; y: number }>({ x: 320, y: 200 })
   const jsonPanelCollapsed = ref(true)
+  const paletteCollapsed = ref(true)
+  const inspectorExpanded = ref(false)
+  const focusMode = ref(false)
+
+  const selectedElementKey = computed(() => Array.from(store.selectedIds).sort().join('|'))
+  const inspectorVisible = computed(() => !focusMode.value && inspectorExpanded.value)
+
+  watch(selectedElementKey, (key) => {
+    inspectorExpanded.value = key.length > 0 && !focusMode.value
+    if (key.length > 0) paletteCollapsed.value = true
+  })
 
   function toggleJsonPanel() {
     jsonPanelCollapsed.value = !jsonPanelCollapsed.value
+  }
+
+  function toggleFocusMode() {
+    focusMode.value = !focusMode.value
+    if (focusMode.value) jsonPanelCollapsed.value = true
+    else inspectorExpanded.value = selectedElementKey.value.length > 0
+    nextTick(() => canvasRef.value?.fitToViewport())
+  }
+
+  function togglePalette() {
+    paletteCollapsed.value = !paletteCollapsed.value
+    if (!paletteCollapsed.value) inspectorExpanded.value = false
+  }
+
+  function openInspector() {
+    paletteCollapsed.value = true
+    inspectorExpanded.value = true
   }
 
   /** 从画布读取当前视口中心(画布逻辑坐标),graph 未就绪时保持上次值。 */
@@ -115,27 +150,22 @@
     quickPaletteVisible.value = true
   }
 
-  /**
-   * P6 点击节点库添加:落到视口中心,并对同一会话内的重复点击做累加偏移避免重叠。
-   * P1 只读守卫:NodePalette 内部已拦只读,这里再兜底一次。
-   */
-  const paletteClickOffset = ref(0)
+  /** 点击节点库添加:按节点尺寸寻找视口中心附近的空位,避免连接桩被重叠节点遮挡。 */
   function onPaletteAdd(type: DesignerNodeType) {
     if (!store.editable) {
       ElMessage.warning(t('workflowDesignerMvp.lock.readonlyGuard'))
       return
     }
     refreshCanvasCenter()
-    const off = paletteClickOffset.value
+    const position = findVacantNodePosition(type, canvasCenter.value, store.nodes)
     const code = `${type.toLowerCase()}_${String(Date.now()).slice(-4)}`
     store.addNode({
       nodeCode: code,
       nodeName: code,
       nodeType: type,
-      x: canvasCenter.value.x + off,
-      y: canvasCenter.value.y + off,
+      x: position.x,
+      y: position.y,
     })
-    paletteClickOffset.value = off + 24
   }
   function openTemplateLibrary() {
     templateLibraryVisible.value = true
@@ -242,6 +272,8 @@
         description: detail.description,
         version: detail.version,
       })
+      await nextTick()
+      canvasRef.value?.fitToViewport()
       await lockMgr.acquire(id, tenantStore.tenantId)
     } catch (err) {
       logRoute('[designer] load failed', { err: String(err) })
@@ -274,6 +306,18 @@
       return
     }
     canvasRef.value?.autoLayout(layoutDirection.value)
+  }
+
+  async function onUndo() {
+    store.undo()
+    await nextTick()
+    canvasRef.value?.fitToViewport()
+  }
+
+  async function onRedo() {
+    store.redo()
+    await nextTick()
+    canvasRef.value?.fitToViewport()
   }
 
   /**
@@ -326,12 +370,14 @@
       const n = store.nodes.find((nn) => nn.id === id)
       if (!n) continue
       const newCode = `${n.nodeCode}_dup_${suffixBase}`
+      const sizeCenter = { x: n.x + 110, y: n.y + 90 }
+      const position = findVacantNodePosition(n.nodeType, sizeCenter, store.nodes)
       store.addNode({
         nodeCode: newCode,
         nodeName: n.nodeName,
         nodeType: n.nodeType,
-        x: n.x + 40,
-        y: n.y + 40,
+        x: position.x,
+        y: position.y,
         attrs: { ...(n.attrs ?? {}) },
       })
       newIds.push(newCode)
@@ -500,7 +546,10 @@
       :can-save="store.editable"
       :layout-direction="layoutDirection"
       :json-panel-open="!jsonPanelCollapsed"
+      :focus-mode="focusMode"
       @auto-layout="onAutoLayout"
+      @undo="onUndo"
+      @redo="onRedo"
       @validate="onValidate"
       @save="onSave"
       @export-mermaid="onExportMermaid"
@@ -509,6 +558,7 @@
       @toggle-layout-direction="toggleLayoutDirection"
       @toggle-json="toggleJsonPanel"
       @focus-node="locateNode"
+      @toggle-focus-mode="toggleFocusMode"
     />
     <div
       v-if="readonlyBanner"
@@ -527,9 +577,25 @@
     >
       {{ t('workflowDesignerMvp.errorBanner', { count: errorCount }) }}
     </div>
-    <JsonSyncPanel v-model:collapsed="jsonPanelCollapsed" :readonly="!store.editable" />
-    <div class="workflow-designer__body">
-      <NodePalette @add="onPaletteAdd" />
+    <JsonSyncPanel
+      v-if="!jsonPanelCollapsed"
+      v-model:collapsed="jsonPanelCollapsed"
+      :readonly="!store.editable"
+    />
+    <div
+      class="workflow-designer__body"
+      :class="{
+        'workflow-designer__body--palette-expanded': !paletteCollapsed && !focusMode,
+        'workflow-designer__body--inspector-visible': inspectorVisible,
+        'workflow-designer__body--focus': focusMode,
+      }"
+    >
+      <NodePalette
+        v-if="!focusMode"
+        :collapsed="paletteCollapsed"
+        @toggle="togglePalette"
+        @add="onPaletteAdd"
+      />
       <section class="workflow-designer__canvas-shell">
         <div class="workflow-designer__canvas-status">
           <span>{{ store.meta.workflowCode || t('workflowDesignerMvp.untitledWorkflow') }}</span>
@@ -539,6 +605,19 @@
           <el-tag size="small" type="info" effect="plain"> {{ layoutDirection }} </el-tag>
         </div>
         <DagCanvas ref="canvasRef" />
+        <el-tooltip
+          v-if="!inspectorVisible && !focusMode"
+          :content="t('workflowDesignerMvp.layout.openInspector')"
+          placement="left"
+        >
+          <el-button
+            class="workflow-designer__open-inspector"
+            circle
+            :icon="PanelRightOpen"
+            :aria-label="t('workflowDesignerMvp.layout.openInspector')"
+            @click="openInspector"
+          />
+        </el-tooltip>
         <div v-if="store.nodes.length === 0" class="workflow-designer__empty-canvas">
           <div class="workflow-designer__empty-title">
             {{ t('workflowDesignerMvp.canvasEmptyTitle') }}
@@ -556,7 +635,7 @@
           </div>
         </div>
       </section>
-      <NodeInspector />
+      <NodeInspector v-if="inspectorVisible" @close="inspectorExpanded = false" />
     </div>
 
     <el-drawer
@@ -570,13 +649,14 @@
           v-for="(e, idx) in store.validationErrors"
           :key="idx"
           class="error-list__item"
-          :class="{ 'error-list__item--locatable': !!e.nodeId }"
-          :role="e.nodeId ? 'button' : undefined"
-          :tabindex="e.nodeId ? 0 : undefined"
-          @click="e.nodeId && locateNode(e.nodeId)"
-          @keydown.enter="e.nodeId && locateNode(e.nodeId)"
+          :class="{ 'error-list__item--locatable': !!e.nodeId || !!e.edgeId }"
+          :role="e.nodeId || e.edgeId ? 'button' : undefined"
+          :tabindex="e.nodeId || e.edgeId ? 0 : undefined"
+          @click="e.nodeId ? locateNode(e.nodeId) : e.edgeId && locateEdge(e.edgeId)"
+          @keydown.enter="e.nodeId ? locateNode(e.nodeId) : e.edgeId && locateEdge(e.edgeId)"
         >
           <span v-if="e.nodeId" class="error-list__node">[{{ e.nodeId }}]</span>
+          <span v-else-if="e.edgeId" class="error-list__node">[{{ e.edgeId }}]</span>
           {{ localizeError(e) }}
         </li>
       </ul>
@@ -617,16 +697,36 @@
     background: var(--color-bg-page);
   }
   .workflow-designer__body {
+    --designer-palette-width: 56px;
+    --designer-inspector-width: 0px;
+
     display: grid;
-    grid-template-columns: 190px minmax(520px, 1fr) 320px;
+    grid-template-columns:
+      var(--designer-palette-width) minmax(0, 1fr)
+      var(--designer-inspector-width);
     flex: 1 1 auto;
     min-height: 0;
     min-width: 0;
     gap: 0;
-    padding: 12px;
+    padding: 8px;
     overflow: hidden;
+    transition: grid-template-columns 160ms ease;
+  }
+  .workflow-designer__body--palette-expanded {
+    --designer-palette-width: 176px;
+  }
+  .workflow-designer__body--inspector-visible {
+    --designer-inspector-width: 320px;
+  }
+  .workflow-designer__body--focus {
+    --designer-palette-width: 0px;
+    --designer-inspector-width: 0px;
+  }
+  .workflow-designer__body > :deep(.node-palette) {
+    grid-column: 1;
   }
   .workflow-designer__canvas-shell {
+    grid-column: 2;
     position: relative;
     display: flex;
     flex-direction: column;
@@ -636,6 +736,9 @@
     border: 1px solid var(--color-border-light);
     border-radius: var(--radius-content);
     background: var(--color-bg-canvas, #e9eef5);
+  }
+  .workflow-designer__body > :deep(.node-inspector) {
+    grid-column: 3;
   }
   .workflow-designer__canvas-status {
     position: absolute;
@@ -662,6 +765,13 @@
     white-space: nowrap;
     font-weight: 650;
     color: var(--color-text-primary);
+  }
+  .workflow-designer__open-inspector {
+    position: absolute;
+    top: 52px;
+    right: 12px;
+    z-index: 4;
+    box-shadow: var(--shadow-sm);
   }
   .workflow-designer__empty-canvas {
     position: absolute;
@@ -733,8 +843,11 @@
   }
 
   @media (max-width: 1100px) {
-    .workflow-designer__body {
-      grid-template-columns: 160px minmax(420px, 1fr) 280px;
+    .workflow-designer__body--palette-expanded {
+      --designer-palette-width: 160px;
+    }
+    .workflow-designer__body--inspector-visible {
+      --designer-inspector-width: 280px;
     }
   }
 
@@ -744,8 +857,13 @@
     }
 
     .workflow-designer__body {
-      grid-template-columns: 132px minmax(360px, 1fr) 250px;
       overflow: auto;
+    }
+    .workflow-designer__body--palette-expanded {
+      --designer-palette-width: 132px;
+    }
+    .workflow-designer__body--inspector-visible {
+      --designer-inspector-width: 250px;
     }
   }
 </style>

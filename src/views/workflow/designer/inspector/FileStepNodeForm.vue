@@ -48,7 +48,7 @@
   })
 
   watch(
-    () => props.node.id,
+    () => [props.node.id, props.node.nodeName, JSON.stringify(props.node.attrs ?? {})],
     () => {
       local.value = readAttrs(props.node)
       localName.value = props.node.nodeName

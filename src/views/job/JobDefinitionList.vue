@@ -287,9 +287,9 @@
             min-width="220"
             show-overflow-tooltip
           />
-          <el-table-column :label="t('jobDefinitionList.colActions')" width="190" fixed="right">
+          <el-table-column :label="t('jobDefinitionList.colActions')" width="228" fixed="right">
             <template #default="{ row }">
-              <RowActions :actions="rowActions(row)" :inline-limit="2" />
+              <RowActions :actions="rowActions(row)" :inline-limit="2" nowrap />
             </template>
           </el-table-column>
         </template>

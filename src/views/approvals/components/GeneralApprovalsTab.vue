@@ -12,6 +12,7 @@
       @row-click="openDetail"
       :error="loadError"
       :on-retry="load"
+      :has-active-filters="hasActiveFilters"
       row-key="approvalNo"
       class="approval-table"
     >
@@ -76,6 +77,19 @@
             </el-button>
           </template>
         </BulkActionBar>
+      </template>
+
+      <template #empty>
+        <EmptyState
+          variant="tenant-empty"
+          :title="t('approvals.emptyTitle')"
+          :description="t('approvals.emptyDescription')"
+          :image-size="64"
+        >
+          <template #action>
+            <el-button type="primary" plain @click="load">{{ t('common.refresh') }}</el-button>
+          </template>
+        </EmptyState>
       </template>
 
       <el-table-column
@@ -269,6 +283,7 @@
   import MetaSelect from '@/components/common/MetaSelect.vue'
   import CopyableText from '@/components/common/CopyableText.vue'
   import DetailDrawer from '@/components/common/DetailDrawer.vue'
+  import EmptyState from '@/components/common/EmptyState.vue'
   import type { ConsoleApprovalCommandResponse } from '@/types/console-api'
   import { useAuthStore } from '@/stores/auth'
 
@@ -322,6 +337,9 @@
     keyword: '',
     requesterId: requesterFilter,
   })
+  const hasActiveFilters = computed(
+    () => !!(filters.status || filters.type || filters.keyword || filters.requesterId),
+  )
 
   const { data: metaEnums } = useConsoleMetaEnumsQuery()
 

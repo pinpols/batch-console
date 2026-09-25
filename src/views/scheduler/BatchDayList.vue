@@ -74,6 +74,20 @@
         :title="t('batchDayList.loadFailed')"
       />
 
+      <div
+        v-if="!loading && !loadError && calendarSummary.days === 0"
+        class="batch-calendar__empty"
+        role="status"
+      >
+        <div>
+          <strong>{{ t('batchDayList.emptyMonthTitle') }}</strong>
+          <span>{{ t('batchDayList.emptyMonthDescription') }}</span>
+        </div>
+        <el-button size="small" plain type="primary" @click="viewMode = 'table'">
+          {{ t('batchDayList.viewTable') }}
+        </el-button>
+      </div>
+
       <el-calendar v-model="calendarDate" class="batch-calendar__grid">
         <template #date-cell="{ data }">
           <button
@@ -366,6 +380,29 @@
     --el-calendar-cell-width: auto;
   }
 
+  .batch-calendar__empty {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-md);
+    margin: var(--space-md) var(--space-md) 0;
+    padding: var(--space-md);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-content);
+    background: var(--color-bg-subtle);
+  }
+
+  .batch-calendar__empty > div {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+  }
+
+  .batch-calendar__empty span {
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+  }
+
   .batch-calendar__grid :deep(.el-calendar__body) {
     padding: 0;
   }
@@ -434,6 +471,11 @@
   }
 
   @media (max-width: 640px) {
+    .batch-calendar__empty {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+
     .batch-calendar__summary {
       grid-template-columns: 1fr;
     }

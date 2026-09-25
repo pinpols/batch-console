@@ -1,29 +1,29 @@
 <script setup lang="ts">
-/**
- * START 节点表单 —— 只读节点类型 + 可编辑节点名。
- */
-import { ref, watch } from 'vue'
-import { useI18n } from 'vue-i18n'
-import { useDesignerStore } from '../store/useDesignerStore'
-import type { DesignerNode } from '../types'
+  /**
+   * START 节点表单 —— 只读节点类型 + 可编辑节点名。
+   */
+  import { ref, watch } from 'vue'
+  import { useI18n } from 'vue-i18n'
+  import { useDesignerStore } from '../store/useDesignerStore'
+  import type { DesignerNode } from '../types'
 
-const props = defineProps<{ node: DesignerNode; readonly: boolean }>()
-const { t } = useI18n()
-const store = useDesignerStore()
-const localName = ref(props.node.nodeName)
+  const props = defineProps<{ node: DesignerNode; readonly: boolean }>()
+  const { t } = useI18n()
+  const store = useDesignerStore()
+  const localName = ref(props.node.nodeName)
 
-watch(
-  () => props.node.id,
-  () => {
-    localName.value = props.node.nodeName
-  },
-)
+  watch(
+    () => [props.node.id, props.node.nodeName],
+    () => {
+      localName.value = props.node.nodeName
+    },
+  )
 
-function onBlurName() {
-  if (props.readonly) return
-  if (localName.value === props.node.nodeName) return
-  store.updateNode(props.node.id, { nodeName: localName.value })
-}
+  function onBlurName() {
+    if (props.readonly) return
+    if (localName.value === props.node.nodeName) return
+    store.updateNode(props.node.id, { nodeName: localName.value })
+  }
 </script>
 
 <template>

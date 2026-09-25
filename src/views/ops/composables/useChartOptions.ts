@@ -50,7 +50,7 @@ function toDateKey(ts: number) {
 function baseGridOption() {
   return {
     backgroundColor: 'transparent',
-    grid: { left: 46, right: 18, top: 42, bottom: 44 },
+    grid: { left: 48, right: 24, top: 42, bottom: 56, containLabel: true },
     tooltip: { trigger: 'axis' },
   }
 }
@@ -74,6 +74,7 @@ export function buildLineOption(params: {
   x: string[]
   series: { name: string; data: number[]; color?: string; area?: boolean }[]
   yAxisName?: string
+  xAxisLabelFormatter?: (value: string, index: number) => string
 }) {
   return {
     ...baseGridOption(),
@@ -82,7 +83,12 @@ export function buildLineOption(params: {
       type: 'category',
       data: params.x,
       boundaryGap: false,
-      axisLabel: { fontSize: 11, margin: 12 },
+      axisLabel: {
+        fontSize: 11,
+        margin: 12,
+        hideOverlap: true,
+        formatter: params.xAxisLabelFormatter,
+      },
     },
     yAxis: { type: 'value', name: params.yAxisName ?? '', nameTextStyle: { fontSize: 11 } },
     series: params.series.map((s) => ({
@@ -214,15 +220,30 @@ export function buildGaugeOption(params: {
   }
 }
 
-export function buildHorizontalTopNOption(items: { name: string; value: number }[], color: string) {
+export function buildHorizontalTopNOption(
+  items: { name: string; value: number }[],
+  color: string,
+  valueAxisName = '',
+) {
   const rows = [...items].sort((a, b) => b.value - a.value).slice(0, 10)
   const names = rows.map((x) => x.name).reverse()
   const vals = rows.map((x) => x.value).reverse()
   return {
-    grid: { left: 120, right: 18, top: 16, bottom: 18 },
+    grid: { left: 16, right: 28, top: 28, bottom: 20, containLabel: true },
     tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
-    xAxis: { type: 'value', axisLabel: { fontSize: 11 } },
-    yAxis: { type: 'category', data: names, axisLabel: { fontSize: 11 } },
+    xAxis: {
+      type: 'value',
+      name: valueAxisName,
+      nameLocation: 'middle',
+      nameGap: 30,
+      nameTextStyle: { fontSize: 11 },
+      axisLabel: { fontSize: 11, hideOverlap: true },
+    },
+    yAxis: {
+      type: 'category',
+      data: names,
+      axisLabel: { fontSize: 11, overflow: 'truncate', width: 112 },
+    },
     series: [
       {
         type: 'bar',

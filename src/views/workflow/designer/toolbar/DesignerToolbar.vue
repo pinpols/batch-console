@@ -15,6 +15,8 @@
     FileText as Document,
     CircleCheck,
     Check as Select,
+    Maximize2,
+    Minimize2,
   } from 'lucide-vue-next'
   import { useDesignerStore } from '../store/useDesignerStore'
   import ShortcutHelpButton from './ShortcutHelpButton.vue'
@@ -37,12 +39,22 @@
       layoutDirection?: 'TB' | 'LR'
       /** JSON 同步面板当前展开状态(用于 button aria-pressed),默认折叠 */
       jsonPanelOpen?: boolean
+      /** 隐藏左右辅助面板,让画布占满工作区。 */
+      focusMode?: boolean
     }>(),
-    { saving: false, canSave: true, layoutDirection: 'TB', jsonPanelOpen: false },
+    {
+      saving: false,
+      canSave: true,
+      layoutDirection: 'TB',
+      jsonPanelOpen: false,
+      focusMode: false,
+    },
   )
 
   const emit = defineEmits<{
     (e: 'autoLayout'): void
+    (e: 'undo'): void
+    (e: 'redo'): void
     (e: 'validate'): void
     (e: 'save'): void
     (e: 'exportMermaid'): void
@@ -51,6 +63,7 @@
     (e: 'toggleLayoutDirection'): void
     (e: 'toggleJson'): void
     (e: 'focusNode', nodeId: string): void
+    (e: 'toggleFocusMode'): void
   }>()
 
   function onMoreCommand(command: string) {
@@ -87,7 +100,7 @@
           :icon="RefreshLeft"
           :disabled="!store.editable || !store.canUndo"
           :title="t('workflowDesignerSpike.actionUndo')"
-          @click="store.undo()"
+          @click="$emit('undo')"
         >
           <span class="designer-toolbar__btn-text">{{
             t('workflowDesignerSpike.actionUndo')
@@ -97,7 +110,7 @@
           :icon="RefreshRight"
           :disabled="!store.editable || !store.canRedo"
           :title="t('workflowDesignerSpike.actionRedo')"
-          @click="store.redo()"
+          @click="$emit('redo')"
         >
           <span class="designer-toolbar__btn-text">{{
             t('workflowDesignerSpike.actionRedo')
@@ -204,6 +217,26 @@
     </el-tag>
     <NodeSearchBox class="designer-toolbar__search" @focus="$emit('focusNode', $event)" />
     <ShortcutHelpButton class="designer-toolbar__help" />
+    <el-tooltip
+      :content="
+        focusMode
+          ? t('workflowDesignerMvp.layout.exitFocusMode')
+          : t('workflowDesignerMvp.layout.enterFocusMode')
+      "
+      placement="bottom"
+    >
+      <el-button
+        circle
+        :icon="focusMode ? Minimize2 : Maximize2"
+        :type="focusMode ? 'primary' : 'default'"
+        :aria-label="
+          focusMode
+            ? t('workflowDesignerMvp.layout.exitFocusMode')
+            : t('workflowDesignerMvp.layout.enterFocusMode')
+        "
+        @click="$emit('toggleFocusMode')"
+      />
+    </el-tooltip>
   </div>
 </template>
 

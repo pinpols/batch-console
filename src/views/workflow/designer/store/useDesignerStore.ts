@@ -22,6 +22,10 @@ function cloneSnapshot(nodes: DesignerNode[], edges: DesignerEdge[]): DesignerSn
   }
 }
 
+function snapshotFingerprint(nodes: DesignerNode[], edges: DesignerEdge[]): string {
+  return JSON.stringify(cloneSnapshot(nodes, edges))
+}
+
 /** BE workflow_definition 元信息(load 时填充,保存时回传) */
 export interface DesignerMeta {
   id: number | null
@@ -65,6 +69,7 @@ export const useDesignerStore = defineStore('workflowDesigner', () => {
   const edges = ref<DesignerEdge[]>([])
   const selectedIds = ref<Set<string>>(new Set())
   const dirty = ref(false)
+  const cleanFingerprint = ref(snapshotFingerprint([], []))
   const undoStack = ref<DesignerSnapshot[]>([])
   const redoStack = ref<DesignerSnapshot[]>([])
   const meta = ref<DesignerMeta>({ ...EMPTY_META })
@@ -84,6 +89,14 @@ export const useDesignerStore = defineStore('workflowDesigner', () => {
     }
     return s
   })
+  /** 连线级错误索引,供画布语义线高亮使用 */
+  const errorEdgeIds = computed<Set<string>>(() => {
+    const s = new Set<string>()
+    for (const e of validationErrors.value) {
+      if (e.edgeId) s.add(e.edgeId)
+    }
+    return s
+  })
 
   /** 在变更前 push 当前快照到 undoStack,清空 redoStack。 */
   function pushUndo() {
@@ -96,11 +109,16 @@ export const useDesignerStore = defineStore('workflowDesigner', () => {
 
   function applySnapshot(snap: DesignerSnapshot) {
     nodes.value = snap.nodes.map((n) => ({ ...n, attrs: { ...(n.attrs ?? {}) } }))
-    edges.value = snap.edges.map((e) => ({ ...e }))
+    edges.value = snap.edges.map((e) => ({ ...e, attrs: { ...(e.attrs ?? {}) } }))
+  }
+
+  function refreshDirtyFromBaseline() {
+    dirty.value = snapshotFingerprint(nodes.value, edges.value) !== cleanFingerprint.value
   }
 
   function reset(snap: DesignerSnapshot = { nodes: [], edges: [] }) {
     applySnapshot(snap)
+    cleanFingerprint.value = snapshotFingerprint(nodes.value, edges.value)
     selectedIds.value = new Set()
     dirty.value = false
     undoStack.value = []
@@ -154,6 +172,7 @@ export const useDesignerStore = defineStore('workflowDesigner', () => {
       source: input.source,
       target: input.target,
       label: input.label,
+      attrs: { edgeType: 'SUCCESS', enabled: true },
     })
     dirty.value = true
   }
@@ -222,7 +241,7 @@ export const useDesignerStore = defineStore('workflowDesigner', () => {
     const prev = undoStack.value.pop()!
     redoStack.value.push(cloneSnapshot(nodes.value, edges.value))
     applySnapshot(prev)
-    dirty.value = true
+    refreshDirtyFromBaseline()
   }
 
   function redo() {
@@ -230,10 +249,11 @@ export const useDesignerStore = defineStore('workflowDesigner', () => {
     const next = redoStack.value.pop()!
     undoStack.value.push(cloneSnapshot(nodes.value, edges.value))
     applySnapshot(next)
-    dirty.value = true
+    refreshDirtyFromBaseline()
   }
 
   function markClean() {
+    cleanFingerprint.value = snapshotFingerprint(nodes.value, edges.value)
     dirty.value = false
   }
 
@@ -258,6 +278,7 @@ export const useDesignerStore = defineStore('workflowDesigner', () => {
     snapshot,
     editable,
     errorNodeIds,
+    errorEdgeIds,
     // actions
     reset,
     setMeta,

@@ -1,5 +1,5 @@
 <template>
-  <div class="row-actions">
+  <div class="row-actions" :class="{ 'row-actions--nowrap': nowrap }">
     <!-- 常用操作直显；超出 inlineLimit 的低频/危险操作再折进"更多" -->
     <el-button
       v-for="a in inlineActions"
@@ -98,8 +98,10 @@
       actions: RowAction[]
       /** 最多直显几个行操作；危险操作默认排在折叠菜单里，除非数量足够少。 */
       inlineLimit?: number
+      /** 单行展示直显操作；调用方需为操作列预留足够宽度。 */
+      nowrap?: boolean
     }>(),
-    { inlineLimit: 3 },
+    { inlineLimit: 3, nowrap: false },
   )
 
   const visibleActions = computed(() => props.actions.filter(Boolean))
@@ -153,10 +155,17 @@
     max-width: 100%;
   }
 
+  .row-actions--nowrap {
+    flex-wrap: nowrap;
+    width: max-content;
+    max-width: none;
+  }
+
   .row-actions :deep(.el-button) {
     min-width: 0;
     max-width: 100%;
     padding-inline: 8px;
+    white-space: nowrap;
   }
 
   .row-actions__more {

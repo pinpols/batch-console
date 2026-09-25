@@ -13,10 +13,8 @@
  *   7. 点「保存」按钮 — 验证 toast「保存成功」
  *   8. 刷新页面 — 验证画布重渲染,3 节点 2 边还在
  *
- * 容忍策略(参考 e2e/business-flows.spec.ts):
- *   - BE 未启动 / 无可用 workflow 行 → test.skip 并打 console warn
- *   - X6 canvas mount 失败 → 主流程跳过,只跑基础导航 smoke
- *   - 锁冲突 / 409 → 视为可接受路径(非本 spec 红线)
+ * 本用例是发布门禁:隔离工作流创建、编辑锁、X6 渲染、连线、保存任一步失败都必须报错，
+ * 不允许用 skip 把「页面能打开但不能编排」误报为通过。
  *
  * 命名隔离:
  *   - prefix 'e2e-wfd-<ts>' — global-teardown.cjs 按 prefix=e2e 统一清(已涵盖)
@@ -24,7 +22,7 @@
  * 范围外(留 follow-up):
  *   - 版本 diff e2e(Polish lane 在做)
  *   - 模板库 / 节点搜索 palette
- *   - 新建模式直存(BE 需补 POST /full 端点)
+ *   - 新建模式的元信息 prompt → POST 创建 → 带 id 重开完整链路
  */
 
 import { test, expect } from './support/app'
@@ -37,9 +35,7 @@ test.describe('@workflow-designer-smoke 工作流设计器主路径', () => {
     await enterDemoApp(page)
   })
 
-  test('主路径:进入 → 拖 3 节点 → 连边 → 填 jobCode → 校验 → 保存 → 重开仍在', async ({
-    page,
-  }) => {
+  test('主路径:进入 → 拖 3 节点 → 连边 → 填 jobCode → 校验 → 保存 → 重开仍在', async ({ page }) => {
     // ── Step 1-2: 创建隔离的最小合法图 → 进入设计器 ────────────────
     // 测试数据用 API 建立，核心编排动作仍全部走 UI；避免反复修改公共 seed 工作流。
     const stamp = Date.now()
@@ -51,7 +47,7 @@ test.describe('@workflow-designer-smoke 工作流设计器主路径', () => {
       },
       data: {
         tenantId: 'ta',
-        workflowCode: `e2e_wfd_${stamp}`,
+        workflowCode: `e2e-wfd-${stamp}`,
         workflowName: `E2E workflow designer ${stamp}`,
         workflowType: 'DAG',
         enabled: true,
@@ -87,18 +83,11 @@ test.describe('@workflow-designer-smoke 工作流设计器主路径', () => {
     const inspector = page.locator('.node-inspector').first()
     await expect(palette).toBeVisible({ timeout: 10_000 })
     await expect(canvas).toBeVisible({ timeout: 5_000 })
-    await expect(inspector).toBeVisible({ timeout: 5_000 })
+    await expect(inspector).toHaveCount(0)
 
-    // 锁可能被他人持有 → 只读 banner 在 → 写入路径不可达,记录跳过
-    if (await isVisible(page.locator('.workflow-designer__banner--readonly'), 2000)) {
-      test.skip(true, '该 workflow 被他人持锁,本 spec 不验冲突场景(留 follow-up),跳过写入')
-      return
-    }
+    await expect(page.locator('.workflow-designer__banner--readonly')).toHaveCount(0)
     const saveBtn = page.getByRole('button', { name: '保存' }).first()
-    if (await saveBtn.isDisabled()) {
-      test.skip(true, '未取得 workflow 编辑锁或无保存权限,跳过写入主路径')
-      return
-    }
+    await expect(saveBtn).toBeEnabled()
 
     // 读现有节点边数,作为 baseline(已 seed 的 workflow 会带原有节点)
     const baseline = await readGraphCounts(page)
@@ -127,13 +116,9 @@ test.describe('@workflow-designer-smoke 工作流设计器主路径', () => {
     startId = startId ?? (await pickIdByType(page, 'start'))
     const jobId = await pickIdByType(page, 'job')
     endId = endId ?? (await pickIdByType(page, 'end'))
-    if (!startId || !jobId || !endId) {
-      test.skip(
-        true,
-        `未能从画布抓到新增 3 节点 id(start=${startId} job=${jobId} end=${endId}),X6 渲染未就绪,跳过后续`,
-      )
-      return
-    }
+    expect(startId, '未能从画布识别 START 节点').not.toBeNull()
+    expect(jobId, '未能从画布识别 JOB 节点').not.toBeNull()
+    expect(endId, '未能从画布识别 END 节点').not.toBeNull()
 
     // ── Step 4: 连边 START → JOB → END ───────────────────────────
     await connectNodes(page, startId, jobId)
@@ -144,6 +129,7 @@ test.describe('@workflow-designer-smoke 工作流设计器主路径', () => {
 
     // ── Step 5: 选 JOB 节点 → inspector → 填 jobCode ────────────
     await page.locator(`.x6-node[data-cell-id="${jobId}"]`).first().click({ force: true })
+    await expect(inspector).toBeVisible({ timeout: 3_000 })
 
     // ElSelect 下拉:打开 → 选第一个 option
     const jobCodeInput = inspector
@@ -171,14 +157,8 @@ test.describe('@workflow-designer-smoke 工作流设计器主路径', () => {
     }
 
     // ── Step 7: 点「保存」按钮 ────────────────────────────────────
-    if (!(await isVisible(saveBtn, 2000))) {
-      test.skip(true, '未找到「保存」按钮(可能 readonly 模式)')
-      return
-    }
-    if (await saveBtn.isDisabled()) {
-      test.skip(true, '保存按钮 disabled(锁丢失 / readonly),跳过 save+reload 验证')
-      return
-    }
+    await expect(saveBtn).toBeVisible()
+    await expect(saveBtn).toBeEnabled()
     await saveBtn.click({ force: true })
 
     // 期望出现「保存成功」toast — 真实 BE 写入失败必须让核心冒烟失败。
@@ -229,7 +209,7 @@ async function addPaletteNode(
   type: 'START' | 'END' | 'JOB' | 'GATEWAY' | 'FILE_STEP' | 'APPROVAL',
 ) {
   const before = (await readGraphCounts(page)).nodes
-  const paletteItem = page.locator('.palette-item').filter({ hasText: type }).first()
+  const paletteItem = page.getByRole('button', { name: type, exact: true }).first()
   await expect(paletteItem).toBeVisible({ timeout: 3_000 })
   for (let attempt = 0; attempt < 3; attempt += 1) {
     await paletteItem.click({ force: true })
@@ -248,12 +228,12 @@ async function connectNodes(
   sourceId: string,
   targetId: string,
 ) {
-  const sourcePort = page.locator(
-    `.x6-node[data-cell-id="${sourceId}"] .x6-port-body[port="out"]`,
-  ).first()
-  const targetPort = page.locator(
-    `.x6-node[data-cell-id="${targetId}"] .x6-port-body[port="in"]`,
-  ).first()
+  const sourcePort = page
+    .locator(`.x6-node[data-cell-id="${sourceId}"] .x6-port-body[port="out"]`)
+    .first()
+  const targetPort = page
+    .locator(`.x6-node[data-cell-id="${targetId}"] .x6-port-body[port="in"]`)
+    .first()
   await expect(sourcePort).toBeAttached()
   await expect(targetPort).toBeAttached()
   const source = await sourcePort.boundingBox()
@@ -277,9 +257,11 @@ async function pickIdByType(
   prefix: 'start' | 'job' | 'end',
 ): Promise<string | null> {
   return await page.evaluate((pfx) => {
-    const x6 = (window as unknown as {
-      x6Graph?: { getNodes(): Array<{ id: string }> }
-    }).x6Graph
+    const x6 = (
+      window as unknown as {
+        x6Graph?: { getNodes(): Array<{ id: string }> }
+      }
+    ).x6Graph
     if (x6) {
       const matches = x6.getNodes().filter((n) => n.id.startsWith(`${pfx}_`))
       return matches[matches.length - 1]?.id ?? null

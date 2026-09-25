@@ -118,8 +118,9 @@ describe('QuickPalette', () => {
     await nextTick()
     expect(store.nodes.length).toBe(1)
     expect(store.nodes[0].nodeType).toBe('JOB')
-    expect(store.nodes[0].x).toBe(200)
-    expect(store.nodes[0].y).toBe(300)
+    // centerX / centerY are viewport-center coordinates; node position is its top-left corner.
+    expect(store.nodes[0].x).toBe(130)
+    expect(store.nodes[0].y).toBe(270)
     expect(wrapper.emitted('created')).toBeTruthy()
     expect(wrapper.emitted('update:visible')?.[0]).toEqual([false])
   })
