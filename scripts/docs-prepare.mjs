@@ -17,10 +17,10 @@ import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-const docsRoot = join(__dirname, '..', '..', 'file-batch-system', 'docs')
+const docsRoot = process.env.BACKEND_DOCS_ROOT || join(__dirname, '..', '..', 'file-batch-system', 'docs')
 
 if (!existsSync(docsRoot)) {
-  console.log('[docs-prepare] sibling file-batch-system/docs 不存在,跳过')
+  console.log(`[docs-prepare] backend docs 不存在,跳过: ${docsRoot}`)
   process.exit(0)
 }
 

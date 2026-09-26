@@ -3,6 +3,7 @@
 #
 # 用法:
 #   ./scripts/check-api-drift.sh                # local 模式:用同级 file-batch-system 的 yaml
+#   BE_OPENAPI_PATH=/path/to/openapi.yaml ./scripts/check-api-drift.sh
 #   BE_OPENAPI_URL=... ./scripts/check-api-drift.sh   # 远端模式:CI 用 raw GitHub URL
 #   ./scripts/check-api-drift.sh --quiet         # 安静模式,只在漂移时输出
 #
@@ -28,7 +29,7 @@ QUIET=false
 log()  { $QUIET || echo "$@"; }
 warn() { echo "[api-drift] $*" >&2; }
 
-LOCAL_YAML="../file-batch-system/docs/api/console-api.openapi.yaml"
+LOCAL_YAML="${BE_OPENAPI_PATH:-../file-batch-system/docs/api/console-api.openapi.yaml}"
 GENERATED="src/types/api.generated.ts"
 # 用临时目录而非临时文件:macOS mktemp 无法控制后缀,而 prettier 需 .ts 才能选解析器
 TMP_DIR="$(mktemp -d)"
@@ -48,7 +49,7 @@ if [[ -n "${BE_OPENAPI_URL:-}" ]]; then
 elif [[ -f "$LOCAL_YAML" ]]; then
   YAML_PATH="$LOCAL_YAML"
 else
-  warn "no yaml source available (set BE_OPENAPI_URL or check out file-batch-system as sibling) — skipping (exit 0)"
+  warn "no yaml source available (set BE_OPENAPI_PATH, BE_OPENAPI_URL, or check out file-batch-system as sibling) — skipping (exit 0)"
   exit 0
 fi
 

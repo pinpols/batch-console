@@ -10,7 +10,7 @@
   "scripts": {
     "prepare": "node scripts/prepare.mjs",
     "dev": "vite",
-    "gen:api": "openapi-typescript ../file-batch-system/docs/api/console-api.openapi.yaml -o src/types/api.generated.ts && prettier --write src/types/api.generated.ts",
+    "gen:api": "bash scripts/gen-api-types.sh",
     "gen:api:check": "bash scripts/check-api-drift.sh",
     "check:version": "bash scripts/check-version-alignment.sh",
     "compliance:sbom": "node scripts/generate-frontend-compliance.mjs",
