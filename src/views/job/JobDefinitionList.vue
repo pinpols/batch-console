@@ -1561,6 +1561,7 @@
       () => route.query.editId,
       () => route.query.tenantId,
       () => tenant.tenantId,
+      () => canMutateConfig.value,
     ],
     async ([action, editId, queryTenant]) => {
       const request = ++editLinkRequest
@@ -1578,10 +1579,10 @@
       try {
         const row = await jobApi.getDefinition(id, targetTenant)
         if (request !== editLinkRequest || route.query.action !== 'edit') return
-        openEdit(row)
-        void router.replace({
+        await router.replace({
           query: { ...route.query, action: undefined, editId: undefined },
         })
+        if (route.path === '/jobs/definitions') openEdit(row)
       } catch {
         // Keep the deep link intact so refresh can retry after a transient failure.
       }

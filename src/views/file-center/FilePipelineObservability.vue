@@ -53,11 +53,17 @@
         </router-link>
       </div>
       <div class="pipeline-stages" :aria-label="t('filePipelineObservability.stageOverview')">
-        <div
+        <button
           v-for="stage in selectedStages"
           :key="stage.code"
+          type="button"
           class="pipeline-stage"
-          :class="`pipeline-stage--${stage.tone}`"
+          :class="[
+            `pipeline-stage--${stage.tone}`,
+            { 'pipeline-stage--selected': selectedStageCode === stage.code },
+          ]"
+          :aria-pressed="selectedStageCode === stage.code"
+          @click="focusStage(stage.code)"
         >
           <span class="pipeline-stage__index">{{ stage.index }}</span>
           <span class="pipeline-stage__body">
@@ -67,7 +73,7 @@
               {{ stage.error }}
             </span>
           </span>
-        </div>
+        </button>
       </div>
     </SectionCard>
 
@@ -576,6 +582,7 @@
   const allDispatches = ref<ConsoleFileDispatchRecordResponse[]>([])
   const allErrors = ref<ConsoleFileErrorRecordResponse[]>([])
   const selectedPipeline = ref<ConsoleFilePipelineResponse | null>(null)
+  const selectedStageCode = ref<string | null>(null)
   const PIPELINE_STAGES = ['RECEIVE', 'PARSE', 'VALIDATE', 'LOAD', 'ARCHIVE'] as const
 
   const selectedSteps = computed(() =>
@@ -612,7 +619,14 @@
 
   function selectPipeline(row: ConsoleFilePipelineResponse) {
     selectedPipeline.value = row
+    selectedStageCode.value = null
     void ensureStepsLoaded()
+  }
+
+  function focusStage(code: string) {
+    selectedStageCode.value = selectedStageCode.value === code ? null : code
+    activeTab.value = 'steps'
+    page.value = 1
   }
 
   // 行级进度:默认开启(BE 已服务端桥接运行中实时行数,未开 checkpoint 也有值;
@@ -744,12 +758,18 @@
 
   const filteredSteps = computed(() => {
     const k = kwApplied.value.trim().toLowerCase()
-    if (!k) return allSteps.value
-    return allSteps.value.filter((row) =>
-      `${row.stepCode} ${row.stageCode} ${row.stepStatus} ${row.errorMessage ?? ''} ${row.pipelineInstanceId}`
-        .toLowerCase()
-        .includes(k),
-    )
+    return allSteps.value.filter((row) => {
+      if (selectedStageCode.value && row.stageCode?.toUpperCase() !== selectedStageCode.value)
+        return false
+      if (selectedStageCode.value && row.pipelineInstanceId !== selectedPipeline.value?.id)
+        return false
+      return (
+        !k ||
+        `${row.stepCode} ${row.stageCode} ${row.stepStatus} ${row.errorMessage ?? ''} ${row.pipelineInstanceId}`
+          .toLowerCase()
+          .includes(k)
+      )
+    })
   })
 
   const filteredDispatches = computed(() => {
@@ -886,6 +906,7 @@
   }
 
   function onTabChange() {
+    if (activeTab.value !== 'steps') selectedStageCode.value = null
     page.value = 1
     kwDraft.value = ''
     kwApplied.value = ''
@@ -903,6 +924,7 @@
       page.value = 1
       selectedPipeline.value =
         allPipelines.value.find((item) => item.id === Number(next)) ?? selectedPipeline.value
+      selectedStageCode.value = null
       if (selectedPipeline.value) void ensureStepsLoaded()
       void loadCurrentFile(next)
     },
@@ -920,6 +942,7 @@
   useTenantReload(() => {
     page.value = 1
     selectedPipeline.value = null
+    selectedStageCode.value = null
     allPipelines.value = []
     allSteps.value = []
     stepsLoaded.value = false
@@ -984,6 +1007,17 @@
     border: 1px solid var(--color-border-light);
     border-radius: var(--radius-content);
     background: var(--color-bg-page);
+    color: inherit;
+    font: inherit;
+    width: 100%;
+    cursor: pointer;
+    text-align: left;
+  }
+
+  .pipeline-stage--selected,
+  .pipeline-stage:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
   }
 
   .pipeline-stage__index {
