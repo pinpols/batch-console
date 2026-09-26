@@ -13,6 +13,7 @@
 | [页面命名约定](./engineering/page-naming-convention.md)                                | URL / 代码目录 / 侧边栏分组三者一致规则                           |
 | [前端可观测性方案](./engineering/前端可观测性方案.md)                                  | 操作日志 / 行为埋点 / Sentry / 错误追踪                           |
 | [运行时与依赖版本](./engineering/runtime-versions.md)                                  | Node 运行约束、锁文件和后端权威支持矩阵                            |
+| [第三方软件声明](./compliance/THIRD-PARTY-LICENSES.md)                                 | 前端 npm 依赖许可证摘要;SBOM 见同目录 `sbom.json`                   |
 | [meta-enum 覆盖清单](./engineering/meta-enum-coverage.md)                              | 后端枚举元数据 → 筛选项 / 状态标签覆盖                            |
 | [移动端刷新策略](./engineering/mobile-refresh-strategy.md)                             | `/m/*` 下拉 / 自动刷新设计                                        |
 | [内嵌文档中心方案](./engineering/内嵌文档中心方案.md)                                  | VitePress 文档中心构建 / 部署                                     |
@@ -30,7 +31,7 @@
 
 ## 阶段性报告(reports/)
 
-按时间倒序,反映**当时**的实现状态;长期规则看 `engineering/` 与 `../CLAUDE.md`。
+按时间倒序,反映**当时**的实现状态;长期规则看 `engineering/` 与 `../AGENTS.md`。
 
 | 日期       | 报告                                                                      | 关注点                              |
 | ---------- | ------------------------------------------------------------------------- | ----------------------------------- |
@@ -65,7 +66,7 @@
 
 ## 常见任务入口
 
-- **了解项目现状**:[architecture/project-structure.md](./architecture/project-structure.md) → 根 [CLAUDE.md](../CLAUDE.md)
+- **了解项目现状**:[architecture/project-structure.md](./architecture/project-structure.md) → 根 [AGENTS.md](../AGENTS.md)
 - **新增页面**:[engineering/page-naming-convention.md](./engineering/page-naming-convention.md) → `src/router/index.ts` → `src/constants/pageMeta.ts` → `src/constants/navigation.ts` → `src/locales/`
 - **联调接口**:[api/README.md](./api/README.md) → 后端 `../file-batch-system/docs/api/console-api.openapi.yaml` → `npm run gen:api`
 - **排查契约漂移**:后端 `python3 scripts/ci/check-console-openapi-paths.py` → 前端 `npm run gen:api:check`
@@ -74,7 +75,7 @@
 
 ## 维护规则
 
-> CLAUDE.md 规范条款本身的变化(结构 / 构建 / 架构约束 / 编码红线 / i18n / 测试范围)记在 [`changelog.md`](./changelog.md),日期倒序。
+> AGENTS.md 规范条款本身的变化(结构 / 构建 / 架构约束 / 编码红线 / i18n / 测试范围)记在 [`changelog.md`](./changelog.md),日期倒序。
 
 - 长期工程规则放 `engineering/`,视觉重设计资产放根 `../design/`,避免散落到报告。
 - 阶段性报告放 `reports/`,文件名 `YYYY-MM-DD-` 前缀。

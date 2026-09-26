@@ -2,7 +2,7 @@
 # =========================================================
 # fe-acceptance.sh
 #
-# FE 全链路验收 entry — 与 ~/.claude/skills/fe-acceptance 同步。
+# FE 全链路验收 entry。
 # 类比 BE 的 be-acceptance.sh,串行执行 typecheck → lint → i18n →
 # api-drift → unit → build → e2e smoke → e2e full → preview 冒烟 →
 # 违约扫 → backlog 归档。

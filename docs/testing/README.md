@@ -17,7 +17,7 @@
 
 **当前规模**:单测 70 个文件;e2e 88 个顶层 spec + 26 个 flows/flows-ui。
 
-**移动端不写自动化测试**(`src/views-mobile/` 是桌面 API 的轻壳,逻辑复用已被桌面单测覆盖;手势无法稳定复现)。详见根 `CLAUDE.md §移动端测试范围`。
+**移动端不写自动化测试**(`src/views-mobile/` 是桌面 API 的轻壳,逻辑复用已被桌面单测覆盖;手势无法稳定复现)。详见根 `AGENTS.md §移动端测试范围`。
 
 ---
 
@@ -213,7 +213,7 @@ bash scripts/local/fe-acceptance.sh --skip-e2e-full
 | 暗色下白卡 | 组件用了 `var(--color-xxx, #浅色)` 但该 token **未在 `html.dark` 定义** | 在 `tokens.css` 的 `:root` + `html.dark` **成对**定义;审计:见本仓 token 缺口扫法 |
 | 单测报 `Unknown file extension ".css"` | element-plus SFC auto-import 副作用拉 css | 优先把逻辑抽到 `src/utils/*.ts` 测;非测不可时 vite.config `test.css:false` + `server.deps.inline:[/element-plus/]`(已配) |
 | `npm run test:e2e` 全 fail | BE 没起 | `cd ../file-batch-system && bash scripts/local/restart.sh console` |
-| 表格行 `.click()` 不触发 | 见根 CLAUDE.md/记忆:个别场景须原生 `el.click()` | 用 `clickTableAction` helper |
+| 表格行 `.click()` 不触发 | 见根 AGENTS.md/记忆:个别场景须原生 `el.click()` | 用 `clickTableAction` helper |
 
 ---
 
@@ -229,7 +229,7 @@ bash scripts/local/fe-acceptance.sh --skip-e2e-full
 
 ---
 
-## 9. 编写约定(摘自根 CLAUDE.md §测试约定)
+## 9. 编写约定(摘自根 AGENTS.md §测试约定)
 
 - 框架统一 Vitest,**禁** jest/chai/sinon;`*.test.ts` 与被测文件**同目录**。
 - `describe(被测对象短名)`;`it(行为)`,**禁** `should` 前缀。

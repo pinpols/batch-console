@@ -26,9 +26,11 @@ RUN npm run ${BUILD_MODE}
 # ── 文档站点(可选):跨仓 srcDir = ../../../../file-batch-system/docs ──
 # vitepress 配置:tools/docs-bridge/backend/.vitepress/config.ts(base: /docs/),
 # 产物 → tools/docs-bridge/backend/.vitepress/dist。
-# 仅当 build context 包含 file-batch-system/docs(用 docker build -f batch-console/Dockerfile ../)
-# 才能成功构建;否则回退占位页,nginx /docs/ 路径也不会 404 整面崩溃。
-RUN if [ -d /app/../file-batch-system/docs ] || [ -d ../file-batch-system/docs ]; then \
+# 优先复用 build context 中已有的预构建产物;否则尝试在容器内构建;再否则回退占位页,
+# nginx /docs/ 路径不会 404 整面崩溃。
+RUN if [ -f tools/docs-bridge/backend/.vitepress/dist/index.html ]; then \
+      echo "[docs] using prebuilt vitepress dist"; \
+    elif [ -d /app/../file-batch-system/docs ] || [ -d ../file-batch-system/docs ]; then \
       echo "[docs] building vitepress from sibling repo..." && \
       npm run docs:build; \
     else \

@@ -79,7 +79,7 @@ export default [
       ...prettier.rules,
       'vue/multi-word-component-names': 'off',
       '@typescript-eslint/no-explicit-any': 'warn',
-      'no-console': ['warn', { allow: ['warn', 'error'] }],
+      'no-console': ['error', { allow: ['warn', 'error'] }],
       // 禁用原生 v-html：统一走 v-safe-html（内部用 DOMPurify 过滤）
       'vue/no-v-html': 'error',
     },
@@ -91,7 +91,7 @@ export default [
     files: ['**/*.vue'],
     rules: {
       'no-undef': 'error',
-      // CLAUDE.md 红线 #2:组件禁裸 axios,API 调用一律走 src/api/*(已配 client/interceptors:
+      // AGENTS.md 红线 #2:组件禁裸 axios,API 调用一律走 src/api/*(已配 client/interceptors:
       // auth/tenant/幂等/解包)。允许 `import type`(类型零运行时)。把"靠自觉"变"靠门禁"。
       '@typescript-eslint/no-restricted-imports': [
         'error',
@@ -108,4 +108,3 @@ export default [
     },
   },
 ]
-

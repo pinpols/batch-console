@@ -9,8 +9,8 @@
 ## 方案 A — 永久解锁(推荐)
 
 ```bash
-# ~/.claude/settings.json 加 Bash/Edit/Read 权限规则,允许动 ../file-batch-system/
-# (具体 JSON 编辑命令见聊天上文)
+# 在当前 Agent 环境中授予 Bash/Edit/Read 权限,允许动 ../file-batch-system/
+# (具体权限配置方式以当前 Agent 工具为准)
 ```
 
 ## 方案 B — 手动应用 patch
