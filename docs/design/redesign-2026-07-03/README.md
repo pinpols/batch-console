@@ -98,7 +98,7 @@
 | P3 · 看板页 | Outbox 投递 / 事件告警 | 新看板组件 |
 | P4 · Dashboard + 详情 | 严重度分色 KPI(替换等权卡片)、详情状态头 + 复制 traceId | 收口 |
 
-**红线**:沿用既有约束——`v-safe-html`、`useTenantReload`、类型走 `api.generated.ts`、i18n 全量、颜色/间距走 token(禁裸 hex/px)。详见 `../../CLAUDE.md`。
+**红线**:沿用既有约束——`v-safe-html`、`useTenantReload`、类型走 `api.generated.ts`、i18n 全量、颜色/间距走 token(禁裸 hex/px)。详见 `../../AGENTS.md`。
 
 ---
 

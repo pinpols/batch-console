@@ -46,7 +46,7 @@ npm run gen:api          # 从 BE OpenAPI 重新生成 src/types/api.generated.t
 # CI 漂移检查会 reject 不同步的 PR
 ```
 
-详见 [`CLAUDE.md`](../../CLAUDE.md) 「后端 OpenAPI 同步」。
+详见 [`AGENTS.md`](../../AGENTS.md) 「后端 OpenAPI 同步」。
 
 ## 提交前自检
 
@@ -174,5 +174,5 @@ A: 拉 BE 最新 → 本地 `npm run gen:api` → commit `src/types/api.generate
 ## 相关文档
 
 - CI 流水线:[`docs/runbook/ci.md`](ci.md)
-- Agent 指南:[`CLAUDE.md`](../../CLAUDE.md)
+- Agent 指南:[`AGENTS.md`](../../AGENTS.md)
 - 配对后端开发流程:[`../../file-batch-system/docs/runbook/dev-workflow.md`](../../../file-batch-system/docs/runbook/dev-workflow.md)

@@ -38,12 +38,21 @@
           >
         </button>
       </el-tooltip>
+
+      <div class="login-brand login-card__mobile-brand">
+        <span class="login-brand__logo">BC</span>
+        <div>
+          <div class="login-brand__name">{{ t('nav.appTitle') }}</div>
+          <div class="login-brand__desc">{{ t('login.appDesc') }}</div>
+        </div>
+      </div>
+
       <header class="login-card__header">
         <h2 class="login-card__title">{{ t('login.welcome') }}</h2>
         <p class="login-card__subtitle">{{ t('login.subtitle') }}</p>
       </header>
 
-      <div v-if="loginTrace" class="login-trace" role="status">
+      <div v-if="loginTrace" class="login-trace" role="status" aria-live="polite">
         <span class="login-trace__label">{{ t('login.traceLabel') }}</span>
         <code class="login-trace__code" :title="loginTrace">{{ loginTrace }}</code>
         <el-button size="small" link type="primary" @click="copyTrace">
@@ -70,17 +79,15 @@
               <el-icon><User /></el-icon>
             </template>
             <template #suffix>
-              <el-icon
+              <button
                 v-if="form.username"
                 class="input-clear-btn"
-                role="button"
-                tabindex="0"
+                type="button"
                 :aria-label="t('login.clearUsernameAria')"
                 @click="form.username = ''"
-                @keydown.enter.space.prevent="form.username = ''"
               >
-                <CircleClose />
-              </el-icon>
+                <el-icon><CircleClose /></el-icon>
+              </button>
             </template>
           </el-input>
         </el-form-item>
@@ -98,12 +105,15 @@
             </template>
           </el-input>
         </el-form-item>
-        <div v-if="captchaVisible" class="login-captcha">
-          <div class="login-captcha__hint">{{ t('login.captchaHint') }}</div>
+        <div v-if="captchaVisible" class="login-captcha" aria-live="polite">
+          <div id="login-captcha-hint" class="login-captcha__hint">
+            {{ t('login.captchaHint') }}
+          </div>
           <CaptchaChallenge
             :key="captchaKey"
             :provider="captchaConfig.provider"
             :site-key="captchaConfig.siteKey"
+            aria-describedby="login-captcha-hint"
             @token="onCaptchaToken"
           />
         </div>
@@ -112,6 +122,7 @@
           type="primary"
           native-type="submit"
           :loading="loading"
+          :disabled="loading"
           class="login-submit"
           size="large"
         >
@@ -248,10 +259,14 @@
     }
   }
 
-  function copyTrace() {
+  async function copyTrace() {
     if (!loginTrace.value) return
-    void navigator.clipboard.writeText(loginTrace.value)
-    ElMessage.success(t('login.copySuccess'))
+    try {
+      await navigator.clipboard.writeText(loginTrace.value)
+      ElMessage.success(t('login.copySuccess'))
+    } catch {
+      ElMessage.warning(t('login.copyFailed'))
+    }
   }
 
   function toggleLocale() {
@@ -266,7 +281,7 @@
     min-height: 100dvh;
     display: flex;
     align-items: stretch;
-    background: var(--color-bg-page);
+    background: var(--login-page-bg);
   }
 
   .login-hero {
@@ -305,10 +320,10 @@
     aspect-ratio: 2 / 1;
     margin-top: clamp(16px, 2.5vh, 28px);
     overflow: hidden;
-    border: 1px solid rgb(96 165 250 / 22%);
-    border-radius: 14px;
-    background: #06111f;
-    box-shadow: 0 18px 44px rgb(0 0 0 / 18%);
+    border: 1px solid color-mix(in srgb, var(--color-primary) 24%, var(--color-border));
+    border-radius: var(--radius-content);
+    background: var(--color-bg-subtle);
+    box-shadow: var(--shadow-card);
   }
 
   .login-hero__visual img {
@@ -335,9 +350,19 @@
     display: flex;
     flex-direction: column;
     justify-content: center;
+    align-items: stretch;
     padding: 48px 56px;
     background: var(--color-bg-card);
     border-left: 1px solid var(--color-border);
+  }
+
+  .login-card__header,
+  .login-trace,
+  .login-form,
+  .login-card__mobile-brand {
+    width: 100%;
+    max-width: 420px;
+    align-self: center;
   }
 
   .login-locale-toggle {
@@ -354,6 +379,11 @@
     border-radius: var(--radius-button);
     background: var(--color-bg-elevated);
     cursor: pointer;
+  }
+
+  .login-locale-toggle:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--button-focus-ring);
   }
 
   .login-locale-toggle__seg {
@@ -397,9 +427,9 @@
     font-size: 13px;
     font-weight: 700;
     letter-spacing: 0.06em;
-    color: #fff;
-    background: #1d4ed8;
-    box-shadow: 0 4px 12px rgb(29 78 216 / 20%);
+    color: var(--button-primary-text);
+    background: var(--button-primary-bg);
+    box-shadow: 0 4px 12px color-mix(in srgb, var(--button-primary-bg) 20%, transparent);
   }
 
   .login-brand__name {
@@ -418,6 +448,11 @@
   /* 标题 */
   .login-card__header {
     margin-bottom: 24px;
+  }
+
+  .login-card__mobile-brand {
+    display: none;
+    margin-bottom: 32px;
   }
 
   .login-card__title {
@@ -511,14 +546,29 @@
   }
 
   .input-clear-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: 0;
+    background: transparent;
     cursor: pointer;
     color: var(--color-text-tertiary);
     font-size: 15px;
     transition: color 0.15s ease;
   }
 
-  .input-clear-btn:hover {
+  .input-clear-btn:hover,
+  .input-clear-btn:focus-visible {
     color: var(--color-text-secondary);
+  }
+
+  .input-clear-btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--button-focus-ring);
+    border-radius: var(--radius-button);
   }
 
   .login-captcha {
@@ -554,6 +604,12 @@
     box-shadow: 0 6px 20px color-mix(in srgb, var(--button-primary-bg) 26%, transparent);
   }
 
+  .login-submit.is-disabled,
+  .login-submit.is-disabled:hover {
+    transform: none;
+    box-shadow: none;
+  }
+
   .login-submit:active {
     transform: translateY(0);
   }
@@ -568,8 +624,31 @@
       flex: 1;
       max-width: none;
       min-width: 0;
+      min-height: 100vh;
+      min-height: 100dvh;
+      overflow-y: auto;
       border-left: none;
       padding: 40px 28px;
+    }
+
+    .login-card__mobile-brand {
+      display: flex;
+      padding-right: 78px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .login-card {
+      padding: 28px 20px;
+    }
+
+    .login-locale-toggle {
+      top: 20px;
+      right: 20px;
+    }
+
+    .login-card__title {
+      font-size: 22px;
     }
   }
 </style>

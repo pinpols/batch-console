@@ -27,7 +27,7 @@ batch-console/
 ├── logs/                      本地验证日志(.gitignore)
 ├── .remember/                 本地 session memory(.gitignore)
 ├── .codex-audit/              本地审计缓存(.gitignore)
-├── .claude/                   本地 Claude/Codex 运行时状态(.gitignore)
+├── .agents/                   仓库级 Agent 技能
 ├── .idea/                     本地 IDE 状态,workspace.xml 忽略
 │
 ├── index.html                 SPA 入口
@@ -43,8 +43,7 @@ batch-console/
 ├── docker-compose.yml         本地编排
 ├── docker-compose.deploy.yml  部署编排
 ├── Makefile                   常用任务 alias
-├── CLAUDE.md                  项目红线 + 关键路径(权威)
-├── AGENTS.md                  Codex/OpenAI Agent 入口,指向 CLAUDE.md
+├── AGENTS.md                  项目红线 + 关键路径(权威)
 └── CHANGELOG.md               发布日志(release-please 维护)
 ```
 
@@ -58,7 +57,7 @@ batch-console/
 | 设计输入 | `design/`                                                                                                       | 作为前端设计稿输入独立保留,默认只读,不做目录整理 |
 | 工程脚本 | `scripts/`, `tools/`                                                                                            | 可重构,但要保留 CLI 入口兼容性                   |
 | 仓库配置 | `.github/`, `.husky/`, `.vscode/`                                                                               | 随 CI / DX 需求维护                              |
-| 本地产物 | `dist/`, `coverage/`, `playwright-report/`, `test-results/`, `logs/`, `.remember/`, `.codex-audit/`, `.claude/` | 已由 `.gitignore` 管理,不提交                    |
+| 本地产物 | `dist/`, `coverage/`, `playwright-report/`, `test-results/`, `logs/`, `.remember/`, `.codex-audit/` | 已由 `.gitignore` 管理,不提交                    |
 
 ## src/ 子目录
 
@@ -154,7 +153,7 @@ scripts/
     └── sync-from-main.sh / sync-main.sh    跨仓 main 同步
 ```
 
-## 关键约束(详 [`../../CLAUDE.md`](../../CLAUDE.md))
+## 关键约束(详 [`../../AGENTS.md`](../../AGENTS.md))
 
 - **i18n 强制双语**:zh-CN / en-US `messages.ts` 1:1;`check-i18n-messages.mjs` 守护
 - **禁硬编码中文**:UI 文本走 `t('key')`(JobDefinitionList 历史违例已修)

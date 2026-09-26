@@ -20,6 +20,8 @@
  * 退出码:发现真 bug → 1;全干净 → 0(供 CI / pre-release gate 用)。
  */
 const { chromium } = require('playwright')
+const { tmpdir } = require('node:os')
+const { join } = require('node:path')
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
 const BASE = process.env.BASE || 'http://localhost:5173'
@@ -150,7 +152,8 @@ async function main() {
       await page.goto(BASE + '/config/tenant-package', { waitUntil: 'domcontentloaded' }); await sleep(2000)
       const [dl] = await Promise.all([page.waitForEvent('download', { timeout: 30000 }).catch(() => null), nClick(page.locator('button:has-text("导出当前配置"),button:has-text("Export current")').first())])
       if (!dl) throw new Error('导出未触发下载')
-      const p = '/tmp/fe-audit-pkg.xlsx'; await dl.saveAs(p)
+      const p = join(tmpdir(), 'fe-audit-pkg.xlsx')
+      await dl.saveAs(p)
       await page.locator('input[type=file]').first().setInputFiles(p); await sleep(800)
       await nClick(page.locator('button:has-text("开始上传"),button:has-text("Start upload")').first())
       for (let i = 0; i < 20 && !token; i++) await sleep(500)

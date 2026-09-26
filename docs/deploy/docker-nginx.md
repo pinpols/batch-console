@@ -14,7 +14,7 @@
 | 文件 | 用途 |
 |---|---|
 | `Dockerfile` | 多阶段构建定义 |
-| `.dockerignore` | 排除 node_modules / dist / git / e2e / docs-site 等 |
+| `.dockerignore` | 排除 node_modules / dist / git / e2e / 前端 docs 源文件等 |
 | `nginx/nginx.conf` | nginx 主配置(全局 gzip / 日志 / sendfile / worker) |
 | `nginx/default.conf.template` | server block 模板,启动时 envsubst 替换 `${BACKEND_UPSTREAM_HOST}` / `${NGINX_PORT}` |
 | `docker-compose.yml` | 单服务 compose,默认反代到 `host.docker.internal:18080` |
@@ -61,7 +61,7 @@ vue-router history 模式 → `try_files $uri $uri/ /index.html`,所有未知路
 - `Upgrade / Connection` 头保留(WebSocket 预留)
 
 ### `/docs/*` 文档站点 + 鉴权
-- 静态产物:`docs-site/.vitepress/dist`(VitePress base 配置 `/docs/` 与 nginx alias 对齐)
+- 静态产物:`tools/docs-bridge/backend/.vitepress/dist`(VitePress base 配置 `/docs/` 与 nginx alias 对齐)
 - **内嵌 auth_request**:每个 docs 资源请求都触发一次 internal 子请求到 BE `/api/console/auth/check`
 - BE 期望:`GET /api/console/auth/check` 拿 cookie / Authorization 头 → 200/204 通过,401/403 拒绝
 - 鉴权 SLO:子请求 connect/read 超时各 1-2s,超时即拒
@@ -97,28 +97,27 @@ BUILD_MODE=build docker compose up -d --build
 
 ## VitePress 文档构建(跨仓)
 
-`docs-site/.vitepress/config.ts` 用 `srcDir: '../../file-batch-system/docs'` 跨仓引用 BE 仓的 markdown,**两个仓必须放在同一父目录**(参见 `AGENTS.md`)。
+`tools/docs-bridge/backend/.vitepress/config.ts` 用 `srcDir: '../../../../file-batch-system/docs'` 跨仓引用 BE 仓的 markdown,**两个仓必须放在同一父目录**(参见 `AGENTS.md`)。
 
 构建有 2 种方式:
 
-**方式 1:扩展 build context 到父目录**(自动跑 vitepress build)
-
-```bash
-# Dockerfile 在父目录可见 file-batch-system/docs 时会自动跑 npm run docs:build
-docker build -f batch-console/Dockerfile -t batch-console:latest ..
-```
-
-**方式 2:CI 预构建 + 单仓 docker build**(推荐 CI 用)
+**方式 1:CI 预构建 + 单仓 docker build**(推荐)
 
 ```bash
 # 在 CI 上先 cd batch-console && npm install && npm run docs:build
-# 产物在 docs-site/.vitepress/dist;docker build 直接拷
+# 产物在 tools/docs-bridge/backend/.vitepress/dist;docker build 直接复用
 docker build -t batch-console:latest .
 ```
 
-**方式 3(回退)**:不构建文档,镜像里 `/docs/` 返回占位页,SPA 主站不受影响。
+**方式 2:本地快速构建占位文档**
 
-> Dockerfile 启动时检测 `/app/../file-batch-system/docs` 是否存在 — 存在自动跑 docs:build,否则装占位页。
+```bash
+# 未预构建文档、且构建上下文看不到后端 docs 时,Dockerfile 写入 /docs/ 占位页,
+# SPA 主站与 /api/ 反代不受影响。
+docker build -t batch-console:latest .
+```
+
+> Dockerfile 顺序:复用 `tools/docs-bridge/backend/.vitepress/dist/index.html` → 尝试容器内构建 → 写入占位页。
 
 ## BE 地址注入方式
 
@@ -166,8 +165,8 @@ docker inspect --format='{{.State.Health.Status}}' batch-console
 
 由 `.dockerignore` 排除:
 - `node_modules` / `dist`(在构建阶段重新生成)
-- `.git` / `.github` / `.idea` / `.vscode` / `.claude`
+- `.git` / `.github` / `.idea` / `.vscode`
 - e2e 相关:`test-results / playwright-report / e2e/.auth`
-- `docs-site` / `docs`(单独 vitepress 部署)
+- `docs`(前端文档源;运行镜像只需要构建后的文档产物)
 - `.env.local` / `.env.*.local`(env 通过 `-e` 注入)
 - `.png` / `.xlsx` / `oldfiles` / `.DS_Store`

@@ -3,7 +3,7 @@
     <div class="captcha-thirdparty">
       <div v-if="thirdPartyError" class="captcha-fallback" role="alert">
         {{ t('captcha.loadFailed') }}
-        <el-button size="small" link type="primary" @click="initThirdParty">
+        <el-button size="small" link type="primary" native-type="button" @click="initThirdParty">
           {{ t('captcha.retry') }}
         </el-button>
       </div>

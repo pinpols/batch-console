@@ -14,7 +14,7 @@ import { fileURLToPath, URL } from 'node:url'
  */
 export default withMermaid({
   // 跨仓 srcDir:相对 .vitepress/ 上推四级到 batch-console/,再 ../ 到 Downloads/,
-  // 然后到 file-batch-system/docs。本地约束:两仓必须放同一父目录(CLAUDE.md)。
+  // 然后到 file-batch-system/docs。本地约束:两仓必须放同一父目录(AGENTS.md)。
   // 路径段:.vitepress → backend → docs-bridge → tools → batch-console → Downloads → file-batch-system/docs
   srcDir: '../../../../file-batch-system/docs',
   // outDir 默认在 tools/docs-bridge/backend/.vitepress/dist;不绕到外层防止 rollup 跨包 resolve 异常
@@ -290,7 +290,7 @@ export default withMermaid({
         async closeBundle() {
           const { readdir, mkdir, copyFile, stat } = await import('node:fs/promises')
           const { join, relative, dirname } = await import('node:path')
-          const SRC = fileURLToPath(new URL('../../../file-batch-system/docs', import.meta.url))
+          const SRC = fileURLToPath(new URL('../../../../../file-batch-system/docs', import.meta.url))
           const DIST = fileURLToPath(new URL('../.vitepress/dist', import.meta.url))
           const ALLOWED = /\.(ya?ml|json|sql|csv|txt|svg|png|jpe?g|gif|pdf)$/i
           let copied = 0
@@ -418,17 +418,6 @@ export default withMermaid({
         },
       },
     ],
-    resolve: {
-      // 跨仓 srcDir 下,Rollup 从 markdown 文件位置(file-batch-system/docs/...)
-      // 反向解析 vue / vue/server-renderer 找不到本仓 node_modules。
-      // 显式 alias 保 build 不挂(dev 走 root 已 OK)。
-      // alias 指 vue 包目录(含 package.json),让 import 'vue' / 'vue/server-renderer'
-      // / 'vue/jsx-runtime' 等 sub-path 都走 vue 自己的 exports map 解析。
-      // 别 alias 到具体 entry 文件(否则 sub-path 会拼成 <file>/server-renderer 报错)。
-      alias: {
-        vue: fileURLToPath(new URL('../../node_modules/vue', import.meta.url)),
-      },
-    },
   },
 
   themeConfig: {

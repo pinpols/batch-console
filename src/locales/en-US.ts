@@ -2031,6 +2031,7 @@ const messages: Messages = {
     traceLabel: 'Trace',
     copy: 'Copy',
     copySuccess: 'Trace ID copied',
+    copyFailed: 'Copy failed, please select the trace ID manually',
     usernameLabel: 'Tenant username',
     usernamePlaceholder: 'Enter tenant username',
     clearUsernameAria: 'Clear username',

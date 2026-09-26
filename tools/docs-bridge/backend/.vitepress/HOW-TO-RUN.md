@@ -5,16 +5,17 @@
 ## 本地
 
 ```bash
-npm run docs:dev      # http://localhost:5174/docs/
-npm run docs:build    # 产物 → docs-site/.vitepress/dist/
-npm run docs:preview  # 本地预览 build 产物
+npm run docs:build      # 构建后端文档站
+npm run docs:serve      # 构建并预览 http://localhost:5174/docs/
+npm run docs:build:all  # 构建后端 + 前端文档站
+npm run docs:serve:all  # 同时预览 /docs/ 与 /fe-docs/
 ```
 
 约束:`batch-console` 与 `file-batch-system` 必须在同一父目录(AGENTS.md 既有约束)。
 
 ## 部署
 
-把 `docs-site/.vitepress/dist/` rsync 到 nginx 静态目录(如 `/var/www/batch-docs/`),然后:
+把 `tools/docs-bridge/backend/.vitepress/dist/` rsync 到 nginx 静态目录(如 `/var/www/batch-docs/`),然后:
 
 ```nginx
 # 控制台 SPA

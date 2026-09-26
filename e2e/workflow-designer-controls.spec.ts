@@ -4,7 +4,7 @@
  *   - 新建直入(/workflow/designer 无 id)就位 —— P3 新建闭环入口
  *   - 工具栏关键控件齐全(撤销/重做/自动布局/校验/保存)—— P4 undo + P5 工具栏
  *   - 校验给出反馈 —— P7
- * 移动端按 CLAUDE.md「不写自动化测试」,此处只桌面;用稳定 class/role + 真实文案。
+ * 移动端按 AGENTS.md「不写自动化测试」,此处只桌面;用稳定 class/role + 真实文案。
  */
 import { expect, test } from './support/app'
 import { enterDemoApp } from './support/app'

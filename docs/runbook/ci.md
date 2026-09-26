@@ -1,30 +1,42 @@
 # FE CI / CD Runbook
 
-3 个 GH workflow,对齐 BE 仓 `pr-gate / full-ci-gate / staging-gate` 模式。FE 不需要 `capacity-gate`(无容量压测需求,性能指标走 Lighthouse)。
+4 个 GH workflow,对齐 BE 仓 `pr-gate / full-ci-gate / staging-gate` 模式。FE 不需要 `capacity-gate`(无容量压测需求,性能指标走 Lighthouse)。
 
 ## Workflow 全景
 
 | Workflow | 文件 | 触发 | 角色 | 预估耗时 |
 |---|---|---|---|---|
 | `pr-gate` | `.github/workflows/pr-gate.yml` | PR → main / push main / 手动 | PR 必过门禁,fast feedback | 5-7 min |
+| `frontend-ci` | `.github/workflows/frontend-ci.yml` | PR → main / push main / 手动 | Node 24 兼容 + 前端文档构建 | 8-12 min |
 | `full-ci-gate` | `.github/workflows/full-ci-gate.yml` | push main / nightly cron(02:00 UTC = 10:00 Asia/Shanghai)/ 手动 | 全量回归 | 15-20 min |
 | `staging-gate` | `.github/workflows/staging-gate.yml` | tag `v*` / 手动(可输入 base_url) | staging 部署前真环境最终关 | 10-15 min |
 
 ## pr-gate 详情(7 步顺序)
 
 ```
-checkout → setup-node@v4(node 20 + npm cache)
+checkout → setup-node@v5(node 22 + npm cache)
         → npm ci --no-audit --no-fund
+        → npm run check:version
         → npm run lint:check       (ESLint check 模式)
         → npm run gen:api:check    (OpenAPI yaml ↔ api.generated.ts 漂移)
         → npm run typecheck        (vue-tsc --noEmit)
         → npm run check:i18n       (zh-CN ↔ en-US 1:1)
-        → npm run test:unit        (Vitest 全量)
+        → npm run test:unit -- --coverage
         → npm run build:fast       (Vite 生产产物)
+        → npm run size
         → npm audit --omit=dev --audit-level=high
 ```
 
 并发控制:同 PR `cancel-in-progress: true` 取消过期任务。15 min timeout。
+
+## frontend-ci 详情(Node 24 兼容 + 文档)
+
+`frontend-ci` 不再重复 `pr-gate` 的 Node 22 lint / size / audit 主门禁,只做两件事:
+
+1. **Node 24 兼容构建**:在 Node 24 下跑 `check:version`、`typecheck`、`check:i18n`、`test:unit`、`build`。
+2. **前端文档构建**:跑 `npm run fe-docs:build`,确保 `tools/docs-bridge/frontend` 可生成。
+
+这样 PR 必过门禁仍由 `pr-gate` 统一承担,Node 新版本兼容和文档站可独立暴露问题,避免同一 PR 出现两套相似 required check 一过一挂。
 
 ## full-ci-gate 详情(4 job 并行)
 
@@ -88,11 +100,11 @@ tag v* / 手动 ─────────┬─ e2e-against-staging
 
 | 守护 | pr-gate | full-ci-gate | staging-gate | 本地 hook |
 |---|---|---|---|---|
-| `eslint --check` | ✅ | ✅ | — | `.husky/pre-commit` `lint-staged` |
+| `eslint --check` | ✅ | ✅ | — | `.husky/pre-commit` `lint-staged` + `preflight:changed` |
 | `prettier --check` | (lint 包含)| (lint 包含) | — | `.husky/pre-commit` `lint-staged` |
-| `vue-tsc` typecheck | ✅ | ✅ | — | — |
-| `check-i18n-messages.mjs` | ✅ | ✅(含 build 里二次)| — | — |
-| `check-api-drift.sh` | ✅ | ✅ | — | — |
+| `vue-tsc` typecheck | ✅ | ✅ | — | `preflight:changed`(src 变更) |
+| `check-i18n-messages.mjs` | ✅ | ✅(含 build 里二次)| — | `preflight:changed`(src / locale 变更) |
+| `check-api-drift.sh` | ✅ | ✅ | — | `preflight:changed`(api / generated types 变更) |
 | Vitest 全量 | ✅ | ✅ | — | — |
 | Vite build | ✅ (`build:fast`)| ✅ (`build` 完整) | — | — |
 | `npm audit` | ✅ prod high+ | ✅ 全量 critical 拒 | — | — |
@@ -100,6 +112,29 @@ tag v* / 手动 ─────────┬─ e2e-against-staging
 | Trivy 镜像扫 | — | ✅ CRITICAL 拒 | — | — |
 | Lighthouse | — | ✅ against preview | ✅ against staging | — |
 | Playwright e2e | — | — | ✅ 82 specs against staging | — |
+| `check-version-alignment.sh` | ✅ | ✅ | — | `preflight:changed`(package 变更) |
+| `fe-docs:build` | — | — | — | `preflight:changed`(frontend docs 变更) |
+
+## 本地按需预检
+
+提交前 `.husky/pre-commit` 会先跑 `lint-staged`,再跑:
+
+```bash
+npm run preflight:changed
+```
+
+该脚本只读取 staged 文件,按变更范围选择检查:
+
+| 变更范围 | 自动检查 |
+|---|---|
+| `src/**/*.{vue,ts,tsx}` | `lint:check` + `typecheck` + `check:i18n` |
+| `src/locales/**` | `check:i18n` |
+| `src/api/**` / `src/types/api.generated.ts` / `src/types/**` | `gen:api:check` |
+| `package.json` / `package-lock.json` | `check:version` |
+| `docs/**` / `tools/docs-bridge/frontend/**` | `fe-docs:build` |
+| `tools/docs-bridge/backend/**` | `docs:build` |
+
+本地预检只做便宜且高命中率的检查;`test:unit --coverage`、bundle size、audit、Docker/Trivy、Lighthouse、staging e2e 仍由 CI 分层承担。
 
 ## 常见故障 / 排查
 
@@ -149,4 +184,4 @@ precheck job 读 `secrets.STAGING_URL`(或 dispatch input `base_url`)。空 → 
 - `eslint.config.js` — lint ignore 路径(变更目录结构时易漏)
 - `playwright.config.cjs` — e2e 配置
 - `scripts/check-api-drift.sh` `scripts/check-i18n-messages.mjs` — 校验脚本
-- `fe-acceptance` Claude skill — 本地手跑等价验收(对应 BE be-acceptance)
+- `fe-acceptance` Agent skill — 本地手跑等价验收(对应 BE be-acceptance)

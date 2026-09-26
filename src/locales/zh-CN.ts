@@ -1964,6 +1964,7 @@ export default {
     traceLabel: 'Trace',
     copy: '复制',
     copySuccess: '已复制追踪 ID',
+    copyFailed: '复制失败,请手动选取追踪 ID',
     usernameLabel: '租户账号',
     usernamePlaceholder: '请输入租户账号',
     clearUsernameAria: '清空用户名',
