@@ -1,6 +1,12 @@
 <template>
   <PageContainer>
-    <PageHeader />
+    <PageHeader>
+      <template #actions>
+        <el-button @click="$router.push('/files/arrival-groups')">
+          {{ t('fileList.arrivalGroupsAction') }}
+        </el-button>
+      </template>
+    </PageHeader>
 
     <!-- 照设计 #files:汇总卡右上「›」跳转箭头(proto dump: docs/redesign/proto-files.html) -->
     <div class="file-summary">

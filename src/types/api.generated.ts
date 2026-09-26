@@ -3992,7 +3992,7 @@ export interface paths {
     patch?: never
     trace?: never
   }
-  '/api/console/queues/{id}/toggle': {
+  '/api/console/queues/{id}/enabled': {
     parameters: {
       query?: never
       header?: never
@@ -4001,12 +4001,12 @@ export interface paths {
     }
     get?: never
     put?: never
-    /** Enable or disable resource queue */
-    post: operations['toggleResourceQueue']
+    post?: never
     delete?: never
     options?: never
     head?: never
-    patch?: never
+    /** Set resource queue enabled state */
+    patch: operations['setResourceQueueEnabled']
     trace?: never
   }
   '/api/console/batch-windows': {
@@ -4044,7 +4044,7 @@ export interface paths {
     patch?: never
     trace?: never
   }
-  '/api/console/batch-windows/{id}/toggle': {
+  '/api/console/batch-windows/{id}/enabled': {
     parameters: {
       query?: never
       header?: never
@@ -4053,12 +4053,12 @@ export interface paths {
     }
     get?: never
     put?: never
-    /** Enable or disable batch window */
-    post: operations['toggleBatchWindow']
+    post?: never
     delete?: never
     options?: never
     head?: never
-    patch?: never
+    /** Set batch window enabled state */
+    patch: operations['setBatchWindowEnabled']
     trace?: never
   }
   '/api/console/calendars': {
@@ -4096,7 +4096,7 @@ export interface paths {
     patch?: never
     trace?: never
   }
-  '/api/console/calendars/{id}/toggle': {
+  '/api/console/calendars/{id}/enabled': {
     parameters: {
       query?: never
       header?: never
@@ -4105,12 +4105,12 @@ export interface paths {
     }
     get?: never
     put?: never
-    /** Enable or disable calendar */
-    post: operations['toggleCalendar']
+    post?: never
     delete?: never
     options?: never
     head?: never
-    patch?: never
+    /** Set calendar enabled state */
+    patch: operations['setCalendarEnabled']
     trace?: never
   }
   '/api/console/calendars/{id}/holidays': {
@@ -4490,7 +4490,7 @@ export interface paths {
     patch?: never
     trace?: never
   }
-  '/api/console/quota-policies/{id}/toggle': {
+  '/api/console/quota-policies/{id}/enabled': {
     parameters: {
       query?: never
       header?: never
@@ -4499,12 +4499,12 @@ export interface paths {
     }
     get?: never
     put?: never
-    /** Enable or disable quota policy */
-    post: operations['toggleQuotaPolicy']
+    post?: never
     delete?: never
     options?: never
     head?: never
-    patch?: never
+    /** Set quota policy enabled state */
+    patch: operations['setQuotaPolicyEnabled']
     trace?: never
   }
   '/api/console/alert-routings': {
@@ -4542,7 +4542,7 @@ export interface paths {
     patch?: never
     trace?: never
   }
-  '/api/console/alert-routings/{id}/toggle': {
+  '/api/console/alert-routings/{id}/enabled': {
     parameters: {
       query?: never
       header?: never
@@ -4551,12 +4551,12 @@ export interface paths {
     }
     get?: never
     put?: never
-    /** Enable or disable alert routing */
-    post: operations['toggleAlertRouting']
+    post?: never
     delete?: never
     options?: never
     head?: never
-    patch?: never
+    /** Set alert routing enabled state */
+    patch: operations['setAlertRoutingEnabled']
     trace?: never
   }
   '/api/console/pipeline-definitions': {
@@ -4595,7 +4595,7 @@ export interface paths {
     patch?: never
     trace?: never
   }
-  '/api/console/pipeline-definitions/{id}/toggle': {
+  '/api/console/pipeline-definitions/{id}/enabled': {
     parameters: {
       query?: never
       header?: never
@@ -4604,12 +4604,12 @@ export interface paths {
     }
     get?: never
     put?: never
-    /** Enable or disable pipeline definition */
-    post: operations['togglePipelineDefinition']
+    post?: never
     delete?: never
     options?: never
     head?: never
-    patch?: never
+    /** Set pipeline definition enabled state */
+    patch: operations['setPipelineDefinitionEnabled']
     trace?: never
   }
   '/api/console/instances/{id}/partitions/retry-failed': {
@@ -17273,12 +17273,9 @@ export interface operations {
       }
     }
   }
-  toggleResourceQueue: {
+  setResourceQueueEnabled: {
     parameters: {
-      query: {
-        tenantId: string
-        enabled: boolean
-      }
+      query?: never
       header: {
         'Idempotency-Key': components['parameters']['IdempotencyKeyHeader']
       }
@@ -17287,7 +17284,11 @@ export interface operations {
       }
       cookie?: never
     }
-    requestBody?: never
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['EnabledPatchRequest']
+      }
+    }
     responses: {
       /** @description Success */
       200: {
@@ -17381,12 +17382,9 @@ export interface operations {
       }
     }
   }
-  toggleBatchWindow: {
+  setBatchWindowEnabled: {
     parameters: {
-      query: {
-        tenantId: string
-        enabled: boolean
-      }
+      query?: never
       header: {
         'Idempotency-Key': components['parameters']['IdempotencyKeyHeader']
       }
@@ -17395,7 +17393,11 @@ export interface operations {
       }
       cookie?: never
     }
-    requestBody?: never
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['EnabledPatchRequest']
+      }
+    }
     responses: {
       /** @description Success */
       200: {
@@ -17489,12 +17491,9 @@ export interface operations {
       }
     }
   }
-  toggleCalendar: {
+  setCalendarEnabled: {
     parameters: {
-      query: {
-        tenantId: string
-        enabled: boolean
-      }
+      query?: never
       header: {
         'Idempotency-Key': components['parameters']['IdempotencyKeyHeader']
       }
@@ -17503,7 +17502,11 @@ export interface operations {
       }
       cookie?: never
     }
-    requestBody?: never
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['EnabledPatchRequest']
+      }
+    }
     responses: {
       /** @description Success */
       200: {
@@ -18145,12 +18148,9 @@ export interface operations {
       }
     }
   }
-  toggleQuotaPolicy: {
+  setQuotaPolicyEnabled: {
     parameters: {
-      query: {
-        tenantId: string
-        enabled: boolean
-      }
+      query?: never
       header: {
         'Idempotency-Key': components['parameters']['IdempotencyKeyHeader']
       }
@@ -18159,7 +18159,11 @@ export interface operations {
       }
       cookie?: never
     }
-    requestBody?: never
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['EnabledPatchRequest']
+      }
+    }
     responses: {
       /** @description Success */
       200: {
@@ -18255,12 +18259,9 @@ export interface operations {
       }
     }
   }
-  toggleAlertRouting: {
+  setAlertRoutingEnabled: {
     parameters: {
-      query: {
-        tenantId: string
-        enabled: boolean
-      }
+      query?: never
       header: {
         'Idempotency-Key': components['parameters']['IdempotencyKeyHeader']
       }
@@ -18269,7 +18270,11 @@ export interface operations {
       }
       cookie?: never
     }
-    requestBody?: never
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['EnabledPatchRequest']
+      }
+    }
     responses: {
       /** @description Success */
       200: {
@@ -18388,12 +18393,9 @@ export interface operations {
       }
     }
   }
-  togglePipelineDefinition: {
+  setPipelineDefinitionEnabled: {
     parameters: {
-      query: {
-        tenantId: string
-        enabled: boolean
-      }
+      query?: never
       header: {
         'Idempotency-Key': components['parameters']['IdempotencyKeyHeader']
       }
@@ -18402,7 +18404,11 @@ export interface operations {
       }
       cookie?: never
     }
-    requestBody?: never
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['EnabledPatchRequest']
+      }
+    }
     responses: {
       /** @description Success */
       200: {

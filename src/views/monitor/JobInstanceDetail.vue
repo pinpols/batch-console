@@ -15,16 +15,52 @@
           {{ t('monitor.detailRefresh') }}
         </el-button>
         <el-button
-          v-if="row"
+          v-if="row && !isTerminal"
           type="danger"
           :loading="cancelLoading"
-          :disabled="isTerminal"
           @click="confirmCancel"
         >
           {{ t('monitor.detailCancel') }}
         </el-button>
         <el-button v-if="row" :loading="diagnosisLoading" @click="runDiagnosis">
           {{ t('monitor.detailDiagnose') }}
+        </el-button>
+        <el-button v-if="canManageSystem" @click="router.push('/ops/diagnostic')">
+          {{ t('jobInstanceDetail.opsDiagnosticAction') }}
+        </el-button>
+        <el-button v-if="row" @click="goLogs">{{ t('monitor.detailGoLogs') }}</el-button>
+        <el-button
+          v-if="row && isTerminal"
+          type="warning"
+          :loading="rerunLoading"
+          @click="confirmRerun"
+        >
+          {{ t('monitor.detailRerunBtn') }}
+        </el-button>
+        <el-tooltip
+          v-if="row && isTerminal"
+          :disabled="canRetryFailedPartitions"
+          :content="t('monitor.detailRetryFailedPartitionsDisabled')"
+          placement="bottom"
+        >
+          <span class="action-button-wrap">
+            <el-button
+              :loading="retryFailedPartitionsLoading"
+              :disabled="!canRetryFailedPartitions"
+              @click="confirmRetryFailedPartitions"
+            >
+              {{ t('monitor.detailRetryFailedPartitions') }}
+            </el-button>
+          </span>
+        </el-tooltip>
+        <el-button
+          v-if="row && !isTerminal"
+          type="danger"
+          plain
+          :loading="terminateLoading"
+          @click="confirmTerminate"
+        >
+          {{ t('monitor.detailTerminateBtn') }}
         </el-button>
         <PrintButton />
       </template>
@@ -58,7 +94,7 @@
         :label="t('monitor.detailMetricStatus')"
         :value="row.instanceStatus"
         :tone="statusTone(row.instanceStatus)"
-        description="instanceStatus"
+        :description="t('jobInstanceDetail.metricStatusDescription')"
       />
       <MetricCard
         :label="t('monitor.detailMetricJobCode')"
@@ -69,18 +105,18 @@
       <MetricCard
         :label="t('monitor.detailMetricBizDate')"
         :value="row.bizDate"
-        description="bizDate"
+        :description="t('jobInstanceDetail.metricBizDateDescription')"
       />
       <MetricCard
         :label="t('monitor.detailMetricTrace')"
         :value="compactIdentifier(row.traceId)"
         :copy-value="row.traceId || ''"
-        :description="row.traceId || 'traceId'"
+        :description="row.traceId || t('jobInstanceDetail.metricTraceEmpty')"
       />
       <MetricCard
         :label="t('monitor.detailMetricQueue')"
         :value="row.queueCode || '—'"
-        description="queueCode"
+        :description="t('jobInstanceDetail.metricQueueDescription')"
       />
     </div>
 
@@ -122,7 +158,7 @@
               fmtDatetime(row.deadlineAt)
             }}</el-descriptions-item>
             <el-descriptions-item :label="t('monitor.detailSlaAlerted')">{{
-              row.slaAlertedAt || '—'
+              fmtDatetime(row.slaAlertedAt)
             }}</el-descriptions-item>
             <el-descriptions-item :label="t('monitor.detailRerun')">
               {{ row.rerunFlag ? t('common.yes') : t('common.no') }}
@@ -131,53 +167,6 @@
               {{ row.retryFlag ? t('common.yes') : t('common.no') }}
             </el-descriptions-item>
           </el-descriptions>
-          <div class="actions">
-            <div class="action-group">
-              <el-button @click="goLogs">{{ t('monitor.detailGoLogs') }}</el-button>
-              <el-button :loading="diagnosisLoading" @click="runDiagnosis">
-                {{ t('monitor.detailDiagnose') }}
-              </el-button>
-            </div>
-            <div class="action-group">
-              <el-tooltip
-                :disabled="canRetryFailedPartitions"
-                :content="t('monitor.detailRetryFailedPartitionsDisabled')"
-                placement="top"
-              >
-                <span class="action-button-wrap">
-                  <el-button
-                    type="warning"
-                    :loading="retryFailedPartitionsLoading"
-                    :disabled="!canRetryFailedPartitions"
-                    @click="confirmRetryFailedPartitions"
-                  >
-                    {{ t('monitor.detailRetryFailedPartitions') }}
-                  </el-button>
-                </span>
-              </el-tooltip>
-              <el-button type="warning" :loading="rerunLoading" @click="confirmRerun">
-                {{ t('monitor.detailRerunBtn') }}
-              </el-button>
-            </div>
-            <div class="action-group action-group--danger">
-              <el-button
-                type="danger"
-                :loading="cancelLoading"
-                :disabled="isTerminal"
-                @click="confirmCancel"
-              >
-                {{ t('monitor.detailCancelBtn') }}
-              </el-button>
-              <el-button
-                type="danger"
-                :loading="terminateLoading"
-                :disabled="isTerminal"
-                @click="confirmTerminate"
-              >
-                {{ t('monitor.detailTerminateBtn') }}
-              </el-button>
-            </div>
-          </div>
         </SectionCard>
 
         <SectionCard v-if="diagnosisResult">
@@ -377,6 +366,7 @@
   const refresh = useRefreshAction()
   import { confirmDanger } from '@/composables/useDangerConfirm'
   import { showCreateSuccess } from '@/composables/useCreateSuccess'
+  import { usePermission } from '@/composables/usePermission'
   import { diagnoseJobInstance } from '@/api/clusterDiagnostic'
   import { instanceApi } from '@/api/instance'
   import { createLogStream } from '@/api/stream'
@@ -398,6 +388,7 @@
   const route = useRoute()
   const router = useRouter()
   const tenant = useTenantStore()
+  const { canManageSystem } = usePermission()
   const loading = ref(false)
   const rerunLoading = ref(false)
   const cancelLoading = ref(false)
@@ -516,7 +507,7 @@
 
   const headerDesc = computed(() => {
     if (!row.value) return t('monitor.detailLoading')
-    return `${row.value.jobCode} · ${row.value.bizDate || ''} · ${t('monitor.detailKeyHint')}`
+    return `${row.value.jobCode} · ${row.value.bizDate || '—'} · ${row.value.instanceNo}`
   })
 
   let activeLoadKey: string | null = null

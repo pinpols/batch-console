@@ -2,6 +2,7 @@ import { get, post } from '@/api/client'
 import type {
   ConsoleSchedulerSnapshotHistoryResponse,
   ConsoleSchedulerSnapshotResponse,
+  SchedulerCommandResponse,
 } from '@/types/console-api'
 
 export function getSchedulerSnapshot(tenantId: string) {
@@ -16,16 +17,16 @@ export function getSchedulerSnapshotHistory(tenantId: string, limit?: number) {
 }
 
 /** GET /api/console/scheduler/status */
-export function getSchedulerStatus(tenantId: string) {
-  return get<unknown>('/api/console/scheduler/status', { tenantId })
+export function getSchedulerStatus() {
+  return get<SchedulerCommandResponse>('/api/console/scheduler/status')
 }
 
 /** POST /api/console/scheduler/pause-all */
 export function pauseAllSchedulers() {
-  return post<string>('/api/console/scheduler/pause-all', undefined)
+  return post<SchedulerCommandResponse>('/api/console/scheduler/pause-all', undefined)
 }
 
 /** POST /api/console/scheduler/resume-all */
 export function resumeAllSchedulers() {
-  return post<string>('/api/console/scheduler/resume-all', undefined)
+  return post<SchedulerCommandResponse>('/api/console/scheduler/resume-all', undefined)
 }

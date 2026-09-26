@@ -4,6 +4,7 @@
  */
 import { devices } from '@playwright/test'
 import { expect, test } from './support/app'
+import { installMobileMocks } from './support/mobile-mocks'
 
 // 用 Pixel 5 (Android Chromium-based) 替代 iPhone 14 (webkit 未安装)
 test.use({ ...devices['Pixel 5'] })
@@ -21,6 +22,9 @@ const MOBILE_ROUTES = [
 ]
 
 test.describe('@cross-browser mobile /m/* 冒烟', () => {
+  test.beforeEach(async ({ page }) => {
+    await installMobileMocks(page)
+  })
 
   for (const route of MOBILE_ROUTES) {
     test(`移动端可打开 ${route}`, async ({ page }) => {

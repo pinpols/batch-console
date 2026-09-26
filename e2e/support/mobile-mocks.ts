@@ -149,6 +149,16 @@ export async function installMobileMocks(page: Page, spec: MockSpec = {}) {
   const outbox = spec.outbox ?? FIXTURES.outbox
   const files = spec.files ?? FIXTURES.files
 
+  // Router guards always hydrate the current profile before mounting a protected page.
+  // Keep mock-mode independent from a running backend instead of stalling on /auth/me.
+  await page.route('**/api/console/auth/me', (r) =>
+    ok(r, {
+      username: 'mobile-e2e',
+      tenantId: 'tc',
+      authorities: ['ROLE_TENANT_ADMIN'],
+      mustChangePassword: false,
+    }),
+  )
   await page.route('**/api/console/meta/enums*', (r) => ok(r, FIXTURES.metaEnums))
 
   await page.route('**/api/console/queries/approvals*', (r) => ok(r, page_(approvals)))

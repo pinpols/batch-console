@@ -2,6 +2,9 @@
   <PageContainer>
     <PageHeader>
       <template #actions>
+        <el-button @click="$router.push('/system/event-catalog')">
+          {{ t('notificationManagement.eventCatalogAction') }}
+        </el-button>
         <el-button
           v-if="activeCreateAction"
           type="primary"

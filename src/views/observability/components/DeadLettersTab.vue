@@ -80,7 +80,7 @@
           min-width="250"
           show-overflow-tooltip
         />
-        <DatetimeColumn prop="createdAt" :label="t('observability.dlqColFailedAt')" width="160" />
+        <DatetimeColumn prop="createdAt" :label="t('observability.dlqColFailedAt')" width="180" />
         <el-table-column
           prop="replayCount"
           :label="t('observability.dlqColRetryCount')"

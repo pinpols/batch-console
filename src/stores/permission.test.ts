@@ -103,6 +103,12 @@ describe('permission navigation filtering', () => {
       '/files/pipeline-obs',
       '/files/channels',
       '/observability/operation-audits',
+      '/ops/diagnostic',
+      '/workflow/designer',
+      '/config/tenant-package',
+      '/files/arrival-groups',
+      '/ops/batch-day-replay',
+      '/system/event-catalog',
     ]) {
       const item = navigationGroups
         .flatMap((group) => group.children)
@@ -113,7 +119,12 @@ describe('permission navigation filtering', () => {
     const visiblePaths = navigationGroups.flatMap((group) =>
       group.children.filter((item) => !item.hidden).map((item) => item.path),
     )
-    expect(visiblePaths).toHaveLength(31)
+    expect(visiblePaths).toHaveLength(25)
     expect(new Set(visiblePaths).size).toBe(visiblePaths.length)
+
+    const hiddenPaths = navigationGroups.flatMap((group) =>
+      group.children.filter((item) => item.hidden).map((item) => item.path),
+    )
+    expect(hiddenPaths).toHaveLength(29)
   })
 })

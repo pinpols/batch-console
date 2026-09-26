@@ -173,9 +173,7 @@ export function updatePipelineDefinition(id: number, body: Record<string, unknow
 }
 
 export function togglePipelineDefinition(id: number, tenantId: string, enabled: boolean) {
-  return post<string>(`/api/console/pipeline-definitions/${id}/toggle`, undefined, {
-    params: { tenantId, enabled },
-  })
+  return patch<string>(`/api/console/pipeline-definitions/${id}/enabled`, { tenantId, enabled })
 }
 
 /** GET /api/console/file-channels — command-side list */

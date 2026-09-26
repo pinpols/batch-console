@@ -239,7 +239,7 @@
   .mobile-appbar__title {
     font-size: 17px;
     font-weight: 600;
-    letter-spacing: -0.02em;
+    letter-spacing: 0;
     color: #000;
     overflow: hidden;
     text-overflow: ellipsis;

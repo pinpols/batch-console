@@ -73,7 +73,7 @@
         <DatetimeColumn
           prop="nextRetryAt"
           :label="t('observability.retryColNextRetry')"
-          width="160"
+          width="180"
         />
         <el-table-column
           prop="retryCount"
@@ -85,7 +85,7 @@
           :label="t('observability.retryColMaxRetry')"
           width="90"
         />
-        <DatetimeColumn prop="createdAt" :label="t('observability.retryColCreated')" width="160" />
+        <DatetimeColumn prop="createdAt" :label="t('observability.retryColCreated')" width="180" />
         <el-table-column :label="t('observability.retryColActions')" width="120" fixed="right">
           <template #default="{ row }">
             <div class="table-actions">

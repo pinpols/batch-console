@@ -8,6 +8,15 @@
       </template>
     </PageHeader>
 
+    <div class="governance-workspace">
+      <el-segmented
+        :model-value="governancePath"
+        :options="governanceOptions"
+        :aria-label="t('queueConfig.workspaceLabel')"
+        @change="onWorkspaceChange"
+      />
+    </div>
+
     <!-- 还原设计:tabs 与内容直铺底色,无外层卡片壳 -->
     <div>
       <el-tabs
@@ -17,12 +26,6 @@
       >
         <!-- el-tab-pane 不能用 v-if(EP 2.9 unmount bug,panes.indexOf undefined);用 v-show 避免崩溃 -->
         <el-tab-pane v-show="showQueuesTab" :label="t('queueConfig.tabQueues')" name="queues">
-          <div class="panel-head">
-            <div class="panel-title">
-              <span class="dot dot--primary" />
-              {{ t('queueConfig.sectionQueues') }}
-            </div>
-          </div>
           <GovernanceFilterBar
             v-model:keyword="kwDraft"
             v-model:enabled="enabledDraft"
@@ -110,12 +113,6 @@
         </el-tab-pane>
 
         <el-tab-pane v-show="showWindowsTab" :label="t('queueConfig.tabWindows')" name="windows">
-          <div class="panel-head">
-            <div class="panel-title">
-              <span class="dot dot--warning" />
-              {{ t('queueConfig.sectionWindows') }}
-            </div>
-          </div>
           <GovernanceFilterBar
             v-model:keyword="kwDraft"
             v-model:enabled="enabledDraft"
@@ -202,12 +199,6 @@
           :label="t('queueConfig.tabCalendars')"
           name="calendars"
         >
-          <div class="panel-head">
-            <div class="panel-title">
-              <span class="dot dot--success" />
-              {{ t('queueConfig.sectionCalendars') }}
-            </div>
-          </div>
           <GovernanceFilterBar
             v-model:keyword="kwDraft"
             v-model:enabled="enabledDraft"
@@ -603,7 +594,7 @@
 
 <script setup lang="ts">
   import { computed, reactive, ref, watch } from 'vue'
-  import { useRoute } from 'vue-router'
+  import { useRoute, useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { confirmDanger } from '@/composables/useDangerConfirm'
@@ -645,6 +636,18 @@
   const togglingKey = ref('')
   // P2 IA 拆分:route.meta.mode 限定本页只显示某一类资源
   const route = useRoute()
+  const router = useRouter()
+  const governancePath = computed(() => route.path)
+  const governanceOptions = computed(() => [
+    { label: t('queueConfig.sectionQueues'), value: '/governance/queues' },
+    { label: t('queueConfig.sectionWindows'), value: '/governance/windows' },
+    { label: t('queueConfig.sectionCalendars'), value: '/governance/calendars' },
+  ])
+
+  function onWorkspaceChange(value: string | number | boolean) {
+    const path = String(value)
+    if (path !== route.path) void router.push({ path, query: route.query })
+  }
   const mode = computed<'queues' | 'windows' | 'calendars' | 'all'>(
     () => (route.meta?.mode as 'queues' | 'windows' | 'calendars' | undefined) ?? 'all',
   )
@@ -655,6 +658,9 @@
   const activeTab = ref<'queues' | 'windows' | 'calendars'>(
     mode.value === 'windows' ? 'windows' : mode.value === 'calendars' ? 'calendars' : 'queues',
   )
+  watch(mode, (next) => {
+    if (next !== 'all') activeTab.value = next
+  })
 
   // PageHeader 右上"新建"按钮按当前 tab 切换文案与动作
   const activeCreateLabel = computed(() => {
@@ -1287,6 +1293,11 @@
 </script>
 
 <style scoped>
+  .governance-workspace {
+    display: flex;
+    margin-bottom: var(--space-md);
+  }
+
   .governance-tabs :deep(.el-tabs__content) {
     padding-top: 10px;
     overflow: visible;
@@ -1298,42 +1309,5 @@
   }
   .governance-tabs.single-mode :deep(.el-tabs__content) {
     padding-top: 0;
-  }
-
-  .panel-head {
-    margin-bottom: var(--space-sm);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-md);
-    flex-wrap: wrap;
-  }
-
-  .panel-title {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    font-size: var(--font-size-md);
-    font-weight: 700;
-    color: var(--color-text-primary);
-    line-height: var(--line-height-tight);
-  }
-
-  .dot {
-    width: 10px;
-    height: 10px;
-    border-radius: var(--radius-content);
-  }
-
-  .dot--primary {
-    background: var(--color-primary);
-  }
-
-  .dot--warning {
-    background: var(--color-warning);
-  }
-
-  .dot--success {
-    background: var(--color-success);
   }
 </style>

@@ -2,6 +2,9 @@
   <PageContainer>
     <PageHeader>
       <template #actions>
+        <el-button v-if="canReplay" @click="router.push('/ops/batch-day-replay')">
+          {{ t('batchDayList.replayAction') }}
+        </el-button>
         <el-segmented v-model="viewMode" :options="viewModeOptions" />
       </template>
     </PageHeader>
@@ -205,6 +208,7 @@
 <script setup lang="ts">
   import { ref, reactive, computed, watch } from 'vue'
   import { useRouter } from 'vue-router'
+  import { usePermission } from '@/composables/usePermission'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
 
@@ -223,6 +227,8 @@
   import { indexBatchDays, monthDateRange, summarizeBatchDays } from './batchDayPresentation'
 
   const router = useRouter()
+  const { canAccess } = usePermission()
+  const canReplay = computed(() => canAccess('OPERATOR'))
   const tenant = useTenantStore()
   const loading = ref(false)
   const { filterBusy, tableBlocking, runSearch, runReset, runRefresh } =

@@ -10,25 +10,6 @@
       @reset="resetQuery"
       @refresh="() => runRefresh(loadData)"
     >
-      <template #saved>
-        <div class="jr-presets">
-          <span class="jr-presets__label">{{ t('jobInstanceList.savedFilters') }}</span>
-          <button
-            v-for="s in savedFilters.sets.value"
-            :key="s.id"
-            type="button"
-            class="jr-chip"
-            :class="{ 'is-active': activePresetId === s.id }"
-            @click="applyPreset(s.id)"
-          >
-            <span v-if="activePresetId === s.id" class="jr-chip__star">★</span>{{ s.name }}
-          </button>
-          <button type="button" class="jr-chip jr-chip--save" @click="promptSaveFilter">
-            <span class="jr-chip__plus">＋</span>{{ t('jobInstanceList.saveCurrentFilter') }}
-          </button>
-        </div>
-      </template>
-
       <template #status>
         <StatusSegment
           v-model="statusSegmentValue"
@@ -204,7 +185,7 @@
             v-if="isColVisible('startedAt')"
             prop="startedAt"
             :label="t('jobInstanceList.colStartedAt')"
-            width="145"
+            width="170"
           />
           <el-table-column
             v-if="isColVisible('duration')"
@@ -576,38 +557,6 @@
     query.page = 1
     syncFiltersToUrl()
     void loadData()
-  }
-
-  // 预设 chip:当前 query 与某套保存值完全一致时该 chip 高亮
-  const activePresetId = computed(() => {
-    const cur = JSON.stringify({
-      jobCode: query.jobCode,
-      instanceStatus: query.instanceStatus,
-      instanceStatuses: query.instanceStatuses,
-      startDate: query.startDate,
-      endDate: query.endDate,
-      traceId: query.traceId,
-      slaBreached: query.slaBreached,
-    })
-    return savedFilters.sets.value.find((s) => JSON.stringify(s.filters) === cur)?.id ?? ''
-  })
-
-  function applyPreset(id: string) {
-    savedFilters.applySet(id)
-    dateRange.value = query.startDate && query.endDate ? [query.startDate, query.endDate] : null
-  }
-
-  async function promptSaveFilter() {
-    try {
-      const { value } = await ElMessageBox.prompt(
-        t('jobInstanceList.saveFilterPrompt'),
-        t('jobInstanceList.saveCurrentFilter'),
-        { confirmButtonText: t('common.confirm'), cancelButtonText: t('common.cancel') },
-      )
-      if (value?.trim()) savedFilters.save(value.trim())
-    } catch {
-      /* cancel */
-    }
   }
 
   const lastRefreshText = computed(() => {
