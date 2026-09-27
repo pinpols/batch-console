@@ -9,14 +9,14 @@ test.describe('observability query tabs (可观测性查询)', () => {
   test('可观测性查询页面可打开并展示多个标签页', async ({ page }) => {
     await page.goto('/observability/queries')
     await expectPageTitle(page, '综合查询')
-    await expect(page.getByRole('tab', { name: 'Dead Letters' })).toBeVisible()
+    await expect(page.getByRole('tab', { name: '死信队列' })).toBeVisible()
   })
 
   test('Dead Letters 标签展示表格与刷新按钮', async ({ page }) => {
-    // 默认 tab 改为"执行日志",需点击切换到 Dead Letters
+    // 默认 tab 为“执行日志”，需点击切换到死信队列。
     await page.goto('/observability/queries')
-    await page.getByRole('tab', { name: 'Dead Letters' }).click()
-    await expect(page.getByRole('tab', { name: 'Dead Letters' })).toHaveClass(/is-active/)
+    await page.getByRole('tab', { name: '死信队列' }).click()
+    await expect(page.getByRole('tab', { name: '死信队列' })).toHaveClass(/is-active/)
     await expect(page.getByRole('button', { name: '刷新' })).toBeVisible()
   })
 
