@@ -24,7 +24,7 @@
       </el-table-column>
       <el-table-column prop="bizType" :label="t('jobRelatedFiles.colBizType')" width="120" />
       <el-table-column prop="bizDate" :label="t('jobRelatedFiles.colBizDate')" width="120" />
-      <el-table-column prop="createdAt" :label="t('jobRelatedFiles.colCreatedAt')" width="180" />
+      <DatetimeColumn prop="createdAt" :label="t('jobRelatedFiles.colCreatedAt')" width="180" />
     </el-table>
 
     <div v-if="total > pageSize" class="related-pagination">
@@ -61,6 +61,7 @@
   import { useI18n } from 'vue-i18n'
   import { RefreshCw as Refresh } from '@lucide/vue'
   import { fileApi } from '@/api/file'
+  import DatetimeColumn from '@/components/common/DatetimeColumn.vue'
   import type { ConsoleFileRecordResponse } from '@/types/console-api'
 
   const props = defineProps<{

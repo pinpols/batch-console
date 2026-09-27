@@ -338,6 +338,7 @@
   import LiveMonitorBar from '@/components/table/LiveMonitorBar.vue'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
+  import { fmtClockTime, recentBusinessDateRange } from '@/utils/datetime'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import type { ConsoleJobInstanceResponse } from '@/types/console-api'
   import BulkActionBar from '@/components/table/BulkActionBar.vue'
@@ -410,14 +411,7 @@
   // 常常空屏(尤其当天尚无业务日数据),近 7 天更贴合运维"看最近一批运行"的真实诉求;
   // URL query 会在下面覆盖。需要精确单日时用户自行收窄即可。
   function recentRange(days = 7): [string, string] {
-    const fmt = (d: Date) => {
-      const p = (n: number) => String(n).padStart(2, '0')
-      return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`
-    }
-    const end = new Date()
-    const start = new Date()
-    start.setDate(start.getDate() - (days - 1))
-    return [fmt(start), fmt(end)]
+    return recentBusinessDateRange(days)
   }
   const initialRange = recentRange()
   const dateRange = ref<[string, string] | null>(initialRange)
@@ -562,11 +556,7 @@
 
   const lastRefreshText = computed(() => {
     const v = live.lastRefreshedAt.value
-    if (!v) return '—'
-    const d = v instanceof Date ? v : new Date(v)
-    if (Number.isNaN(d.getTime())) return '—'
-    const p = (n: number) => String(n).padStart(2, '0')
-    return `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`
+    return fmtClockTime(v)
   })
 
   async function loadJobCodes() {

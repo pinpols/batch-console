@@ -363,6 +363,7 @@
   import DateRangePresetPicker from '@/components/common/DateRangePresetPicker.vue'
   import RowActions, { type RowAction } from '@/components/common/RowActions.vue'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
+  import { recentBusinessDateRange } from '@/utils/datetime'
   import { getMetaBizTypes } from '@/api/meta'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import type {
@@ -408,14 +409,7 @@
   // "今天单日"(start==end)常空屏(当天尚无文件到达时尤甚)。近 7 天更贴合运维诉求;
   // 需精确单日用户自行收窄。
   function recentRange(days = 7): [string, string] {
-    const fmt = (d: Date) => {
-      const p = (n: number) => String(n).padStart(2, '0')
-      return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`
-    }
-    const end = new Date()
-    const start = new Date()
-    start.setDate(start.getDate() - (days - 1))
-    return [fmt(start), fmt(end)]
+    return recentBusinessDateRange(days)
   }
   const initialBizRange = recentRange()
   const bizDateRange = ref<[string, string] | null>(initialBizRange)

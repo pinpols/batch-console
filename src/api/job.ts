@@ -4,6 +4,7 @@ import { launchBatchDayCatchUp } from '@/api/batchDays'
 import { instanceApi } from '@/api/instance'
 import { queryJobInstances, type InstanceQueryParams } from '@/api/queries/instances'
 import { i18n } from '@/locales'
+import { todayBusinessDate } from '@/utils/datetime'
 import type {
   BatchDayCatchUpRequest,
   ConfigSyncBundlePayload,
@@ -97,7 +98,7 @@ export const jobApi = {
     post<string>('/api/console/jobs/trigger', {
       tenantId,
       jobCode,
-      bizDate: new Date().toISOString().slice(0, 10),
+      bizDate: todayBusinessDate(),
       triggerType: 'MANUAL',
       payload: payload ? JSON.stringify(payload) : '{}',
     }),

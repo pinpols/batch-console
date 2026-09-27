@@ -105,7 +105,7 @@
             >
               {{ sevLabel(row.severity) }}
             </span>
-            <span class="al-card__time">{{ fmtAlertTime(row.lastSeenAt) }}</span>
+            <span class="al-card__time">{{ fmtTodayOrDatetime(row.lastSeenAt) }}</span>
             <span v-if="(row.occurrenceCount ?? 0) > 1" class="al-card__time"
               >x{{ row.occurrenceCount }}</span
             >
@@ -227,7 +227,7 @@
   import LiveMonitorBar from '@/components/table/LiveMonitorBar.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
   import { TriangleAlert } from '@lucide/vue'
-  import { fmtCompact, fmtDatetime } from '@/utils/datetime'
+  import { fmtClockTime, fmtTodayOrDatetime } from '@/utils/datetime'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
   import type { ConsoleAlertEventResponse } from '@/types/console-api'
@@ -401,12 +401,7 @@
   }
 
   const lastRefreshText = computed(() => {
-    const value = live.lastRefreshedAt.value
-    if (!value) return '—'
-    const date = value instanceof Date ? value : new Date(value)
-    if (Number.isNaN(date.getTime())) return '—'
-    const part = (n: number) => String(n).padStart(2, '0')
-    return `${part(date.getHours())}:${part(date.getMinutes())}:${part(date.getSeconds())}`
+    return fmtClockTime(live.lastRefreshedAt.value)
   })
 
   /** 严重度 → 设计卡片配色(左条/图标块/pill) */
@@ -436,19 +431,6 @@
     const key = `enum.severity.${s}`
     const v = t(key)
     return v && v !== key ? v : s
-  }
-
-  /** 设计原型时间格式:仅今天显示「今天 HH:mm」,非今天保持完整时间 */
-  function fmtAlertTime(val: unknown): string {
-    if (val === null || val === undefined || val === '') return '—'
-    const d = typeof val === 'number' ? new Date(val) : new Date(String(val))
-    if (isNaN(d.getTime())) return fmtDatetime(val)
-    const now = new Date()
-    const sameDay =
-      d.getFullYear() === now.getFullYear() &&
-      d.getMonth() === now.getMonth() &&
-      d.getDate() === now.getDate()
-    return sameDay ? fmtCompact(val) : fmtDatetime(val)
   }
 
   function onTimeChange(val: [string, string] | null) {

@@ -73,10 +73,10 @@
           <span v-else>—</span>
         </el-descriptions-item>
         <el-descriptions-item :label="t('monitor.runDetailStarted')">
-          {{ run.startedAt }}
+          <DatetimeText :value="run.startedAt" />
         </el-descriptions-item>
         <el-descriptions-item :label="t('monitor.runDetailFinished')">
-          {{ run.finishedAt }}
+          <DatetimeText :value="run.finishedAt" />
         </el-descriptions-item>
       </el-descriptions>
     </SectionCard>
@@ -204,6 +204,7 @@
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
   import DatetimeColumn from '@/components/common/DatetimeColumn.vue'
+  import DatetimeText from '@/components/common/DatetimeText.vue'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'

@@ -8,17 +8,23 @@
     >
       <el-option v-for="p in presets" :key="p.key" :label="p.label" :value="p.key" />
     </el-select>
-    <el-date-picker
-      :model-value="modelValue ?? null"
-      :type="type"
-      :value-format="resolvedFormat"
+    <InstantRangePicker
+      v-if="type === 'datetimerange'"
+      :model-value="modelValue"
       :range-separator="t('dateRangePicker.rangeSeparator')"
-      :start-placeholder="
-        type === 'daterange' ? t('dateRangePicker.startDate') : t('dateRangePicker.startTime')
-      "
-      :end-placeholder="
-        type === 'daterange' ? t('dateRangePicker.endDate') : t('dateRangePicker.endTime')
-      "
+      :start-placeholder="t('dateRangePicker.startTime')"
+      :end-placeholder="t('dateRangePicker.endTime')"
+      class="dr-preset__picker"
+      @update:model-value="emit('update:modelValue', $event)"
+    />
+    <el-date-picker
+      v-else
+      :model-value="modelValue ?? null"
+      type="daterange"
+      value-format="YYYY-MM-DD"
+      :range-separator="t('dateRangePicker.rangeSeparator')"
+      :start-placeholder="t('dateRangePicker.startDate')"
+      :end-placeholder="t('dateRangePicker.endDate')"
       class="dr-preset__picker"
       @update:model-value="onPickerChange"
     />
@@ -28,13 +34,15 @@
 <script setup lang="ts">
   import { computed, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
+  import { displayTimezone } from '@/constants/timezone'
+  import { presetDateRange, readBusinessTimezone } from '@/utils/datetime'
+  import InstantRangePicker from './InstantRangePicker.vue'
 
   const { t } = useI18n({ useScope: 'global' })
 
   /**
-   * 时间范围预设 chip + 常驻日期选择器。
-   * 点 chip → 算出预设区间填入 picker;用户直接改 picker → 自动落入"自由日期"
-   * 状态(无 chip 高亮)。picker 常驻,用户始终能看到当前生效区间。
+   * 日期范围输出 LocalDate 字符串；时间范围输出 UTC Instant 字符串。
+   * 选择器墙上时间始终按当前展示时区换算。
    */
 
   type PresetKey = 'today' | '7d' | '30d' | 'thisMonth' | 'all'
@@ -42,15 +50,13 @@
   interface Preset {
     key: PresetKey
     label: string
-    range?: () => [Date, Date]
+    range?: () => [string, string]
   }
 
   const props = withDefaults(
     defineProps<{
       modelValue: [string, string] | null | undefined
       defaultPreset?: PresetKey
-      /** 显式自定义 value-format;不传时按 type 推断('YYYY-MM-DD' / 'YYYY-MM-DD HH:mm:ss') */
-      valueFormat?: string
       /** datetimerange = 含时分秒;daterange = 仅日期(列表筛选用日期足够) */
       type?: 'datetimerange' | 'daterange'
       /** 是否显示"全部"chip(不传时间区间) */
@@ -63,67 +69,39 @@
     },
   )
 
-  const resolvedFormat = computed(
-    () => props.valueFormat ?? (props.type === 'daterange' ? 'YYYY-MM-DD' : 'YYYY-MM-DD HH:mm:ss'),
-  )
-
   const emit = defineEmits<{
     (e: 'update:modelValue', v: [string, string] | null): void
   }>()
 
-  function startOfDay(d: Date) {
-    const x = new Date(d)
-    x.setHours(0, 0, 0, 0)
-    return x
-  }
-  function endOfDay(d: Date) {
-    const x = new Date(d)
-    x.setHours(23, 59, 59, 999)
-    return x
-  }
-  function daysAgo(n: number) {
-    const x = new Date()
-    x.setDate(x.getDate() - n)
-    return x
-  }
-
+  const zone = computed(() =>
+    props.type === 'daterange' ? readBusinessTimezone() : displayTimezone.value,
+  )
   const presets = computed<Preset[]>(() => {
     const base: Preset[] = [
       {
         key: 'today',
         label: t('dateRangePicker.today'),
-        range: () => [startOfDay(new Date()), endOfDay(new Date())],
+        range: () => presetDateRange('today', props.type, zone.value),
       },
       {
         key: '7d',
         label: t('dateRangePicker.last7d'),
-        range: () => [startOfDay(daysAgo(6)), endOfDay(new Date())],
+        range: () => presetDateRange('7d', props.type, zone.value),
       },
       {
         key: '30d',
         label: t('dateRangePicker.last30d'),
-        range: () => [startOfDay(daysAgo(29)), endOfDay(new Date())],
+        range: () => presetDateRange('30d', props.type, zone.value),
       },
       {
         key: 'thisMonth',
         label: t('dateRangePicker.thisMonth'),
-        range: () => {
-          const now = new Date()
-          return [startOfDay(new Date(now.getFullYear(), now.getMonth(), 1)), endOfDay(now)]
-        },
+        range: () => presetDateRange('thisMonth', props.type, zone.value),
       },
     ]
     if (props.includeAll) base.push({ key: 'all', label: t('dateRangePicker.all') })
     return base
   })
-
-  // 用 pad('0') / 简单格式化代替 dayjs(避免新增依赖)
-  function fmt(d: Date): string {
-    const p = (n: number) => String(n).padStart(2, '0')
-    const date = d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate())
-    if (props.type === 'daterange') return date
-    return date + ' ' + p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds())
-  }
 
   // 反推当前 modelValue 命中哪个 preset;不命中时返回 undefined → 无 chip 高亮,
   // 表示用户在 picker 里挑了自由日期。
@@ -133,7 +111,7 @@
     for (const p of presets.value) {
       if (!p.range) continue
       const [s, e] = p.range()
-      if (fmt(s) === v[0] && fmt(e) === v[1]) return p.key
+      if (s === v[0] && e === v[1]) return p.key
     }
     return undefined
   })
@@ -146,8 +124,7 @@
     }
     const p = presets.value.find((x) => x.key === k)
     if (!p?.range) return
-    const [s, e] = p.range()
-    emit('update:modelValue', [fmt(s), fmt(e)])
+    emit('update:modelValue', p.range())
   }
 
   function onPickerChange(v: unknown) {
@@ -165,8 +142,7 @@
       if (v === undefined && old === undefined) {
         const p = presets.value.find((x) => x.key === props.defaultPreset)
         if (p?.range) {
-          const [s, e] = p.range()
-          emit('update:modelValue', [fmt(s), fmt(e)])
+          emit('update:modelValue', p.range())
         }
       }
     },

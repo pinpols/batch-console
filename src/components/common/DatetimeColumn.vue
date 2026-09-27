@@ -2,14 +2,14 @@
   <el-table-column v-bind="colProps">
     <template #default="{ row }">
       <!-- 还原设计:时间/编号一律等宽字体 -->
-      <span class="dt-mono">{{ fmtDatetime(cellValue(row)) }}</span>
+      <span class="dt-mono"><DatetimeText :value="cellValue(row)" /></span>
     </template>
   </el-table-column>
 </template>
 
 <script setup lang="ts">
   import { computed } from 'vue'
-  import { fmtDatetime } from '@/utils/datetime'
+  import DatetimeText from './DatetimeText.vue'
 
   interface Props {
     prop: string

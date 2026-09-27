@@ -133,10 +133,8 @@
           </el-select>
         </el-form-item>
         <el-form-item :label="t('apiKeyList.fieldExpiresAt')" prop="expiresAt">
-          <el-date-picker
+          <InstantPicker
             v-model="form.expiresAt"
-            type="datetime"
-            value-format="YYYY-MM-DDTHH:mm:ss"
             :placeholder="t('apiKeyList.fieldExpiresAtPlaceholder')"
             class="query-w-full"
           />
@@ -209,11 +207,11 @@
           String(detail.enabled ?? '')
         }}</el-descriptions-item>
         <el-descriptions-item :label="t('apiKeyList.detailExpiresAt')">
-          {{ detail.expiresAt }}
+          <DatetimeText :value="detail.expiresAt" />
         </el-descriptions-item>
-        <el-descriptions-item :label="t('apiKeyList.detailRevokedAt')">{{
-          detail.revokedAt ?? '—'
-        }}</el-descriptions-item>
+        <el-descriptions-item :label="t('apiKeyList.detailRevokedAt')">
+          <DatetimeText :value="detail.revokedAt" />
+        </el-descriptions-item>
         <el-descriptions-item :label="t('apiKeyList.detailRevokedBy')">{{
           detail.revokedBy ?? '—'
         }}</el-descriptions-item>
@@ -254,6 +252,8 @@
   import StatusTag from '@/components/common/StatusTag.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
   import JsonPreview from '@/components/common/JsonPreview.vue'
+  import DatetimeText from '@/components/common/DatetimeText.vue'
+  import InstantPicker from '@/components/common/InstantPicker.vue'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
 
   const tenant = useTenantStore()

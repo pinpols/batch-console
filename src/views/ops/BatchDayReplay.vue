@@ -90,7 +90,7 @@
           </template>
         </el-table-column>
         <el-table-column :label="t('batchDayReplay.colRequestedBy')" prop="requestedBy" />
-        <el-table-column :label="t('batchDayReplay.colCreatedAt')" prop="createdAt" width="180" />
+        <DatetimeColumn :label="t('batchDayReplay.colCreatedAt')" prop="createdAt" width="180" />
       </el-table>
     </SectionCard>
 
@@ -431,6 +431,8 @@
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
+  import DatetimeColumn from '@/components/common/DatetimeColumn.vue'
+  import { todayBusinessDate } from '@/utils/datetime'
   import {
     batchDayReplayApi,
     type BatchDayReplaySession,
@@ -457,7 +459,7 @@
   const submitForm = reactive<BatchDayReplaySubmitRequest>({
     tenantId: tenant.tenantId,
     calendarCode: 'default',
-    bizDate: new Date().toISOString().slice(0, 10),
+    bizDate: todayBusinessDate(),
     scope: 'ALL',
     executionMode: 'REPLAY',
     candidateSource: 'EXISTING_INSTANCES',

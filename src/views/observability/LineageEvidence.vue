@@ -185,6 +185,7 @@
   import MetricCard from '@/components/common/MetricCard.vue'
   import JsonPreview from '@/components/common/JsonPreview.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
+  import { todayBusinessDate } from '@/utils/datetime'
 
   const { t } = useI18n({ useScope: 'global' })
   const tenant = useTenantStore()
@@ -198,7 +199,7 @@
 
   const readinessQuery = reactive({
     jobCode: '',
-    bizDate: new Date().toISOString().slice(0, 10),
+    bizDate: todayBusinessDate(),
   })
   const readiness = ref<AssetPartitionReadiness | null>(null)
   const loadingReadiness = ref(false)
@@ -258,7 +259,7 @@
 
   function resetReadiness() {
     readinessQuery.jobCode = ''
-    readinessQuery.bizDate = new Date().toISOString().slice(0, 10)
+    readinessQuery.bizDate = todayBusinessDate()
     readiness.value = null
   }
 

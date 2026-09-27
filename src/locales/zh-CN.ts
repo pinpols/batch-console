@@ -897,6 +897,7 @@ export default {
     step5Desc: '侧边栏底部按钮控制菜单栏,内容区需要更多空间时可以收起。',
   },
   dateRangePicker: {
+    invalidLocalTime: '所选时间在当前时区不存在，请重新选择',
     rangeSeparator: '至',
     startDate: '开始日期',
     endDate: '结束日期',

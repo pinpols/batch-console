@@ -288,6 +288,7 @@
   import BulkActionBar from '@/components/table/BulkActionBar.vue'
   import { useBulkSelection } from '@/composables/useBulkSelection'
   import { fmtNumber } from '@/utils/number'
+  import { fmtClockTime } from '@/utils/datetime'
   import type {
     ConsoleOutboxDeliveryLogResponse,
     ConsoleOutboxRetryLogResponse,
@@ -628,12 +629,7 @@
   const successCount = computed(() => deliveredTotal.value)
 
   const lastRefreshText = computed(() => {
-    const v = activeLive.value.lastRefreshedAt.value
-    if (!v) return '—'
-    const d = v instanceof Date ? v : new Date(v)
-    if (Number.isNaN(d.getTime())) return '—'
-    const p = (n: number) => String(n).padStart(2, '0')
-    return `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`
+    return fmtClockTime(activeLive.value.lastRefreshedAt.value)
   })
 
   // URL state:tab + 当前活动 tab 的 status / page / pageSize round-trip

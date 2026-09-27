@@ -322,6 +322,7 @@
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
   import StrongPasswordInput from '@/components/common/StrongPasswordInput.vue'
+  import { fmtClockTime } from '@/utils/datetime'
   import TablePagerBar from '@/components/table/TablePagerBar.vue'
   import OpsFilterToolbar from '@/components/table/OpsFilterToolbar.vue'
   import StatusSegment from '@/components/table/StatusSegment.vue'
@@ -390,9 +391,7 @@
   const hasAccountFilters = computed(() => !!(queryApplied.keyword.trim() || accountStatus.value))
 
   const lastRefreshText = computed(() => {
-    if (!lastLoadedAt.value) return '—'
-    const part = (n: number) => String(n).padStart(2, '0')
-    return `${part(lastLoadedAt.value.getHours())}:${part(lastLoadedAt.value.getMinutes())}:${part(lastLoadedAt.value.getSeconds())}`
+    return fmtClockTime(lastLoadedAt.value)
   })
 
   function parseRoles(csv?: string): string[] {
