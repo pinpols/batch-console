@@ -11,7 +11,7 @@
 
 | Item | Count |
 |---|---:|
-| Runtime direct dependencies | 30 |
+| Runtime direct dependencies | 31 |
 | Development direct dependencies | 35 |
 | Resolved lockfile components | 943 |
 
@@ -61,6 +61,7 @@
 | `axios` | `^1.16.1` |
 | `codemirror` | `^6.0.2` |
 | `cronstrue` | `^3.14.0` |
+| `dayjs` | `1.11.23` |
 | `dompurify` | `^3.4.0` |
 | `driver.js` | `^1.4.0` |
 | `echarts` | `^6.0.0` |

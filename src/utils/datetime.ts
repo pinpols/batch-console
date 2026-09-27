@@ -1,5 +1,14 @@
 import { i18n } from '@/locales'
 import { readDisplayTimezone } from '@/constants/timezone'
+import dayjs from 'dayjs'
+import utc from 'dayjs/plugin/utc'
+import timezonePlugin from 'dayjs/plugin/timezone'
+
+dayjs.extend(utc)
+dayjs.extend(timezonePlugin)
+
+const WALL_TIME_FORMAT = 'YYYY-MM-DD HH:mm:ss'
+const WALL_TIME_PATTERN = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/
 
 type CalendarParts = {
   year: number
@@ -17,7 +26,7 @@ function dt(key: string, named?: Record<string, unknown>): string {
 
 function parseDate(value: unknown): Date | null {
   if (value === null || value === undefined || value === '') return null
-  const date = typeof value === 'number' ? new Date(value) : new Date(String(value))
+  const date = value instanceof Date ? value : new Date(value as string | number)
   return Number.isNaN(date.getTime()) ? null : date
 }
 
@@ -90,18 +99,64 @@ export function fmtDatetime(val: unknown, timezone?: string): string {
   return datetimeText(partsOf(date, timezone))
 }
 
-/**
- * 把日期/字符串规范化为 ISO-8601 datetime(UTC,带 Z 后缀)。
- *
- * Why: 后端期望 ISO datetime,FE el-date-picker 默认 `YYYY-MM-DD` 10-char 形态会触发
- * "Text '2026-05-17' could not be parsed at index 10" 后端日志(见 BE 日志 issue #5)。
- * 用法: payload 出站前调用 `toIsoDateTime(form.bizDate)`,空值返 undefined 跳过该字段。
- */
-export function toIsoDateTime(val: unknown): string | undefined {
-  if (val === null || val === undefined || val === '') return undefined
-  const date = val instanceof Date ? val : new Date(String(val))
-  if (Number.isNaN(date.getTime())) return undefined
-  return date.toISOString()
+/** 日期选择器的墙上时间转为 API Instant；不存在的夏令时时刻会被拒绝。 */
+export function wallTimeToApiInstant(value: string, zone = readDisplayTimezone()): string | null {
+  if (!WALL_TIME_PATTERN.test(value)) return null
+  const parsed = dayjs.tz(value, zone)
+  return parsed.isValid() && parsed.format(WALL_TIME_FORMAT) === value ? parsed.toISOString() : null
+}
+
+/** 后端 Instant 转日期选择器的墙上时间；兼容旧版已保存的无时区筛选值。 */
+export function apiInstantToWallTime(value: string, zone = readDisplayTimezone()): string {
+  if (WALL_TIME_PATTERN.test(value)) return value
+  const parsed = dayjs(value)
+  return parsed.isValid() ? parsed.tz(zone).format(WALL_TIME_FORMAT) : ''
+}
+
+export function readBusinessTimezone(): string {
+  const configured = import.meta.env.VITE_DISPLAY_TIMEZONE?.trim()
+  if (configured) {
+    try {
+      new Intl.DateTimeFormat('en-US', { timeZone: configured }).format()
+      return configured
+    } catch {
+      // Keep business-date defaults independent of the user's display preference.
+    }
+  }
+  return 'Asia/Shanghai'
+}
+
+/** 业务日期使用部署配置的时区，不受个人展示时区切换影响。 */
+export function todayBusinessDate(now: Date = new Date()): string {
+  return fmtDate(now, readBusinessTimezone())
+}
+
+/** 将平台业务日映射为日历控件的本地日期模型，不把 LocalDate 当作 Instant 解析。 */
+export function businessCalendarDate(now: Date = new Date()): Date {
+  const [year, month, day] = todayBusinessDate(now).split('-').map(Number)
+  return new Date(year, month - 1, day, 12)
+}
+
+/** 近 N 个业务日（包含今天），用于 LocalDate 筛选而非 Instant 时间窗口。 */
+export function recentBusinessDateRange(days = 7, now: Date = new Date()): [string, string] {
+  const today = dayjs(now).tz(readBusinessTimezone())
+  const count = Math.max(1, Math.floor(days))
+  return [today.subtract(count - 1, 'day').format('YYYY-MM-DD'), today.format('YYYY-MM-DD')]
+}
+
+export function presetDateRange(
+  key: 'today' | '7d' | '30d' | 'thisMonth',
+  type: 'daterange' | 'datetimerange',
+  zone: string,
+  now: Date = new Date(),
+): [string, string] {
+  const today = dayjs(now).tz(zone)
+  const start =
+    key === 'thisMonth'
+      ? today.startOf('month')
+      : today.subtract(key === '30d' ? 29 : key === '7d' ? 6 : 0, 'day').startOf('day')
+  if (type === 'daterange') return [start.format('YYYY-MM-DD'), today.format('YYYY-MM-DD')]
+  return [start.toISOString(), today.endOf('day').toISOString()]
 }
 
 /**
@@ -113,6 +168,25 @@ export function fmtDate(val: unknown, timezone?: string): string {
   if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw
   const date = parseDate(val)
   return date ? dateText(partsOf(date, timezone)) : raw
+}
+
+/** 仅显示当前展示时区的钟表时间；用于刷新状态等不需要重复日期的场景。 */
+export function fmtClockTime(val: unknown, timezone?: string, includeSeconds = true): string {
+  const date = parseDate(val)
+  if (!date) return '—'
+  const parts = partsOf(date, timezone)
+  const hm = `${pad(parts.hour)}:${pad(parts.minute)}`
+  return includeSeconds ? `${hm}:${pad(parts.second)}` : hm
+}
+
+/** 今天显示紧凑时间，历史时间显示完整日期。 */
+export function fmtTodayOrDatetime(val: unknown, timezone?: string): string {
+  const date = parseDate(val)
+  if (!date) return fmtDatetime(val, timezone)
+  const zone = safeTimezone(timezone)
+  return fmtDate(date, zone) === fmtDate(new Date(), zone)
+    ? fmtCompact(date, zone)
+    : fmtDatetime(date, zone)
 }
 
 /**

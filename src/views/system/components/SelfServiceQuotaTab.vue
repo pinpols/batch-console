@@ -82,7 +82,7 @@
   import { useTenantReload } from '@/composables/useTenantReload'
   import JsonPreview from '@/components/common/JsonPreview.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
-  import { fmtDatetime } from '@/utils/datetime'
+  import { fmtClockTime } from '@/utils/datetime'
 
   const tenant = useTenantStore()
   const auth = useAuthStore()
@@ -106,7 +106,7 @@
   const hasUsageData = computed(() => !isEmptyPayload(usage.value))
 
   function formatNow() {
-    return fmtDatetime(new Date()).slice(11)
+    return fmtClockTime(new Date())
   }
 
   function isEmptyPayload(payload: unknown) {

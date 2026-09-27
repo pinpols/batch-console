@@ -87,6 +87,7 @@
   import { ref, computed, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
+  import { todayBusinessDate } from '@/utils/datetime'
   import {
     dryRunApi,
     type DryRunLevel,
@@ -120,7 +121,7 @@
     if (v) {
       // 每次打开重置表单(保留上次 level 选择以减少重复点击)
       paramsText.value = (props.defaultParams || '').trim()
-      bizDate.value = new Date().toISOString().slice(0, 10)
+      bizDate.value = todayBusinessDate()
       result.value = null
       paramsError.value = ''
     }

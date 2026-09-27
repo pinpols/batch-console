@@ -3,6 +3,8 @@ import type {
   CapacityProfileReport,
   CapacityProfileRow,
 } from '@/api/capacityProfile'
+import { readDisplayTimezone } from '@/constants/timezone'
+import { fmtDate } from '@/utils/datetime'
 
 export interface CapacityBucket {
   from: string
@@ -17,11 +19,12 @@ export interface CapacityTrendPoint {
 }
 
 function toIso(value: number): string {
-  return new Date(value).toISOString().slice(0, 19) + 'Z'
+  return new Date(value).toISOString()
 }
 
-function bucketLabel(from: number, to: number): string {
+function bucketLabel(from: number, to: number, zone: string): string {
   const options: Intl.DateTimeFormatOptions = {
+    timeZone: zone,
     month: '2-digit',
     day: '2-digit',
     hour: '2-digit',
@@ -29,11 +32,15 @@ function bucketLabel(from: number, to: number): string {
     hour12: false,
   }
   const format = new Intl.DateTimeFormat(undefined, options)
-  if (new Date(from).toDateString() === new Date(to).toDateString()) return format.format(from)
+  if (fmtDate(from, zone) === fmtDate(to, zone)) return format.format(from)
   return `${format.format(from)} - ${format.format(to)}`
 }
 
-export function buildCapacityBuckets(range: [string, string], maxBuckets = 7): CapacityBucket[] {
+export function buildCapacityBuckets(
+  range: [string, string],
+  maxBuckets = 7,
+  zone = readDisplayTimezone(),
+): CapacityBucket[] {
   const from = Date.parse(range[0])
   const to = Date.parse(range[1])
   if (!Number.isFinite(from) || !Number.isFinite(to) || to <= from || maxBuckets < 1) return []
@@ -47,7 +54,7 @@ export function buildCapacityBuckets(range: [string, string], maxBuckets = 7): C
     return {
       from: toIso(bucketFrom),
       to: toIso(bucketTo),
-      label: bucketLabel(bucketFrom, bucketTo),
+      label: bucketLabel(bucketFrom, bucketTo, zone),
     }
   })
 }
@@ -65,9 +72,10 @@ export function capacityDimensionValue(
 export function buildCapacityTrend(
   buckets: CapacityBucket[],
   reports: Array<CapacityProfileReport | null>,
+  zone = readDisplayTimezone(),
 ): CapacityTrendPoint[] {
   return buckets.map((bucket, index) => ({
-    label: bucket.label,
+    label: bucketLabel(Date.parse(bucket.from), Date.parse(bucket.to), zone),
     instanceCount: Number(reports[index]?.totals?.instanceCount ?? 0),
     taskCount: Number(reports[index]?.totals?.taskCount ?? 0),
   }))

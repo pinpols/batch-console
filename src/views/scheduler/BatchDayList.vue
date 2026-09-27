@@ -223,6 +223,7 @@
   import ProTable from '@/components/table/ProTable.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
+  import { businessCalendarDate } from '@/utils/datetime'
   import type { ConsoleBatchDayResponse } from '@/types/console-api'
   import { indexBatchDays, monthDateRange, summarizeBatchDays } from './batchDayPresentation'
 
@@ -244,7 +245,7 @@
     to: '' as string,
   })
   const viewMode = ref<'calendar' | 'table'>('calendar')
-  const calendarDate = ref(new Date())
+  const calendarDate = ref(businessCalendarDate())
   const viewModeOptions = computed(() => [
     { label: t('batchDayList.viewCalendar'), value: 'calendar' },
     { label: t('batchDayList.viewTable'), value: 'table' },
@@ -315,7 +316,7 @@
       filters.from = ''
       filters.to = ''
       page.value = 1
-      calendarDate.value = new Date()
+      calendarDate.value = businessCalendarDate()
       await load()
     })
   }
