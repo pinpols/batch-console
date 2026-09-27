@@ -32,6 +32,7 @@ Batch Console 是 File Batch System 的控制面。它用于配置、编排、�
 | 查询运行、重试、取消、审批或重放       | [运行与审批](./runs-and-approvals.md)    | 运维值班、租户管理员、审计员   |
 | 配置文件渠道、模板或导入租户配置包     | [文件与配置导入](./files-and-imports.md) | 租户管理员、平台管理员         |
 | 处理告警、Outbox、Trace 和审计         | [可观测性与排障](./observability.md)     | 运维值班、审计员、管理员       |
+| 换算时区、检查文件或预览调度参数       | [运维工具](./operations-tools.md)        | 全部角色                       |
 | 管理租户、账号、Worker、配额和配置同步 | [平台治理](./platform-governance.md)     | 平台管理员、租户管理员、审计员 |
 | 页面报错、数据为空或操作无结果         | [常见问题](./troubleshooting.md)         | 全部角色                       |
 

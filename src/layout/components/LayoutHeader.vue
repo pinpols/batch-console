@@ -133,6 +133,10 @@
           </button>
           <template #dropdown>
             <el-dropdown-menu>
+              <el-dropdown-item command="operations-toolkit">
+                <el-icon><Wrench /></el-icon>
+                {{ t('nav.operationsToolkit') }}
+              </el-dropdown-item>
               <el-dropdown-item command="mobile">
                 <el-icon><Iphone /></el-icon>
                 {{ t('nav.mobilePreview') }}
@@ -188,6 +192,7 @@
       </div>
     </div>
   </el-header>
+  <OperationsToolkitDrawer v-if="toolkitMounted" v-model="toolkitVisible" />
 </template>
 
 <script setup lang="ts">
@@ -210,11 +215,12 @@
     Sun as Sunny,
     LogOut as SwitchButton,
     Globe2 as TimezoneIcon,
+    Wrench,
   } from '@lucide/vue'
   import TenantSelect from '@/components/common/TenantSelect.vue'
   import NotificationCenter from './NotificationCenter.vue'
   import { useHeaderLogic } from '@/layout/composables/useHeaderLogic'
-  import { computed, onMounted, watch } from 'vue'
+  import { computed, defineAsyncComponent, onMounted, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { useLocale } from '@/composables/useLocale'
   import { useMobileBadgesStore } from '@/stores/mobileBadges'
@@ -233,6 +239,11 @@
   const { current: currentLocale, setLocale } = useLocale()
   const timezoneOptions = DISPLAY_TIMEZONE_OPTIONS
   const currentTimezone = displayTimezone
+  const OperationsToolkitDrawer = defineAsyncComponent(
+    () => import('@/components/tools/OperationsToolkitDrawer.vue'),
+  )
+  const toolkitMounted = ref(false)
+  const toolkitVisible = ref(false)
 
   function changeDisplayTimezone(timezone: string | number | object) {
     if (typeof timezone !== 'string' || timezone === currentTimezone.value) return
@@ -310,7 +321,10 @@
   }
 
   function onUtilityCommand(command: string | number | object) {
-    if (command === 'mobile') openMobilePreview()
+    if (command === 'operations-toolkit') {
+      toolkitMounted.value = true
+      toolkitVisible.value = true
+    } else if (command === 'mobile') openMobilePreview()
     else if (command === 'docs') void openDocs()
     else if (command === 'theme') app.toggleTheme()
   }

@@ -662,7 +662,7 @@
   import PageContainer from '@/components/common/PageContainer.vue'
   import JobConfigBasicForm from './components/JobConfigBasicForm.vue'
   import JobDefinitionDrawer from './components/JobDefinitionDrawer.vue'
-  import CronExprInput from './components/CronExprInput.vue'
+  import CronExprInput from '@/components/common/CronExprInput.vue'
   import JobRelatedFilesTab from './components/JobRelatedFilesTab.vue'
   import {
     type JobEditFormState,

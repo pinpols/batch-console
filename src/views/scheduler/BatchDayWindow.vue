@@ -14,11 +14,43 @@
         >
           {{ t('batchDayWindow.refresh') }}
         </el-button>
-        <el-button type="success" :disabled="!calendarCode" @click="openCatchup">
+        <el-button
+          v-if="canManageSystem"
+          type="success"
+          :disabled="!calendarCode"
+          @click="openCatchup"
+        >
           {{ t('batchDayWindow.catchUp') }}
         </el-button>
       </template>
     </PageHeader>
+
+    <div class="batch-day-context" role="search">
+      <div class="batch-day-context__field">
+        <span>{{ t('batchDayWindow.queryBizDate') }}</span>
+        <el-date-picker
+          v-model="bizDateDraft"
+          type="date"
+          value-format="YYYY-MM-DD"
+          :placeholder="t('batchDayWindow.queryBizDatePlaceholder')"
+        />
+      </div>
+      <div class="batch-day-context__field">
+        <span>{{ t('batchDayWindow.queryCalendar') }}</span>
+        <el-select
+          v-model="calendarDraft"
+          filterable
+          allow-create
+          default-first-option
+          :placeholder="t('batchDayWindow.selectCalendarPlaceholder')"
+        >
+          <el-option label="DEFAULT" value="DEFAULT" />
+        </el-select>
+      </div>
+      <el-button type="primary" :loading="loading" @click="applyWindowQuery">
+        {{ t('batchDayWindow.loadCalendar') }}
+      </el-button>
+    </div>
 
     <SectionCard v-if="window">
       <template #header>{{ t('batchDayWindow.windowStatus') }}</template>
@@ -117,24 +149,7 @@
       <EmptyState
         :title="t('batchDayWindow.selectCalendarTitle')"
         :description="t('batchDayWindow.selectCalendarDescription')"
-      >
-        <template #action>
-          <div class="batch-day-calendar-picker">
-            <el-select
-              v-model="calendarDraft"
-              filterable
-              allow-create
-              default-first-option
-              :placeholder="t('batchDayWindow.selectCalendarPlaceholder')"
-            >
-              <el-option label="DEFAULT" value="DEFAULT" />
-            </el-select>
-            <el-button type="primary" @click="applyCalendar">
-              {{ t('batchDayWindow.loadCalendar') }}
-            </el-button>
-          </div>
-        </template>
-      </EmptyState>
+      />
     </SectionCard>
 
     <SectionCard v-else-if="!loading">
@@ -187,8 +202,10 @@
   import { ElMessage } from 'element-plus'
   import { RefreshCw as Refresh } from '@lucide/vue'
   import { useRefreshAction } from '@/composables/useRefreshAction'
+  import { usePermission } from '@/composables/usePermission'
 
   const refresh = useRefreshAction()
+  const { canManageSystem } = usePermission()
 
   const { t } = useI18n({ useScope: 'global' })
   import { launchBatchDayCatchUp, queryBatchDayWindow } from '@/api/batchDays'
@@ -210,6 +227,7 @@
 
   const bizDate = computed(() => (route.params.bizDate as string) || '')
   const calendarCode = computed(() => (route.query.calendarCode as string) || '')
+  const bizDateDraft = ref(bizDate.value)
   const calendarDraft = ref(calendarCode.value || 'DEFAULT')
 
   const title = computed(() =>
@@ -259,13 +277,17 @@
     }
   }
 
-  function applyCalendar() {
+  function applyWindowQuery() {
+    const date = bizDateDraft.value
     const value = calendarDraft.value.trim()
-    if (!value) {
-      ElMessage.warning(t('batchDayWindow.missingCalendar'))
+    if (!date || !value) {
+      ElMessage.warning(t('batchDayWindow.missingQuery'))
       return
     }
-    void router.replace({ query: { ...route.query, calendarCode: value } })
+    void router.replace({
+      path: `/scheduler/batch-days/${date}`,
+      query: { ...route.query, calendarCode: value },
+    })
   }
 
   function openCatchup() {
@@ -317,21 +339,46 @@
   useTenantReload(load)
 
   watch([bizDate, calendarCode], () => {
+    bizDateDraft.value = bizDate.value
     calendarDraft.value = calendarCode.value || 'DEFAULT'
     void load()
   })
 </script>
 
 <style scoped>
-  .batch-day-calendar-picker {
+  .batch-day-context {
     display: flex;
     align-items: center;
+    justify-content: flex-end;
     gap: var(--space-sm);
-    width: min(100%, 420px);
+    padding: var(--space-sm) var(--space-md);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-content);
+    background: var(--color-bg-card);
   }
 
-  .batch-day-calendar-picker .el-select {
-    flex: 1;
-    min-width: 0;
+  .batch-day-context__field {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+  }
+
+  .batch-day-context__field :deep(.el-date-editor),
+  .batch-day-context__field :deep(.el-select) {
+    width: 12rem;
+  }
+
+  @media (max-width: 56.25rem) {
+    .batch-day-context {
+      align-items: stretch;
+      flex-direction: column;
+    }
+
+    .batch-day-context__field :deep(.el-date-editor),
+    .batch-day-context__field :deep(.el-select) {
+      width: 100%;
+    }
   }
 </style>

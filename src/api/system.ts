@@ -58,6 +58,9 @@ export type FileTemplateSavePayload = components['schemas']['FileTemplateCreateR
 /** 复用 OpenAPI 生成类型(create 超集,update 调用复用同体)。 */
 export type FileChannelSavePayload = components['schemas']['FileChannelCreateRequest']
 
+export type FileNamePreviewPayload = components['schemas']['FileNamePreviewRequest']
+export type FileNamePreviewResult = components['schemas']['FileNamePreviewResponse']
+
 function readString(row: RawObject, ...keys: string[]) {
   for (const key of keys) {
     const value = row[key]
@@ -219,6 +222,11 @@ export function createFileTemplate(body: FileTemplateSavePayload) {
 
 export function updateFileTemplate(id: number, body: FileTemplateSavePayload) {
   return put<ConsoleFileTemplateResponse>(`/api/console/file-templates/${id}`, body)
+}
+
+/** 与导出 Worker 共用解析器，只预览最终文件名，不执行导出。 */
+export function previewFileTemplateName(body: FileNamePreviewPayload) {
+  return post<FileNamePreviewResult>('/api/console/file-templates/naming-preview', body)
 }
 
 /** GET /api/console/file-templates/{id} */

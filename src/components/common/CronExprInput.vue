@@ -2,7 +2,7 @@
   <div class="cron-expr-input">
     <el-input
       :model-value="modelValue"
-      :placeholder="placeholder"
+      :placeholder="inputPlaceholder"
       :disabled="disabled"
       @update:model-value="onInput"
     />
@@ -76,9 +76,9 @@
   // @ts-ignore — cronstrue/i18n 子包没有显式 type 声明,运行时存在
   import 'cronstrue/locales/zh_CN'
   import { previewCron } from '@/api/system.cron'
-  import DatetimeText from '@/components/common/DatetimeText.vue'
+  import DatetimeText from './DatetimeText.vue'
 
-  const { t } = useI18n({ useScope: 'global' })
+  const { t, locale } = useI18n({ useScope: 'global' })
 
   const props = withDefaults(
     defineProps<{
@@ -86,7 +86,7 @@
       placeholder?: string
       disabled?: boolean
     }>(),
-    { modelValue: '', placeholder: '例:0 0 2 * * ?  (每天 02:00)', disabled: false },
+    { modelValue: '', placeholder: '', disabled: false },
   )
   const emit = defineEmits<{ (e: 'update:modelValue', v: string): void }>()
 
@@ -94,20 +94,24 @@
     emit('update:modelValue', String(v ?? ''))
   }
 
-  const PRESETS = [
-    { label: '每天 02:00', expr: '0 0 2 * * ?' },
-    { label: '每小时', expr: '0 0 * * * ?' },
-    { label: '每 15 分', expr: '0 */15 * * * ?' },
-    { label: '每周一 02:00', expr: '0 0 2 ? * MON' },
-    { label: '每月 1 号 02:00', expr: '0 0 2 1 * ?' },
-  ] as const
+  const inputPlaceholder = computed(() => props.placeholder || t('cronExprInput.placeholder'))
+  const PRESETS = computed(() => [
+    { label: t('cronExprInput.presetDaily'), expr: '0 0 2 * * ?' },
+    { label: t('cronExprInput.presetHourly'), expr: '0 0 * * * ?' },
+    { label: t('cronExprInput.presetQuarterHour'), expr: '0 */15 * * * ?' },
+    { label: t('cronExprInput.presetWeekly'), expr: '0 0 2 ? * MON' },
+    { label: t('cronExprInput.presetMonthly'), expr: '0 0 2 1 * ?' },
+  ])
 
   // ── 描述:cronstrue(中文)。失败兜底英文 / 原表达式 ───────────
   const desc = computed(() => {
     const expr = props.modelValue?.trim()
     if (!expr) return ''
     try {
-      return cronstrue.toString(expr, { locale: 'zh_CN', use24HourTimeFormat: true })
+      return cronstrue.toString(expr, {
+        locale: locale.value === 'zh-CN' ? 'zh_CN' : 'en',
+        use24HourTimeFormat: true,
+      })
     } catch {
       try {
         return cronstrue.toString(expr, { use24HourTimeFormat: true })
@@ -144,7 +148,7 @@
             if (seq !== previewSeq) return // 中途又输入,丢弃过时响应
             if (!res.valid) {
               nextRuns.value = []
-              previewError.value = res.error || '解析失败'
+              previewError.value = res.error || t('cronExprInput.parseFailed')
               previewTz.value = null
             } else {
               nextRuns.value = res.nextRuns

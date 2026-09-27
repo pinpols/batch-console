@@ -4956,6 +4956,23 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/console/file-templates/naming-preview': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Preview an export file name with the worker runtime resolver */
+    post: operations['previewFileTemplateName']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/console/file-templates/{id}': {
     parameters: {
       query?: never
@@ -6811,6 +6828,9 @@ export interface components {
     CommonResponseFileTemplateMappingDraftResponse: components['schemas']['CommonResponseBase'] & {
       data?: components['schemas']['FileTemplateMappingDraftResponse']
     }
+    CommonResponseFileNamePreviewResponse: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['FileNamePreviewResponse']
+    }
     /** @description 工作流 DAG 静态校验的单条发现条目。`nodeCode` 与 `edgeId` 至多一个非空。 */
     DagValidationFinding: {
       /** @description 规则码，例如 MISSING_START / CYCLE_DETECTED / JOB_REF_MISSING */
@@ -8010,6 +8030,20 @@ export interface components {
       queryParamSchemaJson?: string
       defaultQuerySql?: string | null
       warnings?: string[]
+    }
+    FileNamePreviewRequest: {
+      tenantId: string
+      namingRule?: string
+      fileFormatType: string
+      bizType?: string
+      /** Format: date */
+      bizDate: string
+      batchNo?: string
+      region?: string
+      version?: string
+    }
+    FileNamePreviewResponse: {
+      fileName: string
     }
     /** @description 创建文件渠道。与 BE Java DTO `FileChannelCreateRequest` 对齐。 */
     FileChannelCreateRequest: {
@@ -19032,6 +19066,32 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['CommonResponseFileTemplateMappingDraftResponse']
+        }
+      }
+    }
+  }
+  previewFileTemplateName: {
+    parameters: {
+      query?: never
+      header: {
+        'Idempotency-Key': components['parameters']['IdempotencyKeyHeader']
+      }
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['FileNamePreviewRequest']
+      }
+    }
+    responses: {
+      /** @description Worker-compatible export file name preview */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseFileNamePreviewResponse']
         }
       }
     }
