@@ -79,13 +79,13 @@ describe('v-permission directive', () => {
     const auth = useAuthStore()
     vi.spyOn(auth, 'canAccess').mockReturnValue(true)
     vi.spyOn(auth, 'hasPermission').mockReturnValue(true)
-    expect(survived(runMounted({ minRole: 'ROLE_USER', permissions: 'x' }))).toBe(true)
+    expect(survived(runMounted({ minRole: 'OPERATOR', permissions: 'x' }))).toBe(true)
   })
 
   it('object form: minRole pass but permissions fail → removed (AND semantics)', () => {
     const auth = useAuthStore()
     vi.spyOn(auth, 'canAccess').mockReturnValue(true)
     vi.spyOn(auth, 'hasPermission').mockReturnValue(false)
-    expect(survived(runMounted({ minRole: 'ROLE_USER', permissions: 'x' }))).toBe(false)
+    expect(survived(runMounted({ minRole: 'OPERATOR', permissions: 'x' }))).toBe(false)
   })
 })

@@ -1,4 +1,5 @@
 import { get } from '@/api/client'
+import type { AxiosRequestConfig } from 'axios'
 
 /**
  * 验证码相关接口。后端返回的是宽松 Map（无 OpenAPI schema），
@@ -25,8 +26,8 @@ function normalizeProvider(raw: unknown): CaptchaProvider {
 
 export const captchaApi = {
   /** 拉取验证码配置。任意 provider 都可调用(包括 none)。 */
-  getCaptchaConfig: async (): Promise<CaptchaConfig> => {
-    const raw = await get<Record<string, unknown>>('/api/console/captcha/config')
+  getCaptchaConfig: async (config?: AxiosRequestConfig): Promise<CaptchaConfig> => {
+    const raw = await get<Record<string, unknown>>('/api/console/captcha/config', undefined, config)
     return {
       provider: normalizeProvider(raw?.provider),
       siteKey: typeof raw?.siteKey === 'string' ? raw.siteKey : undefined,

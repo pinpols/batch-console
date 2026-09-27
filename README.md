@@ -8,7 +8,7 @@
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/Node.js-22%20%7C%2024-339933.svg?logo=node.js&logoColor=white)](https://nodejs.org/)
 
-[快速开始](#快速开始) · [核心能力](#核心能力) · [工程结构](#工程结构) · [文档索引](docs/README.md) · [贡献指南](CONTRIBUTING.md) · [配对后端](https://github.com/pinpols/file-batch-system)
+[用户指南](docs/user-guide/README.md) · [快速开始](#快速开始) · [核心能力](#核心能力) · [工程结构](#工程结构) · [文档索引](docs/README.md) · [贡献指南](CONTRIBUTING.md) · [配对后端](https://github.com/pinpols/file-batch-system)
 
 ## 这是什么？
 
@@ -21,13 +21,13 @@ Batch Console（BC）是 [File Batch System](https://github.com/pinpols/file-bat
 
 ## 核心能力
 
-| 领域 | 能力 |
-|---|---|
-| 配置与编排 | 作业、DAG 工作流、管道、文件渠道、资源队列和租户配置包 |
-| 运行与处置 | 实例查询、触发、重试、取消、批次日重放、审批和补偿 |
-| 可观测性 | 运行总览、告警、Outbox、Trace ID、Worker 指纹、容量与文件到达进度 |
-| 平台治理 | 多租户权限、审计、配置同步、Secret 管理、国际化和主题切换 |
-| 工程交付 | OpenAPI 类型生成、Vitest、Playwright、视觉回归、Docker/Nginx 与分层 CI |
+| 领域       | 能力                                                                   |
+| ---------- | ---------------------------------------------------------------------- |
+| 配置与编排 | 作业、DAG 工作流、管道、文件渠道、资源队列和租户配置包                 |
+| 运行与处置 | 实例查询、触发、重试、取消、批次日重放、审批和补偿                     |
+| 可观测性   | 运行总览、告警、Outbox、Trace ID、Worker 指纹、容量与文件到达进度      |
+| 平台治理   | 多租户权限、审计、配置同步、Secret 管理、国际化和主题切换              |
+| 工程交付   | OpenAPI 类型生成、Vitest、Playwright、视觉回归、Docker/Nginx 与分层 CI |
 
 ## 快速开始
 
@@ -114,4 +114,4 @@ src/
 
 ## 文档
 
-文档入口见 [docs/README.md](./docs/README.md)。新增或修订文档时优先确认它属于长期设计、阶段性报告还是归档材料，避免同一事实在多处重复维护。
+产品使用从[角色化使用指南](./docs/user-guide/README.md)开始，包含四类正式角色、快速入门、作业与流程、运行审批、文件导入、可观测性和平台治理。工程文档入口见 [docs/README.md](./docs/README.md)。新增或修订文档时优先确认它属于产品手册、长期设计、阶段性报告还是归档材料，避免同一事实在多处重复维护。

@@ -13,7 +13,7 @@
     </PageHeader>
 
     <div class="metrics">
-      <MetricCard :label="t('userRole.metricCurrentRole')" :value="roleLabel(currentRole)" />
+      <MetricCard :label="t('userRole.metricCurrentRole')" :value="formalRoleLabel" />
       <MetricCard :label="t('userRole.metricPermissionCount')" :value="permissionList.length" />
       <div
         class="metric-hit"
@@ -47,7 +47,7 @@
           {{ currentUser?.userId || '—' }}
         </el-descriptions-item>
         <el-descriptions-item :label="t('userRole.fieldRole')">
-          <el-tag size="small" type="primary">{{ roleLabel(currentRole) }}</el-tag>
+          <el-tag size="small" type="primary">{{ formalRoleLabel }}</el-tag>
         </el-descriptions-item>
         <el-descriptions-item :label="t('userRole.fieldTenant')">
           {{ tenant.tenantId }}
@@ -64,7 +64,7 @@
               :type="role === currentRole ? 'success' : 'info'"
               effect="plain"
             >
-              {{ roleLabelMap[role] }}
+              {{ roleLabel(role) }}
             </el-tag>
           </div>
         </el-descriptions-item>
@@ -153,6 +153,12 @@
               {{ roleLabel(row.requiredRole) }}
             </template>
           </el-table-column>
+          <el-table-column
+            prop="requiredAuthorities"
+            :label="t('userRole.colAuthorities')"
+            min-width="220"
+            show-overflow-tooltip
+          />
           <el-table-column :label="t('userRole.colAccess')" width="120">
             <template #default="{ row }">
               <el-tag size="small" :type="row.allowed ? 'success' : 'info'">
@@ -187,7 +193,12 @@
 
   const refreshAction = useRefreshAction()
   import { navigationGroups } from '@/constants/navigation'
-  import { roleLabelMap, roleOrder } from '@/constants/role'
+  import {
+    authorityRoleLabelKeyMap,
+    resolveAuthorityRole,
+    roleLabelKeyMap,
+    roleOrder,
+  } from '@/constants/role'
   import { useAuthStore } from '@/stores/auth'
   import { usePermissionStore } from '@/stores/permission'
   import { useTenantStore } from '@/stores/tenant'
@@ -203,6 +214,7 @@
     groupTitle: string
     itemTitle: string
     requiredRole?: Role
+    requiredAuthorities: string
     allowed: boolean
     path: string
   }
@@ -242,10 +254,18 @@
   const currentUser = computed(() => auth.userInfo)
   const currentRole = computed<Role | undefined>(() => currentUser.value?.role ?? undefined)
   const permissionList = computed(() => currentUser.value?.permissions ?? [])
+  const formalRoleLabel = computed(() => {
+    const role = resolveAuthorityRole(permissionList.value)
+    return role ? `${t(authorityRoleLabelKeyMap[role])} (${role})` : t('userRole.roleUnset')
+  })
   const visibleMenuCount = computed(() =>
     permission.visibleGroups.reduce((total, group) => total + group.children.length, 0),
   )
   const modeMessage = computed(() => t('userRole.modeMessage'))
+  const visibleAccessPaths = computed(
+    () =>
+      new Set(permission.visibleGroups.flatMap((group) => group.children.map((item) => item.path))),
+  )
 
   const accessRows = computed<AccessRow[]>(() =>
     navigationGroups.flatMap((group) =>
@@ -255,7 +275,8 @@
           groupTitle: group.title,
           itemTitle: item.title,
           requiredRole,
-          allowed: permission.canAccessRole(requiredRole),
+          requiredAuthorities: item.authorities?.join(', ') ?? '—',
+          allowed: visibleAccessPaths.value.has(item.path),
           path: item.path,
         }
       }),
@@ -282,7 +303,7 @@
   })
 
   function roleLabel(role?: Role) {
-    return role ? roleLabelMap[role] : t('userRole.roleUnset')
+    return role ? t(roleLabelKeyMap[role]) : t('userRole.roleUnset')
   }
 
   async function refreshProfile() {

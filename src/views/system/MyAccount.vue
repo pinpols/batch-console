@@ -46,7 +46,7 @@
           </div>
           <div class="me-fact">
             <dt>{{ t('myAccount.fieldRole') }}</dt>
-            <dd>{{ auth.userInfo?.role || '—' }}</dd>
+            <dd>{{ formalRoleLabel }}</dd>
           </div>
           <div class="me-fact">
             <dt>{{ t('myAccount.fieldTenant') }}</dt>
@@ -191,6 +191,7 @@
   } from '@/utils/passwordGenerator'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
+  import { authorityRoleLabelKeyMap, resolveAuthorityRole } from '@/constants/role'
 
   const { t } = useI18n({ useScope: 'global' })
   const route = useRoute()
@@ -203,6 +204,10 @@
   const submitting = ref(false)
   const strength = computed(() => passwordStrength(form.newPassword))
   const visiblePermissions = computed(() => (auth.userInfo?.permissions ?? []).slice(0, 6))
+  const formalRoleLabel = computed(() => {
+    const role = resolveAuthorityRole(auth.userInfo?.permissions ?? [])
+    return role ? `${t(authorityRoleLabelKeyMap[role])} (${role})` : '—'
+  })
   const hiddenPermissionCount = computed(() =>
     Math.max((auth.userInfo?.permissions?.length ?? 0) - visiblePermissions.value.length, 0),
   )

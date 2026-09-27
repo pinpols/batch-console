@@ -1,5 +1,7 @@
 # D 档 QA 阶段报告
 
+> **历史快照**：角色相关数字记录的是当时测试环境，已被四角色模型取代。当前授权依据见[角色与页面矩阵](../../user-guide/role-page-matrix.md)。
+
 > 目标:真实场景不会报错 4xx/5xx;前端短联合调试结束;所有 CRUD 接口覆盖(除 AI)
 > 流程:Phase 1 (API 直打) → Phase 2 (UI 真实场景全量) → Phase 3 (真实用户行为闭环 + 清理)
 > 基础设施:`e2e/support/fixtures.ts` 全局 network watchdog + `e2e/all-pages-zero-error.spec.ts` 34 页 0-4xx 巡检

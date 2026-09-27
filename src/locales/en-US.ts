@@ -882,7 +882,6 @@ const messages: Messages = {
     auditor: 'Auditor',
     tenantAdmin: 'Tenant admin',
     tenantUser: 'Tenant user',
-    user: 'Legacy JWT compatibility',
   },
   onboarding: {
     nextBtn: 'Next →',
@@ -897,7 +896,7 @@ const messages: Messages = {
     step3Desc:
       'Open the top-bar tools menu for ADRs, architecture, ops runbooks, field references, and the mobile preview.',
     step4Title: 'Account menu',
-    step4Desc: 'Top-right shows your roles / sign out; admins can open the permission self-check.',
+    step4Desc: 'Use the top-right menu to view your formal role, inspect access, or sign out.',
     step5Title: 'Collapse / expand sidebar',
     step5Desc:
       'The button at the bottom of the sidebar toggles the menu; collapse it when you need more space for content.',
@@ -2059,6 +2058,18 @@ const messages: Messages = {
     passwordRequired: 'Tenant password is required',
     captchaHint: 'For security, please complete the verification below before signing in',
     captchaRequired: 'Please complete the verification first',
+    serviceUnavailableTitle: 'Console service is temporarily unavailable',
+    serviceUnavailableDescription:
+      'The sign-in service cannot be reached. Confirm that it is running or retry later. Your entered account details are preserved.',
+    retry: 'Reconnect',
+  },
+  docsUnavailable: {
+    title: 'Documentation service is temporarily unavailable',
+    description:
+      'Console functions are not affected. Confirm that the documentation service is running, then reconnect.',
+    devHint: 'For local development, run in another terminal:',
+    retry: 'Reconnect',
+    back: 'Back to console',
   },
   captcha: {
     slideHint: 'Drag the slider to the gap',
@@ -3458,9 +3469,9 @@ const messages: Messages = {
     tenantScopeLockedHint: 'Tenant admins can only create accounts in their own tenant',
     createUsernamePlaceholder: 'Globally unique username',
     fieldPassword: 'Initial password',
-    createRolesPlaceholder: 'Blank defaults to ROLE_USER',
+    createRolesPlaceholder: 'Blank defaults to tenant user',
     createRolesHint:
-      'Blank roles default to ROLE_USER on the backend; use ROLE_ADMIN for admin access. Separate multiple roles with commas.',
+      'Blank roles default to ROLE_TENANT_USER. Select the least-privileged formal role required.',
     createSubmit: 'Create',
     createSuccess: 'Created account {name}',
     tenantRequired: 'Please select a tenant',
@@ -3476,8 +3487,7 @@ const messages: Messages = {
     fieldDisplayNamePlaceholder: 'Optional',
     fieldRoles: 'Roles',
     fieldRolesPlaceholder: 'e.g. ROLE_ADMIN,ROLE_TENANT_USER',
-    rolesHint:
-      'Use backend authority codes, e.g. ROLE_ADMIN / ROLE_TENANT_USER; separate multiple with commas.',
+    rolesHint: 'Select only formal roles. Multiple roles combine privileges; use least privilege.',
     dialogCancel: 'Cancel',
     dialogSave: 'Save',
     updateSuccess: 'Updated',
@@ -5428,7 +5438,10 @@ const messages: Messages = {
     fieldRole: 'Role',
     fieldTenant: 'Current tenant',
     fieldPermissionCount: 'Permission count',
-    fieldRoleChain: 'Role hierarchy',
+    fieldRoleChain: 'UI capability tier',
+    capabilityViewer: 'Read-only UI',
+    capabilityOperator: 'Operator UI',
+    capabilityAdmin: 'Admin UI',
     sectionPermissionList: 'Permissions',
     emptyPermissions: 'No permission claims returned for the current user.',
     sectionAccessMatrix: 'Navigation access matrix',
@@ -5438,7 +5451,8 @@ const messages: Messages = {
     matrixCollapsedHint: 'Hover or click to expand the full access matrix',
     colGroup: 'Group',
     colItem: 'Page',
-    colMinRole: 'Min role',
+    colMinRole: 'Minimum UI tier',
+    colAuthorities: 'Restricted roles',
     colAccess: 'Access',
     accessAllowed: 'Allowed',
     accessHidden: 'Hidden',

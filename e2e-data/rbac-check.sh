@@ -1,28 +1,25 @@
 #!/usr/bin/env bash
 # RBAC × tenant-switch 快速验证。
-# 对 6 个角色用户分别测:
+# 对 4 个正式角色用户分别测:
 #   1. login 是否成功 + 拿到 menus
 #   2. GET /auth/me 看 authorities
 #   3. 关键 endpoints 的权限边界:
-#      - GET /tenants (ADMIN/AUDITOR 应可, VIEWER/TENANT_USER 可能不可)
-#      - POST /queues (ADMIN/CONFIG_ADMIN/OPERATOR 应可, VIEWER/AUDITOR/TENANT_USER 应 403)
+#      - GET /tenants (ADMIN/TENANT_ADMIN 可访问)
+#      - POST /queues (仅 ADMIN)
 #      - DELETE /tenants/xx (仅 ADMIN)
 #   4. tenant-switch: 把 X-Tenant-Id 切到 tb, GET /queries/job-definitions
-#      - ADMIN/AUDITOR/CONFIG_ADMIN 允许切
-#      - TENANT_USER 只能看自己 tenant
+#      - ADMIN/AUDITOR 允许切
+#      - TENANT_ADMIN/TENANT_USER 只能看自己 tenant
 
 set +u
 API="http://localhost:18080"
 
-## 2026-05-17 对齐:BE 实际实现 5 角色(ADMIN/AUDITOR/CONFIG_ADMIN/TENANT_USER/USER)。
-## 历史 OPERATOR/VIEWER 是菜单档位标签不是 Spring 角色,已并入 TENANT_USER/USER。
+## 只使用 ADMIN/AUDITOR/TENANT_ADMIN/TENANT_USER 四类正式角色。
 declare -a USERS=(
   "admin:admin123:ADMIN"
-  "test-op-ta:TestOp@2026taX:TENANT_USER(原OPERATOR)"
-  "test-viewer-ta:TestVi@2026taX:USER(原VIEWER)"
+  "test-tadmin-ta:TestTa@2026taX:TENANT_ADMIN"
   "test-tu-ta:TestTu@2026taX:TENANT_USER"
   "test-auditor:TestAu@2026sysX:AUDITOR"
-  "test-cfg-admin:TestCf@2026sysX:CONFIG_ADMIN"
 )
 
 printf "%-18s %-12s %-5s %-12s %-12s %-15s %-15s\n" "user" "role" "login" "auth/me" "menu#" "POST /queues" "切租户到 tb"

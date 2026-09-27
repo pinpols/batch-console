@@ -586,15 +586,6 @@ async function globalSetup(config) {
       displayName: 'E2E Tenant Admin',
       authority: 'ROLE_TENANT_ADMIN',
     },
-    {
-      file: 'role-user.json',
-      username: 'user-tx',
-      password: 'admin123',
-      tenantId: 'tx',
-      defaultTenant: 'tx',
-      displayName: 'E2E Legacy User',
-      authority: 'ROLE_USER',
-    },
   ]
   // role-admin.json 直接复用 user.json 的 cookies(同 username,避免互踩 session)
   writeFileSync(path.join(authDir, 'role-admin.json'), JSON.stringify(storageState, null, 2))

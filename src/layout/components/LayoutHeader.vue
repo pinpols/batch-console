@@ -166,13 +166,13 @@
               <span class="user-chip__avatar">{{ userInitial }}</span>
               <span class="user-chip__meta">
                 <span class="user-chip__name">{{ userDisplayName }}</span>
-                <span v-if="auth.role" class="user-chip__role">{{ auth.role }}</span>
+                <span v-if="userRoleLabel" class="user-chip__role">{{ userRoleLabel }}</span>
               </span>
               <el-icon class="username__caret"><ArrowDown /></el-icon>
             </span>
             <template #dropdown>
               <el-dropdown-menu>
-                <el-dropdown-item v-if="auth.role === 'ADMIN'" command="profile" :icon="Key">
+                <el-dropdown-item command="profile" :icon="Key">
                   {{ t('nav.permissionAudit') }}
                 </el-dropdown-item>
                 <el-dropdown-item command="onboarding" :icon="Compass">
@@ -220,6 +220,9 @@
   import { useMobileBadgesStore } from '@/stores/mobileBadges'
   import { useTenantStore } from '@/stores/tenant'
   import { useAutoRefresh } from '@/composables/useAutoRefresh'
+  import { authorityRoleLabelKeyMap, resolveAuthorityRole } from '@/constants/role'
+  import { getDocsBase } from '@/components/common/docsRegistry'
+  import { checkDocsAvailability } from '@/utils/serviceAvailability'
   import {
     DISPLAY_TIMEZONE_OPTIONS,
     displayTimezone,
@@ -249,8 +252,15 @@
     (auth.userInfo?.username ?? '?').trim().charAt(0).toUpperCase(),
   )
   const userDisplayName = computed(() => auth.userInfo?.username ?? t('nav.notLoggedIn'))
+  const userAuthorityRole = computed(() => resolveAuthorityRole(auth.userInfo?.permissions ?? []))
+  const userRoleLabel = computed(() => {
+    const role = userAuthorityRole.value
+    return role ? t(authorityRoleLabelKeyMap[role]) : ''
+  })
   const userChipTitle = computed(() =>
-    auth.role ? `${userDisplayName.value} · ${auth.role}` : userDisplayName.value,
+    userRoleLabel.value
+      ? `${userDisplayName.value} · ${userRoleLabel.value}`
+      : userDisplayName.value,
   )
   const themeToolIcon = computed(() => {
     if (app.themePreference === 'system') return Monitor
@@ -278,10 +288,21 @@
   // (README.md → index.md)实测不生效,所有目录入口客户端路由 404。要本地浏览
   // 文档请用 `npm run docs:serve`(= build + preview)而不是 `npm run docs:dev`,
   // preview 是基于真 build 产物,行为与 prod 一致。
-  const docsUrl = import.meta.env.DEV ? 'http://localhost:5174/docs/' : '/docs/'
+  const docsUrl = getDocsBase()
 
-  function openDocs() {
-    window.open(docsUrl, '_blank', 'noopener')
+  async function openDocs() {
+    // 先同步创建标签页，避免可用性探测结束后被浏览器判定为弹窗。
+    const docsTab = window.open('about:blank', '_blank')
+    if (docsTab) docsTab.opener = null
+
+    if (await checkDocsAvailability(docsUrl)) {
+      if (docsTab) docsTab.location.href = docsUrl
+      else window.open(docsUrl, '_blank', 'noopener')
+      return
+    }
+
+    docsTab?.close()
+    void router.push('/docs-unavailable')
   }
 
   function openMobilePreview() {
@@ -290,7 +311,7 @@
 
   function onUtilityCommand(command: string | number | object) {
     if (command === 'mobile') openMobilePreview()
-    else if (command === 'docs') openDocs()
+    else if (command === 'docs') void openDocs()
     else if (command === 'theme') app.toggleTheme()
   }
 

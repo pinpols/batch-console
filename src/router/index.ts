@@ -135,6 +135,7 @@ export const routes: RouteRecordRaw[] = [
           description: '待办与批量审批',
           activeMenu: '/approvals',
           minRole: 'OPERATOR',
+          permissions: ['ROLE_ADMIN', 'ROLE_TENANT_ADMIN'],
         },
       },
       {
@@ -298,7 +299,8 @@ export const routes: RouteRecordRaw[] = [
         meta: {
           title: '新建作业向导',
           activeMenu: '/jobs/definitions',
-          minRole: 'ADMIN',
+          minRole: 'OPERATOR',
+          permissions: ['ROLE_ADMIN', 'ROLE_TENANT_ADMIN'],
         },
       },
       {
@@ -624,7 +626,8 @@ export const routes: RouteRecordRaw[] = [
           title: '业务日历',
           // 同上:QueueConfig 的 calendars tab,activeMenu 指 /governance/queues 避免被守卫弹回。
           activeMenu: '/governance/queues',
-          minRole: 'ADMIN',
+          minRole: 'OPERATOR',
+          permissions: ['ROLE_ADMIN', 'ROLE_TENANT_ADMIN'],
           mode: 'calendars',
         },
       },
@@ -656,7 +659,8 @@ export const routes: RouteRecordRaw[] = [
         meta: {
           title: '权限自查',
           activeMenu: '/system/users',
-          minRole: 'ADMIN',
+          minRole: 'VIEWER',
+          permissions: ['ROLE_ADMIN', 'ROLE_AUDITOR', 'ROLE_TENANT_ADMIN', 'ROLE_TENANT_USER'],
         },
       },
       {
@@ -686,8 +690,8 @@ export const routes: RouteRecordRaw[] = [
         meta: {
           title: 'API Key',
           activeMenu: '/system/api-keys',
-          minRole: 'OPERATOR',
-          permissions: ['ROLE_ADMIN', 'ROLE_TENANT_ADMIN', 'ROLE_TENANT_USER', 'ROLE_USER'],
+          minRole: 'VIEWER',
+          permissions: ['ROLE_ADMIN', 'ROLE_TENANT_ADMIN', 'ROLE_TENANT_USER'],
         },
       },
       {
@@ -814,8 +818,8 @@ export const routes: RouteRecordRaw[] = [
         meta: {
           title: '自助服务',
           activeMenu: '/self-service',
-          minRole: 'OPERATOR',
-          permissions: ['ROLE_ADMIN', 'ROLE_TENANT_ADMIN', 'ROLE_TENANT_USER', 'ROLE_USER'],
+          minRole: 'VIEWER',
+          permissions: ['ROLE_ADMIN', 'ROLE_TENANT_ADMIN', 'ROLE_TENANT_USER'],
         },
       },
       { path: 'self-service/tenant', redirect: '/self-service' },
@@ -851,7 +855,11 @@ export const routes: RouteRecordRaw[] = [
         path: 'approvals',
         name: 'm-approvals',
         component: () => import('@/views-mobile/MApprovals.vue'),
-        meta: { title: '审批中心', minRole: 'OPERATOR' },
+        meta: {
+          title: '审批中心',
+          minRole: 'OPERATOR',
+          permissions: ['ROLE_ADMIN', 'ROLE_TENANT_ADMIN'],
+        },
       },
       {
         path: 'alerts',
@@ -883,7 +891,11 @@ export const routes: RouteRecordRaw[] = [
         path: 'catchup',
         name: 'm-catchup',
         component: () => import('@/views-mobile/MCatchUp.vue'),
-        meta: { title: 'Catch-up 审批', minRole: 'OPERATOR' },
+        meta: {
+          title: 'Catch-up 审批',
+          minRole: 'OPERATOR',
+          permissions: ['ROLE_ADMIN', 'ROLE_TENANT_ADMIN'],
+        },
       },
       {
         path: 'files',
@@ -916,6 +928,12 @@ export const routes: RouteRecordRaw[] = [
     name: 'maintenance',
     component: () => import('@/views/MaintenancePage.vue'),
     meta: { requiresAuth: false, title: '系统维护中' },
+  },
+  {
+    path: '/docs-unavailable',
+    name: 'docs-unavailable',
+    component: () => import('@/views/DocsUnavailable.vue'),
+    meta: { requiresAuth: false, title: '文档服务不可用' },
   },
   {
     path: '/setup/initial-tenant',
@@ -1039,7 +1057,8 @@ router.beforeEach(async (to, from) => {
   // 避免用户通过 URL、历史标签或命令面板进入已被后端隐藏的页面。
   const activeMenu = to.meta.activeMenu as string | undefined
   const menuPath = activeMenu || to.path
-  const allowWithoutMenu = to.path === '/system/me' || to.path.startsWith('/m/')
+  const allowWithoutMenu =
+    to.path === '/system/me' || to.path === '/system/users' || to.path.startsWith('/m/')
   if (!allowWithoutMenu && !permission.hasBackendMenuAccess(menuPath)) {
     return { path: '/' }
   }

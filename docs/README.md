@@ -2,21 +2,36 @@
 
 本文档是 `batch-console` 的文档入口。所有文档按「权威设计 / 阶段报告 / 归档材料」分层维护:长期规则只放一处,阶段性结论保留日期,过时材料归档参考。
 
+## 产品使用指南
+
+| 文档                                                | 关注角色                       | 用途                                       |
+| --------------------------------------------------- | ------------------------------ | ------------------------------------------ |
+| [**使用指南首页**](./user-guide/README.md)          | 全部角色                       | 按角色与任务选择操作手册                   |
+| [角色与权限](./user-guide/roles-and-access.md)      | 全部角色、账号管理员           | 四类正式角色、前端能力档与权限排查         |
+| [角色与页面矩阵](./user-guide/role-page-matrix.md)  | 全部角色、验收人员             | 四类角色对应的页面、入口和验收方法         |
+| [快速入门](./user-guide/getting-started.md)         | 全部角色                       | 登录、租户、导航、语言、主题与密码提示     |
+| [作业与流程](./user-guide/jobs-and-workflows.md)    | 租户管理员、平台管理员         | 作业、Workflow、Pipeline 配置与验证        |
+| [运行与审批](./user-guide/runs-and-approvals.md)    | 运维值班、管理员、审计员       | 运行查询、重试、取消、审批与批次日重放     |
+| [文件与配置导入](./user-guide/files-and-imports.md) | 租户管理员、平台管理员         | 渠道、模板、租户配置包与 JSON 同步         |
+| [可观测性与排障](./user-guide/observability.md)     | 运维值班、审计员、管理员       | 告警、Outbox、Trace、审计与诊断            |
+| [平台治理](./user-guide/platform-governance.md)     | 平台管理员、租户管理员、审计员 | 账号、Worker、日历、队列、配额、密钥和分片 |
+| [常见问题](./user-guide/troubleshooting.md)         | 全部角色                       | 空数据、权限、HTTP 错误、语言和主题问题    |
+
 ## 项目结构与权威设计
 
 | 文档                                                                                   | 用途                                                              |
 | -------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
 | [项目结构图](./architecture/project-structure.md)                                      | 顶层 + src 子目录 + 关键 composable + npm script(2026-06-03 新增) |
 | [前端方案设计说明书 V3](./engineering/批量调度系统前端方案设计说明书_开发落地版_V3.md) | 前端总体方案:业务域 / 路由 / 页面职责 / 组件分层 / 联调边界       |
-| [Batch Console 重设计资料](./redesign/README.md)                                     | 当前设计来源、覆盖矩阵、原型证据与历史实施计划归档                |
+| [Batch Console 重设计资料](./redesign/README.md)                                       | 当前设计来源、覆盖矩阵、原型证据与历史实施计划归档                |
 | [wrapper 迁移计划](./engineering/fe-wrapper-migration-plan.md)                         | wrapper 迁移路径(过渡期方案)                                      |
 | [页面命名约定](./engineering/page-naming-convention.md)                                | URL / 代码目录 / 侧边栏分组三者一致规则                           |
 | [前端可观测性方案](./engineering/前端可观测性方案.md)                                  | 操作日志 / 行为埋点 / Sentry / 错误追踪                           |
-| [运行时与依赖版本](./engineering/runtime-versions.md)                                  | Node 运行约束、锁文件和后端权威支持矩阵                            |
-| [环境变量治理](./engineering/environment-variables.md)                               | 构建期配置、敏感性和 owner                                         |
-| [浏览器支持策略](./engineering/browser-support.md)                                   | 桌面/移动支持范围与跨浏览器验收                                    |
-| [设计 Token 治理](./engineering/design-tokens.md)                                   | 运行时 token 权威源与视觉变更规则                                  |
-| [第三方软件声明](./compliance/THIRD-PARTY-LICENSES.md)                                 | 前端 npm 依赖许可证摘要;SBOM 见同目录 `sbom.json`                   |
+| [运行时与依赖版本](./engineering/runtime-versions.md)                                  | Node 运行约束、锁文件和后端权威支持矩阵                           |
+| [环境变量治理](./engineering/environment-variables.md)                                 | 构建期配置、敏感性和 owner                                        |
+| [浏览器支持策略](./engineering/browser-support.md)                                     | 桌面/移动支持范围与跨浏览器验收                                   |
+| [设计 Token 治理](./engineering/design-tokens.md)                                      | 运行时 token 权威源与视觉变更规则                                 |
+| [第三方软件声明](./compliance/THIRD-PARTY-LICENSES.md)                                 | 前端 npm 依赖许可证摘要;SBOM 见同目录 `sbom.json`                 |
 | [meta-enum 覆盖清单](./engineering/meta-enum-coverage.md)                              | 后端枚举元数据 → 筛选项 / 状态标签覆盖                            |
 | [移动端刷新策略](./engineering/mobile-refresh-strategy.md)                             | `/m/*` 下拉 / 自动刷新设计                                        |
 | [内嵌文档中心方案](./engineering/内嵌文档中心方案.md)                                  | VitePress 文档中心构建 / 部署                                     |
@@ -31,9 +46,9 @@
 | [审计资料索引](./audits/README.md)              | UI / UX / 可用性审计证据与截图                                                        |
 | [QA D 档总评](./qa/d-tier/)                     | P1-P5 + P5b 完整闭环                                                                  |
 | [部署:Docker + Nginx](./deploy/docker-nginx.md) | 容器化部署                                                                            |
-| [发布晋级](./runbook/release-promotion.md)      | staging 验收、不可变镜像晋级和发布阻断                                                 |
-| [前端事故处理](./runbook/frontend-incident.md)  | 白屏、静态资源、API、缓存与 CSP 故障处置                                                |
-| [可观测性运行手册](./runbook/observability.md)  | Sentry、遥测、采样和告警边界                                                           |
+| [发布晋级](./runbook/release-promotion.md)      | staging 验收、不可变镜像晋级和发布阻断                                                |
+| [前端事故处理](./runbook/frontend-incident.md)  | 白屏、静态资源、API、缓存与 CSP 故障处置                                              |
+| [可观测性运行手册](./runbook/observability.md)  | Sentry、遥测、采样和告警边界                                                          |
 
 ## 阶段性报告(reports/)
 

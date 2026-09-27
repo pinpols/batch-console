@@ -1,5 +1,7 @@
 # C 档 QA 最终报告
 
+> **历史快照**：本报告记录当时的旧角色模型，不可作为现行授权依据。当前系统只接受 `ROLE_ADMIN`、`ROLE_AUDITOR`、`ROLE_TENANT_ADMIN`、`ROLE_TENANT_USER`，以[角色与页面矩阵](../user-guide/role-page-matrix.md)为准。
+
 > 2026-05-17 完成。5 天计划 1 天压缩完成(因 B 档已预修 10 条 baseline)。
 > 衔接 [fe-qa-c-tier-plan.md](./fe-qa-c-tier-plan.md) + [qa-c-baseline.md](./qa-c-baseline.md)。
 

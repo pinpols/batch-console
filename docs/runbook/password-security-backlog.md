@@ -34,7 +34,7 @@
 
 **端点**:`POST /api/console/auth/change-password`
 
-**权限**:`@PreAuthorize("hasAnyAuthority('ROLE_ADMIN','ROLE_CONFIG_ADMIN','ROLE_AUDITOR','ROLE_TENANT_USER','ROLE_USER')")` — 5 角色全部可调
+**权限**：四类正式角色均可调用；旧角色不兼容。
 
 **Request body**:
 ```json
@@ -265,7 +265,7 @@ Day 4  P3   (BE 过期 + history + FE banner)
 ## 验收清单(每项实施后跑)
 
 ### P0.1 验收
-- [ ] POST /auth/change-password 5 角色全部可调(扩 RBAC matrix spec)
+- [ ] POST /auth/change-password 四类正式角色全部可调(扩 RBAC matrix spec)
 - [ ] oldPassword 错返 401 + 友好提示
 - [ ] newPassword 不合规返 400
 - [ ] newPassword == oldPassword 返 409

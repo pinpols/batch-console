@@ -2,8 +2,8 @@
  * 控制台账号管理「角色多选」的可选项集合 + 按当前操作者过滤。
  *
  * 与 BE `ConsoleUserAccountService.enforceGrantableAuthorities` 对齐:
- *   - 平台 ADMIN  → 看全部 5 项,可授任意
- *   - TENANT_ADMIN → 只看 3 项(TENANT_ADMIN / TENANT_USER / USER),授 ADMIN/AUDITOR 直接 403
+ *   - 平台 ADMIN  → 可授予 4 类正式角色
+ *   - TENANT_ADMIN → 只看 TENANT_ADMIN / TENANT_USER,授 ADMIN/AUDITOR 直接 403
  *
  * FE 这层只是 UX 收敛(避免给用户看不可用选项),真正守卫在 BE。
  *
@@ -31,7 +31,6 @@ const ROLE_OPTION_DEFS: ReadonlyArray<RoleOptionDef> = [
   { value: 'ROLE_AUDITOR', labelKey: 'roleOptions.auditor', adminOnly: true },
   { value: 'ROLE_TENANT_ADMIN', labelKey: 'roleOptions.tenantAdmin', adminOnly: false },
   { value: 'ROLE_TENANT_USER', labelKey: 'roleOptions.tenantUser', adminOnly: false },
-  { value: 'ROLE_USER', labelKey: 'roleOptions.user', adminOnly: false },
 ]
 
 function toRoleOption(def: RoleOptionDef): RoleOption {

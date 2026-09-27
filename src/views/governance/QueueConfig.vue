@@ -648,9 +648,9 @@
   import MetaSelect from '@/components/common/MetaSelect.vue'
   import { usePermission } from '@/composables/usePermission'
   import PageHeader from '@/components/common/PageHeader.vue'
-  const { canMutateConfig } = usePermission()
-  // 后端 Quota / Queue 这类计数字段是 int32:防止 999999999999999 这种超界值落到 Jackson
-  // (会回 400 "Numeric value out of range of int")。BE 日志里 8 次 4xx 全是这原因。
+  // 三类治理资源的写接口均为 ROLE_ADMIN;租户管理员仅可读取业务日历。
+  const { canAccess, canManageSystem: canMutateConfig } = usePermission()
+  // 计数字段按后端 int32 上限约束，避免超界值在 Jackson 反序列化阶段返回 400。
   const INT32_MAX = 2147483647
   import TablePagerBar from '@/components/table/TablePagerBar.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
@@ -667,12 +667,15 @@
   const route = useRoute()
   const router = useRouter()
   const governancePath = computed(() => route.path)
-  const governanceOptions = computed(() => [
-    { label: t('queueConfig.sectionQueues'), value: '/governance/queues' },
-    { label: t('queueConfig.sectionWindows'), value: '/governance/windows' },
-    { label: t('queueConfig.sectionCalendars'), value: '/governance/calendars' },
-  ])
-
+  const governanceOptions = computed(() => {
+    const calendars = { label: t('queueConfig.sectionCalendars'), value: '/governance/calendars' }
+    if (!canAccess('ADMIN')) return [calendars]
+    return [
+      { label: t('queueConfig.sectionQueues'), value: '/governance/queues' },
+      { label: t('queueConfig.sectionWindows'), value: '/governance/windows' },
+      calendars,
+    ]
+  })
   function onWorkspaceChange(value: string | number | boolean) {
     const path = String(value)
     if (path !== route.path) void router.push({ path, query: route.query })
@@ -1320,7 +1323,6 @@
     enabledApplied.value = undefined
     resetListPages()
   })
-
   useTenantReload(load)
 </script>
 
@@ -1329,11 +1331,9 @@
     display: flex;
     margin-bottom: var(--space-md);
   }
-
   .governance-load-error {
     margin-bottom: var(--space-md);
   }
-
   .governance-tabs :deep(.el-tabs__content) {
     padding-top: 10px;
     overflow: visible;

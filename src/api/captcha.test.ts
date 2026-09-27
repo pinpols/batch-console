@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import type { AxiosRequestConfig } from 'axios'
 
 vi.mock('@/api/client', () => ({
   get: vi.fn(),
@@ -37,5 +38,15 @@ describe('captchaApi', () => {
   it('defaults loginProtectionEnabled to false when missing', async () => {
     mockedGet.mockResolvedValue({ provider: 'none' })
     expect((await getCaptchaConfig()).loginProtectionEnabled).toBe(false)
+  })
+
+  it('forwards request config for silent availability probes', async () => {
+    mockedGet.mockResolvedValue({ provider: 'none' })
+
+    await getCaptchaConfig({ _silent: true } as AxiosRequestConfig)
+
+    expect(mockedGet).toHaveBeenCalledWith('/api/console/captcha/config', undefined, {
+      _silent: true,
+    })
   })
 })

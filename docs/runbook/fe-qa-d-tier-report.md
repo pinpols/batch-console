@@ -1,5 +1,7 @@
 # D 档 QA 完整覆盖 — 测试终结报告
 
+> **历史快照**：文中的旧角色数量和旧角色名已失效。当前系统只接受四类正式角色，以[角色与页面矩阵](../user-guide/role-page-matrix.md)为准。
+
 > 开工 2026-05-17。衔接 [fe-qa-d-tier-plan.md](./fe-qa-d-tier-plan.md)。
 > C 档基线已 PASS(466/16/0,见 [fe-qa-c-tier-report.md](./fe-qa-c-tier-report.md))。
 > 本档完成四维度:**移动操作 / 多浏览器 / 上传完整链路 / 长会话稳定性 + i18n 切换**。

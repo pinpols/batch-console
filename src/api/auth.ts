@@ -55,9 +55,7 @@ function mapAuthoritiesToRole(authorities: string[]): Role {
   const a = authorities.join(' ')
   if (a.includes('ROLE_ADMIN')) return 'ADMIN'
   if (a.includes('ROLE_TENANT_ADMIN')) return 'OPERATOR'
-  // ROLE_TENANT_USER 后端有自助写权限(触发作业/自助配额等),之前漏映射被兜底成 VIEWER,
-  // 导致其被授予的写能力在 UI 上无入口。映射到 OPERATOR 使其可达 self-service 等页面。
-  if (a.includes('ROLE_TENANT_USER')) return 'OPERATOR'
+  if (a.includes('ROLE_TENANT_USER')) return 'VIEWER'
   if (a.includes('ROLE_AUDITOR')) return 'VIEWER'
   return 'VIEWER'
 }
@@ -153,7 +151,7 @@ export const authApi = {
   /**
    * POST /api/console/auth/change-password — 自助改密码
    *
-   * - 5 角色全部可调(hasAnyAuthority ROLE_ADMIN/TENANT_ADMIN/AUDITOR/TENANT_USER/USER)
+   * - 四类正式角色全部可调
    * - currentPassword 错 → 401
    * - newPassword 不合规(< 12 位)→ 400
    * - newPassword == currentPassword → 409 STATE_CONFLICT
