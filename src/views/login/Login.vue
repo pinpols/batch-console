@@ -136,7 +136,7 @@
 <script setup lang="ts">
   import { computed, ref, reactive, onBeforeUnmount, onMounted } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { CircleX as CircleClose, Lock, User } from 'lucide-vue-next'
+  import { CircleX as CircleClose, Lock, User } from '@lucide/vue'
 
   const { t } = useI18n({ useScope: 'global' })
   import { useRouter, useRoute } from 'vue-router'

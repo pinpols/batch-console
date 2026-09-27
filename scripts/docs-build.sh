@@ -30,7 +30,11 @@ build_one() {
     prepared=1
   fi
   echo "▶ 构建文档:$DOCS_DIR"
-  npx vitepress build "$DOCS_DIR"
+  "$DOCS_ROOT_DIR/node_modules/.bin/vitepress" build "$DOCS_DIR"
+  case "$target" in
+    backend|be) "$NPM_BIN" run docs:size ;;
+    frontend|fe) "$NPM_BIN" run fe-docs:size ;;
+  esac
   echo "✓ 构建完成:$DOCS_DIR"
 }
 

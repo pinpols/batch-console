@@ -112,7 +112,7 @@
 <script setup lang="ts">
   import { ref, reactive, computed } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { RefreshCw as Refresh, Plus } from 'lucide-vue-next'
+  import { RefreshCw as Refresh, Plus } from '@lucide/vue'
   import { ElMessage } from 'element-plus'
   import { confirmDanger } from '@/composables/useDangerConfirm'
   import PageContainer from '@/components/common/PageContainer.vue'

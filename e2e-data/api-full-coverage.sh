@@ -7,7 +7,6 @@
 # 用法:  bash e2e-data/api-full-coverage.sh
 
 set -u
-DIR="$(cd "$(dirname "$0")" && pwd)"
 TENANT="${TENANT:-ta}"
 REPORT="${REPORT:-/tmp/api-full-coverage-report.md}"
 BC_API_BASE="${BC_API_BASE:-http://localhost:18080}"

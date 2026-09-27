@@ -51,7 +51,7 @@ import {
   CalendarCheck,
   Folder as FolderClosed,
   Upload,
-} from 'lucide-vue-next'
+} from '@lucide/vue'
 
 export interface NavigationItem {
   title: string

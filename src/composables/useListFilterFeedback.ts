@@ -1,6 +1,6 @@
 import { computed, type Component, type Ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Search, RotateCcw as RefreshLeft, RefreshCw as Refresh } from 'lucide-vue-next'
+import { Search, RotateCcw as RefreshLeft, RefreshCw as Refresh } from '@lucide/vue'
 import { useBriefActionLoading } from '@/composables/useBriefActionLoading'
 import { i18n } from '@/locales'
 

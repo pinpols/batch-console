@@ -5,9 +5,11 @@ import { fileURLToPath } from 'node:url'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const src = join(root, 'src')
+const baselinePath = join(root, 'config', 'maintainability-baseline.json')
+const baseline = JSON.parse(readFileSync(baselinePath, 'utf8'))
 const extensions = new Set(['.ts', '.tsx', '.vue'])
 const errors = []
-const warnings = []
+const observed = []
 
 function walk(dir) {
   for (const name of readdirSync(dir)) {
@@ -23,14 +25,23 @@ function walk(dir) {
           ? 1200
           : 2000
       if (lines > hardLimit) errors.push(`${rel}: ${lines} 行，超过上限 ${hardLimit}`)
-      else if (!rel.startsWith('src/locales/') && lines > 1200) warnings.push(`${rel}: ${lines} 行`)
+      else if (!rel.startsWith('src/locales/') && lines > 1200) {
+        const allowed = baseline[rel]
+        if (allowed === undefined) {
+          errors.push(`${rel}: ${lines} 行，新增大文件未登记基线`)
+        } else if (lines > allowed) {
+          errors.push(`${rel}: ${lines} 行，超过基线 ${allowed}`)
+        } else {
+          observed.push(`${rel}: ${lines}/${allowed} 行`)
+        }
+      }
     }
   }
 }
 walk(src)
-warnings.forEach((warning) => console.warn(`[maintainability] 建议拆分: ${warning}`))
 if (errors.length) {
   errors.forEach((error) => console.error(`[maintainability] ${error}`))
   process.exit(1)
 }
-console.log(`[maintainability] 通过，${warnings.length} 个大文件进入观察清单`)
+observed.forEach((item) => console.log(`[maintainability] 已登记: ${item}`))
+console.log(`[maintainability] 通过，${observed.length} 个存量大文件未新增行数`)

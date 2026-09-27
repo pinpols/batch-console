@@ -35,7 +35,7 @@ jobs:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
 
       - run: npm ci --no-audit --no-fund
@@ -58,6 +58,7 @@ jobs:
           npm run check:env
           npm run check:maintainability
           npm run check:workflows
+          npm run check:shell
           npm run check:docs
 
       - name: Check SBOM and license snapshot drift
@@ -138,7 +139,7 @@ jobs:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
       - run: npm ci --no-audit --no-fund
 
@@ -178,7 +179,7 @@ jobs:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
       - run: npm ci --no-audit --no-fund
 

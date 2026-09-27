@@ -38,7 +38,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v5
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
 
       - name: Install deps
@@ -65,6 +65,7 @@ jobs:
           npm run check:env
           npm run check:maintainability
           npm run check:workflows
+          npm run check:shell
           npm run check:docs
           npm run compliance:check
           npm run check:changelog

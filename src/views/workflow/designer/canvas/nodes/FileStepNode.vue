@@ -4,7 +4,7 @@
    */
   import { computed, inject } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { FileText as Document } from 'lucide-vue-next'
+  import { FileText as Document } from '@lucide/vue'
   import { useDesignerStore } from '../../store/useDesignerStore'
   import type { DesignerNode } from '../../types'
 

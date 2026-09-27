@@ -16,14 +16,14 @@ CI 由 3 个核心门禁、兼容/安全检查和发布辅助 workflow 组成。
 ## pr-gate 详情
 
 ```
-checkout → setup-node@v5(node 22 + npm cache)
+checkout → setup-node@v5(node 24 + npm cache)
         → npm ci --no-audit --no-fund
         → npm run check:version
         → npm run lint:check       (ESLint check 模式)
         → npm run gen:api:check    (OpenAPI yaml ↔ api.generated.ts 漂移)
         → npm run typecheck        (vue-tsc --noEmit)
         → npm run check:i18n       (zh-CN ↔ en-US 1:1)
-        → architecture / env / maintainability / workflow / docs / SBOM governance
+        → architecture / env / maintainability / workflow / shell / docs / SBOM governance
         → npm run test:unit -- --coverage
         → npm run build:fast       (Vite 生产产物)
         → npm run size
@@ -34,10 +34,10 @@ checkout → setup-node@v5(node 22 + npm cache)
 
 ## frontend-ci 详情(Node 24 兼容 + 文档)
 
-`frontend-ci` 不再重复 `pr-gate` 的 Node 22 lint / size / audit 主门禁,只做两件事:
+`frontend-ci` 不再重复 `pr-gate` 的 lint / size / audit 主门禁,只做两件事:
 
 1. **Node 24 兼容构建**:在 Node 24 下跑 `check:version`、`typecheck`、`check:i18n`、`test:unit`、`build`。
-2. **前端文档构建**:跑 `npm run fe-docs:build`,确保 `tools/docs-bridge/frontend` 可生成。
+2. **前端文档构建**:跑 `npm run fe-docs:build`,确保 `tools/docs-bridge/frontend` 可生成，并由构建入口执行文档 chunk 与搜索索引预算检查。
 
 这样 PR 必过门禁仍由 `pr-gate` 统一承担,Node 新版本兼容和文档站可独立暴露问题,避免同一 PR 出现两套相似 required check 一过一挂。
 
@@ -117,6 +117,8 @@ tag v* / 手动 ── precheck(URL/账号/healthz/版本必须有效)
 | Lighthouse | — | ✅ against preview | ✅ against staging | — |
 | Playwright e2e | — | — | ✅ against staging | — |
 | 架构/环境/文档/SBOM | ✅ | ✅ | — | 按 staged 变更选择 |
+| Shell 语法 / ShellCheck warning | ✅ | ✅ | — | `npm run check:shell` |
+| 文档 chunk / 搜索索引预算 | 前端文档 job | Docker 文档构建 | — | `docs:build` / `fe-docs:build` 内置 |
 | `check-version-alignment.sh` | ✅ | ✅ | — | `preflight:changed`(package 变更) |
 | `fe-docs:build` | — | — | — | `preflight:changed`(frontend docs 变更) |
 

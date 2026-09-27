@@ -22,7 +22,7 @@
 
 set +u
 
-cd "$(dirname "$0")"
+cd "$(dirname "$0")" || exit 1
 source _lib/api-helpers.sh 2>/dev/null
 
 REPORT="${BC_BOUNDARY_REPORT:-/tmp/boundary-report.md}"
@@ -56,10 +56,9 @@ print(json.dumps(fixed))
 " 2>/dev/null)
   [ -z "$payload" ] && payload="${fixed_json}"
 
-  local raw code body http_code
+  local raw http_code
   raw=$(api_call POST "$endpoint" "$payload")
   http_code="${raw##*@@HTTP@@}"
-  body="${raw%@@HTTP@@*}"
 
   # expected: pass-200 / fail-400
   local actual_kind status
@@ -83,9 +82,8 @@ print(json.dumps(fixed))
 run_file() {
   local f="$1"
   [ ! -f "$f" ] && { echo "skip $f (not found)"; return; }
-  local endpoint method fixed
+  local endpoint fixed
   endpoint=$(python3 -c "import json;print(json.load(open('$f'))['endpoint'])")
-  method=$(python3 -c "import json;print(json.load(open('$f')).get('method','POST'))")
   fixed=$(python3 -c "import json;print(json.dumps(json.load(open('$f'))['fixed']))")
 
   echo "=== $endpoint ==="
@@ -94,7 +92,7 @@ run_file() {
   local fcount
   fcount=$(python3 -c "import json;print(len(json.load(open('$f'))['fields']))")
   for i in $(seq 0 $((fcount-1))); do
-    local fname ftype fmin fmax fvalues finvalid
+    local fname ftype fmax finvalid
     fname=$(python3 -c "import json;print(json.load(open('$f'))['fields'][$i]['name'])")
     ftype=$(python3 -c "import json;print(json.load(open('$f'))['fields'][$i]['type'])")
 
@@ -105,7 +103,8 @@ run_file() {
 
     elif [ "$ftype" = "string" ]; then
       fmax=$(python3 -c "import json;print(json.load(open('$f'))['fields'][$i].get('max',128))")
-      local over_max=$(python3 -c "print(repr('a'*($fmax+1)))")
+      local over_max
+      over_max=$(python3 -c "print(repr('a'*($fmax+1)))")
       run_one_case "$endpoint" "$fixed" "$fname" "len=max+1" "$over_max" "400"
 
     elif [ "$ftype" = "enum" ]; then

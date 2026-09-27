@@ -75,7 +75,7 @@
 <script setup lang="ts">
   import { ref, computed, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { RefreshCw as Refresh } from 'lucide-vue-next'
+  import { RefreshCw as Refresh } from '@lucide/vue'
   import JsonPreview from '@/components/common/JsonPreview.vue'
   import { fmtDatetime } from '@/utils/datetime'
   import { useAutoRefresh } from '@/composables/useAutoRefresh'

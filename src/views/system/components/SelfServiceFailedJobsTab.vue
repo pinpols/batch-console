@@ -54,7 +54,7 @@
   import { ref } from 'vue'
   import { useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
-  import { RotateCw as RefreshRight } from 'lucide-vue-next'
+  import { RotateCw as RefreshRight } from '@lucide/vue'
   import ProTable from '@/components/table/ProTable.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
   import { fmtDatetime } from '@/utils/datetime'

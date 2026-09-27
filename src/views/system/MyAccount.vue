@@ -180,7 +180,7 @@
     ShieldCheck,
     Sparkles as MagicStick,
     UserRound,
-  } from 'lucide-vue-next'
+  } from '@lucide/vue'
   import { authApi } from '@/api/auth'
   import { useAuthStore } from '@/stores/auth'
   import { useTenantStore } from '@/stores/tenant'

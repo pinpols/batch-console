@@ -33,7 +33,7 @@ Batch Console（BC）是 [File Batch System](https://github.com/pinpols/file-bat
 
 ### 环境要求
 
-- Node.js 22 或 24；本地默认使用 `.node-version` / `.nvmrc` 指定的 Node 24
+- Node.js 24；本地、CI 与镜像统一使用 `.node-version` / `.nvmrc` 指定的版本
 - 后端联调仓库：`../file-batch-system`
 - Console API 默认地址：`http://localhost:18080`
 

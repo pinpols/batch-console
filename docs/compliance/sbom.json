@@ -1,7 +1,7 @@
 {
   "bomFormat": "CycloneDX",
   "specVersion": "1.6",
-  "serialNumber": "urn:uuid:ee77812a-c38d-d7ea-e86f-5ac5fb5666fa",
+  "serialNumber": "urn:uuid:657d63fd-3e38-f417-5d8f-037029390c72",
   "version": 1,
   "metadata": {
     "component": {
@@ -4104,27 +4104,6 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/@isaacs/cliui@9.0.0",
-      "name": "@isaacs/cliui",
-      "version": "9.0.0",
-      "purl": "pkg:npm/@isaacs/cliui@9.0.0",
-      "licenses": [
-        {
-          "license": {
-            "id": "BlueOak-1.0.0"
-          }
-        }
-      ],
-      "scope": "optional",
-      "externalReferences": [
-        {
-          "type": "distribution",
-          "url": "https://registry.npmjs.org/@isaacs/cliui/-/cliui-9.0.0.tgz"
-        }
-      ]
-    },
-    {
-      "type": "library",
       "bom-ref": "pkg:npm/@jridgewell/gen-mapping@0.3.13",
       "name": "@jridgewell/gen-mapping",
       "version": "0.3.13",
@@ -4372,6 +4351,27 @@
         {
           "type": "distribution",
           "url": "https://registry.npmjs.org/@lezer/lr/-/lr-1.4.10.tgz"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/@lucide/vue@1.48.0",
+      "name": "@lucide/vue",
+      "version": "1.48.0",
+      "purl": "pkg:npm/@lucide/vue@1.48.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "ISC"
+          }
+        }
+      ],
+      "scope": "required",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@lucide/vue/-/vue-1.48.0.tgz"
         }
       ]
     },
@@ -11874,27 +11874,6 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/foreground-child@3.3.1",
-      "name": "foreground-child",
-      "version": "3.3.1",
-      "purl": "pkg:npm/foreground-child@3.3.1",
-      "licenses": [
-        {
-          "license": {
-            "id": "ISC"
-          }
-        }
-      ],
-      "scope": "optional",
-      "externalReferences": [
-        {
-          "type": "distribution",
-          "url": "https://registry.npmjs.org/foreground-child/-/foreground-child-3.3.1.tgz"
-        }
-      ]
-    },
-    {
-      "type": "library",
       "bom-ref": "pkg:npm/form-data@4.0.6",
       "name": "form-data",
       "version": "4.0.6",
@@ -13638,27 +13617,6 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/jackspeak@4.2.3",
-      "name": "jackspeak",
-      "version": "4.2.3",
-      "purl": "pkg:npm/jackspeak@4.2.3",
-      "licenses": [
-        {
-          "license": {
-            "id": "BlueOak-1.0.0"
-          }
-        }
-      ],
-      "scope": "optional",
-      "externalReferences": [
-        {
-          "type": "distribution",
-          "url": "https://registry.npmjs.org/jackspeak/-/jackspeak-4.2.3.tgz"
-        }
-      ]
-    },
-    {
-      "type": "library",
       "bom-ref": "pkg:npm/jake@10.9.4",
       "name": "jake",
       "version": "10.9.4",
@@ -14494,27 +14452,6 @@
         {
           "type": "distribution",
           "url": "https://registry.npmjs.org/lru-cache/-/lru-cache-11.5.3.tgz"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "bom-ref": "pkg:npm/lucide-vue-next@1.0.0",
-      "name": "lucide-vue-next",
-      "version": "1.0.0",
-      "purl": "pkg:npm/lucide-vue-next@1.0.0",
-      "licenses": [
-        {
-          "license": {
-            "id": "ISC"
-          }
-        }
-      ],
-      "scope": "required",
-      "externalReferences": [
-        {
-          "type": "distribution",
-          "url": "https://registry.npmjs.org/lucide-vue-next/-/lucide-vue-next-1.0.0.tgz"
         }
       ]
     },
@@ -15439,27 +15376,6 @@
         {
           "type": "distribution",
           "url": "https://registry.npmjs.org/p-locate/-/p-locate-5.0.0.tgz"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "bom-ref": "pkg:npm/package-json-from-dist@1.0.1",
-      "name": "package-json-from-dist",
-      "version": "1.0.1",
-      "purl": "pkg:npm/package-json-from-dist@1.0.1",
-      "licenses": [
-        {
-          "license": {
-            "id": "BlueOak-1.0.0"
-          }
-        }
-      ],
-      "scope": "optional",
-      "externalReferences": [
-        {
-          "type": "distribution",
-          "url": "https://registry.npmjs.org/package-json-from-dist/-/package-json-from-dist-1.0.1.tgz"
         }
       ]
     },
@@ -17056,27 +16972,6 @@
         {
           "type": "distribution",
           "url": "https://registry.npmjs.org/siginfo/-/siginfo-2.0.0.tgz"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "bom-ref": "pkg:npm/signal-exit@4.1.0",
-      "name": "signal-exit",
-      "version": "4.1.0",
-      "purl": "pkg:npm/signal-exit@4.1.0",
-      "licenses": [
-        {
-          "license": {
-            "id": "ISC"
-          }
-        }
-      ],
-      "scope": "optional",
-      "externalReferences": [
-        {
-          "type": "distribution",
-          "url": "https://registry.npmjs.org/signal-exit/-/signal-exit-4.1.0.tgz"
         }
       ]
     },
@@ -20135,7 +20030,6 @@
         "pkg:npm/@intlify/devtools-types@11.4.12",
         "pkg:npm/@intlify/message-compiler@11.4.12",
         "pkg:npm/@intlify/shared@11.4.12",
-        "pkg:npm/@isaacs/cliui@9.0.0",
         "pkg:npm/@jridgewell/gen-mapping@0.3.13",
         "pkg:npm/@jridgewell/remapping@2.3.5",
         "pkg:npm/@jridgewell/resolve-uri@3.1.2",
@@ -20148,6 +20042,7 @@
         "pkg:npm/@lezer/highlight@1.2.4",
         "pkg:npm/@lezer/json@1.0.3",
         "pkg:npm/@lezer/lr@1.4.10",
+        "pkg:npm/@lucide/vue@1.48.0",
         "pkg:npm/@marijn/find-cluster-break@1.0.4",
         "pkg:npm/@mermaid-js/mermaid-mindmap@9.3.0",
         "pkg:npm/@mermaid-js/parser@1.2.1",
@@ -20505,7 +20400,6 @@
         "pkg:npm/focus-trap@7.8.0",
         "pkg:npm/follow-redirects@1.16.0",
         "pkg:npm/for-each@0.3.5",
-        "pkg:npm/foreground-child@3.3.1",
         "pkg:npm/form-data@4.0.6",
         "pkg:npm/fs-extra@9.1.0",
         "pkg:npm/fsevents@2.3.3",
@@ -20589,7 +20483,6 @@
         "pkg:npm/istanbul-lib-coverage@3.2.2",
         "pkg:npm/istanbul-lib-report@3.0.1",
         "pkg:npm/istanbul-reports@3.2.0",
-        "pkg:npm/jackspeak@4.2.3",
         "pkg:npm/jake@10.9.4",
         "pkg:npm/js-beautify@2.0.3",
         "pkg:npm/js-cookie@3.0.8",
@@ -20630,7 +20523,6 @@
         "pkg:npm/lodash-unified@1.0.3",
         "pkg:npm/lodash.debounce@4.0.8",
         "pkg:npm/lru-cache@11.5.3",
-        "pkg:npm/lucide-vue-next@1.0.0",
         "pkg:npm/magic-string@1.4.2",
         "pkg:npm/magic-string-ast@1.0.3",
         "pkg:npm/magicast@0.5.5",
@@ -20675,7 +20567,6 @@
         "pkg:npm/own-keys@1.0.2",
         "pkg:npm/p-limit@3.1.0",
         "pkg:npm/p-locate@5.0.0",
-        "pkg:npm/package-json-from-dist@1.0.1",
         "pkg:npm/package-manager-detector@1.8.0",
         "pkg:npm/parse-json@8.3.0",
         "pkg:npm/parse5@8.0.1",
@@ -20752,7 +20643,6 @@
         "pkg:npm/side-channel-map@1.0.1",
         "pkg:npm/side-channel-weakmap@1.0.2",
         "pkg:npm/siginfo@2.0.0",
-        "pkg:npm/signal-exit@4.1.0",
         "pkg:npm/smob@1.6.2",
         "pkg:npm/source-map@0.6.1",
         "pkg:npm/source-map-js@1.2.1",

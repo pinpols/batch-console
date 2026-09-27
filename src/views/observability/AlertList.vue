@@ -226,7 +226,7 @@
   import StatusSegment from '@/components/table/StatusSegment.vue'
   import LiveMonitorBar from '@/components/table/LiveMonitorBar.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
-  import { TriangleAlert } from 'lucide-vue-next'
+  import { TriangleAlert } from '@lucide/vue'
   import { fmtCompact, fmtDatetime } from '@/utils/datetime'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'

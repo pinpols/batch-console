@@ -142,7 +142,7 @@
   import { useTenantReload } from '@/composables/useTenantReload'
   import { useRoute } from 'vue-router'
   import { useI18n } from 'vue-i18n'
-  import { Search } from 'lucide-vue-next'
+  import { Search } from '@lucide/vue'
   import { ElMessage } from 'element-plus'
   import { confirmActionSheet } from '@/layout-mobile/MActionSheet'
   import { useTenantStore } from '@/stores/tenant'

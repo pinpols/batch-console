@@ -11,7 +11,7 @@
     Play,
     Square,
     Workflow,
-  } from 'lucide-vue-next'
+  } from '@lucide/vue'
   import type { DesignerNodeType } from '../types'
   import { useDesignerStore } from '../store/useDesignerStore'
 

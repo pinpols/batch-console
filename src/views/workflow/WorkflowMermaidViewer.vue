@@ -438,7 +438,7 @@
     Play as VideoPlay,
     ZoomIn,
     ZoomOut,
-  } from 'lucide-vue-next'
+  } from '@lucide/vue'
   import svgPanZoom from 'svg-pan-zoom'
   import { useRefreshAction } from '@/composables/useRefreshAction'
 

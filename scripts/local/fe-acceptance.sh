@@ -36,7 +36,7 @@
 set -uo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-cd "$ROOT_DIR"
+cd "$ROOT_DIR" || exit 1
 
 # BE_DIR:默认走 sibling 仓相对路径(本仓和 file-batch-system 平级)。
 # 别人 clone 仓库到不同位置 / Linux 上跑,环境变量 export BE_DIR=/path 覆盖。
@@ -138,15 +138,18 @@ FAILED_STEP=0
 
 run_step() {
   local n=$1; shift
-  local name="$(step_name $n)"
+  local name
+  name="$(step_name "$n")"
   if ! should_run "$n"; then
     printf "${DIM}── Step %2d %s (skip)${RST}\n" "$n" "$name"
     RESULTS[$n]="SKIP"
     return 0
   fi
   printf "\n${BLUE}── Step %2d %s ──────────────────────${RST}\n" "$n" "$name"
-  local start=$(date +%s)
-  local logf="$LOG_DIR/step${n}-$(date +%H%M).log"
+  local start
+  local logf
+  start=$(date +%s)
+  logf="$LOG_DIR/step${n}-$(date +%H%M).log"
   if "$@" 2>&1 | tee "$logf"; then
     local dur=$(( $(date +%s) - start ))
     DURATIONS[$n]=$dur
@@ -213,13 +216,23 @@ step_8_e2e_smoke()  { npm run test:e2e:smoke; }
 step_9_e2e_full()   { npm run test:e2e:all; }
 
 step_10_preview() {
-  lsof -i :${PREVIEW_PORT} -sTCP:LISTEN 2>/dev/null | tail -n +2 | awk '{print $2}' | xargs -r kill 2>/dev/null || true
-  nohup npx vite preview --port ${PREVIEW_PORT} > "$LOG_DIR/preview.log" 2>&1 &
+  local existing_pid command_line
+  existing_pid=$(lsof -ti ":${PREVIEW_PORT}" -sTCP:LISTEN 2>/dev/null | head -1 || true)
+  if [[ -n "$existing_pid" ]]; then
+    command_line=$(ps -p "$existing_pid" -o command= 2>/dev/null || true)
+    if [[ "$command_line" != *vite*preview* ]]; then
+      echo "preview 端口 ${PREVIEW_PORT} 被未知进程占用: pid=$existing_pid command=$command_line" >&2
+      return 1
+    fi
+    kill -TERM "$existing_pid" 2>/dev/null || true
+  fi
+  nohup npm exec -- vite preview --port "${PREVIEW_PORT}" > "$LOG_DIR/preview.log" 2>&1 &
   disown
   sleep 3
   local ok=1
   for path in / /login /m/; do
-    local code=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:${PREVIEW_PORT}${path}")
+    local code
+    code=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:${PREVIEW_PORT}${path}")
     echo "  ${path} → ${code}"
     [[ "$code" =~ ^(200|301|302)$ ]] || ok=0
   done

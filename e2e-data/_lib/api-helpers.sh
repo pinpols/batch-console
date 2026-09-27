@@ -88,12 +88,13 @@ crud_entity() {
   local update_payload="$4"
   local flags="${5:-LCRUTD}"
   local list_path="${6:-$path}"
-  local has_list=$([[ "$flags" == *L* ]] && echo 1 || echo 0)
-  local has_create=$([[ "$flags" == *C* ]] && echo 1 || echo 0)
-  local has_read=$([[ "$flags" == *R* ]] && echo 1 || echo 0)
-  local has_update=$([[ "$flags" == *U* ]] && echo 1 || echo 0)
-  local has_toggle=$([[ "$flags" == *T* ]] && echo 1 || echo 0)
-  local has_delete=$([[ "$flags" == *D* ]] && echo 1 || echo 0)
+  local has_list has_create has_read has_update has_toggle has_delete
+  has_list=$([[ "$flags" == *L* ]] && echo 1 || echo 0)
+  has_create=$([[ "$flags" == *C* ]] && echo 1 || echo 0)
+  has_read=$([[ "$flags" == *R* ]] && echo 1 || echo 0)
+  has_update=$([[ "$flags" == *U* ]] && echo 1 || echo 0)
+  has_toggle=$([[ "$flags" == *T* ]] && echo 1 || echo 0)
+  has_delete=$([[ "$flags" == *D* ]] && echo 1 || echo 0)
 
   printf '\n=== %s (%s) ===\n' "$label" "$path"
   local step_pass=0 step_fail=0

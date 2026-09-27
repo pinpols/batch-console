@@ -101,7 +101,7 @@
     Files,
     ClipboardList as Memo,
     Send as Promotion,
-  } from 'lucide-vue-next'
+  } from '@lucide/vue'
   import { ElMessage } from 'element-plus'
 
   const { t } = useI18n({ useScope: 'global' })

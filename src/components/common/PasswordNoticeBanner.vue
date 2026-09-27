@@ -25,7 +25,7 @@
   import { computed, ref, watch } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
-  import { ArrowRight, KeyRound, X } from 'lucide-vue-next'
+  import { ArrowRight, KeyRound, X } from '@lucide/vue'
   import { useAuthStore } from '@/stores/auth'
 
   const auth = useAuthStore()

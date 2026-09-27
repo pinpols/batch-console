@@ -24,7 +24,7 @@
   import { useRoute, useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
-  import { PanelRightOpen } from 'lucide-vue-next'
+  import { PanelRightOpen } from '@lucide/vue'
   import { useTenantStore } from '@/stores/tenant'
   import { useDesignerStore } from './store/useDesignerStore'
   import type { DesignerNodeType } from './types'

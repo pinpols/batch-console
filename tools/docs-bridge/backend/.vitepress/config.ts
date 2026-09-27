@@ -247,6 +247,18 @@ export default withMermaid({
   // 不到本仓 node_modules 的 vue。显式 alias 避免 SSR build 时 vue/server-renderer
   // 解析失败。
   vite: {
+    build: {
+      // 文档站 Mermaid 动态图类按需加载；通用 chunk 预算由 docs:size 独立阻断。
+      chunkSizeWarningLimit: 4000,
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (id.includes('/node_modules/cytoscape/')) return 'vendor-cytoscape'
+            if (id.includes('/node_modules/katex/')) return 'vendor-katex'
+          },
+        },
+      },
+    },
     // 跨仓 srcDir 时,Vite 的 root 默认会跑去 srcDir(file-batch-system/docs/),
     // 那边没 node_modules,导致 optimizeDeps 找不到 vitepress 子依赖 → dev 白屏。
     // 显式 root 锚定到 tools/docs-bridge/backend/.vitepress 同级,确保依赖解析正确。
@@ -477,6 +489,32 @@ export default withMermaid({
     search: {
       provider: 'local',
       options: {
+        // 历史归档和阶段计划体量大且时效性低，不进入浏览器全文索引。
+        // 页面仍可正常访问，当前架构、设计、API 与运维文档保留全文搜索。
+        _render(
+          mdSource: string,
+          env: { relativePath?: string },
+          md: { render: (source: string, renderEnv?: { relativePath?: string }) => string },
+        ) {
+          const path = env.relativePath || ''
+          if (
+            /^(analysis|archive|audit|backlog|compliance|plans|qa|review|sdk|spike|stats|test-data|testing|verifications)\//.test(
+              path,
+            )
+          ) {
+            return ''
+          }
+          // ADR 数量多且正文较长，搜索只保留标题层级；页面正文仍完整构建和访问。
+          // 决策编号、主题和章节可搜索，同时避免把整套历史决策装入浏览器索引。
+          if (path.startsWith('architecture/adr/')) {
+            const headings = mdSource
+              .split('\n')
+              .filter((line) => /^#{1,3}\s+/.test(line))
+              .join('\n')
+            return md.render(headings, env)
+          }
+          return md.render(mdSource, env)
+        },
         translations: {
           button: { buttonText: '搜索文档', buttonAriaLabel: '搜索文档' },
           modal: {

@@ -58,7 +58,7 @@
   import { ref, reactive } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
-  import { Send as Promotion, RotateCcw as RefreshLeft } from 'lucide-vue-next'
+  import { Send as Promotion, RotateCcw as RefreshLeft } from '@lucide/vue'
 
   const { t } = useI18n({ useScope: 'global' })
   import type { FormRules } from 'element-plus'

@@ -13,7 +13,7 @@
 |---|---:|
 | Runtime direct dependencies | 30 |
 | Development direct dependencies | 35 |
-| Resolved lockfile components | 948 |
+| Resolved lockfile components | 943 |
 
 ## 许可证分布
 
@@ -24,13 +24,13 @@
 | 0BSD | 1 |
 | Apache-2.0 | 28 |
 | Apache-2.0 WITH LLVM-exception | 1 |
-| BlueOak-1.0.0 | 8 |
+| BlueOak-1.0.0 | 5 |
 | BSD-2-Clause | 13 |
 | BSD-3-Clause | 15 |
 | CC-BY-4.0 | 1 |
 | CC0-1.0 | 2 |
 | FSL-1.1-MIT | 9 |
-| ISC | 60 |
+| ISC | 58 |
 | MIT | 787 |
 | MIT-0 | 2 |
 | MPL-2.0 | 14 |
@@ -55,6 +55,7 @@
 | `@codemirror/view` | `^6.42.1` |
 | `@fontsource/ibm-plex-mono` | `^5.2.7` |
 | `@fontsource/ibm-plex-sans` | `^5.2.8` |
+| `@lucide/vue` | `^1.48.0` |
 | `@sentry/vue` | `^10.52.0` |
 | `@tanstack/vue-query` | `^5.96.1` |
 | `axios` | `^1.16.1` |
@@ -65,7 +66,6 @@
 | `echarts` | `^6.0.0` |
 | `element-plus` | `^2.14.6` |
 | `json-bigint` | `^1.0.0` |
-| `lucide-vue-next` | `^1.0.0` |
 | `pinia` | `^3.0.4` |
 | `svg-pan-zoom` | `^3.6.2` |
 | `vue` | `^3.5.13` |

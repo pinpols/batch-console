@@ -12,8 +12,6 @@
 # 影响:仅 ta 租户测试数据,不动其他租户
 
 set -u
-DIR="$(cd "$(dirname "$0")" && pwd)"
-
 JAR=$(mktemp /tmp/seed-fixture-jar.XXXXX)
 trap 'rm -f "$JAR"' EXIT
 

@@ -110,7 +110,8 @@ check_drift() {
 # ── Vite preview 端口占用(信息) ────────────────────────
 check_preview_port() {
   if lsof -ti ":$FE_PREVIEW_PORT" -sTCP:LISTEN >/dev/null 2>&1; then
-    local pid=$(lsof -ti ":$FE_PREVIEW_PORT" -sTCP:LISTEN | head -1)
+    local pid
+    pid=$(lsof -ti ":$FE_PREVIEW_PORT" -sTCP:LISTEN | head -1)
     info "Preview port" ":$FE_PREVIEW_PORT 已被占(pid=$pid),npm run preview 前需 kill"
   else
     info "Preview port" ":$FE_PREVIEW_PORT 空闲"

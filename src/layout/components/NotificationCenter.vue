@@ -101,7 +101,7 @@
     TriangleAlert as Warning,
     CircleX as CircleClose,
     ArrowRight,
-  } from 'lucide-vue-next'
+  } from '@lucide/vue'
 
   const props = defineProps<{
     pendingApprovals: number

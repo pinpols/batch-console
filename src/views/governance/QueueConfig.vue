@@ -626,7 +626,7 @@
   import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { confirmDanger } from '@/composables/useDangerConfirm'
-  import { Trash2 as Delete, Pencil as Edit, Plus } from 'lucide-vue-next'
+  import { Trash2 as Delete, Pencil as Edit, Plus } from '@lucide/vue'
 
   const { t } = useI18n({ useScope: 'global' })
   import { toPageResult } from '@/api/adapters'

@@ -210,7 +210,7 @@
     Sun as Sunny,
     LogOut as SwitchButton,
     Globe2 as TimezoneIcon,
-  } from 'lucide-vue-next'
+  } from '@lucide/vue'
   import TenantSelect from '@/components/common/TenantSelect.vue'
   import NotificationCenter from './NotificationCenter.vue'
   import { useHeaderLogic } from '@/layout/composables/useHeaderLogic'

@@ -90,7 +90,7 @@
     Settings2 as SetUp,
     Timer,
     TriangleAlert as Warning,
-  } from 'lucide-vue-next'
+  } from '@lucide/vue'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'

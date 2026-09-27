@@ -127,9 +127,9 @@ run git checkout "$ORIG_BRANCH" --quiet 2>/dev/null || true
 
 echo
 echo "==== 结果 ===="
-echo "  synced (ff)  : ${#synced[@]}${synced[@]:+ — ${synced[*]}}"
-echo "  merged (3way): ${#merged[@]}${merged[@]:+ — ${merged[*]}}"
-echo "  diverged     : ${#diverged[@]}${diverged[@]:+ — ${diverged[*]}}"
-echo "  conflict     : ${#conflict[@]}${conflict[@]:+ — ${conflict[*]}}"
-echo "  failed       : ${#failed[@]}${failed[@]:+ — ${failed[*]}}"
+printf '  synced (ff)  : %d%s\n' "${#synced[@]}" "${synced[*]:+ — ${synced[*]}}"
+printf '  merged (3way): %d%s\n' "${#merged[@]}" "${merged[*]:+ — ${merged[*]}}"
+printf '  diverged     : %d%s\n' "${#diverged[@]}" "${diverged[*]:+ — ${diverged[*]}}"
+printf '  conflict     : %d%s\n' "${#conflict[@]}" "${conflict[*]:+ — ${conflict[*]}}"
+printf '  failed       : %d%s\n' "${#failed[@]}" "${failed[*]:+ — ${failed[*]}}"
 [[ ${#failed[@]} -eq 0 && ${#conflict[@]} -eq 0 ]] || exit 1

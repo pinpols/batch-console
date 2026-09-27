@@ -25,7 +25,7 @@
    */
   import { onMounted, onUnmounted } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { TriangleAlert as WarningFilled } from 'lucide-vue-next'
+  import { TriangleAlert as WarningFilled } from '@lucide/vue'
   import { useAppStore } from '@/stores/app'
 
   const app = useAppStore()

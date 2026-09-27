@@ -9,7 +9,8 @@ PACKAGE_VERSION="$(node -p "require('$ROOT_DIR/package.json').version")"
 LOCK_VERSION="$(node -p "require('$ROOT_DIR/package-lock.json').version")"
 LOCK_ROOT_VERSION="$(node -p "require('$ROOT_DIR/package-lock.json').packages[''].version")"
 
-if [[ "$PACKAGE_VERSION" != "$LOCK_VERSION" || "$PACKAGE_VERSION" != "$LOCK_ROOT_VERSION" ]]; then
+if [[ "$PACKAGE_VERSION" != "$LOCK_VERSION" ]] \
+  || [[ "$PACKAGE_VERSION" != "$LOCK_ROOT_VERSION" ]]; then
   echo "版本不一致: package.json=$PACKAGE_VERSION package-lock.json=$LOCK_VERSION packages['']=$LOCK_ROOT_VERSION" >&2
   exit 1
 fi
