@@ -25,6 +25,7 @@
 | 工作流运行 | `/monitor/workflow-runs` | 管理  | 只读    | 管理         | 只读        |
 | 综合查询   | `/observability/queries` | 只读  | 只读    | 只读         | 只读        |
 | Trace 诊断 | `/observability/trace`   | 只读  | 只读    | 只读         | 只读        |
+| 运维工具   | 顶栏工具抽屉             | 只读  | 只读    | 只读         | 只读        |
 | 平台诊断   | `/ops/diagnostic`        | 管理  | —       | —            | —           |
 
 ## 告警、投递与定义

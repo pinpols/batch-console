@@ -315,7 +315,7 @@
   import type { JobEditFormState } from '@/views/job/jobEditFormTypes'
   import CalendarMiniCreateDrawer from './CalendarMiniCreateDrawer.vue'
   import WindowMiniCreateDrawer from './WindowMiniCreateDrawer.vue'
-  import CronExprInput from './CronExprInput.vue'
+  import CronExprInput from '@/components/common/CronExprInput.vue'
   import JsonTextareaInput from '@/components/common/JsonTextareaInput.vue'
   import {
     useMetaBizTypesQuery,

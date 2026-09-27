@@ -14,6 +14,7 @@
 | [运行与审批](./user-guide/runs-and-approvals.md)    | 运维值班、管理员、审计员       | 运行查询、重试、取消、审批与批次日重放     |
 | [文件与配置导入](./user-guide/files-and-imports.md) | 租户管理员、平台管理员         | 渠道、模板、租户配置包与 JSON 同步         |
 | [可观测性与排障](./user-guide/observability.md)     | 运维值班、审计员、管理员       | 告警、Outbox、Trace、审计与诊断            |
+| [运维工具](./user-guide/operations-tools.md)        | 全部角色                       | 时区、Cron、文件、命名与重试辅助检查       |
 | [平台治理](./user-guide/platform-governance.md)     | 平台管理员、租户管理员、审计员 | 账号、Worker、日历、队列、配额、密钥和分片 |
 | [常见问题](./user-guide/troubleshooting.md)         | 全部角色                       | 空数据、权限、HTTP 错误、语言和主题问题    |
 

@@ -68,8 +68,11 @@
   import { pathToKey } from '@/constants/pathKey'
   import { instanceApi } from '@/api/instance'
   import { workflowApi } from '@/api/workflow'
+  import { fileApi } from '@/api/file'
   import { useTenantStore } from '@/stores/tenant'
+  import { parseCommandPaletteJump } from './commandPaletteJumps'
   import type {
+    ConsoleFileRecordResponse,
     ConsoleJobInstanceResponse,
     ConsoleWorkflowDefinitionResponse,
   } from '@/types/console-api'
@@ -112,14 +115,14 @@
   // BE 支持 jobCode partial / workflowCode partial 过滤,我们各拉 5 条。
   const entityJobInstances = ref<ConsoleJobInstanceResponse[]>([])
   const entityWorkflowDefs = ref<ConsoleWorkflowDefinitionResponse[]>([])
+  const entityFiles = ref<ConsoleFileRecordResponse[]>([])
   const entityLoading = ref(false)
   let debounceTimer: ReturnType<typeof setTimeout> | null = null
   let activeSearchGen = 0
 
   function shouldSearchEntity(term: string) {
     if (term.length < 2) return false
-    if (/^\d+$/.test(term)) return false // 纯数字走 jumpItems
-    if (/^[a-f0-9]{16,64}$/i.test(term)) return false // traceId 走 jumpItems
+    if (parseCommandPaletteJump(term)) return false
     return true
   }
 
@@ -128,13 +131,14 @@
     if (!shouldSearchEntity(term) || !tenant.tenantId) {
       entityJobInstances.value = []
       entityWorkflowDefs.value = []
+      entityFiles.value = []
       return
     }
     activeSearchGen += 1
     const myGen = activeSearchGen
     entityLoading.value = true
     try {
-      const [jobs, wfs] = await Promise.all([
+      const [jobs, wfs, files] = await Promise.all([
         instanceApi
           .list({ tenantId: tenant.tenantId, jobCode: term, page: 1, pageSize: 5 })
           .catch(() => ({ records: [] as ConsoleJobInstanceResponse[] })),
@@ -146,11 +150,15 @@
             pageSize: 5,
           })
           .catch(() => ({ records: [] as ConsoleWorkflowDefinitionResponse[] })),
+        fileApi
+          .list({ tenantId: tenant.tenantId, fileName: term, page: 1, pageSize: 5 })
+          .catch(() => ({ records: [] as ConsoleFileRecordResponse[] })),
       ])
       // 防止快速输入时旧请求覆盖新结果
       if (myGen !== activeSearchGen) return
       entityJobInstances.value = (jobs.records ?? []).slice(0, 5)
       entityWorkflowDefs.value = (wfs.records ?? []).slice(0, 5)
+      entityFiles.value = (files.records ?? []).slice(0, 5)
     } finally {
       if (myGen === activeSearchGen) entityLoading.value = false
     }
@@ -212,33 +220,27 @@
 
   const jumpItems = computed((): Omit<PaletteItem, 'globalIndex'>[] => {
     const term = q.value.trim()
-    // 纯数字:跳 Job Instance
-    if (/^\d+$/.test(term)) {
-      return [
-        {
-          key: `jump:job:${term}`,
-          title: t('palette.jumpJobInstance', { id: term }),
-          subtitle: t('palette.jumpDetail'),
-          meta: t('palette.metaJump'),
-          path: `/monitor/job-instances/${term}`,
-          source: 'jump' as const,
-        },
-      ]
-    }
-    // traceId 形态(32-64 位 16 进制):跳 Trace 诊断
-    if (/^[a-f0-9]{16,64}$/i.test(term)) {
-      return [
-        {
-          key: `jump:trace:${term}`,
-          title: t('palette.jumpTrace', { trace: term.slice(0, 16) + '...' }),
-          subtitle: t('palette.jumpTraceSubtitle'),
-          meta: t('palette.metaJump'),
-          path: `/observability/trace?traceId=${term}`,
-          source: 'jump' as const,
-        },
-      ]
-    }
-    return []
+    const jump = parseCommandPaletteJump(term)
+    if (!jump) return []
+    const titleKey =
+      jump.kind === 'job'
+        ? 'palette.jumpJobInstance'
+        : jump.kind === 'file'
+          ? 'palette.jumpFile'
+          : 'palette.jumpTrace'
+    return [
+      {
+        key: `jump:${jump.kind}:${jump.value}`,
+        title: t(titleKey, {
+          id: jump.value,
+          trace: jump.value.length > 16 ? `${jump.value.slice(0, 16)}...` : jump.value,
+        }),
+        subtitle: jump.kind === 'trace' ? t('palette.jumpTraceSubtitle') : t('palette.jumpDetail'),
+        meta: t('palette.metaJump'),
+        path: jump.path,
+        source: 'jump' as const,
+      },
+    ]
   })
 
   const entityItems = computed((): Omit<PaletteItem, 'globalIndex'>[] => {
@@ -263,6 +265,16 @@
         source: 'entity' as const,
       })
     }
+    for (const file of entityFiles.value) {
+      out.push({
+        key: `entity:file:${file.id}`,
+        title: file.fileName || String(file.id),
+        subtitle: `${file.bizType || '—'} · ${file.fileStatus || '—'} · #${file.id}`,
+        meta: t('palette.metaFile'),
+        path: `/files/list?fileId=${file.id}`,
+        source: 'entity' as const,
+      })
+    }
     return out
   })
 
@@ -271,7 +283,7 @@
     const term = rawTerm.toLowerCase()
     const base: Omit<PaletteItem, 'globalIndex'>[] = []
 
-    const isJump = /^\d+$/.test(rawTerm) || /^[a-f0-9]{16,64}$/i.test(rawTerm)
+    const isJump = Boolean(parseCommandPaletteJump(rawTerm))
     if (term && isJump) {
       base.push(...jumpItems.value, ...recentItems.value, ...menuItems.value)
     } else {
@@ -281,8 +293,7 @@
 
     const filtered = term
       ? base.filter((it) => {
-          if ((/^\d+$/.test(rawTerm) || /^[a-f0-9]{16,64}$/i.test(rawTerm)) && it.source === 'jump')
-            return true
+          if (isJump && it.source === 'jump') return true
           // 实体匹配项来自服务端搜索结果,本身就是命中,不再用 hay 二次过滤
           // (避免如 "wf-001" 因 path 不含全部字符被错杀)
           if (it.source === 'entity') return true
@@ -344,6 +355,7 @@
     activeIndex.value = 0
     entityJobInstances.value = []
     entityWorkflowDefs.value = []
+    entityFiles.value = []
     if (debounceTimer) {
       clearTimeout(debounceTimer)
       debounceTimer = null
