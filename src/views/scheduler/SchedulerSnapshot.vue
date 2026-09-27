@@ -87,12 +87,19 @@
             </el-tag>
           </div>
           <div class="card-actions">
-            <el-tag size="small" effect="plain" type="info">tenant: {{ snap.tenantId }}</el-tag>
+            <el-tag size="small" effect="plain" type="info">
+              {{ t('schedulerSnapshot.tenantLabel', { id: snap.tenantId }) }}
+            </el-tag>
           </div>
         </div>
       </template>
 
-      <div class="kpis" role="tablist" :aria-label="t('schedulerSnapshot.kpiAriaLabel')">
+      <div
+        class="kpis"
+        role="tablist"
+        :aria-label="t('schedulerSnapshot.kpiAriaLabel')"
+        @keydown="onKpiKeydown"
+      >
         <SnapshotKpiTab
           v-for="t in kpiTabs"
           :key="t.key"
@@ -100,6 +107,8 @@
           :value="t.value"
           :variant="t.variant"
           :active="activePanel === t.key"
+          :tab-id="`snapshot-tab-${t.key}`"
+          :panel-id="`snapshot-panel-${t.key}`"
           @select="activePanel = t.key"
         />
       </div>
@@ -118,7 +127,13 @@
         </div>
       </template>
 
-      <div v-show="activePanel === 'policies'" class="detail-pane" role="tabpanel">
+      <div
+        v-show="activePanel === 'policies'"
+        id="snapshot-panel-policies"
+        class="detail-pane"
+        role="tabpanel"
+        aria-labelledby="snapshot-tab-policies"
+      >
         <el-table
           v-loading="loading"
           :data="pagedPolicies.records"
@@ -138,7 +153,7 @@
                   </el-tag>
                 </div>
                 <div class="cell-sub">
-                  quotaResetPolicy:
+                  {{ t('schedulerSnapshot.quotaResetPolicyLabel') }}:
                   <el-tag size="small" effect="plain" type="info">{{
                     row.quotaResetPolicy
                   }}</el-tag>
@@ -225,7 +240,13 @@
         />
       </div>
 
-      <div v-show="activePanel === 'queues'" class="detail-pane" role="tabpanel">
+      <div
+        v-show="activePanel === 'queues'"
+        id="snapshot-panel-queues"
+        class="detail-pane"
+        role="tabpanel"
+        aria-labelledby="snapshot-tab-queues"
+      >
         <el-table
           v-loading="loading"
           :data="pagedQueues.records"
@@ -245,7 +266,7 @@
                   </el-tag>
                 </div>
                 <div class="cell-sub">
-                  quotaResetPolicy:
+                  {{ t('schedulerSnapshot.quotaResetPolicyLabel') }}:
                   <el-tag size="small" effect="plain" type="info">{{
                     row.quotaResetPolicy
                   }}</el-tag>
@@ -317,7 +338,13 @@
         />
       </div>
 
-      <div v-show="activePanel === 'workers'" class="detail-pane" role="tabpanel">
+      <div
+        v-show="activePanel === 'workers'"
+        id="snapshot-panel-workers"
+        class="detail-pane"
+        role="tabpanel"
+        aria-labelledby="snapshot-tab-workers"
+      >
         <el-table
           v-loading="loading"
           :data="pagedWorkers.records"
@@ -337,7 +364,9 @@
                   </el-tag>
                   <StatusTag :value="row.status" category="worker" />
                 </div>
-                <div class="cell-sub">heartbeat: {{ fmtDatetime(row.heartbeatAt) }}</div>
+                <div class="cell-sub">
+                  {{ t('schedulerSnapshot.heartbeatLabel') }}: {{ fmtDatetime(row.heartbeatAt) }}
+                </div>
               </div>
             </template>
           </el-table-column>
@@ -373,7 +402,13 @@
         />
       </div>
 
-      <div v-show="activePanel === 'history'" class="detail-pane" role="tabpanel">
+      <div
+        v-show="activePanel === 'history'"
+        id="snapshot-panel-history"
+        class="detail-pane"
+        role="tabpanel"
+        aria-labelledby="snapshot-tab-history"
+      >
         <el-table
           v-loading="histLoading"
           :data="pagedHistory.records"
@@ -394,7 +429,7 @@
                   </el-tag>
                 </div>
                 <div class="cell-sub">
-                  quotaResetPolicy:
+                  {{ t('schedulerSnapshot.quotaResetPolicyLabel') }}:
                   <el-tag size="small" effect="plain" type="info">{{
                     row.quotaResetPolicy
                   }}</el-tag>
@@ -517,6 +552,24 @@
   const loadErrorTrace = ref('')
   const lastSuccessfulAt = ref<string | null>(null)
   const activePanel = ref<PanelKey>('policies')
+  const KPI_KEYS: PanelKey[] = ['policies', 'queues', 'workers', 'history']
+
+  function onKpiKeydown(event: KeyboardEvent) {
+    let nextIndex = KPI_KEYS.indexOf(activePanel.value)
+    if (event.key === 'ArrowRight' || event.key === 'ArrowDown')
+      nextIndex = (nextIndex + 1) % KPI_KEYS.length
+    else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp')
+      nextIndex = (nextIndex - 1 + KPI_KEYS.length) % KPI_KEYS.length
+    else if (event.key === 'Home') nextIndex = 0
+    else if (event.key === 'End') nextIndex = KPI_KEYS.length - 1
+    else return
+
+    event.preventDefault()
+    activePanel.value = KPI_KEYS[nextIndex]
+    requestAnimationFrame(() =>
+      document.getElementById(`snapshot-tab-${activePanel.value}`)?.focus(),
+    )
+  }
 
   const pageSize = ref(15)
   const pagePolicies = ref(1)

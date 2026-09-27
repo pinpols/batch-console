@@ -52,7 +52,26 @@
           {{ t('filePipelineObservability.relatedTrace') }}
         </router-link>
       </div>
-      <div class="pipeline-stages" :aria-label="t('filePipelineObservability.stageOverview')">
+      <el-alert
+        v-if="selectedStepLoadError"
+        class="pipeline-stage-error"
+        type="error"
+        show-icon
+        :closable="false"
+        :title="t('filePipelineObservability.stageLoadError')"
+      >
+        <template #default>
+          <el-button link type="primary" @click="reloadSelectedSteps">
+            {{ t('common.retry') }}
+          </el-button>
+        </template>
+      </el-alert>
+      <div
+        v-else
+        v-loading="selectedStepsLoading"
+        class="pipeline-stages"
+        :aria-label="t('filePipelineObservability.stageOverview')"
+      >
         <button
           v-for="stage in selectedStages"
           :key="stage.code"
@@ -516,12 +535,12 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, computed, watch } from 'vue'
+  import { ref, computed, onMounted, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { useRoute } from 'vue-router'
   import { fetchAllPageItems, toPageResult } from '@/api/adapters'
 
-  const { t } = useI18n({ useScope: 'global' })
+  const { t, te } = useI18n({ useScope: 'global' })
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
@@ -543,6 +562,8 @@
   import { useSseAutoReload } from '@/composables/useSseAutoReload'
   import OpsListToolbar from '@/components/table/OpsListToolbar.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
+  import { pipelineStageCodes } from './pipelineStageModel'
+  import { fetchPipelineStages, type PipelineStagesMap } from '@/api/pipelineMeta'
 
   const tenant = useTenantStore()
   const route = useRoute()
@@ -578,20 +599,22 @@
   const allPipelines = ref<ConsoleFilePipelineResponse[]>([])
   const allSteps = ref<ConsoleFilePipelineStepResponse[]>([])
   const stepLoadError = ref<unknown>(null)
-  const stepsLoaded = ref(false)
+  const selectedPipelineSteps = ref<ConsoleFilePipelineStepResponse[]>([])
+  const selectedStepsLoading = ref(false)
+  const selectedStepLoadError = ref<unknown>(null)
+  let selectedStepsRequestId = 0
   const allDispatches = ref<ConsoleFileDispatchRecordResponse[]>([])
   const allErrors = ref<ConsoleFileErrorRecordResponse[]>([])
   const selectedPipeline = ref<ConsoleFilePipelineResponse | null>(null)
   const selectedStageCode = ref<string | null>(null)
-  const PIPELINE_STAGES = ['RECEIVE', 'PARSE', 'VALIDATE', 'LOAD', 'ARCHIVE'] as const
-
-  const selectedSteps = computed(() =>
-    selectedPipeline.value
-      ? allSteps.value.filter((step) => step.pipelineInstanceId === selectedPipeline.value?.id)
-      : [],
-  )
+  const stagesMap = ref<PipelineStagesMap>({})
+  const selectedSteps = computed(() => selectedPipelineSteps.value)
   const selectedStages = computed(() =>
-    PIPELINE_STAGES.map((code, index) => {
+    pipelineStageCodes(
+      selectedPipeline.value?.pipelineType,
+      selectedSteps.value,
+      stagesMap.value,
+    ).map((code, index) => {
       const step = selectedSteps.value.find((item) => item.stageCode?.toUpperCase() === code)
       const status = String(step?.stepStatus ?? '')
       const normalized = status.toUpperCase()
@@ -605,7 +628,9 @@
       return {
         code,
         index: index + 1,
-        label: t(`filePipelineObservability.stage${code}`),
+        label: te(`filePipelineObservability.stage${code}`)
+          ? t(`filePipelineObservability.stage${code}`)
+          : code,
         status: status || t('filePipelineObservability.stageNoRecord'),
         error: step?.errorMessage?.trim() || '',
         tone,
@@ -613,18 +638,49 @@
     }),
   )
 
-  async function ensureStepsLoaded() {
-    if (!stepsLoaded.value && !loading.value) await loadSteps()
+  async function loadSelectedSteps(pipelineInstanceId: number) {
+    const requestId = ++selectedStepsRequestId
+    selectedStepsLoading.value = true
+    selectedStepLoadError.value = null
+    try {
+      const steps = await fetchAllPageItems<ConsoleFilePipelineStepResponse>(
+        '/api/console/queries/file-pipeline-steps',
+        { tenantId: tenant.tenantId, pipelineInstanceId },
+      )
+      if (requestId === selectedStepsRequestId && selectedPipeline.value?.id === pipelineInstanceId)
+        selectedPipelineSteps.value = steps
+    } catch (error) {
+      if (requestId === selectedStepsRequestId) selectedStepLoadError.value = error
+    } finally {
+      if (requestId === selectedStepsRequestId) selectedStepsLoading.value = false
+    }
+  }
+
+  onMounted(() => {
+    fetchPipelineStages()
+      .then((stages) => (stagesMap.value = stages || {}))
+      .catch(() => {
+        stagesMap.value = {}
+      })
+  })
+
+  function reloadSelectedSteps() {
+    const pipelineInstanceId = selectedPipeline.value?.id
+    if (pipelineInstanceId) void loadSelectedSteps(pipelineInstanceId)
   }
 
   function selectPipeline(row: ConsoleFilePipelineResponse) {
     selectedPipeline.value = row
     selectedStageCode.value = null
-    void ensureStepsLoaded()
+    selectedPipelineSteps.value = []
+    void loadSelectedSteps(row.id)
   }
 
   function focusStage(code: string) {
-    selectedStageCode.value = selectedStageCode.value === code ? null : code
+    const nextStage = selectedStageCode.value === code ? null : code
+    selectedStageCode.value = nextStage
+    if (nextStage) allSteps.value = [...selectedPipelineSteps.value]
+    else void loadSteps()
     activeTab.value = 'steps'
     page.value = 1
   }
@@ -854,7 +910,10 @@
     } finally {
       loading.value = false
     }
-    if (selectedPipeline.value) void ensureStepsLoaded()
+    if (selectedPipeline.value) {
+      selectedPipelineSteps.value = []
+      void loadSelectedSteps(selectedPipeline.value.id)
+    }
   }
 
   async function loadSteps() {
@@ -865,7 +924,6 @@
         '/api/console/queries/file-pipeline-steps',
         { tenantId: tenant.tenantId },
       )
-      stepsLoaded.value = true
       if (showProgressColumns.value) {
         void loadProgress()
       }
@@ -925,12 +983,13 @@
       selectedPipeline.value =
         allPipelines.value.find((item) => item.id === Number(next)) ?? selectedPipeline.value
       selectedStageCode.value = null
-      if (selectedPipeline.value) void ensureStepsLoaded()
+      if (selectedPipeline.value) {
+        selectedPipelineSteps.value = []
+        void loadSelectedSteps(selectedPipeline.value.id)
+      }
       void loadCurrentFile(next)
     },
   )
-
-  if (initialPipelineInstanceId) void loadCurrentFile(initialPipelineInstanceId)
 
   async function runActive() {
     if (activeTab.value === 'pipelines') await loadPipelines()
@@ -945,10 +1004,14 @@
     selectedStageCode.value = null
     allPipelines.value = []
     allSteps.value = []
-    stepsLoaded.value = false
+    selectedPipelineSteps.value = []
+    selectedStepLoadError.value = null
     stepLoadError.value = null
     allDispatches.value = []
     allErrors.value = []
+    currentFile.value = null
+    const pipelineInstanceId = String(route.query.pipelineInstanceId ?? '').trim()
+    if (pipelineInstanceId) void loadCurrentFile(pipelineInstanceId)
     return runActive()
   })
 </script>
@@ -994,7 +1057,7 @@
 
   .pipeline-stages {
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
     gap: var(--space-sm);
   }
 

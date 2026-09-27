@@ -19961,6 +19961,8 @@ export interface operations {
         tenantId?: string
         /** @description Fuzzy match on username or displayName */
         keyword?: string
+        /** @description Filter by enabled status */
+        enabled?: boolean
         pageNo?: number
         pageSize?: number
       }

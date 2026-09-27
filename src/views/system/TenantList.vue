@@ -53,7 +53,7 @@
                 class="query-w-220"
                 v-model="queryDraft.keyword"
                 clearable
-                placeholder="搜索"
+                :placeholder="t('common.search')"
                 @keyup.enter="onSearch"
               />
             </el-form-item>

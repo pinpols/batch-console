@@ -422,7 +422,7 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, reactive, computed, onMounted, watch } from 'vue'
+  import { ref, reactive, computed, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
   import { confirmDanger } from '@/composables/useDangerConfirm'
@@ -439,6 +439,7 @@
     type BatchDayReplayPreview,
   } from '@/api/batchDayReplay'
   import { useTenantStore } from '@/stores/tenant'
+  import { useTenantReload } from '@/composables/useTenantReload'
   import { useAuthStore } from '@/stores/auth'
   import { buildBatchDayReplayRequest } from '@/utils/batchDayReplayForm'
 
@@ -728,20 +729,14 @@
     }
   }
 
-  onMounted(() => {
-    void loadSessions()
+  useTenantReload(() => {
+    submitForm.tenantId = tenant.tenantId
+    sessions.value = []
+    currentSession.value = null
+    entries.value = []
+    historyUnavailable.value = false
+    return loadSessions()
   })
-
-  watch(
-    () => tenant.tenantId,
-    () => {
-      sessions.value = []
-      currentSession.value = null
-      entries.value = []
-      historyUnavailable.value = false
-      void loadSessions()
-    },
-  )
 </script>
 
 <style scoped>

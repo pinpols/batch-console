@@ -17,6 +17,21 @@
       />
     </div>
 
+    <el-alert
+      v-if="loadError"
+      class="governance-load-error"
+      type="error"
+      show-icon
+      :closable="false"
+      :title="t('queueConfig.loadError')"
+    >
+      <template #default>
+        <el-button link type="primary" @click="loadActiveTab(true)">
+          {{ t('common.retry') }}
+        </el-button>
+      </template>
+    </el-alert>
+
     <!-- 还原设计:tabs 与内容直铺底色,无外层卡片壳 -->
     <div>
       <el-tabs
@@ -81,6 +96,7 @@
                 <el-switch
                   :model-value="row.enabled"
                   :loading="togglingKey === `queue-${row.id}`"
+                  :disabled="!canMutateConfig"
                   inline-prompt
                   :active-text="t('queueConfig.switchOn')"
                   :inactive-text="t('queueConfig.switchOff')"
@@ -91,6 +107,7 @@
             <el-table-column :label="t('fileTemplateList.colActions')" width="120" fixed="right">
               <template #default="{ row }">
                 <el-button
+                  v-if="canMutateConfig"
                   type="primary"
                   plain
                   size="small"
@@ -163,6 +180,7 @@
                 <el-switch
                   :model-value="row.enabled"
                   :loading="togglingKey === `window-${row.id}`"
+                  :disabled="!canMutateConfig"
                   inline-prompt
                   :active-text="t('queueConfig.switchOn')"
                   :inactive-text="t('queueConfig.switchOff')"
@@ -173,6 +191,7 @@
             <el-table-column :label="t('fileTemplateList.colActions')" width="120" fixed="right">
               <template #default="{ row }">
                 <el-button
+                  v-if="canMutateConfig"
                   type="primary"
                   plain
                   size="small"
@@ -247,6 +266,7 @@
                 <el-switch
                   :model-value="row.enabled"
                   :loading="togglingKey === `calendar-${row.id}`"
+                  :disabled="!canMutateConfig"
                   inline-prompt
                   :active-text="t('queueConfig.switchOn')"
                   :inactive-text="t('queueConfig.switchOff')"
@@ -257,6 +277,7 @@
             <el-table-column :label="t('fileTemplateList.colActions')" width="120" fixed="right">
               <template #default="{ row }">
                 <el-button
+                  v-if="canMutateConfig"
                   type="primary"
                   plain
                   size="small"
@@ -289,6 +310,7 @@
     >
       <div class="config-toolbar">
         <el-button
+          v-if="canMutateConfig"
           type="primary"
           :icon="Plus"
           :disabled="!currentCalendarId"
@@ -327,7 +349,12 @@
             <StatusTag :value="String(row.enabled)" category="yn" />
           </template>
         </el-table-column>
-        <el-table-column :label="t('fileTemplateList.colActions')" width="170" fixed="right">
+        <el-table-column
+          v-if="canMutateConfig"
+          :label="t('fileTemplateList.colActions')"
+          width="170"
+          fixed="right"
+        >
           <template #default="{ row }">
             <div class="table-actions">
               <el-button
@@ -634,6 +661,7 @@
   const loading = ref(false)
   const holidayLoading = ref(false)
   const togglingKey = ref('')
+  const loadError = ref<unknown>(null)
   // P2 IA 拆分:route.meta.mode 限定本页只显示某一类资源
   const route = useRoute()
   const router = useRouter()
@@ -669,6 +697,7 @@
     return t('queueConfig.actionCreateCalendar')
   })
   function onCreateClick() {
+    if (!canMutateConfig.value) return
     if (activeTab.value === 'queues') openQueueCreate()
     else if (activeTab.value === 'windows') openWindowCreate()
     else openCalendarCreate()
@@ -752,7 +781,7 @@
 
   function requireText(value: string, label: string) {
     const text = value.trim()
-    if (!text) throw new Error(`${label} 必填`)
+    if (!text) throw new Error(t('queueConfig.requiredField', { label }))
     return text
   }
 
@@ -868,29 +897,18 @@
   const loadedTabs = ref(new Set<string>())
 
   async function fetchQueues() {
-    try {
-      queues.value = await governanceApi.listQueues(tenant.tenantId)
-    } catch {
-      queues.value = []
-    }
+    queues.value = await governanceApi.listQueues(tenant.tenantId)
   }
   async function fetchWindows() {
-    try {
-      windows.value = await governanceApi.listBatchWindows(tenant.tenantId)
-    } catch {
-      windows.value = []
-    }
+    windows.value = await governanceApi.listBatchWindows(tenant.tenantId)
   }
   async function fetchCalendars() {
-    try {
-      calendars.value = await governanceApi.listCalendars(tenant.tenantId)
-    } catch {
-      calendars.value = []
-    }
+    calendars.value = await governanceApi.listCalendars(tenant.tenantId)
   }
 
   async function loadActiveTab(force = false) {
     const tab = activeTab.value
+    loadError.value = null
     if (!force && loadedTabs.value.has(tab)) return
     loading.value = true
     try {
@@ -898,6 +916,8 @@
       else if (tab === 'windows') await fetchWindows()
       else if (tab === 'calendars') await fetchCalendars()
       loadedTabs.value.add(tab)
+    } catch (error) {
+      loadError.value = error
     } finally {
       loading.value = false
     }
@@ -921,16 +941,16 @@
     apiCall: () => Promise<unknown>,
     onSuccess: () => void,
   ) {
-    if (!rowId) return
+    if (!canMutateConfig.value || !rowId) return
     try {
       const action = enabledNext ? t('queueConfig.enable') : t('queueConfig.disable')
       await confirmDanger({
         verb: action,
         target: `「${label}」`,
         consequence: enabledNext
-          ? '该队列/窗口恢复参与调度,排队中的任务将被派发。'
-          : '该队列/窗口停止参与调度,挂在其上的任务不会被派发,直到再次启用。',
-        confirmButtonText: `确认${action}`,
+          ? t('queueConfig.enableConsequence')
+          : t('queueConfig.disableConsequence'),
+        confirmButtonText: t('queueConfig.confirmToggle', { action }),
       })
     } catch {
       return
@@ -983,6 +1003,7 @@
   }
 
   function openQueueCreate() {
+    if (!canMutateConfig.value) return
     queueEditingId.value = null
     Object.assign(queueForm, {
       queueCode: '',
@@ -1002,6 +1023,7 @@
   }
 
   function openQueueEdit(row: GovernanceQueueRow) {
+    if (!canMutateConfig.value) return
     queueEditingId.value = row.id
     Object.assign(queueForm, {
       queueCode: row.queueCode,
@@ -1041,6 +1063,7 @@
   }
 
   async function saveQueue() {
+    if (!canMutateConfig.value) return
     saving.value = true
     try {
       const payload = buildQueuePayload()
@@ -1057,6 +1080,7 @@
   }
 
   function openWindowCreate() {
+    if (!canMutateConfig.value) return
     windowEditingId.value = null
     Object.assign(windowForm, {
       windowCode: '',
@@ -1074,6 +1098,7 @@
   }
 
   function openWindowEdit(row: GovernanceBatchWindowRow) {
+    if (!canMutateConfig.value) return
     windowEditingId.value = row.id
     Object.assign(windowForm, {
       windowCode: row.windowCode,
@@ -1109,6 +1134,7 @@
   }
 
   async function saveWindow() {
+    if (!canMutateConfig.value) return
     saving.value = true
     try {
       const payload = buildWindowPayload()
@@ -1125,6 +1151,7 @@
   }
 
   function openCalendarCreate() {
+    if (!canMutateConfig.value) return
     calendarEditingId.value = null
     Object.assign(calendarForm, {
       calendarCode: '',
@@ -1139,6 +1166,7 @@
   }
 
   function openCalendarEdit(row: GovernanceCalendarRow) {
+    if (!canMutateConfig.value) return
     calendarEditingId.value = row.id
     Object.assign(calendarForm, {
       calendarCode: row.calendarCode,
@@ -1166,6 +1194,7 @@
   }
 
   async function saveCalendar() {
+    if (!canMutateConfig.value) return
     saving.value = true
     try {
       const payload = buildCalendarPayload()
@@ -1201,6 +1230,7 @@
   }
 
   function openHolidayCreate() {
+    if (!canMutateConfig.value) return
     holidayEditingId.value = null
     Object.assign(holidayForm, {
       bizDate: '',
@@ -1212,6 +1242,7 @@
   }
 
   function openHolidayEdit(row: GovernanceCalendarHolidayRow) {
+    if (!canMutateConfig.value) return
     holidayEditingId.value = row.id
     Object.assign(holidayForm, {
       bizDate: row.holidayDate,
@@ -1241,7 +1272,7 @@
   }
 
   async function saveHoliday() {
-    if (!currentCalendarId.value) return
+    if (!canMutateConfig.value || !currentCalendarId.value) return
     saving.value = true
     try {
       const payload = buildHolidayPayload()
@@ -1265,7 +1296,7 @@
   }
 
   async function deleteHoliday(row: GovernanceCalendarHolidayRow) {
-    if (!currentCalendarId.value || !row.id) return
+    if (!canMutateConfig.value || !currentCalendarId.value || !row.id) return
     try {
       await confirmDanger({
         verb: t('common.delete'),
@@ -1295,6 +1326,10 @@
 <style scoped>
   .governance-workspace {
     display: flex;
+    margin-bottom: var(--space-md);
+  }
+
+  .governance-load-error {
     margin-bottom: var(--space-md);
   }
 

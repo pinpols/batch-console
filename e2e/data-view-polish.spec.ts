@@ -3,6 +3,12 @@ import { enterDemoApp, expectPageTitle, isVisible } from './support/app'
 
 test.describe('data-heavy pages use the intended primary views', () => {
   test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('batch-console-session', '1')
+      localStorage.setItem('batch-console-tenant-id', 'ta')
+      localStorage.setItem('batch-console:locale', 'zh-CN')
+      localStorage.setItem('batch-console-onboarding-done', '1')
+    })
     await page.route('**/api/console/auth/me', (route) =>
       route.fulfill({
         status: 200,
@@ -53,6 +59,105 @@ test.describe('data-heavy pages use the intended primary views', () => {
             offlineWorkers: 0,
             outboxRetryBacklog: 0,
             outboxDeliveryFailures: 0,
+          },
+        }),
+      }),
+    )
+    await page.route('**/api/console/queries/batch-days?*', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          code: 'SUCCESS',
+          message: 'ok',
+          data: {
+            items: [
+              {
+                bizDate: '2026-09-27',
+                dayStatus: 'OPEN',
+                openAt: '2026-09-27T00:00:00Z',
+                slaStatus: 'NORMAL',
+                totalJobCount: 1,
+                successJobCount: 0,
+                failedJobCount: 0,
+                inFlightJobCount: 1,
+                lateCount: 0,
+                catchupCount: 0,
+                catchupSummary: [],
+              },
+            ],
+            total: 1,
+            pageNo: 1,
+            pageSize: 100,
+          },
+        }),
+      }),
+    )
+    await page.route('**/api/console/event-catalog/event-types*', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          code: 'SUCCESS',
+          message: 'ok',
+          data: [
+            {
+              eventType: 'JOB_COMPLETED',
+              description: 'Job completed event',
+              category: 'JOB',
+              schema: '{}',
+            },
+          ],
+        }),
+      }),
+    )
+    await page.route('**/api/console/event-catalog/topics*', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ code: 'SUCCESS', message: 'ok', data: [] }),
+      }),
+    )
+    await page.route('**/api/console/capacity-profile*', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          code: 'SUCCESS',
+          message: 'ok',
+          data: {
+            generatedAt: '2026-09-27T00:00:00Z',
+            tenantId: 'ta',
+            window: { from: '2026-09-20T00:00:00Z', to: '2026-09-27T00:00:00Z' },
+            groupBy: 'TENANT',
+            scope: 'tenant',
+            rows: [
+              {
+                tenantId: 'ta',
+                instanceCount: 1,
+                taskCount: 1,
+                successCount: 1,
+                failureCount: 0,
+                totalDurationMs: 1000,
+                wallClockDurationMs: 1000,
+                avgDurationMs: 1000,
+                p95DurationMs: 1000,
+                totalFileBytes: 1024,
+                processedRecords: 10,
+                recordsPerSecond: 10,
+                mbPerSecond: 0.001,
+              },
+            ],
+            totals: {
+              instanceCount: 1,
+              taskCount: 1,
+              successCount: 1,
+              failureCount: 0,
+              totalDurationMs: 1000,
+              totalFileBytes: 1024,
+              processedRecords: 10,
+            },
+            coverage: { evidenceSource: 'mock', knownGaps: [], rejectedScopes: [] },
           },
         }),
       }),
@@ -137,7 +242,7 @@ test.describe('data-heavy pages use the intended primary views', () => {
     page,
   }) => {
     await page.goto('/ops/worker-fingerprints')
-    await expectPageTitle(page, 'Worker fingerprint 看板')
+    await expectPageTitle(page, 'Worker 指纹看板')
     await expect(page.getByText('主版本', { exact: true }).first()).toBeVisible()
     await expect(page.getByText('版本漂移', { exact: true })).toBeVisible()
 

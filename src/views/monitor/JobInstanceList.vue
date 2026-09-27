@@ -137,7 +137,7 @@
         </template>
 
         <template #default="{ isColVisible }">
-          <el-table-column type="selection" width="44" :selectable="() => true" />
+          <el-table-column type="selection" width="44" :selectable="isBulkSelectable" />
           <!-- 列序照设计 #instances:JOB CODE 首列,状态第三,TRACE 短码,操作=文字链 -->
           <el-table-column
             v-if="isColVisible('jobCode')"
@@ -342,6 +342,7 @@
   import type { ConsoleJobInstanceResponse } from '@/types/console-api'
   import BulkActionBar from '@/components/table/BulkActionBar.vue'
   import { useBulkSelection } from '@/composables/useBulkSelection'
+  import { canSelectJobInstanceForBulk, TERMINAL_INSTANCE_STATUSES } from './jobInstanceBulk'
 
   const router = useRouter()
   const route = useRoute()
@@ -357,7 +358,7 @@
   const proTableRef = ref<{ clearSelection?: () => void } | null>(null)
   const bulk = useBulkSelection<ConsoleJobInstanceResponse>()
   onMounted(() => bulk.bindTable(proTableRef.value))
-  const TERMINAL_STATUSES = ['SUCCESS', 'FAILED', 'CANCELLED', 'CANCELED', 'TERMINATED']
+  const isBulkSelectable = canSelectJobInstanceForBulk
 
   async function onBulkRetry() {
     const eligible = bulk.selected.value.filter((r) => r.instanceStatus === 'FAILED')
@@ -382,7 +383,7 @@
 
   async function onBulkCancel() {
     const eligible = bulk.selected.value.filter(
-      (r) => !TERMINAL_STATUSES.includes(r.instanceStatus),
+      (r) => !TERMINAL_INSTANCE_STATUSES.includes(r.instanceStatus),
     )
     if (!eligible.length) {
       ElMessage.warning(t('jobInstanceList.bulkCancelNone'))

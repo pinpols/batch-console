@@ -20,7 +20,7 @@ test.describe('file templates (文件模板)', () => {
 
   test('文件模板列表可打开并展示表格', async ({ page }) => {
     await page.goto('/files/templates')
-    await expectPageTitle(page, '文件配置')
+    await expectPageTitle(page, '文件模板')
     await expect(page.getByRole('button', { name: '刷新' })).toBeVisible()
   })
 })
@@ -45,9 +45,9 @@ test.describe('file pipeline observability (流水线观测)', () => {
   test('流水线观测可打开并展示多维度标签页', async ({ page }) => {
     await page.goto('/files/pipeline-obs')
     await expectPageTitle(page, '流水线观测')
-    await expect(page.getByRole('tab', { name: '流水线' })).toBeVisible()
-    await expect(page.getByRole('tab', { name: '步骤' })).toBeVisible()
-    await expect(page.getByRole('tab', { name: '投递' })).toBeVisible()
-    await expect(page.getByRole('tab', { name: '错单' })).toBeVisible()
+    await expect(page.getByRole('tab', { name: '运行列表' })).toBeVisible()
+    await expect(page.getByRole('tab', { name: '阶段明细' })).toBeVisible()
+    await expect(page.getByRole('tab', { name: '投递记录' })).toBeVisible()
+    await expect(page.getByRole('tab', { name: '错误记录' })).toBeVisible()
   })
 })

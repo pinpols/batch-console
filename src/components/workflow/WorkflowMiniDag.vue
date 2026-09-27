@@ -2,8 +2,8 @@
   <div class="mini-dag">
     <DataState
       :loading="loading"
-      :error="errorMessage"
-      :empty="!loading && !mermaidText"
+      :error="renderError || errorMessage"
+      :has-data="Boolean(mermaidText)"
       :empty-text="emptyText"
     >
       <div ref="graphRef" class="mini-dag__graph" :style="graphStyle" />
@@ -45,7 +45,7 @@
   const graphStyle = computed(() => ({
     maxHeight: `${props.maxHeight ?? 280}px`,
   }))
-  const errorMessage = ref<string>('')
+  const renderError = ref<string>('')
 
   function sanitizeMermaidId(raw: string): string {
     let out = ''
@@ -84,7 +84,7 @@
   }
 
   async function render() {
-    errorMessage.value = ''
+    renderError.value = ''
     if (!props.mermaidText.trim()) {
       clearTrustedSvg(graphRef.value)
       return
@@ -97,7 +97,7 @@
       await nextTick()
       setTrustedMermaidSvg(graphRef.value, svg)
     } catch (err: unknown) {
-      errorMessage.value = err instanceof Error ? err.message : String(err)
+      renderError.value = err instanceof Error ? err.message : String(err)
     }
   }
 
