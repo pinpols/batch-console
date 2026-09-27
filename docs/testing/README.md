@@ -15,7 +15,7 @@
 | **e2e 业务流** | Playwright | `e2e/flows/*.spec.ts`(API 序列)、`e2e/flows-ui/*.spec.ts`(UI 序列) | 端到端业务逻辑:触发→实例、配置发布全生命周期、租户复制、文件流水线… | 跨多页/多接口的真实业务场景 |
 | **守护单测** | Vitest | 见 §6 | 权限指令 / XSS 兜底 / 租户 ID 校验 / 拦截器防御 | 安全/防御红线,改一次固化一次 |
 
-**当前规模**:单测 70 个文件;e2e 88 个顶层 spec + 26 个 flows/flows-ui。
+测试数量持续变化，不在文档固化瞬时数字；以 `vitest` / `playwright --list` 的实际收集结果为准。
 
 **移动端不写自动化测试**(`src/views-mobile/` 是桌面 API 的轻壳,逻辑复用已被桌面单测覆盖;手势无法稳定复现)。详见根 `AGENTS.md §移动端测试范围`。
 
@@ -169,7 +169,8 @@ npm run test:unit            # 全量(CI 也跑)
 npm run test:unit:watch
 
 # e2e(需 BE 在 18080 + dev/preview 在 5173)
-npm run test:e2e             # 全量 88+ spec(每次自动跑 global-setup 刷新登录态)
+npm run test:e2e             # 常规套件，排除 @slow
+npm run test:e2e:all         # 发布验收全量套件，包含 @slow
 npm run test:e2e:smoke       # 冒烟三件套(smoke/cross-navigation/navigation)
 npm run test:e2e:ui          # Playwright UI 模式调试
 npx playwright test e2e/xxx.spec.ts --reporter=list   # 单 spec
@@ -180,7 +181,10 @@ npm run lint:check           # eslint(0 error)
 npm run check:i18n           # zh/en key 1:1
 npm run gen:api:check        # BE OpenAPI 漂移
 
-# 一条龙上线前验收(依赖→typecheck→lint→i18n→drift→unit→build→e2e→preview→违约扫)
+# 无后端本地完整门禁(治理→静态检查→覆盖率→build→size→audit)
+npm run verify:local
+
+# 真实环境上线前验收(治理→覆盖率→build→e2e→preview→真实使用审计)
 bash scripts/local/fe-acceptance.sh           # 或 /fe-acceptance
 bash scripts/local/fe-acceptance.sh --skip-e2e-full
 ```

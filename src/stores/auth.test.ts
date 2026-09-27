@@ -5,6 +5,7 @@ import { useTenantStore } from './tenant'
 
 const storage = new Map<string, string>()
 const sessionStorageState = new Map<string, string>()
+const apiMocks = vi.hoisted(() => ({ get: vi.fn() }))
 vi.stubGlobal('localStorage', {
   getItem: (k: string) => storage.get(k) ?? null,
   setItem: (k: string, v: string) => storage.set(k, v),
@@ -19,13 +20,14 @@ vi.stubGlobal('sessionStorage', {
 })
 
 vi.mock('@/api/client', () => ({
-  get: vi.fn(),
+  get: apiMocks.get,
 }))
 
 vi.mock('@/api/auth', () => ({
   authApi: {
     login: vi.fn(),
     logout: vi.fn().mockResolvedValue(undefined),
+    profile: apiMocks.get,
   },
   mapProfileToUserInfo: vi.fn((p) => ({
     userId: p.userId,

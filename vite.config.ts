@@ -31,13 +31,39 @@ export default defineConfig(({ mode }) => {
       },
       coverage: {
         provider: 'v8',
-        include: ['src/api/**', 'src/utils/**'],
-        // 实测基线(2026-06,scope=api+utils):stmts 53% / branch 50% / funcs 38% / lines 54%。
-        // 闸设其下留余量防回退;补 governance.ts 等高价值模块测试后逐步上调。CI 跑 `test:unit -- --coverage`。
-        thresholds: { statements: 50, branches: 45, functions: 35, lines: 50 },
+        include: [
+          'src/api/**',
+          'src/utils/**',
+          'src/stores/**',
+          'src/composables/**',
+          'src/router/**',
+        ],
+        // 覆盖契约适配、状态流、租户刷新、权限路由和公共逻辑。阈值基于扩大后的
+        // 核心范围设置，新增高风险逻辑必须补测试，页面模板本身不做低价值行覆盖追逐。
+        thresholds: { statements: 45, branches: 40, functions: 35, lines: 45 },
       },
     } satisfies UserConfig['test'],
     plugins: [
+      {
+        name: 'version-manifest',
+        generateBundle() {
+          this.emitFile({
+            type: 'asset',
+            fileName: 'version.json',
+            source: `${JSON.stringify(
+              {
+                version: process.env.npm_package_version || 'dev',
+                gitSha: process.env.VITE_GIT_SHA || 'local',
+                builtAt: process.env.SOURCE_DATE_EPOCH
+                  ? new Date(Number(process.env.SOURCE_DATE_EPOCH) * 1000).toISOString()
+                  : null,
+              },
+              null,
+              2,
+            )}\n`,
+          })
+        },
+      },
       vue(),
       AutoImport({
         resolvers: [ElementPlusResolver()],
@@ -96,6 +122,8 @@ export default defineConfig(({ mode }) => {
     build: {
       // 默认 esbuild minify（terser 慢 5-10x），显式写明防被覆盖
       minify: 'esbuild',
+      // 仅发布上传 Sentry 时生成隐藏 sourcemap；常规构建和运行镜像不携带 map。
+      sourcemap: process.env.SENTRY_SOURCEMAPS === 'true' ? 'hidden' : false,
       // element-plus 1.06 MB（gzip 334 KB）是合理 vendor chunk，阈值拉到 1200 静默噪声
       // 超 1200 才告警，仍能提示"真的需要拆分"的新引入
       chunkSizeWarningLimit: 1200,

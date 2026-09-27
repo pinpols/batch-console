@@ -60,8 +60,7 @@
   import { ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { RefreshCw as Refresh } from 'lucide-vue-next'
-  import { get } from '@/api/client'
-  import type { PageResponse } from '@/types'
+  import { fileApi } from '@/api/file'
   import type { ConsoleFileRecordResponse } from '@/types/console-api'
 
   const props = defineProps<{
@@ -81,12 +80,12 @@
     if (!props.tenantId || !props.jobCode) return
     loading.value = true
     try {
-      const res = await get<PageResponse<ConsoleFileRecordResponse>>('/api/console/queries/files', {
-        tenantId: props.tenantId,
-        jobCode: props.jobCode,
-        pageNo: page.value,
+      const res = await fileApi.listRelatedToJob(
+        props.tenantId,
+        props.jobCode,
+        page.value,
         pageSize,
-      })
+      )
       rows.value = res.items ?? []
       total.value = res.total ?? 0
     } catch {

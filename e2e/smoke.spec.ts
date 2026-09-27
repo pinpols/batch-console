@@ -3,7 +3,7 @@ import { enterDemoApp, expectPageTitle, gotoAndAssertRoute, smokeRoutes } from '
 
 test.use({ serviceWorkers: 'block' })
 
-test.describe('@cross-browser smoke routes (VITE_DEMO_MODE)', () => {
+test.describe('@cross-browser smoke routes', () => {
   // 多路由串行 goto + assert 在 dev server 并发压力下需要更长 budget
   test.describe.configure({ timeout: 60_000 })
   test('已登录用户访问根路径自动跳转到控制面板', async ({ page }) => {

@@ -42,15 +42,15 @@ YAML_PATH=""
 if [[ -n "${BE_OPENAPI_URL:-}" ]]; then
   log "[api-drift] fetching $BE_OPENAPI_URL ..."
   if ! curl -fsSL "$BE_OPENAPI_URL" -o "$TMP_YAML"; then
-    warn "could not fetch BE_OPENAPI_URL — skipping (exit 0)"
-    exit 0
+    warn "could not fetch BE_OPENAPI_URL — contract source is required"
+    exit 2
   fi
   YAML_PATH="$TMP_YAML"
 elif [[ -f "$LOCAL_YAML" ]]; then
   YAML_PATH="$LOCAL_YAML"
 else
-  warn "no yaml source available (set BE_OPENAPI_PATH, BE_OPENAPI_URL, or check out file-batch-system as sibling) — skipping (exit 0)"
-  exit 0
+  warn "no yaml source available (set BE_OPENAPI_PATH, BE_OPENAPI_URL, or check out file-batch-system as sibling)"
+  exit 2
 fi
 
 # 2. 检查工具链

@@ -3,7 +3,6 @@
 **Product**: `batch-console`
 **Version**: `1.0.0`
 **License**: `Apache-2.0`
-**Generated**: `2026-09-26`
 **Source**: `package.json` + `package-lock.json`
 
 本文档是前端仓库第三方 npm 组件的人工可读快照。机器可读 SBOM 见 [sbom.json](./sbom.json)。
@@ -13,8 +12,8 @@
 | Item | Count |
 |---|---:|
 | Runtime direct dependencies | 30 |
-| Development direct dependencies | 34 |
-| Resolved lockfile components | 937 |
+| Development direct dependencies | 35 |
+| Resolved lockfile components | 948 |
 
 ## 许可证分布
 
@@ -30,8 +29,9 @@
 | BSD-3-Clause | 15 |
 | CC-BY-4.0 | 1 |
 | CC0-1.0 | 2 |
+| FSL-1.1-MIT | 9 |
 | ISC | 60 |
-| MIT | 785 |
+| MIT | 787 |
 | MIT-0 | 2 |
 | MPL-2.0 | 14 |
 | NOASSERTION | 1 |
@@ -81,6 +81,7 @@
 | `@axe-core/playwright` | `^4.11.3` |
 | `@element-plus/icons-vue` | `^2.3.2` |
 | `@playwright/test` | `^1.60.0` |
+| `@sentry/cli` | `^2.58.6` |
 | `@types/dagre` | `^0.7.54` |
 | `@types/json-bigint` | `^1.0.4` |
 | `@typescript-eslint/eslint-plugin` | `^8.18.0` |

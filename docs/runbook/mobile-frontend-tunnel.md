@@ -200,7 +200,7 @@ tailscale serve reset
 
 ## Vite 配置要点
 
-Vite 默认只监听 `localhost`，Funnel 转发到 `127.0.0.1:5173` 没问题，但要让 Vite 接受外部 Host header，在 [vite.config.ts](vite.config.ts) 加：
+Vite 默认只监听 `localhost`，Funnel 转发到 `127.0.0.1:5173` 没问题，但要让 Vite 接受外部 Host header，在 [vite.config.ts](../../vite.config.ts) 加：
 
 ```ts
 export default defineConfig({

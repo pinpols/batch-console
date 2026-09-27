@@ -100,13 +100,13 @@ C 档结束后整体 e2e:
 
 ## 2026-05-17 RBAC 收尾
 
-跑 `e2e-data/rbac-check.sh` 时发现历史 seed 把 `ROLE_OPERATOR` / `ROLE_VIEWER` 塞进 `authorities_csv`,但 BE 实际只实现 5 个 Spring 角色,这两个仅是 [ConsoleMenuRegistry](../../../file-batch-system/batch-console-api/src/main/java/com/example/batch/console/support/ConsoleMenuRegistry.java) 的菜单档位标签。结果两个 test 用户 `/auth/me` 都 403。
+跑 `e2e-data/rbac-check.sh` 时发现历史 seed 把 `ROLE_OPERATOR` / `ROLE_VIEWER` 塞进 `authorities_csv`,但 BE 实际只实现 5 个 Spring 角色,这两个仅是 [ConsoleMenuRegistry](../../../file-batch-system/batch-console-api/src/main/java/io/github/pinpols/batch/console/domain/rbac/support/ConsoleMenuRegistry.java) 的菜单档位标签。结果两个 test 用户 `/auth/me` 都 403。
 
 **对齐处理**(option A,1h):
 - `seed-users.sql` / `users.json`:test-op-ta → `ROLE_TENANT_USER`,test-viewer-ta → `ROLE_USER`
 - `rbac-check.sh`:角色列注明"原 OPERATOR / 原 VIEWER"
 - DB:`UPDATE batch.console_user_account SET authorities_csv = ... WHERE username IN ('test-op-ta','test-viewer-ta')`
-- memory:`rbac_5roles_only.md` 固化 5 角色现实模型
+- 配对后端权限配置固化 5 角色现实模型
 
 **复跑结果**(6 用户全绿):
 

@@ -16,18 +16,24 @@ const staged = args.has('--staged')
 const all = args.has('--all')
 
 function gitChangedFiles() {
-  const diffArgs = all
-    ? ['ls-files']
-    : ['diff', '--name-only', staged ? '--cached' : 'HEAD', '--']
-  const res = spawnSync('git', diffArgs, { encoding: 'utf8' })
-  if (res.status !== 0) {
-    process.stderr.write(res.stderr || res.stdout)
-    process.exit(res.status ?? 1)
+  const commands = all
+    ? [
+        ['diff', '--name-only', 'HEAD', '--'],
+        ['ls-files', '--others', '--exclude-standard'],
+      ]
+    : [['diff', '--name-only', staged ? '--cached' : 'HEAD', '--']]
+  const files = new Set()
+  for (const commandArgs of commands) {
+    const res = spawnSync('git', commandArgs, { encoding: 'utf8' })
+    if (res.status !== 0) {
+      process.stderr.write(res.stderr || res.stdout)
+      process.exit(res.status ?? 1)
+    }
+    for (const file of res.stdout.split('\n').map((x) => x.trim()).filter(Boolean)) {
+      files.add(file)
+    }
   }
-  return res.stdout
-    .split('\n')
-    .map((x) => x.trim())
-    .filter(Boolean)
+  return [...files]
 }
 
 function hasAny(files, predicates) {
@@ -66,6 +72,24 @@ const docsChanged = hasAny(files, [
   (f) => /^tools\/docs-bridge\/frontend\//.test(f),
 ])
 const backendDocsBridgeChanged = hasAny(files, [(f) => /^tools\/docs-bridge\/backend\//.test(f)])
+const architectureChanged = hasAny(files, [
+  (f) => /^src\/.+\.(vue|ts|tsx)$/.test(f),
+  (f) => /^scripts\/check-architecture\.mjs$/.test(f),
+])
+const environmentChanged = hasAny(files, [
+  (f) => /^\.env/.test(f),
+  (f) => /^config\/frontend-env\.json$/.test(f),
+  (f) => f === 'Dockerfile' || /^docker-compose/.test(f),
+  (f) => /^\.github\/workflows\//.test(f),
+])
+const workflowChanged = hasAny(files, [(f) => /^\.github\/workflows\//.test(f)])
+const complianceChanged = hasAny(files, [
+  (f) => f === 'package.json' || f === 'package-lock.json',
+  (f) => /^scripts\/(generate-frontend-compliance|check-compliance-drift)\.mjs$/.test(f),
+])
+const releaseImpact = hasAny(files, [
+  (f) => /^(src\/|public\/|Dockerfile$|docker-compose.*\.ya?ml$|nginx\/|package(?:-lock)?\.json$)/.test(f),
+])
 
 if (packageChanged) {
   run('package version alignment', 'npm', ['run', 'check:version'])
@@ -84,12 +108,34 @@ if (apiChanged) {
   run('OpenAPI drift', 'npm', ['run', 'gen:api:check'])
 }
 
+if (architectureChanged) {
+  run('architecture boundaries', 'npm', ['run', 'check:architecture'])
+  run('maintainability limits', 'npm', ['run', 'check:maintainability'])
+}
+
+if (environmentChanged) {
+  run('environment governance', 'npm', ['run', 'check:env'])
+}
+
+if (workflowChanged) {
+  run('workflow governance', 'npm', ['run', 'check:workflows'])
+}
+
 if (docsChanged) {
+  run('documentation links and paths', 'npm', ['run', 'check:docs'])
   run('frontend docs build', 'npm', ['run', 'fe-docs:build'])
 }
 
 if (backendDocsBridgeChanged) {
   run('backend docs bridge build', 'npm', ['run', 'docs:build'])
+}
+
+if (complianceChanged) {
+  run('SBOM and license drift', 'npm', ['run', 'compliance:check'])
+}
+
+if (releaseImpact) {
+  run('changelog coverage', 'npm', ['run', 'check:changelog'])
 }
 
 console.log('\n[preflight] changed-file checks passed')

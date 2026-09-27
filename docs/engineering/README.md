@@ -7,4 +7,4 @@
 | [移动端刷新策略](./mobile-refresh-strategy.md)                            | mobile `/m/*` 页面的下拉/自动刷新设计          |
 | [内嵌文档中心方案](./内嵌文档中心方案.md)                                 | 跨仓 docs vitepress 集成方案                   |
 | [前端可观测性方案](./前端可观测性方案.md)                                 | FE 监控 / track / log 收口                     |
-| [Batch Console 重设计规格](../../design/export/batch-console-设计规格.md) | 根 `design/` 下的最新视觉设计规格              |
+| [Batch Console 重设计规格](../../design/batch-console-设计规格.md) | 根 `design/` 下的最新视觉设计规格              |

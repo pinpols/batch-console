@@ -296,4 +296,4 @@ Day 4  P3   (BE 过期 + history + FE banner)
 - ADR-030 §D7 — HttpOnly cookie JWT 演进
 - `docs/runbook/fe-be-joint-test-report-bplus-cplus.md` — 联调报告
 - `src/utils/passwordGenerator.ts` — 方案 A FE 工具
-- [rbac_5roles_only](memory) — BE 真实 5 角色
+- 后端 RBAC 权威定义 — 以配对后端权限配置和 OpenAPI 为准

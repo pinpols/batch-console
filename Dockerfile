@@ -6,6 +6,9 @@
 FROM node:24-alpine AS build
 WORKDIR /app
 
+# 文档构建脚本复用仓库内 Bash 工具链；构建镜像必须显式提供运行时。
+RUN apk add --no-cache bash
+
 # 先拷依赖文件单独 COPY 以最大化 layer cache,只有 package*.json 变才重装
 # .npmrc 必须一起拷:内含 legacy-peer-deps=true，否则 npm ci 会因 TS6 与
 # @typescript-eslint/openapi-typescript 的 peer 声明冲突而 ERESOLVE 失败。
@@ -21,24 +24,24 @@ COPY . .
 # build:fast = vite build 不跑 vue-tsc(CI 已跑过 typecheck),节省 ~20s 构建时间
 # 想严格类型检查的把这里改成 npm run build
 ARG BUILD_MODE=build
+ARG VITE_GIT_SHA=local
+ARG SOURCE_DATE_EPOCH
+ARG VITE_SENTRY_DSN=
+ARG VITE_TELEMETRY_ENABLED=false
+ARG VITE_TELEMETRY_ENDPOINT=/api/console/telemetry/events
+ENV VITE_GIT_SHA=$VITE_GIT_SHA
+ENV SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH
+ENV VITE_SENTRY_DSN=$VITE_SENTRY_DSN
+ENV VITE_TELEMETRY_ENABLED=$VITE_TELEMETRY_ENABLED
+ENV VITE_TELEMETRY_ENDPOINT=$VITE_TELEMETRY_ENDPOINT
 RUN npm run ${BUILD_MODE}
 
 # ── 文档站点(可选):跨仓 srcDir = ../../../../file-batch-system/docs ──
 # vitepress 配置:tools/docs-bridge/backend/.vitepress/config.ts(base: /docs/),
 # 产物 → tools/docs-bridge/backend/.vitepress/dist。
-# 优先复用 build context 中已有的预构建产物;否则尝试在容器内构建;再否则回退占位页,
-# nginx /docs/ 路径不会 404 整面崩溃。
-RUN if [ -f tools/docs-bridge/backend/.vitepress/dist/index.html ]; then \
-      echo "[docs] using prebuilt vitepress dist"; \
-    elif [ -d /app/../file-batch-system/docs ] || [ -d ../file-batch-system/docs ]; then \
-      echo "[docs] building vitepress from sibling repo..." && \
-      npm run docs:build; \
-    else \
-      echo "[docs] sibling docs repo not in build context — fallback placeholder" && \
-      mkdir -p tools/docs-bridge/backend/.vitepress/dist && \
-      printf '<!doctype html><meta charset=utf-8><title>docs</title><h1>文档暂未构建</h1><p>请用 <code>docker build -f batch-console/Dockerfile ..</code> 把 build context 扩展到父目录(含 file-batch-system/docs),或预先 <code>npm run docs:build</code></p>' \
-        > tools/docs-bridge/backend/.vitepress/dist/index.html; \
-    fi
+# 后端文档通过 BuildKit named context 注入。缺失即构建失败，禁止发布占位文档。
+COPY --from=backend-docs . /file-batch-system/docs
+RUN test -f /file-batch-system/docs/README.md && npm run docs:build
 
 # ───── Stage 2: runtime ─────
 FROM nginx:1.27-alpine AS runtime
@@ -56,6 +59,7 @@ RUN apk upgrade --no-cache && \
 RUN rm -rf /etc/nginx/conf.d/default.conf /usr/share/nginx/html/*
 
 COPY nginx/nginx.conf /etc/nginx/nginx.conf
+COPY nginx/snippets /etc/nginx/snippets
 COPY nginx/default.conf.template /etc/nginx/templates/default.conf.template
 
 COPY --from=build /app/dist /usr/share/nginx/html

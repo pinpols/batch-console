@@ -1,0 +1,76 @@
+{
+  "variables": [
+    {
+      "name": "VITE_API_BASE_URL",
+      "phase": "build",
+      "required": true,
+      "sensitive": false,
+      "owner": "frontend",
+      "default": "/"
+    },
+    {
+      "name": "VITE_APP_TITLE",
+      "phase": "build",
+      "required": true,
+      "sensitive": false,
+      "owner": "frontend",
+      "default": "批量调度平台"
+    },
+    {
+      "name": "VITE_DEV_PROXY_TARGET",
+      "phase": "development",
+      "required": false,
+      "sensitive": false,
+      "owner": "frontend",
+      "default": "http://localhost:18080"
+    },
+    {
+      "name": "VITE_DISPLAY_TIMEZONE",
+      "phase": "build",
+      "required": true,
+      "sensitive": false,
+      "owner": "platform",
+      "default": "Asia/Shanghai"
+    },
+    {
+      "name": "VITE_HMR_TUNNEL",
+      "phase": "development",
+      "required": false,
+      "sensitive": false,
+      "owner": "frontend",
+      "default": "0"
+    },
+    {
+      "name": "VITE_GIT_SHA",
+      "phase": "build",
+      "required": true,
+      "sensitive": false,
+      "owner": "ci",
+      "default": "local"
+    },
+    {
+      "name": "VITE_SENTRY_DSN",
+      "phase": "build",
+      "required": false,
+      "sensitive": true,
+      "owner": "operations",
+      "default": ""
+    },
+    {
+      "name": "VITE_TELEMETRY_ENABLED",
+      "phase": "build",
+      "required": true,
+      "sensitive": false,
+      "owner": "operations",
+      "default": "false"
+    },
+    {
+      "name": "VITE_TELEMETRY_ENDPOINT",
+      "phase": "build",
+      "required": true,
+      "sensitive": false,
+      "owner": "frontend",
+      "default": "/api/console/telemetry/events"
+    }
+  ]
+}

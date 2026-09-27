@@ -22,6 +22,8 @@ e2e/__snapshots__
 
 # 前端 docs/ 源文件不进运行镜像；tools/docs-bridge 是 Dockerfile 构建 /docs/ 的必需配置。
 docs
+tools/docs-bridge/**/.vitepress/cache
+tools/docs-bridge/**/.vitepress/dist
 
 # 截图 / 临时
 *.png

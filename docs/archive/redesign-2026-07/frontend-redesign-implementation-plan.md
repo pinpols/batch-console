@@ -4,13 +4,13 @@
 > 日期:2026-07-03
 > 视觉源:`../../design/Batch Console 设计定稿.html`
 > 设计规格:`../../design/export/batch-console-设计规格.md`
-> Token 交付:`../../design/refs/tokens-handoff.css`
+> 运行时 Token 权威源：`../../src/styles/tokens-handoff.css`；`../../design/tokens-handoff.css` 仅为最初设计交付快照。
 
 ## 0. 开工前置(阻塞项,未关闭不进 Phase 1)
 
 - [x] **IA 分组数定死 → 7 组(2026-07-03 定)**:工作台、运行监控、告警与投递、作业与流程、文件、调度治理、系统管理;低频 admin 页不进侧栏走 Command Palette。`design/AGENTS.md` 已同步(原"5 组"已改)。
 - [ ] **基线合并**:本轮 prep(根 `design/`、本 plan、tokens、目录 reorg)目前在 **codex 分支**,未推远端、不在 `main`;而 `main` 已含近期已合 UX:**#176 表单渐进披露 / #177 QueueConfig 懒加载 / #179 筛选栏等宽栅格 + 占位符文案清洗 / #180 设计文档**。两边已分叉(main 独有 8 / codex 独有 7)。**必须先合出一个同时含「设计 prep」与「#176–#180」的统一基线**,Phase 1 在该基线上开工——否则会覆盖回退这些已合修复。
-- [ ] **Token 定稿确认**:`design/refs/tokens-handoff.css` 为最终交付版(非占位),色/间距/字号齐全。
+- [x] **Token 权威源确认**：`src/styles/tokens-handoff.css` 为运行时权威源，色/间距/字号修改直接在此评审。
 
 ## 1. 定稿口径
 
@@ -59,7 +59,7 @@
 
 实施内容:
 
-- 将 `refs/tokens-handoff.css` 映射进现有 token 体系,优先覆盖语义色,不新增平行变量体系。
+- 运行时只加载 `src/styles/tokens-handoff.css`，`design/` 下文件不再作为复制源，避免双向漂移。
 - 引入深色默认、浅色可切的主题策略,保留现有用户主题记忆。
 - 重做 Sidebar/Header 的密度、折叠、激活态、图标与顶部操作布局。
 - 统一 PageHeader 的标题、描述、操作区和面包屑视觉。

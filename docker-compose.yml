@@ -14,9 +14,14 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      additional_contexts:
+        backend-docs: ../file-batch-system/docs
       args:
         # 想严格 typecheck 改 build(慢 ~20s);快速发布走 build:fast
         BUILD_MODE: ${BUILD_MODE:-build:fast}
+        VITE_SENTRY_DSN: ${VITE_SENTRY_DSN:-}
+        VITE_TELEMETRY_ENABLED: ${VITE_TELEMETRY_ENABLED:-false}
+        VITE_TELEMETRY_ENDPOINT: ${VITE_TELEMETRY_ENDPOINT:-/api/console/telemetry/events}
     image: batch-console:latest
     container_name: batch-console
     restart: unless-stopped

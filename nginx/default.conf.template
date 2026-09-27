@@ -13,6 +13,8 @@ server {
     root /usr/share/nginx/html;
     index index.html;
 
+    include /etc/nginx/snippets/security-headers.conf;
+
     # 关键:return 30x 时输出相对 Location,避免 nginx 用 server_name(此处 "_") +
     # 监听端口(80)拼绝对 URL → 浏览器看到 http://localhost/... 把宿主映射端口(如 15173)丢了。
     # 让浏览器自己用当前 origin 解析,容器映射到任意端口都正常。
@@ -22,6 +24,7 @@ server {
     # ────── 健康检查 ──────
     location = /healthz {
         access_log off;
+        include /etc/nginx/snippets/security-headers.conf;
         add_header Content-Type text/plain;
         return 200 "ok\n";
     }
@@ -75,10 +78,12 @@ server {
         # vitepress 也是 hash 命名 assets,长缓存
         location ~* /docs/assets/.+\.(js|css|woff2?|ttf|eot|otf|png|jpg|jpeg|gif|svg|webp|ico)$ {
             expires 1y;
+            include /etc/nginx/snippets/security-headers.conf;
             add_header Cache-Control "public, max-age=31536000, immutable";
         }
         # docs/index.html 跟主站一样不缓存
         location = /docs/index.html {
+            include /etc/nginx/snippets/security-headers.conf;
             add_header Cache-Control "no-cache, no-store, must-revalidate";
         }
     }
@@ -110,30 +115,31 @@ server {
     # ────── 静态资源:hash 文件名 → 长缓存 immutable ──────
     location ~* ^/(assets|fonts|img)/.+\.(js|css|woff2?|ttf|eot|otf|png|jpg|jpeg|gif|svg|webp|ico)$ {
         expires 1y;
+        include /etc/nginx/snippets/security-headers.conf;
         add_header Cache-Control "public, max-age=31536000, immutable";
         try_files $uri =404;
     }
 
     # ────── HTML / index 不缓存(SPA 入口必须新鲜) ──────
     location = /index.html {
+        include /etc/nginx/snippets/security-headers.conf;
         add_header Cache-Control "no-cache, no-store, must-revalidate";
         add_header Pragma "no-cache";
         add_header Expires "0";
     }
 
+    location = /version.json {
+        include /etc/nginx/snippets/security-headers.conf;
+        add_header Cache-Control "no-cache, no-store, must-revalidate";
+        try_files $uri =404;
+    }
+
     # ────── SPA fallback:vue-router history 模式所有路由 → /index.html ──────
     location / {
         try_files $uri $uri/ /index.html;
+        include /etc/nginx/snippets/security-headers.conf;
         add_header Cache-Control "no-cache";
     }
-
-    # ────── 安全头(全局) ──────
-    add_header X-Content-Type-Options "nosniff" always;
-    add_header X-Frame-Options "SAMEORIGIN" always;
-    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
-    add_header X-XSS-Protection "1; mode=block" always;
-    # Permissions-Policy 关闭不需要的浏览器特性(按需调整)
-    add_header Permissions-Policy "geolocation=(), microphone=(), camera=(), payment=()" always;
 
     # 错误页:都回 SPA 入口让 vue-router 自己处理 404
     error_page 404 = /index.html;

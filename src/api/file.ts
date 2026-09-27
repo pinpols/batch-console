@@ -33,6 +33,15 @@ export interface FileQuery {
 }
 
 export const fileApi = {
+  /** 作业详情抽屉中的关联文件分页。 */
+  listRelatedToJob: (tenantId: string, jobCode: string, pageNo: number, pageSize: number) =>
+    get<PageResponse<ConsoleFileRecordResponse>>('/api/console/queries/files', {
+      tenantId,
+      jobCode,
+      pageNo,
+      pageSize,
+    }),
+
   list: async (query: FileQuery) => {
     // 全字段过滤后端原生支持（FileStatus/BizType/FileName/TraceId/FileId/Start/EndDate
     // 均已在 console-api.openapi.yaml 的 /queries/files parameters 中声明），

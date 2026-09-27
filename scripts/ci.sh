@@ -1,24 +1,17 @@
-#!/bin/zsh
-
+#!/usr/bin/env bash
+# 本地无后端门禁：与 PR 静态检查保持同一口径，不修改工作区，也不伪装真实环境验收。
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-NPM_BIN="${NPM:-npm}"
-LINT_SCRIPT="${LINT_SCRIPT:-$NPM_BIN run lint}"
-BUILD_SCRIPT="${BUILD_SCRIPT:-$NPM_BIN run build}"
-UNIT_SCRIPT="${UNIT_SCRIPT:-$ROOT_DIR/scripts/test-unit.sh run}"
-E2E_SCRIPT="${E2E_SCRIPT:-$ROOT_DIR/scripts/test-e2e.sh run}"
-
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
-echo "Running lint"
-eval "$LINT_SCRIPT"
-
-echo "Running build"
-eval "$BUILD_SCRIPT"
-
-echo "Running unit tests"
-eval "$UNIT_SCRIPT"
-
-echo "Running e2e tests"
-eval "$E2E_SCRIPT"
+npm run check:version
+npm run lint:check
+npm run typecheck
+npm run check:i18n
+npm run gen:api:check
+npm run verify:governance
+npm run test:unit -- --coverage
+npm run build:fast
+npm run size
+npm audit --omit=dev --audit-level=high
