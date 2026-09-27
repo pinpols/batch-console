@@ -10,6 +10,7 @@
 
     <div class="governance-workspace">
       <el-segmented
+        class="pill-segmented"
         :model-value="governancePath"
         :options="governanceOptions"
         :aria-label="t('queueConfig.workspaceLabel')"

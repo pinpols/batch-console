@@ -104,6 +104,7 @@
           :total="total"
           v-model:page="page"
           v-model:page-size="pageSize"
+          @change="onPageChange"
           :error="loadError"
           :on-retry="loadPipelines"
           @row-click="selectPipeline"
@@ -238,6 +239,7 @@
           :total="total"
           v-model:page="page"
           v-model:page-size="pageSize"
+          @change="onPageChange"
         >
           <template #query>
             <ListPageQueryBar
@@ -358,6 +360,7 @@
           :total="total"
           v-model:page="page"
           v-model:page-size="pageSize"
+          @change="onPageChange"
         >
           <template #query>
             <ListPageQueryBar
@@ -465,6 +468,7 @@
           :total="total"
           v-model:page="page"
           v-model:page-size="pageSize"
+          @change="onPageChange"
         >
           <template #query>
             <ListPageQueryBar
@@ -539,6 +543,12 @@
   import { useI18n } from 'vue-i18n'
   import { useRoute } from 'vue-router'
   import { fetchAllPageItems, toPageResult } from '@/api/adapters'
+  import {
+    queryFileDispatchPage,
+    queryFileErrorPage,
+    queryFilePipelinePage,
+    queryFilePipelineStepPage,
+  } from '@/api/filePipelineQuery'
 
   const { t, te } = useI18n({ useScope: 'global' })
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
@@ -605,6 +615,7 @@
   let selectedStepsRequestId = 0
   const allDispatches = ref<ConsoleFileDispatchRecordResponse[]>([])
   const allErrors = ref<ConsoleFileErrorRecordResponse[]>([])
+  const serverTotal = ref(0)
   const selectedPipeline = ref<ConsoleFilePipelineResponse | null>(null)
   const selectedStageCode = ref<string | null>(null)
   const stagesMap = ref<PipelineStagesMap>({})
@@ -631,7 +642,11 @@
         label: te(`filePipelineObservability.stage${code}`)
           ? t(`filePipelineObservability.stage${code}`)
           : code,
-        status: status || t('filePipelineObservability.stageNoRecord'),
+        status: status
+          ? te(`enum.partitionStatus.${status}`)
+            ? t(`enum.partitionStatus.${status}`)
+            : status
+          : t('filePipelineObservability.stageNoRecord'),
         error: step?.errorMessage?.trim() || '',
         tone,
       }
@@ -849,6 +864,7 @@
   })
 
   const total = computed(() => {
+    if (!usesClientFiltering.value) return serverTotal.value
     if (activeTab.value === 'pipelines') return filteredPipelines.value.length
     if (activeTab.value === 'steps') return filteredSteps.value.length
     if (activeTab.value === 'dispatches') return filteredDispatches.value.length
@@ -856,48 +872,73 @@
   })
 
   const pipelineRows = computed(() => {
+    if (!usesClientFiltering.value) return allPipelines.value
     const pr = toPageResult(filteredPipelines.value, page.value, pageSize.value)
     return pr.records
   })
 
   const stepRows = computed(() => {
+    if (!usesClientFiltering.value) return allSteps.value
     const pr = toPageResult(filteredSteps.value, page.value, pageSize.value)
     return pr.records
   })
 
   const dispatchRows = computed(() => {
+    if (!usesClientFiltering.value) return allDispatches.value
     const pr = toPageResult(filteredDispatches.value, page.value, pageSize.value)
     return pr.records
   })
 
   const errorRows = computed(() => {
+    if (!usesClientFiltering.value) return allErrors.value
     const pr = toPageResult(filteredErrors.value, page.value, pageSize.value)
     return pr.records
   })
 
+  const usesClientFiltering = computed(
+    () => Boolean(kwApplied.value.trim()) || Boolean(selectedStageCode.value),
+  )
+
   function onSearch() {
-    return runSearch(() => {
+    return runSearch(async () => {
       kwApplied.value = kwDraft.value.trim()
       page.value = 1
+      await runActive()
     })
   }
 
   function onReset() {
-    return runReset(() => {
+    return runReset(async () => {
       kwDraft.value = ''
       kwApplied.value = ''
       page.value = 1
+      await runActive()
     })
+  }
+
+  function onPageChange() {
+    if (!usesClientFiltering.value) void runActive()
   }
 
   async function loadPipelines() {
     loading.value = true
     loadError.value = null
     try {
-      allPipelines.value = await fetchAllPageItems<ConsoleFilePipelineResponse>(
-        '/api/console/queries/file-pipelines',
-        { tenantId: tenant.tenantId },
-      )
+      if (kwApplied.value) {
+        allPipelines.value = await fetchAllPageItems<ConsoleFilePipelineResponse>(
+          '/api/console/queries/file-pipelines',
+          { tenantId: tenant.tenantId },
+        )
+        serverTotal.value = allPipelines.value.length
+      } else {
+        const result = await queryFilePipelinePage({
+          tenantId: tenant.tenantId,
+          pageNo: page.value,
+          pageSize: pageSize.value,
+        })
+        allPipelines.value = result.items
+        serverTotal.value = result.total
+      }
       const requestedId = Number(route.query.pipelineInstanceId)
       const previousId = selectedPipeline.value?.id
       selectedPipeline.value =
@@ -920,10 +961,23 @@
     loading.value = true
     stepLoadError.value = null
     try {
-      allSteps.value = await fetchAllPageItems<ConsoleFilePipelineStepResponse>(
-        '/api/console/queries/file-pipeline-steps',
-        { tenantId: tenant.tenantId },
-      )
+      if (usesClientFiltering.value) {
+        allSteps.value = selectedStageCode.value
+          ? [...selectedPipelineSteps.value]
+          : await fetchAllPageItems<ConsoleFilePipelineStepResponse>(
+              '/api/console/queries/file-pipeline-steps',
+              { tenantId: tenant.tenantId },
+            )
+        serverTotal.value = allSteps.value.length
+      } else {
+        const result = await queryFilePipelineStepPage({
+          tenantId: tenant.tenantId,
+          pageNo: page.value,
+          pageSize: pageSize.value,
+        })
+        allSteps.value = result.items
+        serverTotal.value = result.total
+      }
       if (showProgressColumns.value) {
         void loadProgress()
       }
@@ -937,10 +991,21 @@
   async function loadDispatches() {
     loading.value = true
     try {
-      allDispatches.value = await fetchAllPageItems<ConsoleFileDispatchRecordResponse>(
-        '/api/console/queries/file-dispatches',
-        { tenantId: tenant.tenantId },
-      )
+      if (kwApplied.value) {
+        allDispatches.value = await fetchAllPageItems<ConsoleFileDispatchRecordResponse>(
+          '/api/console/queries/file-dispatches',
+          { tenantId: tenant.tenantId },
+        )
+        serverTotal.value = allDispatches.value.length
+      } else {
+        const result = await queryFileDispatchPage({
+          tenantId: tenant.tenantId,
+          pageNo: page.value,
+          pageSize: pageSize.value,
+        })
+        allDispatches.value = result.items
+        serverTotal.value = result.total
+      }
     } finally {
       loading.value = false
     }
@@ -949,10 +1014,21 @@
   async function loadErrors() {
     loading.value = true
     try {
-      allErrors.value = await fetchAllPageItems<ConsoleFileErrorRecordResponse>(
-        '/api/console/queries/file-errors',
-        { tenantId: tenant.tenantId },
-      )
+      if (kwApplied.value) {
+        allErrors.value = await fetchAllPageItems<ConsoleFileErrorRecordResponse>(
+          '/api/console/queries/file-errors',
+          { tenantId: tenant.tenantId },
+        )
+        serverTotal.value = allErrors.value.length
+      } else {
+        const result = await queryFileErrorPage({
+          tenantId: tenant.tenantId,
+          pageNo: page.value,
+          pageSize: pageSize.value,
+        })
+        allErrors.value = result.items
+        serverTotal.value = result.total
+      }
     } finally {
       loading.value = false
     }

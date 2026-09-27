@@ -206,7 +206,7 @@
           <DataState
             :loading="loading"
             :error="errorMessage"
-            :empty="!loading && !mermaidText"
+            :has-data="Boolean(mermaidText)"
             :empty-text="t('workflowMermaidViewer.noRenderData')"
           >
             <div ref="graphRef" class="workflow-mermaid-graph" />

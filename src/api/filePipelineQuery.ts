@@ -1,4 +1,11 @@
 import { get } from '@/api/client'
+import type { PageResponse } from '@/types'
+import type {
+  ConsoleFileDispatchRecordResponse,
+  ConsoleFileErrorRecordResponse,
+  ConsoleFilePipelineResponse,
+  ConsoleFilePipelineStepResponse,
+} from '@/types/console-api'
 
 /**
  * File pipeline 行级进度查询。
@@ -61,4 +68,38 @@ export async function queryPipelineProgressSafe(
       steps: [],
     }
   }
+}
+
+interface FilePipelinePageParams {
+  tenantId: string
+  pageNo: number
+  pageSize: number
+}
+
+export function queryFilePipelinePage(params: FilePipelinePageParams) {
+  return get<PageResponse<ConsoleFilePipelineResponse>>(
+    '/api/console/queries/file-pipelines',
+    params,
+  )
+}
+
+export function queryFilePipelineStepPage(params: FilePipelinePageParams) {
+  return get<PageResponse<ConsoleFilePipelineStepResponse>>(
+    '/api/console/queries/file-pipeline-steps',
+    params,
+  )
+}
+
+export function queryFileDispatchPage(params: FilePipelinePageParams) {
+  return get<PageResponse<ConsoleFileDispatchRecordResponse>>(
+    '/api/console/queries/file-dispatches',
+    params,
+  )
+}
+
+export function queryFileErrorPage(params: FilePipelinePageParams) {
+  return get<PageResponse<ConsoleFileErrorRecordResponse>>(
+    '/api/console/queries/file-errors',
+    params,
+  )
 }

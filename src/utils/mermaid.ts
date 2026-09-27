@@ -8,7 +8,10 @@ export function loadMermaid(): Promise<MermaidApi> {
     mermaid.initialize({
       startOnLoad: false,
       theme: 'default',
-      flowchart: { htmlLabels: true, curve: 'basis' },
+      // Mermaid 11 以全局 htmlLabels 为准；同时保留 flowchart 配置兼容旧版。
+      // 使用原生 SVG <text>，避免安全净化移除 foreignObject 后节点只剩色块。
+      htmlLabels: false,
+      flowchart: { htmlLabels: false, curve: 'basis' },
       securityLevel: 'strict',
     })
     return mermaid

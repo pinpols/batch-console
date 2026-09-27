@@ -113,6 +113,30 @@
       </el-table>
     </SectionCard>
 
+    <SectionCard v-else-if="!loading && !calendarCode">
+      <EmptyState
+        :title="t('batchDayWindow.selectCalendarTitle')"
+        :description="t('batchDayWindow.selectCalendarDescription')"
+      >
+        <template #action>
+          <div class="batch-day-calendar-picker">
+            <el-select
+              v-model="calendarDraft"
+              filterable
+              allow-create
+              default-first-option
+              :placeholder="t('batchDayWindow.selectCalendarPlaceholder')"
+            >
+              <el-option label="DEFAULT" value="DEFAULT" />
+            </el-select>
+            <el-button type="primary" @click="applyCalendar">
+              {{ t('batchDayWindow.loadCalendar') }}
+            </el-button>
+          </div>
+        </template>
+      </EmptyState>
+    </SectionCard>
+
     <SectionCard v-else-if="!loading">
       <EmptyState :description="t('batchDayWindow.emptyDescription')" />
     </SectionCard>
@@ -158,7 +182,7 @@
 
 <script setup lang="ts">
   import { computed, ref, watch } from 'vue'
-  import { useRoute } from 'vue-router'
+  import { useRoute, useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
   import { RefreshCw as Refresh } from 'lucide-vue-next'
@@ -179,11 +203,13 @@
   import type { ConsoleBatchDayWindowResponse } from '@/types/console-api'
 
   const route = useRoute()
+  const router = useRouter()
 
   const tenant = useTenantStore()
 
   const bizDate = computed(() => (route.params.bizDate as string) || '')
   const calendarCode = computed(() => (route.query.calendarCode as string) || '')
+  const calendarDraft = ref(calendarCode.value || 'DEFAULT')
 
   const title = computed(() =>
     bizDate.value
@@ -230,6 +256,15 @@
     } finally {
       loading.value = false
     }
+  }
+
+  function applyCalendar() {
+    const value = calendarDraft.value.trim()
+    if (!value) {
+      ElMessage.warning(t('batchDayWindow.missingCalendar'))
+      return
+    }
+    void router.replace({ query: { ...route.query, calendarCode: value } })
   }
 
   function openCatchup() {
@@ -281,6 +316,21 @@
   useTenantReload(load)
 
   watch([bizDate, calendarCode], () => {
+    calendarDraft.value = calendarCode.value || 'DEFAULT'
     void load()
   })
 </script>
+
+<style scoped>
+  .batch-day-calendar-picker {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    width: min(100%, 420px);
+  }
+
+  .batch-day-calendar-picker .el-select {
+    flex: 1;
+    min-width: 0;
+  }
+</style>

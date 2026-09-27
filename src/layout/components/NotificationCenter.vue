@@ -17,11 +17,7 @@
         <el-button text class="icon-button" :aria-label="bellAria">
           <el-icon><Bell /></el-icon>
         </el-button>
-        <span
-          v-if="hasNew"
-          class="notif-center__new-dot"
-          :aria-label="t('notificationCenter.newItems')"
-        />
+        <span v-if="hasNew" class="notif-center__new-dot" aria-hidden="true" />
       </el-badge>
     </template>
 
@@ -182,6 +178,10 @@
     font-weight: 700;
     line-height: 16px;
     box-shadow: 0 0 0 2px var(--layout-header-bg);
+  }
+
+  .notif-center__badge :deep(.el-badge__content--warning) {
+    color: var(--color-on-warning);
   }
 
   .notif-center__new-dot {

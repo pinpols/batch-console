@@ -9,6 +9,7 @@
     :remote-method="search"
     :loading="searching"
     :placeholder="placeholder || t('common.searchTenant')"
+    :aria-label="ariaLabel || placeholder || t('common.searchTenant')"
     :size="size"
     :class="resolvedSelectClass"
     :style="selectStyleNormalized"
@@ -46,6 +47,7 @@
     defineProps<{
       modelValue?: string
       placeholder?: string
+      ariaLabel?: string
       size?: 'small' | 'default' | 'large'
       disabled?: boolean
       /** @deprecated Prefer `selectClass` (e.g. `query-w-200`) */
@@ -58,6 +60,7 @@
     {
       modelValue: '',
       placeholder: '',
+      ariaLabel: '',
       size: 'default',
       disabled: false,
       selectStyle: 'width: 200px',

@@ -13,7 +13,7 @@ test.describe('queue config CRUD (资源队列)', () => {
   test.beforeEach(async ({ page }) => {
     await enterDemoApp(page)
     await page.goto('/governance/queues')
-    await expectPageTitle(page, '队列与窗口')
+    await expectPageTitle(page, '资源队列')
   })
 
   test('新建队列对话框可打开 + 必填字段校验', async ({ page }) => {

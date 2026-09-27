@@ -411,13 +411,16 @@ const messages: Messages = {
       'You have unsaved changes. Applying a template will overwrite them. Continue?',
     diffViewerTitle: 'Version diff',
     diffBack: 'Back to designer',
-    diffNoVersionEndpoint:
-      'Version snapshot unavailable; degraded: from side is empty, only current version shown',
+    diffNoVersionEndpoint: 'Version snapshot unavailable',
     diffSideFrom: 'From',
     diffSideTo: 'To',
     diffEmptySide: '(empty)',
     diffInvalidId: 'Invalid route id',
+    diffInvalidVersion: 'Invalid version number; comparison is unavailable',
     diffLoadFailed: 'Failed to load versions',
+    diffUnavailableTitle: 'Version comparison unavailable',
+    diffUnavailableDescription:
+      'At least one version snapshot is missing or failed to load. No diff was generated.',
     diffLegendAdded: 'Added',
     diffLegendRemoved: 'Removed',
     diffLegendModified: 'Modified',
@@ -1146,6 +1149,7 @@ const messages: Messages = {
       operator: 'Operator',
       time: 'Time',
       summaryColon: 'Summary',
+      fullDetail: 'View full detail',
     },
     common: {
       loadFail: 'Load failed, please retry later',
@@ -1191,6 +1195,9 @@ const messages: Messages = {
       approvedToast: 'Approved',
       rejectedToast: 'Rejected',
       submitterPrefix: 'Submitted by {who}',
+      approvalNo: 'Approval no.',
+      target: 'Target',
+      rejectionReason: 'Rejection reason',
     },
     alerts: {
       title: 'Alerts',
@@ -1242,6 +1249,9 @@ const messages: Messages = {
       priority: 'Priority',
       startedAt: 'Started',
       finishedAt: 'Finished',
+      queue: 'Queue',
+      worker: 'Worker group',
+      traceId: 'Trace ID',
       bulkSelect: 'Multi-select',
       bulkCancel: 'Cancel multi-select',
       bulkSelected: '{n} selected',
@@ -1264,6 +1274,9 @@ const messages: Messages = {
       stepEmpty: 'No step data',
       stepRetry: 'Retry partition',
       stepRetryDoneToast: 'Partition retry dispatched',
+      stepRetryCount: 'Retries',
+      stepStartedAt: 'Started',
+      stepFinishedAt: 'Finished',
       viewLogs: 'Diagnose by traceId →',
     },
     catchup: {
@@ -2574,6 +2587,11 @@ const messages: Messages = {
     colCatchupJob: 'Catch-up',
     emptyDescription:
       'No data or calendar code missing. Enter from the list page with calendarCode.',
+    selectCalendarTitle: 'Select a business calendar',
+    selectCalendarDescription:
+      'This deep link does not include a calendar code. Select one to load the window for this business date.',
+    selectCalendarPlaceholder: 'Enter or select a calendar code',
+    loadCalendar: 'Load window',
     dialogTitle: 'Batch day Catch-up',
     fieldCalendar: 'Calendar code',
     fieldJobCodes: 'Job codes',
@@ -2931,8 +2949,7 @@ const messages: Messages = {
     runDetailRefresh: 'Refresh',
     runDetailCancel: 'Cancel',
     runDetailTerminate: 'Terminate',
-    nodeRunsHeader:
-      'Node runs (GET /api/console/queries/workflow-node-runs, filtered by workflowRunId)',
+    nodeRunsHeader: 'Node run records',
     nodeFilterStatusPlaceholder: 'All',
     nodeFilterCodePlaceholder: 'Exact nodeCode',
     nodeFilterCodeLabel: 'Node code',

@@ -20,7 +20,7 @@
           <p class="empty-state__description">{{ computedDescription }}</p>
         </div>
       </template>
-      <template v-if="$slots.extra || $slots.action" #extra>
+      <template v-if="hasAction" #default>
         <div class="empty-state__action">
           <slot name="extra"><slot name="action" /></slot>
         </div>
@@ -39,7 +39,7 @@
     TriangleAlert,
     WifiOff,
   } from 'lucide-vue-next'
-  import { computed } from 'vue'
+  import { computed, useSlots } from 'vue'
   import { useI18n } from 'vue-i18n'
 
   type EmptyStateVariant =
@@ -68,6 +68,8 @@
   )
 
   const { t } = useI18n({ useScope: 'global' })
+  const slots = useSlots()
+  const hasAction = computed(() => Boolean(slots.extra || slots.action))
 
   const presets = computed<Record<EmptyStateVariant, { title: string; description: string }>>(
     () => ({

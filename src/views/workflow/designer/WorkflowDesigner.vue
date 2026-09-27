@@ -721,6 +721,7 @@
   .workflow-designer__body--focus {
     --designer-palette-width: 0px;
     --designer-inspector-width: 0px;
+    transition: none;
   }
   .workflow-designer__body > :deep(.node-palette) {
     grid-column: 1;
