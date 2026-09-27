@@ -177,7 +177,7 @@
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import JsonPreview from '@/components/common/JsonPreview.vue'
-  import { fmtDatetime } from '@/utils/datetime'
+  import { fmtClockTime } from '@/utils/datetime'
 
   const { t } = useI18n({ useScope: 'global' })
   const tenant = useTenantStore()
@@ -290,7 +290,7 @@
   }
 
   function fmtNow() {
-    return fmtDatetime(new Date()).slice(11)
+    return fmtClockTime(new Date())
   }
 
   function createCard(opts: {

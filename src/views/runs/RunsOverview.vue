@@ -146,7 +146,7 @@
   import { useRefreshAction } from '@/composables/useRefreshAction'
 
   const refresh = useRefreshAction()
-  import { fmtDatetime } from '@/utils/datetime'
+  import { fmtClockTime, fmtDatetime, todayBusinessDate } from '@/utils/datetime'
   import { instanceApi } from '@/api/instance'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
@@ -206,12 +206,6 @@
     waiting: null,
   })
 
-  function todayStr(): string {
-    const d = new Date()
-    const p = (n: number) => String(n).padStart(2, '0')
-    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`
-  }
-
   const COUNT_DEFS: { key: string; instanceStatus: string; todayOnly: boolean }[] = [
     { key: 'running', instanceStatus: 'RUNNING', todayOnly: false },
     { key: 'todayCompleted', instanceStatus: 'COMPLETED', todayOnly: true },
@@ -220,7 +214,7 @@
   ]
 
   async function loadStatCounts() {
-    const today = todayStr()
+    const today = todayBusinessDate()
     await Promise.all(
       COUNT_DEFS.map(async (def) => {
         try {
@@ -286,11 +280,7 @@
   }
 
   function fmtShortTime(v: unknown): string {
-    if (v == null || v === '') return '—'
-    const d = new Date(String(v))
-    if (Number.isNaN(d.getTime())) return '—'
-    const p = (n: number) => String(n).padStart(2, '0')
-    return `${p(d.getHours())}:${p(d.getMinutes())}`
+    return fmtClockTime(v, undefined, false)
   }
 
   async function loadJobs() {

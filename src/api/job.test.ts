@@ -90,6 +90,21 @@ describe('jobApi', () => {
     })
   })
 
+  it('uses the business date after Shanghai midnight, not the UTC date', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-09-26T16:30:00Z'))
+    try {
+      mp.mockResolvedValue('ok')
+      await jobApi.trigger('JOB_A', 'ta')
+      expect(mp).toHaveBeenCalledWith(
+        '/api/console/jobs/trigger',
+        expect.objectContaining({ bizDate: '2026-09-27' }),
+      )
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   it('trigger with payload object → JSON stringified', async () => {
     mp.mockResolvedValue('ok')
     await jobApi.trigger('JOB_A', 'ta', { foo: 'bar' })

@@ -29,8 +29,8 @@ describe('capacityProfilePresentation', () => {
   it('splits a long range into at most seven contiguous buckets', () => {
     const buckets = buildCapacityBuckets(['2026-09-01T00:00:00Z', '2026-09-08T00:00:00Z'])
     expect(buckets).toHaveLength(7)
-    expect(buckets[0].from).toBe('2026-09-01T00:00:00Z')
-    expect(buckets.at(-1)?.to).toBe('2026-09-08T00:00:00Z')
+    expect(buckets[0].from).toBe('2026-09-01T00:00:00.000Z')
+    expect(buckets.at(-1)?.to).toBe('2026-09-08T00:00:00.000Z')
     expect(buckets[0].to).toBe(buckets[1].from)
   })
 
@@ -43,6 +43,14 @@ describe('capacityProfilePresentation', () => {
       { instanceCount: 4, taskCount: 9 },
       { instanceCount: 0, taskCount: 0 },
     ])
+  })
+
+  it('relabels an existing bucket when the display timezone changes', () => {
+    const buckets = buildCapacityBuckets(['2026-09-26T23:30:00Z', '2026-09-27T00:30:00Z'], 1, 'UTC')
+    const utc = buildCapacityTrend(buckets, [null], 'UTC')[0].label
+    const shanghai = buildCapacityTrend(buckets, [null], 'Asia/Shanghai')[0].label
+    expect(shanghai).not.toBe(utc)
+    expect(shanghai).toContain('09/27')
   })
 
   it('builds dimension-aware throughput and P95 rankings', () => {

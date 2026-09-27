@@ -903,6 +903,7 @@ const messages: Messages = {
       'The button at the bottom of the sidebar toggles the menu; collapse it when you need more space for content.',
   },
   dateRangePicker: {
+    invalidLocalTime: 'The selected time does not exist in the current time zone.',
     rangeSeparator: 'to',
     startDate: 'Start date',
     endDate: 'End date',

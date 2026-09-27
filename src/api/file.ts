@@ -1,6 +1,7 @@
 import { apiClient, get, post, del } from '@/api/client'
 import { fetchAllPageItems } from '@/api/adapters'
 import { readStoredTenantId } from '@/api/interceptors'
+import { todayBusinessDate } from '@/utils/datetime'
 import type { PageResponse, PageResult } from '@/types'
 import type {
   ConsoleAuditLogResponse,
@@ -74,9 +75,7 @@ export const fileApi = {
    * 通过稳定的 /queries/files 分页总数按口径组成汇总，避免依赖额外的聚合接口。
    */
   summary: async (tenantId = readStoredTenantId()): Promise<ConsoleFileSummaryResponse> => {
-    const today = new Date()
-    const p = (n: number) => String(n).padStart(2, '0')
-    const todayText = `${today.getFullYear()}-${p(today.getMonth() + 1)}-${p(today.getDate())}`
+    const todayText = todayBusinessDate()
     const count = async (params: Record<string, string | number | undefined>) => {
       const pr = await get<PageResponse<ConsoleFileRecordResponse>>('/api/console/queries/files', {
         tenantId,

@@ -1,5 +1,18 @@
 import { afterEach, describe, it, expect, vi } from 'vitest'
-import { fmtCompact, fmtDatetime, fmtDate, fmtRelative } from './datetime'
+import {
+  apiInstantToWallTime,
+  businessCalendarDate,
+  fmtClockTime,
+  fmtCompact,
+  fmtDatetime,
+  fmtDate,
+  fmtRelative,
+  fmtTodayOrDatetime,
+  presetDateRange,
+  recentBusinessDateRange,
+  todayBusinessDate,
+  wallTimeToApiInstant,
+} from './datetime'
 import { setI18nLocale } from '@/locales'
 
 afterEach(() => {
@@ -36,6 +49,75 @@ describe('fmtDate', () => {
 
   it('returns — for null', () => expect(fmtDate(null)).toBe('—'))
   it('returns — for undefined', () => expect(fmtDate(undefined)).toBe('—'))
+})
+
+describe('wallTimeToApiInstant', () => {
+  it('converts a selected wall time to an offset-aware API instant', () => {
+    expect(wallTimeToApiInstant('2026-09-27 00:30:00', 'Asia/Shanghai')).toBe(
+      '2026-09-26T16:30:00.000Z',
+    )
+    expect(apiInstantToWallTime('2026-09-26T16:30:00.000Z', 'Asia/Shanghai')).toBe(
+      '2026-09-27 00:30:00',
+    )
+    expect(apiInstantToWallTime('2026-09-27 00:30:00', 'Asia/Shanghai')).toBe('2026-09-27 00:30:00')
+  })
+
+  it('rejects invalid calendar values and a nonexistent DST wall time', () => {
+    expect(wallTimeToApiInstant('2026-02-30 12:00:00', 'Asia/Shanghai')).toBeNull()
+    expect(wallTimeToApiInstant('2026-03-08 02:30:00', 'America/New_York')).toBeNull()
+  })
+})
+
+describe('presetDateRange', () => {
+  it('uses the requested timezone for timestamp boundaries', () => {
+    expect(
+      presetDateRange('today', 'datetimerange', 'Asia/Shanghai', new Date('2026-09-26T16:30:00Z')),
+    ).toEqual(['2026-09-26T16:00:00.000Z', '2026-09-27T15:59:59.999Z'])
+  })
+
+  it('uses a 23-hour instant window on a DST spring-forward day', () => {
+    expect(
+      presetDateRange(
+        'today',
+        'datetimerange',
+        'America/New_York',
+        new Date('2026-03-08T16:00:00Z'),
+      ),
+    ).toEqual(['2026-03-08T05:00:00.000Z', '2026-03-09T03:59:59.999Z'])
+  })
+
+  it('keeps business dates as dates, including at local midnight', () => {
+    expect(todayBusinessDate(new Date('2026-09-26T16:30:00Z'))).toBe('2026-09-27')
+    expect(recentBusinessDateRange(7, new Date('2026-09-26T16:30:00Z'))).toEqual([
+      '2026-09-21',
+      '2026-09-27',
+    ])
+    expect(
+      presetDateRange('7d', 'daterange', 'Asia/Shanghai', new Date('2026-09-26T16:30:00Z')),
+    ).toEqual(['2026-09-21', '2026-09-27'])
+  })
+
+  it('opens calendar controls on the platform business day', () => {
+    const date = businessCalendarDate(new Date('2026-09-30T16:30:00Z'))
+    expect([date.getFullYear(), date.getMonth() + 1, date.getDate()]).toEqual([2026, 10, 1])
+  })
+})
+
+describe('fmtClockTime', () => {
+  it('formats the same instant in the requested display timezone', () => {
+    expect(fmtClockTime('2026-09-26T16:30:00Z', 'Asia/Shanghai')).toBe('00:30:00')
+    expect(fmtClockTime('2026-09-26T16:30:00Z', 'UTC', false)).toBe('16:30')
+    expect(fmtClockTime('invalid', 'UTC')).toBe('—')
+  })
+})
+
+describe('fmtTodayOrDatetime', () => {
+  it('uses the display timezone to decide whether an instant is today', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-09-26T16:30:00Z'))
+    expect(fmtTodayOrDatetime('2026-09-26T16:10:00Z', 'Asia/Shanghai')).toBe('今天 00:10')
+    expect(fmtTodayOrDatetime('2026-09-26T15:10:00Z', 'Asia/Shanghai')).toBe('2026-09-26 23:10:00')
+  })
 })
 
 describe('fmtCompact', () => {

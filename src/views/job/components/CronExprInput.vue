@@ -47,8 +47,8 @@
             t('cronExprInput.nextRunsLabel', { tz: previewTz || t('cronExprInput.tzLocal') })
           }}</span>
           <span class="cron-next__list">
-            <span v-for="(t, i) in nextRuns" :key="i" class="cron-next__time">
-              {{ formatNext(t) }}
+            <span v-for="(run, i) in nextRuns" :key="i" class="cron-next__time">
+              <DatetimeText :value="run" :timezone="previewTz ?? undefined" />
             </span>
           </span>
         </div>
@@ -76,6 +76,7 @@
   // @ts-ignore — cronstrue/i18n 子包没有显式 type 声明,运行时存在
   import 'cronstrue/locales/zh_CN'
   import { previewCron } from '@/api/system.cron'
+  import DatetimeText from '@/components/common/DatetimeText.vue'
 
   const { t } = useI18n({ useScope: 'global' })
 
@@ -117,7 +118,7 @@
   })
 
   // ── 下次执行:BE 防抖调用 ────────────────────────────────
-  const nextRuns = ref<Date[]>([])
+  const nextRuns = ref<string[]>([])
   const previewTz = ref<string | null>(null)
   const previewError = ref('')
   const previewLoading = ref(false)
@@ -146,7 +147,7 @@
               previewError.value = res.error || '解析失败'
               previewTz.value = null
             } else {
-              nextRuns.value = res.nextRuns.map((s) => new Date(s))
+              nextRuns.value = res.nextRuns
               previewError.value = ''
               previewTz.value = res.timezone
             }
@@ -164,16 +165,6 @@
     },
     { immediate: true },
   )
-
-  function formatNext(d: Date): string {
-    const yyyy = d.getFullYear()
-    const mm = String(d.getMonth() + 1).padStart(2, '0')
-    const dd = String(d.getDate()).padStart(2, '0')
-    const HH = String(d.getHours()).padStart(2, '0')
-    const MM = String(d.getMinutes()).padStart(2, '0')
-    const SS = String(d.getSeconds()).padStart(2, '0')
-    return `${yyyy}-${mm}-${dd} ${HH}:${MM}:${SS}`
-  }
 </script>
 
 <style scoped>

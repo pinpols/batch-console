@@ -25,12 +25,10 @@
           />
         </el-form-item>
         <el-form-item :label="t('capacityProfile.windowLabel')">
-          <el-date-picker
+          <InstantRangePicker
             class="capacity-window-picker"
             v-model="range"
-            type="datetimerange"
             unlink-panels
-            value-format="YYYY-MM-DDTHH:mm:ssZ"
             :start-placeholder="t('capacityProfile.fromPlaceholder')"
             :end-placeholder="t('capacityProfile.toPlaceholder')"
           />
@@ -120,7 +118,7 @@
               {{ report.scope }}
             </el-tag>
             <el-tag v-if="report.generatedAt" size="small" effect="plain" type="info">
-              {{ report.generatedAt }}
+              <DatetimeText :value="report.generatedAt" />
             </el-tag>
           </div>
         </div>
@@ -231,6 +229,9 @@
   import EmptyState from '@/components/common/EmptyState.vue'
   import MetricCard from '@/components/common/MetricCard.vue'
   import JsonPreview from '@/components/common/JsonPreview.vue'
+  import DatetimeText from '@/components/common/DatetimeText.vue'
+  import InstantRangePicker from '@/components/common/InstantRangePicker.vue'
+  import { displayTimezone } from '@/constants/timezone'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import {
     buildGroupedBarOption,
@@ -258,9 +259,8 @@
   const detailSections = ref<string[]>([])
   // 默认最近 7 天窗口:后端 capacity-profile 端点缺省 from/to 会 500,首屏必须带窗口。
   function defaultWindow(): [string, string] {
-    const iso = (d: Date) => d.toISOString().slice(0, 19) + 'Z'
     const now = new Date()
-    return [iso(new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)), iso(now)]
+    return [new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString(), now.toISOString()]
   }
   const range = ref<[string, string] | null>(defaultWindow())
   const query = reactive<{ groupBy: CapacityProfileGroupBy; limit: number }>({
@@ -275,7 +275,7 @@
   ])
   const chartTheme = computed(() => (app.theme === 'dark' ? 'console-dark' : 'console-light'))
   const trendOption = computed(() => {
-    const points = buildCapacityTrend(trendBuckets.value, trendReports.value)
+    const points = buildCapacityTrend(trendBuckets.value, trendReports.value, displayTimezone.value)
     if (
       !points.length ||
       points.every((point) => point.instanceCount === 0 && point.taskCount === 0)

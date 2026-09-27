@@ -30,19 +30,19 @@
           {{ window.dayStatus }}
         </el-descriptions-item>
         <el-descriptions-item :label="t('batchDayWindow.currentTime')">
-          {{ window.currentSystemTime }}
+          <DatetimeText :value="window.currentSystemTime" />
         </el-descriptions-item>
         <el-descriptions-item :label="t('batchDayWindow.cutoff')">
-          {{ window.cutoffAt ?? '—' }}
+          <DatetimeText :value="window.cutoffAt" />
         </el-descriptions-item>
         <el-descriptions-item :label="t('batchDayWindow.slaCutoff')">
-          {{ window.slaDeadlineAt ?? '—' }}
+          <DatetimeText :value="window.slaDeadlineAt" />
         </el-descriptions-item>
         <el-descriptions-item :label="t('batchDayWindow.secondsToCutoff')">
           {{ window.timeUntilCutoffSeconds ?? '—' }}
         </el-descriptions-item>
         <el-descriptions-item :label="t('batchDayWindow.lateWindowClosed')">
-          {{ window.lateArrivalWindowClosesAt ?? '—' }}
+          <DatetimeText :value="window.lateArrivalWindowClosesAt" />
         </el-descriptions-item>
       </el-descriptions>
     </SectionCard>
@@ -198,6 +198,7 @@
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
+  import DatetimeText from '@/components/common/DatetimeText.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import type { ConsoleBatchDayWindowResponse } from '@/types/console-api'

@@ -123,7 +123,7 @@
                   {{ num(p.maxPartitionsPerTenant) }}
                 </el-descriptions-item>
                 <el-descriptions-item :label="t('quotaPanel.descUpdatedAt')">
-                  {{ p.updatedAt || '—' }}
+                  <DatetimeText :value="p.updatedAt" />
                 </el-descriptions-item>
                 <el-descriptions-item :label="t('quotaPanel.fieldEnabled')">
                   {{ p.enabled ? 'true' : 'false' }}
@@ -208,6 +208,7 @@
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
+  import DatetimeText from '@/components/common/DatetimeText.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
 
   const tenant = useTenantStore()
