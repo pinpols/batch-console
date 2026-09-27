@@ -328,7 +328,7 @@
 - `tenantId` @ValidTenantId
 - `username`: 2-128 字符,正则 `^[a-zA-Z0-9][a-zA-Z0-9._\-]*$`
 - `password`: 8-256
-- `authoritiesCsv`: ≤512 CSV(ROLE_ADMIN/ROLE_OPERATOR/ROLE_VIEWER/ROLE_TENANT_USER/ROLE_AUDITOR/ROLE_CONFIG_ADMIN)
+- `authoritiesCsv`: ≤512 CSV，仅允许 ROLE_ADMIN/ROLE_AUDITOR/ROLE_TENANT_ADMIN/ROLE_TENANT_USER
 
 ### `/system/api-keys` — CreateApiKeyRequest
 

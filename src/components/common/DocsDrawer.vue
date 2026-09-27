@@ -1,5 +1,6 @@
 <template>
   <el-drawer
+    class="docs-drawer"
     :append-to-body="true"
     :model-value="modelValue"
     :title="resolvedTitle"
@@ -13,21 +14,26 @@
           <el-icon><Document /></el-icon>
           {{ resolvedTitle }}
         </span>
-        <el-button
-          text
-          type="primary"
-          tag="a"
-          :href="iframeSrc"
-          target="_blank"
-          rel="noopener"
-          :icon="Top"
-        >
+        <el-button text type="primary" :icon="Top" @click="openInDocs">
           {{ t('docsDrawer.openInDocs') }}
         </el-button>
       </div>
     </template>
+    <el-skeleton v-if="docsState === 'checking'" :rows="8" animated />
+    <EmptyState
+      v-else-if="docsState === 'unavailable'"
+      variant="service-down"
+      :title="t('docsUnavailable.title')"
+      :description="t('docsUnavailable.description')"
+    >
+      <template #action>
+        <el-button type="primary" :icon="Refresh" @click="checkDocs">
+          {{ t('docsUnavailable.retry') }}
+        </el-button>
+      </template>
+    </EmptyState>
     <iframe
-      v-if="modelValue && iframeSrc"
+      v-else-if="modelValue && iframeSrc && docsState === 'ready'"
       :src="iframeSrc"
       class="docs-drawer__iframe"
       :title="t('docsDrawer.iframeTitle')"
@@ -49,11 +55,15 @@
    *
    * docKey 是稳定标识(避免业务代码硬编码具体 URL);新增 doc-key 加到 DOC_REGISTRY。
    */
-  import { computed } from 'vue'
+  import { computed, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { ArrowUp as Top, FileText as Document } from '@lucide/vue'
+  import { ArrowUp as Top, FileText as Document, RefreshCw as Refresh } from '@lucide/vue'
+  import { useRouter } from 'vue-router'
+  import EmptyState from './EmptyState.vue'
   import { DOC_REGISTRY, resolveDocUrl } from './docsRegistry'
+  import { checkDocsAvailability } from '@/utils/serviceAvailability'
   const { t } = useI18n({ useScope: 'global' })
+  const router = useRouter()
 
   const props = defineProps<{
     modelValue: boolean
@@ -71,6 +81,38 @@
   const iframeSrc = computed(() => resolveDocUrl(props.docKey))
   const resolvedTitle = computed(
     () => props.title || docEntry.value?.title || t('docsDrawer.iframeTitle'),
+  )
+  const docsState = ref<'idle' | 'checking' | 'ready' | 'unavailable'>('idle')
+
+  async function checkDocs() {
+    if (!iframeSrc.value) {
+      docsState.value = 'unavailable'
+      return
+    }
+    docsState.value = 'checking'
+    docsState.value = (await checkDocsAvailability(iframeSrc.value)) ? 'ready' : 'unavailable'
+  }
+
+  async function openInDocs() {
+    const docsTab = window.open('about:blank', '_blank')
+    if (docsTab) docsTab.opener = null
+    if (await checkDocsAvailability(iframeSrc.value)) {
+      if (docsTab) docsTab.location.href = iframeSrc.value
+      else window.open(iframeSrc.value, '_blank', 'noopener')
+      return
+    }
+    docsTab?.close()
+    emit('update:modelValue', false)
+    void router.push('/docs-unavailable')
+  }
+
+  watch(
+    [() => props.modelValue, iframeSrc],
+    ([visible]) => {
+      if (visible) void checkDocs()
+      else docsState.value = 'idle'
+    },
+    { immediate: true },
   )
 </script>
 
@@ -93,5 +135,9 @@
     height: calc(100vh - 80px);
     height: calc(100dvh - 80px);
     border: none;
+  }
+
+  .docs-drawer :deep(.el-skeleton) {
+    padding: var(--space-lg);
   }
 </style>

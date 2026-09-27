@@ -19998,7 +19998,7 @@ export interface operations {
           username: string
           password: string
           displayName?: string
-          /** @description CSV of role authorities, e.g. "ROLE_ADMIN,ROLE_TENANT_USER". Empty defaults to USER. */
+          /** @description CSV containing only ROLE_ADMIN, ROLE_AUDITOR, ROLE_TENANT_ADMIN, or ROLE_TENANT_USER. Empty defaults to ROLE_TENANT_USER. */
           authoritiesCsv?: string
         }
       }

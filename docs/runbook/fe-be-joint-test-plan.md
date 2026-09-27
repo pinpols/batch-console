@@ -30,7 +30,7 @@ B 档(CRUD 闭环,已完成 2026-05-16)
 
 B+ 档(联调验收级,2026-05-18 扩充)
 ├─ Phase 5  Seed + 阻塞 spec 真跑   ~1 天   补 4 个未运行的 SQL/JSON seed,把 4 个被 skip 的 spec 真跑
-├─ Phase 6  RBAC 5 角色权限矩阵     ~1 天   5 真实角色 × 关键写接口,验权限/越权/兜底文案
+├─ Phase 6  RBAC 4 角色权限矩阵     ~1 天   4 正式角色 × 关键写接口,验权限/越权/兜底文案
 ├─ Phase 7  3 个端到端业务剧本       ~2 天   任务失败→重跑→审批 / 文件到达→处理→回执 / 配置灰度→回滚
 ├─ Phase 8  多租户切换 + SSE 重连    ~0.5 天 切租户竞态 + WebSocket/SSE 断线 + 长连保活
 └─ Phase 9  设计器 + AI Chat 烟测   ~0.5 天 X6 拖拽基础烟测 + AI Chat 基础烟测 (允许 mock 后端)
@@ -287,21 +287,20 @@ npx playwright test \
 
 ---
 
-## Phase 6 — RBAC 5 角色权限矩阵(~1 天)
+## Phase 6 — RBAC 4 角色权限矩阵(~1 天)
 
-**Why**：历史 RBAC 审查确认 OPERATOR/VIEWER 是菜单档位标签而不是 Spring authority，自由填写会触发 URL 兜底 403。后端实际只有 5 个真实 Spring authority，前端只跑 admin 路径意味着其余角色的权限边界没有真实验收。
+**Why**：OPERATOR/VIEWER 是前端能力档而不是 Spring authority。后端只接受 ADMIN/AUDITOR/TENANT_ADMIN/TENANT_USER 四类正式角色，前端需要逐角色验收权限边界。
 
 **产出**: `e2e/rbac-matrix.spec.ts`(单文件,~120 断言)+ 矩阵报告。
 
-### 6.1 5 真实角色 × 关键写接口矩阵
+### 6.1 4 正式角色 × 关键写接口矩阵
 
 | 角色 \ 接口 | tenants 写 | queues 写 | quotas 写 | configs 发布 | job-defs 写 | api-keys 写 | users 写 | self-service 提单 | reports 导 |
 |---|---|---|---|---|---|---|---|---|---|
 | ROLE_ADMIN | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| ROLE_CONFIG_ADMIN | ❌ | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ✅ | ✅ |
 | ROLE_AUDITOR | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ |
-| ROLE_TENANT_USER | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ |
-| ROLE_USER | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ |
+| ROLE_TENANT_ADMIN | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| ROLE_TENANT_USER | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ | ✅ | ❌ |
 
 (✅ = 应返 200/202,❌ = 应返 403 且 toast 走"权限不足"i18n 不是裸 message)
 
@@ -315,7 +314,7 @@ npx playwright test \
 - 用 admin 切租户,验 `/auth/me` 在切前/切后返回的 permissions 是否一致
 
 ### 6.4 落地
-- 用 Phase 5.1 的 `seed/10-rbac-users.sql` 灌 5 个测试账号
+- 用 Phase 5.1 的 `seed/10-rbac-users.sql` 灌 4 个测试账号
 - spec 用 storageState 在每个 test 切角色:`test.use({ storageState: 'e2e/.auth/role-${role}.json' })`
 
 ---
@@ -723,7 +722,7 @@ test('SSE 断线 5s 后自动重连,不丢消息', async ({ page }) => {
 | 触发器 | `trigger-crud` + `trigger-ops` | 真 CRUD | ✅ |
 | 配置发布 | `config-release-crud` + `config-release-advanced` + `config-release-ops` | 真 CRUD + 灰度/回滚操作 | ✅ |
 | 自助服务 | `self-service-forms` + `self-service` | 5 个 Tab 表单 | ✅ |
-| **RBAC 多角色** | `rbac-denial` → Phase 6 `rbac-matrix` | seed 10 已写 + 5 角色矩阵 spec | 🔵 B+ 补 |
+| **RBAC 多角色** | `rbac-denial` → Phase 6 `rbac-matrix` | seed 10 已写 + 4 角色矩阵 spec | 🔵 B+ 补 |
 | **Job 实例操作** | `monitor-ops` | seed 03 已写 + 真跑 | 🔵 B+ 补 |
 | **审批** | `approval-ops` + `approval-actions` | seed 04 已写 + 真跑 | 🔵 B+ 补 |
 | **Outbox 重投** | `alert-outbox-ops` + `ops-diagnostic` | seed 07 已写 + 真跑 | 🔵 B+ 补 |
@@ -789,7 +788,7 @@ npx playwright test \
   e2e/monitor-ops.spec.ts e2e/approval-ops.spec.ts \
   e2e/alert-outbox-ops.spec.ts e2e/rbac-denial.spec.ts
 
-# Day 2 — Phase 6  RBAC 5 角色矩阵
+# Day 2 — Phase 6  RBAC 4 角色矩阵
 npx playwright test e2e/rbac-matrix.spec.ts
 
 # Day 3-4 — Phase 7  3 业务剧本

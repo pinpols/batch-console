@@ -17,9 +17,9 @@ export function usePermission() {
   /**
    * 是否具备"写配置"能力(治理 / 配置发布 / 告警路由 / 任务 / Pipeline 定义等写操作)。
    *
-   * Why: 后端 5 角色里 AUDITOR / TENANT_USER 没写权限,日志里大量 403
+   * Why:后端四类正式角色中 AUDITOR / TENANT_USER 没有配置写权限,日志里大量 403
    * "console access denied: POST /api/console/queues" 来自前端没隐藏 Create 按钮。
-   * (`rbac_5roles_only`:OPERATOR/VIEWER 是菜单档位标签不是 Spring authority,这里只看真实角色)
+   * OPERATOR/VIEWER 是前端能力档，不是 Spring authority；这里只看四类正式角色。
    */
   const canMutateConfig = computed(
     () => auth.hasPermission('ROLE_ADMIN') || auth.hasPermission('ROLE_TENANT_ADMIN'),

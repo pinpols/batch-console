@@ -52,6 +52,17 @@
         <p class="login-card__subtitle">{{ t('login.subtitle') }}</p>
       </header>
 
+      <div v-if="serviceUnavailable" class="login-service-state" role="alert" aria-live="assertive">
+        <el-icon class="login-service-state__icon"><ServerOff /></el-icon>
+        <div class="login-service-state__copy">
+          <strong>{{ t('login.serviceUnavailableTitle') }}</strong>
+          <span>{{ t('login.serviceUnavailableDescription') }}</span>
+        </div>
+        <el-button link type="primary" :loading="loading" @click="handleLogin">
+          {{ t('login.retry') }}
+        </el-button>
+      </div>
+
       <div v-if="loginTrace" class="login-trace" role="status" aria-live="polite">
         <span class="login-trace__label">{{ t('login.traceLabel') }}</span>
         <code class="login-trace__code" :title="loginTrace">{{ loginTrace }}</code>
@@ -136,7 +147,7 @@
 <script setup lang="ts">
   import { computed, ref, reactive, onBeforeUnmount, onMounted } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { CircleX as CircleClose, Lock, User } from '@lucide/vue'
+  import { CircleX as CircleClose, Lock, ServerOff, User } from '@lucide/vue'
 
   const { t } = useI18n({ useScope: 'global' })
   import { useRouter, useRoute } from 'vue-router'
@@ -150,6 +161,7 @@
   import CaptchaChallenge from '@/components/common/CaptchaChallenge.vue'
   import type { AxiosRequestConfig } from 'axios'
   import { lastApiMeta } from '@/utils/lastApiMeta'
+  import { isConsoleServiceUnavailable } from '@/utils/serviceAvailability'
   import {
     applyThemeToDocument,
     getSystemIsDark,
@@ -175,6 +187,7 @@
   const loading = ref(false)
   const appVersion = __APP_VERSION__
   const loginTrace = ref('')
+  const serviceUnavailable = ref(false)
   const form = reactive({ username: '', password: '' })
 
   // ────────────────────────────── 验证码状态
@@ -206,11 +219,12 @@
     void authApi.logout({ _silent: true } as AxiosRequestConfig).catch(() => {})
     // 拉验证码配置:loginProtectionEnabled && provider!=none 时才可能需要验证码;
     // 但只有登录失败返回 CAPTCHA_REQUIRED 才真正展示组件(渐进式,首登无摩擦)。
-    void getCaptchaConfig()
+    void getCaptchaConfig({ _silent: true } as AxiosRequestConfig)
       .then((cfg) => {
         captchaConfig.value = cfg
       })
-      .catch(() => {
+      .catch((error: unknown) => {
+        serviceUnavailable.value = isConsoleServiceUnavailable(error)
         // 配置拉取失败不阻断登录(后端会按需 401 CAPTCHA_REQUIRED 兜底)
       })
   })
@@ -235,6 +249,7 @@
     }
     loading.value = true
     loginTrace.value = ''
+    serviceUnavailable.value = false
     try {
       await auth.login(form.username, form.password, captchaToken.value || undefined)
       const redirect = (route.query.redirect as string) || '/'
@@ -242,6 +257,7 @@
     } catch (e: unknown) {
       const err = e as { traceId?: string }
       loginTrace.value = err.traceId ?? lastApiMeta.value?.traceId ?? ''
+      serviceUnavailable.value = isConsoleServiceUnavailable(e)
       if (isCaptchaRequiredError(e) && captchaAvailable()) {
         // 触发验证码:展示组件,清掉旧 token,换一张新挑战。
         // token 用错/过期再次登录仍会 CAPTCHA_REQUIRED → 回到此态并刷新挑战。
@@ -357,6 +373,7 @@
   }
 
   .login-card__header,
+  .login-service-state,
   .login-trace,
   .login-form,
   .login-card__mobile-brand {
@@ -461,6 +478,36 @@
     font-weight: 700;
     letter-spacing: 0;
     color: var(--color-text-primary);
+  }
+
+  .login-service-state {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-lg);
+    padding: var(--space-md);
+    border: 1px solid color-mix(in srgb, var(--color-danger) 35%, var(--color-border));
+    border-radius: var(--radius-content);
+    color: var(--color-text-primary);
+    background: color-mix(in srgb, var(--color-danger) 8%, var(--color-bg-elevated));
+  }
+
+  .login-service-state__icon {
+    color: var(--color-danger);
+    font-size: var(--font-size-lg);
+  }
+
+  .login-service-state__copy {
+    display: grid;
+    min-width: 0;
+    gap: var(--space-xs);
+    font-size: var(--font-size-sm);
+    line-height: 1.5;
+  }
+
+  .login-service-state__copy span {
+    color: var(--color-text-secondary);
   }
 
   /* Trace */

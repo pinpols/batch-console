@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 /**
- * 为 RBAC 矩阵测试生成 5 角色的 Playwright storageState 文件。
+ * 为 RBAC 矩阵测试生成 4 正式角色的 Playwright storageState 文件。
  *
- * 输出:e2e/.auth/role-{admin,configAdmin,auditor,tenantUser,user}.json
+ * 输出:e2e/.auth/role-{admin,auditor,tenantAdmin,tenantUser}.json
  *
  * 用法:
  *   node e2e/scripts/build-role-storage-states.cjs
  *
- * 依赖:BE @ localhost:18080,5 个测试账号已存在(详见账户表 console_user_account)。
+ * 依赖:BE @ localhost:18080,4 个测试账号已存在(详见账户表 console_user_account)。
  */
 const fs = require('node:fs')
 const path = require('node:path')
@@ -17,10 +17,9 @@ const ORIGIN = process.env.BC_FE_ORIGIN || 'http://localhost:5173'
 
 const ROLES = [
   { key: 'admin', username: 'admin', password: 'admin123', tenantId: 'system' },
-  { key: 'configAdmin', username: 'config-admin', password: 'admin123', tenantId: 'system' },
   { key: 'auditor', username: 'auditor', password: 'admin123', tenantId: 'system' },
+  { key: 'tenantAdmin', username: 'tadmin-ta', password: 'Admin@123abc', tenantId: 'ta' },
   { key: 'tenantUser', username: 'op-tx', password: 'admin123', tenantId: 'tx' },
-  { key: 'user', username: 'user-tx', password: 'admin123', tenantId: 'tx' },
 ]
 
 function parseSetCookie(raw, baseUrl) {

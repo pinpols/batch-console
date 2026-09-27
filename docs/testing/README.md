@@ -31,7 +31,7 @@ e2e/
     form-helpers.ts   # 表单:openDialog / submitForm / expectRequiredBlocked / expectMaxLength …
     crud-smoke.ts     # readOnlyPageSmoke(只读页一键冒烟)
     error-injection.ts# injectError / runErrorMatrix(注入 4xx/5xx/超时 验错误态)
-  global-setup.cjs    # 每轮跑:登录、幂等准备 5 角色账号、刷新 storageState、seed ta/tb/tc
+  global-setup.cjs    # 每轮跑:登录、幂等准备 4 角色账号、刷新 storageState、seed ta/tb/tc
   global-teardown.cjs # 按 prefix=e2e 清测试脏数据
   .auth/              # storageState(user.json + role-*.json),global-setup 写入
   *.spec.ts           # 顶层 spec

@@ -43,7 +43,9 @@ export const usePermissionStore = defineStore('permission', () => {
   const visibleGroups = computed<NavigationGroup[]>(() => {
     const backendMenus = auth.menus
     if (backendMenus && backendMenus.length > 0) {
-      return filterNavigationByBackendMenus(navigationGroups, backendMenus)
+      // 后端菜单是可见性上限,前端精确 authority / capability 规则仍需同时满足。
+      // 避免后端菜单配置偏宽时,本地已收紧的 ADMIN 页面重新出现在低权限侧栏。
+      return filterNavigationByBackendMenus(filterGroups(navigationGroups), backendMenus)
     }
     return filterGroups(navigationGroups)
   })

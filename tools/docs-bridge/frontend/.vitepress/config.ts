@@ -62,6 +62,7 @@ export default withMermaid({
   themeConfig: {
     nav: [
       { text: '主页', link: '/' },
+      { text: '使用指南', link: '/user-guide/' },
       { text: 'QA 阶段报告', link: '/runbook/qa-d-phase-reports/' },
       { text: '运维', link: '/runbook/' },
       { text: '设计', link: '/design/' },
@@ -79,6 +80,24 @@ export default withMermaid({
         ],
       },
     ],
-    // sidebar 走 vitepress 默认(不强配),保持简洁
+    sidebar: {
+      '/user-guide/': [
+        {
+          text: '产品使用指南',
+          items: [
+            { text: '指南首页', link: '/user-guide/' },
+            { text: '角色与权限', link: '/user-guide/roles-and-access' },
+            { text: '角色与页面矩阵', link: '/user-guide/role-page-matrix' },
+            { text: '快速入门', link: '/user-guide/getting-started' },
+            { text: '作业与流程', link: '/user-guide/jobs-and-workflows' },
+            { text: '运行与审批', link: '/user-guide/runs-and-approvals' },
+            { text: '文件与配置导入', link: '/user-guide/files-and-imports' },
+            { text: '可观测性与排障', link: '/user-guide/observability' },
+            { text: '平台治理', link: '/user-guide/platform-governance' },
+            { text: '常见问题', link: '/user-guide/troubleshooting' },
+          ],
+        },
+      ],
+    },
   },
 })
