@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
-import { dirname, extname, join, relative, resolve } from 'node:path'
+import { dirname, extname, isAbsolute, join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
+const backendRoot = resolve(root, '../file-batch-system')
 const roots = [
   join(root, 'README.md'),
   join(root, 'AGENTS.md'),
@@ -29,6 +30,12 @@ roots.forEach(walk)
 
 const errors = []
 const linkPattern = /\[[^\]]*\]\(([^)]+)\)/g
+
+function isInside(parent, target) {
+  const path = relative(parent, target)
+  return path === '' || (path !== '..' && !path.startsWith('../') && !isAbsolute(path))
+}
+
 for (const file of files) {
   const rel = relative(root, file).replaceAll('\\', '/')
   const text = readFileSync(file, 'utf8')
@@ -44,6 +51,8 @@ for (const file of files) {
     const target = pathPart.startsWith('/')
       ? join(root, pathPart)
       : resolve(dirname(file), pathPart)
+    // 配对后端在本地是同级仓库，CI 单仓 checkout 时无法验证其文件是否存在。
+    if (isInside(backendRoot, target)) continue
     const candidates = [target, `${target}.md`, join(target, 'README.md'), join(target, 'index.md')]
     if (!candidates.some(existsSync)) errors.push(`${rel}: 无效链接 ${raw}`)
   }
