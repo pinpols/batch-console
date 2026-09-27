@@ -31,18 +31,18 @@
 
             <div class="sync__section sync__section--grow">
               <div class="sync__section-title">{{ t('configSyncTab.typesTitle') }}</div>
-              <div class="sync__types">
-                <label
+              <el-checkbox-group v-model="selectedExportTypes" class="sync__types">
+                <div
                   v-for="opt in exportTypeOptions"
                   :key="opt.value"
                   class="sync__type-option"
                   :class="{ 'is-checked': selectedExportTypes.includes(opt.value) }"
                 >
-                  <el-checkbox v-model="selectedExportTypes" :value="opt.value">
+                  <el-checkbox :value="opt.value">
                     {{ opt.label }}
                   </el-checkbox>
-                </label>
-              </div>
+                </div>
+              </el-checkbox-group>
               <p class="sync__types-hint">{{ t('configSyncTab.typesDescAll') }}</p>
             </div>
           </el-form>

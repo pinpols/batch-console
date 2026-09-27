@@ -122,8 +122,10 @@
   /* 内边距按 iOS 标准:左右 16px,顶部 10px(给页面 .m-page 留收紧空间),底部留 tabbar + home indicator */
   .mobile-layout__content {
     flex: 1;
-    padding: 10px 16px calc(76px + env(safe-area-inset-bottom, 0));
+    padding: var(--space-sm) max(var(--space-md), env(safe-area-inset-right, 0))
+      calc(76px + env(safe-area-inset-bottom, 0)) max(var(--space-md), env(safe-area-inset-left, 0));
     overflow-y: auto;
+    overflow-x: hidden;
   }
 
   /* 切页时 enter/leave 同时在场,让旧页 absolute 浮起,新页 normal flow 占位,

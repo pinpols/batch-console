@@ -9,10 +9,18 @@
         <el-button :icon="Refresh" :loading="loading" @click="load">
           {{ t('common.refresh') }}
         </el-button>
-        <el-button v-if="job" :icon="MagicStick" @click="dryRunVisible = true">
+        <el-button v-if="job && canMutateConfig" :icon="Edit" @click="goEdit">
+          {{ t('common.edit') }}
+        </el-button>
+        <el-button v-if="job && canMutateConfig" :icon="MagicStick" @click="dryRunVisible = true">
           {{ t('jobDefinitionDetail.dryRun') }}
         </el-button>
-        <el-button v-if="job" type="primary" :loading="triggering" @click="triggerJob">
+        <el-button
+          v-if="job && canMutateConfig"
+          type="primary"
+          :loading="triggering"
+          @click="triggerJob"
+        >
           {{ t('jobDefinitionDetail.manualTrigger') }}
         </el-button>
       </template>
@@ -62,6 +70,7 @@
             <JobConfigBasicSection
               :job="job"
               :execution-mode-label="resolveEnumLabel('executionMode', job.executionMode)"
+              overview-only
             />
           </el-tab-pane>
 
@@ -74,7 +83,7 @@
                 <el-descriptions-item :label="t('jobConfigBasic.fieldScheduleExpr')">
                   <span class="mono">{{ job.scheduleExpr || '—' }}</span>
                 </el-descriptions-item>
-                <el-descriptions-item label="dependsOnJobCode">
+                <el-descriptions-item :label="t('jobConfigBasic.fieldDependsOnJobCode')">
                   <span class="mono">{{ job.dependsOnJobCode || '—' }}</span>
                 </el-descriptions-item>
                 <el-descriptions-item :label="t('jobConfigBasic.fieldTimezone')">
@@ -90,7 +99,7 @@
                   {{ job.dagEnabled ? t('common.yes') : t('common.no') }}
                 </el-descriptions-item>
               </el-descriptions>
-              <div class="panel-actions">
+              <div v-if="canMutateConfig" class="panel-actions">
                 <el-button @click="calendarMiniVisible = true">
                   {{ t('jobDefinitionDetail.btnNewCalendar') }}
                 </el-button>
@@ -129,7 +138,7 @@
                   {{ job.retryPolicy || '—' }}
                 </el-descriptions-item>
               </el-descriptions>
-              <div class="panel-actions">
+              <div v-if="canMutateConfig" class="panel-actions">
                 <el-button @click="router.push('/governance/queues')">
                   {{ t('jobDefinitionDetail.maintainQueue') }}
                 </el-button>
@@ -156,7 +165,7 @@
                   <pre class="json-block">{{ formatJson(job.paramSchema) }}</pre>
                 </el-descriptions-item>
               </el-descriptions>
-              <div class="panel-actions">
+              <div v-if="canMutateConfig" class="panel-actions">
                 <el-button type="primary" :loading="triggering" @click="triggerJob">
                   {{ t('jobDefinitionDetail.manualTrigger') }}
                 </el-button>
@@ -236,7 +245,7 @@
                   </template>
                 </el-table-column>
               </el-table>
-              <div class="panel-actions">
+              <div v-if="canMutateConfig" class="panel-actions">
                 <el-button @click="router.push('/workflow/definitions')">
                   {{ t('jobDefinitionDetail.maintainWorkflowDefinition') }}
                 </el-button>
@@ -288,7 +297,7 @@
                   </template>
                 </el-table-column>
               </el-table>
-              <div class="panel-actions">
+              <div v-if="canMutateConfig" class="panel-actions">
                 <el-button @click="router.push('/observability/alert-routings')">
                   {{ t('jobDefinitionDetail.maintainAlertRouting') }}
                 </el-button>
@@ -377,11 +386,9 @@
                   min-width="260"
                   show-overflow-tooltip
                 />
-                <el-table-column
-                  prop="createdAt"
-                  :label="t('jobDefinitionDetail.colCreatedAt')"
-                  width="180"
-                />
+                <el-table-column :label="t('jobDefinitionDetail.colCreatedAt')" width="180">
+                  <template #default="{ row }">{{ fmtDatetime(row.createdAt) }}</template>
+                </el-table-column>
               </el-table>
             </div>
           </el-tab-pane>
@@ -392,11 +399,11 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, onMounted, ref, watch } from 'vue'
+  import { computed, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { useRoute, useRouter } from 'vue-router'
   import { ElMessage, ElMessageBox } from 'element-plus'
-  import { RefreshCw as Refresh, Sparkles as MagicStick } from 'lucide-vue-next'
+  import { Pencil as Edit, RefreshCw as Refresh, Sparkles as MagicStick } from 'lucide-vue-next'
   import DryRunPlanDialog from '@/components/dialogs/DryRunPlanDialog.vue'
   import { jobApi } from '@/api/job'
   import { instanceApi } from '@/api/instance'
@@ -406,6 +413,8 @@
   import type { ConsoleWorkflowDefinitionResponse } from '@/types/console-api'
   import { useTenantStore } from '@/stores/tenant'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
+  import { usePermission } from '@/composables/usePermission'
+  import { useTenantReload } from '@/composables/useTenantReload'
   import { fmtDatetime } from '@/utils/datetime'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
@@ -450,6 +459,7 @@
   const tenant = useTenantStore()
   const { t } = useI18n({ useScope: 'global' })
   const { data: metaEnumsData } = useConsoleMetaEnumsQuery()
+  const { canMutateConfig } = usePermission()
 
   type JobDefinitionDetailModel = ConsoleJobDefinitionResponse &
     Partial<{
@@ -603,12 +613,12 @@
   }
 
   function onCalendarCreated(code: string) {
-    ElMessage.success(`已新建日历 ${code},可在治理页绑定到本作业`)
+    ElMessage.success(t('jobDefinitionDetail.calendarCreated', { code }))
     calendarMiniVisible.value = false
   }
 
   function onWindowCreated(code: string) {
-    ElMessage.success(`已新建窗口 ${code},可在治理页绑定到本作业`)
+    ElMessage.success(t('jobDefinitionDetail.windowCreated', { code }))
     windowMiniVisible.value = false
   }
 
@@ -665,6 +675,19 @@
     })
   }
 
+  function goEdit() {
+    if (!job.value || !canMutateConfig.value) return
+    void router.push({
+      path: '/jobs/definitions',
+      query: {
+        action: 'edit',
+        editId: String(job.value.id),
+        jobCode: job.value.jobCode,
+        tenantId: job.value.tenantId,
+      },
+    })
+  }
+
   function goRunDetail(row: ConsoleJobInstanceResponse) {
     void router.push(`/monitor/job-instances/${row.id}`)
   }
@@ -702,13 +725,13 @@
   )
 
   watch(
-    () => [route.params.id, tenant.tenantId],
+    () => route.params.id,
     () => {
       void load()
     },
   )
 
-  onMounted(load)
+  useTenantReload(load)
 </script>
 
 <style scoped>

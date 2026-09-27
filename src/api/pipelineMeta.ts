@@ -1,7 +1,7 @@
 import { get } from '@/api/client'
 
 /**
- * Pipeline 元信息 API:9 个固定 stages 字典 + 已注册 stepImpl 字典。
+ * Pipeline 元信息 API:后端维护的 stages 字典 + 已注册 stepImpl 字典。
  * 给 PipelineDefinitionList 步骤编辑器把自由输入升级成下拉选择,避免用户手敲拼错。
  *
  * BE 路径:`/api/console/meta/pipeline-stages` / `/api/console/meta/step-impls`。

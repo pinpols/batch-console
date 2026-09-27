@@ -170,6 +170,24 @@ test.describe('配置管理 — 配置导出', () => {
     const exported = await exportConfigFromUi(page)
     expect(JSON.stringify(exported), 'exported JOB config payload').toMatch(/job|JOB|作业/i)
   })
+
+  test('导出类型支持多选且不产生 checkbox 类型警告', async ({ page }) => {
+    const checkboxWarnings: string[] = []
+    page.on('console', (message) => {
+      const text = message.text()
+      if (message.type() === 'warning' && text.includes('modelValue')) checkboxWarnings.push(text)
+    })
+
+    await page.reload({ waitUntil: 'domcontentloaded' })
+    const job = page.getByRole('checkbox', { name: /作业|Job/ }).first()
+    const workflow = page.getByRole('checkbox', { name: /工作流|Workflow/ }).first()
+    await page.locator('.el-checkbox').filter({ hasText: /作业|Job/ }).first().click()
+    await page.locator('.el-checkbox').filter({ hasText: /工作流|Workflow/ }).first().click()
+
+    await expect(job).toBeChecked()
+    await expect(workflow).toBeChecked()
+    expect(checkboxWarnings).toHaveLength(0)
+  })
 })
 
 // ─── 配置导入 ──────────────────────────────────────────────────────

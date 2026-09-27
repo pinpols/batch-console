@@ -45,15 +45,15 @@ export const pageMetaByPath = {
   },
   '/workflow/designer': {
     title: '编排设计器',
-    description: '选择 Workflow 后编辑节点、条件边和汇聚关系。',
+    description: '选择工作流后编辑节点、条件边和汇聚关系。',
   },
   '/jobs/pipelines': {
     title: '流水线定义',
     description: '维护流水线定义和步骤执行顺序。',
   },
   '/workflow/viewer': {
-    title: 'Workflow DAG 视图',
-    description: '只读查看 workflow 的 mermaid 图;编辑请走 Excel 包导入。',
+    title: '工作流 DAG 视图',
+    description: '只读查看工作流的 DAG;编辑请进入编排设计器。',
   },
   '/runs': {
     title: '全部运行',
@@ -112,7 +112,7 @@ export const pageMetaByPath = {
     description: '导入租户配置包,预览校验结果后一次性应用。',
   },
   '/observability/alerts': {
-    title: '事件告警',
+    title: '告警事件',
     description: '查看告警事件,并执行确认、静默和关闭。',
   },
   '/observability/alert-routings': {
@@ -120,7 +120,7 @@ export const pageMetaByPath = {
     description: '查看预留路由配置；当前运行时告警投递不读取这些记录。',
   },
   '/observability/trace': {
-    title: 'Trace 诊断',
+    title: '链路诊断',
     description:
       '按 traceId 跨域聚合查询(作业实例/工作流运行/文件/审计/执行日志/告警/Outbox/死信),0 命中时引导去日志/链路平台。',
   },
@@ -166,7 +166,7 @@ export const pageMetaByPath = {
     description: '按日历和日期查看批次日运行状态。',
   },
   '/governance/queues': {
-    title: '队列',
+    title: '资源队列',
     description: '维护调度队列,控制并发与优先级。',
   },
   '/governance/windows': {

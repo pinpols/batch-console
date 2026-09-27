@@ -59,7 +59,7 @@
         <el-table-column
           prop="operationType"
           :label="t('observability.execColOperationType')"
-          width="140"
+          width="180"
         >
           <template #default="{ row }">
             {{ resolveEnumLabel('operationType', row.operationType) }}
@@ -81,7 +81,7 @@
           show-overflow-tooltip
         />
         <el-table-column
-          prop="detailSummary"
+          prop="displaySummary"
           :label="t('observability.execColSummary')"
           min-width="300"
           show-overflow-tooltip
@@ -89,7 +89,7 @@
         <el-table-column
           prop="traceId"
           :label="t('observability.execColTrace')"
-          width="180"
+          width="220"
           show-overflow-tooltip
         >
           <template #default="{ row }">
@@ -103,8 +103,8 @@
             <span v-else class="cell-empty">—</span>
           </template>
         </el-table-column>
-        <DatetimeColumn prop="createdAt" :label="t('observability.execColTime')" width="160" />
-        <el-table-column :label="t('observability.execColActions')" width="160" fixed="right">
+        <DatetimeColumn prop="createdAt" :label="t('observability.execColTime')" width="180" />
+        <el-table-column :label="t('observability.execColActions')" width="180" fixed="right">
           <template #default="{ row }">
             <div class="table-actions">
               <el-button size="small" plain type="primary" @click="openDetail(row)">
@@ -162,6 +162,7 @@
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { useListLoadState } from '@/composables/useListLoadState'
   import DataState from '@/components/common/DataState.vue'
+  import { structuredSummary } from '@/utils/structuredSummary'
 
   const tenant = useTenantStore()
   const router = useRouter()
@@ -240,25 +241,6 @@
     return typeof v === 'string' ? v : String(v)
   }
 
-  function decodeHtmlEntities(value: string): string {
-    return value
-      .replace(/&quot;|&#34;/g, '"')
-      .replace(/&#39;|&apos;/g, "'")
-      .replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>')
-      .replace(/&amp;/g, '&')
-  }
-
-  function formatDetailSummary(value: unknown): string {
-    if (value == null) return ''
-    const decoded = decodeHtmlEntities(String(value))
-    try {
-      return JSON.stringify(JSON.parse(decoded))
-    } catch {
-      return decoded
-    }
-  }
-
   async function loadExecutionLogs() {
     await runLoadExec(async () => {
       const rows = (await queryExecutionLogs(tenant.tenantId, {
@@ -268,7 +250,7 @@
       })) as Record<string, unknown>[]
       execRows.value = rows.map((row) => ({
         ...row,
-        detailSummary: formatDetailSummary(row.detailSummary),
+        displaySummary: structuredSummary(row.detailSummary),
       }))
     }).catch(() => {
       execRows.value = []

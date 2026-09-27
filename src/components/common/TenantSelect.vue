@@ -8,7 +8,7 @@
     clearable
     :remote-method="search"
     :loading="searching"
-    :placeholder="placeholder"
+    :placeholder="placeholder || t('common.searchTenant')"
     :size="size"
     :class="resolvedSelectClass"
     :style="selectStyleNormalized"
@@ -39,6 +39,7 @@
 
 <script setup lang="ts">
   import { computed, ref, onMounted } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import { listTenants, type Tenant } from '@/api/tenants'
 
   const props = withDefaults(
@@ -56,7 +57,7 @@
     }>(),
     {
       modelValue: '',
-      placeholder: '搜索租户',
+      placeholder: '',
       size: 'default',
       disabled: false,
       selectStyle: 'width: 200px',
@@ -64,6 +65,8 @@
       popperClass: '',
     },
   )
+
+  const { t } = useI18n({ useScope: 'global' })
 
   defineEmits<{
     'update:modelValue': [value: string]

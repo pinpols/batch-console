@@ -100,7 +100,7 @@ function resolveMobileTarget(to: RouteLocationNormalized): string | null {
   return null
 }
 
-const routes: RouteRecordRaw[] = [
+export const routes: RouteRecordRaw[] = [
   {
     path: '/login',
     name: 'login',

@@ -126,7 +126,7 @@
     font-size: 15px;
     color: var(--ios-label-primary);
     font-family: inherit;
-    letter-spacing: -0.01em;
+    letter-spacing: 0;
     -webkit-appearance: none;
   }
 

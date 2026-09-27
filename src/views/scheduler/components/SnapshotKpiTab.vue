@@ -1,17 +1,18 @@
 <template>
-  <div
+  <button
+    :id="tabId"
+    type="button"
     role="tab"
-    :tabindex="0"
+    :tabindex="active ? 0 : -1"
     :aria-selected="active"
+    :aria-controls="panelId"
     class="kpi"
     :class="[`kpi--${variant}`, { 'kpi--active': active }]"
-    @mouseenter="emit('select')"
     @click="emit('select')"
-    @focus="emit('select')"
   >
     <div class="kpi__label">{{ label }}</div>
     <div class="kpi__value">{{ value }}</div>
-  </div>
+  </button>
 </template>
 
 <script setup lang="ts">
@@ -20,6 +21,8 @@
     value: number | string
     variant: 'primary' | 'success' | 'warning' | 'info'
     active: boolean
+    tabId: string
+    panelId: string
   }>()
 
   const emit = defineEmits<{
@@ -37,6 +40,9 @@
     overflow: hidden;
     cursor: pointer;
     outline: none;
+    width: 100%;
+    font-family: inherit;
+    text-align: left;
     transition:
       border-color var(--motion-duration-sm) var(--motion-ease-standard),
       box-shadow var(--motion-duration-sm) var(--motion-ease-standard);
@@ -103,7 +109,7 @@
     margin-top: 4px;
     font-size: 22px;
     font-weight: 700;
-    letter-spacing: -0.02em;
+    letter-spacing: 0;
     color: var(--color-text-primary);
   }
 </style>

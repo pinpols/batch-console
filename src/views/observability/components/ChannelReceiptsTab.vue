@@ -90,7 +90,7 @@
         <DatetimeColumn
           prop="dispatchedAt"
           :label="t('observability.chanColDispatchedAt')"
-          width="160"
+          width="180"
         />
         <el-table-column :label="t('observability.chanColActions')" width="120" fixed="right">
           <template #default="{ row }">

@@ -1,7 +1,11 @@
 <template>
   <section class="ops-panel" :class="{ 'ops-panel--active': active }" aria-hidden="false">
     <div class="metric-grid">
-      <button type="button" class="metric-hit" @click="$emit('go', '/approvals?status=PENDING')">
+      <button
+        type="button"
+        class="metric-hit metric-hit--pending"
+        @click="$emit('go', '/approvals?status=PENDING')"
+      >
         <MetricCard
           :label="t('opsMetricGrid.pendingApprovals')"
           :value="String(summary.pendingApprovals)"
@@ -12,6 +16,7 @@
       <button
         type="button"
         class="metric-hit"
+        :class="{ 'metric-hit--attention': summary.openAlerts > 0 }"
         @click="$emit('go', '/observability/alerts?status=OPEN')"
       >
         <MetricCard
@@ -24,6 +29,7 @@
       <button
         type="button"
         class="metric-hit"
+        :class="{ 'metric-hit--attention': summary.criticalAlerts > 0 }"
         @click="$emit('go', '/observability/alerts?severity=CRITICAL&status=OPEN')"
       >
         <MetricCard
@@ -45,7 +51,12 @@
           tone="info"
         />
       </button>
-      <button type="button" class="metric-hit" @click="$emit('goFailedJobs')">
+      <button
+        type="button"
+        class="metric-hit"
+        :class="{ 'metric-hit--attention': summary.failedJobs > 0 }"
+        @click="$emit('goFailedJobs')"
+      >
         <MetricCard
           :label="t('opsMetricGrid.failedInstances')"
           :value="String(summary.failedJobs)"
@@ -56,6 +67,7 @@
       <button
         type="button"
         class="metric-hit"
+        :class="{ 'metric-hit--attention': summary.slaBreaches > 0 }"
         @click="$emit('go', '/monitor/job-instances?slaBreached=1&range=all')"
       >
         <MetricCard
@@ -80,6 +92,7 @@
       <button
         type="button"
         class="metric-hit"
+        :class="{ 'metric-hit--attention': summary.drainingWorkers > 0 }"
         @click="$emit('go', '/workers/management?status=DRAINING')"
       >
         <MetricCard
@@ -92,6 +105,7 @@
       <button
         type="button"
         class="metric-hit"
+        :class="{ 'metric-hit--attention': summary.offlineWorkers > 0 }"
         @click="$emit('go', '/workers/management?status=OFFLINE,DECOMMISSIONED')"
       >
         <MetricCard
@@ -104,6 +118,7 @@
       <button
         type="button"
         class="metric-hit"
+        :class="{ 'metric-hit--attention': summary.outboxRetryBacklog > 0 }"
         @click="$emit('go', '/observability/outbox?tab=retry')"
       >
         <MetricCard
@@ -116,6 +131,7 @@
       <button
         type="button"
         class="metric-hit"
+        :class="{ 'metric-hit--attention': summary.outboxDeliveryFailures > 0 }"
         @click="$emit('go', '/observability/outbox?tab=delivery&status=FAILED')"
       >
         <MetricCard
@@ -167,6 +183,14 @@
 
   .metric-hit:nth-child(-n + 3) {
     grid-column: span 4;
+  }
+
+  .metric-hit--pending {
+    order: -2;
+  }
+
+  .metric-hit--attention {
+    order: -1;
   }
 
   .metric-hit:focus-visible {

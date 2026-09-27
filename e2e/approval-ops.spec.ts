@@ -7,6 +7,16 @@ import { enterDemoApp, expectPageTitle, isVisible } from './support/app'
 
 async function createPendingApproval(page: Parameters<typeof enterDemoApp>[0], label: string) {
   const suffix = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
+  const definitionsResponse = await page.request.get(
+    '/api/console/queries/job-definitions?tenantId=ta&pageNo=1&pageSize=1',
+    { headers: { 'X-Tenant-Id': 'ta' } },
+  )
+  expect(definitionsResponse.status(), 'query an existing job definition').toBe(200)
+  const definitionsBody = (await definitionsResponse.json()) as {
+    data?: { items?: Array<{ jobCode?: string }> }
+  }
+  const jobCode = definitionsBody.data?.items?.[0]?.jobCode
+  expect(jobCode, 'ta must contain a job definition for rerun approval').toBeTruthy()
   const response = await page.request.post('/api/console/self-service/jobs/rerun-request', {
     headers: {
       'X-Tenant-Id': 'ta',
@@ -14,7 +24,7 @@ async function createPendingApproval(page: Parameters<typeof enterDemoApp>[0], l
     },
     data: {
       tenantId: 'ta',
-      jobCode: `e2e-approval-${label}-${suffix}`,
+      jobCode,
       bizDate: '2026-09-21',
       reason: `e2e ${label} approval action`,
     },

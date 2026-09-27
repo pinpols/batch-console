@@ -10,29 +10,96 @@
         >
           {{ t('schedulerSnapshot.headerRefresh') }}
         </el-button>
-        <el-button type="warning" :loading="pauseLoading" @click="confirmPauseAll">
+        <el-button
+          v-if="canManageSystem && schedulerState === 'running'"
+          type="warning"
+          :icon="Pause"
+          :loading="pauseLoading"
+          @click="confirmPauseAll"
+        >
           {{ t('schedulerSnapshot.headerPauseAll') }}
         </el-button>
-        <el-button type="success" :loading="resumeLoading" @click="confirmResumeAll">
+        <el-button
+          v-else-if="canManageSystem && schedulerState === 'paused'"
+          type="success"
+          :icon="Play"
+          :loading="resumeLoading"
+          @click="confirmResumeAll"
+        >
           {{ t('schedulerSnapshot.headerResumeAll') }}
         </el-button>
+        <el-tooltip v-else-if="canManageSystem" :content="t('schedulerSnapshot.statusUnknownTip')">
+          <span>
+            <el-button disabled :icon="Pause">{{ t('schedulerSnapshot.statusUnknown') }}</el-button>
+          </span>
+        </el-tooltip>
       </template>
     </PageHeader>
+
+    <el-alert
+      v-if="loadError"
+      class="snapshot-alert"
+      type="error"
+      show-icon
+      :closable="false"
+      :title="t('schedulerSnapshot.loadErrorTitle')"
+      :description="
+        snap
+          ? t('schedulerSnapshot.staleDescription', { time: fmtDatetime(lastSuccessfulAt) })
+          : t('schedulerSnapshot.loadErrorDescription')
+      "
+    >
+      <template #default>
+        <div class="snapshot-alert__actions">
+          <CopyableText v-if="loadErrorTrace" :text="loadErrorTrace">
+            <span>{{ t('schedulerSnapshot.errorTrace', { trace: loadErrorTrace }) }}</span>
+          </CopyableText>
+          <el-button type="primary" plain size="small" :loading="loading" @click="loadAll()">
+            {{ t('common.retry') }}
+          </el-button>
+          <el-button plain size="small" @click="router.push('/ops/diagnostic')">
+            {{ t('schedulerSnapshot.openDiagnostic') }}
+          </el-button>
+        </div>
+      </template>
+    </el-alert>
+
+    <SectionCard v-if="!snap && !loading" class="mt">
+      <EmptyState variant="service-down" :description="t('schedulerSnapshot.loadErrorDescription')">
+        <template #action>
+          <el-button type="primary" :icon="Refresh" @click="loadAll()">
+            {{ t('common.retry') }}
+          </el-button>
+        </template>
+      </EmptyState>
+    </SectionCard>
 
     <SectionCard v-if="snap">
       <template #header>
         <div class="card-header">
           <div class="card-title">
             {{ t('schedulerSnapshot.cardSnapshotTitle') }}
-            <el-tag size="small" effect="plain" type="info">{{ snap.generatedAt }}</el-tag>
+            <el-tag size="small" effect="plain" type="info">{{
+              fmtDatetime(snap.generatedAt)
+            }}</el-tag>
+            <el-tag size="small" effect="plain" :type="schedulerStateTagType">
+              {{ schedulerStateLabel }}
+            </el-tag>
           </div>
           <div class="card-actions">
-            <el-tag size="small" effect="plain" type="info">tenant: {{ snap.tenantId }}</el-tag>
+            <el-tag size="small" effect="plain" type="info">
+              {{ t('schedulerSnapshot.tenantLabel', { id: snap.tenantId }) }}
+            </el-tag>
           </div>
         </div>
       </template>
 
-      <div class="kpis" role="tablist" :aria-label="t('schedulerSnapshot.kpiAriaLabel')">
+      <div
+        class="kpis"
+        role="tablist"
+        :aria-label="t('schedulerSnapshot.kpiAriaLabel')"
+        @keydown="onKpiKeydown"
+      >
         <SnapshotKpiTab
           v-for="t in kpiTabs"
           :key="t.key"
@@ -40,6 +107,8 @@
           :value="t.value"
           :variant="t.variant"
           :active="activePanel === t.key"
+          :tab-id="`snapshot-tab-${t.key}`"
+          :panel-id="`snapshot-panel-${t.key}`"
           @select="activePanel = t.key"
         />
       </div>
@@ -58,7 +127,13 @@
         </div>
       </template>
 
-      <div v-show="activePanel === 'policies'" class="detail-pane" role="tabpanel">
+      <div
+        v-show="activePanel === 'policies'"
+        id="snapshot-panel-policies"
+        class="detail-pane"
+        role="tabpanel"
+        aria-labelledby="snapshot-tab-policies"
+      >
         <el-table
           v-loading="loading"
           :data="pagedPolicies.records"
@@ -78,7 +153,7 @@
                   </el-tag>
                 </div>
                 <div class="cell-sub">
-                  quotaResetPolicy:
+                  {{ t('schedulerSnapshot.quotaResetPolicyLabel') }}:
                   <el-tag size="small" effect="plain" type="info">{{
                     row.quotaResetPolicy
                   }}</el-tag>
@@ -165,7 +240,13 @@
         />
       </div>
 
-      <div v-show="activePanel === 'queues'" class="detail-pane" role="tabpanel">
+      <div
+        v-show="activePanel === 'queues'"
+        id="snapshot-panel-queues"
+        class="detail-pane"
+        role="tabpanel"
+        aria-labelledby="snapshot-tab-queues"
+      >
         <el-table
           v-loading="loading"
           :data="pagedQueues.records"
@@ -185,7 +266,7 @@
                   </el-tag>
                 </div>
                 <div class="cell-sub">
-                  quotaResetPolicy:
+                  {{ t('schedulerSnapshot.quotaResetPolicyLabel') }}:
                   <el-tag size="small" effect="plain" type="info">{{
                     row.quotaResetPolicy
                   }}</el-tag>
@@ -257,7 +338,13 @@
         />
       </div>
 
-      <div v-show="activePanel === 'workers'" class="detail-pane" role="tabpanel">
+      <div
+        v-show="activePanel === 'workers'"
+        id="snapshot-panel-workers"
+        class="detail-pane"
+        role="tabpanel"
+        aria-labelledby="snapshot-tab-workers"
+      >
         <el-table
           v-loading="loading"
           :data="pagedWorkers.records"
@@ -277,7 +364,9 @@
                   </el-tag>
                   <StatusTag :value="row.status" category="worker" />
                 </div>
-                <div class="cell-sub">heartbeat: {{ fmtDatetime(row.heartbeatAt) }}</div>
+                <div class="cell-sub">
+                  {{ t('schedulerSnapshot.heartbeatLabel') }}: {{ fmtDatetime(row.heartbeatAt) }}
+                </div>
               </div>
             </template>
           </el-table-column>
@@ -313,7 +402,13 @@
         />
       </div>
 
-      <div v-show="activePanel === 'history'" class="detail-pane" role="tabpanel">
+      <div
+        v-show="activePanel === 'history'"
+        id="snapshot-panel-history"
+        class="detail-pane"
+        role="tabpanel"
+        aria-labelledby="snapshot-tab-history"
+      >
         <el-table
           v-loading="histLoading"
           :data="pagedHistory.records"
@@ -334,7 +429,7 @@
                   </el-tag>
                 </div>
                 <div class="cell-sub">
-                  quotaResetPolicy:
+                  {{ t('schedulerSnapshot.quotaResetPolicyLabel') }}:
                   <el-tag size="small" effect="plain" type="info">{{
                     row.quotaResetPolicy
                   }}</el-tag>
@@ -406,30 +501,35 @@
 <script setup lang="ts">
   import { computed, ref } from 'vue'
   import { useI18n } from 'vue-i18n'
+  import { useRouter } from 'vue-router'
   import { ElMessage } from 'element-plus'
-  import { Copy as DocumentCopy, RefreshCw as Refresh } from 'lucide-vue-next'
+  import { Copy as DocumentCopy, Pause, Play, RefreshCw as Refresh } from 'lucide-vue-next'
   import { useRefreshAction } from '@/composables/useRefreshAction'
 
   const refresh = useRefreshAction()
   import { confirmDanger } from '@/composables/useDangerConfirm'
 
   const { t } = useI18n({ useScope: 'global' })
+  const router = useRouter()
   import { fmtDatetime } from '@/utils/datetime'
   import {
     getSchedulerSnapshot,
     getSchedulerSnapshotHistory,
+    getSchedulerStatus,
     pauseAllSchedulers,
     resumeAllSchedulers,
   } from '@/api/scheduler'
   import { toPageResult } from '@/api/adapters'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
+  import { usePermission } from '@/composables/usePermission'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
   import TablePagerBar from '@/components/table/TablePagerBar.vue'
   import CopyableText from '@/components/common/CopyableText.vue'
+  import EmptyState from '@/components/common/EmptyState.vue'
   import SnapshotKpiTab from './components/SnapshotKpiTab.vue'
   import type {
     ConsoleSchedulerSnapshotHistoryResponse,
@@ -440,19 +540,63 @@
   type KpiVariant = 'primary' | 'success' | 'warning' | 'info'
 
   const tenant = useTenantStore()
+  const { canManageSystem } = usePermission()
   const loading = ref(false)
   const histLoading = ref(false)
   const pauseLoading = ref(false)
   const resumeLoading = ref(false)
   const snap = ref<ConsoleSchedulerSnapshotResponse | null>(null)
   const history = ref<ConsoleSchedulerSnapshotHistoryResponse[]>([])
+  const schedulerStatus = ref('')
+  const loadError = ref(false)
+  const loadErrorTrace = ref('')
+  const lastSuccessfulAt = ref<string | null>(null)
   const activePanel = ref<PanelKey>('policies')
+  const KPI_KEYS: PanelKey[] = ['policies', 'queues', 'workers', 'history']
+
+  function onKpiKeydown(event: KeyboardEvent) {
+    let nextIndex = KPI_KEYS.indexOf(activePanel.value)
+    if (event.key === 'ArrowRight' || event.key === 'ArrowDown')
+      nextIndex = (nextIndex + 1) % KPI_KEYS.length
+    else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp')
+      nextIndex = (nextIndex - 1 + KPI_KEYS.length) % KPI_KEYS.length
+    else if (event.key === 'Home') nextIndex = 0
+    else if (event.key === 'End') nextIndex = KPI_KEYS.length - 1
+    else return
+
+    event.preventDefault()
+    activePanel.value = KPI_KEYS[nextIndex]
+    requestAnimationFrame(() =>
+      document.getElementById(`snapshot-tab-${activePanel.value}`)?.focus(),
+    )
+  }
 
   const pageSize = ref(15)
   const pagePolicies = ref(1)
   const pageQueues = ref(1)
   const pageWorkers = ref(1)
   const pageHistory = ref(1)
+
+  const schedulerState = computed<'running' | 'paused' | 'unknown'>(() => {
+    const status = schedulerStatus.value.toUpperCase()
+    if (status === 'ALL_PAUSED' || status === 'PAUSED') return 'paused'
+    if (status === 'RUNNING' || status === 'ALL_RESUMED') return 'running'
+    return 'unknown'
+  })
+  const schedulerStateLabel = computed(() =>
+    schedulerState.value === 'paused'
+      ? t('schedulerSnapshot.statusPaused')
+      : schedulerState.value === 'running'
+        ? t('schedulerSnapshot.statusRunning')
+        : t('schedulerSnapshot.statusUnknown'),
+  )
+  const schedulerStateTagType = computed(() =>
+    schedulerState.value === 'paused'
+      ? 'warning'
+      : schedulerState.value === 'running'
+        ? 'success'
+        : 'info',
+  )
 
   const kpiTabs = computed<{ key: PanelKey; label: string; value: number; variant: KpiVariant }[]>(
     () => [
@@ -571,30 +715,49 @@
     return undefined
   }
 
+  function errorCorrelation(reason: unknown): string {
+    const response = (reason as { response?: { data?: unknown; headers?: unknown } })?.response
+    const data = response?.data as { meta?: { traceId?: unknown; requestId?: unknown } } | undefined
+    const fromMeta = data?.meta?.traceId ?? data?.meta?.requestId
+    if (fromMeta) return String(fromMeta)
+    const headers = response?.headers as
+      { get?: (name: string) => unknown; [key: string]: unknown } | undefined
+    const fromHeader =
+      headers?.get?.('x-trace-id') ??
+      headers?.get?.('x-request-id') ??
+      headers?.['x-trace-id'] ??
+      headers?.['x-request-id']
+    return fromHeader ? String(fromHeader) : ''
+  }
+
   async function loadAll(silent = false) {
     loading.value = true
     histLoading.value = true
-    let snapOk = true
-    let histOk = true
-    try {
-      snap.value = await getSchedulerSnapshot(tenant.tenantId)
-    } catch {
-      snap.value = null
-      snapOk = false
-    } finally {
-      loading.value = false
-    }
-    try {
-      history.value = await getSchedulerSnapshotHistory(tenant.tenantId)
-    } catch {
-      history.value = []
-      histOk = false
-    } finally {
-      histLoading.value = false
-    }
+    const [snapResult, historyResult, statusResult] = await Promise.allSettled([
+      getSchedulerSnapshot(tenant.tenantId),
+      getSchedulerSnapshotHistory(tenant.tenantId),
+      getSchedulerStatus(),
+    ])
+    const snapOk = snapResult.status === 'fulfilled'
+    const histOk = historyResult.status === 'fulfilled'
+    const statusOk = statusResult.status === 'fulfilled'
+    if (snapResult.status === 'fulfilled') snap.value = snapResult.value
+    if (historyResult.status === 'fulfilled') history.value = historyResult.value
+    if (statusResult.status === 'fulfilled') schedulerStatus.value = statusResult.value.status
+    else schedulerStatus.value = ''
+    loadError.value = !snapOk || !histOk || !statusOk
+    loadErrorTrace.value =
+      [snapResult, historyResult, statusResult]
+        .filter((result) => result.status === 'rejected')
+        .map((result) => errorCorrelation(result.reason))
+        .find(Boolean) ?? ''
+    if (snapOk) lastSuccessfulAt.value = new Date().toISOString()
+    loading.value = false
+    histLoading.value = false
     if (!silent) {
-      if (snapOk && histOk) ElMessage.success(t('schedulerSnapshot.refreshDone'))
-      else if (!snapOk && !histOk) ElMessage.error(t('schedulerSnapshot.refreshFailed'))
+      if (snapOk && histOk && statusOk) ElMessage.success(t('schedulerSnapshot.refreshDone'))
+      else if (!snapOk && !histOk && !statusOk)
+        ElMessage.error(t('schedulerSnapshot.refreshFailed'))
       else ElMessage.warning(t('schedulerSnapshot.refreshPartial'))
     }
   }
@@ -611,6 +774,7 @@
       })
       pauseLoading.value = true
       await pauseAllSchedulers()
+      schedulerStatus.value = 'ALL_PAUSED'
       ElMessage.success(t('schedulerSnapshot.pauseSuccess'))
       await loadAll()
     } catch {
@@ -630,6 +794,7 @@
       })
       resumeLoading.value = true
       await resumeAllSchedulers()
+      schedulerStatus.value = 'ALL_RESUMED'
       ElMessage.success(t('schedulerSnapshot.resumeSuccess'))
       await loadAll()
     } catch {
@@ -643,6 +808,17 @@
 <style scoped>
   .mt {
     margin-top: 16px;
+  }
+
+  .snapshot-alert {
+    margin-bottom: var(--space-md);
+  }
+
+  .snapshot-alert__actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    flex-wrap: wrap;
   }
 
   .card-header {

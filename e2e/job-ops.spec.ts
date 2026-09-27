@@ -15,7 +15,7 @@ test.describe('Job 定义 — 筛选查询', () => {
   })
 
   test('Job Code 模糊搜索后表格刷新', async ({ page }) => {
-    const input = page.locator('.el-form-item').filter({ hasText: 'Job Code' }).getByRole('textbox')
+    const input = page.getByRole('textbox', { name: '作业编码' })
     await input.fill('test')
     await page.getByRole('button', { name: '搜索' }).click()
     await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
@@ -50,7 +50,7 @@ test.describe('Job 定义 — 筛选查询', () => {
   test('搜索按钮重新加载(新 UI 裁撤独立刷新钮)', async ({ page }) => {
     // 新 UI:作业定义查询条 show-refresh=false,重查载体是「搜索」按钮
     await page.getByRole('button', { name: '搜索' }).click()
-    await expect(page.getByRole('columnheader', { name: 'Job Code' })).toBeVisible({ timeout: 6000 })
+    await expect(page.getByRole('columnheader', { name: '作业编码' })).toBeVisible({ timeout: 6000 })
   })
 })
 

@@ -160,6 +160,7 @@ export const navigationGroups: NavigationGroup[] = [
         path: '/ops/diagnostic',
         minRole: 'ADMIN',
         icon: Tools,
+        hidden: true,
       },
       {
         title: pageTitle('/observability/lineage'),
@@ -232,12 +233,14 @@ export const navigationGroups: NavigationGroup[] = [
         path: '/workflow/designer',
         minRole: 'OPERATOR',
         icon: Aim,
+        hidden: true,
       },
       {
         title: pageTitle('/config/tenant-package'),
         path: '/config/tenant-package',
         minRole: 'OPERATOR',
         icon: Box,
+        hidden: true,
       },
     ],
   },
@@ -258,6 +261,7 @@ export const navigationGroups: NavigationGroup[] = [
         path: '/files/arrival-groups',
         minRole: 'VIEWER',
         icon: CollectionTag,
+        hidden: true,
       },
       {
         title: pageTitle('/files/pipeline-obs'),
@@ -318,6 +322,7 @@ export const navigationGroups: NavigationGroup[] = [
         path: '/ops/batch-day-replay',
         minRole: 'OPERATOR',
         icon: DataAnalysis,
+        hidden: true,
       },
       {
         title: pageTitle('/ops/capacity-profile'),
@@ -453,6 +458,7 @@ export const navigationGroups: NavigationGroup[] = [
         path: '/system/event-catalog',
         minRole: 'VIEWER',
         icon: Collection,
+        hidden: true,
       },
       {
         title: pageTitle('/system/tags'),

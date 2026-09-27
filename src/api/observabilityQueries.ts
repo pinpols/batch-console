@@ -125,11 +125,48 @@ export function queryOutboxRetries(tenantId: string, filters?: OutboxRetryFilter
   })
 }
 
+export function queryOutboxRetriesPage(
+  tenantId: string,
+  pageNo: number,
+  pageSize: number,
+  filters?: OutboxRetryFilters,
+): Promise<PageResponse<ConsoleOutboxRetryLogResponse>> {
+  return get<PageResponse<ConsoleOutboxRetryLogResponse>>('/api/console/queries/outbox-retries', {
+    tenantId,
+    pageNo,
+    pageSize,
+    ...(filters?.eventType ? { eventType: filters.eventType } : {}),
+    ...(filters?.eventKey ? { eventKey: filters.eventKey } : {}),
+    ...(filters?.retryStatus ? { retryStatus: filters.retryStatus } : {}),
+  })
+}
+
 export function queryOutboxDeliveries(tenantId: string, filters?: OutboxDeliveryFilters) {
   return fetchAllPageItems<ConsoleOutboxDeliveryLogResponse>(
     '/api/console/queries/outbox-deliveries',
     {
       tenantId,
+      ...(filters?.eventType ? { eventType: filters.eventType } : {}),
+      ...(filters?.eventKey ? { eventKey: filters.eventKey } : {}),
+      ...(filters?.deliveryStatus ? { deliveryStatus: filters.deliveryStatus } : {}),
+      ...(filters?.targetTopic ? { targetTopic: filters.targetTopic } : {}),
+      ...(filters?.traceId ? { traceId: filters.traceId } : {}),
+    },
+  )
+}
+
+export function queryOutboxDeliveriesPage(
+  tenantId: string,
+  pageNo: number,
+  pageSize: number,
+  filters?: OutboxDeliveryFilters,
+): Promise<PageResponse<ConsoleOutboxDeliveryLogResponse>> {
+  return get<PageResponse<ConsoleOutboxDeliveryLogResponse>>(
+    '/api/console/queries/outbox-deliveries',
+    {
+      tenantId,
+      pageNo,
+      pageSize,
       ...(filters?.eventType ? { eventType: filters.eventType } : {}),
       ...(filters?.eventKey ? { eventKey: filters.eventKey } : {}),
       ...(filters?.deliveryStatus ? { deliveryStatus: filters.deliveryStatus } : {}),

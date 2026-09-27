@@ -1554,6 +1554,42 @@
     editDirty.markPristine()
   }
 
+  let editLinkRequest = 0
+  watch(
+    [
+      () => route.query.action,
+      () => route.query.editId,
+      () => route.query.tenantId,
+      () => tenant.tenantId,
+      () => canMutateConfig.value,
+    ],
+    async ([action, editId, queryTenant]) => {
+      const request = ++editLinkRequest
+      const id = Number(editId)
+      const targetTenant = String(queryTenant || tenant.tenantId)
+      if (
+        action !== 'edit' ||
+        !canMutateConfig.value ||
+        !Number.isSafeInteger(id) ||
+        id <= 0 ||
+        !targetTenant ||
+        jdVisible.value
+      )
+        return
+      try {
+        const row = await jobApi.getDefinition(id, targetTenant)
+        if (request !== editLinkRequest || route.query.action !== 'edit') return
+        await router.replace({
+          query: { ...route.query, action: undefined, editId: undefined },
+        })
+        if (route.path === '/jobs/definitions') openEdit(row)
+      } catch {
+        // Keep the deep link intact so refresh can retry after a transient failure.
+      }
+    },
+    { immediate: true },
+  )
+
   async function submitEdit() {
     if (editingId.value == null) return
     const valid = await editFormRef.value

@@ -8,7 +8,14 @@
     v-model:page="logPage"
     v-model:page-size="logPageSize"
     @change="() => {}"
+    :has-active-filters="hasActiveLogFilters"
   >
+    <template v-if="!hasActiveLogFilters" #empty>
+      <EmptyState
+        :description="t('notificationDeliveryLogsTab.emptyDescription')"
+        :image-size="80"
+      />
+    </template>
     <template #query>
       <ListPageQueryBar
         :filter-busy="filterBusy"
@@ -104,6 +111,7 @@
   import DatetimeColumn from '@/components/common/DatetimeColumn.vue'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { useListLoadState } from '@/composables/useListLoadState'
+  import EmptyState from '@/components/common/EmptyState.vue'
 
   const tenant = useTenantStore()
   const { data: metaEnums } = useConsoleMetaEnumsQuery()
@@ -116,6 +124,9 @@
   const logPageSize = ref(15)
   const logFilterDraft = reactive({ keyword: '', status: '' })
   const logFilterApplied = reactive({ keyword: '', status: '' })
+  const hasActiveLogFilters = computed(
+    () => !!logFilterApplied.keyword.trim() || !!logFilterApplied.status.trim(),
+  )
 
   async function loadDeliveryLogs() {
     await runLoadLogs(async () => {

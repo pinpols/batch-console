@@ -1,6 +1,7 @@
 <template>
   <div class="job-config-basic">
     <el-descriptions
+      v-if="!overviewOnly"
       :title="t('jobConfigBasic.groupBasic')"
       :column="2"
       border
@@ -42,7 +43,7 @@
       <el-descriptions-item :label="t('jobConfigBasic.fieldScheduleExpr')">{{
         job.scheduleExpr || '—'
       }}</el-descriptions-item>
-      <el-descriptions-item label="dependsOnJobCode">{{
+      <el-descriptions-item :label="t('jobConfigBasic.fieldDependsOnJobCode')">{{
         job.dependsOnJobCode || '—'
       }}</el-descriptions-item>
       <el-descriptions-item :label="t('jobConfigBasic.fieldCalendarCode')">{{
@@ -54,6 +55,7 @@
     </el-descriptions>
 
     <el-descriptions
+      v-if="!overviewOnly"
       :title="t('jobConfigBasic.groupResource')"
       :column="2"
       border
@@ -75,6 +77,7 @@
     </el-descriptions>
 
     <el-descriptions
+      v-if="!overviewOnly"
       :title="t('jobConfigBasic.groupRetry')"
       :column="2"
       border
@@ -93,7 +96,7 @@
     </el-descriptions>
 
     <el-descriptions
-      v-if="job.paramSchema || job.defaultParams"
+      v-if="!overviewOnly && (job.paramSchema || job.defaultParams)"
       :title="t('jobConfigBasic.groupParams')"
       :column="1"
       border
@@ -119,10 +122,10 @@
       class="config-group"
     >
       <el-descriptions-item :label="t('jobConfigBasic.fieldCreatedAt')">{{
-        job.createdAt || '—'
+        fmtDatetime(job.createdAt)
       }}</el-descriptions-item>
       <el-descriptions-item :label="t('jobConfigBasic.fieldUpdatedAt')">{{
-        job.updatedAt || '—'
+        fmtDatetime(job.updatedAt)
       }}</el-descriptions-item>
     </el-descriptions>
   </div>
@@ -144,11 +147,14 @@
    */
   import { useI18n } from 'vue-i18n'
   import type { ConsoleJobDefinitionResponse } from '@/types/console-api'
+  import { fmtDatetime } from '@/utils/datetime'
 
   const props = defineProps<{
     job: ConsoleJobDefinitionResponse
     /** 已解析的 executionMode 显示文案;父组件用 meta enum 算好传入,组件本身不依赖 enum 服务 */
     executionModeLabel?: string
+    /** 详情页只展示身份与审计字段，避免与调度、资源和触发 Tab 重复。 */
+    overviewOnly?: boolean
   }>()
 
   const { t } = useI18n({ useScope: 'global' })

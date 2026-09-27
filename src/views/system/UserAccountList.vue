@@ -18,9 +18,10 @@
     >
       <template #status>
         <StatusSegment
-          v-model="accountStatus"
+          :model-value="accountStatus"
           :items="accountStatusItems"
           :aria-label="t('userAccountList.colStatus')"
+          @update:model-value="onAccountStatusChange"
         />
       </template>
 
@@ -384,11 +385,7 @@
     },
   ])
 
-  const visibleItems = computed(() => {
-    if (accountStatus.value === 'enabled') return page.value.items.filter((user) => user.enabled)
-    if (accountStatus.value === 'disabled') return page.value.items.filter((user) => !user.enabled)
-    return page.value.items
-  })
+  const visibleItems = computed(() => page.value.items)
 
   const hasAccountFilters = computed(() => !!(queryApplied.keyword.trim() || accountStatus.value))
 
@@ -414,6 +411,7 @@
       }
       if (queryApplied.tenantId) q.tenantId = queryApplied.tenantId
       if (queryApplied.keyword) q.keyword = queryApplied.keyword
+      if (accountStatus.value) q.enabled = accountStatus.value === 'enabled'
       page.value = await listUsers(q)
       lastLoadedAt.value = new Date()
     }).catch(() => {
@@ -458,6 +456,13 @@
   }
   function onPageSize(s: number) {
     queryApplied.pageSize = s
+    queryApplied.pageNo = 1
+    void load()
+  }
+
+  function onAccountStatusChange(status: string) {
+    if (accountStatus.value === status) return
+    accountStatus.value = status
     queryApplied.pageNo = 1
     void load()
   }

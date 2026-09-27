@@ -40,7 +40,7 @@ const PAGES: PageCheck[] = [
     title: '文件列表',
     drillFirstRow: true,
   },
-  { path: '/files/templates', title: '文件配置' },
+  { path: '/files/templates', title: '文件模板' },
   { path: '/files/arrival-groups', title: '到达组治理' },
   { path: '/files/pipeline-obs', title: '流水线观测' },
   // 定义
@@ -76,6 +76,16 @@ test.describe('@cross-browser 全页面零 4xx/5xx 巡检', () => {
   test.describe.configure({ timeout: 60_000 })
   for (const target of PAGES) {
     test(`无服务端错误: ${target.path}`, async ({ page, network }) => {
+      const vueWarnings: string[] = []
+      page.on('console', (message) => {
+        const text = message.text()
+        if (
+          message.type() === 'warning' &&
+          /(Vue warn|Invalid prop|Extraneous non-props attributes)/i.test(text)
+        ) {
+          vueWarnings.push(text.slice(0, 1000))
+        }
+      })
       for (const u of target.allowErrors ?? []) network.ignore(u)
       // 跨多个测试同时跑时,主页面去往新 path 有时间 race;允许全局忽略 ConsoleSession 的 SSE 心跳
       network.ignore(/\/notifications\/sse\b/)
@@ -116,6 +126,7 @@ test.describe('@cross-browser 全页面零 4xx/5xx 巡检', () => {
       }
 
       network.assertClean(target.path)
+      expect(vueWarnings, `Vue warnings at ${target.path}`).toHaveLength(0)
     })
   }
 })

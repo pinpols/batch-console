@@ -36,6 +36,7 @@ export type ConsoleSchedulerSnapshotResponse =
   components['schemas']['ConsoleSchedulerSnapshotResponse']
 export type ConsoleSchedulerSnapshotHistoryResponse =
   components['schemas']['ConsoleSchedulerSnapshotHistoryResponse']
+export type SchedulerCommandResponse = components['schemas']['SchedulerCommandResponse']
 export type ConsoleSchedulerPolicySnapshot = components['schemas']['ConsoleSchedulerPolicySnapshot']
 export type ConsoleSchedulerQueueSnapshot = components['schemas']['ConsoleSchedulerQueueSnapshot']
 export type ConsoleAlertEventResponse = components['schemas']['ConsoleAlertEventResponse']

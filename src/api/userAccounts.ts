@@ -21,6 +21,7 @@ export interface UserAccount {
 export interface UserListQuery {
   tenantId?: string
   keyword?: string
+  enabled?: boolean
   pageNo?: number
   pageSize?: number
 }

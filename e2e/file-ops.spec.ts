@@ -114,7 +114,7 @@ test.describe('文件模板 — 筛选与详情', () => {
   test.beforeEach(async ({ page }) => {
     await enterDemoApp(page)
     await page.goto('/files/templates')
-    await expectPageTitle(page, '文件配置')
+    await expectPageTitle(page, '文件模板')
   })
 
   test('模板编码搜索 → 查询', async ({ page }) => {
@@ -196,23 +196,23 @@ test.describe('流水线观测 — Tab 功能', () => {
     await expectPageTitle(page, '流水线观测')
   })
 
-  test('默认展示流水线实例 tab', async ({ page }) => {
-    await expect(page.getByRole('tab', { name: '流水线实例' })).toHaveClass(/is-active/)
+  test('默认展示运行列表 tab', async ({ page }) => {
+    await expect(page.getByRole('tab', { name: '运行列表' })).toHaveClass(/is-active/)
   })
 
-  test('切换到步骤 tab', async ({ page }) => {
-    await page.getByRole('tab', { name: '步骤' }).click()
-    await expect(page.getByRole('tab', { name: '步骤' })).toHaveClass(/is-active/)
+  test('切换到阶段明细 tab', async ({ page }) => {
+    await page.getByRole('tab', { name: '阶段明细' }).click()
+    await expect(page.getByRole('tab', { name: '阶段明细' })).toHaveClass(/is-active/)
   })
 
-  test('切换到投递 tab', async ({ page }) => {
-    await page.getByRole('tab', { name: '投递' }).click()
-    await expect(page.getByRole('tab', { name: '投递' })).toHaveClass(/is-active/)
+  test('切换到投递记录 tab', async ({ page }) => {
+    await page.getByRole('tab', { name: '投递记录' }).click()
+    await expect(page.getByRole('tab', { name: '投递记录' })).toHaveClass(/is-active/)
   })
 
-  test('切换到错单 tab', async ({ page }) => {
-    await page.getByRole('tab', { name: '错单' }).click()
-    await expect(page.getByRole('tab', { name: '错单' })).toHaveClass(/is-active/)
+  test('切换到错误记录 tab', async ({ page }) => {
+    await page.getByRole('tab', { name: '错误记录' }).click()
+    await expect(page.getByRole('tab', { name: '错误记录' })).toHaveClass(/is-active/)
   })
 
   test('关键字搜索 → 查询', async ({ page }) => {

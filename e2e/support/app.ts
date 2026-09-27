@@ -21,11 +21,13 @@ export const smokeRoutes: RouteCheck[] = [
   { path: '/system/tags', title: '标签管理' },
   // 文件中心
   { path: '/files/list', title: '文件列表' },
-  { path: '/files/templates', title: '文件配置' },
+  { path: '/files/templates', title: '文件模板' },
+  { path: '/files/channels', title: '文件渠道' },
   { path: '/files/arrival-groups', title: '到达组治理' },
   { path: '/files/pipeline-obs', title: '流水线观测' },
   // 定义与编排
   { path: '/jobs/definitions', title: '作业定义' },
+  { path: '/jobs/pipelines', title: '流水线定义' },
   { path: '/workflow/definitions', title: '工作流定义' },
   { path: '/workflow/designer', title: '编排设计器' },
   // Runs / 执行与观测
@@ -35,26 +37,44 @@ export const smokeRoutes: RouteCheck[] = [
   { path: '/monitor/workflow-runs', title: '工作流运行' },
   // /logs 已 redirect 到 /observability/queries?tab=executionLogs,smoke 不再列
   { path: '/observability/alerts', title: /事件告警|告警/ },
+  { path: '/observability/alert-routings', title: '告警路由（预留）' },
+  { path: '/observability/trace', title: '链路诊断' },
+  { path: '/observability/lineage', title: '血缘证据' },
   { path: '/observability/audits', title: '审计日志' },
+  { path: '/observability/operation-audits', title: '操作审计' },
   { path: '/observability/outbox', title: 'Outbox' },
   { path: '/observability/queries', title: '综合查询' },
   { path: '/system/event-catalog', title: '事件目录' },
   // 调度与治理
   // /scheduler/catch-up-approvals 已 redirect 到 /approvals?tab=catch-up,smoke 不再列
+  { path: '/scheduler/snapshot', title: '调度快照' },
+  { path: '/scheduler/batch-days', title: '批次日与窗口' },
+  { path: '/governance/windows', title: '批次窗口' },
+  { path: '/governance/calendars', title: '业务日历' },
   { path: '/governance/quota', title: /配额策略|租户配额/ },
   { path: '/governance/queues', title: /队列/ },
   { path: '/workers/management', title: 'Worker' },
   { path: '/system/triggers', title: '触发器' },
   { path: '/ops/custom-task-types', title: /自定义\s*taskType|Custom\s*task\s*types/ },
+  { path: '/ops/worker-fingerprints', title: 'Worker 指纹看板' },
+  { path: '/ops/capacity-profile', title: '容量画像' },
+  { path: '/ops/asset-freshness', title: '资产新鲜度策略' },
+  { path: '/ops/shard-catalog', title: '分片目录' },
+  { path: '/ops/tenant-placements', title: '租户分片' },
+  { path: '/ops/batch-day-replay', title: '批次日重放' },
   // 系统
   { path: '/system/tenants', title: '租户实例' },
   { path: '/system/user-accounts', title: '登录账户' },
+  { path: '/system/me', title: '我的账户' },
   { path: '/system/users', title: '权限自查' },
   { path: '/system/ai-chat', title: 'AI 助手' },
   { path: '/system/api-keys', title: 'API Key' },
   { path: '/system/parameters', title: '系统参数' },
   { path: '/system/notifications', title: '通知与投递' },
-  { path: '/system/atomic-task-types', title: /Atomic\s*节点配置中心|Atomic\s*task\s*type\s*center/ },
+  {
+    path: '/system/atomic-task-types',
+    title: /Atomic\s*节点配置中心|Atomic\s*task\s*type\s*center/,
+  },
 ]
 
 export async function enterDemoApp(page: Page) {

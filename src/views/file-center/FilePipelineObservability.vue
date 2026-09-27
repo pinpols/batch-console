@@ -17,6 +17,85 @@
       <span v-if="!currentFile.fileName && !currentFile.fileId" class="muted">—</span>
     </div>
 
+    <SectionCard v-if="selectedPipeline" class="pipeline-focus">
+      <template #header>
+        <div class="pipeline-focus__header">
+          <span>{{ t('filePipelineObservability.selectedRun', { id: selectedPipeline.id }) }}</span>
+          <StatusTag :value="String(selectedPipeline.runStatus ?? '')" category="workflow" />
+        </div>
+      </template>
+      <div class="pipeline-focus__links">
+        <span>{{ selectedPipeline.jobCode }}</span>
+        <router-link
+          v-if="selectedPipeline.fileId"
+          class="cell-link"
+          :to="`/files/list?fileId=${selectedPipeline.fileId}`"
+        >
+          {{ t('filePipelineObservability.relatedFile', { id: selectedPipeline.fileId }) }}
+        </router-link>
+        <router-link
+          v-if="selectedPipeline.relatedJobInstanceId"
+          class="cell-link"
+          :to="`/monitor/job-instances/${selectedPipeline.relatedJobInstanceId}`"
+        >
+          {{
+            t('filePipelineObservability.relatedInstance', {
+              id: selectedPipeline.relatedJobInstanceId,
+            })
+          }}
+        </router-link>
+        <router-link
+          v-if="selectedPipeline.traceId"
+          class="cell-link"
+          :to="`/observability/trace?traceId=${selectedPipeline.traceId}`"
+        >
+          {{ t('filePipelineObservability.relatedTrace') }}
+        </router-link>
+      </div>
+      <el-alert
+        v-if="selectedStepLoadError"
+        class="pipeline-stage-error"
+        type="error"
+        show-icon
+        :closable="false"
+        :title="t('filePipelineObservability.stageLoadError')"
+      >
+        <template #default>
+          <el-button link type="primary" @click="reloadSelectedSteps">
+            {{ t('common.retry') }}
+          </el-button>
+        </template>
+      </el-alert>
+      <div
+        v-else
+        v-loading="selectedStepsLoading"
+        class="pipeline-stages"
+        :aria-label="t('filePipelineObservability.stageOverview')"
+      >
+        <button
+          v-for="stage in selectedStages"
+          :key="stage.code"
+          type="button"
+          class="pipeline-stage"
+          :class="[
+            `pipeline-stage--${stage.tone}`,
+            { 'pipeline-stage--selected': selectedStageCode === stage.code },
+          ]"
+          :aria-pressed="selectedStageCode === stage.code"
+          @click="focusStage(stage.code)"
+        >
+          <span class="pipeline-stage__index">{{ stage.index }}</span>
+          <span class="pipeline-stage__body">
+            <strong>{{ stage.label }}</strong>
+            <span>{{ stage.status }}</span>
+            <span v-if="stage.error" class="pipeline-stage__error" :title="stage.error">
+              {{ stage.error }}
+            </span>
+          </span>
+        </button>
+      </div>
+    </SectionCard>
+
     <el-tabs v-model="activeTab" class="pill-tabs" @tab-change="onTabChange">
       <el-tab-pane :label="t('filePipelineObservability.tabPipelines')" name="pipelines">
         <ProTable
@@ -25,6 +104,9 @@
           :total="total"
           v-model:page="page"
           v-model:page-size="pageSize"
+          :error="loadError"
+          :on-retry="loadPipelines"
+          @row-click="selectPipeline"
         >
           <template #toolbar>
             <OpsListToolbar
@@ -56,7 +138,7 @@
           <el-table-column
             prop="jobCode"
             :label="t('filePipelineObservability.colJob')"
-            width="140"
+            min-width="180"
             show-overflow-tooltip
           />
           <el-table-column
@@ -120,7 +202,7 @@
           <el-table-column
             prop="traceId"
             :label="t('filePipelineObservability.colTrace')"
-            min-width="120"
+            min-width="220"
             show-overflow-tooltip
           >
             <template #default="{ row }">
@@ -137,12 +219,12 @@
           <DatetimeColumn
             prop="startedAt"
             :label="t('filePipelineObservability.colStart')"
-            width="160"
+            width="180"
           />
           <DatetimeColumn
             prop="finishedAt"
             :label="t('filePipelineObservability.colFinish')"
-            width="160"
+            width="180"
           />
         </ProTable>
       </el-tab-pane>
@@ -151,6 +233,8 @@
         <ProTable
           :data="stepRows"
           :loading="tableBlocking"
+          :error="stepLoadError"
+          :on-retry="loadSteps"
           :total="total"
           v-model:page="page"
           v-model:page-size="pageSize"
@@ -451,12 +535,12 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, computed, watch } from 'vue'
+  import { ref, computed, onMounted, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { useRoute } from 'vue-router'
   import { fetchAllPageItems, toPageResult } from '@/api/adapters'
 
-  const { t } = useI18n({ useScope: 'global' })
+  const { t, te } = useI18n({ useScope: 'global' })
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
@@ -477,6 +561,9 @@
   import { useAutoRefresh } from '@/composables/useAutoRefresh'
   import { useSseAutoReload } from '@/composables/useSseAutoReload'
   import OpsListToolbar from '@/components/table/OpsListToolbar.vue'
+  import SectionCard from '@/components/common/SectionCard.vue'
+  import { pipelineStageCodes } from './pipelineStageModel'
+  import { fetchPipelineStages, type PipelineStagesMap } from '@/api/pipelineMeta'
 
   const tenant = useTenantStore()
   const route = useRoute()
@@ -511,8 +598,92 @@
 
   const allPipelines = ref<ConsoleFilePipelineResponse[]>([])
   const allSteps = ref<ConsoleFilePipelineStepResponse[]>([])
+  const stepLoadError = ref<unknown>(null)
+  const selectedPipelineSteps = ref<ConsoleFilePipelineStepResponse[]>([])
+  const selectedStepsLoading = ref(false)
+  const selectedStepLoadError = ref<unknown>(null)
+  let selectedStepsRequestId = 0
   const allDispatches = ref<ConsoleFileDispatchRecordResponse[]>([])
   const allErrors = ref<ConsoleFileErrorRecordResponse[]>([])
+  const selectedPipeline = ref<ConsoleFilePipelineResponse | null>(null)
+  const selectedStageCode = ref<string | null>(null)
+  const stagesMap = ref<PipelineStagesMap>({})
+  const selectedSteps = computed(() => selectedPipelineSteps.value)
+  const selectedStages = computed(() =>
+    pipelineStageCodes(
+      selectedPipeline.value?.pipelineType,
+      selectedSteps.value,
+      stagesMap.value,
+    ).map((code, index) => {
+      const step = selectedSteps.value.find((item) => item.stageCode?.toUpperCase() === code)
+      const status = String(step?.stepStatus ?? '')
+      const normalized = status.toUpperCase()
+      const tone = ['SUCCESS', 'COMPLETED', 'SUCCEEDED'].includes(normalized)
+        ? 'success'
+        : ['FAILED', 'ERROR'].includes(normalized)
+          ? 'danger'
+          : ['RUNNING', 'PROCESSING'].includes(normalized)
+            ? 'active'
+            : 'pending'
+      return {
+        code,
+        index: index + 1,
+        label: te(`filePipelineObservability.stage${code}`)
+          ? t(`filePipelineObservability.stage${code}`)
+          : code,
+        status: status || t('filePipelineObservability.stageNoRecord'),
+        error: step?.errorMessage?.trim() || '',
+        tone,
+      }
+    }),
+  )
+
+  async function loadSelectedSteps(pipelineInstanceId: number) {
+    const requestId = ++selectedStepsRequestId
+    selectedStepsLoading.value = true
+    selectedStepLoadError.value = null
+    try {
+      const steps = await fetchAllPageItems<ConsoleFilePipelineStepResponse>(
+        '/api/console/queries/file-pipeline-steps',
+        { tenantId: tenant.tenantId, pipelineInstanceId },
+      )
+      if (requestId === selectedStepsRequestId && selectedPipeline.value?.id === pipelineInstanceId)
+        selectedPipelineSteps.value = steps
+    } catch (error) {
+      if (requestId === selectedStepsRequestId) selectedStepLoadError.value = error
+    } finally {
+      if (requestId === selectedStepsRequestId) selectedStepsLoading.value = false
+    }
+  }
+
+  onMounted(() => {
+    fetchPipelineStages()
+      .then((stages) => (stagesMap.value = stages || {}))
+      .catch(() => {
+        stagesMap.value = {}
+      })
+  })
+
+  function reloadSelectedSteps() {
+    const pipelineInstanceId = selectedPipeline.value?.id
+    if (pipelineInstanceId) void loadSelectedSteps(pipelineInstanceId)
+  }
+
+  function selectPipeline(row: ConsoleFilePipelineResponse) {
+    selectedPipeline.value = row
+    selectedStageCode.value = null
+    selectedPipelineSteps.value = []
+    void loadSelectedSteps(row.id)
+  }
+
+  function focusStage(code: string) {
+    const nextStage = selectedStageCode.value === code ? null : code
+    selectedStageCode.value = nextStage
+    if (nextStage) allSteps.value = [...selectedPipelineSteps.value]
+    else void loadSteps()
+    activeTab.value = 'steps'
+    page.value = 1
+  }
 
   // 行级进度:默认开启(BE 已服务端桥接运行中实时行数,未开 checkpoint 也有值;
   // 用户反馈默认看不到实时行数是主痛点)。total 恒 null 时 ETA 列优雅降级为 '—'。
@@ -635,7 +806,7 @@
     const k = kwApplied.value.trim().toLowerCase()
     if (!k) return allPipelines.value
     return allPipelines.value.filter((row) =>
-      `${row.jobCode} ${row.pipelineType} ${row.runStatus} ${row.traceId} ${row.fileId} ${row.currentStage ?? ''}`
+      `${row.id} ${row.jobCode} ${row.pipelineType} ${row.runStatus} ${row.traceId} ${row.fileId} ${row.currentStage ?? ''}`
         .toLowerCase()
         .includes(k),
     )
@@ -643,12 +814,18 @@
 
   const filteredSteps = computed(() => {
     const k = kwApplied.value.trim().toLowerCase()
-    if (!k) return allSteps.value
-    return allSteps.value.filter((row) =>
-      `${row.stepCode} ${row.stageCode} ${row.stepStatus} ${row.errorMessage ?? ''} ${row.pipelineInstanceId}`
-        .toLowerCase()
-        .includes(k),
-    )
+    return allSteps.value.filter((row) => {
+      if (selectedStageCode.value && row.stageCode?.toUpperCase() !== selectedStageCode.value)
+        return false
+      if (selectedStageCode.value && row.pipelineInstanceId !== selectedPipeline.value?.id)
+        return false
+      return (
+        !k ||
+        `${row.stepCode} ${row.stageCode} ${row.stepStatus} ${row.errorMessage ?? ''} ${row.pipelineInstanceId}`
+          .toLowerCase()
+          .includes(k)
+      )
+    })
   })
 
   const filteredDispatches = computed(() => {
@@ -715,18 +892,33 @@
 
   async function loadPipelines() {
     loading.value = true
+    loadError.value = null
     try {
       allPipelines.value = await fetchAllPageItems<ConsoleFilePipelineResponse>(
         '/api/console/queries/file-pipelines',
         { tenantId: tenant.tenantId },
       )
+      const requestedId = Number(route.query.pipelineInstanceId)
+      const previousId = selectedPipeline.value?.id
+      selectedPipeline.value =
+        allPipelines.value.find((item) => item.id === requestedId) ??
+        allPipelines.value.find((item) => item.id === previousId) ??
+        allPipelines.value[0] ??
+        null
+    } catch (error) {
+      loadError.value = error
     } finally {
       loading.value = false
+    }
+    if (selectedPipeline.value) {
+      selectedPipelineSteps.value = []
+      void loadSelectedSteps(selectedPipeline.value.id)
     }
   }
 
   async function loadSteps() {
     loading.value = true
+    stepLoadError.value = null
     try {
       allSteps.value = await fetchAllPageItems<ConsoleFilePipelineStepResponse>(
         '/api/console/queries/file-pipeline-steps',
@@ -735,6 +927,8 @@
       if (showProgressColumns.value) {
         void loadProgress()
       }
+    } catch (error) {
+      stepLoadError.value = error
     } finally {
       loading.value = false
     }
@@ -770,6 +964,7 @@
   }
 
   function onTabChange() {
+    if (activeTab.value !== 'steps') selectedStageCode.value = null
     page.value = 1
     kwDraft.value = ''
     kwApplied.value = ''
@@ -785,11 +980,16 @@
       kwDraft.value = next
       kwApplied.value = next
       page.value = 1
+      selectedPipeline.value =
+        allPipelines.value.find((item) => item.id === Number(next)) ?? selectedPipeline.value
+      selectedStageCode.value = null
+      if (selectedPipeline.value) {
+        selectedPipelineSteps.value = []
+        void loadSelectedSteps(selectedPipeline.value.id)
+      }
       void loadCurrentFile(next)
     },
   )
-
-  if (initialPipelineInstanceId) void loadCurrentFile(initialPipelineInstanceId)
 
   async function runActive() {
     if (activeTab.value === 'pipelines') await loadPipelines()
@@ -800,7 +1000,19 @@
 
   useTenantReload(() => {
     page.value = 1
-    void runActive()
+    selectedPipeline.value = null
+    selectedStageCode.value = null
+    allPipelines.value = []
+    allSteps.value = []
+    selectedPipelineSteps.value = []
+    selectedStepLoadError.value = null
+    stepLoadError.value = null
+    allDispatches.value = []
+    allErrors.value = []
+    currentFile.value = null
+    const pipelineInstanceId = String(route.query.pipelineInstanceId ?? '').trim()
+    if (pipelineInstanceId) void loadCurrentFile(pipelineInstanceId)
+    return runActive()
   })
 </script>
 
@@ -824,5 +1036,100 @@
   .current-file-bar__name {
     color: var(--color-text-primary);
     font-weight: 600;
+  }
+
+  .pipeline-focus {
+    margin-bottom: var(--page-block-gap);
+  }
+
+  .pipeline-focus__header,
+  .pipeline-focus__links {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    flex-wrap: wrap;
+  }
+
+  .pipeline-focus__links {
+    margin-bottom: var(--space-md);
+    color: var(--color-text-secondary);
+  }
+
+  .pipeline-stages {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: var(--space-sm);
+  }
+
+  .pipeline-stage {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    min-width: 0;
+    padding: var(--space-sm) var(--space-md);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-content);
+    background: var(--color-bg-page);
+    color: inherit;
+    font: inherit;
+    width: 100%;
+    cursor: pointer;
+    text-align: left;
+  }
+
+  .pipeline-stage--selected,
+  .pipeline-stage:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+
+  .pipeline-stage__index {
+    display: inline-grid;
+    place-items: center;
+    width: var(--space-xl);
+    height: var(--space-xl);
+    flex: 0 0 auto;
+    border-radius: 50%;
+    background: var(--color-bg-subtle);
+    color: var(--color-text-secondary);
+  }
+
+  .pipeline-stage__body {
+    display: grid;
+    min-width: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+  }
+
+  .pipeline-stage__body strong {
+    color: var(--color-text-primary);
+  }
+
+  .pipeline-stage__error {
+    display: -webkit-box;
+    overflow: hidden;
+    color: var(--color-danger);
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .pipeline-stage--success {
+    border-color: var(--color-success);
+  }
+
+  .pipeline-stage--active {
+    border-color: var(--color-primary);
+    background: var(--color-bg-info);
+  }
+
+  .pipeline-stage--danger {
+    border-color: var(--color-danger);
+    background: var(--wf-node-error-light);
+  }
+
+  @media (max-width: 900px) {
+    .pipeline-stages {
+      grid-template-columns: 1fr;
+    }
   }
 </style>

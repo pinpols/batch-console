@@ -19,7 +19,7 @@ test.describe('navigation and tabs', () => {
     await waitForRouteStable(page)
     await page.locator('.nav__group-hd', { hasText: '告警与投递' }).click()
     await page
-      .getByRole('link', { name: /^事件告警$|^告警$|^Alerts?$/ })
+      .getByRole('link', { name: /^告警事件$|^事件告警$|^告警$|^Alerts?$/ })
       .first()
       .click()
     await expect(page).toHaveURL(/\/observability\/alerts/)

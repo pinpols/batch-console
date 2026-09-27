@@ -90,7 +90,7 @@
         :total="retryTotal"
         v-model:page="retryPage"
         v-model:page-size="retryPageSize"
-        @change="sliceRetry"
+        @change="onRetryPageChange"
         @selection-change="bulk.onSelectionChange"
         :error="loadError"
         :on-retry="loadTab"
@@ -178,7 +178,7 @@
         :total="deliveryTotal"
         v-model:page="deliveryPage"
         v-model:page-size="deliveryPageSize"
-        @change="sliceDelivery"
+        @change="onDeliveryPageChange"
         :error="loadError"
         :on-retry="loadTab"
       >
@@ -259,8 +259,13 @@
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
   import { confirmDanger } from '@/composables/useDangerConfirm'
-  import { queryOutboxDeliveries, queryOutboxRetries } from '@/api/observabilityQueries'
-  import { republishOutbox } from '@/api/ops'
+  import {
+    queryOutboxDeliveries,
+    queryOutboxDeliveriesPage,
+    queryOutboxRetries,
+    queryOutboxRetriesPage,
+  } from '@/api/observabilityQueries'
+  import { getOutboxStats, republishOutbox } from '@/api/ops'
 
   const { t } = useI18n({ useScope: 'global' })
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
@@ -304,6 +309,7 @@
 
   const retriesAll = ref<ConsoleOutboxRetryLogResponse[]>([])
   const deliveriesAll = ref<ConsoleOutboxDeliveryLogResponse[]>([])
+  const deliveredTotal = ref(0)
   // 各 tab 是否已拉过数据:未拉过时 tab 计数不显示(0 会误导)
   const retryLoaded = ref(false)
   const deliveryLoaded = ref(false)
@@ -446,42 +452,42 @@
   }
 
   function onRetrySearch() {
-    return runSearch(() => {
+    return runSearch(async () => {
       retryKwApplied.value = retryKwDraft.value.trim()
       retryStatusApplied.value = retryStatusDraft.value.trim()
       retryPage.value = 1
-      sliceRetry()
+      await loadTab()
     })
   }
 
   function onRetryReset() {
-    return runReset(() => {
+    return runReset(async () => {
       retryKwDraft.value = ''
       retryStatusDraft.value = ''
       retryKwApplied.value = ''
       retryStatusApplied.value = ''
       retryPage.value = 1
-      sliceRetry()
+      await loadTab()
     })
   }
 
   function onDeliverySearch() {
-    return runSearch(() => {
+    return runSearch(async () => {
       deliveryKwApplied.value = deliveryKwDraft.value.trim()
       deliveryStatusApplied.value = deliveryStatusDraft.value.trim()
       deliveryPage.value = 1
-      sliceDelivery()
+      await loadTab()
     })
   }
 
   function onDeliveryReset() {
-    return runReset(() => {
+    return runReset(async () => {
       deliveryKwDraft.value = ''
       deliveryStatusDraft.value = ''
       deliveryKwApplied.value = ''
       deliveryStatusApplied.value = ''
       deliveryPage.value = 1
-      sliceDelivery()
+      await loadTab()
     })
   }
 
@@ -499,25 +505,63 @@
       : !!(deliveryKwApplied.value || deliveryStatusApplied.value),
   )
 
+  function onRetryPageChange() {
+    return retryKwApplied.value ? sliceRetry() : loadTab()
+  }
+
+  function onDeliveryPageChange() {
+    return deliveryKwApplied.value ? sliceDelivery() : loadTab()
+  }
+
+  function parseDeliveredTotal(value: unknown) {
+    const rows = (value as { statusBreakdown?: Array<Record<string, unknown>> })?.statusBreakdown
+    if (!Array.isArray(rows)) return 0
+    return rows.reduce((total, row) => {
+      const status = String(row.publishStatus ?? '')
+      return OUTBOX_SUCCESS_STATUSES.includes(status) ? total + Number(row.count ?? 0) : total
+    }, 0)
+  }
+
   async function loadTab() {
     loading.value = true
     loadError.value = null
     try {
       if (tab.value === 'retry') {
-        retriesAll.value = await queryOutboxRetries(tenant.tenantId, {
-          retryStatus: retryStatusApplied.value.trim() || undefined,
-        })
+        const filters = { retryStatus: retryStatusApplied.value.trim() || undefined }
+        if (retryKwApplied.value) {
+          retriesAll.value = await queryOutboxRetries(tenant.tenantId, filters)
+          sliceRetry()
+        } else {
+          const result = await queryOutboxRetriesPage(
+            tenant.tenantId,
+            retryPage.value,
+            retryPageSize.value,
+            filters,
+          )
+          retriesAll.value = result.items
+          retryRows.value = result.items
+          retryTotal.value = result.total
+        }
         retryLoaded.value = true
-        retryPage.value = 1
-        sliceRetry()
       } else {
-        deliveriesAll.value = await queryOutboxDeliveries(tenant.tenantId, {
-          deliveryStatus: deliveryStatusApplied.value.trim() || undefined,
-        })
+        const filters = { deliveryStatus: deliveryStatusApplied.value.trim() || undefined }
+        if (deliveryKwApplied.value) {
+          deliveriesAll.value = await queryOutboxDeliveries(tenant.tenantId, filters)
+          sliceDelivery()
+        } else {
+          const result = await queryOutboxDeliveriesPage(
+            tenant.tenantId,
+            deliveryPage.value,
+            deliveryPageSize.value,
+            filters,
+          )
+          deliveriesAll.value = result.items
+          deliveryRows.value = result.items
+          deliveryTotal.value = result.total
+        }
         deliveryLoaded.value = true
-        deliveryPage.value = 1
-        sliceDelivery()
       }
+      deliveredTotal.value = parseDeliveredTotal(await getOutboxStats(tenant.tenantId))
     } finally {
       loading.value = false
       activeLive.value.markRefreshed()
@@ -581,15 +625,7 @@
   // 头部「投递成功」统计 pill:从当前 tab 已加载数据里数成功态(dump 的「今日成功」
   // 后端无独立汇总端点,取已加载集合口径)
   const OUTBOX_SUCCESS_STATUSES = ['PUBLISHED', 'SUCCEEDED', 'SUCCESS']
-  const successCount = computed(() =>
-    tab.value === 'retry'
-      ? retriesAll.value.filter((r) =>
-          OUTBOX_SUCCESS_STATUSES.includes(String(r.retryStatus ?? '')),
-        ).length
-      : deliveriesAll.value.filter((r) =>
-          OUTBOX_SUCCESS_STATUSES.includes(String(r.deliveryStatus ?? '')),
-        ).length,
-  )
+  const successCount = computed(() => deliveredTotal.value)
 
   const lastRefreshText = computed(() => {
     const v = activeLive.value.lastRefreshedAt.value

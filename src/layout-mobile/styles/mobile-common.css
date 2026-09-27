@@ -94,7 +94,7 @@ html.dark .mobile-layout {
 .m-page__title {
   font-size: 22px;
   font-weight: 700;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
   color: var(--ios-label-primary);
   line-height: 1.2;
 }
@@ -185,7 +185,7 @@ html.dark .mobile-layout {
   color: var(--ios-blue);
   font-size: 17px;
   font-weight: 400;
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
   cursor: pointer;
   transition: opacity 0.1s ease;
 }
@@ -267,7 +267,7 @@ html.dark .m-card {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
 }
 
 .m-card__sub {
@@ -393,7 +393,7 @@ html.dark .m-list {
   color: var(--ios-blue);
   font-size: 15px;
   font-weight: 600;
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
   cursor: pointer;
   position: relative;
   overflow: hidden;
@@ -505,7 +505,7 @@ html.dark .m-metric {
 .m-metric__value {
   font-size: 28px;
   font-weight: 700;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
   color: var(--ios-label-primary);
   font-variant-numeric: tabular-nums;
 }
@@ -548,7 +548,7 @@ html.dark .m-metric {
   line-height: 1.3;
   background: var(--ios-fill-tertiary);
   color: var(--ios-label-secondary);
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
   /* flex 容器(如 .m-card__row)里,标题占满后 chip 会被挤窄
      → 中文字符按 1 字宽竖排成圆球。两条兜住:不换行 + 不收缩 */
   white-space: nowrap;
@@ -648,7 +648,7 @@ html.dark .m-chip--warning {
   font-size: 15px;
   color: var(--ios-label-primary);
   font-family: inherit;
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
 }
 
 .mobile-layout .el-input__inner::placeholder {
@@ -734,7 +734,7 @@ html.dark .m-chip--warning {
   font-size: 13px;
   font-weight: 600;
   line-height: 1;
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
   cursor: pointer;
   font-family: inherit;
   transition:
@@ -941,7 +941,7 @@ html.dark .m-action-sheet__cancel-card {
   font-size: 13px;
   font-weight: 600;
   color: rgb(60 60 67 / 60%);
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
 }
 
 .m-action-sheet__message {
@@ -967,7 +967,7 @@ html.dark .m-action-sheet__message {
   background: transparent;
   font-size: 20px;
   font-weight: 400;
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
   color: #007aff;
   cursor: pointer;
   font-family: inherit;

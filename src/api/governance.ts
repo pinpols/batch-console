@@ -1,4 +1,4 @@
-import { del, get, post, put } from '@/api/client'
+import { del, get, patch, post, put } from '@/api/client'
 import { fetchAllPageItems } from '@/api/adapters'
 import type { components } from '@/types/api.generated'
 
@@ -285,11 +285,9 @@ export const governanceApi = {
   ) =>
     (await listGovernanceRows('/api/console/queues', tenantId, filters ?? {})).map(normalizeQueue),
 
-  /** POST /api/console/queues/{id}/toggle — toggle enabled */
+  /** 显式设置目标 enabled 状态，不读取或反转服务端当前值。 */
   toggleQueue: (id: number, tenantId: string, enabled: boolean) =>
-    post<string>(`/api/console/queues/${id}/toggle`, undefined, {
-      params: { tenantId, enabled },
-    }),
+    patch<string>(`/api/console/queues/${id}/enabled`, { tenantId, enabled }),
 
   createQueue: (body: GovernanceQueueSavePayload) =>
     post<RawRow>('/api/console/queues', body).then(normalizeQueue),
@@ -305,11 +303,9 @@ export const governanceApi = {
       normalizeBatchWindow,
     ),
 
-  /** POST /api/console/batch-windows/{id}/toggle — toggle enabled */
+  /** 显式设置目标 enabled 状态，不读取或反转服务端当前值。 */
   toggleBatchWindow: (id: number, tenantId: string, enabled: boolean) =>
-    post<string>(`/api/console/batch-windows/${id}/toggle`, undefined, {
-      params: { tenantId, enabled },
-    }),
+    patch<string>(`/api/console/batch-windows/${id}/enabled`, { tenantId, enabled }),
 
   createBatchWindow: (body: GovernanceBatchWindowSavePayload) =>
     post<RawRow>('/api/console/batch-windows', body).then(normalizeBatchWindow),
@@ -322,11 +318,9 @@ export const governanceApi = {
       normalizeCalendar,
     ),
 
-  /** POST /api/console/calendars/{id}/toggle — toggle enabled */
+  /** 显式设置目标 enabled 状态，不读取或反转服务端当前值。 */
   toggleCalendar: (id: number, tenantId: string, enabled: boolean) =>
-    post<string>(`/api/console/calendars/${id}/toggle`, undefined, {
-      params: { tenantId, enabled },
-    }),
+    patch<string>(`/api/console/calendars/${id}/enabled`, { tenantId, enabled }),
 
   createCalendar: (body: GovernanceCalendarSavePayload) =>
     post<RawRow>('/api/console/calendars', body).then(normalizeCalendar),
@@ -371,11 +365,9 @@ export const governanceApi = {
       normalizeQuotaPolicy,
     ),
 
-  /** POST /api/console/quota-policies/{id}/toggle — toggle enabled */
+  /** 显式设置目标 enabled 状态，不读取或反转服务端当前值。 */
   toggleQuotaPolicy: (id: number, tenantId: string, enabled: boolean) =>
-    post<string>(`/api/console/quota-policies/${id}/toggle`, undefined, {
-      params: { tenantId, enabled },
-    }),
+    patch<string>(`/api/console/quota-policies/${id}/enabled`, { tenantId, enabled }),
 
   createQuotaPolicy: (body: GovernanceQuotaPolicySavePayload) =>
     post<RawRow>('/api/console/quota-policies', body).then(normalizeQuotaPolicy),
@@ -398,9 +390,7 @@ export const governanceApi = {
     put<RawRow>(`/api/console/alert-routings/${id}`, body).then(normalizeAlertRouting),
 
   toggleAlertRouting: (id: number, tenantId: string, enabled: boolean) =>
-    post<string>(`/api/console/alert-routings/${id}/toggle`, undefined, {
-      params: { tenantId, enabled },
-    }),
+    patch<string>(`/api/console/alert-routings/${id}/enabled`, { tenantId, enabled }),
 
   /** DELETE /api/console/calendars/{id}/holidays/{holidayId} */
   deleteCalendarHoliday: (calendarId: number, holidayId: number, tenantId: string) =>
