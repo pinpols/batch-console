@@ -15,6 +15,7 @@
 
 - 普通文本使用 `src/components/common/DatetimeText.vue`；表格列使用 `DatetimeColumn.vue`。相对时间和紧凑时间也由 `DatetimeText` 的 `mode` 选择。
 - 单个 `Instant` 输入使用 `InstantPicker.vue`；范围输入使用 `InstantRangePicker.vue`。需要预设时使用 `DateRangePresetPicker.vue`，其 `datetimerange` 值为 ISO `Instant` 元组，`daterange` 值为 `LocalDate` 元组。页面不再自行拼接无偏移时间字符串。
+- `datetimerange` 沿用包含式结束边界；全天预设以目标时区下一日零点前一个微秒（`.999999`）作为结束值，与 PostgreSQL 时间戳精度一致，避免遗漏当天最后一个毫秒内的记录。
 - 通用转换集中在 `src/utils/datetime.ts`：`todayBusinessDate()`、`recentBusinessDateRange()` 和 `businessCalendarDate()` 处理业务日；`fmtClockTime()` 与 `fmtTodayOrDatetime()` 处理紧凑展示。禁止用 UTC 日期截取或浏览器本地年月日推导业务日。
 - 无效日期和夏令时跳时期间不存在的本地时刻不会提交；重复的回拨时刻由时区库解析为其中一个时间点，如需精确区分，应由后端字段明确接收偏移。
 
