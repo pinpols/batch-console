@@ -1,6 +1,6 @@
 import { i18n } from '@/locales'
 import { readDisplayTimezone } from '@/constants/timezone'
-import dayjs from 'dayjs'
+import dayjs, { type Dayjs } from 'dayjs'
 import utc from 'dayjs/plugin/utc'
 import timezonePlugin from 'dayjs/plugin/timezone'
 
@@ -144,6 +144,12 @@ export function recentBusinessDateRange(days = 7, now: Date = new Date()): [stri
   return [today.subtract(count - 1, 'day').format('YYYY-MM-DD'), today.format('YYYY-MM-DD')]
 }
 
+/** 保持包含式结束边界，并对齐 PostgreSQL 时间戳的微秒精度。 */
+function inclusiveEndOfDayInstant(day: Dayjs): string {
+  const lastMillisecond = day.add(1, 'day').startOf('day').subtract(1, 'millisecond').toISOString()
+  return lastMillisecond.replace(/\.999Z$/, '.999999Z')
+}
+
 export function presetDateRange(
   key: 'today' | '7d' | '30d' | 'thisMonth',
   type: 'daterange' | 'datetimerange',
@@ -156,7 +162,7 @@ export function presetDateRange(
       ? today.startOf('month')
       : today.subtract(key === '30d' ? 29 : key === '7d' ? 6 : 0, 'day').startOf('day')
   if (type === 'daterange') return [start.format('YYYY-MM-DD'), today.format('YYYY-MM-DD')]
-  return [start.toISOString(), today.endOf('day').toISOString()]
+  return [start.toISOString(), inclusiveEndOfDayInstant(today)]
 }
 
 /**

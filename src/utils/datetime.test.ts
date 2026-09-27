@@ -72,7 +72,7 @@ describe('presetDateRange', () => {
   it('uses the requested timezone for timestamp boundaries', () => {
     expect(
       presetDateRange('today', 'datetimerange', 'Asia/Shanghai', new Date('2026-09-26T16:30:00Z')),
-    ).toEqual(['2026-09-26T16:00:00.000Z', '2026-09-27T15:59:59.999Z'])
+    ).toEqual(['2026-09-26T16:00:00.000Z', '2026-09-27T15:59:59.999999Z'])
   })
 
   it('uses a 23-hour instant window on a DST spring-forward day', () => {
@@ -83,7 +83,7 @@ describe('presetDateRange', () => {
         'America/New_York',
         new Date('2026-03-08T16:00:00Z'),
       ),
-    ).toEqual(['2026-03-08T05:00:00.000Z', '2026-03-09T03:59:59.999Z'])
+    ).toEqual(['2026-03-08T05:00:00.000Z', '2026-03-09T03:59:59.999999Z'])
   })
 
   it('keeps business dates as dates, including at local midnight', () => {
