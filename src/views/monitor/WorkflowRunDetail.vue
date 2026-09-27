@@ -179,7 +179,7 @@
 <script setup lang="ts">
   import { computed, ref, watch, reactive } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
-  import { Eye as View, RefreshCw as Refresh } from 'lucide-vue-next'
+  import { Eye as View, RefreshCw as Refresh } from '@lucide/vue'
   import { useRefreshAction } from '@/composables/useRefreshAction'
 
   const refresh = useRefreshAction()

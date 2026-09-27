@@ -66,7 +66,7 @@
   import { ref } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
-  import { Send as Promotion, RotateCcw as RefreshLeft } from 'lucide-vue-next'
+  import { Send as Promotion, RotateCcw as RefreshLeft } from '@lucide/vue'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
   import { listTriggers, pauseTrigger, resumeTrigger } from '@/api/triggers'

@@ -17,7 +17,7 @@
     Check as Select,
     Maximize2,
     Minimize2,
-  } from 'lucide-vue-next'
+  } from '@lucide/vue'
   import { useDesignerStore } from '../store/useDesignerStore'
   import ShortcutHelpButton from './ShortcutHelpButton.vue'
   import NodeSearchBox from './NodeSearchBox.vue'

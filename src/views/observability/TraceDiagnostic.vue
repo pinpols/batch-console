@@ -159,7 +159,7 @@
     Activity as DataLine,
     LoaderCircle as Loading,
     TriangleAlert as WarningFilled,
-  } from 'lucide-vue-next'
+  } from '@lucide/vue'
   import { ElMessage } from 'element-plus'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'

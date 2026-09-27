@@ -10,6 +10,7 @@ description: 整理前端 README、CLAUDE、docs 索引、Changelog、归档、�
 - `AGENTS.md` 只放不能从代码推断的约束、高频红线和关键入口；细节进入 `docs/`。
 - 根 `README.md` 要说明项目用途、架构、启动、验证、部署和配对后端关系。
 - `docs/README.md` 与子目录 README 负责索引当前长期文档；一次性验收、审计、压测和历史计划应进入 reports/backlog/archive 等合适目录。
+- 当前文档由 `npm run check:docs` 检查链接和个人绝对路径；归档、报告和历史验证不作为现行规范扫描对象。
 
 ## Changelog 与归档
 
@@ -22,6 +23,8 @@ description: 整理前端 README、CLAUDE、docs 索引、Changelog、归档、�
 - 文档中的命令、路径、端口、环境变量和 workflow 名称要跟 `package.json`、脚本、CI 和实际目录一致。
 - 删除或移动文档时同步索引和引用，避免 README 指向不存在页面。
 - 对“已验证”“已全绿”“已上线”等结论保留证据；没有当前证据时写成历史记录或待验证。
+- 不在长期规范中固化测试数、页面数、耗时等易漂移快照；需要记录时放入带日期的验收或审计报告。
+- 修改当前文档后至少运行 `npm run check:docs`；文档站入口或导航变化再运行 `npm run fe-docs:build`。
 
 ## 写作口径
 

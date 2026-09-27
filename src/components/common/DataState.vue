@@ -35,7 +35,7 @@
    */
   import { computed } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { RefreshCw as Refresh } from 'lucide-vue-next'
+  import { RefreshCw as Refresh } from '@lucide/vue'
   import EmptyState from '@/components/common/EmptyState.vue'
   import TableSkeleton from '@/components/table/TableSkeleton.vue'
 

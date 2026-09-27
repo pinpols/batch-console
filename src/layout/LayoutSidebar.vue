@@ -73,7 +73,7 @@
   import { computed, ref, watch } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
-  import { ChevronDown, PanelLeftClose, PanelLeftOpen } from 'lucide-vue-next'
+  import { ChevronDown, PanelLeftClose, PanelLeftOpen } from '@lucide/vue'
   import { useAppStore } from '@/stores/app'
   import { usePermissionStore } from '@/stores/permission'
   import type { NavigationGroup, NavigationItem } from '@/constants/navigation'

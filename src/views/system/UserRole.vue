@@ -76,7 +76,10 @@
         <span>{{ t('userRole.sectionPermissionList') }}</span>
       </template>
 
-      <EmptyState v-if="permissionList.length === 0" :description="t('userRole.emptyPermissions')" />
+      <EmptyState
+        v-if="permissionList.length === 0"
+        :description="t('userRole.emptyPermissions')"
+      />
 
       <div v-else class="permission-list">
         <el-tag v-for="permissionName in permissionList" :key="permissionName" effect="plain">
@@ -179,7 +182,7 @@
   import { ElMessage } from 'element-plus'
 
   const { t } = useI18n({ useScope: 'global' })
-  import { ChevronUp as ArrowUp, Plus, RefreshCw as Refresh } from 'lucide-vue-next'
+  import { ChevronUp as ArrowUp, Plus, RefreshCw as Refresh } from '@lucide/vue'
   import { useRefreshAction } from '@/composables/useRefreshAction'
 
   const refreshAction = useRefreshAction()

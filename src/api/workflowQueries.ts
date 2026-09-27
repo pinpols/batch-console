@@ -10,6 +10,11 @@ import type {
 } from '@/types/console-api'
 import type { PageResponse, PageResult } from '@/types'
 
+/** 设计器 FILE_STEP 节点使用的轻量管道编码列表。 */
+export function queryPipelineDefinitionCodes(tenantId: string) {
+  return get<string[]>('/api/console/queries/pipeline-definitions/codes', { tenantId })
+}
+
 /** OpenAPI data 为 PageResponse，此处聚合全量供 DAG / 筛选使用 */
 export function queryWorkflowDefinitions(tenantId: string) {
   return fetchAllPageItems<ConsoleWorkflowDefinitionResponse>(

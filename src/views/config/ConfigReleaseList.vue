@@ -385,7 +385,7 @@
   import { ref, watch, computed, reactive } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
-  import { Plus, Settings2 } from 'lucide-vue-next'
+  import { Plus, Settings2 } from '@lucide/vue'
   import { confirmDanger } from '@/composables/useDangerConfirm'
 
   const { t, te } = useI18n({ useScope: 'global' })

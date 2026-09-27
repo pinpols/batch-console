@@ -48,23 +48,23 @@
       <div v-for="row in filtered" :key="row.approvalNo" class="m-card">
         <div class="m-card__row">
           <div class="m-card__title">
-            {{ resolveEnumLabel('approvalType', row.approvalType) }} · {{ row.actionType }}
+            {{ resolveEnumLabel('approvalType', row.approvalType) }} ·
+            {{ resolveEnumLabel('approvalActionType', row.actionType) }}
           </div>
           <span :class="['m-chip', statusChipClass(row.approvalStatus)]">
             {{ resolveEnumLabel('approvalStatus', row.approvalStatus) }}
           </span>
         </div>
         <div class="m-card__sub">
-          No:
+          {{ t('mobile.approvals.approvalNo') }}:
           <span class="m-copy-text" @click.stop="copy(row.approvalNo, 'approvalNo')">{{
             row.approvalNo
           }}</span>
         </div>
         <div class="m-card__meta">
           <div>
-            <span class="m-card__meta-key">target</span>{{ row.targetType }}/{{
-              row.targetId || '—'
-            }}
+            <span class="m-card__meta-key">{{ t('mobile.approvals.target') }}</span
+            >{{ row.targetType }}/{{ row.targetId || '—' }}
           </div>
           <div>
             <span class="m-card__meta-key">{{
@@ -77,7 +77,8 @@
             {{ fmt(row.createdAt) }}
           </div>
           <div v-if="row.rejectionReason">
-            <span class="m-card__meta-key">reason</span>{{ row.rejectionReason }}
+            <span class="m-card__meta-key">{{ t('mobile.approvals.rejectionReason') }}</span
+            >{{ row.rejectionReason }}
           </div>
         </div>
         <div v-if="isPending(row)" class="m-card__actions">
@@ -101,7 +102,7 @@
   import { computed, nextTick, ref } from 'vue'
   import { useTenantReload } from '@/composables/useTenantReload'
   import { useI18n } from 'vue-i18n'
-  import { Search } from 'lucide-vue-next'
+  import { Search } from '@lucide/vue'
   import { ElMessage } from 'element-plus'
   import { confirmActionSheet } from '@/layout-mobile/MActionSheet'
   import { useTenantStore } from '@/stores/tenant'

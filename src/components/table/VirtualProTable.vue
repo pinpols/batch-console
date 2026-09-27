@@ -78,7 +78,7 @@
    */
   import { computed } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { RefreshCw as Refresh, LoaderCircle as Loading } from 'lucide-vue-next'
+  import { RefreshCw as Refresh, LoaderCircle as Loading } from '@lucide/vue'
 
   const { t } = useI18n({ useScope: 'global' })
   import type { Column } from 'element-plus'

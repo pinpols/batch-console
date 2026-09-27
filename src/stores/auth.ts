@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia'
 import { ref, computed, watch } from 'vue'
-import { get } from '@/api/client'
 import { authApi, mapProfileToUserInfo, type ConsoleAuthProfilePayload } from '@/api/auth'
 import { useTenantStore } from '@/stores/tenant'
 import { roleOrder } from '@/constants/role'
@@ -118,7 +117,7 @@ export const useAuthStore = defineStore('auth', () => {
     inflightTenantId = requestedTenantId
     fetchMePromise = (async () => {
       try {
-        const profile = await get<ConsoleAuthProfilePayload>('/api/console/auth/me')
+        const profile: ConsoleAuthProfilePayload = await authApi.profile()
         // 落地前再校验一次:如果用户切租户在响应回来前发生,丢弃当前响应,
         // 避免 A 租户的 profile 写到 B 租户上下文里(role / menus / permissions 错配)
         if (tenant.tenantId === requestedTenantId) {

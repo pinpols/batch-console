@@ -15,47 +15,65 @@ on:
         required: false
         type: string
 
+permissions:
+  contents: read
+
 concurrency:
   group: staging-gate-${{ github.ref }}
-  cancel-in-progress: false  # staging 验收不要被 push 抢断
+  cancel-in-progress: false # staging 验收不要被 push 抢断
 
 jobs:
-  # 没配 STAGING_URL secret 且没手动传 base_url 时,整条流水线干净跳过
-  # (warning 而非 failure)。配上 secret / 传 input 后自动启用全套 Playwright +
-  # Lighthouse 检查。
+  # 发布验收必须有真实环境和测试账号；缺少配置属于发布阻断，不允许静默跳过。
   precheck:
     runs-on: ubuntu-latest
     timeout-minutes: 2
     outputs:
       base_url: ${{ steps.s.outputs.base_url }}
-      should_run: ${{ steps.s.outputs.should_run }}
     steps:
       - id: s
         env:
           INPUT_URL: ${{ github.event.inputs.base_url }}
           SECRET_URL: ${{ secrets.STAGING_URL }}
+          E2E_USERNAME: ${{ secrets.STAGING_E2E_USERNAME }}
+          E2E_PASSWORD: ${{ secrets.STAGING_E2E_PASSWORD }}
         run: |
+          set -euo pipefail
           URL="${INPUT_URL:-$SECRET_URL}"
           if [ -z "$URL" ]; then
-            echo "::warning::STAGING_URL 未配置,且 workflow_dispatch 未传 base_url — 跳过 staging-gate。"
-            echo "::warning::配置: Settings → Secrets and variables → Actions → STAGING_URL"
-            echo "should_run=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "should_run=true" >> "$GITHUB_OUTPUT"
-            echo "base_url=$URL" >> "$GITHUB_OUTPUT"
+            echo "::error::STAGING_URL 未配置，发布验收不能跳过。"
+            exit 2
+          fi
+          if [ -z "$E2E_USERNAME" ] || [ -z "$E2E_PASSWORD" ]; then
+            echo "::error::STAGING_E2E_USERNAME / STAGING_E2E_PASSWORD 未配置。"
+            exit 2
+          fi
+          URL="${URL%/}"
+          curl -fsS "$URL/healthz" >/dev/null
+          echo "base_url=$URL" >> "$GITHUB_OUTPUT"
+
+      - name: Verify deployed revision for release tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          BASE_URL: ${{ steps.s.outputs.base_url }}
+          EXPECTED_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          actual=$(curl -fsS "$BASE_URL/version.json" | jq -r '.gitSha')
+          if [ "$actual" != "$EXPECTED_SHA" ]; then
+            echo "::error::staging revision mismatch: expected=$EXPECTED_SHA actual=$actual"
+            exit 1
           fi
 
   e2e-against-staging:
     name: Playwright e2e (full, against staging)
     needs: precheck
-    if: needs.precheck.outputs.should_run == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
       - run: npm ci --no-audit --no-fund
 
@@ -64,21 +82,17 @@ jobs:
 
       # base URL 由 precheck 统一计算;
       # E2E_USERNAME/E2E_PASSWORD 走 secret,global-setup 用它建 storageState
-      - name: Playwright (full 82 specs against staging)
+      - name: Playwright (full suite against staging)
         env:
           PLAYWRIGHT_BASE_URL: ${{ needs.precheck.outputs.base_url }}
           E2E_USERNAME: ${{ secrets.STAGING_E2E_USERNAME }}
           E2E_PASSWORD: ${{ secrets.STAGING_E2E_PASSWORD }}
-        run: npm run test:e2e
+        run: npm run test:e2e:all
 
-      # axe a11y 基线:test:e2e 默认 --grep-invert @slow 把它排除了 → 这里显式点名文件跑
-      # (点名文件不受 script 里的 grep-invert 影响),让"写好却从不跑"的 a11y 闸真正生效,挡 staging 发布。
-      - name: a11y axe baseline (P0 pages)
+      - name: Visual regression baseline
         env:
           PLAYWRIGHT_BASE_URL: ${{ needs.precheck.outputs.base_url }}
-          E2E_USERNAME: ${{ secrets.STAGING_E2E_USERNAME }}
-          E2E_PASSWORD: ${{ secrets.STAGING_E2E_PASSWORD }}
-        run: npx playwright test e2e/a11y.spec.ts
+        run: npm run test:e2e:visual
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v5
@@ -91,14 +105,13 @@ jobs:
   lighthouse-against-staging:
     name: Lighthouse (against staging)
     needs: precheck
-    if: needs.precheck.outputs.should_run == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
         with:
-          node-version: 22
+          node-version: 24
 
       - name: Run Lighthouse on staging
         uses: treosh/lighthouse-ci-action@v12

@@ -13,10 +13,8 @@
  *   - 推送发送 internal 端点(告警 / 审批触发时调)
  */
 
-import { get, post } from '@/api/client'
+import { pushApi } from '@/api/push'
 import { readStoredTenantId } from '@/api/interceptors'
-
-const PUSH_API_BASE = '/api/console/push'
 
 export type PushPermissionResult = 'granted' | 'denied' | 'unsupported' | 'not-standalone'
 
@@ -63,7 +61,7 @@ export async function requestPushPermission(): Promise<PushPermissionResult> {
   if (perm !== 'granted') return 'denied'
 
   // 2. 拿 VAPID 公钥
-  const { publicKey } = await get<{ publicKey: string }>(`${PUSH_API_BASE}/vapid-public-key`)
+  const { publicKey } = await pushApi.getVapidPublicKey()
   if (!publicKey) throw new Error('VAPID key missing')
 
   // 3. SW 注册 + 订阅
@@ -74,9 +72,7 @@ export async function requestPushPermission(): Promise<PushPermissionResult> {
   })
 
   // 4. 上报后端持久化
-  await post<void>(`${PUSH_API_BASE}/subscribe`, sub.toJSON(), {
-    params: { tenantId: readStoredTenantId() },
-  })
+  await pushApi.subscribe(readStoredTenantId(), sub.toJSON())
 
   return 'granted'
 }
@@ -87,13 +83,7 @@ export async function unsubscribePush(): Promise<void> {
   const reg = await navigator.serviceWorker.ready
   const sub = await reg.pushManager.getSubscription()
   if (!sub) return
-  await post<void>(
-    `${PUSH_API_BASE}/unsubscribe`,
-    { endpoint: sub.endpoint },
-    {
-      params: { tenantId: readStoredTenantId() },
-    },
-  ).catch(() => {
+  await pushApi.unsubscribe(readStoredTenantId(), sub.endpoint).catch(() => {
     /* 后端失败也继续 unsubscribe,前端态优先 */
   })
   await sub.unsubscribe()

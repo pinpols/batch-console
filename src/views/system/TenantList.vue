@@ -184,7 +184,7 @@
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
   import { confirmDanger } from '@/composables/useDangerConfirm'
-  import { Plus } from 'lucide-vue-next'
+  import { Plus } from '@lucide/vue'
 
   const { t } = useI18n({ useScope: 'global' })
   import {

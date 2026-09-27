@@ -46,9 +46,20 @@
           </div>
           <div v-if="row.detailSummary">
             <span class="m-card__meta-key">{{ t('mobile.executionLog.summaryColon') }}</span>
-            {{ row.detailSummary }}
+            {{ structuredSummary(row.detailSummary) }}
           </div>
         </div>
+        <details v-if="row.detailSummary" class="m-details">
+          <summary>{{ t('mobile.executionLog.fullDetail') }}</summary>
+          <pre>{{ decodeHtmlEntities(row.detailSummary) }}</pre>
+          <button
+            class="m-btn"
+            type="button"
+            @click="copy(decodeHtmlEntities(row.detailSummary), 'detailSummary')"
+          >
+            {{ t('common.copy') }}
+          </button>
+        </details>
       </div>
     </div>
   </MPullRefresh>
@@ -59,7 +70,6 @@
   import { useTenantReload } from '@/composables/useTenantReload'
   import { useRoute, useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
-  import { RefreshCw as Refresh } from 'lucide-vue-next'
   import { ElMessage } from 'element-plus'
   import { useTenantStore } from '@/stores/tenant'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
@@ -68,12 +78,15 @@
   import { queryAudits } from '@/api/observabilityQueries'
   import type { ConsoleAuditLogResponse } from '@/types/console-api'
   import { fmtDatetime } from '@/utils/datetime'
+  import { decodeHtmlEntities, structuredSummary } from '@/utils/structuredSummary'
+  import { useCopy } from '@/composables/useCopy'
 
   const { t, te } = useI18n({ useScope: 'global' })
   const route = useRoute()
   const router = useRouter()
   const tenant = useTenantStore()
   const { data: metaEnums } = useConsoleMetaEnumsQuery()
+  const { copy } = useCopy()
 
   function resolveEnumLabel(group: string, value?: string | null): string {
     if (!value) return '—'

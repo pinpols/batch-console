@@ -8,7 +8,7 @@
 </template>
 
 <script setup lang="ts">
-  import { Copy as DocumentCopy } from 'lucide-vue-next'
+  import { Copy as DocumentCopy } from '@lucide/vue'
   import { useCopy } from '@/composables/useCopy'
 
   const props = defineProps<{

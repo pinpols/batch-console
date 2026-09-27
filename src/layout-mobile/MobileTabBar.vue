@@ -39,7 +39,7 @@
     SlidersHorizontal as Operation,
     Cpu,
     Coins as Coin,
-  } from 'lucide-vue-next'
+  } from '@lucide/vue'
   import { useMobileBadgesStore } from '@/stores/mobileBadges'
 
   const route = useRoute()

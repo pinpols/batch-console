@@ -18,14 +18,18 @@
   --ios-separator: rgb(60 60 67 / 12%);
   --ios-separator-opaque: #c6c6c8;
   --ios-label-primary: #000000;
-  --ios-label-secondary: rgb(60 60 67 / 60%);
-  --ios-label-tertiary: rgb(60 60 67 / 30%);
+  --ios-label-secondary: rgb(60 60 67 / 76%);
+  --ios-label-tertiary: rgb(60 60 67 / 74%);
   --ios-fill-quaternary: rgb(120 120 128 / 8%);
   --ios-fill-tertiary: rgb(118 118 128 / 12%);
-  --ios-blue: #007aff;
-  --ios-green: #34c759;
-  --ios-orange: #ff9500;
-  --ios-red: #ff3b30;
+  --ios-blue: #005ebd;
+  --ios-blue-strong: #004b98;
+  --ios-green: #187a35;
+  --ios-orange: #945200;
+  --ios-red: #b42318;
+  --ios-red-strong: #c5221f;
+  --ios-on-accent: #ffffff;
+  --ios-on-danger: #ffffff;
   --ios-yellow: #ffcc00;
 
   /* iOS 系统字体栈 */
@@ -45,8 +49,15 @@ html.dark .mobile-layout {
   --ios-separator: rgb(84 84 88 / 60%);
   --ios-separator-opaque: #38383a;
   --ios-label-primary: #ffffff;
-  --ios-label-secondary: rgb(235 235 245 / 60%);
-  --ios-label-tertiary: rgb(235 235 245 / 30%);
+  --ios-label-secondary: rgb(235 235 245 / 72%);
+  --ios-label-tertiary: rgb(235 235 245 / 62%);
+  --ios-blue: #5aa7ff;
+  --ios-blue-strong: #5aa7ff;
+  --ios-green: #4cd964;
+  --ios-orange: #ffb340;
+  --ios-red: #ff6961;
+  --ios-on-accent: #08111c;
+  --ios-on-danger: #1c0908;
   --ios-fill-quaternary: rgb(118 118 128 / 18%);
   --ios-fill-tertiary: rgb(118 118 128 / 24%);
 }
@@ -174,6 +185,10 @@ html.dark .mobile-layout {
   color: #fff;
 }
 
+html.dark .m-page__title-action--active {
+  color: var(--ios-on-accent);
+}
+
 /* iOS Back Button:无背景、纯蓝色,左箭头 + 文字 */
 .m-page__back {
   display: inline-flex;
@@ -287,7 +302,7 @@ html.dark .m-card {
 }
 
 .m-card__meta-key {
-  color: var(--ios-label-tertiary);
+  color: var(--ios-label-secondary);
   margin-right: 4px;
 }
 
@@ -447,6 +462,14 @@ html.dark .m-list {
     inset 0 -1px 2px rgb(0 0 0 / 12%);
 }
 
+html.dark .m-btn--primary {
+  color: var(--ios-on-accent);
+}
+
+html.dark .m-btn--danger {
+  color: var(--ios-on-danger);
+}
+
 .m-btn--danger {
   background: var(--ios-red);
   color: #fff;
@@ -581,6 +604,10 @@ html.dark .m-chip--success {
 html.dark .m-chip--warning {
   color: var(--ios-orange);
 }
+html.dark .m-chip--danger {
+  background: var(--ios-red-strong);
+  color: var(--ios-label-primary);
+}
 
 /* ── 顶栏账号 popover 手机适配 ─────────────────────────────
    桌面 el-popover 290px + 内部 TenantSelect 190px 在窄屏会被裁切 /
@@ -696,8 +723,8 @@ html.dark .m-chip--warning {
 }
 
 .el-select-dropdown .el-select-dropdown__item.is-selected {
-  background: color-mix(in srgb, #007aff 12%, transparent 88%);
-  color: #007aff;
+  background: color-mix(in srgb, var(--ios-blue) 12%, transparent 88%);
+  color: var(--ios-blue);
   font-weight: 500;
 }
 
@@ -773,7 +800,7 @@ html.dark .m-chip--warning {
   padding: 0 6px;
   border-radius: 9px;
   background: var(--ios-fill-tertiary);
-  color: var(--ios-label-secondary);
+  color: var(--ios-label-primary);
   font-size: 11px;
   font-weight: 700;
   line-height: 18px;
@@ -789,7 +816,7 @@ html.dark .m-chip--warning {
 
 .m-tab__badge--info {
   background: color-mix(in srgb, var(--ios-blue) 16%, transparent 84%);
-  color: var(--ios-blue);
+  color: var(--ios-blue-strong);
 }
 .m-tab__badge--success {
   background: color-mix(in srgb, var(--ios-green) 18%, transparent 82%);
@@ -800,7 +827,7 @@ html.dark .m-chip--warning {
   color: color-mix(in srgb, var(--ios-orange) 80%, #000 20%);
 }
 .m-tab__badge--danger {
-  background: var(--ios-red);
+  background: var(--ios-red-strong);
   color: #fff;
 }
 
@@ -821,12 +848,12 @@ html.dark .m-chip--warning {
   color: color-mix(in srgb, var(--ios-orange) 80%, #000 20%);
 }
 .m-tab--active .m-tab__badge--danger {
-  background: var(--ios-red);
+  background: var(--ios-red-strong);
   color: #fff;
 }
 .m-tab--active .m-tab__badge--info {
   background: color-mix(in srgb, var(--ios-blue) 16%, transparent 84%);
-  color: var(--ios-blue);
+  color: var(--ios-blue-strong);
 }
 
 html.dark .m-tab__badge--success {
@@ -834,6 +861,10 @@ html.dark .m-tab__badge--success {
 }
 html.dark .m-tab__badge--warning {
   color: var(--ios-orange);
+}
+html.dark .m-tab__badge--info,
+html.dark .m-tab--active .m-tab__badge--info {
+  color: var(--ios-blue);
 }
 
 /* 小巧的状态点:用在 subtitle 这种 "在线 0 · Drain 0 · 离线 0" 行 */

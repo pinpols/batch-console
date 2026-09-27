@@ -168,7 +168,7 @@
 <script setup lang="ts">
   import { ref, computed } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { RefreshCw as Refresh } from 'lucide-vue-next'
+  import { RefreshCw as Refresh } from '@lucide/vue'
   import { ElMessage } from 'element-plus'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'

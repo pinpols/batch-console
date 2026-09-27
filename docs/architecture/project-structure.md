@@ -41,7 +41,7 @@ batch-console/
 ├── playwright.config.cjs      Playwright 配置
 ├── Dockerfile                 容器镜像
 ├── docker-compose.yml         本地编排
-├── docker-compose.deploy.yml  部署编排
+├── docker-compose.yml         本地与自托管部署编排
 ├── Makefile                   常用任务 alias
 ├── AGENTS.md                  项目红线 + 关键路径(权威)
 └── CHANGELOG.md               发布日志(release-please 维护)
@@ -140,7 +140,7 @@ docs/
 scripts/
 ├── check-api-drift.sh      检查 BE OpenAPI 与 FE 类型漂移
 ├── check-i18n-messages.mjs  zh-CN / en-US 1:1 对齐校验
-├── ci.sh                   CI 入口(lint + type-check + test + build)
+├── ci.sh                   无后端本地完整门禁(只检查，不修改工作区)
 ├── dev-server.sh           本地 dev 启动
 ├── docs-prepare.mjs        docs 跨仓 sync 预处理
 ├── gen-pwa-icons.mjs       PWA 图标生成
@@ -148,7 +148,7 @@ scripts/
 ├── test-e2e.sh             Playwright e2e 入口
 ├── test-unit.sh            Vitest 单测入口
 └── local/                  本地特定
-    ├── fe-acceptance.sh    本地 acceptance 入口
+    ├── fe-acceptance.sh    真实环境 acceptance 入口，基础设施缺失即失败
     ├── health-check.sh     dev server 健康检查
     └── sync-from-main.sh / sync-main.sh    跨仓 main 同步
 ```

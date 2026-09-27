@@ -57,7 +57,7 @@
     Trash2 as Delete,
     Upload,
     Download,
-  } from 'lucide-vue-next'
+  } from '@lucide/vue'
   import { useI18n } from 'vue-i18n'
   import type { SavedFilterSet } from '@/composables/useSavedFilters'
 

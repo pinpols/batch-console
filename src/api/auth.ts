@@ -130,8 +130,11 @@ export const authApi = {
   },
 
   /** GET /api/console/auth/me */
+  profile: () => get<ConsoleAuthProfilePayload>('/api/console/auth/me'),
+
+  /** GET /api/console/auth/me，并映射为页面使用的用户信息。 */
   me: async () => {
-    const profile = await get<ConsoleAuthProfilePayload>('/api/console/auth/me')
+    const profile = await authApi.profile()
     return mapProfileToUserInfo(profile)
   },
 

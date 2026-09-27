@@ -136,7 +136,7 @@
 <script setup lang="ts">
   import { computed, ref, reactive, onBeforeUnmount, onMounted } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { CircleX as CircleClose, Lock, User } from 'lucide-vue-next'
+  import { CircleX as CircleClose, Lock, User } from '@lucide/vue'
 
   const { t } = useI18n({ useScope: 'global' })
   import { useRouter, useRoute } from 'vue-router'
@@ -428,8 +428,8 @@
     font-weight: 700;
     letter-spacing: 0.06em;
     color: var(--button-primary-text);
-    background: var(--button-primary-bg);
-    box-shadow: 0 4px 12px color-mix(in srgb, var(--button-primary-bg) 20%, transparent);
+    background: var(--color-brand-mark-bg);
+    box-shadow: 0 4px 12px color-mix(in srgb, var(--color-brand-mark-bg) 20%, transparent);
   }
 
   .login-brand__name {

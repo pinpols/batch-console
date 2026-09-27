@@ -4,7 +4,7 @@
  * Lucide 线性图标(还原设计),故这里把 EP 名映射到 Lucide 等价图标再解析。
  */
 import type { Component } from 'vue'
-import * as Lucide from 'lucide-vue-next'
+import * as Lucide from '@lucide/vue'
 
 const lucide = Lucide as unknown as Record<string, Component>
 

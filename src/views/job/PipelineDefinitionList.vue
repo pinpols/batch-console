@@ -398,7 +398,7 @@
     RefreshCw as Refresh,
     RotateCcw as RefreshLeft,
     CircleCheckBig as Finished,
-  } from 'lucide-vue-next'
+  } from '@lucide/vue'
   import type { Component } from 'vue'
 
   // Stage → 图标 + 主题色 + 一句话描述。覆盖 STAGES_BY_TYPE 全 17 种,缺省走默认。

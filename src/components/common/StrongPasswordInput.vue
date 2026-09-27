@@ -47,7 +47,7 @@
   import { computed } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
-  import { Sparkles as MagicStick, Copy as DocumentCopy } from 'lucide-vue-next'
+  import { Sparkles as MagicStick, Copy as DocumentCopy } from '@lucide/vue'
   import { generatePassword } from '@/utils/passwordGenerator'
 
   const { t } = useI18n({ useScope: 'global' })

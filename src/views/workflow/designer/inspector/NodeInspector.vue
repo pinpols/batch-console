@@ -9,7 +9,7 @@
    */
   import { computed } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { X } from 'lucide-vue-next'
+  import { X } from '@lucide/vue'
   import { useDesignerStore } from '../store/useDesignerStore'
   import StartNodeForm from './StartNodeForm.vue'
   import EndNodeForm from './EndNodeForm.vue'

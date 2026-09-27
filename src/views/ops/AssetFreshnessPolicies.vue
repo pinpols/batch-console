@@ -163,7 +163,7 @@
   import { reactive, ref } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
-  import { Pencil as Edit, Plus, RefreshCw as Refresh } from 'lucide-vue-next'
+  import { Pencil as Edit, Plus, RefreshCw as Refresh } from '@lucide/vue'
   import {
     createAssetFreshnessPolicy,
     listAssetFreshnessPolicies,

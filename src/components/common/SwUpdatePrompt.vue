@@ -28,7 +28,7 @@
   import { onMounted, ref } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
-  import { RefreshCw as Refresh } from 'lucide-vue-next'
+  import { RefreshCw as Refresh } from '@lucide/vue'
 
   const { t } = useI18n({ useScope: 'global' })
   const needRefresh = ref(false)

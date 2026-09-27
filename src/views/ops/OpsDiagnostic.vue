@@ -162,7 +162,7 @@
     RefreshCw as Refresh,
     Wrench as Tools,
     TriangleAlert as Warning,
-  } from 'lucide-vue-next'
+  } from '@lucide/vue'
   import { getKafkaLag, getOutboxStats, cleanupOutbox, republishOutbox } from '@/api/ops'
   import {
     getClusterDiagnostic,

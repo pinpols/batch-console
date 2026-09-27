@@ -144,7 +144,7 @@
   import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { confirmDanger } from '@/composables/useDangerConfirm'
-  import { RefreshCw as Refresh } from 'lucide-vue-next'
+  import { RefreshCw as Refresh } from '@lucide/vue'
   import { useRefreshAction } from '@/composables/useRefreshAction'
 
   const refresh = useRefreshAction()

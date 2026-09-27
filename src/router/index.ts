@@ -354,8 +354,8 @@ export const routes: RouteRecordRaw[] = [
         },
       },
       {
-        // Workflow 版本对比 diff(Polish 阶段)。BE 暂无 versions 列表端点,
-        // from 端降级为空,仅展示当前版本 nodes;路由参数保留供后续扩展。
+        // Workflow 版本对比。两侧快照都存在时才生成差异，
+        // 历史版本不可用时显式告知用户，不降级为“当前版本对空”。
         path: 'workflow/designer/:id/diff/:fromVersion/:toVersion',
         name: 'workflow-designer-diff',
         component: () => import('@/views/workflow/designer/diff/WorkflowDesignerDiff.vue'),
@@ -365,7 +365,10 @@ export const routes: RouteRecordRaw[] = [
           minRole: 'VIEWER',
         },
       },
-      { path: 'monitor/instances', redirect: '/monitor/job-instances' },
+      {
+        path: 'monitor/instances',
+        redirect: () => (isMobile() ? '/m/jobs' : '/monitor/job-instances'),
+      },
       {
         path: 'runs',
         name: 'runs-overview',

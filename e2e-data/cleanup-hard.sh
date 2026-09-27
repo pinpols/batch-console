@@ -28,10 +28,12 @@ is_protected() {
 is_temp() { [[ "$1" =~ $TEMP_TENANT_REGEX ]]; }
 
 run_or_dry() {
+  local description="$1"
+  shift
   if [ "$DRYRUN" = "1" ]; then
-    echo "  [dry] $*"
+    echo "  [dry] $description"
   else
-    eval "$@"
+    "$@" >/dev/null
   fi
 }
 
@@ -52,8 +54,8 @@ for r in items: print(r.get("tenantId",""))
 for T in $TENANTS; do
   if is_temp "$T"; then
     echo "  -> delete temp tenant: $T"
-    run_or_dry "curl -s -X POST '$BC_API_BASE/api/console/tenants/$T/suspend' -H \"$H_AUTH\" -H \"$H_TENANT_SYSTEM\" >/dev/null"
-    run_or_dry "curl -s -X DELETE '$BC_API_BASE/api/console/tenants/$T' -H \"$H_AUTH\" -H \"$H_TENANT_SYSTEM\" >/dev/null"
+    run_or_dry "suspend tenant $T" curl -s -X POST "$BC_API_BASE/api/console/tenants/$T/suspend" -H "$H_AUTH" -H "$H_TENANT_SYSTEM"
+    run_or_dry "delete tenant $T" curl -s -X DELETE "$BC_API_BASE/api/console/tenants/$T" -H "$H_AUTH" -H "$H_TENANT_SYSTEM"
   elif is_protected "$T"; then
     : # silent
   else
@@ -76,7 +78,7 @@ for r in items:
   if name.startswith("test-") and rid: print(rid, name)
 ' | while read RID NAME; do
   echo "  -> delete api-key: $RID $NAME"
-  run_or_dry "curl -s -X DELETE '$BC_API_BASE/api/console/api-keys/$RID' -H \"$H_AUTH\" -H \"$H_TENANT_SYSTEM\" >/dev/null"
+  run_or_dry "delete api-key $RID" curl -s -X DELETE "$BC_API_BASE/api/console/api-keys/$RID" -H "$H_AUTH" -H "$H_TENANT_SYSTEM"
 done
 
 # ── 3. 删除测试 Webhook ──
@@ -94,7 +96,7 @@ for r in items:
   if name.startswith("test-") and rid: print(rid, name)
 ' | while read RID NAME; do
   echo "  -> delete webhook: $RID $NAME"
-  run_or_dry "curl -s -X DELETE '$BC_API_BASE/api/console/webhooks/$RID' -H \"$H_AUTH\" -H \"$H_TENANT_SYSTEM\" >/dev/null"
+  run_or_dry "delete webhook $RID" curl -s -X DELETE "$BC_API_BASE/api/console/webhooks/$RID" -H "$H_AUTH" -H "$H_TENANT_SYSTEM"
 done
 
 # ── 4. 删除测试 Tag ──
@@ -119,7 +121,7 @@ for r in items:
   if TEMP.match(u) and rid: print(rid, u)
 ' | while read RID UN; do
   echo "  -> delete user: $RID $UN"
-  run_or_dry "curl -s -X DELETE '$BC_API_BASE/api/console/users/$RID' -H \"$H_AUTH\" -H \"$H_TENANT_SYSTEM\" >/dev/null"
+  run_or_dry "delete user $RID" curl -s -X DELETE "$BC_API_BASE/api/console/users/$RID" -H "$H_AUTH" -H "$H_TENANT_SYSTEM"
 done
 
 echo

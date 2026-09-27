@@ -8,7 +8,7 @@
  */
 
 import { ref } from 'vue'
-import { get } from '@/api/client'
+import { jobApi } from '@/api/job'
 
 const STALE_MS = 5 * 60 * 1000
 
@@ -34,10 +34,10 @@ export function useJobCodeOptions() {
     loading.value = true
     inflight = (async () => {
       try {
-        const res = await get<string[]>('/api/console/queries/job-definitions/codes', {
-          tenantId,
-        })
-        const codes = Array.isArray(res) ? res.filter((s): s is string => typeof s === 'string') : []
+        const res = await jobApi.listCodes(tenantId)
+        const codes = Array.isArray(res)
+          ? res.filter((s): s is string => typeof s === 'string')
+          : []
         cache = { tenantId, ts: Date.now(), codes }
         options.value = codes
         return codes

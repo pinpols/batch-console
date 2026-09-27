@@ -58,6 +58,18 @@ const components = Object.entries(lockPackages)
   .filter(Boolean)
   .sort((a, b) => a.name.localeCompare(b.name) || a.version.localeCompare(b.version))
 
+const forbiddenLicense = /(?:^|[-( ])(?:AGPL|GPL|SSPL|BUSL)(?:[-). ]|$)/i
+const forbiddenComponents = components.filter((component) =>
+  forbiddenLicense.test(component.licenses[0].license.id),
+)
+if (forbiddenComponents.length) {
+  console.error('[frontend-compliance] 检测到禁止许可证:')
+  forbiddenComponents.forEach((component) =>
+    console.error(`- ${component.name}@${component.version}: ${component.licenses[0].license.id}`),
+  )
+  process.exit(1)
+}
+
 const dependencies = [
   {
     ref: `pkg:npm/${packageJson.name}@${packageJson.version}`,
@@ -74,7 +86,6 @@ const sbom = {
     .replace(/^(.{8})(.{4})(.{4})(.{4})(.{12}).*$/, '$1-$2-$3-$4-$5')}`,
   version: 1,
   metadata: {
-    timestamp: new Date().toISOString(),
     component: {
       type: 'application',
       name: packageJson.name,
@@ -118,7 +129,6 @@ const markdown = `# 前端第三方软件使用声明
 **Product**: \`${packageJson.name}\`
 **Version**: \`${packageJson.version}\`
 **License**: \`${packageJson.license || 'NOASSERTION'}\`
-**Generated**: \`${new Date().toISOString().slice(0, 10)}\`
 **Source**: \`package.json\` + \`package-lock.json\`
 
 本文档是前端仓库第三方 npm 组件的人工可读快照。机器可读 SBOM 见 [sbom.json](./sbom.json)。

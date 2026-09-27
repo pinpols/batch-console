@@ -127,17 +127,40 @@
                 </div>
                 <span class="wk-card__load">{{ row.currentLoad ?? 0 }}</span>
               </div>
-              <div class="wk-card__actions">
-                <el-button size="small" plain type="warning" @click="drain(row)">
+              <div v-if="workerActionsForStatus(row.status).length" class="wk-card__actions">
+                <el-button
+                  v-if="canWorkerAction(row.status, 'drain')"
+                  size="small"
+                  plain
+                  type="warning"
+                  @click="drain(row)"
+                >
                   {{ t('workerManagement.actionDrain') }}
                 </el-button>
-                <el-button size="small" plain type="danger" @click="offline(row)">
+                <el-button
+                  v-if="canWorkerAction(row.status, 'offline')"
+                  size="small"
+                  plain
+                  type="danger"
+                  @click="offline(row)"
+                >
                   {{ t('workerManagement.actionOffline') }}
                 </el-button>
-                <el-button size="small" plain @click="takeover(row)">
+                <el-button
+                  v-if="canWorkerAction(row.status, 'takeover')"
+                  size="small"
+                  plain
+                  @click="takeover(row)"
+                >
                   {{ t('workerManagement.actionTakeover') }}
                 </el-button>
-                <el-button size="small" plain type="success" @click="warmup(row)">
+                <el-button
+                  v-if="canWorkerAction(row.status, 'warmup')"
+                  size="small"
+                  plain
+                  type="success"
+                  @click="warmup(row)"
+                >
                   {{ t('workerManagement.actionWarmup') }}
                 </el-button>
               </div>
@@ -276,7 +299,7 @@
   import { computed, reactive, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
-  import { RefreshCw as Refresh } from 'lucide-vue-next'
+  import { RefreshCw as Refresh } from '@lucide/vue'
 
   const { t } = useI18n({ useScope: 'global' })
   import { confirmDanger } from '@/composables/useDangerConfirm'
@@ -312,6 +335,7 @@
   import EmptyState from '@/components/common/EmptyState.vue'
   import TablePagerBar from '@/components/table/TablePagerBar.vue'
   import type { ConsoleWorkerRegistryResponse } from '@/types/console-api'
+  import { canWorkerAction, workerActionsForStatus } from './workerActions'
   import type { ConsoleFileChannelResponse } from '@/types/console-api'
   import { fmtDatetime } from '@/utils/datetime'
 
@@ -551,6 +575,7 @@
     try {
       await warmupWorker(row.workerCode, tenant.tenantId)
       ElMessage.success(t('workerManagement.warmupSuccess', { code: row.workerCode }))
+      await queryClient.invalidateQueries({ queryKey: ['workers', tenant.tenantId] })
     } catch {
       /* cancel */
     }

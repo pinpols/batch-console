@@ -21,7 +21,7 @@
 <script setup lang="ts">
   import { ref, useAttrs } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { CircleHelp as QuestionFilled } from 'lucide-vue-next'
+  import { CircleHelp as QuestionFilled } from '@lucide/vue'
 
   const { t } = useI18n({ useScope: 'global' })
   defineOptions({ inheritAttrs: false })

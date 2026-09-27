@@ -4,7 +4,7 @@
    */
   import { computed, onMounted, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { Plus, Trash2 as Delete } from 'lucide-vue-next'
+  import { Plus, Trash2 as Delete } from '@lucide/vue'
   import { useDesignerStore } from '../store/useDesignerStore'
   import { usePipelineCodeOptions } from '@/composables/usePipelineCodeOptions'
   import type { DesignerNode } from '../types'

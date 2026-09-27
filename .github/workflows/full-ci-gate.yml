@@ -18,6 +18,9 @@ on:
     - cron: '0 2 * * 1'
   workflow_dispatch: {}
 
+permissions:
+  contents: read
+
 concurrency:
   group: full-ci-gate-${{ github.ref }}
   cancel-in-progress: true
@@ -32,8 +35,11 @@ jobs:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
+
+      - name: Install shell runtimes
+        run: sudo apt-get update -qq && sudo apt-get install -y --no-install-recommends zsh
 
       - run: npm ci --no-audit --no-fund
 
@@ -46,8 +52,20 @@ jobs:
 
       - name: Check OpenAPI drift
         env:
-          BE_OPENAPI_URL: ${{ secrets.BE_OPENAPI_URL }}
+          BE_OPENAPI_URL: ${{ secrets.BE_OPENAPI_URL || 'https://raw.githubusercontent.com/pinpols/file-batch-system/main/docs/api/console-api.openapi.yaml' }}
         run: npm run gen:api:check
+
+      - name: Architecture, environment and documentation governance
+        run: |
+          npm run check:architecture
+          npm run check:env
+          npm run check:maintainability
+          npm run check:workflows
+          npm run check:shell
+          npm run check:docs
+
+      - name: Check SBOM and license snapshot drift
+        run: npm run compliance:check
 
       - run: npm run test:unit -- --coverage
 
@@ -75,12 +93,20 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      - name: Checkout backend documentation source
+        uses: actions/checkout@v5
+        with:
+          repository: pinpols/file-batch-system
+          ref: main
+          path: backend-docs-source
+          persist-credentials: false
+
       - name: Build Docker image
-        run: docker build -t batch-console:ci-${{ github.sha }} .
+        run: docker build --build-context backend-docs=./backend-docs-source/docs -t batch-console:ci-${{ github.sha }} .
 
       # Trivy 镜像漏洞扫:只挡 CRITICAL(HIGH 警告但不挡,zero-day 噪音降级)
       - name: Trivy scan (CRITICAL only)
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: 'batch-console:ci-${{ github.sha }}'
           format: 'table'
@@ -89,7 +115,7 @@ jobs:
           ignore-unfixed: true
 
       - name: Trivy scan (HIGH+CRITICAL report-only)
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: 'batch-console:ci-${{ github.sha }}'
           format: 'sarif'
@@ -116,7 +142,7 @@ jobs:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
       - run: npm ci --no-audit --no-fund
 
@@ -156,7 +182,7 @@ jobs:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
       - run: npm ci --no-audit --no-fund
 

@@ -1,172 +1,69 @@
 # 前端 Docker / Nginx 部署
 
-## 镜像组成
+## 制品内容
 
-多阶段构建,产物 ~50MB:
-
-| 阶段 | 基础镜像 | 用途 |
-|---|---|---|
-| `build` | `node:24-alpine` | `npm ci` + `vite build` 出 `dist/` |
-| `runtime` | `nginx:1.27-alpine` | 拷 `dist` 到 `/usr/share/nginx/html`,装 nginx 配置 |
-
-## 文件清单
-
-| 文件 | 用途 |
-|---|---|
-| `Dockerfile` | 多阶段构建定义 |
-| `.dockerignore` | 排除 node_modules / dist / git / e2e / 前端 docs 源文件等 |
-| `nginx/nginx.conf` | nginx 主配置(全局 gzip / 日志 / sendfile / worker) |
-| `nginx/default.conf.template` | server block 模板,启动时 envsubst 替换 `${BACKEND_UPSTREAM_HOST}` / `${NGINX_PORT}` |
-| `docker-compose.yml` | 单服务 compose,默认反代到 `host.docker.internal:18080` |
-
-## 快速跑起
+镜像由 Node 24 构建阶段和 Nginx 1.27 运行阶段组成，包含 Vue SPA 与从配对后端权威文档构建的 `/docs/`。文档通过 BuildKit named context 注入；缺少文档源时构建直接失败，不生成占位页。
 
 ```bash
-# 用 compose(推荐:支持自动重启 + healthcheck + 日志旋转)
-docker compose up -d --build
-
-# 自定义 BE 地址(默认 host.docker.internal:18080)
-BACKEND_UPSTREAM_HOST=10.0.0.5:18080 docker compose up -d --build
-
-# 自定义对外端口(默认 8080,容器内 80)
-HOST_PORT=80 docker compose up -d --build
-
-# 单纯 docker run
+# 两仓位于同一父目录时
 npm run docker:build
-npm run docker:run
-```
 
-打开 <http://localhost:8080>。
-
-## 关键设计
-
-### 整体路由分布
-
-```
-浏览器 → nginx
-        ├── /                → Vue SPA 静态(/usr/share/nginx/html)
-        ├── /api/*           → 反代 console-api:18080(透传 SSE / WebSocket)
-        ├── /docs/*          → VitePress 文档(/var/www/batch-docs)
-        │                      经 auth_request 鉴权
-        ├── /__auth_check    → internal,子请求 BE /api/console/auth/check
-        └── /healthz         → 200 ok
-```
-
-### SPA fallback
-vue-router history 模式 → `try_files $uri $uri/ /index.html`,所有未知路径回首页让前端路由处理。
-
-### `/api/*` 反代
-- 透传 `Host / X-Real-IP / X-Forwarded-For/Proto/Host` 头(BE 可拿到真实客户端信息)
-- `proxy_buffering off` + `proxy_read_timeout 3600s` 支持 SSE 长连接(`/api/console/ops/summary/events`)
-- `Upgrade / Connection` 头保留(WebSocket 预留)
-
-### `/docs/*` 文档站点 + 鉴权
-- 静态产物:`tools/docs-bridge/backend/.vitepress/dist`(VitePress base 配置 `/docs/` 与 nginx alias 对齐)
-- **内嵌 auth_request**:每个 docs 资源请求都触发一次 internal 子请求到 BE `/api/console/auth/check`
-- BE 期望:`GET /api/console/auth/check` 拿 cookie / Authorization 头 → 200/204 通过,401/403 拒绝
-- 鉴权 SLO:子请求 connect/read 超时各 1-2s,超时即拒
-- Docs assets 一样长缓存(`/docs/assets/*` immutable),`docs/index.html` 不缓存
-
-### 缓存策略
-| 路径 | Cache-Control |
-|---|---|
-| `/assets/*.{js,css,woff2,...}` | `public, max-age=31536000, immutable`(hash 命名,1 年) |
-| `/index.html` | `no-cache, no-store, must-revalidate`(每次都拉新) |
-| 其它 | `no-cache`(走协商缓存) |
-
-### 安全头
-`X-Content-Type-Options / X-Frame-Options / Referrer-Policy / X-XSS-Protection / Permissions-Policy` 全开,关掉 `server_tokens`。
-
-### 健康检查
-- `GET /healthz` 返 `200 ok`,Docker `HEALTHCHECK` 每 30s 探一次
-- compose `unless-stopped` 重启策略
-
-### 日志
-- 格式:JSON 行,带 `time / status / rt / upstream_rt / trace`,直接喂 ELK / Loki 即可
-- 旋转:compose `max-size: 10m, max-file: 3`,防写满磁盘
-
-## 构建模式
-
-```bash
-# 默认 build:fast(只跑 vite build,不重复 vue-tsc — CI 应已跑过 typecheck)
+# Compose 同样使用 ../file-batch-system/docs
 docker compose up -d --build
-
-# 严格构建(跑 vue-tsc 全量类型检查,慢 ~20s)
-BUILD_MODE=build docker compose up -d --build
 ```
 
-## VitePress 文档构建(跨仓)
-
-`tools/docs-bridge/backend/.vitepress/config.ts` 用 `srcDir: '../../../../file-batch-system/docs'` 跨仓引用 BE 仓的 markdown,**两个仓必须放在同一父目录**(参见 `AGENTS.md`)。
-
-构建有 2 种方式:
-
-**方式 1:CI 预构建 + 单仓 docker build**(推荐)
+手动构建必须显式提供文档上下文：
 
 ```bash
-# 在 CI 上先 cd batch-console && npm install && npm run docs:build
-# 产物在 tools/docs-bridge/backend/.vitepress/dist;docker build 直接复用
-docker build -t batch-console:latest .
+docker build \
+  --build-context backend-docs=../file-batch-system/docs \
+  --build-arg VITE_GIT_SHA="$(git rev-parse HEAD)" \
+  -t batch-console:local .
 ```
 
-**方式 2:本地快速构建占位文档**
+## 路由与缓存
+
+| 路径 | 行为 | 缓存 |
+|---|---|---|
+| `/` | Vue Router history fallback | `no-cache` |
+| `/index.html` | SPA 入口 | `no-store` |
+| `/version.json` | 版本和 commit 校验 | `no-store` |
+| `/assets/*` | hash 静态资源 | 一年 immutable |
+| `/api/*` | 反向代理 Console API，支持 SSE/WebSocket | 不代理缓存 |
+| `/docs/*` | VitePress，先通过后端 `auth_request` 鉴权 | assets immutable，入口不缓存 |
+| `/healthz` | 容器健康检查 | 不缓存 |
+
+`BACKEND_UPSTREAM_HOST` 在容器启动时注入；Compose 默认 `host.docker.internal:18090`，生产必须设置为真实 Console API 地址。
+
+## 安全头
+
+`nginx/snippets/security-headers.conf` 是统一入口，所有自行设置缓存头的 location 都显式包含该文件，避免 Nginx `add_header` 继承规则造成安全头丢失。当前包含 CSP、HSTS、frame、MIME、Referrer 与 Permissions Policy。
+
+HSTS 只有 HTTPS 响应才生效。若 TLS 在 ingress/CDN 终止，平台负责人仍须在最终公网响应执行：
 
 ```bash
-# 未预构建文档、且构建上下文看不到后端 docs 时,Dockerfile 写入 /docs/ 占位页,
-# SPA 主站与 /api/ 反代不受影响。
-docker build -t batch-console:latest .
+curl -sSI https://console.example.com/ | grep -Ei 'strict-transport|content-security|x-frame|permissions-policy'
 ```
 
-> Dockerfile 顺序:复用 `tools/docs-bridge/backend/.vitepress/dist/index.html` → 尝试容器内构建 → 写入占位页。
+CSP 新增外部 API、Sentry 或资源域名时应按最小域名扩展 `connect-src` 等指令，不得使用通配 `*`。
 
-## BE 地址注入方式
+## 构建期配置
 
-| 场景 | `BACKEND_UPSTREAM_HOST` 值 |
-|---|---|
-| macOS / Windows 本机 BE | `host.docker.internal:18080` |
-| Linux 本机 BE | `host.docker.internal:host-gateway` 已自动加 extra_hosts,同上 |
-| K8s / 集群内 BE | `backend-svc.batch.svc.cluster.local:18080` 或 service 名 |
-| 外部 BE | 直接 IP / DNS,如 `10.0.0.5:18080` |
+`VITE_SENTRY_DSN`、遥测开关和端点通过 Docker build args 写入静态制品，定义见[环境变量治理](../engineering/environment-variables.md)。这些变量不是容器启动后动态配置；修改后必须重新构建镜像。
+
+## 发布与回滚
+
+主分支生成 `sha-*` 多架构镜像，版本 tag 只晋级已通过 staging 的同一 digest。流程见[发布晋级](../runbook/release-promotion.md)，回滚见[回滚手册](../runbook/rollback.md)。不得直接从工作目录构建未验收的生产版本。
 
 ## 排查
 
 ```bash
-# 进容器看 nginx 渲染后的 conf
-docker compose exec frontend cat /etc/nginx/conf.d/default.conf
-
-# 看实时访问日志
+docker compose ps
 docker compose logs -f frontend
-
-# 测试反代是否通
-docker compose exec frontend curl -i http://backend/api/console/healthz
-
-# 检查健康
-docker inspect --format='{{.State.Health.Status}}' batch-console
+docker compose exec frontend nginx -t
+docker compose exec frontend cat /etc/nginx/conf.d/default.conf
+curl -sS http://localhost:8080/version.json
+curl -sSI http://localhost:8080/index.html
 ```
 
-## CI/CD 集成示例
-
-```yaml
-# GitHub Actions:tag 推送后构建并推到 GHCR
-- name: Build & push
-  uses: docker/build-push-action@v5
-  with:
-    context: .
-    push: true
-    tags: |
-      ghcr.io/${{ github.repository }}/frontend:${{ github.ref_name }}
-      ghcr.io/${{ github.repository }}/frontend:latest
-    build-args: BUILD_MODE=build  # CI 走严格类型检查
-    cache-from: type=gha
-    cache-to: type=gha,mode=max
-```
-
-## 不打入镜像的内容
-
-由 `.dockerignore` 排除:
-- `node_modules` / `dist`(在构建阶段重新生成)
-- `.git` / `.github` / `.idea` / `.vscode`
-- e2e 相关:`test-results / playwright-report / e2e/.auth`
-- `docs`(前端文档源;运行镜像只需要构建后的文档产物)
-- `.env.local` / `.env.*.local`(env 通过 `-e` 注入)
-- `.png` / `.xlsx` / `oldfiles` / `.DS_Store`
+Compose 使用 `json-file` 日志轮转，默认每个文件 10 MiB、保留 3 份。生产平台可接入 Loki/ELK，但不得依赖容器内无限期留存。

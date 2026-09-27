@@ -12,6 +12,9 @@ on:
     branches: [main]
   workflow_dispatch: {}
 
+permissions:
+  contents: read
+
 # 同 PR 上的过期任务取消,节约 Actions 分钟
 concurrency:
   group: pr-gate-${{ github.ref }}
@@ -25,12 +28,21 @@ jobs:
 
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Validate GitHub Actions workflows
+        uses: docker://rhysd/actionlint:1.7.12
 
       - name: Setup Node
         uses: actions/setup-node@v5
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
+
+      - name: Install shell runtimes
+        run: sudo apt-get update -qq && sudo apt-get install -y --no-install-recommends zsh
 
       - name: Install deps
         run: npm ci --no-audit --no-fund
@@ -47,8 +59,19 @@ jobs:
       # `../file-batch-system/docs/api/console-api.openapi.yaml` 时优先用本地。
       - name: Check OpenAPI drift
         env:
-          BE_OPENAPI_URL: ${{ secrets.BE_OPENAPI_URL }}
+          BE_OPENAPI_URL: ${{ secrets.BE_OPENAPI_URL || 'https://raw.githubusercontent.com/pinpols/file-batch-system/main/docs/api/console-api.openapi.yaml' }}
         run: npm run gen:api:check
+
+      - name: Engineering governance
+        run: |
+          npm run check:architecture
+          npm run check:env
+          npm run check:maintainability
+          npm run check:workflows
+          npm run check:shell
+          npm run check:docs
+          npm run compliance:check
+          npm run check:changelog
 
       - name: TypeCheck
         run: npm run typecheck

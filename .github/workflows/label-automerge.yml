@@ -18,7 +18,7 @@ on:
   pull_request:
     types: [labeled, synchronize, reopened, ready_for_review]
   workflow_run:
-    workflows: ["pr-gate"]
+    workflows: ['pr-gate']
     types: [completed]
 
 permissions:
@@ -68,7 +68,7 @@ jobs:
             echo "::warning::无法读取 main branch protection 的 required checks,退出"
             exit 0
           fi
-          echo "required checks: $(echo ${REQUIRED} | tr '\n' ' ')"
+          echo "required checks: $(printf '%s\n' "${REQUIRED}" | tr '\n' ' ')"
 
           for pr in ${PRS}; do
             echo
@@ -102,14 +102,15 @@ jobs:
             fi
 
             ALL_GREEN=true
-            for check in ${REQUIRED}; do
+            while IFS= read -r check; do
+              [[ -z "${check}" ]] && continue
               CONCLUSION=$(echo "${META}" | jq -r ".statusCheckRollup[] | select(.name == \"${check}\") | .conclusion" | head -1)
               if [[ "${CONCLUSION}" != "SUCCESS" ]]; then
                 echo "  required check '${check}' = '${CONCLUSION:-MISSING}',等下次触发"
                 ALL_GREEN=false
                 break
               fi
-            done
+            done <<< "${REQUIRED}"
 
             if [[ "${ALL_GREEN}" != "true" ]]; then
               continue

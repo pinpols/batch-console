@@ -224,7 +224,7 @@
   import { ref, reactive, onUnmounted } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
-  import { RefreshCw as Refresh, Copy as DocumentCopy } from 'lucide-vue-next'
+  import { RefreshCw as Refresh, Copy as DocumentCopy } from '@lucide/vue'
   import { ElInput, ElInputNumber, ElSwitch } from 'element-plus'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'

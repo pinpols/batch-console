@@ -115,7 +115,7 @@
   import type { TableInstance } from 'element-plus'
   import { useRoute } from 'vue-router'
   import { useI18n } from 'vue-i18n'
-  import { RefreshCw as Refresh, SlidersHorizontal as Operation } from 'lucide-vue-next'
+  import { RefreshCw as Refresh, SlidersHorizontal as Operation } from '@lucide/vue'
   import type { PaginationMode } from '@/api/pagination'
 
   /**

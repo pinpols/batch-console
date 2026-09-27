@@ -18,6 +18,14 @@ describe('getTaskHeartbeatDetails', () => {
     expect(mockedGet).toHaveBeenCalledWith('/api/console/tasks/12/heartbeat-details')
   })
 
+  it('显式传递租户查询参数', async () => {
+    mockedGet.mockResolvedValue({ taskId: 12, taskStatus: 'RUNNING', details: null })
+    await getTaskHeartbeatDetails(12, 'ta')
+    expect(mockedGet).toHaveBeenCalledWith('/api/console/tasks/12/heartbeat-details', {
+      tenantId: 'ta',
+    })
+  })
+
   // 注:404/500 catch 分支无单测覆盖。当前 vitest(v4)在 mockRejectedValue /
   // mockImplementation(throw) 路径下,即便业务代码已 try/catch 也会把那次 reject
   // 计入"unhandled error"导致测试失败(只在该子句出现,其它带 mock reject 的

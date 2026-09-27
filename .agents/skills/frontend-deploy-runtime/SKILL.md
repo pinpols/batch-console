@@ -17,9 +17,12 @@ description: 修改或审查前端 Docker、Nginx、环境变量、PWA、构建�
 2. 版本发布相关变化要同步 `package.json`、`package-lock.json`、release-please 配置和 README/运行手册。
 3. PWA、图标、manifest 或 service worker 变化要验证缓存更新策略，避免旧前端长期持有旧 API 契约。
 4. 部署脚本要兼容 Linux/macOS/PowerShell 的既有边界，路径和端口不要写死到个人机器。
+5. 新增或调整 `VITE_*`、容器运行时变量时同步 `config/frontend-env.json`，并运行 `npm run check:env`；不要让 `.env` 成为未登记的事实来源。
+6. GitHub Actions 使用固定版本标签并声明顶层最小 `permissions`；workflow 变化运行 `npm run check:workflows`，本机有 `actionlint` 时一并验证。
 
 ## 验证
 
 - 轻量验证优先：`npm run check:version`、`npm run build`、`npm run docker:build` 或对应脚本。
+- 无后端综合门禁使用 `npm run verify:local`；它不能替代 Docker 运行态、Lighthouse 或 staging 浏览器验收。
 - 线上或 staging 验证要记录镜像/tag、后端地址、健康检查、Lighthouse/Trivy 等证据。
-- 未构建镜像或未跑 staging 时，不要宣称部署链路已验证。
+- 版本标签只能晋级同一 commit 已通过 staging 的不可变镜像；未构建镜像或未跑 staging 时，不要宣称部署链路已验证。

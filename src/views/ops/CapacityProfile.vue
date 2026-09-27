@@ -213,7 +213,7 @@
   import { computed, reactive, ref } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
-  import { RefreshCw as Refresh } from 'lucide-vue-next'
+  import { RefreshCw as Refresh } from '@lucide/vue'
   import VChart from 'vue-echarts'
   import {
     getCapacityProfile,

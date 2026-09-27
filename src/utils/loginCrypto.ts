@@ -10,20 +10,14 @@
  *
  * 公钥缓存: sessionStorage 5min,会话结束自动清。
  */
-import { get } from '@/api/client'
+import { fetchLoginPublicKey, type LoginPublicKeyResponse } from '@/api/authPublicKey'
 
 const CACHE_KEY = 'console:auth:public-key'
 const CACHE_TTL_MS = 5 * 60 * 1000
 
-interface PublicKeyResponse {
-  algorithm: string
-  publicKey: string
-  fingerprint: string
-}
-
 interface CachedKey {
   fetchedAt: number
-  payload: PublicKeyResponse
+  payload: LoginPublicKeyResponse
 }
 
 export interface EncryptedLoginBody {
@@ -32,7 +26,7 @@ export interface EncryptedLoginBody {
   ciphertext: string
 }
 
-async function fetchPublicKey(): Promise<PublicKeyResponse | null> {
+async function fetchPublicKey(): Promise<LoginPublicKeyResponse | null> {
   const cachedRaw = sessionStorage.getItem(CACHE_KEY)
   if (cachedRaw) {
     try {
@@ -45,9 +39,7 @@ async function fetchPublicKey(): Promise<PublicKeyResponse | null> {
     }
   }
   try {
-    const resp = await get<PublicKeyResponse>('/api/console/auth/public-key', {
-      _silent: true,
-    } as Record<string, unknown>)
+    const resp = await fetchLoginPublicKey()
     sessionStorage.setItem(
       CACHE_KEY,
       JSON.stringify({ fetchedAt: Date.now(), payload: resp } satisfies CachedKey),

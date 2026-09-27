@@ -4,7 +4,7 @@
 
 set +e
 DIR="$(cd "$(dirname "$0")" && pwd)"
-cd "$DIR"
+cd "$DIR" || exit 1
 
 PASS=0
 FAIL=0
@@ -21,9 +21,10 @@ check_json() {
 }
 
 check_xlsx() {
-  local f="$1"; local expected_sheets="$2"
+  local f="$1"
   if [ ! -f "$f" ] && [ ! -L "$f" ]; then bad "$f 不存在"; return; fi
-  local out=$(python3 -c "
+  local out
+  out=$(python3 -c "
 import openpyxl
 wb = openpyxl.load_workbook('$f', read_only=True)
 print(','.join(wb.sheetnames))

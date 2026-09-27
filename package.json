@@ -5,7 +5,7 @@
   "license": "Apache-2.0",
   "type": "module",
   "engines": {
-    "node": "^22 || ^24"
+    "node": "^24"
   },
   "scripts": {
     "prepare": "node scripts/prepare.mjs",
@@ -13,7 +13,17 @@
     "gen:api": "bash scripts/gen-api-types.sh",
     "gen:api:check": "bash scripts/check-api-drift.sh",
     "check:version": "bash scripts/check-version-alignment.sh",
+    "check:architecture": "node scripts/check-architecture.mjs",
+    "check:env": "node scripts/check-env-governance.mjs",
+    "check:docs": "node scripts/check-docs.mjs",
+    "check:maintainability": "node scripts/check-maintainability.mjs",
+    "check:workflows": "node scripts/check-workflows.mjs",
+    "check:shell": "bash scripts/check-shell-scripts.sh",
+    "check:changelog": "node scripts/check-changelog-sync.mjs",
+    "verify:governance": "npm run check:architecture && npm run check:env && npm run check:maintainability && npm run check:workflows && npm run check:shell && npm run check:docs && npm run compliance:check && npm run check:changelog",
+    "verify:local": "bash scripts/ci.sh",
     "compliance:sbom": "node scripts/generate-frontend-compliance.mjs",
+    "compliance:check": "node scripts/check-compliance-drift.mjs",
     "typecheck": "vue-tsc --noEmit",
     "check:i18n": "node --experimental-strip-types scripts/check-i18n-messages.mjs",
     "preflight:changed": "node scripts/local/preflight-changed.mjs --staged",
@@ -33,19 +43,22 @@
     "test:e2e:all": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
+    "test:e2e:visual": "playwright test --config playwright.visual.config.cjs",
     "test:e2e:smoke": "playwright test e2e/smoke.spec.ts e2e/cross-navigation.spec.ts e2e/navigation.spec.ts",
     "docs:prepare": "node scripts/docs-prepare.mjs",
     "docs:build": "bash scripts/docs-build.sh backend",
+    "docs:size": "node scripts/check-docs-bundle-size.mjs backend",
     "docs:preview": "vitepress preview tools/docs-bridge/backend --port 5174",
     "docs:serve": "bash scripts/docs-serve.sh backend",
     "docs:build:all": "bash scripts/docs-build.sh all",
     "docs:serve:all": "concurrently -k -n BEDOCS,FEDOCS -c green,magenta \"bash scripts/docs-serve.sh backend\" \"bash scripts/docs-serve.sh frontend\"",
     "//docs:dev:disabled": "vitepress 1.6.4 跨仓 srcDir+cleanUrls dev 模式所有目录入口 404(rewrites README.md→index.md 不生效),本地起文档必须 npm run docs:serve(= build + preview)",
-    "fe-docs:build": "vitepress build tools/docs-bridge/frontend",
+    "fe-docs:build": "bash scripts/docs-build.sh frontend",
+    "fe-docs:size": "node scripts/check-docs-bundle-size.mjs frontend",
     "fe-docs:preview": "vitepress preview tools/docs-bridge/frontend --port 5175",
     "fe-docs:serve": "npm run fe-docs:build && npm run fe-docs:preview",
     "dev:all": "concurrently -k -n SPA,DOCS,FEDOCS -c blue,green,magenta \"npm:dev\" \"npm:docs:serve\" \"npm:fe-docs:serve\"",
-    "docker:build": "docker build -t batch-console:latest .",
+    "docker:build": "docker build --build-context backend-docs=../file-batch-system/docs -t batch-console:latest .",
     "docker:run": "docker run --rm -p 8080:80 -e BACKEND_UPSTREAM_HOST=host.docker.internal:18080 --add-host=host.docker.internal:host-gateway batch-console:latest",
     "docker:up": "docker compose up -d --build",
     "docker:down": "docker compose down",
@@ -65,6 +78,7 @@
     "@codemirror/view": "^6.42.1",
     "@fontsource/ibm-plex-mono": "^5.2.7",
     "@fontsource/ibm-plex-sans": "^5.2.8",
+    "@lucide/vue": "^1.48.0",
     "@sentry/vue": "^10.52.0",
     "@tanstack/vue-query": "^5.96.1",
     "axios": "^1.16.1",
@@ -75,7 +89,6 @@
     "echarts": "^6.0.0",
     "element-plus": "^2.14.6",
     "json-bigint": "^1.0.0",
-    "lucide-vue-next": "^1.0.0",
     "pinia": "^3.0.4",
     "svg-pan-zoom": "^3.6.2",
     "vue": "^3.5.13",
@@ -88,6 +101,7 @@
     "@axe-core/playwright": "^4.11.3",
     "@element-plus/icons-vue": "^2.3.2",
     "@playwright/test": "^1.60.0",
+    "@sentry/cli": "^2.58.6",
     "@types/dagre": "^0.7.54",
     "@types/json-bigint": "^1.0.4",
     "@typescript-eslint/eslint-plugin": "^8.18.0",
@@ -121,6 +135,7 @@
     "vue-tsc": "^3.3.1"
   },
   "overrides": {
+    "glob": "^13.0.6",
     "vitepress": {
       "esbuild": "^0.25.5",
       "vite": "^6.4.3"
@@ -131,5 +146,12 @@
       "eslint --fix",
       "prettier --write"
     ]
+  },
+  "allowScripts": {
+    "esbuild@0.28.2": true,
+    "esbuild@0.25.12": true,
+    "vue-demi@0.14.10": true,
+    "@sentry/cli@2.58.6": true,
+    "fsevents@2.3.3": true
   }
 }

@@ -1,5 +1,5 @@
-/* Redesign token handoff.
-   Source: design/refs/tokens-handoff.css, copied into src so app builds do not import from design/. */
+/* Batch Console 运行时设计 token 权威源。
+   design/tokens-handoff.css 仅保留最初设计交付快照，不参与应用构建。 */
 
 :root {
   --font-sans:
@@ -31,6 +31,8 @@
   --color-warning: #b57816;
   --color-danger: #d64543;
   --color-info: #1668e3;
+  --color-brand-mark-bg: #1257c4;
+  --color-on-warning: #1b1e26;
 
   --color-text-primary: #1b1e26;
   --color-text-secondary: #5b6270;

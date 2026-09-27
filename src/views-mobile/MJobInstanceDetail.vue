@@ -34,8 +34,14 @@
               <span class="m-card__meta-key">{{ t('mobile.jobs.priority') }}</span
               >{{ row.priority }}
             </div>
-            <div><span class="m-card__meta-key">queue</span>{{ row.queueCode || '—' }}</div>
-            <div><span class="m-card__meta-key">Worker</span>{{ row.workerGroup || '—' }}</div>
+            <div>
+              <span class="m-card__meta-key">{{ t('mobile.jobs.queue') }}</span>
+              {{ row.queueCode || '—' }}
+            </div>
+            <div>
+              <span class="m-card__meta-key">{{ t('mobile.jobs.worker') }}</span>
+              {{ row.workerGroup || '—' }}
+            </div>
             <div>
               <span class="m-card__meta-key">{{ t('mobile.jobs.startedAt') }}</span>
               {{ fmt(row.startedAt) }}
@@ -45,7 +51,7 @@
               {{ fmt(row.finishedAt) }}
             </div>
             <div>
-              <span class="m-card__meta-key">traceId</span>
+              <span class="m-card__meta-key">{{ t('mobile.jobs.traceId') }}</span>
               <button
                 v-if="row.traceId"
                 class="m-link"
@@ -105,9 +111,13 @@
                 </span>
               </div>
               <div class="m-card__meta">
-                <div>retry · {{ s.retryCount }}</div>
-                <div v-if="s.startedAt">start · {{ fmt(s.startedAt) }}</div>
-                <div v-if="s.finishedAt">finish · {{ fmt(s.finishedAt) }}</div>
+                <div>{{ t('mobile.jobDetail.stepRetryCount') }} · {{ s.retryCount }}</div>
+                <div v-if="s.startedAt">
+                  {{ t('mobile.jobDetail.stepStartedAt') }} · {{ fmt(s.startedAt) }}
+                </div>
+                <div v-if="s.finishedAt">
+                  {{ t('mobile.jobDetail.stepFinishedAt') }} · {{ fmt(s.finishedAt) }}
+                </div>
               </div>
               <div v-if="s.errorCode || s.errorMessage" class="m-step__err">
                 <span v-if="s.errorCode" class="m-step__err-code">[{{ s.errorCode }}]</span>
@@ -151,12 +161,16 @@
         </div>
 
         <div class="m-card">
-          <div class="m-card__title" style="margin-bottom: 6px">paramsSnapshot</div>
+          <div class="m-card__title" style="margin-bottom: 6px">
+            {{ t('jobInstanceDetail.paramsSnapshot') }}
+          </div>
           <JsonPreview :data="row.paramsSnapshot" />
         </div>
 
         <div class="m-card">
-          <div class="m-card__title" style="margin-bottom: 6px">resultSummary</div>
+          <div class="m-card__title" style="margin-bottom: 6px">
+            {{ t('jobInstanceDetail.resultSummary') }}
+          </div>
           <JsonPreview :data="row.resultSummary" />
         </div>
       </template>
@@ -168,7 +182,7 @@
   import { computed, ref, watch } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
-  import { ArrowLeft, RefreshCw as Refresh } from 'lucide-vue-next'
+  import { ArrowLeft, RefreshCw as Refresh } from '@lucide/vue'
   import { ElMessage } from 'element-plus'
   import { confirmActionSheet } from '@/layout-mobile/MActionSheet'
   import { useTenantStore } from '@/stores/tenant'
@@ -360,7 +374,7 @@
     }
     heartbeatLoading.value = true
     try {
-      const r = await getTaskHeartbeatDetails(id)
+      const r = await getTaskHeartbeatDetails(id, tenant.tenantId)
       if (r === null) {
         heartbeatNotFound.value = true
         heartbeatLatest.value = null

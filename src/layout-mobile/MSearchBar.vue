@@ -31,7 +31,7 @@
 <script setup lang="ts">
   import { ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { CircleX as CircleCloseFilled, Search } from 'lucide-vue-next'
+  import { CircleX as CircleCloseFilled, Search } from '@lucide/vue'
   import { logClick } from '@/utils/logger'
 
   const { t } = useI18n({ useScope: 'global' })

@@ -47,6 +47,10 @@ export interface JobDefinitionListParams {
 }
 
 export const jobApi = {
+  /** 设计器 JOB 节点使用的轻量编码列表。 */
+  listCodes: (tenantId: string) =>
+    get<string[]>('/api/console/queries/job-definitions/codes', { tenantId }),
+
   /**
    * @deprecated 仅限需要全量聚合的特殊场景（如 meta 下拉）。列表页请改用
    * {@link jobApi.listDefinitionsPaged}，避免 fetchAllPageItems 最大 20000 条的客户端聚合。

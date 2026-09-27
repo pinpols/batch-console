@@ -403,7 +403,7 @@
   import { useI18n } from 'vue-i18n'
   import { useRoute, useRouter } from 'vue-router'
   import { ElMessage, ElMessageBox } from 'element-plus'
-  import { Pencil as Edit, RefreshCw as Refresh, Sparkles as MagicStick } from 'lucide-vue-next'
+  import { Pencil as Edit, RefreshCw as Refresh, Sparkles as MagicStick } from '@lucide/vue'
   import DryRunPlanDialog from '@/components/dialogs/DryRunPlanDialog.vue'
   import { jobApi } from '@/api/job'
   import { instanceApi } from '@/api/instance'

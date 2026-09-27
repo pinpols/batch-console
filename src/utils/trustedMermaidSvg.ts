@@ -1,11 +1,10 @@
 import { purifyHtml } from '@/utils/safeHtml'
 
 /**
- * Render Mermaid's generated SVG into a container.
+ * 把 Mermaid 生成的 SVG 安全写入容器。
  *
- * Mermaid is initialized with `securityLevel: 'strict'` at call sites, and we still
- * pass the generated SVG through DOMPurify before assigning `innerHTML` so manual
- * HTML writes have one centralized safety boundary.
+ * Mermaid 本身使用 `securityLevel: 'strict'`，仍在手工写入 `innerHTML`
+ * 前经过 DOMPurify，确保所有这类写入只有一个安全边界。
  */
 export function setTrustedMermaidSvg(el: HTMLElement | null | undefined, svg: string): void {
   if (!el) return

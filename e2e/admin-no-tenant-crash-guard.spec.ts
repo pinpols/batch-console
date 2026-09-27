@@ -52,6 +52,9 @@ test.describe('@cross-browser admin 未选租户 · 页面不整页崩溃(组件
   test.beforeEach(async ({ page }) => {
     // 先进应用清空「当前租户」,模拟 admin 登录后尚未选择租户
     await page.goto('/ops/summary', { waitUntil: 'domcontentloaded' })
+    // Firefox 在路由模块尚未加载完成时立即进行下一次整页导航，会把动态 import
+    // 取消并上报为 pageerror。先等待首屏主体就绪，避免把导航竞态误判成组件崩溃。
+    await expect(page.locator('.page-header, .m-page').first()).toBeVisible({ timeout: 15_000 })
     await page.evaluate((key) => window.localStorage.removeItem(key), TENANT_STORAGE_KEY)
   })
 

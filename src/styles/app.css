@@ -452,7 +452,7 @@ html.dark .pill-tabs .el-tabs__item.is-active:hover {
   }
 }
 
-.pill-segmented {
+.el-segmented.pill-segmented {
   --el-segmented-item-selected-color: color-mix(
     in srgb,
     var(--color-primary) 96%,
@@ -835,6 +835,37 @@ html.dark .form-panel {
 
 .error-toast__trace-copy:hover {
   text-decoration: underline;
+}
+
+@media (max-width: 767px) {
+  .el-message:has(.error-toast) {
+    width: calc(100% - 24px);
+    min-width: 0;
+    max-width: 520px;
+  }
+
+  .error-toast {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .error-toast__trace {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 6px;
+    width: 100%;
+  }
+
+  .error-toast__trace-code {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .error-toast__trace-copy {
+    white-space: nowrap;
+  }
 }
 
 /* Table: render placeholder for truly empty cells */

@@ -48,6 +48,11 @@ if [[ "${BG:-0}" == "1" ]]; then
     echo "✗ dev-stack 已在后台运行(PID $(cat "$STACK_PID"));先 make kill 再起" >&2
     exit 1
   fi
+  # 长时间联调时避免单个后台日志无限增长。保留最近一份旧日志，默认 50 MiB。
+  max_log_bytes="${STACK_LOG_MAX_BYTES:-52428800}"
+  if [[ -f "$STACK_LOG" ]] && [[ "$(wc -c < "$STACK_LOG")" -gt "$max_log_bytes" ]]; then
+    mv -f "$STACK_LOG" "$STACK_LOG.1"
+  fi
   echo "▶ 后台启动 stack[$DOCS]:SPA :$SPA_PORT + 文档 → 日志 $STACK_LOG"
   nohup npx concurrently "$@" > "$STACK_LOG" 2>&1 &
   echo $! > "$STACK_PID"

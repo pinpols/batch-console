@@ -119,7 +119,7 @@
   import { computed, nextTick, ref, watch } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
-  import { ArrowLeft, RefreshCw as Refresh } from 'lucide-vue-next'
+  import { ArrowLeft, RefreshCw as Refresh } from '@lucide/vue'
   import MPullRefresh from '@/layout-mobile/MPullRefresh.vue'
   import { workflowApi } from '@/api/workflow'
   import { queryWorkflowNodeRuns } from '@/api/workflowQueries'

@@ -8,7 +8,7 @@
  */
 
 import { ref } from 'vue'
-import { get } from '@/api/client'
+import { queryPipelineDefinitionCodes } from '@/api/workflowQueries'
 
 const STALE_MS = 5 * 60 * 1000
 
@@ -34,10 +34,10 @@ export function usePipelineCodeOptions() {
     loading.value = true
     inflight = (async () => {
       try {
-        const res = await get<string[]>('/api/console/queries/pipeline-definitions/codes', {
-          tenantId,
-        })
-        const codes = Array.isArray(res) ? res.filter((s): s is string => typeof s === 'string') : []
+        const res = await queryPipelineDefinitionCodes(tenantId)
+        const codes = Array.isArray(res)
+          ? res.filter((s): s is string => typeof s === 'string')
+          : []
         cache = { tenantId, ts: Date.now(), codes }
         options.value = codes
         return codes

@@ -86,7 +86,7 @@
   import '@/charts/echarts'
   import { watch } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { RotateCw as RefreshRight } from 'lucide-vue-next'
+  import { RotateCw as RefreshRight } from '@lucide/vue'
   import VChart from 'vue-echarts'
   import { useRefreshAction } from '@/composables/useRefreshAction'
 

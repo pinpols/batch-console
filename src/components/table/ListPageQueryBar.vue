@@ -57,12 +57,7 @@
   import { computed, onMounted, onUpdated, ref, useAttrs } from 'vue'
   import { useRoute } from 'vue-router'
   import { useI18n } from 'vue-i18n'
-  import {
-    RefreshCw as Refresh,
-    RotateCcw as RefreshLeft,
-    Search,
-    ChevronUp,
-  } from 'lucide-vue-next'
+  import { RefreshCw as Refresh, RotateCcw as RefreshLeft, Search, ChevronUp } from '@lucide/vue'
   const { t } = useI18n({ useScope: 'global' })
 
   defineOptions({ inheritAttrs: false })

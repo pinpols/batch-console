@@ -2,11 +2,11 @@
 
 ## Node.js
 
-- `package.json` 的 `engines.node` 是消费和开发兼容范围：`>=22 <25`。
+- `package.json` 的 `engines.node` 是开发和构建约束：Node 24（`^24`）。
 - 本地默认版本由 `.node-version` 和 `.nvmrc` 统一选择 Node 24。
 - Docker build stage 使用 `node:24-alpine`；部署镜像只运行 Nginx，不包含 Node。
 - 安装依赖必须使用提交的 `package-lock.json` 与 `npm ci`，不要用 `npm install` 更新锁文件之外的运行环境。
-- Node 22 和 24 都由 `.github/workflows/frontend-ci.yml` 执行安装、lint、typecheck、unit、build、bundle size 和依赖审计；Node 24 单独构建前端文档。
+- `pr-gate`、`full-ci-gate`、`frontend-ci`、镜像构建和本地版本文件统一使用 Node 24；不再维护双运行时门禁。
 
 后端维护的[运行时兼容约束](https://github.com/pinpols/file-batch-system/blob/main/docs/architecture/runtime-compatibility-contract-2026-09-01.md)是跨仓库基线。升级 Node 时同步审查 SDK `engines`、CI 矩阵、Dockerfile、锁文件和该基线。
 

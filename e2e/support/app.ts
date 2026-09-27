@@ -105,6 +105,12 @@ export async function enterDemoApp(page: Page) {
     throw e
   }
 
+  // URL 会在异步认证守卫完成前短暂命中；等页面主体渲染后再继续，避免后续 goto
+  // 与守卫的 replace 导航互相取消。
+  await expect(page.locator('.page-header .title, .m-page__title').first()).toBeVisible({
+    timeout: 15_000,
+  })
+
   // 兜底:如 driver overlay 已经渲染就移除
   await page.evaluate(() => {
     document

@@ -206,7 +206,7 @@
           <DataState
             :loading="loading"
             :error="errorMessage"
-            :empty="!loading && !mermaidText"
+            :has-data="Boolean(mermaidText)"
             :empty-text="t('workflowMermaidViewer.noRenderData')"
           >
             <div ref="graphRef" class="workflow-mermaid-graph" />
@@ -438,7 +438,7 @@
     Play as VideoPlay,
     ZoomIn,
     ZoomOut,
-  } from 'lucide-vue-next'
+  } from '@lucide/vue'
   import svgPanZoom from 'svg-pan-zoom'
   import { useRefreshAction } from '@/composables/useRefreshAction'
 

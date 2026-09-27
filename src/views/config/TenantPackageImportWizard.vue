@@ -723,7 +723,7 @@
     Upload,
     Upload as UploadFilled,
     TriangleAlert as WarningFilled,
-  } from 'lucide-vue-next'
+  } from '@lucide/vue'
   import { ElMessage } from 'element-plus'
 
   const { t } = useI18n({ useScope: 'global' })

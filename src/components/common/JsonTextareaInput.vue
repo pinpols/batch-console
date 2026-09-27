@@ -92,7 +92,7 @@
     FileText as Document,
     TriangleAlert as Warning,
     Check,
-  } from 'lucide-vue-next'
+  } from '@lucide/vue'
 
   const { t } = useI18n({ useScope: 'global' })
 
@@ -142,9 +142,7 @@
   )
 
   type ParseStatus =
-    | { kind: 'idle' }
-    | { kind: 'ok'; summary: string }
-    | { kind: 'error'; message: string }
+    { kind: 'idle' } | { kind: 'ok'; summary: string } | { kind: 'error'; message: string }
 
   const parseStatus = computed<ParseStatus>(() => {
     const raw = props.modelValue?.toString().trim()

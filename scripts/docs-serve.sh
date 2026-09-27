@@ -30,7 +30,7 @@ fi
 
 echo "✓ 文档 preview → http://localhost:$DOCS_PORT/"
 if [[ -n "${DOCS_LOG:-}" ]]; then
-  exec npx vitepress preview "$DOCS_DIR" --port "$DOCS_PORT" 2>&1 | tee -a "$DOCS_LOG"
+  exec "$DOCS_ROOT_DIR/node_modules/.bin/vitepress" preview "$DOCS_DIR" --port "$DOCS_PORT" 2>&1 | tee -a "$DOCS_LOG"
 else
-  exec npx vitepress preview "$DOCS_DIR" --port "$DOCS_PORT"
+  exec "$DOCS_ROOT_DIR/node_modules/.bin/vitepress" preview "$DOCS_DIR" --port "$DOCS_PORT"
 fi

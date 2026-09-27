@@ -326,7 +326,7 @@
   import TraceIdInput from '@/components/common/TraceIdInput.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
-  import { List } from 'lucide-vue-next'
+  import { List } from '@lucide/vue'
   import SavedFiltersMenu from '@/components/table/SavedFiltersMenu.vue'
   import { useSavedFilters } from '@/composables/useSavedFilters'
   import { useAuthStore } from '@/stores/auth'

@@ -35,7 +35,7 @@
     KeyRound as Key,
     List,
     SlidersHorizontal as Operation,
-  } from 'lucide-vue-next'
+  } from '@lucide/vue'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import ConfigChangeLogsTab from './components/ConfigChangeLogsTab.vue'

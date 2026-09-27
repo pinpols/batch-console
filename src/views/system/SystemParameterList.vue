@@ -124,7 +124,7 @@
   const { t } = useI18n({ useScope: 'global' })
   import { confirmDanger } from '@/composables/useDangerConfirm'
   import type { FormRules } from 'element-plus'
-  import { Plus } from 'lucide-vue-next'
+  import { Plus } from '@lucide/vue'
   import { useFormValidate, rules } from '@/composables/useFormValidate'
   import { useAsyncAction } from '@/composables/useAsyncAction'
   import {

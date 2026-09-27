@@ -346,7 +346,7 @@
   import { useDrawerAutoClose } from '@/composables/useDrawerAutoClose'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
-  import { Plus } from 'lucide-vue-next'
+  import { Plus } from '@lucide/vue'
   import RowActions, { type RowAction } from '@/components/common/RowActions.vue'
 
   const { t, te } = useI18n({ useScope: 'global' })

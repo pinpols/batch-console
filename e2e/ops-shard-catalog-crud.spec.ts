@@ -11,6 +11,8 @@ async function fillFormItem(drawer, label: string, value: string) {
 }
 
 test.describe('分片目录 shard-catalog (ADMIN)', () => {
+  test.describe.configure({ mode: 'serial' })
+
   test.beforeEach(async ({ page }) => {
     await enterDemoApp(page)
     await page.goto('/ops/shard-catalog')

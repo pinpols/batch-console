@@ -503,7 +503,7 @@
   import { useI18n } from 'vue-i18n'
   import { useRouter } from 'vue-router'
   import { ElMessage } from 'element-plus'
-  import { Copy as DocumentCopy, Pause, Play, RefreshCw as Refresh } from 'lucide-vue-next'
+  import { Copy as DocumentCopy, Pause, Play, RefreshCw as Refresh } from '@lucide/vue'
   import { useRefreshAction } from '@/composables/useRefreshAction'
 
   const refresh = useRefreshAction()

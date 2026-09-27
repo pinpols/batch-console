@@ -6,7 +6,7 @@
 
 <script setup lang="ts">
   import { nextTick } from 'vue'
-  import { Printer } from 'lucide-vue-next'
+  import { Printer } from '@lucide/vue'
   import { useI18n } from 'vue-i18n'
 
   withDefaults(

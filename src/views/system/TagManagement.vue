@@ -44,7 +44,7 @@
   import type { ComputedRef } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
-  import { Plus } from 'lucide-vue-next'
+  import { Plus } from '@lucide/vue'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import TagResourceTab from './components/TagResourceTab.vue'

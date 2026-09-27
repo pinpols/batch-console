@@ -2,7 +2,7 @@
 
 本仓采用 **GitHub Flow 简化版**:只 `main` 一个长期分支,所有工作走短命子分支 + PR + merge 后自动删。
 
-> 与配对后端 `file-batch-system` 一致策略,详见 [`../../file-batch-system/docs/runbook/dev-workflow.md`](../../../file-batch-system/docs/runbook/dev-workflow.md)。
+> 与配对后端 `file-batch-system` 一致策略，详见[后端本地开发手册](../../../file-batch-system/docs/runbook/local-development.md)。
 
 ## 分支策略
 
@@ -175,4 +175,4 @@ A: 拉 BE 最新 → 本地 `npm run gen:api` → commit `src/types/api.generate
 
 - CI 流水线:[`docs/runbook/ci.md`](ci.md)
 - Agent 指南:[`AGENTS.md`](../../AGENTS.md)
-- 配对后端开发流程:[`../../file-batch-system/docs/runbook/dev-workflow.md`](../../../file-batch-system/docs/runbook/dev-workflow.md)
+- 配对后端开发流程：[后端本地开发手册](../../../file-batch-system/docs/runbook/local-development.md)

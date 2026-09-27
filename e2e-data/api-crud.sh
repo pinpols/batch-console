@@ -11,7 +11,7 @@
 
 set -u
 
-cd "$(dirname "$0")"
+cd "$(dirname "$0")" || exit 1
 source _lib/api-helpers.sh
 
 # 初始化报告

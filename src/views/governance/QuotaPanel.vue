@@ -193,7 +193,7 @@
 <script setup lang="ts">
   import { computed, reactive, ref } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { Pencil as Edit, Plus } from 'lucide-vue-next'
+  import { Pencil as Edit, Plus } from '@lucide/vue'
   import { ElMessage } from 'element-plus'
   import type { FormInstance, FormRules } from 'element-plus'
 
@@ -458,7 +458,7 @@
   }
 
   .quota-card--disabled {
-    opacity: 0.78;
+    background: color-mix(in srgb, var(--color-bg-card) 88%, var(--color-bg-canvas) 12%);
   }
 
   .quota-card:hover {

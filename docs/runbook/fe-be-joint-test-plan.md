@@ -289,7 +289,7 @@ npx playwright test \
 
 ## Phase 6 — RBAC 5 角色权限矩阵(~1 天)
 
-**Why**: [rbac_5roles_only](memory:rbac_5roles_only) memory:OPERATOR/VIEWER 是菜单档位标签不是 Spring authority,自由填会触发 URL 兜底 403。BE 实际只有 5 个真实 Spring authority,前端只跑 admin 路径意味着 4 个角色的权限边界**从来没真验过**。
+**Why**：历史 RBAC 审查确认 OPERATOR/VIEWER 是菜单档位标签而不是 Spring authority，自由填写会触发 URL 兜底 403。后端实际只有 5 个真实 Spring authority，前端只跑 admin 路径意味着其余角色的权限边界没有真实验收。
 
 **产出**: `e2e/rbac-matrix.spec.ts`(单文件,~120 断言)+ 矩阵报告。
 

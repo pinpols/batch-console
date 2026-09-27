@@ -4,9 +4,12 @@
 
 | 文档 | 用途 |
 |---|---|
-| [CI 门禁](./ci.md) | 3 个 workflow(pr-gate / full-ci / staging-gate)/ secrets / 阈值 / 排查表 |
+| [CI 门禁](./ci.md) | 核心门禁、兼容、安全与发布 workflow / secrets / 阈值 / 排查表 |
 | [开发工作流](./dev-workflow.md) | 本地开发 / 分支 / 提交 / 联调日常流程 |
 | [回滚](./rollback.md) | 前端发布回滚步骤 |
+| [发布晋级](./release-promotion.md) | 不可变镜像、staging 验收和版本标签晋级 |
+| [前端事故处理](./frontend-incident.md) | 白屏、静态资源、API 和 PWA 缓存故障 |
+| [可观测性](./observability.md) | Sentry、遥测、告警和数据边界 |
 | [密码安全 backlog](./password-security-backlog.md) | 密码 / 凭据安全待办 |
 
 ## QA 阶段报告(权威)

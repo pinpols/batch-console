@@ -308,7 +308,7 @@
    */
   import { computed, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { Plus } from 'lucide-vue-next'
+  import { Plus } from '@lucide/vue'
   import MetaSelect from '@/components/common/MetaSelect.vue'
   import CodeNameBuilder from '@/components/common/CodeNameBuilder.vue'
   import type { MetaOption } from '@/api/meta'

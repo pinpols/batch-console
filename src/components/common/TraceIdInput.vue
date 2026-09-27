@@ -38,7 +38,7 @@
   import { useI18n } from 'vue-i18n'
   import { useRouter } from 'vue-router'
   import { ElMessage } from 'element-plus'
-  import { Search, ClipboardPaste } from 'lucide-vue-next'
+  import { Search, ClipboardPaste } from '@lucide/vue'
 
   const { t } = useI18n({ useScope: 'global' })
   const router = useRouter()

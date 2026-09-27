@@ -64,16 +64,35 @@ expand_docs_targets() {
   esac
 }
 
-# 杀掉占用指定端口的进程(优雅 → 强制)
+# 仅停止本仓 VitePress 预览进程；未知端口占用者直接报错。
 kill_port() {
   local port="${1:?需要端口}"
   local pids
   pids="$(lsof -ti tcp:"$port" 2>/dev/null || true)"
   [[ -z "$pids" ]] && return 0
-  echo "  释放端口 :$port(kill $(echo "$pids" | tr '\n' ' '))"
-  echo "$pids" | xargs -r kill 2>/dev/null || true
-  sleep 1
-  pids="$(lsof -ti tcp:"$port" 2>/dev/null || true)"
-  [[ -n "$pids" ]] && { echo "  强制 kill -9 :$port"; echo "$pids" | xargs -r kill -9 2>/dev/null || true; }
+  local pid command_line
+  while IFS= read -r pid; do
+    [[ -z "$pid" ]] && continue
+    command_line="$(ps -p "$pid" -o command= 2>/dev/null || true)"
+    if [[ "$command_line" != *vitepress* || "$command_line" != *tools/docs-bridge* ]]; then
+      echo "ERROR: 端口 :$port 被未知进程占用，拒绝自动终止。" >&2
+      echo "  pid=$pid command=${command_line:-<unavailable>}" >&2
+      return 1
+    fi
+    echo "  停止本仓文档预览 :$port(pid=$pid)"
+    kill -TERM "$pid" 2>/dev/null || true
+    local waited=0
+    while kill -0 "$pid" 2>/dev/null && (( waited < 10 )); do
+      sleep 1
+      waited=$((waited + 1))
+    done
+    if kill -0 "$pid" 2>/dev/null; then
+      if [[ "${FORCE_KILL:-0}" != "1" ]]; then
+        echo "ERROR: pid=$pid 在 10s 内未退出；确认后可用 FORCE_KILL=1 重试。" >&2
+        return 1
+      fi
+      kill -9 "$pid" 2>/dev/null || true
+    fi
+  done <<<"$pids"
   return 0
 }

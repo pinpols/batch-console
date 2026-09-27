@@ -136,7 +136,7 @@
     FilePlus as DocumentAdd,
     User,
     Cpu,
-  } from 'lucide-vue-next'
+  } from '@lucide/vue'
   import { useRefreshAction } from '@/composables/useRefreshAction'
 
   const refresh = useRefreshAction()

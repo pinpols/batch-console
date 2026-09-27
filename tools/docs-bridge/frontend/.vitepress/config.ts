@@ -17,6 +17,22 @@ export default withMermaid({
   // build 不阻断,运行时 nav 仍可点;真坏链由 CI 单独检查。
   ignoreDeadLinks: true,
 
+  vite: {
+    build: {
+      // Mermaid 的按图类动态 chunk 最大约 800KB raw；这些文档资源不进入 SPA 首屏。
+      // 实际回归由 fe-docs:size 同时约束 raw 与 gzip，这里与可接受上限保持一致。
+      chunkSizeWarningLimit: 850,
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (id.includes('/node_modules/cytoscape/')) return 'vendor-cytoscape'
+            if (id.includes('/node_modules/katex/')) return 'vendor-katex'
+          },
+        },
+      },
+    },
+  },
+
   markdown: {
     // 内联代码里的 {{ }}(如 GitHub Actions `${{ secrets.X }}`)会被 Vue 模板编译器当插值
     // 求值 → SSR build 崩。给 <code> 注入 v-pre,让 Vue 跳过其内容编译,大括号原样渲染。

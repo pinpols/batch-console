@@ -1,6 +1,6 @@
 # FE CI / CD Runbook
 
-4 个 GH workflow,对齐 BE 仓 `pr-gate / full-ci-gate / staging-gate` 模式。FE 不需要 `capacity-gate`(无容量压测需求,性能指标走 Lighthouse)。
+CI 由 3 个核心门禁、兼容/安全检查和发布辅助 workflow 组成。前端不复制后端容量门禁，浏览器性能由 Lighthouse 与真实 staging 验收负责。
 
 ## Workflow 全景
 
@@ -10,17 +10,20 @@
 | `frontend-ci` | `.github/workflows/frontend-ci.yml` | PR → main / push main / 手动 | Node 24 兼容 + 前端文档构建 | 8-12 min |
 | `full-ci-gate` | `.github/workflows/full-ci-gate.yml` | push main / nightly cron(02:00 UTC = 10:00 Asia/Shanghai)/ 手动 | 全量回归 | 15-20 min |
 | `staging-gate` | `.github/workflows/staging-gate.yml` | tag `v*` / 手动(可输入 base_url) | staging 部署前真环境最终关 | 10-15 min |
+| `codeql` | `.github/workflows/codeql.yml` | PR / main / 每周 / 手动 | JavaScript/TypeScript 静态安全分析 | 5-10 min |
+| `build-image` | `.github/workflows/build-image.yml` | main / tag / 手动 | main 构建不可变镜像；tag 在 staging 通过后晋级同一 digest | 10-30 min |
 
-## pr-gate 详情(7 步顺序)
+## pr-gate 详情
 
 ```
-checkout → setup-node@v5(node 22 + npm cache)
+checkout → setup-node@v5(node 24 + npm cache)
         → npm ci --no-audit --no-fund
         → npm run check:version
         → npm run lint:check       (ESLint check 模式)
         → npm run gen:api:check    (OpenAPI yaml ↔ api.generated.ts 漂移)
         → npm run typecheck        (vue-tsc --noEmit)
         → npm run check:i18n       (zh-CN ↔ en-US 1:1)
+        → architecture / env / maintainability / workflow / shell / docs / SBOM governance
         → npm run test:unit -- --coverage
         → npm run build:fast       (Vite 生产产物)
         → npm run size
@@ -31,10 +34,10 @@ checkout → setup-node@v5(node 22 + npm cache)
 
 ## frontend-ci 详情(Node 24 兼容 + 文档)
 
-`frontend-ci` 不再重复 `pr-gate` 的 Node 22 lint / size / audit 主门禁,只做两件事:
+`frontend-ci` 不再重复 `pr-gate` 的 lint / size / audit 主门禁,只做两件事:
 
 1. **Node 24 兼容构建**:在 Node 24 下跑 `check:version`、`typecheck`、`check:i18n`、`test:unit`、`build`。
-2. **前端文档构建**:跑 `npm run fe-docs:build`,确保 `tools/docs-bridge/frontend` 可生成。
+2. **前端文档构建**:跑 `npm run fe-docs:build`,确保 `tools/docs-bridge/frontend` 可生成，并由构建入口执行文档 chunk 与搜索索引预算检查。
 
 这样 PR 必过门禁仍由 `pr-gate` 统一承担,Node 新版本兼容和文档站可独立暴露问题,避免同一 PR 出现两套相似 required check 一过一挂。
 
@@ -57,14 +60,15 @@ push main / nightly ────┤
                              报告上传 artifact
 ```
 
-## staging-gate 详情(2 job 并行 against staging URL)
+## staging-gate 详情
 
 ```
-tag v* / 手动 ─────────┬─ e2e-against-staging
+tag v* / 手动 ── precheck(URL/账号/healthz/版本必须有效)
+                      ├─ e2e-against-staging
                         │   Playwright install --with-deps chromium
                         │   PLAYWRIGHT_BASE_URL = secret.STAGING_URL
                         │   E2E_USERNAME/PASSWORD = secret
-                        │   npm run test:e2e(82 specs)
+                        │   npm run test:e2e:all(含 @slow 的全量场景)
                         │   upload playwright-report artifact
                         │
                         └─ lighthouse-against-staging
@@ -76,7 +80,7 @@ tag v* / 手动 ─────────┬─ e2e-against-staging
 
 1. **Playwright e2e 只在 staging-gate 跑**(against 真 staging URL),不在 pr-gate / full-ci-gate 跑
    - 理由:CI 起 BE testcontainers 太脆(需 BE 仓 sibling checkout + docker-compose),业界 Vercel/Netlify 标准做法
-   - e2e fail block **staging deploy**,不 block PR merge
+   - e2e fail block **release image promotion**,不 block PR merge
    - 接口契约破坏由 `gen:api:check` + BE 仓 pr-gate 兜
 2. **Trivy 镜像扫只挡 CRITICAL**,HIGH 出 SARIF 报告但不 fail build
    - 理由:HIGH 几乎不可避免有 zero-day 噪音,挡 build 会假死
@@ -91,7 +95,7 @@ tag v* / 手动 ─────────┬─ e2e-against-staging
 
 | Secret | 用途 | 默认 fallback |
 |---|---|---|
-| `BE_OPENAPI_URL` | gen:api:check 在 CI 拉 raw github yaml | 本地有 sibling 路径优先 |
+| `BE_OPENAPI_URL` | 可覆盖 gen:api:check 的后端 OpenAPI 地址 | 默认读取后端 main raw 文件；获取失败直接失败 |
 | `STAGING_URL` | staging-gate 的 base URL | 必填,无 fallback |
 | `STAGING_E2E_USERNAME` | staging admin 账号 | 必填 |
 | `STAGING_E2E_PASSWORD` | staging admin 密码 | 必填 |
@@ -111,7 +115,10 @@ tag v* / 手动 ─────────┬─ e2e-against-staging
 | Docker build | — | ✅ | — | — |
 | Trivy 镜像扫 | — | ✅ CRITICAL 拒 | — | — |
 | Lighthouse | — | ✅ against preview | ✅ against staging | — |
-| Playwright e2e | — | — | ✅ 82 specs against staging | — |
+| Playwright e2e | — | — | ✅ against staging | — |
+| 架构/环境/文档/SBOM | ✅ | ✅ | — | 按 staged 变更选择 |
+| Shell 语法 / ShellCheck warning | ✅ | ✅ | — | `npm run check:shell` |
+| 文档 chunk / 搜索索引预算 | 前端文档 job | Docker 文档构建 | — | `docs:build` / `fe-docs:build` 内置 |
 | `check-version-alignment.sh` | ✅ | ✅ | — | `preflight:changed`(package 变更) |
 | `fe-docs:build` | — | — | — | `preflight:changed`(frontend docs 变更) |
 
@@ -130,11 +137,15 @@ npm run preflight:changed
 | `src/**/*.{vue,ts,tsx}` | `lint:check` + `typecheck` + `check:i18n` |
 | `src/locales/**` | `check:i18n` |
 | `src/api/**` / `src/types/api.generated.ts` / `src/types/**` | `gen:api:check` |
-| `package.json` / `package-lock.json` | `check:version` |
-| `docs/**` / `tools/docs-bridge/frontend/**` | `fe-docs:build` |
+| `src/**` | 架构边界 + 可维护性限制 |
+| `.env*` / Docker / Compose / workflow | 环境变量治理 |
+| `.github/workflows/**` | workflow 安全检查 |
+| `package.json` / `package-lock.json` | 版本对齐 + SBOM / 许可证漂移 |
+| `docs/**` / `tools/docs-bridge/frontend/**` | 文档链接检查 + 前端文档构建 |
 | `tools/docs-bridge/backend/**` | `docs:build` |
+| 用户或部署影响文件 | Changelog 覆盖检查 |
 
-本地预检只做便宜且高命中率的检查;`test:unit --coverage`、bundle size、audit、Docker/Trivy、Lighthouse、staging e2e 仍由 CI 分层承担。
+`preflight:changed` 只读取 staged 文件；`preflight:changed:all` 合并 working tree 与未跟踪文件，不再扫描全部 tracked 文件。单测覆盖率、bundle size、audit 可通过 `npm run verify:local` 一次执行；Docker/Trivy、Lighthouse、staging e2e 仍由 CI 分层承担。
 
 ## 常见故障 / 排查
 
@@ -157,7 +168,7 @@ npm run preflight:changed
 | full-ci-gate | 3:48 | push main / nightly / 手动 | ≤6m | ✅ |
 | release-please | 0:12 | push main | ≤6m | ✅ |
 | renovate | 1:23 | renovate bot | ≤6m | ✅ |
-| staging-gate | 0:12 | tag v* / 手动 | ≤6m | ✅ skip(无 STAGING_URL) |
+| staging-gate | 历史基线已失效 | tag v* / 手动 | ≤30m | 缺配置时失败 |
 
 ### Job 级分布
 
@@ -167,18 +178,18 @@ npm run preflight:changed
 **full-ci-gate(4 job 并行,瓶颈 Lighthouse)**
 - Security audit (full) 0:25 / Static checks + Unit 1:21 / Docker build + Trivy 1:25 / **Lighthouse 2:18** ← critical path
 
-**staging-gate(precheck-only,无 STAGING_URL secret)**
-- precheck 4s → Playwright e2e + Lighthouse against staging 双 job skip,workflow 总 12s
+**staging-gate(配置完整时)**
+- precheck 校验 URL、账号、健康状态与发布版本；配置缺失或版本不匹配会直接失败，不允许跳过发布验收
 
-### staging-gate skip 机制
+### staging-gate 发布语义
 
-precheck job 读 `secrets.STAGING_URL`(或 dispatch input `base_url`)。空 → 输出 `should_run=false`,Playwright + Lighthouse 双 job 跳过,workflow warning(非 failure)。配上 secret 后自动启用 82 specs Playwright + Lighthouse 全量。BE 对应模式见 `../file-batch-system/docs/runbook/ci.md`(2026-05-23 BE 仓 PR #23 对齐)。
+precheck 读取 `STAGING_URL`、测试账号并校验 `/healthz`。tag 发布还要求 `/version.json.gitSha` 与 tag commit 一致。任一条件不满足即失败；`build-image` 只在该 commit 的 staging run 成功后给既有 `sha-*` 镜像增加版本标签。
 
 ---
 
 ## 关联文件
 
-- `.github/workflows/*.yml` — 3 个 workflow
+- `.github/workflows/*.yml` — 核心门禁、兼容、安全和发布工作流
 - `.github/lighthouse-budget.json` — Lighthouse 阈值
 - `package.json` `scripts` — npm 命令源
 - `eslint.config.js` — lint ignore 路径(变更目录结构时易漏)

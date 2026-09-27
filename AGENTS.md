@@ -19,6 +19,7 @@ Use the focused workflows under `.agents/skills/` when relevant:
 - `frontend-i18n-accessibility`: i18n strings, form help, accessibility, safe HTML rendering, and user-friendly errors.
 - `frontend-import-template-governance`: tenant package Excel, multi-sheet import/export templates, dropdowns, validation, and fixtures.
 - `frontend-testing-ci`: lint, typecheck, i18n, Vitest, Playwright, bundle size, API drift, and CI gates.
+- `frontend-engineering-governance`: architecture boundaries, environment registry, maintainability, workflow security, SBOM/license drift, changelog coverage, and local governance gates.
 - `frontend-deploy-runtime`: Docker, Nginx, environment variables, PWA, build artifacts, versioning, and deployment scripts.
 - `frontend-docs-release-governance`: README, docs indexes, changelog, archive/date policy, runbooks, and release notes.
 
@@ -37,7 +38,7 @@ Repository-specific commands and contracts remain authoritative over generic ski
 
 | 常驻分支 | 是什么 | 含什么 |
 |---|---|---|
-| **`main`** | 稳定 / 发布 / 集成主干、唯一真相源 | 全部前端代码 **+ 全部部署**(`docker-compose*.yml` / `Dockerfile` / `nginx/*` / `scripts/deploy.ps1` / `.github/workflows/{build-image,deploy,deploy-linux}.yml`)。部署是产品一部分,不单独分支 |
+| **`main`** | 稳定 / 发布 / 集成主干、唯一真相源 | 全部前端代码 **+ 全部部署**(`docker-compose*.yml` / `Dockerfile` / `nginx/*` / `.github/workflows/{build-image,staging-gate}.yml`)。部署是产品一部分,不单独分支 |
 
 **流程**:
 - **业务 / bugfix / 测试 / 文档 / 部署**:从 `main` 开 `feature/<topic>`(或 `fix/<topic>`)→ PR → `main`;短命分支合后即删(仓库 `deleteBranchOnMerge` 已开)。
@@ -53,11 +54,16 @@ Repository-specific commands and contracts remain authoritative over generic ski
 | `npm run build` | typecheck + i18n 完整性检查 + Vite 产物 |
 | `npm run build:fast` | 只跑 Vite build(本地快速验证用) |
 | `npm run test:unit` | Vitest 单测 |
-| `npm run test:e2e` | Playwright e2e(全量) |
+| `npm run test:e2e` | Playwright 常规套件(排除 `@slow`) |
+| `npm run test:e2e:all` | Playwright 发布验收全量套件 |
+| `npm run test:e2e:visual` | 独立视觉回归基线 |
 | `npm run test:e2e:smoke` | smoke 三件套(冒烟 / 跨页 / 导航) |
 | `npm run gen:api` | 从 BE OpenAPI 重新生成 `src/types/api.generated.ts` |
 | `npm run gen:api:check` | 检测 FE 与 BE OpenAPI 漂移(CI 用) |
 | `npm run check:i18n` | 检测 zh / en locale 缺 key |
+| `npm run preflight:changed` | 按 staged 文件执行提交前检查 |
+| `npm run verify:local` | 无后端完整本地门禁，不代表真实业务验收 |
+| `bash scripts/local/fe-acceptance.sh` | 依赖真实后端的全链路验收 |
 
 **改 `src/api/*` 或调接口前**先 `npm run gen:api` 刷新生成类型;CI 漂移检查会 reject 不同步的 PR。
 
@@ -147,13 +153,15 @@ src/
 2. FE 跑 `npm run gen:api` 刷新 `src/types/api.generated.ts`
 3. CI `gen:api:check` 会比对漂移,不一致 reject
 
-## CI(3 个 workflow,对齐 BE)
+## CI（核心门禁 + 辅助治理）
 
 | Workflow | 触发 | 角色 | 耗时 |
 |---|---|---|---|
 | `pr-gate.yml` | PR / push main | PR 必过门禁(lint / typecheck / i18n / api-drift / unit / build / audit) | 5-7 min |
 | `full-ci-gate.yml` | push main / nightly cron / 手动 | 全量(+ Docker/Trivy + Lighthouse + 完整 audit) | 15-20 min |
-| `staging-gate.yml` | tag v* / 手动 | Playwright 82 specs against staging URL + Lighthouse | 10-15 min |
+| `staging-gate.yml` | tag v* / 手动 | Playwright 全量场景 against staging URL + Lighthouse | 10-15 min |
+
+辅助 workflow 包括 Node 24 兼容/文档构建、CodeQL、不可变镜像构建与发布晋级、release-please、Renovate 和自动合并。完整清单与发布顺序见 [`docs/runbook/ci.md`](docs/runbook/ci.md)。
 
 **Playwright e2e 只在 staging-gate 跑**(against 真 staging URL),pr-gate / full-ci 故意不跑(CI 起 BE 太脆,业界 Vercel/Netlify 标准)。完整细则 + secrets / 阈值 / 排查表 → [`docs/runbook/ci.md`](docs/runbook/ci.md)。
 
