@@ -2,7 +2,7 @@
 
 ## 制品内容
 
-镜像由 Node 24 构建阶段和 Nginx 1.27 运行阶段组成，包含 Vue SPA 与从配对后端权威文档构建的 `/docs/`。文档通过 BuildKit named context 注入；缺少文档源时构建直接失败，不生成占位页。
+镜像由 Node.js 24.21.0 / Alpine 3.24 构建阶段和 Nginx 1.30.5 / Alpine 3.24 运行阶段组成，包含 Vue SPA 与从配对后端权威文档构建的 `/docs/`。基础镜像使用完整版本标签；文档通过 BuildKit named context 注入，缺少文档源时构建直接失败，不生成占位页。
 
 ```bash
 # 两仓位于同一父目录时

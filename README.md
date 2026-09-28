@@ -46,6 +46,8 @@ npm run dev
 
 默认开发地址为 `http://localhost:5173`。本地开发通过 Vite 代理把 `/api` 转发到后端，目标地址可在 `.env.development` 中用 `VITE_DEV_PROXY_TARGET` 覆盖。日期时间默认按浏览器 IANA 时区展示，也可通过 `VITE_DISPLAY_TIMEZONE=Asia/Shanghai` 固定展示时区；用户偏好保存到浏览器后优先使用。
 
+Makefile 入口可用 `make help` 查看；`make install` 按 lockfile 执行 `npm ci`，`make lint` 只检查不改文件，自动修复使用 `make lint-fix`。`make dev-all` 只启动 Vite 与文档进程，不会停止 Docker 前端容器。
+
 常用命令：
 
 ```bash

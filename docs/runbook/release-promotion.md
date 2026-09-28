@@ -2,7 +2,7 @@
 
 ## 制品模型
 
-`main` 每次提交构建 `linux/amd64` 与 `linux/arm64` 镜像，并发布 `sha-<完整提交>` 和 `latest`。环境晋级必须使用 `sha-*`，不得重新构建同一版本。
+`main` 每次提交构建 `linux/amd64` 与 `linux/arm64` 镜像，并发布 `sha-<完整提交>` 和 `latest`。环境晋级必须使用 `sha-*`，不得重新构建同一版本；部署 Compose 必须显式设置 `IMAGE_TAG`，不会默认回退到 `latest`。
 
 ## 发布顺序
 

@@ -53,7 +53,7 @@ curl -s $BACKEND_HOST/actuator/info | jq -r '.build.version'
 ## 操作 1:Docker image tag rollback(主要路径)
 
 ### 前提
-- prod 用 docker-compose 部署(本仓 `docker-compose.yml`)
+- prod 用本仓 `docker-compose.yml` + `docker-compose.deploy.yml` overlay 部署
 - registry 里仍保留上 N 个 tag(release-please 每次发布会 tag,默认保留)
 
 ### 步骤
@@ -61,14 +61,13 @@ curl -s $BACKEND_HOST/actuator/info | jq -r '.build.version'
 ```bash
 # 1) 确定回退目标
 PREV_TAG=v0.1.4                       # 上一个 staging-gate 绿的 tag
-REGISTRY=your.registry.com            # 替换成你的 registry
 
 # 2) Pull 旧 image(确保本机有)
-docker pull $REGISTRY/batch-console:$PREV_TAG
+docker pull ghcr.io/pinpols/batch-console:$PREV_TAG
 
 # 3) 用 IMAGE_TAG env 切到旧 image,重启服务
-#    docker-compose.yml 的 image 字段需支持 ${IMAGE_TAG:-latest} 引用
-IMAGE_TAG=$PREV_TAG docker compose up -d --no-build
+#    docker-compose.deploy.yml 必须显式传入 IMAGE_TAG；不允许默认使用 latest
+IMAGE_TAG=$PREV_TAG docker compose -f docker-compose.yml -f docker-compose.deploy.yml up -d --no-build
 
 # 4) 健康检查(30s 内必返 200)
 curl -fs --max-time 30 http://localhost:8080/healthz
@@ -82,15 +81,7 @@ done
 
 **预期**:`/login` 200,`/` 302→`/login` 或 200(取决于是否带 cookie),`/healthz` 200。
 
-### 如果当前 docker-compose 写死 `image: batch-console:latest`
-
-补丁(改 docker-compose.yml):
-```yaml
-services:
-  frontend:
-    image: batch-console:${IMAGE_TAG:-latest}
-```
-然后再走上面 step 3。
+本地开发 Compose 使用 `batch-console:latest` 作为本地构建标签；生产部署使用 `docker-compose.deploy.yml`，必须显式指定已验证的 `IMAGE_TAG`，不得把本地标签作为生产镜像。
 
 ---
 
@@ -185,12 +176,12 @@ docker run -d --name batch-console-emergency \
   -v $(pwd)/dist:/usr/share/nginx/html:ro \
   -v $(pwd)/nginx/default.conf.template:/etc/nginx/templates/default.conf.template:ro \
   -e BACKEND_UPSTREAM_HOST=$BACKEND_HOST \
-  nginx:1.27-alpine
+  nginx:1.30.5-alpine3.24
 
 # E) 终极:404 静态页占位
 docker run -d -p 8080:80 \
   -v $(pwd)/docs/runbook/maintenance.html:/usr/share/nginx/html/index.html:ro \
-  nginx:1.27-alpine
+  nginx:1.30.5-alpine3.24
 ```
 
 A → E 试,中间任何一步通了就停。
