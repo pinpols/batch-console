@@ -35,7 +35,8 @@
 | [第三方软件声明](./compliance/THIRD-PARTY-LICENSES.md)                                 | 前端 npm 依赖许可证摘要;SBOM 见同目录 `sbom.json`                 |
 | [meta-enum 覆盖清单](./engineering/meta-enum-coverage.md)                              | 后端枚举元数据 → 筛选项 / 状态标签覆盖                            |
 | [移动端刷新策略](./engineering/mobile-refresh-strategy.md)                             | `/m/*` 下拉 / 自动刷新设计                                        |
-| [内嵌文档中心方案](./engineering/内嵌文档中心方案.md)                                  | VitePress 文档中心构建 / 部署                                     |
+| [统一文档站](./engineering/unified-documentation-site.md)                              | 当前 VitePress 单站构建、路径、部署与权限边界                     |
+| [内嵌文档中心方案](./engineering/内嵌文档中心方案.md)                                  | 早期后端独立站方案（历史参考）                                    |
 | [API 文档说明](./api/README.md)                                                        | 指向后端权威 OpenAPI / Protocol,前端不维护副本                    |
 
 ## 运维 / QA
@@ -47,6 +48,7 @@
 | [审计资料索引](./audits/README.md)              | UI / UX / 可用性审计证据与截图                                                        |
 | [QA D 档总评](./qa/d-tier/)                     | P1-P5 + P5b 完整闭环                                                                  |
 | [部署:Docker + Nginx](./deploy/docker-nginx.md) | 容器化部署                                                                            |
+| [部署:裸 Linux + Nginx](./deploy/linux-nginx.md) | 原生 Nginx、静态制品、HTTPS、发布与回滚                                                |
 | [发布晋级](./runbook/release-promotion.md)      | staging 验收、不可变镜像晋级和发布阻断                                                |
 | [前端事故处理](./runbook/frontend-incident.md)  | 白屏、静态资源、API、缓存与 CSP 故障处置                                              |
 | [可观测性运行手册](./runbook/observability.md)  | Sentry、遥测、采样和告警边界                                                          |

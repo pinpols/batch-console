@@ -11,30 +11,30 @@ export interface DocRegistryEntry {
 
 export const DOC_REGISTRY: Record<string, DocRegistryEntry> = {
   'adr-009-workflow-param-dsl': {
-    path: 'architecture/adr/ADR-009-workflow-param-dsl',
+    path: 'backend/architecture/adr/ADR-009-workflow-param-dsl',
     title: 'ADR-009 Workflow 参数 DSL',
   },
   'adr-002-transactional-outbox': {
-    path: 'architecture/adr/ADR-002-transactional-outbox',
+    path: 'backend/architecture/adr/ADR-002-transactional-outbox',
     title: 'ADR-002 Transactional Outbox',
   },
   'workflow-dependency-guide': {
-    path: 'architecture/workflow-dependency-guide',
+    path: 'backend/architecture/workflow-dependency-guide',
     title: 'Workflow 依赖规则',
   },
   'pipeline-vs-workflow-boundary': {
-    path: 'architecture/pipeline-vs-workflow-boundary',
+    path: 'backend/architecture/pipeline-vs-workflow-boundary',
     title: 'Pipeline vs Workflow 边界',
   },
   'coding-conventions': {
-    path: 'coding-conventions',
+    path: 'backend/coding-conventions',
     title: '代码规范',
   },
 }
 
-/** 文档站 base:dev 直连 5174,prod 同域 /docs/(nginx alias)。 */
+/** 文档站在开发和生产环境都与控制台同源。 */
 export function getDocsBase(): string {
-  return import.meta.env.DEV ? 'http://localhost:5174/docs/' : '/docs/'
+  return '/docs/'
 }
 
 export function resolveDocUrl(docKey: string): string {

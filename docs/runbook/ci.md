@@ -37,7 +37,7 @@ checkout → setup-node@v5(node 24 + npm cache)
 `frontend-ci` 不再重复 `pr-gate` 的 lint / size / audit 主门禁,只做两件事:
 
 1. **Node 24 兼容构建**:在 Node 24 下跑 `check:version`、`typecheck`、`check:i18n`、`test:unit`、`build`。
-2. **前端文档构建**:跑 `npm run fe-docs:build`,确保 `tools/docs-bridge/frontend` 可生成，并由构建入口执行文档 chunk 与搜索索引预算检查。
+2. **统一文档构建**:检出配对后端文档并跑 `npm run docs:build`，确保前后端共享的 `tools/docs-bridge/frontend` 站点可生成，并执行文档 chunk 与搜索索引预算检查。
 
 这样 PR 必过门禁仍由 `pr-gate` 统一承担,Node 新版本兼容和文档站可独立暴露问题,避免同一 PR 出现两套相似 required check 一过一挂。
 
@@ -118,9 +118,9 @@ tag v* / 手动 ── precheck(URL/账号/healthz/版本必须有效)
 | Playwright e2e | — | — | ✅ against staging | — |
 | 架构/环境/文档/SBOM | ✅ | ✅ | — | 按 staged 变更选择 |
 | Shell 语法 / ShellCheck warning | ✅ | ✅ | — | `npm run check:shell` |
-| 文档 chunk / 搜索索引预算 | 前端文档 job | Docker 文档构建 | — | `docs:build` / `fe-docs:build` 内置 |
+| 文档 chunk / 搜索索引预算 | 统一文档 job | Docker 文档构建 | — | `docs:build` 内置 |
 | `check-version-alignment.sh` | ✅ | ✅ | — | `preflight:changed`(package 变更) |
-| `fe-docs:build` | — | — | — | `preflight:changed`(frontend docs 变更) |
+| `docs:build` | 统一文档 job | Docker 文档构建 | — | `preflight:changed`(文档站变更) |
 
 Shell 脚本统一使用 Bash/sh；`check:shell` 同时做语法与 ShellCheck 检查，CI 不再额外安装 zsh。
 
@@ -143,8 +143,7 @@ npm run preflight:changed
 | `.env*` / Docker / Compose / workflow | 环境变量治理 |
 | `.github/workflows/**` | workflow 安全检查 |
 | `package.json` / `package-lock.json` | 版本对齐 + SBOM / 许可证漂移 |
-| `docs/**` / `tools/docs-bridge/frontend/**` | 文档链接检查 + 前端文档构建 |
-| `tools/docs-bridge/backend/**` | `docs:build` |
+| `docs/**` / `tools/docs-bridge/**` / `scripts/docs-*` | 文档链接检查 + 统一文档构建 |
 | 用户或部署影响文件 | Changelog 覆盖检查 |
 
 `preflight:changed` 只读取 staged 文件；`preflight:changed:all` 合并 working tree 与未跟踪文件，不再扫描全部 tracked 文件。单测覆盖率、bundle size、audit 可通过 `npm run verify:local` 一次执行；Docker/Trivy、Lighthouse、staging e2e 仍由 CI 分层承担。

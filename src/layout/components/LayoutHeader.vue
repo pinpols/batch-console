@@ -293,12 +293,7 @@
     (e: 'open-palette'): void
   }>()
 
-  // 文档站入口:dev 和 prod 都直接打开根路径 /docs/。
-  //
-  // 注意:vitepress dev (vitepress dev) 跨仓 srcDir + cleanUrls 模式下,rewrites
-  // (README.md → index.md)实测不生效,所有目录入口客户端路由 404。要本地浏览
-  // 文档请用 `npm run docs:serve`(= build + preview)而不是 `npm run docs:dev`,
-  // preview 是基于真 build 产物,行为与 prod 一致。
+  // 文档站统一在 /docs/；开发期由 Vite 代理到构建后的单站 preview。
   const docsUrl = getDocsBase()
 
   async function openDocs() {

@@ -24,7 +24,7 @@ description: 整理前端 README、CLAUDE、docs 索引、Changelog、归档、�
 - 删除或移动文档时同步索引和引用，避免 README 指向不存在页面。
 - 对“已验证”“已全绿”“已上线”等结论保留证据；没有当前证据时写成历史记录或待验证。
 - 不在长期规范中固化测试数、页面数、耗时等易漂移快照；需要记录时放入带日期的验收或审计报告。
-- 修改当前文档后至少运行 `npm run check:docs`；文档站入口或导航变化再运行 `npm run fe-docs:build`。
+- 修改当前文档后至少运行 `npm run check:docs`；文档站入口或导航变化再运行 `npm run docs:build`。
 
 ## 写作口径
 

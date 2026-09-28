@@ -1,7 +1,7 @@
 # 单服务部署:前端 nginx 容器,反代到外部 BE
 # 用法:
-#   docker compose up -d --build              # 默认 BE 走 host.docker.internal:18090
-#   BACKEND_UPSTREAM_HOST=10.0.0.5:18090 docker compose up -d   # 覆盖 BE 地址
+#   docker compose up -d --build              # 默认 BE 走 host.docker.internal:18080
+#   BACKEND_UPSTREAM_HOST=10.0.0.5:18080 docker compose up -d   # 覆盖 BE 地址
 #   docker compose logs -f frontend           # 看日志
 #   docker compose down                       # 停
 
@@ -26,18 +26,18 @@ services:
     container_name: batch-console
     restart: unless-stopped
     ports:
-      - '${HOST_PORT:-8080}:80'
+      - '${HOST_PORT:-8080}:8080'
     environment:
-      # nginx upstream;开发本机:host.docker.internal:18090(macOS/Windows 可直接用,Linux 需要加 extra_hosts)
-      # 18090 = 后端 .env.local CONSOLE_API_PORT 的宿主机映射端口(容器内 18080 → 宿主 18090);
+      # nginx upstream;开发本机:host.docker.internal:18080(macOS/Windows 可直接用,Linux 需要加 extra_hosts)
+      # 18080 = 后端 .env.local CONSOLE_API_PORT 的宿主机映射端口;
       # 此默认必须与后端 console-api 实际发布端口一致,否则前端 nginx 反代 502。
-      BACKEND_UPSTREAM_HOST: ${BACKEND_UPSTREAM_HOST:-host.docker.internal:18090}
-      NGINX_PORT: 80
+      BACKEND_UPSTREAM_HOST: ${BACKEND_UPSTREAM_HOST:-host.docker.internal:18080}
+      NGINX_PORT: 8080
     extra_hosts:
       # Linux 需要这行才能让容器解析 host.docker.internal(macOS/Windows 自带)
       - 'host.docker.internal:host-gateway'
     healthcheck:
-      test: ['CMD', 'curl', '-fs', 'http://localhost/healthz']
+      test: ['CMD', 'curl', '-fs', 'http://127.0.0.1:8080/healthz']
       interval: 30s
       timeout: 5s
       retries: 3

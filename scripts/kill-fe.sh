@@ -9,9 +9,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=scripts/docs-lib.sh
 source "$SCRIPT_DIR/docs-lib.sh"
 
-# 默认:SPA 5173 / BE 文档 5174 / FE 文档 5175 / 备用 5176 / vite preview 4173
+# 默认:SPA 5173 / 单站文档 5174 / vite preview 4173
 PORTS=("${@:-}")
-[[ -z "${PORTS[*]}" ]] && PORTS=(5173 5174 5175 5176 4173)
+[[ -z "${PORTS[*]}" ]] && PORTS=(5173 5174 4173)
 
 # 先停后台 stack(concurrently -k 会连带 kill 子进程),再按端口兜底
 for pidf in "$DOCS_ROOT_DIR/.dev-stack.pid" "$DOCS_ROOT_DIR/.vite-dev.pid"; do
