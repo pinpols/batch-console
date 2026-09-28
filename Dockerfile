@@ -1,9 +1,9 @@
 # syntax=docker/dockerfile:1.7
-# 多阶段:node 构建 dist → nginx 1.27 alpine 部署。
+# 多阶段:Node.js 24 LTS 构建 dist → Nginx stable Alpine 部署。
 # 镜像最终 ~50MB(nginx alpine + dist),不含 node_modules。
 
 # ───── Stage 1: build ─────
-FROM node:24-alpine AS build
+FROM node:24.21.0-alpine3.24 AS build
 WORKDIR /app
 
 # 文档构建脚本复用仓库内 Bash 工具链；构建镜像必须显式提供运行时。
@@ -44,13 +44,10 @@ COPY --from=backend-docs . /file-batch-system/docs
 RUN test -f /file-batch-system/docs/README.md && npm run docs:build
 
 # ───── Stage 2: runtime ─────
-FROM nginx:1.27-alpine AS runtime
+FROM nginx:1.30.5-alpine3.24 AS runtime
 
-# apk upgrade:升级 base image 默认的 libcrypto3 / libssl3 等(治 CVE-2026-31789 CRITICAL,
-# nginx:1.27-alpine 镜像更新滞后,显式 upgrade 拿 alpine 仓库 latest patch);
-# 然后装 curl 方便 healthcheck / 排查
-RUN apk upgrade --no-cache && \
-    apk add --no-cache curl tzdata && \
+# 安装 healthcheck 和时区所需工具；基础镜像使用明确的 Nginx/Alpine 版本。
+RUN apk add --no-cache curl tzdata && \
     cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
     echo "Asia/Shanghai" > /etc/timezone && \
     apk del tzdata

@@ -5,10 +5,10 @@
 #
 # 作用:
 #   - docker-compose.yml 默认 build: 本地构建,部署机要从 GHCR 拉。
-#   - pull_policy: always 强制每次 up 前拉最新。
-#   - IMAGE_TAG 默认 latest;CD 可传 sha-<full> 精确部署某次构建。
+#   - pull_policy: always 拉取指定制品。
+#   - IMAGE_TAG 必须显式指定已通过 staging 验证的 sha-<full> 或正式版本标签。
 
 services:
   frontend:
-    image: ghcr.io/pinpols/batch-console:${IMAGE_TAG:-latest}
+    image: ghcr.io/pinpols/batch-console:${IMAGE_TAG:?Set IMAGE_TAG to a staging-verified image tag}
     pull_policy: always

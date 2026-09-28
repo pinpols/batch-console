@@ -1,4 +1,4 @@
-SHELL := /bin/zsh
+SHELL := /bin/bash
 
 NPM ?= npm
 HOST ?= 0.0.0.0
@@ -18,6 +18,8 @@ BG ?=
 
 DEV_PID_FILE := .vite-dev.pid
 DEV_LOG_FILE := .vite-dev.log
+STACK_PID_FILE := .dev-stack.pid
+STACK_LOG_FILE := .dev-stack.log
 DEV_SERVER_SCRIPT := ./scripts/dev-server.sh
 TEST_UNIT_SCRIPT := ./scripts/test-unit.sh
 TEST_E2E_SCRIPT := ./scripts/test-e2e.sh
@@ -28,8 +30,9 @@ CI_SCRIPT := ./scripts/ci.sh
         docs docs-build kill \
         stop stop-container restart status logs \
         build preview lint format \
-        test test-unit test-unit-watch test-e2e test-e2e-ui test-e2e-headed \
-        ci clean
+        test test-unit test-unit-watch test-e2e test-e2e-all test-e2e-smoke test-e2e-ui test-e2e-headed \
+        typecheck check-version docker-build docker-up docker-down \
+        ci clean health lint-fix
 
 help:
 	@echo "Local dev:"
@@ -37,7 +40,7 @@ help:
 	@echo "  make dev-stack         SPA + 文档栈(kill 对应端口 → build → preview,Ctrl+C 一起停)"
 	@echo "                           STACK=all|backend|frontend(默认 all);BG=1 后台+日志(.dev-stack.log)"
 	@echo "  make logs-stack        tail 后台 stack 日志(BG=1 启动时)"
-	@echo "  make dev-all           同 dev-stack STACK=all 的旧入口(npm dev:all)"
+	@echo "  make dev-all           旧入口(清理占用端口后运行 npm dev:all;不停止容器)"
 	@echo "  make dev-bg            SPA 后台,日志 -> $(DEV_LOG_FILE)"
 	@echo "  make docs              起文档站:DOCS=backend(5174,默认)|frontend(5175)[ DPORT=覆盖端口 ]"
 	@echo "  make docs-build        构建文档:DOCS=backend(默认)|frontend|all|<目录>"
@@ -48,17 +51,24 @@ help:
 	@echo "  make status / logs     查看后台 SPA 状态 / 日志"
 	@echo ""
 	@echo "Build & test:"
-	@echo "  make install           npm install"
+	@echo "  make install           npm ci (exact lockfile install)"
 	@echo "  make build             生产构建(vue-tsc + vite build)"
 	@echo "  make preview           预览生产产物"
-	@echo "  make lint / format     eslint / prettier"
+	@echo "  make lint              ESLint check (read-only)"
+	@echo "  make lint-fix          ESLint autofix"
+	@echo "  make format            Prettier write"
 	@echo "  make test-unit         vitest run"
-	@echo "  make test-e2e          Playwright 完整 e2e"
-	@echo "  make ci                lint + build + unit + e2e"
+	@echo "  make test-e2e          Playwright 常规套件（排除 @slow）"
+	@echo "  make test-e2e-all      Playwright 全量套件"
+	@echo "  make test-e2e-smoke    Playwright 冒烟套件"
+	@echo "  make typecheck         Vue / TypeScript 类型检查"
+	@echo "  make check-version     前端 package / Docker 镜像版本检查"
+	@echo "  make docker-build      构建本地前端镜像"
+	@echo "  make ci                无后端本地门禁(含单测和构建,不跑 e2e)"
 	@echo "  make clean             清理 dev pid/log"
 
 install:
-	$(NPM) install
+	$(NPM) ci
 
 # ── Local dev ───────────────────────────────────────────────────────────────
 
@@ -67,8 +77,9 @@ dev:
 
 # SPA + docs 双进程同窗口运行;package.json 的 dev:all 已经写好 concurrently,
 # 这里只做端口冲突的预清理(避免上一次 Ctrl+C 没杀干净)。
-dev-all: stop-container
-	@lsof -ti tcp:$(PORT) tcp:$(DOCS_PORT) 2>/dev/null | xargs -r kill 2>/dev/null || true
+dev-all:
+	@pids="$$(lsof -ti tcp:$(PORT) tcp:$(DOCS_PORT) 2>/dev/null || true)"; \
+	if [ -n "$$pids" ]; then printf '%s\n' "$$pids" | xargs kill 2>/dev/null || true; fi
 	$(NPM) run dev:all
 
 dev-bg:
@@ -139,10 +150,19 @@ preview:
 # ── Quality ────────────────────────────────────────────────────────────────
 
 lint:
+	$(NPM) run lint:check
+
+lint-fix:
 	$(NPM) run lint
 
 format:
 	$(NPM) run format
+
+typecheck:
+	$(NPM) run typecheck
+
+check-version:
+	$(NPM) run check:version
 
 test: test-unit
 
@@ -155,14 +175,35 @@ test-unit-watch:
 test-e2e:
 	NPM=$(NPM) $(TEST_E2E_SCRIPT) run
 
+test-e2e-all:
+	NPM=$(NPM) $(TEST_E2E_SCRIPT) all
+
+test-e2e-smoke:
+	$(NPM) run test:e2e:smoke
+
 test-e2e-ui:
 	NPM=$(NPM) $(TEST_E2E_SCRIPT) ui
 
 test-e2e-headed:
 	NPM=$(NPM) $(TEST_E2E_SCRIPT) headed
 
+docker-build:
+	$(NPM) run docker:build
+
+docker-up:
+	docker compose up -d --build
+
+docker-down:
+	docker compose down
+
 ci:
 	NPM=$(NPM) $(CI_SCRIPT)
 
 clean:
-	rm -f "$(DEV_PID_FILE)" "$(DEV_LOG_FILE)"
+	@for pid_file in "$(DEV_PID_FILE)" "$(STACK_PID_FILE)"; do \
+	  if [ -f "$$pid_file" ] && kill -0 "$$(cat "$$pid_file")" 2>/dev/null; then \
+	    echo "Refusing to remove active process state in $$pid_file; use make stop or make kill first" >&2; \
+	    exit 1; \
+	  fi; \
+	done
+	rm -f "$(DEV_PID_FILE)" "$(DEV_LOG_FILE)" "$(STACK_PID_FILE)" "$(STACK_LOG_FILE)"

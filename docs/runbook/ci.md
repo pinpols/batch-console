@@ -122,6 +122,8 @@ tag v* / 手动 ── precheck(URL/账号/healthz/版本必须有效)
 | `check-version-alignment.sh` | ✅ | ✅ | — | `preflight:changed`(package 变更) |
 | `fe-docs:build` | — | — | — | `preflight:changed`(frontend docs 变更) |
 
+Shell 脚本统一使用 Bash/sh；`check:shell` 同时做语法与 ShellCheck 检查，CI 不再额外安装 zsh。
+
 ## 本地按需预检
 
 提交前 `.husky/pre-commit` 会先跑 `lint-staged`,再跑:

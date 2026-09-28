@@ -1,4 +1,4 @@
-#!/bin/zsh
+#!/usr/bin/env bash
 
 set -euo pipefail
 
@@ -12,6 +12,9 @@ case "$ACTION" in
   run)
     exec "$NPM_BIN" run test:e2e
     ;;
+  all)
+    exec "$NPM_BIN" run test:e2e:all
+    ;;
   ui)
     exec "$NPM_BIN" run test:e2e:ui
     ;;
@@ -19,7 +22,7 @@ case "$ACTION" in
     exec "$NPM_BIN" run test:e2e:headed
     ;;
   *)
-    echo "Usage: scripts/test-e2e.sh {run|ui|headed}"
+    echo "Usage: scripts/test-e2e.sh {run|all|ui|headed}"
     exit 1
     ;;
 esac
