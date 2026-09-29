@@ -3,7 +3,7 @@
 ## 启用条件
 
 - `VITE_SENTRY_DSN` 只通过受控构建环境注入；DSN 为空时 Sentry 关闭。
-- `VITE_TELEMETRY_ENABLED=true` 才启用遥测，上报端点由 `VITE_TELEMETRY_ENDPOINT` 指定。
+- `VITE_TELEMETRY_ENABLED=true` 才启用遥测（默认关闭），上报端点由 `VITE_TELEMETRY_ENDPOINT` 指定；未设置时使用 `/api/console/telemetry/events`。
 - 发布版本以 `/version.json` 的 `version` 和 `gitSha` 为准，Sentry release 必须与其关联。
 
 ## 数据边界

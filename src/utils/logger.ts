@@ -38,7 +38,8 @@ const MAX_ENTRIES = 500
 const FLUSH_INTERVAL_MS = 10_000
 const UPLOAD_INTERVAL_MS = 15_000
 const UPLOAD_BATCH_SIZE = 50
-const TELEMETRY_ENDPOINT = '/api/console/telemetry/events'
+const TELEMETRY_ENDPOINT =
+  import.meta.env.VITE_TELEMETRY_ENDPOINT || '/api/console/telemetry/events'
 const APP_NAME = 'batch-console'
 // D7 Stage B: 不再读 'token'，改读 session flag。真正鉴权靠 HttpOnly cookie 自动随
 // fetch keepalive 发送（fetch 默认 same-origin 带 cookie；keepalive 也保留这一行为）。
