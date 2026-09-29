@@ -15,8 +15,44 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  changes:
+    name: Detect change scope
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    outputs:
+      docs-only: ${{ steps.scope.outputs.docs-only }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Classify pull request changes
+        id: scope
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${EVENT_NAME}" != "pull_request" ]]; then
+            echo "docs-only=false" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          docs_only=true
+          while IFS= read -r path; do
+            case "${path}" in
+              *.md|docs/**|.agents/**) ;;
+              *) docs_only=false; break ;;
+            esac
+          done < <(git diff --name-only "${BASE_SHA}...${HEAD_SHA}")
+          echo "docs-only=${docs_only}" >> "${GITHUB_OUTPUT}"
+
   validate:
     name: Node 24 compatibility
+    needs: changes
+    if: needs.changes.outputs.docs-only != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
