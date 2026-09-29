@@ -10,6 +10,7 @@
 | [发布晋级](./release-promotion.md) | 不可变镜像、staging 验收和版本标签晋级 |
 | [前端事故处理](./frontend-incident.md) | 白屏、静态资源、API 和 PWA 缓存故障 |
 | [可观测性](./observability.md) | Sentry、遥测、告警和数据边界 |
+| [维护与降级前端实施方案](../engineering/maintenance-degradation-implementation-plan.md) | 维护公告、写操作冻结、503 跳转和下游降级提示 |
 | [密码安全 backlog](./password-security-backlog.md) | 密码 / 凭据安全待办 |
 
 ## QA 阶段报告(权威)
