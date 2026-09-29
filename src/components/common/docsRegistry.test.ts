@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import { DOC_REGISTRY, resolveDocUrl } from './docsRegistry'
 
 describe('DOC_REGISTRY', () => {
@@ -37,14 +37,11 @@ describe('resolveDocUrl', () => {
 
   it('已知 docKey 返回 base + path 完整 URL', () => {
     const url = resolveDocUrl('adr-009-workflow-param-dsl')
-    expect(url).toContain('/docs/')
-    expect(url).toContain('architecture/adr/ADR-009-workflow-param-dsl')
+    expect(url).toBe('/docs/backend/architecture/adr/ADR-009-workflow-param-dsl')
   })
 
-  it('test 环境(DEV=false)走相对路径 /docs/', () => {
-    vi.stubEnv('DEV', false as never)
+  it('开发和生产环境均使用同源路径', () => {
     const url = resolveDocUrl('coding-conventions')
-    expect(url).toMatch(/^\/docs\/coding-conventions$/)
-    vi.unstubAllEnvs()
+    expect(url).toBe('/docs/backend/coding-conventions')
   })
 })

@@ -4,15 +4,9 @@ NPM ?= npm
 HOST ?= 0.0.0.0
 PORT ?= 5173
 DOCS_PORT ?= 5174
-FE_DOCS_PORT ?= 5175
 FE_CONTAINER ?= batch-console
 
-# 文档目标(目录做成参数):backend | frontend | all | <目录路径>
-#   DOCS  给 docs(serve 单目标,默认 backend) / docs-build(可 all)
-#   STACK 给 dev-stack(SPA + 文档栈,默认 all = BE+FE)
-#   DPORT 文档 preview 端口覆盖(默认空 → 脚本按 backend=5174/frontend=5175 选)
-DOCS ?= backend
-STACK ?= all
+# 单站文档默认内部端口 5174。
 DPORT ?=
 BG ?=
 
@@ -37,15 +31,15 @@ CI_SCRIPT := ./scripts/ci.sh
 help:
 	@echo "Local dev:"
 	@echo "  make dev               SPA only (Vite, http://localhost:$(PORT))"
-	@echo "  make dev-stack         SPA + 文档栈(kill 对应端口 → build → preview,Ctrl+C 一起停)"
-	@echo "                           STACK=all|backend|frontend(默认 all);BG=1 后台+日志(.dev-stack.log)"
+	@echo "  make dev-stack         SPA + 单站文档(/docs/,build → preview,Ctrl+C 一起停)"
+	@echo "                           BG=1 后台+日志(.dev-stack.log)"
 	@echo "  make logs-stack        tail 后台 stack 日志(BG=1 启动时)"
 	@echo "  make dev-all           旧入口(清理占用端口后运行 npm dev:all;不停止容器)"
 	@echo "  make dev-bg            SPA 后台,日志 -> $(DEV_LOG_FILE)"
-	@echo "  make docs              起文档站:DOCS=backend(5174,默认)|frontend(5175)[ DPORT=覆盖端口 ]"
-	@echo "  make docs-build        构建文档:DOCS=backend(默认)|frontend|all|<目录>"
-	@echo "  make kill              kill 所有前端 dev 端口(SPA+BE/FE文档+preview)"
-	@echo "  make stop              停掉后台 SPA(端口 $(PORT) + $(DOCS_PORT) + $(FE_DOCS_PORT))"
+	@echo "  make docs              起统一文档站(5174;DPORT 可覆盖)"
+	@echo "  make docs-build        构建前后端统一文档站"
+	@echo "  make kill              停止本仓 SPA、文档与预览端口"
+	@echo "  make stop              停掉后台 SPA(端口 $(PORT) + $(DOCS_PORT))"
 	@echo "  make stop-container    停掉 docker 里的 $(FE_CONTAINER) FE 容器(保留 db/redis/kafka)"
 	@echo "  make restart           重启后台 SPA"
 	@echo "  make status / logs     查看后台 SPA 状态 / 日志"
@@ -85,34 +79,32 @@ dev-all:
 dev-bg:
 	DEV_HOST=$(HOST) PORT=$(PORT) NPM=$(NPM) DEV_PID_FILE=$(DEV_PID_FILE) DEV_LOG_FILE=$(DEV_LOG_FILE) $(DEV_SERVER_SCRIPT) start
 
-# 只起文档站(kill 端口 → build → preview)。文档目录参数化:DOCS=backend|frontend|<目录>
-#   make docs               # BE 文档(5174)
-#   make docs DOCS=frontend # FE 文档(5175)
-#   make docs DOCS=backend DPORT=6174  # 覆盖端口
+# 只起统一文档站(kill 端口 → build → preview)。
+#   make docs               # 5174
+#   make docs DPORT=6174    # 覆盖端口
 docs:
-	NPM=$(NPM) bash scripts/docs-serve.sh $(DOCS) $(DPORT)
+	NPM=$(NPM) DOCS_PORT=$(if $(DPORT),$(DPORT),$(DOCS_PORT)) bash scripts/docs-serve.sh
 
-# 构建文档静态产物。DOCS=backend|frontend|all|<目录>(默认 backend)
+# 构建统一文档静态产物。
 docs-build:
-	NPM=$(NPM) bash scripts/docs-build.sh $(DOCS)
+	NPM=$(NPM) bash scripts/docs-build.sh
 
-# SPA + 文档栈一起起;自动 kill 对应端口。前台(默认,Ctrl+C 一起停)或 BG=1 后台+日志。
-#   make dev-stack                 # SPA + BE + FE 文档(STACK=all,前台)
-#   make dev-stack STACK=backend
+# SPA + 单站文档一起起;自动清理本仓占用进程。
+#   make dev-stack                 # SPA + /docs/(前台)
 #   make dev-stack BG=1            # 后台跑,日志 -> .dev-stack.log(make logs-stack 看)
 dev-stack:
-	DEV_HOST=$(HOST) SPA_PORT=$(PORT) NPM=$(NPM) BG=$(BG) bash scripts/dev-stack.sh $(STACK)
+	DEV_HOST=$(HOST) SPA_PORT=$(PORT) NPM=$(NPM) BG=$(BG) bash scripts/dev-stack.sh
 
 # tail 后台 stack 日志(BG=1 启动时写 .dev-stack.log)
 logs-stack:
 	@test -f .dev-stack.log && tail -f .dev-stack.log || echo "无 .dev-stack.log(用 make dev-stack BG=1 后台启动)"
 
-# kill 所有前端 dev 端口(SPA + BE/FE 文档 + preview),清后台 PID 文件。
+# 停止本仓前端开发端口，清后台 PID 文件。
 kill:
 	bash scripts/kill-fe.sh
 
 stop:
-	DEV_HOST=$(HOST) PORT=$(PORT) NPM=$(NPM) DEV_PID_FILE=$(DEV_PID_FILE) DEV_LOG_FILE=$(DEV_LOG_FILE) EXTRA_PORTS=$(DOCS_PORT),$(FE_DOCS_PORT) $(DEV_SERVER_SCRIPT) stop
+	DEV_HOST=$(HOST) PORT=$(PORT) NPM=$(NPM) DEV_PID_FILE=$(DEV_PID_FILE) DEV_LOG_FILE=$(DEV_LOG_FILE) EXTRA_PORTS=$(DOCS_PORT) $(DEV_SERVER_SCRIPT) stop
 
 # 停掉 docker FE 容器(用 docker compose 部署时容器名就是 $(FE_CONTAINER));
 # 容器不存在时静默,避免裸机环境报错。其它依赖容器(db/redis/kafka)保留。

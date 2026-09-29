@@ -45,6 +45,35 @@ export default defineConfig(({ mode }) => {
     } satisfies UserConfig['test'],
     plugins: [
       {
+        name: 'docs-trailing-slash',
+        configureServer(server) {
+          server.middlewares.use((req, res, next) => {
+            const { pathname, search } = new URL(req.url || '/', 'http://localhost')
+            if (pathname === '/docs') {
+              res.writeHead(301, { Location: `/docs/${search}` })
+              res.end()
+              return
+            }
+            if (pathname === '/fe-docs' || pathname.startsWith('/fe-docs/')) {
+              res.statusCode = 410
+              res.end()
+              return
+            }
+            if (
+              pathname.startsWith('/docs/') &&
+              !/^\/docs\/(?:frontend|backend|assets)(?:\/|$)/.test(pathname) &&
+              pathname !== '/docs/' &&
+              pathname !== '/docs/index.html'
+            ) {
+              res.statusCode = 404
+              res.end()
+              return
+            }
+            next()
+          })
+        },
+      },
+      {
         name: 'version-manifest',
         generateBundle() {
           this.emitFile({
@@ -194,7 +223,7 @@ export default defineConfig(({ mode }) => {
        * watch.ignored:把 vitepress build 产物挡在 chokidar 之外。
        *
        * 不加这个,`make dev-all` 期间 vitepress 把 ~200 个 html 写到
-       * tools/docs-bridge/{backend,frontend}/.vitepress/{dist,cache} 时会触发 vite 上百次
+       * tools/docs-bridge/frontend/.vitepress/{dist,cache} 时会触发 vite 上百次
        * full page reload(HMR 把 html 变更当成路由刷新),内存秒上 1GB 然后被 OOM-killer 干掉
        * (上次现象是 SPA exit code 137 + DOCS exit 143 几乎同时收到)。
        *
@@ -204,15 +233,16 @@ export default defineConfig(({ mode }) => {
         ignored: ['**/tools/docs-bridge/**', '**/dist/**', '**/playwright-report/**'],
       },
       proxy: {
+        '/docs': {
+          target: 'http://127.0.0.1:5174',
+          changeOrigin: true,
+        },
         '/api': {
           target: devProxyTarget,
           changeOrigin: true,
         },
-        // 不再代理 /docs 到 vitepress dev (5174):VitePress dev 在非根 base 下
-        // 会从客户端拼出形如 `/docs.md` 的 module URL(漏 /docs/ 前缀),proxy
-        // 透传后 vitepress 5174 也匹配不上 → 404。
-        // dev 期请直接访问 http://localhost:5174/docs/ 看文档;
-        // prod 由 nginx alias /var/www/batch-docs/ 兜住,无 base 计算问题。
+        // 代理的是静态构建后的 VitePress preview，不是 dev server。
+        // preview 保留 /docs/ base，路径和生产 nginx 完全一致。
       },
       /**
        * 预热：dev 启动时后台编译这些文件，用户首次导航立即到位。

@@ -36,12 +36,10 @@ ENV VITE_TELEMETRY_ENABLED=$VITE_TELEMETRY_ENABLED
 ENV VITE_TELEMETRY_ENDPOINT=$VITE_TELEMETRY_ENDPOINT
 RUN npm run ${BUILD_MODE}
 
-# ── 文档站点(可选):跨仓 srcDir = ../../../../file-batch-system/docs ──
-# vitepress 配置:tools/docs-bridge/backend/.vitepress/config.ts(base: /docs/),
-# 产物 → tools/docs-bridge/backend/.vitepress/dist。
-# 后端文档通过 BuildKit named context 注入。缺失即构建失败，禁止发布占位文档。
+# 后端文档通过 BuildKit named context 只读注入；与本仓 docs/ 构建为一个站点。
 COPY --from=backend-docs . /file-batch-system/docs
-RUN test -f /file-batch-system/docs/README.md && npm run docs:build
+RUN test -f /file-batch-system/docs/README.md && \
+    FRONTEND_DOCS_ROOT=/app/docs BACKEND_DOCS_ROOT=/file-batch-system/docs npm run docs:build
 
 # ───── Stage 2: runtime ─────
 FROM nginx:1.30.5-alpine3.24 AS runtime
@@ -55,23 +53,31 @@ RUN apk add --no-cache curl tzdata && \
 # 删默认配置,用我们自己的
 RUN rm -rf /etc/nginx/conf.d/default.conf /usr/share/nginx/html/*
 
+# 官方 entrypoint 需要写 conf.d，Nginx 还需要可写的临时目录。
+# 静态文件和配置模板保留 root 所有权，只给运行用户读取权限。
+RUN addgroup -S -g 10001 batch \
+    && adduser -S -D -H -u 10001 -G batch batch \
+    && chown batch:batch /etc/nginx/conf.d /var/cache/nginx
+
 COPY nginx/nginx.conf /etc/nginx/nginx.conf
 COPY nginx/snippets /etc/nginx/snippets
 COPY nginx/default.conf.template /etc/nginx/templates/default.conf.template
 
 COPY --from=build /app/dist /usr/share/nginx/html
-# 文档站点(若上一阶段构建成功)→ /var/www/batch-docs,nginx /docs/ alias 指过去
-COPY --from=build /app/tools/docs-bridge/backend/.vitepress/dist /var/www/batch-docs
+# 单站文档产物 → /docs/
+COPY --from=build /app/tools/docs-bridge/frontend/.vitepress/dist /var/www/batch-docs
 
 # 默认 BE 上游(可在 docker run/compose 中覆盖)
 ENV BACKEND_UPSTREAM_HOST=backend:18080 \
-    NGINX_PORT=80
+    NGINX_PORT=8080
 
-EXPOSE 80
+USER batch:batch
+
+EXPOSE 8080
 
 # 健康检查:5s 内返 200 即活着
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD curl -fs http://localhost:${NGINX_PORT}/healthz || exit 1
+    CMD curl -fs http://127.0.0.1:${NGINX_PORT}/healthz || exit 1
 
 # nginx 1.19+ 自带 envsubst on 启动 entry,会读 /etc/nginx/templates/*.template
 # 输出到 /etc/nginx/conf.d/*.conf,把 ${BACKEND_UPSTREAM} / ${NGINX_PORT} 替换掉

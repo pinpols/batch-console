@@ -65,6 +65,8 @@ npm run check:docs     # 当前文档链接与本机路径漂移
 npm run verify:local   # 无后端完整本地门禁
 ```
 
+本地用 `npm run dev:all` 同时启动控制台与统一文档站，访问 `http://localhost:5173/docs/`。前后端文档源可分别通过 `FRONTEND_DOCS_ROOT`、`BACKEND_DOCS_ROOT` 覆盖；详情见[统一文档站](docs/engineering/unified-documentation-site.md)。
+
 > **联调遇怪问题先 `make health`** — 协议层探测 BE console-api / trigger / orchestrator + API 漂移。
 > Staging:覆盖 `BE_CONSOLE_URL` / `BE_TRIGGER_URL` / `BE_ORCH_URL` 指向远端。
 > 详见 [`scripts/local/health-check.sh`](scripts/local/health-check.sh) 顶部注释。

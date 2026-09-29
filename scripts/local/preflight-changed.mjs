@@ -70,8 +70,8 @@ const packageChanged = hasAny(files, [
 const docsChanged = hasAny(files, [
   (f) => /^docs\//.test(f),
   (f) => /^tools\/docs-bridge\/frontend\//.test(f),
+  (f) => /^scripts\/docs-(prepare|build|serve|lib)\./.test(f),
 ])
-const backendDocsBridgeChanged = hasAny(files, [(f) => /^tools\/docs-bridge\/backend\//.test(f)])
 const architectureChanged = hasAny(files, [
   (f) => /^src\/.+\.(vue|ts|tsx)$/.test(f),
   (f) => /^scripts\/check-architecture\.mjs$/.test(f),
@@ -123,11 +123,7 @@ if (workflowChanged) {
 
 if (docsChanged) {
   run('documentation links and paths', 'npm', ['run', 'check:docs'])
-  run('frontend docs build', 'npm', ['run', 'fe-docs:build'])
-}
-
-if (backendDocsBridgeChanged) {
-  run('backend docs bridge build', 'npm', ['run', 'docs:build'])
+  run('unified docs build', 'npm', ['run', 'docs:build'])
 }
 
 if (complianceChanged) {

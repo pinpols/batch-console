@@ -20,13 +20,14 @@ e2e/__snapshots__
 .env.local
 .env.*.local
 
-# 前端 docs/ 源文件不进运行镜像；tools/docs-bridge 是 Dockerfile 构建 /docs/ 的必需配置。
-docs
+# 构建统一文档站需要前端 docs/ 源文件；多阶段镜像不会将源文件带入运行层。
+tools/docs-bridge/frontend/content
 tools/docs-bridge/**/.vitepress/cache
 tools/docs-bridge/**/.vitepress/dist
 
 # 截图 / 临时
 *.png
+!docs/**/*.png
 *.xlsx
 oldfiles
 

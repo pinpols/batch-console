@@ -180,8 +180,8 @@ scripts/
 | `npm run test:e2e`       | Playwright e2e                              |
 | `npm run test:e2e:all`   | Playwright 全量 e2e                         |
 | `npm run test:e2e:smoke` | 冒烟子集                                    |
-| `npm run docs:serve`     | 后端文档桥接站点 build + preview            |
-| `npm run fe-docs:serve`  | 前端文档桥接站点 build + preview            |
+| `npm run docs:serve`     | 前后端统一文档站 build + preview            |
+| `npm run dev:all`        | 控制台 + 一个文档服务；同源 `/docs/`          |
 
 ## 分支策略(与 BE 一致)
 

@@ -15,17 +15,14 @@ describe('isConsoleServiceUnavailable', () => {
 })
 
 describe('checkDocsAvailability', () => {
-  it('接受正常响应与跨域 opaque 响应', async () => {
+  it('仅接受成功响应，拒绝 opaque 响应', async () => {
     const okFetch = vi.fn().mockResolvedValue({ ok: true, type: 'basic' })
     const opaqueFetch = vi.fn().mockResolvedValue({ ok: false, type: 'opaque' })
 
     expect(await checkDocsAvailability('/docs/', okFetch as unknown as typeof fetch)).toBe(true)
-    expect(
-      await checkDocsAvailability(
-        'http://localhost:5174/docs/',
-        opaqueFetch as unknown as typeof fetch,
-      ),
-    ).toBe(true)
+    expect(await checkDocsAvailability('/docs/', opaqueFetch as unknown as typeof fetch)).toBe(
+      false,
+    )
   })
 
   it('在错误响应或连接失败时返回 false', async () => {

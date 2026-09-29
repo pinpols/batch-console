@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # =========================================================
-# dev-stack.sh — SPA + 文档栈一起起(kill 对应端口 → build 文档 → concurrently 前台)
+# dev-stack.sh — SPA + 单站文档一起起(kill 对应端口 → build → concurrently)
 #
-# 用法:scripts/dev-stack.sh [all|backend|frontend]   默认 all
+# 用法:scripts/dev-stack.sh
 #   concurrently -k:任一退出/Ctrl-C 时连带 kill 全部,不留残留 preview。
 # env:DEV_HOST(默认 0.0.0.0)、SPA_PORT(默认 5173)
 # =========================================================
@@ -13,32 +13,22 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/docs-lib.sh"
 cd "$DOCS_ROOT_DIR"
 
-DOCS="${1:-all}"
 DEV_HOST="${DEV_HOST:-0.0.0.0}"
 SPA_PORT="${SPA_PORT:-5173}"
 NPM_BIN="${NPM:-npm}"
 
-# 1) kill 对应端口(SPA + 选中的文档目标)
+# 1) 只接管本仓进程占用的端口
 kill_port "$SPA_PORT"
-for t in $(expand_docs_targets "$DOCS"); do
-  resolve_docs_target "$t"; kill_port "$DOCS_PORT"
-done
+kill_port "$DOCS_PORT"
 
-# 2) 先 build 文档(preview 需产物;dev 模式 vitepress 跨仓 404)
-bash "$SCRIPT_DIR/docs-build.sh" "$DOCS"
+# 2) 先 build 聚合文档(preview 需产物)
+bash "$SCRIPT_DIR/docs-build.sh"
 
-# 3) concurrently 跑 SPA + 文档 preview(-k 连带退出)。BG=1 → 后台 + 写日志。
+# 3) concurrently 跑 SPA + 单个文档 preview(-k 连带退出)。
 SPA_CMD="$NPM_BIN run dev -- --host $DEV_HOST --port $SPA_PORT"
-if [[ "$DOCS" == "all" ]]; then
-  set -- -k -n SPA,BE-DOCS,FE-DOCS -c blue,green,magenta \
-    "$SPA_CMD" \
-    "NO_BUILD=1 bash $SCRIPT_DIR/docs-serve.sh backend" \
-    "NO_BUILD=1 bash $SCRIPT_DIR/docs-serve.sh frontend"
-else
-  set -- -k -n SPA,DOCS -c blue,green \
-    "$SPA_CMD" \
-    "NO_BUILD=1 bash $SCRIPT_DIR/docs-serve.sh $DOCS"
-fi
+set -- -k -n SPA,DOCS -c blue,green \
+  "$SPA_CMD" \
+  "NO_BUILD=1 bash $SCRIPT_DIR/docs-serve.sh"
 
 STACK_LOG="${STACK_LOG:-$DOCS_ROOT_DIR/.dev-stack.log}"
 STACK_PID="${STACK_PID:-$DOCS_ROOT_DIR/.dev-stack.pid}"
@@ -53,11 +43,11 @@ if [[ "${BG:-0}" == "1" ]]; then
   if [[ -f "$STACK_LOG" ]] && [[ "$(wc -c < "$STACK_LOG")" -gt "$max_log_bytes" ]]; then
     mv -f "$STACK_LOG" "$STACK_LOG.1"
   fi
-  echo "▶ 后台启动 stack[$DOCS]:SPA :$SPA_PORT + 文档 → 日志 $STACK_LOG"
+  echo "▶ 后台启动:SPA :$SPA_PORT + 文档 /docs/ → 日志 $STACK_LOG"
   nohup npx concurrently "$@" > "$STACK_LOG" 2>&1 &
   echo $! > "$STACK_PID"
   echo "  PID $(cat "$STACK_PID")  ·  tail: make logs-stack  ·  停: make kill"
 else
-  echo "▶ SPA http://localhost:$SPA_PORT/  +  文档栈[$DOCS](前台,Ctrl+C 一起停)"
+  echo "▶ SPA http://localhost:$SPA_PORT/ + 文档 http://localhost:$SPA_PORT/docs/"
   exec npx concurrently "$@"
 fi

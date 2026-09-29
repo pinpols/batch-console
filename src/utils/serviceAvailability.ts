@@ -26,7 +26,7 @@ export function isConsoleServiceUnavailable(error: unknown): boolean {
   return /network error|failed to fetch|load failed|timeout|timed out/i.test(message)
 }
 
-/** 文档站是否可访问；跨域本地预览返回 opaque 也表示服务已响应。 */
+/** 同源文档入口是否可访问。 */
 export async function checkDocsAvailability(
   url: string,
   fetcher: typeof fetch = globalThis.fetch,
@@ -40,10 +40,9 @@ export async function checkDocsAvailability(
       method: 'HEAD',
       cache: 'no-store',
       credentials: 'include',
-      mode: 'no-cors',
       signal: controller.signal,
     })
-    return response.ok || response.type === 'opaque'
+    return response.ok
   } catch {
     return false
   } finally {
