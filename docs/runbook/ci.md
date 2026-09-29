@@ -7,8 +7,8 @@ CI 由 3 个核心门禁、兼容/安全检查和发布辅助 workflow 组成。
 | Workflow | 文件 | 触发 | 角色 | 预估耗时 |
 |---|---|---|---|---|
 | `pr-gate` | `.github/workflows/pr-gate.yml` | PR → main / push main / 手动 | PR 必过门禁,fast feedback | 5-7 min |
-| `frontend-ci` | `.github/workflows/frontend-ci.yml` | PR → main / push main / 手动 | Node 24 兼容 + 前端文档构建 | 8-12 min |
-| `full-ci-gate` | `.github/workflows/full-ci-gate.yml` | push main / nightly cron(02:00 UTC = 10:00 Asia/Shanghai)/ 手动 | 全量回归 | 15-20 min |
+| `frontend-ci` | `.github/workflows/frontend-ci.yml` | PR → main / push main / 手动 | Node 24 兼容 + 前端文档构建；Markdown-only PR 跳过兼容构建 | 8-12 min |
+| `full-ci-gate` | `.github/workflows/full-ci-gate.yml` | PR → main / push main / nightly cron(02:00 UTC = 10:00 Asia/Shanghai)/ 手动 | 全量回归；Markdown-only PR 保留 required check 但跳过构建和全量审计 | 15-20 min |
 | `staging-gate` | `.github/workflows/staging-gate.yml` | tag `v*` / 手动(可输入 base_url) | staging 部署前真环境最终关 | 10-15 min |
 | `codeql` | `.github/workflows/codeql.yml` | PR / main / 每周 / 手动 | JavaScript/TypeScript 静态安全分析 | 5-10 min |
 | `build-image` | `.github/workflows/build-image.yml` | main / tag / 手动 | main 构建不可变镜像；tag 在 staging 通过后晋级同一 digest | 10-30 min |
@@ -41,7 +41,9 @@ checkout → setup-node@v5(node 24 + npm cache)
 
 这样 PR 必过门禁仍由 `pr-gate` 统一承担,Node 新版本兼容和文档站可独立暴露问题,避免同一 PR 出现两套相似 required check 一过一挂。
 
-## full-ci-gate 详情(4 job 并行)
+## full-ci-gate 详情(4 个执行 job 并行 + 1 个范围探测 job)
+
+PR 进入 workflow 后先执行 `Detect change scope`。仅包含 Markdown、`docs/**` 或 `.agents/**` 的 PR 会跳过 `Static checks + Unit` 和 `Security audit (full)` 两个重 job；required check 以 skipped-success 状态回报，不改变 main push / nightly / 手动运行的全量门禁。包含 workflow、脚本、配置、源码、依赖或部署文件的 PR 仍完整执行。
 
 ```
                          ┌─ static-and-unit ──→ upload dist artifact
