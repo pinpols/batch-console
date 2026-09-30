@@ -132,7 +132,7 @@ test('AI history excludes another owner and another tenant', async ({ page, netw
   }
 })
 
-test('switching conversations ignores an older real history response', async ({
+test('switching and deleting conversations ignore older real history responses', async ({
   page,
   network,
 }) => {
@@ -166,6 +166,7 @@ test('switching conversations ignores an older real history response', async ({
   const newerPrompt = `查询批量调度运行概况 new-${randomUUID()}`
 
   let releaseOlder: (() => void) | undefined
+  let releaseDeleted: (() => void) | undefined
   try {
     const olderId = await create(olderPrompt)
     const newerId = await create(newerPrompt)
@@ -184,6 +185,15 @@ test('switching conversations ignores an older real history response', async ({
     )
     await expect(olderConversation).toBeVisible()
     await expect(newerConversation).toBeVisible()
+    const sidebarBounds = await page.locator('.conversation-list').boundingBox()
+    const deleteBounds = await newerConversation
+      .getByRole('button', { name: '删除会话' })
+      .boundingBox()
+    expect(sidebarBounds).not.toBeNull()
+    expect(deleteBounds).not.toBeNull()
+    expect(deleteBounds!.x + deleteBounds!.width).toBeLessThanOrEqual(
+      sidebarBounds!.x + sidebarBounds!.width,
+    )
 
     let intercepted!: () => void
     const olderFetched = new Promise<void>((resolve) => {
@@ -217,14 +227,47 @@ test('switching conversations ignores an older real history response', async ({
     )
     await expect(page.locator('.bubble__body')).toContainText([newerPrompt])
     await expect(page.getByText(olderPrompt)).toHaveCount(0)
+
+    let deletedFetched!: () => void
+    const deletedRequest = new Promise<void>((resolve) => {
+      deletedFetched = resolve
+    })
+    const holdDeleted = new Promise<void>((resolve) => {
+      releaseDeleted = resolve
+    })
+    await page.route(`**/api/console/ai/conversations/${newerId}/turns?**`, async (route) => {
+      const response = await route.fetch()
+      deletedFetched()
+      await holdDeleted
+      await route.fulfill({ response })
+    })
+    await newerConversation.locator('.conversation-list__open').click()
+    await deletedRequest
+    await newerConversation.getByRole('button', { name: '删除会话' }).click()
+    await page.getByRole('dialog').getByRole('button', { name: '确定' }).click()
+    await expect(newerConversation).toHaveCount(0)
+
+    const deletedResponse = page.waitForResponse((response) =>
+      response.url().includes(`/api/console/ai/conversations/${newerId}/turns`),
+    )
+    releaseDeleted()
+    expect((await deletedResponse).status()).toBe(200)
+    await page.evaluate(
+      () =>
+        new Promise<void>((resolve) =>
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+        ),
+    )
+    await expect(page.getByText(newerPrompt)).toHaveCount(0)
     network.assertClean('AI real history response ordering')
   } finally {
     releaseOlder?.()
+    releaseDeleted?.()
     for (const id of createdIds) {
       const response = await page.request.delete(`/api/console/ai/conversations/${id}`, {
         headers: { ...headers, 'Idempotency-Key': randomUUID() },
       })
-      expect(response.status(), `cleanup conversation ${id}`).toBe(200)
+      expect([200, 404], `cleanup conversation ${id}`).toContain(response.status())
     }
   }
 })

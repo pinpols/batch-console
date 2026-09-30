@@ -42,6 +42,7 @@
                   <el-button
                     text
                     :icon="Trash2"
+                    class="conversation-list__delete"
                     :aria-label="t('aiChat.deleteConversation')"
                     @click="removeConversation(conversation.id)"
                   />
@@ -676,8 +677,13 @@
 
   .conversation-list__items {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: var(--space-xs);
     margin-top: var(--space-sm);
+  }
+
+  .conversation-list__item {
+    min-width: 0;
   }
 
   .conversation-list__fallback {
@@ -696,6 +702,11 @@
   .conversation-list__open :deep(span) {
     overflow: hidden;
     text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .conversation-list__delete {
+    flex: none;
   }
 
   .conversation-list__loading {
