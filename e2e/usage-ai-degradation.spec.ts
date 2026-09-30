@@ -7,7 +7,7 @@ test.describe('Usage, AI and degradation', () => {
     await enterDemoApp(page)
   })
 
-  test('usage page shows backend aggregate totals without counting UI events as business success', async ({ page }) => {
+  test('usage page shows backend aggregate totals without counting UI events as successful operations', async ({ page }) => {
     const responsePromise = page.waitForResponse((response) =>
       response.url().includes('/api/console/queries/usage-summary') && response.request().method() === 'GET',
     )
@@ -19,8 +19,9 @@ test.describe('Usage, AI and degradation', () => {
     const businessRows = payload.data.filter((row: { source: string }) => row.source !== 'FRONTEND')
     const successes = businessRows.reduce((sum: number, row: { successCount: number }) => sum + row.successCount, 0)
     const failures = businessRows.reduce((sum: number, row: { failureCount: number }) => sum + row.failureCount, 0)
-    await expect(page.locator('.usage-total').filter({ hasText: '业务成功数' }).locator('strong')).toHaveText(successes.toLocaleString())
-    await expect(page.locator('.usage-total').filter({ hasText: '业务失败数' }).locator('strong')).toHaveText(failures.toLocaleString())
+    await expect(page.locator('.usage-total').filter({ hasText: '成功事件数' }).locator('strong')).toHaveText(successes.toLocaleString())
+    await expect(page.locator('.usage-total').filter({ hasText: '失败事件数' }).locator('strong')).toHaveText(failures.toLocaleString())
+    await expect(page.locator('.usage-note')).toContainText('不含作业或文件最终结果')
   })
 
   test('audit page links directly to the usage report', async ({ page }) => {

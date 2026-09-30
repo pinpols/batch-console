@@ -3368,13 +3368,14 @@ export default {
     loadError: '使用率数据加载失败',
     empty: '该条件下暂无聚合数据',
     events: '事件数',
-    success: '业务成功数',
-    failure: '业务失败数',
-    trend: '业务结果趋势',
+    success: '成功事件数',
+    failure: '失败事件数',
+    trend: '结果事件趋势',
     breakdown: '指标明细',
     date: '日期',
     source: '来源',
-    disclaimer: '数据来自后端日聚合；前端遥测仅用于趋势参考，不用于计费、对账或合规取证。',
+    disclaimer:
+      '当前数据来自后端操作审计日聚合，不含作业或文件最终结果；不能作为业务成功率、计费或合规取证依据。',
   },
   operationAuditList: {
     actionLabel: '动作',

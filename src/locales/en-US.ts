@@ -3454,14 +3454,14 @@ const messages: Messages = {
     loadError: 'Failed to load usage data',
     empty: 'No aggregate data matches these filters',
     events: 'Events',
-    success: 'Business successes',
-    failure: 'Business failures',
-    trend: 'Business outcome trend',
+    success: 'Successful events',
+    failure: 'Failed events',
+    trend: 'Outcome event trend',
     breakdown: 'Metric breakdown',
     date: 'Date',
     source: 'Source',
     disclaimer:
-      'Data comes from backend daily aggregates. Frontend telemetry is for trends only, not billing, reconciliation or compliance evidence.',
+      'Current data is aggregated from backend operation audits, not final job or file outcomes. Do not use it as a business success rate, billing or compliance evidence.',
   },
   operationAuditList: {
     actionLabel: 'Action',
