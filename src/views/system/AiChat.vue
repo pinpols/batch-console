@@ -90,7 +90,11 @@
                       {{ item.refusalReason }}
                     </div>
                   </div>
-                  <div class="bubble__body">{{ messageBody(item) }}</div>
+                  <AiMessageContent
+                    class="bubble__body"
+                    :content="messageBody(item)"
+                    :role="item.role"
+                  />
                   <div v-if="item.role === 'assistant' && item.modelName" class="bubble__model">
                     {{ t('aiChat.modelBy', { model: item.modelName }) }}
                   </div>
@@ -265,6 +269,7 @@
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
   import PageContainer from '@/components/common/PageContainer.vue'
+  import AiMessageContent from '@/components/common/AiMessageContent.vue'
   import MetaSelect from '@/components/common/MetaSelect.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'

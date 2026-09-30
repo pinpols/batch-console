@@ -112,6 +112,39 @@ test.describe('Usage, AI and degradation', () => {
     await expect(launcher).toBeFocused()
   })
 
+  test('AI Markdown renders safely and copies a code block', async ({ page }) => {
+    await page.context().grantPermissions(['clipboard-read', 'clipboard-write'])
+    await page.route('**/api/console/ai/chat', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          code: 'SUCCESS',
+          message: 'success',
+          data: {
+            sessionId: 'markdown-session',
+            requestId: 'markdown-request',
+            traceId: 'markdown-trace',
+            promptCategory: 'OPERATIONS',
+            promptDecision: 'APPROVED',
+            modelName: 'test',
+            answer: '**诊断完成**\n\n```sh\necho ok\n```\n\n<img src=x onerror=alert(1)>',
+            refusalReason: null,
+          },
+        }),
+      }),
+    )
+    await page.getByRole('button', { name: '打开 AI 助手' }).click()
+    const drawer = page.locator('.ai-assistant-drawer')
+    await drawer.getByRole('textbox', { name: '问题' }).fill('如何检查作业')
+    await drawer.getByRole('button', { name: '发送' }).click()
+    await expect(drawer.locator('.ai-message-content__markdown strong')).toHaveText('诊断完成')
+    await expect(drawer.locator('.ai-markdown__code code')).toHaveText('echo ok')
+    await expect(drawer.locator('.ai-message-content__markdown img')).toHaveCount(0)
+    await drawer.getByRole('button', { name: '复制代码' }).click()
+    await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe('echo ok\n')
+  })
+
   test('AI rate limiting keeps the draft ready for retry', async ({ page, network }) => {
     network.ignore('/api/console/ai/chat')
     await page.route('**/api/console/ai/chat', (route) => route.fulfill({

@@ -1,7 +1,7 @@
 {
   "bomFormat": "CycloneDX",
   "specVersion": "1.6",
-  "serialNumber": "urn:uuid:05e24ea6-7239-fdb9-9a75-e15d4789a080",
+  "serialNumber": "urn:uuid:fd658581-d7c2-456b-9585-918a8164a907",
   "version": 1,
   "metadata": {
     "component": {
@@ -14016,6 +14016,27 @@
     },
     {
       "type": "library",
+      "bom-ref": "pkg:npm/linkify-it@6.1.0",
+      "name": "linkify-it",
+      "version": "6.1.0",
+      "purl": "pkg:npm/linkify-it@6.1.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "scope": "optional",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/linkify-it/-/linkify-it-6.1.0.tgz"
+        }
+      ]
+    },
+    {
+      "type": "library",
       "bom-ref": "pkg:npm/lint-staged@17.6.0",
       "name": "lint-staged",
       "version": "17.6.0",
@@ -14268,6 +14289,27 @@
     },
     {
       "type": "library",
+      "bom-ref": "pkg:npm/markdown-it@15.0.2",
+      "name": "markdown-it",
+      "version": "15.0.2",
+      "purl": "pkg:npm/markdown-it@15.0.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "scope": "required",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/markdown-it/-/markdown-it-15.0.2.tgz"
+        }
+      ]
+    },
+    {
+      "type": "library",
       "bom-ref": "pkg:npm/marked@16.4.2",
       "name": "marked",
       "version": "16.4.2",
@@ -14347,6 +14389,27 @@
         {
           "type": "distribution",
           "url": "https://registry.npmjs.org/mdn-data/-/mdn-data-2.27.1.tgz"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/mdurl@2.1.0",
+      "name": "mdurl",
+      "version": "2.1.0",
+      "purl": "pkg:npm/mdurl@2.1.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "scope": "optional",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/mdurl/-/mdurl-2.1.0.tgz"
         }
       ]
     },
@@ -15733,6 +15796,27 @@
         {
           "type": "distribution",
           "url": "https://registry.npmjs.org/punycode/-/punycode-2.3.1.tgz"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/punycode.js@2.3.1",
+      "name": "punycode.js",
+      "version": "2.3.1",
+      "purl": "pkg:npm/punycode.js@2.3.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "scope": "optional",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/punycode.js/-/punycode.js-2.3.1.tgz"
         }
       ]
     },
@@ -17665,6 +17749,27 @@
         {
           "type": "distribution",
           "url": "https://registry.npmjs.org/typescript/-/typescript-6.0.3.tgz"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/uc.micro@3.0.0",
+      "name": "uc.micro",
+      "version": "3.0.0",
+      "purl": "pkg:npm/uc.micro@3.0.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "scope": "optional",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/uc.micro/-/uc.micro-3.0.0.tgz"
         }
       ]
     },
@@ -20103,6 +20208,7 @@
         "pkg:npm/lightningcss-linux-x64-musl@1.33.0",
         "pkg:npm/lightningcss-win32-arm64-msvc@1.33.0",
         "pkg:npm/lightningcss-win32-x64-msvc@1.33.0",
+        "pkg:npm/linkify-it@6.1.0",
         "pkg:npm/lint-staged@17.6.0",
         "pkg:npm/local-pkg@1.2.1",
         "pkg:npm/locate-path@6.0.0",
@@ -20115,10 +20221,12 @@
         "pkg:npm/magic-string-ast@1.0.3",
         "pkg:npm/magicast@0.5.5",
         "pkg:npm/mark.js@8.11.1",
+        "pkg:npm/markdown-it@15.0.2",
         "pkg:npm/marked@16.4.2",
         "pkg:npm/math-intrinsics@1.1.0",
         "pkg:npm/mdast-util-to-hast@13.2.1",
         "pkg:npm/mdn-data@2.27.1",
+        "pkg:npm/mdurl@2.1.0",
         "pkg:npm/memoize-one@6.0.0",
         "pkg:npm/mermaid@11.17.2",
         "pkg:npm/micromark-util-character@2.1.1",
@@ -20185,6 +20293,7 @@
         "pkg:npm/proto-list@1.2.4",
         "pkg:npm/proxy-from-env@2.1.0",
         "pkg:npm/punycode@2.3.1",
+        "pkg:npm/punycode.js@2.3.1",
         "pkg:npm/qified@0.10.1",
         "pkg:npm/quansync@0.2.11",
         "pkg:npm/readdirp@5.1.1",
@@ -20277,6 +20386,7 @@
         "pkg:npm/typed-array-byte-offset@1.0.5",
         "pkg:npm/typed-array-length@1.0.8",
         "pkg:npm/typescript@6.0.3",
+        "pkg:npm/uc.micro@3.0.0",
         "pkg:npm/ufo@1.6.4",
         "pkg:npm/unbox-primitive@1.1.0",
         "pkg:npm/undici@6.29.0",

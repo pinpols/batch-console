@@ -5632,6 +5632,9 @@ const messages: Messages = {
     sendTimeout: 'The AI request timed out. Try again; your question is still in the input box.',
     bubbleMe: 'Me',
     bubbleAi: 'AI',
+    copyCode: 'Copy code',
+    codeCopied: 'Code copied',
+    codeCopyFailed: 'Could not copy code',
     inputPlaceholder:
       "e.g. explain a job failure, query trace-related steps, summarize today's alerts…",
     composerHint: 'Enter for newline; click Send to submit',
