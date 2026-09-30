@@ -81,4 +81,17 @@
   .route-progress-fade-leave-to {
     opacity: 0;
   }
+
+  @media (prefers-reduced-motion: reduce) {
+    .route-progress__lead {
+      animation: none;
+      width: 100%;
+      max-width: none;
+    }
+
+    .route-progress-fade-enter-active,
+    .route-progress-fade-leave-active {
+      transition: none;
+    }
+  }
 </style>
