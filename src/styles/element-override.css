@@ -1308,10 +1308,45 @@ a:focus-visible,
   font-weight: 500;
 }
 
-/* Toast:底部居中(EP 默认顶部;多条并发短时可接受轻微堆叠) */
+/* 页面级等待使用品牌图标；按钮内的原生 loading 保持紧凑。 */
+.el-loading-spinner .circular {
+  display: none;
+}
+
+.el-loading-spinner:has(.circular)::before {
+  content: '';
+  display: block;
+  width: 40px;
+  height: 40px;
+  margin: 0 auto;
+  border-radius: var(--radius-content);
+  background: center / contain no-repeat url('/icons/icon-192-maskable.png');
+  animation: brand-loading-walk 1.15s ease-in-out infinite;
+}
+
+html.dark .el-loading-spinner:has(.circular)::before {
+  background-image: url('/icons/icon-192.png');
+}
+
+@keyframes brand-loading-walk {
+  0%,
+  100% {
+    transform: translateX(-10px) rotate(-2deg);
+  }
+
+  50% {
+    transform: translateX(10px) rotate(2deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .el-loading-spinner:has(.circular)::before {
+    animation: none;
+  }
+}
+
+/* Toast 位置与堆叠交给 ElConfigProvider，避免多条消息覆盖。 */
 .el-message {
-  top: auto !important;
-  bottom: 36px;
   padding: 11px 18px;
   border-radius: 10px;
   background: var(--color-bg-elevated) !important;
@@ -1321,28 +1356,26 @@ a:focus-visible,
 }
 
 .el-message .el-message__icon {
-  display: none;
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-size: 18px;
+  margin-right: 0;
 }
 
-.el-message::before {
-  content: '';
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  flex-shrink: 0;
-  background: var(--color-primary);
+.el-message--info .el-message__icon {
+  color: var(--color-info);
 }
 
-.el-message--success::before {
-  background: var(--color-success);
+.el-message--success .el-message__icon {
+  color: var(--color-success);
 }
 
-.el-message--warning::before {
-  background: var(--color-warning);
+.el-message--warning .el-message__icon {
+  color: var(--color-warning);
 }
 
-.el-message--error::before {
-  background: var(--color-danger);
+.el-message--error .el-message__icon {
+  color: var(--color-danger);
 }
 
 .el-message .el-message__content {
