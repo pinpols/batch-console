@@ -6329,6 +6329,11 @@ export interface components {
        * @description Monotonic shared-state version used for replica convergence and CAS.
        */
       version: number
+      /**
+       * Format: date-time
+       * @description Last shared-state update timestamp.
+       */
+      updatedAt: string | null
     }
     ConsoleUsageSummaryResponse: {
       /** Format: date */
