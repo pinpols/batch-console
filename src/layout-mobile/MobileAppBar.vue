@@ -1,7 +1,7 @@
 <template>
   <header class="mobile-appbar" :class="{ 'mobile-appbar--scrolled': scrolled }">
     <div class="mobile-appbar__left">
-      <div class="mobile-appbar__logo">BC</div>
+      <BatchMark class="mobile-appbar__logo" :size="28" />
       <transition name="appbar-title">
         <div v-if="scrolled" key="t" class="mobile-appbar__title">{{ title }}</div>
       </transition>
@@ -96,6 +96,7 @@
   import { pathToKey } from '@/constants/pathKey'
   import { useLocale } from '@/composables/useLocale'
   import TenantSelect from '@/components/common/TenantSelect.vue'
+  import BatchMark from '@/components/common/BatchMark.vue'
 
   withDefaults(defineProps<{ scrolled?: boolean }>(), { scrolled: false })
 
@@ -221,16 +222,6 @@
   }
 
   .mobile-appbar__logo {
-    display: grid;
-    place-items: center;
-    width: 28px;
-    height: 28px;
-    border-radius: 8px;
-    color: #fff;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    background: linear-gradient(135deg, #007aff 0%, #5ac8fa 100%);
     flex-shrink: 0;
   }
 

@@ -3,7 +3,7 @@
   <div class="login-page">
     <aside class="login-hero">
       <div class="login-brand">
-        <span class="login-brand__logo">BC</span>
+        <BatchMark class="login-brand__logo" :size="40" />
         <div>
           <div class="login-brand__name">{{ t('nav.appTitle') }}</div>
           <div class="login-brand__desc">{{ t('login.appDesc') }}</div>
@@ -40,7 +40,7 @@
       </el-tooltip>
 
       <div class="login-brand login-card__mobile-brand">
-        <span class="login-brand__logo">BC</span>
+        <BatchMark class="login-brand__logo" :size="40" />
         <div>
           <div class="login-brand__name">{{ t('nav.appTitle') }}</div>
           <div class="login-brand__desc">{{ t('login.appDesc') }}</div>
@@ -159,6 +159,7 @@
   import { getCaptchaConfig } from '@/api/captcha'
   import type { CaptchaConfig } from '@/api/captcha'
   import CaptchaChallenge from '@/components/common/CaptchaChallenge.vue'
+  import BatchMark from '@/components/common/BatchMark.vue'
   import type { AxiosRequestConfig } from 'axios'
   import { lastApiMeta } from '@/utils/lastApiMeta'
   import { isConsoleServiceUnavailable } from '@/utils/serviceAvailability'
@@ -435,17 +436,6 @@
   }
 
   .login-brand__logo {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 40px;
-    height: 40px;
-    border-radius: var(--radius-content);
-    font-size: 13px;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    color: var(--button-primary-text);
-    background: var(--color-brand-mark-bg);
     box-shadow: 0 4px 12px color-mix(in srgb, var(--color-brand-mark-bg) 20%, transparent);
   }
 
