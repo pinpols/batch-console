@@ -97,8 +97,9 @@ test('AI history excludes another owner and another tenant', async ({ page, netw
       const response = await page.request.get(`/api/console/ai/conversations/${id}/turns`, {
         headers: { 'X-Tenant-Id': 'ta' },
       })
-      expect(response.status()).toBe(404)
-      expect((await response.json()).code).toBe('NOT_FOUND')
+      const payload = await response.json()
+      expect(response.status(), `${payload.code}: ${payload.message}`).toBe(404)
+      expect(payload.code).toBe('NOT_FOUND')
     }
 
     const xsrfToken = (await page.context().cookies()).find(
@@ -119,13 +120,111 @@ test('AI history excludes another owner and another tenant', async ({ page, netw
           prompt: '查询批量调度作业运行状态',
         },
       })
-      expect(response.status()).toBe(404)
-      expect((await response.json()).code).toBe('NOT_FOUND')
+      const payload = await response.json()
+      expect(response.status(), `${payload.code}: ${payload.message}`).toBe(404)
+      expect(payload.code).toBe('NOT_FOUND')
     }
     network.assertClean('AI conversation tenant and owner isolation')
   } finally {
     remove(ownId, 'ta')
     remove(otherOwnerId, 'ta')
     remove(otherTenantId, 'tb')
+  }
+})
+
+test('switching conversations ignores an older real history response', async ({
+  page,
+  network,
+}) => {
+  const username = process.env.E2E_AI_USERNAME
+  const password = process.env.E2E_AI_PASSWORD
+  if (!username || !password) throw new Error('E2E_AI_USERNAME/PASSWORD are required')
+  const login = await page.request.post('/api/console/auth/login', {
+    headers: { 'X-Tenant-Id': 'system' },
+    data: { username, password },
+  })
+  expect(login.status()).toBe(200)
+  const xsrfToken = (await page.context().cookies()).find(
+    (cookie) => cookie.name === 'XSRF-TOKEN',
+  )?.value
+  expect(xsrfToken).toBeTruthy()
+  const headers = { 'X-Tenant-Id': 'ta', 'X-XSRF-TOKEN': xsrfToken! }
+  const createdIds: string[] = []
+  const create = async (prompt: string) => {
+    const response = await page.request.post('/api/console/ai/chat', {
+      headers: { ...headers, 'Idempotency-Key': randomUUID() },
+      data: { tenantId: 'ta', contextVersion: 'v1', prompt },
+    })
+    const payload = await response.json()
+    expect(response.status(), `${payload.code}: ${payload.message}`).toBe(200)
+    const id = payload.data?.sessionId
+    expect(id).toBeTruthy()
+    createdIds.push(id)
+    return id as string
+  }
+  const olderPrompt = `查询批量调度运行概况 old-${randomUUID()}`
+  const newerPrompt = `查询批量调度运行概况 new-${randomUUID()}`
+
+  let releaseOlder: (() => void) | undefined
+  try {
+    const olderId = await create(olderPrompt)
+    const newerId = await create(newerPrompt)
+    await page.addInitScript(() => {
+      localStorage.setItem('batch-console-session', '1')
+      localStorage.setItem('batch-console-tenant-id', 'ta')
+      localStorage.setItem('batch-console:locale', 'zh-CN')
+      localStorage.setItem('batch-console-onboarding-done', '1')
+    })
+    await page.goto('/system/ai-chat')
+    const olderConversation = page.locator(
+      `.conversation-list__item[data-conversation-id="${olderId}"]`,
+    )
+    const newerConversation = page.locator(
+      `.conversation-list__item[data-conversation-id="${newerId}"]`,
+    )
+    await expect(olderConversation).toBeVisible()
+    await expect(newerConversation).toBeVisible()
+
+    let intercepted!: () => void
+    const olderFetched = new Promise<void>((resolve) => {
+      intercepted = resolve
+    })
+    const holdOlder = new Promise<void>((resolve) => {
+      releaseOlder = resolve
+    })
+    await page.route(`**/api/console/ai/conversations/${olderId}/turns?**`, async (route) => {
+      const response = await route.fetch()
+      intercepted()
+      await holdOlder
+      await route.fulfill({ response })
+    })
+
+    await olderConversation.locator('.conversation-list__open').click()
+    await olderFetched
+    await newerConversation.locator('.conversation-list__open').click()
+    await expect(page.locator('.bubble__body')).toContainText([newerPrompt])
+
+    const olderResponse = page.waitForResponse((response) =>
+      response.url().includes(`/api/console/ai/conversations/${olderId}/turns`),
+    )
+    releaseOlder()
+    expect((await olderResponse).status()).toBe(200)
+    await page.evaluate(
+      () =>
+        new Promise<void>((resolve) =>
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+        ),
+    )
+    await expect(page.locator('.bubble__body')).toContainText([newerPrompt])
+    await expect(page.getByText(olderPrompt)).toHaveCount(0)
+    network.assertClean('AI real history response ordering')
+  } finally {
+    releaseOlder?.()
+    for (const id of createdIds) {
+      const response = await page.request.delete(`/api/console/ai/conversations/${id}`, {
+        headers: { ...headers, 'Idempotency-Key': randomUUID() },
+      })
+      expect(response.status(), `cleanup conversation ${id}`).toBe(200)
+    }
   }
 })
