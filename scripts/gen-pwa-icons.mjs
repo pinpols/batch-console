@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// 用 sharp 从 public/apple-touch-icon.svg 生成 PWA / iOS 启动图全套位图。
+// 用 sharp 从品牌原图生成 PWA / iOS 启动图全套位图。
 // 用法:`node scripts/gen-pwa-icons.mjs`
 // 这是构建期一次性脚本,不是运行时;sharp 用 --no-save 装,不入 package.json
 //
@@ -20,35 +20,23 @@ const root = join(here, '..')
 const out = join(root, 'public', 'icons')
 if (!existsSync(out)) mkdirSync(out, { recursive: true })
 
-const svg = readFileSync(join(root, 'public', 'apple-touch-icon.svg'))
+const markOnBlue = readFileSync(join(root, 'assets', 'brand', 'mark-on-blue.jpg'))
+const markOnWhite = readFileSync(join(root, 'assets', 'brand', 'mark-on-white.jpg'))
 
-// 1) 通用 + maskable PWA 图标。maskable 加 10% safe-zone padding(Android adaptive icon 会裁角)
-async function genIcon(size, file, padded = false) {
-  let pipeline = sharp(svg, { density: 300 }).resize(size, size)
-  if (padded) {
-    const pad = Math.round(size * 0.1)
-    pipeline = sharp(svg, { density: 300 })
-      .resize(size - pad * 2, size - pad * 2)
-      .extend({
-        top: pad,
-        bottom: pad,
-        left: pad,
-        right: pad,
-        background: { r: 22, g: 119, b: 255, alpha: 1 }, // 与 theme_color 一致
-      })
-  }
-  await pipeline.png().toFile(join(out, file))
+// 标准图标使用蓝底，maskable 使用白底原图，避免裁切时露出旧的背景色。
+async function genIcon(size, file, source = markOnBlue) {
+  await sharp(source).resize(size, size).png().toFile(join(out, file))
   console.log('  ✓', file)
 }
 
 console.log('[icons] generating PWA icons...')
 await genIcon(180, 'icon-180.png') // iOS apple-touch-icon
 await genIcon(192, 'icon-192.png')
-await genIcon(192, 'icon-192-maskable.png', true)
+await genIcon(192, 'icon-192-maskable.png', markOnWhite)
 await genIcon(256, 'icon-256.png')
 await genIcon(384, 'icon-384.png')
 await genIcon(512, 'icon-512.png')
-await genIcon(512, 'icon-512-maskable.png', true)
+await genIcon(512, 'icon-512-maskable.png', markOnWhite)
 
 // 2) iOS apple-touch-startup-image:按 device-width × dpr 全套
 // (Common iPhone/iPad lineups 2020-2025; portrait only)
@@ -80,7 +68,7 @@ for (const [w, h] of splashes) {
   })
     .composite([
       {
-        input: await sharp(svg, { density: 300 }).resize(iconSize, iconSize).png().toBuffer(),
+        input: await sharp(markOnBlue).resize(iconSize, iconSize).png().toBuffer(),
         gravity: 'center',
       },
     ])

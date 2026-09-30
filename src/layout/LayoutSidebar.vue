@@ -8,7 +8,7 @@
   -->
   <el-aside class="layout-sidebar" :width="app.sidebarCollapsed ? '58px' : '224px'">
     <div class="brand">
-      <div class="brand__logo">BC</div>
+      <BatchMark class="brand__logo" :size="34" />
       <div v-if="!app.sidebarCollapsed" class="brand__text">
         <div class="brand__title">{{ t('nav.appTitle') }}</div>
         <div class="brand__subtitle">Batch Console</div>
@@ -74,6 +74,7 @@
   import { useRoute, useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import { ChevronDown, PanelLeftClose, PanelLeftOpen } from '@lucide/vue'
+  import BatchMark from '@/components/common/BatchMark.vue'
   import { useAppStore } from '@/stores/app'
   import { usePermissionStore } from '@/stores/permission'
   import type { NavigationGroup, NavigationItem } from '@/constants/navigation'
@@ -217,15 +218,6 @@
   }
 
   .brand__logo {
-    display: grid;
-    place-items: center;
-    width: 34px;
-    height: 34px;
-    border-radius: 8px;
-    color: #fff;
-    font-size: 14px;
-    font-weight: 700;
-    background: linear-gradient(135deg, #1d7dff 0%, #4c9dff 100%);
     flex-shrink: 0;
   }
 

@@ -124,7 +124,7 @@ export default defineConfig(({ mode }) => {
           navigateFallback: '/index.html',
           navigateFallbackDenylist: [/^\/api\//, /^\/docs\//],
           // 静态资源 hash 命名,长期缓存 + SW 接管刷新
-          globPatterns: ['**/*.{js,css,html,svg,woff2}'],
+          globPatterns: ['**/*.{js,css,html,svg,woff2}', 'icons/icon-*.png'],
           // 排除大文件(echarts/x6 vendor chunk)避免预缓存膨胀
           maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
           // P7 Web Push:把自定义 push / notificationclick handler 注入生成的 SW
