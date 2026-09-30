@@ -53,6 +53,8 @@ if (files.length === 0) {
   process.exit(0)
 }
 
+run('UTF-8 text encoding', 'npm', ['run', 'check:encoding'])
+
 const srcChanged = hasAny(files, [(f) => /^src\/.+\.(vue|ts|tsx)$/.test(f)])
 const localeChanged = hasAny(files, [
   (f) => /^src\/locales\/.+\.(ts|json)$/.test(f),

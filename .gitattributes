@@ -1,0 +1,4 @@
+* text=auto eol=lf
+
+# 外部业务文件编码反例，必须保留原始字节，禁止 Git 做文本换行转换。
+e2e-data/06-file-pipeline/samples/sample-invalid-encoding.csv -text
