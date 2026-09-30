@@ -28,6 +28,7 @@
                   v-for="conversation in conversations"
                   :key="conversation.id"
                   class="conversation-list__item"
+                  :data-conversation-id="conversation.id"
                 >
                   <el-button
                     text
