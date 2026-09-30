@@ -198,6 +198,8 @@ E2E_AI_LIVE=1 E2E_SKIP_GLOBAL_SETUP=1 E2E_BASE_URL=http://127.0.0.1:5174 \
 
 此用例自行登录并先确认缺少 CSRF 头会得到 403，然后验证会话创建、刷新恢复和删除；通过不代表外部 provider、预算或跨租户链路已验收。
 
+AI 会话隔离使用 `e2e/ai-live-isolation.spec.ts`，同样需要启用持久化、关闭 bypass 的本机 Console API 与 PostgreSQL。提供 `E2E_AI_USERNAME/PASSWORD` 和 `BATCH_PLATFORM_DB_USERNAME/PASSWORD`，用 `E2E_AI_ISOLATION=1` 启用。用例验证列表不泄露非本人/其他租户会话，历史和续写返回 `404/NOT_FOUND`，并清理临时记录；不调用模型，不代替外部 provider 验收。
+
 移动端真实降级联测使用 `e2e/degradation-live-mobile.spec.ts`，默认跳过。需将前端 dev proxy 指向本机 Console API，并确认其 Trigger 下游不可用、`/scheduler/status` 返回 `X-Degraded-Source: trigger`：
 
 ```bash
