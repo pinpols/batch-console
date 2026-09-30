@@ -1,6 +1,7 @@
 import { fetchAllPageItems } from '@/api/adapters'
 import { get, post } from '@/api/client'
 import type { PageResponse } from '@/types'
+import type { operations } from '@/types/api.generated'
 import type {
   ConsoleAuditLogResponse,
   ConsoleDeadLetterTaskResponse,
@@ -21,15 +22,8 @@ import type {
   AiAuditLogResponse,
 } from '@/types/console-api'
 
-export interface AuditQueryFilters {
-  traceId?: string
-  operationType?: string
-  operatorId?: string
-  fileId?: number | string
-  operationResult?: string
-  startTime?: string
-  endTime?: string
-}
+type AuditQuery = NonNullable<operations['queryAuditLogs']['parameters']['query']>
+export type AuditQueryFilters = Omit<AuditQuery, 'tenantId' | 'pageNo' | 'pageSize'>
 
 export interface ExecutionLogFilters {
   traceId?: string
@@ -74,20 +68,6 @@ export function queryTraceSnapshot(
   return get<TraceSnapshotResponse>('/api/console/queries/trace-snapshot', {
     tenantId,
     traceId,
-  })
-}
-
-/** OpenAPI data 均为 PageResponse；将过滤参数传给后端（后端支持时减少传输量，客户端仍做兜底过滤） */
-export function queryAudits(tenantId: string, filters?: AuditQueryFilters) {
-  return fetchAllPageItems<ConsoleAuditLogResponse>('/api/console/queries/audits', {
-    tenantId,
-    ...(filters?.traceId ? { traceId: filters.traceId } : {}),
-    ...(filters?.operationType ? { operationType: filters.operationType } : {}),
-    ...(filters?.operatorId ? { operatorId: filters.operatorId } : {}),
-    ...(filters?.fileId ? { fileId: filters.fileId } : {}),
-    ...(filters?.operationResult ? { operationResult: filters.operationResult } : {}),
-    ...(filters?.startTime ? { startTime: filters.startTime } : {}),
-    ...(filters?.endTime ? { endTime: filters.endTime } : {}),
   })
 }
 

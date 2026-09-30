@@ -9,6 +9,9 @@
         {{ app.maintenance.message }}
       </span>
       <span v-if="etaText" class="maintenance-banner__eta">· {{ etaText }}</span>
+      <span v-if="app.maintenance.isStale" class="maintenance-banner__sync">
+        · {{ t('maintenance.syncStale') }}
+      </span>
       <!-- 受影响子系统 chip:有 affectedServices 列表时按 service 展示,否则不渲染(banner 走 message 兜底) -->
       <span
         v-for="svc in app.maintenance.affectedServices"
@@ -126,5 +129,9 @@
   .maintenance-banner__eta {
     margin-left: 6px;
     opacity: 0.8;
+  }
+  .maintenance-banner__sync {
+    margin-left: 6px;
+    font-weight: 600;
   }
 </style>

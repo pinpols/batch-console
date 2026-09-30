@@ -409,7 +409,7 @@
   import { instanceApi } from '@/api/instance'
   import { governanceApi, type GovernanceAlertRoutingRow } from '@/api/governance'
   import { workflowApi } from '@/api/workflow'
-  import { queryAudits } from '@/api/observabilityQueries'
+  import { queryAuditsPage } from '@/api/observabilityQueries'
   import type { ConsoleWorkflowDefinitionResponse } from '@/types/console-api'
   import { useTenantStore } from '@/stores/tenant'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
@@ -568,8 +568,8 @@
     if (!job.value) return
     auditLoading.value = true
     try {
-      const rows = await queryAudits(job.value.tenantId)
-      auditRows.value = rows
+      const result = await queryAuditsPage(job.value.tenantId, 1, 50)
+      auditRows.value = (result.items ?? [])
         .filter((row) => {
           const text = `${row.operationType ?? ''} ${row.detailSummary ?? ''} ${row.evidenceRef ?? ''}`
           return text.includes(job.value?.jobCode ?? '')

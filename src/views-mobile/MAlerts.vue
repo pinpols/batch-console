@@ -83,23 +83,39 @@
           </button>
         </div>
         <div v-if="row.status === 'OPEN'" class="m-card__actions">
-          <button class="m-btn" data-track="alerts.silence" @click="silence(row)">
+          <button
+            class="m-btn"
+            :disabled="writesFrozen"
+            data-track="alerts.silence"
+            @click="silence(row)"
+          >
             {{ t('mobile.alerts.silence') }}
           </button>
-          <button class="m-btn" data-track="alerts.ack" @click="ack(row)">
+          <button class="m-btn" :disabled="writesFrozen" data-track="alerts.ack" @click="ack(row)">
             {{ t('mobile.alerts.ack') }}
           </button>
-          <button class="m-btn m-btn--primary" data-track="alerts.close" @click="close(row)">
+          <button
+            class="m-btn m-btn--primary"
+            :disabled="writesFrozen"
+            data-track="alerts.close"
+            @click="close(row)"
+          >
             {{ t('mobile.alerts.close') }}
           </button>
         </div>
+      </div>
+      <div v-if="filtered.length > 0" class="m-load-more">
+        <button v-if="hasMore" class="m-btn" :disabled="loading" @click="loadMore">
+          {{ loading ? t('mobile.common.loadingMore') : t('mobile.common.loadMore') }}
+        </button>
+        <span v-else>{{ t('mobile.common.noMore') }}</span>
       </div>
     </div>
   </MPullRefresh>
 </template>
 
 <script setup lang="ts">
-  import { computed, nextTick, ref } from 'vue'
+  import { computed, nextTick, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { Search } from '@lucide/vue'
   import { ElMessage } from 'element-plus'
@@ -113,16 +129,23 @@
   import MPullRefresh from '@/layout-mobile/MPullRefresh.vue'
   import MSkeleton from '@/layout-mobile/MSkeleton.vue'
   import MSearchBar from '@/layout-mobile/MSearchBar.vue'
-  import { queryAlertsAll } from '@/api/alertsQuery'
+  import { queryAlertsPage } from '@/api/alertsQuery'
   import { acknowledgeAlert, silenceAlert, closeAlert } from '@/api/alertsCommands'
   import type { ConsoleAlertEventResponse } from '@/types/console-api'
   import { fmtDatetime } from '@/utils/datetime'
+  import { useWriteAvailability } from '@/composables/useWriteAvailability'
 
   const { t, te } = useI18n({ useScope: 'global' })
   const tenant = useTenantStore()
   const { copy } = useCopy()
+  const { writesFrozen, ensureWriteAvailable } = useWriteAvailability()
   const loading = ref(false)
   const rows = ref<ConsoleAlertEventResponse[]>([])
+  const page = ref(1)
+  const pageSize = 30
+  const total = ref(0)
+  const hasMore = ref(false)
+  const statusTotals = ref<Record<string, number>>({})
   const filter = ref<'all' | 'open' | 'acked' | 'closed'>('open')
 
   const filterOptions = computed(() => [
@@ -145,10 +168,10 @@
   // 4 tab 的 count(open 显示当前未处理量,acked/closed 显示历史量,all 显示总数)。
   // open 里如果有 CRITICAL/ERROR,badge 用红色突出
   const counts = computed<Record<string, number>>(() => ({
-    open: rows.value.filter((r) => r.status === 'OPEN').length,
-    acked: rows.value.filter((r) => r.status === 'ACKED').length,
-    closed: rows.value.filter((r) => r.status === 'CLOSED').length,
-    all: rows.value.length,
+    open: statusTotals.value.OPEN ?? 0,
+    acked: statusTotals.value.ACKED ?? 0,
+    closed: statusTotals.value.CLOSED ?? 0,
+    all: statusTotals.value.ALL ?? 0,
   }))
   const criticalOpenCount = computed(
     () =>
@@ -225,10 +248,44 @@
     }
   }
 
-  async function load() {
+  function selectedStatus(): string | undefined {
+    if (filter.value === 'open') return 'OPEN'
+    if (filter.value === 'acked') return 'ACKED'
+    if (filter.value === 'closed') return 'CLOSED'
+    return undefined
+  }
+
+  async function refreshCounts() {
+    const [all, open, acked, closed] = await Promise.all([
+      queryAlertsPage(tenant.tenantId, 1, 1),
+      queryAlertsPage(tenant.tenantId, 1, 1, { status: 'OPEN' }),
+      queryAlertsPage(tenant.tenantId, 1, 1, { status: 'ACKED' }),
+      queryAlertsPage(tenant.tenantId, 1, 1, { status: 'CLOSED' }),
+    ])
+    statusTotals.value = {
+      ALL: all.total ?? 0,
+      OPEN: open.total ?? 0,
+      ACKED: acked.total ?? 0,
+      CLOSED: closed.total ?? 0,
+    }
+  }
+
+  async function load(reset = true) {
     loading.value = true
     try {
-      rows.value = await queryAlertsAll(tenant.tenantId)
+      if (reset) page.value = 1
+      const status = selectedStatus()
+      const result = await queryAlertsPage(
+        tenant.tenantId,
+        page.value,
+        pageSize,
+        status ? { status } : undefined,
+      )
+      const next = result.items ?? []
+      rows.value = reset ? next : [...rows.value, ...next]
+      total.value = result.total ?? rows.value.length
+      hasMore.value = rows.value.length < total.value
+      if (reset) await refreshCounts()
     } catch {
       ElMessage.error(t('mobile.common.loadFail'))
     } finally {
@@ -236,7 +293,14 @@
     }
   }
 
+  async function loadMore() {
+    if (loading.value || !hasMore.value) return
+    page.value += 1
+    await load(false)
+  }
+
   async function ack(row: ConsoleAlertEventResponse) {
+    if (!ensureWriteAvailable()) return
     try {
       await acknowledgeAlert(row.id, { tenantId: tenant.tenantId })
       ElMessage.success(t('mobile.alerts.ackedToast'))
@@ -247,6 +311,7 @@
   }
 
   async function silence(row: ConsoleAlertEventResponse) {
+    if (!ensureWriteAvailable()) return
     try {
       await silenceAlert(row.id, { tenantId: tenant.tenantId })
       ElMessage.success(t('mobile.alerts.silencedToast'))
@@ -257,6 +322,7 @@
   }
 
   async function close(row: ConsoleAlertEventResponse) {
+    if (!ensureWriteAvailable()) return
     try {
       await confirmActionSheet(
         `${t('mobile.alerts.close')} #${row.id}?`,
@@ -276,7 +342,8 @@
   }
 
   // useTenantReload: setup 时 + tenant 切换时调用 load(替代 onMounted + watch 手写)
-  useTenantReload(load)
+  useTenantReload(() => load(true))
+  watch(filter, () => void load(true))
   // oncall 关键页:20s 轮询,切后台时暂停
   useAutoRefresh(load, REFRESH_INTERVAL_WARM_MS)
 </script>

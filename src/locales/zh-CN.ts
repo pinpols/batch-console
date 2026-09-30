@@ -1134,6 +1134,7 @@ export default {
     pageContact: '紧急情况请联系运维。',
     pageRetry: '立即重试',
     writeBlocked: '维护期间禁止此操作',
+    syncStale: '维护状态同步中断，当前信息可能已过期',
   },
   degradation: {
     bannerHeadline: '后端部分下游降级中',
@@ -1249,6 +1250,7 @@ export default {
       refresh: '刷新',
       loading: '加载中',
       loadingMore: '加载更多…',
+      loadMore: '加载更多',
       noMore: '没有更多了',
       retry: '重试',
       clear: '清除',

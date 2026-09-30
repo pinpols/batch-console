@@ -84,22 +84,34 @@
         <div v-if="isPending(row)" class="m-card__actions">
           <button
             class="m-btn m-btn--plain-danger"
+            :disabled="writesFrozen"
             data-track="approvals.reject"
             @click="reject(row)"
           >
             {{ t('mobile.approvals.reject') }}
           </button>
-          <button class="m-btn m-btn--primary" data-track="approvals.approve" @click="approve(row)">
+          <button
+            class="m-btn m-btn--primary"
+            :disabled="writesFrozen"
+            data-track="approvals.approve"
+            @click="approve(row)"
+          >
             {{ t('mobile.approvals.approve') }}
           </button>
         </div>
+      </div>
+      <div v-if="filtered.length > 0" class="m-load-more">
+        <button v-if="hasMore" class="m-btn" :disabled="loading" @click="loadMore">
+          {{ loading ? t('mobile.common.loadingMore') : t('mobile.common.loadMore') }}
+        </button>
+        <span v-else>{{ t('mobile.common.noMore') }}</span>
       </div>
     </div>
   </MPullRefresh>
 </template>
 
 <script setup lang="ts">
-  import { computed, nextTick, ref } from 'vue'
+  import { computed, nextTick, onUnmounted, ref, watch } from 'vue'
   import { useTenantReload } from '@/composables/useTenantReload'
   import { useI18n } from 'vue-i18n'
   import { Search } from '@lucide/vue'
@@ -111,13 +123,15 @@
   import MPullRefresh from '@/layout-mobile/MPullRefresh.vue'
   import MSkeleton from '@/layout-mobile/MSkeleton.vue'
   import MSearchBar from '@/layout-mobile/MSearchBar.vue'
-  import { queryApprovals, approveOne, rejectOne } from '@/api/approvals'
+  import { queryApprovalsPage, approveOne, rejectOne } from '@/api/approvals'
   import type { ConsoleApprovalCommandResponse } from '@/types/console-api'
   import { fmtDatetime } from '@/utils/datetime'
+  import { useWriteAvailability } from '@/composables/useWriteAvailability'
 
   const { t, te } = useI18n({ useScope: 'global' })
   const tenant = useTenantStore()
   const { copy } = useCopy()
+  const { writesFrozen, ensureWriteAvailable } = useWriteAvailability()
 
   const { data: metaEnums } = useConsoleMetaEnumsQuery()
   function resolveEnumLabel(group: string, value?: string | null): string {
@@ -128,6 +142,11 @@
   }
   const loading = ref(false)
   const rows = ref<ConsoleApprovalCommandResponse[]>([])
+  const page = ref(1)
+  const pageSize = 30
+  const total = ref(0)
+  const hasMore = ref(false)
+  const statusTotals = ref<Record<string, number>>({})
 
   type ApprovalFilter = 'pending' | 'approved' | 'rejected' | 'all'
   const filter = ref<ApprovalFilter>('pending')
@@ -154,12 +173,10 @@
 
   // 各 tab 的 count
   const counts = computed<Record<string, number>>(() => ({
-    pending: rows.value.filter((r) => r.approvalStatus === 'PENDING').length,
-    approved: rows.value.filter(
-      (r) => r.approvalStatus === 'APPROVED' || r.approvalStatus === 'EXECUTED',
-    ).length,
-    rejected: rows.value.filter((r) => r.approvalStatus === 'REJECTED').length,
-    all: rows.value.length,
+    pending: statusTotals.value.PENDING ?? 0,
+    approved: (statusTotals.value.APPROVED ?? 0) + (statusTotals.value.EXECUTED ?? 0),
+    rejected: statusTotals.value.REJECTED ?? 0,
+    all: statusTotals.value.ALL ?? 0,
   }))
 
   function badgeToneFor(filterKey: string) {
@@ -169,30 +186,7 @@
     return '' // all → 默认灰
   }
 
-  // tabs(状态)+ keyword(approvalNo/requesterId/target/actionType 模糊)
-  const filtered = computed(() => {
-    let list = rows.value
-    if (filter.value === 'pending') {
-      list = list.filter((r) => r.approvalStatus === 'PENDING')
-    } else if (filter.value === 'approved') {
-      list = list.filter((r) => r.approvalStatus === 'APPROVED' || r.approvalStatus === 'EXECUTED')
-    } else if (filter.value === 'rejected') {
-      list = list.filter((r) => r.approvalStatus === 'REJECTED')
-    }
-    const kw = keyword.value.trim().toLowerCase()
-    if (kw) {
-      list = list.filter((r) => {
-        return (
-          r.approvalNo?.toLowerCase().includes(kw) ||
-          r.requesterId?.toLowerCase().includes(kw) ||
-          r.targetId?.toLowerCase().includes(kw) ||
-          r.targetType?.toLowerCase().includes(kw) ||
-          r.actionType?.toLowerCase().includes(kw)
-        )
-      })
-    }
-    return list
-  })
+  const filtered = computed(() => rows.value)
 
   function fmt(ts?: string | null) {
     return fmtDatetime(ts)
@@ -216,10 +210,67 @@
     }
   }
 
-  async function load() {
+  function keywordFilter() {
+    const value = keyword.value.trim()
+    return value ? { keyword: value } : {}
+  }
+
+  async function refreshCounts() {
+    const base = keywordFilter()
+    const [all, pending, approved, executed, rejected] = await Promise.all([
+      queryApprovalsPage(tenant.tenantId, 1, 1, base),
+      queryApprovalsPage(tenant.tenantId, 1, 1, { ...base, approvalStatus: 'PENDING' }),
+      queryApprovalsPage(tenant.tenantId, 1, 1, { ...base, approvalStatus: 'APPROVED' }),
+      queryApprovalsPage(tenant.tenantId, 1, 1, { ...base, approvalStatus: 'EXECUTED' }),
+      queryApprovalsPage(tenant.tenantId, 1, 1, { ...base, approvalStatus: 'REJECTED' }),
+    ])
+    statusTotals.value = {
+      ALL: all.total ?? 0,
+      PENDING: pending.total ?? 0,
+      APPROVED: approved.total ?? 0,
+      EXECUTED: executed.total ?? 0,
+      REJECTED: rejected.total ?? 0,
+    }
+  }
+
+  async function queryCurrentPage() {
+    const base = keywordFilter()
+    if (filter.value === 'approved') {
+      const [approved, executed] = await Promise.all([
+        queryApprovalsPage(tenant.tenantId, page.value, pageSize, {
+          ...base,
+          approvalStatus: 'APPROVED',
+        }),
+        queryApprovalsPage(tenant.tenantId, page.value, pageSize, {
+          ...base,
+          approvalStatus: 'EXECUTED',
+        }),
+      ])
+      return {
+        items: [...(approved.items ?? []), ...(executed.items ?? [])].sort((a, b) =>
+          String(b.createdAt ?? '').localeCompare(String(a.createdAt ?? '')),
+        ),
+        total: (approved.total ?? 0) + (executed.total ?? 0),
+      }
+    }
+    const status =
+      filter.value === 'pending' ? 'PENDING' : filter.value === 'rejected' ? 'REJECTED' : undefined
+    return queryApprovalsPage(tenant.tenantId, page.value, pageSize, {
+      ...base,
+      ...(status ? { approvalStatus: status } : {}),
+    })
+  }
+
+  async function load(reset = true) {
     loading.value = true
     try {
-      rows.value = await queryApprovals(tenant.tenantId)
+      if (reset) page.value = 1
+      const result = await queryCurrentPage()
+      const next = result.items ?? []
+      rows.value = reset ? next : [...rows.value, ...next]
+      total.value = result.total ?? rows.value.length
+      hasMore.value = rows.value.length < total.value
+      if (reset) await refreshCounts()
     } catch {
       ElMessage.error(t('mobile.common.loadFail'))
     } finally {
@@ -227,8 +278,15 @@
     }
   }
 
+  async function loadMore() {
+    if (loading.value || !hasMore.value) return
+    page.value += 1
+    await load(false)
+  }
+
   // 通过 = 构造性操作,直接执行 + toast,不弹二次确认(iOS 习惯)
   async function approve(row: ConsoleApprovalCommandResponse) {
+    if (!ensureWriteAvailable()) return
     try {
       await approveOne(row.approvalNo, { tenantId: tenant.tenantId })
       ElMessage.success(t('mobile.approvals.approvedToast'))
@@ -239,6 +297,7 @@
   }
 
   async function reject(row: ConsoleApprovalCommandResponse) {
+    if (!ensureWriteAvailable()) return
     try {
       await confirmActionSheet(
         `${t('mobile.approvals.reject')} ${row.approvalNo}?`,
@@ -256,5 +315,14 @@
       /* cancelled */
     }
   }
-  useTenantReload(load)
+  useTenantReload(() => load(true))
+  watch(filter, () => void load(true))
+  let searchTimer: ReturnType<typeof setTimeout> | null = null
+  watch(keyword, () => {
+    if (searchTimer) clearTimeout(searchTimer)
+    searchTimer = setTimeout(() => void load(true), 300)
+  })
+  onUnmounted(() => {
+    if (searchTimer) clearTimeout(searchTimer)
+  })
 </script>

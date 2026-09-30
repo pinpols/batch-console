@@ -92,7 +92,7 @@ src/
 - **API 客户端**:统一走 `src/api/client.ts` 的 `get/post/put/del`;axios 拦截器(auth / tenant / idempotency / response 解包)已配,**不要**自己 new axios 实例
 - **租户切换重取**:依赖 `tenant.tenantId` 的视图统一用 `useTenantReload(loadFn)`,**禁**手写 `onMounted + watch(tenant.tenantId)`。TanStack Query 场景把 `tenant.tenantId` 写进 `queryKey` 即可
 - **XSS 兜底**:`v-html` 已被 ESLint 禁用(`vue/no-v-html: error`);需 HTML 渲染用 `v-safe-html="content"`(走 DOMPurify);手动 `innerHTML = ...` 先经 `purifyHtml()`(`src/utils/safeHtml.ts`)。**不信任后端是否已转义**
-- **认证**:HttpOnly cookie `batch_console_token`(BE 下发),axios `withCredentials: true`。兼容期 Authorization header 由 interceptor 注入(双轨,后续删)
+- **认证**:HttpOnly cookie `batch_console_token`(BE 下发),axios `withCredentials: true`。前端不读取 token、不注入 Authorization header；后端对旧客户端的兼容不属于前端实现。
 
 ## i18n
 

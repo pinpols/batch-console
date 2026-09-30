@@ -106,7 +106,7 @@
   import { useAuthStore } from '@/stores/auth'
   import { useTenantReload } from '@/composables/useTenantReload'
   import { useDrawerAutoClose } from '@/composables/useDrawerAutoClose'
-  import { queryApprovals } from '@/api/approvals'
+  import { queryApprovalsPage } from '@/api/approvals'
 
   const { t } = useI18n({ useScope: 'global' })
   const route = useRoute()
@@ -330,13 +330,23 @@
   async function loadPendingCounts() {
     if (!tenant.tenantId) return
     try {
-      const items = await queryApprovals(tenant.tenantId)
       const me = auth.userInfo?.userId
+      const approvalTypes = Array.from(
+        new Set(cards.value.flatMap((card) => card.approvalTypes).filter(Boolean)),
+      )
+      const results = await Promise.all(
+        approvalTypes.map(async (approvalType) => ({
+          approvalType,
+          result: await queryApprovalsPage(tenant.tenantId, 1, 1, {
+            approvalStatus: 'PENDING',
+            approvalType,
+            ...(me ? { requesterId: me } : {}),
+          }),
+        })),
+      )
       const counts: Record<string, number> = {}
-      for (const it of items ?? []) {
-        if (it.approvalStatus !== 'PENDING') continue
-        if (me && it.requesterId && it.requesterId !== me) continue
-        counts[it.approvalType] = (counts[it.approvalType] ?? 0) + 1
+      for (const { approvalType, result } of results) {
+        counts[approvalType] = result.total ?? 0
       }
       pendingByType.value = counts
     } catch {

@@ -2,13 +2,15 @@ import type { AxiosRequestConfig } from 'axios'
 import { get, put } from '@/api/client'
 import type { components } from '@/types/api.generated'
 
-export interface MaintenanceStatus {
-  enabled: boolean
-  readOnly: boolean
+type BackendMaintenanceStatus = components['schemas']['MaintenanceStatus']
+export type MaintenanceStatus = Omit<
+  BackendMaintenanceStatus,
+  'message' | 'etaAt' | 'affectedServices' | 'version'
+> & {
   message: string | null
   etaAt: string | null
-  /** 受影响子系统 code 列表(空数组=整站维护) */
   affectedServices: string[]
+  version: number | null
 }
 
 /** 复用 OpenAPI 生成类型(与 BE `UpdateMaintenanceRequest` Java DTO 对齐)。重新生成:`npm run gen:api`。 */
@@ -49,5 +51,6 @@ function normalize(data: Partial<MaintenanceStatus> | null): MaintenanceStatus {
     message: data?.message ?? null,
     etaAt: data?.etaAt ?? null,
     affectedServices: Array.isArray(data?.affectedServices) ? data.affectedServices : [],
+    version: data?.version ?? null,
   }
 }

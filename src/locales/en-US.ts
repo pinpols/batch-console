@@ -1148,6 +1148,7 @@ const messages: Messages = {
     pageContact: 'Contact ops for urgent issues.',
     pageRetry: 'Retry now',
     writeBlocked: 'Write operations are disabled during maintenance',
+    syncStale: 'Maintenance status sync is interrupted and may be stale',
   },
   degradation: {
     bannerHeadline: 'Some downstream services degraded',
@@ -1264,6 +1265,7 @@ const messages: Messages = {
       refresh: 'Refresh',
       loading: 'Loading',
       loadingMore: 'Loading more…',
+      loadMore: 'Load more',
       noMore: 'No more',
       retry: 'Retry',
       clear: 'Clear',

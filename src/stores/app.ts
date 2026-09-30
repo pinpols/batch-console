@@ -140,6 +140,14 @@ export const useAppStore = defineStore('app', () => {
     affectedServices: string[]
     /** 当前用户是 admin 旁路(由响应头 X-Maintenance: admin-bypass 触发) */
     adminBypass: boolean
+    /** 后端维护配置版本；旧后端未提供时为空。 */
+    version: number | null
+    /** 前端最近一次成功同步时间。 */
+    lastSyncedAt: string | null
+    /** 最近一次同步失败摘要。 */
+    syncError: string | null
+    /** 连续无法同步且状态可能过期。 */
+    isStale: boolean
   }>({
     enabled: false,
     readOnly: false,
@@ -147,13 +155,17 @@ export const useAppStore = defineStore('app', () => {
     etaAt: null,
     affectedServices: [],
     adminBypass: false,
+    version: null,
+    lastSyncedAt: null,
+    syncError: null,
+    isStale: false,
   })
 
   function setMaintenance(state: Partial<typeof maintenance.value>) {
     maintenance.value = { ...maintenance.value, ...state }
   }
 
-  /** 写操作是否被冻结(enabled=true 或 readOnly=true)— 给写按钮 :disabled 用 */
+  /** 写操作是否被冻结；完整维护和只读维护都禁止普通业务写入。 */
   const writesFrozen = computed(() => maintenance.value.enabled)
 
   // 降级模式状态 — BE Resilience4j circuit breaker 触发降级时,响应头加

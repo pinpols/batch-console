@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+- 维护模式增加统一写操作冻结、动态轮询、同步陈旧状态和 503 即时跳转；审批、审计、告警及其移动/摘要入口改为服务端分页，并删除旧的全量聚合兼容调用。
+- 升级 Pinia、Sentry、Vitest、jsdom、web-vitals 与相关工具链主版本；TypeScript 7 和 Mermaid 12 因当前生态不兼容或高危传递依赖继续固定在已验证安全版本。
+- 更新发布验收矩阵、OpenAPI wrapper 迁移状态及分页治理记录，并把已落地的密码改造文档明确降级为历史记录。
 - 升级 GitHub Actions、Artifact 上传下载、Docker 构建、Release Please 与 Renovate 的 CI 运行依赖到 Node 24 兼容主版本；Runner 固定为 Ubuntu 26.04，并通过完整门禁验证跨 Job 制品闭环。
 - 统一平台文本为 UTF-8 无 BOM，补充编辑器、容器、Nginx、浏览器导出与 Windows 工具约束，并将编码检查接入本地预检和 CI；外部批量文件继续按后端模板字符集解析。
 - 页面级加载遮罩使用品牌图标轻量行走动效，Toast 恢复成功/警告/失败等语义图标并修复多条消息重叠；减少动态效果时呈现静态加载状态。

@@ -3,11 +3,12 @@
 来源:Round-1 TOP-10 R3-7。PR #253 已让 BE OpenAPI schema 完善,#41 重新生成了
 `src/types/api.generated.ts`(~16k 行),`src/types/console-api.ts` 抽离了常用 schema 别名。
 
-本 PR 仅做 PoC 迁移 2 个 wrapper,用于验证 generated types 与手写 interface 的字段一致性、
+早期 PR 先做 PoC 迁移 2 个 wrapper,用于验证 generated types 与手写 interface 的字段一致性、
 派生(`operations[...]['requestBody']`、`responses[...]`)的可读性,以及对 view 层
-零侵入的可行性。**剩余 wrapper 留作后续批量 follow-up。**
+零侵入的可行性。2026-09-30 又完成审批、告警、审计查询参数迁移，三者直接从
+`operations[...]` 派生筛选类型，并删除对应全量聚合兼容入口。
 
-## 已迁移(2)
+## 已迁移批次
 
 ### 1. `src/api/webhooks.ts`(简单 — 纯 CRUD)
 - `CreateWebhookBody` / `UpdateWebhookBody` 改为 `operations[...]['requestBody'].content['application/json']` 派生。
@@ -24,6 +25,14 @@
 - 调用方 `OperationAuditList.vue` 因 generated 把 page 字段标 optional,加了 `?? []` / `?? 0` 兜底
   (语义等价,只是显式)。
 
+### 3. 运行态查询参数
+
+- `src/api/approvals.ts` → `operations['queryApprovals']`。
+- `src/api/alertsQuery.ts` → `operations['queryAlerts']`。
+- `src/api/observabilityQueries.ts` 的审计查询 → `operations['queryAuditLogs']`。
+- 页面 envelope 暂保留统一 `PageResponse<T>`：后端通用 `PageResponse` 在 OpenAPI 中丢失 item
+  泛型，直接派生只能得到 `unknown[]`，此处不制造“看似 generated、实为强转”的假类型。
+
 ## 字段不一致(已在 wrapper 注释里记录)
 
 | 位置 | 旧 FE 手写 | BE generated | 处理 |
@@ -35,7 +44,8 @@
 
 ## 剩余范围 + 风险
 
-- 仓内手写 wrapper 总数:**51 个**(`src/api/*.ts` 去测试文件后),本 PR 迁 2 个,**剩余 49 个**。
+- wrapper 数量会随业务变化，不再在长期文档固化瞬时统计；以 `src/api/*.ts` 和
+  generated type import 的当前扫描结果为准。
 - 已经使用 `@/types/console-api` 别名的 wrapper(`approvals / configReleases / workers /
   configReleases / file / ...`)只是 response item 已对齐,**request body / page envelope
   / query 仍是手写**,属于 follow-up 范围。

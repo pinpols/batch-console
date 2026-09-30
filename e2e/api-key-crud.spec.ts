@@ -17,7 +17,7 @@ test.describe('API Key management CRUD (API Key 增删)', () => {
 
   test('新增 API Key → 表格出现 → 查看详情 → 吊销清理', async ({ page }) => {
     // —— 新增 ——
-    await page.getByRole('button', { name: '新增 API Key' }).click()
+    await page.locator('button.pretty-add-button', { hasText: '新增 API Key' }).click()
     await expect(page.getByText('新增 API Key').first()).toBeVisible()
     await page.getByLabel('名称').fill(uniqueName)
     // 权限范围是 multiple el-select(可多选),不能 fill —— 打开下拉勾选最多两项

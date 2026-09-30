@@ -1,30 +1,34 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { approveOne, rejectOne, batchApprove, batchReject, queryApprovals } from './approvals'
+import { approveOne, rejectOne, batchApprove, batchReject, queryApprovalsPage } from './approvals'
 
 vi.mock('./client', () => ({
   get: vi.fn(),
   post: vi.fn(),
 }))
-vi.mock('./adapters', () => ({
-  fetchAllPageItems: vi.fn(),
-}))
-
-import { post } from './client'
-import { fetchAllPageItems } from './adapters'
+import { get, post } from './client'
 
 const mockedPost = vi.mocked(post)
-const mockedAll = vi.mocked(fetchAllPageItems)
+const mockedGet = vi.mocked(get)
 
 describe('approvalsApi', () => {
   beforeEach(() => {
     mockedPost.mockReset()
-    mockedAll.mockReset()
+    mockedGet.mockReset()
   })
 
-  it('queryApprovals aggregates pages by tenantId', async () => {
-    mockedAll.mockResolvedValue([])
-    await queryApprovals('ta')
-    expect(mockedAll).toHaveBeenCalledWith('/api/console/queries/approvals', { tenantId: 'ta' })
+  it('queryApprovalsPage sends generated query filters to server pagination', async () => {
+    mockedGet.mockResolvedValue({ total: 0, pageNo: 1, pageSize: 15, items: [] })
+    await queryApprovalsPage('ta', 1, 15, {
+      approvalStatus: 'PENDING',
+      keyword: 'job-a',
+    })
+    expect(mockedGet).toHaveBeenCalledWith('/api/console/queries/approvals', {
+      tenantId: 'ta',
+      pageNo: 1,
+      pageSize: 15,
+      approvalStatus: 'PENDING',
+      keyword: 'job-a',
+    })
   })
 
   it('approveOne POST with encoded approvalNo + body', async () => {

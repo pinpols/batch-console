@@ -1,6 +1,6 @@
 import { get } from '@/api/client'
-import { fetchAllPageItems } from '@/api/adapters'
 import type { PageResponse } from '@/types'
+import type { operations } from '@/types/api.generated'
 import type { ConsoleAlertEventResponse } from '@/types/console-api'
 
 /**
@@ -8,20 +8,8 @@ import type { ConsoleAlertEventResponse } from '@/types/console-api'
  * severity / status / alertType / traceId 后端精确过滤;startDate / endDate 按 last_seen_at 范围。
  * 旧的 `acknowledged` 布尔已废弃 —— 直接传 `status` 的真值(OPEN/ACKED/SUPPRESSED/CLOSED)。
  */
-export interface AlertQueryFilters {
-  /** 严重级别精确过滤(severity enum) */
-  severity?: string
-  /** 告警状态精确过滤(alertStatus enum:OPEN/ACKED/SUPPRESSED/CLOSED) */
-  status?: string
-  /** 告警类型精确过滤 */
-  alertType?: string
-  /** traceId 精确过滤 */
-  traceId?: string
-  /** last_seen_at 范围起(ISO date 或 datetime) */
-  startDate?: string
-  /** last_seen_at 范围止(ISO date 或 datetime) */
-  endDate?: string
-}
+type AlertQuery = NonNullable<operations['queryAlerts']['parameters']['query']>
+export type AlertQueryFilters = Omit<AlertQuery, 'tenantId' | 'pageNo' | 'pageSize'>
 
 function toQuery(filters?: AlertQueryFilters): Record<string, string> {
   return {
@@ -32,17 +20,6 @@ function toQuery(filters?: AlertQueryFilters): Record<string, string> {
     ...(filters?.startDate ? { startDate: filters.startDate } : {}),
     ...(filters?.endDate ? { endDate: filters.endDate } : {}),
   }
-}
-
-/**
- * @deprecated 端上全量聚合(大租户告警上万会卡 + 4000 截断);新代码用 queryAlertsPage 服务端分页。
- *             仅保留给过渡调用方。
- */
-export function queryAlertsAll(tenantId: string, filters?: AlertQueryFilters) {
-  return fetchAllPageItems<ConsoleAlertEventResponse>('/api/console/queries/alerts', {
-    tenantId,
-    ...toQuery(filters),
-  })
 }
 
 /**
