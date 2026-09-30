@@ -7,6 +7,7 @@
       </transition>
     </div>
     <div class="mobile-appbar__right">
+      <AiAssistantLauncher mobile />
       <el-popover
         placement="bottom-end"
         popper-class="mobile-appbar__popover"
@@ -97,6 +98,7 @@
   import { useLocale } from '@/composables/useLocale'
   import TenantSelect from '@/components/common/TenantSelect.vue'
   import BatchMark from '@/components/common/BatchMark.vue'
+  import AiAssistantLauncher from '@/components/common/AiAssistantLauncher.vue'
 
   withDefaults(defineProps<{ scrolled?: boolean }>(), { scrolled: false })
 

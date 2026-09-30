@@ -7,6 +7,7 @@
         :data="pagedRows"
         :loading="tableBlocking"
         :error="loadError"
+        :empty-text="triggerDegraded ? t('triggerList.degradedEmpty') : undefined"
         :on-retry="load"
         :total="filtered.length"
         v-model:page="page"
@@ -158,6 +159,7 @@
   } from '@/api/triggers'
   import { toPageResult } from '@/api/adapters'
   import { useTenantStore } from '@/stores/tenant'
+  import { useAppStore } from '@/stores/app'
   import { useTenantReload } from '@/composables/useTenantReload'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
@@ -168,6 +170,8 @@
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
 
   const tenant = useTenantStore()
+  const app = useAppStore()
+  const triggerDegraded = computed(() => app.activeDegradationSources.includes('trigger'))
   const loading = ref(false)
   const loadError = ref<unknown>(null)
   const { filterBusy, tableBlocking, runSearch, runReset, runRefresh } =

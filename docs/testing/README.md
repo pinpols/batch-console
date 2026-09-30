@@ -189,6 +189,15 @@ bash scripts/local/fe-acceptance.sh           # 或 /fe-acceptance
 bash scripts/local/fe-acceptance.sh --skip-e2e-full
 ```
 
+AI 会话正向联测使用 `e2e/ai-live-persistence.spec.ts`，默认跳过。运行前需单独启动已开启 AI 与持久化、且 `bypass-mode=false` 的后端；可使用仅返回固定答案的本地 OpenAI-compatible 模型桩，不要求外部模型密钥。将前端 dev proxy 指向该后端，并在环境变量中提供 `E2E_AI_USERNAME`、`E2E_AI_PASSWORD`，再运行：
+
+```bash
+E2E_AI_LIVE=1 E2E_SKIP_GLOBAL_SETUP=1 E2E_BASE_URL=http://127.0.0.1:5174 \
+  npx playwright test e2e/ai-live-persistence.spec.ts --workers=1
+```
+
+此用例自行登录并先确认缺少 CSRF 头会得到 403，然后验证会话创建、刷新恢复和删除；通过不代表外部 provider、预算或跨租户链路已验收。
+
 ---
 
 ## 6. 守护测试 / 运行期 Guard(安全红线,改路径要确认没被绕过)

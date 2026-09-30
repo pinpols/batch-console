@@ -118,9 +118,7 @@
   .maintenance-banner__text {
     flex: 1;
     min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    overflow-wrap: anywhere;
   }
   .maintenance-banner__msg {
     margin-left: 6px;

@@ -51,20 +51,19 @@
     padding: 8px 16px;
     font-size: 13px;
     line-height: 1.4;
-    background: var(--color-warning-light, #fef3c7);
-    color: var(--color-warning, #b45309);
-    border-bottom: 1px solid rgb(180 83 9 / 18%);
+    background: color-mix(in srgb, var(--color-warning) 10%, var(--color-bg-card));
+    color: var(--color-text-primary);
+    border-bottom: 1px solid var(--color-warning);
   }
   .degradation-banner__icon {
     flex-shrink: 0;
     font-size: 18px;
+    color: var(--color-warning);
   }
   .degradation-banner__text {
     flex: 1;
     min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    overflow-wrap: anywhere;
   }
   .degradation-banner__msg {
     margin-left: 6px;
@@ -74,8 +73,8 @@
     display: inline-block;
     margin-left: 6px;
     padding: 1px 8px;
-    border-radius: 10px;
-    background: rgb(255 255 255 / 60%);
+    border-radius: var(--radius-button);
+    background: var(--color-fill-light);
     font-size: 11px;
     font-weight: 600;
   }

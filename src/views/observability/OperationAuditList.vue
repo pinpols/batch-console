@@ -2,6 +2,11 @@
   <PageContainer>
     <PageHeader>
       <template #actions>
+        <RouterLink to="/observability/usage">
+          <el-button :icon="ChartNoAxesCombined">{{
+            t('page.observabilityUsage.title')
+          }}</el-button>
+        </RouterLink>
         <RouterLink to="/observability/audits">
           <el-button :icon="FileClock">
             {{ t('page.observabilityAudits.title') }}
@@ -183,7 +188,7 @@
   import { reactive, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { RouterLink } from 'vue-router'
-  import { FileClock } from '@lucide/vue'
+  import { ChartNoAxesCombined, FileClock } from '@lucide/vue'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
