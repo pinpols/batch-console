@@ -2361,6 +2361,74 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/console/ai/conversations': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** List the current user's AI conversations */
+    get: operations['listConsoleAiConversations']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/ai/conversations/{conversationId}/turns': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** List turns for a conversation owned by the current user */
+    get: operations['listConsoleAiConversationTurns']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/ai/conversations/{conversationId}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    /** Delete a conversation owned by the current user */
+    delete: operations['deleteConsoleAiConversation']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/ai/cost-summary': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Get this tenant's estimated AI usage for a UTC calendar month */
+    get: operations['getConsoleAiCostSummary']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/console/queries/audits': {
     parameters: {
       query?: never
@@ -7220,6 +7288,15 @@ export interface components {
     CommonResponseAiChatResponse: components['schemas']['CommonResponseBase'] & {
       data?: components['schemas']['AiChatResponse']
     }
+    CommonResponseConsoleAiConversationList: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['ConsoleAiConversationView'][]
+    }
+    CommonResponseConsoleAiTurnList: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['ConsoleAiTurnView'][]
+    }
+    CommonResponseConsoleAiCostSummary: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['ConsoleAiCostSummary']
+    }
     CommonResponseFileArrivalGroupList: components['schemas']['CommonResponseBase'] & {
       data?: components['schemas']['PageResponse']
     }
@@ -7719,14 +7796,28 @@ export interface components {
     AiChatRequest: {
       /** @description 租户 id;可由请求体或请求头携带(两者都给时须一致)。 */
       tenantId?: string
-      /** @description 会话 id,多轮对话续接时回传上一轮响应的 sessionId;不传则后端以本次 requestId 起新会话。 */
+      /** @description 会话 id；服务端持久化开启时续接需由同一租户和操作者所有。 */
       sessionId?: string
+      /**
+       * @description 页面上下文 schema 版本；仅支持 v1。
+       * @default v1
+       * @enum {string}
+       */
+      contextVersion: 'v1'
       /** @description 用户问题(必填,@NotBlank)。 */
       prompt: string
-      /** @description 可选的附加上下文,任意 JSON 键值对(Map<String,Object>)。 */
+      /** @description v1 兼容字段；只允许 pageType、objectType、objectId 字符串。 */
       context?: {
-        [key: string]: unknown
+        pageType?: string
+        objectType?: string
+        objectId?: string
       }
+      pageContext?: components['schemas']['AiPageContextRequest']
+    }
+    AiPageContextRequest: {
+      pageType?: string
+      objectType?: string
+      objectId?: string
     }
     AiChatResponse: {
       /** @description 本次请求 id（沿用请求元数据 requestId，缺失时后端生成）。 */
@@ -7772,8 +7863,65 @@ export interface components {
       promptPreview: string
       responsePreview: string
       refusalReason: string
+      /** Format: int32 */
+      promptTokens: number | null
+      /** Format: int32 */
+      completionTokens: number | null
+      /** Format: double */
+      estimatedCostUsd: number | null
+      /** @enum {string} */
+      costStatus: 'UNPRICED' | 'PRICED' | 'RESERVED'
       /** Format: date-time */
       createdAt: string
+    }
+    ConsoleAiConversationView: {
+      id: string
+      title: string
+      /** @enum {string} */
+      contextVersion: 'v1'
+      /** Format: date-time */
+      createdAt: string
+      /** Format: date-time */
+      updatedAt: string
+      /** Format: date-time */
+      expiresAt: string
+    }
+    ConsoleAiTurnView: {
+      /** Format: int64 */
+      turnNo: number
+      /** @enum {string} */
+      contextVersion: 'v1'
+      prompt: string
+      response: string | null
+      /** @enum {string} */
+      status: 'IN_PROGRESS' | 'COMPLETE' | 'FAILED' | 'REJECTED'
+      promptDecision: string | null
+      modelName: string | null
+      /** Format: int32 */
+      promptTokens: number | null
+      /** Format: int32 */
+      completionTokens: number | null
+      /** Format: double */
+      estimatedCostUsd: number | null
+      /** Format: date-time */
+      createdAt: string
+      /** Format: date-time */
+      completedAt: string | null
+    }
+    ConsoleAiCostSummary: {
+      month: string
+      /** Format: int64 */
+      requestCount: number
+      /** Format: int64 */
+      promptTokens: number
+      /** Format: int64 */
+      completionTokens: number
+      /** Format: double */
+      estimatedCostUsd: number
+      /** Format: double */
+      reservedCostUsd: number
+      /** Format: double */
+      monthlyBudgetUsd: number
     }
     ConsoleAlertEventResponse: {
       /** Format: int64 */
@@ -14878,6 +15026,98 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['CommonResponseAiChatResponse']
+        }
+      }
+    }
+  }
+  listConsoleAiConversations: {
+    parameters: {
+      query?: {
+        limit?: number
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Owner-scoped conversation list */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseConsoleAiConversationList']
+        }
+      }
+    }
+  }
+  listConsoleAiConversationTurns: {
+    parameters: {
+      query?: {
+        beforeTurnNo?: number
+        limit?: number
+      }
+      header?: never
+      path: {
+        conversationId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Conversation history, newest first */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseConsoleAiTurnList']
+        }
+      }
+    }
+  }
+  deleteConsoleAiConversation: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        conversationId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Conversation deletion result */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseObject']
+        }
+      }
+    }
+  }
+  getConsoleAiCostSummary: {
+    parameters: {
+      query?: {
+        /** @description UTC billing month in YYYY-MM format; defaults to current UTC month. */
+        month?: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Estimated token usage and monthly budget state */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseConsoleAiCostSummary']
         }
       }
     }

@@ -3,10 +3,10 @@
  *
  * 与 BE `workflow_definition` / `workflow_node` / `workflow_edge` 三表的字段映射见
  * `file-batch-system/docs/design/workflow-dag-designer.md` §5。Spike 阶段只覆盖 START / END / JOB,
- * 其余节点(GATEWAY / FILE_STEP / APPROVAL)在 codec 中作为通用矩形渲染,字段透传。
+ * 其余节点(GATEWAY / FILE_STEP)在 codec 中作为通用矩形渲染,字段透传。
  */
 
-export type DesignerNodeType = 'START' | 'END' | 'JOB' | 'FILE_STEP' | 'GATEWAY' | 'APPROVAL'
+export type DesignerNodeType = 'START' | 'END' | 'JOB' | 'FILE_STEP' | 'GATEWAY'
 
 export interface DesignerNode {
   id: string

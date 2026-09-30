@@ -87,13 +87,13 @@ describe('QuickPalette', () => {
     setActivePinia(createPinia())
   })
 
-  it('visible 时渲染 input + 6 类型行', async () => {
+  it('visible 时渲染 input + 5 类型行', async () => {
     const { wrapper } = factory(true)
     await nextTick()
     expect(wrapper.find('.quick-palette__mask').exists()).toBe(true)
     expect(wrapper.find('.quick-palette__input').exists()).toBe(true)
     const items = wrapper.findAll('.quick-palette__item')
-    expect(items.length).toBe(6) // START / END / JOB / GATEWAY / FILE_STEP / APPROVAL
+    expect(items.length).toBe(5) // START / END / JOB / GATEWAY / FILE_STEP
   })
 
   it('搜索 "job" → 仅保留 JOB 类型行', async () => {

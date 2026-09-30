@@ -48,7 +48,7 @@
   /**
    * Workflow DAG 设计器节点配色 token(P8 视觉统一)。
    * 每类节点一对 base / light:base 作描边 + 文字,light 作填充背景。
-   * START 绿 / END 红 / JOB 蓝 / GATEWAY 橙 / FILE_STEP 青绿(与 START 区分)/ APPROVAL 紫。
+   * START 绿 / END 红 / JOB 蓝 / GATEWAY 橙 / FILE_STEP 青绿(与 START 区分)。
    * 另含交互态:selected(选中描边)/ error(校验失败描边 + 浅底)。
    */
   --wf-node-start: #54a772;
@@ -61,8 +61,6 @@
   --wf-node-gateway-light: #fdf3e6;
   --wf-node-file-step: #0d9aa6;
   --wf-node-file-step-light: #e6f7f8;
-  --wf-node-approval: #8b5cf6;
-  --wf-node-approval-light: #f3eefe;
   --wf-node-selected: var(--color-primary);
   --wf-node-error: var(--color-danger);
   --wf-node-error-light: #fdeeee;

@@ -3,7 +3,7 @@
  *
  * Spike 阶段:
  * - START / END / JOB 渲染各自专用 Vue 节点(StartNode / EndNode / JobNode)
- * - GATEWAY / FILE_STEP / APPROVAL 占位为通用矩形(nodeType 透传,下阶段在 codec 不动的前提下接专用节点)
+ * - GATEWAY / FILE_STEP 占位为通用矩形(nodeType 透传,下阶段在 codec 不动的前提下接专用节点)
  * - nodeCode 同时作为 X6 node id,保证幂等且与 BE 字段对齐
  */
 
@@ -21,7 +21,6 @@ const KNOWN_NODE_TYPES: ReadonlySet<DesignerNodeType> = new Set<DesignerNodeType
   'JOB',
   'FILE_STEP',
   'GATEWAY',
-  'APPROVAL',
 ])
 
 function normalizeNodeType(raw: string): DesignerNodeType {

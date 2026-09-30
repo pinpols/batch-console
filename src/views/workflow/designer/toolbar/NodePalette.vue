@@ -3,7 +3,6 @@
   import { ElMessage } from 'element-plus'
   import type { Component } from 'vue'
   import {
-    CheckSquare,
     FileInput,
     GitFork,
     PanelLeftClose,
@@ -63,12 +62,6 @@
       labelKey: 'workflowDesignerMvp.nodeFileStep',
       styleClass: 'palette-item--file',
       icon: FileInput,
-    },
-    {
-      type: 'APPROVAL',
-      labelKey: 'workflowDesignerMvp.nodeApproval',
-      styleClass: 'palette-item--approval',
-      icon: CheckSquare,
     },
   ]
 
@@ -273,8 +266,5 @@
   }
   .palette-item--file {
     --palette-accent: var(--wf-node-file-step);
-  }
-  .palette-item--approval {
-    --palette-accent: var(--wf-node-approval);
   }
 </style>
