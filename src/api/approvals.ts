@@ -1,33 +1,13 @@
 import { get, post } from '@/api/client'
-import { fetchAllPageItems } from '@/api/adapters'
 import type { PageResponse } from '@/types'
+import type { operations } from '@/types/api.generated'
 import type {
   ConsoleApprovalCommandResponse,
   ConsolePendingCatchUpResponse,
 } from '@/types/console-api'
 
-/**
- * @deprecated 端上全量聚合(4000 截断隐患)。审批中心列表已迁 queryApprovalsPage 服务端分页;
- *             仅 SelfServicePanel / MApprovals 等小数据量场景过渡保留。
- */
-export function queryApprovals(tenantId: string) {
-  return fetchAllPageItems<ConsoleApprovalCommandResponse>('/api/console/queries/approvals', {
-    tenantId,
-  })
-}
-
-export interface ApprovalQueryFilters {
-  /** 审批状态(approvalStatus enum)精确过滤 */
-  approvalStatus?: string
-  /** 审批类型(approvalType enum)精确过滤 */
-  approvalType?: string
-  /** 动作类型精确过滤 */
-  actionType?: string
-  /** 申请人精确过滤(?requester=me 入口) */
-  requesterId?: string
-  /** 大小写不敏感模糊匹配 approvalNo/requesterId/targetType/targetId 任一 */
-  keyword?: string
-}
+type ApprovalQuery = NonNullable<operations['queryApprovals']['parameters']['query']>
+export type ApprovalQueryFilters = Omit<ApprovalQuery, 'tenantId' | 'pageNo' | 'pageSize'>
 
 /** 服务端分页查询审批指令(P5:替代 queryApprovals 端上全量聚合)。 */
 export function queryApprovalsPage(

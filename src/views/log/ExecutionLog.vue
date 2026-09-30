@@ -8,7 +8,7 @@
         :total="total"
         v-model:page="page"
         v-model:page-size="pageSize"
-        @change="slicePage"
+        @change="load"
         :show-pager="true"
         :error="loadError"
         :on-retry="load"
@@ -104,11 +104,10 @@
 
   const { t } = useI18n({ useScope: 'global' })
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
-  import { queryAudits } from '@/api/observabilityQueries'
+  import { queryAuditsPage } from '@/api/observabilityQueries'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
-  import { toPageResult } from '@/api/adapters'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
   import PageContainer from '@/components/common/PageContainer.vue'
   import MetaSelect from '@/components/common/MetaSelect.vue'
@@ -130,7 +129,6 @@
     runReset,
     runRefresh,
   } = useListFilterFeedback(loading)
-  const rows = ref<ConsoleAuditLogResponse[]>([])
   const traceDraft = ref('')
   const opDraft = ref('')
   const opResultDraft = ref('')
@@ -150,28 +148,6 @@
   const operationTypeOptions = computed(() => pickMetaEnumGroup(metaEnums.value, 'operationType'))
 
   const opResultOptions = computed(() => pickMetaEnumGroup(metaEnums.value, 'operationResult'))
-
-  const filtered = computed(() => {
-    let r = rows.value
-    const trace = traceApplied.value.trim()
-    if (trace) r = r.filter((x) => x.traceId?.includes(trace))
-    const o = opApplied.value.trim()
-    if (o) r = r.filter((x) => String(x.operationType ?? '') === o)
-    const res = opResultApplied.value.trim()
-    if (res)
-      r = r.filter((x) => String(x.operationResult ?? '').toUpperCase() === res.toUpperCase())
-    return r
-  })
-
-  function slicePage() {
-    const list = filtered.value
-    total.value = list.length
-    const pr = toPageResult(list, page.value, pageSize.value)
-    display.value = (pr.records as ConsoleAuditLogResponse[]).map((row) => ({
-      ...row,
-      detailSummary: formatDetailSummary(row.detailSummary),
-    }))
-  }
 
   function decodeHtmlEntities(value: string): string {
     return value
@@ -193,18 +169,18 @@
     }
   }
 
-  function onSearch() {
-    return runSearch(() => {
+  async function onSearch() {
+    return runSearch(async () => {
       traceApplied.value = traceDraft.value.trim()
       opApplied.value = opDraft.value.trim()
       opResultApplied.value = opResultDraft.value.trim()
       page.value = 1
-      slicePage()
+      await load()
     })
   }
 
-  function reset() {
-    return runReset(() => {
+  async function reset() {
+    return runReset(async () => {
       traceDraft.value = ''
       opDraft.value = ''
       opResultDraft.value = ''
@@ -212,7 +188,7 @@
       opApplied.value = ''
       opResultApplied.value = ''
       page.value = 1
-      slicePage()
+      await load()
     })
   }
 
@@ -220,13 +196,16 @@
     loading.value = true
     loadError.value = null
     try {
-      rows.value = await queryAudits(tenant.tenantId, {
+      const response = await queryAuditsPage(tenant.tenantId, page.value, pageSize.value, {
         traceId: traceApplied.value.trim() || undefined,
         operationType: opApplied.value.trim() || undefined,
         operationResult: opResultApplied.value.trim() || undefined,
       })
-      page.value = 1
-      slicePage()
+      display.value = (response.items ?? []).map((row) => ({
+        ...row,
+        detailSummary: formatDetailSummary(row.detailSummary),
+      }))
+      total.value = response.total ?? 0
     } catch (err) {
       loadError.value = err
       throw err

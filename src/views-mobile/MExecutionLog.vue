@@ -5,7 +5,7 @@
         <div>
           <div class="m-page__title">{{ t('mobile.executionLog.title') }}</div>
           <div class="m-page__subtitle">
-            {{ t('mobile.executionLog.summary', { total: rows.length }) }}
+            {{ t('mobile.executionLog.summary', { total }) }}
           </div>
         </div>
       </div>
@@ -61,6 +61,12 @@
           </button>
         </details>
       </div>
+      <div v-if="rows.length > 0" class="m-load-more">
+        <button v-if="hasMore" class="m-btn" :disabled="loading" @click="loadMore">
+          {{ loading ? t('mobile.common.loadingMore') : t('mobile.common.loadMore') }}
+        </button>
+        <span v-else>{{ t('mobile.common.noMore') }}</span>
+      </div>
     </div>
   </MPullRefresh>
 </template>
@@ -75,7 +81,7 @@
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import MPullRefresh from '@/layout-mobile/MPullRefresh.vue'
   import MSkeleton from '@/layout-mobile/MSkeleton.vue'
-  import { queryAudits } from '@/api/observabilityQueries'
+  import { queryAuditsPage } from '@/api/observabilityQueries'
   import type { ConsoleAuditLogResponse } from '@/types/console-api'
   import { fmtDatetime } from '@/utils/datetime'
   import { decodeHtmlEntities, structuredSummary } from '@/utils/structuredSummary'
@@ -97,6 +103,10 @@
 
   const loading = ref(false)
   const rows = ref<ConsoleAuditLogResponse[]>([])
+  const page = ref(1)
+  const pageSize = 30
+  const total = ref(0)
+  const hasMore = ref(false)
   const traceDraft = ref<string>((route.query.traceId as string) ?? '')
 
   function fmt(ts?: string | null) {
@@ -109,11 +119,21 @@
     return 'm-chip--info'
   }
 
-  async function load() {
+  async function load(reset = true) {
     loading.value = true
     try {
+      if (reset) page.value = 1
       const trace = traceDraft.value.trim()
-      rows.value = await queryAudits(tenant.tenantId, trace ? { traceId: trace } : undefined)
+      const result = await queryAuditsPage(
+        tenant.tenantId,
+        page.value,
+        pageSize,
+        trace ? { traceId: trace } : undefined,
+      )
+      const next = result.items ?? []
+      rows.value = reset ? next : [...rows.value, ...next]
+      total.value = result.total ?? rows.value.length
+      hasMore.value = rows.value.length < total.value
     } catch {
       rows.value = []
       ElMessage.error(t('mobile.common.loadFail'))
@@ -122,22 +142,28 @@
     }
   }
 
+  async function loadMore() {
+    if (loading.value || !hasMore.value) return
+    page.value += 1
+    await load(false)
+  }
+
   function onTraceChange() {
     const trace = traceDraft.value.trim()
     void router.replace({
       path: '/m/logs',
       query: trace ? { traceId: trace } : {},
     })
-    void load()
+    void load(true)
   }
-  useTenantReload(load)
+  useTenantReload(() => load(true))
   watch(
     () => route.query.traceId,
     (v) => {
       const next = (v as string) || ''
       if (next !== traceDraft.value) {
         traceDraft.value = next
-        void load()
+        void load(true)
       }
     },
   )

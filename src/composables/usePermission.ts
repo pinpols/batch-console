@@ -1,9 +1,11 @@
 import { computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { useAppStore } from '@/stores/app'
 import type { Role } from '@/types'
 
 export function usePermission() {
   const auth = useAuthStore()
+  const app = useAppStore()
   const role = computed(() => auth.role)
 
   function canAccess(minRole: Role) {
@@ -22,11 +24,13 @@ export function usePermission() {
    * OPERATOR/VIEWER 是前端能力档，不是 Spring authority；这里只看四类正式角色。
    */
   const canMutateConfig = computed(
-    () => auth.hasPermission('ROLE_ADMIN') || auth.hasPermission('ROLE_TENANT_ADMIN'),
+    () =>
+      !app.writesFrozen &&
+      (auth.hasPermission('ROLE_ADMIN') || auth.hasPermission('ROLE_TENANT_ADMIN')),
   )
 
   /** 仅 ADMIN 能做的高危操作(用户管理、租户管理等) */
-  const canManageSystem = computed(() => auth.hasPermission('ROLE_ADMIN'))
+  const canManageSystem = computed(() => !app.writesFrozen && auth.hasPermission('ROLE_ADMIN'))
 
   return {
     role,

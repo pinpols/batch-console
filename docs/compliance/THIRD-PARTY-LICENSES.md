@@ -13,7 +13,7 @@
 |---|---:|
 | Runtime direct dependencies | 31 |
 | Development direct dependencies | 35 |
-| Resolved lockfile components | 943 |
+| Resolved lockfile components | 924 |
 
 ## 许可证分布
 
@@ -26,12 +26,12 @@
 | Apache-2.0 WITH LLVM-exception | 1 |
 | BlueOak-1.0.0 | 5 |
 | BSD-2-Clause | 13 |
-| BSD-3-Clause | 15 |
+| BSD-3-Clause | 12 |
 | CC-BY-4.0 | 1 |
 | CC0-1.0 | 2 |
 | FSL-1.1-MIT | 9 |
-| ISC | 58 |
-| MIT | 787 |
+| ISC | 57 |
+| MIT | 772 |
 | MIT-0 | 2 |
 | MPL-2.0 | 14 |
 | NOASSERTION | 1 |
@@ -55,9 +55,9 @@
 | `@codemirror/view` | `^6.42.1` |
 | `@fontsource/ibm-plex-mono` | `^5.2.7` |
 | `@fontsource/ibm-plex-sans` | `^5.2.8` |
-| `@lucide/vue` | `^1.48.0` |
-| `@sentry/vue` | `^10.52.0` |
-| `@tanstack/vue-query` | `^5.96.1` |
+| `@lucide/vue` | `^1.49.0` |
+| `@sentry/vue` | `^11.1.0` |
+| `@tanstack/vue-query` | `^5.104.0` |
 | `axios` | `^1.16.1` |
 | `codemirror` | `^6.0.2` |
 | `cronstrue` | `^3.14.0` |
@@ -67,13 +67,13 @@
 | `echarts` | `^6.0.0` |
 | `element-plus` | `^2.14.6` |
 | `json-bigint` | `^1.0.0` |
-| `pinia` | `^3.0.4` |
+| `pinia` | `^4.0.3` |
 | `svg-pan-zoom` | `^3.6.2` |
 | `vue` | `^3.5.13` |
-| `vue-echarts` | `^8.0.1` |
+| `vue-echarts` | `^8.3.1` |
 | `vue-i18n` | `^11.4.4` |
 | `vue-router` | `^5.0.7` |
-| `web-vitals` | `^5.2.0` |
+| `web-vitals` | `^6.2.2` |
 
 ## 开发期直接依赖
 
@@ -82,16 +82,16 @@
 | `@axe-core/playwright` | `^4.11.3` |
 | `@element-plus/icons-vue` | `^2.3.2` |
 | `@playwright/test` | `^1.60.0` |
-| `@sentry/cli` | `^2.58.6` |
+| `@sentry/cli` | `^3.8.0` |
 | `@types/dagre` | `^0.7.54` |
 | `@types/json-bigint` | `^1.0.4` |
-| `@typescript-eslint/eslint-plugin` | `^8.18.0` |
-| `@typescript-eslint/parser` | `^8.18.0` |
+| `@typescript-eslint/eslint-plugin` | `^8.71.0` |
+| `@typescript-eslint/parser` | `^8.71.0` |
 | `@vitejs/plugin-vue` | `^6.0.7` |
-| `@vitest/coverage-v8` | `^4.1.7` |
+| `@vitest/coverage-v8` | `^5.0.2` |
 | `@vue/test-utils` | `^2.4.10` |
 | `@vue/tsconfig` | `^0.9.1` |
-| `concurrently` | `^9.2.1` |
+| `concurrently` | `^10.0.5` |
 | `dagre` | `^0.8.5` |
 | `esbuild` | `^0.28.0` |
 | `eslint` | `^10.4.1` |
@@ -99,9 +99,9 @@
 | `eslint-plugin-vue` | `^10.9.1` |
 | `globals` | `^17.6.0` |
 | `husky` | `^9.1.7` |
-| `jsdom` | `^29.1.1` |
-| `lint-staged` | `^17.0.5` |
-| `mermaid` | `^11.14.0` |
+| `jsdom` | `^30.1.1` |
+| `lint-staged` | `^17.6.0` |
+| `mermaid` | `^11.17.2` |
 | `openapi-typescript` | `^7.4.4` |
 | `prettier` | `^3.8.3` |
 | `typescript` | `^6.0.3` |
@@ -111,7 +111,7 @@
 | `vite-plugin-pwa` | `^1.3.0` |
 | `vitepress` | `^1.6.4` |
 | `vitepress-plugin-mermaid` | `^2.0.17` |
-| `vitest` | `^4.1.7` |
+| `vitest` | `^5.0.2` |
 | `vue-eslint-parser` | `^10.4.0` |
 | `vue-tsc` | `^3.3.1` |
 

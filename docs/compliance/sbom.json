@@ -1,7 +1,7 @@
 {
   "bomFormat": "CycloneDX",
   "specVersion": "1.6",
-  "serialNumber": "urn:uuid:657d63fd-3e38-f417-5d8f-037029390c72",
+  "serialNumber": "urn:uuid:05e24ea6-7239-fdb9-9a75-e15d4789a080",
   "version": 1,
   "metadata": {
     "component": {
@@ -492,10 +492,10 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/@asamuzakjp/css-color@5.1.11",
+      "bom-ref": "pkg:npm/@asamuzakjp/css-color@7.1.2",
       "name": "@asamuzakjp/css-color",
-      "version": "5.1.11",
-      "purl": "pkg:npm/@asamuzakjp/css-color@5.1.11",
+      "version": "7.1.2",
+      "purl": "pkg:npm/@asamuzakjp/css-color@7.1.2",
       "licenses": [
         {
           "license": {
@@ -507,16 +507,16 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/@asamuzakjp/css-color/-/css-color-5.1.11.tgz"
+          "url": "https://registry.npmjs.org/@asamuzakjp/css-color/-/css-color-7.1.2.tgz"
         }
       ]
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/@asamuzakjp/dom-selector@7.1.1",
+      "bom-ref": "pkg:npm/@asamuzakjp/dom-selector@9.2.2",
       "name": "@asamuzakjp/dom-selector",
-      "version": "7.1.1",
-      "purl": "pkg:npm/@asamuzakjp/dom-selector@7.1.1",
+      "version": "9.2.2",
+      "purl": "pkg:npm/@asamuzakjp/dom-selector@9.2.2",
       "licenses": [
         {
           "license": {
@@ -528,49 +528,7 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/@asamuzakjp/dom-selector/-/dom-selector-7.1.1.tgz"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "bom-ref": "pkg:npm/@asamuzakjp/generational-cache@1.0.1",
-      "name": "@asamuzakjp/generational-cache",
-      "version": "1.0.1",
-      "purl": "pkg:npm/@asamuzakjp/generational-cache@1.0.1",
-      "licenses": [
-        {
-          "license": {
-            "id": "MIT"
-          }
-        }
-      ],
-      "scope": "optional",
-      "externalReferences": [
-        {
-          "type": "distribution",
-          "url": "https://registry.npmjs.org/@asamuzakjp/generational-cache/-/generational-cache-1.0.1.tgz"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "bom-ref": "pkg:npm/@asamuzakjp/nwsapi@2.3.9",
-      "name": "@asamuzakjp/nwsapi",
-      "version": "2.3.9",
-      "purl": "pkg:npm/@asamuzakjp/nwsapi@2.3.9",
-      "licenses": [
-        {
-          "license": {
-            "id": "MIT"
-          }
-        }
-      ],
-      "scope": "optional",
-      "externalReferences": [
-        {
-          "type": "distribution",
-          "url": "https://registry.npmjs.org/@asamuzakjp/nwsapi/-/nwsapi-2.3.9.tgz"
+          "url": "https://registry.npmjs.org/@asamuzakjp/dom-selector/-/dom-selector-9.2.2.tgz"
         }
       ]
     },
@@ -2802,10 +2760,10 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/@csstools/color-helpers@6.1.1",
+      "bom-ref": "pkg:npm/@csstools/color-helpers@6.1.2",
       "name": "@csstools/color-helpers",
-      "version": "6.1.1",
-      "purl": "pkg:npm/@csstools/color-helpers@6.1.1",
+      "version": "6.1.2",
+      "purl": "pkg:npm/@csstools/color-helpers@6.1.2",
       "licenses": [
         {
           "license": {
@@ -2817,16 +2775,16 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/@csstools/color-helpers/-/color-helpers-6.1.1.tgz"
+          "url": "https://registry.npmjs.org/@csstools/color-helpers/-/color-helpers-6.1.2.tgz"
         }
       ]
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/@csstools/css-calc@3.4.0",
+      "bom-ref": "pkg:npm/@csstools/css-calc@3.4.1",
       "name": "@csstools/css-calc",
-      "version": "3.4.0",
-      "purl": "pkg:npm/@csstools/css-calc@3.4.0",
+      "version": "3.4.1",
+      "purl": "pkg:npm/@csstools/css-calc@3.4.1",
       "licenses": [
         {
           "license": {
@@ -2838,16 +2796,16 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/@csstools/css-calc/-/css-calc-3.4.0.tgz"
+          "url": "https://registry.npmjs.org/@csstools/css-calc/-/css-calc-3.4.1.tgz"
         }
       ]
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/@csstools/css-color-parser@4.2.3",
+      "bom-ref": "pkg:npm/@csstools/css-color-parser@4.2.4",
       "name": "@csstools/css-color-parser",
-      "version": "4.2.3",
-      "purl": "pkg:npm/@csstools/css-color-parser@4.2.3",
+      "version": "4.2.4",
+      "purl": "pkg:npm/@csstools/css-color-parser@4.2.4",
       "licenses": [
         {
           "license": {
@@ -2859,16 +2817,16 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/@csstools/css-color-parser/-/css-color-parser-4.2.3.tgz"
+          "url": "https://registry.npmjs.org/@csstools/css-color-parser/-/css-color-parser-4.2.4.tgz"
         }
       ]
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/@csstools/css-parser-algorithms@4.0.0",
+      "bom-ref": "pkg:npm/@csstools/css-parser-algorithms@4.0.1",
       "name": "@csstools/css-parser-algorithms",
-      "version": "4.0.0",
-      "purl": "pkg:npm/@csstools/css-parser-algorithms@4.0.0",
+      "version": "4.0.1",
+      "purl": "pkg:npm/@csstools/css-parser-algorithms@4.0.1",
       "licenses": [
         {
           "license": {
@@ -2880,7 +2838,7 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/@csstools/css-parser-algorithms/-/css-parser-algorithms-4.0.0.tgz"
+          "url": "https://registry.npmjs.org/@csstools/css-parser-algorithms/-/css-parser-algorithms-4.0.1.tgz"
         }
       ]
     },
@@ -2907,10 +2865,10 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/@csstools/css-tokenizer@4.0.1",
+      "bom-ref": "pkg:npm/@csstools/css-tokenizer@4.0.2",
       "name": "@csstools/css-tokenizer",
-      "version": "4.0.1",
-      "purl": "pkg:npm/@csstools/css-tokenizer@4.0.1",
+      "version": "4.0.2",
+      "purl": "pkg:npm/@csstools/css-tokenizer@4.0.2",
       "licenses": [
         {
           "license": {
@@ -2922,7 +2880,7 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/@csstools/css-tokenizer/-/css-tokenizer-4.0.1.tgz"
+          "url": "https://registry.npmjs.org/@csstools/css-tokenizer/-/css-tokenizer-4.0.2.tgz"
         }
       ]
     },
@@ -4356,10 +4314,10 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/@lucide/vue@1.48.0",
+      "bom-ref": "pkg:npm/@lucide/vue@1.49.0",
       "name": "@lucide/vue",
-      "version": "1.48.0",
-      "purl": "pkg:npm/@lucide/vue@1.48.0",
+      "version": "1.49.0",
+      "purl": "pkg:npm/@lucide/vue@1.49.0",
       "licenses": [
         {
           "license": {
@@ -4371,7 +4329,7 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/@lucide/vue/-/vue-1.48.0.tgz"
+          "url": "https://registry.npmjs.org/@lucide/vue/-/vue-1.49.0.tgz"
         }
       ]
     },
@@ -5574,10 +5532,10 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/@sentry/browser@10.75.3",
+      "bom-ref": "pkg:npm/@sentry/browser@11.1.0",
       "name": "@sentry/browser",
-      "version": "10.75.3",
-      "purl": "pkg:npm/@sentry/browser@10.75.3",
+      "version": "11.1.0",
+      "purl": "pkg:npm/@sentry/browser@11.1.0",
       "licenses": [
         {
           "license": {
@@ -5589,16 +5547,16 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/@sentry/browser/-/browser-10.75.3.tgz"
+          "url": "https://registry.npmjs.org/@sentry/browser/-/browser-11.1.0.tgz"
         }
       ]
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/@sentry/browser-utils@10.75.3",
+      "bom-ref": "pkg:npm/@sentry/browser-utils@11.1.0",
       "name": "@sentry/browser-utils",
-      "version": "10.75.3",
-      "purl": "pkg:npm/@sentry/browser-utils@10.75.3",
+      "version": "11.1.0",
+      "purl": "pkg:npm/@sentry/browser-utils@11.1.0",
       "licenses": [
         {
           "license": {
@@ -5610,16 +5568,16 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/@sentry/browser-utils/-/browser-utils-10.75.3.tgz"
+          "url": "https://registry.npmjs.org/@sentry/browser-utils/-/browser-utils-11.1.0.tgz"
         }
       ]
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/@sentry/cli@2.58.6",
+      "bom-ref": "pkg:npm/@sentry/cli@3.8.0",
       "name": "@sentry/cli",
-      "version": "2.58.6",
-      "purl": "pkg:npm/@sentry/cli@2.58.6",
+      "version": "3.8.0",
+      "purl": "pkg:npm/@sentry/cli@3.8.0",
       "licenses": [
         {
           "license": {
@@ -5631,16 +5589,16 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/@sentry/cli/-/cli-2.58.6.tgz"
+          "url": "https://registry.npmjs.org/@sentry/cli/-/cli-3.8.0.tgz"
         }
       ]
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/@sentry/cli-darwin@2.58.6",
+      "bom-ref": "pkg:npm/@sentry/cli-darwin@3.8.0",
       "name": "@sentry/cli-darwin",
-      "version": "2.58.6",
-      "purl": "pkg:npm/@sentry/cli-darwin@2.58.6",
+      "version": "3.8.0",
+      "purl": "pkg:npm/@sentry/cli-darwin@3.8.0",
       "licenses": [
         {
           "license": {
@@ -5652,16 +5610,16 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/@sentry/cli-darwin/-/cli-darwin-2.58.6.tgz"
+          "url": "https://registry.npmjs.org/@sentry/cli-darwin/-/cli-darwin-3.8.0.tgz"
         }
       ]
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/@sentry/cli-linux-arm@2.58.6",
+      "bom-ref": "pkg:npm/@sentry/cli-linux-arm@3.8.0",
       "name": "@sentry/cli-linux-arm",
-      "version": "2.58.6",
-      "purl": "pkg:npm/@sentry/cli-linux-arm@2.58.6",
+      "version": "3.8.0",
+      "purl": "pkg:npm/@sentry/cli-linux-arm@3.8.0",
       "licenses": [
         {
           "license": {
@@ -5673,16 +5631,16 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/@sentry/cli-linux-arm/-/cli-linux-arm-2.58.6.tgz"
+          "url": "https://registry.npmjs.org/@sentry/cli-linux-arm/-/cli-linux-arm-3.8.0.tgz"
         }
       ]
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/@sentry/cli-linux-arm64@2.58.6",
+      "bom-ref": "pkg:npm/@sentry/cli-linux-arm64@3.8.0",
       "name": "@sentry/cli-linux-arm64",
-      "version": "2.58.6",
-      "purl": "pkg:npm/@sentry/cli-linux-arm64@2.58.6",
+      "version": "3.8.0",
+      "purl": "pkg:npm/@sentry/cli-linux-arm64@3.8.0",
       "licenses": [
         {
           "license": {
@@ -5694,16 +5652,16 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/@sentry/cli-linux-arm64/-/cli-linux-arm64-2.58.6.tgz"
+          "url": "https://registry.npmjs.org/@sentry/cli-linux-arm64/-/cli-linux-arm64-3.8.0.tgz"
         }
       ]
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/@sentry/cli-linux-i686@2.58.6",
+      "bom-ref": "pkg:npm/@sentry/cli-linux-i686@3.8.0",
       "name": "@sentry/cli-linux-i686",
-      "version": "2.58.6",
-      "purl": "pkg:npm/@sentry/cli-linux-i686@2.58.6",
+      "version": "3.8.0",
+      "purl": "pkg:npm/@sentry/cli-linux-i686@3.8.0",
       "licenses": [
         {
           "license": {
@@ -5715,16 +5673,16 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/@sentry/cli-linux-i686/-/cli-linux-i686-2.58.6.tgz"
+          "url": "https://registry.npmjs.org/@sentry/cli-linux-i686/-/cli-linux-i686-3.8.0.tgz"
         }
       ]
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/@sentry/cli-linux-x64@2.58.6",
+      "bom-ref": "pkg:npm/@sentry/cli-linux-x64@3.8.0",
       "name": "@sentry/cli-linux-x64",
-      "version": "2.58.6",
-      "purl": "pkg:npm/@sentry/cli-linux-x64@2.58.6",
+      "version": "3.8.0",
+      "purl": "pkg:npm/@sentry/cli-linux-x64@3.8.0",
       "licenses": [
         {
           "license": {
@@ -5736,16 +5694,16 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/@sentry/cli-linux-x64/-/cli-linux-x64-2.58.6.tgz"
+          "url": "https://registry.npmjs.org/@sentry/cli-linux-x64/-/cli-linux-x64-3.8.0.tgz"
         }
       ]
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/@sentry/cli-win32-arm64@2.58.6",
+      "bom-ref": "pkg:npm/@sentry/cli-win32-arm64@3.8.0",
       "name": "@sentry/cli-win32-arm64",
-      "version": "2.58.6",
-      "purl": "pkg:npm/@sentry/cli-win32-arm64@2.58.6",
+      "version": "3.8.0",
+      "purl": "pkg:npm/@sentry/cli-win32-arm64@3.8.0",
       "licenses": [
         {
           "license": {
@@ -5757,16 +5715,16 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/@sentry/cli-win32-arm64/-/cli-win32-arm64-2.58.6.tgz"
+          "url": "https://registry.npmjs.org/@sentry/cli-win32-arm64/-/cli-win32-arm64-3.8.0.tgz"
         }
       ]
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/@sentry/cli-win32-i686@2.58.6",
+      "bom-ref": "pkg:npm/@sentry/cli-win32-i686@3.8.0",
       "name": "@sentry/cli-win32-i686",
-      "version": "2.58.6",
-      "purl": "pkg:npm/@sentry/cli-win32-i686@2.58.6",
+      "version": "3.8.0",
+      "purl": "pkg:npm/@sentry/cli-win32-i686@3.8.0",
       "licenses": [
         {
           "license": {
@@ -5778,16 +5736,16 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/@sentry/cli-win32-i686/-/cli-win32-i686-2.58.6.tgz"
+          "url": "https://registry.npmjs.org/@sentry/cli-win32-i686/-/cli-win32-i686-3.8.0.tgz"
         }
       ]
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/@sentry/cli-win32-x64@2.58.6",
+      "bom-ref": "pkg:npm/@sentry/cli-win32-x64@3.8.0",
       "name": "@sentry/cli-win32-x64",
-      "version": "2.58.6",
-      "purl": "pkg:npm/@sentry/cli-win32-x64@2.58.6",
+      "version": "3.8.0",
+      "purl": "pkg:npm/@sentry/cli-win32-x64@3.8.0",
       "licenses": [
         {
           "license": {
@@ -5799,16 +5757,16 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/@sentry/cli-win32-x64/-/cli-win32-x64-2.58.6.tgz"
+          "url": "https://registry.npmjs.org/@sentry/cli-win32-x64/-/cli-win32-x64-3.8.0.tgz"
         }
       ]
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/@sentry/conventions@0.16.0",
+      "bom-ref": "pkg:npm/@sentry/conventions@0.24.0",
       "name": "@sentry/conventions",
-      "version": "0.16.0",
-      "purl": "pkg:npm/@sentry/conventions@0.16.0",
+      "version": "0.24.0",
+      "purl": "pkg:npm/@sentry/conventions@0.24.0",
       "licenses": [
         {
           "license": {
@@ -5820,16 +5778,16 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/@sentry/conventions/-/conventions-0.16.0.tgz"
+          "url": "https://registry.npmjs.org/@sentry/conventions/-/conventions-0.24.0.tgz"
         }
       ]
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/@sentry/core@10.75.3",
+      "bom-ref": "pkg:npm/@sentry/core@11.1.0",
       "name": "@sentry/core",
-      "version": "10.75.3",
-      "purl": "pkg:npm/@sentry/core@10.75.3",
+      "version": "11.1.0",
+      "purl": "pkg:npm/@sentry/core@11.1.0",
       "licenses": [
         {
           "license": {
@@ -5841,16 +5799,16 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/@sentry/core/-/core-10.75.3.tgz"
+          "url": "https://registry.npmjs.org/@sentry/core/-/core-11.1.0.tgz"
         }
       ]
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/@sentry/feedback@10.75.3",
+      "bom-ref": "pkg:npm/@sentry/feedback@11.1.0",
       "name": "@sentry/feedback",
-      "version": "10.75.3",
-      "purl": "pkg:npm/@sentry/feedback@10.75.3",
+      "version": "11.1.0",
+      "purl": "pkg:npm/@sentry/feedback@11.1.0",
       "licenses": [
         {
           "license": {
@@ -5862,16 +5820,16 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/@sentry/feedback/-/feedback-10.75.3.tgz"
+          "url": "https://registry.npmjs.org/@sentry/feedback/-/feedback-11.1.0.tgz"
         }
       ]
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/@sentry/replay@10.75.3",
+      "bom-ref": "pkg:npm/@sentry/replay@11.1.0",
       "name": "@sentry/replay",
-      "version": "10.75.3",
-      "purl": "pkg:npm/@sentry/replay@10.75.3",
+      "version": "11.1.0",
+      "purl": "pkg:npm/@sentry/replay@11.1.0",
       "licenses": [
         {
           "license": {
@@ -5883,16 +5841,16 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/@sentry/replay/-/replay-10.75.3.tgz"
+          "url": "https://registry.npmjs.org/@sentry/replay/-/replay-11.1.0.tgz"
         }
       ]
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/@sentry/replay-canvas@10.75.3",
+      "bom-ref": "pkg:npm/@sentry/replay-canvas@11.1.0",
       "name": "@sentry/replay-canvas",
-      "version": "10.75.3",
-      "purl": "pkg:npm/@sentry/replay-canvas@10.75.3",
+      "version": "11.1.0",
+      "purl": "pkg:npm/@sentry/replay-canvas@11.1.0",
       "licenses": [
         {
           "license": {
@@ -5904,16 +5862,16 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/@sentry/replay-canvas/-/replay-canvas-10.75.3.tgz"
+          "url": "https://registry.npmjs.org/@sentry/replay-canvas/-/replay-canvas-11.1.0.tgz"
         }
       ]
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/@sentry/vue@10.75.3",
+      "bom-ref": "pkg:npm/@sentry/vue@11.1.0",
       "name": "@sentry/vue",
-      "version": "10.75.3",
-      "purl": "pkg:npm/@sentry/vue@10.75.3",
+      "version": "11.1.0",
+      "purl": "pkg:npm/@sentry/vue@11.1.0",
       "licenses": [
         {
           "license": {
@@ -5925,7 +5883,7 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/@sentry/vue/-/vue-10.75.3.tgz"
+          "url": "https://registry.npmjs.org/@sentry/vue/-/vue-11.1.0.tgz"
         }
       ]
     },
@@ -6099,31 +6057,10 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/@standard-schema/spec@1.1.0",
-      "name": "@standard-schema/spec",
-      "version": "1.1.0",
-      "purl": "pkg:npm/@standard-schema/spec@1.1.0",
-      "licenses": [
-        {
-          "license": {
-            "id": "MIT"
-          }
-        }
-      ],
-      "scope": "optional",
-      "externalReferences": [
-        {
-          "type": "distribution",
-          "url": "https://registry.npmjs.org/@standard-schema/spec/-/spec-1.1.0.tgz"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "bom-ref": "pkg:npm/@tanstack/match-sorter-utils@8.19.4",
+      "bom-ref": "pkg:npm/@tanstack/match-sorter-utils@9.1.2",
       "name": "@tanstack/match-sorter-utils",
-      "version": "8.19.4",
-      "purl": "pkg:npm/@tanstack/match-sorter-utils@8.19.4",
+      "version": "9.1.2",
+      "purl": "pkg:npm/@tanstack/match-sorter-utils@9.1.2",
       "licenses": [
         {
           "license": {
@@ -6135,16 +6072,16 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/@tanstack/match-sorter-utils/-/match-sorter-utils-8.19.4.tgz"
+          "url": "https://registry.npmjs.org/@tanstack/match-sorter-utils/-/match-sorter-utils-9.1.2.tgz"
         }
       ]
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/@tanstack/query-core@5.103.2",
+      "bom-ref": "pkg:npm/@tanstack/query-core@5.104.0",
       "name": "@tanstack/query-core",
-      "version": "5.103.2",
-      "purl": "pkg:npm/@tanstack/query-core@5.103.2",
+      "version": "5.104.0",
+      "purl": "pkg:npm/@tanstack/query-core@5.104.0",
       "licenses": [
         {
           "license": {
@@ -6156,16 +6093,16 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/@tanstack/query-core/-/query-core-5.103.2.tgz"
+          "url": "https://registry.npmjs.org/@tanstack/query-core/-/query-core-5.104.0.tgz"
         }
       ]
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/@tanstack/vue-query@5.103.2",
+      "bom-ref": "pkg:npm/@tanstack/vue-query@5.104.0",
       "name": "@tanstack/vue-query",
-      "version": "5.103.2",
-      "purl": "pkg:npm/@tanstack/vue-query@5.103.2",
+      "version": "5.104.0",
+      "purl": "pkg:npm/@tanstack/vue-query@5.104.0",
       "licenses": [
         {
           "license": {
@@ -6177,7 +6114,7 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/@tanstack/vue-query/-/vue-query-5.103.2.tgz"
+          "url": "https://registry.npmjs.org/@tanstack/vue-query/-/vue-query-5.104.0.tgz"
         }
       ]
     },
@@ -7254,10 +7191,10 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/@typescript-eslint/eslint-plugin@8.70.1",
+      "bom-ref": "pkg:npm/@typescript-eslint/eslint-plugin@8.71.0",
       "name": "@typescript-eslint/eslint-plugin",
-      "version": "8.70.1",
-      "purl": "pkg:npm/@typescript-eslint/eslint-plugin@8.70.1",
+      "version": "8.71.0",
+      "purl": "pkg:npm/@typescript-eslint/eslint-plugin@8.71.0",
       "licenses": [
         {
           "license": {
@@ -7269,16 +7206,16 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/@typescript-eslint/eslint-plugin/-/eslint-plugin-8.70.1.tgz"
+          "url": "https://registry.npmjs.org/@typescript-eslint/eslint-plugin/-/eslint-plugin-8.71.0.tgz"
         }
       ]
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/@typescript-eslint/parser@8.70.1",
+      "bom-ref": "pkg:npm/@typescript-eslint/parser@8.71.0",
       "name": "@typescript-eslint/parser",
-      "version": "8.70.1",
-      "purl": "pkg:npm/@typescript-eslint/parser@8.70.1",
+      "version": "8.71.0",
+      "purl": "pkg:npm/@typescript-eslint/parser@8.71.0",
       "licenses": [
         {
           "license": {
@@ -7290,16 +7227,16 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/@typescript-eslint/parser/-/parser-8.70.1.tgz"
+          "url": "https://registry.npmjs.org/@typescript-eslint/parser/-/parser-8.71.0.tgz"
         }
       ]
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/@typescript-eslint/project-service@8.70.1",
+      "bom-ref": "pkg:npm/@typescript-eslint/project-service@8.71.0",
       "name": "@typescript-eslint/project-service",
-      "version": "8.70.1",
-      "purl": "pkg:npm/@typescript-eslint/project-service@8.70.1",
+      "version": "8.71.0",
+      "purl": "pkg:npm/@typescript-eslint/project-service@8.71.0",
       "licenses": [
         {
           "license": {
@@ -7311,16 +7248,16 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/@typescript-eslint/project-service/-/project-service-8.70.1.tgz"
+          "url": "https://registry.npmjs.org/@typescript-eslint/project-service/-/project-service-8.71.0.tgz"
         }
       ]
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/@typescript-eslint/scope-manager@8.70.1",
+      "bom-ref": "pkg:npm/@typescript-eslint/scope-manager@8.71.0",
       "name": "@typescript-eslint/scope-manager",
-      "version": "8.70.1",
-      "purl": "pkg:npm/@typescript-eslint/scope-manager@8.70.1",
+      "version": "8.71.0",
+      "purl": "pkg:npm/@typescript-eslint/scope-manager@8.71.0",
       "licenses": [
         {
           "license": {
@@ -7332,16 +7269,16 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/@typescript-eslint/scope-manager/-/scope-manager-8.70.1.tgz"
+          "url": "https://registry.npmjs.org/@typescript-eslint/scope-manager/-/scope-manager-8.71.0.tgz"
         }
       ]
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/@typescript-eslint/tsconfig-utils@8.70.1",
+      "bom-ref": "pkg:npm/@typescript-eslint/tsconfig-utils@8.71.0",
       "name": "@typescript-eslint/tsconfig-utils",
-      "version": "8.70.1",
-      "purl": "pkg:npm/@typescript-eslint/tsconfig-utils@8.70.1",
+      "version": "8.71.0",
+      "purl": "pkg:npm/@typescript-eslint/tsconfig-utils@8.71.0",
       "licenses": [
         {
           "license": {
@@ -7353,16 +7290,16 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/@typescript-eslint/tsconfig-utils/-/tsconfig-utils-8.70.1.tgz"
+          "url": "https://registry.npmjs.org/@typescript-eslint/tsconfig-utils/-/tsconfig-utils-8.71.0.tgz"
         }
       ]
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/@typescript-eslint/type-utils@8.70.1",
+      "bom-ref": "pkg:npm/@typescript-eslint/type-utils@8.71.0",
       "name": "@typescript-eslint/type-utils",
-      "version": "8.70.1",
-      "purl": "pkg:npm/@typescript-eslint/type-utils@8.70.1",
+      "version": "8.71.0",
+      "purl": "pkg:npm/@typescript-eslint/type-utils@8.71.0",
       "licenses": [
         {
           "license": {
@@ -7374,16 +7311,16 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/@typescript-eslint/type-utils/-/type-utils-8.70.1.tgz"
+          "url": "https://registry.npmjs.org/@typescript-eslint/type-utils/-/type-utils-8.71.0.tgz"
         }
       ]
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/@typescript-eslint/types@8.70.1",
+      "bom-ref": "pkg:npm/@typescript-eslint/types@8.71.0",
       "name": "@typescript-eslint/types",
-      "version": "8.70.1",
-      "purl": "pkg:npm/@typescript-eslint/types@8.70.1",
+      "version": "8.71.0",
+      "purl": "pkg:npm/@typescript-eslint/types@8.71.0",
       "licenses": [
         {
           "license": {
@@ -7395,16 +7332,16 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/@typescript-eslint/types/-/types-8.70.1.tgz"
+          "url": "https://registry.npmjs.org/@typescript-eslint/types/-/types-8.71.0.tgz"
         }
       ]
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/@typescript-eslint/typescript-estree@8.70.1",
+      "bom-ref": "pkg:npm/@typescript-eslint/typescript-estree@8.71.0",
       "name": "@typescript-eslint/typescript-estree",
-      "version": "8.70.1",
-      "purl": "pkg:npm/@typescript-eslint/typescript-estree@8.70.1",
+      "version": "8.71.0",
+      "purl": "pkg:npm/@typescript-eslint/typescript-estree@8.71.0",
       "licenses": [
         {
           "license": {
@@ -7416,16 +7353,16 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/@typescript-eslint/typescript-estree/-/typescript-estree-8.70.1.tgz"
+          "url": "https://registry.npmjs.org/@typescript-eslint/typescript-estree/-/typescript-estree-8.71.0.tgz"
         }
       ]
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/@typescript-eslint/utils@8.70.1",
+      "bom-ref": "pkg:npm/@typescript-eslint/utils@8.71.0",
       "name": "@typescript-eslint/utils",
-      "version": "8.70.1",
-      "purl": "pkg:npm/@typescript-eslint/utils@8.70.1",
+      "version": "8.71.0",
+      "purl": "pkg:npm/@typescript-eslint/utils@8.71.0",
       "licenses": [
         {
           "license": {
@@ -7437,16 +7374,16 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/@typescript-eslint/utils/-/utils-8.70.1.tgz"
+          "url": "https://registry.npmjs.org/@typescript-eslint/utils/-/utils-8.71.0.tgz"
         }
       ]
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/@typescript-eslint/visitor-keys@8.70.1",
+      "bom-ref": "pkg:npm/@typescript-eslint/visitor-keys@8.71.0",
       "name": "@typescript-eslint/visitor-keys",
-      "version": "8.70.1",
-      "purl": "pkg:npm/@typescript-eslint/visitor-keys@8.70.1",
+      "version": "8.71.0",
+      "purl": "pkg:npm/@typescript-eslint/visitor-keys@8.71.0",
       "licenses": [
         {
           "license": {
@@ -7458,7 +7395,7 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/@typescript-eslint/visitor-keys/-/visitor-keys-8.70.1.tgz"
+          "url": "https://registry.npmjs.org/@typescript-eslint/visitor-keys/-/visitor-keys-8.71.0.tgz"
         }
       ]
     },
@@ -7527,10 +7464,10 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/@vitest/coverage-v8@4.1.11",
+      "bom-ref": "pkg:npm/@vitest/coverage-v8@5.0.2",
       "name": "@vitest/coverage-v8",
-      "version": "4.1.11",
-      "purl": "pkg:npm/@vitest/coverage-v8@4.1.11",
+      "version": "5.0.2",
+      "purl": "pkg:npm/@vitest/coverage-v8@5.0.2",
       "licenses": [
         {
           "license": {
@@ -7542,16 +7479,16 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/@vitest/coverage-v8/-/coverage-v8-4.1.11.tgz"
+          "url": "https://registry.npmjs.org/@vitest/coverage-v8/-/coverage-v8-5.0.2.tgz"
         }
       ]
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/@vitest/expect@4.1.11",
-      "name": "@vitest/expect",
-      "version": "4.1.11",
-      "purl": "pkg:npm/@vitest/expect@4.1.11",
+      "bom-ref": "pkg:npm/@vitest/istanbul-lib-coverage@1.0.2",
+      "name": "@vitest/istanbul-lib-coverage",
+      "version": "1.0.2",
+      "purl": "pkg:npm/@vitest/istanbul-lib-coverage@1.0.2",
       "licenses": [
         {
           "license": {
@@ -7563,16 +7500,37 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/@vitest/expect/-/expect-4.1.11.tgz"
+          "url": "https://registry.npmjs.org/@vitest/istanbul-lib-coverage/-/istanbul-lib-coverage-1.0.2.tgz"
         }
       ]
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/@vitest/mocker@4.1.11",
+      "bom-ref": "pkg:npm/@vitest/istanbul-lib-report@1.0.2",
+      "name": "@vitest/istanbul-lib-report",
+      "version": "1.0.2",
+      "purl": "pkg:npm/@vitest/istanbul-lib-report@1.0.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "scope": "optional",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@vitest/istanbul-lib-report/-/istanbul-lib-report-1.0.2.tgz"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/@vitest/mocker@5.0.2",
       "name": "@vitest/mocker",
-      "version": "4.1.11",
-      "purl": "pkg:npm/@vitest/mocker@4.1.11",
+      "version": "5.0.2",
+      "purl": "pkg:npm/@vitest/mocker@5.0.2",
       "licenses": [
         {
           "license": {
@@ -7584,79 +7542,16 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/@vitest/mocker/-/mocker-4.1.11.tgz"
+          "url": "https://registry.npmjs.org/@vitest/mocker/-/mocker-5.0.2.tgz"
         }
       ]
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/@vitest/pretty-format@4.1.11",
-      "name": "@vitest/pretty-format",
-      "version": "4.1.11",
-      "purl": "pkg:npm/@vitest/pretty-format@4.1.11",
-      "licenses": [
-        {
-          "license": {
-            "id": "MIT"
-          }
-        }
-      ],
-      "scope": "optional",
-      "externalReferences": [
-        {
-          "type": "distribution",
-          "url": "https://registry.npmjs.org/@vitest/pretty-format/-/pretty-format-4.1.11.tgz"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "bom-ref": "pkg:npm/@vitest/runner@4.1.11",
-      "name": "@vitest/runner",
-      "version": "4.1.11",
-      "purl": "pkg:npm/@vitest/runner@4.1.11",
-      "licenses": [
-        {
-          "license": {
-            "id": "MIT"
-          }
-        }
-      ],
-      "scope": "optional",
-      "externalReferences": [
-        {
-          "type": "distribution",
-          "url": "https://registry.npmjs.org/@vitest/runner/-/runner-4.1.11.tgz"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "bom-ref": "pkg:npm/@vitest/snapshot@4.1.11",
-      "name": "@vitest/snapshot",
-      "version": "4.1.11",
-      "purl": "pkg:npm/@vitest/snapshot@4.1.11",
-      "licenses": [
-        {
-          "license": {
-            "id": "MIT"
-          }
-        }
-      ],
-      "scope": "optional",
-      "externalReferences": [
-        {
-          "type": "distribution",
-          "url": "https://registry.npmjs.org/@vitest/snapshot/-/snapshot-4.1.11.tgz"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "bom-ref": "pkg:npm/@vitest/spy@4.1.11",
+      "bom-ref": "pkg:npm/@vitest/spy@5.0.2",
       "name": "@vitest/spy",
-      "version": "4.1.11",
-      "purl": "pkg:npm/@vitest/spy@4.1.11",
+      "version": "5.0.2",
+      "purl": "pkg:npm/@vitest/spy@5.0.2",
       "licenses": [
         {
           "license": {
@@ -7668,28 +7563,7 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/@vitest/spy/-/spy-4.1.11.tgz"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "bom-ref": "pkg:npm/@vitest/utils@4.1.11",
-      "name": "@vitest/utils",
-      "version": "4.1.11",
-      "purl": "pkg:npm/@vitest/utils@4.1.11",
-      "licenses": [
-        {
-          "license": {
-            "id": "MIT"
-          }
-        }
-      ],
-      "scope": "optional",
-      "externalReferences": [
-        {
-          "type": "distribution",
-          "url": "https://registry.npmjs.org/@vitest/utils/-/utils-4.1.11.tgz"
+          "url": "https://registry.npmjs.org/@vitest/spy/-/spy-5.0.2.tgz"
         }
       ]
     },
@@ -8346,10 +8220,10 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/ansi-regex@5.0.1",
+      "bom-ref": "pkg:npm/ansi-regex@6.4.0",
       "name": "ansi-regex",
-      "version": "5.0.1",
-      "purl": "pkg:npm/ansi-regex@5.0.1",
+      "version": "6.4.0",
+      "purl": "pkg:npm/ansi-regex@6.4.0",
       "licenses": [
         {
           "license": {
@@ -8361,16 +8235,16 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/ansi-regex/-/ansi-regex-5.0.1.tgz"
+          "url": "https://registry.npmjs.org/ansi-regex/-/ansi-regex-6.4.0.tgz"
         }
       ]
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/ansi-styles@4.3.0",
+      "bom-ref": "pkg:npm/ansi-styles@6.2.3",
       "name": "ansi-styles",
-      "version": "4.3.0",
-      "purl": "pkg:npm/ansi-styles@4.3.0",
+      "version": "6.2.3",
+      "purl": "pkg:npm/ansi-styles@6.2.3",
       "licenses": [
         {
           "license": {
@@ -8382,7 +8256,7 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/ansi-styles/-/ansi-styles-4.3.0.tgz"
+          "url": "https://registry.npmjs.org/ansi-styles/-/ansi-styles-6.2.3.tgz"
         }
       ]
     },
@@ -9102,10 +8976,10 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/chalk@4.1.2",
+      "bom-ref": "pkg:npm/chalk@5.6.2",
       "name": "chalk",
-      "version": "4.1.2",
-      "purl": "pkg:npm/chalk@4.1.2",
+      "version": "5.6.2",
+      "purl": "pkg:npm/chalk@5.6.2",
       "licenses": [
         {
           "license": {
@@ -9117,7 +8991,7 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/chalk/-/chalk-4.1.2.tgz"
+          "url": "https://registry.npmjs.org/chalk/-/chalk-5.6.2.tgz"
         }
       ]
     },
@@ -9207,10 +9081,10 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/cliui@8.0.1",
+      "bom-ref": "pkg:npm/cliui@9.0.1",
       "name": "cliui",
-      "version": "8.0.1",
-      "purl": "pkg:npm/cliui@8.0.1",
+      "version": "9.0.1",
+      "purl": "pkg:npm/cliui@9.0.1",
       "licenses": [
         {
           "license": {
@@ -9222,7 +9096,7 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/cliui/-/cliui-8.0.1.tgz"
+          "url": "https://registry.npmjs.org/cliui/-/cliui-9.0.1.tgz"
         }
       ]
     },
@@ -9244,48 +9118,6 @@
         {
           "type": "distribution",
           "url": "https://registry.npmjs.org/codemirror/-/codemirror-6.0.2.tgz"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "bom-ref": "pkg:npm/color-convert@2.0.1",
-      "name": "color-convert",
-      "version": "2.0.1",
-      "purl": "pkg:npm/color-convert@2.0.1",
-      "licenses": [
-        {
-          "license": {
-            "id": "MIT"
-          }
-        }
-      ],
-      "scope": "optional",
-      "externalReferences": [
-        {
-          "type": "distribution",
-          "url": "https://registry.npmjs.org/color-convert/-/color-convert-2.0.1.tgz"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "bom-ref": "pkg:npm/color-name@1.1.4",
-      "name": "color-name",
-      "version": "1.1.4",
-      "purl": "pkg:npm/color-name@1.1.4",
-      "licenses": [
-        {
-          "license": {
-            "id": "MIT"
-          }
-        }
-      ],
-      "scope": "optional",
-      "externalReferences": [
-        {
-          "type": "distribution",
-          "url": "https://registry.npmjs.org/color-name/-/color-name-1.1.4.tgz"
         }
       ]
     },
@@ -9375,10 +9207,10 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/concurrently@9.2.4",
+      "bom-ref": "pkg:npm/concurrently@10.0.5",
       "name": "concurrently",
-      "version": "9.2.4",
-      "purl": "pkg:npm/concurrently@9.2.4",
+      "version": "10.0.5",
+      "purl": "pkg:npm/concurrently@10.0.5",
       "licenses": [
         {
           "license": {
@@ -9390,7 +9222,7 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/concurrently/-/concurrently-9.2.4.tgz"
+          "url": "https://registry.npmjs.org/concurrently/-/concurrently-10.0.5.tgz"
         }
       ]
     },
@@ -10971,10 +10803,10 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/emoji-regex@8.0.0",
+      "bom-ref": "pkg:npm/emoji-regex@10.6.0",
       "name": "emoji-regex",
-      "version": "8.0.0",
-      "purl": "pkg:npm/emoji-regex@8.0.0",
+      "version": "10.6.0",
+      "purl": "pkg:npm/emoji-regex@10.6.0",
       "licenses": [
         {
           "license": {
@@ -10986,7 +10818,7 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/emoji-regex/-/emoji-regex-8.0.0.tgz"
+          "url": "https://registry.npmjs.org/emoji-regex/-/emoji-regex-10.6.0.tgz"
         }
       ]
     },
@@ -12063,6 +11895,27 @@
     },
     {
       "type": "library",
+      "bom-ref": "pkg:npm/get-east-asian-width@1.7.0",
+      "name": "get-east-asian-width",
+      "version": "1.7.0",
+      "purl": "pkg:npm/get-east-asian-width@1.7.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "scope": "optional",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/get-east-asian-width/-/get-east-asian-width-1.7.0.tgz"
+        }
+      ]
+    },
+    {
+      "type": "library",
       "bom-ref": "pkg:npm/get-intrinsic@1.3.0",
       "name": "get-intrinsic",
       "version": "1.3.0",
@@ -12336,27 +12189,6 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/has-flag@4.0.0",
-      "name": "has-flag",
-      "version": "4.0.0",
-      "purl": "pkg:npm/has-flag@4.0.0",
-      "licenses": [
-        {
-          "license": {
-            "id": "MIT"
-          }
-        }
-      ],
-      "scope": "optional",
-      "externalReferences": [
-        {
-          "type": "distribution",
-          "url": "https://registry.npmjs.org/has-flag/-/has-flag-4.0.0.tgz"
-        }
-      ]
-    },
-    {
-      "type": "library",
       "bom-ref": "pkg:npm/has-property-descriptors@1.0.2",
       "name": "has-property-descriptors",
       "version": "1.0.2",
@@ -12567,10 +12399,10 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/html-encoding-sniffer@6.0.0",
+      "bom-ref": "pkg:npm/html-encoding-sniffer@7.0.0",
       "name": "html-encoding-sniffer",
-      "version": "6.0.0",
-      "purl": "pkg:npm/html-encoding-sniffer@6.0.0",
+      "version": "7.0.0",
+      "purl": "pkg:npm/html-encoding-sniffer@7.0.0",
       "licenses": [
         {
           "license": {
@@ -12582,28 +12414,7 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/html-encoding-sniffer/-/html-encoding-sniffer-6.0.0.tgz"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "bom-ref": "pkg:npm/html-escaper@2.0.2",
-      "name": "html-escaper",
-      "version": "2.0.2",
-      "purl": "pkg:npm/html-escaper@2.0.2",
-      "licenses": [
-        {
-          "license": {
-            "id": "MIT"
-          }
-        }
-      ],
-      "scope": "optional",
-      "externalReferences": [
-        {
-          "type": "distribution",
-          "url": "https://registry.npmjs.org/html-escaper/-/html-escaper-2.0.2.tgz"
+          "url": "https://registry.npmjs.org/html-encoding-sniffer/-/html-encoding-sniffer-7.0.0.tgz"
         }
       ]
     },
@@ -13092,27 +12903,6 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/is-fullwidth-code-point@3.0.0",
-      "name": "is-fullwidth-code-point",
-      "version": "3.0.0",
-      "purl": "pkg:npm/is-fullwidth-code-point@3.0.0",
-      "licenses": [
-        {
-          "license": {
-            "id": "MIT"
-          }
-        }
-      ],
-      "scope": "optional",
-      "externalReferences": [
-        {
-          "type": "distribution",
-          "url": "https://registry.npmjs.org/is-fullwidth-code-point/-/is-fullwidth-code-point-3.0.0.tgz"
-        }
-      ]
-    },
-    {
-      "type": "library",
       "bom-ref": "pkg:npm/is-generator-function@1.1.2",
       "name": "is-generator-function",
       "version": "1.1.2",
@@ -13554,69 +13344,6 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/istanbul-lib-coverage@3.2.2",
-      "name": "istanbul-lib-coverage",
-      "version": "3.2.2",
-      "purl": "pkg:npm/istanbul-lib-coverage@3.2.2",
-      "licenses": [
-        {
-          "license": {
-            "id": "BSD-3-Clause"
-          }
-        }
-      ],
-      "scope": "optional",
-      "externalReferences": [
-        {
-          "type": "distribution",
-          "url": "https://registry.npmjs.org/istanbul-lib-coverage/-/istanbul-lib-coverage-3.2.2.tgz"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "bom-ref": "pkg:npm/istanbul-lib-report@3.0.1",
-      "name": "istanbul-lib-report",
-      "version": "3.0.1",
-      "purl": "pkg:npm/istanbul-lib-report@3.0.1",
-      "licenses": [
-        {
-          "license": {
-            "id": "BSD-3-Clause"
-          }
-        }
-      ],
-      "scope": "optional",
-      "externalReferences": [
-        {
-          "type": "distribution",
-          "url": "https://registry.npmjs.org/istanbul-lib-report/-/istanbul-lib-report-3.0.1.tgz"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "bom-ref": "pkg:npm/istanbul-reports@3.2.0",
-      "name": "istanbul-reports",
-      "version": "3.2.0",
-      "purl": "pkg:npm/istanbul-reports@3.2.0",
-      "licenses": [
-        {
-          "license": {
-            "id": "BSD-3-Clause"
-          }
-        }
-      ],
-      "scope": "optional",
-      "externalReferences": [
-        {
-          "type": "distribution",
-          "url": "https://registry.npmjs.org/istanbul-reports/-/istanbul-reports-3.2.0.tgz"
-        }
-      ]
-    },
-    {
-      "type": "library",
       "bom-ref": "pkg:npm/jake@10.9.4",
       "name": "jake",
       "version": "10.9.4",
@@ -13743,10 +13470,10 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/jsdom@29.1.1",
+      "bom-ref": "pkg:npm/jsdom@30.1.1",
       "name": "jsdom",
-      "version": "29.1.1",
-      "purl": "pkg:npm/jsdom@29.1.1",
+      "version": "30.1.1",
+      "purl": "pkg:npm/jsdom@30.1.1",
       "licenses": [
         {
           "license": {
@@ -13758,7 +13485,7 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/jsdom/-/jsdom-29.1.1.tgz"
+          "url": "https://registry.npmjs.org/jsdom/-/jsdom-30.1.1.tgz"
         }
       ]
     },
@@ -14289,10 +14016,10 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/lint-staged@17.5.1",
+      "bom-ref": "pkg:npm/lint-staged@17.6.0",
       "name": "lint-staged",
-      "version": "17.5.1",
-      "purl": "pkg:npm/lint-staged@17.5.1",
+      "version": "17.6.0",
+      "purl": "pkg:npm/lint-staged@17.6.0",
       "licenses": [
         {
           "license": {
@@ -14304,7 +14031,7 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/lint-staged/-/lint-staged-17.5.1.tgz"
+          "url": "https://registry.npmjs.org/lint-staged/-/lint-staged-17.6.0.tgz"
         }
       ]
     },
@@ -14515,27 +14242,6 @@
         {
           "type": "distribution",
           "url": "https://registry.npmjs.org/magicast/-/magicast-0.5.5.tgz"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "bom-ref": "pkg:npm/make-dir@4.0.0",
-      "name": "make-dir",
-      "version": "4.0.0",
-      "purl": "pkg:npm/make-dir@4.0.0",
-      "licenses": [
-        {
-          "license": {
-            "id": "MIT"
-          }
-        }
-      ],
-      "scope": "optional",
-      "externalReferences": [
-        {
-          "type": "distribution",
-          "url": "https://registry.npmjs.org/make-dir/-/make-dir-4.0.0.tgz"
         }
       ]
     },
@@ -15019,27 +14725,6 @@
         {
           "type": "distribution",
           "url": "https://registry.npmjs.org/natural-compare/-/natural-compare-1.4.0.tgz"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "bom-ref": "pkg:npm/node-fetch@2.7.0",
-      "name": "node-fetch",
-      "version": "2.7.0",
-      "purl": "pkg:npm/node-fetch@2.7.0",
-      "licenses": [
-        {
-          "license": {
-            "id": "MIT"
-          }
-        }
-      ],
-      "scope": "optional",
-      "externalReferences": [
-        {
-          "type": "distribution",
-          "url": "https://registry.npmjs.org/node-fetch/-/node-fetch-2.7.0.tgz"
         }
       ]
     },
@@ -15654,10 +15339,10 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/pinia@3.0.4",
+      "bom-ref": "pkg:npm/pinia@4.0.3",
       "name": "pinia",
-      "version": "3.0.4",
-      "purl": "pkg:npm/pinia@3.0.4",
+      "version": "4.0.3",
+      "purl": "pkg:npm/pinia@4.0.3",
       "licenses": [
         {
           "license": {
@@ -15669,7 +15354,7 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/pinia/-/pinia-3.0.4.tgz"
+          "url": "https://registry.npmjs.org/pinia/-/pinia-4.0.3.tgz"
         }
       ]
     },
@@ -16347,27 +16032,6 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/require-directory@2.1.1",
-      "name": "require-directory",
-      "version": "2.1.1",
-      "purl": "pkg:npm/require-directory@2.1.1",
-      "licenses": [
-        {
-          "license": {
-            "id": "MIT"
-          }
-        }
-      ],
-      "scope": "optional",
-      "externalReferences": [
-        {
-          "type": "distribution",
-          "url": "https://registry.npmjs.org/require-directory/-/require-directory-2.1.1.tgz"
-        }
-      ]
-    },
-    {
-      "type": "library",
       "bom-ref": "pkg:npm/require-from-string@2.0.2",
       "name": "require-from-string",
       "version": "2.0.2",
@@ -16956,27 +16620,6 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/siginfo@2.0.0",
-      "name": "siginfo",
-      "version": "2.0.0",
-      "purl": "pkg:npm/siginfo@2.0.0",
-      "licenses": [
-        {
-          "license": {
-            "id": "ISC"
-          }
-        }
-      ],
-      "scope": "optional",
-      "externalReferences": [
-        {
-          "type": "distribution",
-          "url": "https://registry.npmjs.org/siginfo/-/siginfo-2.0.0.tgz"
-        }
-      ]
-    },
-    {
-      "type": "library",
       "bom-ref": "pkg:npm/smob@1.6.2",
       "name": "smob",
       "version": "1.6.2",
@@ -17103,27 +16746,6 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/stackback@0.0.2",
-      "name": "stackback",
-      "version": "0.0.2",
-      "purl": "pkg:npm/stackback@0.0.2",
-      "licenses": [
-        {
-          "license": {
-            "id": "MIT"
-          }
-        }
-      ],
-      "scope": "optional",
-      "externalReferences": [
-        {
-          "type": "distribution",
-          "url": "https://registry.npmjs.org/stackback/-/stackback-0.0.2.tgz"
-        }
-      ]
-    },
-    {
-      "type": "library",
       "bom-ref": "pkg:npm/std-env@4.2.0",
       "name": "std-env",
       "version": "4.2.0",
@@ -17208,10 +16830,10 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/string-width@4.2.3",
+      "bom-ref": "pkg:npm/string-width@7.2.0",
       "name": "string-width",
-      "version": "4.2.3",
-      "purl": "pkg:npm/string-width@4.2.3",
+      "version": "7.2.0",
+      "purl": "pkg:npm/string-width@7.2.0",
       "licenses": [
         {
           "license": {
@@ -17223,7 +16845,7 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/string-width/-/string-width-4.2.3.tgz"
+          "url": "https://registry.npmjs.org/string-width/-/string-width-7.2.0.tgz"
         }
       ]
     },
@@ -17355,10 +16977,10 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/strip-ansi@6.0.1",
+      "bom-ref": "pkg:npm/strip-ansi@7.2.0",
       "name": "strip-ansi",
-      "version": "6.0.1",
-      "purl": "pkg:npm/strip-ansi@6.0.1",
+      "version": "7.2.0",
+      "purl": "pkg:npm/strip-ansi@7.2.0",
       "licenses": [
         {
           "license": {
@@ -17370,7 +16992,7 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/strip-ansi/-/strip-ansi-6.0.1.tgz"
+          "url": "https://registry.npmjs.org/strip-ansi/-/strip-ansi-7.2.0.tgz"
         }
       ]
     },
@@ -17481,10 +17103,10 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/supports-color@8.1.1",
+      "bom-ref": "pkg:npm/supports-color@10.2.2",
       "name": "supports-color",
-      "version": "8.1.1",
-      "purl": "pkg:npm/supports-color@8.1.1",
+      "version": "10.2.2",
+      "purl": "pkg:npm/supports-color@10.2.2",
       "licenses": [
         {
           "license": {
@@ -17496,7 +17118,7 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/supports-color/-/supports-color-8.1.1.tgz"
+          "url": "https://registry.npmjs.org/supports-color/-/supports-color-10.2.2.tgz"
         }
       ]
     },
@@ -17539,27 +17161,6 @@
         {
           "type": "distribution",
           "url": "https://registry.npmjs.org/svg-pan-zoom/-/svg-pan-zoom-3.6.2.tgz"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "bom-ref": "pkg:npm/symbol-tree@3.2.4",
-      "name": "symbol-tree",
-      "version": "3.2.4",
-      "purl": "pkg:npm/symbol-tree@3.2.4",
-      "licenses": [
-        {
-          "license": {
-            "id": "MIT"
-          }
-        }
-      ],
-      "scope": "optional",
-      "externalReferences": [
-        {
-          "type": "distribution",
-          "url": "https://registry.npmjs.org/symbol-tree/-/symbol-tree-3.2.4.tgz"
         }
       ]
     },
@@ -17649,10 +17250,10 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/tinybench@2.9.0",
+      "bom-ref": "pkg:npm/tinybench@6.2.0",
       "name": "tinybench",
-      "version": "2.9.0",
-      "purl": "pkg:npm/tinybench@2.9.0",
+      "version": "6.2.0",
+      "purl": "pkg:npm/tinybench@6.2.0",
       "licenses": [
         {
           "license": {
@@ -17664,7 +17265,7 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/tinybench/-/tinybench-2.9.0.tgz"
+          "url": "https://registry.npmjs.org/tinybench/-/tinybench-6.2.0.tgz"
         }
       ]
     },
@@ -18111,10 +17712,10 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/undici@7.29.1",
+      "bom-ref": "pkg:npm/undici@6.29.0",
       "name": "undici",
-      "version": "7.29.1",
-      "purl": "pkg:npm/undici@7.29.1",
+      "version": "6.29.0",
+      "purl": "pkg:npm/undici@6.29.0",
       "licenses": [
         {
           "license": {
@@ -18126,7 +17727,7 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/undici/-/undici-7.29.1.tgz"
+          "url": "https://registry.npmjs.org/undici/-/undici-6.29.0.tgz"
         }
       ]
     },
@@ -18741,10 +18342,10 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/vitest@4.1.11",
+      "bom-ref": "pkg:npm/vitest@5.0.2",
       "name": "vitest",
-      "version": "4.1.11",
-      "purl": "pkg:npm/vitest@4.1.11",
+      "version": "5.0.2",
+      "purl": "pkg:npm/vitest@5.0.2",
       "licenses": [
         {
           "license": {
@@ -18756,7 +18357,7 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/vitest/-/vitest-4.1.11.tgz"
+          "url": "https://registry.npmjs.org/vitest/-/vitest-5.0.2.tgz"
         }
       ]
     },
@@ -18846,10 +18447,10 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/vue-echarts@8.3.0",
+      "bom-ref": "pkg:npm/vue-echarts@8.3.1",
       "name": "vue-echarts",
-      "version": "8.3.0",
-      "purl": "pkg:npm/vue-echarts@8.3.0",
+      "version": "8.3.1",
+      "purl": "pkg:npm/vue-echarts@8.3.1",
       "licenses": [
         {
           "license": {
@@ -18861,7 +18462,7 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/vue-echarts/-/vue-echarts-8.3.0.tgz"
+          "url": "https://registry.npmjs.org/vue-echarts/-/vue-echarts-8.3.1.tgz"
         }
       ]
     },
@@ -18972,10 +18573,10 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/w3c-xmlserializer@5.0.0",
+      "bom-ref": "pkg:npm/w3c-xmlserializer@6.0.0",
       "name": "w3c-xmlserializer",
-      "version": "5.0.0",
-      "purl": "pkg:npm/w3c-xmlserializer@5.0.0",
+      "version": "6.0.0",
+      "purl": "pkg:npm/w3c-xmlserializer@6.0.0",
       "licenses": [
         {
           "license": {
@@ -18987,16 +18588,16 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/w3c-xmlserializer/-/w3c-xmlserializer-5.0.0.tgz"
+          "url": "https://registry.npmjs.org/w3c-xmlserializer/-/w3c-xmlserializer-6.0.0.tgz"
         }
       ]
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/web-vitals@5.3.0",
+      "bom-ref": "pkg:npm/web-vitals@6.2.2",
       "name": "web-vitals",
-      "version": "5.3.0",
-      "purl": "pkg:npm/web-vitals@5.3.0",
+      "version": "6.2.2",
+      "purl": "pkg:npm/web-vitals@6.2.2",
       "licenses": [
         {
           "license": {
@@ -19008,7 +18609,7 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/web-vitals/-/web-vitals-5.3.0.tgz"
+          "url": "https://registry.npmjs.org/web-vitals/-/web-vitals-6.2.2.tgz"
         }
       ]
     },
@@ -19203,10 +18804,10 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/why-is-node-running@2.3.0",
+      "bom-ref": "pkg:npm/why-is-node-running@3.2.2",
       "name": "why-is-node-running",
-      "version": "2.3.0",
-      "purl": "pkg:npm/why-is-node-running@2.3.0",
+      "version": "3.2.2",
+      "purl": "pkg:npm/why-is-node-running@3.2.2",
       "licenses": [
         {
           "license": {
@@ -19218,7 +18819,7 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/why-is-node-running/-/why-is-node-running-2.3.0.tgz"
+          "url": "https://registry.npmjs.org/why-is-node-running/-/why-is-node-running-3.2.2.tgz"
         }
       ]
     },
@@ -19581,10 +19182,10 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/wrap-ansi@7.0.0",
+      "bom-ref": "pkg:npm/wrap-ansi@9.0.2",
       "name": "wrap-ansi",
-      "version": "7.0.0",
-      "purl": "pkg:npm/wrap-ansi@7.0.0",
+      "version": "9.0.2",
+      "purl": "pkg:npm/wrap-ansi@9.0.2",
       "licenses": [
         {
           "license": {
@@ -19596,7 +19197,7 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/wrap-ansi/-/wrap-ansi-7.0.0.tgz"
+          "url": "https://registry.npmjs.org/wrap-ansi/-/wrap-ansi-9.0.2.tgz"
         }
       ]
     },
@@ -19728,10 +19329,10 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/yargs@17.7.2",
+      "bom-ref": "pkg:npm/yargs@18.0.0",
       "name": "yargs",
-      "version": "17.7.2",
-      "purl": "pkg:npm/yargs@17.7.2",
+      "version": "18.0.0",
+      "purl": "pkg:npm/yargs@18.0.0",
       "licenses": [
         {
           "license": {
@@ -19743,7 +19344,7 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/yargs/-/yargs-17.7.2.tgz"
+          "url": "https://registry.npmjs.org/yargs/-/yargs-18.0.0.tgz"
         }
       ]
     },
@@ -19858,10 +19459,8 @@
         "pkg:npm/@antv/x6@3.1.8",
         "pkg:npm/@antv/x6-vue-shape@3.0.2",
         "pkg:npm/@apideck/better-ajv-errors@0.3.7",
-        "pkg:npm/@asamuzakjp/css-color@5.1.11",
-        "pkg:npm/@asamuzakjp/dom-selector@7.1.1",
-        "pkg:npm/@asamuzakjp/generational-cache@1.0.1",
-        "pkg:npm/@asamuzakjp/nwsapi@2.3.9",
+        "pkg:npm/@asamuzakjp/css-color@7.1.2",
+        "pkg:npm/@asamuzakjp/dom-selector@9.2.2",
         "pkg:npm/@axe-core/playwright@4.13.0",
         "pkg:npm/@babel/code-frame@7.29.7",
         "pkg:npm/@babel/compat-data@7.29.7",
@@ -19968,12 +19567,12 @@
         "pkg:npm/@codemirror/search@6.7.2",
         "pkg:npm/@codemirror/state@6.7.6",
         "pkg:npm/@codemirror/view@6.43.13",
-        "pkg:npm/@csstools/color-helpers@6.1.1",
-        "pkg:npm/@csstools/css-calc@3.4.0",
-        "pkg:npm/@csstools/css-color-parser@4.2.3",
-        "pkg:npm/@csstools/css-parser-algorithms@4.0.0",
+        "pkg:npm/@csstools/color-helpers@6.1.2",
+        "pkg:npm/@csstools/css-calc@3.4.1",
+        "pkg:npm/@csstools/css-color-parser@4.2.4",
+        "pkg:npm/@csstools/css-parser-algorithms@4.0.1",
         "pkg:npm/@csstools/css-syntax-patches-for-csstree@1.1.14",
-        "pkg:npm/@csstools/css-tokenizer@4.0.1",
+        "pkg:npm/@csstools/css-tokenizer@4.0.2",
         "pkg:npm/@ctrl/tinycolor@4.2.1",
         "pkg:npm/@docsearch/css@3.8.2",
         "pkg:npm/@docsearch/js@3.8.2",
@@ -20042,7 +19641,7 @@
         "pkg:npm/@lezer/highlight@1.2.4",
         "pkg:npm/@lezer/json@1.0.3",
         "pkg:npm/@lezer/lr@1.4.10",
-        "pkg:npm/@lucide/vue@1.48.0",
+        "pkg:npm/@lucide/vue@1.49.0",
         "pkg:npm/@marijn/find-cluster-break@1.0.4",
         "pkg:npm/@mermaid-js/mermaid-mindmap@9.3.0",
         "pkg:npm/@mermaid-js/parser@1.2.1",
@@ -20100,23 +19699,23 @@
         "pkg:npm/@rollup/rollup-win32-ia32-msvc@4.63.5",
         "pkg:npm/@rollup/rollup-win32-x64-gnu@4.63.5",
         "pkg:npm/@rollup/rollup-win32-x64-msvc@4.63.5",
-        "pkg:npm/@sentry/browser@10.75.3",
-        "pkg:npm/@sentry/browser-utils@10.75.3",
-        "pkg:npm/@sentry/cli@2.58.6",
-        "pkg:npm/@sentry/cli-darwin@2.58.6",
-        "pkg:npm/@sentry/cli-linux-arm@2.58.6",
-        "pkg:npm/@sentry/cli-linux-arm64@2.58.6",
-        "pkg:npm/@sentry/cli-linux-i686@2.58.6",
-        "pkg:npm/@sentry/cli-linux-x64@2.58.6",
-        "pkg:npm/@sentry/cli-win32-arm64@2.58.6",
-        "pkg:npm/@sentry/cli-win32-i686@2.58.6",
-        "pkg:npm/@sentry/cli-win32-x64@2.58.6",
-        "pkg:npm/@sentry/conventions@0.16.0",
-        "pkg:npm/@sentry/core@10.75.3",
-        "pkg:npm/@sentry/feedback@10.75.3",
-        "pkg:npm/@sentry/replay@10.75.3",
-        "pkg:npm/@sentry/replay-canvas@10.75.3",
-        "pkg:npm/@sentry/vue@10.75.3",
+        "pkg:npm/@sentry/browser@11.1.0",
+        "pkg:npm/@sentry/browser-utils@11.1.0",
+        "pkg:npm/@sentry/cli@3.8.0",
+        "pkg:npm/@sentry/cli-darwin@3.8.0",
+        "pkg:npm/@sentry/cli-linux-arm@3.8.0",
+        "pkg:npm/@sentry/cli-linux-arm64@3.8.0",
+        "pkg:npm/@sentry/cli-linux-i686@3.8.0",
+        "pkg:npm/@sentry/cli-linux-x64@3.8.0",
+        "pkg:npm/@sentry/cli-win32-arm64@3.8.0",
+        "pkg:npm/@sentry/cli-win32-i686@3.8.0",
+        "pkg:npm/@sentry/cli-win32-x64@3.8.0",
+        "pkg:npm/@sentry/conventions@0.24.0",
+        "pkg:npm/@sentry/core@11.1.0",
+        "pkg:npm/@sentry/feedback@11.1.0",
+        "pkg:npm/@sentry/replay@11.1.0",
+        "pkg:npm/@sentry/replay-canvas@11.1.0",
+        "pkg:npm/@sentry/vue@11.1.0",
         "pkg:npm/@shikijs/core@2.5.0",
         "pkg:npm/@shikijs/engine-javascript@2.5.0",
         "pkg:npm/@shikijs/engine-oniguruma@2.5.0",
@@ -20125,10 +19724,9 @@
         "pkg:npm/@shikijs/transformers@2.5.0",
         "pkg:npm/@shikijs/types@2.5.0",
         "pkg:npm/@shikijs/vscode-textmate@10.0.2",
-        "pkg:npm/@standard-schema/spec@1.1.0",
-        "pkg:npm/@tanstack/match-sorter-utils@8.19.4",
-        "pkg:npm/@tanstack/query-core@5.103.2",
-        "pkg:npm/@tanstack/vue-query@5.103.2",
+        "pkg:npm/@tanstack/match-sorter-utils@9.1.2",
+        "pkg:npm/@tanstack/query-core@5.104.0",
+        "pkg:npm/@tanstack/vue-query@5.104.0",
         "pkg:npm/@trickfilm400/rollup-plugin-off-main-thread@3.0.0-pre1",
         "pkg:npm/@types/chai@5.2.3",
         "pkg:npm/@types/d3@7.4.3",
@@ -20180,27 +19778,24 @@
         "pkg:npm/@types/trusted-types@2.0.7",
         "pkg:npm/@types/unist@3.0.3",
         "pkg:npm/@types/web-bluetooth@0.0.21",
-        "pkg:npm/@typescript-eslint/eslint-plugin@8.70.1",
-        "pkg:npm/@typescript-eslint/parser@8.70.1",
-        "pkg:npm/@typescript-eslint/project-service@8.70.1",
-        "pkg:npm/@typescript-eslint/scope-manager@8.70.1",
-        "pkg:npm/@typescript-eslint/tsconfig-utils@8.70.1",
-        "pkg:npm/@typescript-eslint/type-utils@8.70.1",
-        "pkg:npm/@typescript-eslint/types@8.70.1",
-        "pkg:npm/@typescript-eslint/typescript-estree@8.70.1",
-        "pkg:npm/@typescript-eslint/utils@8.70.1",
-        "pkg:npm/@typescript-eslint/visitor-keys@8.70.1",
+        "pkg:npm/@typescript-eslint/eslint-plugin@8.71.0",
+        "pkg:npm/@typescript-eslint/parser@8.71.0",
+        "pkg:npm/@typescript-eslint/project-service@8.71.0",
+        "pkg:npm/@typescript-eslint/scope-manager@8.71.0",
+        "pkg:npm/@typescript-eslint/tsconfig-utils@8.71.0",
+        "pkg:npm/@typescript-eslint/type-utils@8.71.0",
+        "pkg:npm/@typescript-eslint/types@8.71.0",
+        "pkg:npm/@typescript-eslint/typescript-estree@8.71.0",
+        "pkg:npm/@typescript-eslint/utils@8.71.0",
+        "pkg:npm/@typescript-eslint/visitor-keys@8.71.0",
         "pkg:npm/@ungap/structured-clone@1.4.0",
         "pkg:npm/@upsetjs/venn.js@2.0.0",
         "pkg:npm/@vitejs/plugin-vue@6.0.9",
-        "pkg:npm/@vitest/coverage-v8@4.1.11",
-        "pkg:npm/@vitest/expect@4.1.11",
-        "pkg:npm/@vitest/mocker@4.1.11",
-        "pkg:npm/@vitest/pretty-format@4.1.11",
-        "pkg:npm/@vitest/runner@4.1.11",
-        "pkg:npm/@vitest/snapshot@4.1.11",
-        "pkg:npm/@vitest/spy@4.1.11",
-        "pkg:npm/@vitest/utils@4.1.11",
+        "pkg:npm/@vitest/coverage-v8@5.0.2",
+        "pkg:npm/@vitest/istanbul-lib-coverage@1.0.2",
+        "pkg:npm/@vitest/istanbul-lib-report@1.0.2",
+        "pkg:npm/@vitest/mocker@5.0.2",
+        "pkg:npm/@vitest/spy@5.0.2",
         "pkg:npm/@volar/language-core@2.4.28",
         "pkg:npm/@volar/source-map@2.4.28",
         "pkg:npm/@volar/typescript@2.4.28",
@@ -20232,8 +19827,8 @@
         "pkg:npm/algoliasearch@5.59.0",
         "pkg:npm/alien-signals@3.2.1",
         "pkg:npm/ansi-colors@4.1.3",
-        "pkg:npm/ansi-regex@5.0.1",
-        "pkg:npm/ansi-styles@4.3.0",
+        "pkg:npm/ansi-regex@6.4.0",
+        "pkg:npm/ansi-styles@6.2.3",
         "pkg:npm/argparse@2.0.1",
         "pkg:npm/array-buffer-byte-length@1.0.2",
         "pkg:npm/arraybuffer.prototype.slice@1.0.4",
@@ -20268,20 +19863,18 @@
         "pkg:npm/caniuse-lite@1.0.30001812",
         "pkg:npm/ccount@2.0.1",
         "pkg:npm/chai@6.2.2",
-        "pkg:npm/chalk@4.1.2",
+        "pkg:npm/chalk@5.6.2",
         "pkg:npm/change-case@5.4.4",
         "pkg:npm/character-entities-html4@2.1.0",
         "pkg:npm/character-entities-legacy@3.0.0",
         "pkg:npm/chokidar@5.0.0",
-        "pkg:npm/cliui@8.0.1",
+        "pkg:npm/cliui@9.0.1",
         "pkg:npm/codemirror@6.0.2",
-        "pkg:npm/color-convert@2.0.1",
-        "pkg:npm/color-name@1.1.4",
         "pkg:npm/colorette@1.4.0",
         "pkg:npm/combined-stream@1.0.8",
         "pkg:npm/comma-separated-tokens@2.0.3",
         "pkg:npm/common-tags@1.8.2",
-        "pkg:npm/concurrently@9.2.4",
+        "pkg:npm/concurrently@10.0.5",
         "pkg:npm/confbox@0.3.1",
         "pkg:npm/config-chain@1.1.13",
         "pkg:npm/convert-source-map@2.0.0",
@@ -20357,7 +19950,7 @@
         "pkg:npm/ejs@3.1.10",
         "pkg:npm/electron-to-chromium@1.5.439",
         "pkg:npm/element-plus@2.14.6",
-        "pkg:npm/emoji-regex@8.0.0",
+        "pkg:npm/emoji-regex@10.6.0",
         "pkg:npm/emoji-regex-xs@1.0.0",
         "pkg:npm/entities@8.1.0",
         "pkg:npm/es-abstract@1.24.2",
@@ -20409,6 +20002,7 @@
         "pkg:npm/generator-function@2.0.1",
         "pkg:npm/gensync@1.0.0-beta.2",
         "pkg:npm/get-caller-file@2.0.5",
+        "pkg:npm/get-east-asian-width@1.7.0",
         "pkg:npm/get-intrinsic@1.3.0",
         "pkg:npm/get-own-enumerable-property-symbols@3.0.2",
         "pkg:npm/get-proto@1.0.1",
@@ -20422,7 +20016,6 @@
         "pkg:npm/graphlib@2.1.8",
         "pkg:npm/hachure-fill@0.5.2",
         "pkg:npm/has-bigints@1.1.0",
-        "pkg:npm/has-flag@4.0.0",
         "pkg:npm/has-property-descriptors@1.0.2",
         "pkg:npm/has-proto@1.2.0",
         "pkg:npm/has-symbols@1.1.0",
@@ -20433,8 +20026,7 @@
         "pkg:npm/hast-util-whitespace@3.0.0",
         "pkg:npm/hookable@5.5.3",
         "pkg:npm/hookified@1.15.1",
-        "pkg:npm/html-encoding-sniffer@6.0.0",
-        "pkg:npm/html-escaper@2.0.2",
+        "pkg:npm/html-encoding-sniffer@7.0.0",
         "pkg:npm/html-void-elements@3.0.0",
         "pkg:npm/https-proxy-agent@5.0.1",
         "pkg:npm/husky@9.1.7",
@@ -20458,7 +20050,6 @@
         "pkg:npm/is-document.all@1.0.0",
         "pkg:npm/is-extglob@2.1.1",
         "pkg:npm/is-finalizationregistry@1.1.1",
-        "pkg:npm/is-fullwidth-code-point@3.0.0",
         "pkg:npm/is-generator-function@1.1.2",
         "pkg:npm/is-glob@4.0.3",
         "pkg:npm/is-map@2.0.3",
@@ -20480,16 +20071,13 @@
         "pkg:npm/is-weakset@2.0.4",
         "pkg:npm/isarray@2.0.5",
         "pkg:npm/isexe@2.0.0",
-        "pkg:npm/istanbul-lib-coverage@3.2.2",
-        "pkg:npm/istanbul-lib-report@3.0.1",
-        "pkg:npm/istanbul-reports@3.2.0",
         "pkg:npm/jake@10.9.4",
         "pkg:npm/js-beautify@2.0.3",
         "pkg:npm/js-cookie@3.0.8",
         "pkg:npm/js-levenshtein@1.1.6",
         "pkg:npm/js-tokens@10.0.0",
         "pkg:npm/js-yaml@4.3.2",
-        "pkg:npm/jsdom@29.1.1",
+        "pkg:npm/jsdom@30.1.1",
         "pkg:npm/jsesc@3.1.0",
         "pkg:npm/json-bigint@1.0.0",
         "pkg:npm/json-schema-traverse@0.4.1",
@@ -20515,7 +20103,7 @@
         "pkg:npm/lightningcss-linux-x64-musl@1.33.0",
         "pkg:npm/lightningcss-win32-arm64-msvc@1.33.0",
         "pkg:npm/lightningcss-win32-x64-msvc@1.33.0",
-        "pkg:npm/lint-staged@17.5.1",
+        "pkg:npm/lint-staged@17.6.0",
         "pkg:npm/local-pkg@1.2.1",
         "pkg:npm/locate-path@6.0.0",
         "pkg:npm/lodash@4.18.1",
@@ -20526,7 +20114,6 @@
         "pkg:npm/magic-string@1.4.2",
         "pkg:npm/magic-string-ast@1.0.3",
         "pkg:npm/magicast@0.5.5",
-        "pkg:npm/make-dir@4.0.0",
         "pkg:npm/mark.js@8.11.1",
         "pkg:npm/marked@16.4.2",
         "pkg:npm/math-intrinsics@1.1.0",
@@ -20550,7 +20137,6 @@
         "pkg:npm/ms@2.1.3",
         "pkg:npm/muggle-string@0.4.1",
         "pkg:npm/natural-compare@1.4.0",
-        "pkg:npm/node-fetch@2.7.0",
         "pkg:npm/node-releases@2.0.57",
         "pkg:npm/non-layered-tidy-tree-layout@2.0.2",
         "pkg:npm/nopt@10.0.1",
@@ -20580,7 +20166,7 @@
         "pkg:npm/perfect-debounce@1.0.0",
         "pkg:npm/picocolors@1.1.1",
         "pkg:npm/picomatch@4.0.7",
-        "pkg:npm/pinia@3.0.4",
+        "pkg:npm/pinia@4.0.3",
         "pkg:npm/pkg-types@2.3.3",
         "pkg:npm/playwright@1.63.0",
         "pkg:npm/playwright-core@1.63.0",
@@ -20613,7 +20199,6 @@
         "pkg:npm/regjsgen@0.8.0",
         "pkg:npm/regjsparser@0.13.3",
         "pkg:npm/remove-accents@0.5.0",
-        "pkg:npm/require-directory@2.1.1",
         "pkg:npm/require-from-string@2.0.2",
         "pkg:npm/resolve@1.22.12",
         "pkg:npm/rfdc@1.4.1",
@@ -20642,40 +20227,37 @@
         "pkg:npm/side-channel-list@1.0.1",
         "pkg:npm/side-channel-map@1.0.1",
         "pkg:npm/side-channel-weakmap@1.0.2",
-        "pkg:npm/siginfo@2.0.0",
         "pkg:npm/smob@1.6.2",
         "pkg:npm/source-map@0.6.1",
         "pkg:npm/source-map-js@1.2.1",
         "pkg:npm/source-map-support@0.5.21",
         "pkg:npm/space-separated-tokens@2.0.2",
         "pkg:npm/speakingurl@14.0.1",
-        "pkg:npm/stackback@0.0.2",
         "pkg:npm/std-env@4.2.0",
         "pkg:npm/stop-iteration-iterator@1.1.0",
         "pkg:npm/strictdom@1.0.1",
         "pkg:npm/string-argv@0.3.2",
-        "pkg:npm/string-width@4.2.3",
+        "pkg:npm/string-width@7.2.0",
         "pkg:npm/string.prototype.matchall@4.1.0",
         "pkg:npm/string.prototype.trim@1.2.11",
         "pkg:npm/string.prototype.trimend@1.0.10",
         "pkg:npm/string.prototype.trimstart@1.0.8",
         "pkg:npm/stringify-entities@4.0.4",
         "pkg:npm/stringify-object@3.3.0",
-        "pkg:npm/strip-ansi@6.0.1",
+        "pkg:npm/strip-ansi@7.2.0",
         "pkg:npm/strip-comments@2.0.1",
         "pkg:npm/strip-literal@4.0.0",
         "pkg:npm/style-mod@4.1.4",
         "pkg:npm/stylis@4.4.0",
         "pkg:npm/superjson@2.2.6",
-        "pkg:npm/supports-color@8.1.1",
+        "pkg:npm/supports-color@10.2.2",
         "pkg:npm/supports-preserve-symlinks-flag@1.0.0",
         "pkg:npm/svg-pan-zoom@3.6.2",
-        "pkg:npm/symbol-tree@3.2.4",
         "pkg:npm/tabbable@6.5.0",
         "pkg:npm/temp-dir@2.0.0",
         "pkg:npm/tempy@0.6.0",
         "pkg:npm/terser@5.51.2",
-        "pkg:npm/tinybench@2.9.0",
+        "pkg:npm/tinybench@6.2.0",
         "pkg:npm/tinyexec@1.3.1",
         "pkg:npm/tinyglobby@0.2.17",
         "pkg:npm/tinyrainbow@3.1.1",
@@ -20697,7 +20279,7 @@
         "pkg:npm/typescript@6.0.3",
         "pkg:npm/ufo@1.6.4",
         "pkg:npm/unbox-primitive@1.1.0",
-        "pkg:npm/undici@7.29.1",
+        "pkg:npm/undici@6.29.0",
         "pkg:npm/unicode-canonical-property-names-ecmascript@2.0.1",
         "pkg:npm/unicode-match-property-ecmascript@2.0.0",
         "pkg:npm/unicode-match-property-value-ecmascript@2.2.1",
@@ -20727,19 +20309,19 @@
         "pkg:npm/vite-plugin-pwa@1.3.0",
         "pkg:npm/vitepress@1.6.4",
         "pkg:npm/vitepress-plugin-mermaid@2.0.17",
-        "pkg:npm/vitest@4.1.11",
+        "pkg:npm/vitest@5.0.2",
         "pkg:npm/vscode-uri@3.2.0",
         "pkg:npm/vue@3.5.43",
         "pkg:npm/vue-component-type-helpers@3.3.11",
         "pkg:npm/vue-demi@0.14.10",
-        "pkg:npm/vue-echarts@8.3.0",
+        "pkg:npm/vue-echarts@8.3.1",
         "pkg:npm/vue-eslint-parser@10.4.1",
         "pkg:npm/vue-i18n@11.4.12",
         "pkg:npm/vue-router@5.3.1",
         "pkg:npm/vue-tsc@3.3.11",
         "pkg:npm/w3c-keyname@2.2.8",
-        "pkg:npm/w3c-xmlserializer@5.0.0",
-        "pkg:npm/web-vitals@5.3.0",
+        "pkg:npm/w3c-xmlserializer@6.0.0",
+        "pkg:npm/web-vitals@6.2.2",
         "pkg:npm/webidl-conversions@8.0.1",
         "pkg:npm/webpack-virtual-modules@0.6.2",
         "pkg:npm/whatwg-mimetype@5.0.0",
@@ -20749,7 +20331,7 @@
         "pkg:npm/which-builtin-type@1.2.1",
         "pkg:npm/which-collection@1.0.2",
         "pkg:npm/which-typed-array@1.1.24",
-        "pkg:npm/why-is-node-running@2.3.0",
+        "pkg:npm/why-is-node-running@3.2.2",
         "pkg:npm/word-wrap@1.2.5",
         "pkg:npm/workbox-background-sync@7.4.1",
         "pkg:npm/workbox-broadcast-update@7.4.1",
@@ -20767,14 +20349,14 @@
         "pkg:npm/workbox-streams@7.4.1",
         "pkg:npm/workbox-sw@7.4.1",
         "pkg:npm/workbox-window@7.4.1",
-        "pkg:npm/wrap-ansi@7.0.0",
+        "pkg:npm/wrap-ansi@9.0.2",
         "pkg:npm/xml-name-validator@5.0.0",
         "pkg:npm/xmlchars@2.2.0",
         "pkg:npm/y18n@5.0.8",
         "pkg:npm/yallist@3.1.1",
         "pkg:npm/yaml@2.9.1",
         "pkg:npm/yaml-ast-parser@0.0.43",
-        "pkg:npm/yargs@17.7.2",
+        "pkg:npm/yargs@18.0.0",
         "pkg:npm/yargs-parser@21.1.1",
         "pkg:npm/yocto-queue@0.1.0",
         "pkg:npm/zrender@6.1.0",

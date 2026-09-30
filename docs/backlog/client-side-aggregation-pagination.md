@@ -1,7 +1,9 @@
 # Backlog: 客户端全量聚合(fetchAllPageItems)→ 服务端分页迁移
 
-> 状态:**待立项**。前端审查 2026-06-21 P5;非 bug、是大租户下的性能 + 数据完整性隐患。
-> 已修的 P1-P4 在 PR #133;本项因跨多页、影响面大,刻意单独立项,不夹在 fix PR 里。
+> 状态：**P1 运行态主链路已完成，P2 长尾继续治理**。2026-09-30 复核确认审批、审计、告警的
+> 桌面主列表、移动列表、自助摘要、执行日志和作业详情审计均已改为服务端分页或有界查询；旧的
+> `queryApprovals/queryAlertsAll/queryAudits` 全量聚合入口已删除。Step Instance、Workflow 与
+> Pipeline 观测仍属于 P2，需按各自筛选契约独立迁移。
 
 ## 问题
 
@@ -14,12 +16,12 @@
 
 ## 调用面分类(2026-06-21 实查)
 
-### 🔴 高流量运行态 — 真隐患,该迁服务端分页
+### 高流量运行态复核
 | 文件 | 端点 | 说明 |
 |---|---|---|
-| `src/api/observabilityQueries.ts:77` | `/queries/audits` | 审计日志,随时间无限增长 |
-| `src/api/approvals.ts:7` | `/queries/approvals` | 审批命令;`CatchUpApprovalsTab.vue` / `MCatchUp.vue` 消费 |
-| `src/api/alertsQuery.ts:22` | `/queries/alerts` | 告警事件,洪峰下量大 |
+| `src/api/observabilityQueries.ts` | `/queries/audits` | ✅ P1 已迁服务端分页 |
+| `src/api/approvals.ts` | `/queries/approvals` | ✅ P1 已迁服务端分页 |
+| `src/api/alertsQuery.ts` | `/queries/alerts` | ✅ P1 已迁服务端分页 |
 | `src/api/instance.ts:47` | step-instance | `JobStepInstanceList.vue` 消费,单 job 步骤多时易超 |
 | `src/api/workflowQueries.ts:15` | workflow definitions | 大租户 workflow 多 |
 | `src/views/file-center/FilePipelineObservability.vue` | pipeline 观测 | 流水实例随跑批累积 |
@@ -63,7 +65,7 @@ audits/alerts 同理)→ ② 前端把端上 `filtered` 逻辑改成传参 → �
 3. **过渡兜底**:迁移前,至少把 `fetchAllPageItems` 截断从静默 warn 改成**给用户可见提示**("仅显示前 4000 条,请用筛选缩小范围"),避免"看着全其实不全"。
 
 ## 优先级
-- P1:audits / approvals / alerts(运行态、增长最快、最容易超 4000)
+- P1:audits / approvals / alerts — **已完成**。
 - P2:step-instance / workflow / pipeline 观测
 - P3:截断用户可见提示(过渡兜底,可先做,成本低)
 

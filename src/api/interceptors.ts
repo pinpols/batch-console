@@ -8,6 +8,8 @@ import { sanitizeParams, sanitizeRequestBody, sanitizeResponseBody } from '@/uti
 import { showErrorToast } from '@/utils/errorToast'
 import { resolveErrorSuggestion, suggestionForBizKey } from '@/utils/errorCatalog'
 import { i18n } from '@/locales'
+import { getActivePinia } from 'pinia'
+import { useAppStore } from '@/stores/app'
 
 /**
  * 把后端 BizException 下发的 i18n key(形如 "error.auth.invalid_credentials")翻成中/英文。
@@ -146,6 +148,11 @@ function isSessionAuthRequest(config?: { url?: string } | null): boolean {
 }
 
 const MUTATING = new Set(['post', 'put', 'patch', 'delete'])
+const MAINTENANCE_WRITE_ALLOWLIST = ['/api/console/auth/', '/api/console/admin/system/maintenance']
+
+export function isMaintenanceWriteAllowed(url = ''): boolean {
+  return MAINTENANCE_WRITE_ALLOWLIST.some((prefix) => url.startsWith(prefix))
+}
 const IDEMPOTENCY_REUSE_WINDOW_MS = 2000
 const IDEMPOTENCY_PENDING_MAX_MS = 60000
 const IDEMPOTENCY_CACHE_MAX = 500
@@ -402,6 +409,22 @@ export function applyApiInterceptors(client: AxiosInstance): void {
 
     const loggable = config as LoggedConfig
     const method = (config.method ?? 'get').toLowerCase()
+    const pinia = getActivePinia()
+    if (MUTATING.has(method) && !isMaintenanceWriteAllowed(config.url) && pinia) {
+      const app = useAppStore(pinia)
+      if (app.writesFrozen) {
+        loggable._silent = true
+        ElMessage.warning(i18n.global.t('maintenance.writeBlocked'))
+        return Promise.reject(
+          Object.assign(new Error(i18n.global.t('maintenance.writeBlocked')), {
+            config,
+            code: 'ERR_MAINTENANCE_WRITE_FROZEN',
+            maintenance: true,
+            silenced: true,
+          }),
+        )
+      }
+    }
     if (MUTATING.has(method) && !config.headers['Idempotency-Key']) {
       const signature = resolveMutationSignature(config, method, tenantId)
       config.headers['Idempotency-Key'] = getAutoIdempotencyKey(signature)
@@ -427,6 +450,7 @@ export function applyApiInterceptors(client: AxiosInstance): void {
       // X-Maintenance: admin-bypass / read-only — 由 MaintenanceModeFilter 在维护期透传
       // 给 admin 时打的标志,前端据此渲染顶部 "维护中,你是 admin 旁路" 提醒
       const xMaint = response.headers?.['x-maintenance']
+      const xMaintVersion = Number(response.headers?.['x-maintenance-version'])
       if (xMaint === 'admin-bypass' || xMaint === 'read-only') {
         void import('@/stores/app').then(({ useAppStore }) => {
           const app = useAppStore()
@@ -434,6 +458,7 @@ export function applyApiInterceptors(client: AxiosInstance): void {
             enabled: true,
             readOnly: xMaint === 'read-only',
             adminBypass: xMaint === 'admin-bypass',
+            version: Number.isFinite(xMaintVersion) ? xMaintVersion : null,
           })
         })
       }
@@ -600,6 +625,8 @@ export function applyApiInterceptors(client: AxiosInstance): void {
               message?: string
               etaAt?: string
               affectedServices?: string[]
+              version?: number
+              updatedAt?: string
             }
           | undefined
         const xMaint = error.response?.headers?.['x-maintenance']
@@ -607,16 +634,27 @@ export function applyApiInterceptors(client: AxiosInstance): void {
           // 动态 import 避开循环依赖(interceptors → store → api → interceptors)
           void import('@/stores/app').then(({ useAppStore }) => {
             const app = useAppStore()
+            const readOnly = !!maint?.readOnly || xMaint === 'read-only'
             app.setMaintenance({
               enabled: true,
-              readOnly: !!maint?.readOnly || xMaint === 'read-only',
+              readOnly,
               message: maint?.message ?? null,
               etaAt: maint?.etaAt ?? null,
               affectedServices: Array.isArray(maint?.affectedServices)
                 ? maint.affectedServices
                 : [],
+              version: maint?.version ?? null,
+              updatedAt: maint?.updatedAt ?? null,
               adminBypass: false,
             })
+            if (!readOnly && typeof window !== 'undefined') {
+              const redirect = `${window.location.pathname}${window.location.search}${window.location.hash}`
+              void import('@/router').then(({ default: router }) => {
+                if (router.currentRoute.value.name !== 'maintenance') {
+                  void router.replace({ name: 'maintenance', query: { redirect } })
+                }
+              })
+            }
           })
           return Promise.reject(
             Object.assign(error as object, { maintenance: true, silenced: true }),
@@ -784,8 +822,7 @@ export function applyApiInterceptors(client: AxiosInstance): void {
           //   b) Spring 默认 404(No static resource) — 路由真的没注册,
           //      由 extractHttpErrorMessage() 改写为「接口不存在或后端版本不匹配(...)」。
           const body = (error as AxiosError)?.response?.data as
-            | { code?: unknown; message?: unknown; data?: unknown }
-            | undefined
+            { code?: unknown; message?: unknown; data?: unknown } | undefined
           const isBizNotFound =
             body != null &&
             typeof body === 'object' &&

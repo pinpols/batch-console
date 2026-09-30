@@ -66,7 +66,7 @@
   import { useTenantStore } from '@/stores/tenant'
   import { useAuthStore } from '@/stores/auth'
   import { useTenantReload } from '@/composables/useTenantReload'
-  import { queryAudits } from '@/api/observabilityQueries'
+  import { queryAuditsPage } from '@/api/observabilityQueries'
   import type { ConsoleAuditLogResponse } from '@/types/console-api'
 
   const { t } = useI18n({ useScope: 'global' })
@@ -82,11 +82,10 @@
     loading.value = true
     error.value = false
     try {
-      // queryAudits 返回 fetchAllPageItems 聚合的数组(单租户 paged 全拉);只取前 20 条
-      const all = (await queryAudits(tenant.tenantId, {
+      const result = await queryAuditsPage(tenant.tenantId, 1, 20, {
         operatorId: auth.userInfo?.userId,
-      })) as ConsoleAuditLogResponse[]
-      rows.value = (all ?? []).slice(0, 20)
+      })
+      rows.value = (result.items ?? []) as ConsoleAuditLogResponse[]
     } catch {
       error.value = true
     } finally {

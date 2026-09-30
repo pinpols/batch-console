@@ -76,7 +76,12 @@
     checking.value = true
     try {
       const s = await getMaintenanceStatus()
-      app.setMaintenance(s)
+      app.setMaintenance({
+        ...s,
+        lastSyncedAt: new Date().toISOString(),
+        syncError: null,
+        isStale: false,
+      })
     } finally {
       checking.value = false
     }

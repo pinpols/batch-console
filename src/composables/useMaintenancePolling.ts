@@ -11,24 +11,46 @@ import { useAppStore } from '@/stores/app'
  *
  * 在 App.vue / 顶层布局调用一次即可,SSR 安全(只在 onMounted 启动)。
  */
-export function useMaintenancePolling(intervalMs = 30_000): void {
+export function useMaintenancePolling(
+  normalIntervalMs = 30_000,
+  maintenanceIntervalMs = 10_000,
+): void {
   const app = useAppStore()
-  let timer: ReturnType<typeof setInterval> | null = null
+  let timer: ReturnType<typeof setTimeout> | null = null
+  let stopped = false
+
+  function schedule() {
+    if (stopped) return
+    const delay = app.maintenance.enabled ? maintenanceIntervalMs : normalIntervalMs
+    timer = setTimeout(() => void poll(), delay)
+  }
 
   async function poll() {
     try {
       const s = await getMaintenanceStatus()
-      app.setMaintenance(s)
-    } catch {
-      /* 探活失败不动状态 — 接口本身允许偶发 5xx(虽不应该);保持现有 banner 状态 */
+      app.setMaintenance({
+        ...s,
+        lastSyncedAt: new Date().toISOString(),
+        syncError: null,
+        isStale: false,
+      })
+    } catch (error) {
+      const last = app.maintenance.lastSyncedAt
+      const staleAfterMs = Math.max(normalIntervalMs * 2, 60_000)
+      app.setMaintenance({
+        syncError: error instanceof Error ? error.message : String(error),
+        isStale: !last || Date.now() - Date.parse(last) > staleAfterMs,
+      })
+    } finally {
+      schedule()
     }
   }
 
   onMounted(() => {
     void poll()
-    timer = setInterval(poll, intervalMs)
   })
   onUnmounted(() => {
-    if (timer) clearInterval(timer)
+    stopped = true
+    if (timer) clearTimeout(timer)
   })
 }

@@ -6305,6 +6305,16 @@ export interface components {
        *     FE renders a per-service availability badge so users see what's still usable.
        */
       affectedServices?: string[]
+      /**
+       * Format: int64
+       * @description Monotonically increasing runtime maintenance state version
+       */
+      version: number
+      /**
+       * Format: date-time
+       * @description Last initialization or hot-update timestamp
+       */
+      updatedAt: string | null
     }
     UpdateMaintenanceRequest: {
       enabled: boolean

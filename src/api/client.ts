@@ -10,7 +10,7 @@ export const apiClient = axios.create({
   timeout: 30_000,
   // ADR-030 §D7：后端登录响应下发 HttpOnly cookie `batch_console_token`，浏览器自动随请求回带。
   // 同源场景 axios 默认不带 cookie,必须显式 withCredentials=true。
-  // 兼容期 Authorization header 仍由 interceptor 注入(双轨),后续 PR 完成迁移后再删。
+  // 前端只使用 HttpOnly cookie；不会读取 token，也不会注入 Authorization header。
   withCredentials: true,
   // CSRF 纵深防御:axios 默认会读 cookie `XSRF-TOKEN` 透传到 header `X-XSRF-TOKEN`。
   // 显式声明避免被全局 defaults 覆盖。BE 侧 Spring CookieCsrfTokenRepository
