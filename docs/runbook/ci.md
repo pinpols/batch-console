@@ -16,7 +16,7 @@ CI 由 3 个核心门禁、兼容/安全检查和发布辅助 workflow 组成。
 ## pr-gate 详情
 
 ```
-checkout → setup-node@v5(node 24 + npm cache)
+checkout@v7 → setup-node@v7(node 24 + npm cache)
         → npm ci --no-audit --no-fund
         → npm run check:version
         → npm run lint:check       (ESLint check 模式)
@@ -31,6 +31,20 @@ checkout → setup-node@v5(node 24 + npm cache)
 ```
 
 并发控制:同 PR `cancel-in-progress: true` 取消过期任务。15 min timeout。
+
+### Action 版本基线
+
+CI 使用 GitHub 托管的 `ubuntu-26.04`，Action 运行时统一到 Node 24 兼容主版本。禁止使用浮动的 `ubuntu-latest`，避免 GitHub 分阶段迁移镜像时同一分支出现不同系统环境：
+
+`actionlint` 1.7.12 的内置标签表尚未收录 `ubuntu-26.04`，因此 `.github/actionlint.yaml` 临时登记该标签；升级到已原生识别此标签的 actionlint 后应删除兼容项。
+
+- `actions/checkout@v7`、`actions/setup-node@v7`
+- `actions/upload-artifact@v7`、`actions/download-artifact@v8`
+- `docker/setup-qemu-action@v4`、`docker/setup-buildx-action@v4`
+- `docker/login-action@v4`、`docker/metadata-action@v6`、`docker/build-push-action@v7`
+- `googleapis/release-please-action@v5`、`renovatebot/github-action@v46.3.6`
+
+artifact 上传下载升级后，必须手动运行一次 `full-ci-gate`，确认 `static-and-unit` 上传的 `dist` 能在 `lighthouse` job 下载、解压并启动预览；仅通过 workflow 语法检查不算闭环验证。
 
 ## frontend-ci 详情(Node 24 兼容 + 文档)
 
@@ -156,7 +170,7 @@ npm run preflight:changed
 |---|---|---|
 | pr-gate `lint:check` `Definition for rule 'es5/no-es6-methods' was not found` | eslint config 没 ignore vitepress cache | `eslint.config.js` ignore 路径检查 |
 | pr-gate `gen:api:check` 漂移 | BE OpenAPI yaml 改了 FE 没跑 gen:api | 本地 `npm run gen:api` + commit `src/types/api.generated.ts` |
-| pr-gate `npm audit` 在 CI fail 本地通 | npm registry POST 405(代理) | 本地代理特殊,CI ubuntu-latest 正常 |
+| pr-gate `npm audit` 在 CI fail 本地通 | npm registry POST 405(代理) | 本地代理特殊，CI `ubuntu-26.04` 正常 |
 | full-ci-gate Trivy 报 CRITICAL | base image 漏洞 | `Dockerfile` 升 base image,或加 `.trivyignore` 临时白名单 |
 | full-ci-gate Lighthouse perf < 0.8 | 包体增大 / 慢资源 | 看报告找 LCP / TBT 拖累项,常见:vendor chunk 拆分 / 图片压缩 |
 | staging-gate playwright fail | staging 服务挂 / 选择器漂 | 看 playwright-report artifact 截图 / 录屏 |
