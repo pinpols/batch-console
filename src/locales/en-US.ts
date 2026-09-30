@@ -3454,14 +3454,14 @@ const messages: Messages = {
     loadError: 'Failed to load usage data',
     empty: 'No aggregate data matches these filters',
     events: 'Events',
-    success: 'Business successes',
-    failure: 'Business failures',
-    trend: 'Business outcome trend',
+    success: 'Successful events',
+    failure: 'Failed events',
+    trend: 'Outcome event trend',
     breakdown: 'Metric breakdown',
     date: 'Date',
     source: 'Source',
     disclaimer:
-      'Data comes from backend daily aggregates. Frontend telemetry is for trends only, not billing, reconciliation or compliance evidence.',
+      'Current data is aggregated from backend operation audits, not final job or file outcomes. Do not use it as a business success rate, billing or compliance evidence.',
   },
   operationAuditList: {
     actionLabel: 'Action',
@@ -5614,12 +5614,17 @@ const messages: Messages = {
     turnRejected: 'This request was not approved.',
     historyEmpty: 'No saved conversations',
     historyLoadError: 'Could not load the conversation. Try again.',
+    conversationUnavailable:
+      'This conversation no longer exists or has expired. Choose another one.',
     loadOlder: 'Load older messages',
+    loadOlderConversations: 'Load older conversations',
     deleteConversation: 'Delete conversation',
     deleteConfirm: 'This conversation cannot be recovered after deletion. Continue?',
     monthlyCost: 'Estimated this month: ${cost}',
     promptLabel: 'Question',
     sendError: 'Sending failed. Your question remains in the input box.',
+    sendSessionExpired:
+      'This conversation no longer exists or has expired. Start a new conversation to retry; your question is still in the input box.',
     sendRateLimited:
       'Request limit reached. Try again later; your question is still in the input box.',
     sendForbidden: 'Request denied. Check your access or refresh the page and try again.',
@@ -5627,6 +5632,9 @@ const messages: Messages = {
     sendTimeout: 'The AI request timed out. Try again; your question is still in the input box.',
     bubbleMe: 'Me',
     bubbleAi: 'AI',
+    copyCode: 'Copy code',
+    codeCopied: 'Code copied',
+    codeCopyFailed: 'Could not copy code',
     inputPlaceholder:
       "e.g. explain a job failure, query trace-related steps, summarize today's alerts…",
     composerHint: 'Enter for newline; click Send to submit',

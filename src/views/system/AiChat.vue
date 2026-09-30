@@ -17,9 +17,10 @@
                 />
               </div>
               <div v-if="historyLoading" v-loading="true" class="conversation-list__loading" />
-              <p v-else-if="!historyAvailable" class="conversation-list__empty">
-                {{ t('aiChat.historyUnavailable') }}
-              </p>
+              <div v-else-if="!historyAvailable" class="conversation-list__fallback">
+                <p class="conversation-list__empty">{{ t('aiChat.historyUnavailable') }}</p>
+                <el-button text @click="loadConversations">{{ t('common.retry') }}</el-button>
+              </div>
               <p v-else-if="!conversations.length" class="conversation-list__empty">
                 {{ t('aiChat.historyEmpty') }}
               </p>
@@ -41,10 +42,22 @@
                   <el-button
                     text
                     :icon="Trash2"
+                    class="conversation-list__delete"
                     :aria-label="t('aiChat.deleteConversation')"
                     @click="removeConversation(conversation.id)"
                   />
                 </div>
+                <el-button
+                  v-if="historyHasMore"
+                  text
+                  :loading="historyMoreLoading"
+                  @click="loadMoreConversations"
+                >
+                  {{ t('aiChat.loadOlderConversations') }}
+                </el-button>
+                <p v-if="historyPageError" class="conversation-list__empty" role="alert">
+                  {{ t('aiChat.historyLoadError') }}
+                </p>
               </div>
               <p v-if="monthlyCost !== null" class="conversation-list__cost">
                 {{ t('aiChat.monthlyCost', { cost: monthlyCost }) }}
@@ -52,7 +65,7 @@
             </aside>
             <div class="chat-panel">
               <div v-if="historyError" class="history-error" role="alert">
-                {{ t('aiChat.historyLoadError') }}
+                {{ t(historyErrorKey) }}
               </div>
               <div v-loading="historyTurnsLoading" class="chat-list" aria-live="polite">
                 <div
@@ -78,7 +91,11 @@
                       {{ item.refusalReason }}
                     </div>
                   </div>
-                  <div class="bubble__body">{{ messageBody(item) }}</div>
+                  <AiMessageContent
+                    class="bubble__body"
+                    :content="messageBody(item)"
+                    :role="item.role"
+                  />
                   <div v-if="item.role === 'assistant' && item.modelName" class="bubble__model">
                     {{ t('aiChat.modelBy', { model: item.modelName }) }}
                   </div>
@@ -98,6 +115,7 @@
                   v-model="prompt"
                   type="textarea"
                   :rows="6"
+                  :disabled="historyTurnsLoading"
                   :placeholder="t('aiChat.inputPlaceholder')"
                   class="composer__editor"
                 />
@@ -113,7 +131,7 @@
                     <el-button
                       type="primary"
                       :loading="sending"
-                      :disabled="!prompt.trim()"
+                      :disabled="historyTurnsLoading || !prompt.trim()"
                       @click="send"
                     >
                       {{ t('aiChat.btnSend') }}
@@ -241,7 +259,7 @@
   import {
     deleteAiConversation,
     getAiCostSummary,
-    listAiConversations,
+    pageAiConversations,
     listAiTurns,
   } from '@/api/ai'
   import { useAiChatSession } from '@/composables/useAiChatSession'
@@ -252,6 +270,7 @@
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
   import PageContainer from '@/components/common/PageContainer.vue'
+  import AiMessageContent from '@/components/common/AiMessageContent.vue'
   import MetaSelect from '@/components/common/MetaSelect.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
@@ -277,8 +296,16 @@
   })
   const historyAvailable = ref(true)
   const historyLoading = ref(false)
+  const historyMoreLoading = ref(false)
+  const historyHasMore = ref(false)
+  const historyNextCursor = ref<string | null>(null)
+  const historyPageError = ref(false)
   const historyTurnsLoading = ref(false)
+  const openingConversationId = ref<string | null>(null)
   const historyError = ref(false)
+  const historyErrorKey = ref<'aiChat.historyLoadError' | 'aiChat.conversationUnavailable'>(
+    'aiChat.historyLoadError',
+  )
   const oldestTurnNo = ref<number | null>(null)
   const hasOlderTurns = ref(false)
   let historyRequestSequence = 0
@@ -363,20 +390,40 @@
   function resetSession() {
     turnRequestSequence += 1
     historyTurnsLoading.value = false
+    openingConversationId.value = null
     chat.reset()
     oldestTurnNo.value = null
     hasOlderTurns.value = false
     historyError.value = false
+    historyErrorKey.value = 'aiChat.historyLoadError'
+  }
+
+  function isMissingConversation(error: unknown): boolean {
+    if (!error || typeof error !== 'object') return false
+    const response = (error as { response?: { status?: number; data?: { code?: string } } })
+      .response
+    return response?.status === 404 || response?.data?.code === 'NOT_FOUND'
+  }
+
+  function markConversationUnavailable(id: string) {
+    conversations.value = conversations.value.filter((item) => item.id !== id)
+    if (sessionId.value === id) resetSession()
+    historyErrorKey.value = 'aiChat.conversationUnavailable'
+    historyError.value = true
   }
 
   async function loadConversations() {
     const sequence = ++historyRequestSequence
     const tenantId = tenant.tenantId
     historyLoading.value = true
+    historyMoreLoading.value = false
+    historyPageError.value = false
     try {
-      const result = await listAiConversations({ limit: 100 })
+      const result = await pageAiConversations({ limit: 20 })
       if (sequence !== historyRequestSequence || tenant.tenantId !== tenantId) return
-      conversations.value = result
+      conversations.value = result.items
+      historyNextCursor.value = result.nextCursor
+      historyHasMore.value = result.hasMore && Boolean(result.nextCursor)
       historyAvailable.value = true
       const cost = await getAiCostSummary().catch(() => null)
       if (sequence === historyRequestSequence && tenant.tenantId === tenantId)
@@ -384,10 +431,38 @@
     } catch {
       if (sequence !== historyRequestSequence || tenant.tenantId !== tenantId) return
       conversations.value = []
+      historyNextCursor.value = null
+      historyHasMore.value = false
       historyAvailable.value = false
       costSummary.value = null
     } finally {
       if (sequence === historyRequestSequence) historyLoading.value = false
+    }
+  }
+
+  async function loadMoreConversations() {
+    const cursor = historyNextCursor.value
+    if (!cursor || !historyHasMore.value || historyLoading.value || historyMoreLoading.value) return
+    const sequence = historyRequestSequence
+    const tenantId = tenant.tenantId
+    historyMoreLoading.value = true
+    historyPageError.value = false
+    try {
+      const result = await pageAiConversations({ cursor, limit: 20 })
+      if (sequence !== historyRequestSequence || tenant.tenantId !== tenantId) return
+      const loadedIds = new Set(conversations.value.map((item) => item.id))
+      conversations.value = [
+        ...conversations.value,
+        ...result.items.filter((item) => !loadedIds.has(item.id)),
+      ]
+      historyNextCursor.value = result.nextCursor
+      historyHasMore.value =
+        result.hasMore && Boolean(result.nextCursor) && result.nextCursor !== cursor
+    } catch {
+      if (sequence === historyRequestSequence && tenant.tenantId === tenantId)
+        historyPageError.value = true
+    } finally {
+      if (sequence === historyRequestSequence) historyMoreLoading.value = false
     }
   }
 
@@ -396,7 +471,9 @@
     const sequence = ++turnRequestSequence
     const tenantId = tenant.tenantId
     historyTurnsLoading.value = true
+    openingConversationId.value = id
     historyError.value = false
+    historyErrorKey.value = 'aiChat.historyLoadError'
     try {
       const turns = await listAiTurns(id, { limit: 50 })
       if (sequence !== turnRequestSequence || tenant.tenantId !== tenantId) return
@@ -404,11 +481,16 @@
       chat.restore(id, turns, t('aiChat.emptyAnswer'))
       oldestTurnNo.value = turns.length ? Math.min(...turns.map((turn) => turn.turnNo)) : null
       hasOlderTurns.value = turns.length === 50
-    } catch {
-      if (sequence === turnRequestSequence && tenant.tenantId === tenantId)
-        historyError.value = true
+    } catch (error) {
+      if (sequence === turnRequestSequence && tenant.tenantId === tenantId) {
+        if (isMissingConversation(error)) markConversationUnavailable(id)
+        else historyError.value = true
+      }
     } finally {
-      if (sequence === turnRequestSequence) historyTurnsLoading.value = false
+      if (sequence === turnRequestSequence) {
+        historyTurnsLoading.value = false
+        openingConversationId.value = null
+      }
     }
   }
 
@@ -432,9 +514,15 @@
       chat.prepend(turns, t('aiChat.emptyAnswer'))
       oldestTurnNo.value = turns.length ? Math.min(...turns.map((turn) => turn.turnNo)) : null
       hasOlderTurns.value = turns.length === 50
-    } catch {
-      if (sequence === turnRequestSequence && tenant.tenantId === tenantId)
-        historyError.value = true
+    } catch (error) {
+      if (
+        sequence === turnRequestSequence &&
+        tenant.tenantId === tenantId &&
+        sessionId.value === selectedSessionId
+      ) {
+        if (isMissingConversation(error)) markConversationUnavailable(selectedSessionId)
+        else historyError.value = true
+      }
     } finally {
       if (sequence === turnRequestSequence) historyTurnsLoading.value = false
     }
@@ -448,12 +536,18 @@
     } catch {
       return
     }
+    if (openingConversationId.value === id) {
+      turnRequestSequence += 1
+      historyTurnsLoading.value = false
+      openingConversationId.value = null
+    }
     await deleteAiConversation(id)
     if (sessionId.value === id) resetSession()
     await loadConversations()
   }
 
   async function send() {
+    if (historyTurnsLoading.value) return
     if (await chat.send(t('aiChat.emptyAnswer'))) {
       void loadAudits()
       if (historyAvailable.value) void loadConversations()
@@ -523,6 +617,9 @@
     auditRequestSequence += 1
     resetSession()
     conversations.value = []
+    historyNextCursor.value = null
+    historyHasMore.value = false
+    historyPageError.value = false
     costSummary.value = null
     await Promise.all([loadAudits(), loadConversations()])
   })
@@ -580,8 +677,19 @@
 
   .conversation-list__items {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: var(--space-xs);
     margin-top: var(--space-sm);
+  }
+
+  .conversation-list__item {
+    min-width: 0;
+  }
+
+  .conversation-list__fallback {
+    display: grid;
+    justify-items: start;
+    gap: var(--space-xs);
   }
 
   .conversation-list__open {
@@ -594,6 +702,11 @@
   .conversation-list__open :deep(span) {
     overflow: hidden;
     text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .conversation-list__delete {
+    flex: none;
   }
 
   .conversation-list__loading {

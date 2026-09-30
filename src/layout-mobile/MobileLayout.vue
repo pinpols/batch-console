@@ -43,6 +43,7 @@
   import { useTabsStore } from '@/stores/tabs'
   import { useAutoRefresh } from '@/composables/useAutoRefresh'
   import { useMobileTracker } from '@/composables/useMobileTracker'
+  import { getSchedulerStatus } from '@/api/scheduler'
 
   const badges = useMobileBadgesStore()
   const tenant = useTenantStore()
@@ -95,6 +96,17 @@
   )
   // 30s 轮询所有 tab 的徽章，切后台时暂停
   useAutoRefresh(() => badges.refresh(), 30_000)
+
+  // 移动端没有调度页面；主动探测才能接收后端的降级响应头。
+  async function refreshSchedulerStatus() {
+    try {
+      await getSchedulerStatus(true)
+    } catch {
+      // 网络错误由拦截器记录；定时探测不向用户重复弹错。
+    }
+  }
+  onMounted(() => void refreshSchedulerStatus())
+  useAutoRefresh(refreshSchedulerStatus, 30_000)
 
   // 移动端也支持 ⌘K / Ctrl+K(主要给挂键盘的平板用)
   function onGlobalKeydown(e: KeyboardEvent) {

@@ -7,7 +7,7 @@ test.describe('Usage, AI and degradation', () => {
     await enterDemoApp(page)
   })
 
-  test('usage page shows backend aggregate totals without counting UI events as business success', async ({ page }) => {
+  test('usage page shows backend aggregate totals without counting UI events as successful operations', async ({ page }) => {
     const responsePromise = page.waitForResponse((response) =>
       response.url().includes('/api/console/queries/usage-summary') && response.request().method() === 'GET',
     )
@@ -19,8 +19,91 @@ test.describe('Usage, AI and degradation', () => {
     const businessRows = payload.data.filter((row: { source: string }) => row.source !== 'FRONTEND')
     const successes = businessRows.reduce((sum: number, row: { successCount: number }) => sum + row.successCount, 0)
     const failures = businessRows.reduce((sum: number, row: { failureCount: number }) => sum + row.failureCount, 0)
-    await expect(page.locator('.usage-total').filter({ hasText: '业务成功数' }).locator('strong')).toHaveText(successes.toLocaleString())
-    await expect(page.locator('.usage-total').filter({ hasText: '业务失败数' }).locator('strong')).toHaveText(failures.toLocaleString())
+    await expect(page.locator('.usage-total').filter({ hasText: '成功事件数' }).locator('strong')).toHaveText(successes.toLocaleString())
+    await expect(page.locator('.usage-total').filter({ hasText: '失败事件数' }).locator('strong')).toHaveText(failures.toLocaleString())
+    await expect(page.locator('.usage-note')).toContainText('不含作业或文件最终结果')
+  })
+
+  test('usage version filter updates totals and rows without changing metric codes', async ({ page }) => {
+    await page.route('**/api/console/queries/usage-summary?**', (route) => route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        code: 'SUCCESS',
+        message: 'success',
+        data: [
+          { statDate: '2026-09-30', tenantId: 'ta', source: 'OPERATION_AUDIT', metricCode: 'operation.job-trigger', pageCode: '', appVersion: 'v1', eventCount: 2, successCount: 2, failureCount: 0 },
+          { statDate: '2026-09-30', tenantId: 'ta', source: 'OPERATION_AUDIT', metricCode: 'operation.job-trigger', pageCode: '', appVersion: 'v2', eventCount: 4, successCount: 3, failureCount: 1 },
+        ],
+      }),
+    }))
+    await page.goto('/observability/usage')
+    await expect(page.locator('.usage-table .el-table__row')).toHaveCount(2)
+    await expect(page.locator('.usage-total').first().locator('strong')).toHaveText('6')
+
+    await page.locator('.usage-table-head .el-select').click()
+    await page.getByRole('option', { name: 'v2' }).click()
+    await expect(page.locator('.usage-table .el-table__row')).toHaveCount(1)
+    await expect(page.locator('.usage-table .el-table__row')).toContainText('operation.job-trigger')
+    await expect(page.locator('.usage-table .el-table__row')).toContainText('v2')
+    await expect(page.locator('.usage-total').first().locator('strong')).toHaveText('4')
+    await expect(page.locator('.usage-total').filter({ hasText: '成功事件数' }).locator('strong')).toHaveText('3')
+    await expect(page.locator('.usage-total').filter({ hasText: '失败事件数' }).locator('strong')).toHaveText('1')
+  })
+
+  test('usage page ignores a previous tenant response after switching tenants', async ({ page }) => {
+    let releasePrevious!: () => void
+    let previousRequested!: () => void
+    const previousGate = new Promise<void>((resolve) => { releasePrevious = resolve })
+    const previousRequest = new Promise<void>((resolve) => { previousRequested = resolve })
+    await page.route('**/api/console/tenants?**', (route) => route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ code: 'SUCCESS', message: 'success', data: {
+        total: 2, pageNo: 1, pageSize: 50,
+        items: [
+          { tenantId: 'ta', tenantName: 'Tenant A', status: 'ACTIVE' },
+          { tenantId: 'tb', tenantName: 'Tenant B', status: 'ACTIVE' },
+        ],
+      } }),
+    }))
+    await page.route('**/api/console/queries/usage-summary?**', async (route) => {
+      const tenantId = new URL(route.request().url()).searchParams.get('tenantId')
+      if (tenantId === 'ta') {
+        previousRequested()
+        await previousGate
+      }
+      const metricCode = tenantId === 'tb' ? 'operation.tb-only' : 'operation.ta-only'
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ code: 'SUCCESS', message: 'success', data: [{
+          statDate: '2026-09-30', tenantId, source: 'OPERATION_AUDIT', metricCode,
+          pageCode: '', appVersion: '', eventCount: 1, successCount: 1, failureCount: 0,
+        }] }),
+      })
+    })
+
+    try {
+      await page.goto('/observability/usage')
+      await previousRequest
+      await page.getByRole('combobox', { name: '切换租户' }).fill('tb')
+      await page.getByRole('option', { name: /tb/ }).click()
+      await expect(page.locator('.usage-table .el-table__row')).toContainText('operation.tb-only')
+      const previousResponse = page.waitForResponse((response) =>
+        response.url().includes('/api/console/queries/usage-summary') &&
+        new URL(response.url()).searchParams.get('tenantId') === 'ta',
+      )
+      releasePrevious()
+      await previousResponse
+      await page.evaluate(() => new Promise<void>((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+      ))
+      await expect(page.locator('.usage-table .el-table__row')).not.toContainText('operation.ta-only')
+      await expect(page.locator('.usage-total').first().locator('strong')).toHaveText('1')
+    } finally {
+      releasePrevious()
+    }
   })
 
   test('audit page links directly to the usage report', async ({ page }) => {
@@ -84,6 +167,39 @@ test.describe('Usage, AI and degradation', () => {
     await expect(launcher).toBeFocused()
   })
 
+  test('AI Markdown renders safely and copies a code block', async ({ page }) => {
+    await page.context().grantPermissions(['clipboard-read', 'clipboard-write'])
+    await page.route('**/api/console/ai/chat', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          code: 'SUCCESS',
+          message: 'success',
+          data: {
+            sessionId: 'markdown-session',
+            requestId: 'markdown-request',
+            traceId: 'markdown-trace',
+            promptCategory: 'OPERATIONS',
+            promptDecision: 'APPROVED',
+            modelName: 'test',
+            answer: '**诊断完成**\n\n```sh\necho ok\n```\n\n<img src=x onerror=alert(1)>',
+            refusalReason: null,
+          },
+        }),
+      }),
+    )
+    await page.getByRole('button', { name: '打开 AI 助手' }).click()
+    const drawer = page.locator('.ai-assistant-drawer')
+    await drawer.getByRole('textbox', { name: '问题' }).fill('如何检查作业')
+    await drawer.getByRole('button', { name: '发送' }).click()
+    await expect(drawer.locator('.ai-message-content__markdown strong')).toHaveText('诊断完成')
+    await expect(drawer.locator('.ai-markdown__code code')).toHaveText('echo ok')
+    await expect(drawer.locator('.ai-message-content__markdown img')).toHaveCount(0)
+    await drawer.getByRole('button', { name: '复制代码' }).click()
+    await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe('echo ok\n')
+  })
+
   test('AI rate limiting keeps the draft ready for retry', async ({ page, network }) => {
     network.ignore('/api/console/ai/chat')
     await page.route('**/api/console/ai/chat', (route) => route.fulfill({
@@ -100,6 +216,40 @@ test.describe('Usage, AI and degradation', () => {
     await expect(prompt).toHaveValue('分析当前作业失败')
   })
 
+  test('AI preserves the draft when a previously created session expires', async ({ page, network }) => {
+    network.ignore('/api/console/ai/chat')
+    let requests = 0
+    await page.route('**/api/console/ai/chat', async (route) => {
+      requests += 1
+      if (requests === 1) {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ code: 'SUCCESS', message: 'success', data: { sessionId: 'expired-session', requestId: 'request-1', traceId: 'trace-1', promptCategory: 'OPERATIONS', promptDecision: 'APPROVED', modelName: 'test', answer: '第一答', refusalReason: null } }),
+        })
+      } else {
+        expect(route.request().postDataJSON().sessionId).toBe('expired-session')
+        await route.fulfill({
+          status: 404,
+          contentType: 'application/json',
+          body: JSON.stringify({ code: 'NOT_FOUND', message: 'error.common.not_found_detail', data: null }),
+        })
+      }
+    })
+
+    await page.getByRole('button', { name: '打开 AI 助手' }).click()
+    const drawer = page.locator('.ai-assistant-drawer')
+    const prompt = drawer.getByRole('textbox', { name: '问题' })
+    await prompt.fill('第一问')
+    await drawer.getByRole('button', { name: '发送' }).click()
+    await expect(drawer.getByText('第一答')).toBeVisible()
+    await prompt.fill('第二问')
+    await drawer.getByRole('button', { name: '发送' }).click()
+    await expect(drawer.getByRole('alert')).toContainText('会话不存在或已过期')
+    await expect(prompt).toHaveValue('第二问')
+    expect(requests).toBe(2)
+  })
+
   test('AI history restores ordered turns and deletes a conversation with routed responses', async ({ page }) => {
     let deleted = false
     await page.route('**/api/console/ai/conversations**', async (route) => {
@@ -108,8 +258,8 @@ test.describe('Usage, AI and degradation', () => {
       const method = route.request().method()
       const now = '2026-09-30T00:00:00Z'
       let data: unknown = null
-      if (path.endsWith('/conversations') && method === 'GET') {
-        data = deleted ? [] : [{ id: 'session-1', title: '作业诊断', contextVersion: 'v1', createdAt: now, updatedAt: now, expiresAt: now }]
+      if (path.endsWith('/conversations/page') && method === 'GET') {
+        data = { total: 0, pageNo: 0, pageSize: 20, items: deleted ? [] : [{ id: 'session-1', title: '作业诊断', contextVersion: 'v1', createdAt: now, updatedAt: now, expiresAt: now }], nextCursor: null, hasMore: false }
       } else if (path.endsWith('/session-1/turns') && method === 'GET') {
         data = [
           { turnNo: 4, contextVersion: 'v1', prompt: '第四问', response: null, status: 'REJECTED', promptDecision: 'REJECTED_BUDGET', modelName: null, promptTokens: null, completionTokens: null, estimatedCostUsd: null, createdAt: now, completedAt: now },
@@ -137,6 +287,155 @@ test.describe('Usage, AI and degradation', () => {
     await page.getByRole('button', { name: '删除会话' }).click()
     await page.getByRole('dialog').getByRole('button', { name: '确定' }).click()
     await expect(page.getByRole('button', { name: '作业诊断' })).toHaveCount(0)
+  })
+
+  test('AI conversation history loads older owner-scoped pages', async ({ page }) => {
+    const now = '2026-09-30T00:00:00Z'
+    const queriedCursors: string[] = []
+    let olderPageFailures = 0
+    await page.route('**/api/console/ai/conversations/page**', async (route) => {
+      const cursor = new URL(route.request().url()).searchParams.get('cursor') ?? ''
+      queriedCursors.push(cursor)
+      if (cursor && olderPageFailures++ < 3) {
+        await route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ code: 'SYSTEM_ERROR', message: 'unavailable' }) })
+        return
+      }
+      const items = cursor
+        ? [{ id: 'session-older', title: '较早会话', contextVersion: 'v1', createdAt: now, updatedAt: now, expiresAt: now }]
+        : [{ id: 'session-newer', title: '最近会话', contextVersion: 'v1', createdAt: now, updatedAt: now, expiresAt: now }]
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ code: 'SUCCESS', message: 'success', data: { total: 0, pageNo: 0, pageSize: 20, items, nextCursor: cursor ? null : 'cursor-1', hasMore: !cursor } }) })
+    })
+    await page.route('**/api/console/ai/cost-summary**', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ code: 'SUCCESS', message: 'success', data: null }) }))
+
+    await page.goto('/system/ai-chat')
+    await expect(page.getByRole('button', { name: '最近会话' })).toBeVisible()
+    await page.getByRole('button', { name: '加载更早的会话' }).click()
+    await expect(page.locator('.conversation-list').getByRole('alert')).toBeVisible()
+    await expect(page.getByRole('button', { name: '最近会话' })).toBeVisible()
+    await page.getByRole('button', { name: '加载更早的会话' }).click()
+    await expect(page.getByRole('button', { name: '较早会话' })).toBeVisible()
+    await expect(page.locator('.conversation-list').getByRole('alert')).toHaveCount(0)
+    await expect(page.getByRole('button', { name: '加载更早的会话' })).toHaveCount(0)
+    expect(queriedCursors).toEqual(['', 'cursor-1', 'cursor-1', 'cursor-1', 'cursor-1'])
+  })
+
+  test('AI conversation history can retry after the initial page is unavailable', async ({ page }) => {
+    let failedRequests = 0
+    await page.route('**/api/console/ai/conversations/page**', async (route) => {
+      if (failedRequests++ < 3) {
+        await route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ code: 'SYSTEM_ERROR', message: 'unavailable' }) })
+        return
+      }
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ code: 'SUCCESS', message: 'success', data: { total: 0, pageNo: 0, pageSize: 20, items: [{ id: 'session-recovered', title: '恢复会话', contextVersion: 'v1', createdAt: '2026-09-30T00:00:00Z', updatedAt: '2026-09-30T00:00:00Z', expiresAt: '2026-10-30T00:00:00Z' }], nextCursor: null, hasMore: false } }) })
+    })
+    await page.route('**/api/console/ai/cost-summary**', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ code: 'SUCCESS', message: 'success', data: null }) }))
+
+    await page.goto('/system/ai-chat')
+    await expect(page.locator('.conversation-list')).toContainText('会话历史暂不可用')
+    await page.locator('.conversation-list').getByRole('button', { name: '重试' }).click()
+    await expect(page.getByRole('button', { name: '恢复会话' })).toBeVisible()
+    expect(failedRequests).toBe(4)
+  })
+
+  test('AI composer waits for the selected conversation to finish loading', async ({ page }) => {
+    let releaseTurns!: () => void
+    let turnsRequested!: () => void
+    const turnGate = new Promise<void>((resolve) => { releaseTurns = resolve })
+    const turnRequest = new Promise<void>((resolve) => { turnsRequested = resolve })
+    const now = '2026-09-30T00:00:00Z'
+    await page.route('**/api/console/ai/conversations/page**', (route) => route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ code: 'SUCCESS', message: 'success', data: { total: 1, pageNo: 0, pageSize: 20, items: [{ id: 'session-1', title: '作业诊断', contextVersion: 'v1', createdAt: now, updatedAt: now, expiresAt: now }], nextCursor: null, hasMore: false } }),
+    }))
+    await page.route('**/api/console/ai/cost-summary**', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ code: 'SUCCESS', message: 'success', data: null }) }))
+    await page.route('**/api/console/ai/conversations/session-1/turns**', async (route) => {
+      turnsRequested()
+      await turnGate
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ code: 'SUCCESS', message: 'success', data: [{ turnNo: 1, contextVersion: 'v1', prompt: '第一问', response: '第一答', status: 'COMPLETE', promptDecision: 'APPROVED', modelName: null, promptTokens: 1, completionTokens: 1, estimatedCostUsd: 0, createdAt: now, completedAt: now }] }) })
+    })
+
+    try {
+      await page.goto('/system/ai-chat')
+      const prompt = page.locator('.composer textarea')
+      await prompt.fill('新的问题')
+      await page.getByRole('button', { name: '作业诊断' }).click()
+      await turnRequest
+      await expect(prompt).toBeDisabled()
+      await expect(page.locator('.composer').getByRole('button', { name: '发送' })).toBeDisabled()
+      releaseTurns()
+      await expect(page.locator('.bubble__body')).toHaveText(['第一问', '第一答'])
+      await expect(prompt).toBeEnabled()
+    } finally {
+      releaseTurns()
+    }
+  })
+
+  test('AI ignores late history after deleting a conversation that is loading', async ({ page }) => {
+    let releaseTurns!: () => void
+    let turnsRequested!: () => void
+    const turnGate = new Promise<void>((resolve) => { releaseTurns = resolve })
+    const turnRequest = new Promise<void>((resolve) => { turnsRequested = resolve })
+    const now = '2026-09-30T00:00:00Z'
+    let deleted = false
+    await page.route('**/api/console/ai/conversations/page**', (route) => route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ code: 'SUCCESS', message: 'success', data: { total: deleted ? 0 : 1, pageNo: 0, pageSize: 20, items: deleted ? [] : [{ id: 'session-1', title: '作业诊断', contextVersion: 'v1', createdAt: now, updatedAt: now, expiresAt: now }], nextCursor: null, hasMore: false } }),
+    }))
+    await page.route('**/api/console/ai/cost-summary**', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ code: 'SUCCESS', message: 'success', data: null }) }))
+    await page.route('**/api/console/ai/conversations/session-1**', async (route) => {
+      if (route.request().method() !== 'DELETE') return route.continue()
+      deleted = true
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ code: 'SUCCESS', message: 'success', data: null }) })
+    })
+    await page.route('**/api/console/ai/conversations/session-1/turns**', async (route) => {
+      turnsRequested()
+      await turnGate
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ code: 'SUCCESS', message: 'success', data: [{ turnNo: 1, contextVersion: 'v1', prompt: '已删除的问题', response: '已删除的回答', status: 'COMPLETE', promptDecision: 'APPROVED', modelName: null, promptTokens: 1, completionTokens: 1, estimatedCostUsd: 0, createdAt: now, completedAt: now }] }) })
+    })
+
+    try {
+      await page.goto('/system/ai-chat')
+      await page.getByRole('button', { name: '作业诊断' }).click()
+      await turnRequest
+      await page.getByRole('button', { name: '删除会话' }).click()
+      await page.getByRole('dialog').getByRole('button', { name: '确定' }).click()
+      await expect(page.getByRole('button', { name: '作业诊断' })).toHaveCount(0)
+      const lateTurns = page.waitForResponse((response) =>
+        response.url().includes('/api/console/ai/conversations/session-1/turns'),
+      )
+      releaseTurns()
+      await lateTurns
+      await page.evaluate(() => new Promise<void>((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+      ))
+      await expect(page.locator('.bubble')).toHaveCount(0)
+      await expect(page.locator('.chat-list')).not.toContainText('已删除的问题')
+    } finally {
+      releaseTurns()
+    }
+  })
+
+  test('AI removes an expired conversation after a server NOT_FOUND', async ({ page }) => {
+    const now = '2026-09-30T00:00:00Z'
+    await page.route('**/api/console/ai/conversations/page**', (route) => route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ code: 'SUCCESS', message: 'success', data: { total: 1, pageNo: 0, pageSize: 20, items: [{ id: 'expired-session', title: '过期会话', contextVersion: 'v1', createdAt: now, updatedAt: now, expiresAt: now }], nextCursor: null, hasMore: false } }),
+    }))
+    await page.route('**/api/console/ai/cost-summary**', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ code: 'SUCCESS', message: 'success', data: null }) }))
+    await page.route('**/api/console/ai/conversations/expired-session/turns**', (route) => route.fulfill({
+      status: 404,
+      contentType: 'application/json',
+      body: JSON.stringify({ code: 'NOT_FOUND', message: 'error.common.not_found_detail', data: null }),
+    }))
+
+    await page.goto('/system/ai-chat')
+    await page.getByRole('button', { name: '过期会话' }).click()
+    await expect(page.locator('.history-error')).toContainText('会话不存在或已过期')
+    await expect(page.getByRole('button', { name: '过期会话' })).toHaveCount(0)
+    await expect(page.locator('.bubble')).toHaveCount(0)
   })
 
   test('usage API error offers retry without showing a false zero report', async ({ page, network }) => {

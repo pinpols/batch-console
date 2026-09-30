@@ -168,7 +168,7 @@ await expect(page.locator('.error-state, .el-result')).toBeVisible()  // 有错�
 npm run test:unit            # 全量(CI 也跑)
 npm run test:unit:watch
 
-# e2e(需 BE 在 18080 + dev/preview 在 5173)
+# e2e(默认 BE 在 18080 + dev/preview 在 5173；隔离环境用 BC_API_BASE/E2E_BASE_URL 指定两端)
 npm run test:e2e             # 常规套件，排除 @slow
 npm run test:e2e:all         # 发布验收全量套件，包含 @slow
 npm run test:e2e:smoke       # 冒烟三件套(smoke/cross-navigation/navigation)
@@ -189,6 +189,17 @@ bash scripts/local/fe-acceptance.sh           # 或 /fe-acceptance
 bash scripts/local/fe-acceptance.sh --skip-e2e-full
 ```
 
+隔离端口重跑使用率、AI 与降级关联套件时，前端 dev proxy 应指向同一个 Console API；全局准备和清理均用 `BC_API_BASE`，浏览器用 `E2E_BASE_URL`：
+
+```bash
+BC_API_BASE=http://127.0.0.1:18089 E2E_BASE_URL=http://127.0.0.1:5175 \
+  npx playwright test e2e/usage-ai-degradation.spec.ts --project=chromium --workers=1 --retries=0
+```
+
+全局准备会登录内置 admin 并按需准备测试租户及角色账号；如多个实例共享数据库，重新登录可能使同一账号的其他会话失效。需要保留现场时可显式设置 `BC_E2E_SKIP_TEARDOWN=1`，但不能据此宣称已完成测试数据清理。`E2E_SKIP_GLOBAL_SETUP=1` 只适用于自行登录的 opt-in 用例；普通套件跳过准备会使用过期的 `e2e/.auth/*.json`。
+
+当前本地 `ta/tb/tc` 的作业配置不等于 `batch.tenant` 中存在对应租户实例。使用率切租户迟到响应用例仅模拟租户候选和汇总行，验证前端不会回填旧租户数据；真实页头切换验收需要后端租户列表确实返回至少两个业务租户。不要把此用例当成真实租户目录联测。
+
 AI 会话正向联测使用 `e2e/ai-live-persistence.spec.ts`，默认跳过。运行前需单独启动已开启 AI 与持久化、且 `bypass-mode=false` 的后端；可使用仅返回固定答案的本地 OpenAI-compatible 模型桩，不要求外部模型密钥。将前端 dev proxy 指向该后端，并在环境变量中提供 `E2E_AI_USERNAME`、`E2E_AI_PASSWORD`，再运行：
 
 ```bash
@@ -197,6 +208,52 @@ E2E_AI_LIVE=1 E2E_SKIP_GLOBAL_SETUP=1 E2E_BASE_URL=http://127.0.0.1:5174 \
 ```
 
 此用例自行登录并先确认缺少 CSRF 头会得到 403，然后验证会话创建、刷新恢复和删除；通过不代表外部 provider、预算或跨租户链路已验收。
+
+AI 会话隔离使用 `e2e/ai-live-isolation.spec.ts`，同样需要启用持久化、关闭 bypass 的本机 Console API 与 PostgreSQL。提供 `E2E_AI_USERNAME/PASSWORD` 和 `BATCH_PLATFORM_DB_USERNAME/PASSWORD`，用 `E2E_AI_ISOLATION=1` 启用。用例验证列表不泄露非本人/其他租户会话，历史和续写返回 `404/NOT_FOUND`，并清理临时记录；不调用模型，不代替外部 provider 验收。
+
+移动端真实降级联测使用 `e2e/degradation-live-mobile.spec.ts`，默认跳过。需将前端 dev proxy 指向本机 Console API，并确认其 Trigger 下游不可用、`/scheduler/status` 返回 `X-Degraded-Source: trigger`：
+
+```bash
+E2E_REAL_DEGRADATION=1 E2E_SKIP_GLOBAL_SETUP=1 E2E_BASE_URL=http://127.0.0.1:5175 \
+  E2E_DEGRADATION_USERNAME=admin E2E_DEGRADATION_PASSWORD='<password>' \
+  npx playwright test e2e/degradation-live-mobile.spec.ts --project=chromium --workers=1
+```
+
+用例验证移动布局主动探测和降级横幅；不代替真实 Trigger 恢复验收。
+
+移动端受控下游恢复联测使用 `e2e/degradation-live-recovery.spec.ts`，默认跳过。隔离 Console API 必须关闭安全 bypass，设置 `BATCH_TRIGGER_BASE_URL=http://127.0.0.1:18181`，启动时保证该端口空闲；前端 dev proxy 指向隔离 API。测试先确认真实后端返回 `X-Degraded-Source: trigger`，再自行启动本机 HTTP 桩并验证恢复响应和横幅过期：
+
+```bash
+E2E_DEGRADATION_RECOVERY=1 E2E_SKIP_GLOBAL_SETUP=1 E2E_BASE_URL=http://127.0.0.1:5175 \
+  E2E_DEGRADATION_USERNAME=admin E2E_DEGRADATION_PASSWORD='<password>' \
+  npx playwright test e2e/degradation-live-recovery.spec.ts --project=chromium --workers=1 --retries=0
+```
+
+可用 `E2E_TRIGGER_STUB_PORT` 改桩端口，须与后端 `BATCH_TRIGGER_BASE_URL` 一致。此测试不启动真实 Trigger，不验证调度任务恢复。
+
+真实 Trigger 恢复联测使用 `e2e/degradation-live-real-trigger.spec.ts`，默认跳过。先构建配对后端的 `batch-trigger` 可执行 JAR；另启关闭安全 bypass 的隔离 Console API，将 `BATCH_TRIGGER_BASE_URL` 设为 `http://127.0.0.1:18181`，并将隔离前端 dev proxy 指向该 API。运行前确认 18181 未被占用，本机 PostgreSQL 管理账号有 `CREATEDB` 权限，应用账号可拥有新数据库；用例只允许连接 loopback PostgreSQL，不复用现有业务库。提供 Console 登录账号、本机数据库管理账号和应用账号：
+
+```bash
+E2E_REAL_TRIGGER_RECOVERY=1 E2E_SKIP_GLOBAL_SETUP=1 E2E_BASE_URL=http://127.0.0.1:5175 \
+  E2E_REAL_TRIGGER_JAR='../file-batch-system/batch-trigger/target/batch-trigger-1.0.0-exec.jar' \
+  E2E_DEGRADATION_USERNAME=admin E2E_DEGRADATION_PASSWORD='<password>' \
+  E2E_TRIGGER_DB_ADMIN_USERNAME='<db-admin>' E2E_TRIGGER_DB_ADMIN_PASSWORD='<db-admin-password>' \
+  BATCH_PLATFORM_DB_USERNAME='<db-app>' BATCH_PLATFORM_DB_PASSWORD='<db-app-password>' \
+  npx playwright test e2e/degradation-live-real-trigger.spec.ts --project=chromium --workers=1 --retries=0
+```
+
+默认 PostgreSQL 地址 `127.0.0.1:15432`、Trigger 端口 `18181`；可用 `E2E_TRIGGER_DB_HOST/PORT` 和 `E2E_REAL_TRIGGER_PORT` 改本机端口，后者必须与隔离 Console API 的 `BATCH_TRIGGER_BASE_URL` 一致。用例创建随机 `e2e_trigger_*` 数据库并启动真实 Trigger，验证初始降级、调度状态 `STARTED`、恢复响应和移动横幅过期消失；无论通过或失败，先停服务再删测试库。它不验证已有作业执行或生产环境恢复。
+
+使用率页面与 PostgreSQL 的只读对账使用 `e2e/usage-live-reconciliation.spec.ts`，默认跳过。测试窗口内需要有 `ta` 聚合数据；提供本机数据库账号后运行：
+
+```bash
+E2E_USAGE_DB_RECONCILIATION=1 E2E_SKIP_GLOBAL_SETUP=1 E2E_BASE_URL=http://127.0.0.1:5173 \
+  E2E_USAGE_USERNAME=admin E2E_USAGE_PASSWORD='<password>' \
+  BATCH_PLATFORM_DB_USERNAME='<db-user>' BATCH_PLATFORM_DB_PASSWORD='<db-password>' \
+  npx playwright test e2e/usage-live-reconciliation.spec.ts --project=chromium --workers=1
+```
+
+数据库地址默认 `127.0.0.1:15432/batch_platform`，可用 `E2E_USAGE_DB_HOST/PORT/NAME` 和 `PSQL_BIN` 调整，但不接受远程数据库。用例验证 API、数据库和页面读数一致；不证明业务终态或聚合事件去重正确。
 
 ---
 
@@ -217,7 +274,7 @@ E2E_AI_LIVE=1 E2E_SKIP_GLOBAL_SETUP=1 E2E_BASE_URL=http://127.0.0.1:5174 \
 
 | 症状 | 根因 | 处理 |
 |---|---|---|
-| e2e 报「storageState token is expired」或角色账号准备失败 | 登录态过期,或脱离 global-setup 直跑(如手写 `chromium.launch + storageState` 的一次性脚本) | **必须走 `npx playwright test` / `npm run test:e2e`** —— 它每次自动准备角色账号并刷新 `e2e/.auth/*.json`;**别用独立脚本直接吃陈旧 storageState**;确认 BE 在 18080 且 admin/admin123 可登录 |
+| e2e 报「storageState token is expired」或角色账号准备失败 | 登录态过期,或脱离 global-setup 直跑(如手写 `chromium.launch + storageState` 的一次性脚本) | **必须走 `npx playwright test` / `npm run test:e2e`** —— 它每次自动准备角色账号并刷新 `e2e/.auth/*.json`;**别用独立脚本直接吃陈旧 storageState**;确认 BE 在 `BC_API_BASE` 指定地址(默认 18080)且 admin/admin123 可登录 |
 | `toHaveURL` 断言失败但页面其实正常(如 `/scheduler/catch-up-approvals`) | 该路径是**别名,会重定向**(→ `/approvals?tab=catch-up`) | URL 断言写成接受重定向:`toHaveURL(/\/(scheduler\/catch-up-approvals\|approvals)/)` |
 | tab 切换后 `LIST_OR_EMPTY.first()` 报 `Received: hidden` | 多 tab pane 下 `.first()` 命中**隐藏的非激活 pane**(`display:none`) | 切 tab 后改断 `tab` 的 `aria-selected='true'`,别断隐藏 pane 的表(见 §4.8) |
 | 设计器 e2e 进去撞「只读 banner」被 skip | **设计锁按会话持有,跨运行不自动释放** | `beforeEach` 主动 DELETE 锁(见 §4.7) |

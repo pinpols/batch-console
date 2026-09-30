@@ -11,9 +11,9 @@
 
 | Item | Count |
 |---|---:|
-| Runtime direct dependencies | 31 |
-| Development direct dependencies | 35 |
-| Resolved lockfile components | 924 |
+| Runtime direct dependencies | 32 |
+| Development direct dependencies | 36 |
+| Resolved lockfile components | 929 |
 
 ## 许可证分布
 
@@ -31,7 +31,7 @@
 | CC0-1.0 | 2 |
 | FSL-1.1-MIT | 9 |
 | ISC | 57 |
-| MIT | 772 |
+| MIT | 777 |
 | MIT-0 | 2 |
 | MPL-2.0 | 14 |
 | NOASSERTION | 1 |
@@ -67,6 +67,7 @@
 | `echarts` | `^6.0.0` |
 | `element-plus` | `^2.14.6` |
 | `json-bigint` | `^1.0.0` |
+| `markdown-it` | `^15.0.2` |
 | `pinia` | `^4.0.3` |
 | `svg-pan-zoom` | `^3.6.2` |
 | `vue` | `^3.5.13` |
@@ -85,6 +86,7 @@
 | `@sentry/cli` | `^3.8.0` |
 | `@types/dagre` | `^0.7.54` |
 | `@types/json-bigint` | `^1.0.4` |
+| `@types/markdown-it` | `^14.2.0` |
 | `@typescript-eslint/eslint-plugin` | `^8.71.0` |
 | `@typescript-eslint/parser` | `^8.71.0` |
 | `@vitejs/plugin-vue` | `^6.0.7` |

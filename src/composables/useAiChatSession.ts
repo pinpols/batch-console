@@ -9,6 +9,7 @@ type SendErrorKey =
   | 'aiChat.sendError'
   | 'aiChat.sendRateLimited'
   | 'aiChat.sendForbidden'
+  | 'aiChat.sendSessionExpired'
   | 'aiChat.sendUnavailable'
   | 'aiChat.sendTimeout'
 
@@ -24,6 +25,7 @@ function sendErrorKeyFor(error: unknown): SendErrorKey {
   if (result.rateLimited || status === 429 || code === 'RATE_LIMITED')
     return 'aiChat.sendRateLimited'
   if (status === 403 || code === 'FORBIDDEN') return 'aiChat.sendForbidden'
+  if (status === 404 || code === 'NOT_FOUND') return 'aiChat.sendSessionExpired'
   if (status === 503 || code === 'SERVICE_UNAVAILABLE') return 'aiChat.sendUnavailable'
   if (result.code === 'ECONNABORTED' || result.code === 'ETIMEDOUT' || status === 504)
     return 'aiChat.sendTimeout'

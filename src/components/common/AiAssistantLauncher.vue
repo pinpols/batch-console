@@ -43,7 +43,7 @@
             <strong>{{
               message.role === 'user' ? t('aiChat.bubbleMe') : t('aiChat.bubbleAi')
             }}</strong>
-            <span>{{ message.content }}</span>
+            <AiMessageContent :content="message.content" :role="message.role" />
             <small v-if="message.refusalReason">{{ message.refusalReason }}</small>
           </div>
         </div>
@@ -90,6 +90,7 @@
   import { useI18n } from 'vue-i18n'
   import { Plus, Sparkles } from '@lucide/vue'
   import type { InputInstance } from 'element-plus'
+  import AiMessageContent from '@/components/common/AiMessageContent.vue'
   import { useAiChatSession } from '@/composables/useAiChatSession'
   import { useTenantReload } from '@/composables/useTenantReload'
   import { useAuthStore } from '@/stores/auth'
