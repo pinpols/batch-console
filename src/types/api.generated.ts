@@ -215,6 +215,8 @@ export interface paths {
      *     - Pre-rollout: PUT `{enabled:true, readOnly:false, message:..., etaAt:...,
      *       affectedServices:["job-schedule"]}`
      *     - Post-rollout: PUT `{enabled:false}`
+     *     The state is stored in a database singleton and updated with a version CAS, so all
+     *     Console replicas converge on the same state. A concurrent update returns 409.
      */
     put: operations['updateAdminMaintenanceState']
     post?: never
@@ -238,6 +240,23 @@ export interface paths {
      *     files); avoids the menu-assembly cost of `GET /api/console/auth/me`.
      */
     get: operations['checkConsoleAuth']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/queries/usage-summary': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Query backend-derived daily usage aggregates */
+    get: operations['queryConsoleUsageSummary']
     put?: never
     post?: never
     delete?: never
@@ -6307,14 +6326,30 @@ export interface components {
       affectedServices?: string[]
       /**
        * Format: int64
-       * @description Monotonically increasing runtime maintenance state version
+       * @description Monotonic shared-state version used for replica convergence and CAS.
        */
       version: number
-      /**
-       * Format: date-time
-       * @description Last initialization or hot-update timestamp
-       */
-      updatedAt: string | null
+    }
+    ConsoleUsageSummaryResponse: {
+      /** Format: date */
+      statDate: string
+      tenantId: string
+      /** @enum {string} */
+      source: 'OPERATION_AUDIT' | 'BUSINESS_RESULT' | 'FRONTEND'
+      metricCode: string
+      pageCode: string
+      appVersion: string
+      /** Format: int64 */
+      eventCount: number
+      /** Format: int64 */
+      successCount: number
+      /** Format: int64 */
+      failureCount: number
+      /** Format: date-time */
+      lastSeenAt?: string | null
+    }
+    CommonResponseConsoleUsageSummaryList: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['ConsoleUsageSummaryResponse'][]
     }
     UpdateMaintenanceRequest: {
       enabled: boolean
@@ -11518,6 +11553,32 @@ export interface operations {
           [name: string]: unknown
         }
         content?: never
+      }
+    }
+  }
+  queryConsoleUsageSummary: {
+    parameters: {
+      query: {
+        tenantId: string
+        from: string
+        to: string
+        metricCode?: string
+        pageCode?: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Daily usage rows. These are derived trend data, not audit or billing evidence. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseConsoleUsageSummaryList']
+        }
       }
       /** @description Not authenticated */
       401: {

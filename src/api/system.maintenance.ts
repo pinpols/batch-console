@@ -5,13 +5,12 @@ import type { components } from '@/types/api.generated'
 type BackendMaintenanceStatus = components['schemas']['MaintenanceStatus']
 export type MaintenanceStatus = Omit<
   BackendMaintenanceStatus,
-  'message' | 'etaAt' | 'affectedServices' | 'version' | 'updatedAt'
+  'message' | 'etaAt' | 'affectedServices' | 'version'
 > & {
   message: string | null
   etaAt: string | null
   affectedServices: string[]
   version: number | null
-  updatedAt: string | null
 }
 
 /** 复用 OpenAPI 生成类型(与 BE `UpdateMaintenanceRequest` Java DTO 对齐)。重新生成:`npm run gen:api`。 */
@@ -53,6 +52,5 @@ function normalize(data: Partial<MaintenanceStatus> | null): MaintenanceStatus {
     etaAt: data?.etaAt ?? null,
     affectedServices: Array.isArray(data?.affectedServices) ? data.affectedServices : [],
     version: data?.version ?? null,
-    updatedAt: data?.updatedAt ?? null,
   }
 }

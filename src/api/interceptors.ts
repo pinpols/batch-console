@@ -626,7 +626,6 @@ export function applyApiInterceptors(client: AxiosInstance): void {
               etaAt?: string
               affectedServices?: string[]
               version?: number
-              updatedAt?: string
             }
           | undefined
         const xMaint = error.response?.headers?.['x-maintenance']
@@ -644,7 +643,6 @@ export function applyApiInterceptors(client: AxiosInstance): void {
                 ? maint.affectedServices
                 : [],
               version: maint?.version ?? null,
-              updatedAt: maint?.updatedAt ?? null,
               adminBypass: false,
             })
             if (!readOnly && typeof window !== 'undefined') {
