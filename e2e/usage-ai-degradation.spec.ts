@@ -54,7 +54,8 @@ test.describe('Usage, AI and degradation', () => {
       await expect(drawer.getByText(payload.data.answer)).toBeVisible()
     } else {
       expect([403, 429, 503]).toContain(response.status())
-      await expect(drawer.getByRole('alert')).toContainText('发送失败')
+      const expectedMessage = response.status() === 403 ? '请求被拒绝' : response.status() === 429 ? '请求受限' : 'AI 服务暂不可用'
+      await expect(drawer.getByRole('alert')).toContainText(expectedMessage)
       await expect(prompt).toHaveValue('查询当前批量调度运行概况')
     }
   })
@@ -95,7 +96,7 @@ test.describe('Usage, AI and degradation', () => {
     const prompt = drawer.getByRole('textbox', { name: '问题' })
     await prompt.fill('分析当前作业失败')
     await drawer.getByRole('button', { name: '发送' }).click()
-    await expect(drawer.getByRole('alert')).toContainText('发送失败')
+    await expect(drawer.getByRole('alert')).toContainText('请求受限')
     await expect(prompt).toHaveValue('分析当前作业失败')
   })
 

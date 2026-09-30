@@ -5620,6 +5620,11 @@ const messages: Messages = {
     monthlyCost: 'Estimated this month: ${cost}',
     promptLabel: 'Question',
     sendError: 'Sending failed. Your question remains in the input box.',
+    sendRateLimited:
+      'Request limit reached. Try again later; your question is still in the input box.',
+    sendForbidden: 'Request denied. Check your access or refresh the page and try again.',
+    sendUnavailable: 'The AI service is unavailable. Try again later.',
+    sendTimeout: 'The AI request timed out. Try again; your question is still in the input box.',
     bubbleMe: 'Me',
     bubbleAi: 'AI',
     inputPlaceholder:

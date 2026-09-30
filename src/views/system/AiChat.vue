@@ -102,7 +102,7 @@
                   class="composer__editor"
                 />
                 <div v-if="sendError" class="history-error" role="alert">
-                  {{ t('aiChat.sendError') }}
+                  {{ t(sendErrorKey) }}
                 </div>
                 <div class="composer__actions">
                   <el-button :disabled="sending || !messages.length" @click="resetSession">
@@ -268,7 +268,7 @@
   const router = useRouter()
   const activeTab = ref<'chat' | 'audits'>('chat')
   const chat = useAiChatSession()
-  const { prompt, sending, sendError, sessionId, messages } = chat
+  const { prompt, sending, sendError, sendErrorKey, sessionId, messages } = chat
   const conversations = ref<AiConversation[]>([])
   const costSummary = ref<AiCostSummary | null>(null)
   const monthlyCost = computed(() => {

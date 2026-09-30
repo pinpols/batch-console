@@ -51,6 +51,26 @@ describe('useAiChatSession', () => {
     expect(chat.prompt.value).toBe('Retry me')
     expect(chat.messages.value).toEqual([])
     expect(chat.sendError.value).toBe(true)
+    expect(chat.sendErrorKey.value).toBe('aiChat.sendError')
+  })
+
+  it.each([
+    [{ rateLimited: true }, 'aiChat.sendRateLimited'],
+    [{ response: { status: 429, data: { code: 'RATE_LIMITED' } } }, 'aiChat.sendRateLimited'],
+    [{ response: { status: 403, data: { code: 'FORBIDDEN' } } }, 'aiChat.sendForbidden'],
+    [
+      { response: { status: 503, data: { code: 'SERVICE_UNAVAILABLE' } } },
+      'aiChat.sendUnavailable',
+    ],
+    [{ code: 'ECONNABORTED' }, 'aiChat.sendTimeout'],
+  ] as const)('maps a failed send to %s', async (error, expectedKey) => {
+    mockedChat.mockRejectedValue(error)
+    const chat = useAiChatSession()
+    chat.prompt.value = 'Retry me'
+
+    expect(await chat.send('Empty')).toBe(false)
+    expect(chat.sendErrorKey.value).toBe(expectedKey)
+    expect(chat.prompt.value).toBe('Retry me')
   })
 
   it('keeps a new draft typed while the previous question is sending', async () => {

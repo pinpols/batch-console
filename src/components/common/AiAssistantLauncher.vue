@@ -49,7 +49,7 @@
         </div>
         <div class="ai-panel__composer">
           <div v-if="chat.sendError.value" class="ai-panel__error" role="alert">
-            {{ t('aiChat.sendError') }}
+            {{ t(chat.sendErrorKey.value) }}
           </div>
           <el-input
             ref="input"

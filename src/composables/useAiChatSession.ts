@@ -5,6 +5,30 @@ import type { AiTurn } from '@/api/ai'
 import type { AiChatResponse } from '@/types/console-api'
 
 type PromptDecision = AiChatResponse['promptDecision'] | 'REJECTED_BUDGET'
+type SendErrorKey =
+  | 'aiChat.sendError'
+  | 'aiChat.sendRateLimited'
+  | 'aiChat.sendForbidden'
+  | 'aiChat.sendUnavailable'
+  | 'aiChat.sendTimeout'
+
+function sendErrorKeyFor(error: unknown): SendErrorKey {
+  if (!error || typeof error !== 'object') return 'aiChat.sendError'
+  const result = error as {
+    rateLimited?: boolean
+    code?: string
+    response?: { status?: number; data?: { code?: string } }
+  }
+  const status = result.response?.status
+  const code = result.response?.data?.code
+  if (result.rateLimited || status === 429 || code === 'RATE_LIMITED')
+    return 'aiChat.sendRateLimited'
+  if (status === 403 || code === 'FORBIDDEN') return 'aiChat.sendForbidden'
+  if (status === 503 || code === 'SERVICE_UNAVAILABLE') return 'aiChat.sendUnavailable'
+  if (result.code === 'ECONNABORTED' || result.code === 'ETIMEDOUT' || status === 504)
+    return 'aiChat.sendTimeout'
+  return 'aiChat.sendError'
+}
 
 function persistedDecision(value: string | null): PromptDecision | undefined {
   switch (value) {
@@ -36,6 +60,7 @@ export function useAiChatSession() {
   const prompt = ref('')
   const sending = ref(false)
   const sendError = ref(false)
+  const sendErrorKey = ref<SendErrorKey>('aiChat.sendError')
   const sessionId = ref('')
   const messages = ref<AiChatMessage[]>([])
   let generation = 0
@@ -47,6 +72,7 @@ export function useAiChatSession() {
     sessionId.value = ''
     messages.value = []
     sendError.value = false
+    sendErrorKey.value = 'aiChat.sendError'
   }
 
   function turnMessages(turns: AiTurn[], emptyAnswer: string): AiChatMessage[] {
@@ -82,6 +108,7 @@ export function useAiChatSession() {
     messages.value.push(userMessage)
     sending.value = true
     sendError.value = false
+    sendErrorKey.value = 'aiChat.sendError'
     try {
       const res = await chatWithAi({
         tenantId,
@@ -102,15 +129,27 @@ export function useAiChatSession() {
       })
       if (prompt.value === draft) prompt.value = ''
       return true
-    } catch {
+    } catch (error) {
       if (requestGeneration !== generation || tenant.tenantId !== tenantId) return false
       messages.value = messages.value.filter((message) => message.id !== userMessage.id)
       sendError.value = true
+      sendErrorKey.value = sendErrorKeyFor(error)
       return false
     } finally {
       if (requestGeneration === generation) sending.value = false
     }
   }
 
-  return { prompt, sending, sendError, sessionId, messages, reset, restore, prepend, send }
+  return {
+    prompt,
+    sending,
+    sendError,
+    sendErrorKey,
+    sessionId,
+    messages,
+    reset,
+    restore,
+    prepend,
+    send,
+  }
 }
