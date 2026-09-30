@@ -210,6 +210,16 @@ E2E_REAL_DEGRADATION=1 E2E_SKIP_GLOBAL_SETUP=1 E2E_BASE_URL=http://127.0.0.1:517
 
 用例验证移动布局主动探测和降级横幅；不代替真实 Trigger 恢复验收。
 
+移动端受控下游恢复联测使用 `e2e/degradation-live-recovery.spec.ts`，默认跳过。隔离 Console API 必须关闭安全 bypass，设置 `BATCH_TRIGGER_BASE_URL=http://127.0.0.1:18181`，启动时保证该端口空闲；前端 dev proxy 指向隔离 API。测试先确认真实后端返回 `X-Degraded-Source: trigger`，再自行启动本机 HTTP 桩并验证恢复响应和横幅过期：
+
+```bash
+E2E_DEGRADATION_RECOVERY=1 E2E_SKIP_GLOBAL_SETUP=1 E2E_BASE_URL=http://127.0.0.1:5175 \
+  E2E_DEGRADATION_USERNAME=admin E2E_DEGRADATION_PASSWORD='<password>' \
+  npx playwright test e2e/degradation-live-recovery.spec.ts --project=chromium --workers=1 --retries=0
+```
+
+可用 `E2E_TRIGGER_STUB_PORT` 改桩端口，须与后端 `BATCH_TRIGGER_BASE_URL` 一致。此测试不启动真实 Trigger，不验证调度任务恢复。
+
 使用率页面与 PostgreSQL 的只读对账使用 `e2e/usage-live-reconciliation.spec.ts`，默认跳过。测试窗口内需要有 `ta` 聚合数据；提供本机数据库账号后运行：
 
 ```bash

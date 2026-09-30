@@ -52,7 +52,7 @@
 | **FE-MAINT-2** | 统一写操作守卫，覆盖作业、工作流、批量日、运维动作和配置导入 | ✅ 已完成 | 请求拦截器统一兜底，后端 503 仍为最终防线 |
 | **FE-MAINT-3** | 维护 503 即时进入 `/maintenance`，恢复后安全回跳 | ✅ 已完成 | 已覆盖即时跳转、原路由保留和恢复重试 |
 | **FE-DEGRADE-1** | 消费 `X-Degraded-Source`，展示可解释的非阻塞降级提示 | ✅ 已验证 | Trigger 停止时真实 `/scheduler/status` 和 `/ops/triggers` 返回 `X-Degraded-Source: trigger`；拦截器、Banner 和 Trigger 空态已验证 |
-| **FE-DEGRADE-2** | 桌面/移动端降级、恢复、长公告、多语言和布局 E2E | 🟠 进行中 | 桌面真实降级与双语 E2E 已覆盖；模拟来源停止后的 60 秒 TTL 恢复、长公告在 390px/1280px 宽度下不截断已通过 E2E。移动布局主动探测调度状态；390px 浏览器连接真实故障后端，验证 `trigger` 降级头、横幅与视口边界，1/1 通过。真实下游恢复链路仍待验收 |
+| **FE-DEGRADE-2** | 桌面/移动端降级、恢复、长公告、多语言和布局 E2E | 🟠 进行中 | 桌面真实降级与双语 E2E 已覆盖；模拟来源停止后的 60 秒 TTL 恢复、长公告在 390px/1280px 宽度下不截断已通过 E2E。移动布局连接真实故障后端，验证 `trigger` 降级头、横幅与视口边界；隔离后端连接受控 Trigger 桩，从故障到恢复后不再返回降级头，移动横幅 TTL 结束后消失，均通过浏览器 E2E。真实 Trigger 服务启动后的恢复仍待验收 |
 
 明确不做：前端自判 5xx 为降级、通用故障注入操作台、工单/通知平台和新的编排入口。
 
@@ -86,5 +86,7 @@ npm run gen:api:check
 同样环境下，`E2E_AI_ISOLATION=1` 运行 `ai-live-isolation.spec.ts`，验证同租户非本人和跨租户会话的列表、历史、续写隔离。使用本机 PostgreSQL 临时记录，测试结束按租户清理；默认 E2E 套件跳过它。
 
 移动端真实降级浏览器回归为显式 opt-in：`E2E_REAL_DEGRADATION=1`，连接本机 Console API 且 Trigger 下游不可用；提供 `E2E_DEGRADATION_USERNAME/PASSWORD`。用例先要求后端 `/scheduler/status` 返回 `X-Degraded-Source: trigger`，再断言移动端页面自动探测并显示横幅；默认 E2E 套件跳过它。
+
+受控下游恢复回归为显式 opt-in：`E2E_DEGRADATION_RECOVERY=1`。隔离 Console API 的 `BATCH_TRIGGER_BASE_URL` 指向尚未启动的本机桩端口；用例确认首次降级后启动桩，验证恢复响应无降级头及移动横幅在 TTL 后消失。它不启动真实 Trigger，不替代调度器恢复验收。
 
 使用率真实 SQL 对账为显式 opt-in：`E2E_USAGE_DB_RECONCILIATION=1`，连接本机 Console API 和 PostgreSQL，提供 `E2E_USAGE_USERNAME/PASSWORD` 与 `BATCH_PLATFORM_DB_USERNAME/PASSWORD`。用例只读查询 `ta` 的日聚合记录，要求测试窗口内至少有一条记录；数据库仅允许 loopback，默认 E2E 套件跳过它。
