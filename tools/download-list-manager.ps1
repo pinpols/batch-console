@@ -27,6 +27,28 @@ function Resolve-FullPath {
   return [System.IO.Path]::GetFullPath((Join-Path (Get-Location) $Path))
 }
 
+function Write-Utf8NoBom {
+  param(
+    [string]$Path,
+    [string[]]$Lines
+  )
+
+  [System.IO.File]::WriteAllLines(
+    $Path,
+    $Lines,
+    [System.Text.UTF8Encoding]::new($false)
+  )
+}
+
+function Export-CsvUtf8NoBom {
+  param(
+    [object[]]$Items,
+    [string]$Path
+  )
+
+  Write-Utf8NoBom -Path $Path -Lines @($Items | ConvertTo-Csv -NoTypeInformation)
+}
+
 function Get-SafeFileName {
   param(
     [string]$Name,
@@ -93,7 +115,7 @@ function Read-DownloadItems {
   $items = @()
 
   if ($extension -eq ".csv") {
-    $rows = Import-Csv -LiteralPath $fullPath
+    $rows = Import-Csv -LiteralPath $fullPath -Encoding UTF8
     foreach ($row in $rows) {
       $url = Get-ObjectValue -Object $row -Names @("url", "URL", "link", "Link", "href", "Href")
       $fileName = Get-ObjectValue -Object $row -Names @("fileName", "filename", "name", "title")
@@ -107,7 +129,7 @@ function Read-DownloadItems {
   }
 
   if ($extension -eq ".json") {
-    $json = Get-Content -LiteralPath $fullPath -Raw | ConvertFrom-Json
+    $json = Get-Content -LiteralPath $fullPath -Raw -Encoding UTF8 | ConvertFrom-Json
     foreach ($row in @($json)) {
       if ($row -is [string]) {
         $items += [PSCustomObject]@{ Url = $row; FileName = "" }
@@ -122,7 +144,7 @@ function Read-DownloadItems {
     return $items
   }
 
-  $lines = Get-Content -LiteralPath $fullPath
+  $lines = Get-Content -LiteralPath $fullPath -Encoding UTF8
   foreach ($line in $lines) {
     $trimmed = $line.Trim()
     if ($trimmed -eq "" -or $trimmed.StartsWith("#")) {
@@ -189,6 +211,7 @@ function Write-IdmScript {
 
   $lines = @(
     "@echo off",
+    "chcp 65001 >nul",
     "setlocal",
     "set ""IDM=$IdmExe""",
     "set ""OUT=$DownloadDir""",
@@ -211,7 +234,7 @@ function Write-IdmScript {
     $lines += "echo Added $($Items.Count) task(s) to IDM queue. Start the queue in IDM when ready."
   }
 
-  Set-Content -LiteralPath $ScriptPath -Value $lines -Encoding ASCII
+  Write-Utf8NoBom -Path $ScriptPath -Lines $lines
 }
 
 function Write-Aria2List {
@@ -228,7 +251,7 @@ function Write-Aria2List {
     $lines += "  out=$($item.FileName)"
   }
 
-  Set-Content -LiteralPath $ListPath -Value $lines -Encoding UTF8
+  Write-Utf8NoBom -Path $ListPath -Lines $lines
 }
 
 $inputFullPath = Resolve-FullPath $InputPath
@@ -243,8 +266,8 @@ $result = Get-CleanDownloadItems -RawItems $rawItems
 
 $cleanListPath = [System.IO.Path]::ChangeExtension($outScriptFullPath, ".clean.csv")
 $skipListPath = [System.IO.Path]::ChangeExtension($outScriptFullPath, ".skipped.csv")
-$result.Items | Export-Csv -LiteralPath $cleanListPath -NoTypeInformation -Encoding UTF8
-$result.Skipped | Export-Csv -LiteralPath $skipListPath -NoTypeInformation -Encoding UTF8
+Export-CsvUtf8NoBom -Items $result.Items -Path $cleanListPath
+Export-CsvUtf8NoBom -Items $result.Skipped -Path $skipListPath
 
 if ($Mode -eq "idm") {
   Write-IdmScript -Items $result.Items -ScriptPath $outScriptFullPath -DownloadDir $outputFullPath -IdmExe $IdmPath -ShouldStartQueue $StartQueue.IsPresent

@@ -911,7 +911,7 @@
     if (viewport) viewport.removeAttribute('transform')
     const xml = new XMLSerializer().serializeToString(clone)
     const blob = new Blob([`<?xml version="1.0" encoding="UTF-8"?>\n${xml}`], {
-      type: 'image/svg+xml',
+      type: 'image/svg+xml;charset=utf-8',
     })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')

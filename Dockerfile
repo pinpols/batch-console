@@ -4,6 +4,8 @@
 
 # ───── Stage 1: build ─────
 FROM node:24.21.0-alpine3.24 AS build
+ENV LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8
 WORKDIR /app
 
 # 文档构建脚本复用仓库内 Bash 工具链；构建镜像必须显式提供运行时。
@@ -43,6 +45,8 @@ RUN test -f /file-batch-system/docs/README.md && \
 
 # ───── Stage 2: runtime ─────
 FROM nginx:1.30.5-alpine3.24 AS runtime
+ENV LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8
 
 # 安装 healthcheck 和时区所需工具；基础镜像使用明确的 Nginx/Alpine 版本。
 RUN apk add --no-cache curl tzdata && \
