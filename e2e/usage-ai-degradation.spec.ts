@@ -148,6 +148,64 @@ test.describe('Usage, AI and degradation', () => {
     await expect(page.locator('.degradation-banner')).toContainText('Some downstream services degraded')
   })
 
+  test('degradation banner clears after the source stops reporting degradation', async ({ page }) => {
+    await page.clock.install()
+    await page.route('**/api/console/queries/usage-summary**', async (route) => {
+      const response = await route.fetch()
+      await route.fulfill({
+        response,
+        headers: { ...response.headers(), 'x-degraded-source': 'orchestrator' },
+      })
+    })
+    await page.goto('/observability/usage')
+    await expect(page.locator('.degradation-banner')).toContainText('orchestrator')
+    await page.unroute('**/api/console/queries/usage-summary**')
+    const recoveredResponse = page.waitForResponse((response) =>
+      response.url().includes('/api/console/queries/usage-summary') && response.request().method() === 'GET',
+    )
+    await page.getByRole('button', { name: '搜索' }).click()
+    expect((await recoveredResponse).headers()['x-degraded-source']).toBeUndefined()
+    await expect(page.locator('.degradation-banner')).toContainText('orchestrator')
+    await page.clock.fastForward(75_000)
+    await expect(page.locator('.degradation-banner')).toHaveCount(0)
+  })
+
+  test('long maintenance announcement remains readable at narrow and desktop widths', async ({ page }) => {
+    const message = '维护公告'.repeat(40)
+    await page.route('**/api/console/system/maintenance', (route) => route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        code: 'SUCCESS',
+        message: 'success',
+        data: {
+          enabled: true,
+          readOnly: true,
+          message,
+          etaAt: null,
+          affectedServices: ['batch-orchestrator', 'batch-trigger'],
+          version: 1,
+          updatedAt: '2026-09-30T00:00:00Z',
+        },
+      }),
+    }))
+    await page.goto('/observability/usage')
+    const banner = page.locator('.maintenance-banner')
+    await expect(banner).toContainText(message)
+    for (const width of [390, 1280]) {
+      await page.setViewportSize({ width, height: 800 })
+      const dimensions = await banner.evaluate((element) => {
+        const text = element.querySelector('.maintenance-banner__text') as HTMLElement
+        const bounds = element.getBoundingClientRect()
+        return {
+          textFits: text.scrollWidth <= text.clientWidth && text.scrollHeight <= text.clientHeight,
+          withinViewport: bounds.left >= 0 && bounds.right <= window.innerWidth,
+        }
+      })
+      expect(dimensions).toEqual({ textFits: true, withinViewport: true })
+    }
+  })
+
   test('trigger list follows the real backend degradation header when a downstream is unavailable', async ({ page }) => {
     const responsePromise = page.waitForResponse((response) =>
       response.url().includes('/api/console/ops/triggers') && response.request().method() === 'GET',
