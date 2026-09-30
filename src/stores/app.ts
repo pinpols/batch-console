@@ -142,6 +142,8 @@ export const useAppStore = defineStore('app', () => {
     adminBypass: boolean
     /** 后端维护配置版本；旧后端未提供时为空。 */
     version: number | null
+    /** 后端共享维护状态更新时间；旧后端未提供时为空。 */
+    updatedAt: string | null
     /** 前端最近一次成功同步时间。 */
     lastSyncedAt: string | null
     /** 最近一次同步失败摘要。 */
@@ -156,6 +158,7 @@ export const useAppStore = defineStore('app', () => {
     affectedServices: [],
     adminBypass: false,
     version: null,
+    updatedAt: null,
     lastSyncedAt: null,
     syncError: null,
     isStale: false,
