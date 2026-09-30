@@ -1,0 +1,5 @@
+# actionlint 1.7.12 的内置 GitHub-hosted 标签表尚未包含 ubuntu-26.04。
+# GitHub 已将该镜像标记为 GA；actionlint 收录后删除此兼容白名单。
+self-hosted-runner:
+  labels:
+    - ubuntu-26.04

@@ -34,7 +34,9 @@ checkout@v7 → setup-node@v7(node 24 + npm cache)
 
 ### Action 版本基线
 
-CI 使用 GitHub 托管的 `ubuntu-latest`，Action 运行时统一到 Node 24 兼容主版本：
+CI 使用 GitHub 托管的 `ubuntu-26.04`，Action 运行时统一到 Node 24 兼容主版本。禁止使用浮动的 `ubuntu-latest`，避免 GitHub 分阶段迁移镜像时同一分支出现不同系统环境：
+
+`actionlint` 1.7.12 的内置标签表尚未收录 `ubuntu-26.04`，因此 `.github/actionlint.yaml` 临时登记该标签；升级到已原生识别此标签的 actionlint 后应删除兼容项。
 
 - `actions/checkout@v7`、`actions/setup-node@v7`
 - `actions/upload-artifact@v7`、`actions/download-artifact@v8`
@@ -168,7 +170,7 @@ npm run preflight:changed
 |---|---|---|
 | pr-gate `lint:check` `Definition for rule 'es5/no-es6-methods' was not found` | eslint config 没 ignore vitepress cache | `eslint.config.js` ignore 路径检查 |
 | pr-gate `gen:api:check` 漂移 | BE OpenAPI yaml 改了 FE 没跑 gen:api | 本地 `npm run gen:api` + commit `src/types/api.generated.ts` |
-| pr-gate `npm audit` 在 CI fail 本地通 | npm registry POST 405(代理) | 本地代理特殊,CI ubuntu-latest 正常 |
+| pr-gate `npm audit` 在 CI fail 本地通 | npm registry POST 405(代理) | 本地代理特殊，CI `ubuntu-26.04` 正常 |
 | full-ci-gate Trivy 报 CRITICAL | base image 漏洞 | `Dockerfile` 升 base image,或加 `.trivyignore` 临时白名单 |
 | full-ci-gate Lighthouse perf < 0.8 | 包体增大 / 慢资源 | 看报告找 LCP / TBT 拖累项,常见:vendor chunk 拆分 / 图片压缩 |
 | staging-gate playwright fail | staging 服务挂 / 选择器漂 | 看 playwright-report artifact 截图 / 录屏 |

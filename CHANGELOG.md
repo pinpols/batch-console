@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- 升级 GitHub Actions、Artifact 上传下载、Docker 构建、Release Please 与 Renovate 的 CI 运行依赖到 Node 24 兼容主版本，并通过完整门禁验证跨 Job 制品闭环。
+- 升级 GitHub Actions、Artifact 上传下载、Docker 构建、Release Please 与 Renovate 的 CI 运行依赖到 Node 24 兼容主版本；Runner 固定为 Ubuntu 26.04，并通过完整门禁验证跨 Job 制品闭环。
 - 统一平台文本为 UTF-8 无 BOM，补充编辑器、容器、Nginx、浏览器导出与 Windows 工具约束，并将编码检查接入本地预检和 CI；外部批量文件继续按后端模板字符集解析。
 - 页面级加载遮罩使用品牌图标轻量行走动效，Toast 恢复成功/警告/失败等语义图标并修复多条消息重叠；减少动态效果时呈现静态加载状态。
 - 统一前端品牌图标为提供的蓝底、白底原图：桌面/移动导航与登录页随主题切换，刷新浏览器图标、PWA 安装图标及 iOS 启动画面，移除旧 BC 图标入口。

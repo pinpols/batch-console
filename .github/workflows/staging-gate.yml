@@ -25,7 +25,7 @@ concurrency:
 jobs:
   # 发布验收必须有真实环境和测试账号；缺少配置属于发布阻断，不允许静默跳过。
   precheck:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 2
     outputs:
       base_url: ${{ steps.s.outputs.base_url }}
@@ -67,7 +67,7 @@ jobs:
   e2e-against-staging:
     name: Playwright e2e (full, against staging)
     needs: precheck
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
@@ -105,7 +105,7 @@ jobs:
   lighthouse-against-staging:
     name: Lighthouse (against staging)
     needs: precheck
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
