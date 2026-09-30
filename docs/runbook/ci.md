@@ -16,7 +16,7 @@ CI 由 3 个核心门禁、兼容/安全检查和发布辅助 workflow 组成。
 ## pr-gate 详情
 
 ```
-checkout → setup-node@v5(node 24 + npm cache)
+checkout@v7 → setup-node@v7(node 24 + npm cache)
         → npm ci --no-audit --no-fund
         → npm run check:version
         → npm run lint:check       (ESLint check 模式)
@@ -31,6 +31,17 @@ checkout → setup-node@v5(node 24 + npm cache)
 ```
 
 并发控制:同 PR `cancel-in-progress: true` 取消过期任务。15 min timeout。
+
+### Action 版本基线
+
+CI 使用 GitHub 托管的 `ubuntu-latest`，Action 运行时统一到 Node 24 兼容主版本：
+
+- `actions/checkout@v7`、`actions/setup-node@v7`
+- `docker/setup-qemu-action@v4`、`docker/setup-buildx-action@v4`
+- `docker/login-action@v4`、`docker/metadata-action@v6`、`docker/build-push-action@v7`
+- `googleapis/release-please-action@v5`、`renovatebot/github-action@v46.3.6`
+
+artifact 上传/下载暂时保持 `upload-artifact@v5`、`download-artifact@v5`，待独立上传下载闭环验证后再升级，避免把制品协议变化混入常规 Action 运行时升级。
 
 ## frontend-ci 详情(Node 24 兼容 + 文档)
 
