@@ -3,7 +3,7 @@ const { writeFileSync, mkdirSync, readFileSync, existsSync } = require('fs')
 const path = require('path')
 const crypto = require('crypto')
 
-const API_BASE = 'http://localhost:18080'
+const API_BASE = process.env.BC_API_BASE || 'http://localhost:18080'
 const FIXTURE_TENANT = 'system'
 
 // 超时常量（ms）

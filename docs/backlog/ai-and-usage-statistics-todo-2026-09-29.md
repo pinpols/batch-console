@@ -79,7 +79,7 @@ npm run test:unit
 npm run gen:api:check
 ```
 
-涉及真实后端契约时，再执行前端验收脚本和配对后端联测；mock 通过不能替代租户隔离、权限和业务终态验证。
+涉及真实后端契约时，再执行前端验收脚本和配对后端联测；mock 通过不能替代租户隔离、权限和业务终态验证。2026-10-01 在隔离前后端端口重跑 `usage-ai-degradation.spec.ts` 通过；其中 AI 异常/并发等用例使用路由模拟，真实 provider 与业务终态仍按上表单列验收。
 
 真实 AI 过期会话浏览器回归为显式 opt-in：`E2E_AI_EXPIRY=1`，连接本机启用会话持久化且关闭 bypass 的 Console API；需提供 `E2E_AI_USERNAME`、`E2E_AI_PASSWORD`、`BATCH_PLATFORM_DB_USERNAME`、`BATCH_PLATFORM_DB_PASSWORD`，可用 `E2E_AI_DB_HOST/PORT/NAME` 与 `PSQL_BIN` 指向本机 PostgreSQL。测试仅允许 loopback 数据库，数据在用例结束时清理；默认 E2E 套件跳过它。
 

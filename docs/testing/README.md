@@ -168,7 +168,7 @@ await expect(page.locator('.error-state, .el-result')).toBeVisible()  // 有错�
 npm run test:unit            # 全量(CI 也跑)
 npm run test:unit:watch
 
-# e2e(需 BE 在 18080 + dev/preview 在 5173)
+# e2e(默认 BE 在 18080 + dev/preview 在 5173；隔离环境用 BC_API_BASE/E2E_BASE_URL 指定两端)
 npm run test:e2e             # 常规套件，排除 @slow
 npm run test:e2e:all         # 发布验收全量套件，包含 @slow
 npm run test:e2e:smoke       # 冒烟三件套(smoke/cross-navigation/navigation)
@@ -188,6 +188,15 @@ npm run verify:local
 bash scripts/local/fe-acceptance.sh           # 或 /fe-acceptance
 bash scripts/local/fe-acceptance.sh --skip-e2e-full
 ```
+
+隔离端口重跑使用率、AI 与降级关联套件时，前端 dev proxy 应指向同一个 Console API；全局准备和清理均用 `BC_API_BASE`，浏览器用 `E2E_BASE_URL`：
+
+```bash
+BC_API_BASE=http://127.0.0.1:18089 E2E_BASE_URL=http://127.0.0.1:5175 \
+  npx playwright test e2e/usage-ai-degradation.spec.ts --project=chromium --workers=1 --retries=0
+```
+
+全局准备会登录内置 admin 并按需准备测试租户及角色账号；如多个实例共享数据库，重新登录可能使同一账号的其他会话失效。需要保留现场时可显式设置 `BC_E2E_SKIP_TEARDOWN=1`，但不能据此宣称已完成测试数据清理。`E2E_SKIP_GLOBAL_SETUP=1` 只适用于自行登录的 opt-in 用例；普通套件跳过准备会使用过期的 `e2e/.auth/*.json`。
 
 AI 会话正向联测使用 `e2e/ai-live-persistence.spec.ts`，默认跳过。运行前需单独启动已开启 AI 与持久化、且 `bypass-mode=false` 的后端；可使用仅返回固定答案的本地 OpenAI-compatible 模型桩，不要求外部模型密钥。将前端 dev proxy 指向该后端，并在环境变量中提供 `E2E_AI_USERNAME`、`E2E_AI_PASSWORD`，再运行：
 
@@ -250,7 +259,7 @@ E2E_USAGE_DB_RECONCILIATION=1 E2E_SKIP_GLOBAL_SETUP=1 E2E_BASE_URL=http://127.0.
 
 | 症状 | 根因 | 处理 |
 |---|---|---|
-| e2e 报「storageState token is expired」或角色账号准备失败 | 登录态过期,或脱离 global-setup 直跑(如手写 `chromium.launch + storageState` 的一次性脚本) | **必须走 `npx playwright test` / `npm run test:e2e`** —— 它每次自动准备角色账号并刷新 `e2e/.auth/*.json`;**别用独立脚本直接吃陈旧 storageState**;确认 BE 在 18080 且 admin/admin123 可登录 |
+| e2e 报「storageState token is expired」或角色账号准备失败 | 登录态过期,或脱离 global-setup 直跑(如手写 `chromium.launch + storageState` 的一次性脚本) | **必须走 `npx playwright test` / `npm run test:e2e`** —— 它每次自动准备角色账号并刷新 `e2e/.auth/*.json`;**别用独立脚本直接吃陈旧 storageState**;确认 BE 在 `BC_API_BASE` 指定地址(默认 18080)且 admin/admin123 可登录 |
 | `toHaveURL` 断言失败但页面其实正常(如 `/scheduler/catch-up-approvals`) | 该路径是**别名,会重定向**(→ `/approvals?tab=catch-up`) | URL 断言写成接受重定向:`toHaveURL(/\/(scheduler\/catch-up-approvals\|approvals)/)` |
 | tab 切换后 `LIST_OR_EMPTY.first()` 报 `Received: hidden` | 多 tab pane 下 `.first()` 命中**隐藏的非激活 pane**(`display:none`) | 切 tab 后改断 `tab` 的 `aria-selected='true'`,别断隐藏 pane 的表(见 §4.8) |
 | 设计器 e2e 进去撞「只读 banner」被 skip | **设计锁按会话持有,跨运行不自动释放** | `beforeEach` 主动 DELETE 锁(见 §4.7) |
