@@ -37,11 +37,12 @@ checkout@v7 → setup-node@v7(node 24 + npm cache)
 CI 使用 GitHub 托管的 `ubuntu-latest`，Action 运行时统一到 Node 24 兼容主版本：
 
 - `actions/checkout@v7`、`actions/setup-node@v7`
+- `actions/upload-artifact@v7`、`actions/download-artifact@v8`
 - `docker/setup-qemu-action@v4`、`docker/setup-buildx-action@v4`
 - `docker/login-action@v4`、`docker/metadata-action@v6`、`docker/build-push-action@v7`
 - `googleapis/release-please-action@v5`、`renovatebot/github-action@v46.3.6`
 
-artifact 上传/下载暂时保持 `upload-artifact@v5`、`download-artifact@v5`，待独立上传下载闭环验证后再升级，避免把制品协议变化混入常规 Action 运行时升级。
+artifact 上传下载升级后，必须手动运行一次 `full-ci-gate`，确认 `static-and-unit` 上传的 `dist` 能在 `lighthouse` job 下载、解压并启动预览；仅通过 workflow 语法检查不算闭环验证。
 
 ## frontend-ci 详情(Node 24 兼容 + 文档)
 

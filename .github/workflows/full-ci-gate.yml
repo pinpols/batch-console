@@ -116,7 +116,7 @@ jobs:
         run: npm run size
 
       - name: Upload dist artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: dist
           path: dist/
@@ -163,7 +163,7 @@ jobs:
           ignore-unfixed: true
 
       - name: Upload Trivy SARIF
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: trivy-results
@@ -186,7 +186,7 @@ jobs:
       - run: npm ci --no-audit --no-fund
 
       - name: Download dist
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v8
         with:
           name: dist
           path: dist/
@@ -244,7 +244,7 @@ jobs:
           fi
 
       - name: Upload audit report
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: npm-audit
