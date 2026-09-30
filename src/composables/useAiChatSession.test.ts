@@ -53,6 +53,36 @@ describe('useAiChatSession', () => {
     expect(chat.sendError.value).toBe(true)
   })
 
+  it('keeps a new draft typed while the previous question is sending', async () => {
+    let resolveResponse!: (value: Awaited<ReturnType<typeof chatWithAi>>) => void
+    mockedChat.mockReturnValue(
+      new Promise((resolve) => {
+        resolveResponse = resolve
+      }),
+    )
+    const chat = useAiChatSession()
+    chat.prompt.value = 'First question'
+    const pending = chat.send('Empty')
+    chat.prompt.value = 'Next question'
+    resolveResponse({
+      requestId: 'r1',
+      traceId: 't1',
+      sessionId: 's1',
+      promptCategory: 'OPERATIONS',
+      promptDecision: 'APPROVED',
+      modelName: 'test',
+      answer: 'First answer',
+      refusalReason: null,
+    })
+
+    expect(await pending).toBe(true)
+    expect(chat.prompt.value).toBe('Next question')
+    expect(chat.messages.value.map((message) => message.content)).toEqual([
+      'First question',
+      'First answer',
+    ])
+  })
+
   it('does not render a previous tenant response after reset', async () => {
     let resolveResponse!: (value: Awaited<ReturnType<typeof chatWithAi>>) => void
     mockedChat.mockReturnValue(
@@ -111,5 +141,39 @@ describe('useAiChatSession', () => {
       expect.objectContaining({ content: '', status: 'FAILED' }),
       expect.objectContaining({ content: '', status: 'IN_PROGRESS' }),
     ])
+  })
+
+  it('restores the server decision on rejected and failed turns', () => {
+    const chat = useAiChatSession()
+    const time = '2026-09-30T00:00:00Z'
+    const turn = (turnNo: number, status: 'REJECTED' | 'FAILED', promptDecision: string) => ({
+      turnNo,
+      contextVersion: 'v1' as const,
+      prompt: `question ${turnNo}`,
+      response: null,
+      status,
+      promptDecision,
+      modelName: null,
+      promptTokens: null,
+      completionTokens: null,
+      estimatedCostUsd: null,
+      createdAt: time,
+      completedAt: time,
+    })
+    chat.restore(
+      'session-1',
+      [
+        turn(3, 'REJECTED', 'UNKNOWN'),
+        turn(2, 'FAILED', 'FAILED'),
+        turn(1, 'REJECTED', 'REJECTED_BUDGET'),
+      ],
+      'No answer',
+    )
+
+    expect(
+      chat.messages.value
+        .filter((message) => message.role === 'assistant')
+        .map((message) => message.decision),
+    ).toEqual(['REJECTED_BUDGET', 'FAILED', undefined])
   })
 })

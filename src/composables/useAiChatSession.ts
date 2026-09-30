@@ -4,7 +4,22 @@ import { useTenantStore } from '@/stores/tenant'
 import type { AiTurn } from '@/api/ai'
 import type { AiChatResponse } from '@/types/console-api'
 
-type PromptDecision = AiChatResponse['promptDecision']
+type PromptDecision = AiChatResponse['promptDecision'] | 'REJECTED_BUDGET'
+
+function persistedDecision(value: string | null): PromptDecision | undefined {
+  switch (value) {
+    case 'APPROVED':
+    case 'REJECTED_SCOPE':
+    case 'REJECTED_AUTH':
+    case 'REJECTED_DISABLED':
+    case 'REJECTED_SAFETY':
+    case 'REJECTED_BUDGET':
+    case 'FAILED':
+      return value
+    default:
+      return undefined
+  }
+}
 
 export interface AiChatMessage {
   id: string
@@ -41,6 +56,7 @@ export function useAiChatSession() {
         id: `${turn.turnNo}-a`,
         role: 'assistant' as const,
         content: turn.response || (turn.status === 'COMPLETE' ? emptyAnswer : ''),
+        decision: persistedDecision(turn.promptDecision),
         modelName: turn.modelName || undefined,
         status: turn.status,
       },
@@ -57,7 +73,8 @@ export function useAiChatSession() {
   }
 
   async function send(emptyAnswer: string, pageType?: string): Promise<boolean> {
-    const content = prompt.value.trim()
+    const draft = prompt.value
+    const content = draft.trim()
     if (!content || sending.value) return false
     const requestGeneration = generation
     const tenantId = tenant.tenantId
@@ -83,7 +100,7 @@ export function useAiChatSession() {
         refusalReason: res.refusalReason,
         modelName: res.modelName,
       })
-      prompt.value = ''
+      if (prompt.value === draft) prompt.value = ''
       return true
     } catch {
       if (requestGeneration !== generation || tenant.tenantId !== tenantId) return false

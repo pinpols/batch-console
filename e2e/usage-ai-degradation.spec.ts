@@ -59,6 +59,30 @@ test.describe('Usage, AI and degradation', () => {
     }
   })
 
+  test('mobile AI drawer keeps the composer visible and returns focus on close', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 800 })
+    await page.goto('/m/ops/summary')
+    const launcher = page.getByRole('button', { name: '打开 AI 助手' })
+    await expect(launcher).toBeVisible()
+    await launcher.click()
+    const drawer = page.locator('.ai-assistant-drawer')
+    const prompt = drawer.getByRole('textbox', { name: '问题' })
+    await expect(prompt).toBeFocused()
+    await expect(drawer.getByRole('button', { name: '发送' })).toBeVisible()
+    const bounds = await drawer.evaluate((element) => {
+      const drawerBounds = element.getBoundingClientRect()
+      const inputBounds = element.querySelector('textarea')!.getBoundingClientRect()
+      return {
+        drawerFits: drawerBounds.left >= 0 && drawerBounds.right <= window.innerWidth,
+        inputFits: inputBounds.left >= 0 && inputBounds.right <= window.innerWidth && inputBounds.bottom <= window.innerHeight,
+      }
+    })
+    expect(bounds).toEqual({ drawerFits: true, inputFits: true })
+    await drawer.locator('.el-drawer__close-btn').click()
+    await expect(drawer).toBeHidden()
+    await expect(launcher).toBeFocused()
+  })
+
   test('AI rate limiting keeps the draft ready for retry', async ({ page, network }) => {
     network.ignore('/api/console/ai/chat')
     await page.route('**/api/console/ai/chat', (route) => route.fulfill({
@@ -87,6 +111,7 @@ test.describe('Usage, AI and degradation', () => {
         data = deleted ? [] : [{ id: 'session-1', title: '作业诊断', contextVersion: 'v1', createdAt: now, updatedAt: now, expiresAt: now }]
       } else if (path.endsWith('/session-1/turns') && method === 'GET') {
         data = [
+          { turnNo: 4, contextVersion: 'v1', prompt: '第四问', response: null, status: 'REJECTED', promptDecision: 'REJECTED_BUDGET', modelName: null, promptTokens: null, completionTokens: null, estimatedCostUsd: null, createdAt: now, completedAt: now },
           { turnNo: 3, contextVersion: 'v1', prompt: '第三问', response: null, status: 'IN_PROGRESS', promptDecision: null, modelName: null, promptTokens: null, completionTokens: null, estimatedCostUsd: null, createdAt: now, completedAt: null },
           { turnNo: 2, contextVersion: 'v1', prompt: '第二问', response: '第二答', status: 'COMPLETE', promptDecision: 'APPROVED', modelName: 'test', promptTokens: 1, completionTokens: 1, estimatedCostUsd: 0, createdAt: now, completedAt: now },
           { turnNo: 1, contextVersion: 'v1', prompt: '第一问', response: '第一答', status: 'COMPLETE', promptDecision: 'APPROVED', modelName: 'test', promptTokens: 1, completionTokens: 1, estimatedCostUsd: 0, createdAt: now, completedAt: now },
@@ -106,7 +131,8 @@ test.describe('Usage, AI and degradation', () => {
     }))
     await page.goto('/system/ai-chat')
     await page.getByRole('button', { name: '作业诊断' }).click()
-    await expect(page.locator('.bubble__body')).toHaveText(['第一问', '第一答', '第二问', '第二答', '第三问', '回答仍在生成中。'])
+    await expect(page.locator('.bubble__body')).toHaveText(['第一问', '第一答', '第二问', '第二答', '第三问', '回答仍在生成中。', '第四问', '本次请求未获批准。'])
+    await expect(page.locator('.gate-notice__tag')).toHaveText('预算限制')
     await page.getByRole('button', { name: '删除会话' }).click()
     await page.getByRole('dialog').getByRole('button', { name: '确定' }).click()
     await expect(page.getByRole('button', { name: '作业诊断' })).toHaveCount(0)

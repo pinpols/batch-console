@@ -19,6 +19,7 @@
       :size="mobile ? '100%' : 'min(440px, 100vw)'"
       :title="t('aiPanel.title')"
       class="ai-assistant-drawer"
+      @opened="input?.focus()"
       @closed="trigger?.focus()"
     >
       <div class="ai-panel">
@@ -59,7 +60,12 @@
             :aria-label="t('aiChat.promptLabel')"
           />
           <div class="ai-panel__actions">
-            <el-button :icon="Plus" :aria-label="t('aiChat.btnNewSession')" @click="chat.reset()" />
+            <el-button
+              :icon="Plus"
+              :aria-label="t('aiChat.btnNewSession')"
+              :disabled="chat.sending.value"
+              @click="chat.reset()"
+            />
             <el-button
               type="primary"
               :loading="chat.sending.value"
@@ -79,7 +85,7 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, nextTick, ref } from 'vue'
+  import { computed, ref } from 'vue'
   import { useRoute } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import { Plus, Sparkles } from '@lucide/vue'
@@ -125,7 +131,6 @@
   function openPanel() {
     capturePage()
     open.value = true
-    void nextTick(() => input.value?.focus())
   }
 
   async function send() {

@@ -5634,6 +5634,7 @@ const messages: Messages = {
       rejectedAuth: 'Not authorized',
       rejectedDisabled: 'AI disabled',
       rejectedSafety: 'Safety block',
+      rejectedBudget: 'Budget limit',
       failed: 'Failed',
     },
     tabAudits: 'AI audit',

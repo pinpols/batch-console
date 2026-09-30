@@ -257,11 +257,11 @@
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import ProTable from '@/components/table/ProTable.vue'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
-  import type { AiAuditLogResponse, AiChatResponse } from '@/types/console-api'
+  import type { AiAuditLogResponse } from '@/types/console-api'
   import type { AiConversation, AiCostSummary } from '@/api/ai'
   import type { AiChatMessage } from '@/composables/useAiChatSession'
 
-  type PromptDecision = AiChatResponse['promptDecision']
+  type PromptDecision = NonNullable<AiChatMessage['decision']>
 
   const tenant = useTenantStore()
   const route = useRoute()
@@ -290,6 +290,7 @@
     REJECTED_AUTH: 'aiChat.decision.rejectedAuth',
     REJECTED_DISABLED: 'aiChat.decision.rejectedDisabled',
     REJECTED_SAFETY: 'aiChat.decision.rejectedSafety',
+    REJECTED_BUDGET: 'aiChat.decision.rejectedBudget',
     FAILED: 'aiChat.decision.failed',
   }
 

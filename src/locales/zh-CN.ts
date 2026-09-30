@@ -5504,6 +5504,7 @@ export default {
       rejectedAuth: '未授权',
       rejectedDisabled: 'AI 已禁用',
       rejectedSafety: '安全拦截',
+      rejectedBudget: '预算限制',
       failed: '处理失败',
     },
     tabAudits: 'AI 审计',
