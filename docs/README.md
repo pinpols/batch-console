@@ -31,6 +31,7 @@
 | [Console AI 助手前端实施方案](./engineering/ai-assistant-frontend-implementation-plan.md) | 全局入口、页面上下文、会话 UI、移动端与前后端契约                 |
 | [当前 AI 与使用率待办](./backlog/ai-and-usage-statistics-todo-2026-09-29.md)             | AI 前端交付、使用率统计联测和暂缓/不做边界                         |
 | [运行时与依赖版本](./engineering/runtime-versions.md)                                  | Node 运行约束、锁文件和后端权威支持矩阵                           |
+| [CI 依赖治理](./engineering/ci-dependency-governance.md)                              | Action、Runner、Artifact、分批升级、验证与回滚规则                 |
 | [环境变量治理](./engineering/environment-variables.md)                                 | 构建期配置、敏感性和 owner                                        |
 | [浏览器支持策略](./engineering/browser-support.md)                                     | 桌面/移动支持范围与跨浏览器验收                                   |
 | [设计 Token 治理](./engineering/design-tokens.md)                                      | 运行时 token 权威源与视觉变更规则                                 |
