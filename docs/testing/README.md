@@ -231,6 +231,19 @@ E2E_DEGRADATION_RECOVERY=1 E2E_SKIP_GLOBAL_SETUP=1 E2E_BASE_URL=http://127.0.0.1
 
 可用 `E2E_TRIGGER_STUB_PORT` 改桩端口，须与后端 `BATCH_TRIGGER_BASE_URL` 一致。此测试不启动真实 Trigger，不验证调度任务恢复。
 
+真实 Trigger 恢复联测使用 `e2e/degradation-live-real-trigger.spec.ts`，默认跳过。先构建配对后端的 `batch-trigger` 可执行 JAR；另启关闭安全 bypass 的隔离 Console API，将 `BATCH_TRIGGER_BASE_URL` 设为 `http://127.0.0.1:18181`，并将隔离前端 dev proxy 指向该 API。运行前确认 18181 未被占用，本机 PostgreSQL 管理账号有 `CREATEDB` 权限，应用账号可拥有新数据库；用例只允许连接 loopback PostgreSQL，不复用现有业务库。提供 Console 登录账号、本机数据库管理账号和应用账号：
+
+```bash
+E2E_REAL_TRIGGER_RECOVERY=1 E2E_SKIP_GLOBAL_SETUP=1 E2E_BASE_URL=http://127.0.0.1:5175 \
+  E2E_REAL_TRIGGER_JAR='../file-batch-system/batch-trigger/target/batch-trigger-1.0.0-exec.jar' \
+  E2E_DEGRADATION_USERNAME=admin E2E_DEGRADATION_PASSWORD='<password>' \
+  E2E_TRIGGER_DB_ADMIN_USERNAME='<db-admin>' E2E_TRIGGER_DB_ADMIN_PASSWORD='<db-admin-password>' \
+  BATCH_PLATFORM_DB_USERNAME='<db-app>' BATCH_PLATFORM_DB_PASSWORD='<db-app-password>' \
+  npx playwright test e2e/degradation-live-real-trigger.spec.ts --project=chromium --workers=1 --retries=0
+```
+
+默认 PostgreSQL 地址 `127.0.0.1:15432`、Trigger 端口 `18181`；可用 `E2E_TRIGGER_DB_HOST/PORT` 和 `E2E_REAL_TRIGGER_PORT` 改本机端口，后者必须与隔离 Console API 的 `BATCH_TRIGGER_BASE_URL` 一致。用例创建随机 `e2e_trigger_*` 数据库并启动真实 Trigger，验证初始降级、调度状态 `STARTED`、恢复响应和移动横幅过期消失；无论通过或失败，先停服务再删测试库。它不验证已有作业执行或生产环境恢复。
+
 使用率页面与 PostgreSQL 的只读对账使用 `e2e/usage-live-reconciliation.spec.ts`，默认跳过。测试窗口内需要有 `ta` 聚合数据；提供本机数据库账号后运行：
 
 ```bash
