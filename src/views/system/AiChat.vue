@@ -64,7 +64,7 @@
             </aside>
             <div class="chat-panel">
               <div v-if="historyError" class="history-error" role="alert">
-                {{ t('aiChat.historyLoadError') }}
+                {{ t(historyErrorKey) }}
               </div>
               <div v-loading="historyTurnsLoading" class="chat-list" aria-live="polite">
                 <div
@@ -110,6 +110,7 @@
                   v-model="prompt"
                   type="textarea"
                   :rows="6"
+                  :disabled="historyTurnsLoading"
                   :placeholder="t('aiChat.inputPlaceholder')"
                   class="composer__editor"
                 />
@@ -125,7 +126,7 @@
                     <el-button
                       type="primary"
                       :loading="sending"
-                      :disabled="!prompt.trim()"
+                      :disabled="historyTurnsLoading || !prompt.trim()"
                       @click="send"
                     >
                       {{ t('aiChat.btnSend') }}
@@ -294,7 +295,11 @@
   const historyNextCursor = ref<string | null>(null)
   const historyPageError = ref(false)
   const historyTurnsLoading = ref(false)
+  const openingConversationId = ref<string | null>(null)
   const historyError = ref(false)
+  const historyErrorKey = ref<'aiChat.historyLoadError' | 'aiChat.conversationUnavailable'>(
+    'aiChat.historyLoadError',
+  )
   const oldestTurnNo = ref<number | null>(null)
   const hasOlderTurns = ref(false)
   let historyRequestSequence = 0
@@ -379,10 +384,26 @@
   function resetSession() {
     turnRequestSequence += 1
     historyTurnsLoading.value = false
+    openingConversationId.value = null
     chat.reset()
     oldestTurnNo.value = null
     hasOlderTurns.value = false
     historyError.value = false
+    historyErrorKey.value = 'aiChat.historyLoadError'
+  }
+
+  function isMissingConversation(error: unknown): boolean {
+    if (!error || typeof error !== 'object') return false
+    const response = (error as { response?: { status?: number; data?: { code?: string } } })
+      .response
+    return response?.status === 404 || response?.data?.code === 'NOT_FOUND'
+  }
+
+  function markConversationUnavailable(id: string) {
+    conversations.value = conversations.value.filter((item) => item.id !== id)
+    if (sessionId.value === id) resetSession()
+    historyErrorKey.value = 'aiChat.conversationUnavailable'
+    historyError.value = true
   }
 
   async function loadConversations() {
@@ -444,7 +465,9 @@
     const sequence = ++turnRequestSequence
     const tenantId = tenant.tenantId
     historyTurnsLoading.value = true
+    openingConversationId.value = id
     historyError.value = false
+    historyErrorKey.value = 'aiChat.historyLoadError'
     try {
       const turns = await listAiTurns(id, { limit: 50 })
       if (sequence !== turnRequestSequence || tenant.tenantId !== tenantId) return
@@ -452,11 +475,16 @@
       chat.restore(id, turns, t('aiChat.emptyAnswer'))
       oldestTurnNo.value = turns.length ? Math.min(...turns.map((turn) => turn.turnNo)) : null
       hasOlderTurns.value = turns.length === 50
-    } catch {
-      if (sequence === turnRequestSequence && tenant.tenantId === tenantId)
-        historyError.value = true
+    } catch (error) {
+      if (sequence === turnRequestSequence && tenant.tenantId === tenantId) {
+        if (isMissingConversation(error)) markConversationUnavailable(id)
+        else historyError.value = true
+      }
     } finally {
-      if (sequence === turnRequestSequence) historyTurnsLoading.value = false
+      if (sequence === turnRequestSequence) {
+        historyTurnsLoading.value = false
+        openingConversationId.value = null
+      }
     }
   }
 
@@ -480,9 +508,15 @@
       chat.prepend(turns, t('aiChat.emptyAnswer'))
       oldestTurnNo.value = turns.length ? Math.min(...turns.map((turn) => turn.turnNo)) : null
       hasOlderTurns.value = turns.length === 50
-    } catch {
-      if (sequence === turnRequestSequence && tenant.tenantId === tenantId)
-        historyError.value = true
+    } catch (error) {
+      if (
+        sequence === turnRequestSequence &&
+        tenant.tenantId === tenantId &&
+        sessionId.value === selectedSessionId
+      ) {
+        if (isMissingConversation(error)) markConversationUnavailable(selectedSessionId)
+        else historyError.value = true
+      }
     } finally {
       if (sequence === turnRequestSequence) historyTurnsLoading.value = false
     }
@@ -496,12 +530,18 @@
     } catch {
       return
     }
+    if (openingConversationId.value === id) {
+      turnRequestSequence += 1
+      historyTurnsLoading.value = false
+      openingConversationId.value = null
+    }
     await deleteAiConversation(id)
     if (sessionId.value === id) resetSession()
     await loadConversations()
   }
 
   async function send() {
+    if (historyTurnsLoading.value) return
     if (await chat.send(t('aiChat.emptyAnswer'))) {
       void loadAudits()
       if (historyAvailable.value) void loadConversations()

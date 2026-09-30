@@ -58,6 +58,7 @@ describe('useAiChatSession', () => {
     [{ rateLimited: true }, 'aiChat.sendRateLimited'],
     [{ response: { status: 429, data: { code: 'RATE_LIMITED' } } }, 'aiChat.sendRateLimited'],
     [{ response: { status: 403, data: { code: 'FORBIDDEN' } } }, 'aiChat.sendForbidden'],
+    [{ response: { status: 404, data: { code: 'NOT_FOUND' } } }, 'aiChat.sendSessionExpired'],
     [
       { response: { status: 503, data: { code: 'SERVICE_UNAVAILABLE' } } },
       'aiChat.sendUnavailable',

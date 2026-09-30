@@ -5614,6 +5614,8 @@ const messages: Messages = {
     turnRejected: 'This request was not approved.',
     historyEmpty: 'No saved conversations',
     historyLoadError: 'Could not load the conversation. Try again.',
+    conversationUnavailable:
+      'This conversation no longer exists or has expired. Choose another one.',
     loadOlder: 'Load older messages',
     loadOlderConversations: 'Load older conversations',
     deleteConversation: 'Delete conversation',
@@ -5621,6 +5623,8 @@ const messages: Messages = {
     monthlyCost: 'Estimated this month: ${cost}',
     promptLabel: 'Question',
     sendError: 'Sending failed. Your question remains in the input box.',
+    sendSessionExpired:
+      'This conversation no longer exists or has expired. Start a new conversation to retry; your question is still in the input box.',
     sendRateLimited:
       'Request limit reached. Try again later; your question is still in the input box.',
     sendForbidden: 'Request denied. Check your access or refresh the page and try again.',

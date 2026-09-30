@@ -2353,7 +2353,7 @@ export interface paths {
     }
     get?: never
     put?: never
-    /** Chat with console AI */
+    /** Chat with console AI; an unknown or expired supplied sessionId is rejected */
     post: operations['chatWithConsoleAi']
     delete?: never
     options?: never
@@ -2402,7 +2402,7 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** List turns for a conversation owned by the current user */
+    /** List turns for an unexpired conversation owned by the current user */
     get: operations['listConsoleAiConversationTurns']
     put?: never
     post?: never
@@ -15065,6 +15065,13 @@ export interface operations {
           'application/json': components['schemas']['CommonResponseAiChatResponse']
         }
       }
+      /** @description Supplied sessionId does not exist or has expired */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
     }
   }
   listConsoleAiConversations: {
@@ -15134,6 +15141,13 @@ export interface operations {
         content: {
           'application/json': components['schemas']['CommonResponseConsoleAiTurnList']
         }
+      }
+      /** @description Conversation does not exist or has expired */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
       }
     }
   }
