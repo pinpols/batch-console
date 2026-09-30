@@ -1,4 +1,5 @@
 import { get, post } from '@/api/client'
+import type { AxiosRequestConfig } from 'axios'
 import type {
   ConsoleSchedulerSnapshotHistoryResponse,
   ConsoleSchedulerSnapshotResponse,
@@ -17,8 +18,9 @@ export function getSchedulerSnapshotHistory(tenantId: string, limit?: number) {
 }
 
 /** GET /api/console/scheduler/status */
-export function getSchedulerStatus() {
-  return get<SchedulerCommandResponse>('/api/console/scheduler/status')
+export function getSchedulerStatus(silent = false) {
+  const config = silent ? ({ _silent: true } as AxiosRequestConfig) : undefined
+  return get<SchedulerCommandResponse>('/api/console/scheduler/status', undefined, config)
 }
 
 /** POST /api/console/scheduler/pause-all */

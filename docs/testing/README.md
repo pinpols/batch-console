@@ -198,6 +198,16 @@ E2E_AI_LIVE=1 E2E_SKIP_GLOBAL_SETUP=1 E2E_BASE_URL=http://127.0.0.1:5174 \
 
 此用例自行登录并先确认缺少 CSRF 头会得到 403，然后验证会话创建、刷新恢复和删除；通过不代表外部 provider、预算或跨租户链路已验收。
 
+移动端真实降级联测使用 `e2e/degradation-live-mobile.spec.ts`，默认跳过。需将前端 dev proxy 指向本机 Console API，并确认其 Trigger 下游不可用、`/scheduler/status` 返回 `X-Degraded-Source: trigger`：
+
+```bash
+E2E_REAL_DEGRADATION=1 E2E_SKIP_GLOBAL_SETUP=1 E2E_BASE_URL=http://127.0.0.1:5175 \
+  E2E_DEGRADATION_USERNAME=admin E2E_DEGRADATION_PASSWORD='<password>' \
+  npx playwright test e2e/degradation-live-mobile.spec.ts --project=chromium --workers=1
+```
+
+用例验证移动布局主动探测和降级横幅；不代替真实 Trigger 恢复验收。
+
 ---
 
 ## 6. 守护测试 / 运行期 Guard(安全红线,改路径要确认没被绕过)

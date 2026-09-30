@@ -52,7 +52,7 @@
 | **FE-MAINT-2** | 统一写操作守卫，覆盖作业、工作流、批量日、运维动作和配置导入 | ✅ 已完成 | 请求拦截器统一兜底，后端 503 仍为最终防线 |
 | **FE-MAINT-3** | 维护 503 即时进入 `/maintenance`，恢复后安全回跳 | ✅ 已完成 | 已覆盖即时跳转、原路由保留和恢复重试 |
 | **FE-DEGRADE-1** | 消费 `X-Degraded-Source`，展示可解释的非阻塞降级提示 | ✅ 已验证 | Trigger 停止时真实 `/scheduler/status` 和 `/ops/triggers` 返回 `X-Degraded-Source: trigger`；拦截器、Banner 和 Trigger 空态已验证 |
-| **FE-DEGRADE-2** | 桌面/移动端降级、恢复、长公告、多语言和布局 E2E | 🟠 进行中 | 桌面真实降级与双语 E2E 已覆盖；模拟来源停止后的 60 秒 TTL 恢复、长公告在 390px/1280px 宽度下不截断已通过 E2E；390px 手机尺寸浏览器连接真实摘要 API，注入 `X-Degraded-Source` 后横幅完整显示，恢复为无降级头后清除。真实下游故障到移动端恢复链路仍待验收 |
+| **FE-DEGRADE-2** | 桌面/移动端降级、恢复、长公告、多语言和布局 E2E | 🟠 进行中 | 桌面真实降级与双语 E2E 已覆盖；模拟来源停止后的 60 秒 TTL 恢复、长公告在 390px/1280px 宽度下不截断已通过 E2E。移动布局主动探测调度状态；390px 浏览器连接真实故障后端，验证 `trigger` 降级头、横幅与视口边界，1/1 通过。真实下游恢复链路仍待验收 |
 
 明确不做：前端自判 5xx 为降级、通用故障注入操作台、工单/通知平台和新的编排入口。
 
@@ -82,3 +82,5 @@ npm run gen:api:check
 涉及真实后端契约时，再执行前端验收脚本和配对后端联测；mock 通过不能替代租户隔离、权限和业务终态验证。
 
 真实 AI 过期会话浏览器回归为显式 opt-in：`E2E_AI_EXPIRY=1`，连接本机启用会话持久化且关闭 bypass 的 Console API；需提供 `E2E_AI_USERNAME`、`E2E_AI_PASSWORD`、`BATCH_PLATFORM_DB_USERNAME`、`BATCH_PLATFORM_DB_PASSWORD`，可用 `E2E_AI_DB_HOST/PORT/NAME` 与 `PSQL_BIN` 指向本机 PostgreSQL。测试仅允许 loopback 数据库，数据在用例结束时清理；默认 E2E 套件跳过它。
+
+移动端真实降级浏览器回归为显式 opt-in：`E2E_REAL_DEGRADATION=1`，连接本机 Console API 且 Trigger 下游不可用；提供 `E2E_DEGRADATION_USERNAME/PASSWORD`。用例先要求后端 `/scheduler/status` 返回 `X-Degraded-Source: trigger`，再断言移动端页面自动探测并显示横幅；默认 E2E 套件跳过它。
