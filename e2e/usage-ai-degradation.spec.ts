@@ -51,6 +51,61 @@ test.describe('Usage, AI and degradation', () => {
     await expect(page.locator('.usage-total').filter({ hasText: '失败事件数' }).locator('strong')).toHaveText('1')
   })
 
+  test('usage page ignores a previous tenant response after switching tenants', async ({ page }) => {
+    let releasePrevious!: () => void
+    let previousRequested!: () => void
+    const previousGate = new Promise<void>((resolve) => { releasePrevious = resolve })
+    const previousRequest = new Promise<void>((resolve) => { previousRequested = resolve })
+    await page.route('**/api/console/tenants?**', (route) => route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ code: 'SUCCESS', message: 'success', data: {
+        total: 2, pageNo: 1, pageSize: 50,
+        items: [
+          { tenantId: 'ta', tenantName: 'Tenant A', status: 'ACTIVE' },
+          { tenantId: 'tb', tenantName: 'Tenant B', status: 'ACTIVE' },
+        ],
+      } }),
+    }))
+    await page.route('**/api/console/queries/usage-summary?**', async (route) => {
+      const tenantId = new URL(route.request().url()).searchParams.get('tenantId')
+      if (tenantId === 'ta') {
+        previousRequested()
+        await previousGate
+      }
+      const metricCode = tenantId === 'tb' ? 'operation.tb-only' : 'operation.ta-only'
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ code: 'SUCCESS', message: 'success', data: [{
+          statDate: '2026-09-30', tenantId, source: 'OPERATION_AUDIT', metricCode,
+          pageCode: '', appVersion: '', eventCount: 1, successCount: 1, failureCount: 0,
+        }] }),
+      })
+    })
+
+    try {
+      await page.goto('/observability/usage')
+      await previousRequest
+      await page.getByRole('combobox', { name: '切换租户' }).fill('tb')
+      await page.getByRole('option', { name: /tb/ }).click()
+      await expect(page.locator('.usage-table .el-table__row')).toContainText('operation.tb-only')
+      const previousResponse = page.waitForResponse((response) =>
+        response.url().includes('/api/console/queries/usage-summary') &&
+        new URL(response.url()).searchParams.get('tenantId') === 'ta',
+      )
+      releasePrevious()
+      await previousResponse
+      await page.evaluate(() => new Promise<void>((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+      ))
+      await expect(page.locator('.usage-table .el-table__row')).not.toContainText('operation.ta-only')
+      await expect(page.locator('.usage-total').first().locator('strong')).toHaveText('1')
+    } finally {
+      releasePrevious()
+    }
+  })
+
   test('audit page links directly to the usage report', async ({ page }) => {
     await page.goto('/observability/audits')
     await page.getByRole('button', { name: '使用率' }).click()

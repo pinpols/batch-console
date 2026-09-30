@@ -198,6 +198,8 @@ BC_API_BASE=http://127.0.0.1:18089 E2E_BASE_URL=http://127.0.0.1:5175 \
 
 全局准备会登录内置 admin 并按需准备测试租户及角色账号；如多个实例共享数据库，重新登录可能使同一账号的其他会话失效。需要保留现场时可显式设置 `BC_E2E_SKIP_TEARDOWN=1`，但不能据此宣称已完成测试数据清理。`E2E_SKIP_GLOBAL_SETUP=1` 只适用于自行登录的 opt-in 用例；普通套件跳过准备会使用过期的 `e2e/.auth/*.json`。
 
+当前本地 `ta/tb/tc` 的作业配置不等于 `batch.tenant` 中存在对应租户实例。使用率切租户迟到响应用例仅模拟租户候选和汇总行，验证前端不会回填旧租户数据；真实页头切换验收需要后端租户列表确实返回至少两个业务租户。不要把此用例当成真实租户目录联测。
+
 AI 会话正向联测使用 `e2e/ai-live-persistence.spec.ts`，默认跳过。运行前需单独启动已开启 AI 与持久化、且 `bypass-mode=false` 的后端；可使用仅返回固定答案的本地 OpenAI-compatible 模型桩，不要求外部模型密钥。将前端 dev proxy 指向该后端，并在环境变量中提供 `E2E_AI_USERNAME`、`E2E_AI_PASSWORD`，再运行：
 
 ```bash
