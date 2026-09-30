@@ -24,6 +24,33 @@ test.describe('Usage, AI and degradation', () => {
     await expect(page.locator('.usage-note')).toContainText('不含作业或文件最终结果')
   })
 
+  test('usage version filter updates totals and rows without changing metric codes', async ({ page }) => {
+    await page.route('**/api/console/queries/usage-summary?**', (route) => route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        code: 'SUCCESS',
+        message: 'success',
+        data: [
+          { statDate: '2026-09-30', tenantId: 'ta', source: 'OPERATION_AUDIT', metricCode: 'operation.job-trigger', pageCode: '', appVersion: 'v1', eventCount: 2, successCount: 2, failureCount: 0 },
+          { statDate: '2026-09-30', tenantId: 'ta', source: 'OPERATION_AUDIT', metricCode: 'operation.job-trigger', pageCode: '', appVersion: 'v2', eventCount: 4, successCount: 3, failureCount: 1 },
+        ],
+      }),
+    }))
+    await page.goto('/observability/usage')
+    await expect(page.locator('.usage-table .el-table__row')).toHaveCount(2)
+    await expect(page.locator('.usage-total').first().locator('strong')).toHaveText('6')
+
+    await page.locator('.usage-table-head .el-select').click()
+    await page.getByRole('option', { name: 'v2' }).click()
+    await expect(page.locator('.usage-table .el-table__row')).toHaveCount(1)
+    await expect(page.locator('.usage-table .el-table__row')).toContainText('operation.job-trigger')
+    await expect(page.locator('.usage-table .el-table__row')).toContainText('v2')
+    await expect(page.locator('.usage-total').first().locator('strong')).toHaveText('4')
+    await expect(page.locator('.usage-total').filter({ hasText: '成功事件数' }).locator('strong')).toHaveText('3')
+    await expect(page.locator('.usage-total').filter({ hasText: '失败事件数' }).locator('strong')).toHaveText('1')
+  })
+
   test('audit page links directly to the usage report', async ({ page }) => {
     await page.goto('/observability/audits')
     await page.getByRole('button', { name: '使用率' }).click()

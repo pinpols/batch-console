@@ -40,7 +40,7 @@
 | **FE-USAGE-1** | 固化页面/指标编码，保持中英文文案、按钮文本和 metric code 解耦 | 🟠 进行中 | 页面只读展示后端 `metricCode`；指标目录/本地化标签仍需冻结 |
 | **FE-USAGE-2** | `usage-summary` OpenAPI 类型、API client、权限和租户筛选 | ✅ 已验证 | 生成类型、typed wrapper、权限路由；真实后端 tenant admin 查本租户 200、跨租户 403 |
 | **FE-USAGE-3** | 观测分组下的只读使用率趋势页面、空态、错误态和日期范围限制 | 🟠 进行中 | `/observability/usage` 已实现；当前是审计日志下二级入口，尚未进入独立观测菜单分组 |
-| **FE-USAGE-4** | 与直接 SQL 汇总对账，覆盖租户隔离、失败不计成功、重复事件、版本维度和接口失败 | 🟠 进行中 | 本地 `ta` 聚合 API 与 `batch.console_usage_daily` 对账为 2 事件/2 成功/0 失败；后端 `ConsoleUsageDailyIntegrationTest` 在最新基线通过并发计数、失败数和数据库 RLS 隔离 2 例；前端已测接口失败重试及跨租户 403。当前后端仅投影操作审计，页面已避免把该计数称作业务终态；重复事件、版本维度和真实业务操作到聚合的完整 E2E 对账仍待补 |
+| **FE-USAGE-4** | 与直接 SQL 汇总对账，覆盖租户隔离、失败不计成功、重复事件、版本维度和接口失败 | 🟠 进行中 | 本地 `ta` 聚合 API 与 `batch.console_usage_daily` 已做只读对账；新增可选真实浏览器+PostgreSQL E2E，逐行比较页面所请求窗口的 API/SQL 数据与页面汇总，1/1 通过。版本筛选和汇总的浏览器 fixture 回归已通过；真实后端聚合行的 `appVersion` 仍为空，不能算真实版本链路验收。后端 `ConsoleUsageDailyIntegrationTest` 覆盖并发计数、失败数和数据库 RLS 隔离；前端已测接口失败重试及跨租户 403。当前后端仅投影操作审计，页面已避免把该计数称作业务终态；重复事件和真实业务操作到聚合的完整 E2E 对账仍待补 |
 
 ## 维护与服务降级
 
@@ -84,3 +84,5 @@ npm run gen:api:check
 真实 AI 过期会话浏览器回归为显式 opt-in：`E2E_AI_EXPIRY=1`，连接本机启用会话持久化且关闭 bypass 的 Console API；需提供 `E2E_AI_USERNAME`、`E2E_AI_PASSWORD`、`BATCH_PLATFORM_DB_USERNAME`、`BATCH_PLATFORM_DB_PASSWORD`，可用 `E2E_AI_DB_HOST/PORT/NAME` 与 `PSQL_BIN` 指向本机 PostgreSQL。测试仅允许 loopback 数据库，数据在用例结束时清理；默认 E2E 套件跳过它。
 
 移动端真实降级浏览器回归为显式 opt-in：`E2E_REAL_DEGRADATION=1`，连接本机 Console API 且 Trigger 下游不可用；提供 `E2E_DEGRADATION_USERNAME/PASSWORD`。用例先要求后端 `/scheduler/status` 返回 `X-Degraded-Source: trigger`，再断言移动端页面自动探测并显示横幅；默认 E2E 套件跳过它。
+
+使用率真实 SQL 对账为显式 opt-in：`E2E_USAGE_DB_RECONCILIATION=1`，连接本机 Console API 和 PostgreSQL，提供 `E2E_USAGE_USERNAME/PASSWORD` 与 `BATCH_PLATFORM_DB_USERNAME/PASSWORD`。用例只读查询 `ta` 的日聚合记录，要求测试窗口内至少有一条记录；数据库仅允许 loopback，默认 E2E 套件跳过它。

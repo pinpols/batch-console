@@ -208,6 +208,17 @@ E2E_REAL_DEGRADATION=1 E2E_SKIP_GLOBAL_SETUP=1 E2E_BASE_URL=http://127.0.0.1:517
 
 用例验证移动布局主动探测和降级横幅；不代替真实 Trigger 恢复验收。
 
+使用率页面与 PostgreSQL 的只读对账使用 `e2e/usage-live-reconciliation.spec.ts`，默认跳过。测试窗口内需要有 `ta` 聚合数据；提供本机数据库账号后运行：
+
+```bash
+E2E_USAGE_DB_RECONCILIATION=1 E2E_SKIP_GLOBAL_SETUP=1 E2E_BASE_URL=http://127.0.0.1:5173 \
+  E2E_USAGE_USERNAME=admin E2E_USAGE_PASSWORD='<password>' \
+  BATCH_PLATFORM_DB_USERNAME='<db-user>' BATCH_PLATFORM_DB_PASSWORD='<db-password>' \
+  npx playwright test e2e/usage-live-reconciliation.spec.ts --project=chromium --workers=1
+```
+
+数据库地址默认 `127.0.0.1:15432/batch_platform`，可用 `E2E_USAGE_DB_HOST/PORT/NAME` 和 `PSQL_BIN` 调整，但不接受远程数据库。用例验证 API、数据库和页面读数一致；不证明业务终态或聚合事件去重正确。
+
 ---
 
 ## 6. 守护测试 / 运行期 Guard(安全红线,改路径要确认没被绕过)
