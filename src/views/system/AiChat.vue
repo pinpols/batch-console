@@ -6,8 +6,54 @@
       <el-tabs v-model="activeTab" tab-position="left" class="pill-tabs">
         <el-tab-pane :label="t('aiChat.tabChat')" name="chat">
           <div class="chat-layout">
+            <aside class="conversation-list" :aria-label="t('aiChat.historyTitle')">
+              <div class="conversation-list__head">
+                <strong>{{ t('aiChat.historyTitle') }}</strong>
+                <el-button
+                  :icon="Plus"
+                  circle
+                  :aria-label="t('aiChat.btnNewSession')"
+                  @click="resetSession"
+                />
+              </div>
+              <div v-if="historyLoading" v-loading="true" class="conversation-list__loading" />
+              <p v-else-if="!historyAvailable" class="conversation-list__empty">
+                {{ t('aiChat.historyUnavailable') }}
+              </p>
+              <p v-else-if="!conversations.length" class="conversation-list__empty">
+                {{ t('aiChat.historyEmpty') }}
+              </p>
+              <div v-else class="conversation-list__items">
+                <div
+                  v-for="conversation in conversations"
+                  :key="conversation.id"
+                  class="conversation-list__item"
+                >
+                  <el-button
+                    text
+                    class="conversation-list__open"
+                    :type="sessionId === conversation.id ? 'primary' : 'default'"
+                    @click="openConversation(conversation.id)"
+                  >
+                    {{ conversation.title }}
+                  </el-button>
+                  <el-button
+                    text
+                    :icon="Trash2"
+                    :aria-label="t('aiChat.deleteConversation')"
+                    @click="removeConversation(conversation.id)"
+                  />
+                </div>
+              </div>
+              <p v-if="monthlyCost !== null" class="conversation-list__cost">
+                {{ t('aiChat.monthlyCost', { cost: monthlyCost }) }}
+              </p>
+            </aside>
             <div class="chat-panel">
-              <div class="chat-list">
+              <div v-if="historyError" class="history-error" role="alert">
+                {{ t('aiChat.historyLoadError') }}
+              </div>
+              <div v-loading="historyTurnsLoading" class="chat-list" aria-live="polite">
                 <div
                   v-for="item in messages"
                   :key="item.id"
@@ -31,14 +77,22 @@
                       {{ item.refusalReason }}
                     </div>
                   </div>
-                  <div class="bubble__body">{{ item.content }}</div>
+                  <div class="bubble__body">{{ messageBody(item) }}</div>
                   <div v-if="item.role === 'assistant' && item.modelName" class="bubble__model">
                     {{ t('aiChat.modelBy', { model: item.modelName }) }}
                   </div>
                 </div>
+                <el-button
+                  v-if="hasOlderTurns"
+                  text
+                  :loading="historyTurnsLoading"
+                  @click="loadOlderTurns"
+                >
+                  {{ t('aiChat.loadOlder') }}
+                </el-button>
               </div>
               <el-form class="composer" @submit.prevent>
-                <div class="composer__label">Prompt</div>
+                <div class="composer__label">{{ t('aiChat.promptLabel') }}</div>
                 <el-input
                   v-model="prompt"
                   type="textarea"
@@ -46,13 +100,21 @@
                   :placeholder="t('aiChat.inputPlaceholder')"
                   class="composer__editor"
                 />
+                <div v-if="sendError" class="history-error" role="alert">
+                  {{ t('aiChat.sendError') }}
+                </div>
                 <div class="composer__actions">
                   <el-button :disabled="sending || !messages.length" @click="resetSession">
                     {{ t('aiChat.btnNewSession') }}
                   </el-button>
                   <div class="composer__actions-right">
                     <div class="composer__hint">{{ t('aiChat.composerHint') }}</div>
-                    <el-button type="primary" :loading="sending" @click="send">
+                    <el-button
+                      type="primary"
+                      :loading="sending"
+                      :disabled="!prompt.trim()"
+                      @click="send"
+                    >
                       {{ t('aiChat.btnSend') }}
                     </el-button>
                   </div>
@@ -171,9 +233,17 @@
   import { computed, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { useRoute, useRouter } from 'vue-router'
+  import { ElMessageBox } from 'element-plus'
+  import { Plus, Trash2 } from '@lucide/vue'
 
   const { t } = useI18n({ useScope: 'global' })
-  import { chatWithAi } from '@/api/system'
+  import {
+    deleteAiConversation,
+    getAiCostSummary,
+    listAiConversations,
+    listAiTurns,
+  } from '@/api/ai'
+  import { useAiChatSession } from '@/composables/useAiChatSession'
   import { queryAiAuditsPage } from '@/api/observabilityQueries'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
@@ -187,26 +257,32 @@
   import ProTable from '@/components/table/ProTable.vue'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
   import type { AiAuditLogResponse, AiChatResponse } from '@/types/console-api'
+  import type { AiConversation, AiCostSummary } from '@/api/ai'
+  import type { AiChatMessage } from '@/composables/useAiChatSession'
 
   type PromptDecision = AiChatResponse['promptDecision']
-
-  interface ChatMessage {
-    id: string
-    role: 'user' | 'assistant'
-    content: string
-    decision?: PromptDecision
-    refusalReason?: string | null
-    modelName?: string
-  }
 
   const tenant = useTenantStore()
   const route = useRoute()
   const router = useRouter()
   const activeTab = ref<'chat' | 'audits'>('chat')
-  const prompt = ref('')
-  const sending = ref(false)
-  const sessionId = ref('')
-  const messages = ref<ChatMessage[]>([])
+  const chat = useAiChatSession()
+  const { prompt, sending, sendError, sessionId, messages } = chat
+  const conversations = ref<AiConversation[]>([])
+  const costSummary = ref<AiCostSummary | null>(null)
+  const monthlyCost = computed(() => {
+    const value = costSummary.value?.estimatedCostUsd
+    return typeof value === 'number' && Number.isFinite(value) ? value.toFixed(2) : null
+  })
+  const historyAvailable = ref(true)
+  const historyLoading = ref(false)
+  const historyTurnsLoading = ref(false)
+  const historyError = ref(false)
+  const oldestTurnNo = ref<number | null>(null)
+  const hasOlderTurns = ref(false)
+  let historyRequestSequence = 0
+  let turnRequestSequence = 0
+  let auditRequestSequence = 0
 
   const DECISION_LABEL_KEY: Record<Exclude<PromptDecision, 'APPROVED'>, string> = {
     REJECTED_SCOPE: 'aiChat.decision.rejectedScope',
@@ -219,6 +295,15 @@
   function decisionLabel(decision: PromptDecision): string {
     if (decision === 'APPROVED') return ''
     return t(DECISION_LABEL_KEY[decision])
+  }
+
+  function messageBody(message: AiChatMessage): string {
+    if (message.role === 'assistant' && !message.content) {
+      if (message.status === 'IN_PROGRESS') return t('aiChat.turnPending')
+      if (message.status === 'FAILED') return t('aiChat.turnFailed')
+      if (message.status === 'REJECTED') return t('aiChat.turnRejected')
+    }
+    return message.content
   }
 
   const { loading: auditLoading, error: auditLoadError, run: runLoadAudits } = useListLoadState()
@@ -274,38 +359,108 @@
   }
 
   function resetSession() {
-    sessionId.value = ''
-    messages.value = []
+    turnRequestSequence += 1
+    historyTurnsLoading.value = false
+    chat.reset()
+    oldestTurnNo.value = null
+    hasOlderTurns.value = false
+    historyError.value = false
+  }
+
+  async function loadConversations() {
+    const sequence = ++historyRequestSequence
+    const tenantId = tenant.tenantId
+    historyLoading.value = true
+    try {
+      const result = await listAiConversations({ limit: 100 })
+      if (sequence !== historyRequestSequence || tenant.tenantId !== tenantId) return
+      conversations.value = result
+      historyAvailable.value = true
+      const cost = await getAiCostSummary().catch(() => null)
+      if (sequence === historyRequestSequence && tenant.tenantId === tenantId)
+        costSummary.value = cost
+    } catch {
+      if (sequence !== historyRequestSequence || tenant.tenantId !== tenantId) return
+      conversations.value = []
+      historyAvailable.value = false
+      costSummary.value = null
+    } finally {
+      if (sequence === historyRequestSequence) historyLoading.value = false
+    }
+  }
+
+  async function openConversation(id: string) {
+    if (sending.value) return
+    const sequence = ++turnRequestSequence
+    const tenantId = tenant.tenantId
+    historyTurnsLoading.value = true
+    historyError.value = false
+    try {
+      const turns = await listAiTurns(id, { limit: 50 })
+      if (sequence !== turnRequestSequence || tenant.tenantId !== tenantId) return
+      chat.reset()
+      chat.restore(id, turns, t('aiChat.emptyAnswer'))
+      oldestTurnNo.value = turns.length ? Math.min(...turns.map((turn) => turn.turnNo)) : null
+      hasOlderTurns.value = turns.length === 50
+    } catch {
+      if (sequence === turnRequestSequence && tenant.tenantId === tenantId)
+        historyError.value = true
+    } finally {
+      if (sequence === turnRequestSequence) historyTurnsLoading.value = false
+    }
+  }
+
+  async function loadOlderTurns() {
+    if (!sessionId.value || oldestTurnNo.value == null) return
+    const sequence = ++turnRequestSequence
+    const tenantId = tenant.tenantId
+    const selectedSessionId = sessionId.value
+    historyTurnsLoading.value = true
+    try {
+      const turns = await listAiTurns(selectedSessionId, {
+        beforeTurnNo: oldestTurnNo.value,
+        limit: 50,
+      })
+      if (
+        sequence !== turnRequestSequence ||
+        tenant.tenantId !== tenantId ||
+        sessionId.value !== selectedSessionId
+      )
+        return
+      chat.prepend(turns, t('aiChat.emptyAnswer'))
+      oldestTurnNo.value = turns.length ? Math.min(...turns.map((turn) => turn.turnNo)) : null
+      hasOlderTurns.value = turns.length === 50
+    } catch {
+      if (sequence === turnRequestSequence && tenant.tenantId === tenantId)
+        historyError.value = true
+    } finally {
+      if (sequence === turnRequestSequence) historyTurnsLoading.value = false
+    }
+  }
+
+  async function removeConversation(id: string) {
+    try {
+      await ElMessageBox.confirm(t('aiChat.deleteConfirm'), t('aiChat.deleteConversation'), {
+        type: 'warning',
+      })
+    } catch {
+      return
+    }
+    await deleteAiConversation(id)
+    if (sessionId.value === id) resetSession()
+    await loadConversations()
   }
 
   async function send() {
-    const content = prompt.value.trim()
-    if (!content) return
-    messages.value.push({ id: `${Date.now()}-u`, role: 'user', content })
-    sending.value = true
-    try {
-      const res = await chatWithAi({
-        tenantId: tenant.tenantId,
-        prompt: content,
-        sessionId: sessionId.value || undefined,
-      })
-      if (res.sessionId) sessionId.value = res.sessionId
-      messages.value.push({
-        id: `${Date.now()}-a`,
-        role: 'assistant',
-        content: res.answer || t('aiChat.emptyAnswer'),
-        decision: res.promptDecision,
-        refusalReason: res.refusalReason,
-        modelName: res.modelName,
-      })
-      prompt.value = ''
+    if (await chat.send(t('aiChat.emptyAnswer'))) {
       void loadAudits()
-    } finally {
-      sending.value = false
+      if (historyAvailable.value) void loadConversations()
     }
   }
 
   async function loadAudits() {
+    const sequence = ++auditRequestSequence
+    const tenantId = tenant.tenantId
     await runLoadAudits(async () => {
       const resp = await queryAiAuditsPage(
         tenant.tenantId,
@@ -317,11 +472,13 @@
           promptCategory: auditCategoryApplied.value.trim() || undefined,
         },
       )
+      if (sequence !== auditRequestSequence || tenant.tenantId !== tenantId) return
       auditRows.value = resp.items ?? []
       auditTotal.value = resp.total ?? 0
       auditNextCursor.value = resp.nextCursor ?? null
       auditHasMore.value = Boolean(resp.hasMore)
     }).catch(() => {
+      if (sequence !== auditRequestSequence || tenant.tenantId !== tenantId) return
       auditRows.value = []
       auditTotal.value = 0
       auditNextCursor.value = null
@@ -359,7 +516,14 @@
 
   if (route.query.tab === 'audits') activeTab.value = 'audits'
 
-  useTenantReload(loadAudits)
+  useTenantReload(async () => {
+    historyRequestSequence += 1
+    auditRequestSequence += 1
+    resetSession()
+    conversations.value = []
+    costSummary.value = null
+    await Promise.all([loadAudits(), loadConversations()])
+  })
 
   watch(
     () => route.query.tab,
@@ -393,20 +557,76 @@
 
   .chat-layout {
     display: grid;
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: minmax(180px, 240px) minmax(0, 1fr);
+    gap: var(--space-md);
     min-width: 0;
+  }
+
+  .conversation-list {
+    min-width: 0;
+    border-right: 1px solid var(--color-border-light);
+    padding-right: var(--space-md);
+  }
+
+  .conversation-list__head,
+  .conversation-list__item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-xs);
+  }
+
+  .conversation-list__items {
+    display: grid;
+    gap: var(--space-xs);
+    margin-top: var(--space-sm);
+  }
+
+  .conversation-list__open {
+    min-width: 0;
+    flex: 1;
+    justify-content: flex-start;
+    overflow: hidden;
+  }
+
+  .conversation-list__open :deep(span) {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .conversation-list__loading {
+    min-height: 80px;
+  }
+  .conversation-list__empty,
+  .conversation-list__cost {
+    color: var(--color-text-tertiary);
+    font-size: var(--font-size-sm);
+    line-height: 1.5;
+  }
+  .history-error {
+    color: var(--color-danger);
+    font-size: var(--font-size-sm);
+    margin-bottom: var(--space-sm);
+  }
+
+  @media (max-width: 900px) {
+    .chat-layout {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .conversation-list {
+      border-right: 0;
+      border-bottom: 1px solid var(--color-border-light);
+      padding: 0 0 var(--space-md);
+    }
+    .conversation-list__items {
+      max-height: 150px;
+      overflow: auto;
+    }
   }
 
   .chat-panel {
     width: 100%;
-    padding: var(--space-md);
-    border-radius: var(--radius-content);
-    border: 1px solid var(--color-border-light);
-    background: color-mix(in srgb, var(--color-bg-card) 94%, var(--color-bg-canvas) 6%);
     box-sizing: border-box;
-    box-shadow:
-      inset 0 1px 0 rgb(255 255 255 / 55%),
-      0 1px 2px rgb(15 23 42 / 6%);
   }
 
   .audit-table-shell {
@@ -421,16 +641,11 @@
     flex-direction: column;
     gap: 12px;
     margin-bottom: 16px;
+    min-height: 280px;
     max-height: min(520px, calc(100vh - 420px));
     max-height: min(520px, calc(100dvh - 420px));
     overflow: auto;
-    padding: 14px;
-    border-radius: var(--radius-content);
-    border: 1px solid var(--color-border-light);
-    background: color-mix(in srgb, var(--color-bg-card) 92%, var(--color-bg-canvas) 8%);
-    box-shadow:
-      inset 0 1px 0 rgb(255 255 255 / 55%),
-      0 1px 2px rgb(15 23 42 / 6%);
+    padding: var(--space-sm) 0;
   }
 
   .bubble {

@@ -520,6 +520,17 @@ export const routes: RouteRecordRaw[] = [
         },
       },
       {
+        path: 'observability/usage',
+        name: 'observability-usage',
+        component: () => import('@/views/observability/UsageSummary.vue'),
+        meta: {
+          title: '使用率',
+          activeMenu: '/observability/audits',
+          minRole: 'VIEWER',
+          permissions: ['ROLE_ADMIN', 'ROLE_TENANT_ADMIN', 'ROLE_AUDITOR'],
+        },
+      },
+      {
         path: 'observability/outbox',
         name: 'observability-outbox',
         component: () => import('@/views/observability/OutboxList.vue'),

@@ -78,6 +78,7 @@
           :failed-jobs="badges.failedJobs"
           :user-id="auth.userInfo?.userId"
         />
+        <AiAssistantLauncher />
 
         <el-tooltip :content="localeToggleTooltip" placement="bottom">
           <button
@@ -218,6 +219,7 @@
     Wrench,
   } from '@lucide/vue'
   import TenantSelect from '@/components/common/TenantSelect.vue'
+  import AiAssistantLauncher from '@/components/common/AiAssistantLauncher.vue'
   import NotificationCenter from './NotificationCenter.vue'
   import { useHeaderLogic } from '@/layout/composables/useHeaderLogic'
   import { computed, defineAsyncComponent, onMounted, ref, watch } from 'vue'

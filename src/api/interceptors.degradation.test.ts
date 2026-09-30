@@ -94,6 +94,24 @@ describe('X-Degraded-Source header', () => {
     expect(new Set(app.activeDegradationSources)).toEqual(new Set(['trigger', 'push']))
   })
 
+  it('records an explicit degraded source on an error response', async () => {
+    const client = makeClient()
+    client.defaults.adapter = async (cfg) => {
+      throw new axios.AxiosError('unavailable', 'ERR_BAD_RESPONSE', cfg, undefined, {
+        data: { code: 'DOWNSTREAM_UNAVAILABLE', message: 'unavailable' },
+        status: 502,
+        statusText: 'Bad Gateway',
+        headers: { 'x-degraded-source': 'orchestrator, invalid source' },
+        config: cfg,
+      })
+    }
+
+    await expect(client.post('/api/console/ops/retry', {})).rejects.toThrow()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    expect(useAppStore().activeDegradationSources).toEqual(['orchestrator'])
+  })
+
   it('无 header → 不变更 store', async () => {
     const client = makeClient()
     client.defaults.adapter = async (cfg) =>

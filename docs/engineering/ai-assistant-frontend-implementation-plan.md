@@ -1,6 +1,6 @@
 # Console AI 助手前端实施方案
 
-- **状态**：提案，尚未实施
+- **状态**：双端全局入口、版本化页面上下文和服务端会话 UI 已接入；真实 provider、持久化恢复、来源引用和授权能力仍待验收（2026-09-30）
 - **范围**：`batch-console` 桌面与移动端交互、页面上下文、会话体验和前后端契约
 - **后端总方案**：`file-batch-system` 仓库的 `docs/plans/ai-assistant-contextual-experience-and-cost-governance-2026-09-29.md`
 - **现状核对日期**：2026-09-29
@@ -19,13 +19,11 @@
 
 ## 2. 当前实现基线
 
-- 桌面端已有 `/system/ai-chat` 页面 `src/views/system/AiChat.vue`，包含聊天与调用审计两个标签页；页面导航和路由目前均限制为 `ADMIN`。
-- 聊天通过 `src/api/system.ts` 的 `chatWithAi` 调用 `POST /api/console/ai/chat`。页面消息保存在组件内存，刷新后丢失；`sessionId` 会随请求回传，但目前不是服务端可恢复会话的证明。
-- 当前聊天请求携带 `tenantId`、`prompt`、`sessionId`，没有页面类型或业务对象上下文 DTO。
-- 桌面认证页面挂载于 `DefaultLayout`；移动端使用独立布局和有限移动路由，AI 助手尚无移动端专属入口。
-- `src/types/api.generated.ts` 为后端 OpenAPI 生成，接口契约变化必须先更新后端 OpenAPI，再执行 `npm run gen:api`，禁止手改生成类型。
-
-以上为代码核对结果，不代表后端计划中的目标功能已实现。
+- `/system/ai-chat` 保留聊天/审计双标签，已接服务端会话列表、历史分页、删除和成本摘要；本地后端默认关闭 AI 会话持久化，列表不可用时不声称对话已保存。
+- `src/composables/useAiChatSession.ts` 统一全页与侧栏发送状态；请求包含 `contextVersion=v1`，页面模式仅发送白名单 `pageType`，未发送后端尚未对具体对象重新授权的 ID。
+- 桌面 `LayoutHeader` 与移动 `MobileAppBar` 已挂载全局入口；当前沿用 ADMIN 角色门槛。后端 `/auth/me` 尚未提供 `AI_ASSISTANT_USE` 能力，不能将入口可见性等同于最终服务端授权。
+- 后端 `AiChatResponse` 尚无结构化来源引用和取消生成契约；前端不伪造引用、停止按钮或持久化成功状态。真实 provider、限流、预算和跨租户会话验收仍需受控环境。
+- `src/types/api.generated.ts` 由后端 OpenAPI 生成，契约变化必须先更新后端 OpenAPI，再执行 `npm run gen:api`，禁止手改生成类型。
 
 ## 3. 目标交互
 

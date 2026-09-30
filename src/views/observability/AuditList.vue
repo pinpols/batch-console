@@ -2,6 +2,9 @@
   <PageContainer>
     <PageHeader>
       <template #actions>
+        <el-button :icon="ChartNoAxesCombined" @click="router.push('/observability/usage')">
+          {{ t('page.observabilityUsage.title') }}
+        </el-button>
         <el-button :icon="ScrollText" @click="router.push('/observability/operation-audits')">
           {{ t('page.observabilityOperationAudits.title') }}
         </el-button>
@@ -131,7 +134,7 @@
   import { computed, reactive, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { useRouter } from 'vue-router'
-  import { ScrollText } from '@lucide/vue'
+  import { ChartNoAxesCombined, ScrollText } from '@lucide/vue'
 
   const { t, te } = useI18n({ useScope: 'global' })
   const router = useRouter()

@@ -1,6 +1,6 @@
 # Console 使用率统计前端方案
 
-状态：配套提案，尚未落地
+状态：前端只读页面和真实本地 API/PG 联测进行中；未完成全量业务结果对账与指标目录冻结（2026-09-30）
 
 后端总体方案见：`../file-batch-system/docs/plans/console-usage-statistics-plan-2026-09-29.md`。
 

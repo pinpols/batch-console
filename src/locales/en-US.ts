@@ -1145,7 +1145,7 @@ const messages: Messages = {
   degradation: {
     bannerHeadline: 'Some downstream services degraded',
     bannerMessage:
-      'Affected downstreams are tripped; displayed data may be incomplete and will auto-recover.',
+      'An affected downstream is unavailable. Displayed data may be incomplete; retry later.',
   },
   copy: {
     success: 'Copied',
@@ -1536,6 +1536,10 @@ const messages: Messages = {
       title: 'Operation audit',
       description:
         'Trail of all console user write actions (alerts / approvals / jobs / workers / outbox / API keys).',
+    },
+    observabilityUsage: {
+      title: 'Usage',
+      description: 'View daily aggregate usage trends and feature metrics for the current tenant.',
     },
     observabilityOutbox: {
       title: 'Outbox',
@@ -3438,6 +3442,27 @@ const messages: Messages = {
     colEvidence: 'Evidence',
     colSummary: 'Summary',
   },
+  usageSummary: {
+    dateRange: 'Date range',
+    rangeError: 'Select a valid date range of no more than 400 days.',
+    metric: 'Metric code',
+    metricPlaceholder: 'All metrics',
+    page: 'Page code',
+    pagePlaceholder: 'All pages',
+    version: 'App version',
+    allVersions: 'All versions',
+    loadError: 'Failed to load usage data',
+    empty: 'No aggregate data matches these filters',
+    events: 'Events',
+    success: 'Business successes',
+    failure: 'Business failures',
+    trend: 'Business outcome trend',
+    breakdown: 'Metric breakdown',
+    date: 'Date',
+    source: 'Source',
+    disclaimer:
+      'Data comes from backend daily aggregates. Frontend telemetry is for trends only, not billing, reconciliation or compliance evidence.',
+  },
   operationAuditList: {
     actionLabel: 'Action',
     actionPlaceholder: 'Search action (e.g. alert.close)',
@@ -3463,6 +3488,8 @@ const messages: Messages = {
     colError: 'Error',
   },
   triggerList: {
+    degradedEmpty:
+      'The trigger service is unavailable. This list may be incomplete; refresh later.',
     jobCodeLabel: 'Job Code',
     jobCodePlaceholder: 'Search Job Code',
     colJobCode: 'Job Code',
@@ -5566,8 +5593,33 @@ const messages: Messages = {
     roleUnset: 'Unset',
     loginRefreshedToast: 'Login state refreshed',
   },
+  aiPanel: {
+    open: 'Open AI assistant',
+    title: 'AI assistant',
+    systemMode: 'System',
+    pageMode: 'Current page',
+    pageContext: 'Page context: {page}',
+    noPageContext: 'Unavailable',
+    updateContext: 'Update page',
+    empty: 'Start a new conversation',
+    fullPage: 'Open full conversation page',
+  },
   aiChat: {
     tabChat: 'AI assistant',
+    historyTitle: 'Conversations',
+    historyUnavailable:
+      'Conversation history is unavailable. Check AI access and server-side retention settings.',
+    turnPending: 'The answer is still being generated.',
+    turnFailed: 'This answer failed. Please ask again.',
+    turnRejected: 'This request was not approved.',
+    historyEmpty: 'No saved conversations',
+    historyLoadError: 'Could not load the conversation. Try again.',
+    loadOlder: 'Load older messages',
+    deleteConversation: 'Delete conversation',
+    deleteConfirm: 'This conversation cannot be recovered after deletion. Continue?',
+    monthlyCost: 'Estimated this month: ${cost}',
+    promptLabel: 'Question',
+    sendError: 'Sending failed. Your question remains in the input box.',
     bubbleMe: 'Me',
     bubbleAi: 'AI',
     inputPlaceholder:
