@@ -5615,6 +5615,7 @@ const messages: Messages = {
     historyEmpty: 'No saved conversations',
     historyLoadError: 'Could not load the conversation. Try again.',
     loadOlder: 'Load older messages',
+    loadOlderConversations: 'Load older conversations',
     deleteConversation: 'Delete conversation',
     deleteConfirm: 'This conversation cannot be recovered after deletion. Continue?',
     monthlyCost: 'Estimated this month: ${cost}',

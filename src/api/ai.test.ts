@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { del, get } from './client'
-import { deleteAiConversation, listAiConversations, listAiTurns } from './ai'
+import { deleteAiConversation, listAiConversations, listAiTurns, pageAiConversations } from './ai'
 
 vi.mock('./client', () => ({ get: vi.fn(), del: vi.fn() }))
 
@@ -19,6 +19,23 @@ describe('listAiConversations', () => {
     expect(mockedGet).toHaveBeenCalledWith(
       '/api/console/ai/conversations',
       { limit: 20 },
+      { _silent: true },
+    )
+  })
+
+  it('passes the server cursor through the owner-scoped page endpoint', async () => {
+    mockedGet.mockResolvedValue({
+      items: [],
+      total: 0,
+      pageNo: 0,
+      pageSize: 20,
+      nextCursor: null,
+      hasMore: false,
+    })
+    await pageAiConversations({ cursor: 'opaque-cursor', limit: 20 })
+    expect(mockedGet).toHaveBeenCalledWith(
+      '/api/console/ai/conversations/page',
+      { cursor: 'opaque-cursor', limit: 20 },
       { _silent: true },
     )
   })

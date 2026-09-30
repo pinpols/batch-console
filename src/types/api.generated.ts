@@ -2378,6 +2378,23 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/console/ai/conversations/page': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Page through the current user's unexpired AI conversations */
+    get: operations['pageConsoleAiConversations']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/console/ai/conversations/{conversationId}/turns': {
     parameters: {
       query?: never
@@ -7291,6 +7308,9 @@ export interface components {
     CommonResponseConsoleAiConversationList: components['schemas']['CommonResponseBase'] & {
       data?: components['schemas']['ConsoleAiConversationView'][]
     }
+    CommonResponseConsoleAiConversationPage: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['ConsoleAiConversationPageResponse']
+    }
     CommonResponseConsoleAiTurnList: components['schemas']['CommonResponseBase'] & {
       data?: components['schemas']['ConsoleAiTurnView'][]
     }
@@ -7885,6 +7905,23 @@ export interface components {
       updatedAt: string
       /** Format: date-time */
       expiresAt: string
+    }
+    ConsoleAiConversationPageResponse: {
+      /**
+       * Format: int64
+       * @description Cursor mode always returns 0
+       */
+      total: number
+      /**
+       * Format: int32
+       * @description Cursor mode always returns 0
+       */
+      pageNo: number
+      /** Format: int32 */
+      pageSize: number
+      items: components['schemas']['ConsoleAiConversationView'][]
+      nextCursor: string | null
+      hasMore: boolean
     }
     ConsoleAiTurnView: {
       /** Format: int64 */
@@ -15048,6 +15085,29 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['CommonResponseConsoleAiConversationList']
+        }
+      }
+    }
+  }
+  pageConsoleAiConversations: {
+    parameters: {
+      query?: {
+        cursor?: string
+        limit?: number
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Owner-scoped cursor page ordered by update time and ID */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseConsoleAiConversationPage']
         }
       }
     }

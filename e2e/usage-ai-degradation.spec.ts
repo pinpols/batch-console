@@ -108,8 +108,8 @@ test.describe('Usage, AI and degradation', () => {
       const method = route.request().method()
       const now = '2026-09-30T00:00:00Z'
       let data: unknown = null
-      if (path.endsWith('/conversations') && method === 'GET') {
-        data = deleted ? [] : [{ id: 'session-1', title: '作业诊断', contextVersion: 'v1', createdAt: now, updatedAt: now, expiresAt: now }]
+      if (path.endsWith('/conversations/page') && method === 'GET') {
+        data = { total: 0, pageNo: 0, pageSize: 20, items: deleted ? [] : [{ id: 'session-1', title: '作业诊断', contextVersion: 'v1', createdAt: now, updatedAt: now, expiresAt: now }], nextCursor: null, hasMore: false }
       } else if (path.endsWith('/session-1/turns') && method === 'GET') {
         data = [
           { turnNo: 4, contextVersion: 'v1', prompt: '第四问', response: null, status: 'REJECTED', promptDecision: 'REJECTED_BUDGET', modelName: null, promptTokens: null, completionTokens: null, estimatedCostUsd: null, createdAt: now, completedAt: now },
@@ -137,6 +137,54 @@ test.describe('Usage, AI and degradation', () => {
     await page.getByRole('button', { name: '删除会话' }).click()
     await page.getByRole('dialog').getByRole('button', { name: '确定' }).click()
     await expect(page.getByRole('button', { name: '作业诊断' })).toHaveCount(0)
+  })
+
+  test('AI conversation history loads older owner-scoped pages', async ({ page }) => {
+    const now = '2026-09-30T00:00:00Z'
+    const queriedCursors: string[] = []
+    let olderPageFailures = 0
+    await page.route('**/api/console/ai/conversations/page**', async (route) => {
+      const cursor = new URL(route.request().url()).searchParams.get('cursor') ?? ''
+      queriedCursors.push(cursor)
+      if (cursor && olderPageFailures++ < 3) {
+        await route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ code: 'SYSTEM_ERROR', message: 'unavailable' }) })
+        return
+      }
+      const items = cursor
+        ? [{ id: 'session-older', title: '较早会话', contextVersion: 'v1', createdAt: now, updatedAt: now, expiresAt: now }]
+        : [{ id: 'session-newer', title: '最近会话', contextVersion: 'v1', createdAt: now, updatedAt: now, expiresAt: now }]
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ code: 'SUCCESS', message: 'success', data: { total: 0, pageNo: 0, pageSize: 20, items, nextCursor: cursor ? null : 'cursor-1', hasMore: !cursor } }) })
+    })
+    await page.route('**/api/console/ai/cost-summary**', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ code: 'SUCCESS', message: 'success', data: null }) }))
+
+    await page.goto('/system/ai-chat')
+    await expect(page.getByRole('button', { name: '最近会话' })).toBeVisible()
+    await page.getByRole('button', { name: '加载更早的会话' }).click()
+    await expect(page.locator('.conversation-list').getByRole('alert')).toBeVisible()
+    await expect(page.getByRole('button', { name: '最近会话' })).toBeVisible()
+    await page.getByRole('button', { name: '加载更早的会话' }).click()
+    await expect(page.getByRole('button', { name: '较早会话' })).toBeVisible()
+    await expect(page.locator('.conversation-list').getByRole('alert')).toHaveCount(0)
+    await expect(page.getByRole('button', { name: '加载更早的会话' })).toHaveCount(0)
+    expect(queriedCursors).toEqual(['', 'cursor-1', 'cursor-1', 'cursor-1', 'cursor-1'])
+  })
+
+  test('AI conversation history can retry after the initial page is unavailable', async ({ page }) => {
+    let failedRequests = 0
+    await page.route('**/api/console/ai/conversations/page**', async (route) => {
+      if (failedRequests++ < 3) {
+        await route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ code: 'SYSTEM_ERROR', message: 'unavailable' }) })
+        return
+      }
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ code: 'SUCCESS', message: 'success', data: { total: 0, pageNo: 0, pageSize: 20, items: [{ id: 'session-recovered', title: '恢复会话', contextVersion: 'v1', createdAt: '2026-09-30T00:00:00Z', updatedAt: '2026-09-30T00:00:00Z', expiresAt: '2026-10-30T00:00:00Z' }], nextCursor: null, hasMore: false } }) })
+    })
+    await page.route('**/api/console/ai/cost-summary**', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ code: 'SUCCESS', message: 'success', data: null }) }))
+
+    await page.goto('/system/ai-chat')
+    await expect(page.locator('.conversation-list')).toContainText('会话历史暂不可用')
+    await page.locator('.conversation-list').getByRole('button', { name: '重试' }).click()
+    await expect(page.getByRole('button', { name: '恢复会话' })).toBeVisible()
+    expect(failedRequests).toBe(4)
   })
 
   test('usage API error offers retry without showing a false zero report', async ({ page, network }) => {

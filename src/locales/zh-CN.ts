@@ -5486,6 +5486,7 @@ export default {
     historyEmpty: '暂无已保存的会话',
     historyLoadError: '会话加载失败，请重试。',
     loadOlder: '加载更早的消息',
+    loadOlderConversations: '加载更早的会话',
     deleteConversation: '删除会话',
     deleteConfirm: '删除后无法恢复这段会话，确定继续吗？',
     monthlyCost: '本月估算费用 ${cost}',
