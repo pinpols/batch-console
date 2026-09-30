@@ -262,7 +262,6 @@ const messages: Messages = {
   workflowDesignerMvp: {
     nodeGateway: 'GATEWAY',
     nodeFileStep: 'FILE_STEP',
-    nodeApproval: 'APPROVAL',
     gatewayTopology: 'Gateway dependency topology',
     gatewayBranchHint:
       'This is a branch gateway; each outgoing edge type and condition controls its downstream trigger.',
@@ -325,10 +324,6 @@ const messages: Messages = {
       outgoingDependencies: 'Outgoing',
       joinMode: 'Join mode',
       joinThreshold: 'Required count',
-      approvalTemplateCode: 'Approval template',
-      approvalTemplateCodePlaceholder: 'Enter approval template code',
-      timeoutFallback: 'Timeout fallback',
-      timeoutFallbackPlaceholder: 'Pick a timeout strategy',
       edgeType: 'Edge type',
       edgeSource: 'Upstream node',
       edgeTarget: 'Downstream node',
@@ -371,7 +366,6 @@ const messages: Messages = {
       endOutDegree: 'END node should have no outgoing edges (currently {count})',
       noOutEdge: 'This node has no outgoing edge and cannot reach downstream',
       danglingEdge: 'Dangling edge: source "{source}" or target "{target}" node does not exist',
-      approvalTemplateCodeRequired: 'approvalTemplateCode is required',
       conditionExprRequired: 'Condition edge {source} → {target} requires an expression',
       conditionExprTemplateWrapper:
         'Template wrapping is unsupported; enter a field condition directly, such as bizDate != null',
@@ -403,8 +397,6 @@ const messages: Messages = {
     templateFanOutDesc: 'GATEWAY dispatches to 3 independent ENDs',
     templateFanIn: 'Fan-out + merge',
     templateFanInDesc: 'Two JOB paths from GATEWAY merge into a shared END',
-    templateApproval: 'JOB + APPROVAL',
-    templateApprovalDesc: 'Prepare → approval → execute, for human-in-the-loop flows',
     templateStats: '{nodes} nodes · {edges} edges',
     templateOverwriteTitle: 'Overwrite current canvas?',
     templateOverwriteConfirm:

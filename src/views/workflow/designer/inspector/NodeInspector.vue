@@ -16,7 +16,6 @@
   import JobNodeForm from './JobNodeForm.vue'
   import FileStepNodeForm from './FileStepNodeForm.vue'
   import GatewayNodeForm from './GatewayNodeForm.vue'
-  import ApprovalNodeForm from './ApprovalNodeForm.vue'
   import EdgeInspector from './EdgeInspector.vue'
   import { edgeTypeOf } from '../canvas/edgePresentation'
 
@@ -123,11 +122,6 @@
       />
       <GatewayNodeForm
         v-else-if="selectedNode.nodeType === 'GATEWAY'"
-        :node="selectedNode"
-        :readonly="readonly"
-      />
-      <ApprovalNodeForm
-        v-else-if="selectedNode.nodeType === 'APPROVAL'"
         :node="selectedNode"
         :readonly="readonly"
       />

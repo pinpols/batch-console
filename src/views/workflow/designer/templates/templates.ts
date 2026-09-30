@@ -1,18 +1,17 @@
 /**
  * Workflow 设计器内置模板(Polish 阶段)。
  *
- * 4 个内置模板,纯前端 hard-code definition_json,不接 BE 模板表(后续可扩):
+ * 3 个内置模板,纯前端 hard-code definition_json,不接 BE 模板表(后续可扩):
  * - linear3:线性 START → JOB_A → JOB_B → JOB_C → END
  * - fanOut:扇出 START → GATEWAY → 3 branches → 3 END
  * - fanIn:扇出 + 合并 START → GATEWAY → 2 JOB → 共同 END
- * - approval:JOB → APPROVAL → JOB
  *
  * 节点 x/y 坐标已预排,用户拉入后无需再点"自动布局"。
  */
 import type { WorkflowDefinitionJson } from '../types'
 
 export interface DesignerTemplate {
-  key: 'linear3' | 'fanOut' | 'fanIn' | 'approval'
+  key: 'linear3' | 'fanOut' | 'fanIn'
   labelKey: string
   descKey: string
   definition: WorkflowDefinitionJson
@@ -73,27 +72,25 @@ const fanIn: WorkflowDefinitionJson = {
   ],
 }
 
-const approval: WorkflowDefinitionJson = {
-  nodes: [
-    { nodeCode: 'start', nodeName: 'START', nodeType: 'START', x: 80, y: 80 },
-    { nodeCode: 'job_pre', nodeName: 'PREPARE', nodeType: 'JOB', x: 260, y: 80 },
-    { nodeCode: 'approval', nodeName: 'APPROVAL', nodeType: 'APPROVAL', x: 440, y: 80 },
-    { nodeCode: 'job_post', nodeName: 'EXECUTE', nodeType: 'JOB', x: 620, y: 80 },
-    { nodeCode: 'end', nodeName: 'END', nodeType: 'END', x: 800, y: 80 },
-  ],
-  edges: [
-    { sourceNodeCode: 'start', targetNodeCode: 'job_pre' },
-    { sourceNodeCode: 'job_pre', targetNodeCode: 'approval' },
-    { sourceNodeCode: 'approval', targetNodeCode: 'job_post' },
-    { sourceNodeCode: 'job_post', targetNodeCode: 'end' },
-  ],
-}
-
 export const BUILTIN_TEMPLATES: DesignerTemplate[] = [
-  { key: 'linear3', labelKey: 'workflowDesignerPolish.templateLinear3', descKey: 'workflowDesignerPolish.templateLinear3Desc', definition: linear3 },
-  { key: 'fanOut', labelKey: 'workflowDesignerPolish.templateFanOut', descKey: 'workflowDesignerPolish.templateFanOutDesc', definition: fanOut },
-  { key: 'fanIn', labelKey: 'workflowDesignerPolish.templateFanIn', descKey: 'workflowDesignerPolish.templateFanInDesc', definition: fanIn },
-  { key: 'approval', labelKey: 'workflowDesignerPolish.templateApproval', descKey: 'workflowDesignerPolish.templateApprovalDesc', definition: approval },
+  {
+    key: 'linear3',
+    labelKey: 'workflowDesignerPolish.templateLinear3',
+    descKey: 'workflowDesignerPolish.templateLinear3Desc',
+    definition: linear3,
+  },
+  {
+    key: 'fanOut',
+    labelKey: 'workflowDesignerPolish.templateFanOut',
+    descKey: 'workflowDesignerPolish.templateFanOutDesc',
+    definition: fanOut,
+  },
+  {
+    key: 'fanIn',
+    labelKey: 'workflowDesignerPolish.templateFanIn',
+    descKey: 'workflowDesignerPolish.templateFanInDesc',
+    definition: fanIn,
+  },
 ]
 
 export function findTemplate(key: string): DesignerTemplate | undefined {

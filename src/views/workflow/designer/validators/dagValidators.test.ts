@@ -293,30 +293,6 @@ describe('validateDag', () => {
     expect(errs.some((e) => e.messageKey.endsWith('.danglingEdge'))).toBe(true)
   })
 
-  it('R13 APPROVAL 缺 approvalTemplateCode', () => {
-    const errs = validateDag(
-      snap(
-        [
-          { id: 's', type: 'START' },
-          { id: 'a', type: 'APPROVAL' },
-          { id: 'e', type: 'END' },
-        ],
-        [
-          ['s', 'a'],
-          ['a', 'e'],
-        ],
-      ),
-    )
-    expect(
-      errs.find(
-        (e) =>
-          e.nodeId === 'a' &&
-          e.field === 'approvalTemplateCode' &&
-          e.messageKey.endsWith('.approvalTemplateCodeRequired'),
-      ),
-    ).toBeTruthy()
-  })
-
   it('R14 CONDITION 边缺少表达式时定位到该连线', () => {
     const errs = validateDag(
       snap(
@@ -363,23 +339,6 @@ describe('validateDag', () => {
       field: 'conditionExpr',
       messageKey: 'workflowDesignerMvp.validation.conditionExprTemplateWrapper',
     })
-  })
-
-  it('合法 APPROVAL DAG → 无错误', () => {
-    const errs = validateDag(
-      snap(
-        [
-          { id: 's', type: 'START' },
-          { id: 'a', type: 'APPROVAL', attrs: { approvalTemplateCode: 'TPL' } },
-          { id: 'e', type: 'END' },
-        ],
-        [
-          ['s', 'a'],
-          ['a', 'e'],
-        ],
-      ),
-    )
-    expect(errs).toEqual([])
   })
 
   it('合法线性 DAG → 无错误', () => {

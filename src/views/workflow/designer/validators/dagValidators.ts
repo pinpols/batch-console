@@ -14,7 +14,6 @@
  *  R10 END 出度 = 0(END 不应有出边)
  *  R11 非 END 节点出度 ≥ 1(除 END 外都要有出边,START 也要)
  *  R12 边引用异常:edge.source/target 指向不存在的节点 → 报错
- *  R13 APPROVAL.attrs.approvalTemplateCode 必填(与 JOB/FILE_STEP 对称)
  *  R14 CONDITION 边必须配置非空 conditionExpr(与 BE EDGE_CONDITION_MISSING_EXPR 一致)
  *  R15 CONDITION 表达式不接受 `${...}` 模板包裹(运行时 DSL 直接解析字段路径)
  *
@@ -216,16 +215,6 @@ export function validateDag(snapshot: DesignerSnapshot): ValidationError[] {
           nodeId: n.id,
           field: 'pipelineCode',
           messageKey: NS + 'pipelineCodeRequired',
-        })
-      }
-    }
-    // R13 APPROVAL.approvalTemplateCode 必填
-    if (n.nodeType === 'APPROVAL') {
-      if (!attrs.approvalTemplateCode || String(attrs.approvalTemplateCode).trim() === '') {
-        errors.push({
-          nodeId: n.id,
-          field: 'approvalTemplateCode',
-          messageKey: NS + 'approvalTemplateCodeRequired',
         })
       }
     }

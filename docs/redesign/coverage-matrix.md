@@ -34,7 +34,7 @@
 | A24 | 作业定义 | 行内 手动触发 | 触发确认(见 #states 确认弹窗) | 有 | ✅ |
 | A25 | 作业定义 | 行内 ⋯ 菜单 | 查看详情 / 编辑 / 克隆 / 导出定义 / 删除 | 克隆/导出定义未见 | ⚠️ |
 | A26 | 流水线定义(nav-only) | 列表 | +新增流水线 / ☰列;列:PIPELINE CODE/名称/阶段数/类型/状态/操作(编辑/⋯) | `/jobs/pipelines` PipelineDefinitionList.vue | ✅ |
-| A27 | 工作流 `#workflow` | 模式·设计器 | 节点库 START/END/JOB/GATEWAY/FILE_STEP/APPROVAL;↶↷/自动布局/方向 TB/快速节点/模板/校验/导出▾/保存;节点属性面板(名称/绑定 Job Code/超时/重试/失败策略 中断·跳过·补偿) | `/workflow/designer` WorkflowDesigner.vue(palette/inspector/toolbar 全套) | ✅ |
+| A27 | 工作流 `#workflow` | 模式·设计器 | 节点库 START/END/JOB/GATEWAY/FILE_STEP;↶↷/自动布局/方向 TB/快速节点/模板/校验/导出▾/保存;节点属性面板(名称/绑定 Job Code/超时/重试/失败策略 中断·跳过·补偿) | `/workflow/designer` WorkflowDesigner.vue(palette/inspector/toolbar 全套);Workflow 人工审批节点已撤销 | ✅ |
 | A28 | 工作流 | 模式·只读视图 | "只读 · 编辑请走 Excel 包导入";⇪Excel 导入 / 导出 PNG;静态 DAG | `/workflow/viewer/:id` WorkflowMermaidViewer.vue | ✅ |
 | A29 | 配置批量导入 `#import` | 3 步向导 | 上传(9+2/11-Sheet 配置包,.xls/.xlsx,下载模板/导出当前配置包)→ 预览校验 → 应用 | `/config/tenant-package` TenantPackageImportWizard.vue | ✅ |
 | A30 | 告警中心 `#alerts` | 分组 tab | 未处理 6 / 已确认 0 / 全部 6;空分组显"当前分组没有告警";严重程度▾ | `/observability/alerts` AlertList.vue 用状态下拉筛选,非 3 分组 tab | ⚠️ |

@@ -47,7 +47,6 @@
     { key: 'JOB', nodeType: 'JOB', display: 'JOB' },
     { key: 'GATEWAY', nodeType: 'GATEWAY', display: 'GATEWAY' },
     { key: 'FILE_STEP', nodeType: 'FILE_STEP', display: 'FILE_STEP' },
-    { key: 'APPROVAL', nodeType: 'APPROVAL', display: 'APPROVAL' },
   ]
 
   const query = ref('')

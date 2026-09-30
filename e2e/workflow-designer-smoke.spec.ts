@@ -206,7 +206,7 @@ async function readGraphCounts(page: import('@playwright/test').Page) {
  */
 async function addPaletteNode(
   page: import('@playwright/test').Page,
-  type: 'START' | 'END' | 'JOB' | 'GATEWAY' | 'FILE_STEP' | 'APPROVAL',
+  type: 'START' | 'END' | 'JOB' | 'GATEWAY' | 'FILE_STEP',
 ) {
   const before = (await readGraphCounts(page)).nodes
   const paletteItem = page.getByRole('button', { name: type, exact: true }).first()

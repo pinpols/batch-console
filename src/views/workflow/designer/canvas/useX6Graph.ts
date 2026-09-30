@@ -2,7 +2,7 @@
  * X6 实例的初始化、节点注册、事件桥接,以及自动布局(dagre)。
  *
  * Spike 阶段:
- * - 注册 3 类 Vue 节点(START / END / JOB);GATEWAY / FILE_STEP / APPROVAL 用通用矩形占位
+ * - 注册 3 类 Vue 节点(START / END / JOB);GATEWAY / FILE_STEP 用通用矩形占位
  * - 启用 mini-map + 历史插件不开(undo/redo 走 store)
  * - 拖入节点 / 连线 / 删除 / 选中事件全部回写 store
  */
@@ -26,7 +26,6 @@ import EndNode from './nodes/EndNode.vue'
 import JobNode from './nodes/JobNode.vue'
 import GatewayNode from './nodes/GatewayNode.vue'
 import FileStepNode from './nodes/FileStepNode.vue'
-import ApprovalNode from './nodes/ApprovalNode.vue'
 import type { DesignerNode, DesignerNodeType } from '../types'
 import { useDesignerStore } from '../store/useDesignerStore'
 import { designerNodeSize } from './nodePlacement'
@@ -42,7 +41,6 @@ function ensureRegistered() {
     { name: 'designer-job', component: JobNode as unknown as Component },
     { name: 'designer-gateway', component: GatewayNode as unknown as Component },
     { name: 'designer-file-step', component: FileStepNode as unknown as Component },
-    { name: 'designer-approval', component: ApprovalNode as unknown as Component },
   ]
   for (const s of shapes) {
     registerVueShape({ shape: s.name, component: s.component })
@@ -61,8 +59,6 @@ function shapeOf(type: DesignerNodeType): string {
       return 'designer-gateway'
     case 'FILE_STEP':
       return 'designer-file-step'
-    case 'APPROVAL':
-      return 'designer-approval'
     default:
       return 'rect'
   }
