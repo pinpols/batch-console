@@ -7885,6 +7885,12 @@ export interface components {
       answer: string
       /** @description 拒绝原因；APPROVED 时为 null，被门禁拒绝时给出原因。 */
       refusalReason: string | null
+      /** @description 本次回答实际引用的知识库来源；拒绝、失败或未命中知识库时为空数组。 */
+      sources: components['schemas']['AiSourceResponse'][]
+    }
+    AiSourceResponse: {
+      /** @description 知识库来源文件名；不包含知识片段正文或内部相似度。 */
+      source: string
     }
     AiAuditLogResponse: {
       /** Format: int64 */
@@ -11436,6 +11442,8 @@ export interface components {
     /** @description 深翻页上限 10000;超深页请改用 cursor 分页(ADR-031) */
     PageNoQuery: number
     PageSizeQuery: number
+    /** @description Literal case-insensitive keyword search across the list's visible identity and status fields. */
+    KeywordQuery: string
     /** @description Filter by job code (partial match) */
     JobCodeFilter: string
     /** @description Filter by instance status (exact match) */
@@ -15786,6 +15794,8 @@ export interface operations {
         /** @description 深翻页上限 10000;超深页请改用 cursor 分页(ADR-031) */
         pageNo?: components['parameters']['PageNoQuery']
         pageSize?: components['parameters']['PageSizeQuery']
+        /** @description Literal case-insensitive keyword search across the list's visible identity and status fields. */
+        keyword?: components['parameters']['KeywordQuery']
       }
       header?: never
       path?: never
@@ -15835,6 +15845,8 @@ export interface operations {
         /** @description 深翻页上限 10000;超深页请改用 cursor 分页(ADR-031) */
         pageNo?: components['parameters']['PageNoQuery']
         pageSize?: components['parameters']['PageSizeQuery']
+        /** @description Literal case-insensitive keyword search across the list's visible identity and status fields. */
+        keyword?: components['parameters']['KeywordQuery']
       }
       header?: never
       path?: never
@@ -15884,6 +15896,8 @@ export interface operations {
         /** @description 深翻页上限 10000;超深页请改用 cursor 分页(ADR-031) */
         pageNo?: components['parameters']['PageNoQuery']
         pageSize?: components['parameters']['PageSizeQuery']
+        /** @description Literal case-insensitive keyword search across the list's visible identity and status fields. */
+        keyword?: components['parameters']['KeywordQuery']
       }
       header?: never
       path?: never
@@ -15933,6 +15947,10 @@ export interface operations {
         /** @description 深翻页上限 10000;超深页请改用 cursor 分页(ADR-031) */
         pageNo?: components['parameters']['PageNoQuery']
         pageSize?: components['parameters']['PageSizeQuery']
+        /** @description Literal case-insensitive keyword search across the list's visible identity and status fields. */
+        keyword?: components['parameters']['KeywordQuery']
+        pipelineInstanceId?: number
+        stageCode?: string
       }
       header?: never
       path?: never
@@ -15958,6 +15976,8 @@ export interface operations {
         /** @description 深翻页上限 10000;超深页请改用 cursor 分页(ADR-031) */
         pageNo?: components['parameters']['PageNoQuery']
         pageSize?: components['parameters']['PageSizeQuery']
+        /** @description Literal case-insensitive keyword search across the list's visible identity and status fields. */
+        keyword?: components['parameters']['KeywordQuery']
       }
       header?: never
       path?: never
@@ -15983,6 +16003,8 @@ export interface operations {
         /** @description 深翻页上限 10000;超深页请改用 cursor 分页(ADR-031) */
         pageNo?: components['parameters']['PageNoQuery']
         pageSize?: components['parameters']['PageSizeQuery']
+        /** @description Literal case-insensitive keyword search across the list's visible identity and status fields. */
+        keyword?: components['parameters']['KeywordQuery']
       }
       header?: never
       path?: never
@@ -16060,6 +16082,8 @@ export interface operations {
         /** @description 深翻页上限 10000;超深页请改用 cursor 分页(ADR-031) */
         pageNo?: components['parameters']['PageNoQuery']
         pageSize?: components['parameters']['PageSizeQuery']
+        /** @description Literal case-insensitive keyword search across the list's visible identity and status fields. */
+        keyword?: components['parameters']['KeywordQuery']
       }
       header?: never
       path?: never
@@ -16222,6 +16246,7 @@ export interface operations {
         pageSize?: components['parameters']['PageSizeQuery']
         /** @description Filter by job instance ID */
         jobInstanceId?: components['parameters']['JobInstanceIdFilter']
+        stepStatus?: string
       }
       header?: never
       path?: never
@@ -16302,6 +16327,10 @@ export interface operations {
         pageSize?: components['parameters']['PageSizeQuery']
         /** @description Filter by workflow code (partial match) */
         workflowCode?: string
+        /** @description Filter by workflow name (partial match) */
+        workflowName?: string
+        workflowType?: string
+        version?: number
         /** @description Filter by enabled status. Defaults to true (only enabled records returned unless overridden). */
         enabled?: boolean
       }

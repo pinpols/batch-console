@@ -74,6 +74,9 @@ interface FilePipelinePageParams {
   tenantId: string
   pageNo: number
   pageSize: number
+  keyword?: string
+  pipelineInstanceId?: number
+  stageCode?: string
 }
 
 export function queryFilePipelinePage(params: FilePipelinePageParams) {

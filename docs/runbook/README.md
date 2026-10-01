@@ -35,5 +35,5 @@
 
 | 文档 | 用途 |
 |---|---|
-| [BE 修复 backlog](./be-fix-backlog.md) | 已知 BE 问题清单 |
+| [Phase 1 API CRUD 历史问题](./be-fix-backlog.md) | 早期联调问题与修复依据；不作为当前待办 |
 | [移动端 tunnel](./mobile-frontend-tunnel.md) | 移动端联调隧道方案 |

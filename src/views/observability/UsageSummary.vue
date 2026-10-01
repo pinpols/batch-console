@@ -13,11 +13,20 @@
           />
         </el-form-item>
         <el-form-item :label="t('usageSummary.metric')">
-          <el-input
+          <el-select
             v-model="metricCode"
             clearable
+            filterable
+            allow-create
             :placeholder="t('usageSummary.metricPlaceholder')"
-          />
+          >
+            <el-option
+              v-for="code in usageMetricCodes"
+              :key="code"
+              :value="code"
+              :label="`${usageMetricLabel(code, t)} (${code})`"
+            />
+          </el-select>
         </el-form-item>
         <el-form-item :label="t('usageSummary.page')">
           <el-input v-model="pageCode" clearable :placeholder="t('usageSummary.pagePlaceholder')" />
@@ -88,12 +97,14 @@
         <template #empty><el-empty :description="t('usageSummary.empty')" /></template>
         <el-table-column prop="statDate" :label="t('usageSummary.date')" width="125" />
         <el-table-column prop="source" :label="t('usageSummary.source')" width="170" />
-        <el-table-column
-          prop="metricCode"
-          :label="t('usageSummary.metric')"
-          min-width="210"
-          show-overflow-tooltip
-        />
+        <el-table-column :label="t('usageSummary.metric')" min-width="260">
+          <template #default="{ row }">
+            <div class="usage-metric">
+              <span>{{ usageMetricLabel(row.metricCode, t) }}</span>
+              <code>{{ row.metricCode }}</code>
+            </div>
+          </template>
+        </el-table-column>
         <el-table-column
           prop="pageCode"
           :label="t('usageSummary.page')"
@@ -155,6 +166,7 @@
   import { useTenantStore } from '@/stores/tenant'
   import { presetDateRange, readBusinessTimezone } from '@/utils/datetime'
   import { usageDailyTrend, usageTotals } from './usageSummary'
+  import { usageMetricCodes, usageMetricLabel } from './usageMetricCatalog'
 
   const { t } = useI18n({ useScope: 'global' })
   const tenant = useTenantStore()
@@ -318,6 +330,15 @@
   }
   .usage-table-head :deep(.el-select) {
     width: 180px;
+  }
+  .usage-metric {
+    display: grid;
+    gap: var(--space-xxs);
+    line-height: var(--line-height-tight);
+  }
+  .usage-metric code {
+    color: var(--color-text-tertiary);
+    font-size: var(--font-size-xs);
   }
   .usage-pagination {
     justify-content: flex-end;

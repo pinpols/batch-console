@@ -395,7 +395,6 @@
   const { filterBusy, tableBlocking, runSearch, runReset, runRefresh } =
     useListFilterFeedback(loading)
   const rows = ref<ConsoleWorkflowDefinitionResponse[]>([])
-  const allRows = ref<ConsoleWorkflowDefinitionResponse[]>([])
   const total = ref(0)
   const page = ref(1)
   const pageSize = ref(15)
@@ -490,16 +489,12 @@
       ),
   )
 
-  // workflowType 走后端 enum,完整候选不依赖列表先加载;rows 派生作 fallback
+  // workflowType 走后端 enum；候选不依赖列表全量加载。
   const { data: metaEnums } = useConsoleMetaEnumsQuery()
   const workflowTypeOptions = computed(() => {
     const fromEnum = pickMetaEnumGroup(metaEnums.value, 'workflowType')
     if (fromEnum.length > 0) return fromEnum
-    return Array.from(
-      new Set(
-        allRows.value.map((row) => row.workflowType).filter((item): item is string => !!item),
-      ),
-    ).map((v) => ({ value: v, label: v }))
+    return []
   })
   function openDag(row: ConsoleWorkflowDefinitionResponse) {
     void router.push({ path: `/workflow/viewer/${row.id}` })
@@ -594,7 +589,6 @@
     loading.value = true
     loadError.value = null
     try {
-      // listDefinitions 内部已做全量拉取 + 过滤 + 分页，直接使用结果
       const result = await workflowApi.listDefinitions({
         tenantId: filters.tenantId || tenant.tenantId,
         workflowCode: filters.workflowCode.trim() || undefined,
@@ -605,8 +599,6 @@
         page: page.value,
         pageSize: pageSize.value,
       })
-      // allItems 是过滤前的全量数据，用于提取类型选项
-      allRows.value = result.allItems
       rows.value = result.records
       total.value = result.total
     } catch (err) {

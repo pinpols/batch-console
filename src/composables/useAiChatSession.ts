@@ -58,6 +58,12 @@ function persistedDecision(value: string | null): PromptDecision | undefined {
   }
 }
 
+function withoutInlineSources(answer: string, sources: AiChatResponse['sources']): string {
+  if (!sources.length) return answer
+  const suffix = `\n\n参考来源:${sources.map((item) => item.source).join(', ')}`
+  return answer.endsWith(suffix) ? answer.slice(0, -suffix.length) : answer
+}
+
 export interface AiChatMessage {
   id: string
   role: 'user' | 'assistant'
@@ -65,6 +71,7 @@ export interface AiChatMessage {
   decision?: PromptDecision
   refusalReason?: string | null
   modelName?: string
+  sources?: AiChatResponse['sources']
   status?: AiTurn['status']
 }
 
@@ -185,10 +192,12 @@ export function useAiChatSession() {
       if (requestGeneration !== generation || tenant.tenantId !== tenantId) return false
       if (res.sessionId) sessionId.value = res.sessionId
       assistantMessage.id = res.requestId
-      assistantMessage.content = res.answer || emptyAnswer
+      const sources = res.sources ?? []
+      assistantMessage.content = withoutInlineSources(res.answer || emptyAnswer, sources)
       assistantMessage.decision = res.promptDecision
       assistantMessage.refusalReason = res.refusalReason
       assistantMessage.modelName = res.modelName ?? undefined
+      assistantMessage.sources = sources
       assistantMessage.status = res.promptDecision === 'APPROVED' ? 'COMPLETE' : 'FAILED'
       if (res.promptDecision === 'APPROVED' && prompt.value === draft) {
         prompt.value = ''
