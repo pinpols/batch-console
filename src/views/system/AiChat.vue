@@ -67,7 +67,12 @@
               <div v-if="historyError" class="history-error" role="alert">
                 {{ t(historyErrorKey) }}
               </div>
-              <div v-loading="historyTurnsLoading" class="chat-list" aria-live="polite">
+              <div
+                ref="chatList"
+                v-loading="historyTurnsLoading"
+                class="chat-list"
+                aria-live="polite"
+              >
                 <div
                   v-for="item in messages"
                   :key="item.id"
@@ -95,6 +100,7 @@
                     class="bubble__body"
                     :content="messageBody(item)"
                     :role="item.role"
+                    :streaming="item.status === 'IN_PROGRESS'"
                   />
                   <div v-if="item.role === 'assistant' && item.modelName" class="bubble__model">
                     {{ t('aiChat.modelBy', { model: item.modelName }) }}
@@ -122,12 +128,19 @@
                 <div v-if="sendError" class="history-error" role="alert">
                   {{ t(sendErrorKey) }}
                 </div>
+                <AiTextAttachmentPicker v-model="chat.attachment.value" :disabled="sending" />
                 <div class="composer__actions">
                   <el-button :disabled="sending || !messages.length" @click="resetSession">
                     {{ t('aiChat.btnNewSession') }}
                   </el-button>
                   <div class="composer__actions-right">
                     <div class="composer__hint">{{ t('aiChat.composerHint') }}</div>
+                    <el-button
+                      v-if="sending"
+                      :icon="Square"
+                      :aria-label="t('aiChat.btnStop')"
+                      @click="chat.stop()"
+                    />
                     <el-button
                       type="primary"
                       :loading="sending"
@@ -253,7 +266,7 @@
   import { useI18n } from 'vue-i18n'
   import { useRoute, useRouter } from 'vue-router'
   import { ElMessageBox } from 'element-plus'
-  import { Plus, Trash2 } from '@lucide/vue'
+  import { Plus, Square, Trash2 } from '@lucide/vue'
 
   const { t } = useI18n({ useScope: 'global' })
   import {
@@ -271,6 +284,7 @@
   import { useTenantReload } from '@/composables/useTenantReload'
   import PageContainer from '@/components/common/PageContainer.vue'
   import AiMessageContent from '@/components/common/AiMessageContent.vue'
+  import AiTextAttachmentPicker from '@/components/common/AiTextAttachmentPicker.vue'
   import MetaSelect from '@/components/common/MetaSelect.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
@@ -288,6 +302,17 @@
   const activeTab = ref<'chat' | 'audits'>('chat')
   const chat = useAiChatSession()
   const { prompt, sending, sendError, sendErrorKey, sessionId, messages } = chat
+  const chatList = ref<HTMLElement | null>(null)
+  watch(
+    () => [messages.value.length, messages.value.at(-1)?.content],
+    () => {
+      const element = chatList.value
+      if (element && element.scrollHeight - element.scrollTop - element.clientHeight < 150) {
+        element.scrollTop = element.scrollHeight
+      }
+    },
+    { flush: 'post' },
+  )
   const conversations = ref<AiConversation[]>([])
   const costSummary = ref<AiCostSummary | null>(null)
   const monthlyCost = computed(() => {
@@ -548,7 +573,7 @@
 
   async function send() {
     if (historyTurnsLoading.value) return
-    if (await chat.send(t('aiChat.emptyAnswer'))) {
+    if (await chat.send(t('aiChat.emptyAnswer'), undefined, t('aiChat.stopped'))) {
       void loadAudits()
       if (historyAvailable.value) void loadConversations()
     }

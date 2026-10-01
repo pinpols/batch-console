@@ -5,7 +5,7 @@
     @click="copyCode"
   >
     <div
-      v-if="role === 'assistant' && markdownHtml"
+      v-if="role === 'assistant' && !streaming && markdownHtml"
       v-safe-html="markdownHtml"
       class="ai-message-content__markdown"
     />
@@ -18,7 +18,7 @@
   import { ElMessage } from 'element-plus'
   import { useI18n } from 'vue-i18n'
 
-  const props = defineProps<{ content: string; role: 'user' | 'assistant' }>()
+  const props = defineProps<{ content: string; role: 'user' | 'assistant'; streaming?: boolean }>()
   const { t } = useI18n({ useScope: 'global' })
   const render = shallowRef<((content: string, copyLabel: string) => string) | null>(null)
   const markdownHtml = computed(() => render.value?.(props.content, t('aiChat.copyCode')) ?? '')

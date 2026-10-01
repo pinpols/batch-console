@@ -11,9 +11,9 @@
 
 | Item | Count |
 |---|---:|
-| Runtime direct dependencies | 32 |
+| Runtime direct dependencies | 33 |
 | Development direct dependencies | 36 |
-| Resolved lockfile components | 929 |
+| Resolved lockfile components | 930 |
 
 ## 许可证分布
 
@@ -31,7 +31,7 @@
 | CC0-1.0 | 2 |
 | FSL-1.1-MIT | 9 |
 | ISC | 57 |
-| MIT | 777 |
+| MIT | 778 |
 | MIT-0 | 2 |
 | MPL-2.0 | 14 |
 | NOASSERTION | 1 |
@@ -66,6 +66,7 @@
 | `driver.js` | `^1.4.0` |
 | `echarts` | `^6.0.0` |
 | `element-plus` | `^2.14.6` |
+| `eventsource-parser` | `4.1.1` |
 | `json-bigint` | `^1.0.0` |
 | `markdown-it` | `^15.0.2` |
 | `pinia` | `^4.0.3` |

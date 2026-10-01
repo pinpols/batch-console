@@ -33,7 +33,7 @@
         <div v-if="!chat.messages.value.length" class="ai-panel__empty">
           {{ t('aiPanel.empty') }}
         </div>
-        <div v-else class="ai-panel__messages" aria-live="polite">
+        <div v-else ref="messageList" class="ai-panel__messages" aria-live="polite">
           <div
             v-for="message in chat.messages.value"
             :key="message.id"
@@ -43,7 +43,15 @@
             <strong>{{
               message.role === 'user' ? t('aiChat.bubbleMe') : t('aiChat.bubbleAi')
             }}</strong>
-            <AiMessageContent :content="message.content" :role="message.role" />
+            <AiMessageContent
+              :content="
+                message.status === 'IN_PROGRESS' && !message.content
+                  ? t('aiChat.turnPending')
+                  : message.content
+              "
+              :role="message.role"
+              :streaming="message.status === 'IN_PROGRESS'"
+            />
             <small v-if="message.refusalReason">{{ message.refusalReason }}</small>
           </div>
         </div>
@@ -59,7 +67,14 @@
             :placeholder="t('aiChat.inputPlaceholder')"
             :aria-label="t('aiChat.promptLabel')"
           />
+          <AiTextAttachmentPicker v-model="chat.attachment.value" :disabled="chat.sending.value" />
           <div class="ai-panel__actions">
+            <el-button
+              v-if="chat.sending.value"
+              :icon="Square"
+              :aria-label="t('aiChat.btnStop')"
+              @click="chat.stop()"
+            />
             <el-button
               :icon="Plus"
               :aria-label="t('aiChat.btnNewSession')"
@@ -85,12 +100,13 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, ref } from 'vue'
+  import { computed, ref, watch } from 'vue'
   import { useRoute } from 'vue-router'
   import { useI18n } from 'vue-i18n'
-  import { Plus, Sparkles } from '@lucide/vue'
+  import { Plus, Sparkles, Square } from '@lucide/vue'
   import type { InputInstance } from 'element-plus'
   import AiMessageContent from '@/components/common/AiMessageContent.vue'
+  import AiTextAttachmentPicker from '@/components/common/AiTextAttachmentPicker.vue'
   import { useAiChatSession } from '@/composables/useAiChatSession'
   import { useTenantReload } from '@/composables/useTenantReload'
   import { useAuthStore } from '@/stores/auth'
@@ -103,6 +119,17 @@
   const tenant = useTenantStore()
   const route = useRoute()
   const chat = useAiChatSession()
+  const messageList = ref<HTMLElement | null>(null)
+  watch(
+    () => [chat.messages.value.length, chat.messages.value.at(-1)?.content],
+    () => {
+      const element = messageList.value
+      if (element && element.scrollHeight - element.scrollTop - element.clientHeight < 150) {
+        element.scrollTop = element.scrollHeight
+      }
+    },
+    { flush: 'post' },
+  )
   const trigger = ref<HTMLElement | null>(null)
   const input = ref<InputInstance | null>(null)
   const open = ref(false)
@@ -138,6 +165,7 @@
     await chat.send(
       t('aiChat.emptyAnswer'),
       mode.value === 'page' ? capturedPageType.value : undefined,
+      t('aiChat.stopped'),
     )
   }
 
