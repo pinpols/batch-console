@@ -2361,6 +2361,43 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/console/ai/chat/stream': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Stream an AI chat turn as server-sent events
+     * @description Uses the same authorization, budgets, audit, and conversation retention as /chat. Events are started ({requestId}), delta ({text}), and completed (AiChatResponse). An unexpected pre-completion error emits failed ({code}). The client must treat connection loss without completed as a failed turn. A stopped turn remains audited.
+     */
+    post: operations['streamConsoleAiChat']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/ai/chat/stream/{requestId}/cancel': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Stop the current operator's active AI stream */
+    post: operations['cancelConsoleAiChatStream']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/console/ai/conversations': {
     parameters: {
       query?: never
@@ -15075,6 +15112,70 @@ export interface operations {
         }
       }
       /** @description Supplied sessionId does not exist or has expired */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  streamConsoleAiChat: {
+    parameters: {
+      query?: never
+      header: {
+        'Idempotency-Key': components['parameters']['IdempotencyKeyHeader']
+      }
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['AiChatRequest']
+      }
+    }
+    responses: {
+      /** @description UTF-8 SSE event stream */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'text/event-stream': string
+        }
+      }
+      /** @description Supplied sessionId does not exist or has expired */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  cancelConsoleAiChatStream: {
+    parameters: {
+      query?: never
+      header: {
+        'Idempotency-Key': components['parameters']['IdempotencyKeyHeader']
+      }
+      path: {
+        requestId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Cancellation accepted */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseVoid']
+        }
+      }
+      /** @description Stream not found or not owned by the current operator */
       404: {
         headers: {
           [name: string]: unknown
