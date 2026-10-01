@@ -29,6 +29,7 @@
 | [页面命名约定](./engineering/page-naming-convention.md)                                | URL / 代码目录 / 侧边栏分组三者一致规则                           |
 | [前端可观测性方案](./engineering/前端可观测性方案.md)                                  | 操作日志 / 行为埋点 / Sentry / 错误追踪                           |
 | [Console AI 助手前端实施方案](./engineering/ai-assistant-frontend-implementation-plan.md) | 全局入口、页面上下文、会话 UI、移动端与前后端契约                 |
+| [AI 对话流式交互](./engineering/ai-chat-streaming.md)                       | SSE 协议、停止生成、文本附件及数据保留边界                        |
 | [当前 AI 与使用率待办](./backlog/ai-and-usage-statistics-todo-2026-09-29.md)             | AI 前端交付、使用率统计联测和暂缓/不做边界                         |
 | [运行时与依赖版本](./engineering/runtime-versions.md)                                  | Node 运行约束、锁文件和后端权威支持矩阵                           |
 | [CI 依赖治理](./engineering/ci-dependency-governance.md)                              | Action、Runner、Artifact、分批升级、验证与回滚规则                 |

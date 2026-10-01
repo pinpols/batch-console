@@ -2,8 +2,6 @@ import { get, patch, post, put } from '@/api/client'
 import { fetchAllPageItems } from '@/api/adapters'
 import type {
   AiAuditLogResponse,
-  AiChatRequest,
-  AiChatResponse,
   ConsoleFileChannelResponse,
   ConsoleFileTemplateResponse,
   ConsoleFilePipelineResponse,
@@ -105,10 +103,6 @@ function normalizePipelineDefinition(row: RawObject): PipelineDefinitionRow {
     description: readString(row, 'description'),
     updatedAt: readString(row, 'updatedAt', 'updated_at'),
   }
-}
-
-export function chatWithAi(body: AiChatRequest) {
-  return post<AiChatResponse>('/api/console/ai/chat', body)
 }
 
 export function queryCatchUpApprovals(tenantId: string, pageNo: number, pageSize: number) {

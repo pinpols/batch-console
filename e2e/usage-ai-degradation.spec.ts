@@ -1,6 +1,7 @@
 import { expect, test } from './support/app'
 import { enterDemoApp, grantAiCapability } from './support/app'
 import { request as apiRequest } from '@playwright/test'
+import { aiSseEvent, aiStreamEventData } from './support/aiStream'
 
 test.describe('Usage, AI and degradation', () => {
   test.beforeEach(async ({ page }) => {
@@ -124,7 +125,7 @@ test.describe('Usage, AI and degradation', () => {
     const prompt = drawer.getByRole('textbox', { name: '问题' })
     await prompt.fill('查询当前批量调度运行概况')
     const responsePromise = page.waitForResponse((response) =>
-      response.url().includes('/api/console/ai/chat') && response.request().method() === 'POST',
+      response.url().endsWith('/api/console/ai/chat/stream') && response.request().method() === 'POST',
     )
     await drawer.getByRole('button', { name: '发送' }).click()
     const response = await responsePromise
@@ -133,9 +134,16 @@ test.describe('Usage, AI and degradation', () => {
     expect(body.pageContext).toEqual({ pageType: 'ops-summary' })
     expect(body.pageContext.objectId).toBeUndefined()
     if (response.ok()) {
-      const payload = await response.json()
-      expect(payload.data.sessionId).toBeTruthy()
-      await expect(drawer.getByText(payload.data.answer)).toBeVisible()
+      const stream = await response.text()
+      if (stream.includes('event:completed')) {
+        const result = await aiStreamEventData<{ sessionId: string; answer: string }>(response, 'completed')
+        expect(result.sessionId).toBeTruthy()
+        await expect(drawer.getByText(result.answer)).toBeVisible()
+      } else {
+        expect(stream).toContain('event:failed')
+        await expect(drawer.getByRole('alert')).toBeVisible()
+        await expect(prompt).toHaveValue('查询当前批量调度运行概况')
+      }
     } else {
       expect([403, 429, 503]).toContain(response.status())
       const expectedMessage = response.status() === 403 ? '请求被拒绝' : response.status() === 429 ? '请求受限' : 'AI 服务暂不可用'
@@ -170,14 +178,11 @@ test.describe('Usage, AI and degradation', () => {
 
   test('AI Markdown renders safely and copies a code block', async ({ page }) => {
     await page.context().grantPermissions(['clipboard-read', 'clipboard-write'])
-    await page.route('**/api/console/ai/chat', (route) =>
+    await page.route('**/api/console/ai/chat/stream', (route) =>
       route.fulfill({
         status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          code: 'SUCCESS',
-          message: 'success',
-          data: {
+        contentType: 'text/event-stream',
+        body: aiSseEvent('started', { requestId: 'markdown-request' }) + aiSseEvent('completed', {
             sessionId: 'markdown-session',
             requestId: 'markdown-request',
             traceId: 'markdown-trace',
@@ -186,7 +191,6 @@ test.describe('Usage, AI and degradation', () => {
             modelName: 'test',
             answer: '**诊断完成**\n\n```sh\necho ok\n```\n\n<img src=x onerror=alert(1)>',
             refusalReason: null,
-          },
         }),
       }),
     )
@@ -202,8 +206,8 @@ test.describe('Usage, AI and degradation', () => {
   })
 
   test('AI rate limiting keeps the draft ready for retry', async ({ page, network }) => {
-    network.ignore('/api/console/ai/chat')
-    await page.route('**/api/console/ai/chat', (route) => route.fulfill({
+    network.ignore('/api/console/ai/chat/stream')
+    await page.route('**/api/console/ai/chat/stream', (route) => route.fulfill({
       status: 429,
       contentType: 'application/json',
       body: JSON.stringify({ code: 'RATE_LIMITED', message: 'error.ai.rate_limited' }),
@@ -218,15 +222,15 @@ test.describe('Usage, AI and degradation', () => {
   })
 
   test('AI preserves the draft when a previously created session expires', async ({ page, network }) => {
-    network.ignore('/api/console/ai/chat')
+    network.ignore('/api/console/ai/chat/stream')
     let requests = 0
-    await page.route('**/api/console/ai/chat', async (route) => {
+    await page.route('**/api/console/ai/chat/stream', async (route) => {
       requests += 1
       if (requests === 1) {
         await route.fulfill({
           status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({ code: 'SUCCESS', message: 'success', data: { sessionId: 'expired-session', requestId: 'request-1', traceId: 'trace-1', promptCategory: 'OPERATIONS', promptDecision: 'APPROVED', modelName: 'test', answer: '第一答', refusalReason: null } }),
+          contentType: 'text/event-stream',
+          body: aiSseEvent('started', { requestId: 'request-1' }) + aiSseEvent('completed', { sessionId: 'expired-session', requestId: 'request-1', traceId: 'trace-1', promptCategory: 'OPERATIONS', promptDecision: 'APPROVED', modelName: 'test', answer: '第一答', refusalReason: null }),
         })
       } else {
         expect(route.request().postDataJSON().sessionId).toBe('expired-session')

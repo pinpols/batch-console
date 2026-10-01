@@ -1,19 +1,22 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
-import { chatWithAi } from '@/api/system'
+import { cancelAiChatStream, streamAiChat } from '@/api/aiStream'
 import { useTenantStore } from '@/stores/tenant'
 import { useAiChatSession } from './useAiChatSession'
 
-vi.mock('@/api/system', () => ({ chatWithAi: vi.fn() }))
+vi.mock('@/api/aiStream', () => ({ streamAiChat: vi.fn(), cancelAiChatStream: vi.fn() }))
 
-const mockedChat = vi.mocked(chatWithAi)
+const mockedChat = vi.mocked(streamAiChat)
+const mockedCancel = vi.mocked(cancelAiChatStream)
 
 describe('useAiChatSession', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
     useTenantStore().setTenantId('ta')
     mockedChat.mockReset()
+    mockedCancel.mockReset()
+    mockedCancel.mockResolvedValue()
   })
 
   it('sends versioned, allowlisted page context without object IDs', async () => {
@@ -31,13 +34,17 @@ describe('useAiChatSession', () => {
     chat.prompt.value = 'What happened?'
 
     expect(await chat.send('Empty', 'job-instance')).toBe(true)
-    expect(mockedChat).toHaveBeenCalledWith({
-      tenantId: 'ta',
-      contextVersion: 'v1',
-      prompt: 'What happened?',
-      sessionId: undefined,
-      pageContext: { pageType: 'job-instance' },
-    })
+    expect(mockedChat).toHaveBeenCalledWith(
+      {
+        tenantId: 'ta',
+        contextVersion: 'v1',
+        prompt: 'What happened?',
+        sessionId: undefined,
+        pageContext: { pageType: 'job-instance' },
+      },
+      expect.objectContaining({ onStarted: expect.any(Function), onDelta: expect.any(Function) }),
+      expect.any(AbortSignal),
+    )
     expect(chat.sessionId.value).toBe('s1')
     expect(chat.messages.value.map((item) => item.content)).toEqual(['What happened?', 'result'])
   })
@@ -98,7 +105,7 @@ describe('useAiChatSession', () => {
   })
 
   it('keeps a new draft typed while the previous question is sending', async () => {
-    let resolveResponse!: (value: Awaited<ReturnType<typeof chatWithAi>>) => void
+    let resolveResponse!: (value: Awaited<ReturnType<typeof streamAiChat>>) => void
     mockedChat.mockReturnValue(
       new Promise((resolve) => {
         resolveResponse = resolve
@@ -128,7 +135,7 @@ describe('useAiChatSession', () => {
   })
 
   it('does not render a previous tenant response after reset', async () => {
-    let resolveResponse!: (value: Awaited<ReturnType<typeof chatWithAi>>) => void
+    let resolveResponse!: (value: Awaited<ReturnType<typeof streamAiChat>>) => void
     mockedChat.mockReturnValue(
       new Promise((resolve) => {
         resolveResponse = resolve
@@ -219,5 +226,52 @@ describe('useAiChatSession', () => {
         .filter((message) => message.role === 'assistant')
         .map((message) => message.decision),
     ).toEqual(['REJECTED_BUDGET', 'FAILED', undefined])
+  })
+
+  it('shows deltas before completion and replaces them with the audited final answer', async () => {
+    let resolveResponse!: (value: Awaited<ReturnType<typeof streamAiChat>>) => void
+    mockedChat.mockImplementation(
+      (_body, callbacks) =>
+        new Promise((resolve) => {
+          resolveResponse = resolve
+          callbacks.onStarted('request-1')
+          callbacks.onDelta('partial ')
+        }),
+    )
+    const chat = useAiChatSession()
+    chat.prompt.value = 'Status?'
+    const pending = chat.send('Empty')
+    expect(chat.messages.value[1]).toMatchObject({ content: 'partial ', status: 'IN_PROGRESS' })
+    resolveResponse({
+      requestId: 'request-1',
+      traceId: 'trace-1',
+      sessionId: 'session-1',
+      promptCategory: 'OPERATIONS',
+      promptDecision: 'APPROVED',
+      modelName: 'test',
+      answer: 'partial answer',
+      refusalReason: null,
+    })
+    expect(await pending).toBe(true)
+    expect(chat.messages.value[1]).toMatchObject({ content: 'partial answer', status: 'COMPLETE' })
+  })
+
+  it('cancels an active request and keeps the draft', async () => {
+    mockedChat.mockImplementation(
+      (_body, callbacks, signal) =>
+        new Promise((_resolve, reject) => {
+          callbacks.onStarted('request-1')
+          signal.addEventListener('abort', () => reject(new DOMException('Stopped', 'AbortError')))
+        }),
+    )
+    const chat = useAiChatSession()
+    chat.prompt.value = 'Status?'
+    const pending = chat.send('Empty', undefined, 'Stopped')
+    chat.stop()
+    expect(await pending).toBe(false)
+    expect(mockedCancel).toHaveBeenCalledWith('request-1', 'ta')
+    expect(chat.prompt.value).toBe('Status?')
+    expect(chat.messages.value[1]).toMatchObject({ content: 'Stopped', status: 'FAILED' })
+    expect(chat.sendError.value).toBe(false)
   })
 })

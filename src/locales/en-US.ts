@@ -5630,6 +5630,18 @@ const messages: Messages = {
     sendForbidden: 'Request denied. Check your access or refresh the page and try again.',
     sendUnavailable: 'The AI service is unavailable. Try again later.',
     sendTimeout: 'The AI request timed out. Try again; your question is still in the input box.',
+    attachmentTooLarge:
+      'Question and attachment must total at most 4000 characters. Shorten them and retry.',
+    attachText: 'Attach text file',
+    removeAttachment: 'Remove attachment',
+    attachmentRetention:
+      'File content is sent to the model and retained under the current conversation policy. Do not attach secrets or sensitive source data.',
+    attachmentError: {
+      type: 'Only .txt, .md, and .log files are supported.',
+      size: 'The file must be at most 8 KiB, and question plus file content at most 4000 characters.',
+      encoding: 'The file must contain valid UTF-8 text.',
+      empty: 'The file is empty.',
+    },
     bubbleMe: 'Me',
     bubbleAi: 'AI',
     copyCode: 'Copy code',
@@ -5639,6 +5651,8 @@ const messages: Messages = {
       "e.g. explain a job failure, query trace-related steps, summarize today's alerts…",
     composerHint: 'Enter for newline; click Send to submit',
     btnSend: 'Send',
+    btnStop: 'Stop generating',
+    stopped: 'Generation stopped.',
     btnNewSession: 'New session',
     modelBy: 'Answered by {model}',
     gateTitle: 'This request did not pass the gate',

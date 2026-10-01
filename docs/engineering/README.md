@@ -8,6 +8,7 @@
 | [字符编码治理](./encoding-governance.md)                                  | 平台 UTF-8、外部文件边界、门禁与排障规范       |
 | [注释语言治理](./comment-language-governance.md)                           | 中文解释性注释、技术标识豁免与门禁约定         |
 | [移动端刷新策略](./mobile-refresh-strategy.md)                            | mobile `/m/*` 页面的下拉/自动刷新设计          |
+| [AI 对话流式交互](./ai-chat-streaming.md)                                  | SSE 协议、停止生成、文本附件及数据保留边界     |
 | [统一文档站](./unified-documentation-site.md)                           | 当前单站路径、构建和权限边界                   |
 | [内嵌文档中心方案](./内嵌文档中心方案.md)                                 | 早期方案，仅作历史参考                         |
 | [前端可观测性方案](./前端可观测性方案.md)                                 | FE 监控 / track / log 收口                     |
