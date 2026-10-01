@@ -37,16 +37,16 @@ job-definition / fileChannels / queues / governance / system 等:数据量受租
 
 | 端点 | 后端现有 query 参数 | 前端端上筛选维度 | 能否纯前端迁 |
 |---|---|---|---|
-| `/queries/catch-up-approvals` | tenantId/jobCode/requestId/**bizDate**/**keyword**/cursor/pageNo/pageSize | keyword / status / bizDate | ✅ **后端已补**(BE PR #602:bizDate 精确 + keyword 跨列模糊;status 维度后端恒 ACCEPTED、前端 enum 退化 no-op,无需后端参数)→ 待 BE 合 main 后纯前端迁 |
-| `/queries/approvals` | tenantId/approvalNo/approvalType/actionType/approvalStatus/**requesterId**/**keyword**/pageNo/pageSize | status / type / keyword / requesterId | ✅ **后端已补**(BE PR #605:requesterId 精确 + keyword 跨 approvalNo/requesterId/targetType/targetId 模糊;status→approvalStatus、type→approvalType 早已支持)→ 待 BE 合 main 后纯前端迁 |
+| `/queries/catch-up-approvals` | tenantId/jobCode/requestId/**bizDate**/**keyword**/cursor/pageNo/pageSize | keyword / status / bizDate | ✅ 后端筛选与前端服务端分页均已完成 |
+| `/queries/approvals` | tenantId/approvalNo/approvalType/actionType/approvalStatus/**requesterId**/**keyword**/pageNo/pageSize | status / type / keyword / requesterId | ✅ 后端筛选与前端服务端分页均已完成 |
 | `/queries/audits` | tenantId/operationType/operationResult/operatorId/fileId/traceId/startTime/endTime/pageNo/pageSize | 同左(全部) | ✅ **后端早已完整支持**(service+mapper+OpenAPI 都齐),**无需后端改动**,前端可直接迁 |
-| `/queries/alerts` | tenantId/severity/status/alertType/traceId | severity/alertType/traceId(端上) + status→acknowledged + 时间范围 | ⚠️ **前后端契约错位**:前端发 `acknowledged`/`startDate`/`endDate` 后端 DTO 没有(实为 `status`、无时间参);traceId 后端精确 vs 前端子串。需单独契约对齐 PR,**不是简单补参** |
+| `/queries/alerts` | tenantId/severity/status/alertType/traceId/时间范围 | severity/alertType/traceId/status/时间范围 | ✅ 契约已对齐，前端服务端分页已完成 |
 
 > **进度(2026-06-21)**:
 > - **catch-up-approvals**:后端筛选参数补齐(file-batch-system PR #602:DTO+Query+mapper+OpenAPI+IT),服务端筛选+分页样板端点。
 > - **approvals**:后端补 `requesterId`+`keyword`(file-batch-system PR #605:DTO+Query+mapper+OpenAPI+IT;并补录该端点 OpenAPI 既有漂移)。
 > - **audits**:核查后确认后端 service+mapper+OpenAPI **已完整支持**前端全部筛选维度,**零后端改动**,可直接前端迁。
-> - **alerts**:前后端契约错位(见上表),需先做契约对齐(后端补 `acknowledged`/时间范围 或 前端改用 `status`/对齐 traceId 匹配语义),再迁分页。本批未动。
+> - **alerts**:历史契约错位已完成对齐，页面现使用后端状态、时间和 TraceId 筛选并执行服务端分页。
 >
 > **迁移动作**(每个 ✅ 端点)**:待对应 BE PR 合入 `../file-batch-system` main → 前端 `npm run gen:api` 刷新类型 → 对应页面(`CatchUpApprovalsTab` / `GeneralApprovalsTab` / `AuditList` / 移动端对应)去掉 `fetchAllPageItems`,把端上 `filtered` 改成把筛选项作为 query 参数传后端 + ProTable 服务端 total/page。
 
