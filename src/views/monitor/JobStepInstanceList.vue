@@ -98,7 +98,7 @@
 
   const { t } = useI18n({ useScope: 'global' })
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
-  import { fetchAllPageItems, toPageResult } from '@/api/adapters'
+  import { queryJobStepInstancePage } from '@/api/jobStepInstances'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
   import PageContainer from '@/components/common/PageContainer.vue'
@@ -123,7 +123,6 @@
     runReset,
     runRefresh,
   } = useListFilterFeedback(loading)
-  const allRows = ref<ConsoleJobStepInstanceResponse[]>([])
   const filterInstanceId = ref('')
   const filterStepStatus = ref('')
   const { data: metaEnums } = useConsoleMetaEnumsQuery()
@@ -134,29 +133,14 @@
   const total = ref(0)
   const rows = ref<ConsoleJobStepInstanceResponse[]>([])
 
-  const displayRows = computed(() => {
-    let r = allRows.value
-    const id = filterInstanceId.value.trim()
-    if (id) {
-      const n = Number(id)
-      if (Number.isFinite(n)) r = r.filter((row) => row.jobInstanceId === n)
-    }
-    const st = filterStepStatus.value.trim()
-    if (st) r = r.filter((row) => String(row.stepStatus ?? '') === st)
-    return r
-  })
-
   function slicePage() {
-    const list = displayRows.value
-    total.value = list.length
-    const pr = toPageResult(list, page.value, pageSize.value)
-    rows.value = pr.records as ConsoleJobStepInstanceResponse[]
+    void load()
   }
 
   function onQuerySearch() {
     return runSearch(() => {
       page.value = 1
-      slicePage()
+      return load()
     })
   }
 
@@ -165,7 +149,7 @@
       filterInstanceId.value = ''
       filterStepStatus.value = ''
       page.value = 1
-      slicePage()
+      return load()
     })
   }
 
@@ -173,12 +157,18 @@
     loading.value = true
     loadError.value = null
     try {
-      allRows.value = await fetchAllPageItems<ConsoleJobStepInstanceResponse>(
-        '/api/console/queries/job-step-instances',
-        { tenantId: tenant.tenantId },
-      )
-      page.value = 1
-      slicePage()
+      const instanceIdText = filterInstanceId.value.trim()
+      const parsedInstanceId = Number(instanceIdText)
+      const result = await queryJobStepInstancePage({
+        tenantId: tenant.tenantId,
+        pageNo: page.value,
+        pageSize: pageSize.value,
+        jobInstanceId:
+          instanceIdText && Number.isFinite(parsedInstanceId) ? parsedInstanceId : undefined,
+        stepStatus: filterStepStatus.value.trim() || undefined,
+      })
+      rows.value = result.items ?? []
+      total.value = result.total ?? 0
     } catch (err) {
       loadError.value = err
       throw err

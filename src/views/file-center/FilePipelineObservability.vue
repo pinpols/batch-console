@@ -542,7 +542,7 @@
   import { ref, computed, onMounted, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { useRoute } from 'vue-router'
-  import { fetchAllPageItems, toPageResult } from '@/api/adapters'
+  import { fetchAllPageItems } from '@/api/adapters'
   import {
     queryFileDispatchPage,
     queryFileErrorPage,
@@ -694,10 +694,9 @@
   function focusStage(code: string) {
     const nextStage = selectedStageCode.value === code ? null : code
     selectedStageCode.value = nextStage
-    if (nextStage) allSteps.value = [...selectedPipelineSteps.value]
-    else void loadSteps()
     activeTab.value = 'steps'
     page.value = 1
+    void loadSteps()
   }
 
   // 行级进度:默认开启(BE 已服务端桥接运行中实时行数,未开 checkpoint 也有值;
@@ -817,87 +816,11 @@
     onFallback: null,
   })
 
-  const filteredPipelines = computed(() => {
-    const k = kwApplied.value.trim().toLowerCase()
-    if (!k) return allPipelines.value
-    return allPipelines.value.filter((row) =>
-      `${row.id} ${row.jobCode} ${row.pipelineType} ${row.runStatus} ${row.traceId} ${row.fileId} ${row.currentStage ?? ''}`
-        .toLowerCase()
-        .includes(k),
-    )
-  })
-
-  const filteredSteps = computed(() => {
-    const k = kwApplied.value.trim().toLowerCase()
-    return allSteps.value.filter((row) => {
-      if (selectedStageCode.value && row.stageCode?.toUpperCase() !== selectedStageCode.value)
-        return false
-      if (selectedStageCode.value && row.pipelineInstanceId !== selectedPipeline.value?.id)
-        return false
-      return (
-        !k ||
-        `${row.stepCode} ${row.stageCode} ${row.stepStatus} ${row.errorMessage ?? ''} ${row.pipelineInstanceId}`
-          .toLowerCase()
-          .includes(k)
-      )
-    })
-  })
-
-  const filteredDispatches = computed(() => {
-    const k = kwApplied.value.trim().toLowerCase()
-    if (!k) return allDispatches.value
-    return allDispatches.value.filter((row) =>
-      `${row.fileId} ${row.dispatchStatus} ${row.channelCode} ${row.externalRequestId ?? ''} ${row.pipelineInstanceId}`
-        .toLowerCase()
-        .includes(k),
-    )
-  })
-
-  const filteredErrors = computed(() => {
-    const k = kwApplied.value.trim().toLowerCase()
-    if (!k) return allErrors.value
-    return allErrors.value.filter((row) =>
-      `${row.fileId} ${row.errorCode} ${row.errorStage} ${row.errorMessage ?? ''}`
-        .toLowerCase()
-        .includes(k),
-    )
-  })
-
-  const total = computed(() => {
-    if (!usesClientFiltering.value) return serverTotal.value
-    if (activeTab.value === 'pipelines') return filteredPipelines.value.length
-    if (activeTab.value === 'steps') return filteredSteps.value.length
-    if (activeTab.value === 'dispatches') return filteredDispatches.value.length
-    return filteredErrors.value.length
-  })
-
-  const pipelineRows = computed(() => {
-    if (!usesClientFiltering.value) return allPipelines.value
-    const pr = toPageResult(filteredPipelines.value, page.value, pageSize.value)
-    return pr.records
-  })
-
-  const stepRows = computed(() => {
-    if (!usesClientFiltering.value) return allSteps.value
-    const pr = toPageResult(filteredSteps.value, page.value, pageSize.value)
-    return pr.records
-  })
-
-  const dispatchRows = computed(() => {
-    if (!usesClientFiltering.value) return allDispatches.value
-    const pr = toPageResult(filteredDispatches.value, page.value, pageSize.value)
-    return pr.records
-  })
-
-  const errorRows = computed(() => {
-    if (!usesClientFiltering.value) return allErrors.value
-    const pr = toPageResult(filteredErrors.value, page.value, pageSize.value)
-    return pr.records
-  })
-
-  const usesClientFiltering = computed(
-    () => Boolean(kwApplied.value.trim()) || Boolean(selectedStageCode.value),
-  )
+  const total = computed(() => serverTotal.value)
+  const pipelineRows = computed(() => allPipelines.value)
+  const stepRows = computed(() => allSteps.value)
+  const dispatchRows = computed(() => allDispatches.value)
+  const errorRows = computed(() => allErrors.value)
 
   function onSearch() {
     return runSearch(async () => {
@@ -917,28 +840,21 @@
   }
 
   function onPageChange() {
-    if (!usesClientFiltering.value) void runActive()
+    void runActive()
   }
 
   async function loadPipelines() {
     loading.value = true
     loadError.value = null
     try {
-      if (kwApplied.value) {
-        allPipelines.value = await fetchAllPageItems<ConsoleFilePipelineResponse>(
-          '/api/console/queries/file-pipelines',
-          { tenantId: tenant.tenantId },
-        )
-        serverTotal.value = allPipelines.value.length
-      } else {
-        const result = await queryFilePipelinePage({
-          tenantId: tenant.tenantId,
-          pageNo: page.value,
-          pageSize: pageSize.value,
-        })
-        allPipelines.value = result.items
-        serverTotal.value = result.total
-      }
+      const result = await queryFilePipelinePage({
+        tenantId: tenant.tenantId,
+        pageNo: page.value,
+        pageSize: pageSize.value,
+        keyword: kwApplied.value || undefined,
+      })
+      allPipelines.value = result.items ?? []
+      serverTotal.value = result.total ?? 0
       const requestedId = Number(route.query.pipelineInstanceId)
       const previousId = selectedPipeline.value?.id
       selectedPipeline.value =
@@ -961,23 +877,16 @@
     loading.value = true
     stepLoadError.value = null
     try {
-      if (usesClientFiltering.value) {
-        allSteps.value = selectedStageCode.value
-          ? [...selectedPipelineSteps.value]
-          : await fetchAllPageItems<ConsoleFilePipelineStepResponse>(
-              '/api/console/queries/file-pipeline-steps',
-              { tenantId: tenant.tenantId },
-            )
-        serverTotal.value = allSteps.value.length
-      } else {
-        const result = await queryFilePipelineStepPage({
-          tenantId: tenant.tenantId,
-          pageNo: page.value,
-          pageSize: pageSize.value,
-        })
-        allSteps.value = result.items
-        serverTotal.value = result.total
-      }
+      const result = await queryFilePipelineStepPage({
+        tenantId: tenant.tenantId,
+        pageNo: page.value,
+        pageSize: pageSize.value,
+        keyword: kwApplied.value || undefined,
+        pipelineInstanceId: selectedStageCode.value ? selectedPipeline.value?.id : undefined,
+        stageCode: selectedStageCode.value || undefined,
+      })
+      allSteps.value = result.items ?? []
+      serverTotal.value = result.total ?? 0
       if (showProgressColumns.value) {
         void loadProgress()
       }
@@ -991,21 +900,14 @@
   async function loadDispatches() {
     loading.value = true
     try {
-      if (kwApplied.value) {
-        allDispatches.value = await fetchAllPageItems<ConsoleFileDispatchRecordResponse>(
-          '/api/console/queries/file-dispatches',
-          { tenantId: tenant.tenantId },
-        )
-        serverTotal.value = allDispatches.value.length
-      } else {
-        const result = await queryFileDispatchPage({
-          tenantId: tenant.tenantId,
-          pageNo: page.value,
-          pageSize: pageSize.value,
-        })
-        allDispatches.value = result.items
-        serverTotal.value = result.total
-      }
+      const result = await queryFileDispatchPage({
+        tenantId: tenant.tenantId,
+        pageNo: page.value,
+        pageSize: pageSize.value,
+        keyword: kwApplied.value || undefined,
+      })
+      allDispatches.value = result.items ?? []
+      serverTotal.value = result.total ?? 0
     } finally {
       loading.value = false
     }
@@ -1014,21 +916,14 @@
   async function loadErrors() {
     loading.value = true
     try {
-      if (kwApplied.value) {
-        allErrors.value = await fetchAllPageItems<ConsoleFileErrorRecordResponse>(
-          '/api/console/queries/file-errors',
-          { tenantId: tenant.tenantId },
-        )
-        serverTotal.value = allErrors.value.length
-      } else {
-        const result = await queryFileErrorPage({
-          tenantId: tenant.tenantId,
-          pageNo: page.value,
-          pageSize: pageSize.value,
-        })
-        allErrors.value = result.items
-        serverTotal.value = result.total
-      }
+      const result = await queryFileErrorPage({
+        tenantId: tenant.tenantId,
+        pageNo: page.value,
+        pageSize: pageSize.value,
+        keyword: kwApplied.value || undefined,
+      })
+      allErrors.value = result.items ?? []
+      serverTotal.value = result.total ?? 0
     } finally {
       loading.value = false
     }

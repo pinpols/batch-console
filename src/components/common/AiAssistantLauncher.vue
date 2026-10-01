@@ -52,6 +52,10 @@
               :role="message.role"
               :streaming="message.status === 'IN_PROGRESS'"
             />
+            <AiSourceReferences
+              v-if="message.role === 'assistant'"
+              :sources="message.sources ?? []"
+            />
             <small v-if="message.refusalReason">{{ message.refusalReason }}</small>
           </div>
         </div>
@@ -106,6 +110,7 @@
   import { Plus, Sparkles, Square } from '@lucide/vue'
   import type { InputInstance } from 'element-plus'
   import AiMessageContent from '@/components/common/AiMessageContent.vue'
+  import AiSourceReferences from '@/components/common/AiSourceReferences.vue'
   import AiTextAttachmentPicker from '@/components/common/AiTextAttachmentPicker.vue'
   import { useAiChatSession } from '@/composables/useAiChatSession'
   import { useTenantReload } from '@/composables/useTenantReload'

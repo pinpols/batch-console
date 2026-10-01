@@ -27,8 +27,9 @@ describe('useAiChatSession', () => {
       promptCategory: 'OPERATIONS',
       promptDecision: 'APPROVED',
       modelName: 'test',
-      answer: 'result',
+      answer: 'result\n\n参考来源:operations.md',
       refusalReason: null,
+      sources: [{ source: 'operations.md' }],
     })
     const chat = useAiChatSession()
     chat.prompt.value = 'What happened?'
@@ -47,6 +48,7 @@ describe('useAiChatSession', () => {
     )
     expect(chat.sessionId.value).toBe('s1')
     expect(chat.messages.value.map((item) => item.content)).toEqual(['What happened?', 'result'])
+    expect(chat.messages.value[1]?.sources).toEqual([{ source: 'operations.md' }])
   })
 
   it('retains the draft and removes the optimistic message on failure', async () => {
@@ -71,6 +73,7 @@ describe('useAiChatSession', () => {
       modelName: null,
       answer: 'AI is temporarily unavailable.',
       refusalReason: null,
+      sources: [],
     })
     const chat = useAiChatSession()
     chat.prompt.value = 'Retry this question'
@@ -124,6 +127,7 @@ describe('useAiChatSession', () => {
       modelName: 'test',
       answer: 'First answer',
       refusalReason: null,
+      sources: [],
     })
 
     expect(await pending).toBe(true)
@@ -156,6 +160,7 @@ describe('useAiChatSession', () => {
       modelName: 'test',
       answer: 'tenant A answer',
       refusalReason: null,
+      sources: [],
     })
 
     expect(await pending).toBe(false)
@@ -251,6 +256,7 @@ describe('useAiChatSession', () => {
       modelName: 'test',
       answer: 'partial answer',
       refusalReason: null,
+      sources: [],
     })
     expect(await pending).toBe(true)
     expect(chat.messages.value[1]).toMatchObject({ content: 'partial answer', status: 'COMPLETE' })

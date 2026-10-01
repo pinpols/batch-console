@@ -1,9 +1,8 @@
 # Backlog: 客户端全量聚合(fetchAllPageItems)→ 服务端分页迁移
 
-> 状态：**P1 运行态主链路已完成，P2 长尾继续治理**。2026-09-30 复核确认审批、审计、告警的
-> 桌面主列表、移动列表、自助摘要、执行日志和作业详情审计均已改为服务端分页或有界查询；旧的
-> `queryApprovals/queryAlertsAll/queryAudits` 全量聚合入口已删除。Step Instance、Workflow 与
-> Pipeline 观测仍属于 P2，需按各自筛选契约独立迁移。
+> 状态：**P1 与 P2 运行态列表迁移已完成**。2026-10-01 复核确认审批、审计、告警、Step Instance、
+> Workflow 与 Pipeline 观测主列表均使用服务端筛选和分页。仅配置字典、下拉关联解析及选中 Pipeline
+> 的有界步骤详情保留 `fetchAllPageItems`，不再作为高流量运行态列表的数据源。
 
 ## 问题
 
@@ -22,19 +21,19 @@
 | `src/api/observabilityQueries.ts` | `/queries/audits` | ✅ P1 已迁服务端分页 |
 | `src/api/approvals.ts` | `/queries/approvals` | ✅ P1 已迁服务端分页 |
 | `src/api/alertsQuery.ts` | `/queries/alerts` | ✅ P1 已迁服务端分页 |
-| `src/api/instance.ts:47` | step-instance | `JobStepInstanceList.vue` 消费,单 job 步骤多时易超 |
-| `src/api/workflowQueries.ts:15` | workflow definitions | 大租户 workflow 多 |
-| `src/views/file-center/FilePipelineObservability.vue` | pipeline 观测 | 流水实例随跑批累积 |
+| `src/api/jobStepInstances.ts` | step-instance | ✅ P2 已迁服务端分页，实例 ID 与步骤状态由后端筛选 |
+| `src/api/workflow.ts` | workflow definitions | ✅ P2 已迁服务端分页，名称、类型、版本由后端筛选 |
+| `src/views/file-center/FilePipelineObservability.vue` | pipeline 观测 | ✅ P2 已迁服务端分页，四类列表关键字由后端筛选；选中 Pipeline 的步骤详情保持有界子资源查询 |
 
 ### 🟡 配置/字典类 — 可接受,暂不动
 job-definition / fileChannels / queues / governance / system 等:数据量受租户配置规模限,远 <4000;
 端上聚合用于下拉/关联解析,迁移收益低。`operationAudits.ts` 已**主动避开** fetchAllPageItems(注释说明),可参考其服务端分页写法。
 
-## ⚠️ 关键约束:多数端点后端筛选参数不全 → 必须前后端协同,纯前端迁会退化
+## 关键约束：服务端筛选契约必须先于分页迁移
 
-实查(2026-06-21):这些 `/queries/*` 端点**当前只暴露 `tenantId/pageNo/pageSize`,没有业务筛选参数**。
-而前端是**端上全量拉取 + 端上多维筛选**(如 `CatchUpApprovalsTab` 按 status/bizDate/keyword 在
-`filtered` computed 里筛)。
+2026-06-21 的历史实查发现部分 `/queries/*` 端点只暴露分页参数；相关 P1 端点随后补齐筛选契约并完成迁移。
+2026-10-01，文件 Pipeline、步骤、分发和错误列表补齐 `keyword`，步骤列表补齐
+`pipelineInstanceId/stageCode`；Job Step 与 Workflow 的既有筛选参数同步写入 OpenAPI 后，P2 页面完成迁移。
 
 | 端点 | 后端现有 query 参数 | 前端端上筛选维度 | 能否纯前端迁 |
 |---|---|---|---|
@@ -64,10 +63,10 @@ audits/alerts 同理)→ ② 前端把端上 `filtered` 逻辑改成传参 → �
    参考已迁移的**文件列表**(file-center,已服务端分页)+ `operationAudits.ts`。
 3. **过渡兜底**:迁移前,至少把 `fetchAllPageItems` 截断从静默 warn 改成**给用户可见提示**("仅显示前 4000 条,请用筛选缩小范围"),避免"看着全其实不全"。
 
-## 优先级
-- P1:audits / approvals / alerts — **已完成**。
-- P2:step-instance / workflow / pipeline 观测
-- P3:截断用户可见提示(过渡兜底,可先做,成本低)
+## 完成状态
+- P1：audits / approvals / alerts — **已完成**。
+- P2：step-instance / workflow / pipeline 观测 — **已完成**。
+- 过渡截断提示不再用于上述运行态列表；仍保留 `fetchAllPageItems` 的低基数字典和有界子资源继续受统一上限保护。
 
 ## 不做
 配置/字典类(🟡)不迁——量小、收益低,符合"不为指标重构"原则。

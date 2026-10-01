@@ -102,6 +102,10 @@
                     :role="item.role"
                     :streaming="item.status === 'IN_PROGRESS'"
                   />
+                  <AiSourceReferences
+                    v-if="item.role === 'assistant'"
+                    :sources="item.sources ?? []"
+                  />
                   <div v-if="item.role === 'assistant' && item.modelName" class="bubble__model">
                     {{ t('aiChat.modelBy', { model: item.modelName }) }}
                   </div>
@@ -284,6 +288,7 @@
   import { useTenantReload } from '@/composables/useTenantReload'
   import PageContainer from '@/components/common/PageContainer.vue'
   import AiMessageContent from '@/components/common/AiMessageContent.vue'
+  import AiSourceReferences from '@/components/common/AiSourceReferences.vue'
   import AiTextAttachmentPicker from '@/components/common/AiTextAttachmentPicker.vue'
   import MetaSelect from '@/components/common/MetaSelect.vue'
   import PageHeader from '@/components/common/PageHeader.vue'

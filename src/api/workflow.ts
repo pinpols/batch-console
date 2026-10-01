@@ -1,10 +1,10 @@
-import { fetchAllPageItems, toPageResult } from '@/api/adapters'
+import { fetchAllPageItems } from '@/api/adapters'
 import { get, patch, post, put } from '@/api/client'
 import type {
   ConsoleWorkflowDefinitionResponse,
   WorkflowDefinitionDetailResponse,
 } from '@/types/console-api'
-import type { PageResult } from '@/types'
+import type { PageResponse, PageResult } from '@/types'
 import type { components } from '@/types/api.generated'
 
 export interface WorkflowDefinitionQuery {
@@ -28,43 +28,34 @@ export type WorkflowEdgeSaveItem = components['schemas']['WorkflowDefinitionSave
 export type SaveWorkflowRequest = components['schemas']['WorkflowDefinitionSaveRequest']
 
 export const workflowApi = {
-  /**
-   * 拉取全量定义并在前端过滤 + 分页。
-   * 返回 { records, allItems } 以便调用方复用全量数据，避免二次请求。
-   */
+  /** 工作流定义列表直接使用后端过滤和分页，避免随定义数量增长聚合全量页。 */
   listDefinitions: async (
     query: WorkflowDefinitionQuery,
-  ): Promise<
-    PageResult<ConsoleWorkflowDefinitionResponse> & {
-      allItems: ConsoleWorkflowDefinitionResponse[]
-    }
-  > => {
-    const items = await fetchAllPageItems<ConsoleWorkflowDefinitionResponse>(
+  ): Promise<PageResult<ConsoleWorkflowDefinitionResponse>> => {
+    const result = await get<PageResponse<ConsoleWorkflowDefinitionResponse>>(
       '/api/console/queries/workflow-definitions',
-      { tenantId: query.tenantId },
+      {
+        tenantId: query.tenantId,
+        pageNo: query.page,
+        pageSize: query.pageSize,
+        workflowCode: query.workflowCode,
+        workflowName: query.workflowName,
+        enabled: query.enabled,
+        workflowType: query.workflowType,
+        version: query.version,
+      },
     )
-    let rows = [...items]
-    if (query.workflowCode) {
-      rows = rows.filter((r) => r.workflowCode?.includes(query.workflowCode!))
+    return {
+      records: result.items ?? [],
+      total: result.total ?? 0,
+      page: query.page,
+      pageSize: query.pageSize,
     }
-    if (query.workflowName) {
-      rows = rows.filter((r) => r.workflowName?.includes(query.workflowName!))
-    }
-    if (query.enabled != null) {
-      rows = rows.filter((r) => r.enabled === query.enabled)
-    }
-    if (query.workflowType) {
-      rows = rows.filter((r) => r.workflowType?.includes(query.workflowType!))
-    }
-    if (query.version != null) {
-      rows = rows.filter((r) => r.version === query.version)
-    }
-    return { ...toPageResult(rows, query.page, query.pageSize), allItems: items }
   },
 
   /**
-   * 查询单个 workflow 定义。优先使用 workflowCode 参数让后端过滤，
-   * 若后端不支持则回退到全量拉取。
+   * 按编码查询单个 workflow 定义。该点查入口仍兼容同编码的历史版本，
+   * 因而保留有上限的定义聚合；主列表不再依赖该方法。
    */
   detail: async (
     workflowCode: string,
