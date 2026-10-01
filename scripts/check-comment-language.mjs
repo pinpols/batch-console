@@ -173,7 +173,18 @@ function isTechnicalFragment(fragment) {
   if (token.includes('/') && !token.includes('://')) return true
   if (/^[A-Z][A-Z0-9_-]*$/u.test(token)) return true
   if (/^[A-Z][A-Za-z0-9]*$/u.test(token)) return true
-  return /^[\w$]+(?:[.:_-][\w$]+)+$/u.test(token)
+  let hasSeparator = false
+  let segmentLength = 0
+  for (const character of token) {
+    if (/[\p{L}\p{N}_$]/u.test(character)) {
+      segmentLength += 1
+      continue
+    }
+    if (!'.:-'.includes(character) || segmentLength === 0) return false
+    hasSeparator = true
+    segmentLength = 0
+  }
+  return hasSeparator && segmentLength > 0
 }
 
 function isExempt(line) {
