@@ -24,7 +24,6 @@ export interface ConsoleAuthTokenPayload {
   username: string
   tenantId: string
   authorities: string[]
-  capabilities?: string[]
   mustChangePassword: boolean
 }
 
@@ -32,6 +31,8 @@ export interface ConsoleAuthProfilePayload {
   username: string
   tenantId: string
   authorities: string[]
+  /** 后端结合功能开关与用户/角色白名单计算出的动态能力。 */
+  capabilities?: string[]
   /** 后端 ConsoleMenuRegistry 按 authorities 过滤后的菜单树；老版本后端可能无该字段 */
   menus?: MenuGroup[]
   /**

@@ -1061,7 +1061,9 @@ router.beforeEach(async (to, from) => {
     } catch (err) {
       // 探测失败不拦截 —— 让用户继续,避免 BE 抖动把 admin 锁在向导外。
       // 业务页加载失败由各自 loader 处理。
-      logError('[router] systemHasTenants probe failed', err)
+      logError('[router] systemHasTenants probe failed', {
+        error: err instanceof Error ? err.message : String(err),
+      })
     }
   }
 

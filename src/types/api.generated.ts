@@ -7863,7 +7863,7 @@ export interface components {
         | 'REJECTED_SAFETY'
         | 'FAILED'
       /** @description 实际使用的模型名（来自服务端配置）。 */
-      modelName: string
+      modelName: string | null
       /** @description 助手回答；被门禁拒绝时为对应的拒绝提示文案。 */
       answer: string
       /** @description 拒绝原因；APPROVED 时为 null，被门禁拒绝时给出原因。 */

@@ -63,13 +63,16 @@ describe('useAuthStore', () => {
   it('checks dynamic capabilities independently from role authorities', async () => {
     const { authApi } = await import('@/api/auth')
     vi.mocked(authApi.login).mockResolvedValue({
+      token: 'test-token',
       tenantId: 'system',
       userInfo: {
+        userId: 'auditor',
         username: 'auditor',
+        role: 'VIEWER',
         permissions: ['ROLE_AUDITOR'],
         capabilities: ['AI_ASSISTANT_USE'],
       },
-    } as Awaited<ReturnType<typeof authApi.login>>)
+    })
 
     const auth = useAuthStore()
     await auth.login('auditor', 'pw')
@@ -177,13 +180,16 @@ describe('useAuthStore', () => {
   it('marks the authoritative profile loaded only after /auth/me succeeds', async () => {
     const { authApi } = await import('@/api/auth')
     vi.mocked(authApi.login).mockResolvedValue({
+      token: 'test-token',
       tenantId: 'system',
       userInfo: {
+        userId: 'admin',
         username: 'admin',
+        role: 'ADMIN',
         permissions: ['ROLE_ADMIN'],
         capabilities: [],
       },
-    } as Awaited<ReturnType<typeof authApi.login>>)
+    })
     apiMocks.get.mockResolvedValue({
       username: 'admin',
       permissions: ['ROLE_ADMIN'],
@@ -292,13 +298,16 @@ describe('useAuthStore', () => {
       setActivePinia(createPinia())
       const { authApi } = await import('@/api/auth')
       vi.mocked(authApi.login).mockResolvedValue({
+        token: 'test-token',
         tenantId: 'system',
-        userInfo: { permissions: ['ROLE_ADMIN'] } as unknown as Parameters<
-          (typeof import('./auth'))['useAuthStore']
-        > extends never
-          ? never
-          : never,
-      } as Awaited<ReturnType<typeof authApi.login>>)
+        userInfo: {
+          userId: 'admin',
+          username: 'admin',
+          role: 'ADMIN',
+          permissions: ['ROLE_ADMIN'],
+          capabilities: [],
+        },
+      })
 
       const auth = useAuthStore()
       const tenant = useTenantStore()
@@ -313,13 +322,16 @@ describe('useAuthStore', () => {
     it('tenant 业务用户 login → tenant store 正常落到自己租户', async () => {
       const { authApi } = await import('@/api/auth')
       vi.mocked(authApi.login).mockResolvedValue({
+        token: 'test-token',
         tenantId: 'ta',
-        userInfo: { permissions: ['ROLE_TENANT_USER'] } as unknown as Parameters<
-          (typeof import('./auth'))['useAuthStore']
-        > extends never
-          ? never
-          : never,
-      } as Awaited<ReturnType<typeof authApi.login>>)
+        userInfo: {
+          userId: 'op-ta',
+          username: 'op-ta',
+          role: 'VIEWER',
+          permissions: ['ROLE_TENANT_USER'],
+          capabilities: [],
+        },
+      })
 
       const auth = useAuthStore()
       const tenant = useTenantStore()
