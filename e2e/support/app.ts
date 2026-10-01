@@ -1,10 +1,16 @@
 import { type Locator, type Page } from '@playwright/test'
 import { test, expect } from './fixtures'
+import {
+  type E2eLocale,
+  type LocalizedExpectation,
+  resolveLocalizedExpectation,
+  setE2eLocale,
+} from './i18n'
 export { test, expect }
 
 export type RouteCheck = {
   path: string
-  title: string | RegExp
+  title: LocalizedExpectation
 }
 
 export const smokeRoutes: RouteCheck[] = [
@@ -76,18 +82,18 @@ export const smokeRoutes: RouteCheck[] = [
   },
 ]
 
-export async function enterDemoApp(page: Page) {
+export async function enterDemoApp(page: Page, locale: E2eLocale = 'zh-CN') {
   // 第一次访问任意页面前预置 localStorage:locale + onboarding 跳过。
   // 用 addInitScript 保证在每次 navigation 之前(含跳登录后回 ops/summary)都生效。
   // 本地存储键：
   //   - 'batch-console:locale'           见 src/constants/locale.ts:1
   //   - 'batch-console-onboarding-done'  见 src/composables/useOnboardingTour.ts:14
-  await page.addInitScript(() => {
+  await page.addInitScript((nextLocale: E2eLocale) => {
     try {
-      localStorage.setItem('batch-console:locale', 'zh-CN')
+      localStorage.setItem('batch-console:locale', nextLocale)
       localStorage.setItem('batch-console-onboarding-done', '1')
     } catch {}
-  })
+  }, locale)
 
   await page.goto('/ops/summary', { waitUntil: 'domcontentloaded' })
   // FE 启动期 router.beforeEach 异步调 /auth/me,domcontentloaded 可能早于此完成 →
@@ -141,10 +147,10 @@ export async function gotoAndAssertRoute(page: Page, route: RouteCheck) {
 }
 
 export async function waitForRouteStable(page: Page, timeout = 15_000) {
-  await expect(page.getByRole('progressbar', { name: '页面切换中' })).toBeHidden({ timeout })
+  await expect(page.getByRole('progressbar').first()).toBeHidden({ timeout })
 }
 
-export async function expectPageTitle(page: Page, title: string | RegExp) {
+export async function expectPageTitle(page: Page, title: LocalizedExpectation) {
   await waitForRouteStable(page)
   const heading = page.locator('.page-header .title').first()
   // 部分页面(如 WorkflowDesigner 画布)没有 .page-header,直接放行
@@ -152,11 +158,12 @@ export async function expectPageTitle(page: Page, title: string | RegExp) {
   if (exists === 0) return
   // 路由守卫 redirect 兜底:若实际渲染的是默认页(控制面板),直接给清晰错误,
   // 避免下游 button-not-visible / dialog-timeout 等误导性失败掩盖根因。
+  const resolvedTitle = await resolveLocalizedExpectation(page, title)
   try {
-    await expect(heading).toHaveText(title, { timeout: 10_000 })
+    await expect(heading).toHaveText(resolvedTitle, { timeout: 10_000 })
   } catch (e) {
     const actual = (await heading.textContent({ timeout: 500 }).catch(() => null)) ?? ''
-    const expected = title instanceof RegExp ? title.source : title
+    const expected = resolvedTitle instanceof RegExp ? resolvedTitle.source : resolvedTitle
     if (actual.includes('控制面板') && !expected.includes('控制面板')) {
       throw new Error(
         `expectPageTitle: 期望 "${expected}",实际 "${actual}" — 页面被 router guard redirect 到控制面板,` +

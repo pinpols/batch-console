@@ -1,0 +1,7 @@
+# 排除已被替代的历史页、规模快照和一次性验证证据；现行设计与治理资料继续发布。
+# 规则是相对 docs/ 的文件或目录前缀，不支持通配符。
+archive/
+stats/
+verifications/
+e2e-remaining-failures-rootcause-2026-06-22.md
+engineering/内嵌文档中心方案.md
