@@ -52,6 +52,13 @@ describe('permission navigation filtering', () => {
     expect(filterNavigationByBackendMenus(navigationGroups, backendMenus)).toEqual([])
   })
 
+  it('keeps a capability path even when the static backend menu omits it', () => {
+    const result = filterNavigationByBackendMenus(navigationGroups, [], ['/system/ai-chat'])
+
+    const paths = result.flatMap((group) => group.children.map((item) => item.path))
+    expect(paths).toEqual(['/system/ai-chat'])
+  })
+
   it('allows local IA regrouping while preserving backend path visibility', () => {
     const backendMenus: MenuGroup[] = [
       {
@@ -119,7 +126,7 @@ describe('permission navigation filtering', () => {
     const visiblePaths = navigationGroups.flatMap((group) =>
       group.children.filter((item) => !item.hidden).map((item) => item.path),
     )
-    expect(visiblePaths).toHaveLength(25)
+    expect(visiblePaths).toHaveLength(26)
     expect(new Set(visiblePaths).size).toBe(visiblePaths.length)
 
     const hiddenPaths = navigationGroups.flatMap((group) =>

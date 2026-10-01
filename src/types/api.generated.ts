@@ -7863,7 +7863,7 @@ export interface components {
         | 'REJECTED_SAFETY'
         | 'FAILED'
       /** @description 实际使用的模型名（来自服务端配置）。 */
-      modelName: string
+      modelName: string | null
       /** @description 助手回答；被门禁拒绝时为对应的拒绝提示文案。 */
       answer: string
       /** @description 拒绝原因；APPROVED 时为 null，被门禁拒绝时给出原因。 */
@@ -8845,6 +8845,8 @@ export interface components {
       authorities: string[]
       /** @description 按当前用户 authorities 过滤后的侧边栏菜单树，由后端 ConsoleMenuRegistry 下发，前端不再硬编码。 */
       menus: components['schemas']['ConsoleMenuGroup'][]
+      /** @description 当前用户已开通的动态控制台能力；能力同时考虑功能开关和用户/角色白名单。 */
+      capabilities: string[]
       /** @description 首次登录/重置后建议更新密码提示标志；true 时 FE 显示非阻断提醒。 */
       mustChangePassword: boolean
     }
@@ -11772,6 +11774,13 @@ export interface operations {
       }
       /** @description Not authenticated */
       401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description Requires ROLE_ADMIN, ROLE_AUDITOR, or ROLE_TENANT_ADMIN */
+      403: {
         headers: {
           [name: string]: unknown
         }

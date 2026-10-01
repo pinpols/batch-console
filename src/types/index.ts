@@ -72,6 +72,8 @@ export interface UserInfo {
   username: string
   role: Role
   permissions: string[]
+  /** 后端结合功能开关与用户/角色白名单计算出的动态能力。 */
+  capabilities: string[]
   /** 后端下发的侧边栏菜单（已按当前 authorities 过滤） */
   menus?: MenuGroup[]
   /**
@@ -208,13 +210,7 @@ export interface JobPartition {
 }
 
 export type WorkflowRunStatus =
-  | 'CREATED'
-  | 'RUNNING'
-  | 'SUCCESS'
-  | 'PARTIAL_FAILED'
-  | 'FAILED'
-  | 'CANCELLED'
-  | 'TERMINATED'
+  'CREATED' | 'RUNNING' | 'SUCCESS' | 'PARTIAL_FAILED' | 'FAILED' | 'CANCELLED' | 'TERMINATED'
 
 export interface WorkflowRun {
   id: number

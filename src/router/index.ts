@@ -524,8 +524,8 @@ export const routes: RouteRecordRaw[] = [
         name: 'observability-usage',
         component: () => import('@/views/observability/UsageSummary.vue'),
         meta: {
-          title: '使用率',
-          activeMenu: '/observability/audits',
+          title: '使用统计',
+          activeMenu: '/observability/usage',
           minRole: 'VIEWER',
           permissions: ['ROLE_ADMIN', 'ROLE_TENANT_ADMIN', 'ROLE_AUDITOR'],
         },
@@ -691,7 +691,8 @@ export const routes: RouteRecordRaw[] = [
         meta: {
           title: 'AI 助手',
           activeMenu: '/system/ai-chat',
-          minRole: 'ADMIN',
+          minRole: 'VIEWER',
+          capabilities: ['AI_ASSISTANT_USE'],
         },
       },
       {
@@ -975,14 +976,15 @@ router.beforeEach(async (to, from) => {
   const auth = useAuthStore()
   const permission = usePermissionStore()
 
-  // 维护期(enabled=true 且非 readOnly):除维护页/登录页外都重定向到 /maintenance
-  // readOnly 模式不强跳,让用户继续读;写按钮由 store.writesFrozen 禁用
+  // 未登录用户和普通用户在完整维护期进入维护页；已登录但画像尚未加载时延后判断，
+  // 避免误拦后端明确允许全程操作的 ROLE_ADMIN。
   const app = useAppStore()
   if (
     app.maintenance.enabled &&
     !app.maintenance.readOnly &&
     to.name !== 'maintenance' &&
-    to.name !== 'login'
+    to.name !== 'login' &&
+    (!auth.isLoggedIn || (auth.userInfo && !auth.hasPermission('ROLE_ADMIN')))
   ) {
     return { name: 'maintenance', query: { redirect: to.fullPath } }
   }
@@ -1015,7 +1017,7 @@ router.beforeEach(async (to, from) => {
     return { path: '/m/ops/summary' }
   }
 
-  if (!auth.userInfo) {
+  if (!auth.profileLoaded) {
     try {
       await auth.fetchMe()
     } catch (err) {
@@ -1029,6 +1031,16 @@ router.beforeEach(async (to, from) => {
       // 透明放行:userInfo 仍为 null,各页面自身 loadXxx 会再次失败 + toast,
       // 但用户不会被无声踢出。
     }
+  }
+
+  if (
+    app.maintenance.enabled &&
+    !app.maintenance.readOnly &&
+    !auth.hasPermission('ROLE_ADMIN') &&
+    to.name !== 'maintenance' &&
+    to.name !== 'login'
+  ) {
+    return { name: 'maintenance', query: { redirect: to.fullPath } }
   }
 
   // 首登向导:系统 0 租户时,ADMIN 必须先建第一个租户。其它角色无创建权限,
@@ -1049,7 +1061,9 @@ router.beforeEach(async (to, from) => {
     } catch (err) {
       // 探测失败不拦截 —— 让用户继续,避免 BE 抖动把 admin 锁在向导外。
       // 业务页加载失败由各自 loader 处理。
-      logError('[router] systemHasTenants probe failed', err)
+      logError('[router] systemHasTenants probe failed', {
+        error: err instanceof Error ? err.message : String(err),
+      })
     }
   }
 
@@ -1063,13 +1077,21 @@ router.beforeEach(async (to, from) => {
     return { path: '/' }
   }
 
+  const capabilities = to.meta.capabilities as string[] | undefined
+  if (capabilities && !capabilities.some((capability) => auth.hasCapability(capability))) {
+    return { path: '/' }
+  }
+
   // 后端 /auth/me 下发的菜单是当前租户+authorities 的最终可见性来源。
   // 静态 minRole 只表示前端粗粒度等级；当后端菜单存在时，路由也必须按菜单 allowlist 收口，
   // 避免用户通过 URL、历史标签或命令面板进入已被后端隐藏的页面。
   const activeMenu = to.meta.activeMenu as string | undefined
   const menuPath = activeMenu || to.path
   const allowWithoutMenu =
-    to.path === '/system/me' || to.path === '/system/users' || to.path.startsWith('/m/')
+    to.path === '/system/me' ||
+    to.path === '/system/users' ||
+    to.path.startsWith('/m/') ||
+    (to.path === '/system/ai-chat' && auth.hasCapability('AI_ASSISTANT_USE'))
   if (!allowWithoutMenu && !permission.hasBackendMenuAccess(menuPath)) {
     return { path: '/' }
   }

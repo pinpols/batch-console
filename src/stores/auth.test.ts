@@ -34,6 +34,7 @@ vi.mock('@/api/auth', () => ({
     username: p.username,
     role: p.role,
     permissions: p.permissions ?? [],
+    capabilities: p.capabilities ?? [],
     menus: p.menus,
     mustChangePassword: p.mustChangePassword,
   })),
@@ -57,6 +58,27 @@ describe('useAuthStore', () => {
     setActivePinia(createPinia())
     const auth = useAuthStore()
     expect(auth.isLoggedIn).toBe(true)
+  })
+
+  it('checks dynamic capabilities independently from role authorities', async () => {
+    const { authApi } = await import('@/api/auth')
+    vi.mocked(authApi.login).mockResolvedValue({
+      token: 'test-token',
+      tenantId: 'system',
+      userInfo: {
+        userId: 'auditor',
+        username: 'auditor',
+        role: 'VIEWER',
+        permissions: ['ROLE_AUDITOR'],
+        capabilities: ['AI_ASSISTANT_USE'],
+      },
+    })
+
+    const auth = useAuthStore()
+    await auth.login('auditor', 'pw')
+
+    expect(auth.hasCapability('AI_ASSISTANT_USE')).toBe(true)
+    expect(auth.hasCapability('UNKNOWN')).toBe(false)
   })
 
   it('hasPermission returns false when no userInfo', () => {
@@ -155,6 +177,34 @@ describe('useAuthStore', () => {
     expect(auth.userInfo?.username).toBe('test')
   })
 
+  it('marks the authoritative profile loaded only after /auth/me succeeds', async () => {
+    const { authApi } = await import('@/api/auth')
+    vi.mocked(authApi.login).mockResolvedValue({
+      token: 'test-token',
+      tenantId: 'system',
+      userInfo: {
+        userId: 'admin',
+        username: 'admin',
+        role: 'ADMIN',
+        permissions: ['ROLE_ADMIN'],
+        capabilities: [],
+      },
+    })
+    apiMocks.get.mockResolvedValue({
+      username: 'admin',
+      permissions: ['ROLE_ADMIN'],
+      capabilities: ['AI_ASSISTANT_USE'],
+    })
+
+    const auth = useAuthStore()
+    await auth.login('admin', 'pw')
+    expect(auth.profileLoaded).toBe(false)
+
+    await auth.fetchMe()
+    expect(auth.profileLoaded).toBe(true)
+    expect(auth.hasCapability('AI_ASSISTANT_USE')).toBe(true)
+  })
+
   it('fetchMe discards stale response after tenant switch mid-flight', async () => {
     const { get } = await import('@/api/client')
     const mockedGet = vi.mocked(get)
@@ -248,13 +298,16 @@ describe('useAuthStore', () => {
       setActivePinia(createPinia())
       const { authApi } = await import('@/api/auth')
       vi.mocked(authApi.login).mockResolvedValue({
+        token: 'test-token',
         tenantId: 'system',
-        userInfo: { permissions: ['ROLE_ADMIN'] } as unknown as Parameters<
-          (typeof import('./auth'))['useAuthStore']
-        > extends never
-          ? never
-          : never,
-      } as Awaited<ReturnType<typeof authApi.login>>)
+        userInfo: {
+          userId: 'admin',
+          username: 'admin',
+          role: 'ADMIN',
+          permissions: ['ROLE_ADMIN'],
+          capabilities: [],
+        },
+      })
 
       const auth = useAuthStore()
       const tenant = useTenantStore()
@@ -269,13 +322,16 @@ describe('useAuthStore', () => {
     it('tenant 业务用户 login → tenant store 正常落到自己租户', async () => {
       const { authApi } = await import('@/api/auth')
       vi.mocked(authApi.login).mockResolvedValue({
+        token: 'test-token',
         tenantId: 'ta',
-        userInfo: { permissions: ['ROLE_TENANT_USER'] } as unknown as Parameters<
-          (typeof import('./auth'))['useAuthStore']
-        > extends never
-          ? never
-          : never,
-      } as Awaited<ReturnType<typeof authApi.login>>)
+        userInfo: {
+          userId: 'op-ta',
+          username: 'op-ta',
+          role: 'VIEWER',
+          permissions: ['ROLE_TENANT_USER'],
+          capabilities: [],
+        },
+      })
 
       const auth = useAuthStore()
       const tenant = useTenantStore()

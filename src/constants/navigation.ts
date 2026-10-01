@@ -60,6 +60,8 @@ export interface NavigationItem {
   minRole?: Role
   /** 精确 authority 白名单；用于无法由 VIEWER/OPERATOR/ADMIN 层级表达的角色能力。 */
   authorities?: string[]
+  /** 后端 /auth/me 动态能力；用于受功能开关和白名单共同控制的入口。 */
+  capabilities?: string[]
   /** 隐藏出现在侧边栏,但 Command Palette / 内嵌跳转 仍可达 */
   hidden?: boolean
   /**
@@ -160,6 +162,13 @@ export const navigationGroups: NavigationGroup[] = [
         path: '/observability/trace',
         minRole: 'VIEWER',
         icon: Search,
+      },
+      {
+        title: pageTitle('/observability/usage'),
+        path: '/observability/usage',
+        minRole: 'VIEWER',
+        authorities: ['ROLE_ADMIN', 'ROLE_TENANT_ADMIN', 'ROLE_AUDITOR'],
+        icon: DataAnalysis,
       },
       {
         title: pageTitle('/ops/diagnostic'),
@@ -478,7 +487,8 @@ export const navigationGroups: NavigationGroup[] = [
       {
         title: pageTitle('/system/ai-chat'),
         path: '/system/ai-chat',
-        minRole: 'ADMIN',
+        minRole: 'VIEWER',
+        capabilities: ['AI_ASSISTANT_USE'],
         icon: Document,
         hidden: true,
       },

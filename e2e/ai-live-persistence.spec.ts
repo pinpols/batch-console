@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto'
 import { expect, test } from './support/app'
 
 test.use({ storageState: { cookies: [], origins: [] } })
@@ -27,29 +28,49 @@ test('AI conversation survives reload and can be deleted', async ({ page }) => {
   await page.goto('/system/ai-chat')
   await expect(page.locator('.composer__editor textarea')).toBeVisible()
 
-  const prompt = `查询批量调度运行概况 e2e-${Date.now()}`
-  await page.locator('.composer__editor textarea').fill(prompt)
-  const chatResponse = page.waitForResponse((response) =>
-    response.url().includes('/api/console/ai/chat') && response.request().method() === 'POST',
-  )
-  await page.getByRole('button', { name: '发送' }).click()
-  const response = await chatResponse
-  const payload = await response.json()
-  expect(response.status(), `${payload.code}: ${payload.message}`).toBe(200)
-  expect(payload.data.promptDecision).toBe('APPROVED')
-  expect(payload.data.sessionId).toBeTruthy()
-  expect(payload.data.answer).toBeTruthy()
-  await expect(page.locator('.bubble__body')).toContainText([prompt, payload.data.answer])
+  let sessionId: string | undefined
+  try {
+    const prompt = `查询批量调度运行概况 e2e-${randomUUID()}`
+    await page.locator('.composer__editor textarea').fill(prompt)
+    const chatResponse = page.waitForResponse((response) =>
+      response.url().includes('/api/console/ai/chat') && response.request().method() === 'POST',
+    )
+    await page.getByRole('button', { name: '发送' }).click()
+    const response = await chatResponse
+    const payload = await response.json()
+    expect(response.status(), `${payload.code}: ${payload.message}`).toBe(200)
+    expect(payload.data.promptDecision).toBe('APPROVED')
+    sessionId = payload.data.sessionId
+    expect(sessionId).toBeTruthy()
+    expect(payload.data.answer).toBeTruthy()
+    await expect(page.locator('.bubble--user .bubble__body')).toHaveText(prompt)
+    const answer = page.locator('.bubble--assistant .bubble__body')
+    await expect(answer).not.toBeEmpty()
+    const renderedAnswer = await answer.innerText()
 
-  await page.reload()
-  const conversation = page.locator(
-    `.conversation-list__item[data-conversation-id="${payload.data.sessionId}"]`,
-  )
-  await expect(conversation).toBeVisible()
-  await conversation.locator('.conversation-list__open').click()
-  await expect(page.locator('.bubble__body')).toContainText([prompt, payload.data.answer])
+    await page.reload()
+    const conversation = page.locator(
+      `.conversation-list__item[data-conversation-id="${sessionId}"]`,
+    )
+    await expect(conversation).toBeVisible()
+    await conversation.locator('.conversation-list__open').click()
+    await expect(page.locator('.bubble--user .bubble__body')).toHaveText(prompt)
+    await expect(page.locator('.bubble--assistant .bubble__body')).toHaveText(renderedAnswer)
 
-  await conversation.getByRole('button', { name: '删除会话' }).click()
-  await page.getByRole('dialog').getByRole('button', { name: '确定' }).click()
-  await expect(conversation).toHaveCount(0)
+    await conversation.getByRole('button', { name: '删除会话' }).click()
+    await page.getByRole('dialog').getByRole('button', { name: '确定' }).click()
+    await expect(conversation).toHaveCount(0)
+  } finally {
+    if (sessionId) {
+      const xsrf = (await page.context().cookies()).find((cookie) => cookie.name === 'XSRF-TOKEN')
+      const cleanup = await page.request.delete(`/api/console/ai/conversations/${sessionId}`, {
+        headers: {
+          'X-Tenant-Id': 'ta',
+          'X-XSRF-TOKEN': xsrf?.value ?? '',
+          'Idempotency-Key': randomUUID(),
+        },
+      })
+      expect([200, 404], `cleanup conversation ${sessionId}`).toContain(cleanup.status())
+    }
+  }
 })

@@ -3,10 +3,11 @@
  * 这是个写接口(POST),前端有发送消息流程。
  */
 import { expect, test } from './support/app'
-import { enterDemoApp, expectPageTitle, isVisible } from './support/app'
+import { enterDemoApp, expectPageTitle, grantAiCapability, isVisible } from './support/app'
 
 test.describe('AI Chat', () => {
   test.beforeEach(async ({ page }) => {
+    await grantAiCapability(page)
     await enterDemoApp(page)
     await page.goto('/system/ai-chat')
     await expectPageTitle(page, 'AI 助手')

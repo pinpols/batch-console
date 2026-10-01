@@ -1,5 +1,5 @@
 import { expect, test } from './support/app'
-import { enterDemoApp, expectPageTitle } from './support/app'
+import { enterDemoApp, expectPageTitle, grantAiCapability } from './support/app'
 
 test.describe('tenant management (租户管理)', () => {
   test.beforeEach(async ({ page }) => {
@@ -102,6 +102,7 @@ test.describe('event catalog (事件目录)', () => {
 
 test.describe('AI chat (AI 助手)', () => {
   test.beforeEach(async ({ page }) => {
+    await grantAiCapability(page)
     await enterDemoApp(page)
   })
 

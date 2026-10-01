@@ -127,9 +127,9 @@ export function useAiChatSession() {
         content: res.answer || emptyAnswer,
         decision: res.promptDecision,
         refusalReason: res.refusalReason,
-        modelName: res.modelName,
+        modelName: res.modelName ?? undefined,
       })
-      if (prompt.value === draft) prompt.value = ''
+      if (res.promptDecision === 'APPROVED' && prompt.value === draft) prompt.value = ''
       return true
     } catch (error) {
       if (requestGeneration !== generation || tenant.tenantId !== tenantId) return false

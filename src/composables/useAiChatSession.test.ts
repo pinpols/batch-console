@@ -54,6 +54,29 @@ describe('useAiChatSession', () => {
     expect(chat.sendErrorKey.value).toBe('aiChat.sendError')
   })
 
+  it('keeps the draft when the backend persists a failed model response', async () => {
+    mockedChat.mockResolvedValue({
+      requestId: 'r-failed',
+      traceId: 't-failed',
+      sessionId: 's-failed',
+      promptCategory: 'OPERATIONS',
+      promptDecision: 'FAILED',
+      modelName: null,
+      answer: 'AI is temporarily unavailable.',
+      refusalReason: null,
+    })
+    const chat = useAiChatSession()
+    chat.prompt.value = 'Retry this question'
+
+    expect(await chat.send('Empty')).toBe(true)
+    expect(chat.prompt.value).toBe('Retry this question')
+    expect(chat.sessionId.value).toBe('s-failed')
+    expect(chat.messages.value[1]).toMatchObject({
+      decision: 'FAILED',
+      content: 'AI is temporarily unavailable.',
+    })
+  })
+
   it.each([
     [{ rateLimited: true }, 'aiChat.sendRateLimited'],
     [{ response: { status: 429, data: { code: 'RATE_LIMITED' } } }, 'aiChat.sendRateLimited'],

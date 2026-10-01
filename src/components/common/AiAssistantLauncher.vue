@@ -113,7 +113,7 @@
     return key ? t(key) : t('aiPanel.noPageContext')
   })
   const visible = computed(
-    () => auth.isLoggedIn && auth.hasPermission('ROLE_ADMIN') && Boolean(tenant.tenantId),
+    () => auth.isLoggedIn && auth.hasCapability('AI_ASSISTANT_USE') && Boolean(tenant.tenantId),
   )
   const currentPageType = computed(() => aiPageType(route.name))
   const contextStale = computed(

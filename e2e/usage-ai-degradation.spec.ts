@@ -1,9 +1,10 @@
 import { expect, test } from './support/app'
-import { enterDemoApp } from './support/app'
+import { enterDemoApp, grantAiCapability } from './support/app'
 import { request as apiRequest } from '@playwright/test'
 
 test.describe('Usage, AI and degradation', () => {
   test.beforeEach(async ({ page }) => {
+    await grantAiCapability(page)
     await enterDemoApp(page)
   })
 
@@ -108,7 +109,7 @@ test.describe('Usage, AI and degradation', () => {
 
   test('audit page links directly to the usage report', async ({ page }) => {
     await page.goto('/observability/audits')
-    await page.getByRole('button', { name: '使用率' }).click()
+    await page.getByRole('button', { name: '使用统计' }).click()
     await expect(page).toHaveURL(/\/observability\/usage$/)
     await expect(page.locator('.usage-total')).toHaveCount(3)
   })
@@ -565,6 +566,25 @@ test.describe('Usage, AI and degradation', () => {
       })
       expect(other.status()).toBe(403)
       expect((await other.json()).code).toBe('FORBIDDEN')
+    } finally {
+      await api.dispose()
+    }
+  })
+
+  test('tenant user cannot read the usage summary directly', async ({}, testInfo) => {
+    const baseURL = testInfo.project.use.baseURL
+    if (!baseURL) throw new Error('Playwright baseURL is required for role testing')
+    const api = await apiRequest.newContext({
+      baseURL,
+      storageState: 'e2e/.auth/role-tenantUser.json',
+      extraHTTPHeaders: { 'X-Tenant-Id': 'tx' },
+    })
+    try {
+      const response = await api.get('/api/console/queries/usage-summary', {
+        params: { tenantId: 'tx', from: '2026-09-29', to: '2026-09-30' },
+      })
+      expect(response.status()).toBe(403)
+      expect((await response.json()).code).toBe('FORBIDDEN')
     } finally {
       await api.dispose()
     }
