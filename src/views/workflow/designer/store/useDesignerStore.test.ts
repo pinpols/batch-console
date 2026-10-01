@@ -28,8 +28,8 @@ describe('useDesignerStore', () => {
     s.addNode({ nodeCode: 'a', nodeType: 'START', x: 0, y: 0 })
     s.addNode({ nodeCode: 'b', nodeType: 'JOB', x: 100, y: 0 })
     s.addEdge({ source: 'a', target: 'b' })
-    s.addEdge({ source: 'a', target: 'b' }) // dupe
-    s.addEdge({ source: 'a', target: 'a' }) // self
+    s.addEdge({ source: 'a', target: 'b' }) // 重复节点
+    s.addEdge({ source: 'a', target: 'a' }) // 自连接
     expect(s.edges).toHaveLength(1)
   })
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =========================================================
-# sync-from-main.sh
+# 主分支同步脚本 sync-from-main.sh
 #
 # 把长生命周期 feature 分支同步到 main(本地 + 远端)。
 # 分支清单写死在下面 BRANCHES 数组,与 .git/info/branch-hygiene 对齐。
@@ -80,7 +80,7 @@ for b in "${TARGETS[@]}"; do
   fi
 
   if [[ "$ahead" != "0" ]]; then
-    # diverged
+    # 分支已产生分歧
     if [[ $MERGE_MODE -eq 0 ]]; then
       echo "  ${YELLOW}diverged${RESET}: $b 独有 $ahead, main 独有 $behind — 跳过(--merge 可自动 3-way merge)"
       diverged+=("$b")

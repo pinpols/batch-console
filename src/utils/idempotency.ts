@@ -1,6 +1,6 @@
 let fallbackCounter = 0
 
-/** Generated idempotency key for console write APIs (see console-api-protocol). */
+/** 为控制台写接口生成幂等键，详见 console-api-protocol。 */
 export function createIdempotencyKey(): string {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
     return crypto.randomUUID()

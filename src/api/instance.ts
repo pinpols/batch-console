@@ -14,9 +14,9 @@ export interface WorkflowRunQuery {
   tenantId?: string
   /** 由 workflowCode 在页面侧解析为 definitionId 后传入 */
   workflowDefinitionId?: number
-  /** exact match */
+  /** 精确匹配 */
   runStatus?: string
-  /** partial match */
+  /** 模糊匹配 */
   traceId?: string
   page: number
   pageSize: number

@@ -2,7 +2,7 @@ import { get, post, del } from '@/api/client'
 
 export type ResourceType = 'JOB' | 'WORKFLOW' | 'FILE_CHANNEL' | 'FILE_TEMPLATE'
 
-/** GET /api/console/tags — list tags for a resource */
+/** GET /api/console/tags — 查询资源标签 */
 export function listResourceTags(
   tenantId: string,
   resourceType: ResourceType,
@@ -11,7 +11,7 @@ export function listResourceTags(
   return get<unknown>('/api/console/tags', { tenantId, resourceType, resourceCode })
 }
 
-/** POST /api/console/tags — upsert a tag */
+/** POST /api/console/tags — 新增或更新标签 */
 export function upsertResourceTag(
   tenantId: string,
   body: {
@@ -24,7 +24,7 @@ export function upsertResourceTag(
   return post<void>('/api/console/tags', body, { params: { tenantId } })
 }
 
-/** DELETE /api/console/tags — delete a single tag */
+/** DELETE /api/console/tags — 删除单个标签 */
 export function deleteResourceTag(
   tenantId: string,
   resourceType: string,
@@ -50,7 +50,7 @@ export function listTagKeys(tenantId: string) {
   return get<unknown>('/api/console/tags/keys', { tenantId })
 }
 
-/** DELETE /api/console/tags/all — delete all tags for a resource */
+/** DELETE /api/console/tags/all — 删除资源的全部标签 */
 export function deleteAllResourceTags(
   tenantId: string,
   resourceType: string,

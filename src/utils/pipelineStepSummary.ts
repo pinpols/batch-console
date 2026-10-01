@@ -6,9 +6,9 @@
  * buildOutputSummary 写入累计 attribute 快照),响应里就有,无需 BE 端点。本工具把它解析出来。
  *
  * stage→key 映射对应 file-batch-system 各 stage 枚举的产出计数:
- *   import  RECEIVE/PREPROCESS/PARSE/VALIDATE/LOAD/FEEDBACK → parsedCount/validatedCount/loadedCount
- *   export  PREPARE/GENERATE/STORE/REGISTER/COMPLETE        → recordCount
- *   process PREPARE/COMPUTE/VALIDATE/COMMIT/FEEDBACK         → processedCount/stagedCount/publishedCount
+ *   导入：RECEIVE/PREPROCESS/PARSE/VALIDATE/LOAD/FEEDBACK → parsedCount/validatedCount/loadedCount
+ *   导出：PREPARE/GENERATE/STORE/REGISTER/COMPLETE → recordCount
+ *   处理：PREPARE/COMPUTE/VALIDATE/COMMIT/FEEDBACK → processedCount/stagedCount/publishedCount
  */
 
 /** stageCode → outputSummary 里的主计数字段。 */

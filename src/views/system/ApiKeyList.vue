@@ -414,7 +414,7 @@
       })
       await revokeApiKey(row.id as number, tenant.tenantId)
       ElMessage.success(t('apiKeyList.revokedToast'))
-      // Optimistic UI: update row immediately (so button/text changes right away)
+      // 乐观更新：立即更新当前行，使按钮和文案及时变化。
       row.revokedAt = new Date().toISOString()
       row.enabled = false
       await load()

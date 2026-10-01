@@ -16,7 +16,7 @@ description: 修改或审查前端架构边界、环境变量登记、可维护�
 
 | 改动 | 必查项 |
 |---|---|
-| `src/**` | `check:architecture`、`check:maintainability` |
+| `src/**` | `check:comments`、`check:architecture`、`check:maintainability` |
 | `.env*`、Docker、Compose、workflow | `check:env` |
 | `.github/workflows/**` | `check:workflows`，可用时再跑 `actionlint` |
 | `package.json`、`package-lock.json` | `check:version`、`compliance:check` |
@@ -34,5 +34,6 @@ description: 修改或审查前端架构边界、环境变量登记、可维护�
 ## 结果处理
 
 - 错误必须修复后重跑；维护性观察项是非阻断警告，但新增超限文件或继续扩大既有大文件时应优先拆分。
+- `check:comments` 只要求解释性注释使用中文；API 路径、类型字段、命令、代码示例和工具指令保持权威原文。
 - `compliance:check` 发现漂移时运行 `npm run compliance:sbom` 并提交确定性生成结果，不手工编辑 SBOM 或许可证清单。
 - 报告区分 PASS、FAIL、SKIP 和未运行，并写明真实后端、mock、preview 或 staging 的证据边界。

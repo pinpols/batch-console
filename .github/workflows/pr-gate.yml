@@ -50,6 +50,9 @@ jobs:
       - name: Check UTF-8 text encoding
         run: npm run check:encoding
 
+      - name: Check Chinese explanatory comments
+        run: npm run check:comments
+
       - name: ESLint（check 模式，不 auto-fix）
         run: npm run lint:check
 

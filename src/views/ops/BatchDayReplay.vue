@@ -94,7 +94,7 @@
       </el-table>
     </SectionCard>
 
-    <!-- Submit drawer -->
+    <!-- 提交抽屉 -->
     <el-drawer
       v-model="submitDrawerOpen"
       :title="t('batchDayReplay.submitTitle')"
@@ -307,7 +307,7 @@
       </template>
     </el-drawer>
 
-    <!-- Detail drawer -->
+    <!-- 详情抽屉 -->
     <el-drawer
       v-model="detailDrawerOpen"
       :title="

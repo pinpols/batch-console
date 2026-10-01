@@ -1,8 +1,8 @@
 /**
- * Mobile-ops e2e mock helpers.
+ * 移动端运维 E2E mock 辅助方法。
  *
- * Mocks the read & write endpoints used by /m/* views so spec can run
- * without a live backend. Real-BE mode: env E2E_REAL_BE=1 skips installs.
+ * Mock `/m/*` 视图使用的读写端点，使测试可在没有真实后端时运行。
+ * 真实后端模式设置 E2E_REAL_BE=1，此时跳过 mock 安装。
  */
 import type { Page, Route } from '@playwright/test'
 
@@ -138,8 +138,8 @@ export type MockSpec = {
 }
 
 /**
- * Install GET-route mocks for the most common mobile-ops endpoints.
- * Call BEFORE page.goto. Pass spec={} to use default fixtures.
+ * 为常用移动端运维端点安装 GET 路由 mock。
+ * 必须在 page.goto 前调用；传入 spec={} 可使用默认夹具。
  */
 export async function installMobileMocks(page: Page, spec: MockSpec = {}) {
   if (useRealBE) return
@@ -149,8 +149,8 @@ export async function installMobileMocks(page: Page, spec: MockSpec = {}) {
   const outbox = spec.outbox ?? FIXTURES.outbox
   const files = spec.files ?? FIXTURES.files
 
-  // Router guards always hydrate the current profile before mounting a protected page.
-  // Keep mock-mode independent from a running backend instead of stalling on /auth/me.
+  // 路由守卫在挂载受保护页面前始终会加载当前用户资料。
+  // Mock 模式应独立于运行中的后端，避免阻塞在 /auth/me。
   await page.route('**/api/console/auth/me', (r) =>
     ok(r, {
       username: 'mobile-e2e',

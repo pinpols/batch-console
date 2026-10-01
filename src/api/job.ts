@@ -130,7 +130,7 @@ export const jobApi = {
   getDefinition: (id: number, tenantId: string) =>
     get<ConsoleJobDefinitionResponse>(`/api/console/job-definitions/${id}`, { tenantId }),
 
-  /** POST /api/console/job-definitions — create */
+  /** POST /api/console/job-definitions — 创建作业定义 */
   createDefinition: (body: JobDefinitionCreateRequest) =>
     post<number>('/api/console/job-definitions', body),
 
@@ -138,7 +138,7 @@ export const jobApi = {
   updateDefinition: (id: number, body: JobDefinitionUpdateRequest) =>
     put<void>(`/api/console/job-definitions/${id}`, body),
 
-  /** POST /api/console/jobs/rerun — rerun a failed instance */
+  /** POST /api/console/jobs/rerun — 重跑失败实例 */
   rerun: (body: {
     tenantId: string
     jobCode: string

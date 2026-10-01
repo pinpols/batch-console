@@ -46,7 +46,7 @@ const PAGES: PageCheck[] = [
   // 定义
   { path: '/jobs/definitions', title: '作业定义', drillFirstRow: true },
   { path: '/workflow/definitions', title: '工作流定义', drillFirstRow: true },
-  // Runs
+  // 运行记录
   { path: '/runs', title: '全部运行' },
   { path: '/monitor/job-instances', title: '作业运行', drillFirstRow: true },
   { path: '/monitor/job-steps', title: '作业步骤' },

@@ -93,6 +93,15 @@ const releaseImpact = hasAny(files, [
   (f) => /^(src\/|public\/|Dockerfile$|docker-compose.*\.ya?ml$|nginx\/|package(?:-lock)?\.json$)/.test(f),
 ])
 
+const commentScopeChanged = hasAny(files, [
+  (f) => /^(src|e2e|scripts)\/.+\.(cjs|css|js|mjs|sh|ts|tsx|vue)$/.test(f),
+  (f) => ['eslint.config.js', 'playwright.config.cjs', 'playwright.visual.config.cjs', 'vite.config.ts'].includes(f),
+])
+
+if (commentScopeChanged) {
+  run('Chinese explanatory comments', 'npm', ['run', 'check:comments'])
+}
+
 if (packageChanged) {
   run('package version alignment', 'npm', ['run', 'check:version'])
 }

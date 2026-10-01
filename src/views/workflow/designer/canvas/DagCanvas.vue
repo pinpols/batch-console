@@ -88,7 +88,7 @@
       }
       return
     }
-    // Ctrl+Z / Ctrl+Y
+    // 撤销与重做快捷键：Ctrl+Z / Ctrl+Y
     if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === 'z') {
       ev.preventDefault()
       store.undo()

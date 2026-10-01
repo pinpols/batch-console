@@ -219,8 +219,8 @@ const messages: Messages = {
     canvasHintDelete: 'to delete ·',
     canvasHintShiftKey: 'to quick-add downstream',
   },
-  // Workflow DAG designer — Spike phase (file-batch-system/docs/design/workflow-dag-designer.md §8).
-  // Separate namespace from `workflowDesigner` (existing legacy keys, unused in current build).
+  // 工作流 DAG 设计器的 Spike 阶段，参见 file-batch-system/docs/design/workflow-dag-designer.md §8。
+  // 与 `workflowDesigner` 分开命名；后者为当前构建未使用的历史键。
   workflowDesignerSearch: {
     placeholder: 'Search nodes…',
     noMatch: 'No matching node',
@@ -258,7 +258,7 @@ const messages: Messages = {
     saveSpikeToast: 'Spike: snapshot logged to console (backend save lands in MVP)',
     mermaidDialogTitle: 'Mermaid export',
   },
-  // Workflow DAG designer — MVP phase (file-batch-system/docs/design/workflow-dag-designer.md §FE MVP).
+  // 工作流 DAG 设计器的 MVP 阶段，参见 file-batch-system/docs/design/workflow-dag-designer.md §FE MVP。
   workflowDesignerMvp: {
     nodeGateway: 'GATEWAY',
     nodeFileStep: 'FILE_STEP',
@@ -381,7 +381,7 @@ const messages: Messages = {
       lost_network: 'Lock renewal failed (network); auto-renew stopped',
     },
   },
-  // Workflow DAG designer — Polish phase (file-batch-system/docs/design/workflow-dag-designer.md §Polish FE).
+  // 工作流 DAG 设计器的完善阶段，参见 file-batch-system/docs/design/workflow-dag-designer.md §Polish FE。
   workflowDesignerPolish: {
     actionQuickPalette: 'Quick palette',
     actionTemplates: 'Templates',
@@ -427,7 +427,7 @@ const messages: Messages = {
     diffStatus_modified: 'Modified',
     diffStatus_unchanged: 'Unchanged',
   },
-  // Workflow DAG designer — JSON sync bottom tab (designer sub-feature).
+  // 工作流 DAG 设计器的 JSON 同步底部页签。
   workflowDesignerJson: {
     toolbarButton: 'JSON',
     panelTitle: 'JSON sync',
@@ -666,7 +666,7 @@ const messages: Messages = {
     joinModePlaceholder: 'Default ANY_OF (any predecessor ready triggers)',
     fieldJoinN: 'N (N_OF_M)',
     fieldCrossDayDeps: 'Cross-day deps JSON',
-    // vue-i18n parses {x} as a slot; escape literal braces via {'{'} / {'}'}
+    // vue-i18n 会把 {x} 解析为插槽；字面量花括号需写成 {'{'} / {'}'}
     crossDayDepsPlaceholder: '[{\'{\'}"jobCode":"X","dayOffset":-1{\'}\'}]',
     fieldCrossDayTimeout: 'Cross-day deps timeout (s)',
     fieldExtJson: 'Extension JSON',
@@ -1062,7 +1062,7 @@ const messages: Messages = {
     themeLight: 'Light',
     themeDark: 'Dark',
     group: {
-      // IA v3 (2026-07-03, 7 groups) primary keys
+      // IA v3（2026-07-03，7 个分组）的主键
       workspace: 'Workspace',
       monitor: 'Runtime monitoring',
       alerting: 'Alerts & delivery',
@@ -1070,7 +1070,7 @@ const messages: Messages = {
       files: 'Files',
       scheduling: 'Scheduling & Governance',
       system: 'System Admin',
-      // Legacy fallback keys (stale HMR / cached nav won't show raw keys)
+      // 历史回退键，避免旧 HMR 或导航缓存直接显示原始键名
       runs: 'Runs',
       runtime: 'Runtime & Monitoring',
       assets: 'Jobs & Files',
@@ -1804,7 +1804,7 @@ const messages: Messages = {
     },
     boundary: 'Component render error',
   },
-  // Error code → suggested action (used by errorCatalog; appended after the explanation)
+  // 错误码到建议操作的映射，由 errorCatalog 使用并追加在错误说明后
   errorAction: {
     relogin: 'Suggestion: please sign in again and retry',
     retry: 'Suggestion: please retry shortly',
@@ -1939,12 +1939,12 @@ const messages: Messages = {
       DEPRECATED: 'Deprecated',
     },
     outboxPublishStatus: {
-      // actual BE OutboxPublishStatus enum codes
+      // 后端实际使用的 OutboxPublishStatus 枚举值
       NEW: 'Pending',
       PUBLISHING: 'Publishing',
       PUBLISHED: 'Sent',
       GIVE_UP: 'Given up',
-      // compatibility alias codes
+      // 兼容别名
       PENDING: 'Pending',
       SCHEDULED: 'Scheduled',
       RETRYING: 'Retrying',
@@ -5291,7 +5291,7 @@ const messages: Messages = {
     refreshAllFailed: 'All sections failed to load; check permissions or backend logs',
     refreshPartial: 'Refreshed with {n} section(s) failing',
     loadFailed: 'Load failed',
-    // Domain-specific summary chips in JsonPreview summary slot
+    // JsonPreview 摘要插槽中的领域摘要标签
     sumTotal: '{n} total',
     sumPending: 'Pending',
     sumFailed: 'Failed',
@@ -5410,7 +5410,7 @@ const messages: Messages = {
     onboardingTenantDesc: 'Switch or create tenants for multi-business isolation',
     onboardingWorker: 'Check workers',
     onboardingWorkerDesc: 'Verify workers are up, otherwise jobs cannot run',
-    // chart legends / placeholders
+    // 图表图例和占位文案
     legendNow: 'Now',
     legendRunning: 'Running',
     legendFailed: 'Failed',
@@ -5821,7 +5821,7 @@ const messages: Messages = {
     drawerTitleQuotaChange: 'Submit quota change request',
     drawerTitleRerun: 'Submit rerun request',
     drawerTitleCompensation: 'Submit compensation request',
-    /* 2nd batch — 5 self-service cards */
+    /* 第二批：5 个自助服务入口 */
     tabApiKey: 'My API keys',
     descApiKey: 'Manage your own API keys: issue / rotate / revoke',
     cardCtaApiKey: 'Manage',

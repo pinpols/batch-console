@@ -123,7 +123,7 @@
     backdrop-filter: saturate(180%) blur(28px);
     -webkit-backdrop-filter: saturate(180%) blur(28px);
     border-top: 0.5px solid rgb(60 60 67 / 18%);
-    /* Liquid Glass:
+    /* 液态玻璃效果：
        1) inset 顶部 1px 半透白 → 玻璃顶缘折射 highlight
        2) inset 顶部 6px 极淡白渐变 → specular(模拟漫反射)
        3) 外向上阴影抬起 */

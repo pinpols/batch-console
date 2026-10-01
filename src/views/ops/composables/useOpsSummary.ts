@@ -21,15 +21,15 @@ export function useOpsSummary() {
   const router = useRouter()
   const tenant = useTenantStore()
 
-  // ---- core state ----
+  // ---- 核心状态 ----
   const loading = ref(false)
   const summary = ref<ConsoleOpsSummaryResponse | null>(null)
 
-  // ---- tabs / range ----
+  // ---- 页签与时间范围 ----
   const opsTab = ref<'kpis' | 'trend' | 'dist' | 'extra'>('kpis')
   const rangeKey = ref<'1h' | '6h' | '24h'>('6h')
 
-  // ---- chart options ----
+  // ---- 图表配置 ----
   const chartsLoading = ref(false)
   // 趋势(trend): 折线/堆叠柱,看时间序列上的变化
   const jobsTrendOption = ref<Record<string, unknown>>({})
@@ -54,7 +54,7 @@ export function useOpsSummary() {
     document.documentElement.classList.contains('dark') ? 'console-dark' : 'console-light',
   )
 
-  // ---- extra panels ----
+  // ---- 扩展面板 ----
   // 注:执行进度(execution-progress)接口要求 jobCode + bizDate 都必填,
   // 本页是租户级概览没法填,曾在这里调用时一直报"参数缺失 (jobCode)"。
   // 已撤掉调用,UI 改成提示用户去 Job 实例详情查看。
@@ -65,7 +65,7 @@ export function useOpsSummary() {
   const slaReportError = ref<unknown>(null)
   const tenantUsageError = ref<unknown>(null)
 
-  // ---- actions ----
+  // ---- 操作 ----
 
   async function loadCharts() {
     if (!summary.value) return
@@ -315,7 +315,7 @@ export function useOpsSummary() {
   useTenantReload(load)
 
   return {
-    // state
+    // 状态
     loading,
     summary,
     opsTab,
@@ -338,7 +338,7 @@ export function useOpsSummary() {
     tenantUsage,
     slaReportError,
     tenantUsageError,
-    // actions
+    // 操作
     load,
     loadCharts,
     loadExtraPanels,

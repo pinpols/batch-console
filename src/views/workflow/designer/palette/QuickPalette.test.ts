@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
 /**
- * QuickPalette — 4 case:
+ * QuickPalette 的 4 个场景：
  * - 渲染:visible=true 时挂载 dialog + input + 默认 6 类型行
  * - 搜索:输入后 filteredRows 收敛
  * - 选中(Enter / 点击):store.addNode 被调,emit('created')
- * - Esc:emit('update:visible', false)
+ * - Esc：触发 emit('update:visible', false)
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
@@ -118,7 +118,7 @@ describe('QuickPalette', () => {
     await nextTick()
     expect(store.nodes.length).toBe(1)
     expect(store.nodes[0].nodeType).toBe('JOB')
-    // centerX / centerY are viewport-center coordinates; node position is its top-left corner.
+    // centerX / centerY 是视口中心坐标，节点位置使用其左上角坐标。
     expect(store.nodes[0].x).toBe(130)
     expect(store.nodes[0].y).toBe(270)
     expect(wrapper.emitted('created')).toBeTruthy()

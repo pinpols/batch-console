@@ -1181,7 +1181,7 @@
         cancelButtonText: t('common.cancel'),
       })
     } catch {
-      return /* user cancelled confirm */
+      return /* 用户取消确认 */
     }
     applyLoading.value = true
     applyError.value = null

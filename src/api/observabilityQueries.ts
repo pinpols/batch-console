@@ -32,24 +32,24 @@ export interface ExecutionLogFilters {
 }
 
 export interface OutboxRetryFilters {
-  /** exact match */
+  /** 精确匹配 */
   eventType?: string
-  /** exact match */
+  /** 精确匹配 */
   eventKey?: string
-  /** exact match */
+  /** 精确匹配 */
   retryStatus?: string
 }
 
 export interface OutboxDeliveryFilters {
-  /** exact match */
+  /** 精确匹配 */
   eventType?: string
-  /** exact match */
+  /** 精确匹配 */
   eventKey?: string
-  /** exact match */
+  /** 精确匹配 */
   deliveryStatus?: string
-  /** partial match */
+  /** 模糊匹配 */
   targetTopic?: string
-  /** exact match */
+  /** 精确匹配 */
   traceId?: string
 }
 

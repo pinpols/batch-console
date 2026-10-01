@@ -14,19 +14,19 @@ import type {
 
 export interface FileQuery {
   tenantId?: string
-  /** exact match */
+  /** 精确匹配 */
   fileStatus?: string
-  /** partial match */
+  /** 模糊匹配 */
   bizType?: string
-  /** partial match */
+  /** 模糊匹配 */
   fileName?: string
-  /** exact match */
+  /** 精确匹配 */
   traceId?: string
-  /** exact match */
+  /** 精确匹配 */
   fileId?: string
-  /** ISO date range start */
+  /** ISO 日期范围起点 */
   startDate?: string
-  /** ISO date range end */
+  /** ISO 日期范围终点 */
   endDate?: string
   page: number
   pageSize: number
@@ -132,7 +132,7 @@ export const fileApi = {
       params: { tenantId },
     }),
 
-  /** GET /api/console/files/{fileId}/errors/export — CSV download */
+  /** GET /api/console/files/{fileId}/errors/export — 下载 CSV */
   exportErrors: (fileId: number, tenantId: string, errorStage?: string) =>
     apiClient.get(`/api/console/files/${fileId}/errors/export`, {
       params: { tenantId, ...(errorStage ? { errorStage } : {}) },

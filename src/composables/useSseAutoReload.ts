@@ -246,8 +246,7 @@ export function useSseAutoReload(options: UseSseAutoReloadOptions): UseSseAutoRe
     })
   }
 
-  // onScopeDispose works both inside a component (auto-fires on unmount)
-  // and inside a bare effectScope (for testing).
+  // onScopeDispose 在组件内会随卸载自动触发，在独立 effectScope 中也可用于测试。
   onScopeDispose(close)
 
   return {

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 /**
- * JsonSyncPanel — 3 case:
+ * JsonSyncPanel 的 3 个场景：
  * - 画布变更 → JSON textarea 文本同步更新
  * - JSON textarea 改 → blur 后画布(store.nodes/edges)同步更新
  * - JSON 非法 → 显示 parseError 提示,画布不破坏

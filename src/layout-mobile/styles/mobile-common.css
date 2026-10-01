@@ -652,7 +652,7 @@ html.dark .m-chip--danger {
   }
 }
 
-/* ── iOS Input / Select / Textarea ──────────────────────────
+/* ── iOS 输入框、选择器与文本域 ──────────────────────────────
    el-input、el-select 默认是 1px border 描边 + 圆角 4px,移动端 iOS
    习惯是 "rounded rect tile":灰底填充、无可见 border、38px tap area。
    focus 时蓝色 ring 兜住。 */

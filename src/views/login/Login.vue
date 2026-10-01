@@ -500,7 +500,7 @@
     color: var(--color-text-secondary);
   }
 
-  /* Trace */
+  /* 链路标识 */
   .login-trace {
     display: flex;
     align-items: center;

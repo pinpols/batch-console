@@ -15,7 +15,7 @@ describe('diffDefinitions', () => {
       edges: [{ sourceNodeCode: 'a', targetNodeCode: 'b' }],
     }
     const d = diffDefinitions(from, to)
-    expect(d.summary.added).toBe(3) // 2 nodes + 1 edge
+    expect(d.summary.added).toBe(3) // 2 个节点和 1 条边
     expect(d.summary.removed).toBe(0)
     expect(d.summary.modified).toBe(0)
     expect(d.nodes.find((n) => n.nodeCode === 'a')?.status).toBe('added')
@@ -34,7 +34,7 @@ describe('diffDefinitions', () => {
     }
     const to = { nodes: [{ nodeCode: 'a', nodeType: 'START' }], edges: [] }
     const d = diffDefinitions(from, to)
-    expect(d.summary.removed).toBe(2) // 1 node(b) + 1 edge
+    expect(d.summary.removed).toBe(2) // 1 个节点（b）和 1 条边
     expect(d.summary.added).toBe(0)
     expect(d.nodes.find((n) => n.nodeCode === 'b')?.status).toBe('removed')
     expect(statusOfNodeInSide(d, 'b', 'from')).toBe('removed')
@@ -43,15 +43,11 @@ describe('diffDefinitions', () => {
 
   it('detects modified nodes when nodeType / nodeName / attrs differ (ignoring x/y)', () => {
     const from = {
-      nodes: [
-        { nodeCode: 'a', nodeName: 'Hello', nodeType: 'JOB', jobCode: 'old', x: 0, y: 0 },
-      ],
+      nodes: [{ nodeCode: 'a', nodeName: 'Hello', nodeType: 'JOB', jobCode: 'old', x: 0, y: 0 }],
       edges: [],
     }
     const to = {
-      nodes: [
-        { nodeCode: 'a', nodeName: 'Hello', nodeType: 'JOB', jobCode: 'new', x: 99, y: 99 },
-      ],
+      nodes: [{ nodeCode: 'a', nodeName: 'Hello', nodeType: 'JOB', jobCode: 'new', x: 99, y: 99 }],
       edges: [],
     }
     const d = diffDefinitions(from, to)

@@ -12,9 +12,9 @@ import {
  * `window.innerWidth` 用法(无法在 SSR 或 jsdom 等无 layout 环境运行,且 resize
  * listener 各组件各装一遍易漏 cleanup)。
  *
- * - `isMobile`: ≤ sm (768)
+ * - `isMobile`：小于等于 sm（768）
  * - `isTablet`: > sm 且 ≤ lg (1280) — 笔电 / 大平板
- * - `isDesktop`: > lg
+ * - `isDesktop`：大于 lg
  * - `isCompact`: ≤ 1440(含 mobile/tablet)— 宽度紧时收起侧栏腾内容的 UX 阈值
  * - `breakpoint`: 当前匹配的最小命中档(xs/sm/md/lg/xl/xxl/ultrawide)
  *

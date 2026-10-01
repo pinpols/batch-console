@@ -60,7 +60,7 @@ export function getUser(id: number) {
   return get<UserAccount>(`/api/console/users/${id}`)
 }
 
-/** POST /api/console/users — admin creates a new account */
+/** POST /api/console/users — 管理员创建账户 */
 export function createUser(body: CreateUserRequest) {
   return post<UserAccount>('/api/console/users', body)
 }

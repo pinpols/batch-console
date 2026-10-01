@@ -79,39 +79,39 @@ export type JobBundleImportRequest = components['schemas']['JobBundleImportReque
 export type JobDefinitionCreateRequest = components['schemas']['JobDefinitionCreateRequest']
 export type JobDefinitionUpdateRequest = components['schemas']['JobDefinitionUpdateRequest']
 
-// --- Excel shared types ---
+// --- Excel 共享类型 ---
 export type ExcelApplyRequest = components['schemas']['ExcelApplyRequest']
 export type ExcelApplyResponse = components['schemas']['ExcelApplyResponse']
 export type ExcelUploadResponse = components['schemas']['ExcelUploadResponse']
 export type ExcelQuickImportResponse = components['schemas']['ExcelQuickImportResponse']
 export type ExcelRowIssue = components['schemas']['ExcelRowIssue']
 
-// --- Auth ---
+// --- 认证 ---
 export type ConsoleAuthTokenResponse = components['schemas']['ConsoleAuthTokenResponse']
 export type ConsoleAuthProfileResponse = components['schemas']['ConsoleAuthProfileResponse']
 
-// --- Alert actions ---
+// --- 告警操作 ---
 export type AlertActionRequest = components['schemas']['AlertActionRequest']
 export type ConsoleAlertActionResponse = components['schemas']['ConsoleAlertActionResponse']
 
-// --- Config ---
+// --- 配置 ---
 export type ConsoleConfigChangeLogResponse = components['schemas']['ConsoleConfigChangeLogResponse']
 export type ConsoleSecretVersionResponse = components['schemas']['ConsoleSecretVersionResponse']
 
-// --- File operations ---
+// --- 文件操作 ---
 export type ConsoleFileOperationResponse = components['schemas']['ConsoleFileOperationResponse']
 export type ConsolePresignDownloadResponse = components['schemas']['ConsolePresignDownloadResponse']
 
-// --- Dead letters / retries ---
+// --- 死信与重试 ---
 export type ConsoleDeadLetterTaskResponse = components['schemas']['ConsoleDeadLetterTaskResponse']
 export type DeadLetterReplayRequest = components['schemas']['DeadLetterReplayRequest']
 export type ConsoleRetryScheduleResponse = components['schemas']['ConsoleRetryScheduleResponse']
 
-// --- Worker ---
+// --- Worker 节点 ---
 export type ConsoleWorkerClaimedTaskResponse =
   components['schemas']['ConsoleWorkerClaimedTaskResponse']
 
-// --- Batch approval ---
+// --- 批次审批 ---
 export type ConsoleBatchApprovalResultResponse =
   components['schemas']['ConsoleBatchApprovalResultResponse']
 export type ConsoleBatchDayCatchUpItemResponse =
@@ -122,7 +122,7 @@ export type ConsoleSseEventResponse = components['schemas']['ConsoleSseEventResp
 export type ConsoleTraceSnapshotResponse = components['schemas']['ConsoleTraceSnapshotResponse']
 export type ConsoleTraceTimelineItem = components['schemas']['ConsoleTraceTimelineItem']
 
-// --- Excel CRUD responses (file-templates) ---
+// --- Excel CRUD 响应（文件模板）---
 export type ConsoleFileTemplateExcelUploadResponse =
   components['schemas']['ConsoleFileTemplateExcelUploadResponse']
 export type ConsoleFileTemplateExcelPreviewResponse =
@@ -130,7 +130,7 @@ export type ConsoleFileTemplateExcelPreviewResponse =
 export type ConsoleFileTemplateExcelApplyResponse =
   components['schemas']['ConsoleFileTemplateExcelApplyResponse']
 
-// --- Excel CRUD responses (file-channels) ---
+// --- Excel CRUD 响应（文件渠道）---
 // 后端 codegen 未单独命名 Preview/Apply 的 channel 变体,统一用泛型 ExcelUpload/Apply。
 // (代码里目前没人 import ChannelPreview/Apply 字面量,等用时再补本地接口。)
 export type ConsoleFileChannelExcelUploadResponse =
@@ -138,6 +138,6 @@ export type ConsoleFileChannelExcelUploadResponse =
 export type ConsoleFileChannelExcelApplyResponse =
   components['schemas']['ConsoleFileChannelExcelApplyResponse']
 
-// --- Excel CRUD responses (workflows / job-definitions) ---
+// --- Excel CRUD 响应（工作流、作业定义）---
 // 后端 codegen 尚未生成 workflow / job-definition 的 Excel*Response schema。
 // 这些类型 export 全部 0 引用,删除即可;真要用时回到 codegen 加 schema 并恢复。

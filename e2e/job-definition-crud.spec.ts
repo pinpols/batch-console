@@ -117,7 +117,7 @@ test.describe('Job Definition CRUD', () => {
       await page.waitForTimeout(500)
     }
 
-    // ─── Clone ───
+    // ─── 克隆 ───
     const cloneBtn = page
       .locator('tr', { hasText: jobCode })
       .getByRole('button', { name: '克隆' })

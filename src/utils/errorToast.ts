@@ -3,21 +3,21 @@ import { h } from 'vue'
 import { i18n } from '@/locales'
 
 type ErrorToastOptions = {
-  /** Short title shown in bold */
+  /** 加粗显示的简短标题 */
   title: string
-  /** Main message content */
+  /** 主要消息内容 */
   message: string
-  /** Optional traceId/requestId for backend correlation */
+  /** 用于后端关联查询的可选 traceId/requestId */
   traceId?: string
-  /** Optional "what to do next" suggestion line, shown below the message. */
+  /** 显示在消息下方的可选后续操作建议 */
   suggestion?: string
-  /** How long to show the toast (ms). Defaults based on traceId presence. */
+  /** 提示显示时长（毫秒），默认值根据是否存在 traceId 决定 */
   duration?: number
 }
 
 function copyText(text: string) {
   if (!text) return
-  // Prefer Clipboard API; fallback to legacy execCommand.
+  // 优先使用 Clipboard API，失败时回退到旧版 execCommand。
   if (navigator.clipboard?.writeText) {
     navigator.clipboard.writeText(text).catch(() => {
       /* ignore */

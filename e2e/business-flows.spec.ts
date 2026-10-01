@@ -2,11 +2,11 @@
  * P6 真实业务流程 — 用 SQL 预先 seed 完整运行时数据,FE 真按用户路径走完整闭环。
  *
  * 前置(已做):
- *   - psql -f e2e-data/03-job-instance-states/seed-job-instances.sql        (28 instance)
- *   - psql -f e2e-data/04-approvals-pending/seed-pending-approvals.sql      ( 3 approval PENDING)
- *   - alert_event direct INSERT (4 alert OPEN)
- *   - config_release direct INSERT (3 release DRAFT/PENDING/PUBLISHED)
- *   - event_outbox_retry direct INSERT (3 retry FAILED)
+ *   - psql -f e2e-data/03-job-instance-states/seed-job-instances.sql        (28 个实例)
+ *   - psql -f e2e-data/04-approvals-pending/seed-pending-approvals.sql      (3 个 PENDING 审批)
+ *   - alert_event 直接 INSERT（4 个 OPEN 告警）
+ *   - config_release 直接 INSERT（3 个 DRAFT/PENDING/PUBLISHED 发布记录）
+ *   - event_outbox_retry 直接 INSERT（3 个 FAILED 重试记录）
  *   - outbox_event 3 row 标 FAILED
  *   - BATCH_CONSOLE_READ_REPLICA_ENABLED=false (主从断了 11 天,读主库)
  *
@@ -146,7 +146,7 @@ test.describe('@business-flows D 档 P6 真实业务流程', () => {
   })
 
   // ───────────────────────────────────────────────────────────────
-  // 4. Alert lifecycle — ack / silence / close
+  // 4. 告警生命周期：确认、静默、关闭
   // ───────────────────────────────────────────────────────────────
   test('4. Alert — 列表 + ack/silence/close 三流程', async ({ page, network }) => {
     await page.goto('/observability/alerts')
@@ -197,7 +197,7 @@ test.describe('@business-flows D 档 P6 真实业务流程', () => {
   })
 
   // ───────────────────────────────────────────────────────────────
-  // 5. Config release — diff / submit approval
+  // 5. 配置发布：差异对比、提交审批
   // ───────────────────────────────────────────────────────────────
   test('5. Config release — diff / submit approval 行操作', async ({ page, network }) => {
     const release = await createDraftConfigRelease(page.request)
@@ -274,7 +274,7 @@ test.describe('@business-flows D 档 P6 真实业务流程', () => {
   })
 
   // ───────────────────────────────────────────────────────────────
-  // 7. Job definition — trigger + clone
+  // 7. 作业定义：触发、克隆
   // ───────────────────────────────────────────────────────────────
   test('7. JobDefinition — clone', async ({ page, network }) => {
     await page.goto('/jobs/definitions')

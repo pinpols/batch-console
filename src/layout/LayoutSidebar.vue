@@ -236,7 +236,7 @@
     white-space: nowrap;
   }
 
-  /* ── nav ── */
+  /* ── 导航 ── */
   .nav {
     flex: 1;
     min-height: 0;

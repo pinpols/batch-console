@@ -262,7 +262,7 @@ export const useDesignerStore = defineStore('workflowDesigner', () => {
   }
 
   return {
-    // state
+    // 状态
     nodes,
     edges,
     selectedIds,
@@ -272,14 +272,14 @@ export const useDesignerStore = defineStore('workflowDesigner', () => {
     meta,
     lock,
     validationErrors,
-    // getters
+    // 派生状态
     canUndo,
     canRedo,
     snapshot,
     editable,
     errorNodeIds,
     errorEdgeIds,
-    // actions
+    // 操作
     reset,
     setMeta,
     setLock,

@@ -102,8 +102,8 @@ const e2ePrefix = () => `e2e-rbac-${ts()}-${rand()}`
 // 与原 plan 文档描述的"应当如何"可能有差异:差异会反映在测试结果里,作为 BE 设计审查输入。
 const ENDPOINTS: Endpoint[] = [
   {
-    // ConsoleTenantController.create() @PreAuthorize ROLE_ADMIN
-    // CreateTenantRequest: tenantId/tenantName/username/password @NotBlank
+    // ConsoleTenantController.create() 使用 @PreAuthorize ROLE_ADMIN
+    // CreateTenantRequest 的 tenantId/tenantName/username/password 均要求 @NotBlank
     key: 'POST /tenants',
     method: 'POST',
     url: () => '/api/console/tenants',
@@ -120,7 +120,7 @@ const ENDPOINTS: Endpoint[] = [
     expect: { admin: true, tenantAdmin: false, auditor: false, tenantUser: false },
   },
   {
-    // ConsoleResourceQueueController class-level @PreAuthorize ROLE_ADMIN
+    // ConsoleResourceQueueController 类级别使用 @PreAuthorize ROLE_ADMIN
     key: 'POST /queues',
     method: 'POST',
     url: () => '/api/console/queues',
@@ -136,7 +136,7 @@ const ENDPOINTS: Endpoint[] = [
     expect: { admin: true, tenantAdmin: false, auditor: false, tenantUser: false },
   },
   {
-    // ConsoleQuotaPolicyController class-level @PreAuthorize ROLE_ADMIN
+    // ConsoleQuotaPolicyController 类级别使用 @PreAuthorize ROLE_ADMIN
     key: 'POST /quota-policies',
     method: 'POST',
     url: () => '/api/console/quota-policies',
@@ -192,7 +192,7 @@ const ENDPOINTS: Endpoint[] = [
     expect: { admin: true, tenantAdmin: true, auditor: false, tenantUser: true },
   },
   {
-    // ConsoleUserAccountController class-level @PreAuthorize hasAnyAuthority('ROLE_ADMIN','ROLE_TENANT_ADMIN')
+    // ConsoleUserAccountController 类级别使用 @PreAuthorize hasAnyAuthority('ROLE_ADMIN','ROLE_TENANT_ADMIN')
     // (ADR-032):TENANT_ADMIN 可在本租户加员工,Service 层 enforceTenantScope 强制 tenantId=principal.tenantId
     key: 'POST /users',
     method: 'POST',
@@ -208,7 +208,7 @@ const ENDPOINTS: Endpoint[] = [
   },
   {
     // ConsoleSelfServiceJobController 允许 ADMIN / TENANT_ADMIN / TENANT_USER
-    // RerunRequest: tenantId/jobCode/bizDate @NotBlank
+    // RerunRequest 的 tenantId/jobCode/bizDate 均要求 @NotBlank
     key: 'POST /self-service/rerun-request',
     method: 'POST',
     url: () => '/api/console/self-service/jobs/rerun-request',
