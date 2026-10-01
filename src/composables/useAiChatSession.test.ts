@@ -2,13 +2,24 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { cancelAiChatStream, streamAiChat } from '@/api/aiStream'
+import { deleteAiAttachment, getAiCapabilities, uploadAiAttachment } from '@/api/ai'
 import { useTenantStore } from '@/stores/tenant'
 import { useAiChatSession } from './useAiChatSession'
 
 vi.mock('@/api/aiStream', () => ({ streamAiChat: vi.fn(), cancelAiChatStream: vi.fn() }))
+vi.mock('@/api/ai', () => ({
+  deleteAiAttachment: vi.fn(),
+  getAiCapabilities: vi.fn(),
+  getAiAttachmentByClientId: vi.fn(),
+  getAiTurnByClientId: vi.fn(),
+  uploadAiAttachment: vi.fn(),
+}))
 
 const mockedChat = vi.mocked(streamAiChat)
 const mockedCancel = vi.mocked(cancelAiChatStream)
+const mockedCapabilities = vi.mocked(getAiCapabilities)
+const mockedUpload = vi.mocked(uploadAiAttachment)
+const mockedDelete = vi.mocked(deleteAiAttachment)
 
 describe('useAiChatSession', () => {
   beforeEach(() => {
@@ -17,6 +28,103 @@ describe('useAiChatSession', () => {
     mockedChat.mockReset()
     mockedCancel.mockReset()
     mockedCancel.mockResolvedValue()
+    mockedCapabilities.mockReset()
+    mockedUpload.mockReset()
+    mockedDelete.mockReset()
+    mockedDelete.mockResolvedValue()
+    vi.stubGlobal('URL', {
+      ...URL,
+      createObjectURL: vi.fn(() => 'blob:preview'),
+      revokeObjectURL: vi.fn(),
+    })
+  })
+
+  it('sends uploaded images by stable IDs and releases the local preview', async () => {
+    mockedCapabilities.mockResolvedValue({
+      imageInput: true,
+      maxImages: 4,
+      maxImageBytes: 1024,
+      maxTotalBytes: 4096,
+    })
+    mockedUpload.mockImplementation(async (_file, clientAttachmentId) => ({
+      id: 'attachment-1',
+      clientAttachmentId,
+      status: 'DRAFT',
+      mediaType: 'image/png',
+      byteSize: 4,
+      width: 1,
+      height: 1,
+      expiresAt: '2026-10-02T00:00:00Z',
+    }))
+    mockedChat.mockResolvedValue({
+      requestId: 'r1',
+      traceId: 't1',
+      sessionId: 's1',
+      promptCategory: 'OPERATIONS',
+      promptDecision: 'APPROVED',
+      modelName: 'test',
+      answer: 'Image answer',
+      refusalReason: null,
+      sources: [],
+    })
+    const chat = useAiChatSession()
+    await chat.loadImageCapabilities()
+    await chat.addImages([new File(['data'], 'screen.png', { type: 'image/png' })])
+    expect(chat.images.value[0]?.status).toBe('ready')
+    chat.prompt.value = 'What is shown?'
+
+    expect(await chat.send('Empty')).toBe(true)
+    expect(mockedChat).toHaveBeenCalledWith(
+      expect.objectContaining({
+        attachmentIds: ['attachment-1'],
+        clientTurnId: expect.any(String),
+      }),
+      expect.any(Object),
+      expect.any(AbortSignal),
+    )
+    expect(chat.messages.value[0]?.images?.[0]?.id).toBe('attachment-1')
+    expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:preview')
+  })
+
+  it('reports image validation errors without using the text attachment length message', async () => {
+    mockedCapabilities.mockResolvedValue({
+      imageInput: true,
+      maxImages: 4,
+      maxImageBytes: 1024,
+      maxTotalBytes: 4096,
+    })
+    const chat = useAiChatSession()
+    await chat.loadImageCapabilities()
+    await chat.addImages([new File(['test'], 'evidence.txt', { type: 'text/plain' })])
+
+    expect(chat.sendErrorKey.value).toBe('aiChat.imageInvalid')
+    expect(mockedUpload).not.toHaveBeenCalled()
+  })
+
+  it('deletes abandoned uploaded drafts when the session is cleared', async () => {
+    mockedCapabilities.mockResolvedValue({
+      imageInput: true,
+      maxImages: 4,
+      maxImageBytes: 1024,
+      maxTotalBytes: 4096,
+    })
+    mockedUpload.mockImplementation(async (_file, clientAttachmentId) => ({
+      id: 'attachment-1',
+      clientAttachmentId,
+      status: 'DRAFT',
+      mediaType: 'image/png',
+      byteSize: 4,
+      width: 1,
+      height: 1,
+      expiresAt: '2026-10-02T00:00:00Z',
+    }))
+    const chat = useAiChatSession()
+    await chat.loadImageCapabilities()
+    await chat.addImages([new File(['data'], 'screen.png', { type: 'image/png' })])
+    chat.reset(true)
+
+    expect(mockedDelete).toHaveBeenCalledWith('attachment-1')
+    expect(chat.images.value).toEqual([])
   })
 
   it('sends versioned, allowlisted page context without object IDs', async () => {
@@ -48,6 +156,26 @@ describe('useAiChatSession', () => {
     )
     expect(chat.sessionId.value).toBe('s1')
     expect(chat.messages.value.map((item) => item.content)).toEqual(['What happened?', 'result'])
+    expect(chat.messages.value[1]?.sources).toEqual([{ source: 'operations.md' }])
+  })
+
+  it('keeps source references separate from an English answer', async () => {
+    mockedChat.mockResolvedValue({
+      requestId: 'r2',
+      traceId: 't2',
+      sessionId: 's2',
+      promptCategory: 'OPERATIONS',
+      promptDecision: 'APPROVED',
+      modelName: 'test',
+      answer: 'Result\n\nSources:operations.md',
+      refusalReason: null,
+      sources: [{ source: 'operations.md' }],
+    })
+    const chat = useAiChatSession()
+    chat.prompt.value = 'What happened?'
+
+    expect(await chat.send('Empty')).toBe(true)
+    expect(chat.messages.value[1]?.content).toBe('Result')
     expect(chat.messages.value[1]?.sources).toEqual([{ source: 'operations.md' }])
   })
 
@@ -138,6 +266,35 @@ describe('useAiChatSession', () => {
     ])
   })
 
+  it('keeps separate in-memory drafts for the current and another conversation', () => {
+    const chat = useAiChatSession()
+    chat.prompt.value = 'New conversation draft'
+    chat.restore('s1', [], 'Empty')
+    expect(chat.prompt.value).toBe('')
+
+    chat.prompt.value = 'Existing conversation draft'
+    chat.reset()
+    expect(chat.prompt.value).toBe('New conversation draft')
+
+    chat.restore('s1', [], 'Empty')
+    expect(chat.prompt.value).toBe('Existing conversation draft')
+    chat.reset(true)
+    expect(chat.prompt.value).toBe('')
+  })
+
+  it('does not replace a newer draft when a sent question fails', async () => {
+    let rejectResponse!: (reason: Error) => void
+    mockedChat.mockReturnValue(new Promise((_resolve, reject) => (rejectResponse = reject)))
+    const chat = useAiChatSession()
+    chat.prompt.value = 'First question'
+    const pending = chat.send('Empty')
+    chat.prompt.value = 'Follow-up draft'
+    rejectResponse(new Error('unavailable'))
+
+    expect(await pending).toBe(false)
+    expect(chat.prompt.value).toBe('Follow-up draft')
+  })
+
   it('does not render a previous tenant response after reset', async () => {
     let resolveResponse!: (value: Awaited<ReturnType<typeof streamAiChat>>) => void
     mockedChat.mockReturnValue(
@@ -185,6 +342,7 @@ describe('useAiChatSession', () => {
       estimatedCostUsd: null,
       createdAt: time,
       completedAt: null,
+      attachments: [],
     })
     chat.restore(
       'session-1',
@@ -215,6 +373,7 @@ describe('useAiChatSession', () => {
       estimatedCostUsd: null,
       createdAt: time,
       completedAt: time,
+      attachments: [],
     })
     chat.restore(
       'session-1',
@@ -246,7 +405,9 @@ describe('useAiChatSession', () => {
     const chat = useAiChatSession()
     chat.prompt.value = 'Status?'
     const pending = chat.send('Empty')
-    expect(chat.messages.value[1]).toMatchObject({ content: 'partial ', status: 'IN_PROGRESS' })
+    await vi.waitFor(() =>
+      expect(chat.messages.value[1]).toMatchObject({ content: 'partial ', status: 'IN_PROGRESS' }),
+    )
     resolveResponse({
       requestId: 'request-1',
       traceId: 'trace-1',
@@ -279,5 +440,27 @@ describe('useAiChatSession', () => {
     expect(chat.prompt.value).toBe('Status?')
     expect(chat.messages.value[1]).toMatchObject({ content: 'Stopped', status: 'FAILED' })
     expect(chat.sendError.value).toBe(false)
+  })
+
+  it('cancels the old stream and unlocks the composer when switching conversations', async () => {
+    mockedChat.mockImplementation(
+      (_body, callbacks, signal) =>
+        new Promise((_resolve, reject) => {
+          callbacks.onStarted('request-1')
+          signal.addEventListener('abort', () => reject(new DOMException('Stopped', 'AbortError')))
+        }),
+    )
+    const chat = useAiChatSession()
+    chat.prompt.value = 'Old question'
+    const pending = chat.send('Empty')
+
+    chat.restore('new-session', [], 'Empty')
+
+    expect(chat.sessionId.value).toBe('new-session')
+    expect(chat.sending.value).toBe(false)
+    expect(chat.messages.value).toEqual([])
+    expect(mockedCancel).toHaveBeenCalledWith('request-1', 'ta')
+    expect(await pending).toBe(false)
+    expect(chat.messages.value).toEqual([])
   })
 })

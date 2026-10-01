@@ -32,22 +32,14 @@ server {
     # ────── /api 反代到 BE ──────
     # 路径透传(BE 期望 /api/console/* 完整路径),保留 Host / X-Real-IP / X-Forwarded-* 头
     # WebSocket / SSE 升级头也带上(/api/console/ops/summary/events 走 SSE)
-    location /api/ {
-        proxy_pass         http://backend;
-        proxy_http_version 1.1;
-        proxy_set_header   Host              $host;
-        proxy_set_header   X-Real-IP         $remote_addr;
-        proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
-        proxy_set_header   X-Forwarded-Proto $scheme;
-        proxy_set_header   X-Forwarded-Host  $host;
-        proxy_set_header   Upgrade           $http_upgrade;
-        proxy_set_header   Connection        $connection_upgrade;
+    location = /api/console/ai/attachments {
+        # 覆盖后端允许的 20 MiB 硬上限及 multipart 开销；实际租户限制仍由后端配置裁决。
+        client_max_body_size 21m;
+        include /etc/nginx/snippets/api-proxy.conf;
+    }
 
-        # SSE/长连接:关 buffer + 长读超时(对齐 BE keepAlive 30s 周期)
-        proxy_buffering    off;
-        proxy_cache        off;
-        proxy_read_timeout 3600s;
-        proxy_send_timeout 3600s;
+    location /api/ {
+        include /etc/nginx/snippets/api-proxy.conf;
 
         # CORS preflight:本同源部署不需要,跨域部署再开
         # add_header Access-Control-Allow-Origin "*" always;

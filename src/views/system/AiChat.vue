@@ -13,7 +13,7 @@
                   :icon="Plus"
                   circle
                   :aria-label="t('aiChat.btnNewSession')"
-                  @click="resetSession"
+                  @click="resetSession()"
                 />
               </div>
               <div v-if="historyLoading" v-loading="true" class="conversation-list__loading" />
@@ -59,9 +59,17 @@
                   {{ t('aiChat.historyLoadError') }}
                 </p>
               </div>
-              <p v-if="monthlyCost !== null" class="conversation-list__cost">
-                {{ t('aiChat.monthlyCost', { cost: monthlyCost }) }}
-              </p>
+              <div v-if="costSummary" class="conversation-list__cost">
+                <div>{{ t('aiChat.monthlyCost', { cost: monthlyCost }) }}</div>
+                <div>{{ t('aiChat.meteredCalls', { count: costSummary.requestCount }) }}</div>
+                <div>{{ t('aiChat.reportedTokens', { count: reportedTokens }) }}</div>
+                <div v-if="reservedCost !== null">
+                  {{ t('aiChat.reservedCost', { cost: reservedCost }) }}
+                </div>
+                <div v-if="monthlyBudget !== null">
+                  {{ t('aiChat.monthlyBudget', { budget: monthlyBudget }) }}
+                </div>
+              </div>
             </aside>
             <div class="chat-panel">
               <div v-if="historyError" class="history-error" role="alert">
@@ -72,6 +80,7 @@
                 v-loading="historyTurnsLoading"
                 class="chat-list"
                 aria-live="polite"
+                @scroll="onChatScroll"
               >
                 <div
                   v-for="item in messages"
@@ -92,9 +101,6 @@
                       <span class="gate-notice__title">{{ t('aiChat.gateTitle') }}</span>
                       <span class="gate-notice__tag">{{ decisionLabel(item.decision) }}</span>
                     </div>
-                    <div v-if="item.refusalReason" class="gate-notice__reason">
-                      {{ item.refusalReason }}
-                    </div>
                   </div>
                   <AiMessageContent
                     class="bubble__body"
@@ -102,6 +108,7 @@
                     :role="item.role"
                     :streaming="item.status === 'IN_PROGRESS'"
                   />
+                  <AiMessageImages v-if="item.role === 'user'" :images="item.images ?? []" />
                   <AiSourceReferences
                     v-if="item.role === 'assistant'"
                     :sources="item.sources ?? []"
@@ -119,7 +126,18 @@
                   {{ t('aiChat.loadOlder') }}
                 </el-button>
               </div>
-              <el-form class="composer" @submit.prevent>
+              <AiFollowUpSuggestions
+                :messages="messages"
+                :has-draft="Boolean(prompt.trim())"
+                @select="(value) => (prompt = value)"
+              />
+              <el-form
+                class="composer"
+                @submit.prevent
+                @paste="handleImagePaste"
+                @drop="handleImageDrop"
+                @dragover="handleImageDragOver"
+              >
                 <div class="composer__label">{{ t('aiChat.promptLabel') }}</div>
                 <el-input
                   v-model="prompt"
@@ -132,9 +150,13 @@
                 <div v-if="sendError" class="history-error" role="alert">
                   {{ t(sendErrorKey) }}
                 </div>
+                <el-button v-if="chat.pendingTurnId.value" text @click="chat.reconcileTurn()">
+                  {{ t('aiChat.checkTurnStatus') }}
+                </el-button>
                 <AiTextAttachmentPicker v-model="chat.attachment.value" :disabled="sending" />
+                <AiImageAttachmentPicker ref="imagePicker" :chat="chat" :disabled="sending" />
                 <div class="composer__actions">
-                  <el-button :disabled="sending || !messages.length" @click="resetSession">
+                  <el-button :disabled="sending || !messages.length" @click="resetSession()">
                     {{ t('aiChat.btnNewSession') }}
                   </el-button>
                   <div class="composer__actions-right">
@@ -148,7 +170,9 @@
                     <el-button
                       type="primary"
                       :loading="sending"
-                      :disabled="historyTurnsLoading || !prompt.trim()"
+                      :disabled="
+                        historyTurnsLoading || !prompt.trim() || !!chat.pendingTurnId.value
+                      "
                       @click="send"
                     >
                       {{ t('aiChat.btnSend') }}
@@ -280,6 +304,9 @@
     listAiTurns,
   } from '@/api/ai'
   import { useAiChatSession } from '@/composables/useAiChatSession'
+  import { useAiAutoScroll } from '@/composables/useAiAutoScroll'
+  import { aiMessageBody } from '@/utils/aiMessagePresentation'
+  import { formatAiUsd } from '@/utils/formatAiUsd'
   import { queryAiAuditsPage } from '@/api/observabilityQueries'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
@@ -288,6 +315,9 @@
   import { useTenantReload } from '@/composables/useTenantReload'
   import PageContainer from '@/components/common/PageContainer.vue'
   import AiMessageContent from '@/components/common/AiMessageContent.vue'
+  import AiMessageImages from '@/components/common/AiMessageImages.vue'
+  import AiImageAttachmentPicker from '@/components/common/AiImageAttachmentPicker.vue'
+  import AiFollowUpSuggestions from '@/components/common/AiFollowUpSuggestions.vue'
   import AiSourceReferences from '@/components/common/AiSourceReferences.vue'
   import AiTextAttachmentPicker from '@/components/common/AiTextAttachmentPicker.vue'
   import MetaSelect from '@/components/common/MetaSelect.vue'
@@ -307,23 +337,42 @@
   const activeTab = ref<'chat' | 'audits'>('chat')
   const chat = useAiChatSession()
   const { prompt, sending, sendError, sendErrorKey, sessionId, messages } = chat
-  const chatList = ref<HTMLElement | null>(null)
-  watch(
-    () => [messages.value.length, messages.value.at(-1)?.content],
-    () => {
-      const element = chatList.value
-      if (element && element.scrollHeight - element.scrollTop - element.clientHeight < 150) {
-        element.scrollTop = element.scrollHeight
-      }
-    },
-    { flush: 'post' },
-  )
+  const imagePicker = ref<InstanceType<typeof AiImageAttachmentPicker> | null>(null)
+  function handleImagePaste(event: Event) {
+    imagePicker.value?.onPaste(event as ClipboardEvent)
+  }
+  function handleImageDrop(event: Event) {
+    imagePicker.value?.onDrop(event as DragEvent)
+  }
+  function handleImageDragOver(event: Event) {
+    imagePicker.value?.onDragOver(event as DragEvent)
+  }
+  const {
+    element: chatList,
+    onScroll: onChatScroll,
+    follow: followChat,
+  } = useAiAutoScroll(computed(() => [messages.value.length, messages.value.at(-1)?.content]))
   const conversations = ref<AiConversation[]>([])
   const costSummary = ref<AiCostSummary | null>(null)
   const monthlyCost = computed(() => {
     const value = costSummary.value?.estimatedCostUsd
-    return typeof value === 'number' && Number.isFinite(value) ? value.toFixed(2) : null
+    return typeof value === 'number' && Number.isFinite(value) ? formatAiUsd(value) : null
   })
+  const monthlyBudget = computed(() => {
+    const value = costSummary.value?.monthlyBudgetUsd
+    return typeof value === 'number' && value > 0 && Number.isFinite(value)
+      ? value.toFixed(2)
+      : null
+  })
+  const reservedCost = computed(() => {
+    const value = costSummary.value?.reservedCostUsd
+    return typeof value === 'number' && value > 0 && Number.isFinite(value)
+      ? formatAiUsd(value)
+      : null
+  })
+  const reportedTokens = computed(
+    () => (costSummary.value?.promptTokens ?? 0) + (costSummary.value?.completionTokens ?? 0),
+  )
   const historyAvailable = ref(true)
   const historyLoading = ref(false)
   const historyMoreLoading = ref(false)
@@ -357,12 +406,7 @@
   }
 
   function messageBody(message: AiChatMessage): string {
-    if (message.role === 'assistant' && !message.content) {
-      if (message.status === 'IN_PROGRESS') return t('aiChat.turnPending')
-      if (message.status === 'FAILED') return t('aiChat.turnFailed')
-      if (message.status === 'REJECTED') return t('aiChat.turnRejected')
-    }
-    return message.content
+    return aiMessageBody(message, t)
   }
 
   const { loading: auditLoading, error: auditLoadError, run: runLoadAudits } = useListLoadState()
@@ -417,11 +461,11 @@
     })
   }
 
-  function resetSession() {
+  function resetSession(clearDrafts = false) {
     turnRequestSequence += 1
     historyTurnsLoading.value = false
     openingConversationId.value = null
-    chat.reset()
+    chat.reset(clearDrafts)
     oldestTurnNo.value = null
     hasOlderTurns.value = false
     historyError.value = false
@@ -507,8 +551,8 @@
     try {
       const turns = await listAiTurns(id, { limit: 50 })
       if (sequence !== turnRequestSequence || tenant.tenantId !== tenantId) return
-      chat.reset()
       chat.restore(id, turns, t('aiChat.emptyAnswer'))
+      followChat()
       oldestTurnNo.value = turns.length ? Math.min(...turns.map((turn) => turn.turnNo)) : null
       hasOlderTurns.value = turns.length === 50
     } catch (error) {
@@ -645,13 +689,13 @@
   useTenantReload(async () => {
     historyRequestSequence += 1
     auditRequestSequence += 1
-    resetSession()
+    resetSession(true)
     conversations.value = []
     historyNextCursor.value = null
     historyHasMore.value = false
     historyPageError.value = false
     costSummary.value = null
-    await Promise.all([loadAudits(), loadConversations()])
+    await Promise.all([loadAudits(), loadConversations(), chat.loadImageCapabilities()])
   })
 
   watch(
@@ -856,15 +900,6 @@
     color: color-mix(in srgb, var(--color-warning) 78%, var(--color-text-primary) 22%);
     background: color-mix(in srgb, var(--color-warning) 16%, var(--color-bg-card) 84%);
     border: 1px solid color-mix(in srgb, var(--color-warning) 30%, var(--color-border) 70%);
-  }
-
-  .gate-notice__reason {
-    margin-top: 6px;
-    font-size: 13px;
-    line-height: 1.55;
-    white-space: pre-wrap;
-    word-break: break-word;
-    color: var(--color-text-secondary);
   }
 
   .bubble__model {

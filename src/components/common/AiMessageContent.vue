@@ -4,6 +4,14 @@
     :class="{ 'ai-message-content--plain': role === 'user' }"
     @click="copyCode"
   >
+    <el-button
+      v-if="role === 'assistant' && !streaming && content"
+      class="ai-message-content__copy"
+      text
+      :icon="Copy"
+      :aria-label="t('aiChat.copyAnswer')"
+      @click.stop="copyAnswer"
+    />
     <div
       v-if="role === 'assistant' && !streaming && markdownHtml"
       v-safe-html="markdownHtml"
@@ -17,6 +25,7 @@
   import { computed, onMounted, shallowRef } from 'vue'
   import { ElMessage } from 'element-plus'
   import { useI18n } from 'vue-i18n'
+  import { Copy } from '@lucide/vue'
 
   const props = defineProps<{ content: string; role: 'user' | 'assistant'; streaming?: boolean }>()
   const { t } = useI18n({ useScope: 'global' })
@@ -48,12 +57,25 @@
       ElMessage.error(t('aiChat.codeCopyFailed'))
     }
   }
+
+  async function copyAnswer() {
+    try {
+      await navigator.clipboard.writeText(props.content)
+      ElMessage.success(t('aiChat.answerCopied'))
+    } catch {
+      ElMessage.error(t('aiChat.answerCopyFailed'))
+    }
+  }
 </script>
 
 <style scoped>
   .ai-message-content {
     min-width: 0;
     overflow-wrap: anywhere;
+  }
+  .ai-message-content__copy {
+    float: right;
+    margin-left: var(--space-xs);
   }
   .ai-message-content--plain,
   .ai-message-content > span {

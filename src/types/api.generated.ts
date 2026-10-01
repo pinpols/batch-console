@@ -2364,6 +2364,91 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/console/ai/capabilities': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Get the current deployment's approved AI image input capability */
+    get: operations['getConsoleAiCapabilities']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/ai/attachments': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Upload a private image draft for the current operator */
+    post: operations['uploadConsoleAiAttachment']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/ai/attachments/by-client-id/{clientAttachmentId}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Reconcile an uncertain image upload by stable client ID */
+    get: operations['getConsoleAiAttachmentByClientId']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/ai/attachments/{id}/content': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Read an owned, unexpired AI image bound to a conversation turn */
+    get: operations['getConsoleAiAttachmentContent']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/ai/attachments/{id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    /** Remove an unbound image draft owned by the current operator */
+    delete: operations['deleteConsoleAiAttachment']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/console/ai/chat/stream/{requestId}/cancel': {
     parameters: {
       query?: never
@@ -2424,6 +2509,23 @@ export interface paths {
     }
     /** List turns for an unexpired conversation owned by the current user */
     get: operations['listConsoleAiConversationTurns']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/ai/turns/by-client-id/{clientTurnId}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Reconcile a stream result without invoking the model again */
+    get: operations['getConsoleAiTurnByClientId']
     put?: never
     post?: never
     delete?: never
@@ -7331,6 +7433,15 @@ export interface components {
     CommonResponseConsoleAiTurnList: components['schemas']['CommonResponseBase'] & {
       data?: components['schemas']['ConsoleAiTurnView'][]
     }
+    CommonResponseConsoleAiCapabilities: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['ConsoleAiCapabilities']
+    }
+    CommonResponseConsoleAiAttachment: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['ConsoleAiAttachmentView']
+    }
+    CommonResponseConsoleAiClientTurn: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['ConsoleAiClientTurnView']
+    }
     CommonResponseConsoleAiCostSummary: components['schemas']['CommonResponseBase'] & {
       data?: components['schemas']['ConsoleAiCostSummary']
     }
@@ -7843,6 +7954,13 @@ export interface components {
       contextVersion: 'v1'
       /** @description 用户问题(必填,@NotBlank)。 */
       prompt: string
+      /**
+       * Format: uuid
+       * @description 稳定客户端轮次 ID；带图片时必填，用于断流后的状态对账。
+       */
+      clientTurnId?: string
+      /** @description 已上传且未绑定的图片 ID；由当前操作者持有，服务端在创建轮次时原子绑定。 */
+      attachmentIds?: string[]
       /** @description v1 兼容字段；只允许 pageType、objectType、objectId 字符串。 */
       context?: {
         pageType?: string
@@ -7949,6 +8067,8 @@ export interface components {
     ConsoleAiTurnView: {
       /** Format: int64 */
       turnNo: number
+      /** Format: uuid */
+      clientTurnId?: string | null
       /** @enum {string} */
       contextVersion: 'v1'
       prompt: string
@@ -7967,6 +8087,48 @@ export interface components {
       createdAt: string
       /** Format: date-time */
       completedAt: string | null
+      attachments: components['schemas']['ConsoleAiAttachmentSummary'][]
+    }
+    ConsoleAiCapabilities: {
+      imageInput: boolean
+      /** Format: int32 */
+      maxImages: number
+      /** Format: int32 */
+      maxImageBytes: number
+      /** Format: int64 */
+      maxTotalBytes: number
+    }
+    ConsoleAiAttachmentView: {
+      /** Format: uuid */
+      id: string
+      /** Format: uuid */
+      clientAttachmentId: string
+      /** @enum {string} */
+      status: 'UPLOADING' | 'DRAFT' | 'BOUND'
+      mediaType?: string | null
+      /** Format: int64 */
+      byteSize?: number | null
+      /** Format: int32 */
+      width?: number | null
+      /** Format: int32 */
+      height?: number | null
+      /** Format: date-time */
+      expiresAt: string
+    }
+    ConsoleAiAttachmentSummary: {
+      /** Format: uuid */
+      id: string
+      mediaType: string
+      /** Format: int64 */
+      byteSize: number
+      /** Format: int32 */
+      width: number
+      /** Format: int32 */
+      height: number
+    }
+    ConsoleAiClientTurnView: {
+      sessionId: string
+      turn: components['schemas']['ConsoleAiTurnView']
     }
     ConsoleAiCostSummary: {
       month: string
@@ -15108,6 +15270,145 @@ export interface operations {
       }
     }
   }
+  getConsoleAiCapabilities: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Image input availability and upload limits */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseConsoleAiCapabilities']
+        }
+      }
+    }
+  }
+  uploadConsoleAiAttachment: {
+    parameters: {
+      query?: never
+      header: {
+        'Idempotency-Key': components['parameters']['IdempotencyKeyHeader']
+      }
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'multipart/form-data': {
+          /** Format: uuid */
+          clientAttachmentId: string
+          /** Format: binary */
+          file: string
+        }
+      }
+    }
+    responses: {
+      /** @description Normalized image metadata; object bytes and storage key are never returned */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseConsoleAiAttachment']
+        }
+      }
+    }
+  }
+  getConsoleAiAttachmentByClientId: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        clientAttachmentId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Current upload status for the owner */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseConsoleAiAttachment']
+        }
+      }
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  getConsoleAiAttachmentContent: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Decrypted normalized image with Cache-Control no-store and nosniff; drafts are not downloadable */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'image/png': string
+          'image/jpeg': string
+        }
+      }
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  deleteConsoleAiAttachment: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Draft access revoked and object deletion queued */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseVoid']
+        }
+      }
+      /** @description Not found or already bound to a turn */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
   cancelConsoleAiChatStream: {
     parameters: {
       query?: never
@@ -15208,6 +15509,35 @@ export interface operations {
         }
       }
       /** @description Conversation does not exist or has expired */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  getConsoleAiTurnByClientId: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        clientTurnId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Current persisted turn status for the owner */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseConsoleAiClientTurn']
+        }
+      }
+      /** @description Not found */
       404: {
         headers: {
           [name: string]: unknown
