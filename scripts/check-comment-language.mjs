@@ -71,29 +71,60 @@ function scanScript(text, baseOffset = 0) {
     }))
 }
 
-function scanPattern(text, pattern, baseOffset = 0) {
-  return [...text.matchAll(pattern)].map((match) => ({
-    text: match[0],
-    offset: baseOffset + (match.index ?? 0),
-  }))
+function scanDelimited(text, startToken, endTokens, baseOffset = 0) {
+  const comments = []
+  let cursor = 0
+  while (cursor < text.length) {
+    const start = text.indexOf(startToken, cursor)
+    if (start < 0) break
+
+    let end = text.length
+    for (const token of endTokens) {
+      const candidate = text.indexOf(token, start + startToken.length)
+      if (candidate >= 0 && candidate + token.length < end) end = candidate + token.length
+    }
+    comments.push({ text: text.slice(start, end), offset: baseOffset + start })
+    cursor = Math.max(end, start + startToken.length)
+  }
+  return comments
+}
+
+function scanVueBlocks(text, tag, scanContent) {
+  const comments = []
+  const normalized = text.toLowerCase()
+  const openToken = `<${tag}`
+  const closeToken = `</${tag}`
+  let cursor = 0
+
+  while (cursor < text.length) {
+    const openStart = normalized.indexOf(openToken, cursor)
+    if (openStart < 0) break
+    const contentStart = normalized.indexOf('>', openStart + openToken.length)
+    if (contentStart < 0) break
+    const closeStart = normalized.indexOf(closeToken, contentStart + 1)
+    if (closeStart < 0) break
+    const closeEnd = normalized.indexOf('>', closeStart + closeToken.length)
+    if (closeEnd < 0) break
+
+    const offset = contentStart + 1
+    comments.push(...scanContent(text.slice(offset, closeStart), offset))
+    cursor = closeEnd + 1
+  }
+  return comments
 }
 
 function extractComments(file, text) {
   if (file.endsWith('.vue')) {
-    const comments = scanPattern(text, /<!--[\s\S]*?-->/g)
-    for (const match of text.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)) {
-      const content = match[1]
-      const contentOffset = (match.index ?? 0) + match[0].indexOf(content)
-      comments.push(...scanScript(content, contentOffset))
-    }
-    for (const match of text.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/gi)) {
-      const content = match[1]
-      const contentOffset = (match.index ?? 0) + match[0].indexOf(content)
-      comments.push(...scanPattern(content, /\/\*[\s\S]*?\*\//g, contentOffset))
-    }
+    const comments = scanDelimited(text, '<!--', ['-->', '--!>'])
+    comments.push(...scanVueBlocks(text, 'script', scanScript))
+    comments.push(
+      ...scanVueBlocks(text, 'style', (content, offset) =>
+        scanDelimited(content, '/*', ['*/'], offset),
+      ),
+    )
     return comments
   }
-  if (file.endsWith('.css')) return scanPattern(text, /\/\*[\s\S]*?\*\//g)
+  if (file.endsWith('.css')) return scanDelimited(text, '/*', ['*/'])
   if (file.endsWith('.sh')) {
     return [...text.matchAll(/^\s*#(?!\!)(.*)$/gm)].map((match) => ({
       text: match[0],
@@ -104,14 +135,45 @@ function extractComments(file, text) {
 }
 
 function commentLines(comment) {
-  return comment
-    .replace(/^\s*\/\*+/, '')
-    .replace(/\*\/\s*$/, '')
-    .replace(/^\s*\/\//, '')
-    .replace(/^\s*<!--/, '')
-    .replace(/-->\s*$/, '')
-    .split('\n')
-    .map((line) => line.replace(/^\s*(?:\*|#)\s?/, '').trim())
+  let content = comment.trim()
+  if (content.startsWith('<!--')) content = content.slice(4)
+  else if (content.startsWith('/*')) content = content.slice(content.startsWith('/**') ? 3 : 2)
+  else if (content.startsWith('//')) content = content.slice(2)
+  if (content.endsWith('--!>')) content = content.slice(0, -4)
+  else if (content.endsWith('-->')) content = content.slice(0, -3)
+  else if (content.endsWith('*/')) content = content.slice(0, -2)
+
+  return content.split('\n').map((line) => line.replace(/^\s*(?:\*|#)\s?/, '').trim())
+}
+
+function isSeparatedIdentifierList(line) {
+  const normalized = line.replace(/[,:;。]$/u, '')
+  const parts = normalized.split(/\s*[,|/]\s*/u)
+  return parts.length > 1 && parts.every((part) => /^[\w$.@/-]+$/u.test(part))
+}
+
+function stripInlineCode(line) {
+  let result = ''
+  let cursor = 0
+  while (cursor < line.length) {
+    const start = line.indexOf('`', cursor)
+    if (start < 0) return result + line.slice(cursor)
+    result += line.slice(cursor, start)
+    const end = line.indexOf('`', start + 1)
+    if (end < 0) return result
+    cursor = end + 1
+  }
+  return result
+}
+
+function isTechnicalFragment(fragment) {
+  const token = fragment.replace(/^[([{<'"`]+|[\])}>'"`.,:;。；，]+$/gu, '')
+  if (!token || token === '-' || token === '*' || token === '=') return true
+  if (token.startsWith('http://') || token.startsWith('https://')) return true
+  if (token.includes('/') && !token.includes('://')) return true
+  if (/^[A-Z][A-Z0-9_-]*$/u.test(token)) return true
+  if (/^[A-Z][A-Za-z0-9]*$/u.test(token)) return true
+  return /^[\w$]+(?:[.:_-][\w$]+)+$/u.test(token)
 }
 
 function isExempt(line) {
@@ -136,7 +198,7 @@ function isExempt(line) {
   if (/^(?:env|run):(?:\s|$)/i.test(line)) return true
   if (/^[A-Z][A-Z0-9_]*:\s+(?:https?:\/\/|\S+=)/u.test(line)) return true
   if (/^[A-Z][A-Z0-9_]*(?:\s*[=/|,+-]\s*[A-Z0-9_]+)*$/u.test(line)) return true
-  if (/^[\w$.@/-]+(?:\s*[,|/]\s*[\w$.@/-]+)+[,:;。]?$/u.test(line)) return true
+  if (isSeparatedIdentifierList(line)) return true
   if (
     /^(?:import|export|const|let|var|return|await|if|for|while|function|class|interface|type)\b.*[;{([\]]/u.test(
       line,
@@ -152,17 +214,15 @@ function isExempt(line) {
   if (/^[\w$.]+\(\{$/u.test(line)) return true
   if (/^[\w$.]+\(.+=>.+\);?$/u.test(line)) return true
   if (/^[\w$.@:-]+\s*=\s*\S+/u.test(line)) return true
-  if (/^[-*]\s+`?[\w@./:-]+`?(?:\s*[(/|,+→]\s*`?[\w@./:-]+`?)*[)。;]?$/u.test(line)) return true
   if (/^[-*]\s+`/.test(line)) return true
-  if (/^\/?[\w./-]+(?:\s*\/\s*[\w./-]+)+[)。;]?$/u.test(line)) return true
-  if (/^[\w.-]+(?:\/[\w.{}:-]+)+[）。;]?$/u.test(line)) return true
+  if (isSeparatedIdentifierList(line.replace(/^[-*]\s+/u, ''))) return true
+  const technicalLine = line.replace(/^[-*]\s+/u, '')
+  if (technicalLine.split(/\s+/u).every(isTechnicalFragment)) return true
   if (/^\$?[A-Z][A-Z0-9_]*=\S+/u.test(line)) return true
-  const prose = line
-    .replace(/`[^`]+`/g, '')
-    .replace(/https?:\/\/\S+/gi, '')
-    .replace(/(?:\.\.?\/|\/)?[\w@.-]+(?:\/[\w@.{}:-]+)+/g, '')
-    .replace(/\b[A-Z][A-Z0-9_/-]*\b/g, '')
-    .replace(/\b[\w$]+(?:[.:_-][\w$]+)+\b/g, '')
+  const prose = stripInlineCode(line)
+    .split(/\s+/u)
+    .filter((fragment) => !isTechnicalFragment(fragment))
+    .join(' ')
   return !/[A-Za-z]{2}/.test(prose)
 }
 
@@ -187,6 +247,14 @@ const pattern = /https?:\/\//
   )
   if (parsed.length !== 1 || !parsed[0].text.includes('中文解释')) {
     throw new Error('[comment-language] 注释解析器把字符串或正则误判为注释')
+  }
+
+  const vueComments = extractComments(
+    'BoundaryCase.vue',
+    '<template><!-- 中文模板 --!></template><script>/* 中文脚本 */</script ><style>/* 中文样式 */</style >',
+  )
+  if (vueComments.length !== 3) {
+    throw new Error('[comment-language] Vue 边界注释解析不完整')
   }
 }
 
