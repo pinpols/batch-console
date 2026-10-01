@@ -19,6 +19,8 @@
 
 构建脚本只读复制两仓文档到被 Git 忽略的 `tools/docs-bridge/frontend/content/`。后端源仓不写入软链或索引，生成目录不可手工维护。两仓的 `README.md` 分别对应 `/docs/frontend/` 和 `/docs/backend/`。旧 `/fe-docs/*` 返回 `410 Gone`，未加 `backend/` 前缀的后端页面路径返回 `404`；均不设兼容入口。
 
+两仓分别通过 `docs/.docsignore` 管理不进入发布站的仓库内资料。规则是一行一个、相对各自 `docs/` 的文件或目录前缀；支持空行和 `#` 注释，不支持通配符、绝对路径或 `..`。构建器始终额外排除 `.DS_Store`、`node_modules`、`.git`、`.vitepress`、`.docsignore` 和符号链接。已被替代且无现行依赖的历史页、技术试验、测试数据、规模统计和一次性验证证据继续保留在 Git 中，但不进入 VitePress 页面与搜索索引；现行设计、治理和可追溯证据继续发布，避免产生不可用的站内链接。
+
 ## 构建与运行
 
 两仓默认同级放置。`FRONTEND_DOCS_ROOT` 默认是本仓 `docs/`，`BACKEND_DOCS_ROOT` 默认是同级后端仓的 `docs/`；两者都可覆盖为其他文档源目录。相对路径从前端仓库根目录解析。缺少任一权威源时构建失败，不发布不完整站点。
@@ -33,6 +35,8 @@ npm run dev:all
 ```bash
 FRONTEND_DOCS_ROOT=/workspace/console-docs BACKEND_DOCS_ROOT=/workspace/backend-docs npm run docs:build
 ```
+
+自定义来源目录可以不提供 `.docsignore`，此时只应用内置技术目录排除。CI 与生产构建使用仓库内已提交规则，禁止在机器上维护另一份隐式排除清单。
 
 只运行文档预览使用 `npm run docs:serve`。`make dev-stack` 会先构建文档，再启动前端与一个预览服务。文档源变化后需重新构建；前端 Vite 的热更新不负责重建 VitePress 静态产物。
 
