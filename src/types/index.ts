@@ -19,7 +19,7 @@ export interface ApiResponse<T = unknown> {
   data: T
 }
 
-/** OpenAPI PageRequest */
+/** OpenAPI 分页请求 */
 export interface PageRequest {
   pageNo: number
   pageSize: number

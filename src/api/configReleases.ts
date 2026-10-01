@@ -15,7 +15,7 @@ export function listConfigGovernance() {
   return get<ConfigGovernanceItemResponse[]>('/api/console/config/governance')
 }
 
-/** POST /api/console/config/releases — create a config release
+/** POST /api/console/config/releases — 创建配置发布
  * 字段对齐后端 DTO `ConfigReleaseUpsertRequest`(configType/configKey/configName 必填)。 */
 export function createConfigRelease(body: {
   tenantId: string
@@ -88,7 +88,7 @@ export function diffConfigReleases(tenantId: string, releaseIdA: number, release
   return get<unknown>('/api/console/config/releases/diff', { tenantId, releaseIdA, releaseIdB })
 }
 
-/** POST /api/console/config/releases/{releaseId}/submit-approval — submit for approval */
+/** POST /api/console/config/releases/{releaseId}/submit-approval — 提交审批 */
 export function submitReleaseApproval(
   releaseId: number,
   body: { tenantId: string; reason?: string },
@@ -148,7 +148,7 @@ export function previewConfigSync(body: ConfigSyncPreviewBody) {
  * POST /api/console/config/sync/import
  *
  * 与 BE `ConfigSyncImportRequest` 对齐:
- *   tenantId / sourceEnv / targetEnv NotBlank,targetTenantIds NotEmpty;
+ *   tenantId / sourceEnv / targetEnv 要求 NotBlank，targetTenantIds 要求 NotEmpty；
  *   之前 FE 用 `payload` 字段名 + 缺所有 env / target 字段,直接被 NotBlank/NotEmpty 三连。
  */
 export interface ConfigSyncImportBody {

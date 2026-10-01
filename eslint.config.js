@@ -12,7 +12,7 @@ import { readFileSync } from 'node:fs'
 // fallback 给硬编码的 vue/vue-router/pinia 常用 auto-import 列表,跟 vite.config.ts
 // AutoImport({imports: ['vue', 'vue-router', 'pinia']}) 配置对齐。
 const AUTO_IMPORT_FALLBACK = [
-  // vue
+  // Vue 自动导入
   'computed', 'ref', 'reactive', 'readonly', 'shallowRef', 'shallowReactive',
   'watch', 'watchEffect', 'watchPostEffect', 'watchSyncEffect', 'nextTick',
   'onMounted', 'onUnmounted', 'onBeforeMount', 'onBeforeUnmount', 'onUpdated',
@@ -22,9 +22,9 @@ const AUTO_IMPORT_FALLBACK = [
   'h', 'createApp', 'getCurrentInstance', 'useAttrs', 'useSlots', 'useCssModule',
   'toRef', 'toRefs', 'toRaw', 'markRaw', 'isRef', 'isReactive', 'isReadonly', 'isProxy',
   'unref', 'customRef', 'triggerRef', 'effectScope', 'getCurrentScope', 'onScopeDispose',
-  // vue-router
+  // Vue Router 自动导入
   'useRouter', 'useRoute', 'useLink', 'onBeforeRouteUpdate', 'onBeforeRouteLeave',
-  // pinia
+  // Pinia 自动导入
   'defineStore', 'storeToRefs', 'createPinia', 'setActivePinia', 'getActivePinia',
   'acceptHMRUpdate', 'mapStores', 'mapState', 'mapWritableState', 'mapActions',
 ]

@@ -81,7 +81,7 @@ const MOBILE_DEEPLINK_MAP: { prefix: string; to: string | MobileMapper }[] = [
   { prefix: '/observability/outbox', to: '/m/outbox' },
   // 执行日志（旧 /logs 与综合查询日志 Tab）
   { prefix: '/logs', to: '/m/logs' },
-  // Worker
+  // Worker 节点
   { prefix: '/workers', to: '/m/workers' },
   // 运维快照/控制面板
   { prefix: '/ops/summary', to: MOBILE_HOME },

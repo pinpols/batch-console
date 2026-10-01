@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =========================================================
-# fe-acceptance.sh
+# 前端验收脚本 fe-acceptance.sh
 #
 # FE 全链路验收入口。静态治理、测试和真实环境步骤均给出明确 PASS/FAIL/SKIP；
 # 默认全量验收要求后端可用，不允许把基础设施缺失记成通过。
@@ -19,14 +19,14 @@
 # 步骤定义:
 #   0  前置条件检查(node / BE / playwright / 端口 / 磁盘)
 #   1  依赖刷新(package-lock 变才 npm ci)
-#   2  typecheck (vue-tsc --noEmit)
-#   3  lint:check (eslint)
-#   4  check:i18n (zh / en 1:1)
-#   5  gen:api:check (BE OpenAPI drift)
-#   6  test:unit + coverage
-#   7  build + bundle size + prod audit
-#   8  test:e2e:smoke (3 specs)
-#   9  test:e2e (Playwright full suite)
+#   2  类型检查 typecheck（vue-tsc --noEmit）
+#   3  代码检查 lint:check（eslint）
+#   4  国际化检查 check:i18n（zh / en 1:1）
+#   5  契约检查 gen:api:check（后端 OpenAPI 漂移）
+#   6  单元测试 test:unit 与覆盖率
+#   7  构建、产物体积与生产依赖审计
+#   8  E2E 冒烟 test:e2e:smoke（3 个场景）
+#   9  Playwright 全量 E2E 测试
 #   10 preview 冒烟 (vite preview + curl)
 #   11 近 3 天 FE 违约扫描
 #   12 本地验收报告
@@ -127,7 +127,7 @@ should_run() {
   (( s < FROM_STEP )) && return 1
   # --skip 排除
   for x in "${SKIP_STEPS[@]:-}"; do [[ "$x" == "$s" ]] && return 1; done
-  # --skip-e2e-full
+  # 按 --skip-e2e-full 跳过全量 E2E
   (( SKIP_E2E_FULL == 1 && s == 9 )) && return 1
   return 0
 }
@@ -167,7 +167,7 @@ run_step() {
   fi
 }
 
-# ── Steps ──────────────────────────────────────────────────
+# ── 验收步骤 ───────────────────────────────────────────────
 
 step_0_preflight() {
   echo "node: $(node --version 2>/dev/null || echo MISSING)"

@@ -1,5 +1,5 @@
 /**
- * designer nodes/edges → `workflow_definition.definition_json`。
+ * 将设计器节点和边转换为 `workflow_definition.definition_json`。
  *
  * Spike 阶段保存按钮 console.log 即可,但已实现完整反向 codec,MVP 接 BE PUT /full 无需改。
  */

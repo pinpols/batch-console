@@ -2344,6 +2344,23 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/console/ai/chat': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Chat with console AI; an unknown or expired supplied sessionId is rejected */
+    post: operations['chatWithConsoleAi']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/console/ai/chat/stream': {
     parameters: {
       query?: never
@@ -2355,7 +2372,7 @@ export interface paths {
     put?: never
     /**
      * Stream an AI chat turn as server-sent events
-     * @description Uses console AI authorization, budgets, audit, and conversation retention. Events are started ({requestId}), delta ({text}), and completed (AiChatResponse). An unexpected pre-completion error emits failed ({code}). The client must treat connection loss without completed as a failed turn. A stopped turn remains audited.
+     * @description Uses the same authorization, budgets, audit, and conversation retention as /chat. Events are started ({requestId}), delta ({text}), and completed (AiChatResponse). An unexpected pre-completion error emits failed ({code}). The client must treat connection loss without completed as a failed turn. A stopped turn remains audited.
      */
     post: operations['streamConsoleAiChat']
     delete?: never
@@ -7321,6 +7338,9 @@ export interface components {
     }
     CommonResponseAiAuditLogList: components['schemas']['CommonResponseBase'] & {
       data?: components['schemas']['PageResponse']
+    }
+    CommonResponseAiChatResponse: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['AiChatResponse']
     }
     CommonResponseConsoleAiConversationList: components['schemas']['CommonResponseBase'] & {
       data?: components['schemas']['ConsoleAiConversationView'][]
@@ -15064,6 +15084,39 @@ export interface operations {
         content: {
           'application/json': components['schemas']['CommonResponseConsoleSchedulerSnapshotHistoryList']
         }
+      }
+    }
+  }
+  chatWithConsoleAi: {
+    parameters: {
+      query?: never
+      header: {
+        'Idempotency-Key': components['parameters']['IdempotencyKeyHeader']
+      }
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['AiChatRequest']
+      }
+    }
+    responses: {
+      /** @description Chat response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseAiChatResponse']
+        }
+      }
+      /** @description Supplied sessionId does not exist or has expired */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
       }
     }
   }

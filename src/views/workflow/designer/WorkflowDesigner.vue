@@ -9,12 +9,12 @@
    *   │ ErrorBanner(校验错误数 + 展开)                          │
    *   │ LockBanner(他人持锁只读提示)                            │
    *   ├────────┬────────────────────────────┬───────────────────┤
-   *   │ Palette│ Canvas(X6)+ mini-map     │ Inspector          │
+   *   │ 节点库 │ 画布(X6)+小地图          │ 检查器             │
    *   └────────┴────────────────────────────┴───────────────────┘
    *
    * 数据流:
    * - mount → workflowDesignerApi.getFull(:id) → 填 store.meta + reset(snapshot) →
-   *   useLockManager.acquire → setLock(isMine / readonly)
+   *   锁获取流程：useLockManager.acquire → setLock(isMine / readonly)
    * - 保存 → validateDag → 有错弹 drawer;无错走 putFull(/full) + markClean
    * - 锁丢失(续期失败/被夺) → setLock 只读 + banner
    * - onUnmounted → useLockManager 内置 release + beforeunload sendBeacon 兜底

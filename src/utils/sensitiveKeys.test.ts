@@ -55,17 +55,14 @@ describe('detectSensitiveKeys', () => {
   it('skips exempt path prefix (HTTP auth.* aligns with BE exemption)', () => {
     const hits = detectSensitiveKeys(
       { auth: { password: 'p', token: 't' }, other: { secret: 's' } },
-      { exemptPaths: ['auth'] }
+      { exemptPaths: ['auth'] },
     )
     expect(hits).toEqual(['other.secret'])
   })
 
   it('exempt prefix matches segments precisely (does not over-match)', () => {
-    // `auth` should NOT exempt `authorize.password`
-    const hits = detectSensitiveKeys(
-      { authorize: { password: 'p' } },
-      { exemptPaths: ['auth'] }
-    )
+    // `auth` 不应让 `authorize.password` 获得豁免
+    const hits = detectSensitiveKeys({ authorize: { password: 'p' } }, { exemptPaths: ['auth'] })
     expect(hits).toEqual(['authorize.password'])
   })
 

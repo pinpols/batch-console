@@ -58,7 +58,7 @@ test.describe('tenant init config dialog (初始化租户配置)', () => {
       await expect(page.getByText('ALERT_ROUTING')).toBeVisible()
       // 写入模式 radio
       await expect(page.getByText('仅补缺失项').first()).toBeVisible()
-      // Spec JSON textarea
+      // 规格 JSON 文本框
       await expect(page.getByPlaceholder(/完整的配置 JSON/)).toBeVisible()
       // 试运行 switch 默认开启
       await expect(page.getByText('试运行').first()).toBeVisible()

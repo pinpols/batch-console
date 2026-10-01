@@ -191,7 +191,7 @@
     }
     if (filterKey === 'acked') return 'm-tab__badge--info'
     if (filterKey === 'closed') return 'm-tab__badge--success'
-    return '' // all
+    return '' // 全部
   }
 
   const keyword = ref('')

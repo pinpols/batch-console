@@ -1,7 +1,7 @@
 /**
  * 补 Day 1-4 新交付页面的 smoke:
  *   - /jobs/definitions/new      (JobDefinitionWizard)
- *   - /jobs/definitions/:id      (JobDefinitionDetail 9 Tab)
+ *   - /jobs/definitions/:id      （JobDefinitionDetail 的 9 个页签）
  *   - 编辑 drawer 中 workerGroup 下拉(B1 修复)
  *   - cron 输入框 placeholder i18n(B2 修复,需 scheduleType ≠ MANUAL)
  *

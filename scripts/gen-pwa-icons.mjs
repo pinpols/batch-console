@@ -30,7 +30,7 @@ async function genIcon(size, file, source = markOnBlue) {
 }
 
 console.log('[icons] generating PWA icons...')
-await genIcon(180, 'icon-180.png') // iOS apple-touch-icon
+await genIcon(180, 'icon-180.png') // iOS 主屏幕图标
 await genIcon(192, 'icon-192.png')
 await genIcon(192, 'icon-192-maskable.png', markOnWhite)
 await genIcon(256, 'icon-256.png')

@@ -139,7 +139,7 @@ export const authApi = {
     return mapProfileToUserInfo(profile)
   },
 
-  /** POST /api/console/auth/token — exchange current session for JWT */
+  /** POST /api/console/auth/token — 将当前会话换取为 JWT */
   token: () => post<ConsoleAuthTokenPayload>('/api/console/auth/token', undefined),
 
   /**
@@ -157,7 +157,7 @@ export const authApi = {
    * - 四类正式角色全部可调
    * - currentPassword 错 → 401
    * - newPassword 不合规(< 12 位)→ 400
-   * - newPassword == currentPassword → 409 STATE_CONFLICT
+   * - newPassword == currentPassword 时返回 409 STATE_CONFLICT
    * - 成功后 BE 自动清 password_must_change flag
    */
   changePassword: (body: ChangePasswordBody) =>

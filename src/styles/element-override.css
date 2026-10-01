@@ -541,7 +541,7 @@ html.dark {
   --button-soft-text: var(--button-neutral-text);
 }
 
-/* Solid buttons carry the action hierarchy.
+/* 实心按钮承载主要操作层级。
    2026-05-17:从 3 层阴影 → 2 层,gradient 高光降至 8%/4% 更"扁平自然",
    hover 微浮 −1px + 阴影外扩,active 落回 0 + 阴影内收,组成连续的"按起-按下"反馈。 */
 .el-button:not(.is-link):not(.is-text):not(.is-plain):not(.is-disabled) {
@@ -583,7 +583,7 @@ html.dark .el-button--default:not(.is-link):not(.is-text):not(.is-plain):not(.is
   box-shadow: 0 1px 3px rgb(0 0 0 / 32%);
 }
 
-/* Plain buttons are the default table/action-bar style: semantic but low-noise. */
+/* 朴素按钮作为表格和操作栏默认样式：保留语义，降低视觉噪声。 */
 .el-button.is-plain:not(.is-disabled) {
   background-color: var(--button-soft-bg);
   border-color: var(--button-soft-border);

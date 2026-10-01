@@ -4,17 +4,17 @@ import type { PageResponse, PageResult } from '@/types'
 
 export interface InstanceQueryParams {
   tenantId: string
-  /** partial match */
+  /** 模糊匹配 */
   jobCode?: string
   /** exact match,instanceStatuses 非空时被忽略 */
   instanceStatus?: string
   /** CSV 多状态(如 "FAILED,PARTIAL_FAILED"),优先于 instanceStatus 单值 */
   instanceStatuses?: string
-  /** ISO date range start */
+  /** ISO 日期范围起点 */
   startDate?: string
-  /** ISO date range end */
+  /** ISO 日期范围终点 */
   endDate?: string
-  /** partial match */
+  /** 模糊匹配 */
   traceId?: string
   /** SLA 违约过滤:服务端按 deadline_at<now AND active status 判定 */
   slaBreached?: boolean

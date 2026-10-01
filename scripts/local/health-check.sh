@@ -12,8 +12,8 @@
 #
 # env-var 驱动,任何环境可用:
 #   本地:    默认 localhost
-#   Staging: BE_CONSOLE_URL=https://console.staging.example.com bash health-check.sh
-#   CI smoke: BE_CONSOLE_URL=http://app:18080 BE_DRIFT_OPENAPI=... bash health-check.sh
+#   预发布环境: BE_CONSOLE_URL=https://console.staging.example.com bash health-check.sh
+#   CI 冒烟: BE_CONSOLE_URL=http://app:18080 BE_DRIFT_OPENAPI=... bash health-check.sh
 #
 # 用法:
 #   bash scripts/local/health-check.sh             # 默认本地
@@ -142,7 +142,7 @@ check_tunnel() {
   fi
 }
 
-# ── main ─────────────────────────────────────────────
+# ── 主流程 ───────────────────────────────────────────
 [[ $QUIET == 1 ]] || echo "── FE 联调健康检查 ──"
 
 check_be "BE console-api" "$BE_CONSOLE_URL"

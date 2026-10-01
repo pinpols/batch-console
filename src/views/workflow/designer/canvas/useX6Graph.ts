@@ -321,8 +321,8 @@ export function useX6Graph(
     ensureRegistered()
     const graph = new Graph({
       container: containerRef.value,
-      // The designer body, JSON panel and responsive shell can all change the available canvas size.
-      // X6 otherwise keeps the mount-time dimensions and may render a blank or clipped interaction area.
+      // 设计器主体、JSON 面板和响应式外壳都会改变可用画布尺寸。
+      // 若不重新测量，X6 会保留挂载时尺寸，导致交互区域空白或被裁切。
       autoResize: true,
       // --color-bg-canvas 是已定义且暗色感知的画布底色(light #e9eef5 / dark #0b0f14);
       // 原 --color-bg-base 未定义 → 暗色下回退 #fafafa 变浅色画布。

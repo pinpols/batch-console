@@ -34,6 +34,7 @@
 | [运行时与依赖版本](./engineering/runtime-versions.md)                                  | Node 运行约束、锁文件和后端权威支持矩阵                           |
 | [CI 依赖治理](./engineering/ci-dependency-governance.md)                              | Action、Runner、Artifact、分批升级、验证与回滚规则                 |
 | [环境变量治理](./engineering/environment-variables.md)                                 | 构建期配置、敏感性和 owner                                        |
+| [注释语言治理](./engineering/comment-language-governance.md)                           | 中文解释性注释、技术标识豁免与本地/CI 门禁                        |
 | [浏览器支持策略](./engineering/browser-support.md)                                     | 桌面/移动支持范围与跨浏览器验收                                   |
 | [设计 Token 治理](./engineering/design-tokens.md)                                      | 运行时 token 权威源与视觉变更规则                                 |
 | [第三方软件声明](./compliance/THIRD-PARTY-LICENSES.md)                                 | 前端 npm 依赖许可证摘要;SBOM 见同目录 `sbom.json`                 |

@@ -76,7 +76,7 @@ test.describe('@user-journey D 档真实用户端到端闭环', () => {
     await drawer.getByRole('button', { name: '新增', exact: true }).click()
     await expect(drawer).toBeHidden({ timeout: 8000 })
 
-    // C.2 Search-back & verify
+    // C.2 返回搜索并验证
     const keyword = page.getByPlaceholder(/请输入|jobCode/).first()
     if (await isVisible(keyword, 1500)) {
       await keyword.fill(jobCode)

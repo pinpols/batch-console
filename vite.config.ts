@@ -104,7 +104,7 @@ export default defineConfig(({ mode }) => {
         dts: 'src/types/components.d.ts',
       }),
       /**
-       * PWA / Service Worker:
+       * PWA 与 Service Worker：
        * - 桌面快捷方式 + 移动端可"加到桌面"(已有 manifest.webmanifest)
        * - 静态资源 cache-first(版本化文件名,SW 自动刷新)
        * - API 不缓存(除 /meta/* 这类配置字典外,避免数据陈旧)

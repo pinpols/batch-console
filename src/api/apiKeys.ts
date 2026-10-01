@@ -29,7 +29,7 @@ export function getApiKey(id: number, tenantId: string) {
   return get<unknown>(`/api/console/api-keys/${id}`, { tenantId })
 }
 
-/** DELETE /api/console/api-keys/{id} — revoke */
+/** DELETE /api/console/api-keys/{id} — 吊销密钥 */
 export function revokeApiKey(id: number, tenantId: string) {
   return del<void>(`/api/console/api-keys/${id}`, { params: { tenantId } })
 }

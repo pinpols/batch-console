@@ -15,7 +15,7 @@ const FORCE_SEED = process.env.E2E_FORCE_SEED === '1'
 
 /**
  * 把 fetch 响应的 Set-Cookie 头解析成 Playwright storageState cookie 对象。
- * Playwright cookie schema: { name, value, domain, path, expires, httpOnly, secure, sameSite }
+ * Playwright Cookie 结构：{ name, value, domain, path, expires, httpOnly, secure, sameSite }
  *
  * 我们的 BE 通常下发的 cookie 是 SESSION / accessToken,带 HttpOnly + Path=/。
  * 这里做最小解析:取 first kv 作为 name=value,后续 attribute 解析 Path/Domain/HttpOnly/Secure/SameSite。
@@ -65,9 +65,9 @@ function sleep(ms) {
 }
 
 /**
- * Seed / fixture endpoints run from Node fetch, not the browser context.
- * Newer console-api builds issue auth only through HttpOnly cookies, so the
- * setup must replay those cookies instead of relying on a response-body token.
+ * 种子数据和夹具端点由 Node fetch 调用，不经过浏览器上下文。
+ * 新版 console-api 仅通过 HttpOnly Cookie 下发认证信息，因此初始化逻辑必须复用这些
+ * Cookie，不能依赖响应体中的令牌。
  */
 function buildAuthHeaders(token, cookies) {
   const headers = {}
@@ -551,7 +551,7 @@ async function globalSetup(config) {
   console.log('[global-setup] storageState 已写入，默认测试租户: ta')
 
   // ── 刷新分角色 storageState(role-*.json) ─────────────────────────
-  // scenarios-business / multi-tenant-and-stream / c-plus-coverage / rbac-matrix /
+  // 以下场景共用分角色状态：scenarios-business / multi-tenant-and-stream / c-plus-coverage / rbac-matrix /
   // flows/_watchdog 都直接读这些文件做 APIRequestContext。
   // 旧版只生成 user.json,role-*.json 的 token 容易过期导致 401。
   // 这里幂等准备账号并重新登录刷新，避免本地数据库缺账号时静默跳过 RBAC 覆盖。

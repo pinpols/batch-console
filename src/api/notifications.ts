@@ -60,7 +60,7 @@ function normalizeDelivery(row: NotificationDeliveryWire) {
 //  - 订阅规则以 ruleId(int64) 为路径标识
 //  - 请求/响应体后端为 Map<String, Object>，此处保留 unknown
 
-// ── Notification Channels ──
+// ── 通知渠道 ──
 
 /** GET /api/console/notifications/channels?tenantId= */
 export async function listNotificationChannels(tenantId: string) {
@@ -113,7 +113,7 @@ export function testNotificationChannel(channelCode: string, tenantId: string) {
   )
 }
 
-// ── Notification Rules ──
+// ── 通知规则 ──
 
 /** GET /api/console/notifications/rules?tenantId= */
 export async function listNotificationRules(tenantId: string) {
@@ -150,7 +150,7 @@ export function deleteNotificationRule(ruleId: number, tenantId: string) {
   return del<void>(`/api/console/notifications/rules/${ruleId}`, { params: { tenantId } })
 }
 
-// ── Delivery Logs ──
+// ── 投递日志 ──
 
 /** GET /api/console/notifications/delivery-logs?tenantId=&limit= */
 export async function listNotificationDeliveryLogs(tenantId: string, limit = 100) {
