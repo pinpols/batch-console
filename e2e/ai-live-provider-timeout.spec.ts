@@ -2,6 +2,7 @@ import { execFileSync } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
 import { createServer } from 'node:http'
 import { expect, test } from './support/app'
+import { aiStreamEventData } from './support/aiStream'
 
 test.use({ storageState: { cookies: [], origins: [] } })
 test.skip(
@@ -72,15 +73,19 @@ test('backend model timeout is shown as a failed turn without discarding the pro
     await page.locator('.composer__editor textarea').fill(prompt)
     const chatResponse = page.waitForResponse(
       (response) =>
-        response.url().endsWith('/api/console/ai/chat') && response.request().method() === 'POST',
+        response.url().endsWith('/api/console/ai/chat/stream') &&
+        response.request().method() === 'POST',
     )
     await page.getByRole('button', { name: '发送' }).click()
     const response = await chatResponse
-    const payload = await response.json()
+    const result = await aiStreamEventData<{ promptDecision: string; sessionId: string }>(
+      response,
+      'completed',
+    )
     expect(modelRequests).toBeGreaterThan(0)
-    expect(response.status(), `${payload.code}: ${payload.message}`).toBe(200)
-    expect(payload.data.promptDecision).toBe('FAILED')
-    expect(payload.data.sessionId).toBeTruthy()
+    expect(response.status()).toBe(200)
+    expect(result.promptDecision).toBe('FAILED')
+    expect(result.sessionId).toBeTruthy()
     await expect(page.locator('.gate-notice__tag')).toContainText('处理失败')
     await expect(page.locator('.composer__editor textarea')).toHaveValue(prompt)
     const answer = page.locator('.bubble--assistant .bubble__body')
@@ -89,7 +94,7 @@ test('backend model timeout is shown as a failed turn without discarding the pro
 
     await page.reload()
     const conversation = page.locator(
-      `.conversation-list__item[data-conversation-id="${payload.data.sessionId}"]`,
+      `.conversation-list__item[data-conversation-id="${result.sessionId}"]`,
     )
     await expect(conversation).toBeVisible()
     await conversation.locator('.conversation-list__open').click()

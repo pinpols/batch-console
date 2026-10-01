@@ -1,5 +1,5 @@
 /**
- * AI 助手页面 + POST /api/console/ai/chat 触发测试
+ * AI 助手页面 + POST /api/console/ai/chat/stream 触发测试
  * 这是个写接口(POST),前端有发送消息流程。
  */
 import { expect, test } from './support/app'
@@ -23,14 +23,14 @@ test.describe('AI Chat', () => {
     await expect(sendBtn).toBeVisible()
   })
 
-  test('发送一条消息 → 触发 POST /api/console/ai/chat', async ({ page }) => {
+  test('发送一条消息 → 触发流式对话接口', async ({ page }) => {
     const input = page.getByRole('textbox').first()
     if (!(await isVisible(input, 3000))) return
     await input.fill('e2e ai chat test')
 
     // 监听 chat 接口
     const apiCall = page.waitForResponse(
-      (r) => r.url().includes('/api/console/ai/chat') && r.request().method() === 'POST',
+      (r) => r.url().endsWith('/api/console/ai/chat/stream') && r.request().method() === 'POST',
       { timeout: 15_000 },
     )
 

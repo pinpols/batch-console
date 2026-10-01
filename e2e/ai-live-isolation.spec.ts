@@ -1,6 +1,7 @@
 import { execFileSync } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
 import { expect, test } from './support/app'
+import { aiStreamEventData } from './support/aiStream'
 
 test.use({ storageState: { cookies: [], origins: [] } })
 test.skip(process.env.E2E_AI_ISOLATION !== '1', 'Requires local AI persistence and PostgreSQL')
@@ -107,7 +108,7 @@ test('AI history excludes another owner and another tenant', async ({ page, netw
     )?.value
     expect(xsrfToken).toBeTruthy()
     for (const id of [otherOwnerId, otherTenantId]) {
-      const response = await page.request.post('/api/console/ai/chat', {
+      const response = await page.request.post('/api/console/ai/chat/stream', {
         headers: {
           'X-Tenant-Id': 'ta',
           'X-XSRF-TOKEN': xsrfToken!,
@@ -120,9 +121,8 @@ test('AI history excludes another owner and another tenant', async ({ page, netw
           prompt: '查询批量调度作业运行状态',
         },
       })
-      const payload = await response.json()
-      expect(response.status(), `${payload.code}: ${payload.message}`).toBe(404)
-      expect(payload.code).toBe('NOT_FOUND')
+      expect(response.status()).toBe(200)
+      expect((await aiStreamEventData<{ code: string }>(response, 'failed')).code).toBe('NOT_FOUND')
     }
     network.assertClean('AI conversation tenant and owner isolation')
   } finally {
@@ -151,13 +151,13 @@ test('switching and deleting conversations ignore older real history responses',
   const headers = { 'X-Tenant-Id': 'ta', 'X-XSRF-TOKEN': xsrfToken! }
   const createdIds: string[] = []
   const create = async (prompt: string) => {
-    const response = await page.request.post('/api/console/ai/chat', {
+    const response = await page.request.post('/api/console/ai/chat/stream', {
       headers: { ...headers, 'Idempotency-Key': randomUUID() },
       data: { tenantId: 'ta', contextVersion: 'v1', prompt },
     })
-    const payload = await response.json()
-    expect(response.status(), `${payload.code}: ${payload.message}`).toBe(200)
-    const id = payload.data?.sessionId
+    expect(response.status()).toBe(200)
+    const result = await aiStreamEventData<{ sessionId: string }>(response, 'completed')
+    const id = result.sessionId
     expect(id).toBeTruthy()
     createdIds.push(id)
     return id as string

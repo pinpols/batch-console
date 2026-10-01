@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { expect, test } from './support/app'
+import { aiStreamEventData } from './support/aiStream'
 
 test.use({ storageState: { cookies: [], origins: [] } })
 test.skip(process.env.E2E_AI_LIVE !== '1', 'Requires a backend with AI and persistence enabled')
@@ -32,17 +33,23 @@ test('AI conversation survives reload and can be deleted', async ({ page }) => {
   try {
     const prompt = `查询批量调度运行概况 e2e-${randomUUID()}`
     await page.locator('.composer__editor textarea').fill(prompt)
-    const chatResponse = page.waitForResponse((response) =>
-      response.url().includes('/api/console/ai/chat') && response.request().method() === 'POST',
+    const chatResponse = page.waitForResponse(
+      (response) =>
+        response.url().endsWith('/api/console/ai/chat/stream') &&
+        response.request().method() === 'POST',
     )
     await page.getByRole('button', { name: '发送' }).click()
     const response = await chatResponse
-    const payload = await response.json()
-    expect(response.status(), `${payload.code}: ${payload.message}`).toBe(200)
-    expect(payload.data.promptDecision).toBe('APPROVED')
-    sessionId = payload.data.sessionId
+    expect(response.status()).toBe(200)
+    const result = await aiStreamEventData<{
+      promptDecision: string
+      sessionId: string
+      answer: string
+    }>(response, 'completed')
+    expect(result.promptDecision).toBe('APPROVED')
+    sessionId = result.sessionId
     expect(sessionId).toBeTruthy()
-    expect(payload.data.answer).toBeTruthy()
+    expect(result.answer).toBeTruthy()
     await expect(page.locator('.bubble--user .bubble__body')).toHaveText(prompt)
     const answer = page.locator('.bubble--assistant .bubble__body')
     await expect(answer).not.toBeEmpty()

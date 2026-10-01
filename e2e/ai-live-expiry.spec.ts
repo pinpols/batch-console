@@ -1,6 +1,7 @@
 import { execFileSync } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
 import { expect, test } from './support/app'
+import { aiStreamEventData } from './support/aiStream'
 
 test.use({ storageState: { cookies: [], origins: [] } })
 test.skip(process.env.E2E_AI_EXPIRY !== '1', 'Requires local AI persistence and PostgreSQL')
@@ -13,20 +14,27 @@ function runSql(sql: string): string {
   const username = process.env.BATCH_PLATFORM_DB_USERNAME
   const password = process.env.BATCH_PLATFORM_DB_PASSWORD
   if (!username || !password) throw new Error('BATCH_PLATFORM_DB_USERNAME/PASSWORD are required')
-  return execFileSync(process.env.PSQL_BIN ?? 'psql', ['-X', '-v', 'ON_ERROR_STOP=1', '-Atqc', sql], {
-    encoding: 'utf8',
-    env: {
-      ...process.env,
-      PGHOST: host,
-      PGPORT: process.env.E2E_AI_DB_PORT ?? '15432',
-      PGDATABASE: process.env.E2E_AI_DB_NAME ?? 'batch_platform',
-      PGUSER: username,
-      PGPASSWORD: password,
+  return execFileSync(
+    process.env.PSQL_BIN ?? 'psql',
+    ['-X', '-v', 'ON_ERROR_STOP=1', '-Atqc', sql],
+    {
+      encoding: 'utf8',
+      env: {
+        ...process.env,
+        PGHOST: host,
+        PGPORT: process.env.E2E_AI_DB_PORT ?? '15432',
+        PGDATABASE: process.env.E2E_AI_DB_NAME ?? 'batch_platform',
+        PGUSER: username,
+        PGPASSWORD: password,
+      },
     },
-  }).trim()
+  ).trim()
 }
 
-test('expired AI conversation rejects history and send without losing the draft', async ({ page, network }) => {
+test('expired AI conversation rejects history and send without losing the draft', async ({
+  page,
+  network,
+}) => {
   const username = process.env.E2E_AI_USERNAME
   const password = process.env.E2E_AI_PASSWORD
   if (!username || !password) throw new Error('E2E_AI_USERNAME/PASSWORD are required')
@@ -47,12 +55,15 @@ test('expired AI conversation rejects history and send without losing the draft'
 
   const id = `e2e-ai-expiry-${randomUUID()}`
   const title = 'E2E expired conversation'
-  runSql(`BEGIN; SELECT set_config('app.tenant_id', 'ta', true); INSERT INTO batch.console_ai_conversation (id, tenant_id, owner_user_id, title, context_version, expires_at) VALUES ('${id}', 'ta', '${owner}', '${title}', 'v1', CURRENT_TIMESTAMP + INTERVAL '1 hour'); COMMIT;`)
+  runSql(
+    `BEGIN; SELECT set_config('app.tenant_id', 'ta', true); INSERT INTO batch.console_ai_conversation (id, tenant_id, owner_user_id, title, context_version, expires_at) VALUES ('${id}', 'ta', '${owner}', '${title}', 'v1', CURRENT_TIMESTAMP + INTERVAL '1 hour'); COMMIT;`,
+  )
   try {
-    network.ignoreIf((entry) =>
-      entry.status === 404 &&
-      (entry.url.includes(`/api/console/ai/conversations/${id}/turns`) ||
-        entry.url.endsWith('/api/console/ai/chat')),
+    network.ignoreIf(
+      (entry) =>
+        entry.status === 404 &&
+        (entry.url.includes(`/api/console/ai/conversations/${id}/turns`) ||
+          entry.url.endsWith('/api/console/ai/chat/stream')),
     )
     await page.addInitScript(() => {
       localStorage.setItem('batch-console-session', '1')
@@ -63,14 +74,18 @@ test('expired AI conversation rejects history and send without losing the draft'
     await page.goto('/system/ai-chat')
     const conversation = page.locator(`.conversation-list__item[data-conversation-id="${id}"]`)
     await expect(conversation).toBeVisible()
-    expect((await page.context().cookies()).some((cookie) => cookie.name === 'XSRF-TOKEN')).toBe(true)
-    const missingCsrf = await page.request.post('/api/console/ai/chat', {
+    expect((await page.context().cookies()).some((cookie) => cookie.name === 'XSRF-TOKEN')).toBe(
+      true,
+    )
+    const missingCsrf = await page.request.post('/api/console/ai/chat/stream', {
       headers: { 'X-Tenant-Id': 'ta' },
       data: { tenantId: 'ta', contextVersion: 'v1', prompt: '查询批量调度运行状态' },
     })
     expect(missingCsrf.status()).toBe(403)
 
-    runSql(`BEGIN; SELECT set_config('app.tenant_id', 'ta', true); UPDATE batch.console_ai_conversation SET expires_at = CURRENT_TIMESTAMP - INTERVAL '1 minute' WHERE tenant_id = 'ta' AND id = '${id}'; COMMIT;`)
+    runSql(
+      `BEGIN; SELECT set_config('app.tenant_id', 'ta', true); UPDATE batch.console_ai_conversation SET expires_at = CURRENT_TIMESTAMP - INTERVAL '1 minute' WHERE tenant_id = 'ta' AND id = '${id}'; COMMIT;`,
+    )
     const missing = page.waitForResponse((response) =>
       response.url().includes(`/api/console/ai/conversations/${id}/turns`),
     )
@@ -81,26 +96,36 @@ test('expired AI conversation rejects history and send without losing the draft'
     await expect(conversation).toHaveCount(0)
     await expect(page.locator('.history-error')).toContainText('会话不存在或已过期')
 
-    runSql(`BEGIN; SELECT set_config('app.tenant_id', 'ta', true); UPDATE batch.console_ai_conversation SET expires_at = CURRENT_TIMESTAMP + INTERVAL '1 hour' WHERE tenant_id = 'ta' AND id = '${id}'; COMMIT;`)
+    runSql(
+      `BEGIN; SELECT set_config('app.tenant_id', 'ta', true); UPDATE batch.console_ai_conversation SET expires_at = CURRENT_TIMESTAMP + INTERVAL '1 hour' WHERE tenant_id = 'ta' AND id = '${id}'; COMMIT;`,
+    )
     await page.reload()
     await expect(conversation).toBeVisible()
     await conversation.locator('.conversation-list__open').click()
     await expect(page.locator('.conversation-list__open.el-button--primary')).toBeVisible()
 
-    runSql(`BEGIN; SELECT set_config('app.tenant_id', 'ta', true); UPDATE batch.console_ai_conversation SET expires_at = CURRENT_TIMESTAMP - INTERVAL '1 minute' WHERE tenant_id = 'ta' AND id = '${id}'; COMMIT;`)
+    runSql(
+      `BEGIN; SELECT set_config('app.tenant_id', 'ta', true); UPDATE batch.console_ai_conversation SET expires_at = CURRENT_TIMESTAMP - INTERVAL '1 minute' WHERE tenant_id = 'ta' AND id = '${id}'; COMMIT;`,
+    )
     const draft = '查询批量调度作业运行状态'
     await page.locator('.composer__editor textarea').fill(draft)
-    const rejected = page.waitForResponse((result) =>
-      result.url().endsWith('/api/console/ai/chat') && result.request().method() === 'POST',
+    const rejected = page.waitForResponse(
+      (result) =>
+        result.url().endsWith('/api/console/ai/chat/stream') &&
+        result.request().method() === 'POST',
     )
     await page.getByRole('button', { name: '发送' }).click()
     const sendResponse = await rejected
-    expect(sendResponse.status()).toBe(404)
-    expect((await sendResponse.json()).code).toBe('NOT_FOUND')
+    expect(sendResponse.status()).toBe(200)
+    expect((await aiStreamEventData<{ code: string }>(sendResponse, 'failed')).code).toBe(
+      'NOT_FOUND',
+    )
     await expect(page.locator('.composer__editor textarea')).toHaveValue(draft)
     await expect(page.locator('.composer .history-error')).toContainText('会话不存在或已过期')
     network.assertClean('expired AI conversation')
   } finally {
-    runSql(`BEGIN; SELECT set_config('app.tenant_id', 'ta', true); DELETE FROM batch.console_ai_conversation WHERE tenant_id = 'ta' AND id = '${id}'; COMMIT;`)
+    runSql(
+      `BEGIN; SELECT set_config('app.tenant_id', 'ta', true); DELETE FROM batch.console_ai_conversation WHERE tenant_id = 'ta' AND id = '${id}'; COMMIT;`,
+    )
   }
 })
