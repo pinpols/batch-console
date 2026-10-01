@@ -1,11 +1,12 @@
-# BE 修复 backlog (Phase 1 API CRUD 测试发现)
+# Phase 1 API CRUD 历史问题记录
 
-> 由 `e2e-data/api-crud.sh` 在 tx 隔离租户上跑全实体 CRUD 抓到的 BE 端问题。
-> **最终 Phase 1 结果**: **PASS 42 / FAIL 0 / SKIP 0** ✅
-> 报告: `/tmp/api-crud-report.md`
+> 文档性质：历史联调记录，不是当前后端待办清单。本文由 `e2e-data/api-crud.sh` 在隔离租户执行
+> Phase 1 CRUD 时产生，保留当时的症状、根因和修复思路用于追溯。最终记录为
+> **PASS 42 / FAIL 0 / SKIP 0**；正文中的“必须修”“唯一 FAIL”“待 owner 决定”等均是当时状态，
+> 不得据此判断当前后端仍有缺陷。
 >
-> **已修复**: ISSUE-2 / ISSUE-3 / ISSUE-4 / ISSUE-5 / ISSUE-6 部分
-> **待 BE owner 决定**: ISSUE-6 完整版 (其他实体 UPDATE merge) / ISSUE-7 (设计行为)
+> 当前契约以后端 OpenAPI、Controller 和 `file-batch-system/docs/analysis/todo-master.md` 为准；
+> 发现可复现的新问题时重新登记，不在本文续写待办。
 
 ## BE-ISSUE-2: DataIntegrityViolationException 误报 500
 
@@ -173,4 +174,4 @@ No setter found for the keyProperty 'id' in 'com.example.batch.console.domain.pa
 - Webhook (LCD 全过)
 - 通知渠道 (LC,见 BE-ISSUE-7)
 
-**Phase 1 唯一 FAIL**: 文件渠道 CREATE (BE-ISSUE-5)。
+**Phase 1 当时唯一 FAIL**：文件渠道 CREATE（BE-ISSUE-5）；最终复跑结果已为 42/0/0。
