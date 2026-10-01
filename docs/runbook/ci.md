@@ -32,6 +32,16 @@ checkout@v7 → setup-node@v7(node 24 + npm cache)
 
 并发控制:同 PR `cancel-in-progress: true` 取消过期任务。15 min timeout。
 
+业务与规范检查采用失败聚合模式：单项失败会记录稳定错误码并继续执行其余独立检查，
+job 末尾一次性列出全部失败并返回非零。checkout、Node 安装、`npm ci` 等后续检查
+无法继续的基础环境步骤仍立即失败。本地 `npm run verify:local` 使用相同汇总行为。
+
+### 派生产物与人工维护边界
+
+- `package.json` / `package-lock.json` 已暂存且没有同文件未暂存改动时，pre-commit 会自动重建并暂存前端 SBOM 与第三方许可证清单；CI 只读比对，不在机器人账号下回写 PR。
+- `src/types/api.generated.ts` 可确定性生成，但权威输入位于配对后端仓库。接口契约变更仍由开发者确认后执行 `npm run gen:api`，避免本地后端分支或远端下载源被静默带入提交。
+- Changelog、环境变量 owner/phase、可维护性基线、bundle/Lighthouse 预算、视觉快照和许可证证据覆盖需要语义或风险判断，门禁只负责提示漂移，不自动放宽或改写。
+
 ### Action 版本基线
 
 CI 使用 GitHub 托管的 `ubuntu-26.04`，Action 运行时统一到 Node 24 兼容主版本。禁止使用浮动的 `ubuntu-latest`，避免 GitHub 分阶段迁移镜像时同一分支出现不同系统环境：
@@ -103,6 +113,7 @@ tag v* / 手动 ── precheck(URL/账号/healthz/版本必须有效)
 3. **npm audit 双层**:
    - pr-gate:`--omit=dev --audit-level=high`(只 prod 依赖 + high+critical)
    - full-ci-gate:全量(含 dev),critical 挡 / high warning
+   - SBOM 同时覆盖运行与开发依赖；AGPL/GPL/SSPL/BUSL/CPAL/EUPL、Commons Clause、Elastic、PolyForm 直接阻断，未知许可证也阻断，只有精确包版本和可复核证据可以覆盖缺失元数据。
 4. **Lighthouse 阈值统一**(`.github/lighthouse-budget.json`):
    - perf ≥ 0.8 / a11y ≥ 0.9 / SEO ≥ 0.8 / best-practices ≥ 0.85
    - CLS ≤ 0.1 / LCP ≤ 2500ms / FCP ≤ 2000ms / TBT ≤ 300ms
@@ -132,7 +143,7 @@ tag v* / 手动 ── precheck(URL/账号/healthz/版本必须有效)
 | Trivy 镜像扫 | — | ✅ CRITICAL 拒 | — | — |
 | Lighthouse | — | ✅ against preview | ✅ against staging | — |
 | Playwright e2e | — | — | ✅ against staging | — |
-| 架构/环境/文档/SBOM | ✅ | ✅ | — | 按 staged 变更选择 |
+| 架构/环境/文档/SBOM/许可证 | ✅ | ✅ | — | 按 staged 变更选择 |
 | Shell 语法 / ShellCheck warning | ✅ | ✅ | — | `npm run check:shell` |
 | 文档 chunk / 搜索索引预算 | 统一文档 job | Docker 文档构建 | — | `docs:build` 内置 |
 | `check-version-alignment.sh` | ✅ | ✅ | — | `preflight:changed`(package 变更) |

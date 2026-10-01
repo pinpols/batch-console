@@ -25,6 +25,8 @@ jobs:
     name: Lint / Typecheck / Unit / Build
     runs-on: ubuntu-26.04
     timeout-minutes: 15
+    env:
+      BATCH_GATE_COLLECT: '1'
 
     steps:
       - uses: actions/checkout@v7
@@ -33,6 +35,8 @@ jobs:
           persist-credentials: false
 
       - name: Validate GitHub Actions workflows
+        id: actionlint
+        continue-on-error: true
         uses: docker://rhysd/actionlint:1.7.12
 
       - name: Setup Node
@@ -45,16 +49,19 @@ jobs:
         run: npm ci --no-audit --no-fund
 
       - name: Check package version alignment
-        run: npm run check:version
+        run: bash scripts/ci/run-gate.sh FE_VERSION "版本对齐" -- npm run check:version
 
       - name: Check UTF-8 text encoding
-        run: npm run check:encoding
+        run: bash scripts/ci/run-gate.sh FE_ENCODING "UTF-8 编码" -- npm run check:encoding
+
+      - name: Test gate failure aggregation
+        run: bash scripts/ci/run-gate.sh FE_GATE_COLLECTION_TEST "门禁失败汇总自测" -- bash scripts/ci/test-gate-result-collection.sh
 
       - name: Check Chinese explanatory comments
-        run: npm run check:comments
+        run: bash scripts/ci/run-gate.sh FE_COMMENTS "中文解释性注释" -- npm run check:comments
 
       - name: ESLint（check 模式，不 auto-fix）
-        run: npm run lint:check
+        run: bash scripts/ci/run-gate.sh FE_LINT "ESLint" -- npm run lint:check
 
       # 后端 console-api.openapi.yaml 改了但前端没跑 gen:api 提交,会在这里挂。
       # 本地开发也可直接 `npm run gen:api:check` 自查。
@@ -63,39 +70,44 @@ jobs:
       - name: Check OpenAPI drift
         env:
           BE_OPENAPI_URL: ${{ secrets.BE_OPENAPI_URL || 'https://raw.githubusercontent.com/pinpols/file-batch-system/main/docs/api/console-api.openapi.yaml' }}
-        run: npm run gen:api:check
+        run: bash scripts/ci/run-gate.sh FE_API_DRIFT "OpenAPI 漂移" -- npm run gen:api:check
 
       - name: Engineering governance
-        run: |
-          npm run check:architecture
-          npm run check:env
-          npm run check:maintainability
-          npm run check:workflows
-          npm run check:shell
-          npm run check:docs
-          npm run compliance:check
-          npm run check:changelog
+        run: bash scripts/verify-governance.sh
 
       - name: TypeCheck
-        run: npm run typecheck
+        run: bash scripts/ci/run-gate.sh FE_TYPECHECK "TypeScript 类型检查" -- npm run typecheck
 
       # zh-CN ↔ en-US 1:1 对齐检查 — build 隐含会跑,这里前置以便快失败
       - name: i18n consistency
-        run: npm run check:i18n
+        run: bash scripts/ci/run-gate.sh FE_I18N "国际化词条一致性" -- npm run check:i18n
 
       - name: Unit tests (Vitest) + coverage gate
-        run: npm run test:unit -- --coverage
+        run: bash scripts/ci/run-gate.sh FE_UNIT "Vitest 单测与覆盖率" -- npm run test:unit -- --coverage
 
       - name: Build (Vite 生产产物,跳重复 typecheck/i18n)
-        run: npm run build:fast
+        run: bash scripts/ci/run-gate.sh FE_BUILD "Vite 生产构建" -- npm run build:fast
 
       # Bundle size budget — vendor-element-plus 340KB / vendor-vue 60KB / index 200KB
       # (brotli;实测 247/40/139KB,约 30% headroom)。超阈值 PR 直接 fail,
       # 防 vendor 渐进膨胀。配置在 package.json#size-limit。
       - name: Bundle size budget
-        run: npm run size
+        run: bash scripts/ci/run-gate.sh FE_BUNDLE_SIZE "Bundle 体积预算" -- npm run size
 
       # 只挡 high+critical 严重度,low/moderate 噪音忽略
       # --omit=dev 跳 devDep(eslint/playwright/vitest 等 dev-time vuln 不影响产物)
       - name: npm audit (prod deps, high+critical only)
-        run: npm audit --audit-level=high --omit=dev
+        run: bash scripts/ci/run-gate.sh FE_NPM_AUDIT "生产依赖漏洞审计" -- npm audit --audit-level=high --omit=dev
+
+      - name: Report all gate failures
+        if: always()
+        env:
+          ACTIONLINT_OUTCOME: ${{ steps.actionlint.outcome }}
+        shell: bash
+        run: |
+          source scripts/lib/gate-result.sh
+          if [[ "$ACTIONLINT_OUTCOME" == "failure" ]]; then
+            gate_result FAIL FE_ACTIONLINT "GitHub Actions 语法" 1
+            gate_record_failure FE_ACTIONLINT "GitHub Actions 语法" 1
+          fi
+          gate_assert_collected
