@@ -1,6 +1,6 @@
 # batch-console 项目结构
 
-> 2026-07-03 整理。Vue 3 + TypeScript + Pinia + Element Plus 控制面前端,桌面 + 移动端双端。
+> 2026-10-01 更新。Vue 3 + TypeScript + Pinia + Element Plus 控制面前端,桌面 + 移动端双端。
 
 ## 顶层结构
 
@@ -40,7 +40,6 @@ batch-console/
 ├── eslint.config.js           ESLint 9 配置
 ├── playwright.config.cjs      Playwright 配置
 ├── Dockerfile                 容器镜像
-├── docker-compose.yml         本地编排
 ├── docker-compose.yml         本地与自托管部署编排
 ├── Makefile                   常用任务 alias
 ├── AGENTS.md                  项目红线 + 关键路径(权威)
@@ -63,23 +62,50 @@ batch-console/
 
 ```
 src/
-├── api/              69  REST 客户端 + 类型(per-domain,如 alertsQuery / jobInstance)
-├── stores/           11  Pinia stores(auth / theme / mobileBadges / ...)
-├── router/            1  Vue Router 路由表
-├── views/           103  桌面页面(L1 模块:job / workflow / alert / config / system / ...)
-├── views-mobile/     11  移动端页面(/m/*)
-├── layout/            5  桌面 layout(DefaultLayout / LayoutHeader / LayoutSidebar / ...)
-├── layout-mobile/    11  移动端 layout(MobileLayout / MobileTabBar / MobileAppBar / ...)
-├── components/       45  跨页通用组件(ProTable / DataState / TraceIdCell / ...)
-├── composables/      47  Vue 3 组合式函数(useRouteFilters / useResponsive / useDirtyForm / ...)
-├── locales/           4  i18n 文件(zh-CN / en-US 1:1 必须对齐)
-├── styles/            5  全局样式 + tokens(z-index.css / dark theme / mobile-common)
-├── charts/            1  ECharts 配色与封装
-├── constants/        10  枚举常量(severity / status / role / ...)
-├── directives/        7  自定义指令(v-permission / v-track / ...)
-├── types/             6  共享 TypeScript 类型
-└── utils/            43  纯函数工具(fmtRelative / clipboard / ...)
+├── api/                    REST 客户端 + 按领域拆分的查询适配
+│   └── queries/            TanStack Query 查询定义
+├── stores/                 Pinia stores(auth / theme / mobileBadges / ...)
+├── router/                 Vue Router 路由与桌面/移动分流
+├── views/                  桌面页面(job / workflow / observability / config / system / ...)
+├── views-mobile/           移动端页面(/m/*)
+├── layout/                 桌面 layout(DefaultLayout / LayoutHeader / LayoutSidebar / ...)
+├── layout-mobile/          移动端 layout(MobileLayout / MobileTabBar / MobileAppBar / ...)
+├── components/             跨页通用组件
+│   ├── common/             DataState / TraceIdInput / AI 助手展示与附件选择等
+│   ├── table/              数据表格通用能力
+│   ├── tools/              顶栏批处理工具
+│   └── workflow/           Workflow 展示与交互组件
+├── composables/            Vue 组合式函数
+│   └── queries/            查询状态与页面数据流复用
+├── locales/                i18n 词条(zh-CN / en-US 1:1 必须对齐)
+├── styles/                 全局样式 + design tokens
+├── charts/                 ECharts 配色与封装
+├── constants/              枚举常量(severity / status / role / ...)
+├── directives/             自定义指令(v-permission / v-track / ...)
+├── types/                  共享类型 + OpenAPI 生成类型
+└── utils/                  无副作用工具(format / clipboard / safe HTML / ...)
 ```
+
+目录数量不作为长期架构事实记录；文件规模由 CI 和带日期的审计报告统计，避免新增页面后结构文档失真。
+
+## 前端调用结构图
+
+```mermaid
+flowchart LR
+  USER["桌面 / 移动用户"] --> ROUTER["router\n路由与设备分流"]
+  ROUTER --> VIEWS["views / views-mobile\n页面编排"]
+  VIEWS --> COMPONENTS["components\n通用 UI / 工具 / Workflow / AI 助手"]
+  VIEWS --> STATE["composables / Pinia / TanStack Query\n页面状态与服务端状态"]
+  COMPONENTS --> STATE
+  STATE --> API["api\n统一 HTTP 客户端与领域适配"]
+  API -->|"Cookie / Tenant / CSRF / OpenAPI"| BACKEND["file-batch-system\nbatch-console-api"]
+  BACKEND -->|"SSE 文本流 / 附件元数据 / 受控文件流"| API
+  TYPES["api.generated.ts\n后端 OpenAPI 生成"] -. "类型约束" .-> API
+  I18N["locales\nzh-CN / en-US"] -. "用户文案" .-> VIEWS
+  TOKENS["styles / charts\n设计令牌"] -. "统一视觉" .-> COMPONENTS
+```
+
+AI 图片和文件附件仍通过 `src/api/ai.ts` 访问 `batch-console-api`，浏览器不直连对象存储，也不持有对象存储凭据；历史消息只消费后端返回的附件元数据和受控读取地址。
 
 ## 模块划分(views/)
 
