@@ -186,7 +186,7 @@ export function useAiChatSession() {
         images.value.reduce((sum, item) => sum + item.size, 0) + file.size > limits.maxTotalBytes
       ) {
         sendError.value = true
-        sendErrorKey.value = 'aiChat.attachmentTooLarge'
+        sendErrorKey.value = 'aiChat.imageInvalid'
         break
       }
       const item: AiImageDraft = {

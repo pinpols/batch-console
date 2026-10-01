@@ -5601,7 +5601,7 @@ export default {
     imageProviderNotice: '图片会发送给当前配置的模型',
     imageUploadFailed: '图片上传失败，请移除后重试',
     imageUploadRateLimited: '图片上传已达到限制，请稍后重试或移除未使用的图片',
-    imageInvalid: '图片格式、大小或分辨率不受支持',
+    imageInvalid: '图片格式、大小、分辨率或数量不符合限制',
     imageUploadUnavailable: '图片上传服务暂时不可用',
     imageUploadPending: '请等待图片上传完成，或移除失败的图片',
     imageStatusUnknown: '请求状态尚未确认，请先查询状态，不要重复发送',

@@ -86,6 +86,21 @@ describe('useAiChatSession', () => {
     expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:preview')
   })
 
+  it('reports image validation errors without using the text attachment length message', async () => {
+    mockedCapabilities.mockResolvedValue({
+      imageInput: true,
+      maxImages: 4,
+      maxImageBytes: 1024,
+      maxTotalBytes: 4096,
+    })
+    const chat = useAiChatSession()
+    await chat.loadImageCapabilities()
+    await chat.addImages([new File(['test'], 'evidence.txt', { type: 'text/plain' })])
+
+    expect(chat.sendErrorKey.value).toBe('aiChat.imageInvalid')
+    expect(mockedUpload).not.toHaveBeenCalled()
+  })
+
   it('deletes abandoned uploaded drafts when the session is cleared', async () => {
     mockedCapabilities.mockResolvedValue({
       imageInput: true,

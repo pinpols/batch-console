@@ -5734,7 +5734,7 @@ const messages: Messages = {
     imageProviderNotice: 'Images are sent to the configured model',
     imageUploadFailed: 'Image upload failed; remove it and try again',
     imageUploadRateLimited: 'Image upload limit reached; try again later or remove unused drafts',
-    imageInvalid: 'This image format, size, or resolution is not supported',
+    imageInvalid: 'Image format, size, resolution, or count exceeds the current limits',
     imageUploadUnavailable: 'Image uploads are temporarily unavailable',
     imageUploadPending: 'Wait for the image upload or remove the failed image',
     imageStatusUnknown: 'Request status is uncertain; check it before sending again',
