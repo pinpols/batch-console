@@ -5,7 +5,7 @@
       :key="image.id"
       type="button"
       class="ai-message-images__item"
-      :aria-label="t('aiChat.previewImage', { name: image.id })"
+      :aria-label="t('aiChat.imagePreviewTitle')"
       @click="openPreview(image.id)"
     >
       <img

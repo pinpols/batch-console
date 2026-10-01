@@ -306,6 +306,7 @@
   import { useAiChatSession } from '@/composables/useAiChatSession'
   import { useAiAutoScroll } from '@/composables/useAiAutoScroll'
   import { aiMessageBody } from '@/utils/aiMessagePresentation'
+  import { formatAiUsd } from '@/utils/formatAiUsd'
   import { queryAiAuditsPage } from '@/api/observabilityQueries'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
@@ -355,7 +356,7 @@
   const costSummary = ref<AiCostSummary | null>(null)
   const monthlyCost = computed(() => {
     const value = costSummary.value?.estimatedCostUsd
-    return typeof value === 'number' && Number.isFinite(value) ? value.toFixed(2) : null
+    return typeof value === 'number' && Number.isFinite(value) ? formatAiUsd(value) : null
   })
   const monthlyBudget = computed(() => {
     const value = costSummary.value?.monthlyBudgetUsd
@@ -366,7 +367,7 @@
   const reservedCost = computed(() => {
     const value = costSummary.value?.reservedCostUsd
     return typeof value === 'number' && value > 0 && Number.isFinite(value)
-      ? value.toFixed(4)
+      ? formatAiUsd(value)
       : null
   })
   const reportedTokens = computed(
