@@ -70,6 +70,8 @@ jobs:
     if: needs.changes.outputs.docs-only != 'true'
     runs-on: ubuntu-26.04
     timeout-minutes: 20
+    env:
+      BATCH_GATE_COLLECT: '1'
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -80,50 +82,52 @@ jobs:
       - run: npm ci --no-audit --no-fund
 
       - name: Check package version alignment
-        run: npm run check:version
+        run: bash scripts/ci/run-gate.sh FE_VERSION "版本对齐" -- npm run check:version
 
       - name: Check UTF-8 text encoding
-        run: npm run check:encoding
+        run: bash scripts/ci/run-gate.sh FE_ENCODING "UTF-8 编码" -- npm run check:encoding
+
+      - name: Test gate failure aggregation
+        run: bash scripts/ci/run-gate.sh FE_GATE_COLLECTION_TEST "门禁失败汇总自测" -- bash scripts/ci/test-gate-result-collection.sh
 
       - name: Check Chinese explanatory comments
-        run: npm run check:comments
+        run: bash scripts/ci/run-gate.sh FE_COMMENTS "中文解释性注释" -- npm run check:comments
 
-      - run: npm run lint:check
-      - run: npm run typecheck
-      - run: npm run check:i18n
+      - run: bash scripts/ci/run-gate.sh FE_LINT "ESLint" -- npm run lint:check
+      - run: bash scripts/ci/run-gate.sh FE_TYPECHECK "TypeScript 类型检查" -- npm run typecheck
+      - run: bash scripts/ci/run-gate.sh FE_I18N "国际化词条一致性" -- npm run check:i18n
 
       - name: Check OpenAPI drift
         env:
           BE_OPENAPI_URL: ${{ secrets.BE_OPENAPI_URL || 'https://raw.githubusercontent.com/pinpols/file-batch-system/main/docs/api/console-api.openapi.yaml' }}
-        run: npm run gen:api:check
+        run: bash scripts/ci/run-gate.sh FE_API_DRIFT "OpenAPI 漂移" -- npm run gen:api:check
 
       - name: Architecture, environment and documentation governance
-        run: |
-          npm run check:architecture
-          npm run check:env
-          npm run check:maintainability
-          npm run check:workflows
-          npm run check:shell
-          npm run check:docs
+        run: bash scripts/verify-governance.sh
 
-      - name: Check SBOM and license snapshot drift
-        run: npm run compliance:check
-
-      - run: npm run test:unit -- --coverage
+      - run: bash scripts/ci/run-gate.sh FE_UNIT "Vitest 单测与覆盖率" -- npm run test:unit -- --coverage
 
       # 完整 build(vue-tsc + i18n + vite build),验证生产产物可生成
-      - run: npm run build
+      - run: bash scripts/ci/run-gate.sh FE_BUILD "完整生产构建" -- npm run build
 
       # Bundle size budget(同 pr-gate)— full-ci 也复跑兜底
       - name: Bundle size budget
-        run: npm run size
+        run: bash scripts/ci/run-gate.sh FE_BUNDLE_SIZE "Bundle 体积预算" -- npm run size
 
       - name: Upload dist artifact
+        if: always()
         uses: actions/upload-artifact@v7
         with:
           name: dist
           path: dist/
           retention-days: 7
+
+      - name: Report all gate failures
+        if: always()
+        shell: bash
+        run: |
+          source scripts/lib/gate-result.sh
+          gate_assert_collected
 
   # ── Job 2:Docker 镜像 build + Trivy 漏洞扫描 ──────────────────────
   docker-and-scan:

@@ -31,10 +31,9 @@
 | CC0-1.0 | 2 |
 | FSL-1.1-MIT | 9 |
 | ISC | 57 |
-| MIT | 778 |
+| MIT | 779 |
 | MIT-0 | 2 |
 | MPL-2.0 | 14 |
-| NOASSERTION | 1 |
 | OFL-1.1 | 2 |
 | Python-2.0 | 1 |
 | Unlicense | 1 |
@@ -120,9 +119,15 @@
 
 ## 许可证风险说明
 
-- 当前清单未发现 AGPL / GPL / SSPL / BUSL 等强 copyleft 或商业限制类红线许可证。
-- `NOASSERTION` 表示 lockfile 中没有提供明确许可证字段，需在合规审计或发布前人工复核。
+- 当前清单未发现 AGPL / GPL / SSPL / BUSL / CPAL / EUPL / Commons Clause / Elastic / PolyForm 等强 copyleft、网络 copyleft 或商业限制类红线许可证。
+- lockfile 未声明许可证时默认阻断；仅允许按精确包版本登记已核验证据，不接受包名级宽泛白名单。
 - 字体、测试工具、构建工具和运行时库均纳入 lockfile 级 SBOM；是否进入生产镜像取决于构建产物和 Dockerfile。
+
+## 许可证证据覆盖
+
+| Package | License | Evidence |
+|---|---|---|
+| `khroma@2.1.0` | `MIT` | npm tarball package/license（包元数据未声明 license） |
 
 ## 重新生成
 

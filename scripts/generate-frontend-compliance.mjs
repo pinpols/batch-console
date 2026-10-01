@@ -16,6 +16,16 @@ const lock = JSON.parse(readFileSync(lockPath, 'utf8'))
 const lockPackages = lock.packages || {}
 const rootPackage = lockPackages[''] || {}
 
+const licenseOverrides = new Map([
+  [
+    'khroma@2.1.0',
+    {
+      license: 'MIT',
+      evidence: 'npm tarball package/license（包元数据未声明 license）',
+    },
+  ],
+])
+
 function parsePackagePath(path) {
   const prefix = 'node_modules/'
   if (!path.startsWith(prefix)) return null
@@ -32,15 +42,17 @@ function purl(name, version) {
 }
 
 function normalizeLicense(value) {
-  if (!value || typeof value !== 'string') return 'NOASSERTION'
-  return value.trim() || 'NOASSERTION'
+  if (!value || typeof value !== 'string') return null
+  return value.trim() || null
 }
 
 const components = Object.entries(lockPackages)
   .map(([path, meta]) => {
     const name = parsePackagePath(path)
     if (!name || !meta.version) return null
-    const license = normalizeLicense(meta.license)
+    const packageKey = `${name}@${meta.version}`
+    const override = licenseOverrides.get(packageKey)
+    const license = normalizeLicense(meta.license) || override?.license || 'NOASSERTION'
     const component = {
       type: 'library',
       'bom-ref': `pkg:npm/${name}@${meta.version}`,
@@ -58,7 +70,8 @@ const components = Object.entries(lockPackages)
   .filter(Boolean)
   .sort((a, b) => a.name.localeCompare(b.name) || a.version.localeCompare(b.version))
 
-const forbiddenLicense = /(?:^|[-( ])(?:AGPL|GPL|SSPL|BUSL)(?:[-). ]|$)/i
+const forbiddenLicense =
+  /(?:^|[-( ])(?:AGPL|GPL|SSPL|BUSL|CPAL|EUPL)(?:[-). ]|$)|Commons Clause|Elastic License|PolyForm/i
 const forbiddenComponents = components.filter((component) =>
   forbiddenLicense.test(component.licenses[0].license.id),
 )
@@ -67,6 +80,18 @@ if (forbiddenComponents.length) {
   forbiddenComponents.forEach((component) =>
     console.error(`- ${component.name}@${component.version}: ${component.licenses[0].license.id}`),
   )
+  process.exit(1)
+}
+
+const unknownLicenseComponents = components.filter(
+  (component) => component.licenses[0].license.id === 'NOASSERTION',
+)
+if (unknownLicenseComponents.length) {
+  console.error('[frontend-compliance] 检测到未确认许可证:')
+  unknownLicenseComponents.forEach((component) =>
+    console.error(`- ${component.name}@${component.version}`),
+  )
+  console.error('[frontend-compliance] 请核验发布包许可证并增加精确版本证据覆盖')
   process.exit(1)
 }
 
@@ -161,9 +186,15 @@ ${tableRows(devDependencies.map(([name, version]) => [`\`${name}\``, `\`${versio
 
 ## 许可证风险说明
 
-- 当前清单未发现 AGPL / GPL / SSPL / BUSL 等强 copyleft 或商业限制类红线许可证。
-- \`NOASSERTION\` 表示 lockfile 中没有提供明确许可证字段，需在合规审计或发布前人工复核。
+- 当前清单未发现 AGPL / GPL / SSPL / BUSL / CPAL / EUPL / Commons Clause / Elastic / PolyForm 等强 copyleft、网络 copyleft 或商业限制类红线许可证。
+- lockfile 未声明许可证时默认阻断；仅允许按精确包版本登记已核验证据，不接受包名级宽泛白名单。
 - 字体、测试工具、构建工具和运行时库均纳入 lockfile 级 SBOM；是否进入生产镜像取决于构建产物和 Dockerfile。
+
+## 许可证证据覆盖
+
+| Package | License | Evidence |
+|---|---|---|
+${tableRows([...licenseOverrides.entries()].map(([name, value]) => [`\`${name}\``, `\`${value.license}\``, value.evidence]))}
 
 ## 重新生成
 

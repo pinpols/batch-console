@@ -46,6 +46,13 @@ function run(label, command, commandArgs) {
   if (res.status !== 0) process.exit(res.status ?? 1)
 }
 
+function hasUnstagedChanges(paths) {
+  const res = spawnSync('git', ['diff', '--quiet', '--', ...paths], { stdio: 'inherit' })
+  if (res.status === 0) return false
+  if (res.status === 1) return true
+  process.exit(res.status ?? 1)
+}
+
 const files = gitChangedFiles()
 
 if (files.length === 0) {
@@ -103,6 +110,19 @@ if (commentScopeChanged) {
 }
 
 if (packageChanged) {
+  if (staged) {
+    if (hasUnstagedChanges(['package.json', 'package-lock.json'])) {
+      console.error('[preflight] package 文件还有未暂存改动，拒绝自动生成合规快照')
+      process.exit(1)
+    }
+    run('regenerate SBOM and license inventory', 'npm', ['run', 'compliance:sbom'])
+    run('stage generated compliance snapshots', 'git', [
+      'add',
+      '--',
+      'docs/compliance/sbom.json',
+      'docs/compliance/THIRD-PARTY-LICENSES.md',
+    ])
+  }
   run('package version alignment', 'npm', ['run', 'check:version'])
 }
 
