@@ -8845,6 +8845,8 @@ export interface components {
       authorities: string[]
       /** @description 按当前用户 authorities 过滤后的侧边栏菜单树，由后端 ConsoleMenuRegistry 下发，前端不再硬编码。 */
       menus: components['schemas']['ConsoleMenuGroup'][]
+      /** @description 当前用户已开通的动态控制台能力；能力同时考虑功能开关和用户/角色白名单。 */
+      capabilities: string[]
       /** @description 首次登录/重置后建议更新密码提示标志；true 时 FE 显示非阻断提醒。 */
       mustChangePassword: boolean
     }
@@ -11772,6 +11774,13 @@ export interface operations {
       }
       /** @description Not authenticated */
       401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description Requires ROLE_ADMIN, ROLE_AUDITOR, or ROLE_TENANT_ADMIN */
+      403: {
         headers: {
           [name: string]: unknown
         }

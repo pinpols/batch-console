@@ -2,6 +2,7 @@ import { computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
+import { useAuthStore } from '@/stores/auth'
 
 /**
  * 统一维护期写操作守卫。
@@ -11,9 +12,10 @@ import { useAppStore } from '@/stores/app'
  */
 export function useWriteAvailability() {
   const app = useAppStore()
+  const auth = useAuthStore()
   const { t } = useI18n({ useScope: 'global' })
 
-  const writesFrozen = computed(() => app.writesFrozen)
+  const writesFrozen = computed(() => app.writesFrozen && !auth.hasPermission('ROLE_ADMIN'))
   const disabledReason = computed(() =>
     writesFrozen.value ? t('maintenance.writeBlocked') : undefined,
   )

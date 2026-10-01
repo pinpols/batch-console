@@ -24,6 +24,7 @@ export interface ConsoleAuthTokenPayload {
   username: string
   tenantId: string
   authorities: string[]
+  capabilities?: string[]
   mustChangePassword: boolean
 }
 
@@ -66,6 +67,7 @@ export function mapProfileToUserInfo(p: ConsoleAuthProfilePayload): UserInfo {
     username: p.username,
     role: mapAuthoritiesToRole(p.authorities ?? []),
     permissions: p.authorities ?? [],
+    capabilities: p.capabilities ?? [],
     menus: p.menus,
     // 字段缺失保持 undefined,由 auth store 按本次登录的会话级提示状态补齐。
     mustChangePassword: p.mustChangePassword,

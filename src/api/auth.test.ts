@@ -52,16 +52,18 @@ describe('mapProfileToUserInfo (role mapping)', () => {
     expect(info.role).toBe('ADMIN')
   })
 
-  it('passes through menus / mustChangePassword / passwordExpiringIn', () => {
+  it('passes through menus / capabilities / mustChangePassword / passwordExpiringIn', () => {
     const info = mapProfileToUserInfo({
       username: 'u',
       tenantId: 'ta',
       authorities: ['ROLE_ADMIN'],
       menus: [{ title: 'Ops', items: [] }] as never,
+      capabilities: ['AI_ASSISTANT_USE'],
       mustChangePassword: true,
       passwordExpiringIn: 3,
     })
     expect(info.menus).toEqual([{ title: 'Ops', items: [] }])
+    expect(info.capabilities).toEqual(['AI_ASSISTANT_USE'])
     expect(info.mustChangePassword).toBe(true)
     expect(info.passwordExpiringIn).toBe(3)
   })
@@ -74,6 +76,7 @@ describe('mapProfileToUserInfo (role mapping)', () => {
     })
     expect(info.role).toBe('VIEWER')
     expect(info.permissions).toEqual([])
+    expect(info.capabilities).toEqual([])
   })
 
   it('mustChangePassword undefined → undefined (not coerced false)', () => {

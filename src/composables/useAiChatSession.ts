@@ -129,7 +129,7 @@ export function useAiChatSession() {
         refusalReason: res.refusalReason,
         modelName: res.modelName,
       })
-      if (prompt.value === draft) prompt.value = ''
+      if (res.promptDecision === 'APPROVED' && prompt.value === draft) prompt.value = ''
       return true
     } catch (error) {
       if (requestGeneration !== generation || tenant.tenantId !== tenantId) return false

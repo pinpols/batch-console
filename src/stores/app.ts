@@ -168,8 +168,8 @@ export const useAppStore = defineStore('app', () => {
     maintenance.value = { ...maintenance.value, ...state }
   }
 
-  /** 写操作是否被冻结；完整维护和只读维护都禁止普通业务写入。 */
-  const writesFrozen = computed(() => maintenance.value.enabled)
+  /** 写操作是否被冻结；管理员旁路由后端授权，不受前端维护冻结影响。 */
+  const writesFrozen = computed(() => maintenance.value.enabled && !maintenance.value.adminBypass)
 
   // 降级模式状态 — BE Resilience4j circuit breaker 触发降级时,响应头加
   //   X-Degraded-Source: <serviceCode>(如 trigger / orchestrator / push)

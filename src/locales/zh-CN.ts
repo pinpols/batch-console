@@ -1495,7 +1495,7 @@ export default {
       description: '控制台所有用户写操作的留痕(告警/审批/Job/Worker/Outbox/API Key 等)。',
     },
     observabilityUsage: {
-      title: '使用率',
+      title: '使用统计',
       description: '查看当前租户的日聚合使用趋势和功能指标。',
     },
     observabilityOutbox: { title: 'Outbox', description: '查看 Outbox 投递状态与重试记录。' },
@@ -3365,7 +3365,7 @@ export default {
     pagePlaceholder: '全部页面',
     version: '应用版本',
     allVersions: '全部版本',
-    loadError: '使用率数据加载失败',
+    loadError: '使用统计数据加载失败',
     empty: '该条件下暂无聚合数据',
     events: '事件数',
     success: '成功事件数',

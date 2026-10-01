@@ -138,7 +138,7 @@ export const pageMetaByPath = {
       '控制台所有用户写操作的留痕(告警/审批/Job/Worker/Outbox/API Key 等),由 @AuditAction 切面同事务落库。',
   },
   '/observability/usage': {
-    title: '使用率',
+    title: '使用统计',
     description: '查看当前租户的日聚合使用趋势和功能指标。',
   },
   '/observability/outbox': {

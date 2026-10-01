@@ -1,6 +1,7 @@
 import { onMounted, onUnmounted } from 'vue'
 import { getMaintenanceStatus } from '@/api/system.maintenance'
 import { useAppStore } from '@/stores/app'
+import { useAuthStore } from '@/stores/auth'
 
 /**
  * 启动时 + 30s 轮询拉维护状态,写入 appStore。
@@ -16,6 +17,7 @@ export function useMaintenancePolling(
   maintenanceIntervalMs = 10_000,
 ): void {
   const app = useAppStore()
+  const auth = useAuthStore()
   let timer: ReturnType<typeof setTimeout> | null = null
   let stopped = false
 
@@ -30,6 +32,7 @@ export function useMaintenancePolling(
       const s = await getMaintenanceStatus()
       app.setMaintenance({
         ...s,
+        adminBypass: s.enabled && auth.hasPermission('ROLE_ADMIN'),
         lastSyncedAt: new Date().toISOString(),
         syncError: null,
         isStale: false,

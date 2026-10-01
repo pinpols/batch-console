@@ -34,6 +34,7 @@ vi.mock('@/api/auth', () => ({
     username: p.username,
     role: p.role,
     permissions: p.permissions ?? [],
+    capabilities: p.capabilities ?? [],
     menus: p.menus,
     mustChangePassword: p.mustChangePassword,
   })),
@@ -57,6 +58,24 @@ describe('useAuthStore', () => {
     setActivePinia(createPinia())
     const auth = useAuthStore()
     expect(auth.isLoggedIn).toBe(true)
+  })
+
+  it('checks dynamic capabilities independently from role authorities', async () => {
+    const { authApi } = await import('@/api/auth')
+    vi.mocked(authApi.login).mockResolvedValue({
+      tenantId: 'system',
+      userInfo: {
+        username: 'auditor',
+        permissions: ['ROLE_AUDITOR'],
+        capabilities: ['AI_ASSISTANT_USE'],
+      },
+    } as Awaited<ReturnType<typeof authApi.login>>)
+
+    const auth = useAuthStore()
+    await auth.login('auditor', 'pw')
+
+    expect(auth.hasCapability('AI_ASSISTANT_USE')).toBe(true)
+    expect(auth.hasCapability('UNKNOWN')).toBe(false)
   })
 
   it('hasPermission returns false when no userInfo', () => {
@@ -153,6 +172,31 @@ describe('useAuthStore', () => {
     await p2
     expect(mockedGet).toHaveBeenCalledTimes(1)
     expect(auth.userInfo?.username).toBe('test')
+  })
+
+  it('marks the authoritative profile loaded only after /auth/me succeeds', async () => {
+    const { authApi } = await import('@/api/auth')
+    vi.mocked(authApi.login).mockResolvedValue({
+      tenantId: 'system',
+      userInfo: {
+        username: 'admin',
+        permissions: ['ROLE_ADMIN'],
+        capabilities: [],
+      },
+    } as Awaited<ReturnType<typeof authApi.login>>)
+    apiMocks.get.mockResolvedValue({
+      username: 'admin',
+      permissions: ['ROLE_ADMIN'],
+      capabilities: ['AI_ASSISTANT_USE'],
+    })
+
+    const auth = useAuthStore()
+    await auth.login('admin', 'pw')
+    expect(auth.profileLoaded).toBe(false)
+
+    await auth.fetchMe()
+    expect(auth.profileLoaded).toBe(true)
+    expect(auth.hasCapability('AI_ASSISTANT_USE')).toBe(true)
   })
 
   it('fetchMe discards stale response after tenant switch mid-flight', async () => {

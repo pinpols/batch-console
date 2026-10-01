@@ -67,7 +67,6 @@ export const smokeRoutes: RouteCheck[] = [
   { path: '/system/user-accounts', title: '登录账户' },
   { path: '/system/me', title: '我的账户' },
   { path: '/system/users', title: '权限自查' },
-  { path: '/system/ai-chat', title: 'AI 助手' },
   { path: '/system/api-keys', title: 'API Key' },
   { path: '/system/parameters', title: '系统参数' },
   { path: '/system/notifications', title: '通知与投递' },
@@ -116,6 +115,22 @@ export async function enterDemoApp(page: Page) {
     document
       .querySelectorAll('.driver-overlay, .driver-popover, .driver-active-element')
       .forEach((el) => el.remove())
+  })
+}
+
+/** 为使用路由桩验证 AI 交互的用例补充能力；真实 AI 联测不得调用。 */
+export async function grantAiCapability(page: Page) {
+  await page.route('**/api/console/auth/me', async (route) => {
+    const response = await route.fetch()
+    const payload = (await response.json()) as {
+      data?: { capabilities?: string[] }
+    }
+    if (payload.data) {
+      payload.data.capabilities = Array.from(
+        new Set([...(payload.data.capabilities ?? []), 'AI_ASSISTANT_USE']),
+      )
+    }
+    await route.fulfill({ response, json: payload })
   })
 }
 

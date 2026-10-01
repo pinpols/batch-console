@@ -15,6 +15,7 @@
 import { test, expect, request as pwRequest, type APIRequestContext } from '@playwright/test'
 import path from 'node:path'
 import fs from 'node:fs'
+import { grantAiCapability } from './support/app'
 
 const STATE_ADMIN = path.resolve(__dirname, '.auth/role-admin.json')
 
@@ -36,6 +37,7 @@ test.describe('Phase 9 — 设计器 + AI Chat 烟测', () => {
   })
 
   test('AI Chat 页打得开 + 输入框可输入', async ({ page }) => {
+    await grantAiCapability(page)
     await page.goto('http://localhost:5173/system/ai-chat', { timeout: 12000 })
     await page.waitForLoadState('networkidle', { timeout: 8000 }).catch(() => undefined)
     // 不应跳登录

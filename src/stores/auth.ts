@@ -43,6 +43,7 @@ function writePasswordNotice(username: string, mustChangePassword: boolean | und
 export const useAuthStore = defineStore('auth', () => {
   const sessionActive = ref<boolean>(localStorage.getItem(SESSION_FLAG_KEY) === '1')
   const userInfoInternal = ref<UserInfo | null>(null)
+  const profileLoaded = ref(false)
   // 在飞 fetchMe 的目标 tenantId,用于切租户竞态时识别"应丢弃"的旧响应
   let fetchMePromise: Promise<void> | null = null
   let inflightTenantId: string | null = null
@@ -72,6 +73,9 @@ export const useAuthStore = defineStore('auth', () => {
     if (list.includes('*')) return true
     return list.includes(permission)
   }
+  function hasCapability(capability: string): boolean {
+    return userInfoInternal.value?.capabilities.includes(capability) ?? false
+  }
 
   function canAccess(minRole: Role): boolean {
     const current = role.value ? roleOrder.indexOf(role.value) : -1
@@ -85,6 +89,7 @@ export const useAuthStore = defineStore('auth', () => {
     const result = await authApi.login({ username, password, captchaToken })
     sessionActive.value = true
     userInfoInternal.value = result.userInfo
+    profileLoaded.value = false
     localStorage.setItem(SESSION_FLAG_KEY, '1')
     writePasswordNotice(result.userInfo.username, result.userInfo.mustChangePassword)
     const tenant = useTenantStore()
@@ -102,6 +107,7 @@ export const useAuthStore = defineStore('auth', () => {
     })
     sessionActive.value = false
     userInfoInternal.value = null
+    profileLoaded.value = false
     localStorage.removeItem(SESSION_FLAG_KEY)
     sessionStorage.removeItem(PASSWORD_NOTICE_KEY)
   }
@@ -129,6 +135,7 @@ export const useAuthStore = defineStore('auth', () => {
             nextUserInfo.mustChangePassword = true
           }
           userInfoInternal.value = nextUserInfo
+          profileLoaded.value = true
           writePasswordNotice(nextUserInfo.username, nextUserInfo.mustChangePassword)
         }
         // 注意：不要在这里 setTenantId(profile.tenantId)。
@@ -153,6 +160,7 @@ export const useAuthStore = defineStore('auth', () => {
     () => tenantStore.tenantId,
     () => {
       if (!sessionActive.value) return
+      profileLoaded.value = false
       void fetchMe()
     },
   )
@@ -166,11 +174,13 @@ export const useAuthStore = defineStore('auth', () => {
 
   return {
     userInfo,
+    profileLoaded,
     isLoggedIn,
     role,
     menus,
     isTenantUser,
     hasPermission,
+    hasCapability,
     canAccess,
     login,
     logout,

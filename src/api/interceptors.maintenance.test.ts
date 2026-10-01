@@ -59,6 +59,16 @@ describe('maintenance write guard', () => {
     expect(adapter).toHaveBeenCalledTimes(2)
   })
 
+  it('keeps administrator bypass mutations available', async () => {
+    useAppStore().setMaintenance({ enabled: true, readOnly: false, adminBypass: true })
+    const client = createClient()
+
+    await client.post('/api/console/jobs', {})
+
+    expect(adapter).toHaveBeenCalledOnce()
+    expect(ElMessage.warning).not.toHaveBeenCalled()
+  })
+
   it('allowlist only covers authentication and maintenance administration', () => {
     expect(isMaintenanceWriteAllowed('/api/console/auth/login')).toBe(true)
     expect(isMaintenanceWriteAllowed('/api/console/admin/system/maintenance')).toBe(true)

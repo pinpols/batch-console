@@ -26,6 +26,9 @@ export const usePermissionStore = defineStore('permission', () => {
       .map((group) => ({
         ...group,
         children: group.children.filter((item) => {
+          if (item.capabilities?.length) {
+            return item.capabilities.some((capability) => auth.hasCapability(capability))
+          }
           if (item.authorities?.length) {
             return item.authorities.some((authority) => auth.hasPermission(authority))
           }
@@ -45,7 +48,15 @@ export const usePermissionStore = defineStore('permission', () => {
     if (backendMenus && backendMenus.length > 0) {
       // 后端菜单是可见性上限,前端精确 authority / capability 规则仍需同时满足。
       // 避免后端菜单配置偏宽时,本地已收紧的 ADMIN 页面重新出现在低权限侧栏。
-      return filterNavigationByBackendMenus(filterGroups(navigationGroups), backendMenus)
+      const capabilityPaths = navigationGroups
+        .flatMap((group) => group.children)
+        .filter((item) => item.capabilities?.some((capability) => auth.hasCapability(capability)))
+        .map((item) => item.path)
+      return filterNavigationByBackendMenus(
+        filterGroups(navigationGroups),
+        backendMenus,
+        capabilityPaths,
+      )
     }
     return filterGroups(navigationGroups)
   })
@@ -77,8 +88,10 @@ export function hasBackendMenuAccess(backendMenus?: MenuGroup[] | null, path?: s
 export function filterNavigationByBackendMenus(
   groups: NavigationGroup[],
   backendMenus: MenuGroup[],
+  additionalVisiblePaths: string[] = [],
 ): NavigationGroup[] {
   const visiblePaths = backendVisiblePaths(backendMenus)
+  for (const path of additionalVisiblePaths) visiblePaths.add(path)
 
   return groups
     .map((group) => ({

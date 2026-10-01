@@ -23,7 +23,7 @@
 - `src/composables/useAiChatSession.ts` 统一全页与侧栏发送状态；请求包含 `contextVersion=v1`，页面模式仅发送白名单 `pageType`，未发送后端尚未对具体对象重新授权的 ID。
 - 历史恢复保留服务端 `promptDecision`（含预算拒绝）；发送请求期间用户继续编辑的问题草稿不会因前一响应成功而丢失。
 - 发送错误根据后端限流、拒绝、会话不存在/过期、服务不可用及请求超时状态显示不同提示；页面保留未成功提交的问题草稿供重试。会话历史加载期间阻止向旧会话发送，删除中的迟到历史响应不再恢复会话。真实过期读取/续写已使用独立后端和本机 PostgreSQL 验证；限流和并发浏览器回归仍以路由模拟为主，不等同于真实故障验收。
-- 桌面 `LayoutHeader` 与移动 `MobileAppBar` 已挂载全局入口；当前沿用 ADMIN 角色门槛。后端 `/auth/me` 尚未提供 `AI_ASSISTANT_USE` 能力，不能将入口可见性等同于最终服务端授权。
+- 桌面 `LayoutHeader` 与移动 `MobileAppBar` 已挂载全局入口；入口和完整页均读取后端 `/auth/me` 的 `AI_ASSISTANT_USE` 能力。该能力同时考虑 AI 总开关、用户名白名单和角色白名单，API 仍执行最终授权。
 - 后端 `AiChatResponse` 尚无结构化来源引用和取消生成契约；前端不伪造引用、停止按钮或持久化成功状态。真实 provider、限流、预算和跨租户会话验收仍需受控环境。
 - 完整页与全局面板共用 AI 回复组件；Markdown 解析器仅在出现助手消息时加载，关闭原始 HTML 和图片，生成的 HTML 再经 `v-safe-html` 净化；代码块提供复制，纯文本回退不依赖解析器加载成功。
 - `src/types/api.generated.ts` 由后端 OpenAPI 生成，契约变化必须先更新后端 OpenAPI，再执行 `npm run gen:api`，禁止手改生成类型。
