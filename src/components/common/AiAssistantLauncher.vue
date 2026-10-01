@@ -33,7 +33,13 @@
         <div v-if="!chat.messages.value.length" class="ai-panel__empty">
           {{ t('aiPanel.empty') }}
         </div>
-        <div v-else ref="messageList" class="ai-panel__messages" aria-live="polite">
+        <div
+          v-else
+          ref="messageList"
+          class="ai-panel__messages"
+          aria-live="polite"
+          @scroll="onMessageScroll"
+        >
           <div
             v-for="message in chat.messages.value"
             :key="message.id"
@@ -44,25 +50,34 @@
               message.role === 'user' ? t('aiChat.bubbleMe') : t('aiChat.bubbleAi')
             }}</strong>
             <AiMessageContent
-              :content="
-                message.status === 'IN_PROGRESS' && !message.content
-                  ? t('aiChat.turnPending')
-                  : message.content
-              "
+              :content="aiMessageBody(message, t)"
               :role="message.role"
               :streaming="message.status === 'IN_PROGRESS'"
             />
+            <AiMessageImages v-if="message.role === 'user'" :images="message.images ?? []" />
             <AiSourceReferences
               v-if="message.role === 'assistant'"
               :sources="message.sources ?? []"
             />
-            <small v-if="message.refusalReason">{{ message.refusalReason }}</small>
           </div>
         </div>
-        <div class="ai-panel__composer">
+        <AiFollowUpSuggestions
+          :messages="chat.messages.value"
+          :has-draft="Boolean(chat.prompt.value.trim())"
+          @select="(value) => (chat.prompt.value = value)"
+        />
+        <div
+          class="ai-panel__composer"
+          @paste="handleImagePaste"
+          @drop="handleImageDrop"
+          @dragover="handleImageDragOver"
+        >
           <div v-if="chat.sendError.value" class="ai-panel__error" role="alert">
             {{ t(chat.sendErrorKey.value) }}
           </div>
+          <el-button v-if="chat.pendingTurnId.value" text @click="chat.reconcileTurn()">
+            {{ t('aiChat.checkTurnStatus') }}
+          </el-button>
           <el-input
             ref="input"
             v-model="chat.prompt.value"
@@ -72,6 +87,7 @@
             :aria-label="t('aiChat.promptLabel')"
           />
           <AiTextAttachmentPicker v-model="chat.attachment.value" :disabled="chat.sending.value" />
+          <AiImageAttachmentPicker ref="imagePicker" :chat="chat" :disabled="chat.sending.value" />
           <div class="ai-panel__actions">
             <el-button
               v-if="chat.sending.value"
@@ -88,7 +104,7 @@
             <el-button
               type="primary"
               :loading="chat.sending.value"
-              :disabled="!chat.prompt.value.trim()"
+              :disabled="!chat.prompt.value.trim() || !!chat.pendingTurnId.value"
               @click="send"
             >
               {{ t('aiChat.btnSend') }}
@@ -104,15 +120,20 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, ref, watch } from 'vue'
+  import { computed, ref } from 'vue'
   import { useRoute } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import { Plus, Sparkles, Square } from '@lucide/vue'
   import type { InputInstance } from 'element-plus'
   import AiMessageContent from '@/components/common/AiMessageContent.vue'
+  import AiMessageImages from '@/components/common/AiMessageImages.vue'
+  import AiImageAttachmentPicker from '@/components/common/AiImageAttachmentPicker.vue'
+  import AiFollowUpSuggestions from '@/components/common/AiFollowUpSuggestions.vue'
   import AiSourceReferences from '@/components/common/AiSourceReferences.vue'
   import AiTextAttachmentPicker from '@/components/common/AiTextAttachmentPicker.vue'
   import { useAiChatSession } from '@/composables/useAiChatSession'
+  import { useAiAutoScroll } from '@/composables/useAiAutoScroll'
+  import { aiMessageBody } from '@/utils/aiMessagePresentation'
   import { useTenantReload } from '@/composables/useTenantReload'
   import { useAuthStore } from '@/stores/auth'
   import { useTenantStore } from '@/stores/tenant'
@@ -124,16 +145,18 @@
   const tenant = useTenantStore()
   const route = useRoute()
   const chat = useAiChatSession()
-  const messageList = ref<HTMLElement | null>(null)
-  watch(
-    () => [chat.messages.value.length, chat.messages.value.at(-1)?.content],
-    () => {
-      const element = messageList.value
-      if (element && element.scrollHeight - element.scrollTop - element.clientHeight < 150) {
-        element.scrollTop = element.scrollHeight
-      }
-    },
-    { flush: 'post' },
+  const imagePicker = ref<InstanceType<typeof AiImageAttachmentPicker> | null>(null)
+  function handleImagePaste(event: Event) {
+    imagePicker.value?.onPaste(event as ClipboardEvent)
+  }
+  function handleImageDrop(event: Event) {
+    imagePicker.value?.onDrop(event as DragEvent)
+  }
+  function handleImageDragOver(event: Event) {
+    imagePicker.value?.onDragOver(event as DragEvent)
+  }
+  const { element: messageList, onScroll: onMessageScroll } = useAiAutoScroll(
+    computed(() => [chat.messages.value.length, chat.messages.value.at(-1)?.content]),
   )
   const trigger = ref<HTMLElement | null>(null)
   const input = ref<InputInstance | null>(null)
@@ -175,8 +198,9 @@
   }
 
   useTenantReload(() => {
-    chat.reset()
+    chat.reset(true)
     open.value = false
+    void chat.loadImageCapabilities()
   })
 </script>
 
