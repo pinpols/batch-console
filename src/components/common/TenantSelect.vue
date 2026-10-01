@@ -50,11 +50,11 @@
       ariaLabel?: string
       size?: 'small' | 'default' | 'large'
       disabled?: boolean
-      /** @deprecated Prefer `selectClass` (e.g. `query-w-200`) */
+      /** @deprecated 请改用 `selectClass`，例如 `query-w-200` */
       selectStyle?: string
-      /** Utility classes applied to the underlying `el-select` */
+      /** 应用于底层 `el-select` 的工具类 */
       selectClass?: string
-      /** Classes applied to the dropdown popper. */
+      /** 应用于下拉浮层的类名 */
       popperClass?: string
     }>(),
     {
@@ -81,7 +81,7 @@
   )
 
   const selectStyleNormalized = computed(() => {
-    // When callers use width utility classes, inline `width:` would win and defeat the class.
+    // 调用方使用宽度工具类时，内联 `width` 会覆盖类样式，因此这里不再写入内联宽度。
     if (resolvedSelectClass.value) return undefined
     return props.selectStyle?.trim() ? props.selectStyle : undefined
   })

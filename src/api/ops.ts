@@ -31,12 +31,12 @@ export function listGovernanceParams(tenantId: string) {
   return get<unknown>('/api/console/ops/governance', { tenantId })
 }
 
-/** POST /api/console/ops/governance — update a parameter */
+/** POST /api/console/ops/governance — 更新参数 */
 export function updateGovernanceParam(tenantId: string, body: { key: string; value: string }) {
   return post<void>('/api/console/ops/governance', body, { params: { tenantId } })
 }
 
-/** POST /api/console/ops/governance/reset — reset to default */
+/** POST /api/console/ops/governance/reset — 恢复默认值 */
 export function resetGovernanceParam(tenantId: string, body: { key: string }) {
   return post<void>('/api/console/ops/governance/reset', body, { params: { tenantId } })
 }

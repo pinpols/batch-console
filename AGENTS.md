@@ -51,6 +51,7 @@ Repository-specific commands and contracts remain authoritative over generic ski
 | `npm run dev` | Vite dev server (默认 5173) |
 | `npm run typecheck` | `vue-tsc --noEmit` |
 | `npm run lint` | ESLint + 自动 fix |
+| `npm run check:comments` | 检查手写代码的解释性注释是否使用中文 |
 | `npm run build` | typecheck + i18n 完整性检查 + Vite 产物 |
 | `npm run build:fast` | 只跑 Vite build(本地快速验证用) |
 | `npm run test:unit` | Vitest 单测 |
@@ -139,6 +140,7 @@ src/
 | 8 | Element Plus 组件优先,**禁裸 HTML** 实现下拉 / 弹窗 / 表格 | `<select>` / `<dialog>` 原生 |
 | 9 | 通用录入用 `src/components/common/` 助手组件(StrongPasswordInput / TenantIdInput / CodeNameBuilder / TraceIdInput) | 重复写密码生成 / 租户校验逻辑 |
 | 10 | 文件命名:Vue 组件 `PascalCase.vue`,composable `useXxx.ts`,API 模块 camelCase | `pipeline_list.vue` |
+| 11 | 解释性注释用中文；API 路径、类型/字段、命令和工具指令保留原文 | `// fallback when request fails` |
 
 **红线**(违反 = 直接 reject):
 - **禁手改** `src/types/api.generated.ts`(由 OpenAPI 生成)

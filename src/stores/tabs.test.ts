@@ -41,7 +41,7 @@ describe('useTabsStore', () => {
       const tabs = useTabsStore()
       tabs.addFromRoute(mkRoute('/job/list', 'Jobs', '/job/list'))
       const first = tabs.list[0].lastAccessAt
-      // Same key, different query — should not create a new tab
+      // 路由键相同但查询参数不同，不应创建新页签
       tabs.addFromRoute(mkRoute('/job/list', 'Jobs', '/job/list?status=RUNNING'))
       expect(tabs.list).toHaveLength(1)
       expect(tabs.list[0].path).toBe('/job/list?status=RUNNING')
@@ -90,13 +90,13 @@ describe('useTabsStore', () => {
       ;['/a', '/b', '/c', '/d'].forEach((p) => tabs.addFromRoute(mkRoute(p)))
       const result = tabs.closeAllRightOf('/a', '/b')
       expect(tabs.list.map((t) => t.key)).toEqual(['/a', '/b'])
-      expect(result).toBeNull() // current /a is not among removed
+      expect(result).toBeNull() // 当前路由 /a 不在删除范围内
     })
 
     it('returns refKey when current tab was closed', () => {
       const tabs = useTabsStore()
       ;['/a', '/b', '/c'].forEach((p) => tabs.addFromRoute(mkRoute(p)))
-      // Current route is /c, refKey is /a → /c gets closed
+      // 当前路由是 /c，引用键为 /a，因此关闭 /c
       const result = tabs.closeAllRightOf('/c', '/a')
       expect(result).toBe('/a')
     })

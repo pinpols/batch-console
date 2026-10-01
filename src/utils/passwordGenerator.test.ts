@@ -53,14 +53,14 @@ describe('passwordStrength', () => {
   })
 
   it('grants 1 point for each present class on length ≥ 8', () => {
-    expect(passwordStrength('abcdefgh')).toBe(0) // 8 chars, only lower, no mix → 0
-    expect(passwordStrength('Abcdefgh')).toBe(1) // upper+lower
-    expect(passwordStrength('Abcdef12')).toBe(2) // upper+lower + digit
-    expect(passwordStrength('Abcdef1!')).toBe(3) // + symbol
+    expect(passwordStrength('abcdefgh')).toBe(0) // 8 个字符，只有小写字母且未混合 → 0
+    expect(passwordStrength('Abcdefgh')).toBe(1) // 大写字母与小写字母
+    expect(passwordStrength('Abcdef12')).toBe(2) // 大写字母、小写字母与数字
+    expect(passwordStrength('Abcdef1!')).toBe(3) // 再加符号
   })
 
   it('extra point at length ≥ 12', () => {
-    expect(passwordStrength('Abcdef1!XyzW')).toBe(4) // all classes + len 12
+    expect(passwordStrength('Abcdef1!XyzW')).toBe(4) // 包含全部字符类别且长度为 12
   })
 
   it('caps at 4 (extreme)', () => {

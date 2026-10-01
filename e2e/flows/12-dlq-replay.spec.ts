@@ -1,5 +1,5 @@
 /**
- * Flow 12: Dead Letter Queue replay
+ * 流程 12：死信队列重放
  *
  * 端点:
  *   GET  /api/console/queries/dead-letters

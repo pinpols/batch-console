@@ -13,7 +13,7 @@
 #   2 — 工具链 / curl 错误
 #
 # CI 推荐配置(.github/workflows/ci.yml):
-#   - name: Check OpenAPI drift
+#   - name: 检查 OpenAPI 漂移
 #     env:
 #       BE_OPENAPI_URL: https://raw.githubusercontent.com/<org>/file-batch-system/main/docs/api/console-api.openapi.yaml
 #     run: bash scripts/check-api-drift.sh

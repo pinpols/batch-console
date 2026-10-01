@@ -1,7 +1,7 @@
 /**
  * Phase 8 — 多租户切换并发 + SSE/WebSocket 长连重连
  *
- * Why:
+ * 原因：
  *   1) 切租户期间 inflight /auth/me 不应被旧响应覆盖(auth.ts inflightTenantId 校验)
  *   2) 同接口跨租户连调不应 cookie 串台 / role 错配
  *   3) SSE 断网应自动重连,cursor 续推不丢消息

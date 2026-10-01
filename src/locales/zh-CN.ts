@@ -2774,12 +2774,12 @@ export default {
     outboxStatSuccess: '投递成功',
     traceQuickGo: '诊断 Trace',
     traceQuickHint: '从其它页复制完整 traceId 后粘贴,诊断页按完整值精确查询',
-    // ObservabilityQueryTabs
+    // 可观测查询页签
     tabDeadLetters: '死信队列',
     tabRetries: '重试调度',
     tabExecLogs: '执行日志',
     tabChannelReceipts: '渠道回执',
-    // EventCatalog
+    // 事件目录
     eventCatalogTabEventTypes: '事件类型',
     eventCatalogTabTopics: 'Kafka Topics',
     eventCatalogKeywordLabel: '关键字',
@@ -2809,7 +2809,7 @@ export default {
     eventCatalogCategoryMissing: '未登记分类',
     eventCatalogSchemaMissingTitle: 'Schema 未登记',
     eventCatalogSchemaMissingDescription: '该事件类型当前没有可展示的 Schema 定义。',
-    // OutboxList
+    // 发件箱列表
     outboxTabRetry: '重试',
     outboxTabDelivery: '投递',
     outboxKeywordLabel: '关键字',
@@ -2837,7 +2837,7 @@ export default {
     outboxEmptyTitle: '暂无 Outbox 事件',
     outboxRetryEmptyDescription: '当前范围内没有待重试或重试中的事件。',
     outboxDeliveryEmptyDescription: '当前范围内没有投递记录。',
-    // DeadLettersTab
+    // 死信页签
     dlqSourceTypeLabel: '来源类型',
     dlqSourceTypePlaceholder: '全部',
     dlqSourceIdLabel: '来源 ID',
@@ -2862,7 +2862,7 @@ export default {
     dlqReplaySuccess: '重放已提交',
     dlqReplayFailed: '重放失败',
     dlqBulkReplayNone: '所选死信无可重放项(仅 NEW/FAILED 可重放)',
-    // RetriesTab
+    // 重试页签
     retryRelatedTypeLabel: '关联类型',
     retryRelatedTypePlaceholder: '全部',
     retryRelatedIdLabel: '关联 ID',
@@ -2882,7 +2882,7 @@ export default {
     retryMetaRelatedType: '关联类型',
     retryMetaRelatedId: '关联 ID',
     retryMetaStatus: '状态',
-    // ExecutionLogsTab
+    // 执行日志页签
     execOperationTypeLabel: '操作类型',
     execOperationTypePlaceholder: '全部',
     execResultLabel: '结果',
@@ -2903,7 +2903,7 @@ export default {
       '没有匹配的执行/审计日志。最近请求 traceId 只用于后端排障,不一定会写入业务日志。',
     execMetaOperationType: '操作类型',
     execMetaResult: '结果',
-    // ChannelReceiptsTab
+    // 渠道回执页签
     chanLabel: '渠道',
     chanPlaceholder: '搜索关键字',
     chanFileIdLabel: '文件 ID',
@@ -2942,7 +2942,7 @@ export default {
     colCurrentNode: '当前节点',
   },
   monitor: {
-    // WorkflowRunList
+    // 工作流运行列表
     runListTenantLabel: '租户',
     runListTenantPlaceholder: '按租户过滤',
     runListWorkflowLabel: 'Workflow',
@@ -2966,7 +2966,7 @@ export default {
     runColRelated: '关联实例',
     runColActions: '操作',
     runActionDetail: '详情',
-    // WorkflowRunDetail
+    // 工作流运行详情
     runDetailTitle: '工作流运行详情',
     runDetailInvalidParam: '无效路由参数',
     runDetailMaster: '运行主档',
@@ -3020,7 +3020,7 @@ export default {
     skipNodeTarget: '节点「{code}」',
     skipNodeConsequence: '该节点状态置为 SKIPPED,下游节点按依赖正常推进,但本节点的输出不会产生。',
     skipNodeButton: '确认跳过',
-    // JobInstanceDetail
+    // 作业实例详情
     detailTitle: '作业实例详情',
     detailLoading: '加载中...',
     detailRefresh: '刷新',
@@ -3090,7 +3090,7 @@ export default {
     cancelConfirmConsequence:
       'Worker 会尽快终止运行中的进程。已写入的中间结果可能保留,需手动清理。',
     cancelConfirmButton: '确认终止',
-    // PartitionView
+    // 分区视图
     partitionTitle: '作业分片',
     partitionDescription: '实例 #{id} 的分区列表',
     partitionRefresh: '刷新',
@@ -3117,7 +3117,7 @@ export default {
     partRetryConfirmText: '重试分片 #{id}?',
     partRetryConfirmTitle: '重试确认',
     partRetrySuccess: '已发起重试',
-    // JobStepInstanceList
+    // 作业步骤实例列表
     stepInstanceIdLabel: '实例 Id',
     stepInstanceIdPlaceholder: '精确匹配作业实例 ID',
     stepStatusLabel: '步骤状态',
@@ -5068,7 +5068,7 @@ export default {
     errPreviewFailed: '预览失败',
     errImportFailed: '应用失败',
     toastImportDone: '已应用到目标',
-    // confirmDanger
+    // 危险操作确认
     importConsequence: '将覆盖目标租户的对应配置项,立即生效。建议先"预览差异"确认无误。',
     importConfirmVerb: '应用配置',
     importConfirmTarget: '到 {count} 个目标租户({sample})',

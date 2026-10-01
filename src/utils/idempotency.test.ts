@@ -14,7 +14,7 @@ describe('createIdempotencyKey', () => {
 
   it('returns a UUID format when crypto.randomUUID is available', () => {
     const key = createIdempotencyKey()
-    // UUID v4 format: xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx
+    // UUID v4 格式：xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx
     expect(key).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
   })
 

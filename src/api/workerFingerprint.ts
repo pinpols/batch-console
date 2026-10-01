@@ -1,6 +1,6 @@
 /**
  * Worker run-fingerprint 看板只读 API(`/api/console/workers/fingerprints`,
- * SDK Phase 5 / SDK-P5-3,console Lane D/F)。
+ * 对应 SDK 第 5 阶段 / SDK-P5-3，以及 console Lane D/F。
  *
  * 类型直接复用 `src/types/api.generated.ts` 的 generated schema
  * (`WorkerFingerprintResponse` / `WorkerFingerprintSummaryResponse`),

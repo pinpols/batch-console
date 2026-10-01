@@ -21,7 +21,7 @@ vi.stubGlobal('localStorage', {
 })
 vi.stubGlobal('location', { pathname: '/test', hash: '' })
 
-// initLogger calls window.addEventListener — stub it in node env
+// initLogger 会调用 window.addEventListener，在 Node 环境中使用桩替代
 if (typeof window === 'undefined') {
   vi.stubGlobal('window', { addEventListener: vi.fn() })
 } else if (!window.addEventListener) {

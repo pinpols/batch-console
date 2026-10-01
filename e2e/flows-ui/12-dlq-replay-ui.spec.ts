@@ -1,5 +1,5 @@
 /**
- * UI Flow 12: DLQ replay UI
+ * UI 流程 12：死信队列重放界面
  * 真页:/observability/outbox (dead-letters tab) 或 /ops/diagnostic
  *
  * 断言深度:每步硬断言「页面真到位 + 内容真渲染」;死信 tab 切换后验数据视图;

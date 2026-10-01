@@ -23,7 +23,7 @@ function pickOne(charset: string): string {
 }
 
 function shuffle<T>(arr: T[]): T[] {
-  // Fisher-Yates with crypto random
+  // 使用加密随机数执行 Fisher-Yates 洗牌
   const a = arr.slice()
   for (let i = a.length - 1; i > 0; i--) {
     const buf = new Uint32Array(1)

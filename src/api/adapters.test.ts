@@ -8,7 +8,7 @@ vi.mock('element-plus', () => ({
   },
 }))
 
-// mock the get function from client
+// Mock 统一客户端的 get 方法
 vi.mock('./client', () => ({
   get: vi.fn(),
 }))

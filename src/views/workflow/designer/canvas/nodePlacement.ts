@@ -50,9 +50,9 @@ function overlaps(point: CanvasPoint, size: NodeSize, existing: DesignerNode): b
 }
 
 /**
- * Returns a top-left graph coordinate near the viewport center without covering an existing node.
- * START and END prefer the top/bottom lanes so the common START -> JOB -> END path is usable
- * immediately, while repeated task nodes spread horizontally before moving to another row.
+ * 返回靠近视口中心且不遮挡现有节点的左上角画布坐标。
+ * START 和 END 优先放在上下通道，使常见的 START -> JOB -> END 路径可直接使用；
+ * 重复任务节点先横向展开，空间不足后再换行。
  */
 export function findVacantNodePosition(
   type: DesignerNodeType,

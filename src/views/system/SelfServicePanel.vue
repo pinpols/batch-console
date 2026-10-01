@@ -259,7 +259,7 @@
   // 内联展开(只有 quota 用)
   const expandedKey = ref<CardKey | null>(null)
 
-  // Drawer
+  // 抽屉
   const drawerOpen = ref(false)
   useDrawerAutoClose(drawerOpen)
   const drawerKey = ref<CardKey | null>(null)

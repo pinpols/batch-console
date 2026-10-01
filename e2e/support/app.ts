@@ -79,7 +79,7 @@ export const smokeRoutes: RouteCheck[] = [
 export async function enterDemoApp(page: Page) {
   // 第一次访问任意页面前预置 localStorage:locale + onboarding 跳过。
   // 用 addInitScript 保证在每次 navigation 之前(含跳登录后回 ops/summary)都生效。
-  // STORAGE keys:
+  // 本地存储键：
   //   - 'batch-console:locale'           见 src/constants/locale.ts:1
   //   - 'batch-console-onboarding-done'  见 src/composables/useOnboardingTour.ts:14
   await page.addInitScript(() => {
@@ -174,16 +174,16 @@ function escapeForRegex(value: string) {
 }
 
 /**
- * Returns true when a locator is visible within the given timeout.
- * Avoids the verbose `.isVisible({ timeout }).catch(() => false)` pattern.
+ * 定位器在给定超时时间内可见时返回 true。
+ * 用于避免重复书写 `.isVisible({ timeout }).catch(() => false)`。
  */
 export async function isVisible(locator: Locator, timeout = 3000): Promise<boolean> {
   return locator.isVisible({ timeout }).catch(() => false)
 }
 
 /**
- * Clicks a table-action button in the first row that contains `rowText`.
- * Skips silently when no matching row is found within `timeout`.
+ * 点击首个包含 `rowText` 的表格行操作按钮。
+ * 在 `timeout` 内找不到匹配行时静默跳过。
  */
 export async function clickTableAction(
   page: Page,
@@ -199,17 +199,17 @@ export async function clickTableAction(
 }
 
 /**
- * Waits for an El-Message success toast containing `text`.
+ * 等待包含 `text` 的 El-Message 成功提示。
  */
 export async function expectSuccessToast(page: Page, text: string | RegExp) {
   await expect(page.locator('.el-message--success')).toContainText(text)
 }
 
 /**
- * Navigates to a list page and returns the numeric ID from the first `.cell-link` href.
- * Returns null when the table has no rows (no runtime data available).
+ * 进入列表页，并从首个 `.cell-link` 链接中返回数字 ID。
+ * 表格无数据时返回 null，表示当前没有可用运行数据。
  *
- * Use this instead of hard-coding IDs like `/monitor/job-instances/1`.
+ * 使用该方法，避免硬编码 `/monitor/job-instances/1` 一类 ID。
  */
 export async function getFirstCellLinkId(page: Page, listPath: string): Promise<string | null> {
   await page.goto(listPath)

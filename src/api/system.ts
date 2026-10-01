@@ -179,7 +179,7 @@ export function togglePipelineDefinition(id: number, tenantId: string, enabled: 
   return patch<string>(`/api/console/pipeline-definitions/${id}/enabled`, { tenantId, enabled })
 }
 
-/** GET /api/console/file-channels — command-side list */
+/** GET /api/console/file-channels — 命令侧列表 */
 export async function listFileChannels(tenantId: string) {
   const rows = await fetchAllPageItems<ConsoleFileChannelResponse>('/api/console/file-channels', {
     tenantId,
@@ -208,7 +208,7 @@ export function queryFileChannelDetail(channelCode: string, tenantId: string) {
   )
 }
 
-/** GET /api/console/file-templates — command-side list */
+/** GET /api/console/file-templates — 命令侧列表 */
 export async function listFileTemplates(tenantId: string) {
   const rows = await fetchAllPageItems<ConsoleFileTemplateResponse>('/api/console/file-templates', {
     tenantId,
@@ -239,12 +239,12 @@ export function queryFilePipelineDetail(id: number, tenantId: string) {
   return get<ConsoleFilePipelineResponse>(`/api/console/queries/file-pipelines/${id}`, { tenantId })
 }
 
-/** PATCH /api/console/file-channels/{id} — toggle enabled */
+/** PATCH /api/console/file-channels/{id} — 切换启用状态 */
 export function toggleFileChannel(id: number, tenantId: string, enabled: boolean) {
   return patch<void>(`/api/console/file-channels/${id}`, { tenantId, enabled })
 }
 
-/** PATCH /api/console/file-templates/{id} — toggle enabled */
+/** PATCH /api/console/file-templates/{id} — 切换启用状态 */
 export function toggleFileTemplate(id: number, tenantId: string, enabled: boolean) {
   return patch<void>(`/api/console/file-templates/${id}`, { tenantId, enabled })
 }

@@ -71,7 +71,7 @@ describe('useSavedFilters', () => {
     const { handle, current, applied } = setup()
     current.status = 'CANCELLED'
     const created = handle.save('c')!
-    current.status = '' // user changed filters
+    current.status = '' // 用户修改筛选条件
     handle.applySet(created.id)
     expect(applied.at(-1)).toEqual({ status: 'CANCELLED', keyword: '' })
     expect(current.status).toBe('CANCELLED')

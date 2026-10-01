@@ -29,7 +29,7 @@ export function detectBrowserTimezone(): string {
     const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
     if (timezone && isValidTimezone(timezone)) return timezone
   } catch {
-    // Fall through to the stable UTC fallback.
+    // 解析失败时继续使用稳定的 UTC 回退值。
   }
   return FALLBACK_TIMEZONE
 }
@@ -39,7 +39,7 @@ function resolveInitialTimezone(): string {
     const stored = globalThis.localStorage?.getItem?.(DISPLAY_TIMEZONE_STORAGE_KEY)?.trim()
     if (stored && isValidTimezone(stored)) return stored
   } catch {
-    // Storage may be unavailable in private browsing or test environments.
+    // 隐私浏览或测试环境中 Storage 可能不可用。
   }
 
   const configured = import.meta.env.VITE_DISPLAY_TIMEZONE?.trim()
@@ -61,7 +61,7 @@ export function writeDisplayTimezone(timezone: string): void {
   try {
     globalThis.localStorage?.setItem?.(DISPLAY_TIMEZONE_STORAGE_KEY, normalized)
   } catch {
-    // A missing preference is safe; formatting still uses the detected timezone.
+    // 未保存偏好不影响格式化，仍使用自动检测到的时区。
   }
   displayTimezone.value = normalized
 }

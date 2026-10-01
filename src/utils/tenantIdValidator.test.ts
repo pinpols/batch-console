@@ -60,9 +60,9 @@ describe('validateTenantId', () => {
   })
 
   it('legitimate tenant containing reserved substring (not prefix) passes', () => {
-    // "best-tenant" contains "test-" but doesn't START with it (begins with "best-")
+    // "best-tenant" 包含 "test-"，但并非以它开头，而是以 "best-" 开头
     expect(validateTenantId('best-tenant')).toEqual({ ok: true })
-    // "edevops" doesn't start with "dev-"
+    // "edevops" 并非以 "dev-" 开头
     expect(validateTenantId('edevops')).toEqual({ ok: true })
   })
 })

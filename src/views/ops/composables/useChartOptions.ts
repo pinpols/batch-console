@@ -1,9 +1,9 @@
 /**
- * Chart option builders for the Ops Summary dashboard.
- * Pure functions -- no Vue reactivity, no side-effects.
+ * 运行摘要看板的图表配置构造器。
+ * 保持纯函数，不依赖 Vue 响应式，也不产生副作用。
  */
 
-// ---- ECharts option builders ----
+// ---- ECharts 配置构造器 ----
 
 function baseGridOption() {
   return {

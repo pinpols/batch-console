@@ -36,7 +36,7 @@ describe('useBulkSelection', () => {
     expect(res).toEqual({ ok: 3, fail: 0, failed: [] })
     expect(action).toHaveBeenCalledTimes(3)
     expect(success).toHaveBeenCalledTimes(1)
-    expect(b.count.value).toBe(0) // cleared on full success
+    expect(b.count.value).toBe(0) // 全部成功后清空选择
   })
 
   it('runBulk partial failure collects failed items and warns (no clear)', async () => {
@@ -51,7 +51,7 @@ describe('useBulkSelection', () => {
     expect(res.fail).toBe(1)
     expect(res.failed[0].item).toEqual({ id: 2 })
     expect(warning).toHaveBeenCalledTimes(1)
-    expect(b.count.value).toBe(3) // not cleared on partial failure
+    expect(b.count.value).toBe(3) // 部分失败时保留选择
   })
 
   it('runBulk all-failure errors', async () => {

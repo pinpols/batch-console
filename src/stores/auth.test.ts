@@ -88,9 +88,9 @@ describe('useAuthStore', () => {
 
   it('canAccess checks role hierarchy', () => {
     const auth = useAuthStore()
-    // Simulate setting userInfo via internal state
+    // 模拟通过内部状态设置 userInfo
     auth.$patch({})
-    // Without userInfo, canAccess should return false for any role
+    // 缺少 userInfo 时，任意角色的 canAccess 都应返回 false
     expect(auth.canAccess('VIEWER')).toBe(false)
     expect(auth.canAccess('ADMIN')).toBe(false)
   })
@@ -164,7 +164,7 @@ describe('useAuthStore', () => {
     const p1 = auth.fetchMe()
     const p2 = auth.fetchMe()
 
-    // Both calls return the same underlying promise, so only 1 API call
+    // 两次调用复用同一个底层 Promise，因此只发起一次 API 请求
     resolve({
       userId: 'u1',
       username: 'test',

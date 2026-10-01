@@ -30,7 +30,7 @@ function concise(value: unknown, maxLength: number): string {
   return text.length > maxLength ? `${text.slice(0, maxLength - 1)}…` : text
 }
 
-/** Convert structured audit payloads into a scan-friendly list summary without losing raw drawer data. */
+/** 将结构化审计载荷转换为易浏览的列表摘要，同时保留抽屉中的原始数据。 */
 export function structuredSummary(value: unknown, maxLength = 180): string {
   if (value == null) return ''
   const decoded = decodeHtmlEntities(String(value))
