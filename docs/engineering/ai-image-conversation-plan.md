@@ -1,6 +1,6 @@
 # AI 图片对话与回答复制实施方案
 
-状态：实施中，尚未上线。本文同时保留目标契约和验收边界；`design/` 是只读设计稿目录，不在本方案中修改。
+状态：本地开发已收口，生产开关仍需环境验收。本文同时保留目标契约和验收边界；`design/` 是只读设计稿目录，不在本方案中修改。
 
 截至 2026-10-01，本地分支已实现图片上传/归一化/加密、所有者读取、草稿与保留配额、限速、过期清理、对话绑定及前端双入口。后端迁移与权限集成测试、前端构建、Nginx 配置检查已通过；使用本机环境密钥的 Spring AI + DeepSeek 流式红绿图探针通过。中英文拒绝/降级文案及来源后缀已对齐，前端展示月度计量调用、模型上报 token、已结算估算费用和待结算预算预留；这些指标不代表所有 AI 请求或供应商最终账单。本地浏览器登录到历史恢复的核心链路已联测；不同对象存储实现的删除验证、跨供应商适配器契约和费用对账仍待完成，不应仅凭当前联测打开生产图片开关。
 
@@ -13,7 +13,8 @@
 - 附加只含合成作业编号和错误标记的 `.txt`，模型准确提取两个字段。完整回答复制后，浏览器剪贴板内容与实际 Markdown 回答一致，并显示成功提示。
 - 发现“与批量调度系统无关”仍命中关键词并调用模型；后端增加明确否定领域关联的定向拒绝。重启后同一问题显示 `REJECTED_SCOPE`，计量调用保持 4 不变。该规则只覆盖明确措辞，不等于任意自然语言越界识别均可靠。
 - 修正亚美分费用显示从 `$0.00` 到实际估算值（四次计量后 `$0.002508`，全局入口复测后五次计量为 `$0.003499`）；该费率为本地测试配置，不代表供应商账单。历史图片按钮读屏名称改为通用“图片预览”，不暴露内部 UUID。
-- 尚未完成：真实拖放/截图粘贴、上传失败与断流重试、取消生成、跨租户/跨用户浏览器验收、手机端人工验收、其他供应商协议、对象存储删除残留及供应商账单对账。以上不能标为已验收。
+- 本地已补齐：完整页与全局助手的拖放/截图粘贴入口、上传失败后的 `clientAttachmentId` 对账、SSE 断流后的 `clientTurnId` 对账、停止生成、同租户非本人和跨租户浏览器隔离回归。新增前端单测覆盖上传和轮次状态不确定时的权威查询，避免重复上传或重复调用模型。
+- 仍属环境验收：手机真机软键盘、不同对象存储实现的删除残留、跨供应商适配器契约、真实供应商主动限流/账单对账。以上不能标为生产已验收。
 
 ## 目标与范围
 
@@ -27,11 +28,11 @@
 | 当前能力 | 代码入口 | 图片改造影响 |
 | --- | --- | --- |
 | SSE 文本对话与取消 | `src/api/aiStream.ts`、后端 `ConsoleAiController` | 保持流式事件不变，扩展请求中的附件 ID |
-| 文本附件 | `src/components/common/AiTextAttachmentPicker.vue`、`src/utils/aiTextAttachment.ts` | 目前读入浏览器并拼进 prompt；图片不可沿用此方案 |
-| 会话持久化与历史 | 后端 `ConsoleAiConversationService`、`console_ai_turn` | 仅存加密文本；需增加图片元数据与受控读取 |
-| 模型调用 | 后端 `DefaultConsoleAiApplicationService.callProvider`、`ConsoleAiClients` | 当前 `.user(promptPayload)` 为纯文本；`ProviderClient` 只有名称和 `ChatClient`，缺少能力与协议边界 |
-| 对象存储 | 后端 `BatchObjectStore` | 已有 S3/文件系统抽象，但 AI 附件的授权和生命周期需独立实现 |
-| 复制 | `src/components/common/AiMessageContent.vue` | 已支持代码块复制；缺少整条回答复制 |
+| 文本附件 | `src/components/common/AiTextAttachmentPicker.vue`、`src/utils/aiTextAttachment.ts` | 继续走浏览器文本读取；图片走受控上传和服务端附件 ID，不复用文本拼接方案 |
+| 会话持久化与历史 | 后端 `ConsoleAiConversationService`、`console_ai_turn`、`console_ai_attachment` | 会话正文加密；图片只返回元数据和认证读取端点，不返回对象 key / base64 |
+| 模型调用 | 后端 `DefaultConsoleAiApplicationService`、`ConsoleAiClients` | 已按能力发送受控图片；配置仍需通过真实 provider 探针确认，不因兼容协议自动开放 |
+| 对象存储 | 后端 `BatchObjectStore` | AI 附件使用专用桶；上传、读取、草稿删除和过期清理由后端授权控制 |
+| 复制 | `src/components/common/AiMessageContent.vue` | 已支持整条回答复制和代码块复制，复制内容不包含调试元数据 |
 
 后端会话持久化默认关闭，启用时有保留期限并禁止安全旁路。**图片能力要求会话持久化已启用**；未启用或处于安全旁路模式时，服务端拒绝图片上传和发送，前端不显示图片入口。这样图片发送与历史恢复始终是同一份承诺，不提供刷新后丢图的临时模式。
 
@@ -69,7 +70,7 @@
 
 ## 后端契约与数据
 
-**先改后端 OpenAPI，再生成前端类型**；以下是待评审的契约草案，不是已存在端点。
+**先改后端 OpenAPI，再生成前端类型**；以下契约已进入后端 OpenAPI 和前端生成类型，后续只按后端权威契约调整。
 
 | 契约 | 预期行为 |
 | --- | --- |
@@ -78,10 +79,10 @@
 | 历史轮次响应 | 增加有序图片元数据（ID、类型、尺寸、大小、展示名），不含对象 key/供应商文件 ID/公网 URL |
 | `GET /api/console/ai/attachments/{id}/content` | 当前会话所有者经租户校验后读取已绑定图片；草稿不可下载；禁缓存、限制 Content-Type。首版用同一归一化图片生成浏览器缩略图，不提供独立原图变体 |
 | `DELETE /api/console/ai/attachments/{id}` | 仅允许上传者删除未绑定草稿；已绑定图片随会话删除或保留期清理，避免改写历史 |
-| `GET /api/console/ai/capabilities` 或现有能力响应扩展 | 返回 `imageInput`、可用模型、上限及持久化状态；以服务端为准，不由前端硬编码推断 |
+| `GET /api/console/ai/capabilities` | 返回 `imageInput`、上限及持久化状态；以服务端为准，不由前端硬编码推断 |
 | 轮次/上传状态查询 | 按上传者、租户与稳定 `clientTurnId/clientAttachmentId` 查询已有结果；网络结果不确定时先对账，不盲目重复调用模型或写对象 |
 
-建议新增 `console_ai_attachment` 元数据表：`tenant_id`、不透明 ID、`owner_user_id`、可空的 `conversation_id/turn_no`、对象 key、归一化 MIME、字节数、宽高、哈希、状态、创建/过期时间。外键、索引和 RLS 沿用 `console_ai_conversation`/`console_ai_turn` 的租户边界，并为客户端稳定 ID 建唯一约束。**数据库事务与对象存储写入不是一个原子事务**：先写受限草稿，绑定与 `beginTurn` 的轮次分配在同一数据库事务完成；任一失败路径要能明确区分可重试草稿与已绑定轮次。
+`console_ai_attachment` 元数据表已落地，字段包含 `tenant_id`、不透明 ID、`owner_user_id`、可空的 `conversation_id/turn_no`、对象 key、归一化 MIME、字节数、宽高、哈希、状态、创建/过期时间。外键、索引和 RLS 沿用 `console_ai_conversation`/`console_ai_turn` 的租户边界，并为客户端稳定 ID 建唯一约束。**数据库事务与对象存储写入不是一个原子事务**：先写受限草稿，绑定与 `beginTurn` 的轮次分配在同一数据库事务完成；任一失败路径要能明确区分可重试草稿与已绑定轮次。
 
 当前过期任务直接删除会话，`console_ai_turn` 随外键级联删除。如果附件元数据也级联，先删会话会丢失对象 key，留下永久孤儿。实施时在同一事务把待删对象 key 写入**不随会话级联删除**的持久 tombstone/清理队列表，并立即撤销附件读取权限，再删会话；对象删除成功后才移除清理记录。用户主动删除和定时过期必须共用此流程，失败按租户分页重试，具备跨进程互斥或幂等；另外周期性清点无元数据对象。对象 key 不从用户文件名拼接，清理失败量和最旧待删时长要有监控。
 
