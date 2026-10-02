@@ -85,3 +85,43 @@ sha-<full> 标签继续用于可读性；环境事实以 digest 为准。
 - 不在部署机 npm ci / npm run build。
 - 不用 latest 作为 staging → production 晋级凭据。
 - 不把已有 Helm/Argo 规划描述成 GitOps 已落地。
+
+
+## 7. 当前与最终生产架构中的前端位置
+
+前端服务器规格、数据平面和平台最终拓扑以配对后端的 `docs/runbook/compose-cd-roadmap.md` 为唯一事实源，本仓不复制第二份硬件表。
+
+当前 Compose 生产基线：
+
+```mermaid
+flowchart LR
+  USER["Browser"] --> NGINX["Nginx / batch-console\nApp Node"]
+  NGINX --> API["console-api\nApp Node"]
+  API --> PLATFORM["Trigger / Orchestrator / Workers"]
+  PLATFORM --> DATA["PostgreSQL / Kafka / Valkey / MinIO\nInfra Node"]
+```
+
+最终 Kubernetes / GitOps 目标：
+
+```mermaid
+flowchart LR
+  USER["Browser"] --> ING["Ingress / TLS"]
+  ING --> FE["batch-console × N"]
+  ING --> API["console-api × N"]
+  API --> CTRL["Trigger / Orchestrator × N"]
+  CTRL --> WK["Worker Pools × N"]
+  WK --> DATA["HA Data Plane"]
+  ARGO["Argo CD"] --> FE
+  ARGO --> API
+  GHCR["GHCR immutable digest"] --> ARGO
+```
+
+前端在两个阶段保持相同发布契约：immutable image digest、`/healthz`、`/version.json`、staging E2E、与后端共同组成 release manifest。部署执行器从 SSH + Compose 切到 Argo CD 时，不改变这些契约。
+
+## 8. 前端生产边界
+
+- Nginx / batch-console 是 Web 入口，不承载数据库、Kafka 或对象存储职责。
+- 浏览器只访问公开 Web/API；不得直接访问 PostgreSQL、Kafka、Valkey、MinIO。
+- production 不在服务器执行 npm build；只运行 CI 已构建并通过 staging 的镜像 digest。
+- 多副本阶段前端保持无状态；配置通过构建/运行时受控入口提供。
+- 前端回滚必须与平台 release set 一起判断兼容性，不能只看前端单镜像是否可启动。
