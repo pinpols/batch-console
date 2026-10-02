@@ -2,7 +2,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { cancelAiChatStream, streamAiChat } from '@/api/aiStream'
-import { deleteAiAttachment, getAiCapabilities, uploadAiAttachment } from '@/api/ai'
+import {
+  deleteAiAttachment,
+  getAiAttachmentByClientId,
+  getAiCapabilities,
+  getAiTurnByClientId,
+  uploadAiAttachment,
+} from '@/api/ai'
 import { useTenantStore } from '@/stores/tenant'
 import { useAiChatSession } from './useAiChatSession'
 
@@ -18,6 +24,8 @@ vi.mock('@/api/ai', () => ({
 const mockedChat = vi.mocked(streamAiChat)
 const mockedCancel = vi.mocked(cancelAiChatStream)
 const mockedCapabilities = vi.mocked(getAiCapabilities)
+const mockedAttachmentByClientId = vi.mocked(getAiAttachmentByClientId)
+const mockedTurnByClientId = vi.mocked(getAiTurnByClientId)
 const mockedUpload = vi.mocked(uploadAiAttachment)
 const mockedDelete = vi.mocked(deleteAiAttachment)
 
@@ -29,6 +37,8 @@ describe('useAiChatSession', () => {
     mockedCancel.mockReset()
     mockedCancel.mockResolvedValue()
     mockedCapabilities.mockReset()
+    mockedAttachmentByClientId.mockReset()
+    mockedTurnByClientId.mockReset()
     mockedUpload.mockReset()
     mockedDelete.mockReset()
     mockedDelete.mockResolvedValue()
@@ -125,6 +135,56 @@ describe('useAiChatSession', () => {
 
     expect(mockedDelete).toHaveBeenCalledWith('attachment-1')
     expect(chat.images.value).toEqual([])
+  })
+
+  it('reconciles an uncertain image upload by stable client attachment ID', async () => {
+    mockedCapabilities.mockResolvedValue({
+      imageInput: true,
+      maxImages: 4,
+      maxImageBytes: 1024,
+      maxTotalBytes: 4096,
+    })
+    mockedUpload.mockRejectedValue(new Error('network lost after object write'))
+    mockedAttachmentByClientId.mockImplementation(async (clientAttachmentId) => ({
+      id: 'attachment-recovered',
+      clientAttachmentId,
+      status: 'DRAFT',
+      mediaType: 'image/png',
+      byteSize: 4,
+      width: 2,
+      height: 2,
+      expiresAt: '2026-10-02T00:00:00Z',
+    }))
+    const chat = useAiChatSession()
+    await chat.loadImageCapabilities()
+    await chat.addImages([new File(['data'], 'screen.png', { type: 'image/png' })])
+
+    expect(chat.images.value[0]).toMatchObject({
+      id: 'attachment-recovered',
+      status: 'ready',
+      width: 2,
+      height: 2,
+    })
+    expect(chat.sendError.value).toBe(false)
+  })
+
+  it('marks the image upload failed when reconciliation cannot find a draft', async () => {
+    mockedCapabilities.mockResolvedValue({
+      imageInput: true,
+      maxImages: 4,
+      maxImageBytes: 1024,
+      maxTotalBytes: 4096,
+    })
+    mockedUpload.mockRejectedValue({
+      response: { status: 503, data: { code: 'SERVICE_UNAVAILABLE' } },
+    })
+    mockedAttachmentByClientId.mockResolvedValue(null as never)
+    const chat = useAiChatSession()
+    await chat.loadImageCapabilities()
+    await chat.addImages([new File(['data'], 'screen.png', { type: 'image/png' })])
+
+    expect(chat.images.value[0]?.status).toBe('failed')
+    expect(chat.sendErrorKey.value).toBe('aiChat.imageUploadUnavailable')
   })
 
   it('sends versioned, allowlisted page context without object IDs', async () => {
@@ -440,6 +500,93 @@ describe('useAiChatSession', () => {
     expect(chat.prompt.value).toBe('Status?')
     expect(chat.messages.value[1]).toMatchObject({ content: 'Stopped', status: 'FAILED' })
     expect(chat.sendError.value).toBe(false)
+  })
+
+  it('reconciles an image turn after the SSE connection ends before completion', async () => {
+    mockedCapabilities.mockResolvedValue({
+      imageInput: true,
+      maxImages: 4,
+      maxImageBytes: 1024,
+      maxTotalBytes: 4096,
+    })
+    mockedUpload.mockImplementation(async (_file, clientAttachmentId) => ({
+      id: 'attachment-1',
+      clientAttachmentId,
+      status: 'DRAFT',
+      mediaType: 'image/png',
+      byteSize: 4,
+      width: 1,
+      height: 1,
+      expiresAt: '2026-10-02T00:00:00Z',
+    }))
+    mockedChat.mockRejectedValue(new Error('stream lost before completed'))
+    mockedTurnByClientId.mockResolvedValue({
+      sessionId: 'session-1',
+      turn: {
+        turnNo: 1,
+        contextVersion: 'v1',
+        prompt: 'Analyze image',
+        response: 'Recovered answer',
+        status: 'COMPLETE',
+        promptDecision: 'APPROVED',
+        modelName: 'vision-model',
+        promptTokens: 10,
+        completionTokens: 5,
+        estimatedCostUsd: '0.001',
+        createdAt: '2026-10-02T00:00:00Z',
+        completedAt: '2026-10-02T00:00:01Z',
+        attachments: [],
+      },
+    })
+    const chat = useAiChatSession()
+    await chat.loadImageCapabilities()
+    await chat.addImages([new File(['data'], 'screen.png', { type: 'image/png' })])
+    chat.prompt.value = 'Analyze image'
+
+    expect(await chat.send('Empty')).toBe(true)
+    expect(mockedTurnByClientId).toHaveBeenCalledWith(expect.any(String))
+    expect(chat.sessionId.value).toBe('session-1')
+    expect(chat.messages.value[1]).toMatchObject({
+      content: 'Recovered answer',
+      status: 'COMPLETE',
+      decision: 'APPROVED',
+      modelName: 'vision-model',
+    })
+    expect(chat.pendingTurnId.value).toBe('')
+  })
+
+  it('blocks a duplicate image send while the server-side turn status is uncertain', async () => {
+    mockedCapabilities.mockResolvedValue({
+      imageInput: true,
+      maxImages: 4,
+      maxImageBytes: 1024,
+      maxTotalBytes: 4096,
+    })
+    mockedUpload.mockImplementation(async (_file, clientAttachmentId) => ({
+      id: 'attachment-1',
+      clientAttachmentId,
+      status: 'DRAFT',
+      mediaType: 'image/png',
+      byteSize: 4,
+      width: 1,
+      height: 1,
+      expiresAt: '2026-10-02T00:00:00Z',
+    }))
+    mockedChat.mockRejectedValue(new Error('stream lost before completed'))
+    mockedTurnByClientId.mockResolvedValue(null as never)
+    const chat = useAiChatSession()
+    await chat.loadImageCapabilities()
+    await chat.addImages([new File(['data'], 'screen.png', { type: 'image/png' })])
+    chat.prompt.value = 'Analyze image'
+
+    expect(await chat.send('Empty')).toBe(false)
+    expect(chat.pendingTurnId.value).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
+    )
+    expect(chat.sendErrorKey.value).toBe('aiChat.imageStatusUnknown')
+    chat.prompt.value = 'Try duplicate'
+    expect(await chat.send('Empty')).toBe(false)
+    expect(mockedChat).toHaveBeenCalledTimes(1)
   })
 
   it('cancels the old stream and unlocks the composer when switching conversations', async () => {

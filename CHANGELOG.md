@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- AI 图片对话补齐上传不确定、流式中断和重复发送保护的前端回归覆盖，并将开发计划文档收口为本地已落地项与环境验收项两类。
 - 移除 Windows 原生 PowerShell 部署助手 `scripts/deploy.ps1`；生产部署基线统一为 Linux，Windows 开发机使用 WSL2 + Docker Desktop，Compose CD 由 Linux SSH 部署入口承接。
 
 - 清理无调用且引用失效设计稿的根目录 `_design.mjs`；UTF-8 门禁正确跳过工作区中尚未暂存的删除项；主页同步补充贡献范围、契约边界和验证入口，并将 Node 徽章对齐到唯一支持的 Node 24。
