@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- 前端镜像构建增加 nightly 变更 gate：按北京时间前一日检查前后端代码/配置变更；后端有变更时等待配对后端 `daily-sim-strict-validation` 的 `sim-and-strict` 成功后再构建，发布与手动路径保持不变。
+
 - AI 助手增加受控图片选择、拖放、粘贴、预览、历史恢复与回答复制，并通过后端能力接口决定入口和上传边界；Nginx 仅放宽专用上传端点，普通 API 代理策略不变。
 - AI 图片选择失败统一提示格式、大小、分辨率或数量限制，不再误用文本附件长度提示。
 - 前端 PR、Full Gate、Node 24 兼容和本地治理改为执行全部独立检查后统一汇总失败；SBOM 许可证门禁新增未知许可证阻断及 CPAL、EUPL、Commons Clause、Elastic、PolyForm 风险策略，并为缺少包元数据但 tarball 明确采用 MIT 的 `khroma@2.1.0` 登记精确证据；依赖文件提交前自动刷新并暂存确定性合规产物。

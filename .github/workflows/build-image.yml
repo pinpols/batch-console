@@ -5,14 +5,18 @@ name: build-image
 # tag(v*) push:等待同 commit 的 staging-gate 成功后，只给既有 sha 镜像增加 release tag，
 # 不重新构建，保证 staging 验收与发布制品 digest 一致。
 #
-# 注意:本文件挂在 push:main 上,合并进 main 后才会随 main push 触发;
-#       在 feature 分支期间可用 Actions 页面的 workflow_dispatch 选该分支手动验证。
+# nightly:按北京时间前一日的前后端代码变更决定是否构建；后端有变更时，
+#          必须等待配对后端 daily-sim-strict-validation 的 sim-and-strict 成功。
+# 注意:main push/tag 发布路径不改变；feature 分支可用 workflow_dispatch 手动验证。
 on:
   push:
     branches:
       - main
     tags:
       - 'v*'
+  schedule:
+    # 北京时间 03:00，给后端 21:31 nightly sim 留出完成窗口。
+    - cron: '0 19 * * *'
   workflow_dispatch: {}
 
 permissions:
@@ -29,6 +33,109 @@ env:
   IMAGE: ghcr.io/pinpols/batch-console
 
 jobs:
+  nightly-sim-gate:
+    name: Nightly backend sim-strict gate
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-26.04
+    timeout-minutes: 75
+    outputs:
+      should_build: ${{ steps.gate.outputs.should_build }}
+    steps:
+      - name: Checkout frontend history
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Checkout backend history
+        uses: actions/checkout@v7
+        with:
+          repository: pinpols/file-batch-system
+          ref: main
+          path: backend-sim-source
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Check daily changes and backend sim-strict
+        id: gate
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BACKEND_REPOSITORY: pinpols/file-batch-system
+          BACKEND_WORKFLOW: daily-sim-strict-validation.yml
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          validation_day=$(TZ=Asia/Shanghai date -d 'yesterday' +%F)
+          next_day=$(TZ=Asia/Shanghai date -d "${validation_day} +1 day" +%F)
+          since="${validation_day} 00:00:00 +0800"
+          until="${next_day} 00:00:00 +0800"
+
+          has_code_changes() {
+            local repo="$1"
+            git -C "$repo" log --since="$since" --until="$until" \
+              --format= --name-only --no-renames HEAD \
+              | awk 'NF && $0 !~ /(^|\/)([^/]+\.(md|rst)|LICENSE|NOTICE)$/ { found=1 } END { exit found ? 0 : 1 }'
+          }
+
+          frontend_changed=false
+          backend_changed=false
+          has_code_changes . && frontend_changed=true || true
+          has_code_changes backend-sim-source && backend_changed=true || true
+
+          echo "validation day: ${validation_day}"
+          echo "frontend code changed: ${frontend_changed}"
+          echo "backend code changed: ${backend_changed}"
+
+          if [[ "$frontend_changed" == false && "$backend_changed" == false ]]; then
+            echo "当天没有前后端代码/配置变更，跳过 nightly 前端镜像构建。"
+            echo 'should_build=false' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [[ "$backend_changed" == true ]]; then
+            echo "等待 ${BACKEND_REPOSITORY} 当天 daily sim-strict 完成..."
+            sim_run_id=''
+            jq_filter=$(printf '.[] | select(.createdAt | startswith("%s")) | .databaseId' "$validation_day")
+            for _ in $(seq 1 60); do
+              sim_run_id=$(gh run list --repo "$BACKEND_REPOSITORY" \
+                --workflow "$BACKEND_WORKFLOW" --limit 30 \
+                --json databaseId,createdAt \
+                --jq "$jq_filter" \
+                2>/dev/null | head -n 1 || true)
+              [[ -n "$sim_run_id" ]] && break
+              sleep 60
+            done
+            [[ -n "$sim_run_id" ]] || {
+              echo "::error::未找到后端 ${validation_day} 的 daily sim-strict run。"
+              exit 1
+            }
+
+            for _ in $(seq 1 60); do
+              job_state=$(gh api --paginate \
+                "repos/${BACKEND_REPOSITORY}/actions/runs/${sim_run_id}/jobs?per_page=100" \
+                --jq '.jobs[] | select(.name == "sim-and-strict") | [.status, .conclusion] | @tsv' \
+                2>/dev/null | tail -n 1 || true)
+              status=$(printf '%s' "$job_state" | cut -f1)
+              conclusion=$(printf '%s' "$job_state" | cut -f2)
+              if [[ "$status" == completed ]]; then
+                [[ "$conclusion" == success ]] || {
+                  echo "::error::后端 daily sim-strict 未成功: run=${sim_run_id}, conclusion=${conclusion:-unknown}"
+                  exit 1
+                }
+                break
+              fi
+              sleep 60
+            done
+
+            [[ "$status" == completed && "$conclusion" == success ]] || {
+              echo "::error::后端 daily sim-strict 等待超时: run=${sim_run_id}"
+              exit 1
+            }
+          fi
+
+          echo 'should_build=true' >> "$GITHUB_OUTPUT"
+
   release-acceptance:
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-26.04
@@ -58,7 +165,15 @@ jobs:
           exit 1
 
   build:
-    if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
+    needs: nightly-sim-gate
+    if: >-
+      always() &&
+      (
+        github.ref == 'refs/heads/main' && github.event_name != 'schedule' ||
+        github.event_name == 'workflow_dispatch' ||
+        (github.event_name == 'schedule' && needs.nightly-sim-gate.result == 'success'
+          && needs.nightly-sim-gate.outputs.should_build == 'true')
+      )
     runs-on: ubuntu-26.04
     timeout-minutes: 30
     steps:

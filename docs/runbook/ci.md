@@ -11,7 +11,7 @@ CI 由 3 个核心门禁、兼容/安全检查和发布辅助 workflow 组成。
 | `full-ci-gate` | `.github/workflows/full-ci-gate.yml` | PR → main / push main / nightly cron(02:00 UTC = 10:00 Asia/Shanghai)/ 手动 | 全量回归；Markdown-only PR 保留 required check 但跳过构建和全量审计 | 15-20 min |
 | `staging-gate` | `.github/workflows/staging-gate.yml` | tag `v*` / 手动(可输入 base_url) | staging 部署前真环境最终关 | 10-15 min |
 | `codeql` | `.github/workflows/codeql.yml` | PR / main / 每周 / 手动 | JavaScript/TypeScript 静态安全分析 | 5-10 min |
-| `build-image` | `.github/workflows/build-image.yml` | main / tag / 手动 | main 构建不可变镜像；tag 在 staging 通过后晋级同一 digest | 10-30 min |
+| `build-image` | `.github/workflows/build-image.yml` | main / tag / 每日 19:00 UTC(北京时间 03:00) / 手动 | main 构建不可变镜像；nightly 按前后端代码变更决定是否构建，后端有变更时等待配对后端 daily sim-strict 成功；tag 在 staging 通过后晋级同一 digest | 10-75 min |
 
 ## pr-gate 详情
 
