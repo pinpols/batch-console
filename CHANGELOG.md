@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- 移除 Windows 原生 PowerShell 部署助手 `scripts/deploy.ps1`；生产部署基线统一为 Linux，Windows 开发机使用 WSL2 + Docker Desktop，Compose CD 由 Linux SSH 部署入口承接。
+
 - 清理无调用且引用失效设计稿的根目录 `_design.mjs`；UTF-8 门禁正确跳过工作区中尚未暂存的删除项；主页同步补充贡献范围、契约边界和验证入口，并将 Node 徽章对齐到唯一支持的 Node 24。
 - 前端镜像构建增加 nightly 变更 gate：按北京时间前一日检查前后端代码/配置变更；后端有变更时等待配对后端 `daily-sim-strict-validation` 的 `sim-and-strict` 成功后再构建，发布与手动路径保持不变。
 
