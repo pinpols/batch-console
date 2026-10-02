@@ -2,7 +2,7 @@
 
 ## 开发流程
 
-1. 从最新 `main` 创建短命 `feature/*` 或 `fix/*` 分支。
+1. 从最新 `main` 创建短命分支：`feature/<topic>`（功能）、`fix/<topic>`（缺陷）、`chore/<topic>`（工程/依赖/脚本/CI）或 `docs/<topic>`（纯文档）。
 2. 使用 Node 24 和锁文件安装依赖：`npm ci`。
 3. 接口变更先更新配对后端 OpenAPI，再运行 `npm run gen:api`。
 4. 用户可见文案同时维护 `zh-CN` 与 `en-US`；行为变化同步测试和长期文档。
