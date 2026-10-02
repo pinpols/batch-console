@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { execFileSync } from 'node:child_process'
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { extname, resolve } from 'node:path'
 
 const root = resolve(import.meta.dirname, '..')
@@ -50,6 +50,10 @@ const failures = []
 let checked = 0
 
 for (const file of repositoryFiles()) {
+  const absolutePath = resolve(root, file)
+  // git ls-files 仍会返回工作区中尚未暂存的删除项，删除不应导致编码检查读文件失败。
+  if (!existsSync(absolutePath)) continue
+
   if (
     allowedNonUtf8.has(file) ||
     extensionlessBinaryFiles.has(file) ||
@@ -58,7 +62,7 @@ for (const file of repositoryFiles()) {
     continue
   }
 
-  const bytes = readFileSync(resolve(root, file))
+  const bytes = readFileSync(absolutePath)
   checked += 1
   if (bytes.length >= 3 && bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf) {
     failures.push(`${file}: UTF-8 BOM`)
