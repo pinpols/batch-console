@@ -5731,6 +5731,111 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/console/users/batch/template': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Download XLSX account batch template */
+    get: operations['downloadUserBatchTemplate']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/users/batch/preview': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Validate up to 500 accounts without writing them */
+    post: operations['previewUserBatch']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/users/batch/preview/{token}/patch': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Correct one row and revalidate the preview */
+    post: operations['patchUserBatchPreview']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/users/batch/apply/{token}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Atomically create all previewed accounts
+     * @description Initial passwords appear only in this success response. Lost responses require password reset.
+     */
+    post: operations['applyUserBatch']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/users/batch/operations': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Recover non-sensitive operation status by requestId */
+    get: operations['findUserBatchOperation']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/users/batch/operations/{operationId}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Get own non-sensitive batch result */
+    get: operations['getUserBatchOperation']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/console/users/{id}': {
     parameters: {
       query?: never
@@ -6343,6 +6448,62 @@ export interface paths {
 export type webhooks = Record<string, never>
 export interface components {
   schemas: {
+    UserBatchAccountRow: {
+      rowNo: number
+      tenantId: string
+      username: string
+      displayName: string
+      /** @enum {string} */
+      role: 'ROLE_ADMIN' | 'ROLE_AUDITOR' | 'ROLE_TENANT_ADMIN' | 'ROLE_TENANT_USER'
+    }
+    UserBatchRowIssue: {
+      rowNo: number
+      username: string
+      errorCode: string
+      message: string
+    }
+    UserBatchPreview: {
+      previewToken: string
+      version: number
+      sourceDigest: string
+      totalRows: number
+      validRows: number
+      rows: components['schemas']['UserBatchAccountRow'][]
+      issues: components['schemas']['UserBatchRowIssue'][]
+    }
+    UserBatchCredential: {
+      /** Format: int64 */
+      accountId: number
+      tenantId: string
+      username: string
+      /** @description One-time sensitive value. Never persisted or returned by operation lookup. */
+      initialPassword: string
+    }
+    UserBatchApplyResult: {
+      /** Format: uuid */
+      operationId: string
+      accountCount: number
+      credentials: components['schemas']['UserBatchCredential'][]
+    }
+    UserBatchOperation: {
+      /** Format: uuid */
+      operationId: string
+      /** Format: uuid */
+      requestId: string
+      accountCount: number
+      tenantIds: string
+      /** Format: date-time */
+      createdAt: string
+    }
+    UserBatchPreviewEnvelope: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['UserBatchPreview']
+    }
+    UserBatchApplyEnvelope: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['UserBatchApplyResult']
+    }
+    UserBatchOperationEnvelope: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['UserBatchOperation'] | null
+    }
     /**
      * @description Single worker run-fingerprint (SDK Phase 5 / SDK-P5-3, console Lane D).
      *     buildId / sdkVersion are nullable when worker did not report (e.g. legacy non-SDK file pipeline workers).
@@ -20877,6 +21038,162 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['CommonResponseObject']
+        }
+      }
+    }
+  }
+  downloadUserBatchTemplate: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Accounts workbook with tenantId, username, displayName, role columns */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': string
+        }
+      }
+    }
+  }
+  previewUserBatch: {
+    parameters: {
+      query?: never
+      header: {
+        'Idempotency-Key': components['parameters']['IdempotencyKeyHeader']
+      }
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'multipart/form-data': {
+          /** Format: binary */
+          file: string
+        }
+      }
+    }
+    responses: {
+      /** @description Preview with row-level issues and 15-minute token */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['UserBatchPreviewEnvelope']
+        }
+      }
+    }
+  }
+  patchUserBatchPreview: {
+    parameters: {
+      query?: never
+      header: {
+        'Idempotency-Key': components['parameters']['IdempotencyKeyHeader']
+      }
+      path: {
+        token: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': {
+          version: number
+          row: components['schemas']['UserBatchAccountRow']
+        }
+      }
+    }
+    responses: {
+      /** @description Revalidated preview */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['UserBatchPreviewEnvelope']
+        }
+      }
+    }
+  }
+  applyUserBatch: {
+    parameters: {
+      query?: never
+      header: {
+        'Idempotency-Key': components['parameters']['IdempotencyKeyHeader']
+      }
+      path: {
+        token: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': {
+          version: number
+          /** Format: uuid */
+          requestId: string
+        }
+      }
+    }
+    responses: {
+      /** @description Created accounts and one-time credentials */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['UserBatchApplyEnvelope']
+        }
+      }
+    }
+  }
+  findUserBatchOperation: {
+    parameters: {
+      query: {
+        requestId: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Own operation or null if not committed */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['UserBatchOperationEnvelope']
+        }
+      }
+    }
+  }
+  getUserBatchOperation: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        operationId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Operation summary without credentials */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['UserBatchOperationEnvelope']
         }
       }
     }
