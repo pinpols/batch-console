@@ -41,7 +41,7 @@ Repository-specific commands and contracts remain authoritative over generic ski
 | **`main`** | 稳定 / 发布 / 集成主干、唯一真相源 | 全部前端代码 **+ 全部部署**(`docker-compose*.yml` / `Dockerfile` / `nginx/*` / `.github/workflows/{build-image,staging-gate}.yml`)。部署是产品一部分,不单独分支 |
 
 **流程**:
-- **业务 / bugfix / 测试 / 文档 / 部署**:从 `main` 开 `feature/<topic>`(或 `fix/<topic>`)→ PR → `main`;短命分支合后即删(仓库 `deleteBranchOnMerge` 已开)。
+- **业务 / bugfix / 测试 / 文档 / 部署**:从 `main` 开 `feature/<topic>`（功能）、`fix/<topic>`（缺陷）、`chore/<topic>`（工程/依赖/脚本/CI）或 `docs/<topic>`（纯文档）→ PR → `main`;短命分支合后即删(仓库 `deleteBranchOnMerge` 已开)。
 - **不再有独立 `dev` / 部署分支**——所有改动经 PR 直接进 main,部署文件直接在 main(自托管 / on-prem 的 compose/nginx/deploy 脚本是产品的一部分,与后端 main 同理)。
 
 ## 构建 / 测试
