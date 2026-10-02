@@ -1,5 +1,7 @@
 # 前端文档索引
 
+- [前端 Compose CD 路线](runbook/compose-cd-roadmap.md)：与后端统一 release set、digest 晋级、staging 验收、production 审批与回滚待办。
+
 本文档是 `batch-console` 的文档入口。所有文档按「权威设计 / 阶段报告 / 归档材料」分层维护:长期规则只放一处,阶段性结论保留日期,过时材料归档参考。
 
 ## 产品使用指南
