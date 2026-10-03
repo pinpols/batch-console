@@ -8,7 +8,7 @@
   -->
   <el-aside class="layout-sidebar" :width="app.sidebarCollapsed ? '58px' : '224px'">
     <div class="brand">
-      <BatchMark class="brand__logo" :size="34" />
+      <BatchMark class="brand__logo" :size="38" tight />
       <div v-if="!app.sidebarCollapsed" class="brand__text">
         <div class="brand__title">{{ t('nav.appTitle') }}</div>
         <div class="brand__subtitle">Batch Console</div>
@@ -211,14 +211,18 @@
   .brand {
     display: flex;
     align-items: center;
-    gap: 11px;
+    gap: 10px;
     flex-shrink: 0;
     min-height: 66px;
-    padding: 16px 14px;
+    padding: 14px 10px;
   }
 
   .brand__logo {
     flex-shrink: 0;
+  }
+
+  .layout-sidebar[style*='58px'] .brand {
+    justify-content: center;
   }
 
   .brand__title {

@@ -1,5 +1,5 @@
 <template>
-  <div v-if="visible" class="ai-launcher">
+  <div v-if="visible" class="ai-launcher" :class="{ 'ai-launcher--open': open }">
     <el-tooltip :content="t('aiPanel.open')" placement="bottom">
       <button
         ref="trigger"
@@ -205,20 +205,44 @@
 </script>
 
 <style scoped>
+  .ai-launcher {
+    position: fixed;
+    right: var(--space-lg);
+    bottom: calc(var(--space-lg) + env(safe-area-inset-bottom, 0px));
+    z-index: var(--z-fab);
+  }
+
   .ai-launcher__button {
     display: inline-grid;
     place-items: center;
-    width: 36px;
-    height: 36px;
-    border: 0;
-    border-radius: var(--radius-button);
-    color: var(--color-text-secondary);
-    background: transparent;
+    width: 46px;
+    height: 46px;
+    border: 1px solid var(--color-primary);
+    border-radius: 50%;
+    color: var(--color-primary);
+    background: var(--color-bg-card);
+    box-shadow: var(--shadow-surface-hover);
     cursor: pointer;
+    transition:
+      color 0.18s ease,
+      background-color 0.18s ease,
+      transform 0.18s ease;
+  }
+  .ai-launcher--open .ai-launcher__button {
+    visibility: hidden;
+    pointer-events: none;
   }
   .ai-launcher__button:hover {
-    color: var(--color-primary);
-    background: var(--color-fill-light);
+    color: var(--color-bg-card);
+    background: var(--color-primary);
+    transform: translateY(-2px);
+  }
+
+  @media (max-width: 860px) {
+    .ai-launcher {
+      right: var(--space-md);
+      bottom: calc(76px + var(--space-md) + env(safe-area-inset-bottom, 0px));
+    }
   }
   .ai-panel {
     display: flex;
@@ -275,6 +299,10 @@
   .ai-panel__composer {
     display: grid;
     gap: var(--space-sm);
+    flex-shrink: 0;
+    padding-top: var(--space-md);
+    border-top: 1px solid var(--color-border-light);
+    background: var(--color-bg-card);
   }
   .ai-panel__actions {
     display: flex;

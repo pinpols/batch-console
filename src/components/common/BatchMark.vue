@@ -1,6 +1,7 @@
 <template>
   <span
     class="batch-mark"
+    :class="{ 'batch-mark--tight': tight }"
     :style="{ width: `${size}px`, height: `${size}px` }"
     role="img"
     :aria-label="label ?? t('nav.appTitle')"
@@ -10,8 +11,9 @@
 <script setup lang="ts">
   import { useI18n } from 'vue-i18n'
 
-  withDefaults(defineProps<{ size?: number; label?: string }>(), {
+  withDefaults(defineProps<{ size?: number; label?: string; tight?: boolean }>(), {
     size: 32,
+    tight: false,
   })
 
   const { t } = useI18n()
@@ -22,6 +24,12 @@
     display: block;
     flex: 0 0 auto;
     background: center / contain no-repeat url('/icons/icon-192-maskable.png');
+  }
+
+  .batch-mark--tight {
+    overflow: hidden;
+    border-radius: 25%;
+    background-size: 122%;
   }
 
   :global(html.dark .batch-mark) {
