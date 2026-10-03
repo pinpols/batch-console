@@ -47,7 +47,7 @@ test('opens an edit deep link outside the current job list page', async ({ page 
   })
 
   await page.goto('/ops/summary')
-  await expect(page.getByRole('button', { name: /polish-e2e.*ADMIN/ })).toBeVisible()
+  await expect(page.getByRole('button', { name: /polish-e2e.*平台管理员/ })).toBeVisible()
   await page.goto('/jobs/definitions?action=edit&editId=42&tenantId=tc')
   await expect(page.locator('.jdd')).toBeVisible()
   await expect(page.locator('.jdd')).toContainText('JOB_OUTSIDE_PAGE')

@@ -40,7 +40,8 @@ test.describe('notification management (通知与投递)', () => {
   test('Webhook 标签页展示表格与新增按钮', async ({ page }) => {
     await page.goto('/system/notifications')
     await page.getByRole('tab', { name: 'Webhook' }).click()
-    await expect(page.getByRole('button', { name: /新增/ })).toBeVisible()
+    await expect(page.getByRole('button', { name: '新增 Webhook' })).toBeVisible()
+    await expect(page.getByRole('columnheader', { name: 'URL' })).toBeVisible()
   })
 
   test('旧 webhooks 路由重定向', async ({ page }) => {
