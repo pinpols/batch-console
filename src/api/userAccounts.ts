@@ -5,7 +5,14 @@
  * - 所有操作均要求 ROLE_ADMIN
  * - 密码仅以 Argon2id 哈希存储，响应中永远不包含 passwordHash
  */
-import { get, post, put } from '@/api/client'
+import { apiClient, get, post, put } from '@/api/client'
+import type { components } from '@/types/api.generated'
+
+const BATCH_BASE = '/api/console/users/batch'
+export type UserBatchAccountRow = components['schemas']['UserBatchAccountRow']
+export type UserBatchPreview = components['schemas']['UserBatchPreview']
+export type UserBatchApplyResult = components['schemas']['UserBatchApplyResult']
+export type UserBatchOperation = components['schemas']['UserBatchOperation']
 
 export interface UserAccount {
   id: number
@@ -83,4 +90,34 @@ export function enableUser(id: number) {
 /** POST /api/console/users/{id}/disable */
 export function disableUser(id: number) {
   return post<UserAccount>(`/api/console/users/${id}/disable`)
+}
+
+export async function downloadUserBatchTemplate(): Promise<Blob> {
+  const { data } = await apiClient.get<Blob>(`${BATCH_BASE}/template`, { responseType: 'blob' })
+  return data
+}
+
+export function previewUserBatch(file: File): Promise<UserBatchPreview> {
+  const body = new FormData()
+  body.append('file', file)
+  return post<UserBatchPreview>(`${BATCH_BASE}/preview`, body)
+}
+
+export function patchUserBatch(token: string, version: number, row: UserBatchAccountRow) {
+  return post<UserBatchPreview>(`${BATCH_BASE}/preview/${encodeURIComponent(token)}/patch`, {
+    version,
+    row,
+  })
+}
+
+export function applyUserBatch(token: string, version: number, requestId: string) {
+  return post<UserBatchApplyResult>(
+    `${BATCH_BASE}/apply/${encodeURIComponent(token)}`,
+    { version, requestId },
+    { headers: { 'Idempotency-Key': requestId }, timeout: 60_000 },
+  )
+}
+
+export function findUserBatchOperation(requestId: string) {
+  return get<UserBatchOperation | null>(`${BATCH_BASE}/operations`, { requestId })
 }

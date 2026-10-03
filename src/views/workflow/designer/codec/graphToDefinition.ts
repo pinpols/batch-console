@@ -1,7 +1,7 @@
 /**
  * 将设计器节点和边转换为 `workflow_definition.definition_json`。
  *
- * Spike 阶段保存按钮 console.log 即可,但已实现完整反向 codec,MVP 接 BE PUT /full 无需改。
+ * 保存时走后端 definition_json 契约；attrs 保真透传，避免未显式编辑的节点/边字段丢失。
  */
 
 import type { DesignerSnapshot, WorkflowDefinitionJson } from '../types'

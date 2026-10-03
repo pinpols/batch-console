@@ -55,4 +55,27 @@ describe('route inventory', () => {
       expect(target?.meta?.activeMenu, `${path} must define activeMenu`).toBeTruthy()
     }
   })
+
+  it('keeps shared-component pages highlighted by their real route', () => {
+    const expected: Record<string, { activeMenu: string; fallback: string[] }> = {
+      '/files/channels': {
+        activeMenu: '/files/channels',
+        fallback: ['/files/templates'],
+      },
+      '/governance/windows': {
+        activeMenu: '/governance/windows',
+        fallback: ['/governance/queues'],
+      },
+      '/governance/calendars': {
+        activeMenu: '/governance/calendars',
+        fallback: ['/governance/queues'],
+      },
+    }
+
+    for (const [path, config] of Object.entries(expected)) {
+      const target = inventory.find((item) => item.path === path)?.route
+      expect(target?.meta?.activeMenu).toBe(config.activeMenu)
+      expect(target?.meta?.menuAccessFallbacks).toEqual(config.fallback)
+    }
+  })
 })

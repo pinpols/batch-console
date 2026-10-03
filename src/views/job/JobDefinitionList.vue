@@ -348,7 +348,7 @@
             :tenant-id="detailRow.tenantId"
             :job-code="detailRow.jobCode"
           />
-          <el-empty
+          <EmptyState
             v-else
             :description="t('jobDefinitionList.fileTabNotApplicable')"
             :image-size="60"

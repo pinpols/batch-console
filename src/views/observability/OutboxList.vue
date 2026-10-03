@@ -711,11 +711,11 @@
   }
 
   .ob-keyword {
-    width: min(300px, 28vw);
+    width: min(220px, 20vw);
   }
 
   .ob-status {
-    width: min(210px, 20vw);
+    width: min(168px, 15vw);
   }
 
   @media (max-width: 720px) {

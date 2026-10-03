@@ -1,0 +1,44 @@
+{
+  "src/views/config/ConfigReleaseList.vue": {
+    "fixedPx": 84,
+    "lines": 1111,
+    "overlays": 5,
+    "tableTags": 6
+  },
+  "src/views/config/TenantPackageImportWizard.vue": {
+    "fixedPx": 163,
+    "lines": 1968,
+    "overlays": 1,
+    "tableTags": 23
+  },
+  "src/views/file-center/FilePipelineObservability.vue": {
+    "fixedPx": 6,
+    "lines": 1107,
+    "overlays": 0,
+    "tableTags": 42
+  },
+  "src/views/governance/QueueConfig.vue": {
+    "fixedPx": 10,
+    "lines": 1350,
+    "overlays": 5,
+    "tableTags": 31
+  },
+  "src/views/job/JobDefinitionList.vue": {
+    "fixedPx": 32,
+    "lines": 1796,
+    "overlays": 1,
+    "tableTags": 17
+  },
+  "src/views/scheduler/SchedulerSnapshot.vue": {
+    "fixedPx": 12,
+    "lines": 922,
+    "overlays": 0,
+    "tableTags": 39
+  },
+  "src/views/workflow/WorkflowMermaidViewer.vue": {
+    "fixedPx": 48,
+    "lines": 1222,
+    "overlays": 1,
+    "tableTags": 0
+  }
+}

@@ -94,7 +94,9 @@
         </el-select>
       </div>
       <el-table v-loading="loading" :data="pagedRows" :row-key="rowKey" class="usage-table">
-        <template #empty><el-empty :description="t('usageSummary.empty')" /></template>
+        <template #empty>
+          <EmptyState :description="t('usageSummary.empty')" />
+        </template>
         <el-table-column prop="statDate" :label="t('usageSummary.date')" width="125" />
         <el-table-column prop="source" :label="t('usageSummary.source')" width="170" />
         <el-table-column :label="t('usageSummary.metric')" min-width="260">
@@ -159,6 +161,7 @@
   import VChart from 'vue-echarts'
   import { queryUsageSummary, type UsageSummaryRow } from '@/api/usage'
   import DateRangePresetPicker from '@/components/common/DateRangePresetPicker.vue'
+  import EmptyState from '@/components/common/EmptyState.vue'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import { useTenantReload } from '@/composables/useTenantReload'

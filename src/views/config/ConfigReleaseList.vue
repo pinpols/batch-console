@@ -69,7 +69,7 @@
     <!-- 主体:左时间线卡片流 + 右侧 sticky 详情面板(照 dump 双栏结构) -->
     <div class="cr-layout" v-loading="tableBlocking">
       <div class="cr-timeline">
-        <el-empty
+        <EmptyState
           v-if="!tableBlocking && rows.length === 0"
           :description="t('configReleaseList.listEmpty')"
         />

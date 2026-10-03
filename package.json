@@ -19,6 +19,7 @@
     "check:env": "node scripts/check-env-governance.mjs",
     "check:docs": "node scripts/check-docs.mjs",
     "check:maintainability": "node scripts/check-maintainability.mjs",
+    "check:ui-complexity": "node scripts/check-ui-complexity.mjs",
     "check:workflows": "node scripts/check-workflows.mjs",
     "check:shell": "bash scripts/check-shell-scripts.sh",
     "check:changelog": "node scripts/check-changelog-sync.mjs",

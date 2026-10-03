@@ -89,28 +89,27 @@
   .ops-filter-toolbar {
     display: grid;
     min-width: 0;
-    margin: 6px 0 10px;
+    margin: 4px 0 8px;
     border: 1px solid var(--color-border-light);
-    border-radius: var(--radius-content);
+    border-radius: var(--radius-input);
     background: var(--color-bg-card);
     overflow: hidden;
-    box-shadow: var(--shadow-card);
   }
 
   .ops-filter-toolbar__saved {
     display: flex;
     align-items: center;
-    min-height: 42px;
-    padding: 8px 12px;
+    min-height: 36px;
+    padding: 6px 10px;
     border-bottom: 1px solid var(--color-border-light);
   }
 
   .ops-filter-toolbar__main {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
     min-width: 0;
-    padding: 10px 12px;
+    padding: 8px 10px;
   }
 
   .ops-filter-toolbar__status {
@@ -124,7 +123,7 @@
     display: flex;
     align-items: center;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 6px;
     min-width: 0;
     flex: 1 1 auto;
   }
@@ -133,7 +132,7 @@
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    gap: 8px;
+    gap: 6px;
     flex: 0 0 auto;
   }
 
@@ -142,14 +141,22 @@
   }
 
   .ops-filter-toolbar__actions :deep(.el-button) {
-    min-width: 74px;
+    min-width: 66px;
+    padding-inline: 10px;
   }
 
   .ops-filter-toolbar__context {
-    padding: 0 12px 10px;
+    padding: 0 10px 8px;
   }
 
-  @media (max-width: 1800px) {
+  .ops-filter-toolbar__filters :deep(.el-input),
+  .ops-filter-toolbar__filters :deep(.el-select),
+  .ops-filter-toolbar__filters :deep(.el-date-editor) {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  @media (max-width: 1320px) {
     .ops-filter-toolbar__main {
       align-items: flex-start;
       flex-wrap: wrap;

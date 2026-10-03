@@ -2,6 +2,9 @@
   <PageContainer>
     <PageHeader>
       <template #actions>
+        <el-button v-if="canProvision" :icon="Upload" @click="batchVisible = true">
+          {{ t('userBatch.open') }}
+        </el-button>
         <el-button type="primary" :icon="Plus" class="pretty-add-button" @click="openCreate">
           {{ t('userAccountList.headerCreate') }}
         </el-button>
@@ -143,6 +146,8 @@
         @update:page-size="onPageSize"
       />
     </SectionCard>
+
+    <UserBatchProvisioningDialog v-model="batchVisible" @applied="load" />
 
     <el-drawer
       :append-to-body="true"
@@ -295,7 +300,8 @@
   import { computed, onMounted, reactive, ref } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
-  import { Plus } from '@lucide/vue'
+  import { Plus, Upload } from '@lucide/vue'
+  import UserBatchProvisioningDialog from './UserBatchProvisioningDialog.vue'
 
   const { t } = useI18n({ useScope: 'global' })
   import { confirmDanger } from '@/composables/useDangerConfirm'
@@ -340,6 +346,9 @@
 
   /** 当前操作者是否平台 ADMIN(能授任意角色 + 任意租户);TENANT_ADMIN 只能管自己租户。 */
   const isPlatformAdmin = computed(() => auth.hasPermission('ROLE_ADMIN'))
+  const canProvision = computed(
+    () => isPlatformAdmin.value || auth.hasPermission('ROLE_TENANT_ADMIN'),
+  )
 
   /**
    * 角色选项 + 当前操作者过滤逻辑抽到 `utils/roleOptions.ts`(独立 vitest 守护)。
@@ -356,6 +365,7 @@
     return Array.from(new Set(arr || [])).join(',')
   }
   const creating = ref(false)
+  const batchVisible = ref(false)
   const resetting = ref(false)
   const listRemote = ref(true)
   const { filterBusy, runSearch, runReset, runRefresh } = useListFilterFeedback(listRemote)
@@ -696,7 +706,7 @@
 
 <style scoped>
   .account-keyword {
-    width: min(360px, 36vw);
+    width: min(220px, 20vw);
   }
 
   .role-tags {

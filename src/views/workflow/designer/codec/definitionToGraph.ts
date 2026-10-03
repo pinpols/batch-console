@@ -1,9 +1,9 @@
 /**
  * `workflow_definition.definition_json` → designer 内部 nodes/edges 结构。
  *
- * Spike 阶段:
+ * 当前实现:
  * - START / END / JOB 渲染各自专用 Vue 节点(StartNode / EndNode / JobNode)
- * - GATEWAY / FILE_STEP 占位为通用矩形(nodeType 透传,下阶段在 codec 不动的前提下接专用节点)
+ * - GATEWAY / FILE_STEP 使用专用或通用节点渲染，nodeType 与扩展字段透传
  * - nodeCode 同时作为 X6 node id,保证幂等且与 BE 字段对齐
  */
 

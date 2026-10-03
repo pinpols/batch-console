@@ -649,15 +649,15 @@
 
 <style scoped>
   .al-sel {
-    width: min(176px, 17vw);
+    width: min(156px, 14vw);
   }
 
   .al-range {
-    width: min(520px, 46vw);
+    width: min(420px, 36vw);
   }
 
   .al-trace {
-    width: min(210px, 19vw);
+    width: min(180px, 16vw);
   }
 
   .al-saved :deep(.el-button) {
