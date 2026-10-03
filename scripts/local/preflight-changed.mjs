@@ -154,6 +154,7 @@ if (workflowChanged) {
 
 if (docsChanged) {
   run('documentation links and paths', 'npm', ['run', 'check:docs'])
+  run('go-live readiness documentation', 'npm', ['run', 'check:go-live-readiness'])
   run('unified docs build', 'npm', ['run', 'docs:build'])
 }
 

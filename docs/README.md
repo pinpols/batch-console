@@ -31,6 +31,7 @@
 | [Batch Console 重设计资料](./redesign/README.md)                                       | 当前设计来源、覆盖矩阵、原型证据与历史实施计划归档                |
 | [wrapper 迁移计划](./engineering/fe-wrapper-migration-plan.md)                         | wrapper 迁移路径(过渡期方案)                                      |
 | [页面命名约定](./engineering/page-naming-convention.md)                                | URL / 代码目录 / 侧边栏分组三者一致规则                           |
+| [前端工程成熟度路线图](./engineering/engineering-maturity-roadmap.md)                  | 大厂工程实践对齐、上线准入、UI 治理和验收证据分层                 |
 | [前端可观测性方案](./engineering/前端可观测性方案.md)                                  | 操作日志 / 行为埋点 / Sentry / 错误追踪                           |
 | [Console AI 助手前端实施方案](./engineering/ai-assistant-frontend-implementation-plan.md) | 全局入口、页面上下文、会话 UI、移动端与前后端契约                 |
 | [AI 对话流式交互](./engineering/ai-chat-streaming.md)                       | SSE 协议、停止生成、文本附件及数据保留边界                        |
@@ -60,6 +61,7 @@
 | [部署:Docker + Nginx](./deploy/docker-nginx.md) | 容器化部署                                                                            |
 | [部署:裸 Linux + Nginx](./deploy/linux-nginx.md) | 原生 Nginx、静态制品、HTTPS、发布与回滚                                                |
 | [发布晋级](./runbook/release-promotion.md)      | staging 验收、不可变镜像晋级和发布阻断                                                |
+| [上线准入清单](./runbook/go-live-readiness-checklist.md) | PR 门禁、真实环境验收、UI 交互准入和发布运行时证据                         |
 | [前端事故处理](./runbook/frontend-incident.md)  | 白屏、静态资源、API、缓存与 CSP 故障处置                                              |
 | [可观测性运行手册](./runbook/observability.md)  | Sentry、遥测、采样和告警边界                                                          |
 

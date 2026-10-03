@@ -146,6 +146,7 @@ tag v* / 手动 ── precheck(URL/账号/healthz/版本必须有效)
 | 架构/环境/文档/SBOM/许可证 | ✅ | ✅ | — | 按 staged 变更选择 |
 | Shell 语法 / ShellCheck warning | ✅ | ✅ | — | `npm run check:shell` |
 | 文档 chunk / 搜索索引预算 | 统一文档 job | Docker 文档构建 | — | `docs:build` 内置 |
+| 上线准入文档覆盖 | ✅ | ✅ | — | `preflight:changed`(文档变更) |
 | `check-version-alignment.sh` | ✅ | ✅ | — | `preflight:changed`(package 变更) |
 | `docs:build` | 统一文档 job | Docker 文档构建 | — | `preflight:changed`(文档站变更) |
 
