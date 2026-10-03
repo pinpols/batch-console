@@ -70,7 +70,7 @@ describe('definitionToGraph', () => {
     })
     expect(snap.nodes[0].nodeType).toBe('GATEWAY')
     expect(snap.nodes[0].attrs?.gatewayStrategy).toBe('XOR')
-    // 未知节点类型回退到 JOB(Spike 阶段渲染为通用矩形)
+    // 未知节点类型回退到 JOB,避免画布因异常枚举中断渲染。
     expect(snap.nodes[1].nodeType).toBe('JOB')
   })
 })

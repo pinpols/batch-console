@@ -4,7 +4,7 @@
     :title="t('userBatch.title')"
     :width="preview || result ? 'min(960px, 96vw)' : 'min(640px, 96vw)'"
     :close-on-click-modal="false"
-    :close-on-press-escape="!busy"
+    :close-on-press-escape="!busy && !result"
     :before-close="beforeClose"
     @closed="clearSensitiveResult"
   >
@@ -31,6 +31,7 @@
         :title="t('userBatch.created', { count: result.accountCount })"
       />
       <p class="batch-note">{{ t('userBatch.oneTimeWarning') }}</p>
+      <p class="batch-note batch-note--strong">{{ t('userBatch.closeWarning') }}</p>
       <p class="batch-operation">{{ t('userBatch.operationId') }}: {{ result.operationId }}</p>
       <el-table
         class="batch-desktop-table"
@@ -264,25 +265,52 @@
     if (fileInput.value) fileInput.value.value = ''
   }
 
-  function close() {
+  async function confirmSensitiveClose() {
+    if (!result.value) return true
+    try {
+      await ElMessageBox.confirm(
+        t('userBatch.closeConfirmBody'),
+        t('userBatch.closeConfirmTitle'),
+        {
+          type: 'warning',
+          confirmButtonText: t('userBatch.closeConfirmAction'),
+          cancelButtonText: t('common.cancel'),
+        },
+      )
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  async function close() {
     if (busy.value) return
+    if (!(await confirmSensitiveClose())) return
     emit('update:modelValue', false)
   }
 
-  function beforeClose(done: () => void) {
+  async function beforeClose(done: () => void) {
     if (busy.value) return
-    close()
-    done()
+    if (await confirmSensitiveClose()) {
+      emit('update:modelValue', false)
+      done()
+    }
   }
 
   async function downloadTemplate() {
-    const blob = await downloadUserBatchTemplate()
-    const url = URL.createObjectURL(blob)
-    const anchor = document.createElement('a')
-    anchor.href = url
-    anchor.download = 'accounts-template.xlsx'
-    anchor.click()
-    URL.revokeObjectURL(url)
+    if (busy.value) return
+    busy.value = true
+    try {
+      const blob = await downloadUserBatchTemplate()
+      const url = URL.createObjectURL(blob)
+      const anchor = document.createElement('a')
+      anchor.href = url
+      anchor.download = 'accounts-template.xlsx'
+      anchor.click()
+      URL.revokeObjectURL(url)
+    } finally {
+      busy.value = false
+    }
   }
 
   async function onFileChange(event: Event) {
@@ -290,6 +318,7 @@
     if (!file) return
     if (!file.name.toLowerCase().endsWith('.xlsx') || file.size > 2 * 1024 * 1024) {
       ElMessage.error(t('userBatch.fileLimit'))
+      if (fileInput.value) fileInput.value.value = ''
       return
     }
     busy.value = true
@@ -386,8 +415,12 @@
   }
 
   async function copyPassword(password: string) {
-    await navigator.clipboard.writeText(password)
-    ElMessage.success(t('userBatch.copied'))
+    try {
+      await navigator.clipboard.writeText(password)
+      ElMessage.success(t('userBatch.copied'))
+    } catch {
+      ElMessage.error(t('userBatch.copyFailed'))
+    }
   }
 </script>
 
@@ -432,6 +465,10 @@
   .batch-note {
     margin: 16px 0 8px;
     color: var(--color-warning);
+  }
+  .batch-note--strong {
+    margin-top: 0;
+    font-weight: 600;
   }
   .batch-operation {
     overflow-wrap: anywhere;

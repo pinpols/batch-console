@@ -26,10 +26,16 @@ export default {
   created: 'Created {count} accounts',
   oneTimeWarning:
     'Initial passwords are shown only once. Deliver them securely. If lost, an admin must reset them. A password change is prompted on first sign-in but is not yet enforced.',
+  closeWarning: 'Closing this dialog clears these initial passwords immediately.',
+  closeConfirmTitle: 'Close and clear initial passwords?',
+  closeConfirmBody:
+    'These initial passwords cannot be viewed again after closing. Confirm only after saving or delivering them securely.',
+  closeConfirmAction: 'Close anyway',
   operationId: 'Batch ID',
   password: 'Initial password',
   copy: 'Copy password',
   copied: 'Copied',
+  copyFailed: 'Copy failed. Select the password manually.',
   recovered: 'The batch was committed, but initial passwords were not received',
   recoveredHint: 'Reset each password from the account list. Do not submit the same batch again.',
   issueCodes: {

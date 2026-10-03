@@ -108,6 +108,8 @@ test('批量开户预览修正后提交，关闭即清除一次性密码', async
   await testInfo.attach('batch-result-mobile.png', { body: await page.screenshot(), contentType: 'image/png' })
   await page.setViewportSize({ width: 1280, height: 720 })
   await dialog.getByRole('button', { name: '关闭', exact: true }).click()
+  await expect(page.getByRole('dialog', { name: '关闭并清除初始密码？' })).toBeVisible()
+  await page.getByRole('button', { name: '确认关闭' }).click()
   await page.getByRole('button', { name: '批量开户' }).click()
   await expect(page.getByRole('dialog', { name: '批量开户', exact: true }).getByText('sample-password-123')).toHaveCount(0)
   await page.getByRole('dialog', { name: '批量开户', exact: true }).getByRole('button', { name: '关闭', exact: true }).click()

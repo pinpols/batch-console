@@ -1251,6 +1251,13 @@ const messages: Messages = {
       summaryColon: 'Summary',
       fullDetail: 'View full detail',
     },
+    desktopOnly: {
+      title: 'This feature needs desktop mode',
+      description:
+        'This page contains dense tables, a designer, or batch configuration actions. Mobile only covers viewing and emergency workflows. Switch to desktop mode to continue.',
+      openDesktop: 'Switch to desktop',
+      backHome: 'Back to mobile home',
+    },
     common: {
       loadFail: 'Load failed, please retry later',
       noData: 'No data',

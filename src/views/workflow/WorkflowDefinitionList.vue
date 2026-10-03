@@ -506,7 +506,7 @@
     void router.push({ path: '/config/tenant-package' })
   }
 
-  /** 新建走 DAG 设计器(Spike 阶段),保留 Excel 导入路径不动 */
+  /** 新建走 DAG 设计器,保留 Excel 导入路径不动 */
   function goDesignerNew() {
     if (!canMutateConfig.value) return
     void router.push({ path: '/workflow/designer' })

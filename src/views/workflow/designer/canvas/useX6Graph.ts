@@ -1,9 +1,9 @@
 /**
  * X6 实例的初始化、节点注册、事件桥接,以及自动布局(dagre)。
  *
- * Spike 阶段:
- * - 注册 3 类 Vue 节点(START / END / JOB);GATEWAY / FILE_STEP 用通用矩形占位
- * - 启用 mini-map + 历史插件不开(undo/redo 走 store)
+ * 当前实现:
+ * - 注册 START / END / JOB / GATEWAY / FILE_STEP 节点视图
+ * - 启用 mini-map + 对齐线;undo/redo 走 store
  * - 拖入节点 / 连线 / 删除 / 选中事件全部回写 store
  */
 
@@ -190,8 +190,7 @@ export function useX6Graph(
 
   /**
    * 把 store 状态 → X6 cells(全量替换)。
-   * 设计折衷:Spike 阶段每次 store 变化都全量重画,数十节点性能可接受;
-   * MVP 接 BE 后再做增量 diff。
+   * 将 store 状态同步到 X6。当前采用增量 reconcile，避免重建节点时残留 Teleport DOM。
    */
   function syncFromStore(graph: Graph) {
     graph.startBatch('sync-from-store')

@@ -57,7 +57,7 @@
     // fallback 当 graph 还未挂载时:用相对容器坐标
     const x = Number.isFinite(point.x) ? point.x : ev.clientX - rect.left
     const y = Number.isFinite(point.y) ? point.y : ev.clientY - rect.top
-    // 生成 nodeCode:类型前缀 + 时间戳后 4 位,Spike 阶段够用
+    // 生成 nodeCode:类型前缀 + 时间戳后 4 位，供新节点落盘前临时标识。
     const suffix = String(Date.now()).slice(-4)
     const code = `${nodeType.toLowerCase()}_${suffix}`
     store.addNode({

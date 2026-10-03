@@ -77,7 +77,7 @@
             <div class="rp-bar__label">{{ d.label }}</div>
           </div>
         </div>
-        <el-empty
+        <EmptyState
           v-else-if="!trendLoading"
           :description="t('reportExportHub.trendEmpty')"
           :image-size="64"

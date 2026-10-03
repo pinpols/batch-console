@@ -1,7 +1,7 @@
 /**
  * designer 内部 DAG → Mermaid `graph TD` 字符串。
  *
- * 复用 `utils/crossDayMermaid.ts` 的字符串拼接思路,Spike 阶段只覆盖 DAG 子集:
+ * 复用 `utils/crossDayMermaid.ts` 的字符串拼接思路，覆盖设计器 DAG 子集:
  * - START / END / JOB / GATEWAY / FILE_STEP 节点形状区分
  * - 边携带 label 时渲染 `-->|label|`
  * - 不处理跨日依赖(交给只读 viewer 的 `injectCrossDayEdges`)

@@ -26,10 +26,16 @@ export default {
   created: '已创建 {count} 个账户',
   oneTimeWarning:
     '初始密码只在此显示一次。请通过安全渠道交付；关闭后无法恢复，遗失时需由管理员重置。首次登录会提示改密，但目前不强制。',
+  closeWarning: '关闭弹窗会立即清除这些初始密码，请确认已经安全保存或交付。',
+  closeConfirmTitle: '关闭并清除初始密码？',
+  closeConfirmBody:
+    '这些初始密码关闭后无法再次查看。确认关闭前，请确保已经通过安全渠道保存或交付。',
+  closeConfirmAction: '确认关闭',
   operationId: '批次 ID',
   password: '初始密码',
   copy: '复制密码',
   copied: '已复制',
+  copyFailed: '复制失败，请手动选取密码',
   recovered: '批次已提交，但本次响应未取得初始密码',
   recoveredHint: '请在账户列表中逐个重置密码；不要重复提交同一批次。',
   issueCodes: {

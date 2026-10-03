@@ -1237,6 +1237,13 @@ export default {
       summaryColon: '摘要',
       fullDetail: '查看完整内容',
     },
+    desktopOnly: {
+      title: '该功能需要桌面端',
+      description:
+        '这个页面包含大表格、设计器或批量配置操作，手机端只提供查看和应急处理入口。请切换到桌面版继续。',
+      openDesktop: '切换桌面版',
+      backHome: '回移动首页',
+    },
     common: {
       loadFail: '加载失败,请稍后重试',
       noData: '暂无数据',

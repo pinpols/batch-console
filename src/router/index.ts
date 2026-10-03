@@ -21,8 +21,8 @@ import type { Role } from '@/types'
 const MOBILE_HOME = '/m/ops/summary'
 
 /**
- * 移动端仅覆盖关键 5 页。桌面其它路径在移动设备上不自动跳，
- * 但首次落到根路径 / /ops/summary 时会被判断为"首页场景"引导到 /m。
+ * 移动端覆盖 on-call 高频查看/审批路径。桌面其它路径默认保持桌面版；
+ * 首次落到根路径 / /ops/summary 时会被判断为"首页场景"引导到 /m。
  */
 const MOBILE_AUTO_REDIRECT_PATHS = new Set<string>(['/', '/ops/summary'])
 
@@ -65,10 +65,10 @@ const MOBILE_DEEPLINK_MAP: { prefix: string; to: string | MobileMapper }[] = [
       return m ? `/m/workflow/${m[1]}` : null
     },
   },
-  // 作业/工作流/流水线定义：移动端无编辑页，回退首页
-  { prefix: '/jobs/definitions', to: MOBILE_HOME },
-  { prefix: '/jobs/pipelines', to: MOBILE_HOME },
-  { prefix: '/workflow/definitions', to: MOBILE_HOME },
+  // 作业/工作流/流水线定义：移动端无编辑/管理体验，明确提示切桌面版。
+  { prefix: '/jobs/definitions', to: '/m/desktop-only' },
+  { prefix: '/jobs/pipelines', to: '/m/desktop-only' },
+  { prefix: '/workflow/definitions', to: '/m/desktop-only' },
   // 文件中心：列表 + 模板/渠道/到达组等子页统一降级到移动文件页
   { prefix: '/files', to: '/m/files' },
   // 告警
@@ -254,9 +254,8 @@ export const routes: RouteRecordRaw[] = [
         component: () => import('@/views/file-center/FileTemplateList.vue'),
         meta: {
           title: '文件渠道',
-          // 与 /files/templates 同组件(FileTemplateList 的 channels tab)。activeMenu 指已注册的
-          // /files/templates,否则后端菜单 allowlist 守卫把本路由弹回首页(不跳转)。
-          activeMenu: '/files/templates',
+          activeMenu: '/files/channels',
+          menuAccessFallbacks: ['/files/templates'],
           minRole: 'VIEWER',
           permissions: ['ROLE_ADMIN', 'ROLE_TENANT_ADMIN', 'ROLE_AUDITOR'],
           mode: 'channels',
@@ -344,8 +343,7 @@ export const routes: RouteRecordRaw[] = [
         },
       },
       {
-        // Workflow DAG 编辑器 Spike 阶段(file-batch-system/docs/design/workflow-dag-designer.md §8)。
-        // :id 可选,空 = 新建;Spike 阶段保存只 console.log,MVP 接 BE PUT /full + 单人锁。
+        // Workflow DAG 编辑器：:id 可选，空 = 新建；保存走后端接口 + 单人锁。
         path: 'workflow/designer/:id?',
         name: 'workflow-designer',
         component: () => import('@/views/workflow/designer/WorkflowDesigner.vue'),
@@ -622,9 +620,8 @@ export const routes: RouteRecordRaw[] = [
         component: () => import('@/views/governance/QueueConfig.vue'),
         meta: {
           title: '批次窗口',
-          // 与 /governance/queues 同组件(QueueConfig 的 windows tab)。activeMenu 指向已注册菜单项
-          // /governance/queues,否则后端菜单 allowlist 守卫会把本路由弹回首页(不跳转)。
-          activeMenu: '/governance/queues',
+          activeMenu: '/governance/windows',
+          menuAccessFallbacks: ['/governance/queues'],
           minRole: 'ADMIN',
           mode: 'windows',
         },
@@ -635,8 +632,8 @@ export const routes: RouteRecordRaw[] = [
         component: () => import('@/views/governance/QueueConfig.vue'),
         meta: {
           title: '业务日历',
-          // 同上:QueueConfig 的 calendars tab,activeMenu 指 /governance/queues 避免被守卫弹回。
-          activeMenu: '/governance/queues',
+          activeMenu: '/governance/calendars',
+          menuAccessFallbacks: ['/governance/queues'],
           minRole: 'OPERATOR',
           permissions: ['ROLE_ADMIN', 'ROLE_TENANT_ADMIN'],
           mode: 'calendars',
@@ -933,6 +930,12 @@ export const routes: RouteRecordRaw[] = [
         component: () => import('@/views-mobile/MExecutionLog.vue'),
         meta: { title: '执行日志', minRole: 'VIEWER' },
       },
+      {
+        path: 'desktop-only',
+        name: 'm-desktop-only',
+        component: () => import('@/views-mobile/MDesktopOnly.vue'),
+        meta: { title: '桌面端功能', minRole: 'VIEWER' },
+      },
     ],
   },
   {
@@ -1003,7 +1006,11 @@ router.beforeEach(async (to, from) => {
     const mobileTarget = resolveMobileTarget(to)
     // 透传原 query（traceId / tab / runId 等），避免降级丢上下文。
     if (mobileTarget && mobileTarget !== to.path) {
-      return { path: mobileTarget, query: to.query }
+      return {
+        path: mobileTarget,
+        query:
+          mobileTarget === '/m/desktop-only' ? { ...to.query, redirect: to.fullPath } : to.query,
+      }
     }
   }
 
@@ -1086,13 +1093,16 @@ router.beforeEach(async (to, from) => {
   // 静态 minRole 只表示前端粗粒度等级；当后端菜单存在时，路由也必须按菜单 allowlist 收口，
   // 避免用户通过 URL、历史标签或命令面板进入已被后端隐藏的页面。
   const activeMenu = to.meta.activeMenu as string | undefined
-  const menuPath = activeMenu || to.path
+  const menuCandidates = [
+    activeMenu || to.path,
+    ...((to.meta.menuAccessFallbacks as string[] | undefined) ?? []),
+  ]
   const allowWithoutMenu =
     to.path === '/system/me' ||
     to.path === '/system/users' ||
     to.path.startsWith('/m/') ||
     (to.path === '/system/ai-chat' && auth.hasCapability('AI_ASSISTANT_USE'))
-  if (!allowWithoutMenu && !permission.hasBackendMenuAccess(menuPath)) {
+  if (!allowWithoutMenu && !menuCandidates.some((path) => permission.hasBackendMenuAccess(path))) {
     return { path: '/' }
   }
 

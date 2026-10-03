@@ -20,6 +20,7 @@ gate_run FE_COMMENTS "中文解释性注释" npm run check:comments
 gate_run FE_ARCHITECTURE "架构边界" npm run check:architecture
 gate_run FE_ENV "环境变量治理" npm run check:env
 gate_run FE_MAINTAINABILITY "可维护性" npm run check:maintainability
+gate_run FE_UI_COMPLEXITY "UI 复杂度预算" npm run check:ui-complexity
 gate_run FE_WORKFLOWS "Workflow 治理" npm run check:workflows
 gate_run FE_SHELL "Shell 治理" npm run check:shell
 gate_run FE_DOCS "文档治理" npm run check:docs
