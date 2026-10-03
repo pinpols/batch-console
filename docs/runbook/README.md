@@ -9,6 +9,7 @@
 | [开发工作流](./dev-workflow.md) | 本地开发 / 分支 / 提交 / 联调日常流程 |
 | [回滚](./rollback.md) | 前端发布回滚步骤 |
 | [发布晋级](./release-promotion.md) | 不可变镜像、staging 验收和版本标签晋级 |
+| [上线准入清单](./go-live-readiness-checklist.md) | PR 门禁、真实环境、UI 交互和运行时发布证据 |
 | [前端事故处理](./frontend-incident.md) | 白屏、静态资源、API 和 PWA 缓存故障 |
 | [可观测性](./observability.md) | Sentry、遥测、告警和数据边界 |
 | [维护与降级前端实施方案](../engineering/maintenance-degradation-implementation-plan.md) | 维护公告、写操作冻结、503 跳转和下游降级提示 |

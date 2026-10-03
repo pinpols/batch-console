@@ -24,6 +24,7 @@ gate_run FE_UI_COMPLEXITY "UI 复杂度预算" npm run check:ui-complexity
 gate_run FE_WORKFLOWS "Workflow 治理" npm run check:workflows
 gate_run FE_SHELL "Shell 治理" npm run check:shell
 gate_run FE_DOCS "文档治理" npm run check:docs
+gate_run FE_GO_LIVE_READINESS "上线准入文档治理" npm run check:go-live-readiness
 gate_run FE_COMPLIANCE "SBOM 与许可证" npm run compliance:check
 gate_run FE_CHANGELOG "Changelog 同步" npm run check:changelog
 
