@@ -1,5 +1,5 @@
 <template>
-  <div v-if="visible" class="ai-launcher">
+  <div v-if="visible" class="ai-launcher" :class="{ 'ai-launcher--open': open }">
     <el-tooltip :content="t('aiPanel.open')" placement="bottom">
       <button
         ref="trigger"
@@ -228,6 +228,10 @@
       background-color 0.18s ease,
       transform 0.18s ease;
   }
+  .ai-launcher--open .ai-launcher__button {
+    visibility: hidden;
+    pointer-events: none;
+  }
   .ai-launcher__button:hover {
     color: var(--color-bg-card);
     background: var(--color-primary);
@@ -295,6 +299,10 @@
   .ai-panel__composer {
     display: grid;
     gap: var(--space-sm);
+    flex-shrink: 0;
+    padding-top: var(--space-md);
+    border-top: 1px solid var(--color-border-light);
+    background: var(--color-bg-card);
   }
   .ai-panel__actions {
     display: flex;

@@ -50,6 +50,7 @@
       </el-main>
     </el-container>
 
+    <AiAssistantLauncher />
     <CommandPalette v-model="paletteOpen" :groups="visibleGroups" :recent-tabs="tabsStore.list" />
     <SwUpdatePrompt />
   </el-container>
@@ -62,6 +63,7 @@
   import { Maximize as FullScreen } from '@lucide/vue'
   const { t } = useI18n({ useScope: 'global' })
   import CommandPalette from '@/components/common/CommandPalette.vue'
+  import AiAssistantLauncher from '@/components/common/AiAssistantLauncher.vue'
   import ErrorBoundary from '@/components/common/ErrorBoundary.vue'
   import MaintenanceBanner from '@/components/common/MaintenanceBanner.vue'
   import DegradationBanner from '@/components/common/DegradationBanner.vue'
