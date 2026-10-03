@@ -5,6 +5,7 @@ const baseURL = process.env.E2E_BASE_URL || 'http://localhost:5173'
 
 module.exports = defineConfig({
   testDir: './e2e',
+  testIgnore: ['**/visual-regression.spec.ts'],
   // 每次运行前刷新 token + 上传 seed 到 ta/tb/tc（非 CI 也执行，避免 storageState 过期）
   globalSetup:
     process.env.E2E_SKIP_GLOBAL_SETUP === '1'

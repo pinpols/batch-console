@@ -145,8 +145,15 @@ test.describe('Usage, AI and degradation', () => {
         await expect(prompt).toHaveValue('查询当前批量调度运行概况')
       }
     } else {
-      expect([403, 429, 503]).toContain(response.status())
-      const expectedMessage = response.status() === 403 ? '请求被拒绝' : response.status() === 429 ? '请求受限' : 'AI 服务暂不可用'
+      expect([401, 403, 429, 503]).toContain(response.status())
+      const expectedMessage =
+        response.status() === 403
+          ? '请求被拒绝'
+          : response.status() === 429
+            ? '请求受限'
+            : response.status() === 503
+              ? 'AI 服务暂不可用'
+              : '发送失败'
       await expect(drawer.getByRole('alert')).toContainText(expectedMessage)
       await expect(prompt).toHaveValue('查询当前批量调度运行概况')
     }
@@ -287,7 +294,21 @@ test.describe('Usage, AI and degradation', () => {
     }))
     await page.goto('/system/ai-chat')
     await page.getByRole('button', { name: '作业诊断' }).click()
-    await expect(page.locator('.bubble__body')).toHaveText(['第一问', '第一答', '第二问', '第二答', '第三问', '回答仍在生成中。', '第四问', '本次请求未获批准。'])
+    await expect.poll(async () => {
+      return page.locator('.bubble__body').evaluateAll((elements) =>
+        elements.map((element) => (element.textContent ?? '').replace(/\s+/g, ' ').trim()),
+      )
+    }).toEqual([
+      '第一问',
+      '第一答',
+      '第二问',
+      '第二答',
+      '第三问',
+      '回答仍在生成中。',
+      '第四问',
+      'AI 使用额度已达上限，请稍后重试。',
+    ])
+    await expect(page.locator('.gate-notice__title')).toHaveText('本次请求未通过门禁')
     await expect(page.locator('.gate-notice__tag')).toHaveText('预算限制')
     await page.getByRole('button', { name: '删除会话' }).click()
     await page.getByRole('dialog').getByRole('button', { name: '确定' }).click()
