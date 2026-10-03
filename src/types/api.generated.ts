@@ -21158,6 +21158,8 @@ export interface operations {
     parameters: {
       query: {
         requestId: string
+        /** @description Optional target tenant filter. Tenant administrators are always scoped to their own tenant. */
+        targetTenantId?: string
       }
       header?: never
       path?: never
@@ -21178,7 +21180,10 @@ export interface operations {
   }
   getUserBatchOperation: {
     parameters: {
-      query?: never
+      query?: {
+        /** @description Optional target tenant filter. Tenant administrators are always scoped to their own tenant. */
+        targetTenantId?: string
+      }
       header?: never
       path: {
         operationId: string
