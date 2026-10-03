@@ -814,15 +814,15 @@
   }
 
   .jr-date {
-    width: min(520px, 46vw);
+    width: min(440px, 38vw);
   }
 
   .jr-jobcode {
-    width: min(190px, 18vw);
+    width: min(168px, 15vw);
   }
 
   .jr-trace {
-    width: min(210px, 20vw);
+    width: min(180px, 16vw);
   }
 
   .jr-sla {

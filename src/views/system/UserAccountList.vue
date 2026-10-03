@@ -706,7 +706,7 @@
 
 <style scoped>
   .account-keyword {
-    width: min(360px, 36vw);
+    width: min(220px, 20vw);
   }
 
   .role-tags {

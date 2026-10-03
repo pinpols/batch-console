@@ -912,8 +912,8 @@ html.dark .data-panel {
  * 需要“固定档位宽度”时，优先用 `query-w-###`（替代手写 `style="width: ###px"`），避免 inline style 与全局默认打架。
  */
 .query-form.el-form--inline {
-  --query-input-width: 220px;
-  --query-select-width: 200px;
+  --query-input-width: 180px;
+  --query-select-width: 168px;
 }
 
 /**
@@ -1261,8 +1261,8 @@ html.dark .dr-preset .el-radio-group {
 
 @media (max-width: 900px) {
   .query-form.el-form--inline {
-    --query-input-width: min(320px, 100%);
-    --query-select-width: min(260px, 100%);
+    --query-input-width: min(280px, 100%);
+    --query-select-width: min(220px, 100%);
   }
 }
 

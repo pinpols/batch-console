@@ -203,13 +203,13 @@
   .query-form :deep(.el-form-item.query-span-2),
   .query-form :deep(.el-form-item:has(.el-date-editor--daterange)),
   .query-form :deep(.el-form-item:has(.el-date-editor--datetimerange)) {
-    flex: 1 1 340px;
-    max-width: 460px;
+    flex: 1 1 300px;
+    max-width: 400px;
   }
 
   .query-form :deep(.el-form-item.query-span-3) {
-    flex: 1 1 480px;
-    max-width: 640px;
+    flex: 1 1 420px;
+    max-width: 560px;
   }
 
   /* 控件填满 form-item 余下空间,不让 EP 默认 220px 卡死 */
@@ -250,9 +250,9 @@
     flex-direction: column;
     align-items: stretch;
     margin: 0;
-    flex: 1 1 180px;
-    min-width: 150px;
-    max-width: 240px;
+    flex: 1 1 152px;
+    min-width: 128px;
+    max-width: 200px;
   }
 
   .query-form :deep(.el-form-item__label) {
@@ -316,7 +316,7 @@
   }
 
   .query-form--label-left :deep(.el-form-item__content) {
-    --el-input-width: 200px;
+    --el-input-width: 168px;
   }
 
   /* 操作按钮组:尺寸自适应内容 + margin-left:auto 塞进当前行右侧空位;有空同行、
