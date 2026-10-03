@@ -8,7 +8,7 @@
   -->
   <el-aside class="layout-sidebar" :width="app.sidebarCollapsed ? '58px' : '224px'">
     <div class="brand">
-      <BatchMark class="brand__logo" :size="38" />
+      <BatchMark class="brand__logo" :size="38" tight />
       <div v-if="!app.sidebarCollapsed" class="brand__text">
         <div class="brand__title">{{ t('nav.appTitle') }}</div>
         <div class="brand__subtitle">Batch Console</div>
