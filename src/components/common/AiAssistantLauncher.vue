@@ -200,7 +200,7 @@
   useTenantReload(() => {
     chat.reset(true)
     open.value = false
-    void chat.loadImageCapabilities()
+    if (visible.value) void chat.loadImageCapabilities()
   })
 </script>
 

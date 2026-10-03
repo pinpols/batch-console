@@ -9,7 +9,7 @@ test.describe('approval actions (审批操作)', () => {
   })
 
   test('审批列表展示查询栏与表格列', async ({ page }) => {
-    await expect(page.getByRole('button', { name: '刷新' })).toBeVisible()
+    await expect(page.locator('main').getByRole('button', { name: '刷新' }).first()).toBeVisible()
     await expect(page.getByRole('columnheader', { name: '审批单号' })).toBeVisible()
     await expect(page.getByRole('columnheader', { name: '类型' }).first()).toBeVisible()
     await expect(page.getByRole('columnheader', { name: '状态' })).toBeVisible()
@@ -34,7 +34,7 @@ test.describe('approval actions (审批操作)', () => {
     }
     await page.getByRole('button', { name: '搜索' }).click()
     // 查询后页面不崩溃
-    await expect(page.getByRole('button', { name: '刷新' })).toBeVisible()
+    await expect(page.locator('main').getByRole('button', { name: '刷新' }).first()).toBeVisible()
   })
 
   test('重置清空筛选条件', async ({ page }) => {

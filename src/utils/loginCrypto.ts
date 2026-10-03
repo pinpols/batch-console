@@ -11,6 +11,7 @@
  * 公钥缓存: sessionStorage 5min,会话结束自动清。
  */
 import { fetchLoginPublicKey, type LoginPublicKeyResponse } from '@/api/authPublicKey'
+import { logError } from '@/utils/logger'
 
 const CACHE_KEY = 'console:auth:public-key'
 const CACHE_TTL_MS = 5 * 60 * 1000
@@ -101,7 +102,9 @@ export async function encryptLoginBody(
       ciphertext: bufToBase64(ciphertext),
     }
   } catch (err) {
-    console.warn('[loginCrypto] encryption failed, falling back to plaintext', err)
+    logError('login.encryption_fallback', {
+      reason: err instanceof Error ? err.name : typeof err,
+    })
     return null
   }
 }

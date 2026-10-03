@@ -152,12 +152,11 @@
   const forwardDisabled = computed(() => !historyForwardPath.value)
 
   function goBack() {
-    const hasBackEntry = !!historyBackPath.value
-    if (hasBackEntry) {
-      router.back()
-    } else if (props.backTo) {
-      router.push(props.backTo)
+    if (props.backTo) {
+      void router.push(props.backTo)
+      return
     }
+    if (historyBackPath.value) router.back()
   }
 
   function goForward() {

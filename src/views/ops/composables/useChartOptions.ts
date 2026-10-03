@@ -3,6 +3,17 @@
  * 保持纯函数，不依赖 Vue 响应式，也不产生副作用。
  */
 
+export const OPS_CHART_COLORS = {
+  primary: '#1668e3',
+  primarySoft: '#8fbcff',
+  success: '#22845a',
+  warning: '#b57816',
+  danger: '#d64543',
+  orange: '#c06f24',
+  teal: '#218b99',
+  neutral: '#737b8c',
+} as const
+
 // ---- ECharts 配置构造器 ----
 
 function baseGridOption() {
@@ -141,7 +152,7 @@ export function buildGaugeOption(params: {
   color?: string
 }) {
   const v = Math.max(0, Math.min(params.value, params.max ?? 100))
-  const color = params.color ?? '#54a772'
+  const color = params.color ?? OPS_CHART_COLORS.success
   return {
     backgroundColor: 'transparent',
     series: [

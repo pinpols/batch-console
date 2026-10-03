@@ -94,7 +94,7 @@ test.describe('审批中心 — 筛选查询', () => {
   })
 
   test('刷新按钮重新加载', async ({ page }) => {
-    await page.getByRole('button', { name: '刷新' }).click()
+    await page.locator('main').getByRole('button', { name: '刷新' }).first().click()
     await expect(page.getByRole('columnheader', { name: '审批单号' })).toBeVisible({ timeout: 6000 })
   })
 })

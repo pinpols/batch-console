@@ -242,10 +242,10 @@ html.layout-shell-lock .layout-root > .layout-sidebar.el-aside {
 }
 
 .pill-tabs .el-tabs__item {
-  height: 28px;
-  line-height: 28px;
+  height: var(--control-height-sm);
+  line-height: var(--control-height-sm);
   padding: 0 16px;
-  border-radius: 7px;
+  border-radius: var(--radius-button);
   overflow: hidden;
   border: none;
   background: transparent;
@@ -271,7 +271,7 @@ html.layout-shell-lock .layout-root > .layout-sidebar.el-aside {
 .pill-tabs .el-tabs__item.is-active {
   color: var(--color-primary);
   background-color: color-mix(in srgb, var(--color-primary) 12%, transparent);
-  border-radius: 7px;
+  border-radius: var(--radius-button);
   box-shadow: none;
 }
 
@@ -320,9 +320,7 @@ html.layout-shell-lock .layout-root > .layout-sidebar.el-aside {
 .pill-tabs .el-tabs__item.is-active:hover {
   background-color: color-mix(in srgb, var(--color-primary) 12%, var(--color-bg-card) 88%);
   border-color: color-mix(in srgb, var(--color-primary) 28%, var(--color-border) 72%);
-  box-shadow:
-    0 8px 18px rgb(15 23 42 / 12%),
-    0 0 0 1px rgb(15 23 42 / 4%);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-primary) 12%, transparent);
 }
 
 /* 统一“新增”按钮：浅蓝、轻渐变、微阴影（用于页面 actions / queryBar prepend） */
@@ -331,19 +329,15 @@ html.layout-shell-lock .layout-root > .layout-sidebar.el-aside {
   --el-button-bg-color: transparent;
   --el-button-border-color: transparent;
   border: 1px solid var(--button-primary-border);
-  border-radius: 11px;
+  border-radius: var(--radius-button);
   padding: 0 14px;
-  min-height: 34px;
-  font-weight: 650;
-  letter-spacing: 0.02em;
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--button-primary-bg) 88%, #ffffff 12%) 0%,
-    var(--button-primary-bg) 100%
-  );
+  min-height: var(--control-height-md);
+  font-weight: 600;
+  letter-spacing: 0;
+  background: var(--button-primary-bg);
   box-shadow:
-    0 8px 18px color-mix(in srgb, var(--button-primary-bg) 18%, transparent),
-    inset 0 1px 0 rgb(255 255 255 / 14%);
+    0 1px 2px rgb(15 23 42 / 7%),
+    0 4px 10px color-mix(in srgb, var(--button-primary-bg) 14%, transparent);
   transition:
     transform var(--motion-duration-sm) var(--motion-ease-emphasized),
     box-shadow var(--motion-duration-md) var(--motion-ease-standard),
@@ -351,15 +345,11 @@ html.layout-shell-lock .layout-root > .layout-sidebar.el-aside {
 }
 
 .pretty-add-button.el-button:hover {
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--button-primary-bg-hover) 88%, #ffffff 12%) 0%,
-    var(--button-primary-bg-hover) 100%
-  );
+  background: var(--button-primary-bg-hover);
   box-shadow:
-    0 12px 24px color-mix(in srgb, var(--button-primary-bg) 22%, transparent),
-    inset 0 1px 0 rgb(255 255 255 / 16%);
-  filter: saturate(1.02);
+    0 2px 4px rgb(15 23 42 / 9%),
+    0 6px 14px color-mix(in srgb, var(--button-primary-bg) 16%, transparent);
+  filter: none;
 }
 
 /* 自助服务提交 CTA:与全站标准主按钮统一(同色 / 同高 / 同圆角),
@@ -399,13 +389,13 @@ html.layout-shell-lock .layout-root > .layout-sidebar.el-aside {
 
 /* 小号“新增”按钮（用于弹窗/抽屉内工具条：如新增步骤） */
 .pretty-add-button--mini.el-button {
-  border-radius: 10px;
+  border-radius: var(--radius-button);
   padding: 0 12px;
-  min-height: 30px;
+  min-height: var(--control-height-sm);
   font-size: 12px;
   box-shadow:
-    0 8px 18px color-mix(in srgb, var(--button-primary-bg) 18%, transparent),
-    inset 0 1px 0 rgb(255 255 255 / 14%);
+    0 1px 2px rgb(15 23 42 / 7%),
+    0 4px 10px color-mix(in srgb, var(--button-primary-bg) 14%, transparent);
 }
 
 .pill-tabs .el-tabs__item:focus-visible {
@@ -430,17 +420,13 @@ html.dark .pill-tabs .el-tabs__item:hover {
 html.dark .pill-tabs .el-tabs__item.is-active {
   background-color: color-mix(in srgb, var(--color-primary) 16%, var(--color-bg-card) 84%);
   border-color: color-mix(in srgb, var(--color-primary) 34%, var(--color-border) 66%);
-  box-shadow:
-    0 10px 22px rgb(0 0 0 / 42%),
-    0 0 0 1px rgb(255 255 255 / 6%);
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 6%);
 }
 
 html.dark .pill-tabs .el-tabs__item.is-active:hover {
   background-color: color-mix(in srgb, var(--color-primary) 18%, var(--color-bg-card) 82%);
   border-color: color-mix(in srgb, var(--color-primary) 38%, var(--color-border) 62%);
-  box-shadow:
-    0 12px 26px rgb(0 0 0 / 46%),
-    0 0 0 1px rgb(255 255 255 / 7%);
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 7%);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -479,11 +465,11 @@ html.dark .pill-tabs .el-tabs__item.is-active:hover {
 }
 
 .pill-segmented .el-segmented__item {
-  min-height: 34px;
-  height: 34px;
-  line-height: 34px;
+  min-height: var(--control-height-md);
+  height: var(--control-height-md);
+  line-height: var(--control-height-md);
   padding: 0 12px;
-  border-radius: var(--radius-content);
+  border-radius: var(--radius-button);
   font-weight: 600;
   font-size: var(--font-size-sm);
   letter-spacing: 0.1px;
@@ -508,9 +494,7 @@ html.dark .pill-tabs .el-tabs__item.is-active:hover {
 .pill-segmented .el-segmented__item.is-selected {
   border-color: color-mix(in srgb, var(--color-primary) 24%, var(--color-border) 76%);
   background-color: color-mix(in srgb, var(--color-primary) 10%, var(--color-bg-card) 90%);
-  box-shadow:
-    0 6px 14px rgb(15 23 42 / 10%),
-    0 0 0 1px rgb(15 23 42 / 3%);
+  box-shadow: 0 0 0 1px rgb(15 23 42 / 3%);
 }
 
 html.dark .pill-segmented {
@@ -521,17 +505,13 @@ html.dark .pill-segmented {
 
 .pill-segmented .el-segmented__item.is-selected:hover {
   background-color: color-mix(in srgb, var(--color-primary) 12%, var(--color-bg-card) 88%);
-  box-shadow:
-    0 8px 18px rgb(15 23 42 / 12%),
-    0 0 0 1px rgb(15 23 42 / 4%);
+  box-shadow: 0 0 0 1px rgb(15 23 42 / 4%);
 }
 
 html.dark .pill-segmented .el-segmented__item.is-selected {
   background-color: color-mix(in srgb, var(--color-primary) 16%, var(--color-bg-card) 84%);
   border-color: color-mix(in srgb, var(--color-primary) 34%, var(--color-border) 66%);
-  box-shadow:
-    0 10px 22px rgb(0 0 0 / 42%),
-    0 0 0 1px rgb(255 255 255 / 6%);
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 6%);
 }
 
 html.dark .pill-segmented .el-segmented__item:hover {
@@ -541,9 +521,7 @@ html.dark .pill-segmented .el-segmented__item:hover {
 
 html.dark .pill-segmented .el-segmented__item.is-selected:hover {
   background-color: color-mix(in srgb, var(--color-primary) 18%, var(--color-bg-card) 82%);
-  box-shadow:
-    0 12px 26px rgb(0 0 0 / 46%),
-    0 0 0 1px rgb(255 255 255 / 7%);
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 7%);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1311,13 +1289,13 @@ html.dark .dr-preset .el-radio-group {
     }
   }
 
-  /* 稍长 + 对称缓入缓出，叠化更柔、更「淡」 */
+  /* 轻量叠化:避免整页慢淡出造成登录页和控制台切换发闷。 */
   ::view-transition-old(root) {
-    animation: vt-theme-root-out 0.72s cubic-bezier(0.45, 0.02, 0.55, 0.98) both;
+    animation: vt-theme-root-out 0.32s cubic-bezier(0.2, 0, 0, 1) both;
   }
 
   ::view-transition-new(root) {
-    animation: vt-theme-root-in 0.72s cubic-bezier(0.45, 0.02, 0.55, 0.98) both;
+    animation: vt-theme-root-in 0.36s cubic-bezier(0.2, 0, 0, 1) both;
   }
 
   /* 过渡期间关掉局部 transition，避免 border/shadow 与整页快照不同步 */

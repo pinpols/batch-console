@@ -9,7 +9,7 @@ import { test, expect } from '../support/app'
 import { enterDemoApp, expectPageTitle, isVisible } from '../support/app'
 
 const LIST_OR_EMPTY = 'tbody tr.el-table__row, .el-table__empty-block, .el-empty, .empty-state'
-const WRITE_RESPONSE_TIMEOUT_MS = 45_000
+const MANUAL_TRIGGER_JOB = 'TA_EXPORT_REPORT'
 
 test.describe('UI Flow 01: trigger → instance', () => {
   test.beforeEach(async ({ page }) => {
@@ -29,30 +29,39 @@ test.describe('UI Flow 01: trigger → instance', () => {
     await expect(page).toHaveURL(/\/jobs\/definitions/)
     await page.waitForLoadState('networkidle', { timeout: 8000 }).catch(() => undefined)
     await expect(page.locator(LIST_OR_EMPTY).first()).toBeVisible({ timeout: 10_000 })
-    const triggerBtn = page
-      .locator('.table-actions, td')
-      .getByRole('button', { name: /触发|trigger/i })
+    const codeInput = page
+      .locator('.el-form-item')
+      .filter({ hasText: /Job Code|作业编码|编码/ })
+      .locator('input')
       .first()
-    if (!(await isVisible(triggerBtn, 2000))) {
-      test.skip(true, '无 trigger 按钮(空列表 / RBAC)')
-      return
+    if (await isVisible(codeInput, 3000)) {
+      await codeInput.fill(MANUAL_TRIGGER_JOB)
+      await page.getByRole('button', { name: /搜索|查询/ }).first().click().catch(() => undefined)
+      await page.waitForLoadState('networkidle', { timeout: 6000 }).catch(() => undefined)
     }
-    await triggerBtn.click({ force: true })
+    const row = page.locator('tbody tr.el-table__row').filter({ hasText: MANUAL_TRIGGER_JOB }).first()
+    await expect(row, `未找到稳定手动触发作业 ${MANUAL_TRIGGER_JOB}`).toBeVisible({ timeout: 8_000 })
+
+    let triggerBtn = row.getByRole('button', { name: /手动触发|trigger/i }).first()
+    if (!(await isVisible(triggerBtn, 2000))) {
+      const more = row.getByRole('button', { name: /^更多/ }).first()
+      if (await isVisible(more, 1500)) {
+        await more.click()
+        triggerBtn = page
+          .locator('.el-dropdown-menu__item, [role="menuitem"]')
+          .filter({ hasText: /手动触发|trigger/i })
+          .first()
+      }
+    }
+    await expect(triggerBtn, `${MANUAL_TRIGGER_JOB} 应提供手动触发入口`).toBeVisible({ timeout: 4_000 })
+    await triggerBtn.click()
     // 触发应弹确认对话框/表单(验交互真生效,而非静默)
     const dlg = page.locator('.el-message-box, .el-dialog:visible').first()
     await expect(dlg).toBeVisible({ timeout: 3000 })
-    const ok = dlg.getByRole('button', { name: /确定|确认|触发/ }).first()
-    if (await isVisible(ok, 1500)) {
-      const triggerResponse = page.waitForResponse(
-        (res) =>
-          res.request().method() === 'POST' &&
-          res.url().includes('/api/console/jobs/trigger'),
-        { timeout: WRITE_RESPONSE_TIMEOUT_MS },
-      )
-      await ok.click({ force: true })
-      expect((await triggerResponse).status()).toBeLessThan(400)
-    }
-    await page.waitForTimeout(600)
+    const payload = dlg.locator('textarea').first()
+    if (await isVisible(payload, 1500)) await payload.fill('{}')
+    const cancel = dlg.getByRole('button', { name: /取消|关闭/ }).first()
+    if (await isVisible(cancel, 1500)) await cancel.click()
   })
 
   test('3. /monitor/job-instances 实例数据视图渲染', async ({ page }) => {

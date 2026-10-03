@@ -164,8 +164,22 @@
   .row-actions :deep(.el-button) {
     min-width: 0;
     max-width: 100%;
-    padding-inline: 8px;
+    min-height: var(--control-height-sm);
+    padding-inline: 9px;
+    font-weight: 600;
+    letter-spacing: 0;
     white-space: nowrap;
+  }
+
+  .row-actions :deep(.el-button.is-plain:not(.is-disabled)) {
+    background: transparent;
+    border-color: var(--color-border);
+    box-shadow: none;
+  }
+
+  .row-actions :deep(.el-button.is-plain:not(.is-disabled):hover) {
+    background: color-mix(in srgb, var(--button-soft-text) 8%, transparent);
+    border-color: color-mix(in srgb, var(--button-soft-text) 34%, var(--color-border) 66%);
   }
 
   .row-actions__more {
