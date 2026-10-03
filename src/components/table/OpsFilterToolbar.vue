@@ -89,7 +89,7 @@
   .ops-filter-toolbar {
     display: grid;
     min-width: 0;
-    margin: 4px 0 8px;
+    margin: 2px 0 6px;
     border: 1px solid var(--color-border-light);
     border-radius: var(--radius-input);
     background: var(--color-bg-card);
@@ -99,17 +99,17 @@
   .ops-filter-toolbar__saved {
     display: flex;
     align-items: center;
-    min-height: 36px;
-    padding: 6px 10px;
+    min-height: 32px;
+    padding: 4px 10px;
     border-bottom: 1px solid var(--color-border-light);
   }
 
   .ops-filter-toolbar__main {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     min-width: 0;
-    padding: 8px 10px;
+    padding: 6px 10px;
   }
 
   .ops-filter-toolbar__status {
@@ -123,7 +123,7 @@
     display: flex;
     align-items: center;
     flex-wrap: wrap;
-    gap: 6px;
+    gap: 4px 6px;
     min-width: 0;
     flex: 1 1 auto;
   }
@@ -146,7 +146,7 @@
   }
 
   .ops-filter-toolbar__context {
-    padding: 0 10px 8px;
+    padding: 0 10px 6px;
   }
 
   .ops-filter-toolbar__filters :deep(.el-input),

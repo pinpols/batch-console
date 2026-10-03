@@ -238,6 +238,7 @@
     buildHorizontalTopNOption,
     buildLineOption,
     emptyOption,
+    OPS_CHART_COLORS,
   } from './composables/useChartOptions'
   import {
     buildCapacityBuckets,
@@ -289,13 +290,13 @@
         {
           name: t('capacityProfile.metricInstances'),
           data: points.map((point) => point.instanceCount),
-          color: '#1677ff',
+          color: OPS_CHART_COLORS.primary,
           area: true,
         },
         {
           name: t('capacityProfile.metricTasks'),
           data: points.map((point) => point.taskCount),
-          color: '#13c2c2',
+          color: OPS_CHART_COLORS.teal,
         },
       ],
     })
@@ -303,7 +304,11 @@
   const rankingOption = computed(() => {
     const items = buildThroughputRanking(report.value?.rows ?? [], query.groupBy, tenant.tenantId)
     return items.length
-      ? buildHorizontalTopNOption(items, '#52c41a', t('capacityProfile.recordsPerSecondUnit'))
+      ? buildHorizontalTopNOption(
+          items,
+          OPS_CHART_COLORS.success,
+          t('capacityProfile.recordsPerSecondUnit'),
+        )
       : emptyOption(t('common.noData'))
   })
   const latencyOption = computed(() => {
@@ -313,8 +318,16 @@
           x: latency.labels,
           yAxisName: 'ms',
           series: [
-            { name: t('capacityProfile.colAvg'), data: latency.average, color: '#91caff' },
-            { name: t('capacityProfile.colP95'), data: latency.p95, color: '#ff7a45' },
+            {
+              name: t('capacityProfile.colAvg'),
+              data: latency.average,
+              color: OPS_CHART_COLORS.primarySoft,
+            },
+            {
+              name: t('capacityProfile.colP95'),
+              data: latency.p95,
+              color: OPS_CHART_COLORS.orange,
+            },
           ],
         })
       : emptyOption(t('common.noData'))

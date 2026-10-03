@@ -6,6 +6,7 @@ import { getOpsSummary } from '@/api/ops'
 import { useTenantStore } from '@/stores/tenant'
 import { useTenantReload } from '@/composables/useTenantReload'
 import { getDashboardBundle, getDashboardSlaReport, getDashboardTenantUsage } from '@/api/dashboard'
+import { logError } from '@/utils/logger'
 import type { ConsoleOpsSummaryResponse } from '@/types/console-api'
 import {
   buildLineOption,
@@ -14,6 +15,7 @@ import {
   buildPieOption,
   buildGaugeOption,
   emptyOption,
+  OPS_CHART_COLORS,
 } from './useChartOptions'
 
 export function useOpsSummary() {
@@ -81,7 +83,7 @@ export function useOpsSummary() {
             data: bundle.jobs.series.running.length
               ? bundle.jobs.series.running
               : [Number(summary.value?.runningJobs ?? 0)],
-            color: '#1677ff',
+            color: OPS_CHART_COLORS.primary,
             area: true,
           },
           {
@@ -89,7 +91,7 @@ export function useOpsSummary() {
             data: bundle.jobs.series.failed.length
               ? bundle.jobs.series.failed
               : [Number(summary.value?.failedJobs ?? 0)],
-            color: '#ff4d4f',
+            color: OPS_CHART_COLORS.danger,
           },
         ],
       })
@@ -97,9 +99,9 @@ export function useOpsSummary() {
       alertsTrendOption.value = buildStackBarOption({
         x: bundle.alerts.labels,
         series: [
-          { name: 'OPEN', data: bundle.alerts.series.open, color: '#ff4d4f' },
-          { name: 'ACKED', data: bundle.alerts.series.acked, color: '#1677ff' },
-          { name: 'CLOSED', data: bundle.alerts.series.closed, color: '#8c8c8c' },
+          { name: 'OPEN', data: bundle.alerts.series.open, color: OPS_CHART_COLORS.danger },
+          { name: 'ACKED', data: bundle.alerts.series.acked, color: OPS_CHART_COLORS.primary },
+          { name: 'CLOSED', data: bundle.alerts.series.closed, color: OPS_CHART_COLORS.neutral },
         ],
       })
 
@@ -109,13 +111,13 @@ export function useOpsSummary() {
           {
             name: t('opsSummary.legendSlaOnTime'),
             data: bundle.sla.series.onTime,
-            color: '#52c41a',
+            color: OPS_CHART_COLORS.success,
             area: true,
           },
           {
             name: t('opsSummary.legendSlaViolation'),
             data: bundle.sla.series.violation,
-            color: '#ff4d4f',
+            color: OPS_CHART_COLORS.danger,
           },
         ],
       })
@@ -136,7 +138,7 @@ export function useOpsSummary() {
                 {
                   name: t('opsSummary.legendFailRate'),
                   data: failRateSeries,
-                  color: '#ff7a45',
+                  color: OPS_CHART_COLORS.orange,
                   area: true,
                 },
               ],
@@ -146,11 +148,11 @@ export function useOpsSummary() {
       triggerTypeTopNOption.value =
         bundle.triggerTypes.items.length === 0
           ? emptyOption(t('common.noData'))
-          : buildHorizontalTopNOption(bundle.triggerTypes.items, '#1677ff')
+          : buildHorizontalTopNOption(bundle.triggerTypes.items, OPS_CHART_COLORS.primary)
       workerLoadTopNOption.value =
         bundle.workerLoads.items.length === 0
           ? emptyOption(t('common.noData'))
-          : buildHorizontalTopNOption(bundle.workerLoads.items, '#52c41a')
+          : buildHorizontalTopNOption(bundle.workerLoads.items, OPS_CHART_COLORS.success)
 
       // 状态分布饼图(数据来源:summary KPI 实时快照)
       const s = summary.value
@@ -162,9 +164,21 @@ export function useOpsSummary() {
           ? emptyOption(t('common.noData'))
           : buildPieOption({
               items: [
-                { name: t('opsSummary.legendRunning'), value: running, color: '#1677ff' },
-                { name: t('opsSummary.legendFailed'), value: failed, color: '#ff4d4f' },
-                { name: t('opsSummary.legendSlaViolation'), value: slaBreach, color: '#fa8c16' },
+                {
+                  name: t('opsSummary.legendRunning'),
+                  value: running,
+                  color: OPS_CHART_COLORS.primary,
+                },
+                {
+                  name: t('opsSummary.legendFailed'),
+                  value: failed,
+                  color: OPS_CHART_COLORS.danger,
+                },
+                {
+                  name: t('opsSummary.legendSlaViolation'),
+                  value: slaBreach,
+                  color: OPS_CHART_COLORS.orange,
+                },
               ],
               innerRadius: '40%',
             })
@@ -177,9 +191,21 @@ export function useOpsSummary() {
           ? emptyOption(t('common.noData'))
           : buildPieOption({
               items: [
-                { name: t('opsSummary.legendOnline'), value: online, color: '#52c41a' },
-                { name: t('opsSummary.legendDraining'), value: draining, color: '#faad14' },
-                { name: t('opsSummary.legendOffline'), value: offline, color: '#8c8c8c' },
+                {
+                  name: t('opsSummary.legendOnline'),
+                  value: online,
+                  color: OPS_CHART_COLORS.success,
+                },
+                {
+                  name: t('opsSummary.legendDraining'),
+                  value: draining,
+                  color: OPS_CHART_COLORS.warning,
+                },
+                {
+                  name: t('opsSummary.legendOffline'),
+                  value: offline,
+                  color: OPS_CHART_COLORS.neutral,
+                },
               ],
               innerRadius: '40%',
             })
@@ -192,8 +218,16 @@ export function useOpsSummary() {
           ? emptyOption(t('opsSummary.noActiveAlerts'))
           : buildPieOption({
               items: [
-                { name: t('opsSummary.legendCritical'), value: critical, color: '#ff4d4f' },
-                { name: t('opsSummary.legendOtherOpen'), value: otherOpen, color: '#faad14' },
+                {
+                  name: t('opsSummary.legendCritical'),
+                  value: critical,
+                  color: OPS_CHART_COLORS.danger,
+                },
+                {
+                  name: t('opsSummary.legendOtherOpen'),
+                  value: otherOpen,
+                  color: OPS_CHART_COLORS.warning,
+                },
               ],
               innerRadius: '40%',
             })
@@ -205,8 +239,16 @@ export function useOpsSummary() {
           ? emptyOption(t('opsSummary.outboxHealthy'))
           : buildPieOption({
               items: [
-                { name: t('opsSummary.legendRetryBacklog'), value: retry, color: '#faad14' },
-                { name: t('opsSummary.legendDeliveryFail'), value: delivFail, color: '#ff4d4f' },
+                {
+                  name: t('opsSummary.legendRetryBacklog'),
+                  value: retry,
+                  color: OPS_CHART_COLORS.warning,
+                },
+                {
+                  name: t('opsSummary.legendDeliveryFail'),
+                  value: delivFail,
+                  color: OPS_CHART_COLORS.danger,
+                },
               ],
               innerRadius: '40%',
             })
@@ -222,10 +264,17 @@ export function useOpsSummary() {
         value: slaPct,
         max: 100,
         unit: '%',
-        color: slaPct >= 99 ? '#52c41a' : slaPct >= 95 ? '#faad14' : '#ff4d4f',
+        color:
+          slaPct >= 99
+            ? OPS_CHART_COLORS.success
+            : slaPct >= 95
+              ? OPS_CHART_COLORS.warning
+              : OPS_CHART_COLORS.danger,
       })
     } catch (e) {
-      console.error('[ops charts]', e)
+      logError('opsSummary.charts.load_failed', {
+        reason: e instanceof Error ? e.message : String(e),
+      })
       ElMessage.error(t('opsSummary.chartsLoadFailed'))
       jobsTrendOption.value = emptyOption(t('opsSummary.loadFailed'))
       alertsTrendOption.value = emptyOption(t('opsSummary.loadFailed'))

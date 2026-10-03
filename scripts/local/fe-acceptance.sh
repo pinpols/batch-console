@@ -180,7 +180,7 @@ step_0_preflight() {
     fi
     echo "BE: DOWN；当前选择不包含真实环境步骤"
   fi
-  npx playwright --version >/dev/null 2>&1 || {
+  node scripts/run-playwright.mjs --version >/dev/null 2>&1 || {
     echo "playwright 不可用，请先执行 npm ci"
     return 1
   }

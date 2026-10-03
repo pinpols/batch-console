@@ -12,14 +12,14 @@
      不再出现 Win 4K 全屏左右露 canvas 色带的不一致(原 1600 只够 macOS 有效视口)。 */
   --content-max-width: 2400px;
 
-  --color-primary: #1677ff;
+  --color-primary: #1668e3;
   /* 语义色柔和化(2026-06-04):success/warning/danger 从 Ant 高饱和默认降一档,
      减少仪表盘指标卡 / StatusTag 的"刺眼"感,保持语义可辨 + 强调用对比度(非正文,
-     accent/large 用途)。primary 因被大量 rgb(22 119 255) 字面量复用暂不动。 */
+     accent/large 用途)。primary 与运行时设计交付主色保持一致。 */
   --color-success: #54a772;
   --color-warning: #e6a23c;
   --color-danger: #ef6a6c;
-  --color-info: #1677ff;
+  --color-info: #1668e3;
 
   /**
    * Pipeline stage 调色板 — 17 个 stage 各自语义化色,用于 PipelineDefinitionList 中
@@ -55,7 +55,7 @@
   --wf-node-start-light: #eef8f1;
   --wf-node-end: #ef6a6c;
   --wf-node-end-light: #fdeeee;
-  --wf-node-job: #1677ff;
+  --wf-node-job: #1668e3;
   --wf-node-job-light: #ecf3ff;
   --wf-node-gateway: #d97706;
   --wf-node-gateway-light: #fdf3e6;
@@ -67,7 +67,7 @@
 
   /** Button color system: 统一在 Tailwind 500/600 区间(行业基线 GitHub/Vercel/Linear)。
    *  Light mode 调整(2026-05-14):
-   *    - primary 从 blue-600(#2563eb)→ #1677ff(与 --color-primary 一致),避免过深
+   *    - primary 从 blue-600(#2563eb)→ #1668e3(与 --color-primary 一致),避免过深
    *    - success 从 green-700(#15803d)→ green-600(#16a34a),不再发"墨"
    *    - warning 从 amber-700(#b45309)→ amber-600(#d97706),提高识别度
    *    - danger  从 red-600 (#dc2626)→ red-500 (#ef4444),与 save pill / 校验徽章统一
@@ -75,10 +75,10 @@
    *      不再"消失"。Hover/active 跟着加深 1 阶。
    *  Hover/active 一律比 base 深 8-10% (HSL L),保持视觉一致的"按下感"。
    */
-  --button-primary-bg: #1677ff;
+  --button-primary-bg: #1668e3;
   --button-primary-bg-hover: #0e63db;
   --button-primary-bg-active: #0a52ba;
-  --button-primary-border: #1677ff;
+  --button-primary-border: #1668e3;
   --button-primary-text: #ffffff;
   --button-primary-soft-bg: #eff6ff;
   --button-primary-soft-bg-hover: #dbeafe;
@@ -196,6 +196,12 @@
   /** 与旧命名兼容 */
   --radius-surface: var(--radius-content);
   --radius-card: var(--radius-content);
+
+  /** 控件尺寸 token：按钮 / 输入 / 筛选条 / 行操作同源，避免页面级硬编码高度漂移。 */
+  --control-height-sm: 28px;
+  --control-height-md: 32px;
+  --control-height-lg: 36px;
+  --control-inline-gap: 8px;
 
   --space-xs: 4px;
   --space-sm: 8px;

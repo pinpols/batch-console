@@ -364,7 +364,7 @@ html.dark {
   display: inline-flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
 }
 
 .el-table .table-actions .el-button {
@@ -374,21 +374,21 @@ html.dark {
 
 .el-table .table-actions .el-button.el-button--small:not(.is-link):not(.is-text) {
   font-size: 11px;
-  font-weight: 650;
-  letter-spacing: 0.02em;
+  font-weight: 600;
+  letter-spacing: 0;
   border-radius: var(--radius-button);
-  padding: 4px 10px;
-  min-height: 26px;
+  padding: 0 9px;
+  min-height: var(--control-height-sm);
 }
 
 .el-table .table-actions .el-button.is-link,
 .el-table .table-actions .el-button.is-text {
   font-size: 11px;
-  font-weight: 650;
-  letter-spacing: 0.02em;
-  padding-left: 4px;
-  padding-right: 4px;
-  min-height: 26px;
+  font-weight: 600;
+  letter-spacing: 0;
+  padding-left: 5px;
+  padding-right: 5px;
+  min-height: var(--control-height-sm);
   border-radius: var(--radius-button);
 }
 
@@ -462,6 +462,8 @@ html.dark {
   --button-soft-border: var(--button-neutral-border);
   --button-soft-text: var(--button-neutral-text);
   border-radius: var(--radius-button);
+  min-height: var(--control-height-md);
+  line-height: 1.2;
   /* 还原设计:按钮 13px;次级 400、主按钮 700(下方 primary 块覆盖) */
   font-size: 13px;
   font-weight: 400;
@@ -476,6 +478,16 @@ html.dark {
     box-shadow var(--motion-duration-md) var(--motion-ease-standard),
     opacity var(--motion-duration-sm) var(--motion-ease-standard),
     transform var(--motion-duration-sm) var(--motion-ease-emphasized);
+}
+
+.el-button--small {
+  min-height: var(--control-height-sm);
+  padding: 0 10px;
+  font-size: 12px;
+}
+
+.el-button--large {
+  min-height: var(--control-height-lg);
 }
 
 .el-button--primary,
@@ -550,8 +562,8 @@ html.dark {
   border-color: var(--button-border);
   color: var(--button-text);
   box-shadow:
-    0 1px 2px rgb(15 23 42 / 8%),
-    0 4px 10px color-mix(in srgb, var(--button-bg) 14%, transparent);
+    0 1px 2px rgb(15 23 42 / 7%),
+    0 3px 8px color-mix(in srgb, var(--button-bg) 12%, transparent);
 }
 
 .el-button:not(.is-link):not(.is-text):not(.is-plain):not(.is-disabled):hover {
@@ -560,8 +572,8 @@ html.dark {
   color: var(--button-text-hover, var(--button-text));
   transform: translateY(-1px);
   box-shadow:
-    0 2px 4px rgb(15 23 42 / 10%),
-    0 8px 18px color-mix(in srgb, var(--button-bg) 20%, transparent);
+    0 2px 4px rgb(15 23 42 / 9%),
+    0 6px 14px color-mix(in srgb, var(--button-bg) 16%, transparent);
 }
 
 .el-button:not(.is-link):not(.is-text):not(.is-plain):not(.is-disabled):active {
@@ -588,7 +600,7 @@ html.dark .el-button--default:not(.is-link):not(.is-text):not(.is-plain):not(.is
   background-color: var(--button-soft-bg);
   border-color: var(--button-soft-border);
   color: var(--button-soft-text);
-  box-shadow: 0 1px 2px rgb(15 23 42 / 5%);
+  box-shadow: none;
 }
 
 .el-button.is-plain:not(.is-disabled):hover,
@@ -599,8 +611,8 @@ html.dark .el-button--default:not(.is-link):not(.is-text):not(.is-plain):not(.is
   /* 微浮 1px + 更柔的 ring(8% mix),不与 :focus-visible 的强 outline 抢戏 */
   transform: translateY(-1px);
   box-shadow:
-    0 2px 4px rgb(15 23 42 / 6%),
-    0 0 0 2px color-mix(in srgb, var(--button-soft-text) 8%, transparent);
+    0 1px 3px rgb(15 23 42 / 6%),
+    0 0 0 2px color-mix(in srgb, var(--button-soft-text) 7%, transparent);
 }
 
 .el-button.is-plain:not(.is-disabled):active {
@@ -725,6 +737,7 @@ html.dark .el-button--default:not(.is-link):not(.is-text):not(.is-plain):not(.is
 .el-textarea__inner,
 .el-date-editor.el-input__wrapper {
   border-radius: var(--radius-input);
+  min-height: var(--control-height-md);
   /* 还原设计:输入类控件底 = --input-bg(dark #15161b 比卡片更沉;light #fff),
      边框 --border,替代 EP 默认 fill/shadow 边。 */
   background-color: var(--input-bg, var(--color-bg-card));
@@ -901,12 +914,12 @@ html.dark .el-dialog {
 }
 
 .el-drawer.rtl {
-  border-radius: 12px 0 0 12px;
+  border-radius: var(--radius-content) 0 0 var(--radius-content);
   box-shadow: -10px 0 40px rgb(0 0 0 / 14%);
 }
 
 .el-drawer.ltr {
-  border-radius: 0 12px 12px 0;
+  border-radius: 0 var(--radius-content) var(--radius-content) 0;
 }
 
 html.dark .el-drawer {
@@ -1015,15 +1028,15 @@ html.dark .el-drawer {
 }
 
 .el-select-dropdown .el-select-dropdown__item {
-  min-height: 36px;
+  min-height: var(--control-height-md);
   height: auto;
   line-height: 1.5;
-  padding: 8px 12px;
+  padding: 7px 12px;
   /* 2026-05-17:13px → 14px,与正文同级,长选项不再"看着小一档"。
      允许 2 行自然换行(原来 nowrap+ellipsis 直接遮挡),超过 2 行才省略。 */
   font-size: var(--font-size-md);
   border: 1px solid transparent;
-  border-radius: var(--radius-card);
+  border-radius: var(--radius-input);
   margin: 2px 2px;
   color: var(--color-text-secondary);
   white-space: normal;
@@ -1348,7 +1361,7 @@ html.dark .el-loading-spinner:has(.circular)::before {
 /* Toast 位置与堆叠交给 ElConfigProvider，避免多条消息覆盖。 */
 .el-message {
   padding: 11px 18px;
-  border-radius: 10px;
+  border-radius: var(--radius-content);
   background: var(--color-bg-elevated) !important;
   border: 1px solid var(--color-border-strong, rgba(255, 255, 255, 0.16)) !important;
   box-shadow: var(--shadow-pop, 0 8px 24px rgba(0, 0, 0, 0.45));

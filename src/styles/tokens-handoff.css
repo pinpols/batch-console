@@ -61,6 +61,11 @@
   --radius-surface: var(--radius-content);
   --layout-panel-radius: var(--radius-content);
 
+  --control-height-sm: 28px;
+  --control-height-md: 32px;
+  --control-height-lg: 36px;
+  --control-inline-gap: 8px;
+
   --card-inner-padding: 20px;
   --page-section-gap: 12px;
   --page-block-gap: 12px;

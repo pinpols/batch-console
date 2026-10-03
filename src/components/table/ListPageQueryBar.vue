@@ -154,7 +154,7 @@
   /* 自管 margin-bottom:让裸用 ListPageQueryBar(不套 ProTable)的页面也跟下方表格
      有标准间距。ProTable 那边把 .pro-table__query 的 margin 清 0 避免叠加 */
   .query-form {
-    margin-bottom: 12px;
+    margin-bottom: 8px;
   }
 
   /* ──────────────────────────────────────────────
@@ -166,7 +166,7 @@
     display: flex;
     flex-wrap: wrap;
     align-items: end;
-    gap: 8px 12px;
+    gap: 6px 8px;
     padding: 0;
     background: transparent;
     border: none;
@@ -203,13 +203,13 @@
   .query-form :deep(.el-form-item.query-span-2),
   .query-form :deep(.el-form-item:has(.el-date-editor--daterange)),
   .query-form :deep(.el-form-item:has(.el-date-editor--datetimerange)) {
-    flex: 1 1 300px;
-    max-width: 400px;
+    flex: 1 1 280px;
+    max-width: 380px;
   }
 
   .query-form :deep(.el-form-item.query-span-3) {
-    flex: 1 1 420px;
-    max-width: 560px;
+    flex: 1 1 380px;
+    max-width: 520px;
   }
 
   /* 控件填满 form-item 余下空间,不让 EP 默认 220px 卡死 */
