@@ -5389,6 +5389,8 @@ export default {
     stageCOMMIT: '提交',
     stageNoRecord: '暂无步骤记录',
     stageLoadError: '阶段记录加载失败',
+    progressUnavailable: '部分进度暂不可用。已有采样仅供参考，恢复前不更新成功时间或预计完成时间。',
+    fileSummaryUnavailable: '文件摘要暂不可用，请刷新重试。',
     relatedFile: '文件 #{id}',
     relatedInstance: '作业实例 #{id}',
     relatedTrace: '链路追踪',

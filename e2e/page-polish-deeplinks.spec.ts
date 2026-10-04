@@ -67,6 +67,32 @@ test('keeps governance workspace selection in sync with the URL', async ({ page 
 
 test('locates a pipeline run by its instance ID and shows its failed stage', async ({ page }) => {
   let stepsRequestUrl = ''
+  let progressMode: 'success' | 'failure' | 'empty' = 'success'
+  let processed = 123
+  await page.route('**/api/console/queries/pipeline-progress*', async (route) => {
+    await route.fulfill({
+      status: progressMode === 'failure' ? 503 : 200,
+      contentType: 'application/json',
+      body: JSON.stringify(
+        progressMode === 'failure'
+          ? { code: 'SERVICE_UNAVAILABLE', message: 'progress unavailable' }
+          : response({
+              pipelineInstanceId: 42,
+              steps:
+                progressMode === 'empty'
+                  ? []
+                  : [
+                      {
+                        stepId: 7,
+                        pipelineInstanceId: 42,
+                        rowsProcessed: processed,
+                        totalRowsHint: null,
+                      },
+                    ],
+            }),
+      ),
+    })
+  })
   await page.route('**/api/console/meta/pipeline-stages', async (route) => {
     await route.fulfill({
       status: 200,
@@ -134,6 +160,27 @@ test('locates a pipeline run by its instance ID and shows its failed stage', asy
   await expect(page.getByRole('tab', { name: '阶段明细' })).toHaveAttribute('aria-selected', 'true')
   await expect(page.locator('.pipeline-stage--danger')).toHaveAttribute('aria-pressed', 'true')
   await expect(page.locator('#pane-steps .pro-table__table')).toContainText('PARSE_FILE')
+  const steps = page.locator('#pane-steps')
+  const row = steps.locator('.el-table__body tr').first()
+  await expect(row).toContainText('123')
+  await expect(row.locator('td').nth(8)).toHaveText('—')
+  await expect(steps.locator('.live-status-badge__fresh')).toBeVisible()
+
+  progressMode = 'failure'
+  await steps.getByRole('button', { name: '刷新', exact: true }).click()
+  await expect(steps.getByRole('alert')).toContainText('进度暂不可用')
+  await expect(row).toContainText('123')
+
+  progressMode = 'success'
+  processed = 456
+  await steps.getByRole('button', { name: '刷新', exact: true }).click()
+  await expect(steps.getByRole('alert')).toHaveCount(0)
+  await expect(row).toContainText('456')
+
+  progressMode = 'empty'
+  await steps.getByRole('button', { name: '刷新', exact: true }).click()
+  await expect(row).not.toContainText('456')
+  await expect(steps.getByRole('alert')).toHaveCount(0)
 })
 
 test('keeps admin governance routes unavailable to an auditor', async ({ page }) => {

@@ -37,8 +37,8 @@ export interface UseSseAutoReloadHandle {
 export interface UseSseAutoReloadOptions {
   /** SSE 接入的后端域,对应 `/api/console/stream/{domain}/events` 或 `/api/console/{domain}/events` */
   domain: SseStreamType
-  /** 收到事件后要触发的重新加载(会被去抖)。 */
-  reload: () => void | Promise<void>
+  /** 收到事件后重新加载；返回 false 表示未完成有效刷新，不更新时间。 */
+  reload: () => void | boolean | Promise<void | boolean>
   /** 当该 watch 源变化时,关闭旧流并以新值重开(常用于 tenantId)。 */
   scope?: WatchSource<unknown>
   /** 去抖窗口(毫秒)。事件密集时在窗口内只触发一次 reload。默认 800ms。 */
@@ -121,7 +121,15 @@ export function useSseAutoReload(options: UseSseAutoReloadOptions): UseSseAutoRe
     if (reloadTimer) return
     reloadTimer = setTimeout(() => {
       reloadTimer = null
-      void Promise.resolve(reload()).finally(markRefreshed)
+      const capturedGeneration = generation
+      void Promise.resolve()
+        .then(reload)
+        .then((result) => {
+          if (capturedGeneration === generation && result !== false) markRefreshed()
+        })
+        .catch(() => {
+          // 错误态由页面负责展示；刷新失败不更新成功时间，也不产生未处理拒绝。
+        })
     }, debounceMs)
   }
 

@@ -5513,6 +5513,9 @@ const messages: Messages = {
     stageCOMMIT: 'Commit',
     stageNoRecord: 'No step record',
     stageLoadError: 'Failed to load stage records',
+    progressUnavailable:
+      'Some progress is unavailable. Existing samples may be stale; the success time and ETA will not update until recovery.',
+    fileSummaryUnavailable: 'File summary is unavailable. Refresh to retry.',
     relatedFile: 'File #{id}',
     relatedInstance: 'Job instance #{id}',
     relatedTrace: 'Trace',
