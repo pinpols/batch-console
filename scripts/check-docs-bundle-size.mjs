@@ -9,13 +9,24 @@ const assetDir = fileURLToPath(
 )
 const maxRawBytes = 850_000
 const maxGzipBytes = 220_000
+const gateCode = 'DOCS_BUNDLE_SIZE'
+const gateName = '统一文档站体积预算'
+
+function pass(extra = '') {
+  console.log(`✅ 通过 | code=${gateCode} | gate=${gateName}${extra}`)
+}
+
+function fail(message) {
+  console.error(`❌ 不通过 | code=${gateCode} | gate=${gateName} | exit_code=1`)
+  console.error(message)
+  process.exit(1)
+}
 
 let files
 try {
   files = await collectJavaScript(assetDir)
 } catch {
-  console.error('FAIL DOCS_BUNDLE_SIZE: 未找到统一文档站产物，请先执行 npm run docs:build')
-  process.exit(1)
+  fail('未找到统一文档站产物，请先执行 npm run docs:build')
 }
 
 const violations = []
@@ -32,16 +43,13 @@ for (const name of files) {
 }
 
 if (violations.length) {
-  console.error(
-    'FAIL DOCS_BUNDLE_SIZE: 文档 JS chunk 超过通用预算(raw 850KB/gzip 220KB)或搜索索引预算(raw 4.5MB/gzip 1.2MB)',
-  )
+  console.error(`❌ 不通过 | code=${gateCode} | gate=${gateName} | exit_code=1`)
+  console.error('文档 JS chunk 超过通用预算(raw 850KB/gzip 220KB)或搜索索引预算(raw 4.5MB/gzip 1.2MB)')
   violations.forEach((item) => console.error(`  - ${item}`))
   process.exit(1)
 }
 
-console.log(
-  'PASS DOCS_BUNDLE_SIZE: 统一文档站 JS chunk 通过通用预算，搜索索引通过独立预算',
-)
+pass(' | reason=统一文档站 JS chunk 通过通用预算，搜索索引通过独立预算')
 
 async function collectJavaScript(directory) {
   const entries = await readdir(directory, { withFileTypes: true })
