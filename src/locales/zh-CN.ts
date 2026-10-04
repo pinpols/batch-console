@@ -1529,7 +1529,10 @@ export default {
       title: '事件目录',
       description: '查看系统事件类型、Topic 和投递约定。',
     },
-    workersManagement: { title: 'Worker', description: '查看 Worker 在线状态与文件处理渠道。' },
+    workersManagement: {
+      title: 'Worker 管理',
+      description: '查看 Worker 在线状态与文件处理渠道。',
+    },
     systemTriggers: { title: '触发器', description: '管理作业触发器的注册、暂停和恢复。' },
     schedulerBatchDays: {
       title: '批次日与窗口',
@@ -1606,9 +1609,9 @@ export default {
       description: '管理 JOB asset freshness SLA 策略,驱动缺失和过期告警。',
     },
     systemAtomicTaskTypes: {
-      title: 'Atomic 节点配置中心',
+      title: '原子节点配置中心',
       description:
-        '查看平台内置 sql / shell / stored_proc / http 四类原子节点的参数 schema 与安全闸状态。',
+        '查看平台内置 SQL / Shell / 存储过程 / HTTP 四类原子节点的参数结构与安全闸状态。',
     },
   },
   myAccount: {
