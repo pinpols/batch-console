@@ -152,6 +152,20 @@ tag v* / 手动 ── precheck(URL/账号/healthz/版本必须有效)
 
 Shell 脚本统一使用 Bash/sh；`check:shell` 同时做语法与 ShellCheck 检查，CI 不再额外安装 zsh。
 
+## 门禁结果格式
+
+CI workflow 和本地聚合门禁统一通过 `scripts/ci/run-gate.sh` /
+`scripts/lib/gate-result.sh` 输出最终状态行：
+
+```text
+✅ 通过 | code=FE_VERSION | gate=版本对齐 | exit_code=0
+❌ 不通过 | code=FE_VERSION | gate=版本对齐 | exit_code=1
+```
+
+状态行固定包含状态、`code`、`gate` 和 `exit_code`，后续可追加 `reason`、`files`、
+`version` 等诊断字段。扫描器明细、测试进度、构建日志和人工排查提示不强行改成状态行，
+但每个门禁脚本的最终结论必须可被人和机器稳定识别。
+
 ## 本地按需预检
 
 提交前 `.husky/pre-commit` 会先跑 `lint-staged`,再跑:

@@ -92,17 +92,17 @@ const messages: Messages = {
     missingJobCodeWithUrl:
       'This API requires jobCode, but the request did not include it. Check the page filters or route parameters.\n{method} {url}',
     resourceNotFoundTitle: 'Resource not found',
-    resourceNotFoundMessage: 'The requested resource was not found by the backend.',
+    resourceNotFoundMessage: 'The requested resource was not found.',
     endpointNotFoundTitle: 'Endpoint not found',
     endpointNotFoundMessage:
-      'The backend does not provide this endpoint or the deployed version is incompatible. Confirm the backend is up to date and check proxy/gateway routing.',
+      'The endpoint is unavailable or the service version is incompatible. Check the service version and gateway routing.',
     endpointNotFoundWithUrl:
-      'The backend does not provide this endpoint or the deployed version is incompatible: {url}. Confirm the backend is up to date and check proxy/gateway routing.',
+      'The endpoint is unavailable or the service version is incompatible: {url}. Check the service version and gateway routing.',
     backendUnreachableDev:
-      'Cannot reach backend (proxy target {target}). Confirm the service is running and matches VITE_DEV_PROXY_TARGET.',
+      'Cannot reach the service (target {target}). Confirm the service is running and the proxy is configured correctly.',
     backendUnreachable: 'Network unreachable or service did not respond. Try again later.',
-    endpointVersionMismatch: 'Endpoint not found or backend version mismatch',
-    endpointVersionMismatchWithUrl: 'Endpoint not found or backend version mismatch ({url})',
+    endpointVersionMismatch: 'Endpoint unavailable or service version mismatch',
+    endpointVersionMismatchWithUrl: 'Endpoint unavailable or service version mismatch ({url})',
     networkError: 'Network error',
     invalidCredentials: 'Invalid username or password',
     rateLimited: 'Too many requests, please try again later',
@@ -120,20 +120,20 @@ const messages: Messages = {
     expandRightPanel: 'Expand right panel',
     collapseRightPanel: 'Collapse right panel',
     saveStatusSyncing: 'Syncing…',
-    saveStatusSyncingTip: 'Pushing canvas to backend',
+    saveStatusSyncingTip: 'Submitting canvas definition',
     saveStatusSynced: 'Synced',
-    saveStatusSyncedTip: 'Canvas matches backend',
+    saveStatusSyncedTip: 'Canvas matches the published definition',
     saveStatusDirty: 'Local draft',
-    saveStatusDirtyTip: 'Auto-saved to browser; click Submit to push to server',
+    saveStatusDirtyTip: 'Auto-saved in the browser; submit to apply',
     saveStatusIdle: 'Idle',
-    emptyTitle: 'Select a Workflow first',
+    emptyTitle: 'Select a workflow',
     emptyDesc:
-      'Pick an existing Workflow from the dropdown above, or go to definitions to create a new one. Other actions become available after selection.',
-    emptyActionSelect: 'Select existing Workflow',
-    emptyActionNew: 'Create new Workflow',
-    createModeTitle: 'Create new Workflow',
+      'Pick an existing workflow from the dropdown above, or create one from definitions. Actions become available after selection.',
+    emptyActionSelect: 'Select workflow',
+    emptyActionNew: 'Create workflow',
+    createModeTitle: 'Create workflow',
     createModeDesc:
-      'Fill workflowCode / name / type in the right "Workflow properties" card, then drag nodes from the library to start designing. Hit "Submit to backend" when done.',
+      'Fill workflow code, name and type on the right, then drag nodes from the library to start designing. Submit when ready.',
     createModeGo: 'Go fill workflow properties',
     createModeCancel: 'Cancel',
     btnMore: 'More',
@@ -160,20 +160,20 @@ const messages: Messages = {
     btnDocs: 'DSL docs',
     selectPlaceholder: 'Pick a workflow',
     tagLocalDraft: 'Local draft',
-    tagBackend: 'Backend data',
+    tagBackend: 'Published',
     btnAutoLayout: 'Auto layout',
     btnUndo: 'Undo',
     btnRedo: 'Redo',
     readOnlyTag: 'Read-only',
     readOnlyTooltip: 'Read-only: current account lacks ROLE_ADMIN',
     btnApplyDefinitionForm: 'Apply workflow info',
-    btnBackendValidate: 'Backend validate',
+    btnBackendValidate: 'Service validate',
     btnSaveDraft: 'Save draft',
     btnCopyDsl: 'Copy DSL',
     btnClearDraft: 'Clear draft',
     btnExportJson: 'Export JSON',
     btnImportJson: 'Import JSON',
-    btnSubmitBackend: 'Submit to backend',
+    btnSubmitBackend: 'Submit',
     sectionLibrary: 'Node library',
     libraryTooltip: 'Hold left mouse to drag onto canvas',
     sectionValidation: 'Validation',
@@ -221,7 +221,7 @@ const messages: Messages = {
     canvasHintDelete: 'to delete ·',
     canvasHintShiftKey: 'to quick-add downstream',
   },
-  // 工作流 DAG 设计器的 Spike 阶段，参见 file-batch-system/docs/design/workflow-dag-designer.md §8。
+  // Workflow DAG 设计器文案。
   // 与 `workflowDesigner` 分开命名；后者为当前构建未使用的历史键。
   workflowDesignerSearch: {
     placeholder: 'Search nodes…',
@@ -257,10 +257,10 @@ const messages: Messages = {
     actionMermaid: 'Export Mermaid',
     confirmDeleteNode: 'Delete selected node?',
     dirtyTag: 'Unsaved',
-    saveSpikeToast: 'Spike: snapshot logged to console (backend save lands in MVP)',
+    saveSpikeToast: 'Snapshot generated. Submit to save.',
     mermaidDialogTitle: 'Mermaid export',
   },
-  // 工作流 DAG 设计器的 MVP 阶段，参见 file-batch-system/docs/design/workflow-dag-designer.md §FE MVP。
+  // Workflow DAG 设计器预览能力。
   workflowDesignerMvp: {
     nodeGateway: 'GATEWAY',
     nodeFileStep: 'FILE_STEP',
@@ -501,7 +501,7 @@ const messages: Messages = {
     guideDrawerTitle: '11-sheet field guide',
     guideDrawerIntroTitle: 'Read before filling',
     guideDrawerIntroBody:
-      'This view uses the same backend field definitions as the Excel template and shows required columns, types, enums, default / empty behavior, and copyable examples.',
+      'This view shows package field definitions, including required columns, types, enums, default or empty behavior, and copyable examples.',
     guideSearchPlaceholder: 'Search column, description, enum, or example',
     guideSheetPlaceholder: 'Select sheet',
     guideSheetSummary: '{total} columns, {required} required',
@@ -631,7 +631,8 @@ const messages: Messages = {
     templateDownloadedToast: 'Template downloaded',
     exportedToast: 'Config exported',
     annotatedDownloadedToast: 'Annotated preview downloaded',
-    noUploadTokenWarn: 'No uploadToken in response; verify backend multipart field and contract.',
+    noUploadTokenWarn:
+      'The upload response is missing uploadToken. Check the file format and retry.',
     applyConfirmText: 'Apply the preview result to tenant config?',
     applyConfirmTitle: 'Apply',
     appliedToast: 'Applied {domain} config changes',
@@ -845,7 +846,7 @@ const messages: Messages = {
       expression: 'Quartz Cron expression',
       placeholder: 'Example: 0 0 2 * * ?',
       authorityNote:
-        'Next runs come from the backend Quartz parser; the local description is advisory.',
+        'Next runs are calculated by the service Quartz parser; the page description is advisory.',
     },
     file: {
       title: 'Local file sample check',
@@ -873,8 +874,7 @@ const messages: Messages = {
     },
     naming: {
       title: 'Export naming rule preview',
-      description:
-        'Preview the final file name with the same backend resolver used by the export worker.',
+      description: 'Preview the final file name with the service naming rule.',
       rule: 'Naming rule',
       rulePlaceholder: 'Example: ${bizType}_${bizDate}_${batchNo}',
       placeholders:
@@ -885,9 +885,9 @@ const messages: Messages = {
       batchNo: 'Batch number',
       region: 'Region',
       version: 'Version',
-      preview: 'Backend preview',
+      preview: 'Rule preview',
       result: 'Final file name',
-      required: 'Select a tenant and business date first.',
+      required: 'Select a tenant and business date.',
       authorityNote:
         'This tool only previews export file names; it does not select import templates or route files.',
     },
@@ -908,7 +908,7 @@ const messages: Messages = {
       colWindow: 'Possible time window',
       colNominal: 'Nominal time',
       authorityNote:
-        'This is an advisory preview. Actual retries start after each failure completes and follow backend runtime policy.',
+        'This is an advisory preview. Actual retries start after each failure completes and follow the runtime policy.',
     },
   },
   rowActions: {
@@ -1123,7 +1123,7 @@ const messages: Messages = {
     presetMonthly: 'Monthly on day 1 at 02:00',
     emptyHintPrefix: 'Quartz 6 fields (sec min hour day month weekday), e.g. ',
     emptyHintSuffix: ' = daily at 02:00. Leave empty for manual scheduling.',
-    previewLoading: 'Next runs (BE computing…)',
+    previewLoading: 'Next runs (computing…)',
     nextRunsLabel: 'Next 3 runs ({tz}):',
     tzLocal: 'local',
     parseFailed: 'Unable to parse expression',
@@ -1261,7 +1261,7 @@ const messages: Messages = {
     common: {
       loadFail: 'Load failed, please retry later',
       noData: 'No data',
-      empty: 'No data — expected if backend not yet wired up.',
+      empty: 'No data.',
       emptyForSearch: 'No matches',
       refresh: 'Refresh',
       loading: 'Loading',
@@ -1392,7 +1392,7 @@ const messages: Messages = {
       empty: 'No catch-up requests',
       pendingCount: '{n} pending',
       missedRuns: '{n} missed run(s)',
-      pendingApi: 'Approval API pending backend rollout',
+      pendingApi: 'Approval action is temporarily unavailable',
       approve: 'Approve',
       reject: 'Reject',
       approveSuccess: 'Approved',
@@ -1557,7 +1557,7 @@ const messages: Messages = {
     observabilityTrace: {
       title: 'Trace diagnostic',
       description:
-        'Stitch requests, API calls, Outbox dispatches and audits by traceId to debug cross-link issues.',
+        'Stitch requests, API calls, Outbox dispatches and audits by traceId to diagnose cross-link issues.',
     },
     observabilityLineage: {
       title: 'Lineage evidence',
@@ -2182,7 +2182,7 @@ const messages: Messages = {
     title: 'Documentation service is temporarily unavailable',
     description:
       'Console functions are not affected. Confirm that the documentation service is running, then reconnect.',
-    devHint: 'For local development, run in another terminal:',
+    devHint: 'Start the documentation service from the runbook:',
     retry: 'Reconnect',
     back: 'Back to console',
   },
@@ -2505,11 +2505,11 @@ const messages: Messages = {
     emptyDesc:
       'Create a session to track approval state, execution progress, and entry results here.',
     emptyLegacyDesc:
-      'The current backend does not expose the history list yet. Newly created or opened sessions still appear on this page.',
+      'History is temporarily unavailable. Newly created or opened sessions still appear on this page.',
     historyUnavailableTag: 'History unavailable',
-    historyUnavailableTitle: 'Replay history list is not available on this backend',
+    historyUnavailableTitle: 'Replay history is unavailable',
     historyUnavailableBody:
-      'The page has fallen back to an in-page session view. Recent submitted sessions will appear after the backend is updated.',
+      'This page currently shows in-page sessions only. Recent submitted sessions will appear after the service is upgraded.',
     submitBtn: 'New replay',
     submitTitle: 'New batch-day replay',
     submitConfirm: 'Submit',
@@ -2776,7 +2776,7 @@ const messages: Messages = {
     archiveVerb: 'Archive',
     archiveTarget: 'Workflow "{code}"',
     archiveConsequence:
-      'BE has no physical-delete endpoint. Archive flags the workflow as disabled: new triggers are blocked, in-flight runs continue. Re-enable via the Disabled filter later.',
+      'Archiving disables the workflow: new triggers are blocked, in-flight runs continue, and it can be re-enabled from the Disabled filter.',
     archiveSuccess: 'Archived (disabled) {code}',
     validatePass: 'Validation passed — DAG structure is OK',
     validateFailed: 'Validation failed: {errors} errors / {warnings} warnings',
@@ -2998,7 +2998,7 @@ const messages: Messages = {
     execDetailTitle: 'Execution log detail',
     execEmptyDefault: 'No execution/audit logs',
     execEmptyTrace:
-      'No matching execution/audit logs. A recent request traceId is for backend diagnostics and may not be persisted as a business log.',
+      'No matching execution/audit logs. Request trace IDs are primarily for diagnostics and may not be persisted as business logs.',
     execMetaOperationType: 'Operation type',
     execMetaResult: 'Result',
     chanLabel: 'Channel',
@@ -3533,7 +3533,7 @@ const messages: Messages = {
       upsert: 'Create or update',
     },
     disclaimer:
-      'Current data is aggregated from backend operation audits, not final job or file outcomes. Do not use it as a business success rate, billing or compliance evidence.',
+      'Current data is aggregated from operation audits, not final job or file outcomes. Do not use it as business success rate, billing or compliance evidence.',
   },
   operationAuditList: {
     actionLabel: 'Action',
@@ -3642,7 +3642,7 @@ const messages: Messages = {
     revokeVerb: 'revoke',
     revokeTarget: ' API Key "{name}"',
     revokeConsequence:
-      'The key is invalidated immediately; all backend calls, SDK clients, and CI/CD pipelines using it will get 401 right away.',
+      'The key is invalidated immediately; SDK clients and CI/CD pipelines using it will receive 401 responses.',
     revokedToast: 'Revoked',
   },
   userBatch,
@@ -3650,7 +3650,7 @@ const messages: Messages = {
   workerManagement: {
     statOnline: 'Online',
     loadBarTitle:
-      'Load is the current in-flight task count; bar length is relative to the peak among listed workers (backend provides no capacity denominator)',
+      'Load is the current in-flight task count; bar length is normalized against the peak among listed workers.',
     statOffline: 'Offline',
     hbSecondsAgo: '{n}s ago',
     hbMinutesAgo: '{n}m ago',
@@ -3805,7 +3805,7 @@ const messages: Messages = {
     publishTitle: 'Publish {key}',
     publishConfirm: 'Publish',
     publishSuccess: 'Published {key}',
-    grayPrompt: 'Gray scope JSON (optional, aligns with backend grayScopeJson)',
+    grayPrompt: 'Gray scope JSON (optional)',
     grayTitle: 'Canary {key}',
     graySuccess: 'Canary applied: {key}',
     rollbackConfirmText: 'Confirm rollback of {key}?',
@@ -4129,7 +4129,7 @@ const messages: Messages = {
     placeholderTriggerMode: 'SCHEDULED / MANUAL / EVENT / CATCH_UP / API',
     fieldDagEnabled: 'DAG Enabled',
     fieldExecutionHandler: 'Execution Handler',
-    placeholderExecutionHandler: 'BE handler bean / handler key',
+    placeholderExecutionHandler: 'Handler bean / key',
     fieldParamSchema: 'Param Schema (JSON)',
     fieldDefaultParams: 'Default Params (JSON)',
     placeholderJson: 'JSON string, optional',
@@ -4201,7 +4201,7 @@ const messages: Messages = {
     empty: 'No alert events',
     emptyFiltered: 'No matching alert events',
     emptyTrace:
-      'No matching alert events. A request traceId is for backend diagnostics and may not be persisted as an alert event.',
+      'No matching alert events. Request trace IDs are primarily for diagnostics and may not be persisted as alert events.',
     colId: 'ID',
     colSeverity: 'Severity',
     colType: 'Type',
@@ -4288,14 +4288,14 @@ const messages: Messages = {
     approveDialogPlaceholder: 'reason',
     rejectDialogTitle: 'Reject',
     rejectDialogPrompt: 'Rejection reason',
-    rejectDialogPlaceholder: 'Required or as backend rules',
+    rejectDialogPlaceholder: 'Required when policy demands',
     approvedToast: 'Approved: {no}',
     rejectedToast: 'Rejected: {no}',
     batchApproveConfirm: 'Confirm batch approve of {n} item(s)?',
     batchApproveTitle: 'Batch approve',
     batchApprovedToast: 'Batch approved {n} item(s)',
-    batchApprovedToastUnknown: 'Submitted batch approve for {n} item(s) (BE returned no details)',
-    batchRejectedToastUnknown: 'Submitted batch reject for {n} item(s) (BE returned no details)',
+    batchApprovedToastUnknown: 'Submitted batch approve for {n} item(s)',
+    batchRejectedToastUnknown: 'Submitted batch reject for {n} item(s)',
     batchApprovePartialTitle: 'Batch approve partially failed',
     batchRejectPartialTitle: 'Batch reject partially failed',
     batchApprovePartialSummary: '{ok} approved, {fail} failed. Failures:',
@@ -4325,7 +4325,7 @@ const messages: Messages = {
     emptyDescription: 'New config-release, rerun, or compensation requests will appear here.',
     catchUpEmptyTitle: 'No catch-up requests for this tenant',
     catchUpEmptyDescription: 'Submitted job catch-up requests will appear here.',
-    catchUpDisabledTip: 'Approve/reject buttons disabled, awaiting backend approvalNo field',
+    catchUpDisabledTip: 'Approve/reject is temporarily unavailable',
   },
   schedulerSnapshot: {
     headerRefresh: 'Refresh',
@@ -4387,7 +4387,7 @@ const messages: Messages = {
       'Triggers resume dispatching; tasks that came due during the pause are caught up or deferred per their configured policy.',
     resumeAllConfirmButton: 'Confirm resume',
     refreshDone: 'Refreshed',
-    refreshFailed: 'Refresh failed; check permissions or backend logs',
+    refreshFailed: 'Refresh failed; check permissions or service status',
     refreshPartial: 'Refreshed, but some data failed to load',
     colMaxRunningJobsPerTenant: 'Max jobs / tenant',
     colBurstLimit: 'Burst limit',
@@ -4474,7 +4474,7 @@ const messages: Messages = {
     noHeartbeat: 'none',
     noDetailsTitle: 'No progress / checkpoint yet',
     noDetailsBody:
-      'No heartbeat with details has been reported. The task may not have started a ProgressReporter, or the SDK version is too old.',
+      'No detailed heartbeat has been reported. Confirm progress reporting is enabled and the SDK version is supported.',
   },
   jobInstanceDetail: {
     opsDiagnosticAction: 'Operations diagnostic',
@@ -4571,7 +4571,7 @@ const messages: Messages = {
     archiveVerb: 'archive',
     archiveTarget: 'file "{name}"',
     archiveConsequence:
-      'After archiving, this file no longer appears in the list. Running downstream tasks are unaffected, but new triggers will not find it. You can still query by fileId from the admin backend.',
+      'After archiving, this file no longer appears in the list. Running downstream tasks are unaffected, but new triggers will not find it. Administrators can still query it by fileId.',
     archiveSuccess: 'Archived',
   },
   mJobDetail: {
@@ -4581,7 +4581,7 @@ const messages: Messages = {
   workerFingerprintBoard: {
     summaryTitle: 'Rollout overview',
     fingerprintTermTip:
-      'A worker fingerprint is the identity of a running worker (buildId build version + sdkVersion). Use it to see each build’s share after a new release (gray rollout) and to spot which worker’s heartbeat dropped (fault location).',
+      'A worker fingerprint identifies a running worker by buildId and sdkVersion. Use it to track rollout share and locate heartbeat anomalies.',
     colBuildIdTip:
       'Build ID is the version identifier of the artifact the worker process runs; use it to tell new vs. old instances apart during a release.',
     summaryTotalOnline: '{n} active workers',
@@ -4596,7 +4596,7 @@ const messages: Messages = {
     autoRefreshOff: 'Auto refresh · off',
     introTitle: 'Worker run-fingerprints (SDK Phase 5)',
     introBody:
-      'BE aggregates this tenant’s ONLINE workers by (buildId, sdkVersion) — useful for rollout monitoring (track build share after a new release) and on-call triage (spot stale heartbeats). Lists ONLINE / DRAINING only, capped at 200 rows.',
+      'Aggregates this tenant’s active workers by buildId and sdkVersion for rollout monitoring and heartbeat triage. Lists ONLINE / DRAINING workers only, capped at 200 rows.',
     cardWorkers: 'workers',
     metricDominantBuild: 'Dominant build',
     metricDominantBuildDesc: 'SDK {sdk}',
@@ -4672,7 +4672,7 @@ const messages: Messages = {
     totalActive: '{n} active',
     introTitle: 'Custom task types (read-only)',
     introBody:
-      'Reported via the register protocol when this tenant’s SDK workers start. The console only reads — to remove, drop the handler on the worker side and restart; entries archive automatically after TTL.',
+      'Reported when this tenant’s SDK workers start. This page is read-only; remove the handler on the worker side and entries archive automatically after TTL.',
     loadError: 'Failed to load, please retry',
     emptyDescription:
       'No custom task types registered for this tenant yet. Implement SdkTaskHandler in a worker and let the SDK report it.',
@@ -4697,8 +4697,7 @@ const messages: Messages = {
     introBody:
       'Platform batch-worker-atomic ships four built-in atomic executors (sql / shell / stored_proc / http, ADR-029). This page only shows their parameter schema and safety gates; node configuration on workflows still goes through the import flow or definition API.',
     loadError: 'Failed to load schema, please retry',
-    empty:
-      'No atomic node schema returned (the BE ConsoleAtomicTaskTypeController may be disabled).',
+    empty: 'No atomic node schema is available.',
     tagDefaultDisabled: 'Disabled by default',
     warnDefaultDisabledTitle: '{type} executor is disabled by default',
     warnDefaultDisabledBody:
@@ -4713,7 +4712,7 @@ const messages: Messages = {
     colParamDescription: 'Description',
     requiredYes: 'Required',
     requiredNo: 'Optional',
-    sectionTryForm: 'Config draft (local preview, not submitted)',
+    sectionTryForm: 'Config preview (not submitted)',
     tryFormHintTitle: 'This form only generates a local parameters JSON for preview',
     tryFormHintBody:
       'To save and publish, use the import flow or workflow definition API. Never enter sensitive credentials (DB password, tokens) in this form — pass them through worker process env; the platform does not persist them.',
@@ -5015,7 +5014,7 @@ const messages: Messages = {
     fieldJobCodes: 'Job scope',
     jobCodesPlaceholder: 'Type jobCode and press Enter; empty copies all selected config types',
     jobCodesHint:
-      'When set, the backend builds a minimal job bundle with dependent pipelines, workflows, file templates, and channels.',
+      'When set, the service builds a minimal job bundle with dependent pipelines, workflows, file templates, and channels.',
     previewOptions: 'Preview options',
     includeUnchanged: 'Show unchanged items',
     includeDeleteCandidates: 'Show delete candidates',
@@ -5296,7 +5295,7 @@ const messages: Messages = {
     sectionWorkerConsistency: 'Worker consistency',
     sectionOutboxHealth: 'Outbox health',
     refreshDone: 'Refreshed',
-    refreshAllFailed: 'All sections failed to load; check permissions or backend logs',
+    refreshAllFailed: 'All sections failed to load; check permissions or service status',
     refreshPartial: 'Refreshed with {n} section(s) failing',
     loadFailed: 'Load failed',
     // JsonPreview 摘要插槽中的领域摘要标签
@@ -5406,18 +5405,18 @@ const messages: Messages = {
     tabTrend: 'Trend',
     tabDist: 'Distribution',
     tabExtra: 'Extra panels',
-    errorDesc:
-      'No data or request failed (normal if backend not connected). Verify tenantId and gateway.',
-    onboardingTitle: 'Tenant looks fresh',
-    onboardingDesc: 'All metrics are zero. Start with one of the four actions below.',
+    errorDesc: 'No data or request failed. Verify tenant, network, and gateway status.',
+    onboardingEyebrow: 'Get started',
+    onboardingTitle: 'No runtime data for this tenant yet',
+    onboardingDesc: 'Core metrics are currently zero. Start initialization from any action below.',
     onboardingImport: 'Import config package',
-    onboardingImportDesc: 'Upload Excel bundle to bring jobs / queues / file templates at once',
+    onboardingImportDesc: 'Upload an Excel package to import jobs, queues, and file templates',
     onboardingNewJob: 'New job definition',
-    onboardingNewJobDesc: 'Create jobs one by one, good for trial',
+    onboardingNewJobDesc: 'Create the first job to validate the scheduling path',
     onboardingTenant: 'Manage tenants',
-    onboardingTenantDesc: 'Switch or create tenants for multi-business isolation',
-    onboardingWorker: 'Check workers',
-    onboardingWorkerDesc: 'Verify workers are up, otherwise jobs cannot run',
+    onboardingTenantDesc: 'Switch or create a tenant for business isolation',
+    onboardingWorker: 'Manage workers',
+    onboardingWorkerDesc: 'Check worker availability before running jobs',
     // 图表图例和占位文案
     legendNow: 'Now',
     legendRunning: 'Running',
@@ -5465,10 +5464,9 @@ const messages: Messages = {
     searchPlaceholder: 'Search reports…',
     btnDownload: 'Download',
     emptyDesc: 'No matching reports',
-    hintText:
-      'Tip: if the backend returns JSON error instead of xlsx, the browser may fail to open it; check Network and traceId.',
+    hintText: 'If the download is not xlsx, use Network and traceId to inspect the response.',
     downloadStartedToast: 'Download started',
-    downloadFailedToast: 'Download failed (see console and traceId)',
+    downloadFailedToast: 'Download failed. Check the response details and traceId.',
     tenantCopiedToast: 'tenantId copied',
     copyFailedToast: 'Copy failed',
     badgeConfig: 'Config',
@@ -5576,7 +5574,7 @@ const messages: Messages = {
     metricVisibleMenuDesc: 'Click to open the matrix below',
     metricCurrentTenant: 'Current tenant',
     sectionLoginStatus: 'Login status',
-    modeMessage: 'Live auth mode; data comes from /api/console/auth/me.',
+    modeMessage: 'Live auth mode; data comes from the current session.',
     fieldUsername: 'Username',
     fieldUserId: 'User ID',
     fieldRole: 'Role',
@@ -5939,7 +5937,7 @@ const messages: Messages = {
   },
   sensitiveFieldAlert: {
     title: '{n} suspected credential field(s) detected',
-    hint: 'Use environment variables; never embed credentials in parameters / descriptor. BE rejects such payloads statically (Lane C).',
+    hint: 'Use environment variables; never embed credentials in parameters or descriptors.',
     inlineHint: 'Credentials must come from environment variables, not request payload.',
   },
 }

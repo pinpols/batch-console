@@ -174,8 +174,8 @@ export const routes: RouteRecordRaw[] = [
         name: 'custom-task-types',
         component: () => import('@/views/ops/CustomTaskTypeList.vue'),
         meta: {
-          title: '自定义 taskType',
-          description: '租户 SDK 上报的自定义 taskType(只读)',
+          title: '自定义任务类型',
+          description: '查看租户 SDK 上报的自定义任务类型。',
           activeMenu: '/ops/custom-task-types',
           minRole: 'OPERATOR',
         },
@@ -185,8 +185,8 @@ export const routes: RouteRecordRaw[] = [
         name: 'worker-fingerprints',
         component: () => import('@/views/ops/WorkerFingerprintBoard.vue'),
         meta: {
-          title: 'Worker fingerprint 看板',
-          description: '按 build/sdk 维度查看本租户活跃 worker(SDK Phase 5 / 灰度切流)',
+          title: 'Worker 指纹看板',
+          description: '按 buildId / sdkVersion 查看本租户活跃 Worker，辅助灰度切流与故障定位。',
           activeMenu: '/ops/worker-fingerprints',
           minRole: 'OPERATOR',
         },
@@ -208,7 +208,7 @@ export const routes: RouteRecordRaw[] = [
         component: () => import('@/views/ops/AssetFreshnessPolicies.vue'),
         meta: {
           title: '资产新鲜度策略',
-          description: '管理 JOB asset freshness SLA 策略,驱动缺失和过期告警。',
+          description: '管理作业资产新鲜度 SLA 策略，驱动缺失和过期告警。',
           activeMenu: '/ops/asset-freshness',
           minRole: 'OPERATOR',
         },
@@ -218,8 +218,8 @@ export const routes: RouteRecordRaw[] = [
         name: 'atomic-task-types',
         component: () => import('@/views/system/AtomicTaskTypeCenter.vue'),
         meta: {
-          title: 'Atomic 节点配置中心',
-          description: '查看平台四类原子节点 schema + 安全闸状态',
+          title: '原子节点配置中心',
+          description: '查看平台四类原子节点的参数结构与安全闸状态。',
           activeMenu: '/system/atomic-task-types',
           minRole: 'OPERATOR',
         },
@@ -672,7 +672,7 @@ export const routes: RouteRecordRaw[] = [
         },
       },
       {
-        // 自助账号 / 改密码 — 所有登录角色都可访问(P0.1 + P1 等 BE 实施)
+        // 自助账号 / 改密码 — 所有登录角色都可访问。
         path: 'system/me',
         name: 'my-account',
         component: () => import('@/views/system/MyAccount.vue'),
