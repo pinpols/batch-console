@@ -587,7 +587,7 @@
     ConsoleFilePipelineResponse,
     ConsoleFilePipelineStepResponse,
   } from '@/types/console-api'
-  import { queryPipelineProgress, type PipelineStepProgress } from '@/api/filePipelineQuery'
+  import { queryPipelineProgress } from '@/api/filePipelineQuery'
   import { usePipelineProgress } from '@/composables/usePipelineProgress'
   import { processedCountFromSummary } from '@/utils/pipelineStepSummary'
   import { fmtNumber } from '@/utils/number'
@@ -732,8 +732,7 @@
     void loadSteps()
   }
 
-  // 行级进度:默认开启(BE 已服务端桥接运行中实时行数,未开 checkpoint 也有值;
-  // 用户反馈默认看不到实时行数是主痛点)。total 恒 null 时 ETA 列优雅降级为 '—'。
+  // 默认展示行级进度；未知总量不推断预计完成时间。
   const showProgressColumns = ref(true)
   // stepId → 最新进度采样(BE pipeline-progress 端点上报)
   const progress = usePipelineProgress(() => tenant.tenantId)
@@ -742,28 +741,7 @@
     unavailable: progressUnavailable,
     lastSucceededAt: progressLastSucceededAt,
   } = progress
-  // stepId → 最近 60s 内的 rowsProcessed 历史(ETA 线性外推用,长度上限 6)
-  const historyByStepId = new Map<number, { ts: number; processed: number }[]>()
-
-  const HISTORY_WINDOW_MS = 60_000
   const HEARTBEAT_STALL_MS = 90_000
-  const MIN_ETA_WINDOW_MS = 60_000
-  const MAX_HISTORY_SAMPLES = 12
-
-  function recordHistory(stepId: number, processed: number | null | undefined) {
-    if (processed == null) return
-    const now = Date.now()
-    const arr = historyByStepId.get(stepId) ?? []
-    arr.push({ ts: now, processed })
-    // 丢弃 > 2×WINDOW 的样本,保留尾部 MAX_HISTORY_SAMPLES 个
-    const cutoff = now - HISTORY_WINDOW_MS * 2
-    const trimmed = arr.filter((s) => s.ts >= cutoff).slice(-MAX_HISTORY_SAMPLES)
-    historyByStepId.set(stepId, trimmed)
-  }
-
-  function formatNumberWithCommas(n: number): string {
-    return fmtNumber(n)
-  }
 
   function formatRowsCompact(n: number): string {
     if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
@@ -775,29 +753,10 @@
     // 运行中步骤:优先实时 cache(若 BE 实时端点可用);完成步骤:回落 outputSummary 计数
     // (见 utils/pipelineStepSummary —— 完成步骤的计数本就在响应里,无需 BE 端点)。
     const prog = progressByStepId.value.get(row.id)
-    if (prog && prog.rowsProcessed != null) return formatNumberWithCommas(prog.rowsProcessed)
+    if (prog && prog.rowsProcessed != null) return fmtNumber(prog.rowsProcessed)
     const fromSummary = processedCountFromSummary(row.stageCode, row.outputSummary)
-    if (fromSummary != null) return formatNumberWithCommas(fromSummary)
+    if (fromSummary != null) return fmtNumber(fromSummary)
     return '—'
-  }
-
-  function computeEtaText(prog: PipelineStepProgress): string {
-    if (prog.stepId == null) return ''
-    const history = historyByStepId.get(prog.stepId) ?? []
-    if (history.length < 2) return ''
-    const first = history[0]
-    const last = history[history.length - 1]
-    const windowMs = last.ts - first.ts
-    if (windowMs < MIN_ETA_WINDOW_MS) return ''
-    if (prog.totalRowsHint == null) return ''
-    if ((prog.rowsProcessed ?? 0) >= prog.totalRowsHint) return ''
-    const delta = last.processed - first.processed
-    if (delta <= 0) return ''
-    const ratePerMs = delta / windowMs
-    const remaining = prog.totalRowsHint - (prog.rowsProcessed ?? 0)
-    const remainingMs = remaining / ratePerMs
-    const minutes = Math.max(1, Math.round(remainingMs / 60_000))
-    return t('common.etaPattern', { minutes })
   }
 
   function formatTotalEta(row: ConsoleFilePipelineStepResponse): string {
@@ -814,30 +773,16 @@
     if (prog.lastHeartbeatAt != null && Date.now() - prog.lastHeartbeatAt > HEARTBEAT_STALL_MS) {
       return `${totalStr} · ${t('common.etaStalled')}`
     }
-    const etaText = computeEtaText(prog)
-    if (!etaText) return totalStr
-    return `${totalStr} · ${etaText}`
+    const minutes = progress.estimateMinutes(prog)
+    return minutes == null ? totalStr : `${totalStr} · ${t('common.etaPattern', { minutes })}`
   }
 
   async function loadProgress() {
     // 只在 steps tab 且需要时拉
     if (activeTab.value !== 'steps' || !showProgressColumns.value) return false
-    // 按 pipelineInstanceId 去重拉取
-    const pipelineIds = Array.from(
-      new Set(allSteps.value.map((s) => s.pipelineInstanceId).filter((id) => id != null)),
+    return progress.refresh(
+      allSteps.value.map((s) => s.pipelineInstanceId).filter((id) => id != null),
     )
-    const succeeded = await progress.refresh(pipelineIds)
-    if (!succeeded) {
-      historyByStepId.clear()
-      return false
-    }
-    for (const id of historyByStepId.keys()) {
-      if (!progressByStepId.value.has(id)) historyByStepId.delete(id)
-    }
-    for (const [stepId, sample] of progressByStepId.value)
-      recordHistory(stepId, sample.rowsProcessed)
-    live.markRefreshed()
-    return true
   }
 
   // 30s 轮询(与心跳一致);页面隐藏自动暂停
@@ -1025,7 +970,6 @@
     fileSummaryRequestId++
     fileSummaryUnavailable.value = false
     progress.reset()
-    historyByStepId.clear()
     page.value = 1
     selectedPipeline.value = null
     selectedStageCode.value = null

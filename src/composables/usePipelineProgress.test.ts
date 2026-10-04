@@ -32,6 +32,29 @@ afterEach(() => {
 })
 
 describe('usePipelineProgress', () => {
+  it('estimates ETA only with sufficient history and clears it after a failure', async () => {
+    const now = vi.spyOn(Date, 'now').mockReturnValue(0)
+    const response = sample()
+    const step = response.steps![0]
+    step.totalRowsHint = 100
+    vi.mocked(queryPipelineProgress).mockResolvedValue(response)
+    await progress.refresh([1])
+    expect(progress.estimateMinutes(step)).toBeNull()
+    now.mockReturnValue(60_000)
+    step.rowsProcessed = 40
+    await progress.refresh([1])
+    expect(progress.estimateMinutes(step)).toBe(2)
+    expect(progress.estimateMinutes({ ...step, totalRowsHint: null })).toBeNull()
+    expect(progress.estimateMinutes({ ...step, rowsProcessed: 100 })).toBeNull()
+    vi.mocked(queryPipelineProgress).mockRejectedValue(new Error('offline'))
+    await progress.refresh([1])
+    expect(progress.estimateMinutes(step)).toBeNull()
+    vi.mocked(queryPipelineProgress).mockResolvedValue(response)
+    now.mockReturnValue(90_000)
+    await progress.refresh([1])
+    expect(progress.estimateMinutes(step)).toBeNull()
+  })
+
   it('deduplicates pipelines and preserves unknown totals without fabricating values', async () => {
     vi.mocked(queryPipelineProgress).mockResolvedValue(sample())
     expect(await progress.refresh([1, 1])).toBe(true)
