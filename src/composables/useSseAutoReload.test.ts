@@ -54,6 +54,66 @@ afterEach(() => {
 })
 
 describe('useSseAutoReload', () => {
+  it.each(['false', 'reject', 'throw'])(
+    'keeps the last success time when reload returns %s',
+    async (failure) => {
+      let onEvent!: () => void
+      createSseStreamMock.mockImplementation(async (_domain: unknown, event: () => void) => {
+        onEvent = event
+        return makeFakeEs()
+      })
+      const reload = vi.fn<() => void | boolean | Promise<void | boolean>>()
+      const scope = effectScope()
+      const handle = scope.run(() =>
+        useSseAutoReload({ domain: 'pipeline-progress', reload, debounceMs: 10 }),
+      )!
+      await flushMicrotasks()
+      onEvent()
+      await vi.advanceTimersByTimeAsync(10)
+      const succeededAt = handle.lastRefreshedAt.value
+      expect(succeededAt).not.toBeNull()
+      reload.mockImplementation(() => {
+        if (failure === 'throw') throw new Error('failed')
+        return failure === 'reject' ? Promise.reject(new Error('failed')) : false
+      })
+      onEvent()
+      await vi.advanceTimersByTimeAsync(10)
+      expect(handle.lastRefreshedAt.value).toBe(succeededAt)
+      scope.stop()
+    },
+  )
+
+  it('does not stamp an old scope reload after tenant changes', async () => {
+    let onEvent!: () => void
+    let resolve!: () => void
+    createSseStreamMock.mockImplementation(async (_domain: unknown, event: () => void) => {
+      onEvent = event
+      return makeFakeEs()
+    })
+    const tenant = ref('ta')
+    const scope = effectScope()
+    const handle = scope.run(() =>
+      useSseAutoReload({
+        domain: 'pipeline-progress',
+        scope: () => tenant.value,
+        reload: () =>
+          new Promise<void>((done) => {
+            resolve = done
+          }),
+        debounceMs: 10,
+      }),
+    )!
+    await flushMicrotasks()
+    onEvent()
+    await vi.advanceTimersByTimeAsync(10)
+    tenant.value = 'tb'
+    await flushMicrotasks()
+    resolve()
+    await flushMicrotasks()
+    expect(handle.lastRefreshedAt.value).toBeNull()
+    scope.stop()
+  })
+
   it('opens stream and debounces reload calls', async () => {
     let capturedOnEvent: (() => void) | null = null
     createSseStreamMock.mockImplementation(async (_dom: unknown, onEvent: () => void) => {

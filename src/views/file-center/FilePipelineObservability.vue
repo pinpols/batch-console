@@ -2,6 +2,14 @@
   <PageContainer>
     <PageHeader />
 
+    <el-alert
+      v-if="fileSummaryUnavailable"
+      type="warning"
+      show-icon
+      :closable="false"
+      :title="t('filePipelineObservability.fileSummaryUnavailable')"
+    />
+
     <div v-if="currentFile" class="current-file-bar">
       <span class="current-file-bar__label">{{ t('filePipelineObservability.currentFile') }}</span>
       <span v-if="currentFile.fileName" class="current-file-bar__name">
@@ -231,6 +239,14 @@
       </el-tab-pane>
 
       <el-tab-pane :label="t('filePipelineObservability.tabSteps')" name="steps">
+        <el-alert
+          v-if="showProgressColumns && progressUnavailable"
+          class="pipeline-stage-error"
+          type="warning"
+          show-icon
+          :closable="false"
+          :title="t('filePipelineObservability.progressUnavailable')"
+        />
         <ProTable
           :data="stepRows"
           :loading="tableBlocking"
@@ -241,6 +257,12 @@
           v-model:page-size="pageSize"
           @change="onPageChange"
         >
+          <template #toolbar>
+            <OpsListToolbar
+              :status="live.status.value"
+              :last-refreshed-at="progressLastSucceededAt"
+            />
+          </template>
           <template #query>
             <ListPageQueryBar
               :filter-busy="queryActionBusy"
@@ -565,7 +587,8 @@
     ConsoleFilePipelineResponse,
     ConsoleFilePipelineStepResponse,
   } from '@/types/console-api'
-  import { queryPipelineProgressSafe, type PipelineStepProgress } from '@/api/filePipelineQuery'
+  import { queryPipelineProgress, type PipelineStepProgress } from '@/api/filePipelineQuery'
+  import { usePipelineProgress } from '@/composables/usePipelineProgress'
   import { processedCountFromSummary } from '@/utils/pipelineStepSummary'
   import { fmtNumber } from '@/utils/number'
   import { useAutoRefresh } from '@/composables/useAutoRefresh'
@@ -593,17 +616,27 @@
   const kwDraft = ref(initialPipelineInstanceId)
   const kwApplied = ref(initialPipelineInstanceId)
 
-  // 缺口2:当前文件摘要(深链 ?pipelineInstanceId=X 进入时,从 pipeline-progress 顶层拿 fileName/fileId)
+  // 深链打开时从正式进度响应读取文件摘要，错误与真实空摘要分开展示。
   const currentFile = ref<{ fileId: number | null; fileName: string | null } | null>(null)
+  const fileSummaryUnavailable = ref(false)
+  let fileSummaryRequestId = 0
 
   async function loadCurrentFile(pipelineInstanceId: string) {
+    const requestId = ++fileSummaryRequestId
+    currentFile.value = null
+    fileSummaryUnavailable.value = false
     const pid = Number(pipelineInstanceId)
     if (!Number.isFinite(pid) || pid <= 0) {
       currentFile.value = null
       return
     }
-    const resp = await queryPipelineProgressSafe(pid)
-    currentFile.value = { fileId: resp.fileId ?? null, fileName: resp.fileName ?? null }
+    try {
+      const resp = await queryPipelineProgress(pid)
+      if (requestId === fileSummaryRequestId)
+        currentFile.value = { fileId: resp.fileId ?? null, fileName: resp.fileName ?? null }
+    } catch {
+      if (requestId === fileSummaryRequestId) fileSummaryUnavailable.value = true
+    }
   }
 
   const allPipelines = ref<ConsoleFilePipelineResponse[]>([])
@@ -703,7 +736,12 @@
   // 用户反馈默认看不到实时行数是主痛点)。total 恒 null 时 ETA 列优雅降级为 '—'。
   const showProgressColumns = ref(true)
   // stepId → 最新进度采样(BE pipeline-progress 端点上报)
-  const progressByStepId = ref<Map<number, PipelineStepProgress>>(new Map())
+  const progress = usePipelineProgress(() => tenant.tenantId)
+  const {
+    byStepId: progressByStepId,
+    unavailable: progressUnavailable,
+    lastSucceededAt: progressLastSucceededAt,
+  } = progress
   // stepId → 最近 60s 内的 rowsProcessed 历史(ETA 线性外推用,长度上限 6)
   const historyByStepId = new Map<number, { ts: number; processed: number }[]>()
 
@@ -712,7 +750,7 @@
   const MIN_ETA_WINDOW_MS = 60_000
   const MAX_HISTORY_SAMPLES = 12
 
-  function recordHistory(stepId: number, processed: number | null) {
+  function recordHistory(stepId: number, processed: number | null | undefined) {
     if (processed == null) return
     const now = Date.now()
     const arr = historyByStepId.get(stepId) ?? []
@@ -744,6 +782,7 @@
   }
 
   function computeEtaText(prog: PipelineStepProgress): string {
+    if (prog.stepId == null) return ''
     const history = historyByStepId.get(prog.stepId) ?? []
     if (history.length < 2) return ''
     const first = history[0]
@@ -762,6 +801,11 @@
   }
 
   function formatTotalEta(row: ConsoleFilePipelineStepResponse): string {
+    if (
+      row.pipelineInstanceId != null &&
+      progress.failedPipelineIds.value.has(row.pipelineInstanceId)
+    )
+      return '—'
     const prog = progressByStepId.value.get(row.id)
     if (!prog || prog.totalRowsHint == null) return '—'
     const totalStr = formatRowsCompact(prog.totalRowsHint)
@@ -777,26 +821,23 @@
 
   async function loadProgress() {
     // 只在 steps tab 且需要时拉
-    if (activeTab.value !== 'steps' || !showProgressColumns.value) return
-    if (allSteps.value.length === 0) return
+    if (activeTab.value !== 'steps' || !showProgressColumns.value) return false
     // 按 pipelineInstanceId 去重拉取
     const pipelineIds = Array.from(
       new Set(allSteps.value.map((s) => s.pipelineInstanceId).filter((id) => id != null)),
     )
-    const next = new Map(progressByStepId.value)
-    for (const pid of pipelineIds) {
-      try {
-        const resp = await queryPipelineProgressSafe(pid)
-        for (const s of resp.steps) {
-          next.set(s.stepId, s)
-          recordHistory(s.stepId, s.rowsProcessed)
-        }
-      } catch {
-        // safe 版已吞错;此处 catch 兜底防 TS 警告
-      }
+    const succeeded = await progress.refresh(pipelineIds)
+    if (!succeeded) {
+      historyByStepId.clear()
+      return false
     }
-    progressByStepId.value = next
+    for (const id of historyByStepId.keys()) {
+      if (!progressByStepId.value.has(id)) historyByStepId.delete(id)
+    }
+    for (const [stepId, sample] of progressByStepId.value)
+      recordHistory(stepId, sample.rowsProcessed)
     live.markRefreshed()
+    return true
   }
 
   // 30s 轮询(与心跳一致);页面隐藏自动暂停
@@ -873,7 +914,11 @@
     }
   }
 
+  let stepsRequestId = 0
+
   async function loadSteps() {
+    const requestId = ++stepsRequestId
+    const requestedTenant = tenant.tenantId
     loading.value = true
     stepLoadError.value = null
     try {
@@ -885,15 +930,17 @@
         pipelineInstanceId: selectedStageCode.value ? selectedPipeline.value?.id : undefined,
         stageCode: selectedStageCode.value || undefined,
       })
+      if (requestId !== stepsRequestId || requestedTenant !== tenant.tenantId) return
       allSteps.value = result.items ?? []
       serverTotal.value = result.total ?? 0
       if (showProgressColumns.value) {
-        void loadProgress()
+        await loadProgress()
       }
     } catch (error) {
-      stepLoadError.value = error
+      if (requestId === stepsRequestId && requestedTenant === tenant.tenantId)
+        stepLoadError.value = error
     } finally {
-      loading.value = false
+      if (requestId === stepsRequestId && requestedTenant === tenant.tenantId) loading.value = false
     }
   }
 
@@ -929,9 +976,13 @@
     }
   }
 
-  function reloadTab() {
+  async function reloadTab() {
     page.value = 1
-    void runActive()
+    const pipelineInstanceId = String(route.query.pipelineInstanceId ?? '').trim()
+    await Promise.all([
+      runActive(),
+      fileSummaryUnavailable.value ? loadCurrentFile(pipelineInstanceId) : Promise.resolve(),
+    ])
   }
 
   function onTabChange() {
@@ -970,6 +1021,11 @@
   }
 
   useTenantReload(() => {
+    stepsRequestId++
+    fileSummaryRequestId++
+    fileSummaryUnavailable.value = false
+    progress.reset()
+    historyByStepId.clear()
     page.value = 1
     selectedPipeline.value = null
     selectedStageCode.value = null
