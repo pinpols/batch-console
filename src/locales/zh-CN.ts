@@ -3623,6 +3623,7 @@ export default {
     colGroup: '组',
     colStatus: '状态',
     colLoad: '负载',
+    colPort: '端口',
     colHeartbeat: '心跳',
     empty: '暂无自托管 Worker,请参考 SDK 接入文档启动并注册你的 Worker。',
     refresh: '刷新',

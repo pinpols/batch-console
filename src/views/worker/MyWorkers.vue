@@ -32,6 +32,9 @@
           </template>
         </el-table-column>
         <el-table-column prop="currentLoad" :label="t('myWorkers.colLoad')" width="80" />
+        <el-table-column prop="port" :label="t('myWorkers.colPort')" width="90">
+          <template #default="{ row }">{{ row.port ?? '—' }}</template>
+        </el-table-column>
         <DatetimeColumn prop="heartbeatAt" :label="t('myWorkers.colHeartbeat')" width="160" />
 
         <template #empty>
@@ -60,20 +63,20 @@
   import StatusTag from '@/components/common/StatusTag.vue'
   import CopyableText from '@/components/common/CopyableText.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
-  import type { ConsoleWorkerRegistryResponse } from '@/types/console-api'
+  import type { MyWorkerResponse } from '@/types/console-api'
 
   const tenant = useTenantStore()
 
   const page = ref(1)
   const pageSize = ref(15)
-  const allWorkers = ref<ConsoleWorkerRegistryResponse[]>([])
+  const allWorkers = ref<MyWorkerResponse[]>([])
 
   const { loading, error: loadError, run } = useListLoadState()
 
   const total = computed(() => allWorkers.value.length)
   const rows = computed(() => {
     const pr = toPageResult(allWorkers.value, page.value, pageSize.value)
-    return pr.records as ConsoleWorkerRegistryResponse[]
+    return pr.records as MyWorkerResponse[]
   })
 
   async function loadData() {

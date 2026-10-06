@@ -18,6 +18,7 @@ export type ConsoleFileSummaryResponse = components['schemas']['ConsoleFileSumma
 export type ConsoleFileArrivalGroupResponse =
   components['schemas']['ConsoleFileArrivalGroupResponse']
 export type ConsoleWorkerRegistryResponse = components['schemas']['ConsoleWorkerRegistryResponse']
+export type MyWorkerResponse = components['schemas']['MyWorkerResponse']
 export type ConsoleOperationAuditResponse = components['schemas']['ConsoleOperationAuditResponse']
 export type ConsoleFileChannelResponse = components['schemas']['ConsoleFileChannelResponse']
 export type ConsoleWorkflowDefinitionResponse =

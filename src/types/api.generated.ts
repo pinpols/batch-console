@@ -9160,6 +9160,11 @@ export interface components {
       drainStartedAt?: string | null
       /** Format: date-time */
       drainDeadlineAt?: string | null
+      /**
+       * Format: int32
+       * @description Worker 实际监听 HTTP 端口；null=未上报（老 worker / 老 SDK / 非 web 上下文）
+       */
+      port?: number | null
     }
     /**
      * @description 登录 / 换 token 响应。P1-1 (pre-launch audit 2026-05-18) 后 accessToken 不再出现在 response body,
@@ -10724,6 +10729,11 @@ export interface components {
       drainStartedAt?: string | null
       /** Format: date-time */
       drainDeadlineAt?: string | null
+      /**
+       * Format: int32
+       * @description Worker 实际监听 HTTP 端口；null=未上报（老 worker / 老 SDK / 非 web 上下文）
+       */
+      port?: number | null
     }
     CommonResponseMyWorkerList: components['schemas']['CommonResponseBase'] & {
       data?: components['schemas']['MyWorkerResponse'][]
