@@ -3715,6 +3715,7 @@ const messages: Messages = {
     colGroup: 'Group',
     colStatus: 'Status',
     colLoad: 'Load',
+    colPort: 'Port',
     colHeartbeat: 'Heartbeat',
     empty:
       'No self-hosted workers yet. Follow the SDK onboarding guide to start and register your worker.',

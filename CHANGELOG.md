@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- 「我的 Worker」列表响应类型由运维 Worker 页的 `ConsoleWorkerRegistryResponse` 改为接口实际返回的 `MyWorkerResponse`，同步后端 OpenAPI 新增的 `port` 字段，并在表格中展示 Worker 实际监听端口（未上报显示 `—`），修复类型字段集错配导致 `maxConcurrent`/`port` 被静默丢弃的问题。
 - 跟进收敛前端生产文案中的内部实现词，去除可见提示里的 ADR、Phase、paged-all、SdkTaskHandler 等实现细节，并统一 Worker 指纹、自定义任务类型和原子节点的中英文表达。
 - 上线前统一前端生产文案：收敛工作流设计器、配置导入、链路诊断、审批、Worker 与原子节点页面中的内部实现口吻，路由兜底标题同步改为专业简洁表达。
 - 优化控制面板租户初始化引导的文案准确性、层级字号、辅助文字对比度和卡片操作提示，避免将“暂无运行数据”误判为“未接入”。
