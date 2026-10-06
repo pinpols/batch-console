@@ -16599,10 +16599,10 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/shell-quote@1.9.0",
+      "bom-ref": "pkg:npm/shell-quote@1.12.0",
       "name": "shell-quote",
-      "version": "1.9.0",
-      "purl": "pkg:npm/shell-quote@1.9.0",
+      "version": "1.12.0",
+      "purl": "pkg:npm/shell-quote@1.12.0",
       "licenses": [
         {
           "license": {
@@ -16614,7 +16614,7 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/shell-quote/-/shell-quote-1.9.0.tgz"
+          "url": "https://registry.npmjs.org/shell-quote/-/shell-quote-1.12.0.tgz"
         }
       ]
     },
@@ -16767,10 +16767,10 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/source-map-js@1.2.1",
+      "bom-ref": "pkg:npm/source-map-js@1.2.2",
       "name": "source-map-js",
-      "version": "1.2.1",
-      "purl": "pkg:npm/source-map-js@1.2.1",
+      "version": "1.2.2",
+      "purl": "pkg:npm/source-map-js@1.2.2",
       "licenses": [
         {
           "license": {
@@ -16782,7 +16782,7 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/source-map-js/-/source-map-js-1.2.1.tgz"
+          "url": "https://registry.npmjs.org/source-map-js/-/source-map-js-1.2.2.tgz"
         }
       ]
     },
@@ -20352,7 +20352,7 @@
         "pkg:npm/set-proto@1.0.0",
         "pkg:npm/shebang-command@2.0.0",
         "pkg:npm/shebang-regex@3.0.0",
-        "pkg:npm/shell-quote@1.9.0",
+        "pkg:npm/shell-quote@1.12.0",
         "pkg:npm/shiki@2.5.0",
         "pkg:npm/side-channel@1.1.1",
         "pkg:npm/side-channel-list@1.0.1",
@@ -20360,7 +20360,7 @@
         "pkg:npm/side-channel-weakmap@1.0.2",
         "pkg:npm/smob@1.6.2",
         "pkg:npm/source-map@0.6.1",
-        "pkg:npm/source-map-js@1.2.1",
+        "pkg:npm/source-map-js@1.2.2",
         "pkg:npm/source-map-support@0.5.21",
         "pkg:npm/space-separated-tokens@2.0.2",
         "pkg:npm/speakingurl@14.0.1",
