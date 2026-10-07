@@ -2,6 +2,8 @@
 
 CI 由 3 个核心门禁、兼容/安全检查和发布辅助 workflow 组成。前端不复制后端容量门禁，浏览器性能由 Lighthouse 与真实 staging 验收负责。
 
+GitHub Security 告警的分类、修复、误报处理和合并后验证遵循[安全告警治理](./security-alert-governance.md)。CodeQL workflow 成功不等于开放告警已关闭。
+
 ## Workflow 全景
 
 | Workflow | 文件 | 触发 | 角色 | 预估耗时 |

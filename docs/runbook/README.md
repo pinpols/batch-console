@@ -5,6 +5,7 @@
 | 文档 | 用途 |
 |---|---|
 | [CI 门禁](./ci.md) | 核心门禁、兼容、安全与发布 workflow / secrets / 阈值 / 排查表 |
+| [GitHub 安全告警治理](./security-alert-governance.md) | 告警分类、修复与误报依据、PR 验证和合并后收尾 |
 | [CI 依赖治理](../engineering/ci-dependency-governance.md) | Action、Runner、Artifact 的升级、验证和回滚规则 |
 | [开发工作流](./dev-workflow.md) | 本地开发 / 分支 / 提交 / 联调日常流程 |
 | [回滚](./rollback.md) | 前端发布回滚步骤 |
