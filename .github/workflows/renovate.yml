@@ -1,14 +1,11 @@
-name: renovate
+name: Quarterly dependency inventory
 
 # Renovate self-hosted on GitHub Actions —— 无外部服务依赖。
-# 手动触发,扫依赖 + 开升级 PR(策略走 renovate.json)。
-# 用 GITHUB_TOKEN(默认 permissions: contents/PR write)。
-#
-# 历史:曾每天 UTC 21:00 cron(配合 renovate.json `schedule:weekends`),但自动 PR
-# 嘈杂,改为纯手动触发(2026-06-02)。
-# 想升依赖 → Actions UI → renovate → Run workflow(可选 dry-run 看会开什么 PR)。
+# 仅生成季度依赖盘点，不修改分支、不创建或自动合并 PR。
 
 on:
+  schedule:
+    - cron: '0 3 1 1,4,7,10 *'
   workflow_dispatch:
     inputs:
       logLevel:
@@ -16,34 +13,59 @@ on:
         default: 'info'
         type: choice
         options: [info, debug, trace]
-      dryRun:
-        description: 'Dry-run only (不开 PR)'
-        default: false
-        type: boolean
 
 concurrency:
   group: renovate-${{ github.ref }}
   cancel-in-progress: false # 跨次跑不打断,排队
 
 permissions:
-  contents: write
-  pull-requests: write
-  issues: write
+  contents: read
 
 jobs:
   renovate:
     runs-on: ubuntu-26.04
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
-      - name: Self-hosted Renovate
-        uses: renovatebot/github-action@v46.3.6
+      - name: Generate Renovate inventory
+        uses: renovatebot/github-action@6d26fcf0275dc65624cbc3d51fe78bc773f98321 # v46.3.6
         with:
           configurationFile: renovate.json
           token: ${{ secrets.GITHUB_TOKEN }}
         env:
           LOG_LEVEL: ${{ inputs.logLevel || 'info' }}
-          RENOVATE_DRY_RUN: ${{ inputs.dryRun || 'false' }}
+          RENOVATE_DRY_RUN: full
           # 限制只跑本仓
           RENOVATE_REPOSITORIES: ${{ github.repository }}
+
+  issue:
+    needs: renovate
+    runs-on: ubuntu-26.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Open one quarterly review issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          month=$((10#$(date -u +%m)))
+          quarter=$((((month - 1) / 3) + 1))
+          title="前端依赖集中治理 $(date -u +%Y)-Q${quarter}"
+          if gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "$title in:title" \
+              --json title --jq '.[].title' | grep -Fxq "$title"; then
+            echo "existing issue: $title"
+            exit 0
+          fi
+          issue_body="${RUNNER_TEMP}/quarterly-dependency-review.md"
+          cat > "$issue_body" <<EOF
+          季度依赖盘点已完成：${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}
+
+          只允许基于最新 main 创建一张人工维护 PR；安全紧急修复除外。
+          EOF
+          gh issue create --repo "$GITHUB_REPOSITORY" --title "$title" --body-file "$issue_body"

@@ -14,6 +14,7 @@ GitHub Security 告警的分类、修复、误报处理和合并后验证遵循[
 | `staging-gate` | `.github/workflows/staging-gate.yml` | tag `v*` / 手动(可输入 base_url) | staging 部署前真环境最终关 | 10-15 min |
 | `codeql` | `.github/workflows/codeql.yml` | PR / main / 每周 / 手动 | JavaScript/TypeScript 静态安全分析 | 5-10 min |
 | `build-image` | `.github/workflows/build-image.yml` | main / tag / 每日 19:00 UTC(北京时间 03:00) / 手动 | main 构建不可变镜像；nightly 按前后端代码变更决定是否构建，后端有变更时等待配对后端 daily sim-strict 成功；tag 在 staging 通过后晋级同一 digest | 10-75 min |
+| `Quarterly dependency inventory` | `.github/workflows/renovate.yml` | 每季度 / 手动 | 只生成 Renovate dry-run 盘点和一张 Issue，不创建 PR | 5-15 min |
 
 ## pr-gate 详情
 
@@ -50,11 +51,13 @@ CI 使用 GitHub 托管的 `ubuntu-26.04`，Action 运行时统一到 Node 24 �
 
 `actionlint` 1.7.12 的内置标签表尚未收录 `ubuntu-26.04`，因此 `.github/actionlint.yaml` 临时登记该标签；升级到已原生识别此标签的 actionlint 后应删除兼容项。
 
-- `actions/checkout@v7`、`actions/setup-node@v7`
-- `actions/upload-artifact@v7`、`actions/download-artifact@v8`
-- `docker/setup-qemu-action@v4`、`docker/setup-buildx-action@v4`
-- `docker/login-action@v4`、`docker/metadata-action@v6`、`docker/build-push-action@v7`
-- `googleapis/release-please-action@v5`、`renovatebot/github-action@v46.3.6`
+- `actions/checkout` v7、`actions/setup-node` v7
+- `actions/upload-artifact` v7、`actions/download-artifact` v8
+- `docker/setup-qemu-action` v4、`docker/setup-buildx-action` v4
+- `docker/login-action` v4、`docker/metadata-action` v6、`docker/build-push-action` v7
+- `googleapis/release-please-action` v5、`renovatebot/github-action` v46.3.6
+
+上述版本仅用于阅读；workflow 实际引用必须是对应的 40 位 commit SHA。Node 基线由 `.node-version`/`.nvmrc` 固定到精确 patch，Dockerfile 基础镜像固定 tag + digest。
 
 artifact 上传下载升级后，必须手动运行一次 `full-ci-gate`，确认 `static-and-unit` 上传的 `dist` 能在 `lighthouse` job 下载、解压并启动预览；仅通过 workflow 语法检查不算闭环验证。
 
