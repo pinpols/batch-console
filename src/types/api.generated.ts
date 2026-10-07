@@ -1892,11 +1892,7 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /**
-     * Count self-hosted workers for current tenant (deprecated)
-     * @deprecated
-     * @description Deprecated; clients should derive the count from GET /api/console/my-workers.
-     */
+    /** Count self-hosted workers for current tenant (dashboard) */
     get: operations['countMyWorkers']
     put?: never
     post?: never
