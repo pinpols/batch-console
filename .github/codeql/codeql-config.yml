@@ -1,0 +1,11 @@
+# CodeQL 扫描范围：保留产品源码与测试（src/ / e2e/ / scripts/ / 根 index.html 等），
+# 只排除设计交付物里的离线 HTML 原型。
+#
+# 排障背景（2026-10-07）：CodeQL 默认把仓库里所有 .html / .js 都当分析目标，而设计原型是
+# 单文件离线交付物（靠 DOMParser 注入自带模板 + 内联 script 才能工作），因此被反复报
+# js/xss-through-dom；这些文件不参与 Vite 构建、不进镜像（见 .dockerignore 与 .docsignore），
+# 属于设计资料而非产品代码。用路径排除而不是改原型行为，避免为了过扫描破坏交付物。
+paths-ignore:
+  - design/**
+  - docs/design/**
+  - docs/redesign/**

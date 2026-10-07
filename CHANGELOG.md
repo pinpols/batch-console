@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- 清理 GitHub Code Scanning 告警：telemetry 会话 ID 与 E2E 数据后缀改用 `crypto` 随机源（替换可预测的 `Math.random()`）、Mermaid 标签补齐反斜杠转义、`purifyHtml` 单测改为断言 DOMPurify 委派契约而非自查正则；设计交付物里的离线 HTML 原型通过 CodeQL `paths-ignore` 排除，不再计入安全扫描。
 - 「我的 Worker」列表响应类型由运维 Worker 页的 `ConsoleWorkerRegistryResponse` 改为接口实际返回的 `MyWorkerResponse`，同步后端 OpenAPI 新增的 `port` 字段，并在表格中展示 Worker 实际监听端口（未上报显示 `—`），修复类型字段集错配导致 `maxConcurrent`/`port` 被静默丢弃的问题。
 - 跟进收敛前端生产文案中的内部实现词，去除可见提示里的 ADR、Phase、paged-all、SdkTaskHandler 等实现细节，并统一 Worker 指纹、自定义任务类型和原子节点的中英文表达。
 - 上线前统一前端生产文案：收敛工作流设计器、配置导入、链路诊断、审批、Worker 与原子节点页面中的内部实现口吻，路由兜底标题同步改为专业简洁表达。
