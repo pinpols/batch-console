@@ -11,6 +11,24 @@ export default withMermaid({
   lang: 'zh-CN',
   cleanUrls: true,
 
+  // 控制台通过查询参数传入当前主题；无参数时文档站跟随系统，并保留自己的切换能力。
+  appearance: {
+    storageKey: 'batch-console:docs-theme',
+    initialValue: 'auto',
+  },
+  head: [
+    [
+      'script',
+      {},
+      `(() => {
+        const theme = new URLSearchParams(window.location.search).get('theme')
+        if (theme !== 'dark' && theme !== 'light') return
+        localStorage.setItem('batch-console:docs-theme', theme)
+        document.documentElement.classList.toggle('dark', theme === 'dark')
+      })()`,
+    ],
+  ],
+
   // 两仓都以 README.md 作为目录入口，聚合后仍保留原有目录链接。
   rewrites: {
     'README.md': 'index.md',

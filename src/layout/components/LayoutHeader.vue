@@ -99,14 +99,17 @@
           <button
             type="button"
             class="icon-button header-icon"
-            :aria-label="t('layoutHeader.timezoneTooltip')"
-            :title="t('layoutHeader.timezoneTooltip')"
+            :aria-label="timezoneTooltip"
+            :title="timezoneTooltip"
           >
             <el-icon><TimezoneIcon /></el-icon>
           </button>
           <template #dropdown>
             <el-dropdown-menu>
-              <el-dropdown-item disabled>{{ t('layoutHeader.timezoneLabel') }}</el-dropdown-item>
+              <el-dropdown-item disabled>
+                <span class="timezone-menu__label">{{ t('layoutHeader.timezoneLabel') }}</span>
+                <span class="timezone-menu__current">{{ currentTimezone }}</span>
+              </el-dropdown-item>
               <el-dropdown-item
                 v-for="timezone in timezoneOptions"
                 :key="timezone"
@@ -114,7 +117,38 @@
                 :disabled="timezone === currentTimezone"
               >
                 <el-icon v-if="timezone === currentTimezone"><Check /></el-icon>
-                {{ timezone }}
+                <span class="timezone-option">
+                  <span class="timezone-option__name">{{ timezone }}</span>
+                  <span class="timezone-option__offset">{{ timezoneOffsetLabel(timezone) }}</span>
+                </span>
+              </el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
+
+        <el-dropdown trigger="click" placement="bottom-end" @command="changeThemePreference">
+          <button
+            type="button"
+            class="icon-button header-icon"
+            :aria-label="themeToggleAriaLabel"
+            :title="themeToggleLabel"
+          >
+            <el-icon><component :is="themeToolIcon" /></el-icon>
+          </button>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item disabled>{{ t('nav.switchTheme') }}</el-dropdown-item>
+              <el-dropdown-item command="system" :disabled="app.themePreference === 'system'">
+                <el-icon v-if="app.themePreference === 'system'"><Check /></el-icon>
+                <span>{{ t('nav.themeFollowSystem') }}</span>
+              </el-dropdown-item>
+              <el-dropdown-item command="light" :disabled="app.themePreference === 'light'">
+                <el-icon v-if="app.themePreference === 'light'"><Check /></el-icon>
+                <span>{{ t('nav.themeLight') }}</span>
+              </el-dropdown-item>
+              <el-dropdown-item command="dark" :disabled="app.themePreference === 'dark'">
+                <el-icon v-if="app.themePreference === 'dark'"><Check /></el-icon>
+                <span>{{ t('nav.themeDark') }}</span>
               </el-dropdown-item>
             </el-dropdown-menu>
           </template>
@@ -144,10 +178,6 @@
                 <el-icon><Reading /></el-icon>
                 {{ t('nav.openDocs') }}
               </el-dropdown-item>
-              <el-dropdown-item command="theme" divided>
-                <el-icon><component :is="themeToolIcon" /></el-icon>
-                {{ themeActionLabel }}
-              </el-dropdown-item>
             </el-dropdown-menu>
           </template>
         </el-dropdown>
@@ -159,7 +189,8 @@
             :hide-on-click="true"
             @command="onUserCommand"
           >
-            <span
+            <button
+              type="button"
               class="user-chip username--clickable"
               data-onboarding="account"
               tabindex="0"
@@ -168,11 +199,11 @@
             >
               <span class="user-chip__avatar">{{ userInitial }}</span>
               <span class="user-chip__meta">
-                <span class="user-chip__name">{{ userDisplayName }}</span>
+                <span class="user-chip__name">{{ userDisplayNameCompact }}</span>
                 <span v-if="userRoleLabel" class="user-chip__role">{{ userRoleLabel }}</span>
               </span>
               <el-icon class="username__caret"><ArrowDown /></el-icon>
-            </span>
+            </button>
             <template #dropdown>
               <el-dropdown-menu>
                 <el-dropdown-item command="profile" :icon="Key">
@@ -229,20 +260,24 @@
   import { getDocsBase } from '@/components/common/docsRegistry'
   import { checkDocsAvailability } from '@/utils/serviceAvailability'
   import {
-    DISPLAY_TIMEZONE_OPTIONS,
     displayTimezone,
+    getDisplayTimezoneOptions,
+    getTimezoneOffsetLabel,
     writeDisplayTimezone,
   } from '@/constants/timezone'
+  import { truncateDisplayText } from '@/utils/text'
 
   const { t } = useI18n({ useScope: 'global' })
   const { current: currentLocale, setLocale } = useLocale()
-  const timezoneOptions = DISPLAY_TIMEZONE_OPTIONS
   const currentTimezone = displayTimezone
   const OperationsToolkitDrawer = defineAsyncComponent(
     () => import('@/components/tools/OperationsToolkitDrawer.vue'),
   )
   const toolkitMounted = ref(false)
   const toolkitVisible = ref(false)
+
+  const timezoneOptions = computed(() => getDisplayTimezoneOptions(currentTimezone.value))
+  const timezoneOffsetLabel = getTimezoneOffsetLabel
 
   function changeDisplayTimezone(timezone: string | number | object) {
     if (typeof timezone !== 'string' || timezone === currentTimezone.value) return
@@ -262,6 +297,8 @@
     (auth.userInfo?.username ?? '?').trim().charAt(0).toUpperCase(),
   )
   const userDisplayName = computed(() => auth.userInfo?.username ?? t('nav.notLoggedIn'))
+  // 只收敛顶栏可用空间，完整用户名仍通过 title/aria-label 保留并可访问。
+  const userDisplayNameCompact = computed(() => truncateDisplayText(userDisplayName.value, 16))
   const userAuthorityRole = computed(() => resolveAuthorityRole(auth.userInfo?.permissions ?? []))
   const userRoleLabel = computed(() => {
     const role = userAuthorityRole.value
@@ -272,17 +309,22 @@
       ? `${userDisplayName.value} · ${userRoleLabel.value}`
       : userDisplayName.value,
   )
+  const timezoneTooltip = computed(() =>
+    t('layoutHeader.timezoneTooltipWithCurrent', { timezone: currentTimezone.value }),
+  )
   const themeToolIcon = computed(() => {
     if (app.themePreference === 'system') return Monitor
     return app.themePreference === 'light' ? Sunny : Moon
   })
-  // 与「打开文档中心 / Switch to English / 进入全屏」对齐，统一动词开头。
-  // 点击后实际切到的是 next preference，所以这里展示的是下一步动作，不是当前状态。
-  const themeActionLabel = computed(() => {
-    if (app.themePreference === 'light') return t('nav.switchToThemeDark')
-    if (app.themePreference === 'dark') return t('nav.switchToThemeSystem')
-    return t('nav.switchToThemeLight')
+  // 常驻主题入口展示当前偏好，展开后可直接选择三种模式。
+  const themeToggleLabel = computed(() => {
+    if (app.themePreference === 'system') {
+      const effective = app.theme === 'dark' ? t('nav.themeDark') : t('nav.themeLight')
+      return `${t('nav.themeFollowSystem')} · ${effective}`
+    }
+    return app.themePreference === 'light' ? t('nav.themeLight') : t('nav.themeDark')
   })
+  const themeToggleAriaLabel = computed(() => t('nav.switchTheme'))
 
   function toggleLocale() {
     setLocale(currentLocale.value === 'zh-CN' ? 'en-US' : 'zh-CN')
@@ -293,16 +335,16 @@
   }>()
 
   // 文档站统一在 /docs/；开发期由 Vite 代理到构建后的单站 preview。
-  const docsUrl = getDocsBase()
+  const docsUrl = computed(() => getDocsBase(app.theme))
 
   async function openDocs() {
     // 先同步创建标签页，避免可用性探测结束后被浏览器判定为弹窗。
     const docsTab = window.open('about:blank', '_blank')
     if (docsTab) docsTab.opener = null
 
-    if (await checkDocsAvailability(docsUrl)) {
-      if (docsTab) docsTab.location.href = docsUrl
-      else window.open(docsUrl, '_blank', 'noopener')
+    if (await checkDocsAvailability(docsUrl.value)) {
+      if (docsTab) docsTab.location.href = docsUrl.value
+      else window.open(docsUrl.value, '_blank', 'noopener')
       return
     }
 
@@ -320,7 +362,12 @@
       toolkitVisible.value = true
     } else if (command === 'mobile') openMobilePreview()
     else if (command === 'docs') void openDocs()
-    else if (command === 'theme') app.toggleTheme()
+  }
+
+  function changeThemePreference(preference: string | number | object) {
+    if (preference === 'system' || preference === 'light' || preference === 'dark') {
+      app.setThemePreference(preference)
+    }
   }
 
   const router = useRouter()
@@ -492,6 +539,11 @@
     border: 1px solid transparent;
     border-radius: var(--radius-button);
     box-sizing: border-box;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
   }
 
   .user-chip__avatar {
@@ -525,6 +577,38 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  .timezone-menu__label,
+  .timezone-menu__current {
+    display: block;
+  }
+
+  .timezone-menu__current {
+    margin-top: 2px;
+    color: var(--color-text-tertiary);
+    font-size: 11px;
+    font-weight: 400;
+  }
+
+  .timezone-option {
+    display: inline-flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 18px;
+    min-width: 188px;
+  }
+
+  .timezone-option__name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .timezone-option__offset {
+    flex: 0 0 auto;
+    color: var(--color-text-tertiary);
+    font-size: 11px;
   }
 
   .user-chip__role {

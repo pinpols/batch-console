@@ -114,16 +114,6 @@ export function useHeaderLogic() {
 
   const visibleGroups = computed(() => permission.visibleGroups)
 
-  const themeToggleLabel = computed(() => {
-    if (app.themePreference === 'system') {
-      const effective = app.theme === 'dark' ? t('nav.themeDark') : t('nav.themeLight')
-      return `${t('nav.themeFollowSystem')} · ${effective}`
-    }
-    return app.themePreference === 'light' ? t('nav.themeLight') : t('nav.themeDark')
-  })
-
-  const themeToggleAriaLabel = computed(() => t('nav.switchTheme'))
-
   const commandPaletteShortcutLabel = computed(() =>
     typeof navigator !== 'undefined' && /Mac|iPhone|iPod|iPad/i.test(navigator.platform ?? '')
       ? '⌘K'
@@ -153,8 +143,6 @@ export function useHeaderLogic() {
     copyTenant,
     currentTitle,
     visibleGroups,
-    themeToggleLabel,
-    themeToggleAriaLabel,
     commandPaletteShortcutLabel,
     handleLogout,
   }

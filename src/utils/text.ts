@@ -39,6 +39,18 @@ export function decodeBasicEntities(input: unknown): string {
   return s.split('&amp;').join('&')
 }
 
+/**
+ * 仅用于紧凑 UI 的显示文本收敛；原始值仍保留在 title、表单和 API 数据中。
+ * 使用 Array.from 处理中文和 emoji，避免按 UTF-16 截断出半个字符。
+ */
+export function truncateDisplayText(input: unknown, maxCharacters: number): string {
+  const value = input == null ? '' : String(input)
+  if (!Number.isFinite(maxCharacters) || maxCharacters < 2) return value
+  const characters = Array.from(value)
+  if (characters.length <= maxCharacters) return value
+  return `${characters.slice(0, maxCharacters - 1).join('')}…`
+}
+
 function safeFromCodePoint(cp: number): string {
   if (!Number.isFinite(cp) || cp < 0 || cp > 0x10ffff) return ''
   try {

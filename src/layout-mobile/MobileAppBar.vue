@@ -11,7 +11,7 @@
       <el-popover
         placement="bottom-end"
         popper-class="mobile-appbar__popover"
-        :width="240"
+        :width="286"
         trigger="click"
       >
         <template #reference>
@@ -20,6 +20,21 @@
           </button>
         </template>
         <div class="mobile-appbar__panel">
+          <div
+            class="mobile-appbar__identity"
+            :title="auth.userInfo?.username || t('mobile.appBar.user')"
+          >
+            <span class="mobile-appbar__identity-avatar">{{ userInitial }}</span>
+            <span class="mobile-appbar__identity-meta">
+              <strong class="mobile-appbar__identity-name">{{ userDisplayNameCompact }}</strong>
+              <small v-if="userRoleLabel" class="mobile-appbar__identity-role">
+                {{ userRoleLabel }}
+              </small>
+            </span>
+          </div>
+
+          <el-divider class="mobile-appbar__divider" />
+
           <!-- 租户:有切换权限显示下拉,否则只读 -->
           <div class="mobile-appbar__tenant">
             <span class="mobile-appbar__key">
@@ -38,10 +53,36 @@
             <span v-else class="mobile-appbar__val">{{ tenant.tenantId }}</span>
           </div>
 
-          <el-divider style="margin: 8px 0" />
+          <el-divider class="mobile-appbar__divider" />
+
+          <!-- 展示时区:与桌面端共用本地偏好 -->
+          <div class="mobile-appbar__row">
+            <span class="mobile-appbar__key">
+              <el-icon class="mobile-appbar__icon"><TimezoneIcon /></el-icon>
+              {{ t('mobile.appBar.timezone') }}
+            </span>
+            <el-select
+              :model-value="currentTimezone"
+              size="small"
+              class="mobile-appbar__timezone-select"
+              :aria-label="t('layoutHeader.timezoneTooltip')"
+              @change="changeDisplayTimezone"
+            >
+              <el-option
+                v-for="timezone in timezoneOptions"
+                :key="timezone"
+                :label="timezoneOptionLabel(timezone)"
+                :value="timezone"
+              />
+            </el-select>
+          </div>
 
           <!-- 主题切换 -->
-          <div class="mobile-appbar__row mobile-appbar__row--clickable" @click="app.toggleTheme()">
+          <button
+            type="button"
+            class="mobile-appbar__row mobile-appbar__row--clickable"
+            @click="app.toggleTheme()"
+          >
             <span class="mobile-appbar__key">
               <el-icon class="mobile-appbar__icon">
                 <Monitor v-if="app.themePreference === 'system'" />
@@ -51,18 +92,22 @@
               {{ t('mobile.appBar.theme') }}
             </span>
             <span class="mobile-appbar__val">{{ themeLabel }}</span>
-          </div>
+          </button>
 
           <!-- 语言切换 -->
-          <div class="mobile-appbar__row mobile-appbar__row--clickable" @click="toggleLocale">
+          <button
+            type="button"
+            class="mobile-appbar__row mobile-appbar__row--clickable"
+            @click="toggleLocale"
+          >
             <span class="mobile-appbar__key">
               <el-icon class="mobile-appbar__icon"><Promotion /></el-icon>
               {{ t('mobile.appBar.language') }}
             </span>
             <span class="mobile-appbar__val">{{ localeLabel }}</span>
-          </div>
+          </button>
 
-          <el-divider style="margin: 8px 0" />
+          <el-divider class="mobile-appbar__divider" />
 
           <!-- 退出 -->
           <el-popconfirm
@@ -72,9 +117,9 @@
             @confirm="handleLogout"
           >
             <template #reference>
-              <a class="mobile-appbar__link mobile-appbar__link--danger">
+              <button type="button" class="mobile-appbar__link mobile-appbar__link--danger">
                 {{ t('mobile.appBar.logout') }}
-              </a>
+              </button>
             </template>
           </el-popconfirm>
         </div>
@@ -87,7 +132,14 @@
   import { computed } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
-  import { User, Monitor, Moon, Sun as Sunny, Send as Promotion } from '@lucide/vue'
+  import {
+    User,
+    Monitor,
+    Moon,
+    Sun as Sunny,
+    Send as Promotion,
+    Globe2 as TimezoneIcon,
+  } from '@lucide/vue'
   import { ElMessage } from 'element-plus'
   import { useAuthStore } from '@/stores/auth'
   import { useTenantStore } from '@/stores/tenant'
@@ -99,6 +151,14 @@
   import TenantSelect from '@/components/common/TenantSelect.vue'
   import BatchMark from '@/components/common/BatchMark.vue'
   import AiAssistantLauncher from '@/components/common/AiAssistantLauncher.vue'
+  import {
+    displayTimezone,
+    getDisplayTimezoneOptions,
+    getTimezoneOffsetLabel,
+    writeDisplayTimezone,
+  } from '@/constants/timezone'
+  import { authorityRoleLabelKeyMap, resolveAuthorityRole } from '@/constants/role'
+  import { truncateDisplayText } from '@/utils/text'
 
   withDefaults(defineProps<{ scrolled?: boolean }>(), { scrolled: false })
 
@@ -111,6 +171,19 @@
   const app = useAppStore()
   const { current: currentLocale, setLocale } = useLocale()
   const canSwitchTenant = computed(() => checkCanSwitchTenant(auth.userInfo?.permissions ?? []))
+  const currentTimezone = displayTimezone
+  const timezoneOptions = computed(() => getDisplayTimezoneOptions(currentTimezone.value))
+  const timezoneOptionLabel = (timezone: string) =>
+    `${timezone} · ${getTimezoneOffsetLabel(timezone)}`
+  const userInitial = computed(() =>
+    (auth.userInfo?.username ?? '?').trim().charAt(0).toUpperCase(),
+  )
+  const userDisplayName = computed(() => auth.userInfo?.username ?? t('nav.notLoggedIn'))
+  const userDisplayNameCompact = computed(() => truncateDisplayText(userDisplayName.value, 14))
+  const userRoleLabel = computed(() => {
+    const role = resolveAuthorityRole(auth.userInfo?.permissions ?? [])
+    return role ? t(authorityRoleLabelKeyMap[role]) : ''
+  })
 
   const title = computed(() => {
     // 移动端路由 meta 也写了中文 title;若桌面端 page.<key>.title 命中就走 i18n,
@@ -132,10 +205,22 @@
     }
   })
 
-  const localeLabel = computed(() => (currentLocale.value === 'zh-CN' ? '中文' : 'English'))
+  const localeLabel = computed(() =>
+    currentLocale.value === 'zh-CN' ? t('mobile.appBar.localeZh') : t('mobile.appBar.localeEn'),
+  )
 
   function toggleLocale() {
     setLocale(currentLocale.value === 'zh-CN' ? 'en-US' : 'zh-CN')
+  }
+
+  function changeDisplayTimezone(value: unknown) {
+    if (typeof value !== 'string' || value === currentTimezone.value) return
+    try {
+      writeDisplayTimezone(value)
+      ElMessage.success(t('layoutHeader.timezoneChanged', { timezone: value }))
+    } catch {
+      ElMessage.error(t('layoutHeader.invalidTimezone'))
+    }
   }
 
   async function handleLogout() {
@@ -166,14 +251,14 @@
     justify-content: space-between;
     padding: 8px 16px;
     padding-top: calc(env(safe-area-inset-top, 0) + 8px);
-    background: color-mix(in srgb, #ffffff 72%, transparent 28%);
+    background: color-mix(in srgb, var(--color-bg-elevated) 86%, transparent);
     backdrop-filter: saturate(180%) blur(28px);
     -webkit-backdrop-filter: saturate(180%) blur(28px);
-    border-bottom: 0.5px solid rgb(60 60 67 / 18%);
+    border-bottom: 1px solid var(--color-border-light);
     /* Liquid Glass:内底 0.5px 白高光 → 玻璃下缘折射;首屏无阴影,滚动塌缩时再加 */
     box-shadow:
-      inset 0 -0.5px 0 rgb(255 255 255 / 60%),
-      inset 0 -8px 12px rgb(255 255 255 / 18%);
+      inset 0 -0.5px 0 color-mix(in srgb, var(--color-bg-base) 64%, transparent),
+      inset 0 -8px 12px color-mix(in srgb, var(--color-bg-base) 18%, transparent);
     z-index: var(--z-app-bar);
   }
 
@@ -184,36 +269,25 @@
     inset: 0;
     pointer-events: none;
     background:
-      radial-gradient(circle at 0% 100%, rgb(0 122 255 / 8%) 0%, transparent 35%),
-      radial-gradient(circle at 100% 100%, rgb(90 200 250 / 8%) 0%, transparent 35%);
+      radial-gradient(
+        circle at 0% 100%,
+        color-mix(in srgb, var(--color-primary) 8%, transparent) 0%,
+        transparent 35%
+      ),
+      radial-gradient(
+        circle at 100% 100%,
+        color-mix(in srgb, var(--color-info) 8%, transparent) 0%,
+        transparent 35%
+      );
     mix-blend-mode: screen;
-  }
-
-  :global(html.dark .mobile-appbar) {
-    background: color-mix(in srgb, #10151d 86%, transparent 14%);
-    border-bottom: 0.5px solid rgb(148 163 184 / 28%);
-    box-shadow:
-      inset 0 -0.5px 0 rgb(255 255 255 / 16%),
-      inset 0 -8px 12px rgb(96 165 250 / 5%);
-  }
-  :global(html.dark .mobile-appbar::after) {
-    background:
-      radial-gradient(circle at 0% 100%, rgb(10 132 255 / 14%) 0%, transparent 40%),
-      radial-gradient(circle at 100% 100%, rgb(94 92 230 / 12%) 0%, transparent 40%);
   }
 
   /* 滚动塌缩:加投影拉开层级,inset 高光强度也增加 */
   .mobile-appbar--scrolled {
     box-shadow:
-      inset 0 -0.5px 0 rgb(255 255 255 / 80%),
-      inset 0 -8px 12px rgb(255 255 255 / 22%),
-      0 2px 12px rgb(0 0 0 / 8%);
-  }
-  :global(html.dark .mobile-appbar--scrolled) {
-    box-shadow:
-      inset 0 -0.5px 0 rgb(255 255 255 / 18%),
-      inset 0 -8px 12px rgb(255 255 255 / 5%),
-      0 2px 12px rgb(0 0 0 / 40%);
+      inset 0 -0.5px 0 color-mix(in srgb, var(--color-bg-base) 76%, transparent),
+      inset 0 -8px 12px color-mix(in srgb, var(--color-bg-base) 22%, transparent),
+      0 2px 12px color-mix(in srgb, var(--color-text-primary) 12%, transparent);
   }
 
   .mobile-appbar__left {
@@ -233,22 +307,15 @@
     font-size: 17px;
     font-weight: 600;
     letter-spacing: 0;
-    color: #000;
+    color: var(--color-text-primary);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
-  :global(html.dark .mobile-appbar__title) {
-    color: #fff;
-  }
-
   /* 滚动塌缩态:底部分隔线显出来(顶部 large title 已离开视线,需要视觉收口) */
   .mobile-appbar--scrolled {
-    border-bottom-color: rgb(60 60 67 / 36%);
-  }
-  :global(html.dark .mobile-appbar--scrolled) {
-    border-bottom-color: rgb(84 84 88 / 90%);
+    border-bottom-color: var(--color-border);
   }
 
   /* compact title fade-in 动画 */
@@ -274,7 +341,7 @@
     border: none;
     border-radius: 50%;
     background: transparent;
-    color: #007aff;
+    color: var(--color-primary);
     cursor: pointer;
     transition: opacity 0.1s ease;
   }
@@ -289,8 +356,20 @@
 
   .mobile-appbar__panel {
     padding: 4px 0;
+    color: var(--color-text-primary);
     font-family:
       -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'PingFang SC', 'Helvetica Neue', sans-serif;
+  }
+
+  :global(.mobile-appbar__popover.el-popover) {
+    border-color: var(--color-border);
+    background: var(--color-bg-elevated);
+    color: var(--color-text-primary);
+  }
+
+  :global(.mobile-appbar__popover .el-popper__arrow::before) {
+    border-color: var(--color-border);
+    background: var(--color-bg-elevated);
   }
 
   .mobile-appbar__row {
@@ -302,11 +381,11 @@
   }
 
   .mobile-appbar__key {
-    color: rgb(60 60 67 / 60%);
+    color: var(--color-text-secondary);
   }
 
   .mobile-appbar__val {
-    color: #000;
+    color: var(--color-text-primary);
     font-weight: 400;
     max-width: 140px;
     overflow: hidden;
@@ -319,7 +398,7 @@
     padding: 12px 4px;
     font-size: 16px;
     font-weight: 400;
-    color: #007aff;
+    color: var(--color-primary);
     cursor: pointer;
     transition: opacity 0.1s ease;
   }
@@ -329,7 +408,7 @@
   }
 
   .mobile-appbar__link--danger {
-    color: #ff3b30;
+    color: var(--color-danger);
   }
 
   .mobile-appbar__tenant {
@@ -340,7 +419,68 @@
     padding: 6px 4px;
   }
 
+  .mobile-appbar__identity {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    padding: 4px;
+  }
+
+  .mobile-appbar__identity-avatar {
+    display: grid;
+    flex: 0 0 auto;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: var(--color-primary);
+    color: var(--button-primary-text);
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .mobile-appbar__identity-meta {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-width: 0;
+    line-height: 1.25;
+  }
+
+  .mobile-appbar__identity-name,
+  .mobile-appbar__identity-role {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mobile-appbar__identity-name {
+    color: var(--color-text-primary);
+    font-size: 14px;
+  }
+
+  .mobile-appbar__identity-role {
+    color: var(--color-text-tertiary);
+    font-size: 11px;
+  }
+
+  .mobile-appbar__divider {
+    margin: var(--space-sm) 0;
+  }
+
+  .mobile-appbar__timezone-select {
+    width: 166px;
+    flex: 0 0 auto;
+  }
+
   .mobile-appbar__row--clickable {
+    width: 100%;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
     cursor: pointer;
     border-radius: 6px;
     transition: background 0.15s ease;

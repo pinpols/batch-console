@@ -62,8 +62,10 @@
   import EmptyState from './EmptyState.vue'
   import { DOC_REGISTRY, resolveDocUrl } from './docsRegistry'
   import { checkDocsAvailability } from '@/utils/serviceAvailability'
+  import { useAppStore } from '@/stores/app'
   const { t } = useI18n({ useScope: 'global' })
   const router = useRouter()
+  const app = useAppStore()
 
   const props = defineProps<{
     modelValue: boolean
@@ -78,7 +80,7 @@
   }>()
 
   const docEntry = computed(() => DOC_REGISTRY[props.docKey])
-  const iframeSrc = computed(() => resolveDocUrl(props.docKey))
+  const iframeSrc = computed(() => resolveDocUrl(props.docKey, app.theme))
   const resolvedTitle = computed(
     () => props.title || docEntry.value?.title || t('docsDrawer.iframeTitle'),
   )

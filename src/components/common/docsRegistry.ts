@@ -32,13 +32,16 @@ export const DOC_REGISTRY: Record<string, DocRegistryEntry> = {
   },
 }
 
-/** 文档站在开发和生产环境都与控制台同源。 */
-export function getDocsBase(): string {
-  return '/docs/'
+export type DocsTheme = 'light' | 'dark'
+
+/** 文档站在开发和生产环境都与控制台同源；主题通过查询参数同步给独立文档页面。 */
+export function getDocsBase(theme?: DocsTheme): string {
+  return theme ? `/docs/?theme=${theme}` : '/docs/'
 }
 
-export function resolveDocUrl(docKey: string): string {
+export function resolveDocUrl(docKey: string, theme?: DocsTheme): string {
   const entry = DOC_REGISTRY[docKey]
   if (!entry) return ''
-  return getDocsBase() + entry.path
+  const url = `/docs/${entry.path}`
+  return theme ? `${url}?theme=${theme}` : url
 }
