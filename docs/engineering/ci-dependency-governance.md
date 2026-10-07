@@ -25,14 +25,14 @@
 | 类别 | 基线 | 约束 |
 |---|---|---|
 | Runner | `ubuntu-26.04` | 使用显式 GA 标签，禁止 `ubuntu-latest` |
-| Node | Node 24 | 通过 `actions/setup-node@v7` 安装，与项目运行时一致 |
-| 仓库检出 | `actions/checkout@v7` | 跨仓文档检出同样使用该基线 |
+| Node | Node 24.21.0 | `.node-version` 与 `.nvmrc` 固定精确 patch，工作流通过 `setup-node` 读取 |
+| 仓库检出 | `actions/checkout` v7 对应 SHA | 跨仓文档检出同样使用该基线 |
 | Artifact | `actions/upload-artifact@v7`、`actions/download-artifact@v8` | 升级后必须验证跨 Job 上传、下载、解压和消费 |
 | Docker | QEMU/Buildx/Login v4、Metadata v6、Build Push v7 | 必须覆盖多架构构建、GHCR 登录和推送 |
 | 发布与更新 | Release Please v5、Renovate v46 | Renovate 使用精确版本，发布 Action 使用受支持主版本 |
 | 安全与质量 | CodeQL、Trivy、Lighthouse | 版本变化必须保持原有阻断语义和报告产物 |
 
-Action 引用禁止跟随 `main` 或 `master`。GitHub 与 Docker 官方 Action 可使用受支持主版本标签；其他第三方 Action 优先使用明确版本，并由 Renovate 提交可审查的升级 PR。
+所有外部 Action 必须固定到 40 位 commit SHA，保留版本注释供人工阅读；`docker://` Action 必须同时保留可读 tag 和不可变 digest。`scripts/check-workflows.mjs` 在本地与 CI 强制执行该约束。npm 包由 `package-lock.json` 的 integrity 校验，容器基础镜像由 tag + 多架构 manifest digest 锁定。
 
 ## Runner 策略
 
@@ -48,6 +48,12 @@ Action 引用禁止跟随 `main` 或 `master`。GitHub 与 Docker 官方 Action 
 6. 合并后观察 `main` 的完整门禁和镜像构建。
 
 `actionlint` 1.7.12 的内置标签表暂未包含 `ubuntu-26.04`，`.github/actionlint.yaml` 用兼容白名单登记该标签。升级到原生识别 Ubuntu 26.04 的 actionlint 后，应删除该白名单并重新运行静态检查。
+
+## 季度集中升级
+
+Renovate 只在每年 1、4、7、10 月首日以 `dryRun=full` 生成依赖盘点并创建一张 Issue，不修改分支、不创建 PR、不自动合并。维护者基于最新 `main` 创建一张人工依赖治理 PR；可达的 Critical/High 安全漏洞可以单独紧急修复，不等待季度窗口。
+
+精确版本用于保证同一提交反复执行时解析相同内容，但不同生态还必须依赖不可变校验：Action SHA、Docker digest、npm lockfile integrity。只写一个语义版本号不能防止上游 tag 或制品被替换。
 
 ## 分批升级规则
 
@@ -81,7 +87,7 @@ npm run check:workflows
 npm run check:encoding
 npm run check:docs
 npm run check:changelog
-docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:1.7.12
+docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:1.7.12@sha256:b1934ee5f1c509618f2508e6eb47ee0d3520686341fec936f3b79331f9315667
 npm run preflight:changed:all
 ```
 
@@ -140,4 +146,3 @@ gh run watch <run-id> --exit-status
 - Docker Buildx、Trivy、CodeQL、文档构建、安全审计与生产构建。
 
 该段只记录本轮历史证据。当前版本与当前门禁状态始终以 workflow 文件和 GitHub Actions 最新运行结果为准。
-

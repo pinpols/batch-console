@@ -7,8 +7,6 @@
   ],
   "timezone": "Asia/Shanghai",
   "labels": ["deps"],
-  "prHourlyLimit": 4,
-  "prConcurrentLimit": 8,
   "rangeStrategy": "bump",
   "rebaseWhen": "behind-base-branch",
   "lockFileMaintenance": {
@@ -57,14 +55,12 @@
     {
       "matchUpdateTypes": ["minor", "patch"],
       "matchDepTypes": ["devDependencies"],
-      "automerge": true,
-      "automergeType": "pr",
-      "platformAutomerge": true
+      "automerge": false
     },
     {
       "matchPackageNames": ["@types/**"],
       "groupName": "Types",
-      "automerge": true
+      "automerge": false
     }
   ]
 }

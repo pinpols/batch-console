@@ -28,11 +28,15 @@ fi
 
 NODE_BASE_IMAGE="$(sed -nE 's/^FROM (node:[^ ]+) AS build$/\1/p' "$ROOT_DIR/Dockerfile")"
 NGINX_BASE_IMAGE="$(sed -nE 's/^FROM (nginx:[^ ]+) AS runtime$/\1/p' "$ROOT_DIR/Dockerfile")"
-if [[ ! "$NODE_BASE_IMAGE" =~ ^node:[0-9]+\.[0-9]+\.[0-9]+-alpine[0-9]+\.[0-9]+$ ]]; then
-  fail "Node 构建镜像必须使用精确版本和 Alpine 次版本，实际: ${NODE_BASE_IMAGE:-missing}"
+NODE_RUNTIME="$(tr -d '[:space:]' < "$ROOT_DIR/.node-version")"
+if [[ ! "$NODE_BASE_IMAGE" =~ ^node:([0-9]+\.[0-9]+\.[0-9]+)-alpine[0-9]+\.[0-9]+@sha256:[0-9a-f]{64}$ ]]; then
+  fail "Node 构建镜像必须使用精确版本、Alpine 次版本和 digest，实际: ${NODE_BASE_IMAGE:-missing}"
 fi
-if [[ ! "$NGINX_BASE_IMAGE" =~ ^nginx:[0-9]+\.[0-9]+\.[0-9]+-alpine[0-9]+\.[0-9]+$ ]]; then
-  fail "Nginx 运行镜像必须使用精确版本和 Alpine 次版本，实际: ${NGINX_BASE_IMAGE:-missing}"
+if [[ "${BASH_REMATCH[1]}" != "$NODE_RUNTIME" ]]; then
+  fail "Docker Node 版本必须与 .node-version 一致，镜像=${BASH_REMATCH[1]} 基线=${NODE_RUNTIME}"
+fi
+if [[ ! "$NGINX_BASE_IMAGE" =~ ^nginx:[0-9]+\.[0-9]+\.[0-9]+-alpine[0-9]+\.[0-9]+@sha256:[0-9a-f]{64}$ ]]; then
+  fail "Nginx 运行镜像必须使用精确版本、Alpine 次版本和 digest，实际: ${NGINX_BASE_IMAGE:-missing}"
 fi
 if grep -En -- 'image:.*(:latest|\$\{IMAGE_TAG:-latest\})' "$ROOT_DIR/docker-compose.deploy.yml"; then
   fail "生产部署 Compose 不得引用 latest"

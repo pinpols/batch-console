@@ -3,7 +3,7 @@
 # 镜像最终 ~50MB(nginx alpine + dist),不含 node_modules。
 
 # ───── Stage 1: build ─────
-FROM node:24.21.0-alpine3.24 AS build
+FROM node:24.21.0-alpine3.24@sha256:ebfe2f90462722a7a4de65e91990e97fe0d401c70e0e762c5b53302f905ec1c1 AS build
 ENV LANG=C.UTF-8 \
     LC_ALL=C.UTF-8
 WORKDIR /app
@@ -44,7 +44,7 @@ RUN test -f /file-batch-system/docs/README.md && \
     FRONTEND_DOCS_ROOT=/app/docs BACKEND_DOCS_ROOT=/file-batch-system/docs npm run docs:build
 
 # ───── Stage 2: runtime ─────
-FROM nginx:1.30.5-alpine3.24 AS runtime
+FROM nginx:1.30.5-alpine3.24@sha256:0985e772fb9f729e6fa0980da05fca5d9c468e870eed43071545afa9d2e27d94 AS runtime
 ENV LANG=C.UTF-8 \
     LC_ALL=C.UTF-8
 
