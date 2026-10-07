@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- 收紧 CodeQL 设计资料排除范围：仅排除离线 HTML 原型，同目录的 TypeScript/JavaScript 继续纳入安全扫描。
+- 对齐后端固定契约治理：Trigger 列表与操作使用生成响应类型，移除后端未接收的列表租户参数和多形态兼容解析；普通触发仍返回实例号，dry-run 对象分支补入 OpenAPI，Lineage 证据行改为精确生成字段，仅 metadata 保留动态 JSON。
 - 优化桌面与移动端高频入口：主题模式移至顶栏常驻选择，账号区支持长用户名紧凑展示、时区选择与暗色主题，文档抽屉/独立文档页跟随控制台主题；同步补齐前端文档逐项审查记录与入口说明。
 - 同步后端 OpenAPI 对已弃用 Worker 计数接口的生成类型注释，保持前后端契约检查通过。
 - 收敛环境变量治理：扫描 HTML、Docker、Compose、`.env` 和 workflow 引用，移除 `VITE_APP_TITLE` 例外，并清理已弃用的 Worker 计数 wrapper 与遥测用户 ID 空实现。

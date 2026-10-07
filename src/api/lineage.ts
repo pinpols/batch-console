@@ -3,8 +3,7 @@ import type { components } from '@/types/api.generated'
 
 export type AssetPartitionReadiness = components['schemas']['AssetPartitionReadiness']
 
-// 后端 #801-804 Map 收敛后已生成 LineageCoverage / LineageEvidenceResponse 真类型,
-// 字段与此前手写 interface 逐一对齐,切到生成类型(重新生成:npm run gen:api)。
+// 证据行使用后端固定投影的生成类型，仅文件 metadata 保留动态 JSON。
 export type LineageCoverage = components['schemas']['LineageCoverage']
 export type LineageEvidence = components['schemas']['LineageEvidenceResponse']
 

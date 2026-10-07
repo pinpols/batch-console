@@ -6,6 +6,6 @@
 # js/xss-through-dom；这些文件不参与 Vite 构建、不进镜像（见 .dockerignore 与 .docsignore），
 # 属于设计资料而非产品代码。用路径排除而不是改原型行为，避免为了过扫描破坏交付物。
 paths-ignore:
-  - design/**
-  - docs/design/**
-  - docs/redesign/**
+  - design/**/*.html
+  - docs/design/**/*.html
+  - docs/redesign/**/*.html

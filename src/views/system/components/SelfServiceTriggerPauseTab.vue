@@ -69,7 +69,12 @@
   import { Send as Promotion, RotateCcw as RefreshLeft } from '@lucide/vue'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
-  import { listTriggers, pauseTrigger, resumeTrigger } from '@/api/triggers'
+  import {
+    listTriggers,
+    pauseTrigger,
+    resumeTrigger,
+    type TriggerStatusResponse,
+  } from '@/api/triggers'
 
   interface TriggerRow {
     jobCode: string
@@ -89,7 +94,7 @@
     if (!tenant.tenantId) return
     listLoading.value = true
     try {
-      const raw = await listTriggers(tenant.tenantId)
+      const raw = await listTriggers()
       const items = extractTriggers(raw)
       triggers.value = items
     } catch {
@@ -99,24 +104,12 @@
     }
   }
 
-  /** BE 返回 shape 不确定:可能是数组、可能是 { items } 包裹,容忍处理 */
-  function extractTriggers(raw: unknown): TriggerRow[] {
-    const arr: unknown[] = Array.isArray(raw)
-      ? raw
-      : Array.isArray((raw as { items?: unknown })?.items)
-        ? (raw as { items: unknown[] }).items
-        : []
-    const out: TriggerRow[] = []
-    for (const it of arr) {
-      if (!it || typeof it !== 'object') continue
-      const r = it as Record<string, unknown>
-      const code = String(r.jobCode ?? r.code ?? '').trim()
-      if (!code) continue
-      const status = String(r.triggerStatus ?? r.status ?? '').toUpperCase()
-      const paused = status === 'PAUSED' || r.paused === true
-      out.push({ jobCode: code, paused })
-    }
-    return out
+  /** 固定数组契约；缺失作业编码的条目不能成为运维动作目标。 */
+  function extractTriggers(rows: TriggerStatusResponse[]): TriggerRow[] {
+    return rows.flatMap((row) => {
+      const code = row.jobCode?.trim()
+      return code ? [{ jobCode: code, paused: row.status?.toUpperCase() === 'PAUSED' }] : []
+    })
   }
 
   function resetTriggerForm() {
