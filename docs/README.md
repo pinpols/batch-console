@@ -64,6 +64,7 @@
 | [上线准入清单](./runbook/go-live-readiness-checklist.md) | PR 门禁、真实环境验收、UI 交互准入和发布运行时证据                         |
 | [前端事故处理](./runbook/frontend-incident.md)  | 白屏、静态资源、API、缓存与 CSP 故障处置                                              |
 | [可观测性运行手册](./runbook/observability.md)  | Sentry、遥测、采样和告警边界                                                          |
+| [GitHub 安全告警治理](./runbook/security-alert-governance.md) | 告警分类、修复边界、误报依据与合并后确认 |
 
 ## 阶段性报告(reports/)
 
