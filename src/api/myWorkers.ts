@@ -11,8 +11,3 @@ import type { MyWorkerResponse } from '@/types/console-api'
 export function listMyWorkers(tenantId: string) {
   return get<MyWorkerResponse[]>('/api/console/my-workers', { tenantId })
 }
-
-/** GET /api/console/my-workers/count —— 自托管 worker 计数(仪表卡用) */
-export function countMyWorkers(tenantId: string) {
-  return get<number>('/api/console/my-workers/count', { tenantId })
-}

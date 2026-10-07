@@ -106,14 +106,6 @@ function currentPage(): string {
   return typeof location !== 'undefined' ? location.pathname + location.hash : ''
 }
 
-/**
- * D7 Stage B: 不再前端解码 JWT。userId 现在由后端从 HttpOnly cookie 鉴权后服务端补齐
- * （后端 telemetry receive handler 知道当前 principal）。前端 payload 留空 userId 即可。
- */
-function currentUserId(): string | null {
-  return null
-}
-
 function currentTenantId(): string | null {
   try {
     return localStorage.getItem(TENANT_STORAGE_KEY) || null
@@ -271,10 +263,8 @@ function clip(value: string | undefined, max: number): string {
 }
 
 function buildPayload(entries: LogEntry[]): TelemetryPayload {
-  const uid = currentUserId()
   return {
     app: clip(APP_NAME, MAX_APP_LEN),
-    ...(uid ? { userId: uid } : {}),
     sessionId: SESSION_ID,
     // 过滤 + 截断：后端 @NotBlank/@Size 若单条不合规会拒整批，
     // 导致 lastUploadedSeq 永不前进、所有后续日志也卡死。
