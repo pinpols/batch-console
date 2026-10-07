@@ -37,4 +37,6 @@ jobs:
       - uses: github/codeql-action/init@v4
         with:
           languages: javascript-typescript
+          # 排除设计交付物里的离线 HTML 原型（非产品代码），规则见 config 文件注释
+          config-file: ./.github/codeql/codeql-config.yml
       - uses: github/codeql-action/analyze@v4

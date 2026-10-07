@@ -74,8 +74,22 @@ function isTelemetryEnabled(): boolean {
   return import.meta.env?.VITE_TELEMETRY_ENABLED === 'true'
 }
 
-/** tab 级 session ID,整个页面生命周期不变 */
-const SESSION_ID = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+let sessionSeq = 0
+
+/**
+ * tab 级 session ID,整个页面生命周期不变。
+ * 用 `crypto.randomUUID()` 生成,避免 Math.random() 可预测带来的会话标识碰撞/伪造;
+ * 非安全上下文(无 crypto)退化为时间戳 + 单调计数器,同一 tab 内仍唯一。
+ */
+function createSessionId(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID()
+  }
+  sessionSeq = (sessionSeq + 1) % 0x7fffffff
+  return `${Date.now()}-${sessionSeq}`
+}
+
+const SESSION_ID = createSessionId()
 
 let seq = 0
 let buffer: LogEntry[] = []

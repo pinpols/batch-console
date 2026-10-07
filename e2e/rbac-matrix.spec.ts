@@ -95,7 +95,8 @@ type Endpoint = {
 }
 
 const ts = () => Date.now().toString(36)
-const rand = () => Math.random().toString(36).slice(2, 8)
+// 测试数据后缀只需唯一、不需可预测性,用 crypto 随机源避免 CodeQL js/insecure-randomness
+const rand = () => crypto.randomUUID().replace(/-/g, '').slice(0, 8)
 const e2ePrefix = () => `e2e-rbac-${ts()}-${rand()}`
 
 // 期望矩阵基于 BE 实际 @PreAuthorize 配置(2026-05-18 核对 file-batch-system controllers)。

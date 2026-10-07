@@ -17,7 +17,8 @@ function sanitizeId(code: string): string {
 /** 节点形状:Mermaid 语法 `id[label]` 矩形 / `((label))` 圆形 / `{label}` 菱形 */
 function renderNode(id: string, name: string, type: DesignerNodeType): string {
   const safeId = sanitizeId(id)
-  const safeName = name.replace(/"/g, '\\"')
+  // Mermaid 标签是双引号字符串:反斜杠必须先转义,否则 `\"` 序列会被重新组合成未转义的引号
+  const safeName = name.replace(/\\/g, '\\\\').replace(/"/g, '\\"')
   switch (type) {
     case 'START':
     case 'END':
