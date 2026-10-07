@@ -81,6 +81,10 @@ const docsChanged = hasAny(files, [
   (f) => /^tools\/docs-bridge\/frontend\//.test(f),
   (f) => /^scripts\/docs-(prepare|build|serve|lib)\./.test(f),
 ])
+const docsBuildChanged = hasAny(files, [
+  (f) => /^tools\/docs-bridge\/frontend\//.test(f),
+  (f) => /^scripts\/docs-(prepare|build|serve|lib)\./.test(f),
+])
 const architectureChanged = hasAny(files, [
   (f) => /^src\/.+\.(vue|ts|tsx)$/.test(f),
   (f) => /^scripts\/check-architecture\.mjs$/.test(f),
@@ -155,6 +159,9 @@ if (workflowChanged) {
 if (docsChanged) {
   run('documentation links and paths', 'npm', ['run', 'check:docs'])
   run('go-live readiness documentation', 'npm', ['run', 'check:go-live-readiness'])
+}
+
+if (docsBuildChanged) {
   run('unified docs build', 'npm', ['run', 'docs:build'])
 }
 

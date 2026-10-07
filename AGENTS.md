@@ -22,6 +22,7 @@ Use the focused workflows under `.agents/skills/` when relevant:
 - `frontend-engineering-governance`: architecture boundaries, environment registry, maintainability, workflow security, SBOM/license drift, changelog coverage, and local governance gates.
 - `frontend-deploy-runtime`: Docker, Nginx, environment variables, PWA, build artifacts, versioning, and deployment scripts.
 - `frontend-docs-release-governance`: README, docs indexes, changelog, archive/date policy, runbooks, and release notes.
+- `git-pr-workflow`: branch/PR delivery, stacked PR baselines, remote head verification, merge sequencing, and branch cleanup.
 
 Repository-specific commands and contracts remain authoritative over generic skill checklists.
 

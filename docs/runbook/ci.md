@@ -150,7 +150,7 @@ tag v* / 手动 ── precheck(URL/账号/healthz/版本必须有效)
 | 文档 chunk / 搜索索引预算 | 统一文档 job | Docker 文档构建 | — | `docs:build` 内置 |
 | 上线准入文档覆盖 | ✅ | ✅ | — | `preflight:changed`(文档变更) |
 | `check-version-alignment.sh` | ✅ | ✅ | — | `preflight:changed`(package 变更) |
-| `docs:build` | 统一文档 job | Docker 文档构建 | — | `preflight:changed`(文档站变更) |
+| `docs:build` | 统一文档 job | Docker 文档构建 | — | `preflight:changed`(文档桥接、站点配置或构建脚本变更) |
 
 Shell 脚本统一使用 Bash/sh；`check:shell` 同时做语法与 ShellCheck 检查，CI 不再额外安装 zsh。
 
@@ -190,7 +190,7 @@ npm run preflight:changed
 | `docs/**` / `tools/docs-bridge/**` / `scripts/docs-*` | 文档链接检查 + 统一文档构建 |
 | 用户或部署影响文件 | Changelog 覆盖检查 |
 
-`preflight:changed` 只读取 staged 文件；`preflight:changed:all` 合并 working tree 与未跟踪文件，不再扫描全部 tracked 文件。单测覆盖率、bundle size、audit 可通过 `npm run verify:local` 一次执行；Docker/Trivy、Lighthouse、staging e2e 仍由 CI 分层承担。
+`preflight:changed` 只读取 staged 文件；`preflight:changed:all` 合并 working tree 与未跟踪文件，不再扫描全部 tracked 文件。普通 `docs/**` 变更只执行链接、路径和上线准入检查；只有文档桥接、站点配置或构建脚本变化才在本地执行完整 `docs:build`，统一文档 CI 继续对所有文档交付做构建兜底。单测覆盖率、bundle size、audit 可通过 `npm run verify:local` 一次执行；Docker/Trivy、Lighthouse、staging e2e 仍由 CI 分层承担。
 
 ## 常见故障 / 排查
 
