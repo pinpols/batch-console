@@ -53,6 +53,29 @@ export function readDisplayTimezone(): string {
   return displayTimezone.value
 }
 
+/**
+ * 保留一组常用时区，同时把当前自动检测/已保存的合法时区放进列表，避免当前值无法再次选择。
+ */
+export function getDisplayTimezoneOptions(current: string = displayTimezone.value): string[] {
+  return Array.from(new Set([current, ...DISPLAY_TIMEZONE_OPTIONS])).filter(Boolean)
+}
+
+/** 用用户本地化时区偏移辅助识别 IANA 名称，避免菜单里只有一串难读的标识。 */
+export function getTimezoneOffsetLabel(timezone: string, date: Date = new Date()): string {
+  try {
+    const part = new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone,
+      timeZoneName: 'shortOffset',
+    })
+      .formatToParts(date)
+      .find(({ type }) => type === 'timeZoneName')?.value
+    if (!part || part === 'GMT' || part === 'GMT+0' || part === 'GMT-0') return 'UTC'
+    return part.replace(/^GMT/, 'UTC')
+  } catch {
+    return 'UTC'
+  }
+}
+
 export function writeDisplayTimezone(timezone: string): void {
   const normalized = timezone.trim()
   if (!normalized || !isValidTimezone(normalized)) {

@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- 优化桌面与移动端高频入口：主题模式移至顶栏常驻选择，账号区支持长用户名紧凑展示、时区选择与暗色主题，文档抽屉/独立文档页跟随控制台主题；同步补齐前端文档逐项审查记录与入口说明。
 - 收敛环境变量治理：扫描 HTML、Docker、Compose、`.env` 和 workflow 引用，移除 `VITE_APP_TITLE` 例外，并清理已弃用的 Worker 计数 wrapper 与遥测用户 ID 空实现。
 - 清理 GitHub Code Scanning 告警：telemetry 会话 ID 与 E2E 数据后缀改用 `crypto` 随机源（替换可预测的 `Math.random()`）、Mermaid 标签补齐反斜杠转义、`purifyHtml` 单测改为断言 DOMPurify 委派契约而非自查正则；设计交付物里的离线 HTML 原型通过 CodeQL `paths-ignore` 排除，不再计入安全扫描。
 - 「我的 Worker」列表响应类型由运维 Worker 页的 `ConsoleWorkerRegistryResponse` 改为接口实际返回的 `MyWorkerResponse`，同步后端 OpenAPI 新增的 `port` 字段，并在表格中展示 Worker 实际监听端口（未上报显示 `—`），修复类型字段集错配导致 `maxConcurrent`/`port` 被静默丢弃的问题。

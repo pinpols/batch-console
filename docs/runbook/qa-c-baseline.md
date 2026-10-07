@@ -2,6 +2,7 @@
 
 > 2026-05-17 开工。Day 1 任务:**不修任何**,只跑现状 axe baseline 留底。
 > 衔接 [fe-qa-c-tier-plan.md](./fe-qa-c-tier-plan.md)。
+> **历史快照**：本文只记录 2026-05-17 开工时的基线与当时缺口；当前 QA 结果以 `docs/qa/d-tier/`、最新验收报告和当前门禁为准，不要按本文的“尚未跑”重新立项。
 
 ## a11y 现状(收紧到 critical+serious)
 

@@ -29,14 +29,14 @@
 | [项目结构图](./architecture/project-structure.md)                                      | 顶层 + src 子目录 + 关键 composable + npm script(2026-06-03 新增) |
 | [前端方案设计说明书 V3](./engineering/批量调度系统前端方案设计说明书_开发落地版_V3.md) | 前端总体方案:业务域 / 路由 / 页面职责 / 组件分层 / 联调边界       |
 | [Batch Console 重设计资料](./redesign/README.md)                                       | 当前设计来源、覆盖矩阵、原型证据与历史实施计划归档                |
-| [wrapper 迁移计划](./engineering/fe-wrapper-migration-plan.md)                         | wrapper 迁移路径(过渡期方案)                                      |
+| [wrapper 迁移记录](./engineering/fe-wrapper-migration-plan.md)                         | 已完成批次、剩余边界与后续迁移规则                                  |
 | [页面命名约定](./engineering/page-naming-convention.md)                                | URL / 代码目录 / 侧边栏分组三者一致规则                           |
 | [前端工程成熟度路线图](./engineering/engineering-maturity-roadmap.md)                  | 大厂工程实践对齐、上线准入、UI 治理和验收证据分层                 |
 | [前端可观测性方案](./engineering/前端可观测性方案.md)                                  | 操作日志 / 行为埋点 / Sentry / 错误追踪                           |
 | [Console AI 助手前端实施方案](./engineering/ai-assistant-frontend-implementation-plan.md) | 全局入口、页面上下文、会话 UI、移动端与前后端契约                 |
 | [AI 对话流式交互](./engineering/ai-chat-streaming.md)                       | SSE 协议、停止生成、文本附件及数据保留边界                        |
 | [AI 图片对话与回答复制方案](./engineering/ai-image-conversation-plan.md) | 截图粘贴、图片历史、模型能力、附件治理与复制验收                 |
-| [当前 AI 与使用率待办](./backlog/ai-and-usage-statistics-todo-2026-09-29.md)             | AI 前端交付、使用率统计联测和暂缓/不做边界                         |
+| [AI、使用率与降级交付记录](./backlog/ai-and-usage-statistics-todo-2026-09-29.md)             | AI、使用率与降级交付状态、联测证据和暂缓/不做边界                         |
 | [运行时与依赖版本](./engineering/runtime-versions.md)                                  | Node 运行约束、锁文件和后端权威支持矩阵                           |
 | [CI 依赖治理](./engineering/ci-dependency-governance.md)                              | Action、Runner、Artifact、分批升级、验证与回滚规则                 |
 | [环境变量治理](./engineering/environment-variables.md)                                 | 构建期配置、敏感性和 owner                                        |
