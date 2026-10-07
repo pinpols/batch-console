@@ -1,4 +1,10 @@
 {
+  "src/layout/components/LayoutHeader.vue": {
+    "fixedPx": 121,
+    "lines": 1064,
+    "overlays": 0,
+    "tableTags": 0
+  },
   "src/views/config/ConfigReleaseList.vue": {
     "fixedPx": 84,
     "lines": 1111,
