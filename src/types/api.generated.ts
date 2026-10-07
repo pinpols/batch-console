@@ -21821,7 +21821,7 @@ export interface operations {
           userId?: string
           sessionId?: string
           events: {
-            /** @description Event category: route, click, api, error */
+            /** @description Preferred event categories: route, click, api, error; bounded extension values remain compatible */
             type: string
             /** @description Event name or description */
             name: string
