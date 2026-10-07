@@ -23,14 +23,14 @@ describe('triggersApi', () => {
     mockedPost.mockReset()
   })
 
-  it('listTriggers GET with tenantId query', async () => {
-    mockedGet.mockResolvedValue({ items: [] })
-    await listTriggers('ta')
-    expect(mockedGet).toHaveBeenCalledWith('/api/console/ops/triggers', { tenantId: 'ta' })
+  it('listTriggers GET uses the authenticated tenant scope', async () => {
+    mockedGet.mockResolvedValue([])
+    await listTriggers()
+    expect(mockedGet).toHaveBeenCalledWith('/api/console/ops/triggers')
   })
 
   it('registerTrigger POST with encoded jobCode + tenantId in params', async () => {
-    mockedPost.mockResolvedValue('ok')
+    mockedPost.mockResolvedValue({ tenantId: 'ta', jobCode: 'JOB_A', status: 'REGISTERED' })
     await registerTrigger('job/01', 'ta')
     expect(mockedPost).toHaveBeenCalledWith(
       '/api/console/ops/triggers/job%2F01/register',
@@ -40,7 +40,7 @@ describe('triggersApi', () => {
   })
 
   it('unregisterTrigger POST', async () => {
-    mockedPost.mockResolvedValue('ok')
+    mockedPost.mockResolvedValue({ tenantId: 'ta', jobCode: 'JOB_A', status: 'REGISTERED' })
     await unregisterTrigger('JOB_A', 'ta')
     expect(mockedPost).toHaveBeenCalledWith(
       '/api/console/ops/triggers/JOB_A/unregister',
@@ -50,7 +50,7 @@ describe('triggersApi', () => {
   })
 
   it('pauseTrigger POST', async () => {
-    mockedPost.mockResolvedValue('ok')
+    mockedPost.mockResolvedValue({ tenantId: 'ta', jobCode: 'JOB_A', status: 'REGISTERED' })
     await pauseTrigger('JOB_A', 'ta')
     expect(mockedPost).toHaveBeenCalledWith('/api/console/ops/triggers/JOB_A/pause', undefined, {
       params: { tenantId: 'ta' },
@@ -58,7 +58,7 @@ describe('triggersApi', () => {
   })
 
   it('resumeTrigger POST', async () => {
-    mockedPost.mockResolvedValue('ok')
+    mockedPost.mockResolvedValue({ tenantId: 'ta', jobCode: 'JOB_A', status: 'REGISTERED' })
     await resumeTrigger('JOB_A', 'ta')
     expect(mockedPost).toHaveBeenCalledWith('/api/console/ops/triggers/JOB_A/resume', undefined, {
       params: { tenantId: 'ta' },
@@ -66,7 +66,7 @@ describe('triggersApi', () => {
   })
 
   it('jobCode with special chars (#, space) is URL-encoded for path safety', async () => {
-    mockedPost.mockResolvedValue('ok')
+    mockedPost.mockResolvedValue({ tenantId: 'ta', jobCode: 'JOB_A', status: 'REGISTERED' })
     await registerTrigger('JOB A#1', 'ta')
     expect(mockedPost).toHaveBeenCalledWith(
       '/api/console/ops/triggers/JOB%20A%231/register',

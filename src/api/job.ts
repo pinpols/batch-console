@@ -5,6 +5,7 @@ import { instanceApi } from '@/api/instance'
 import { queryJobInstances, type InstanceQueryParams } from '@/api/queries/instances'
 import { i18n } from '@/locales'
 import { todayBusinessDate } from '@/utils/datetime'
+import type { components } from '@/types/api.generated'
 import type {
   BatchDayCatchUpRequest,
   ConfigSyncBundlePayload,
@@ -26,6 +27,11 @@ export type InstanceQuery = InstanceQueryParams
 
 export type ExecutionMode = NonNullable<JobDefinitionCreateRequest['executionMode']>
 export type JobBundlePayload = ConfigSyncBundlePayload
+// 普通触发仅取实例号分支，dry-run 的对象分支由专用调用方消费。
+type TriggeredInstanceNo = Extract<
+  NonNullable<components['schemas']['CommonResponseJobTrigger']['data']>,
+  string
+>
 
 async function resolveJobDefinitionId(jobCode: string, tenantId: string) {
   // 传入 jobCode 让后端过滤（后端不支持时忽略该参数，回退到全量）
@@ -95,7 +101,7 @@ export const jobApi = {
   },
 
   trigger: (jobCode: string, tenantId: string, payload?: object) =>
-    post<string>('/api/console/jobs/trigger', {
+    post<TriggeredInstanceNo>('/api/console/jobs/trigger', {
       tenantId,
       jobCode,
       bizDate: todayBusinessDate(),

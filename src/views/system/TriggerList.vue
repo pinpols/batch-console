@@ -152,6 +152,7 @@
   }
   import {
     listTriggers,
+    type TriggerStatusResponse,
     registerTrigger,
     unregisterTrigger,
     pauseTrigger,
@@ -176,7 +177,7 @@
   const loadError = ref<unknown>(null)
   const { filterBusy, tableBlocking, runSearch, runReset, runRefresh } =
     useListFilterFeedback(loading)
-  const allRows = ref<Record<string, unknown>[]>([])
+  const allRows = ref<TriggerStatusResponse[]>([])
   const page = ref(1)
   const pageSize = ref(15)
   const kwDraft = ref('')
@@ -192,13 +193,7 @@
     )
   })
 
-  const pagedRows = computed(
-    () =>
-      toPageResult(filtered.value, page.value, pageSize.value).records as unknown as Record<
-        string,
-        unknown
-      >[],
-  )
+  const pagedRows = computed(() => toPageResult(filtered.value, page.value, pageSize.value).records)
 
   function onSearch() {
     return runSearch(() => {
@@ -218,7 +213,7 @@
     loading.value = true
     loadError.value = null
     try {
-      allRows.value = (await listTriggers(tenant.tenantId)) as Record<string, unknown>[]
+      allRows.value = await listTriggers()
     } catch (err) {
       loadError.value = err
       allRows.value = []

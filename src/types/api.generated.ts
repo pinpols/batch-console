@@ -6660,6 +6660,36 @@ export interface components {
       pageSize: number
       items: unknown[]
     }
+    DryRunTriggerResult: {
+      /** @enum {boolean} */
+      dryRun: true
+      tenantId: string
+      jobCode: string
+      /** Format: date */
+      bizDate: string
+      valid: boolean
+      errors: string[]
+    }
+    CommonResponseJobTrigger: components['schemas']['CommonResponseBase'] & {
+      /** @description 普通触发返回实例号；dryRun 返回校验结果。保留既有 JSON 形态。 */
+      data?: string | components['schemas']['DryRunTriggerResult']
+    }
+    ConsoleTriggerStatusResponse: {
+      tenantId?: string | null
+      jobCode?: string | null
+      scheduleType?: string | null
+      scheduleExpression?: string | null
+      timezone?: string | null
+      triggerMode?: string | null
+      status?: string | null
+      /** Format: date-time */
+      previousFireTime?: string | null
+      /** Format: date-time */
+      nextFireTime?: string | null
+    }
+    CommonResponseTriggerStatusList: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['ConsoleTriggerStatusResponse'][]
+    }
     CommonResponseString: components['schemas']['CommonResponseBase'] & {
       data?: string
     }
@@ -7104,13 +7134,146 @@ export interface components {
     CommonResponseCapacityProfile: components['schemas']['CommonResponseBase'] & {
       data?: components['schemas']['CapacityProfileResponse']
     }
+    LineageJobInstance: {
+      /** Format: int64 */
+      id?: number | null
+      tenant_id?: string | null
+      job_code?: string | null
+      /** Format: date */
+      biz_date?: string | null
+      instance_status?: string | null
+      /** Format: int32 */
+      run_attempt?: number | null
+      trace_id?: string | null
+      /** Format: int64 */
+      related_file_id?: number | null
+      /** Format: int64 */
+      parent_instance_id?: number | null
+      /** Format: int64 */
+      replay_session_id?: number | null
+      /** Format: date-time */
+      started_at?: string | null
+      /** Format: date-time */
+      finished_at?: string | null
+      /** Format: date-time */
+      created_at?: string | null
+      /** Format: date-time */
+      updated_at?: string | null
+    }
+    LineagePipelineInstance: {
+      /** Format: int64 */
+      id?: number | null
+      tenant_id?: string | null
+      /** Format: int64 */
+      pipeline_definition_id?: number | null
+      job_code?: string | null
+      pipeline_type?: string | null
+      /** Format: int64 */
+      file_id?: number | null
+      /** Format: int64 */
+      related_job_instance_id?: number | null
+      current_stage?: string | null
+      last_success_stage?: string | null
+      run_status?: string | null
+      trace_id?: string | null
+      /** Format: date-time */
+      started_at?: string | null
+      /** Format: date-time */
+      finished_at?: string | null
+      /** Format: date-time */
+      created_at?: string | null
+      /** Format: date-time */
+      updated_at?: string | null
+    }
+    LineageFileRecord: {
+      /** Format: int64 */
+      id?: number | null
+      tenant_id?: string | null
+      file_code?: string | null
+      biz_type?: string | null
+      file_category?: string | null
+      file_name?: string | null
+      file_format_type?: string | null
+      /** Format: int64 */
+      file_size_bytes?: number | null
+      checksum_type?: string | null
+      checksum_value?: string | null
+      storage_type?: string | null
+      storage_bucket?: string | null
+      storage_path?: string | null
+      file_status?: string | null
+      /** Format: date */
+      biz_date?: string | null
+      trace_id?: string | null
+      metadata_json?: {
+        [key: string]: unknown
+      } | null
+      /** Format: date-time */
+      created_at?: string | null
+      /** Format: date-time */
+      updated_at?: string | null
+    }
+    LineageDispatchRecord: {
+      /** Format: int64 */
+      id?: number | null
+      tenant_id?: string | null
+      /** Format: int64 */
+      file_id?: number | null
+      /** Format: int64 */
+      pipeline_instance_id?: number | null
+      channel_code?: string | null
+      dispatch_target?: string | null
+      dispatch_status?: string | null
+      /** Format: int32 */
+      dispatch_attempt?: number | null
+      receipt_code?: string | null
+      receipt_status?: string | null
+      external_request_id?: string | null
+      error_code?: string | null
+      error_message?: string | null
+      /** Format: date-time */
+      dispatched_at?: string | null
+      /** Format: date-time */
+      ack_at?: string | null
+      /** Format: date-time */
+      created_at?: string | null
+      /** Format: date-time */
+      updated_at?: string | null
+    }
+    LineageResultVersion: {
+      /** Format: int64 */
+      id?: number | null
+      tenantId?: string | null
+      businessKey?: string | null
+      /** Format: int32 */
+      versionNo?: number | null
+      /** Format: int64 */
+      jobInstanceId?: number | null
+      status?: string | null
+      /** Format: date-time */
+      effectiveAt?: string | null
+      /** Format: date-time */
+      deactivatedAt?: string | null
+      payloadStorage?: string | null
+      payloadRef?: string | null
+      /** Format: date-time */
+      generatedAt?: string | null
+      generatedBy?: string | null
+      promotionPolicy?: string | null
+      dqGateStatus?: string | null
+    }
+    LineageSources: {
+      resultVersion: string
+      jobInstance: string
+      pipelineInstances: string
+      fileRecords: string
+      dispatchRecords: string
+    }
     LineageCoverage: {
       scope: string
       /** Format: int64 */
       resultVersionId: number
-      sources: {
-        [key: string]: string
-      }
+      sources: components['schemas']['LineageSources']
       jobInstanceFound: boolean
       /** Format: int64 */
       payloadFileId?: number | null
@@ -7124,21 +7287,11 @@ export interface components {
       knownGaps: string[]
     }
     LineageEvidenceResponse: {
-      resultVersion: {
-        [key: string]: unknown
-      }
-      jobInstance?: {
-        [key: string]: unknown
-      } | null
-      pipelineInstances: {
-        [key: string]: unknown
-      }[]
-      fileRecords: {
-        [key: string]: unknown
-      }[]
-      dispatchRecords: {
-        [key: string]: unknown
-      }[]
+      resultVersion: components['schemas']['LineageResultVersion']
+      jobInstance?: components['schemas']['LineageJobInstance'] | null
+      pipelineInstances: components['schemas']['LineagePipelineInstance'][]
+      fileRecords: components['schemas']['LineageFileRecord'][]
+      dispatchRecords: components['schemas']['LineageDispatchRecord'][]
       coverage: components['schemas']['LineageCoverage']
     }
     CommonResponseLineageEvidence: components['schemas']['CommonResponseBase'] & {
@@ -12733,7 +12886,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseString']
+          'application/json': components['schemas']['CommonResponseJobTrigger']
         }
       }
     }
@@ -17910,9 +18063,7 @@ export interface operations {
   }
   listTriggers: {
     parameters: {
-      query: {
-        tenantId: string
-      }
+      query?: never
       header?: never
       path?: never
       cookie?: never
@@ -17925,7 +18076,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseTriggerStatusList']
         }
       }
     }
@@ -21670,7 +21821,7 @@ export interface operations {
           userId?: string
           sessionId?: string
           events: {
-            /** @description Event category: route, click, api, error */
+            /** @description Preferred event categories: route, click, api, error; bounded extension values remain compatible */
             type: string
             /** @description Event name or description */
             name: string
