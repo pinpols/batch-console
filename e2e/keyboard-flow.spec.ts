@@ -6,7 +6,7 @@
  *   3. Dialog Tab 焦点陷阱(不应溢出到背景)
  *   4. 命令面板 ⌘K / Ctrl+K 切换
  *
- * 见 fe-qa-c-tier-plan.md §3 键盘 / a11y。
+ * 历史测试设计来源:docs/archive/qa-2026-05/runbook/fe-qa-c-tier-plan.md §3 键盘 / a11y。
  */
 import { expect, test } from './support/app'
 import { enterDemoApp } from './support/app'

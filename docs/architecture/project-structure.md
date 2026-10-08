@@ -144,21 +144,19 @@ docs/
 │
 ├── api/                       OpenAPI 同步 / API 漂移检查
 ├── architecture/              架构与项目结构说明
-├── archive/                   历史归档(4 月旧 audit / 已失效方案)
+├── archive/                   历史归档(已关闭项目 / 失效方案 / 旧验收证据)
 ├── audits/                    设计 / 可用性 / 代码审计证据
-├── backlog/                   待办 / acceptance
+├── backlog/                   未完成且有验收条件的开发 / 环境验收事项
 ├── deploy/                    部署文档(docker-nginx)
-├── design/                    已纳入仓库的 HTML prototype / 截图设计证据
-├── engineering/               工程方案(meta-enum / mobile-refresh / 可观测性 / 文档中心)
-├── qa/                        QA 阶段总评(D 档等)
-├── redesign/                  前端重设计落地计划
-├── reports/                   评审 / 扫描历史报告
+├── engineering/               当前工程方案(meta-enum / mobile-refresh / 可观测性 / 文档站)
+├── qa/                        QA 文档入口；已关闭 campaign 在 archive/
+├── reports/                   日期化评审 / 验收 / 扫描报告
 ├── testing/                   测试体系说明
 ├── runbook/                   运维手册(ci / dev-workflow / rollback / 联测)
 └── verifications/             验证记录(CD / e2e)
 ```
 
-> `design/` 与 `docs/design/` 含义不同:`design/` 是外部设计稿输入;`docs/design/` 是已进入工程文档体系的 prototype / screenshot 证据。
+> `design/` 是当前视觉规格与参考稿唯一来源；旧原型和截图位于 `docs/archive/redesign-2026-07/`，仅作历史证据。
 
 ## scripts/ 体系
 

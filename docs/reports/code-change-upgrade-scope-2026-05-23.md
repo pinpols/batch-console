@@ -16,7 +16,7 @@
 | **TypeScript 5 → 6 + vue-tsc 3** | 154 .vue + ~200 .ts | 中-高 | 1-2 天 | 🟡 先 dry-run 看错误数 |
 | **Vite 7 → 8** | `vite.config.ts` + 插件兼容性 | 高 | 等生态 | 🔴 暂不做(vite-plugin-pwa 未适配) |
 
-跨仓相关项(BE okhttp / jsqlparser / Spring AI)详见 [`../../../file-batch-system/docs/analysis/code-change-upgrade-scope-2026-05-23.md`](../../../file-batch-system/docs/analysis/code-change-upgrade-scope-2026-05-23.md)。
+跨仓相关项(BE okhttp / jsqlparser / Spring AI)详见配对仓库已归档的 [`docs/archive/analysis/code-change-upgrade-scope-2026-05-23.md`](../../../file-batch-system/docs/archive/analysis/code-change-upgrade-scope-2026-05-23.md)。
 
 ---
 

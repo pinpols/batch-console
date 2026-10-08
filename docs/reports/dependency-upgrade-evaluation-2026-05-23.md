@@ -99,7 +99,7 @@ Node 20 → 22 升级风险:**低**,Vite 6 / TS 5 / Vue 3 全兼容。CI workflo
 
 ## 5. 配对后端关联
 
-后端配对评估文件:[`../file-batch-system/docs/analysis/dependency-upgrade-evaluation-2026-05-23.md`](../../../file-batch-system/docs/analysis/dependency-upgrade-evaluation-2026-05-23.md)
+后端配对评估文件已归档：[配对仓库历史评估](../../../file-batch-system/docs/archive/analysis/dependency-upgrade-evaluation-2026-05-23.md)。
 
 跨仓 license 协议、基础设施(MinIO / Redis / PostgreSQL / Prometheus / Nginx 等)的评估在该文件中统一说明。
 

@@ -1,6 +1,6 @@
 /**
  * 错误态注入 helpers — 给 error-states.spec.ts 复用。
- * 见 docs/runbook/fe-qa-c-tier-plan.md §B.2。
+ * 历史测试设计来源:docs/archive/qa-2026-05/runbook/fe-qa-c-tier-plan.md §B.2。
  *
  * 用 page.route 拦截匹配的 endpoint,注入 BE 异常响应,断言 UI 兜底。
  * **不**动 production 的 interceptors.ts。

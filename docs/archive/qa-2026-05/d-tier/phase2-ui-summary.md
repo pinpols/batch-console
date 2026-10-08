@@ -41,10 +41,10 @@ P2 全程 `e2e/support/fixtures.ts` 全局 `network` watchdog 抓所有 ≥400�
 
 | 文件 | 作用 |
 |---|---|
-| [e2e/support/fixtures.ts](../../../e2e/support/fixtures.ts) | 全局 `network` watchdog fixture(auto:true,所有 spec 自动抓 4xx/5xx);`assertClean(scope?)`;`ignore(pattern)`;失败时落盘 `network.log` |
-| [e2e/support/crud-smoke.ts](../../../e2e/support/crud-smoke.ts) | `readOnlyPageSmoke()` helper(进页→切 tab→翻页→assertClean) |
-| [e2e/all-pages-zero-error.spec.ts](../../../e2e/all-pages-zero-error.spec.ts) | **34 页**逐页 0-4xx/5xx 巡检 spec |
-| [e2e/job-definition-crud.spec.ts](../../../e2e/job-definition-crud.spec.ts) | 新增 — 填补 JobDefinition CRUD 空白页(BE LCRU + toggle/clone) |
+| [e2e/support/fixtures.ts](../../../../e2e/support/fixtures.ts) | 全局 `network` watchdog fixture(auto:true,所有 spec 自动抓 4xx/5xx);`assertClean(scope?)`;`ignore(pattern)`;失败时落盘 `network.log` |
+| [e2e/support/crud-smoke.ts](../../../../e2e/support/crud-smoke.ts) | `readOnlyPageSmoke()` helper(进页→切 tab→翻页→assertClean) |
+| [e2e/all-pages-zero-error.spec.ts](../../../../e2e/all-pages-zero-error.spec.ts) | **34 页**逐页 0-4xx/5xx 巡检 spec |
+| [e2e/job-definition-crud.spec.ts](../../../../e2e/job-definition-crud.spec.ts) | 新增 — 填补 JobDefinition CRUD 空白页(BE LCRU + toggle/clone) |
 
 ## Spec 修补清单(可复用)
 

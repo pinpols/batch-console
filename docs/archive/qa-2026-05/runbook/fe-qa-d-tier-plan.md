@@ -1,6 +1,6 @@
 # D 档 QA 完整覆盖 — 测试方案
 
-> **历史执行方案**：本文记录 D 档开工时的目标和 baseline；执行结果见 [`fe-qa-d-tier-report.md`](./fe-qa-d-tier-report.md)，当前测试入口以 [`docs/testing/README.md`](../testing/README.md) 和实际代码为准。
+> **历史执行方案**：本文记录 D 档开工时的目标和 baseline；执行结果见 [`fe-qa-d-tier-report.md`](./fe-qa-d-tier-report.md)，当前测试入口以[测试指南](../../../testing/README.md)和实际代码为准。
 
 > 衔接 [fe-qa-c-tier-plan.md](./fe-qa-c-tier-plan.md) 出口标准已 PASS(466/16/0)。
 > 本档目标:**移动端操作 / 多浏览器 / 上传完整链路 / 长会话稳定性**。

@@ -1,6 +1,6 @@
 /**
  * Day 2 — 队列/窗口/日历对话框表单校验子矩阵
- * 来源:fe-qa-c-tier-plan.md §B + 附录 A
+ * 历史测试设计来源:docs/archive/qa-2026-05/runbook/fe-qa-c-tier-plan.md §B + 附录 A
  */
 import { expect, test } from './support/app'
 import { enterDemoApp } from './support/app'

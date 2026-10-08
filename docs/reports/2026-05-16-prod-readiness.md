@@ -29,7 +29,7 @@
 | **HTTP adapter credential injection** | ⚠ high | ✅ |
 | **no_proxy bypass via IP alias** | ⚠ high | ✅ |
 
-[package.json](package.json) `axios: "^1.7.9"` → 实际锁到 `1.16.1`。
+[package.json](../../package.json) `axios: "^1.7.9"` → 实际锁到 `1.16.1`。
 
 ---
 
@@ -127,7 +127,7 @@ PWA: 245 entries (6.4 MB precache)
 
 ### 3. NGINX security headers
 
-[nginx/default.conf.template](nginx/default.conf.template) 已配:
+[nginx/default.conf.template](../../nginx/default.conf.template) 已配:
 
 | Header | 已加 | 备注 |
 |---|---|---|
@@ -187,7 +187,7 @@ PWA: 245 entries (6.4 MB precache)
 
 3. **lodash 升级到 4.17.21+**(虽然不可被利用,但 audit 噪音)— 等 dagre / element-plus 上游升级
 
-4. **后端联调**:F-1 Set-Cookie 落地后,删除 [src/stores/auth.ts](src/stores/auth.ts) 和 [src/api/interceptors.ts](src/api/interceptors.ts) 的 dev fallback 块(已用注释标"后端补完后可删")
+4. **后端联调**:F-1 Set-Cookie 落地后,删除 [src/stores/auth.ts](../../src/stores/auth.ts) 和 [src/api/interceptors.ts](../../src/api/interceptors.ts) 的 dev fallback 块(已用注释标"后端补完后可删")
 
 ---
 
