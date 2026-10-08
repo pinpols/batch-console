@@ -1,169 +1,143 @@
 <template>
   <PageContainer>
-    <PageHeader />
+    <div class="me-page">
+      <PageHeader />
 
-    <section class="me-hero" :class="{ 'me-hero--reminder': showPasswordReminder }">
-      <div class="me-hero__icon" aria-hidden="true">
-        <ShieldCheck v-if="showPasswordReminder" :size="26" />
-        <UserRound v-else :size="26" />
-      </div>
-      <div class="me-hero__content">
-        <div class="me-hero__topline">
-          <el-tag :type="showPasswordReminder ? 'warning' : 'info'" effect="plain" size="small">
-            {{
-              showPasswordReminder ? t('myAccount.securityRequired') : t('myAccount.securityNormal')
-            }}
-          </el-tag>
-          <span class="me-hero__tenant">{{ tenant.tenantId || '—' }}</span>
-        </div>
-        <h2>
-          {{ showPasswordReminder ? t('myAccount.mustChangeTitle') : t('myAccount.sectionTitle') }}
-        </h2>
-        <p>
-          {{
-            showPasswordReminder
-              ? t('myAccount.mustChangeDescription')
-              : t('myAccount.accountDescription')
-          }}
-        </p>
-      </div>
-    </section>
-
-    <div class="me-layout">
-      <section class="me-panel me-panel--context">
-        <div class="me-panel__header">
-          <div>
-            <h2>{{ t('myAccount.accountContextTitle') }}</h2>
-            <p>{{ t('myAccount.accountContextDescription') }}</p>
-          </div>
-          <KeyRound :size="20" aria-hidden="true" />
-        </div>
-
-        <dl class="me-facts">
-          <div class="me-fact">
-            <dt>{{ t('myAccount.fieldUsername') }}</dt>
-            <dd>{{ auth.userInfo?.username || '—' }}</dd>
-          </div>
-          <div class="me-fact">
-            <dt>{{ t('myAccount.fieldRole') }}</dt>
-            <dd>{{ formalRoleLabel }}</dd>
-          </div>
-          <div class="me-fact">
-            <dt>{{ t('myAccount.fieldTenant') }}</dt>
-            <dd>{{ tenant.tenantId || '—' }}</dd>
-          </div>
-        </dl>
-
-        <div class="me-permissions">
-          <span class="me-permissions__label">{{ t('myAccount.fieldPermissions') }}</span>
-          <div class="me-permissions__list">
-            <el-tag
-              v-for="p in visiblePermissions"
-              :key="p"
-              size="small"
-              effect="plain"
-              class="me-perm-tag"
-            >
-              {{ p }}
+      <section v-if="showPasswordReminder" class="me-notice" role="status">
+        <div class="me-notice__icon" aria-hidden="true"><ShieldCheck :size="19" /></div>
+        <div class="me-notice__content">
+          <div class="me-notice__heading">
+            <el-tag type="warning" effect="plain" size="small">
+              {{ t('myAccount.securityRequired') }}
             </el-tag>
-            <span v-if="hiddenPermissionCount > 0" class="me-permissions__more">
-              {{ t('myAccount.permissionsMore', { count: hiddenPermissionCount }) }}
-            </span>
-            <span v-if="visiblePermissions.length === 0" class="me-permissions__more">—</span>
+            <h2>{{ t('myAccount.mustChangeTitle') }}</h2>
           </div>
+          <p>{{ t('myAccount.mustChangeDescription') }}</p>
         </div>
-
-        <el-alert
-          v-if="!showPasswordReminder && isPasswordExpiringSoon"
-          type="warning"
-          :title="t('myAccount.expiringTitle', { days: auth.userInfo?.passwordExpiringIn })"
-          show-icon
-          :closable="false"
-          class="me-alert"
-        />
       </section>
 
-      <section class="me-panel me-panel--form">
-        <div class="me-panel__header">
-          <div>
-            <h2>{{ t('myAccount.changePasswordTitle') }}</h2>
-            <p>{{ t('myAccount.changePasswordDescription') }}</p>
-          </div>
-        </div>
-
-        <el-form
-          ref="formRef"
-          :model="form"
-          :rules="formRules"
-          label-position="top"
-          hide-required-asterisk
-          class="me-form"
-        >
-          <el-form-item :label="t('myAccount.fieldOldPassword')" prop="oldPassword">
-            <el-input
-              v-model="form.oldPassword"
-              type="password"
-              show-password
-              :placeholder="t('myAccount.placeholderOldPassword')"
-              maxlength="256"
-              autocomplete="current-password"
-            />
-          </el-form-item>
-
-          <el-form-item :label="t('myAccount.fieldNewPassword')" prop="newPassword">
-            <el-input
-              v-model="form.newPassword"
-              type="password"
-              show-password
-              :placeholder="t('myAccount.placeholderNewPassword')"
-              maxlength="256"
-              autocomplete="new-password"
-            >
-              <template #append>
-                <el-tooltip :content="t('common.passwordGenerate')" placement="top">
-                  <el-button
-                    :icon="MagicStick"
-                    :aria-label="t('common.passwordGenerate')"
-                    @click="onGen"
-                  />
-                </el-tooltip>
-                <el-tooltip :content="t('common.passwordCopy')" placement="top">
-                  <el-button
-                    :icon="DocumentCopy"
-                    :disabled="!form.newPassword"
-                    :aria-label="t('common.passwordCopy')"
-                    @click="onCopy"
-                  />
-                </el-tooltip>
-              </template>
-            </el-input>
-            <div class="field-hint">
-              {{ t('myAccount.hintNewPassword') }}
-              <span v-if="form.newPassword" class="me-strength" :class="`me-strength--${strength}`">
-                {{ getPasswordStrengthLabel(strength) }}
-              </span>
+      <div class="me-layout">
+        <section class="me-panel me-panel--context">
+          <div class="me-panel__header">
+            <div>
+              <h2>{{ t('myAccount.accountContextTitle') }}</h2>
+              <p>{{ t('myAccount.accountContextDescription') }}</p>
             </div>
-          </el-form-item>
+          </div>
 
-          <el-form-item :label="t('myAccount.fieldConfirmPassword')" prop="confirmPassword">
-            <el-input
-              v-model="form.confirmPassword"
-              type="password"
-              show-password
-              :placeholder="t('myAccount.placeholderConfirmPassword')"
-              maxlength="256"
-              autocomplete="new-password"
-            />
-          </el-form-item>
+          <div class="me-identity">
+            <div class="me-identity__avatar" aria-hidden="true"><UserRound :size="21" /></div>
+            <div class="me-identity__details">
+              <span class="me-identity__label">{{ t('myAccount.fieldUsername') }}</span>
+              <strong>{{ auth.userInfo?.username || '—' }}</strong>
+              <span class="me-identity__role">{{ formalRoleLabel }}</span>
+            </div>
+          </div>
 
-          <el-form-item>
-            <el-button type="primary" :loading="submitting" class="me-submit" @click="submit">
-              {{ t('myAccount.btnSubmit') }}
-            </el-button>
-            <el-button @click="onReset">{{ t('common.reset') }}</el-button>
-          </el-form-item>
-        </el-form>
-      </section>
+          <dl class="me-facts">
+            <div class="me-fact">
+              <dt>{{ t('myAccount.fieldTenant') }}</dt>
+              <dd>{{ tenant.tenantId || '—' }}</dd>
+            </div>
+          </dl>
+
+          <div class="me-permissions">
+            <span class="me-permissions__label">{{ t('myAccount.fieldPermissions') }}</span>
+            <div class="me-permissions__list">
+              <el-tag
+                v-for="p in visiblePermissions"
+                :key="p"
+                size="small"
+                effect="plain"
+                class="me-perm-tag"
+              >
+                {{ p }}
+              </el-tag>
+              <span v-if="hiddenPermissionCount > 0" class="me-permissions__more">
+                {{ t('myAccount.permissionsMore', { count: hiddenPermissionCount }) }}
+              </span>
+              <span v-if="visiblePermissions.length === 0" class="me-permissions__more">—</span>
+            </div>
+          </div>
+
+          <el-alert
+            v-if="!showPasswordReminder && isPasswordExpiringSoon"
+            type="warning"
+            :title="t('myAccount.expiringTitle', { days: auth.userInfo?.passwordExpiringIn })"
+            show-icon
+            :closable="false"
+            class="me-alert"
+          />
+        </section>
+
+        <section class="me-panel me-panel--form" aria-labelledby="change-password-title">
+          <div class="me-panel__header">
+            <div>
+              <h2 id="change-password-title">{{ t('myAccount.changePasswordTitle') }}</h2>
+              <p>{{ t('myAccount.changePasswordDescription') }}</p>
+            </div>
+            <KeyRound :size="19" aria-hidden="true" />
+          </div>
+
+          <el-form
+            ref="formRef"
+            :model="form"
+            :rules="formRules"
+            label-position="top"
+            hide-required-asterisk
+            class="me-form"
+          >
+            <el-form-item :label="t('myAccount.fieldOldPassword')" prop="oldPassword">
+              <el-input
+                v-model="form.oldPassword"
+                type="password"
+                show-password
+                :placeholder="t('myAccount.placeholderOldPassword')"
+                maxlength="256"
+                autocomplete="current-password"
+              />
+            </el-form-item>
+
+            <el-form-item :label="t('myAccount.fieldNewPassword')" prop="newPassword">
+              <StrongPasswordInput
+                v-model="form.newPassword"
+                :placeholder="t('myAccount.placeholderNewPassword')"
+                :show-strength="false"
+                actions-outside
+                @generated="onGen"
+              />
+              <div class="field-hint">
+                {{ t('myAccount.hintNewPassword') }}
+                <span
+                  v-if="form.newPassword"
+                  class="me-strength"
+                  :class="`me-strength--${strength}`"
+                >
+                  {{ getPasswordStrengthLabel(strength) }}
+                </span>
+              </div>
+            </el-form-item>
+
+            <el-form-item :label="t('myAccount.fieldConfirmPassword')" prop="confirmPassword">
+              <el-input
+                v-model="form.confirmPassword"
+                type="password"
+                show-password
+                :placeholder="t('myAccount.placeholderConfirmPassword')"
+                maxlength="256"
+                autocomplete="new-password"
+              />
+            </el-form-item>
+
+            <el-form-item>
+              <el-button type="primary" :loading="submitting" class="me-submit" @click="submit">
+                {{ t('myAccount.btnSubmit') }}
+              </el-button>
+              <el-button @click="onReset">{{ t('common.reset') }}</el-button>
+            </el-form-item>
+          </el-form>
+        </section>
+      </div>
     </div>
   </PageContainer>
 </template>
@@ -174,23 +148,14 @@
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
   import type { FormInstance, FormRules } from 'element-plus'
-  import {
-    Copy as DocumentCopy,
-    KeyRound,
-    ShieldCheck,
-    Sparkles as MagicStick,
-    UserRound,
-  } from '@lucide/vue'
+  import { KeyRound, ShieldCheck, UserRound } from '@lucide/vue'
   import { authApi } from '@/api/auth'
   import { useAuthStore } from '@/stores/auth'
   import { useTenantStore } from '@/stores/tenant'
-  import {
-    generatePassword,
-    passwordStrength,
-    getPasswordStrengthLabel,
-  } from '@/utils/passwordGenerator'
+  import { passwordStrength, getPasswordStrengthLabel } from '@/utils/passwordGenerator'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
+  import StrongPasswordInput from '@/components/common/StrongPasswordInput.vue'
   import { authorityRoleLabelKeyMap, resolveAuthorityRole } from '@/constants/role'
 
   const { t } = useI18n({ useScope: 'global' })
@@ -206,7 +171,7 @@
   const visiblePermissions = computed(() => (auth.userInfo?.permissions ?? []).slice(0, 6))
   const formalRoleLabel = computed(() => {
     const role = resolveAuthorityRole(auth.userInfo?.permissions ?? [])
-    return role ? `${t(authorityRoleLabelKeyMap[role])} (${role})` : '—'
+    return role ? t(authorityRoleLabelKeyMap[role]) : '—'
   })
   const hiddenPermissionCount = computed(() =>
     Math.max((auth.userInfo?.permissions?.length ?? 0) - visiblePermissions.value.length, 0),
@@ -243,20 +208,8 @@
     ],
   }
 
-  function onGen() {
-    form.newPassword = generatePassword(16)
-    form.confirmPassword = form.newPassword
-    ElMessage.success(t('common.passwordGeneratedToast'))
-  }
-
-  async function onCopy() {
-    if (!form.newPassword) return
-    try {
-      await navigator.clipboard.writeText(form.newPassword)
-      ElMessage.success(t('common.passwordCopiedToast'))
-    } catch {
-      ElMessage.warning(t('common.passwordCopyFailed'))
-    }
+  function onGen(password: string) {
+    form.confirmPassword = password
   }
 
   function onReset() {
@@ -290,97 +243,89 @@
 </script>
 
 <style scoped>
-  .me-hero {
+  .me-page {
+    display: flex;
+    flex-direction: column;
+    gap: var(--page-section-gap);
+    width: min(100%, 75rem);
+    margin-inline: auto;
+  }
+
+  .me-notice {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr);
     align-items: center;
-    gap: 14px;
-    padding: 16px 20px;
-    border: 1px solid var(--color-border-light);
-    border-radius: 10px;
-    background: linear-gradient(
-      135deg,
-      color-mix(in srgb, var(--color-primary) 6%, var(--color-bg-card)) 0%,
-      var(--color-bg-card) 54%
-    );
-    box-shadow: 0 1px 2px color-mix(in srgb, #1f2937 5%, transparent);
+    gap: var(--space-sm);
+    padding: var(--space-sm) var(--space-md);
+    border: 1px solid color-mix(in srgb, var(--color-warning) 30%, var(--color-border-light));
+    border-radius: var(--radius-content);
+    background: color-mix(in srgb, var(--color-warning) 7%, var(--color-bg-card));
   }
 
-  .me-hero--reminder {
-    border-color: color-mix(in srgb, var(--color-warning) 32%, var(--color-border-light));
-    background: linear-gradient(
-      135deg,
-      color-mix(in srgb, var(--color-warning) 10%, var(--color-bg-card)) 0%,
-      var(--color-bg-card) 58%
-    );
-  }
-
-  .me-hero__icon {
+  .me-notice__icon {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 46px;
-    height: 46px;
-    color: var(--color-primary);
-    border: 1px solid color-mix(in srgb, var(--color-primary) 22%, var(--color-border-light));
-    border-radius: 10px;
-    background: color-mix(in srgb, var(--color-primary) 8%, var(--color-bg-card));
-  }
-
-  .me-hero--reminder .me-hero__icon {
+    width: var(--control-height-lg);
+    height: var(--control-height-lg);
+    border-radius: 50%;
     color: var(--color-warning);
-    border-color: color-mix(in srgb, var(--color-warning) 28%, var(--color-border-light));
-    background: color-mix(in srgb, var(--color-warning) 12%, var(--color-bg-card));
+    background: color-mix(in srgb, var(--color-warning) 13%, var(--color-bg-card));
   }
 
-  .me-hero__content {
+  .me-notice__content {
     min-width: 0;
   }
 
-  .me-hero__topline {
+  .me-notice__heading {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 8px;
-    margin-bottom: 6px;
+    gap: var(--space-sm);
   }
 
-  .me-hero__tenant {
-    font-size: 12px;
-    color: var(--color-text-tertiary);
+  .me-notice__heading :deep(.el-tag) {
+    flex: 0 0 auto;
   }
 
-  .me-hero h2 {
+  .me-notice h2 {
     margin: 0;
-    font-size: 19px;
-    font-weight: 650;
-    line-height: 1.28;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    line-height: 1.4;
     color: var(--color-text-primary);
     letter-spacing: 0;
   }
 
-  .me-hero p {
-    max-width: 760px;
-    margin: 5px 0 0;
-    font-size: 13px;
+  .me-notice p {
+    margin: var(--space-xs) 0 0;
+    font-size: 0.8125rem;
     line-height: 1.6;
     color: var(--color-text-secondary);
   }
 
   .me-layout {
     display: grid;
-    grid-template-columns: minmax(280px, 0.82fr) minmax(420px, 1fr);
-    gap: 16px;
-    align-items: start;
+    grid-template-columns: minmax(15rem, 0.62fr) minmax(0, 1.38fr);
+    gap: var(--space-lg);
+    align-items: stretch;
   }
 
   .me-panel {
     min-width: 0;
-    padding: 18px 20px;
+  }
+
+  .me-panel--context {
+    padding: var(--space-md) var(--space-md) var(--space-md) var(--space-xs);
+    border-right: 1px solid var(--color-border-light);
+  }
+
+  .me-panel--form {
+    padding: var(--space-md) var(--space-lg);
     border: 1px solid var(--color-border-light);
-    border-radius: 10px;
+    border-radius: var(--radius-content);
     background: var(--color-bg-card);
-    box-shadow: 0 1px 2px color-mix(in srgb, #1f2937 5%, transparent);
+    box-shadow: var(--shadow-card);
   }
 
   .me-panel__header {
@@ -388,12 +333,12 @@
     align-items: flex-start;
     justify-content: space-between;
     gap: var(--space-md);
-    margin-bottom: 14px;
+    margin-bottom: var(--space-md);
   }
 
   .me-panel__header h2 {
     margin: 0;
-    font-size: 15px;
+    font-size: 0.875rem;
     font-weight: 650;
     line-height: 1.4;
     color: var(--color-text-primary);
@@ -401,16 +346,60 @@
   }
 
   .me-panel__header p {
-    margin: 4px 0 0;
-    font-size: 13px;
+    margin: var(--space-xs) 0 0;
+    font-size: 0.8125rem;
     line-height: 1.6;
     color: var(--color-text-tertiary);
   }
 
   .me-panel__header svg {
     flex: none;
-    margin-top: 2px;
+    margin-top: 0;
     color: var(--color-text-tertiary);
+  }
+
+  .me-identity {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    margin: var(--space-md) 0;
+  }
+
+  .me-identity__avatar {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    width: var(--control-height-lg);
+    height: var(--control-height-lg);
+    border: 1px solid color-mix(in srgb, var(--color-primary) 24%, var(--color-border-light));
+    border-radius: 50%;
+    color: var(--color-primary);
+    background: color-mix(in srgb, var(--color-primary) 9%, var(--color-bg-card));
+  }
+
+  .me-identity__details {
+    display: grid;
+    min-width: 0;
+    gap: var(--space-xs);
+  }
+
+  .me-identity__label {
+    font-size: 0.75rem;
+    color: var(--color-text-tertiary);
+  }
+
+  .me-identity__details strong {
+    overflow-wrap: anywhere;
+    font-size: 1rem;
+    font-weight: 650;
+    line-height: 1.35;
+    color: var(--color-text-primary);
+  }
+
+  .me-identity__role {
+    font-size: 0.75rem;
+    color: var(--color-text-secondary);
   }
 
   .me-facts {
@@ -421,20 +410,15 @@
 
   .me-fact {
     display: grid;
-    grid-template-columns: 86px minmax(0, 1fr);
-    gap: 12px;
-    align-items: center;
-    min-height: 44px;
-    padding: 8px 0;
+    grid-template-columns: 1fr;
+    gap: var(--space-xs);
+    align-items: start;
+    padding: var(--space-sm) 0;
     border-bottom: 1px solid var(--color-border-light);
   }
 
-  .me-fact:last-child {
-    border-bottom: none;
-  }
-
   .me-fact dt {
-    font-size: 12px;
+    font-size: 0.75rem;
     color: var(--color-text-tertiary);
   }
 
@@ -442,28 +426,26 @@
     min-width: 0;
     margin: 0;
     overflow-wrap: anywhere;
-    font-size: 14px;
+    font-size: 0.8125rem;
     font-weight: 600;
     color: var(--color-text-primary);
   }
 
   .me-permissions {
-    margin-top: 12px;
-    padding-top: 14px;
-    border-top: 1px solid var(--color-border-light);
+    margin-top: var(--space-md);
   }
 
   .me-permissions__label {
     display: block;
-    margin-bottom: 10px;
-    font-size: 12px;
+    margin-bottom: var(--space-sm);
+    font-size: 0.75rem;
     color: var(--color-text-tertiary);
   }
 
   .me-permissions__list {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
+    gap: var(--space-xs);
   }
 
   .me-perm-tag {
@@ -473,52 +455,52 @@
   .me-permissions__more {
     display: inline-flex;
     align-items: center;
-    min-height: 24px;
-    font-size: 12px;
+    min-height: 1.5rem;
+    font-size: 0.75rem;
     color: var(--color-text-tertiary);
   }
 
   .me-alert {
-    margin-top: 16px;
+    margin-top: var(--space-md);
   }
 
   .me-form {
-    max-width: 560px;
+    max-width: 40rem;
   }
 
   .me-form :deep(.el-form-item__label) {
-    padding-bottom: 6px;
+    padding-bottom: var(--space-xs);
     font-weight: 600;
     color: var(--color-text-secondary);
   }
 
   .me-form :deep(.el-form-item) {
-    margin-bottom: 17px;
+    margin-bottom: var(--space-md);
   }
 
   .me-form :deep(.el-input__wrapper) {
-    min-height: 36px;
+    min-height: var(--control-height-lg);
     border-radius: var(--radius-button);
   }
 
   .me-form :deep(.el-form-item__error) {
-    padding-top: 3px;
-    font-size: 12px;
+    padding-top: var(--space-xs);
+    font-size: 0.75rem;
   }
 
   .me-submit {
-    min-width: 108px;
+    min-width: 7.25rem;
   }
 
   .field-hint {
-    margin-top: 3px;
-    font-size: 12px;
+    margin-top: var(--space-xs);
+    font-size: 0.75rem;
     line-height: 1.45;
     color: var(--color-text-tertiary);
   }
 
   .me-strength {
-    margin-left: 8px;
+    margin-left: var(--space-sm);
     font-weight: 600;
   }
   .me-strength--0,
@@ -535,28 +517,38 @@
 
   @media (max-width: 980px) {
     .me-layout {
-      grid-template-columns: 1fr;
+      grid-template-columns: minmax(0, 1fr);
+      gap: var(--space-md);
+    }
+
+    .me-panel--context {
+      padding: var(--space-sm) 0 var(--space-md);
+      border-right: 0;
+      border-bottom: 1px solid var(--color-border-light);
     }
   }
 
   @media (max-width: 640px) {
-    .me-hero,
-    .me-panel {
-      padding: 18px;
+    .me-page {
+      width: 100%;
     }
 
-    .me-hero {
-      grid-template-columns: 1fr;
+    .me-notice {
+      align-items: start;
+      padding: var(--space-sm);
     }
 
-    .me-hero__icon {
-      width: 48px;
-      height: 48px;
+    .me-notice__icon {
+      width: var(--space-xl);
+      height: var(--space-xl);
     }
 
-    .me-fact {
-      grid-template-columns: 1fr;
-      gap: 4px;
+    .me-panel--context {
+      padding-top: 4px;
+    }
+
+    .me-panel--form {
+      padding: var(--space-md);
     }
 
     .me-form :deep(.el-form-item__content) {

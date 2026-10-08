@@ -1,15 +1,38 @@
 <template>
-  <el-input
-    v-model="model"
-    type="password"
-    show-password
-    :placeholder="placeholder || t('common.passwordHint')"
-    :maxlength="maxlength"
-    @input="onChange"
+  <div
+    class="strong-password-input"
+    :class="{ 'strong-password-input--actions-outside': actionsOutside }"
   >
-    <template #append>
+    <el-input
+      v-model="model"
+      type="password"
+      show-password
+      :placeholder="placeholder || t('common.passwordHint')"
+      :maxlength="maxlength"
+      @input="onChange"
+    >
+      <template v-if="!actionsOutside" #append>
+        <el-tooltip :content="t('common.passwordGenerate')" placement="top">
+          <el-button
+            :icon="MagicStick"
+            :aria-label="t('common.passwordGenerate')"
+            @click="onGenerate"
+          />
+        </el-tooltip>
+        <el-tooltip :content="t('common.passwordCopy')" placement="top">
+          <el-button
+            :icon="DocumentCopy"
+            :disabled="!model"
+            :aria-label="t('common.passwordCopy')"
+            @click="onCopy"
+          />
+        </el-tooltip>
+      </template>
+    </el-input>
+    <div v-if="actionsOutside" class="pwd-actions">
       <el-tooltip :content="t('common.passwordGenerate')" placement="top">
         <el-button
+          circle
           :icon="MagicStick"
           :aria-label="t('common.passwordGenerate')"
           @click="onGenerate"
@@ -17,14 +40,15 @@
       </el-tooltip>
       <el-tooltip :content="t('common.passwordCopy')" placement="top">
         <el-button
+          circle
           :icon="DocumentCopy"
           :disabled="!model"
           :aria-label="t('common.passwordCopy')"
           @click="onCopy"
         />
       </el-tooltip>
-    </template>
-  </el-input>
+    </div>
+  </div>
   <div v-if="model && showStrength" class="pwd-meta">
     <div class="pwd-strength" :class="`pwd-strength--${strength.level}`">
       <span class="pwd-strength__bar" :style="{ width: strength.score * 25 + '%' }" />
@@ -61,8 +85,10 @@
       maxlength?: number
       /** 是否显示强度指示条,默认 true */
       showStrength?: boolean
+      /** 将生成/复制按钮放在输入框外侧,适用于需要与相邻输入框等宽的表单 */
+      actionsOutside?: boolean
     }>(),
-    { placeholder: '', length: 16, maxlength: 256, showStrength: true },
+    { placeholder: '', length: 16, maxlength: 256, showStrength: true, actionsOutside: false },
   )
 
   const emit = defineEmits<{
@@ -114,6 +140,55 @@
 </script>
 
 <style scoped>
+  .strong-password-input {
+    display: flex;
+    width: 100%;
+  }
+
+  .strong-password-input--actions-outside {
+    width: calc(100% + 2 * var(--control-height-lg) + 2 * var(--control-inline-gap));
+    flex: 0 0 auto;
+    align-items: flex-start;
+    gap: var(--control-inline-gap);
+  }
+
+  .strong-password-input--actions-outside :deep(.el-input) {
+    flex: 1 1 0;
+    width: 0;
+    min-width: 0;
+  }
+
+  .pwd-actions {
+    display: flex;
+    flex: 0 0 auto;
+    gap: var(--control-inline-gap);
+  }
+
+  .pwd-actions :deep(.el-button) {
+    flex: 0 0 var(--control-height-lg);
+    min-width: var(--control-height-lg);
+    width: var(--control-height-lg);
+    height: var(--control-height-lg);
+    min-height: var(--control-height-lg);
+    margin: 0;
+    padding: 0;
+  }
+
+  @media (max-width: 1360px) {
+    .strong-password-input--actions-outside {
+      width: 100%;
+      flex-wrap: wrap;
+    }
+
+    .strong-password-input--actions-outside :deep(.el-input) {
+      flex-basis: 100%;
+    }
+
+    .strong-password-input--actions-outside .pwd-actions {
+      width: 100%;
+    }
+  }
+
   .pwd-meta {
     margin-top: 4px;
     display: flex;
