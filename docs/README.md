@@ -1,9 +1,5 @@
 # 前端文档索引
 
-- [批量账号开户待办](backlog/bulk-user-provisioning.md)：Bulk User Provisioning 的 Preview/Apply、租户/角色约束、初始凭据与前端验收清单。
-
-- [前端 Compose CD 路线](runbook/compose-cd-roadmap.md)：与后端统一 release set、digest 晋级、staging 验收、production 审批与回滚待办。
-
 本文档是 `batch-console` 的文档入口。所有文档按「权威设计 / 阶段报告 / 归档材料」分层维护:长期规则只放一处,阶段性结论保留日期,过时材料归档参考。
 
 ## 产品使用指南
@@ -28,7 +24,7 @@
 | -------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
 | [项目结构图](./architecture/project-structure.md)                                      | 顶层 + src 子目录 + 关键 composable + npm script(2026-06-03 新增) |
 | [前端方案设计说明书 V3](./engineering/批量调度系统前端方案设计说明书_开发落地版_V3.md) | 前端总体方案:业务域 / 路由 / 页面职责 / 组件分层 / 联调边界       |
-| [Batch Console 重设计资料](./redesign/README.md)                                       | 当前设计来源、覆盖矩阵、原型证据与历史实施计划归档                |
+| [设计 Token 治理](./engineering/design-tokens.md)                                       | 运行时 token 权威源；根目录 `design/` 是不发布到文档站的本地只读参考 |
 | [wrapper 迁移记录](./engineering/fe-wrapper-migration-plan.md)                         | 已完成批次、剩余边界与后续迁移规则                                  |
 | [页面命名约定](./engineering/page-naming-convention.md)                                | URL / 代码目录 / 侧边栏分组三者一致规则                           |
 | [前端工程成熟度路线图](./engineering/engineering-maturity-roadmap.md)                  | 大厂工程实践对齐、上线准入、UI 治理和验收证据分层                 |
@@ -47,7 +43,6 @@
 | [meta-enum 覆盖清单](./engineering/meta-enum-coverage.md)                              | 后端枚举元数据 → 筛选项 / 状态标签覆盖                            |
 | [移动端刷新策略](./engineering/mobile-refresh-strategy.md)                             | `/m/*` 下拉 / 自动刷新设计                                        |
 | [统一文档站](./engineering/unified-documentation-site.md)                              | 当前 VitePress 单站构建、路径、部署与权限边界                     |
-| [内嵌文档中心方案](./engineering/内嵌文档中心方案.md)                                  | 早期后端独立站方案（历史参考）                                    |
 | [API 文档说明](./api/README.md)                                                        | 指向后端权威 OpenAPI / Protocol,前端不维护副本                    |
 
 ## 运维 / QA
@@ -57,7 +52,7 @@
 | [**前端测试体系**](./testing/README.md)         | ★ 测试分层 / 可复用 helper / 可复制测试案例模板 / 运行 / CI 门禁 / 常见坑(写测试先读) |
 | [运维 / QA 索引](./runbook/README.md)           | CI / dev-workflow / rollback / 联测计划与报告入口                                     |
 | [审计资料索引](./audits/README.md)              | UI / UX / 可用性审计证据与截图                                                        |
-| [QA D 档总评](./qa/d-tier/)                     | P1-P5 + P5b 完整闭环                                                                  |
+| [QA 文档索引](./qa/README.md)                    | 当前测试指南与已关闭 campaign 的适用边界                                                |
 | [部署:Docker + Nginx](./deploy/docker-nginx.md) | 容器化部署                                                                            |
 | [部署:裸 Linux + Nginx](./deploy/linux-nginx.md) | 原生 Nginx、静态制品、HTTPS、发布与回滚                                                |
 | [发布晋级](./runbook/release-promotion.md)      | staging 验收、不可变镜像晋级和发布阻断                                                |
@@ -65,6 +60,8 @@
 | [前端事故处理](./runbook/frontend-incident.md)  | 白屏、静态资源、API、缓存与 CSP 故障处置                                              |
 | [可观测性运行手册](./runbook/observability.md)  | Sentry、遥测、采样和告警边界                                                          |
 | [GitHub 安全告警治理](./runbook/security-alert-governance.md) | 告警分类、修复边界、误报依据与合并后确认 |
+| [批量账号开户环境验收](./backlog/bulk-user-provisioning.md) | 已交付功能的真实后端并发、审计检索与安全验收边界 |
+| [Compose CD 路线图](./runbook/compose-cd-roadmap.md) | 规划中的统一 release set 自动晋级；不是当前已落地部署流程 |
 
 ## 阶段性报告(reports/)
 
@@ -83,14 +80,9 @@
 
 > 4 月报告(2026-04-\*)已归档到 `archive/`,2026-05-13 IA 重构 / 2026-04-22 UI audit 也已归档。
 
-## 部署 / CD 验证记录(verifications/)
+完整日期化清单见[阶段报告索引](./reports/README.md)。已完成的实施清单和一次性验收快照不再留在 `backlog/`。
 
-真实环境跑通的验证留痕(发布 / CD 流程实测,非日常开发入口)。
-
-| 日期       | 验证                                                                 | 关注点              |
-| ---------- | -------------------------------------------------------------------- | ------------------- |
-| 2026-05-28 | [CD E2E](./verifications/cd-e2e-2026-05-28.md)                       | CD 流水线端到端验证 |
-| 2026-05-28 | [CD 前端脚本部署](./verifications/cd-fe-script-deploy-2026-05-28.md) | 前端脚本化部署验证  |
+真实环境 CD 验证留痕保存在被文档站排除的 `docs/verifications/`，仅作历史证据；当前发布流程见[发布晋级](./runbook/release-promotion.md)和[上线准入清单](./runbook/go-live-readiness-checklist.md)。
 
 ## 归档材料(archive/)
 
@@ -100,6 +92,8 @@
 - 2026-04-22 Console UI/UX audit / 2026-05-13 IA 重构(已落地)
 - 2026-05-21 / 2026-05-23 FE acceptance 报告(历史)
 - 2026-04-01 多步骤对话落地指南(早期 AI 协作)
+- 2026-05 QA campaign、旧密码方案和废弃文档站提案
+- 2026-07 视觉原型与已完成重设计计划
 
 ## 常见任务入口
 
@@ -116,6 +110,7 @@
 
 - 长期工程规则放 `engineering/`,视觉重设计资产放根 `../design/`,避免散落到报告。
 - 阶段性报告放 `reports/`,文件名 `YYYY-MM-DD-` 前缀。
+- `backlog/` 只保留尚未完成且有明确验收条件的事项；已交付实施和日期快照移入 `reports/`，失效方案移入 `archive/`。
 - 已失效流程放 `archive/`,顶部说明当前适用性。
 - 新增 / 移动 / 归档文档时同步更新本索引。
 - 涉及接口 / 路由 / 导航 / 测试策略的文档变更,应同时核对代码中的权威入口,避免再次漂移。

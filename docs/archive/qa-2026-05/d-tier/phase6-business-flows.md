@@ -2,7 +2,7 @@
 
 > 生成: 2026-05-18
 > 范围: SQL seed 完整运行时数据 → playwright 跑 9 个跨页业务流程 → watchdog 兜底 0 4xx/5xx
-> spec: [e2e/business-flows.spec.ts](../../../e2e/business-flows.spec.ts)
+> spec: [e2e/business-flows.spec.ts](../../../../e2e/business-flows.spec.ts)
 
 ## 结果
 

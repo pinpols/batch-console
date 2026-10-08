@@ -14,24 +14,14 @@
 | [前端事故处理](./frontend-incident.md) | 白屏、静态资源、API 和 PWA 缓存故障 |
 | [可观测性](./observability.md) | Sentry、遥测、告警和数据边界 |
 | [维护与降级前端实施方案](../engineering/maintenance-degradation-implementation-plan.md) | 维护公告、写操作冻结、503 跳转和下游降级提示 |
-| [密码安全历史记录](./password-security-backlog.md) | 2026-05-18 密码治理方案与当前实现差异；不作为现行待办 |
 
 ## QA 阶段报告（日期化证据）
 
-- [D 档 QA 阶段总评](../qa/d-tier/) — P1-P5 + P5b 日期化证据(2026-06-03 移到 `docs/qa/d-tier/` 统一 QA 目录)；不替代当前门禁。
+- C/D 档 QA campaign 历史证据位于仓库内 `docs/archive/qa-2026-05/`，不发布到文档站，也不替代当前门禁。
 
-## 历史联调计划 / 日期化报告
+## 历史验收证据
 
-| 文档 | 阶段 |
-|---|---|
-| [FE-QA D 档计划](./fe-qa-d-tier-plan.md) | D 档历史执行计划 |
-| [FE-QA D 档报告](./fe-qa-d-tier-report.md) | D 档日期化总结 |
-| [FE-QA C 档计划](./fe-qa-c-tier-plan.md) | C 档历史执行计划 |
-| [FE-QA C 档报告](./fe-qa-c-tier-report.md) | C 档日期化总结 |
-| [FE-BE 联测计划](./fe-be-joint-test-plan.md) | 历史联测方案与档位定义 |
-| [FE-BE 联测报告](./fe-be-joint-test-report.md) | 日期化联测总报告 |
-| [FE-BE 联测 B+/C+ 报告](./fe-be-joint-test-report-bplus-cplus.md) | B+/C+ 日期化增量 |
-| [QA C baseline](./qa-c-baseline.md) | C 档历史基线（仅作当时记账，不代表当前门禁） |
+C/D 档 QA campaign、联测计划与历史基线均已关闭并移至仓库内 `docs/archive/qa-2026-05/`。其中的数字是当时快照，不代表当前门禁或发布结论。
 
 ## 附加资料
 

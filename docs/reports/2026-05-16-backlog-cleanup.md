@@ -14,9 +14,9 @@
 
 | 文件 | 改动 |
 |---|---|
-| [src/stores/auth.ts:62](src/stores/auth.ts#L62) | login 成功后 `sessionStorage.setItem('batch-console:dev-access-token', result.token)` |
-| [src/stores/auth.ts:79](src/stores/auth.ts#L79) | logout 同步 removeItem |
-| [src/api/interceptors.ts:195](src/api/interceptors.ts#L195) | 请求拦截器在 DEV 模式从 sessionStorage 读 token,作 Authorization header 兜底 |
+| [src/stores/auth.ts:62](../../src/stores/auth.ts#L62) | login 成功后 `sessionStorage.setItem('batch-console:dev-access-token', result.token)` |
+| [src/stores/auth.ts:79](../../src/stores/auth.ts#L79) | logout 同步 removeItem |
+| [src/api/interceptors.ts:195](../../src/api/interceptors.ts#L195) | 请求拦截器在 DEV 模式从 sessionStorage 读 token,作 Authorization header 兜底 |
 
 **安全性**:
 - ✅ Prod 不启用,生产构建 tree-shake 掉相关分支
@@ -41,8 +41,8 @@ URL 切到 /ops/summary ✓
 
 | 文件 | 改动 |
 |---|---|
-| [src/views/system/components/tenantConfigTypes.ts](src/views/system/components/tenantConfigTypes.ts) | `RESERVED_TENANT_IDS` / `TEMPLATE_TENANT_ID` 从 export → 模块内部(仅 isReservedTenant / isTemplateTenant 对外导出) |
-| [src/components/common/docsRegistry.ts](src/components/common/docsRegistry.ts) | `getDocsBase` 同处理 |
+| [src/views/system/components/tenantConfigTypes.ts](../../src/views/system/components/tenantConfigTypes.ts) | `RESERVED_TENANT_IDS` / `TEMPLATE_TENANT_ID` 从 export → 模块内部(仅 isReservedTenant / isTemplateTenant 对外导出) |
+| [src/components/common/docsRegistry.ts](../../src/components/common/docsRegistry.ts) | `getDocsBase` 同处理 |
 
 **未做的死代码**(故意保留,有 codegen / 间接引用风险):
 - `api/system.ts` 11 个 query 方法 — 大概率是 OpenAPI codegen 模板会再加回

@@ -1,6 +1,6 @@
 # D 档 QA 阶段报告
 
-> **历史快照**：角色相关数字记录的是当时测试环境，已被四角色模型取代。当前授权依据见[角色与页面矩阵](../../user-guide/role-page-matrix.md)。
+> **历史快照**：角色相关数字记录的是当时测试环境，已被四角色模型取代。当前授权依据见[角色与页面矩阵](../../../user-guide/role-page-matrix.md)。
 
 > 目标:真实场景不会报错 4xx/5xx;前端短联合调试结束;所有 CRUD 接口覆盖(除 AI)
 > 流程:Phase 1 (API 直打) → Phase 2 (UI 真实场景全量) → Phase 3 (真实用户行为闭环 + 清理)
@@ -44,11 +44,11 @@ Phase 3 闭环:    9/0     跨 9 页面 CRUD,全程 0 unignored 4xx/5xx
 
 | 文件 | 作用 |
 |---|---|
-| [e2e/support/fixtures.ts](../../../e2e/support/fixtures.ts) | 全局 `network` watchdog,所有 spec 自动抓 ≥400,失败时落 `network.log` |
-| [e2e/support/crud-smoke.ts](../../../e2e/support/crud-smoke.ts) | `readOnlyPageSmoke()` helper |
-| [e2e/all-pages-zero-error.spec.ts](../../../e2e/all-pages-zero-error.spec.ts) | 34 页 0-4xx/5xx 巡检 |
-| [e2e/job-definition-crud.spec.ts](../../../e2e/job-definition-crud.spec.ts) | 补 JobDefinition CRUD 空白 |
-| [e2e/user-journey.spec.ts](../../../e2e/user-journey.spec.ts) | P3 跨页 CRUD 闭环 |
+| [e2e/support/fixtures.ts](../../../../e2e/support/fixtures.ts) | 全局 `network` watchdog,所有 spec 自动抓 ≥400,失败时落 `network.log` |
+| [e2e/support/crud-smoke.ts](../../../../e2e/support/crud-smoke.ts) | `readOnlyPageSmoke()` helper |
+| [e2e/all-pages-zero-error.spec.ts](../../../../e2e/all-pages-zero-error.spec.ts) | 34 页 0-4xx/5xx 巡检 |
+| [e2e/job-definition-crud.spec.ts](../../../../e2e/job-definition-crud.spec.ts) | 补 JobDefinition CRUD 空白 |
+| [e2e/user-journey.spec.ts](../../../../e2e/user-journey.spec.ts) | P3 跨页 CRUD 闭环 |
 
 ## P2 修补复盘(可复用)
 

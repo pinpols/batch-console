@@ -2,7 +2,7 @@
 
 > 生成: 2026-05-18
 > 范围: 一个登录态用户跨页 CRUD 闭环 + network watchdog 全程兜底
-> spec: [e2e/user-journey.spec.ts](../../../e2e/user-journey.spec.ts)
+> spec: [e2e/user-journey.spec.ts](../../../../e2e/user-journey.spec.ts)
 
 ## 结果
 

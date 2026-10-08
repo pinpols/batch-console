@@ -1,6 +1,6 @@
 /**
  * 表单 / 对话框测试通用 helpers — 给 *-validation.spec.ts 复用。
- * 见 docs/runbook/fe-qa-c-tier-plan.md §B.1。
+ * 历史测试设计来源:docs/archive/qa-2026-05/runbook/fe-qa-c-tier-plan.md §B.1。
  */
 import { type Page, type Locator, expect } from '@playwright/test'
 

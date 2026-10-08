@@ -3,7 +3,7 @@
  * 每个 endpoint 跑 400 / 500 / offline 三件套,断言 UI 兜底信号。
  *
  * 注入通过 page.route 客户端拦截,**不**动 production interceptor。
- * 见 fe-qa-c-tier-plan.md §B.2。
+ * 历史测试设计来源:docs/archive/qa-2026-05/runbook/fe-qa-c-tier-plan.md §B.2。
  */
 import { expect, test } from './support/app'
 import { enterDemoApp } from './support/app'

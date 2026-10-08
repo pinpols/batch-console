@@ -11,8 +11,7 @@
 | [移动端刷新策略](./mobile-refresh-strategy.md)                            | mobile `/m/*` 页面的下拉/自动刷新设计          |
 | [AI 对话流式交互](./ai-chat-streaming.md)                                  | SSE 协议、停止生成、文本附件及数据保留边界     |
 | [统一文档站](./unified-documentation-site.md)                           | 当前单站路径、构建和权限边界                   |
-| [内嵌文档中心方案](./内嵌文档中心方案.md)                                 | 早期方案，仅作历史参考                         |
 | [前端可观测性方案](./前端可观测性方案.md)                                 | FE 监控 / track / log 收口                     |
 | [Console 使用率统计前端方案](./console-usage-statistics-plan.md)          | 已落地页面、埋点边界、前后端契约与验收口径 |
 | [Console 维护与降级前端实施方案](./maintenance-degradation-implementation-plan.md) | 已落地维护/降级能力、剩余环境验收边界与联测口径 |
-| [Batch Console 重设计规格](../../design/batch-console-设计规格.md) | 根 `design/` 下的最新视觉设计规格              |
+| [设计 Token 治理](./design-tokens.md) | 当前运行时 token 规则；根 `design/` 视觉稿是仓库内只读输入，不发布到文档站 |

@@ -4,7 +4,7 @@
  * 覆盖 /m/* 的 P0 5 个页面 × 6 子用例(列表 / 刷新 / 筛选 / 主操作 / 空态 / 详情进入)
  * 用 mock-mode 跑(E2E_REAL_BE=1 时走真 BE)。
  *
- * 衔接 fe-qa-d-tier-plan.md
+ * 历史测试设计来源:docs/archive/qa-2026-05/runbook/fe-qa-d-tier-plan.md
  */
 import { devices } from '@playwright/test'
 import { test, expect } from './support/app'

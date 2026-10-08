@@ -1,6 +1,6 @@
-# Backlog: 客户端全量聚合(fetchAllPageItems)→ 服务端分页迁移
+# 客户端全量聚合(fetchAllPageItems)→ 服务端分页迁移完成记录
 
-> 状态：**P1 与 P2 运行态列表迁移已完成**。2026-10-01 复核确认审批、审计、告警、Step Instance、
+> 状态：**P1 与 P2 运行态列表迁移已完成**。本文的旧计划、风险分析和顺序只保留为决策记录，不是当前待办。2026-10-01 复核确认审批、审计、告警、Step Instance、
 > Workflow 与 Pipeline 观测主列表均使用服务端筛选和分页。仅配置字典、下拉关联解析及选中 Pipeline
 > 的有界步骤详情保留 `fetchAllPageItems`，不再作为高流量运行态列表的数据源。
 
@@ -53,10 +53,10 @@ job-definition / fileChannels / queues / governance / system 等:数据量受租
 **若纯前端改服务端分页而后端筛选参数不补**:keyword/status/bizDate 筛选会退化成"只在当前页生效"
 (用户筛不到下一页的匹配项)→ **比现在的 4000 截断更糟**。所以这是**前后端协同任务**,不是纯前端 fix。
 
-**正确顺序**:① 后端给 `/queries/*` 补业务筛选 query 参数(catch-up: status/bizDate/keyword;
+**当时的推荐顺序**:① 后端给 `/queries/*` 补业务筛选 query 参数(catch-up: status/bizDate/keyword;
 audits/alerts 同理)→ ② 前端把端上 `filtered` 逻辑改成传参 → ③ ProTable 服务端 total/page。
 
-## 迁移方向
+## 历史迁移方向（已由上方完成状态取代）
 
 1. **后端**:确认这些 `/queries/*` 端点支持服务端筛选参数(jobCode/status/时间范围等);缺的补。
 2. **前端**:🔴 类页面改成 `ProTable` 服务端分页(`v-model:page` + 服务端 total),不再 `fetchAllPageItems`。

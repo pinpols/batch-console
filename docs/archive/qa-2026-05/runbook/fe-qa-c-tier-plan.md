@@ -1,6 +1,6 @@
 # C 档 QA 完整覆盖 — 测试方案
 
-> **历史执行方案**：本文记录 C 档开工时的 baseline、计划和旧工具清单；执行结果见 [`fe-qa-c-tier-report.md`](./fe-qa-c-tier-report.md)，当前测试入口以 [`docs/testing/README.md`](../testing/README.md) 和实际代码为准。
+> **历史执行方案**：本文记录 C 档开工时的 baseline、计划和旧工具清单；执行结果见 [`fe-qa-c-tier-report.md`](./fe-qa-c-tier-report.md)，当前测试入口以[测试指南](../../../testing/README.md)和实际代码为准。
 
 > 衔接 [fe-be-joint-test-plan.md](./fe-be-joint-test-plan.md) 的档位定义。
 > A 档(冒烟)/ B 档(CRUD 闭环)已 PASS。本档目标:**表单校验 / 错误态 / 键盘 / a11y / 边界值** 的系统性 QA。

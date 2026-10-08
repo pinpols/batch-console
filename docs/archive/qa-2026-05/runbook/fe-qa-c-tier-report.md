@@ -1,6 +1,6 @@
 # C 档 QA 最终报告
 
-> **历史快照**：本报告记录当时的旧角色模型，不可作为现行授权依据。当前系统只接受 `ROLE_ADMIN`、`ROLE_AUDITOR`、`ROLE_TENANT_ADMIN`、`ROLE_TENANT_USER`，以[角色与页面矩阵](../user-guide/role-page-matrix.md)为准。
+> **历史快照**：本报告记录当时的旧角色模型，不可作为现行授权依据。当前系统只接受 `ROLE_ADMIN`、`ROLE_AUDITOR`、`ROLE_TENANT_ADMIN`、`ROLE_TENANT_USER`，以[角色与页面矩阵](../../../user-guide/role-page-matrix.md)为准。
 
 > 2026-05-17 完成。5 天计划 1 天压缩完成(因 B 档已预修 10 条 baseline)。
 > 衔接 [fe-qa-c-tier-plan.md](./fe-qa-c-tier-plan.md) + [qa-c-baseline.md](./qa-c-baseline.md)。
@@ -102,7 +102,7 @@ C 档结束后整体 e2e:
 
 ## 2026-05-17 RBAC 收尾
 
-跑 `e2e-data/rbac-check.sh` 时发现历史 seed 把 `ROLE_OPERATOR` / `ROLE_VIEWER` 塞进 `authorities_csv`,但 BE 实际只实现 5 个 Spring 角色,这两个仅是 [ConsoleMenuRegistry](../../../file-batch-system/batch-console-api/src/main/java/io/github/pinpols/batch/console/domain/rbac/support/ConsoleMenuRegistry.java) 的菜单档位标签。结果两个 test 用户 `/auth/me` 都 403。
+跑 `e2e-data/rbac-check.sh` 时发现历史 seed 把 `ROLE_OPERATOR` / `ROLE_VIEWER` 塞进 `authorities_csv`,但 BE 实际只实现 5 个 Spring 角色,这两个仅是 [ConsoleMenuRegistry](../../../../../file-batch-system/batch-console-api/src/main/java/io/github/pinpols/batch/console/domain/rbac/support/ConsoleMenuRegistry.java) 的菜单档位标签。结果两个 test 用户 `/auth/me` 都 403。
 
 **对齐处理**(option A,1h):
 - `seed-users.sql` / `users.json`:test-op-ta → `ROLE_TENANT_USER`,test-viewer-ta → `ROLE_USER`
