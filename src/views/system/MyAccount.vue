@@ -316,8 +316,11 @@
   }
 
   .me-panel--context {
-    padding: var(--space-md) var(--space-md) var(--space-md) var(--space-xs);
-    border-right: 1px solid var(--color-border-light);
+    padding: var(--space-md) var(--space-lg);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-content);
+    background: var(--color-bg-card);
+    box-shadow: var(--shadow-card);
   }
 
   .me-panel--form {
@@ -522,9 +525,7 @@
     }
 
     .me-panel--context {
-      padding: var(--space-sm) 0 var(--space-md);
-      border-right: 0;
-      border-bottom: 1px solid var(--color-border-light);
+      padding: var(--space-md);
     }
   }
 
@@ -544,7 +545,7 @@
     }
 
     .me-panel--context {
-      padding-top: 4px;
+      padding: var(--space-md);
     }
 
     .me-panel--form {
