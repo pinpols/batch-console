@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- 重设计“我的账户”页面的信息层级与等高双栏面板；新密码生成/复制操作移至输入框外侧，保证表单字段等宽并在窄屏下换行。
 - 收敛前端供应链治理：Node、GitHub Actions、Docker 基础镜像使用不可变版本与完整性校验，Renovate 改为季度只读盘点，不再自动创建或合并依赖 PR；受控覆盖 Mermaid 传递依赖 KaTeX 的低危漏洞版本。
 - 收紧 CodeQL 设计资料排除范围：仅排除离线 HTML 原型，同目录的 TypeScript/JavaScript 继续纳入安全扫描。
 - 对齐后端固定契约治理：Trigger 列表与操作使用生成响应类型，移除后端未接收的列表租户参数和多形态兼容解析；普通触发仍返回实例号，dry-run 对象分支补入 OpenAPI，Lineage 证据行改为精确生成字段，仅 metadata 保留动态 JSON。
