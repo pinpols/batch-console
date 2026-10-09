@@ -45,6 +45,15 @@ server {
         # add_header Access-Control-Allow-Origin "*" always;
     }
 
+    # OIDC 授权跳转与 IdP 回调由后端 Spring Security 处理，不能进入 SPA fallback。
+    location ^~ /oauth2/authorization/ {
+        include /etc/nginx/snippets/api-proxy.conf;
+    }
+
+    location ^~ /login/oauth2/code/ {
+        include /etc/nginx/snippets/api-proxy.conf;
+    }
+
     # ────── /docs/ 内嵌文档中心(VitePress 静态产物) ──────
     # 走 auth_request 鉴权:internal 子请求带原 cookie/header 到 BE /api/console/auth/check
     # BE 返 204 = 通过,401/403 = 拒绝(浏览器收到 401 后由 SPA 拦截器跳登录)

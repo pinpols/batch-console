@@ -21,6 +21,61 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/console/auth/oidc/provider': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Read public OIDC login availability
+     * @description Returns only whether the configured pilot login is enabled and its public registration id; never returns issuer credentials or tokens.
+     */
+    get: operations['getConsoleOidcProvider']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/auth/oidc/identities': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** List explicit OIDC identity bindings for the configured tenant */
+    get: operations['listConsoleOidcIdentities']
+    put?: never
+    /** Bind an OIDC subject to an existing local account */
+    post: operations['bindConsoleOidcIdentity']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/auth/oidc/identities/{id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    /** Remove an OIDC identity binding */
+    delete: operations['unbindConsoleOidcIdentity']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/console/auth/public-key': {
     parameters: {
       query?: never
@@ -11674,6 +11729,38 @@ export interface components {
       publicKey: string
       fingerprint: string
     }
+    /** @description 登录页可见的 OIDC 开关状态；不暴露 IdP 地址或客户端凭据。 */
+    ConsoleOidcProviderResponse: {
+      enabled: boolean
+      registrationId?: string | null
+    }
+    ConsoleOidcIdentityRequest: {
+      username: string
+      /** @description IdP 提供的精确、区分大小写的 OIDC sub 值；按 OIDC Core 限制为 ASCII。 */
+      subject: string
+    }
+    ConsoleOidcIdentityResponse: {
+      /** Format: int64 */
+      id: number
+      tenantId: string
+      /** Format: int64 */
+      accountId: number
+      username: string
+      issuer: string
+      subject: string
+      linkedBy: string
+      /** Format: date-time */
+      linkedAt: string
+    }
+    CommonResponseConsoleOidcProvider: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['ConsoleOidcProviderResponse']
+    }
+    CommonResponseConsoleOidcIdentity: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['ConsoleOidcIdentityResponse']
+    }
+    CommonResponseConsoleOidcIdentityList: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['ConsoleOidcIdentityResponse'][]
+    }
     CommonResponseConsoleLoginPublicKey: components['schemas']['CommonResponseBase'] & {
       data?: components['schemas']['ConsoleLoginPublicKeyResponse']
     }
@@ -12011,6 +12098,98 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['CommonResponseConsoleAuthTokenResponse']
+        }
+      }
+    }
+  }
+  getConsoleOidcProvider: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description OIDC login availability */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseConsoleOidcProvider']
+        }
+      }
+    }
+  }
+  listConsoleOidcIdentities: {
+    parameters: {
+      query: {
+        tenantId: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Identity bindings */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseConsoleOidcIdentityList']
+        }
+      }
+    }
+  }
+  bindConsoleOidcIdentity: {
+    parameters: {
+      query: {
+        tenantId: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ConsoleOidcIdentityRequest']
+      }
+    }
+    responses: {
+      /** @description Identity binding created */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseConsoleOidcIdentity']
+        }
+      }
+    }
+  }
+  unbindConsoleOidcIdentity: {
+    parameters: {
+      query: {
+        tenantId: string
+      }
+      header?: never
+      path: {
+        id: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Identity binding removed */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseVoid']
         }
       }
     }
