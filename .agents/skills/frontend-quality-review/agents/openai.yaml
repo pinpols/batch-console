@@ -1,0 +1,3 @@
+interface:
+  display_name: "前端综合质量审查"
+  short_description: "审查界面、代码可读性与浏览器安全"
