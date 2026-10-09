@@ -1,6 +1,7 @@
 import type { Messages } from './zh-CN'
 import userBatch from './userBatch.en-US.ts'
 import userAccountList from './userAccountList.en-US.ts'
+import jobMonitoringPolicy from './jobMonitoringPolicy.en-US.ts'
 
 const messages: Messages = {
   print: {
@@ -1463,6 +1464,11 @@ const messages: Messages = {
     jobsDefinitions: {
       title: 'Job definitions',
       description: 'Maintain job definitions, execution mode and scheduling rules.',
+    },
+    observabilityJobMonitoringPolicies: {
+      title: 'Job monitoring policies',
+      description:
+        'Set alert thresholds and severity for long runs, late starts and late completion.',
     },
     workflowDefinitions: {
       title: 'Workflow definitions',
@@ -4102,6 +4108,7 @@ const messages: Messages = {
     colBizDate: 'Biz Date',
     colCreatedAt: 'Created At',
   },
+  jobMonitoringPolicy,
   jobConfigBasic: {
     groupBasic: 'Basic',
     groupSchedule: 'Schedule',

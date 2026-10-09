@@ -115,6 +115,10 @@ export const pageMetaByPath = {
     title: '告警事件',
     description: '查看告警事件,并执行确认、静默和关闭。',
   },
+  '/observability/job-monitoring-policies': {
+    title: '作业监控策略',
+    description: '按作业维护耗时过久、到期未启动和到期未结束的告警阈值与等级。',
+  },
   '/observability/alert-routings': {
     title: '告警路由（预留）',
     description: '查看预留路由配置；当前运行时告警投递不读取这些记录。',

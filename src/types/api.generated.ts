@@ -6303,7 +6303,7 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** Export current tenant config package as 11-sheet Excel (importable) */
+    /** Export current tenant config package as 12-sheet Excel (importable) */
     get: operations['exportTenantConfigPackageExcel']
     put?: never
     post?: never
@@ -6320,7 +6320,7 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** Download blank tenant config package Excel template (11 sheets) */
+    /** Download blank tenant config package Excel template (12 sheets) */
     get: operations['downloadTenantConfigPackageExcelTemplate']
     put?: never
     post?: never
@@ -6354,7 +6354,7 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** Return 11-sheet tenant config package field guide */
+    /** Return 12-sheet tenant config package field guide */
     get: operations['getTenantConfigPackageExcelGuide']
     put?: never
     post?: never
@@ -6373,7 +6373,7 @@ export interface paths {
     }
     get?: never
     put?: never
-    /** Upload tenant config package Excel (11 sheets) */
+    /** Upload tenant config package Excel (12 sheets) */
     post: operations['uploadTenantConfigPackageExcel']
     delete?: never
     options?: never
@@ -8897,6 +8897,48 @@ export interface components {
       retryMaxCount?: number
       /** Format: int32 */
       timeoutSeconds?: number
+      /**
+       * Format: int32
+       * @description 作业实际开始执行后超过该时长告警；适用于定时和非定时作业，0 表示关闭
+       */
+      softRuntimeSeconds?: number
+      /**
+       * @description 运行时长告警级别；缺省 WARN
+       * @enum {string}
+       */
+      softRuntimeSeverity?: 'WARN' | 'ERROR' | 'CRITICAL'
+      /**
+       * Format: int32
+       * @description Cron 独立作业从计划触发时刻、依赖作业从计划触发与上游就绪时刻中的较晚者起算启动宽限秒数；超过宽限期仍未启动时告警，创建时未指定采用平台默认，0 表示关闭
+       */
+      startGraceSeconds?: number
+      /**
+       * @description 启动过晚告警级别；缺省 WARN
+       * @enum {string}
+       */
+      startGraceSeverity?: 'WARN' | 'ERROR' | 'CRITICAL'
+      /** @description 完成过晚监控是否启用；无依赖 Cron 以 completionDeadlineLocalTime 启用，依赖作业以 dependencyCompletionWindowSeconds 启用 */
+      completionDeadlineEnabled?: boolean
+      /**
+       * Format: time
+       * @description 仅无依赖 CRON：完成截止钟点（HH:mm），按作业时区解释；到期仍未结束则告警，留空关闭
+       */
+      completionDeadlineLocalTime?: string
+      /**
+       * Format: int32
+       * @description 仅无依赖 CRON：截止日期相对计划触发日的偏移；0 当日，1 次日
+       */
+      completionDeadlineDayOffset?: number
+      /**
+       * Format: int32
+       * @description 仅依赖作业：从下游满足执行资格时起算的完成窗口秒数；到期仍未结束则告警，0 关闭
+       */
+      dependencyCompletionWindowSeconds?: number
+      /**
+       * @description 完成过晚告警级别；Cron 独立作业或声明上游依赖的作业适用，缺省 WARN
+       * @enum {string}
+       */
+      completionDeadlineSeverity?: 'WARN' | 'ERROR' | 'CRITICAL'
       executionHandler?: string
       paramSchema?: string
       defaultParams?: string
@@ -8933,6 +8975,48 @@ export interface components {
       retryMaxCount?: number
       /** Format: int32 */
       timeoutSeconds?: number
+      /**
+       * Format: int32
+       * @description 作业实际开始执行后超过该时长告警；适用于定时和非定时作业，0 表示关闭
+       */
+      softRuntimeSeconds?: number
+      /**
+       * @description 运行时长告警级别；缺省 WARN
+       * @enum {string}
+       */
+      softRuntimeSeverity?: 'WARN' | 'ERROR' | 'CRITICAL'
+      /**
+       * Format: int32
+       * @description Cron 独立作业从计划触发时刻、依赖作业从计划触发与上游就绪时刻中的较晚者起算启动宽限秒数；超过宽限期仍未启动时告警，0 表示关闭
+       */
+      startGraceSeconds?: number
+      /**
+       * @description 启动过晚告警级别；缺省 WARN
+       * @enum {string}
+       */
+      startGraceSeverity?: 'WARN' | 'ERROR' | 'CRITICAL'
+      /** @description 完成过晚监控是否启用；无依赖 Cron 以 completionDeadlineLocalTime 启用，依赖作业以 dependencyCompletionWindowSeconds 启用 */
+      completionDeadlineEnabled?: boolean
+      /**
+       * Format: time
+       * @description 仅无依赖 CRON：完成截止钟点（HH:mm），按作业时区解释；到期仍未结束则告警，留空关闭
+       */
+      completionDeadlineLocalTime?: string
+      /**
+       * Format: int32
+       * @description 仅无依赖 CRON：截止日期相对计划触发日的偏移；0 当日，1 次日
+       */
+      completionDeadlineDayOffset?: number
+      /**
+       * Format: int32
+       * @description 仅依赖作业：从下游满足执行资格时起算的完成窗口秒数；到期仍未结束则告警，0 关闭
+       */
+      dependencyCompletionWindowSeconds?: number
+      /**
+       * @description 完成过晚告警级别；Cron 独立作业或声明上游依赖的作业适用，缺省 WARN
+       * @enum {string}
+       */
+      completionDeadlineSeverity?: 'WARN' | 'ERROR' | 'CRITICAL'
       executionHandler?: string
       paramSchema?: string
       defaultParams?: string
@@ -8953,6 +9037,8 @@ export interface components {
       workerGroup: string
       scheduleType: string
       scheduleExpr: string
+      /** @description 作业调度时区；完成截止钟点也使用此时区 */
+      timezone?: string
       calendarCode: string
       windowCode: string
       retryPolicy: string
@@ -8960,6 +9046,48 @@ export interface components {
       retryMaxCount: number
       /** Format: int32 */
       timeoutSeconds: number
+      /**
+       * Format: int32
+       * @description 作业实际开始执行后超过该时长告警；适用于定时和非定时作业，0 表示关闭
+       */
+      softRuntimeSeconds?: number
+      /**
+       * @description 运行时长告警级别；缺省 WARN
+       * @enum {string}
+       */
+      softRuntimeSeverity?: 'WARN' | 'ERROR' | 'CRITICAL'
+      /**
+       * Format: int32
+       * @description Cron 独立作业按计划触发时刻、依赖作业按计划触发与上游就绪时刻中的较晚者起算允许的启动延迟时长（秒）；超过宽限期仍未启动时告警，0 表示关闭
+       */
+      startGraceSeconds?: number
+      /**
+       * @description 启动过晚告警级别；缺省 WARN
+       * @enum {string}
+       */
+      startGraceSeverity?: 'WARN' | 'ERROR' | 'CRITICAL'
+      /** @description 完成过晚监控是否启用；无依赖 Cron 使用钟点规则，依赖作业使用相对完成窗口 */
+      completionDeadlineEnabled?: boolean
+      /**
+       * Format: time
+       * @description 仅无依赖 CRON：完成截止钟点（HH:mm），按作业时区解释；到期仍未结束则告警，留空关闭
+       */
+      completionDeadlineLocalTime?: string
+      /**
+       * Format: int32
+       * @description 仅无依赖 CRON：截止日期相对计划触发日的偏移；0 当日，1 次日
+       */
+      completionDeadlineDayOffset?: number
+      /**
+       * Format: int32
+       * @description 仅依赖作业：从下游满足执行资格时起算的完成窗口秒数；到期仍未结束则告警，0 关闭
+       */
+      dependencyCompletionWindowSeconds?: number
+      /**
+       * @description 完成过晚告警级别；Cron 独立作业或声明上游依赖的作业适用，缺省 WARN
+       * @enum {string}
+       */
+      completionDeadlineSeverity?: 'WARN' | 'ERROR' | 'CRITICAL'
       shardStrategy: string
       /** @description 执行模式 ExecutionMode 枚举 code:FULL / INCREMENTAL / CDC,缺省 FULL */
       executionMode: string
@@ -9377,6 +9505,16 @@ export interface components {
        * @description Worker 实际监听 HTTP 端口；null=未上报（老 worker / 老 SDK / 非 web 上下文）
        */
       port?: number | null
+      /** @description Runtime executor capabilities reported at worker registration; informational only. */
+      taskCapabilities?: components['schemas']['WorkerTaskCapability'][]
+    }
+    WorkerTaskCapability: {
+      taskType: string
+      resourceKinds: string[]
+      idempotent: boolean
+      cancellable: boolean
+      /** Format: int64 */
+      recommendedTimeoutMillis: number
     }
     /**
      * @description 登录 / 换 token 响应。P1-1 (pre-launch audit 2026-05-18) 后 accessToken 不再出现在 response body,
@@ -16495,6 +16633,8 @@ export interface operations {
         pageSize?: components['parameters']['PageSizeQuery']
         /** @description Filter by job code (partial match) */
         jobCode?: components['parameters']['JobCodeFilter']
+        /** @description Filter by schedule type: CRON, FIXED_RATE, or MANUAL. */
+        scheduleType?: 'CRON' | 'FIXED_RATE' | 'MANUAL'
         /** @description Filter by enabled status. Defaults to true (only enabled records returned unless overridden). */
         enabled?: boolean
       }
@@ -22332,7 +22472,7 @@ export interface operations {
     }
     requestBody?: never
     responses: {
-      /** @description 11-sheet Excel workbook containing all config data for the tenant */
+      /** @description 12-sheet Excel workbook containing all config data for the tenant; job monitoring settings are isolated in job_monitoring_policy */
       200: {
         headers: {
           [name: string]: unknown
@@ -22352,7 +22492,7 @@ export interface operations {
     }
     requestBody?: never
     responses: {
-      /** @description Empty Excel template with 11 data sheets */
+      /** @description Empty Excel template with 12 data sheets */
       200: {
         headers: {
           [name: string]: unknown
@@ -22377,7 +22517,7 @@ export interface operations {
     }
     requestBody?: never
     responses: {
-      /** @description Scenario sample Excel template with 11 data sheets */
+      /** @description Scenario sample Excel template with 12 data sheets */
       200: {
         headers: {
           [name: string]: unknown
