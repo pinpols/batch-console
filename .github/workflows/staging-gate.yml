@@ -30,6 +30,9 @@ jobs:
     outputs:
       base_url: ${{ steps.s.outputs.base_url }}
     steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
       - id: s
         env:
           INPUT_URL: ${{ github.event.inputs.base_url }}
@@ -51,6 +54,11 @@ jobs:
           curl -fsS "$URL/healthz" >/dev/null
           echo "base_url=$URL" >> "$GITHUB_OUTPUT"
 
+      - name: Check deployed security headers
+        env:
+          FRONTEND_BASE_URL: ${{ steps.s.outputs.base_url }}
+        run: node scripts/check-security-headers.mjs
+
       - name: Verify deployed revision for release tag
         if: startsWith(github.ref, 'refs/tags/v')
         env:
@@ -68,7 +76,7 @@ jobs:
     name: Playwright e2e (full, against staging)
     needs: precheck
     runs-on: ubuntu-26.04
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
@@ -78,7 +86,7 @@ jobs:
       - run: npm ci --no-audit --no-fund
 
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install --with-deps chromium firefox webkit
 
       # base URL 由 precheck 统一计算;
       # E2E_USERNAME/E2E_PASSWORD 走 secret,global-setup 用它建 storageState
@@ -93,6 +101,12 @@ jobs:
         env:
           PLAYWRIGHT_BASE_URL: ${{ needs.precheck.outputs.base_url }}
         run: npm run test:e2e:visual
+
+      - name: Cross-browser route smoke (Chromium / Firefox / WebKit / mobile Chrome)
+        env:
+          PLAYWRIGHT_BASE_URL: ${{ needs.precheck.outputs.base_url }}
+          CROSS_BROWSER: '1'
+        run: npm run test:e2e:all -- e2e/smoke.spec.ts --grep @cross-browser
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7

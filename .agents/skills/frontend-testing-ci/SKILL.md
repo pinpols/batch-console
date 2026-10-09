@@ -22,7 +22,7 @@ description: 规划、执行或修复前端 lint、typecheck、i18n、Vitest、P
 ## CI 处理
 
 - PR gate、full-ci-gate、staging-gate 角色不同；skipped/cancelled/timed_out 不能报告为通过。
-- Staging gate 必须连接真实环境并运行 `test:e2e:all`；URL、账号、健康检查或版本证据不足时失败，不降级为成功的空跑。
+- Staging gate 必须连接真实环境并运行 `test:e2e:all`、安全响应头检查及标记的跨浏览器路由冒烟；URL、账号、健康检查或版本证据不足时失败，不降级为成功的空跑。
 - 失败先读对应 job 日志和真实退出码；不要只因为本地构建通过就认定线上失败是环境问题。
 - workflow 或门禁变更要同步 `docs/runbook/ci.md`，并考虑 API drift、i18n、audit、Lighthouse、Docker/Trivy 的触发范围。
 

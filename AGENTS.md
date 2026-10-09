@@ -1,177 +1,87 @@
 # batch-console Frontend Agent Guide
 
-批量调度系统前端控制台。Vue 3 + TypeScript + Element Plus + Pinia + vue-i18n + TanStack Query。桌面 (`src/views/`) + 移动 (`src/views-mobile/`) 双端,API 类型从配对后端 OpenAPI 生成。
+批量调度系统前端控制台，使用 Vue 3、TypeScript、Element Plus、Pinia、vue-i18n 和 TanStack Query。桌面页面位于 `src/views/`，移动页面位于 `src/views-mobile/`；API 类型由配对后端 OpenAPI 生成。
 
-> **维护规则**:本文件只装「不能从代码推断的约束」+「高频违反的红线」+「关键路径指针」。细节去 `docs/`。
+> **维护规则**：本文件只保留不能从代码推断的约束、高频红线和权威文档入口。细节应维护在对应 `docs/` 文档中。
 >
-> 影响本文件已有规范的改动 → 同步 [`docs/changelog.md`](docs/changelog.md)(日期倒序)。Feature / bugfix / 运维 → git commit + PR + 对应 `docs/` 子目录,**不要**写到本文件。
+> 修改本文件既有规范时，同步更新 [`docs/changelog.md`](docs/changelog.md)（日期倒序）。功能、缺陷、运维变更写入对应文档，不把临时任务说明塞进本文件。
 >
 > 配对后端约定见 [`../file-batch-system/AGENTS.md`](../file-batch-system/AGENTS.md)。
 
-
 ## Skills
 
-Use the focused workflows under `.agents/skills/` when relevant:
+按任务加载 `.agents/skills/` 下的专项工作流；跨领域审查先用综合技能，再按需加载专项技能：
 
-- `frontend-api-contract`: Console API, OpenAPI generated types, permissions, authentication payloads, and API drift.
-- `frontend-state-data-flow`: Vue/Pinia/TanStack Query, tenant reload, pagination, polling, SSE, and page data loading.
-- `frontend-ui-ia-review`: page design, information architecture, navigation, data-heavy views, forms, designers, and mobile fit.
-- `frontend-i18n-accessibility`: i18n strings, form help, accessibility, safe HTML rendering, and user-friendly errors.
-- `frontend-import-template-governance`: tenant package Excel, multi-sheet import/export templates, dropdowns, validation, and fixtures.
-- `frontend-testing-ci`: lint, typecheck, i18n, Vitest, Playwright, bundle size, API drift, and CI gates.
-- `frontend-engineering-governance`: architecture boundaries, environment registry, maintainability, workflow security, SBOM/license drift, changelog coverage, and local governance gates.
-- `frontend-deploy-runtime`: Docker, Nginx, environment variables, PWA, build artifacts, versioning, and deployment scripts.
-- `frontend-docs-release-governance`: README, docs indexes, changelog, archive/date policy, runbooks, and release notes.
-- `git-pr-workflow`: branch/PR delivery, stacked PR baselines, remote head verification, merge sequencing, and branch cleanup.
+- `frontend-quality-review`：UI、交互、代码可读性、可访问性和浏览器安全的综合审查。
+- `frontend-ui-ia-review`：页面设计、信息架构、导航、数据密集视图、表单和移动适配。
+- `frontend-i18n-accessibility`：用户文案、i18n、ARIA、键盘和安全 HTML 渲染。
+- `frontend-api-contract`：API、OpenAPI 生成类型、认证和权限契约。
+- `frontend-state-data-flow`：Vue/Pinia/TanStack Query、租户切换、分页、轮询和异步状态。
+- `frontend-import-template-governance`：配置包、Excel 模板、导入导出和相关测试数据。
+- `frontend-testing-ci`：单测、Playwright、前端门禁及验证策略。
+- `frontend-engineering-governance`：架构、依赖、环境变量、SBOM、许可证和治理检查。
+- `frontend-deploy-runtime`：Docker、Nginx、运行时配置、PWA 和部署。
+- `frontend-docs-release-governance`：README、文档索引、变更记录和发布文档。
+- `git-pr-workflow`：分支、PR、连续交付链、远端 head 核验和清理。
 
-Repository-specific commands and contracts remain authoritative over generic skill checklists.
+仓库约定和配对后端契约优先于通用技能建议。技能负责流程，不取代代码、测试和 CI 的实际证据。
 
-## 配对后端仓库
+## 配对后端
 
-- 路径:`../file-batch-system`(绝对 `/Users/dengchao/Downloads/file-batch-system`)
-- 关键子模块:`batch-console-api`(REST API)/ `batch-orchestrator` / `batch-worker-*` / `db`(schema/migration)
-- **联调约定**:验证后端行为直接搜 `../file-batch-system` 的 Controller / DTO / 权限配置,**不要凭空假设**
-- 后端 Agent 指南:[`../file-batch-system/AGENTS.md`](../file-batch-system/AGENTS.md)(优先阅读)
+- 仓库：`../file-batch-system`；REST API 位于 `batch-console-api`，数据库结构和迁移位于 `db`。
+- 验证后端行为时直接检查对应 Controller、DTO、权限配置和 OpenAPI，不根据前端猜测契约。
+- 后端指南：[`../file-batch-system/AGENTS.md`](../file-batch-system/AGENTS.md)。
 
-## 分支用途
+## 分支与交付
 
-**唯一常驻分支 = `main`**(2026-06-23 起;此前的 `dev` 集成分支已并入 main 并删除,与配对后端 `file-batch-system` 的单 main 模型对齐):
+- 唯一常驻分支是 `main`；功能、缺陷、测试、文档、CI 和部署改动均从 `main` 建短期分支，经 PR 合入 `main`。
+- 分支命名使用 `feature/`、`fix/`、`chore/` 或 `docs/` 前缀。不要另建常驻 `dev` 或部署分支。
+- 部署文件属于产品的一部分，与应用代码同在 `main`。
+- PR、连续交付链和合并后的 diff 核验按 `git-pr-workflow` 执行；不得把历史授权当作当前合并或删除分支的授权。
 
-| 常驻分支 | 是什么 | 含什么 |
-|---|---|---|
-| **`main`** | 稳定 / 发布 / 集成主干、唯一真相源 | 全部前端代码 **+ 全部部署**(`docker-compose*.yml` / `Dockerfile` / `nginx/*` / `.github/workflows/{build-image,staging-gate}.yml`)。部署是产品一部分,不单独分支 |
-
-**流程**:
-- **业务 / bugfix / 测试 / 文档 / 部署**:从 `main` 开 `feature/<topic>`（功能）、`fix/<topic>`（缺陷）、`chore/<topic>`（工程/依赖/脚本/CI）或 `docs/<topic>`（纯文档）→ PR → `main`;短命分支合后即删(仓库 `deleteBranchOnMerge` 已开)。
-- **不再有独立 `dev` / 部署分支**——所有改动经 PR 直接进 main,部署文件直接在 main(自托管 / on-prem 的 compose/nginx/deploy 脚本是产品的一部分,与后端 main 同理)。
-
-## 构建 / 测试
+## 常用命令
 
 | 命令 | 用途 |
 |---|---|
-| `npm run dev` | Vite dev server (默认 5173) |
-| `npm run typecheck` | `vue-tsc --noEmit` |
-| `npm run lint` | ESLint + 自动 fix |
-| `npm run check:comments` | 检查手写代码的解释性注释是否使用中文 |
-| `npm run build` | typecheck + i18n 完整性检查 + Vite 产物 |
-| `npm run build:fast` | 只跑 Vite build(本地快速验证用) |
-| `npm run test:unit` | Vitest 单测 |
-| `npm run test:e2e` | Playwright 常规套件(排除 `@slow`) |
-| `npm run test:e2e:all` | Playwright 发布验收全量套件 |
-| `npm run test:e2e:visual` | 独立视觉回归基线 |
-| `npm run test:e2e:smoke` | smoke 三件套(冒烟 / 跨页 / 导航) |
-| `npm run gen:api` | 从 BE OpenAPI 重新生成 `src/types/api.generated.ts` |
-| `npm run gen:api:check` | 检测 FE 与 BE OpenAPI 漂移(CI 用) |
-| `npm run check:i18n` | 检测 zh / en locale 缺 key |
-| `npm run preflight:changed` | 按 staged 文件执行提交前检查 |
-| `npm run verify:local` | 无后端完整本地门禁，不代表真实业务验收 |
+| `npm run dev` | 启动 Vite 开发服务器（默认 5173） |
+| `npm run preflight:changed` | 按暂存变更运行提交前检查 |
+| `npm run verify:local` | 运行无后端本地门禁，不代表真实业务验收 |
 | `bash scripts/local/fe-acceptance.sh` | 依赖真实后端的全链路验收 |
+| `npm run gen:api` / `npm run gen:api:check` | 生成或检查前后端 API 类型漂移 |
 
-**改 `src/api/*` 或调接口前**先 `npm run gen:api` 刷新生成类型;CI 漂移检查会 reject 不同步的 PR。
+测试分层、测试 helper 和案例见 [`docs/testing/README.md`](docs/testing/README.md)；CI 触发、门禁和发布顺序见 [`docs/runbook/ci.md`](docs/runbook/ci.md)。其他命令以 `package.json` 为准。
 
-## 目录结构
+## 不可违约约束
 
+- **API 类型**：`src/types/api.generated.ts` 由 `../file-batch-system/docs/api/console-api.openapi.yaml` 生成，禁止手改。接口变更先更新后端 OpenAPI，再运行 `npm run gen:api`。
+- **API 客户端**：请求统一走 `src/api/client.ts` 导出的客户端方法；禁止在组件中新建 axios 实例或绕过拦截器。
+- **租户切换**：依赖当前租户的数据加载使用 `useTenantReload(loadFn)`；TanStack Query 将租户标识纳入 `queryKey`。
+- **认证与权限**：认证由后端 HttpOnly Cookie 契约处理；前端不读取或持久化 token、不自行添加 `Authorization`。前端权限只控制体验，后端负责授权裁决。
+- **HTML 安全**：禁止 `v-html`。需要呈现 HTML 时使用 `v-safe-html`；手动写入 `innerHTML` 前使用 `purifyHtml()`。后端返回内容也视为不可信输入。
+- **用户文案**：所有用户可见字符串使用 `t('namespace.key')`；`zh-CN` 与 `en-US` 保持 key 一致。
+- **样式与组件**：遵循 [`docs/engineering/design-tokens.md`](docs/engineering/design-tokens.md)，优先复用 design token、Element Plus 和 `src/components/common/` 录入助手；不要为相同交互另造裸 HTML 组件或重复校验逻辑。
+- **代码约定**：解释性注释用中文；Vue 组件使用 PascalCase，composable 使用 `useXxx`；禁止在 `.vue`/`.ts` 留 `console.log` 或添加 emoji（用户明确要求除外）。
+- **列表分页**：默认每页 15 条，选项使用 `[15, 30, 50, 100]`；确有业务差异时应有明确依据。
+
+## 测试边界
+
+- 移动页面不重复编写自动化测试；业务逻辑由共享模块和桌面测试覆盖。若移动端引入独立业务逻辑或出现移动端专属回归，应为该逻辑/缺陷补针对性测试。
+- Playwright 的运行范围和环境以 [`docs/runbook/ci.md`](docs/runbook/ci.md) 与 `playwright.config.cjs` 为准；不要把 mock/fixture 验证描述成真实后端验收。
+- 写测试前阅读 [`docs/testing/README.md`](docs/testing/README.md)，复用既有 helper 和测试约定。
+
+## 目录速查
+
+```text
+src/api/          REST 客户端与查询适配
+src/components/   共用组件和表单助手
+src/composables/  跨页面组合逻辑
+src/layout/       桌面布局
+src/layout-mobile/ 移动布局
+src/locales/      中英文词条
+src/router/       桌面与移动路由
+src/stores/       Pinia 状态
+src/styles/       全局样式和 design token
+src/types/        手写类型与生成 API 类型
+src/views/        桌面页面
+src/views-mobile/ 移动页面
 ```
-src/
-  api/          REST 客户端 + queries(适配后端 console-api)
-  components/   通用组件(包含 common/ 表单辅助组件)
-  composables/  Vue Composable(useTenantReload / useAsyncAction / usePermission ...)
-  layout/       桌面布局
-  layout-mobile/ 移动布局(MAppBar / MTabBar / MSearchBar / ActionSheet)
-  locales/      vue-i18n 词条(zh-CN / en-US 1:1)
-  router/       Vue Router(/ vs /m/ 桌面/移动分流)
-  stores/       Pinia(tenant / auth / lastApiMeta)
-  styles/       全局 CSS + design token
-  types/        手写类型 + api.generated.ts(由 OpenAPI 生成,**禁手改**)
-  utils/        通用工具
-  views/        桌面页面
-  views-mobile/ 移动页面(`/m/*` 路由)
-```
-
-## 架构硬约束
-
-- **API 类型**:`src/types/api.generated.ts` 由 `../file-batch-system/docs/api/console-api.openapi.yaml` 生成,**禁手改**;接口变更走 BE OpenAPI → `npm run gen:api` → 用生成的类型
-- **API 客户端**:统一走 `src/api/client.ts` 的 `get/post/put/del`;axios 拦截器(auth / tenant / idempotency / response 解包)已配,**不要**自己 new axios 实例
-- **租户切换重取**:依赖 `tenant.tenantId` 的视图统一用 `useTenantReload(loadFn)`,**禁**手写 `onMounted + watch(tenant.tenantId)`。TanStack Query 场景把 `tenant.tenantId` 写进 `queryKey` 即可
-- **XSS 兜底**:`v-html` 已被 ESLint 禁用(`vue/no-v-html: error`);需 HTML 渲染用 `v-safe-html="content"`(走 DOMPurify);手动 `innerHTML = ...` 先经 `purifyHtml()`(`src/utils/safeHtml.ts`)。**不信任后端是否已转义**
-- **认证**:HttpOnly cookie `batch_console_token`(BE 下发),axios `withCredentials: true`。前端不读取 token、不注入 Authorization header；后端对旧客户端的兼容不属于前端实现。
-
-## i18n
-
-- 所有用户可见字符串**必须** `t('namespace.key')`,**禁硬编码** zh/en
-- key 命名:页面级 namespace(`pipelineDefinitionList.xxx`),公共词 → `common.xxx`
-- zh-CN + en-US **1:1 对齐**;`npm run build` 会跑 `check:i18n` 拦截缺 key
-
-## 移动端测试范围
-
-- **移动端不写自动化测试**(既不写 Vitest 也不写 Playwright):移动视图是桌面 API 的轻量壳,业务逻辑全部复用 stores / api / composables(已有桌面单测覆盖);Playwright 仅在 Desktop Chrome 跑,手势(下拉刷新 / 触屏滚动)无法稳定复现;维护收益 << 重复成本
-- **何时要补测**:移动端新增独立于桌面的业务逻辑 → Vitest 单测;移动端独有回归 bug → 单测固化
-- **桌面端**:照旧关键业务逻辑 Vitest 覆盖,e2e 覆盖主要用户路径
-
-## 测试约定
-
-> 完整测试体系(分层 / 可复用 helper / 可复制案例模板 / 运行 / CI / 常见坑)见 [`docs/testing/README.md`](docs/testing/README.md)。写测试前先读。
-
-**Vitest 单测**(`*.test.ts`):
-
-- 框架统一 Vitest,**禁** jest / chai / sinon。`import { describe, it, expect, vi, beforeEach } from 'vitest'`
-- 文件命名 `xxx.test.ts`,**同目录**与被测文件共存(不另开 `__tests__/`)
-- `describe(name)` 用**被测对象短名**:函数名(`mapProfileToUserInfo`)/ composable 名(`useTenantReload`)/ 导出对象名(`jobApi` / `instanceApi`)。**禁** `xxx API` / `xxx tests` 等冗余后缀
-- `it(desc)` 描述**行为**,**禁** `should ...` 前缀(全仓 0 处);中英不强制(跟同模块现有保持一致 —— API/utils 英文,业务 composable 可中文)
-- mock 风格:顶层 `vi.mock('./client', () => ({...}))` → `import { get } from './client'` → `const mockedGet = vi.mocked(get)`。`vi.hoisted` 仅在闭包必需时用(全仓 1 处)
-- 需要 DOM 时顶部加 `// @vitest-environment jsdom`(jsdom 已是 devDep)
-- 清理 mock 用 `beforeEach { mockReset() }`,不要 `afterEach`
-- SFC 测试受 element-plus auto-import .css 链路阻塞,**优先抽业务逻辑到 util 测**;非测不可时 vite.config 加 `server.deps.inline: [/element-plus/]` + `css: false`
-
-**Playwright e2e**(`e2e/*.spec.ts`):见 §移动端测试范围 + `playwright.config.cjs`。
-
-## Vue / TS 编码细则
-
-**以下每条都常被违,写代码前必须先扫一遍**:
-
-| # | 规则 | 反例 |
-|---|---|---|
-| 1 | 所有用户可见字符串走 `t('...')`,**禁硬编码** zh/en | `<el-button>新建</el-button>` |
-| 2 | API 调用走 `src/api/*.ts` 的方法,**禁**组件里直接 `axios.get(...)` | `axios.get('/api/...')` in `.vue` |
-| 3 | API 入参 / 出参类型用 `src/types/api.generated.ts` 生成的,**禁手敲** interface | 自己写 `interface UserResp { ... }` |
-| 4 | 租户依赖视图用 `useTenantReload(loadFn)`,**禁** `onMounted + watch(tenantId)` 手写 | 手写 `watch(() => tenant.tenantId, ...)` |
-| 5 | `v-html` 已 ESLint 禁;HTML 渲染走 `v-safe-html`;`innerHTML =` 走 `purifyHtml()` | `<div v-html="raw">` |
-| 6 | 列表分页默认 **15**(`pageSize = ref(15)`),`pageSizes` 含 `[15, 30, 50, 100]` | `pageSize = ref(20)` |
-| 7 | 颜色 / 间距走 design token(`var(--color-xxx)` / `var(--space-xx)`),**禁裸 hex / px** | `color: #1890ff` in `<style>` |
-| 8 | Element Plus 组件优先,**禁裸 HTML** 实现下拉 / 弹窗 / 表格 | `<select>` / `<dialog>` 原生 |
-| 9 | 通用录入用 `src/components/common/` 助手组件(StrongPasswordInput / TenantIdInput / CodeNameBuilder / TraceIdInput) | 重复写密码生成 / 租户校验逻辑 |
-| 10 | 文件命名:Vue 组件 `PascalCase.vue`,composable `useXxx.ts`,API 模块 camelCase | `pipeline_list.vue` |
-| 11 | 解释性注释用中文；API 路径、类型/字段、命令和工具指令保留原文 | `// fallback when request fails` |
-
-**红线**(违反 = 直接 reject):
-- **禁手改** `src/types/api.generated.ts`(由 OpenAPI 生成)
-- **禁** 在 `.vue` / `.ts` 文件中加 emoji(除非用户明确要求)
-- **禁** `console.log` 留在提交代码里(用 `logger.xxx` 或删)
-- **禁** 在组件里写新的 axios 实例(全部走 `src/api/client.ts`)
-
-## 后端 OpenAPI 同步
-
-改后端 `batch-console-api` controller 后:
-1. BE 同 PR 更新 `../file-batch-system/docs/api/console-api.openapi.yaml`
-2. FE 跑 `npm run gen:api` 刷新 `src/types/api.generated.ts`
-3. CI `gen:api:check` 会比对漂移,不一致 reject
-
-## CI（核心门禁 + 辅助治理）
-
-| Workflow | 触发 | 角色 | 耗时 |
-|---|---|---|---|
-| `pr-gate.yml` | PR / push main | PR 必过门禁(lint / typecheck / i18n / api-drift / unit / build / audit) | 5-7 min |
-| `full-ci-gate.yml` | push main / nightly cron / 手动 | 全量(+ Docker/Trivy + Lighthouse + 完整 audit) | 15-20 min |
-| `staging-gate.yml` | tag v* / 手动 | Playwright 全量场景 against staging URL + Lighthouse | 10-15 min |
-
-辅助 workflow 包括 Node 24 兼容/文档构建、CodeQL、不可变镜像构建与发布晋级、release-please、Renovate 和自动合并。完整清单与发布顺序见 [`docs/runbook/ci.md`](docs/runbook/ci.md)。
-
-**Playwright e2e 只在 staging-gate 跑**(against 真 staging URL),pr-gate / full-ci 故意不跑(CI 起 BE 太脆,业界 Vercel/Netlify 标准)。完整细则 + secrets / 阈值 / 排查表 → [`docs/runbook/ci.md`](docs/runbook/ci.md)。
-
-## 桌面 vs 移动
-
-- 桌面路由 `/`(`src/views/` + `src/layout/`)
-- 移动路由 `/m/*`(`src/views-mobile/` + `src/layout-mobile/`)
-- 共享:stores / api / composables / locales / 业务逻辑
-- 设备分流由 `src/router/index.ts` 入口逻辑处理(UA / viewport)
-- 移动端走 iOS HIG(Liquid Glass / Large Title 塌缩 / 底部 sheet / fill 图标)

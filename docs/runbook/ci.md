@@ -6,15 +6,15 @@ GitHub Security 告警的分类、修复、误报处理和合并后验证遵循[
 
 ## Workflow 全景
 
-| Workflow | 文件 | 触发 | 角色 | 预估耗时 |
-|---|---|---|---|---|
-| `pr-gate` | `.github/workflows/pr-gate.yml` | PR → main / push main / 手动 | PR 必过门禁,fast feedback | 5-7 min |
-| `frontend-ci` | `.github/workflows/frontend-ci.yml` | PR → main / push main / 手动 | Node 24 兼容 + 前端文档构建；Markdown-only PR 跳过兼容构建 | 8-12 min |
-| `full-ci-gate` | `.github/workflows/full-ci-gate.yml` | PR → main / push main / nightly cron(02:00 UTC = 10:00 Asia/Shanghai)/ 手动 | 全量回归；Markdown-only PR 保留 required check 但跳过构建和全量审计 | 15-20 min |
-| `staging-gate` | `.github/workflows/staging-gate.yml` | tag `v*` / 手动(可输入 base_url) | staging 部署前真环境最终关 | 10-15 min |
-| `codeql` | `.github/workflows/codeql.yml` | PR / main / 每周 / 手动 | JavaScript/TypeScript 静态安全分析 | 5-10 min |
-| `build-image` | `.github/workflows/build-image.yml` | main / tag / 每日 19:00 UTC(北京时间 03:00) / 手动 | main 构建不可变镜像；nightly 按前后端代码变更决定是否构建，后端有变更时等待配对后端 daily sim-strict 成功；tag 在 staging 通过后晋级同一 digest | 10-75 min |
-| `Quarterly dependency inventory` | `.github/workflows/renovate.yml` | 每季度 / 手动 | 只生成 Renovate dry-run 盘点和一张 Issue，不创建 PR | 5-15 min |
+| Workflow                         | 文件                                 | 触发                                                                        | 角色                                                                                                                                            | 预估耗时  |
+| -------------------------------- | ------------------------------------ | --------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
+| `pr-gate`                        | `.github/workflows/pr-gate.yml`      | PR → main / push main / 手动                                                | PR 必过门禁,fast feedback                                                                                                                       | 5-7 min   |
+| `frontend-ci`                    | `.github/workflows/frontend-ci.yml`  | PR → main / push main / 手动                                                | Node 24 兼容 + 前端文档构建；Markdown-only PR 跳过兼容构建                                                                                      | 8-12 min  |
+| `full-ci-gate`                   | `.github/workflows/full-ci-gate.yml` | PR → main / push main / nightly cron(02:00 UTC = 10:00 Asia/Shanghai)/ 手动 | 全量回归；Markdown-only PR 保留 required check 但跳过构建和全量审计                                                                             | 15-20 min |
+| `staging-gate`                   | `.github/workflows/staging-gate.yml` | tag `v*` / 手动(可输入 base_url)                                            | 真实环境安全头、Playwright/axe、视觉及跨浏览器路由验收                                                                                          | 20-35 min |
+| `codeql`                         | `.github/workflows/codeql.yml`       | PR / main / 每周 / 手动                                                     | JavaScript/TypeScript 静态安全分析                                                                                                              | 5-10 min  |
+| `build-image`                    | `.github/workflows/build-image.yml`  | main / tag / 每日 19:00 UTC(北京时间 03:00) / 手动                          | main 构建不可变镜像；nightly 按前后端代码变更决定是否构建，后端有变更时等待配对后端 daily sim-strict 成功；tag 在 staging 通过后晋级同一 digest | 10-75 min |
+| `Quarterly dependency inventory` | `.github/workflows/renovate.yml`     | 每季度 / 手动                                                               | 只生成 Renovate dry-run 盘点和一张 Issue，不创建 PR                                                                                             | 5-15 min  |
 
 ## pr-gate 详情
 
@@ -94,18 +94,23 @@ push main / nightly ────┤
 ## staging-gate 详情
 
 ```
-tag v* / 手动 ── precheck(URL/账号/healthz/版本必须有效)
+tag v* / 手动 ── precheck(URL/账号/healthz/部署安全头/版本必须有效)
                       ├─ e2e-against-staging
                         │   Playwright install --with-deps chromium
                         │   PLAYWRIGHT_BASE_URL = secret.STAGING_URL
                         │   E2E_USERNAME/PASSWORD = secret
                         │   npm run test:e2e:all(含 @slow 的全量场景)
+                        │   键盘与 axe 基线在 Chromium 验收
+                        │   安装 Firefox/WebKit 后运行 smoke.spec.ts @cross-browser
+                        │   覆盖 Chromium / Firefox / WebKit / Pixel 5
                         │   upload playwright-report artifact
                         │
                         └─ lighthouse-against-staging
                             Lighthouse CI against staging URL
                             阈值同 full-ci(共享 lighthouse-budget.json)
 ```
+
+`precheck` 使用 `scripts/check-security-headers.mjs` 对 `/`、`/login` 和 `/healthz` 发起真实 HTTP 请求，验证最终响应的 CSP 基线、安全响应头及 HTTPS HSTS。该检查验证部署后的响应，不替代 Nginx 配置审查或渗透测试。
 
 ## 关键决策(锁住,不要再翻案)
 
@@ -125,35 +130,35 @@ tag v* / 手动 ── precheck(URL/账号/healthz/版本必须有效)
 
 ## Secrets 配置(GH repo settings → Secrets)
 
-| Secret | 用途 | 默认 fallback |
-|---|---|---|
-| `BE_OPENAPI_URL` | 可覆盖 gen:api:check 的后端 OpenAPI 地址 | 默认读取后端 main raw 文件；获取失败直接失败 |
-| `STAGING_URL` | staging-gate 的 base URL | 必填,无 fallback |
-| `STAGING_E2E_USERNAME` | staging admin 账号 | 必填 |
-| `STAGING_E2E_PASSWORD` | staging admin 密码 | 必填 |
+| Secret                 | 用途                                     | 默认 fallback                                |
+| ---------------------- | ---------------------------------------- | -------------------------------------------- |
+| `BE_OPENAPI_URL`       | 可覆盖 gen:api:check 的后端 OpenAPI 地址 | 默认读取后端 main raw 文件；获取失败直接失败 |
+| `STAGING_URL`          | staging-gate 的 base URL                 | 必填,无 fallback                             |
+| `STAGING_E2E_USERNAME` | staging admin 账号                       | 必填                                         |
+| `STAGING_E2E_PASSWORD` | staging admin 密码                       | 必填                                         |
 
 ## 守护脚本 → workflow 覆盖矩阵
 
-| 守护 | pr-gate | full-ci-gate | staging-gate | 本地 hook |
-|---|---|---|---|---|
-| `eslint --check` | ✅ | ✅ | — | `.husky/pre-commit` `lint-staged` + `preflight:changed` |
-| `prettier --check` | (lint 包含)| (lint 包含) | — | `.husky/pre-commit` `lint-staged` |
-| `vue-tsc` typecheck | ✅ | ✅ | — | `preflight:changed`(src 变更) |
-| `check-i18n-messages.mjs` | ✅ | ✅(含 build 里二次)| — | `preflight:changed`(src / locale 变更) |
-| `check-api-drift.sh` | ✅ | ✅ | — | `preflight:changed`(api / generated types 变更) |
-| Vitest 全量 | ✅ | ✅ | — | — |
-| Vite build | ✅ (`build:fast`)| ✅ (`build` 完整) | — | — |
-| `npm audit` | ✅ prod high+ | ✅ 全量 critical 拒 | — | — |
-| Docker build | — | ✅ | — | — |
-| Trivy 镜像扫 | — | ✅ CRITICAL 拒 | — | — |
-| Lighthouse | — | ✅ against preview | ✅ against staging | — |
-| Playwright e2e | — | — | ✅ against staging | — |
-| 架构/环境/文档/SBOM/许可证 | ✅ | ✅ | — | 按 staged 变更选择 |
-| Shell 语法 / ShellCheck warning | ✅ | ✅ | — | `npm run check:shell` |
-| 文档 chunk / 搜索索引预算 | 统一文档 job | Docker 文档构建 | — | `docs:build` 内置 |
-| 上线准入文档覆盖 | ✅ | ✅ | — | `preflight:changed`(文档变更) |
-| `check-version-alignment.sh` | ✅ | ✅ | — | `preflight:changed`(package 变更) |
-| `docs:build` | 统一文档 job | Docker 文档构建 | — | `preflight:changed`(文档桥接、站点配置或构建脚本变更) |
+| 守护                            | pr-gate           | full-ci-gate        | staging-gate       | 本地 hook                                               |
+| ------------------------------- | ----------------- | ------------------- | ------------------ | ------------------------------------------------------- |
+| `eslint --check`                | ✅                | ✅                  | —                  | `.husky/pre-commit` `lint-staged` + `preflight:changed` |
+| `prettier --check`              | (lint 包含)       | (lint 包含)         | —                  | `.husky/pre-commit` `lint-staged`                       |
+| `vue-tsc` typecheck             | ✅                | ✅                  | —                  | `preflight:changed`(src 变更)                           |
+| `check-i18n-messages.mjs`       | ✅                | ✅(含 build 里二次) | —                  | `preflight:changed`(src / locale 变更)                  |
+| `check-api-drift.sh`            | ✅                | ✅                  | —                  | `preflight:changed`(api / generated types 变更)         |
+| Vitest 全量                     | ✅                | ✅                  | —                  | —                                                       |
+| Vite build                      | ✅ (`build:fast`) | ✅ (`build` 完整)   | —                  | —                                                       |
+| `npm audit`                     | ✅ prod high+     | ✅ 全量 critical 拒 | —                  | —                                                       |
+| Docker build                    | —                 | ✅                  | —                  | —                                                       |
+| Trivy 镜像扫                    | —                 | ✅ CRITICAL 拒      | —                  | —                                                       |
+| Lighthouse                      | —                 | ✅ against preview  | ✅ against staging | —                                                       |
+| Playwright e2e                  | —                 | —                   | ✅ against staging | —                                                       |
+| 架构/环境/文档/SBOM/许可证      | ✅                | ✅                  | —                  | 按 staged 变更选择                                      |
+| Shell 语法 / ShellCheck warning | ✅                | ✅                  | —                  | `npm run check:shell`                                   |
+| 文档 chunk / 搜索索引预算       | 统一文档 job      | Docker 文档构建     | —                  | `docs:build` 内置                                       |
+| 上线准入文档覆盖                | ✅                | ✅                  | —                  | `preflight:changed`(文档变更)                           |
+| `check-version-alignment.sh`    | ✅                | ✅                  | —                  | `preflight:changed`(package 变更)                       |
+| `docs:build`                    | 统一文档 job      | Docker 文档构建     | —                  | `preflight:changed`(文档桥接、站点配置或构建脚本变更)   |
 
 Shell 脚本统一使用 Bash/sh；`check:shell` 同时做语法与 ShellCheck 检查，CI 不再额外安装 zsh。
 
@@ -181,52 +186,55 @@ npm run preflight:changed
 
 该脚本只读取 staged 文件,按变更范围选择检查:
 
-| 变更范围 | 自动检查 |
-|---|---|
-| `src/**/*.{vue,ts,tsx}` | `lint:check` + `typecheck` + `check:i18n` |
-| `src/locales/**` | `check:i18n` |
-| `src/api/**` / `src/types/api.generated.ts` / `src/types/**` | `gen:api:check` |
-| `src/**` | 架构边界 + 可维护性限制 |
-| `.env*` / Docker / Compose / workflow | 环境变量治理 |
-| `.github/workflows/**` | workflow 安全检查 |
-| `package.json` / `package-lock.json` | 版本对齐 + SBOM / 许可证漂移 |
-| `docs/**` / `tools/docs-bridge/**` / `scripts/docs-*` | 文档链接检查 + 统一文档构建 |
-| 用户或部署影响文件 | Changelog 覆盖检查 |
+| 变更范围                                                     | 自动检查                                  |
+| ------------------------------------------------------------ | ----------------------------------------- |
+| `src/**/*.{vue,ts,tsx}`                                      | `lint:check` + `typecheck` + `check:i18n` |
+| `src/locales/**`                                             | `check:i18n`                              |
+| `src/api/**` / `src/types/api.generated.ts` / `src/types/**` | `gen:api:check`                           |
+| `src/**`                                                     | 架构边界 + 可维护性限制                   |
+| `.env*` / Docker / Compose / workflow                        | 环境变量治理                              |
+| `.github/workflows/**`                                       | workflow 安全检查                         |
+| `package.json` / `package-lock.json`                         | 版本对齐 + SBOM / 许可证漂移              |
+| `docs/**` / `tools/docs-bridge/**` / `scripts/docs-*`        | 文档链接检查 + 统一文档构建               |
+| 用户或部署影响文件                                           | Changelog 覆盖检查                        |
 
 `preflight:changed` 只读取 staged 文件；`preflight:changed:all` 合并 working tree 与未跟踪文件，不再扫描全部 tracked 文件。普通 `docs/**` 变更只执行链接、路径和上线准入检查；只有文档桥接、站点配置或构建脚本变化才在本地执行完整 `docs:build`，统一文档 CI 继续对所有文档交付做构建兜底。单测覆盖率、bundle size、audit 可通过 `npm run verify:local` 一次执行；Docker/Trivy、Lighthouse、staging e2e 仍由 CI 分层承担。
 
 ## 常见故障 / 排查
 
-| 症状 | 根因 | 修法 |
-|---|---|---|
-| pr-gate `lint:check` `Definition for rule 'es5/no-es6-methods' was not found` | eslint config 没 ignore vitepress cache | `eslint.config.js` ignore 路径检查 |
-| pr-gate `gen:api:check` 漂移 | BE OpenAPI yaml 改了 FE 没跑 gen:api | 本地 `npm run gen:api` + commit `src/types/api.generated.ts` |
-| pr-gate `npm audit` 在 CI fail 本地通 | npm registry POST 405(代理) | 本地代理特殊，CI `ubuntu-26.04` 正常 |
-| full-ci-gate Trivy 报 CRITICAL | base image 漏洞 | `Dockerfile` 升 base image,或加 `.trivyignore` 临时白名单 |
-| full-ci-gate Lighthouse perf < 0.8 | 包体增大 / 慢资源 | 看报告找 LCP / TBT 拖累项,常见:vendor chunk 拆分 / 图片压缩 |
-| staging-gate playwright fail | staging 服务挂 / 选择器漂 | 看 playwright-report artifact 截图 / 录屏 |
+| 症状                                                                          | 根因                                    | 修法                                                         |
+| ----------------------------------------------------------------------------- | --------------------------------------- | ------------------------------------------------------------ |
+| pr-gate `lint:check` `Definition for rule 'es5/no-es6-methods' was not found` | eslint config 没 ignore vitepress cache | `eslint.config.js` ignore 路径检查                           |
+| pr-gate `gen:api:check` 漂移                                                  | BE OpenAPI yaml 改了 FE 没跑 gen:api    | 本地 `npm run gen:api` + commit `src/types/api.generated.ts` |
+| pr-gate `npm audit` 在 CI fail 本地通                                         | npm registry POST 405(代理)             | 本地代理特殊，CI `ubuntu-26.04` 正常                         |
+| full-ci-gate Trivy 报 CRITICAL                                                | base image 漏洞                         | `Dockerfile` 升 base image,或加 `.trivyignore` 临时白名单    |
+| full-ci-gate Lighthouse perf < 0.8                                            | 包体增大 / 慢资源                       | 看报告找 LCP / TBT 拖累项,常见:vendor chunk 拆分 / 图片压缩  |
+| staging-gate playwright fail                                                  | staging 服务挂 / 选择器漂               | 看 playwright-report artifact 截图 / 录屏                    |
 
 ## 耗时基线(2026-05-23 snapshot)
 
 最近一次成功跑的总耗时与 job 分布。指标用于回归告警:任一 wf 超基线 +50% 需排查。
 
-| Workflow | 总耗时 | 触发 | 目标 | 状态 |
-|---|---|---|---|---|
-| pr-gate | 1:37 | PR / push | ≤6m | ✅ |
-| full-ci-gate | 3:48 | push main / nightly / 手动 | ≤6m | ✅ |
-| release-please | 0:12 | push main | ≤6m | ✅ |
-| renovate | 1:23 | renovate bot | ≤6m | ✅ |
-| staging-gate | 历史基线已失效 | tag v* / 手动 | ≤30m | 缺配置时失败 |
+| Workflow       | 总耗时         | 触发                       | 目标 | 状态         |
+| -------------- | -------------- | -------------------------- | ---- | ------------ |
+| pr-gate        | 1:37           | PR / push                  | ≤6m  | ✅           |
+| full-ci-gate   | 3:48           | push main / nightly / 手动 | ≤6m  | ✅           |
+| release-please | 0:12           | push main                  | ≤6m  | ✅           |
+| renovate       | 1:23           | renovate bot               | ≤6m  | ✅           |
+| staging-gate   | 历史基线已失效 | tag v* / 手动              | ≤30m | 缺配置时失败 |
 
 ### Job 级分布
 
 **pr-gate(单 job)**
+
 - Lint / Typecheck / Unit / Build:1:32
 
 **full-ci-gate(4 job 并行,瓶颈 Lighthouse)**
+
 - Security audit (full) 0:25 / Static checks + Unit 1:21 / Docker build + Trivy 1:25 / **Lighthouse 2:18** ← critical path
 
 **staging-gate(配置完整时)**
+
 - precheck 校验 URL、账号、健康状态与发布版本；配置缺失或版本不匹配会直接失败，不允许跳过发布验收
 
 ### staging-gate 发布语义
