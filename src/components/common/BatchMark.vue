@@ -23,12 +23,12 @@
   .batch-mark {
     display: block;
     flex: 0 0 auto;
+    overflow: hidden;
+    border-radius: 25%;
     background: center / contain no-repeat url('/icons/icon-192-maskable.png');
   }
 
   .batch-mark--tight {
-    overflow: hidden;
-    border-radius: 25%;
     background-size: 122%;
   }
 
