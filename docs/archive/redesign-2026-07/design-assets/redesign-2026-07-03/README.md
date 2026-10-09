@@ -1,10 +1,10 @@
-# Batch Console 前端重设计方案（2026-07-03）
+# Batch Console 前端重设计归档（2026-07-03）
 
-> 本目录是**新版前端设计的权威落地稿**,供前端直接照此开工。
-> - **交互原型**:[`batch-console-redesign-prototype.html`](./batch-console-redesign-prototype.html) —— 浏览器直接打开,点左侧图标 / 顶部 tab 可切换 **14 个页面**(可交互多页原型)。
-> - **页面截图**:见 [`screenshots/`](./screenshots)(01–13,与下方页面清单一一对应)。
+> 本目录是 2026-07 重设计阶段的历史归档，不是当前设计或实现规范的权威来源。
+> - **页面截图**:见 [`screenshots/`](./screenshots)(01–13,作为当时视觉方案的静态记录)。
+> - **交互原型**：已退役。原型通过解析归档 HTML 并重新执行其中脚本来恢复页面；为避免保留不必要的 DOM XSS 执行链，不再提供可执行原型。
 > - **接口契约(权威)**:后端 `file-batch-system/docs/api/`(`console-api-protocol.md` + `console-api.openapi.yaml`)。本稿只定 UI/交互,**不改接口**。
-> - 与既有 `docs/design/批量调度系统前端方案设计说明书_开发落地版_V3.md` 的关系:V3 是工程结构 / IA / 组件封装的基线,**本稿是视觉与交互的升级层**(dark-first + 严重度分色 + 看板 + 汇总卡),二者叠加使用。
+> - 当前设计入口见 [`../../../design/README.md`](../../../design/README.md)；本归档中的方案仅用于回溯当时的决策。
 
 ---
 
@@ -102,6 +102,6 @@
 
 ---
 
-## 6. 如何评审
+## 6. 如何回溯
 
-浏览器打开 `batch-console-redesign-prototype.html` → 点左侧图标逐页看 → 对照 `screenshots/` 与本文 §3/§4。有疑问在 PR 里逐页标注。
+对照 `screenshots/` 与本文 §3/§4 回溯当时的视觉和交互方案。截图是静态记录，不代表当前页面状态；当前实现以代码和现行设计文档为准。
