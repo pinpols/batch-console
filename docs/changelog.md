@@ -9,6 +9,7 @@
 ### 2026-10-09
 
 - **前端 Agent 指南与质量审查**——新增 `frontend-quality-review`，将 UI/交互、代码可读性/维护性、可访问性与浏览器安全纳入有证据边界的审查流程，并路由到既有专项技能；同时收敛 `AGENTS.md` 的重复测试/编码细则，保留高频约束和权威文档入口。参考 Vue、Carbon、W3C 和 OWASP 官方指南，继续遵循本仓库 design token、Element Plus、OpenAPI、HttpOnly Cookie 和安全渲染约束。
+- **发布环境门禁补强**——staging gate 增加部署安全响应头检查及 Chromium、Firefox、WebKit、Pixel 5 的标记路由冒烟；完整业务 E2E 与 axe 基线仍在 Chromium 运行，浏览器覆盖边界在支持策略中明确记录。
 
 ### 2026-10-07
 
