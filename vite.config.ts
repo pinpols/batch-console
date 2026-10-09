@@ -122,7 +122,12 @@ export default defineConfig(({ mode }) => {
         workbox: {
           // SPA fallback:offline 时所有路由 fallback 到 index.html
           navigateFallback: '/index.html',
-          navigateFallbackDenylist: [/^\/api\//, /^\/docs\//],
+          navigateFallbackDenylist: [
+            /^\/api\//,
+            /^\/docs\//,
+            /^\/oauth2\/authorization(?:\/|$)/,
+            /^\/login\/oauth2\/code(?:\/|$)/,
+          ],
           // 静态资源 hash 命名,长期缓存 + SW 接管刷新
           globPatterns: ['**/*.{js,css,html,svg,woff2}', 'icons/icon-*.png'],
           // 排除大文件(echarts/x6 vendor chunk)避免预缓存膨胀
@@ -241,6 +246,15 @@ export default defineConfig(({ mode }) => {
           target: devProxyTarget,
           changeOrigin: true,
         },
+        '/oauth2/authorization': {
+          target: devProxyTarget,
+          // 保留浏览器访问的 Host，避免后端 sendRedirect 将登录后跳转地址生成为 API 端口。
+          changeOrigin: false,
+        },
+        '/login/oauth2/code': {
+          target: devProxyTarget,
+          changeOrigin: false,
+        },
         // 代理的是静态构建后的 VitePress preview，不是 dev server。
         // preview 保留 /docs/ base，路径和生产 nginx 完全一致。
       },
@@ -268,6 +282,14 @@ export default defineConfig(({ mode }) => {
         '/api': {
           target: devProxyTarget,
           changeOrigin: true,
+        },
+        '/oauth2/authorization': {
+          target: devProxyTarget,
+          changeOrigin: false,
+        },
+        '/login/oauth2/code': {
+          target: devProxyTarget,
+          changeOrigin: false,
         },
       },
     },

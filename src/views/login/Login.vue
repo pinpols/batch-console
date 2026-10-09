@@ -52,6 +52,15 @@
         <p class="login-card__subtitle">{{ t('login.subtitle') }}</p>
       </header>
 
+      <el-alert
+        v-if="oidcLoginFailed"
+        class="login-oidc-error"
+        type="error"
+        :closable="false"
+        show-icon
+        :title="t('login.oidcFailed')"
+      />
+
       <div v-if="serviceUnavailable" class="login-service-state" role="alert" aria-live="assertive">
         <el-icon class="login-service-state__icon"><ServerOff /></el-icon>
         <div class="login-service-state__copy">
@@ -140,6 +149,20 @@
           {{ loading ? t('login.submitting') : t('login.submit') }}
         </el-button>
       </el-form>
+
+      <template v-if="oidcRegistrationId">
+        <div class="login-sso-divider">
+          <span>{{ t('login.alternative') }}</span>
+        </div>
+        <el-button
+          class="login-sso"
+          size="large"
+          :disabled="oidcRedirecting"
+          @click="startOidcLogin"
+        >
+          {{ oidcRedirecting ? t('login.redirecting') : t('login.enterpriseLogin') }}
+        </el-button>
+      </template>
     </main>
   </div>
 </template>
@@ -158,6 +181,7 @@
   import { authApi } from '@/api/auth'
   import { getCaptchaConfig } from '@/api/captcha'
   import type { CaptchaConfig } from '@/api/captcha'
+  import { getConsoleOidcProvider } from '@/api/oidc'
   import CaptchaChallenge from '@/components/common/CaptchaChallenge.vue'
   import BatchMark from '@/components/common/BatchMark.vue'
   import type { AxiosRequestConfig } from 'axios'
@@ -189,6 +213,9 @@
   const appVersion = __APP_VERSION__
   const loginTrace = ref('')
   const serviceUnavailable = ref(false)
+  const oidcRegistrationId = ref('')
+  const oidcRedirecting = ref(false)
+  const oidcLoginFailed = computed(() => route.query.authError === 'oidc')
   const form = reactive({ username: '', password: '' })
 
   // ────────────────────────────── 验证码状态
@@ -228,7 +255,21 @@
         serviceUnavailable.value = isConsoleServiceUnavailable(error)
         // 配置拉取失败不阻断登录(后端会按需 401 CAPTCHA_REQUIRED 兜底)
       })
+    void getConsoleOidcProvider()
+      .then((provider) => {
+        oidcRegistrationId.value =
+          provider.enabled && provider.registrationId ? provider.registrationId : ''
+      })
+      .catch(() => {
+        oidcRegistrationId.value = ''
+      })
   })
+
+  function startOidcLogin() {
+    if (!oidcRegistrationId.value || oidcRedirecting.value) return
+    oidcRedirecting.value = true
+    window.location.assign(`/oauth2/authorization/${encodeURIComponent(oidcRegistrationId.value)}`)
+  }
 
   /** 当前 provider 是否具备展示验证码的条件(配置开启 + 非 none)。 */
   function captchaAvailable(): boolean {
@@ -633,6 +674,33 @@
     transition:
       transform 0.2s ease,
       box-shadow 0.2s ease;
+  }
+
+  .login-oidc-error {
+    margin-bottom: var(--space-4);
+  }
+
+  .login-sso-divider {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    margin: var(--space-4) 0 var(--space-3);
+    color: var(--color-text-tertiary);
+    font-size: 12px;
+  }
+
+  .login-sso-divider::before,
+  .login-sso-divider::after {
+    flex: 1;
+    height: 1px;
+    background: var(--color-border);
+    content: '';
+  }
+
+  .login-sso {
+    width: 100%;
+    min-height: 46px;
+    border-radius: var(--radius-content);
   }
 
   .login-submit:hover {

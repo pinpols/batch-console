@@ -2173,6 +2173,11 @@ const messages: Messages = {
     passwordPlaceholder: 'Enter tenant password',
     submit: 'Sign in',
     submitting: 'Signing in…',
+    alternative: 'OR',
+    enterpriseLogin: 'Sign in with your organization',
+    redirecting: 'Redirecting…',
+    oidcFailed:
+      'Enterprise sign-in could not be completed. Retry or use your username and password.',
     usernameRequired: 'Tenant username is required',
     passwordRequired: 'Tenant password is required',
     captchaHint: 'For security, please complete the verification below before signing in',
