@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { stubLocalStorage } from '@/test-utils/localStorage'
 
 const { driverDriveMock, driverConstructorMock } = vi.hoisted(() => {
   const drive = vi.fn()
@@ -17,16 +18,10 @@ vi.mock('driver.js', () => ({
 }))
 vi.mock('driver.js/dist/driver.css', () => ({}))
 
-const storage = new Map<string, string>()
+const storage = stubLocalStorage()
 type ModalStub = Element & { display?: string; visibility?: string }
 const modalElements: ModalStub[] = []
 
-vi.stubGlobal('localStorage', {
-  getItem: (k: string) => storage.get(k) ?? null,
-  setItem: (k: string, v: string) => storage.set(k, v),
-  removeItem: (k: string) => storage.delete(k),
-  clear: () => storage.clear(),
-})
 
 // stub document.querySelector(useOnboardingTour 校验 anchor 存在性)
 vi.stubGlobal('document', {

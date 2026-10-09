@@ -6,6 +6,10 @@
 >
 > 按日期倒序,使用绝对日期(`YYYY-MM-DD`)。
 
+### 2026-10-10
+
+- **测试 fixture 与配置来源约定**——在 `docs/testing/README.md` 固化平台事实来源、共享 helper 与契约独立预期的边界；`AGENTS.md` 增加简要入口，防止测试配置重复或同源断言漏检漂移。
+
 ### 2026-10-09
 
 - **前端 Agent 指南与质量审查**——新增 `frontend-quality-review`，将 UI/交互、代码可读性/维护性、可访问性与浏览器安全纳入有证据边界的审查流程，并路由到既有专项技能；同时收敛 `AGENTS.md` 的重复测试/编码细则，保留高频约束和权威文档入口。参考 Vue、Carbon、W3C 和 OWASP 官方指南，继续遵循本仓库 design token、Element Plus、OpenAPI、HttpOnly Cookie 和安全渲染约束。

@@ -1,17 +1,13 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
+import { STORAGE_KEYS } from '@/constants/storageKeys'
+import { stubLocalStorage } from '@/test-utils/localStorage'
 import { useAuthStore } from './auth'
 import { useTenantStore } from './tenant'
 
-const storage = new Map<string, string>()
+const storage = stubLocalStorage()
 const sessionStorageState = new Map<string, string>()
 const apiMocks = vi.hoisted(() => ({ get: vi.fn() }))
-vi.stubGlobal('localStorage', {
-  getItem: (k: string) => storage.get(k) ?? null,
-  setItem: (k: string, v: string) => storage.set(k, v),
-  removeItem: (k: string) => storage.delete(k),
-  clear: () => storage.clear(),
-})
 vi.stubGlobal('sessionStorage', {
   getItem: (k: string) => sessionStorageState.get(k) ?? null,
   setItem: (k: string, v: string) => sessionStorageState.set(k, v),
@@ -54,7 +50,7 @@ describe('useAuthStore', () => {
   })
 
   it('isLoggedIn is true when session flag exists', () => {
-    storage.set('batch-console-session', '1')
+    storage.set(STORAGE_KEYS.session, '1')
     setActivePinia(createPinia())
     const auth = useAuthStore()
     expect(auth.isLoggedIn).toBe(true)
@@ -97,7 +93,7 @@ describe('useAuthStore', () => {
 
   it('logout clears session flag and userInfo', async () => {
     // D7 Stage B: token 不再前端持有；登录态用 session flag 表达
-    storage.set('batch-console-session', '1')
+    storage.set(STORAGE_KEYS.session, '1')
     setActivePinia(createPinia())
     const auth = useAuthStore()
     expect(auth.isLoggedIn).toBe(true)
@@ -105,7 +101,7 @@ describe('useAuthStore', () => {
     await auth.logout()
     expect(auth.isLoggedIn).toBe(false)
     expect(auth.userInfo).toBeNull()
-    expect(storage.get('batch-console-session')).toBeUndefined()
+    expect(storage.get(STORAGE_KEYS.session)).toBeUndefined()
   })
 
   it('preserves a login password reminder when legacy /auth/me omits the field', async () => {
@@ -208,7 +204,7 @@ describe('useAuthStore', () => {
   it('fetchMe discards stale response after tenant switch mid-flight', async () => {
     const { get } = await import('@/api/client')
     const mockedGet = vi.mocked(get)
-    storage.set('batch-console-session', '1')
+    storage.set(STORAGE_KEYS.session, '1')
     setActivePinia(createPinia())
     const auth = useAuthStore()
     const tenant = useTenantStore()
@@ -259,7 +255,7 @@ describe('useAuthStore', () => {
   it('auth store auto-refreshes profile when tenant changes', async () => {
     const { get } = await import('@/api/client')
     const mockedGet = vi.mocked(get)
-    storage.set('batch-console-session', '1')
+    storage.set(STORAGE_KEYS.session, '1')
     setActivePinia(createPinia())
     const auth = useAuthStore()
     const tenant = useTenantStore()
@@ -294,7 +290,7 @@ describe('useAuthStore', () => {
   describe('login tenant resolution (2026-05 角色重设计)', () => {
     it('admin login with tenantId=system → 不写 tenant store,保留 localStorage 上次值', async () => {
       // 模拟之前已选过业务租户 ta
-      storage.set('batch-console-tenant-id', 'ta')
+      storage.set(STORAGE_KEYS.tenantId, 'ta')
       setActivePinia(createPinia())
       const { authApi } = await import('@/api/auth')
       vi.mocked(authApi.login).mockResolvedValue({
@@ -348,7 +344,7 @@ describe('useAuthStore', () => {
       // pinia 通过 $patch 不能直接写内部 ref,这里改用 fetchMe 路径
       const { get } = await import('@/api/client')
       vi.mocked(get).mockResolvedValue({ permissions: ['ROLE_TENANT_USER'] } as never)
-      storage.set('batch-console-session', '1')
+      storage.set(STORAGE_KEYS.session, '1')
       setActivePinia(createPinia())
       const auth2 = useAuthStore()
       await auth2.fetchMe()
@@ -358,7 +354,7 @@ describe('useAuthStore', () => {
     it('ROLE_TENANT_ADMIN 视为 tenant scoped → isTenantUser=true(不能跨租户切换)', async () => {
       const { get } = await import('@/api/client')
       vi.mocked(get).mockResolvedValue({ permissions: ['ROLE_TENANT_ADMIN'] } as never)
-      storage.set('batch-console-session', '1')
+      storage.set(STORAGE_KEYS.session, '1')
       setActivePinia(createPinia())
       const auth = useAuthStore()
       await auth.fetchMe()
@@ -368,7 +364,7 @@ describe('useAuthStore', () => {
     it('ROLE_ADMIN → isTenantUser=false(可跨租户)', async () => {
       const { get } = await import('@/api/client')
       vi.mocked(get).mockResolvedValue({ permissions: ['ROLE_ADMIN'] } as never)
-      storage.set('batch-console-session', '1')
+      storage.set(STORAGE_KEYS.session, '1')
       setActivePinia(createPinia())
       const auth = useAuthStore()
       await auth.fetchMe()
@@ -380,7 +376,7 @@ describe('useAuthStore', () => {
       vi.mocked(get).mockResolvedValue({
         permissions: ['ROLE_TENANT_ADMIN', 'ROLE_ADMIN'],
       } as never)
-      storage.set('batch-console-session', '1')
+      storage.set(STORAGE_KEYS.session, '1')
       setActivePinia(createPinia())
       const auth = useAuthStore()
       await auth.fetchMe()

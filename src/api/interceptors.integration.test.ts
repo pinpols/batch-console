@@ -10,15 +10,11 @@ import axios from 'axios'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { applyApiInterceptors } from './interceptors'
 import { clearLogs, getLogs } from '@/utils/logger'
+import { STORAGE_KEYS } from '@/constants/storageKeys'
+import { stubLocalStorage } from '@/test-utils/localStorage'
 
 // localStorage + location + window stubs(node env 没有)
-const storage = new Map<string, string>()
-vi.stubGlobal('localStorage', {
-  getItem: (k: string) => storage.get(k) ?? null,
-  setItem: (k: string, v: string) => storage.set(k, v),
-  removeItem: (k: string) => storage.delete(k),
-  clear: () => storage.clear(),
-})
+const storage = stubLocalStorage()
 vi.stubGlobal('location', { pathname: '/ops/summary', hash: '' })
 if (typeof window === 'undefined') {
   vi.stubGlobal('window', { addEventListener: vi.fn(), location: { href: '/' } })
@@ -42,10 +38,10 @@ function makeClient() {
 beforeEach(() => {
   storage.clear()
   // D7 Stage B: token 不再前端持有；session flag 表达"已登录"
-  storage.set('batch-console-session', '1')
-  storage.set('batch-console-tenant-id', 'tenant-a')
+  storage.set(STORAGE_KEYS.session, '1')
+  storage.set(STORAGE_KEYS.tenantId, 'tenant-a')
   // telemetry 默认关闭，测试需显式启用否则 logger push() 早 return → 断言 getLogs() 全失败
-  storage.set('batch-console-telemetry', 'on')
+  storage.set(STORAGE_KEYS.telemetry, 'on')
   clearLogs()
 })
 
@@ -193,7 +189,7 @@ describe('401 分级处理:业务 401 不登出', () => {
     client.defaults.adapter = make401Adapter('/api/console/auth/me') as never
     await expect(client.get('/api/console/auth/me')).rejects.toThrow()
     // D7 Stage B: 不再清 'token'（已不存在），改清 session flag
-    expect(storage.get('batch-console-session')).toBeUndefined()
+    expect(storage.get(STORAGE_KEYS.session)).toBeUndefined()
     expect((window as { location: { href: string } }).location.href).toBe('/login')
   })
 
@@ -221,7 +217,7 @@ describe('401 分级处理:业务 401 不登出', () => {
     }) as never
     await expect(client.get('/api/console/ops/triggers')).rejects.toThrow()
     // D7 Stage B: 业务 401 + refresh 也 401 不应清登录态（可能是单接口 RBAC 不足）
-    expect(storage.get('batch-console-session')).toBe('1')
+    expect(storage.get(STORAGE_KEYS.session)).toBe('1')
     expect((window as { location: { href: string } }).location.href).toBe('/')
   })
 
@@ -282,7 +278,7 @@ describe('401 分级处理:业务 401 不登出', () => {
     client.defaults.adapter = make401Adapter('/api/console/auth/login') as never
     await expect(client.post('/api/console/auth/login', {})).rejects.toThrow()
     // D7 Stage B: 登录 401 是输错密码，不应清掉已有 session flag
-    expect(storage.get('batch-console-session')).toBe('1')
+    expect(storage.get(STORAGE_KEYS.session)).toBe('1')
     expect((window as { location: { href: string } }).location.href).toBe('/')
   })
 })

@@ -1,14 +1,10 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
+import { STORAGE_KEYS } from '@/constants/storageKeys'
+import { stubLocalStorage } from '@/test-utils/localStorage'
 import { useTenantStore } from './tenant'
 
-const storage = new Map<string, string>()
-vi.stubGlobal('localStorage', {
-  getItem: (k: string) => storage.get(k) ?? null,
-  setItem: (k: string, v: string) => storage.set(k, v),
-  removeItem: (k: string) => storage.delete(k),
-  clear: () => storage.clear(),
-})
+const storage = stubLocalStorage()
 
 describe('useTenantStore', () => {
   beforeEach(() => {
@@ -24,7 +20,7 @@ describe('useTenantStore', () => {
   })
 
   it('reads initial value from localStorage', () => {
-    storage.set('batch-console-tenant-id', 'my-tenant')
+    storage.set(STORAGE_KEYS.tenantId, 'my-tenant')
     setActivePinia(createPinia())
     const tenant = useTenantStore()
     expect(tenant.tenantId).toBe('my-tenant')
@@ -37,7 +33,7 @@ describe('useTenantStore', () => {
   })
 
   it('setTenantId clears to empty for empty / whitespace-only input (no default-tenant fallback)', () => {
-    storage.set('batch-console-tenant-id', 'pre-existing-tenant')
+    storage.set(STORAGE_KEYS.tenantId, 'pre-existing-tenant')
     setActivePinia(createPinia())
     const tenant = useTenantStore()
     tenant.setTenantId('  ')

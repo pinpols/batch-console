@@ -68,6 +68,7 @@
 - 移动页面不重复编写自动化测试；业务逻辑由共享模块和桌面测试覆盖。若移动端引入独立业务逻辑或出现移动端专属回归，应为该逻辑/缺陷补针对性测试。
 - Playwright 的运行范围和环境以 [`docs/runbook/ci.md`](docs/runbook/ci.md) 与 `playwright.config.cjs` 为准；不要把 mock/fixture 验证描述成真实后端验收。
 - 写测试前阅读 [`docs/testing/README.md`](docs/testing/README.md)，复用既有 helper 和测试约定。
+- 测试输入与配置优先复用权威来源和共享 fixture；契约断言保留独立预期值，避免实现与期望同源而漏检漂移。详见 [`docs/testing/README.md` §9.1](docs/testing/README.md#91-测试数据与配置来源)。
 
 ## 目录速查
 

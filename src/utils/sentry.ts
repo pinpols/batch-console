@@ -12,6 +12,7 @@
 
 import type { App } from 'vue'
 import type { Router } from 'vue-router'
+import { STORAGE_KEYS } from '@/constants/storageKeys'
 
 export interface SentryOptions {
   app: App
@@ -54,7 +55,7 @@ export async function initSentry({ app, router, dsn }: SentryOptions): Promise<v
 
     beforeSend(event: Record<string, unknown>) {
       // 附加租户信息
-      const tenantId = localStorage.getItem('batch-console-tenant-id')
+      const tenantId = localStorage.getItem(STORAGE_KEYS.tenantId)
       if (tenantId) {
         event.tags = { ...(event.tags as Record<string, string> | undefined), tenantId }
       }
