@@ -39,7 +39,17 @@ docker build \
 | `/docs/*` | VitePress，先通过后端 `auth_request` 鉴权 | assets immutable，入口不缓存 |
 | `/healthz` | 容器健康检查 | 不缓存 |
 
-`BACKEND_UPSTREAM_HOST` 在容器启动时注入；Compose 默认 `host.docker.internal:18080`，生产必须设置为真实 Console API 地址。
+`BACKEND_UPSTREAM_HOST` 在容器启动时注入。仅本地开发 Compose 默认使用 `host.docker.internal:18080`；部署 overlay 要求显式提供可达的 Console API `host:port`，并清除本地 `host-gateway` 映射。镜像本身不含后端地址默认值，直接运行镜像时遗漏该变量会导致 Nginx 配置校验/启动失败，而不是误连某个假定的 `backend` 服务。
+
+部署示例：
+
+```bash
+BACKEND_UPSTREAM_HOST=console-api.prod.example.net:18080 \
+IMAGE_TAG=sha-abc123-staging-verified \
+docker compose -f docker-compose.yml -f docker-compose.deploy.yml up -d --no-build
+```
+
+上例主机名仅为格式示例；实际值必须由站点发布配置提供。Docker Compose 需支持 `!reset`（Compose v2.24+），以免部署 overlay 继承本地 `host.docker.internal` host-gateway。
 
 ## 安全头
 

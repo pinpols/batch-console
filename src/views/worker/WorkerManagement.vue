@@ -110,6 +110,32 @@
                 <div class="wk-card__id">
                   <CopyableText class="wk-card__code" :text="row.workerCode" />
                   <div class="wk-card__group">{{ row.workerGroup }}</div>
+                  <div v-if="row.taskCapabilities?.length" class="wk-card__capabilities">
+                    <div
+                      v-for="capability in row.taskCapabilities"
+                      :key="capability.taskType"
+                      class="wk-card__capability"
+                      :title="capability.resourceKinds.join(', ')"
+                    >
+                      <span class="wk-card__task-type">{{ capability.taskType }}</span>
+                      <span>{{ capability.resourceKinds.join(', ') }}</span>
+                      <span>{{
+                        capability.idempotent
+                          ? t('workerManagement.idempotent')
+                          : t('workerManagement.nonIdempotent')
+                      }}</span>
+                      <span>{{
+                        capability.cancellable
+                          ? t('workerManagement.cancellable')
+                          : t('workerManagement.notCancellable')
+                      }}</span>
+                      <span>{{
+                        t('workerManagement.recommendedTimeout', {
+                          value: fmtDuration(capability.recommendedTimeoutMillis),
+                        })
+                      }}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
               <div class="wk-card__meta">
@@ -337,7 +363,7 @@
   import type { ConsoleWorkerRegistryResponse } from '@/types/console-api'
   import { canWorkerAction, workerActionsForStatus } from './workerActions'
   import type { ConsoleFileChannelResponse } from '@/types/console-api'
-  import { fmtDatetime } from '@/utils/datetime'
+  import { fmtDatetime, fmtDuration } from '@/utils/datetime'
 
   const tenant = useTenantStore()
   const queryClient = useQueryClient()
@@ -812,6 +838,26 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+
+  .wk-card__capabilities {
+    display: grid;
+    gap: 4px;
+    margin-top: 8px;
+    color: var(--color-text-secondary);
+    font-size: 11px;
+  }
+
+  .wk-card__capability {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 8px;
+    min-width: 0;
+  }
+
+  .wk-card__task-type {
+    color: var(--color-text-primary);
+    font-family: var(--font-mono);
   }
 
   .wk-card__meta {

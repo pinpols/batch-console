@@ -3661,6 +3661,11 @@ const messages: Messages = {
     loadBarTitle:
       'Load is the current in-flight task count; bar length is normalized against the peak among listed workers.',
     statOffline: 'Offline',
+    idempotent: 'Idempotent',
+    nonIdempotent: 'Non-idempotent',
+    cancellable: 'Cancellable',
+    notCancellable: 'Not cancellable',
+    recommendedTimeout: 'Suggested timeout: {value}',
     hbSecondsAgo: '{n}s ago',
     hbMinutesAgo: '{n}m ago',
     hbHoursAgo: '{n}h ago',
