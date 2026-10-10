@@ -12,7 +12,7 @@ import type { UserInfo, Role, MenuGroup } from '@/types'
  * 内容是常量 "1"，无敏感信息；页面刷新后避免登录态闪烁。真正鉴权靠后端 cookie。
  */
 const SESSION_FLAG_KEY = STORAGE_KEYS.session
-const PASSWORD_NOTICE_KEY = 'batch-console-password-notice'
+const PASSWORD_NOTICE_KEY = STORAGE_KEYS.passwordNotice
 
 interface PasswordNoticeState {
   username: string

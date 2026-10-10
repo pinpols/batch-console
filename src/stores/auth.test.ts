@@ -143,7 +143,7 @@ describe('useAuthStore', () => {
     auth.clearPasswordReminder()
 
     expect(auth.userInfo?.mustChangePassword).toBe(false)
-    expect(sessionStorageState.get('batch-console-password-notice')).toBeUndefined()
+    expect(sessionStorageState.get(STORAGE_KEYS.passwordNotice)).toBeUndefined()
   })
 
   it('fetchMe deduplicates concurrent calls', async () => {

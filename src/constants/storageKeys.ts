@@ -3,5 +3,6 @@ export const STORAGE_KEYS = {
   tenantId: 'batch-console-tenant-id',
   operationLog: 'batch-console-oplog',
   session: 'batch-console-session',
+  passwordNotice: 'batch-console-password-notice',
   telemetry: 'batch-console-telemetry',
 } as const
