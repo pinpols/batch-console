@@ -2,6 +2,8 @@
 
 CI 由 3 个核心门禁、兼容/安全检查和发布辅助 workflow 组成。前端不复制后端容量门禁，浏览器性能由 Lighthouse 与真实 staging 验收负责。
 
+前后端定时任务的变更检测原则和统一盘点见 [CI 定时治理](https://github.com/pinpols/file-batch-system/blob/main/docs/runbook/ci-schedule-governance.md)。
+
 GitHub Security 告警的分类、修复、误报处理和合并后验证遵循[安全告警治理](./security-alert-governance.md)。CodeQL workflow 成功不等于开放告警已关闭。
 
 ## Workflow 全景
@@ -10,10 +12,10 @@ GitHub Security 告警的分类、修复、误报处理和合并后验证遵循[
 | -------------------------------- | ------------------------------------ | --------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
 | `pr-gate`                        | `.github/workflows/pr-gate.yml`      | PR → main / push main / 手动                                                | PR 必过门禁,fast feedback                                                                                                                       | 5-7 min   |
 | `frontend-ci`                    | `.github/workflows/frontend-ci.yml`  | PR → main / push main / 手动                                                | Node 24 兼容 + 前端文档构建；Markdown-only PR 跳过兼容构建                                                                                      | 8-12 min  |
-| `full-ci-gate`                   | `.github/workflows/full-ci-gate.yml` | PR → main / push main / nightly cron(02:00 UTC = 10:00 Asia/Shanghai)/ 手动 | 全量回归；Markdown-only PR 保留 required check 但跳过构建和全量审计                                                                             | 15-20 min |
+| `full-ci-gate`                   | `.github/workflows/full-ci-gate.yml` | PR → main / push main / 每周一 02:00 UTC（10:00 北京）/ 手动 | 全量回归；Markdown-only PR 保留 required check 但跳过构建和全量审计                                                                             | 15-20 min |
 | `staging-gate`                   | `.github/workflows/staging-gate.yml` | tag `v*` / 手动(可输入 base_url)                                            | 真实环境安全头、Playwright/axe、视觉及跨浏览器路由验收                                                                                          | 20-35 min |
 | `codeql`                         | `.github/workflows/codeql.yml`       | PR / main / 每周 / 手动                                                     | JavaScript/TypeScript 静态安全分析                                                                                                              | 5-10 min  |
-| `build-image`                    | `.github/workflows/build-image.yml`  | main / tag / 每日 19:00 UTC(北京时间 03:00) / 手动                          | main 构建不可变镜像；nightly 按前后端代码变更决定是否构建，后端有变更时等待配对后端 daily sim-strict 成功；tag 在 staging 通过后晋级同一 digest | 10-75 min |
+| `build-image`                    | `.github/workflows/build-image.yml`  | main / tag / 每日 19:00 UTC（北京时间 03:00）/ 手动                          | main 构建不可变镜像；定时任务先判断前后端前一日是否有相关变更，无变更跳过；后端有变更时等待配对后端 daily-sim-strict 成功；tag 在 staging 通过后晋级同一 digest | 10-75 min |
 | `Quarterly dependency inventory` | `.github/workflows/renovate.yml`     | 每季度 / 手动                                                               | 只生成 Renovate dry-run 盘点和一张 Issue，不创建 PR                                                                                             | 5-15 min  |
 
 ## pr-gate 详情
@@ -83,12 +85,14 @@ artifact 上传下载升级后，必须手动运行一次 `full-ci-gate`，确�
 
 ## full-ci-gate 详情(4 个执行 job 并行 + 1 个范围探测 job)
 
-PR 进入 workflow 后先执行 `Detect change scope`。仅包含 Markdown、`docs/**` 或 `.agents/**` 的 PR 会跳过 `Static checks + Unit` 和 `Security audit (full)` 两个重 job；required check 以 skipped-success 状态回报，不改变 main push / nightly / 手动运行的全量门禁。包含 workflow、脚本、配置、源码、依赖或部署文件的 PR 仍完整执行。
+每周定时运行是低频 runner、依赖和门禁漂移检查，不是每日重复回归；日常代码变更由 PR 和 main push 覆盖。
+
+PR 进入 workflow 后先执行 `Detect change scope`。仅包含 Markdown、`docs/**` 或 `.agents/**` 的 PR 会跳过 `Static checks + Unit` 和 `Security audit (full)` 两个重 job；required check 以 skipped-success 状态回报，不改变 main push / 每周定时 / 手动运行的全量门禁。包含 workflow、脚本、配置、源码、依赖或部署文件的 PR 仍完整执行。
 
 ```
                          ┌─ static-and-unit ──→ upload dist artifact
                          │   (full build with i18n + typecheck)
-push main / nightly ────┤
+push main / weekly schedule ────┤
                          ├─ docker-and-scan (needs static-and-unit)
                          │   Docker build + Trivy CRITICAL block
                          │   + HIGH+CRITICAL SARIF report upload
@@ -229,7 +233,7 @@ npm run preflight:changed
 | Workflow       | 总耗时         | 触发                       | 目标 | 状态         |
 | -------------- | -------------- | -------------------------- | ---- | ------------ |
 | pr-gate        | 1:37           | PR / push                  | ≤6m  | ✅           |
-| full-ci-gate   | 3:48           | push main / nightly / 手动 | ≤6m  | ✅           |
+| full-ci-gate   | 3:48           | PR / push main / 每周一 / 手动 | ≤6m  | ✅           |
 | release-please | 0:12           | push main                  | ≤6m  | ✅           |
 | renovate       | 1:23           | renovate bot               | ≤6m  | ✅           |
 | staging-gate   | 历史基线已失效 | tag v* / 手动              | ≤30m | 缺配置时失败 |
