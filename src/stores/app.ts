@@ -1,5 +1,6 @@
 import { computed, ref, watch } from 'vue'
 import { defineStore } from 'pinia'
+import { STORAGE_KEYS } from '@/constants/storageKeys'
 import {
   applyThemeToDocument,
   getSystemIsDark,
@@ -16,8 +17,8 @@ import {
   type ContentDensityMode,
 } from '@/constants/contentDensity'
 
-const sidebarCollapsedKey = 'batch-console:sidebar-collapsed'
-const focusModeKey = 'batch-console:focus-mode'
+const sidebarCollapsedKey = STORAGE_KEYS.sidebarCollapsed
+const focusModeKey = STORAGE_KEYS.focusMode
 
 export type ContentDensity = ContentDensityMode
 

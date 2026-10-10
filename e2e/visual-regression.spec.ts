@@ -1,3 +1,4 @@
+import { STORAGE_KEYS } from './support/storage'
 import { expect, test } from '@playwright/test'
 
 test.beforeEach(async ({ page }) => {
@@ -9,8 +10,8 @@ test.beforeEach(async ({ page }) => {
     }),
   )
   await page.addInitScript(() => {
-    localStorage.setItem('batch-console:locale', 'zh-CN')
-    localStorage.setItem('batch-console:theme', 'dark')
+    localStorage.setItem(STORAGE_KEYS.locale, 'zh-CN')
+    localStorage.setItem(STORAGE_KEYS.theme, 'dark')
   })
 })
 

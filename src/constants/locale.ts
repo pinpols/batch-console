@@ -1,4 +1,6 @@
-export const LOCALE_STORAGE_KEY = 'batch-console:locale'
+import { STORAGE_KEYS } from './storageKeys'
+
+export const LOCALE_STORAGE_KEY = STORAGE_KEYS.locale
 
 export type Locale = 'zh-CN' | 'en-US'
 

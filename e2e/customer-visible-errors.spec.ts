@@ -13,9 +13,10 @@
  *   覆盖 admin(跨租户,最易暴露)+ tenantAdmin + tenantUser(非 admin 角色)。
  *   role-*.json 由 global-setup.cjs 生成;无权页必须明确断言守卫重定向成功。
  */
+import { STORAGE_KEYS } from './support/storage'
 import { test, expect, type Page } from '@playwright/test'
 
-const TENANT_KEY = 'batch-console-tenant-id'
+const TENANT_KEY = STORAGE_KEYS.tenantId
 
 // 错误 toast 文案白判:这些词出现在 .el-message--error 即客户可见报错
 const ERROR_TEXT = /资源不存在|请求失败|unsupported|not found|加载失败|系统错误|渲染异常/i

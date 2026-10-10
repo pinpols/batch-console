@@ -41,13 +41,13 @@
 
 ## 常用命令
 
-| 命令 | 用途 |
-|---|---|
-| `npm run dev` | 启动 Vite 开发服务器（默认 5173） |
-| `npm run preflight:changed` | 按暂存变更运行提交前检查 |
-| `npm run verify:local` | 运行无后端本地门禁，不代表真实业务验收 |
-| `bash scripts/local/fe-acceptance.sh` | 依赖真实后端的全链路验收 |
-| `npm run gen:api` / `npm run gen:api:check` | 生成或检查前后端 API 类型漂移 |
+| 命令                                        | 用途                                   |
+| ------------------------------------------- | -------------------------------------- |
+| `npm run dev`                               | 启动 Vite 开发服务器（默认 5173）      |
+| `npm run preflight:changed`                 | 按暂存变更运行提交前检查               |
+| `npm run verify:local`                      | 运行无后端本地门禁，不代表真实业务验收 |
+| `bash scripts/local/fe-acceptance.sh`       | 依赖真实后端的全链路验收               |
+| `npm run gen:api` / `npm run gen:api:check` | 生成或检查前后端 API 类型漂移          |
 
 测试分层、测试 helper 和案例见 [`docs/testing/README.md`](docs/testing/README.md)；CI 触发、门禁和发布顺序见 [`docs/runbook/ci.md`](docs/runbook/ci.md)。其他命令以 `package.json` 为准。
 
@@ -68,7 +68,7 @@
 - 移动页面不重复编写自动化测试；业务逻辑由共享模块和桌面测试覆盖。若移动端引入独立业务逻辑或出现移动端专属回归，应为该逻辑/缺陷补针对性测试。
 - Playwright 的运行范围和环境以 [`docs/runbook/ci.md`](docs/runbook/ci.md) 与 `playwright.config.cjs` 为准；不要把 mock/fixture 验证描述成真实后端验收。
 - 写测试前阅读 [`docs/testing/README.md`](docs/testing/README.md)，复用既有 helper 和测试约定。
-- 测试输入与配置优先复用权威来源和共享 fixture；契约断言保留独立预期值，避免实现与期望同源而漏检漂移。持久化键和 localStorage 桩由 `check:test-fixture-sources` 守护。详见 [`docs/testing/README.md` §9.1](docs/testing/README.md#91-测试数据与配置来源)。
+- 测试输入与配置优先复用权威来源和共享 fixture；契约断言保留独立预期值，避免实现与期望同源而漏检漂移。Vitest、Playwright 和 storage-state 脚本中的持久化键、平台服务地址及 localStorage 桩由 `check:test-fixture-sources` 守护。详见 [`docs/testing/README.md` §9.1](docs/testing/README.md#91-测试数据与配置来源)。
 
 ## 目录速查
 

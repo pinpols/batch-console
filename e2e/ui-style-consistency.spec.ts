@@ -1,3 +1,4 @@
+import { STORAGE_KEYS } from './support/storage'
 import { expect, test } from './support/app'
 import { enterDemoApp, smokeRoutes, waitForRouteStable } from './support/app'
 
@@ -18,7 +19,7 @@ type AuditIssue = {
 }
 
 async function setTheme(page: import('@playwright/test').Page, theme: 'light' | 'dark') {
-  await page.evaluate((value) => localStorage.setItem('batch-console:theme', value), theme)
+  await page.evaluate((value) => localStorage.setItem(STORAGE_KEYS.theme, value), theme)
   await page.reload({ waitUntil: 'domcontentloaded' })
   if (theme === 'dark') {
     await expect(page.locator('html')).toHaveClass(/dark/)

@@ -1,3 +1,4 @@
+import { STORAGE_KEYS } from './storage'
 import { type Locator, type Page } from '@playwright/test'
 import { test, expect } from './fixtures'
 import {
@@ -86,12 +87,12 @@ export async function enterDemoApp(page: Page, locale: E2eLocale = 'zh-CN') {
   // 第一次访问任意页面前预置 localStorage:locale + onboarding 跳过。
   // 用 addInitScript 保证在每次 navigation 之前(含跳登录后回 ops/summary)都生效。
   // 本地存储键：
-  //   - 'batch-console:locale'           见 src/constants/locale.ts:1
-  //   - 'batch-console-onboarding-done'  见 src/composables/useOnboardingTour.ts:14
+  //   - STORAGE_KEYS.locale           见 src/constants/locale.ts:1
+  //   - STORAGE_KEYS.onboardingDone  见 src/composables/useOnboardingTour.ts:14
   await page.addInitScript((nextLocale: E2eLocale) => {
     try {
-      localStorage.setItem('batch-console:locale', nextLocale)
-      localStorage.setItem('batch-console-onboarding-done', '1')
+      localStorage.setItem(STORAGE_KEYS.locale, nextLocale)
+      localStorage.setItem(STORAGE_KEYS.onboardingDone, '1')
     } catch {}
   }, locale)
 

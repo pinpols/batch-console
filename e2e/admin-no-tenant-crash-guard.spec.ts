@@ -14,12 +14,13 @@
  *   本 spec 锁死该回归:在 admin-无租户态逐页断言「无组件渲染异常 + 无未捕获 pageerror」。
  *   既往巡检(all-pages-zero-error)仅在「有租户」态跑,从未覆盖这条最易暴露空参的路径。
  */
+import { STORAGE_KEYS } from './support/storage'
 import { test, expect } from '@playwright/test'
 
 // 用 admin(跨租户)身份;global-setup.cjs 生成 role-admin.json
 test.use({ storageState: 'e2e/.auth/role-admin.json' })
 
-const TENANT_STORAGE_KEY = 'batch-console-tenant-id'
+const TENANT_STORAGE_KEY = STORAGE_KEYS.tenantId
 
 // 租户依赖的列表/详情页(空 tenantId 时最易触发空参请求)
 const TENANT_SCOPED_PAGES = [

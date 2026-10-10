@@ -67,6 +67,8 @@ jobs:
           cache: npm
       - name: Install locked dependencies
         run: npm ci --no-audit --no-fund
+      - name: Test configuration source governance
+        run: bash scripts/ci/run-gate.sh FE_TEST_FIXTURE_SOURCES "测试配置事实来源" -- npm run check:test-fixture-sources
       - name: Check package version alignment
         run: bash scripts/ci/run-gate.sh FE_VERSION "版本对齐" -- npm run check:version
       - name: Typecheck

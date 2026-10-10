@@ -1,3 +1,4 @@
+import { STORAGE_KEYS } from './support/storage'
 import { expect, test } from './support/app'
 
 test.use({ serviceWorkers: 'block' })
@@ -67,10 +68,10 @@ const jobs = [
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
-    localStorage.setItem('batch-console-session', '1')
-    localStorage.setItem('batch-console-tenant-id', 'tc')
-    localStorage.setItem('batch-console:locale', 'zh-CN')
-    localStorage.setItem('batch-console-onboarding-done', '1')
+    localStorage.setItem(STORAGE_KEYS.session, '1')
+    localStorage.setItem(STORAGE_KEYS.tenantId, 'tc')
+    localStorage.setItem(STORAGE_KEYS.locale, 'zh-CN')
+    localStorage.setItem(STORAGE_KEYS.onboardingDone, '1')
   })
   await page.route('**/api/console/**', async (route) => {
     const path = new URL(route.request().url()).pathname

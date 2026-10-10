@@ -1,5 +1,6 @@
 import { EventSourceParserStream } from 'eventsource-parser/stream'
 import { createIdempotencyKey } from '@/utils/idempotency'
+import { LOCALE_STORAGE_KEY } from '@/constants/locale'
 import type { AiChatRequest, AiChatResponse } from '@/types/console-api'
 
 interface StreamCallbacks {
@@ -31,7 +32,7 @@ function xsrfToken(): string {
 }
 
 function headers(tenantId: string): HeadersInit {
-  const locale = localStorage.getItem('batch-console:locale')
+  const locale = localStorage.getItem(LOCALE_STORAGE_KEY)
   return {
     'Content-Type': 'application/json',
     'X-Tenant-Id': tenantId,

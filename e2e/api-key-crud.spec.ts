@@ -1,4 +1,5 @@
 import { expect, test } from './support/app'
+import { FRONTEND_ORIGIN } from './support/config'
 import { enterDemoApp, expectPageTitle, isVisible } from './support/app'
 
 test.describe('API Key management CRUD (API Key 增删)', () => {
@@ -8,7 +9,7 @@ test.describe('API Key management CRUD (API Key 增删)', () => {
     // P0 secret modal 关闭按钮在 clipboard 写入成功前 disabled,headless 默认无 clipboard 权限 →
     // 永远关不掉。授权给页面 origin。
     await context.grantPermissions(['clipboard-read', 'clipboard-write'], {
-      origin: 'http://localhost:5173',
+      origin: FRONTEND_ORIGIN,
     })
     await enterDemoApp(page)
     await page.goto('/system/api-keys')

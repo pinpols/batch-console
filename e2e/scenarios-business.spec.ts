@@ -10,6 +10,7 @@
  *      用 API 层 (request) 验状态转移,不走 FE UI 减少 flakiness。
  */
 import { test, expect, type APIRequestContext } from '@playwright/test'
+import { API_BASE_URL } from './support/config'
 import fs from 'node:fs'
 import path from 'node:path'
 
@@ -23,7 +24,7 @@ const idem = () => `e2e-scenario-${ts()}-${rand()}`
 async function loadStateRequest(file: string, headers: Record<string, string> = {}) {
   const { request } = await import('@playwright/test')
   return request.newContext({
-    baseURL: process.env.BC_API_BASE || 'http://localhost:18080',
+    baseURL: API_BASE_URL,
     storageState: file,
     extraHTTPHeaders: { 'Content-Type': 'application/json', ...headers },
   })

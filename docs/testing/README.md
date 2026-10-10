@@ -28,6 +28,8 @@ e2e/
   support/            # ★ 可复用 helper(写 e2e 必先看)
     fixtures.ts       # test/expect 扩展 + NetworkWatchdog(自动抓 4xx/5xx)
     app.ts            # enterDemoApp / isVisible / clickTableAction / expectSuccessToast …
+    config.ts         # e2e/config.cjs 的类型化入口；服务地址默认值只在 e2e/test-config.json 维护
+    storage.ts        # 使用应用权威 STORAGE_KEYS 的浏览器存储读写 helper
     form-helpers.ts   # 表单:openDialog / submitForm / expectRequiredBlocked / expectMaxLength …
     crud-smoke.ts     # readOnlyPageSmoke(只读页一键冒烟)
     error-injection.ts# injectError / runErrorMatrix(注入 4xx/5xx/超时 验错误态)
@@ -37,11 +39,27 @@ e2e/
   *.spec.ts           # 顶层 spec
   flows/ flows-ui/    # 业务流 spec
 src/**/*.test.ts      # 单测
-playwright.config.cjs # baseURL=5173 / reuseExistingServer / storageState=e2e/.auth/user.json / 重试
+playwright.config.cjs # 从 e2e/config.cjs 读取 baseURL / reuseExistingServer / storageState / 重试
 vite.config.ts        # test{} 块 = vitest 配置(node env / element-plus inline / coverage)
 scripts/
   test-unit.sh test-e2e.sh check-api-drift.sh check-i18n-messages.mjs
   local/fe-acceptance.sh   # 一条龙验收 wrapper
+```
+
+### 测试配置事实来源
+
+- 应用持久化键由 `src/constants/storageKeys.json` 唯一维护；应用代码从 `src/constants/storageKeys.ts` 引用，Playwright 通过 `e2e/support/storage.ts` 的 `seedBrowserStorage` / `readBrowserStorage` 操作。改动时同步应用事实源和调用方，不在测试内复制字符串。`src/constants/storageKeys.test.ts` 是兼容性契约测试，字面量是有意保留的预期值。
+- E2E 前端、API、Orchestrator、MockServer、Prometheus、Alertmanager 地址由 `e2e/test-config.json` 提供默认值，并通过 `E2E_BASE_URL`、`BC_API_BASE`、`BATCH_ORCHESTRATOR_BASE_URL`、`MOCKSERVER_BASE_URL`、`E2E_PROMETHEUS_URL`、`E2E_ALERTMANAGER_URL` 覆盖。Playwright 配置、setup/teardown、storage-state 生成器和测试统一经过 `e2e/config.cjs` / `e2e/support/config.ts` 读取。
+- 场景数据不是平台配置：租户样例、分页边界、业务状态、请求体和断言值按测试目的保留在测试内，不要求抽成配置。
+- `npm run check:test-fixture-sources` 以 TypeScript AST 检查测试重复定义应用持久化键、内联 localStorage 桩，以及重复写平台服务 origin（包括带插值的模板字符串）。动态临时服务端口和业务场景数据允许保留；契约预期和外部服务地址也不属于该门禁范围。
+- 门禁纳入 `verify-governance.sh`，由 PR 与 Full Gate 调用；本地 `preflight:changed` 在应用/测试、Playwright 配置、事实源或门禁脚本变更时运行。
+
+```ts
+// 正确：引用应用持久化键并复用共享 seed helper
+await seedBrowserStorage(page, { locale: 'zh-CN', tenantId: 'ta' })
+
+// 错误：测试复制应用键，应用改名后测试会与实现漂移
+await page.addInitScript(() => localStorage.setItem('batch-console:locale', 'zh-CN'))
 ```
 
 ---
@@ -217,7 +235,7 @@ BC_API_BASE=http://127.0.0.1:18089 E2E_BASE_URL=http://127.0.0.1:5175 \
 
 全局准备会登录内置 admin 并按需准备测试租户及角色账号；如多个实例共享数据库，重新登录可能使同一账号的其他会话失效。需要保留现场时可显式设置 `BC_E2E_SKIP_TEARDOWN=1`，但不能据此宣称已完成测试数据清理。`E2E_SKIP_GLOBAL_SETUP=1` 只适用于自行登录的 opt-in 用例；普通套件跳过准备会使用过期的 `e2e/.auth/*.json`。
 
-真实告警监控联测使用 `e2e/monitoring-platform-real.spec.ts`，不拦截或 mock Console API：检查本机 Prometheus 已加载可用性/事件规则、Alertmanager 接收器配置，并通过浏览器验证事件目录、告警列表、通知渠道/订阅/投递日志 API。默认要求 `127.0.0.1:19090`、`127.0.0.1:19093`、Console API `18080` 和 E2E 前端可用；非 loopback 目标必须显式设置 `E2E_MONITORING_ALLOW_REMOTE=1`。该专项 setup 仅登录生成浏览器态，不导入配置包、创建角色账号或执行全局清理。若本机 5173 被其他工作树占用，可把当前前端启动在 5174 并设置 `E2E_BASE_URL=http://127.0.0.1:5174`。运行：
+真实告警监控联测使用 `e2e/monitoring-platform-real.spec.ts`，不拦截或 mock Console API：检查 Prometheus 已加载可用性/事件规则、Alertmanager 接收器配置，并通过浏览器验证事件目录、告警列表、通知渠道/订阅/投递日志 API。默认地址来自 `e2e/test-config.json`；可分别用 `E2E_PROMETHEUS_URL`、`E2E_ALERTMANAGER_URL`、`BC_API_BASE` 和 `E2E_BASE_URL` 覆盖。非 loopback 目标必须显式设置 `E2E_MONITORING_ALLOW_REMOTE=1`。该专项 setup 仅登录生成浏览器态，不导入配置包、创建角色账号或执行全局清理。若本机 5173 被其他工作树占用，可把当前前端启动在 5174 并设置 `E2E_BASE_URL=http://127.0.0.1:5174`。运行：
 
 ```bash
 npm run test:e2e:monitoring:real
@@ -338,7 +356,7 @@ E2E_USAGE_DB_RECONCILIATION=1 E2E_SKIP_GLOBAL_SETUP=1 E2E_BASE_URL=http://127.0.
 ### 9.1 测试数据与配置来源
 
 - 测试输入依赖平台已有定义时，优先复用生产代码或共享 fixture：持久化键使用 `src/constants/storageKeys.ts`，浏览器存储桩使用 `src/test-utils/localStorage.ts`。主题、语言、页面偏好等功能专属键继续由对应模块维护，不为集中而集中。
-- `npm run check:test-fixture-sources` 会阻止测试重复写 `batch-console-*` / `batch-console:*` 持久化键，以及在测试里内联创建 localStorage 桩；新增或调整 `src/**/*.test.ts`、存储键常量或共享桩时应运行该检查。`src/constants/storageKeys.test.ts` 是有意保留独立预期值的契约测试例外。
+- `npm run check:test-fixture-sources` 会扫描 Vitest、Playwright spec、storage-state CJS 和测试脚本，阻止重复写浏览器持久化键、重复写平台前后端服务地址，以及在测试中内联创建 localStorage 桩。浏览器持久化键由 `src/constants/storageKeys.json` 维护，应用模块通过 `src/constants/storageKeys.ts` 派生；Playwright 通过 `e2e/support/storage.ts` 写入和读取。前端/API/Orchestrator 测试地址由 `e2e/config.cjs` 根据 `e2e/test-config.json` 和可覆盖环境变量解析；页面导航优先使用相对路径。新增或调整这些测试、配置源或共享桩时应运行该检查。`src/constants/storageKeys.test.ts` 保留独立字面量，验证已发布键值兼容性。
 - 拦截示例：在 `auth.test.ts` 直接写 `storage.set('batch-console-session', '1')`，或再次 `vi.stubGlobal('localStorage', ...)`；应改用 `STORAGE_KEYS.session` 与 `stubLocalStorage()`。放行示例：`storageKeys.test.ts` 将发布过的键值作为独立预期固定下来，或某个测试使用 `tenant-a` 这类仅属于该测试数据的标识。
 - 同一测试环境配置被多个测试复用时，放入已有 Vitest setup、共享测试 helper 或测试环境配置；单个测试特有的覆盖值留在测试旁，并说明验证目的。不要复制相同的桩实现或环境默认值。
 - 输入数据依赖当前平台定义时，优先引用相应 DTO、枚举、导出常量或公共 fixture，避免平台定义变化后测试输入悄悄过期。

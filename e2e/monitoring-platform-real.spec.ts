@@ -1,9 +1,10 @@
 import { expect, test } from './support/app'
 import { enterDemoApp, expectPageTitle } from './support/app'
+import { PROMETHEUS_BASE_URL, ALERTMANAGER_BASE_URL } from './support/config'
 
 const REAL_MONITORING_ENABLED = process.env.E2E_MONITORING_REAL === '1'
-const PROMETHEUS_URL = process.env.E2E_PROMETHEUS_URL || 'http://127.0.0.1:19090'
-const ALERTMANAGER_URL = process.env.E2E_ALERTMANAGER_URL || 'http://127.0.0.1:19093'
+const PROMETHEUS_URL = PROMETHEUS_BASE_URL
+const ALERTMANAGER_URL = ALERTMANAGER_BASE_URL
 
 function assertLocalEndpoint(value: string, name: string) {
   const url = new URL(value)

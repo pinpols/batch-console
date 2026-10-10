@@ -1,7 +1,7 @@
 // @ts-check
 const { defineConfig, devices } = require('@playwright/test')
 
-const baseURL = process.env.E2E_BASE_URL || 'http://localhost:5173'
+const { FRONTEND_BASE_URL: baseURL } = require('./e2e/config.cjs')
 
 module.exports = defineConfig({
   testDir: './e2e',
