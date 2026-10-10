@@ -199,6 +199,13 @@ export const navigationGroups: NavigationGroup[] = [
         icon: Bell,
       },
       {
+        title: pageTitle('/observability/job-monitoring-policies'),
+        path: '/observability/job-monitoring-policies',
+        minRole: 'OPERATOR',
+        authorities: ['ROLE_ADMIN', 'ROLE_TENANT_ADMIN'],
+        icon: Timer,
+      },
+      {
         title: pageTitle('/observability/alert-routings'),
         path: '/observability/alert-routings',
         minRole: 'OPERATOR',

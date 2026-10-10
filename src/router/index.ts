@@ -67,6 +67,7 @@ const MOBILE_DEEPLINK_MAP: { prefix: string; to: string | MobileMapper }[] = [
   },
   // 作业/工作流/流水线定义：移动端无编辑/管理体验，明确提示切桌面版。
   { prefix: '/jobs/definitions', to: '/m/desktop-only' },
+  { prefix: '/observability/job-monitoring-policies', to: '/m/desktop-only' },
   { prefix: '/jobs/pipelines', to: '/m/desktop-only' },
   { prefix: '/workflow/definitions', to: '/m/desktop-only' },
   // 文件中心：列表 + 模板/渠道/到达组等子页统一降级到移动文件页
@@ -452,6 +453,17 @@ export const routes: RouteRecordRaw[] = [
       } as RouteRecordRaw,
       { path: 'alerts', redirect: '/observability/alerts' },
       { path: 'alerts/list', redirect: '/observability/alerts' },
+      {
+        path: 'observability/job-monitoring-policies',
+        name: 'job-monitoring-policies',
+        component: () => import('@/views/observability/JobMonitoringPolicies.vue'),
+        meta: {
+          title: '作业监控策略',
+          activeMenu: '/observability/job-monitoring-policies',
+          minRole: 'OPERATOR',
+          permissions: ['ROLE_ADMIN', 'ROLE_TENANT_ADMIN'],
+        },
+      },
       {
         path: 'observability/alerts',
         name: 'observability-alerts',

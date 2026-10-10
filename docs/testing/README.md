@@ -8,12 +8,12 @@
 
 ## 1. 测试分层(各层职责 + 何时用)
 
-| 层 | 工具 | 位置 | 验证什么 | 何时写 |
-|---|---|---|---|---|
-| **单元测试** | Vitest | `src/**/*.test.ts`(与被测文件同目录) | 纯逻辑:util / composable / api 客户端 / 指令 / 拦截器 | 关键业务逻辑、防御性代码、复用工具 |
-| **e2e** | Playwright | `e2e/*.spec.ts` | 真实浏览器 + 真实 BE:页面渲染、4xx/5xx、CRUD、表单校验、RBAC、跳转交互 | 主要用户路径、页面级回归、跨页流程 |
-| **e2e 业务流** | Playwright | `e2e/flows/*.spec.ts`(API 序列)、`e2e/flows-ui/*.spec.ts`(UI 序列) | 端到端业务逻辑:触发→实例、配置发布全生命周期、租户复制、文件流水线… | 跨多页/多接口的真实业务场景 |
-| **守护单测** | Vitest | 见 §6 | 权限指令 / XSS 兜底 / 租户 ID 校验 / 拦截器防御 | 安全/防御红线,改一次固化一次 |
+| 层             | 工具       | 位置                                                               | 验证什么                                                               | 何时写                             |
+| -------------- | ---------- | ------------------------------------------------------------------ | ---------------------------------------------------------------------- | ---------------------------------- |
+| **单元测试**   | Vitest     | `src/**/*.test.ts`(与被测文件同目录)                               | 纯逻辑:util / composable / api 客户端 / 指令 / 拦截器                  | 关键业务逻辑、防御性代码、复用工具 |
+| **e2e**        | Playwright | `e2e/*.spec.ts`                                                    | 真实浏览器 + 真实 BE:页面渲染、4xx/5xx、CRUD、表单校验、RBAC、跳转交互 | 主要用户路径、页面级回归、跨页流程 |
+| **e2e 业务流** | Playwright | `e2e/flows/*.spec.ts`(API 序列)、`e2e/flows-ui/*.spec.ts`(UI 序列) | 端到端业务逻辑:触发→实例、配置发布全生命周期、租户复制、文件流水线…    | 跨多页/多接口的真实业务场景        |
+| **守护单测**   | Vitest     | 见 §6                                                              | 权限指令 / XSS 兜底 / 租户 ID 校验 / 拦截器防御                        | 安全/防御红线,改一次固化一次       |
 
 测试数量持续变化，不在文档固化瞬时数字；以 `vitest` / `playwright --list` 的实际收集结果为准。
 
@@ -49,27 +49,32 @@ scripts/
 ## 3. 可复用 helper(写测试前先查这里)
 
 ### 3.1 `e2e/support/app.ts`
-| helper | 签名 | 用途 |
-|---|---|---|
-| `enterDemoApp(page)` | `(Page)=>Promise<void>` | 进入已登录的 app(走 storageState),并断言落在 `/ops/summary`;**被重定向到 /login 会抛「storageState 过期」**(见 §7) |
-| `isVisible(locator, timeout=3000)` | `=>Promise<boolean>` | 替代啰嗦的 `.isVisible({timeout}).catch(()=>false)`;**条件分支/skip 守卫**用它 |
-| `gotoAndAssertRoute(page, route)` | | 跳转 + 断言 URL + 页面标题 |
-| `expectPageTitle(page, title)` | | 断言页标题(含被 router guard 弹回控制面板的明确报错) |
-| `clickTableAction(...)` | | 点表格行操作按钮(含 More 折叠兜底),返回是否点到 |
-| `expectSuccessToast(page, text)` | | 断言成功 toast |
-| `getFirstCellLinkId(page, listPath)` | | 取列表首行链接 id(进详情用) |
-| `smokeRoutes` | `RouteCheck[]` | 全站冒烟路由表 |
+
+| helper                               | 签名                    | 用途                                                                                                               |
+| ------------------------------------ | ----------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `enterDemoApp(page)`                 | `(Page)=>Promise<void>` | 进入已登录的 app(走 storageState),并断言落在 `/ops/summary`;**被重定向到 /login 会抛「storageState 过期」**(见 §7) |
+| `isVisible(locator, timeout=3000)`   | `=>Promise<boolean>`    | 替代啰嗦的 `.isVisible({timeout}).catch(()=>false)`;**条件分支/skip 守卫**用它                                     |
+| `gotoAndAssertRoute(page, route)`    |                         | 跳转 + 断言 URL + 页面标题                                                                                         |
+| `expectPageTitle(page, title)`       |                         | 断言页标题(含被 router guard 弹回控制面板的明确报错)                                                               |
+| `clickTableAction(...)`              |                         | 点表格行操作按钮(含 More 折叠兜底),返回是否点到                                                                    |
+| `expectSuccessToast(page, text)`     |                         | 断言成功 toast                                                                                                     |
+| `getFirstCellLinkId(page, listPath)` |                         | 取列表首行链接 id(进详情用)                                                                                        |
+| `smokeRoutes`                        | `RouteCheck[]`          | 全站冒烟路由表                                                                                                     |
 
 ### 3.2 `e2e/support/form-helpers.ts`(抽屉/弹窗表单)
+
 `openDialog` / `submitForm` / `cancelDialog` / `expectRequiredBlocked`(必填拦截)/ `expectMaxLength` / `expectNumericRejection` / `fieldInput` / `expectFormResetOnReopen`。
 
 ### 3.3 `e2e/support/error-injection.ts`(错误态)
+
 `injectError(page, urlMatcher, kind)` / `clearInjection` / `runErrorMatrix(...)`,`ErrorKind` 含 4xx/5xx/timeout/malformed。用于验「接口出错时 UI 不白屏、有重试态」。
 
 ### 3.4 `e2e/support/crud-smoke.ts`
+
 `readOnlyPageSmoke(page, opts)` —— 只读页一键冒烟(渲染 + 查询 + 零服务端错误)。
 
 ### 3.5 `e2e/support/fixtures.ts`
+
 扩展的 `test`/`expect` 自带 **NetworkWatchdog**:测试期间任何 4xx/5xx 响应都会被记录,**无需每个 spec 手写抓 4xx/5xx**。
 
 ---
@@ -80,6 +85,7 @@ scripts/
 > **容忍策略**:仅依赖可选业务数据的场景允许用 `test.skip(true, '原因')`;BE 未启动、登录失败、RBAC 账号准备失败属于联测基础设施错误,必须 fail,不得用 skip 掩盖覆盖缺口。
 
 ### 4.1 只读页冒烟
+
 ```ts
 import { test, expect } from './support/app'
 import { enterDemoApp } from './support/app'
@@ -94,6 +100,7 @@ test.describe('XXX 列表', () => {
 ```
 
 ### 4.2 CRUD(新建 → 编辑 → 删除)
+
 ```ts
 import { test, expect } from './support/app'
 import { enterDemoApp, isVisible, expectSuccessToast } from './support/app'
@@ -103,14 +110,15 @@ test('新建 XXX → 校验必填 → 提交 → toast', async ({ page }) => {
   await enterDemoApp(page)
   await page.goto('/xxx/list')
   const dialog = await openDialog(page, { name: /新建/ })
-  await expectRequiredBlocked(dialog)            // 必填拦截
-  await dialog.getByLabel('名称').fill(`e2e-xxx-${Date.now()}`)  // 命名带 e2e 前缀,teardown 自动清
+  await expectRequiredBlocked(dialog) // 必填拦截
+  await dialog.getByLabel('名称').fill(`e2e-xxx-${Date.now()}`) // 命名带 e2e 前缀,teardown 自动清
   await submitForm(dialog)
   await expectSuccessToast(page, /成功/)
 })
 ```
 
 ### 4.3 表单校验矩阵
+
 ```ts
 import { expectMaxLength, expectNumericRejection } from './support/form-helpers'
 // 在打开的 dialog 上:
@@ -119,33 +127,43 @@ await expectNumericRejection(dialog, '超时秒数')
 ```
 
 ### 4.4 错误态(注入 4xx/5xx)
+
 ```ts
 import { injectError, runErrorMatrix } from './support/error-injection'
 await injectError(page, '/api/console/xxx', '500')
 await page.goto('/xxx/list')
-await expect(page.locator('.error-state, .el-result')).toBeVisible()  // 有错误态,不白屏
+await expect(page.locator('.error-state, .el-result')).toBeVisible() // 有错误态,不白屏
 ```
 
 ### 4.5 RBAC(角色可见性)
+
 用 `e2e/.auth/role-*.json` 切换 storageState;global-setup 会幂等查找或创建 admin/tenantAdmin/auditor/tenantUser/user 五类账号,校正角色与启用状态,必要时完成重置密码和首次改密。角色准备失败会终止 suite,RBAC 矩阵不得条件跳过。参考 `e2e/rbac-matrix.spec.ts` / `rbac-denial.spec.ts`。
 
 ### 4.6 跨页业务流
+
 - API 序列:`e2e/flows/*.spec.ts`(如 `09-config-release-lifecycle`、`10-tenant-copy`)。
 - UI 序列:`e2e/flows-ui/*.spec.ts`(如 `01-trigger-instance-ui`)。
 
 ### 4.7 ★ 设计器(X6,绕原生 DnD)—— 见 `e2e/workflow-designer-save-flow.spec.ts`
+
 **原生 HTML5 DnD,Playwright 驱不动**,所以**不要**靠拖拽建图。可靠做法:
+
 - 借**既有合法 workflow** 进设计器 + 工具栏「自动布局」改图(`store.moveNode` → dirty 但仍合法),或「模板/快速节点」(`store.addNode`/`store.reset`)落图;
 - `beforeEach` 里**主动释放设计锁**(锁按会话持有,跨运行不释放,否则撞「只读」被 skip):
   ```ts
   for (let id = 1; id <= 15; id++)
-    await page.request.delete(`/api/console/workflow-definitions/${id}/lock?tenantId=ta`,
-      { headers: { 'X-Tenant-Id': 'ta', 'Idempotency-Key': `e2e-rellock-${id}-${Date.now()}` } }).catch(()=>0)
+    await page.request
+      .delete(`/api/console/workflow-definitions/${id}/lock?tenantId=ta`, {
+        headers: { 'X-Tenant-Id': 'ta', 'Idempotency-Key': `e2e-rellock-${id}-${Date.now()}` },
+      })
+      .catch(() => 0)
   ```
 - 保存走 `graphToDefinition → PUT /full`,刷新后断言节点数不变(持久化往返)。
 
 ### 4.8 断言深度模式(flows-ui 深化经验,稳健不 flaky)
+
 让 UI 业务流既"深"又不依赖具体 seed 数据:
+
 - **数据视图真渲染(行 or 空态)**,而非仅 `toBeAttached`:
   ```ts
   const LIST_OR_EMPTY = 'tbody tr.el-table__row, .el-table__empty-block, .el-empty, .empty-state'
@@ -155,7 +173,7 @@ await expect(page.locator('.error-state, .el-result')).toBeVisible()  // 有错�
 - **tab 切换验真激活**,**不要**切完去断 `LIST_OR_EMPTY.first()`——多 tab pane 下 `.first()` 会命中**隐藏**的非激活 pane(`display:none`)→ `toBeVisible` 失败:
   ```ts
   await deliveryTab.click({ force: true })
-  await expect(deliveryTab).toHaveAttribute('aria-selected', 'true')  // el-tabs 激活态
+  await expect(deliveryTab).toHaveAttribute('aria-selected', 'true') // el-tabs 激活态
   ```
 - **数据相关交互保持 best-effort**:`if (await isVisible(btn)) { ... }`,有数据才点;别硬断言某行/某按钮存在(seed 波动会 flaky)。
 
@@ -172,6 +190,7 @@ npm run test:unit:watch
 npm run test:e2e             # 常规套件，排除 @slow
 npm run test:e2e:all         # 发布验收全量套件，包含 @slow
 npm run test:e2e:smoke       # 冒烟三件套(smoke/cross-navigation/navigation)
+npm run test:e2e:monitoring:real # 真实 Prometheus/Alertmanager + Console 告警页面联测(需先启动本地观测栈和后端)
 npm run test:e2e:ui          # Playwright UI 模式调试
 npx playwright test e2e/xxx.spec.ts --reporter=list   # 单 spec
 
@@ -197,6 +216,14 @@ BC_API_BASE=http://127.0.0.1:18089 E2E_BASE_URL=http://127.0.0.1:5175 \
 ```
 
 全局准备会登录内置 admin 并按需准备测试租户及角色账号；如多个实例共享数据库，重新登录可能使同一账号的其他会话失效。需要保留现场时可显式设置 `BC_E2E_SKIP_TEARDOWN=1`，但不能据此宣称已完成测试数据清理。`E2E_SKIP_GLOBAL_SETUP=1` 只适用于自行登录的 opt-in 用例；普通套件跳过准备会使用过期的 `e2e/.auth/*.json`。
+
+真实告警监控联测使用 `e2e/monitoring-platform-real.spec.ts`，不拦截或 mock Console API：检查本机 Prometheus 已加载可用性/事件规则、Alertmanager 接收器配置，并通过浏览器验证事件目录、告警列表、通知渠道/订阅/投递日志 API。默认要求 `127.0.0.1:19090`、`127.0.0.1:19093`、Console API `18080` 和 E2E 前端可用；非 loopback 目标必须显式设置 `E2E_MONITORING_ALLOW_REMOTE=1`。该专项 setup 仅登录生成浏览器态，不导入配置包、创建角色账号或执行全局清理。若本机 5173 被其他工作树占用，可把当前前端启动在 5174 并设置 `E2E_BASE_URL=http://127.0.0.1:5174`。运行：
+
+```bash
+npm run test:e2e:monitoring:real
+```
+
+平台级 Prometheus 规则由 Docker/Helm 配置管理，不提供租户级前台编辑；事件目录是只读契约目录。通知渠道和订阅规则在“通知与投递”维护。告警列表验证读取 `alert_event`，不能据此宣称 Prometheus firing 已投递到真实外部收件端；真实收件端送达仍需按后端 [`observability-stack.md`](../../../file-batch-system/docs/runbook/observability-stack.md) 演练。
 
 当前本地 `ta/tb/tc` 的作业配置不等于 `batch.tenant` 中存在对应租户实例。使用率切租户迟到响应用例仅模拟租户候选和汇总行，验证前端不会回填旧租户数据；真实页头切换验收需要后端租户列表确实返回至少两个业务租户。不要把此用例当成真实租户目录联测。
 
@@ -259,41 +286,41 @@ E2E_USAGE_DB_RECONCILIATION=1 E2E_SKIP_GLOBAL_SETUP=1 E2E_BASE_URL=http://127.0.
 
 ## 6. 守护测试 / 运行期 Guard(安全红线,改路径要确认没被绕过)
 
-| 测试/Guard | 拦截 |
-|---|---|
-| `src/directives/permission.test.ts` | 权限指令 8 case |
-| `src/directives/safeHtml.test.ts` | XSS 兜底(script/on*/javascript: URL) |
-| `src/utils/tenantIdValidator.test.ts` | 租户 ID 校验与 BE ReservedPrefixGuard 对齐 |
-| `src/api/interceptors.integration.test.ts` | 拦截器 401/4xx/blob/token 不泄露 |
-| `vue/no-v-html: error`(eslint) | 禁原生 v-html,须 `v-safe-html`(DOMPurify) |
-| `.husky/pre-commit` | lint-staged:对 staged 跑 eslint+prettier(禁 `--no-verify`) |
+| 测试/Guard                                 | 拦截                                                       |
+| ------------------------------------------ | ---------------------------------------------------------- |
+| `src/directives/permission.test.ts`        | 权限指令 8 case                                            |
+| `src/directives/safeHtml.test.ts`          | XSS 兜底(script/on*/javascript: URL)                       |
+| `src/utils/tenantIdValidator.test.ts`      | 租户 ID 校验与 BE ReservedPrefixGuard 对齐                 |
+| `src/api/interceptors.integration.test.ts` | 拦截器 401/4xx/blob/token 不泄露                           |
+| `vue/no-v-html: error`(eslint)             | 禁原生 v-html,须 `v-safe-html`(DOMPurify)                  |
+| `.husky/pre-commit`                        | lint-staged:对 staged 跑 eslint+prettier(禁 `--no-verify`) |
 
 ---
 
 ## 7. 常见坑 / 排障(本项目实测踩过)
 
-| 症状 | 根因 | 处理 |
-|---|---|---|
-| e2e 报「storageState token is expired」或角色账号准备失败 | 登录态过期,或脱离 global-setup 直跑(如手写 `chromium.launch + storageState` 的一次性脚本) | **必须走 `npx playwright test` / `npm run test:e2e`** —— 它每次自动准备角色账号并刷新 `e2e/.auth/*.json`;**别用独立脚本直接吃陈旧 storageState**;确认 BE 在 `BC_API_BASE` 指定地址(默认 18080)且 admin/admin123 可登录 |
-| `toHaveURL` 断言失败但页面其实正常(如 `/scheduler/catch-up-approvals`) | 该路径是**别名,会重定向**(→ `/approvals?tab=catch-up`) | URL 断言写成接受重定向:`toHaveURL(/\/(scheduler\/catch-up-approvals\|approvals)/)` |
-| tab 切换后 `LIST_OR_EMPTY.first()` 报 `Received: hidden` | 多 tab pane 下 `.first()` 命中**隐藏的非激活 pane**(`display:none`) | 切 tab 后改断 `tab` 的 `aria-selected='true'`,别断隐藏 pane 的表(见 §4.8) |
-| 设计器 e2e 进去撞「只读 banner」被 skip | **设计锁按会话持有,跨运行不自动释放** | `beforeEach` 主动 DELETE 锁(见 §4.7) |
-| 设计器 dev 偶发「View with name 'vue-shape-view' does not exist」 | vite **optimizeDeps 把 x6 系预打包成多实例**(dev-only;prod rollup 单实例无此问题) | `vite.config optimizeDeps.include` 必须含 `@antv/x6` + `@antv/x6-vue-shape` + `@antv/x6/es/plugin/minimap`;`--force` 重启后**首次**加载可能撞 504 churn,优化器稳定后正常 |
-| 设计器拖节点崩 `clientToLocalPoint is not a function` | X6 v3 公开 API 是 `graph.clientToLocal(x,y)`(`clientToLocalPoint` 仅在 `graph.coord`) | 已修;新代码用 `clientToLocal` |
-| 暗色下白卡 | 组件用了 `var(--color-xxx, #浅色)` 但该 token **未在 `html.dark` 定义** | 在 `tokens.css` 的 `:root` + `html.dark` **成对**定义;审计:见本仓 token 缺口扫法 |
-| 单测报 `Unknown file extension ".css"` | element-plus SFC auto-import 副作用拉 css | 优先把逻辑抽到 `src/utils/*.ts` 测;非测不可时 vite.config `test.css:false` + `server.deps.inline:[/element-plus/]`(已配) |
-| `npm run test:e2e` 全 fail | BE 没起 | `cd ../file-batch-system && bash scripts/local/restart.sh console` |
-| 表格行 `.click()` 不触发 | 见根 AGENTS.md/记忆:个别场景须原生 `el.click()` | 用 `clickTableAction` helper |
+| 症状                                                                   | 根因                                                                                      | 处理                                                                                                                                                                                                                   |
+| ---------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| e2e 报「storageState token is expired」或角色账号准备失败              | 登录态过期,或脱离 global-setup 直跑(如手写 `chromium.launch + storageState` 的一次性脚本) | **必须走 `npx playwright test` / `npm run test:e2e`** —— 它每次自动准备角色账号并刷新 `e2e/.auth/*.json`;**别用独立脚本直接吃陈旧 storageState**;确认 BE 在 `BC_API_BASE` 指定地址(默认 18080)且 admin/admin123 可登录 |
+| `toHaveURL` 断言失败但页面其实正常(如 `/scheduler/catch-up-approvals`) | 该路径是**别名,会重定向**(→ `/approvals?tab=catch-up`)                                    | URL 断言写成接受重定向:`toHaveURL(/\/(scheduler\/catch-up-approvals\|approvals)/)`                                                                                                                                     |
+| tab 切换后 `LIST_OR_EMPTY.first()` 报 `Received: hidden`               | 多 tab pane 下 `.first()` 命中**隐藏的非激活 pane**(`display:none`)                       | 切 tab 后改断 `tab` 的 `aria-selected='true'`,别断隐藏 pane 的表(见 §4.8)                                                                                                                                              |
+| 设计器 e2e 进去撞「只读 banner」被 skip                                | **设计锁按会话持有,跨运行不自动释放**                                                     | `beforeEach` 主动 DELETE 锁(见 §4.7)                                                                                                                                                                                   |
+| 设计器 dev 偶发「View with name 'vue-shape-view' does not exist」      | vite **optimizeDeps 把 x6 系预打包成多实例**(dev-only;prod rollup 单实例无此问题)         | `vite.config optimizeDeps.include` 必须含 `@antv/x6` + `@antv/x6-vue-shape` + `@antv/x6/es/plugin/minimap`;`--force` 重启后**首次**加载可能撞 504 churn,优化器稳定后正常                                               |
+| 设计器拖节点崩 `clientToLocalPoint is not a function`                  | X6 v3 公开 API 是 `graph.clientToLocal(x,y)`(`clientToLocalPoint` 仅在 `graph.coord`)     | 已修;新代码用 `clientToLocal`                                                                                                                                                                                          |
+| 暗色下白卡                                                             | 组件用了 `var(--color-xxx, #浅色)` 但该 token **未在 `html.dark` 定义**                   | 在 `tokens.css` 的 `:root` + `html.dark` **成对**定义;审计:见本仓 token 缺口扫法                                                                                                                                       |
+| 单测报 `Unknown file extension ".css"`                                 | element-plus SFC auto-import 副作用拉 css                                                 | 优先把逻辑抽到 `src/utils/*.ts` 测;非测不可时 vite.config `test.css:false` + `server.deps.inline:[/element-plus/]`(已配)                                                                                               |
+| `npm run test:e2e` 全 fail                                             | BE 没起                                                                                   | `cd ../file-batch-system && bash scripts/local/restart.sh console`                                                                                                                                                     |
+| 表格行 `.click()` 不触发                                               | 见根 AGENTS.md/记忆:个别场景须原生 `el.click()`                                           | 用 `clickTableAction` helper                                                                                                                                                                                           |
 
 ---
 
 ## 8. CI 门禁(e2e 不在 PR gate 跑)
 
-| Workflow | 触发 | 内容 |
-|---|---|---|
-| `pr-gate.yml` | PR / push main | lint / typecheck / i18n / api-drift / **unit** / build / audit |
-| `full-ci-gate.yml` | push main / nightly | pr-gate 全套 + Docker/Trivy + Lighthouse |
-| `staging-gate.yml` | tag v* / 手动 | **Playwright 全量 against staging URL** + Lighthouse |
+| Workflow           | 触发                | 内容                                                           |
+| ------------------ | ------------------- | -------------------------------------------------------------- |
+| `pr-gate.yml`      | PR / push main      | lint / typecheck / i18n / api-drift / **unit** / build / audit |
+| `full-ci-gate.yml` | push main / nightly | pr-gate 全套 + Docker/Trivy + Lighthouse                       |
+| `staging-gate.yml` | tag v* / 手动       | **Playwright 全量 against staging URL** + Lighthouse           |
 
 **关键**:Playwright e2e **只在 staging-gate**(真 staging URL)跑,pr-gate/full-ci **故意不跑**(CI 起 BE 太脆,业界惯例)。e2e 失败 block staging 部署,不 block PR 合并。
 
@@ -315,6 +342,7 @@ E2E_USAGE_DB_RECONCILIATION=1 E2E_SKIP_GLOBAL_SETUP=1 E2E_BASE_URL=http://127.0.
 **覆盖好**:CRUD / 列表 / 表单校验 / RBAC / 错误态 / 全站零 4xx-5xx 巡检 / i18n 切换稳定性 / 主要业务流(flows)。
 
 **缺口 / flaky(留 follow-up)**:
+
 - **设计器(X6)**:原生 DnD 测不了,只能走 store/模板/自动布局驱动;save-flow spec 依赖设计锁 + 登录态新鲜,环境不满足时 skip(非 fail)。
 - **暗色模式**:已补 token 缺口,但无「全站暗色逐页」自动断言,新增页仍可能引入未定义 token(写 `<style>` 时用 `tokens.css` 已有 token,勿造新的浅色 fallback)。
 - **A11y / Lighthouse**:只在 staging-gate 跑,本地不强制。

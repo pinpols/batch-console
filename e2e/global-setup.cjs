@@ -479,6 +479,7 @@ const TENANT_EXCELS = [
  */
 async function globalSetup(config) {
   const baseURL = config.projects[0].use.baseURL ?? 'http://localhost:5173'
+  const readOnlyMonitoringRun = process.env.E2E_MONITORING_REAL === '1'
 
   // ── 登录 ────────────────────────────────────────────────────────
   // D7 Stage B(commit 6405b5a):token 已迁到 HttpOnly cookie,localStorage 不再存。
@@ -513,7 +514,7 @@ async function globalSetup(config) {
 
   // ── 导入测试数据 ─────────────────────────────────────────────────
   const seedAuthHeaders = buildAuthHeaders(token, authCookies)
-  if (Object.keys(seedAuthHeaders).length > 0) {
+  if (!readOnlyMonitoringRun && Object.keys(seedAuthHeaders).length > 0) {
     for (const { tenantId, file } of TENANT_EXCELS) {
       await seedTenant(seedAuthHeaders, tenantId, file)
     }
@@ -549,6 +550,13 @@ async function globalSetup(config) {
 
   writeFileSync(path.join(authDir, 'user.json'), JSON.stringify(storageState, null, 2))
   console.log('[global-setup] storageState 已写入，默认测试租户: ta')
+
+  if (readOnlyMonitoringRun) {
+    console.log(
+      '[global-setup] monitoring real run: skipped tenant seed, fixture export and RBAC setup',
+    )
+    return
+  }
 
   // ── 刷新分角色 storageState(role-*.json) ─────────────────────────
   // 以下场景共用分角色状态：scenarios-business / multi-tenant-and-stream / c-plus-coverage / rbac-matrix /

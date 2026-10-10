@@ -1,5 +1,5 @@
 /**
- * Job 编辑 / 新建表单的本地 state 类型(对齐 BE `JobDefinitionUpdateRequest` 24 字段)。
+ * Job 编辑 / 新建表单的本地 state 类型(对齐 BE `JobDefinitionUpdateRequest`)。
  *
  * 与 generated `JobDefinitionUpdateRequest` 区别:
  *   - 不含 tenantId(由调用方提交时单独带)
@@ -12,6 +12,22 @@
  *   - 新建作业向导 state(Day 8+)
  */
 export type ExecutionMode = 'FULL' | 'INCREMENTAL' | 'CDC'
+
+export function createEmptyJobDefinitionCreateForm() {
+  return {
+    jobCode: '',
+    jobName: '',
+    jobType: 'GENERAL',
+    scheduleType: 'MANUAL',
+    scheduleExpr: '',
+    dependsOnJobCode: '',
+    queueCode: '',
+    workerGroup: '',
+    executionMode: 'FULL' as ExecutionMode,
+    watermarkField: '',
+    enabled: false,
+  }
+}
 
 export interface JobEditFormState {
   /** 仅显示用,提交时不带 */

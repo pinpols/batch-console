@@ -29,8 +29,8 @@ describe('route inventory', () => {
     const navigationItems = navigationGroups.flatMap((group) => group.children)
     const navigationPaths = navigationItems.map((item) => item.path)
 
-    expect(navigationPaths).toHaveLength(55)
-    expect(navigationItems.filter((item) => !item.hidden)).toHaveLength(26)
+    expect(navigationPaths).toHaveLength(56)
+    expect(navigationItems.filter((item) => !item.hidden)).toHaveLength(27)
     expect(navigationItems.filter((item) => item.hidden)).toHaveLength(29)
     expect(navigationPaths.filter((path) => !routePaths.has(path))).toEqual([])
   })
