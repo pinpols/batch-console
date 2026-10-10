@@ -71,9 +71,8 @@ COPY --from=build /app/dist /usr/share/nginx/html
 # 单站文档产物 → /docs/
 COPY --from=build /app/tools/docs-bridge/frontend/.vitepress/dist /var/www/batch-docs
 
-# 默认 BE 上游(可在 docker run/compose 中覆盖)
-ENV BACKEND_UPSTREAM_HOST=backend:18080 \
-    NGINX_PORT=8080
+# Nginx fails startup if deployment omits BACKEND_UPSTREAM_HOST; local Compose supplies its own default.
+ENV NGINX_PORT=8080
 
 USER batch:batch
 

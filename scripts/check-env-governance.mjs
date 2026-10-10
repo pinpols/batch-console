@@ -73,6 +73,22 @@ for (const file of [
 ]) scanFile(join(root, file))
 scan(join(root, '.github', 'workflows'), new Set(['.yml', '.yaml']))
 
+const localCompose = readFileSync(join(root, 'docker-compose.yml'), 'utf8')
+const deployCompose = readFileSync(join(root, 'docker-compose.deploy.yml'), 'utf8')
+const dockerfile = readFileSync(join(root, 'Dockerfile'), 'utf8')
+if (!localCompose.includes('BACKEND_UPSTREAM_HOST: ${BACKEND_UPSTREAM_HOST:-host.docker.internal:18080}')) {
+  errors.push('本地 Compose 必须保留显式标注的 host.docker.internal 开发默认值')
+}
+if (!deployCompose.includes('BACKEND_UPSTREAM_HOST: ${BACKEND_UPSTREAM_HOST:?')) {
+  errors.push('部署 Compose 必须要求显式设置 BACKEND_UPSTREAM_HOST')
+}
+if (!deployCompose.includes('extra_hosts: !reset []')) {
+  errors.push('部署 Compose 必须清除本地 host-gateway 映射')
+}
+if (/ENV\s+BACKEND_UPSTREAM_HOST\s*=/.test(dockerfile)) {
+  errors.push('Dockerfile 不得携带环境相关的后端上游默认地址')
+}
+
 for (const [name, file] of used)
   if (!declared.has(name)) errors.push(`${name} 使用于 ${file}，但未登记`)
 for (const name of declared)

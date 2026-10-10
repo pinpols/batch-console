@@ -12,3 +12,6 @@ services:
   frontend:
     image: ghcr.io/pinpols/batch-console:${IMAGE_TAG:?Set IMAGE_TAG to a staging-verified image tag}
     pull_policy: always
+    environment:
+      BACKEND_UPSTREAM_HOST: ${BACKEND_UPSTREAM_HOST:?Set BACKEND_UPSTREAM_HOST to the reachable Console API host:port}
+    extra_hosts: !reset []
