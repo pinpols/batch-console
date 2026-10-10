@@ -3,6 +3,7 @@ import { ref, computed, watch } from 'vue'
 import { authApi, mapProfileToUserInfo, type ConsoleAuthProfilePayload } from '@/api/auth'
 import { useTenantStore } from '@/stores/tenant'
 import { roleOrder } from '@/constants/role'
+import { STORAGE_KEYS } from '@/constants/storageKeys'
 import type { UserInfo, Role, MenuGroup } from '@/types'
 
 /**
@@ -10,8 +11,8 @@ import type { UserInfo, Role, MenuGroup } from '@/types'
  * 前端不再持有 token 字符串。{@code SESSION_FLAG_KEY} 仅作为"已登录"UI 提示位，
  * 内容是常量 "1"，无敏感信息；页面刷新后避免登录态闪烁。真正鉴权靠后端 cookie。
  */
-const SESSION_FLAG_KEY = 'batch-console-session'
-const PASSWORD_NOTICE_KEY = 'batch-console-password-notice'
+const SESSION_FLAG_KEY = STORAGE_KEYS.session
+const PASSWORD_NOTICE_KEY = STORAGE_KEYS.passwordNotice
 
 interface PasswordNoticeState {
   username: string

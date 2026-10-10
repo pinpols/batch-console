@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { effectScope } from 'vue'
+import { stubLocalStorage } from '@/test-utils/localStorage'
 
 const listDefinitionsPagedMock = vi.fn()
 const searchDefinitionsMock = vi.fn()
@@ -11,15 +12,9 @@ vi.mock('@/api/job', () => ({
   },
 }))
 
-const storage = new Map<string, string>()
-vi.stubGlobal('localStorage', {
-  getItem: (k: string) => storage.get(k) ?? null,
-  setItem: (k: string, v: string) => storage.set(k, v),
-  removeItem: (k: string) => storage.delete(k),
-  clear: () => storage.clear(),
-})
+const storage = stubLocalStorage()
 
-import { useJobCodeSearch } from './useJobCodeSearch'
+import { JOB_CODE_SEARCH_PAGE_SIZE, useJobCodeSearch } from './useJobCodeSearch'
 
 beforeEach(() => {
   listDefinitionsPagedMock.mockReset()
@@ -53,7 +48,7 @@ describe('useJobCodeSearch', () => {
     expect(listDefinitionsPagedMock).toHaveBeenCalledWith({
       tenantId: expect.any(String),
       pageNo: 1,
-      pageSize: 30,
+      pageSize: JOB_CODE_SEARCH_PAGE_SIZE,
       enabled: true,
     })
     expect(api.jobCodeOptions.value).toEqual(['a', 'b'])

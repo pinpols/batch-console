@@ -11,14 +11,10 @@ import {
   exportLogsAsJson,
   initLogger,
 } from './logger'
+import { STORAGE_KEYS } from '@/constants/storageKeys'
+import { stubLocalStorage } from '@/test-utils/localStorage'
 
-const storage = new Map<string, string>()
-vi.stubGlobal('localStorage', {
-  getItem: (k: string) => storage.get(k) ?? null,
-  setItem: (k: string, v: string) => storage.set(k, v),
-  removeItem: (k: string) => storage.delete(k),
-  clear: () => storage.clear(),
-})
+const storage = stubLocalStorage()
 vi.stubGlobal('location', { pathname: '/test', hash: '' })
 
 // initLogger 会调用 window.addEventListener，在 Node 环境中使用桩替代
@@ -32,7 +28,7 @@ beforeEach(() => {
   clearLogs()
   storage.clear()
   // telemetry 默认关闭（cc90063），测试需显式启用否则 push() 早 return → buffer 永远为空
-  storage.set('batch-console-telemetry', 'on')
+  storage.set(STORAGE_KEYS.telemetry, 'on')
 })
 
 describe('logger core — schema 对齐后端 OpenAPI', () => {
@@ -156,10 +152,10 @@ describe('clearLogs', () => {
   it('empties buffer and localStorage', () => {
     logClick('a')
     flushLogs()
-    expect(localStorage.getItem('batch-console-oplog')).not.toBeNull()
+    expect(localStorage.getItem(STORAGE_KEYS.operationLog)).not.toBeNull()
     clearLogs()
     expect(getLogs()).toHaveLength(0)
-    expect(localStorage.getItem('batch-console-oplog')).toBeNull()
+    expect(localStorage.getItem(STORAGE_KEYS.operationLog)).toBeNull()
   })
 })
 
@@ -169,7 +165,7 @@ describe('persistence', () => {
     logRoute('page B')
     flushLogs()
 
-    const raw = localStorage.getItem('batch-console-oplog')
+    const raw = localStorage.getItem(STORAGE_KEYS.operationLog)
     expect(raw).not.toBeNull()
     const data = JSON.parse(raw!) as { seq: number; entries: { name: string }[] }
     expect(data.entries).toHaveLength(2)
@@ -177,7 +173,7 @@ describe('persistence', () => {
   })
 
   it('handles corrupted localStorage gracefully', () => {
-    localStorage.setItem('batch-console-oplog', '{broken json!!!}')
+    localStorage.setItem(STORAGE_KEYS.operationLog, '{broken json!!!}')
     expect(() => initLogger()).not.toThrow()
   })
 })

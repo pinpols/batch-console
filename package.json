@@ -20,6 +20,7 @@
     "check:docs": "node scripts/check-docs.mjs",
     "check:go-live-readiness": "node scripts/check-go-live-readiness-doc.mjs",
     "check:maintainability": "node scripts/check-maintainability.mjs",
+    "check:test-fixture-sources": "node scripts/check-test-fixture-sources.mjs",
     "check:ui-complexity": "node scripts/check-ui-complexity.mjs",
     "check:workflows": "node scripts/check-workflows.mjs",
     "check:shell": "bash scripts/check-shell-scripts.sh",

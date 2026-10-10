@@ -6,6 +6,11 @@
 >
 > 按日期倒序,使用绝对日期(`YYYY-MM-DD`)。
 
+### 2026-10-10
+
+- **测试 fixture 与配置来源约定**——在 `docs/testing/README.md` 固化平台事实来源、共享 helper 与契约独立预期的边界；新增 `check:test-fixture-sources` 守护重复持久化键和内联 localStorage 桩，并接入增量预检、PR/Full Gate；`AGENTS.md` 增加简要入口。
+- **前端门禁失败边界说明**——在 CI runbook 逐项区分增量预检的快速失败、PR/Full Gate 与本地完整门禁的失败汇总，以及文档构建和真实环境验收的依赖阻断边界。
+
 ### 2026-10-09
 
 - **前端 Agent 指南与质量审查**——新增 `frontend-quality-review`，将 UI/交互、代码可读性/维护性、可访问性与浏览器安全纳入有证据边界的审查流程，并路由到既有专项技能；同时收敛 `AGENTS.md` 的重复测试/编码细则，保留高频约束和权威文档入口。参考 Vue、Carbon、W3C 和 OWASP 官方指南，继续遵循本仓库 design token、Element Plus、OpenAPI、HttpOnly Cookie 和安全渲染约束。

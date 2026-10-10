@@ -89,6 +89,10 @@ const architectureChanged = hasAny(files, [
   (f) => /^src\/.+\.(vue|ts|tsx)$/.test(f),
   (f) => /^scripts\/check-architecture\.mjs$/.test(f),
 ])
+const testFixtureSourceChanged = hasAny(files, [
+  (f) => /^src\/.+\.(vue|ts|tsx)$/.test(f),
+  (f) => f === 'scripts/check-test-fixture-sources.mjs',
+])
 const environmentChanged = hasAny(files, [
   (f) => /^\.env/.test(f),
   (f) => /^config\/frontend-env\.json$/.test(f),
@@ -146,6 +150,10 @@ if (apiChanged) {
 if (architectureChanged) {
   run('architecture boundaries', 'npm', ['run', 'check:architecture'])
   run('maintainability limits', 'npm', ['run', 'check:maintainability'])
+}
+
+if (testFixtureSourceChanged) {
+  run('test fixture source governance', 'npm', ['run', 'check:test-fixture-sources'])
 }
 
 if (environmentChanged) {

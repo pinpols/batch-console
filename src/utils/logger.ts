@@ -1,3 +1,5 @@
+import { STORAGE_KEYS } from '@/constants/storageKeys'
+
 /**
  * 前端操作日志 —— 唯一的埋点入口(telemetry.ts 已废弃并删除)。
  *
@@ -33,7 +35,7 @@ export interface LogEntry {
   props?: Record<string, unknown>
 }
 
-const STORAGE_KEY = 'batch-console-oplog'
+const STORAGE_KEY = STORAGE_KEYS.operationLog
 const MAX_ENTRIES = 500
 const FLUSH_INTERVAL_MS = 10_000
 const UPLOAD_INTERVAL_MS = 15_000
@@ -43,8 +45,8 @@ const TELEMETRY_ENDPOINT =
 const APP_NAME = 'batch-console'
 // D7 Stage B: 不再读 'token'，改读 session flag。真正鉴权靠 HttpOnly cookie 自动随
 // fetch keepalive 发送（fetch 默认 same-origin 带 cookie；keepalive 也保留这一行为）。
-const SESSION_FLAG_KEY = 'batch-console-session'
-const TENANT_STORAGE_KEY = 'batch-console-tenant-id'
+const SESSION_FLAG_KEY = STORAGE_KEYS.session
+const TENANT_STORAGE_KEY = STORAGE_KEYS.tenantId
 
 /** 已知 benign 错误 —— 不进 buffer,不上报,不刷 UI */
 const IGNORED_ERROR_PATTERNS: readonly RegExp[] = [
@@ -61,7 +63,7 @@ const IGNORED_ERROR_PATTERNS: readonly RegExp[] = [
  * 关闭时所有 log* / initLogger / unload 上报全部 no-op，不写 buffer、不起定时器、
  * 不注册 beforeunload 监听 —— 避免 `Failed to fetch` 类卸载竞态噪音。
  */
-const TELEMETRY_TOGGLE_KEY = 'batch-console-telemetry'
+const TELEMETRY_TOGGLE_KEY = STORAGE_KEYS.telemetry
 
 function isTelemetryEnabled(): boolean {
   try {

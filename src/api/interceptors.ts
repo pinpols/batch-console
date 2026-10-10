@@ -10,6 +10,7 @@ import { resolveErrorSuggestion, suggestionForBizKey } from '@/utils/errorCatalo
 import { i18n } from '@/locales'
 import { getActivePinia } from 'pinia'
 import { useAppStore } from '@/stores/app'
+import { STORAGE_KEYS } from '@/constants/storageKeys'
 
 /**
  * 把后端 BizException 下发的 i18n key(形如 "error.auth.invalid_credentials")翻成中/英文。
@@ -129,10 +130,8 @@ function nextRetryDelay(attempt: number): number {
   return exp + jitter
 }
 
-const TENANT_STORAGE_KEY = 'batch-console-tenant-id'
-
 export function readStoredTenantId(): string {
-  return localStorage.getItem(TENANT_STORAGE_KEY) ?? ''
+  return localStorage.getItem(STORAGE_KEYS.tenantId) ?? ''
 }
 
 function isSuccessCode(code: string | number | undefined): boolean {
@@ -741,7 +740,7 @@ export function applyApiInterceptors(client: AxiosInstance): void {
         } else if (isSessionAuthRequest(cfg)) {
           // /auth/me 401:session 真正失效 → 清登录 flag 跳登录
           // (HttpOnly cookie 由后端 max-age=0 或服务端 token 已过期;前端只需清 UI flag)
-          localStorage.removeItem('batch-console-session')
+          localStorage.removeItem(STORAGE_KEYS.session)
           // 带上 redirect 参数,登录后 router.replace 回原页面,
           // 否则用户深页面 session 过期 → 登录后被踢回首页 → 工作上下文全丢。
           // Login.vue 已实现 `route.query.redirect` 跳转逻辑。

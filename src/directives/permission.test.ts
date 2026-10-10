@@ -4,6 +4,7 @@ import { setActivePinia, createPinia } from 'pinia'
 import type { DirectiveBinding } from 'vue'
 import { permissionDirective } from './permission'
 import { useAuthStore } from '@/stores/auth'
+import { stubLocalStorage } from '@/test-utils/localStorage'
 
 vi.mock('@/api/client', () => ({ get: vi.fn() }))
 vi.mock('@/api/auth', () => ({
@@ -12,13 +13,7 @@ vi.mock('@/api/auth', () => ({
 }))
 
 // jsdom 自带 localStorage,但 auth store init 时若读 storage 抛会让 pinia setup 失败 — 兜底成空
-const storage = new Map<string, string>()
-vi.stubGlobal('localStorage', {
-  getItem: (k: string) => storage.get(k) ?? null,
-  setItem: (k: string, v: string) => storage.set(k, v),
-  removeItem: (k: string) => storage.delete(k),
-  clear: () => storage.clear(),
-})
+stubLocalStorage()
 
 /** 直接调用 directive.mounted(el, binding),不走 Vue 渲染,避免依赖 @vue/test-utils。 */
 function runMounted(value: unknown): HTMLElement {

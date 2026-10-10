@@ -39,6 +39,17 @@ checkout@v7 → setup-node@v7(node 24 + npm cache)
 job 末尾一次性列出全部失败并返回非零。checkout、Node 安装、`npm ci` 等后续检查
 无法继续的基础环境步骤仍立即失败。本地 `npm run verify:local` 使用相同汇总行为。
 
+### 快速失败与失败汇总边界
+
+| 入口 | 失败行为 | 继续/停止边界 |
+|---|---|---|
+| `npm run preflight:changed` / `preflight:changed:all` | 对本次变更选出的检查按顺序执行，首个失败立即返回 | 提交前快速反馈；修复后重跑即可，不承诺收集后续检查结果 |
+| PR `pr-gate`、`full-ci-gate` 和 `frontend-ci` 的静态/Node 兼容步骤 | `run-gate.sh` 在 `BATCH_GATE_COLLECT=1` 下记录单项结果并继续；`verify-governance.sh` 收集其内部独立门禁；各 job 末尾 `gate_assert_collected` 汇总并非零退出 | 同一 job 的独立 lint、配置、测试、构建等门禁尽量收齐；安装、checkout、运行时等前置步骤失败仍会阻断依赖它们的阶段 |
+| `npm run verify:local` | `scripts/ci.sh` 聚合独立检查并在结尾返回总结果 | 真实依赖/环境准备失败、必须依赖前序产物的步骤失败时，不执行依赖阶段 |
+| `frontend-ci` 的文档构建、`staging-gate` 的环境预检与浏览器验收 | job/步骤按依赖关系失败即停止 | 文档站构建或真实环境预检失败时，不继续执行依赖该结果的发布/浏览器验收；不把未执行阶段算通过 |
+
+门禁判定的拦截与放行示例见下方覆盖矩阵和 [测试事实来源约定](../testing/README.md#91-测试数据与配置来源)。
+
 ### 派生产物与人工维护边界
 
 - `package.json` / `package-lock.json` 已暂存且没有同文件未暂存改动时，pre-commit 会自动重建并暂存前端 SBOM 与第三方许可证清单；CI 只读比对，不在机器人账号下回写 PR。
@@ -154,6 +165,7 @@ tag v* / 手动 ── precheck(URL/账号/healthz/部署安全头/版本必须�
 | Lighthouse                      | —                 | ✅ against preview  | ✅ against staging | —                                                       |
 | Playwright e2e                  | —                 | —                   | ✅ against staging | —                                                       |
 | 架构/环境/文档/SBOM/许可证      | ✅                | ✅                  | —                  | 按 staged 变更选择                                      |
+| 测试 fixture 事实来源 (`check:test-fixture-sources`) | ✅ (`verify-governance.sh`) | ✅ (`verify-governance.sh`) | — | `src/**` 变更时由 `preflight:changed` 触发 |
 | Shell 语法 / ShellCheck warning | ✅                | ✅                  | —                  | `npm run check:shell`                                   |
 | 文档 chunk / 搜索索引预算       | 统一文档 job      | Docker 文档构建     | —                  | `docs:build` 内置                                       |
 | 上线准入文档覆盖                | ✅                | ✅                  | —                  | `preflight:changed`(文档变更)                           |

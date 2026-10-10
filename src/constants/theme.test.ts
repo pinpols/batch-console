@@ -6,15 +6,9 @@ import {
   THEME_REDESIGN_DEFAULT_STORAGE_KEY,
   THEME_STORAGE_KEY,
 } from './theme'
+import { stubLocalStorage } from '@/test-utils/localStorage'
 
-const storage = new Map<string, string>()
-
-vi.stubGlobal('localStorage', {
-  getItem: vi.fn((key: string) => storage.get(key) ?? null),
-  setItem: vi.fn((key: string, value: string) => storage.set(key, value)),
-  removeItem: vi.fn((key: string) => storage.delete(key)),
-  clear: vi.fn(() => storage.clear()),
-})
+const storage = stubLocalStorage()
 
 describe('theme', () => {
   beforeEach(() => {
