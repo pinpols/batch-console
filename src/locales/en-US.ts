@@ -2599,6 +2599,11 @@ const messages: Messages = {
     entryStatusFailed: 'Failed',
     previewBtn: 'Preview impact',
     previewOk: 'Preview generated',
+    previewRequired:
+      'Preview the current options before submitting. Any option change requires a new preview.',
+    previewExpired: 'The preview expired. Generate a new preview before submitting.',
+    previewEntriesSummary:
+      '{count} candidate entries. Use pagination to inspect the complete list.',
   },
   capacityProfile: {
     refresh: 'Refresh',
@@ -3163,6 +3168,7 @@ const messages: Messages = {
     detailGoLogs: 'Execution logs (audit search)',
     detailRerunBtn: 'Rerun',
     detailCancelBtn: 'Cancel run',
+    detailCancelRequestBtn: 'Request cancellation',
     detailTerminateBtn: 'Terminate run',
     detailDiagnose: 'Diagnose run',
     detailRetryFailedPartitions: 'Retry failed partitions',
@@ -3187,6 +3193,9 @@ const messages: Messages = {
     instanceCancelText: 'Cancel run {no}?',
     instanceCancelTitle: 'Confirm cancel',
     instanceCanceled: 'Cancelled run {no}',
+    instanceCancelRequested:
+      'Cancellation requested for {no}; {count} running tasks were signaled. Continue tracking until the instance reaches a terminal state.',
+    instanceCancelAccepted: 'Cancellation accepted for {no}; current status: {status}',
     terminateVerb: 'force terminate',
     terminateTarget: 'instance {no}',
     terminateConsequence:
@@ -3197,10 +3206,14 @@ const messages: Messages = {
     rerunConfirmConsequence:
       'A new instance will be dispatched with the same jobCode + bizDate; the original instance data is kept. If downstream already consumed the old output, duplicate processing may occur.',
     rerunConfirmButton: 'Confirm rerun',
-    cancelConfirmVerb: 'cancel',
-    cancelConfirmConsequence:
-      'The worker will stop the running process as soon as possible. Written intermediate results may remain and require manual cleanup.',
-    cancelConfirmButton: 'Confirm cancel',
+    cancelConfirmVerb: 'cancel instance',
+    cancelConfirmRequestVerb: 'request cancellation',
+    cancelRunningConsequence:
+      'Running tasks receive a cooperative cancellation request and should stop as soon as possible. Acceptance does not mean the instance has stopped. Written intermediate results are not rolled back; track the terminal state and reconcile data as needed.',
+    cancelQueuedConsequence:
+      'This instance has not started. It will be cancelled and moved to a terminal state; this action cannot be undone.',
+    cancelConfirmButton: 'Confirm request',
+    cancelConfirmQueuedButton: 'Confirm cancellation',
     partitionTitle: 'Job partitions',
     partitionDescription: 'Partitions of run #{id}',
     partitionRefresh: 'Refresh',

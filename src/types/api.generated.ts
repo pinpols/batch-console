@@ -932,7 +932,7 @@ export interface paths {
     put?: never
     /**
      * ADR-020 提交批次日重放 session
-     * @description 转发到 orchestrator `POST /internal/orchestrator/batch-day-replay/sessions`。
+     * @description 转发到 orchestrator `POST /internal/orchestrator/batch-day-replay/sessions`。previewToken 必须来自当前请求参数对应且未过期的预览；提交成功后不可再次执行，但相同请求在 24 小时内重试会返回已创建的 session。
      *     scope ∈ {ALL, ALL_FAILED, SUBSET_JOB_CODES, OUTPUTS_ONLY}；ALL/ALL_FAILED 物化所有候选 instance，
      *     SUBSET 需 jobCodes，OUTPUTS_ONLY 需 versionIds。autoApprove=true 直接 RUNNING；否则 PENDING_APPROVAL。
      *     同 (tenant, calendarCode, bizDate) 已存在 active session → STATE_CONFLICT。
@@ -954,9 +954,9 @@ export interface paths {
     get?: never
     put?: never
     /**
-     * ADR-020 批次日重放影响预览（只读）
+     * ADR-020 批次日重放影响预览并签发提交凭证
      * @description 转发到 orchestrator `POST /internal/orchestrator/batch-day-replay/sessions/preview`。
-     *     复用 submit 的候选解析和 scope 校验，但不创建 session / entry，不触发审批；用于提交前确认会重跑哪些 job、影响哪些 result_version。
+     *     复用 submit 的候选解析和 scope 校验，不创建 session / entry，也不触发审批；返回 5 分钟有效的一次性 previewToken。提交必须携带该 token，参数或候选/影响快照变化时需要重新预览。
      */
     post: operations['previewBatchDayReplayImpact']
     delete?: never
@@ -7893,6 +7893,8 @@ export interface components {
        * @enum {string}
        */
       candidateSource: 'EXISTING_INSTANCES' | 'SCHEDULE_PLAN'
+      /** @description 预览接口签发的一次性凭证；提交时必填，不能复用或跨租户使用。 */
+      previewToken?: string
       /** @description 仅 SUBSET_JOB_CODES scope 必填 */
       jobCodes?: string[]
       /** @description 仅 OUTPUTS_ONLY scope 必填，要 promote 的 result_version id 列表 */
@@ -7921,7 +7923,7 @@ export interface components {
       autoApprove?: boolean
       traceId?: string
     }
-    /** @description ADR-020 批次日重放影响预览；只读解析候选，不创建 session。 */
+    /** @description ADR-020 批次日重放影响预览；解析候选并签发短时一次性凭证，不创建 session。 */
     BatchDayReplayPreview: {
       tenantId: string
       calendarCode: string
@@ -7939,6 +7941,10 @@ export interface components {
       configVersionPolicy: 'USE_ORIGINAL_CONFIG' | 'USE_LATEST_CONFIG' | 'USE_SPECIFIED_VERSION'
       /** Format: int32 */
       configVersion?: number | null
+      /** @description 提交本次预览时使用的一次性凭证，有效期 5 分钟。 */
+      previewToken: string
+      /** Format: date-time */
+      expiresAt: string
       /** Format: int32 */
       totalCount: number
       entries: components['schemas']['BatchDayReplayPreviewEntry'][]

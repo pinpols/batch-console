@@ -265,9 +265,12 @@
             <div v-for="w in preview.warnings" :key="w">{{ w }}</div>
           </template>
         </el-alert>
+        <div class="preview-panel__summary">
+          {{ t('batchDayReplay.previewEntriesSummary', { count: preview.entries.length }) }}
+        </div>
         <el-table
           class="replay-preview-table"
-          :data="preview.entries.slice(0, 8)"
+          :data="previewPageEntries"
           size="small"
           border
           :empty-text="t('common.noData')"
@@ -295,13 +298,26 @@
             width="140"
           />
         </el-table>
+        <el-pagination
+          v-if="preview.entries.length > previewPageSize"
+          v-model:current-page="previewPage"
+          :page-size="previewPageSize"
+          :total="preview.entries.length"
+          layout="total, prev, pager, next"
+          class="replay-preview-pagination"
+        />
       </div>
       <template #footer>
         <el-button @click="submitDrawerOpen = false">{{ t('common.cancel') }}</el-button>
         <el-button :loading="previewing" @click="doPreview">
           {{ t('batchDayReplay.previewBtn') }}
         </el-button>
-        <el-button type="primary" :loading="submitting" @click="doSubmit">
+        <el-button
+          type="primary"
+          :loading="submitting"
+          :disabled="!preview || preview.totalCount === 0"
+          @click="doSubmit"
+        >
           {{ t('batchDayReplay.submitConfirm') }}
         </el-button>
       </template>
@@ -433,6 +449,7 @@
   import EmptyState from '@/components/common/EmptyState.vue'
   import DatetimeColumn from '@/components/common/DatetimeColumn.vue'
   import { todayBusinessDate } from '@/utils/datetime'
+  import { batchDayReplayRequestKey, isReplayPreviewCurrent } from '@/utils/batchDayReplayForm'
   import {
     batchDayReplayApi,
     type BatchDayReplaySession,
@@ -473,6 +490,13 @@
   const versionIdsText = ref('')
   const preview = ref<BatchDayReplayPreview | null>(null)
   const previewing = ref(false)
+  const previewRequestKey = ref<string | null>(null)
+  const previewPage = ref(1)
+  const previewPageSize = 20
+  const previewPageEntries = computed(() => {
+    const start = (previewPage.value - 1) * previewPageSize
+    return preview.value?.entries.slice(start, start + previewPageSize) ?? []
+  })
 
   watch(
     () => [
@@ -491,6 +515,8 @@
     ],
     () => {
       preview.value = null
+      previewRequestKey.value = null
+      previewPage.value = 1
     },
   )
 
@@ -585,9 +611,13 @@
   async function doPreview() {
     const req = buildSubmitRequest()
     if (!req) return
+    preview.value = null
+    previewRequestKey.value = null
     previewing.value = true
     try {
       preview.value = await batchDayReplayApi.preview(req)
+      previewRequestKey.value = batchDayReplayRequestKey(req)
+      previewPage.value = 1
       ElMessage.success(t('batchDayReplay.previewOk'))
     } catch (err) {
       ElMessage.error(err instanceof Error ? err.message : String(err))
@@ -599,9 +629,24 @@
   async function doSubmit() {
     const req = buildSubmitRequest()
     if (!req) return
+    if (!preview.value || !isReplayPreviewCurrent(req, previewRequestKey.value)) {
+      preview.value = null
+      previewRequestKey.value = null
+      ElMessage.warning(t('batchDayReplay.previewRequired'))
+      return
+    }
+    if (!preview.value.previewToken || Date.parse(preview.value.expiresAt) <= Date.now()) {
+      preview.value = null
+      previewRequestKey.value = null
+      ElMessage.warning(t('batchDayReplay.previewExpired'))
+      return
+    }
     submitting.value = true
     try {
-      const session = await batchDayReplayApi.submit(req)
+      const session = await batchDayReplayApi.submit({
+        ...req,
+        previewToken: preview.value.previewToken,
+      })
       upsertSession(session)
       ElMessage.success(t('batchDayReplay.submitOk'))
       submitDrawerOpen.value = false
@@ -621,6 +666,7 @@
   function onSubmitClose() {
     submitDrawerOpen.value = false
     preview.value = null
+    previewRequestKey.value = null
   }
 
   async function openDetail(row: BatchDayReplaySession) {
@@ -778,6 +824,17 @@
   .replay-preview-table :deep(.el-table__cell .cell),
   .replay-entries-table :deep(.el-table__cell .cell) {
     min-width: 0;
+  }
+
+  .preview-panel__summary {
+    margin: 8px 0;
+    color: var(--color-text-secondary);
+    font-size: 12px;
+  }
+
+  .replay-preview-pagination {
+    justify-content: flex-end;
+    margin-top: 12px;
   }
 
   .replay-submit-form :deep(.el-form-item) {
