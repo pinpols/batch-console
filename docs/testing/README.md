@@ -23,6 +23,8 @@
 
 ## 2. 目录与配置
 
+CI 定时任务仅保留有独立漂移/安全价值的低频检查；代码和测试回归由 PR、main 变更触发，避免无代码变更时重复构建。完整策略见后端统一的 [CI 定时治理文档](https://github.com/pinpols/file-batch-system/blob/main/docs/runbook/ci-schedule-governance.md)。
+
 ```
 e2e/
   support/            # ★ 可复用 helper(写 e2e 必先看)
@@ -337,7 +339,7 @@ E2E_USAGE_DB_RECONCILIATION=1 E2E_SKIP_GLOBAL_SETUP=1 E2E_BASE_URL=http://127.0.
 | Workflow           | 触发                | 内容                                                           |
 | ------------------ | ------------------- | -------------------------------------------------------------- |
 | `pr-gate.yml`      | PR / push main      | lint / typecheck / i18n / api-drift / **unit** / build / audit |
-| `full-ci-gate.yml` | push main / nightly | pr-gate 全套 + Docker/Trivy + Lighthouse                       |
+| `full-ci-gate.yml` | PR / push main / 每周一 02:00 UTC / 手动 | PR 运行范围适配的静态、单测与安全检查；非 PR 事件再跑 Docker/Trivy + Lighthouse |
 | `staging-gate.yml` | tag v* / 手动       | **Playwright 全量 against staging URL** + Lighthouse           |
 
 **关键**:Playwright e2e **只在 staging-gate**(真 staging URL)跑,pr-gate/full-ci **故意不跑**(CI 起 BE 太脆,业界惯例)。e2e 失败 block staging 部署,不 block PR 合并。

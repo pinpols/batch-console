@@ -90,8 +90,8 @@ git tag v1.3.0 && git push origin v1.3.0
 
 | Workflow | 触发 | 做什么 | 阻断 PR? |
 |---|---|---|---|
-| **pr-gate** ~1.5min | PR open/sync + 非 main push | 单 job 跑 lint + typecheck + i18n + api-drift + unit + build + audit | ✓ |
-| **full-ci-gate** ~3.7min | push main + nightly cron + 手动 | pr-gate 全套 + Docker build + Trivy + Lighthouse + 完整 npm audit。**main 守底** | — |
+| **pr-gate** | PR → main / push main / 手动 | 单 job 跑 lint + typecheck + i18n + api-drift + unit + build + audit | ✓ |
+| **full-ci-gate** | PR → main / push main / 每周一 02:00 UTC / 手动 | PR 上执行范围适配的回归与审计；Docker build/Trivy/Lighthouse 仅在非 PR 事件运行。**main 守底** | — |
 | **staging-gate** | tag `v*` push + 手动 | 对真 staging URL 跑 Playwright 真环境 e2e + Lighthouse | — |
 | **release-please** ~2min | push main | 出 changelog PR + 自动准备 GitHub Release(tag + release notes)| — |
 | **renovate** | Renovate 计划 | 自动开依赖升级 PR(类 Dependabot) | — |
