@@ -15,12 +15,16 @@
           {{ t('monitor.detailRefresh') }}
         </el-button>
         <el-button
-          v-if="row && !isTerminal"
+          v-if="row && canCancelInstance(row.instanceStatus)"
           type="danger"
           :loading="cancelLoading"
           @click="confirmCancel"
         >
-          {{ t('monitor.detailCancel') }}
+          {{
+            row.instanceStatus === 'RUNNING'
+              ? t('monitor.detailCancelRequestBtn')
+              : t('monitor.detailCancel')
+          }}
         </el-button>
         <el-button v-if="row" :loading="diagnosisLoading" @click="runDiagnosis">
           {{ t('monitor.detailDiagnose') }}
@@ -54,7 +58,7 @@
           </span>
         </el-tooltip>
         <el-button
-          v-if="row && !isTerminal"
+          v-if="row && canTerminateInstance(row.instanceStatus)"
           type="danger"
           plain
           :loading="terminateLoading"
@@ -369,6 +373,11 @@
   import { usePermission } from '@/composables/usePermission'
   import { diagnoseJobInstance } from '@/api/clusterDiagnostic'
   import { instanceApi } from '@/api/instance'
+  import {
+    canCancelInstance,
+    canTerminateInstance,
+    resolveInstanceCancelOutcome,
+  } from '@/utils/instanceAction'
   import { createLogStream } from '@/api/stream'
   import { useTenantStore } from '@/stores/tenant'
   import PageContainer from '@/components/common/PageContainer.vue'
@@ -620,21 +629,40 @@
   async function confirmCancel() {
     const r = row.value
     if (!r) return
+    const isRunning = r.instanceStatus === 'RUNNING'
     try {
       await confirmDanger({
-        verb: t('monitor.cancelConfirmVerb'),
+        verb: t(isRunning ? 'monitor.cancelConfirmRequestVerb' : 'monitor.cancelConfirmVerb'),
         target: t('monitor.confirmInstanceTarget', { no: r.instanceNo }),
-        consequence: t('monitor.cancelConfirmConsequence'),
+        consequence: t(
+          isRunning ? 'monitor.cancelRunningConsequence' : 'monitor.cancelQueuedConsequence',
+        ),
         irreversible: true,
-        confirmButtonText: t('monitor.cancelConfirmButton'),
+        confirmButtonText: t(
+          isRunning ? 'monitor.cancelConfirmButton' : 'monitor.cancelConfirmQueuedButton',
+        ),
       })
     } catch {
       return
     }
     cancelLoading.value = true
     try {
-      await instanceApi.cancel(r.id, tenant.tenantId)
-      ElMessage.success(t('monitor.instanceCanceled', { no: r.instanceNo }))
+      const result = await instanceApi.cancel(r.id, tenant.tenantId)
+      const outcome = resolveInstanceCancelOutcome(result.status)
+      if (outcome === 'requested') {
+        ElMessage.success(
+          t('monitor.instanceCancelRequested', {
+            no: r.instanceNo,
+            count: result.cancelRequestedTasks ?? 0,
+          }),
+        )
+      } else if (outcome === 'completed') {
+        ElMessage.success(t('monitor.instanceCanceled', { no: r.instanceNo }))
+      } else {
+        ElMessage.success(
+          t('monitor.instanceCancelAccepted', { no: r.instanceNo, status: result.status }),
+        )
+      }
       await load()
     } finally {
       cancelLoading.value = false

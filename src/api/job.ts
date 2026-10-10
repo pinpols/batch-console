@@ -49,6 +49,7 @@ export interface JobDefinitionListParams {
   pageNo: number
   pageSize: number
   jobCode?: string
+  scheduleType?: 'CRON' | 'FIXED_RATE' | 'MANUAL'
   /** undefined = 后端默认仅 enabled=true；显式传 false = 只看停用；true = 只看启用 */
   enabled?: boolean
 }
@@ -69,9 +70,7 @@ export const jobApi = {
     }),
 
   /**
-   * 服务端分页版本。后端 OpenAPI `queryJobDefinitions` 支持 tenantId / pageNo /
-   * pageSize / jobCode / enabled 五个过滤参数。页面次要过滤（jobName / workerGroup 等
-   * 后端尚未暴露）仍在当前页内做前端过滤——后端扩展后可进一步下推。
+   * 服务端分页版本。后端 OpenAPI `queryJobDefinitions` 支持调度类型、启停状态等筛选。
    */
   listDefinitionsPaged: async (params: JobDefinitionListParams) => {
     const { pageNo, pageSize } = params
@@ -85,6 +84,7 @@ export const jobApi = {
       pageNo,
       pageSize,
       ...(params.jobCode ? { jobCode: params.jobCode } : {}),
+      ...(params.scheduleType ? { scheduleType: params.scheduleType } : {}),
       ...(params.enabled != null ? { enabled: params.enabled } : {}),
     })
     return {

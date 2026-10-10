@@ -5,6 +5,7 @@
  * list / drain / takeover / OFFLINE -> warmup 的真实状态转移。
  */
 import { test, expect } from '@playwright/test'
+import { ORCHESTRATOR_BASE_URL } from '../support/config'
 import { adminCtx, call, FlowLog } from './_watchdog'
 
 test.describe.serial('Flow 11: worker drain/takeover/warmup (API smoke)', () => {
@@ -21,7 +22,7 @@ test.describe.serial('Flow 11: worker drain/takeover/warmup (API smoke)', () => 
   test.beforeAll(async () => {
     ctx = await adminCtx()
     for (const workerCode of Object.values(workerCodes)) {
-      const response = await ctx.post('http://localhost:18082/internal/workers/register', {
+      const response = await ctx.post(`${ORCHESTRATOR_BASE_URL}/internal/workers/register`, {
         data: {
           tenantId: 'ta',
           workerCode,
@@ -76,7 +77,7 @@ test.describe.serial('Flow 11: worker drain/takeover/warmup (API smoke)', () => 
 
   test('5. warmup 端点真实恢复 OFFLINE worker', async () => {
     const offline = await ctx.post(
-      `http://localhost:18082/internal/workers/${workerCodes.warmup}/status`,
+      `${ORCHESTRATOR_BASE_URL}/internal/workers/${workerCodes.warmup}/status`,
       { data: { tenantId: 'ta', status: 'OFFLINE' } },
     )
     expect(offline.status(), `set offline ${workerCodes.warmup}`).toBe(200)

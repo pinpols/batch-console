@@ -102,6 +102,7 @@
   const { t } = useI18n({ useScope: 'global' })
   import { toPageResult } from '@/api/adapters'
   import { useTenantStore } from '@/stores/tenant'
+  import { useTenantReload } from '@/composables/useTenantReload'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
   import ProTable from '@/components/table/ProTable.vue'
@@ -176,4 +177,9 @@
       logPage.value = 1
     })
   }
+
+  useTenantReload(() => {
+    logPage.value = 1
+    void loadDeliveryLogs()
+  })
 </script>

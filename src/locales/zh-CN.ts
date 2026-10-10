@@ -1436,6 +1436,10 @@ export default {
     reports: { title: '报表中心', description: '导出常用运营、调度和审计报表。' },
     selfService: { title: '自助服务', description: '查询配额与用量,提交重跑、补偿与配额申请。' },
     jobsDefinitions: { title: '作业定义', description: '维护作业定义、执行模式和调度规则。' },
+    observabilityJobMonitoringPolicies: {
+      title: '作业监控策略',
+      description: '按作业维护耗时过久、启动过晚和完成过晚的告警阈值与等级。',
+    },
     workflowDefinitions: { title: '工作流定义', description: '维护工作流定义、版本和启停状态。' },
     jobsPipelines: { title: '流水线定义', description: '维护流水线定义和步骤执行顺序。' },
     workflowDesigner: {
@@ -2503,6 +2507,9 @@ export default {
     entryStatusFailed: '失败',
     previewBtn: '预览影响',
     previewOk: '预览已生成',
+    previewRequired: '请先预览当前参数对应的影响；参数变更后需要重新预览。',
+    previewExpired: '预览已过期，请重新预览后再提交。',
+    previewEntriesSummary: '候选作业共 {count} 项，列表支持分页查看。',
   },
   capacityProfile: {
     refresh: '刷新',
@@ -3068,6 +3075,7 @@ export default {
     detailGoLogs: '执行日志(审计检索)',
     detailRerunBtn: '重跑',
     detailCancelBtn: '取消实例',
+    detailCancelRequestBtn: '请求取消',
     detailTerminateBtn: '终止实例',
     detailDiagnose: '诊断实例',
     detailRetryFailedPartitions: '重试失败分区',
@@ -3091,6 +3099,9 @@ export default {
     instanceCancelText: '取消实例 {no}?',
     instanceCancelTitle: '取消确认',
     instanceCanceled: '已取消实例 {no}',
+    instanceCancelRequested:
+      '已受理实例 {no} 的取消请求，涉及 {count} 个运行中任务；请继续跟踪实例终态',
+    instanceCancelAccepted: '实例 {no} 的取消操作已受理，当前状态：{status}',
     terminateVerb: '强制终止',
     terminateTarget: '实例 {no}',
     terminateConsequence:
@@ -3101,10 +3112,13 @@ export default {
     rerunConfirmConsequence:
       '将基于相同 jobCode + bizDate 派发一条新实例,原实例数据保留。下游若已消费旧实例输出,可能产生重复处理。',
     rerunConfirmButton: '确认重跑',
-    cancelConfirmVerb: '终止',
-    cancelConfirmConsequence:
-      'Worker 会尽快终止运行中的进程。已写入的中间结果可能保留,需手动清理。',
-    cancelConfirmButton: '确认终止',
+    cancelConfirmVerb: '取消实例',
+    cancelConfirmRequestVerb: '请求取消',
+    cancelRunningConsequence:
+      '运行中的任务收到协作式取消请求后会尽快停止；请求受理不代表实例已停止。已写入的中间结果不会自动回滚，请跟踪实例终态并按需核对数据。',
+    cancelQueuedConsequence: '尚未开始执行的实例会被取消并进入终态。确认后无法恢复该实例。',
+    cancelConfirmButton: '确认请求取消',
+    cancelConfirmQueuedButton: '确认取消实例',
     // 分区视图
     partitionTitle: '作业分片',
     partitionDescription: '实例 #{id} 的分区列表',
@@ -4005,6 +4019,50 @@ export default {
     colBizType: '业务类型',
     colBizDate: '业务日期',
     colCreatedAt: '创建时间',
+  },
+  jobMonitoringPolicy: {
+    jobCode: '作业编码',
+    jobCodePlaceholder: '按作业编码筛选',
+    jobName: '作业名称',
+    jobStatus: '作业状态',
+    scheduleType: '调度类型',
+    allScheduleTypes: '全部类型',
+    cronSchedule: 'Cron 定时',
+    fixedRateSchedule: '固定频率',
+    manualSchedule: '手动触发',
+    manualScheduleHintShort: '仅耗时监控',
+    enabledOnly: '仅启用',
+    disabledOnly: '仅停用',
+    enabled: '启用',
+    disabled: '已关闭',
+    softRuntime: '耗时过久',
+    startGrace: '启动过晚',
+    completionDeadline: '完成过晚',
+    scheduledDeadlines: '启动与完成时限',
+    thresholdSeconds: '阈值（秒）',
+    deadlineTime: '完成截止时间',
+    deadlineTimePlaceholder: '留空关闭',
+    deadlineDay: '截止日期',
+    sameDay: '计划日当日',
+    nextDay: '计划日次日',
+    notApplicable: '仅定时作业',
+    severity: '告警等级',
+    softRuntimeHint: '从实例开始执行时计时；超过该时长告警。未设置时默认关闭；0 表示关闭。',
+    startGraceHint:
+      'Cron 独立作业按计划触发时刻、依赖作业按计划触发与上游就绪时刻中的较晚者起算；超过宽限期仍未启动时告警。新建作业默认 5 分钟；0 表示关闭。',
+    completionDeadlineHint:
+      '仅无依赖的 Cron 作业适用：计划日到达截止钟点后，实例仍未结束时告警；按作业时区判定。留空关闭。时区：{timezone}',
+    dependencyCompletionHint:
+      '依赖作业从下游满足执行资格时起算；Cron 同时存在计划触发时刻时，以两者较晚者起算。超过该时长仍未结束时告警；0 表示关闭。',
+    manualScheduleHint:
+      '独立固定频率、手动/API/外部触发作业仅支持耗时过久告警；声明上游依赖的作业还支持启动过晚和完成过晚。',
+    alertOnlyHint: '这些阈值只产生告警，不会暂停、取消或改变作业状态。',
+    secondsValue: '{seconds} 秒',
+    minutesValue: '{minutes} 分钟',
+    editTitle: '维护作业监控策略 · {jobCode}',
+    loadFailed: '读取作业监控策略失败',
+    saveSuccess: '作业监控策略已保存',
+    saveFailed: '保存作业监控策略失败',
   },
   jobConfigBasic: {
     groupBasic: '基本信息',

@@ -1,4 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { STORAGE_KEYS } from '@/constants/storageKeys'
+import { stubLocalStorage } from '@/test-utils/localStorage'
 
 const { driverDriveMock, driverConstructorMock } = vi.hoisted(() => {
   const drive = vi.fn()
@@ -17,16 +19,10 @@ vi.mock('driver.js', () => ({
 }))
 vi.mock('driver.js/dist/driver.css', () => ({}))
 
-const storage = new Map<string, string>()
+const storage = stubLocalStorage()
 type ModalStub = Element & { display?: string; visibility?: string }
 const modalElements: ModalStub[] = []
 
-vi.stubGlobal('localStorage', {
-  getItem: (k: string) => storage.get(k) ?? null,
-  setItem: (k: string, v: string) => storage.set(k, v),
-  removeItem: (k: string) => storage.delete(k),
-  clear: () => storage.clear(),
-})
 
 // stub document.querySelector(useOnboardingTour 校验 anchor 存在性)
 vi.stubGlobal('document', {
@@ -57,12 +53,12 @@ describe('useOnboardingTour', () => {
   })
 
   it('shouldShowOnboarding:已完成(localStorage 标 1)→ false', () => {
-    storage.set('batch-console-onboarding-done', '1')
+    storage.set(STORAGE_KEYS.onboardingDone, '1')
     expect(shouldShowOnboarding()).toBe(false)
   })
 
   it('resetOnboarding:清掉标记,下次 shouldShow 返 true', () => {
-    storage.set('batch-console-onboarding-done', '1')
+    storage.set(STORAGE_KEYS.onboardingDone, '1')
     resetOnboarding()
     expect(shouldShowOnboarding()).toBe(true)
   })

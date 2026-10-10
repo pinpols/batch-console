@@ -9,6 +9,7 @@
  * 历史测试设计来源:docs/archive/qa-2026-05/runbook/fe-qa-c-tier-plan.md §3 键盘 / a11y。
  */
 import { expect, test } from './support/app'
+import { FRONTEND_BASE_URL } from './support/config'
 import { enterDemoApp } from './support/app'
 
 test.describe('keyboard flow — P0 页面', () => {
@@ -68,7 +69,7 @@ test.describe('keyboard flow — P0 页面', () => {
 
   test('登录页 Tab 顺序合理(用户名 → 密码 → 登录按钮)', async ({ page, context }) => {
     await context.clearCookies()
-    await page.goto('http://localhost:5173/login', { waitUntil: 'networkidle' })
+    await page.goto(new URL('/login', FRONTEND_BASE_URL).toString(), { waitUntil: 'networkidle' })
     await page.locator('input').first().focus() // 起点
     // 第一个 input
     const v1 = await page.evaluate(() => (document.activeElement as HTMLElement)?.tagName)

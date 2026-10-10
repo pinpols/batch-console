@@ -12,7 +12,7 @@
  */
 
 const TEARDOWN_DISABLED = process.env.BC_E2E_SKIP_TEARDOWN === '1'
-const API_BASE = process.env.BC_API_BASE || 'http://localhost:18080'
+const { API_BASE_URL: API_BASE } = require('./config.cjs')
 const PREFIX = process.env.BC_E2E_PREFIX || 'e2e'
 
 async function globalTeardown() {

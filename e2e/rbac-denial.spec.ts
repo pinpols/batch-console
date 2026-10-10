@@ -6,6 +6,7 @@
  * 注:本 spec 不真的换不同 token 登录(那需要 5 个测试用户预先存在),
  *     而是用拦截器模拟 401 响应,验证 SPA 行为是否合规。
  */
+import { STORAGE_KEYS } from './support/storage'
 import { expect, test } from './support/app'
 import { enterDemoApp, expectPageTitle } from './support/app'
 
@@ -84,8 +85,8 @@ test.describe('RBAC 拒绝行为', () => {
     // 在 enterDemoApp 之前预置 token + locale,避免 fresh context 没 storage
     await page.addInitScript(() => {
       localStorage.setItem('token', 'mock-test-token-not-real-jwt')
-      localStorage.setItem('batch-console:locale', 'zh-CN')
-      localStorage.setItem('batch-console-onboarding-done', '1')
+      localStorage.setItem(STORAGE_KEYS.locale, 'zh-CN')
+      localStorage.setItem(STORAGE_KEYS.onboardingDone, '1')
     })
 
     await page.goto('/ops/summary', { waitUntil: 'domcontentloaded' }).catch(() => {})

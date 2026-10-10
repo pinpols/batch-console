@@ -11,14 +11,10 @@ import { setActivePinia, createPinia } from 'pinia'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { applyApiInterceptors } from './interceptors'
 import { useAppStore } from '@/stores/app'
+import { STORAGE_KEYS } from '@/constants/storageKeys'
+import { stubLocalStorage } from '@/test-utils/localStorage'
 
-const storage = new Map<string, string>()
-vi.stubGlobal('localStorage', {
-  getItem: (k: string) => storage.get(k) ?? null,
-  setItem: (k: string, v: string) => storage.set(k, v),
-  removeItem: (k: string) => storage.delete(k),
-  clear: () => storage.clear(),
-})
+const storage = stubLocalStorage()
 vi.stubGlobal('location', { pathname: '/ops/summary', hash: '' })
 if (typeof window === 'undefined') {
   vi.stubGlobal('window', {
@@ -45,9 +41,9 @@ function makeClient() {
 
 beforeEach(() => {
   storage.clear()
-  storage.set('batch-console-session', '1')
-  storage.set('batch-console-tenant-id', 'tenant-a')
-  storage.set('batch-console-telemetry', 'on')
+  storage.set(STORAGE_KEYS.session, '1')
+  storage.set(STORAGE_KEYS.tenantId, 'tenant-a')
+  storage.set(STORAGE_KEYS.telemetry, 'on')
   setActivePinia(createPinia())
 })
 

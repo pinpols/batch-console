@@ -1,3 +1,5 @@
+import { STORAGE_KEYS } from './support/storage'
+import { FRONTEND_BASE_URL } from './support/config'
 import { expect, test } from '@playwright/test'
 
 /**
@@ -8,7 +10,7 @@ test.describe('login form validation', () => {
 
   test('OIDC 启用时显示企业登录入口', async ({ page, context }) => {
     await context.clearCookies()
-    await page.addInitScript(() => localStorage.setItem('batch-console:locale', 'zh-CN'))
+    await page.addInitScript(() => localStorage.setItem(STORAGE_KEYS.locale, 'zh-CN'))
     await page.route('**/api/console/auth/oidc/provider', (route) =>
       route.fulfill({
         status: 200,
@@ -21,24 +23,23 @@ test.describe('login form validation', () => {
         }),
       }),
     )
-    await page.goto('http://localhost:5173/login', { waitUntil: 'networkidle' })
+    await page.goto('/login', { waitUntil: 'networkidle' })
 
     await expect(page.getByRole('button', { name: '企业登录' })).toBeVisible({ timeout: 8000 })
   })
 
   test('OIDC callback 错误重定向留在前端 origin', async ({ page, context }) => {
     await context.clearCookies()
-    await page.goto(
-      'http://localhost:5173/login/oauth2/code/pilot-tenant?error=access_denied',
-      { waitUntil: 'networkidle' },
-    )
+    await page.goto('/login/oauth2/code/pilot-tenant?error=access_denied', {
+      waitUntil: 'networkidle',
+    })
 
-    await expect(page).toHaveURL('http://localhost:5173/login?authError=oidc')
+    await expect(page).toHaveURL(/\/login\?authError=oidc$/)
   })
 
   test('全空提交不发请求', async ({ page, context }) => {
     await context.clearCookies()
-    await page.goto('http://localhost:5173/login', { waitUntil: 'networkidle' })
+    await page.goto('/login', { waitUntil: 'networkidle' })
     let posted = false
     page.on('request', (req) => {
       if (req.method() === 'POST' && req.url().includes('/auth/login')) posted = true
@@ -52,7 +53,7 @@ test.describe('login form validation', () => {
 
   test('错误密码触发 error toast', async ({ page, context }) => {
     await context.clearCookies()
-    await page.goto('http://localhost:5173/login', { waitUntil: 'networkidle' })
+    await page.goto('/login', { waitUntil: 'networkidle' })
     await page
       .getByPlaceholder(/用户名|username/i)
       .first()
@@ -71,8 +72,8 @@ test.describe('login form validation', () => {
 
   test('登录页语言切换同步更新表单文案', async ({ page, context }) => {
     await context.clearCookies()
-    await page.goto('http://localhost:5173/login', { waitUntil: 'networkidle' })
-    await page.evaluate(() => localStorage.setItem('batch-console:locale', 'zh-CN'))
+    await page.goto('/login', { waitUntil: 'networkidle' })
+    await page.evaluate(() => localStorage.setItem(STORAGE_KEYS.locale, 'zh-CN'))
     await page.reload({ waitUntil: 'networkidle' })
 
     const localeToggle = page.getByRole('button', { name: /切换语言|Switch language/i })

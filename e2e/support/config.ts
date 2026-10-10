@@ -1,0 +1,11 @@
+import config from '../config.cjs'
+
+export const {
+  API_BASE_URL,
+  FRONTEND_BASE_URL,
+  FRONTEND_ORIGIN,
+  ORCHESTRATOR_BASE_URL,
+  MOCKSERVER_BASE_URL,
+  PROMETHEUS_BASE_URL,
+  ALERTMANAGER_BASE_URL,
+} = config

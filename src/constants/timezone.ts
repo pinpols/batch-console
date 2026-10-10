@@ -1,6 +1,8 @@
 import { ref } from 'vue'
 
-export const DISPLAY_TIMEZONE_STORAGE_KEY = 'batch-console:display-timezone'
+import { STORAGE_KEYS } from './storageKeys'
+
+export const DISPLAY_TIMEZONE_STORAGE_KEY = STORAGE_KEYS.displayTimezone
 
 export const DISPLAY_TIMEZONE_OPTIONS = [
   'Asia/Shanghai',

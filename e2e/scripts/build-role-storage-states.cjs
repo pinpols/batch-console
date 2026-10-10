@@ -9,11 +9,10 @@
  *
  * 依赖:BE @ localhost:18080,4 个测试账号已存在(详见账户表 console_user_account)。
  */
+const storageKeys = require('../../src/constants/storageKeys.json')
 const fs = require('node:fs')
 const path = require('node:path')
-
-const API = process.env.BC_API_BASE || 'http://localhost:18080'
-const ORIGIN = process.env.BC_FE_ORIGIN || 'http://localhost:5173'
+const { API_BASE_URL: API, FRONTEND_ORIGIN: ORIGIN } = require('../config.cjs')
 
 const ROLES = [
   { key: 'admin', username: 'admin', password: 'admin123', tenantId: 'system' },
@@ -74,11 +73,11 @@ async function loginAndBuild(role) {
       {
         origin: ORIGIN,
         localStorage: [
-          { name: 'batch-console-tenant-id', value: role.tenantId },
-          { name: 'batch-console-session', value: '1' },
+          { name: storageKeys.tenantId, value: role.tenantId },
+          { name: storageKeys.session, value: '1' },
           { name: 'token', value: token },
-          { name: 'batch-console:locale', value: 'zh-CN' },
-          { name: 'batch-console-onboarding-done', value: '1' },
+          { name: storageKeys.locale, value: 'zh-CN' },
+          { name: storageKeys.onboardingDone, value: '1' },
         ],
       },
     ],

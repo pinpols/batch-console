@@ -5,6 +5,8 @@
  * “业务正确”：instance/task 终态、biz.customer_account / biz.transaction /
  * biz.risk_score 的本轮唯一 token 行数。
  */
+import { STORAGE_KEYS } from './support/storage'
+import { MOCKSERVER_BASE_URL } from './support/config'
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import { spawnSync } from 'node:child_process'
@@ -20,8 +22,15 @@ const BUSINESS_DB = process.env.BUSINESS_DB || 'batch_business'
 const BACKEND_ROOT =
   process.env.BFS_BACKEND_ROOT || path.resolve(__dirname, '../../file-batch-system')
 const SIM_BOOTSTRAP_SQL = path.join(BACKEND_ROOT, 'docs/test-data/sim-e2e-bootstrap.sql')
-const TENANT_STORAGE_KEY = 'batch-console-tenant-id'
-const TERMINAL_STATUSES = new Set(['SUCCESS', 'FAILED', 'COMPENSATED', 'CANCELLED', 'TERMINATED', 'REJECTED'])
+const TENANT_STORAGE_KEY = STORAGE_KEYS.tenantId
+const TERMINAL_STATUSES = new Set([
+  'SUCCESS',
+  'FAILED',
+  'COMPENSATED',
+  'CANCELLED',
+  'TERMINATED',
+  'REJECTED',
+])
 const REQUIRED_IMPORT_STAGES = ['RECEIVE', 'PREPROCESS', 'PARSE', 'VALIDATE', 'LOAD']
 
 type ImportScenario = {
@@ -71,7 +80,8 @@ const SCENARIOS: ImportScenario[] = [
     jobCode: 'TC_IMPORT_RISK_SCORE',
     templateCode: 'tc_import_risk_score_tpl',
     header: 'entity_id,entity_type,score_value,score_band,score_date',
-    row: (token, bizDate, i) => `E${token}${i},ACCOUNT,${600 + i},${i % 2 ? 'LOW' : 'MEDIUM'},${bizDate}`,
+    row: (token, bizDate, i) =>
+      `E${token}${i},ACCOUNT,${600 + i},${i % 2 ? 'LOW' : 'MEDIUM'},${bizDate}`,
     businessCountSql: (token, bizDate) =>
       `select count(*) from biz.risk_score where tenant_id='tc' and score_date='${bizDate}' and entity_id like 'E${token}%';`,
   },
@@ -128,7 +138,7 @@ function applyBackendSimBootstrap() {
       '-v',
       'ON_ERROR_STOP=1',
       '-v',
-      `mockserver_base_url=${process.env.MOCKSERVER_BASE_URL || 'http://localhost:11080'}`,
+      `mockserver_base_url=${MOCKSERVER_BASE_URL}`,
     ],
     { input: readFileSync(SIM_BOOTSTRAP_SQL, 'utf8'), encoding: 'utf8' },
   )
@@ -149,10 +159,9 @@ function assertImportRuntimeSeed() {
           and pd.pipeline_type='IMPORT'
           and ps.enabled=true;`,
     )
-    expect(
-      stages,
-      `${scenario.tenantId}/${scenario.jobCode} import stages`,
-    ).toBe(REQUIRED_IMPORT_STAGES.join(','))
+    expect(stages, `${scenario.tenantId}/${scenario.jobCode} import stages`).toBe(
+      REQUIRED_IMPORT_STAGES.join(','),
+    )
 
     const loadSpec = psql(
       PLATFORM_DB,
@@ -243,14 +252,19 @@ async function triggerImportFromUi(
   await triggerBtn.click()
   const box = page.locator('.el-message-box, .el-dialog:visible').first()
   await expect(box).toBeVisible({ timeout: 5_000 })
-  await box.locator('textarea').first().fill(JSON.stringify(payload, null, 2))
+  await box
+    .locator('textarea')
+    .first()
+    .fill(JSON.stringify(payload, null, 2))
 
   const triggerResponse = page.waitForResponse(
-    (res) =>
-      res.request().method() === 'POST' && res.url().includes('/api/console/jobs/trigger'),
+    (res) => res.request().method() === 'POST' && res.url().includes('/api/console/jobs/trigger'),
     { timeout: 45_000 },
   )
-  await box.getByRole('button', { name: /^触发$|确定|提交/ }).first().click()
+  await box
+    .getByRole('button', { name: /^触发$|确定|提交/ })
+    .first()
+    .click()
   const resp = await triggerResponse
   expect(resp.status(), `${scenario.tenantId}/${scenario.jobCode} trigger status`).toBeLessThan(400)
   const body = await resp.json().catch(() => null)
@@ -259,7 +273,9 @@ async function triggerImportFromUi(
   return {
     instanceNo: String(resultKey),
     idempotencyKey:
-      resp.request().headers()['idempotency-key'] || resp.request().headers()['Idempotency-Key'] || '',
+      resp.request().headers()['idempotency-key'] ||
+      resp.request().headers()['Idempotency-Key'] ||
+      '',
   }
 }
 

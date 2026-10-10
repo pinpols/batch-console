@@ -126,7 +126,7 @@ describe('permission navigation filtering', () => {
     const visiblePaths = navigationGroups.flatMap((group) =>
       group.children.filter((item) => !item.hidden).map((item) => item.path),
     )
-    expect(visiblePaths).toHaveLength(26)
+    expect(visiblePaths).toHaveLength(27)
     expect(new Set(visiblePaths).size).toBe(visiblePaths.length)
 
     const hiddenPaths = navigationGroups.flatMap((group) =>

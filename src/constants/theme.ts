@@ -1,5 +1,7 @@
-export const THEME_STORAGE_KEY = 'batch-console:theme'
-export const THEME_REDESIGN_DEFAULT_STORAGE_KEY = 'batch-console:theme-redesign-default-v1'
+import { STORAGE_KEYS } from './storageKeys'
+
+export const THEME_STORAGE_KEY = STORAGE_KEYS.theme
+export const THEME_REDESIGN_DEFAULT_STORAGE_KEY = STORAGE_KEYS.themeRedesignDefault
 
 /** 实际应用到页面的明暗值 */
 export type ThemeMode = 'light' | 'dark'

@@ -35,11 +35,12 @@
   import { onMounted, ref } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { X as Close, Download as DownloadIcon, Share2 as Share } from '@lucide/vue'
+  import { STORAGE_KEYS } from '@/constants/storageKeys'
 
   const { t } = useI18n({ useScope: 'global' })
 
   const visible = ref(false)
-  const DISMISS_KEY = 'batch-console:m-install-hint-dismissed-at'
+  const DISMISS_KEY = STORAGE_KEYS.mobileInstallHintDismissedAt
   const DISMISS_DAYS = 14
 
   function isIosSafari(): boolean {

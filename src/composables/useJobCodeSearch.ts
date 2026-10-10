@@ -2,6 +2,8 @@ import { ref } from 'vue'
 import { jobApi } from '@/api/job'
 import { useTenantStore } from '@/stores/tenant'
 
+export const JOB_CODE_SEARCH_PAGE_SIZE = 30
+
 /**
  * 远程搜索 Job Code 下拉选项,用于自助服务 rerun / compensation 等表单的
  * el-select 绑定。默认加载 30 条启用中的作业;输入关键字时远程精确搜索。
@@ -19,7 +21,7 @@ export function useJobCodeSearch() {
       const res = await jobApi.listDefinitionsPaged({
         tenantId: tenant.tenantId,
         pageNo: 1,
-        pageSize: 30,
+        pageSize: JOB_CODE_SEARCH_PAGE_SIZE,
         enabled: true,
       })
       jobCodeOptions.value = Array.from(
@@ -44,7 +46,7 @@ export function useJobCodeSearch() {
       const res = await jobApi.listDefinitionsPaged({
         tenantId: tenant.tenantId,
         pageNo: 1,
-        pageSize: 30,
+        pageSize: JOB_CODE_SEARCH_PAGE_SIZE,
         jobCode: q,
         enabled: true,
       })

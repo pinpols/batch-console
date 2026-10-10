@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import type { BatchDayReplaySubmitRequest } from '@/api/batchDayReplay'
-import { buildBatchDayReplayRequest } from './batchDayReplayForm'
+import {
+  batchDayReplayRequestKey,
+  buildBatchDayReplayRequest,
+  isReplayPreviewCurrent,
+} from './batchDayReplayForm'
 
 function replayForm(
   overrides: Partial<BatchDayReplaySubmitRequest> = {},
@@ -70,5 +74,29 @@ describe('buildBatchDayReplayRequest', () => {
     [replayForm({ scope: 'OUTPUTS_ONLY' }), '', '0,-1,NaN', 'missingVersionIds'],
   ] as const)('rejects invalid form data', (form, jobCodes, versionIds, error) => {
     expect(buildBatchDayReplayRequest(form, 'tenant-a', jobCodes, versionIds)).toEqual({ error })
+  })
+})
+
+describe('batchDayReplayRequestKey', () => {
+  it('changes when any submitted option changes', () => {
+    const request = replayForm({ jobCodes: ['daily-import'], reason: 'late file' })
+
+    expect(batchDayReplayRequestKey(request)).not.toBe(
+      batchDayReplayRequestKey({ ...request, reason: 'corrected input' }),
+    )
+    expect(batchDayReplayRequestKey(request)).not.toBe(
+      batchDayReplayRequestKey({ ...request, jobCodes: ['daily-import', 'daily-check'] }),
+    )
+  })
+
+  it('keeps an unchanged request reusable for its preview', () => {
+    const request = replayForm({ jobCodes: ['daily-import'], reason: 'late file' })
+
+    expect(batchDayReplayRequestKey({ ...request })).toBe(batchDayReplayRequestKey(request))
+    expect(isReplayPreviewCurrent(request, batchDayReplayRequestKey(request))).toBe(true)
+    expect(isReplayPreviewCurrent(request, null)).toBe(false)
+    expect(
+      isReplayPreviewCurrent({ ...request, autoApprove: true }, batchDayReplayRequestKey(request)),
+    ).toBe(false)
   })
 })

@@ -72,6 +72,45 @@ describe('jobApi', () => {
     })
   })
 
+  it('persists relative runtime and scheduled local deadline policy through the update contract', async () => {
+    mput.mockResolvedValue(undefined)
+    const policy = {
+      tenantId: 'ta',
+      softRuntimeSeconds: 1800,
+      softRuntimeSeverity: 'ERROR' as const,
+      startGraceSeconds: 600,
+      startGraceSeverity: 'WARN' as const,
+      completionDeadlineEnabled: true,
+      completionDeadlineLocalTime: '04:00',
+      completionDeadlineDayOffset: 1,
+      completionDeadlineSeverity: 'CRITICAL' as const,
+    }
+
+    await jobApi.updateDefinition(7, policy)
+
+    expect(mput).toHaveBeenCalledWith('/api/console/job-definitions/7', policy)
+  })
+
+  it('filters paged job definitions by schedule type', async () => {
+    mg.mockResolvedValue({ total: 0, pageNo: 1, pageSize: 15, items: [] })
+
+    await jobApi.listDefinitionsPaged({
+      tenantId: 'ta',
+      pageNo: 1,
+      pageSize: 15,
+      scheduleType: 'CRON',
+      enabled: true,
+    })
+
+    expect(mg).toHaveBeenCalledWith('/api/console/queries/job-definitions', {
+      tenantId: 'ta',
+      pageNo: 1,
+      pageSize: 15,
+      scheduleType: 'CRON',
+      enabled: true,
+    })
+  })
+
   it('getDefinition GET with tenantId', async () => {
     mg.mockResolvedValue({})
     await jobApi.getDefinition(7, 'ta')

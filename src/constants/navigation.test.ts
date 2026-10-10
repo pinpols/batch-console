@@ -33,4 +33,11 @@ describe('navigation role authorities', () => {
     ])
     expect(item('/system/users').authorities).toEqual([...authorityRoles])
   })
+
+  it('作业监控策略只对平台管理员和租户管理员开放', () => {
+    expect(item('/observability/job-monitoring-policies').authorities).toEqual([
+      'ROLE_ADMIN',
+      'ROLE_TENANT_ADMIN',
+    ])
+  })
 })

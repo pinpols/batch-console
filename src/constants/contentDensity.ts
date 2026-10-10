@@ -1,5 +1,6 @@
-/** 与 `src/stores/app.ts` 使用同一存储键，避免漂移 */
-export const CONTENT_DENSITY_STORAGE_KEY = 'batch-console:content-density'
+import { STORAGE_KEYS } from './storageKeys'
+
+export const CONTENT_DENSITY_STORAGE_KEY = STORAGE_KEYS.contentDensity
 
 export type ContentDensityMode = 'comfortable' | 'compact'
 

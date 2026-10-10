@@ -3,6 +3,12 @@ import type { RouteRecordRaw } from 'vue-router'
 import { applyPageMetaToRoutes, pageMetaByPath } from './pageMeta'
 
 describe('applyPageMetaToRoutes', () => {
+  it('registers the independent job monitoring policy page metadata', () => {
+    expect(pageMetaByPath['/observability/job-monitoring-policies']).toMatchObject({
+      title: '作业监控策略',
+    })
+  })
+
   it('uses pageMetaByPath as the canonical page title source', () => {
     const routes: RouteRecordRaw[] = [
       {

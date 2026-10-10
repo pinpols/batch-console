@@ -1,3 +1,4 @@
+import { STORAGE_KEYS } from './support/storage'
 import { execFileSync } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
 import { createServer } from 'node:http'
@@ -64,10 +65,10 @@ test('backend model timeout is shown as a failed turn without discarding the pro
     })
     expect(login.status()).toBe(200)
     await page.addInitScript(() => {
-      localStorage.setItem('batch-console-session', '1')
-      localStorage.setItem('batch-console-tenant-id', 'ta')
-      localStorage.setItem('batch-console:locale', 'zh-CN')
-      localStorage.setItem('batch-console-onboarding-done', '1')
+      localStorage.setItem(STORAGE_KEYS.session, '1')
+      localStorage.setItem(STORAGE_KEYS.tenantId, 'ta')
+      localStorage.setItem(STORAGE_KEYS.locale, 'zh-CN')
+      localStorage.setItem(STORAGE_KEYS.onboardingDone, '1')
     })
     await page.goto('/system/ai-chat')
     await page.locator('.composer__editor textarea').fill(prompt)

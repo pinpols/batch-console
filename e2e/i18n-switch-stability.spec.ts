@@ -4,8 +4,9 @@
  * 在 5 个 P0 页面之间连续切 zh↔en 10 次,断言:
  * - 页面 title 切换正确(不残留前一语言)
  * - 无 pageerror
- * - localStorage `batch-console:locale` 与当前 UI 一致
+ * - localStorage `STORAGE_KEYS.locale` 与当前 UI 一致
  */
+import { STORAGE_KEYS } from './support/storage'
 import { test, expect } from './support/app'
 import { enterDemoApp } from './support/app'
 
@@ -19,7 +20,7 @@ const PAGES: Array<{ path: string; zh: string | RegExp; en: string | RegExp }> =
 
 async function switchLocale(page: import('@playwright/test').Page, target: 'zh-CN' | 'en-US') {
   await page.evaluate((loc) => {
-    localStorage.setItem('batch-console:locale', loc)
+    localStorage.setItem(STORAGE_KEYS.locale, loc)
   }, target)
   await page.reload({ waitUntil: 'domcontentloaded' })
 }
@@ -50,7 +51,7 @@ test.describe('@slow i18n-switch · zh↔en 稳定性', () => {
     expect(pageErrors, `i18n 切换中出现 pageerror:\n${pageErrors.join('\n')}`).toHaveLength(0)
 
     // 最终 locale 一致性
-    const finalLocale = await page.evaluate(() => localStorage.getItem('batch-console:locale'))
+    const finalLocale = await page.evaluate(() => localStorage.getItem(STORAGE_KEYS.locale))
     expect(finalLocale).toMatch(/^(zh-CN|en-US)$/)
   })
 })

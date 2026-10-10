@@ -3,14 +3,9 @@ import { effectScope, nextTick } from 'vue'
 import { setActivePinia, createPinia } from 'pinia'
 import { useTenantStore } from '@/stores/tenant'
 import { useTenantReload } from './useTenantReload'
+import { stubLocalStorage } from '@/test-utils/localStorage'
 
-const storage = new Map<string, string>()
-vi.stubGlobal('localStorage', {
-  getItem: (k: string) => storage.get(k) ?? null,
-  setItem: (k: string, v: string) => storage.set(k, v),
-  removeItem: (k: string) => storage.delete(k),
-  clear: () => storage.clear(),
-})
+const storage = stubLocalStorage()
 
 function runInScope(fn: () => void) {
   const scope = effectScope()

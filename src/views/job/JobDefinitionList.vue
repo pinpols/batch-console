@@ -395,7 +395,7 @@
       </template>
 
       <!--
-        编辑态。Day 2 (A.1):编辑表单 2 字段扩到 24 字段,对齐 BE JobDefinitionUpdateRequest。
+        编辑态。Day 2 (A.1):编辑表单扩为完整作业配置,对齐 BE JobDefinitionUpdateRequest。
         表单内容抽在 <JobConfigBasicForm> 组件,与新建向导共用。
       -->
       <el-form
@@ -666,6 +666,7 @@
   import JobRelatedFilesTab from './components/JobRelatedFilesTab.vue'
   import {
     type JobEditFormState,
+    createEmptyJobDefinitionCreateForm,
     createEmptyJobEditForm,
     jobResponseToEditForm,
   } from './jobEditFormTypes'
@@ -1140,7 +1141,7 @@
   const editingId = ref<number | null>(null)
   const editingTenantId = ref('')
   const editingJobCode = ref('')
-  // Day 2 (A.1):editForm 从 2 字段(executionMode/watermarkField)扩到 24 字段,
+  // editForm 保留完整可编辑作业配置,
   // 对齐 BE JobDefinitionUpdateRequest。所有可编辑字段均通过 JobConfigBasicForm 暴露。
   const editForm = reactive<JobEditFormState>(createEmptyJobEditForm())
   const createFormRef = ref<FormInstance>()
@@ -1149,19 +1150,7 @@
   const createSaving = ref(false)
   // jobType BE 枚举走 /api/console/meta/enums 动态字典;此处默认 GENERAL(通用任务,
   // P0 Task SPI 落地后内部路由到 Shell/SQL/StoredProc/HTTP builtin)。
-  const createForm = reactive({
-    jobCode: '',
-    jobName: '',
-    jobType: 'GENERAL',
-    scheduleType: 'MANUAL',
-    scheduleExpr: '',
-    dependsOnJobCode: '',
-    queueCode: '',
-    workerGroup: '',
-    executionMode: 'FULL' as ExecutionMode,
-    watermarkField: '',
-    enabled: false,
-  })
+  const createForm = reactive(createEmptyJobDefinitionCreateForm())
 
   // 脏数据保护:抽屉关闭前若有未保存修改弹 confirm,避免点 Esc 丢失输入
   const createDirty = useDirtyForm(() => createForm, {
@@ -1384,7 +1373,7 @@
     trigger: 'blur',
   }
 
-  // Day 2 (A.1):编辑必填字段。BE 24 字段全 optional(partial update),
+  // 编辑必填字段。BE 更新 DTO 使用 partial update,
   // 但 UX 上 jobName / scheduleType / executionMode 三项空着无意义,在 FE 强制必填。
   // paramSchema / defaultParams 是 JSON 字符串,非空时必须语法合法,否则 BE 报 500。
   const jsonValidator = (
@@ -1473,17 +1462,7 @@
   )
 
   function resetCreateForm() {
-    createForm.jobCode = ''
-    createForm.jobName = ''
-    createForm.jobType = 'GENERAL'
-    createForm.scheduleType = 'MANUAL'
-    createForm.scheduleExpr = ''
-    createForm.dependsOnJobCode = ''
-    createForm.queueCode = ''
-    createForm.workerGroup = ''
-    createForm.executionMode = 'FULL'
-    createForm.watermarkField = ''
-    createForm.enabled = false
+    Object.assign(createForm, createEmptyJobDefinitionCreateForm())
   }
 
   function openCreate() {
@@ -1603,7 +1582,7 @@
     if (!valid) return
     editSaving.value = true
     try {
-      // Day 2 (A.1):提交完整 24 字段(对齐 BE JobDefinitionUpdateRequest),
+      // 提交完整可编辑字段(对齐 BE JobDefinitionUpdateRequest),
       // 不再仅传 executionMode + watermarkField。
       // jobCode / jobType 在 BE 视为不可改字段,这里不传。
       await jobApi.updateDefinition(editingId.value, {
