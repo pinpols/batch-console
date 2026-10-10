@@ -1,9 +1,11 @@
 // @ts-check
+const storageKeys = require('../src/constants/storageKeys.json')
 const { writeFileSync, mkdirSync, readFileSync, existsSync } = require('fs')
 const path = require('path')
 const crypto = require('crypto')
+const { API_BASE_URL, FRONTEND_BASE_URL } = require('./config.cjs')
 
-const API_BASE = process.env.BC_API_BASE || 'http://localhost:18080'
+const API_BASE = API_BASE_URL
 const FIXTURE_TENANT = 'system'
 
 // 超时常量（ms）
@@ -112,11 +114,11 @@ function roleStorageState(login, role, baseURL) {
       {
         origin: baseURL,
         localStorage: [
-          { name: 'batch-console-tenant-id', value: role.defaultTenant },
-          { name: 'batch-console-session', value: '1' },
+          { name: storageKeys.tenantId, value: role.defaultTenant },
+          { name: storageKeys.session, value: '1' },
           { name: 'token', value: login.body?.data?.accessToken ?? '' },
-          { name: 'batch-console:locale', value: 'zh-CN' },
-          { name: 'batch-console-onboarding-done', value: '1' },
+          { name: storageKeys.locale, value: 'zh-CN' },
+          { name: storageKeys.onboardingDone, value: '1' },
         ],
       },
     ],
@@ -478,7 +480,7 @@ const TENANT_EXCELS = [
  * @param {import('@playwright/test').FullConfig} config
  */
 async function globalSetup(config) {
-  const baseURL = config.projects[0].use.baseURL ?? 'http://localhost:5173'
+  const baseURL = config.projects[0].use.baseURL ?? FRONTEND_BASE_URL
   const readOnlyMonitoringRun = process.env.E2E_MONITORING_REAL === '1'
 
   // ── 登录 ────────────────────────────────────────────────────────
@@ -531,18 +533,18 @@ async function globalSetup(config) {
       {
         origin: baseURL,
         localStorage: [
-          { name: 'batch-console-tenant-id', value: 'ta' },
+          { name: storageKeys.tenantId, value: 'ta' },
           // FE 的 router beforeEach 检查这个 flag 决定 isLoggedIn(见 stores/auth.ts SESSION_FLAG_KEY)
           // 必须设,否则即使 HttpOnly cookie 有效,FE 也会直接 redirect 到 /login。
-          { name: 'batch-console-session', value: '1' },
+          { name: storageKeys.session, value: '1' },
           // D7 Stage B 后 FE 不再读这个 key,保留是为兼容旧 spec 里可能的引用;真正的鉴权走 cookie。
           { name: 'token', value: token ?? '' },
           // 强制中文 locale,避免某些 spec 没走 enterDemoApp 时 i18n 拿到浏览器默认 en-US
           // 见 src/constants/locale.ts:1 (LOCALE_STORAGE_KEY)
-          { name: 'batch-console:locale', value: 'zh-CN' },
+          { name: storageKeys.locale, value: 'zh-CN' },
           // 关掉首次登录引导(driver.js tour),避免 overlay 拦截点击
           // 见 src/composables/useOnboardingTour.ts:14
-          { name: 'batch-console-onboarding-done', value: '1' },
+          { name: storageKeys.onboardingDone, value: '1' },
         ],
       },
     ],

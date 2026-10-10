@@ -29,7 +29,10 @@ function gitChangedFiles() {
       process.stderr.write(res.stderr || res.stdout)
       process.exit(res.status ?? 1)
     }
-    for (const file of res.stdout.split('\n').map((x) => x.trim()).filter(Boolean)) {
+    for (const file of res.stdout
+      .split('\n')
+      .map((x) => x.trim())
+      .filter(Boolean)) {
       files.add(file)
     }
   }
@@ -91,6 +94,9 @@ const architectureChanged = hasAny(files, [
 ])
 const testFixtureSourceChanged = hasAny(files, [
   (f) => /^src\/.+\.(vue|ts|tsx)$/.test(f),
+  (f) => /^e2e\/.+\.(spec\.ts|cjs|mjs|json)$/.test(f),
+  (f) => f === 'playwright.config.cjs',
+  (f) => f === 'src/constants/storageKeys.json',
   (f) => f === 'scripts/check-test-fixture-sources.mjs',
 ])
 const environmentChanged = hasAny(files, [
@@ -105,12 +111,21 @@ const complianceChanged = hasAny(files, [
   (f) => /^scripts\/(generate-frontend-compliance|check-compliance-drift)\.mjs$/.test(f),
 ])
 const releaseImpact = hasAny(files, [
-  (f) => /^(src\/|public\/|Dockerfile$|docker-compose.*\.ya?ml$|nginx\/|package(?:-lock)?\.json$)/.test(f),
+  (f) =>
+    /^(src\/|public\/|Dockerfile$|docker-compose.*\.ya?ml$|nginx\/|package(?:-lock)?\.json$)/.test(
+      f,
+    ),
 ])
 
 const commentScopeChanged = hasAny(files, [
   (f) => /^(src|e2e|scripts)\/.+\.(cjs|css|js|mjs|sh|ts|tsx|vue)$/.test(f),
-  (f) => ['eslint.config.js', 'playwright.config.cjs', 'playwright.visual.config.cjs', 'vite.config.ts'].includes(f),
+  (f) =>
+    [
+      'eslint.config.js',
+      'playwright.config.cjs',
+      'playwright.visual.config.cjs',
+      'vite.config.ts',
+    ].includes(f),
 ])
 
 if (commentScopeChanged) {

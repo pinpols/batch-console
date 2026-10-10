@@ -1,3 +1,4 @@
+import { STORAGE_KEYS } from './storage'
 import type { Page } from '@playwright/test'
 
 export type E2eLocale = 'zh-CN' | 'en-US'
@@ -11,12 +12,12 @@ export function localized(zhCN: string | RegExp, enUS: string | RegExp): Localiz
 
 export async function setE2eLocale(page: Page, locale: E2eLocale): Promise<void> {
   await page.evaluate((nextLocale) => {
-    localStorage.setItem('batch-console:locale', nextLocale)
+    localStorage.setItem(STORAGE_KEYS.locale, nextLocale)
   }, locale)
 }
 
 export async function currentE2eLocale(page: Page): Promise<E2eLocale> {
-  const locale = await page.evaluate(() => localStorage.getItem('batch-console:locale'))
+  const locale = await page.evaluate(() => localStorage.getItem(STORAGE_KEYS.locale))
   return locale === 'en-US' ? 'en-US' : 'zh-CN'
 }
 

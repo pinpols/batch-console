@@ -1,3 +1,4 @@
+import { STORAGE_KEYS } from './support/storage'
 import { execFileSync } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
 import { expect, test } from './support/app'
@@ -78,10 +79,10 @@ test('AI history excludes another owner and another tenant', async ({ page, netw
       (entry) => entry.status === 404 && entry.url.includes('/api/console/ai/conversations/'),
     )
     await page.addInitScript(() => {
-      localStorage.setItem('batch-console-session', '1')
-      localStorage.setItem('batch-console-tenant-id', 'ta')
-      localStorage.setItem('batch-console:locale', 'zh-CN')
-      localStorage.setItem('batch-console-onboarding-done', '1')
+      localStorage.setItem(STORAGE_KEYS.session, '1')
+      localStorage.setItem(STORAGE_KEYS.tenantId, 'ta')
+      localStorage.setItem(STORAGE_KEYS.locale, 'zh-CN')
+      localStorage.setItem(STORAGE_KEYS.onboardingDone, '1')
     })
     await page.goto('/system/ai-chat')
     await expect(
@@ -171,10 +172,10 @@ test('switching and deleting conversations ignore older real history responses',
     const olderId = await create(olderPrompt)
     const newerId = await create(newerPrompt)
     await page.addInitScript(() => {
-      localStorage.setItem('batch-console-session', '1')
-      localStorage.setItem('batch-console-tenant-id', 'ta')
-      localStorage.setItem('batch-console:locale', 'zh-CN')
-      localStorage.setItem('batch-console-onboarding-done', '1')
+      localStorage.setItem(STORAGE_KEYS.session, '1')
+      localStorage.setItem(STORAGE_KEYS.tenantId, 'ta')
+      localStorage.setItem(STORAGE_KEYS.locale, 'zh-CN')
+      localStorage.setItem(STORAGE_KEYS.onboardingDone, '1')
     })
     await page.goto('/system/ai-chat')
     const olderConversation = page.locator(

@@ -8,7 +8,7 @@ description: 规划、执行或修复前端 lint、typecheck、i18n、Vitest、P
 ## 测试分层
 
 - `npm run lint:check` 检查代码风格；`npm run typecheck` 检查类型；`npm run check:i18n` 检查多语言 key；`npm run gen:api:check` 检查 OpenAPI 漂移。
-- 测试数据和持久化键事实来源由 `npm run check:test-fixture-sources` 守护；测试专属值和独立契约预期不机械抽成全局常量。
+- 测试持久化键和平台服务地址由 `npm run check:test-fixture-sources` 守护，覆盖 Vitest、Playwright 和 storage-state 脚本；场景输入和独立契约预期不机械抽成全局常量。
 - `npm run test:unit` 覆盖 util、API、store 和 composable；SFC 测试只在收益明确时使用。
 - Playwright 主要覆盖桌面关键用户路径；移动端默认不写自动化，除非新增独立业务逻辑或修复移动端独有回归。
 - `npm run test:e2e` 是排除 `@slow` 的常规套件；`npm run test:e2e:all` 才是包含慢场景的发布验收全量套件；视觉基线单独运行 `npm run test:e2e:visual`。

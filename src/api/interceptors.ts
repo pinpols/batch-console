@@ -11,6 +11,7 @@ import { i18n } from '@/locales'
 import { getActivePinia } from 'pinia'
 import { useAppStore } from '@/stores/app'
 import { STORAGE_KEYS } from '@/constants/storageKeys'
+import { LOCALE_STORAGE_KEY } from '@/constants/locale'
 
 /**
  * 把后端 BizException 下发的 i18n key(形如 "error.auth.invalid_credentials")翻成中/英文。
@@ -415,8 +416,7 @@ export function applyApiInterceptors(client: AxiosInstance): void {
     // 用 BE label 兜底。读 localStorage 而不是 vue-i18n 实例,避免请求拦截器在
     // i18n init 之前触发(token-refresh / SSE init 等)时拿不到 locale。
     const locale =
-      (typeof localStorage !== 'undefined' && localStorage.getItem('batch-console:locale')) ||
-      'zh-CN'
+      (typeof localStorage !== 'undefined' && localStorage.getItem(LOCALE_STORAGE_KEY)) || 'zh-CN'
     config.headers['Accept-Language'] = locale === 'en-US' ? 'en-US,en;q=0.9' : 'zh-CN,zh;q=0.9'
 
     const loggable = config as LoggedConfig

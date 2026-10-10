@@ -13,6 +13,7 @@
  * Phase 14 完整 k6 压测留 Pro 档。
  */
 import { test, expect, request as pwRequest, type APIRequestContext } from '@playwright/test'
+import { API_BASE_URL } from './support/config'
 import path from 'node:path'
 import fs from 'node:fs'
 import { grantAiCapability } from './support/app'
@@ -28,7 +29,7 @@ test.describe('Phase 9 — 设计器 + AI Chat 烟测', () => {
   test('工作流可视化页 /workflow/viewer/:id 能打开不崩(用现有 def id)', async ({
     page,
   }) => {
-    await page.goto('http://localhost:5173/workflow/definitions', { timeout: 12000 })
+    await page.goto('/workflow/definitions', { timeout: 12000 })
     // 等待页面骨架渲染,不强求有数据
     await page.waitForLoadState('networkidle', { timeout: 8000 }).catch(() => undefined)
     const errors: string[] = []
@@ -38,7 +39,7 @@ test.describe('Phase 9 — 设计器 + AI Chat 烟测', () => {
 
   test('AI Chat 页打得开 + 输入框可输入', async ({ page }) => {
     await grantAiCapability(page)
-    await page.goto('http://localhost:5173/system/ai-chat', { timeout: 12000 })
+    await page.goto('/system/ai-chat', { timeout: 12000 })
     await page.waitForLoadState('networkidle', { timeout: 8000 }).catch(() => undefined)
     // 不应跳登录
     expect(page.url()).not.toContain('/login')
@@ -50,7 +51,7 @@ test.describe('Phase 10 — 边界值矩阵', () => {
   let api: APIRequestContext
   test.beforeAll(async () => {
     api = await pwRequest.newContext({
-      baseURL: 'http://localhost:18080',
+      baseURL: API_BASE_URL,
       storageState: STATE_ADMIN,
     })
   })
@@ -176,7 +177,7 @@ test.describe('Phase 11 — 安全/注入', () => {
   let api: APIRequestContext
   test.beforeAll(async () => {
     api = await pwRequest.newContext({
-      baseURL: 'http://localhost:18080',
+      baseURL: API_BASE_URL,
       storageState: STATE_ADMIN,
     })
   })
@@ -244,7 +245,7 @@ test.describe('Phase 13 — 可观测性', () => {
   let api: APIRequestContext
   test.beforeAll(async () => {
     api = await pwRequest.newContext({
-      baseURL: 'http://localhost:18080',
+      baseURL: API_BASE_URL,
       storageState: STATE_ADMIN,
     })
   })
@@ -313,7 +314,7 @@ test.describe('Phase 14 — 性能基础', () => {
   let api: APIRequestContext
   test.beforeAll(async () => {
     api = await pwRequest.newContext({
-      baseURL: 'http://localhost:18080',
+      baseURL: API_BASE_URL,
       storageState: STATE_ADMIN,
     })
   })

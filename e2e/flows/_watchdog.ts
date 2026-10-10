@@ -8,10 +8,11 @@
  *  - logFailure — 在 afterAll 里把累积日志写到 test-results/
  */
 import { request as pwRequest, type APIRequestContext, type APIResponse } from '@playwright/test'
+import { API_BASE_URL } from '../support/config'
 import fs from 'node:fs'
 import path from 'node:path'
 
-const API = process.env.BC_API_BASE || 'http://localhost:18080'
+const API = API_BASE_URL
 const STATE_DIR = path.resolve(__dirname, '..', '.auth')
 
 export const ts = () => Date.now().toString(36)

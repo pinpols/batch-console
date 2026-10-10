@@ -1,13 +1,14 @@
+import { STORAGE_KEYS } from './support/storage'
 import { expect, test } from './support/app'
 import { enterDemoApp, expectPageTitle, isVisible } from './support/app'
 
 test.describe('data-heavy pages use the intended primary views', () => {
   test.beforeEach(async ({ page }) => {
     await page.addInitScript(() => {
-      localStorage.setItem('batch-console-session', '1')
-      localStorage.setItem('batch-console-tenant-id', 'ta')
-      localStorage.setItem('batch-console:locale', 'zh-CN')
-      localStorage.setItem('batch-console-onboarding-done', '1')
+      localStorage.setItem(STORAGE_KEYS.session, '1')
+      localStorage.setItem(STORAGE_KEYS.tenantId, 'ta')
+      localStorage.setItem(STORAGE_KEYS.locale, 'zh-CN')
+      localStorage.setItem(STORAGE_KEYS.onboardingDone, '1')
     })
     await page.route('**/api/console/auth/me', (route) =>
       route.fulfill({

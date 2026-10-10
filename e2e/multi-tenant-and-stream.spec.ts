@@ -6,7 +6,9 @@
  *   2) 同接口跨租户连调不应 cookie 串台 / role 错配
  *   3) SSE 断网应自动重连,cursor 续推不丢消息
  */
+import { STORAGE_KEYS } from './support/storage'
 import { test, expect, type APIRequestContext, request as pwRequest } from '@playwright/test'
+import { API_BASE_URL } from './support/config'
 import path from 'node:path'
 
 const STATE_ADMIN = path.resolve(__dirname, '.auth/role-admin.json')
@@ -16,7 +18,7 @@ test.describe('多租户 — admin 跨租户 cookie 不串台', () => {
 
   test.beforeAll(async () => {
     api = await pwRequest.newContext({
-      baseURL: process.env.BC_API_BASE || 'http://localhost:18080',
+      baseURL: API_BASE_URL,
       storageState: STATE_ADMIN,
     })
   })
@@ -88,9 +90,9 @@ test.describe('SSE / 长连接 — 基础烟测', () => {
     const ctx = await browser.newContext({ storageState: STATE_ADMIN })
     const page = await ctx.newPage()
     try {
-      await page.goto('http://localhost:5173/ops/summary', { timeout: 10000 })
+      await page.goto('/ops/summary', { timeout: 10000 })
       // 跑一遍切租户:从默认 ta 切到 tx
-      await page.evaluate(() => localStorage.setItem('batch-console-tenant-id', 'tx'))
+      await page.evaluate(() => localStorage.setItem(STORAGE_KEYS.tenantId, 'tx'))
       await page.reload({ timeout: 10000 })
       // 等页面稳定
       await page.waitForLoadState('networkidle', { timeout: 8000 }).catch(() => undefined)

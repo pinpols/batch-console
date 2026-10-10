@@ -1,3 +1,4 @@
+import { STORAGE_KEYS } from './support/storage'
 import { execFileSync, spawn, type ChildProcess } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
 import { once } from 'node:events'
@@ -69,10 +70,10 @@ test('mobile degradation clears when a real isolated Trigger starts', async ({ p
   })
   expect(login.status()).toBe(200)
   await page.addInitScript(() => {
-    localStorage.setItem('batch-console-session', '1')
-    localStorage.setItem('batch-console-tenant-id', 'ta')
-    localStorage.setItem('batch-console:locale', 'zh-CN')
-    localStorage.setItem('batch-console-onboarding-done', '1')
+    localStorage.setItem(STORAGE_KEYS.session, '1')
+    localStorage.setItem(STORAGE_KEYS.tenantId, 'ta')
+    localStorage.setItem(STORAGE_KEYS.locale, 'zh-CN')
+    localStorage.setItem(STORAGE_KEYS.onboardingDone, '1')
   })
   await page.clock.install()
 

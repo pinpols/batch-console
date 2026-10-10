@@ -15,10 +15,11 @@
  *   ⚠️ = 404 / 业务 4xx (接口存在但资源不足以测真路径,不算授权失败)
  */
 import { test, expect, request as pwRequest, type APIRequestContext } from '@playwright/test'
+import { API_BASE_URL } from './support/config'
 import fs from 'node:fs'
 import path from 'node:path'
 
-const API = process.env.BC_API_BASE || 'http://localhost:18080'
+const API = API_BASE_URL
 
 // admin/auditor 跨租户，tenantAdmin/tenantUser 绑定自己租户。
 type RoleKey = 'admin' | 'tenantAdmin' | 'auditor' | 'tenantUser'

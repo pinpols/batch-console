@@ -9,9 +9,10 @@ import {
   type APIRequestContext,
 } from '@playwright/test'
 import { test, expect } from '@playwright/test'
+import { API_BASE_URL } from '../support/config'
 import { adminCtx, call, FlowLog, e2eCode } from './_watchdog'
 
-const API = process.env.BC_API_BASE || 'http://localhost:18080'
+const API = API_BASE_URL
 
 type ReleaseRow = {
   id: number

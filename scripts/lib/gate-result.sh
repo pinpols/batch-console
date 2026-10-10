@@ -12,9 +12,9 @@ gate_result() {
   local exit_code="${4:-0}"
   local line
   if [[ "$status" == "PASS" ]]; then
-    line="✅ 通过 | code=${code} | gate=${name} | exit_code=0"
+    line="✅ 通过 | code=${code} | gate=${name} | exit_code=0 | action=none"
   else
-    line="❌ 不通过 | code=${code} | gate=${name} | exit_code=${exit_code}"
+    line="❌ 不通过 | code=${code} | gate=${name} | exit_code=${exit_code} | action=fix_and_retry"
   fi
   printf '%s\n' "$line"
   if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
@@ -66,8 +66,9 @@ gate_assert_collected() {
   local summary="## 门禁失败汇总"
   while IFS=$'\t' read -r code exit_code name; do
     ((count += 1))
-    printf '❌ 不通过 %s | code=%s | exit_code=%s\n' "$name" "$code" "$exit_code" >&2
-    summary+=$'\n'"- ${name} (code=${code}, exit_code=${exit_code})"
+    printf '❌ 不通过 | code=%s | gate=%s | exit_code=%s | action=fix_and_retry\n' \
+      "$code" "$name" "$exit_code" >&2
+    summary+=$'\n'"- ❌ 不通过 | code=${code} | gate=${name} | exit_code=${exit_code} | action=fix_and_retry"
   done <"$failure_file"
   if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
     printf '%s\n' "$summary" >>"$GITHUB_STEP_SUMMARY"

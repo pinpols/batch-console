@@ -41,12 +41,12 @@ job 末尾一次性列出全部失败并返回非零。checkout、Node 安装、
 
 ### 快速失败与失败汇总边界
 
-| 入口 | 失败行为 | 继续/停止边界 |
-|---|---|---|
-| `npm run preflight:changed` / `preflight:changed:all` | 对本次变更选出的检查按顺序执行，首个失败立即返回 | 提交前快速反馈；修复后重跑即可，不承诺收集后续检查结果 |
+| 入口                                                               | 失败行为                                                                                                                                                    | 继续/停止边界                                                                                                    |
+| ------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `npm run preflight:changed` / `preflight:changed:all`              | 对本次变更选出的检查按顺序执行，首个失败立即返回                                                                                                            | 提交前快速反馈；修复后重跑即可，不承诺收集后续检查结果                                                           |
 | PR `pr-gate`、`full-ci-gate` 和 `frontend-ci` 的静态/Node 兼容步骤 | `run-gate.sh` 在 `BATCH_GATE_COLLECT=1` 下记录单项结果并继续；`verify-governance.sh` 收集其内部独立门禁；各 job 末尾 `gate_assert_collected` 汇总并非零退出 | 同一 job 的独立 lint、配置、测试、构建等门禁尽量收齐；安装、checkout、运行时等前置步骤失败仍会阻断依赖它们的阶段 |
-| `npm run verify:local` | `scripts/ci.sh` 聚合独立检查并在结尾返回总结果 | 真实依赖/环境准备失败、必须依赖前序产物的步骤失败时，不执行依赖阶段 |
-| `frontend-ci` 的文档构建、`staging-gate` 的环境预检与浏览器验收 | job/步骤按依赖关系失败即停止 | 文档站构建或真实环境预检失败时，不继续执行依赖该结果的发布/浏览器验收；不把未执行阶段算通过 |
+| `npm run verify:local`                                             | `scripts/ci.sh` 聚合独立检查并在结尾返回总结果                                                                                                              | 真实依赖/环境准备失败、必须依赖前序产物的步骤失败时，不执行依赖阶段                                              |
+| `frontend-ci` 的文档构建、`staging-gate` 的环境预检与浏览器验收    | job/步骤按依赖关系失败即停止                                                                                                                                | 文档站构建或真实环境预检失败时，不继续执行依赖该结果的发布/浏览器验收；不把未执行阶段算通过                      |
 
 门禁判定的拦截与放行示例见下方覆盖矩阵和 [测试事实来源约定](../testing/README.md#91-测试数据与配置来源)。
 
@@ -150,27 +150,27 @@ tag v* / 手动 ── precheck(URL/账号/healthz/部署安全头/版本必须�
 
 ## 守护脚本 → workflow 覆盖矩阵
 
-| 守护                            | pr-gate           | full-ci-gate        | staging-gate       | 本地 hook                                               |
-| ------------------------------- | ----------------- | ------------------- | ------------------ | ------------------------------------------------------- |
-| `eslint --check`                | ✅                | ✅                  | —                  | `.husky/pre-commit` `lint-staged` + `preflight:changed` |
-| `prettier --check`              | (lint 包含)       | (lint 包含)         | —                  | `.husky/pre-commit` `lint-staged`                       |
-| `vue-tsc` typecheck             | ✅                | ✅                  | —                  | `preflight:changed`(src 变更)                           |
-| `check-i18n-messages.mjs`       | ✅                | ✅(含 build 里二次) | —                  | `preflight:changed`(src / locale 变更)                  |
-| `check-api-drift.sh`            | ✅                | ✅                  | —                  | `preflight:changed`(api / generated types 变更)         |
-| Vitest 全量                     | ✅                | ✅                  | —                  | —                                                       |
-| Vite build                      | ✅ (`build:fast`) | ✅ (`build` 完整)   | —                  | —                                                       |
-| `npm audit`                     | ✅ prod high+     | ✅ 全量 critical 拒 | —                  | —                                                       |
-| Docker build                    | —                 | ✅                  | —                  | —                                                       |
-| Trivy 镜像扫                    | —                 | ✅ CRITICAL 拒      | —                  | —                                                       |
-| Lighthouse                      | —                 | ✅ against preview  | ✅ against staging | —                                                       |
-| Playwright e2e                  | —                 | —                   | ✅ against staging | —                                                       |
-| 架构/环境/文档/SBOM/许可证      | ✅                | ✅                  | —                  | 按 staged 变更选择                                      |
-| 测试 fixture 事实来源 (`check:test-fixture-sources`) | ✅ (`verify-governance.sh`) | ✅ (`verify-governance.sh`) | — | `src/**` 变更时由 `preflight:changed` 触发 |
-| Shell 语法 / ShellCheck warning | ✅                | ✅                  | —                  | `npm run check:shell`                                   |
-| 文档 chunk / 搜索索引预算       | 统一文档 job      | Docker 文档构建     | —                  | `docs:build` 内置                                       |
-| 上线准入文档覆盖                | ✅                | ✅                  | —                  | `preflight:changed`(文档变更)                           |
-| `check-version-alignment.sh`    | ✅                | ✅                  | —                  | `preflight:changed`(package 变更)                       |
-| `docs:build`                    | 统一文档 job      | Docker 文档构建     | —                  | `preflight:changed`(文档桥接、站点配置或构建脚本变更)   |
+| 守护                                                 | pr-gate                     | full-ci-gate                | staging-gate       | 本地 hook                                                                                                                                           |
+| ---------------------------------------------------- | --------------------------- | --------------------------- | ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `eslint --check`                                     | ✅                          | ✅                          | —                  | `.husky/pre-commit` `lint-staged` + `preflight:changed`                                                                                             |
+| `prettier --check`                                   | (lint 包含)                 | (lint 包含)                 | —                  | `.husky/pre-commit` `lint-staged`                                                                                                                   |
+| `vue-tsc` typecheck                                  | ✅                          | ✅                          | —                  | `preflight:changed`(src 变更)                                                                                                                       |
+| `check-i18n-messages.mjs`                            | ✅                          | ✅(含 build 里二次)         | —                  | `preflight:changed`(src / locale 变更)                                                                                                              |
+| `check-api-drift.sh`                                 | ✅                          | ✅                          | —                  | `preflight:changed`(api / generated types 变更)                                                                                                     |
+| Vitest 全量                                          | ✅                          | ✅                          | —                  | —                                                                                                                                                   |
+| Vite build                                           | ✅ (`build:fast`)           | ✅ (`build` 完整)           | —                  | —                                                                                                                                                   |
+| `npm audit`                                          | ✅ prod high+               | ✅ 全量 critical 拒         | —                  | —                                                                                                                                                   |
+| Docker build                                         | —                           | ✅                          | —                  | —                                                                                                                                                   |
+| Trivy 镜像扫                                         | —                           | ✅ CRITICAL 拒              | —                  | —                                                                                                                                                   |
+| Lighthouse                                           | —                           | ✅ against preview          | ✅ against staging | —                                                                                                                                                   |
+| Playwright e2e                                       | —                           | —                           | ✅ against staging | —                                                                                                                                                   |
+| 架构/环境/文档/SBOM/许可证                           | ✅                          | ✅                          | —                  | 按 staged 变更选择                                                                                                                                  |
+| 测试配置事实来源 (`check:test-fixture-sources`) | ✅ (`verify-governance.sh`) | ✅ (`verify-governance.sh`) | —                  | `src/**`、`e2e/**`、`playwright.config.cjs` 或事实源变更时由 `preflight:changed` 触发；拦截重复持久化键、内联 storage 桩和重复平台服务 origin；场景 fixture 值保留在测试内 |
+| Shell 语法 / ShellCheck warning                      | ✅                          | ✅                          | —                  | `npm run check:shell`                                                                                                                               |
+| 文档 chunk / 搜索索引预算                            | 统一文档 job                | Docker 文档构建             | —                  | `docs:build` 内置                                                                                                                                   |
+| 上线准入文档覆盖                                     | ✅                          | ✅                          | —                  | `preflight:changed`(文档变更)                                                                                                                       |
+| `check-version-alignment.sh`                         | ✅                          | ✅                          | —                  | `preflight:changed`(package 变更)                                                                                                                   |
+| `docs:build`                                         | 统一文档 job                | Docker 文档构建             | —                  | `preflight:changed`(文档桥接、站点配置或构建脚本变更)                                                                                               |
 
 Shell 脚本统一使用 Bash/sh；`check:shell` 同时做语法与 ShellCheck 检查，CI 不再额外安装 zsh。
 
@@ -180,13 +180,12 @@ CI workflow 和本地聚合门禁统一通过 `scripts/ci/run-gate.sh` /
 `scripts/lib/gate-result.sh` 输出最终状态行：
 
 ```text
-✅ 通过 | code=FE_VERSION | gate=版本对齐 | exit_code=0
-❌ 不通过 | code=FE_VERSION | gate=版本对齐 | exit_code=1
+✅ 通过 | code=FE_VERSION | gate=版本对齐 | exit_code=0 | action=none
+❌ 不通过 | code=FE_VERSION | gate=版本对齐 | exit_code=1 | action=fix_and_retry
 ```
 
-状态行固定包含状态、`code`、`gate` 和 `exit_code`，后续可追加 `reason`、`files`、
-`version` 等诊断字段。扫描器明细、测试进度、构建日志和人工排查提示不强行改成状态行，
-但每个门禁脚本的最终结论必须可被人和机器稳定识别。
+状态行固定包含状态、`code`、`gate`、`exit_code` 和 `action`。失败汇总复用同一格式；
+扫描器明细、测试进度、构建日志和排查说明仍保留原有详细输出，但不能替代最终状态行。
 
 ## 本地按需预检
 
