@@ -44,6 +44,17 @@ export function buildBatchDayReplayRequest(
   return { request }
 }
 
+export function batchDayReplayRequestKey(request: BatchDayReplaySubmitRequest): string {
+  return JSON.stringify(request)
+}
+
+export function isReplayPreviewCurrent(
+  request: BatchDayReplaySubmitRequest,
+  previewRequestKey: string | null,
+): boolean {
+  return previewRequestKey !== null && previewRequestKey === batchDayReplayRequestKey(request)
+}
+
 function splitTokens(value: string): string[] {
   return value
     .split(/[\s,]+/)

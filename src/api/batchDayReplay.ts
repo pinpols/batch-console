@@ -37,11 +37,16 @@ interface InnerEnvelope<T> {
   meta?: unknown
 }
 
-function unwrap<T>(env: InnerEnvelope<T> | null | undefined): T {
+function unwrap<T>(env: InnerEnvelope<T> | T | null | undefined): T {
   if (!env) throw new Error('empty response')
-  if (env.code !== 'SUCCESS') throw new Error(env.message || env.code)
-  if (env.data == null) throw new Error('response missing data')
-  return env.data
+  if (typeof env === 'object' && 'code' in env) {
+    const envelope = env as InnerEnvelope<T>
+    if (envelope.code !== 'SUCCESS') throw new Error(envelope.message || envelope.code)
+    if (envelope.data == null) throw new Error('response missing data')
+    return envelope.data
+  }
+  // 共享 Axios 拦截器已拆开 Console CommonResponse。
+  return env as T
 }
 
 export const batchDayReplayApi = {

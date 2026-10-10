@@ -2507,6 +2507,9 @@ export default {
     entryStatusFailed: '失败',
     previewBtn: '预览影响',
     previewOk: '预览已生成',
+    previewRequired: '请先预览当前参数对应的影响；参数变更后需要重新预览。',
+    previewExpired: '预览已过期，请重新预览后再提交。',
+    previewEntriesSummary: '候选作业共 {count} 项，列表支持分页查看。',
   },
   capacityProfile: {
     refresh: '刷新',
@@ -3072,6 +3075,7 @@ export default {
     detailGoLogs: '执行日志(审计检索)',
     detailRerunBtn: '重跑',
     detailCancelBtn: '取消实例',
+    detailCancelRequestBtn: '请求取消',
     detailTerminateBtn: '终止实例',
     detailDiagnose: '诊断实例',
     detailRetryFailedPartitions: '重试失败分区',
@@ -3095,6 +3099,9 @@ export default {
     instanceCancelText: '取消实例 {no}?',
     instanceCancelTitle: '取消确认',
     instanceCanceled: '已取消实例 {no}',
+    instanceCancelRequested:
+      '已受理实例 {no} 的取消请求，涉及 {count} 个运行中任务；请继续跟踪实例终态',
+    instanceCancelAccepted: '实例 {no} 的取消操作已受理，当前状态：{status}',
     terminateVerb: '强制终止',
     terminateTarget: '实例 {no}',
     terminateConsequence:
@@ -3105,10 +3112,13 @@ export default {
     rerunConfirmConsequence:
       '将基于相同 jobCode + bizDate 派发一条新实例,原实例数据保留。下游若已消费旧实例输出,可能产生重复处理。',
     rerunConfirmButton: '确认重跑',
-    cancelConfirmVerb: '终止',
-    cancelConfirmConsequence:
-      'Worker 会尽快终止运行中的进程。已写入的中间结果可能保留,需手动清理。',
-    cancelConfirmButton: '确认终止',
+    cancelConfirmVerb: '取消实例',
+    cancelConfirmRequestVerb: '请求取消',
+    cancelRunningConsequence:
+      '运行中的任务收到协作式取消请求后会尽快停止；请求受理不代表实例已停止。已写入的中间结果不会自动回滚，请跟踪实例终态并按需核对数据。',
+    cancelQueuedConsequence: '尚未开始执行的实例会被取消并进入终态。确认后无法恢复该实例。',
+    cancelConfirmButton: '确认请求取消',
+    cancelConfirmQueuedButton: '确认取消实例',
     // 分区视图
     partitionTitle: '作业分片',
     partitionDescription: '实例 #{id} 的分区列表',

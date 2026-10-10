@@ -6,7 +6,10 @@ import type {
   ConsoleJobStepInstanceResponse,
   ConsoleWorkflowRunResponse,
 } from '@/types/console-api'
+import type { components } from '@/types/api.generated'
 import type { PageResponse, PageResult } from '@/types'
+
+export type InstanceActionResponse = components['schemas']['InstanceActionResponse']
 
 export type InstanceQuery = InstanceQueryParams
 
@@ -38,7 +41,7 @@ export const instanceApi = {
     }),
 
   cancel: (instanceId: number, tenantId: string) =>
-    post<string>(`/api/console/instances/${instanceId}/cancel`, undefined, {
+    post<InstanceActionResponse>(`/api/console/instances/${instanceId}/cancel`, undefined, {
       params: { tenantId },
     }),
 
