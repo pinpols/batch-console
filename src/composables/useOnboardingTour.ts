@@ -11,8 +11,9 @@ import { driver } from 'driver.js'
 import 'driver.js/dist/driver.css'
 import { logRoute } from '@/utils/logger'
 import { i18n } from '@/locales'
+import { STORAGE_KEYS } from '@/constants/storageKeys'
 
-const STORAGE_KEY = 'batch-console-onboarding-done'
+const STORAGE_KEY = STORAGE_KEYS.onboardingDone
 
 export interface TourStep {
   /** CSS 选择器,标在已存在的 DOM 节点上 */

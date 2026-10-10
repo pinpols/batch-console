@@ -338,6 +338,8 @@ E2E_USAGE_DB_RECONCILIATION=1 E2E_SKIP_GLOBAL_SETUP=1 E2E_BASE_URL=http://127.0.
 ### 9.1 测试数据与配置来源
 
 - 测试输入依赖平台已有定义时，优先复用生产代码或共享 fixture：持久化键使用 `src/constants/storageKeys.ts`，浏览器存储桩使用 `src/test-utils/localStorage.ts`。主题、语言、页面偏好等功能专属键继续由对应模块维护，不为集中而集中。
+- `npm run check:test-fixture-sources` 会阻止测试重复写 `batch-console-*` / `batch-console:*` 持久化键，以及在测试里内联创建 localStorage 桩；新增或调整 `src/**/*.test.ts`、存储键常量或共享桩时应运行该检查。`src/constants/storageKeys.test.ts` 是有意保留独立预期值的契约测试例外。
+- 拦截示例：在 `auth.test.ts` 直接写 `storage.set('batch-console-session', '1')`，或再次 `vi.stubGlobal('localStorage', ...)`；应改用 `STORAGE_KEYS.session` 与 `stubLocalStorage()`。放行示例：`storageKeys.test.ts` 将发布过的键值作为独立预期固定下来，或某个测试使用 `tenant-a` 这类仅属于该测试数据的标识。
 - 同一测试环境配置被多个测试复用时，放入已有 Vitest setup、共享测试 helper 或测试环境配置；单个测试特有的覆盖值留在测试旁，并说明验证目的。不要复制相同的桩实现或环境默认值。
 - 输入数据依赖当前平台定义时，优先引用相应 DTO、枚举、导出常量或公共 fixture，避免平台定义变化后测试输入悄悄过期。
 - 契约回归测试必须保留独立预期：持久化键兼容性、API 字段/序列化值、权限边界或公开默认值应明确断言预期，并通过专门测试与生产定义对照。不要让被测实现和期望值读取同一个常量，否则双方同时漂移仍可能通过。

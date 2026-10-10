@@ -9,6 +9,7 @@ describe('STORAGE_KEYS', () => {
       session: 'batch-console-session',
       passwordNotice: 'batch-console-password-notice',
       telemetry: 'batch-console-telemetry',
+      onboardingDone: 'batch-console-onboarding-done',
     })
   })
 })

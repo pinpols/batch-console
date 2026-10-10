@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { STORAGE_KEYS } from '@/constants/storageKeys'
 import { stubLocalStorage } from '@/test-utils/localStorage'
 
 const { driverDriveMock, driverConstructorMock } = vi.hoisted(() => {
@@ -52,12 +53,12 @@ describe('useOnboardingTour', () => {
   })
 
   it('shouldShowOnboarding:已完成(localStorage 标 1)→ false', () => {
-    storage.set('batch-console-onboarding-done', '1')
+    storage.set(STORAGE_KEYS.onboardingDone, '1')
     expect(shouldShowOnboarding()).toBe(false)
   })
 
   it('resetOnboarding:清掉标记,下次 shouldShow 返 true', () => {
-    storage.set('batch-console-onboarding-done', '1')
+    storage.set(STORAGE_KEYS.onboardingDone, '1')
     resetOnboarding()
     expect(shouldShowOnboarding()).toBe(true)
   })
