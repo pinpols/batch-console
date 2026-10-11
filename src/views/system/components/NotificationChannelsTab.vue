@@ -84,32 +84,7 @@
       <el-table-column :label="t('notificationCommon.colActions')" width="260" fixed="right">
         <template #default="{ row }">
           <div class="table-actions">
-            <el-button size="small" plain type="primary" @click="openChannelEdit(row)">
-              {{ t('notificationCommon.btnEdit') }}
-            </el-button>
-            <el-button
-              size="small"
-              plain
-              v-track-click="{
-                action: t('notificationChannelsTab.trackTest'),
-                code: row.channelCode,
-              }"
-              @click="testChannel(row)"
-            >
-              {{ t('notificationChannelsTab.btnTest') }}
-            </el-button>
-            <el-button
-              size="small"
-              plain
-              type="danger"
-              v-track-click="{
-                action: t('notificationChannelsTab.trackDelete'),
-                code: row.channelCode,
-              }"
-              @click="confirmDeleteChannel(row)"
-            >
-              {{ t('notificationCommon.btnDelete') }}
-            </el-button>
+            <RowActions :actions="channelRowActions(row)" :inline-limit="1" />
           </div>
         </template>
       </el-table-column>
@@ -217,6 +192,7 @@
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
   import DatetimeColumn from '@/components/common/DatetimeColumn.vue'
+  import RowActions, { type RowAction } from '@/components/common/RowActions.vue'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { useListLoadState } from '@/composables/useListLoadState'
 
@@ -305,6 +281,37 @@
     channelForm.enabled = !!row.enabled
     channelFormVisible.value = true
     channelDirty.markPristine()
+  }
+
+  function channelRowActions(row: Record<string, unknown>): RowAction[] {
+    return [
+      {
+        key: 'edit',
+        label: t('notificationCommon.btnEdit'),
+        primary: true,
+        onClick: () => openChannelEdit(row),
+      },
+      {
+        key: 'test',
+        label: t('notificationChannelsTab.btnTest'),
+        track: {
+          action: t('notificationChannelsTab.trackTest'),
+          code: row.channelCode,
+        },
+        onClick: () => testChannel(row),
+      },
+      {
+        key: 'delete',
+        label: t('notificationCommon.btnDelete'),
+        danger: true,
+        divided: true,
+        track: {
+          action: t('notificationChannelsTab.trackDelete'),
+          code: row.channelCode,
+        },
+        onClick: () => confirmDeleteChannel(row),
+      },
+    ]
   }
 
   async function closeChannelForm() {

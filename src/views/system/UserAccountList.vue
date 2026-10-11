@@ -111,28 +111,9 @@
             </template>
           </el-table-column>
           <DatetimeColumn prop="createdAt" :label="t('userAccountList.colCreatedAt')" width="160" />
-          <el-table-column :label="t('userAccountList.colActions')" width="230" fixed="right">
+          <el-table-column :label="t('userAccountList.colActions')" width="190" fixed="right">
             <template #default="{ row }">
-              <div class="table-actions">
-                <el-button size="small" link type="primary" @click="openEdit(row)">
-                  {{ t('userAccountList.actionEdit') }}
-                </el-button>
-                <el-button size="small" link @click="openResetPassword(row)">
-                  {{ t('userAccountList.actionResetPassword') }}
-                </el-button>
-                <el-button
-                  v-if="row.enabled"
-                  size="small"
-                  link
-                  type="danger"
-                  @click="confirmDisable(row)"
-                >
-                  {{ t('userAccountList.actionDisable') }}
-                </el-button>
-                <el-button v-else size="small" link type="success" @click="confirmEnable(row)">
-                  {{ t('userAccountList.actionEnable') }}
-                </el-button>
-              </div>
+              <RowActions :actions="accountRowActions(row)" :inline-limit="1" />
             </template>
           </el-table-column>
         </el-table>
@@ -301,6 +282,7 @@
   import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { Plus, Upload } from '@lucide/vue'
+  import RowActions, { type RowAction } from '@/components/common/RowActions.vue'
   import UserBatchProvisioningDialog from './UserBatchProvisioningDialog.vue'
 
   const { t } = useI18n({ useScope: 'global' })
@@ -383,16 +365,16 @@
   const lastLoadedAt = ref<Date | null>(null)
 
   const accountStatusItems = computed(() => [
-    { value: '', label: t('userAccountList.statusAll') },
+    { value: '', label: t('userAccountList.statusAll'), tone: 'neutral' },
     {
       value: 'enabled',
       label: t('userAccountList.metricEnabled'),
-      accent: 'var(--color-success)',
+      tone: 'success',
     },
     {
       value: 'disabled',
       label: t('userAccountList.metricDisabled'),
-      accent: 'var(--color-text-tertiary)',
+      tone: 'muted',
     },
   ])
 
@@ -647,6 +629,36 @@
     resetTarget.value = row
     resetForm.newPassword = ''
     resetVisible.value = true
+  }
+
+  function accountRowActions(row: UserAccount): RowAction[] {
+    return [
+      {
+        key: 'edit',
+        label: t('userAccountList.actionEdit'),
+        primary: true,
+        onClick: () => openEdit(row),
+      },
+      {
+        key: 'reset-password',
+        label: t('userAccountList.actionResetPassword'),
+        onClick: () => openResetPassword(row),
+      },
+      row.enabled
+        ? {
+            key: 'disable',
+            label: t('userAccountList.actionDisable'),
+            danger: true,
+            divided: true,
+            onClick: () => confirmDisable(row),
+          }
+        : {
+            key: 'enable',
+            label: t('userAccountList.actionEnable'),
+            divided: true,
+            onClick: () => confirmEnable(row),
+          },
+    ]
   }
 
   // 密码生成 + 复制已下沉到 StrongPasswordInput 组件,这里不再重复实现

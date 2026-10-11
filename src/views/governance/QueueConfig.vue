@@ -256,7 +256,7 @@
             <el-table-column :label="t('queueConfig.colHolidays')" min-width="128">
               <template #default="{ row }">
                 <div class="table-actions">
-                  <el-button size="small" plain type="primary" @click="openHolidays(row)">
+                  <el-button size="small" plain type="primary" :icon="CalendarDays" @click="openHolidays(row)">
                     {{ t('queueConfig.viewHolidays') }}
                   </el-button>
                 </div>
@@ -626,7 +626,7 @@
   import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { confirmDanger } from '@/composables/useDangerConfirm'
-  import { Trash2 as Delete, Pencil as Edit, Plus } from '@lucide/vue'
+  import { CalendarDays, Trash2 as Delete, Pencil as Edit, Plus } from '@lucide/vue'
 
   const { t } = useI18n({ useScope: 'global' })
   import { toPageResult } from '@/api/adapters'

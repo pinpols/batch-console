@@ -25,6 +25,7 @@
 | [项目结构图](./architecture/project-structure.md)                                      | 顶层 + src 子目录 + 关键 composable + npm script(2026-06-03 新增) |
 | [前端方案设计说明书 V3](./engineering/批量调度系统前端方案设计说明书_开发落地版_V3.md) | 前端总体方案:业务域 / 路由 / 页面职责 / 组件分层 / 联调边界       |
 | [设计 Token 治理](./engineering/design-tokens.md)                                       | 运行时 token 权威源；根目录 `design/` 是不发布到文档站的本地只读参考 |
+| [控制台交互约定](./engineering/ui-interaction-conventions.md)                             | 筛选提交时机、状态分段、列表操作、日历、图表空态、JSON、提示和国际化 |
 | [wrapper 迁移记录](./engineering/fe-wrapper-migration-plan.md)                         | 已完成批次、剩余边界与后续迁移规则                                  |
 | [页面命名约定](./engineering/page-naming-convention.md)                                | URL / 代码目录 / 侧边栏分组三者一致规则                           |
 | [前端工程成熟度路线图](./engineering/engineering-maturity-roadmap.md)                  | 大厂工程实践对齐、上线准入、UI 治理和验收证据分层                 |

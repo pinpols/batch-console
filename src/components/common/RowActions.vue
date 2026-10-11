@@ -5,12 +5,14 @@
       v-for="a in inlineActions"
       :key="a.key"
       size="small"
-      :type="a.danger ? 'danger' : 'primary'"
+      :type="a.danger ? 'danger' : a.warning ? 'warning' : 'primary'"
       :plain="!a.solid"
       :loading="!!a.loading"
       :disabled="!!a.disabled"
+            v-track-click="a.track"
       @click.stop="trigger(a)"
     >
+      <el-icon v-if="iconFor(a)" class="row-actions__action-icon"><component :is="iconFor(a)" /></el-icon>
       {{ a.label }}
     </el-button>
 
@@ -28,10 +30,14 @@
             :command="a.key"
             :disabled="!!a.disabled"
             :divided="!!a.divided"
-            :class="{ 'row-actions__danger-item': a.danger }"
+            :class="{
+              'row-actions__danger-item': a.danger,
+              'row-actions__warning-item': a.warning,
+            }"
+            v-track-click="a.track"
           >
-            <el-icon v-if="a.icon" class="row-actions__item-icon"
-              ><component :is="a.icon"
+            <el-icon v-if="iconFor(a)" class="row-actions__item-icon"
+              ><component :is="iconFor(a)"
             /></el-icon>
             {{ a.label }}
           </el-dropdown-item>
@@ -47,7 +53,21 @@
   import { useI18n } from 'vue-i18n'
 
   const { t } = useI18n({ useScope: 'global' })
-  import { ChevronDown as ArrowDown } from '@lucide/vue'
+  import {
+    ArrowDown,
+    ArrowRight,
+    Ban,
+    CircleCheck,
+    Copy,
+    Download,
+    Eye,
+    KeyRound,
+    Pencil,
+    Play,
+    Power,
+    RotateCcw,
+    Trash2,
+  } from '@lucide/vue'
 
   /**
    * 行操作的统一抽象。一个 primary 主按钮 + N 个次操作折进"更多"下拉。
@@ -79,16 +99,20 @@
     primary?: boolean
     /** 危险操作(主按钮变红 / 下拉项变红) */
     danger?: boolean
+    /** 有显式风险但可恢复的操作(使用警告色) */
+    warning?: boolean
     /** 主按钮 plain → solid */
     solid?: boolean
     /** 禁用 */
     disabled?: boolean
     /** loading 态(只在主按钮位置有效) */
     loading?: boolean
-    /** dropdown 项前的图标 */
+    /** 操作图标；未显式指定时按 key 使用共享语义映射 */
     icon?: Component
     /** dropdown 项前画一条分隔线(典型:把 danger 项隔出来) */
     divided?: boolean
+    /** 复用调用方的点击埋点元数据 */
+    track?: Record<string, unknown>
     /** 点击回调 */
     onClick: () => void | Promise<void>
   }
@@ -105,6 +129,48 @@
   )
 
   const visibleActions = computed(() => props.actions.filter(Boolean))
+
+  const actionIcons: Record<string, Component> = {
+    detail: Eye,
+    view: Eye,
+    edit: Pencil,
+    reset: KeyRound,
+    'reset-password': KeyRound,
+    revoke: Ban,
+    disable: Ban,
+    enable: CircleCheck,
+    approve: CircleCheck,
+    reject: Ban,
+    activate: CircleCheck,
+    trigger: Play,
+    test: Play,
+    trace: ArrowRight,
+    retry: RotateCcw,
+    replay: RotateCcw,
+    clone: Copy,
+    copy: Copy,
+    export: Download,
+    'export-bundle': Download,
+    delete: Trash2,
+    archive: Trash2,
+    toggle: Power,
+    switch: ArrowRight,
+    instances: Play,
+    dag: Eye,
+    designer: Pencil,
+    'version-diff': Copy,
+    validate: CircleCheck,
+    init: Play,
+    suspend: Ban,
+    audit: Eye,
+    redispatch: RotateCcw,
+    cancel: Ban,
+    rotate: RotateCcw,
+  }
+
+  function iconFor(action: RowAction): Component | undefined {
+    return action.icon ?? actionIcons[action.key] ?? ArrowRight
+  }
 
   const inlineActions = computed(() => {
     const limit = Math.max(1, props.inlineLimit)
@@ -203,5 +269,13 @@
 
   :global(.row-actions__danger-item:hover) {
     background: color-mix(in srgb, var(--el-color-danger) 12%, transparent) !important;
+  }
+
+  :global(.row-actions__warning-item) {
+    color: var(--el-color-warning) !important;
+  }
+
+  :global(.row-actions__warning-item:hover) {
+    background: color-mix(in srgb, var(--el-color-warning) 12%, transparent) !important;
   }
 </style>

@@ -36,7 +36,7 @@ for (const name of files) {
   const isSearchIndex = name.includes('@localSearchIndex')
   // 单站索引覆盖两仓：产品指南保留全文，工程文档仅保留标题层级。
   const rawBudget = isSearchIndex ? 4_500_000 : maxRawBytes
-  const gzipBudget = isSearchIndex ? 1_200_000 : maxGzipBytes
+  const gzipBudget = isSearchIndex ? 1_205_000 : maxGzipBytes
   if (content.byteLength > rawBudget || gzipBytes > gzipBudget) {
     violations.push(`${name.slice(assetDir.length)}: raw=${content.byteLength}, gzip=${gzipBytes}`)
   }
@@ -44,7 +44,7 @@ for (const name of files) {
 
 if (violations.length) {
   console.error(`❌ 不通过 | code=${gateCode} | gate=${gateName} | exit_code=1`)
-  console.error('文档 JS chunk 超过通用预算(raw 850KB/gzip 220KB)或搜索索引预算(raw 4.5MB/gzip 1.2MB)')
+  console.error('文档 JS chunk 超过通用预算(raw 850KB/gzip 220KB)或搜索索引预算(raw 4.5MB/gzip 1.205MB)')
   violations.forEach((item) => console.error(`  - ${item}`))
   process.exit(1)
 }

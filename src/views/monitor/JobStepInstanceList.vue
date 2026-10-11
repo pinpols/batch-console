@@ -80,7 +80,7 @@
         <el-table-column :label="t('monitor.stepColActions')" width="110" fixed="right">
           <template #default="{ row }">
             <div class="table-actions">
-              <el-button size="small" plain type="primary" @click="goInstance(row.jobInstanceId)">
+              <el-button size="small" plain type="primary" :icon="Eye" @click="goInstance(row.jobInstanceId)">
                 {{ t('monitor.stepActionInstance') }}
               </el-button>
             </div>
@@ -92,6 +92,7 @@
 </template>
 
 <script setup lang="ts">
+  import { Eye } from '@lucide/vue'
   import { computed, ref } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'

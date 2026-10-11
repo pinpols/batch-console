@@ -78,23 +78,9 @@
         <DatetimeColumn prop="expiresAt" :label="t('apiKeyList.colExpiresAt')" width="160" />
         <DatetimeColumn prop="revokedAt" :label="t('apiKeyList.colRevokedAt')" width="160" />
         <DatetimeColumn prop="createdAt" :label="t('apiKeyList.colCreatedAt')" width="160" />
-        <el-table-column :label="t('apiKeyList.colActions')" width="160" fixed="right">
+        <el-table-column :label="t('apiKeyList.colActions')" width="180" fixed="right">
           <template #default="{ row }">
-            <div class="table-actions">
-              <el-button size="small" plain type="primary" @click="viewDetail(row)">
-                {{ t('apiKeyList.actionDetail') }}
-              </el-button>
-              <el-button
-                size="small"
-                plain
-                type="danger"
-                v-track-click="{ action: 'revoke API key', id: row.id }"
-                @click="confirmRevoke(row)"
-                :disabled="isRevoked(row)"
-              >
-                {{ isRevoked(row) ? t('apiKeyList.actionRevoked') : t('apiKeyList.actionRevoke') }}
-              </el-button>
-            </div>
+            <RowActions :actions="apiKeyRowActions(row)" :inline-limit="1" />
           </template>
         </el-table-column>
       </ProTable>
@@ -232,6 +218,7 @@
   import { confirmDanger } from '@/composables/useDangerConfirm'
   import type { FormRules } from 'element-plus'
   import { Check, Copy as DocumentCopy, Plus } from '@lucide/vue'
+  import RowActions, { type RowAction } from '@/components/common/RowActions.vue'
   import { useFormValidate, rules } from '@/composables/useFormValidate'
   import { useAsyncAction } from '@/composables/useAsyncAction'
   import {
@@ -401,6 +388,26 @@
   async function viewDetail(row: Record<string, unknown>) {
     detail.value = (await getApiKey(row.id as number, tenant.tenantId)) as Record<string, unknown>
     detailVisible.value = true
+  }
+
+  function apiKeyRowActions(row: Record<string, unknown>): RowAction[] {
+    return [
+      {
+        key: 'detail',
+        label: t('apiKeyList.actionDetail'),
+        primary: true,
+        onClick: () => viewDetail(row),
+      },
+      {
+        key: 'revoke',
+        label: isRevoked(row) ? t('apiKeyList.actionRevoked') : t('apiKeyList.actionRevoke'),
+        danger: true,
+        divided: true,
+        disabled: isRevoked(row),
+        track: { action: 'revoke API key', id: row.id },
+        onClick: () => confirmRevoke(row),
+      },
+    ]
   }
 
   async function confirmRevoke(row: Record<string, unknown>) {

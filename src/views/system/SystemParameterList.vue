@@ -62,14 +62,7 @@
         </el-table-column>
         <el-table-column :label="t('systemParameterList.colActions')" width="160" fixed="right">
           <template #default="{ row }">
-            <div class="table-actions">
-              <el-button size="small" plain type="primary" @click="openEdit(row)">
-                {{ t('systemParameterList.actionEdit') }}
-              </el-button>
-              <el-button size="small" plain type="danger" @click="confirmDelete(row)">
-                {{ t('systemParameterList.actionDelete') }}
-              </el-button>
-            </div>
+            <RowActions :actions="parameterRowActions(row)" :inline-limit="1" />
           </template>
         </el-table-column>
       </ProTable>
@@ -125,6 +118,7 @@
   import { confirmDanger } from '@/composables/useDangerConfirm'
   import type { FormRules } from 'element-plus'
   import { Plus } from '@lucide/vue'
+  import RowActions, { type RowAction } from '@/components/common/RowActions.vue'
   import { useFormValidate, rules } from '@/composables/useFormValidate'
   import { useAsyncAction } from '@/composables/useAsyncAction'
   import {
@@ -227,6 +221,24 @@
     form.key = row.key
     form.value = row.value
     dialogVisible.value = true
+  }
+
+  function parameterRowActions(row: { key: string; value: string }): RowAction[] {
+    return [
+      {
+        key: 'edit',
+        label: t('systemParameterList.actionEdit'),
+        primary: true,
+        onClick: () => openEdit(row),
+      },
+      {
+        key: 'delete',
+        label: t('systemParameterList.actionDelete'),
+        danger: true,
+        divided: true,
+        onClick: () => confirmDelete(row),
+      },
+    ]
   }
 
   // useAsyncAction:连点抗抖,完成后 300ms 内 :loading 仍 true

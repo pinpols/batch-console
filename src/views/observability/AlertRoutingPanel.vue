@@ -55,7 +55,7 @@
         </el-form-item>
       </ListPageQueryBar>
 
-      <el-table v-loading="loading" :data="filtered" class="routing-table">
+      <el-table v-loading="loading" :data="rows" class="routing-table">
         <template #empty>
           <EmptyState
             variant="tenant-empty"
@@ -131,6 +131,14 @@
           </template>
         </el-table-column>
       </el-table>
+      <TablePagerBar
+        :page="pageNo"
+        :page-size="pageSize"
+        :total="total"
+        :disabled="loading"
+        @update:page="onPageChange"
+        @update:page-size="onPageSizeChange"
+      />
     </SectionCard>
 
     <el-drawer
@@ -206,7 +214,7 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, reactive, ref } from 'vue'
+  import { reactive, ref } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { Pencil as Edit, Plus } from '@lucide/vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
@@ -229,6 +237,7 @@
   import MetaSelect from '@/components/common/MetaSelect.vue'
   import { usePermission } from '@/composables/usePermission'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
+  import TablePagerBar from '@/components/table/TablePagerBar.vue'
 
   const { canMutateConfig } = usePermission()
   // 运行时消费者尚未落地；保留只读列表用于审计历史配置，避免产生“保存即生效”的错误预期。
@@ -241,6 +250,9 @@
   const loading = ref(false)
   const togglingId = ref<number | null>(null)
   const rows = ref<GovernanceAlertRoutingRow[]>([])
+  const pageNo = ref(1)
+  const pageSize = ref(15)
+  const total = ref(0)
   const kwDraft = ref('')
   const enabledDraft = ref<boolean | undefined>(undefined)
   const kwApplied = ref('')
@@ -269,33 +281,23 @@
     receiver: [{ required: true, message: t('alertRoutingPanel.ruleReceiver'), trigger: 'blur' }],
   }
 
-  const filtered = computed(() => {
-    const k = kwApplied.value.trim().toLowerCase()
-    return rows.value.filter((row) => {
-      const matchKeyword = !k
-        ? true
-        : `${row.routeCode} ${row.routeName} ${row.team} ${row.receiver} ${row.severity}`
-            .toLowerCase()
-            .includes(k)
-      const matchEnabled =
-        enabledApplied.value === undefined ? true : Boolean(row.enabled) === enabledApplied.value
-      return matchKeyword && matchEnabled
-    })
-  })
-
   function onSearch() {
-    return runSearch(() => {
+    return runSearch(async () => {
       kwApplied.value = kwDraft.value.trim()
       enabledApplied.value = enabledDraft.value
+      pageNo.value = 1
+      await load()
     })
   }
 
   function onReset() {
-    return runReset(() => {
+    return runReset(async () => {
       kwDraft.value = ''
       enabledDraft.value = undefined
       kwApplied.value = ''
       enabledApplied.value = undefined
+      pageNo.value = 1
+      await load()
     })
   }
 
@@ -306,12 +308,31 @@
   async function load() {
     loading.value = true
     try {
-      rows.value = await governanceApi.listAlertRoutings(tenant.tenantId)
+      const page = await governanceApi.listAlertRoutingsPage(tenant.tenantId, {
+        keyword: kwApplied.value,
+        enabled: enabledApplied.value,
+        pageNo: pageNo.value,
+        pageSize: pageSize.value,
+      })
+      rows.value = page.items
+      total.value = page.total
     } catch {
       rows.value = []
+      total.value = 0
     } finally {
       loading.value = false
     }
+  }
+
+  function onPageChange(value: number) {
+    pageNo.value = value
+    void load()
+  }
+
+  function onPageSizeChange(value: number) {
+    pageSize.value = value
+    pageNo.value = 1
+    void load()
   }
 
   function resetForm(row?: GovernanceAlertRoutingRow) {

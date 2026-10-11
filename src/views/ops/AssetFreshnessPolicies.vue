@@ -18,7 +18,7 @@
         :filter-busy="loading"
         :refresh-busy="loading"
         :disabled="loading"
-        @search="load"
+        @search="onSearch"
         @reset="resetFilters"
         @refresh="load"
       >
@@ -98,6 +98,14 @@
           </template>
         </el-table-column>
       </el-table>
+      <TablePagerBar
+        :page="pageNo"
+        :page-size="pageSize"
+        :total="total"
+        :disabled="loading"
+        @update:page="onPageChange"
+        @update:page-size="onPageSizeChange"
+      />
     </div>
 
     <el-drawer
@@ -178,10 +186,14 @@
   import PageHeader from '@/components/common/PageHeader.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
+  import TablePagerBar from '@/components/table/TablePagerBar.vue'
 
   const { t } = useI18n({ useScope: 'global' })
   const tenant = useTenantStore()
   const rows = ref<AssetFreshnessPolicy[]>([])
+  const pageNo = ref(1)
+  const pageSize = ref(15)
+  const total = ref(0)
   const loading = ref(false)
   const loadError = ref('')
   const saving = ref(false)
@@ -251,14 +263,18 @@
     loading.value = true
     loadError.value = ''
     try {
-      rows.value = await listAssetFreshnessPolicies({
+      const page = await listAssetFreshnessPolicies({
         tenantId: tenant.tenantId,
         assetCode: query.assetCode,
         enabled: query.enabled,
-        limit: 200,
+        pageNo: pageNo.value,
+        pageSize: pageSize.value,
       })
+      rows.value = page.items
+      total.value = page.total
     } catch (error) {
       rows.value = []
+      total.value = 0
       loadError.value = error instanceof Error ? error.message : t('assetFreshness.loadFailed')
     } finally {
       loading.value = false
@@ -268,6 +284,23 @@
   function resetFilters() {
     query.assetCode = ''
     query.enabled = undefined
+    pageNo.value = 1
+    void load()
+  }
+
+  function onSearch() {
+    pageNo.value = 1
+    void load()
+  }
+
+  function onPageChange(value: number) {
+    pageNo.value = value
+    void load()
+  }
+
+  function onPageSizeChange(value: number) {
+    pageSize.value = value
+    pageNo.value = 1
     void load()
   }
 
@@ -284,7 +317,10 @@
       }
       if (editingId.value)
         await updateAssetFreshnessPolicy(editingId.value, tenant.tenantId, payload)
-      else await createAssetFreshnessPolicy(tenant.tenantId, payload)
+      else {
+        await createAssetFreshnessPolicy(tenant.tenantId, payload)
+        pageNo.value = 1
+      }
       drawerOpen.value = false
       ElMessage.success(t('assetFreshness.saveOk'))
       await load()
@@ -297,7 +333,7 @@
     togglingId.value = row.id
     try {
       await toggleAssetFreshnessPolicy(row.id, tenant.tenantId, { enabled })
-      row.enabled = enabled
+      await load()
       ElMessage.success(t('assetFreshness.toggleOk'))
     } finally {
       togglingId.value = null

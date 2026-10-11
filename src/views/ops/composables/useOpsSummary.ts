@@ -12,6 +12,9 @@ import {
   buildLineOption,
   buildStackBarOption,
   buildHorizontalTopNOption,
+  buildHorizontalStackedStatusOption,
+  buildStatusBarOption,
+  buildStatusColumnOption,
   buildPieOption,
   buildGaugeOption,
   emptyOption,
@@ -39,16 +42,18 @@ export function useOpsSummary() {
   // 历史命名遗留(变量名 outbox 实际显示 SLA),保留为兼容 prop 名;新代码用 slaTrendOption。
   const slaTrendOption = ref<Record<string, unknown>>({})
   const failRateTrendOption = ref<Record<string, unknown>>({})
-  // 分布(distribution): TopN 横向柱 / 饼图,看维度上的占比
+  // 分布(distribution):按类别使用横条、堆叠条、对比柱和圆环表达
   const triggerTypeTopNOption = ref<Record<string, unknown>>({})
   const workerLoadTopNOption = ref<Record<string, unknown>>({})
-  const jobStatusPieOption = ref<Record<string, unknown>>({})
-  const workerStatusPieOption = ref<Record<string, unknown>>({})
-  const alertSeverityPieOption = ref<Record<string, unknown>>({})
-  const outboxHealthPieOption = ref<Record<string, unknown>>({})
+  const jobStatusOption = ref<Record<string, unknown>>({})
+  const workerStatusOption = ref<Record<string, unknown>>({})
+  const alertSeverityOption = ref<Record<string, unknown>>({})
+  const outboxHealthOption = ref<Record<string, unknown>>({})
   // 扩展(extra): gauge / 单值
   // 初始 emptyOption('加载中…'),避免 loadCharts 还没跑完时 VChart 拿到 {} 渲染空白卡
-  const slaGaugeOption = ref<Record<string, unknown>>(emptyOption(t('common.loading')))
+  const slaGaugeOption = ref<Record<string, unknown>>(
+    emptyOption(t('common.loading'), { axes: false }),
+  )
 
   // 用品牌主题(echarts.ts 里 registerTheme 注册),不再用 echarts 内置 'dark'。
   // 跟 tokens.css 的 --color-primary / 网格灰阶 / SectionCard 暗底配色都对得上。
@@ -154,16 +159,15 @@ export function useOpsSummary() {
           ? emptyOption(t('common.noData'))
           : buildHorizontalTopNOption(bundle.workerLoads.items, OPS_CHART_COLORS.success)
 
-      // 状态分布饼图(数据来源:summary KPI 实时快照)
+      // 状态分布(数据来源:summary KPI 实时快照)
       const s = summary.value
       const running = Number(s?.runningJobs ?? 0)
       const failed = Number(s?.failedJobs ?? 0)
       const slaBreach = Number(s?.slaBreaches ?? 0)
-      jobStatusPieOption.value =
+      jobStatusOption.value =
         running + failed + slaBreach === 0
           ? emptyOption(t('common.noData'))
-          : buildPieOption({
-              items: [
+          : buildHorizontalStackedStatusOption([
                 {
                   name: t('opsSummary.legendRunning'),
                   value: running,
@@ -179,18 +183,15 @@ export function useOpsSummary() {
                   value: slaBreach,
                   color: OPS_CHART_COLORS.orange,
                 },
-              ],
-              innerRadius: '40%',
-            })
+              ])
 
       const online = Number(s?.onlineWorkers ?? 0)
       const draining = Number(s?.drainingWorkers ?? 0)
       const offline = Number(s?.offlineWorkers ?? 0)
-      workerStatusPieOption.value =
+      workerStatusOption.value =
         online + draining + offline === 0
           ? emptyOption(t('common.noData'))
-          : buildPieOption({
-              items: [
+          : buildStatusColumnOption([
                 {
                   name: t('opsSummary.legendOnline'),
                   value: online,
@@ -206,18 +207,15 @@ export function useOpsSummary() {
                   value: offline,
                   color: OPS_CHART_COLORS.neutral,
                 },
-              ],
-              innerRadius: '40%',
-            })
+              ])
 
       const openAlerts = Number(s?.openAlerts ?? 0)
       const critical = Number(s?.criticalAlerts ?? 0)
       const otherOpen = Math.max(openAlerts - critical, 0)
-      alertSeverityPieOption.value =
+      alertSeverityOption.value =
         openAlerts === 0
           ? emptyOption(t('opsSummary.noActiveAlerts'))
-          : buildPieOption({
-              items: [
+          : buildStatusBarOption([
                 {
                   name: t('opsSummary.legendCritical'),
                   value: critical,
@@ -228,15 +226,13 @@ export function useOpsSummary() {
                   value: otherOpen,
                   color: OPS_CHART_COLORS.warning,
                 },
-              ],
-              innerRadius: '40%',
-            })
+              ])
 
       const retry = Number(s?.outboxRetryBacklog ?? 0)
       const delivFail = Number(s?.outboxDeliveryFailures ?? 0)
-      outboxHealthPieOption.value =
+      outboxHealthOption.value =
         retry + delivFail === 0
-          ? emptyOption(t('opsSummary.outboxHealthy'))
+          ? emptyOption(t('opsSummary.outboxHealthy'), { axes: false })
           : buildPieOption({
               items: [
                 {
@@ -256,21 +252,22 @@ export function useOpsSummary() {
       // SLA 仪表盘:onTime / (onTime + violation),百分比
       const onTimeTotal = bundle.sla.series.onTime.reduce((a, b) => a + b, 0)
       const violationTotal = bundle.sla.series.violation.reduce((a, b) => a + b, 0)
-      const slaPct =
-        onTimeTotal + violationTotal === 0
-          ? 100
-          : Math.round((onTimeTotal / (onTimeTotal + violationTotal)) * 1000) / 10
-      slaGaugeOption.value = buildGaugeOption({
-        value: slaPct,
-        max: 100,
-        unit: '%',
-        color:
-          slaPct >= 99
-            ? OPS_CHART_COLORS.success
-            : slaPct >= 95
-              ? OPS_CHART_COLORS.warning
-              : OPS_CHART_COLORS.danger,
-      })
+      if (onTimeTotal + violationTotal === 0) {
+        slaGaugeOption.value = emptyOption(t('opsExtraPanel.noSlaSamples'), { axes: false })
+      } else {
+        const slaPct = Math.round((onTimeTotal / (onTimeTotal + violationTotal)) * 1000) / 10
+        slaGaugeOption.value = buildGaugeOption({
+          value: slaPct,
+          max: 100,
+          unit: '%',
+          color:
+            slaPct >= 99
+              ? OPS_CHART_COLORS.success
+              : slaPct >= 95
+                ? OPS_CHART_COLORS.warning
+                : OPS_CHART_COLORS.danger,
+        })
+      }
     } catch (e) {
       logError('opsSummary.charts.load_failed', {
         reason: e instanceof Error ? e.message : String(e),
@@ -282,11 +279,11 @@ export function useOpsSummary() {
       failRateTrendOption.value = emptyOption(t('opsSummary.loadFailed'))
       triggerTypeTopNOption.value = emptyOption(t('opsSummary.loadFailed'))
       workerLoadTopNOption.value = emptyOption(t('opsSummary.loadFailed'))
-      jobStatusPieOption.value = emptyOption(t('opsSummary.loadFailed'))
-      workerStatusPieOption.value = emptyOption(t('opsSummary.loadFailed'))
-      alertSeverityPieOption.value = emptyOption(t('opsSummary.loadFailed'))
-      outboxHealthPieOption.value = emptyOption(t('opsSummary.loadFailed'))
-      slaGaugeOption.value = emptyOption(t('opsSummary.loadFailed'))
+      jobStatusOption.value = emptyOption(t('opsSummary.loadFailed'))
+      workerStatusOption.value = emptyOption(t('opsSummary.loadFailed'))
+      alertSeverityOption.value = emptyOption(t('opsSummary.loadFailed'))
+      outboxHealthOption.value = emptyOption(t('opsSummary.loadFailed'), { axes: false })
+      slaGaugeOption.value = emptyOption(t('opsSummary.loadFailed'), { axes: false })
     } finally {
       chartsLoading.value = false
     }
@@ -377,10 +374,10 @@ export function useOpsSummary() {
     failRateTrendOption,
     triggerTypeTopNOption,
     workerLoadTopNOption,
-    jobStatusPieOption,
-    workerStatusPieOption,
-    alertSeverityPieOption,
-    outboxHealthPieOption,
+    jobStatusOption,
+    workerStatusOption,
+    alertSeverityOption,
+    outboxHealthOption,
     slaGaugeOption,
     extraLoading,
     slaReport,

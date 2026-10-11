@@ -149,6 +149,7 @@
                 size="small"
                 plain
                 type="primary"
+                :icon="Eye"
                 @click="goDetail(row as ConsoleWorkflowRunResponse)"
               >
                 {{ t('monitor.runActionDetail') }}
@@ -162,6 +163,7 @@
 </template>
 
 <script setup lang="ts">
+  import { Eye } from '@lucide/vue'
   import { ref, computed, watch, onMounted } from 'vue'
   import { useRouter, useRoute } from 'vue-router'
   import { useI18n } from 'vue-i18n'

@@ -7,6 +7,7 @@ import type {
   ConsoleSecretVersionResponse,
   ConfigSyncExportResponse,
 } from '@/types/console-api'
+import type { components } from '@/types/api.generated'
 
 export function listConfigReleases(tenantId: string) {
   return get<ConsoleConfigReleaseResponse[]>('/api/console/config/releases', { tenantId })
@@ -166,6 +167,9 @@ export function importConfigSync(body: ConfigSyncImportBody) {
 }
 
 /** GET /api/console/config/sync/logs */
-export function listConfigSyncLogs(tenantId: string) {
-  return get<unknown>('/api/console/config/sync/logs', { tenantId })
+export function listConfigSyncLogs(tenantId: string, pageNo: number, pageSize: number) {
+  return get<components['schemas']['ConfigSyncLogPageResponse']>(
+    '/api/console/config/sync/logs',
+    { tenantId, pageNo, pageSize },
+  )
 }

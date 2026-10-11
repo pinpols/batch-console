@@ -111,12 +111,7 @@
         <el-table-column :label="t('monitor.partColActions')" width="170" fixed="right">
           <template #default="{ row }">
             <div class="table-actions">
-              <el-button size="small" plain type="warning" @click="retryPartition(row)">
-                {{ t('monitor.partActionRetry') }}
-              </el-button>
-              <el-button size="small" plain type="danger" @click="cancelPartition(row)">
-                {{ t('monitor.partActionCancel') }}
-              </el-button>
+              <RowActions :actions="partitionRowActions(row)" :inline-limit="1" />
             </div>
           </template>
         </el-table-column>
@@ -161,6 +156,7 @@
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import TablePagerBar from '@/components/table/TablePagerBar.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
+  import RowActions, { type RowAction } from '@/components/common/RowActions.vue'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
@@ -257,6 +253,24 @@
     } catch {
       /* cancel */
     }
+  }
+
+  function partitionRowActions(row: ConsoleJobPartitionResponse): RowAction[] {
+    return [
+      {
+        key: 'retry',
+        label: t('monitor.partActionRetry'),
+        primary: true,
+        onClick: () => retryPartition(row),
+      },
+      {
+        key: 'cancel',
+        label: t('monitor.partActionCancel'),
+        danger: true,
+        divided: true,
+        onClick: () => cancelPartition(row),
+      },
+    ]
   }
 
   useTenantReload(load)

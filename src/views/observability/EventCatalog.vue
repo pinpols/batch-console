@@ -149,7 +149,7 @@
         />
         <el-table-column :label="t('observability.eventCatalogColActions')" width="104">
           <template #default="{ row }">
-            <el-button size="small" text type="primary" @click="openDetail('eventType', row)">
+            <el-button size="small" text type="primary" :icon="Eye" @click="openDetail('eventType', row)">
               {{ t('observability.eventCatalogActionDetail') }}
             </el-button>
           </template>
@@ -196,7 +196,7 @@
         />
         <el-table-column :label="t('observability.eventCatalogColActions')" width="104">
           <template #default="{ row }">
-            <el-button size="small" text type="primary" @click="openDetail('topic', row)">
+            <el-button size="small" text type="primary" :icon="Eye" @click="openDetail('topic', row)">
               {{ t('observability.eventCatalogActionDetail') }}
             </el-button>
           </template>
@@ -214,6 +214,7 @@
 </template>
 
 <script setup lang="ts">
+  import { Eye } from '@lucide/vue'
   import { computed, onMounted, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import {

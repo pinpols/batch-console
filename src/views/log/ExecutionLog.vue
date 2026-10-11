@@ -89,9 +89,12 @@
         <el-table-column
           prop="detailSummary"
           :label="t('executionLog.colSummary')"
-          min-width="160"
-          show-overflow-tooltip
-        />
+          min-width="260"
+        >
+          <template #default="{ row }">
+            <pre class="execution-log-json">{{ row.detailSummary || '—' }}</pre>
+          </template>
+        </el-table-column>
       </ProTable>
     </SectionCard>
   </PageContainer>
@@ -163,7 +166,7 @@
     const decoded = decodeHtmlEntities(value)
     try {
       const parsed = JSON.parse(decoded)
-      return JSON.stringify(parsed)
+      return JSON.stringify(parsed, null, 2)
     } catch {
       return decoded
     }
@@ -238,3 +241,22 @@
     if (timer) clearInterval(timer)
   })
 </script>
+
+<style scoped>
+  .execution-log-json {
+    box-sizing: border-box;
+    max-height: 132px;
+    margin: 0;
+    overflow: auto;
+    padding: 8px 10px;
+    border: 1px solid var(--color-border-light);
+    border-radius: 6px;
+    background: rgb(255 255 255 / 3%);
+    color: var(--color-text-secondary);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 12px;
+    line-height: 1.55;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+</style>

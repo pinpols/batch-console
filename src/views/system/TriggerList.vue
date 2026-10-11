@@ -74,6 +74,7 @@
                 size="small"
                 plain
                 type="primary"
+                :icon="CirclePlay"
                 v-track-click="{ action: 'register trigger', jobCode: row.jobCode }"
                 @click="doRegister(row)"
               >
@@ -84,6 +85,7 @@
                 size="small"
                 plain
                 type="danger"
+                :icon="CircleStop"
                 v-track-click="{ action: 'unregister trigger', jobCode: row.jobCode }"
                 @click="doUnregister(row)"
               >
@@ -94,6 +96,7 @@
                 size="small"
                 plain
                 type="warning"
+                :icon="Pause"
                 v-track-click="{ action: 'pause trigger', jobCode: row.jobCode }"
                 @click="doPause(row)"
               >
@@ -104,6 +107,7 @@
                 size="small"
                 plain
                 type="success"
+                :icon="Play"
                 v-track-click="{ action: 'resume trigger', jobCode: row.jobCode }"
                 @click="doResume(row)"
               >
@@ -118,6 +122,7 @@
 </template>
 
 <script setup lang="ts">
+  import { CirclePlay, CircleStop, Pause, Play } from '@lucide/vue'
   import { ref, computed } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'

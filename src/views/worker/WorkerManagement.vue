@@ -48,13 +48,10 @@
               />
             </el-form-item>
             <el-form-item :label="t('workerManagement.statusLabel')">
-              <MetaSelect
-                class="query-w-200"
-                v-model="workerFilters.status"
-                clearable
-                enum-key="workerStatus"
-                :placeholder="t('workerManagement.statusPlaceholder')"
-                :options="workerStatusOptions"
+              <StatusSegment
+                v-model="workerStatusSegmentValue"
+                :items="workerStatusSegmentItems"
+                :aria-label="t('workerManagement.statusLabel')"
               />
             </el-form-item>
             <el-form-item :label="t('workerManagement.keywordLabel')">
@@ -299,7 +296,13 @@
             >
               <template #default="{ row }">
                 <div class="table-actions">
-                  <el-button size="small" plain type="primary" @click="openChannelDetail(row)">
+                  <el-button
+                    size="small"
+                    plain
+                    type="primary"
+                    :icon="Eye"
+                    @click="openChannelDetail(row)"
+                  >
                     {{ t('workerManagement.channelActionDetail') }}
                   </el-button>
                 </div>
@@ -341,6 +344,7 @@
 </template>
 
 <script setup lang="ts">
+  import { Eye } from '@lucide/vue'
   import { computed, reactive, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
@@ -369,6 +373,7 @@
   import { useTenantStore } from '@/stores/tenant'
   import PageContainer from '@/components/common/PageContainer.vue'
   import MetaSelect from '@/components/common/MetaSelect.vue'
+  import StatusSegment, { type StatusSegmentItem } from '@/components/table/StatusSegment.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import ProTable from '@/components/table/ProTable.vue'
@@ -436,6 +441,30 @@
   })
 
   const workerStatusOptions = computed(() => pickMetaEnumGroup(metaEnums.value, 'workerStatus'))
+
+  const workerStatusSegmentValue = computed({
+    get: () => workerFilters.status,
+    set: (value: string) => {
+      workerFilters.status = value
+      workerPage.value = 1
+    },
+  })
+
+  const workerStatusSegmentItems = computed<StatusSegmentItem[]>(() => [
+    { value: '', label: t('common.all'), tone: 'neutral' },
+    ...workerStatusOptions.value.map((option) => {
+      const value = String(option.value)
+      const tone =
+        value === 'ONLINE'
+          ? 'success'
+          : value === 'DRAINING'
+            ? 'warning'
+            : value === 'OFFLINE'
+              ? 'danger'
+              : 'muted'
+      return { value, label: option.label, tone }
+    }),
+  ])
 
   const filteredWorkers = computed(() => {
     let r = allWorkerData.value ?? []

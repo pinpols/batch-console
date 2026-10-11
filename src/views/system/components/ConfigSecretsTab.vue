@@ -87,21 +87,7 @@
         <el-table-column :label="t('configSecretsTab.colActions')" width="160" fixed="right">
           <template #default="{ row }">
             <div class="table-actions">
-              <el-button size="small" plain type="primary" @click="viewSecret(row)">
-                {{ t('configSecretsTab.btnDetail') }}
-              </el-button>
-              <el-button
-                size="small"
-                plain
-                type="warning"
-                v-track-click="{
-                  action: t('configSecretsTab.trackRotate'),
-                  secretKey: row.secretRef,
-                }"
-                @click="confirmRotate(row)"
-              >
-                {{ t('configSecretsTab.btnRotate') }}
-              </el-button>
+            <RowActions :actions="secretRowActions(row)" :inline-limit="1" />
             </div>
           </template>
         </el-table-column>
@@ -166,6 +152,7 @@
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { useListLoadState } from '@/composables/useListLoadState'
   import DataState from '@/components/common/DataState.vue'
+  import RowActions, { type RowAction } from '@/components/common/RowActions.vue'
   import type { ConsoleSecretVersionResponse } from '@/types/console-api'
 
   const tenant = useTenantStore()
@@ -198,6 +185,25 @@
       tenant.tenantId,
     )) as ConsoleSecretVersionResponse
     secretDetailVisible.value = true
+  }
+
+  function secretRowActions(row: ConsoleSecretVersionResponse): RowAction[] {
+    return [
+      {
+        key: 'detail',
+        label: t('configSecretsTab.btnDetail'),
+        primary: true,
+        onClick: () => viewSecret(row),
+      },
+      {
+        key: 'rotate',
+        label: t('configSecretsTab.btnRotate'),
+        warning: true,
+        divided: true,
+        track: { action: t('configSecretsTab.trackRotate'), secretKey: row.secretRef },
+        onClick: () => confirmRotate(row),
+      },
+    ]
   }
 
   async function confirmRotate(row: ConsoleSecretVersionResponse) {

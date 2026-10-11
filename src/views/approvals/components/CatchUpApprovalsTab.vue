@@ -80,7 +80,7 @@
       <DatetimeColumn prop="createdAt" :label="t('approvals.catchUpColCreatedAt')" width="160" />
       <el-table-column :label="t('approvals.colActions')" width="96" fixed="right" align="center">
         <template #default="{ row }">
-          <el-button size="small" text type="primary" @click.stop="openDetail(row)">
+          <el-button size="small" text type="primary" :icon="Eye" @click.stop="openDetail(row)">
             {{ t('approvals.actionDetail') }}
           </el-button>
         </template>
@@ -129,6 +129,7 @@
 </template>
 
 <script setup lang="ts">
+  import { Eye } from '@lucide/vue'
   import { computed, ref } from 'vue'
   import { useI18n } from 'vue-i18n'
 

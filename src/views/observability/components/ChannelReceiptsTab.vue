@@ -95,7 +95,7 @@
         <el-table-column :label="t('observability.chanColActions')" width="120" fixed="right">
           <template #default="{ row }">
             <div class="table-actions">
-              <el-button size="small" plain type="primary" @click="openDetail(row)">
+              <el-button size="small" plain type="primary" :icon="Eye" @click="openDetail(row)">
                 {{ t('observability.chanActionDetail') }}
               </el-button>
             </div>
@@ -121,6 +121,7 @@
 </template>
 
 <script setup lang="ts">
+  import { Eye } from '@lucide/vue'
   import { ref, reactive, computed } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { queryChannelReceipts } from '@/api/observabilityQueries'

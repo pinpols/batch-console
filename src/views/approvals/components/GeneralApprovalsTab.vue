@@ -151,23 +151,7 @@
       </el-table-column>
       <el-table-column :label="t('approvals.colActions')" width="176" fixed="right" align="center">
         <template #default="{ row }">
-          <div class="table-actions">
-            <el-button size="small" text type="primary" @click.stop="openDetail(row)">
-              {{ t('approvals.actionDetail') }}
-            </el-button>
-            <el-button size="small" text :disabled="!isPending(row)" @click.stop="approveRow(row)">
-              {{ t('approvals.actionApprove') }}
-            </el-button>
-            <el-button
-              size="small"
-              text
-              type="danger"
-              :disabled="!isPending(row)"
-              @click.stop="rejectRow(row)"
-            >
-              {{ t('approvals.actionReject') }}
-            </el-button>
-          </div>
+          <RowActions :actions="approvalRowActions(row)" :inline-limit="2" />
         </template>
       </el-table-column>
     </ProTable>
@@ -284,6 +268,7 @@
   import CopyableText from '@/components/common/CopyableText.vue'
   import DetailDrawer from '@/components/common/DetailDrawer.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
+  import RowActions, { type RowAction } from '@/components/common/RowActions.vue'
   import type { ConsoleApprovalCommandResponse } from '@/types/console-api'
   import { useAuthStore } from '@/stores/auth'
 
@@ -358,6 +343,31 @@
 
   function isPending(row: ConsoleApprovalCommandResponse) {
     return !terminal.has(row.approvalStatus)
+  }
+
+  function approvalRowActions(row: ConsoleApprovalCommandResponse): RowAction[] {
+    return [
+      {
+        key: 'detail',
+        label: t('approvals.actionDetail'),
+        primary: true,
+        onClick: () => openDetail(row),
+      },
+      {
+        key: 'approve',
+        label: t('approvals.actionApprove'),
+        disabled: !isPending(row),
+        onClick: () => approveRow(row),
+      },
+      {
+        key: 'reject',
+        label: t('approvals.actionReject'),
+        danger: true,
+        divided: true,
+        disabled: !isPending(row),
+        onClick: () => rejectRow(row),
+      },
+    ]
   }
 
   function selectableRow(row: ConsoleApprovalCommandResponse) {

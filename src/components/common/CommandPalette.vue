@@ -44,6 +44,9 @@
       >
         <span class="cp-item__dot" aria-hidden="true" />
         <span class="cp-item__title">{{ it.title }}</span>
+        <span v-if="it.sidebarHidden" class="cp-item__badge">
+          {{ t('palette.sidebarHidden') }}
+        </span>
         <span class="cp-item__meta">{{ it.subtitle || it.meta }}</span>
       </button>
     </div>
@@ -63,7 +66,7 @@
   import { useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import type { Component } from 'vue'
-  import type { NavigationGroup } from '@/constants/navigation'
+  import { navigationGroups, type NavigationGroup } from '@/constants/navigation'
   import type { PageTab } from '@/stores/tabs'
   import { pathToKey } from '@/constants/pathKey'
   import { instanceApi } from '@/api/instance'
@@ -84,6 +87,20 @@
     return te(key) ? t(key) : fallback
   }
 
+  const sidebarHiddenPaths = new Set(
+    navigationGroups.flatMap((group) =>
+      group.children.filter((item) => item.hidden).map((item) => item.path.split('?')[0]),
+    ),
+  )
+
+  function isSidebarHiddenPath(path: string): boolean {
+    return sidebarHiddenPaths.has(path.split(/[?#]/, 1)[0] || path)
+  }
+
+  function displayPath(path: string): string {
+    return path.split(/[?#]/, 1)[0] || path
+  }
+
   type PaletteSource = 'recent' | 'menu' | 'jump' | 'entity'
 
   type PaletteItem = {
@@ -93,6 +110,7 @@
     meta: string
     path: string
     icon?: Component
+    sidebarHidden?: boolean
     source: PaletteSource
     globalIndex: number
   }
@@ -191,10 +209,11 @@
     )
     return sorted.slice(0, 8).map((tab) => ({
       key: `recent:${tab.key}`,
-      title: resolvePageTitle(tab.path, tab.title),
-      subtitle: tab.path,
+      title: resolvePageTitle(displayPath(tab.path), tab.title),
+      subtitle: displayPath(tab.path),
       meta: t('palette.metaRecent'),
       path: tab.path,
+      sidebarHidden: isSidebarHiddenPath(tab.path),
       source: 'recent' as const,
     }))
   })
@@ -211,6 +230,7 @@
           meta: t('palette.metaMenu'),
           path: c.path,
           icon: c.icon,
+          sidebarHidden: isSidebarHiddenPath(c.path),
           source: 'menu',
         })
       }
@@ -464,10 +484,25 @@
     text-overflow: ellipsis;
   }
 
+  .cp-item__badge {
+    flex-shrink: 0;
+    padding: 2px 6px;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    color: var(--color-text-secondary);
+    font-size: 11px;
+    line-height: 1.4;
+  }
+
   .cp-item__meta {
+    max-width: 44%;
+    min-width: 0;
     flex-shrink: 0;
     font-size: 13px;
     color: var(--color-text-tertiary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .cp-item:hover,
