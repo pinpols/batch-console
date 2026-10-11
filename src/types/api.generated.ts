@@ -1753,6 +1753,23 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/console/config/secrets/{secretVersionId}/revoke': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Revoke a secret version for emergency dispatch blocking */
+    post: operations['revokeSecretVersion']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/console/config/change-logs': {
     parameters: {
       query?: never
@@ -8284,6 +8301,10 @@ export interface components {
       secretStatus?: string
       reason?: string
     }
+    SecretVersionRevokeRequest: {
+      tenantId: string
+      reason: string
+    }
     ConfigReleaseApprovalSubmitRequest: {
       tenantId?: string
       reason?: string
@@ -9840,6 +9861,10 @@ export interface components {
        */
       readonly secretPayloadJson: string
       rotationReason: string
+      /** Format: date-time */
+      revokedAt?: string | null
+      revokedBy?: string | null
+      revokeReason?: string | null
       createdBy: string
       updatedBy: string
       /** Format: date-time */
@@ -10976,7 +11001,7 @@ export interface components {
     }
     TenantConfigPackageExcelPreviewResponse: {
       uploadToken: string
-      /** @description One-time confirmation token for this preview result. */
+      /** @description One-time confirmation token bound to the preview and tenant configuration revision. Apply or row-patch requests must use the latest token; stale previews are rejected and must be refreshed. */
       previewToken: string
       fileName: string
       /** Format: int32 */
@@ -11001,6 +11026,8 @@ export interface components {
       messages: string[]
     }
     TenantConfigPackageExcelPatchRequest: {
+      /** @description One-time token returned by the latest successful preview; row edits consume the current preview and return a replacement token. */
+      previewToken: string
       /** @description sheet 名(后端 validator SHEET 常量,如 job_definition / file_channel_config)。 */
       sheetName: string
       /**
@@ -14941,6 +14968,34 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['CommonResponseLong']
+        }
+      }
+    }
+  }
+  revokeSecretVersion: {
+    parameters: {
+      query?: never
+      header: {
+        'Idempotency-Key': components['parameters']['IdempotencyKeyHeader']
+      }
+      path: {
+        secretVersionId: number
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SecretVersionRevokeRequest']
+      }
+    }
+    responses: {
+      /** @description Secret version revoked; subsequent dispatch attempts are blocked */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseVoid']
         }
       }
     }

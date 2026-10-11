@@ -4,6 +4,7 @@
       <el-select
         v-model="domain"
         class="cnb-domain"
+        :aria-label="t('codeNameBuilder.domainLabel')"
         :placeholder="t('codeNameBuilder.domainLabel')"
       >
         <el-option v-for="d in DOMAINS" :key="d" :label="d" :value="d" />

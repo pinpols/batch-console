@@ -5,7 +5,7 @@
         <el-button :icon="Refresh" :loading="loadingDetail" @click="reloadCurrent">
           {{ t('common.refresh') }}
         </el-button>
-        <el-button type="primary" :icon="Plus" @click="submitDrawerOpen = true">
+        <el-button type="primary" :icon="Plus" @click="openSubmitDrawer">
           {{ t('batchDayReplay.submitBtn') }}
         </el-button>
       </template>
@@ -20,7 +20,7 @@
             {{ t('batchDayReplay.historyUnavailableTag') }}
           </el-tag>
         </div>
-        <el-button text type="primary" :icon="Plus" @click="submitDrawerOpen = true">
+        <el-button text type="primary" :icon="Plus" @click="openSubmitDrawer">
           {{ t('batchDayReplay.submitBtn') }}
         </el-button>
       </template>
@@ -54,7 +54,7 @@
             "
           >
             <template #action>
-              <el-button type="primary" :icon="Plus" @click.stop="submitDrawerOpen = true">
+              <el-button type="primary" :icon="Plus" @click.stop="openSubmitDrawer">
                 {{ t('batchDayReplay.submitBtn') }}
               </el-button>
             </template>
@@ -102,10 +102,20 @@
       size="640px"
       :before-close="onSubmitClose"
     >
+      <el-alert
+        v-if="submissionOutcomeUnknown"
+        type="warning"
+        :closable="false"
+        show-icon
+        class="replay-outcome-unknown"
+        :title="t('batchDayReplay.submitOutcomeUnknownTitle')"
+        :description="t('batchDayReplay.submitOutcomeUnknownBody')"
+      />
       <el-form
         class="replay-submit-form"
         ref="submitFormRef"
         :model="submitForm"
+        :disabled="Boolean(submissionOutcomeUnknown)"
         label-width="120px"
         @submit.prevent="doSubmit"
       >
@@ -160,24 +170,79 @@
           :label="t('batchDayReplay.fieldJobCodes')"
           required
         >
-          <el-input
-            v-model="jobCodesText"
-            type="textarea"
-            :rows="3"
-            :placeholder="t('batchDayReplay.fieldJobCodesPlaceholder')"
-          />
+          <el-select
+            v-model="selectedJobCodes"
+            class="query-w-full"
+            multiple
+            filterable
+            collapse-tags
+            collapse-tags-tooltip
+            :loading="loadingJobCodes"
+            :placeholder="t('batchDayReplay.jobCodePickerPlaceholder')"
+          >
+            <el-option v-for="code in jobCodeOptions" :key="code" :label="code" :value="code" />
+          </el-select>
+        </el-form-item>
+        <el-form-item
+          v-if="submitForm.scope === 'OUTPUTS_ONLY'"
+          :label="t('batchDayReplay.fieldOutputJobs')"
+          required
+        >
+          <el-select
+            v-model="selectedOutputJobCodes"
+            class="query-w-full"
+            multiple
+            filterable
+            collapse-tags
+            collapse-tags-tooltip
+            :loading="loadingJobCodes"
+            :placeholder="t('batchDayReplay.jobCodePickerPlaceholder')"
+          >
+            <el-option v-for="code in jobCodeOptions" :key="code" :label="code" :value="code" />
+          </el-select>
+          <p class="cell-mute">{{ t('batchDayReplay.outputJobsHint') }}</p>
         </el-form-item>
         <el-form-item
           v-if="submitForm.scope === 'OUTPUTS_ONLY'"
           :label="t('batchDayReplay.fieldVersionIds')"
           required
         >
-          <el-input
-            v-model="versionIdsText"
-            type="textarea"
-            :rows="3"
-            :placeholder="t('batchDayReplay.fieldVersionIdsPlaceholder')"
-          />
+          <el-select
+            v-model="selectedVersionIds"
+            class="query-w-full"
+            multiple
+            filterable
+            collapse-tags
+            collapse-tags-tooltip
+            :loading="loadingOutputVersions"
+            :placeholder="t('batchDayReplay.versionPickerPlaceholder')"
+          >
+            <el-option
+              v-for="version in outputVersionOptions"
+              :key="version.id"
+              :label="version.label"
+              :value="version.id"
+            />
+          </el-select>
+          <p v-if="!selectedOutputJobCodes.length" class="cell-mute">
+            {{ t('batchDayReplay.selectOutputJobsFirst') }}
+          </p>
+          <p
+            v-else-if="!loadingOutputVersions && outputVersionOptions.length === 0"
+            class="cell-mute"
+          >
+            {{ t('batchDayReplay.noPendingVersions') }}
+          </p>
+          <el-collapse class="advanced-version-ids">
+            <el-collapse-item :title="t('batchDayReplay.advancedVersionIds')" name="version-ids">
+              <el-input
+                v-model="versionIdsText"
+                type="textarea"
+                :rows="2"
+                :placeholder="t('batchDayReplay.fieldVersionIdsPlaceholder')"
+              />
+            </el-collapse-item>
+          </el-collapse>
         </el-form-item>
         <el-form-item
           v-if="submitForm.executionMode !== 'DRY_RUN'"
@@ -252,7 +317,7 @@
               }}
             </div>
           </div>
-          <el-tag size="small" effect="plain">{{ preview.scope }}</el-tag>
+          <el-tag size="small" effect="plain">{{ replayScopeLabel(preview.scope) }}</el-tag>
         </div>
         <el-alert
           v-if="preview.warnings.length"
@@ -276,11 +341,9 @@
           :empty-text="t('common.noData')"
         >
           <el-table-column prop="jobCode" :label="t('batchDayReplay.colJobCode')" min-width="160" />
-          <el-table-column
-            prop="action"
-            :label="t('batchDayReplay.previewColAction')"
-            width="180"
-          />
+          <el-table-column prop="action" :label="t('batchDayReplay.previewColAction')" width="180">
+            <template #default="{ row }">{{ replayActionLabel(row.action) }}</template>
+          </el-table-column>
           <el-table-column
             prop="businessKey"
             :label="t('batchDayReplay.previewColBusinessKey')"
@@ -308,17 +371,27 @@
         />
       </div>
       <template #footer>
-        <el-button @click="submitDrawerOpen = false">{{ t('common.cancel') }}</el-button>
-        <el-button :loading="previewing" @click="doPreview">
+        <el-button :disabled="Boolean(submissionOutcomeUnknown)" @click="submitDrawerOpen = false">
+          {{ t('common.cancel') }}
+        </el-button>
+        <el-button
+          :loading="previewing"
+          :disabled="Boolean(submissionOutcomeUnknown)"
+          @click="doPreview"
+        >
           {{ t('batchDayReplay.previewBtn') }}
         </el-button>
         <el-button
           type="primary"
           :loading="submitting"
-          :disabled="!preview || preview.totalCount === 0"
+          :disabled="!submissionOutcomeUnknown && (!preview || preview.totalCount === 0)"
           @click="doSubmit"
         >
-          {{ t('batchDayReplay.submitConfirm') }}
+          {{
+            submissionOutcomeUnknown
+              ? t('batchDayReplay.resolveSubmitOutcome')
+              : t('batchDayReplay.submitConfirm')
+          }}
         </el-button>
       </template>
     </el-drawer>
@@ -456,6 +529,7 @@
   import { useTenantReload } from '@/composables/useTenantReload'
   import { useAuthStore } from '@/stores/auth'
   import { buildBatchDayReplayRequest } from '@/utils/batchDayReplayForm'
+  import { jobApi } from '@/api/job'
 
   const { t } = useI18n({ useScope: 'global' })
   const tenant = useTenantStore()
@@ -468,6 +542,7 @@
 
   const submitDrawerOpen = ref(false)
   const submitting = ref(false)
+  const submissionOutcomeUnknown = ref<BatchDayReplaySubmitRequest | null>(null)
   const submitForm = reactive<BatchDayReplaySubmitRequest>({
     tenantId: tenant.tenantId,
     calendarCode: 'default',
@@ -481,13 +556,37 @@
     requestedBy: auth.userInfo?.username ?? '',
     autoApprove: false,
   })
-  const jobCodesText = ref('')
+  const selectedJobCodes = ref<string[]>([])
+  const selectedOutputJobCodes = ref<string[]>([])
+  const selectedVersionIds = ref<number[]>([])
+  const jobCodeOptions = ref<string[]>([])
+  const loadingJobCodes = ref(false)
+  const loadingOutputVersions = ref(false)
+  const outputVersionOptions = ref<Array<{ id: number; label: string }>>([])
+  let versionLookupGeneration = 0
   const versionIdsText = ref('')
   const preview = ref<BatchDayReplayPreview | null>(null)
   const previewing = ref(false)
   const previewRequestKey = ref<string | null>(null)
   const previewPage = ref(1)
   const previewPageSize = 20
+  const replayScopeLabel = (scope: string) => {
+    const labels: Record<string, string> = {
+      ALL: t('batchDayReplay.scopeAll'),
+      ALL_FAILED: t('batchDayReplay.scopeAllFailed'),
+      SUBSET_JOB_CODES: t('batchDayReplay.scopeSubsetJobCodes'),
+      OUTPUTS_ONLY: t('batchDayReplay.scopeOutputsOnly'),
+    }
+    return labels[scope] ?? scope
+  }
+  const replayActionLabel = (action: string) => {
+    const labels: Record<string, string> = {
+      RERUN_INSTANCE: t('batchDayReplay.previewActionRerun'),
+      LAUNCH_SCHEDULE_PLAN: t('batchDayReplay.previewActionLaunch'),
+      PROMOTE_RESULT_VERSION: t('batchDayReplay.previewActionPromote'),
+    }
+    return labels[action] ?? action
+  }
   const previewPageEntries = computed(() => {
     const start = (previewPage.value - 1) * previewPageSize
     return preview.value?.entries.slice(start, start + previewPageSize) ?? []
@@ -505,8 +604,9 @@
       submitForm.configVersion,
       submitForm.reason,
       submitForm.autoApprove,
-      jobCodesText.value,
-      versionIdsText.value,
+      selectedJobCodes.value.join(','),
+      selectedOutputJobCodes.value.join(','),
+      [...selectedVersionIds.value.map(String), versionIdsText.value].filter(Boolean).join(','),
     ],
     () => {
       preview.value = null
@@ -533,6 +633,43 @@
     (source) => {
       if (source === 'SCHEDULE_PLAN' && submitForm.scope === 'ALL_FAILED') {
         submitForm.scope = 'ALL'
+      }
+    },
+  )
+
+  watch(
+    () => [submitForm.scope, submitForm.bizDate, tenant.tenantId, ...selectedOutputJobCodes.value],
+    async ([scope, bizDate, tenantId]) => {
+      const generation = ++versionLookupGeneration
+      loadingOutputVersions.value = false
+      selectedVersionIds.value = []
+      outputVersionOptions.value = []
+      if (scope !== 'OUTPUTS_ONLY' || !bizDate || !selectedOutputJobCodes.value.length) return
+
+      loadingOutputVersions.value = true
+      try {
+        const versionsByJob = await Promise.all(
+          selectedOutputJobCodes.value.map(async (jobCode) => {
+            const versions = await batchDayReplayApi.resultVersions(
+              tenantId,
+              `job:${jobCode}:${bizDate}`,
+            )
+            return versions
+              .filter((version) => version.status === 'PENDING')
+              .map((version) => ({
+                id: version.id,
+                label: `${jobCode} · v${version.versionNo} · ${version.status} · #${version.id}`,
+              }))
+          }),
+        )
+        if (generation === versionLookupGeneration)
+          outputVersionOptions.value = versionsByJob.flat()
+      } catch (error) {
+        if (generation === versionLookupGeneration) {
+          ElMessage.error(error instanceof Error ? error.message : String(error))
+        }
+      } finally {
+        if (generation === versionLookupGeneration) loadingOutputVersions.value = false
       }
     },
   )
@@ -599,8 +736,8 @@
     const result = buildBatchDayReplayRequest(
       submitForm,
       tenant.tenantId,
-      jobCodesText.value,
-      versionIdsText.value,
+      selectedJobCodes.value.join(','),
+      [...selectedVersionIds.value.map(String), versionIdsText.value].filter(Boolean).join(','),
     )
     if (result.error) {
       ElMessage.warning(t(`batchDayReplay.${result.error}`))
@@ -628,6 +765,10 @@
   }
 
   async function doSubmit() {
+    if (submissionOutcomeUnknown.value) {
+      await resolveUnknownSubmitOutcome()
+      return
+    }
     const req = buildSubmitRequest()
     if (!req) return
     if (!preview.value || !isReplayPreviewCurrent(req, previewRequestKey.value)) {
@@ -642,32 +783,85 @@
       ElMessage.warning(t('batchDayReplay.previewExpired'))
       return
     }
+    const submissionRequest = { ...req, previewToken: preview.value.previewToken }
     submitting.value = true
     try {
-      const session = await batchDayReplayApi.submit({
-        ...req,
-        previewToken: preview.value.previewToken,
-      })
-      upsertSession(session)
-      ElMessage.success(t('batchDayReplay.submitOk'))
-      submitDrawerOpen.value = false
-      // 自动打开新建的 session detail 看进度
-      currentSession.value = session
-      detailDrawerOpen.value = true
-      await loadEntries()
+      await showSubmittedSession(await batchDayReplayApi.submit(submissionRequest))
     } catch (err) {
-      // BE 返业务 4xx(e.g. NOT_FOUND「未找到可重放候选」)时 batchDayReplayApi 内层 unwrap throws,
-      // 显式 toast 让用户看到原因;axios 全局 toast 仅覆盖外层 envelope 失败,内层不会触发。
-      ElMessage.error(err instanceof Error ? err.message : String(err))
+      if (isUnknownNetworkOutcome(err)) {
+        submissionOutcomeUnknown.value = submissionRequest
+        ElMessage.warning(t('batchDayReplay.submitOutcomeUnknownTitle'))
+      } else {
+        // 内层业务错误不会触发 Axios 全局 envelope toast，需在此展示。
+        ElMessage.error(err instanceof Error ? err.message : String(err))
+      }
     } finally {
       submitting.value = false
     }
   }
 
-  function onSubmitClose() {
+  async function resolveUnknownSubmitOutcome() {
+    const request = submissionOutcomeUnknown.value
+    if (!request) return
+    submitting.value = true
+    try {
+      const session = await batchDayReplayApi.resolveSubmitOutcome(request)
+      submissionOutcomeUnknown.value = null
+      await showSubmittedSession(session)
+    } catch (err) {
+      if (isUnknownNetworkOutcome(err)) {
+        ElMessage.warning(t('batchDayReplay.submitOutcomeStillUnknown'))
+      } else {
+        ElMessage.error(err instanceof Error ? err.message : String(err))
+      }
+    } finally {
+      submitting.value = false
+    }
+  }
+
+  async function showSubmittedSession(session: BatchDayReplaySession) {
+    upsertSession(session)
+    ElMessage.success(t('batchDayReplay.submitOk'))
+    submitDrawerOpen.value = false
+    currentSession.value = session
+    detailDrawerOpen.value = true
+    try {
+      await loadEntries()
+    } catch (err) {
+      ElMessage.error(err instanceof Error ? err.message : String(err))
+    }
+  }
+
+  function isUnknownNetworkOutcome(error: unknown): boolean {
+    if (!(error instanceof Error) || !('isAxiosError' in error) || error.isAxiosError !== true) {
+      return false
+    }
+    return !('response' in error) || error.response == null
+  }
+
+  function onSubmitClose(done: () => void) {
+    if (submissionOutcomeUnknown.value) return
     submitDrawerOpen.value = false
     preview.value = null
     previewRequestKey.value = null
+    done()
+  }
+
+  async function openSubmitDrawer() {
+    submitDrawerOpen.value = true
+    if (!jobCodeOptions.value.length) await loadJobCodeOptions()
+  }
+
+  async function loadJobCodeOptions() {
+    loadingJobCodes.value = true
+    try {
+      jobCodeOptions.value = await jobApi.listCodes(tenant.tenantId)
+    } catch (error) {
+      jobCodeOptions.value = []
+      ElMessage.error(error instanceof Error ? error.message : String(error))
+    } finally {
+      loadingJobCodes.value = false
+    }
   }
 
   async function openDetail(row: BatchDayReplaySession) {
@@ -780,6 +974,10 @@
 
   useTenantReload(() => {
     submitForm.tenantId = tenant.tenantId
+    jobCodeOptions.value = []
+    selectedJobCodes.value = []
+    selectedOutputJobCodes.value = []
+    selectedVersionIds.value = []
     sessions.value = []
     currentSession.value = null
     entries.value = []

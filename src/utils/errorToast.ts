@@ -15,28 +15,38 @@ type ErrorToastOptions = {
   duration?: number
 }
 
-function copyText(text: string) {
-  if (!text) return
-  // 优先使用 Clipboard API，失败时回退到旧版 execCommand。
+async function copyText(text: string) {
+  if (!text) return false
   if (navigator.clipboard?.writeText) {
-    navigator.clipboard.writeText(text).catch(() => {
-      /* ignore */
-    })
-    return
+    try {
+      await navigator.clipboard.writeText(text)
+      ElMessage.success(i18n.global.t('errorToast.copySuccess'))
+      return true
+    } catch {
+      // Clipboard API 不可用时继续尝试兼容方案。
+    }
   }
+
+  let el: HTMLTextAreaElement | undefined
   try {
-    const el = document.createElement('textarea')
+    el = document.createElement('textarea')
     el.value = text
     el.setAttribute('readonly', 'true')
     el.style.position = 'fixed'
     el.style.left = '-9999px'
     document.body.appendChild(el)
     el.select()
-    document.execCommand('copy')
-    document.body.removeChild(el)
+    if (document.execCommand('copy')) {
+      ElMessage.success(i18n.global.t('errorToast.copySuccess'))
+      return true
+    }
   } catch {
-    /* ignore */
+    // 统一在下方给出复制失败反馈。
+  } finally {
+    el?.remove()
   }
+  ElMessage.error(i18n.global.t('errorToast.copyFailed'))
+  return false
 }
 
 export function showErrorToast(opts: ErrorToastOptions) {

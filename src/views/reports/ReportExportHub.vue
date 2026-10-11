@@ -59,26 +59,41 @@
             </span>
           </div>
         </div>
-        <div v-if="trendDays.length" class="rp-bars">
-          <div
-            v-for="d in trendDays"
-            :key="d.day"
-            class="rp-bar"
-            :title="`${d.day} · ${t('reportExportHub.legendSuccess')} ${d.success} / ${t('reportExportHub.legendFailed')} ${d.failed}`"
-          >
-            <div class="rp-bar__stack" :style="{ height: d.heightPct }">
+        <div v-if="!trendError" class="rp-plot">
+          <div class="rp-plot__y-axis" aria-hidden="true">
+            <span v-for="tick in trendYAxisTicks" :key="tick">{{ tick }}</span>
+          </div>
+          <div class="rp-plot__main">
+            <div class="rp-plot__grid" aria-hidden="true"><i /><i /><i /></div>
+            <div class="rp-bars">
               <div
-                v-if="d.failed > 0"
-                class="rp-bar__seg rp-bar__seg--failed"
-                :style="{ height: d.failedPct }"
-              />
-              <div class="rp-bar__seg rp-bar__seg--success" />
+                v-for="d in trendDays"
+                :key="d.day"
+                class="rp-bar"
+                :title="`${d.day} · ${t('reportExportHub.legendSuccess')} ${d.success} / ${t('reportExportHub.legendFailed')} ${d.failed}`"
+              >
+                <div class="rp-bar__plot">
+                  <div class="rp-bar__stack" :style="{ height: d.heightPct }">
+                    <div
+                      v-if="d.failed > 0"
+                      class="rp-bar__seg rp-bar__seg--failed"
+                      :style="{ height: d.failedPct }"
+                    />
+                    <div
+                      v-if="d.success > 0"
+                      class="rp-bar__seg rp-bar__seg--success"
+                      :style="{ height: d.successPct }"
+                    />
+                  </div>
+                </div>
+                <div class="rp-bar__label">{{ d.label }}</div>
+              </div>
             </div>
-            <div class="rp-bar__label">{{ d.label }}</div>
           </div>
         </div>
         <EmptyState
           v-else-if="!trendLoading"
+          :title="t('reportExportHub.trendTitle')"
           :description="t('reportExportHub.trendEmpty')"
           :image-size="64"
         />
@@ -169,6 +184,7 @@
   // ═══════════════════════════════════════
   const TREND_DAYS = 7
   const trendLoading = ref(false)
+  const trendError = ref(false)
   interface TrendRow {
     day: string
     success: number
@@ -189,6 +205,7 @@
   async function loadTrend() {
     if (!tenant.tenantId) return
     trendLoading.value = true
+    trendError.value = false
     try {
       const [jobStats, sla] = await Promise.all([
         getDashboardJobStats(tenant.tenantId, TREND_DAYS),
@@ -226,6 +243,7 @@
       avgDurationSeconds.value = s.avgDurationSeconds == null ? null : asNum(s.avgDurationSeconds)
     } catch {
       trendRows.value = []
+      trendError.value = true
       totalRuns.value = null
       successRuns.value = null
       slaOnTime.value = null
@@ -278,21 +296,35 @@
     ]
   })
 
-  // 柱高:相对 7 日内最大日总量(成功+失败堆叠;dump 同构)
+  // 固定显示最近 7 个自然日,接口未返回的日期按 0 填充,保留可读的坐标轴与基线。
   const trendDays = computed(() => {
-    const rows = trendRows.value
-    const max = rows.reduce((m, r) => Math.max(m, r.success + r.failed), 0)
-    return rows.map((r) => {
+    const byDay = new Map(trendRows.value.map((row) => [row.day, row]))
+    const today = new Date()
+    const days = Array.from({ length: TREND_DAYS }, (_, index) => {
+      const date = new Date(today)
+      date.setDate(today.getDate() - (TREND_DAYS - 1 - index))
+      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+      return byDay.get(key) ?? { day: key, success: 0, failed: 0 }
+    })
+    const max = days.reduce((m, row) => Math.max(m, row.success + row.failed), 0)
+    const scale = Math.max(1, Math.ceil(max / 5) * 5)
+    return days.map((r) => {
       const sum = r.success + r.failed
       return {
         day: r.day,
         label: r.day.length >= 10 ? r.day.slice(5) : r.day,
         success: r.success,
         failed: r.failed,
-        heightPct: max > 0 ? `${Math.max(2, Math.round((sum / max) * 100))}%` : '0%',
-        failedPct: sum > 0 ? `${Math.max(1, Math.round((r.failed / sum) * 100))}%` : '0%',
+        heightPct: `${(sum / scale) * 100}%`,
+        failedPct: `${sum > 0 ? (r.failed / sum) * 100 : 0}%`,
+        successPct: `${sum > 0 ? (r.success / sum) * 100 : 0}%`,
       }
     })
+  })
+  const trendYAxisTicks = computed(() => {
+    const max = Math.max(...trendDays.value.map((day) => day.success + day.failed), 0)
+    const scale = Math.max(1, Math.ceil(max / 5) * 5)
+    return [scale, Math.round(scale / 2), 0]
   })
 
   useTenantReload(loadTrend)
@@ -540,12 +572,55 @@
     background: var(--color-danger);
   }
 
+  .rp-plot {
+    display: flex;
+    height: 220px;
+    gap: 10px;
+  }
+
+  .rp-plot__y-axis {
+    display: flex;
+    flex: 0 0 30px;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 0 0 28px;
+    color: var(--color-text-tertiary);
+    font: 11px var(--font-mono);
+    text-align: right;
+  }
+
+  .rp-plot__main {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .rp-plot__main::before {
+    position: absolute;
+    inset: 0 auto 28px 0;
+    border-left: 1px solid var(--color-border);
+    content: '';
+  }
+
+  .rp-plot__grid {
+    position: absolute;
+    inset: 0 0 28px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    pointer-events: none;
+  }
+
+  .rp-plot__grid i {
+    border-top: 1px solid var(--color-border-light);
+  }
+
   .rp-bars {
+    position: relative;
     display: flex;
     align-items: flex-end;
-    gap: 18px;
-    height: 220px;
-    padding-top: 10px;
+    gap: 8px;
+    height: 100%;
   }
 
   .rp-bar {
@@ -554,18 +629,26 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 8px;
-    height: 100%;
-    justify-content: flex-end;
+    min-width: 0;
+    justify-content: stretch;
+  }
+
+  .rp-bar__plot {
+    display: flex;
+    flex: 1;
+    align-items: flex-end;
+    justify-content: center;
+    width: 100%;
+    min-height: 0;
   }
 
   .rp-bar__stack {
     width: 100%;
-    max-width: 46px;
+    max-width: 38px;
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
-    border-radius: 5px 5px 0 0;
+    border-radius: 4px 4px 0 0;
     overflow: hidden;
   }
 
@@ -575,10 +658,13 @@
 
   .rp-bar__seg--success {
     background: var(--color-primary);
-    flex: 1;
   }
 
   .rp-bar__label {
+    display: flex;
+    flex: 0 0 28px;
+    align-items: center;
+    justify-content: center;
     font-size: 11px;
     color: var(--color-text-tertiary);
     font-family: var(--font-mono);

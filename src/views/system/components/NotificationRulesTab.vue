@@ -38,15 +38,10 @@
             />
           </el-form-item>
           <el-form-item :label="t('notificationCommon.enabledLabel')">
-            <el-select
-              class="query-w-140"
+            <EnabledStatusFilter
               v-model="ruleFilterDraft.enabled"
-              clearable
-              :placeholder="t('notificationCommon.allPlaceholder')"
-            >
-              <el-option :label="t('notificationCommon.optEnabled')" :value="true" />
-              <el-option :label="t('notificationCommon.optDisabled')" :value="false" />
-            </el-select>
+              :aria-label="t('notificationCommon.enabledLabel')"
+            />
           </el-form-item>
         </ListPageQueryBar>
       </template>
@@ -166,6 +161,7 @@
   import EmptyState from '@/components/common/EmptyState.vue'
   import RowActions, { type RowAction } from '@/components/common/RowActions.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
+  import EnabledStatusFilter from '@/components/table/EnabledStatusFilter.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { useListLoadState } from '@/composables/useListLoadState'

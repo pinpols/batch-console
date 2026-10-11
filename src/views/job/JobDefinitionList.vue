@@ -3,21 +3,26 @@
     <PageHeader>
       <template #actions>
         <div class="job-header-actions">
-          <el-tooltip
-            :content="
-              canMutateConfig
-                ? t('jobDefinitionList.headerWizardTip')
-                : t('common.permissionDenied')
-            "
-            placement="top"
+          <el-button
+            type="primary"
+            :disabled="!canMutateConfig"
+            @click="router.push('/jobs/definitions/new')"
           >
-            <span>
-              <!-- 照设计 proto-jobs_view:向导新建 / Bundle 导入 = 无图标 ghost 按钮 -->
-              <el-button :disabled="!canMutateConfig" @click="router.push('/jobs/definitions/new')">
-                {{ t('jobDefinitionList.headerWizard') }}
-              </el-button>
-            </span>
-          </el-tooltip>
+            {{ t('jobDefinitionList.headerNew') }}
+          </el-button>
+          <el-dropdown :disabled="!canMutateConfig" @command="onCreateMode">
+            <el-button :disabled="!canMutateConfig">
+              {{ t('jobDefinitionList.headerMoreCreate') }}
+              <ChevronDown :size="14" aria-hidden="true" />
+            </el-button>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item command="quick-form">
+                  {{ t('jobDefinitionList.headerQuickCreate') }}
+                </el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
           <el-tooltip
             :content="
               canMutateConfig
@@ -29,25 +34,6 @@
             <span>
               <el-button :disabled="!canMutateConfig" @click="openBundleImport">
                 {{ t('jobDefinitionList.headerBundle') }}
-              </el-button>
-            </span>
-          </el-tooltip>
-          <el-tooltip
-            :content="
-              canMutateConfig
-                ? t('jobDefinitionList.headerCreateTip')
-                : t('common.permissionDenied')
-            "
-            placement="top"
-          >
-            <span>
-              <el-button
-                type="primary"
-                :icon="Plus"
-                :disabled="!canMutateConfig"
-                @click="openCreate"
-              >
-                {{ t('jobDefinitionList.headerCreate') }}
               </el-button>
             </span>
           </el-tooltip>
@@ -616,7 +602,7 @@
   import { useFormFocus } from '@/composables/useFormFocus'
   import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
-  import { Plus, Upload } from '@lucide/vue'
+  import { ChevronDown, Upload } from '@lucide/vue'
   type ExecutionMode = 'FULL' | 'INCREMENTAL' | 'CDC'
   const { t, te } = useI18n({ useScope: 'global' })
 
@@ -695,6 +681,10 @@
 
   const route = useRoute()
   const router = useRouter()
+
+  function onCreateMode(command: string) {
+    if (command === 'quick-form') openCreate()
+  }
   const tenant = useTenantStore()
   const { canMutateConfig, canManageSystem } = usePermission()
   const page = ref(1)

@@ -58,14 +58,20 @@
               />
             </el-form-item>
             <el-form-item :label="t('tenantList.statusLabel')">
-              <MetaSelect
-                class="query-w-140"
-                v-model="queryDraft.status"
-                clearable
-                enum-key="tenantStatus"
-                :placeholder="t('tenantList.statusPlaceholderProto')"
-                :options="tenantStatusOptions"
-              />
+              <div class="tenant-status-filter">
+                <StatusSegment
+                  :model-value="tenantStatusSegmentValue"
+                  :items="tenantStatusSegmentItems"
+                  :aria-label="t('tenantList.statusLabel')"
+                  @update:model-value="onTenantStatusModeChange"
+                />
+                <MetaSelect
+                  class="tenant-status-filter__advanced"
+                  v-model="tenantAdvancedStatus"
+                  :options="tenantAdvancedStatusOptions"
+                  :placeholder="t('tenantList.moreStatuses')"
+                />
+              </div>
             </el-form-item>
           </ListPageQueryBar>
         </template>
@@ -186,7 +192,7 @@
   import { confirmDanger } from '@/composables/useDangerConfirm'
   import { Plus } from '@lucide/vue'
 
-  const { t } = useI18n({ useScope: 'global' })
+  const { t, te } = useI18n({ useScope: 'global' })
   import {
     listTenants,
     suspendTenant,
@@ -198,9 +204,10 @@
   } from '@/api/tenants'
   import { useAuthStore } from '@/stores/auth'
   import { useTenantStore } from '@/stores/tenant'
+  import StatusSegment from '@/components/table/StatusSegment.vue'
+  import MetaSelect from '@/components/common/MetaSelect.vue'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { useListLoadState } from '@/composables/useListLoadState'
-  import MetaSelect from '@/components/common/MetaSelect.vue'
   import { canManageTenants as hasTenantAdminAccess } from '@/utils/tenantAccess'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
@@ -246,6 +253,40 @@
 
   const { data: metaEnums } = useConsoleMetaEnumsQuery()
   const tenantStatusOptions = computed(() => pickMetaEnumGroup(metaEnums.value, 'tenantStatus'))
+  const tenantStatusSegmentValue = computed(() => {
+    if (!queryDraft.status) return 'ALL'
+    return queryDraft.status === 'ACTIVE' || queryDraft.status === 'SUSPENDED'
+      ? queryDraft.status
+      : 'CUSTOM'
+  })
+  const tenantAdvancedStatus = computed<TenantStatus | ''>({
+    get: () =>
+      queryDraft.status === 'ACTIVE' || queryDraft.status === 'SUSPENDED' ? '' : queryDraft.status,
+    set: (value) => {
+      queryDraft.status = typeof value === 'string' ? (value as TenantStatus) : ''
+    },
+  })
+  const tenantStatusSegmentItems = computed(() => [
+    { value: 'ALL', label: t('dateRangePicker.all') },
+    { value: 'ACTIVE', label: t('enum.tenantStatus.ACTIVE'), accent: 'var(--color-success)' },
+    {
+      value: 'SUSPENDED',
+      label: t('enum.tenantStatus.SUSPENDED'),
+      accent: 'var(--color-text-tertiary)',
+    },
+  ])
+  const tenantAdvancedStatusOptions = computed(() =>
+    tenantStatusOptions.value
+      .filter((option) => option.value !== 'ACTIVE' && option.value !== 'SUSPENDED')
+      .map((option) => {
+        const key = `enum.tenantStatus.${option.value}`
+        return { ...option, label: te(key) ? t(key) : option.label }
+      }),
+  )
+
+  function onTenantStatusModeChange(value: string) {
+    queryDraft.status = value === 'ACTIVE' || value === 'SUSPENDED' ? value : ''
+  }
 
   const canManageTenants = computed(() => hasTenantAdminAccess(auth.userInfo?.permissions ?? []))
 
@@ -472,6 +513,17 @@
 </script>
 
 <style scoped>
+  .tenant-status-filter {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    max-width: 100%;
+  }
+
+  .tenant-status-filter__advanced {
+    width: 180px;
+  }
+
   .result-json {
     margin: 0;
     padding: 12px;

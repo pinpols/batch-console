@@ -80,9 +80,9 @@ describe('permission navigation filtering', () => {
     const result = filterNavigationByBackendMenus(navigationGroups, backendMenus)
 
     expect(result).toHaveLength(1)
-    // IA v3(7 组):后端仍可把 path 放在 system,前端按设计归入"告警与投递"组
+    // 后端仍可把 path 放在 system,侧栏按异常处置任务归入“处理异常”组
     expect(result[0].key).toBe('alerting')
-    expect(result[0].title).toBe('告警与投递')
+    expect(result[0].title).toBe('处理异常')
     expect(result[0].children.map((c) => c.path)).toEqual(['/system/notifications'])
     expect(result[0].children[0].title).toBe('通知与投递')
   })

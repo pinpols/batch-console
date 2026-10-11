@@ -6,23 +6,15 @@
     <div class="degradation-banner__text">
       <strong>{{ t('degradation.bannerHeadline') }}</strong>
       <span class="degradation-banner__msg">{{ t('degradation.bannerMessage') }}</span>
-      <span class="degradation-banner__countdown">
-        {{ t('degradation.autoClose', { seconds: secondsLeft }) }}
-      </span>
       <span v-for="src in app.activeDegradationSources" :key="src" class="degradation-banner__chip">
         {{ src }}
       </span>
     </div>
-    <el-button
-      text
-      circle
-      class="degradation-banner__close"
-      :aria-label="t('common.close')"
-      :title="t('common.close')"
-      @click="dismissed = true"
-    >
-      <el-icon><X /></el-icon>
-    </el-button>
+    <AutoDismissBannerActions
+      :countdown-text="t('degradation.autoClose', { seconds: secondsLeft })"
+      :close-label="t('common.close')"
+      @dismiss="dismissed = true"
+    />
   </div>
 </template>
 
@@ -38,8 +30,9 @@
    */
   import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { TriangleAlert as WarningFilled, X } from '@lucide/vue'
+  import { TriangleAlert as WarningFilled } from '@lucide/vue'
   import { useAppStore } from '@/stores/app'
+  import AutoDismissBannerActions from './AutoDismissBannerActions.vue'
 
   const app = useAppStore()
   const { t } = useI18n({ useScope: 'global' })
@@ -114,15 +107,6 @@
     flex: 1;
     min-width: 0;
     overflow-wrap: anywhere;
-  }
-  .degradation-banner__countdown {
-    margin-left: 8px;
-    color: var(--color-text-tertiary);
-    white-space: nowrap;
-  }
-  .degradation-banner__close {
-    flex: none;
-    color: var(--color-text-secondary);
   }
   .degradation-banner__msg {
     margin-left: 6px;

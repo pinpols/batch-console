@@ -28,6 +28,15 @@ test.describe('file template + channel CRUD', () => {
   test('文件渠道页面 + 新增渠道对话框', async ({ page }) => {
     await page.goto('/files/channels')
     await expectPageTitle(page, '文件渠道')
+    const enabledFilter = page
+      .locator('.el-form-item')
+      .filter({ hasText: '启用状态' })
+      .locator('[role="radiogroup"]')
+    await expect(enabledFilter.getByRole('radio', { name: '全部' })).toBeVisible()
+    await enabledFilter.getByRole('radio', { name: '已停用' }).click()
+    await expect(enabledFilter.getByRole('radio', { name: '已停用' })).toHaveAttribute('aria-checked', 'true')
+    await page.getByRole('button', { name: '搜索' }).click()
+    await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
     await page.getByRole('button', { name: '新建文件渠道' }).first().click()
     await expect(page.getByText('新增文件渠道')).toBeVisible()
     await page.waitForTimeout(400)

@@ -21,12 +21,7 @@
         </div>
 
         <div class="excel-wizard__body">
-          <div
-            v-show="step === 0"
-            class="excel-wizard__panel"
-            v-loading="upLoading"
-            :element-loading-text="t('excelMaintenanceWizard.uploadingFile')"
-          >
+          <div v-show="step === 0" class="excel-wizard__panel">
             <div
               class="upload-zone"
               :class="{ 'upload-zone--dragover': zoneDragover }"
@@ -690,6 +685,7 @@
     ArrowLeft,
     ArrowRight,
     BookOpen,
+    Download,
     FileText as Document,
     RefreshCw as Refresh,
     Search,
@@ -1343,6 +1339,7 @@
   .upload-zone__secondary-actions {
     display: flex;
     flex-wrap: wrap;
+    justify-content: center;
     gap: 4px 12px;
     padding-top: 4px;
   }
@@ -1387,6 +1384,7 @@
     border: 1px dashed var(--color-border-light);
     display: flex;
     flex-direction: column;
+    justify-content: center;
     align-items: center;
     gap: 6px;
     transition:
@@ -1425,7 +1423,7 @@
     padding: 0 18px;
     width: auto;
     min-width: 180px;
-    justify-self: start;
+    justify-self: center;
   }
 
   .upload-zone__ghost-btn {
@@ -1842,6 +1840,7 @@
   /* I9-I12 Apply 阶段状态机视觉 */
   .apply-zone__actions {
     display: flex;
+    justify-content: center;
     gap: 12px;
     margin-top: 8px;
   }

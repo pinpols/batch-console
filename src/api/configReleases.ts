@@ -80,6 +80,14 @@ export function rotateSecret(body: {
   return post<number>('/api/console/config/secrets/rotate', body)
 }
 
+/** POST /api/console/config/secrets/{secretVersionId}/revoke */
+export function revokeSecretVersion(
+  secretVersionId: number,
+  body: components['schemas']['SecretVersionRevokeRequest'],
+) {
+  return post<void>(`/api/console/config/secrets/${secretVersionId}/revoke`, body)
+}
+
 /** GET /api/console/config/dependencies?tenantId=&configType=&configCode= */
 export function listConfigDependencies(tenantId: string, configType: string, configCode: string) {
   return get<unknown>('/api/console/config/dependencies', { tenantId, configType, configCode })
@@ -168,8 +176,9 @@ export function importConfigSync(body: ConfigSyncImportBody) {
 
 /** GET /api/console/config/sync/logs */
 export function listConfigSyncLogs(tenantId: string, pageNo: number, pageSize: number) {
-  return get<components['schemas']['ConfigSyncLogPageResponse']>(
-    '/api/console/config/sync/logs',
-    { tenantId, pageNo, pageSize },
-  )
+  return get<components['schemas']['ConfigSyncLogPageResponse']>('/api/console/config/sync/logs', {
+    tenantId,
+    pageNo,
+    pageSize,
+  })
 }

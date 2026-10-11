@@ -26,15 +26,22 @@
           @refresh="() => runRefresh(load)"
         >
           <el-form-item :label="t('approvals.statusLabel')">
-            <MetaSelect
-              class="query-w-200"
-              v-model="filters.status"
-              clearable
-              filterable
-              enum-key="approvalStatus"
-              :placeholder="t('approvals.statusPlaceholder')"
-              :options="approvalStatusSelectOptions"
-            />
+            <div class="approval-status-filter">
+              <StatusSegment
+                :model-value="approvalStatusSegmentValue"
+                :items="approvalStatusSegmentItems"
+                :aria-label="t('approvals.statusLabel')"
+                @update:model-value="onApprovalStatusSegmentChange"
+              />
+              <MetaSelect
+                v-model="advancedApprovalStatus"
+                class="approval-status-filter__advanced"
+                clearable
+                filterable
+                :placeholder="t('approvals.moreStatuses')"
+                :options="approvalAdvancedStatusOptions"
+              />
+            </div>
           </el-form-item>
           <el-form-item :label="t('approvals.typeLabel')">
             <MetaSelect
@@ -265,6 +272,7 @@
   import BulkActionBar from '@/components/table/BulkActionBar.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
   import MetaSelect from '@/components/common/MetaSelect.vue'
+  import StatusSegment from '@/components/table/StatusSegment.vue'
   import CopyableText from '@/components/common/CopyableText.vue'
   import DetailDrawer from '@/components/common/DetailDrawer.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
@@ -331,6 +339,31 @@
   const approvalStatusSelectOptions = computed(() =>
     pickMetaEnumGroup(metaEnums.value, 'approvalStatus'),
   )
+  const approvalPrimaryStatuses = new Set(['PENDING', 'APPROVED', 'REJECTED'])
+  const approvalStatusSegmentValue = computed(() =>
+    !filters.status ? '' : approvalPrimaryStatuses.has(filters.status) ? filters.status : 'CUSTOM',
+  )
+  const approvalStatusSegmentItems = computed(() => [
+    { value: '', label: t('dateRangePicker.all') },
+    { value: 'PENDING', label: t('enum.approvalStatus.PENDING'), accent: 'var(--color-warning)' },
+    { value: 'APPROVED', label: t('enum.approvalStatus.APPROVED'), accent: 'var(--color-success)' },
+    { value: 'REJECTED', label: t('enum.approvalStatus.REJECTED'), accent: 'var(--color-danger)' },
+  ])
+  const advancedApprovalStatus = computed({
+    get: () => (approvalPrimaryStatuses.has(filters.status) ? '' : filters.status),
+    set: (value: string | number | boolean | null | undefined) => {
+      filters.status = typeof value === 'string' ? value : ''
+    },
+  })
+  const approvalAdvancedStatusOptions = computed(() =>
+    approvalStatusSelectOptions.value.filter(
+      (option) => !approvalPrimaryStatuses.has(option.value),
+    ),
+  )
+
+  function onApprovalStatusSegmentChange(value: string) {
+    if (value !== 'CUSTOM') filters.status = value
+  }
 
   const approvalTypeOptions = computed(() => pickMetaEnumGroup(metaEnums.value, 'approvalType'))
 
@@ -625,6 +658,32 @@
 
   useTenantReload(load)
 </script>
+
+<style scoped>
+  .approval-status-filter {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    min-width: 0;
+  }
+
+  .approval-status-filter__advanced {
+    width: 160px;
+    flex: 0 1 160px;
+  }
+
+  @media (max-width: 720px) {
+    .approval-status-filter {
+      align-items: stretch;
+      flex-direction: column;
+    }
+
+    .approval-status-filter__advanced {
+      width: 100%;
+      flex-basis: auto;
+    }
+  }
+</style>
 
 <style scoped>
   /* dump proto-approvals:单号 mono 蓝、目标 mono */

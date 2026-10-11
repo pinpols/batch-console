@@ -59,14 +59,10 @@
               </el-select>
             </el-form-item>
             <el-form-item :label="t('pipelineDefinitionList.enabledLabel')">
-              <el-select
+              <EnabledStatusFilter
                 v-model="enabledFilter"
-                clearable
-                :placeholder="t('pipelineDefinitionList.enabledPlaceholder')"
-              >
-                <el-option :label="t('pipelineDefinitionList.optEnabled')" :value="true" />
-                <el-option :label="t('pipelineDefinitionList.optDisabled')" :value="false" />
-              </el-select>
+                :aria-label="t('pipelineDefinitionList.enabledLabel')"
+              />
             </el-form-item>
           </ListPageQueryBar>
         </template>
@@ -459,6 +455,7 @@
   import EmptyState from '@/components/common/EmptyState.vue'
   import MetaSelect from '@/components/common/MetaSelect.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
+  import EnabledStatusFilter from '@/components/table/EnabledStatusFilter.vue'
   import ProTable from '@/components/table/ProTable.vue'
   import { usePermission } from '@/composables/usePermission'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'

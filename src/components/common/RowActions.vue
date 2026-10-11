@@ -9,10 +9,12 @@
       :plain="!a.solid"
       :loading="!!a.loading"
       :disabled="!!a.disabled"
-            v-track-click="a.track"
+      v-track-click="a.track"
       @click.stop="trigger(a)"
     >
-      <el-icon v-if="iconFor(a)" class="row-actions__action-icon"><component :is="iconFor(a)" /></el-icon>
+      <el-icon v-if="iconFor(a)" class="row-actions__action-icon"
+        ><component :is="iconFor(a)"
+      /></el-icon>
       {{ a.label }}
     </el-button>
 
@@ -34,12 +36,13 @@
               'row-actions__danger-item': a.danger,
               'row-actions__warning-item': a.warning,
             }"
-            v-track-click="a.track"
           >
-            <el-icon v-if="iconFor(a)" class="row-actions__item-icon"
-              ><component :is="iconFor(a)"
-            /></el-icon>
-            {{ a.label }}
+            <span v-track-click="a.track" class="row-actions__item-content">
+              <el-icon v-if="iconFor(a)" class="row-actions__item-icon">
+                <component :is="iconFor(a)" />
+              </el-icon>
+              {{ a.label }}
+            </span>
           </el-dropdown-item>
         </el-dropdown-menu>
       </template>

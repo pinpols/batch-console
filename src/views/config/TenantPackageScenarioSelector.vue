@@ -274,7 +274,7 @@
 
   .scenario-template-control :deep(.el-button.scenario-template-control__button) {
     justify-content: flex-start;
-    align-self: flex-start;
+    align-self: center;
     width: auto;
     min-height: 34px;
     margin: 0;

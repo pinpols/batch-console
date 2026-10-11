@@ -129,18 +129,15 @@ test.describe('文件模板 — 筛选与详情', () => {
   })
 
   test('启用状态筛选', async ({ page }) => {
-    const enabledSelect = page
+    const enabledFilter = page
       .locator('.el-form-item')
-      .filter({ hasText: '启用' })
-      .locator('.el-select')
-    if (!(await isVisible(enabledSelect, 2000))) return
-    await enabledSelect.click()
-    const opt = page.locator('.el-select-dropdown__item').filter({ hasText: '启用' }).first()
-    if (await isVisible(opt, 2000)) {
-      await opt.click()
-      await page.getByRole('button', { name: '搜索' }).click()
-      await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
-    }
+      .filter({ hasText: '启用状态' })
+      .locator('[role="radiogroup"]')
+    await expect(enabledFilter.getByRole('radio', { name: '全部' })).toBeVisible()
+    await enabledFilter.getByRole('radio', { name: '已启用' }).click()
+    await expect(enabledFilter.getByRole('radio', { name: '已启用' })).toHaveAttribute('aria-checked', 'true')
+    await page.getByRole('button', { name: '搜索' }).click()
+    await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
   })
 
   test('详情抽屉打开并含模板信息', async ({ page }) => {

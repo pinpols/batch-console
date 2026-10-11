@@ -31,9 +31,13 @@ export function buildBatchDayReplayRequest(
   }
 
   if (request.scope === 'OUTPUTS_ONLY') {
-    request.versionIds = splitTokens(versionIdsText)
-      .map(Number)
-      .filter((value) => Number.isSafeInteger(value) && value > 0)
+    request.versionIds = Array.from(
+      new Set(
+        splitTokens(versionIdsText)
+          .map(Number)
+          .filter((value) => Number.isSafeInteger(value) && value > 0),
+      ),
+    )
     if (request.versionIds.length === 0) {
       return { error: 'missingVersionIds' }
     }

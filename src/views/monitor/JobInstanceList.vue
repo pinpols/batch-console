@@ -293,6 +293,53 @@
         </template>
       </ProTable>
     </div>
+
+    <el-dialog
+      v-model="bulkResultVisible"
+      :title="t('jobInstanceList.bulkResultTitle')"
+      width="760px"
+    >
+      <el-alert
+        :title="
+          t('jobInstanceList.bulkResultSummary', {
+            ok: bulkResultOk,
+            fail: bulkResultRows.filter((row) => !row.succeeded).length,
+          })
+        "
+        :type="bulkResultRows.some((row) => !row.succeeded) ? 'warning' : 'success'"
+        :closable="false"
+        show-icon
+      />
+      <el-table :data="bulkResultRows" size="small" class="bulk-result-table">
+        <el-table-column
+          prop="instanceNo"
+          :label="t('jobInstanceList.colInstanceNo')"
+          min-width="150"
+        />
+        <el-table-column prop="jobCode" :label="t('jobInstanceList.colJobCode')" min-width="150" />
+        <el-table-column prop="bizDate" :label="t('jobInstanceList.colBizDate')" width="120" />
+        <el-table-column :label="t('jobInstanceList.bulkResultStatus')" width="100">
+          <template #default="{ row }">
+            <el-tag :type="row.succeeded ? 'success' : 'danger'">
+              {{
+                row.succeeded
+                  ? t('jobInstanceList.bulkResultSucceeded')
+                  : t('jobInstanceList.bulkResultFailed')
+              }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column
+          prop="message"
+          :label="t('jobInstanceList.bulkResultReason')"
+          min-width="220"
+          show-overflow-tooltip
+        />
+      </el-table>
+      <template #footer>
+        <el-button @click="bulkResultVisible = false">{{ t('common.close') }}</el-button>
+      </template>
+    </el-dialog>
   </PageContainer>
 </template>
 
@@ -368,8 +415,56 @@
   // ── 批量操作:多选 + 批量重试(FAILED)/ 批量取消(非终态)──────────────
   const proTableRef = ref<{ clearSelection?: () => void } | null>(null)
   const bulk = useBulkSelection<ConsoleJobInstanceResponse>()
+  const bulkResultVisible = ref(false)
+  const bulkResultOk = ref(0)
+  const bulkResultRows = ref<
+    Array<{
+      instanceNo: string
+      jobCode: string
+      bizDate: string
+      succeeded: boolean
+      message: string
+    }>
+  >([])
   onMounted(() => bulk.bindTable(proTableRef.value))
   const isBulkSelectable = canSelectJobInstanceForBulk
+
+  async function runInstanceBulk(
+    items: ConsoleJobInstanceResponse[],
+    action: (item: ConsoleJobInstanceResponse) => Promise<unknown>,
+    actionLabel: string,
+  ) {
+    const result = await bulk.runBulk(items, action, { actionLabel, clearOnDone: false })
+    const failedItems = new Map(result.failed.map(({ item, error }) => [item, error]))
+    bulkResultOk.value = result.ok
+    bulkResultRows.value = items.map((item) => {
+      const error = failedItems.get(item)
+      return {
+        instanceNo: item.instanceNo,
+        jobCode: item.jobCode,
+        bizDate: item.bizDate,
+        succeeded: error === undefined,
+        message: error === undefined ? t('jobInstanceList.bulkResultNoError') : errorMessage(error),
+      }
+    })
+    bulkResultVisible.value = items.length > 0
+    if (result.fail === 0) bulk.clear()
+    return result
+  }
+
+  function errorMessage(error: unknown): string {
+    const responseMessage =
+      error && typeof error === 'object' && 'response' in error
+        ? (error as { response?: { data?: { message?: unknown } } }).response?.data?.message
+        : undefined
+    const message =
+      typeof responseMessage === 'string' && responseMessage.trim()
+        ? responseMessage
+        : error instanceof Error
+          ? error.message
+          : String(error)
+    return message.slice(0, 400)
+  }
 
   async function onBulkRetry() {
     const eligible = bulk.selected.value.filter((r) => r.instanceStatus === 'FAILED')
@@ -384,10 +479,10 @@
       { type: 'warning', confirmButtonText: t('common.ok'), cancelButtonText: t('common.cancel') },
     ).catch(() => false)
     if (confirmed === false) return
-    await bulk.runBulk(
+    await runInstanceBulk(
       eligible,
       (r) => instanceApi.retry(r.instanceNo, tenant.tenantId, r.jobCode, r.bizDate),
-      { actionLabel: label },
+      label,
     )
     void loadData()
   }
@@ -411,9 +506,7 @@
     } catch {
       return
     }
-    await bulk.runBulk(eligible, (r) => instanceApi.cancel(r.id, tenant.tenantId), {
-      actionLabel: label,
-    })
+    await runInstanceBulk(eligible, (r) => instanceApi.cancel(r.id, tenant.tenantId), label)
     void loadData()
   }
 

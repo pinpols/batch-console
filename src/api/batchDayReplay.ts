@@ -10,6 +10,7 @@
 import type { AxiosRequestConfig } from 'axios'
 import { get, post } from './client'
 import type { components } from '@/types/api.generated'
+import { createIdempotencyKey } from '@/utils/idempotency'
 
 export type BatchDayReplaySubmitRequest = components['schemas']['BatchDayReplaySubmitRequest']
 export type BatchDayReplayPreview = components['schemas']['BatchDayReplayPreview']
@@ -18,6 +19,7 @@ export type ReplayExecutionMode = NonNullable<BatchDayReplaySubmitRequest['execu
 export type ReplayCandidateSource = NonNullable<BatchDayReplaySubmitRequest['candidateSource']>
 export type ResultPolicy = NonNullable<BatchDayReplaySubmitRequest['resultPolicy']>
 export type ConfigVersionPolicy = NonNullable<BatchDayReplaySubmitRequest['configVersionPolicy']>
+export type ResultVersion = components['schemas']['ResultVersion']
 
 /** Entry 状态(BE 枚举;生成 schema 里 status 是 string,保留字面量联合供筛选参数)。 */
 export type ReplayEntryStatus = 'PENDING' | 'SUCCEEDED' | 'FAILED'
@@ -50,6 +52,19 @@ function unwrap<T>(env: InnerEnvelope<T> | T | null | undefined): T {
 }
 
 export const batchDayReplayApi = {
+  async resultVersions(
+    tenantId: string,
+    businessKey: string,
+    limit = 50,
+  ): Promise<ResultVersion[]> {
+    return unwrap(
+      await get<InnerEnvelope<ResultVersion[]>>('/api/console/result-versions', {
+        tenantId,
+        businessKey,
+        limit,
+      }),
+    )
+  },
   async preview(req: BatchDayReplaySubmitRequest): Promise<BatchDayReplayPreview> {
     return unwrap(
       await post<InnerEnvelope<BatchDayReplayPreview>>(
@@ -63,6 +78,18 @@ export const batchDayReplayApi = {
       await post<InnerEnvelope<BatchDayReplaySession>>(
         '/api/console/ops/batch-day-replay/sessions',
         req,
+      ),
+    )
+  },
+  async resolveSubmitOutcome(req: BatchDayReplaySubmitRequest): Promise<BatchDayReplaySession> {
+    const config: AxiosRequestConfig = {
+      headers: { 'Idempotency-Key': createIdempotencyKey() },
+    }
+    return unwrap(
+      await post<InnerEnvelope<BatchDayReplaySession>>(
+        '/api/console/ops/batch-day-replay/sessions',
+        req,
+        config,
       ),
     )
   },

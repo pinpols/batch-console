@@ -67,9 +67,7 @@
       <!-- 流向连接(>=1100px 显示) -->
       <div class="sync__connector" aria-hidden="true">
         <span class="sync__connector-line"></span>
-        <span class="sync__connector-icon"
-          ><el-icon><Right /></el-icon
-        ></span>
+        <span class="sync__connector-icon"><ArrowRight :size="24" :stroke-width="2.5" /></span>
         <span class="sync__connector-line"></span>
       </div>
 
@@ -166,7 +164,7 @@
   import { computed, onMounted, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
-  import { Download, ChevronRight as Right, Eye as View, Upload } from '@lucide/vue'
+  import { ArrowRight, Download, ChevronRight as Right, Eye as View, Upload } from '@lucide/vue'
   import { exportConfigSync, importConfigSync } from '@/api/configReleases'
   import { listTenants } from '@/api/tenants'
   import { isReservedTenant } from './tenantConfigTypes'
@@ -606,12 +604,33 @@
     height: 100%;
   }
 
-  /* 底部操作区:两边一致地右对齐 + 上边线 */
+  .sync__payload :deep(.json-textarea-input__bar) {
+    justify-content: center;
+    gap: 10px 18px;
+  }
+
+  .sync__payload :deep(.json-textarea-input__left),
+  .sync__payload :deep(.json-textarea-input__right) {
+    flex: 0 1 auto;
+    justify-content: center;
+  }
+
+  .sync__payload :deep(.json-textarea-input__right) {
+    gap: 10px;
+  }
+
+  .sync__payload :deep(.json-textarea-input__actions) {
+    gap: 8px;
+    padding-left: 12px;
+  }
+
+  /* 底部操作区:操作按钮成组居中 */
   .sync__footer {
     display: flex;
-    justify-content: flex-end;
+    justify-content: center;
     align-items: center;
     gap: 8px;
+    flex-wrap: wrap;
     padding: 12px 18px;
     border-top: 1px solid var(--color-border-light);
     background: color-mix(in srgb, var(--color-bg-canvas) 40%, var(--color-bg-card) 60%);
@@ -647,17 +666,18 @@
   }
 
   .sync__connector-icon {
-    width: 26px;
-    height: 26px;
+    width: 42px;
+    height: 42px;
+    flex: 0 0 42px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     border-radius: 50%;
-    background: var(--color-bg-card);
-    border: 1px solid var(--color-border);
-    color: var(--color-text-secondary);
-    font-size: 14px;
-    margin: 6px 0;
+    background: color-mix(in srgb, var(--color-primary) 10%, var(--color-bg-card) 90%);
+    border: 1px solid color-mix(in srgb, var(--color-primary) 35%, var(--color-border) 65%);
+    color: var(--color-primary);
+    box-shadow: 0 2px 8px color-mix(in srgb, var(--color-primary) 12%, transparent);
+    margin: 8px 0;
     /* 窄屏 icon 朝下,宽屏朝右 */
     transform: rotate(90deg);
   }
@@ -677,7 +697,7 @@
 
     .sync__connector-icon {
       transform: none;
-      margin: 0 6px;
+      margin: 0 8px;
     }
   }
 
@@ -715,6 +735,16 @@
   @media (max-width: 720px) {
     .sync__target-grid {
       grid-template-columns: 1fr;
+    }
+
+    .sync__payload :deep(.json-textarea-input__left),
+    .sync__payload :deep(.json-textarea-input__right) {
+      flex-basis: 100%;
+    }
+
+    .sync__payload :deep(.json-textarea-input__actions) {
+      padding-left: 0;
+      border-left: 0;
     }
   }
 </style>

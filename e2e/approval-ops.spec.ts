@@ -54,19 +54,15 @@ test.describe('审批中心 — 筛选查询', () => {
   })
 
   test('状态筛选 → 查询', async ({ page }) => {
-    // 页面上有"状态"label 和"审批状态"label,只取首个
-    const statusSelect = page
+    const statusFilter = page
       .locator('.el-form-item')
       .filter({ hasText: /^状态/ })
-      .locator('.el-select')
-      .first()
-    await statusSelect.click()
-    const opt = page.locator('.el-select-dropdown__item').first()
-    if (await isVisible(opt, 2000)) {
-      await opt.click()
-      await page.getByRole('button', { name: '搜索' }).click()
-      await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
-    }
+      .locator('[role="radiogroup"]')
+    await expect(statusFilter.getByRole('radio', { name: '全部' })).toBeVisible()
+    await statusFilter.getByRole('radio', { name: '待审批' }).click()
+    await expect(statusFilter.getByRole('radio', { name: '待审批' })).toHaveAttribute('aria-checked', 'true')
+    await page.getByRole('button', { name: '搜索' }).click()
+    await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
   })
 
   test('类型筛选 → 查询', async ({ page }) => {
