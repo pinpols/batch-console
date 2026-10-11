@@ -18,6 +18,20 @@ on:
     # 北京时间 03:00，给后端 21:31 nightly sim 留出完成窗口。
     - cron: '0 19 * * *'
   workflow_dispatch: {}
+  workflow_call:
+    inputs:
+      source_ref:
+        description: Exact frontend commit to build
+        required: true
+        type: string
+      backend_ref:
+        description: Exact backend commit used for shared documentation
+        required: true
+        type: string
+    outputs:
+      image_digest:
+        description: Immutable GHCR digest of the frontend image
+        value: ${{ jobs.build.outputs.image_digest }}
 
 permissions:
   contents: read
@@ -166,11 +180,14 @@ jobs:
 
   build:
     needs: nightly-sim-gate
+    outputs:
+      image_digest: ${{ steps.image.outputs.digest }}
     if: >-
       always() &&
       (
         github.ref == 'refs/heads/main' && github.event_name != 'schedule' ||
         github.event_name == 'workflow_dispatch' ||
+        github.event_name == 'workflow_call' ||
         (github.event_name == 'schedule' && needs.nightly-sim-gate.result == 'success'
           && needs.nightly-sim-gate.outputs.should_build == 'true')
       )
@@ -179,14 +196,42 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          repository: pinpols/batch-console
+          ref: ${{ inputs.source_ref || github.sha }}
+          persist-credentials: false
 
       - name: Checkout backend documentation source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           repository: pinpols/file-batch-system
-          ref: main
+          ref: ${{ inputs.backend_ref || 'main' }}
           path: backend-docs-source
           persist-credentials: false
+
+      - name: Verify requested source revisions
+        if: github.event_name == 'workflow_call'
+        env:
+          EXPECTED_FRONTEND_SHA: ${{ inputs.source_ref }}
+          EXPECTED_BACKEND_SHA: ${{ inputs.backend_ref }}
+        run: |
+          set -euo pipefail
+          [[ "$EXPECTED_FRONTEND_SHA" =~ ^[0-9a-f]{40}$ ]] || {
+            echo "::error::source_ref must be a full 40-character lowercase Git SHA."
+            exit 2
+          }
+          [[ "$EXPECTED_BACKEND_SHA" =~ ^[0-9a-f]{40}$ ]] || {
+            echo "::error::backend_ref must be a full 40-character lowercase Git SHA."
+            exit 2
+          }
+          [[ "$(git rev-parse HEAD)" == "$EXPECTED_FRONTEND_SHA" ]] || {
+            echo "::error::Frontend checkout does not match source_ref."
+            exit 2
+          }
+          [[ "$(git -C backend-docs-source rev-parse HEAD)" == "$EXPECTED_BACKEND_SHA" ]] || {
+            echo "::error::Backend docs checkout does not match backend_ref."
+            exit 2
+          }
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4
@@ -207,10 +252,14 @@ jobs:
         with:
           images: ${{ env.IMAGE }}
           tags: |
-            type=sha,format=long
-            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+            type=raw,value=sha-${{ inputs.source_ref || github.sha }}
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' && github.event_name == 'push' }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/pinpols/batch-console
+            org.opencontainers.image.revision=${{ inputs.source_ref || github.sha }}
 
       - name: Build and push
+        id: image
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
         with:
           context: .
@@ -220,7 +269,7 @@ jobs:
           # 与 Dockerfile 默认值一致：镜像构建同时执行 typecheck、i18n 检查和 Vite build。
           build-args: |
             BUILD_MODE=build
-            VITE_GIT_SHA=${{ github.sha }}
+            VITE_GIT_SHA=${{ inputs.source_ref || github.sha }}
             VITE_SENTRY_DSN=${{ secrets.VITE_SENTRY_DSN }}
             VITE_TELEMETRY_ENABLED=${{ vars.VITE_TELEMETRY_ENABLED || 'false' }}
             VITE_TELEMETRY_ENDPOINT=${{ vars.VITE_TELEMETRY_ENDPOINT || '/api/console/telemetry/events' }}

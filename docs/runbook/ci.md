@@ -15,7 +15,7 @@ GitHub Security 告警的分类、修复、误报处理和合并后验证遵循[
 | `full-ci-gate`                   | `.github/workflows/full-ci-gate.yml` | PR → main / push main / 每周一 02:00 UTC（10:00 北京）/ 手动 | 全量回归；Markdown-only PR 保留 required check 但跳过构建和全量审计                                                                             | 15-20 min |
 | `staging-gate`                   | `.github/workflows/staging-gate.yml` | tag `v*` / 手动(可输入 base_url)                                            | 真实环境安全头、Playwright/axe、视觉及跨浏览器路由验收                                                                                          | 20-35 min |
 | `codeql`                         | `.github/workflows/codeql.yml`       | PR / main / 每周 / 手动                                                     | JavaScript/TypeScript 静态安全分析                                                                                                              | 5-10 min  |
-| `build-image`                    | `.github/workflows/build-image.yml`  | main / tag / 每日 19:00 UTC（北京时间 03:00）/ 手动                          | main 构建不可变镜像；定时任务先判断前后端前一日是否有相关变更，无变更跳过；后端有变更时等待配对后端 daily-sim-strict 成功；tag 在 staging 通过后晋级同一 digest | 10-75 min |
+| `build-image`                    | `.github/workflows/build-image.yml`  | main / tag / 每日 19:00 UTC（北京时间 03:00）/ 手动 / reusable workflow     | main 构建不可变镜像；定时任务先判断前后端前一日是否有相关变更，无变更跳过；后端有变更时等待配对后端 daily-sim-strict 成功；tag 在 staging 通过后晋级同一 digest；供后端 Compose CD 调用时固定前端与后端 docs SHA，并返回 frontend image digest | 10-75 min |
 | `Quarterly dependency inventory` | `.github/workflows/renovate.yml`     | 每季度 / 手动                                                               | 只生成 Renovate dry-run 盘点和一张 Issue，不创建 PR                                                                                             | 5-15 min  |
 
 ## pr-gate 详情
@@ -107,6 +107,9 @@ push main / weekly schedule ────┤
 ```
 
 ## staging-gate 详情
+
+后端 `file-batch-system` 的 `compose-cd` workflow 复用本 workflow 所在仓库的 `build-image`
+workflow 输出 digest；不是通过浮动 tag 推断制品版本。主干 build-image 自身保持既有触发行为。
 
 ```
 tag v* / 手动 ── precheck(URL/账号/healthz/部署安全头/版本必须有效)

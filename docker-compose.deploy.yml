@@ -10,8 +10,17 @@
 
 services:
   frontend:
+    # 部署端只拉取制品；清除基础开发文件中的本地 Docker build 配置。
+    build: !reset null
     image: ghcr.io/pinpols/batch-console:${IMAGE_TAG:?Set IMAGE_TAG to a staging-verified image tag}
     pull_policy: always
     environment:
       BACKEND_UPSTREAM_HOST: ${BACKEND_UPSTREAM_HOST:?Set BACKEND_UPSTREAM_HOST to the reachable Console API host:port}
     extra_hosts: !reset []
+    networks:
+      - batch-network
+
+networks:
+  batch-network:
+    external: true
+    name: ${APP_EXTERNAL_NETWORK:-batch-platform_batch-network}

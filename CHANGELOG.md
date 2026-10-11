@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- 前端镜像支持作为平台 Compose CD 的可复用构建步骤返回 immutable digest；部署 overlay 接入共享容器网络并移除本地源码构建配置。
 - 作业监控策略页按调度类型展示完成期限：Cron 配截止钟点，固定频率配触发后宽限时长；列表摘要同步显示对应单位。
 - Docker 镜像不再内置 `backend:18080` 上游假设；部署 Compose 必须显式配置 Console API 上游，并清除仅供本地开发使用的 `host.docker.internal` host-gateway 映射，缺配置时 fail-fast。
 - 批量日回放增加完整预览确认流程：展示候选与影响明细、分页浏览，输入变化或预览过期后要求重新预览；提交携带后端一次性预览凭证，避免执行内容偏离确认内容。

@@ -51,6 +51,11 @@ docker compose -f docker-compose.yml -f docker-compose.deploy.yml up -d --no-bui
 
 上例主机名仅为格式示例；实际值必须由站点发布配置提供。Docker Compose 需支持 `!reset`（Compose v2.24+），以免部署 overlay 继承本地 `host.docker.internal` host-gateway。
 
+后端统一 release-set 部署会把前端服务加入与后端相同的 `batch-network`。外部基础设施部署时，
+前后端 `docker-compose.deploy.yml` 都使用 `APP_EXTERNAL_NETWORK` 指定同一预创建网络；该变量由
+站点部署 env 文件提供。部署 bundle 清除 Docker build 配置，只携带 Compose 定义，不要求部署机
+检出前端源码或安装 Node.js。
+
 ## 安全头
 
 `nginx/snippets/security-headers.conf` 是统一入口，所有自行设置缓存头的 location 都显式包含该文件，避免 Nginx `add_header` 继承规则造成安全头丢失。当前包含 CSP、HSTS、frame、MIME、Referrer 与 Permissions Policy。
