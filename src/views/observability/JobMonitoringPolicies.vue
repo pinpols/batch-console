@@ -25,13 +25,19 @@
           <el-option :label="t('jobMonitoringPolicy.disabledOnly')" :value="false" />
         </el-select>
       </el-form-item>
-      <el-form-item :label="t('jobMonitoringPolicy.scheduleType')">
-        <MetaSelect
-          v-model="filters.scheduleType"
-          enum-key="scheduleType"
+      <el-form-item :label="t('jobMonitoringPolicy.monitoringCategory')">
+        <el-select
+          v-model="filters.monitoringCategory"
           clearable
-          :placeholder="t('jobMonitoringPolicy.allScheduleTypes')"
-        />
+          :placeholder="t('jobMonitoringPolicy.allMonitoringCategories')"
+        >
+          <el-option
+            v-for="category in monitoringCategories"
+            :key="category.value"
+            :label="category.label"
+            :value="category.value"
+          />
+        </el-select>
       </el-form-item>
     </ListPageQueryBar>
 
@@ -66,6 +72,13 @@
           <template #default="{ row }">
             <el-tag :type="hasStartDeadline(row) ? 'success' : 'info'" effect="plain">
               {{ scheduleTypeLabel(row.scheduleType) }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column :label="t('jobMonitoringPolicy.monitoringCategory')" width="140">
+          <template #default="{ row }">
+            <el-tag :type="categoryTagType(row)" effect="plain">
+              {{ monitoringCategoryLabel(row) }}
             </el-tag>
           </template>
         </el-table-column>
@@ -166,7 +179,6 @@
   import JobMonitoringFields from '@/views/job/components/JobMonitoringFields.vue'
   import ScheduledPolicySummary from './components/ScheduledPolicySummary.vue'
   import PolicyValue from './components/JobMonitoringPolicyValue.vue'
-  import MetaSelect from '@/components/common/MetaSelect.vue'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
 
   type Severity = 'WARN' | 'ERROR' | 'CRITICAL'
@@ -198,8 +210,22 @@
   const filters = reactive<{
     jobCode: string
     enabled: boolean
-    scheduleType: '' | 'CRON' | 'FIXED_RATE' | 'MANUAL'
-  }>({ jobCode: '', enabled: true, scheduleType: '' })
+    monitoringCategory: '' | 'SCHEDULED' | 'DEPENDENCY' | 'RUNTIME_ONLY'
+  }>({ jobCode: '', enabled: true, monitoringCategory: '' })
+  const monitoringCategories = computed(() => [
+    {
+      value: 'DEPENDENCY' as const,
+      label: t('jobMonitoringPolicy.categoryDependency'),
+    },
+    {
+      value: 'SCHEDULED' as const,
+      label: t('jobMonitoringPolicy.categoryScheduled'),
+    },
+    {
+      value: 'RUNTIME_ONLY' as const,
+      label: t('jobMonitoringPolicy.categoryRuntimeOnly'),
+    },
+  ])
   const form = reactive<PolicyForm>(emptyPolicy())
 
   watch(
@@ -239,7 +265,7 @@
         pageNo: pageNo.value,
         pageSize: pageSize.value,
         jobCode: filters.jobCode.trim() || undefined,
-        scheduleType: filters.scheduleType || undefined,
+        monitoringCategory: filters.monitoringCategory || undefined,
         enabled: filters.enabled,
       })
       if (requestSequence !== loadSequence || tenant.tenantId !== requestTenantId) return
@@ -263,7 +289,7 @@
   function resetFilters() {
     filters.jobCode = ''
     filters.enabled = true
-    filters.scheduleType = ''
+    filters.monitoringCategory = ''
     pageNo.value = 1
     void load()
   }
@@ -317,6 +343,20 @@
 
   function hasStartDeadline(job: ConsoleJobDefinitionResponse) {
     return job.scheduleType === 'CRON' || Boolean(job.dependsOnJobCode?.trim())
+  }
+
+  function monitoringCategory(job: ConsoleJobDefinitionResponse) {
+    if (job.dependsOnJobCode?.trim()) return 'DEPENDENCY'
+    return job.scheduleType === 'CRON' ? 'SCHEDULED' : 'RUNTIME_ONLY'
+  }
+
+  function monitoringCategoryLabel(job: ConsoleJobDefinitionResponse) {
+    return t(`jobMonitoringPolicy.category${monitoringCategory(job)}`)
+  }
+
+  function categoryTagType(job: ConsoleJobDefinitionResponse) {
+    const category = monitoringCategory(job)
+    return category === 'SCHEDULED' ? 'success' : category === 'DEPENDENCY' ? 'warning' : 'info'
   }
 
   function scheduleTypeLabel(scheduleType?: string | null) {

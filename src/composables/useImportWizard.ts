@@ -131,8 +131,7 @@ export function useImportWizard(): ImportWizardState {
 
   const hasBlockingIssues = computed<boolean>(() => {
     const inv = previewStats.value?.invalid
-    if (typeof inv === 'number') return inv > 0
-    return issueRows.value.length > 0
+    return (typeof inv === 'number' && inv > 0) || issueRows.value.length > 0
   })
 
   function onFile(u: UploadFile) {

@@ -171,6 +171,12 @@ test.describe('data-heavy pages use the intended primary views', () => {
     await expectPageTitle(page, '批次日与窗口')
     await expect(page.getByText('日历视图', { exact: true })).toBeVisible()
     await expect(page.locator('.el-calendar')).toBeVisible()
+    const dayCell = page.locator('.el-calendar-table .el-calendar-day').first()
+    const dayCellBox = await dayCell.boundingBox()
+    expect(dayCellBox).not.toBeNull()
+    expect(dayCellBox!.height).toBeLessThan(100)
+    await expect(page.locator('.batch-calendar__counts').first()).toBeVisible()
+    await expect(page.locator('.batch-calendar__count')).toHaveCount(3)
 
     await page
       .getByRole('radiogroup', { name: 'segmented' })

@@ -4,7 +4,6 @@
     trigger="click"
     placement="bottom-end"
     popper-class="notif-center__popper"
-    @show="onOpen"
   >
     <template #reference>
       <el-badge
@@ -17,7 +16,6 @@
         <el-button text class="icon-button" :aria-label="bellAria">
           <el-icon><Bell /></el-icon>
         </el-button>
-        <span v-if="hasNew" class="notif-center__new-dot" aria-hidden="true" />
       </el-badge>
     </template>
 
@@ -92,7 +90,7 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, ref } from 'vue'
+  import { computed } from 'vue'
   import { useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import {
@@ -108,8 +106,6 @@
     openAlerts: number
     criticalAlerts: number
     failedJobs: number
-    /** 当前用户标识,用于「已读」分桶 */
-    userId?: string
   }>()
 
   const { t } = useI18n({ useScope: 'global' })
@@ -131,30 +127,6 @@
       : t('notificationCenter.empty'),
   )
 
-  // 「有新增」红点:与上次打开通知中心时记录的总数对比,变多则提示。
-  function seenKey(): string {
-    return `bc:notif-seen:${props.userId || 'anon'}`
-  }
-  function readSeen(): number {
-    try {
-      const v = Number(localStorage.getItem(seenKey()))
-      return Number.isFinite(v) ? v : 0
-    } catch {
-      return 0
-    }
-  }
-  const lastSeen = ref(readSeen())
-  const hasNew = computed(() => total.value > lastSeen.value)
-
-  function onOpen() {
-    lastSeen.value = total.value
-    try {
-      localStorage.setItem(seenKey(), String(total.value))
-    } catch {
-      /* localStorage 不可用 — 仅内存态 */
-    }
-  }
-
   function go(path: string, query?: Record<string, string>) {
     void router.push({ path, query })
   }
@@ -166,8 +138,9 @@
   }
 
   .notif-center__badge :deep(.el-badge__content) {
-    top: 4px;
-    right: 5px;
+    z-index: 1;
+    top: 1px;
+    right: 1px;
     min-width: 16px;
     height: 16px;
     padding: 0 4px;
@@ -177,39 +150,13 @@
     font-family: var(--font-mono);
     font-weight: 700;
     line-height: 16px;
+    transform: translate(35%, -35%);
+    transform-origin: center;
     box-shadow: 0 0 0 2px var(--layout-header-bg);
   }
 
   .notif-center__badge :deep(.el-badge__content--warning) {
     color: var(--color-on-warning);
-  }
-
-  .notif-center__new-dot {
-    position: absolute;
-    top: 2px;
-    right: 2px;
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: var(--color-danger, #f56c6c);
-    box-shadow: 0 0 0 2px var(--color-bg-card, #fff);
-    animation: notif-pulse 1.6s ease-in-out infinite;
-  }
-
-  @keyframes notif-pulse {
-    0%,
-    100% {
-      opacity: 1;
-    }
-    50% {
-      opacity: 0.4;
-    }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .notif-center__new-dot {
-      animation: none;
-    }
   }
 
   .notif-center__head {
@@ -241,7 +188,7 @@
   .notif-center__row {
     display: flex;
     align-items: center;
-    gap: var(--space-sm, 8px);
+    gap: 12px;
     width: 100%;
     padding: var(--space-sm, 8px) var(--space-xs, 6px);
     border: none;
@@ -251,6 +198,14 @@
     color: var(--color-text-primary);
     font-size: var(--font-size-sm, 13px);
     text-align: left;
+  }
+
+  .notif-center__row :deep(.el-tag) {
+    flex: none;
+    min-width: 32px;
+    justify-content: center;
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
   }
 
   .notif-center__row:hover {
@@ -282,6 +237,7 @@
   .notif-center__chev {
     color: var(--color-text-placeholder);
     flex-shrink: 0;
+    margin-left: 2px;
   }
 
   .notif-center__foot {

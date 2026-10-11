@@ -3,6 +3,7 @@ import * as path from 'path'
 import { expect, test } from './support/app'
 import { enterDemoApp, expectPageTitle, isVisible } from './support/app'
 import { clearConsoleRateLimitKeys } from './support/rate-limit'
+import { seedStorageForConfiguredOrigin } from './support/storage'
 
 /**
  * Excel 导入测试 — 覆盖唯一入口：租户配置包
@@ -47,8 +48,11 @@ async function uploadTenantPackage(page: import('@playwright/test').Page) {
 // ─── 合并导入（租户配置包）──────────────────────────────────────────
 
 test.describe('合并导入 — 租户配置包', () => {
+  test.use({ serviceWorkers: 'block' })
+
   test.beforeEach(async ({ page }) => {
     clearConsoleRateLimitKeys()
+    await seedStorageForConfiguredOrigin(page)
     await enterDemoApp(page)
     await page.goto('/config/tenant-package')
     await expect(page.locator('.page-header .title').first()).toHaveText(/配置批量导入/, {
@@ -56,15 +60,153 @@ test.describe('合并导入 — 租户配置包', () => {
     })
   })
 
-  test('页面展示三步向导与 11 张配置表描述', async ({ page }) => {
+  test('页面展示三步向导与配置字段说明入口', async ({ page }) => {
     await expect(page.getByText('上传').first()).toBeVisible()
     await expect(page.getByText('预览').first()).toBeVisible()
     await expect(page.getByText('应用').first()).toBeVisible()
-    await expect(page.getByText(/11 张配置表/).first()).toBeVisible()
+    await expect(page.getByRole('button', { name: '字段填写说明' })).toBeVisible()
+    await page.getByRole('button', { name: '字段填写说明' }).click()
+    const guide = page.locator('.tenant-pkg-guide-drawer')
+    await expect(guide.getByText('文件导入 · Excel', { exact: true })).toBeVisible()
+    await expect(guide.getByText('文件导出 · 定长文本', { exact: true })).toBeVisible()
   })
 
   test('下载配置包模板按钮可见', async ({ page }) => {
     await expect(page.getByRole('button', { name: '下载配置包模板' })).toBeVisible()
+  })
+
+  test('选择多个作业场景后下载对应的精简模板', async ({ page }) => {
+    const scenarioResponse = page.waitForResponse(
+      (request) =>
+        request.url().includes('/api/console/config/tenant-package/excel/scenario-template') &&
+        request.request().method() === 'GET',
+    )
+    const download = page.waitForEvent('download')
+
+    const importGroup = page.locator('.scenario-template-control__group').nth(0)
+    const otherGroup = page.locator('.scenario-template-control__group--other')
+    const importParent = importGroup.locator('.el-checkbox').first()
+    await expect(importParent).toBeVisible()
+    await expect(importGroup.getByText('XML', { exact: true })).toBeVisible()
+    await expect(importGroup.getByText('JSON', { exact: true })).toBeVisible()
+    await importParent.click()
+    await expect(importGroup.locator('.el-checkbox.is-checked')).toHaveCount(6)
+    await importParent.click()
+    await expect(importGroup.locator('.el-checkbox.is-checked')).toHaveCount(0)
+
+    await importGroup.getByText('Excel', { exact: true }).click()
+    await otherGroup.getByText('数据处理', { exact: true }).click()
+    await page.getByRole('button', { name: '下载配置包模板' }).click()
+
+    const [response, downloadedFile] = await Promise.all([scenarioResponse, download])
+    const selectedScenarios = new URL(response.url()).searchParams.getAll('scenarios').sort()
+    expect(selectedScenarios).toEqual(['IMPORT_EXCEL', 'PROCESS'])
+    expect(response.status()).toBe(200)
+    expect(response.headers()['content-type']).toContain(
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    )
+    expect(downloadedFile.suggestedFilename()).toBe('tenant-package-import_excel-process.xlsx')
+    const downloadedPath = await downloadedFile.path()
+    expect(downloadedPath).not.toBeNull()
+    expect(fs.statSync(downloadedPath!).size).toBeGreaterThan(0)
+  })
+
+  test('Apply 冲突后刷新预览并要求用户重新核对', async ({ page }) => {
+    let previewRequests = 0
+    await page.route('**/api/console/config/tenant-package/excel/upload**', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          code: 'SUCCESS',
+          message: 'success',
+          data: {
+            uploadToken: 'conflict-upload',
+            fileName: 'tenant-config.xlsx',
+            resourceQueueRows: 0,
+            businessCalendarRows: 0,
+            batchWindowRows: 0,
+            jobRows: 1,
+            fileChannelRows: 0,
+            fileTemplateRows: 0,
+            pipelineRows: 0,
+            pipelineStepRows: 0,
+            workflowDefinitionRows: 0,
+            workflowNodeRows: 0,
+            workflowEdgeRows: 0,
+          },
+          meta: {},
+        }),
+      }),
+    )
+    await page.route(
+      '**/api/console/config/tenant-package/excel/preview/conflict-upload**',
+      (route) => {
+        previewRequests += 1
+        return route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            code: 'SUCCESS',
+            message: 'success',
+            data: {
+              uploadToken: 'conflict-upload',
+              previewToken: `preview-${previewRequests}`,
+              fileName: 'tenant-config.xlsx',
+              totalRows: 1,
+              validRows: 1,
+              invalidRows: 0,
+              sheets: [],
+              issues: [],
+            },
+            meta: {},
+          }),
+        })
+      },
+    )
+    await page.route(
+      '**/api/console/config/tenant-package/excel/apply/conflict-upload**',
+      (route) =>
+        route.fulfill({
+          status: 409,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            code: 'STATE_CONFLICT',
+            message: 'error.config_package.config_changed',
+            data: null,
+            meta: {},
+          }),
+        }),
+    )
+
+    const [fileChooser] = await Promise.all([
+      page.waitForEvent('filechooser'),
+      page.getByRole('button', { name: '选择文件' }).first().click(),
+    ])
+    await fileChooser.setFiles({
+      name: 'tenant-config.xlsx',
+      mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      buffer: Buffer.from('mock-xlsx'),
+    })
+    await uploadTenantPackage(page)
+    await expect(page.getByRole('button', { name: '拉取预览' })).toBeVisible()
+    await expect(page.getByText('预览通过，可应用 1 条有效行')).toBeVisible()
+    await page.getByRole('button', { name: '下一步' }).click()
+
+    await page.getByRole('button', { name: '确认应用变更' }).click()
+    const confirmBox = page.locator('.el-message-box').first()
+    await expect(confirmBox).toBeVisible()
+    await confirmBox
+      .getByRole('button', { name: /确认应用|Confirm apply|Confirm/ })
+      .first()
+      .click()
+
+    await expect(
+      page.getByText('预览已过期或配置已变化，已刷新预览。请重新核对后再应用。'),
+    ).toBeVisible()
+    await expect(page.getByRole('button', { name: '拉取预览' })).toBeVisible()
+    await expect(page.getByRole('button', { name: '下一步' })).toBeVisible()
+    expect(previewRequests).toBe(2)
   })
 
   test('导出当前配置包按钮可见', async ({ page }) => {
@@ -105,6 +247,7 @@ test.describe('合并导入 — 租户配置包', () => {
 test.describe('合并导入 — 文件选择交互', () => {
   test.beforeEach(async ({ page }) => {
     clearConsoleRateLimitKeys()
+    await seedStorageForConfiguredOrigin(page)
     await enterDemoApp(page)
     await page.goto('/config/tenant-package')
     await expect(page.locator('.page-header .title').first()).toHaveText(/配置批量导入/, {
@@ -173,7 +316,10 @@ test.describe('合并导入 — 完整上传链路（依赖后端）', () => {
         r.request().method() === 'POST',
       { timeout: 30_000 },
     )
-    await box.getByRole('button', { name: /确认应用|Confirm apply|Confirm/ }).first().click()
+    await box
+      .getByRole('button', { name: /确认应用|Confirm apply|Confirm/ })
+      .first()
+      .click()
     const applyResp = await applyCall
     expect(applyResp.status(), `tenant package apply status=${applyResp.status()}`).toBeLessThan(
       400,
@@ -182,5 +328,92 @@ test.describe('合并导入 — 完整上传链路（依赖后端）', () => {
     await expect(
       page.locator('.apply-zone__block.el-alert--success, .apply-result-table').first(),
     ).toBeVisible({ timeout: 10_000 })
+  })
+})
+
+test.describe('租户管理员 — 配置包导出回导', () => {
+  test.use({ storageState: 'e2e/.auth/role-tenantAdmin.json' })
+
+  test('导出的配置包可直接回导并通过预览校验', async ({ page }) => {
+    clearConsoleRateLimitKeys()
+    await enterDemoApp(page)
+    await page.goto('/config/tenant-package')
+    await expect(page.locator('.page-header .title').first()).toHaveText(/配置批量导入/, {
+      timeout: 15_000,
+    })
+
+    const exportButton = page.getByRole('button', { name: '导出当前配置包' })
+    const exportResponse = page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/console/config/tenant-package/excel/export') &&
+        response.request().method() === 'GET',
+      { timeout: 30_000 },
+    )
+    const exportDownload = page.waitForEvent('download')
+    await exportButton.click()
+    const [exportResp, exportedFile] = await Promise.all([exportResponse, exportDownload])
+    expect(exportResp.status(), `tenant admin export status=${exportResp.status()}`).toBe(200)
+    const exportedPath = await exportedFile.path()
+    if (!exportedPath) throw new Error('Tenant admin export did not produce a local workbook')
+
+    const [fileChooser] = await Promise.all([
+      page.waitForEvent('filechooser'),
+      page.getByRole('button', { name: '选择文件' }).first().click(),
+    ])
+    await fileChooser.setFiles({
+      name: exportedFile.suggestedFilename(),
+      mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      buffer: fs.readFileSync(exportedPath),
+    })
+    const previewResponse = page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/console/config/tenant-package/excel/preview/') &&
+        response.request().method() === 'GET',
+      { timeout: 30_000 },
+    )
+    const uploadResp = await uploadTenantPackage(page)
+    expect(uploadResp.status(), `tenant admin upload status=${uploadResp.status()}`).toBeLessThan(
+      400,
+    )
+
+    await expect(page.getByRole('button', { name: '拉取预览' })).toBeVisible()
+    const previewResp = await previewResponse
+    const previewPayload = await previewResp.json()
+    expect(
+      previewPayload.data.invalidRows,
+      `tenant admin export round-trip issues: ${JSON.stringify(previewPayload.data.issues)}`,
+    ).toBe(0)
+    await expect(page.locator('.excel-wizard__desc, .el-table__body').first()).toBeVisible({
+      timeout: 10_000,
+    })
+    await expect(page.getByRole('button', { name: '下一步' })).toBeEnabled()
+  })
+})
+
+test.describe('平台管理员 — 配置包导出', () => {
+  test.use({ storageState: 'e2e/.auth/role-admin.json' })
+
+  test('平台管理员可导出当前租户的业务配置包', async ({ page }) => {
+    clearConsoleRateLimitKeys()
+    await enterDemoApp(page)
+    await page.goto('/config/tenant-package')
+    await expect(page.locator('.page-header .title').first()).toHaveText(/配置批量导入/, {
+      timeout: 15_000,
+    })
+
+    const exportResponse = page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/console/config/tenant-package/excel/export') &&
+        response.request().method() === 'GET',
+      { timeout: 30_000 },
+    )
+    const exportDownload = page.waitForEvent('download')
+    await page.getByRole('button', { name: '导出当前配置包' }).click()
+    const [response, download] = await Promise.all([exportResponse, exportDownload])
+    expect(response.status(), `platform admin export status=${response.status()}`).toBe(200)
+
+    const exportedPath = await download.path()
+    if (!exportedPath) throw new Error('Platform admin export did not produce a local workbook')
+    expect(fs.statSync(exportedPath).size).toBeGreaterThan(0)
   })
 })

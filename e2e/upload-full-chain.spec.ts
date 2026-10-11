@@ -10,6 +10,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { test, expect } from './support/app'
 import { enterDemoApp, isVisible } from './support/app'
+import { seedStorageForConfiguredOrigin } from './support/storage'
 
 const useRealBE = process.env.E2E_REAL_BE === '1'
 
@@ -51,6 +52,7 @@ const MOCK_UPLOAD_RESULT = {
 }
 const MOCK_PREVIEW = {
   uploadToken: MOCK_TOKEN,
+  previewToken: 'mock-preview-token-' + Date.now(),
   fileName: MOCK_UPLOAD_RESULT.fileName,
   totalRows: 11,
   validRows: 11,
@@ -157,6 +159,7 @@ async function installUploadMocks(page: import('@playwright/test').Page) {
 test.describe('upload-full-chain · 租户配置包 Excel 导入', () => {
   test.beforeEach(async ({ page }) => {
     await installUploadMocks(page)
+    await seedStorageForConfiguredOrigin(page)
     await enterDemoApp(page)
     await page.goto('/config/tenant-package')
     await expect(page.locator('.page-header .title').first()).toHaveText(/配置批量导入/, {

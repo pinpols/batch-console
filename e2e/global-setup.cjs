@@ -14,6 +14,7 @@ const T_UPLOAD = 20_000 // 文件上传
 const T_APPLY = 30_000 // 配置包应用（事务较重）
 const RATE_LIMIT_RETRY_DELAYS_MS = [1_500, 3_000, 5_000]
 const FORCE_SEED = process.env.E2E_FORCE_SEED === '1'
+const REQUIRE_CONFIG_SEED = process.env.E2E_REQUIRE_CONFIG_SEED === '1'
 
 /**
  * 把 fetch 响应的 Set-Cookie 头解析成 Playwright storageState cookie 对象。
@@ -142,6 +143,34 @@ async function callAdminUserApi(authHeaders, pathname, init = {}) {
     throw new Error(`${method} ${pathname} failed: HTTP ${response.status} ${JSON.stringify(body)}`)
   }
   return body?.data ?? body
+}
+
+async function ensureFixtureTenant(authHeaders, tenantId) {
+  const tenantUrl = `${API_BASE}/api/console/tenants/${encodeURIComponent(tenantId)}`
+  const tenantResponse = await fetchWithTimeout(tenantUrl, {
+    headers: { ...authHeaders, 'X-Tenant-Id': 'system' },
+  })
+  if (tenantResponse.ok) return
+  if (tenantResponse.status !== 404) {
+    const body = await tenantResponse.text().catch(() => '')
+    throw new Error(`GET /api/console/tenants/${tenantId} failed: HTTP ${tenantResponse.status} ${body}`)
+  }
+
+  await callAdminUserApi(authHeaders, '/api/console/tenants', {
+    method: 'POST',
+    body: JSON.stringify({
+      tenantId,
+      tenantName: `E2E fixture ${tenantId}`,
+      username: `e2e-admin-${tenantId}`,
+      password: 'E2eFixture@9371',
+    }),
+  })
+  console.log(`[global-setup] fixture 租户已创建 ${tenantId}`)
+}
+
+function seedFailure(message) {
+  console.warn(message)
+  if (REQUIRE_CONFIG_SEED) throw new Error(message)
 }
 
 async function findRoleAccount(authHeaders, role) {
@@ -291,7 +320,7 @@ async function tenantConfigAlreadyPresent(commonHeaders, tenantId) {
  */
 async function seedTenant(authHeaders, tenantId, filePath) {
   if (!existsSync(filePath)) {
-    console.warn(`[seed] 文件不存在，跳过 ${tenantId}: ${filePath}`)
+    seedFailure(`[seed] 文件不存在 ${tenantId}: ${filePath}`)
     return
   }
 
@@ -337,14 +366,14 @@ async function seedTenant(authHeaders, tenantId, filePath) {
 
     if (!uploadRes.ok) {
       const text = await uploadRes.text().catch(() => '')
-      console.warn(`[seed] 上传失败 tenant=${tenantId} status=${uploadRes.status} ${text}`)
+      seedFailure(`[seed] 上传失败 tenant=${tenantId} status=${uploadRes.status} ${text}`)
       return
     }
 
     const uploadJson = await uploadRes.json()
     uploadToken = uploadJson?.data?.uploadToken ?? uploadJson?.uploadToken
     if (!uploadToken) {
-      console.warn(`[seed] 响应中无 uploadToken，跳过 tenant=${tenantId}`)
+      seedFailure(`[seed] 响应中无 uploadToken tenant=${tenantId}`)
       return
     }
     console.log(`[seed] 上传成功 tenant=${tenantId} token=${uploadToken}`)
@@ -357,6 +386,7 @@ async function seedTenant(authHeaders, tenantId, filePath) {
   // 当前 11-sheet 权威样本包含 pipeline_step_definition；如果本地只启动 console-api、
   // 未启动 worker 注册 step_registry，后端会判定 impl_code 未注册。此时继续 apply
   // 只会得到 400，且污染 e2e 日志。先 preview，发现漂移就显式跳过。
+  let previewToken
   try {
     const previewRes = await fetchWithTimeout(
       `${API_BASE}/api/console/config/tenant-package/excel/preview/${encodeURIComponent(uploadToken)}?tenantId=${encodeURIComponent(tenantId)}`,
@@ -367,23 +397,28 @@ async function seedTenant(authHeaders, tenantId, filePath) {
     )
     if (!previewRes.ok) {
       const text = await previewRes.text().catch(() => '')
-      console.warn(`[seed] 预览失败 tenant=${tenantId} status=${previewRes.status} ${text}`)
+      seedFailure(`[seed] 预览失败 tenant=${tenantId} status=${previewRes.status} ${text}`)
       return
     }
     const previewJson = await previewRes.json()
     const data = previewJson?.data ?? previewJson
+    previewToken = data?.previewToken
+    if (typeof previewToken !== 'string' || previewToken.trim() === '') {
+      seedFailure(`[seed] 预览响应缺少 previewToken tenant=${tenantId}`)
+      return
+    }
     if ((data?.invalidRows ?? 0) > 0) {
       const issues = Array.isArray(data?.issues) ? data.issues.slice(0, 5) : []
       const summary = issues
         .map((x) => `${x.sheetName ?? '?'}#${x.rowNo ?? '?'} ${x.message ?? ''}`.trim())
         .join(' | ')
-      console.warn(
+      seedFailure(
         `[seed] 预览存在无效行，跳过 apply tenant=${tenantId} invalidRows=${data.invalidRows}${summary ? `: ${summary}` : ''}`,
       )
       return
     }
   } catch (err) {
-    console.warn(`[seed] 预览异常 tenant=${tenantId}: ${err.message}`)
+    seedFailure(`[seed] 预览异常 tenant=${tenantId}: ${err.message}`)
     return
   }
 
@@ -399,7 +434,7 @@ async function seedTenant(authHeaders, tenantId, filePath) {
             'Content-Type': 'application/json',
             'Idempotency-Key': idempotencyKey(),
           },
-          body: JSON.stringify({}),
+          body: JSON.stringify({ previewToken }),
           timeoutMs: T_APPLY,
         },
       )
@@ -419,11 +454,11 @@ async function seedTenant(authHeaders, tenantId, filePath) {
         continue
       }
 
-      console.warn(`[seed] 应用失败 tenant=${tenantId} status=${applyRes.status} ${text}`)
+      seedFailure(`[seed] 应用失败 tenant=${tenantId} status=${applyRes.status} ${text}`)
       return
     }
   } catch (err) {
-    console.warn(`[seed] 应用异常 tenant=${tenantId}: ${err.message}`)
+    seedFailure(`[seed] 应用异常 tenant=${tenantId}: ${err.message}`)
   }
 }
 
@@ -437,19 +472,20 @@ async function exportTenantPackageFixture(authHeaders) {
     return
   }
   try {
+    mkdirSync(path.dirname(outPath), { recursive: true })
     const res = await fetchWithTimeout(
       `${API_BASE}/api/console/config/tenant-package/excel/export?tenantId=${encodeURIComponent(FIXTURE_TENANT)}`,
       { headers: { ...authHeaders, 'X-Tenant-Id': FIXTURE_TENANT } },
     )
     if (!res.ok) {
-      console.warn(`[fixture] 租户包导出失败 status=${res.status}`)
+      seedFailure(`[fixture] 租户包导出失败 status=${res.status}`)
       return
     }
     const buf = Buffer.from(await res.arrayBuffer())
     writeFileSync(outPath, buf)
     console.log(`[fixture] ✓ 导出租户包 → ${outPath}`)
   } catch (err) {
-    console.warn(`[fixture] 租户包导出异常: ${err.message}`)
+    seedFailure(`[fixture] 租户包导出异常: ${err.message}`)
   }
 }
 
@@ -517,6 +553,9 @@ async function globalSetup(config) {
   // ── 导入测试数据 ─────────────────────────────────────────────────
   const seedAuthHeaders = buildAuthHeaders(token, authCookies)
   if (!readOnlyMonitoringRun && Object.keys(seedAuthHeaders).length > 0) {
+    for (const tenantId of ['ta', 'tb', 'tc', 'tx']) {
+      await ensureFixtureTenant(seedAuthHeaders, tenantId)
+    }
     for (const { tenantId, file } of TENANT_EXCELS) {
       await seedTenant(seedAuthHeaders, tenantId, file)
     }

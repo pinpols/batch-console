@@ -105,13 +105,18 @@
               <template v-if="day">
                 <StatusTag :value="String(day.dayStatus ?? '')" category="batchDay" />
                 <span class="batch-calendar__counts">
-                  {{
-                    t('batchDayList.calendarCellCounts', {
-                      success: day.successJobCount ?? 0,
-                      failed: day.failedJobCount ?? 0,
-                      running: day.inFlightJobCount ?? 0,
-                    })
-                  }}
+                  <span class="batch-calendar__count batch-calendar__count--success">
+                    <span>{{ t('batchDayList.calendarSuccessShort') }}</span>
+                    {{ day.successJobCount ?? 0 }}
+                  </span>
+                  <span class="batch-calendar__count batch-calendar__count--failed">
+                    <span>{{ t('batchDayList.calendarFailedShort') }}</span>
+                    {{ day.failedJobCount ?? 0 }}
+                  </span>
+                  <span class="batch-calendar__count batch-calendar__count--running">
+                    <span>{{ t('batchDayList.calendarRunningShort') }}</span>
+                    {{ day.inFlightJobCount ?? 0 }}
+                  </span>
                 </span>
                 <span v-if="day.lateCount" class="batch-calendar__late">
                   {{ t('batchDayList.calendarCellLate', { n: day.lateCount }) }}
@@ -415,7 +420,7 @@
   }
 
   .batch-calendar__grid :deep(.el-calendar-table .el-calendar-day) {
-    height: 7.5rem;
+    height: 5.5rem;
     padding: var(--space-xs);
   }
 
@@ -425,8 +430,8 @@
     height: 100%;
     flex-direction: column;
     align-items: flex-start;
-    gap: var(--space-xs);
-    padding: var(--space-sm);
+    gap: 3px;
+    padding: 4px;
     color: var(--color-text-primary);
     text-align: left;
     border: 1px solid transparent;
@@ -456,10 +461,39 @@
     font-family: var(--font-mono);
   }
 
-  .batch-calendar__counts,
+  .batch-calendar__counts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px 6px;
+    max-width: 100%;
+    color: var(--color-text-tertiary);
+    font-size: 11px;
+    line-height: 1.2;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .batch-calendar__count {
+    display: inline-flex;
+    gap: 2px;
+    min-width: 0;
+    white-space: nowrap;
+  }
+
+  .batch-calendar__count--success > span {
+    color: var(--color-success);
+  }
+
+  .batch-calendar__count--failed > span {
+    color: var(--color-danger);
+  }
+
+  .batch-calendar__count--running > span {
+    color: var(--color-primary);
+  }
+
   .batch-calendar__late {
     color: var(--color-text-tertiary);
-    font-size: var(--font-size-sm);
+    font-size: 11px;
     line-height: var(--line-height-normal);
   }
 
@@ -473,7 +507,7 @@
     }
 
     .batch-calendar__grid :deep(.el-calendar-table .el-calendar-day) {
-      height: 6.5rem;
+      height: 5rem;
     }
   }
 

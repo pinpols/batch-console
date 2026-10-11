@@ -413,6 +413,7 @@
           :schedule-type-options="scheduleTypeOptions"
           :queue-options="queueOptions"
           :worker-group-options="workerGroupOptionsMeta"
+          :can-configure-routing="canManageSystem"
         />
       </el-form>
 
@@ -477,7 +478,11 @@
             :placeholder="t('jobConfigBasic.placeholderDependsOnJobCode')"
           />
         </el-form-item>
-        <el-form-item :label="t('jobDefinitionList.queueLabel')" prop="queueCode">
+        <el-form-item
+          v-if="canManageSystem"
+          :label="t('jobDefinitionList.queueLabel')"
+          prop="queueCode"
+        >
           <div class="queue-field">
             <MetaSelect
               v-model="createForm.queueCode"
@@ -501,7 +506,11 @@
             </el-button>
           </div>
         </el-form-item>
-        <el-form-item :label="t('jobDefinitionList.workerGroupLabel')" prop="workerGroup">
+        <el-form-item
+          v-if="canManageSystem"
+          :label="t('jobDefinitionList.workerGroupLabel')"
+          prop="workerGroup"
+        >
           <el-select
             v-model="createForm.workerGroup"
             class="query-w-full"
@@ -687,7 +696,7 @@
   const route = useRoute()
   const router = useRouter()
   const tenant = useTenantStore()
-  const { canMutateConfig } = usePermission()
+  const { canMutateConfig, canManageSystem } = usePermission()
   const page = ref(1)
   const pageSize = ref(15)
   const actingJobCode = ref('')
@@ -1497,8 +1506,12 @@
           createForm.scheduleType === 'MANUAL'
             ? ''
             : createForm.dependsOnJobCode.trim() || undefined,
-        queueCode: createForm.queueCode.trim() || undefined,
-        workerGroup: createForm.workerGroup.trim() || undefined,
+        ...(canManageSystem.value
+          ? {
+              queueCode: createForm.queueCode.trim() || undefined,
+              workerGroup: createForm.workerGroup.trim() || undefined,
+            }
+          : {}),
         executionMode: createForm.executionMode,
         watermarkField:
           createForm.executionMode === 'INCREMENTAL' ? createForm.watermarkField.trim() : '',
@@ -1595,8 +1608,12 @@
           editForm.scheduleType === 'MANUAL' ? '' : editForm.dependsOnJobCode.trim() || undefined,
         timezone: editForm.timezone.trim() || undefined,
         triggerMode: editForm.triggerMode.trim() || undefined,
-        workerGroup: editForm.workerGroup.trim() || undefined,
-        queueCode: editForm.queueCode || undefined,
+        ...(canManageSystem.value
+          ? {
+              workerGroup: editForm.workerGroup.trim() || undefined,
+              queueCode: editForm.queueCode || undefined,
+            }
+          : {}),
         calendarCode: editForm.calendarCode.trim() || undefined,
         windowCode: editForm.windowCode.trim() || undefined,
         dagEnabled: editForm.dagEnabled,

@@ -33,11 +33,21 @@ test.describe('Job Definition Wizard / Detail (Day 1-4 交付)', () => {
     await waitForRouteStable(page)
     await expectPageTitle(page, '新建作业向导')
 
-    // 8 个 step 标题应可见 — 先等首个 step 节点挂载,避免读 DOM 时 wizard 还在 lazy 加载
-    await expect(page.locator('.el-step__title').first()).toBeVisible({ timeout: 8000 })
+    // 等待当前步骤正文挂载，再核对步骤导航，避免懒加载期间读取空 DOM。
+    await expect(page.locator('.wizard-step-banner__title')).toHaveText('基本信息', {
+      timeout: 10_000,
+    })
+    await expect(page.locator('.el-step')).toHaveCount(8)
     const stepTitles = await page.locator('.el-step__title').allTextContents()
     for (const want of [
-      '基本信息', '调度', '资源', '触发', '关联文件', '关联编排', '告警', '复核',
+      '基本信息',
+      '调度',
+      '执行策略',
+      '触发',
+      '关联文件',
+      '关联编排',
+      '告警',
+      '复核',
     ]) {
       expect(stepTitles.some((t) => t.includes(want))).toBeTruthy()
     }
@@ -52,7 +62,6 @@ test.describe('Job Definition Wizard / Detail (Day 1-4 交付)', () => {
 
     network.assertClean('wizard-smoke')
   })
-
 
   test('Detail 页直链可达 + 9 Tab 渲染', async ({ page, network }) => {
     // 用 API 直接抓一条 job id(管理员 admin 默认能看到 system / ta)
@@ -95,11 +104,44 @@ test.describe('Job Definition Wizard / Detail (Day 1-4 交付)', () => {
     const alertsTab = page.locator('.el-tabs__item').filter({ hasText: '告警' }).first()
     await expect(alertsTab).toBeVisible({ timeout: 6000 })
     await alertsTab.click()
-    // 等待表格容器渲染(即便空也应有 empty-text)
-    await expect(
-      page.getByText(/当前租户无告警路由|routeCode|无数据/).first(),
-    ).toBeVisible({ timeout: 8000 })
+    // 在当前 tab 范围内等待数据或明确空态，避免全页同文案定位和渲染时序竞态。
+    const alertPanel = page.getByRole('tabpanel', { name: '告警' })
+    await expect(alertPanel).toContainText(/当前租户暂无告警路由|路由编码/, { timeout: 10_000 })
 
     network.assertClean('detail-tab-alerts')
+  })
+})
+
+async function openWizardExecutionPolicyStep(page: import('@playwright/test').Page) {
+  await enterDemoApp(page)
+  await page.goto('/jobs/definitions/new')
+  await expect(page.locator('.wizard-step-banner__title')).toHaveText('基本信息', {
+    timeout: 10_000,
+  })
+  await page.locator('.cnb-biz input').fill('ROUTING_CHECK')
+  await page.getByLabel('作业名称').fill('资源路由权限检查')
+  await page.getByRole('button', { name: '下一步' }).click()
+  await page.getByRole('button', { name: '下一步' }).click()
+  await expect(page.locator('.wizard-step-banner__title')).toHaveText('执行策略')
+}
+
+test.describe('作业向导资源路由权限', () => {
+  test('平台管理员可见队列和 Worker 组字段', async ({ page }) => {
+    await openWizardExecutionPolicyStep(page)
+    const form = page.locator('.wizard-form')
+    await expect(form.getByText('队列', { exact: true })).toBeVisible()
+    await expect(form.getByText('Worker 组', { exact: true })).toBeVisible()
+  })
+
+  test.describe('租户管理员', () => {
+    test.use({ storageState: 'e2e/.auth/role-tenantAdmin.json' })
+
+    test('仅显示执行策略，不暴露平台队列或 Worker 组', async ({ page }) => {
+      await openWizardExecutionPolicyStep(page)
+      const form = page.locator('.wizard-form')
+      await expect(form.getByText('执行策略', { exact: true })).toBeVisible()
+      await expect(form.getByText('队列', { exact: true })).toHaveCount(0)
+      await expect(form.getByText('Worker 组', { exact: true })).toHaveCount(0)
+    })
   })
 })

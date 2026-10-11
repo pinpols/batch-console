@@ -102,12 +102,19 @@ test.beforeEach(async ({ page }) => {
 test('shows scheduled and manual monitoring rules and filters scheduled jobs on the server', async ({
   page,
 }) => {
-  let queriedScheduleType: string | null = null
+  let queriedMonitoringCategory: string | null = null
   await page.route('**/api/console/queries/job-definitions*', async (route) => {
     const url = new URL(route.request().url())
-    queriedScheduleType = url.searchParams.get('scheduleType')
-    const filteredJobs = queriedScheduleType
-      ? jobs.filter((job) => job.scheduleType === queriedScheduleType)
+    queriedMonitoringCategory = url.searchParams.get('monitoringCategory')
+    const filteredJobs = queriedMonitoringCategory
+      ? jobs.filter((job) => {
+          const category = job.dependsOnJobCode
+            ? 'DEPENDENCY'
+            : job.scheduleType === 'CRON'
+              ? 'SCHEDULED'
+              : 'RUNTIME_ONLY'
+          return category === queriedMonitoringCategory
+        })
       : jobs
     await route.fulfill({
       status: 200,
@@ -142,12 +149,12 @@ test('shows scheduled and manual monitoring rules and filters scheduled jobs on 
   await expect(dependentRow).toContainText('5 分钟')
   await expect(dependentRow).toContainText('15 分钟')
 
-  const scheduleFilter = page.locator('.query-form .el-form-item').filter({ hasText: '调度类型' })
-  await scheduleFilter.locator('.el-select').click()
-  await page.locator('.el-select-dropdown:visible').getByText('Cron (CRON)', { exact: true }).click()
+  const categoryFilter = page.locator('.query-form .el-form-item').filter({ hasText: '监控分类' })
+  await categoryFilter.locator('.el-select').click()
+  await page.locator('.el-select-dropdown:visible').getByText('计划触发', { exact: true }).click()
   await page.getByRole('button', { name: '搜索' }).click()
 
-  await expect.poll(() => queriedScheduleType).toBe('CRON')
+  await expect.poll(() => queriedMonitoringCategory).toBe('SCHEDULED')
   await expect(cronRow).toBeVisible()
   await expect(fixedRateRow).toHaveCount(0)
   await expect(manualRow).toHaveCount(0)

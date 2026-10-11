@@ -173,6 +173,7 @@
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
   import { confirmDanger } from '@/composables/useDangerConfirm'
+  import type { ConfigSyncExportResponse } from '@/types/console-api'
   import JsonPreview from '@/components/common/JsonPreview.vue'
   import JsonTextareaInput from '@/components/common/JsonTextareaInput.vue'
   import { localizeConfigSyncTypeOptions, type ConfigSyncType } from './configSyncTypeOptions'
@@ -212,12 +213,12 @@
   const exporting = ref(false)
   const previewing = ref(false)
   const importing = ref(false)
-  const exportResult = ref<unknown>(null)
+  const exportResult = ref<ConfigSyncExportResponse | null>(null)
   const previewResult = ref<unknown>(null)
   const importPayload = ref('')
 
   // 差异预览结果优先于导出结果(用户最近的动作)
-  const displayResult = computed(() => previewResult.value ?? exportResult.value)
+  const displayResult = computed(() => previewResult.value ?? exportResult.value?.bundle ?? null)
   const displayResultTitle = computed(() =>
     previewResult.value ? t('configSyncTab.resultPreview') : t('configSyncTab.resultExport'),
   )
@@ -243,12 +244,14 @@
     exporting.value = true
     try {
       const types = selectedExportTypes.value
-      exportResult.value = await exportConfigSync({
+      const result = await exportConfigSync({
         sourceTenantId: tenant.tenantId,
         sourceEnv: sourceEnv.value.trim() || 'default',
         targetEnv: targetEnv.value.trim() || 'default',
         ...(types.length ? { configTypes: types } : {}),
       })
+      exportResult.value = result
+      downloadConfigBundle(result)
       previewResult.value = null
       ElMessage.success(t('configSyncTab.toastExportDone'))
     } finally {
@@ -258,8 +261,31 @@
 
   function copyToTarget() {
     if (!exportResult.value) return
-    importPayload.value = JSON.stringify(exportResult.value, null, 2)
+    importPayload.value = JSON.stringify(exportResult.value.bundle, null, 2)
     ElMessage.success(t('configSyncTab.toastCopiedToTarget'))
+  }
+
+  function downloadConfigBundle(result: ConfigSyncExportResponse) {
+    const filenamePart = (value: string) => value.replace(/[^a-zA-Z0-9_-]+/g, '-')
+    const filename =
+      [
+        'config-sync',
+        filenamePart(result.sourceTenantId),
+        filenamePart(result.sourceEnv),
+        filenamePart(result.targetEnv),
+      ].join('-') + '.json'
+    const blob = new Blob([JSON.stringify(result.bundle, null, 2)], {
+      type: 'application/json;charset=utf-8',
+    })
+    const objectUrl = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = objectUrl
+    link.download = filename
+    link.style.display = 'none'
+    document.body.append(link)
+    link.click()
+    link.remove()
+    window.setTimeout(() => URL.revokeObjectURL(objectUrl), 0)
   }
 
   async function doPreview() {

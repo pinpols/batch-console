@@ -50,6 +50,7 @@ export interface JobDefinitionListParams {
   pageSize: number
   jobCode?: string
   scheduleType?: 'CRON' | 'FIXED_RATE' | 'MANUAL'
+  monitoringCategory?: 'SCHEDULED' | 'DEPENDENCY' | 'RUNTIME_ONLY'
   /** undefined = 后端默认仅 enabled=true；显式传 false = 只看停用；true = 只看启用 */
   enabled?: boolean
 }
@@ -85,6 +86,7 @@ export const jobApi = {
       pageSize,
       ...(params.jobCode ? { jobCode: params.jobCode } : {}),
       ...(params.scheduleType ? { scheduleType: params.scheduleType } : {}),
+      ...(params.monitoringCategory ? { monitoringCategory: params.monitoringCategory } : {}),
       ...(params.enabled != null ? { enabled: params.enabled } : {}),
     })
     return {

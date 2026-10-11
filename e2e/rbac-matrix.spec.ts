@@ -47,18 +47,25 @@ const MENU_EXPECTATIONS: Record<
   { count: number; includes: string[]; excludes: string[] }
 > = {
   admin: {
-    count: 55,
-    includes: ['/ops/diagnostic', '/system/tenants', '/system/api-keys', '/observability/usage'],
+    count: 56,
+    includes: [
+      '/ops/diagnostic',
+      '/system/tenants',
+      '/system/api-keys',
+      '/observability/usage',
+      '/config/tenant-package',
+    ],
     excludes: [],
   },
   tenantAdmin: {
-    count: 50,
+    count: 51,
     includes: [
       '/self-service',
       '/system/user-accounts',
       '/system/api-keys',
       '/observability/audits',
       '/observability/usage',
+      '/config/tenant-package',
     ],
     excludes: ['/ops/diagnostic', '/ops/tenant-placements', '/system/ai-chat'],
   },

@@ -159,9 +159,19 @@
     <!-- 资源 / 队列 -->
     <div v-if="showSection('resource')" class="config-group">
       <div v-if="!singleSection" class="config-group__title">
-        {{ t('jobConfigBasic.groupResource') }}
+        {{
+          t(
+            canConfigureRouting
+              ? 'jobConfigBasic.groupResource'
+              : 'jobConfigBasic.groupExecutionPolicy',
+          )
+        }}
       </div>
-      <el-form-item :label="t('jobDefinitionList.queueLabel')" prop="queueCode">
+      <el-form-item
+        v-if="canConfigureRouting"
+        :label="t('jobDefinitionList.queueLabel')"
+        prop="queueCode"
+      >
         <MetaSelect
           v-model="model.queueCode"
           class="query-w-full"
@@ -170,7 +180,11 @@
           :options="queueOptions"
         />
       </el-form-item>
-      <el-form-item :label="t('jobDefinitionList.workerGroupLabel')" prop="workerGroup">
+      <el-form-item
+        v-if="canConfigureRouting"
+        :label="t('jobDefinitionList.workerGroupLabel')"
+        prop="workerGroup"
+      >
         <el-select
           v-model="model.workerGroup"
           class="query-w-full"
@@ -336,15 +350,18 @@
       queueOptions?: MetaOption[]
       /** 当前 tenant 已知的 worker group(从 job 列表去重 computed),可空时仅 allow-create */
       workerGroupOptions?: MetaOption[]
+      /** 物理路由仅允许平台管理员配置。 */
+      canConfigureRouting?: boolean
       /** 编辑态身份字段只读(jobCode/jobType)。Vue 对缺省 Boolean prop 强转 false,
        *  曾使 `!== false` 判定失效渲染出 CodeNameBuilder 并触发其 TDZ 崩溃 → 显式默认 true。 */
       readonlyIdentity?: boolean
       sections?: Array<'basic' | 'schedule' | 'resource' | 'retry' | 'params'>
     }>(),
-    { readonlyIdentity: true },
+    { readonlyIdentity: true, canConfigureRouting: false },
   )
   const model = props.model
   const readonlyIdentity = computed(() => props.readonlyIdentity)
+  const canConfigureRouting = computed(() => props.canConfigureRouting)
 
   function showSection(section: 'basic' | 'schedule' | 'resource' | 'retry' | 'params') {
     return !props.sections || props.sections.includes(section)

@@ -73,7 +73,26 @@
           />
 
           <EmptyState
-            v-if="!workerTableBlocking && workerTableRows.length === 0"
+            v-if="!workerTableBlocking && workerLoadError"
+            variant="error"
+            :title="t('workerManagement.loadFailed')"
+            :description="t('error.subtitle')"
+            :image-size="96"
+          >
+            <template #action>
+              <el-button
+                type="primary"
+                :icon="Refresh"
+                :loading="workerIsFetching"
+                @click="onRefreshWorkers"
+              >
+                {{ t('common.retry') }}
+              </el-button>
+            </template>
+          </EmptyState>
+
+          <EmptyState
+            v-else-if="!workerTableBlocking && workerTableRows.length === 0"
             variant="tenant-empty"
             :title="t('workerManagement.emptyTitle')"
             :description="workerEmptyDescription"
@@ -336,7 +355,6 @@
   const route = useRoute()
   import { useListLoadState } from '@/composables/useListLoadState'
   import { useSseAutoReload } from '@/composables/useSseAutoReload'
-  import { useTenantReload } from '@/composables/useTenantReload'
   import { useWorkers } from '@/composables/queries/useWorkers'
   import {
     useConsoleMetaEnumsQuery,
@@ -382,6 +400,14 @@
     error: workerLoadError,
     refetch: refetchWorkers,
   } = useWorkers()
+  const workerErrorAt = ref(0)
+  watch(
+    workerLoadError,
+    (error) => {
+      if (error) workerErrorAt.value = Date.now()
+    },
+    { flush: 'sync' },
+  )
   const { data: metaEnums } = useConsoleMetaEnumsQuery()
   const { data: workerGroupMeta } = useMetaWorkerGroupsQuery()
 
@@ -549,6 +575,7 @@
   const live = useSseAutoReload({
     domain: 'workers',
     reload: async () => {
+      if (workerLoadError.value && Date.now() - workerErrorAt.value < 5_000) return false
       try {
         await refetchWorkers()
       } finally {
@@ -705,7 +732,13 @@
     sliceChannelPage()
   })
 
-  useTenantReload(loadChannels)
+  watch(
+    [activeTab, () => tenant.tenantId],
+    ([tab, tenantId]) => {
+      if (tab === 'channels' && tenantId) void loadChannels()
+    },
+    { immediate: true },
+  )
 </script>
 
 <style scoped>
@@ -731,6 +764,8 @@
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 14px;
+    width: 100%;
+    min-width: 0;
     margin-bottom: 18px;
   }
 
@@ -738,6 +773,7 @@
     display: flex;
     align-items: center;
     gap: 12px;
+    min-width: 0;
     padding: 14px 18px;
     background: var(--color-bg-card);
     border: 1px solid var(--color-border);
