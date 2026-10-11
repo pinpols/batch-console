@@ -28,6 +28,13 @@ on:
         description: Exact backend commit used for shared documentation
         required: true
         type: string
+    secrets:
+      VITE_SENTRY_DSN:
+        description: Optional Sentry DSN embedded in the frontend build
+        required: false
+      SENTRY_AUTH_TOKEN:
+        description: Optional token used to upload release sourcemaps
+        required: false
     outputs:
       image_digest:
         description: Immutable GHCR digest of the frontend image
