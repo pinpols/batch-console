@@ -1,15 +1,28 @@
 <template>
-  <div v-if="app.isDegraded" class="degradation-banner" role="status">
+  <div v-if="visible" class="degradation-banner" role="status">
     <el-icon class="degradation-banner__icon">
       <WarningFilled />
     </el-icon>
     <div class="degradation-banner__text">
       <strong>{{ t('degradation.bannerHeadline') }}</strong>
       <span class="degradation-banner__msg">{{ t('degradation.bannerMessage') }}</span>
+      <span class="degradation-banner__countdown">
+        {{ t('degradation.autoClose', { seconds: secondsLeft }) }}
+      </span>
       <span v-for="src in app.activeDegradationSources" :key="src" class="degradation-banner__chip">
         {{ src }}
       </span>
     </div>
+    <el-button
+      text
+      circle
+      class="degradation-banner__close"
+      :aria-label="t('common.close')"
+      :title="t('common.close')"
+      @click="dismissed = true"
+    >
+      <el-icon><X /></el-icon>
+    </el-button>
   </div>
 </template>
 
@@ -23,23 +36,60 @@
    *
    * 桌面顶部(LayoutHeader 上方)+ 移动 MobileAppBar 下方共用本组件,与 MaintenanceBanner 同位置。
    */
-  import { onMounted, onUnmounted } from 'vue'
+  import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { TriangleAlert as WarningFilled } from '@lucide/vue'
+  import { TriangleAlert as WarningFilled, X } from '@lucide/vue'
   import { useAppStore } from '@/stores/app'
 
   const app = useAppStore()
   const { t } = useI18n({ useScope: 'global' })
+  const dismissed = ref(false)
+  const secondsLeft = ref(15)
+  const visible = computed(() => app.isDegraded && !dismissed.value)
 
   // 每 15s 清理过期源(TTL 60s,15s 间隔保证最长 75s 后隐藏 banner)
-  let timer: ReturnType<typeof setInterval> | null = null
+  let countdownTimer: ReturnType<typeof setInterval> | null = null
+  let pruneTimer: ReturnType<typeof setInterval> | null = null
+  function clearCountdown() {
+    if (countdownTimer) clearInterval(countdownTimer)
+    countdownTimer = null
+  }
+
+  function startCountdown() {
+    clearCountdown()
+    secondsLeft.value = 15
+    dismissed.value = false
+    countdownTimer = setInterval(() => {
+      if (secondsLeft.value <= 1) {
+        dismissed.value = true
+        clearCountdown()
+      } else {
+        secondsLeft.value -= 1
+      }
+    }, 1000)
+  }
+
+  watch(
+    () => app.isDegraded,
+    (degraded) => {
+      if (degraded) startCountdown()
+      else {
+        clearCountdown()
+        secondsLeft.value = 15
+        dismissed.value = false
+      }
+    },
+    { immediate: true },
+  )
+
   onMounted(() => {
-    timer = setInterval(() => {
+    pruneTimer = setInterval(() => {
       app.pruneDegradationSources()
     }, 15_000)
   })
   onUnmounted(() => {
-    if (timer) clearInterval(timer)
+    clearCountdown()
+    if (pruneTimer) clearInterval(pruneTimer)
   })
 </script>
 
@@ -64,6 +114,15 @@
     flex: 1;
     min-width: 0;
     overflow-wrap: anywhere;
+  }
+  .degradation-banner__countdown {
+    margin-left: 8px;
+    color: var(--color-text-tertiary);
+    white-space: nowrap;
+  }
+  .degradation-banner__close {
+    flex: none;
+    color: var(--color-text-secondary);
   }
   .degradation-banner__msg {
     margin-left: 6px;

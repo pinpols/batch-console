@@ -487,6 +487,7 @@
         /></el-form-item>
         <el-form-item :label="t('fileTemplateList.fieldConfigJson')">
           <JsonTextareaInput v-model="channelForm.configJson" :rows="5" expect="object" />
+          <div class="field-hint">{{ t('fileTemplateList.configJsonSecretHint') }}</div>
         </el-form-item>
       </el-form>
       <template #footer>

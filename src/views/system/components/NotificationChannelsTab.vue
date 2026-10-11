@@ -170,6 +170,7 @@
             :rows="4"
             :placeholder="t('notificationChannelsTab.configPlaceholder')"
           />
+          <div class="field-hint">{{ t('notificationChannelsTab.configSecretHint') }}</div>
         </el-form-item>
         <el-form-item :label="t('notificationChannelsTab.fieldEnabled')" prop="enabled">
           <el-switch v-model="channelForm.enabled" />

@@ -1321,39 +1321,58 @@ a:focus-visible,
   font-weight: 500;
 }
 
-/* 页面级等待使用品牌图标；按钮内的原生 loading 保持紧凑。 */
-.el-loading-spinner .circular {
+/* 页面级等待由品牌圆环和图标组成；按钮内继续使用原生 loading。 */
+.el-loading-mask .el-loading-spinner .circular {
   display: none;
 }
 
-.el-loading-spinner:has(.circular)::before {
-  content: '';
-  display: block;
-  width: 40px;
-  height: 40px;
+.el-loading-mask .el-loading-spinner:has(.circular) {
+  position: relative;
+  width: 52px;
+  height: 52px;
   margin: 0 auto;
-  border-radius: var(--radius-content);
-  background: center / contain no-repeat url('/icons/icon-192-maskable.png');
-  animation: brand-loading-walk 1.15s ease-in-out infinite;
 }
 
-html.dark .el-loading-spinner:has(.circular)::before {
+.el-loading-mask .el-loading-spinner:has(.circular)::before {
+  content: '';
+  display: block;
+  position: absolute;
+  inset: 2px;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    var(--color-primary) 0deg,
+    color-mix(in srgb, var(--color-primary) 14%, transparent) 290deg,
+    transparent 360deg
+  );
+  mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px));
+  animation: brand-loading-spin 1s linear infinite;
+}
+
+.el-loading-mask .el-loading-spinner:has(.circular)::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 32px;
+  height: 32px;
+  border-radius: 25%;
+  background: center / contain no-repeat url('/icons/icon-192-maskable.png');
+  transform: translate(-50%, -50%);
+}
+
+html.dark .el-loading-mask .el-loading-spinner:has(.circular)::after {
   background-image: url('/icons/icon-192.png');
 }
 
-@keyframes brand-loading-walk {
-  0%,
-  100% {
-    transform: translateX(-10px) rotate(-2deg);
-  }
-
-  50% {
-    transform: translateX(10px) rotate(2deg);
+@keyframes brand-loading-spin {
+  to {
+    transform: rotate(360deg);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .el-loading-spinner:has(.circular)::before {
+  .el-loading-mask .el-loading-spinner:has(.circular)::before {
     animation: none;
   }
 }

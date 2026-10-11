@@ -9,6 +9,9 @@
       <el-button link type="warning" :icon="ArrowRight" @click="openAccount">
         {{ t('passwordNotice.action') }}
       </el-button>
+      <span class="password-notice__countdown">
+        {{ t('passwordNotice.autoClose', { seconds: secondsLeft }) }}
+      </span>
       <el-button
         text
         circle
@@ -22,7 +25,7 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, ref, watch } from 'vue'
+  import { computed, onUnmounted, ref, watch } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import { ArrowRight, KeyRound, X } from '@lucide/vue'
@@ -33,6 +36,8 @@
   const router = useRouter()
   const { t } = useI18n({ useScope: 'global' })
   const dismissed = ref(false)
+  const secondsLeft = ref(15)
+  let countdownTimer: ReturnType<typeof setInterval> | null = null
 
   const needsPasswordUpdate = computed(() => auth.userInfo?.mustChangePassword === true)
   const expiringDays = computed(() => auth.userInfo?.passwordExpiringIn)
@@ -55,11 +60,29 @@
   )
 
   watch(
-    () => auth.userInfo?.username,
-    () => {
+    () => [auth.userInfo?.username, needsPasswordUpdate.value || isExpiringSoon.value],
+    ([, eligible]) => {
+      if (countdownTimer) clearInterval(countdownTimer)
+      countdownTimer = null
       dismissed.value = false
+      secondsLeft.value = 15
+      if (!eligible) return
+      countdownTimer = setInterval(() => {
+        if (secondsLeft.value <= 1) {
+          dismissed.value = true
+          if (countdownTimer) clearInterval(countdownTimer)
+          countdownTimer = null
+        } else {
+          secondsLeft.value -= 1
+        }
+      }, 1000)
     },
+    { immediate: true },
   )
+
+  onUnmounted(() => {
+    if (countdownTimer) clearInterval(countdownTimer)
+  })
 
   function openAccount() {
     const query: Record<string, string> = {}
@@ -110,6 +133,12 @@
     align-items: center;
     gap: 2px;
     flex: none;
+  }
+
+  .password-notice__countdown {
+    color: var(--color-text-tertiary);
+    font-size: 11px;
+    white-space: nowrap;
   }
 
   .password-notice__actions :deep(.el-button + .el-button) {

@@ -25,13 +25,19 @@ async function openConfigSyncTab(page: Page) {
 }
 
 async function exportConfigFromUi(page: Page) {
+  const downloadEvent = page.waitForEvent('download', { timeout: 15_000 })
   const apiCall = page.waitForResponse(
     (r) => r.url().includes(CONFIG_SYNC_EXPORT) && r.request().method() === 'POST',
     { timeout: 15_000 },
   )
-  await page.getByRole('button', { name: /导出为 JSON 文件|Download JSON/ }).first().click()
+  await page
+    .getByRole('button', { name: /导出为 JSON 文件|Download JSON/ })
+    .first()
+    .click()
   const resp = await apiCall
+  const download = await downloadEvent
   expect(resp.status(), `config sync export status=${resp.status()}`).toBeLessThan(400)
+  expect(download.suggestedFilename()).toMatch(/^config-sync-.+\.json$/)
   await expect(page.locator('.el-message--success')).toContainText(/导出完成|Export/, {
     timeout: 8_000,
   })
@@ -41,7 +47,10 @@ async function exportConfigFromUi(page: Page) {
 }
 
 async function copyExportToImportPayload(page: Page) {
-  await page.getByRole('button', { name: /复制到目标侧|Copy to target/ }).first().click()
+  await page
+    .getByRole('button', { name: /复制到目标侧|Copy to target/ })
+    .first()
+    .click()
   const payload = page.locator('.json-textarea-input textarea, .el-textarea__inner').first()
   await expect(payload).not.toHaveValue('', { timeout: 3_000 })
   return payload
@@ -52,7 +61,10 @@ async function previewImportPayload(page: Page) {
     (r) => r.url().includes(CONFIG_SYNC_IMPORT) && r.request().method() === 'POST',
     { timeout: 15_000 },
   )
-  await page.getByRole('button', { name: /预览差异|Preview diff/ }).first().click()
+  await page
+    .getByRole('button', { name: /预览差异|Preview diff/ })
+    .first()
+    .click()
   const resp = await apiCall
   expect(resp.status(), `config sync preview status=${resp.status()}`).toBeLessThan(400)
   await expect(page.getByText(/差异预览|Diff preview/)).toBeVisible({ timeout: 8_000 })
@@ -64,10 +76,16 @@ async function importPayloadFromUi(page: Page) {
     (r) => r.url().includes(CONFIG_SYNC_IMPORT) && r.request().method() === 'POST',
     { timeout: 20_000 },
   )
-  await page.getByRole('button', { name: /应用到目标|Apply to target/ }).first().click()
+  await page
+    .getByRole('button', { name: /应用到目标|Apply to target/ })
+    .first()
+    .click()
   const box = page.locator('.el-message-box').first()
   await expect(box).toBeVisible({ timeout: 5_000 })
-  await box.getByRole('button', { name: /确认应用|Confirm apply|Confirm/ }).first().click()
+  await box
+    .getByRole('button', { name: /确认应用|Confirm apply|Confirm/ })
+    .first()
+    .click()
   const resp = await apiCall
   expect(resp.status(), `config sync import status=${resp.status()}`).toBeLessThan(400)
   await expect(page.locator('.el-message--success').last()).toContainText(/已应用到目标|Applied/, {
@@ -89,9 +107,9 @@ test.describe('配置管理 — 变更日志', () => {
   test('刷新后表格或空态展示', async ({ page }) => {
     await page.getByRole('button', { name: '刷新' }).click()
     // DataState 在空数据时不渲染 <el-table>(只渲染 EmptyState),所以不能强制 columnheader
-    await expect(
-      page.locator('.el-table, .empty-state, .table-skeleton').first()
-    ).toBeAttached({ timeout: 6000 })
+    await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({
+      timeout: 6000,
+    })
   })
 
   test('有数据时分页控件可见，切换页码正常', async ({ page }) => {
@@ -102,9 +120,9 @@ test.describe('配置管理 — 变更日志', () => {
     if (!(await nextBtn.isDisabled())) {
       await nextBtn.click()
       // 翻页后仍能看到表格或空态
-      await expect(
-        page.locator('.el-table, .empty-state, .table-skeleton').first()
-      ).toBeAttached({ timeout: 6000 })
+      await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({
+        timeout: 6000,
+      })
     }
   })
 })
@@ -123,9 +141,9 @@ test.describe('配置管理 — Secrets', () => {
   test('刷新后表格或空态展示', async ({ page }) => {
     await page.getByRole('button', { name: '刷新' }).click()
     // DataState 三态:有数据 .el-table / 空 .empty-state / 加载 .table-skeleton 任意可见即通过
-    await expect(
-      page.locator('.el-table, .empty-state, .table-skeleton').first()
-    ).toBeAttached({ timeout: 6000 })
+    await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({
+      timeout: 6000,
+    })
   })
 
   test('详情：抽屉展示 Secret Key + 版本 + 原始响应', async ({ page }) => {
@@ -146,10 +164,15 @@ test.describe('配置管理 — Secrets', () => {
     await rotateBtn.click()
     await expect(page.locator('.el-message-box')).toBeVisible()
     // 真实确认轮转
-    await page.locator('.el-message-box').getByRole('button', { name: /^(确定|确认.*)$/ }).click()
+    await page
+      .locator('.el-message-box')
+      .getByRole('button', { name: /^(确定|确认.*)$/ })
+      .click()
     // success 或 error（后端有 secret 则成功，否则报错）均接受
     await expect(page.locator('.el-message').first()).toBeVisible({ timeout: 8000 })
-    await expect(page.getByRole('columnheader', { name: 'Secret Key' })).toBeVisible({ timeout: 6000 })
+    await expect(page.getByRole('columnheader', { name: 'Secret Key' })).toBeVisible({
+      timeout: 6000,
+    })
   })
 })
 
@@ -166,7 +189,11 @@ test.describe('配置管理 — 配置导出', () => {
   })
 
   test('导出指定类型 JOB → 结果包含 JOB 相关内容', async ({ page }) => {
-    await page.locator('.el-checkbox').filter({ hasText: /作业|Job/ }).first().click()
+    await page
+      .locator('.el-checkbox')
+      .filter({ hasText: /作业|Job/ })
+      .first()
+      .click()
     const exported = await exportConfigFromUi(page)
     expect(JSON.stringify(exported), 'exported JOB config payload').toMatch(/job|JOB|作业/i)
   })
@@ -181,8 +208,16 @@ test.describe('配置管理 — 配置导出', () => {
     await page.reload({ waitUntil: 'domcontentloaded' })
     const job = page.getByRole('checkbox', { name: /作业|Job/ }).first()
     const workflow = page.getByRole('checkbox', { name: /工作流|Workflow/ }).first()
-    await page.locator('.el-checkbox').filter({ hasText: /作业|Job/ }).first().click()
-    await page.locator('.el-checkbox').filter({ hasText: /工作流|Workflow/ }).first().click()
+    await page
+      .locator('.el-checkbox')
+      .filter({ hasText: /作业|Job/ })
+      .first()
+      .click()
+    await page
+      .locator('.el-checkbox')
+      .filter({ hasText: /工作流|Workflow/ })
+      .first()
+      .click()
 
     await expect(job).toBeChecked()
     await expect(workflow).toBeChecked()
@@ -199,24 +234,30 @@ test.describe('配置管理 — 配置导入前端校验', () => {
   })
 
   test('默认 Payload 模板为 JSON 对象 → 预览按钮可用', async ({ page }) => {
-    await expect(page.locator('.json-textarea-input textarea, .el-textarea__inner').first()).toHaveValue(
-      '{}',
-      { timeout: 4_000 },
-    )
+    await expect(
+      page.locator('.json-textarea-input textarea, .el-textarea__inner').first(),
+    ).toHaveValue('{}', { timeout: 4_000 })
     await expect(page.getByRole('button', { name: /预览差异|Preview diff/ }).first()).toBeEnabled()
   })
 
   test('默认 Payload 模板为 JSON 对象 → 导入按钮可用', async ({ page }) => {
-    await expect(page.locator('.json-textarea-input textarea, .el-textarea__inner').first()).toHaveValue(
-      '{}',
-      { timeout: 4_000 },
-    )
-    await expect(page.getByRole('button', { name: /应用到目标|Apply to target/ }).first()).toBeEnabled()
+    await expect(
+      page.locator('.json-textarea-input textarea, .el-textarea__inner').first(),
+    ).toHaveValue('{}', { timeout: 4_000 })
+    await expect(
+      page.getByRole('button', { name: /应用到目标|Apply to target/ }).first(),
+    ).toBeEnabled()
   })
 
   test('非法 JSON → 点预览 → 错误 toast', async ({ page }) => {
-    await page.locator('.json-textarea-input textarea, .el-textarea__inner').first().fill('not-json!!!')
-    await page.getByRole('button', { name: /预览差异|Preview diff/ }).first().click()
+    await page
+      .locator('.json-textarea-input textarea, .el-textarea__inner')
+      .first()
+      .fill('not-json!!!')
+    await page
+      .getByRole('button', { name: /预览差异|Preview diff/ })
+      .first()
+      .click()
     await expect(page.locator('.el-message--error')).toContainText(/JSON 格式不合法|JSON/, {
       timeout: 4_000,
     })
@@ -250,9 +291,9 @@ test.describe('配置管理 — 同步日志', () => {
 
   test('刷新后表格或空态展示', async ({ page }) => {
     await page.getByRole('button', { name: '刷新' }).click()
-    await expect(
-      page.locator('.el-table, .empty-state, .table-skeleton').first()
-    ).toBeAttached({ timeout: 6000 })
+    await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({
+      timeout: 6000,
+    })
   })
 
   test('同步日志在导入后可刷新看到同步记录', async ({ page }) => {
@@ -268,7 +309,10 @@ test.describe('配置管理 — 同步日志', () => {
       { timeout: 15_000 },
     )
     await page.getByRole('tab', { name: '同步日志' }).first().click()
-    await page.getByRole('button', { name: '刷新' }).click().catch(() => undefined)
+    await page
+      .getByRole('button', { name: '刷新' })
+      .click()
+      .catch(() => undefined)
     const resp = await logsCall
     expect(resp.status(), `config sync logs status=${resp.status()}`).toBeLessThan(400)
     await expect(page.getByRole('columnheader', { name: /摘要|Summary/ })).toBeVisible({

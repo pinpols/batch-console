@@ -35,11 +35,16 @@
               @dragleave.prevent="onZoneDragLeave"
               @drop.prevent="onZoneDrop"
             >
-              <el-icon class="upload-zone__icon" :size="36"><FolderOpened /></el-icon>
-              <p class="upload-zone__title">{{ t('tenantPackageImportWizard.uploadTitle') }}</p>
-              <p class="upload-zone__desc">{{ t('tenantPackageImportWizard.uploadDesc') }}</p>
               <div class="upload-zone__toolbar">
                 <div class="upload-zone__toolbar-right">
+                  <div class="upload-zone__intro">
+                    <p class="upload-zone__title">
+                      {{ t('tenantPackageImportWizard.uploadTitle') }}
+                    </p>
+                    <p class="upload-zone__desc">
+                      {{ t('tenantPackageImportWizard.uploadDesc') }}
+                    </p>
+                  </div>
                   <el-upload
                     drag
                     :auto-upload="false"
@@ -76,61 +81,31 @@
                   </div>
                 </div>
                 <div class="upload-zone__toolbar-left">
-                  <el-button
-                    link
-                    type="primary"
-                    :icon="Download"
+                  <TenantPackageScenarioSelector
+                    v-model="selectedScenarios"
                     :loading="tplLoading"
-                    @click="doDownloadTemplate"
-                  >
-                    {{ t('tenantPackageImportWizard.btnDownloadTemplate') }}
-                  </el-button>
-                  <div class="sample-template-control">
-                    <el-select
-                      v-model="selectedSampleScenarios"
-                      size="small"
-                      multiple
-                      collapse-tags
-                      collapse-tags-tooltip
-                      :max-collapse-tags="1"
-                      :placeholder="t('tenantPackageImportWizard.scenarioPlaceholder')"
-                    >
-                      <el-option
-                        v-for="option in scenarioOptions"
-                        :key="option.value"
-                        :label="option.label"
-                        :value="option.value"
-                      />
-                    </el-select>
+                    @download="doDownloadTemplate"
+                  />
+                  <div class="upload-zone__secondary-actions">
                     <el-button
                       link
                       type="primary"
                       :icon="Download"
-                      :loading="sampleTplLoading"
-                      class="sample-template-control__button"
-                      @click="doDownloadSampleTemplate"
+                      :loading="exportLoading"
+                      @click="doExport"
                     >
-                      {{ t('tenantPackageImportWizard.btnDownloadSampleTemplate') }}
+                      {{ t('tenantPackageImportWizard.btnExportCurrent') }}
+                    </el-button>
+                    <el-button
+                      link
+                      type="primary"
+                      :icon="BookOpen"
+                      :loading="guideLoading"
+                      @click="openGuideDrawer"
+                    >
+                      {{ t('tenantPackageImportWizard.btnFieldGuide') }}
                     </el-button>
                   </div>
-                  <el-button
-                    link
-                    type="primary"
-                    :icon="Download"
-                    :loading="exportLoading"
-                    @click="doExport"
-                  >
-                    {{ t('tenantPackageImportWizard.btnExportCurrent') }}
-                  </el-button>
-                  <el-button
-                    link
-                    type="primary"
-                    :icon="BookOpen"
-                    :loading="guideLoading"
-                    @click="openGuideDrawer"
-                  >
-                    {{ t('tenantPackageImportWizard.btnFieldGuide') }}
-                  </el-button>
                 </div>
               </div>
             </div>
@@ -524,10 +499,10 @@
 
               <div class="apply-zone__actions">
                 <el-button
-                  v-if="!applyResult"
+                  v-if="!applyResult && canApplyPackage"
                   type="danger"
                   size="large"
-                  :disabled="!uploadToken || hasBlockingIssues || applyLoading"
+                  :disabled="!uploadToken || !previewToken || hasBlockingIssues || applyLoading"
                   :loading="applyLoading"
                   @click="doApply"
                 >
@@ -716,8 +691,6 @@
     ArrowRight,
     BookOpen,
     FileText as Document,
-    Download,
-    FolderOpen as FolderOpened,
     RefreshCw as Refresh,
     Search,
     Upload,
@@ -730,7 +703,6 @@
   import { confirmDanger } from '@/composables/useDangerConfirm'
   import {
     tenantPackageDownloadTemplate,
-    tenantPackageDownloadSampleTemplate,
     tenantPackageExport,
     tenantPackageUpload,
     tenantPackagePreview,
@@ -738,6 +710,7 @@
     tenantPackageDownloadPreviewWorkbook,
     tenantPackagePatchRow,
     tenantPackageApply,
+    refreshTenantPackagePreviewOnConflict,
     type TenantPackageApplyResponse,
     type TenantPackageColumnGuide,
     type TenantPackageSampleScenario,
@@ -748,9 +721,21 @@
     type SheetStats,
     type PreviewErrorRow,
   } from '@/composables/useImportWizard'
+  import { guideMatchesScenario } from './tenantPackageGuide'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
+  import { useAuthStore } from '@/stores/auth'
+  import TenantPackageScenarioSelector from './TenantPackageScenarioSelector.vue'
+
+  const auth = useAuthStore()
+  const canApplyPackage = computed(
+    () => auth.hasPermission('ROLE_ADMIN') || auth.hasPermission('ROLE_TENANT_ADMIN'),
+  )
+  const previewToken = computed(() => {
+    const value = previewRaw.value?.previewToken
+    return typeof value === 'string' ? value : ''
+  })
 
   const {
     step,
@@ -781,18 +766,31 @@
   const guideSheets = shallowRef<TenantPackageSheetGuide[]>([])
   const guideSheetName = ref('')
   const guideKeyword = ref('')
-  const sampleTplLoading = ref(false)
-  const selectedSampleScenarios = ref<TenantPackageSampleScenario[]>(['ALL'])
+  const selectedScenarios = ref<TenantPackageSampleScenario[]>([])
   const selectedGuideScenario = ref<TenantPackageSampleScenario>('ALL')
   const scenarioOptions = computed<Array<{ label: string; value: TenantPackageSampleScenario }>>(
     () => [
       { label: t('tenantPackageImportWizard.scenarioAll'), value: 'ALL' },
-      { label: 'IMPORT', value: 'IMPORT' },
-      { label: 'EXPORT', value: 'EXPORT' },
-      { label: 'PROCESS', value: 'PROCESS' },
-      { label: 'DISPATCH', value: 'DISPATCH' },
-      { label: 'ATOMIC', value: 'ATOMIC' },
-      { label: 'WORKFLOW', value: 'WORKFLOW' },
+      { label: t('tenantPackageImportWizard.scenarioImportDelimited'), value: 'IMPORT_DELIMITED' },
+      {
+        label: t('tenantPackageImportWizard.scenarioImportFixedWidth'),
+        value: 'IMPORT_FIXED_WIDTH',
+      },
+      { label: t('tenantPackageImportWizard.scenarioImportExcel'), value: 'IMPORT_EXCEL' },
+      { label: t('tenantPackageImportWizard.scenarioImportXml'), value: 'IMPORT_XML' },
+      { label: t('tenantPackageImportWizard.scenarioImportJson'), value: 'IMPORT_JSON' },
+      { label: t('tenantPackageImportWizard.scenarioExportDelimited'), value: 'EXPORT_DELIMITED' },
+      {
+        label: t('tenantPackageImportWizard.scenarioExportFixedWidth'),
+        value: 'EXPORT_FIXED_WIDTH',
+      },
+      { label: t('tenantPackageImportWizard.scenarioExportExcel'), value: 'EXPORT_EXCEL' },
+      { label: t('tenantPackageImportWizard.scenarioExportJson'), value: 'EXPORT_JSON' },
+      { label: t('tenantPackageImportWizard.scenarioProcess'), value: 'PROCESS' },
+      { label: t('tenantPackageImportWizard.scenarioDispatch'), value: 'DISPATCH' },
+      { label: t('tenantPackageImportWizard.scenarioAtomic'), value: 'ATOMIC' },
+      { label: t('tenantPackageImportWizard.scenarioWorkflow'), value: 'WORKFLOW' },
+      { label: t('tenantPackageImportWizard.scenarioSchedule'), value: 'SCHEDULE' },
     ],
   )
   const guideLevelFilter = ref<'all' | 'required' | 'common' | 'advanced'>('all')
@@ -864,9 +862,7 @@
     sheet: TenantPackageSheetGuide | null,
     scenario: TenantPackageSampleScenario,
   ): boolean {
-    if (scenario === 'ALL') return true
-    const text = `${sheet?.appliesTo ?? ''} ${column.appliesTo ?? ''}`.toUpperCase()
-    return text.includes('ALL') || text.includes(scenario)
+    return guideMatchesScenario([sheet?.appliesTo ?? '', column.appliesTo ?? ''], scenario)
   }
 
   function rowKeyOf(row: PreviewErrorRow): string {
@@ -893,6 +889,7 @@
     patchSaving.value = key
     try {
       const resp = await tenantPackagePatchRow(uploadToken.value, {
+        previewToken: previewToken.value,
         sheetName: row.sheetName,
         rowNo: row.rowNo,
         values: draftFor(row),
@@ -1074,28 +1071,16 @@
   }
 
   async function doDownloadTemplate() {
+    if (selectedScenarios.value.length === 0) return
     tplLoading.value = true
     try {
-      const blob = await tenantPackageDownloadTemplate()
-      triggerBlobDownload(blob, 'tenant-package-template.xlsx')
+      const scenarios = selectedScenarios.value
+      const blob = await tenantPackageDownloadTemplate(scenarios)
+      const scenarioName = scenarios.join('-').toLowerCase()
+      triggerBlobDownload(blob, `tenant-package-${scenarioName}.xlsx`)
       ElMessage.success(t('tenantPackageImportWizard.templateDownloadedToast'))
     } finally {
       tplLoading.value = false
-    }
-  }
-
-  async function doDownloadSampleTemplate() {
-    sampleTplLoading.value = true
-    try {
-      const scenarios = selectedSampleScenarios.value.length
-        ? selectedSampleScenarios.value
-        : ['ALL']
-      const blob = await tenantPackageDownloadSampleTemplate(scenarios)
-      const scenarioName = scenarios.join('-').toLowerCase()
-      triggerBlobDownload(blob, `tenant-package-sample-${scenarioName}.xlsx`)
-      ElMessage.success(t('tenantPackageImportWizard.sampleTemplateDownloadedToast'))
-    } finally {
-      sampleTplLoading.value = false
     }
   }
 
@@ -1151,16 +1136,13 @@
   }
 
   async function doApply() {
-    if (!uploadToken.value) return
+    if (!uploadToken.value || !previewToken.value) return
     if (hasBlockingIssues.value) {
       ElMessage.error(t('tenantPackageImportWizard.applyBlockedTitle'))
       return
     }
-    // 重试场景:清掉上一次失败的 alert,再触发 confirm
+    // 每次应用尝试都重新确认，避免重试时绕过用户确认。
     applyError.value = null
-    // confirm 仅首次显示;retry 时跳过(用户已显式点 retry)
-    const isRetry = applyResult.value === null && applyError.value === null && false
-    void isRetry // 占位:目前无 retry-without-confirm 需求,但保留语义钩子
     try {
       const breakdown = sheetStats.value
         .filter((s: SheetStats) => s.valid > 0)
@@ -1186,17 +1168,25 @@
     applyLoading.value = true
     applyError.value = null
     try {
-      const res = await tenantPackageApply(uploadToken.value, {})
+      const res = await tenantPackageApply(uploadToken.value, {
+        previewToken: previewToken.value,
+      })
       // 后端 apply 返每实体 insert/update 拆分,放进 applyResult 让 I10 面板展示完整 breakdown
       applyResult.value = res
       ElMessage.success(t('tenantPackageImportWizard.appliedToast'))
     } catch (err: unknown) {
-      // I11 失败展示:把后端 message / stack 完整保留供用户排障
+      const recovery = await refreshTenantPackagePreviewOnConflict(err, doPreview)
+      if (recovery !== 'not-conflict') {
+        step.value = 1
+        ElMessage[recovery === 'refreshed' ? 'warning' : 'error'](
+          t(
+            `tenantPackageImportWizard.conflictPreview${recovery === 'refreshed' ? 'Refreshed' : 'Failed'}`,
+          ),
+        )
+        return
+      }
       const e = err as { response?: { data?: { message?: string } }; message?: string } | null
-      applyError.value =
-        e?.response?.data?.message ||
-        e?.message ||
-        (err instanceof Error ? err.message : String(err))
+      applyError.value = e?.response?.data?.message || e?.message || String(err)
     } finally {
       applyLoading.value = false
     }
@@ -1210,44 +1200,22 @@
     overflow-x: hidden;
   }
 
-  /* 大屏适配:仅本页作用域(.tenant-pkg-page),让 SectionCard 撑满可用高度,
-     使内部向导能填满纵向空间,而非矮卡片顶在最上、下方大片空白。其它页不受影响。 */
-  .tenant-pkg-page :deep(.section-card) {
-    display: flex;
-    flex: 1 1 auto;
-    flex-direction: column;
-    min-height: 0;
-    min-width: 0;
-  }
-
-  .tenant-pkg-page :deep(.section-card > .el-card__body) {
-    flex: 1 1 auto;
-    min-height: 0;
-    min-width: 0;
-    overflow: hidden;
-  }
-
   .excel-wizard {
     display: flex;
     flex-direction: column;
     gap: 0;
-    margin: 0;
+    margin: 0 auto;
     width: 100%;
-    /* 撑满可用高度;min-height 仅作下限(撑不满时不塌陷,零回归) */
-    flex: 1 1 auto;
-    min-height: 360px;
+    max-width: 1480px;
+    flex: 0 1 auto;
+    min-height: auto;
     min-width: 0;
     box-sizing: border-box;
   }
 
   .excel-wizard__steps-shell {
-    padding: 8px 10px 10px;
+    padding: 4px 0 12px;
     margin-bottom: 10px;
-    background: linear-gradient(
-      180deg,
-      var(--el-fill-color-lighter, rgb(0 0 0 / 4%)) 0%,
-      transparent 100%
-    );
     border-bottom: 1px solid var(--color-border-light);
   }
 
@@ -1270,11 +1238,10 @@
   }
 
   .excel-wizard__body {
-    display: flex;
-    flex-direction: column;
-    flex: 1 1 auto;
+    display: block;
+    flex: 0 1 auto;
     width: 100%;
-    min-height: 180px;
+    min-height: 0;
     min-width: 0;
   }
 
@@ -1295,27 +1262,16 @@
     align-items: stretch;
   }
 
-  /* 内容少的步骤(上传,非 --wide):在撑满的 body 里垂直居中,大屏下不顶在最上方 */
-  .excel-wizard__panel:not(.excel-wizard__panel--wide) {
-    margin-block: auto;
-  }
-
   .upload-zone {
     width: 100%;
     min-width: 0;
-    padding: 16px 12px;
-    text-align: center;
-    border: 1px dashed var(--color-border);
-    border-radius: var(--radius-card-lg);
-    background: var(--color-bg-card);
-    box-shadow: var(--shadow-card);
-    transition:
-      border-color 0.18s,
-      background 0.18s;
+    padding: 4px 0 0;
+    text-align: left;
   }
   .upload-zone--dragover {
-    border-color: var(--color-primary);
-    background: color-mix(in srgb, var(--color-primary) 6%, transparent);
+    outline: 2px solid color-mix(in srgb, var(--color-primary) 40%, transparent);
+    outline-offset: 6px;
+    border-radius: var(--radius-content);
   }
 
   .upload-zone__icon {
@@ -1324,29 +1280,29 @@
   }
 
   .upload-zone__title {
-    margin: 8px 0 4px;
-    font-size: 16px;
+    margin: 0 0 5px;
+    font-size: 14px;
     font-weight: 600;
     color: var(--color-text-primary);
     line-height: 1.3;
   }
 
   .upload-zone__desc {
-    margin: 0 auto;
-    max-width: 520px;
-    font-size: 13px;
-    color: var(--color-text-secondary);
-    line-height: 1.55;
+    margin: 0;
+    max-width: 680px;
+    font-size: 12px;
+    color: var(--color-text-tertiary);
+    line-height: 1.5;
   }
 
   .upload-zone__toolbar {
     display: grid;
-    grid-template-columns: minmax(360px, 1fr) minmax(230px, 300px);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     align-items: stretch;
-    gap: var(--space-md);
-    margin: var(--card-inner-padding) auto 0;
-    padding-top: var(--space-xs);
-    max-width: min(920px, 100%);
+    gap: 24px;
+    margin: 18px 0 0;
+    padding-top: 0;
+    max-width: 100%;
     width: 100%;
     min-width: 0;
   }
@@ -1354,96 +1310,50 @@
   .upload-zone__toolbar-left {
     display: flex;
     flex-direction: column;
-    justify-content: stretch;
-    gap: 8px;
-    padding: 12px;
-    border: 1px solid color-mix(in srgb, var(--color-border-light) 72%, var(--color-border) 28%);
-    border-radius: var(--radius-content);
-    background: color-mix(in srgb, var(--color-bg-card) 82%, var(--color-bg-canvas) 18%);
+    justify-content: flex-start;
+    gap: 12px;
+    padding: 0 0 0 24px;
+    border: 0;
+    border-left: 1px solid var(--color-border-light);
+    border-radius: 0;
+    background: transparent;
     color: var(--color-text-tertiary);
     min-width: 0;
-    min-height: 216px;
+    min-height: 260px;
   }
 
   .upload-zone__toolbar-left :deep(.el-button.is-link) {
     border-radius: var(--radius-input);
-    padding: 6px 12px;
-    background: var(--button-primary-soft-bg);
-    border: 1px solid var(--button-primary-soft-border);
-    box-shadow: 0 8px 18px rgb(15 23 42 / 8%);
+    padding: 6px 10px;
+    background: transparent;
+    border: 1px solid var(--color-border);
+    box-shadow: none;
     transition:
-      transform 0.16s ease,
-      box-shadow 0.18s ease,
-      background 0.18s ease,
-      border-color 0.18s ease;
+      background 0.16s ease,
+      border-color 0.16s ease;
   }
 
   .upload-zone__toolbar-left :deep(.el-button) {
     justify-content: flex-start;
-    width: 100%;
-    min-height: 34px;
+    width: auto;
+    min-height: 32px;
     margin-left: 0;
   }
 
-  .sample-template-control {
-    display: grid;
-    grid-template-columns: 112px minmax(0, 1fr);
-    gap: 8px;
-    align-items: center;
-    width: 100%;
-    min-width: 0;
-    padding: 2px;
-    border: 1px solid var(--color-border-light);
-    border-radius: var(--radius-input);
-    background: color-mix(in srgb, var(--color-bg-card) 88%, var(--color-bg-page) 12%);
-  }
-
-  .sample-template-control :deep(.el-select) {
-    width: 100%;
-  }
-
-  .sample-template-control :deep(.el-select__wrapper) {
-    min-height: 30px;
-    border-radius: calc(var(--radius-input) - 2px);
-    box-shadow: none;
-    background: var(--color-bg-card);
-  }
-
-  .sample-template-control :deep(.el-button.sample-template-control__button) {
-    justify-content: center;
-    width: 100%;
-    min-height: 30px;
-    padding: 0 10px;
-    border: none;
-    border-radius: calc(var(--radius-input) - 2px);
-    background: transparent;
-    box-shadow: none;
-    font-weight: 600;
-  }
-
-  .sample-template-control :deep(.el-button.sample-template-control__button:hover) {
-    transform: none;
-    background: color-mix(in srgb, var(--color-primary) 8%, transparent);
-    border-color: transparent;
-    box-shadow: none;
-  }
-
-  .sample-template-control :deep(.el-button.sample-template-control__button span) {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+  .upload-zone__secondary-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 12px;
+    padding-top: 4px;
   }
 
   .upload-zone__toolbar-left :deep(.el-button.is-link:hover) {
-    transform: translateY(-1px);
-    background: var(--button-primary-soft-bg-hover);
-    border-color: var(--button-primary-soft-text);
-    box-shadow: 0 12px 26px rgb(15 23 42 / 12%);
+    background: var(--el-fill-color-light);
+    border-color: var(--color-primary);
   }
 
   .upload-zone__toolbar-left :deep(.el-button.is-link:active) {
-    transform: translateY(0);
-    box-shadow: 0 10px 20px rgb(15 23 42 / 10%);
+    background: var(--el-fill-color);
   }
 
   .upload-zone__toolbar-dot {
@@ -1452,26 +1362,28 @@
 
   .upload-zone__toolbar-right {
     display: grid;
-    grid-template-rows: minmax(0, 1fr) auto auto;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto 220px auto auto;
+    align-content: start;
     align-items: stretch;
     gap: 10px;
     justify-content: stretch;
     min-width: 0;
-    min-height: 216px;
-    padding: 12px;
-    border: 1px solid color-mix(in srgb, var(--color-border-light) 72%, var(--color-border) 28%);
-    border-radius: var(--radius-content);
-    background: color-mix(in srgb, var(--color-bg-card) 82%, var(--color-bg-canvas) 18%);
+    min-height: 260px;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
   }
 
   /* drag 模式 dropzone */
   .upload-zone__dropzone :deep(.el-upload-dragger) {
-    min-height: 128px;
+    min-height: 220px;
     height: 100%;
-    padding: 18px 28px;
+    padding: 16px;
     min-width: 0;
     border-radius: 8px;
-    background: var(--color-bg-page);
+    background: color-mix(in srgb, var(--color-primary) 3%, var(--color-bg-card));
     border: 1px dashed var(--color-border-light);
     display: flex;
     flex-direction: column;
@@ -1507,63 +1419,50 @@
 
   .upload-zone__ghost-btn,
   .upload-zone__primary-btn {
-    min-height: 44px;
+    min-height: 38px;
     border-radius: var(--radius-input);
     font-weight: 650;
     padding: 0 18px;
-    width: 100%;
+    width: auto;
+    min-width: 180px;
+    justify-self: start;
   }
 
   .upload-zone__ghost-btn {
-    border-color: var(--button-primary-soft-border);
-    background: var(--button-primary-soft-bg);
-    box-shadow: 0 8px 18px rgb(15 23 42 / 10%);
+    border-color: var(--color-border);
+    background: var(--color-bg-card);
+    box-shadow: none;
     transition:
-      transform 0.18s ease,
-      box-shadow 0.18s ease,
-      border-color 0.18s ease,
-      background 0.18s ease;
+      border-color 0.16s ease,
+      background 0.16s ease;
   }
 
   .upload-zone__ghost-btn:hover {
-    transform: translateY(-1px);
-    border-color: var(--button-primary-soft-text);
-    background: var(--button-primary-soft-bg-hover);
-    box-shadow: 0 12px 26px rgb(15 23 42 / 14%);
+    border-color: var(--color-primary);
+    background: var(--el-fill-color-light);
   }
 
   .upload-zone__ghost-btn:active {
-    transform: translateY(0);
+    background: var(--el-fill-color);
   }
 
   .upload-zone__primary-btn {
-    border: none;
+    border: 1px solid var(--button-primary-bg);
     color: var(--button-primary-text);
-    background: linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--button-primary-bg) 88%, #ffffff 12%) 0%,
-      var(--button-primary-bg) 100%
-    );
-    box-shadow: 0 12px 30px color-mix(in srgb, var(--button-primary-bg) 20%, transparent);
+    background: var(--button-primary-bg);
+    box-shadow: none;
     transition:
-      transform 0.18s ease,
-      box-shadow 0.18s ease,
-      filter 0.18s ease;
+      background 0.16s ease,
+      border-color 0.16s ease;
   }
 
   .upload-zone__primary-btn:hover {
-    transform: translateY(-1px);
-    background: linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--button-primary-bg-hover) 88%, #ffffff 12%) 0%,
-      var(--button-primary-bg-hover) 100%
-    );
-    filter: saturate(1.03);
-    box-shadow: 0 16px 40px color-mix(in srgb, var(--button-primary-bg) 24%, transparent);
+    border-color: var(--button-primary-bg-hover);
+    background: var(--button-primary-bg-hover);
   }
 
   .upload-zone__primary-btn:active {
-    transform: translateY(0);
+    background: var(--button-primary-bg-hover);
   }
 
   .upload-zone__primary-btn:disabled,
@@ -1648,13 +1547,18 @@
 
   @media (max-width: 960px) {
     .upload-zone__toolbar {
-      grid-template-columns: 1fr;
-      max-width: 620px;
-      gap: var(--space-sm);
+      grid-template-columns: minmax(0, 1fr);
     }
 
-    .upload-zone__toolbar-right {
-      grid-template-columns: 1fr;
+    .upload-zone__toolbar-left {
+      min-height: 0;
+      padding: 16px 0 0;
+      border-left: 0;
+      border-top: 1px solid var(--color-border-light);
+    }
+
+    .upload-zone__desc {
+      max-width: 100%;
     }
   }
 

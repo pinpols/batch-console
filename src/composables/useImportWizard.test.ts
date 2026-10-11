@@ -47,6 +47,17 @@ describe('useImportWizard — preview 衍生数据', () => {
     expect(w.previewStats.value).toMatchObject({ insert: 7, update: 3 })
   })
 
+  it('预览存在问题明细时即使汇总无效数为零也阻止应用', () => {
+    const w = useImportWizard()
+    w.previewRaw.value = {
+      totalRows: 51,
+      validRows: 51,
+      invalidRows: 0,
+      issues: [{ sheetName: 'job_definition', rowNo: 4, message: '引用的模板不存在' }],
+    }
+    expect(w.hasBlockingIssues.value).toBe(true)
+  })
+
   it('total/valid 都缺失返回 null(没法判断"已预览")', () => {
     const w = useImportWizard()
     w.previewRaw.value = { issues: [] }

@@ -1,5 +1,8 @@
 import type { Page } from '@playwright/test'
+import fs from 'node:fs'
+import path from 'node:path'
 import { STORAGE_KEYS } from '../../src/constants/storageKeys'
+import { FRONTEND_ORIGIN } from './config'
 export { STORAGE_KEYS }
 
 type StorageValues = Partial<Record<keyof typeof STORAGE_KEYS, string>>
@@ -25,4 +28,24 @@ export async function readBrowserStorage(
 ): Promise<string | null> {
   const storageKey = STORAGE_KEYS[key]
   return page.evaluate((name) => localStorage.getItem(name), storageKey)
+}
+
+export async function seedStorageForConfiguredOrigin(page: Page): Promise<void> {
+  const statePath = path.resolve(__dirname, '../.auth/user.json')
+  const state = JSON.parse(fs.readFileSync(statePath, 'utf8')) as {
+    origins: Array<{
+      origin: string
+      localStorage: Array<{ name: string; value: string }>
+    }>
+  }
+  const storedOrigin = state.origins.find((origin) => origin.localStorage.length > 0)
+  if (!storedOrigin || storedOrigin.origin === FRONTEND_ORIGIN) return
+
+  await page.addInitScript((entries) => {
+    for (const entry of entries) {
+      if (localStorage.getItem(entry.name) === null) {
+        localStorage.setItem(entry.name, entry.value)
+      }
+    }
+  }, storedOrigin.localStorage)
 }

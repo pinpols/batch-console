@@ -27,8 +27,24 @@ test.describe('UI Flow 10: tenant copy UI', () => {
   })
 
   test('3. /config/tenant-package 批量导入页', async ({ page }) => {
+    await page.setViewportSize({ width: 2560, height: 1200 })
     await page.goto('/config/tenant-package')
     await page.waitForLoadState('networkidle', { timeout: 8000 }).catch(() => undefined)
     await expect(page.locator('.section-card, .el-card, .el-upload, .el-empty').first()).toBeAttached({ timeout: 10_000 })
+    const alignment = await page.locator('.excel-wizard').evaluate((wizard) => {
+      const body = wizard.closest('.section-card')?.querySelector('.el-card__body')
+      if (!body) return null
+      const wizardRect = wizard.getBoundingClientRect()
+      const bodyRect = body.getBoundingClientRect()
+      return {
+        centerOffset: Math.abs(
+          wizardRect.left + wizardRect.width / 2 - (bodyRect.left + bodyRect.width / 2),
+        ),
+        width: wizardRect.width,
+      }
+    })
+    expect(alignment).not.toBeNull()
+    expect(alignment!.centerOffset).toBeLessThan(2)
+    expect(alignment!.width).toBeLessThanOrEqual(1480)
   })
 })

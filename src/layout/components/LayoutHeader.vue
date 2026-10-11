@@ -76,7 +76,6 @@
           :open-alerts="badges.openAlerts"
           :critical-alerts="badges.criticalAlerts"
           :failed-jobs="badges.failedJobs"
-          :user-id="auth.userInfo?.userId"
         />
         <el-tooltip :content="localeToggleTooltip" placement="bottom">
           <button
@@ -1028,12 +1027,6 @@
   .header-icon :deep(.el-icon),
   .header-icon .el-icon {
     font-size: 15px;
-  }
-
-  /* Bell badge:el-badge 默认 offset 偏外,这里挤回 icon 右上角对齐其它 icon-button */
-  .layout-header__bell :deep(.el-badge__content) {
-    transform: translate(-2px, 2px) scale(0.85);
-    transform-origin: 100% 0%;
   }
 
   .locale-chip {

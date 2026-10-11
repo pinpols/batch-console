@@ -99,6 +99,7 @@ describe('jobApi', () => {
       pageNo: 1,
       pageSize: 15,
       scheduleType: 'CRON',
+      monitoringCategory: 'SCHEDULED',
       enabled: true,
     })
 
@@ -107,6 +108,7 @@ describe('jobApi', () => {
       pageNo: 1,
       pageSize: 15,
       scheduleType: 'CRON',
+      monitoringCategory: 'SCHEDULED',
       enabled: true,
     })
   })

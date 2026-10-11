@@ -3549,7 +3549,10 @@ export interface paths {
     }
     get?: never
     put?: never
-    /** Create job definition */
+    /**
+     * Create job definition
+     * @description 物理队列和 Worker 分组由平台运维分配。租户管理员创建作业时不得提交 queueCode 或 workerGroup； 作业运行路由由平台根据已批准的策略解析。
+     */
     post: operations['createJobDefinition']
     delete?: never
     options?: never
@@ -3566,7 +3569,10 @@ export interface paths {
     }
     /** Get job definition detail */
     get: operations['getJobDefinition']
-    /** Update job definition */
+    /**
+     * Update job definition
+     * @description 物理队列和 Worker 分组由平台运维管理。租户管理员更新时应省略 queueCode 和 workerGroup； 若提交且改变现有路由，服务端将拒绝请求。
+     */
     put: operations['updateJobDefinition']
     post?: never
     delete?: never
@@ -3585,7 +3591,10 @@ export interface paths {
     }
     get?: never
     put?: never
-    /** Clone job definition */
+    /**
+     * Clone job definition
+     * @description 租户管理员复制作业时，服务端会清除复制源的物理队列和 Worker 分组；运行调度时按现有租户启用队列和作业类型匹配路由。 物理资源定义由平台运维管理。
+     */
     post: operations['copyJobDefinition']
     delete?: never
     options?: never
@@ -3619,7 +3628,10 @@ export interface paths {
     }
     get?: never
     put?: never
-    /** Clone job definition with field overrides */
+    /**
+     * Clone job definition with field overrides
+     * @description 租户管理员不得通过覆盖字段指定 queueCode 或 workerGroup。服务端清除复制源路由，运行调度时按现有租户启用队列和作业类型匹配； 平台管理员可在授权范围内管理物理资源分配。
+     */
     post: operations['cloneJobDefinition']
     delete?: never
     options?: never
@@ -3704,7 +3716,10 @@ export interface paths {
     }
     get?: never
     put?: never
-    /** Create workflow definition (with nodes and edges) */
+    /**
+     * Create workflow definition (with nodes and edges)
+     * @description 租户管理员不能为工作流节点指定物理 Worker 分组；平台管理员负责路由分配。
+     */
     post: operations['createWorkflowDefinition']
     delete?: never
     options?: never
@@ -3721,7 +3736,10 @@ export interface paths {
     }
     /** Get workflow definition detail with DAG */
     get: operations['getWorkflowDefinition']
-    /** Update workflow definition */
+    /**
+     * Update workflow definition
+     * @description 租户管理员不能更改工作流节点的物理 Worker 分组；省略该字段时保留现有平台分配。
+     */
     put: operations['updateWorkflowDefinition']
     post?: never
     delete?: never
@@ -4854,7 +4872,10 @@ export interface paths {
     /** List pipeline definitions */
     get: operations['listPipelineDefinitions']
     put?: never
-    /** Create pipeline definition */
+    /**
+     * Create pipeline definition
+     * @description 租户管理员不能设置物理 Worker 分组；该路由由平台运维管理。
+     */
     post: operations['createPipelineDefinition']
     delete?: never
     options?: never
@@ -4871,7 +4892,10 @@ export interface paths {
     }
     /** Get pipeline definition detail with steps */
     get: operations['getPipelineDefinition']
-    /** Update pipeline definition */
+    /**
+     * Update pipeline definition
+     * @description 租户管理员不能修改平台管理的物理 Worker 分组。
+     */
     put: operations['updatePipelineDefinition']
     post?: never
     delete?: never
@@ -5342,7 +5366,7 @@ export interface paths {
     put?: never
     /**
      * Cross-tenant configuration copy
-     * @description Reads configuration from a source tenant and pushes it to one or more target tenants. Supports selective config types and dry-run mode. Response format is identical to tenant-init.
+     * @description Reads configuration from a source tenant and pushes it to one or more target tenants. Supports selective config types and dry-run mode. File channel endpoint and credential JSON are not copied; configure environment-specific values for each target tenant. Response format is identical to tenant-init.
      */
     post: operations['copyTenantConfig']
     delete?: never
@@ -6330,6 +6354,23 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/console/config/tenant-package/excel/scenario-template': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Download a focused blank tenant configuration template */
+    get: operations['downloadTenantConfigPackageExcelScenarioTemplate']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/console/config/tenant-package/excel/sample-template': {
     parameters: {
       query?: never
@@ -6444,7 +6485,10 @@ export interface paths {
     }
     get?: never
     put?: never
-    /** Apply tenant config package Excel in a single transaction */
+    /**
+     * Apply tenant-owned configuration package Excel in a single transaction
+     * @description ROLE_ADMIN may apply legacy full packages. ROLE_TENANT_ADMIN may apply only tenant business configuration; packages containing platform resource allocation or runtime monitoring fields are rejected.
+     */
     post: operations['applyTenantConfigPackageExcel']
     delete?: never
     options?: never
@@ -7618,6 +7662,7 @@ export interface components {
       nodeType: string
       relatedJobCode?: string
       relatedPipelineCode?: string
+      /** @description Platform-owned physical worker group. Tenant administrators cannot assign or change it. */
       workerGroup?: string
       windowCode?: string
       /** Format: int32 */
@@ -8850,6 +8895,7 @@ export interface components {
       channelCode?: string
       channelName?: string
       channelType?: string
+      /** @description 仅用于受控导入；配置导出不回传环境专属 endpoint。 */
       targetEndpoint?: string
       authType?: string
       configJson?: string
@@ -8885,7 +8931,9 @@ export interface components {
       dependsOnJobCode?: string
       timezone?: string
       triggerMode?: string
+      /** @description 平台管理的物理 Worker 分组；租户管理员创建时须省略。 */
       workerGroup?: string
+      /** @description 平台管理的物理队列；租户管理员创建时须省略。 */
       queueCode?: string
       calendarCode?: string
       windowCode?: string
@@ -8967,7 +9015,9 @@ export interface components {
       dependsOnJobCode?: string
       timezone?: string
       triggerMode?: string
+      /** @description 平台管理的物理 Worker 分组；租户管理员不可更改现有值。 */
       workerGroup?: string
+      /** @description 平台管理的物理队列；租户管理员不可更改现有值。 */
       queueCode?: string
       calendarCode?: string
       windowCode?: string
@@ -10210,8 +10260,10 @@ export interface components {
       channelCode?: string
       channelName?: string
       channelType?: string
+      /** @description URI 中的 userinfo 和敏感 query 参数会显示为 ****；更新时回传掩码可保留原凭据 */
       targetEndpoint?: string
       authType?: string
+      /** @description 通道配置 JSON；响应中的敏感键值递归显示为 ****。更新时回传 **** 可保留对应原值，删除键可清除该凭据。 */
       configJson?: string
       receiptPolicy?: string
       /** Format: int32 */
@@ -10847,6 +10899,8 @@ export interface components {
       data: components['schemas']['TenantConfigMatrixResponse']
     }
     TenantConfigPackageExcelApplyRequest: {
+      /** @description One-time token returned by the latest successful preview; tenant administrators must provide it. Platform administrators may omit it for compatibility with existing clients. */
+      previewToken?: string
       reason?: string
     }
     TenantConfigPackageExcelUploadResponse: {
@@ -10898,6 +10952,8 @@ export interface components {
     }
     TenantConfigPackageExcelPreviewResponse: {
       uploadToken: string
+      /** @description One-time confirmation token for this preview result. */
+      previewToken: string
       fileName: string
       /** Format: int32 */
       totalRows: number
@@ -11939,7 +11995,7 @@ export interface components {
     CommonResponseConsoleTenantUsageSummary: components['schemas']['CommonResponseBase'] & {
       data?: components['schemas']['ConsoleTenantUsageSummaryResponse']
     }
-    /** @description 通知渠道行（mapper 显式列，snake_case 键；config_json 为 jsonb 原样透传）。 */
+    /** @description 通知渠道行（mapper 显式列，snake_case 键；config_json 保留 JSON 对象结构，常规凭据键及 webhook URL 在响应中显示为 ****）。更新时回传掩码可保留原值，删除字段可清除配置。 */
     ConsoleNotificationChannelResponse: {
       /** Format: int64 */
       id: number
@@ -11947,7 +12003,7 @@ export interface components {
       channel_code?: string | null
       channel_name?: string | null
       channel_type?: string | null
-      /** @description jsonb 渠道配置原样透传 */
+      /** @description jsonb 渠道配置；敏感键与 URL 脱敏，更新回传 **** 保留现值，删除字段可清除 */
       config_json?: unknown
       enabled?: boolean | null
       created_by?: string | null
@@ -16641,6 +16697,8 @@ export interface operations {
         jobCode?: components['parameters']['JobCodeFilter']
         /** @description Filter by schedule type: CRON, FIXED_RATE, or MANUAL. */
         scheduleType?: 'CRON' | 'FIXED_RATE' | 'MANUAL'
+        /** @description Filter by monitoring matrix category. DEPENDENCY selects jobs with an upstream dependency; SCHEDULED selects standalone CRON jobs; RUNTIME_ONLY selects standalone non-CRON jobs. */
+        monitoringCategory?: 'SCHEDULED' | 'DEPENDENCY' | 'RUNTIME_ONLY'
         /** @description Filter by enabled status. Defaults to true (only enabled records returned unless overridden). */
         enabled?: boolean
       }
@@ -22509,13 +22567,41 @@ export interface operations {
       }
     }
   }
+  downloadTenantConfigPackageExcelScenarioTemplate: {
+    parameters: {
+      query: {
+        /** @description Repeat for each selected scenario. ALL means all tenant business scenarios and excludes platform resource allocation. */
+        scenarios: (
+          'ALL' | 'IMPORT' | 'EXPORT' | 'PROCESS' | 'DISPATCH' | 'ATOMIC' | 'WORKFLOW' | 'SCHEDULE'
+        )[]
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Focused workbook containing only the selected business sheets and fields. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': string
+        }
+      }
+    }
+  }
   downloadTenantConfigPackageExcelSampleTemplate: {
     parameters: {
       query?: {
         /** @description Legacy single scenario filter. ALL keeps all sample scenarios. */
-        scenario?: 'ALL' | 'IMPORT' | 'EXPORT' | 'PROCESS' | 'DISPATCH' | 'ATOMIC' | 'WORKFLOW'
+        scenario?:
+          'ALL' | 'IMPORT' | 'EXPORT' | 'PROCESS' | 'DISPATCH' | 'ATOMIC' | 'WORKFLOW' | 'SCHEDULE'
         /** @description Multi-select scenario filter. Repeat the parameter for multiple scenarios; ALL keeps all sample scenarios. */
-        scenarios?: ('ALL' | 'IMPORT' | 'EXPORT' | 'PROCESS' | 'DISPATCH' | 'ATOMIC' | 'WORKFLOW')[]
+        scenarios?: (
+          'ALL' | 'IMPORT' | 'EXPORT' | 'PROCESS' | 'DISPATCH' | 'ATOMIC' | 'WORKFLOW' | 'SCHEDULE'
+        )[]
       }
       header?: never
       path?: never
@@ -22679,6 +22765,20 @@ export interface operations {
         content: {
           'application/json': components['schemas']['CommonResponseTenantConfigPackageExcelApply']
         }
+      }
+      /** @description Caller role is not allowed to apply the package, or a tenant administrator package contains platform-owned fields */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description Preview token is stale, already consumed, or another apply is in progress */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
       }
     }
   }

@@ -63,13 +63,18 @@ jobs:
       - name: ESLint（check 模式，不 auto-fix）
         run: bash scripts/ci/run-gate.sh FE_LINT "ESLint" -- npm run lint:check
 
-      # 后端 console-api.openapi.yaml 改了但前端没跑 gen:api 提交,会在这里挂。
-      # 本地开发也可直接 `npm run gen:api:check` 自查。
-      # BE_OPENAPI_URL:CI 没有 sibling 仓库,从 raw GitHub 拉 yaml;脚本本地有
-      # `../file-batch-system/docs/api/console-api.openapi.yaml` 时优先用本地。
+      # 配对 PR 优先使用同名后端分支契约；没有配对分支时检查后端 main。
+      - name: Resolve backend OpenAPI contract
+        id: backend-openapi
+        env:
+          BACKEND_API_REF: ${{ github.event.pull_request.head.ref }}
+          BE_OPENAPI_URL_OVERRIDE: ${{ secrets.BE_OPENAPI_URL }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+        run: bash scripts/ci/resolve-backend-openapi.sh "$RUNNER_TEMP/console-api.openapi.yaml" "$GITHUB_OUTPUT"
+
       - name: Check OpenAPI drift
         env:
-          BE_OPENAPI_URL: ${{ secrets.BE_OPENAPI_URL || 'https://raw.githubusercontent.com/pinpols/file-batch-system/main/docs/api/console-api.openapi.yaml' }}
+          BE_OPENAPI_PATH: ${{ steps.backend-openapi.outputs.path }}
         run: bash scripts/ci/run-gate.sh FE_API_DRIFT "OpenAPI 漂移" -- npm run gen:api:check
 
       - name: Engineering governance

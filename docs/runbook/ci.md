@@ -150,7 +150,7 @@ tag v* / 手动 ── precheck(URL/账号/healthz/部署安全头/版本必须�
 
 | Secret                 | 用途                                     | 默认 fallback                                |
 | ---------------------- | ---------------------------------------- | -------------------------------------------- |
-| `BE_OPENAPI_URL`       | 可覆盖 gen:api:check 的后端 OpenAPI 地址 | 默认读取后端 main raw 文件；获取失败直接失败 |
+| `BE_OPENAPI_URL`       | 可覆盖 gen:api:check 的后端 OpenAPI 地址 | PR 优先读取同名后端分支；不存在时读取后端 main。设置该变量后始终使用指定地址，获取失败直接失败 |
 | `STAGING_URL`          | staging-gate 的 base URL                 | 必填,无 fallback                             |
 | `STAGING_E2E_USERNAME` | staging admin 账号                       | 必填                                         |
 | `STAGING_E2E_PASSWORD` | staging admin 密码                       | 必填                                         |

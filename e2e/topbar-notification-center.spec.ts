@@ -33,6 +33,9 @@ test.describe('顶栏通知中心', () => {
   test('铃铛存在且可点开通知面板', async ({ page }) => {
     const bell = page.locator('.notif-center__badge').first()
     await expect(bell).toBeVisible({ timeout: 10_000 })
+    await expect(bell.locator('.notif-center__new-dot')).toHaveCount(0)
+    const badge = bell.locator('.el-badge__content')
+    await expect(badge).toBeVisible()
 
     await bell.locator('button').first().click()
 
@@ -47,6 +50,13 @@ test.describe('顶栏通知中心', () => {
     const hasEmpty = await isVisible(empty, 1500)
     if (!hasEmpty) {
       await expect(rows.first()).toBeVisible({ timeout: 3_000 })
+      const count = rows.first().locator('.el-tag')
+      const arrow = rows.first().locator('.notif-center__chev')
+      const countBox = await count.boundingBox()
+      const arrowBox = await arrow.boundingBox()
+      expect(countBox).not.toBeNull()
+      expect(arrowBox).not.toBeNull()
+      expect(arrowBox!.x).toBeGreaterThanOrEqual(countBox!.x + countBox!.width)
     }
   })
 
@@ -60,5 +70,69 @@ test.describe('顶栏通知中心', () => {
     await firstRow.click()
     // 跳到某个内部路由(approvals / alerts 等),URL 离开 ops/summary
     await expect(page).not.toHaveURL(/\/ops\/summary$/, { timeout: 5_000 })
+  })
+
+  test('降级横幅支持手动关闭并按倒计时自动关闭', async ({ page }) => {
+    await page.clock.install()
+    await page.route('**/api/console/ops/summary*', (route) =>
+      route.fulfill({
+        status: 200,
+        headers: { 'X-Degraded-Source': 'trigger' },
+        contentType: 'application/json',
+        body: JSON.stringify({
+          code: 'SUCCESS',
+          message: 'ok',
+          data: {
+            pendingApprovals: 0,
+            openAlerts: 0,
+            criticalAlerts: 0,
+            failedJobs: 0,
+          },
+        }),
+      }),
+    )
+
+    await page.reload()
+    const banner = page.locator('.degradation-banner')
+    await expect(banner).toContainText('15 秒后自动关闭')
+    await banner.locator('.degradation-banner__close').click()
+    await expect(banner).toHaveCount(0)
+
+    await page.reload()
+    await expect(banner).toBeVisible()
+    await page.clock.runFor(15_000)
+    await expect(banner).toHaveCount(0)
+  })
+
+  test('密码提醒可关闭且按倒计时自动隐藏，不阻断当前页面', async ({ page }) => {
+    await page.clock.install()
+    await page.route('**/api/console/auth/me*', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          code: 'SUCCESS',
+          message: 'ok',
+          data: {
+            username: 'admin',
+            tenantId: 'system',
+            authorities: ['ROLE_ADMIN'],
+            mustChangePassword: true,
+          },
+        }),
+      }),
+    )
+
+    await page.reload()
+    const notice = page.locator('.password-notice')
+    await expect(notice).toContainText('15 秒后自动关闭')
+    await expect(page).toHaveURL(/\/ops\/summary$/)
+    await notice.locator('.password-notice__close').click()
+    await expect(notice).toHaveCount(0)
+
+    await page.reload()
+    await expect(notice).toBeVisible()
+    await page.clock.runFor(15_000)
+    await expect(notice).toHaveCount(0)
   })
 })

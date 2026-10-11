@@ -5,6 +5,7 @@ import type {
   ConfigGovernanceItemResponse,
   ConsoleConfigChangeLogResponse,
   ConsoleSecretVersionResponse,
+  ConfigSyncExportResponse,
 } from '@/types/console-api'
 
 export function listConfigReleases(tenantId: string) {
@@ -125,7 +126,7 @@ export interface ConfigSyncExportBody {
   configTypes?: string[]
 }
 export function exportConfigSync(body: ConfigSyncExportBody) {
-  return post<unknown>('/api/console/config/sync/export', body)
+  return post<ConfigSyncExportResponse>('/api/console/config/sync/export', body)
 }
 
 /**

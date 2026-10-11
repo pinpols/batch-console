@@ -22,19 +22,55 @@ export type TenantPackageSampleScenario =
   | 'ALL'
   | 'IMPORT'
   | 'EXPORT'
+  | 'IMPORT_DELIMITED'
+  | 'IMPORT_FIXED_WIDTH'
+  | 'IMPORT_EXCEL'
+  | 'IMPORT_XML'
+  | 'IMPORT_JSON'
+  | 'EXPORT_DELIMITED'
+  | 'EXPORT_FIXED_WIDTH'
+  | 'EXPORT_EXCEL'
+  | 'EXPORT_JSON'
   | 'PROCESS'
   | 'DISPATCH'
   | 'ATOMIC'
   | 'WORKFLOW'
+  | 'SCHEDULE'
+
+export async function refreshTenantPackagePreviewOnConflict(
+  error: unknown,
+  refresh: () => Promise<unknown>,
+): Promise<'not-conflict' | 'refreshed' | 'refresh-failed'> {
+  const response = (error as { response?: { status?: number; data?: { code?: string } } } | null)
+    ?.response
+  if (response?.status !== 409 || response.data?.code !== 'STATE_CONFLICT') {
+    return 'not-conflict'
+  }
+  try {
+    await refresh()
+    return 'refreshed'
+  } catch {
+    return 'refresh-failed'
+  }
+}
 
 function currentTenantParams() {
   return { tenantId: readStoredTenantId() }
 }
 
-/** GET …/template — 下载租户配置包空白模板 */
-export async function tenantPackageDownloadTemplate(): Promise<Blob> {
-  const res = await apiClient.get(`${TENANT_PKG_BASE}/template`, {
-    params: currentTenantParams(),
+/** GET …/scenario-template — 下载所选业务场景的空白模板 */
+export async function tenantPackageDownloadTemplate(
+  scenarios: TenantPackageSampleScenario[],
+): Promise<Blob> {
+  if (scenarios.length === 0) {
+    throw new Error('Select at least one configuration scenario')
+  }
+  const params = new URLSearchParams()
+  for (const scenario of scenarios) {
+    params.append('scenarios', scenario)
+  }
+  const res = await apiClient.get(`${TENANT_PKG_BASE}/scenario-template`, {
+    params,
     responseType: 'blob',
   })
   return res.data as Blob
@@ -44,9 +80,11 @@ export async function tenantPackageDownloadTemplate(): Promise<Blob> {
 export async function tenantPackageDownloadSampleTemplate(
   scenarios: TenantPackageSampleScenario[],
 ): Promise<Blob> {
+  if (scenarios.length === 0) {
+    throw new Error('Select at least one configuration scenario')
+  }
   const params = new URLSearchParams()
-  const effectiveScenarios = scenarios.length > 0 ? scenarios : ['ALL']
-  for (const scenario of effectiveScenarios) {
+  for (const scenario of scenarios) {
     params.append('scenarios', scenario)
   }
   const res = await apiClient.get(`${TENANT_PKG_BASE}/sample-template`, {
@@ -65,7 +103,7 @@ export async function tenantPackageExport(): Promise<Blob> {
   return res.data as Blob
 }
 
-/** GET …/guide — 读取 11 张 Sheet 的字段填写说明 */
+/** GET …/guide — 读取当前配置包各 Sheet 的字段填写说明 */
 export function tenantPackageGuide(): Promise<TenantPackageGuideResponse> {
   return get<TenantPackageGuideResponse>(`${TENANT_PKG_BASE}/guide`)
 }
@@ -110,7 +148,7 @@ export async function tenantPackageDownloadPreviewWorkbook(uploadToken: string):
 }
 
 /** POST …/apply/{token} — 单事务应用合包导入结果 */
-export function tenantPackageApply(uploadToken: string, body: TenantPackageApplyRequest = {}) {
+export function tenantPackageApply(uploadToken: string, body: TenantPackageApplyRequest) {
   return post<TenantPackageApplyResponse>(
     `${TENANT_PKG_BASE}/apply/${encodeURIComponent(uploadToken)}`,
     body,
