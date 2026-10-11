@@ -100,9 +100,17 @@ jobs:
       - run: bash scripts/ci/run-gate.sh FE_TYPECHECK "TypeScript 类型检查" -- npm run typecheck
       - run: bash scripts/ci/run-gate.sh FE_I18N "国际化词条一致性" -- npm run check:i18n
 
+      - name: Resolve backend OpenAPI contract
+        id: backend-openapi
+        env:
+          BACKEND_API_REF: ${{ github.event.pull_request.head.ref }}
+          BE_OPENAPI_URL_OVERRIDE: ${{ secrets.BE_OPENAPI_URL }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+        run: bash scripts/ci/resolve-backend-openapi.sh "$RUNNER_TEMP/console-api.openapi.yaml" "$GITHUB_OUTPUT"
+
       - name: Check OpenAPI drift
         env:
-          BE_OPENAPI_URL: ${{ secrets.BE_OPENAPI_URL || 'https://raw.githubusercontent.com/pinpols/file-batch-system/main/docs/api/console-api.openapi.yaml' }}
+          BE_OPENAPI_PATH: ${{ steps.backend-openapi.outputs.path }}
         run: bash scripts/ci/run-gate.sh FE_API_DRIFT "OpenAPI 漂移" -- npm run gen:api:check
 
       - name: Architecture, environment and documentation governance

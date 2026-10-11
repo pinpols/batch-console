@@ -10899,8 +10899,8 @@ export interface components {
       data: components['schemas']['TenantConfigMatrixResponse']
     }
     TenantConfigPackageExcelApplyRequest: {
-      /** @description One-time token returned by the latest successful preview; invalidated by a subsequent preview or row patch. */
-      previewToken: string
+      /** @description One-time token returned by the latest successful preview; tenant administrators must provide it. Platform administrators may omit it for compatibility with existing clients. */
+      previewToken?: string
       reason?: string
     }
     TenantConfigPackageExcelUploadResponse: {
