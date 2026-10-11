@@ -49,7 +49,12 @@
       </template>
     </ListPageQueryBar>
 
-    <section v-if="viewMode === 'calendar'" class="batch-calendar" v-loading="loading">
+    <section
+      v-if="viewMode === 'calendar'"
+      :key="locale"
+      class="batch-calendar"
+      v-loading="loading"
+    >
       <div class="batch-calendar__summary" :aria-label="t('batchDayList.calendarSummary')">
         <div class="batch-calendar__metric">
           <span>{{ t('batchDayList.metricDays') }}</span>
@@ -77,55 +82,110 @@
         :title="t('batchDayList.loadFailed')"
       />
 
-      <div
-        v-if="!loading && !loadError && calendarSummary.days === 0"
-        class="batch-calendar__empty"
-        role="status"
-      >
-        <div>
-          <strong>{{ t('batchDayList.emptyMonthTitle') }}</strong>
-          <span>{{ t('batchDayList.emptyMonthDescription') }}</span>
-        </div>
-        <el-button size="small" plain type="primary" @click="viewMode = 'table'">
-          {{ t('batchDayList.viewTable') }}
-        </el-button>
-      </div>
-
-      <el-calendar v-model="calendarDate" class="batch-calendar__grid">
-        <template #date-cell="{ data }">
-          <button
-            type="button"
-            class="batch-calendar__day"
-            :class="{ 'batch-calendar__day--outside': data.type !== 'current-month' }"
-            :disabled="!calendarDay(data.day)"
-            @click.stop="calendarDay(data.day) && goWindow(data.day)"
+      <section class="batch-calendar__grid" :aria-label="t('batchDayList.calendarSummary')">
+        <header class="batch-calendar__toolbar">
+          <div class="batch-calendar__month-group">
+            <h2 class="batch-calendar__month">{{ calendarMonthLabel }}</h2>
+            <div
+              v-if="!loading && !loadError && calendarSummary.days === 0"
+              class="batch-calendar__empty-hint"
+              role="status"
+            >
+              <el-tooltip :content="t('batchDayList.emptyMonthDescription')" placement="bottom">
+                <span class="batch-calendar__empty-message" tabindex="0">
+                  <el-icon aria-hidden="true"><Info /></el-icon>
+                  {{ t('batchDayList.emptyMonthTitle') }}
+                </span>
+              </el-tooltip>
+              <el-button text type="primary" size="small" @click="viewMode = 'table'">
+                {{ t('batchDayList.viewTable') }}
+              </el-button>
+            </div>
+          </div>
+          <div class="batch-calendar__navigation">
+            <el-button
+              circle
+              plain
+              :icon="ChevronLeft"
+              :aria-label="t('batchDayList.previousMonth')"
+              :title="t('batchDayList.previousMonth')"
+              @click="changeMonth(-1)"
+            />
+            <el-button size="small" plain @click="goToToday">
+              {{ t('batchDayList.today') }}
+            </el-button>
+            <el-button
+              circle
+              plain
+              :icon="ChevronRight"
+              :aria-label="t('batchDayList.nextMonth')"
+              :title="t('batchDayList.nextMonth')"
+              @click="changeMonth(1)"
+            />
+          </div>
+        </header>
+        <div class="batch-calendar__matrix">
+          <div class="batch-calendar__weekdays">
+            <span v-for="weekday in weekdayLabels" :key="weekday">{{ weekday }}</span>
+          </div>
+          <div
+            v-for="week in calendarWeeks"
+            :key="calendarDateKey(week[0])"
+            class="batch-calendar__week"
           >
-            <span class="batch-calendar__date">{{ Number(data.day.slice(-2)) }}</span>
-            <template v-for="day in [calendarDay(data.day)]" :key="data.day">
-              <template v-if="day">
-                <StatusTag :value="String(day.dayStatus ?? '')" category="batchDay" />
-                <span class="batch-calendar__counts">
-                  <span class="batch-calendar__count batch-calendar__count--success">
-                    <span>{{ t('batchDayList.calendarSuccessShort') }}</span>
-                    {{ day.successJobCount ?? 0 }}
+            <button
+              v-for="date in week"
+              :key="calendarDateKey(date)"
+              type="button"
+              class="batch-calendar__day"
+              :class="{
+                'batch-calendar__day--outside': !isCurrentMonth(date),
+                'batch-calendar__day--today': isToday(date),
+                'batch-calendar__day--has-data': Boolean(calendarDay(calendarDateKey(date))),
+              }"
+              :disabled="!calendarDay(calendarDateKey(date))"
+              :aria-label="calendarAccessibleLabel(date)"
+              @click.stop="calendarDay(calendarDateKey(date)) && goWindow(calendarDateKey(date))"
+            >
+              <span class="batch-calendar__date">{{ date.getDate() }}</span>
+              <template
+                v-for="day in [calendarDay(calendarDateKey(date))]"
+                :key="calendarDateKey(date)"
+              >
+                <template v-if="day">
+                  <StatusTag :value="String(day.dayStatus ?? '')" category="batchDay" />
+                  <span class="batch-calendar__counts">
+                    <span
+                      class="batch-calendar__count batch-calendar__count--success"
+                      :title="t('batchDayList.calendarCellSuccess')"
+                    >
+                      <el-icon :size="12" aria-hidden="true"><Check /></el-icon>
+                      {{ day.successJobCount ?? 0 }}
+                    </span>
+                    <span
+                      class="batch-calendar__count batch-calendar__count--failed"
+                      :title="t('batchDayList.calendarCellFailed')"
+                    >
+                      <el-icon :size="12" aria-hidden="true"><X /></el-icon>
+                      {{ day.failedJobCount ?? 0 }}
+                    </span>
+                    <span
+                      class="batch-calendar__count batch-calendar__count--running"
+                      :title="t('batchDayList.calendarCellRunning')"
+                    >
+                      <el-icon :size="12" aria-hidden="true"><Clock3 /></el-icon>
+                      {{ day.inFlightJobCount ?? 0 }}
+                    </span>
                   </span>
-                  <span class="batch-calendar__count batch-calendar__count--failed">
-                    <span>{{ t('batchDayList.calendarFailedShort') }}</span>
-                    {{ day.failedJobCount ?? 0 }}
+                  <span v-if="day.lateCount" class="batch-calendar__late">
+                    {{ t('batchDayList.calendarCellLate', { n: day.lateCount }) }}
                   </span>
-                  <span class="batch-calendar__count batch-calendar__count--running">
-                    <span>{{ t('batchDayList.calendarRunningShort') }}</span>
-                    {{ day.inFlightJobCount ?? 0 }}
-                  </span>
-                </span>
-                <span v-if="day.lateCount" class="batch-calendar__late">
-                  {{ t('batchDayList.calendarCellLate', { n: day.lateCount }) }}
-                </span>
+                </template>
               </template>
-            </template>
-          </button>
-        </template>
-      </el-calendar>
+            </button>
+          </div>
+        </div>
+      </section>
     </section>
 
     <div v-else>
@@ -199,7 +259,13 @@
         <el-table-column :label="t('batchDayList.colActions')" width="150" fixed="right">
           <template #default="{ row }">
             <div class="table-actions">
-              <el-button size="small" plain type="primary" @click="goWindow(row.bizDate)">
+              <el-button
+                size="small"
+                plain
+                type="primary"
+                :icon="CalendarDays"
+                @click="goWindow(row.bizDate)"
+              >
                 {{ t('batchDayList.actionWindow') }}
               </el-button>
             </div>
@@ -211,13 +277,15 @@
 </template>
 
 <script setup lang="ts">
+  import { CalendarDays } from '@lucide/vue'
   import { ref, reactive, computed, watch } from 'vue'
   import { useRouter } from 'vue-router'
   import { usePermission } from '@/composables/usePermission'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
+  import { Check, ChevronLeft, ChevronRight, Clock3, Info, X } from '@lucide/vue'
 
-  const { t } = useI18n({ useScope: 'global' })
+  const { t, locale } = useI18n({ useScope: 'global' })
   import { queryBatchDays } from '@/api/batchDays'
   import { useMetaCalendarsQuery } from '@/composables/queries/useConsoleMeta'
   import { useTenantStore } from '@/stores/tenant'
@@ -230,7 +298,13 @@
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { businessCalendarDate } from '@/utils/datetime'
   import type { ConsoleBatchDayResponse } from '@/types/console-api'
-  import { indexBatchDays, monthDateRange, summarizeBatchDays } from './batchDayPresentation'
+  import {
+    indexBatchDays,
+    monthDateRange,
+    monthGridDates,
+    summarizeBatchDays,
+    toLocalDateKey,
+  } from './batchDayPresentation'
 
   const router = useRouter()
   const { canAccess } = usePermission()
@@ -260,6 +334,55 @@
   const calendarMonthKey = computed(
     () => `${calendarDate.value.getFullYear()}-${calendarDate.value.getMonth()}`,
   )
+  const calendarWeeks = computed(() => {
+    const dates = monthGridDates(calendarDate.value)
+    return Array.from({ length: dates.length / 7 }, (_, index) =>
+      dates.slice(index * 7, index * 7 + 7),
+    )
+  })
+  const calendarMonthLabel = computed(() =>
+    new Intl.DateTimeFormat(locale.value, { month: 'long', year: 'numeric' }).format(
+      calendarDate.value,
+    ),
+  )
+  const weekdayLabels = computed(() => {
+    const formatter = new Intl.DateTimeFormat(locale.value, { weekday: 'short' })
+    return Array.from({ length: 7 }, (_, index) => formatter.format(new Date(2024, 0, index + 1)))
+  })
+
+  function calendarDateKey(date: Date): string {
+    return toLocalDateKey(date)
+  }
+
+  function isCurrentMonth(date: Date): boolean {
+    return date.getMonth() === calendarDate.value.getMonth()
+  }
+
+  function isToday(date: Date): boolean {
+    return calendarDateKey(date) === calendarDateKey(businessCalendarDate())
+  }
+
+  function calendarAccessibleLabel(date: Date): string {
+    const day = calendarDay(calendarDateKey(date))
+    const dateLabel = new Intl.DateTimeFormat(locale.value, { dateStyle: 'full' }).format(date)
+    if (!day) return dateLabel
+    return `${dateLabel}, ${t('batchDayList.calendarCellCounts', {
+      success: day.successJobCount ?? 0,
+      failed: day.failedJobCount ?? 0,
+      running: day.inFlightJobCount ?? 0,
+    })}${day.lateCount ? `, ${t('batchDayList.calendarCellLate', { n: day.lateCount })}` : ''}`
+  }
+
+  function changeMonth(offset: number) {
+    const next = new Date(calendarDate.value)
+    next.setDate(1)
+    next.setMonth(next.getMonth() + offset)
+    calendarDate.value = next
+  }
+
+  function goToToday() {
+    calendarDate.value = businessCalendarDate()
+  }
 
   function calendarDay(day: string): ConsoleBatchDayResponse | undefined {
     return calendarIndex.value.get(day)
@@ -389,62 +512,106 @@
   }
 
   .batch-calendar__grid {
-    --el-calendar-cell-width: auto;
+    padding: 0 var(--space-md) var(--space-md);
   }
 
-  .batch-calendar__empty {
+  .batch-calendar__month-group,
+  .batch-calendar__empty-hint,
+  .batch-calendar__empty-message {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: var(--space-md);
-    margin: var(--space-md) var(--space-md) 0;
-    padding: var(--space-md);
-    border: 1px solid var(--color-border-light);
-    border-radius: var(--radius-content);
-    background: var(--color-bg-subtle);
   }
 
-  .batch-calendar__empty > div {
-    display: flex;
-    flex-direction: column;
+  .batch-calendar__month-group {
+    min-width: 0;
+    flex-wrap: wrap;
+    gap: var(--space-sm) var(--space-md);
+  }
+
+  .batch-calendar__empty-hint {
+    min-width: 0;
+    flex-wrap: wrap;
     gap: var(--space-xs);
   }
 
-  .batch-calendar__empty span {
+  .batch-calendar__empty-message {
+    gap: var(--space-xs);
     color: var(--color-text-secondary);
     font-size: var(--font-size-sm);
+    white-space: nowrap;
+    cursor: help;
   }
 
-  .batch-calendar__grid :deep(.el-calendar__body) {
-    padding: 0;
+  .batch-calendar__empty-message .el-icon {
+    color: var(--color-text-tertiary);
   }
 
-  .batch-calendar__grid :deep(.el-calendar-table .el-calendar-day) {
-    height: 5.5rem;
-    padding: var(--space-xs);
+  .batch-calendar__toolbar {
+    display: flex;
+    min-height: 3.5rem;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-md);
+    border-bottom: 1px solid var(--color-border-light);
+  }
+
+  .batch-calendar__month {
+    margin: 0;
+    color: var(--color-text-primary);
+    font-size: var(--font-size-md);
+    font-weight: 600;
+  }
+
+  .batch-calendar__navigation {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+  }
+
+  .batch-calendar__matrix {
+    border-left: 1px solid var(--color-border-light);
+  }
+
+  .batch-calendar__weekdays,
+  .batch-calendar__week {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
+
+  .batch-calendar__weekdays {
+    min-height: 2.25rem;
+    align-items: center;
+    border-top: 1px solid var(--color-border-light);
+    border-bottom: 1px solid var(--color-border-light);
+    color: var(--color-text-tertiary);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    text-align: center;
   }
 
   .batch-calendar__day {
     display: flex;
     width: 100%;
-    height: 100%;
+    min-width: 0;
+    min-height: 5.25rem;
     flex-direction: column;
-    align-items: flex-start;
-    gap: 3px;
-    padding: 4px;
+    align-items: stretch;
+    gap: 4px;
+    padding: 6px 8px;
     color: var(--color-text-primary);
     text-align: left;
-    border: 1px solid transparent;
-    border-radius: var(--radius-input);
-    background: transparent;
+    border: 0;
+    border-right: 1px solid var(--color-border-light);
+    border-bottom: 1px solid var(--color-border-light);
+    background: var(--color-bg-card);
     cursor: pointer;
   }
 
   .batch-calendar__day:not(:disabled):hover,
   .batch-calendar__day:not(:disabled):focus-visible {
-    border-color: var(--el-color-primary-light-5);
-    background: var(--el-color-primary-light-9);
-    outline: none;
+    background: var(--color-bg-subtle);
+    box-shadow: inset 0 0 0 1px var(--el-color-primary-light-5);
+    outline: 0;
   }
 
   .batch-calendar__day:disabled {
@@ -452,53 +619,67 @@
   }
 
   .batch-calendar__day--outside {
-    opacity: 0.35;
+    background: var(--color-bg-subtle);
+  }
+
+  .batch-calendar__day--outside {
+    color: var(--color-text-tertiary);
+  }
+
+  .batch-calendar__day--today .batch-calendar__date {
+    display: inline-flex;
+    min-width: 1.5rem;
+    height: 1.5rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: var(--el-color-primary);
+    color: var(--el-color-white);
+  }
+
+  .batch-calendar__day--has-data {
+    background: color-mix(in srgb, var(--el-color-primary) 5%, var(--color-bg-card));
   }
 
   .batch-calendar__date {
-    align-self: flex-end;
-    color: var(--color-text-secondary);
+    align-self: flex-start;
+    color: inherit;
     font-family: var(--font-mono);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
   }
 
   .batch-calendar__counts {
     display: flex;
     flex-wrap: wrap;
-    gap: 2px 6px;
-    max-width: 100%;
-    color: var(--color-text-tertiary);
-    font-size: 11px;
-    line-height: 1.2;
-    font-variant-numeric: tabular-nums;
+    align-items: center;
+    gap: 3px 8px;
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-xs);
+    line-height: 1.3;
   }
 
   .batch-calendar__count {
     display: inline-flex;
+    align-items: center;
     gap: 2px;
-    min-width: 0;
-    white-space: nowrap;
   }
 
-  .batch-calendar__count--success > span {
-    color: var(--color-success);
+  .batch-calendar__count--success {
+    color: var(--el-color-success);
   }
 
-  .batch-calendar__count--failed > span {
-    color: var(--color-danger);
+  .batch-calendar__count--failed {
+    color: var(--el-color-danger);
   }
 
-  .batch-calendar__count--running > span {
-    color: var(--color-primary);
-  }
-
-  .batch-calendar__late {
-    color: var(--color-text-tertiary);
-    font-size: 11px;
-    line-height: var(--line-height-normal);
+  .batch-calendar__count--running {
+    color: var(--el-color-primary);
   }
 
   .batch-calendar__late {
     color: var(--el-color-warning);
+    font-size: var(--font-size-xs);
   }
 
   @media (max-width: 1080px) {
@@ -506,17 +687,17 @@
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
-    .batch-calendar__grid :deep(.el-calendar-table .el-calendar-day) {
-      height: 5rem;
+    .batch-calendar__day {
+      min-height: 4.75rem;
+      padding: 5px;
+    }
+
+    .batch-calendar__counts {
+      gap: 2px 5px;
     }
   }
 
   @media (max-width: 640px) {
-    .batch-calendar__empty {
-      align-items: flex-start;
-      flex-direction: column;
-    }
-
     .batch-calendar__summary {
       grid-template-columns: 1fr;
     }
@@ -534,9 +715,10 @@
       overflow-x: auto;
     }
 
-    .batch-calendar__grid :deep(.el-calendar__header),
-    .batch-calendar__grid :deep(.el-calendar__body) {
-      min-width: 42rem;
+    .batch-calendar__toolbar,
+    .batch-calendar__weekdays,
+    .batch-calendar__week {
+      min-width: 38rem;
     }
   }
 </style>

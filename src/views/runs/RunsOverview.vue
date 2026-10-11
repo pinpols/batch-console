@@ -3,11 +3,12 @@
     <!-- 照设计 dump docs/redesign/proto-nav-全部运行.html:页头 18px/600 + 右侧刷新 -->
     <PageHeader :title="t('runs.title')" :description="t('runs.description')">
       <template #actions>
-        <el-radio-group v-model="statusFilter" size="small" @change="loadAll">
-          <el-radio-button value="all">{{ t('runs.filterAll') }}</el-radio-button>
-          <el-radio-button value="running">{{ t('runs.filterRunning') }}</el-radio-button>
-          <el-radio-button value="failed">{{ t('runs.filterFailed') }}</el-radio-button>
-        </el-radio-group>
+        <StatusSegment
+          v-model="statusFilter"
+          :items="statusFilterItems"
+          :aria-label="t('runs.title')"
+          @update:model-value="loadAll"
+        />
         <el-button
           type="primary"
           :icon="Refresh"
@@ -152,6 +153,7 @@
   import { useTenantReload } from '@/composables/useTenantReload'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
+  import StatusSegment, { type StatusSegmentItem } from '@/components/table/StatusSegment.vue'
   import type { ConsoleJobInstanceResponse, ConsoleWorkflowRunResponse } from '@/types/console-api'
 
   const { t, te } = useI18n({ useScope: 'global' })
@@ -168,6 +170,11 @@
 
   // 'all' | 'running' | 'failed' — 默认 all,oncall 切到 failed 一眼锁定挂的
   const statusFilter = ref<'all' | 'running' | 'failed'>('all')
+  const statusFilterItems = computed<StatusSegmentItem[]>(() => [
+    { value: 'all', label: t('runs.filterAll'), tone: 'neutral' },
+    { value: 'running', label: t('runs.filterRunning'), tone: 'info' },
+    { value: 'failed', label: t('runs.filterFailed'), tone: 'danger' },
+  ])
 
   function statusCode(): string | undefined {
     if (statusFilter.value === 'running') return 'RUNNING'

@@ -13,22 +13,53 @@
         <div class="brand__title">{{ t('nav.appTitle') }}</div>
         <div class="brand__subtitle">Batch Console</div>
       </div>
+      <button
+        v-if="!app.sidebarCollapsed"
+        type="button"
+        class="brand__groups-toggle"
+        :aria-label="t(hasOpenGroups ? 'nav.collapseAllGroups' : 'nav.expandAllGroups')"
+        :title="t(hasOpenGroups ? 'nav.collapseAllGroups' : 'nav.expandAllGroups')"
+        @click="toggleAllGroups"
+      >
+        <el-icon>
+          <component :is="hasOpenGroups ? ChevronsUp : ChevronsDown" />
+        </el-icon>
+      </button>
     </div>
 
     <nav class="nav">
-      <div v-for="group in visibleGroups" :key="group.key" class="nav__group">
+      <div v-if="app.sidebarCollapsed" class="nav__collapsed-groups-toggle">
         <button
-          v-if="!app.sidebarCollapsed"
           type="button"
-          class="nav__group-hd"
-          @click="toggleGroup(group.key)"
+          class="brand__groups-toggle"
+          :aria-label="t(hasOpenGroups ? 'nav.collapseAllGroups' : 'nav.expandAllGroups')"
+          :title="t(hasOpenGroups ? 'nav.collapseAllGroups' : 'nav.expandAllGroups')"
+          @click="toggleAllGroups"
         >
-          <span class="nav__group-title">{{ resolveGroupTitle(group) }}</span>
-          <el-icon class="nav__chevron" :class="{ 'is-open': isOpen(group.key) }">
-            <ChevronDown />
+          <el-icon>
+            <component :is="hasOpenGroups ? ChevronsUp : ChevronsDown" />
           </el-icon>
         </button>
-        <div v-show="app.sidebarCollapsed || isOpen(group.key)" class="nav__items">
+      </div>
+      <div v-for="group in visibleGroups" :key="group.key" class="nav__group">
+        <button
+          type="button"
+          class="nav__group-hd"
+          :class="{ 'is-collapsed': app.sidebarCollapsed }"
+          :aria-label="resolveGroupTitle(group)"
+          :aria-expanded="isOpen(group.key)"
+          :title="app.sidebarCollapsed ? resolveGroupTitle(group) : undefined"
+          @click="toggleGroup(group.key)"
+        >
+          <el-icon v-if="app.sidebarCollapsed" class="nav__icon nav__group-icon">
+            <component :is="group.icon" />
+          </el-icon>
+          <span v-else class="nav__group-title">{{ resolveGroupTitle(group) }}</span>
+          <el-icon class="nav__chevron" :class="{ 'is-open': isOpen(group.key) }">
+            <ChevronRight />
+          </el-icon>
+        </button>
+        <div v-show="isOpen(group.key)" class="nav__items">
           <RouterLink
             v-for="item in group.children.filter((c) => !c.hidden)"
             :key="item.path"
@@ -73,7 +104,13 @@
   import { computed, ref, watch } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
-  import { ChevronDown, PanelLeftClose, PanelLeftOpen } from '@lucide/vue'
+  import {
+    ChevronRight,
+    ChevronsDown,
+    ChevronsUp,
+    PanelLeftClose,
+    PanelLeftOpen,
+  } from '@lucide/vue'
   import BatchMark from '@/components/common/BatchMark.vue'
   import { useAppStore } from '@/stores/app'
   import { usePermissionStore } from '@/stores/permission'
@@ -166,8 +203,13 @@
   function isOpen(key: string): boolean {
     return manualOpen.value[key] ?? key === activeGroupKey.value
   }
+  const hasOpenGroups = computed(() => visibleGroups.value.some((group) => isOpen(group.key)))
   function toggleGroup(key: string) {
     manualOpen.value[key] = !isOpen(key)
+  }
+  function toggleAllGroups() {
+    const open = !hasOpenGroups.value
+    for (const group of visibleGroups.value) manualOpen.value[group.key] = open
   }
   // 路由切到别的组时,让新活动组自然展开(清掉对它的手动收起标记)
   watch(activeGroupKey, (k) => {
@@ -254,6 +296,41 @@
     display: none;
   }
 
+  .brand__groups-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--layout-sidebar-text-muted);
+    cursor: pointer;
+    transition:
+      color 0.12s ease,
+      background-color 0.12s ease,
+      border-color 0.12s ease;
+  }
+
+  .brand__groups-toggle:hover {
+    color: var(--layout-sidebar-hover-text);
+    background: var(--layout-sidebar-hover-bg);
+    border-color: var(--color-border);
+  }
+
+  .brand__groups-toggle .el-icon {
+    font-size: 16px;
+  }
+
+  .nav__collapsed-groups-toggle {
+    display: flex;
+    justify-content: center;
+    margin: 0 auto 4px;
+  }
+
   /* 组间距:收起组之间紧凑(8px,组头自带 32 高);展开组由 items 的 padding-bottom
      再补呼吸,展开内容到下一组头 ≈ 20px(设计节奏)。此前统一 24px 导致收起组间空隙过大。 */
   .nav__group + .nav__group {
@@ -278,6 +355,15 @@
     cursor: pointer;
   }
 
+  .nav__group-hd.is-collapsed {
+    justify-content: space-between;
+    width: 42px;
+    height: 36px;
+    margin: 0 auto;
+    padding: 0 2px;
+    border-radius: 7px;
+  }
+
   .nav__group-hd:hover {
     color: var(--layout-sidebar-hover-text);
   }
@@ -291,12 +377,20 @@
   .nav__chevron {
     font-size: 13px;
     opacity: 0.7;
-    transform: rotate(-90deg);
+    transform: rotate(0deg);
     transition: transform 0.15s ease;
   }
 
   .nav__chevron.is-open {
-    transform: rotate(0deg);
+    transform: rotate(90deg);
+  }
+
+  .nav__group-hd.is-collapsed .nav__chevron {
+    font-size: 10px;
+  }
+
+  .nav__group-hd.is-collapsed .nav__chevron.is-open {
+    transform: rotate(90deg);
   }
 
   /* 导航项(设计实测:32px / radius 7 / pad 0 8 / gap 9 / 字 13) */
@@ -365,6 +459,11 @@
   .layout-sidebar[style*='58px'] .nav__item {
     justify-content: center;
     padding: 0;
+  }
+
+  .nav__group-hd.is-collapsed[aria-expanded='true'] {
+    color: var(--layout-sidebar-active-text);
+    background: var(--layout-sidebar-active-bg);
   }
 
   /* ── footer:● 服务正常 · vX.Y + 折叠钮 ── */

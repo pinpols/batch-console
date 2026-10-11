@@ -64,6 +64,7 @@
                 size="small"
                 plain
                 type="primary"
+                :icon="Save"
                 :loading="savingKey === String(row.tagKey)"
                 @click="saveRow(row)"
               >
@@ -73,6 +74,7 @@
                 size="small"
                 plain
                 type="danger"
+                :icon="Trash2"
                 :loading="deletingKey === String(row.tagKey)"
                 @click="confirmDeleteTag(row)"
               >
@@ -121,6 +123,7 @@
 </template>
 
 <script setup lang="ts">
+  import { Save, Trash2 } from '@lucide/vue'
   import { ref, reactive, computed, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'

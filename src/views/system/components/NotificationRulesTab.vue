@@ -76,12 +76,7 @@
       <el-table-column :label="t('notificationCommon.colActions')" width="160" fixed="right">
         <template #default="{ row }">
           <div class="table-actions">
-            <el-button size="small" plain type="primary" @click="openRuleEdit(row)">
-              {{ t('notificationCommon.btnEdit') }}
-            </el-button>
-            <el-button size="small" plain type="danger" @click="confirmDeleteRule(row)">
-              {{ t('notificationCommon.btnDelete') }}
-            </el-button>
+            <RowActions :actions="ruleRowActions(row)" :inline-limit="1" />
           </div>
         </template>
       </el-table-column>
@@ -169,6 +164,7 @@
   import { useTenantReload } from '@/composables/useTenantReload'
   import ProTable from '@/components/table/ProTable.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
+  import RowActions, { type RowAction } from '@/components/common/RowActions.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
@@ -255,6 +251,24 @@
     ruleForm.enabled = !!row.enabled
     ruleFormVisible.value = true
     ruleDirty.markPristine()
+  }
+
+  function ruleRowActions(row: Record<string, unknown>): RowAction[] {
+    return [
+      {
+        key: 'edit',
+        label: t('notificationCommon.btnEdit'),
+        primary: true,
+        onClick: () => openRuleEdit(row),
+      },
+      {
+        key: 'delete',
+        label: t('notificationCommon.btnDelete'),
+        danger: true,
+        divided: true,
+        onClick: () => confirmDeleteRule(row),
+      },
+    ]
   }
 
   async function closeRuleForm() {

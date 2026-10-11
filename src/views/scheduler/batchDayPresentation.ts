@@ -14,6 +14,22 @@ export function monthDateRange(date: Date): { from: string; to: string } {
   return { from: toLocalDateKey(first), to: toLocalDateKey(last) }
 }
 
+export function monthGridDates(date: Date): Date[] {
+  const first = new Date(date.getFullYear(), date.getMonth(), 1)
+  const last = new Date(date.getFullYear(), date.getMonth() + 1, 0)
+  const startOffset = (first.getDay() + 6) % 7
+  const endOffset = (7 - ((last.getDay() + 6) % 7) - 1) % 7
+  const start = new Date(first.getFullYear(), first.getMonth(), 1 - startOffset)
+  const end = new Date(last.getFullYear(), last.getMonth(), last.getDate() + endOffset)
+  const dates: Date[] = []
+
+  for (const current = start; current <= end; current.setDate(current.getDate() + 1)) {
+    dates.push(new Date(current.getFullYear(), current.getMonth(), current.getDate()))
+  }
+
+  return dates
+}
+
 export function indexBatchDays(
   rows: ConsoleBatchDayResponse[],
 ): Map<string, ConsoleBatchDayResponse> {

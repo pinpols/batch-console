@@ -133,14 +133,7 @@
         </el-table-column>
         <el-table-column :label="t('pipelineDefinitionList.colActions')" width="180" fixed="right">
           <template #default="{ row }">
-            <div class="table-actions">
-              <el-button size="small" plain type="primary" @click="openDetail(row, 'runs')">
-                {{ t('pipelineDefinitionList.actionRuns') }}
-              </el-button>
-              <el-button size="small" plain @click="openEdit(row)">
-                {{ t('pipelineDefinitionList.actionEdit') }}
-              </el-button>
-            </div>
+            <RowActions :actions="pipelineRowActions(row)" :inline-limit="2" />
           </template>
         </el-table-column>
       </ProTable>
@@ -373,6 +366,7 @@
 <script setup lang="ts">
   import { computed, onMounted, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
+  import RowActions, { type RowAction } from '@/components/common/RowActions.vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
 
   const { t } = useI18n({ useScope: 'global' })
@@ -570,6 +564,22 @@
     activeDetailTab.value = initialTab
     detailVisible.value = true
     if (initialTab === 'runs') void loadDetailRuns()
+  }
+
+  function pipelineRowActions(row: PipelineDefinitionRow): RowAction[] {
+    return [
+      {
+        key: 'instances',
+        label: t('pipelineDefinitionList.actionRuns'),
+        primary: true,
+        onClick: () => openDetail(row, 'runs'),
+      },
+      {
+        key: 'edit',
+        label: t('pipelineDefinitionList.actionEdit'),
+        onClick: () => openEdit(row),
+      },
+    ]
   }
 
   function goJobInstance(row: ConsoleJobInstanceResponse) {

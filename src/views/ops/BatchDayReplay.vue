@@ -382,18 +382,12 @@
 
         <el-divider />
         <div class="entries-toolbar">
-          <el-radio-group v-model="entriesStatusFilter" size="small" @change="loadEntries">
-            <el-radio-button value="">{{ t('batchDayReplay.allEntries') }}</el-radio-button>
-            <el-radio-button value="PENDING">{{
-              t('batchDayReplay.entryStatusPending')
-            }}</el-radio-button>
-            <el-radio-button value="SUCCEEDED">{{
-              t('batchDayReplay.entryStatusSucceeded')
-            }}</el-radio-button>
-            <el-radio-button value="FAILED">{{
-              t('batchDayReplay.entryStatusFailed')
-            }}</el-radio-button>
-          </el-radio-group>
+          <StatusSegment
+            v-model="entriesStatusFilter"
+            :items="entriesStatusItems"
+            :aria-label="t('batchDayReplay.allEntries')"
+            @update:model-value="loadEntries"
+          />
         </div>
         <el-table
           class="replay-entries-table"
@@ -446,6 +440,7 @@
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
+  import StatusSegment, { type StatusSegmentItem } from '@/components/table/StatusSegment.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
   import DatetimeColumn from '@/components/common/DatetimeColumn.vue'
   import { todayBusinessDate } from '@/utils/datetime'
@@ -547,6 +542,12 @@
   const entries = ref<BatchDayReplayEntry[]>([])
   const loadingEntries = ref(false)
   const entriesStatusFilter = ref<'' | 'PENDING' | 'SUCCEEDED' | 'FAILED'>('')
+  const entriesStatusItems = computed<StatusSegmentItem[]>(() => [
+    { value: '', label: t('batchDayReplay.allEntries'), tone: 'neutral' },
+    { value: 'PENDING', label: t('batchDayReplay.entryStatusPending'), tone: 'warning' },
+    { value: 'SUCCEEDED', label: t('batchDayReplay.entryStatusSucceeded'), tone: 'success' },
+    { value: 'FAILED', label: t('batchDayReplay.entryStatusFailed'), tone: 'danger' },
+  ])
   const approving = ref(false)
   const cancelling = ref(false)
 

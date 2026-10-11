@@ -268,16 +268,26 @@
               </div>
             </template>
           </el-table-column>
-          <el-table-column :label="t('jobInstanceList.colActions')" width="110" fixed="right">
+          <el-table-column :label="t('jobInstanceList.colActions')" width="150" fixed="right">
             <template #default="{ row }">
-              <span class="jr-acts">
-                <router-link class="jr-act" :to="`/monitor/job-instances/${row.id}`">
-                  {{ t('jobInstanceList.actionDetail') }}
-                </router-link>
-                <router-link class="jr-act" :to="`/monitor/job-steps?instanceId=${row.id}`">
-                  {{ t('jobInstanceList.actionSteps') }}
-                </router-link>
-              </span>
+              <el-button
+                size="small"
+                link
+                type="primary"
+                :icon="Eye"
+                @click.stop="router.push(`/monitor/job-instances/${row.id}`)"
+              >
+                {{ t('jobInstanceList.actionDetail') }}
+              </el-button>
+              <el-button
+                size="small"
+                link
+                type="primary"
+                :icon="List"
+                @click.stop="router.push(`/monitor/job-steps?instanceId=${row.id}`)"
+              >
+                {{ t('jobInstanceList.actionSteps') }}
+              </el-button>
             </template>
           </el-table-column>
         </template>
@@ -326,7 +336,7 @@
   import TraceIdInput from '@/components/common/TraceIdInput.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
-  import { List } from '@lucide/vue'
+  import { Eye, List } from '@lucide/vue'
   import SavedFiltersMenu from '@/components/table/SavedFiltersMenu.vue'
   import { useSavedFilters } from '@/composables/useSavedFilters'
   import { useAuthStore } from '@/stores/auth'
@@ -465,13 +475,13 @@
   // 计数 = 同筛选(除状态外)下各状态 total(pageSize=1 轻查询);仅筛选签名变化时刷,
   // 不随 10s 实时轮询放大 QPS。
   const TAB_DEFS = [
-    { key: '', dot: '', labelKey: 'jobInstanceList.tabAll' },
-    { key: 'RUNNING', dot: 'var(--color-primary)', labelKey: 'jobInstanceList.tabRunning' },
-    { key: 'SUCCESS', dot: 'var(--color-success)', labelKey: 'jobInstanceList.tabSuccess' },
-    { key: 'FAILED', dot: 'var(--color-danger)', labelKey: 'jobInstanceList.tabFailed' },
+    { key: '', tone: 'neutral', labelKey: 'jobInstanceList.tabAll' },
+    { key: 'RUNNING', tone: 'info', labelKey: 'jobInstanceList.tabRunning' },
+    { key: 'SUCCESS', tone: 'success', labelKey: 'jobInstanceList.tabSuccess' },
+    { key: 'FAILED', tone: 'danger', labelKey: 'jobInstanceList.tabFailed' },
     {
       key: 'CANCELLED',
-      dot: 'var(--color-text-tertiary)',
+      tone: 'muted',
       labelKey: 'jobInstanceList.tabCancelled',
     },
   ] as const
@@ -521,7 +531,7 @@
   const statusTabs = computed(() =>
     TAB_DEFS.map((tab) => ({
       key: tab.key,
-      dot: tab.dot,
+      tone: tab.tone,
       label: t(tab.labelKey),
       count: statusCounts[tab.key],
       active: tab.key
@@ -541,7 +551,7 @@
       value: tab.key,
       label: tab.label,
       count: tab.count,
-      accent: tab.dot || undefined,
+      tone: tab.tone,
     })),
   )
 

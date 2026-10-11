@@ -5,13 +5,16 @@
       :key="item.value"
       type="button"
       class="status-segment__item"
-      :class="{ 'is-active': modelValue === item.value }"
-      :style="item.accent ? { '--status-segment-accent': item.accent } : undefined"
+      :class="[`is-${item.tone ?? 'neutral'}`, { 'is-active': modelValue === item.value }]"
       role="radio"
       :aria-checked="modelValue === item.value"
       @click="emit('update:modelValue', item.value)"
     >
-      <span v-if="item.accent" class="status-segment__dot" aria-hidden="true" />
+      <span
+        v-if="item.tone && item.tone !== 'neutral'"
+        class="status-segment__dot"
+        aria-hidden="true"
+      />
       <span class="status-segment__label">{{ item.label }}</span>
       <span v-if="item.count !== undefined && item.count !== null" class="status-segment__count">
         {{ item.count }}
@@ -25,8 +28,10 @@
     value: string
     label: string
     count?: number | null
-    accent?: string
+    tone?: StatusSegmentTone
   }
+
+  export type StatusSegmentTone = 'neutral' | 'info' | 'success' | 'warning' | 'danger' | 'muted'
 
   defineProps<{
     modelValue: string
@@ -80,20 +85,44 @@
   .status-segment__item.is-active {
     border-color: color-mix(
       in srgb,
-      var(--status-segment-accent, var(--color-text-secondary)) 40%,
-      var(--color-border) 60%
+      var(--status-segment-color, var(--color-text-secondary)) 42%,
+      var(--color-border) 58%
     );
-    background: var(--color-bg-card);
-    color: var(--status-segment-accent, var(--color-text-primary));
+    background: color-mix(
+      in srgb,
+      var(--status-segment-color, var(--color-bg-card)) 12%,
+      var(--color-bg-card)
+    );
+    color: var(--status-segment-color, var(--color-text-primary));
     box-shadow: var(--shadow-card);
     font-weight: 600;
+  }
+
+  .status-segment__item.is-info {
+    --status-segment-color: var(--color-primary);
+  }
+
+  .status-segment__item.is-success {
+    --status-segment-color: var(--color-success);
+  }
+
+  .status-segment__item.is-warning {
+    --status-segment-color: var(--color-warning);
+  }
+
+  .status-segment__item.is-danger {
+    --status-segment-color: var(--color-danger);
+  }
+
+  .status-segment__item.is-muted {
+    --status-segment-color: var(--color-text-tertiary);
   }
 
   .status-segment__dot {
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    background: var(--status-segment-accent);
+    background: var(--status-segment-color);
     flex: 0 0 auto;
   }
 

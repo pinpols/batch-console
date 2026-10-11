@@ -149,7 +149,7 @@
         >
           <template #default="{ row }">
             <div class="table-actions">
-              <el-button size="small" plain type="primary" @click="confirm(row)">
+              <el-button size="small" plain type="primary" :icon="CircleCheck" @click="confirm(row)">
                 {{ t('arrivalGroupList.actionConfirm') }}
               </el-button>
             </div>
@@ -161,6 +161,7 @@
 </template>
 
 <script setup lang="ts">
+  import { CircleCheck } from '@lucide/vue'
   import { computed, ref } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessageBox } from 'element-plus'

@@ -7159,6 +7159,18 @@ export interface components {
     CommonResponseConfigSyncLogList: components['schemas']['CommonResponseBase'] & {
       data?: components['schemas']['ConfigSyncLogResponse'][]
     }
+    ConfigSyncLogPageResponse: {
+      /** Format: int64 */
+      total: number
+      /** Format: int32 */
+      pageNo: number
+      /** Format: int32 */
+      pageSize: number
+      items: components['schemas']['ConfigSyncLogResponse'][]
+    }
+    CommonResponseConfigSyncLogPage: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['ConfigSyncLogPageResponse']
+    }
     CapacityProfileResponse: {
       /** Format: date-time */
       generatedAt: string
@@ -7461,6 +7473,18 @@ export interface components {
     }
     CommonResponseAssetFreshnessPolicyList: components['schemas']['CommonResponseBase'] & {
       data?: components['schemas']['AssetFreshnessPolicy'][]
+    }
+    AssetFreshnessPolicyPageResponse: {
+      /** Format: int64 */
+      total: number
+      /** Format: int32 */
+      pageNo: number
+      /** Format: int32 */
+      pageSize: number
+      items: components['schemas']['AssetFreshnessPolicy'][]
+    }
+    CommonResponseAssetFreshnessPolicyPage: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['AssetFreshnessPolicyPageResponse']
     }
     /** @description 作业账期 readiness 裁决及命中的 EFFECTIVE asset_partition 快照。 */
     AssetPartitionReadiness: {
@@ -13733,7 +13757,9 @@ export interface operations {
         tenantId?: string
         assetCode?: string
         enabled?: boolean
-        limit?: number
+        /** @description 深翻页上限 10000;超深页请改用 cursor 分页(ADR-031) */
+        pageNo?: components['parameters']['PageNoQuery']
+        pageSize?: number
       }
       header?: never
       path?: never
@@ -13747,7 +13773,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseAssetFreshnessPolicyList']
+          'application/json': components['schemas']['CommonResponseAssetFreshnessPolicyPage']
         }
       }
     }
@@ -19549,7 +19575,8 @@ export interface operations {
     parameters: {
       query: {
         tenantId: string
-        limit?: number
+        pageNo?: number
+        pageSize?: number
       }
       header?: never
       path?: never
@@ -19563,7 +19590,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseConfigSyncLogList']
+          'application/json': components['schemas']['CommonResponseConfigSyncLogPage']
         }
       }
     }
@@ -19729,6 +19756,7 @@ export interface operations {
     parameters: {
       query: {
         tenantId: string
+        keyword?: string
         routeCode?: string
         team?: string
         severity?: string

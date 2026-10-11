@@ -51,7 +51,7 @@
         </div>
         <VChart
           class="chart"
-          :option="jobStatusPieOption"
+          :option="jobStatusOption"
           :theme="chartTheme"
           autoresize
           :loading="chartsLoading"
@@ -64,7 +64,7 @@
         </div>
         <VChart
           class="chart"
-          :option="workerStatusPieOption"
+          :option="workerStatusOption"
           :theme="chartTheme"
           autoresize
           :loading="chartsLoading"
@@ -77,7 +77,7 @@
         </div>
         <VChart
           class="chart"
-          :option="alertSeverityPieOption"
+          :option="alertSeverityOption"
           :theme="chartTheme"
           autoresize
           :loading="chartsLoading"
@@ -90,7 +90,7 @@
         </div>
         <VChart
           class="chart"
-          :option="outboxHealthPieOption"
+          :option="outboxHealthOption"
           :theme="chartTheme"
           autoresize
           :loading="chartsLoading"
@@ -116,10 +116,10 @@
     chartTheme: string | undefined
     triggerTypeTopNOption: Record<string, unknown>
     workerLoadTopNOption: Record<string, unknown>
-    jobStatusPieOption: Record<string, unknown>
-    workerStatusPieOption: Record<string, unknown>
-    alertSeverityPieOption: Record<string, unknown>
-    outboxHealthPieOption: Record<string, unknown>
+    jobStatusOption: Record<string, unknown>
+    workerStatusOption: Record<string, unknown>
+    alertSeverityOption: Record<string, unknown>
+    outboxHealthOption: Record<string, unknown>
   }>()
 
   const emit = defineEmits<{

@@ -107,17 +107,7 @@
         <el-table-column :label="t('observability.execColActions')" width="180" fixed="right">
           <template #default="{ row }">
             <div class="table-actions">
-              <el-button size="small" plain type="primary" @click="openDetail(row)">
-                {{ t('observability.execActionDetail') }}
-              </el-button>
-              <el-button
-                v-if="row.traceId"
-                size="small"
-                plain
-                type="info"
-                @click="goTrace(String(row.traceId))"
-                >Trace</el-button
-              >
+              <RowActions :actions="executionLogRowActions(row)" :inline-limit="1" />
             </div>
           </template>
         </el-table-column>
@@ -162,6 +152,7 @@
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { useListLoadState } from '@/composables/useListLoadState'
   import DataState from '@/components/common/DataState.vue'
+  import RowActions, { type RowAction } from '@/components/common/RowActions.vue'
   import { structuredSummary } from '@/utils/structuredSummary'
 
   const tenant = useTenantStore()
@@ -288,6 +279,26 @@
   function openDetail(row: Record<string, unknown>) {
     detailRow.value = row
     detailVisible.value = true
+  }
+
+  function executionLogRowActions(row: Record<string, unknown>): RowAction[] {
+    return [
+      {
+        key: 'detail',
+        label: t('observability.execActionDetail'),
+        primary: true,
+        onClick: () => openDetail(row),
+      },
+      ...(row.traceId
+        ? [
+            {
+              key: 'trace',
+              label: t('observability.execActionTrace'),
+              onClick: () => goTrace(String(row.traceId)),
+            } satisfies RowAction,
+          ]
+        : []),
+    ]
   }
 
   function goTrace(traceId: string) {

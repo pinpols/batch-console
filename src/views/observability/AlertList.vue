@@ -333,9 +333,9 @@
   // ── 设计 #alerts:三分组 tab(未处理/已确认/全部)+ 真实计数 ──────────────
   const GROUP_TABS = [
     // 设计原型:「未处理」分组 pill 用琥珀(warning)点/描边,非 danger 红
-    { key: 'OPEN', dot: 'var(--color-warning)', labelKey: 'alertList.tabOpen' },
-    { key: 'ACKED', dot: 'var(--color-success)', labelKey: 'alertList.tabAcked' },
-    { key: '', dot: '', labelKey: 'alertList.tabAll' },
+    { key: '', tone: 'neutral', labelKey: 'alertList.tabAll' },
+    { key: 'OPEN', tone: 'warning', labelKey: 'alertList.tabOpen' },
+    { key: 'ACKED', tone: 'success', labelKey: 'alertList.tabAcked' },
   ] as const
 
   const groupCounts = reactive<Record<string, number | null>>({ OPEN: null, ACKED: null, '': null })
@@ -373,7 +373,7 @@
   const groupTabs = computed(() =>
     GROUP_TABS.map((g) => ({
       key: g.key,
-      dot: g.dot,
+      tone: g.tone,
       label: t(g.labelKey),
       count: groupCounts[g.key],
       active: g.key ? filters.status === g.key : !filters.status,
@@ -390,7 +390,7 @@
       value: tab.key,
       label: tab.label,
       count: tab.count,
-      accent: tab.dot || undefined,
+      tone: tab.tone,
     })),
   )
 

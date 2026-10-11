@@ -383,6 +383,17 @@ export const governanceApi = {
       normalizeAlertRouting,
     ),
 
+  listAlertRoutingsPage: async (
+    tenantId: string,
+    filters: { keyword: string; enabled?: boolean; pageNo: number; pageSize: number },
+  ) => {
+    const page = await get<components['schemas']['ConsoleAlertRoutingConfigPageResponse']>(
+      '/api/console/alert-routings',
+      { tenantId, ...filters },
+    )
+    return { ...page, items: page.items.map(normalizeAlertRouting) }
+  },
+
   createAlertRouting: (body: GovernanceAlertRoutingSavePayload) =>
     post<RawRow>('/api/console/alert-routings', body).then(normalizeAlertRouting),
 

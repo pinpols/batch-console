@@ -24,18 +24,91 @@ function baseGridOption() {
   }
 }
 
-export function emptyOption(title: string) {
+export function emptyOption(title: string, options: { axes?: boolean } = {}) {
+  const showAxes = options.axes !== false
   return {
-    ...baseGridOption(),
+    ...(showAxes ? baseGridOption() : {}),
+    backgroundColor: 'transparent',
     title: {
       text: title,
       left: 'center',
       top: 'middle',
       textStyle: { fontSize: 12, fontWeight: 500 },
     },
-    xAxis: { type: 'category', data: [] },
-    yAxis: { type: 'value' },
+    xAxis: showAxes
+      ? { type: 'category', data: [], axisTick: { show: false } }
+      : { show: false, type: 'category', data: [] },
+    yAxis: showAxes
+      ? { type: 'value', min: 0, axisLine: { show: true }, splitLine: { show: true } }
+      : { show: false, type: 'value' },
     series: [],
+  }
+}
+
+export function buildHorizontalStackedStatusOption(
+  items: { name: string; value: number; color: string }[],
+) {
+  return {
+    backgroundColor: 'transparent',
+    grid: { left: 18, right: 18, top: 44, bottom: 38, containLabel: true },
+    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+    legend: { top: 8, itemWidth: 10, itemHeight: 10, textStyle: { fontSize: 11 } },
+    xAxis: { type: 'value', min: 0, axisLabel: { fontSize: 11 }, splitLine: { lineStyle: { type: 'dashed' } } },
+    yAxis: { type: 'category', data: [''], axisLabel: { show: false }, axisTick: { show: false } },
+    series: items.map((item) => ({
+      name: item.name,
+      type: 'bar',
+      stack: 'total',
+      barMaxWidth: 28,
+      itemStyle: { color: item.color },
+      emphasis: { focus: 'series' },
+      data: [item.value],
+    })),
+  }
+}
+
+export function buildStatusBarOption(
+  items: { name: string; value: number; color: string }[],
+) {
+  const rows = [...items].reverse()
+  return {
+    grid: { left: 18, right: 28, top: 18, bottom: 18, containLabel: true },
+    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+    xAxis: { type: 'value', min: 0, axisLabel: { fontSize: 11 }, splitLine: { lineStyle: { type: 'dashed' } } },
+    yAxis: {
+      type: 'category',
+      data: rows.map((item) => item.name),
+      axisLabel: { fontSize: 11, overflow: 'truncate', width: 96 },
+    },
+    series: [{
+      type: 'bar',
+      barMaxWidth: 18,
+      data: rows.map((item) => ({ value: item.value, itemStyle: { color: item.color, borderRadius: [0, 5, 5, 0] } })),
+      label: { show: true, position: 'right', fontSize: 11 },
+    }],
+  }
+}
+
+export function buildStatusColumnOption(items: { name: string; value: number; color: string }[]) {
+  return {
+    grid: { left: 36, right: 18, top: 22, bottom: 34, containLabel: true },
+    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+    xAxis: {
+      type: 'category',
+      data: items.map((item) => item.name),
+      axisLabel: { fontSize: 11, interval: 0, hideOverlap: true },
+    },
+    yAxis: { type: 'value', min: 0, axisLabel: { fontSize: 11 }, splitLine: { lineStyle: { type: 'dashed' } } },
+    series: [{
+      type: 'bar',
+      barMaxWidth: 32,
+      data: items.map((item) => ({
+        name: item.name,
+        value: item.value,
+        itemStyle: { color: item.color, borderRadius: [5, 5, 0, 0] },
+      })),
+      label: { show: true, position: 'top', fontSize: 11 },
+    }],
   }
 }
 

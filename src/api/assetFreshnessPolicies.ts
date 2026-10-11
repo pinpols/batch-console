@@ -6,20 +6,23 @@ export type AssetFreshnessPolicyUpsertRequest =
   components['schemas']['AssetFreshnessPolicyUpsertRequest']
 export type AssetFreshnessPolicyToggleRequest =
   components['schemas']['AssetFreshnessPolicyToggleRequest']
+export type AssetFreshnessPolicyPage = components['schemas']['AssetFreshnessPolicyPageResponse']
 
 export interface AssetFreshnessPolicyQuery {
   tenantId: string
   assetCode?: string
   enabled?: boolean
-  limit?: number
+  pageNo: number
+  pageSize: number
 }
 
 export function listAssetFreshnessPolicies(query: AssetFreshnessPolicyQuery) {
-  return get<AssetFreshnessPolicy[]>('/api/console/asset-freshness-policies', {
+  return get<AssetFreshnessPolicyPage>('/api/console/asset-freshness-policies', {
     tenantId: query.tenantId,
     ...(query.assetCode?.trim() ? { assetCode: query.assetCode.trim() } : {}),
     ...(query.enabled != null ? { enabled: query.enabled } : {}),
-    ...(query.limit != null ? { limit: query.limit } : {}),
+    pageNo: query.pageNo,
+    pageSize: query.pageSize,
   })
 }
 

@@ -11,7 +11,7 @@
     <DataState
       :loading="loadingSyncLogs"
       :error="loadSyncLogsError"
-      :has-data="syncLogs.length > 0"
+      :has-data="total > 0"
       :on-retry="loadSyncLogs"
     >
       <el-table
@@ -78,6 +78,14 @@
         </el-table-column>
         <DatetimeColumn prop="createdAt" :label="t('configSyncLogsTab.colTime')" width="170" />
       </el-table>
+      <TablePagerBar
+        :page="pageNo"
+        :page-size="pageSize"
+        :total="total"
+        :disabled="loadingSyncLogs"
+        @update:page="onPageChange"
+        @update:page-size="onPageSizeChange"
+      />
     </DataState>
   </div>
 </template>
@@ -95,6 +103,7 @@
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { useListLoadState } from '@/composables/useListLoadState'
   import DataState from '@/components/common/DataState.vue'
+  import TablePagerBar from '@/components/table/TablePagerBar.vue'
 
   const tenant = useTenantStore()
   const {
@@ -104,6 +113,9 @@
   } = useListLoadState()
   const { filterBusy, runSearch, runReset, runRefresh } = useListFilterFeedback(loadingSyncLogs)
   const syncLogs = ref<Record<string, unknown>[]>([])
+  const pageNo = ref(1)
+  const pageSize = ref(15)
+  const total = ref(0)
 
   function hasMetrics(row: Record<string, unknown>): boolean {
     return (
@@ -156,15 +168,30 @@
 
   async function loadSyncLogs() {
     await runLoadSyncLogs(async () => {
-      const data = await listConfigSyncLogs(tenant.tenantId)
-      syncLogs.value = Array.isArray(data) ? (data as Record<string, unknown>[]) : []
+      const page = await listConfigSyncLogs(tenant.tenantId, pageNo.value, pageSize.value)
+      syncLogs.value = page.items as Record<string, unknown>[]
+      total.value = page.total
     }).catch(() => {
       syncLogs.value = []
+      total.value = 0
     })
+  }
+
+  function onPageChange(value: number) {
+    pageNo.value = value
+    void loadSyncLogs()
+  }
+
+  function onPageSizeChange(value: number) {
+    pageSize.value = value
+    pageNo.value = 1
+    void loadSyncLogs()
   }
 
   useTenantReload(() => {
     syncLogs.value = []
+    total.value = 0
+    pageNo.value = 1
     void loadSyncLogs()
   })
 </script>

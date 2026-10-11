@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import type { ConsoleBatchDayResponse } from '@/types/console-api'
-import { indexBatchDays, monthDateRange, summarizeBatchDays } from './batchDayPresentation'
+import {
+  indexBatchDays,
+  monthDateRange,
+  monthGridDates,
+  summarizeBatchDays,
+  toLocalDateKey,
+} from './batchDayPresentation'
 
 function row(overrides: Partial<ConsoleBatchDayResponse>): ConsoleBatchDayResponse {
   return {
@@ -26,6 +32,14 @@ describe('batchDayPresentation', () => {
       from: '2028-02-01',
       to: '2028-02-29',
     })
+  })
+
+  it('builds a Monday-first grid using only the weeks needed by the month', () => {
+    const sixWeekMonth = monthGridDates(new Date(2026, 7, 12))
+    expect(sixWeekMonth).toHaveLength(42)
+    expect(toLocalDateKey(sixWeekMonth[0])).toBe('2026-07-27')
+    expect(toLocalDateKey(sixWeekMonth[41])).toBe('2026-09-06')
+    expect(monthGridDates(new Date(2021, 1, 1))).toHaveLength(28)
   })
 
   it('indexes days and aggregates calendar totals', () => {

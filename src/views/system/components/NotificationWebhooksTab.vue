@@ -77,15 +77,7 @@
       <el-table-column :label="t('notificationCommon.colActions')" width="220" fixed="right">
         <template #default="{ row }">
           <div class="table-actions">
-            <el-button size="small" plain type="primary" @click="openWebhookEdit(row)">
-              {{ t('notificationCommon.btnEdit') }}
-            </el-button>
-            <el-button size="small" plain @click="viewWebhookLogs(row)">
-              {{ t('notificationWebhooksTab.btnDeliveryLogs') }}
-            </el-button>
-            <el-button size="small" plain type="danger" @click="confirmDeleteWebhook(row)">
-              {{ t('notificationCommon.btnDelete') }}
-            </el-button>
+            <RowActions :actions="webhookRowActions(row)" :inline-limit="1" />
           </div>
         </template>
       </el-table-column>
@@ -204,6 +196,7 @@
   import { useTenantReload } from '@/composables/useTenantReload'
   import ProTable from '@/components/table/ProTable.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
+  import RowActions, { type RowAction } from '@/components/common/RowActions.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
   import DatetimeColumn from '@/components/common/DatetimeColumn.vue'
@@ -273,6 +266,29 @@
     webhookForm.secret = ''
     webhookForm.enabled = row.enabled !== false
     webhookFormVisible.value = true
+  }
+
+  function webhookRowActions(row: WebhookSubscription): RowAction[] {
+    return [
+      {
+        key: 'edit',
+        label: t('notificationCommon.btnEdit'),
+        primary: true,
+        onClick: () => openWebhookEdit(row),
+      },
+      {
+        key: 'detail',
+        label: t('notificationWebhooksTab.btnDeliveryLogs'),
+        onClick: () => viewWebhookLogs(row),
+      },
+      {
+        key: 'delete',
+        label: t('notificationCommon.btnDelete'),
+        danger: true,
+        divided: true,
+        onClick: () => confirmDeleteWebhook(row),
+      },
+    ]
   }
 
   async function saveWebhook() {

@@ -163,7 +163,13 @@
         <el-table-column :label="t('observability.outboxColActions')" width="120" fixed="right">
           <template #default="{ row }">
             <div class="table-actions">
-              <el-button size="small" link type="primary" @click="openDetail('retry', row)">
+              <el-button
+                size="small"
+                link
+                type="primary"
+                :icon="Eye"
+                @click="openDetail('retry', row)"
+              >
                 {{ t('observability.outboxActionDetail') }}
               </el-button>
             </div>
@@ -235,7 +241,13 @@
         <el-table-column :label="t('observability.outboxColActions')" width="120" fixed="right">
           <template #default="{ row }">
             <div class="table-actions">
-              <el-button size="small" link type="primary" @click="openDetail('delivery', row)">
+              <el-button
+                size="small"
+                link
+                type="primary"
+                :icon="Eye"
+                @click="openDetail('delivery', row)"
+              >
                 {{ t('observability.outboxActionDetail') }}
               </el-button>
             </div>
@@ -254,6 +266,7 @@
 </template>
 
 <script setup lang="ts">
+  import { Eye } from '@lucide/vue'
   import { computed, ref, watch, onMounted } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
@@ -594,13 +607,13 @@
       [
         {
           key: 'retry',
-          dot: 'var(--color-warning)',
+          tone: 'warning',
           label: t('observability.outboxTabRetry'),
           count: retryLoaded.value ? filteredRetries.value.length : null,
         },
         {
           key: 'delivery',
-          dot: 'var(--color-primary)',
+          tone: 'info',
           label: t('observability.outboxTabDelivery'),
           count: deliveryLoaded.value ? filteredDeliveries.value.length : null,
         },
@@ -619,7 +632,7 @@
       value: item.key,
       label: item.label,
       count: item.count,
-      accent: item.dot,
+      tone: item.tone,
     })),
   )
 

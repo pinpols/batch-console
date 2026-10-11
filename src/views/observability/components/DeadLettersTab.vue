@@ -90,18 +90,7 @@
         <el-table-column :label="t('observability.dlqColActions')" width="180" fixed="right">
           <template #default="{ row }">
             <div class="table-actions">
-              <el-button size="small" plain type="primary" @click="openDetail(row)">
-                {{ t('observability.dlqActionDetail') }}
-              </el-button>
-              <el-button
-                v-if="isReplayable(row)"
-                size="small"
-                plain
-                type="warning"
-                @click="onReplay(row)"
-              >
-                {{ t('observability.dlqReplay') }}
-              </el-button>
+            <RowActions :actions="deadLetterRowActions(row)" :inline-limit="1" />
             </div>
           </template>
         </el-table-column>
@@ -143,6 +132,7 @@
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { useListLoadState } from '@/composables/useListLoadState'
   import DataState from '@/components/common/DataState.vue'
+  import RowActions, { type RowAction } from '@/components/common/RowActions.vue'
   import type { ConsoleDeadLetterTaskResponse } from '@/types/console-api'
 
   const tenant = useTenantStore()
@@ -283,6 +273,28 @@
   function openDetail(row: ConsoleDeadLetterTaskResponse) {
     detailRow.value = row
     detailVisible.value = true
+  }
+
+  function deadLetterRowActions(row: ConsoleDeadLetterTaskResponse): RowAction[] {
+    return [
+      {
+        key: 'detail',
+        label: t('observability.dlqActionDetail'),
+        primary: true,
+        onClick: () => openDetail(row),
+      },
+      ...(isReplayable(row)
+        ? [
+            {
+              key: 'replay',
+              label: t('observability.dlqReplay'),
+              warning: true,
+              divided: true,
+              onClick: () => onReplay(row),
+            } satisfies RowAction,
+          ]
+        : []),
+    ]
   }
 
   useTenantReload(() => {
