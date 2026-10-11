@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Resolve the paired backend contract for a pull request, falling back to main.
+# 为拉取请求解析配对后端契约；找不到配对分支时回退到 main。
 set -euo pipefail
 
 output_file="${1:?usage: resolve-backend-openapi.sh OUTPUT_FILE GITHUB_OUTPUT}"
