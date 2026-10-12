@@ -48,15 +48,12 @@ export const usePermissionStore = defineStore('permission', () => {
     if (backendMenus && backendMenus.length > 0) {
       // 后端菜单是可见性上限,前端精确 authority / capability 规则仍需同时满足。
       // 避免后端菜单配置偏宽时,本地已收紧的 ADMIN 页面重新出现在低权限侧栏。
-      const capabilityPaths = navigationGroups
-        .flatMap((group) => group.children)
+      const navigationItems = navigationGroups.flatMap((group) => group.children)
+      const capabilityPaths = navigationItems
         .filter((item) => item.capabilities?.some((capability) => auth.hasCapability(capability)))
         .map((item) => item.path)
-      return filterNavigationByBackendMenus(
-        filterGroups(navigationGroups),
-        backendMenus,
-        capabilityPaths,
-      )
+      const permittedGroups = filterGroups(navigationGroups)
+      return filterNavigationByBackendMenus(permittedGroups, backendMenus, capabilityPaths)
     }
     return filterGroups(navigationGroups)
   })

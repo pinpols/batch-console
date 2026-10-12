@@ -45,6 +45,7 @@
   import { useI18n } from 'vue-i18n'
   import { useRoute, useRouter } from 'vue-router'
   import { ArrowLeft, ArrowRight } from '@lucide/vue'
+  import { pageTitleKey } from '@/constants/pageMeta'
 
   const { t } = useI18n({ useScope: 'global' })
 
@@ -83,7 +84,7 @@
   function i18nByPathKey(field: 'title' | 'description'): string {
     const pathKey = typeof route.meta.pathKey === 'string' ? route.meta.pathKey : ''
     if (!pathKey) return ''
-    const key = `page.${pathKey}.${field}`
+    const key = field === 'title' ? pageTitleKey(route.path, pathKey) : `page.${pathKey}.${field}`
     const v = t(key)
     return v && v !== key ? v : ''
   }

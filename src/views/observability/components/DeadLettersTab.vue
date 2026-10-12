@@ -90,7 +90,7 @@
         <el-table-column :label="t('observability.dlqColActions')" width="180" fixed="right">
           <template #default="{ row }">
             <div class="table-actions">
-            <RowActions :actions="deadLetterRowActions(row)" :inline-limit="1" />
+              <RowActions :actions="deadLetterRowActions(row)" :inline-limit="1" />
             </div>
           </template>
         </el-table-column>
@@ -119,8 +119,6 @@
   import { ElMessage } from 'element-plus'
   import { confirmDanger } from '@/composables/useDangerConfirm'
   import { queryDeadLetters, replayDeadLetter } from '@/api/observabilityQueries'
-
-  const { t } = useI18n({ useScope: 'global' })
   import { toPageResult } from '@/api/adapters'
   import BulkActionBar from '@/components/table/BulkActionBar.vue'
   import { useBulkSelection } from '@/composables/useBulkSelection'
@@ -134,6 +132,9 @@
   import DataState from '@/components/common/DataState.vue'
   import RowActions, { type RowAction } from '@/components/common/RowActions.vue'
   import type { ConsoleDeadLetterTaskResponse } from '@/types/console-api'
+  import { uniqueDisplayFieldValues } from '@/utils/queryFormOptions'
+
+  const { t } = useI18n({ useScope: 'global' })
 
   const tenant = useTenantStore()
   const { loading: loadingDL, error: loadDLError, run: runLoadDL } = useListLoadState()
@@ -199,13 +200,7 @@
   }
 
   const dlSourceTypeOptions = computed(() =>
-    Array.from(
-      new Set(
-        dlRows.value
-          .map((x) => String(x.sourceType ?? '').trim())
-          .filter((x) => x && x !== 'null' && x !== 'undefined'),
-      ),
-    ).sort(),
+    uniqueDisplayFieldValues(dlRows.value, (row) => row.sourceType),
   )
 
   const filteredDL = computed(() => {

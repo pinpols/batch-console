@@ -274,6 +274,14 @@ export function pageKey(path: PageMetaPath): string {
 }
 
 /**
+ * 统一生成页面标题的 i18n key；显式 pathKey 由路由元数据提供，未提供时按纯 path 推导。
+ */
+export function pageTitleKey(path: string, explicitPathKey?: string): string {
+  const normalizedPath = path.split(/[?#]/, 1)[0] || path
+  return `page.${explicitPathKey ?? pathToKey(normalizedPath)}.title`
+}
+
+/**
  * 取页面标题(中文兜底)。
  *
  * 注:此函数总是返回中文,**不走 i18n**。原因是 `navigation.ts` 顶层一次性
@@ -281,7 +289,7 @@ export function pageKey(path: PageMetaPath): string {
  * 是冻结的,放在这里做 i18n 反而无法响应语言切换。
  *
  * 想随语言切换实时更新的 UI(Sidebar / LayoutTabs / CommandPalette / breadcrumb)
- * 在模板里直接 `t('page.' + pathToKey(path) + '.title')`,缺 key 时回退本函数。
+ * 响应语言切换的 UI 通过 `pageTitleKey()` 生成 i18n key，缺 key 时回退本函数。
  */
 export function pageTitle(path: PageMetaPath): string {
   return pageMetaByPath[path].title

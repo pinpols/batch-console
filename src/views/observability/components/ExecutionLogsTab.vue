@@ -135,14 +135,6 @@
   import { useRoute, useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import { queryExecutionLogs } from '@/api/observabilityQueries'
-
-  const { t, te } = useI18n({ useScope: 'global' })
-
-  function resolveEnumLabel(group: string, value?: string | null): string {
-    if (!value) return ''
-    const key = `enum.${group}.${value}`
-    return te(key) ? t(key) : value
-  }
   import { toPageResult } from '@/api/adapters'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
@@ -154,6 +146,15 @@
   import DataState from '@/components/common/DataState.vue'
   import RowActions, { type RowAction } from '@/components/common/RowActions.vue'
   import { structuredSummary } from '@/utils/structuredSummary'
+  import { uniqueDisplayFieldValues } from '@/utils/queryFormOptions'
+
+  const { t, te } = useI18n({ useScope: 'global' })
+
+  function resolveEnumLabel(group: string, value?: string | null): string {
+    if (!value) return ''
+    const key = `enum.${group}.${value}`
+    return te(key) ? t(key) : value
+  }
 
   const tenant = useTenantStore()
   const router = useRouter()
@@ -172,23 +173,11 @@
   const detailRow = ref<Record<string, unknown> | null>(null)
 
   const execOperationTypeOptions = computed(() =>
-    Array.from(
-      new Set(
-        execRows.value
-          .map((x) => String(x.operationType ?? '').trim())
-          .filter((x) => x && x !== 'null' && x !== 'undefined'),
-      ),
-    ).sort(),
+    uniqueDisplayFieldValues(execRows.value, (row) => row.operationType),
   )
 
   const execResultOptions = computed(() =>
-    Array.from(
-      new Set(
-        execRows.value
-          .map((x) => String(x.operationResult ?? '').trim())
-          .filter((x) => x && x !== 'null' && x !== 'undefined'),
-      ),
-    ).sort(),
+    uniqueDisplayFieldValues(execRows.value, (row) => row.operationResult),
   )
 
   const filteredExec = computed(() => {

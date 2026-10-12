@@ -14,7 +14,9 @@ export async function readAiTextAttachment(file: File): Promise<AiTextAttachment
   if (file.size > MAX_FILE_BYTES) throw new AiTextAttachmentError('size')
   let text: string
   try {
-    text = new TextDecoder('utf-8', { fatal: true }).decode(await file.arrayBuffer()).trim()
+    const fileBytes = await file.arrayBuffer()
+    const decodedText = new TextDecoder('utf-8', { fatal: true }).decode(fileBytes)
+    text = decodedText.trim()
   } catch {
     throw new AiTextAttachmentError('encoding')
   }

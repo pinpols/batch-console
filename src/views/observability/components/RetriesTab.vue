@@ -118,8 +118,6 @@
   import { Eye } from '@lucide/vue'
   import { ref, reactive, computed } from 'vue'
   import { useI18n } from 'vue-i18n'
-
-  const { t } = useI18n({ useScope: 'global' })
   import { queryRetries } from '@/api/observabilityQueries'
   import { toPageResult } from '@/api/adapters'
   import { useTenantStore } from '@/stores/tenant'
@@ -131,6 +129,9 @@
   import { useListLoadState } from '@/composables/useListLoadState'
   import DataState from '@/components/common/DataState.vue'
   import type { ConsoleRetryScheduleResponse } from '@/types/console-api'
+  import { uniqueDisplayFieldValues } from '@/utils/queryFormOptions'
+
+  const { t } = useI18n({ useScope: 'global' })
 
   const tenant = useTenantStore()
   const { loading: loadingRetry, error: loadRetryError, run: runLoadRetry } = useListLoadState()
@@ -145,23 +146,11 @@
   const detailRow = ref<ConsoleRetryScheduleResponse | null>(null)
 
   const retryRelatedTypeOptions = computed(() =>
-    Array.from(
-      new Set(
-        retryRows.value
-          .map((x) => String(x.relatedType ?? '').trim())
-          .filter((x) => x && x !== 'null' && x !== 'undefined'),
-      ),
-    ).sort(),
+    uniqueDisplayFieldValues(retryRows.value, (row) => row.relatedType),
   )
 
   const retryStatusOptions = computed(() =>
-    Array.from(
-      new Set(
-        retryRows.value
-          .map((x) => String(x.retryStatus ?? '').trim())
-          .filter((x) => x && x !== 'null' && x !== 'undefined'),
-      ),
-    ).sort(),
+    uniqueDisplayFieldValues(retryRows.value, (row) => row.retryStatus),
   )
 
   const filteredRetries = computed(() => {
