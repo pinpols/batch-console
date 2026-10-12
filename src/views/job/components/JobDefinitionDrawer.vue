@@ -29,7 +29,7 @@
         </div>
 
         <!-- 底部操作:查看态=关闭/导出/编辑;编辑/新建态=取消/保存 -->
-        <div class="jdd__foot">
+        <div class="jdd__foot" :class="{ 'jdd__foot--edit': mode !== 'view' }">
           <template v-if="mode === 'view'">
             <el-button @click="emit('close')">{{ t('common.close') }}</el-button>
             <span class="jdd__spacer" />
@@ -49,7 +49,6 @@
           </template>
           <template v-else>
             <el-button @click="emit('cancel')">{{ t('jobDefinitionList.drawerCancel') }}</el-button>
-            <span class="jdd__spacer" />
             <el-button type="primary" :loading="saving" @click="emit('save')">
               {{ saveLabel }}
             </el-button>
@@ -241,5 +240,9 @@
 
   .jdd__foot :deep(.el-button + .el-button) {
     margin-left: 0;
+  }
+
+  .jdd__foot--edit {
+    justify-content: flex-end;
   }
 </style>
