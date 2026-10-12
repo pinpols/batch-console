@@ -136,7 +136,13 @@
     </SectionCard>
 
     <el-drawer :append-to-body="true" v-model="drawerVisible" :title="drawerTitle" size="800px">
-      <el-form ref="formRef" :model="form" :rules="formRules" label-width="120px">
+      <el-form
+        ref="formRef"
+        :model="form"
+        :rules="formRules"
+        label-width="120px"
+        @submit.prevent="submitForm"
+      >
         <el-form-item :label="t('pipelineDefinitionList.fieldPipelineCode')" prop="pipelineCode">
           <el-input v-model="form.pipelineCode" :disabled="editingId != null" maxlength="128" />
         </el-form-item>
@@ -267,11 +273,15 @@
             </div>
           </div>
         </el-form-item>
-        <div class="drawer-actions">
-          <el-button @click="drawerVisible = false">
+        <div class="form-action-bar">
+          <el-button
+            native-type="button"
+            :disabled="submitAction.loading.value"
+            @click="drawerVisible = false"
+          >
             {{ t('pipelineDefinitionList.drawerCancel') }}
           </el-button>
-          <el-button type="primary" :loading="submitAction.loading.value" @click="submitForm">
+          <el-button type="primary" native-type="submit" :loading="submitAction.loading.value">
             {{ t('pipelineDefinitionList.drawerSave') }}
           </el-button>
         </div>
@@ -918,12 +928,6 @@
     font-size: 11.5px;
     font-weight: 600;
     line-height: 1.6;
-  }
-
-  .drawer-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 12px;
   }
 
   .detail-runs-header {

@@ -6,6 +6,7 @@
       :rules="quotaFormRules"
       label-width="88px"
       class="form-section"
+      @submit.prevent="submitQuotaChange"
     >
       <el-form-item :label="t('selfServiceQuotaChangeTab.keyLabel')" prop="quotaKey">
         <el-select
@@ -36,16 +37,14 @@
         <div class="field-hint">{{ t('selfServiceQuotaChangeTab.reasonHint') }}</div>
       </el-form-item>
       <el-form-item class="form-actions">
-        <el-button :icon="RefreshLeft" :disabled="submittingQuota" @click="resetQuotaForm">
+        <el-button native-type="button" :disabled="submittingQuota" @click="resetQuotaForm">
           {{ t('common.reset') }}
         </el-button>
         <el-button
           type="primary"
-          class="pretty-primary-button"
-          :icon="Promotion"
+          native-type="submit"
           :loading="submittingQuota"
           v-track-click="t('selfServiceQuotaChangeTab.trackSubmit')"
-          @click="submitQuotaChange"
         >
           {{ t('selfServiceQuotaChangeTab.btnSubmit') }}
         </el-button>
@@ -58,8 +57,6 @@
   import { ref, reactive } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
-  import { Send as Promotion, RotateCcw as RefreshLeft } from '@lucide/vue'
-
   const { t } = useI18n({ useScope: 'global' })
   import type { FormRules } from 'element-plus'
   import { getTenantQuota, requestQuotaChange } from '@/api/tenantSelfService'
