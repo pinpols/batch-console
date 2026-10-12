@@ -1,8 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import type { RouteRecordRaw } from 'vue-router'
-import { applyPageMetaToRoutes, pageMetaByPath } from './pageMeta'
+import { applyPageMetaToRoutes, pageMetaByPath, pageTitleKey } from './pageMeta'
 
 describe('applyPageMetaToRoutes', () => {
+  it('页面标题 key 忽略 query 和 hash，并优先使用显式 pathKey', () => {
+    expect(pageTitleKey('/approvals?tab=catch-up#latest')).toBe('page.approvals.title')
+    expect(pageTitleKey('/legacy', 'opsSummary')).toBe('page.opsSummary.title')
+  })
+
   it('registers the independent job monitoring policy page metadata', () => {
     expect(pageMetaByPath['/observability/job-monitoring-policies']).toMatchObject({
       title: '作业监控策略',

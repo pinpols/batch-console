@@ -1,6 +1,6 @@
 import type { Component } from 'vue'
 import type { Role } from '@/types'
-import { pageTitle } from '@/constants/pageMeta'
+import { pageTitle, pageTitleKey } from '@/constants/pageMeta'
 // 还原设计:侧栏/导航用 Lucide 线性图标(设计稿同款 stroke-width=2 细线),
 // 以别名映射到原 EP 名,下方结构不变。
 import {
@@ -66,7 +66,7 @@ export interface NavigationItem {
   hidden?: boolean
   /**
    * 显式 i18n 标题 key(覆盖按 path 推导的 page.<pathKey>.title)。
-   * path 带 query(如 Catch-up = /approvals?tab=catch-up)时,pathToKey 推不出正确 key,
+   * path 带 query(如 Catch-up = /approvals?tab=catch-up)且标题不等同基础路由时，
    * 用它指向原页的 key 保证中英都翻。
    */
   titleKey?: string
@@ -80,14 +80,30 @@ export interface NavigationGroup {
   children: NavigationItem[]
 }
 
+export function navigationItemTitleKey(item: NavigationItem): string {
+  return item.titleKey ?? pageTitleKey(item.path)
+}
+
+const navigationGroupOrder = [
+  'workspace',
+  'definitions',
+  'files',
+  'scheduling',
+  'monitor',
+  'alerting',
+  'system',
+] as const
+
+export type NavigationGroupKey = (typeof navigationGroupOrder)[number]
+
 /**
  * 侧边栏分组以用户任务组织；保留既有 7 组、路由与权限，不另建任务导航框架。
  *
  * 后端 `/auth/me` 返回的菜单会参与路由 allowlist,所以这里必须覆盖后端 menu.yml 的全部
  * path;只调整分组表达，不改变后端 `/auth/me` 菜单 allowlist。后端 `TENANT_ADMIN` 在前端统一映射为 `OPERATOR`。
  */
-const navigationGroupsByKey: NavigationGroup[] = [
-  {
+const navigationGroupsByKey = {
+  workspace: {
     key: 'workspace',
     title: '工作台',
     icon: Histogram,
@@ -116,7 +132,7 @@ const navigationGroupsByKey: NavigationGroup[] = [
       },
     ],
   },
-  {
+  monitor: {
     key: 'monitor',
     title: '运行监控',
     icon: Aim,
@@ -186,7 +202,7 @@ const navigationGroupsByKey: NavigationGroup[] = [
       },
     ],
   },
-  {
+  alerting: {
     key: 'alerting',
     title: '告警与投递',
     icon: Bell,
@@ -226,7 +242,7 @@ const navigationGroupsByKey: NavigationGroup[] = [
       },
     ],
   },
-  {
+  definitions: {
     key: 'definitions',
     title: '准备作业',
     icon: Management,
@@ -266,7 +282,7 @@ const navigationGroupsByKey: NavigationGroup[] = [
       },
     ],
   },
-  {
+  files: {
     key: 'files',
     title: '文件管理',
     icon: FolderOpened,
@@ -309,7 +325,7 @@ const navigationGroupsByKey: NavigationGroup[] = [
       },
     ],
   },
-  {
+  scheduling: {
     key: 'scheduling',
     title: '调度与资源',
     icon: DataAnalysis,
@@ -421,7 +437,7 @@ const navigationGroupsByKey: NavigationGroup[] = [
       },
     ],
   },
-  {
+  system: {
     key: 'system',
     title: '平台管理',
     icon: Setting,
@@ -522,20 +538,10 @@ const navigationGroupsByKey: NavigationGroup[] = [
       },
     ],
   },
-]
+} satisfies {
+  [Key in NavigationGroupKey]: NavigationGroup & { key: Key }
+}
 
-const navigationGroupOrder = [
-  'workspace',
-  'definitions',
-  'files',
-  'scheduling',
-  'monitor',
-  'alerting',
-  'system',
-] as const
-
-export const navigationGroups: NavigationGroup[] = navigationGroupOrder.map((key) => {
-  const group = navigationGroupsByKey.find((candidate) => candidate.key === key)
-  if (!group) throw new Error(`Missing navigation group: ${key}`)
-  return group
-})
+export const navigationGroups: NavigationGroup[] = navigationGroupOrder.map(
+  (key) => navigationGroupsByKey[key],
+)

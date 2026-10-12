@@ -114,8 +114,11 @@
   import BatchMark from '@/components/common/BatchMark.vue'
   import { useAppStore } from '@/stores/app'
   import { usePermissionStore } from '@/stores/permission'
-  import type { NavigationGroup, NavigationItem } from '@/constants/navigation'
-  import { pathToKey } from '@/constants/pathKey'
+  import {
+    navigationItemTitleKey,
+    type NavigationGroup,
+    type NavigationItem,
+  } from '@/constants/navigation'
   import { useResponsive } from '@/composables/useResponsive'
 
   const app = useAppStore()
@@ -147,9 +150,7 @@
   }
 
   function resolveItemTitle(item: NavigationItem): string {
-    // 显式 titleKey 优先(path 带 query 时 pathToKey 推不出正确 key)
-    if (item.titleKey && te(item.titleKey)) return t(item.titleKey)
-    const key = `page.${pathToKey(item.path)}.title`
+    const key = navigationItemTitleKey(item)
     return te(key) ? t(key) : item.title
   }
 

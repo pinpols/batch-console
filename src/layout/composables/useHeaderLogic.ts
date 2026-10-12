@@ -8,6 +8,7 @@ import { usePermissionStore } from '@/stores/permission'
 import { useTabsStore } from '@/stores/tabs'
 import { useTenantStore } from '@/stores/tenant'
 import { canSwitchTenant as checkCanSwitchTenant } from '@/utils/tenantAccess'
+import { pageTitleKey } from '@/constants/pageMeta'
 
 export function useHeaderLogic() {
   const route = useRoute()
@@ -35,7 +36,7 @@ export function useHeaderLogic() {
     for (const r of route.matched) {
       const fallback = r.meta?.title
       const pathKey = r.meta?.pathKey as string | undefined
-      const i18nKey = pathKey ? `page.${pathKey}.title` : ''
+      const i18nKey = pathKey ? pageTitleKey(r.path || route.path, pathKey) : ''
       let title: string | undefined
       if (i18nKey && te(i18nKey)) {
         title = t(i18nKey)
@@ -107,7 +108,7 @@ export function useHeaderLogic() {
 
   const currentTitle = computed(() => {
     const pathKey = route.meta?.pathKey as string | undefined
-    const i18nKey = pathKey ? `page.${pathKey}.title` : ''
+    const i18nKey = pathKey ? pageTitleKey(route.path, pathKey) : ''
     if (i18nKey && te(i18nKey)) return t(i18nKey)
     return (route.meta.title as string) ?? t('nav.appTitle')
   })

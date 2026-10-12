@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { uniqueFieldValues } from './queryFormOptions'
+import { uniqueDisplayFieldValues, uniqueFieldValues } from './queryFormOptions'
 
 describe('uniqueFieldValues', () => {
   const rows = [
@@ -27,5 +27,13 @@ describe('uniqueFieldValues', () => {
   it('trims whitespace values to empty and excludes them', () => {
     const data = [{ v: '  hello  ' }, { v: '   ' }]
     expect(uniqueFieldValues(data, (r) => r.v)).toEqual(['hello'])
+  })
+})
+
+describe('uniqueDisplayFieldValues', () => {
+  it('filters textual null sentinels from loose query results', () => {
+    const rows = [{ value: ' B ' }, { value: 'null' }, { value: undefined }, { value: 'A' }]
+
+    expect(uniqueDisplayFieldValues(rows, (row) => row.value)).toEqual(['A', 'B'])
   })
 })

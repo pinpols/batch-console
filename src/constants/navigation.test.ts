@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { navigationGroups } from './navigation'
+import { navigationGroups, navigationItemTitleKey } from './navigation'
 import { authorityRoles } from './role'
 
 const navigationItems = navigationGroups.flatMap((group) => group.children)
@@ -26,6 +26,21 @@ describe('navigation role authorities', () => {
     expect(item('/files/list').path).toBe('/files/list')
     expect(item('/system/users').hidden).not.toBe(true)
     expect(item('/observability/audits').path).toBe('/observability/audits')
+  })
+
+  it('导航分组 key 全部唯一', () => {
+    const keys = navigationGroups.map((group) => group.key)
+    expect(new Set(keys).size).toBe(keys.length)
+  })
+
+  it('带查询参数的菜单项优先使用显式标题 key', () => {
+    expect(
+      navigationItemTitleKey({
+        title: 'Catch-up',
+        path: '/approvals?tab=catch-up',
+        titleKey: 'page.approvals.title',
+      }),
+    ).toBe('page.approvals.title')
   })
 
   it('所有精确白名单只引用四类正式角色', () => {

@@ -145,7 +145,7 @@
               }"
               :disabled="!calendarDay(calendarDateKey(date))"
               :aria-label="calendarAccessibleLabel(date)"
-              @click.stop="calendarDay(calendarDateKey(date)) && goWindow(calendarDateKey(date))"
+              @click.stop="openCalendarDay(date)"
             >
               <span class="batch-calendar__date">{{ date.getDate() }}</span>
               <template
@@ -386,6 +386,11 @@
 
   function calendarDay(day: string): ConsoleBatchDayResponse | undefined {
     return calendarIndex.value.get(day)
+  }
+
+  function openCalendarDay(date: Date) {
+    const dateKey = calendarDateKey(date)
+    if (calendarDay(dateKey)) goWindow(dateKey)
   }
 
   const { data: calendarMeta } = useMetaCalendarsQuery()

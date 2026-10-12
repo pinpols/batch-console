@@ -60,7 +60,7 @@
 - **HTML 安全**：禁止 `v-html`。需要呈现 HTML 时使用 `v-safe-html`；手动写入 `innerHTML` 前使用 `purifyHtml()`。后端返回内容也视为不可信输入。
 - **用户文案**：所有用户可见字符串使用 `t('namespace.key')`；`zh-CN` 与 `en-US` 保持 key 一致。
 - **样式与组件**：遵循 [`docs/engineering/design-tokens.md`](docs/engineering/design-tokens.md)，优先复用 design token、Element Plus 和 `src/components/common/` 录入助手；不要为相同交互另造裸 HTML 组件或重复校验逻辑。
-- **代码约定**：解释性注释用中文；Vue 组件使用 PascalCase，composable 使用 `useXxx`；禁止在 `.vue`/`.ts` 留 `console.log` 或添加 emoji（用户明确要求除外）。
+- **代码约定**：解释性注释用中文；Vue 组件使用 PascalCase，composable 使用 `useXxx`；禁止在 `.vue`/`.ts` 留 `console.log` 或添加 emoji（用户明确要求除外）。嵌套调用、参数合法状态、字符串事实源与抽象边界遵循 [`docs/engineering/code-readability-governance.md`](docs/engineering/code-readability-governance.md)。
 - **列表分页**：默认每页 15 条，选项使用 `[15, 30, 50, 100]`；确有业务差异时应有明确依据。
 
 ## 测试边界

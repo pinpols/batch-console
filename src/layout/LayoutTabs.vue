@@ -133,7 +133,7 @@
   import { ChevronDown as ArrowDown, Ellipsis as MoreFilled } from '@lucide/vue'
   import { useTabsStore, type PageTab } from '@/stores/tabs'
   import { useAppStore } from '@/stores/app'
-  import { pathToKey } from '@/constants/pathKey'
+  import { pageTitleKey } from '@/constants/pageMeta'
 
   const route = useRoute()
   const router = useRouter()
@@ -143,7 +143,7 @@
   const { t, te } = useI18n({ useScope: 'global' })
 
   function resolveTabTitle(tab: PageTab): string {
-    const key = `page.${pathToKey(tab.path)}.title`
+    const key = pageTitleKey(tab.path)
     return te(key) ? t(key) : tab.title
   }
 

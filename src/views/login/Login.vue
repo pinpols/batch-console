@@ -205,7 +205,10 @@
   // 登录入口始终采用深色视觉；离开后恢复用户在控制台内保存的主题偏好。
   applyThemeToDocument('dark')
   onBeforeUnmount(() => {
-    applyThemeToDocument(resolveEffectiveTheme(readThemePreference(), getSystemIsDark()))
+    const themePreference = readThemePreference()
+    const systemIsDark = getSystemIsDark()
+    const restoredTheme = resolveEffectiveTheme(themePreference, systemIsDark)
+    applyThemeToDocument(restoredTheme)
   })
 
   const formRef = ref<FormInstance>()

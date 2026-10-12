@@ -66,9 +66,13 @@
   import { useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import type { Component } from 'vue'
-  import { navigationGroups, type NavigationGroup } from '@/constants/navigation'
+  import {
+    navigationGroups,
+    navigationItemTitleKey,
+    type NavigationGroup,
+  } from '@/constants/navigation'
   import type { PageTab } from '@/stores/tabs'
-  import { pathToKey } from '@/constants/pathKey'
+  import { pageTitleKey } from '@/constants/pageMeta'
   import { instanceApi } from '@/api/instance'
   import { workflowApi } from '@/api/workflow'
   import { fileApi } from '@/api/file'
@@ -83,7 +87,7 @@
   const { t, te } = useI18n({ useScope: 'global' })
 
   function resolvePageTitle(path: string, fallback: string): string {
-    const key = `page.${pathToKey(path)}.title`
+    const key = pageTitleKey(path)
     return te(key) ? t(key) : fallback
   }
 
@@ -223,9 +227,10 @@
     for (const g of props.groups) {
       for (const c of g.children) {
         const groupKey = `nav.group.${g.key}`
+        const titleKey = navigationItemTitleKey(c)
         out.push({
           key: `menu:${c.path}`,
-          title: resolvePageTitle(c.path, c.title),
+          title: te(titleKey) ? t(titleKey) : c.title,
           subtitle: te(groupKey) ? t(groupKey) : g.title,
           meta: t('palette.metaMenu'),
           path: c.path,

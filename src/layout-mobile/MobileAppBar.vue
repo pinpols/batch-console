@@ -146,7 +146,7 @@
   import { useTabsStore } from '@/stores/tabs'
   import { useAppStore } from '@/stores/app'
   import { canSwitchTenant as checkCanSwitchTenant } from '@/utils/tenantAccess'
-  import { pathToKey } from '@/constants/pathKey'
+  import { pageTitleKey } from '@/constants/pageMeta'
   import { useLocale } from '@/composables/useLocale'
   import TenantSelect from '@/components/common/TenantSelect.vue'
   import BatchMark from '@/components/common/BatchMark.vue'
@@ -189,7 +189,7 @@
     // 移动端路由 meta 也写了中文 title;若桌面端 page.<key>.title 命中就走 i18n,
     // 否则回退到 meta.title,最终再兜底应用名
     const pathKey = route.meta?.pathKey as string | undefined
-    const i18nKey = pathKey ? `page.${pathKey}.title` : `page.${pathToKey(route.path)}.title`
+    const i18nKey = pageTitleKey(route.path, pathKey)
     if (te(i18nKey)) return t(i18nKey)
     return (route.meta.title as string) || t('nav.appTitle')
   })

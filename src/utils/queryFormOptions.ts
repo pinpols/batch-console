@@ -11,3 +11,14 @@ export function uniqueFieldValues<T>(
   }
   return [...set].sort((a, b) => a.localeCompare(b))
 }
+
+/** 从宽松查询结果中提取可展示选项，过滤历史接口可能返回的 null/undefined 文本哨兵。 */
+export function uniqueDisplayFieldValues<T>(rows: T[], pick: (row: T) => unknown): string[] {
+  const values = new Set<string>()
+  for (const row of rows) {
+    const value = pick(row)
+    const normalized = String(value ?? '').trim()
+    if (normalized && normalized !== 'null' && normalized !== 'undefined') values.add(normalized)
+  }
+  return [...values].sort()
+}

@@ -86,7 +86,7 @@
             <div class="access-tree__title">
               <span>{{ t('userRole.sectionAccessTree') }}</span>
               <el-tag size="small" effect="plain" type="info">
-                {{ t('userRole.matrixCount', { n: accessRows.length }) }}
+                {{ t('userRole.matrixCount', { n: accessNodeCount }) }}
               </el-tag>
             </div>
             <el-input
@@ -110,7 +110,7 @@
           class="access-tree"
         >
           <template #default="{ data }">
-            <div v-if="data.children" class="access-tree__group">
+            <div v-if="data.kind === 'group'" class="access-tree__group">
               <span class="access-tree__group-label">{{ data.label }}</span>
               <span class="access-tree__group-count">
                 {{
@@ -134,7 +134,11 @@
                   {{ t('userRole.hiddenMenu') }}
                 </el-tag>
                 <span v-if="data.requiredAuthorities" class="access-tree__authorities">
-                  {{ t('userRole.authorityHint', { authorities: data.requiredAuthorities }) }}
+                  {{
+                    t('userRole.authorityHint', {
+                      authorities: data.requiredAuthorities.join(', '),
+                    })
+                  }}
                 </span>
                 <el-tag size="small" :type="data.allowed ? 'success' : 'danger'">
                   {{ data.allowed ? t('userRole.accessAllowed') : t('userRole.accessDenied') }}
@@ -152,13 +156,9 @@
   import { computed, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
-
-  const { t } = useI18n({ useScope: 'global' })
   import { RefreshCw as Refresh } from '@lucide/vue'
   import { useRefreshAction } from '@/composables/useRefreshAction'
-
-  const refreshAction = useRefreshAction()
-  import { navigationGroups } from '@/constants/navigation'
+  import { navigationGroups, navigationItemTitleKey } from '@/constants/navigation'
   import {
     authorityRoleLabelKeyMap,
     resolveAuthorityRole,
@@ -175,26 +175,30 @@
   import EmptyState from '@/components/common/EmptyState.vue'
   import MetricCard from '@/components/common/MetricCard.vue'
 
-  interface AccessRow {
-    groupTitle: string
-    itemTitle: string
-    requiredRole?: Role
-    requiredAuthorities: string
-    allowed: boolean
-    path: string
-    hidden?: boolean
-  }
-
-  interface AccessTreeNode {
+  interface AccessTreeBaseNode {
     id: string
     label: string
-    children?: AccessTreeNode[]
-    path?: string
-    requiredRole?: Role
-    allowed?: boolean
-    hidden?: boolean
-    allowedCount?: number
   }
+
+  interface AccessTreeItemNode extends AccessTreeBaseNode {
+    kind: 'item'
+    path: string
+    requiredRole?: Role
+    requiredAuthorities?: string[]
+    allowed: boolean
+    hidden: boolean
+  }
+
+  interface AccessTreeGroupNode extends AccessTreeBaseNode {
+    kind: 'group'
+    children: AccessTreeItemNode[]
+    allowedCount: number
+  }
+
+  type AccessTreeNode = AccessTreeItemNode | AccessTreeGroupNode
+
+  const { t, te } = useI18n({ useScope: 'global' })
+  const refreshAction = useRefreshAction()
 
   const auth = useAuthStore()
   const permission = usePermissionStore()
@@ -212,49 +216,40 @@
     return role ? `${t(authorityRoleLabelKeyMap[role])} (${role})` : t('userRole.roleUnset')
   })
   const visibleMenuCount = computed(() =>
-    permission.visibleGroups.reduce(
-      (total, group) => total + group.children.filter((item) => !item.hidden).length,
-      0,
-    ),
+    permission.visibleGroups.reduce((total, group) => {
+      const visibleItems = group.children.filter((item) => !item.hidden)
+      return total + visibleItems.length
+    }, 0),
   )
   const modeMessage = computed(() => t('userRole.modeMessage'))
-  const visibleAccessPaths = computed(
-    () =>
-      new Set(permission.visibleGroups.flatMap((group) => group.children.map((item) => item.path))),
-  )
+  const visibleAccessPaths = computed(() => {
+    const paths = permission.visibleGroups.flatMap((group) =>
+      group.children.map((item) => item.path),
+    )
+    return new Set(paths)
+  })
 
-  const accessRows = computed<AccessRow[]>(() =>
-    navigationGroups.flatMap((group) =>
-      group.children.map((item) => {
-        const requiredRole = item.minRole ?? group.minRole
-        return {
-          groupTitle: group.title,
-          itemTitle: item.title,
-          requiredRole,
-          requiredAuthorities: item.authorities?.join(', ') ?? '—',
-          allowed: visibleAccessPaths.value.has(item.path),
-          path: item.path,
-          hidden: item.hidden,
-        }
-      }),
-    ),
+  const accessNodeCount = computed(() =>
+    navigationGroups.reduce((total, group) => total + group.children.length, 0),
   )
 
   const accessTree = computed<AccessTreeNode[]>(() =>
     navigationGroups.map((group) => {
-      const children = accessRows.value
-        .filter((row) => row.groupTitle === group.title)
-        .map((row) => ({
-          id: row.path,
-          label: row.itemTitle,
-          path: row.path,
-          requiredRole: row.requiredRole,
-          requiredAuthorities:
-            row.requiredAuthorities === '—' ? undefined : row.requiredAuthorities,
-          allowed: row.allowed,
-          hidden: row.hidden,
-        }))
+      const children = group.children.map((item) => {
+        const titleKey = navigationItemTitleKey(item)
+        return {
+          kind: 'item' as const,
+          id: item.path,
+          label: te(titleKey) ? t(titleKey) : item.title,
+          path: item.path,
+          requiredRole: item.minRole ?? group.minRole,
+          requiredAuthorities: item.authorities,
+          allowed: visibleAccessPaths.value.has(item.path),
+          hidden: item.hidden === true,
+        }
+      })
       return {
+        kind: 'group' as const,
         id: group.key,
         label: t(`nav.group.${group.key}`),
         allowedCount: children.filter((child) => child.allowed).length,
@@ -266,10 +261,8 @@
   function filterAccessTreeNode(value: string, data: AccessTreeNode) {
     if (!value) return true
     const query = value.toLocaleLowerCase()
-    return (
-      data.label.toLocaleLowerCase().includes(query) ||
-      data.path?.toLocaleLowerCase().includes(query) === true
-    )
+    if (data.label.toLocaleLowerCase().includes(query)) return true
+    return data.kind === 'item' && data.path.toLocaleLowerCase().includes(query)
   }
 
   watch(accessFilter, (value) => accessTreeRef.value?.filter(value))

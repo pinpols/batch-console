@@ -125,8 +125,6 @@
   import { ref, reactive, computed } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { queryChannelReceipts } from '@/api/observabilityQueries'
-
-  const { t } = useI18n({ useScope: 'global' })
   import { toPageResult } from '@/api/adapters'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
@@ -136,6 +134,9 @@
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { useListLoadState } from '@/composables/useListLoadState'
   import DataState from '@/components/common/DataState.vue'
+  import { uniqueDisplayFieldValues } from '@/utils/queryFormOptions'
+
+  const { t } = useI18n({ useScope: 'global' })
 
   const tenant = useTenantStore()
   const {
@@ -154,13 +155,7 @@
   const detailRow = ref<Record<string, unknown> | null>(null)
 
   const receiptStatusOptions = computed(() =>
-    Array.from(
-      new Set(
-        receiptRows.value
-          .map((x) => String(x.receiptStatus ?? '').trim())
-          .filter((x) => x && x !== 'null' && x !== 'undefined'),
-      ),
-    ).sort(),
+    uniqueDisplayFieldValues(receiptRows.value, (row) => row.receiptStatus),
   )
 
   const filteredReceipts = computed(() => {
