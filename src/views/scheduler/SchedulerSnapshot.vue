@@ -40,7 +40,9 @@
       :title="t('schedulerSnapshot.loadErrorTitle')"
       :description="
         snap
-          ? t('schedulerSnapshot.staleDescription', { time: fmtDatetime(lastSuccessfulAt) })
+          ? snapshotFailed
+            ? t('schedulerSnapshot.staleDescription', { time: fmtDatetime(lastSuccessfulAt) })
+            : t('schedulerSnapshot.partialDescription')
           : t('schedulerSnapshot.loadErrorDescription')
       "
     >
@@ -59,7 +61,7 @@
       </template>
     </el-alert>
 
-    <SectionCard v-if="loadError && !snap && !loading" class="mt">
+    <SectionCard v-if="!snap && !loading" class="mt">
       <EmptyState
         variant="service-down"
         :title="t('schedulerSnapshot.loadErrorTitle')"
@@ -558,6 +560,7 @@
   const activePanel = ref<PanelKey>('policies')
   const KPI_KEYS: PanelKey[] = ['policies', 'queues', 'workers', 'history']
 
+  const snapshotFailed = ref(false)
   function onKpiKeydown(event: KeyboardEvent) {
     let nextIndex = KPI_KEYS.indexOf(activePanel.value)
     if (event.key === 'ArrowRight' || event.key === 'ArrowDown')
@@ -755,7 +758,8 @@
         .filter((result) => result.status === 'rejected')
         .map((result) => errorCorrelation(result.reason))
         .find(Boolean) ?? ''
-    if (snapOk) lastSuccessfulAt.value = new Date().toISOString()
+    snapshotFailed.value = !snapOk
+    if (snapOk) lastSuccessfulAt.value = snapResult.value.generatedAt || new Date().toISOString()
     loading.value = false
     histLoading.value = false
     if (!silent) {

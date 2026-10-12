@@ -30,7 +30,7 @@ test.describe('@batch-day-replay 批次日重放', () => {
     await page.getByRole('button', { name: '新建重放' }).first().click()
     const d = page.locator('.el-drawer', { hasText: '新建批次日重放' })
     await expect(d).toBeVisible()
-    await d.getByRole('radio', { name: '仅失败项' }).check()
+    await d.locator('label.el-radio').filter({ hasText: '仅失败项' }).click()
     await expect(d.getByRole('radio', { name: '仅失败项' })).toBeChecked()
     await expect(d.locator('.el-form-item').filter({ hasText: /作业编码/ })).toBeHidden()
     await expect(d.locator('.el-form-item').filter({ hasText: /^结果版本 ID/ })).toBeHidden()
@@ -40,7 +40,7 @@ test.describe('@batch-day-replay 批次日重放', () => {
     await page.getByRole('button', { name: '新建重放' }).first().click()
     const d = page.locator('.el-drawer', { hasText: '新建批次日重放' })
     await expect(d).toBeVisible()
-    await d.locator('.replay-scope-option').filter({ hasText: '指定作业' }).click()
+    await d.locator('label.el-radio').filter({ hasText: '指定作业' }).click()
     await expect(d.getByRole('radio', { name: '指定作业' })).toBeChecked()
     await expect(d.locator('.el-form-item').filter({ hasText: /作业编码/ }).locator('.el-select')).toBeVisible()
     await expect(d.locator('.el-form-item').filter({ hasText: /^结果版本 ID/ })).toBeHidden()
@@ -50,7 +50,7 @@ test.describe('@batch-day-replay 批次日重放', () => {
     await page.getByRole('button', { name: '新建重放' }).first().click()
     const d = page.locator('.el-drawer', { hasText: '新建批次日重放' })
     await expect(d).toBeVisible()
-    await d.getByRole('radio', { name: '仅输出结果' }).check()
+    await d.locator('label.el-radio').filter({ hasText: '仅输出结果' }).click()
     await expect(d.getByRole('radio', { name: '仅输出结果' })).toBeChecked()
     await expect(
       d.locator('.el-form-item').filter({ hasText: /^结果版本 ID/ }).locator('.el-select'),

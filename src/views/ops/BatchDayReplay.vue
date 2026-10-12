@@ -157,14 +157,16 @@
           />
         </el-form-item>
         <el-form-item :label="t('batchDayReplay.fieldScope')" required>
-          <el-radio-group v-model="submitForm.scope" class="replay-scope-options">
-            <el-radio
-              v-for="option in scopeOptions"
-              :key="option.value"
-              :value="option.value"
-              class="replay-scope-option"
-            >
-              {{ option.label }}
+          <el-radio-group v-model="submitForm.scope" class="replay-scope-group">
+            <el-radio value="ALL">{{ t('batchDayReplay.scopeAll') }}</el-radio>
+            <el-radio v-if="submitForm.candidateSource !== 'SCHEDULE_PLAN'" value="ALL_FAILED">
+              {{ t('batchDayReplay.scopeAllFailed') }}
+            </el-radio>
+            <el-radio value="SUBSET_JOB_CODES">
+              {{ t('batchDayReplay.scopeSubsetJobCodes') }}
+            </el-radio>
+            <el-radio v-if="submitForm.executionMode !== 'DRY_RUN'" value="OUTPUTS_ONLY">
+              {{ t('batchDayReplay.scopeOutputsOnly') }}
             </el-radio>
           </el-radio-group>
         </el-form-item>
@@ -559,20 +561,6 @@
     reason: '',
     requestedBy: auth.userInfo?.username ?? '',
     autoApprove: false,
-  })
-  const scopeOptions = computed(() => {
-    const options = [{ label: t('batchDayReplay.scopeAll'), value: 'ALL' as const }]
-    if (submitForm.candidateSource !== 'SCHEDULE_PLAN') {
-      options.push({ label: t('batchDayReplay.scopeAllFailed'), value: 'ALL_FAILED' as const })
-    }
-    options.push({
-      label: t('batchDayReplay.scopeSubsetJobCodes'),
-      value: 'SUBSET_JOB_CODES' as const,
-    })
-    if (submitForm.executionMode !== 'DRY_RUN') {
-      options.push({ label: t('batchDayReplay.scopeOutputsOnly'), value: 'OUTPUTS_ONLY' as const })
-    }
-    return options
   })
   const selectedJobCodes = ref<string[]>([])
   const selectedOutputJobCodes = ref<string[]>([])
@@ -1019,7 +1007,7 @@
     margin-bottom: 12px;
   }
 
-  .replay-scope-options {
+  .replay-scope-group {
     display: flex;
     flex-wrap: nowrap;
     gap: 8px;
@@ -1028,10 +1016,10 @@
     padding: 2px 0;
   }
 
-  .replay-scope-option {
+  .replay-scope-group :deep(.el-radio) {
     flex: 0 0 auto;
-    white-space: nowrap;
     margin-right: 0;
+    white-space: nowrap;
   }
 
   .detail-progress {

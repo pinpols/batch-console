@@ -58,9 +58,11 @@
           </template>
         </el-dialog>
 
-        <el-steps :active="step" finish-status="success" align-center>
-          <el-step v-for="item in steps" :key="item.key" :title="item.title" />
-        </el-steps>
+        <div class="wizard-steps">
+          <el-steps :active="step" finish-status="success" align-center>
+            <el-step v-for="item in steps" :key="item.key" :title="item.title" />
+          </el-steps>
+        </div>
 
         <div class="wizard-step-banner">
           <div class="wizard-step-banner__idx">{{ step + 1 }} / {{ steps.length }}</div>
@@ -747,30 +749,67 @@
     flex-direction: column;
     gap: 24px;
     align-items: stretch;
+    width: 100%;
+    max-width: 1120px;
+    margin: 0 auto;
+  }
+
+  .wizard-steps {
+    width: 100%;
+    max-width: 920px;
+    margin: 0 auto;
   }
 
   .wizard-form {
-    max-width: 760px;
+    max-width: 920px;
     margin: 0 auto;
     width: 100%;
   }
 
-  /* 单个输入 / select 限 480px,避免在宽屏上拉成一条横杠 */
   .wizard-form :deep(.el-form-item) {
-    max-width: 640px;
+    width: 100%;
+    max-width: none;
   }
 
   .wizard-form :deep(.el-input),
   .wizard-form :deep(.el-select),
   .wizard-form :deep(.el-input-number) {
-    max-width: 480px;
+    width: 100%;
+    max-width: none;
   }
 
-  /* textarea / JSON 输入仍允许撑满 */
+  .wizard-form :deep(.el-form-item__content) {
+    min-width: 0;
+  }
+
   .wizard-form :deep(.el-textarea),
   .wizard-form :deep(.el-form-item.query-w-full .el-input),
   .wizard-form :deep(.el-form-item.query-w-full .el-select) {
+    width: 100%;
     max-width: none;
+  }
+
+  .wizard-form :deep(.code-name-builder),
+  .wizard-form :deep(.cnb-row) {
+    width: 100%;
+  }
+
+  .wizard-form :deep(.cnb-row) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .wizard-form :deep(.cnb-domain),
+  .wizard-form :deep(.cnb-biz),
+  .wizard-form :deep(.cnb-version) {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .wizard-form :deep(.inline-create-wrapper .inline-create-input) {
+    width: auto;
+    min-width: 0;
   }
 
   .wizard-step-banner {
@@ -781,7 +820,7 @@
     border-left: 3px solid var(--el-color-primary);
     background: var(--color-bg-subtle, rgba(64, 158, 255, 0.06));
     border-radius: var(--radius-md, 6px);
-    max-width: 760px;
+    max-width: 920px;
     margin: 0 auto;
     width: 100%;
   }
@@ -874,14 +913,50 @@
   }
 
   .bundle-summary {
-    max-width: 720px;
+    width: 100%;
+    max-width: 920px;
   }
 
   .wizard-footer {
     display: flex;
-    justify-content: flex-end;
+    justify-content: center;
     gap: 12px;
     border-top: 1px solid var(--color-border-light);
     padding-top: 16px;
+    width: 100%;
+    max-width: 920px;
+    margin: 0 auto;
+  }
+
+  @media (max-width: 768px) {
+    .wizard-layout {
+      gap: 18px;
+    }
+
+    .wizard-steps :deep(.el-step__title) {
+      font-size: 11px;
+      line-height: 1.3;
+      overflow-wrap: anywhere;
+    }
+
+    .wizard-steps :deep(.el-step__description) {
+      display: none;
+    }
+
+    .wizard-form :deep(.el-form-item__label) {
+      justify-content: flex-start;
+    }
+
+    .wizard-form :deep(.cnb-row) {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .wizard-form :deep(.cnb-sep) {
+      display: none;
+    }
+
+    .wizard-footer {
+      padding-top: 12px;
+    }
   }
 </style>

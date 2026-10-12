@@ -4321,6 +4321,8 @@ const messages: Messages = {
     statusUnknownTip:
       'Scheduler status is unavailable. Refresh successfully before using global controls.',
     loadErrorTitle: 'Scheduler snapshot is incomplete',
+    partialDescription:
+      'The snapshot loaded, but some status or history data is unavailable. This view may be incomplete.',
     loadErrorDescription:
       'The scheduler snapshot is unavailable. Check the scheduler service and retry.',
     staleDescription:
@@ -4456,17 +4458,19 @@ const messages: Messages = {
     bulkResultNoError: 'Request accepted',
   },
   heartbeatPanel: {
-    title: 'Task #{taskId}',
+    title: 'Progress details',
     cancelRequested: 'Cancel requested',
-    autoRefresh: 'Auto-refresh 10s',
-    loadError: 'Failed to load heartbeat, please retry',
+    autoRefresh: 'Auto-refresh (10 sec)',
+    loadError: 'Heartbeat data is temporarily unavailable',
+    loadErrorBody:
+      'Check service health and retry. With auto-refresh enabled, the next request will run on schedule.',
     notFoundTitle: 'Task not visible',
-    notFoundBody: 'The task may belong to another tenant, be archived, or have an invalid ID.',
+    notFoundBody: 'The task may belong to another tenant, be archived, or no longer exist.',
     heartbeatAt: 'Last heartbeat',
     noHeartbeat: 'none',
-    noDetailsTitle: 'No progress / checkpoint yet',
+    noDetailsTitle: 'This task has not reported progress',
     noDetailsBody:
-      'No detailed heartbeat has been reported. Confirm progress reporting is enabled and the SDK version is supported.',
+      'Task status and the latest heartbeat are still available. To view progress details, confirm reporting is enabled and the SDK version is supported.',
   },
   jobInstanceDetail: {
     opsDiagnosticAction: 'Operations diagnostic',
