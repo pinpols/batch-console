@@ -273,7 +273,7 @@
   import BulkActionBar from '@/components/table/BulkActionBar.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
   import MetaSelect from '@/components/common/MetaSelect.vue'
-  import StatusSegment from '@/components/table/StatusSegment.vue'
+  import StatusSegment, { type StatusSegmentItem } from '@/components/table/StatusSegment.vue'
   import CopyableText from '@/components/common/CopyableText.vue'
   import DetailDrawer from '@/components/common/DetailDrawer.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
@@ -344,11 +344,11 @@
   const approvalStatusSegmentValue = computed(() =>
     !filters.status ? '' : approvalPrimaryStatuses.has(filters.status) ? filters.status : 'CUSTOM',
   )
-  const approvalStatusSegmentItems = computed(() => [
-    { value: '', label: t('dateRangePicker.all') },
-    { value: 'PENDING', label: t('enum.approvalStatus.PENDING'), accent: 'var(--color-warning)' },
-    { value: 'APPROVED', label: t('enum.approvalStatus.APPROVED'), accent: 'var(--color-success)' },
-    { value: 'REJECTED', label: t('enum.approvalStatus.REJECTED'), accent: 'var(--color-danger)' },
+  const approvalStatusSegmentItems = computed<StatusSegmentItem[]>(() => [
+    { value: '', label: t('dateRangePicker.all'), tone: 'neutral' },
+    { value: 'PENDING', label: t('enum.approvalStatus.PENDING'), tone: 'warning' },
+    { value: 'APPROVED', label: t('enum.approvalStatus.APPROVED'), tone: 'success' },
+    { value: 'REJECTED', label: t('enum.approvalStatus.REJECTED'), tone: 'danger' },
   ])
   const advancedApprovalStatus = computed({
     get: () => (approvalPrimaryStatuses.has(filters.status) ? '' : filters.status),
