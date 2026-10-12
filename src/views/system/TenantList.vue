@@ -205,7 +205,7 @@
   } from '@/api/tenants'
   import { useAuthStore } from '@/stores/auth'
   import { useTenantStore } from '@/stores/tenant'
-  import StatusSegment from '@/components/table/StatusSegment.vue'
+  import StatusSegment, { type StatusSegmentItem } from '@/components/table/StatusSegment.vue'
   import MetaSelect from '@/components/common/MetaSelect.vue'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { useListLoadState } from '@/composables/useListLoadState'
@@ -267,13 +267,13 @@
       queryDraft.status = typeof value === 'string' ? (value as TenantStatus) : ''
     },
   })
-  const tenantStatusSegmentItems = computed(() => [
-    { value: 'ALL', label: t('dateRangePicker.all') },
-    { value: 'ACTIVE', label: t('enum.tenantStatus.ACTIVE'), accent: 'var(--color-success)' },
+  const tenantStatusSegmentItems = computed<StatusSegmentItem[]>(() => [
+    { value: 'ALL', label: t('dateRangePicker.all'), tone: 'neutral' },
+    { value: 'ACTIVE', label: t('enum.tenantStatus.ACTIVE'), tone: 'success' },
     {
       value: 'SUSPENDED',
       label: t('enum.tenantStatus.SUSPENDED'),
-      accent: 'var(--color-text-tertiary)',
+      tone: 'muted',
     },
   ])
   const tenantAdvancedStatusOptions = computed(() =>

@@ -293,7 +293,7 @@
   import PageHeader from '@/components/common/PageHeader.vue'
   import ProTable from '@/components/table/ProTable.vue'
   import OpsFilterToolbar from '@/components/table/OpsFilterToolbar.vue'
-  import StatusSegment from '@/components/table/StatusSegment.vue'
+  import StatusSegment, { type StatusSegmentItem } from '@/components/table/StatusSegment.vue'
   import LiveMonitorBar from '@/components/table/LiveMonitorBar.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
@@ -627,7 +627,7 @@
     },
   })
 
-  const outboxSegmentItems = computed(() =>
+  const outboxSegmentItems = computed<StatusSegmentItem[]>(() =>
     obTabs.value.map((item) => ({
       value: item.key,
       label: item.label,

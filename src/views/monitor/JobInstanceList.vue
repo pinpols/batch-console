@@ -392,7 +392,7 @@
   import StatusTag from '@/components/common/StatusTag.vue'
   import DateRangePresetPicker from '@/components/common/DateRangePresetPicker.vue'
   import OpsFilterToolbar from '@/components/table/OpsFilterToolbar.vue'
-  import StatusSegment from '@/components/table/StatusSegment.vue'
+  import StatusSegment, { type StatusSegmentItem } from '@/components/table/StatusSegment.vue'
   import LiveMonitorBar from '@/components/table/LiveMonitorBar.vue'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
@@ -630,7 +630,7 @@
     set: (value: string) => pickStatusTab(value),
   })
 
-  const statusSegmentItems = computed(() =>
+  const statusSegmentItems = computed<StatusSegmentItem[]>(() =>
     statusTabs.value.map((tab) => ({
       value: tab.key,
       label: tab.label,

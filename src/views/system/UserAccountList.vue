@@ -313,7 +313,7 @@
   import { fmtClockTime } from '@/utils/datetime'
   import TablePagerBar from '@/components/table/TablePagerBar.vue'
   import OpsFilterToolbar from '@/components/table/OpsFilterToolbar.vue'
-  import StatusSegment from '@/components/table/StatusSegment.vue'
+  import StatusSegment, { type StatusSegmentItem } from '@/components/table/StatusSegment.vue'
   import LiveMonitorBar from '@/components/table/LiveMonitorBar.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
   import TenantSelect from '@/components/common/TenantSelect.vue'
@@ -364,7 +364,7 @@
   const accountStatus = ref('')
   const lastLoadedAt = ref<Date | null>(null)
 
-  const accountStatusItems = computed(() => [
+  const accountStatusItems = computed<StatusSegmentItem[]>(() => [
     { value: '', label: t('userAccountList.statusAll'), tone: 'neutral' },
     {
       value: 'enabled',

@@ -10,19 +10,9 @@
           >
             {{ t('jobDefinitionList.headerNew') }}
           </el-button>
-          <el-dropdown :disabled="!canMutateConfig" @command="onCreateMode">
-            <el-button :disabled="!canMutateConfig">
-              {{ t('jobDefinitionList.headerMoreCreate') }}
-              <ChevronDown :size="14" aria-hidden="true" />
-            </el-button>
-            <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item command="quick-form">
-                  {{ t('jobDefinitionList.headerQuickCreate') }}
-                </el-dropdown-item>
-              </el-dropdown-menu>
-            </template>
-          </el-dropdown>
+          <el-button :disabled="!canMutateConfig" @click="openCreate">
+            {{ t('jobDefinitionList.headerQuickCreate') }}
+          </el-button>
           <el-tooltip
             :content="
               canMutateConfig
@@ -572,10 +562,11 @@
           }}</el-checkbox>
         </el-form-item>
         <el-form-item :label="t('jobDefinitionList.bundleImportJsonLabel')">
-          <el-input
+          <JsonTextareaInput
             v-model="bundleImportJson"
-            type="textarea"
             :rows="14"
+            expect="object"
+            :initialize-default="false"
             :placeholder="t('jobDefinitionList.bundleImportJsonPlaceholder')"
           />
         </el-form-item>
@@ -655,6 +646,7 @@
   import { useTenantReload } from '@/composables/useTenantReload'
   import { showCreateSuccess } from '@/composables/useCreateSuccess'
   import PageContainer from '@/components/common/PageContainer.vue'
+  import JsonTextareaInput from '@/components/common/JsonTextareaInput.vue'
   import JobConfigBasicForm from './components/JobConfigBasicForm.vue'
   import JsonPreview from '@/components/common/JsonPreview.vue'
   import JobDefinitionDrawer from './components/JobDefinitionDrawer.vue'
@@ -683,9 +675,6 @@
   const route = useRoute()
   const router = useRouter()
 
-  function onCreateMode(command: string) {
-    if (command === 'quick-form') openCreate()
-  }
   const tenant = useTenantStore()
   const { canMutateConfig, canManageSystem } = usePermission()
   const page = ref(1)
