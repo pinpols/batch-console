@@ -386,6 +386,7 @@
   import { Eye, List } from '@lucide/vue'
   import SavedFiltersMenu from '@/components/table/SavedFiltersMenu.vue'
   import { useSavedFilters } from '@/composables/useSavedFilters'
+  import { userErrorMessage } from '@/utils/userErrorMessage'
   import { useAuthStore } from '@/stores/auth'
   import ProTable from '@/components/table/ProTable.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
@@ -453,17 +454,7 @@
   }
 
   function errorMessage(error: unknown): string {
-    const responseMessage =
-      error && typeof error === 'object' && 'response' in error
-        ? (error as { response?: { data?: { message?: unknown } } }).response?.data?.message
-        : undefined
-    const message =
-      typeof responseMessage === 'string' && responseMessage.trim()
-        ? responseMessage
-        : error instanceof Error
-          ? error.message
-          : String(error)
-    return message.slice(0, 400)
+    return userErrorMessage(error).slice(0, 400)
   }
 
   async function onBulkRetry() {

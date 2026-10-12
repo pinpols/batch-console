@@ -10,7 +10,7 @@ function response(data: unknown) {
 const jobs = [
   {
     id: 91001,
-    tenantId: 'tc',
+    tenantId: 'ta',
     jobCode: 'JOB_MONITOR_CRON_SAMPLE',
     jobName: '每日客户导入',
     jobType: 'IMPORT',
@@ -28,7 +28,7 @@ const jobs = [
   },
   {
     id: 91002,
-    tenantId: 'tc',
+    tenantId: 'ta',
     jobCode: 'JOB_MONITOR_FIXED_RATE_SAMPLE',
     jobName: '定时清理任务',
     jobType: 'GENERAL',
@@ -41,7 +41,7 @@ const jobs = [
   },
   {
     id: 91003,
-    tenantId: 'tc',
+    tenantId: 'ta',
     jobCode: 'JOB_MONITOR_MANUAL_SAMPLE',
     jobName: '手工补数任务',
     jobType: 'GENERAL',
@@ -52,7 +52,7 @@ const jobs = [
   },
   {
     id: 91004,
-    tenantId: 'tc',
+    tenantId: 'ta',
     jobCode: 'JOB_MONITOR_DEPENDENT_SAMPLE',
     jobName: '结算后下游汇总',
     jobType: 'PROCESS',
@@ -67,12 +67,12 @@ const jobs = [
 ]
 
 test.beforeEach(async ({ page }) => {
-  await page.addInitScript(() => {
-    localStorage.setItem(STORAGE_KEYS.session, '1')
-    localStorage.setItem(STORAGE_KEYS.tenantId, 'tc')
-    localStorage.setItem(STORAGE_KEYS.locale, 'zh-CN')
-    localStorage.setItem(STORAGE_KEYS.onboardingDone, '1')
-  })
+  await page.addInitScript((keys) => {
+    localStorage.setItem(keys.session, '1')
+    localStorage.setItem(keys.tenantId, 'ta')
+    localStorage.setItem(keys.locale, 'zh-CN')
+    localStorage.setItem(keys.onboardingDone, '1')
+  }, STORAGE_KEYS)
   await page.route('**/api/console/**', async (route) => {
     const path = new URL(route.request().url()).pathname
     let data: unknown
@@ -194,7 +194,7 @@ test('saves monitoring thresholds through the job-definition update API', async 
 
   await expect.poll(() => updateRequest?.method).toBe('PUT')
   expect(updateRequest?.body).toMatchObject({
-    tenantId: 'tc',
+    tenantId: 'ta',
     softRuntimeSeconds: 1800,
     startGraceSeconds: 300,
     completionDeadlineLocalTime: '04:00',

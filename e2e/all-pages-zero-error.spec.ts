@@ -60,7 +60,7 @@ const PAGES: PageCheck[] = [
   // 调度 / 治理
   { path: '/governance/quota', title: /配额策略|租户配额/ },
   { path: '/governance/queues', title: /队列/ },
-  { path: '/workers/management', title: 'Worker' },
+  { path: '/workers/management', title: 'Worker 管理' },
   { path: '/system/triggers', title: '触发器' },
   // 系统
   { path: '/system/tenants', title: '租户实例' },

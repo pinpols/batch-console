@@ -66,6 +66,7 @@
                   @update:model-value="onTenantStatusModeChange"
                 />
                 <MetaSelect
+                  v-if="tenantAdvancedStatusOptions.length > 0"
                   class="tenant-status-filter__advanced"
                   v-model="tenantAdvancedStatus"
                   :options="tenantAdvancedStatusOptions"

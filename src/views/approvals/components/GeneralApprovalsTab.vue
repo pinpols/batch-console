@@ -267,6 +267,7 @@
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
   import { fmtCompact, fmtDatetime } from '@/utils/datetime'
+  import { userErrorMessage } from '@/utils/userErrorMessage'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import ProTable from '@/components/table/ProTable.vue'
   import BulkActionBar from '@/components/table/BulkActionBar.vue'
@@ -617,7 +618,7 @@
       clearSelection()
       await load()
     } catch (err) {
-      ElMessage.error(err instanceof Error ? err.message : String(err))
+      ElMessage.error(userErrorMessage(err))
     } finally {
       batchRunning.value = false
     }
@@ -650,7 +651,7 @@
       clearSelection()
       await load()
     } catch (err) {
-      ElMessage.error(err instanceof Error ? err.message : String(err))
+      ElMessage.error(userErrorMessage(err))
     } finally {
       batchRunning.value = false
     }

@@ -115,14 +115,9 @@
           width="140"
           show-overflow-tooltip
         />
-        <el-table-column
-          prop="detailSummary"
-          :label="t('auditList.colSummary')"
-          min-width="220"
-          show-overflow-tooltip
-        >
+        <el-table-column prop="detailSummary" :label="t('auditList.colSummary')" min-width="220">
           <template #default="{ row }">
-            <span class="audit-summary">{{ decodeSummary(row.detailSummary) }}</span>
+            <JsonPreviewPopover :data="decodeSummary(row.detailSummary)" />
           </template>
         </el-table-column>
       </ProTable>
@@ -147,7 +142,7 @@
 
   // BE 返回的 detailSummary 是已经 HTML-encode 过的 JSON 字符串(&quot; / &amp; / &lt; / &gt; / &#39;)
   // Vue 模板插值会把它当字面量再次显示,导致用户看到的是 {&quot;bucket&quot;:...} 而不是 {"bucket":...}
-  // 在前端做一次解码;如能 parse 成 JSON 则尝试压平显示(掐掉两边花括号也不必,直接原 JSON 字符串够用)
+  // 在前端解码后交由 JSON 预览组件解析并按层级展示。
   function decodeSummary(raw: unknown): string {
     if (raw == null) return ''
     const s = String(raw)
@@ -173,6 +168,7 @@
   import SectionCard from '@/components/common/SectionCard.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import ProTable from '@/components/table/ProTable.vue'
+  import JsonPreviewPopover from '@/components/common/JsonPreviewPopover.vue'
   import type { ConsoleAuditLogResponse } from '@/types/console-api'
 
   const tenant = useTenantStore()

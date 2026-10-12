@@ -2,8 +2,10 @@
   <div class="mobile-layout">
     <MobileAppBar :scrolled="scrolled" />
     <MaintenanceBanner />
-    <DegradationBanner />
-    <PasswordNoticeBanner />
+    <div class="mobile-notification-stack" aria-live="polite">
+      <DegradationBanner />
+      <PasswordNoticeBanner />
+    </div>
     <main ref="contentRef" class="mobile-layout__content" @scroll.passive="onScroll">
       <router-view v-slot="{ Component, route: r }">
         <transition :name="pageTransition">
@@ -129,6 +131,76 @@
     min-height: 100dvh;
     /* iOS grouped background;mobile-common.css 会再用 var(--ios-bg-grouped) 覆盖一遍 */
     background: #f2f2f7;
+  }
+
+  /* 全局提示在移动端像 iOS 通知一样浮在导航栏下方，不挤压页面首屏。 */
+  .mobile-notification-stack {
+    position: fixed;
+    z-index: calc(var(--z-app-bar) + 1);
+    top: calc(env(safe-area-inset-top, 0px) + 62px);
+    left: max(12px, env(safe-area-inset-left, 0px));
+    right: max(12px, env(safe-area-inset-right, 0px));
+    display: grid;
+    gap: 8px;
+    pointer-events: none;
+  }
+
+  .mobile-notification-stack :deep(.degradation-banner),
+  .mobile-notification-stack :deep(.password-notice) {
+    min-height: 0;
+    padding: 12px 14px;
+    border: 1px solid color-mix(in srgb, var(--color-border) 72%, transparent);
+    border-radius: 18px;
+    background: color-mix(in srgb, var(--color-bg-elevated) 92%, transparent);
+    box-shadow:
+      0 8px 28px rgb(24 32 48 / 18%),
+      inset 0 1px 0 rgb(255 255 255 / 58%);
+    backdrop-filter: saturate(180%) blur(24px);
+    -webkit-backdrop-filter: saturate(180%) blur(24px);
+    pointer-events: auto;
+  }
+
+  .mobile-notification-stack :deep(.degradation-banner) {
+    border-color: color-mix(in srgb, var(--color-warning) 30%, var(--color-border));
+  }
+
+  .mobile-notification-stack :deep(.password-notice) {
+    border-color: color-mix(in srgb, var(--color-warning) 26%, var(--color-border));
+  }
+
+  .mobile-notification-stack :deep(.password-notice__copy) {
+    display: grid;
+    gap: 2px;
+    align-self: center;
+  }
+
+  .mobile-notification-stack :deep(.degradation-banner__text) {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 2px 6px;
+  }
+
+  .mobile-notification-stack :deep(.degradation-banner__msg) {
+    margin-left: 0;
+  }
+
+  .mobile-notification-stack :deep(.auto-dismiss-actions) {
+    width: auto;
+    align-self: flex-start;
+    margin-left: auto;
+  }
+
+  .mobile-notification-stack :deep(.auto-dismiss-actions__countdown) {
+    display: none;
+  }
+
+  .mobile-notification-stack :deep(.auto-dismiss-actions__close) {
+    min-width: 28px;
+    min-height: 28px;
+    margin: -6px -8px 0 0;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--color-fill-light) 78%, transparent);
   }
 
   /* 内边距按 iOS 标准:左右 16px,顶部 10px(给页面 .m-page 留收紧空间),底部留 tabbar + home indicator */

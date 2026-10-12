@@ -13,7 +13,7 @@
       <el-icon :size="14"><component :is="copied ? Check : DocumentCopy" /></el-icon>
     </button>
     <div v-if="!hasContent" class="json-preview__empty">—</div>
-    <JsonNode v-else :value="parsed" :depth="0" :is-last="true" />
+    <JsonNode v-else :value="parsed" :depth="0" :is-last="true" :initially-open="true" />
   </div>
 </template>
 

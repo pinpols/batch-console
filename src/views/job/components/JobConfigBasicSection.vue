@@ -104,13 +104,13 @@
       class="config-group"
     >
       <el-descriptions-item v-if="job.paramSchema" :label="t('jobConfigBasic.fieldParamSchema')">
-        <pre class="config-json">{{ formatJson(job.paramSchema) }}</pre>
+        <JsonPreview :data="job.paramSchema" />
       </el-descriptions-item>
       <el-descriptions-item
         v-if="job.defaultParams"
         :label="t('jobConfigBasic.fieldDefaultParams')"
       >
-        <pre class="config-json">{{ formatJson(job.defaultParams) }}</pre>
+        <JsonPreview :data="job.defaultParams" />
       </el-descriptions-item>
     </el-descriptions>
 
@@ -145,6 +145,7 @@
    * 当前(Day 1)只读。Day 2 加 `:editable="true"` 内联编辑能力。
    */
   import { useI18n } from 'vue-i18n'
+  import JsonPreview from '@/components/common/JsonPreview.vue'
   import type { ConsoleJobDefinitionResponse } from '@/types/console-api'
   import { fmtDatetime } from '@/utils/datetime'
 
@@ -159,15 +160,6 @@
   const { t } = useI18n({ useScope: 'global' })
   // 兜底:父组件没传 label 时,直接显原值
   void props
-
-  function formatJson(raw: string | undefined | null): string {
-    if (!raw) return '—'
-    try {
-      return JSON.stringify(JSON.parse(raw), null, 2)
-    } catch {
-      return raw
-    }
-  }
 </script>
 
 <style scoped>
@@ -184,21 +176,9 @@
     margin-bottom: 8px;
   }
 
-  .config-mono,
-  .config-json {
+  .config-mono {
     font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, monospace;
     font-size: 12px;
     color: var(--color-text-secondary);
-  }
-
-  .config-json {
-    margin: 0;
-    white-space: pre-wrap;
-    word-break: break-all;
-    background: var(--color-bg-page);
-    padding: 8px 10px;
-    border-radius: 4px;
-    max-height: 200px;
-    overflow: auto;
   }
 </style>

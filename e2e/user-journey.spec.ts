@@ -65,24 +65,16 @@ test.describe('@user-journey D 档真实用户端到端闭环', () => {
     await enumsP
     await page.waitForLoadState('networkidle', { timeout: 8000 }).catch(() => {})
 
-    // C.1 Create — job-def 三态重构后为自定义右滑面板 aside.jdd(非 el-drawer)
-    await page.getByRole('button', { name: '新增作业' }).first().click()
-    const drawer = page.locator('.jdd').first()
-    await expect(drawer).toBeVisible({ timeout: 5000 })
-
-    await drawer.getByLabel('作业编码').fill(jobCode)
-    await drawer.getByLabel('作业名称').fill(`E2E Journey ${STAMP}`)
-    // 作业类型/调度类型有默认值(GENERAL/MANUAL);MANUAL 下无调度表达式字段
-    await drawer.getByRole('button', { name: '新增', exact: true }).click()
-    await expect(drawer).toBeHidden({ timeout: 8000 })
-
-    // C.2 返回搜索并验证
-    const keyword = page.getByPlaceholder(/请输入|jobCode/).first()
-    if (await isVisible(keyword, 1500)) {
-      await keyword.fill(jobCode)
-      await page.keyboard.press('Enter')
-      await page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => {})
+    // C.1 新建入口统一进入六步作业向导。
+    await page.getByRole('button', { name: /新建作业|新增作业/ }).first().click()
+    await expect(page).toHaveURL(/\/jobs\/definitions\/new$/)
+    await expect(page.locator('.wizard-step-banner__title')).toHaveText('基本信息')
+    await page.locator('.code-name-builder .cnb-biz input').fill(jobCode)
+    await page.locator('input[maxlength="256"]').first().fill(`E2E Journey ${STAMP}`)
+    for (let index = 0; index < 4; index += 1) {
+      await page.getByRole('button', { name: '下一步' }).click()
     }
+    await expect(page.locator('.wizard-step-banner__title')).toHaveText('关联配置')
 
     // C.3 全程无 4xx/5xx
     network.assertClean('C. job-def CRUD')

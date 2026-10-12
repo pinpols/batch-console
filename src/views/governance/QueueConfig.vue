@@ -256,7 +256,13 @@
             <el-table-column :label="t('queueConfig.colHolidays')" min-width="128">
               <template #default="{ row }">
                 <div class="table-actions">
-                  <el-button size="small" plain type="primary" :icon="CalendarDays" @click="openHolidays(row)">
+                  <el-button
+                    size="small"
+                    plain
+                    type="primary"
+                    :icon="CalendarDays"
+                    @click="openHolidays(row)"
+                  >
                     {{ t('queueConfig.viewHolidays') }}
                   </el-button>
                 </div>
@@ -655,6 +661,7 @@
   import TablePagerBar from '@/components/table/TablePagerBar.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
   import GovernanceFilterBar from './components/GovernanceFilterBar.vue'
+  import { userErrorMessage } from '@/utils/userErrorMessage'
 
   const tenant = useTenantStore()
   const listRemote = ref(false)
@@ -790,7 +797,7 @@
   }
 
   function handleValidationError(err: unknown) {
-    if (err instanceof Error) ElMessage.warning(err.message)
+    if (err instanceof Error) ElMessage.warning(userErrorMessage(err))
   }
 
   const keywordPlaceholder = computed(() => {

@@ -86,13 +86,9 @@
           width="140"
           show-overflow-tooltip
         />
-        <el-table-column
-          prop="detailSummary"
-          :label="t('executionLog.colSummary')"
-          min-width="260"
-        >
+        <el-table-column prop="detailSummary" :label="t('executionLog.colSummary')" min-width="260">
           <template #default="{ row }">
-            <pre class="execution-log-json">{{ row.detailSummary || '—' }}</pre>
+            <JsonPreviewPopover :data="row.detailSummary || '—'" :popover-width="640" />
           </template>
         </el-table-column>
       </ProTable>
@@ -118,6 +114,7 @@
   import SectionCard from '@/components/common/SectionCard.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import ProTable from '@/components/table/ProTable.vue'
+  import JsonPreviewPopover from '@/components/common/JsonPreviewPopover.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
   import type { ConsoleAuditLogResponse } from '@/types/console-api'
 
@@ -242,21 +239,4 @@
   })
 </script>
 
-<style scoped>
-  .execution-log-json {
-    box-sizing: border-box;
-    max-height: 132px;
-    margin: 0;
-    overflow: auto;
-    padding: 8px 10px;
-    border: 1px solid var(--color-border-light);
-    border-radius: 6px;
-    background: rgb(255 255 255 / 3%);
-    color: var(--color-text-secondary);
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-    font-size: 12px;
-    line-height: 1.55;
-    white-space: pre-wrap;
-    overflow-wrap: anywhere;
-  }
-</style>
+<style scoped></style>

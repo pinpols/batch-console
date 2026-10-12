@@ -78,6 +78,7 @@
    */
   import { computed } from 'vue'
   import { useI18n } from 'vue-i18n'
+  import { userErrorMessage } from '@/utils/userErrorMessage'
   import { RefreshCw as Refresh, LoaderCircle as Loading } from '@lucide/vue'
 
   const { t } = useI18n({ useScope: 'global' })
@@ -128,7 +129,9 @@
 
   const resolvedErrorText = computed(() => {
     if (props.errorText?.trim()) return props.errorText.trim()
-    if (props.error instanceof Error && props.error.message) return props.error.message
+    if (props.error instanceof Error && props.error.message) {
+      return userErrorMessage(props.error, t('empty.error'))
+    }
     return t('proTable.loadFailed')
   })
 

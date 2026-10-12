@@ -1,7 +1,7 @@
 {
   "src/views/config/TenantPackageImportWizard.vue": 1968,
   "src/views/file-center/FilePipelineObservability.vue": 1107,
-  "src/views/governance/QueueConfig.vue": 1350,
+  "src/views/governance/QueueConfig.vue": 1357,
   "src/views/job/JobDefinitionList.vue": 1796,
-  "src/views/workflow/WorkflowMermaidViewer.vue": 1222
+  "src/views/workflow/WorkflowMermaidViewer.vue": 1223
 }

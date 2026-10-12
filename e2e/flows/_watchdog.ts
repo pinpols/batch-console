@@ -90,9 +90,12 @@ export async function call(
   url: string,
   opts: { tenantId?: string; body?: unknown; log?: FlowLog; expectStatus?: number[] } = {},
 ): Promise<{ status: number; body: unknown }> {
+  const { cookies } = await ctx.storageState()
+  const csrfToken = cookies.find((cookie) => cookie.name === 'XSRF-TOKEN')?.value
   const headers: Record<string, string> = {
     'X-Tenant-Id': opts.tenantId ?? 'tx',
     'Idempotency-Key': idem(),
+    ...(csrfToken ? { 'X-XSRF-TOKEN': csrfToken } : {}),
   }
   const reqOpts: Parameters<typeof ctx.post>[1] = {
     headers,

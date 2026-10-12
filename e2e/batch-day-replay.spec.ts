@@ -21,34 +21,40 @@ test.describe('@batch-day-replay 批次日重放', () => {
     await expect(submitDrawer).toBeVisible()
 
     // 不应该显示 SUBSET / OUTPUTS 字段(ALL 是默认 scope)
-    await expect(submitDrawer.getByRole('textbox', { name: /作业编码/ })).toHaveCount(0)
-    await expect(submitDrawer.getByRole('textbox', { name: /结果版本 ID/ })).toHaveCount(0)
+    await expect(submitDrawer.getByRole('radio', { name: '全部候选' })).toBeChecked()
+    await expect(submitDrawer.locator('.el-form-item').filter({ hasText: /作业编码/ })).toBeHidden()
+    await expect(submitDrawer.locator('.el-form-item').filter({ hasText: /^结果版本 ID/ })).toBeHidden()
   })
 
   test('ALL_FAILED scope:不需要 jobCodes 字段', async ({ page }) => {
     await page.getByRole('button', { name: '新建重放' }).first().click()
     const d = page.locator('.el-drawer', { hasText: '新建批次日重放' })
     await expect(d).toBeVisible()
-    await d.locator('label.el-radio', { hasText: '仅失败项' }).click()
-    await expect(d.getByRole('textbox', { name: /作业编码/ })).toHaveCount(0)
-    await expect(d.getByRole('textbox', { name: /结果版本 ID/ })).toHaveCount(0)
+    await d.getByRole('radio', { name: '仅失败项' }).check()
+    await expect(d.getByRole('radio', { name: '仅失败项' })).toBeChecked()
+    await expect(d.locator('.el-form-item').filter({ hasText: /作业编码/ })).toBeHidden()
+    await expect(d.locator('.el-form-item').filter({ hasText: /^结果版本 ID/ })).toBeHidden()
   })
 
   test('SUBSET_JOB_CODES scope:显示 jobCodes 输入框', async ({ page }) => {
     await page.getByRole('button', { name: '新建重放' }).first().click()
     const d = page.locator('.el-drawer', { hasText: '新建批次日重放' })
     await expect(d).toBeVisible()
-    await d.locator('label.el-radio', { hasText: '指定作业' }).click()
-    await expect(d.getByRole('textbox', { name: /作业编码/ })).toBeVisible()
-    await expect(d.getByRole('textbox', { name: /结果版本 ID/ })).toHaveCount(0)
+    await d.locator('.replay-scope-option').filter({ hasText: '指定作业' }).click()
+    await expect(d.getByRole('radio', { name: '指定作业' })).toBeChecked()
+    await expect(d.locator('.el-form-item').filter({ hasText: /作业编码/ }).locator('.el-select')).toBeVisible()
+    await expect(d.locator('.el-form-item').filter({ hasText: /^结果版本 ID/ })).toBeHidden()
   })
 
   test('OUTPUTS_ONLY scope:显示 Version IDs 输入框', async ({ page }) => {
     await page.getByRole('button', { name: '新建重放' }).first().click()
     const d = page.locator('.el-drawer', { hasText: '新建批次日重放' })
     await expect(d).toBeVisible()
-    await d.locator('label.el-radio', { hasText: '仅输出结果' }).click()
-    await expect(d.getByRole('textbox', { name: /结果版本 ID/ })).toBeVisible()
-    await expect(d.getByRole('textbox', { name: /作业编码/ })).toHaveCount(0)
+    await d.getByRole('radio', { name: '仅输出结果' }).check()
+    await expect(d.getByRole('radio', { name: '仅输出结果' })).toBeChecked()
+    await expect(
+      d.locator('.el-form-item').filter({ hasText: /^结果版本 ID/ }).locator('.el-select'),
+    ).toBeVisible()
+    await expect(d.locator('.el-form-item').filter({ hasText: /作业编码/ })).toBeHidden()
   })
 })

@@ -19,7 +19,10 @@ type AuditIssue = {
 }
 
 async function setTheme(page: import('@playwright/test').Page, theme: 'light' | 'dark') {
-  await page.evaluate((value) => localStorage.setItem(STORAGE_KEYS.theme, value), theme)
+  await page.evaluate(
+    ({ themeKey, value }) => localStorage.setItem(themeKey, value),
+    { themeKey: STORAGE_KEYS.theme, value: theme },
+  )
   await page.reload({ waitUntil: 'domcontentloaded' })
   if (theme === 'dark') {
     await expect(page.locator('html')).toHaveClass(/dark/)

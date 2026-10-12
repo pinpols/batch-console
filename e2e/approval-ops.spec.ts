@@ -7,6 +7,8 @@ import { enterDemoApp, expectPageTitle, isVisible } from './support/app'
 
 async function createPendingApproval(page: Parameters<typeof enterDemoApp>[0], label: string) {
   const suffix = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
+  const { cookies } = await page.request.storageState()
+  const csrfToken = cookies.find((cookie) => cookie.name === 'XSRF-TOKEN')?.value
   const definitionsResponse = await page.request.get(
     '/api/console/queries/job-definitions?tenantId=ta&pageNo=1&pageSize=1',
     { headers: { 'X-Tenant-Id': 'ta' } },
@@ -21,6 +23,7 @@ async function createPendingApproval(page: Parameters<typeof enterDemoApp>[0], l
     headers: {
       'X-Tenant-Id': 'ta',
       'Idempotency-Key': `e2e-approval-${label}-${suffix}`,
+      ...(csrfToken ? { 'X-XSRF-TOKEN': csrfToken } : {}),
     },
     data: {
       tenantId: 'ta',
@@ -118,9 +121,8 @@ test.describe('审批中心 — 单条审批操作', () => {
   test('拒绝审批 → 填写原因 → 提交 → toast', async ({ page }) => {
     const approvalNo = await createPendingApproval(page, 'reject')
     const row = await openApprovalRow(page, approvalNo)
-    const rejectBtn = row.getByRole('button', { name: '拒绝' })
-    await expect(rejectBtn).toBeEnabled()
-    await rejectBtn.click()
+    await row.getByRole('button', { name: '更多' }).click()
+    await page.getByRole('menuitem', { name: '拒绝' }).click()
     await expect(page.locator('.el-message-box')).toBeVisible()
     // 填写拒绝原因
     const input = page.locator('.el-message-box').locator('input,textarea').first()

@@ -37,6 +37,7 @@
   import { workflowApi } from '@/api/workflow'
   import { useLockManager } from '@/composables/useLockManager'
   import { logRoute } from '@/utils/logger'
+  import { userErrorMessage } from '@/utils/userErrorMessage'
   import DagCanvas from './canvas/DagCanvas.vue'
   import { findVacantNodePosition } from './canvas/nodePlacement'
   import DesignerToolbar from './toolbar/DesignerToolbar.vue'
@@ -523,9 +524,7 @@
         // 非 409 的保存失败(如 BE 配置期校验拒绝:跨 workflow 嵌套环检测等)此前只 log、无任何
         // 用户提示 —— 用户点保存却"没反应"。改为弹出 BE 返回的具体原因(CommonResponse.message),
         // 取不到再回退通用文案。
-        const beMsg =
-          (typeof ax?.response?.data?.message === 'string' && ax.response.data.message) || ''
-        ElMessage.error(beMsg || t('workflowDesignerMvp.saveFailed'))
+        ElMessage.error(userErrorMessage(err, t('workflowDesignerMvp.saveFailed')))
         logRoute('[designer] save failed', { status, err: String(err) })
       }
     } finally {

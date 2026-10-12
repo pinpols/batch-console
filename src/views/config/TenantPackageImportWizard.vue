@@ -722,6 +722,7 @@
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
   import { useAuthStore } from '@/stores/auth'
+  import { userErrorMessage } from '@/utils/userErrorMessage'
   import TenantPackageScenarioSelector from './TenantPackageScenarioSelector.vue'
 
   const auth = useAuthStore()
@@ -895,12 +896,7 @@
       delete rowDrafts[key]
       ElMessage.success(t('tenantPackageImportWizard.rowSavedToast'))
     } catch (err: unknown) {
-      const e = err as { response?: { data?: { message?: string } }; message?: string } | null
-      ElMessage.error(
-        e?.response?.data?.message ||
-          e?.message ||
-          t('tenantPackageImportWizard.rowSaveFailedToast'),
-      )
+      ElMessage.error(userErrorMessage(err, t('tenantPackageImportWizard.rowSaveFailedToast')))
     } finally {
       patchSaving.value = null
     }
@@ -1181,8 +1177,7 @@
         )
         return
       }
-      const e = err as { response?: { data?: { message?: string } }; message?: string } | null
-      applyError.value = e?.response?.data?.message || e?.message || String(err)
+      applyError.value = userErrorMessage(err, t('tenantPackageImportWizard.applyBlockedTitle'))
     } finally {
       applyLoading.value = false
     }

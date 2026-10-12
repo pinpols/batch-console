@@ -1,5 +1,5 @@
 import { STORAGE_KEYS } from './storage'
-import { type Locator, type Page } from '@playwright/test'
+import { type APIRequestContext, type Locator, type Page } from '@playwright/test'
 import { test, expect } from './fixtures'
 import {
   type E2eLocale,
@@ -8,6 +8,12 @@ import {
   setE2eLocale,
 } from './i18n'
 export { test, expect }
+
+export async function csrfHeaders(request: APIRequestContext): Promise<Record<string, string>> {
+  const { cookies } = await request.storageState()
+  const token = cookies.find((cookie) => cookie.name === 'XSRF-TOKEN')?.value
+  return token ? { 'X-XSRF-TOKEN': token } : {}
+}
 
 export type RouteCheck = {
   path: string
@@ -60,9 +66,9 @@ export const smokeRoutes: RouteCheck[] = [
   { path: '/governance/calendars', title: '业务日历' },
   { path: '/governance/quota', title: /配额策略|租户配额/ },
   { path: '/governance/queues', title: /队列/ },
-  { path: '/workers/management', title: 'Worker' },
+  { path: '/workers/management', title: 'Worker 管理' },
   { path: '/system/triggers', title: '触发器' },
-  { path: '/ops/custom-task-types', title: /自定义\s*taskType|Custom\s*task\s*types/ },
+  { path: '/ops/custom-task-types', title: /自定义任务类型|Custom\s*task\s*types/i },
   { path: '/ops/worker-fingerprints', title: 'Worker 指纹看板' },
   { path: '/ops/capacity-profile', title: '容量画像' },
   { path: '/ops/asset-freshness', title: '资产新鲜度策略' },
@@ -79,7 +85,7 @@ export const smokeRoutes: RouteCheck[] = [
   { path: '/system/notifications', title: '通知与投递' },
   {
     path: '/system/atomic-task-types',
-    title: /Atomic\s*节点配置中心|Atomic\s*task\s*type\s*center/,
+    title: /原子节点配置中心|Atomic\s*task\s*type\s*center/i,
   },
 ]
 
@@ -89,12 +95,16 @@ export async function enterDemoApp(page: Page, locale: E2eLocale = 'zh-CN') {
   // 本地存储键：
   //   - STORAGE_KEYS.locale           见 src/constants/locale.ts:1
   //   - STORAGE_KEYS.onboardingDone  见 src/composables/useOnboardingTour.ts:14
-  await page.addInitScript((nextLocale: E2eLocale) => {
+  await page.addInitScript(({ localeKey, onboardingKey, nextLocale }) => {
     try {
-      localStorage.setItem(STORAGE_KEYS.locale, nextLocale)
-      localStorage.setItem(STORAGE_KEYS.onboardingDone, '1')
+      localStorage.setItem(localeKey, nextLocale)
+      localStorage.setItem(onboardingKey, '1')
     } catch {}
-  }, locale)
+  }, {
+    localeKey: STORAGE_KEYS.locale,
+    onboardingKey: STORAGE_KEYS.onboardingDone,
+    nextLocale: locale,
+  })
 
   await page.goto('/ops/summary', { waitUntil: 'domcontentloaded' })
   // FE 启动期 router.beforeEach 异步调 /auth/me,domcontentloaded 可能早于此完成 →

@@ -159,10 +159,10 @@
                   {{ job.scheduleType || '—' }}
                 </el-descriptions-item>
                 <el-descriptions-item :label="t('jobConfigBasic.fieldDefaultParams')" :span="2">
-                  <pre class="json-block">{{ formatJson(job.defaultParams) }}</pre>
+                  <JsonPreview :data="job.defaultParams" />
                 </el-descriptions-item>
                 <el-descriptions-item :label="t('jobConfigBasic.fieldParamSchema')" :span="2">
-                  <pre class="json-block">{{ formatJson(job.paramSchema) }}</pre>
+                  <JsonPreview :data="job.paramSchema" />
                 </el-descriptions-item>
               </el-descriptions>
               <div v-if="canMutateConfig" class="panel-actions">
@@ -384,8 +384,11 @@
                   prop="detailSummary"
                   :label="t('jobDefinitionDetail.colSummary')"
                   min-width="260"
-                  show-overflow-tooltip
-                />
+                >
+                  <template #default="{ row }">
+                    <JsonPreviewPopover :data="row.detailSummary" />
+                  </template>
+                </el-table-column>
                 <el-table-column :label="t('jobDefinitionDetail.colCreatedAt')" width="180">
                   <template #default="{ row }">{{ fmtDatetime(row.createdAt) }}</template>
                 </el-table-column>
@@ -419,6 +422,8 @@
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
+  import JsonPreview from '@/components/common/JsonPreview.vue'
+  import JsonPreviewPopover from '@/components/common/JsonPreviewPopover.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
   import JobConfigBasicSection from './components/JobConfigBasicSection.vue'
@@ -507,15 +512,6 @@
   function resolveEnumLabel(group: string, value?: string | null): string {
     if (!value) return '—'
     return metaEnumsData.value?.[group]?.find((o) => o.value === value)?.label ?? value
-  }
-
-  function formatJson(raw: string | undefined | null): string {
-    if (!raw) return '—'
-    try {
-      return JSON.stringify(JSON.parse(raw), null, 2)
-    } catch {
-      return raw
-    }
   }
 
   async function load() {
@@ -789,18 +785,9 @@
     justify-content: flex-start;
   }
 
-  .mono,
-  .json-block {
+  .mono {
     font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, monospace;
     font-size: 12px;
-  }
-
-  .json-block {
-    max-height: 240px;
-    margin: 0;
-    overflow: auto;
-    white-space: pre-wrap;
-    word-break: break-all;
   }
 
   .cell-link {

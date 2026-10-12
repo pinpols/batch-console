@@ -149,19 +149,22 @@
           />
         </el-form-item>
         <el-form-item :label="t('batchDayReplay.fieldBizDate')" required>
-          <el-date-picker v-model="submitForm.bizDate" type="date" value-format="YYYY-MM-DD" />
+          <el-date-picker
+            v-model="submitForm.bizDate"
+            class="query-w-full"
+            type="date"
+            value-format="YYYY-MM-DD"
+          />
         </el-form-item>
         <el-form-item :label="t('batchDayReplay.fieldScope')" required>
-          <el-radio-group v-model="submitForm.scope" class="replay-scope-group">
-            <el-radio value="ALL">{{ t('batchDayReplay.scopeAll') }}</el-radio>
-            <el-radio v-if="submitForm.candidateSource !== 'SCHEDULE_PLAN'" value="ALL_FAILED">
-              {{ t('batchDayReplay.scopeAllFailed') }}
-            </el-radio>
-            <el-radio value="SUBSET_JOB_CODES">{{
-              t('batchDayReplay.scopeSubsetJobCodes')
-            }}</el-radio>
-            <el-radio v-if="submitForm.executionMode !== 'DRY_RUN'" value="OUTPUTS_ONLY">
-              {{ t('batchDayReplay.scopeOutputsOnly') }}
+          <el-radio-group v-model="submitForm.scope" class="replay-scope-options">
+            <el-radio
+              v-for="option in scopeOptions"
+              :key="option.value"
+              :value="option.value"
+              class="replay-scope-option"
+            >
+              {{ option.label }}
             </el-radio>
           </el-radio-group>
         </el-form-item>
@@ -509,6 +512,7 @@
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
   import { confirmDanger } from '@/composables/useDangerConfirm'
+  import { userErrorMessage } from '@/utils/userErrorMessage'
   import { RefreshCw as Refresh, Plus } from '@lucide/vue'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
@@ -555,6 +559,20 @@
     reason: '',
     requestedBy: auth.userInfo?.username ?? '',
     autoApprove: false,
+  })
+  const scopeOptions = computed(() => {
+    const options = [{ label: t('batchDayReplay.scopeAll'), value: 'ALL' as const }]
+    if (submitForm.candidateSource !== 'SCHEDULE_PLAN') {
+      options.push({ label: t('batchDayReplay.scopeAllFailed'), value: 'ALL_FAILED' as const })
+    }
+    options.push({
+      label: t('batchDayReplay.scopeSubsetJobCodes'),
+      value: 'SUBSET_JOB_CODES' as const,
+    })
+    if (submitForm.executionMode !== 'DRY_RUN') {
+      options.push({ label: t('batchDayReplay.scopeOutputsOnly'), value: 'OUTPUTS_ONLY' as const })
+    }
+    return options
   })
   const selectedJobCodes = ref<string[]>([])
   const selectedOutputJobCodes = ref<string[]>([])
@@ -620,7 +638,9 @@
     (mode) => {
       if (mode === 'DRY_RUN') {
         submitForm.resultPolicy = 'DRY_RUN_ONLY'
-        if (submitForm.scope === 'OUTPUTS_ONLY') submitForm.scope = 'ALL'
+        if (submitForm.scope === 'OUTPUTS_ONLY') {
+          submitForm.scope = 'ALL'
+        }
       } else {
         submitForm.candidateSource = 'EXISTING_INSTANCES'
         submitForm.resultPolicy = 'CREATE_NEW_VERSION'
@@ -666,7 +686,7 @@
           outputVersionOptions.value = versionsByJob.flat()
       } catch (error) {
         if (generation === versionLookupGeneration) {
-          ElMessage.error(error instanceof Error ? error.message : String(error))
+          ElMessage.error(userErrorMessage(error))
         }
       } finally {
         if (generation === versionLookupGeneration) loadingOutputVersions.value = false
@@ -758,7 +778,7 @@
       previewPage.value = 1
       ElMessage.success(t('batchDayReplay.previewOk'))
     } catch (err) {
-      ElMessage.error(err instanceof Error ? err.message : String(err))
+      ElMessage.error(userErrorMessage(err))
     } finally {
       previewing.value = false
     }
@@ -793,7 +813,7 @@
         ElMessage.warning(t('batchDayReplay.submitOutcomeUnknownTitle'))
       } else {
         // 内层业务错误不会触发 Axios 全局 envelope toast，需在此展示。
-        ElMessage.error(err instanceof Error ? err.message : String(err))
+        ElMessage.error(userErrorMessage(err))
       }
     } finally {
       submitting.value = false
@@ -812,7 +832,7 @@
       if (isUnknownNetworkOutcome(err)) {
         ElMessage.warning(t('batchDayReplay.submitOutcomeStillUnknown'))
       } else {
-        ElMessage.error(err instanceof Error ? err.message : String(err))
+        ElMessage.error(userErrorMessage(err))
       }
     } finally {
       submitting.value = false
@@ -828,7 +848,7 @@
     try {
       await loadEntries()
     } catch (err) {
-      ElMessage.error(err instanceof Error ? err.message : String(err))
+      ElMessage.error(userErrorMessage(err))
     }
   }
 
@@ -858,7 +878,7 @@
       jobCodeOptions.value = await jobApi.listCodes(tenant.tenantId)
     } catch (error) {
       jobCodeOptions.value = []
-      ElMessage.error(error instanceof Error ? error.message : String(error))
+      ElMessage.error(userErrorMessage(error))
     } finally {
       loadingJobCodes.value = false
     }
@@ -921,7 +941,7 @@
       upsertSession(fresh)
       ElMessage.success(t('batchDayReplay.approveOk'))
     } catch (err) {
-      ElMessage.error(err instanceof Error ? err.message : String(err))
+      ElMessage.error(userErrorMessage(err))
     } finally {
       approving.value = false
     }
@@ -946,7 +966,7 @@
       upsertSession(fresh)
       ElMessage.success(t('batchDayReplay.cancelOk'))
     } catch (err) {
-      ElMessage.error(err instanceof Error ? err.message : String(err))
+      ElMessage.error(userErrorMessage(err))
     } finally {
       cancelling.value = false
     }
@@ -999,6 +1019,21 @@
     margin-bottom: 12px;
   }
 
+  .replay-scope-options {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 8px;
+    max-width: 100%;
+    overflow-x: auto;
+    padding: 2px 0;
+  }
+
+  .replay-scope-option {
+    flex: 0 0 auto;
+    white-space: nowrap;
+    margin-right: 0;
+  }
+
   .detail-progress {
     margin: 14px 0 6px;
   }
@@ -1040,17 +1075,6 @@
     margin-bottom: 16px;
   }
 
-  .replay-scope-group {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
-  }
-
-  .replay-scope-group :deep(.el-radio) {
-    margin-right: 0;
-    min-width: 0;
-  }
-
   .preview-panel__head {
     display: flex;
     align-items: flex-start;
@@ -1076,10 +1100,6 @@
   }
 
   @media (max-width: 720px) {
-    .replay-scope-group {
-      grid-template-columns: 1fr;
-    }
-
     .preview-panel__head {
       flex-direction: column;
     }

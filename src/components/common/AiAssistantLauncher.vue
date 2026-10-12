@@ -1,5 +1,9 @@
 <template>
-  <div v-if="visible" class="ai-launcher" :class="{ 'ai-launcher--open': open }">
+  <div
+    v-if="visible"
+    class="ai-launcher"
+    :class="{ 'ai-launcher--open': open, 'ai-launcher--mobile': mobile }"
+  >
     <el-tooltip :content="t('aiPanel.open')" placement="bottom">
       <button
         ref="trigger"
@@ -20,7 +24,7 @@
       :title="t('aiPanel.title')"
       class="ai-assistant-drawer"
       @opened="input?.focus()"
-      @closed="trigger?.focus()"
+      @closed="restoreLauncherFocus"
     >
       <div class="ai-panel">
         <el-segmented v-model="mode" :options="modeOptions" :disabled="chat.sending.value" />
@@ -189,6 +193,13 @@
     open.value = true
   }
 
+  function restoreLauncherFocus() {
+    // Element Plus 在离场过渡后才关闭焦点陷阱；延迟到后续绘制再恢复焦点，避免陷阱拆除时将焦点抢回。
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => trigger.value?.focus({ preventScroll: true }))
+    })
+  }
+
   async function send() {
     await chat.send(
       t('aiChat.emptyAnswer'),
@@ -232,6 +243,13 @@
     visibility: hidden;
     pointer-events: none;
   }
+  .ai-launcher--open {
+    pointer-events: none;
+  }
+  .ai-launcher--open :deep(.el-overlay),
+  .ai-launcher--open :deep(.el-drawer) {
+    pointer-events: auto;
+  }
   .ai-launcher__button:hover {
     color: var(--color-bg-card);
     background: var(--color-primary);
@@ -242,6 +260,11 @@
     .ai-launcher {
       right: var(--space-md);
       bottom: calc(76px + var(--space-md) + env(safe-area-inset-bottom, 0px));
+    }
+    .ai-launcher--mobile {
+      position: static;
+      right: auto;
+      bottom: auto;
     }
   }
   .ai-panel {

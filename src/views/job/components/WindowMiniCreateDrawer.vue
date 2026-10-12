@@ -104,6 +104,7 @@
   import { governanceApi, type GovernanceBatchWindowSavePayload } from '@/api/governance'
   import { useDirtyForm } from '@/composables/useDirtyForm'
   import { useFormFocus } from '@/composables/useFormFocus'
+  import { userErrorMessage } from '@/utils/userErrorMessage'
 
   const props = defineProps<{
     tenantId: string
@@ -220,7 +221,7 @@
       form.startTime = ''
       form.endTime = ''
     } catch (err) {
-      const message = err instanceof Error ? err.message : String(err)
+      const message = userErrorMessage(err)
       ElMessage.error(t('jobConfigBasic.miniWindowCreateFailed', { message }))
     } finally {
       saving.value = false

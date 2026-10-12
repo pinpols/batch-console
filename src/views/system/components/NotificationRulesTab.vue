@@ -228,8 +228,10 @@
   const ruleDirty = useDirtyForm(() => ruleForm, { enabled: () => ruleFormVisible.value })
   useFormFocus(ruleFormRef, () => ruleFormVisible.value)
 
-  function openRuleCreate() {
+  async function openRuleCreate() {
     if (!tenant.tenantId) return
+    // 通道可在相邻标签页创建；打开选择器前刷新列表，确保新建通道能立即用于规则。
+    await loadChannelOptions()
     ruleEditingId.value = null
     ruleForm.ruleName = ''
     ruleForm.eventTypes = ''

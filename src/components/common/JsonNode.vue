@@ -4,7 +4,7 @@
     :class="['json-node__val', `json-node__val--${primitiveType}`]"
     >{{ primitiveDisplay }}</span
   >
-  <span v-else class="json-node__group">
+  <div v-else class="json-node__group">
     <span
       class="json-node__toggle"
       role="button"
@@ -32,7 +32,7 @@
         <span class="json-node__bracket">{{ kind === 'array' ? ']' : '}' }}</span>
       </div>
     </template>
-  </span>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -43,12 +43,12 @@
       value: unknown
       depth: number
       isLast?: boolean
+      initiallyOpen?: boolean
     }>(),
     { isLast: true },
   )
 
-  /** 默认顶层收缩(诊断页一屏多卡片不被刷屏),展开后子级保持 1 层可见 */
-  const open = ref(props.depth > 0 && props.depth < 3)
+  const open = ref(props.initiallyOpen ?? (props.depth > 0 && props.depth < 3))
 
   const kind = computed<'primitive' | 'object' | 'array'>(() => {
     const v = props.value
@@ -91,7 +91,7 @@
 
 <style scoped>
   .json-node__group {
-    display: inline;
+    display: block;
   }
 
   .json-node__toggle {
@@ -130,6 +130,7 @@
     display: flex;
     align-items: flex-start;
     flex-wrap: wrap;
+    min-height: 1.6em;
   }
 
   .json-node__indent {
@@ -139,6 +140,7 @@
 
   .json-node__key {
     color: #c5343d;
+    overflow-wrap: anywhere;
   }
 
   html.dark .json-node__key {
@@ -151,7 +153,7 @@
 
   .json-node__val--string {
     color: #1a7f37;
-    word-break: break-all;
+    overflow-wrap: anywhere;
   }
 
   html.dark .json-node__val--string {

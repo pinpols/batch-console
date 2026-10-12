@@ -25,6 +25,7 @@ const messages: Messages = {
       daysAgo: '{n} d ago',
     },
     ok: 'OK',
+    all: 'All',
     cancel: 'Cancel',
     pageSwitching: 'Page loading',
     permissionDenied: 'Your current role does not allow this action',
@@ -45,6 +46,7 @@ const messages: Messages = {
     edit: 'Edit',
     create: 'Create',
     detail: 'Details',
+    viewJson: 'View JSON',
     search: 'Search',
     searchTenant: 'Search tenants',
     clear: 'Clear',
@@ -83,28 +85,20 @@ const messages: Messages = {
   apiError: {
     requestFailed: 'Request failed',
     selectTenantFirst: 'Select a tenant at the top to view data',
-    requestFailedWithStatus: 'Request failed (HTTP {status})',
     unauthorizedTitle: 'Unauthorized',
     unauthorizedMessage: 'This operation is unauthorized',
     permissionDeniedTitle: 'Permission denied',
     permissionDeniedMessage: 'You do not have permission to access this feature.',
     missingJobCodeTitle: 'Missing parameter (jobCode)',
-    missingJobCodeMessage:
-      'This API requires jobCode, but the request did not include it. Check the page filters or route parameters.',
-    missingJobCodeWithUrl:
-      'This API requires jobCode, but the request did not include it. Check the page filters or route parameters.\n{method} {url}',
+    missingJobCodeMessage: 'Select a job, then try searching again.',
     resourceNotFoundTitle: 'Resource not found',
     resourceNotFoundMessage: 'The requested resource was not found.',
     endpointNotFoundTitle: 'Endpoint not found',
     endpointNotFoundMessage:
-      'The endpoint is unavailable or the service version is incompatible. Check the service version and gateway routing.',
-    endpointNotFoundWithUrl:
-      'The endpoint is unavailable or the service version is incompatible: {url}. Check the service version and gateway routing.',
-    backendUnreachableDev:
-      'Cannot reach the service (target {target}). Confirm the service is running and the proxy is configured correctly.',
-    backendUnreachable: 'Network unreachable or service did not respond. Try again later.',
-    endpointVersionMismatch: 'Endpoint unavailable or service version mismatch',
-    endpointVersionMismatchWithUrl: 'Endpoint unavailable or service version mismatch ({url})',
+      'This service endpoint is temporarily unavailable. Try again or contact an administrator.',
+    backendUnreachable: 'The service is temporarily unavailable. Please try again later.',
+    endpointVersionMismatch:
+      'This service endpoint is temporarily unavailable. Try again or contact an administrator.',
     networkError: 'Network error',
     invalidCredentials: 'Invalid username or password',
     rateLimited: 'Too many requests, please try again later',

@@ -2,6 +2,10 @@ import { STORAGE_KEYS } from './support/storage'
 import { expect, test } from './support/app'
 import { enterDemoApp, expectPageTitle, isVisible } from './support/app'
 
+function currentBusinessDate() {
+  return new Date().toISOString().slice(0, 10)
+}
+
 test.describe('data-heavy pages use the intended primary views', () => {
   test.beforeEach(async ({ page }) => {
     await page.addInitScript(() => {
@@ -74,9 +78,9 @@ test.describe('data-heavy pages use the intended primary views', () => {
           data: {
             items: [
               {
-                bizDate: '2026-09-27',
+                bizDate: currentBusinessDate(),
                 dayStatus: 'OPEN',
-                openAt: '2026-09-27T00:00:00Z',
+                openAt: `${currentBusinessDate()}T00:00:00Z`,
                 slaStatus: 'NORMAL',
                 totalJobCount: 1,
                 successJobCount: 0,
@@ -170,8 +174,8 @@ test.describe('data-heavy pages use the intended primary views', () => {
     await page.goto('/scheduler/batch-days')
     await expectPageTitle(page, '批次日与窗口')
     await expect(page.getByText('日历视图', { exact: true })).toBeVisible()
-    await expect(page.locator('.el-calendar')).toBeVisible()
-    const dayCell = page.locator('.el-calendar-table .el-calendar-day').first()
+    await expect(page.locator('.batch-calendar__grid')).toBeVisible()
+    const dayCell = page.locator('.batch-calendar__day--has-data').first()
     const dayCellBox = await dayCell.boundingBox()
     expect(dayCellBox).not.toBeNull()
     expect(dayCellBox!.height).toBeLessThan(100)
@@ -201,9 +205,9 @@ test.describe('data-heavy pages use the intended primary views', () => {
     )
     await page.goto('/scheduler/batch-days')
     await expect(page.getByText('当前月份暂无批次数据', { exact: true })).toBeVisible()
-    await expect(page.locator('.el-calendar')).toBeVisible()
+    await expect(page.locator('.batch-calendar__grid')).toBeVisible()
     await expect(
-      page.locator('.batch-calendar__empty').getByRole('button', { name: '明细表格' }),
+      page.locator('.batch-calendar__empty-hint').getByRole('button', { name: '明细表格' }),
     ).toBeVisible()
   })
 

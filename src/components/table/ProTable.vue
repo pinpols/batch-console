@@ -115,6 +115,7 @@
   import type { TableInstance } from 'element-plus'
   import { useRoute } from 'vue-router'
   import { useI18n } from 'vue-i18n'
+  import { userErrorMessage } from '@/utils/userErrorMessage'
   import { RefreshCw as Refresh, SlidersHorizontal as Operation } from '@lucide/vue'
   import type { PaginationMode } from '@/api/pagination'
 
@@ -329,7 +330,9 @@
 
   const resolvedErrorText = computed(() => {
     if (props.errorText?.trim()) return props.errorText.trim()
-    if (props.error instanceof Error && props.error.message) return props.error.message
+    if (props.error instanceof Error && props.error.message) {
+      return userErrorMessage(props.error, t('empty.error'))
+    }
     return t('proTable.loadFailed')
   })
 

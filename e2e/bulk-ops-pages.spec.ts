@@ -5,7 +5,7 @@
  *
  * 选行靠 el-table selection 列的 checkbox。测试自行准备数据，避免依赖共享 seed。
  */
-import { expect, test } from './support/app'
+import { csrfHeaders, expect, test } from './support/app'
 import { enterDemoApp, expectPageTitle, isVisible } from './support/app'
 
 /** 在「当前可见的 el-table」上验证批量操作栏闭环。 */
@@ -35,6 +35,7 @@ async function createPendingApproval(page: import('@playwright/test').Page): Pro
     headers: {
       'X-Tenant-Id': 'ta',
       'Idempotency-Key': `e2e-bulk-approval-${suffix}`,
+      ...(await csrfHeaders(page.request)),
     },
     data: {
       tenantId: 'ta',

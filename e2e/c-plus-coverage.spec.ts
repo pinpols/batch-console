@@ -23,6 +23,12 @@ const STATE_ADMIN = path.resolve(__dirname, '.auth/role-admin.json')
 const ts = () => Date.now().toString(36)
 const rand = () => Math.random().toString(36).slice(2, 8)
 const idem = () => `e2e-cplus-${ts()}-${rand()}`
+const adminCsrfToken = () => {
+  const state = JSON.parse(fs.readFileSync(STATE_ADMIN, 'utf8')) as {
+    cookies?: Array<{ name: string; value: string }>
+  }
+  return state.cookies?.find((cookie) => cookie.name === 'XSRF-TOKEN')?.value
+}
 
 // ─── Phase 9: 设计器 + AI Chat 烟测 ─────────────────────────────────
 test.describe('Phase 9 — 设计器 + AI Chat 烟测', () => {
@@ -53,6 +59,7 @@ test.describe('Phase 10 — 边界值矩阵', () => {
     api = await pwRequest.newContext({
       baseURL: API_BASE_URL,
       storageState: STATE_ADMIN,
+      extraHTTPHeaders: { 'X-XSRF-TOKEN': adminCsrfToken() ?? '' },
     })
   })
   test.afterAll(async () => {
@@ -179,6 +186,7 @@ test.describe('Phase 11 — 安全/注入', () => {
     api = await pwRequest.newContext({
       baseURL: API_BASE_URL,
       storageState: STATE_ADMIN,
+      extraHTTPHeaders: { 'X-XSRF-TOKEN': adminCsrfToken() ?? '' },
     })
   })
   test.afterAll(async () => {
@@ -247,6 +255,7 @@ test.describe('Phase 13 — 可观测性', () => {
     api = await pwRequest.newContext({
       baseURL: API_BASE_URL,
       storageState: STATE_ADMIN,
+      extraHTTPHeaders: { 'X-XSRF-TOKEN': adminCsrfToken() ?? '' },
     })
   })
   test.afterAll(async () => {
@@ -316,6 +325,7 @@ test.describe('Phase 14 — 性能基础', () => {
     api = await pwRequest.newContext({
       baseURL: API_BASE_URL,
       storageState: STATE_ADMIN,
+      extraHTTPHeaders: { 'X-XSRF-TOKEN': adminCsrfToken() ?? '' },
     })
   })
   test.afterAll(async () => {

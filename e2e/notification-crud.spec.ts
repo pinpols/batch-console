@@ -45,11 +45,12 @@ test.describe('notification channel CRUD (通知渠道增删改)', () => {
     await expect(page.getByLabel('编码')).toBeDisabled()
     await page.getByLabel('名称').fill('E2E 渠道已修改')
     await page.getByRole('button', { name: '保存' }).click()
-    await expect(page.getByRole('cell', { name: 'E2E 渠道已修改' })).toBeVisible({ timeout: 5000 })
+    await expect(row.getByRole('cell', { name: 'E2E 渠道已修改' })).toBeVisible({ timeout: 5000 })
 
     // —— 删除 ——
-    await row.getByRole('button', { name: '删除' }).click()
-    await page.getByRole('button', { name: '确定' }).click()
+    await row.locator('.row-actions__more').click()
+    await page.getByRole('menuitem', { name: /删除/ }).click()
+    await page.locator('.el-message-box').getByRole('button', { name: '确定' }).click()
     await expect(page.getByRole('cell', { name: uniqueCode })).toBeHidden({ timeout: 5000 })
   })
 

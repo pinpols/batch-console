@@ -232,6 +232,7 @@
   import DatetimeText from '@/components/common/DatetimeText.vue'
   import InstantRangePicker from '@/components/common/InstantRangePicker.vue'
   import { displayTimezone } from '@/constants/timezone'
+  import { userErrorMessage } from '@/utils/userErrorMessage'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import {
     buildGroupedBarOption,
@@ -413,7 +414,7 @@
       report.value = null
       trendBuckets.value = []
       trendReports.value = []
-      loadError.value = error instanceof Error ? error.message : t('capacityProfile.loadFailed')
+      loadError.value = userErrorMessage(error, t('capacityProfile.loadFailed'))
     } finally {
       loading.value = false
     }

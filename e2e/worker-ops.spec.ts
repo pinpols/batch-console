@@ -9,7 +9,7 @@ test.describe('Worker 管理 — 筛选查询', () => {
   test.beforeEach(async ({ page }) => {
     await enterDemoApp(page)
     await page.goto('/workers/management')
-    await expectPageTitle(page, 'Worker')
+    await expectPageTitle(page, 'Worker 管理')
   })
 
   test('Worker 列表 tab 默认激活', async ({ page }) => {
@@ -23,13 +23,10 @@ test.describe('Worker 管理 — 筛选查询', () => {
   })
 
   test('状态筛选 → 查询', async ({ page }) => {
-    const statusFilter = page
-      .locator('.el-form-item')
-      .filter({ hasText: '状态' })
-      .locator('[role="radiogroup"]')
+    const statusFilter = page.getByRole('radiogroup', { name: '状态' })
     await expect(statusFilter.getByRole('radio', { name: '全部' })).toBeVisible()
-    await statusFilter.getByRole('radio', { name: '下线中' }).click()
-    await expect(statusFilter.getByRole('radio', { name: '下线中' })).toHaveAttribute('aria-checked', 'true')
+    await statusFilter.getByRole('radio', { name: '排空中' }).click()
+    await expect(statusFilter.getByRole('radio', { name: '排空中' })).toHaveAttribute('aria-checked', 'true')
     await page.getByRole('button', { name: '搜索' }).click()
     await expect(page.locator('.wk-card, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
   })
@@ -48,7 +45,7 @@ test.describe('Worker 管理 — 筛选查询', () => {
   })
 
   test('刷新按钮', async ({ page }) => {
-    await page.getByRole('button', { name: '刷新' }).click()
+    await page.getByRole('button', { name: '刷新' }).first().click()
     await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
   })
 })
@@ -57,7 +54,7 @@ test.describe('Worker 管理 — Worker 操作', () => {
   test.beforeEach(async ({ page }) => {
     await enterDemoApp(page)
     await page.goto('/workers/management')
-    await expectPageTitle(page, 'Worker')
+    await expectPageTitle(page, 'Worker 管理')
   })
 
   test('Drain → 确认 → toast', async ({ page }) => {
@@ -113,7 +110,7 @@ test.describe('Worker 管理 — 文件渠道', () => {
   test.beforeEach(async ({ page }) => {
     await enterDemoApp(page)
     await page.goto('/workers/management')
-    await expectPageTitle(page, 'Worker')
+    await expectPageTitle(page, 'Worker 管理')
     await page.getByRole('tab', { name: '文件渠道' }).click()
     await expect(page.getByRole('tab', { name: '文件渠道' })).toHaveClass(/is-active/)
   })

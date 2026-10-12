@@ -19,9 +19,10 @@ const PAGES: Array<{ path: string; zh: string | RegExp; en: string | RegExp }> =
 ]
 
 async function switchLocale(page: import('@playwright/test').Page, target: 'zh-CN' | 'en-US') {
-  await page.evaluate((loc) => {
-    localStorage.setItem(STORAGE_KEYS.locale, loc)
-  }, target)
+  await page.evaluate(
+    ({ key, locale }) => localStorage.setItem(key, locale),
+    { key: STORAGE_KEYS.locale, locale: target },
+  )
   await page.reload({ waitUntil: 'domcontentloaded' })
 }
 
@@ -51,7 +52,10 @@ test.describe('@slow i18n-switch · zh↔en 稳定性', () => {
     expect(pageErrors, `i18n 切换中出现 pageerror:\n${pageErrors.join('\n')}`).toHaveLength(0)
 
     // 最终 locale 一致性
-    const finalLocale = await page.evaluate(() => localStorage.getItem(STORAGE_KEYS.locale))
+    const finalLocale = await page.evaluate(
+      (localeKey) => localStorage.getItem(localeKey),
+      STORAGE_KEYS.locale,
+    )
     expect(finalLocale).toMatch(/^(zh-CN|en-US)$/)
   })
 })

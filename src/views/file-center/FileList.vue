@@ -318,8 +318,11 @@
           prop="detailSummary"
           :label="t('fileList.auditDetailSummary')"
           min-width="180"
-          show-overflow-tooltip
-        />
+        >
+          <template #default="{ row }">
+            <JsonPreviewPopover :data="row.detailSummary" />
+          </template>
+        </el-table-column>
       </el-table>
       <TablePagerBar
         :page="auditPage"
@@ -360,6 +363,7 @@
   import StatusTag from '@/components/common/StatusTag.vue'
   import MetricCard from '@/components/common/MetricCard.vue'
   import JsonPreview from '@/components/common/JsonPreview.vue'
+  import JsonPreviewPopover from '@/components/common/JsonPreviewPopover.vue'
   import DateRangePresetPicker from '@/components/common/DateRangePresetPicker.vue'
   import RowActions, { type RowAction } from '@/components/common/RowActions.vue'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
