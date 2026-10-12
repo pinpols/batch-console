@@ -18,7 +18,7 @@
       label-width="84px"
       label-position="right"
       class="mini-create-form"
-      @submit.prevent
+      @submit.prevent="submit"
     >
       <el-form-item :label="t('jobConfigBasic.miniCalendarCode')" prop="calendarCode">
         <el-input
@@ -47,9 +47,11 @@
     </el-form>
 
     <template #footer>
-      <div class="mini-create-dialog__footer">
-        <el-button :disabled="saving" @click="close">{{ t('common.cancel') }}</el-button>
-        <el-button type="primary" :loading="saving" @click="submit">
+      <div class="dialog-footer">
+        <el-button native-type="button" :disabled="saving" @click="close">
+          {{ t('common.cancel') }}
+        </el-button>
+        <el-button type="primary" native-type="button" :loading="saving" @click="submit">
           {{ t('common.confirm') }}
         </el-button>
       </div>
@@ -211,11 +213,5 @@
 
   .mini-create-form :deep(.el-form-item:last-of-type) {
     margin-bottom: 4px;
-  }
-
-  .mini-create-dialog__footer {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
   }
 </style>

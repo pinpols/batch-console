@@ -86,6 +86,7 @@
             label-position="top"
             hide-required-asterisk
             class="me-form"
+            @submit.prevent="submit"
           >
             <el-form-item :label="t('myAccount.fieldOldPassword')" prop="oldPassword">
               <el-input
@@ -129,11 +130,18 @@
               />
             </el-form-item>
 
-            <el-form-item>
-              <el-button type="primary" :loading="submitting" class="me-submit" @click="submit">
+            <el-form-item class="form-actions">
+              <el-button native-type="button" :disabled="submitting" @click="onReset">
+                {{ t('common.reset') }}
+              </el-button>
+              <el-button
+                type="primary"
+                native-type="submit"
+                :loading="submitting"
+                class="me-submit"
+              >
                 {{ t('myAccount.btnSubmit') }}
               </el-button>
-              <el-button @click="onReset">{{ t('common.reset') }}</el-button>
             </el-form-item>
           </el-form>
         </section>
