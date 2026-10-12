@@ -50,7 +50,14 @@
             <span v-else class="muted">—</span>
           </template>
         </el-table-column>
-        <el-table-column prop="secretStatus" :label="t('configSecretsTab.colStatus')" width="100" />
+        <el-table-column :label="t('configSecretsTab.colStatus')" width="110">
+          <template #default="{ row }">
+            <el-tag v-if="row.revokedAt" type="danger" size="small" effect="plain">
+              {{ t('configSecretsTab.tagRevoked') }}
+            </el-tag>
+            <span v-else>{{ row.secretStatus }}</span>
+          </template>
+        </el-table-column>
         <DatetimeColumn
           prop="effectiveFromAt"
           :label="t('configSecretsTab.colEffectiveFrom')"
@@ -87,7 +94,7 @@
         <el-table-column :label="t('configSecretsTab.colActions')" width="160" fixed="right">
           <template #default="{ row }">
             <div class="table-actions">
-            <RowActions :actions="secretRowActions(row)" :inline-limit="1" />
+              <RowActions :actions="secretRowActions(row)" :inline-limit="1" />
             </div>
           </template>
         </el-table-column>
@@ -123,7 +130,22 @@
           {{ secretDetail.versionNo }}
         </el-descriptions-item>
         <el-descriptions-item :label="t('configSecretsTab.fieldStatus')">
-          {{ secretDetail.secretStatus }}
+          <el-tag v-if="secretDetail.revokedAt" type="danger" size="small" effect="plain">
+            {{ t('configSecretsTab.tagRevoked') }}
+          </el-tag>
+          <span v-else>{{ secretDetail.secretStatus }}</span>
+        </el-descriptions-item>
+        <el-descriptions-item
+          v-if="secretDetail.revokedAt"
+          :label="t('configSecretsTab.fieldRevokedAt')"
+        >
+          {{ secretDetail.revokedAt }}
+        </el-descriptions-item>
+        <el-descriptions-item
+          v-if="secretDetail.revokedAt"
+          :label="t('configSecretsTab.fieldRevokeReason')"
+        >
+          {{ secretDetail.revokeReason || '—' }}
         </el-descriptions-item>
         <el-descriptions-item :label="t('configSecretsTab.fieldRaw')">
           <JsonPreview :data="secretDetail" />
@@ -140,9 +162,15 @@
 
   const { t } = useI18n({ useScope: 'global' })
   import { confirmDanger } from '@/composables/useDangerConfirm'
-  import { listSecrets, getSecretVersion, rotateSecret } from '@/api/configReleases'
+  import {
+    listSecrets,
+    getSecretVersion,
+    rotateSecret,
+    revokeSecretVersion,
+  } from '@/api/configReleases'
   import { toPageResult } from '@/api/adapters'
   import { useTenantStore } from '@/stores/tenant'
+  import { useAuthStore } from '@/stores/auth'
   import { useTenantReload } from '@/composables/useTenantReload'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import TablePagerBar from '@/components/table/TablePagerBar.vue'
@@ -156,6 +184,7 @@
   import type { ConsoleSecretVersionResponse } from '@/types/console-api'
 
   const tenant = useTenantStore()
+  const auth = useAuthStore()
   const {
     loading: loadingSecrets,
     error: loadSecretsError,
@@ -188,22 +217,69 @@
   }
 
   function secretRowActions(row: ConsoleSecretVersionResponse): RowAction[] {
-    return [
+    const actions: RowAction[] = [
       {
         key: 'detail',
         label: t('configSecretsTab.btnDetail'),
         primary: true,
         onClick: () => viewSecret(row),
       },
-      {
+    ]
+    if (auth.hasPermission('ROLE_ADMIN')) {
+      actions.push({
         key: 'rotate',
         label: t('configSecretsTab.btnRotate'),
         warning: true,
         divided: true,
         track: { action: t('configSecretsTab.trackRotate'), secretKey: row.secretRef },
         onClick: () => confirmRotate(row),
-      },
-    ]
+      })
+      if (row.secretStatus !== 'DRAFT' && !row.revokedAt) {
+        actions.push({
+          key: 'revoke',
+          label: t('configSecretsTab.btnRevoke'),
+          danger: true,
+          divided: true,
+          track: { action: t('configSecretsTab.trackRevoke'), secretKey: row.secretRef },
+          onClick: () => confirmRevoke(row),
+        })
+      }
+    }
+    return actions
+  }
+
+  async function confirmRevoke(row: ConsoleSecretVersionResponse) {
+    try {
+      await confirmDanger({
+        verb: t('configSecretsTab.revokeConfirmTitle'),
+        target: t('configSecretsTab.revokeTarget', {
+          name: row.secretRef,
+          version: row.versionNo,
+        }),
+        consequence: t('configSecretsTab.revokeConfirmText'),
+        irreversible: true,
+      })
+      const { value: reason } = await ElMessageBox.prompt(
+        t('configSecretsTab.revokeReasonPrompt'),
+        t('configSecretsTab.revokeReasonTitle'),
+        {
+          confirmButtonText: t('common.confirm'),
+          cancelButtonText: t('common.cancel'),
+          inputType: 'textarea',
+          inputValidator: (value) => {
+            const normalized = value?.trim() ?? ''
+            if (!normalized) return t('configSecretsTab.revokeReasonRequired')
+            if (normalized.length > 512) return t('configSecretsTab.revokeReasonTooLong')
+            return true
+          },
+        },
+      )
+      await revokeSecretVersion(row.id, { tenantId: tenant.tenantId, reason: reason.trim() })
+      ElMessage.success(t('configSecretsTab.revokeDoneToast'))
+      await loadSecrets()
+    } catch {
+      /* cancel */
+    }
   }
 
   async function confirmRotate(row: ConsoleSecretVersionResponse) {

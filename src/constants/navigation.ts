@@ -81,10 +81,10 @@ export interface NavigationGroup {
 }
 
 /**
- * 侧边栏分组采用 redesign IA v3 的 7 组口径。
+ * 侧边栏分组以用户任务组织；保留既有 7 组、路由与权限，不另建任务导航框架。
  *
  * 后端 `/auth/me` 返回的菜单会参与路由 allowlist,所以这里必须覆盖后端 menu.yml 的全部
- * path;分组按前端设计稿收敛为 7 组。后端 `TENANT_ADMIN` 在前端统一映射为 `OPERATOR`。
+ * path;只调整分组表达，不改变后端 `/auth/me` 菜单 allowlist。后端 `TENANT_ADMIN` 在前端统一映射为 `OPERATOR`。
  */
 export const navigationGroups: NavigationGroup[] = [
   {
@@ -118,7 +118,7 @@ export const navigationGroups: NavigationGroup[] = [
   },
   {
     key: 'monitor',
-    title: '运行监控',
+    title: '跟踪运行',
     icon: Aim,
     minRole: 'VIEWER',
     children: [
@@ -188,7 +188,7 @@ export const navigationGroups: NavigationGroup[] = [
   },
   {
     key: 'alerting',
-    title: '告警与投递',
+    title: '处理异常',
     icon: Bell,
     minRole: 'VIEWER',
     children: [
@@ -228,7 +228,7 @@ export const navigationGroups: NavigationGroup[] = [
   },
   {
     key: 'definitions',
-    title: '作业与流程',
+    title: '准备作业',
     icon: Management,
     minRole: 'VIEWER',
     children: [
@@ -268,7 +268,7 @@ export const navigationGroups: NavigationGroup[] = [
   },
   {
     key: 'files',
-    title: '文件',
+    title: '核对文件',
     icon: FolderOpened,
     minRole: 'VIEWER',
     children: [
@@ -311,7 +311,7 @@ export const navigationGroups: NavigationGroup[] = [
   },
   {
     key: 'scheduling',
-    title: '调度治理',
+    title: '安排批次',
     icon: DataAnalysis,
     minRole: 'VIEWER',
     children: [
@@ -423,7 +423,7 @@ export const navigationGroups: NavigationGroup[] = [
   },
   {
     key: 'system',
-    title: '系统管理',
+    title: '平台管理',
     icon: Setting,
     minRole: 'VIEWER',
     children: [

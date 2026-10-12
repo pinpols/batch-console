@@ -28,7 +28,7 @@ test.describe('Job Definition Wizard / Detail (Day 1-4 交付)', () => {
     await enterDemoApp(page)
   })
 
-  test('Wizard 页可达 + 8 step 标题 + 默认表单可渲染', async ({ page, network }) => {
+  test('Wizard 页可达 + 六步任务结构及关联能力可见 + 默认表单可渲染', async ({ page, network }) => {
     await page.goto('/jobs/definitions/new')
     await waitForRouteStable(page)
     await expectPageTitle(page, '新建作业向导')
@@ -37,18 +37,9 @@ test.describe('Job Definition Wizard / Detail (Day 1-4 交付)', () => {
     await expect(page.locator('.wizard-step-banner__title')).toHaveText('基本信息', {
       timeout: 10_000,
     })
-    await expect(page.locator('.el-step')).toHaveCount(8)
+    await expect(page.locator('.el-step')).toHaveCount(6)
     const stepTitles = await page.locator('.el-step__title').allTextContents()
-    for (const want of [
-      '基本信息',
-      '调度',
-      '执行策略',
-      '触发',
-      '关联文件',
-      '关联编排',
-      '告警',
-      '复核',
-    ]) {
+    for (const want of ['基本信息', '调度', '执行策略', '触发', '关联配置', '复核']) {
       expect(stepTitles.some((t) => t.includes(want))).toBeTruthy()
     }
 
@@ -60,6 +51,13 @@ test.describe('Job Definition Wizard / Detail (Day 1-4 交付)', () => {
     // 顶部 "导入 Bundle JSON" 按钮存在(方案 3 Bundle 入口)
     await expect(page.getByRole('button', { name: /导入 Bundle JSON/ })).toBeVisible()
 
+    for (let index = 0; index < 4; index += 1) {
+      await page.getByRole('button', { name: '下一步' }).click()
+    }
+    await expect(page.locator('.wizard-step-banner__title')).toHaveText('关联配置')
+    await expect(page.getByText('选择 channel', { exact: true })).toBeVisible()
+    await expect(page.getByText('选择工作流', { exact: true })).toBeVisible()
+    await expect(page.getByText('选择路由', { exact: true })).toBeVisible()
     network.assertClean('wizard-smoke')
   })
 

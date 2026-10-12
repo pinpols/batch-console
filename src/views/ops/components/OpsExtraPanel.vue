@@ -21,49 +21,74 @@
           :theme="chartTheme"
           autoresize
         />
+        <div v-else-if="extraLoading" class="chart-loading" role="status">
+          {{ t('common.loading') }}
+        </div>
+        <EmptyState
+          v-else-if="props.slaReportError"
+          variant="error"
+          :description="t('opsSummary.extraLoadFailedMessage')"
+        >
+          <template #action>
+            <el-button type="primary" :loading="extraLoading" @click="emit('loadExtra')">
+              {{ t('common.retry') }}
+            </el-button>
+          </template>
+        </EmptyState>
         <EmptyState v-else :description="t('opsExtraPanel.emptyData')" />
       </section>
 
       <section class="extra-block">
         <h4 class="extra-title">{{ t('opsExtraPanel.execProgress') }}</h4>
-        <div class="progress-filters">
+        <div class="recent-run-toolbar">
+          <p class="extra-subtitle">
+            {{ t('opsExtraPanel.recentRunsSummary', { count: recentRunLimit }) }}
+          </p>
           <el-select
-            v-model="selectedJobCode"
-            clearable
-            filterable
-            :placeholder="t('opsExtraPanel.selectJob')"
-            :loading="jobsLoading"
+            v-model="recentRunLimit"
+            class="recent-run-limit"
+            :aria-label="t('opsExtraPanel.recentRunsLimit')"
           >
-            <el-option v-for="code in jobCodes" :key="code" :label="code" :value="code" />
+            <el-option
+              v-for="count in recentRunLimits"
+              :key="count"
+              :label="String(count)"
+              :value="count"
+            />
           </el-select>
-          <el-date-picker
-            v-model="selectedBizDate"
-            type="date"
-            value-format="YYYY-MM-DD"
-            :placeholder="t('opsExtraPanel.selectBizDate')"
-          />
-          <el-button
-            type="primary"
-            :disabled="!selectedJobCode || !selectedBizDate"
-            :loading="progressLoading"
-            @click="loadProgress"
-          >
-            {{ t('common.search') }}
-          </el-button>
         </div>
         <VChart
-          v-if="progressRows.length"
+          v-if="recentRunRows.length && !recentRunsLoading"
           class="chart"
-          :option="progressOption"
+          :option="recentRunsOption"
           :theme="chartTheme"
           autoresize
         />
-        <EmptyState v-else :description="progressMessage" />
+        <EmptyState
+          v-else-if="recentRunsFailed && !recentRunsLoading"
+          variant="error"
+          :description="recentRunsMessage"
+        >
+          <template #action>
+            <el-button type="primary" :loading="recentRunsLoading" @click="loadRecentInstances">
+              {{ t('common.retry') }}
+            </el-button>
+          </template>
+        </EmptyState>
+        <EmptyState v-else-if="!recentRunsLoading" :description="recentRunsMessage" />
+        <div v-else class="chart-loading" role="status">{{ t('common.loading') }}</div>
+        <div class="recent-run-footer">
+          <el-button link type="primary" @click="goToInstances">
+            {{ t('opsExtraPanel.linkJobInstances') }}
+          </el-button>
+        </div>
       </section>
 
       <section class="extra-block">
         <h4 class="extra-title">{{ t('opsExtraPanel.tenantUsage') }}</h4>
-        <p class="extra-subtitle">{{ t('opsExtraPanel.tenantUsageSummary', { days: usagePeriod }) }}</p>
+        <p class="extra-subtitle">
+          {{ t('opsExtraPanel.tenantUsageSummary', { days: usagePeriod }) }}
+        </p>
         <VChart
           v-if="usageValues.some((item) => item.value > 0)"
           class="chart"
@@ -71,6 +96,20 @@
           :theme="chartTheme"
           autoresize
         />
+        <div v-else-if="extraLoading" class="chart-loading" role="status">
+          {{ t('common.loading') }}
+        </div>
+        <EmptyState
+          v-else-if="props.tenantUsageError"
+          variant="error"
+          :description="t('opsSummary.extraLoadFailedMessage')"
+        >
+          <template #action>
+            <el-button type="primary" :loading="extraLoading" @click="emit('loadExtra')">
+              {{ t('common.retry') }}
+            </el-button>
+          </template>
+        </EmptyState>
         <EmptyState v-else :description="t('opsExtraPanel.emptyData')" />
       </section>
     </div>
@@ -79,19 +118,16 @@
 
 <script setup lang="ts">
   import '@/charts/echarts'
-  import { computed, onMounted, ref } from 'vue'
+  import { computed, onMounted, ref, watch } from 'vue'
+  import { useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import VChart from 'vue-echarts'
   import SectionCard from '@/components/common/SectionCard.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
   import { jobApi } from '@/api/job'
-  import { getDashboardExecutionProgress } from '@/api/dashboard'
+  import type { ConsoleJobInstanceResponse } from '@/types/console-api'
   import { useTenantStore } from '@/stores/tenant'
-  import {
-    buildGroupedBarOption,
-    buildStackBarOption,
-    OPS_CHART_COLORS,
-  } from '../composables/useChartOptions'
+  import { buildGroupedBarOption, OPS_CHART_COLORS } from '../composables/useChartOptions'
   import { ElMessage } from 'element-plus'
 
   type SlaJob = {
@@ -103,32 +139,25 @@
     slaBreached?: number
     slaOnTime?: number
   }
-  type ProgressRow = {
-    instanceNo: string
-    expectedPartitions: number
-    successPartitions: number
-    failedPartitions: number
-    completedPartitions: number
-    progressPercent: number
-  }
-
   const props = defineProps<{
     extraLoading: boolean
     slaReport: unknown
     tenantUsage: unknown
+    slaReportError: unknown
+    tenantUsageError: unknown
     slaGaugeOption: Record<string, unknown>
     chartTheme: string | undefined
   }>()
   const emit = defineEmits<{ loadExtra: [] }>()
   const { t } = useI18n({ useScope: 'global' })
   const tenant = useTenantStore()
-  const jobCodes = ref<string[]>([])
-  const jobsLoading = ref(false)
-  const selectedJobCode = ref('')
-  const selectedBizDate = ref('')
-  const progressRows = ref<ProgressRow[]>([])
-  const progressLoading = ref(false)
-  const progressSearched = ref(false)
+  const router = useRouter()
+  const recentRunLimits = [10, 20, 50]
+  const recentRunLimit = ref(10)
+  const recentInstances = ref<ConsoleJobInstanceResponse[]>([])
+  const recentRunsLoading = ref(false)
+  const recentRunsFailed = ref(false)
+  let recentRunsRequestId = 0
 
   const slaData = computed(() => asRecord(props.slaReport))
   const slaRows = computed<SlaJob[]>(() => asArray<SlaJob>(slaData.value.jobs))
@@ -142,68 +171,106 @@
         const denominator = (Number(row.slaOnTime) || 0) + (Number(row.slaBreached) || 0)
         return {
           name: row.jobName || row.jobCode || '-',
-          value: denominator ? Math.round(((Number(row.slaOnTime) || 0) / denominator) * 1000) / 10 : 0,
+          value: denominator
+            ? Math.round(((Number(row.slaOnTime) || 0) / denominator) * 1000) / 10
+            : 0,
         }
       })
       .sort((a, b) => a.value - b.value)
       .slice(0, 8)
     return buildGroupedBarOption({
       x: rows.map((row) => row.name),
-      series: [{ name: t('opsExtraPanel.attainment'), data: rows.map((row) => row.value), color: OPS_CHART_COLORS.success }],
+      series: [
+        {
+          name: t('opsExtraPanel.attainment'),
+          data: rows.map((row) => row.value),
+          color: OPS_CHART_COLORS.success,
+        },
+      ],
       yAxisName: '%',
     })
   })
 
   const usageValues = computed(() => [
     { name: t('opsExtraPanel.jobDefinitions'), value: Number(usageData.value.jobDefinitions) || 0 },
-    { name: t('opsExtraPanel.workflowDefinitions'), value: Number(usageData.value.workflowDefinitions) || 0 },
+    {
+      name: t('opsExtraPanel.workflowDefinitions'),
+      value: Number(usageData.value.workflowDefinitions) || 0,
+    },
     { name: t('opsExtraPanel.fileChannels'), value: Number(usageData.value.fileChannels) || 0 },
     { name: t('opsExtraPanel.fileTemplates'), value: Number(usageData.value.fileTemplates) || 0 },
-    { name: t('opsExtraPanel.recentJobInstances'), value: Number(usageData.value.recentJobInstances) || 0 },
+    {
+      name: t('opsExtraPanel.recentJobInstances'),
+      value: Number(usageData.value.recentJobInstances) || 0,
+    },
     { name: t('opsExtraPanel.recentFiles'), value: Number(usageData.value.recentFiles) || 0 },
   ])
   const tenantUsageOption = computed(() =>
     buildGroupedBarOption({
       x: usageValues.value.map((item) => item.name),
-      series: [{ name: t('opsExtraPanel.usageCount'), data: usageValues.value.map((item) => item.value), color: OPS_CHART_COLORS.primary }],
-    }),
-  )
-
-  const progressMessage = computed(() =>
-    progressSearched.value ? t('opsExtraPanel.emptyProgress') : t('opsExtraPanel.execProgressHint'),
-  )
-  const progressOption = computed(() =>
-    buildStackBarOption({
-      x: progressRows.value.map((row) => row.instanceNo),
       series: [
         {
-          name: t('opsExtraPanel.successPartitions'),
-          data: progressRows.value.map((row) => Math.max(row.completedPartitions - row.failedPartitions, 0)),
-          color: OPS_CHART_COLORS.success,
+          name: t('opsExtraPanel.usageCount'),
+          data: usageValues.value.map((item) => item.value),
+          color: OPS_CHART_COLORS.primary,
         },
-        { name: t('opsExtraPanel.failedPartitions'), data: progressRows.value.map((row) => row.failedPartitions), color: OPS_CHART_COLORS.danger },
-        { name: t('opsExtraPanel.remainingPartitions'), data: progressRows.value.map((row) => Math.max(row.expectedPartitions - row.completedPartitions, 0)), color: OPS_CHART_COLORS.neutral },
       ],
     }),
   )
 
-  async function loadProgress() {
-    if (!selectedJobCode.value || !selectedBizDate.value) return
-    progressLoading.value = true
-    progressSearched.value = true
-    try {
-      const response = await getDashboardExecutionProgress(
-        tenant.tenantId,
-        selectedJobCode.value,
-        selectedBizDate.value,
-      )
-      progressRows.value = asArray<ProgressRow>(response)
-    } catch {
-      progressRows.value = []
-      ElMessage.error(t('opsExtraPanel.progressLoadFailed'))
-    } finally {
-      progressLoading.value = false
+  const recentRunRows = computed(() => {
+    const counts = new Map<string, number>()
+    for (const instance of recentInstances.value) {
+      const status = instance.instanceStatus || 'UNKNOWN'
+      counts.set(status, (counts.get(status) ?? 0) + 1)
     }
+    return [...counts.entries()].map(([status, count]) => ({
+      name: t(`enum.instanceStatus.${status}`, status),
+      value: count,
+    }))
+  })
+  const recentRunsMessage = computed(() =>
+    recentRunsFailed.value ? t('opsExtraPanel.recentRunsLoadFailed') : t('opsExtraPanel.emptyData'),
+  )
+  const recentRunsOption = computed(() =>
+    buildGroupedBarOption({
+      x: recentRunRows.value.map((row) => row.name),
+      series: [
+        {
+          name: t('opsExtraPanel.recentRunsCount'),
+          data: recentRunRows.value.map((row) => row.value),
+          color: OPS_CHART_COLORS.primary,
+        },
+      ],
+    }),
+  )
+
+  async function loadRecentInstances() {
+    const requestId = ++recentRunsRequestId
+    const tenantId = tenant.tenantId
+    recentRunsLoading.value = true
+    recentRunsFailed.value = false
+    recentInstances.value = []
+    try {
+      const result = await jobApi.listInstances({
+        tenantId,
+        page: 1,
+        pageSize: recentRunLimit.value,
+      })
+      if (requestId !== recentRunsRequestId || tenantId !== tenant.tenantId) return
+      recentInstances.value = result.records
+    } catch {
+      if (requestId !== recentRunsRequestId || tenantId !== tenant.tenantId) return
+      recentInstances.value = []
+      recentRunsFailed.value = true
+      ElMessage.error(t('opsExtraPanel.recentRunsLoadFailed'))
+    } finally {
+      if (requestId === recentRunsRequestId) recentRunsLoading.value = false
+    }
+  }
+
+  function goToInstances() {
+    void router.push('/monitor/job-instances')
   }
 
   function asRecord(value: unknown): Record<string, unknown> {
@@ -215,14 +282,12 @@
     return Array.isArray(value) ? (value as T[]) : []
   }
 
+  watch([() => tenant.tenantId, recentRunLimit], () => void loadRecentInstances(), {
+    immediate: true,
+  })
+
   onMounted(() => {
     if (!props.slaReport && !props.tenantUsage) emit('loadExtra')
-    jobsLoading.value = true
-    void jobApi
-      .listCodes(tenant.tenantId)
-      .then((codes) => (jobCodes.value = codes))
-      .catch(() => ElMessage.error(t('opsExtraPanel.jobsLoadFailed')))
-      .finally(() => (jobsLoading.value = false))
   })
 </script>
 
@@ -261,16 +326,31 @@
     display: flex;
     flex-direction: column;
   }
-  .progress-filters {
-    display: grid;
-    grid-template-columns: minmax(150px, 1fr) minmax(150px, 1fr) auto;
+  .recent-run-toolbar,
+  .recent-run-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     gap: var(--space-sm);
-    margin-top: var(--space-sm);
+  }
+  .recent-run-limit {
+    width: 88px;
+    flex: 0 0 auto;
+  }
+  .chart-loading {
+    display: grid;
+    min-height: 260px;
+    place-items: center;
+    color: var(--color-text-tertiary);
   }
   @media (max-width: 900px) {
-    .extra-panels { grid-template-columns: minmax(0, 1fr); }
+    .extra-panels {
+      grid-template-columns: minmax(0, 1fr);
+    }
   }
   @media (max-width: 560px) {
-    .progress-filters { grid-template-columns: minmax(0, 1fr); }
+    .recent-run-toolbar {
+      align-items: flex-start;
+    }
   }
 </style>

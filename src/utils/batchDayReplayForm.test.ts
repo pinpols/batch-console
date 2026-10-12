@@ -56,12 +56,12 @@ describe('buildBatchDayReplayRequest', () => {
     expect(result.request?.versionIds).toBeUndefined()
   })
 
-  it('accepts only positive safe integer result-version ids', () => {
+  it('accepts unique positive safe integer result-version ids', () => {
     const result = buildBatchDayReplayRequest(
       replayForm({ scope: 'OUTPUTS_ONLY', jobCodes: ['JOB_A'] }),
       'tenant-a',
       '',
-      '1, -2 3.5 9007199254740992 4',
+      '1, -2 3.5 9007199254740992 4 1',
     )
 
     expect(result.request?.versionIds).toEqual([1, 4])

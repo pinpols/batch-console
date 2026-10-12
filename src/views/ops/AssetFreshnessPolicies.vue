@@ -30,14 +30,7 @@
           />
         </el-form-item>
         <el-form-item :label="t('assetFreshness.enabled')">
-          <el-select
-            v-model="query.enabled"
-            clearable
-            :placeholder="t('assetFreshness.enabledAll')"
-          >
-            <el-option :label="t('common.yes')" :value="true" />
-            <el-option :label="t('common.no')" :value="false" />
-          </el-select>
+          <EnabledStatusFilter v-model="query.enabled" :aria-label="t('assetFreshness.enabled')" />
         </el-form-item>
       </ListPageQueryBar>
     </div>
@@ -170,6 +163,7 @@
 <script setup lang="ts">
   import { reactive, ref } from 'vue'
   import { useI18n } from 'vue-i18n'
+  import EnabledStatusFilter from '@/components/table/EnabledStatusFilter.vue'
   import { ElMessage } from 'element-plus'
   import { Pencil as Edit, Plus, RefreshCw as Refresh } from '@lucide/vue'
   import {

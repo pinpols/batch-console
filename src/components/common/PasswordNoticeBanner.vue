@@ -5,22 +5,15 @@
       <strong>{{ title }}</strong>
       <span>{{ description }}</span>
     </div>
-    <div class="password-notice__actions">
+    <AutoDismissBannerActions
+      :countdown-text="t('passwordNotice.autoClose', { seconds: secondsLeft })"
+      :close-label="t('common.close')"
+      @dismiss="dismissed = true"
+    >
       <el-button link type="warning" :icon="ArrowRight" @click="openAccount">
         {{ t('passwordNotice.action') }}
       </el-button>
-      <span class="password-notice__countdown">
-        {{ t('passwordNotice.autoClose', { seconds: secondsLeft }) }}
-      </span>
-      <el-button
-        text
-        circle
-        :icon="X"
-        :aria-label="t('common.close')"
-        class="password-notice__close"
-        @click="dismissed = true"
-      />
-    </div>
+    </AutoDismissBannerActions>
   </div>
 </template>
 
@@ -28,8 +21,9 @@
   import { computed, onUnmounted, ref, watch } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
-  import { ArrowRight, KeyRound, X } from '@lucide/vue'
+  import { ArrowRight, KeyRound } from '@lucide/vue'
   import { useAuthStore } from '@/stores/auth'
+  import AutoDismissBannerActions from './AutoDismissBannerActions.vue'
 
   const auth = useAuthStore()
   const route = useRoute()
@@ -128,27 +122,6 @@
     color: var(--color-text-secondary);
   }
 
-  .password-notice__actions {
-    display: flex;
-    align-items: center;
-    gap: 2px;
-    flex: none;
-  }
-
-  .password-notice__countdown {
-    color: var(--color-text-tertiary);
-    font-size: 11px;
-    white-space: nowrap;
-  }
-
-  .password-notice__actions :deep(.el-button + .el-button) {
-    margin-left: 0;
-  }
-
-  .password-notice__close {
-    color: var(--color-text-tertiary);
-  }
-
   @media (max-width: 720px) {
     .password-notice {
       align-items: flex-start;
@@ -159,11 +132,6 @@
     .password-notice__copy {
       display: grid;
       gap: 2px;
-    }
-
-    .password-notice__actions {
-      width: 100%;
-      justify-content: flex-end;
     }
   }
 </style>

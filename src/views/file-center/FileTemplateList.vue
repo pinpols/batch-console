@@ -73,15 +73,12 @@
                 />
               </el-form-item>
               <el-form-item :label="t('fileTemplateList.enabledLabel')">
-                <el-select
-                  v-model="enabled"
-                  clearable
-                  :placeholder="t('fileTemplateList.enabledPlaceholder')"
-                  class="query-w-120"
-                >
-                  <el-option :label="t('fileTemplateList.optEnabled')" :value="true" />
-                  <el-option :label="t('fileTemplateList.optDisabled')" :value="false" />
-                </el-select>
+                <StatusSegment
+                  :model-value="templateEnabledSegment"
+                  :items="enabledStatusSegmentItems"
+                  :aria-label="t('fileTemplateList.enabledLabel')"
+                  @update:model-value="onTemplateEnabledSegmentChange"
+                />
               </el-form-item>
             </ListPageQueryBar>
           </template>
@@ -169,15 +166,12 @@
             />
           </el-form-item>
           <el-form-item :label="t('fileTemplateList.enabledLabel')">
-            <el-select
-              v-model="channelEnabled"
-              clearable
-              class="query-w-120"
-              :placeholder="t('fileTemplateList.enabledPlaceholder')"
-            >
-              <el-option :label="t('fileTemplateList.optEnabled')" :value="true" />
-              <el-option :label="t('fileTemplateList.optDisabled')" :value="false" />
-            </el-select>
+            <StatusSegment
+              :model-value="channelEnabledSegment"
+              :items="enabledStatusSegmentItems"
+              :aria-label="t('fileTemplateList.enabledLabel')"
+              @update:model-value="onChannelEnabledSegmentChange"
+            />
           </el-form-item>
         </ListPageQueryBar>
         <el-table
@@ -548,6 +542,7 @@
   import PageHeader from '@/components/common/PageHeader.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import ProTable from '@/components/table/ProTable.vue'
+  import StatusSegment from '@/components/table/StatusSegment.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
   import JsonPreview from '@/components/common/JsonPreview.vue'
   import JsonTextareaInput from '@/components/common/JsonTextareaInput.vue'
@@ -602,6 +597,33 @@
   const enabled = ref<boolean | undefined>()
   const channelKeyword = ref('')
   const channelEnabled = ref<boolean | undefined>()
+  const enabledStatusSegmentItems = computed(() => [
+    { value: 'ALL', label: t('dateRangePicker.all'), accent: 'var(--color-primary)' },
+    {
+      value: 'ENABLED',
+      label: t('fileTemplateList.optEnabled'),
+      accent: 'var(--color-success)',
+    },
+    {
+      value: 'DISABLED',
+      label: t('fileTemplateList.optDisabled'),
+      accent: 'var(--color-text-tertiary)',
+    },
+  ])
+  const templateEnabledSegment = computed({
+    get: () => (enabled.value === true ? 'ENABLED' : enabled.value === false ? 'DISABLED' : 'ALL'),
+  })
+  const channelEnabledSegment = computed(() =>
+    channelEnabled.value === true ? 'ENABLED' : channelEnabled.value === false ? 'DISABLED' : 'ALL',
+  )
+
+  function onChannelEnabledSegmentChange(value: string) {
+    channelEnabled.value = value === 'ENABLED' ? true : value === 'DISABLED' ? false : undefined
+  }
+
+  function onTemplateEnabledSegmentChange(value: string) {
+    enabled.value = value === 'ENABLED' ? true : value === 'DISABLED' ? false : undefined
+  }
 
   const templateForm = reactive({
     templateCode: '',

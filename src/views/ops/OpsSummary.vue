@@ -103,10 +103,10 @@
           :chart-theme="chartTheme"
           :trigger-type-top-n-option="triggerTypeTopNOption"
           :worker-load-top-n-option="workerLoadTopNOption"
-          :job-status-pie-option="jobStatusPieOption"
-          :worker-status-pie-option="workerStatusPieOption"
-          :alert-severity-pie-option="alertSeverityPieOption"
-          :outbox-health-pie-option="outboxHealthPieOption"
+          :job-status-pie-option="jobStatusOption"
+          :worker-status-pie-option="workerStatusOption"
+          :alert-severity-pie-option="alertSeverityOption"
+          :outbox-health-pie-option="outboxHealthOption"
           @refresh-charts="loadCharts"
         />
       </div>
@@ -117,6 +117,8 @@
       :extra-loading="extraLoading"
       :sla-report="slaReport"
       :tenant-usage="tenantUsage"
+      :sla-report-error="slaReportError"
+      :tenant-usage-error="tenantUsageError"
       :sla-gauge-option="slaGaugeOption"
       :chart-theme="chartTheme"
       @load-extra="loadExtraPanels"
@@ -168,10 +170,10 @@
     failRateTrendOption,
     triggerTypeTopNOption,
     workerLoadTopNOption,
-    jobStatusPieOption,
-    workerStatusPieOption,
-    alertSeverityPieOption,
-    outboxHealthPieOption,
+    jobStatusOption,
+    workerStatusOption,
+    alertSeverityOption,
+    outboxHealthOption,
     slaGaugeOption,
     extraLoading,
     slaReport,

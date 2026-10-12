@@ -108,6 +108,13 @@ export const FIXTURES = {
     },
   ],
   metaEnums: {
+    tenantStatus: [
+      { value: 'ACTIVE', label: '正常' },
+      { value: 'SUSPENDING', label: '暂停中' },
+      { value: 'SUSPENDED', label: '已停用' },
+      { value: 'ACTIVATING', label: '恢复中' },
+      { value: 'ARCHIVED', label: '已归档' },
+    ],
     approvalType: [{ value: 'TENANT_CONFIG', label: '租户配置' }],
     approvalStatus: [
       { value: 'PENDING', label: '待审批' },

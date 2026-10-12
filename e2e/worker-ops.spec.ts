@@ -23,18 +23,15 @@ test.describe('Worker 管理 — 筛选查询', () => {
   })
 
   test('状态筛选 → 查询', async ({ page }) => {
-    const statusSelect = page
+    const statusFilter = page
       .locator('.el-form-item')
       .filter({ hasText: '状态' })
-      .locator('.el-select')
-    if (!(await isVisible(statusSelect, 2000))) return
-    await statusSelect.click()
-    const opt = page.locator('.el-select-dropdown__item').first()
-    if (await isVisible(opt, 2000)) {
-      await opt.click()
-      await page.getByRole('button', { name: '搜索' }).click()
-      await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
-    }
+      .locator('[role="radiogroup"]')
+    await expect(statusFilter.getByRole('radio', { name: '全部' })).toBeVisible()
+    await statusFilter.getByRole('radio', { name: '下线中' }).click()
+    await expect(statusFilter.getByRole('radio', { name: '下线中' })).toHaveAttribute('aria-checked', 'true')
+    await page.getByRole('button', { name: '搜索' }).click()
+    await expect(page.locator('.wk-card, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
   })
 
   test('Worker Code 搜索 → 查询 → 重置', async ({ page }) => {

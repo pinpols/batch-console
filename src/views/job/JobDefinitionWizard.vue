@@ -119,138 +119,187 @@
             :sections="['params']"
           />
 
-          <div v-else-if="current.key === 'files'" class="json-step">
-            <el-alert :title="t('jobDefinitionWizard.filesHint')" type="info" :closable="false" />
-            <el-form-item :label="t('jobDefinitionWizard.selectChannelLabel')">
-              <el-select
-                v-model="selectedChannelIds"
-                multiple
-                filterable
-                collapse-tags
-                collapse-tags-tooltip
-                clearable
-                :loading="associationsLoading"
-                :placeholder="t('jobDefinitionWizard.selectChannelPlaceholder')"
-                class="query-w-full"
-              >
-                <el-option
-                  v-for="ch in channelOptions"
-                  :key="ch.id"
-                  :label="ch.channelName ? `${ch.channelCode} / ${ch.channelName}` : ch.channelCode"
-                  :value="ch.id"
-                />
-              </el-select>
-            </el-form-item>
-            <el-form-item :label="t('jobDefinitionWizard.selectTemplateLabel')">
-              <el-select
-                v-model="selectedTemplateIds"
-                multiple
-                filterable
-                collapse-tags
-                collapse-tags-tooltip
-                clearable
-                :loading="associationsLoading"
-                :placeholder="t('jobDefinitionWizard.selectTemplatePlaceholder')"
-                class="query-w-full"
-              >
-                <el-option
-                  v-for="tpl in templateOptions"
-                  :key="tpl.id"
-                  :label="
-                    tpl.templateName
-                      ? `${tpl.templateCode} / ${tpl.templateName}`
-                      : tpl.templateCode
-                  "
-                  :value="tpl.id"
-                />
-              </el-select>
-            </el-form-item>
-            <el-form-item :label="t('jobDefinitionWizard.newChannelsJsonLabel')">
-              <JsonTextareaInput
-                v-model="fileChannelsJson"
-                :rows="4"
-                expect="array"
-                :placeholder="t('jobDefinitionWizard.newChannelsJsonPlaceholder')"
-              />
-            </el-form-item>
-            <el-form-item :label="t('jobDefinitionWizard.newTemplatesJsonLabel')">
-              <JsonTextareaInput
-                v-model="fileTemplatesJson"
-                :rows="4"
-                expect="array"
-                :placeholder="t('jobDefinitionWizard.newTemplatesJsonPlaceholder')"
-              />
-            </el-form-item>
-          </div>
-
-          <div v-else-if="current.key === 'workflow'" class="json-step">
+          <div v-else-if="current.key === 'associations'" class="association-step">
             <el-alert
-              :title="t('jobDefinitionWizard.workflowHint')"
+              :title="t('jobDefinitionWizard.associationsHint')"
               type="info"
               :closable="false"
             />
-            <el-form-item :label="t('jobDefinitionWizard.selectWorkflowLabel')">
-              <el-select
-                v-model="selectedWorkflowIds"
-                multiple
-                filterable
-                collapse-tags
-                collapse-tags-tooltip
-                clearable
-                :loading="associationsLoading"
-                :placeholder="t('jobDefinitionWizard.selectWorkflowPlaceholder')"
-                class="query-w-full"
-              >
-                <el-option
-                  v-for="wf in workflowOptions"
-                  :key="wf.id"
-                  :label="
-                    wf.workflowName ? `${wf.workflowCode} / ${wf.workflowName}` : wf.workflowCode
-                  "
-                  :value="wf.id"
+            <section class="association-section">
+              <h3>{{ t('jobDefinitionWizard.stepFilesTitle') }}</h3>
+              <div class="json-step">
+                <el-alert
+                  :title="t('jobDefinitionWizard.filesHint')"
+                  type="info"
+                  :closable="false"
                 />
-              </el-select>
-            </el-form-item>
-            <el-form-item :label="t('jobDefinitionWizard.newWorkflowsJsonLabel')">
-              <JsonTextareaInput
-                v-model="workflowDefinitionsJson"
-                :rows="8"
-                expect="array"
-                :placeholder="t('jobDefinitionWizard.newWorkflowsJsonPlaceholder')"
-              />
-            </el-form-item>
-          </div>
+                <el-form-item :label="t('jobDefinitionWizard.selectChannelLabel')">
+                  <el-select
+                    v-model="selectedChannelIds"
+                    multiple
+                    filterable
+                    collapse-tags
+                    collapse-tags-tooltip
+                    clearable
+                    :loading="associationsLoading"
+                    :placeholder="t('jobDefinitionWizard.selectChannelPlaceholder')"
+                    class="query-w-full"
+                  >
+                    <el-option
+                      v-for="ch in channelOptions"
+                      :key="ch.id"
+                      :label="
+                        ch.channelName ? `${ch.channelCode} / ${ch.channelName}` : ch.channelCode
+                      "
+                      :value="ch.id"
+                    />
+                  </el-select>
+                </el-form-item>
+                <el-form-item :label="t('jobDefinitionWizard.selectTemplateLabel')">
+                  <el-select
+                    v-model="selectedTemplateIds"
+                    multiple
+                    filterable
+                    collapse-tags
+                    collapse-tags-tooltip
+                    clearable
+                    :loading="associationsLoading"
+                    :placeholder="t('jobDefinitionWizard.selectTemplatePlaceholder')"
+                    class="query-w-full"
+                  >
+                    <el-option
+                      v-for="tpl in templateOptions"
+                      :key="tpl.id"
+                      :label="
+                        tpl.templateName
+                          ? `${tpl.templateCode} / ${tpl.templateName}`
+                          : tpl.templateCode
+                      "
+                      :value="tpl.id"
+                    />
+                  </el-select>
+                </el-form-item>
+                <el-collapse>
+                  <el-collapse-item
+                    :title="t('jobDefinitionWizard.advancedJsonConfig')"
+                    name="file-json"
+                  >
+                    <el-form-item :label="t('jobDefinitionWizard.newChannelsJsonLabel')">
+                      <JsonTextareaInput
+                        v-model="fileChannelsJson"
+                        :rows="4"
+                        expect="array"
+                        :placeholder="t('jobDefinitionWizard.newChannelsJsonPlaceholder')"
+                      />
+                    </el-form-item>
+                    <el-form-item :label="t('jobDefinitionWizard.newTemplatesJsonLabel')">
+                      <JsonTextareaInput
+                        v-model="fileTemplatesJson"
+                        :rows="4"
+                        expect="array"
+                        :placeholder="t('jobDefinitionWizard.newTemplatesJsonPlaceholder')"
+                      />
+                    </el-form-item>
+                  </el-collapse-item>
+                </el-collapse>
+              </div>
+            </section>
 
-          <div v-else-if="current.key === 'alerts'" class="json-step">
-            <el-alert :title="t('jobDefinitionWizard.alertsHint')" type="info" :closable="false" />
-            <el-form-item :label="t('jobDefinitionWizard.selectAlertRoutingLabel')">
-              <el-select
-                v-model="selectedAlertRoutingIds"
-                multiple
-                filterable
-                collapse-tags
-                collapse-tags-tooltip
-                clearable
-                :loading="associationsLoading"
-                :placeholder="t('jobDefinitionWizard.selectAlertRoutingPlaceholder')"
-                class="query-w-full"
-              >
-                <el-option
-                  v-for="ar in alertRoutingOptions"
-                  :key="ar.id"
-                  :label="ar.team ? `${ar.routeCode} / ${ar.team}` : ar.routeCode"
-                  :value="ar.id"
+            <section class="association-section">
+              <h3>{{ t('jobDefinitionWizard.stepWorkflowTitle') }}</h3>
+              <div class="json-step">
+                <el-alert
+                  :title="t('jobDefinitionWizard.workflowHint')"
+                  type="info"
+                  :closable="false"
                 />
-              </el-select>
-            </el-form-item>
-            <el-form-item :label="t('jobDefinitionWizard.newAlertRoutingsJsonLabel')">
-              <JsonTextareaInput
-                v-model="alertRoutingsJson"
-                :rows="8"
-                expect="array"
-                :placeholder="t('jobDefinitionWizard.newAlertRoutingsJsonPlaceholder')"
-              />
-            </el-form-item>
+                <el-form-item :label="t('jobDefinitionWizard.selectWorkflowLabel')">
+                  <el-select
+                    v-model="selectedWorkflowIds"
+                    multiple
+                    filterable
+                    collapse-tags
+                    collapse-tags-tooltip
+                    clearable
+                    :loading="associationsLoading"
+                    :placeholder="t('jobDefinitionWizard.selectWorkflowPlaceholder')"
+                    class="query-w-full"
+                  >
+                    <el-option
+                      v-for="wf in workflowOptions"
+                      :key="wf.id"
+                      :label="
+                        wf.workflowName
+                          ? `${wf.workflowCode} / ${wf.workflowName}`
+                          : wf.workflowCode
+                      "
+                      :value="wf.id"
+                    />
+                  </el-select>
+                </el-form-item>
+                <el-collapse>
+                  <el-collapse-item
+                    :title="t('jobDefinitionWizard.advancedJsonConfig')"
+                    name="workflow-json"
+                  >
+                    <el-form-item :label="t('jobDefinitionWizard.newWorkflowsJsonLabel')">
+                      <JsonTextareaInput
+                        v-model="workflowDefinitionsJson"
+                        :rows="8"
+                        expect="array"
+                        :placeholder="t('jobDefinitionWizard.newWorkflowsJsonPlaceholder')"
+                      />
+                    </el-form-item>
+                  </el-collapse-item>
+                </el-collapse>
+              </div>
+            </section>
+
+            <section class="association-section">
+              <h3>{{ t('jobDefinitionWizard.stepAlertsTitle') }}</h3>
+              <div class="json-step">
+                <el-alert
+                  :title="t('jobDefinitionWizard.alertsHint')"
+                  type="info"
+                  :closable="false"
+                />
+                <el-form-item :label="t('jobDefinitionWizard.selectAlertRoutingLabel')">
+                  <el-select
+                    v-model="selectedAlertRoutingIds"
+                    multiple
+                    filterable
+                    collapse-tags
+                    collapse-tags-tooltip
+                    clearable
+                    :loading="associationsLoading"
+                    :placeholder="t('jobDefinitionWizard.selectAlertRoutingPlaceholder')"
+                    class="query-w-full"
+                  >
+                    <el-option
+                      v-for="ar in alertRoutingOptions"
+                      :key="ar.id"
+                      :label="ar.team ? `${ar.routeCode} / ${ar.team}` : ar.routeCode"
+                      :value="ar.id"
+                    />
+                  </el-select>
+                </el-form-item>
+                <el-collapse>
+                  <el-collapse-item
+                    :title="t('jobDefinitionWizard.advancedJsonConfig')"
+                    name="alert-json"
+                  >
+                    <el-form-item :label="t('jobDefinitionWizard.newAlertRoutingsJsonLabel')">
+                      <JsonTextareaInput
+                        v-model="alertRoutingsJson"
+                        :rows="8"
+                        expect="array"
+                        :placeholder="t('jobDefinitionWizard.newAlertRoutingsJsonPlaceholder')"
+                      />
+                    </el-form-item>
+                  </el-collapse-item>
+                </el-collapse>
+              </div>
+            </section>
           </div>
 
           <div v-else class="review-step">
@@ -341,19 +390,9 @@
           desc: t('jobDefinitionWizard.stepTriggerDesc'),
         },
         {
-          key: 'files',
-          title: t('jobDefinitionWizard.stepFilesTitle'),
-          desc: t('jobDefinitionWizard.stepFilesDesc'),
-        },
-        {
-          key: 'workflow',
-          title: t('jobDefinitionWizard.stepWorkflowTitle'),
-          desc: t('jobDefinitionWizard.stepWorkflowDesc'),
-        },
-        {
-          key: 'alerts',
-          title: t('jobDefinitionWizard.stepAlertsTitle'),
-          desc: t('jobDefinitionWizard.stepAlertsDesc'),
+          key: 'associations',
+          title: t('jobDefinitionWizard.stepAssociationsTitle'),
+          desc: t('jobDefinitionWizard.stepAssociationsDesc'),
         },
         {
           key: 'review',
@@ -775,6 +814,28 @@
     display: flex;
     flex-direction: column;
     gap: 16px;
+  }
+
+  .association-step {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .association-section {
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--el-border-color-lighter);
+  }
+
+  .association-section:last-child {
+    padding-bottom: 0;
+    border-bottom: 0;
+  }
+
+  .association-section h3 {
+    margin: 0 0 16px;
+    font-size: 16px;
+    font-weight: 600;
   }
 
   .prefill-dialog__hint {
