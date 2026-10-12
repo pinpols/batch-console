@@ -39,11 +39,9 @@
       :closable="false"
       :title="t('schedulerSnapshot.loadErrorTitle')"
       :description="
-        snap
-          ? snapshotFailed
-            ? t('schedulerSnapshot.staleDescription', { time: fmtDatetime(lastSuccessfulAt) })
-            : t('schedulerSnapshot.partialDescription')
-          : t('schedulerSnapshot.loadErrorDescription')
+        snapshotFailed
+          ? t('schedulerSnapshot.staleDescription', { time: fmtDatetime(lastSuccessfulAt) })
+          : t('schedulerSnapshot.partialDescription')
       "
     >
       <template #default>
@@ -762,9 +760,8 @@
     if (snapOk) lastSuccessfulAt.value = snapResult.value.generatedAt || new Date().toISOString()
     loading.value = false
     histLoading.value = false
-    if (!silent) {
-      if (snapOk && histOk && statusOk) ElMessage.success(t('schedulerSnapshot.refreshDone'))
-    }
+    if (!silent && snapOk && histOk && statusOk)
+      ElMessage.success(t('schedulerSnapshot.refreshDone'))
   }
 
   useTenantReload(() => loadAll(true))
