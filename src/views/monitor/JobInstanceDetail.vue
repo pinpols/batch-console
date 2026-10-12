@@ -201,12 +201,82 @@
         </template>
         <SectionCard>
           <template #header>
-            <span>{{ t('monitor.detailTabSteps') }}</span>
-            <el-button text type="primary" @click="goSteps">
-              {{ t('monitor.detailOpenStandalone') }}
-            </el-button>
+            <div class="steps-section-header">
+              <span>{{ t('monitor.detailTabSteps') }}</span>
+              <div class="steps-section-header__actions">
+                <el-button
+                  text
+                  :icon="stepsTableView ? GitBranch : List"
+                  :aria-pressed="stepsTableView"
+                  @click="stepsTableView = !stepsTableView"
+                >
+                  {{
+                    stepsTableView
+                      ? t('jobInstanceDetail.stepsTimelineView')
+                      : t('jobInstanceDetail.stepsTableView')
+                  }}
+                </el-button>
+                <el-button text type="primary" @click="goSteps">
+                  {{ t('monitor.detailOpenStandalone') }}
+                </el-button>
+              </div>
+            </div>
           </template>
-          <div class="detail-table-wrap">
+          <el-alert
+            v-if="stepsLoadError"
+            type="error"
+            show-icon
+            :closable="false"
+            :title="t('jobInstanceDetail.stepsLoadFailed')"
+          >
+            <template #default>
+              <el-button link type="primary" @click="loadSteps">{{ t('common.retry') }}</el-button>
+            </template>
+          </el-alert>
+          <div
+            v-else-if="!stepsTableView && stepsLoading && !orderedSteps.length"
+            v-loading="true"
+            class="steps-loading"
+          />
+          <el-timeline v-else-if="!stepsTableView && orderedSteps.length" class="steps-timeline">
+            <el-timeline-item
+              v-for="step in orderedSteps"
+              :key="step.id"
+              :type="stepTimelineTone(step.stepStatus)"
+              :timestamp="fmtDatetime(step.startedAt)"
+              :hollow="!step.finishedAt"
+            >
+              <div class="step-event">
+                <div class="step-event__heading">
+                  <strong>{{ step.stepCode }}</strong>
+                  <StatusTag :value="String(step.stepStatus ?? '')" category="partition" />
+                </div>
+                <div class="step-event__meta">
+                  <span>{{ step.stepType }}</span>
+                  <span>{{ t('monitor.stepColRetry') }}: {{ step.retryCount ?? 0 }}</span>
+                  <span v-if="stepDuration(step)">{{ stepDuration(step) }}</span>
+                  <span v-if="step.finishedAt">{{ fmtDatetime(step.finishedAt) }}</span>
+                </div>
+                <div v-if="step.errorCode || step.errorMessage" class="step-event__error">
+                  <code v-if="step.errorCode">{{ step.errorCode }}</code>
+                  <span v-if="step.errorMessage">{{ step.errorMessage }}</span>
+                </div>
+                <router-link
+                  v-if="step.relatedPipelineInstanceId"
+                  class="cell-link"
+                  :to="`/files/pipeline-obs?pipelineInstanceId=${step.relatedPipelineInstanceId}`"
+                >
+                  {{ t('monitor.stepViewPipelineProgress') }}
+                </router-link>
+              </div>
+            </el-timeline-item>
+          </el-timeline>
+          <EmptyState
+            v-else-if="!stepsTableView && !stepsLoading"
+            :description="t('common.noData')"
+            :image-size="56"
+          />
+          <div v-else-if="stepsTableView" class="detail-table-wrap">
             <el-table
               v-loading="stepsLoading"
               :data="stepsRows"
@@ -366,12 +436,12 @@
 <script setup lang="ts">
   import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { fmtDatetime } from '@/utils/datetime'
+  import { fmtDatetime, fmtDuration } from '@/utils/datetime'
 
   const { t } = useI18n({ useScope: 'global' })
   import { useRoute, useRouter } from 'vue-router'
   import { ElMessage } from 'element-plus'
-  import { RefreshCw as Refresh } from '@lucide/vue'
+  import { GitBranch, List, RefreshCw as Refresh } from '@lucide/vue'
   import { useRefreshAction } from '@/composables/useRefreshAction'
 
   const refresh = useRefreshAction()
@@ -426,7 +496,18 @@
 
   const activeTab = ref<'overview' | 'steps' | 'heartbeat' | 'recent'>('overview')
   const stepsLoading = ref(false)
+  const stepsLoadError = ref(false)
   const stepsRows = ref<ConsoleJobStepInstanceResponse[]>([])
+  const stepsTableView = ref(false)
+  const orderedSteps = computed(() =>
+    [...stepsRows.value].sort((a, b) => {
+      const aStart = Date.parse(a.startedAt)
+      const bStart = Date.parse(b.startedAt)
+      if (Number.isFinite(aStart) && Number.isFinite(bStart) && aStart !== bStart)
+        return aStart - bStart
+      return a.id - b.id
+    }),
+  )
   const stepsLoaded = ref(false)
   const recentLoading = ref(false)
   const recentRows = ref<ConsoleJobInstanceResponse[]>([])
@@ -448,6 +529,19 @@
     if (['RUNNING', 'EXECUTING', 'CLAIMED', 'DISPATCHED'].includes(s)) return 'info'
     if (['WAITING', 'PENDING', 'QUEUED', 'PAUSED', 'COMPENSATING'].includes(s)) return 'warning'
     return 'neutral'
+  }
+
+  function stepTimelineTone(status: string | null | undefined) {
+    const tone = statusTone(status)
+    return tone === 'neutral' ? 'info' : tone
+  }
+
+  function stepDuration(step: ConsoleJobStepInstanceResponse): string {
+    const start = Date.parse(step.startedAt)
+    const finish = Date.parse(step.finishedAt)
+    return Number.isFinite(start) && Number.isFinite(finish) && finish >= start
+      ? fmtDuration(finish - start)
+      : ''
   }
 
   const taskOptions = computed(() =>
@@ -485,11 +579,13 @@
   async function loadSteps() {
     if (!row.value || !Number.isFinite(instanceId.value)) return
     stepsLoading.value = true
+    stepsLoadError.value = false
     try {
       stepsRows.value = await instanceApi.partitions(instanceId.value, tenant.tenantId)
       stepsLoaded.value = true
     } catch {
       stepsRows.value = []
+      stepsLoadError.value = true
     } finally {
       stepsLoading.value = false
     }
@@ -880,6 +976,77 @@
     border: 1px solid var(--color-border);
     border-radius: var(--radius-content);
     background: var(--color-bg-card);
+  }
+
+  .steps-section-header,
+  .steps-section-header__actions,
+  .step-event__heading,
+  .step-event__meta {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+  }
+
+  .steps-section-header {
+    justify-content: space-between;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .steps-section-header__actions {
+    flex-wrap: wrap;
+  }
+
+  .steps-timeline {
+    max-width: 58rem;
+    padding-top: var(--space-sm);
+  }
+
+  .steps-loading {
+    min-height: 8rem;
+  }
+
+  .step-event {
+    display: grid;
+    gap: var(--space-xs);
+    min-width: 0;
+    padding: 0 0 var(--space-md);
+    border-bottom: 1px solid var(--color-border-light);
+  }
+
+  .steps-timeline :deep(.el-timeline-item:last-child .step-event) {
+    border-bottom: 0;
+  }
+
+  .step-event__heading,
+  .step-event__meta {
+    flex-wrap: wrap;
+  }
+
+  .step-event__heading {
+    justify-content: space-between;
+  }
+
+  .step-event__meta {
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+  }
+
+  .step-event__meta > span + span::before {
+    content: '·';
+    margin-right: var(--space-xs);
+    color: var(--color-text-tertiary);
+  }
+
+  .step-event__error {
+    display: grid;
+    gap: var(--space-xs);
+    color: var(--color-danger);
+    overflow-wrap: anywhere;
+  }
+
+  .step-event__error code {
+    font-family: var(--font-family-mono);
   }
 
   .detail-table {

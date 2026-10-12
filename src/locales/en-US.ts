@@ -3049,6 +3049,8 @@ const messages: Messages = {
     runDetailCancel: 'Cancel',
     runDetailTerminate: 'Terminate',
     nodeRunsHeader: 'Node run records',
+    nodeRunsDagLoadFailed:
+      'Node statuses could not be loaded. The diagram may not reflect the latest run state.',
     nodeFilterStatusPlaceholder: 'All',
     nodeFilterCodePlaceholder: 'Exact nodeCode',
     nodeFilterCodeLabel: 'Node code',
@@ -4501,6 +4503,9 @@ const messages: Messages = {
     heartbeatPickStep: 'Pick a step',
     paramsSnapshot: 'Parameter snapshot',
     resultSummary: 'Result summary',
+    stepsTimelineView: 'Timeline view',
+    stepsTableView: 'Table view',
+    stepsLoadFailed: 'Failed to load step records',
   },
   dryRunDialog: {
     title: 'Dry-run · {code}',
@@ -5608,6 +5613,7 @@ const messages: Messages = {
     colTotalRowsEta: 'Total / ETA',
     colToggleHint: 'Toggle columns',
     currentFile: 'Current file',
+    selectRunHint: 'Select a pipeline run to inspect its stages and related records.',
   },
   userRole: {
     btnRefreshLogin: 'Refresh login',
@@ -5745,6 +5751,9 @@ const messages: Messages = {
       failed: 'Failed',
     },
     tabAudits: 'AI audit',
+    auditDetailTitle: 'AI request audit details',
+    auditUsage: 'Tokens / cost',
+    auditUsageValue: 'Input {prompt} · Output {completion} · Estimated cost ${cost}',
     tracePlaceholder: 'Search Trace ID',
     operatorLabel: 'Operator',
     operatorPlaceholder: 'Search Operator ID',

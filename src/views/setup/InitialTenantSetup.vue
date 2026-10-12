@@ -20,6 +20,7 @@
         :rules="formRules"
         label-width="120px"
         class="initial-setup__form"
+        @submit.prevent="onSubmit"
       >
         <el-form-item :label="t('initialSetup.fieldTenantId')" prop="tenantId">
           <TenantIdInput v-model="form.tenantId" />
@@ -61,14 +62,15 @@
           />
           <div class="initial-setup__hint">{{ t('initialSetup.passwordHint') }}</div>
         </el-form-item>
+        <el-form-item class="form-actions">
+          <el-button native-type="button" :disabled="submitAction.loading.value" @click="onLogout">
+            {{ t('initialSetup.btnLogout') }}
+          </el-button>
+          <el-button type="primary" native-type="submit" :loading="submitAction.loading.value">
+            {{ t('initialSetup.btnCreate') }}
+          </el-button>
+        </el-form-item>
       </el-form>
-
-      <div class="initial-setup__footer">
-        <el-button @click="onLogout">{{ t('initialSetup.btnLogout') }}</el-button>
-        <el-button type="primary" :loading="submitAction.loading.value" @click="onSubmit">
-          {{ t('initialSetup.btnCreate') }}
-        </el-button>
-      </div>
     </div>
   </div>
 </template>
@@ -201,12 +203,5 @@
     color: var(--color-text-tertiary);
     margin-top: 4px;
     line-height: 1.5;
-  }
-
-  .initial-setup__footer {
-    display: flex;
-    justify-content: flex-end;
-    gap: 12px;
-    margin-top: var(--space-md, 16px);
   }
 </style>

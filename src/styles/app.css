@@ -352,39 +352,51 @@ html.layout-shell-lock .layout-root > .layout-sidebar.el-aside {
   filter: none;
 }
 
-/* 自助服务提交 CTA:与全站标准主按钮统一(同色 / 同高 / 同圆角),
-   不再加高加粗加重阴影 —— 原"深一度大尺寸+投影"显得突兀、与同排 reset 不等高。 */
-.pretty-primary-button {
-  border-radius: var(--radius-button);
-  padding: 0 16px;
-  font-weight: 500;
-  color: var(--button-primary-text);
-  background: var(--button-primary-bg);
-  border: 1px solid var(--button-primary-border);
-  transition:
-    background 0.18s ease,
-    border-color 0.18s ease;
-}
-
-.pretty-primary-button:hover {
-  background: var(--button-primary-bg-hover);
-  border-color: var(--button-primary-bg-hover);
-}
-
-/* 表单操作行:右下角 + 顶部分隔线;按钮间距 8px。配合自助服务等长表单。 */
-.form-actions {
+/* 表单操作区：页面内嵌表单统一使用顶部弱分隔、右对齐和 8px 间距。
+   el-form-item 使用 form-actions，普通容器使用 form-action-bar。 */
+.form-actions,
+.form-action-bar {
   margin-top: var(--space-md);
   padding-top: var(--space-md);
   border-top: 1px solid var(--color-border-light);
 }
 
-.form-actions .el-form-item__content {
+.form-action-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   justify-content: flex-end;
-  gap: 8px;
+  gap: var(--space-sm);
+}
+
+.form-actions .el-form-item__content {
+  display: flex;
+  flex-wrap: wrap;
+  width: 100%;
+  margin-left: 0 !important;
+  justify-content: flex-end;
+  gap: var(--space-sm);
 }
 
 .form-actions .el-form-item__label {
   display: none;
+}
+
+.form-actions .el-button + .el-button,
+.form-action-bar .el-button + .el-button {
+  margin-left: 0;
+}
+
+@media (max-width: 40rem) {
+  .form-actions .el-form-item__content,
+  .form-action-bar {
+    align-items: stretch;
+  }
+
+  .form-actions .el-button,
+  .form-action-bar .el-button {
+    flex: 1 1 9rem;
+  }
 }
 
 /* 小号“新增”按钮（用于弹窗/抽屉内工具条：如新增步骤） */
@@ -1401,7 +1413,6 @@ html.dark .pill-tabs .el-tabs__item.is-active:hover {
 }
 
 .pretty-add-button.el-button,
-.pretty-primary-button,
 .section-title,
 .query-title,
 .page-section-title {
