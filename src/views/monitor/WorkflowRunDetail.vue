@@ -27,19 +27,33 @@
       </template>
     </PageHeader>
 
-    <SectionCard v-if="run && miniMermaid">
+    <SectionCard v-if="run && miniMermaid" class="run-detail__dag">
       <template #header>
         <div class="run-detail-mini-dag-header">
           <span>{{ t('monitor.runDetailMiniDagHeader') }}</span>
-          <el-button text type="primary" size="small" @click="openDag">
-            {{ t('monitor.runDetailOpenFullDag') }}
-          </el-button>
+          <div class="run-detail-mini-dag-header__actions">
+            <el-button
+              v-if="dagNodesError"
+              text
+              type="primary"
+              size="small"
+              :loading="dagNodesLoading"
+              @click="loadDagNodeRuns"
+            >
+              {{ t('common.retry') }}
+            </el-button>
+            <el-button text type="primary" size="small" @click="openDag">
+              {{ t('monitor.runDetailOpenFullDag') }}
+            </el-button>
+          </div>
         </div>
       </template>
       <WorkflowMiniDag
         :mermaid-text="miniMermaid"
-        :node-runs="nodeRuns"
-        :max-height="240"
+        :node-runs="dagNodeRuns"
+        :max-height="420"
+        :loading="dagNodesLoading"
+        :error-message="dagNodesError ? t('monitor.nodeRunsDagLoadFailed') : ''"
         :empty-text="t('monitor.runDetailMiniDagEmpty')"
       />
     </SectionCard>
@@ -82,97 +96,111 @@
     </SectionCard>
 
     <SectionCard>
-      <template #header>{{ t('monitor.nodeRunsHeader') }}</template>
-      <ListPageQueryBar
-        :filter-busy="filterBusy"
-        :refresh-busy="loading"
-        @search="applyNodeFilter"
-        @reset="resetNodeFilter"
-        @refresh="() => runRefresh(loadNodeRuns)"
-      >
-        <el-form-item :label="t('monitor.nodeFilterCodeLabel')">
-          <el-input
-            class="query-w-200"
-            v-model="nodeFilterDraft.nodeCode"
-            clearable
-            :placeholder="t('monitor.nodeFilterCodePlaceholder')"
-            @keyup.enter="applyNodeFilter"
+      <template #header>
+        <div class="node-runs-header">
+          <span>{{ t('monitor.nodeRunsHeader') }}</span>
+          <el-button
+            text
+            :icon="List"
+            :aria-expanded="nodeTableVisible"
+            @click="nodeTableVisible = !nodeTableVisible"
+          >
+            {{ nodeTableVisible ? t('common.close') : t('common.detail') }}
+          </el-button>
+        </div>
+      </template>
+      <div v-show="nodeTableVisible">
+        <ListPageQueryBar
+          :filter-busy="filterBusy"
+          :refresh-busy="loading"
+          @search="applyNodeFilter"
+          @reset="resetNodeFilter"
+          @refresh="() => runRefresh(loadNodeRuns)"
+        >
+          <el-form-item :label="t('monitor.nodeFilterCodeLabel')">
+            <el-input
+              class="query-w-200"
+              v-model="nodeFilterDraft.nodeCode"
+              clearable
+              :placeholder="t('monitor.nodeFilterCodePlaceholder')"
+              @keyup.enter="applyNodeFilter"
+            />
+          </el-form-item>
+          <el-form-item :label="t('monitor.nodeFilterStatusLabel')">
+            <MetaSelect
+              class="query-w-200"
+              v-model="nodeFilterDraft.nodeStatus"
+              clearable
+              filterable
+              :placeholder="t('monitor.nodeFilterStatusPlaceholder')"
+              :options="nodeStatusOptions"
+            />
+          </el-form-item>
+        </ListPageQueryBar>
+        <el-table
+          v-loading="loading"
+          :data="nodeRuns"
+          stripe
+          border
+          :empty-text="t('common.noData')"
+          class="console-table"
+        >
+          <el-table-column prop="nodeCode" :label="t('monitor.nodeColCode')" width="140" />
+          <el-table-column prop="nodeType" :label="t('monitor.nodeColType')" width="100" />
+          <el-table-column prop="nodeStatus" :label="t('monitor.nodeColStatus')" width="120">
+            <template #default="{ row }">
+              <StatusTag :value="String(row.nodeStatus ?? '')" category="partition" />
+            </template>
+          </el-table-column>
+          <el-table-column prop="runSeq" :label="t('monitor.nodeColSeq')" width="70" />
+          <el-table-column prop="retryCount" :label="t('monitor.nodeColRetry')" width="70" />
+          <DatetimeColumn prop="startedAt" :label="t('monitor.nodeColStarted')" width="160" />
+          <DatetimeColumn prop="finishedAt" :label="t('monitor.nodeColFinished')" width="160" />
+          <el-table-column :label="t('monitor.nodeColError')" min-width="200" show-overflow-tooltip>
+            <template #default="{ row }">
+              <span v-if="row.errorCode" class="mono">[{{ row.errorCode }}]</span>
+              <span v-if="row.errorMessage">{{ row.errorMessage }}</span>
+              <span v-if="!row.errorCode && !row.errorMessage" class="muted">—</span>
+            </template>
+          </el-table-column>
+          <el-table-column
+            prop="durationMs"
+            :label="t('monitor.nodeColDuration')"
+            width="100"
+            align="right"
           />
-        </el-form-item>
-        <el-form-item :label="t('monitor.nodeFilterStatusLabel')">
-          <MetaSelect
-            class="query-w-200"
-            v-model="nodeFilterDraft.nodeStatus"
-            clearable
-            filterable
-            :placeholder="t('monitor.nodeFilterStatusPlaceholder')"
-            :options="nodeStatusOptions"
-          />
-        </el-form-item>
-      </ListPageQueryBar>
-      <el-table
-        v-loading="loading"
-        :data="nodeRuns"
-        stripe
-        border
-        :empty-text="t('common.noData')"
-        class="console-table"
-      >
-        <el-table-column prop="nodeCode" :label="t('monitor.nodeColCode')" width="140" />
-        <el-table-column prop="nodeType" :label="t('monitor.nodeColType')" width="100" />
-        <el-table-column prop="nodeStatus" :label="t('monitor.nodeColStatus')" width="120">
-          <template #default="{ row }">
-            <StatusTag :value="String(row.nodeStatus ?? '')" category="partition" />
-          </template>
-        </el-table-column>
-        <el-table-column prop="runSeq" :label="t('monitor.nodeColSeq')" width="70" />
-        <el-table-column prop="retryCount" :label="t('monitor.nodeColRetry')" width="70" />
-        <DatetimeColumn prop="startedAt" :label="t('monitor.nodeColStarted')" width="160" />
-        <DatetimeColumn prop="finishedAt" :label="t('monitor.nodeColFinished')" width="160" />
-        <el-table-column :label="t('monitor.nodeColError')" min-width="200" show-overflow-tooltip>
-          <template #default="{ row }">
-            <span v-if="row.errorCode" class="mono">[{{ row.errorCode }}]</span>
-            <span v-if="row.errorMessage">{{ row.errorMessage }}</span>
-            <span v-if="!row.errorCode && !row.errorMessage" class="muted">—</span>
-          </template>
-        </el-table-column>
-        <el-table-column
-          prop="durationMs"
-          :label="t('monitor.nodeColDuration')"
-          width="100"
-          align="right"
+          <el-table-column :label="t('monitor.nodeColActions')" width="100" fixed="right">
+            <template #default="{ row }">
+              <div class="table-actions">
+                <el-button
+                  v-if="canSkipNode(row.nodeStatus)"
+                  size="small"
+                  plain
+                  type="warning"
+                  :icon="SkipForward"
+                  @click="confirmSkipNode(row)"
+                >
+                  {{ t('monitor.nodeActionSkip') }}
+                </el-button>
+                <span v-else class="muted">—</span>
+              </div>
+            </template>
+          </el-table-column>
+        </el-table>
+        <TablePagerBar
+          :page="nodePage"
+          :page-size="nodePageSize"
+          :total="nodeTotal"
+          @update:page="onNodePageChange"
+          @update:page-size="
+            (s: number) => {
+              nodePageSize = s
+              nodePage = 1
+              void loadNodeRuns()
+            }
+          "
         />
-        <el-table-column :label="t('monitor.nodeColActions')" width="100" fixed="right">
-          <template #default="{ row }">
-            <div class="table-actions">
-              <el-button
-                v-if="canSkipNode(row.nodeStatus)"
-                size="small"
-                plain
-                type="warning"
-                :icon="SkipForward"
-                @click="confirmSkipNode(row)"
-              >
-                {{ t('monitor.nodeActionSkip') }}
-              </el-button>
-              <span v-else class="muted">—</span>
-            </div>
-          </template>
-        </el-table-column>
-      </el-table>
-      <TablePagerBar
-        :page="nodePage"
-        :page-size="nodePageSize"
-        :total="nodeTotal"
-        @update:page="onNodePageChange"
-        @update:page-size="
-          (s: number) => {
-            nodePageSize = s
-            nodePage = 1
-            void loadNodeRuns()
-          }
-        "
-      />
+      </div>
     </SectionCard>
   </PageContainer>
 </template>
@@ -180,7 +208,7 @@
 <script setup lang="ts">
   import { computed, ref, watch, reactive } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
-  import { SkipForward, Eye as View, RefreshCw as Refresh } from '@lucide/vue'
+  import { List, SkipForward, Eye as View, RefreshCw as Refresh } from '@lucide/vue'
   import { useRefreshAction } from '@/composables/useRefreshAction'
 
   const refresh = useRefreshAction()
@@ -193,7 +221,7 @@
   import { cancelWorkflowRun, terminateWorkflowRun, skipWorkflowRunNode } from '@/api/workflowRuns'
   import { workflowApi } from '@/api/workflow'
   import WorkflowMiniDag from '@/components/workflow/WorkflowMiniDag.vue'
-  import { queryWorkflowNodeRunsPaged } from '@/api/workflowQueries'
+  import { queryWorkflowNodeRuns, queryWorkflowNodeRunsPaged } from '@/api/workflowQueries'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
   import PageContainer from '@/components/common/PageContainer.vue'
@@ -224,7 +252,12 @@
   const run = ref<ConsoleWorkflowRunResponse | null>(null)
   const miniMermaid = ref('')
   let miniMermaidLoadedForDefId: number | null = null
+  const dagNodeRuns = ref<ConsoleWorkflowNodeRunResponse[]>([])
+  const dagNodesLoading = ref(false)
+  const dagNodesError = ref(false)
+  let dagRequestSequence = 0
   const nodeRuns = ref<ConsoleWorkflowNodeRunResponse[]>([])
+  const nodeTableVisible = ref(false)
   const nodePage = ref(1)
   const nodePageSize = ref(15)
   const nodeTotal = ref(0)
@@ -259,6 +292,25 @@
     }
   }
 
+  async function loadDagNodeRuns() {
+    if (!Number.isFinite(runId.value)) return
+    const sequence = ++dagRequestSequence
+    const tenantId = tenant.tenantId
+    dagNodesLoading.value = true
+    dagNodesError.value = false
+    try {
+      const rows = await queryWorkflowNodeRuns(tenantId, runId.value)
+      if (sequence === dagRequestSequence && tenant.tenantId === tenantId) dagNodeRuns.value = rows
+    } catch {
+      if (sequence === dagRequestSequence) {
+        dagNodeRuns.value = []
+        dagNodesError.value = true
+      }
+    } finally {
+      if (sequence === dagRequestSequence) dagNodesLoading.value = false
+    }
+  }
+
   const runId = computed(() => Number(route.params.id))
 
   function openDag() {
@@ -280,6 +332,7 @@
       run.value = await instanceApi.workflowRunDetail(runId.value, tenant.tenantId)
       nodePage.value = 1
       await loadNodeRuns()
+      void loadDagNodeRuns()
       // 顶部 mini-DAG 只在首次拿到 workflowDefinitionId 时拉一次,后续节点状态变化靠
       // nodeRuns 重新渲染 overlay,不重拉 mermaid 文本(图骨架不变)
       const defId = run.value?.workflowDefinitionId
@@ -414,5 +467,22 @@
     align-items: center;
     justify-content: space-between;
     gap: 12px;
+  }
+
+  .node-runs-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-sm);
+  }
+
+  .run-detail-mini-dag-header__actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+  }
+
+  .run-detail__dag :deep(.mini-dag__graph) {
+    min-height: 20rem;
   }
 </style>
