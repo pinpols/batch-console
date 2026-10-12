@@ -71,6 +71,22 @@
       "sensitive": false,
       "owner": "frontend",
       "default": "/api/console/telemetry/events"
+    },
+    {
+      "name": "VITE_GRAFANA_URL",
+      "phase": "build",
+      "required": false,
+      "sensitive": false,
+      "owner": "operations",
+      "default": ""
+    },
+    {
+      "name": "VITE_TEMPO_URL",
+      "phase": "build",
+      "required": false,
+      "sensitive": false,
+      "owner": "operations",
+      "default": ""
     }
   ]
 }

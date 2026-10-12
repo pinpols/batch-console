@@ -280,6 +280,8 @@ jobs:
             VITE_SENTRY_DSN=${{ secrets.VITE_SENTRY_DSN }}
             VITE_TELEMETRY_ENABLED=${{ vars.VITE_TELEMETRY_ENABLED || 'false' }}
             VITE_TELEMETRY_ENDPOINT=${{ vars.VITE_TELEMETRY_ENDPOINT || '/api/console/telemetry/events' }}
+            VITE_GRAFANA_URL=${{ vars.VITE_GRAFANA_URL || '' }}
+            VITE_TEMPO_URL=${{ vars.VITE_TEMPO_URL || '' }}
           build-contexts: |
             backend-docs=./backend-docs-source/docs
           tags: ${{ steps.meta.outputs.tags }}
