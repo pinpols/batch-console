@@ -223,7 +223,7 @@
   import DateRangePresetPicker from '@/components/common/DateRangePresetPicker.vue'
   import TablePagerBar from '@/components/table/TablePagerBar.vue'
   import OpsFilterToolbar from '@/components/table/OpsFilterToolbar.vue'
-  import StatusSegment from '@/components/table/StatusSegment.vue'
+  import StatusSegment, { type StatusSegmentItem } from '@/components/table/StatusSegment.vue'
   import LiveMonitorBar from '@/components/table/LiveMonitorBar.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
   import { TriangleAlert } from '@lucide/vue'
@@ -385,7 +385,7 @@
     set: (value: string) => pickGroup(value),
   })
 
-  const groupSegmentItems = computed(() =>
+  const groupSegmentItems = computed<StatusSegmentItem[]>(() =>
     groupTabs.value.map((tab) => ({
       value: tab.key,
       label: tab.label,

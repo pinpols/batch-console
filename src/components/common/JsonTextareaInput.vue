@@ -102,6 +102,8 @@
       rows?: number
       placeholder?: string
       disabled?: boolean
+      /** 是否在空值时初始化为与 expect 匹配的 JSON 种子 */
+      initializeDefault?: boolean
       /** 文件大小上限,bytes (默认 5MB) */
       maxBytes?: number
       /** 期望根 JSON 类型:object / array / any */
@@ -112,6 +114,7 @@
       rows: 8,
       placeholder: '',
       disabled: false,
+      initializeDefault: true,
       maxBytes: 5 * 1024 * 1024,
       expect: 'any',
     },
@@ -130,7 +133,7 @@
   const defaultSeed = computed(() => (props.expect === 'array' ? '[]' : '{}'))
 
   function ensureDefault() {
-    if (props.disabled) return
+    if (props.disabled || !props.initializeDefault) return
     if (!props.modelValue || !props.modelValue.toString().trim()) {
       emit('update:modelValue', defaultSeed.value)
     }
@@ -225,7 +228,7 @@
   }
 
   function onClear() {
-    emit('update:modelValue', defaultSeed.value)
+    emit('update:modelValue', props.initializeDefault ? defaultSeed.value : '')
     fileName.value = ''
     fileSize.value = 0
   }

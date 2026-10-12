@@ -10,7 +10,7 @@
 <script setup lang="ts">
   import { computed } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import StatusSegment from './StatusSegment.vue'
+  import StatusSegment, { type StatusSegmentItem } from './StatusSegment.vue'
 
   const props = defineProps<{
     modelValue: boolean | undefined
@@ -24,10 +24,10 @@
   const value = computed(() =>
     props.modelValue === true ? 'ENABLED' : props.modelValue === false ? 'DISABLED' : 'ALL',
   )
-  const items = computed(() => [
-    { value: 'ALL', label: t('dateRangePicker.all'), accent: 'var(--color-primary)' },
-    { value: 'ENABLED', label: t('common.enabled'), accent: 'var(--color-success)' },
-    { value: 'DISABLED', label: t('common.disabled'), accent: 'var(--color-text-tertiary)' },
+  const items = computed<StatusSegmentItem[]>(() => [
+    { value: 'ALL', label: t('dateRangePicker.all'), tone: 'neutral' },
+    { value: 'ENABLED', label: t('common.enabled'), tone: 'success' },
+    { value: 'DISABLED', label: t('common.disabled'), tone: 'muted' },
   ])
 
   function onChange(next: string) {

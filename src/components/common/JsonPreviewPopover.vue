@@ -2,14 +2,20 @@
   <el-popover
     :width="popoverWidth"
     :placement="placement"
-    trigger="click"
+    :trigger="['hover', 'focus', 'click']"
+    :show-after="180"
+    :hide-after="120"
+    :focus-on-target="true"
     :teleported="true"
     popper-class="json-preview-popover"
   >
     <template #reference>
-      <button class="json-preview-popover__trigger" type="button" :title="t('common.viewJson')">
-        <el-icon :size="14"><Braces /></el-icon>
-        <span>{{ t('common.viewJson') }}</span>
+      <button
+        class="json-preview-popover__trigger"
+        type="button"
+        :aria-label="t('common.viewJson')"
+      >
+        <el-icon :size="16"><Eye /></el-icon>
       </button>
     </template>
     <JsonPreview :data="data" />
@@ -18,7 +24,7 @@
 
 <script setup lang="ts">
   import { ElIcon, ElPopover } from 'element-plus'
-  import { Braces } from '@lucide/vue'
+  import { Eye } from '@lucide/vue'
   import { useI18n } from 'vue-i18n'
   import JsonPreview from './JsonPreview.vue'
 
@@ -46,9 +52,10 @@
   .json-preview-popover__trigger {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    max-width: 100%;
-    padding: 4px 8px;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    padding: 0;
     border: 1px solid var(--color-border-light);
     border-radius: 6px;
     background: var(--color-bg-subtle);

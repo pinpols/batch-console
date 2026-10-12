@@ -543,7 +543,7 @@
   import PageHeader from '@/components/common/PageHeader.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import ProTable from '@/components/table/ProTable.vue'
-  import StatusSegment from '@/components/table/StatusSegment.vue'
+  import StatusSegment, { type StatusSegmentItem } from '@/components/table/StatusSegment.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
   import JsonPreview from '@/components/common/JsonPreview.vue'
   import JsonTextareaInput from '@/components/common/JsonTextareaInput.vue'
@@ -598,17 +598,17 @@
   const enabled = ref<boolean | undefined>()
   const channelKeyword = ref('')
   const channelEnabled = ref<boolean | undefined>()
-  const enabledStatusSegmentItems = computed(() => [
-    { value: 'ALL', label: t('dateRangePicker.all'), accent: 'var(--color-primary)' },
+  const enabledStatusSegmentItems = computed<StatusSegmentItem[]>(() => [
+    { value: 'ALL', label: t('dateRangePicker.all'), tone: 'neutral' },
     {
       value: 'ENABLED',
       label: t('fileTemplateList.optEnabled'),
-      accent: 'var(--color-success)',
+      tone: 'success',
     },
     {
       value: 'DISABLED',
       label: t('fileTemplateList.optDisabled'),
-      accent: 'var(--color-text-tertiary)',
+      tone: 'muted',
     },
   ])
   const templateEnabledSegment = computed({
