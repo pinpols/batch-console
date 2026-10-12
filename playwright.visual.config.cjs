@@ -1,5 +1,6 @@
 // @ts-check
 const { defineConfig, devices } = require('@playwright/test')
+const { FRONTEND_BASE_URL } = require('./e2e/config.cjs')
 
 module.exports = defineConfig({
   testDir: './e2e',
@@ -13,17 +14,20 @@ module.exports = defineConfig({
   reporter: [['list']],
   use: {
     ...devices['Desktop Chrome'],
-    baseURL: process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:5173',
+    baseURL: FRONTEND_BASE_URL,
     viewport: { width: 1440, height: 900 },
     locale: 'zh-CN',
     colorScheme: 'dark',
   },
-  webServer: process.env.PLAYWRIGHT_BASE_URL
-    ? undefined
-    : {
-        command: 'npm run dev -- --host 127.0.0.1',
-        url: 'http://localhost:5173/login',
-        reuseExistingServer: true,
-        timeout: 120_000,
-      },
+  webServer:
+    process.env.E2E_TARGET_ENV === 'staging' ||
+    process.env.E2E_BASE_URL ||
+    process.env.PLAYWRIGHT_BASE_URL
+      ? undefined
+      : {
+          command: 'npm run dev -- --host 127.0.0.1',
+          url: 'http://localhost:5173/login',
+          reuseExistingServer: true,
+          timeout: 120_000,
+        },
 })

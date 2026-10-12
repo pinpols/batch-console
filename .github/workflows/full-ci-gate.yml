@@ -114,6 +114,8 @@ jobs:
         run: bash scripts/ci/run-gate.sh FE_API_DRIFT "OpenAPI 漂移" -- npm run gen:api:check
 
       - name: Architecture, environment and documentation governance
+        env:
+          BASELINE_BASE_REF: ${{ github.event.pull_request.base.sha || github.event.before || 'origin/main' }}
         run: bash scripts/verify-governance.sh
 
       - run: bash scripts/ci/run-gate.sh FE_UNIT "Vitest 单测与覆盖率" -- npm run test:unit -- --coverage

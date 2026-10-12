@@ -14,6 +14,10 @@ on:
         description: 'Staging URL(默认从 secret STAGING_URL 读)'
         required: false
         type: string
+      api_url:
+        description: 'Staging API origin(默认从 secret STAGING_API_URL 读)'
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -29,6 +33,7 @@ jobs:
     timeout-minutes: 2
     outputs:
       base_url: ${{ steps.s.outputs.base_url }}
+      api_url: ${{ steps.s.outputs.api_url }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -37,6 +42,8 @@ jobs:
         env:
           INPUT_URL: ${{ github.event.inputs.base_url }}
           SECRET_URL: ${{ secrets.STAGING_URL }}
+          INPUT_API_URL: ${{ github.event.inputs.api_url }}
+          SECRET_API_URL: ${{ secrets.STAGING_API_URL }}
           E2E_USERNAME: ${{ secrets.STAGING_E2E_USERNAME }}
           E2E_PASSWORD: ${{ secrets.STAGING_E2E_PASSWORD }}
         run: |
@@ -50,9 +57,18 @@ jobs:
             echo "::error::STAGING_E2E_USERNAME / STAGING_E2E_PASSWORD 未配置。"
             exit 2
           fi
+          API_URL="${INPUT_API_URL:-$SECRET_API_URL}"
+          if [ -z "$API_URL" ]; then
+            echo "::error::STAGING_API_URL 未配置，禁止回退到本地 API。"
+            exit 2
+          fi
           URL="${URL%/}"
+          API_URL="${API_URL%/}"
+          node -e 'for (const [name, value] of [["frontend", process.argv[1]], ["API", process.argv[2]]]) { const url = new URL(value); const host = url.hostname.replace(/^\[|\]$/g, "").toLowerCase().replace(/\.$/, ""); if (!["http:", "https:"].includes(url.protocol) || host === "localhost" || host.endsWith(".localhost") || host === "::1" || host === "0.0.0.0" || host === "::" || /^127(?:\.\d{1,3}){3}$/.test(host)) throw new Error(name + " must use a non-loopback HTTP(S) origin"); }' "$URL" "$API_URL"
           curl -fsS "$URL/healthz" >/dev/null
+          curl -fsS "$API_URL/actuator/health/liveness" >/dev/null
           echo "base_url=$URL" >> "$GITHUB_OUTPUT"
+          echo "api_url=$API_URL" >> "$GITHUB_OUTPUT"
 
       - name: Check deployed security headers
         env:
@@ -84,6 +100,8 @@ jobs:
           node-version-file: '.node-version'
           cache: npm
       - run: npm ci --no-audit --no-fund
+      - name: Verify explicit staging E2E targets
+        run: npm run test:e2e:config
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium firefox webkit
@@ -92,19 +110,38 @@ jobs:
       # E2E_USERNAME/E2E_PASSWORD 走 secret,global-setup 用它建 storageState
       - name: Playwright (full suite against staging)
         env:
-          PLAYWRIGHT_BASE_URL: ${{ needs.precheck.outputs.base_url }}
+          E2E_TARGET_ENV: staging
+          E2E_BASE_URL: ${{ needs.precheck.outputs.base_url }}
+          BC_API_BASE: ${{ needs.precheck.outputs.api_url }}
+          E2E_RELEASE_GATE: '1'
+          E2E_REQUIRE_CONFIG_SEED: '1'
           E2E_USERNAME: ${{ secrets.STAGING_E2E_USERNAME }}
           E2E_PASSWORD: ${{ secrets.STAGING_E2E_PASSWORD }}
         run: npm run test:e2e:all
 
+      - name: Report staging E2E scenarios
+        if: always()
+        run: node scripts/report-playwright-release.mjs
+
       - name: Visual regression baseline
         env:
-          PLAYWRIGHT_BASE_URL: ${{ needs.precheck.outputs.base_url }}
+          E2E_TARGET_ENV: staging
+          E2E_BASE_URL: ${{ needs.precheck.outputs.base_url }}
+          BC_API_BASE: ${{ needs.precheck.outputs.api_url }}
+          E2E_RELEASE_GATE: '1'
+          E2E_USERNAME: ${{ secrets.STAGING_E2E_USERNAME }}
+          E2E_PASSWORD: ${{ secrets.STAGING_E2E_PASSWORD }}
         run: npm run test:e2e:visual
 
       - name: Cross-browser route smoke (Chromium / Firefox / WebKit / mobile Chrome)
         env:
-          PLAYWRIGHT_BASE_URL: ${{ needs.precheck.outputs.base_url }}
+          E2E_TARGET_ENV: staging
+          E2E_BASE_URL: ${{ needs.precheck.outputs.base_url }}
+          BC_API_BASE: ${{ needs.precheck.outputs.api_url }}
+          E2E_RELEASE_GATE: '1'
+          E2E_REQUIRE_CONFIG_SEED: '1'
+          E2E_USERNAME: ${{ secrets.STAGING_E2E_USERNAME }}
+          E2E_PASSWORD: ${{ secrets.STAGING_E2E_PASSWORD }}
           CROSS_BROWSER: '1'
         run: npm run test:e2e:all -- e2e/smoke.spec.ts --grep @cross-browser
 

@@ -13,10 +13,9 @@ test.describe('@row-actions 作业实例行操作', () => {
   test.beforeEach(async ({ page }) => {
     await enterDemoApp(page)
     const listP = page
-      .waitForResponse(
-        (r) => /\/queries\/instances/.test(r.url()) && r.status() === 200,
-        { timeout: 12000 },
-      )
+      .waitForResponse((r) => /\/queries\/instances/.test(r.url()) && r.status() === 200, {
+        timeout: 12000,
+      })
       .catch(() => null)
     await page.goto('/monitor/job-instances')
     await expectPageTitle(page, /作业运行|作业实例|实例|运行/)
@@ -30,6 +29,14 @@ test.describe('@row-actions 作业实例行操作', () => {
       .catch(() => {})
   })
 
+  test('@release-required 发布数据准备:监控页至少存在一条作业实例', async ({ page }) => {
+    test.skip(process.env.E2E_RELEASE_GATE !== '1', '仅发布验收要求实例 seed')
+    await expect(
+      page.locator('tbody tr.el-table__row').first(),
+      '发布验收需要实例 seed 才能验证运维入口',
+    ).toBeVisible()
+  })
+
   test('行「详情」→ 跳作业实例详情页', async ({ page }) => {
     const row = page.locator('tbody tr.el-table__row').first()
     if (!(await isVisible(row, 3000))) {
@@ -39,7 +46,9 @@ test.describe('@row-actions 作业实例行操作', () => {
     await row.getByRole('button', { name: '详情' }).first().click()
     await expect(page).toHaveURL(/\/monitor\/job-instances\/\d+/, { timeout: 8000 })
     // 详情页有实例状态/编号区块
-    await expect(page.locator('.page-header, .el-descriptions, .detail-header').first()).toBeVisible({
+    await expect(
+      page.locator('.page-header, .el-descriptions, .detail-header').first(),
+    ).toBeVisible({
       timeout: 6000,
     })
   })
@@ -74,7 +83,9 @@ test.describe('@row-actions 作业实例行操作', () => {
       return
     }
     await link.click()
-    await expect(page).toHaveURL(/job-instances|jobs\/definitions|job-definitions|trace/, { timeout: 8000 })
+    await expect(page).toHaveURL(/job-instances|jobs\/definitions|job-definitions|trace/, {
+      timeout: 8000,
+    })
   })
 
   test('详情页「重跑」→ 开确认对话框(取消,不真重跑)', async ({ page }) => {

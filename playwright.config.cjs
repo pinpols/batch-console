@@ -59,10 +59,13 @@ module.exports = defineConfig({
         ]
       : []),
   ],
-  webServer: {
-    command: 'npm run dev',
-    url: baseURL,
-    reuseExistingServer: !process.env.CI,
-    timeout: 120_000,
-  },
+  webServer:
+    process.env.E2E_TARGET_ENV === 'staging'
+      ? undefined
+      : {
+          command: 'npm run dev',
+          url: baseURL,
+          reuseExistingServer: !process.env.CI,
+          timeout: 120_000,
+        },
 })

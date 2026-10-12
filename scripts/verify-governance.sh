@@ -20,6 +20,7 @@ gate_run FE_COMMENTS "中文解释性注释" npm run check:comments
 gate_run FE_ARCHITECTURE "架构边界" npm run check:architecture
 gate_run FE_ENV "环境变量治理" npm run check:env
 gate_run FE_MAINTAINABILITY "可维护性" npm run check:maintainability
+gate_run FE_BASELINE_EXPANSION "治理基线扩张审批与反例" bash -c 'npm run check:baseline-expansion && npm run test:baseline-expansion'
 gate_run FE_TEST_FIXTURE_SOURCES "测试 fixture 事实来源" npm run check:test-fixture-sources
 gate_run FE_UI_COMPLEXITY "UI 复杂度预算" npm run check:ui-complexity
 gate_run FE_WORKFLOWS "Workflow 治理" npm run check:workflows
