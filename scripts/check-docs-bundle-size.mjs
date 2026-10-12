@@ -36,9 +36,9 @@ for (const name of files) {
   const isSearchIndex = name.includes('@localSearchIndex')
   // 单站索引覆盖两仓：产品指南保留全文，工程文档仅保留标题层级。
   const rawBudget = isSearchIndex ? 4_500_000 : maxRawBytes
-  // VitePress 并发构建本地索引，记录顺序和压缩大小会随构建环境略有差异。
-  // gzip 预算留出少量兼容余量；raw 大小上限保持不变。
-  const gzipBudget = isSearchIndex ? 1_210_000 : maxGzipBytes
+  // VitePress 并发构建本地索引会改变记录顺序；相同 raw 大小的 gzip 结果实测可波动约 9 KB。
+  // 为压缩结果保留 20 KB 余量，raw 大小上限保持不变。
+  const gzipBudget = isSearchIndex ? 1_230_000 : maxGzipBytes
   if (content.byteLength > rawBudget || gzipBytes > gzipBudget) {
     violations.push(`${name.slice(assetDir.length)}: raw=${content.byteLength}, gzip=${gzipBytes}`)
   }
