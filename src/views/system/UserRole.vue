@@ -15,20 +15,11 @@
     <div class="metrics">
       <MetricCard :label="t('userRole.metricCurrentRole')" :value="formalRoleLabel" />
       <MetricCard :label="t('userRole.metricPermissionCount')" :value="permissionList.length" />
-      <div
-        class="metric-hit"
-        role="button"
-        tabindex="0"
-        :title="t('userRole.matrixHintTooltip')"
-        @click="expandMatrixScroll"
-        @keydown.enter.prevent="expandMatrixScroll"
-      >
-        <MetricCard
-          :label="t('userRole.metricVisibleMenu')"
-          :value="visibleMenuCount"
-          :description="t('userRole.metricVisibleMenuDesc')"
-        />
-      </div>
+      <MetricCard
+        :label="t('userRole.metricVisibleMenu')"
+        :value="visibleMenuCount"
+        :description="t('userRole.metricVisibleMenuDesc')"
+      />
       <MetricCard :label="t('userRole.metricCurrentTenant')" :value="tenant.tenantId" />
     </div>
 
@@ -88,107 +79,82 @@
       </div>
     </SectionCard>
 
-    <div ref="matrixAnchorRef" class="access-matrix-anchor">
-      <SectionCard class="access-matrix-card">
+    <div class="access-tree-anchor">
+      <SectionCard class="access-tree-card">
         <template #header>
-          <div
-            class="access-matrix__head"
-            :class="{ 'access-matrix__head--collapsed': !matrixExpanded }"
-            @mouseenter="onMatrixHeadEnter"
-            @click="onMatrixHeadClick"
-          >
-            <div class="access-matrix__head-left">
-              <span>{{ t('userRole.sectionAccessMatrix') }}</span>
+          <div class="access-tree__header">
+            <div class="access-tree__title">
+              <span>{{ t('userRole.sectionAccessTree') }}</span>
               <el-tag size="small" effect="plain" type="info">
                 {{ t('userRole.matrixCount', { n: accessRows.length }) }}
               </el-tag>
             </div>
-            <div class="access-matrix__head-actions" @click.stop>
-              <template v-if="!matrixExpanded">
-                <el-button
-                  type="primary"
-                  :icon="Plus"
-                  circle
-                  size="small"
-                  :aria-label="t('userRole.btnExpandMatrix')"
-                  @click="expandMatrix"
-                />
-              </template>
-              <el-button
-                v-else
-                type="info"
-                link
-                size="small"
-                :icon="ArrowUp"
-                @click="collapseMatrix"
-              >
-                {{ t('userRole.btnCollapse') }}
-              </el-button>
-            </div>
+            <el-input
+              v-model="accessFilter"
+              clearable
+              size="small"
+              class="access-tree__filter"
+              :placeholder="t('userRole.filterAccessTree')"
+              :aria-label="t('userRole.filterAccessTree')"
+            />
           </div>
         </template>
 
-        <div
-          v-if="!matrixExpanded"
-          class="access-matrix__collapsed"
-          @mouseenter="expandMatrix"
-          @click="expandMatrix"
+        <el-tree
+          ref="accessTreeRef"
+          :data="accessTree"
+          :props="accessTreeProps"
+          :filter-node-method="filterAccessTreeNode"
+          node-key="id"
+          :expand-on-click-node="false"
+          class="access-tree"
         >
-          <el-icon class="access-matrix__collapsed-icon" :size="20"><Plus /></el-icon>
-          <span>{{ t('userRole.matrixCollapsedHint') }}</span>
-        </div>
-
-        <el-table
-          v-if="matrixExpanded"
-          :data="pagedAccessRows.records"
-          border
-          size="small"
-          highlight-current-row
-          class="console-table access-matrix__table"
-        >
-          <el-table-column prop="groupTitle" :label="t('userRole.colGroup')" min-width="140" />
-          <el-table-column prop="itemTitle" :label="t('userRole.colItem')" min-width="160" />
-          <el-table-column :label="t('userRole.colMinRole')" width="120">
-            <template #default="{ row }">
-              {{ roleLabel(row.requiredRole) }}
-            </template>
-          </el-table-column>
-          <el-table-column
-            prop="requiredAuthorities"
-            :label="t('userRole.colAuthorities')"
-            min-width="220"
-            show-overflow-tooltip
-          />
-          <el-table-column :label="t('userRole.colAccess')" width="120">
-            <template #default="{ row }">
-              <el-tag size="small" :type="row.allowed ? 'success' : 'info'">
-                {{ row.allowed ? t('userRole.accessAllowed') : t('userRole.accessHidden') }}
-              </el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column prop="path" :label="t('userRole.colPath')" min-width="220" />
-        </el-table>
-        <TablePagerBar
-          v-if="matrixExpanded"
-          :page="matrixPage"
-          :page-size="matrixPageSize"
-          :total="pagedAccessRows.total"
-          @update:page="setMatrixPage"
-          @update:page-size="onMatrixPageSize"
-        />
+          <template #default="{ data }">
+            <div v-if="data.children" class="access-tree__group">
+              <span class="access-tree__group-label">{{ data.label }}</span>
+              <span class="access-tree__group-count">
+                {{
+                  t('userRole.groupAccessCount', {
+                    allowed: data.allowedCount,
+                    total: data.children.length,
+                  })
+                }}
+              </span>
+            </div>
+            <div v-else class="access-tree__item">
+              <div class="access-tree__item-main">
+                <span class="access-tree__item-label">{{ data.label }}</span>
+                <code class="access-tree__path">{{ data.path }}</code>
+              </div>
+              <div class="access-tree__item-meta">
+                <el-tag v-if="data.requiredRole" size="small" effect="plain" type="info">
+                  {{ roleLabel(data.requiredRole) }}
+                </el-tag>
+                <el-tag v-if="data.hidden" size="small" effect="plain" type="warning">
+                  {{ t('userRole.hiddenMenu') }}
+                </el-tag>
+                <span v-if="data.requiredAuthorities" class="access-tree__authorities">
+                  {{ t('userRole.authorityHint', { authorities: data.requiredAuthorities }) }}
+                </span>
+                <el-tag size="small" :type="data.allowed ? 'success' : 'danger'">
+                  {{ data.allowed ? t('userRole.accessAllowed') : t('userRole.accessDenied') }}
+                </el-tag>
+              </div>
+            </div>
+          </template>
+        </el-tree>
       </SectionCard>
     </div>
   </PageContainer>
 </template>
 
 <script setup lang="ts">
-  import { computed, nextTick, ref, watch } from 'vue'
+  import { computed, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { toPageResult } from '@/api/adapters'
   import { ElMessage } from 'element-plus'
 
   const { t } = useI18n({ useScope: 'global' })
-  import { ChevronUp as ArrowUp, Plus, RefreshCw as Refresh } from '@lucide/vue'
+  import { RefreshCw as Refresh } from '@lucide/vue'
   import { useRefreshAction } from '@/composables/useRefreshAction'
 
   const refreshAction = useRefreshAction()
@@ -208,7 +174,6 @@
   import SectionCard from '@/components/common/SectionCard.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
   import MetricCard from '@/components/common/MetricCard.vue'
-  import TablePagerBar from '@/components/table/TablePagerBar.vue'
 
   interface AccessRow {
     groupTitle: string
@@ -217,39 +182,27 @@
     requiredAuthorities: string
     allowed: boolean
     path: string
+    hidden?: boolean
+  }
+
+  interface AccessTreeNode {
+    id: string
+    label: string
+    children?: AccessTreeNode[]
+    path?: string
+    requiredRole?: Role
+    allowed?: boolean
+    hidden?: boolean
+    allowedCount?: number
   }
 
   const auth = useAuthStore()
   const permission = usePermissionStore()
   const tenant = useTenantStore()
   const refreshing = ref(false)
-  const matrixExpanded = ref(false)
-  const matrixAnchorRef = ref<HTMLElement | null>(null)
-  const matrixPage = ref(1)
-  const matrixPageSize = ref(15)
-
-  function expandMatrix() {
-    matrixExpanded.value = true
-  }
-
-  function collapseMatrix() {
-    matrixExpanded.value = false
-  }
-
-  function expandMatrixScroll() {
-    expandMatrix()
-    void nextTick(() => {
-      matrixAnchorRef.value?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
-    })
-  }
-
-  function onMatrixHeadEnter() {
-    if (!matrixExpanded.value) expandMatrix()
-  }
-
-  function onMatrixHeadClick() {
-    if (!matrixExpanded.value) expandMatrix()
-  }
+  const accessFilter = ref('')
+  const accessTreeRef = ref<{ filter: (value: string) => void } | null>(null)
+  const accessTreeProps = { label: 'label', children: 'children' }
 
   const currentUser = computed(() => auth.userInfo)
   const currentRole = computed<Role | undefined>(() => currentUser.value?.role ?? undefined)
@@ -259,7 +212,10 @@
     return role ? `${t(authorityRoleLabelKeyMap[role])} (${role})` : t('userRole.roleUnset')
   })
   const visibleMenuCount = computed(() =>
-    permission.visibleGroups.reduce((total, group) => total + group.children.length, 0),
+    permission.visibleGroups.reduce(
+      (total, group) => total + group.children.filter((item) => !item.hidden).length,
+      0,
+    ),
   )
   const modeMessage = computed(() => t('userRole.modeMessage'))
   const visibleAccessPaths = computed(
@@ -278,29 +234,45 @@
           requiredAuthorities: item.authorities?.join(', ') ?? '—',
           allowed: visibleAccessPaths.value.has(item.path),
           path: item.path,
+          hidden: item.hidden,
         }
       }),
     ),
   )
 
-  const pagedAccessRows = computed(() =>
-    toPageResult(accessRows.value, matrixPage.value, matrixPageSize.value),
+  const accessTree = computed<AccessTreeNode[]>(() =>
+    navigationGroups.map((group) => {
+      const children = accessRows.value
+        .filter((row) => row.groupTitle === group.title)
+        .map((row) => ({
+          id: row.path,
+          label: row.itemTitle,
+          path: row.path,
+          requiredRole: row.requiredRole,
+          requiredAuthorities:
+            row.requiredAuthorities === '—' ? undefined : row.requiredAuthorities,
+          allowed: row.allowed,
+          hidden: row.hidden,
+        }))
+      return {
+        id: group.key,
+        label: t(`nav.group.${group.key}`),
+        allowedCount: children.filter((child) => child.allowed).length,
+        children,
+      }
+    }),
   )
 
-  function setMatrixPage(p: number) {
-    matrixPage.value = p
+  function filterAccessTreeNode(value: string, data: AccessTreeNode) {
+    if (!value) return true
+    const query = value.toLocaleLowerCase()
+    return (
+      data.label.toLocaleLowerCase().includes(query) ||
+      data.path?.toLocaleLowerCase().includes(query) === true
+    )
   }
 
-  function onMatrixPageSize(s: number) {
-    matrixPageSize.value = s
-    matrixPage.value = 1
-  }
-
-  watch([accessRows, matrixPageSize], () => {
-    const total = accessRows.value.length
-    const max = Math.max(1, Math.ceil(total / matrixPageSize.value) || 1)
-    if (matrixPage.value > max) matrixPage.value = max
-  })
+  watch(accessFilter, (value) => accessTreeRef.value?.filter(value))
 
   function roleLabel(role?: Role) {
     return role ? t(roleLabelKeyMap[role]) : t('userRole.roleUnset')
@@ -340,47 +312,20 @@
     gap: var(--space-sm);
   }
 
-  .metric-hit {
-    min-width: 0;
-    border-radius: var(--radius-content);
-    cursor: pointer;
-    outline: none;
-  }
-
-  .metric-hit:focus-visible {
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 45%, transparent);
-  }
-
-  .metric-hit :deep(.metric-card) {
-    transition:
-      border-color var(--motion-duration-sm) var(--motion-ease-standard),
-      box-shadow var(--motion-duration-sm) var(--motion-ease-standard);
-  }
-
-  .metric-hit:hover :deep(.metric-card) {
-    border-color: color-mix(in srgb, var(--color-border) 55%, var(--color-primary) 45%);
-  }
-
-  .access-matrix-anchor {
+  .access-tree-anchor {
     scroll-margin-top: 12px;
   }
 
-  .access-matrix__head {
+  .access-tree__header {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: var(--space-md);
-    width: 100%;
     min-width: 0;
-    cursor: pointer;
-    user-select: none;
   }
 
-  .access-matrix__head--collapsed {
-    border-radius: var(--radius-content);
-  }
-
-  .access-matrix__head-left {
+  .access-tree__title,
+  .access-tree__item-meta {
     display: inline-flex;
     align-items: center;
     gap: var(--space-sm);
@@ -388,34 +333,74 @@
     min-width: 0;
   }
 
-  .access-matrix__head-actions {
-    flex-shrink: 0;
+  .access-tree__filter {
+    width: min(100%, 320px);
   }
 
-  .access-matrix__collapsed {
+  .access-tree__group,
+  .access-tree__item,
+  .access-tree__item-main {
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 10px;
-    padding: 14px 12px;
-    margin: 4px 0 0;
-    color: var(--color-text-secondary);
-    font-size: var(--font-size-sm);
-    cursor: pointer;
-    border-radius: var(--radius-content);
-    transition: background-color 0.15s ease;
+    min-width: 0;
   }
 
-  .access-matrix__collapsed:hover {
-    background: var(--el-fill-color-light);
+  .access-tree__group {
+    gap: var(--space-sm);
+  }
+
+  .access-tree__group-label,
+  .access-tree__item-label {
     color: var(--color-text-primary);
+    overflow-wrap: anywhere;
   }
 
-  .access-matrix__collapsed-icon {
-    color: var(--color-primary);
+  .access-tree__group-count,
+  .access-tree__path,
+  .access-tree__authorities {
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-xs);
   }
 
-  .access-matrix__table {
-    margin-top: 2px;
+  .access-tree__item {
+    justify-content: space-between;
+    gap: var(--space-md);
+    width: 100%;
+    padding: var(--space-xs) 0;
+  }
+
+  .access-tree__item-main {
+    gap: var(--space-md);
+    flex-wrap: wrap;
+  }
+
+  .access-tree__path {
+    overflow-wrap: anywhere;
+  }
+
+  .access-tree__item-meta {
+    justify-content: flex-end;
+    flex: 0 0 auto;
+  }
+
+  .access-tree :deep(.el-tree-node__content) {
+    min-height: 42px;
+    height: auto;
+  }
+
+  @media (max-width: 720px) {
+    .access-tree__header,
+    .access-tree__item {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+
+    .access-tree__filter {
+      width: 100%;
+    }
+
+    .access-tree__item-meta {
+      justify-content: flex-start;
+    }
   }
 </style>

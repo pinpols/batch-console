@@ -18,7 +18,7 @@
       label-width="92px"
       label-position="right"
       class="mini-create-form"
-      @submit.prevent
+      @submit.prevent="submit"
     >
       <el-form-item :label="t('jobConfigBasic.miniWindowCode')" prop="windowCode">
         <el-input
@@ -83,9 +83,11 @@
     </el-form>
 
     <template #footer>
-      <div class="mini-create-dialog__footer">
-        <el-button :disabled="saving" @click="close">{{ t('common.cancel') }}</el-button>
-        <el-button type="primary" :loading="saving" @click="submit">
+      <div class="dialog-footer">
+        <el-button native-type="button" :disabled="saving" @click="close">
+          {{ t('common.cancel') }}
+        </el-button>
+        <el-button type="primary" native-type="button" :loading="saving" @click="submit">
           {{ t('common.confirm') }}
         </el-button>
       </div>
@@ -291,11 +293,5 @@
     font-size: 13px;
     color: var(--color-text-secondary);
     cursor: pointer;
-  }
-
-  .mini-create-dialog__footer {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
   }
 </style>

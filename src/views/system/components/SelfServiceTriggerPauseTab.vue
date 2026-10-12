@@ -8,7 +8,7 @@
       class="trigger-pause__intro"
     />
 
-    <el-form label-width="88px" class="form-section" @submit.prevent>
+    <el-form label-width="88px" class="form-section" @submit.prevent="submit">
       <el-form-item :label="t('selfServicePanel.triggerJobCodeLabel')">
         <el-select
           v-model="jobCode"
@@ -44,17 +44,10 @@
       </el-form-item>
 
       <el-form-item class="form-actions">
-        <el-button :icon="RefreshLeft" :disabled="submitting" @click="resetTriggerForm">
+        <el-button native-type="button" :disabled="submitting" @click="resetTriggerForm">
           {{ t('common.reset') }}
         </el-button>
-        <el-button
-          type="primary"
-          class="pretty-primary-button"
-          :icon="Promotion"
-          :loading="submitting"
-          :disabled="!jobCode"
-          @click="submit"
-        >
+        <el-button type="primary" native-type="submit" :loading="submitting" :disabled="!jobCode">
           {{ t('selfServicePanel.triggerSubmit') }}
         </el-button>
       </el-form-item>
@@ -66,7 +59,6 @@
   import { ref } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
-  import { Send as Promotion, RotateCcw as RefreshLeft } from '@lucide/vue'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
   import {

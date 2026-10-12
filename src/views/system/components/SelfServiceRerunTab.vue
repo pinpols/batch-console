@@ -6,6 +6,7 @@
       :rules="rerunFormRules"
       label-width="88px"
       class="form-section"
+      @submit.prevent="submitRerun"
     >
       <el-form-item :label="t('selfServiceCommon.jobCodeLabel')" prop="jobCode">
         <el-select
@@ -73,16 +74,14 @@
         <div class="field-hint">{{ t('selfServiceRerunTab.reasonHint') }}</div>
       </el-form-item>
       <el-form-item class="form-actions">
-        <el-button :icon="RefreshLeft" :disabled="rerunLoading" @click="resetRerunForm">
+        <el-button native-type="button" :disabled="rerunLoading" @click="resetRerunForm">
           {{ t('common.reset') }}
         </el-button>
         <el-button
           type="primary"
-          class="pretty-primary-button"
-          :icon="Promotion"
+          native-type="submit"
           :loading="rerunLoading"
           v-track-click="t('selfServiceRerunTab.trackSubmit')"
-          @click="submitRerun"
         >
           {{ t('selfServiceRerunTab.btnSubmit') }}
         </el-button>
@@ -95,8 +94,6 @@
   import { ref, reactive, toRefs } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
-  import { Send as Promotion, RotateCcw as RefreshLeft } from '@lucide/vue'
-
   const { t } = useI18n({ useScope: 'global' })
   import type { FormRules } from 'element-plus'
   import { selfServiceRerunRequest } from '@/api/selfServiceJobs'

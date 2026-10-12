@@ -352,7 +352,10 @@
                             />
                           </el-form-item>
                         </el-form>
-                        <div class="error-row-editor__actions">
+                        <div class="form-action-bar">
+                          <el-button :disabled="patchSaving !== null" @click="resetDraft(row)">
+                            {{ t('tenantPackageImportWizard.btnResetRow') }}
+                          </el-button>
                           <el-button
                             type="primary"
                             :loading="patchSaving === rowKeyOf(row)"
@@ -360,9 +363,6 @@
                             @click="saveRow(row)"
                           >
                             {{ t('tenantPackageImportWizard.btnSaveRow') }}
-                          </el-button>
-                          <el-button :disabled="patchSaving !== null" @click="resetDraft(row)">
-                            {{ t('tenantPackageImportWizard.btnResetRow') }}
                           </el-button>
                         </div>
                       </div>

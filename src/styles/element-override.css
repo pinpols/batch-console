@@ -909,8 +909,27 @@ html.dark .el-dialog {
 }
 
 .el-dialog__footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-sm);
   padding: 14px 20px 18px;
   border-top: 1px solid var(--color-border-light);
+}
+
+.el-dialog__footer .dialog-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-sm);
+  width: 100%;
+}
+
+.el-dialog__footer .el-button + .el-button,
+.el-drawer__footer .el-button + .el-button {
+  margin-left: 0;
 }
 
 .el-drawer.rtl {
@@ -936,8 +955,10 @@ html.dark .el-drawer {
 /* 抽屉 footer 统一:border-top + 右对齐 + 8px 按钮间距 */
 .el-drawer__footer {
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   justify-content: flex-end;
-  gap: 8px;
+  gap: var(--space-sm);
   padding: 12px 20px;
   margin: 0;
   border-top: 1px solid var(--color-border-light);
@@ -945,6 +966,20 @@ html.dark .el-drawer {
 
 .el-drawer__footer .dialog-footer {
   display: contents;
+}
+
+@media (max-width: 40rem) {
+  .el-dialog__footer,
+  .el-dialog__footer .dialog-footer,
+  .el-drawer__footer {
+    align-items: stretch;
+  }
+
+  .el-dialog__footer > .el-button,
+  .el-dialog__footer .dialog-footer > .el-button,
+  .el-drawer__footer > .el-button {
+    flex: 1 1 9rem;
+  }
 }
 
 /* form-item 间距统一,避免每页各自设 */
