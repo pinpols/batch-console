@@ -15,6 +15,7 @@ const T_APPLY = 30_000 // 配置包应用（事务较重）
 const RATE_LIMIT_RETRY_DELAYS_MS = [1_500, 3_000, 5_000]
 const FORCE_SEED = process.env.E2E_FORCE_SEED === '1'
 const REQUIRE_CONFIG_SEED = process.env.E2E_REQUIRE_CONFIG_SEED === '1'
+const IS_STAGING_TARGET = process.env.E2E_TARGET_ENV === 'staging'
 
 /**
  * 把 fetch 响应的 Set-Cookie 头解析成 Playwright storageState cookie 对象。
@@ -161,7 +162,9 @@ async function ensureFixtureTenant(authHeaders, tenantId) {
   if (tenantResponse.ok) return
   if (tenantResponse.status !== 404) {
     const body = await tenantResponse.text().catch(() => '')
-    throw new Error(`GET /api/console/tenants/${tenantId} failed: HTTP ${tenantResponse.status} ${body}`)
+    throw new Error(
+      `GET /api/console/tenants/${tenantId} failed: HTTP ${tenantResponse.status} ${body}`,
+    )
   }
 
   await callAdminUserApi(authHeaders, '/api/console/tenants', {
@@ -543,7 +546,10 @@ async function globalSetup(config) {
     const loginRes = await fetchWithTimeout(`${API_BASE}/api/console/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-Tenant-Id': 'system' },
-      body: JSON.stringify({ username: 'admin', password: 'admin123' }),
+      body: JSON.stringify({
+        username: process.env.E2E_USERNAME || 'admin',
+        password: process.env.E2E_PASSWORD || 'admin123',
+      }),
     })
     if (!loginRes.ok) throw new Error(`HTTP ${loginRes.status}`)
     const loginJson = await loginRes.json()
@@ -558,6 +564,9 @@ async function globalSetup(config) {
       `[global-setup] 登录成功,expires: ${loginJson?.data?.expiresAt},cookies: ${authCookies.length}${token ? ',token: 有(body)' : ',token: 仅 cookie'}`,
     )
   } catch (err) {
+    if (IS_STAGING_TARGET) {
+      throw new Error(`[staging-e2e] 管理账号登录或目标 API 校验失败: ${err.message}`)
+    }
     console.warn(`[global-setup] 登录失败（${err.message}），跳过 seed,仅写入 storageState`)
   }
 

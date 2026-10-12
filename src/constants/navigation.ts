@@ -86,7 +86,7 @@ export interface NavigationGroup {
  * 后端 `/auth/me` 返回的菜单会参与路由 allowlist,所以这里必须覆盖后端 menu.yml 的全部
  * path;只调整分组表达，不改变后端 `/auth/me` 菜单 allowlist。后端 `TENANT_ADMIN` 在前端统一映射为 `OPERATOR`。
  */
-export const navigationGroups: NavigationGroup[] = [
+const navigationGroupsByKey: NavigationGroup[] = [
   {
     key: 'workspace',
     title: '工作台',
@@ -118,7 +118,7 @@ export const navigationGroups: NavigationGroup[] = [
   },
   {
     key: 'monitor',
-    title: '跟踪运行',
+    title: '运行监控',
     icon: Aim,
     minRole: 'VIEWER',
     children: [
@@ -188,7 +188,7 @@ export const navigationGroups: NavigationGroup[] = [
   },
   {
     key: 'alerting',
-    title: '处理异常',
+    title: '告警与投递',
     icon: Bell,
     minRole: 'VIEWER',
     children: [
@@ -268,7 +268,7 @@ export const navigationGroups: NavigationGroup[] = [
   },
   {
     key: 'files',
-    title: '核对文件',
+    title: '文件管理',
     icon: FolderOpened,
     minRole: 'VIEWER',
     children: [
@@ -311,7 +311,7 @@ export const navigationGroups: NavigationGroup[] = [
   },
   {
     key: 'scheduling',
-    title: '安排批次',
+    title: '调度与资源',
     icon: DataAnalysis,
     minRole: 'VIEWER',
     children: [
@@ -446,7 +446,6 @@ export const navigationGroups: NavigationGroup[] = [
         minRole: 'VIEWER',
         authorities: ['ROLE_ADMIN', 'ROLE_AUDITOR', 'ROLE_TENANT_ADMIN', 'ROLE_TENANT_USER'],
         icon: Tickets,
-        hidden: true,
       },
       {
         title: pageTitle('/config/releases'),
@@ -524,3 +523,19 @@ export const navigationGroups: NavigationGroup[] = [
     ],
   },
 ]
+
+const navigationGroupOrder = [
+  'workspace',
+  'definitions',
+  'files',
+  'scheduling',
+  'monitor',
+  'alerting',
+  'system',
+] as const
+
+export const navigationGroups: NavigationGroup[] = navigationGroupOrder.map((key) => {
+  const group = navigationGroupsByKey.find((candidate) => candidate.key === key)
+  if (!group) throw new Error(`Missing navigation group: ${key}`)
+  return group
+})

@@ -234,7 +234,7 @@
         :model="createForm"
         :rules="createRules"
         label-width="120px"
-        @submit.prevent
+        @submit.prevent="submitCreate"
       >
         <el-form-item :label="t('configReleaseList.createKeyLabel')" prop="configKey">
           <el-input
@@ -278,9 +278,11 @@
             :placeholder="t('configReleaseList.createNotePlaceholder')"
           />
         </el-form-item>
-        <div class="drawer-actions">
-          <el-button @click="closeCreate">{{ t('common.cancel') }}</el-button>
-          <el-button type="primary" :loading="createSaving" @click="submitCreate">
+        <div class="form-action-bar">
+          <el-button native-type="button" :disabled="createSaving" @click="closeCreate">
+            {{ t('common.cancel') }}
+          </el-button>
+          <el-button type="primary" native-type="submit" :loading="createSaving">
             {{ t('configReleaseList.createSubmit') }}
           </el-button>
         </div>
@@ -1099,12 +1101,5 @@
 
   .diff-result {
     margin-top: var(--card-inner-padding);
-  }
-
-  .drawer-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 12px;
-    margin-top: 8px;
   }
 </style>

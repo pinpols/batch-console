@@ -48,7 +48,7 @@ test.describe('navigation and tabs', () => {
   test('侧边栏导航可切换到关键页面', async ({ page }) => {
     // 2026-07 侧栏按设计原稿原生重写(弃 el-menu):分组头 .nav__group-hd(可折叠,
     // 默认只展开当前路由所在组)+ RouterLink .nav__item;1280 宽 > 1024 阈值,默认展开标签栏。
-    await page.locator('.nav__group-hd', { hasText: '跟踪运行' }).click()
+    await page.locator('.nav__group-hd', { hasText: '运行监控' }).click()
     await page
       .getByRole('link', { name: /工作流运行|Workflow Run/ })
       .first()
@@ -56,7 +56,7 @@ test.describe('navigation and tabs', () => {
     await expect(page).toHaveURL(/\/monitor\/workflow-runs/)
 
     await expect(page.getByRole('progressbar').first()).toBeHidden()
-    await page.locator('.nav__group-hd', { hasText: '处理异常' }).click()
+    await page.locator('.nav__group-hd', { hasText: '告警与投递' }).click()
     await page
       .getByRole('link', { name: /^告警事件$|^事件告警$|^告警$|^Alerts?$/ })
       .first()
@@ -65,7 +65,7 @@ test.describe('navigation and tabs', () => {
   })
 
   test('侧边栏分组和页面入口可通过键盘操作', async ({ page }) => {
-    const group = page.getByRole('button', { name: '跟踪运行' })
+    const group = page.getByRole('button', { name: '运行监控' })
     await group.focus()
     await expect(group).toBeFocused()
     await page.keyboard.press('Enter')
@@ -76,6 +76,15 @@ test.describe('navigation and tabs', () => {
     await expect(workflowLink).toBeFocused()
     await page.keyboard.press('Enter')
     await expect(page).toHaveURL(/\/monitor\/workflow-runs/)
+  })
+
+  test('权限自查位于平台管理并以树形结构展示菜单', async ({ page }) => {
+    await page.locator('.nav__group-hd', { hasText: '平台管理' }).click()
+    await page.getByRole('link', { name: '权限自查' }).click()
+    await expect(page).toHaveURL(/\/system\/users/)
+    await expect(page.getByText('菜单权限树')).toBeVisible()
+    await expect(page.getByRole('tree')).toBeVisible()
+    await expect(page.getByPlaceholder('搜索菜单或路由')).toBeVisible()
   })
 
   test('命令面板可以打开和关闭', async ({ page }) => {
