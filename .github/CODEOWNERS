@@ -21,6 +21,8 @@
 /Dockerfile                             @pinpols
 /nginx/                                 @pinpols
 /docker-compose.yml                     @pinpols
+/config/*baseline.json                  @pinpols
+/config/baseline-expansion-approvals.json @pinpols
 
 # 测试代码(防"改 assertion / spec 让 CI 过")
 /e2e/                                   @pinpols

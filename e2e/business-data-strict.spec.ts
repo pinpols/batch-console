@@ -36,7 +36,10 @@ const STRICT_PAGES: StrictPage[] = [
 ]
 
 for (const pg of STRICT_PAGES) {
-  test(`严格数据校验:${pg.path} — 首条业务字段来自当前 API 响应`, async ({ page, network }) => {
+  test(`@release-required 严格数据校验:${pg.path} — 首条业务字段来自当前 API 响应`, async ({
+    page,
+    network,
+  }) => {
     await enterDemoApp(page)
     const responses: unknown[] = []
 
@@ -70,6 +73,9 @@ for (const pg of STRICT_PAGES) {
     })
 
     if (items.length === 0) {
+      if (process.env.E2E_RELEASE_GATE === '1') {
+        throw new Error(`${pg.path} 发布验收必须有业务 seed，不能以空列表跳过字段对齐`)
+      }
       test.skip(true, `${pg.path} 当前 API 返回空列表,跳过首行字段校验`)
       return
     }

@@ -78,6 +78,8 @@ jobs:
         run: bash scripts/ci/run-gate.sh FE_API_DRIFT "OpenAPI 漂移" -- npm run gen:api:check
 
       - name: Engineering governance
+        env:
+          BASELINE_BASE_REF: ${{ github.event.pull_request.base.sha || 'origin/main' }}
         run: bash scripts/verify-governance.sh
 
       - name: TypeCheck

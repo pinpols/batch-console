@@ -273,6 +273,9 @@ test.describe('合并导入 — 文件选择交互', () => {
 test.describe('合并导入 — 完整上传链路（依赖后端）', () => {
   // seedA 文件始终存在，用它来跑链路（格式与后端期望一致）
   test.beforeEach(async ({ page }) => {
+    if (process.env.E2E_RELEASE_GATE === '1' && !fs.existsSync(FIXTURES.seedA)) {
+      throw new Error(`发布验收配置包 seed 不存在: ${FIXTURES.seedA}`)
+    }
     test.skip(!fs.existsSync(FIXTURES.seedA), '种子文件不存在，跳过上传链路')
     clearConsoleRateLimitKeys()
     await enterDemoApp(page)
@@ -282,7 +285,7 @@ test.describe('合并导入 — 完整上传链路（依赖后端）', () => {
     })
   })
 
-  test('上传 → 预览 → 确认应用成功', async ({ page }) => {
+  test('@release-required 上传 → 预览 → 确认应用成功', async ({ page }) => {
     const [fileChooser] = await Promise.all([
       page.waitForEvent('filechooser'),
       page.getByRole('button', { name: '选择文件' }).first().click(),

@@ -25,6 +25,8 @@
 
 CI 定时任务仅保留有独立漂移/安全价值的低频检查；代码和测试回归由 PR、main 变更触发，避免无代码变更时重复构建。完整策略见后端统一的 [CI 定时治理文档](https://github.com/pinpols/file-batch-system/blob/main/docs/runbook/ci-schedule-governance.md)。
 
+前端治理基线（`config/maintainability-baseline.json`、`config/ui-complexity-baseline.json`）在 PR 和 Full Gate 中与目标分支比较；新增或调高预算必须在 `config/baseline-expansion-approvals.json` 记录 owner、原因、复审日期和移除条件，并由 CODEOWNERS 审核。定向验证：`npm run check:baseline-expansion`、`npm run test:baseline-expansion`。
+
 ```
 e2e/
   support/            # ★ 可复用 helper(写 e2e 必先看)
@@ -237,6 +239,8 @@ BC_API_BASE=http://127.0.0.1:18089 E2E_BASE_URL=http://127.0.0.1:5175 \
 
 全局准备会登录内置 admin 并按需准备测试租户及角色账号；如多个实例共享数据库，重新登录可能使同一账号的其他会话失效。需要保留现场时可显式设置 `BC_E2E_SKIP_TEARDOWN=1`，但不能据此宣称已完成测试数据清理。`E2E_SKIP_GLOBAL_SETUP=1` 只适用于自行登录的 opt-in 用例；普通套件跳过准备会使用过期的 `e2e/.auth/*.json`。
 
+手动 staging workflow 必须显式提供前端 URL（`STAGING_URL` 或输入 `base_url`）、API origin（`STAGING_API_URL` 或输入 `api_url`）及 `STAGING_E2E_USERNAME/PASSWORD`。它设置 `E2E_TARGET_ENV=staging`，拒绝 loopback、缺失地址/凭据和本地 API 默认回退；Playwright 不启动本地 Vite 服务。`@release-required` 场景在发布模式下 seed 缺失必须失败，报告器将全套用例列为 PASS/SKIP/FAIL，并在没有发现必验场景时失败。可选场景仍可跳过，但跳过及原因会进入 Actions Summary。运行 `npm run test:e2e:config` 可验证 staging 环境变量契约；真实 staging 运行仍需有效环境和账号。
+
 真实告警监控联测使用 `e2e/monitoring-platform-real.spec.ts`，不拦截或 mock Console API：检查 Prometheus 已加载可用性/事件规则、Alertmanager 接收器配置，并通过浏览器验证事件目录、告警列表、通知渠道/订阅/投递日志 API。默认地址来自 `e2e/test-config.json`；可分别用 `E2E_PROMETHEUS_URL`、`E2E_ALERTMANAGER_URL`、`BC_API_BASE` 和 `E2E_BASE_URL` 覆盖。非 loopback 目标必须显式设置 `E2E_MONITORING_ALLOW_REMOTE=1`。该专项 setup 仅登录生成浏览器态，不导入配置包、创建角色账号或执行全局清理。若本机 5173 被其他工作树占用，可把当前前端启动在 5174 并设置 `E2E_BASE_URL=http://127.0.0.1:5174`。运行：
 
 ```bash
@@ -340,9 +344,9 @@ E2E_USAGE_DB_RECONCILIATION=1 E2E_SKIP_GLOBAL_SETUP=1 E2E_BASE_URL=http://127.0.
 | ------------------ | ------------------- | -------------------------------------------------------------- |
 | `pr-gate.yml`      | PR / push main      | lint / typecheck / i18n / api-drift / **unit** / build / audit |
 | `full-ci-gate.yml` | PR / push main / 每周一 02:00 UTC / 手动 | PR 运行范围适配的静态、单测与安全检查；非 PR 事件再跑 Docker/Trivy + Lighthouse |
-| `staging-gate.yml` | tag v* / 手动       | **Playwright 全量 against staging URL** + Lighthouse           |
+| `staging-gate.yml` | 手动       | Playwright against explicitly configured staging frontend/API origins + required-scenario report and Lighthouse           |
 
-**关键**:Playwright e2e **只在 staging-gate**(真 staging URL)跑,pr-gate/full-ci **故意不跑**(CI 起 BE 太脆,业界惯例)。e2e 失败 block staging 部署,不 block PR 合并。
+**关键**:Playwright e2e **只在 staging-gate**跑。该 workflow 不部署到 staging；必须配置前端/API origin 与测试凭据，发布必验场景缺失或跳过会失败，可选场景跳过会进入报告。E2E 失败阻断该 staging 验收 job，不 block PR 合并。配置契约可用 `npm run test:e2e:config` 本地验证；只有目标 staging 上的实际运行才能证明真实环境验收通过。
 
 ---
 
