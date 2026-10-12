@@ -80,9 +80,9 @@ describe('permission navigation filtering', () => {
     const result = filterNavigationByBackendMenus(navigationGroups, backendMenus)
 
     expect(result).toHaveLength(1)
-    // 后端仍可把 path 放在 system,侧栏按异常处置任务归入“处理异常”组
+    // 后端菜单配置仍由前端按产品任务分组呈现。
     expect(result[0].key).toBe('alerting')
-    expect(result[0].title).toBe('处理异常')
+    expect(result[0].title).toBe('告警与投递')
     expect(result[0].children.map((c) => c.path)).toEqual(['/system/notifications'])
     expect(result[0].children[0].title).toBe('通知与投递')
   })
@@ -126,12 +126,12 @@ describe('permission navigation filtering', () => {
     const visiblePaths = navigationGroups.flatMap((group) =>
       group.children.filter((item) => !item.hidden).map((item) => item.path),
     )
-    expect(visiblePaths).toHaveLength(27)
+    expect(visiblePaths).toHaveLength(28)
     expect(new Set(visiblePaths).size).toBe(visiblePaths.length)
 
     const hiddenPaths = navigationGroups.flatMap((group) =>
       group.children.filter((item) => item.hidden).map((item) => item.path),
     )
-    expect(hiddenPaths).toHaveLength(29)
+    expect(hiddenPaths).toHaveLength(28)
   })
 })
