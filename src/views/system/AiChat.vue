@@ -244,48 +244,82 @@
             <DatetimeColumn prop="createdAt" :label="t('aiChat.colTime')" width="160" />
             <el-table-column prop="operatorId" :label="t('aiChat.colOperator')" width="120" />
             <el-table-column
-              prop="sessionId"
-              :label="t('aiChat.colSession')"
-              width="140"
-              show-overflow-tooltip
+              prop="promptCategory"
+              :label="t('aiChat.colCategory')"
+              min-width="130"
             />
-            <el-table-column
-              prop="requestId"
-              :label="t('aiChat.colRequestId')"
-              width="140"
-              show-overflow-tooltip
-            />
-            <el-table-column prop="promptCategory" :label="t('aiChat.colCategory')" width="120" />
-            <el-table-column prop="promptDecision" :label="t('aiChat.colDecision')" width="110" />
-            <el-table-column prop="modelName" :label="t('aiChat.colModel')" width="140" />
-            <el-table-column
-              prop="refusalReason"
-              :label="t('aiChat.colRejectReason')"
-              min-width="180"
-              show-overflow-tooltip
-            />
-            <el-table-column
-              prop="promptPreview"
-              :label="t('aiChat.colPromptPreview')"
-              min-width="220"
-              show-overflow-tooltip
-            />
-            <el-table-column
-              prop="responsePreview"
-              :label="t('aiChat.colAnswerPreview')"
-              min-width="260"
-              show-overflow-tooltip
-            />
-            <el-table-column
-              prop="traceId"
-              :label="t('aiChat.colTrace')"
-              min-width="150"
-              show-overflow-tooltip
-            />
+            <el-table-column prop="promptDecision" :label="t('aiChat.colDecision')" width="120">
+              <template #default="{ row }">
+                <StatusTag :value="String(row.promptDecision ?? '')" category="approval" />
+              </template>
+            </el-table-column>
+            <el-table-column prop="modelName" :label="t('aiChat.colModel')" min-width="150" />
+            <el-table-column :label="t('common.detail')" width="120" fixed="right">
+              <template #default="{ row }">
+                <el-button size="small" :icon="Eye" @click="openAuditDetail(row)">
+                  {{ t('common.detail') }}
+                </el-button>
+              </template>
+            </el-table-column>
           </ProTable>
         </el-tab-pane>
       </el-tabs>
     </div>
+
+    <DetailDrawer
+      v-model:visible="auditDetailOpen"
+      :title="t('aiChat.auditDetailTitle')"
+      size="min(44rem, 92vw)"
+    >
+      <template v-if="selectedAudit">
+        <div class="audit-detail__identity">
+          <StatusTag :value="String(selectedAudit.promptDecision ?? '')" category="approval" />
+          <span>{{ selectedAudit.promptCategory || '—' }}</span>
+          <span>{{ selectedAudit.modelName || '—' }}</span>
+        </div>
+        <el-descriptions :column="1" border size="small">
+          <el-descriptions-item :label="t('aiChat.colTime')">
+            <DatetimeText :value="selectedAudit.createdAt" />
+          </el-descriptions-item>
+          <el-descriptions-item :label="t('aiChat.colOperator')">
+            {{ selectedAudit.operatorId || '—' }}
+          </el-descriptions-item>
+          <el-descriptions-item :label="t('aiChat.colSession')">
+            <CopyableText :text="selectedAudit.sessionId || '—'" />
+          </el-descriptions-item>
+          <el-descriptions-item :label="t('aiChat.colRequestId')">
+            <CopyableText :text="selectedAudit.requestId || '—'" />
+          </el-descriptions-item>
+          <el-descriptions-item :label="t('aiChat.colTrace')">
+            <CopyableText :text="selectedAudit.traceId || '—'" />
+          </el-descriptions-item>
+          <el-descriptions-item :label="t('aiChat.auditUsage')">
+            {{
+              t('aiChat.auditUsageValue', {
+                prompt: selectedAudit.promptTokens ?? '—',
+                completion: selectedAudit.completionTokens ?? '—',
+                cost:
+                  selectedAudit.estimatedCostUsd == null
+                    ? '—'
+                    : formatAiUsd(selectedAudit.estimatedCostUsd),
+              })
+            }}
+          </el-descriptions-item>
+        </el-descriptions>
+        <section class="audit-detail__section">
+          <h3>{{ t('aiChat.colRejectReason') }}</h3>
+          <p>{{ selectedAudit.refusalReason || t('common.etaUnknown') }}</p>
+        </section>
+        <section class="audit-detail__section">
+          <h3>{{ t('aiChat.colPromptPreview') }}</h3>
+          <pre>{{ selectedAudit.promptPreview || '—' }}</pre>
+        </section>
+        <section class="audit-detail__section">
+          <h3>{{ t('aiChat.colAnswerPreview') }}</h3>
+          <pre>{{ selectedAudit.responsePreview || '—' }}</pre>
+        </section>
+      </template>
+    </DetailDrawer>
   </PageContainer>
 </template>
 
@@ -294,7 +328,7 @@
   import { useI18n } from 'vue-i18n'
   import { useRoute, useRouter } from 'vue-router'
   import { ElMessageBox } from 'element-plus'
-  import { Plus, Square, Trash2 } from '@lucide/vue'
+  import { Eye, Plus, Square, Trash2 } from '@lucide/vue'
 
   const { t } = useI18n({ useScope: 'global' })
   import {
@@ -322,6 +356,10 @@
   import AiTextAttachmentPicker from '@/components/common/AiTextAttachmentPicker.vue'
   import MetaSelect from '@/components/common/MetaSelect.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
+  import StatusTag from '@/components/common/StatusTag.vue'
+  import DatetimeText from '@/components/common/DatetimeText.vue'
+  import CopyableText from '@/components/common/CopyableText.vue'
+  import DetailDrawer from '@/components/common/DetailDrawer.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import ProTable from '@/components/table/ProTable.vue'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
@@ -418,6 +456,8 @@
     runRefresh: runAuditRefresh,
   } = useListFilterFeedback(auditLoading)
   const auditRows = ref<AiAuditLogResponse[]>([])
+  const selectedAudit = ref<AiAuditLogResponse | null>(null)
+  const auditDetailOpen = ref(false)
   const auditTotal = ref(0)
   const auditPage = ref(1)
   const auditPageSize = ref(15)
@@ -431,6 +471,11 @@
   const auditTraceApplied = ref('')
   const auditOperatorApplied = ref('')
   const auditCategoryApplied = ref('')
+
+  function openAuditDetail(row: AiAuditLogResponse) {
+    selectedAudit.value = row
+    auditDetailOpen.value = true
+  }
 
   const { data: metaEnums } = useConsoleMetaEnumsQuery()
 
@@ -733,6 +778,45 @@
     grid-template-columns: minmax(180px, 240px) minmax(0, 1fr);
     gap: var(--space-md);
     min-width: 0;
+  }
+
+  .audit-detail__identity {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-md);
+    color: var(--color-text-secondary);
+  }
+
+  .audit-detail__section {
+    margin-top: var(--space-lg);
+  }
+
+  .audit-detail__section h3 {
+    margin: 0 0 var(--space-sm);
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+  }
+
+  .audit-detail__section p,
+  .audit-detail__section pre {
+    margin: 0;
+    padding: var(--space-md);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-content);
+    background: var(--color-bg-page);
+    color: var(--color-text-primary);
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+  }
+
+  .audit-detail__section pre {
+    max-height: 22rem;
+    overflow: auto;
+    font-family: var(--font-family-mono);
+    font-size: var(--font-size-sm);
   }
 
   .conversation-list {

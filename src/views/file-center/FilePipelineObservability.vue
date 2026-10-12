@@ -25,217 +25,109 @@
       <span v-if="!currentFile.fileName && !currentFile.fileId" class="muted">—</span>
     </div>
 
-    <SectionCard v-if="selectedPipeline" class="pipeline-focus">
-      <template #header>
-        <div class="pipeline-focus__header">
-          <span>{{ t('filePipelineObservability.selectedRun', { id: selectedPipeline.id }) }}</span>
-          <StatusTag :value="String(selectedPipeline.runStatus ?? '')" category="workflow" />
-        </div>
-      </template>
-      <div class="pipeline-focus__links">
-        <span>{{ selectedPipeline.jobCode }}</span>
-        <router-link
-          v-if="selectedPipeline.fileId"
-          class="cell-link"
-          :to="`/files/list?fileId=${selectedPipeline.fileId}`"
-        >
-          {{ t('filePipelineObservability.relatedFile', { id: selectedPipeline.fileId }) }}
-        </router-link>
-        <router-link
-          v-if="selectedPipeline.relatedJobInstanceId"
-          class="cell-link"
-          :to="`/monitor/job-instances/${selectedPipeline.relatedJobInstanceId}`"
-        >
-          {{
-            t('filePipelineObservability.relatedInstance', {
-              id: selectedPipeline.relatedJobInstanceId,
-            })
-          }}
-        </router-link>
-        <router-link
-          v-if="selectedPipeline.traceId"
-          class="cell-link"
-          :to="`/observability/trace?traceId=${selectedPipeline.traceId}`"
-        >
-          {{ t('filePipelineObservability.relatedTrace') }}
-        </router-link>
-      </div>
-      <el-alert
-        v-if="selectedStepLoadError"
-        class="pipeline-stage-error"
-        type="error"
-        show-icon
-        :closable="false"
-        :title="t('filePipelineObservability.stageLoadError')"
-      >
-        <template #default>
-          <el-button link type="primary" @click="reloadSelectedSteps">
-            {{ t('common.retry') }}
-          </el-button>
-        </template>
-      </el-alert>
-      <div
-        v-else
-        v-loading="selectedStepsLoading"
-        class="pipeline-stages"
-        :aria-label="t('filePipelineObservability.stageOverview')"
-      >
-        <button
-          v-for="stage in selectedStages"
-          :key="stage.code"
-          type="button"
-          class="pipeline-stage"
-          :class="[
-            `pipeline-stage--${stage.tone}`,
-            { 'pipeline-stage--selected': selectedStageCode === stage.code },
-          ]"
-          :aria-pressed="selectedStageCode === stage.code"
-          @click="focusStage(stage.code)"
-        >
-          <span class="pipeline-stage__index">{{ stage.index }}</span>
-          <span class="pipeline-stage__body">
-            <strong>{{ stage.label }}</strong>
-            <span>{{ stage.status }}</span>
-            <span v-if="stage.error" class="pipeline-stage__error" :title="stage.error">
-              {{ stage.error }}
-            </span>
-          </span>
-        </button>
-      </div>
-    </SectionCard>
-
     <el-tabs v-model="activeTab" class="pill-tabs" @tab-change="onTabChange">
       <el-tab-pane :label="t('filePipelineObservability.tabPipelines')" name="pipelines">
-        <ProTable
-          :data="pipelineRows"
-          :loading="tableBlocking"
-          :total="total"
-          v-model:page="page"
-          v-model:page-size="pageSize"
-          @change="onPageChange"
-          :error="loadError"
-          :on-retry="loadPipelines"
-          @row-click="selectPipeline"
-        >
-          <template #toolbar>
-            <OpsListToolbar
-              :status="live.status.value"
-              :last-refreshed-at="live.lastRefreshedAt.value"
+        <div class="pipeline-workspace" :class="{ 'pipeline-workspace--empty': !selectedPipeline }">
+          <ProTable
+            class="pipeline-workspace__master"
+            :data="pipelineRows"
+            :loading="tableBlocking"
+            :total="total"
+            v-model:page="page"
+            v-model:page-size="pageSize"
+            @change="onPageChange"
+            :error="loadError"
+            :on-retry="loadPipelines"
+            @row-click="selectPipeline"
+          >
+            <template #toolbar>
+              <OpsListToolbar
+                :status="live.status.value"
+                :last-refreshed-at="live.lastRefreshedAt.value"
+              />
+            </template>
+            <template #query>
+              <ListPageQueryBar
+                :filter-busy="queryActionBusy"
+                :refresh-busy="loading"
+                :disabled="loading"
+                @search="onSearch"
+                @reset="onReset"
+                @refresh="() => runRefresh(reloadTab)"
+              >
+                <el-form-item :label="t('filePipelineObservability.keywordLabel')">
+                  <el-input
+                    class="query-w-280"
+                    v-model="kwDraft"
+                    clearable
+                    :placeholder="t('filePipelineObservability.pipelinesKw')"
+                    @keyup.enter="onSearch"
+                  />
+                </el-form-item>
+              </ListPageQueryBar>
+            </template>
+            <el-table-column prop="id" :label="t('filePipelineObservability.colId')" width="88" />
+            <el-table-column
+              prop="jobCode"
+              :label="t('filePipelineObservability.colJob')"
+              min-width="180"
+              show-overflow-tooltip
             />
-          </template>
-          <template #query>
-            <ListPageQueryBar
-              :filter-busy="queryActionBusy"
-              :refresh-busy="loading"
-              :disabled="loading"
-              @search="onSearch"
-              @reset="onReset"
-              @refresh="() => runRefresh(reloadTab)"
+            <el-table-column
+              prop="pipelineType"
+              :label="t('filePipelineObservability.colType')"
+              width="110"
+            />
+            <el-table-column
+              prop="runStatus"
+              :label="t('filePipelineObservability.colStatus')"
+              width="120"
             >
-              <el-form-item :label="t('filePipelineObservability.keywordLabel')">
-                <el-input
-                  class="query-w-280"
-                  v-model="kwDraft"
-                  clearable
-                  :placeholder="t('filePipelineObservability.pipelinesKw')"
-                  @keyup.enter="onSearch"
+              <template #default="{ row }">
+                <StatusTag :value="String(row.runStatus ?? '')" category="workflow" />
+              </template>
+            </el-table-column>
+            <el-table-column
+              prop="currentStage"
+              :label="t('filePipelineObservability.colCurrentStage')"
+              width="120"
+              show-overflow-tooltip
+            />
+            <DatetimeColumn
+              prop="startedAt"
+              :label="t('filePipelineObservability.colStart')"
+              width="160"
+            />
+            <el-table-column :label="t('common.detail')" width="76" fixed="right">
+              <template #default="{ row }">
+                <el-button
+                  text
+                  type="primary"
+                  :icon="Eye"
+                  :aria-label="t('common.detail')"
+                  :aria-pressed="selectedPipeline?.id === row.id"
+                  @click="selectPipeline(row)"
                 />
-              </el-form-item>
-            </ListPageQueryBar>
-          </template>
-          <el-table-column prop="id" :label="t('filePipelineObservability.colId')" width="88" />
-          <el-table-column
-            prop="jobCode"
-            :label="t('filePipelineObservability.colJob')"
-            min-width="180"
-            show-overflow-tooltip
+              </template>
+            </el-table-column>
+          </ProTable>
+          <SelectedPipelinePanel
+            v-if="selectedPipeline"
+            :pipeline="selectedPipeline"
+            :stages="selectedStages"
+            :selected-code="selectedStageCode"
+            :loading="selectedStepsLoading"
+            :load-error="Boolean(selectedStepLoadError)"
+            @stage-click="focusStage"
+            @retry="reloadSelectedSteps"
           />
-          <el-table-column
-            prop="pipelineType"
-            :label="t('filePipelineObservability.colType')"
-            width="110"
-          />
-          <el-table-column
-            prop="runStatus"
-            :label="t('filePipelineObservability.colStatus')"
-            width="120"
-          >
-            <template #default="{ row }">
-              <StatusTag :value="String(row.runStatus ?? '')" category="workflow" />
-            </template>
-          </el-table-column>
-          <el-table-column
-            prop="currentStage"
-            :label="t('filePipelineObservability.colCurrentStage')"
-            width="120"
-            show-overflow-tooltip
-          />
-          <el-table-column
-            prop="lastSuccessStage"
-            :label="t('filePipelineObservability.colLastSuccess')"
-            width="120"
-            show-overflow-tooltip
-          />
-          <el-table-column
-            prop="fileId"
-            :label="t('filePipelineObservability.colFileId')"
-            width="88"
-          >
-            <template #default="{ row }">
-              <router-link
-                v-if="row.fileId"
-                class="cell-link"
-                :to="`/files/list?fileId=${row.fileId}`"
-              >
-                {{ row.fileId }}
-              </router-link>
-              <span v-else>—</span>
-            </template>
-          </el-table-column>
-          <el-table-column
-            prop="relatedJobInstanceId"
-            :label="t('filePipelineObservability.colRelatedInstance')"
-            width="100"
-          >
-            <template #default="{ row }">
-              <router-link
-                v-if="row.relatedJobInstanceId"
-                class="cell-link"
-                :to="`/monitor/job-instances/${row.relatedJobInstanceId}`"
-              >
-                {{ row.relatedJobInstanceId }}
-              </router-link>
-              <span v-else>—</span>
-            </template>
-          </el-table-column>
-          <el-table-column
-            prop="traceId"
-            :label="t('filePipelineObservability.colTrace')"
-            min-width="220"
-            show-overflow-tooltip
-          >
-            <template #default="{ row }">
-              <router-link
-                v-if="row.traceId"
-                class="cell-link"
-                :to="`/observability/trace?traceId=${row.traceId}`"
-              >
-                {{ row.traceId }}
-              </router-link>
-              <span v-else>—</span>
-            </template>
-          </el-table-column>
-          <DatetimeColumn
-            prop="startedAt"
-            :label="t('filePipelineObservability.colStart')"
-            width="180"
-          />
-          <DatetimeColumn
-            prop="finishedAt"
-            :label="t('filePipelineObservability.colFinish')"
-            width="180"
-          />
-        </ProTable>
+          <div v-else-if="pipelineRows.length" class="pipeline-workspace__hint">
+            <EmptyState
+              :description="t('filePipelineObservability.selectRunHint')"
+              :image-size="64"
+            />
+          </div>
+        </div>
       </el-tab-pane>
 
       <el-tab-pane :label="t('filePipelineObservability.tabSteps')" name="steps">
@@ -564,6 +456,7 @@
   import { ref, computed, onMounted, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { useRoute } from 'vue-router'
+  import { Eye } from '@lucide/vue'
   import { fetchAllPageItems } from '@/api/adapters'
   import {
     queryFileDispatchPage,
@@ -581,6 +474,8 @@
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import ProTable from '@/components/table/ProTable.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
+  import EmptyState from '@/components/common/EmptyState.vue'
+  import SelectedPipelinePanel from './components/SelectedPipelinePanel.vue'
   import type {
     ConsoleFileDispatchRecordResponse,
     ConsoleFileErrorRecordResponse,
@@ -1009,98 +904,35 @@
     font-weight: 600;
   }
 
-  .pipeline-focus {
-    margin-bottom: var(--page-block-gap);
-  }
-
-  .pipeline-focus__header,
-  .pipeline-focus__links {
-    display: flex;
-    align-items: center;
-    gap: var(--space-md);
-    flex-wrap: wrap;
-  }
-
-  .pipeline-focus__links {
-    margin-bottom: var(--space-md);
-    color: var(--color-text-secondary);
-  }
-
-  .pipeline-stages {
+  .pipeline-workspace {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-    gap: var(--space-sm);
+    grid-template-columns: minmax(0, 1.8fr) minmax(19rem, 1fr);
+    align-items: start;
+    gap: var(--page-block-gap);
+    min-width: 0;
   }
 
-  .pipeline-stage {
-    display: flex;
-    align-items: center;
-    gap: var(--space-sm);
+  .pipeline-workspace__master,
+  .pipeline-workspace__hint {
     min-width: 0;
-    padding: var(--space-sm) var(--space-md);
-    border: 1px solid var(--color-border-light);
+  }
+
+  .pipeline-workspace__hint {
+    display: grid;
+    min-height: 18rem;
+    place-items: center;
+    border: 1px dashed var(--color-border-light);
     border-radius: var(--radius-content);
     background: var(--color-bg-page);
-    color: inherit;
-    font: inherit;
-    width: 100%;
-    cursor: pointer;
-    text-align: left;
   }
 
-  .pipeline-stage--selected,
-  .pipeline-stage:focus-visible {
-    outline: 2px solid var(--color-primary);
-    outline-offset: 2px;
+  .pipeline-workspace--empty {
+    grid-template-columns: minmax(0, 1fr);
   }
 
-  .pipeline-stage__index {
-    display: inline-grid;
-    place-items: center;
-    width: var(--space-xl);
-    height: var(--space-xl);
-    flex: 0 0 auto;
-    border-radius: 50%;
-    background: var(--color-bg-subtle);
-    color: var(--color-text-secondary);
-  }
-
-  .pipeline-stage__body {
-    display: grid;
-    min-width: 0;
-    color: var(--color-text-secondary);
-    font-size: var(--font-size-sm);
-  }
-
-  .pipeline-stage__body strong {
-    color: var(--color-text-primary);
-  }
-
-  .pipeline-stage__error {
-    display: -webkit-box;
-    overflow: hidden;
-    color: var(--color-danger);
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-  }
-
-  .pipeline-stage--success {
-    border-color: var(--color-success);
-  }
-
-  .pipeline-stage--active {
-    border-color: var(--color-primary);
-    background: var(--color-bg-info);
-  }
-
-  .pipeline-stage--danger {
-    border-color: var(--color-danger);
-    background: var(--wf-node-error-light);
-  }
-
-  @media (max-width: 900px) {
-    .pipeline-stages {
-      grid-template-columns: 1fr;
+  @media (max-width: 1320px) {
+    .pipeline-workspace {
+      grid-template-columns: minmax(0, 1fr);
     }
   }
 </style>
