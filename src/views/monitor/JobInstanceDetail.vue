@@ -268,8 +268,15 @@
           </div>
           <div v-else class="hb-wrap">
             <div class="hb-picker">
-              <span class="hb-picker__label">{{ t('jobInstanceDetail.heartbeatPickStep') }}</span>
-              <el-select v-model="selectedTaskId" size="small" class="hb-picker__select">
+              <label class="hb-picker__label" for="heartbeat-task-picker">
+                {{ t('jobInstanceDetail.heartbeatPickStep') }}
+              </label>
+              <el-select
+                id="heartbeat-task-picker"
+                v-model="selectedTaskId"
+                size="small"
+                class="hb-picker__select"
+              >
                 <el-option
                   v-for="opt in taskOptions"
                   :key="opt.taskId"
@@ -930,22 +937,26 @@
   .hb-wrap {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 16px;
   }
 
   .hb-picker {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 12px;
+    min-height: 40px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--color-border-subtle);
   }
 
   .hb-picker__label {
     font-size: 12px;
     color: var(--color-text-secondary);
+    white-space: nowrap;
   }
 
   .hb-picker__select {
-    width: min(320px, 100%);
+    width: min(440px, 100%);
     max-width: 100%;
   }
 
@@ -965,8 +976,9 @@
     }
 
     .hb-picker {
-      align-items: flex-start;
+      align-items: stretch;
       flex-direction: column;
+      gap: 6px;
     }
   }
 </style>

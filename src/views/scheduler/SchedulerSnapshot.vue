@@ -2,12 +2,7 @@
   <PageContainer>
     <PageHeader>
       <template #actions>
-        <el-button
-          type="primary"
-          :icon="Refresh"
-          :loading="loading || refresh.loading.value"
-          @click="refresh.run(() => loadAll())"
-        >
+        <el-button type="primary" :icon="Refresh" :loading="loading" @click="loadAll()">
           {{ t('schedulerSnapshot.headerRefresh') }}
         </el-button>
         <el-button
@@ -37,16 +32,16 @@
     </PageHeader>
 
     <el-alert
-      v-if="loadError"
+      v-if="loadError && snap"
       class="snapshot-alert"
       type="error"
       show-icon
       :closable="false"
       :title="t('schedulerSnapshot.loadErrorTitle')"
       :description="
-        snap
+        snapshotFailed
           ? t('schedulerSnapshot.staleDescription', { time: fmtDatetime(lastSuccessfulAt) })
-          : t('schedulerSnapshot.loadErrorDescription')
+          : t('schedulerSnapshot.partialDescription')
       "
     >
       <template #default>
@@ -65,11 +60,23 @@
     </el-alert>
 
     <SectionCard v-if="!snap && !loading" class="mt">
-      <EmptyState variant="service-down" :description="t('schedulerSnapshot.loadErrorDescription')">
+      <EmptyState
+        variant="service-down"
+        :title="t('schedulerSnapshot.loadErrorTitle')"
+        :description="t('schedulerSnapshot.loadErrorDescription')"
+      >
         <template #action>
-          <el-button type="primary" :icon="Refresh" @click="loadAll()">
-            {{ t('common.retry') }}
-          </el-button>
+          <div class="snapshot-empty-actions">
+            <el-button type="primary" :icon="Refresh" @click="loadAll()">
+              {{ t('common.retry') }}
+            </el-button>
+            <el-button @click="router.push('/ops/diagnostic')">
+              {{ t('schedulerSnapshot.openDiagnostic') }}
+            </el-button>
+          </div>
+          <CopyableText v-if="loadErrorTrace" :text="loadErrorTrace">
+            <span>{{ t('schedulerSnapshot.errorTrace', { trace: loadErrorTrace }) }}</span>
+          </CopyableText>
         </template>
       </EmptyState>
     </SectionCard>
@@ -504,9 +511,6 @@
   import { useRouter } from 'vue-router'
   import { ElMessage } from 'element-plus'
   import { Copy as DocumentCopy, Pause, Play, RefreshCw as Refresh } from '@lucide/vue'
-  import { useRefreshAction } from '@/composables/useRefreshAction'
-
-  const refresh = useRefreshAction()
   import { confirmDanger } from '@/composables/useDangerConfirm'
 
   const { t } = useI18n({ useScope: 'global' })
@@ -554,6 +558,7 @@
   const activePanel = ref<PanelKey>('policies')
   const KPI_KEYS: PanelKey[] = ['policies', 'queues', 'workers', 'history']
 
+  const snapshotFailed = ref(false)
   function onKpiKeydown(event: KeyboardEvent) {
     let nextIndex = KPI_KEYS.indexOf(activePanel.value)
     if (event.key === 'ArrowRight' || event.key === 'ArrowDown')
@@ -734,9 +739,9 @@
     loading.value = true
     histLoading.value = true
     const [snapResult, historyResult, statusResult] = await Promise.allSettled([
-      getSchedulerSnapshot(tenant.tenantId),
-      getSchedulerSnapshotHistory(tenant.tenantId),
-      getSchedulerStatus(),
+      getSchedulerSnapshot(tenant.tenantId, true),
+      getSchedulerSnapshotHistory(tenant.tenantId, undefined, true),
+      getSchedulerStatus(true),
     ])
     const snapOk = snapResult.status === 'fulfilled'
     const histOk = historyResult.status === 'fulfilled'
@@ -751,15 +756,12 @@
         .filter((result) => result.status === 'rejected')
         .map((result) => errorCorrelation(result.reason))
         .find(Boolean) ?? ''
-    if (snapOk) lastSuccessfulAt.value = new Date().toISOString()
+    snapshotFailed.value = !snapOk
+    if (snapOk) lastSuccessfulAt.value = snapResult.value.generatedAt || new Date().toISOString()
     loading.value = false
     histLoading.value = false
-    if (!silent) {
-      if (snapOk && histOk && statusOk) ElMessage.success(t('schedulerSnapshot.refreshDone'))
-      else if (!snapOk && !histOk && !statusOk)
-        ElMessage.error(t('schedulerSnapshot.refreshFailed'))
-      else ElMessage.warning(t('schedulerSnapshot.refreshPartial'))
-    }
+    if (!silent && snapOk && histOk && statusOk)
+      ElMessage.success(t('schedulerSnapshot.refreshDone'))
   }
 
   useTenantReload(() => loadAll(true))
@@ -819,6 +821,13 @@
     align-items: center;
     gap: var(--space-sm);
     flex-wrap: wrap;
+  }
+
+  .snapshot-empty-actions {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
   }
 
   .card-header {

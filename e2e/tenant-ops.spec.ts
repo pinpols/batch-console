@@ -36,15 +36,9 @@ test.describe('租户管理 — 筛选查询', () => {
     await expect(statusFilter.getByRole('radio', { name: '全部' })).toHaveAttribute('aria-checked', 'true')
   })
 
-  test('低频生命周期状态保留在更多状态中', async ({ page }) => {
-    const advancedStatus = page.locator('.tenant-status-filter__advanced')
-    await advancedStatus.click()
-    await page.getByRole('option', { name: '暂停中' }).click()
-    await expect(advancedStatus).toContainText('暂停中')
-    await expect(page.locator('.tenant-status-filter').getByRole('radio', { name: '正常' }))
-      .toHaveAttribute('aria-checked', 'false')
-    await page.getByRole('button', { name: '搜索' }).click()
-    await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
+  test('不显示无可用枚举值的更多状态筛选器', async ({ page }) => {
+    await expect(page.locator('.tenant-status-filter .status-segment')).toBeVisible()
+    await expect(page.locator('.tenant-status-filter__advanced')).toHaveCount(0)
   })
 
   test('搜索按钮重新拉取列表', async ({ page }) => {

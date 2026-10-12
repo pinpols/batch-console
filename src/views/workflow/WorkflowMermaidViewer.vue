@@ -313,7 +313,7 @@
                 v-if="selectedNodeMeta.nodeParams"
                 :label="t('workflowMermaidViewer.fldParams')"
               >
-                <pre class="node-detail-json">{{ selectedNodeMeta.nodeParams }}</pre>
+                <JsonPreview :data="selectedNodeMeta.nodeParams" />
               </el-descriptions-item>
             </el-descriptions>
           </div>
@@ -410,7 +410,7 @@
           v-if="selectedNodeMeta.nodeParams"
           :label="t('workflowMermaidViewer.fldParams')"
         >
-          <pre class="node-detail-json">{{ selectedNodeMeta.nodeParams }}</pre>
+          <JsonPreview :data="selectedNodeMeta.nodeParams" />
         </el-descriptions-item>
       </el-descriptions>
     </el-drawer>
@@ -447,6 +447,7 @@
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
   import DataState from '@/components/common/DataState.vue'
+  import JsonPreview from '@/components/common/JsonPreview.vue'
   import { clearTrustedSvg, setTrustedMermaidSvg } from '@/utils/trustedMermaidSvg'
   import { workflowApi } from '@/api/workflow'
   import { injectCrossDayEdges, describeCrossDayDeps } from '@/utils/crossDayMermaid'
@@ -454,6 +455,7 @@
   import { instanceApi } from '@/api/instance'
   import { useTenantStore } from '@/stores/tenant'
   import { loadMermaid } from '@/utils/mermaid'
+  import { userErrorMessage } from '@/utils/userErrorMessage'
   import {
     workflowRunMermaidClassDefs,
     workflowRunStatusClass,
@@ -616,7 +618,7 @@
       attachNodeClicks()
       maybeStartPoll()
     } catch (err: unknown) {
-      errorMessage.value = err instanceof Error ? err.message : String(err)
+      errorMessage.value = userErrorMessage(err)
       mermaidText.value = ''
       rendererText.value = ''
       runStatus.value = null
@@ -837,9 +839,7 @@
         })
       }
     } catch (err: unknown) {
-      errorMessage.value =
-        t('workflowMermaidViewer.renderFailPrefix') +
-        (err instanceof Error ? err.message : String(err))
+      errorMessage.value = t('workflowMermaidViewer.renderFailPrefix') + userErrorMessage(err)
       clearGraph()
     }
   }
@@ -1207,15 +1207,5 @@
   .cell-mute {
     margin-left: 4px;
     color: var(--el-text-color-secondary);
-  }
-  .node-detail-json {
-    margin: 0;
-    padding: 8px;
-    background: var(--el-fill-color-light);
-    border-radius: 4px;
-    font-family: var(--el-font-family-mono, monospace);
-    font-size: 12px;
-    max-height: 240px;
-    overflow: auto;
   }
 </style>

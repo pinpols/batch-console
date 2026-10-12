@@ -1,4 +1,4 @@
-import { expect, test } from './support/app'
+import { csrfHeaders, expect, test } from './support/app'
 import { enterDemoApp } from './support/app'
 
 test.describe('@workflow-designer-gateway 网关与依赖语义', () => {
@@ -14,6 +14,7 @@ test.describe('@workflow-designer-gateway 网关与依赖语义', () => {
         'Content-Type': 'application/json',
         'X-Tenant-Id': 'ta',
         'Idempotency-Key': `e2e-wfd-gateway-create-${stamp}`,
+        ...(await csrfHeaders(page.request)),
       },
       data: {
         tenantId: 'ta',

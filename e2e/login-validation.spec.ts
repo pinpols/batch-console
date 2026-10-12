@@ -10,7 +10,7 @@ test.describe('login form validation', () => {
 
   test('OIDC 启用时显示企业登录入口', async ({ page, context }) => {
     await context.clearCookies()
-    await page.addInitScript(() => localStorage.setItem(STORAGE_KEYS.locale, 'zh-CN'))
+    await page.addInitScript((localeKey) => localStorage.setItem(localeKey, 'zh-CN'), STORAGE_KEYS.locale)
     await page.route('**/api/console/auth/oidc/provider', (route) =>
       route.fulfill({
         status: 200,
@@ -73,7 +73,7 @@ test.describe('login form validation', () => {
   test('登录页语言切换同步更新表单文案', async ({ page, context }) => {
     await context.clearCookies()
     await page.goto('/login', { waitUntil: 'networkidle' })
-    await page.evaluate(() => localStorage.setItem(STORAGE_KEYS.locale, 'zh-CN'))
+    await page.evaluate((localeKey) => localStorage.setItem(localeKey, 'zh-CN'), STORAGE_KEYS.locale)
     await page.reload({ waitUntil: 'networkidle' })
 
     const localeToggle = page.getByRole('button', { name: /切换语言|Switch language/i })

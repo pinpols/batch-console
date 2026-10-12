@@ -153,7 +153,7 @@
           <JsonPreview :data="parsedDescriptor" />
         </div>
         <div v-else-if="detailRow.descriptor" class="ctt-detail__raw">
-          <pre>{{ detailRow.descriptor }}</pre>
+          <JsonPreview :data="detailRow.descriptor" />
         </div>
         <EmptyState
           v-else

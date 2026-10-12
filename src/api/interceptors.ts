@@ -12,6 +12,7 @@ import { getActivePinia } from 'pinia'
 import { useAppStore } from '@/stores/app'
 import { STORAGE_KEYS } from '@/constants/storageKeys'
 import { LOCALE_STORAGE_KEY } from '@/constants/locale'
+import { userErrorMessage } from '@/utils/userErrorMessage'
 
 /**
  * 把后端 BizException 下发的 i18n key(形如 "error.auth.invalid_credentials")翻成中/英文。
@@ -25,7 +26,7 @@ function translateBizMessage(raw: string | undefined): string | undefined {
   // 只识别 "error.xxx[.yyy...]" 这种点分 key,普通中英文 message 原样直出
   if (!/^error\.[a-z][a-z0-9_]*(?:\.[a-zA-Z0-9_]+)+$/.test(trimmed)) return raw
   const { t, te } = i18n.global
-  return te(trimmed) ? t(trimmed) : raw
+  return te(trimmed) ? t(trimmed) : i18n.global.t('apiError.requestFailed')
 }
 
 function trackDegradationHeader(value: unknown) {
@@ -297,17 +298,6 @@ type SpringLikeErrorBody = {
 
 function extractHttpErrorMessage(error: unknown): string {
   const ax = error as AxiosError<SpringLikeErrorBody | string>
-  const code = (ax as AxiosError & { code?: string }).code
-  if (
-    !ax.response &&
-    (code === 'ECONNREFUSED' || code === 'ERR_NETWORK' || /Network Error/i.test(String(ax.message)))
-  ) {
-    const target = import.meta.env.VITE_DEV_PROXY_TARGET || 'http://localhost:18080'
-    if (import.meta.env.DEV) {
-      return i18n.global.t('apiError.backendUnreachableDev', { target })
-    }
-    return i18n.global.t('apiError.backendUnreachable')
-  }
   const status = ax.response?.status
   const d = ax.response?.data
   if (d && typeof d === 'object') {
@@ -315,20 +305,10 @@ function extractHttpErrorMessage(error: unknown): string {
     // 例：`No static resource api/console/triggers for request '/api/console/triggers'.`
     // 这类信息对用户不友好，统一改成“接口不存在/版本不匹配”。
     if (status === 404 && typeof d.message === 'string' && /No static resource/i.test(d.message)) {
-      const url = ax.config?.url || d.path
-      return url
-        ? i18n.global.t('apiError.endpointVersionMismatchWithUrl', { url })
-        : i18n.global.t('apiError.endpointVersionMismatch')
+      return i18n.global.t('apiError.endpointVersionMismatch')
     }
-    const parts: string[] = []
-    if (d.message) parts.push(translateBizMessage(String(d.message)) ?? String(d.message))
-    if (d.error && String(d.error) !== String(d.message)) parts.push(String(d.error))
-    if (d.path) parts.push(`(${String(d.path)})`)
-    if (parts.length) return parts.join(' ')
   }
-  if (typeof d === 'string' && d.trim()) return d.trim().slice(0, 400)
-  if (status) return i18n.global.t('apiError.requestFailedWithStatus', { status })
-  return ax.message || i18n.global.t('apiError.networkError')
+  return userErrorMessage(error)
 }
 
 type ErrorCorrelation = {
@@ -615,6 +595,10 @@ export function applyApiInterceptors(client: AxiosInstance): void {
         setLastApiMeta((raw as CommonResponse<unknown>).meta ?? null)
       }
 
+      if ((error as AxiosError).code === 'ERR_CANCELED') {
+        return Promise.reject(error)
+      }
+
       // 维护模式 503:BE MaintenanceModeFilter 返 {maintenance:true, readOnly, message, etaAt} +
       // X-Maintenance header。识别到就把状态写进 appStore,后续 banner / 写按钮禁用 / 跳降级页
       // 由 UI 层消费;此处不弹通用错误 toast,避免一堆 503 提示淹没用户视线。
@@ -806,13 +790,9 @@ export function applyApiInterceptors(client: AxiosInstance): void {
           console.error('[API]', m, path, status, raw)
         }
         if (status === 400 && /Required request parameter 'jobCode'/i.test(msg)) {
-          const m = (cfg?.method ?? 'get').toUpperCase()
-          const url = cfg?.url ?? (error as AxiosError)?.config?.url
           showErrorToast({
             title: i18n.global.t('apiError.missingJobCodeTitle'),
-            message: url
-              ? i18n.global.t('apiError.missingJobCodeWithUrl', { method: m, url })
-              : i18n.global.t('apiError.missingJobCodeMessage'),
+            message: i18n.global.t('apiError.missingJobCodeMessage'),
             traceId: extractErrorTrace(error),
             duration: 7500,
           })
@@ -838,21 +818,16 @@ export function applyApiInterceptors(client: AxiosInstance): void {
               traceId: extractErrorTrace(error),
             })
           } else {
-            const url = (error as AxiosError)?.config?.url
             showErrorToast({
               title: i18n.global.t('apiError.endpointNotFoundTitle'),
-              message: url
-                ? i18n.global.t('apiError.endpointNotFoundWithUrl', { url })
-                : i18n.global.t('apiError.endpointNotFoundMessage'),
+              message: i18n.global.t('apiError.endpointNotFoundMessage'),
               traceId: extractErrorTrace(error),
               duration: 7500,
             })
           }
         } else {
           showErrorToast({
-            title: status
-              ? i18n.global.t('apiError.requestFailedWithStatus', { status })
-              : i18n.global.t('apiError.requestFailed'),
+            title: i18n.global.t('apiError.requestFailed'),
             message: msg,
             traceId: extractErrorTrace(error),
           })

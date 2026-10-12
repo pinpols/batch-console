@@ -75,6 +75,7 @@
   import { governanceApi, type GovernanceCalendarSavePayload } from '@/api/governance'
   import { useDirtyForm } from '@/composables/useDirtyForm'
   import { useFormFocus } from '@/composables/useFormFocus'
+  import { userErrorMessage } from '@/utils/userErrorMessage'
 
   const props = defineProps<{
     tenantId: string
@@ -174,7 +175,7 @@
       form.calendarCode = ''
       form.calendarName = ''
     } catch (err) {
-      const message = err instanceof Error ? err.message : String(err)
+      const message = userErrorMessage(err)
       ElMessage.error(t('jobConfigBasic.miniCalendarCreateFailed', { message }))
     } finally {
       saving.value = false

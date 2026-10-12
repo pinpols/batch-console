@@ -69,13 +69,12 @@
           </template>
         </el-table-column>
         <DatetimeColumn prop="createdAt" :label="t('configChangeLogsTab.colTime')" width="160" />
-        <el-table-column
-          :label="t('configChangeLogsTab.colSummary')"
-          min-width="180"
-          show-overflow-tooltip
-        >
+        <el-table-column :label="t('configChangeLogsTab.colSummary')" min-width="180">
           <template #default="{ row }">
-            <span v-if="row.changeSummaryJson" class="mono">{{ row.changeSummaryJson }}</span>
+            <JsonPreviewPopover
+              v-if="row.changeSummaryJson"
+              :data="decodeSummary(row.changeSummaryJson)"
+            />
             <span v-else class="muted">—</span>
           </template>
         </el-table-column>
@@ -112,7 +111,9 @@
   import DatetimeColumn from '@/components/common/DatetimeColumn.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
   import CopyableText from '@/components/common/CopyableText.vue'
+  import JsonPreviewPopover from '@/components/common/JsonPreviewPopover.vue'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
+  import { decodeHtmlEntities } from '@/utils/structuredSummary'
   import type { ConsoleConfigChangeLogResponse } from '@/types/console-api'
 
   const tenant = useTenantStore()
@@ -122,6 +123,10 @@
   const logPage = ref(1)
   const logPageSize = ref(15)
   const pagedLogs = computed(() => toPageResult(logRows.value, logPage.value, logPageSize.value))
+
+  function decodeSummary(value: string): string {
+    return decodeHtmlEntities(value)
+  }
 
   async function loadLogs() {
     await runLoadLogs(async () => {

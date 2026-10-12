@@ -37,6 +37,7 @@
   import { useI18n } from 'vue-i18n'
   import { RefreshCw as Refresh } from '@lucide/vue'
   import EmptyState from '@/components/common/EmptyState.vue'
+  import { userErrorMessage } from '@/utils/userErrorMessage'
   import TableSkeleton from '@/components/table/TableSkeleton.vue'
 
   type EmptyVariant = 'empty' | 'filter-empty' | 'tenant-empty' | 'no-permission' | 'service-down'
@@ -67,7 +68,7 @@
 
   const errorText = computed(() => {
     if (props.errorText?.trim()) return props.errorText.trim()
-    if (props.error instanceof Error) return props.error.message || t('empty.error')
+    if (props.error instanceof Error) return userErrorMessage(props.error, t('empty.error'))
     return t('empty.error')
   })
 

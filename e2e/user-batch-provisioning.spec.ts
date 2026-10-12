@@ -4,12 +4,12 @@ import { expect, test } from '@playwright/test'
 test.use({ storageState: { cookies: [], origins: [] }, serviceWorkers: 'block' })
 
 test.beforeEach(async ({ page }) => {
-  await page.addInitScript(() => {
-    localStorage.setItem(STORAGE_KEYS.session, '1')
-    localStorage.setItem(STORAGE_KEYS.tenantId, 'ta')
-    localStorage.setItem(STORAGE_KEYS.locale, 'zh-CN')
-    localStorage.setItem(STORAGE_KEYS.onboardingDone, '1')
-  })
+  await page.addInitScript((keys) => {
+    localStorage.setItem(keys.session, '1')
+    localStorage.setItem(keys.tenantId, 'ta')
+    localStorage.setItem(keys.locale, 'zh-CN')
+    localStorage.setItem(keys.onboardingDone, '1')
+  }, STORAGE_KEYS)
   await page.route('**/api/console/**', async (route) => {
     const path = new URL(route.request().url()).pathname
     const data = path === '/api/console/auth/me'

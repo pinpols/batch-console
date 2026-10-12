@@ -17,7 +17,7 @@ test.describe('worker management (Worker 管理)', () => {
     await page.goto('/workers/management')
     await expect(page.getByRole('tab', { name: 'Worker 列表' })).toHaveClass(/is-active/)
     await expect(page.getByRole('button', { name: '刷新' }).first()).toBeVisible()
-    await expect(page.locator('.ops-toolbar')).toContainText(/刚刚更新|\d+ 秒前更新|\d+ 分钟前更新/)
+    await expect(page.locator('.ops-toolbar')).toContainText(/实时|刚刚更新|\d+ 秒前更新|\d+ 分钟前更新/)
   })
 
   test('文件渠道仅在打开标签后加载', async ({ page }) => {

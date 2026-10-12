@@ -88,6 +88,7 @@
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
   import { todayBusinessDate } from '@/utils/datetime'
+  import { userErrorMessage } from '@/utils/userErrorMessage'
   import {
     dryRunApi,
     type DryRunLevel,
@@ -179,7 +180,7 @@
       }
     } catch (err) {
       // dryRunApi 内层 unwrap throws(BE 业务 4xx);axios 全局 toast 仅覆盖外层 envelope。
-      ElMessage.error(err instanceof Error ? err.message : String(err))
+      ElMessage.error(userErrorMessage(err))
     } finally {
       running.value = false
     }

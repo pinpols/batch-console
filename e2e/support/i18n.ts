@@ -11,13 +11,14 @@ export function localized(zhCN: string | RegExp, enUS: string | RegExp): Localiz
 }
 
 export async function setE2eLocale(page: Page, locale: E2eLocale): Promise<void> {
-  await page.evaluate((nextLocale) => {
-    localStorage.setItem(STORAGE_KEYS.locale, nextLocale)
-  }, locale)
+  await page.evaluate(
+    ({ localeKey, nextLocale }) => localStorage.setItem(localeKey, nextLocale),
+    { localeKey: STORAGE_KEYS.locale, nextLocale: locale },
+  )
 }
 
 export async function currentE2eLocale(page: Page): Promise<E2eLocale> {
-  const locale = await page.evaluate(() => localStorage.getItem(STORAGE_KEYS.locale))
+  const locale = await page.evaluate((localeKey) => localStorage.getItem(localeKey), STORAGE_KEYS.locale)
   return locale === 'en-US' ? 'en-US' : 'zh-CN'
 }
 

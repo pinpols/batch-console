@@ -17,6 +17,7 @@
 <script setup lang="ts">
   import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
   import DataState from '@/components/common/DataState.vue'
+  import { userErrorMessage } from '@/utils/userErrorMessage'
   import { loadMermaid } from '@/utils/mermaid'
   import { clearTrustedSvg, setTrustedMermaidSvg } from '@/utils/trustedMermaidSvg'
   import {
@@ -97,7 +98,7 @@
       await nextTick()
       setTrustedMermaidSvg(graphRef.value, svg)
     } catch (err: unknown) {
-      renderError.value = err instanceof Error ? err.message : String(err)
+      renderError.value = userErrorMessage(err)
     }
   }
 

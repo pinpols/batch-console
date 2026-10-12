@@ -30,16 +30,17 @@ async function globalTeardown() {
     console.warn('[global-teardown] no user.json storage, skip cleanup')
     return
   }
-  let cookie = ''
+  let cookies = []
   try {
     const state = JSON.parse(fs.readFileSync(stateFile, 'utf8'))
-    const tk = (state.cookies || []).find((c) => c.name === 'batch_console_token')
-    if (tk) cookie = `${tk.name}=${tk.value}`
+    cookies = (state.cookies || []).filter((c) => ['batch_console_token', 'XSRF-TOKEN'].includes(c.name))
   } catch (e) {
     console.warn('[global-teardown] failed to parse storage state:', e.message)
     return
   }
-  if (!cookie) {
+  const cookieHeader = cookies.map((cookie) => `${cookie.name}=${cookie.value}`).join('; ')
+  const csrfToken = cookies.find((cookie) => cookie.name === 'XSRF-TOKEN')?.value
+  if (!cookieHeader.includes('batch_console_token=')) {
     console.warn('[global-teardown] no admin cookie, skip cleanup')
     return
   }
@@ -50,7 +51,11 @@ async function globalTeardown() {
     const url = `${API_BASE}/api/console/admin/test-data?prefix=${encodeURIComponent(PREFIX)}`
     const res = await fetch(url, {
       method: 'DELETE',
-      headers: { Cookie: cookie, 'X-Tenant-Id': 'system' },
+      headers: {
+        Cookie: cookieHeader,
+        'X-Tenant-Id': 'system',
+        ...(csrfToken ? { 'X-XSRF-TOKEN': csrfToken } : {}),
+      },
       signal: controller.signal,
     })
     if (!res.ok) {

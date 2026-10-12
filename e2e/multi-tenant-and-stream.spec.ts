@@ -92,7 +92,7 @@ test.describe('SSE / 长连接 — 基础烟测', () => {
     try {
       await page.goto('/ops/summary', { timeout: 10000 })
       // 跑一遍切租户:从默认 ta 切到 tx
-      await page.evaluate(() => localStorage.setItem(STORAGE_KEYS.tenantId, 'tx'))
+      await page.evaluate((tenantKey) => localStorage.setItem(tenantKey, 'tx'), STORAGE_KEYS.tenantId)
       await page.reload({ timeout: 10000 })
       // 等页面稳定
       await page.waitForLoadState('networkidle', { timeout: 8000 }).catch(() => undefined)

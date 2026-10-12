@@ -130,6 +130,7 @@
   import { useAutoRefresh } from '@/composables/useAutoRefresh'
   import { useSmartBack } from '@/composables/useSmartBack'
   import { loadMermaid } from '@/utils/mermaid'
+  import { userErrorMessage } from '@/utils/userErrorMessage'
   import {
     workflowRunMermaidClassDefs,
     workflowRunStatusClass,
@@ -206,7 +207,7 @@
       await renderMermaid(applyStateOverlay(mermaidText.value, nodeRuns))
       attachNodeClicks()
     } catch (err: unknown) {
-      errorMessage.value = err instanceof Error ? err.message : String(err)
+      errorMessage.value = userErrorMessage(err)
     } finally {
       loading.value = false
     }
@@ -288,9 +289,7 @@
       await nextTick()
       setTrustedMermaidSvg(graphRef.value, svg)
     } catch (err: unknown) {
-      errorMessage.value =
-        t('mobile.workflowViewer.renderFailPrefix') +
-        (err instanceof Error ? err.message : String(err))
+      errorMessage.value = t('mobile.workflowViewer.renderFailPrefix') + userErrorMessage(err)
     }
   }
 

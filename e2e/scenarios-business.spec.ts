@@ -23,10 +23,18 @@ const idem = () => `e2e-scenario-${ts()}-${rand()}`
 
 async function loadStateRequest(file: string, headers: Record<string, string> = {}) {
   const { request } = await import('@playwright/test')
+  const state = JSON.parse(fs.readFileSync(file, 'utf8')) as {
+    cookies?: Array<{ name: string; value: string }>
+  }
+  const csrfToken = state.cookies?.find((cookie) => cookie.name === 'XSRF-TOKEN')?.value
   return request.newContext({
     baseURL: API_BASE_URL,
     storageState: file,
-    extraHTTPHeaders: { 'Content-Type': 'application/json', ...headers },
+    extraHTTPHeaders: {
+      'Content-Type': 'application/json',
+      ...(csrfToken ? { 'X-XSRF-TOKEN': csrfToken } : {}),
+      ...headers,
+    },
   })
 }
 

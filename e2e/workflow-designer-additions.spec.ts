@@ -2,7 +2,7 @@
  * Workflow 设计器新增能力 e2e(本会话 A/C 组:快捷键帮助面板 + 节点搜索框)。
  * 每条用例通过 API 创建隔离工作流后直达设计器，避免依赖共享 seed 或列表首行状态。
  */
-import { enterDemoApp, expect, test } from './support/app'
+import { csrfHeaders, enterDemoApp, expect, test } from './support/app'
 
 async function openDesigner(page): Promise<void> {
   const stamp = `${Date.now()}_${Math.random().toString(36).slice(2, 7)}`
@@ -11,6 +11,7 @@ async function openDesigner(page): Promise<void> {
       'Content-Type': 'application/json',
       'X-Tenant-Id': 'ta',
       'Idempotency-Key': `e2e-wfd-tools-${stamp}`,
+      ...(await csrfHeaders(page.request)),
     },
     data: {
       tenantId: 'ta',

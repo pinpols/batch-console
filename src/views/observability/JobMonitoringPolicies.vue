@@ -180,6 +180,7 @@
   import ScheduledPolicySummary from './components/ScheduledPolicySummary.vue'
   import PolicyValue from './components/JobMonitoringPolicyValue.vue'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
+  import { userErrorMessage } from '@/utils/userErrorMessage'
 
   type Severity = 'WARN' | 'ERROR' | 'CRITICAL'
   interface PolicyForm {
@@ -275,7 +276,7 @@
       if (requestSequence !== loadSequence || tenant.tenantId !== requestTenantId) return
       rows.value = []
       total.value = 0
-      loadError.value = error instanceof Error ? error.message : t('jobMonitoringPolicy.loadFailed')
+      loadError.value = userErrorMessage(error, t('jobMonitoringPolicy.loadFailed'))
     } finally {
       if (requestSequence === loadSequence) loading.value = false
     }
@@ -331,7 +332,7 @@
       ElMessage.success(t('jobMonitoringPolicy.saveSuccess'))
       await load()
     } catch (error) {
-      ElMessage.error(error instanceof Error ? error.message : t('jobMonitoringPolicy.saveFailed'))
+      ElMessage.error(userErrorMessage(error, t('jobMonitoringPolicy.saveFailed')))
     } finally {
       saving.value = false
     }

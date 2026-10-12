@@ -25,7 +25,7 @@
   },
   "src/views/governance/QueueConfig.vue": {
     "fixedPx": 10,
-    "lines": 1350,
+    "lines": 1357,
     "overlays": 5,
     "tableTags": 31
   },
@@ -37,7 +37,7 @@
   },
   "src/views/scheduler/SchedulerSnapshot.vue": {
     "fixedPx": 12,
-    "lines": 922,
+    "lines": 934,
     "overlays": 0,
     "tableTags": 39
   },

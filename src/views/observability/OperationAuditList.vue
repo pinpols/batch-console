@@ -154,14 +154,9 @@
             <span v-else>—</span>
           </template>
         </el-table-column>
-        <el-table-column
-          prop="params"
-          :label="t('operationAuditList.colParams')"
-          min-width="220"
-          show-overflow-tooltip
-        >
+        <el-table-column prop="params" :label="t('operationAuditList.colParams')" min-width="220">
           <template #default="{ row }">
-            <code v-if="row.params" class="params-cell">{{ row.params }}</code>
+            <JsonPreviewPopover v-if="row.params" :data="row.params" />
             <span v-else class="muted">—</span>
           </template>
         </el-table-column>
@@ -200,6 +195,7 @@
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import ProTable from '@/components/table/ProTable.vue'
   import DatetimeColumn from '@/components/common/DatetimeColumn.vue'
+  import JsonPreviewPopover from '@/components/common/JsonPreviewPopover.vue'
 
   const { t } = useI18n({ useScope: 'global' })
 

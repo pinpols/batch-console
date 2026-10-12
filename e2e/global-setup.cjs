@@ -77,8 +77,16 @@ function buildAuthHeaders(token, cookies) {
   if (token) headers.Authorization = `Bearer ${token}`
   if (Array.isArray(cookies) && cookies.length > 0) {
     headers.Cookie = cookies.map((c) => `${c.name}=${c.value}`).join('; ')
+    const csrfToken = csrfTokenFromCookies(cookies)
+    if (csrfToken) headers['X-XSRF-TOKEN'] = csrfToken
   }
   return headers
+}
+
+function csrfTokenFromCookies(cookies) {
+  return Array.isArray(cookies)
+    ? cookies.find((cookie) => cookie.name === 'XSRF-TOKEN')?.value
+    : undefined
 }
 
 function getSetCookies(response) {
@@ -232,6 +240,9 @@ async function changeRolePassword(login, currentPassword, newPassword) {
     headers: {
       'Content-Type': 'application/json',
       Cookie: login.cookies.map((cookie) => `${cookie.name}=${cookie.value}`).join('; '),
+      ...(csrfTokenFromCookies(login.cookies)
+        ? { 'X-XSRF-TOKEN': csrfTokenFromCookies(login.cookies) }
+        : {}),
     },
     body: JSON.stringify({ currentPassword, newPassword }),
   })

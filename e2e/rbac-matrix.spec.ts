@@ -279,10 +279,21 @@ for (const role of ROLE_KEYS) {
       for (const path of expected.excludes) expect(paths).not.toContain(path)
     })
 
+    test('租户切换器使用的租户列表与角色边界一致', async ({ request }) => {
+      const response = await request.get('/api/console/tenants?pageNo=1&pageSize=1', {
+        headers: { 'X-Tenant-Id': ROLE_TENANT[role] },
+        failOnStatusCode: false,
+      })
+      const expectedStatus = role === 'tenantUser' ? 403 : 200
+      expect(response.status(), `${ROLE_LABEL[role]} GET /tenants`).toBe(expectedStatus)
+    })
+
     for (const ep of ENDPOINTS) {
       const expected = ep.expect[role]
       const verdict = expected ? '✅ 允许' : '❌ 拒绝'
       test(`${ep.key} → 期望 ${verdict}`, async ({ request }) => {
+        const { cookies } = await request.storageState()
+        const csrfToken = cookies.find((cookie) => cookie.name === 'XSRF-TOKEN')?.value
         const targetTenant = ROLE_TARGET_TENANT[role]
         const url = ep.url(targetTenant)
         const idemKey = `e2e-rbac-${ts()}-${rand()}`
@@ -291,6 +302,7 @@ for (const role of ROLE_KEYS) {
             'Content-Type': 'application/json',
             'X-Tenant-Id': ROLE_TENANT[role],
             'Idempotency-Key': idemKey,
+            ...(csrfToken ? { 'X-XSRF-TOKEN': csrfToken } : {}),
           },
           data: ep.body ? ep.body(targetTenant) : undefined,
           failOnStatusCode: false,
@@ -322,12 +334,15 @@ test.describe('跨租户越权', () => {
   })
 
   test('TENANT_USER 用自身 cookie 调他租户的写接口 → 应 403/404 不应 200', async ({ request }) => {
+    const { cookies } = await request.storageState()
+    const csrfToken = cookies.find((cookie) => cookie.name === 'XSRF-TOKEN')?.value
     // op-tx 属 tx 租户,试图操作 ta 的资源
     const res = await request.post('/api/console/queues', {
       headers: {
         'Content-Type': 'application/json',
         'X-Tenant-Id': 'ta',
         'Idempotency-Key': `e2e-cross-tenant-${ts()}`,
+        ...(csrfToken ? { 'X-XSRF-TOKEN': csrfToken } : {}),
       },
       data: {
         tenantId: 'ta',

@@ -16,7 +16,7 @@
  * 数据:每次创建独立 e2e 工作流，仅改节点坐标后保存；global-teardown 按 prefix=e2e 清理。
  */
 
-import { test, expect } from './support/app'
+import { csrfHeaders, test, expect } from './support/app'
 import { enterDemoApp } from './support/app'
 
 test.describe('@workflow-designer-save 工作流设计器保存流', () => {
@@ -34,6 +34,7 @@ test.describe('@workflow-designer-save 工作流设计器保存流', () => {
         'Content-Type': 'application/json',
         'X-Tenant-Id': 'ta',
         'Idempotency-Key': `e2e-wfd-save-create-${stamp}`,
+        ...(await csrfHeaders(page.request)),
       },
       data: {
         tenantId: 'ta',

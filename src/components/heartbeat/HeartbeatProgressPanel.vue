@@ -2,7 +2,7 @@
   <div class="hb-panel">
     <div class="hb-panel__head">
       <div class="hb-panel__title">
-        <span>{{ t('heartbeatPanel.title', { taskId }) }}</span>
+        <span>{{ t('heartbeatPanel.title') }}</span>
         <el-tag v-if="details?.cancelRequested" size="small" type="warning" effect="plain">
           {{ t('heartbeatPanel.cancelRequested') }}
         </el-tag>
@@ -16,11 +16,12 @@
         </el-tag>
       </div>
       <div class="hb-panel__actions">
+        <span class="hb-panel__auto-refresh-label">{{ t('heartbeatPanel.autoRefresh') }}</span>
         <el-switch
           v-model="autoRefresh"
-          :active-text="t('heartbeatPanel.autoRefresh')"
           inline-prompt
           size="small"
+          :aria-label="t('heartbeatPanel.autoRefresh')"
         />
         <el-button :icon="Refresh" :loading="loading" size="small" @click="load">
           {{ t('common.refresh') }}
@@ -28,8 +29,14 @@
       </div>
     </div>
 
-    <div v-if="loadError" class="hb-panel__row">
-      <el-alert type="error" show-icon :closable="false" :title="t('heartbeatPanel.loadError')" />
+    <div v-if="loadError" class="hb-panel__notice hb-panel__notice--error" role="alert">
+      <div class="hb-panel__notice-copy">
+        <strong>{{ t('heartbeatPanel.loadError') }}</strong>
+        <span>{{ t('heartbeatPanel.loadErrorBody') }}</span>
+      </div>
+      <el-button size="small" :loading="loading" @click="load">
+        {{ t('common.retry') }}
+      </el-button>
     </div>
 
     <div v-else-if="loading && !details" class="hb-panel__row">
@@ -37,9 +44,12 @@
     </div>
 
     <div v-else-if="notFound" class="hb-panel__row">
-      <el-alert type="info" show-icon :closable="false" :title="t('heartbeatPanel.notFoundTitle')">
-        <template #default>{{ t('heartbeatPanel.notFoundBody') }}</template>
-      </el-alert>
+      <div class="hb-panel__notice" role="status">
+        <div class="hb-panel__notice-copy">
+          <strong>{{ t('heartbeatPanel.notFoundTitle') }}</strong>
+          <span>{{ t('heartbeatPanel.notFoundBody') }}</span>
+        </div>
+      </div>
     </div>
 
     <template v-else-if="details">
@@ -58,16 +68,13 @@
       <div v-if="details.details" class="hb-panel__details">
         <JsonPreview :data="details.details" />
       </div>
-      <el-alert
-        v-else
-        type="info"
-        show-icon
-        :closable="false"
-        class="hb-panel__row"
-        :title="t('heartbeatPanel.noDetailsTitle')"
-      >
-        <template #default>{{ t('heartbeatPanel.noDetailsBody') }}</template>
-      </el-alert>
+      <div v-else class="hb-panel__notice" role="status">
+        <span class="hb-panel__notice-mark" aria-hidden="true"><InfoIcon :size="16" /></span>
+        <div class="hb-panel__notice-copy">
+          <strong>{{ t('heartbeatPanel.noDetailsTitle') }}</strong>
+          <span>{{ t('heartbeatPanel.noDetailsBody') }}</span>
+        </div>
+      </div>
     </template>
   </div>
 </template>
@@ -75,7 +82,7 @@
 <script setup lang="ts">
   import { ref, computed, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { RefreshCw as Refresh } from '@lucide/vue'
+  import { Info as InfoIcon, RefreshCw as Refresh } from '@lucide/vue'
   import JsonPreview from '@/components/common/JsonPreview.vue'
   import { fmtDatetime } from '@/utils/datetime'
   import { useAutoRefresh } from '@/composables/useAutoRefresh'
@@ -160,6 +167,7 @@
     justify-content: space-between;
     gap: 8px;
     flex-wrap: wrap;
+    min-height: 32px;
   }
 
   .hb-panel__title {
@@ -173,7 +181,12 @@
   .hb-panel__actions {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
+  }
+
+  .hb-panel__auto-refresh-label {
+    font-size: 12px;
+    color: var(--color-text-secondary);
   }
 
   .hb-panel__progress {
@@ -189,6 +202,53 @@
     margin-block: 4px;
   }
 
+  .hb-panel__notice {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 64px;
+    padding: 12px 16px;
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-content);
+    background: var(--color-bg-subtle);
+  }
+
+  .hb-panel__notice--error {
+    justify-content: space-between;
+    border-color: color-mix(in srgb, var(--color-danger) 35%, var(--color-border));
+    background: color-mix(in srgb, var(--color-danger) 8%, var(--color-bg-subtle));
+  }
+
+  .hb-panel__notice-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  .hb-panel__notice-copy strong {
+    color: var(--color-text-primary);
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .hb-panel__notice-copy span {
+    color: var(--color-text-secondary);
+    font-size: 12px;
+    line-height: 1.6;
+  }
+
+  .hb-panel__notice-mark {
+    display: grid;
+    flex: 0 0 24px;
+    width: 24px;
+    height: 24px;
+    place-items: center;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--color-primary) 12%, var(--color-bg-subtle));
+    color: var(--color-info);
+  }
+
   .hb-panel__details {
     max-height: 360px;
     overflow: auto;
@@ -196,5 +256,21 @@
 
   .muted {
     color: var(--color-text-tertiary);
+  }
+
+  @media (max-width: 600px) {
+    .hb-panel__head {
+      align-items: flex-start;
+    }
+
+    .hb-panel__actions {
+      width: 100%;
+      justify-content: space-between;
+    }
+
+    .hb-panel__notice--error {
+      align-items: flex-start;
+      flex-direction: column;
+    }
   }
 </style>

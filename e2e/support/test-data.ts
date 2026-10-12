@@ -4,12 +4,15 @@ export async function createDraftConfigRelease(
   request: APIRequestContext,
   tenantId = 'ta',
 ): Promise<{ id: number; configKey: string }> {
+  const { cookies } = await request.storageState()
+  const csrfToken = cookies.find((cookie) => cookie.name === 'XSRF-TOKEN')?.value
   const suffix = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
   const configKey = `e2e_ui_release_${suffix.replaceAll('-', '_')}`
   const response = await request.post('/api/console/config/releases', {
     headers: {
       'X-Tenant-Id': tenantId,
       'Idempotency-Key': `e2e-config-release-${suffix}`,
+      ...(csrfToken ? { 'X-XSRF-TOKEN': csrfToken } : {}),
     },
     data: {
       tenantId,
@@ -50,11 +53,14 @@ export async function createPendingApproval(
   label: string,
   tenantId = 'ta',
 ): Promise<string> {
+  const { cookies } = await request.storageState()
+  const csrfToken = cookies.find((cookie) => cookie.name === 'XSRF-TOKEN')?.value
   const suffix = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
   const response = await request.post('/api/console/self-service/jobs/rerun-request', {
     headers: {
       'X-Tenant-Id': tenantId,
       'Idempotency-Key': `e2e-approval-${label}-${suffix}`,
+      ...(csrfToken ? { 'X-XSRF-TOKEN': csrfToken } : {}),
     },
     data: {
       tenantId,

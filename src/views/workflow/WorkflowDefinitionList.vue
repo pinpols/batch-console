@@ -378,6 +378,7 @@
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
+  import { userErrorMessage } from '@/utils/userErrorMessage'
   import MetaSelect from '@/components/common/MetaSelect.vue'
   import type {
     ConsoleWorkflowDefinitionResponse,
@@ -418,7 +419,7 @@
       detailMermaidLoadedForId.value = def.id
     } catch (err: unknown) {
       detailMermaidText.value = ''
-      detailMermaidError.value = err instanceof Error ? err.message : String(err)
+      detailMermaidError.value = userErrorMessage(err)
     } finally {
       detailMermaidLoading.value = false
     }

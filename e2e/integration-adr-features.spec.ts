@@ -14,11 +14,21 @@
  */
 import { test, expect } from './support/app'
 
+async function csrfHeader(request: import('@playwright/test').APIRequestContext) {
+  const { cookies } = await request.storageState()
+  const token = cookies.find((cookie) => cookie.name === 'XSRF-TOKEN')?.value
+  return token ? { 'X-XSRF-TOKEN': token } : {}
+}
+
 test.describe('@integration ADR-026 dry-run', () => {
   test('FE dryRunApi.plan 双层 envelope 解析正确 + severity 字段读得到', async ({ request }) => {
     // 直接走 APIRequestContext(同登录态),验证 BE 返回的 wire 格式
     const resp = await request.post('/api/console/ops/dry-run/plan', {
-      headers: { 'X-Tenant-Id': 'ta', 'Content-Type': 'application/json' },
+      headers: {
+        'X-Tenant-Id': 'ta',
+        'Content-Type': 'application/json',
+        ...(await csrfHeader(request)),
+      },
       data: {
         tenantId: 'ta',
         jobCode: 'TA_IMPORT_CUSTOMER',
@@ -51,22 +61,36 @@ test.describe('@integration ADR-026 dry-run', () => {
 
 test.describe('@integration ADR-020 batch-day-replay', () => {
   test('FE batchDayReplayApi.submit 业务 404 友好显示', async ({ request }) => {
-    // 用一个肯定没有 instance 的日期 → BE 返 HTTP 404 + NOT_FOUND envelope
+    // 提交必须绑定同一请求的预览凭证；未来随机日期保证无实例且不撞已有会话。
+    const bizDate = `2099-12-${String(1 + Math.floor(Math.random() * 28)).padStart(2, '0')}`
+    const submission = {
+      tenantId: 'ta',
+      calendarCode: 'ta-default-calendar',
+      bizDate,
+      scope: 'ALL',
+      reason: '[E2E integration] BE NOT_FOUND',
+      requestedBy: 'admin',
+      autoApprove: false,
+    }
+    const preview = await request.post('/api/console/ops/batch-day-replay/sessions/preview', {
+      headers: {
+        'X-Tenant-Id': 'ta',
+        'Content-Type': 'application/json',
+        ...(await csrfHeader(request)),
+      },
+      data: submission,
+    })
+    expect(preview.status()).toBe(200)
+    const previewBody = (await preview.json()) as { data?: { previewToken?: string } }
+    expect(previewBody.data?.previewToken).toBeTruthy()
     const resp = await request.post('/api/console/ops/batch-day-replay/sessions', {
       headers: {
         'X-Tenant-Id': 'ta',
         'Content-Type': 'application/json',
         'Idempotency-Key': `e2e-integ-${Date.now()}`,
+        ...(await csrfHeader(request)),
       },
-      data: {
-        tenantId: 'ta',
-        calendarCode: 'default',
-        bizDate: '2099-01-01',
-        scope: 'ALL',
-        reason: '[E2E integration] BE NOT_FOUND',
-        requestedBy: 'admin',
-        autoApprove: false,
-      },
+      data: { ...submission, previewToken: previewBody.data?.previewToken },
       failOnStatusCode: false,
     })
     expect(resp.status()).toBe(404)
@@ -78,30 +102,43 @@ test.describe('@integration ADR-020 batch-day-replay', () => {
   })
 
   test('FE submit 真实成功路径(自动 approve)', async ({ request }) => {
-    // 找一个真实有 instance 的 bizDate(2026-05-19 from psql)
+    // 用真实默认库的业务日预览，再将凭证绑定到提交请求；候选可能因库状态而为空。
+    const submission = {
+      tenantId: 'ta',
+      calendarCode: 'ta-default-calendar',
+      bizDate: '2026-05-19',
+      scope: 'ALL',
+      reason: '[E2E integration] success path',
+      requestedBy: 'admin',
+      autoApprove: true,
+    }
+    const preview = await request.post('/api/console/ops/batch-day-replay/sessions/preview', {
+      headers: {
+        'X-Tenant-Id': 'ta',
+        'Content-Type': 'application/json',
+        ...(await csrfHeader(request)),
+      },
+      data: submission,
+    })
+    expect(preview.status()).toBe(200)
+    const previewBody = (await preview.json()) as { data?: { previewToken?: string } }
+    expect(previewBody.data?.previewToken).toBeTruthy()
     const resp = await request.post('/api/console/ops/batch-day-replay/sessions', {
       headers: {
         'X-Tenant-Id': 'ta',
         'Content-Type': 'application/json',
         'Idempotency-Key': `e2e-integ-${Date.now()}`,
+        ...(await csrfHeader(request)),
       },
-      data: {
-        tenantId: 'ta',
-        calendarCode: 'ta-default-calendar',
-        bizDate: '2026-05-19',
-        scope: 'ALL',
-        reason: '[E2E integration] success path',
-        requestedBy: 'admin',
-        autoApprove: true,
-      },
+      data: { ...submission, previewToken: previewBody.data?.previewToken },
       failOnStatusCode: false,
     })
     // 期望:
     //   200 + SUCCESS = 创建成功(BE 找到候选)
-    //   404 + NOT_FOUND = ta 2026-05-19 实际没可重放(legal 退化)
-    // 任一都证明 FE-3 API 契约对(只要不是 5xx 或 4xx 非 NOT_FOUND)
-    expect([200, 404]).toContain(resp.status())
+    //   404 + NOT_FOUND = 当前默认库该业务日无候选
+    //   409 + STATE_CONFLICT = 默认库已有同业务日活动会话
+    expect([200, 404, 409]).toContain(resp.status())
     const body = await resp.json()
-    expect(['SUCCESS', 'NOT_FOUND']).toContain(body.code)
+    expect(['SUCCESS', 'NOT_FOUND', 'STATE_CONFLICT']).toContain(body.code)
   })
 })

@@ -520,6 +520,7 @@
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
   import { getMetaBizTypes, type MetaOption } from '@/api/meta'
+  import { userErrorMessage } from '@/utils/userErrorMessage'
   import MetaSelect from '@/components/common/MetaSelect.vue'
   import CodeNameBuilder from '@/components/common/CodeNameBuilder.vue'
   import {
@@ -682,7 +683,7 @@
   }
 
   function handleValidationError(err: unknown) {
-    if (err instanceof Error) ElMessage.warning(err.message)
+    if (err instanceof Error) ElMessage.warning(userErrorMessage(err))
   }
   // templateType 走后端 enum(完整候选);未到达时 fallback 到 rows 派生
   const { data: metaEnums } = useConsoleMetaEnumsQuery()

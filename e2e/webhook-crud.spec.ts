@@ -28,7 +28,7 @@ test.describe('Webhook CRUD', () => {
     // 名称 / URL / 事件类型 — 用 form-item filter 定位,避开 getByLabel 在列表筛选区的歧义
     const dialog = page.locator('.el-dialog:visible, .el-drawer:visible')
     await dialog.locator('.el-form-item').filter({ hasText: '名称' }).locator('input').first().fill(uniqueName)
-    await dialog.locator('.el-form-item').filter({ hasText: 'URL' }).locator('input').first().fill('https://example.com/test-hook')
+    await dialog.locator('.el-form-item').filter({ hasText: 'URL' }).locator('input').first().fill('https://github.com/webhook')
     await dialog.locator('.el-form-item').filter({ hasText: '事件类型' }).locator('input,textarea').first().fill('JOB_SUCCEEDED')
 
     // 验证 fill 成功(debug 防御:如果输入失败,提前明确报错)
@@ -44,9 +44,8 @@ test.describe('Webhook CRUD', () => {
     await expect(row).toHaveCount(1)
 
     // —— 删除清理 ——
-    const deleteBtn = row.getByRole('button', { name: /删除|吊销/ }).first()
-    await expect(deleteBtn).toBeVisible()
-    await deleteBtn.click()
+    await row.locator('.row-actions__more').click()
+    await page.getByRole('menuitem', { name: /删除/ }).click()
     await expect(page.locator('.el-message-box')).toBeVisible()
     await page
       .locator('.el-message-box')

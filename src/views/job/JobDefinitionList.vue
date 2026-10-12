@@ -319,7 +319,7 @@
               :class="{ 'jd-field--wide': field.wide }"
             >
               <div class="jd-field__label">{{ field.label }}</div>
-              <pre v-if="field.json" class="jd-field__json">{{ field.value }}</pre>
+              <JsonPreview v-if="field.json" :data="field.value" />
               <div v-else class="jd-field__value" :class="{ 'is-mono': field.mono }">
                 {{ field.value }}
               </div>
@@ -656,6 +656,7 @@
   import { showCreateSuccess } from '@/composables/useCreateSuccess'
   import PageContainer from '@/components/common/PageContainer.vue'
   import JobConfigBasicForm from './components/JobConfigBasicForm.vue'
+  import JsonPreview from '@/components/common/JsonPreview.vue'
   import JobDefinitionDrawer from './components/JobDefinitionDrawer.vue'
   import CronExprInput from '@/components/common/CronExprInput.vue'
   import JobRelatedFilesTab from './components/JobRelatedFilesTab.vue'
@@ -695,13 +696,21 @@
   const scheduleTypeOptions = ref<MetaOption[]>([])
   const filters = reactive({
     tenantId: tenant.tenantId,
-    jobCode: '',
+    jobCode: typeof route.query.jobCode === 'string' ? route.query.jobCode : '',
     jobName: '',
     enabled: undefined as boolean | undefined,
     workerGroup: '',
     queueCode: '',
     scheduleType: '',
   })
+  watch(
+    () => route.query.jobCode,
+    (jobCode) => {
+      if (typeof jobCode !== 'string' || jobCode === filters.jobCode) return
+      filters.jobCode = jobCode
+      page.value = 1
+    },
+  )
 
   const filterTenantRef = computed(() => filters.tenantId)
   // 服务端过滤参数：后端 queryJobDefinitions 仅支持 jobCode / enabled；
@@ -1716,20 +1725,6 @@
   .jd-field__value.is-mono {
     font-family: var(--font-mono);
     font-size: 12px;
-  }
-
-  .jd-field__json {
-    margin: 5px 0 0;
-    font-family: var(--font-mono);
-    font-size: 12px;
-    color: var(--color-text-secondary);
-    white-space: pre-wrap;
-    word-break: break-all;
-    background: var(--input-bg);
-    padding: 8px 10px;
-    border-radius: 7px;
-    max-height: 200px;
-    overflow: auto;
   }
 
   .queue-field {

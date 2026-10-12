@@ -6,15 +6,25 @@ import type {
   SchedulerCommandResponse,
 } from '@/types/console-api'
 
-export function getSchedulerSnapshot(tenantId: string) {
-  return get<ConsoleSchedulerSnapshotResponse>('/api/console/scheduler/snapshot', { tenantId })
+export function getSchedulerSnapshot(tenantId: string, silent = false) {
+  const config = silent ? ({ _silent: true } as AxiosRequestConfig) : undefined
+  return get<ConsoleSchedulerSnapshotResponse>(
+    '/api/console/scheduler/snapshot',
+    { tenantId },
+    config,
+  )
 }
 
-export function getSchedulerSnapshotHistory(tenantId: string, limit?: number) {
-  return get<ConsoleSchedulerSnapshotHistoryResponse[]>('/api/console/scheduler/snapshot/history', {
-    tenantId,
-    ...(limit != null ? { limit } : {}),
-  })
+export function getSchedulerSnapshotHistory(tenantId: string, limit?: number, silent = false) {
+  const config = silent ? ({ _silent: true } as AxiosRequestConfig) : undefined
+  return get<ConsoleSchedulerSnapshotHistoryResponse[]>(
+    '/api/console/scheduler/snapshot/history',
+    {
+      tenantId,
+      ...(limit != null ? { limit } : {}),
+    },
+    config,
+  )
 }
 
 /** GET /api/console/scheduler/status */

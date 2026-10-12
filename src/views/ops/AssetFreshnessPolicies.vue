@@ -176,6 +176,7 @@
   } from '@/api/assetFreshnessPolicies'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
+  import { userErrorMessage } from '@/utils/userErrorMessage'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
@@ -269,7 +270,7 @@
     } catch (error) {
       rows.value = []
       total.value = 0
-      loadError.value = error instanceof Error ? error.message : t('assetFreshness.loadFailed')
+      loadError.value = userErrorMessage(error, t('assetFreshness.loadFailed'))
     } finally {
       loading.value = false
     }

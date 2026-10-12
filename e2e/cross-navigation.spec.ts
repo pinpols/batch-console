@@ -50,7 +50,7 @@ test.describe('dashboard metric card navigation (指标卡片跳转)', () => {
 
   test('点击在线 Worker 卡片跳转到 Worker 管理', async ({ page }) => {
     await clickMetric(page, '在线 Worker', /\/workers\/management/)
-    await expectPageTitle(page, 'Worker')
+    await expectPageTitle(page, 'Worker 管理')
   })
 
   test('点击 Outbox 重试积压卡片跳转到 Outbox', async ({ page }) => {

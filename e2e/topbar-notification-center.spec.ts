@@ -95,7 +95,7 @@ test.describe('顶栏通知中心', () => {
     await page.reload()
     const banner = page.locator('.degradation-banner')
     await expect(banner).toContainText('15 秒后自动关闭')
-    await banner.locator('.degradation-banner__close').click()
+    await banner.locator('.auto-dismiss-actions__close').click()
     await expect(banner).toHaveCount(0)
 
     await page.reload()
@@ -127,12 +127,65 @@ test.describe('顶栏通知中心', () => {
     const notice = page.locator('.password-notice')
     await expect(notice).toContainText('15 秒后自动关闭')
     await expect(page).toHaveURL(/\/ops\/summary$/)
-    await notice.locator('.password-notice__close').click()
+    await notice.locator('.auto-dismiss-actions__close').click()
     await expect(notice).toHaveCount(0)
 
     await page.reload()
     await expect(notice).toBeVisible()
     await page.clock.runFor(15_000)
     await expect(notice).toHaveCount(0)
+  })
+
+  test('移动端密码与服务降级提示呈 iOS 通知卡片并错位堆叠', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.route('**/api/console/auth/me*', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          code: 'SUCCESS',
+          message: 'ok',
+          data: {
+            username: 'admin',
+            tenantId: 'system',
+            authorities: ['ROLE_ADMIN'],
+            mustChangePassword: true,
+          },
+        }),
+      }),
+    )
+    await page.route('**/api/console/ops/summary*', (route) =>
+      route.fulfill({
+        status: 200,
+        headers: { 'X-Degraded-Source': 'worker' },
+        contentType: 'application/json',
+        body: JSON.stringify({
+          code: 'SUCCESS',
+          message: 'ok',
+          data: { pendingApprovals: 0, openAlerts: 0, criticalAlerts: 0, failedJobs: 0 },
+        }),
+      }),
+    )
+
+    await page.goto('/m/ops/summary')
+    const stack = page.locator('.mobile-notification-stack')
+    const degradation = stack.locator('.degradation-banner')
+    const password = stack.locator('.password-notice')
+    await expect(degradation).toContainText('worker')
+    await expect(password).toBeVisible()
+    const [stackBox, degradationBox, passwordBox] = await Promise.all([
+      stack.boundingBox(),
+      degradation.boundingBox(),
+      password.boundingBox(),
+    ])
+    expect(stackBox).not.toBeNull()
+    expect(degradationBox).not.toBeNull()
+    expect(passwordBox).not.toBeNull()
+    expect(stackBox!.x).toBeGreaterThanOrEqual(0)
+    expect(stackBox!.x + stackBox!.width).toBeLessThanOrEqual(390)
+    expect(passwordBox!.y).toBeGreaterThanOrEqual(degradationBox!.y + degradationBox!.height)
+    expect(await degradation.evaluate((el) => getComputedStyle(el).borderRadius)).not.toBe('0px')
+    await expect(degradation.locator('.auto-dismiss-actions__close')).toBeVisible()
+    await expect(password.locator('.auto-dismiss-actions__close')).toBeVisible()
   })
 })

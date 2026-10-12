@@ -10,9 +10,10 @@ import { logClick } from '@/utils/logger'
  *
  * 值为字符串时直接作为 name;值为对象时取 `action` 字段作 name,其余字段作 props。
  */
-type TrackClickValue = string | { action: string; [key: string]: unknown }
+type TrackClickValue = string | { action: string; [key: string]: unknown } | undefined | null
 
 function handleClick(value: TrackClickValue) {
+  if (value == null) return
   if (typeof value === 'string') {
     logClick(value)
   } else {

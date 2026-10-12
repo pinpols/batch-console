@@ -25,7 +25,7 @@
  *   - 新建模式的元信息 prompt → POST 创建 → 带 id 重开完整链路
  */
 
-import { test, expect } from './support/app'
+import { csrfHeaders, test, expect } from './support/app'
 import { enterDemoApp, isVisible } from './support/app'
 
 const PREFIX = `e2e-wfd-${Date.now()}`
@@ -44,6 +44,7 @@ test.describe('@workflow-designer-smoke 工作流设计器主路径', () => {
         'Content-Type': 'application/json',
         'X-Tenant-Id': 'ta',
         'Idempotency-Key': `e2e-wfd-create-${stamp}`,
+        ...(await csrfHeaders(page.request)),
       },
       data: {
         tenantId: 'ta',
