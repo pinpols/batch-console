@@ -447,34 +447,47 @@
     void router.replace({ query: { ...route.query, traceId: undefined } })
   }
 
-  async function openExternal(target: 'grafana' | 'tempo') {
+  function openExternal(target: 'grafana' | 'tempo') {
     const trace = lastSearchedTrace.value
     if (target === 'tempo' && !/^[0-9a-f]{32}$/i.test(trace)) {
       ElMessage.warning(t('traceDiagnostic.tempoRequiresW3cTraceId'))
       return
     }
-    const base = target === 'grafana' ? 'http://localhost:13000' : 'http://localhost:13200'
-    const probe = target === 'grafana' ? `${base}/api/health` : `${base}/ready`
-    // P2.6 健康检查:先 ping 2s 看观测栈是否启动,挂掉就提示而非直接跳浏览器拒绝连接页
+    const configuredUrl =
+      target === 'grafana' ? import.meta.env.VITE_GRAFANA_URL : import.meta.env.VITE_TEMPO_URL
+    const service = t(
+      target === 'grafana' ? 'degradation.sourceGrafana' : 'degradation.sourceTempo',
+    )
+    let base: URL
     try {
-      await fetch(probe, {
-        method: 'GET',
-        mode: 'no-cors',
-        signal: AbortSignal.timeout(2000),
-      })
+      base = new URL(configuredUrl ?? '')
     } catch {
-      ElMessage.warning(
-        target === 'grafana'
-          ? t('traceDiagnostic.grafanaDown', { url: base })
-          : t('traceDiagnostic.tempoDown', { url: base }),
-      )
+      ElMessage.warning(t('traceDiagnostic.externalPlatformNotConfigured', { service }))
       return
     }
-    const url =
+    if (
+      (base.protocol !== 'http:' && base.protocol !== 'https:') ||
+      base.username ||
+      base.password
+    ) {
+      ElMessage.warning(t('traceDiagnostic.externalPlatformNotConfigured', { service }))
+      return
+    }
+    const basePath = base.pathname.replace(/\/+$/, '')
+    const url = new URL(
       target === 'grafana'
-        ? `${base}/explore?orgId=1&left=${encodeURIComponent(JSON.stringify({ datasource: 'Tempo', queries: [{ query: trace }] }))}`
-        : `${base}/api/traces/${trace}`
-    window.open(url, '_blank', 'noopener')
+        ? `${basePath}/explore`
+        : `${basePath}/api/traces/${encodeURIComponent(trace)}`,
+      base.origin,
+    )
+    if (target === 'grafana') {
+      url.searchParams.set('orgId', '1')
+      url.searchParams.set(
+        'left',
+        JSON.stringify({ datasource: 'Tempo', queries: [{ query: trace }] }),
+      )
+    }
+    window.open(url.toString(), '_blank', 'noopener')
   }
 
   // URL 带 traceId 直接搜

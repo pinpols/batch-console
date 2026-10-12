@@ -7,3 +7,5 @@
 开发代理变量只在本地生效；生产 API 默认使用同源 `/api`。新增变量必须声明阶段、默认值、敏感性和 owner，并同步 `.env` 示例、Docker 构建参数和运行手册。
 
 `VITE_GIT_SHA` 由 CI 注入，用于生成 `/version.json` 并验证 staging 部署版本；本地默认值为 `local`。
+
+`VITE_GRAFANA_URL` 与 `VITE_TEMPO_URL` 是可选的构建期公网地址，仅用于链路诊断页跳转外部观测平台；未配置时页面不访问任何 localhost 服务，并提示联系管理员。两者都必须是用户浏览器可访问的完整 HTTP(S) URL，不得填写内部服务密钥。

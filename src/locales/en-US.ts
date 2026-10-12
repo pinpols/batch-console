@@ -96,7 +96,7 @@ const messages: Messages = {
     endpointNotFoundTitle: 'Endpoint not found',
     endpointNotFoundMessage:
       'This service endpoint is temporarily unavailable. Try again or contact an administrator.',
-    backendUnreachable: 'The service is temporarily unavailable. Please try again later.',
+    backendUnreachable: 'Cannot connect to the Console service. Please try again later.',
     endpointVersionMismatch:
       'This service endpoint is temporarily unavailable. Try again or contact an administrator.',
     networkError: 'Network error',
@@ -1061,9 +1061,20 @@ const messages: Messages = {
     syncStale: 'Maintenance status sync is interrupted and may be stale',
   },
   degradation: {
-    bannerHeadline: 'Some downstream services degraded',
-    bannerMessage:
-      'An affected downstream is unavailable. Displayed data may be incomplete; retry later.',
+    bannerHeadline: 'Service degradation detected',
+    bannerMessage: 'The following services are unavailable; related data may be incomplete:',
+    sourceConsole: 'Console service',
+    sourceTrigger: 'Trigger service',
+    sourceOrchestrator: 'Orchestrator service',
+    sourcePush: 'Notification delivery service',
+    sourceAtomicWorker: 'Atomic executor',
+    sourceWorkerDispatch: 'File dispatch executor',
+    sourceWorkerImport: 'File import executor',
+    sourceWorkerExport: 'File export executor',
+    sourceWorkerProcess: 'Data processing executor',
+    sourceWorkerAtomic: 'Atomic executor',
+    sourceGrafana: 'Logging platform',
+    sourceTempo: 'Tracing platform',
     autoClose: 'Closes in {seconds}s',
   },
   copy: {
@@ -2776,9 +2787,7 @@ const messages: Messages = {
       'The record may be outside the retention window or stored by an external service. Continue in the logs or trace platform.',
     openGrafana: 'Search request logs',
     openTempo: 'View distributed trace',
-    grafanaDown:
-      'Logs platform is down or unreachable: {url}. Start the observability stack first.',
-    tempoDown: 'Trace platform is down or unreachable: {url}. Start the observability stack first.',
+    externalPlatformNotConfigured: '{service} URL is not configured. Contact your administrator.',
     summary: 'traceId "{trace}" — {hits} hits across {domains} domains',
     truncatedWarning:
       'These domains exceed the snapshot limit; showing the first 200 rows: {domains}',
@@ -3649,9 +3658,14 @@ const messages: Messages = {
     actionOffline: 'Force offline',
     actionTakeover: 'Takeover',
     actionWarmup: 'Warm up',
-    drainConfirmTitle: 'Drain',
-    drainConfirmText: 'Initiate drain for {code}?',
-    drainSuccess: 'Drain initiated for {code}',
+    drainConfirmTitle: 'Graceful shutdown',
+    drainConfirmText:
+      'Gracefully shut down executor {code}? It will stop receiving new tasks and finish tasks already accepted.',
+    drainSuccess: 'Graceful shutdown started for executor {code}',
+    offlineWorkersNotice:
+      'Offline executors: {workers} ({count} total). Related jobs may not run. Check executor processes and heartbeat connectivity.',
+    moreOfflineWorkers: '+{count} more',
+    unknownWorker: 'Unnamed executor',
     takeoverConfirmTitle: 'Takeover',
     takeoverConfirmText: 'Take over {code} tasks?',
     takeoverSuccess: 'Took over {code}',

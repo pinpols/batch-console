@@ -22,6 +22,8 @@ services:
         VITE_SENTRY_DSN: ${VITE_SENTRY_DSN:-}
         VITE_TELEMETRY_ENABLED: ${VITE_TELEMETRY_ENABLED:-false}
         VITE_TELEMETRY_ENDPOINT: ${VITE_TELEMETRY_ENDPOINT:-/api/console/telemetry/events}
+        VITE_GRAFANA_URL: ${VITE_GRAFANA_URL:-}
+        VITE_TEMPO_URL: ${VITE_TEMPO_URL:-}
     image: batch-console:latest
     container_name: batch-console
     restart: unless-stopped

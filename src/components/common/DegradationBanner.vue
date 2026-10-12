@@ -6,7 +6,7 @@
     <div class="degradation-banner__text">
       <strong>{{ t('degradation.bannerHeadline') }}</strong>
       <span class="degradation-banner__msg">{{ t('degradation.bannerMessage') }}</span>
-      <span v-for="src in app.activeDegradationSources" :key="src" class="degradation-banner__chip">
+      <span v-for="src in localizedSources" :key="src" class="degradation-banner__chip">
         {{ src }}
       </span>
     </div>
@@ -35,10 +35,19 @@
   import AutoDismissBannerActions from './AutoDismissBannerActions.vue'
 
   const app = useAppStore()
-  const { t } = useI18n({ useScope: 'global' })
+  const { t, te } = useI18n({ useScope: 'global' })
   const dismissed = ref(false)
   const secondsLeft = ref(15)
   const visible = computed(() => app.isDegraded && !dismissed.value)
+  const localizedSources = computed(() =>
+    app.activeDegradationSources.map((source) => {
+      const key = `degradation.source${source
+        .split(/[-_.]/)
+        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+        .join('')}`
+      return te(key) ? t(key) : source
+    }),
+  )
 
   // 每 15s 清理过期源(TTL 60s,15s 间隔保证最长 75s 后隐藏 banner)
   let countdownTimer: ReturnType<typeof setInterval> | null = null

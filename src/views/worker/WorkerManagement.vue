@@ -21,6 +21,19 @@
         </span>
       </button>
     </div>
+    <el-alert
+      v-if="workerStats.offline > 0"
+      class="wk-offline-notice"
+      type="warning"
+      :closable="false"
+      show-icon
+      :title="
+        t('workerManagement.offlineWorkersNotice', {
+          count: workerStats.offline,
+          workers: workerStats.offlineCodes,
+        })
+      "
+    />
 
     <!-- 还原设计:tabs 与内容直铺底色,无外层卡片壳 -->
     <div>
@@ -510,7 +523,25 @@
   const workerStats = computed(() => {
     const all = allWorkerData.value ?? []
     const by = (s: string) => all.filter((x) => String(x.status ?? '').toUpperCase() === s).length
-    return { online: by('ONLINE'), draining: by('DRAINING'), offline: by('OFFLINE') }
+    const offlineRows = all.filter((worker) =>
+      ['OFFLINE', 'DECOMMISSIONED'].includes(String(worker.status ?? '').toUpperCase()),
+    )
+    const offlineCodeList = offlineRows
+      .slice(0, 4)
+      .map((worker) =>
+        String(worker.workerCode ?? worker.workerGroup ?? t('workerManagement.unknownWorker')),
+      )
+    if (offlineRows.length > 4) {
+      offlineCodeList.push(
+        t('workerManagement.moreOfflineWorkers', { count: offlineRows.length - 4 }),
+      )
+    }
+    return {
+      online: by('ONLINE'),
+      draining: by('DRAINING'),
+      offline: offlineRows.length,
+      offlineCodes: offlineCodeList.join(', '),
+    }
   })
 
   function toggleStatusFilter(status: string) {
@@ -796,6 +827,10 @@
     width: 100%;
     min-width: 0;
     margin-bottom: 18px;
+  }
+
+  .wk-offline-notice {
+    margin: 12px 0;
   }
 
   .wk-stat {

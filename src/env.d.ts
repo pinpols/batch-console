@@ -23,6 +23,8 @@ interface ImportMetaEnv {
   /** 前端 telemetry 日志总开关。`'true'` 才启用；默认关闭。 */
   readonly VITE_TELEMETRY_ENABLED?: string
   readonly VITE_TELEMETRY_ENDPOINT?: string
+  readonly VITE_GRAFANA_URL?: string
+  readonly VITE_TEMPO_URL?: string
 }
 
 interface ImportMeta {
