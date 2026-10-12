@@ -36,6 +36,7 @@
 | [AI、使用率与降级交付记录](./backlog/ai-and-usage-statistics-todo-2026-09-29.md)             | AI、使用率与降级交付状态、联测证据和暂缓/不做边界                         |
 | [运行时与依赖版本](./engineering/runtime-versions.md)                                  | Node 运行约束、锁文件和后端权威支持矩阵                           |
 | [CI 依赖治理](./engineering/ci-dependency-governance.md)                              | Action、Runner、Artifact、分批升级、验证与回滚规则                 |
+| [约定与 CI 周期复核](./engineering/convention-drift-review.md)                        | 前端工程和产品约定的人工/AI 复扫；核对 CI 漏扫、误拦和目标环境证据 |
 | [环境变量治理](./engineering/environment-variables.md)                                 | 构建期配置、敏感性和 owner                                        |
 | [注释语言治理](./engineering/comment-language-governance.md)                           | 中文解释性注释、技术标识豁免与本地/CI 门禁                        |
 | [浏览器支持策略](./engineering/browser-support.md)                                     | 桌面/移动支持范围与跨浏览器验收                                   |
