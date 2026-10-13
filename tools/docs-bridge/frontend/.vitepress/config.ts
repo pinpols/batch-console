@@ -428,6 +428,15 @@ export default withMermaid({
           if (/^(backend\/(?:analysis|archive|audit|backlog|compliance|plans|qa|review|sdk|spike|stats|test-data|testing|verifications)|frontend\/(?:archive|reports|redesign|verifications))\//.test(path)) {
             return ''
           }
+          // 带日期的后端设计稿保留页面与标题可搜索，不再把历史正文重复装入浏览器索引。
+          // 无日期的当前设计、API 与运维文档仍保留全文搜索。
+          if (/^backend\/design\/[^/]+-\d{4}-\d{2}-\d{2}\.md$/.test(path)) {
+            const headings = mdSource
+              .split('\n')
+              .filter((line) => /^#{1,3}\s+/.test(line))
+              .join('\n')
+            return md.render(headings, env)
+          }
           if (path.startsWith('frontend/') && !path.startsWith('frontend/user-guide/')) {
             const headings = mdSource
               .split('\n')
