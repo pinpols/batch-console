@@ -25,7 +25,7 @@ export function usePermission() {
    */
   const canMutateConfig = computed(
     () =>
-      (!app.writesFrozen || auth.hasPermission('ROLE_ADMIN')) &&
+      !app.writesFrozen &&
       (auth.hasPermission('ROLE_ADMIN') || auth.hasPermission('ROLE_TENANT_ADMIN')),
   )
 

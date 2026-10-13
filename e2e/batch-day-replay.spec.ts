@@ -17,7 +17,7 @@ test.describe('@batch-day-replay 批次日重放', () => {
   test('ALL scope:打开表单显示默认值', async ({ page }) => {
     await page.getByRole('button', { name: '新建重放' }).first().click()
     // 两个 drawer 都在 DOM(submit + detail),定位到可见的那个
-    const submitDrawer = page.locator('.el-drawer', { hasText: '新建批次日重放' })
+    const submitDrawer = page.locator('.el-drawer:visible', { hasText: '新建批次日重放' })
     await expect(submitDrawer).toBeVisible()
 
     // 不应该显示 SUBSET / OUTPUTS 字段(ALL 是默认 scope)
@@ -28,7 +28,7 @@ test.describe('@batch-day-replay 批次日重放', () => {
 
   test('ALL_FAILED scope:不需要 jobCodes 字段', async ({ page }) => {
     await page.getByRole('button', { name: '新建重放' }).first().click()
-    const d = page.locator('.el-drawer', { hasText: '新建批次日重放' })
+    const d = page.locator('.el-drawer:visible', { hasText: '新建批次日重放' })
     await expect(d).toBeVisible()
     await d.locator('label.el-radio').filter({ hasText: '仅失败项' }).click()
     await expect(d.getByRole('radio', { name: '仅失败项' })).toBeChecked()
@@ -38,7 +38,7 @@ test.describe('@batch-day-replay 批次日重放', () => {
 
   test('SUBSET_JOB_CODES scope:显示 jobCodes 输入框', async ({ page }) => {
     await page.getByRole('button', { name: '新建重放' }).first().click()
-    const d = page.locator('.el-drawer', { hasText: '新建批次日重放' })
+    const d = page.locator('.el-drawer:visible', { hasText: '新建批次日重放' })
     await expect(d).toBeVisible()
     await d.locator('label.el-radio').filter({ hasText: '指定作业' }).click()
     await expect(d.getByRole('radio', { name: '指定作业' })).toBeChecked()
@@ -48,7 +48,7 @@ test.describe('@batch-day-replay 批次日重放', () => {
 
   test('OUTPUTS_ONLY scope:显示 Version IDs 输入框', async ({ page }) => {
     await page.getByRole('button', { name: '新建重放' }).first().click()
-    const d = page.locator('.el-drawer', { hasText: '新建批次日重放' })
+    const d = page.locator('.el-drawer:visible', { hasText: '新建批次日重放' })
     await expect(d).toBeVisible()
     await d.locator('label.el-radio').filter({ hasText: '仅输出结果' }).click()
     await expect(d.getByRole('radio', { name: '仅输出结果' })).toBeChecked()

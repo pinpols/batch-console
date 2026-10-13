@@ -284,9 +284,8 @@ test('作业定义页以新建作业为主入口并保留熟练用户快速表�
   await expect(page.locator('.page-header .title').first()).toBeVisible()
 
   await page.goto('/jobs/definitions')
-  await page.getByRole('button', { name: '其他方式' }).click()
-  await page.getByRole('menuitem', { name: '快速表单（熟练用户）' }).click()
-  await expect(page.getByRole('dialog')).toContainText('新建')
+  await page.getByRole('button', { name: '快速表单' }).click()
+  await expect(page.getByRole('dialog', { name: '新建 · 作业定义' })).toBeVisible()
 })
 
 test('作业向导收敛为六步并在一个可选步骤中呈现关联配置', async ({ page }) => {

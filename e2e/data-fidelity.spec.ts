@@ -48,22 +48,26 @@ for (const pg of PAGES) {
     await enterDemoApp(page)
 
     // 进页前挂上响应捕获:抓第一条命中 listUrl 且 body 是分页结构的响应。
-    const respP = page
-      .waitForResponse(
-        (r) =>
-          pg.listUrl.test(r.url()) &&
-          r.request().method() === 'GET' &&
-          r.status() === 200 &&
-          (r.headers()['content-type'] ?? '').includes('application/json'),
-        { timeout: 12000 },
-      )
-      .catch(() => null)
+    // 响应到达后立即读取正文，避免后续导航和长标题断言使 Chromium 的响应句柄失效。
+    let bodyPromise: Promise<unknown> | null = null
+    const onResponse = (response: import('@playwright/test').Response) => {
+      if (
+        !bodyPromise &&
+        pg.listUrl.test(response.url()) &&
+        response.request().method() === 'GET' &&
+        response.status() === 200 &&
+        (response.headers()['content-type'] ?? '').includes('application/json')
+      ) {
+        bodyPromise = response.json()
+      }
+    }
+    page.on('response', onResponse)
 
     await page.goto(pg.path)
     await expectPageTitle(page, pg.title)
-    const resp = await respP
-    expect(resp, `未捕获到 ${pg.path} 的 JSON 列表响应`).not.toBeNull()
-    const body = await resp!.json()
+    page.off('response', onResponse)
+    expect(bodyPromise, `未捕获到 ${pg.path} 的 JSON 列表响应`).not.toBeNull()
+    const body = await bodyPromise!
     // 解析分页结构:data.items(主流)/ data.records / data 直接是数组。
     const data = (body as { data?: unknown })?.data as
       | { items?: unknown[]; records?: unknown[]; total?: number }

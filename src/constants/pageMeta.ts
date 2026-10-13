@@ -205,6 +205,10 @@ export const pageMetaByPath = {
     title: '系统参数',
     description: '维护系统级参数键值,控制平台运行开关。',
   },
+  '/system/maintenance': {
+    title: '维护设置',
+    description: '切换全冻结或只读维护，设置维护公告和预计恢复时间。',
+  },
   '/system/api-keys': {
     title: 'API Key',
     description: '创建、查看和吊销控制台 API Key。',

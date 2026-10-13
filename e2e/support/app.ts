@@ -158,7 +158,9 @@ export async function gotoAndAssertRoute(page: Page, route: RouteCheck) {
 }
 
 export async function waitForRouteStable(page: Page, timeout = 15_000) {
-  await expect(page.getByRole('progressbar').first()).toBeHidden({ timeout })
+  // 只等待路由切换指示器。页面内的表格、图表和 onboarding 进度条可能长期可见，
+  // 不代表路由仍在加载；用通用 role=progressbar 会让页面标题巡检误超时。
+  await expect(page.locator('.route-progress')).toBeHidden({ timeout })
 }
 
 export async function expectPageTitle(page: Page, title: LocalizedExpectation) {

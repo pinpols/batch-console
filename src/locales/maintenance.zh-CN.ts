@@ -1,0 +1,16 @@
+export default {
+  bannerBlocked: '系统维护中',
+  bannerReadonly: '系统进入只读模式',
+  bannerAdminBypass: '系统维护中，管理员仅可读取诊断信息；业务写操作仍被冻结',
+  etaPast: '预计已恢复,正在检测…',
+  etaInMinutes: '预计 {n} 分钟后恢复',
+  etaInHours: '预计 {n} 小时后恢复',
+  pageTitle: '系统维护中',
+  pageMessageFallback: '我们正在升级或修复系统,请稍候。',
+  pageAffectedTitle: '受影响功能:',
+  pageHint: '此页面每 30 秒自动检测一次,恢复后自动跳回。',
+  pageContact: '紧急情况请联系运维。',
+  pageRetry: '立即重试',
+  writeBlocked: '维护期间禁止此操作',
+  syncStale: '维护状态同步中断，当前信息可能已过期',
+}

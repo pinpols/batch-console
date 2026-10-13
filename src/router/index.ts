@@ -735,6 +735,17 @@ export const routes: RouteRecordRaw[] = [
           minRole: 'ADMIN',
         },
       },
+      {
+        path: 'system/maintenance',
+        name: 'system-maintenance',
+        component: () => import('@/views/system/MaintenanceSettings.vue'),
+        meta: {
+          title: '维护设置',
+          activeMenu: '/system/maintenance',
+          minRole: 'ADMIN',
+          permissions: ['ROLE_ADMIN'],
+        },
+      },
       { path: 'system/webhooks', redirect: '/system/notifications' },
       {
         path: 'system/tags',
@@ -991,8 +1002,7 @@ router.beforeEach(async (to, from) => {
   const auth = useAuthStore()
   const permission = usePermissionStore()
 
-  // 未登录用户和普通用户在完整维护期进入维护页；已登录但画像尚未加载时延后判断，
-  // 避免误拦后端明确允许全程操作的 ROLE_ADMIN。
+  // 未登录用户和普通用户在完整维护期进入维护页；管理员保留后端允许的诊断读取与维护设置入口。
   const app = useAppStore()
   if (
     app.maintenance.enabled &&
