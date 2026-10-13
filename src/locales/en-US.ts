@@ -3,6 +3,7 @@ import userBatch from './userBatch.en-US.ts'
 import userAccountList from './userAccountList.en-US.ts'
 import jobMonitoringPolicy from './jobMonitoringPolicy.en-US.ts'
 import tenantPackageImportWizard from './tenantPackageImportWizard.en-US.ts'
+import onboardingCenter from './onboardingCenter.en-US.ts'
 
 const messages: Messages = {
   print: {
@@ -898,15 +899,11 @@ const messages: Messages = {
       'All data is isolated by tenant. Select a tenant here first so business pages show data; system admins can switch anytime.',
     step2Title: 'Command palette',
     step2Desc: 'Press ⌘/Ctrl + K anytime to search menus, jump to pages, or switch tenants.',
-    step3Title: 'Docs center',
+    step3Title: 'Activation center',
     step3Desc:
-      'Open the top-bar tools menu for ADRs, architecture, ops runbooks, field references, and the mobile preview.',
-    step4Title: 'Account menu',
-    step4Desc: 'Use the top-right menu to view your formal role, inspect access, or sign out.',
-    step5Title: 'Collapse / expand sidebar',
-    step5Desc:
-      'The button at the bottom of the sidebar toggles the menu; collapse it when you need more space for content.',
+      'This area shows the next task for your role and updates from real configuration, worker, and run evidence.',
   },
+  onboardingCenter,
   dateRangePicker: {
     invalidLocalTime: 'The selected time does not exist in the current time zone.',
     rangeSeparator: 'to',
@@ -966,7 +963,8 @@ const messages: Messages = {
     switchToThemeDark: 'Switch to dark theme',
     switchToThemeSystem: 'Match system theme',
     permissionAudit: 'Permission audit',
-    onboarding: 'Replay onboarding',
+    onboardingCenter: 'Activation center',
+    interfaceTour: 'Replay interface tour',
     confirmLogout: 'Sign out of the console?',
     tenant: 'Tenant',
     tenantCurrent: 'Current tenant',
@@ -5458,17 +5456,6 @@ const messages: Messages = {
     tabDist: 'Distribution',
     tabExtra: 'Extra panels',
     errorDesc: 'No data or request failed. Verify tenant, network, and gateway status.',
-    onboardingEyebrow: 'Get started',
-    onboardingTitle: 'No runtime data for this tenant yet',
-    onboardingDesc: 'Core metrics are currently zero. Start initialization from any action below.',
-    onboardingImport: 'Import config package',
-    onboardingImportDesc: 'Upload an Excel package to import jobs, queues, and file templates',
-    onboardingNewJob: 'New job definition',
-    onboardingNewJobDesc: 'Create the first job to validate the scheduling path',
-    onboardingTenant: 'Manage tenants',
-    onboardingTenantDesc: 'Switch or create a tenant for business isolation',
-    onboardingWorker: 'Manage workers',
-    onboardingWorkerDesc: 'Check worker availability before running jobs',
     // 图表图例和占位文案
     legendNow: 'Now',
     legendRunning: 'Running',

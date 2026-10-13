@@ -10,8 +10,10 @@ describe('DOC_REGISTRY', () => {
     }
   })
 
-  it('包含核心 5 个 doc-key', () => {
+  it('包含核心架构和新手引导 doc-key', () => {
     const expected = [
+      'first-tenant-config-quickstart',
+      'worker-sdk-onboarding',
       'adr-009-workflow-param-dsl',
       'adr-002-transactional-outbox',
       'workflow-dependency-guide',

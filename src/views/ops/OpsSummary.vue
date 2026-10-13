@@ -13,47 +13,7 @@
       </template>
     </PageHeader>
 
-    <!-- P2.1 全 0 引导:summary 加载完且所有核心指标 = 0,显示"开始接入"卡片 -->
-    <SectionCard v-if="summary && isFreshTenant && opsTab === 'extra'" class="ops-onboarding">
-      <div class="ops-onboarding__head">
-        <span class="ops-onboarding__eyebrow">{{ t('opsSummary.onboardingEyebrow') }}</span>
-        <h3>{{ t('opsSummary.onboardingTitle') }}</h3>
-        <p>{{ t('opsSummary.onboardingDesc') }}</p>
-      </div>
-      <div class="ops-onboarding__grid">
-        <button class="ops-onboarding__card" @click="$router.push('/config/tenant-package')">
-          <span class="ops-onboarding__icon">
-            <el-icon size="20"><FolderOpened /></el-icon>
-          </span>
-          <strong>{{ t('opsSummary.onboardingImport') }}</strong>
-          <span class="ops-onboarding__desc">{{ t('opsSummary.onboardingImportDesc') }}</span>
-        </button>
-        <button
-          class="ops-onboarding__card"
-          @click="$router.push('/jobs/definitions?action=create')"
-        >
-          <span class="ops-onboarding__icon">
-            <el-icon size="20"><DocumentAdd /></el-icon>
-          </span>
-          <strong>{{ t('opsSummary.onboardingNewJob') }}</strong>
-          <span class="ops-onboarding__desc">{{ t('opsSummary.onboardingNewJobDesc') }}</span>
-        </button>
-        <button class="ops-onboarding__card" @click="$router.push('/system/tenants')">
-          <span class="ops-onboarding__icon">
-            <el-icon size="20"><User /></el-icon>
-          </span>
-          <strong>{{ t('opsSummary.onboardingTenant') }}</strong>
-          <span class="ops-onboarding__desc">{{ t('opsSummary.onboardingTenantDesc') }}</span>
-        </button>
-        <button class="ops-onboarding__card" @click="$router.push('/workers/management')">
-          <span class="ops-onboarding__icon">
-            <el-icon size="20"><Cpu /></el-icon>
-          </span>
-          <strong>{{ t('opsSummary.onboardingWorker') }}</strong>
-          <span class="ops-onboarding__desc">{{ t('opsSummary.onboardingWorkerDesc') }}</span>
-        </button>
-      </div>
-    </SectionCard>
+    <OnboardingCenter />
 
     <div v-if="summary" class="ops-tabs-card">
       <!-- 扩展面板的刷新钮上提到 tabs 同行右侧(用户反馈:原独占一行造成空带) -->
@@ -131,15 +91,9 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, defineAsyncComponent } from 'vue'
+  import { defineAsyncComponent } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import {
-    RefreshCw as Refresh,
-    FolderOpen as FolderOpened,
-    FilePlus as DocumentAdd,
-    User,
-    Cpu,
-  } from '@lucide/vue'
+  import { RefreshCw as Refresh } from '@lucide/vue'
   import { useRefreshAction } from '@/composables/useRefreshAction'
 
   const refresh = useRefreshAction()
@@ -150,6 +104,7 @@
   import PrintButton from '@/components/common/PrintButton.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
+  import OnboardingCenter from '@/components/onboarding/OnboardingCenter.vue'
   import OpsMetricGrid from './components/OpsMetricGrid.vue'
   import { useOpsSummary } from './composables/useOpsSummary'
 
@@ -178,110 +133,20 @@
     extraLoading,
     slaReport,
     tenantUsage,
+    slaReportError,
+    tenantUsageError,
     load,
     loadCharts,
     loadExtraPanels,
     go,
     goFailedJobs,
   } = useOpsSummary()
-
-  // 全 0 指标 → 视为"全新租户",显示接入引导
-  const isFreshTenant = computed(() => {
-    const s = summary.value
-    if (!s) return false
-    return (
-      (s.pendingApprovals ?? 0) === 0 &&
-      (s.openAlerts ?? 0) === 0 &&
-      (s.criticalAlerts ?? 0) === 0 &&
-      (s.runningJobs ?? 0) === 0 &&
-      (s.failedJobs ?? 0) === 0
-    )
-  })
 </script>
 
 <style scoped>
   .ops-tabs-card {
     margin-top: 0;
   }
-  .ops-onboarding__head {
-    margin-bottom: var(--space-lg);
-  }
-  .ops-onboarding__eyebrow {
-    display: block;
-    margin-bottom: var(--space-xs);
-    color: var(--color-primary);
-    font-size: var(--font-size-xs);
-    font-weight: 650;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-  }
-  .ops-onboarding__head h3 {
-    margin: 0 0 var(--space-xs);
-    font-size: var(--font-size-lg);
-    font-weight: 650;
-    line-height: var(--line-height-tight);
-    color: var(--color-text-primary);
-  }
-  .ops-onboarding__head p {
-    margin: 0;
-    color: var(--color-text-secondary);
-    font-size: var(--font-size-sm);
-    line-height: var(--line-height-base);
-  }
-  .ops-onboarding__grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 12px;
-  }
-  .ops-onboarding__card {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-xs);
-    min-height: 168px;
-    padding: var(--space-lg);
-    border: 1px solid var(--color-border-light);
-    border-radius: var(--radius-content);
-    background: var(--color-bg-card);
-    cursor: pointer;
-    text-align: left;
-    transition:
-      box-shadow 0.15s,
-      border-color 0.15s;
-  }
-  .ops-onboarding__card:hover {
-    border-color: var(--color-primary);
-    box-shadow: var(--shadow-surface);
-  }
-  .ops-onboarding__card:hover .ops-onboarding__icon {
-    background: var(--color-primary);
-    color: var(--button-primary-text);
-  }
-  .ops-onboarding__icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 40px;
-    height: 40px;
-    margin-bottom: var(--space-sm);
-    border-radius: var(--radius-button);
-    background: color-mix(in srgb, var(--color-primary) 10%, transparent);
-    color: var(--color-primary);
-    transition:
-      background 0.15s,
-      color 0.15s;
-  }
-  .ops-onboarding__card strong {
-    font-size: var(--font-size-md);
-    font-weight: 650;
-    line-height: var(--line-height-tight);
-    color: var(--color-text-primary);
-  }
-  .ops-onboarding__card .ops-onboarding__desc {
-    font-size: var(--font-size-sm);
-    line-height: var(--line-height-base);
-    color: var(--color-text-secondary);
-  }
-
   /* 还原设计纵向节奏:副标题→Tab ≈ 32px、Tab→卡片 ≈ 28px */
   .ops-tabs-card {
     margin-top: 12px;

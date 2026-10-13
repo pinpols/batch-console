@@ -68,9 +68,15 @@
   import { useHeaderLogic } from '@/layout/composables/useHeaderLogic'
   import { useNetworkStatus } from '@/composables/useNetworkStatus'
   import { useMaintenancePolling } from '@/composables/useMaintenancePolling'
+  import { useAuthStore } from '@/stores/auth'
+  import { useTenantStore } from '@/stores/tenant'
 
   const route = useRoute()
+  const auth = useAuthStore()
+  const tenant = useTenantStore()
   const { app, tabsStore, paletteOpen, visibleGroups } = useHeaderLogic()
+  let onboardingTimer: ReturnType<typeof setTimeout> | undefined
+  let scheduledIdentity = ''
   // 全局网络状态监听:断网/恢复弹消息(配合 axios retry,短抖用户无感)
   useNetworkStatus()
   // 维护模式探活:30s 轮询 /system/maintenance,自动同步 banner / 写按钮 / 降级页
@@ -93,17 +99,38 @@
   onMounted(() => {
     document.documentElement.classList.add(LAYOUT_SHELL_LOCK_CLASS)
     window.addEventListener('keydown', onGlobalKeydown)
-    // 首次登录后引导;延迟 800ms 等 Header / Sidebar 渲染完再标 anchor
-    void import('@/composables/useOnboardingTour').then(
-      ({ shouldShowOnboarding, startOnboarding }) => {
-        if (shouldShowOnboarding()) setTimeout(() => startOnboarding(), 800)
-      },
-    )
   })
   onUnmounted(() => {
+    if (onboardingTimer) clearTimeout(onboardingTimer)
     document.documentElement.classList.remove(LAYOUT_SHELL_LOCK_CLASS)
     window.removeEventListener('keydown', onGlobalKeydown)
   })
+
+  watch(
+    [
+      () => auth.profileLoaded,
+      () => auth.userInfo?.userId,
+      () => auth.userInfo?.mustChangePassword,
+      () => tenant.tenantId,
+      () => route.path,
+    ],
+    ([profileLoaded, userId, mustChangePassword, tenantId, path]) => {
+      if (!profileLoaded || !userId || mustChangePassword || path !== '/ops/summary') return
+      const identityKey = `${userId}:${tenantId || 'no-tenant'}`
+      if (scheduledIdentity === identityKey) return
+      scheduledIdentity = identityKey
+      if (onboardingTimer) clearTimeout(onboardingTimer)
+      onboardingTimer = setTimeout(() => {
+        void import('@/composables/useOnboardingTour').then(
+          ({ shouldShowOnboarding, startOnboarding }) => {
+            const identity = { userId, tenantId }
+            if (shouldShowOnboarding(identity)) startOnboarding(identity)
+          },
+        )
+      }, 800)
+    },
+    { immediate: true },
+  )
 
   watch(
     () => route.fullPath,
