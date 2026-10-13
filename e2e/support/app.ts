@@ -1,10 +1,12 @@
 import { STORAGE_KEYS } from './storage'
+import { pageTitleKey } from '../../src/constants/pageMeta'
 import { type APIRequestContext, type Locator, type Page } from '@playwright/test'
 import { test, expect } from './fixtures'
 import {
   type E2eLocale,
   type LocalizedExpectation,
   E2E_DEFAULT_LOCALE,
+  i18nKey,
   installE2eLocale,
   resolveLocalizedExpectation,
   setE2eLocale,
@@ -19,76 +21,77 @@ export async function csrfHeaders(request: APIRequestContext): Promise<Record<st
 
 export type RouteCheck = {
   path: string
-  title: LocalizedExpectation
+  title?: LocalizedExpectation
+}
+
+function pageRoute(path: string): RouteCheck {
+  return { path, title: i18nKey(pageTitleKey(path)) }
 }
 
 export const smokeRoutes: RouteCheck[] = [
   // 工作台
-  { path: '/ops/summary', title: '控制面板' },
-  { path: '/approvals', title: '审批中心' },
-  { path: '/reports', title: '报表中心' },
-  { path: '/self-service', title: '自助服务' },
-  { path: '/ops/diagnostic', title: '运维诊断' },
+  pageRoute('/ops/summary'),
+  pageRoute('/approvals'),
+  pageRoute('/reports'),
+  pageRoute('/self-service'),
+  pageRoute('/ops/diagnostic'),
   // 配置与发布
-  { path: '/config/releases', title: '发布管理' },
-  { path: '/config/management', title: '变更与同步' },
-  { path: '/config/tenant-package', title: '配置批量导入' },
-  { path: '/system/tags', title: '标签管理' },
+  pageRoute('/config/releases'),
+  pageRoute('/config/management'),
+  pageRoute('/config/tenant-package'),
+  pageRoute('/system/tags'),
   // 文件中心
-  { path: '/files/list', title: '文件列表' },
-  { path: '/files/templates', title: '文件模板' },
-  { path: '/files/channels', title: '文件渠道' },
-  { path: '/files/arrival-groups', title: '到达组治理' },
-  { path: '/files/pipeline-obs', title: '流水线观测' },
+  pageRoute('/files/list'),
+  pageRoute('/files/templates'),
+  pageRoute('/files/channels'),
+  pageRoute('/files/arrival-groups'),
+  pageRoute('/files/pipeline-obs'),
   // 定义与编排
-  { path: '/jobs/definitions', title: '作业定义' },
-  { path: '/jobs/pipelines', title: '流水线定义' },
-  { path: '/workflow/definitions', title: '工作流定义' },
-  { path: '/workflow/designer', title: '编排设计器' },
+  pageRoute('/jobs/definitions'),
+  pageRoute('/jobs/pipelines'),
+  pageRoute('/workflow/definitions'),
+  pageRoute('/workflow/designer'),
   // Runs / 执行与观测
-  { path: '/runs', title: '全部运行' },
-  { path: '/monitor/job-instances', title: '作业运行' },
-  { path: '/monitor/job-steps', title: '作业步骤' },
-  { path: '/monitor/workflow-runs', title: '工作流运行' },
+  pageRoute('/runs'),
+  pageRoute('/monitor/job-instances'),
+  pageRoute('/monitor/job-steps'),
+  pageRoute('/monitor/workflow-runs'),
   // /logs 已 redirect 到 /observability/queries?tab=executionLogs,smoke 不再列
-  { path: '/observability/alerts', title: /事件告警|告警/ },
-  { path: '/observability/alert-routings', title: '告警路由（预留）' },
-  { path: '/observability/trace', title: '链路诊断' },
-  { path: '/observability/lineage', title: '血缘证据' },
-  { path: '/observability/audits', title: '审计日志' },
-  { path: '/observability/operation-audits', title: '操作审计' },
-  { path: '/observability/outbox', title: 'Outbox' },
-  { path: '/observability/queries', title: '综合查询' },
-  { path: '/system/event-catalog', title: '事件目录' },
+  pageRoute('/observability/alerts'),
+  pageRoute('/observability/alert-routings'),
+  pageRoute('/observability/trace'),
+  pageRoute('/observability/lineage'),
+  pageRoute('/observability/audits'),
+  pageRoute('/observability/operation-audits'),
+  pageRoute('/observability/outbox'),
+  pageRoute('/observability/queries'),
+  pageRoute('/system/event-catalog'),
   // 调度与治理
   // /scheduler/catch-up-approvals 已 redirect 到 /approvals?tab=catch-up,smoke 不再列
-  { path: '/scheduler/snapshot', title: '调度快照' },
-  { path: '/scheduler/batch-days', title: '批次日与窗口' },
-  { path: '/governance/windows', title: '批次窗口' },
-  { path: '/governance/calendars', title: '业务日历' },
-  { path: '/governance/quota', title: /配额策略|租户配额/ },
-  { path: '/governance/queues', title: /队列/ },
-  { path: '/workers/management', title: 'Worker 管理' },
-  { path: '/system/triggers', title: '触发器' },
-  { path: '/ops/custom-task-types', title: '自定义任务类型' },
-  { path: '/ops/worker-fingerprints', title: 'Worker 指纹看板' },
-  { path: '/ops/capacity-profile', title: '容量画像' },
-  { path: '/ops/asset-freshness', title: '资产新鲜度策略' },
-  { path: '/ops/shard-catalog', title: '分片目录' },
-  { path: '/ops/tenant-placements', title: '租户分片' },
-  { path: '/ops/batch-day-replay', title: '批次日重放' },
+  pageRoute('/scheduler/snapshot'),
+  pageRoute('/scheduler/batch-days'),
+  pageRoute('/governance/windows'),
+  pageRoute('/governance/calendars'),
+  pageRoute('/governance/quota'),
+  pageRoute('/governance/queues'),
+  pageRoute('/workers/management'),
+  pageRoute('/system/triggers'),
+  pageRoute('/ops/custom-task-types'),
+  pageRoute('/ops/worker-fingerprints'),
+  pageRoute('/ops/capacity-profile'),
+  pageRoute('/ops/asset-freshness'),
+  pageRoute('/ops/shard-catalog'),
+  pageRoute('/ops/tenant-placements'),
+  pageRoute('/ops/batch-day-replay'),
   // 系统
-  { path: '/system/tenants', title: '租户实例' },
-  { path: '/system/user-accounts', title: '登录账户' },
-  { path: '/system/me', title: '我的账户' },
-  { path: '/system/users', title: '权限自查' },
-  { path: '/system/api-keys', title: 'API Key' },
-  { path: '/system/parameters', title: '系统参数' },
-  { path: '/system/notifications', title: '通知与投递' },
-  {
-    path: '/system/atomic-task-types',
-    title: '原子节点配置中心',
-  },
+  pageRoute('/system/tenants'),
+  pageRoute('/system/user-accounts'),
+  pageRoute('/system/me'),
+  pageRoute('/system/users'),
+  pageRoute('/system/api-keys'),
+  pageRoute('/system/parameters'),
+  pageRoute('/system/notifications'),
+  pageRoute('/system/atomic-task-types'),
 ]
 
 export async function enterDemoApp(page: Page, locale: E2eLocale = E2E_DEFAULT_LOCALE) {
@@ -154,7 +157,7 @@ export async function grantAiCapability(page: Page) {
 export async function gotoAndAssertRoute(page: Page, route: RouteCheck) {
   await page.goto(route.path, { waitUntil: 'domcontentloaded' })
   await expect(page).toHaveURL(new RegExp(escapeForRegex(route.path)), { timeout: 10_000 })
-  await expectPageTitle(page, route.title)
+  await expectPageTitle(page, route.title ?? i18nKey(pageTitleKey(route.path)))
 }
 
 export async function waitForRouteStable(page: Page, timeout = 15_000) {
