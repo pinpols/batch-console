@@ -152,6 +152,7 @@ if (packageChanged) {
 if (srcChanged) {
   run('ESLint check', 'npm', ['run', 'lint:check'])
   run('TypeScript check', 'npm', ['run', 'typecheck'])
+  run('readability callsite gate', 'npm', ['run', 'check:readability-calls'])
 }
 
 if (localeChanged) {
