@@ -103,7 +103,7 @@ test.describe('@workflow-designer-save 工作流设计器保存流', () => {
     await expect(nodeNameInput).toHaveValue('作业')
     await expect(page.getByText('未保存', { exact: true })).toHaveCount(0)
 
-    // ── 自动布局:改节点坐标 → 图 dirty 但仍合法(借既有合法图,绕 JOB-jobCode 校验)──
+    // ── 自动布局:校验节点仍在画布且连线保留;已布局图允许布局操作无变更 ──
     const autoLayoutBtn = page.getByRole('button', { name: '自动布局' }).first()
     await expect(autoLayoutBtn).toBeEnabled()
     await autoLayoutBtn.click()
@@ -111,13 +111,20 @@ test.describe('@workflow-designer-save 工作流设计器保存流', () => {
     await expectNodesInsideCanvas(page)
     await expectEdgesRendered(page, 2)
 
+    // 用确定会产生变化的名称编辑验证撤销/重做,避免依赖自动布局是否改变已布局图坐标。
+    await page.locator(`.dag-canvas .x6-node[data-cell-id="${jobCode}"]`).first().click({ force: true })
+    await nodeNameInput.fill('作业-保存验收')
+    await nodeNameInput.blur()
+    await expect(page.getByText('未保存', { exact: true })).toBeVisible()
     const undoBtn = page.getByRole('button', { name: '撤销' }).first()
     const redoBtn = page.getByRole('button', { name: '重做' }).first()
     await undoBtn.click()
+    await expect(nodeNameInput).toHaveValue('作业')
     await expect(page.getByText('未保存', { exact: true })).toHaveCount(0)
     await expectNodesInsideCanvas(page)
     await expectEdgesRendered(page, 2)
     await redoBtn.click()
+    await expect(nodeNameInput).toHaveValue('作业-保存验收')
     await expect(page.getByText('未保存', { exact: true })).toBeVisible()
     await expectNodesInsideCanvas(page)
     await expectEdgesRendered(page, 2)
@@ -129,9 +136,12 @@ test.describe('@workflow-designer-save 工作流设计器保存流', () => {
     }
     await page.getByRole('combobox', { name: '依赖连线选择器' }).click()
     await page.getByRole('option', { name: new RegExp(`${startCode}.*${jobCode}.*成功`) }).click()
-    const inspectorInputs = page.locator('.edge-inspector input[readonly]')
-    await expect(inspectorInputs.nth(0)).toHaveValue(`开始 (${startCode})`)
-    await expect(inspectorInputs.nth(1)).toHaveValue(`作业 (${jobCode})`)
+    await expect(
+      page.locator('.edge-inspector .el-select').nth(0).locator('.el-select__placeholder'),
+    ).toContainText(`开始 (${startCode})`)
+    await expect(
+      page.locator('.edge-inspector .el-select').nth(1).locator('.el-select__placeholder'),
+    ).toContainText(`作业-保存验收 (${jobCode})`)
 
     await page.locator('.edge-inspector .el-select').first().click()
     await page.getByRole('option', { name: /条件.*CONDITION/ }).click()
@@ -156,6 +166,8 @@ test.describe('@workflow-designer-save 工作流设计器保存流', () => {
     await expect(page.locator('.dag-canvas').first()).toBeVisible({ timeout: 12_000 })
     await expect(page.locator('.designer-node').first()).toBeVisible({ timeout: 8_000 })
     expect(await mainCanvasNodeCount(page)).toBe(initialNodes)
+    await page.locator(`.dag-canvas .x6-node[data-cell-id="${jobCode}"]`).first().click({ force: true })
+    await expect(nodeNameInput).toHaveValue('作业-保存验收')
 
     await expect(
       page.locator(`.dag-canvas__graph .x6-edge[data-cell-id="${firstEdgeId}"] .x6-edge-label`),
