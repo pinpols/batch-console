@@ -46,7 +46,7 @@ job 末尾一次性列出全部失败并返回非零。checkout、Node 安装、
 
 | 入口                                                               | 失败行为                                                                                                                                                    | 继续/停止边界                                                                                                    |
 | ------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `npm run preflight:changed` / `preflight:changed:all`              | 对本次变更选出的检查按顺序执行，首个失败立即返回                                                                                                            | 提交前快速反馈；修复后重跑即可，不承诺收集后续检查结果                                                           |
+| `npm run preflight:changed` / `preflight:changed:all`              | 通过统一 `run-gate.sh` 运行适用检查，独立失败继续执行并在末尾汇总                                                                                           | 提交前收集诊断；环境/runner 前置错误单独记录并最终失败                                                           |
 | PR `pr-gate`、`full-ci-gate` 和 `frontend-ci` 的静态/Node 兼容步骤 | `run-gate.sh` 在 `BATCH_GATE_COLLECT=1` 下记录单项结果并继续；`verify-governance.sh` 收集其内部独立门禁；各 job 末尾 `gate_assert_collected` 汇总并非零退出 | 同一 job 的独立 lint、配置、测试、构建等门禁尽量收齐；安装、checkout、运行时等前置步骤失败仍会阻断依赖它们的阶段 |
 | `npm run verify:local`                                             | `scripts/ci.sh` 聚合独立检查并在结尾返回总结果                                                                                                              | 真实依赖/环境准备失败、必须依赖前序产物的步骤失败时，不执行依赖阶段                                              |
 | `frontend-ci` 的文档构建、`staging-gate` 的环境预检与浏览器验收    | job/步骤按依赖关系失败即停止                                                                                                                                | 文档站构建或真实环境预检失败时，不继续执行依赖该结果的发布/浏览器验收；不把未执行阶段算通过                      |
@@ -189,20 +189,22 @@ CI workflow 和本地聚合门禁统一通过 `scripts/ci/run-gate.sh` /
 `scripts/lib/gate-result.sh` 输出最终状态行：
 
 ```text
-✅ 通过 | code=FE_VERSION | gate=版本对齐 | exit_code=0 | action=none
-❌ 不通过 | code=FE_VERSION | gate=版本对齐 | exit_code=1 | action=fix_and_retry
+✅ 通过 | code=FE_VERSION | gate=版本对齐 | group=configuration | mode=enforce | exit_code=0 | action=none
+❌ 不通过 | code=FE_VERSION | gate=版本对齐 | group=configuration | mode=enforce | exit_code=1 | action=fix_and_retry
 ```
 
-状态行固定包含状态、`code`、`gate`、`exit_code` 和 `action`。失败汇总复用同一格式；
+状态行固定包含状态、`code`、`gate`、`group`、`mode`、`exit_code` 和 `action`。Runner 会过滤子检查器缺少 `group` / `mode` 的旧式状态行，保留诊断及格式合规的嵌套门禁状态；runner 输出作为本门禁的权威状态。失败汇总复用同一格式；
 扫描器明细、测试进度、构建日志和排查说明仍保留原有详细输出，但不能替代最终状态行。
 
 ## 本地按需预检
 
-提交前 `.husky/pre-commit` 会先跑 `lint-staged`,再跑:
+提交前 `.husky/pre-commit` 会通过统一门禁执行器先后运行 `lint-staged` 和按需预检；两个阶段独立收集结果，末尾统一汇总：
 
 ```bash
 npm run preflight:changed
 ```
+
+按需路由只使用 staged 文件，路径以 NUL 分隔读取，因此空格、换行等合法文件名不会被错误拆分。每项检查使用统一状态格式和稳定分组：`hygiene`、`quality`、`localization`、`contracts`、`configuration`、`testing`、`governance`、`docs`、`supply-chain`。可用 `BATCH_GATE_MODE=report` 设置全局报告模式、`BATCH_GATE_GROUP_MODES='quality=report,docs=ignore'` 覆盖分组，或 `BATCH_GATE_MODES='FE_LINT=ignore'` 覆盖单项；优先级为总开关关闭 > 单项 > 分组 > 全局 > 默认 `enforce`。报告模式仍执行检查并汇总实际失败，忽略模式则明确不执行。以上只用于本地 hook，不能用于放宽 CI required checks。
 
 该脚本只读取 staged 文件,按变更范围选择检查:
 
@@ -218,7 +220,7 @@ npm run preflight:changed
 | `docs/**` / `tools/docs-bridge/**` / `scripts/docs-*`        | 文档链接检查 + 统一文档构建               |
 | 用户或部署影响文件                                           | Changelog 覆盖检查                        |
 
-`preflight:changed` 只读取 staged 文件；`preflight:changed:all` 合并 working tree 与未跟踪文件，不再扫描全部 tracked 文件。普通 `docs/**` 变更只执行链接、路径和上线准入检查；只有文档桥接、站点配置或构建脚本变化才在本地执行完整 `docs:build`，统一文档 CI 继续对所有文档交付做构建兜底。单测覆盖率、bundle size、audit 可通过 `npm run verify:local` 一次执行；Docker/Trivy、Lighthouse、staging e2e 仍由 CI 分层承担。
+`preflight:changed` 只读取 staged 文件；`preflight:changed:all` 合并 working tree 与未跟踪文件，不再扫描全部 tracked 文件。UTF-8 与说明性注释检查只接收本次变更路径，不再扫描全仓。普通 `docs/**` 变更只执行链接、路径和上线准入检查；只有文档桥接、站点配置或构建脚本变化才在本地执行完整 `docs:build`，统一文档 CI 继续对所有文档交付做构建兜底。单测覆盖率、bundle size、audit 可通过 `npm run verify:local` 一次执行；Docker/Trivy、Lighthouse、staging e2e 仍由 CI 分层承担。
 
 ## 常见故障 / 排查
 
