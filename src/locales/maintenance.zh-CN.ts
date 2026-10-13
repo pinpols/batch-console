@@ -1,5 +1,9 @@
 export default {
   bannerBlocked: '系统维护中',
+  bannerScheduled: '系统维护即将开始',
+  startImminent: '即将开始',
+  startsInMinutes: '{n} 分钟后开始维护',
+  startsInHours: '{n} 小时后开始维护',
   bannerReadonly: '系统进入只读模式',
   bannerAdminBypass: '系统维护中，管理员仅可读取诊断信息；业务写操作仍被冻结',
   etaPast: '预计已恢复,正在检测…',

@@ -75,11 +75,19 @@
               type="primary"
               plain
               :loading="running"
+              :disabled="writesFrozen"
               @click="runBatchApprove"
             >
               {{ t('approvals.batchApprove') }}
             </el-button>
-            <el-button size="small" type="danger" plain :loading="running" @click="runBatchReject">
+            <el-button
+              size="small"
+              type="danger"
+              plain
+              :loading="running"
+              :disabled="writesFrozen"
+              @click="runBatchReject"
+            >
               {{ t('approvals.batchReject') }}
             </el-button>
           </template>
@@ -264,6 +272,7 @@
   } from '@/api/approvals'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
+  import { useWriteAvailability } from '@/composables/useWriteAvailability'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
   import { fmtCompact, fmtDatetime } from '@/utils/datetime'
@@ -282,6 +291,7 @@
   import { useAuthStore } from '@/stores/auth'
 
   const tenant = useTenantStore()
+  const { writesFrozen, ensureWriteAvailable } = useWriteAvailability()
   const loading = ref(false)
   const loadError = ref<unknown>(null)
   const {
@@ -597,6 +607,7 @@
   }
 
   async function runBatchApprove() {
+    if (!ensureWriteAvailable()) return
     const nos = selection.value.map((r) => r.approvalNo)
     try {
       await ElMessageBox.confirm(
@@ -625,6 +636,7 @@
   }
 
   async function runBatchReject() {
+    if (!ensureWriteAvailable()) return
     const nos = selection.value.map((r) => r.approvalNo)
     let reason: string | undefined
     try {

@@ -2,7 +2,13 @@
   <PageContainer>
     <PageHeader>
       <template #actions>
-        <el-button v-if="canManage" type="primary" :icon="Plus" @click="openCreate">
+        <el-button
+          v-if="canManage"
+          type="primary"
+          :icon="Plus"
+          :disabled="writesFrozen"
+          @click="openCreate"
+        >
           {{ t('common.create') }}
         </el-button>
         <el-button :icon="Refresh" :loading="loading" @click="load">
@@ -117,7 +123,9 @@
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">{{ t('common.cancel') }}</el-button>
-        <el-button type="primary" :loading="saving" @click="save">{{ t('common.save') }}</el-button>
+        <el-button type="primary" :loading="saving" :disabled="writesFrozen" @click="save">{{
+          t('common.save')
+        }}</el-button>
       </template>
     </el-drawer>
   </PageContainer>
@@ -138,6 +146,7 @@
   import HelpLabel from '@/components/common/HelpLabel.vue'
   import { fmtDatetime } from '@/utils/datetime'
   import { useAuthStore } from '@/stores/auth'
+  import { useWriteAvailability } from '@/composables/useWriteAvailability'
   import {
     listShardCatalog,
     upsertShardCatalog,
@@ -149,6 +158,7 @@
   const { t } = useI18n({ useScope: 'global' })
   const auth = useAuthStore()
   const canManage = computed(() => auth.hasPermission('ROLE_ADMIN'))
+  const { writesFrozen, ensureWriteAvailable } = useWriteAvailability()
 
   const rows = ref<ShardCatalogRow[]>([])
   const loading = ref(false)
@@ -185,6 +195,7 @@
   }
 
   function openCreate() {
+    if (!ensureWriteAvailable()) return
     editing.value = false
     Object.assign(form, {
       placementKey: '',
@@ -215,6 +226,7 @@
   }
 
   async function save() {
+    if (!ensureWriteAvailable()) return
     saving.value = true
     try {
       await upsertShardCatalog({ ...form })

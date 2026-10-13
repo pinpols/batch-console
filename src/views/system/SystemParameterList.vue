@@ -2,7 +2,13 @@
   <PageContainer>
     <PageHeader>
       <template #actions>
-        <el-button type="primary" :icon="Plus" class="pretty-add-button" @click="openCreate">
+        <el-button
+          type="primary"
+          :icon="Plus"
+          class="pretty-add-button"
+          :disabled="writesFrozen"
+          @click="openCreate"
+        >
           {{ t('systemParameterList.headerCreate') }}
         </el-button>
       </template>
@@ -101,7 +107,12 @@
         <el-button @click="dialogVisible = false">
           {{ t('common.cancel') }}
         </el-button>
-        <el-button type="primary" :loading="saveAction.loading.value" @click="save">
+        <el-button
+          type="primary"
+          :loading="saveAction.loading.value"
+          :disabled="writesFrozen"
+          @click="save"
+        >
           {{ t('common.save') }}
         </el-button>
       </template>
@@ -136,8 +147,10 @@
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import CopyableText from '@/components/common/CopyableText.vue'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
+  import { useWriteAvailability } from '@/composables/useWriteAvailability'
 
   const tenant = useTenantStore()
+  const { writesFrozen, ensureWriteAvailable } = useWriteAvailability()
   const loading = ref(false)
   const loadError = ref<unknown>(null)
   const { filterBusy, tableBlocking, runSearch, runReset, runRefresh } =
@@ -210,6 +223,7 @@
   }
 
   function openCreate() {
+    if (!ensureWriteAvailable()) return
     editingKey.value = ''
     form.key = ''
     form.value = ''
@@ -253,6 +267,7 @@
   )
 
   async function save() {
+    if (!ensureWriteAvailable()) return
     if (!(await validateParamForm())) return
     await saveAction.run()
   }

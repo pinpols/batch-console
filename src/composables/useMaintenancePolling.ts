@@ -23,7 +23,11 @@ export function useMaintenancePolling(
 
   function schedule() {
     if (stopped) return
-    const delay = app.maintenance.enabled ? maintenanceIntervalMs : normalIntervalMs
+    const delay = app.maintenance.enabled
+      ? app.maintenance.active
+        ? maintenanceIntervalMs
+        : Math.min(5_000, maintenanceIntervalMs)
+      : normalIntervalMs
     timer = setTimeout(() => void poll(), delay)
   }
 
@@ -32,7 +36,7 @@ export function useMaintenancePolling(
       const s = await getMaintenanceStatus()
       app.setMaintenance({
         ...s,
-        adminBypass: s.enabled && auth.hasPermission('ROLE_ADMIN'),
+        adminBypass: s.active && auth.hasPermission('ROLE_ADMIN'),
         lastSyncedAt: new Date().toISOString(),
         syncError: null,
         isStale: false,

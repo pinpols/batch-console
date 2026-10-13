@@ -41,7 +41,7 @@
   /**
    * 维护降级页 — 路由级 fallback。
    *
-   * 用 useMaintenancePolling 30s 轮询(useAppStore.maintenance.enabled 变 false 时 watch 触发 redirect)
+   * 用 useMaintenancePolling 轮询(useAppStore.maintenance.active 变 false 时 watch 触发 redirect)
    * + 手动「立即重试」按钮兜底。本页本身不调用业务接口,避免被维护期 503 反复拒绝。
    */
   import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
@@ -89,9 +89,9 @@
 
   // 退出维护期自动跳回原路径(redirect query)或首页
   watch(
-    () => app.maintenance.enabled,
-    (enabled) => {
-      if (!enabled) {
+    () => app.maintenance.active,
+    (active) => {
+      if (!active) {
         const back = (route.query.redirect as string) || '/'
         router.replace(back)
       }

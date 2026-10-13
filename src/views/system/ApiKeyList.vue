@@ -7,6 +7,7 @@
           :icon="Plus"
           class="pretty-add-button"
           v-track-click="'create API key'"
+          :disabled="writesFrozen"
           @click="openCreate"
         >
           {{ t('apiKeyList.headerCreate') }}
@@ -48,7 +49,7 @@
         <template #empty>
           <EmptyState :description="t('apiKeyList.emptyDescription')" :image-size="80">
             <template #action>
-              <el-button type="primary" :icon="Plus" @click="openCreate">
+              <el-button type="primary" :icon="Plus" :disabled="writesFrozen" @click="openCreate">
                 {{ t('apiKeyList.headerCreate') }}
               </el-button>
             </template>
@@ -128,7 +129,12 @@
       </el-form>
       <template #footer>
         <el-button @click="createVisible = false">{{ t('common.cancel') }}</el-button>
-        <el-button type="primary" :loading="saveAction.loading.value" @click="save">
+        <el-button
+          type="primary"
+          :loading="saveAction.loading.value"
+          :disabled="writesFrozen"
+          @click="save"
+        >
           {{ t('apiKeyList.dialogCreate') }}
         </el-button>
       </template>
@@ -221,6 +227,7 @@
   import RowActions, { type RowAction } from '@/components/common/RowActions.vue'
   import { useFormValidate, rules } from '@/composables/useFormValidate'
   import { useAsyncAction } from '@/composables/useAsyncAction'
+  import { useWriteAvailability } from '@/composables/useWriteAvailability'
   import {
     listApiKeys,
     createApiKey,
@@ -244,6 +251,7 @@
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
 
   const tenant = useTenantStore()
+  const { writesFrozen, ensureWriteAvailable } = useWriteAvailability()
   const loading = ref(false)
   const loadError = ref<unknown>(null)
   const { filterBusy, tableBlocking, runSearch, runReset, runRefresh } =
@@ -354,6 +362,7 @@
   }
 
   function openCreate() {
+    if (!ensureWriteAvailable()) return
     form.keyName = ''
     form.scopes = []
     form.expiresAt = ''
@@ -381,6 +390,7 @@
   )
 
   async function save() {
+    if (!ensureWriteAvailable()) return
     if (!(await validateApiKeyForm())) return
     await saveAction.run()
   }
@@ -403,7 +413,7 @@
         label: isRevoked(row) ? t('apiKeyList.actionRevoked') : t('apiKeyList.actionRevoke'),
         danger: true,
         divided: true,
-        disabled: isRevoked(row),
+        disabled: isRevoked(row) || writesFrozen.value,
         track: { action: 'revoke API key', id: row.id },
         onClick: () => confirmRevoke(row),
       },
@@ -411,6 +421,7 @@
   }
 
   async function confirmRevoke(row: Record<string, unknown>) {
+    if (!ensureWriteAvailable()) return
     if (isRevoked(row)) return
     try {
       await confirmDanger({

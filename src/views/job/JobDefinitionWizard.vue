@@ -88,7 +88,7 @@
             :execution-mode-options="executionModeOptions"
             :schedule-type-options="scheduleTypeOptions"
             :queue-options="queueOptions"
-            :can-configure-routing="canManageSystem"
+            :can-configure-routing="canManageSystem && !writesFrozen"
             :sections="['basic']"
           />
           <JobConfigBasicForm
@@ -98,7 +98,7 @@
             :execution-mode-options="executionModeOptions"
             :schedule-type-options="scheduleTypeOptions"
             :queue-options="queueOptions"
-            :can-configure-routing="canManageSystem"
+            :can-configure-routing="canManageSystem && !writesFrozen"
             :sections="['schedule']"
           />
           <JobConfigBasicForm
@@ -108,7 +108,7 @@
             :execution-mode-options="executionModeOptions"
             :schedule-type-options="scheduleTypeOptions"
             :queue-options="queueOptions"
-            :can-configure-routing="canManageSystem"
+            :can-configure-routing="canManageSystem && !writesFrozen"
             :sections="['resource', 'retry']"
           />
           <JobConfigBasicForm
@@ -354,6 +354,7 @@
   import { governanceApi, type GovernanceAlertRoutingRow } from '@/api/governance'
   import { useTenantStore } from '@/stores/tenant'
   import { usePermission } from '@/composables/usePermission'
+  import { useWriteAvailability } from '@/composables/useWriteAvailability'
   import { useTenantReload } from '@/composables/useTenantReload'
   import type {
     ConsoleFileChannelResponse,
@@ -406,6 +407,7 @@
   const router = useRouter()
   const tenant = useTenantStore()
   const { canManageSystem } = usePermission()
+  const { writesFrozen } = useWriteAvailability()
   const formRef = ref<FormInstance>()
   const step = ref(0)
   const current = computed(() => steps.value[step.value])

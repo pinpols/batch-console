@@ -11,6 +11,7 @@
           type="primary"
           :icon="Plus"
           class="pretty-add-button"
+          :disabled="writesFrozen"
           @click="openCreate"
         >
           {{ t('configReleaseList.headerCreate') }}
@@ -155,6 +156,7 @@
             v-if="canManageSystem && selectedRow.configStatus === 'DRAFT'"
             type="primary"
             class="cr-panel__btn"
+            :disabled="writesFrozen"
             @click="doSubmitApproval(selectedRow)"
           >
             {{ t('configReleaseList.actionSubmit') }}
@@ -175,6 +177,7 @@
             size="small"
             plain
             type="danger"
+            :disabled="writesFrozen"
             @click="doRollback(selectedRow)"
           >
             {{ t('configReleaseList.actionRollback') }}
@@ -389,12 +392,11 @@
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { Plus, Settings2 } from '@lucide/vue'
   import { confirmDanger } from '@/composables/useDangerConfirm'
-
-  const { t, te } = useI18n({ useScope: 'global' })
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { useDirtyForm } from '@/composables/useDirtyForm'
   import { useFormFocus } from '@/composables/useFormFocus'
   import { usePermission } from '@/composables/usePermission'
+  import { useWriteAvailability } from '@/composables/useWriteAvailability'
   import {
     createConfigRelease,
     listConfigReleases,
@@ -414,7 +416,6 @@
   import PageContainer from '@/components/common/PageContainer.vue'
   import MetaSelect from '@/components/common/MetaSelect.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
-  const { canManageSystem } = usePermission()
   import EmptyState from '@/components/common/EmptyState.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import JsonPreview from '@/components/common/JsonPreview.vue'
@@ -423,6 +424,10 @@
     ConfigGovernanceItemResponse,
     ConsoleConfigReleaseResponse,
   } from '@/types/console-api'
+
+  const { t, te } = useI18n({ useScope: 'global' })
+  const { canManageSystem } = usePermission()
+  const { writesFrozen } = useWriteAvailability()
 
   const tenant = useTenantStore()
   const loading = ref(false)

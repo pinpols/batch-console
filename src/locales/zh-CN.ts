@@ -14,6 +14,7 @@ import workflowDesignerJobDependencies from './workflowDesignerJobDependencies.z
 import onboardingCenter from './onboardingCenter.zh-CN.ts'
 import maintenance from './maintenance.zh-CN.ts'
 import maintenanceSettings from './maintenanceSettings.zh-CN.ts'
+import sidebarOperationalStatus from './sidebarOperationalStatus.zh-CN.ts'
 
 export default {
   print: {
@@ -934,7 +935,7 @@ export default {
     commandPalette: '命令面板',
     search: '搜索',
     appTitle: '批量调度平台',
-    serviceHealthy: '服务正常',
+    ...sidebarOperationalStatus,
     collapseToggle: '折叠 / 展开侧栏',
     collapseAllGroups: '收起所有分组',
     expandAllGroups: '展开所有分组',

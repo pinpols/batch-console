@@ -88,9 +88,19 @@
       :title="t('nav.collapseToggle')"
       @click="app.toggleSidebar()"
     >
-      <span v-if="!app.sidebarCollapsed" class="sidebar-foot__status">
-        <span class="sidebar-foot__dot" />
-        {{ t('nav.serviceHealthy') }}
+      <span
+        v-if="!app.sidebarCollapsed"
+        class="sidebar-foot__status"
+        role="status"
+        aria-live="polite"
+        :title="t(sidebarStatus.descriptionKey)"
+      >
+        <span
+          class="sidebar-foot__dot"
+          :class="`sidebar-foot__dot--${sidebarStatus.tone}`"
+          aria-hidden="true"
+        />
+        {{ t(sidebarStatus.labelKey) }}
         <span class="sidebar-foot__ver">· v{{ appVersion }}</span>
       </span>
       <el-icon class="sidebar-foot__chevron">
@@ -120,6 +130,7 @@
     type NavigationItem,
   } from '@/constants/navigation'
   import { useResponsive } from '@/composables/useResponsive'
+  import { resolveSidebarOperationalStatus } from './sidebarOperationalStatus'
 
   const app = useAppStore()
 
@@ -155,6 +166,9 @@
   }
 
   const visibleGroups = computed(() => permission.visibleGroups)
+  const sidebarStatus = computed(() =>
+    resolveSidebarOperationalStatus(app.maintenance, app.isDegraded),
+  )
 
   // 侧栏高亮:优先「真实路径 + query 最具体命中」的菜单项,再回退 meta.activeMenu。
   // 修复两类「点了不高亮 = 选不中」:
@@ -501,9 +515,34 @@
     width: 7px;
     height: 7px;
     border-radius: 999px;
+    flex-shrink: 0;
+  }
+
+  .sidebar-foot__dot--normal {
     background: var(--color-success);
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-success) 22%, transparent);
-    flex-shrink: 0;
+  }
+
+  .sidebar-foot__dot--scheduled {
+    background: var(--color-info);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-info) 22%, transparent);
+  }
+
+  .sidebar-foot__dot--read-only,
+  .sidebar-foot__dot--admin-bypass,
+  .sidebar-foot__dot--degraded {
+    background: var(--color-warning);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-warning) 22%, transparent);
+  }
+
+  .sidebar-foot__dot--maintenance {
+    background: var(--color-danger);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-danger) 22%, transparent);
+  }
+
+  .sidebar-foot__dot--unknown {
+    background: var(--color-text-tertiary);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-text-tertiary) 18%, transparent);
   }
 
   .sidebar-foot__ver {

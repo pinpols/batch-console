@@ -50,7 +50,14 @@
         @clear="bulk.clear"
       >
         <template #default="{ running }">
-          <el-button size="small" type="primary" plain :loading="running" @click="onBulkReplay">
+          <el-button
+            size="small"
+            type="primary"
+            plain
+            :loading="running"
+            :disabled="writesFrozen"
+            @click="onBulkReplay"
+          >
             {{ t('observability.dlqBulkReplay') }}
           </el-button>
         </template>
@@ -114,6 +121,7 @@
 </template>
 
 <script setup lang="ts">
+  import { useWriteAvailability } from '@/composables/useWriteAvailability'
   import { ref, reactive, computed, onMounted } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
@@ -135,6 +143,7 @@
   import { uniqueDisplayFieldValues } from '@/utils/queryFormOptions'
 
   const { t } = useI18n({ useScope: 'global' })
+  const { writesFrozen, ensureWriteAvailable } = useWriteAvailability()
 
   const tenant = useTenantStore()
   const { loading: loadingDL, error: loadDLError, run: runLoadDL } = useListLoadState()
@@ -178,6 +187,7 @@
   }
 
   async function onBulkReplay() {
+    if (!ensureWriteAvailable()) return
     const eligible = bulk.selected.value.filter(isReplayable)
     if (!eligible.length) {
       ElMessage.warning(t('observability.dlqBulkReplayNone'))

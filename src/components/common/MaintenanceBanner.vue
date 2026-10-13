@@ -5,6 +5,7 @@
     </el-icon>
     <div class="maintenance-banner__text">
       <strong>{{ headline }}</strong>
+      <span v-if="startText" class="maintenance-banner__eta">· {{ startText }}</span>
       <span v-if="app.maintenance.message" class="maintenance-banner__msg">
         {{ app.maintenance.message }}
       </span>
@@ -40,11 +41,13 @@
   const { t } = useI18n({ useScope: 'global' })
 
   const toneClass = computed(() => {
+    if (!app.maintenance.active) return 'maintenance-banner--scheduled'
     if (app.maintenance.adminBypass) return 'maintenance-banner--admin'
     return app.maintenance.readOnly ? 'maintenance-banner--readonly' : 'maintenance-banner--blocked'
   })
 
   const headline = computed(() => {
+    if (!app.maintenance.active) return t('maintenance.bannerScheduled')
     if (app.maintenance.adminBypass) return t('maintenance.bannerAdminBypass')
     return app.maintenance.readOnly
       ? t('maintenance.bannerReadonly')
@@ -57,7 +60,7 @@
   onMounted(() => {
     timer = setInterval(() => {
       now.value = Date.now()
-    }, 60_000)
+    }, 1_000)
   })
   onUnmounted(() => {
     if (timer) clearInterval(timer)
@@ -74,6 +77,17 @@
     if (mins < 60) return t('maintenance.etaInMinutes', { n: mins })
     const hours = Math.round(mins / 60)
     return t('maintenance.etaInHours', { n: hours })
+  })
+
+  const startText = computed(() => {
+    if (app.maintenance.active || !app.maintenance.startsAt) return ''
+    const target = new Date(app.maintenance.startsAt).getTime()
+    if (Number.isNaN(target)) return ''
+    const diffMs = target - now.value
+    if (diffMs <= 0) return t('maintenance.startImminent')
+    const mins = Math.ceil(diffMs / 60_000)
+    if (mins < 60) return t('maintenance.startsInMinutes', { n: mins })
+    return t('maintenance.startsInHours', { n: Math.ceil(mins / 60) })
   })
 </script>
 
@@ -98,6 +112,11 @@
     border-bottom-color: rgb(180 83 9 / 18%);
   }
   .maintenance-banner--admin {
+    background: var(--color-info-light, #e0e7ff);
+    color: var(--color-info, #1e40af);
+    border-bottom-color: rgb(30 64 175 / 18%);
+  }
+  .maintenance-banner--scheduled {
     background: var(--color-info-light, #e0e7ff);
     color: var(--color-info, #1e40af);
     border-bottom-color: rgb(30 64 175 / 18%);

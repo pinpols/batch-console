@@ -10,6 +10,7 @@
           type="warning"
           :icon="Pause"
           :loading="pauseLoading"
+          :disabled="writesFrozen"
           @click="confirmPauseAll"
         >
           {{ t('schedulerSnapshot.headerPauseAll') }}
@@ -19,6 +20,7 @@
           type="success"
           :icon="Play"
           :loading="resumeLoading"
+          :disabled="writesFrozen"
           @click="confirmResumeAll"
         >
           {{ t('schedulerSnapshot.headerResumeAll') }}
@@ -512,9 +514,6 @@
   import { ElMessage } from 'element-plus'
   import { Copy as DocumentCopy, Pause, Play, RefreshCw as Refresh } from '@lucide/vue'
   import { confirmDanger } from '@/composables/useDangerConfirm'
-
-  const { t } = useI18n({ useScope: 'global' })
-  const router = useRouter()
   import { fmtDatetime } from '@/utils/datetime'
   import {
     getSchedulerSnapshot,
@@ -527,6 +526,7 @@
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
   import { usePermission } from '@/composables/usePermission'
+  import { useWriteAvailability } from '@/composables/useWriteAvailability'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
@@ -540,11 +540,14 @@
     ConsoleSchedulerSnapshotResponse,
   } from '@/types/console-api'
 
+  const { t } = useI18n({ useScope: 'global' })
+  const router = useRouter()
   type PanelKey = 'policies' | 'queues' | 'workers' | 'history'
   type KpiVariant = 'primary' | 'success' | 'warning' | 'info'
 
   const tenant = useTenantStore()
   const { canManageSystem } = usePermission()
+  const { writesFrozen } = useWriteAvailability()
   const loading = ref(false)
   const histLoading = ref(false)
   const pauseLoading = ref(false)

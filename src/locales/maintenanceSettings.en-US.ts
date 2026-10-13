@@ -7,6 +7,9 @@ export default {
   enabledLabel: 'Maintenance switch',
   enabled: 'Enabled',
   disabled: 'Disabled',
+  scheduled: 'Announced, waiting to start',
+  scheduledEffect:
+    'The announcement appears immediately. Business reads and writes remain available until the scheduled time, when the selected maintenance mode activates automatically.',
   modeLabel: 'Mode',
   readOnlyMode: 'Read-only maintenance',
   fullFreezeMode: 'Full freeze (downtime)',
@@ -16,6 +19,10 @@ export default {
   messagePlaceholder: 'Explain the reason or information users need',
   etaLabel: 'Estimated recovery time',
   etaPlaceholder: 'Optional; select in your local time zone',
+  startsAtLabel: 'Scheduled start time',
+  startsAtPlaceholder: 'Leave blank to start immediately when saved',
+  startsAtHint:
+    'The announcement and countdown appear immediately. The backend activates the selected mode at this time; leave blank for immediate activation.',
   affectedServicesLabel: 'Affected service labels',
   affectedServicesPlaceholder: 'One service code per line, such as trigger',
   affectedServicesHint:

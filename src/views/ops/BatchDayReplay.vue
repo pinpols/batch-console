@@ -5,7 +5,7 @@
         <el-button :icon="Refresh" :loading="loadingDetail" @click="reloadCurrent">
           {{ t('common.refresh') }}
         </el-button>
-        <el-button type="primary" :icon="Plus" @click="openSubmitDrawer">
+        <el-button type="primary" :icon="Plus" :disabled="writesFrozen" @click="openSubmitDrawer">
           {{ t('batchDayReplay.submitBtn') }}
         </el-button>
       </template>
@@ -20,7 +20,13 @@
             {{ t('batchDayReplay.historyUnavailableTag') }}
           </el-tag>
         </div>
-        <el-button text type="primary" :icon="Plus" @click="openSubmitDrawer">
+        <el-button
+          text
+          type="primary"
+          :icon="Plus"
+          :disabled="writesFrozen"
+          @click="openSubmitDrawer"
+        >
           {{ t('batchDayReplay.submitBtn') }}
         </el-button>
       </template>
@@ -54,7 +60,12 @@
             "
           >
             <template #action>
-              <el-button type="primary" :icon="Plus" @click.stop="openSubmitDrawer">
+              <el-button
+                type="primary"
+                :icon="Plus"
+                :disabled="writesFrozen"
+                @click.stop="openSubmitDrawer"
+              >
                 {{ t('batchDayReplay.submitBtn') }}
               </el-button>
             </template>
@@ -396,7 +407,9 @@
           native-type="submit"
           form="batch-day-replay-form"
           :loading="submitting"
-          :disabled="!submissionOutcomeUnknown && (!preview || preview.totalCount === 0)"
+          :disabled="
+            !submissionOutcomeUnknown && (writesFrozen || !preview || preview.totalCount === 0)
+          "
         >
           {{
             submissionOutcomeUnknown
@@ -504,10 +517,22 @@
       </div>
       <template #footer>
         <el-button @click="detailDrawerOpen = false">{{ t('common.close') }}</el-button>
-        <el-button v-if="canApprove" type="success" :loading="approving" @click="doApprove">
+        <el-button
+          v-if="canApprove"
+          type="success"
+          :loading="approving"
+          :disabled="writesFrozen"
+          @click="doApprove"
+        >
           {{ t('batchDayReplay.approveBtn') }}
         </el-button>
-        <el-button v-if="canCancel" type="danger" :loading="cancelling" @click="doCancel">
+        <el-button
+          v-if="canCancel"
+          type="danger"
+          :loading="cancelling"
+          :disabled="writesFrozen"
+          @click="doCancel"
+        >
           {{ t('batchDayReplay.cancelBtn') }}
         </el-button>
       </template>
@@ -540,12 +565,14 @@
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
   import { useAuthStore } from '@/stores/auth'
+  import { useWriteAvailability } from '@/composables/useWriteAvailability'
   import { buildBatchDayReplayRequest } from '@/utils/batchDayReplayForm'
   import { jobApi } from '@/api/job'
 
   const { t } = useI18n({ useScope: 'global' })
   const tenant = useTenantStore()
   const auth = useAuthStore()
+  const { writesFrozen, ensureWriteAvailable } = useWriteAvailability()
 
   const sessions = ref<BatchDayReplaySession[]>([])
   const loadingSessions = ref(false)
@@ -706,12 +733,15 @@
 
   /** 仅 PENDING_APPROVAL 状态 + ADMIN 角色可以审批 */
   const canApprove = computed(
-    () => currentSession.value?.status === 'PENDING_APPROVAL' && isPlatformAdmin.value,
+    () =>
+      !writesFrozen.value &&
+      currentSession.value?.status === 'PENDING_APPROVAL' &&
+      isPlatformAdmin.value,
   )
   /** RUNNING / PENDING_APPROVAL 都可取消;ADMIN 或 提交人本人 */
   const canCancel = computed(() => {
     const s = currentSession.value
-    if (!s) return false
+    if (!s || writesFrozen.value) return false
     if (s.status !== 'RUNNING' && s.status !== 'PENDING_APPROVAL') return false
     return isPlatformAdmin.value || s.requestedBy === auth.userInfo?.username
   })
@@ -779,6 +809,7 @@
   }
 
   async function doSubmit() {
+    if (!ensureWriteAvailable()) return
     if (submissionOutcomeUnknown.value) {
       await resolveUnknownSubmitOutcome()
       return
@@ -862,6 +893,7 @@
   }
 
   async function openSubmitDrawer() {
+    if (!ensureWriteAvailable()) return
     submitDrawerOpen.value = true
     if (!jobCodeOptions.value.length) await loadJobCodeOptions()
   }
@@ -912,6 +944,7 @@
   }
 
   async function doApprove() {
+    if (!ensureWriteAvailable()) return
     if (!currentSession.value) return
     try {
       await confirmDanger({
@@ -942,6 +975,7 @@
   }
 
   async function doCancel() {
+    if (!ensureWriteAvailable()) return
     if (!currentSession.value) return
     try {
       await confirmDanger({

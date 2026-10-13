@@ -186,6 +186,7 @@
                 <el-button
                   v-if="canWorkerAction(row.status, 'drain')"
                   size="small"
+                  :disabled="writesFrozen"
                   plain
                   type="warning"
                   @click="drain(row)"
@@ -195,6 +196,7 @@
                 <el-button
                   v-if="canWorkerAction(row.status, 'offline')"
                   size="small"
+                  :disabled="writesFrozen"
                   plain
                   type="danger"
                   @click="offline(row)"
@@ -204,6 +206,7 @@
                 <el-button
                   v-if="canWorkerAction(row.status, 'takeover')"
                   size="small"
+                  :disabled="writesFrozen"
                   plain
                   @click="takeover(row)"
                 >
@@ -212,6 +215,7 @@
                 <el-button
                   v-if="canWorkerAction(row.status, 'warmup')"
                   size="small"
+                  :disabled="writesFrozen"
                   plain
                   type="success"
                   @click="warmup(row)"
@@ -384,6 +388,7 @@
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
   import { uniqueFieldValues } from '@/utils/queryFormOptions'
   import { useTenantStore } from '@/stores/tenant'
+  import { useWriteAvailability } from '@/composables/useWriteAvailability'
   import PageContainer from '@/components/common/PageContainer.vue'
   import MetaSelect from '@/components/common/MetaSelect.vue'
   import StatusSegment, { type StatusSegmentItem } from '@/components/table/StatusSegment.vue'
@@ -402,6 +407,7 @@
   import { fmtDatetime, fmtDuration } from '@/utils/datetime'
 
   const tenant = useTenantStore()
+  const { writesFrozen, ensureWriteAvailable } = useWriteAvailability()
   const queryClient = useQueryClient()
   const activeTab = ref('workers')
 
@@ -646,6 +652,7 @@
   })
 
   async function drain(row: ConsoleWorkerRegistryResponse) {
+    if (!ensureWriteAvailable()) return
     try {
       await confirmDanger({
         verb: t('workerManagement.drainConfirmTitle'),
@@ -663,6 +670,7 @@
   }
 
   async function takeover(row: ConsoleWorkerRegistryResponse) {
+    if (!ensureWriteAvailable()) return
     try {
       await ElMessageBox.confirm(
         t('workerManagement.takeoverConfirmText', { code: row.workerCode }),
@@ -685,6 +693,7 @@
   }
 
   async function warmup(row: ConsoleWorkerRegistryResponse) {
+    if (!ensureWriteAvailable()) return
     try {
       await warmupWorker(row.workerCode, tenant.tenantId)
       ElMessage.success(t('workerManagement.warmupSuccess', { code: row.workerCode }))
@@ -695,6 +704,7 @@
   }
 
   async function offline(row: ConsoleWorkerRegistryResponse) {
+    if (!ensureWriteAvailable()) return
     try {
       await confirmDanger({
         verb: t('workerManagement.offlineVerb'),

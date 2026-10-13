@@ -5,8 +5,10 @@ import type { components } from '@/types/api.generated'
 type BackendMaintenanceStatus = components['schemas']['MaintenanceStatus']
 export type MaintenanceStatus = Omit<
   BackendMaintenanceStatus,
-  'message' | 'etaAt' | 'affectedServices' | 'version' | 'updatedAt'
+  'message' | 'etaAt' | 'startsAt' | 'active' | 'affectedServices' | 'version' | 'updatedAt'
 > & {
+  active: boolean
+  startsAt: string | null
   message: string | null
   etaAt: string | null
   affectedServices: string[]
@@ -48,9 +50,11 @@ export async function updateMaintenance(
 function normalize(data: Partial<MaintenanceStatus> | null): MaintenanceStatus {
   return {
     enabled: !!data?.enabled,
+    active: data?.active ?? !!data?.enabled,
     readOnly: !!data?.readOnly,
     message: data?.message ?? null,
     etaAt: data?.etaAt ?? null,
+    startsAt: data?.startsAt ?? null,
     affectedServices: Array.isArray(data?.affectedServices) ? data.affectedServices : [],
     version: data?.version ?? null,
     updatedAt: data?.updatedAt ?? null,

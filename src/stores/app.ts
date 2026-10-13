@@ -131,12 +131,14 @@ export const useAppStore = defineStore('app', () => {
   })
 
   // 维护 / 降级模式状态 — BE GET /api/console/system/maintenance + 503 拦截共同维护
-  // enabled=true 时全局 banner 显示;readOnly=true 时所有写按钮禁用;两者均 true 时降级页
+  // enabled=true 时显示公告;active=true 后才冻结写操作,全冻结模式进入降级页
   const maintenance = ref<{
     enabled: boolean
+    active: boolean
     readOnly: boolean
     message: string | null
     etaAt: string | null
+    startsAt: string | null
     /** 受影响子系统 code 列表;空 = 整站维护(banner 走 message 兜底) */
     affectedServices: string[]
     /** 当前用户是 admin 旁路(由响应头 X-Maintenance: admin-bypass 触发) */
@@ -153,9 +155,11 @@ export const useAppStore = defineStore('app', () => {
     isStale: boolean
   }>({
     enabled: false,
+    active: false,
     readOnly: false,
     message: null,
     etaAt: null,
+    startsAt: null,
     affectedServices: [],
     adminBypass: false,
     version: null,
@@ -166,11 +170,15 @@ export const useAppStore = defineStore('app', () => {
   })
 
   function setMaintenance(state: Partial<typeof maintenance.value>) {
-    maintenance.value = { ...maintenance.value, ...state }
+    maintenance.value = {
+      ...maintenance.value,
+      ...state,
+      active: state.active ?? state.enabled ?? maintenance.value.active,
+    }
   }
 
   /** 维护期间所有业务写操作均冻结；管理员旁路只允许后端放行诊断读取。 */
-  const writesFrozen = computed(() => maintenance.value.enabled)
+  const writesFrozen = computed(() => maintenance.value.active)
 
   // 降级模式状态 — BE Resilience4j circuit breaker 触发降级时,响应头加
   //   X-Degraded-Source: <serviceCode>(如 trigger / orchestrator / push)

@@ -1,5 +1,9 @@
 export default {
   bannerBlocked: 'System under maintenance',
+  bannerScheduled: 'Scheduled maintenance',
+  startImminent: 'Starting soon',
+  startsInMinutes: 'Maintenance starts in {n} minutes',
+  startsInHours: 'Maintenance starts in {n} hours',
   bannerReadonly: 'System is in read-only mode',
   bannerAdminBypass:
     'Maintenance active; admins can read diagnostics, while business writes remain blocked',
