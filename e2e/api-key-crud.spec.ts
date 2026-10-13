@@ -60,7 +60,7 @@ test.describe('API Key management CRUD (API Key 增删)', () => {
       document.body.classList.remove('el-popup-parent--hidden')
     })
     // 列表可能已累积大量 key(分页),新建的不一定在第 1 页:先按名称搜索过滤再断言,避免 flaky。
-    const keywordInput = page.getByPlaceholder(/关键字|keyword|名称|name/i).first()
+    const keywordInput = page.getByPlaceholder(/关键字|名称/).first()
     if (await keywordInput.count()) {
       await keywordInput.fill(uniqueName)
       await keywordInput.press('Enter')

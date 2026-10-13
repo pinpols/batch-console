@@ -205,7 +205,7 @@ test.describe('upload-full-chain · 租户配置包 Excel 导入', () => {
         response.request().method() === 'POST',
       { timeout: 10_000 },
     )
-    await confirm.getByRole('button', { name: /确认应用|Confirm apply|Confirm/ }).click()
+    await confirm.getByRole('button', { name: /确认应用/ }).click()
     expect((await applyResponseP).status()).toBeLessThan(400)
     await expect(page.locator('.apply-zone__block.el-alert--success')).toBeVisible({
       timeout: 10_000,

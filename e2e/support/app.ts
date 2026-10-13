@@ -4,6 +4,8 @@ import { test, expect } from './fixtures'
 import {
   type E2eLocale,
   type LocalizedExpectation,
+  E2E_DEFAULT_LOCALE,
+  installE2eLocale,
   resolveLocalizedExpectation,
   setE2eLocale,
 } from './i18n'
@@ -68,7 +70,7 @@ export const smokeRoutes: RouteCheck[] = [
   { path: '/governance/queues', title: /队列/ },
   { path: '/workers/management', title: 'Worker 管理' },
   { path: '/system/triggers', title: '触发器' },
-  { path: '/ops/custom-task-types', title: /自定义任务类型|Custom\s*task\s*types/i },
+  { path: '/ops/custom-task-types', title: '自定义任务类型' },
   { path: '/ops/worker-fingerprints', title: 'Worker 指纹看板' },
   { path: '/ops/capacity-profile', title: '容量画像' },
   { path: '/ops/asset-freshness', title: '资产新鲜度策略' },
@@ -85,25 +87,23 @@ export const smokeRoutes: RouteCheck[] = [
   { path: '/system/notifications', title: '通知与投递' },
   {
     path: '/system/atomic-task-types',
-    title: /原子节点配置中心|Atomic\s*task\s*type\s*center/i,
+    title: '原子节点配置中心',
   },
 ]
 
-export async function enterDemoApp(page: Page, locale: E2eLocale = 'zh-CN') {
+export async function enterDemoApp(page: Page, locale: E2eLocale = E2E_DEFAULT_LOCALE) {
   // 第一次访问任意页面前预置 localStorage:locale + onboarding 跳过。
   // 用 addInitScript 保证在每次 navigation 之前(含跳登录后回 ops/summary)都生效。
   // 本地存储键：
   //   - STORAGE_KEYS.locale           见 src/constants/locale.ts:1
   //   - STORAGE_KEYS.onboardingDone  见 src/composables/useOnboardingTour.ts:14
-  await page.addInitScript(({ localeKey, onboardingKey, nextLocale }) => {
+  await installE2eLocale(page, locale)
+  await page.addInitScript(({ onboardingKey }) => {
     try {
-      localStorage.setItem(localeKey, nextLocale)
       localStorage.setItem(onboardingKey, '1')
     } catch {}
   }, {
-    localeKey: STORAGE_KEYS.locale,
     onboardingKey: STORAGE_KEYS.onboardingDone,
-    nextLocale: locale,
   })
 
   await page.goto('/ops/summary', { waitUntil: 'domcontentloaded' })

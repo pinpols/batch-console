@@ -32,9 +32,9 @@ const PAGES: ListPage[] = [
     rowSelector: '.quota-card:visible',
   },
   { path: '/system/tags', title: '标签管理', listUrl: /\/tags\/keys/ },
-  { path: '/system/api-keys', title: /API Key|密钥/, listUrl: /\/api-keys(\?|\/?$)/ },
+  { path: '/system/api-keys', title: 'API Key', listUrl: /\/api-keys(\?|\/?$)/ },
   { path: '/system/parameters', title: /系统参数|参数/, listUrl: /\/system-parameters/ },
-  { path: '/system/triggers', title: /触发器|Trigger/, listUrl: /\/ops\/triggers/ },
+  { path: '/system/triggers', title: '触发器', listUrl: /\/ops\/triggers/ },
   {
     path: '/observability/alerts',
     title: /告警|事件告警/,

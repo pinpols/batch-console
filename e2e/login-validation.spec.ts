@@ -1,5 +1,6 @@
 import { STORAGE_KEYS } from './support/storage'
 import { FRONTEND_BASE_URL } from './support/config'
+import { installE2eLocale } from './support/i18n'
 import { expect, test } from '@playwright/test'
 
 /**
@@ -8,9 +9,12 @@ import { expect, test } from '@playwright/test'
 test.describe('login form validation', () => {
   test.use({ storageState: { cookies: [], origins: [] } })
 
+  test.beforeEach(async ({ page }) => {
+    await installE2eLocale(page)
+  })
+
   test('OIDC 启用时显示企业登录入口', async ({ page, context }) => {
     await context.clearCookies()
-    await page.addInitScript((localeKey) => localStorage.setItem(localeKey, 'zh-CN'), STORAGE_KEYS.locale)
     await page.route('**/api/console/auth/oidc/provider', (route) =>
       route.fulfill({
         status: 200,
@@ -44,7 +48,7 @@ test.describe('login form validation', () => {
     page.on('request', (req) => {
       if (req.method() === 'POST' && req.url().includes('/auth/login')) posted = true
     })
-    const loginBtn = page.getByRole('button', { name: /登\s*录|Sign\s*in/i }).first()
+    const loginBtn = page.getByRole('button', { name: /登\s*录/ }).first()
     await expect(loginBtn).toBeVisible({ timeout: 8000 })
     await loginBtn.click()
     await page.waitForTimeout(800)
@@ -55,15 +59,15 @@ test.describe('login form validation', () => {
     await context.clearCookies()
     await page.goto('/login', { waitUntil: 'networkidle' })
     await page
-      .getByPlaceholder(/用户名|username/i)
+      .getByPlaceholder(/用户名/)
       .first()
       .fill('admin')
     await page
-      .getByPlaceholder(/密码|password/i)
+      .getByPlaceholder(/密码/)
       .first()
       .fill('wrong-password-xyz')
     await page
-      .getByRole('button', { name: /登\s*录|Sign\s*in/i })
+      .getByRole('button', { name: /登\s*录/ })
       .first()
       .click()
     const toast = page.locator('.el-message--error, .el-message--warning').first()
@@ -76,9 +80,9 @@ test.describe('login form validation', () => {
     await page.evaluate((localeKey) => localStorage.setItem(localeKey, 'zh-CN'), STORAGE_KEYS.locale)
     await page.reload({ waitUntil: 'networkidle' })
 
-    const localeToggle = page.getByRole('button', { name: /切换语言|Switch language/i })
+    const localeToggle = page.getByRole('button', { name: '切换语言' })
     await expect(localeToggle).toBeVisible({ timeout: 8000 })
-    await localeToggle.click()
+    await page.getByRole('button', { name: 'Switch language' }).click()
 
     await expect(page.getByRole('heading', { name: 'Sign in to the console' })).toBeVisible()
     await expect(page.getByPlaceholder('Enter tenant username')).toBeVisible()
