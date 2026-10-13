@@ -9,6 +9,7 @@ import type { components } from '@/types/api.generated'
 import type {
   BatchDayCatchUpRequest,
   ConfigSyncBundlePayload,
+  CodeNameOption,
   ConsoleJobDefinitionResponse,
   JobBundleCreateRequest,
   JobBundleImportRequest,
@@ -51,6 +52,9 @@ export interface JobDefinitionListParams {
   jobCode?: string
   scheduleType?: 'CRON' | 'FIXED_RATE' | 'MANUAL'
   monitoringCategory?: 'SCHEDULED' | 'DEPENDENCY' | 'RUNTIME_ONLY'
+  exactJobCode?: string
+  dependsOnJobCode?: string
+  includeDisabled?: boolean
   /** undefined = 后端默认仅 enabled=true；显式传 false = 只看停用；true = 只看启用 */
   enabled?: boolean
 }
@@ -58,7 +62,7 @@ export interface JobDefinitionListParams {
 export const jobApi = {
   /** 设计器 JOB 节点使用的轻量编码列表。 */
   listCodes: (tenantId: string) =>
-    get<string[]>('/api/console/queries/job-definitions/codes', { tenantId }),
+    get<CodeNameOption[]>('/api/console/queries/job-definitions/codes', { tenantId }),
 
   /**
    * @deprecated 仅限需要全量聚合的特殊场景（如 meta 下拉）。列表页请改用
@@ -85,6 +89,9 @@ export const jobApi = {
       pageNo,
       pageSize,
       ...(params.jobCode ? { jobCode: params.jobCode } : {}),
+      ...(params.exactJobCode ? { exactJobCode: params.exactJobCode } : {}),
+      ...(params.dependsOnJobCode ? { dependsOnJobCode: params.dependsOnJobCode } : {}),
+      ...(params.includeDisabled ? { includeDisabled: true } : {}),
       ...(params.scheduleType ? { scheduleType: params.scheduleType } : {}),
       ...(params.monitoringCategory ? { monitoringCategory: params.monitoringCategory } : {}),
       ...(params.enabled != null ? { enabled: params.enabled } : {}),

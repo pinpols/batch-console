@@ -4,6 +4,7 @@ import userAccountList from './userAccountList.en-US.ts'
 import jobMonitoringPolicy from './jobMonitoringPolicy.en-US.ts'
 import tenantPackageImportWizard from './tenantPackageImportWizard.en-US.ts'
 import workflowDesignerDependency from './workflowDesignerDependency.en-US.ts'
+import workflowDesignerJobDependencies from './workflowDesignerJobDependencies.en-US.ts'
 import onboardingCenter from './onboardingCenter.en-US.ts'
 
 const messages: Messages = {
@@ -293,6 +294,7 @@ const messages: Messages = {
     errorDrawerTitle: 'Validation errors',
     dependencyPickerPlaceholder: 'Select a dependency edge',
     dependencyPickerAria: 'Dependency edge picker',
+    jobDependencies: workflowDesignerJobDependencies,
     saveOk: 'Saved',
     saveFailed: 'Save failed',
     saveNeedsId: 'workflowId is required to save',

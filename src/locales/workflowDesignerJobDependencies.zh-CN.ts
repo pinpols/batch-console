@@ -1,0 +1,15 @@
+export default {
+  title: '作业依赖概览',
+  workflowTitle: '当前流程（可编辑）',
+  workflowUpstream: '流程上游',
+  workflowDownstream: '流程下游',
+  noWorkflowUpstream: '当前流程没有直接上游节点',
+  noWorkflowDownstream: '当前流程没有直接下游节点',
+  definitionTitle: '作业定义依赖',
+  definitionUpstream: '作业定义前置',
+  definitionDownstream: '直接依赖此作业的定义（{count}）',
+  noDefinitionUpstream: '未配置作业定义前置依赖',
+  noDefinitionDownstream: '暂无直接后置作业定义',
+  definitionMissing: '当前绑定的作业定义未找到，依赖信息可能不完整。',
+  loadError: '作业定义依赖暂时无法加载，请稍后重试。',
+}

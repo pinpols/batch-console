@@ -5,6 +5,7 @@
 import type { components } from '@/types/api.generated'
 
 export type ConsoleJobDefinitionResponse = components['schemas']['ConsoleJobDefinitionResponse']
+export type CodeNameOption = components['schemas']['CodeNameOption']
 export type ConsoleJobInstanceResponse = components['schemas']['ConsoleJobInstanceResponse']
 export type ConsoleJobStepInstanceResponse = components['schemas']['ConsoleJobStepInstanceResponse']
 export type ConsoleOpsSummaryResponse = components['schemas']['ConsoleOpsSummaryResponse']

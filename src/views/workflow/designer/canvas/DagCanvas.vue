@@ -183,10 +183,10 @@
   .dag-canvas__zoom {
     position: absolute;
     left: 12px;
-    bottom: 16px;
+    top: 52px;
     z-index: 3;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     padding: 3px;
     border: 1px solid var(--color-border-light);
     border-radius: 8px;

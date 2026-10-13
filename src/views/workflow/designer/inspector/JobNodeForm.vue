@@ -6,16 +6,19 @@
    *  - skipExpression 文本(粗校验:非空字符串)
    * 表单不立即保存,失焦写回 store(走 updateNode → 入 undo 栈)。
    */
-  import { computed, onMounted, ref, watch } from 'vue'
+  import { computed, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { useDesignerStore } from '../store/useDesignerStore'
   import { useJobCodeOptions } from '@/composables/useJobCodeOptions'
+  import { useJobDefinitionDependencies } from '@/composables/useJobDefinitionDependencies'
+  import { edgeTypeOf } from '../canvas/edgePresentation'
   import type { DesignerNode } from '../types'
 
   const props = defineProps<{ node: DesignerNode; readonly: boolean }>()
   const { t } = useI18n()
   const store = useDesignerStore()
   const { loading, options, load } = useJobCodeOptions()
+  const jobDependencies = useJobDefinitionDependencies()
 
   interface JobAttrs {
     jobCode?: string
@@ -36,6 +39,34 @@
 
   const local = ref<JobAttrs>(readAttrs(props.node))
   const localName = ref(props.node.nodeName)
+  const linkedJobCode = computed(() => String(props.node.attrs?.jobCode ?? '').trim())
+  const currentFlowDependencies = computed(() => {
+    const nodeById = new Map(store.nodes.map((node) => [node.id, node]))
+    return store.edges
+      .filter((edge) => edge.source === props.node.id || edge.target === props.node.id)
+      .map((edge) => {
+        const incoming = edge.target === props.node.id
+        const relatedNode = nodeById.get(incoming ? edge.source : edge.target)
+        if (!relatedNode) return null
+        return {
+          id: relatedNode.id,
+          direction: incoming ? 'incoming' : 'outgoing',
+          label:
+            relatedNode.nodeName === relatedNode.nodeCode
+              ? relatedNode.nodeCode
+              : `${relatedNode.nodeName} (${relatedNode.nodeCode})`,
+          edgeType: edgeTypeOf(edge),
+          enabled: edge.attrs?.enabled !== false,
+        }
+      })
+      .filter((relation): relation is NonNullable<typeof relation> => relation !== null)
+  })
+  const currentFlowIncoming = computed(() =>
+    currentFlowDependencies.value.filter((relation) => relation.direction === 'incoming'),
+  )
+  const currentFlowOutgoing = computed(() =>
+    currentFlowDependencies.value.filter((relation) => relation.direction === 'outgoing'),
+  )
   const fieldErrors = computed(() => {
     const m = new Map<string, string>()
     for (const e of store.validationErrors) {
@@ -52,9 +83,25 @@
     },
   )
 
-  onMounted(() => {
-    if (store.meta.tenantId) void load(store.meta.tenantId)
-  })
+  watch(
+    () => store.meta.tenantId,
+    (tenantId) => {
+      if (tenantId) void load(tenantId)
+    },
+    { immediate: true },
+  )
+
+  watch(
+    [() => store.meta.tenantId, linkedJobCode],
+    ([tenantId, jobCode]) => {
+      void jobDependencies.load(tenantId, jobCode)
+    },
+    { immediate: true },
+  )
+
+  function loadDependentPage(page: number) {
+    void jobDependencies.loadDownstreamPage(store.meta.tenantId, linkedJobCode.value, page)
+  }
 
   function writeAttr(field: keyof JobAttrs, raw: unknown) {
     if (props.readonly) return
@@ -131,5 +178,210 @@
         @blur="writeAttr('skipExpression', local.skipExpression)"
       />
     </el-form-item>
+
+    <section class="job-dependencies" :aria-label="t('workflowDesignerMvp.jobDependencies.title')">
+      <h4>{{ t('workflowDesignerMvp.jobDependencies.title') }}</h4>
+      <div class="job-dependencies__group">
+        <div class="job-dependencies__heading">
+          {{ t('workflowDesignerMvp.jobDependencies.workflowTitle') }}
+        </div>
+        <div class="job-dependencies__columns">
+          <div>
+            <span class="job-dependencies__label">
+              {{ t('workflowDesignerMvp.jobDependencies.workflowUpstream') }}
+            </span>
+            <div v-if="currentFlowIncoming.length" class="job-dependencies__items">
+              <div
+                v-for="relation in currentFlowIncoming"
+                :key="relation.id"
+                class="job-dependencies__item"
+              >
+                <span>{{ relation.label }}</span>
+                <el-tag size="small" :type="relation.enabled ? 'success' : 'info'">
+                  {{ t(`enum.edgeType.${relation.edgeType}`) }}
+                </el-tag>
+              </div>
+            </div>
+            <span v-else class="job-dependencies__empty">
+              {{ t('workflowDesignerMvp.jobDependencies.noWorkflowUpstream') }}
+            </span>
+          </div>
+          <div>
+            <span class="job-dependencies__label">
+              {{ t('workflowDesignerMvp.jobDependencies.workflowDownstream') }}
+            </span>
+            <div v-if="currentFlowOutgoing.length" class="job-dependencies__items">
+              <div
+                v-for="relation in currentFlowOutgoing"
+                :key="relation.id"
+                class="job-dependencies__item"
+              >
+                <span>{{ relation.label }}</span>
+                <el-tag size="small" :type="relation.enabled ? 'success' : 'info'">
+                  {{ t(`enum.edgeType.${relation.edgeType}`) }}
+                </el-tag>
+              </div>
+            </div>
+            <span v-else class="job-dependencies__empty">
+              {{ t('workflowDesignerMvp.jobDependencies.noWorkflowDownstream') }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="job-dependencies__group">
+        <div class="job-dependencies__heading">
+          {{ t('workflowDesignerMvp.jobDependencies.definitionTitle') }}
+          <el-tag size="small" type="info">{{ t('workflowDesignerMvp.readonlyTag') }}</el-tag>
+        </div>
+        <el-skeleton v-if="jobDependencies.loading.value" :rows="2" animated />
+        <el-alert
+          v-else-if="jobDependencies.hasError.value"
+          :title="t('workflowDesignerMvp.jobDependencies.loadError')"
+          type="warning"
+          :closable="false"
+          show-icon
+        />
+        <template v-if="!jobDependencies.loading.value">
+          <el-alert
+            v-if="!jobDependencies.definition.value"
+            :title="t('workflowDesignerMvp.jobDependencies.definitionMissing')"
+            type="info"
+            :closable="false"
+            show-icon
+          />
+          <div class="job-dependencies__label">
+            {{ t('workflowDesignerMvp.jobDependencies.definitionUpstream') }}
+          </div>
+          <div class="job-dependencies__definition-row">
+            <template v-if="jobDependencies.definition.value?.dependsOnJobCode">
+              <span class="job-dependencies__code">
+                {{
+                  jobDependencies.upstream.value?.jobName ||
+                  jobDependencies.definition.value.dependsOnJobCode
+                }}
+              </span>
+              <span class="job-dependencies__code-detail">
+                {{ jobDependencies.definition.value.dependsOnJobCode }}
+              </span>
+            </template>
+            <span v-else-if="jobDependencies.definition.value" class="job-dependencies__empty">
+              {{ t('workflowDesignerMvp.jobDependencies.noDefinitionUpstream') }}
+            </span>
+            <span v-else class="job-dependencies__empty">{{ linkedJobCode }}</span>
+          </div>
+          <div class="job-dependencies__label">
+            {{
+              t('workflowDesignerMvp.jobDependencies.definitionDownstream', {
+                count: jobDependencies.downstreamTotal.value,
+              })
+            }}
+          </div>
+          <div v-if="jobDependencies.downstream.value.length" class="job-dependencies__items">
+            <div
+              v-for="dependent in jobDependencies.downstream.value"
+              :key="dependent.id"
+              class="job-dependencies__item"
+            >
+              <span>{{ dependent.jobName || dependent.jobCode }}</span>
+              <span class="job-dependencies__code-detail">{{ dependent.jobCode }}</span>
+              <el-tag size="small" :type="dependent.enabled ? 'success' : 'info'">
+                {{ dependent.enabled ? t('common.enabled') : t('common.disabled') }}
+              </el-tag>
+            </div>
+            <el-pagination
+              v-if="jobDependencies.downstreamTotal.value > jobDependencies.pageSize"
+              small
+              layout="prev, pager, next"
+              :current-page="jobDependencies.downstreamPage.value"
+              :page-size="jobDependencies.pageSize"
+              :total="jobDependencies.downstreamTotal.value"
+              @current-change="loadDependentPage"
+            />
+          </div>
+          <span v-else class="job-dependencies__empty">
+            {{ t('workflowDesignerMvp.jobDependencies.noDefinitionDownstream') }}
+          </span>
+        </template>
+      </div>
+    </section>
   </el-form>
 </template>
+
+<style scoped>
+  .job-dependencies {
+    display: grid;
+    gap: 10px;
+    border-top: 1px solid var(--color-border-light);
+    padding-top: 12px;
+  }
+  .job-dependencies h4 {
+    margin: 0;
+    color: var(--color-text-primary);
+    font-size: 13px;
+  }
+  .job-dependencies__group {
+    display: grid;
+    gap: 9px;
+    padding: 10px;
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-control);
+    background: var(--color-bg-subtle, var(--color-bg-page));
+  }
+  .job-dependencies__heading,
+  .job-dependencies__item,
+  .job-dependencies__definition-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    min-width: 0;
+  }
+  .job-dependencies__heading {
+    color: var(--color-text-primary);
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .job-dependencies__columns {
+    display: grid;
+    gap: 10px;
+  }
+  .job-dependencies__label {
+    display: block;
+    margin-bottom: 5px;
+    color: var(--color-text-secondary);
+    font-size: 11px;
+  }
+  .job-dependencies__items {
+    display: grid;
+    gap: 6px;
+  }
+  .job-dependencies__item {
+    color: var(--color-text-primary);
+    font-size: 12px;
+  }
+  .job-dependencies__item > span:first-child {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .job-dependencies__empty,
+  .job-dependencies__code-detail {
+    color: var(--color-text-tertiary);
+    font-size: 11px;
+  }
+  .job-dependencies__definition-row {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+  }
+  .job-dependencies__code {
+    color: var(--color-text-primary);
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .job-dependencies :deep(.el-pagination) {
+    justify-content: flex-end;
+    margin-top: 4px;
+  }
+</style>
