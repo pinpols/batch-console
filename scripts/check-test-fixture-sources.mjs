@@ -254,12 +254,12 @@ if (violations.length) {
   console.error('[test-fixture-sources] 检查失败:')
   for (const violation of violations) console.error(`- ${violation}`)
   console.error(
-    '❌ 不通过 | code=TEST_FIXTURE_SOURCES | gate=测试配置事实来源 | exit_code=1 | action=fix_and_retry',
+    '❌ 不通过 | code=TEST_FIXTURE_SOURCES | gate=测试配置事实来源 | group=testing | mode=enforce | exit_code=1 | action=fix_and_retry',
   )
   process.exit(1)
 }
 
 console.log(`[test-fixture-sources] 已检查 ${testFiles.length} 个测试文件`)
 console.log(
-  '✅ 通过 | code=TEST_FIXTURE_SOURCES | gate=测试配置事实来源 | exit_code=0 | action=none',
+  '✅ 通过 | code=TEST_FIXTURE_SOURCES | gate=测试配置事实来源 | group=testing | mode=enforce | exit_code=0 | action=none',
 )

@@ -68,13 +68,13 @@ jobs:
       - name: Install locked dependencies
         run: npm ci --no-audit --no-fund
       - name: Test configuration source governance
-        run: bash scripts/ci/run-gate.sh FE_TEST_FIXTURE_SOURCES "测试配置事实来源" -- npm run check:test-fixture-sources
+        run: bash scripts/ci/run-gate.sh --group testing FE_TEST_FIXTURE_SOURCES "测试配置事实来源" -- npm run check:test-fixture-sources
       - name: Check package version alignment
         run: bash scripts/ci/run-gate.sh FE_VERSION "版本对齐" -- npm run check:version
       - name: Typecheck
         run: bash scripts/ci/run-gate.sh FE_TYPECHECK "TypeScript 类型检查" -- npm run typecheck
       - name: Check translations
-        run: bash scripts/ci/run-gate.sh FE_I18N "国际化词条一致性" -- npm run check:i18n
+        run: bash scripts/ci/run-gate.sh --group localization FE_I18N "国际化词条一致性" -- npm run check:i18n
       - name: Unit tests
         run: bash scripts/ci/run-gate.sh FE_UNIT "Vitest 单测" -- npm run test:unit
       - name: Production build

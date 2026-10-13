@@ -87,7 +87,7 @@ jobs:
 
       # zh-CN ↔ en-US 1:1 对齐检查 — build 隐含会跑,这里前置以便快失败
       - name: i18n consistency
-        run: bash scripts/ci/run-gate.sh FE_I18N "国际化词条一致性" -- npm run check:i18n
+        run: bash scripts/ci/run-gate.sh --group localization FE_I18N "国际化词条一致性" -- npm run check:i18n
 
       - name: Unit tests (Vitest) + coverage gate
         run: bash scripts/ci/run-gate.sh FE_UNIT "Vitest 单测与覆盖率" -- npm run test:unit -- --coverage

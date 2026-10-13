@@ -10,11 +10,12 @@ gate_result() {
   local code="$2"
   local name="$3"
   local exit_code="${4:-0}"
+  local group="${5:-${BATCH_GATE_GROUP:-general}}"
   local line
   if [[ "$status" == "PASS" ]]; then
-    line="✅ 通过 | code=${code} | gate=${name} | exit_code=0 | action=none"
+    line="✅ 通过 | code=${code} | gate=${name} | group=${group} | mode=enforce | exit_code=0 | action=none"
   else
-    line="❌ 不通过 | code=${code} | gate=${name} | exit_code=${exit_code} | action=fix_and_retry"
+    line="❌ 不通过 | code=${code} | gate=${name} | group=${group} | mode=enforce | exit_code=${exit_code} | action=fix_and_retry"
   fi
   printf '%s\n' "$line"
   if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
@@ -26,22 +27,27 @@ gate_record_failure() {
   local failure_file
   failure_file="$(gate_failure_file)"
   mkdir -p "$(dirname "$failure_file")"
-  printf '%s\t%s\t%s\n' "$1" "$3" "$2" >>"$failure_file"
+  printf '%s\t%s\t%s\t%s\n' "$1" "$3" "$2" "${4:-${BATCH_GATE_GROUP:-general}}" >>"$failure_file"
 }
 
 gate_run() {
   local code="$1"
   local name="$2"
+  local group="${BATCH_GATE_GROUP:-general}"
   shift 2
+  if (($# >= 2)) && [[ "$1" == "--group" ]]; then
+    group="$2"
+    shift 2
+  fi
   if "$@"; then
-    gate_result PASS "$code" "$name"
+    gate_result PASS "$code" "$name" 0 "$group"
     return 0
   else
     local exit_code=$?
   fi
-  gate_result FAIL "$code" "$name" "$exit_code" >&2
+  gate_result FAIL "$code" "$name" "$exit_code" "$group" >&2
   if [[ "${BATCH_GATE_COLLECT:-0}" == "1" ]]; then
-    gate_record_failure "$code" "$name" "$exit_code"
+    gate_record_failure "$code" "$name" "$exit_code" "$group"
     return 0
   fi
   return "$exit_code"
@@ -55,7 +61,7 @@ gate_assert_collected() {
   local failure_file
   failure_file="$(gate_failure_file)"
   if [[ ! -s "$failure_file" ]]; then
-    gate_result PASS GATE_COLLECTION_SUMMARY "门禁失败汇总"
+    gate_result PASS GATE_COLLECTION_SUMMARY "门禁失败汇总" 0 "${BATCH_GATE_GROUP:-general}"
     return 0
   fi
 
@@ -63,12 +69,13 @@ gate_assert_collected() {
   local code
   local exit_code
   local name
+  local group
   local summary="## 门禁失败汇总"
-  while IFS=$'\t' read -r code exit_code name; do
+  while IFS=$'\t' read -r code exit_code name group; do
     ((count += 1))
-    printf '❌ 不通过 | code=%s | gate=%s | exit_code=%s | action=fix_and_retry\n' \
-      "$code" "$name" "$exit_code" >&2
-    summary+=$'\n'"- ❌ 不通过 | code=${code} | gate=${name} | exit_code=${exit_code} | action=fix_and_retry"
+    printf '❌ 不通过 | code=%s | gate=%s | group=%s | mode=enforce | exit_code=%s | action=fix_and_retry\n' \
+      "$code" "$name" "${group:-general}" "$exit_code" >&2
+    summary+=$'\n'"- ❌ 不通过 | code=${code} | gate=${name} | group=${group:-general} | mode=enforce | exit_code=${exit_code} | action=fix_and_retry"
   done <"$failure_file"
   if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
     printf '%s\n' "$summary" >>"$GITHUB_STEP_SUMMARY"

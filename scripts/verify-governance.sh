@@ -5,6 +5,7 @@ ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"
 cd "$ROOT"
 # shellcheck source=lib/gate-result.sh
 source "$ROOT/scripts/lib/gate-result.sh"
+export BATCH_GATE_GROUP=governance
 
 owns_collection=0
 if [[ "${BATCH_GATE_COLLECT:-0}" != "1" ]]; then
@@ -23,7 +24,7 @@ gate_run FE_MAINTAINABILITY "可维护性" npm run check:maintainability
 gate_run FE_READABILITY_CALLS "新增调用现场深层嵌套" npm run check:readability-calls
 gate_run FE_READABILITY_CALLS_TEST "调用现场门禁正反例" npm run test:readability-calls
 gate_run FE_BASELINE_EXPANSION "治理基线扩张审批与反例" bash -c 'npm run check:baseline-expansion && npm run test:baseline-expansion'
-gate_run FE_TEST_FIXTURE_SOURCES "测试 fixture 事实来源" npm run check:test-fixture-sources
+BATCH_GATE_GROUP=testing gate_run FE_TEST_FIXTURE_SOURCES "测试 fixture 事实来源" npm run check:test-fixture-sources
 gate_run FE_UI_COMPLEXITY "UI 复杂度预算" npm run check:ui-complexity
 gate_run FE_WORKFLOWS "Workflow 治理" npm run check:workflows
 gate_run FE_SHELL "Shell 治理" npm run check:shell

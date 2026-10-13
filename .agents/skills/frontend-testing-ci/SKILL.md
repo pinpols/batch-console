@@ -19,6 +19,8 @@ description: 规划、执行或修复前端 lint、typecheck、i18n、Vitest、P
 - Vitest 文件与被测文件同目录，命名 `xxx.test.ts`；`describe` 用被测对象短名，`it` 描述行为，不用 `should` 前缀。
 - mock 使用 `vi.mock` + `vi.mocked`，每个用例前 `mockReset()`；不要引入 jest/chai/sinon。
 - Playwright 要使用稳定选择器和业务结果断言，不依赖脆弱延时或截图偶然一致。
+- 普通 E2E 的语言来自 `e2e/test-config.json` 的 `defaultLocale`；用户可见文案优先用 `i18nKey()` / `e2eText()` 按生产 locale key 断言，不写中英文二选一表达式。双语覆盖放在 i18n 专项中；API 契约、枚举 code 和外部兼容值保留独立预期。
+- 持久化键、浏览器 storage 桩和平台服务 origin 使用权威来源或共享 helper；不要把环境地址复制到测试里。用 `npm run check:test-fixture-sources` 检查回归。
 
 ## CI 处理
 
@@ -27,6 +29,7 @@ description: 规划、执行或修复前端 lint、typecheck、i18n、Vitest、P
 - 失败先读对应 job 日志和真实退出码；不要只因为本地构建通过就认定线上失败是环境问题。
 - workflow 或门禁变更要同步 `docs/runbook/ci.md`，并考虑 API drift、i18n、audit、Lighthouse、Docker/Trivy 的触发范围。
 - 本地 `preflight:changed` 对选中的增量检查快速失败；PR/Full Gate 通过 `run-gate.sh` 汇总独立检查，`verify-governance.sh` 在聚合模式下记录子门禁失败并继续，末尾统一报告。依赖安装、运行环境和步骤间产物等基础前置失败仍会阻断后续依赖步骤。
+- CI 状态行由 `scripts/lib/gate-result.sh` 统一生成，字段顺序为状态、`code`、`gate`、`group`、`mode`、`exit_code`、`action`；locale 门禁归 `localization`，测试事实来源归 `testing`。检查器诊断可保持详细，但最终状态行必须使用该格式。
 
 ## 本地入口
 
