@@ -10,6 +10,14 @@ export interface DocRegistryEntry {
 }
 
 export const DOC_REGISTRY: Record<string, DocRegistryEntry> = {
+  'first-tenant-config-quickstart': {
+    path: 'backend/runbook/first-tenant-config-quickstart',
+    title: '首个租户配置与运行自检',
+  },
+  'worker-sdk-onboarding': {
+    path: 'backend/sdk/onboarding-journey',
+    title: '自托管 Worker 接入',
+  },
   'adr-009-workflow-param-dsl': {
     path: 'backend/architecture/adr/ADR-009-workflow-param-dsl',
     title: 'ADR-009 Workflow 参数 DSL',
