@@ -1,6 +1,6 @@
 <template>
   <el-select
-    v-model="picked"
+    :model-value="picked"
     filterable
     clearable
     :placeholder="t('workflowDesignerSearch.placeholder')"
@@ -9,13 +9,9 @@
     class="node-search"
     size="default"
     @change="onChange"
+    @clear="clearSelection"
   >
-    <el-option
-      v-for="n in options"
-      :key="n.id"
-      :label="n.label"
-      :value="n.id"
-    >
+    <el-option v-for="n in options" :key="n.id" :label="n.label" :value="n.id">
       <span class="node-search__type">{{ n.nodeType }}</span>
       <span class="node-search__label">{{ n.label }}</span>
     </el-option>
@@ -23,13 +19,18 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, computed } from 'vue'
+  import { computed } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { useDesignerStore } from '../store/useDesignerStore'
 
   const { t } = useI18n({ useScope: 'global' })
   const store = useDesignerStore()
-  const picked = ref<string>('')
+  const picked = computed(() => {
+    const selected = Array.from(store.selectedIds)
+    return selected.length === 1 && store.nodes.some((node) => node.id === selected[0])
+      ? selected[0]
+      : ''
+  })
 
   const emit = defineEmits<{ (e: 'focus', nodeId: string): void }>()
 
@@ -44,8 +45,10 @@
 
   function onChange(id: string | null) {
     if (id) emit('focus', id)
-    // 选完即清空,保持搜索框是"动作"而非"持久选择",避免与画布选中态混淆
-    picked.value = ''
+  }
+
+  function clearSelection() {
+    store.setSelection([])
   }
 </script>
 

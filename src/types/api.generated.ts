@@ -16776,6 +16776,12 @@ export interface operations {
         pageSize?: components['parameters']['PageSizeQuery']
         /** @description Filter by job code (partial match) */
         jobCode?: components['parameters']['JobCodeFilter']
+        /** @description Filter by exact job code (for dependency lookup). */
+        exactJobCode?: string
+        /** @description Filter jobs that directly depend on this job code. */
+        dependsOnJobCode?: string
+        /** @description Include both enabled and disabled definitions; otherwise enabled jobs only. */
+        includeDisabled?: boolean
         /** @description Filter by schedule type: CRON, FIXED_RATE, or MANUAL. */
         scheduleType?: 'CRON' | 'FIXED_RATE' | 'MANUAL'
         /** @description Filter by monitoring matrix category. DEPENDENCY selects jobs with an upstream dependency; SCHEDULED selects standalone CRON jobs; RUNTIME_ONLY selects standalone non-CRON jobs. */

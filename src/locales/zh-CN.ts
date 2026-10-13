@@ -10,6 +10,7 @@ import userBatch from './userBatch.zh-CN.ts'
 import userAccountList from './userAccountList.zh-CN.ts'
 import tenantPackageImportWizard from './tenantPackageImportWizard.zh-CN.ts'
 import workflowDesignerDependency from './workflowDesignerDependency.zh-CN.ts'
+import workflowDesignerJobDependencies from './workflowDesignerJobDependencies.zh-CN.ts'
 import onboardingCenter from './onboardingCenter.zh-CN.ts'
 
 export default {
@@ -293,6 +294,7 @@ export default {
     errorDrawerTitle: '校验错误',
     dependencyPickerPlaceholder: '选择依赖连线',
     dependencyPickerAria: '依赖连线选择器',
+    jobDependencies: workflowDesignerJobDependencies,
     saveOk: '保存成功',
     saveFailed: '保存失败',
     saveNeedsId: '需要 workflowId 才能保存',

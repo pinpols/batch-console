@@ -47,6 +47,10 @@ vi.mock('element-plus', () => ({
     template:
       '<input type="number" :value="modelValue" :min="min" :max="max" :disabled="disabled" @input="$emit(\'change\', Number($event.target.value)); $emit(\'update:modelValue\', Number($event.target.value))" />',
   },
+  ElTag: { name: 'ElTag', template: '<span><slot /></span>' },
+  ElSkeleton: { name: 'ElSkeleton', template: '<div class="skeleton" />' },
+  ElAlert: { name: 'ElAlert', props: ['title'], template: '<div>{{ title }}</div>' },
+  ElPagination: { name: 'ElPagination', template: '<div class="pagination" />' },
 }))
 
 vi.mock('@/composables/useJobCodeOptions', async () => {
@@ -57,6 +61,24 @@ vi.mock('@/composables/useJobCodeOptions', async () => {
       options: ref(['job-a', 'job-b']),
       load: vi.fn().mockResolvedValue(['job-a', 'job-b']),
       clear: vi.fn(),
+    }),
+  }
+})
+
+vi.mock('@/composables/useJobDefinitionDependencies', async () => {
+  const { ref } = await import('vue')
+  return {
+    useJobDefinitionDependencies: () => ({
+      loading: ref(false),
+      hasError: ref(false),
+      definition: ref(null),
+      upstream: ref(null),
+      downstream: ref([]),
+      downstreamTotal: ref(0),
+      downstreamPage: ref(1),
+      pageSize: 15,
+      load: vi.fn().mockResolvedValue(undefined),
+      loadDownstreamPage: vi.fn().mockResolvedValue(undefined),
     }),
   }
 })
@@ -73,6 +95,22 @@ const i18n = createI18n({
     'zh-CN': {
       workflowDesignerSpike: { nodeJob: 'JOB' },
       workflowDesignerMvp: {
+        readonlyTag: '只读',
+        jobDependencies: {
+          title: '作业依赖概览',
+          workflowTitle: '当前流程（可编辑）',
+          workflowUpstream: '流程上游',
+          workflowDownstream: '流程下游',
+          noWorkflowUpstream: '当前流程没有直接上游节点',
+          noWorkflowDownstream: '当前流程没有直接下游节点',
+          definitionTitle: '作业定义依赖',
+          definitionUpstream: '作业定义前置',
+          definitionDownstream: '直接依赖此作业的定义（{count}）',
+          noDefinitionUpstream: '未配置作业定义前置依赖',
+          noDefinitionDownstream: '暂无直接后置作业定义',
+          definitionMissing: '当前绑定的作业定义未找到，依赖信息可能不完整。',
+          loadError: '作业定义依赖暂时无法加载，请稍后重试。',
+        },
         field: {
           nodeType: '节点类型',
           nodeCode: '节点编码',
@@ -86,6 +124,8 @@ const i18n = createI18n({
         },
         validation: { jobCodeRequired: '请配置 jobCode' },
       },
+      enum: { edgeType: { SUCCESS: '成功' } },
+      common: { enabled: '已启用', disabled: '已禁用' },
     },
     'en-US': { workflowDesignerSpike: { nodeJob: 'JOB' } },
   },
@@ -130,6 +170,8 @@ describe('JobNodeForm', () => {
     expect(inputs.some((i) => (i.element as HTMLInputElement).value === 'My Job')).toBe(true)
     // jobCode 下拉默认选项渲染出 2 条
     expect(wrapper.findAll('option')).toHaveLength(2)
+    expect(wrapper.text()).toContain('当前流程（可编辑）')
+    expect(wrapper.text()).toContain('作业定义依赖')
   })
 
   it('修改 jobCode → store.updateNode 被调用并标 dirty', async () => {
@@ -173,5 +215,32 @@ describe('JobNodeForm', () => {
     const items = wrapper.findAll('.el-form-item')
     const jobItem = items.find((i) => i.attributes('data-label') === '关联 Job')
     expect(jobItem?.attributes('data-error')).toBe('请配置 jobCode')
+  })
+
+  it('分别显示当前流程中的直接上游和下游节点', async () => {
+    const { wrapper, store } = factory(mkNode({ jobCode: 'job-a' }))
+    store.nodes.push(
+      { ...mkNode(), id: 'upstream', nodeCode: 'upstream', nodeName: '前置作业' },
+      { ...mkNode(), id: 'downstream', nodeCode: 'downstream', nodeName: '后置作业' },
+    )
+    store.edges.push(
+      {
+        id: 'edge-in',
+        source: 'upstream',
+        target: 'job-1',
+        attrs: { edgeType: 'SUCCESS', enabled: true },
+      },
+      {
+        id: 'edge-out',
+        source: 'job-1',
+        target: 'downstream',
+        attrs: { edgeType: 'SUCCESS', enabled: true },
+      },
+    )
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.text()).toContain('前置作业 (upstream)')
+    expect(wrapper.text()).toContain('后置作业 (downstream)')
+    expect(wrapper.text()).toContain('成功')
   })
 })
