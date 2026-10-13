@@ -143,7 +143,7 @@ test.describe('@workflow-designer-save 工作流设计器保存流', () => {
       page.locator('.edge-inspector .el-select').nth(1).locator('.el-select__placeholder'),
     ).toContainText(`作业-保存验收 (${jobCode})`)
 
-    await page.locator('.edge-inspector .el-select').first().click()
+    await page.locator('.edge-inspector .el-select').nth(2).click()
     await page.getByRole('option', { name: /条件.*CONDITION/ }).click()
     const conditionExpr = page.locator('.node-inspector textarea').first()
     await expect(conditionExpr).toBeVisible()
@@ -166,17 +166,22 @@ test.describe('@workflow-designer-save 工作流设计器保存流', () => {
     await expect(page.locator('.dag-canvas').first()).toBeVisible({ timeout: 12_000 })
     await expect(page.locator('.designer-node').first()).toBeVisible({ timeout: 8_000 })
     expect(await mainCanvasNodeCount(page)).toBe(initialNodes)
-    await page.locator(`.dag-canvas .x6-node[data-cell-id="${jobCode}"]`).first().click({ force: true })
+    await page.locator('.node-search input').fill(jobCode)
+    await page.getByRole('option', { name: new RegExp(jobCode) }).click()
     await expect(nodeNameInput).toHaveValue('作业-保存验收')
 
     await expect(
       page.locator(`.dag-canvas__graph .x6-edge[data-cell-id="${firstEdgeId}"] .x6-edge-label`),
     ).toContainText('CONDITION · amount > 1000')
 
-    await page.getByRole('button', { name: '打开属性面板' }).click()
+    if ((await page.locator('.node-inspector').count()) === 0) {
+      await page.getByRole('button', { name: '打开属性面板' }).click()
+    }
     await page.getByRole('combobox', { name: '依赖连线选择器' }).click()
     await page.getByRole('option', { name: new RegExp(`${startCode}.*${jobCode}.*条件`) }).click()
-    await expect(page.locator('.edge-inspector .el-select').first()).toContainText('CONDITION')
+    await expect(
+      page.locator('.edge-inspector .el-select').nth(2).locator('.el-select__placeholder'),
+    ).toContainText('CONDITION')
     await expect(page.locator('.edge-inspector textarea').first()).toHaveValue('amount > 1000')
 
     const persistedResponse = await page.request.get(
