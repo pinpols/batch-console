@@ -40,6 +40,7 @@
   const local = ref<JobAttrs>(readAttrs(props.node))
   const localName = ref(props.node.nodeName)
   const linkedJobCode = computed(() => String(props.node.attrs?.jobCode ?? '').trim())
+  const hasJobBinding = computed(() => linkedJobCode.value.length > 0)
   const currentFlowDependencies = computed(() => {
     const nodeById = new Map(store.nodes.map((node) => [node.id, node]))
     return store.edges
@@ -101,6 +102,14 @@
 
   function loadDependentPage(page: number) {
     void jobDependencies.loadDownstreamPage(store.meta.tenantId, linkedJobCode.value, page)
+  }
+
+  function retryDependencies() {
+    void jobDependencies.load(
+      store.meta.tenantId,
+      linkedJobCode.value,
+      jobDependencies.downstreamPage.value,
+    )
   }
 
   function writeAttr(field: keyof JobAttrs, raw: unknown) {
@@ -235,14 +244,21 @@
           <el-tag size="small" type="info">{{ t('workflowDesignerMvp.readonlyTag') }}</el-tag>
         </div>
         <el-skeleton v-if="jobDependencies.loading.value" :rows="2" animated />
-        <el-alert
-          v-else-if="jobDependencies.hasError.value"
-          :title="t('workflowDesignerMvp.jobDependencies.loadError')"
-          type="warning"
-          :closable="false"
-          show-icon
-        />
-        <template v-if="!jobDependencies.loading.value">
+        <span v-else-if="!hasJobBinding" class="job-dependencies__empty">
+          {{ t('workflowDesignerMvp.jobDependencies.selectJob') }}
+        </span>
+        <template v-else-if="!jobDependencies.loading.value">
+          <div v-if="jobDependencies.hasError.value" class="job-dependencies__error">
+            <el-alert
+              :title="t('workflowDesignerMvp.jobDependencies.loadError')"
+              type="warning"
+              :closable="false"
+              show-icon
+            />
+            <el-button text type="primary" @click="retryDependencies">
+              {{ t('common.retry') }}
+            </el-button>
+          </div>
           <el-alert
             v-if="!jobDependencies.definition.value"
             :title="t('workflowDesignerMvp.jobDependencies.definitionMissing')"
@@ -277,7 +293,11 @@
               })
             }}
           </div>
-          <div v-if="jobDependencies.downstream.value.length" class="job-dependencies__items">
+          <div
+            v-if="jobDependencies.downstream.value.length"
+            v-loading="jobDependencies.downstreamLoading.value"
+            class="job-dependencies__items"
+          >
             <div
               v-for="dependent in jobDependencies.downstream.value"
               :key="dependent.id"
@@ -296,6 +316,7 @@
               :current-page="jobDependencies.downstreamPage.value"
               :page-size="jobDependencies.pageSize"
               :total="jobDependencies.downstreamTotal.value"
+              :disabled="jobDependencies.downstreamLoading.value"
               @current-change="loadDependentPage"
             />
           </div>
@@ -327,6 +348,11 @@
     border: 1px solid var(--color-border-light);
     border-radius: var(--radius-control);
     background: var(--color-bg-subtle, var(--color-bg-page));
+  }
+  .job-dependencies__error {
+    display: grid;
+    justify-items: start;
+    gap: 4px;
   }
   .job-dependencies__heading,
   .job-dependencies__item,

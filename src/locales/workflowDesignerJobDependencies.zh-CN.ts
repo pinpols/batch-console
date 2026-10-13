@@ -11,5 +11,6 @@ export default {
   noDefinitionUpstream: '未配置作业定义前置依赖',
   noDefinitionDownstream: '暂无直接后置作业定义',
   definitionMissing: '当前绑定的作业定义未找到，依赖信息可能不完整。',
+  selectJob: '先选择关联作业，即可查看作业定义中的前置与后置依赖。',
   loadError: '作业定义依赖暂时无法加载，请稍后重试。',
 }

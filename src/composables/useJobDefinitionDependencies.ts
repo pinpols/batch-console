@@ -6,6 +6,7 @@ const PAGE_SIZE = 15
 
 export function useJobDefinitionDependencies() {
   const loading = ref(false)
+  const downstreamLoading = ref(false)
   const hasError = ref(false)
   const definition = ref<ConsoleJobDefinitionResponse | null>(null)
   const upstream = ref<ConsoleJobDefinitionResponse | null>(null)
@@ -34,6 +35,7 @@ export function useJobDefinitionDependencies() {
     upstream.value = null
     downstream.value = []
     downstreamTotal.value = 0
+    downstreamLoading.value = false
     hasError.value = false
     if (!tenantId || !jobCode) {
       loading.value = false
@@ -84,6 +86,7 @@ export function useJobDefinitionDependencies() {
     const downstreamRequest = ++downstreamSequence
     downstreamPage.value = page
     if (!tenantId || !jobCode) return
+    downstreamLoading.value = true
     try {
       const result = await jobApi.listDefinitionsPaged({
         tenantId,
@@ -99,11 +102,16 @@ export function useJobDefinitionDependencies() {
       if (sequence === requestSequence && downstreamRequest === downstreamSequence) {
         hasError.value = true
       }
+    } finally {
+      if (sequence === requestSequence && downstreamRequest === downstreamSequence) {
+        downstreamLoading.value = false
+      }
     }
   }
 
   return {
     loading,
+    downstreamLoading,
     hasError,
     definition,
     upstream,
