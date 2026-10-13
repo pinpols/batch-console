@@ -29,8 +29,8 @@ describe('route inventory', () => {
     const navigationItems = navigationGroups.flatMap((group) => group.children)
     const navigationPaths = navigationItems.map((item) => item.path)
 
-    expect(navigationPaths).toHaveLength(56)
-    expect(navigationItems.filter((item) => !item.hidden)).toHaveLength(28)
+    expect(navigationPaths).toHaveLength(57)
+    expect(navigationItems.filter((item) => !item.hidden)).toHaveLength(29)
     expect(navigationItems.filter((item) => item.hidden)).toHaveLength(28)
     expect(navigationPaths.filter((path) => !routePaths.has(path))).toEqual([])
   })
@@ -69,6 +69,10 @@ describe('route inventory', () => {
       '/governance/calendars': {
         activeMenu: '/governance/calendars',
         fallback: ['/governance/queues'],
+      },
+      '/system/maintenance': {
+        activeMenu: '/system/maintenance',
+        fallback: ['/system/parameters'],
       },
     }
 

@@ -742,6 +742,7 @@ export const routes: RouteRecordRaw[] = [
         meta: {
           title: '维护设置',
           activeMenu: '/system/maintenance',
+          menuAccessFallbacks: ['/system/parameters'],
           minRole: 'ADMIN',
           permissions: ['ROLE_ADMIN'],
         },
