@@ -18,7 +18,11 @@
   import { usePipelineCodeOptions } from '@/composables/usePipelineCodeOptions'
   import type { DesignerNodeType } from '../types'
   import { findVacantNodePosition } from '../canvas/nodePlacement'
-  import { automaticNodeCenter, resolveAutomaticPlacement } from '../canvas/automaticConnection'
+  import {
+    automaticNodeCenter,
+    createUniqueNodeCode,
+    resolveAutomaticPlacement,
+  } from '../canvas/automaticConnection'
 
   const props = defineProps<{
     visible: boolean
@@ -103,17 +107,12 @@
     emit('update:visible', false)
   }
 
-  function genNodeCode(nodeType: DesignerNodeType, related?: string): string {
-    if (related) return `${nodeType.toLowerCase()}_${related}_${String(Date.now()).slice(-4)}`
-    return `${nodeType.toLowerCase()}_${String(Date.now()).slice(-4)}`
-  }
-
   function commit(row: PaletteRow) {
     if (store.lock !== null && !store.editable) {
       close()
       return
     }
-    const code = genNodeCode(row.nodeType, row.related)
+    const code = createUniqueNodeCode(row.nodeType, store.nodes, row.related)
     const attrs: Record<string, unknown> = {}
     if (row.nodeType === 'JOB' && row.related) attrs.jobCode = row.related
     if (row.nodeType === 'FILE_STEP' && row.related) attrs.pipelineCode = row.related

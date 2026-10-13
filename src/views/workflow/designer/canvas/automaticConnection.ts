@@ -15,6 +15,24 @@ export type AutomaticPlacementResult =
         | 'cannotInsertTerminal'
     }
 
+/** 为多个相同类型的节点生成可持续创建的临时编码。 */
+export function createUniqueNodeCode(
+  nodeType: DesignerNodeType,
+  nodes: DesignerNode[],
+  related?: string,
+): string {
+  const prefix = related ? `${nodeType.toLowerCase()}_${related}` : nodeType.toLowerCase()
+  const base = `${prefix}_${Date.now().toString(36)}`
+  const existing = new Set(nodes.map((node) => node.nodeCode))
+  let candidate = base
+  let suffix = 2
+  while (existing.has(candidate)) {
+    candidate = `${base}_${suffix}`
+    suffix += 1
+  }
+  return candidate
+}
+
 /**
  * 为“点击添加节点”选择一个不会破坏 DAG 语义的自动连线位置。
  *

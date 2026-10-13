@@ -7,6 +7,7 @@
   import { usesConditionTemplateWrapper } from '../validators/dagValidators'
 
   const props = defineProps<{ edge: DesignerEdge; readonly: boolean }>()
+  const emit = defineEmits<{ (event: 'topology-changed'): void }>()
   const { t } = useI18n()
   const store = useDesignerStore()
 
@@ -102,6 +103,7 @@
       return
     }
     ElMessage.success(t('workflowDesignerMvp.dependency.updated'))
+    emit('topology-changed')
   }
 
   function deleteDependency() {
@@ -109,6 +111,7 @@
     store.deleteEdge(props.edge.id)
     store.setSelection([])
     ElMessage.success(t('workflowDesignerMvp.dependency.deleted'))
+    emit('topology-changed')
   }
 </script>
 

@@ -23,7 +23,10 @@
 
   const { t } = useI18n()
   const store = useDesignerStore()
-  const emit = defineEmits<{ (e: 'close'): void }>()
+  const emit = defineEmits<{
+    (e: 'close'): void
+    (e: 'topology-changed'): void
+  }>()
 
   const selectedNode = computed(() => {
     const ids = Array.from(store.selectedIds)
@@ -70,6 +73,7 @@
         count: dependencyCount,
       }),
     )
+    emit('topology-changed')
   }
 </script>
 
@@ -124,7 +128,12 @@
           : t('workflowDesignerMvp.noSelectNotice')
       }}
     </div>
-    <EdgeInspector v-else-if="selectedEdge" :edge="selectedEdge" :readonly="readonly" />
+    <EdgeInspector
+      v-else-if="selectedEdge"
+      :edge="selectedEdge"
+      :readonly="readonly"
+      @topology-changed="emit('topology-changed')"
+    />
     <template v-else>
       <StartNodeForm
         v-if="selectedNode.nodeType === 'START'"
@@ -164,6 +173,7 @@
     <DependencyCreateDialog
       v-model="dependencyDialogVisible"
       :preferred-node-id="selectedNode?.id"
+      @created="emit('topology-changed')"
     />
   </aside>
 </template>

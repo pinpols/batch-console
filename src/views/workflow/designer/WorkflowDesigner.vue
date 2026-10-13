@@ -40,7 +40,11 @@
   import { userErrorMessage } from '@/utils/userErrorMessage'
   import DagCanvas from './canvas/DagCanvas.vue'
   import { findVacantNodePosition } from './canvas/nodePlacement'
-  import { automaticNodeCenter, resolveAutomaticPlacement } from './canvas/automaticConnection'
+  import {
+    automaticNodeCenter,
+    createUniqueNodeCode,
+    resolveAutomaticPlacement,
+  } from './canvas/automaticConnection'
   import DesignerToolbar from './toolbar/DesignerToolbar.vue'
   import NodePalette from './toolbar/NodePalette.vue'
   import NodeInspector from './inspector/NodeInspector.vue'
@@ -158,6 +162,11 @@
     ElMessage.success(t('workflowDesignerMvp.autoConnect.connected'))
   }
 
+  async function onTopologyChanged() {
+    await nextTick()
+    canvasRef.value?.autoLayout(layoutDirection.value, false)
+  }
+
   /**
    * 结构化添加：节点库不再只往画布丢一个孤立节点，而是依据当前选中的节点或依赖边
    * 自动追加 / 插入并重排。分支图没有明确插入点时不猜测，要求用户先选中目标位置。
@@ -181,7 +190,7 @@
       layoutDirection.value,
     )
     const position = findVacantNodePosition(type, preferredCenter, store.nodes)
-    const code = `${type.toLowerCase()}_${String(Date.now()).slice(-4)}`
+    const code = createUniqueNodeCode(type, store.nodes)
     const added = store.addConnectedNode(
       {
         nodeCode: code,
@@ -671,7 +680,11 @@
           </div>
         </div>
       </section>
-      <NodeInspector v-if="inspectorVisible" @close="inspectorExpanded = false" />
+      <NodeInspector
+        v-if="inspectorVisible"
+        @close="inspectorExpanded = false"
+        @topology-changed="onTopologyChanged"
+      />
     </div>
 
     <el-drawer
