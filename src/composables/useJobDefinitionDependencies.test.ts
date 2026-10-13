@@ -88,4 +88,22 @@ describe('useJobDefinitionDependencies', () => {
     expect(overview.definition.value?.jobCode).toBe('NEW_JOB')
     expect(overview.downstreamTotal.value).toBe(0)
   })
+
+  it('shows loading for downstream paging and records a failed page request', async () => {
+    listDefinitionsPaged
+      .mockResolvedValueOnce({ records: [{ jobCode: 'JOB_A' }], total: 1 })
+      .mockResolvedValueOnce({ records: [{ jobCode: 'JOB_B' }], total: 16 })
+      .mockRejectedValueOnce(new Error('page unavailable'))
+    const overview = useJobDefinitionDependencies()
+
+    await overview.load('tenant-a', 'JOB_A')
+    const pageRequest = overview.loadDownstreamPage('tenant-a', 'JOB_A', 2)
+    expect(overview.downstreamLoading.value).toBe(true)
+    await pageRequest
+
+    expect(overview.downstreamLoading.value).toBe(false)
+    expect(overview.hasError.value).toBe(true)
+    expect(overview.downstreamPage.value).toBe(2)
+    expect(overview.downstream.value[0]?.jobCode).toBe('JOB_B')
+  })
 })

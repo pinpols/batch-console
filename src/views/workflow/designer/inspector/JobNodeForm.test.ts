@@ -14,6 +14,12 @@ import { createI18n } from 'vue-i18n'
 import { createPinia, setActivePinia } from 'pinia'
 
 vi.mock('element-plus', () => ({
+  ElLoadingDirective: { mounted: vi.fn(), updated: vi.fn(), unmounted: vi.fn() },
+  ElButton: {
+    name: 'ElButton',
+    emits: ['click'],
+    template: '<button @click="$emit(\'click\')"><slot /></button>',
+  },
   ElForm: { name: 'ElForm', template: '<form><slot /></form>' },
   ElFormItem: {
     name: 'ElFormItem',
@@ -58,6 +64,7 @@ vi.mock('@/composables/useJobCodeOptions', async () => {
   return {
     useJobCodeOptions: () => ({
       loading: ref(false),
+      downstreamLoading: ref(false),
       options: ref(['job-a', 'job-b']),
       load: vi.fn().mockResolvedValue(['job-a', 'job-b']),
       clear: vi.fn(),
@@ -109,6 +116,7 @@ const i18n = createI18n({
           noDefinitionUpstream: '未配置作业定义前置依赖',
           noDefinitionDownstream: '暂无直接后置作业定义',
           definitionMissing: '当前绑定的作业定义未找到，依赖信息可能不完整。',
+          selectJob: '先选择关联作业，即可查看作业定义中的前置与后置依赖。',
           loadError: '作业定义依赖暂时无法加载，请稍后重试。',
         },
         field: {
@@ -242,5 +250,12 @@ describe('JobNodeForm', () => {
     expect(wrapper.text()).toContain('前置作业 (upstream)')
     expect(wrapper.text()).toContain('后置作业 (downstream)')
     expect(wrapper.text()).toContain('成功')
+  })
+
+  it('尚未绑定作业时显示配置引导而不是定义缺失警告', () => {
+    const { wrapper } = factory(mkNode())
+
+    expect(wrapper.text()).toContain('先选择关联作业，即可查看作业定义中的前置与后置依赖。')
+    expect(wrapper.text()).not.toContain('当前绑定的作业定义未找到')
   })
 })

@@ -12,5 +12,6 @@ export default {
   noDefinitionDownstream: 'No direct downstream job definitions',
   definitionMissing:
     'The linked job definition was not found; dependency information may be incomplete.',
+  selectJob: 'Select a linked job to view its upstream and downstream definition dependencies.',
   loadError: 'Job-definition dependencies could not be loaded. Try again later.',
 }
