@@ -28,10 +28,14 @@ npm run check:version -- X.Y.Z
 
 ## 发布晋级
 
-1. 两仓 Release PR 合并后记录前后端 commit SHA。
-2. 使用 `compose-cd` 固定这两个 SHA、构建不可变镜像并部署 staging。
-3. 完成健康检查和真实前后端联合验收。
-4. 在已验收 commit 上分别创建同名 `v*` tag；staging-gate 完成前端验收后再给镜像增加版本标签。
-5. 两仓分别生成 GitHub Release，并记录相同版本、SHA 与制品 digest；生产按 Release Manifest 晋级。
+`main` 构建多架构不可变镜像，并发布 `sha-<完整提交>` 与 `latest`。环境晋级必须使用 `sha-*`，不得为同一版本重新构建；部署 Compose 必须显式设置 `IMAGE_TAG`，不会回退到 `latest`。
 
-缺少 staging URL、测试账号、后端文档上下文或验收结果时，发布必须失败。详见[回滚手册](./rollback.md)。
+1. 合并前后端同版本 Release PR，记录两个 commit SHA；此时不创建版本 tag。
+2. 使用 `compose-cd` 固定这两个 SHA、组装 Release Manifest，并将对应 `sha-*` 镜像部署到 staging。
+3. 确认 `/healthz` 正常、`/version.json` 中 `gitSha` 等于目标前端提交，并完成真实前后端联合验收。
+4. 在已验收的两个 commit 上分别创建同名 `v*` tag；tag 触发前端 `staging-gate` 执行 Playwright、axe 与 Lighthouse。
+5. `build-image` 等待该 commit 的 staging 验收成功，再为同一 digest 增加版本标签。
+6. 两仓分别生成 GitHub Release，并记录相同版本、SHA 与制品 digest。
+7. 生产按 Release Manifest 中的 digest 晋级，部署后再次核对 `/version.json`。
+
+缺少 staging URL、测试账号、后端文档上下文或验收结果时，发布必须失败。回滚使用上一已验收 digest，详见[回滚手册](./rollback.md)。
