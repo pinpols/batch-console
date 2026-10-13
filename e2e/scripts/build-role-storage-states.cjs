@@ -10,6 +10,7 @@
  * 依赖:BE @ localhost:18080,4 个测试账号已存在(详见账户表 console_user_account)。
  */
 const storageKeys = require('../../src/constants/storageKeys.json')
+const { DEFAULT_LOCALE } = require('../config.cjs')
 const fs = require('node:fs')
 const path = require('node:path')
 const { API_BASE_URL: API, FRONTEND_ORIGIN: ORIGIN } = require('../config.cjs')
@@ -76,7 +77,7 @@ async function loginAndBuild(role) {
           { name: storageKeys.tenantId, value: role.tenantId },
           { name: storageKeys.session, value: '1' },
           { name: 'token', value: token },
-          { name: storageKeys.locale, value: 'zh-CN' },
+          { name: storageKeys.locale, value: DEFAULT_LOCALE },
           { name: storageKeys.onboardingDone, value: '1' },
         ],
       },

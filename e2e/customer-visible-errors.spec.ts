@@ -19,7 +19,7 @@ import { test, expect, type Page } from '@playwright/test'
 const TENANT_KEY = STORAGE_KEYS.tenantId
 
 // 错误 toast 文案白判:这些词出现在 .el-message--error 即客户可见报错
-const ERROR_TEXT = /资源不存在|请求失败|unsupported|not found|加载失败|系统错误|渲染异常/i
+const ERROR_TEXT = /资源不存在|请求失败|加载失败|系统错误|渲染异常/
 
 // 受租户数据驱动、最易暴露渲染/加载错的页面
 const PAGES = [

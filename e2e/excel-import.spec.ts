@@ -197,7 +197,7 @@ test.describe('合并导入 — 租户配置包', () => {
     const confirmBox = page.locator('.el-message-box').first()
     await expect(confirmBox).toBeVisible()
     await confirmBox
-      .getByRole('button', { name: /确认应用|Confirm apply|Confirm/ })
+      .getByRole('button', { name: /确认应用/ })
       .first()
       .click()
 
@@ -320,7 +320,7 @@ test.describe('合并导入 — 完整上传链路（依赖后端）', () => {
       { timeout: 30_000 },
     )
     await box
-      .getByRole('button', { name: /确认应用|Confirm apply|Confirm/ })
+      .getByRole('button', { name: /确认应用/ })
       .first()
       .click()
     const applyResp = await applyCall

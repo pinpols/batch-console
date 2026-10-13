@@ -60,7 +60,7 @@ test.describe('@row-actions 作业实例行操作', () => {
       return
     }
     // 行内第二个动作按钮(label「步骤」,即分片视图入口)
-    const partBtn = row.getByRole('button', { name: /步骤|分片|partition/i }).first()
+    const partBtn = row.getByRole('button', { name: /步骤|分片/ }).first()
     if (!(await isVisible(partBtn, 2000))) {
       test.skip(true, '该行无步骤/分片入口')
       return

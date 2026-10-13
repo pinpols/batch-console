@@ -45,6 +45,7 @@ function validateStagingTarget() {
 validateStagingTarget()
 
 module.exports = {
+  DEFAULT_LOCALE: defaults.defaultLocale,
   FRONTEND_BASE_URL: frontendBaseUrl,
   FRONTEND_ORIGIN: new URL(frontendBaseUrl).origin,
   API_BASE_URL: apiBaseUrl,

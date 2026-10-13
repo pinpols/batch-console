@@ -31,24 +31,24 @@ async function exportConfigFromUi(page: Page) {
     { timeout: 15_000 },
   )
   await page
-    .getByRole('button', { name: /导出为 JSON 文件|Download JSON/ })
+    .getByRole('button', { name: /导出为 JSON 文件/ })
     .first()
     .click()
   const resp = await apiCall
   const download = await downloadEvent
   expect(resp.status(), `config sync export status=${resp.status()}`).toBeLessThan(400)
   expect(download.suggestedFilename()).toMatch(/^config-sync-.+\.json$/)
-  await expect(page.locator('.el-message--success')).toContainText(/导出完成|Export/, {
+  await expect(page.locator('.el-message--success')).toContainText(/导出完成/, {
     timeout: 8_000,
   })
-  await expect(page.getByText(/导出结果|Export result/)).toBeVisible()
+  await expect(page.getByText(/导出结果/)).toBeVisible()
   await expect(page.locator('.json-preview').first()).toBeVisible()
   return resp.json().catch(() => null)
 }
 
 async function copyExportToImportPayload(page: Page) {
   await page
-    .getByRole('button', { name: /复制到目标侧|Copy to target/ })
+    .getByRole('button', { name: /复制到目标侧/ })
     .first()
     .click()
   const payload = page.locator('.json-textarea-input textarea, .el-textarea__inner').first()
@@ -62,12 +62,12 @@ async function previewImportPayload(page: Page) {
     { timeout: 15_000 },
   )
   await page
-    .getByRole('button', { name: /预览差异|Preview diff/ })
+    .getByRole('button', { name: /预览差异/ })
     .first()
     .click()
   const resp = await apiCall
   expect(resp.status(), `config sync preview status=${resp.status()}`).toBeLessThan(400)
-  await expect(page.getByText(/差异预览|Diff preview/)).toBeVisible({ timeout: 8_000 })
+  await expect(page.getByText(/差异预览/)).toBeVisible({ timeout: 8_000 })
   await expect(page.locator('.json-preview').first()).toBeVisible()
 }
 
@@ -77,18 +77,18 @@ async function importPayloadFromUi(page: Page) {
     { timeout: 20_000 },
   )
   await page
-    .getByRole('button', { name: /应用到目标|Apply to target/ })
+    .getByRole('button', { name: /应用到目标/ })
     .first()
     .click()
   const box = page.locator('.el-message-box').first()
   await expect(box).toBeVisible({ timeout: 5_000 })
   await box
-    .getByRole('button', { name: /确认应用|Confirm apply|Confirm/ })
+    .getByRole('button', { name: /确认应用/ })
     .first()
     .click()
   const resp = await apiCall
   expect(resp.status(), `config sync import status=${resp.status()}`).toBeLessThan(400)
-  await expect(page.locator('.el-message--success').last()).toContainText(/已应用到目标|Applied/, {
+  await expect(page.locator('.el-message--success').last()).toContainText(/已应用到目标/, {
     timeout: 10_000,
   })
 }
@@ -191,7 +191,7 @@ test.describe('配置管理 — 配置导出', () => {
   test('导出指定类型 JOB → 结果包含 JOB 相关内容', async ({ page }) => {
     await page
       .locator('.el-checkbox')
-      .filter({ hasText: /作业|Job/ })
+      .filter({ hasText: /作业/ })
       .first()
       .click()
     const exported = await exportConfigFromUi(page)
@@ -206,16 +206,16 @@ test.describe('配置管理 — 配置导出', () => {
     })
 
     await page.reload({ waitUntil: 'domcontentloaded' })
-    const job = page.getByRole('checkbox', { name: /作业|Job/ }).first()
-    const workflow = page.getByRole('checkbox', { name: /工作流|Workflow/ }).first()
+    const job = page.getByRole('checkbox', { name: /作业/ }).first()
+    const workflow = page.getByRole('checkbox', { name: /工作流/ }).first()
     await page
       .locator('.el-checkbox')
-      .filter({ hasText: /作业|Job/ })
+      .filter({ hasText: /作业/ })
       .first()
       .click()
     await page
       .locator('.el-checkbox')
-      .filter({ hasText: /工作流|Workflow/ })
+      .filter({ hasText: /工作流/ })
       .first()
       .click()
 
@@ -237,7 +237,7 @@ test.describe('配置管理 — 配置导入前端校验', () => {
     await expect(
       page.locator('.json-textarea-input textarea, .el-textarea__inner').first(),
     ).toHaveValue('{}', { timeout: 4_000 })
-    await expect(page.getByRole('button', { name: /预览差异|Preview diff/ }).first()).toBeEnabled()
+    await expect(page.getByRole('button', { name: /预览差异/ }).first()).toBeEnabled()
   })
 
   test('默认 Payload 模板为 JSON 对象 → 导入按钮可用', async ({ page }) => {
@@ -245,7 +245,7 @@ test.describe('配置管理 — 配置导入前端校验', () => {
       page.locator('.json-textarea-input textarea, .el-textarea__inner').first(),
     ).toHaveValue('{}', { timeout: 4_000 })
     await expect(
-      page.getByRole('button', { name: /应用到目标|Apply to target/ }).first(),
+      page.getByRole('button', { name: /应用到目标/ }).first(),
     ).toBeEnabled()
   })
 
@@ -255,10 +255,10 @@ test.describe('配置管理 — 配置导入前端校验', () => {
       .first()
       .fill('not-json!!!')
     await page
-      .getByRole('button', { name: /预览差异|Preview diff/ })
+      .getByRole('button', { name: /预览差异/ })
       .first()
       .click()
-    await expect(page.locator('.el-message--error')).toContainText(/JSON 格式不合法|JSON/, {
+    await expect(page.locator('.el-message--error')).toContainText(/JSON 格式不合法/, {
       timeout: 4_000,
     })
   })
@@ -315,7 +315,7 @@ test.describe('配置管理 — 同步日志', () => {
       .catch(() => undefined)
     const resp = await logsCall
     expect(resp.status(), `config sync logs status=${resp.status()}`).toBeLessThan(400)
-    await expect(page.getByRole('columnheader', { name: /摘要|Summary/ })).toBeVisible({
+    await expect(page.getByRole('columnheader', { name: /摘要/ })).toBeVisible({
       timeout: 6000,
     })
     await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({

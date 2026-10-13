@@ -19,7 +19,7 @@ test.describe('AI Chat', () => {
     await expect(input).toBeVisible({ timeout: 6000 })
 
     // 发送按钮(可能叫"发送"/"提交"/Send)
-    const sendBtn = page.getByRole('button', { name: /发送|提交|Send/i }).first()
+    const sendBtn = page.getByRole('button', { name: /发送|提交/ }).first()
     await expect(sendBtn).toBeVisible()
   })
 
@@ -34,7 +34,7 @@ test.describe('AI Chat', () => {
       { timeout: 15_000 },
     )
 
-    const sendBtn = page.getByRole('button', { name: /发送|提交|Send/i }).first()
+    const sendBtn = page.getByRole('button', { name: /发送|提交/ }).first()
     await sendBtn.click()
 
     // 拦到请求即视为接口已触发(响应可能是成功或 502/未配置,都算)

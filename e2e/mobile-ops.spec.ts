@@ -32,14 +32,14 @@ test.describe('mobile-ops · MApprovals', () => {
 
   test('approve 主操作触发 toast', async ({ page }) => {
     await page.goto('/m/approvals', { waitUntil: 'domcontentloaded' })
-    const approveBtn = page.getByRole('button', { name: /通过|批准|approve/i }).first()
+    const approveBtn = page.getByRole('button', { name: /通过|批准/ }).first()
     if (!(await approveBtn.isVisible({ timeout: 5000 }).catch(() => false))) {
       if (useRealBE) test.skip(true, '无待审批数据(可能 RBAC 限制或真 BE 空数据)')
       await expect(approveBtn).toBeVisible()
     }
     await approveBtn.click()
     // 处理可能弹出的二次确认 dialog
-    const confirm = page.getByRole('button', { name: /确定|confirm|ok/i }).last()
+    const confirm = page.getByRole('button', { name: /确定/ }).last()
     if (await confirm.isVisible({ timeout: 1500 }).catch(() => false)) await confirm.click()
     await expect(page.locator('.el-message--success, .el-message')).toBeVisible({ timeout: 6000 })
   })
@@ -86,7 +86,7 @@ test.describe('mobile-ops · MJobInstances', () => {
       if (useRealBE) test.skip(true, '租户列表空(real BE 无 instances seed)')
       await expect(cards.first()).toBeVisible()
     }
-    const retryBtn = page.getByRole('button', { name: /重试|retry/i }).first()
+    const retryBtn = page.getByRole('button', { name: /重试/ }).first()
     await expect(retryBtn).toBeVisible({ timeout: 3000 })
     await retryBtn.click()
     await expect(page.locator('.el-message')).toBeVisible({ timeout: 6000 })
@@ -127,13 +127,13 @@ test.describe('mobile-ops · MOutbox', () => {
 
   test('republish 触发 toast', async ({ page }) => {
     await page.goto('/m/outbox', { waitUntil: 'domcontentloaded' })
-    const btn = page.getByRole('button', { name: /重新发布|republish|重投/i }).first()
+    const btn = page.getByRole('button', { name: /重新发布|重投/ }).first()
     if (!(await btn.isVisible({ timeout: 5000 }).catch(() => false))) {
       if (useRealBE) test.skip(true, '无可重投行(可能 BE 空)')
       await expect(btn).toBeVisible()
     }
     await btn.click()
-    const confirm = page.getByRole('button', { name: /确定|confirm|ok/i }).last()
+    const confirm = page.getByRole('button', { name: /确定/ }).last()
     if (await confirm.isVisible({ timeout: 1500 }).catch(() => false)) await confirm.click()
     await expect(page.locator('.el-message')).toBeVisible({ timeout: 6000 })
   })
@@ -165,7 +165,7 @@ test.describe('mobile-ops · MCatchUp 占位', () => {
     await expect(page.locator('.m-page__title, .page-header')).toBeVisible({ timeout: 8000 })
     // approve/reject 按钮在 2026-05-07 已下线,断言不可见
     const approveCount = await page
-      .getByRole('button', { name: /批准|approve/i })
+      .getByRole('button', { name: /批准/ })
       .count()
     // 允许 0(占位)或 >0(BE 已重新上线),不强制断言
     expect(typeof approveCount).toBe('number')

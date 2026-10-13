@@ -31,7 +31,7 @@ test.describe('UI Flow 12: DLQ replay UI', () => {
     await page.waitForLoadState('networkidle', { timeout: 8000 }).catch(() => undefined)
     await expect(page.locator(LIST_OR_EMPTY).first()).toBeVisible({ timeout: 10_000 })
     // 新 UI:el-tabs 换自绘 pill tab(.ob-tab);死信 tab 若存在则点击并验激活态
-    const dlqTab = page.locator('.ob-tab').filter({ hasText: /死信|dead.?letter|DLQ/i }).first()
+    const dlqTab = page.locator('.ob-tab').filter({ hasText: /死信/ }).first()
     if (await isVisible(dlqTab, 2000)) {
       await dlqTab.click({ force: true })
       await expect(dlqTab).toHaveClass(/is-active/, { timeout: 4000 })
@@ -45,7 +45,7 @@ test.describe('UI Flow 12: DLQ replay UI', () => {
     await expect(page.locator(LIST_OR_EMPTY).first()).toBeVisible({ timeout: 10_000 })
     const replayBtn = page
       .locator('.table-actions')
-      .getByRole('button', { name: /replay|重放|重新投递/i })
+      .getByRole('button', { name: /重放|重新投递/ })
       .first()
     if (await isVisible(replayBtn, 2000)) {
       await replayBtn.click({ force: true })

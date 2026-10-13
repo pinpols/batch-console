@@ -1,13 +1,26 @@
 import { STORAGE_KEYS } from './storage'
+import { DEFAULT_LOCALE } from './config'
 import type { Page } from '@playwright/test'
 
 export type E2eLocale = 'zh-CN' | 'en-US'
+
+export const E2E_DEFAULT_LOCALE = DEFAULT_LOCALE as E2eLocale
 
 export type LocalizedExpectation =
   string | RegExp | { 'zh-CN': string | RegExp; 'en-US': string | RegExp }
 
 export function localized(zhCN: string | RegExp, enUS: string | RegExp): LocalizedExpectation {
   return { 'zh-CN': zhCN, 'en-US': enUS }
+}
+
+export async function installE2eLocale(
+  page: Page,
+  locale: E2eLocale = E2E_DEFAULT_LOCALE,
+): Promise<void> {
+  await page.addInitScript(
+    ({ localeKey, nextLocale }) => localStorage.setItem(localeKey, nextLocale),
+    { localeKey: STORAGE_KEYS.locale, nextLocale: locale },
+  )
 }
 
 export async function setE2eLocale(page: Page, locale: E2eLocale): Promise<void> {

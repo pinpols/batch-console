@@ -109,7 +109,7 @@ test.describe('批量操作栏 — 多页面复用', () => {
     await page.goto('/observability/queries')
     await expectPageTitle(page, '综合查询')
     // 切到死信 tab(observability.tabDeadLetters = 'Dead Letters',zh-CN 也保留英文)
-    const tab = page.getByRole('tab', { name: /Dead Letters|死信/i })
+    const tab = page.getByRole('tab', { name: /死信/ })
     if (!(await isVisible(tab, 3000))) test.skip(true, '死信 Tab 未渲染')
     await tab.click()
     await expect(page.locator('.el-table, .empty-state').first()).toBeAttached({ timeout: 10_000 })

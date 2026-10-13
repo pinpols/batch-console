@@ -50,7 +50,7 @@ test.describe('Job Instance — 筛选查询', () => {
 
   test('刷新', async ({ page }) => {
     await clickRefresh(page)
-    await expect(page.getByRole('columnheader', { name: /Job Code|状态/ }).first()).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByRole('columnheader', { name: /作业编码|状态/ }).first()).toBeVisible({ timeout: 10_000 })
   })
 })
 
@@ -84,7 +84,7 @@ test.describe('Job Instance 详情 — 操作流', () => {
     if (!id) return
     await page.goto(`/monitor/job-instances/${id}`)
     await expectPageTitle(page, '作业实例详情')
-    const stepsBtn = page.getByRole('button', { name: /步骤|Job Step/ })
+    const stepsBtn = page.getByRole('button', { name: /步骤/ })
     if (!(await isVisible(stepsBtn, 3000))) return
     await stepsBtn.click()
     await expect(page).toHaveURL(new RegExp(`/monitor/job-instances/${id}/partitions|/monitor/job-steps`))
@@ -210,7 +210,7 @@ test.describe('Workflow Run — 筛选查询', () => {
 
   test('刷新', async ({ page }) => {
     await clickRefresh(page)
-    await expect(page.getByRole('columnheader', { name: /Workflow|状态/ }).first()).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByRole('columnheader', { name: /工作流|状态/ }).first()).toBeVisible({ timeout: 10_000 })
   })
 })
 

@@ -50,7 +50,7 @@ test.describe('navigation and tabs', () => {
     // 默认只展开当前路由所在组)+ RouterLink .nav__item;1280 宽 > 1024 阈值,默认展开标签栏。
     await page.locator('.nav__group-hd', { hasText: '运行监控' }).click()
     await page
-      .getByRole('link', { name: /工作流运行|Workflow Run/ })
+      .getByRole('link', { name: /工作流运行/ })
       .first()
       .click()
     await expect(page).toHaveURL(/\/monitor\/workflow-runs/)
@@ -58,7 +58,7 @@ test.describe('navigation and tabs', () => {
     await expect(page.getByRole('progressbar').first()).toBeHidden()
     await page.locator('.nav__group-hd', { hasText: '告警与投递' }).click()
     await page
-      .getByRole('link', { name: /^告警事件$|^事件告警$|^告警$|^Alerts?$/ })
+      .getByRole('link', { name: /^告警事件$|^事件告警$|^告警$/ })
       .first()
       .click()
     await expect(page).toHaveURL(/\/observability\/alerts/)
@@ -70,7 +70,7 @@ test.describe('navigation and tabs', () => {
     await expect(group).toBeFocused()
     await page.keyboard.press('Enter')
 
-    const workflowLink = page.getByRole('link', { name: /工作流运行|Workflow Run/ }).first()
+    const workflowLink = page.getByRole('link', { name: /工作流运行/ }).first()
     await expect(workflowLink).toBeVisible()
     await workflowLink.focus()
     await expect(workflowLink).toBeFocused()

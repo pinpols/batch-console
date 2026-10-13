@@ -39,7 +39,7 @@ test.describe('Job Definition CRUD', () => {
   })
 
   test('@cross-browser 列表分页 + 筛选无服务端错误', async ({ page, network }) => {
-    const keyword = page.getByPlaceholder(/请输入|jobCode/).first()
+    const keyword = page.getByPlaceholder(/请输入/).first()
     if (await isVisible(keyword, 1500)) {
       await keyword.fill('e2e')
       await page.keyboard.press('Enter')

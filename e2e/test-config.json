@@ -1,4 +1,5 @@
 {
+  "defaultLocale": "zh-CN",
   "frontendBaseUrl": "http://localhost:5173",
   "apiBaseUrl": "http://localhost:18080",
   "orchestratorBaseUrl": "http://localhost:18082",

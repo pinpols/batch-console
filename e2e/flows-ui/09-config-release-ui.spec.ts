@@ -32,7 +32,7 @@ test.describe('UI Flow 09: config release lifecycle UI', () => {
     const typeInput = drawer.locator('.el-input__inner').nth(1)
     if (await isVisible(typeInput, 1000)) await typeInput.fill('JSON', { force: true })
     // 取消(不真提交)
-    const cancelBtn = drawer.getByRole('button', { name: /取消|cancel/i }).first()
+    const cancelBtn = drawer.getByRole('button', { name: /取消/ }).first()
     if (await isVisible(cancelBtn, 1500)) await cancelBtn.click({ force: true })
     else await page.keyboard.press('Escape')
   })

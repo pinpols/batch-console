@@ -226,14 +226,14 @@ async function triggerImportFromUi(
     timeout: 10_000,
   })
 
-  let triggerBtn = row.getByRole('button', { name: /手动触发|触发|trigger/i }).first()
+  let triggerBtn = row.getByRole('button', { name: /手动触发|触发/ }).first()
   if (!(await isVisible(triggerBtn, 1_500))) {
     const more = row.getByRole('button', { name: /^更多/ }).first()
     if (await isVisible(more, 1_500)) {
       await more.click()
       triggerBtn = page
         .locator('.el-dropdown-menu__item, [role="menuitem"]')
-        .filter({ hasText: /手动触发|触发|trigger/i })
+        .filter({ hasText: /手动触发|触发/ })
         .first()
     }
   }

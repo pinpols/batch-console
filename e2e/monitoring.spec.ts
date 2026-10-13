@@ -16,7 +16,7 @@ test.describe('monitoring pages', () => {
 
   test('Job Step Instance 页面可打开', async ({ page }) => {
     await page.goto('/monitor/job-steps')
-    await expectPageTitle(page, /作业步骤|Job Step Instance/)
+    await expectPageTitle(page, /作业步骤/)
     await expect(page.getByRole('button', { name: '刷新' })).toBeVisible()
   })
 

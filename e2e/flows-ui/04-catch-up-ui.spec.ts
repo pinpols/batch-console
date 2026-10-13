@@ -45,7 +45,7 @@ test.describe('UI Flow 04: catch-up', () => {
     // 新 UI:el-tabs 换自绘 pill tab(.ap-tab 按钮,v-show 挂载)
     const tab = page
       .locator('.ap-tab')
-      .filter({ hasText: /catch-up|catchup|补登|补跑/i })
+      .filter({ hasText: /补登|补跑/ })
       .first()
     if (await isVisible(tab, 2000)) {
       await tab.click({ force: true })

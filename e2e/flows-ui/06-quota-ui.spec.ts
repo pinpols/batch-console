@@ -45,7 +45,7 @@ test.describe('UI Flow 06: quota', () => {
     await page.goto('/self-service')
     await expect(page).toHaveURL(/\/self-service/)
     await page.waitForLoadState('networkidle', { timeout: 8000 }).catch(() => undefined)
-    const tab = page.getByRole('tab', { name: /配额|quota/i }).first()
+    const tab = page.getByRole('tab', { name: /配额/ }).first()
     if (await isVisible(tab, 2000)) {
       await tab.click({ force: true })
       await expect(page.locator('.el-input__inner, .el-textarea__inner').first()).toBeVisible({

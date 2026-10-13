@@ -46,9 +46,9 @@ test.describe('@business-flows D 档 P6 真实业务流程', () => {
     }
 
     // 找 RUNNING 行,试点「取消」(不一定每个 spec 都触发,只验通)
-    const runningRow = page.locator('tr', { hasText: /RUNNING|运行中/ }).first()
+    const runningRow = page.locator('tr', { hasText: /运行中/ }).first()
     if (await isVisible(runningRow, 2000)) {
-      const cancelBtn = runningRow.getByRole('button', { name: /取消|cancel/i }).first()
+      const cancelBtn = runningRow.getByRole('button', { name: /取消/ }).first()
       if (await isVisible(cancelBtn, 1000)) {
         await cancelBtn.click({ force: true })
         const ok = page.locator('.el-message-box').getByRole('button', { name: /确定|确认/ }).first()
@@ -69,7 +69,7 @@ test.describe('@business-flows D 档 P6 真实业务流程', () => {
     await expectPageTitle(page, '审批中心')
     await page.waitForLoadState('networkidle', { timeout: 8000 }).catch(() => {})
 
-    const tab = page.getByRole('tab', { name: /通用|general/i }).first()
+    const tab = page.getByRole('tab', { name: /通用/ }).first()
     if (await isVisible(tab, 1500)) await tab.click({ force: true })
     await page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => {})
 
@@ -79,7 +79,7 @@ test.describe('@business-flows D 档 P6 真实业务流程', () => {
     const row = page.locator('tbody tr.el-table__row').filter({ hasText: approvalNo })
     await expect(row).toHaveCount(1)
 
-    const approveBtn = row.getByRole('button', { name: /通过|批准|approve/i }).first()
+    const approveBtn = row.getByRole('button', { name: /通过|批准/ }).first()
     if (await isVisible(approveBtn, 1500)) {
       await approveBtn.click({ force: true })
       // 确认对话框 / 备注表单
@@ -102,7 +102,7 @@ test.describe('@business-flows D 档 P6 真实业务流程', () => {
     await page.getByRole('button', { name: '搜索' }).click()
     const row = page.locator('tbody tr.el-table__row').filter({ hasText: approvalNo })
     await expect(row).toHaveCount(1)
-    const rejectBtn = row.getByRole('button', { name: /拒绝|reject/i }).first()
+    const rejectBtn = row.getByRole('button', { name: /拒绝/ }).first()
     if (await isVisible(rejectBtn, 1500)) {
       await rejectBtn.click({ force: true })
       const reason = page.locator('.el-dialog:visible, .el-drawer:visible').locator('textarea').first()
@@ -123,13 +123,13 @@ test.describe('@business-flows D 档 P6 真实业务流程', () => {
     await page.waitForLoadState('networkidle', { timeout: 8000 }).catch(() => {})
 
     // 切到「失败」或「卡住」筛选(若存在)
-    const failedFilter = page.getByText(/FAILED|失败|卡住/).first()
+    const failedFilter = page.getByText(/失败|卡住/).first()
     if (await isVisible(failedFilter, 1500)) {
       await failedFilter.click({ force: true }).catch(() => {})
       await page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => {})
     }
 
-    const republishBtn = page.getByRole('button', { name: /重发布|republish/i }).first()
+    const republishBtn = page.getByRole('button', { name: /重发布/ }).first()
     if (await isVisible(republishBtn, 2000)) {
       const disabled = await republishBtn.isDisabled().catch(() => false)
       if (!disabled) {
@@ -205,21 +205,21 @@ test.describe('@business-flows D 档 P6 真实业务流程', () => {
     await expectPageTitle(page, '发布管理')
     await page.waitForLoadState('networkidle', { timeout: 8000 }).catch(() => {})
 
-    const keyInput = page.getByPlaceholder(/搜索配置 Key|Search config key/i)
+    const keyInput = page.getByPlaceholder(/搜索配置 Key/)
     await keyInput.fill(release.configKey)
-    await page.getByRole('button', { name: /搜索|Search/ }).click()
+    await page.getByRole('button', { name: /搜索/ }).click()
     const card = page.locator('.cr-item').filter({ hasText: release.configKey }).first()
     await expect(card).toBeVisible({ timeout: 8_000 })
     await card.locator('.cr-card').click()
 
-    const diffBtn = page.locator('.cr-panel').getByRole('button', { name: /对比|差异|Diff/i })
+    const diffBtn = page.locator('.cr-panel').getByRole('button', { name: /对比|差异/ })
     await expect(diffBtn).toBeVisible()
     await diffBtn.click()
     const diffPanel = page.locator('.el-dialog:visible, .el-drawer:visible').first()
     await expect(diffPanel).toBeVisible()
     await page.keyboard.press('Escape')
 
-    const submitBtn = page.locator('.cr-panel').getByRole('button', { name: /提审|提交审批|Submit/i })
+    const submitBtn = page.locator('.cr-panel').getByRole('button', { name: /提审|提交审批/ })
     await expect(submitBtn).toBeVisible()
     await submitBtn.click()
     const confirm = page.locator('.el-message-box:visible')

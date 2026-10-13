@@ -26,7 +26,7 @@ test.describe('UI Flow 08: outbox republish UI', () => {
     await page.goto('/observability/outbox')
     await expect(page).toHaveURL(/\/observability\/outbox/)
     await page.waitForLoadState('networkidle', { timeout: 8000 }).catch(() => undefined)
-    const deliveryTab = page.getByRole('tab', { name: /投递|delivery/i }).first()
+    const deliveryTab = page.getByRole('tab', { name: /投递/ }).first()
     if (await isVisible(deliveryTab, 2000)) {
       await deliveryTab.click({ force: true })
       // 验 tab 真切换(激活态);不去断隐藏 pane 的表(多 pane 下 .first() 会命中隐藏的)
@@ -41,7 +41,7 @@ test.describe('UI Flow 08: outbox republish UI', () => {
     await expect(page.locator(LIST_OR_EMPTY).first()).toBeVisible({ timeout: 10_000 })
     const republishBtn = page
       .locator('.table-actions')
-      .getByRole('button', { name: /重发布|republish|重投/i })
+      .getByRole('button', { name: /重发布|重投/ })
       .first()
     if (await isVisible(republishBtn, 2000)) {
       await republishBtn.click({ force: true })

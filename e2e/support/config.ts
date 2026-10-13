@@ -1,6 +1,7 @@
 import config from '../config.cjs'
 
 export const {
+  DEFAULT_LOCALE,
   API_BASE_URL,
   FRONTEND_BASE_URL,
   FRONTEND_ORIGIN,
