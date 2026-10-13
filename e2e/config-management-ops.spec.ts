@@ -11,6 +11,7 @@
 import { type Page } from '@playwright/test'
 import { expect, test } from './support/app'
 import { enterDemoApp, expectPageTitle, isVisible } from './support/app'
+import { e2eText, i18nKey } from './support/i18n'
 import { clearConsoleRateLimitKeys } from './support/rate-limit'
 
 const CONFIG_SYNC_EXPORT = '/api/console/config/sync/export'
@@ -19,7 +20,7 @@ const CONFIG_SYNC_IMPORT = '/api/console/config/sync/import'
 async function openConfigSyncTab(page: Page) {
   await enterDemoApp(page)
   await page.goto('/config/management')
-  await expectPageTitle(page, '变更与同步')
+  await expectPageTitle(page, i18nKey('page.configManagement.title'))
   await page.getByRole('tab', { name: '配置同步' }).first().click()
   await expect(page.getByRole('tab', { name: '配置同步' }).first()).toHaveClass(/is-active/)
 }
@@ -31,24 +32,24 @@ async function exportConfigFromUi(page: Page) {
     { timeout: 15_000 },
   )
   await page
-    .getByRole('button', { name: /导出为 JSON 文件/ })
+    .getByRole('button', { name: e2eText('configSyncTab.btnExport') })
     .first()
     .click()
   const resp = await apiCall
   const download = await downloadEvent
   expect(resp.status(), `config sync export status=${resp.status()}`).toBeLessThan(400)
   expect(download.suggestedFilename()).toMatch(/^config-sync-.+\.json$/)
-  await expect(page.locator('.el-message--success')).toContainText(/导出完成/, {
+  await expect(page.locator('.el-message--success')).toContainText(e2eText('configSyncTab.toastExportDone'), {
     timeout: 8_000,
   })
-  await expect(page.getByText(/导出结果/)).toBeVisible()
+  await expect(page.getByText(e2eText('configSyncTab.resultExport'))).toBeVisible()
   await expect(page.locator('.json-preview').first()).toBeVisible()
   return resp.json().catch(() => null)
 }
 
 async function copyExportToImportPayload(page: Page) {
   await page
-    .getByRole('button', { name: /复制到目标侧/ })
+    .getByRole('button', { name: e2eText('configSyncTab.btnCopyToTarget') })
     .first()
     .click()
   const payload = page.locator('.json-textarea-input textarea, .el-textarea__inner').first()
@@ -62,12 +63,12 @@ async function previewImportPayload(page: Page) {
     { timeout: 15_000 },
   )
   await page
-    .getByRole('button', { name: /预览差异/ })
+    .getByRole('button', { name: e2eText('configSyncTab.btnPreview') })
     .first()
     .click()
   const resp = await apiCall
   expect(resp.status(), `config sync preview status=${resp.status()}`).toBeLessThan(400)
-  await expect(page.getByText(/差异预览/)).toBeVisible({ timeout: 8_000 })
+  await expect(page.getByText(e2eText('configSyncTab.resultPreview'))).toBeVisible({ timeout: 8_000 })
   await expect(page.locator('.json-preview').first()).toBeVisible()
 }
 
@@ -77,18 +78,18 @@ async function importPayloadFromUi(page: Page) {
     { timeout: 20_000 },
   )
   await page
-    .getByRole('button', { name: /应用到目标/ })
+    .getByRole('button', { name: e2eText('configSyncTab.btnImport') })
     .first()
     .click()
   const box = page.locator('.el-message-box').first()
   await expect(box).toBeVisible({ timeout: 5_000 })
   await box
-    .getByRole('button', { name: /确认应用/ })
+    .getByRole('button', { name: e2eText('configSyncTab.importConfirmButton') })
     .first()
     .click()
   const resp = await apiCall
   expect(resp.status(), `config sync import status=${resp.status()}`).toBeLessThan(400)
-  await expect(page.locator('.el-message--success').last()).toContainText(/已应用到目标/, {
+  await expect(page.locator('.el-message--success').last()).toContainText(e2eText('configSyncTab.toastImportDone'), {
     timeout: 10_000,
   })
 }
