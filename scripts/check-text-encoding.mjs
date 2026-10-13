@@ -35,6 +35,8 @@ const binaryExtensions = new Set([
 ])
 
 function repositoryFiles() {
+  const filesIndex = process.argv.indexOf('--files')
+  if (filesIndex >= 0) return process.argv.slice(filesIndex + 1).filter(Boolean)
   const output = execFileSync(
     'git',
     ['ls-files', '--cached', '--others', '--exclude-standard', '-z'],
@@ -46,10 +48,17 @@ function repositoryFiles() {
     .filter(Boolean)
 }
 
+const filesOnly = process.argv.includes('--files')
+const files = repositoryFiles()
+if (filesOnly && files.length === 0) {
+  console.error('[encoding] --files 后必须提供至少一个路径')
+  process.exit(2)
+}
+
 const failures = []
 let checked = 0
 
-for (const file of repositoryFiles()) {
+for (const file of files) {
   const absolutePath = resolve(root, file)
   // git ls-files 仍会返回工作区中尚未暂存的删除项，删除不应导致编码检查读文件失败。
   if (!existsSync(absolutePath)) continue

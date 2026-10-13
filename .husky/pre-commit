@@ -1,5 +1,12 @@
 #!/usr/bin/env sh
-set -e
+set -eu
 
-npx lint-staged
-npm run preflight:changed
+failure_file="$(mktemp "${TMPDIR:-/tmp}/batch-console-pre-commit.XXXXXX")"
+trap 'rm -f "$failure_file"' EXIT HUP INT TERM
+export BATCH_GATE_COLLECT=1
+export BATCH_GATE_FAILURE_FILE="$failure_file"
+
+bash scripts/ci/run-gate.sh --group quality FE_LINT_STAGED "lint-staged 提交检查" -- npx lint-staged
+bash scripts/ci/run-gate.sh --group governance FE_PREFLIGHT_CHANGED "按需提交门禁" -- npm run preflight:changed
+
+bash -c '. scripts/lib/gate-result.sh; gate_assert_collected'

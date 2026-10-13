@@ -42,12 +42,12 @@ OpenAPI 生成类型、自动导入声明和组件声明属于生成文件，不
 | 入口                        | 行为                         |
 | --------------------------- | ---------------------------- |
 | `npm run check:comments`    | 全量检查手写代码注释         |
-| `.husky/pre-commit`         | 提交时自动执行 staged 预检   |
-| `npm run preflight:changed` | 变更涉及代码或脚本时自动执行 |
+| `.husky/pre-commit`         | 通过统一 gate runner 执行 staged 预检 |
+| `npm run preflight:changed` | 仅将本次变更路径传给检查器          |
 | `npm run verify:governance` | 与其他工程治理检查一起执行   |
 | PR Gate / Full Gate         | CI 阻断新增英文解释性注释    |
 
-检查器使用 TypeScript AST 获取真实注释，Vue 文件分别处理脚本、模板和样式，避免把字符串、正则表达式或 URL 中的 `//` 误判为注释。门禁同时校验 `.husky/pre-commit → preflight:changed → check:comments` 接线，防止本地提交钩子被静默移除。
+检查器使用 TypeScript AST 获取真实注释，Vue 文件分别处理脚本、模板和样式，避免把字符串、正则表达式或 URL 中的 `//` 误判为注释。提交钩子向检查器传入 staged 变更文件；门禁校验按需预检仍接入 `scripts/check-comment-language.mjs`，避免本地增量检查被静默移除。
 
 ## 维护原则
 

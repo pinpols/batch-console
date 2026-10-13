@@ -19,6 +19,18 @@ const rootSourceFiles = new Set([
 const supportedExtensions = new Set(['.cjs', '.css', '.js', '.mjs', '.sh', '.ts', '.tsx', '.vue'])
 
 function repositoryFiles() {
+  const filesIndex = process.argv.indexOf('--files')
+  if (filesIndex >= 0) {
+    return process.argv.slice(filesIndex + 1).filter((file) => {
+      if (generatedFiles.has(file) || !supportedExtensions.has(extname(file))) return false
+      return (
+        file.startsWith('src/') ||
+        file.startsWith('e2e/') ||
+        file.startsWith('scripts/') ||
+        rootSourceFiles.has(file)
+      )
+    })
+  }
   const output = execFileSync(
     'git',
     ['ls-files', '--cached', '--others', '--exclude-standard', '-z'],
@@ -271,12 +283,12 @@ const pattern = /https?:\/\//
 
 function verifyLocalHookWiring() {
   const preCommit = readFileSync(resolve(root, '.husky/pre-commit'), 'utf8')
-  if (!/^npm run preflight:changed\s*$/m.test(preCommit)) {
+  if (!/npm run preflight:changed(?:\s|$)/u.test(preCommit)) {
     throw new Error('[comment-language] .husky/pre-commit 未接入 preflight:changed')
   }
 
   const preflight = readFileSync(resolve(root, 'scripts/local/preflight-changed.mjs'), 'utf8')
-  if (!/\['run', 'check:comments'\]/u.test(preflight)) {
+  if (!preflight.includes('scripts/check-comment-language.mjs')) {
     throw new Error('[comment-language] preflight:changed 未接入 check:comments')
   }
 }

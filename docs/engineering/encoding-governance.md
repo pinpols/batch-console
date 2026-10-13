@@ -29,11 +29,11 @@
 
 ## 自动化门禁
 
-`npm run check:encoding` 使用严格 UTF-8 解码检查 Git 已跟踪和待提交的平台文本文件，同时拒绝 UTF-8 BOM。已知二进制文件按扩展名排除，非 UTF-8 业务样本必须在脚本中逐项登记，禁止使用目录级通配豁免。
+`npm run check:encoding` 使用严格 UTF-8 解码检查 Git 已跟踪和待提交的平台文本文件，同时拒绝 UTF-8 BOM。提交钩子通过 `--files` 仅检查本次变更路径；完整命令与 CI 仍扫描仓库清单。已知二进制文件按扩展名排除，非 UTF-8 业务样本必须在脚本中逐项登记，禁止使用目录级通配豁免。
 
 门禁接入层次：
 
-1. `npm run preflight:changed`：提交前只要存在变更即执行。
+1. `.husky/pre-commit`：将暂存路径传给 `scripts/check-text-encoding.mjs --files`，增量检查提交内容。
 2. `npm run verify:governance`：本地完整工程治理入口。
 3. `pr-gate.yml`：PR 必过门禁。
 4. `full-ci-gate.yml`：主干与定时全量门禁。

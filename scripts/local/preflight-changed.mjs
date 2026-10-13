@@ -10,6 +10,9 @@
  * - src 代码改动后未做类型检查
  */
 import { spawnSync } from 'node:child_process'
+import { mkdtempSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 
 const args = new Set(process.argv.slice(2))
 const staged = args.has('--staged')
@@ -18,10 +21,10 @@ const all = args.has('--all')
 function gitChangedFiles() {
   const commands = all
     ? [
-        ['diff', '--name-only', 'HEAD', '--'],
-        ['ls-files', '--others', '--exclude-standard'],
+        ['diff', '--name-only', '-z', 'HEAD', '--'],
+        ['ls-files', '--others', '--exclude-standard', '-z'],
       ]
-    : [['diff', '--name-only', staged ? '--cached' : 'HEAD', '--']]
+    : [['diff', '--name-only', '-z', ...(staged ? ['--cached'] : ['HEAD']), '--']]
   const files = new Set()
   for (const commandArgs of commands) {
     const res = spawnSync('git', commandArgs, { encoding: 'utf8' })
@@ -29,10 +32,7 @@ function gitChangedFiles() {
       process.stderr.write(res.stderr || res.stdout)
       process.exit(res.status ?? 1)
     }
-    for (const file of res.stdout
-      .split('\n')
-      .map((x) => x.trim())
-      .filter(Boolean)) {
+    for (const file of res.stdout.split('\0').filter(Boolean)) {
       files.add(file)
     }
   }
@@ -43,10 +43,45 @@ function hasAny(files, predicates) {
   return files.some((file) => predicates.some((p) => p(file)))
 }
 
-function run(label, command, commandArgs) {
-  console.log(`\n[preflight] ${label}`)
-  const res = spawnSync(command, commandArgs, { stdio: 'inherit', shell: false })
-  if (res.status !== 0) process.exit(res.status ?? 1)
+let gateTempDir
+let failureFile
+let runnerErrors = 0
+
+function run(code, group, label, command, commandArgs) {
+  const gateArgs = [
+    'scripts/ci/run-gate.sh',
+    '--group',
+    group,
+    code,
+    label,
+    '--',
+    command,
+    ...commandArgs,
+  ]
+  const res = spawnSync('bash', gateArgs, {
+    stdio: 'inherit',
+    shell: false,
+    env: {
+      ...process.env,
+      BATCH_GATE_COLLECT: '1',
+      BATCH_GATE_FAILURE_FILE: failureFile,
+    },
+  })
+  if (res.status !== 0) runnerErrors += 1
+}
+
+function runNpm(code, group, label, script, args = []) {
+  run(code, group, label, 'npm', ['run', script, ...(args.length > 0 ? ['--', ...args] : [])])
+}
+
+function assertCollected() {
+  const res = spawnSync(
+    'bash',
+    ['-c', 'source scripts/lib/gate-result.sh; gate_assert_collected'],
+    { stdio: 'inherit', shell: false, env: { ...process.env, BATCH_GATE_FAILURE_FILE: failureFile } },
+  )
+  rmSync(gateTempDir, { recursive: true, force: true })
+  if (runnerErrors > 0 || res.status !== 0) process.exit(1)
 }
 
 function hasUnstagedChanges(paths) {
@@ -63,7 +98,14 @@ if (files.length === 0) {
   process.exit(0)
 }
 
-run('UTF-8 text encoding', 'npm', ['run', 'check:encoding'])
+gateTempDir = mkdtempSync(join(tmpdir(), 'batch-console-preflight-'))
+failureFile = join(gateTempDir, 'failures.tsv')
+
+run('FE_ENCODING', 'hygiene', 'UTF-8 文本编码', process.execPath, [
+  'scripts/check-text-encoding.mjs',
+  '--files',
+  ...files,
+])
 
 const srcChanged = hasAny(files, [(f) => /^src\/.+\.(vue|ts|tsx)$/.test(f)])
 const localeChanged = hasAny(files, [
@@ -129,72 +171,75 @@ const commentScopeChanged = hasAny(files, [
 ])
 
 if (commentScopeChanged) {
-  run('Chinese explanatory comments', 'npm', ['run', 'check:comments'])
+  run('FE_COMMENTS', 'quality', '中文解释性注释', process.execPath, [
+    'scripts/check-comment-language.mjs',
+    '--files',
+    ...files,
+  ])
 }
 
 if (packageChanged) {
   if (staged) {
     if (hasUnstagedChanges(['package.json', 'package-lock.json'])) {
       console.error('[preflight] package 文件还有未暂存改动，拒绝自动生成合规快照')
-      process.exit(1)
+      runnerErrors += 1
+    } else {
+      run('FE_SBOM_SYNC', 'supply-chain', '重建并暂存 SBOM 与许可证清单', 'bash', [
+        '-c',
+        'npm run compliance:sbom && git add -- docs/compliance/sbom.json docs/compliance/THIRD-PARTY-LICENSES.md',
+      ])
     }
-    run('regenerate SBOM and license inventory', 'npm', ['run', 'compliance:sbom'])
-    run('stage generated compliance snapshots', 'git', [
-      'add',
-      '--',
-      'docs/compliance/sbom.json',
-      'docs/compliance/THIRD-PARTY-LICENSES.md',
-    ])
   }
-  run('package version alignment', 'npm', ['run', 'check:version'])
+  runNpm('FE_VERSION', 'configuration', '版本对齐', 'check:version')
 }
 
 if (srcChanged) {
-  run('ESLint check', 'npm', ['run', 'lint:check'])
-  run('TypeScript check', 'npm', ['run', 'typecheck'])
-  run('readability callsite gate', 'npm', ['run', 'check:readability-calls'])
+  runNpm('FE_LINT', 'quality', 'ESLint', 'lint:check')
+  runNpm('FE_TYPECHECK', 'quality', 'TypeScript 类型检查', 'typecheck')
+  runNpm('FE_READABILITY_CALLS', 'quality', '新增调用现场深层嵌套', 'check:readability-calls')
 }
 
 if (localeChanged) {
-  run('i18n consistency', 'npm', ['run', 'check:i18n'])
+  runNpm('FE_I18N', 'localization', '国际化词条一致性', 'check:i18n')
 }
 
 if (apiChanged) {
-  run('OpenAPI drift', 'npm', ['run', 'gen:api:check'])
+  runNpm('FE_API_DRIFT', 'contracts', 'OpenAPI 漂移', 'gen:api:check')
 }
 
 if (architectureChanged) {
-  run('architecture boundaries', 'npm', ['run', 'check:architecture'])
-  run('maintainability limits', 'npm', ['run', 'check:maintainability'])
+  runNpm('FE_ARCHITECTURE', 'quality', '架构边界', 'check:architecture')
+  runNpm('FE_MAINTAINABILITY', 'quality', '可维护性限制', 'check:maintainability')
 }
 
 if (testFixtureSourceChanged) {
-  run('test fixture source governance', 'npm', ['run', 'check:test-fixture-sources'])
+  runNpm('FE_TEST_FIXTURE_SOURCES', 'testing', '测试 fixture 事实来源', 'check:test-fixture-sources')
 }
 
 if (environmentChanged) {
-  run('environment governance', 'npm', ['run', 'check:env'])
+  runNpm('FE_ENV', 'configuration', '环境变量治理', 'check:env')
 }
 
 if (workflowChanged) {
-  run('workflow governance', 'npm', ['run', 'check:workflows'])
+  runNpm('FE_WORKFLOWS', 'governance', 'Workflow 治理', 'check:workflows')
 }
 
 if (docsChanged) {
-  run('documentation links and paths', 'npm', ['run', 'check:docs'])
-  run('go-live readiness documentation', 'npm', ['run', 'check:go-live-readiness'])
+  runNpm('FE_DOCS', 'docs', '文档链接与路径', 'check:docs')
+  runNpm('FE_GO_LIVE_READINESS', 'docs', '上线准入文档覆盖', 'check:go-live-readiness')
 }
 
 if (docsBuildChanged) {
-  run('unified docs build', 'npm', ['run', 'docs:build'])
+  runNpm('FE_DOCS_BUILD', 'docs', '统一文档构建', 'docs:build')
 }
 
 if (complianceChanged) {
-  run('SBOM and license drift', 'npm', ['run', 'compliance:check'])
+  runNpm('FE_COMPLIANCE', 'supply-chain', 'SBOM 与许可证漂移', 'compliance:check')
 }
 
 if (releaseImpact) {
-  run('changelog coverage', 'npm', ['run', 'check:changelog'])
+  runNpm('FE_CHANGELOG', 'docs', 'Changelog 覆盖', 'check:changelog')
 }
 
+assertCollected()
 console.log('\n[preflight] changed-file checks passed')
