@@ -33,6 +33,8 @@ return total + group.children.filter((item) => !item.hidden).length
 - 提取前后保持求值顺序、调用次数、短路行为、异常时机和副作用不变。
 - 只有形成复用的领域操作或独立职责时才抽方法/composable；单次表达式优先局部变量，避免无价值转调层。
 
+自动门禁 `npm run check:readability-calls` 只检查当前分支新增/修改的生产表达式：方法实参或 `return` 内出现至少 3 层连续方法/构造调用时阻断，并提示提取有业务含义的局部变量。短 fluent 链、回调函数体、测试与生成 API 类型不扫描。门禁不推断变量命名质量；普通的两层嵌套仍由评审按本节判断。
+
 ## 3. 参数与合法状态
 
 - 方法出现一组共同变化的参数时，优先使用已有的 request/options/context 类型；不要用连续 `null` 或多个布尔值选择模式。

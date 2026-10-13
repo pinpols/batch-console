@@ -20,6 +20,8 @@
     "check:docs": "node scripts/check-docs.mjs",
     "check:go-live-readiness": "node scripts/check-go-live-readiness-doc.mjs",
     "check:maintainability": "node scripts/check-maintainability.mjs",
+    "check:readability-calls": "node scripts/check-readability-calls.mjs",
+    "test:readability-calls": "node --test scripts/tests/readability-callsite.test.mjs",
     "check:baseline-expansion": "node scripts/check-governance-baseline-expansion.mjs",
     "test:baseline-expansion": "node --test scripts/tests/governance-baseline-expansion.test.mjs scripts/tests/staging-e2e-config.test.mjs scripts/tests/playwright-release-report.test.mjs",
     "check:test-fixture-sources": "node scripts/check-test-fixture-sources.mjs",
