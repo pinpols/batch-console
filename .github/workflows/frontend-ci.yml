@@ -106,7 +106,7 @@ jobs:
       - name: Install locked dependencies
         run: npm ci --no-audit --no-fund
       - name: Build unified documentation
-        run: npm run docs:build
+        run: bash scripts/ci/run-gate.sh --group docs FE_DOCS_BUILD "文档站点构建" -- npm run docs:build
         env:
           FRONTEND_DOCS_ROOT: ${{ github.workspace }}/docs
           BACKEND_DOCS_ROOT: ${{ github.workspace }}/backend-docs-source/docs
