@@ -6,8 +6,8 @@
  * 覆盖主路径(8 步,符合设计文档验收 §10):
  *   1. 登录 → API 创建 e2e 前缀的隔离最小合法图
  *   2. 进入 /workflow/designer/:id 并取得编辑锁
- *   3. 从 palette 添加 JOB 节点到画布，复用基线 START / END
- *   4. 连线(START → JOB → END)— 真鼠标从 X6 out 端口拖到 in 端口
+ *   3. 选中 START → END 依赖，从 palette 添加 JOB
+ *   4. 设计器自动拆边并形成 START → JOB → END
  *   5. 点 JOB 节点 → inspector 渲染 → 填 jobCode 下拉
  *   6. 点「校验」按钮 — 验证无 error banner
  *   7. 点「保存」按钮 — 验证 toast「保存成功」
@@ -35,7 +35,7 @@ test.describe('@workflow-designer-smoke 工作流设计器主路径', () => {
     await enterDemoApp(page)
   })
 
-  test('主路径:进入 → 拖 3 节点 → 连边 → 填 jobCode → 校验 → 保存 → 重开仍在', async ({ page }) => {
+  test('主路径:进入 → 自动插入节点 → 填 jobCode → 校验 → 保存 → 重开仍在', async ({ page }) => {
     // ── Step 1-2: 创建隔离的最小合法图 → 进入设计器 ────────────────
     // 测试数据用 API 建立，核心编排动作仍全部走 UI；避免反复修改公共 seed 工作流。
     const stamp = Date.now()
@@ -94,40 +94,23 @@ test.describe('@workflow-designer-smoke 工作流设计器主路径', () => {
     const baseline = await readGraphCounts(page)
 
     // ── Step 3: 从 palette 补齐 START / JOB / END ─────────────────
-    // 合法种子通常已有唯一 START / END，设计器会阻止重复创建；这种情况下复用既有节点。
-    let startId = await pickIdByType(page, 'start')
-    let endId = await pickIdByType(page, 'end')
-    let addedNodes = 1
-    if (!startId) {
-      await addPaletteNode(page, 'START')
-      addedNodes += 1
-    }
+    // 选中既有 START → END 依赖，新节点将自动插入其中。
+    const baselineEdge = page.locator('.dag-canvas__graph .x6-edge').first()
+    await expect(baselineEdge).toBeVisible({ timeout: 5_000 })
+    await baselineEdge.click({ force: true })
     await addPaletteNode(page, 'JOB')
-    if (!endId) {
-      await addPaletteNode(page, 'END')
-      addedNodes += 1
-    }
 
-    // 验证补充节点已入 store(store 通过 DagCanvas onDrop → store.addNode)
     await expect
       .poll(async () => (await readGraphCounts(page)).nodes, { timeout: 5_000 })
-      .toBeGreaterThanOrEqual(baseline.nodes + addedNodes)
-
-    // 从 DOM 抓完整链路的节点 id；START / END 可能来自既有合法图。
-    startId = startId ?? (await pickIdByType(page, 'start'))
-    const jobId = await pickIdByType(page, 'job')
-    endId = endId ?? (await pickIdByType(page, 'end'))
-    expect(startId, '未能从画布识别 START 节点').not.toBeNull()
-    expect(jobId, '未能从画布识别 JOB 节点').not.toBeNull()
-    expect(endId, '未能从画布识别 END 节点').not.toBeNull()
-
-    // ── Step 4: 连边 START → JOB → END ───────────────────────────
-    await connectNodes(page, startId, jobId)
-    await connectNodes(page, jobId, endId)
+      .toBe(baseline.nodes + 1)
     await expect
       .poll(async () => (await readGraphCounts(page)).edges, { timeout: 5_000 })
-      .toBeGreaterThanOrEqual(baseline.edges + 2)
+      .toBe(baseline.edges + 1)
 
+    const jobId = await pickIdByType(page, 'job')
+    expect(jobId, '未能从画布识别 JOB 节点').not.toBeNull()
+
+    // ── Step 4: 连边 START → JOB → END ───────────────────────────
     // ── Step 5: 选 JOB 节点 → inspector → 填 jobCode ────────────
     await page.locator(`.x6-node[data-cell-id="${jobId}"]`).first().click({ force: true })
     await expect(inspector).toBeVisible({ timeout: 3_000 })
@@ -224,33 +207,8 @@ async function addPaletteNode(
   expect((await readGraphCounts(page)).nodes, `${type} 节点未添加到主画布`).toBeGreaterThan(before)
 }
 
-async function connectNodes(
-  page: import('@playwright/test').Page,
-  sourceId: string,
-  targetId: string,
-) {
-  const sourcePort = page
-    .locator(`.x6-node[data-cell-id="${sourceId}"] .x6-port-body[port="out"]`)
-    .first()
-  const targetPort = page
-    .locator(`.x6-node[data-cell-id="${targetId}"] .x6-port-body[port="in"]`)
-    .first()
-  await expect(sourcePort).toBeAttached()
-  await expect(targetPort).toBeAttached()
-  const source = await sourcePort.boundingBox()
-  const target = await targetPort.boundingBox()
-  expect(source, `source port ${sourceId}`).not.toBeNull()
-  expect(target, `target port ${targetId}`).not.toBeNull()
-  await page.mouse.move(source!.x + source!.width / 2, source!.y + source!.height / 2)
-  await page.mouse.down()
-  await page.mouse.move(target!.x + target!.width / 2, target!.y + target!.height / 2, {
-    steps: 12,
-  })
-  await page.mouse.up()
-}
-
 /**
- * 按 nodeCode 前缀(start_/job_/end_,DagCanvas.onDrop 命名规则)挑出最新加进去的节点 id。
+ * 按 nodeCode 前缀(start_/job_/end_)挑出最新加进去的节点 id。
  * 没找到返回 null。
  */
 async function pickIdByType(

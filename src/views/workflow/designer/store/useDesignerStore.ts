@@ -12,6 +12,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { DesignerEdge, DesignerNode, DesignerNodeType, DesignerSnapshot } from '../types'
 import type { ValidationError } from '../validators/dagValidators'
+import type { AutomaticPlacement } from '../canvas/automaticConnection'
 
 const UNDO_STACK_LIMIT = 50
 
@@ -52,6 +53,9 @@ export interface DesignerLockReadonly {
   expiresAt: string
 }
 export type DesignerLockState = null | DesignerLockMine | DesignerLockReadonly
+
+export type DependencyMutationResult =
+  { ok: true } | { ok: false; reason: 'invalidEndpoint' | 'duplicate' | 'cycle' }
 
 const EMPTY_META: DesignerMeta = {
   id: null,
@@ -177,6 +181,166 @@ export const useDesignerStore = defineStore('workflowDesigner', () => {
     dirty.value = true
   }
 
+  function nextEdgeId(source: string, target: string): string {
+    const base = `e_${source}_${target}`
+    let suffix = edges.value.length
+    let candidate = `${base}_${suffix}`
+    while (edges.value.some((edge) => edge.id === candidate)) {
+      suffix += 1
+      candidate = `${base}_${suffix}`
+    }
+    return candidate
+  }
+
+  function createEdge(
+    source: string,
+    target: string,
+    semantic?: Pick<DesignerEdge, 'label' | 'attrs'>,
+  ): DesignerEdge {
+    return {
+      id: nextEdgeId(source, target),
+      source,
+      target,
+      label: semantic?.label,
+      attrs: semantic?.attrs ? { ...semantic.attrs } : { edgeType: 'SUCCESS', enabled: true },
+    }
+  }
+
+  function validateDependency(
+    sourceId: string,
+    targetId: string,
+    ignoredEdgeId?: string,
+  ): DependencyMutationResult {
+    const source = nodes.value.find((node) => node.id === sourceId)
+    const target = nodes.value.find((node) => node.id === targetId)
+    if (
+      !source ||
+      !target ||
+      source.id === target.id ||
+      source.nodeType === 'END' ||
+      target.nodeType === 'START'
+    ) {
+      return { ok: false, reason: 'invalidEndpoint' }
+    }
+    if (
+      edges.value.some(
+        (edge) => edge.id !== ignoredEdgeId && edge.source === sourceId && edge.target === targetId,
+      )
+    ) {
+      return { ok: false, reason: 'duplicate' }
+    }
+
+    const outgoing = new Map<string, string[]>()
+    for (const node of nodes.value) outgoing.set(node.id, [])
+    for (const edge of edges.value) {
+      if (edge.id === ignoredEdgeId) continue
+      outgoing.get(edge.source)?.push(edge.target)
+    }
+    const visited = new Set<string>()
+    const pending = [targetId]
+    while (pending.length > 0) {
+      const current = pending.pop()!
+      if (current === sourceId) return { ok: false, reason: 'cycle' }
+      if (visited.has(current)) continue
+      visited.add(current)
+      pending.push(...(outgoing.get(current) ?? []))
+    }
+    return { ok: true }
+  }
+
+  function addDependency(input: {
+    source: string
+    target: string
+    label?: string
+    attrs?: Record<string, unknown>
+  }): DependencyMutationResult {
+    const validation = validateDependency(input.source, input.target)
+    if (!validation.ok) return validation
+    pushUndo()
+    edges.value.push(
+      createEdge(input.source, input.target, {
+        label: input.label,
+        attrs: input.attrs ?? { edgeType: 'SUCCESS', enabled: true },
+      }),
+    )
+    dirty.value = true
+    return { ok: true }
+  }
+
+  function rewireDependency(
+    edgeId: string,
+    source: string,
+    target: string,
+  ): DependencyMutationResult {
+    const edge = edges.value.find((item) => item.id === edgeId)
+    if (!edge) return { ok: false, reason: 'invalidEndpoint' }
+    if (edge.source === source && edge.target === target) return { ok: true }
+    const validation = validateDependency(source, target, edgeId)
+    if (!validation.ok) return validation
+    pushUndo()
+    edge.source = source
+    edge.target = target
+    dirty.value = true
+    return { ok: true }
+  }
+
+  /**
+   * 新增节点并按结构化插入点自动接线。节点、删旧边、补新边共用一个撤销快照，
+   * 避免用户撤销一次后只剩半条依赖。
+   */
+  function addConnectedNode(
+    input: {
+      nodeCode: string
+      nodeName?: string
+      nodeType: DesignerNodeType
+      x: number
+      y: number
+      attrs?: Record<string, unknown>
+    },
+    placement: AutomaticPlacement,
+  ): boolean {
+    if (nodes.value.some((node) => node.id === input.nodeCode)) return false
+
+    const source =
+      placement.kind === 'append'
+        ? nodes.value.find((node) => node.id === placement.sourceId)
+        : undefined
+    const splitEdge =
+      placement.kind === 'insert'
+        ? edges.value.find((edge) => edge.id === placement.edgeId)
+        : undefined
+
+    if (placement.kind === 'append' && (!source || source.nodeType === 'END')) return false
+    if (placement.kind !== 'standalone' && input.nodeType === 'START') return false
+    if (placement.kind === 'insert' && (!splitEdge || input.nodeType === 'END')) return false
+
+    pushUndo()
+    nodes.value.push({
+      id: input.nodeCode,
+      nodeCode: input.nodeCode,
+      nodeName: input.nodeName ?? input.nodeCode,
+      nodeType: input.nodeType,
+      x: input.x,
+      y: input.y,
+      attrs: { ...(input.attrs ?? {}) },
+    })
+
+    if (source) {
+      edges.value.push(createEdge(source.id, input.nodeCode))
+    } else if (splitEdge) {
+      edges.value = edges.value.filter((edge) => edge.id !== splitEdge.id)
+      // 原依赖条件属于原上游节点，保留在“原上游 → 新节点”这一段。
+      edges.value.push(
+        createEdge(splitEdge.source, input.nodeCode, splitEdge),
+        createEdge(input.nodeCode, splitEdge.target),
+      )
+    }
+
+    selectedIds.value = new Set([input.nodeCode])
+    dirty.value = true
+    return true
+  }
+
   function deleteNode(id: string) {
     const idx = nodes.value.findIndex((n) => n.id === id)
     if (idx < 0) return
@@ -285,7 +449,10 @@ export const useDesignerStore = defineStore('workflowDesigner', () => {
     setLock,
     setValidationErrors,
     addNode,
+    addConnectedNode,
     addEdge,
+    addDependency,
+    rewireDependency,
     deleteNode,
     deleteEdge,
     updateEdge,

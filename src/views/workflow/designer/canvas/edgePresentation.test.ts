@@ -26,7 +26,7 @@ describe('edgePresentation', () => {
   it('marks disabled dependencies with both text and dashed styling', () => {
     const value = edge({ edgeType: 'FAILURE', enabled: false })
     expect(edgeCanvasLabel(value)).toBe('DISABLED · FAILURE')
-    expect(edgeCanvasAttrs(value).line).toMatchObject({ strokeDasharray: '6 4', opacity: 0.65 })
+    expect(edgeCanvasAttrs(value).line).toMatchObject({ strokeDasharray: '6 4', opacity: 0.6 })
   })
 
   it('uses error styling without losing the edge type label', () => {
@@ -34,5 +34,14 @@ describe('edgePresentation', () => {
     const presentation = edgeCanvasAttrs(value, true)
     expect(presentation.label.text.text).toBe('CONDITION')
     expect(presentation.line.stroke).toContain('--color-danger')
+  })
+
+  it('uses a stronger stroke for the selected dependency without changing semantics', () => {
+    const value = edge({ edgeType: 'SUCCESS', enabled: true })
+    expect(edgeCanvasAttrs(value, false, true).line).toMatchObject({
+      strokeWidth: 2.4,
+      opacity: 1,
+    })
+    expect(edgeTypeOf(value)).toBe('SUCCESS')
   })
 })

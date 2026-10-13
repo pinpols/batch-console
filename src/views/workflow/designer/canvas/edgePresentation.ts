@@ -5,7 +5,7 @@ export type DesignerEdgeType = 'SUCCESS' | 'FAILURE' | 'CONDITION' | 'ALWAYS'
 const KNOWN_EDGE_TYPES = new Set<DesignerEdgeType>(['SUCCESS', 'FAILURE', 'CONDITION', 'ALWAYS'])
 
 const EDGE_TONES: Record<DesignerEdgeType, string> = {
-  SUCCESS: 'var(--color-success, #16a34a)',
+  SUCCESS: 'var(--color-text-placeholder, #8c959f)',
   FAILURE: 'var(--color-danger, #dc2626)',
   CONDITION: 'var(--color-warning, #d97706)',
   ALWAYS: 'var(--color-primary, #1668e3)',
@@ -35,7 +35,7 @@ export function edgeCanvasLabel(edge: DesignerEdge): string {
   return ''
 }
 
-export function edgeCanvasAttrs(edge: DesignerEdge, hasError = false) {
+export function edgeCanvasAttrs(edge: DesignerEdge, hasError = false, selected = false) {
   const enabled = isEdgeEnabled(edge)
   const edgeType = edgeTypeOf(edge)
   const tone = hasError
@@ -47,10 +47,10 @@ export function edgeCanvasAttrs(edge: DesignerEdge, hasError = false) {
   return {
     line: {
       stroke: tone,
-      strokeWidth: hasError ? 2.25 : 1.75,
+      strokeWidth: hasError || selected ? 2.4 : 1.6,
       strokeDasharray:
         !enabled || edgeType === 'FAILURE' ? '6 4' : edgeType === 'CONDITION' ? '3 3' : '',
-      opacity: enabled ? 1 : 0.65,
+      opacity: selected ? 1 : enabled ? 0.9 : 0.6,
       vectorEffect: 'non-scaling-stroke',
       targetMarker: { name: 'block', size: 8, fill: tone, stroke: tone },
     },

@@ -9,6 +9,7 @@
 import userBatch from './userBatch.zh-CN.ts'
 import userAccountList from './userAccountList.zh-CN.ts'
 import tenantPackageImportWizard from './tenantPackageImportWizard.zh-CN.ts'
+import workflowDesignerDependency from './workflowDesignerDependency.zh-CN.ts'
 import onboardingCenter from './onboardingCenter.zh-CN.ts'
 
 export default {
@@ -243,9 +244,9 @@ export default {
   },
   workflowDesignerSpike: {
     title: 'Workflow 设计器',
-    paletteTitle: '节点库',
-    paletteAriaLabel: '从节点库拖入画布',
-    paletteAddHint: '拖到画布,或点击添加到视口中心',
+    paletteTitle: '添加步骤',
+    paletteAriaLabel: '选择节点类型并自动加入工作流',
+    paletteAddHint: '先选节点或连线，再点击类型；系统会自动连接并布局',
     canvasAriaLabel: 'Workflow DAG 画布',
     minimapAriaLabel: '画布缩略图',
     toolbarAriaLabel: '设计器工具栏',
@@ -282,8 +283,9 @@ export default {
     noSelectNotice: '请选择一个节点或连线查看属性',
     multiSelectNotice: '已选中多个节点,单选才能编辑',
     untitledWorkflow: '未命名工作流',
+    ...workflowDesignerDependency,
     canvasEmptyTitle: '从节点开始编排',
-    canvasEmptyDesc: '添加 START、JOB、END 后连接端点,再校验并保存。',
+    canvasEmptyDesc: '依次点击 START、JOB、END，系统会自动生成依赖和布局。',
     actionValidate: '校验',
     validateOk: '校验通过,可保存',
     errorBanner: '当前有 {count} 条校验错误,点击查看',
@@ -350,6 +352,9 @@ export default {
       closeInspector: '关闭属性面板',
       enterFocusMode: '专注画布',
       exitFocusMode: '退出专注画布',
+      zoomIn: '放大画布',
+      zoomOut: '缩小画布',
+      fitCanvas: '适配全部作业',
     },
     validation: {
       missingStart: '缺少 START 节点',

@@ -1,11 +1,13 @@
 <script setup lang="ts">
   import { computed, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
+  import { ElMessage } from 'element-plus'
   import { useDesignerStore } from '../store/useDesignerStore'
   import type { DesignerEdge } from '../types'
   import { usesConditionTemplateWrapper } from '../validators/dagValidators'
 
   const props = defineProps<{ edge: DesignerEdge; readonly: boolean }>()
+  const emit = defineEmits<{ (event: 'topology-changed'): void }>()
   const { t } = useI18n()
   const store = useDesignerStore()
 
@@ -38,8 +40,8 @@
     return node.nodeName === node.nodeCode ? node.nodeCode : `${node.nodeName} (${node.nodeCode})`
   }
 
-  const sourceLabel = computed(() => endpointLabel(props.edge.source))
-  const targetLabel = computed(() => endpointLabel(props.edge.target))
+  const sourceOptions = computed(() => store.nodes.filter((node) => node.nodeType !== 'END'))
+  const targetOptions = computed(() => store.nodes.filter((node) => node.nodeType !== 'START'))
   const conditionError = computed(() => {
     if (local.value.edgeType !== 'CONDITION') return ''
     if (!local.value.conditionExpr.trim()) {
@@ -90,15 +92,60 @@
     }
     commit()
   }
+
+  function rewire(endpoint: 'source' | 'target', nodeId: string) {
+    if (props.readonly) return
+    const source = endpoint === 'source' ? nodeId : props.edge.source
+    const target = endpoint === 'target' ? nodeId : props.edge.target
+    const result = store.rewireDependency(props.edge.id, source, target)
+    if (!result.ok) {
+      ElMessage.warning(t(`workflowDesignerMvp.dependency.${result.reason}`))
+      return
+    }
+    ElMessage.success(t('workflowDesignerMvp.dependency.updated'))
+    emit('topology-changed')
+  }
+
+  function deleteDependency() {
+    if (props.readonly) return
+    store.deleteEdge(props.edge.id)
+    store.setSelection([])
+    ElMessage.success(t('workflowDesignerMvp.dependency.deleted'))
+    emit('topology-changed')
+  }
 </script>
 
 <template>
   <el-form class="edge-inspector" label-position="top" size="small">
     <el-form-item :label="t('workflowDesignerMvp.field.edgeSource')">
-      <el-input :model-value="sourceLabel" readonly />
+      <el-select
+        :model-value="props.edge.source"
+        :disabled="props.readonly"
+        filterable
+        @change="rewire('source', String($event))"
+      >
+        <el-option
+          v-for="node in sourceOptions"
+          :key="node.id"
+          :label="endpointLabel(node.id)"
+          :value="node.id"
+        />
+      </el-select>
     </el-form-item>
     <el-form-item :label="t('workflowDesignerMvp.field.edgeTarget')">
-      <el-input :model-value="targetLabel" readonly />
+      <el-select
+        :model-value="props.edge.target"
+        :disabled="props.readonly"
+        filterable
+        @change="rewire('target', String($event))"
+      >
+        <el-option
+          v-for="node in targetOptions"
+          :key="node.id"
+          :label="endpointLabel(node.id)"
+          :value="node.id"
+        />
+      </el-select>
     </el-form-item>
     <el-form-item :label="t('workflowDesignerMvp.field.edgeType')">
       <el-select
@@ -137,6 +184,15 @@
         {{ t('workflowDesignerMvp.disabledEdgeHint') }}
       </span>
     </el-form-item>
+    <el-button
+      class="edge-inspector__delete"
+      type="danger"
+      plain
+      :disabled="props.readonly"
+      @click="deleteDependency"
+    >
+      {{ t('workflowDesignerMvp.dependency.deleteAction') }}
+    </el-button>
   </el-form>
 </template>
 
@@ -153,5 +209,10 @@
     margin-left: 8px;
     color: var(--color-warning, #d97706);
     font-size: 11px;
+  }
+
+  .edge-inspector__delete {
+    width: 100%;
+    margin-top: 4px;
   }
 </style>

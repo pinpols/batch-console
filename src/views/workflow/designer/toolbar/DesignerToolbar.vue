@@ -35,7 +35,7 @@
     defineProps<{
       saving?: boolean
       canSave?: boolean
-      /** dagre 布局方向(Polish 阶段:可在 TB/LR 切换);默认 TB 维持向后兼容 */
+      /** dagre 布局方向;横向更适合展示作业依赖链 */
       layoutDirection?: 'TB' | 'LR'
       /** JSON 同步面板当前展开状态(用于 button aria-pressed),默认折叠 */
       jsonPanelOpen?: boolean
@@ -45,7 +45,7 @@
     {
       saving: false,
       canSave: true,
-      layoutDirection: 'TB',
+      layoutDirection: 'LR',
       jsonPanelOpen: false,
       focusMode: false,
     },
@@ -86,7 +86,7 @@
   >
     <!-- 分组:返回 -->
     <div class="designer-toolbar__group">
-      <el-button :icon="ArrowLeft" :title="t('common.backToList')" @click="goBack">
+      <el-button size="small" :icon="ArrowLeft" :title="t('common.backToList')" @click="goBack">
         <span class="designer-toolbar__btn-text">{{ t('common.backToList') }}</span>
       </el-button>
     </div>
@@ -97,6 +97,7 @@
     <div class="designer-toolbar__group">
       <el-button-group>
         <el-button
+          size="small"
           :icon="RefreshLeft"
           :disabled="!store.editable || !store.canUndo"
           :title="t('workflowDesignerSpike.actionUndo')"
@@ -107,6 +108,7 @@
           }}</span>
         </el-button>
         <el-button
+          size="small"
           :icon="RefreshRight"
           :disabled="!store.editable || !store.canRedo"
           :title="t('workflowDesignerSpike.actionRedo')"
@@ -125,6 +127,7 @@
     <div class="designer-toolbar__group">
       <el-button-group>
         <el-button
+          size="small"
           :icon="Rank"
           :disabled="!store.editable"
           :title="t('workflowDesignerSpike.actionAutoLayout')"
@@ -135,6 +138,7 @@
           }}</span>
         </el-button>
         <el-button
+          size="small"
           :icon="Sort"
           :disabled="!store.editable"
           :title="t('workflowDesignerPolish.actionLayoutDirection', { dir: layoutDirection })"
@@ -152,6 +156,7 @@
     <!-- 分组:视图。快捷添加保留直显，低频工具收进菜单减少工具栏拥挤。 -->
     <div class="designer-toolbar__group">
       <el-button
+        size="small"
         :icon="MagicStick"
         :title="t('workflowDesignerPolish.actionQuickPalette')"
         @click="$emit('openQuickPalette')"
@@ -161,7 +166,7 @@
         }}</span>
       </el-button>
       <el-dropdown trigger="click" @command="onMoreCommand">
-        <el-button :icon="More" :title="t('common.more')">
+        <el-button size="small" :icon="More" :title="t('common.more')">
           <span class="designer-toolbar__btn-text">{{ t('common.more') }}</span>
         </el-button>
         <template #dropdown>
@@ -189,6 +194,7 @@
     <!-- 分组:校验保存(validate / save) -->
     <div class="designer-toolbar__group">
       <el-button
+        size="small"
         :icon="CircleCheck"
         :title="t('workflowDesignerMvp.actionValidate')"
         @click="$emit('validate')"
@@ -198,6 +204,7 @@
         }}</span>
       </el-button>
       <el-button
+        size="small"
         class="designer-toolbar__save-btn"
         :type="saveButtonType"
         :icon="Select"
@@ -226,6 +233,7 @@
       placement="bottom"
     >
       <el-button
+        size="small"
         circle
         :icon="focusMode ? Minimize2 : Maximize2"
         :type="focusMode ? 'primary' : 'default'"
@@ -244,16 +252,24 @@
   .designer-toolbar {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 8px 16px;
+    gap: 4px;
+    padding: 6px 10px;
     border-bottom: 1px solid var(--color-border);
-    background: var(--color-bg-overlay, #fff);
+    background: var(--color-bg-card, #fff);
+    box-shadow: 0 1px 0 color-mix(in srgb, var(--color-border) 72%, transparent);
     min-width: 0;
   }
   .designer-toolbar__group {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
+  }
+  .designer-toolbar :deep(.el-icon) {
+    font-size: 14px;
+  }
+  .designer-toolbar :deep(.el-divider--vertical) {
+    margin: 0 4px;
+    border-color: var(--color-border-light);
   }
   .designer-toolbar__spacer {
     flex: 1 1 auto;
@@ -272,14 +288,25 @@
   .designer-toolbar__save-btn {
     font-weight: 600;
   }
-  /* 窄屏:工具栏换行,文字按钮折叠为纯 icon(title/tooltip 兜底语义) */
+  /* 侧栏展开时内容区会比视口窄，常规笔记本宽度提前收起按钮文字。 */
+  @media (max-width: 1366px) {
+    .designer-toolbar__btn-text {
+      display: none;
+    }
+    .designer-toolbar__save-btn .designer-toolbar__btn-text,
+    .designer-toolbar__group:first-child .designer-toolbar__btn-text {
+      display: inline;
+    }
+    .designer-toolbar__search {
+      max-width: 180px;
+    }
+  }
+
+  /* 窄桌面允许工具栏换行，保留所有操作的可达性。 */
   @media (max-width: 1024px) {
     .designer-toolbar {
       flex-wrap: wrap;
-      row-gap: 8px;
-    }
-    .designer-toolbar__btn-text {
-      display: none;
+      row-gap: 6px;
     }
     .designer-toolbar__spacer {
       flex-basis: 100%;

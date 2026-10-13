@@ -1,34 +1,28 @@
 <template>
-  <el-alert
-    v-if="visible"
-    type="warning"
-    show-icon
-    :closable="false"
-    class="no-tenant-banner"
-    :title="title"
-  >
-    <template #default>
-      <div class="no-tenant-banner__body">
-        <span class="no-tenant-banner__text">{{ description }}</span>
-        <!-- 横幅内嵌选择器:有可选租户时直接在此选,不必去右上角找切换器 -->
-        <TenantSelect
-          v-if="canSwitch && !autoSelecting"
-          :model-value="''"
-          class="no-tenant-banner__select"
-          @update:model-value="onPick"
-        />
-        <el-button
-          v-if="canCreate"
-          link
-          type="primary"
-          class="no-tenant-banner__action"
-          @click="goCreate"
-        >
-          {{ t('noTenantBanner.actionCreate') }}
-        </el-button>
-      </div>
-    </template>
-  </el-alert>
+  <div v-if="visible" class="no-tenant-banner" role="status">
+    <Building2 :size="17" aria-hidden="true" class="no-tenant-banner__icon" />
+    <div class="no-tenant-banner__copy">
+      <strong>{{ title }}</strong>
+      <span>{{ description }}</span>
+    </div>
+    <!-- 有可选租户时可直接选择,不必去顶栏切换器查找。 -->
+    <TenantSelect
+      v-if="canSwitch && !autoSelecting"
+      :model-value="''"
+      class="no-tenant-banner__select"
+      @update:model-value="onPick"
+    />
+    <el-button
+      v-if="canCreate"
+      link
+      type="warning"
+      :icon="ArrowRight"
+      class="no-tenant-banner__action"
+      @click="goCreate"
+    >
+      {{ t('noTenantBanner.actionCreate') }}
+    </el-button>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -37,6 +31,7 @@
   import { useRouter, useRoute } from 'vue-router'
   import { storeToRefs } from 'pinia'
   import { ElMessage } from 'element-plus'
+  import { ArrowRight, Building2 } from '@lucide/vue'
   import { useAuthStore } from '@/stores/auth'
   import { useTenantStore } from '@/stores/tenant'
   import { canSwitchTenant as checkCanSwitchTenant } from '@/utils/tenantAccess'
@@ -111,27 +106,65 @@
 
 <style scoped>
   .no-tenant-banner {
-    border-radius: var(--radius-content, 8px);
-  }
-
-  .no-tenant-banner__body {
     display: flex;
     align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
+    gap: 10px;
+    min-height: 38px;
+    padding: 6px 12px 6px 16px;
+    border-bottom: 1px solid color-mix(in srgb, var(--color-warning) 24%, var(--color-border));
+    color: color-mix(in srgb, var(--color-warning) 78%, var(--color-text-primary) 22%);
+    background: color-mix(in srgb, var(--color-warning) 9%, var(--color-bg-card) 91%);
+    font-size: 12px;
+    line-height: 1.45;
   }
 
-  .no-tenant-banner__text {
-    font-size: 13px;
-    color: var(--color-text-primary);
+  .no-tenant-banner__icon {
+    flex: none;
+  }
+
+  .no-tenant-banner__copy {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    min-width: 0;
+    flex: 1;
+  }
+
+  .no-tenant-banner__copy strong {
+    flex: none;
+    font-weight: 650;
+  }
+
+  .no-tenant-banner__copy span {
+    min-width: 0;
+    color: var(--color-text-secondary);
   }
 
   .no-tenant-banner__action {
     padding: 0;
     height: auto;
+    flex: none;
   }
 
   .no-tenant-banner__select {
-    min-width: 220px;
+    flex: 0 0 200px;
+  }
+
+  @media (max-width: 720px) {
+    .no-tenant-banner {
+      align-items: flex-start;
+      flex-wrap: wrap;
+      padding: 8px 10px;
+    }
+
+    .no-tenant-banner__copy {
+      display: grid;
+      gap: 2px;
+    }
+
+    .no-tenant-banner__select {
+      flex: 1 1 180px;
+      margin-left: 27px;
+    }
   }
 </style>

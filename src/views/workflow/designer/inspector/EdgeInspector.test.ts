@@ -12,6 +12,7 @@ vi.mock('element-plus/es/components/option/style/css', () => ({}))
 vi.mock('element-plus/es/components/switch/style/css', () => ({}))
 
 vi.mock('element-plus', () => ({
+  ElMessage: { success: vi.fn(), warning: vi.fn() },
   ElForm: { name: 'ElForm', template: '<form><slot /></form>' },
   ElFormItem: {
     name: 'ElFormItem',
@@ -46,6 +47,12 @@ vi.mock('element-plus', () => ({
     template:
       '<input class="switch" type="checkbox" :checked="modelValue" :disabled="disabled" @change="$emit(\'update:modelValue\', $event.target.checked); $emit(\'change\', $event.target.checked)" />',
   },
+  ElButton: {
+    name: 'ElButton',
+    props: ['disabled', 'type', 'plain'],
+    emits: ['click'],
+    template: '<button :disabled="disabled" @click="$emit(\'click\')"><slot /></button>',
+  },
 }))
 
 import EdgeInspector from './EdgeInspector.vue'
@@ -76,6 +83,14 @@ const i18n = createI18n({
         },
         conditionExprHelp: '直接引用 sourcePayload 字段',
         disabledEdgeHint: '禁用后不参与运行',
+        dependency: {
+          updated: '依赖已更新',
+          deleted: '依赖已删除',
+          deleteAction: '删除依赖',
+          invalidEndpoint: '端点不合法',
+          duplicate: '依赖重复',
+          cycle: '不能成环',
+        },
         validation: {
           conditionExprRequired: '条件连线 {source} → {target} 必须配置表达式',
           conditionExprTemplateWrapper: '不支持模板包裹',
@@ -128,16 +143,18 @@ describe('EdgeInspector', () => {
 
   it('明确展示上下游节点和当前触发语义', () => {
     const { wrapper } = factory()
-    const readonlyValues = wrapper
-      .findAll('input[readonly]')
-      .map((input) => (input.element as HTMLInputElement).value)
-    expect(readonlyValues).toEqual(['清洗数据 (source)', '生成报表 (target)'])
+    const selectValues = wrapper
+      .findAll('select')
+      .map((select) => (select.element as HTMLSelectElement).value)
+    expect(selectValues).toEqual(['source', 'target', 'SUCCESS'])
+    expect(wrapper.text()).toContain('清洗数据 (source)')
+    expect(wrapper.text()).toContain('生成报表 (target)')
     expect(wrapper.text()).toContain('成功说明')
   })
 
   it('CONDITION 边即时提示必填并把表达式写回 store', async () => {
     const { store, wrapper } = factory()
-    await wrapper.find('select').setValue('CONDITION')
+    await wrapper.findAll('select')[2]!.setValue('CONDITION')
 
     const conditionItem = wrapper
       .findAll('.el-form-item')
@@ -161,7 +178,7 @@ describe('EdgeInspector', () => {
 
   it('CONDITION 边拒绝运行时不支持的模板包裹', async () => {
     const { wrapper } = factory()
-    await wrapper.find('select').setValue('CONDITION')
+    await wrapper.findAll('select')[2]!.setValue('CONDITION')
     await wrapper.find('textarea').setValue('${bizDate != null}')
 
     const conditionItem = wrapper

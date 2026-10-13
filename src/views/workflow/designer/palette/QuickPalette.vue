@@ -5,23 +5,30 @@
    * 触发:Ctrl+K(Mac Cmd+K)+ toolbar 按钮(父组件控制 visible)。
    * 行为:
    * - 模态浮窗 + 输入框 → 模糊匹配节点类型 + (JOB 类型)jobCode 下拉 + (FILE_STEP 类型)pipelineCode 下拉
-   * - ↑↓ 切换高亮、Enter 触发"在画布中心点新建该节点"、Esc 关闭
+   * - ↑↓ 切换高亮、Enter 触发结构化添加、Esc 关闭
    *
-   * 不直接操作 X6,只调 store.addNode + emit('created');父组件决定落点(画布中心)。
+   * 不直接操作 X6；和左侧节点库共用自动连线规则，父组件在创建后触发自动布局。
    */
   import { computed, nextTick, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
+  import { ElMessage } from 'element-plus'
   import { useTenantStore } from '@/stores/tenant'
   import { useDesignerStore } from '../store/useDesignerStore'
   import { useJobCodeOptions } from '@/composables/useJobCodeOptions'
   import { usePipelineCodeOptions } from '@/composables/usePipelineCodeOptions'
   import type { DesignerNodeType } from '../types'
   import { findVacantNodePosition } from '../canvas/nodePlacement'
+  import {
+    automaticNodeCenter,
+    createUniqueNodeCode,
+    resolveAutomaticPlacement,
+  } from '../canvas/automaticConnection'
 
   const props = defineProps<{
     visible: boolean
     centerX: number
     centerY: number
+    layoutDirection: 'TB' | 'LR'
   }>()
   const emit = defineEmits<{
     (e: 'update:visible', v: boolean): void
@@ -100,33 +107,48 @@
     emit('update:visible', false)
   }
 
-  function genNodeCode(nodeType: DesignerNodeType, related?: string): string {
-    if (related) return `${nodeType.toLowerCase()}_${related}_${String(Date.now()).slice(-4)}`
-    return `${nodeType.toLowerCase()}_${String(Date.now()).slice(-4)}`
-  }
-
   function commit(row: PaletteRow) {
     if (store.lock !== null && !store.editable) {
       close()
       return
     }
-    const code = genNodeCode(row.nodeType, row.related)
+    const code = createUniqueNodeCode(row.nodeType, store.nodes, row.related)
     const attrs: Record<string, unknown> = {}
     if (row.nodeType === 'JOB' && row.related) attrs.jobCode = row.related
     if (row.nodeType === 'FILE_STEP' && row.related) attrs.pipelineCode = row.related
-    const position = findVacantNodePosition(
-      row.nodeType,
-      { x: props.centerX, y: props.centerY },
+    const resolution = resolveAutomaticPlacement(
       store.nodes,
+      store.edges,
+      store.selectedIds,
+      row.nodeType,
     )
-    store.addNode({
-      nodeCode: code,
-      nodeName: row.display,
-      nodeType: row.nodeType,
-      x: position.x,
-      y: position.y,
-      attrs,
-    })
+    if (!resolution.ok) {
+      ElMessage.warning(t(`workflowDesignerMvp.autoConnect.${resolution.reason}`))
+      return
+    }
+    const preferredCenter = automaticNodeCenter(
+      resolution.placement,
+      store.nodes,
+      store.edges,
+      { x: props.centerX, y: props.centerY },
+      props.layoutDirection,
+    )
+    const position = findVacantNodePosition(row.nodeType, preferredCenter, store.nodes)
+    const added = store.addConnectedNode(
+      {
+        nodeCode: code,
+        nodeName: row.display,
+        nodeType: row.nodeType,
+        x: position.x,
+        y: position.y,
+        attrs,
+      },
+      resolution.placement,
+    )
+    if (!added) {
+      ElMessage.warning(t('workflowDesignerMvp.autoConnect.invalidPlacement'))
+      return
+    }
     emit('created', code)
     close()
   }

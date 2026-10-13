@@ -2,6 +2,7 @@
   import { nextTick, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
+  import { Maximize2, ZoomIn, ZoomOut } from '@lucide/vue'
   import { getTeleport } from '@antv/x6-vue-shape'
   import { useDesignerStore } from '../store/useDesignerStore'
   import { useX6Graph } from './useX6Graph'
@@ -20,9 +21,12 @@
 
   defineExpose({
     /** 暴露给 toolbar 的自动布局入口(Polish 阶段支持方向参数) */
-    autoLayout: (direction: 'TB' | 'LR' = 'TB') => handle.autoLayout(direction),
+    autoLayout: (direction: 'TB' | 'LR' = 'LR', recordUndo = true) =>
+      handle.autoLayout(direction, recordUndo),
     /** 将全部节点完整放进当前画布视口。 */
     fitToViewport: () => handle.fitToViewport(),
+    zoomIn: () => handle.zoomIn(),
+    zoomOut: () => handle.zoomOut(),
     /** 校验错误列表点击 → 居中并选中该节点 */
     focusNode: (nodeId: string) => handle.focusNode(nodeId),
     /** 连线校验错误列表点击 → 居中并选中该连线 */
@@ -38,36 +42,6 @@
       handle.graph?.trigger('__rerender__')
     },
   )
-
-  // 拖入节点(从 palette HTML5 DnD 落点),由 DagCanvas 监听 drop
-  function onDrop(ev: DragEvent) {
-    // P1 只读守卫:未持锁 / 他人持锁时禁止拖入新节点
-    if (!store.editable) {
-      ev.preventDefault()
-      ElMessage.warning(t('workflowDesignerMvp.lock.readonlyGuard'))
-      return
-    }
-    ev.preventDefault()
-    const nodeType = ev.dataTransfer?.getData('application/x-designer-node-type')
-    if (!nodeType || !containerRef.value || !handle.graph) return
-    const rect = containerRef.value.getBoundingClientRect()
-    // X6 v3 公开方法是 graph.clientToLocal(x, y)(clientToLocalPoint 仅在 graph.coord 子对象上,
-    // 直接 graph.clientToLocalPoint(...) 会 is-not-a-function);返回画布逻辑坐标点
-    const point = handle.graph.clientToLocal(ev.clientX, ev.clientY)
-    // fallback 当 graph 还未挂载时:用相对容器坐标
-    const x = Number.isFinite(point.x) ? point.x : ev.clientX - rect.left
-    const y = Number.isFinite(point.y) ? point.y : ev.clientY - rect.top
-    // 生成 nodeCode:类型前缀 + 时间戳后 4 位，供新节点落盘前临时标识。
-    const suffix = String(Date.now()).slice(-4)
-    const code = `${nodeType.toLowerCase()}_${suffix}`
-    store.addNode({
-      nodeCode: code,
-      nodeName: code,
-      nodeType: nodeType as never,
-      x,
-      y,
-    })
-  }
 
   async function onKeyDown(ev: KeyboardEvent) {
     // P1 只读守卫:未持锁 / 他人持锁时禁止删除 / 撤销 / 重做(均会改 store)
@@ -110,11 +84,45 @@
     class="dag-canvas"
     tabindex="0"
     :aria-label="t('workflowDesignerSpike.canvasAriaLabel')"
-    @dragover.prevent
-    @drop="onDrop"
     @keydown="onKeyDown"
   >
     <div ref="containerRef" class="dag-canvas__graph" />
+    <div
+      class="dag-canvas__zoom"
+      role="group"
+      :aria-label="t('workflowDesignerSpike.canvasAriaLabel')"
+    >
+      <el-tooltip :content="t('workflowDesignerMvp.layout.zoomIn')" placement="right">
+        <el-button
+          text
+          circle
+          size="small"
+          :icon="ZoomIn"
+          :aria-label="t('workflowDesignerMvp.layout.zoomIn')"
+          @click="handle.zoomIn()"
+        />
+      </el-tooltip>
+      <el-tooltip :content="t('workflowDesignerMvp.layout.zoomOut')" placement="right">
+        <el-button
+          text
+          circle
+          size="small"
+          :icon="ZoomOut"
+          :aria-label="t('workflowDesignerMvp.layout.zoomOut')"
+          @click="handle.zoomOut()"
+        />
+      </el-tooltip>
+      <el-tooltip :content="t('workflowDesignerMvp.layout.fitCanvas')" placement="right">
+        <el-button
+          text
+          circle
+          size="small"
+          :icon="Maximize2"
+          :aria-label="t('workflowDesignerMvp.layout.fitCanvas')"
+          @click="handle.fitToViewport()"
+        />
+      </el-tooltip>
+    </div>
     <div class="dag-canvas__legend" :aria-label="t('workflowDesignerMvp.edgeLegendAria')">
       <span class="dag-canvas__legend-item">
         <i class="dag-canvas__legend-line dag-canvas__legend-line--success" />
@@ -161,15 +169,32 @@
     z-index: 2;
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     padding: 6px 9px;
     border: 1px solid var(--color-border-light);
-    border-radius: 4px;
-    background: color-mix(in srgb, var(--color-bg-card) 92%, transparent);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--color-bg-card) 96%, transparent);
+    box-shadow: 0 1px 3px color-mix(in srgb, #1f2328 8%, transparent);
     color: var(--color-text-secondary);
     font-size: 11px;
     line-height: 1;
     pointer-events: none;
+  }
+  .dag-canvas__zoom {
+    position: absolute;
+    left: 12px;
+    bottom: 16px;
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    padding: 3px;
+    border: 1px solid var(--color-border-light);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--color-bg-card) 96%, transparent);
+    box-shadow: 0 1px 3px color-mix(in srgb, #1f2328 8%, transparent);
+  }
+  .dag-canvas__zoom :deep(.el-button) {
+    margin: 0;
   }
   .dag-canvas__legend-item {
     display: inline-flex;
@@ -183,7 +208,7 @@
     border-top: 2px solid;
   }
   .dag-canvas__legend-line--success {
-    border-color: var(--color-success);
+    border-color: var(--color-text-placeholder, #8c959f);
   }
   .dag-canvas__legend-line--failure {
     border-color: var(--color-danger);
@@ -203,12 +228,10 @@
     width: 180px;
     height: 120px;
     overflow: hidden;
-    background: color-mix(in srgb, var(--color-bg-elevated) 88%, var(--color-bg-canvas) 12%);
-    border: 1px solid color-mix(in srgb, var(--color-border) 82%, var(--color-primary) 18%);
-    border-radius: var(--radius-content);
-    box-shadow:
-      0 10px 24px rgb(0 0 0 / 22%),
-      inset 0 1px 0 rgb(255 255 255 / 8%);
+    background: color-mix(in srgb, var(--color-bg-card) 96%, transparent);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    box-shadow: 0 2px 8px color-mix(in srgb, #1f2328 10%, transparent);
     z-index: 2;
   }
 

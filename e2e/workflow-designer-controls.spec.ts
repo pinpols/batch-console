@@ -56,10 +56,13 @@ test.describe('编排设计器 — 桌面控件', () => {
       return canvasBox!.width / bodyBox!.width
     }
 
-    await expect(page.locator('.node-palette')).toHaveClass(/node-palette--collapsed/)
+    await expect(page.locator('.node-palette')).not.toHaveClass(/node-palette--collapsed/)
     await expect(page.locator('.node-inspector')).toHaveCount(0)
-    expect(await canvasRatio()).toBeGreaterThan(0.88)
+    expect(await canvasRatio()).toBeGreaterThan(0.75)
 
+    await page.getByRole('button', { name: '收起节点库' }).click()
+    await expect(body).not.toHaveClass(/workflow-designer__body--palette-expanded/)
+    expect(await canvasRatio()).toBeGreaterThan(0.88)
     await page.getByRole('button', { name: '展开节点库' }).click()
     await expect(body).toHaveClass(/workflow-designer__body--palette-expanded/)
     await page.getByRole('button', { name: '打开属性面板' }).click()
@@ -77,7 +80,7 @@ test.describe('编排设计器 — 桌面控件', () => {
     await expect(page.locator('.node-palette')).toBeVisible()
   })
 
-  test('连续添加 START、JOB、END 不重叠且可以连接成完整链路', async ({ page }) => {
+  test('连续添加 START、JOB、END 会自动连接并布局成完整链路', async ({ page }) => {
     await page.goto('/workflow/designer')
     await expect(page.locator('.workflow-designer')).toBeVisible({ timeout: 15_000 })
 
@@ -103,30 +106,7 @@ test.describe('编排设计器 — 桌面控件', () => {
     expect(overlaps(boxes[0]!, boxes[1]!)).toBe(false)
     expect(overlaps(boxes[1]!, boxes[2]!)).toBe(false)
 
-    const ids = await nodes.evaluateAll((items) =>
-      items.map((item) => item.getAttribute('data-cell-id') ?? ''),
-    )
-    await connect(page, ids[0]!, ids[1]!)
-    await connect(page, ids[1]!, ids[2]!)
     await expect(page.locator('.workflow-designer__canvas-status')).toContainText('2 edges')
+    await expect(page.locator('.dag-canvas__graph .x6-edge')).toHaveCount(2)
   })
 })
-
-async function connect(page: import('@playwright/test').Page, sourceId: string, targetId: string) {
-  const source = page
-    .locator(`.dag-canvas__graph .x6-node[data-cell-id="${sourceId}"] .x6-port-body[port="out"]`)
-    .first()
-  const target = page
-    .locator(`.dag-canvas__graph .x6-node[data-cell-id="${targetId}"] .x6-port-body[port="in"]`)
-    .first()
-  const sourceBox = await source.boundingBox()
-  const targetBox = await target.boundingBox()
-  expect(sourceBox).not.toBeNull()
-  expect(targetBox).not.toBeNull()
-  await page.mouse.move(sourceBox!.x + sourceBox!.width / 2, sourceBox!.y + sourceBox!.height / 2)
-  await page.mouse.down()
-  await page.mouse.move(targetBox!.x + targetBox!.width / 2, targetBox!.y + targetBox!.height / 2, {
-    steps: 12,
-  })
-  await page.mouse.up()
-}

@@ -7,9 +7,10 @@
    *  - 多选 / 无选 → 显示提示空态
    *  - 只读态(store.editable=false)→ 所有子表单 readonly,UI 提示
    */
-  import { computed } from 'vue'
+  import { computed, ref } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { X } from '@lucide/vue'
+  import { ElMessage } from 'element-plus'
   import { useDesignerStore } from '../store/useDesignerStore'
   import StartNodeForm from './StartNodeForm.vue'
   import EndNodeForm from './EndNodeForm.vue'
@@ -17,11 +18,15 @@
   import FileStepNodeForm from './FileStepNodeForm.vue'
   import GatewayNodeForm from './GatewayNodeForm.vue'
   import EdgeInspector from './EdgeInspector.vue'
+  import DependencyCreateDialog from './DependencyCreateDialog.vue'
   import { edgeTypeOf } from '../canvas/edgePresentation'
 
   const { t } = useI18n()
   const store = useDesignerStore()
-  const emit = defineEmits<{ (e: 'close'): void }>()
+  const emit = defineEmits<{
+    (e: 'close'): void
+    (e: 'topology-changed'): void
+  }>()
 
   const selectedNode = computed(() => {
     const ids = Array.from(store.selectedIds)
@@ -36,6 +41,7 @@
   })
 
   const readonly = computed(() => !store.editable)
+  const dependencyDialogVisible = ref(false)
 
   const selectedEdgeId = computed(() => selectedEdge.value?.id ?? '')
 
@@ -53,6 +59,22 @@
   function selectEdge(edgeId: string) {
     store.setSelection(edgeId ? [edgeId] : [])
   }
+
+  function deleteSelectedNode() {
+    if (readonly.value || !selectedNode.value) return
+    const nodeId = selectedNode.value.id
+    const dependencyCount = store.edges.filter(
+      (edge) => edge.source === nodeId || edge.target === nodeId,
+    ).length
+    store.deleteNode(nodeId)
+    store.setSelection([])
+    ElMessage.success(
+      t('workflowDesignerMvp.nodeDeleted', {
+        count: dependencyCount,
+      }),
+    )
+    emit('topology-changed')
+  }
 </script>
 
 <template>
@@ -60,6 +82,14 @@
     <div class="node-inspector__header">
       <span class="node-inspector__title">{{ t('workflowDesignerMvp.inspectorTitle') }}</span>
       <div class="node-inspector__header-actions">
+        <el-button
+          v-if="!readonly && store.nodes.length >= 2"
+          text
+          type="primary"
+          @click="dependencyDialogVisible = true"
+        >
+          {{ t('workflowDesignerMvp.dependency.createAction') }}
+        </el-button>
         <el-tag v-if="readonly" type="info" size="small">
           {{ t('workflowDesignerMvp.readonlyTag') }}
         </el-tag>
@@ -98,7 +128,12 @@
           : t('workflowDesignerMvp.noSelectNotice')
       }}
     </div>
-    <EdgeInspector v-else-if="selectedEdge" :edge="selectedEdge" :readonly="readonly" />
+    <EdgeInspector
+      v-else-if="selectedEdge"
+      :edge="selectedEdge"
+      :readonly="readonly"
+      @topology-changed="emit('topology-changed')"
+    />
     <template v-else>
       <StartNodeForm
         v-if="selectedNode.nodeType === 'START'"
@@ -125,7 +160,21 @@
         :node="selectedNode"
         :readonly="readonly"
       />
+      <el-button
+        class="node-inspector__delete"
+        type="danger"
+        plain
+        :disabled="readonly"
+        @click="deleteSelectedNode"
+      >
+        {{ t('workflowDesignerMvp.deleteNodeAction') }}
+      </el-button>
     </template>
+    <DependencyCreateDialog
+      v-model="dependencyDialogVisible"
+      :preferred-node-id="selectedNode?.id"
+      @created="emit('topology-changed')"
+    />
   </aside>
 </template>
 
@@ -133,16 +182,15 @@
   .node-inspector {
     width: 100%;
     min-width: 0;
-    border: 1px solid var(--color-border-light);
-    border-left: none;
-    border-radius: 0 var(--radius-content) var(--radius-content) 0;
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
     background: var(--color-bg-card, #fff);
     padding: 14px;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
     gap: 12px;
-    box-shadow: 0 10px 24px color-mix(in srgb, #1f2937 5%, transparent);
+    box-shadow: 0 1px 2px color-mix(in srgb, #1f2328 6%, transparent);
   }
   .node-inspector__header {
     display: flex;
@@ -171,5 +219,9 @@
   }
   .node-inspector__dependency-picker {
     width: 100%;
+  }
+  .node-inspector__delete {
+    width: 100%;
+    margin-top: auto;
   }
 </style>

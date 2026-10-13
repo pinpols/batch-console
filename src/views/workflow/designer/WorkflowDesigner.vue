@@ -40,6 +40,11 @@
   import { userErrorMessage } from '@/utils/userErrorMessage'
   import DagCanvas from './canvas/DagCanvas.vue'
   import { findVacantNodePosition } from './canvas/nodePlacement'
+  import {
+    automaticNodeCenter,
+    createUniqueNodeCode,
+    resolveAutomaticPlacement,
+  } from './canvas/automaticConnection'
   import DesignerToolbar from './toolbar/DesignerToolbar.vue'
   import NodePalette from './toolbar/NodePalette.vue'
   import NodeInspector from './inspector/NodeInspector.vue'
@@ -102,7 +107,7 @@
   // Polish 阶段:Ctrl+K 节点 palette / 模板库 / dagre 布局方向开关
   const quickPaletteVisible = ref(false)
   const templateLibraryVisible = ref(false)
-  const layoutDirection = ref<'TB' | 'LR'>('TB')
+  const layoutDirection = ref<'TB' | 'LR'>('LR')
   const canvasCenter = ref<{ x: number; y: number }>({ x: 320, y: 200 })
   const jsonPanelCollapsed = ref(true)
   const paletteCollapsed = ref(true)
@@ -151,22 +156,58 @@
     quickPaletteVisible.value = true
   }
 
-  /** 点击节点库添加:按节点尺寸寻找视口中心附近的空位,避免连接桩被重叠节点遮挡。 */
-  function onPaletteAdd(type: DesignerNodeType) {
+  async function onQuickPaletteCreated() {
+    await nextTick()
+    canvasRef.value?.autoLayout(layoutDirection.value, false)
+    ElMessage.success(t('workflowDesignerMvp.autoConnect.connected'))
+  }
+
+  async function onTopologyChanged() {
+    await nextTick()
+    canvasRef.value?.autoLayout(layoutDirection.value, false)
+  }
+
+  /**
+   * 结构化添加：节点库不再只往画布丢一个孤立节点，而是依据当前选中的节点或依赖边
+   * 自动追加 / 插入并重排。分支图没有明确插入点时不猜测，要求用户先选中目标位置。
+   */
+  async function onPaletteAdd(type: DesignerNodeType) {
     if (!store.editable) {
       ElMessage.warning(t('workflowDesignerMvp.lock.readonlyGuard'))
       return
     }
     refreshCanvasCenter()
-    const position = findVacantNodePosition(type, canvasCenter.value, store.nodes)
-    const code = `${type.toLowerCase()}_${String(Date.now()).slice(-4)}`
-    store.addNode({
-      nodeCode: code,
-      nodeName: code,
-      nodeType: type,
-      x: position.x,
-      y: position.y,
-    })
+    const resolution = resolveAutomaticPlacement(store.nodes, store.edges, store.selectedIds, type)
+    if (!resolution.ok) {
+      ElMessage.warning(t(`workflowDesignerMvp.autoConnect.${resolution.reason}`))
+      return
+    }
+    const preferredCenter = automaticNodeCenter(
+      resolution.placement,
+      store.nodes,
+      store.edges,
+      canvasCenter.value,
+      layoutDirection.value,
+    )
+    const position = findVacantNodePosition(type, preferredCenter, store.nodes)
+    const code = createUniqueNodeCode(type, store.nodes)
+    const added = store.addConnectedNode(
+      {
+        nodeCode: code,
+        nodeName: code,
+        nodeType: type,
+        x: position.x,
+        y: position.y,
+      },
+      resolution.placement,
+    )
+    if (!added) {
+      ElMessage.warning(t('workflowDesignerMvp.autoConnect.invalidPlacement'))
+      return
+    }
+    await nextTick()
+    canvasRef.value?.autoLayout(layoutDirection.value, false)
+    ElMessage.success(t('workflowDesignerMvp.autoConnect.connected'))
   }
   function openTemplateLibrary() {
     templateLibraryVisible.value = true
@@ -274,6 +315,9 @@
         version: detail.version,
       })
       await nextTick()
+      // 加载时仅调整初始视图，不形成用户编辑/撤销记录；默认以横向作业链呈现。
+      canvasRef.value?.autoLayout(layoutDirection.value, false)
+      store.markClean()
       canvasRef.value?.fitToViewport()
       await lockMgr.acquire(id, tenantStore.tenantId)
     } catch (err) {
@@ -599,7 +643,12 @@
         <div class="workflow-designer__canvas-status">
           <span>{{ store.meta.workflowCode || t('workflowDesignerMvp.untitledWorkflow') }}</span>
           <el-tag size="small" effect="plain">
-            {{ store.nodes.length }} nodes / {{ store.edges.length }} edges
+            {{
+              t('workflowDesignerMvp.graphStats', {
+                nodes: store.nodes.length,
+                edges: store.edges.length,
+              })
+            }}
           </el-tag>
           <el-tag size="small" type="info" effect="plain"> {{ layoutDirection }} </el-tag>
         </div>
@@ -634,7 +683,11 @@
           </div>
         </div>
       </section>
-      <NodeInspector v-if="inspectorVisible" @close="inspectorExpanded = false" />
+      <NodeInspector
+        v-if="inspectorVisible"
+        @close="inspectorExpanded = false"
+        @topology-changed="onTopologyChanged"
+      />
     </div>
 
     <el-drawer
@@ -665,6 +718,8 @@
       v-model:visible="quickPaletteVisible"
       :center-x="canvasCenter.x"
       :center-y="canvasCenter.y"
+      :layout-direction="layoutDirection"
+      @created="onQuickPaletteCreated"
     />
     <TemplateLibrary v-model:visible="templateLibraryVisible" />
 
@@ -696,7 +751,7 @@
     background: var(--color-bg-page);
   }
   .workflow-designer__body {
-    --designer-palette-width: 56px;
+    --designer-palette-width: 44px;
     --designer-inspector-width: 0px;
 
     display: grid;
@@ -706,16 +761,16 @@
     flex: 1 1 auto;
     min-height: 0;
     min-width: 0;
-    gap: 0;
+    gap: 8px;
     padding: 8px;
     overflow: hidden;
     transition: grid-template-columns 160ms ease;
   }
   .workflow-designer__body--palette-expanded {
-    --designer-palette-width: 176px;
+    --designer-palette-width: 168px;
   }
   .workflow-designer__body--inspector-visible {
-    --designer-inspector-width: 320px;
+    --designer-inspector-width: 280px;
   }
   .workflow-designer__body--focus {
     --designer-palette-width: 0px;
@@ -733,9 +788,10 @@
     min-width: 0;
     min-height: 0;
     overflow: hidden;
-    border: 1px solid var(--color-border-light);
-    border-radius: var(--radius-content);
-    background: var(--color-bg-canvas, #e9eef5);
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    background: var(--color-bg-subtle, #f6f8fa);
+    box-shadow: 0 1px 2px color-mix(in srgb, #1f2328 7%, transparent);
   }
   .workflow-designer__body > :deep(.node-inspector) {
     grid-column: 3;
@@ -751,9 +807,9 @@
     max-width: calc(100% - 24px);
     padding: 6px 8px;
     border: 1px solid var(--color-border-light);
-    border-radius: var(--radius-content);
-    background: color-mix(in srgb, var(--color-bg-card) 92%, transparent);
-    box-shadow: 0 8px 20px color-mix(in srgb, #1f2937 8%, transparent);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--color-bg-card) 96%, transparent);
+    box-shadow: 0 1px 3px color-mix(in srgb, #1f2328 10%, transparent);
     color: var(--color-text-secondary);
     font-size: 12px;
   }
@@ -779,11 +835,11 @@
     left: 50%;
     z-index: 2;
     width: min(360px, calc(100% - 48px));
-    padding: 18px;
-    border: 1px solid var(--color-border-light);
-    border-radius: var(--radius-content);
-    background: color-mix(in srgb, var(--color-bg-card) 94%, transparent);
-    box-shadow: 0 16px 36px color-mix(in srgb, #1f2937 10%, transparent);
+    padding: 24px;
+    border: 1px dashed var(--color-border);
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--color-bg-card) 97%, transparent);
+    box-shadow: 0 4px 16px color-mix(in srgb, #1f2328 7%, transparent);
     text-align: center;
     transform: translate(-50%, -50%);
   }
@@ -844,10 +900,10 @@
 
   @media (max-width: 1100px) {
     .workflow-designer__body--palette-expanded {
-      --designer-palette-width: 160px;
+      --designer-palette-width: 152px;
     }
     .workflow-designer__body--inspector-visible {
-      --designer-inspector-width: 280px;
+      --designer-inspector-width: 260px;
     }
   }
 
@@ -860,10 +916,10 @@
       overflow: auto;
     }
     .workflow-designer__body--palette-expanded {
-      --designer-palette-width: 132px;
+      --designer-palette-width: 128px;
     }
     .workflow-designer__body--inspector-visible {
-      --designer-inspector-width: 250px;
+      --designer-inspector-width: 240px;
     }
   }
 </style>

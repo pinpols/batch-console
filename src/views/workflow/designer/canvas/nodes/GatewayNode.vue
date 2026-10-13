@@ -39,12 +39,16 @@
     const nodeId = data.value?.id ?? data.value?.nodeCode
     return nodeId ? store.errorNodeIds.has(nodeId) : false
   })
+  const isSelected = computed(() => {
+    const nodeId = data.value?.id ?? data.value?.nodeCode
+    return nodeId ? store.selectedIds.has(nodeId) : false
+  })
 </script>
 
 <template>
   <div
     class="designer-gateway"
-    :class="{ 'designer-gateway--error': hasError }"
+    :class="{ 'designer-gateway--error': hasError, 'designer-gateway--selected': isSelected }"
     role="img"
     :aria-label="t('workflowDesignerMvp.nodeGateway')"
   >
@@ -87,6 +91,10 @@
   .designer-gateway--error .designer-gateway__diamond {
     border-color: var(--wf-node-error);
     background: var(--wf-node-error-light);
+  }
+  .designer-gateway--selected .designer-gateway__diamond {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 4px var(--color-primary-light-8);
   }
   .designer-gateway__inner {
     transform: rotate(-45deg);
