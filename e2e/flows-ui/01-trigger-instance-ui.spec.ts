@@ -31,7 +31,7 @@ test.describe('UI Flow 01: trigger → instance', () => {
     await expect(page.locator(LIST_OR_EMPTY).first()).toBeVisible({ timeout: 10_000 })
     const codeInput = page
       .locator('.el-form-item')
-      .filter({ hasText: /Job Code|作业编码|编码/ })
+      .filter({ hasText: /作业编码|编码/ })
       .locator('input')
       .first()
     if (await isVisible(codeInput, 3000)) {
@@ -42,14 +42,14 @@ test.describe('UI Flow 01: trigger → instance', () => {
     const row = page.locator('tbody tr.el-table__row').filter({ hasText: MANUAL_TRIGGER_JOB }).first()
     await expect(row, `未找到稳定手动触发作业 ${MANUAL_TRIGGER_JOB}`).toBeVisible({ timeout: 8_000 })
 
-    let triggerBtn = row.getByRole('button', { name: /手动触发|trigger/i }).first()
+    let triggerBtn = row.getByRole('button', { name: /手动触发/ }).first()
     if (!(await isVisible(triggerBtn, 2000))) {
       const more = row.getByRole('button', { name: /^更多/ }).first()
       if (await isVisible(more, 1500)) {
         await more.click()
         triggerBtn = page
           .locator('.el-dropdown-menu__item, [role="menuitem"]')
-          .filter({ hasText: /手动触发|trigger/i })
+          .filter({ hasText: /手动触发/ })
           .first()
       }
     }

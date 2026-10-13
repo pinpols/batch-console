@@ -23,7 +23,7 @@ test.describe('UI Flow 03: fail → rerun → approve', () => {
     await page.waitForLoadState('networkidle', { timeout: 8000 }).catch(() => undefined)
     await expect(page.locator(LIST_OR_EMPTY).first()).toBeVisible({ timeout: 10_000 })
 
-    const failedRow = page.locator('tr', { hasText: /FAILED|失败/ }).first()
+    const failedRow = page.locator('tr', { hasText: /失败/ }).first()
     if (await isVisible(failedRow, 3000)) {
       const link = failedRow.locator('.cell-link, a.el-link').first()
       if (await isVisible(link, 1500)) {
@@ -41,7 +41,7 @@ test.describe('UI Flow 03: fail → rerun → approve', () => {
     await expect(page.locator('.el-tabs, .el-form, .section-card').first()).toBeVisible({
       timeout: 8000,
     })
-    const rerunTab = page.getByRole('tab', { name: /重跑|rerun/i }).first()
+    const rerunTab = page.getByRole('tab', { name: /重跑/ }).first()
     if (await isVisible(rerunTab, 2000)) await rerunTab.click({ force: true })
     // 录入控件存在时填写并回读(部分 tab 默认无 input,不硬性要求)
     const anyInput = page.locator('.el-input__inner, .el-textarea__inner').first()

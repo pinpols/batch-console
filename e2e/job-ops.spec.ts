@@ -194,7 +194,7 @@ test.describe('Workflow 定义 — 操作流', () => {
     await detailBtn.click()
     // drawer title 改成"工作流详情 / 版本信息"
     await expect(
-      page.getByText(/工作流详情|Workflow 详情|版本信息/),
+      page.getByText(/工作流详情|版本信息/),
     ).toBeVisible({ timeout: 6000 })
     await page.locator('.el-drawer__close-btn').first().click()
   })

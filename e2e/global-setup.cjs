@@ -3,7 +3,7 @@ const storageKeys = require('../src/constants/storageKeys.json')
 const { writeFileSync, mkdirSync, readFileSync, existsSync } = require('fs')
 const path = require('path')
 const crypto = require('crypto')
-const { API_BASE_URL, FRONTEND_BASE_URL } = require('./config.cjs')
+const { API_BASE_URL, DEFAULT_LOCALE, FRONTEND_BASE_URL } = require('./config.cjs')
 
 const API_BASE = API_BASE_URL
 const FIXTURE_TENANT = 'system'
@@ -127,7 +127,7 @@ function roleStorageState(login, role, baseURL) {
           { name: storageKeys.tenantId, value: role.defaultTenant },
           { name: storageKeys.session, value: '1' },
           { name: 'token', value: login.body?.data?.accessToken ?? '' },
-          { name: storageKeys.locale, value: 'zh-CN' },
+          { name: storageKeys.locale, value: DEFAULT_LOCALE },
           { name: storageKeys.onboardingDone, value: '1' },
         ],
       },
@@ -600,7 +600,7 @@ async function globalSetup(config) {
           { name: 'token', value: token ?? '' },
           // 强制中文 locale,避免某些 spec 没走 enterDemoApp 时 i18n 拿到浏览器默认 en-US
           // 见 src/constants/locale.ts:1 (LOCALE_STORAGE_KEY)
-          { name: storageKeys.locale, value: 'zh-CN' },
+          { name: storageKeys.locale, value: DEFAULT_LOCALE },
           // 关掉首次登录引导(driver.js tour),避免 overlay 拦截点击
           // 见 src/composables/useOnboardingTour.ts:14
           { name: storageKeys.onboardingDone, value: '1' },

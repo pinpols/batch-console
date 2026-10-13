@@ -1,9 +1,10 @@
 import { STORAGE_KEYS } from './storage'
+import { DEFAULT_LOCALE } from './config'
 import type { Page } from '@playwright/test'
 
 export type E2eLocale = 'zh-CN' | 'en-US'
 
-export const E2E_DEFAULT_LOCALE: E2eLocale = 'zh-CN'
+export const E2E_DEFAULT_LOCALE = DEFAULT_LOCALE as E2eLocale
 
 export type LocalizedExpectation =
   string | RegExp | { 'zh-CN': string | RegExp; 'en-US': string | RegExp }

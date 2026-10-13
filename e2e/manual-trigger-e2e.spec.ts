@@ -22,7 +22,7 @@ test.describe('@manual-trigger 手动触发作业 真端到端', () => {
     // 按 jobCode 过滤定位目标行
     const codeInput = page
       .locator('.el-form-item')
-      .filter({ hasText: /Job Code|作业编码|编码/ })
+      .filter({ hasText: /作业编码|编码/ })
       .locator('input')
       .first()
     if (await isVisible(codeInput, 3000)) {

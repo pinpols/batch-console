@@ -53,7 +53,7 @@ test.describe('keyboard flow — P0 页面', () => {
     await page.goto('/ops/summary')
     await page.waitForTimeout(500)
     await page.locator('body').click()
-    const palette = page.getByPlaceholder(/搜索页面|Search pages/).first()
+    const palette = page.getByPlaceholder(/搜索页面/).first()
     await page.keyboard.press('Meta+K')
     const openedByMeta = await expect(palette)
       .toBeVisible({ timeout: 3000 })
