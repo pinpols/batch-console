@@ -4426,6 +4426,7 @@ export default {
     stepsLoadFailed: '步骤记录加载失败',
   },
   heartbeatPanel: {
+    title: '进度详情',
     cancelRequested: '已请求取消',
     autoRefresh: '自动刷新（10 秒）',
     loadError: '心跳数据暂时无法读取',
