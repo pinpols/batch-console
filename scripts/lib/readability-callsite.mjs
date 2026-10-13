@@ -1,4 +1,5 @@
 import ts from 'typescript'
+import { parse as parseVueSfc } from '@vue/compiler-sfc'
 
 const CALL_DEPTH_LIMIT = 3
 
@@ -93,11 +94,17 @@ export function findChangedCallsiteCandidates(source, fileName, changedLines) {
   const findings = []
 
   if (fileName.endsWith('.vue')) {
-    const scriptTag = /<script\b[^>]*>([\s\S]*?)<\/script\s*>/gi
-    for (const match of source.matchAll(scriptTag)) {
-      const contentStart = match.index + match[0].indexOf('>') + 1
-      const lineOffset = source.slice(0, contentStart).split('\n').length - 1
-      collectFromScript(match[1], fileName, lineOffset, changedLines, findings)
+    const { descriptor } = parseVueSfc(source, { filename: fileName })
+    for (const block of [descriptor.script, descriptor.scriptSetup]) {
+      if (block) {
+        collectFromScript(
+          block.content,
+          fileName,
+          block.loc.start.line - 1,
+          changedLines,
+          findings,
+        )
+      }
     }
   } else {
     collectFromScript(source, fileName, 0, changedLines, findings)
