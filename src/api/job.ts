@@ -51,6 +51,8 @@ export interface JobDefinitionListParams {
   pageSize: number
   jobCode?: string
   scheduleType?: 'CRON' | 'FIXED_RATE' | 'MANUAL'
+  triggerMode?: 'SCHEDULED' | 'API' | 'MANUAL' | 'EVENT' | 'MIXED'
+  hasUpstreamDependency?: boolean
   monitoringCategory?: 'SCHEDULED' | 'DEPENDENCY' | 'RUNTIME_ONLY'
   exactJobCode?: string
   dependsOnJobCode?: string
@@ -93,6 +95,10 @@ export const jobApi = {
       ...(params.dependsOnJobCode ? { dependsOnJobCode: params.dependsOnJobCode } : {}),
       ...(params.includeDisabled ? { includeDisabled: true } : {}),
       ...(params.scheduleType ? { scheduleType: params.scheduleType } : {}),
+      ...(params.triggerMode ? { triggerMode: params.triggerMode } : {}),
+      ...(params.hasUpstreamDependency != null
+        ? { hasUpstreamDependency: params.hasUpstreamDependency }
+        : {}),
       ...(params.monitoringCategory ? { monitoringCategory: params.monitoringCategory } : {}),
       ...(params.enabled != null ? { enabled: params.enabled } : {}),
     })

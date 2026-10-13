@@ -8985,10 +8985,14 @@ export interface components {
       jobName?: string
       bizType?: string
       scheduleExpr?: string
-      /** @description 上游作业编码；填写后 scheduled fire 前等待同 bizDate 上游就绪。 */
+      /** @description 单个同租户上游作业编码；scheduled fire 等待同一 bizDate 上游成功就绪，不支持可配置的依赖结果条件。 */
       dependsOnJobCode?: string
       timezone?: string
-      triggerMode?: string
+      /**
+       * @description 作业定义声明的触发入口分类；不代表某次实例的实际触发来源，后者见 triggerType。
+       * @enum {string}
+       */
+      triggerMode?: 'SCHEDULED' | 'API' | 'MANUAL' | 'EVENT' | 'MIXED'
       /** @description 平台管理的物理 Worker 分组；租户管理员创建时须省略。 */
       workerGroup?: string
       /** @description 平台管理的物理队列；租户管理员创建时须省略。 */
@@ -9069,10 +9073,14 @@ export interface components {
       bizType?: string
       scheduleType?: string
       scheduleExpr?: string
-      /** @description 上游作业编码；填写后 scheduled fire 前等待同 bizDate 上游就绪。 */
+      /** @description 单个同租户上游作业编码；scheduled fire 等待同一 bizDate 上游成功就绪，不支持可配置的依赖结果条件。 */
       dependsOnJobCode?: string
       timezone?: string
-      triggerMode?: string
+      /**
+       * @description 作业定义声明的触发入口分类；不代表某次实例的实际触发来源，后者见 triggerType。
+       * @enum {string}
+       */
+      triggerMode?: 'SCHEDULED' | 'API' | 'MANUAL' | 'EVENT' | 'MIXED'
       /** @description 平台管理的物理 Worker 分组；租户管理员不可更改现有值。 */
       workerGroup?: string
       /** @description 平台管理的物理队列；租户管理员不可更改现有值。 */
@@ -9144,6 +9152,7 @@ export interface components {
       id: number
       tenantId: string
       jobCode: string
+      /** @description 单个同租户上游作业编码；scheduled fire 等待同一 bizDate 上游成功就绪，不支持可配置的依赖结果条件。 */
       dependsOnJobCode: string
       jobName: string
       jobType: string
@@ -9155,6 +9164,11 @@ export interface components {
       timezone?: string
       calendarCode: string
       windowCode: string
+      /**
+       * @description 作业定义声明的触发入口分类；不代表某次实例的实际触发来源，后者见 triggerType。
+       * @enum {string}
+       */
+      triggerMode: 'SCHEDULED' | 'API' | 'MANUAL' | 'EVENT' | 'MIXED'
       retryPolicy: string
       /** Format: int32 */
       retryMaxCount: number
@@ -16797,6 +16811,10 @@ export interface operations {
         includeDisabled?: boolean
         /** @description Filter by schedule type: CRON, FIXED_RATE, or MANUAL. */
         scheduleType?: 'CRON' | 'FIXED_RATE' | 'MANUAL'
+        /** @description Filter by the job definition's declared trigger entry mode. */
+        triggerMode?: 'SCHEDULED' | 'API' | 'MANUAL' | 'EVENT' | 'MIXED'
+        /** @description Filter by whether a same-tenant upstream job dependency is configured. */
+        hasUpstreamDependency?: boolean
         /** @description Filter by monitoring matrix category. DEPENDENCY selects jobs with an upstream dependency; SCHEDULED selects standalone CRON jobs; RUNTIME_ONLY selects standalone non-CRON jobs. */
         monitoringCategory?: 'SCHEDULED' | 'DEPENDENCY' | 'RUNTIME_ONLY'
         /** @description Filter by enabled status. Defaults to true (only enabled records returned unless overridden). */

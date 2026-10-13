@@ -140,6 +140,11 @@
                 :options="scheduleTypeOptions"
               />
             </el-form-item>
+            <JobDefinitionTaxonomyFilters
+              v-model:trigger-mode="filters.triggerMode"
+              v-model:dependency="filters.dependency"
+              :trigger-mode-options="triggerModeOptions"
+            />
           </ListPageQueryBar>
         </template>
 
@@ -163,7 +168,6 @@
         </template>
 
         <template #default="{ isColVisible }">
-          <!-- 列序照设计 proto-jobs_view:JOB CODE(250) 名称 类型 WORKER GROUP QUEUE 启用 操作 -->
           <el-table-column prop="jobCode" :label="t('jobDefinitionList.colJobCode')" width="210">
             <template #default="{ row }">
               <router-link class="definition-link" :to="definitionDetailLocation(row)">
@@ -227,7 +231,31 @@
             width="120"
           >
             <template #default="{ row }">
-              {{ resolveScheduleType(row.scheduleType) }}
+              <JobDefinitionTaxonomyCell :value="row.scheduleType" enum-group="scheduleType" />
+            </template>
+          </el-table-column>
+          <el-table-column
+            v-if="isColVisible('triggerMode')"
+            prop="triggerMode"
+            :label="t('jobDefinitionList.colTriggerMode')"
+            width="125"
+          >
+            <template #default="{ row }">
+              <JobDefinitionTaxonomyCell :value="row.triggerMode" />
+            </template>
+          </el-table-column>
+          <el-table-column
+            v-if="isColVisible('dependsOnJobCode')"
+            prop="dependsOnJobCode"
+            :label="t('jobDefinitionList.colDependency')"
+            min-width="150"
+            show-overflow-tooltip
+          >
+            <template #default="{ row }">
+              <JobDefinitionTaxonomyCell
+                :value="row.dependsOnJobCode || t('jobDefinitionList.noDependency')"
+                :muted="!row.dependsOnJobCode"
+              />
             </template>
           </el-table-column>
           <el-table-column
@@ -434,6 +462,7 @@
             :placeholder="t('jobDefinitionList.scheduleTypePlaceholder')"
           />
         </el-form-item>
+        <JobDefinitionTriggerModeField v-model="createForm.triggerMode" />
         <el-form-item
           v-if="createForm.scheduleType !== 'MANUAL'"
           :label="t('jobDefinitionList.fieldScheduleExpr')"
@@ -597,29 +626,6 @@
   type ExecutionMode = 'FULL' | 'INCREMENTAL' | 'CDC'
   const { t, te } = useI18n({ useScope: 'global' })
 
-  function resolveScheduleType(value?: string | null): string {
-    if (!value) return ''
-    const key = `enum.scheduleType.${value}`
-    return te(key) ? t(key) : value
-  }
-
-  function jobTypePillStyle(value?: string | null): Record<string, string> {
-    const palette: Record<string, string> = {
-      ATOMIC: '#8b5cf6',
-      PROCESS: 'var(--color-primary)',
-      IMPORT: '#0891b2',
-      EXPORT: 'var(--color-warning)',
-      WORKFLOW: '#7c3aed',
-      GENERAL: 'var(--color-text-secondary)',
-    }
-    const color = palette[String(value || 'GENERAL').toUpperCase()] ?? palette.GENERAL
-    return {
-      color,
-      background: `color-mix(in srgb, ${color} 12%, transparent)`,
-      borderColor: `color-mix(in srgb, ${color} 32%, var(--color-border) 68%)`,
-    }
-  }
-
   // 列设置:jobCode(主链)/操作列始终显示;默认可见列按 redesign 作业定义表格稿对齐。
   const columnDefs = computed(() => [
     { key: 'jobName', label: t('jobDefinitionList.colJobName') },
@@ -628,12 +634,14 @@
     { key: 'workerGroup', label: t('jobDefinitionList.colWorkerGroup') },
     { key: 'queueCode', label: t('jobDefinitionList.colQueue') },
     { key: 'scheduleType', label: t('jobDefinitionList.colScheduleType'), defaultHidden: true },
+    { key: 'triggerMode', label: t('jobDefinitionList.colTriggerMode') },
+    { key: 'dependsOnJobCode', label: t('jobDefinitionList.colDependency') },
     { key: 'executionMode', label: t('jobDefinitionList.colExecutionMode'), defaultHidden: true },
     { key: 'enabled', label: t('jobDefinitionList.colEnabled') },
     { key: 'scheduleExpr', label: t('jobDefinitionList.colScheduleExpr'), defaultHidden: true },
   ])
   import type { FormInstance, FormItemRule, FormRules } from 'element-plus'
-  import { jobApi, type JobBundlePayload } from '@/api/job'
+  import { jobApi, type JobBundlePayload, type JobDefinitionListParams } from '@/api/job'
   import { instanceApi } from '@/api/instance'
   import { fmtDatetime } from '@/utils/datetime'
   import { getMetaEnums, getMetaQueues, type MetaOption } from '@/api/meta'
@@ -648,6 +656,9 @@
   import PageContainer from '@/components/common/PageContainer.vue'
   import JsonTextareaInput from '@/components/common/JsonTextareaInput.vue'
   import JobConfigBasicForm from './components/JobConfigBasicForm.vue'
+  import JobDefinitionTaxonomyFilters from './components/JobDefinitionTaxonomyFilters.vue'
+  import JobDefinitionTriggerModeField from './components/JobDefinitionTriggerModeField.vue'
+  import JobDefinitionTaxonomyCell from './components/JobDefinitionTaxonomyCell.vue'
   import JsonPreview from '@/components/common/JsonPreview.vue'
   import JobDefinitionDrawer from './components/JobDefinitionDrawer.vue'
   import CronExprInput from '@/components/common/CronExprInput.vue'
@@ -671,6 +682,8 @@
     ConsoleJobDefinitionResponse,
     ConsoleJobInstanceResponse,
   } from '@/types/console-api'
+  import { useJobDefinitionTaxonomyQuery } from './useJobDefinitionTaxonomyQuery'
+  import { jobTypePillStyle } from './jobDefinitionDisplay'
 
   const route = useRoute()
   const router = useRouter()
@@ -683,6 +696,7 @@
   const exportingJobCode = ref('')
   const queueOptions = ref<MetaOption[]>([])
   const scheduleTypeOptions = ref<MetaOption[]>([])
+  const triggerModeOptions = ref<MetaOption[]>([])
   const filters = reactive({
     tenantId: tenant.tenantId,
     jobCode: typeof route.query.jobCode === 'string' ? route.query.jobCode : '',
@@ -690,7 +704,9 @@
     enabled: undefined as boolean | undefined,
     workerGroup: '',
     queueCode: '',
-    scheduleType: '',
+    scheduleType: '' as JobDefinitionListParams['scheduleType'] | '',
+    triggerMode: '' as JobDefinitionListParams['triggerMode'] | '',
+    dependency: '',
   })
   watch(
     () => route.query.jobCode,
@@ -702,11 +718,10 @@
   )
 
   const filterTenantRef = computed(() => filters.tenantId)
-  // 服务端过滤参数：后端 queryJobDefinitions 仅支持 jobCode / enabled；
-  // 次要过滤（jobName / workerGroup / queueCode / scheduleType）后端未暴露
-  // → 放到"本页前端过滤"。要完整搜索须用 Job Code / 启用状态。
+  // 作业编码、启用、调度、触发模式和依赖状态使用服务端过滤，分页总数与筛选结果一致。
   const serverJobCode = computed(() => filters.jobCode.trim() || undefined)
   const serverEnabled = computed<boolean | undefined>(() => filters.enabled ?? undefined)
+  const taxonomyQuery = useJobDefinitionTaxonomyQuery(filters)
   const {
     data,
     isPending,
@@ -718,6 +733,7 @@
     pageSize,
     jobCode: serverJobCode,
     enabled: serverEnabled,
+    ...taxonomyQuery,
     tenantIdOverride: filterTenantRef,
   })
 
@@ -742,7 +758,7 @@
     workerGroupOptions.value.map((v) => ({ value: v, label: v })),
   )
 
-  /** 只对后端未暴露的次要 filter（jobName / workerGroup / queueCode / scheduleType）做本页过滤。 */
+  /** 名称、Worker 组和队列目前在已加载页本地筛选；调度、触发和依赖条件由服务端分页过滤。 */
   const filtered = computed(() => {
     return pageRows.value.filter((row) => {
       if (filters.jobName.trim() && !row.jobName?.includes(filters.jobName.trim())) return false
@@ -750,9 +766,6 @@
         return false
       }
       if (filters.queueCode.trim() && !row.queueCode?.includes(filters.queueCode.trim())) {
-        return false
-      }
-      if (filters.scheduleType.trim() && !row.scheduleType?.includes(filters.scheduleType.trim())) {
         return false
       }
       return true
@@ -776,6 +789,8 @@
       filters.workerGroup = ''
       filters.queueCode = ''
       filters.scheduleType = ''
+      filters.triggerMode = ''
+      filters.dependency = ''
       page.value = 1
     })
   }
@@ -952,6 +967,7 @@
       getMetaQueues(filters.tenantId || tenant.tenantId),
     ])
     scheduleTypeOptions.value = enums.scheduleType ?? []
+    triggerModeOptions.value = enums.triggerMode ?? []
     queueOptions.value = queues
   }
 
@@ -1489,6 +1505,7 @@
         jobName: createForm.jobName.trim() || undefined,
         jobType: createForm.jobType.trim(),
         scheduleType: createForm.scheduleType.trim(),
+        triggerMode: createForm.triggerMode.trim() || undefined,
         scheduleExpr: createForm.scheduleExpr.trim() || undefined,
         dependsOnJobCode:
           createForm.scheduleType === 'MANUAL'
