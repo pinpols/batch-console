@@ -80,7 +80,7 @@ artifact 上传下载升级后，必须手动运行一次 `full-ci-gate`，确�
 `frontend-ci` 不再重复 `pr-gate` 的 lint / size / audit 主门禁,只做两件事:
 
 1. **Node 24 兼容构建**:在 Node 24 下跑 `check:version`、`typecheck`、`check:i18n`、`test:unit`、`build`。
-2. **统一文档构建**:检出配对后端文档并跑 `npm run docs:build`，确保前后端共享的 `tools/docs-bridge/frontend` 站点可生成，并执行文档 chunk 与搜索索引预算检查（普通 chunk raw 850 KB / gzip 220 KB；搜索索引 raw 4.5 MB / gzip 1.23 MB）。
+2. **统一文档构建**:检出配对后端文档并跑 `npm run docs:build`，确保前后端共享的 `tools/docs-bridge/frontend` 站点可生成，并执行文档 chunk 与搜索索引预算检查（普通 chunk raw 850 KB / gzip 220 KB；搜索索引 raw 4.5 MB / gzip 1.23 MB）。带日期的后端设计稿仅索引一至三级标题，页面正文仍完整发布；无日期的当前设计、API 与运维文档保留全文搜索。
 
 这样 PR 必过门禁仍由 `pr-gate` 统一承担,Node 新版本兼容和文档站可独立暴露问题,避免同一 PR 出现两套相似 required check 一过一挂。
 
