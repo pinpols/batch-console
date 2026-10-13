@@ -8988,11 +8988,8 @@ export interface components {
       /** @description 单个同租户上游作业编码；scheduled fire 等待同一 bizDate 上游成功就绪，不支持可配置的依赖结果条件。 */
       dependsOnJobCode?: string
       timezone?: string
-      /**
-       * @description 作业定义声明的触发入口分类；不代表某次实例的实际触发来源，后者见 triggerType。
-       * @enum {string}
-       */
-      triggerMode?: 'SCHEDULED' | 'API' | 'MANUAL' | 'EVENT' | 'MIXED'
+      /** @description 作业定义声明的触发入口分类（SCHEDULED / API / MANUAL / EVENT / MIXED）； 服务端按公共 TriggerMode 词表校验。该字段不代表某次实例的实际触发来源，后者见 triggerType。 */
+      triggerMode?: string
       /** @description 平台管理的物理 Worker 分组；租户管理员创建时须省略。 */
       workerGroup?: string
       /** @description 平台管理的物理队列；租户管理员创建时须省略。 */
@@ -9076,11 +9073,8 @@ export interface components {
       /** @description 单个同租户上游作业编码；scheduled fire 等待同一 bizDate 上游成功就绪，不支持可配置的依赖结果条件。 */
       dependsOnJobCode?: string
       timezone?: string
-      /**
-       * @description 作业定义声明的触发入口分类；不代表某次实例的实际触发来源，后者见 triggerType。
-       * @enum {string}
-       */
-      triggerMode?: 'SCHEDULED' | 'API' | 'MANUAL' | 'EVENT' | 'MIXED'
+      /** @description 作业定义声明的触发入口分类（SCHEDULED / API / MANUAL / EVENT / MIXED）； 服务端按公共 TriggerMode 词表校验。该字段不代表某次实例的实际触发来源，后者见 triggerType。 */
+      triggerMode?: string
       /** @description 平台管理的物理 Worker 分组；租户管理员不可更改现有值。 */
       workerGroup?: string
       /** @description 平台管理的物理队列；租户管理员不可更改现有值。 */

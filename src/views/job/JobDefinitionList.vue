@@ -234,30 +234,7 @@
               <JobDefinitionTaxonomyCell :value="row.scheduleType" enum-group="scheduleType" />
             </template>
           </el-table-column>
-          <el-table-column
-            v-if="isColVisible('triggerMode')"
-            prop="triggerMode"
-            :label="t('jobDefinitionList.colTriggerMode')"
-            width="125"
-          >
-            <template #default="{ row }">
-              <JobDefinitionTaxonomyCell :value="row.triggerMode" />
-            </template>
-          </el-table-column>
-          <el-table-column
-            v-if="isColVisible('dependsOnJobCode')"
-            prop="dependsOnJobCode"
-            :label="t('jobDefinitionList.colDependency')"
-            min-width="150"
-            show-overflow-tooltip
-          >
-            <template #default="{ row }">
-              <JobDefinitionTaxonomyCell
-                :value="row.dependsOnJobCode || t('jobDefinitionList.noDependency')"
-                :muted="!row.dependsOnJobCode"
-              />
-            </template>
-          </el-table-column>
+          <JobDefinitionTaxonomyColumns :is-col-visible="isColVisible" />
           <el-table-column
             v-if="isColVisible('executionMode')"
             prop="executionMode"
@@ -657,6 +634,7 @@
   import JsonTextareaInput from '@/components/common/JsonTextareaInput.vue'
   import JobConfigBasicForm from './components/JobConfigBasicForm.vue'
   import JobDefinitionTaxonomyFilters from './components/JobDefinitionTaxonomyFilters.vue'
+  import JobDefinitionTaxonomyColumns from './components/JobDefinitionTaxonomyColumns.vue'
   import JobDefinitionTriggerModeField from './components/JobDefinitionTriggerModeField.vue'
   import JobDefinitionTaxonomyCell from './components/JobDefinitionTaxonomyCell.vue'
   import JsonPreview from '@/components/common/JsonPreview.vue'
