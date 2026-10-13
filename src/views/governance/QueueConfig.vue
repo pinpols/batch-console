@@ -655,7 +655,7 @@
   import { usePermission } from '@/composables/usePermission'
   import PageHeader from '@/components/common/PageHeader.vue'
   // 三类治理资源的写接口均为 ROLE_ADMIN;租户管理员仅可读取业务日历。
-  const { canAccess, canManageSystem: canMutateConfig } = usePermission()
+  const { canAccess, canWriteSystem: canMutateConfig } = usePermission()
   // 计数字段按后端 int32 上限约束，避免超界值在 Jackson 反序列化阶段返回 400。
   const INT32_MAX = 2147483647
   import TablePagerBar from '@/components/table/TablePagerBar.vue'

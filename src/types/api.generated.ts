@@ -262,12 +262,13 @@ export interface paths {
     /**
      * Hot-update maintenance state without restart (admin)
      * @description ROLE_ADMIN only. Replaces the runtime maintenance state in
-     *     `MaintenanceStateHolder` (AtomicReference). Takes effect immediately on next
-     *     request — no restart needed. Whitelisted by `MaintenanceModeFilter` so admins
+     *     `MaintenanceStateHolder` (AtomicReference). With `startsAt` omitted, takes effect
+     *     immediately on the next request; a future `startsAt` announces maintenance and
+     *     activates it at that timestamp without a restart. Whitelisted by `MaintenanceModeFilter` so admins
      *     can disable maintenance even during a maintenance window.
      *
      *     Typical SOP:
-     *     - Pre-rollout: PUT `{enabled:true, readOnly:false, message:..., etaAt:...,
+     *     - Pre-rollout: PUT `{enabled:true, readOnly:false, startsAt:..., message:..., etaAt:...,
      *       affectedServices:["job-schedule"]}`
      *     - Post-rollout: PUT `{enabled:false}`
      *     The state is stored in a database singleton and updated with a version CAS, so all
@@ -6833,6 +6834,13 @@ export interface components {
       enabled: boolean
       /** @description When true, GET requests pass through but POST/PUT/PATCH/DELETE return 503 */
       readOnly: boolean
+      /** @description Server-computed effective maintenance state; false while startsAt is in the future */
+      active: boolean
+      /**
+       * Format: date-time
+       * @description Planned start timestamp; null means immediate activation when enabled
+       */
+      startsAt?: string | null
       /** @description User-facing reason; rendered verbatim in the FE banner */
       message?: string | null
       /** @description ISO-8601 estimated recovery timestamp; null when unknown */
@@ -6881,6 +6889,11 @@ export interface components {
       message?: string
       /** @description ISO-8601 estimated recovery timestamp */
       etaAt?: string
+      /**
+       * Format: date-time
+       * @description Planned start timestamp; omit for immediate activation
+       */
+      startsAt?: string
       affectedServices?: string[]
     }
     CommonResponseMaintenanceStatus: components['schemas']['CommonResponseBase'] & {

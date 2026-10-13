@@ -126,10 +126,24 @@
             @clear="bulk.clear"
           >
             <template #default="{ running }">
-              <el-button size="small" type="warning" plain :loading="running" @click="onBulkRetry">
+              <el-button
+                size="small"
+                type="warning"
+                plain
+                :loading="running"
+                :disabled="writesFrozen"
+                @click="onBulkRetry"
+              >
                 {{ t('jobInstanceList.bulkRetry') }}
               </el-button>
-              <el-button size="small" type="danger" plain :loading="running" @click="onBulkCancel">
+              <el-button
+                size="small"
+                type="danger"
+                plain
+                :loading="running"
+                :disabled="writesFrozen"
+                @click="onBulkCancel"
+              >
                 {{ t('jobInstanceList.bulkCancel') }}
               </el-button>
             </template>
@@ -347,10 +361,12 @@
   import { ref, reactive, computed, onMounted } from 'vue'
   import { useRouter, useRoute } from 'vue-router'
   import { useI18n } from 'vue-i18n'
+  import { useWriteAvailability } from '@/composables/useWriteAvailability'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { confirmDanger } from '@/composables/useDangerConfirm'
 
   const { t, te } = useI18n({ useScope: 'global' })
+  const { writesFrozen, ensureWriteAvailable } = useWriteAvailability()
 
   function resolveTriggerType(value?: string | null): string {
     if (!value) return '—'
@@ -458,6 +474,7 @@
   }
 
   async function onBulkRetry() {
+    if (!ensureWriteAvailable()) return
     const eligible = bulk.selected.value.filter((r) => r.instanceStatus === 'FAILED')
     if (!eligible.length) {
       ElMessage.warning(t('jobInstanceList.bulkRetryNone'))
@@ -479,6 +496,7 @@
   }
 
   async function onBulkCancel() {
+    if (!ensureWriteAvailable()) return
     const eligible = bulk.selected.value.filter(
       (r) => !TERMINAL_INSTANCE_STATUSES.includes(r.instanceStatus),
     )

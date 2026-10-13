@@ -17,6 +17,7 @@
         <el-button
           v-if="row && canCancelInstance(row.instanceStatus)"
           type="danger"
+          :disabled="writesFrozen"
           :loading="cancelLoading"
           @click="confirmCancel"
         >
@@ -36,6 +37,7 @@
         <el-button
           v-if="row && isTerminal"
           type="warning"
+          :disabled="writesFrozen"
           :loading="rerunLoading"
           @click="confirmRerun"
         >
@@ -50,7 +52,7 @@
           <span class="action-button-wrap">
             <el-button
               :loading="retryFailedPartitionsLoading"
-              :disabled="!canRetryFailedPartitions"
+              :disabled="!canRetryFailedPartitions || writesFrozen"
               @click="confirmRetryFailedPartitions"
             >
               {{ t('monitor.detailRetryFailedPartitions') }}
@@ -61,6 +63,7 @@
           v-if="row && canTerminateInstance(row.instanceStatus)"
           type="danger"
           plain
+          :disabled="writesFrozen"
           :loading="terminateLoading"
           @click="confirmTerminate"
         >
@@ -448,6 +451,7 @@
   import { confirmDanger } from '@/composables/useDangerConfirm'
   import { showCreateSuccess } from '@/composables/useCreateSuccess'
   import { usePermission } from '@/composables/usePermission'
+  import { useWriteAvailability } from '@/composables/useWriteAvailability'
   import { diagnoseJobInstance } from '@/api/clusterDiagnostic'
   import { instanceApi } from '@/api/instance'
   import {
@@ -475,6 +479,7 @@
   const router = useRouter()
   const tenant = useTenantStore()
   const { canManageSystem } = usePermission()
+  const { writesFrozen, ensureWriteAvailable } = useWriteAvailability()
   const loading = ref(false)
   const rerunLoading = ref(false)
   const cancelLoading = ref(false)
@@ -659,6 +664,7 @@
   }
 
   async function confirmRerun() {
+    if (!ensureWriteAvailable()) return
     const r = row.value
     if (!r) return
     try {
@@ -706,6 +712,7 @@
   }
 
   async function confirmRetryFailedPartitions() {
+    if (!ensureWriteAvailable()) return
     const r = row.value
     if (!r) return
     try {
@@ -730,6 +737,7 @@
   }
 
   async function confirmCancel() {
+    if (!ensureWriteAvailable()) return
     const r = row.value
     if (!r) return
     const isRunning = r.instanceStatus === 'RUNNING'
@@ -773,6 +781,7 @@
   }
 
   async function confirmTerminate() {
+    if (!ensureWriteAvailable()) return
     const r = row.value
     if (!r) return
     try {

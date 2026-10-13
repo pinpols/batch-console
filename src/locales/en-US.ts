@@ -8,6 +8,7 @@ import workflowDesignerJobDependencies from './workflowDesignerJobDependencies.e
 import onboardingCenter from './onboardingCenter.en-US.ts'
 import maintenance from './maintenance.en-US.ts'
 import maintenanceSettings from './maintenanceSettings.en-US.ts'
+import sidebarOperationalStatus from './sidebarOperationalStatus.en-US.ts'
 
 const messages: Messages = {
   print: {
@@ -949,7 +950,7 @@ const messages: Messages = {
     commandPalette: 'Command palette',
     search: 'Search',
     appTitle: 'Batch Console',
-    serviceHealthy: 'All systems normal',
+    ...sidebarOperationalStatus,
     collapseToggle: 'Collapse / expand sidebar',
     collapseAllGroups: 'Collapse all groups',
     expandAllGroups: 'Expand all groups',

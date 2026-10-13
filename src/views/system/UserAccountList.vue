@@ -2,10 +2,21 @@
   <PageContainer>
     <PageHeader>
       <template #actions>
-        <el-button v-if="canProvision" :icon="Upload" @click="batchVisible = true">
+        <el-button
+          v-if="canProvision"
+          :icon="Upload"
+          :disabled="writesFrozen"
+          @click="batchVisible = true"
+        >
           {{ t('userBatch.open') }}
         </el-button>
-        <el-button type="primary" :icon="Plus" class="pretty-add-button" @click="openCreate">
+        <el-button
+          type="primary"
+          :icon="Plus"
+          class="pretty-add-button"
+          :disabled="writesFrozen"
+          @click="openCreate"
+        >
           {{ t('userAccountList.headerCreate') }}
         </el-button>
       </template>
@@ -190,7 +201,12 @@
       </el-form>
       <template #footer>
         <el-button @click="closeCreate">{{ t('common.cancel') }}</el-button>
-        <el-button type="primary" :loading="creating" @click="submitCreate">
+        <el-button
+          type="primary"
+          :loading="creating"
+          :disabled="writesFrozen"
+          @click="submitCreate"
+        >
           {{ t('userAccountList.createSubmit') }}
         </el-button>
       </template>
@@ -244,7 +260,12 @@
       </el-form>
       <template #footer>
         <el-button @click="closeEdit">{{ t('common.cancel') }}</el-button>
-        <el-button type="primary" :loading="submitAction.loading.value" @click="submitForm">
+        <el-button
+          type="primary"
+          :loading="submitAction.loading.value"
+          :disabled="writesFrozen"
+          @click="submitForm"
+        >
           {{ t('common.save') }}
         </el-button>
       </template>
@@ -269,7 +290,12 @@
       </el-form>
       <template #footer>
         <el-button @click="resetVisible = false">{{ t('userAccountList.resetCancel') }}</el-button>
-        <el-button type="primary" :loading="resetting" @click="submitReset">
+        <el-button
+          type="primary"
+          :loading="resetting"
+          :disabled="writesFrozen"
+          @click="submitReset"
+        >
           {{ t('userAccountList.resetSubmit') }}
         </el-button>
       </template>
@@ -284,8 +310,10 @@
   import { Plus, Upload } from '@lucide/vue'
   import RowActions, { type RowAction } from '@/components/common/RowActions.vue'
   import UserBatchProvisioningDialog from './UserBatchProvisioningDialog.vue'
+  import { useWriteAvailability } from '@/composables/useWriteAvailability'
 
   const { t } = useI18n({ useScope: 'global' })
+  const { writesFrozen, ensureWriteAvailable } = useWriteAvailability()
   import { confirmDanger } from '@/composables/useDangerConfirm'
   import type { FormRules } from 'element-plus'
   import { useFormValidate, rules } from '@/composables/useFormValidate'
@@ -503,6 +531,7 @@
   useFormFocus(createFormRef, () => createVisible.value)
 
   function openCreate() {
+    if (!ensureWriteAvailable()) return
     resetCreateForm()
     createVisible.value = true
     createDirty.markPristine()
@@ -522,6 +551,7 @@
   }
 
   async function submitCreate() {
+    if (!ensureWriteAvailable()) return
     if (!(await validateCreateForm())) return
     creating.value = true
     const username = createForm.username.trim()
@@ -575,6 +605,7 @@
   const editDirty = useDirtyForm(() => form, { enabled: () => formVisible.value })
 
   function openEdit(row: UserAccount) {
+    if (!ensureWriteAvailable()) return
     form.id = row.id
     form.tenantId = row.tenantId
     form.username = row.username
@@ -612,6 +643,7 @@
   )
 
   async function submitForm() {
+    if (!ensureWriteAvailable()) return
     await submitAction.run()
   }
 
@@ -626,6 +658,7 @@
   }
 
   function openResetPassword(row: UserAccount) {
+    if (!ensureWriteAvailable()) return
     resetTarget.value = row
     resetForm.newPassword = ''
     resetVisible.value = true
@@ -637,11 +670,13 @@
         key: 'edit',
         label: t('userAccountList.actionEdit'),
         primary: true,
+        disabled: writesFrozen.value,
         onClick: () => openEdit(row),
       },
       {
         key: 'reset-password',
         label: t('userAccountList.actionResetPassword'),
+        disabled: writesFrozen.value,
         onClick: () => openResetPassword(row),
       },
       row.enabled
@@ -650,12 +685,14 @@
             label: t('userAccountList.actionDisable'),
             danger: true,
             divided: true,
+            disabled: writesFrozen.value,
             onClick: () => confirmDisable(row),
           }
         : {
             key: 'enable',
             label: t('userAccountList.actionEnable'),
             divided: true,
+            disabled: writesFrozen.value,
             onClick: () => confirmEnable(row),
           },
     ]
@@ -664,6 +701,7 @@
   // 密码生成 + 复制已下沉到 StrongPasswordInput 组件,这里不再重复实现
 
   async function submitReset() {
+    if (!ensureWriteAvailable()) return
     if (!resetTarget.value) return
     if (!(await validateResetForm())) return
     resetting.value = true
@@ -678,6 +716,7 @@
 
   // --- 启停 / 删除 ---
   async function confirmEnable(row: UserAccount) {
+    if (!ensureWriteAvailable()) return
     try {
       await ElMessageBox.confirm(
         t('userAccountList.enableConfirmText', { name: row.username }),
@@ -697,6 +736,7 @@
   }
 
   async function confirmDisable(row: UserAccount) {
+    if (!ensureWriteAvailable()) return
     try {
       await confirmDanger({
         verb: t('userAccountList.disableConfirmTitle'),

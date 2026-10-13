@@ -448,6 +448,7 @@ export function applyApiInterceptors(client: AxiosInstance): void {
           const app = useAppStore()
           app.setMaintenance({
             enabled: true,
+            active: true,
             readOnly: xMaint === 'read-only',
             adminBypass: xMaint === 'admin-bypass',
             version: Number.isFinite(xMaintVersion) ? xMaintVersion : null,
@@ -623,6 +624,7 @@ export function applyApiInterceptors(client: AxiosInstance): void {
             const readOnly = !!maint?.readOnly || xMaint === 'read-only'
             app.setMaintenance({
               enabled: true,
+              active: true,
               readOnly,
               message: maint?.message ?? null,
               etaAt: maint?.etaAt ?? null,

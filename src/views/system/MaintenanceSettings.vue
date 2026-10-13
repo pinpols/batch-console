@@ -14,11 +14,13 @@
 
       <el-alert
         v-if="form.enabled"
-        :title="t('maintenanceSettings.activeWarning')"
+        :title="statusLabel"
         :description="
-          form.readOnly
-            ? t('maintenanceSettings.readOnlyEffect')
-            : t('maintenanceSettings.fullFreezeEffect')
+          isScheduled
+            ? t('maintenanceSettings.scheduledEffect')
+            : form.readOnly
+              ? t('maintenanceSettings.readOnlyEffect')
+              : t('maintenanceSettings.fullFreezeEffect')
         "
         type="warning"
         :closable="false"
@@ -69,6 +71,18 @@
           />
         </el-form-item>
 
+        <el-form-item :label="t('maintenanceSettings.startsAtLabel')">
+          <el-date-picker
+            v-model="form.startsAt"
+            type="datetime"
+            value-format="YYYY-MM-DDTHH:mm:ss.SSSZ"
+            :placeholder="t('maintenanceSettings.startsAtPlaceholder')"
+            :clearable="true"
+            :disabled="!form.enabled"
+          />
+          <div class="maintenance-settings__hint">{{ t('maintenanceSettings.startsAtHint') }}</div>
+        </el-form-item>
+
         <el-form-item :label="t('maintenanceSettings.affectedServicesLabel')">
           <el-input
             v-model="form.affectedServicesText"
@@ -104,7 +118,7 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, onMounted, reactive, ref } from 'vue'
+  import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
   import PageContainer from '@/components/common/PageContainer.vue'
@@ -121,24 +135,32 @@
   const auth = useAuthStore()
   const loading = ref(false)
   const saving = ref(false)
+  const currentTime = ref(Date.now())
+  let currentTimeTimer: ReturnType<typeof setInterval> | null = null
   const state = ref<MaintenanceStatus | null>(null)
   const form = reactive({
     enabled: false,
     readOnly: true,
     message: '',
     etaAt: '',
+    startsAt: '',
     affectedServicesText: '',
   })
 
+  const isScheduled = computed(
+    () => !!form.startsAt && new Date(form.startsAt).getTime() > currentTime.value,
+  )
   const statusLabel = computed(() =>
     !form.enabled
       ? t('maintenanceSettings.disabled')
-      : form.readOnly
-        ? t('maintenanceSettings.readOnlyMode')
-        : t('maintenanceSettings.fullFreezeMode'),
+      : isScheduled.value
+        ? t('maintenanceSettings.scheduled')
+        : form.readOnly
+          ? t('maintenanceSettings.readOnlyMode')
+          : t('maintenanceSettings.fullFreezeMode'),
   )
   const statusTagType = computed(() =>
-    !form.enabled ? 'info' : form.readOnly ? 'warning' : 'danger',
+    !form.enabled || isScheduled.value ? 'info' : form.readOnly ? 'warning' : 'danger',
   )
 
   function applyState(next: MaintenanceStatus) {
@@ -147,6 +169,7 @@
     form.readOnly = next.readOnly
     form.message = next.message ?? ''
     form.etaAt = next.etaAt ? new Date(next.etaAt).toISOString() : ''
+    form.startsAt = next.startsAt ? new Date(next.startsAt).toISOString() : ''
     form.affectedServicesText = next.affectedServices.join('\n')
   }
 
@@ -181,7 +204,9 @@
     const changesMode =
       state.value &&
       (form.enabled !== state.value.enabled ||
-        (form.enabled && state.value.readOnly !== form.readOnly))
+        (form.enabled && state.value.readOnly !== form.readOnly) ||
+        form.startsAt !==
+          (state.value.startsAt ? new Date(state.value.startsAt).toISOString() : ''))
     if (changesMode) {
       try {
         await confirmDanger({
@@ -189,11 +214,13 @@
             ? t('maintenanceSettings.confirmEnableVerb')
             : t('maintenanceSettings.confirmDisableVerb'),
           target: t('maintenanceSettings.confirmTarget'),
-          consequence: form.enabled
-            ? form.readOnly
-              ? t('maintenanceSettings.readOnlyEffect')
-              : t('maintenanceSettings.fullFreezeEffect')
-            : t('maintenanceSettings.disabledEffect'),
+          consequence: isScheduled.value
+            ? t('maintenanceSettings.scheduledEffect')
+            : form.enabled
+              ? form.readOnly
+                ? t('maintenanceSettings.readOnlyEffect')
+                : t('maintenanceSettings.fullFreezeEffect')
+              : t('maintenanceSettings.disabledEffect'),
           confirmButtonText: form.enabled
             ? t('maintenanceSettings.confirmEnable')
             : t('maintenanceSettings.confirmDisable'),
@@ -211,12 +238,13 @@
         readOnly: form.readOnly,
         message: form.message.trim() || undefined,
         etaAt: form.etaAt ? new Date(form.etaAt).toISOString() : undefined,
+        startsAt: form.enabled && form.startsAt ? new Date(form.startsAt).toISOString() : undefined,
         affectedServices: services,
       })
       applyState(updated)
       app.setMaintenance({
         ...updated,
-        adminBypass: updated.enabled && auth.hasPermission('ROLE_ADMIN'),
+        adminBypass: updated.active && auth.hasPermission('ROLE_ADMIN'),
         lastSyncedAt: new Date().toISOString(),
         syncError: null,
         isStale: false,
@@ -235,7 +263,13 @@
     return Number.isNaN(date.getTime()) ? value : date.toLocaleString()
   }
 
-  onMounted(() => void load())
+  onMounted(() => {
+    currentTimeTimer = setInterval(() => (currentTime.value = Date.now()), 1_000)
+    void load()
+  })
+  onUnmounted(() => {
+    if (currentTimeTimer) clearInterval(currentTimeTimer)
+  })
 </script>
 
 <style scoped>

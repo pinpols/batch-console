@@ -17,7 +17,7 @@
         <el-button
           v-if="canManageSystem"
           type="success"
-          :disabled="!calendarCode"
+          :disabled="!calendarCode || writesFrozen"
           @click="openCatchup"
         >
           {{ t('batchDayWindow.catchUp') }}
@@ -187,7 +187,12 @@
       </el-form>
       <template #footer>
         <el-button @click="catchupVisible = false">{{ t('common.cancel') }}</el-button>
-        <el-button type="primary" :loading="catchupLoading" @click="submitCatchup">
+        <el-button
+          type="primary"
+          :loading="catchupLoading"
+          :disabled="writesFrozen"
+          @click="submitCatchup"
+        >
           {{ t('batchDayWindow.dialogSubmit') }}
         </el-button>
       </template>
@@ -203,9 +208,11 @@
   import { RefreshCw as Refresh } from '@lucide/vue'
   import { useRefreshAction } from '@/composables/useRefreshAction'
   import { usePermission } from '@/composables/usePermission'
+  import { useWriteAvailability } from '@/composables/useWriteAvailability'
 
   const refresh = useRefreshAction()
   const { canManageSystem } = usePermission()
+  const { writesFrozen } = useWriteAvailability()
 
   const { t } = useI18n({ useScope: 'global' })
   import { launchBatchDayCatchUp, queryBatchDayWindow } from '@/api/batchDays'
@@ -291,6 +298,7 @@
   }
 
   function openCatchup() {
+    if (writesFrozen.value) return
     if (!calendarCode.value.trim()) {
       ElMessage.warning(t('batchDayWindow.missingCalendar'))
       return
@@ -309,6 +317,7 @@
   }
 
   async function submitCatchup() {
+    if (writesFrozen.value) return
     const bd = bizDate.value
     if (!bd) return
     const raw = catchupJobCodesText.value.trim()

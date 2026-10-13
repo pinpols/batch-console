@@ -72,6 +72,21 @@ describe('maintenance write guard', () => {
     expect(ElMessage.warning).toHaveBeenCalledOnce()
   })
 
+  it('allows writes before a scheduled start and blocks them once the server marks it active', async () => {
+    const app = useAppStore()
+    app.setMaintenance({ enabled: true, active: false, startsAt: '2099-01-01T00:00:00Z' })
+    const client = createClient()
+
+    await client.post('/api/console/jobs', {})
+    expect(adapter).toHaveBeenCalledOnce()
+
+    app.setMaintenance({ active: true })
+    await expect(client.post('/api/console/jobs', {})).rejects.toMatchObject({
+      code: 'ERR_MAINTENANCE_WRITE_FROZEN',
+    })
+    expect(adapter).toHaveBeenCalledOnce()
+  })
+
   it('allowlist only covers authentication and maintenance administration', () => {
     expect(isMaintenanceWriteAllowed('/api/console/auth/login')).toBe(true)
     expect(isMaintenanceWriteAllowed('/api/console/admin/system/maintenance')).toBe(true)

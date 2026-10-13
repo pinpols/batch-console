@@ -75,6 +75,7 @@
                 plain
                 type="primary"
                 :icon="CirclePlay"
+                :disabled="writesFrozen"
                 v-track-click="{ action: 'register trigger', jobCode: row.jobCode }"
                 @click="doRegister(row)"
               >
@@ -86,6 +87,7 @@
                 plain
                 type="danger"
                 :icon="CircleStop"
+                :disabled="writesFrozen"
                 v-track-click="{ action: 'unregister trigger', jobCode: row.jobCode }"
                 @click="doUnregister(row)"
               >
@@ -97,6 +99,7 @@
                 plain
                 type="warning"
                 :icon="Pause"
+                :disabled="writesFrozen"
                 v-track-click="{ action: 'pause trigger', jobCode: row.jobCode }"
                 @click="doPause(row)"
               >
@@ -108,6 +111,7 @@
                 plain
                 type="success"
                 :icon="Play"
+                :disabled="writesFrozen"
                 v-track-click="{ action: 'resume trigger', jobCode: row.jobCode }"
                 @click="doResume(row)"
               >
@@ -127,8 +131,10 @@
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
   import { confirmDanger } from '@/composables/useDangerConfirm'
+  import { useWriteAvailability } from '@/composables/useWriteAvailability'
 
   const { t, te } = useI18n({ useScope: 'global' })
+  const { writesFrozen, ensureWriteAvailable } = useWriteAvailability()
 
   function resolveTriggerType(value?: string | null): string {
     if (!value) return '—'
@@ -228,6 +234,7 @@
   }
 
   async function doRegister(row: Record<string, unknown>) {
+    if (!ensureWriteAvailable()) return
     try {
       await confirmDanger({
         verb: t('triggerList.registerConfirmVerb'),
@@ -244,6 +251,7 @@
   }
 
   async function doUnregister(row: Record<string, unknown>) {
+    if (!ensureWriteAvailable()) return
     try {
       await confirmDanger({
         verb: t('triggerList.unregisterConfirmVerb'),
@@ -261,6 +269,7 @@
   }
 
   async function doPause(row: Record<string, unknown>) {
+    if (!ensureWriteAvailable()) return
     try {
       await confirmDanger({
         verb: t('triggerList.pauseConfirmVerb'),
@@ -277,6 +286,7 @@
   }
 
   async function doResume(row: Record<string, unknown>) {
+    if (!ensureWriteAvailable()) return
     try {
       await resumeTrigger(String(row.jobCode), tenant.tenantId)
       ElMessage.success(t('triggerList.resumeSuccess'))

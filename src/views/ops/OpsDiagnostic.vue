@@ -109,7 +109,7 @@
                   size="small"
                   :icon="Delete"
                   :loading="cleaning"
-                  :disabled="!!cleanupDisableReason"
+                  :disabled="!!cleanupDisableReason || writesFrozen"
                   v-track-click="t('opsDiagnostic.trackCleanup')"
                   @click="doCleanup"
                 >
@@ -128,7 +128,7 @@
                   size="small"
                   :icon="Promotion"
                   :loading="republishing"
-                  :disabled="!!republishDisableReason"
+                  :disabled="!!republishDisableReason || writesFrozen"
                   v-track-click="t('opsDiagnostic.trackRepublish')"
                   @click="doRepublish"
                 >
@@ -173,6 +173,7 @@
   import { useTenantStore } from '@/stores/tenant'
   import { useAuthStore } from '@/stores/auth'
   import { useTenantReload } from '@/composables/useTenantReload'
+  import { useWriteAvailability } from '@/composables/useWriteAvailability'
   import { purifyHtml } from '@/utils/safeHtml'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
@@ -181,6 +182,11 @@
 
   const { t } = useI18n({ useScope: 'global' })
   const tenant = useTenantStore()
+  const {
+    writesFrozen,
+    disabledReason: maintenanceWriteReason,
+    ensureWriteAvailable,
+  } = useWriteAvailability()
   const auth = useAuthStore()
 
   // ──────────────────────────────────────────────
@@ -525,6 +531,7 @@
   const isAdmin = computed(() => auth.role === 'ADMIN')
 
   const cleanupDisableReason = computed<string>(() => {
+    if (writesFrozen.value) return maintenanceWriteReason.value ?? ''
     if (!isAdmin.value) return t('opsDiagnostic.needAdmin')
     const stats = cardOutboxStats.data as Record<string, unknown> | null
     if (!stats) return t('opsDiagnostic.needOutboxStats')
@@ -538,6 +545,7 @@
   })
 
   const republishDisableReason = computed<string>(() => {
+    if (writesFrozen.value) return maintenanceWriteReason.value ?? ''
     if (!isAdmin.value) return t('opsDiagnostic.needAdmin')
     const health = cardOutboxHealth.data as Record<string, unknown> | null
     if (!health) return t('opsDiagnostic.needOutboxHealth')
@@ -547,6 +555,7 @@
   })
 
   async function doCleanup() {
+    if (!ensureWriteAvailable()) return
     try {
       await confirmDanger({
         verb: t('opsDiagnostic.cleanupConfirmTitle'),
@@ -566,6 +575,7 @@
   }
 
   async function doRepublish() {
+    if (!ensureWriteAvailable()) return
     try {
       const { value: idsText } = await ElMessageBox.prompt(
         t('opsDiagnostic.republishPromptText'),

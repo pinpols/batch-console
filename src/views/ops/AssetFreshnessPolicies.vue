@@ -5,7 +5,7 @@
         <el-button :icon="Refresh" :loading="loading" @click="load">
           {{ t('assetFreshness.refresh') }}
         </el-button>
-        <el-button type="primary" :icon="Plus" @click="openCreate">
+        <el-button type="primary" :icon="Plus" :disabled="writesFrozen" @click="openCreate">
           {{ t('assetFreshness.create') }}
         </el-button>
       </template>
@@ -79,6 +79,7 @@
             <el-switch
               :model-value="!!row.enabled"
               :loading="togglingId === row.id"
+              :disabled="writesFrozen"
               @change="(value) => toggle(row, Boolean(value))"
             />
           </template>
@@ -86,7 +87,13 @@
         <el-table-column :label="t('common.actions')" width="120" fixed="right">
           <template #default="{ row }">
             <el-tooltip :content="t('common.edit')" placement="top">
-              <el-button :icon="Edit" text type="primary" @click="openEdit(row)" />
+              <el-button
+                :icon="Edit"
+                text
+                type="primary"
+                :disabled="writesFrozen"
+                @click="openEdit(row)"
+              />
             </el-tooltip>
           </template>
         </el-table-column>
@@ -159,6 +166,7 @@
           native-type="submit"
           form="asset-freshness-form"
           :loading="saving"
+          :disabled="writesFrozen"
         >
           {{ t('common.save') }}
         </el-button>
@@ -170,6 +178,7 @@
 <script setup lang="ts">
   import { reactive, ref } from 'vue'
   import { useI18n } from 'vue-i18n'
+  import { useWriteAvailability } from '@/composables/useWriteAvailability'
   import EnabledStatusFilter from '@/components/table/EnabledStatusFilter.vue'
   import { ElMessage } from 'element-plus'
   import { Pencil as Edit, Plus, RefreshCw as Refresh } from '@lucide/vue'
@@ -191,6 +200,7 @@
   import TablePagerBar from '@/components/table/TablePagerBar.vue'
 
   const { t } = useI18n({ useScope: 'global' })
+  const { writesFrozen, ensureWriteAvailable } = useWriteAvailability()
   const tenant = useTenantStore()
   const rows = ref<AssetFreshnessPolicy[]>([])
   const pageNo = ref(1)
@@ -228,12 +238,14 @@
   }
 
   function openCreate() {
+    if (!ensureWriteAvailable()) return
     editingId.value = null
     resetForm()
     drawerOpen.value = true
   }
 
   function openEdit(row: AssetFreshnessPolicy) {
+    if (!ensureWriteAvailable()) return
     editingId.value = row.id
     Object.assign(form, {
       assetCode: row.assetCode,
@@ -307,6 +319,7 @@
   }
 
   async function save() {
+    if (!ensureWriteAvailable()) return
     if (!form.assetCode?.trim() || !form.expectedByLocalTime) {
       ElMessage.warning(t('assetFreshness.required'))
       return
@@ -332,6 +345,7 @@
   }
 
   async function toggle(row: AssetFreshnessPolicy, enabled: boolean) {
+    if (!ensureWriteAvailable()) return
     togglingId.value = row.id
     try {
       await toggleAssetFreshnessPolicy(row.id, tenant.tenantId, { enabled })

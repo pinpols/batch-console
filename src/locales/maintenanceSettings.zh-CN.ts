@@ -6,6 +6,9 @@ export default {
   enabledLabel: '维护开关',
   enabled: '已开启',
   disabled: '未开启',
+  scheduled: '已公告，等待开始',
+  scheduledEffect:
+    '公告会立即展示；到计划时间前业务查询和写入均保持可用，开始时自动切换为所选维护模式。',
   modeLabel: '维护模式',
   readOnlyMode: '只读维护',
   fullFreezeMode: '全冻结（停机维护）',
@@ -14,6 +17,10 @@ export default {
   messagePlaceholder: '说明维护原因或用户需要了解的信息',
   etaLabel: '预计恢复时间',
   etaPlaceholder: '可留空；时间按本地时区选择',
+  startsAtLabel: '计划开始时间',
+  startsAtPlaceholder: '留空表示保存后立即开始',
+  startsAtHint:
+    '计划公告会立即展示倒计时；到达该时间后，后端自动启用所选维护模式。留空则立即生效。',
   affectedServicesLabel: '受影响服务标记',
   affectedServicesPlaceholder: '每行一个服务编码，例如 trigger',
   affectedServicesHint: '这些编码仅用于公告展示，不会执行服务路由或单服务维护。',

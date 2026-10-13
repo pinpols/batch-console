@@ -1006,7 +1006,7 @@ router.beforeEach(async (to, from) => {
   // 未登录用户和普通用户在完整维护期进入维护页；管理员保留后端允许的诊断读取与维护设置入口。
   const app = useAppStore()
   if (
-    app.maintenance.enabled &&
+    app.maintenance.active &&
     !app.maintenance.readOnly &&
     to.name !== 'maintenance' &&
     to.name !== 'login' &&
@@ -1064,7 +1064,7 @@ router.beforeEach(async (to, from) => {
   }
 
   if (
-    app.maintenance.enabled &&
+    app.maintenance.active &&
     !app.maintenance.readOnly &&
     !auth.hasPermission('ROLE_ADMIN') &&
     to.name !== 'maintenance' &&

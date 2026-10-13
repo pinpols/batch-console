@@ -2,7 +2,13 @@
   <PageContainer>
     <PageHeader>
       <template #actions>
-        <el-button v-if="canManage" type="primary" :icon="Plus" @click="openCreate">
+        <el-button
+          v-if="canManage"
+          type="primary"
+          :icon="Plus"
+          :disabled="writesFrozen"
+          @click="openCreate"
+        >
           {{ t('common.create') }}
         </el-button>
         <el-button :icon="Refresh" :loading="loading" @click="load">
@@ -101,7 +107,12 @@
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">{{ t('common.cancel') }}</el-button>
-        <el-button type="primary" :loading="saving" :disabled="placementKeyInvalid" @click="save">
+        <el-button
+          type="primary"
+          :loading="saving"
+          :disabled="writesFrozen || placementKeyInvalid"
+          @click="save"
+        >
           {{ t('common.save') }}
         </el-button>
       </template>
@@ -124,6 +135,7 @@
   import HelpLabel from '@/components/common/HelpLabel.vue'
   import { fmtDatetime } from '@/utils/datetime'
   import { useAuthStore } from '@/stores/auth'
+  import { useWriteAvailability } from '@/composables/useWriteAvailability'
   import {
     listTenantPlacements,
     upsertTenantPlacement,
@@ -136,6 +148,7 @@
 
   const { t } = useI18n({ useScope: 'global' })
   const auth = useAuthStore()
+  const { writesFrozen, ensureWriteAvailable } = useWriteAvailability()
   const canManage = computed(() => auth.hasPermission('ROLE_ADMIN'))
 
   const rows = ref<TenantPlacementRow[]>([])
@@ -178,6 +191,7 @@
   }
 
   function openCreate() {
+    if (!ensureWriteAvailable()) return
     editing.value = false
     form.tenantId = ''
     form.placementKey = ''
@@ -186,6 +200,7 @@
   }
 
   function openEdit(row: TenantPlacementRow) {
+    if (!ensureWriteAvailable()) return
     editing.value = true
     form.tenantId = row.tenantId
     form.placementKey = row.placementKey
@@ -194,6 +209,7 @@
   }
 
   async function save() {
+    if (!ensureWriteAvailable()) return
     if (placementKeyInvalid.value) return
     saving.value = true
     try {
@@ -209,6 +225,7 @@
   }
 
   async function confirmDelete(row: TenantPlacementRow) {
+    if (!ensureWriteAvailable()) return
     try {
       await confirmDanger({
         verb: t('tenantPlacementList.actionUnassign'),
@@ -233,12 +250,14 @@
         key: 'edit',
         label: t('tenantPlacementList.actionReassign'),
         primary: true,
+        disabled: writesFrozen.value,
         onClick: () => openEdit(row),
       },
       {
         key: 'delete',
         label: t('tenantPlacementList.actionUnassign'),
         danger: true,
+        disabled: writesFrozen.value,
         onClick: () => confirmDelete(row),
       },
     ]
