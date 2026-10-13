@@ -5,6 +5,10 @@ const frontendBaseUrl =
   process.env.E2E_BASE_URL || process.env.PLAYWRIGHT_BASE_URL || defaults.frontendBaseUrl
 const apiBaseUrl = process.env.BC_API_BASE || (isStagingTarget ? '' : defaults.apiBaseUrl)
 
+if (!['zh-CN', 'en-US'].includes(defaults.defaultLocale)) {
+  throw new Error('[e2e-config] defaultLocale must be zh-CN or en-US')
+}
+
 function validateStagingTarget() {
   if (!isStagingTarget) return
 

@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test'
 import { STORAGE_KEYS } from './support/storage'
+import { installE2eLocale } from './support/i18n'
 
 test.use({ storageState: { cookies: [], origins: [] }, serviceWorkers: 'block' })
 
@@ -9,10 +10,10 @@ function response(data: unknown) {
 
 test.describe('navigation and tabs', () => {
   test.beforeEach(async ({ page }) => {
+    await installE2eLocale(page)
     await page.addInitScript((keys) => {
       localStorage.setItem(keys.session, '1')
       localStorage.setItem(keys.tenantId, 'ta')
-      localStorage.setItem(keys.locale, 'zh-CN')
       localStorage.setItem(keys.onboardingDone, '1')
     }, STORAGE_KEYS)
     await page.route('**/api/console/**', async (route) => {

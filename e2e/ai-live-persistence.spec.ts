@@ -2,6 +2,7 @@ import { STORAGE_KEYS } from './support/storage'
 import { randomUUID } from 'node:crypto'
 import { expect, test } from './support/app'
 import { aiStreamEventData } from './support/aiStream'
+import { installE2eLocale } from './support/i18n'
 
 test.use({ storageState: { cookies: [], origins: [] } })
 test.skip(process.env.E2E_AI_LIVE !== '1', 'Requires a backend with AI and persistence enabled')
@@ -21,10 +22,10 @@ test('AI conversation survives reload and can be deleted', async ({ page }) => {
   })
   expect(csrfProbe.status(), 'AI live test requires CSRF enforcement').toBe(403)
 
+  await installE2eLocale(page)
   await page.addInitScript(() => {
     localStorage.setItem(STORAGE_KEYS.session, '1')
     localStorage.setItem(STORAGE_KEYS.tenantId, 'ta')
-    localStorage.setItem(STORAGE_KEYS.locale, 'zh-CN')
     localStorage.setItem(STORAGE_KEYS.onboardingDone, '1')
   })
   await page.goto('/system/ai-chat')

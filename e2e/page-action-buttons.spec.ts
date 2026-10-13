@@ -15,9 +15,9 @@ const PAGES: Pg[] = [
   { path: '/jobs/pipelines', title: /流水线/, create: /新建|新增/, refresh: true },
   { path: '/governance/queues', title: /队列/, create: /新建|新增/, refresh: true },
   { path: '/governance/quota', title: /配额/, create: /新建|新增/, refresh: true },
-  { path: '/system/api-keys', title: /API Key|密钥/, create: /新增 API Key|新建/, refresh: true },
+  { path: '/system/api-keys', title: 'API Key', create: /新增 API Key|新建/, refresh: true },
   { path: '/system/parameters', title: /参数/, create: /新建|新增/, refresh: true },
-  { path: '/system/triggers', title: /触发器|Trigger/, refresh: true },
+  { path: '/system/triggers', title: '触发器', refresh: true },
   // 标签页刷新是 filter-gated(resourceType+编码齐备才查),空筛选下刷新是合法 no-op,不断言发请求
   { path: '/system/tags', title: '标签管理', refresh: false },
   { path: '/workers/management', title: /Worker/, refresh: true },

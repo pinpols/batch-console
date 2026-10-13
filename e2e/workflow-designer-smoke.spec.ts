@@ -117,7 +117,7 @@ test.describe('@workflow-designer-smoke 工作流设计器主路径', () => {
 
     // ElSelect 下拉:打开 → 选第一个 option
     const jobCodeInput = inspector
-      .getByRole('combobox', { name: /关联\s*Job|jobCode|Job\s*Code|作业\s*Code/i })
+      .getByRole('combobox', { name: /关联\s*Job/ })
       .first()
     await expect(jobCodeInput).toBeVisible({ timeout: 3_000 })
     // el-select 开启 allow-create；直接录入唯一编码并回车，确保触发 @change 写回 store。
@@ -137,7 +137,7 @@ test.describe('@workflow-designer-smoke 工作流设计器主路径', () => {
     const validateBtn = page.getByRole('button', { name: '校验' }).first()
     if (await isVisible(validateBtn, 2000)) {
       await validateBtn.click({ force: true })
-      await expect(page.getByRole('dialog', { name: /校验错误|Validation errors/i })).toHaveCount(0)
+      await expect(page.getByRole('dialog', { name: /校验错误/ })).toHaveCount(0)
     }
 
     // ── Step 7: 点「保存」按钮 ────────────────────────────────────
@@ -146,7 +146,7 @@ test.describe('@workflow-designer-smoke 工作流设计器主路径', () => {
     await saveBtn.click({ force: true })
 
     // 期望出现「保存成功」toast — 真实 BE 写入失败必须让核心冒烟失败。
-    const successToast = page.locator('.el-message--success').filter({ hasText: /保存成功|Saved/ })
+    const successToast = page.locator('.el-message--success').filter({ hasText: /保存成功/ })
     const saved = await successToast
       .waitFor({ state: 'visible', timeout: 8_000 })
       .then(() => true)

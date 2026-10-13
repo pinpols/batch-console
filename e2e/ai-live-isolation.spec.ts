@@ -3,6 +3,7 @@ import { execFileSync } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
 import { expect, test } from './support/app'
 import { aiStreamEventData } from './support/aiStream'
+import { installE2eLocale } from './support/i18n'
 
 test.use({ storageState: { cookies: [], origins: [] } })
 test.skip(process.env.E2E_AI_ISOLATION !== '1', 'Requires local AI persistence and PostgreSQL')
@@ -78,10 +79,10 @@ test('AI history excludes another owner and another tenant', async ({ page, netw
     network.ignoreIf(
       (entry) => entry.status === 404 && entry.url.includes('/api/console/ai/conversations/'),
     )
+    await installE2eLocale(page)
     await page.addInitScript(() => {
       localStorage.setItem(STORAGE_KEYS.session, '1')
       localStorage.setItem(STORAGE_KEYS.tenantId, 'ta')
-      localStorage.setItem(STORAGE_KEYS.locale, 'zh-CN')
       localStorage.setItem(STORAGE_KEYS.onboardingDone, '1')
     })
     await page.goto('/system/ai-chat')
@@ -171,10 +172,10 @@ test('switching and deleting conversations ignore older real history responses',
   try {
     const olderId = await create(olderPrompt)
     const newerId = await create(newerPrompt)
+    await installE2eLocale(page)
     await page.addInitScript(() => {
       localStorage.setItem(STORAGE_KEYS.session, '1')
       localStorage.setItem(STORAGE_KEYS.tenantId, 'ta')
-      localStorage.setItem(STORAGE_KEYS.locale, 'zh-CN')
       localStorage.setItem(STORAGE_KEYS.onboardingDone, '1')
     })
     await page.goto('/system/ai-chat')

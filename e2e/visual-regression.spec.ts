@@ -1,7 +1,9 @@
 import { STORAGE_KEYS } from './support/storage'
 import { expect, test } from '@playwright/test'
+import { installE2eLocale } from './support/i18n'
 
 test.beforeEach(async ({ page }) => {
+  await installE2eLocale(page)
   await page.route('**/api/**', (route) =>
     route.fulfill({
       status: 401,
@@ -10,7 +12,6 @@ test.beforeEach(async ({ page }) => {
     }),
   )
   await page.addInitScript(() => {
-    localStorage.setItem(STORAGE_KEYS.locale, 'zh-CN')
     localStorage.setItem(STORAGE_KEYS.theme, 'dark')
   })
 })

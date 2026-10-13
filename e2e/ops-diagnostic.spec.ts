@@ -19,7 +19,7 @@ test.describe('ops diagnostic (运维诊断)', () => {
   })
 
   test('Kafka Lag / Outbox 区块存在', async ({ page }) => {
-    await expect(page.getByText(/Kafka Lag|消息积压/).first()).toBeVisible({ timeout: 8000 })
+    await expect(page.getByText(/消息积压/).first()).toBeVisible({ timeout: 8000 })
     // 主页面 Outbox 区块文本(排除侧边栏菜单)
     await expect(
       page.locator('.diag-card, main, .page-body').getByText(/Outbox/).first(),

@@ -56,7 +56,7 @@ test.describe('@workflow-designer-dependencies dependency overview', () => {
     await expect(inspector).toContainText(downstreamCodes[15]!)
     await expect(inspector).toContainText('已禁用')
 
-    const nextPage = page.getByRole('button', { name: /下一页|Next/ }).last()
+    const nextPage = page.getByRole('button', { name: /下一页/ }).last()
     await expect(nextPage).toBeEnabled()
     await nextPage.click()
     await expect(inspector).toContainText(downstreamCodes[0]!)

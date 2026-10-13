@@ -4,6 +4,7 @@ import { randomUUID } from 'node:crypto'
 import { createServer } from 'node:http'
 import { expect, test } from './support/app'
 import { aiStreamEventData } from './support/aiStream'
+import { installE2eLocale } from './support/i18n'
 
 test.use({ storageState: { cookies: [], origins: [] } })
 test.skip(
@@ -64,10 +65,10 @@ test('backend model timeout is shown as a failed turn without discarding the pro
       data: { username, password },
     })
     expect(login.status()).toBe(200)
+    await installE2eLocale(page)
     await page.addInitScript(() => {
       localStorage.setItem(STORAGE_KEYS.session, '1')
       localStorage.setItem(STORAGE_KEYS.tenantId, 'ta')
-      localStorage.setItem(STORAGE_KEYS.locale, 'zh-CN')
       localStorage.setItem(STORAGE_KEYS.onboardingDone, '1')
     })
     await page.goto('/system/ai-chat')

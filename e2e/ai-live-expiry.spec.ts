@@ -3,6 +3,7 @@ import { execFileSync } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
 import { expect, test } from './support/app'
 import { aiStreamEventData } from './support/aiStream'
+import { installE2eLocale } from './support/i18n'
 
 test.use({ storageState: { cookies: [], origins: [] } })
 test.skip(process.env.E2E_AI_EXPIRY !== '1', 'Requires local AI persistence and PostgreSQL')
@@ -66,10 +67,10 @@ test('expired AI conversation rejects history and send without losing the draft'
         (entry.url.includes(`/api/console/ai/conversations/${id}/turns`) ||
           entry.url.endsWith('/api/console/ai/chat/stream')),
     )
+    await installE2eLocale(page)
     await page.addInitScript(() => {
       localStorage.setItem(STORAGE_KEYS.session, '1')
       localStorage.setItem(STORAGE_KEYS.tenantId, 'ta')
-      localStorage.setItem(STORAGE_KEYS.locale, 'zh-CN')
       localStorage.setItem(STORAGE_KEYS.onboardingDone, '1')
     })
     await page.goto('/system/ai-chat')

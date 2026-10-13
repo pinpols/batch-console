@@ -68,7 +68,7 @@ test.describe('租户分片 tenant-placements (ADMIN)', () => {
     const row = page.locator('tr', { hasText: TENANT })
     let delBtn = row.getByRole('button', { name: '取消指派' }).first()
     if (!(await delBtn.isVisible().catch(() => false))) {
-      const more = row.getByRole('button', { name: /更多|More/i }).first()
+      const more = row.getByRole('button', { name: /更多/ }).first()
       if (await more.isVisible().catch(() => false)) {
         await more.click()
         delBtn = page.getByRole('menuitem', { name: '取消指派' }).first()
