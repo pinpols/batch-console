@@ -38,7 +38,7 @@ curl -fs http://localhost:8080/healthz
 # 1. 当前在跑哪个 tag
 docker inspect batch-console --format '{{.Config.Image}} (started {{.State.StartedAt}})'
 
-# 2. 最近合并到 main 的 release(release-please 自动打的 tag)
+# 2. 最近已验收的联合 release tag
 gh release list --limit 5
 
 # 3. 上一个绿色 staging-gate 跑的 commit
@@ -54,7 +54,7 @@ curl -s $BACKEND_HOST/actuator/info | jq -r '.build.version'
 
 ### 前提
 - prod 用本仓 `docker-compose.yml` + `docker-compose.deploy.yml` overlay 部署
-- registry 里仍保留上 N 个 tag(release-please 每次发布会 tag,默认保留)
+- registry 里仍保留上 N 个已验收版本 tag；tag 在 staging 验收后由发布流程创建
 
 ### 步骤
 
@@ -222,5 +222,5 @@ A → E 试,中间任何一步通了就停。
 - `docker-compose.yml` — prod 部署入口
 - `Dockerfile` + `nginx/default.conf.template` — image 构建 + nginx 配置(已含 SPA cache header)
 - `.github/workflows/staging-gate.yml` — prod 前最后一关(Playwright + Lighthouse)
-- `.github/workflows/release-please.yml` — release tag 自动化(2026-05-22 引入)
-- `.release-please-manifest.json` — 当前版本号源
+- `.platform-release-manifest.json` — 联合发布版本对照值
+- `docs/runbook/release-promotion.md` — 联合版本准备与晋级入口（编排 workflow 位于配对后端仓库）

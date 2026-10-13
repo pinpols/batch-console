@@ -14,6 +14,7 @@ GitHub Security 告警的分类、修复、误报处理和合并后验证遵循[
 | `frontend-ci`                    | `.github/workflows/frontend-ci.yml`  | PR → main / push main / 手动                                                | Node 24 兼容 + 前端文档构建；Markdown-only PR 跳过兼容构建                                                                                      | 8-12 min  |
 | `full-ci-gate`                   | `.github/workflows/full-ci-gate.yml` | PR → main / push main / 每周一 02:00 UTC（10:00 北京）/ 手动 | 全量回归；Markdown-only PR 保留 required check 但跳过构建和全量审计                                                                             | 15-20 min |
 | `staging-gate`                   | `.github/workflows/staging-gate.yml` | tag `v*` / 手动(可输入 base_url)                                            | 真实环境安全头、Playwright/axe、视觉及跨浏览器路由验收                                                                                          | 20-35 min |
+| `prepare-platform-release`        | 配对后端 `.github/workflows/prepare-platform-release.yml` | 后端仓库手动选择 bump 类型 | 校验版本并创建双仓 Release PR；不合并/发布，需 GitHub App | ≤15 min |
 | `codeql`                         | `.github/workflows/codeql.yml`       | PR / main / 每周 / 手动                                                     | JavaScript/TypeScript 静态安全分析                                                                                                              | 5-10 min  |
 | `build-image`                    | `.github/workflows/build-image.yml`  | main / tag / 每日 19:00 UTC（北京时间 03:00）/ 手动 / reusable workflow     | main 构建不可变镜像；定时任务先判断前后端前一日是否有相关变更，无变更跳过；后端有变更时等待配对后端 daily-sim-strict 成功；tag 在 staging 通过后晋级同一 digest；供后端 Compose CD 调用时固定前端与后端 docs SHA，并返回 frontend image digest | 10-75 min |
 | `Quarterly dependency inventory` | `.github/workflows/renovate.yml`     | 每季度 / 手动                                                               | 只生成 Renovate dry-run 盘点和一张 Issue，不创建 PR                                                                                             | 5-15 min  |
@@ -68,7 +69,7 @@ CI 使用 GitHub 托管的 `ubuntu-26.04`，Action 运行时统一到 Node 24 �
 - `actions/upload-artifact` v7、`actions/download-artifact` v8
 - `docker/setup-qemu-action` v4、`docker/setup-buildx-action` v4
 - `docker/login-action` v4、`docker/metadata-action` v6、`docker/build-push-action` v7
-- `googleapis/release-please-action` v5、`renovatebot/github-action` v46.3.6
+- `actions/create-github-app-token` v3（联合版本准备 workflow 位于配对后端仓库）、`renovatebot/github-action` v46.3.6
 
 上述版本仅用于阅读；workflow 实际引用必须是对应的 40 位 commit SHA。Node 基线由 `.node-version`/`.nvmrc` 固定到精确 patch，Dockerfile 基础镜像固定 tag + digest。
 
@@ -238,7 +239,7 @@ npm run preflight:changed
 | -------------- | -------------- | -------------------------- | ---- | ------------ |
 | pr-gate        | 1:37           | PR / push                  | ≤6m  | ✅           |
 | full-ci-gate   | 3:48           | PR / push main / 每周一 / 手动 | ≤6m  | ✅           |
-| release-please | 0:12           | push main                  | ≤6m  | ✅           |
+| prepare-platform-release | 新增，未运行 | 后端手动触发 | ≤15m | 需配置 GitHub App |
 | renovate       | 1:23           | renovate bot               | ≤6m  | ✅           |
 | staging-gate   | 历史基线已失效 | tag v* / 手动              | ≤30m | 缺配置时失败 |
 

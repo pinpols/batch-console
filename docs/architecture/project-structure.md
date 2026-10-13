@@ -43,7 +43,7 @@ batch-console/
 ├── docker-compose.yml         本地与自托管部署编排
 ├── Makefile                   常用任务 alias
 ├── AGENTS.md                  项目红线 + 关键路径(权威)
-└── CHANGELOG.md               发布日志(release-please 维护)
+└── CHANGELOG.md               发布日志(联合发布准备 workflow 维护)
 ```
 
 ## 顶层目录归类
