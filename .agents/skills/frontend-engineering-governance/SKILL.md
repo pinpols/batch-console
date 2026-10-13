@@ -1,6 +1,6 @@
 ---
 name: frontend-engineering-governance
-description: 修改或审查前端架构边界、环境变量登记、可维护性阈值、GitHub Actions 安全、SBOM 许可证、Changelog 联动和提交前治理门禁时使用。
+description: 修改或审查 batch-console 的架构边界、环境变量、可维护性阈值、GitHub Actions、SBOM/许可证、Changelog 和治理门禁时使用。前后端周期治理或全量腐化扫描使用 cross-repo-governance-review。
 ---
 
 # 前端工程治理
@@ -8,6 +8,7 @@ description: 修改或审查前端架构边界、环境变量登记、可维护�
 ## 适用边界
 
 - 本技能处理跨模块工程约束和可重复门禁；业务测试走 `frontend-testing-ci`，部署运行时走 `frontend-deploy-runtime`，文档内容治理走 `frontend-docs-release-governance`。
+- 用户要求月度/季度治理、全项目深扫、规范防退化、代码腐化或前后端一起审查时，先使用 `cross-repo-governance-review` 建立固定覆盖矩阵，再按矩阵回到本技能处理前端工程守卫。
 - 仓库脚本和 `package.json` 是执行口径，技能文件只记录选择规则，不复制检查实现或瞬时统计。
 
 ## 变更前判断

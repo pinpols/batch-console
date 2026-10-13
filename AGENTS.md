@@ -10,9 +10,13 @@
 
 ## Skills
 
-按任务加载 `.agents/skills/` 下的专项工作流；跨领域审查先用综合技能，再按需加载专项技能：
+按任务加载 `.agents/skills/` 下的工作流。先按任务层级选择总控，再加载专项技能，避免每次重新发明审查清单：
 
-- `frontend-quality-review`：UI、交互、代码可读性、可访问性和浏览器安全的综合审查。
+- **双仓周期治理**：`cross-repo-governance-review`，用于月度/季度治理、全量深扫、规范防退化、代码腐化、发布前复核和事故后复盘，固定覆盖前后端 20 个领域。
+- **前端综合审查**：`frontend-quality-review`，用于 UI、交互、代码可读性、可访问性和浏览器安全的跨领域审查。
+
+**前端专项：**
+
 - `frontend-ui-ia-review`：页面设计、信息架构、导航、数据密集视图、表单和移动适配。
 - `frontend-i18n-accessibility`：用户文案、i18n、ARIA、键盘和安全 HTML 渲染。
 - `frontend-api-contract`：API、OpenAPI 生成类型、认证和权限契约。
@@ -22,9 +26,11 @@
 - `frontend-engineering-governance`：架构、依赖、环境变量、SBOM、许可证和治理检查。
 - `frontend-deploy-runtime`：Docker、Nginx、运行时配置、PWA 和部署。
 - `frontend-docs-release-governance`：README、文档索引、变更记录和发布文档。
-- `git-pr-workflow`：分支、PR、连续交付链、远端 head 核验和清理。
+
+- **交付流程**：`git-pr-workflow`，用于分支、PR、连续交付链、远端 head 核验和清理。
 
 仓库约定和配对后端契约优先于通用技能建议。技能负责流程，不取代代码、测试和 CI 的实际证据。
+详细选择树、组合示例和调用方式见 [`docs/engineering/agent-skills-guide.md`](docs/engineering/agent-skills-guide.md)。
 
 ## 配对后端
 

@@ -29,6 +29,7 @@
 | [wrapper 迁移记录](./engineering/fe-wrapper-migration-plan.md)                         | 已完成批次、剩余边界与后续迁移规则                                  |
 | [页面命名约定](./engineering/page-naming-convention.md)                                | URL / 代码目录 / 侧边栏分组三者一致规则                           |
 | [前端工程成熟度路线图](./engineering/engineering-maturity-roadmap.md)                  | 大厂工程实践对齐、上线准入、UI 治理和验收证据分层                 |
+| [Agent Skill 使用指南](./engineering/agent-skills-guide.md)                           | 前后端治理总控、前端专项和 PR 交付 Skill 的选择与调用             |
 | [前端可观测性方案](./engineering/前端可观测性方案.md)                                  | 操作日志 / 行为埋点 / Sentry / 错误追踪                           |
 | [Console AI 助手前端实施方案](./engineering/ai-assistant-frontend-implementation-plan.md) | 全局入口、页面上下文、会话 UI、移动端与前后端契约                 |
 | [AI 对话流式交互](./engineering/ai-chat-streaming.md)                       | SSE 协议、停止生成、文本附件及数据保留边界                        |
@@ -105,6 +106,7 @@
 - **排查契约漂移**:后端 `python3 scripts/ci/check-console-openapi-paths.py` → 前端 `npm run gen:api:check`
 - **改列表页**:`src/components/table/ProTable.vue` / `ListPageQueryBar.vue`
 - **跨仓协作规则**:根 [AGENTS.md](../AGENTS.md)
+- **选择 Agent Skill**:[engineering/agent-skills-guide.md](./engineering/agent-skills-guide.md) → 根 [AGENTS.md](../AGENTS.md)
 
 ## 维护规则
 
