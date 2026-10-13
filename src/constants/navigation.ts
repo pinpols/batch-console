@@ -62,6 +62,8 @@ export interface NavigationItem {
   authorities?: string[]
   /** 后端 /auth/me 动态能力；用于受功能开关和白名单共同控制的入口。 */
   capabilities?: string[]
+  /** 后端菜单未同步新入口时，可复用已有且权限受限的菜单路径作为 allowlist。 */
+  menuAccessFallbacks?: string[]
   /** 隐藏出现在侧边栏,但 Command Palette / 内嵌跳转 仍可达 */
   hidden?: boolean
   /**
@@ -528,6 +530,14 @@ const navigationGroupsByKey = {
         minRole: 'ADMIN',
         icon: Setting,
         hidden: true,
+      },
+      {
+        title: pageTitle('/system/maintenance'),
+        path: '/system/maintenance',
+        minRole: 'ADMIN',
+        authorities: ['ROLE_ADMIN'],
+        icon: Tools,
+        menuAccessFallbacks: ['/system/parameters'],
       },
       {
         title: pageTitle('/system/atomic-task-types'),

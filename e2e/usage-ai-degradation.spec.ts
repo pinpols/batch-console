@@ -495,9 +495,10 @@ test.describe('Usage, AI and degradation', () => {
       })
     })
     await page.goto('/observability/usage')
-    await expect(page.locator('.degradation-banner')).toContainText('orchestrator')
+    await expect(page.locator('.degradation-banner')).toContainText('编排器服务')
     await page.getByRole('button', { name: '切换英文' }).click()
     await expect(page.locator('.degradation-banner')).toContainText('Some downstream services degraded')
+    await expect(page.locator('.degradation-banner')).toContainText('Orchestrator service')
   })
 
   test('degradation banner clears after the source stops reporting degradation', async ({ page }) => {
@@ -510,14 +511,14 @@ test.describe('Usage, AI and degradation', () => {
       })
     })
     await page.goto('/observability/usage')
-    await expect(page.locator('.degradation-banner')).toContainText('orchestrator')
+    await expect(page.locator('.degradation-banner')).toContainText('编排器服务')
     await page.unroute('**/api/console/queries/usage-summary**')
     const recoveredResponse = page.waitForResponse((response) =>
       response.url().includes('/api/console/queries/usage-summary') && response.request().method() === 'GET',
     )
     await page.getByRole('button', { name: '搜索' }).click()
     expect((await recoveredResponse).headers()['x-degraded-source']).toBeUndefined()
-    await expect(page.locator('.degradation-banner')).toContainText('orchestrator')
+    await expect(page.locator('.degradation-banner')).toContainText('编排器服务')
     await page.clock.fastForward(75_000)
     await expect(page.locator('.degradation-banner')).toHaveCount(0)
   })

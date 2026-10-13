@@ -12,6 +12,8 @@ import tenantPackageImportWizard from './tenantPackageImportWizard.zh-CN.ts'
 import workflowDesignerDependency from './workflowDesignerDependency.zh-CN.ts'
 import workflowDesignerJobDependencies from './workflowDesignerJobDependencies.zh-CN.ts'
 import onboardingCenter from './onboardingCenter.zh-CN.ts'
+import maintenance from './maintenance.zh-CN.ts'
+import maintenanceSettings from './maintenanceSettings.zh-CN.ts'
 
 export default {
   print: {
@@ -1037,22 +1039,8 @@ export default {
     tzLocal: '本地',
     parseFailed: '解析失败',
   },
-  maintenance: {
-    bannerBlocked: '系统维护中',
-    bannerReadonly: '系统进入只读模式',
-    bannerAdminBypass: '系统维护中(管理员旁路,普通用户已被拦截)',
-    etaPast: '预计已恢复,正在检测…',
-    etaInMinutes: '预计 {n} 分钟后恢复',
-    etaInHours: '预计 {n} 小时后恢复',
-    pageTitle: '系统维护中',
-    pageMessageFallback: '我们正在升级或修复系统,请稍候。',
-    pageAffectedTitle: '受影响功能:',
-    pageHint: '此页面每 30 秒自动检测一次,恢复后自动跳回。',
-    pageContact: '紧急情况请联系运维。',
-    pageRetry: '立即重试',
-    writeBlocked: '维护期间禁止此操作',
-    syncStale: '维护状态同步中断，当前信息可能已过期',
-  },
+  maintenance,
+  maintenanceSettings,
   degradation: {
     bannerHeadline: '服务状态异常',
     bannerMessage: '以下服务暂不可用，相关数据可能不完整：',
@@ -1513,6 +1501,10 @@ export default {
     systemParameters: {
       title: '系统参数',
       description: '维护系统级参数键值,控制平台运行开关。',
+    },
+    systemMaintenance: {
+      title: '维护设置',
+      description: '切换全冻结或只读维护，设置维护公告和预计恢复时间。',
     },
     systemApiKeys: { title: 'API Key', description: '创建、查看和吊销控制台 API Key。' },
     systemAiChat: { title: 'AI 助手', description: '与 AI 助手对话,并追踪历史调用记录。' },

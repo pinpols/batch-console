@@ -59,14 +59,17 @@ describe('maintenance write guard', () => {
     expect(adapter).toHaveBeenCalledTimes(2)
   })
 
-  it('keeps administrator bypass mutations available', async () => {
+  it('keeps administrator business mutations blocked during maintenance', async () => {
     useAppStore().setMaintenance({ enabled: true, readOnly: false, adminBypass: true })
     const client = createClient()
 
-    await client.post('/api/console/jobs', {})
+    await expect(client.post('/api/console/jobs', {})).rejects.toMatchObject({
+      code: 'ERR_MAINTENANCE_WRITE_FROZEN',
+      maintenance: true,
+    })
 
-    expect(adapter).toHaveBeenCalledOnce()
-    expect(ElMessage.warning).not.toHaveBeenCalled()
+    expect(adapter).not.toHaveBeenCalled()
+    expect(ElMessage.warning).toHaveBeenCalledOnce()
   })
 
   it('allowlist only covers authentication and maintenance administration', () => {

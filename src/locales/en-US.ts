@@ -6,6 +6,8 @@ import tenantPackageImportWizard from './tenantPackageImportWizard.en-US.ts'
 import workflowDesignerDependency from './workflowDesignerDependency.en-US.ts'
 import workflowDesignerJobDependencies from './workflowDesignerJobDependencies.en-US.ts'
 import onboardingCenter from './onboardingCenter.en-US.ts'
+import maintenance from './maintenance.en-US.ts'
+import maintenanceSettings from './maintenanceSettings.en-US.ts'
 
 const messages: Messages = {
   print: {
@@ -1052,22 +1054,8 @@ const messages: Messages = {
     tzLocal: 'local',
     parseFailed: 'Unable to parse expression',
   },
-  maintenance: {
-    bannerBlocked: 'System under maintenance',
-    bannerReadonly: 'System is in read-only mode',
-    bannerAdminBypass: 'Maintenance active (admin bypass — normal users are blocked)',
-    etaPast: 'Should be back, re-checking…',
-    etaInMinutes: 'ETA {n} minutes',
-    etaInHours: 'ETA {n} hours',
-    pageTitle: 'System under maintenance',
-    pageMessageFallback: 'We are upgrading or repairing the system. Please wait.',
-    pageAffectedTitle: 'Affected features:',
-    pageHint: 'This page auto-checks every 30 seconds and will redirect when recovered.',
-    pageContact: 'Contact ops for urgent issues.',
-    pageRetry: 'Retry now',
-    writeBlocked: 'Write operations are disabled during maintenance',
-    syncStale: 'Maintenance status sync is interrupted and may be stale',
-  },
+  maintenance,
+  maintenanceSettings,
   degradation: {
     bannerHeadline: 'Service degradation detected',
     bannerMessage: 'The following services are unavailable; related data may be incomplete:',
@@ -1566,6 +1554,11 @@ const messages: Messages = {
     systemParameters: {
       title: 'System parameters',
       description: 'Maintain system-level key-value params for platform switches.',
+    },
+    systemMaintenance: {
+      title: 'Maintenance settings',
+      description:
+        'Set full freeze or read-only maintenance, with an announcement and recovery ETA.',
     },
     systemApiKeys: {
       title: 'API keys',
