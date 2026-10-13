@@ -1,8 +1,10 @@
 const tenantPackageImportWizard = {
   uploadTitle: '上传租户配置包 Excel',
-  unsupportedFileType: '仅支持 .xls / .xlsx 文件,当前: {name}',
+  unsupportedFileType: '仅支持 .xlsx 文件，当前：{name}',
+  fileTooLarge: '文件不能超过 50 MB，当前：{name}',
+  uploadLimitHint: '.xlsx · 单文件不超过 50 MB',
   uploadDesc:
-    '可上传完整配置包或按作业场景生成的精简模板。场景模板只包含所选业务配置，不含平台资源分配；未提供的配置不删除，空白选填项保留现值。删除请在对应配置页操作。上传后先预览校验，再确认应用。',
+    '可上传不超过 50 MB 的 .xlsx 完整配置包，或按作业场景生成的精简模板。场景模板只包含所选业务配置，不含平台资源分配；未提供的配置不删除，空白选填项保留现值。删除请在对应配置页操作。上传后先预览校验，再确认应用。',
   btnDownloadTemplate: '下载配置包模板',
   btnExportCurrent: '导出当前配置包',
   btnFieldGuide: '字段填写说明',

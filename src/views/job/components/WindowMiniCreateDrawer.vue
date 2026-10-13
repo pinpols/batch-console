@@ -12,12 +12,13 @@
     draggable
   >
     <el-form
+      id="window-mini-create-form"
       ref="formRef"
       :model="form"
       :rules="rules"
       label-width="92px"
       label-position="right"
-      class="mini-create-form"
+      class="mini-create-form form-preserve-label-position"
       @submit.prevent="submit"
     >
       <el-form-item :label="t('jobConfigBasic.miniWindowCode')" prop="windowCode">
@@ -87,7 +88,12 @@
         <el-button native-type="button" :disabled="saving" @click="close">
           {{ t('common.cancel') }}
         </el-button>
-        <el-button type="primary" native-type="button" :loading="saving" @click="submit">
+        <el-button
+          type="primary"
+          native-type="submit"
+          form="window-mini-create-form"
+          :loading="saving"
+        >
           {{ t('common.confirm') }}
         </el-button>
       </div>
