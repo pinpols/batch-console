@@ -17,7 +17,7 @@ test.describe('workflow definition CRUD', () => {
   })
 
   test('搜索 / 重置可执行', async ({ page }) => {
-    const kw = page.locator('.el-form-item').filter({ hasText: /关键字|workflow/i }).locator('input').first()
+    const kw = page.locator('.el-form-item').filter({ hasText: /关键字/ }).locator('input').first()
     if (await kw.count()) {
       await kw.fill('e2e-test')
       const searchBtn = page.getByRole('button', { name: '搜索' }).first()

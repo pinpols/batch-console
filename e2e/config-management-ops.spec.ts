@@ -195,7 +195,7 @@ test.describe('配置管理 — 配置导出', () => {
       .first()
       .click()
     const exported = await exportConfigFromUi(page)
-    expect(JSON.stringify(exported), 'exported JOB config payload').toMatch(/job|JOB|作业/i)
+    expect(JSON.stringify(exported), 'exported JOB config payload').toMatch(/job/i)
   })
 
   test('导出类型支持多选且不产生 checkbox 类型警告', async ({ page }) => {

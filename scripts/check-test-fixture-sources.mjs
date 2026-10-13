@@ -8,6 +8,12 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const sourceRoot = join(root, 'src')
 const contractTest = 'src/constants/storageKeys.test.ts'
 const sharedStorageStub = 'src/test-utils/localStorage.ts'
+const e2eConfigSource = 'e2e/config.cjs'
+const e2eLocaleSource = 'e2e/support/i18n.ts'
+const bilingualE2eSpecs = new Set([
+  'e2e/i18n-critical-pages.spec.ts',
+  'e2e/i18n-switch-stability.spec.ts',
+])
 const persistedKeyPattern = /^batch-console(?:-|:)/
 const testConfig = JSON.parse(readFileSync(join(root, 'e2e/test-config.json'), 'utf8'))
 const platformServiceOrigins = new Set(
@@ -44,6 +50,38 @@ function sourceViolations(file, text) {
         const { line } = source.getLineAndCharacterOfPosition(node.getStart(source))
         violations.push(
           `${relativeFile}:${line + 1}: 测试不得重复写持久化键 ${node.text}；请引用权威常量，契约预期放在 ${contractTest}`,
+        )
+      }
+      if (
+        isE2e &&
+        relativeFile !== e2eConfigSource &&
+        relativeFile !== e2eLocaleSource &&
+        !bilingualE2eSpecs.has(relativeFile) &&
+        (node.text === 'zh-CN' || node.text === 'en-US')
+      ) {
+        const { line } = source.getLineAndCharacterOfPosition(node.getStart(source))
+        violations.push(
+          `${relativeFile}:${line + 1}: 普通 E2E 不得重复写 locale ${node.text}；请使用 ${e2eLocaleSource} 的默认语言入口`,
+        )
+      }
+    }
+    if (
+      isE2e &&
+      relativeFile !== e2eLocaleSource &&
+      relativeFile !== e2eConfigSource &&
+      !bilingualE2eSpecs.has(relativeFile) &&
+      ts.isRegularExpressionLiteral(node)
+    ) {
+      const body = node.text.slice(1, node.text.lastIndexOf('/'))
+      const branches = body.split('|')
+      const hasChineseBranch = branches.some((branch) => /[\u3400-\u9fff]/.test(branch))
+      const hasEnglishOnlyBranch = branches.some(
+        (branch) => /[A-Za-z]{2}/.test(branch) && !/[\u3400-\u9fff]/.test(branch),
+      )
+      if (hasChineseBranch && hasEnglishOnlyBranch) {
+        const { line } = source.getLineAndCharacterOfPosition(node.getStart(source))
+        violations.push(
+          `${relativeFile}:${line + 1}: 普通 E2E 不得使用中英文任选的断言 ${node.text}；默认语言由 ${e2eLocaleSource} 统一维护，双语覆盖放入 i18n 专项`,
         )
       }
     }
@@ -146,6 +184,22 @@ function runSelfTests() {
     sharedStorageStub,
     "vi.stubGlobal('localStorage', { getItem: () => null })",
   )
+  const badLocaleLiteral = sourceViolations(
+    'e2e/example.spec.ts',
+    "localStorage.setItem(STORAGE_KEYS.locale, 'zh-CN')",
+  )
+  const allowedLocaleSource = sourceViolations(
+    e2eLocaleSource,
+    "export type E2eLocale = 'zh-CN' | 'en-US'",
+  )
+  const badBilingualFallback = sourceViolations(
+    'e2e/example.spec.ts',
+    "page.getByRole('button', { name: /搜索|Search/ })",
+  )
+  const allowedI18nCoverage = sourceViolations(
+    'e2e/i18n-critical-pages.spec.ts',
+    "page.getByRole('button', { name: /搜索|Search/ })",
+  )
 
   const results = [
     assertSelfTest('重复持久化键应拦截', badDuplicate, 1),
@@ -161,6 +215,10 @@ function runSelfTests() {
     assertSelfTest('事实源变更后旧本地服务地址仍应拦截', staleDefaultAfterSourceChange, 1),
     assertSelfTest('外部服务契约地址应放行', allowedExternalEndpoint, 0),
     assertSelfTest('共享 localStorage 桩实现应放行', allowedSharedStub, 0),
+    assertSelfTest('普通 E2E 重复 locale 应拦截', badLocaleLiteral, 1),
+    assertSelfTest('locale 权威入口应放行', allowedLocaleSource, 0),
+    assertSelfTest('普通 E2E 双语兜底应拦截', badBilingualFallback, 1),
+    assertSelfTest('i18n 专项双语断言应放行', allowedI18nCoverage, 0),
   ]
   if (results.some((passed) => !passed)) {
     console.error(

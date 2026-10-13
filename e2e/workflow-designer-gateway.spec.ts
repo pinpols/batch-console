@@ -105,7 +105,7 @@ test.describe('@workflow-designer-gateway 网关与依赖语义', () => {
     await expect(inspector.getByRole('spinbutton', { name: /满足数量/ })).toHaveValue('2')
 
     await page.getByRole('button', { name: '校验' }).first().click()
-    await expect(page.getByRole('dialog', { name: /校验错误|Validation errors/i })).toHaveCount(0)
+    await expect(page.getByRole('dialog', { name: /校验错误/ })).toHaveCount(0)
     await expect(page.getByRole('button', { name: '展开校验错误列表' })).toHaveCount(0)
 
     await page.getByRole('combobox', { name: '依赖连线选择器' }).click()

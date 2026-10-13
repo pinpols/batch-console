@@ -9,6 +9,7 @@
 import { STORAGE_KEYS } from './support/storage'
 import { expect, test } from './support/app'
 import { enterDemoApp, expectPageTitle } from './support/app'
+import { installE2eLocale } from './support/i18n'
 
 test.describe('RBAC 拒绝行为', () => {
   test('业务 401 + refresh 失败 → 不踢登录,只 toast', async ({ page, context }) => {
@@ -59,6 +60,7 @@ test.describe('RBAC 拒绝行为', () => {
     )
 
     // 直接清掉 userInfo 强制路由守卫重新 fetchMe(addInitScript 在 enterDemoApp 里跑过)
+    await installE2eLocale(page)
     await page.addInitScript(() => {
       // localStorage 保持 token,但 sessionStorage / pinia 重置不影响
     })
@@ -85,7 +87,6 @@ test.describe('RBAC 拒绝行为', () => {
     // 在 enterDemoApp 之前预置 token + locale,避免 fresh context 没 storage
     await page.addInitScript(() => {
       localStorage.setItem('token', 'mock-test-token-not-real-jwt')
-      localStorage.setItem(STORAGE_KEYS.locale, 'zh-CN')
       localStorage.setItem(STORAGE_KEYS.onboardingDone, '1')
     })
 

@@ -1,6 +1,6 @@
 import { STORAGE_KEYS } from './support/storage'
 import { FRONTEND_BASE_URL } from './support/config'
-import { installE2eLocale } from './support/i18n'
+import { E2E_DEFAULT_LOCALE, installE2eLocale } from './support/i18n'
 import { expect, test } from '@playwright/test'
 
 /**
@@ -77,7 +77,10 @@ test.describe('login form validation', () => {
   test('登录页语言切换同步更新表单文案', async ({ page, context }) => {
     await context.clearCookies()
     await page.goto('/login', { waitUntil: 'networkidle' })
-    await page.evaluate((localeKey) => localStorage.setItem(localeKey, 'zh-CN'), STORAGE_KEYS.locale)
+    await page.evaluate(
+      ({ localeKey, locale }) => localStorage.setItem(localeKey, locale),
+      { localeKey: STORAGE_KEYS.locale, locale: E2E_DEFAULT_LOCALE },
+    )
     await page.reload({ waitUntil: 'networkidle' })
 
     const localeToggle = page.getByRole('button', { name: '切换语言' })

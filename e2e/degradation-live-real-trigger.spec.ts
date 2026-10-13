@@ -5,6 +5,7 @@ import { once } from 'node:events'
 import { existsSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { expect, test } from './support/app'
+import { installE2eLocale } from './support/i18n'
 
 test.use({ storageState: { cookies: [], origins: [] } })
 test.skip(
@@ -69,10 +70,10 @@ test('mobile degradation clears when a real isolated Trigger starts', async ({ p
     data: { username, password },
   })
   expect(login.status()).toBe(200)
+  await installE2eLocale(page)
   await page.addInitScript(() => {
     localStorage.setItem(STORAGE_KEYS.session, '1')
     localStorage.setItem(STORAGE_KEYS.tenantId, 'ta')
-    localStorage.setItem(STORAGE_KEYS.locale, 'zh-CN')
     localStorage.setItem(STORAGE_KEYS.onboardingDone, '1')
   })
   await page.clock.install()

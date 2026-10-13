@@ -34,7 +34,7 @@ test.describe('Worker 管理 — 筛选查询', () => {
   test('Worker Code 搜索 → 查询 → 重置', async ({ page }) => {
     const input = page
       .locator('.el-form-item')
-      .filter({ hasText: /Worker Code|关键字/ })
+      .filter({ hasText: /关键字/ })
       .getByRole('textbox')
     if (!(await isVisible(input, 2000))) return
     await input.fill('worker')

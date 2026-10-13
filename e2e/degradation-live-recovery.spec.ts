@@ -1,6 +1,7 @@
 import { STORAGE_KEYS } from './support/storage'
 import { createServer, type Server } from 'node:http'
 import { expect, test } from './support/app'
+import { installE2eLocale } from './support/i18n'
 
 test.use({ storageState: { cookies: [], origins: [] } })
 test.skip(
@@ -25,10 +26,10 @@ test('mobile banner clears after the backend reaches a recovered downstream', as
     data: { username, password },
   })
   expect(login.status()).toBe(200)
+  await installE2eLocale(page)
   await page.addInitScript(() => {
     localStorage.setItem(STORAGE_KEYS.session, '1')
     localStorage.setItem(STORAGE_KEYS.tenantId, 'ta')
-    localStorage.setItem(STORAGE_KEYS.locale, 'zh-CN')
     localStorage.setItem(STORAGE_KEYS.onboardingDone, '1')
   })
   await page.clock.install()

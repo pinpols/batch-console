@@ -39,7 +39,7 @@ async function auditRoute(page: import('@playwright/test').Page, route: string) 
   return page.evaluate(() => ({
     overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
     hasErrorBoundary: Array.from(document.querySelectorAll('body *')).some((element) =>
-      /组件渲染异常|Component render error/i.test(element.textContent ?? ''),
+      /组件渲染异常/.test(element.textContent ?? ''),
     ),
   }))
 }

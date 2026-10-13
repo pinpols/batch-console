@@ -45,7 +45,7 @@ test.describe('observability pages', () => {
     const deliveryTab = page.getByRole('radio', { name: /投递/ })
     await deliveryTab.click()
     await expect(deliveryTab).toHaveAttribute('aria-checked', 'true')
-    await expect(content).toContainText(/Topic|状态/, { timeout: 15_000 })
+    await expect(content).toContainText(/状态/, { timeout: 15_000 })
     const retryTab = page.getByRole('radio', { name: /重试/ })
     await retryTab.click()
     await expect(retryTab).toHaveAttribute('aria-checked', 'true')

@@ -1,4 +1,5 @@
 import { STORAGE_KEYS } from './support/storage'
+import { installE2eLocale } from './support/i18n'
 import { expect, test } from './support/app'
 
 test.use({ serviceWorkers: 'block' })
@@ -67,10 +68,10 @@ const jobs = [
 ]
 
 test.beforeEach(async ({ page }) => {
+  await installE2eLocale(page)
   await page.addInitScript((keys) => {
     localStorage.setItem(keys.session, '1')
     localStorage.setItem(keys.tenantId, 'ta')
-    localStorage.setItem(keys.locale, 'zh-CN')
     localStorage.setItem(keys.onboardingDone, '1')
   }, STORAGE_KEYS)
   await page.route('**/api/console/**', async (route) => {

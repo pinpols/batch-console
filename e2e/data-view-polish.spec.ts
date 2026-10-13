@@ -1,6 +1,7 @@
 import { STORAGE_KEYS } from './support/storage'
 import { expect, test } from './support/app'
 import { enterDemoApp, expectPageTitle, isVisible } from './support/app'
+import { installE2eLocale } from './support/i18n'
 
 function currentBusinessDate() {
   return new Date().toISOString().slice(0, 10)
@@ -8,10 +9,10 @@ function currentBusinessDate() {
 
 test.describe('data-heavy pages use the intended primary views', () => {
   test.beforeEach(async ({ page }) => {
+    await installE2eLocale(page)
     await page.addInitScript(() => {
       localStorage.setItem(STORAGE_KEYS.session, '1')
       localStorage.setItem(STORAGE_KEYS.tenantId, 'ta')
-      localStorage.setItem(STORAGE_KEYS.locale, 'zh-CN')
       localStorage.setItem(STORAGE_KEYS.onboardingDone, '1')
     })
     await page.route('**/api/console/auth/me', (route) =>

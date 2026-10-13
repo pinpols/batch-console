@@ -1,5 +1,6 @@
 import { STORAGE_KEYS } from './support/storage'
 import { expect, test } from './support/app'
+import { installE2eLocale } from './support/i18n'
 
 test.use({ storageState: { cookies: [], origins: [] } })
 test.skip(process.env.E2E_REAL_DEGRADATION !== '1', 'Requires a local backend with a degraded Trigger service')
@@ -20,10 +21,10 @@ test('mobile layout reports the backend Trigger degradation without visiting a s
   expect(probe.status()).toBe(200)
   expect(probe.headers()['x-degraded-source']?.split(',')).toContain('trigger')
 
+  await installE2eLocale(page)
   await page.addInitScript(() => {
     localStorage.setItem(STORAGE_KEYS.session, '1')
     localStorage.setItem(STORAGE_KEYS.tenantId, 'ta')
-    localStorage.setItem(STORAGE_KEYS.locale, 'zh-CN')
     localStorage.setItem(STORAGE_KEYS.onboardingDone, '1')
   })
   await page.setViewportSize({ width: 390, height: 800 })

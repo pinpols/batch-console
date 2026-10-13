@@ -46,7 +46,7 @@ test.describe('@row-actions 行操作覆盖缺口补丁', () => {
     // 导入临时文件可能已被对象存储清理；GENERATED 导出文件是可下载的稳定种子。
     const row = page
       .locator('tbody tr.el-table__row')
-      .filter({ hasText: /GENERATED|已生成/ })
+      .filter({ hasText: /已生成/ })
       .first()
     if (!(await isVisible(row, 2000))) {
       test.skip(true, '无可下载的 GENERATED 文件数据')
@@ -95,14 +95,14 @@ test.describe('@row-actions 行操作覆盖缺口补丁', () => {
     const release = await createDraftConfigRelease(page.request)
     await page.goto('/config/releases')
     await page.waitForLoadState('networkidle', { timeout: 8000 }).catch(() => {})
-    const keyInput = page.getByPlaceholder(/搜索配置 Key|Search config key/i)
+    const keyInput = page.getByPlaceholder(/搜索配置 Key/)
     await keyInput.fill(release.configKey)
-    await page.getByRole('button', { name: /搜索|Search/ }).click()
+    await page.getByRole('button', { name: /搜索/ }).click()
     const card = page.locator('.cr-item').filter({ hasText: release.configKey }).first()
     await expect(card).toBeVisible({ timeout: 8_000 })
     await card.locator('.cr-card').click()
     test.setTimeout(60000)
-    const diffBtn = page.locator('.cr-panel').getByRole('button', { name: /对比|差异|Diff/i })
+    const diffBtn = page.locator('.cr-panel').getByRole('button', { name: /对比|差异/ })
     await expect(diffBtn).toBeVisible()
     await diffBtn.click()
     await page.waitForTimeout(800)

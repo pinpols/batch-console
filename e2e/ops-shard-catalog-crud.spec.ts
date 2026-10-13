@@ -61,7 +61,7 @@ test.describe('分片目录 shard-catalog (ADMIN)', () => {
     const row = page.locator('tr', { hasText: KEY })
     let delBtn = row.getByRole('button', { name: '删除' }).first()
     if (!(await delBtn.isVisible().catch(() => false))) {
-      const more = row.getByRole('button', { name: /更多|More/i }).first()
+      const more = row.getByRole('button', { name: /更多/ }).first()
       if (await more.isVisible().catch(() => false)) {
         await more.click()
         delBtn = page.getByRole('menuitem', { name: '删除' }).first()

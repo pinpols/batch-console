@@ -89,7 +89,7 @@ test.describe('soak · 长会话稳定性', () => {
     await enterDemoApp(page)
     await page.goto('/system/parameters', { waitUntil: 'domcontentloaded' })
     // 等待新建按钮出现
-    const createBtn = page.getByRole('button', { name: /新建|创建|新增|create/i }).first()
+    const createBtn = page.getByRole('button', { name: /新建|创建|新增/ }).first()
     await expect(createBtn).toBeVisible({ timeout: 5000 })
 
     const sampleSize = Number(process.env.SOAK_DIALOG_ROUNDS ?? '20')
