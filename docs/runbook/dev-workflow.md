@@ -73,11 +73,7 @@ tag `v*` push → staging-gate 自动跑 Playwright 真环境 e2e。
 
 ## Release(无 release 分支)
 
-```bash
-git checkout main && git pull
-git tag v1.3.0 && git push origin v1.3.0
-# release-please 自动出 changelog PR
-```
+在后端仓库手动运行 `prepare-platform-release`，按本周期变更选择 patch/minor/major；审核并合并前后端同版本 Release PR 后，再按[发布晋级手册](./release-promotion.md)完成 staging、验收和 tag。普通 PR 不递增版本，也不直接打 tag。
 
 ## Label automerge
 
@@ -93,7 +89,7 @@ git tag v1.3.0 && git push origin v1.3.0
 | **pr-gate** | PR → main / push main / 手动 | 单 job 跑 lint + typecheck + i18n + api-drift + unit + build + audit | ✓ |
 | **full-ci-gate** | PR → main / push main / 每周一 02:00 UTC / 手动 | PR 上执行范围适配的回归与审计；Docker build/Trivy/Lighthouse 仅在非 PR 事件运行。**main 守底** | — |
 | **staging-gate** | tag `v*` push + 手动 | 对真 staging URL 跑 Playwright 真环境 e2e + Lighthouse | — |
-| **release-please** ~2min | push main | 出 changelog PR + 自动准备 GitHub Release(tag + release notes)| — |
+| **prepare-platform-release** | 后端仓库手动触发 | 创建两仓同版本 Release PR；不打 tag、不发布 | 需配置 GitHub App |
 | **renovate** | Renovate 计划 | 自动开依赖升级 PR(类 Dependabot) | — |
 
 ### 一句话用法

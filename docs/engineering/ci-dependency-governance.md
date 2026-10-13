@@ -29,7 +29,7 @@
 | 仓库检出 | `actions/checkout` v7 对应 SHA | 跨仓文档检出同样使用该基线 |
 | Artifact | `actions/upload-artifact@v7`、`actions/download-artifact@v8` | 升级后必须验证跨 Job 上传、下载、解压和消费 |
 | Docker | QEMU/Buildx/Login v4、Metadata v6、Build Push v7 | 必须覆盖多架构构建、GHCR 登录和推送 |
-| 发布与更新 | Release Please v5、Renovate v46 | Renovate 使用精确版本，发布 Action 使用受支持主版本 |
+| 发布与更新 | GitHub App token Action v3、Renovate v46 | Renovate 使用精确版本，Action 使用受支持主版本；联合发布编排位于配对后端仓库 |
 | 安全与质量 | CodeQL、Trivy、Lighthouse | 版本变化必须保持原有阻断语义和报告产物 |
 
 所有外部 Action 必须固定到 40 位 commit SHA，保留版本注释供人工阅读；`docker://` Action 必须同时保留可读 tag 和不可变 digest。`scripts/check-workflows.mjs` 在本地与 CI 强制执行该约束。npm 包由 `package-lock.json` 的 integrity 校验，容器基础镜像由 tag + 多架构 manifest digest 锁定。
