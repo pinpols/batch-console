@@ -9,6 +9,7 @@ import { get, post, put } from '@/api/client'
 import type { components } from '@/types/api.generated'
 
 export type TenantStatus = components['schemas']['TenantStatus']
+export type TenantReadinessResult = components['schemas']['TenantReadinessResult']
 
 export interface Tenant {
   id?: number
@@ -109,6 +110,13 @@ export function listTenants(query: TenantListQuery = {}) {
 /** GET /api/console/tenants/{tenantId} */
 export function getTenant(tenantId: string) {
   return get<Tenant>(`/api/console/tenants/${encodeURIComponent(tenantId)}`)
+}
+
+/** GET /api/console/tenants/{tenantId}/readiness */
+export function getTenantReadiness(tenantId: string) {
+  return get<TenantReadinessResult>(
+    `/api/console/tenants/${encodeURIComponent(tenantId)}/readiness`,
+  )
 }
 
 /** POST /api/console/tenants */

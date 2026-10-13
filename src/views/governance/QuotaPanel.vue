@@ -74,11 +74,11 @@
               <div v-if="p.description" class="quota-card__desc">{{ p.description }}</div>
               <div class="quota-card__meta">
                 <span class="quota-card__chip">
-                  <span class="quota-card__chip-label">weight</span>
+                  <span class="quota-card__chip-label">{{ t('quotaPanel.chipWeight') }}</span>
                   <span class="quota-card__chip-value">{{ num(p.fairShareWeight) }}</span>
                 </span>
                 <span v-if="p.tenantId" class="quota-card__chip">
-                  <span class="quota-card__chip-label">tenant</span>
+                  <span class="quota-card__chip-label">{{ t('quotaPanel.chipTenant') }}</span>
                   <span class="quota-card__chip-value">{{ p.tenantId }}</span>
                 </span>
               </div>
@@ -126,7 +126,7 @@
                   <DatetimeText :value="p.updatedAt" />
                 </el-descriptions-item>
                 <el-descriptions-item :label="t('quotaPanel.fieldEnabled')">
-                  {{ p.enabled ? 'true' : 'false' }}
+                  {{ p.enabled ? t('quotaPanel.switchOn') : t('quotaPanel.switchOff') }}
                 </el-descriptions-item>
               </el-descriptions>
             </el-collapse-item>

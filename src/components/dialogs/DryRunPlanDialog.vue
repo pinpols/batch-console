@@ -6,7 +6,7 @@
     :close-on-click-modal="false"
     @closed="onClosed"
   >
-    <el-form label-width="100px" label-position="left">
+    <el-form class="form-preserve-label-position" label-width="100px" label-position="left">
       <el-form-item :label="t('dryRunDialog.levelLabel')">
         <el-radio-group v-model="level">
           <el-radio-button value="CONFIG_VALIDATE">

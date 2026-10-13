@@ -205,13 +205,33 @@
             </button>
             <template #dropdown>
               <el-dropdown-menu>
-                <el-dropdown-item command="profile" :icon="Key">
+                <el-dropdown-item
+                  command="profile"
+                  :icon="Key"
+                  :aria-label="t('nav.permissionAudit')"
+                >
                   {{ t('nav.permissionAudit') }}
                 </el-dropdown-item>
-                <el-dropdown-item command="onboarding" :icon="Compass">
-                  {{ t('nav.onboarding') }}
+                <el-dropdown-item
+                  command="onboarding-center"
+                  :icon="Compass"
+                  :aria-label="t('nav.onboardingCenter')"
+                >
+                  {{ t('nav.onboardingCenter') }}
                 </el-dropdown-item>
-                <el-dropdown-item command="logout" :icon="SwitchButton" divided>
+                <el-dropdown-item
+                  command="onboarding-tour"
+                  :icon="Reading"
+                  :aria-label="t('nav.interfaceTour')"
+                >
+                  {{ t('nav.interfaceTour') }}
+                </el-dropdown-item>
+                <el-dropdown-item
+                  command="logout"
+                  :icon="SwitchButton"
+                  :aria-label="t('nav.logout')"
+                  divided
+                >
                   {{ t('nav.logout') }}
                 </el-dropdown-item>
               </el-dropdown-menu>
@@ -249,7 +269,7 @@
   import TenantSelect from '@/components/common/TenantSelect.vue'
   import NotificationCenter from './NotificationCenter.vue'
   import { useHeaderLogic } from '@/layout/composables/useHeaderLogic'
-  import { computed, defineAsyncComponent, onMounted, ref, watch } from 'vue'
+  import { computed, defineAsyncComponent, nextTick, onMounted, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { useLocale } from '@/composables/useLocale'
   import { useMobileBadgesStore } from '@/stores/mobileBadges'
@@ -397,11 +417,21 @@
       void router.push('/system/users')
       return
     }
-    if (command === 'onboarding') {
+    if (command === 'onboarding-center') {
+      await router.push({ path: '/ops/summary', query: { onboarding: '1' } })
+      return
+    }
+    if (command === 'onboarding-tour') {
       // 等下拉菜单完成关闭后再启动,避免 popper 与引导层争夺焦点和定位。
       const { resetOnboarding, startOnboarding } = await import('@/composables/useOnboardingTour')
-      resetOnboarding()
-      window.requestAnimationFrame(() => startOnboarding())
+      const identity = {
+        userId: auth.userInfo?.userId ?? '',
+        tenantId: tenant.tenantId,
+      }
+      resetOnboarding(identity)
+      await router.push({ path: '/ops/summary', query: { onboarding: '1' } })
+      await nextTick()
+      window.requestAnimationFrame(() => startOnboarding(identity))
       return
     }
     if (command === 'logout') {

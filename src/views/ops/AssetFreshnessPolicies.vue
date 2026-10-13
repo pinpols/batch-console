@@ -107,7 +107,7 @@
       direction="rtl"
       size="520px"
     >
-      <el-form label-width="150px" :model="form" @submit.prevent="save">
+      <el-form id="asset-freshness-form" label-width="150px" :model="form" @submit.prevent="save">
         <el-form-item :label="t('assetFreshness.assetCode')" required>
           <el-input
             v-model="form.assetCode"
@@ -151,8 +151,15 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="drawerOpen = false">{{ t('common.cancel') }}</el-button>
-        <el-button type="primary" :loading="saving" @click="save">
+        <el-button native-type="button" @click="drawerOpen = false">{{
+          t('common.cancel')
+        }}</el-button>
+        <el-button
+          type="primary"
+          native-type="submit"
+          form="asset-freshness-form"
+          :loading="saving"
+        >
           {{ t('common.save') }}
         </el-button>
       </template>

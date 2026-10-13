@@ -15,24 +15,25 @@
       <!-- prepend(已保存筛选等辅助控件)与操作按钮同行,不再占字段格(label 上置布局下孤格突兀) -->
       <slot name="prepend" />
       <!-- 收起/展开筛选:放操作组最左(用户反馈),笔记本首屏省 ~113px 竖向空间,状态按路由持久化 -->
-      <el-button v-if="collapsible" text class="query-collapse-toggle" @click="toggleCollapsed">
+      <el-button
+        v-if="collapsible"
+        text
+        native-type="button"
+        class="query-collapse-toggle"
+        :aria-expanded="!collapsed"
+        @click="toggleCollapsed"
+      >
         {{ collapsed ? t('proTable.filterExpand') : t('proTable.filterCollapse') }}
         <el-icon class="query-collapse-toggle__chev" :class="{ 'is-collapsed': collapsed }">
           <ChevronUp />
         </el-icon>
       </el-button>
+      <span v-if="collapsible && collapsed" class="query-collapsed-hint" role="status">
+        {{ t('proTable.filtersHidden') }}
+      </span>
       <el-button
-        v-if="showSearch && !(collapsible && collapsed)"
-        type="primary"
-        :icon="Search"
-        :loading="filterBusy"
-        :disabled="disabled"
-        @click="emit('search')"
-      >
-        {{ t('common.search') }}
-      </el-button>
-      <el-button
-        v-if="showReset && !(collapsible && collapsed)"
+        v-if="showReset"
+        native-type="button"
         :icon="RefreshLeft"
         :loading="filterBusy"
         :disabled="disabled"
@@ -42,12 +43,23 @@
       </el-button>
       <el-button
         v-if="showRefresh"
+        native-type="button"
         :icon="Refresh"
         :loading="refreshLoading"
         :disabled="disabled"
         @click="emit('refresh')"
       >
         {{ t('common.refresh') }}
+      </el-button>
+      <el-button
+        v-if="showSearch && !(collapsible && collapsed)"
+        type="primary"
+        native-type="submit"
+        :icon="Search"
+        :loading="filterBusy"
+        :disabled="disabled"
+      >
+        {{ t('common.search') }}
       </el-button>
     </el-form-item>
   </el-form>
@@ -191,6 +203,11 @@
   }
   .query-collapse-toggle__chev.is-collapsed {
     transform: rotate(180deg);
+  }
+  .query-collapsed-hint {
+    color: var(--color-text-tertiary);
+    font-size: var(--font-size-sm);
+    white-space: nowrap;
   }
 
   @media (max-width: 720px) {

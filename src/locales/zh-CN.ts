@@ -10,6 +10,7 @@ import userBatch from './userBatch.zh-CN.ts'
 import userAccountList from './userAccountList.zh-CN.ts'
 import tenantPackageImportWizard from './tenantPackageImportWizard.zh-CN.ts'
 import workflowDesignerDependency from './workflowDesignerDependency.zh-CN.ts'
+import onboardingCenter from './onboardingCenter.zh-CN.ts'
 
 export default {
   print: {
@@ -688,6 +689,7 @@ export default {
     loadFailed: '加载失败,请重试',
     filterCollapse: '收起',
     filterExpand: '展开筛选',
+    filtersHidden: '筛选条件已收起',
     loadingMore: '加载中…',
     columnSettings: {
       trigger: '列设置',
@@ -887,13 +889,10 @@ export default {
     step1Desc: '所有数据按租户隔离。先在这里选一个租户,业务页才会有数据;系统管理员可随时切换。',
     step2Title: '命令面板',
     step2Desc: '⌘/Ctrl + K 任何时候唤出,搜索菜单 / 跳转页面 / 切换租户。',
-    step3Title: '文档中心',
-    step3Desc: '打开顶部工具菜单可查 ADR / 架构 / 运维手册 / 字段说明,也可进入移动端预览。',
-    step4Title: '账户菜单',
-    step4Desc: '右上角查看正式角色、打开权限自查或退出登录。',
-    step5Title: '收起 / 展开侧边栏',
-    step5Desc: '侧边栏底部按钮控制菜单栏,内容区需要更多空间时可以收起。',
+    step3Title: '业务引导中心',
+    step3Desc: '这里按你的角色列出下一项任务，并根据真实配置、Worker 与运行结果自动更新进度。',
   },
+  onboardingCenter,
   dateRangePicker: {
     invalidLocalTime: '所选时间在当前时区不存在，请重新选择',
     rangeSeparator: '至',
@@ -953,7 +952,8 @@ export default {
     switchToThemeDark: '切换深色',
     switchToThemeSystem: '跟随系统',
     permissionAudit: '权限自查',
-    onboarding: '重看引导',
+    onboardingCenter: '业务引导中心',
+    interfaceTour: '重看界面导览',
     confirmLogout: '确认退出登录?',
     tenant: '租户',
     tenantCurrent: '当前租户',
@@ -2173,6 +2173,8 @@ export default {
     empty: '暂无配额策略',
     switchOn: '启用',
     switchOff: '停用',
+    chipWeight: '权重',
+    chipTenant: '租户',
     kpiConcurrent: '并发上限',
     kpiQps: 'QPS',
     kpiPartitions: '分片上限',
@@ -5364,18 +5366,6 @@ export default {
     tabDist: '分布',
     tabExtra: '扩展面板',
     errorDesc: '暂无数据或请求失败。请确认租户、网络和网关状态。',
-    // P2.1 全新租户引导
-    onboardingEyebrow: '开始接入',
-    onboardingTitle: '当前租户暂无运行数据',
-    onboardingDesc: '核心指标当前均为 0,可从以下任一入口开始初始化。',
-    onboardingImport: '导入配置包',
-    onboardingImportDesc: '上传 Excel 配置包,一次性导入作业、队列和文件模板',
-    onboardingNewJob: '新建作业定义',
-    onboardingNewJobDesc: '创建首个作业,适合快速验证调度链路',
-    onboardingTenant: '管理租户',
-    onboardingTenantDesc: '切换或创建业务租户,隔离不同业务环境',
-    onboardingWorker: '管理 Worker',
-    onboardingWorkerDesc: '查看 Worker 在线状态,确认执行资源就绪',
     // 图表图例 / 占位文案
     legendNow: '当前',
     legendRunning: '运行中',
@@ -5799,6 +5789,7 @@ export default {
     eventCatalogAction: '事件目录',
     tabChannels: '通知渠道',
     tabRules: '订阅规则',
+    tabWebhooks: 'Webhook',
     tabDeliveryLogs: '投递日志',
   },
   selfServicePanel: {

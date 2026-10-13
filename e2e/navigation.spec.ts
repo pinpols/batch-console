@@ -93,4 +93,23 @@ test.describe('navigation and tabs', () => {
     await page.keyboard.press('Escape')
     await expect(page.getByPlaceholder(/搜索页面/)).toBeHidden()
   })
+
+  test('业务引导中心展示可执行任务并支持稍后继续', async ({ page }) => {
+    await expect(page.getByRole('heading', { name: '完成平台首条可运行链路' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: '确定工作租户' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: '创建作业配置' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: '完成首个成功运行' })).toBeVisible()
+    await expect(page.getByRole('button', { name: /新建作业/ })).toBeVisible()
+
+    await expect(page.getByText('第一步:选择租户')).toBeVisible()
+    await page.keyboard.press('Escape')
+
+    await page.getByRole('button', { name: '稍后提醒' }).click()
+    await expect(page.getByRole('button', { name: '继续配置' })).toBeVisible()
+
+    await page.getByRole('button', { name: /navigation-admin.*平台管理员/ }).click()
+    await page.getByRole('menuitem', { name: '业务引导中心' }).click()
+    await expect(page).toHaveURL(/\/ops\/summary\?onboarding=1/)
+    await expect(page.getByRole('heading', { name: '完成平台首条可运行链路' })).toBeVisible()
+  })
 })

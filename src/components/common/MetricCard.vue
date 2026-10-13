@@ -60,7 +60,7 @@
   /* 严格对齐设计:bg #1b1d23 / radius 12px / padding 16 18 14 / shadow 0 1px 2px rgba(0,0,0,.25) */
   .metric-card {
     border: 1px solid var(--color-border);
-    border-radius: 12px;
+    border-radius: var(--radius-content);
     overflow: hidden;
     position: relative;
     min-height: 112px;
@@ -132,7 +132,7 @@
   }
 
   .metric-card__value--long {
-    font-size: 18px;
+    font-size: var(--font-size-xl);
     line-height: 1.2;
     font-family:
       ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
