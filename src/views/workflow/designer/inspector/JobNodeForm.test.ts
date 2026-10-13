@@ -64,7 +64,6 @@ vi.mock('@/composables/useJobCodeOptions', async () => {
   return {
     useJobCodeOptions: () => ({
       loading: ref(false),
-      downstreamLoading: ref(false),
       options: ref(['job-a', 'job-b']),
       load: vi.fn().mockResolvedValue(['job-a', 'job-b']),
       clear: vi.fn(),
@@ -77,6 +76,7 @@ vi.mock('@/composables/useJobDefinitionDependencies', async () => {
   return {
     useJobDefinitionDependencies: () => ({
       loading: ref(false),
+      downstreamLoading: ref(false),
       hasError: ref(false),
       definition: ref(null),
       upstream: ref(null),

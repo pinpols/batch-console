@@ -89,6 +89,23 @@ describe('useJobDefinitionDependencies', () => {
     expect(overview.downstreamTotal.value).toBe(0)
   })
 
+  it('does not let an older failed lookup mark the newer job request as failed', async () => {
+    let rejectOldDefinition: ((error: Error) => void) | undefined
+    listDefinitionsPaged
+      .mockImplementationOnce(() => new Promise((_, reject) => (rejectOldDefinition = reject)))
+      .mockResolvedValueOnce({ records: [{ jobCode: 'NEW_JOB' }], total: 1 })
+      .mockResolvedValueOnce({ records: [], total: 0 })
+    const overview = useJobDefinitionDependencies()
+    const oldLoad = overview.load('tenant-a', 'OLD_JOB')
+    await overview.load('tenant-a', 'NEW_JOB')
+
+    rejectOldDefinition?.(new Error('stale lookup failed'))
+    await oldLoad
+
+    expect(overview.definition.value?.jobCode).toBe('NEW_JOB')
+    expect(overview.hasError.value).toBe(false)
+  })
+
   it('shows loading for downstream paging and records a failed page request', async () => {
     listDefinitionsPaged
       .mockResolvedValueOnce({ records: [{ jobCode: 'JOB_A' }], total: 1 })
