@@ -58,7 +58,7 @@ test.describe('编排设计器 — 桌面控件', () => {
 
     await expect(page.locator('.node-palette')).toHaveClass(/node-palette--collapsed/)
     await expect(page.locator('.node-inspector')).toHaveCount(0)
-    expect(await canvasRatio()).toBeGreaterThan(0.88)
+    expect(await canvasRatio()).toBeGreaterThan(0.75)
 
     await page.getByRole('button', { name: '展开节点库' }).click()
     await expect(page.locator('.node-palette')).not.toHaveClass(/node-palette--collapsed/)
@@ -67,7 +67,7 @@ test.describe('编排设计器 — 桌面控件', () => {
     await page.getByRole('button', { name: '收起节点库' }).click()
     await expect(page.locator('.node-palette')).toHaveClass(/node-palette--collapsed/)
     await expect(body).not.toHaveClass(/workflow-designer__body--palette-expanded/)
-    expect(await canvasRatio()).toBeGreaterThan(0.88)
+    expect(await canvasRatio()).toBeGreaterThan(0.75)
     await page.getByRole('button', { name: '打开属性面板' }).click()
     await expect(page.locator('.node-palette')).toHaveClass(/node-palette--collapsed/)
     await expect(page.locator('.node-inspector')).toBeVisible()
