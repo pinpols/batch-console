@@ -354,6 +354,9 @@ const messages: Messages = {
       closeInspector: 'Close properties panel',
       enterFocusMode: 'Focus canvas',
       exitFocusMode: 'Exit canvas focus',
+      zoomIn: 'Zoom in',
+      zoomOut: 'Zoom out',
+      fitCanvas: 'Fit all jobs',
     },
     validation: {
       missingStart: 'Missing START node',

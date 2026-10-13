@@ -2,6 +2,7 @@
   import { nextTick, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
+  import { Maximize2, ZoomIn, ZoomOut } from '@lucide/vue'
   import { getTeleport } from '@antv/x6-vue-shape'
   import { useDesignerStore } from '../store/useDesignerStore'
   import { useX6Graph } from './useX6Graph'
@@ -20,10 +21,12 @@
 
   defineExpose({
     /** 暴露给 toolbar 的自动布局入口(Polish 阶段支持方向参数) */
-    autoLayout: (direction: 'TB' | 'LR' = 'TB', recordUndo = true) =>
+    autoLayout: (direction: 'TB' | 'LR' = 'LR', recordUndo = true) =>
       handle.autoLayout(direction, recordUndo),
     /** 将全部节点完整放进当前画布视口。 */
     fitToViewport: () => handle.fitToViewport(),
+    zoomIn: () => handle.zoomIn(),
+    zoomOut: () => handle.zoomOut(),
     /** 校验错误列表点击 → 居中并选中该节点 */
     focusNode: (nodeId: string) => handle.focusNode(nodeId),
     /** 连线校验错误列表点击 → 居中并选中该连线 */
@@ -84,6 +87,42 @@
     @keydown="onKeyDown"
   >
     <div ref="containerRef" class="dag-canvas__graph" />
+    <div
+      class="dag-canvas__zoom"
+      role="group"
+      :aria-label="t('workflowDesignerSpike.canvasAriaLabel')"
+    >
+      <el-tooltip :content="t('workflowDesignerMvp.layout.zoomIn')" placement="right">
+        <el-button
+          text
+          circle
+          size="small"
+          :icon="ZoomIn"
+          :aria-label="t('workflowDesignerMvp.layout.zoomIn')"
+          @click="handle.zoomIn()"
+        />
+      </el-tooltip>
+      <el-tooltip :content="t('workflowDesignerMvp.layout.zoomOut')" placement="right">
+        <el-button
+          text
+          circle
+          size="small"
+          :icon="ZoomOut"
+          :aria-label="t('workflowDesignerMvp.layout.zoomOut')"
+          @click="handle.zoomOut()"
+        />
+      </el-tooltip>
+      <el-tooltip :content="t('workflowDesignerMvp.layout.fitCanvas')" placement="right">
+        <el-button
+          text
+          circle
+          size="small"
+          :icon="Maximize2"
+          :aria-label="t('workflowDesignerMvp.layout.fitCanvas')"
+          @click="handle.fitToViewport()"
+        />
+      </el-tooltip>
+    </div>
     <div class="dag-canvas__legend" :aria-label="t('workflowDesignerMvp.edgeLegendAria')">
       <span class="dag-canvas__legend-item">
         <i class="dag-canvas__legend-line dag-canvas__legend-line--success" />
@@ -140,6 +179,22 @@
     font-size: 11px;
     line-height: 1;
     pointer-events: none;
+  }
+  .dag-canvas__zoom {
+    position: absolute;
+    left: 12px;
+    bottom: 16px;
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    padding: 3px;
+    border: 1px solid var(--color-border-light);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--color-bg-card) 96%, transparent);
+    box-shadow: 0 1px 3px color-mix(in srgb, #1f2328 8%, transparent);
+  }
+  .dag-canvas__zoom :deep(.el-button) {
+    margin: 0;
   }
   .dag-canvas__legend-item {
     display: inline-flex;

@@ -122,10 +122,10 @@
   .node-palette {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
     width: 100%;
     min-width: 0;
-    padding: 12px;
+    padding: 8px;
     border: 1px solid var(--color-border);
     border-radius: 10px;
     background: var(--color-bg-card);
@@ -133,8 +133,8 @@
   }
   .node-palette--collapsed {
     align-items: center;
-    gap: 8px;
-    padding: 8px 6px;
+    gap: 6px;
+    padding: 6px 4px;
   }
   .node-palette__header {
     display: flex;
@@ -186,9 +186,9 @@
 
   .node-palette--collapsed .palette-item {
     justify-content: center;
-    width: 40px;
-    height: 40px;
-    min-height: 40px;
+    width: 34px;
+    height: 34px;
+    min-height: 34px;
     padding: 0;
   }
 
@@ -210,8 +210,8 @@
 
   .palette-item__icon {
     flex: 0 0 auto;
-    width: 17px;
-    height: 17px;
+    width: 15px;
+    height: 15px;
     color: var(--palette-accent);
   }
   .palette-item__label {

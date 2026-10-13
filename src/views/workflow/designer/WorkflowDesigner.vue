@@ -107,10 +107,10 @@
   // Polish 阶段:Ctrl+K 节点 palette / 模板库 / dagre 布局方向开关
   const quickPaletteVisible = ref(false)
   const templateLibraryVisible = ref(false)
-  const layoutDirection = ref<'TB' | 'LR'>('TB')
+  const layoutDirection = ref<'TB' | 'LR'>('LR')
   const canvasCenter = ref<{ x: number; y: number }>({ x: 320, y: 200 })
   const jsonPanelCollapsed = ref(true)
-  const paletteCollapsed = ref(false)
+  const paletteCollapsed = ref(true)
   const inspectorExpanded = ref(false)
   const focusMode = ref(false)
 
@@ -315,6 +315,9 @@
         version: detail.version,
       })
       await nextTick()
+      // 加载时仅调整初始视图，不形成用户编辑/撤销记录；默认以横向作业链呈现。
+      canvasRef.value?.autoLayout(layoutDirection.value, false)
+      store.markClean()
       canvasRef.value?.fitToViewport()
       await lockMgr.acquire(id, tenantStore.tenantId)
     } catch (err) {
@@ -748,7 +751,7 @@
     background: var(--color-bg-page);
   }
   .workflow-designer__body {
-    --designer-palette-width: 56px;
+    --designer-palette-width: 44px;
     --designer-inspector-width: 0px;
 
     display: grid;
@@ -758,16 +761,16 @@
     flex: 1 1 auto;
     min-height: 0;
     min-width: 0;
-    gap: 10px;
-    padding: 12px;
+    gap: 8px;
+    padding: 8px;
     overflow: hidden;
     transition: grid-template-columns 160ms ease;
   }
   .workflow-designer__body--palette-expanded {
-    --designer-palette-width: 188px;
+    --designer-palette-width: 168px;
   }
   .workflow-designer__body--inspector-visible {
-    --designer-inspector-width: 320px;
+    --designer-inspector-width: 280px;
   }
   .workflow-designer__body--focus {
     --designer-palette-width: 0px;
@@ -897,10 +900,10 @@
 
   @media (max-width: 1100px) {
     .workflow-designer__body--palette-expanded {
-      --designer-palette-width: 168px;
+      --designer-palette-width: 152px;
     }
     .workflow-designer__body--inspector-visible {
-      --designer-inspector-width: 280px;
+      --designer-inspector-width: 260px;
     }
   }
 
@@ -913,10 +916,10 @@
       overflow: auto;
     }
     .workflow-designer__body--palette-expanded {
-      --designer-palette-width: 132px;
+      --designer-palette-width: 128px;
     }
     .workflow-designer__body--inspector-visible {
-      --designer-inspector-width: 250px;
+      --designer-inspector-width: 240px;
     }
   }
 </style>

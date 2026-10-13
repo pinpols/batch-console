@@ -111,10 +111,12 @@ function togglePorts(graph: Graph, nodeId: string, hovered: boolean) {
 
 export interface X6GraphHandle {
   graph: Graph | null
-  /** Polish 阶段:可选 dagre 布局方向(TB 默认 / LR 左右),不传保持原行为 */
+  /** 可选 dagre 布局方向(LR 横向 / TB 纵向);recordUndo=false 用于初始视图和自动重排。 */
   autoLayout: (direction?: 'TB' | 'LR', recordUndo?: boolean) => void
   /** 将全部节点缩放并居中到当前画布视口,避免加载或自动布局后节点被裁切。 */
   fitToViewport: () => void
+  zoomIn: () => void
+  zoomOut: () => void
   /** 把指定节点居中到视口并选中(校验错误列表点击定位用);节点不存在则 no-op */
   focusNode: (nodeId: string) => void
   /** 把指定连线居中到视口并选中(边校验错误定位用);连线不存在则 no-op */
@@ -132,6 +134,8 @@ export function useX6Graph(
     graph: null,
     autoLayout: () => {},
     fitToViewport: () => {},
+    zoomIn: () => {},
+    zoomOut: () => {},
     focusNode: () => {},
     focusEdge: () => {},
     getViewportCenter: () => ({ x: 320, y: 200 }),
@@ -187,6 +191,16 @@ export function useX6Graph(
     })
   }
   handle.fitToViewport = fitToViewport
+
+  function zoomIn() {
+    handle.graph?.zoom(0.2, { maxScale: 2 })
+  }
+  handle.zoomIn = zoomIn
+
+  function zoomOut() {
+    handle.graph?.zoom(-0.2, { minScale: 0.2 })
+  }
+  handle.zoomOut = zoomOut
 
   /**
    * 把 store 状态 → X6 cells(全量替换)。
@@ -272,11 +286,10 @@ export function useX6Graph(
     }
   }
 
-  function autoLayout(direction: 'TB' | 'LR' = 'TB', recordUndo = true) {
-    if (!handle.graph || !store.editable) {
-      if (!store.editable) {
-        ElMessage.warning(i18n.global.t('workflowDesignerMvp.lock.readonlyGuard'))
-      }
+  function autoLayout(direction: 'TB' | 'LR' = 'LR', recordUndo = true) {
+    if (!handle.graph) return
+    if (recordUndo && !store.editable) {
+      ElMessage.warning(i18n.global.t('workflowDesignerMvp.lock.readonlyGuard'))
       return
     }
     const g = new dagre.graphlib.Graph()

@@ -352,6 +352,9 @@ export default {
       closeInspector: '关闭属性面板',
       enterFocusMode: '专注画布',
       exitFocusMode: '退出专注画布',
+      zoomIn: '放大画布',
+      zoomOut: '缩小画布',
+      fitCanvas: '适配全部作业',
     },
     validation: {
       missingStart: '缺少 START 节点',
