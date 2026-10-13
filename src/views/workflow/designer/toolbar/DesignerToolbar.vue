@@ -244,16 +244,21 @@
   .designer-toolbar {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 8px 16px;
+    gap: 6px;
+    padding: 10px 16px;
     border-bottom: 1px solid var(--color-border);
-    background: var(--color-bg-overlay, #fff);
+    background: var(--color-bg-card, #fff);
+    box-shadow: 0 1px 0 color-mix(in srgb, var(--color-border) 72%, transparent);
     min-width: 0;
   }
   .designer-toolbar__group {
     display: flex;
     align-items: center;
     gap: 8px;
+  }
+  .designer-toolbar :deep(.el-divider--vertical) {
+    margin: 0 4px;
+    border-color: var(--color-border-light);
   }
   .designer-toolbar__spacer {
     flex: 1 1 auto;
@@ -272,14 +277,25 @@
   .designer-toolbar__save-btn {
     font-weight: 600;
   }
-  /* 窄屏:工具栏换行,文字按钮折叠为纯 icon(title/tooltip 兜底语义) */
+  /* 侧栏展开时内容区会比视口窄，常规笔记本宽度提前收起按钮文字。 */
+  @media (max-width: 1366px) {
+    .designer-toolbar__btn-text {
+      display: none;
+    }
+    .designer-toolbar__save-btn .designer-toolbar__btn-text,
+    .designer-toolbar__group:first-child .designer-toolbar__btn-text {
+      display: inline;
+    }
+    .designer-toolbar__search {
+      max-width: 180px;
+    }
+  }
+
+  /* 窄桌面允许工具栏换行，保留所有操作的可达性。 */
   @media (max-width: 1024px) {
     .designer-toolbar {
       flex-wrap: wrap;
       row-gap: 8px;
-    }
-    .designer-toolbar__btn-text {
-      display: none;
     }
     .designer-toolbar__spacer {
       flex-basis: 100%;

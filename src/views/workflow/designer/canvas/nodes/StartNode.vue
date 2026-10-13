@@ -14,12 +14,13 @@
   )
   const data = getNode?.()?.getData?.()
   const hasError = computed(() => (data?.id ? store.errorNodeIds.has(data.id) : false))
+  const isSelected = computed(() => (data?.id ? store.selectedIds.has(data.id) : false))
 </script>
 
 <template>
   <div
     class="designer-node designer-node--start"
-    :class="{ 'designer-node--error': hasError }"
+    :class="{ 'designer-node--error': hasError, 'designer-node--selected': isSelected }"
     role="img"
     :aria-label="t('workflowDesignerSpike.nodeStart')"
   >
@@ -50,6 +51,9 @@
   }
   .designer-node--start:hover {
     box-shadow: 0 0 0 3px var(--wf-node-start-light);
+  }
+  .designer-node--selected {
+    box-shadow: 0 0 0 4px var(--color-primary-light-8) !important;
   }
   .designer-node--error {
     border-color: var(--wf-node-error) !important;

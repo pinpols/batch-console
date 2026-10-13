@@ -1,6 +1,5 @@
 <script setup lang="ts">
   import { useI18n } from 'vue-i18n'
-  import { ElMessage } from 'element-plus'
   import type { Component } from 'vue'
   import {
     FileInput,
@@ -65,24 +64,8 @@
     },
   ]
 
-  function onDragStart(ev: DragEvent, type: DesignerNodeType) {
-    // P1 只读守卫:未持锁 / 他人持锁时禁止从节点库拖出
-    if (!store.editable) {
-      ev.preventDefault()
-      ElMessage.warning(t('workflowDesignerMvp.lock.readonlyGuard'))
-      return
-    }
-    if (!ev.dataTransfer) return
-    ev.dataTransfer.effectAllowed = 'copy'
-    ev.dataTransfer.setData('application/x-designer-node-type', type)
-  }
-
   function onClickAdd(type: DesignerNodeType) {
-    // P1 只读守卫:未持锁 / 他人持锁时禁止点击添加
-    if (!store.editable) {
-      ElMessage.warning(t('workflowDesignerMvp.lock.readonlyGuard'))
-      return
-    }
+    if (!store.editable) return
     emit('add', type)
   }
 </script>
@@ -124,10 +107,9 @@
       type="button"
       class="palette-item"
       :class="item.styleClass"
-      draggable="true"
+      :disabled="!store.editable"
       :aria-label="t(item.labelKey)"
       :title="t('workflowDesignerSpike.paletteAddHint')"
-      @dragstart="onDragStart($event, item.type)"
       @click="onClickAdd(item.type)"
     >
       <component :is="item.icon" class="palette-item__icon" aria-hidden="true" />
@@ -143,11 +125,11 @@
     gap: 10px;
     width: 100%;
     min-width: 0;
-    padding: 10px;
-    border: 1px solid var(--color-border-light);
-    border-right: none;
-    border-radius: var(--radius-content) 0 0 var(--radius-content);
+    padding: 12px;
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
     background: var(--color-bg-card);
+    box-shadow: 0 1px 2px color-mix(in srgb, #1f2328 6%, transparent);
   }
   .node-palette--collapsed {
     align-items: center;
@@ -166,8 +148,8 @@
   }
   .node-palette__title {
     font-size: 13px;
-    font-weight: 650;
-    color: var(--color-text-secondary, #606266);
+    font-weight: 700;
+    color: var(--color-text-primary);
     margin-bottom: 0;
   }
   .node-palette__hint {
@@ -179,18 +161,18 @@
     --palette-accent: var(--color-text-tertiary);
 
     position: relative;
-    min-height: 42px;
-    padding: 8px 10px;
-    border-radius: var(--radius-content);
+    min-height: 44px;
+    padding: 8px 10px 8px 14px;
+    border-radius: 8px;
     font-size: 13px;
     font-weight: 600;
     text-align: left;
-    cursor: grab;
+    cursor: pointer;
     user-select: none;
     width: 100%;
     font: inherit;
     border: 1px solid var(--color-border-light);
-    background: color-mix(in srgb, var(--color-bg-canvas) 68%, var(--color-bg-card) 32%);
+    background: var(--color-bg-card);
     color: var(--color-text-secondary);
     overflow-wrap: anywhere;
     display: flex;
@@ -213,10 +195,10 @@
   .palette-item::before {
     content: '';
     position: absolute;
-    left: 10px;
+    left: 7px;
     top: 50%;
     width: 3px;
-    height: 16px;
+    height: 22px;
     border-radius: var(--radius-pill);
     background: var(--palette-accent);
     transform: translateY(-50%);
@@ -243,8 +225,12 @@
   }
 
   .palette-item:active {
-    cursor: grabbing;
     background: color-mix(in srgb, var(--palette-accent) 10%, var(--color-bg-card) 90%);
+  }
+
+  .palette-item:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
   }
 
   .palette-item:focus-visible {

@@ -1,0 +1,26 @@
+export default {
+  graphStats: '{nodes} 个节点 · {edges} 条依赖',
+  autoConnect: {
+    connected: '节点已加入，依赖关系和布局已自动更新',
+    duplicateStart: '工作流只能有一个 START 节点',
+    multipleSelection: '请只选中一个节点或一条连线作为插入位置',
+    selectInsertionPoint: '请先选中上游节点或要插入的连线',
+    cannotAppendAfterEnd: 'END 是终点，不能继续添加下游节点',
+    cannotInsertTerminal: 'END 不能插入依赖中间，请选中上游节点后添加',
+    invalidPlacement: '该位置无法生成合法依赖，请重新选择插入位置',
+  },
+  dependency: {
+    createTitle: '新增依赖',
+    createAction: '新增依赖',
+    createHint: '依赖会按工作流规则校验；不允许重复、自环、START 入边、END 出边或形成环。',
+    created: '依赖已新增',
+    updated: '依赖上下游已更新',
+    deleted: '依赖已删除，可使用撤销恢复',
+    deleteAction: '删除依赖',
+    invalidEndpoint: '该上下游组合不合法；START 不能作为下游，END 不能作为上游',
+    duplicate: '相同上下游的依赖已存在',
+    cycle: '该调整会形成环，DAG 工作流不允许循环依赖',
+  },
+  deleteNodeAction: '删除节点',
+  nodeDeleted: '节点及其 {count} 条关联依赖已删除，可使用撤销恢复',
+}

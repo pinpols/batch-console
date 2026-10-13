@@ -79,7 +79,7 @@ const PORT_ATTRS = {
     stroke: 'var(--color-primary, #1668e3)',
     strokeWidth: 1.5,
     fill: 'var(--color-bg-card, #fff)',
-    opacity: 0.45,
+    opacity: 0,
   },
 } as const
 const PORT_GROUPS = {
@@ -100,19 +100,19 @@ function portsOf(type: DesignerNodeType) {
   return { groups: PORT_GROUPS, items }
 }
 
-/** hover 全亮 / 离开半透明 连接桩(常态即可见可抓,hover 强调) */
+/** 手工连线降为高级能力：常态隐藏连接桩，hover 节点时才显示。 */
 function togglePorts(graph: Graph, nodeId: string, hovered: boolean) {
   const node = graph.getCellById(nodeId)
   if (!node || !node.isNode()) return
   for (const port of node.getPorts()) {
-    node.setPortProp(port.id as string, 'attrs/circle/opacity', hovered ? 1 : 0.45)
+    node.setPortProp(port.id as string, 'attrs/circle/opacity', hovered ? 0.9 : 0)
   }
 }
 
 export interface X6GraphHandle {
   graph: Graph | null
   /** Polish 阶段:可选 dagre 布局方向(TB 默认 / LR 左右),不传保持原行为 */
-  autoLayout: (direction?: 'TB' | 'LR') => void
+  autoLayout: (direction?: 'TB' | 'LR', recordUndo?: boolean) => void
   /** 将全部节点缩放并居中到当前画布视口,避免加载或自动布局后节点被裁切。 */
   fitToViewport: () => void
   /** 把指定节点居中到视口并选中(校验错误列表点击定位用);节点不存在则 no-op */
@@ -240,7 +240,11 @@ export function useX6Graph(
         })
       }
       for (const e of store.edges) {
-        const presentation = edgeCanvasAttrs(e, store.errorEdgeIds.has(e.id))
+        const presentation = edgeCanvasAttrs(
+          e,
+          store.errorEdgeIds.has(e.id),
+          store.selectedIds.has(e.id),
+        )
         const labels = presentation.label.text.text ? [{ attrs: presentation.label }] : []
         const existing = graph.getCellById(e.id)
         if (existing?.isEdge()) {
@@ -268,7 +272,7 @@ export function useX6Graph(
     }
   }
 
-  function autoLayout(direction: 'TB' | 'LR' = 'TB') {
+  function autoLayout(direction: 'TB' | 'LR' = 'TB', recordUndo = true) {
     if (!handle.graph || !store.editable) {
       if (!store.editable) {
         ElMessage.warning(i18n.global.t('workflowDesignerMvp.lock.readonlyGuard'))
@@ -306,7 +310,7 @@ export function useX6Graph(
       return
     }
     // 自动布局是一次用户操作，整批坐标变更只压入一个撤销快照。
-    store.pushUndo()
+    if (recordUndo) store.pushUndo()
     for (const position of nextPositions) {
       store.moveNode(position.id, position.x, position.y)
     }
@@ -325,8 +329,8 @@ export function useX6Graph(
       autoResize: true,
       // --color-bg-canvas 是已定义且暗色感知的画布底色(light #e9eef5 / dark #0b0f14);
       // 原 --color-bg-base 未定义 → 暗色下回退 #fafafa 变浅色画布。
-      background: { color: 'var(--color-bg-canvas, #e9eef5)' },
-      grid: { visible: true, type: 'dot', size: 10 },
+      background: { color: 'var(--color-bg-subtle, #f6f8fa)' },
+      grid: { visible: true, type: 'dot', size: 16, args: { color: '#d8dee4', thickness: 1 } },
       panning: { enabled: true },
       mousewheel: { enabled: true, modifiers: 'ctrl', zoomAtMousePosition: true },
       connecting: {
@@ -417,13 +421,20 @@ export function useX6Graph(
       if (src && tgt) {
         // 移除 X6 临时边,store 添加正式边后 syncFromStore 重画
         graph.removeEdge(edge.id, { silent: true })
-        store.addEdge({ source: src, target: tgt })
+        const result = store.addDependency({ source: src, target: tgt })
+        if (!result.ok) {
+          ElMessage.warning(i18n.global.t(`workflowDesignerMvp.dependency.${result.reason}`))
+        }
       }
     })
     graph.on('cell:click', ({ cell }) => {
       store.setSelection([cell.id])
+      graph.trigger('__rerender__')
     })
-    graph.on('blank:click', () => store.setSelection([]))
+    graph.on('blank:click', () => {
+      store.setSelection([])
+      graph.trigger('__rerender__')
+    })
     // hover 显 / 离开隐 连接桩,提升"从哪连线"的可发现性
     graph.on('node:mouseenter', ({ node }) => togglePorts(graph, node.id, true))
     graph.on('node:mouseleave', ({ node }) => togglePorts(graph, node.id, false))

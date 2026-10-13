@@ -3,6 +3,7 @@ import userBatch from './userBatch.en-US.ts'
 import userAccountList from './userAccountList.en-US.ts'
 import jobMonitoringPolicy from './jobMonitoringPolicy.en-US.ts'
 import tenantPackageImportWizard from './tenantPackageImportWizard.en-US.ts'
+import workflowDesignerDependency from './workflowDesignerDependency.en-US.ts'
 
 const messages: Messages = {
   print: {
@@ -239,9 +240,10 @@ const messages: Messages = {
   },
   workflowDesignerSpike: {
     title: 'Workflow designer',
-    paletteTitle: 'Node palette',
-    paletteAriaLabel: 'Drag nodes onto canvas',
-    paletteAddHint: 'Drag onto canvas, or click to add at viewport center',
+    paletteTitle: 'Add step',
+    paletteAriaLabel: 'Choose a node type to add it to the workflow',
+    paletteAddHint:
+      'Select a node or edge, then choose a type; connections and layout are automatic',
     canvasAriaLabel: 'Workflow DAG canvas',
     minimapAriaLabel: 'Canvas minimap',
     toolbarAriaLabel: 'Designer toolbar',
@@ -279,8 +281,10 @@ const messages: Messages = {
     noSelectNotice: 'Select a node or edge to view its properties',
     multiSelectNotice: 'Multiple nodes selected; pick one to edit',
     untitledWorkflow: 'Untitled workflow',
+    ...workflowDesignerDependency,
     canvasEmptyTitle: 'Start composing with nodes',
-    canvasEmptyDesc: 'Add START, JOB, and END, connect ports, then validate and save.',
+    canvasEmptyDesc:
+      'Choose START, JOB, and END in order; dependencies and layout are generated automatically.',
     actionValidate: 'Validate',
     validateOk: 'Validation passed, ready to save',
     errorBanner: '{count} validation errors found, click to inspect',

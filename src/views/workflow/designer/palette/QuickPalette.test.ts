@@ -3,7 +3,7 @@
  * QuickPalette 的 4 个场景：
  * - 渲染:visible=true 时挂载 dialog + input + 默认 6 类型行
  * - 搜索:输入后 filteredRows 收敛
- * - 选中(Enter / 点击):store.addNode 被调,emit('created')
+ * - 选中(Enter / 点击):按自动连线规则创建节点,emit('created')
  * - Esc：触发 emit('update:visible', false)
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
@@ -60,6 +60,16 @@ const i18n = createI18n({
         noResults: '无结果',
         quickPaletteHint: '↑↓',
       },
+      workflowDesignerMvp: {
+        autoConnect: {
+          duplicateStart: '已有开始节点',
+          multipleSelection: '请仅选一项',
+          selectInsertionPoint: '请选择插入位置',
+          cannotAppendAfterEnd: '不能追加',
+          cannotInsertTerminal: '不能插入',
+          invalidPlacement: '无效位置',
+        },
+      },
     },
     'en-US': {
       workflowDesignerPolish: {
@@ -67,6 +77,16 @@ const i18n = createI18n({
         searchPlaceholder: 'Search',
         noResults: 'No results',
         quickPaletteHint: '↑↓',
+      },
+      workflowDesignerMvp: {
+        autoConnect: {
+          duplicateStart: 'Start exists',
+          multipleSelection: 'Select one',
+          selectInsertionPoint: 'Select insertion point',
+          cannotAppendAfterEnd: 'Cannot append',
+          cannotInsertTerminal: 'Cannot insert',
+          invalidPlacement: 'Invalid placement',
+        },
       },
     },
   },
@@ -76,7 +96,7 @@ function factory(visible = true) {
   setActivePinia(createPinia())
   const store = useDesignerStore()
   const wrapper = mount(QuickPalette, {
-    props: { visible, centerX: 200, centerY: 300 },
+    props: { visible, centerX: 200, centerY: 300, layoutDirection: 'TB' },
     global: { plugins: [i18n] },
   })
   return { store, wrapper }
@@ -107,7 +127,7 @@ describe('QuickPalette', () => {
     expect(items[0].text()).toContain('JOB')
   })
 
-  it('点击 row → store.addNode 被调,emit("created")', async () => {
+  it('点击 row → 创建节点,emit("created")', async () => {
     const { wrapper, store } = factory(true)
     await nextTick()
     expect(store.nodes.length).toBe(0)

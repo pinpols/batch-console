@@ -19,12 +19,13 @@
     () => String((data?.attrs as Record<string, unknown> | undefined)?.pipelineCode ?? '') || '',
   )
   const hasError = computed(() => (data?.id ? store.errorNodeIds.has(data.id) : false))
+  const isSelected = computed(() => (data?.id ? store.selectedIds.has(data.id) : false))
 </script>
 
 <template>
   <div
     class="designer-node designer-node--file"
-    :class="{ 'designer-node--error': hasError }"
+    :class="{ 'designer-node--error': hasError, 'designer-node--selected': isSelected }"
     role="img"
     :aria-label="t('workflowDesignerMvp.nodeFileStep')"
   >
@@ -45,23 +46,35 @@
     height: 100%;
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
     padding: 6px 12px;
-    border-radius: 6px;
+    border-radius: 8px;
     font-size: 12px;
-    color: #243247;
+    color: var(--color-text-primary);
     user-select: none;
   }
   .designer-node--file {
-    background: var(--wf-node-file-step-light);
-    border: 2px solid var(--wf-node-file-step);
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    box-shadow:
+      inset 4px 0 0 var(--wf-node-file-step),
+      0 1px 2px color-mix(in srgb, #1f2328 8%, transparent);
     transition:
       box-shadow 0.12s ease,
       border-color 0.12s ease;
   }
   .designer-node--file:hover {
-    box-shadow: 0 0 0 3px var(--wf-node-file-step-light);
+    border-color: var(--wf-node-file-step);
+    box-shadow:
+      inset 4px 0 0 var(--wf-node-file-step),
+      0 3px 10px color-mix(in srgb, #1f2328 12%, transparent);
+  }
+  .designer-node--selected {
+    border-color: var(--color-primary) !important;
+    box-shadow:
+      inset 4px 0 0 var(--wf-node-file-step),
+      0 0 0 3px var(--color-primary-light-8) !important;
   }
   .designer-node--error {
     border-color: var(--wf-node-error) !important;

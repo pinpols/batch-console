@@ -33,6 +33,117 @@ describe('useDesignerStore', () => {
     expect(s.edges).toHaveLength(1)
   })
 
+  it('automatically appends a node and its dependency as one undo step', () => {
+    const s = useDesignerStore()
+    s.reset({
+      nodes: [{ id: 'start', nodeCode: 'start', nodeName: 'start', nodeType: 'START', x: 0, y: 0 }],
+      edges: [],
+    })
+
+    expect(
+      s.addConnectedNode(
+        { nodeCode: 'job', nodeType: 'JOB', x: 0, y: 120 },
+        { kind: 'append', sourceId: 'start' },
+      ),
+    ).toBe(true)
+    expect(s.nodes.map((node) => node.id)).toEqual(['start', 'job'])
+    expect(s.edges).toMatchObject([
+      { source: 'start', target: 'job', attrs: { edgeType: 'SUCCESS', enabled: true } },
+    ])
+
+    s.undo()
+    expect(s.nodes.map((node) => node.id)).toEqual(['start'])
+    expect(s.edges).toHaveLength(0)
+  })
+
+  it('splits an edge without losing its condition semantics', () => {
+    const s = useDesignerStore()
+    s.reset({
+      nodes: [
+        {
+          id: 'gateway',
+          nodeCode: 'gateway',
+          nodeName: 'gateway',
+          nodeType: 'GATEWAY',
+          x: 0,
+          y: 0,
+        },
+        { id: 'end', nodeCode: 'end', nodeName: 'end', nodeType: 'END', x: 0, y: 240 },
+      ],
+      edges: [
+        {
+          id: 'conditional-edge',
+          source: 'gateway',
+          target: 'end',
+          label: 'amount > 1000',
+          attrs: { edgeType: 'CONDITION', enabled: false },
+        },
+      ],
+    })
+
+    expect(
+      s.addConnectedNode(
+        { nodeCode: 'job', nodeType: 'JOB', x: 0, y: 120 },
+        { kind: 'insert', edgeId: 'conditional-edge' },
+      ),
+    ).toBe(true)
+    expect(s.edges).toHaveLength(2)
+    expect(s.edges.find((edge) => edge.source === 'gateway')).toMatchObject({
+      target: 'job',
+      label: 'amount > 1000',
+      attrs: { edgeType: 'CONDITION', enabled: false },
+    })
+    expect(s.edges.find((edge) => edge.source === 'job')).toMatchObject({
+      target: 'end',
+      attrs: { edgeType: 'SUCCESS', enabled: true },
+    })
+  })
+
+  it('supports structured dependency creation and rejects invalid topology', () => {
+    const s = useDesignerStore()
+    s.reset({
+      nodes: [
+        { id: 'start', nodeCode: 'start', nodeName: 'start', nodeType: 'START', x: 0, y: 0 },
+        { id: 'job', nodeCode: 'job', nodeName: 'job', nodeType: 'JOB', x: 0, y: 120 },
+        { id: 'end', nodeCode: 'end', nodeName: 'end', nodeType: 'END', x: 0, y: 240 },
+      ],
+      edges: [],
+    })
+
+    expect(s.addDependency({ source: 'start', target: 'job' })).toEqual({ ok: true })
+    expect(s.addDependency({ source: 'job', target: 'end' })).toEqual({ ok: true })
+    expect(s.addDependency({ source: 'job', target: 'start' })).toEqual({
+      ok: false,
+      reason: 'invalidEndpoint',
+    })
+    expect(s.addDependency({ source: 'end', target: 'job' })).toEqual({
+      ok: false,
+      reason: 'invalidEndpoint',
+    })
+    expect(s.addDependency({ source: 'start', target: 'job' })).toEqual({
+      ok: false,
+      reason: 'duplicate',
+    })
+  })
+
+  it('rejects dependency rewiring that would create a cycle', () => {
+    const s = useDesignerStore()
+    s.reset({
+      nodes: [
+        { id: 'a', nodeCode: 'a', nodeName: 'a', nodeType: 'JOB', x: 0, y: 0 },
+        { id: 'b', nodeCode: 'b', nodeName: 'b', nodeType: 'JOB', x: 0, y: 120 },
+        { id: 'c', nodeCode: 'c', nodeName: 'c', nodeType: 'JOB', x: 0, y: 240 },
+      ],
+      edges: [
+        { id: 'a-b', source: 'a', target: 'b' },
+        { id: 'b-c', source: 'b', target: 'c' },
+      ],
+    })
+
+    expect(s.rewireDependency('a-b', 'c', 'b')).toEqual({ ok: false, reason: 'cycle' })
+    expect(s.edges.find((edge) => edge.id === 'a-b')).toMatchObject({ source: 'a', target: 'b' })
+  })
+
   it('updateEdge preserves execution semantics and can clear a condition label', () => {
     const s = useDesignerStore()
     s.addEdge({ source: 'gateway', target: 'fallback', label: 'ctx.retryable' })
