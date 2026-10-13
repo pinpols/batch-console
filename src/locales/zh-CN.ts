@@ -733,6 +733,7 @@ export default {
     timezoneTooltip: '切换展示时区',
     timezoneTooltipWithCurrent: '切换展示时区，当前为 {timezone}',
     timezoneLabel: '展示时区',
+    timezoneScopeHint: '仅影响个人看到的时间显示；不改变平台业务日期、任务时区或已存储时间。',
     timezoneChanged: '展示时区已切换为 {timezone}',
     invalidTimezone: '时区格式无效',
     exitFullscreenTooltip: '退出全屏(Esc)',
@@ -903,6 +904,9 @@ export default {
   onboardingCenter,
   dateRangePicker: {
     invalidLocalTime: '所选时间在当前时区不存在，请重新选择',
+    displayTimezoneHint:
+      '此范围按个人展示时区 {timezone} 输入，并转换为 UTC 瞬间；切换时区只改变时间标签。',
+    businessTimezoneHint: '此范围是纯日期，按平台业务时区 {timezone} 解释，不受个人展示时区影响。',
     rangeSeparator: '至',
     startDate: '开始日期',
     endDate: '结束日期',

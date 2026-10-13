@@ -738,6 +738,8 @@ const messages: Messages = {
     timezoneTooltip: 'Change display timezone',
     timezoneTooltipWithCurrent: 'Change display timezone; current: {timezone}',
     timezoneLabel: 'Display timezone',
+    timezoneScopeHint:
+      'This only changes how times are displayed to you; it does not change platform business dates, job time zones, or stored instants.',
     timezoneChanged: 'Display timezone changed to {timezone}',
     invalidTimezone: 'Invalid timezone',
     exitFullscreenTooltip: 'Exit fullscreen (Esc)',
@@ -918,6 +920,10 @@ const messages: Messages = {
   onboardingCenter,
   dateRangePicker: {
     invalidLocalTime: 'The selected time does not exist in the current time zone.',
+    displayTimezoneHint:
+      'This range uses your display time zone ({timezone}) and is converted to UTC instants. Switching zones changes labels only.',
+    businessTimezoneHint:
+      'This date-only range uses the platform business time zone ({timezone}) and is not affected by your display preference.',
     rangeSeparator: 'to',
     startDate: 'Start date',
     endDate: 'End date',

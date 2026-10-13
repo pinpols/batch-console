@@ -94,36 +94,7 @@
           </button>
         </el-tooltip>
 
-        <el-dropdown trigger="click" placement="bottom-end" @command="changeDisplayTimezone">
-          <button
-            type="button"
-            class="icon-button header-icon"
-            :aria-label="timezoneTooltip"
-            :title="timezoneTooltip"
-          >
-            <el-icon><TimezoneIcon /></el-icon>
-          </button>
-          <template #dropdown>
-            <el-dropdown-menu>
-              <el-dropdown-item disabled>
-                <span class="timezone-menu__label">{{ t('layoutHeader.timezoneLabel') }}</span>
-                <span class="timezone-menu__current">{{ currentTimezone }}</span>
-              </el-dropdown-item>
-              <el-dropdown-item
-                v-for="timezone in timezoneOptions"
-                :key="timezone"
-                :command="timezone"
-                :disabled="timezone === currentTimezone"
-              >
-                <el-icon v-if="timezone === currentTimezone"><Check /></el-icon>
-                <span class="timezone-option">
-                  <span class="timezone-option__name">{{ timezone }}</span>
-                  <span class="timezone-option__offset">{{ timezoneOffsetLabel(timezone) }}</span>
-                </span>
-              </el-dropdown-item>
-            </el-dropdown-menu>
-          </template>
-        </el-dropdown>
+        <DisplayTimezoneMenu />
 
         <el-dropdown trigger="click" placement="bottom-end" @command="changeThemePreference">
           <button
@@ -246,7 +217,7 @@
 
 <script setup lang="ts">
   import { useRouter } from 'vue-router'
-  import { ElMessage, ElMessageBox } from 'element-plus'
+  import { ElMessageBox } from 'element-plus'
   // 还原设计:顶栏图标统一 Lucide 线性图标(与侧栏一致)
   import {
     ChevronDown as ArrowDown,
@@ -263,10 +234,10 @@
     SlidersHorizontal as UtilityIcon,
     Sun as Sunny,
     LogOut as SwitchButton,
-    Globe2 as TimezoneIcon,
     Wrench,
   } from '@lucide/vue'
   import TenantSelect from '@/components/common/TenantSelect.vue'
+  import DisplayTimezoneMenu from './DisplayTimezoneMenu.vue'
   import NotificationCenter from './NotificationCenter.vue'
   import { useHeaderLogic } from '@/layout/composables/useHeaderLogic'
   import { computed, defineAsyncComponent, nextTick, onMounted, ref, watch } from 'vue'
@@ -278,35 +249,15 @@
   import { authorityRoleLabelKeyMap, resolveAuthorityRole } from '@/constants/role'
   import { getDocsBase } from '@/components/common/docsRegistry'
   import { checkDocsAvailability } from '@/utils/serviceAvailability'
-  import {
-    displayTimezone,
-    getDisplayTimezoneOptions,
-    getTimezoneOffsetLabel,
-    writeDisplayTimezone,
-  } from '@/constants/timezone'
   import { truncateDisplayText } from '@/utils/text'
 
   const { t } = useI18n({ useScope: 'global' })
   const { current: currentLocale, setLocale } = useLocale()
-  const currentTimezone = displayTimezone
   const OperationsToolkitDrawer = defineAsyncComponent(
     () => import('@/components/tools/OperationsToolkitDrawer.vue'),
   )
   const toolkitMounted = ref(false)
   const toolkitVisible = ref(false)
-
-  const timezoneOptions = computed(() => getDisplayTimezoneOptions(currentTimezone.value))
-  const timezoneOffsetLabel = getTimezoneOffsetLabel
-
-  function changeDisplayTimezone(timezone: string | number | object) {
-    if (typeof timezone !== 'string' || timezone === currentTimezone.value) return
-    try {
-      writeDisplayTimezone(timezone)
-      ElMessage.success(t('layoutHeader.timezoneChanged', { timezone }))
-    } catch {
-      ElMessage.error(t('layoutHeader.invalidTimezone'))
-    }
-  }
 
   // 只有两种语言,直接切而不是下拉:tooltip 显示"切到对端"提示
   const localeToggleTooltip = computed(() =>
@@ -327,9 +278,6 @@
     userRoleLabel.value
       ? `${userDisplayName.value} · ${userRoleLabel.value}`
       : userDisplayName.value,
-  )
-  const timezoneTooltip = computed(() =>
-    t('layoutHeader.timezoneTooltipWithCurrent', { timezone: currentTimezone.value }),
   )
   const themeToolIcon = computed(() => {
     if (app.themePreference === 'system') return Monitor
@@ -606,38 +554,6 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-  }
-
-  .timezone-menu__label,
-  .timezone-menu__current {
-    display: block;
-  }
-
-  .timezone-menu__current {
-    margin-top: 2px;
-    color: var(--color-text-tertiary);
-    font-size: 11px;
-    font-weight: 400;
-  }
-
-  .timezone-option {
-    display: inline-flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 18px;
-    min-width: 188px;
-  }
-
-  .timezone-option__name {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .timezone-option__offset {
-    flex: 0 0 auto;
-    color: var(--color-text-tertiary);
-    font-size: 11px;
   }
 
   .user-chip__role {
