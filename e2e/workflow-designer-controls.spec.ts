@@ -56,15 +56,18 @@ test.describe('编排设计器 — 桌面控件', () => {
       return canvasBox!.width / bodyBox!.width
     }
 
-    await expect(page.locator('.node-palette')).not.toHaveClass(/node-palette--collapsed/)
+    await expect(page.locator('.node-palette')).toHaveClass(/node-palette--collapsed/)
     await expect(page.locator('.node-inspector')).toHaveCount(0)
-    expect(await canvasRatio()).toBeGreaterThan(0.75)
+    expect(await canvasRatio()).toBeGreaterThan(0.88)
 
+    await page.getByRole('button', { name: '展开节点库' }).click()
+    await expect(page.locator('.node-palette')).not.toHaveClass(/node-palette--collapsed/)
+    await expect(body).toHaveClass(/workflow-designer__body--palette-expanded/)
+    expect(await canvasRatio()).toBeGreaterThan(0.75)
     await page.getByRole('button', { name: '收起节点库' }).click()
+    await expect(page.locator('.node-palette')).toHaveClass(/node-palette--collapsed/)
     await expect(body).not.toHaveClass(/workflow-designer__body--palette-expanded/)
     expect(await canvasRatio()).toBeGreaterThan(0.88)
-    await page.getByRole('button', { name: '展开节点库' }).click()
-    await expect(body).toHaveClass(/workflow-designer__body--palette-expanded/)
     await page.getByRole('button', { name: '打开属性面板' }).click()
     await expect(page.locator('.node-palette')).toHaveClass(/node-palette--collapsed/)
     await expect(page.locator('.node-inspector')).toBeVisible()
@@ -106,7 +109,7 @@ test.describe('编排设计器 — 桌面控件', () => {
     expect(overlaps(boxes[0]!, boxes[1]!)).toBe(false)
     expect(overlaps(boxes[1]!, boxes[2]!)).toBe(false)
 
-    await expect(page.locator('.workflow-designer__canvas-status')).toContainText('2 edges')
+    await expect(page.locator('.workflow-designer__canvas-status')).toContainText('2 条依赖')
     await expect(page.locator('.dag-canvas__graph .x6-edge')).toHaveCount(2)
   })
 })

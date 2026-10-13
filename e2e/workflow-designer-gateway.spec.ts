@@ -110,8 +110,12 @@ test.describe('@workflow-designer-gateway 网关与依赖语义', () => {
 
     await page.getByRole('combobox', { name: '依赖连线选择器' }).click()
     await page.getByRole('option', { name: /Fork.*Branch B.*条件/ }).click()
-    await expect(page.locator('.edge-inspector input[readonly]').nth(0)).toHaveValue('Fork (FORK)')
-    await expect(page.locator('.edge-inspector input[readonly]').nth(1)).toHaveValue('Branch B (B)')
+    await expect(
+      page.locator('.edge-inspector .el-select').nth(0).locator('.el-select__placeholder'),
+    ).toContainText('Fork (FORK)')
+    await expect(
+      page.locator('.edge-inspector .el-select').nth(1).locator('.el-select__placeholder'),
+    ).toContainText('Branch B (B)')
     await expect(page.locator('.edge-inspector textarea')).toHaveValue('bizDate != null')
   })
 })
