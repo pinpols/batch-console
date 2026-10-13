@@ -98,7 +98,7 @@ jobs:
 
       - run: bash scripts/ci/run-gate.sh FE_LINT "ESLint" -- npm run lint:check
       - run: bash scripts/ci/run-gate.sh FE_TYPECHECK "TypeScript 类型检查" -- npm run typecheck
-      - run: bash scripts/ci/run-gate.sh FE_I18N "国际化词条一致性" -- npm run check:i18n
+      - run: bash scripts/ci/run-gate.sh --group localization FE_I18N "国际化词条一致性" -- npm run check:i18n
 
       - name: Resolve backend OpenAPI contract
         id: backend-openapi

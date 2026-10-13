@@ -38,3 +38,4 @@ description: 修改或审查 batch-console 的架构边界、环境变量、可�
 - `check:comments` 只要求解释性注释使用中文；API 路径、类型字段、命令、代码示例和工具指令保持权威原文。
 - `compliance:check` 发现漂移时运行 `npm run compliance:sbom` 并提交确定性生成结果，不手工编辑 SBOM 或许可证清单。
 - 报告区分 PASS、FAIL、SKIP 和未运行，并写明真实后端、mock、preview 或 staging 的证据边界。
+- 新增或修改门禁时，用 `scripts/ci/run-gate.sh` / `scripts/lib/gate-result.sh` 输出统一状态行，并给门禁分配稳定 `group`；同步 `docs/runbook/ci.md` 的触发与分组矩阵。脚本自测应覆盖会拦截和应放行的案例。
