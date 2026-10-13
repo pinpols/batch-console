@@ -49,7 +49,7 @@ export function useJobDefinitionDependencies() {
         if (sequence !== requestSequence) return
         definition.value = selectedDefinition
       } catch {
-        hasError.value = true
+        if (sequence === requestSequence) hasError.value = true
       }
       if (sequence !== requestSequence) return
 

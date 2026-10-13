@@ -260,7 +260,7 @@
             </el-button>
           </div>
           <el-alert
-            v-if="!jobDependencies.definition.value"
+            v-if="!jobDependencies.definition.value && !jobDependencies.hasError.value"
             :title="t('workflowDesignerMvp.jobDependencies.definitionMissing')"
             type="info"
             :closable="false"
@@ -320,7 +320,7 @@
               @current-change="loadDependentPage"
             />
           </div>
-          <span v-else class="job-dependencies__empty">
+          <span v-else-if="!jobDependencies.hasError.value" class="job-dependencies__empty">
             {{ t('workflowDesignerMvp.jobDependencies.noDefinitionDownstream') }}
           </span>
         </template>
