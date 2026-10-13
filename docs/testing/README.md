@@ -362,7 +362,8 @@ E2E_USAGE_DB_RECONCILIATION=1 E2E_SKIP_GLOBAL_SETUP=1 E2E_BASE_URL=http://127.0.
 ### 9.1 测试数据与配置来源
 
 - 测试输入依赖平台已有定义时，优先复用生产代码或共享 fixture：持久化键使用 `src/constants/storageKeys.ts`，浏览器存储桩使用 `src/test-utils/localStorage.ts`。主题、语言、页面偏好等功能专属键继续由对应模块维护，不为集中而集中。
-- `npm run check:test-fixture-sources` 会扫描 Vitest、Playwright spec、storage-state CJS 和测试脚本，阻止重复写浏览器持久化键、重复写平台前后端服务地址，以及在测试中内联创建 localStorage 桩。浏览器持久化键由 `src/constants/storageKeys.json` 维护，应用模块通过 `src/constants/storageKeys.ts` 派生；Playwright 通过 `e2e/support/storage.ts` 写入和读取。前端/API/Orchestrator 测试地址由 `e2e/config.cjs` 根据 `e2e/test-config.json` 和可覆盖环境变量解析；页面导航优先使用相对路径。新增或调整这些测试、配置源或共享桩时应运行该检查。`src/constants/storageKeys.test.ts` 保留独立字面量，验证已发布键值兼容性。
+- `npm run check:test-fixture-sources` 会扫描 Vitest、Playwright spec、storage-state CJS 和测试脚本，阻止重复写浏览器持久化键、重复写平台前后端服务地址、普通 E2E 重复声明 locale 或使用中英文任选断言，以及在测试中内联创建 localStorage 桩。浏览器持久化键由 `src/constants/storageKeys.json` 维护，应用模块通过 `src/constants/storageKeys.ts` 派生；Playwright 通过 `e2e/support/storage.ts` 写入和读取。前端/API/Orchestrator 测试地址与普通 E2E 默认语言由 `e2e/config.cjs` 根据 `e2e/test-config.json` 和可覆盖环境变量解析；页面导航优先使用相对路径。新增或调整这些测试、配置源或共享桩时应运行该检查。`src/constants/storageKeys.test.ts` 保留独立字面量，验证已发布键值兼容性。
+- 普通 E2E 统一使用 `e2e/test-config.json` 的 `defaultLocale`；用户可见文案优先通过 `e2e/support/i18n.ts` 的 `i18nKey()` / `e2eText()` 从生产词条解析。只有 i18n 专项可以显式遍历多语言。翻译准确性、API 字段、枚举 code、路由和公开默认值等契约测试仍保留独立预期，避免实现与期望同源。
 - 拦截示例：在 `auth.test.ts` 直接写 `storage.set('batch-console-session', '1')`，或再次 `vi.stubGlobal('localStorage', ...)`；应改用 `STORAGE_KEYS.session` 与 `stubLocalStorage()`。放行示例：`storageKeys.test.ts` 将发布过的键值作为独立预期固定下来，或某个测试使用 `tenant-a` 这类仅属于该测试数据的标识。
 - 同一测试环境配置被多个测试复用时，放入已有 Vitest setup、共享测试 helper 或测试环境配置；单个测试特有的覆盖值留在测试旁，并说明验证目的。不要复制相同的桩实现或环境默认值。
 - 输入数据依赖当前平台定义时，优先引用相应 DTO、枚举、导出常量或公共 fixture，避免平台定义变化后测试输入悄悄过期。
