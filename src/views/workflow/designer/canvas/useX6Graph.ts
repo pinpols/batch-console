@@ -68,7 +68,9 @@ function sizeOf(type: DesignerNodeType): { width: number; height: number } {
   return designerNodeSize(type)
 }
 
-// 连接桩(x6 port):in 在顶、out 在底(TB 布局);默认隐藏,hover 节点时显现。
+let currentLayoutDirection: 'TB' | 'LR' = 'LR'
+
+// 连接桩位置跟随布局方向;默认隐藏,hover 节点时显现。
 // 从 out 拖到另一节点 in 即连线(见 connecting.validateMagnet/validateConnection)。
 // 常态半透明可见(让用户一眼看出"从这里连线"),hover 全亮;用 opacity 而非
 // visibility:hidden —— 后者藏着时不接收指针事件,会导致桩抓不住、连不了线。
@@ -82,12 +84,12 @@ const PORT_ATTRS = {
     opacity: 0,
   },
 } as const
-const PORT_GROUPS = {
-  in: { position: 'top', attrs: PORT_ATTRS },
-  out: { position: 'bottom', attrs: PORT_ATTRS },
-} as const
-
-function portsOf(type: DesignerNodeType) {
+function portsOf(type: DesignerNodeType, direction = currentLayoutDirection) {
+  const horizontal = direction === 'LR'
+  const groups = {
+    in: { position: horizontal ? 'left' : 'top', attrs: PORT_ATTRS },
+    out: { position: horizontal ? 'right' : 'bottom', attrs: PORT_ATTRS },
+  }
   const items =
     type === 'START'
       ? [{ id: 'out', group: 'out' }]
@@ -97,7 +99,7 @@ function portsOf(type: DesignerNodeType) {
             { id: 'in', group: 'in' },
             { id: 'out', group: 'out' },
           ]
-  return { groups: PORT_GROUPS, items }
+  return { groups, items }
 }
 
 /** 手工连线降为高级能力：常态隐藏连接桩，hover 节点时才显示。 */
@@ -221,6 +223,7 @@ export function useX6Graph(
       for (const n of store.nodes) {
         const existing = graph.getCellById(n.id)
         if (existing?.isNode()) {
+          existing.prop('ports', portsOf(n.nodeType))
           existing.position(n.x, n.y)
           existing.setData(
             {
@@ -314,12 +317,14 @@ export function useX6Graph(
         }
       })
       .filter((position): position is { id: string; x: number; y: number } => position !== null)
+    currentLayoutDirection = direction
     if (
       !nextPositions.some((position) => {
         const current = store.nodes.find((node) => node.id === position.id)
         return current !== undefined && (current.x !== position.x || current.y !== position.y)
       })
     ) {
+      syncFromStore(handle.graph)
       return
     }
     // 自动布局是一次用户操作，整批坐标变更只压入一个撤销快照。
@@ -354,9 +359,13 @@ export function useX6Graph(
             excludeTerminals: ['source', 'target'],
             maxLoopCount: 5000,
             // X6 会在紧凑拓扑找不到完整避障路径时降级到 orth 并打印 warning。
-            // 设计器端口固定为下出上入,用中线折返可保持正交连线且避免无意义告警。
+            // 根据当前端口方向沿横向或纵向中线折返,避免降级到会穿过节点的 orth 路径。
             fallbackRoute(from, to) {
               if (from.x === to.x || from.y === to.y) return []
+              if (currentLayoutDirection === 'LR') {
+                const middleX = Math.round((from.x + to.x) / 20) * 10
+                return [new Point(middleX, from.y), new Point(middleX, to.y)]
+              }
               const middleY = Math.round((from.y + to.y) / 20) * 10
               return [new Point(from.x, middleY), new Point(to.x, middleY)]
             },

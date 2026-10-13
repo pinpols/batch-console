@@ -25,7 +25,9 @@
     :aria-label="t('workflowDesignerSpike.nodeStart')"
   >
     <span class="designer-node__badge">{{ t('workflowDesignerSpike.nodeStart') }}</span>
-    <span v-if="data?.nodeName" class="designer-node__label">{{ data.nodeName }}</span>
+    <span v-if="data?.nodeName" class="designer-node__label" :title="data.nodeName">
+      {{ data.nodeName }}
+    </span>
   </div>
 </template>
 
@@ -63,6 +65,10 @@
     font-weight: 600;
   }
   .designer-node__label {
+    max-width: 48px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     font-size: 11px;
     opacity: 0.9;
   }
