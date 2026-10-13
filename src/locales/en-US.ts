@@ -690,6 +690,7 @@ const messages: Messages = {
     loadFailed: 'Failed to load. Please retry.',
     filterCollapse: 'Collapse',
     filterExpand: 'Filters',
+    filtersHidden: 'Filters hidden',
     loadingMore: 'Loading…',
     columnSettings: {
       trigger: 'Columns',
@@ -2246,6 +2247,8 @@ const messages: Messages = {
     empty: 'No quota policies',
     switchOn: 'Enable',
     switchOff: 'Disable',
+    chipWeight: 'Weight',
+    chipTenant: 'Tenant',
     kpiConcurrent: 'Concurrency cap',
     kpiQps: 'QPS',
     kpiPartitions: 'Partition cap',
@@ -5888,6 +5891,7 @@ const messages: Messages = {
     eventCatalogAction: 'Event catalog',
     tabChannels: 'Channels',
     tabRules: 'Subscriptions',
+    tabWebhooks: 'Webhooks',
     tabDeliveryLogs: 'Delivery logs',
   },
   selfServicePanel: {

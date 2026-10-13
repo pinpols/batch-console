@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest'
-import { useImportWizard } from './useImportWizard'
+import {
+  MAX_IMPORT_WORKBOOK_BYTES,
+  resolvePreviewWorkbookUrl,
+  useImportWizard,
+  validateImportWorkbookFile,
+} from './useImportWizard'
 
 describe('useImportWizard — 初始状态', () => {
   it('step 从 0 开始,所有 loading 为 false,token / preview 为空', () => {
@@ -120,11 +125,57 @@ describe('useImportWizard — preview 衍生数据', () => {
     expect(w.errorRows.value).toEqual([])
   })
 
-  it('previewWorkbookUrl 仅当字段为非空字符串时返回值', () => {
+  it('previewWorkbookUrl 仅返回安全的相对路径或 HTTPS 地址', () => {
     const w = useImportWizard()
     w.previewRaw.value = { previewWorkbookUrl: '' }
     expect(w.previewWorkbookUrl.value).toBeNull()
     w.previewRaw.value = { previewWorkbookUrl: 'https://x/y.xlsx' }
     expect(w.previewWorkbookUrl.value).toBe('https://x/y.xlsx')
+    w.previewRaw.value = { previewWorkbookUrl: '/api/downloads/y.xlsx' }
+    expect(w.previewWorkbookUrl.value).toBe('/api/downloads/y.xlsx')
+    w.previewRaw.value = { previewWorkbookUrl: 'javascript:alert(1)' }
+    expect(w.previewWorkbookUrl.value).toBeNull()
+  })
+})
+
+describe('useImportWizard — 文件与下载边界', () => {
+  const workbook = (name: string, size: number) => ({ name, size }) as File
+
+  it('仅接受不超过 50 MB 的 xlsx 文件', () => {
+    expect(
+      validateImportWorkbookFile(workbook('tenant.xlsx', MAX_IMPORT_WORKBOOK_BYTES)),
+    ).toBeNull()
+    expect(validateImportWorkbookFile(workbook('tenant.xls', 1024))).toBe('unsupported-type')
+    expect(validateImportWorkbookFile(workbook('tenant.xlsm', 1024))).toBe('unsupported-type')
+    expect(validateImportWorkbookFile(workbook('tenant.xlsx', MAX_IMPORT_WORKBOOK_BYTES + 1))).toBe(
+      'too-large',
+    )
+  })
+
+  it('拒绝脚本、data、blob、协议相对和外部 HTTP 下载地址', () => {
+    const origin = 'http://localhost:5173'
+    expect(resolvePreviewWorkbookUrl('javascript:alert(1)', origin)).toBeNull()
+    expect(resolvePreviewWorkbookUrl('data:text/plain,test', origin)).toBeNull()
+    expect(resolvePreviewWorkbookUrl('blob:http://localhost:5173/id', origin)).toBeNull()
+    expect(resolvePreviewWorkbookUrl('//evil.example/file.xlsx', origin)).toBeNull()
+    expect(resolvePreviewWorkbookUrl('http://evil.example/file.xlsx', origin)).toBeNull()
+  })
+
+  it('本地 HTTP 仅允许同源地址，生产地址要求 HTTPS', () => {
+    expect(
+      resolvePreviewWorkbookUrl(
+        'http://localhost:5173/api/downloads/file.xlsx',
+        'http://localhost:5173',
+      ),
+    ).toBe('http://localhost:5173/api/downloads/file.xlsx')
+    expect(
+      resolvePreviewWorkbookUrl(
+        'http://console.example/api/downloads/file.xlsx',
+        'https://console.example',
+      ),
+    ).toBeNull()
+    expect(resolvePreviewWorkbookUrl('https://files.example/file.xlsx')).toBe(
+      'https://files.example/file.xlsx',
+    )
   })
 })

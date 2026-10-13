@@ -1,5 +1,31 @@
 import { ref, computed, type ComputedRef, type Ref } from 'vue'
-import type { UploadFile } from 'element-plus'
+
+export const MAX_IMPORT_WORKBOOK_BYTES = 50 * 1024 * 1024
+export type ImportWorkbookFileError = 'unsupported-type' | 'too-large'
+
+export function validateImportWorkbookFile(file: File): ImportWorkbookFileError | null {
+  if (!/\.xlsx$/i.test(file.name)) return 'unsupported-type'
+  if (file.size > MAX_IMPORT_WORKBOOK_BYTES) return 'too-large'
+  return null
+}
+
+export function resolvePreviewWorkbookUrl(value: unknown, baseOrigin?: string): string | null {
+  if (typeof value !== 'string') return null
+  const candidate = value.trim()
+  if (!candidate) return null
+  if (/^\/(?!\/)/.test(candidate)) return candidate
+
+  try {
+    const url = new URL(candidate)
+    if (url.protocol === 'https:') return url.href
+    if (url.protocol !== 'http:' || !baseOrigin) return null
+
+    const base = new URL(baseOrigin)
+    return base.protocol === 'http:' && url.origin === base.origin ? url.href : null
+  } catch {
+    return null
+  }
+}
 
 export interface PreviewStats {
   total: number | string
@@ -52,7 +78,7 @@ export interface ImportWizardState {
   errorRows: ComputedRef<PreviewErrorRow[]>
   /** 是否存在阻塞性错误:`invalidRows > 0`。Apply 应当 disabled。 */
   hasBlockingIssues: ComputedRef<boolean>
-  onFile: (u: UploadFile) => void
+  setRawFile: (file: File | null) => void
   triggerBlobDownload: (blob: Blob, filename: string) => void
 }
 
@@ -88,8 +114,8 @@ export function useImportWizard(): ImportWizardState {
   })
 
   const previewWorkbookUrl = computed<string | null>(() => {
-    const url = previewRaw.value?.previewWorkbookUrl
-    return typeof url === 'string' && url ? url : null
+    const baseOrigin = typeof window === 'undefined' ? undefined : window.location.origin
+    return resolvePreviewWorkbookUrl(previewRaw.value?.previewWorkbookUrl, baseOrigin)
   })
 
   const issueRows = computed<PreviewIssue[]>(() => {
@@ -134,11 +160,7 @@ export function useImportWizard(): ImportWizardState {
     return (typeof inv === 'number' && inv > 0) || issueRows.value.length > 0
   })
 
-  function onFile(u: UploadFile) {
-    file.value = u.raw ?? null
-  }
-
-  function setRawFile(f: File) {
+  function setRawFile(f: File | null) {
     file.value = f
   }
 
@@ -169,7 +191,6 @@ export function useImportWizard(): ImportWizardState {
     sheetStats,
     errorRows,
     hasBlockingIssues,
-    onFile,
     setRawFile,
     triggerBlobDownload,
   }

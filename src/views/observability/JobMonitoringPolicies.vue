@@ -130,7 +130,12 @@
       size="min(600px, 96vw)"
       destroy-on-close
     >
-      <el-form :model="form" label-position="top" @submit.prevent="save">
+      <el-form
+        id="job-monitoring-policy-form"
+        :model="form"
+        label-position="top"
+        @submit.prevent="save"
+      >
         <div class="job-identity">
           <span>{{ editingJob?.jobName }}</span>
           <code>{{ editingJob?.jobCode }}</code>
@@ -154,8 +159,15 @@
         />
       </el-form>
       <template #footer>
-        <el-button @click="drawerOpen = false">{{ t('common.cancel') }}</el-button>
-        <el-button type="primary" :loading="saving" @click="save">
+        <el-button native-type="button" @click="drawerOpen = false">{{
+          t('common.cancel')
+        }}</el-button>
+        <el-button
+          type="primary"
+          native-type="submit"
+          form="job-monitoring-policy-form"
+          :loading="saving"
+        >
           {{ t('common.save') }}
         </el-button>
       </template>

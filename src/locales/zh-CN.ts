@@ -687,6 +687,7 @@ export default {
     loadFailed: '加载失败,请重试',
     filterCollapse: '收起',
     filterExpand: '展开筛选',
+    filtersHidden: '筛选条件已收起',
     loadingMore: '加载中…',
     columnSettings: {
       trigger: '列设置',
@@ -2170,6 +2171,8 @@ export default {
     empty: '暂无配额策略',
     switchOn: '启用',
     switchOff: '停用',
+    chipWeight: '权重',
+    chipTenant: '租户',
     kpiConcurrent: '并发上限',
     kpiQps: 'QPS',
     kpiPartitions: '分片上限',
@@ -5784,6 +5787,7 @@ export default {
     eventCatalogAction: '事件目录',
     tabChannels: '通知渠道',
     tabRules: '订阅规则',
+    tabWebhooks: 'Webhook',
     tabDeliveryLogs: '投递日志',
   },
   selfServicePanel: {

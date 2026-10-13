@@ -25,7 +25,7 @@
         <el-tab-pane :label="t('notificationManagement.tabRules')" name="rules">
           <NotificationRulesTab ref="rulesTabRef" />
         </el-tab-pane>
-        <el-tab-pane label="Webhook" name="webhooks">
+        <el-tab-pane :label="t('notificationManagement.tabWebhooks')" name="webhooks">
           <NotificationWebhooksTab ref="webhooksTabRef" />
         </el-tab-pane>
         <el-tab-pane :label="t('notificationManagement.tabDeliveryLogs')" name="deliveryLogs">

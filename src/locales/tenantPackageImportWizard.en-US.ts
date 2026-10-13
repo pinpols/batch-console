@@ -1,8 +1,10 @@
 const tenantPackageImportWizard = {
   uploadTitle: 'Upload tenant config package',
-  unsupportedFileType: 'Only .xls / .xlsx files are supported. Current: {name}',
+  unsupportedFileType: 'Only .xlsx files are supported. Current: {name}',
+  fileTooLarge: 'The file must not exceed 50 MB. Current: {name}',
+  uploadLimitHint: '.xlsx · one file up to 50 MB',
   uploadDesc:
-    'Upload a full configuration package or download a focused template for selected job scenarios. Scenario templates include relevant business settings and exclude platform resource allocation. Omitted configuration is not deleted; blank optional fields keep their current values. Delete items from their configuration pages. Review validation before applying.',
+    'Upload a full .xlsx configuration package up to 50 MB or download a focused template for selected job scenarios. Scenario templates include relevant business settings and exclude platform resource allocation. Omitted configuration is not deleted; blank optional fields keep their current values. Delete items from their configuration pages. Review validation before applying.',
   btnDownloadTemplate: 'Download package template',
   btnExportCurrent: 'Export current package',
   btnFieldGuide: 'Field guide',
