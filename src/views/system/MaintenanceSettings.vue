@@ -129,6 +129,8 @@
   import type { MaintenanceStatus } from '@/api/system.maintenance'
   import { useAppStore } from '@/stores/app'
   import { useAuthStore } from '@/stores/auth'
+  import { displayTimezone } from '@/constants/timezone'
+  import { fmtDatetime } from '@/utils/datetime'
 
   const { t } = useI18n({ useScope: 'global' })
   const app = useAppStore()
@@ -259,8 +261,7 @@
 
   function formatTimestamp(value: string | null | undefined) {
     if (!value) return '—'
-    const date = new Date(value)
-    return Number.isNaN(date.getTime()) ? value : date.toLocaleString()
+    return fmtDatetime(value, displayTimezone.value)
   }
 
   onMounted(() => {

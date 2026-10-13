@@ -76,6 +76,7 @@
               />
             </el-select>
           </div>
+          <p class="mobile-appbar__timezone-hint">{{ t('layoutHeader.timezoneScopeHint') }}</p>
 
           <!-- 主题切换 -->
           <button
@@ -472,6 +473,13 @@
   .mobile-appbar__timezone-select {
     width: 166px;
     flex: 0 0 auto;
+  }
+
+  .mobile-appbar__timezone-hint {
+    margin: -2px 4px 8px;
+    color: var(--color-text-tertiary);
+    font-size: 11px;
+    line-height: 1.5;
   }
 
   .mobile-appbar__row--clickable {

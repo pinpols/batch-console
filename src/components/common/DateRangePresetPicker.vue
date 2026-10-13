@@ -28,12 +28,18 @@
       class="dr-preset__picker"
       @update:model-value="onPickerChange"
     />
+    <el-tooltip :content="timezoneHint" placement="top">
+      <span class="dr-preset__timezone-hint" tabindex="0" role="note" :aria-label="timezoneHint">
+        <el-icon aria-hidden="true"><Info /></el-icon>
+      </span>
+    </el-tooltip>
   </div>
 </template>
 
 <script setup lang="ts">
   import { computed, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
+  import { Info } from '@lucide/vue'
   import { displayTimezone } from '@/constants/timezone'
   import { presetDateRange, readBusinessTimezone } from '@/utils/datetime'
   import InstantRangePicker from './InstantRangePicker.vue'
@@ -75,6 +81,14 @@
 
   const zone = computed(() =>
     props.type === 'daterange' ? readBusinessTimezone() : displayTimezone.value,
+  )
+  const timezoneHint = computed(() =>
+    t(
+      props.type === 'daterange'
+        ? 'dateRangePicker.businessTimezoneHint'
+        : 'dateRangePicker.displayTimezoneHint',
+      { timezone: zone.value },
+    ),
   )
   const presets = computed<Preset[]>(() => {
     const base: Preset[] = [
@@ -160,6 +174,23 @@
 
   .dr-preset__select {
     width: 130px;
+  }
+
+  .dr-preset__timezone-hint {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 24px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    color: var(--color-text-tertiary);
+    cursor: help;
+  }
+
+  .dr-preset__timezone-hint:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
   }
 
   @media (max-width: 720px) {
