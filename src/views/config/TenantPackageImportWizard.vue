@@ -41,11 +41,13 @@
                     </p>
                   </div>
                   <el-upload
+                    ref="uploadRef"
                     drag
                     :auto-upload="false"
                     :limit="1"
-                    accept=".xls,.xlsx"
-                    :on-change="onFile"
+                    accept=".xlsx"
+                    :on-change="onWorkbookFile"
+                    :on-exceed="onWorkbookExceed"
                     :show-file-list="false"
                     class="upload-zone__dropzone"
                   >
@@ -56,7 +58,9 @@
                       <el-link type="primary" underline="never">
                         {{ t('excelMaintenanceWizard.btnPickFile') }}
                       </el-link>
-                      <div class="upload-zone__sub">.xls / .xlsx</div>
+                      <div class="upload-zone__sub">
+                        {{ t('tenantPackageImportWizard.uploadLimitHint') }}
+                      </div>
                     </div>
                   </el-upload>
                   <el-button
@@ -693,7 +697,7 @@
     Upload as UploadFilled,
     TriangleAlert as WarningFilled,
   } from '@lucide/vue'
-  import { ElMessage } from 'element-plus'
+  import { ElMessage, type UploadFile, type UploadInstance, type UploadRawFile } from 'element-plus'
 
   const { t } = useI18n({ useScope: 'global' })
   import { confirmDanger } from '@/composables/useDangerConfirm'
@@ -714,6 +718,7 @@
   } from '@/api/tenantPackageExcel'
   import {
     useImportWizard,
+    validateImportWorkbookFile,
     type SheetStats,
     type PreviewErrorRow,
   } from '@/composables/useImportWizard'
@@ -749,10 +754,39 @@
     sheetStats,
     errorRows,
     hasBlockingIssues,
-    onFile,
     setRawFile,
     triggerBlobDownload,
   } = useImportWizard()
+  const uploadRef = ref<UploadInstance>()
+
+  function selectWorkbookFile(selectedFile: File): boolean {
+    const validationError = validateImportWorkbookFile(selectedFile)
+    if (validationError === 'unsupported-type') {
+      ElMessage.warning(
+        t('tenantPackageImportWizard.unsupportedFileType', { name: selectedFile.name }),
+      )
+      return false
+    }
+    if (validationError === 'too-large') {
+      ElMessage.warning(t('tenantPackageImportWizard.fileTooLarge', { name: selectedFile.name }))
+      return false
+    }
+    setRawFile(selectedFile)
+    return true
+  }
+
+  function onWorkbookFile(uploadFile: UploadFile) {
+    if (!uploadFile.raw || selectWorkbookFile(uploadFile.raw)) return
+    uploadRef.value?.clearFiles()
+    setRawFile(null)
+  }
+
+  function onWorkbookExceed(files: File[]) {
+    const selectedFile = files[0] as UploadRawFile | undefined
+    if (!selectedFile) return
+    uploadRef.value?.clearFiles()
+    if (!selectWorkbookFile(selectedFile)) setRawFile(null)
+  }
 
   // 出错行内联编辑:每行一份草稿(按 sheet#rowNo 键),保存调 patch 端点回写 + 重校验
   const rowDrafts = reactive<Record<string, Record<string, string>>>({})
@@ -917,11 +951,8 @@
     zoneDragover.value = false
     const f = ev.dataTransfer?.files?.[0]
     if (!f) return
-    if (!/\.(xlsx?|xls)$/i.test(f.name)) {
-      ElMessage.warning(t('tenantPackageImportWizard.unsupportedFileType', { name: f.name }))
-      return
-    }
-    setRawFile(f)
+    uploadRef.value?.clearFiles()
+    if (!selectWorkbookFile(f)) setRawFile(null)
   }
 
   /**

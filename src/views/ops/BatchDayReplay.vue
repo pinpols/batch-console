@@ -112,6 +112,7 @@
         :description="t('batchDayReplay.submitOutcomeUnknownBody')"
       />
       <el-form
+        id="batch-day-replay-form"
         class="replay-submit-form"
         ref="submitFormRef"
         :model="submitForm"
@@ -376,7 +377,11 @@
         />
       </div>
       <template #footer>
-        <el-button :disabled="Boolean(submissionOutcomeUnknown)" @click="submitDrawerOpen = false">
+        <el-button
+          native-type="button"
+          :disabled="Boolean(submissionOutcomeUnknown)"
+          @click="submitDrawerOpen = false"
+        >
           {{ t('common.cancel') }}
         </el-button>
         <el-button
@@ -388,9 +393,10 @@
         </el-button>
         <el-button
           type="primary"
+          native-type="submit"
+          form="batch-day-replay-form"
           :loading="submitting"
           :disabled="!submissionOutcomeUnknown && (!preview || preview.totalCount === 0)"
-          @click="doSubmit"
         >
           {{
             submissionOutcomeUnknown
