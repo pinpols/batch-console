@@ -19,6 +19,7 @@ export function createEmptyJobDefinitionCreateForm() {
     jobName: '',
     jobType: 'GENERAL',
     scheduleType: 'MANUAL',
+    triggerMode: 'MANUAL',
     scheduleExpr: '',
     dependsOnJobCode: '',
     queueCode: '',
