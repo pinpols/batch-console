@@ -206,7 +206,20 @@ async function createPipeline(
       pipelineName: `Workflow designer ${pipelineCode}`,
       pipelineType: 'IMPORT',
       enabled: true,
-      steps: [],
+      steps: [
+        'RECEIVE',
+        'PREPROCESS',
+        'PARSE',
+        'VALIDATE',
+        'LOAD',
+        'FEEDBACK',
+      ].map((stageCode, index) => ({
+        stepCode: stageCode,
+        stepName: stageCode,
+        stageCode,
+        stepOrder: index,
+        implCode: `IMPORT_${stageCode}`,
+      })),
     },
   })
   const payload = (await response.json()) as { data?: { id?: number }; id?: number }

@@ -1,6 +1,6 @@
 export default {
   operationalStatus: {
-    normal: '无维护/降级',
+    normal: '服务正常',
     scheduled: '计划维护',
     readOnly: '只读维护中',
     maintenance: '系统维护中',
@@ -9,7 +9,7 @@ export default {
     unknown: '状态未知',
   },
   operationalStatusDescription: {
-    normal: '维护状态已成功同步，当前没有维护公告或已知降级。',
+    normal: '服务运行正常，维护状态已同步，当前没有生效中的维护或已知降级。',
     scheduled: '已发布维护公告，计划时间尚未生效。',
     readOnly: '当前处于只读维护，写操作受限。',
     maintenance: '当前处于全冻结维护，普通业务请求受限。',
