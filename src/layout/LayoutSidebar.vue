@@ -81,32 +81,36 @@
       </div>
     </nav>
 
-    <button
-      class="sidebar-foot"
-      type="button"
-      data-onboarding="sidebar-toggle"
-      :title="t('nav.collapseToggle')"
-      @click="app.toggleSidebar()"
-    >
-      <span
+    <div class="sidebar-foot">
+      <el-tooltip
         v-if="!app.sidebarCollapsed"
-        class="sidebar-foot__status"
-        role="status"
-        aria-live="polite"
-        :title="t(sidebarStatus.descriptionKey)"
+        :content="t(sidebarStatus.descriptionKey)"
+        placement="right"
+        :trigger="['hover', 'focus', 'click']"
       >
-        <span
-          class="sidebar-foot__dot"
-          :class="`sidebar-foot__dot--${sidebarStatus.tone}`"
-          aria-hidden="true"
-        />
-        {{ t(sidebarStatus.labelKey) }}
-        <span class="sidebar-foot__ver">· v{{ appVersion }}</span>
-      </span>
-      <el-icon class="sidebar-foot__chevron">
-        <PanelLeftClose v-if="!app.sidebarCollapsed" /><PanelLeftOpen v-else />
-      </el-icon>
-    </button>
+        <span class="sidebar-foot__status" role="status" aria-live="polite" tabindex="0">
+          <span
+            class="sidebar-foot__dot"
+            :class="`sidebar-foot__dot--${sidebarStatus.tone}`"
+            aria-hidden="true"
+          />
+          {{ t(sidebarStatus.labelKey) }}
+          <span class="sidebar-foot__ver">· v{{ appVersion }}</span>
+        </span>
+      </el-tooltip>
+      <button
+        class="sidebar-foot__toggle"
+        type="button"
+        data-onboarding="sidebar-toggle"
+        :aria-label="t('nav.collapseToggle')"
+        :title="t('nav.collapseToggle')"
+        @click="app.toggleSidebar()"
+      >
+        <el-icon class="sidebar-foot__chevron">
+          <PanelLeftClose v-if="!app.sidebarCollapsed" /><PanelLeftOpen v-else />
+        </el-icon>
+      </button>
+    </div>
   </el-aside>
 </template>
 
@@ -490,16 +494,15 @@
     flex-shrink: 0;
     height: 40px;
     padding: 0 14px;
-    border: none;
     border-top: 1px solid var(--color-border);
     background: transparent;
     color: var(--layout-sidebar-text-muted);
     font-size: 12px;
-    cursor: pointer;
     transition: color 0.12s ease;
   }
 
-  .sidebar-foot:hover {
+  .sidebar-foot__status:hover,
+  .sidebar-foot__status:focus-visible {
     color: var(--layout-sidebar-active-text);
   }
 
@@ -553,5 +556,30 @@
   .sidebar-foot__chevron {
     font-size: 15px;
     flex-shrink: 0;
+  }
+
+  .sidebar-foot__toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+  }
+
+  .sidebar-foot__toggle:hover {
+    color: var(--layout-sidebar-active-text);
+    background: var(--layout-sidebar-active-bg);
+  }
+
+  .layout-sidebar[style*='58px'] .sidebar-foot {
+    justify-content: center;
+    padding: 0;
   }
 </style>
