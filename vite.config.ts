@@ -19,7 +19,7 @@ export default defineConfig(({ mode }) => {
     test: {
       globals: true,
       environment: 'node',
-      include: ['src/**/*.{test,spec}.ts'],
+      include: ['src/**/*.{test,spec}.ts', 'e2e/fixtures/runtime-progress/**/*.test.ts'],
       // element-plus 子组件 SFC 编译时通过 unplugin-vue-components 注入
       // `import 'element-plus/es/components/X/style/css'` 副作用,该模块再 import 真 .css。
       // 单测无需样式,把所有命中的 css 模块在 vitest 端 transform 为空,避免 Node ESM
@@ -235,7 +235,12 @@ export default defineConfig(({ mode }) => {
        * tools/docs-bridge 跟 SPA 源代码完全解耦,vite 没必要 watch 它。
        */
       watch: {
-        ignored: ['**/tools/docs-bridge/**', '**/dist/**', '**/playwright-report/**', '**/output/**'],
+        ignored: [
+          '**/tools/docs-bridge/**',
+          '**/dist/**',
+          '**/playwright-report/**',
+          '**/output/**',
+        ],
       },
       proxy: {
         '/docs': {

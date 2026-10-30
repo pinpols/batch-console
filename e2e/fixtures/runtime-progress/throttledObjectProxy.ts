@@ -29,7 +29,7 @@ export class ThrottledObjectProxy {
       }
       let pathname: string
       try {
-        pathname = decodeURIComponent(new URL(path, 'http://localhost').pathname)
+        pathname = decodeURIComponent(new URL(path, this.upstreamUrl).pathname)
       } catch {
         response.writeHead(400).end()
         return

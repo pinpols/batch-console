@@ -1,6 +1,6 @@
 import { createServer, request, type Server } from 'node:http'
 import { afterEach, describe, expect, it } from 'vitest'
-import { ThrottledObjectProxy } from '../../e2e/fixtures/runtime-progress/throttledObjectProxy'
+import { ThrottledObjectProxy } from './throttledObjectProxy'
 
 const servers: Server[] = []
 const proxies: ThrottledObjectProxy[] = []
