@@ -458,9 +458,10 @@ export default withMermaid({
               .join('\n')
             return md.render(headings, env)
           }
-          // ADR和工程规约搜索保留标题层级；页面正文仍完整构建和访问。
+          // 历史变更日志、ADR 和工程规约搜索保留标题层级；页面正文仍完整构建和访问。
           // 产品指南、系统设计、API及运维入口继续保留全文索引。
           if (
+            path === 'backend/changelog.md' ||
             path.startsWith('backend/architecture/adr/') ||
             path.startsWith('backend/standards/')
           ) {

@@ -44,7 +44,7 @@ FRONTEND_DOCS_ROOT=/workspace/console-docs BACKEND_DOCS_ROOT=/workspace/backend-
 
 只运行文档预览使用 `npm run docs:serve`。`make dev-stack` 会先构建文档，再启动前端与一个预览服务。文档源变化后需重新构建；前端 Vite 的热更新不负责重建 VitePress 静态产物。
 
-CI 的文档任务检出配对后端仓并运行 `docs:build`；Docker 构建通过 `backend-docs` BuildKit context 注入同一权威源。构建先执行 `test:docs-publication`，再准备、编译并检查体积。`docs:size` 对普通 JS chunk 设置 raw 850 KB / gzip 220 KB 预算；统一搜索索引设置 raw 4.5 MB / gzip 1.23 MB 预算。索引 gzip 预算包含少量跨构建环境余量，以覆盖 VitePress 并发索引的序列化差异；raw 上限不变。带日期的后端设计稿、ADR 和工程标准只将一至三级标题纳入搜索索引，页面正文仍完整发布；无日期的当前设计、API、产品指南与运维文档保留全文搜索。
+CI 的文档任务检出配对后端仓并运行 `docs:build`；Docker 构建通过 `backend-docs` BuildKit context 注入同一权威源。构建先执行 `test:docs-publication`，再准备、编译并检查体积。`docs:size` 对普通 JS chunk 设置 raw 850 KB / gzip 220 KB 预算；统一搜索索引设置 raw 4.5 MB / gzip 1.23 MB 预算。索引 gzip 预算包含少量跨构建环境余量，以覆盖 VitePress 并发索引的序列化差异；raw 上限不变。后端历史变更日志、带日期的后端设计稿、ADR 和工程标准只将一至三级标题纳入搜索索引，页面正文仍完整发布；无日期的当前设计、API、产品指南与运维文档保留全文搜索。
 
 发布算法、主题导航或构建输入变更后，除完整构建外，应在新构建的预览中实际验证旧锚点、末卷和前后卷／目录导航。已有预览服务可能缓存构建前的文件；只重启本任务拥有的预览实例后复验，不将旧页面当作新构建结果。
 

@@ -497,12 +497,13 @@
   const recoveryScope = computed(() => {
     const actor = auth.userInfo?.username || ''
     if (!actor || !tenant.tenantId || !bizDate.value || !calendarCode.value.trim()) return ''
-    return (
-      STORAGE_KEYS.batchDayCatchUpRecoveryPrefix +
-      encodeURIComponent(
-        JSON.stringify([actor, tenant.tenantId, bizDate.value, calendarCode.value.trim()]),
-      )
-    )
+    const scopeKey = JSON.stringify([
+      actor,
+      tenant.tenantId,
+      bizDate.value,
+      calendarCode.value.trim(),
+    ])
+    return STORAGE_KEYS.batchDayCatchUpRecoveryPrefix + encodeURIComponent(scopeKey)
   })
 
   async function refreshCatchUpStatus() {

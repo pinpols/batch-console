@@ -521,7 +521,10 @@
     await runInstanceBulk(
       eligible,
       (r) => {
-        if (!isCurrent()) return Promise.reject(new Error(t('common.cancel')))
+        if (!isCurrent()) {
+          const message = t('common.cancel')
+          return Promise.reject(new Error(message))
+        }
         return instanceApi.retry(r.instanceNo, sourceTenantId, r.jobCode, r.bizDate)
       },
       label,
@@ -561,7 +564,10 @@
     await runInstanceBulk(
       eligible,
       (r) => {
-        if (!isCurrent()) return Promise.reject(new Error(t('common.cancel')))
+        if (!isCurrent()) {
+          const message = t('common.cancel')
+          return Promise.reject(new Error(message))
+        }
         return instanceApi.cancel(r.id, sourceTenantId)
       },
       label,
