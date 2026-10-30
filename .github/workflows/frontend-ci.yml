@@ -76,9 +76,25 @@ jobs:
       - name: Check translations
         run: bash scripts/ci/run-gate.sh --group localization FE_I18N "国际化词条一致性" -- npm run check:i18n
       - name: Unit tests
-        run: bash scripts/ci/run-gate.sh FE_UNIT "Vitest 单测" -- npm run test:unit
+        id: unit-tests
+        run: |
+          mkdir -p build/ci-test-reports
+          bash scripts/ci/run-gate.sh FE_UNIT "Vitest 单测" -- npm run test:unit -- --reporter=default --reporter=json --outputFile.json=build/ci-test-reports/vitest.json
       - name: Production build
         run: bash scripts/ci/run-gate.sh FE_BUILD "完整生产构建" -- npm run build
+      - name: 'Node compatibility tests / consolidated report'
+        if: always()
+        env:
+          TEST_OUTCOME: ${{ steps.unit-tests.outcome }}
+        run: node scripts/ci/report-test-summary.mjs vitest
+      - name: Upload compatibility test report
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: frontend-compatibility-test-report
+          path: build/ci-test-reports/
+          retention-days: 14
+
       - name: Report all gate failures
         if: always()
         shell: bash

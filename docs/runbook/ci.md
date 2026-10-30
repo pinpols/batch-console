@@ -168,6 +168,8 @@ E2E 使用 `test:e2e:all`（含 `@slow`），并运行 `smoke.spec.ts @cross-bro
 | `check-version-alignment.sh`                         | ✅                          | ✅                          | —                  | `preflight:changed`(package 变更)                                                                                                                   |
 | `docs:build`                                         | 统一文档 job                | Docker 文档构建             | —                  | `preflight:changed`(文档桥接、站点配置或构建脚本变更)                                                                                               |
 
+PR、Full 和 Node 兼容工作流保存 Vitest JSON，并生成包含成功、失败和跳过数的汇总；Staging 保存全量、视觉和跨浏览器三次 Playwright 的独立 JSON 后再汇总，避免后一次运行覆盖先前结果。报告显示未运行或缺失的状态；执行成功却缺少报告会使汇总失败。每行代表一次执行，不对不同 E2E 套件中的重复场景去重。汇总产物分别保存为 `frontend-pr-test-report`、`frontend-full-test-report`、`frontend-compatibility-test-report` 和 `frontend-staging-test-summary`；真实 Staging 验收仍以原测试及发布门禁结果为准。
+
 Shell 脚本统一使用 Bash/sh；`check:shell` 同时做语法与 ShellCheck 检查，CI 不再额外安装 zsh。
 
 ## 门禁结果格式

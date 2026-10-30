@@ -11,7 +11,7 @@ module.exports = defineConfig({
     timeout: 8_000,
     toHaveScreenshot: { animations: 'disabled', maxDiffPixelRatio: 0.01 },
   },
-  reporter: [['list']],
+  reporter: [['list'], ['json', { outputFile: 'playwright-report/visual-results.json' }]],
   use: {
     ...devices['Desktop Chrome'],
     baseURL: FRONTEND_BASE_URL,

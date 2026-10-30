@@ -90,7 +90,11 @@ jobs:
         run: bash scripts/ci/run-gate.sh --group localization FE_I18N "国际化词条一致性" -- npm run check:i18n
 
       - name: Unit tests (Vitest) + coverage gate
-        run: bash scripts/ci/run-gate.sh FE_UNIT "Vitest 单测与覆盖率" -- npm run test:unit -- --coverage
+        id: unit-tests
+        run: |
+          mkdir -p build/ci-test-reports
+          bash scripts/ci/run-gate.sh FE_UNIT "Vitest 单测与覆盖率" -- npm run test:unit -- --coverage --reporter=default --reporter=json --outputFile.json=build/ci-test-reports/vitest.json
+
 
       - name: Build (Vite 生产产物,跳重复 typecheck/i18n)
         run: bash scripts/ci/run-gate.sh FE_BUILD "Vite 生产构建" -- npm run build:fast
@@ -105,6 +109,19 @@ jobs:
       # --omit=dev 跳 devDep(eslint/playwright/vitest 等 dev-time vuln 不影响产物)
       - name: npm audit (prod deps, high+critical only)
         run: bash scripts/ci/run-gate.sh FE_NPM_AUDIT "生产依赖漏洞审计" -- npm audit --audit-level=high --omit=dev
+
+      - name: 'PR tests / consolidated report'
+        if: always()
+        env:
+          TEST_OUTCOME: ${{ steps.unit-tests.outcome }}
+        run: node scripts/ci/report-test-summary.mjs vitest
+      - name: Upload PR test report
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: frontend-pr-test-report
+          path: build/ci-test-reports/
+          retention-days: 14
 
       - name: Report all gate failures
         if: always()
