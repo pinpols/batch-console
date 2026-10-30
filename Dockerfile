@@ -52,8 +52,8 @@ FROM nginx:1.30.5-alpine3.24@sha256:0985e772fb9f729e6fa0980da05fca5d9c468e870eed
 ENV LANG=C.UTF-8 \
     LC_ALL=C.UTF-8
 
-# 安装 healthcheck 和时区所需工具；基础镜像使用明确的 Nginx/Alpine 版本。
-RUN apk add --no-cache curl tzdata && \
+# 固定基础镜像上的 Brotli 修复版本下限，并安装 healthcheck 和时区工具。
+RUN apk add --no-cache 'brotli-libs>=1.2.1-r0' curl tzdata && \
     cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
     echo "Asia/Shanghai" > /etc/timezone && \
     apk del tzdata
