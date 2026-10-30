@@ -513,7 +513,13 @@
   import { Copy as DocumentCopy, Pause, Play, RefreshCw as Refresh } from '@lucide/vue'
   import { confirmDanger } from '@/composables/useDangerConfirm'
   import { fmtDatetime } from '@/utils/datetime'
-  import { errorCorrelation, progressStatus, tagTypeForKey } from './schedulerSnapshotPresentation'
+  import {
+    clampLoadPercentage,
+    errorCorrelation,
+    panelDotClass,
+    progressStatus,
+    tagTypeForKey,
+  } from './schedulerSnapshotPresentation'
   import {
     getSchedulerSnapshot,
     getSchedulerSnapshotHistory,
@@ -691,16 +697,7 @@
     return m[activePanel.value]
   })
 
-  const activeDotClass = computed(() => {
-    const m: Record<PanelKey, string> = {
-      policies: 'dot--primary',
-      queues: 'dot--success',
-      workers: 'dot--warning',
-      history: 'dot--info',
-    }
-    return m[activePanel.value]
-  })
-
+  const activeDotClass = computed(() => panelDotClass(activePanel.value))
   const activePanelCount = computed(() => {
     const m: Record<PanelKey, number> = {
       policies: snap.value?.policies?.length ?? 0,
@@ -710,12 +707,6 @@
     }
     return m[activePanel.value]
   })
-
-  function clampLoadPercentage(load: unknown): number {
-    const numericLoad = Number(load) || 0
-    const nonNegativeLoad = Math.max(0, numericLoad)
-    return Math.min(100, nonNegativeLoad)
-  }
 
   async function loadAll(silent = false) {
     const scope = snapshotScope.begin()

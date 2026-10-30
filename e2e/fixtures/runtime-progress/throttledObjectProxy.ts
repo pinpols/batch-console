@@ -5,31 +5,47 @@ import { setTimeout as delay } from 'node:timers/promises'
 export class ThrottledObjectProxy {
   private server?: Server
   private readonly upstreamRequests = new Set<ClientRequest>()
+  private readonly upstreamUrl: URL
   readonly transfers: Array<{ bytes: number; complete: boolean; status: number }> = []
 
   constructor(
-    private readonly upstream: string,
+    upstream: string,
     private readonly ownedObjectPath: string,
   ) {
     const url = new URL(upstream)
     if (url.protocol !== 'http:' || !['127.0.0.1', 'localhost'].includes(url.hostname))
       throw new Error('真实对象代理仅允许本地HTTP对象存储')
+    this.upstreamUrl = url
     if (!ownedObjectPath || ownedObjectPath.includes('..'))
       throw new Error('对象代理必须限定本例完整对象路径')
   }
 
   async start() {
     this.server = createServer((request, response) => {
-      const url = new URL(request.url ?? '/', this.upstream)
-      const throttle =
-        request.method === 'GET' &&
-        decodeURIComponent(url.pathname).endsWith(`/${this.ownedObjectPath}`)
+      const path = request.url ?? '/'
+      if (!path.startsWith('/') || path.startsWith('//') || path.includes('\\')) {
+        response.writeHead(400).end()
+        return
+      }
+      let pathname: string
+      try {
+        pathname = decodeURIComponent(new URL(path, 'http://localhost').pathname)
+      } catch {
+        response.writeHead(400).end()
+        return
+      }
+      const throttle = request.method === 'GET' && pathname.endsWith(`/${this.ownedObjectPath}`)
       const transfer = { bytes: 0, complete: false, status: 0 }
       if (throttle) this.transfers.push(transfer)
       // 保留原Host供S3签名校验；只更换TCP目的地址，凭据不进入证据或日志。
       const upstream = httpRequest(
-        url,
-        { method: request.method, headers: request.headers },
+        {
+          hostname: this.upstreamUrl.hostname,
+          port: this.upstreamUrl.port,
+          path,
+          method: request.method,
+          headers: request.headers,
+        },
         (source) => {
           transfer.status = source.statusCode ?? 502
           source.once('error', () => response.destroy())

@@ -36,3 +36,18 @@ export function errorCorrelation(reason: unknown): string {
     headers?.['x-request-id']
   return fromHeader ? String(fromHeader) : ''
 }
+
+export function panelDotClass(panel: 'policies' | 'queues' | 'workers' | 'history'): string {
+  return {
+    policies: 'dot--primary',
+    queues: 'dot--success',
+    workers: 'dot--warning',
+    history: 'dot--info',
+  }[panel]
+}
+
+export function clampLoadPercentage(load: unknown): number {
+  const numericLoad = Number(load) || 0
+  const nonNegativeLoad = Math.max(0, numericLoad)
+  return Math.min(100, nonNegativeLoad)
+}
