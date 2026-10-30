@@ -118,7 +118,11 @@ jobs:
           BASELINE_BASE_REF: ${{ github.event.pull_request.base.sha || github.event.before || 'origin/main' }}
         run: bash scripts/verify-governance.sh
 
-      - run: bash scripts/ci/run-gate.sh FE_UNIT "Vitest 单测与覆盖率" -- npm run test:unit -- --coverage
+      - name: Unit tests (Vitest) + coverage gate
+        id: unit-tests
+        run: |
+          mkdir -p build/ci-test-reports
+          bash scripts/ci/run-gate.sh FE_UNIT "Vitest 单测与覆盖率" -- npm run test:unit -- --coverage --reporter=default --reporter=json --outputFile.json=build/ci-test-reports/vitest.json
 
       # 完整 build(vue-tsc + i18n + vite build),验证生产产物可生成
       - run: bash scripts/ci/run-gate.sh FE_BUILD "完整生产构建" -- npm run build
@@ -134,6 +138,19 @@ jobs:
           name: dist
           path: dist/
           retention-days: 7
+
+      - name: 'Full tests / consolidated report'
+        if: always()
+        env:
+          TEST_OUTCOME: ${{ steps.unit-tests.outcome }}
+        run: node scripts/ci/report-test-summary.mjs vitest
+      - name: Upload Full test report
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: frontend-full-test-report
+          path: build/ci-test-reports/
+          retention-days: 14
 
       - name: Report all gate failures
         if: always()

@@ -168,6 +168,8 @@ E2E 使用 `test:e2e:all`（含 `@slow`），并运行 `smoke.spec.ts @cross-bro
 | `check-version-alignment.sh`                         | ✅                          | ✅                          | —                  | `preflight:changed`(package 变更)                                                                                                                   |
 | `docs:build`                                         | 统一文档 job                | Docker 文档构建             | —                  | `preflight:changed`(文档桥接、站点配置或构建脚本变更)                                                                                               |
 
+PR、Full 和 Node 兼容工作流保存 Vitest JSON，并生成包含成功、失败和跳过数的汇总；Staging 保存全量、视觉和跨浏览器三次 Playwright 的独立 JSON 后再汇总，避免后一次运行覆盖先前结果。报告显示未运行或缺失的状态；执行成功却缺少报告会使汇总失败。每行代表一次执行，不对不同 E2E 套件中的重复场景去重。汇总产物分别保存为 `frontend-pr-test-report`、`frontend-full-test-report`、`frontend-compatibility-test-report` 和 `frontend-staging-test-summary`；真实 Staging 验收仍以原测试及发布门禁结果为准。
+
 Shell 脚本统一使用 Bash/sh；`check:shell` 同时做语法与 ShellCheck 检查，CI 不再额外安装 zsh。
 
 ## 门禁结果格式
@@ -234,7 +236,7 @@ npm run preflight:changed
 | pr-gate `lint:check` `Definition for rule 'es5/no-es6-methods' was not found` | eslint config 没 ignore vitepress cache | `eslint.config.js` ignore 路径检查                           |
 | pr-gate `gen:api:check` 漂移                                                  | BE OpenAPI yaml 改了 FE 没跑 gen:api    | 本地 `npm run gen:api` + commit `src/types/api.generated.ts` |
 | pr-gate `npm audit` 在 CI fail 本地通                                         | npm registry POST 405(代理)             | 本地代理特殊，CI `ubuntu-26.04` 正常                         |
-| full-ci-gate Trivy 报 CRITICAL                                                | base image 漏洞                         | `Dockerfile` 升 base image,或加 `.trivyignore` 临时白名单    |
+| full-ci-gate Trivy 报 CRITICAL                                                | base image 漏洞                         | 核对漏洞与修复版本，升级 `Dockerfile` 基础镜像或受影响系统包并重新扫描 |
 | full-ci-gate Lighthouse perf < 0.8                                            | 包体增大 / 慢资源                       | 看报告找 LCP / TBT 拖累项,常见:vendor chunk 拆分 / 图片压缩  |
 | staging-gate playwright fail                                                  | staging 服务挂 / 选择器漂               | 看 playwright-report artifact 截图 / 录屏                    |
 

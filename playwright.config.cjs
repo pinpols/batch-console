@@ -33,7 +33,10 @@ module.exports = defineConfig({
   reporter: [
     ['html', { open: 'never' }],
     ['list'],
-    ['json', { outputFile: 'playwright-report/results.json' }],
+    [
+      'json',
+      { outputFile: process.env.PLAYWRIGHT_JSON_REPORT_PATH || 'playwright-report/results.json' },
+    ],
   ],
   use: {
     baseURL,

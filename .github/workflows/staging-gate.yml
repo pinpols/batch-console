@@ -109,6 +109,7 @@ jobs:
       # base URL 由 precheck 统一计算;
       # E2E_USERNAME/E2E_PASSWORD 走 secret,global-setup 用它建 storageState
       - name: Playwright (full suite against staging)
+        id: e2e-full
         env:
           E2E_TARGET_ENV: staging
           E2E_BASE_URL: ${{ needs.precheck.outputs.base_url }}
@@ -123,7 +124,14 @@ jobs:
         if: always()
         run: node scripts/report-playwright-release.mjs
 
+      - name: Preserve full Playwright report
+        if: always()
+        run: |
+          mkdir -p build/ci-test-reports
+          if [[ -f playwright-report/results.json ]]; then cp playwright-report/results.json build/ci-test-reports/full.json; fi
+
       - name: Visual regression baseline
+        id: e2e-visual
         env:
           E2E_TARGET_ENV: staging
           E2E_BASE_URL: ${{ needs.precheck.outputs.base_url }}
@@ -133,7 +141,14 @@ jobs:
           E2E_PASSWORD: ${{ secrets.STAGING_E2E_PASSWORD }}
         run: bash scripts/ci/run-gate.sh --group testing FE_E2E_VISUAL "视觉回归测试" -- npm run test:e2e:visual
 
+      - name: Preserve visual Playwright report
+        if: always()
+        run: |
+          mkdir -p build/ci-test-reports
+          if [[ -f playwright-report/visual-results.json ]]; then cp playwright-report/visual-results.json build/ci-test-reports/visual.json; fi
+
       - name: Cross-browser route smoke (Chromium / Firefox / WebKit / mobile Chrome)
+        id: e2e-cross
         env:
           E2E_TARGET_ENV: staging
           E2E_BASE_URL: ${{ needs.precheck.outputs.base_url }}
@@ -143,7 +158,24 @@ jobs:
           E2E_USERNAME: ${{ secrets.STAGING_E2E_USERNAME }}
           E2E_PASSWORD: ${{ secrets.STAGING_E2E_PASSWORD }}
           CROSS_BROWSER: '1'
+          PLAYWRIGHT_JSON_REPORT_PATH: build/ci-test-reports/cross-browser.json
         run: bash scripts/ci/run-gate.sh --group testing FE_E2E_CROSS_BROWSER "跨浏览器冒烟测试" -- npm run test:e2e:all -- e2e/smoke.spec.ts --grep @cross-browser
+
+      - name: 'Staging E2E / consolidated report'
+        if: always()
+        env:
+          OUTCOME_FULL: ${{ steps.e2e-full.outcome }}
+          OUTCOME_VISUAL: ${{ steps.e2e-visual.outcome }}
+          OUTCOME_CROSS_BROWSER: ${{ steps.e2e-cross.outcome }}
+        run: node scripts/ci/report-test-summary.mjs playwright
+
+      - name: Upload consolidated E2E reports
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: frontend-staging-test-summary
+          path: build/ci-test-reports/
+          retention-days: 30
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
